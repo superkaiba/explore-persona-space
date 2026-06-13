@@ -15,7 +15,7 @@ description: >
   changes. Does NOT touch experiment code (`src/explore_persona_space/`,
   `configs/`, `scripts/train.py`, `scripts/eval.py`), does NOT run experiments,
   does NOT mutate task state via `task.py`.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 skills:
   - codebase-debugger
   - cleanup
@@ -57,7 +57,8 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh` — the crash-recovery + pod-safety + stalled-detector watcher + its cron wrapper
   - `session_progress_report.py`, `session_summarize.py`, `session_resolver.py`, `cron_session_summarize.sh` — the per-session progress self-report helper (`/issue` phone titles), the 5-min LLM session-summary cache (dashboard + `spawn_session.py list` PROGRESS column), the Happy-session→transcript resolver, and the summarizer's cron wrapper
   - `workflow_lint.py` — `--check-asks` and friends; enforces the halt-criterion contract
-  - `verify_task_body.py` — 13-check markdown spec for clean-result bodies
+  - `verify_task_body.py` — mechanical markdown spec for clean-result bodies (check catalog in the script docstring)
+  - `verify_plan.py` — the `/adversarial-planner` Phase 1.5.0 mechanical pre-pass gate for plans (check catalog in the script docstring; plan-side sibling of `verify_task_body.py`)
   - `verify_uploads.py` — the upload-verifier's artifact checklist + phantom-URL gate (`--claimed-urls-file`, /issue Step 8)
   - `audit_clean_results_body_discipline.py` — anti-pattern detector
   - `redact_for_gist.py`, `check_no_secret_shaped_strings.py` — the gist-publish PII redactor (daily/weekly update skills) + the pre-commit secret-shaped-string gate whose documented remediation path it is
@@ -67,7 +68,7 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `recent_clean_results.py`, `task_state.py` — the analyzer Step 1.5 exemplar loader + the sagan_state-compat shim it reads the task workflow through
   - `post_step_completed.py` — the `/issue` per-EXIT-site `epm:step-completed` marker poster (third live task_state consumer; read by the §5 re-entry router + `autonomous_session_watch.py`)
   - `codex_task.py`, `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`, `pod_watch.py`
-- `tests/test_workflow*.py`, `tests/test_failure_classifier.py`, `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`, `tests/test_router*.py`, `tests/test_backend_*.py`, `tests/test_slurm_*.py`, `tests/test_gcp_backend.py`, `tests/test_redact_for_gist.py`, `tests/test_check_no_secret_shaped_strings.py`, and other tests that pin workflow invariants
+- `tests/test_workflow*.py`, `tests/test_failure_classifier.py`, `tests/test_verify_plan.py`, `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`, `tests/test_router*.py`, `tests/test_backend_*.py`, `tests/test_slurm_*.py`, `tests/test_gcp_backend.py`, `tests/test_redact_for_gist.py`, `tests/test_check_no_secret_shaped_strings.py`, and other tests that pin workflow invariants
 
 **Out of scope (do NOT touch):**
 - `src/explore_persona_space/**` — library + research code (EXCEPT `task_workflow.py` + `task_workflow_migrate.py` and the `backends/*.py` router package, listed above)
@@ -187,6 +188,15 @@ After editing, run whichever of these apply:
 ```bash
 # Always, if you touched .claude/agents/**/*.md or .claude/skills/**/SKILL.md
 uv run python scripts/workflow_lint.py --check-asks
+
+# If you touched workflow.yaml marker definitions / guidance: regenerate the
+# auto-generated tables and commit the regenerated .claude/skills/issue/markers.md
+# (and any other regenerated table file) ALONGSIDE your workflow.yaml edit, then verify
+uv run python scripts/workflow_lint.py --emit-tables
+uv run python scripts/workflow_lint.py --check-tables
+# (Skipping this leaves markers.md stale and fails the pinned tests
+# test_workflow_lint_check_references_exits_zero / test_workflow_lint_check_tables_exits_zero
+# repo-wide — incident #612 broke them for ~a day.)
 
 # If you touched scripts/verify_task_body.py or the clean-result spec text
 uv run python scripts/verify_task_body.py --self-test  # if it has one; otherwise spot-check on a recent task

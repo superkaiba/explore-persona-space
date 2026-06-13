@@ -25,7 +25,7 @@ The deck has three anchored regions, demarcated by HTML comments the skill greps
 
 **LOG** (research log, newest first): each weekly entry begins with a `## Week of YYYY-MM-DD` divider slide carrying an HTML anchor, followed by that week's per-result slides + open-questions + next-steps. Older weeks are never rewritten.
 
-**APPENDIX** (accumulating): reproducibility cards + the four backup-slide families (see § Backup-slide families). New cards prepend; old cards stay.
+**APPENDIX** (accumulating): reproducibility cards + the five backup-slide families (see § Backup-slide families). New cards prepend; old cards stay.
 
 This split lets the deck serve two roles simultaneously: (a) the Project summary at the top is the *evolving project status* that a new collaborator can read in two minutes, and (b) the LOG below is the *durable archive* that captures how the story changed over time. Both live in the same file with the same shared link.
 
@@ -73,17 +73,19 @@ The skill takes an `--objective` argument (default `inform`) and the user-suppli
 
 ## Backup-slide families
 
-Hughes & Chua devote a section to backup slides — what to have ready when the mentor asks the obvious next question. The skill materialises **four** families, each conditional on real source data being present in this week's clean-results. Skip families with no data; never fabricate.
+Hughes & Chua devote a section to backup slides — what to have ready when the mentor asks the obvious next question. The skill materialises **five** families, each conditional on real source data being present in this week's clean-results. Skip families with no data; never fabricate.
 
-(a) **Metric definition + concrete example.** One slide per metric, with a one-line definition and a real prompt → real model output → assigned score. Sanders: "Can help to include real data / real prompts / real model outputs — harder to fool yourself when you look at real data instead of relying on abstract metrics and intentions." Source data: `## Setup & hyper-parameters` opening prose + `## Sample outputs` from the clean-result template.
+(a) **Metric definition + concrete example.** One slide per metric, with a one-line definition and a real prompt → real model output → assigned score. Sanders: "Can help to include real data / real prompts / real model outputs — harder to fool yourself when you look at real data instead of relying on abstract metrics and intentions." Source data (v2 clean-result shape, `.claude/skills/clean-results/SPEC.md`): the eval-probe descriptions in `## TL;DR` → `### What I ran`, the cherry-picked raw-completion example block inside each `#### <finding>` H4, and the eval-rig rows of the `## Reproducibility` `**Parameters:**` table. (Legacy pre-sentinel bodies keep the older section names — read whatever shape the body actually carries.)
 
 (b) **Detailed prompt with arrows / highlights.** One slide per representative prompt with the load-bearing region marked (e.g., `<mark>...</mark>`), and a one-arrow takeaway in the caption. Hughes & Chua: "Drawing arrows and highlighting text helps draw attention to particular parts of the prompt." This is the *only* place the project allows annotations on slide content — the chart-level no-annotations rule (`feedback_no_plot_annotations`) still holds; arrows on prompt text are a different category.
 
-(c) **Data-scaling curve.** Hughes & Chua: "have you tried more data?" is one of the most common mentor questions; have a scaling answer ready. Show linear and (where data spans ≥2 orders of magnitude) log-log views side by side. Source data: any clean-result whose headline-numbers table has a "data fraction" or "training-step sweep" axis.
+(c) **Data-scaling curve.** Hughes & Chua: "have you tried more data?" is one of the most common mentor questions; have a scaling answer ready. Show linear and (where data spans ≥2 orders of magnitude) log-log views side by side. Source data (v2 clean-result shape, `.claude/skills/clean-results/SPEC.md`): any clean-result with a `#### <finding>` figure whose axis is a data fraction or training-step sweep — per-condition numbers live in plots, not body tables, so pull them from the `eval_results/issue_<N>/` JSONs linked in `## Reproducibility` → `**Artifacts:**`; the figure's `figures/issue_<N>/*.meta.json` sidecar pins the repo commit at figure-save time. (Legacy pre-sentinel bodies may still carry these numbers as a body table — read whatever shape the body actually carries.)
 
-(d) **Baseline-invalidation slide.** "What are some simple ways that would invalidate your results? You should think of some and include slides that discuss it." (Hughes & Chua.) One slide listing the controls + 1-line on what each rules out, with the baseline numbers inline. Source data: baseline rows in the headline-numbers table.
+(d) **Baseline-invalidation slide.** "What are some simple ways that would invalidate your results? You should think of some and include slides that discuss it." (Hughes & Chua.) One slide listing the controls + 1-line on what each rules out, with the baseline numbers inline. Source data (v2 clean-result shape, `.claude/skills/clean-results/SPEC.md`): the baseline / control conditions in the `#### <finding>` figures — read their numbers from the `eval_results/issue_<N>/` JSONs linked in `## Reproducibility` → `**Artifacts:**` (the figure's `figures/issue_<N>/*.meta.json` sidecar pins the repo commit at figure-save time), and each control's rules-out rationale from the finding's setup/read prose. (Legacy pre-sentinel bodies may still carry these numbers as a body table — read whatever shape the body actually carries.)
 
-The skill's quality checklist refuses to emit a backup slide whose source data was not extracted; missing slides are reported in the Step 8 user-facing summary, never silently skipped.
+(e) **Training-data quality.** One slide per result whose fine-tuning ran on a dataset built for that experiment (synthetic mixes, contrastive panels, template corpora): 1-2 verbatim training rows, the data-source tier (real-world / established benchmark / LLM-synthetic / programmatic, per the CLAUDE.md realistic-data hierarchy), and known artifacts (templated structure, narrow topic coverage, judge-model authorship). Source: mentor steer, 2026-06-11 (`docs/mentor_updates/2026-06-11.md`): "Get more into the weeds on thinking about data quality / When running an experiment on finetuning on different things." Source data: the clean-result's training-mix description + the HF data-repo JSONL named in its `## Reproducibility` section. The same steer also mandates the verbatim qualitative example on every behavioral result slide (SKILL.md § Output Rules) — family (e) is the data-side half, the Example bullet the behavior-side half.
+
+The skill's quality checklist refuses to emit a backup slide whose source data was not extracted; missing slides are reported in the end-of-run user-facing summary (SKILL.md § Updating the Persistent Deck), never silently skipped.
 
 ---
 
@@ -148,7 +150,7 @@ Use these in headlines and bullets when the chart underdetermines the verbal cla
 - **Narrow** — restricted to specific setting.
 - **Guarantees** — always true (rare in deep learning).
 
-The clean-result body's existing `Confidence: HIGH | MODERATE | LOW` maps onto this:
+The clean-result H1 title's confidence tag (`HIGH | MODERATE | LOW` — v2 bodies carry confidence in the title tag ONLY, with no body `Confidence:` sentence; legacy pre-sentinel bodies may still carry one) maps onto this:
 - HIGH ≈ systematic
 - MODERATE ≈ hedged
 - LOW ≈ existence proof / narrow

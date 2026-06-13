@@ -7,7 +7,7 @@ description: >
   cleanly. The orchestrator polls the run. Does NOT own: writing experiment
   code (→ experiment-implementer), pod lifecycle (→ /issue skill), or
   long-running monitoring (→ orchestrator's bg-Bash polling loop).
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 skills:
   - experiment-runner
   - codebase-debugger
@@ -172,23 +172,39 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
                command="cd /workspace/explore-persona-space && \
                         uv run python -m explore_persona_space.orchestrate.preflight --json")
    ```
-   If preflight fails, FIRST parse the `errors` list: the feature-branch
-   false positive `Local is N commit(s) behind origin/main` fires on EVERY
-   `issue-<N>` checkout (the check counts `HEAD..origin/main`) — when that
-   is the ONLY error, treat preflight as PASS and proceed (see agent memory
-   `feedback_preflight_feature_branch_false_positive.md`). For any OTHER
-   error, post `<!-- epm:failure v1 -->` with the JSON — do NOT try to
-   "fix it" by editing code on the pod. Code edits never happen on pods.
+   If preflight fails, FIRST parse the `errors` list.
+
+   > **LEGACY tolerance — pre-#554 pod checkouts ONLY.** Preflight is
+   > branch-aware as of 2026-06-12 (#554, commit `25f227273`): on an
+   > `issue-<N>` checkout the git check compares the branch against its
+   > OWN `origin/issue-<N>` ref, and behind-origin/main is an
+   > informational WARNING, not an ERROR — the old false positive no
+   > longer fires on a pod synced to current code. Keep this tolerance
+   > only for a pod still running pre-#554 code (cloned/synced before
+   > 2026-06-12): there, when `Local is N commit(s) behind origin/main`
+   > is the ONLY error, treat preflight as PASS and proceed (see agent
+   > memory `feedback_preflight_feature_branch_false_positive.md`).
+   > **On post-#554 code these ERRORs are REAL — NEVER tolerate them:**
+   > `Local is N commit(s) behind origin/issue-<N>` (the pod is missing
+   > reviewed commits — re-sync the branch) and `git fetch origin failed`
+   > on a feature branch.
+
+   For any OTHER error, post `<!-- epm:failure v1 -->` with the JSON —
+   do NOT try to "fix it" by editing code on the pod. Code edits never
+   happen on pods.
 
    **Pre-clear the false positive for launchers that re-run preflight
-   internally.** Your tolerance above does NOT transfer to a driver that
+   internally (LEGACY — same pre-#554 transition window as above; on
+   post-#554 pods the behind-origin/main ERROR no longer exists, so no
+   pre-clear is needed and the ref repoint below should be skipped).**
+   The legacy tolerance above does NOT transfer to a driver that
    gates launch on its own `orchestrate.preflight` call (e.g. `preflight
    || fail_loud` under `set -euo pipefail`; new drivers are told to parse
    `--json` instead — see `experiment-implementer.md` § "Pod-side
    preflight gates"). Grep the launcher script for `orchestrate.preflight`;
-   if it re-runs preflight internally, repoint the pod-local
-   remote-tracking ref BEFORE launching so the behind-origin/main count
-   reads 0:
+   if it re-runs preflight internally on a pre-#554 checkout, repoint the
+   pod-local remote-tracking ref BEFORE launching so the
+   behind-origin/main count reads 0:
    ```bash
    ssh_execute(server="epm-issue-<N>",
                command="cd /workspace/explore-persona-space && \
@@ -455,6 +471,92 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    original crash; a `pgrep -f <script-name>` pre-check had read clean.
    Same trap, library-side: `.claude/rules/gotchas.md` "Crashed vLLM
    parents leave orphaned `VLLM::EngineCore` workers".
+10. **CVD launcher-env pin — verify before ANY parallel per-GPU fan-out
+    launch (MANDATORY).** When the launch runs N parallel processes with
+    one GPU each (wave dispatchers, per-seed/per-cell fan-outs,
+    `CUDA_VISIBLE_DEVICES`-sharded sweeps), EVERY per-cell launch line
+    MUST prefix the process with `CUDA_VISIBLE_DEVICES=<gpu>` in the
+    LAUNCHER environment AND pass the matching `+gpu_id=N` / `--gpu-id N`
+    arg. The in-process clobber alone
+    (`train/sft.py:1062` / `:1294` set
+    `os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)`) is NOT
+    sufficient: the driver freezes its device list at the FIRST cuInit in
+    the process, so any import-time cuInit (`import peft` is a known
+    offender — #545) makes the late clobber a driver-level no-op and
+    every cell's `cuda:0` resolves to physical GPU 0 — parallel cells
+    co-locate and OOM (#523 Phase B rounds 7/8; recurrence class
+    #541/#543/#557 — the failure-classifier row "parallel fan-out cells
+    co-located on one device"). You do not fix this in code — you VERIFY
+    the dispatcher you are about to launch:
+    ```bash
+    ssh_execute(server="epm-issue-<N>",
+                command="grep -n 'CUDA_VISIBLE_DEVICES' <dispatcher_path>")
+    ```
+    Expect the `CUDA_VISIBLE_DEVICES="$cvd" uv run python ... --gpu-id
+    "$cvd"` shape (`scripts/i474_phase23_dispatch.sh:192-193` is the
+    reference; `tests/test_cvd_wave_assignment_smoke.py` is the
+    regression smoke for that family). Do NOT accept a bare hit count —
+    comment lines mention CUDA_VISIBLE_DEVICES too; INSPECT each
+    backgrounded per-cell launch line for the env prefix. The
+    matching-gpu-arg requirement applies to entrypoints that pass
+    through the `train/sft.py` `gpu_id` clobber (or that accept a
+    gpu-id-style arg); for clobber-free entrypoints the launcher-env
+    pin alone is complete — do not false-bounce those. If the per-cell
+    launch lines rely on the in-process clobber alone (no launcher-env
+    prefix, or — for clobber-bearing entrypoints — a prefix without the
+    matching gpu arg), do NOT launch: post `epm:failure v1` with
+    `failure_class: code` naming the dispatcher + the missing pin, and
+    bounce to `experiment-implementer`. Exempt: a single foreground
+    process that does not fork per-GPU workers, and torchrun/ZeRO-3/
+    vLLM-TP launches where ONE process group deliberately owns all
+    GPUs. NOTE this gate runs only on experimenter-mediated (RunPod
+    lane) launches; gcp/slurm startup-script lanes are covered by the
+    write-side authoring rule (`experiment-implementer.md` § During
+    implementation) + the regression smoke. Full mechanics:
+    `.claude/rules/gotchas.md` § "in-process CUDA_VISIBLE_DEVICES
+    clobber is silently defeated by import-time cuInit".
+11. **Completion sentinel — the finalize artifact gate's clean-exit
+   proof (MANDATORY for RunPod launches, #598).** `RunPodBackend.launch`
+   declares a pod-side, ATTEMPT-BOUND completion-sentinel path on the
+   handle; `dispatch_issue.py finalize` FAILs `confirm_artifacts` (and
+   skips teardown) unless a valid sentinel exists at exactly that path.
+   Three mandatory elements, every launch AND relaunch:
+   1. **The path comes from the handle sidecar — never hand-built.**
+      Read the declared path on the VM and thread it into the pod-side
+      launch command:
+      ```bash
+      SENTINEL_PATH=$(jq -r '.extra.expected_artifacts.sentinel_path' \
+        .claude/cache/issue-<N>-handle.json)
+      ```
+      (The attempt id inside the path is launch-minted —
+      `rp-<UTCstamp>-<4hex>` — so a hand-built path will not match the
+      declaration and the gate will FAIL "sentinel missing".)
+   2. **The write is CHAINED on the workload's exit status** so
+      clean-exit semantics stay mechanical (an LLM-agent judgment call
+      is NOT the writer). Compose the pod-side dispatch as:
+      ```bash
+      <workload-cmd> && uv run python -c "from explore_persona_space.backends.artifacts \
+        import write_completion_sentinel; \
+        write_completion_sentinel(sentinel_path='<declared path>', issue=<N>)"
+      ```
+      `&&` is load-bearing: a crashed workload must NOT write the
+      sentinel (the gate exists to distinguish intentional completion
+      from leftover bytes).
+   3. **Pre-(re)launch stale-sentinel clear** — extends the step-8
+      hygiene (`/workspace` persists across same-pod relaunches, and
+      relaunches bypass `backend.launch`, so a fresh attempt id alone
+      cannot close the window; this also retires any flat legacy
+      sentinel). Run alongside the step-8 `rm -f`, before EVERY launch
+      or relaunch on the pod:
+      ```bash
+      rm -f /workspace/eval_results/issue_<N>/.completion-sentinel.json \
+            /workspace/eval_results/issue_<N>/*/.completion-sentinel.json
+      ```
+   Recovery when the convention was missed on a healthy, fully-uploaded
+   run: write the sentinel on the still-alive pod (same
+   `write_completion_sentinel` one-liner, after verifying uploads) and
+   re-run finalize, or use `--skip-confirm-artifacts` if the run
+   crashed before artifacts could land.
 
 ### During Execution
 

@@ -10,7 +10,7 @@ description: >
   (in-context mode, no marker posting). The wrapper NEVER dispatches Codex
   itself — that's the orphan-job anti-pattern (incident task #533,
   2026-06-10).
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 memory: project
 effort: medium
 background: true
@@ -111,16 +111,24 @@ extract:
 
 - The "Critique Dimensions" subset matching the requested lens — copy the
   items listed under that lens's own subheading in critic.md (`Methodology
-  lens`, `Statistics & Measurement lens` — which now includes the **Construct
-  validity / on-distribution proxy** item — or `Alternative Explanations
-  lens`). Use the lens's items verbatim; do not borrow another lens's items.
+  lens`, `Statistics & Measurement lens`, or `Alternative Explanations
+  lens`). Use the lens's items verbatim and IN FULL — the lists grow over
+  time, so take all of the CURRENT items; do not borrow another lens's
+  items. These items fill the `{{lens_items}}` placeholder in Step 3's
+  template.
 - The "Output Format" CRITIC REPORT schema (Rating: REJECT / REVISE /
   APPROVE).
 
 ### Step 3: Compose the lens-specific prompt
 
-Substitute the lens-specific dimensions and lens label into a prompt template
-(rough sketch — adjust the dimension list per lens):
+Substitute the lens label and the lens's dimension items into the prompt
+template below. The `{{lens_items}}` placeholder is filled with the
+requested lens's items copied VERBATIM from the CURRENT
+`.claude/agents/critic.md` you read in Step 2 — never from a list frozen
+in this file. This template deliberately carries NO per-lens enumerations:
+an earlier version hardcoded them, critic.md grew new items, and a
+literal-minded composer shipped Codex a 3-item subset of a 13-item
+Methodology rubric (drift caught on task #599).
 
 ```
 You are the {{LENS}} CRITIC. Your job is to catch the small number of
@@ -156,67 +164,28 @@ interpretation-critic → clean-result-critic) catches interpretation flaws
 using the diagnostics the plan reports. Trust the pipeline. Recoverable
 concerns go in "Concerns for the analyzer" (non-blocking), not in Must Fix.
 
+GROUNDING + MECHANIZABILITY (standing rule): every Must-Fix item must cite a
+concrete artifact location (plan section, quoted plan line, JSON path/cell,
+prior-issue number) — the reconciler discards ungrounded blockers as
+non-binding — and must carry a `mechanizable: yes|no` tag: `yes` when a
+script could verify the check (presence / structure / regex / recomputation
+over the plan or its cited artifacts), in which case sketch the check in 1-2
+lines. If a mechanizable check belongs in a workflow-surface verifier and is
+likely to recur, say so in plain English in your verdict body (you never
+emit workflow-fix candidates yourself — the orchestrator decides).
+
 PLAN TEXT:
 {{plan_body}}
 
 PRIOR CRITIQUES (this lens, prior rounds):
 {{prior_critique_summaries — empty on round 1}}
 
-For Methodology lens, evaluate ONLY:
-1. Hypothesis testability — can this design answer its own question?
-2. Fatal confound — an alternative explanation the design doesn't rule out
-   AND the analyzer cannot weigh from reported diagnostics. Recoverable
-   confounds are NOT a reason to REVISE.
-3. Technical feasibility — concrete OOM / library / data-path / eval-surface
-   problems you can name (don't speculate).
+For the {{LENS}} lens, evaluate ONLY the following items — copied VERBATIM
+from the matching lens subheading in `.claude/agents/critic.md` at compose
+time. Do not paraphrase, renumber, subset, or borrow another lens's items:
 
-For Statistics lens, evaluate ONLY:
-1. Metric mismatch — does the headline metric measure what the hypothesis
-   actually predicts?
-2. Construct validity / on-distribution proxy — the metric is only a proxy for
-   the Goal's construct (the real behavior). REVISE when a behavioral construct
-   is measured by an off-distribution / convenience proxy (teacher-forced
-   instead of on-policy, a fixed stub answer instead of the model's own
-   generation, an arbitrary token position instead of where the behavior is
-   emitted, a single-token shortcut that changes what is scored) AND the plan's
-   §6 measurement-validity table neither validates the proxy against the
-   construct nor argues it answers THIS Goal. "Cheaper / cleaner / deterministic
-   / one forward pass" is a cost argument, not a validity basis. Also flag a
-   proxy the plan itself expects to saturate (all conditions piled at a
-   floor/ceiling, no dynamic range — rank-shuffles among saturated values are
-   not interpretable). Distinct from item 1: the metric can be about the right
-   thing yet measured off-distribution so it does not track the behavior.
-3. Decision-gate coherence (only when the plan leans on pre-registered
-   kill-gates) — pre-registered kill-gates / thresholds are disfavored by
-   The Bar above (they crush joint power; the analyzer pipeline assigns
-   confidence from reported diagnostics). FIRST ask whether the gate is
-   necessary at all vs training the sweep and letting the analyzer weigh
-   the result post-hoc. This item does NOT instruct you to ADD gates; it
-   scrutinizes gates a plan already relies on. If the plan RETAINS
-   load-bearing gates, cross-check every gate in the plan's Decision Gates
-   section for mutual satisfiability and grounding, and REVISE when: (a) two
-   gates impose contradictory pass criteria on the SAME measurement at the
-   SAME cell — e.g. one requires Δ ≥ +x nat and another requires Δ ≤ −y nat
-   on the identical probe / slot / target — so the gate set is jointly
-   unsatisfiable and the experiment can never pass; or (b) a gate's pass
-   threshold OR its SIGN is an ungrounded assumption not tied to prior-issue
-   evidence of the construct (a kill-gate that no past result of this
-   construct would itself have passed, or whose sign predicts the opposite
-   of what every prior run of this construct produced). Skip entirely when
-   the plan has no Decision Gates section or its gates are advisory
-   monitoring thresholds rather than pass/fail kill-criteria.
-4. Uninterpretable N — sample size so small signal cannot be distinguished
-   from noise at all (not "tighter would be nicer").
-5. Numerical accuracy — read the JSONs the plan cites; flag plan numbers
-   that disagree with the source files.
-
-For Alternatives lens, evaluate ONLY:
-1. For each predicted positive result, name the simplest alternative
-   explanation that doesn't require the claimed mechanism.
-2. If the design rules it out OR the analyzer can weigh it descriptively
-   from reported diagnostics → list it as a Concern and APPROVE.
-3. Only REVISE if the alternative is FATAL — design cannot distinguish it
-   AND analyzer cannot weigh it.
+{{lens_items — the full, current item list for this lens from critic.md,
+inserted by the composer at Step 3}}
 
 Output EXACTLY this format and nothing else (no preamble, no code fences):
 
@@ -226,7 +195,7 @@ Output EXACTLY this format and nothing else (no preamble, no code fences):
 **Rating: REJECT | REVISE | APPROVE**
 
 ### Must Fix (conclusion-changing only)
-1. [Issue]: [Why it would change the conclusion] → [Specific fix]
+1. [Issue]: [Why it would change the conclusion] → [Specific fix] — [grounding: plan §N / quoted plan line / JSON path] — mechanizable: yes|no [+ 1-2 line check sketch when yes]
 
 (If APPROVE, write "None — plan answers its own question.")
 

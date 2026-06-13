@@ -59,6 +59,7 @@ notice the recurrence manually. Now it's same-turn.
   `runpod_api.py`, `bootstrap_pod.sh`, `cron_pod_audit.sh`,
   `sync_pods.sh`, `_pods_conf_path.sh`, `pods.conf`,
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
+  `verify_plan.py`,
   `verify_uploads.py`,
   `audit_clean_results_body_discipline.py`,
   `redact_for_gist.py`, `check_no_secret_shaped_strings.py`,
@@ -75,7 +76,7 @@ notice the recurrence manually. Now it's same-turn.
   `session_progress_report.py`, `session_summarize.py`,
   `session_resolver.py`, `cron_session_summarize.sh`
 - `tests/test_workflow*.py`, `tests/test_task_workflow*.py`,
-  `tests/test_failure_classifier.py`,
+  `tests/test_failure_classifier.py`, `tests/test_verify_plan.py`,
   `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`,
   `tests/test_router*.py`, `tests/test_backend_*.py`,
   `tests/test_slurm_*.py`, `tests/test_gcp_backend.py`,
@@ -100,6 +101,13 @@ notice the recurrence manually. Now it's same-turn.
 If your bug is in the out-of-scope set, the fix belongs to
 `experiment-implementer` / `implementer` / a follow-up task — not to
 `workflow-improver`. Don't emit a candidate.
+
+Out-of-scope or too-big-for-same-turn fixes that get FILED as
+`kind: infra` tasks are not parked: the PM session's standing infra
+auto-dispatch rule (`.claude/agents/research-pm.md` § Standing rule —
+infra auto-dispatch; user directive 2026-06-12) picks up ripe
+`proposed` infra tasks on every STATUS pass and spawns autonomous
+per-issue sessions for them, up to a concurrency cap. Filed ≠ parked.
 
 ## When to emit a candidate
 
@@ -131,6 +139,13 @@ because it lacked the comment tags.
 - A test that should have caught a workflow regression is missing.
 - `CLAUDE.md` describes a rule but the implementing file (agent, skill,
   script) doesn't enforce it.
+- A critic finding whose check belongs in a mechanical verifier — a
+  `mechanizable: yes` blocker from any review lens (critic /
+  code-reviewer / interpretation-critic / clean-result-critic) that
+  targets `verify_task_body.py`, `audit_clean_results_body_discipline.py`,
+  SPEC.md lens text, the `consistency-checker` spec, or a future
+  `verify_plan.py`. Emit only when the check is concrete and likely to
+  recur — not for one-off artifact-specific issues (spam guard).
 
 ### No — don't emit
 
@@ -171,7 +186,10 @@ parses it):
 
 ```
 <!-- workflow-fix-candidate v1 -->
-target_file: <path under workflow surface, relative to repo root>
+target_file: <path(s) under workflow surface, relative to repo root — single
+  path, comma-separated list, or a glob (e.g. `.claude/agents/*.md`) when
+  the bug pattern hits multiple files; grep first, see "Before emitting"
+  below>
 bug_observed: <one sentence: what went wrong>
 why_workflow_gap: <one sentence: why this is the workflow's fault>
 proposed_change: <one sentence summary of the fix>
@@ -182,6 +200,22 @@ confidence: low | medium | high
 related_task: <task ID this surfaced on, e.g. #391, or n/a>
 <!-- /workflow-fix-candidate -->
 ```
+
+**Before emitting: grep the workflow surface for the pattern.** When the
+bug is identifiable by grep (a literal string, a specific regex, a
+frontmatter line — e.g. a stale model pin, a deprecated marker field, a
+shared phrase), the emitter SHOULD run a one-shot
+`grep -rln '<pattern>' .claude/ CLAUDE.md scripts/` (and `src/explore_persona_space/task_workflow*.py
+src/explore_persona_space/backends/` if the pattern is plausibly in the
+in-scope `src/` modules) BEFORE writing the candidate, and list EVERY hit
+in `target_file` — a comma-separated path list or a glob like
+`.claude/agents/*.md` is acceptable when the hit set is uniform. One grep
+is cheap; it spares the improver a discovery round and prevents the
+worst-case incomplete fix where a sibling hit is missed entirely. (#622:
+a stale model pin lived in 25 sibling agent files; the original candidate
+named only one, and the improver had to re-discover scope via `grep -rln`
+on receipt.) The orchestrator also follows this rule when synthesizing a
+candidate from a prose follow-up — grep before populating `target_file`.
 
 Hard rules:
 
@@ -327,7 +361,7 @@ top-level loop):
    # requeue, do not hand-resolve while other sessions commit around you.
    if [ -f "$REPO_ROOT/.git/MERGE_HEAD" ] || [ -n "$(git -C "$REPO_ROOT" diff --name-only --diff-filter=U)" ]; then
      git -C "$REPO_ROOT" merge --abort
-     git -C "$REPO_ROOT" pull --rebase --autostash && git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>" || {
+     git -C "$REPO_ROOT" pull --rebase=merges --autostash && git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>" || {
        echo "merge still conflicted — requeue"; exit 1; }   # -> post epm:workflow-fix-failed
    fi
    # Staging sanity: nothing foreign staged (a concurrent session's files)
@@ -345,10 +379,20 @@ top-level loop):
    posts `epm:workflow-fix-failed v1` with the failure reason and the
    original candidate preserved; nothing is merged. Force-push is NEVER
    auto (it stays a user-ask per CLAUDE.md); a normal push to `main` is
-   covered by this standing rule. If the push is rejected (non-fast-
-   forward), `git pull --rebase --autostash` once and retry (the shared root is
-   essentially always dirty with runtime noise — a plain rebase predictably
-   fails on 'You have unstaged changes'); if it still fails, post
+   covered by this standing rule. **Push IMMEDIATELY after committing the
+   merge** — an unpushed merge commit on the shared root is at risk from
+   every concurrent session's recovery pull (a plain `git pull --rebase`
+   flattens merge commits away; two workflow-fix merges were silently
+   dropped this way on 2026-06-12). For multi-file merges during heavy
+   fleet activity, prefer a scratch worktree detached at `origin/main`
+   (`git worktree add --detach <path> origin/main` — `main` itself is
+   held by the repo root) + `git push origin HEAD:main`. If the push is
+   rejected (non-fast-
+   forward), `git pull --rebase=merges --autostash` once and retry
+   (`--rebase=merges` preserves concurrent sessions' unpushed merge
+   commits; the shared root is essentially always dirty with runtime
+   noise — a rebase without `--autostash` predictably fails on 'You have
+   unstaged changes'); if it still fails, post
    `epm:workflow-fix-failed v1` and surface to the user.
 
    **Orchestrator's own direct workflow edits** (the orchestrator edited
@@ -451,6 +495,7 @@ homepage rendering of the fallback is unimplemented.)
 | Orchestrator surfaces an agent's "Follow-ups (orchestrator should consider)" section to Thomas as a chat note asking "should I apply these?" | Treat each in-scope, non-architectural follow-up as a synthesized candidate and auto-spawn `workflow-improver` for it in the background; do NOT ask |
 | Drop a prose follow-up because it lacked the formal block tags | Prose follow-ups trigger the same auto-spawn default as formal blocks; synthesize a candidate from the prose and dispatch |
 | Hold prose follow-ups back hoping they'll surface "on the next pass" | List every concrete in-scope follow-up the agent found; the orchestrator auto-spawns each in parallel |
+| Name a single `target_file` when a literal-string bug pattern hits N sibling workflow files (#622: a stale model pin lived in 25 agent files; one was named) | `grep -rln '<pattern>' .claude/ CLAUDE.md scripts/` first; list every hit in `target_file` as a comma-separated path list or a glob — one grep spares the improver a discovery round |
 
 ## Composition with other rules
 

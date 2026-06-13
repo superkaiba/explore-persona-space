@@ -41,8 +41,8 @@ in order: `## Human TL;DR` / `## TL;DR` / `## Reproducibility`; with
 `## TL;DR` carrying `### Motivation` / `### What I ran` /
 `### Findings` (parent) → `#### <finding>` per result for
 v2-sentinelled bodies; confidence in H1 title tag only for v2 bodies).
-Enforced mechanically by `scripts/verify_task_body.py` (19 checks).
-Workflow + apply mechanics only here.
+Enforced mechanically by `scripts/verify_task_body.py` (check catalog
+in the script docstring). Workflow + apply mechanics only here.
 
 ---
 
@@ -244,9 +244,10 @@ follow-up-proposer step.
   sample-output discipline).
 - **`CLAUDE.md` § "Experiment Report Structure"** — brief summary
   pointing back at SPEC.md.
-- **`scripts/verify_task_body.py`** — mechanical verifier (19 checks
-  including the v2 sentinel-gated nested-structure check; skips
-  legacy `<!-- legacy-sagan-card -->` HTML bodies with PASS).
+- **`scripts/verify_task_body.py`** — mechanical verifier (check
+  catalog in the script docstring, including the v2 sentinel-gated
+  nested-structure check; skips legacy `<!-- legacy-sagan-card -->`
+  HTML bodies with PASS).
 - **`scripts/verify_sagan_card.py`** — legacy verifier retained for
   grandfathered HTML bodies only.
 - **`scripts/audit_clean_results_body_discipline.py`** — prose-level

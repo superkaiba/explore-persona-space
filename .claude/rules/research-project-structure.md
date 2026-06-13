@@ -58,7 +58,10 @@ For ad-hoc inline shell/python one-liners that need API keys (HF-Hub
 fitness checks, quick probes), the canonical recipe is:
 `set -a && source .env && set +a && uv run python - <<'PY' ... PY`
 — never a bare `load_dotenv()` inside a heredoc (its no-arg
-`find_dotenv()` stack-walk crashes from stdin; see gotchas.md).
+`find_dotenv()` stack-walk crashes from stdin; see gotchas.md). For
+`scripts/*.sh` this is enforced mechanically by
+`scripts/workflow_lint.py --check-heredoc-dotenv` (bundled into the
+no-flags default run; incidents #552/#612).
 
 ## Agent Roles
 

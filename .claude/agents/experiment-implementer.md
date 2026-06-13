@@ -6,7 +6,7 @@ description: >
   the `/issue` skill after plan approval, before any pod is touched. Pairs with
   `code-reviewer` for independent review. Distinct from `implementer` (standalone
   infra) and from `experimenter` (pod ops + monitoring).
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 skills:
   - codebase-debugger
   - cleanup
@@ -281,6 +281,23 @@ was reactive, not preventative.)
      env; `_upload` returned empty path; cell exited rc=2. Enforced by
      `tests/test_subprocess_env_explicit.py` (two AST checks per
      in-scope file).
+- **Per-GPU parallel fan-out: pin `CUDA_VISIBLE_DEVICES=<gpu>` in the
+  LAUNCHER env per cell, with the matching `+gpu_id=N` / `--gpu-id N`.**
+  Any dispatcher running N cells in parallel with one GPU each must set
+  BOTH; the in-process clobber in `train/sft.py` is silently defeated by
+  any import-time cuInit (`import peft` — #545), co-locating every cell
+  on physical GPU 0 (#523/#541/#543/#557). Reference shape:
+  `scripts/i474_phase23_dispatch.sh:192-193`. Regression smoke:
+  `tests/test_cvd_wave_assignment_smoke.py` — extend it or add a sibling
+  when you write a new wave dispatcher. Launch-side enforcement:
+  `experimenter.md` Before Running step 10. Mechanical backstop:
+  `workflow_lint.py --check-dispatcher-cvd-pin` (bundled into the
+  no-flags default run) FAILs any backgrounded `--gpu-id` / `+gpu_id=`
+  python launch in `scripts/**/*.sh` lacking a `CUDA_VISIBLE_DEVICES=`
+  prefix on the same command; waive deliberately unpinned shapes with
+  `# CVD_PIN_EXEMPT: <reason ≥10 chars>` on the same logical line or
+  the immediately preceding non-blank line. Full mechanics:
+  `.claude/rules/gotchas.md`.
 - **Persona injection.** Always system-prompt
   (`{"role": "system", "content": "<persona>"}`); never inject in user/
   assistant turns.
@@ -376,24 +393,59 @@ orchestrator's poll loop reported a FALSE `dead`, `_parse_sentinel`
 silently dropped the end-of-run sentinel for missing required keys, and
 `epm:results` had to be posted by hand from a separate SSH session.
 
-### Pod-side preflight gates (behind-origin/main false positive)
+**Reproducibility card in the `epm:results` payload (training tasks).**
+When your driver trains adapters / logs WandB runs, its `epm:results`
+sentinel's `note` JSON MUST carry a `reproducibility_card` object
+declaring per-cell `adapter_paths` (each verified under `hf_model_repo`
+via `list_repo_files`) + `wandb_run_names` (with `wandb_project`), or
+single-run `hf_model_path` / `wandb_run_path` — full field list:
+`workflow.yaml § markers epm:results`. This applies to GCP-lane
+`--workload-cmd` drivers (drained by `backend_poll.py`) exactly as to
+pod-side dispatchers. A card-less sentinel that only declares
+`production_provenance.<cell>.hf_adapter_subfolder` (+ top-level
+`wandb_*` hints) is rescued by `verify_uploads.py`'s synthesis fallback
+(`_card_from_provenance`, #599), but that synthesis is a safety net, NOT
+the producer contract — emit the explicit card so the verifier's
+hf_model / wandb_run rows resolve mechanically. **When training logs to
+WandB, the card's `wandb_run_path` (entity/project) or `wandb_run_names`
+(or a name prefix) + `wandb_project` are MANDATORY fields, not optional
+extras** — a card declaring only `adapter_paths` forces entity/project
+archaeology on the verifier (#608 follow-up: all 12 runs resolved at the
+conventional `<entity>/issue608` project while the wandb_run row
+mechanically FAILed on the declaration gap; `verify_uploads.py` now
+probes the `issue<N>`-project convention as a last resort, but like the
+synthesis fallback it is a safety net, NOT the contract).
 
-A driver that gates launch on `uv run python -m
+### Pod-side preflight gates (behind-origin/main false positive — LEGACY post-#554)
+
+> **LEGACY (post-#554):** preflight is branch-aware as of 2026-06-12
+> (#554, commit `25f227273`) — on an `issue-<N>` checkout the git check
+> compares the branch against its OWN `origin/issue-<N>` ref and demotes
+> behind-origin/main to an informational WARNING, so the false positive
+> below no longer exists on a pod synced to current code. #554 also made
+> bare (non-`--json`) preflight fail loud (summary on stdout, per-error
+> stderr lines), closing the silent-death mode. Keep the tolerance below
+> ONLY for a pod still running pre-#554 code. **On post-#554 code, a
+> `Local is N commit(s) behind origin/issue-<N>` or `git fetch origin
+> failed` ERROR is REAL — a driver must NEVER tolerate it.** Parsing
+> `--json` instead of gating on bare exit codes remains the right driver
+> design either way.
+
+A driver on a PRE-#554 pod checkout that gates launch on `uv run python -m
 explore_persona_space.orchestrate.preflight` under `set -e` / `fail_loud`
-MUST tolerate the documented feature-branch false positive: preflight's git
+MUST tolerate the documented feature-branch false positive: that era's git
 check counts `HEAD..origin/main`, so on EVERY `issue-<N>` pod checkout it
 reports the ERROR `Local is N commit(s) behind origin/main` and exits
 non-zero even when the pod sits exactly at the reviewed branch tip. Run
 `preflight --json` and fail only when `errors` contains anything OTHER
-than that line (preflight has no skip-git-check flag today — parse the
-JSON, don't invent a flag). Never let that single error be the sole
+than that line. Never let that single error be the sole
 launch-killer. Incident #552 (2026-06-10): a pod-side driver ran bare
 `preflight || fail_loud` under `set -euo pipefail`; it survived launch
 only because the experimenter happened to repoint the pod-local
 `origin/main` ref seconds before the check ran — every NEW driver that
 re-runs preflight re-introduces the fatal check unless it parses the
 error list. (The experimenter's own preflight invocation carries the same
-tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_branch_false_positive.md`.)
+legacy-scoped tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_branch_false_positive.md`.)
 
 ### After implementation (mandatory checklist)
 

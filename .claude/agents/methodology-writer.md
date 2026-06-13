@@ -19,7 +19,7 @@ description: >
   append the new arm's methodology to the existing doc. Does
   NOT spawn subagents; does NOT
   create the secret gist itself (the orchestrator does that).
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 memory: project
 effort: max
 background: true

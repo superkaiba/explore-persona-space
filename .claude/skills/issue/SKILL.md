@@ -886,8 +886,8 @@ FIRST, and resolve workflow-helper scripts (`verify_task_body.py`,
 `post_step_completed.py`, ...) from the MAIN checkout (`"$REPO_ROOT"/scripts/...`),
 never the worktree copy. (Incident #501, 2026-06-06→08: a worktree's
 pre-split skill copy armed `/issue 501` at */10 instead of the
-lightweight `/issue-tick` at */20 — 362 full ~44K-token skill reloads
-over 2.5 days. Incident #496: a worktree's pre-W22 `verify_task_body.py`
+lightweight `/issue-tick` backstop (then */20, now */45) — 362 full
+~44K-token skill reloads over 2.5 days. Incident #496: a worktree's pre-W22 `verify_task_body.py`
 false-FAILed a spec-conformant body, wrongly indicting the analyzer.)
 
 **MANDATORY auto-armed backstop for autonomous sessions — arm it NOW.**
@@ -917,7 +917,7 @@ if os.environ.get("EPM_AUTONOMOUS_SESSION") == "1":
     )
     if not already_armed:
         CronCreate(
-            cron="*/20 * * * *",
+            cron="*/45 * * * *",
             prompt=f"/issue-tick {N}",
             recurring=True,
             durable=False,
@@ -1785,10 +1785,23 @@ for f in $SPECS; do
   # EXCLUDING prior spec-freshness sync commits (which legitimately
   # touch spec paths — without the exclusion, the first sync's own
   # commit would poison every later freshness check on the branch).
-  if [ -z "$(git -C "$WT" log --oneline "$MB"..HEAD --grep='spec-freshness' --invert-grep -- "$f")" ]; then
+  bs_commits=$(git -C "$WT" log --oneline "$MB"..HEAD --grep='spec-freshness' --invert-grep -- "$f")
+  if [ -z "$bs_commits" ]; then
     SAFE_SPECS="$SAFE_SPECS $f"
   else
-    echo "spec-freshness: $f carries branch-side feature edits — skipping blind sync; reconcile manually"
+    # Print the offending commits so the orchestrator can decide whether
+    # to reconcile (cherry-pick main's drift on top of the branch edits)
+    # or whether the branch-side touch is a global revert/port that has
+    # ALREADY landed on main — in which case the skip is a false alarm
+    # and the orchestrator can drop those files from the skip set by
+    # hand (e.g. `git -C "$WT" checkout main -- .claude/agents/*.md`
+    # after confirming the branch-side commit's content is a subset of
+    # main's current state). Without these commit titles printed, the
+    # operator cannot tell a legitimate branch deliverable (#535
+    # incident) from a stale port/revert that needs no protection.
+    echo "spec-freshness: $f carries branch-side feature edits — skipping blind sync; reconcile manually."
+    echo "  branch-side commits:"
+    echo "$bs_commits" | sed 's/^/    /'
   fi
 done
 if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet main -- $SAFE_SPECS; then
@@ -1811,7 +1824,12 @@ above skips exactly those files (warning the orchestrator to reconcile
 them manually — typically by re-applying main's spec changes on top of
 the branch's additions) while everything the branch never touched
 still gets the blind sync. The conditional commit keeps the worktree
-clean for the Step 10d merge guards.
+clean for the Step 10d merge guards. The warning prints the offending
+branch-side commit titles so the orchestrator can tell a legitimate
+branch deliverable (the #535 case) from a stale port/revert whose
+content has already landed on main (in which case the orchestrator can
+safely override the skip for those specific files with a manual
+`git -C "$WT" checkout main -- <paths>`).
 
 **The sync scope is deliberately specs-only — do NOT extend it to
 `scripts/` or `tests/`.** The sync exists because the Agent/Skill tools
@@ -2428,8 +2446,10 @@ needing interactive SSH-MCP-driven orchestration mid-run (the
 experimenter launch pattern); (d) **workloads longer than ~20h on
 GCP** — the lane pins `--instance-termination-action=DELETE` +
 `--max-run-duration` (default 24h), so a multi-day sweep is deleted
-mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
-RunPod override. **When overriding to RunPod, name the residual gap in
+mid-run; thread the plan's declared fence via `--max-run-duration
+<dur>` on `dispatch_issue.py launch` (gcloud duration shape, e.g.
+`30h`; lands in `spec.extra["max_run_duration"]`, inert on non-GCP
+lanes — #628) or use the RunPod override. **When overriding to RunPod, name the residual gap in
 the launch marker note** (CLAUDE.md rule). The dispatch CLI
 cross-checks the task's ACTUAL frontmatter and classifies the override
 3-ways, each with a DISTINCT marker flag (additive visibility — the
@@ -2487,7 +2507,16 @@ plan names none, default to ≥500 GB. `dispatch_issue.py` warns loud
 (stderr + `extra.boot_disk_default_with_ft_intent=true` on the
 `epm:backend-selected` marker) when an ft intent is gcp-reachable with
 no `--boot-disk-gb` — warning only, never a refusal (small-disk ft
-smokes stay legitimate).
+smokes stay legitimate). (i) **WandB project on `--workload-cmd`
+launches defaults to `issue<N>`** — the GCP startup script and the
+SLURM custom stage export `WANDB_PROJECT="${WANDB_PROJECT:-issue<N>}"`
+before the verbatim command, so HF-Trainer workloads that never set a
+project stop landing in WandB's global default `huggingface` project
+(Upload Policy: training metrics → `project=<experiment_name>`; #601
+follow-up r1 landed there silently). An inline `WANDB_PROJECT=...`
+prefix on the workload command — or the workload setting its own
+project internally — still wins (`:-` fills only unset/empty); hydra
+launches are unaffected (project comes from Hydra config).
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
@@ -2737,7 +2766,11 @@ but the container restart may have left stale state:
 ssh_execute(pod=epm-issue-<N>, command="cd /workspace/explore-persona-space && uv run python -m explore_persona_space.orchestrate.preflight --json")
 ```
 
-Parse JSON. If `ok=false`, post `epm:preflight v1` event with the
+Parse JSON. (Note: the old `Local is N commit(s) behind origin/main`
+false-fail on `issue-<N>` branches was fixed at source by #554,
+2026-06-12 — preflight is branch-aware and that condition is now a
+WARNING, so on current code an `ok=false` here is a real failure.)
+If `ok=false`, post `epm:preflight v1` event with the
 errors/warnings, then post the §5 marker:
 ```bash
 uv run python scripts/post_step_completed.py --issue <N> --step 6c \
@@ -2916,6 +2949,7 @@ poller once; the harness re-invokes the orchestrator when the bg-Bash
 exits, which is when one tick has completed:
 
 ```python
+result = None  # parsed JSON line of the PREVIOUS poll tick; None before the first tick
 while True:
     # MANDATORY: refresh the title + self-report at the TOP of every
     # tick so the dashboard / happy-ls / phone title stay current with
@@ -2955,10 +2989,36 @@ while True:
     # paragraph in Step 6b for the full rationale + the failure mode
     # the unconditional invocation would trigger (FALSE-POSITIVE
     # `epm:failure v1 missing_handle_sidecar`).
+    # ADAPTIVE POLL INTERVAL (anti-stall redesign §7). Every tick's JSON
+    # line carries a recommended `next_interval` (seconds): 1800 ONLY on
+    # a healthy, quiet, post-early-run `running` tick far from any phase
+    # boundary; 540 otherwise — gate-adjacent, anomalous, early-run
+    # (first ~30 min after launch), and recent-phase-change ticks NEVER
+    # get the long interval, so gates are never delayed. Use the
+    # PREVIOUS tick's emitted value as this tick's sleep; FALL BACK TO
+    # 540 when there is no previous tick yet (first poll after launch)
+    # or the key is absent/unparseable (older poller, garbled JSON
+    # line). NEVER lengthen the sleep on your own initiative: only the
+    # emitted value may raise it above 540, and never after a tick that
+    # reported anything other than healthy-quiet-running. Risk bound: a
+    # stall can now be noticed up to 30 min later in-session — accepted
+    # because the watcher's 10-min passes + the */45 issue-tick cron
+    # bound out-of-session detection independently
+    # (autonomous_session_watch.py / tick_triage.py).
+    #
+    # `result` below = the parsed JSON line from the PREVIOUS tick's
+    # bg-Bash output (the same `result` the status branch below reads);
+    # it is None on the first iteration — no previous tick yet. The
+    # membership clamp makes the never-lengthen rule MECHANICAL: only
+    # the two known emitted values are honored, anything else (garbled,
+    # bool, surprise number) falls back to 540.
+    interval = 540
+    if result is not None and result.get("next_interval") in (540, 1800):
+        interval = result["next_interval"]
     Bash(
         run_in_background=True,
         command=(
-            f"sleep 540 && uv run python scripts/backend_poll.py --issue {N}"
+            f"sleep {interval} && uv run python scripts/backend_poll.py --issue {N}"
         ),
     )
     # Harness re-invokes orchestrator on bg-Bash exit. To WAIT on bg
@@ -2983,7 +3043,10 @@ while True:
     #                                   the excerpt); run CRON-TEARDOWN (see
     #                                   below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
-    #                                  if new_milestone was true; loop again.
+    #                                  if new_milestone was true; loop again,
+    #                                  using result["next_interval"] as the
+    #                                  next sleep (540 fallback — see
+    #                                  ADAPTIVE POLL INTERVAL above).
     #                                  If the JSON also has
     #                                  gpu_idle_advisory_posted == true, act
     #                                  per "GPU-idle advisory handling" below
@@ -3050,7 +3113,13 @@ markers, so an `epm:progress` note recording the new pid is invisible to
 it and the stale pid yields a false `status=dead` on a healthy run.
 (Incident: task #521, 2026-06-10 — a VM-side pid file plus an
 `epm:progress`-only relaunch produced `status=dead, pid_alive=False`
-while the pod run was healthy.)
+while the pod run was healthy.) On the GCP lane the marker's `pod=`
+field MUST be the instance name (`eps-issue-<N>`) — `GcpBackend.poll`
+matches relaunch markers on that field to follow the new process
+(incident #612): a mismatched value (e.g. a RunPod-style `pod-<N>`)
+rejects the marker and the poll keeps reading the frozen startup-script
+phase, and an omitted `pod=` is accepted only via the launch-time
+`epm:cluster-launched` timestamp baseline, so include it explicitly.
 
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
@@ -3107,22 +3176,24 @@ starting the bg-Bash poll:
    a substring of `"/issue-tick 467"`, so substring matching would
    mis-dedupe sibling issues.
 2. Otherwise call
-   `CronCreate(cron="*/20 * * * *", prompt="/issue-tick <N>", recurring=True, durable=False)`
-   — a 20-minute, session-scoped, in-memory recurring fire of the
+   `CronCreate(cron="*/45 * * * *", prompt="/issue-tick <N>", recurring=True, durable=False)`
+   — a 45-minute, session-scoped, in-memory recurring fire of the
    lightweight `/issue-tick <N>` skill (dies with the session, auto-
    expires at 7 days like the default pod TTL; the harness jitters
    recurring fires so ticks don't all land on a fixed wall-clock mark).
-   The 20-minute interval is chosen deliberately: the Anthropic prompt
-   cache TTL is 5 minutes, so a 10-minute interval was the worst case —
-   always cold (every tick re-prices the ~200K+ prefix at 1.25×), double
-   the ticks for no caching benefit. 20 minutes accepts the cold-cache
-   cost (the lightweight prompt makes it cheap) AND halves the tick
-   count. Going sub-5-min would share the cache but cost MORE wall-clock
-   fires per stalled stretch, which is the opposite of what the backstop
-   is for. The `/issue-tick` skill is ~few-hundred tokens, vs the
-   44K-token full `/issue` skill — so 12 idle ticks across a 4-hour
-   idle stretch cost a few thousand tokens instead of ~1M. Then
-   immediately re-`CronList`
+   The 45-minute interval (lengthened from 20 min on 2026-06-12) is
+   chosen deliberately: the pure-Python `autonomous_session_watch.py`
+   cron (every 10 min, free) carries ALL fast detection — DEAD-session
+   respawn, alive-but-stalled respawn for ACTIVE statuses, pod safety,
+   gate-park phone push, title reconcile — so the tick is purely the
+   in-session re-driver of last resort for the alive-but-stalled-at-PARK
+   class, which tolerates 45-min latency. Every tick fire is LLM-priced
+   (a cold context read even on the guarded-no-op path), so fewer fires
+   is the point. (The old 20-min rationale leaned on a "5-minute prompt
+   cache TTL"; that figure is inaccurate for this org's subscription
+   auth — subscription sessions get the 1-hour cache TTL automatically,
+   5 minutes applies to API-key auth — and the interval choice no longer
+   depends on it.) Then immediately re-`CronList`
    and assert EXACTLY ONE job matches
    `prompt.strip() == "/issue-tick <N>"`. If the harness normalised the
    stored prompt such that the ARM-GUARD would later miss, this assert
@@ -3135,8 +3206,17 @@ pod-backed `kind: experiment` runs reaching Step 6d.2;
 the polling loop do NOT arm it.
 
 **CRON-TEARDOWN procedure (run INLINE at every terminal / park exit site,
-not only here in prose).** `CronList`, find the job with
-`prompt.strip() == "/issue-tick <N>"`, `CronDelete(id=...)` it. The backstop
+not only here in prose) — hardened 2026-06-12.** `CronList`, delete EVERY
+job matching this issue's tick: primary match is whole-string equality
+(`prompt.strip() == "/issue-tick <N>"`); hardened fallback is the anchored
+pattern `issue-tick\s+<N>(?!\d)` (harness prompt-normalization drift was
+the #501 failure mode — the whole-string teardown silently no-oped 1,951
+times; the `(?!\d)` guard prevents sibling mis-delete, `"/issue-tick 46"`
+never matches `"/issue-tick 467"`). Then ASSERT-AFTER-DELETE: re-`CronList`
+and verify no matching job survived; if one did, retry the delete ONCE,
+then log LOUDLY — the runaway parachute (`tick_triage.py`'s
+3-consecutive-terminal flag + the watcher's force-stop) bounds the damage
+of a cron that refuses to die. The backstop
 DELIBERATELY survives the `done` → `verifying` transition (Step 6d.3) and
 keeps re-firing through the uploading / verifying / interpreting /
 reviewing stages — those stages have no other auto-wake, so the backstop
@@ -3318,10 +3398,12 @@ Gate handlers (one per registered `<name>`):
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
-Run CRON-TEARDOWN before parking (`CronList` → `CronDelete` the job with
-`prompt.strip() == "/issue-tick <N>"`) — the pipeline has EXITed and no pod is
+Run CRON-TEARDOWN before parking (the HARDENED Step 6d.2 procedure:
+`CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
+equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
+fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
 burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
-would re-surface the gate question every 20 min). The user's
+would re-surface the gate question every 45 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and
 re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
 skill cleanly via `uv run python scripts/post_step_completed.py --issue <N>
@@ -3347,7 +3429,7 @@ recovery table below must agree).** The live mechanisms during a
 1. The orchestrator's bg-Bash poll chain (Step 6d.2) — primary, drains
    sentinels and posts `epm:progress` / advances on done / blocks on
    stalled-or-dead.
-2. The auto-armed backstop cron (`CronCreate(cron="*/20 * * * *",
+2. The auto-armed backstop cron (`CronCreate(cron="*/45 * * * *",
    prompt="/issue-tick <N>")`, registered by the orchestrator at Step 6d.2,
    torn down at every terminal/park transition — NOT at `done`; see
    Step 6d.2 CRON-TEARDOWN) running in the per-issue
@@ -3399,7 +3481,23 @@ sources contribute to `running`-phase progress:
   - `eval_numbers` (inline dict of final eval metrics)
   - `eval_paths` (list of repo-relative paths to eval result JSONs)
   - `reproducibility_card` (dict matching CLAUDE.md template; filled in
-    with TBD → resolved values)
+    with TBD → resolved values. **For training / sweep runs the card
+    MUST carry the machine-resolvable fields
+    `scripts/verify_uploads.py` self-resolves** (`merged_results_card`
+    → `check_hf_model_from_card` / `check_wandb_from_card`):
+    `adapter_paths` as an explicit per-cell mapping of REAL HF
+    subfolder paths — every value existence-checked under
+    `hf_model_repo` (defaults to the canonical model repo; declare only
+    when different), so NO `<arm>`/`<source>`/`<seed>`-style template
+    placeholders and no `(16 adapters)` prose summaries — plus
+    `wandb_project` AND `wandb_run_names` (per-cell dict or list of run
+    display names; a single run may instead declare `wandb_run_path`).
+    Prose may accompany but NEVER replace these structured fields: a
+    prose-template card (`adapters/issue_<N>/<arm>/<source>_seed<S>
+    (16 adapters)` + a free-text `wandb:` line) resolves to nothing and
+    trips false `hf_model` / `wandb_run` MISSING rows on a
+    fully-uploaded sweep that the upload-verifier must then supersede
+    row-by-row — incident #612.)
   - `wandb_url` (string)
   - `hf_hub_url` (string)
   - `worktree_path` (string, absolute path on local VM)
@@ -3407,6 +3505,20 @@ sources contribute to `running`-phase progress:
   - `gpu_hours_used` (float)
   - `gpu_hours_budgeted` (float)
   - `plan_deviations` (list of `{deviation: <str>, rationale: <str>}`)
+
+  **Orchestrator-composed fallback.** When the driver emits only
+  granular per-cell / per-shard sentinels (no single results sentinel)
+  and the orchestrator composes the `epm:results v1` payload itself
+  from the drained pieces, the composed payload obeys the SAME contract
+  above — in particular the `reproducibility_card` structured-field
+  requirement. Composing the card's adapter / WandB info as prose is
+  the #612 failure mode; assemble the explicit `adapter_paths` mapping
+  and `wandb_project` + `wandb_run_names` from the per-cell sentinels
+  instead. (GCP-lane driver sentinels that declare
+  `production_provenance.<cell>.hf_adapter_subfolder` /
+  `.wandb_run_name` are already self-resolvable — `verify_uploads.py`
+  synthesizes the card from them (#599) — so carry that structure
+  through verbatim rather than flattening it to prose.)
 
 When this skill is re-invoked in `running`:
 
@@ -3682,9 +3794,14 @@ URLs.
   (`reason: confirm_artifacts_no_declaration`).
 
   **Phase-scoped-launch mismatch (incident #604).** The launch-time
-  auto-declaration assumes the FULL task artifact set (HF
-  `issue<N>_<attempt>/raw_completions/`, git `eval_results/issue_<N>/` +
-  `figures/issue_<N>/`), so a launch covering only ONE phase of a
+  auto-declaration assumes the FULL task artifact set (hydra-lane
+  launches: HF `issue<N>_<attempt>/raw_completions/` + git
+  `eval_results/issue_<N>/` + `figures/issue_<N>/`; `--workload-cmd`
+  launches auto-declare only the sentinel + git paths — the guessed HF
+  prefix was dropped after it false-FAILed a perfectly-uploaded run
+  whose driver used its own `issue<N>_<slug>/` contract prefix, #601
+  follow-up r1; HF-data coverage on that lane comes from the
+  agent-level upload-verifier), so a launch covering only ONE phase of a
   multi-phase plan (e.g. an extraction phase whose sole deliverable is
   an `analysis_tensors/` bundle) FAILs `confirm_artifacts` on declared
   paths that only the plan's LATER (VM-local) phases produce. A
@@ -3904,13 +4021,13 @@ re-invocation).**
    is NO result marker for that same stage+round posted AFTER it (i.e. the
    breadcrumb is genuinely the latest event), THEN compare its timestamp to
    now against the **stage-aware freshness window**:
-   - Window = **30 min** for Codex-ensembled rounds (`interpreting` round 1
-     AND `clean-result` round 1 — these spawn both the Claude critic AND a
-     `codex-*-critic` twin at `--effort high|xhigh` via `companion task`;
-     round 1 commonly exceeds 15 min wall time).
-   - Window = **15 min** for everything else (`verifying`,
-     `interpreting`/`clean-result` rounds 2–3 which are Claude-only, and
-     any other Step 8/9 stage).
+   - Window = **30 min** for Codex-ensembled rounds (ALL `interpreting`
+     AND `clean-result` rounds 1-3 — every round spawns both the Claude
+     critic AND a `codex-*-critic` twin at `--effort high|xhigh` via
+     `companion task` since the 2026-06-12 all-rounds policy; such
+     rounds commonly exceed 15 min wall time).
+   - Window = **15 min** for everything else (`verifying` and any other
+     Step 8/9 stage).
    - **age ≤ window** → the subagent is presumed STILL RUNNING. EXIT the
      skill cleanly (`post_step_completed.py ... --exit-kind parked
      --notes "stage <stage> round <r> still in flight (dispatched <Δ>m
@@ -3934,11 +4051,11 @@ event. A stage is in flight when ITS breadcrumb has no matching result
 marker after it and is within the freshness window.
 
 The 15-min default comfortably exceeds a single Claude analyzer / critic /
-verifier turn; the 30-min Codex round-1 window covers a high-effort
+verifier turn; the 30-min Codex-ensemble window covers a high-effort
 Codex twin's wall time without re-dispatching live work and risking a
-double-writer on `body.md`. Both fit cleanly under the 20-min backstop
-cadence × 2-miss safety margin, so a genuinely stalled stage is still
-re-dispatched within ~2 ticks (≈40 min worst case). This guard is the
+double-writer on `body.md`. Both fit cleanly under the 45-min backstop
+cadence, so a genuinely stalled stage is still re-dispatched within
+~2 ticks (≈90 min worst case). This guard is the
 bound referenced by the Step 6d.2 "surviving the backstop into
 verifying/interpreting/reviewing is DESIGNED behavior" paragraph.
 
@@ -4293,7 +4410,8 @@ dispatching this round's critics.
    task with PASS or REVISE.
 
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on
-   round 1 only. Brief contract (matches
+   every round (all-rounds ensemble as of 2026-06-12; previously
+   round 1 only). Brief contract (matches
    `.claude/agents/codex-clean-result-critic.md` § "Your brief
    contains" + Step 1b): pass the ABSOLUTE
    `$(task.py find <N>)/body.md` as `clean_result_body_path` and
@@ -4342,9 +4460,13 @@ Re-spawn `analyzer` agent (fresh context, sees raw data + all
 interp-critique history + the latest clean-result-critique). Analyzer
 revises the `epm:interpretation` event AND edits the task body in
 place via `task.py set-body <N> --file ...`. Re-runs
-`scripts/verify_task_body.py` (must still PASS). Re-spawn
-`clean-result-critic` against the revised surfaces. Posts the next
-critique version. Rounds 2-3 are Claude-only (no Codex twin).
+`scripts/verify_task_body.py` (must still PASS). Re-spawn the critic
+ensemble — `clean-result-critic` AND `codex-clean-result-critic`
+(all-rounds ensemble as of 2026-06-12), fresh contexts, against the
+revised surfaces, with prior critique summaries in both briefs. Both
+post the next critique version (`epm:clean-result-critique v<n>` +
+`epm:clean-result-critique-codex v<n>`); apply the same ensemble
+decision rule (including the procedural-only strip) as round 1.
 
 **Max 3 rounds.** After round 3, advance regardless and fold the
 residual structural / register debt into the chat-side summary so the
@@ -4680,7 +4802,8 @@ steps 4 + 6-9 are the LATE JOIN executed here):
 
 The dedicated `reviewer` / `codex-reviewer` ensemble was deprecated when
 its statistical-framing responsibilities were absorbed into
-`clean-result-critic` Lens 11 (see CLAUDE.md ontology table). The
+`clean-result-critic` Lens 7 (see CLAUDE.md ontology table; under the v2
+spec Lens 11 is "raw alongside processed"). The
 `reviewing` status now exists ONLY as the single-step parking point
 between clean-result-critic PASS and `awaiting_promotion`. The skill
 moves through it in one transition with no agent dispatch:
@@ -4689,7 +4812,7 @@ moves through it in one transition with no agent dispatch:
 uv run python scripts/task.py set-status <N> awaiting_promotion \
   --note "clean-result-critic PASS; parking for user promotion."
 uv run python scripts/task.py post-marker <N> epm:status-changed \
-  --note "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 11)"
+  --note "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 7)"
 ```
 
 **Run CRON-TEARDOWN now.** `awaiting_promotion` is the terminal/park
@@ -5054,6 +5177,19 @@ Then post the chat-side prompt:
 >   `uv run python scripts/task.py promote <N> useful`     (paper-relevant)
 >   `uv run python scripts/task.py promote <N> not-useful` (archive candidate)
 > Then re-enter `/issue <N>` to fire Step 10.
+
+> **Re-park BEFORE the §5 marker (same-issue follow-up rounds — incident
+> #533, 2026-06-11):** during a follow-up round, post the §5 marker below
+> ONLY after the round's re-park has actually executed — check `task.py
+> view <N> --json` shows `status: awaiting_promotion` first. If the
+> status is still `followups_running`, the re-park was skipped: run step
+> 3's `set-status <N> awaiting_promotion` + step 4's
+> `epm:same-issue-followup-run v1` completion marker NOW, then post the
+> marker. Posting the exit-site marker while still at `followups_running`
+> and exiting is the #533 freeze shape — the session died there and the
+> task stranded for ~26h. (`autonomous_session_watch.py` now backstops
+> this with a round-complete auto re-park, but the backstop is recovery,
+> not the design.)
 
 Post the §5 marker (the EXIT site is the tail of step `9a-bis`; the
 candidate landing step on resume is `10` (`completion_audit`), looked up
@@ -5461,7 +5597,7 @@ rebase-merged. Three guards:
    On a later `/issue <N>` resume: if the PR is already merged AND status
    is still `running` for any reason, auto-advance rather than
    re-dispatching.
-3. **Behind-`main` / non-`main`-base guard.** Compute:
+3. **Branch-content / non-`main`-base guard.** Compute:
 
    ```bash
    BEHIND=$(git -C "$WT" rev-list --count HEAD..origin/main)
@@ -5471,25 +5607,53 @@ rebase-merged. Three guards:
      | grep -Fxq "$MB" && echo yes || echo no)
    ```
 
-   The branch is **unsafe to blind-rebase** if EITHER `BEHIND` exceeds
-   the threshold (default `200` commits — tunable; pick lower for repos
-   with high churn, higher for slow-moving infra) OR `ON_MAINLINE=no`
+   The branch is **unsafe to blind-rebase** if EITHER `ON_MAINLINE=no`
    (branch was forked off another `issue-<M>` branch that is itself
-   still unmerged). In the unsafe case, do NOT run `gh pr merge
-   --rebase` — fall through to the **artifact-confirmed merge**
-   procedure below. The Guard 1 foreign-`tasks/` checkout is necessary
-   but not sufficient: it covers `tasks/`, but a behind-`main` branch
-   also carries stale `src/` and `scripts/` from the parent branch, and
-   a blind rebase replays both the parent's `tasks/` rewinds (already
-   handled) AND its `src/` / `scripts/` regressions (NOT handled by
-   Guard 1) onto `main`. (Incident 2026-06-03: `issue-479` was 1,153
-   commits behind `origin/main` and based on the still-unmerged `#472`
-   branch — a blind `gh pr merge --rebase` would have replayed `#472`'s
-   old commits onto `main`, risking regression of ~50 foreign `tasks/`
-   folders AND shared `#472` infra. The orchestrator caught it by hand;
-   this guard encodes the catch.)
+   still unmerged) OR the branch's **own commit content** is out of
+   scope (the content check below). `BEHIND` alone is NEVER an
+   automatic unsafe verdict — in this repo every `task.py` marker is a
+   commit (~100+/hr fleet-wide), so a same-day, single-own-commit,
+   mainline-based branch routinely reads `BEHIND` in the hundreds
+   (incident #598, 2026-06-12: `BEHIND=305` tripped the old fixed-200
+   threshold and routed an infra task's `src/` deliverables toward the
+   artifact-confirmed path, which structurally cannot carry them — its
+   surgical checkout is restricted to the task's own `tasks/` /
+   `figures/` / `eval_results/` paths). `BEHIND` exceeding the
+   threshold (default `200` commits) instead TRIGGERS the own-commit
+   content check:
 
-#### The auto-merge procedure (safe case: branch up-to-date and based on `main`)
+   ```bash
+   # The branch's OWN commits (merge-base..HEAD) — with ON_MAINLINE=yes
+   # this is exactly what `gh pr merge --rebase` will replay onto main.
+   git -C "$WT" diff --name-only origin/main...HEAD   # three-dot form
+   ```
+
+   UNSAFE if that list touches any foreign `tasks/` path (under
+   `tasks/` but outside `tasks/*/<N>/`) or files outside this task's
+   deliverable scope (paths neither the plan nor the code review
+   touched). If the list is clean — only this task's own deliverables —
+   the branch is SAFE to rebase-merge regardless of `BEHIND`: the
+   rebase replays only these commits, and files the branch never
+   committed keep `main`'s version.
+
+   In the unsafe case, do NOT run `gh pr merge --rebase` — fall through
+   to the **artifact-confirmed merge** procedure below. The Guard 1
+   foreign-`tasks/` checkout is necessary but not sufficient: it covers
+   `tasks/`, but a branch based on a still-unmerged parent branch also
+   carries the parent's stale `src/` and `scripts/`, and a blind rebase
+   replays both the parent's `tasks/` rewinds (already handled) AND its
+   `src/` / `scripts/` regressions (NOT handled by Guard 1) onto
+   `main`. (Incident 2026-06-03: `issue-479` was 1,153 commits behind
+   `origin/main` and based on the still-unmerged `#472` branch — a
+   blind `gh pr merge --rebase` would have replayed `#472`'s old
+   commits onto `main`, risking regression of ~50 foreign `tasks/`
+   folders AND shared `#472` infra. The orchestrator caught it by hand;
+   this guard encodes the catch. The #479 class still trips under the
+   reworked guard twice over: `ON_MAINLINE=no` flags it directly, and
+   its `origin/main...HEAD` diff carries the whole `#472` parent
+   payload, failing the content check.)
+
+#### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
 ```bash
 PR=$(gh pr view <PR> --json number -q .number 2>/dev/null) || true
@@ -5512,15 +5676,46 @@ no `git worktree remove`).
 
 - **Success:** post `epm:merged v1` with the list of merge SHAs. Update
   the chat title with `merged`.
-- **Failure** (rebase conflict, non-mergeable PR, non-fast-forward): do
-  NOT swallow it (fail-fast). Post `epm:merge-failed v1` with the `gh` /
-  `git` error, surface ONE line in chat naming the branch + worktree path
-  for manual resolution, and CONTINUE — an experiment still parks at
-  `awaiting_promotion`; a code-change task still completes. The merge is
-  retried (idempotently) on the next `/issue <N>` re-invocation.
+- **Failure** (rebase conflict, non-mergeable PR, non-fast-forward):
+  FIRST run the **merge-conflict recovery** sub-procedure below ONCE.
+  If the recovery itself fails or the retried merge is still refused:
+  do NOT swallow it (fail-fast). Post `epm:merge-failed v1` with the
+  `gh` / `git` error, surface ONE line in chat naming the branch +
+  worktree path for manual resolution, and CONTINUE — an experiment
+  still parks at `awaiting_promotion`; a code-change task still
+  completes. The merge is retried (idempotently) on the next
+  `/issue <N>` re-invocation.
 - **Autonomous mode** (no user present): same as above — the auto-merge
   proceeds. No deferral. (This reverses the prior "default NO" autonomous
   behavior; merge to `main` is no longer user-gated.)
+
+#### Merge-conflict recovery (safe case: `gh pr merge` refuses)
+
+When the safe-case merge is refused on mergeability (a REAL conflict —
+`main` and the branch both changed the same lines), do NOT hand-resolve
+in the shared repo root and do NOT force-push. Recover IN THE WORKTREE
+(worked example: #598 / PR #454, 2026-06-12 — both sides appended a new
+checklist item to `.claude/agents/experimenter.md`; resolved in the
+worktree, 210 targeted tests re-run, merged on retry):
+
+```bash
+git -C "$WT" fetch origin main --quiet
+git -C "$WT" merge origin/main          # conflicts surface HERE, in the worktree
+# Resolve each conflict in the worktree (keep main's version of anything
+# outside this task's deliverables), then:
+git -C "$WT" add <each resolved file>
+git -C "$WT" commit --no-edit
+# Re-run the targeted tests for the touched surface, then:
+git -C "$WT" push
+# gh recomputes mergeability asynchronously after a push — it can be
+# momentarily stale. Re-check before concluding failure:
+gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
+gh pr merge <PR> --rebase --delete-branch=false
+```
+
+One recovery attempt per Step 10d invocation. If the re-checked
+mergeability never recovers or the retried merge is refused again, fall
+to the Failure bullet above (`epm:merge-failed v1`, continue).
 
 #### The artifact-confirmed merge procedure (unsafe case: guard 3 tripped)
 
@@ -5561,8 +5756,9 @@ Decision tree:
 
 - **All required deliverables resolve on `origin/main`** -> post
   `epm:merged v1` with fields `{artifact_confirmed: true,
-  full_rebase_deferred: true, reason: "branch <BEHIND> commits behind
-  main; based on <PARENT> (not on mainline)", verified_paths: [...]}`.
+  full_rebase_deferred: true, reason: "<the tripped guard-3 condition:
+  based on <PARENT> (not on mainline) | own commits touch foreign /
+  out-of-scope paths: <paths>>", verified_paths: [...]}`.
   Update the chat title with `merged (artifact-confirmed)`. Skip the
   `gh pr merge` call; leave the PR open so a future `/issue <N>`
   re-invocation can retry the full rebase once the parent branch is
@@ -5601,8 +5797,8 @@ Decision tree:
   git diff --cached --name-only   # sanity echo: spot any foreign staged entries
   xargs -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
 
-  Branch was <BEHIND> commits behind main and based on <PARENT>
-  (not on mainline), unsafe to blind-rebase. Cherry-picked this
+  Branch unsafe to blind-rebase: <based on <PARENT> (not on mainline) |
+  own commits touch foreign / out-of-scope paths>. Cherry-picked this
   task's own added files only; shared src/ / scripts/ unchanged." --
   git push origin main
   ```
@@ -5612,7 +5808,7 @@ Decision tree:
   [...]}`. Same chat title update as above.
 
 - **Surgical checkout itself fails** (file conflicts, push rejected
-  after one `git pull --rebase --autostash` retry; plain rebase fails on the always-dirty shared root) — post `epm:merge-failed v1`
+  after one `git pull --rebase=merges --autostash` retry; `--rebase=merges` preserves concurrent sessions' unpushed merge commits — plain `--rebase` flattens them away — and a rebase without `--autostash` fails on the always-dirty shared root) — post `epm:merge-failed v1`
   with the error, surface ONE line in chat (branch + worktree path +
   one-line reason), CONTINUE. Same fail-fast policy as the safe case.
 
@@ -5723,7 +5919,7 @@ dedicated "working" statuses):
 | `running` (code-reviewing) | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |
 | `running` (code-reviewing) | `epm:code-review v<n>` exists, no `epm:code-review-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-code-reviewer` only |
 | `running` (code-reviewing) | `epm:code-review-codex v<n>` exists, no `epm:code-review v<n>` | Claude reviewer not yet returned | re-spawn `code-reviewer` only |
-| `running` (code-reviewing) | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts disagree (PASS-class vs FAIL), no `epm:review-reconcile v<n>` | reconciler not yet started | spawn reconciler |
+| `running` (code-reviewing) | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts disagree (PASS-class vs FAIL), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `code-reviewer` | reconciler not yet started | spawn reconciler |
 | `running` (code-reviewing) | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts agree | ensemble decision ready | apply Step 5c rule and advance |
 | `running` (code-reviewing) | `epm:code-review-codex` is `epm:failure` (codex-output-malformed or infra) | Codex twin no-show | proceed with Claude-only decision per Step 5d fallback |
 | `running` (workload) | no `epm:results` for > 4h | experimenter crashed silently | post `epm:stale`, ask user |
@@ -5733,12 +5929,15 @@ dedicated "working" statuses):
 | `interpreting` | `epm:interpretation` exists, neither `epm:interp-critique` nor `epm:interp-critique-codex` for the current version | both ensemble critics not started | spawn `interpretation-critic` + `codex-interpretation-critic` in parallel |
 | `interpreting` | `epm:interp-critique v<n>` exists, no `epm:interp-critique-codex v<n>` | Codex twin not yet returned | re-spawn `codex-interpretation-critic` only |
 | `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
-| `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | both ensemble events exist, verdicts agree OR reconcile event present, ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique events |
-| `interpreting` | ensemble verdict PASS or round >= 3, no `epm:clean-result-critique` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn clean-result-critic |
-| `interpreting` | `epm:clean-result-critique` REVISE, round < 3 | structure / register revision in progress | re-spawn analyzer with the clean-result-critique |
-| `interpreting` | `epm:clean-result-critique` PASS or round >= 3 | ready for review | advance to `reviewing` |
-| `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 11 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
+| `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `interpretation-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
+| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique events |
+| `interpreting` | ensemble verdict PASS or round >= 3, neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel |
+| `interpreting` | `epm:clean-result-critique v<n>` exists, no `epm:clean-result-critique-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-clean-result-critic` only |
+| `interpreting` | `epm:clean-result-critique-codex v<n>` exists, no `epm:clean-result-critique v<n>` | Claude critic not yet returned | re-spawn `clean-result-critic` only |
+| `interpreting` | both `epm:clean-result-critique v<n>` and `epm:clean-result-critique-codex v<n>` exist, verdicts disagree (PASS-class vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `clean-result-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
+| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 3 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
+| `interpreting` | clean-result ensemble verdict PASS-class or round >= 3 | ready for review | advance to `reviewing` |
+| `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 7 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
@@ -5747,6 +5946,19 @@ dedicated "working" statuses):
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
+
+**Reconcile predicates are role-scoped.** There is exactly ONE marker-mode
+reconcile kind (`epm:review-reconcile` — workflow.yaml § markers); the
+adjudicated role lives in the verdict body's `**Role under adjudication:**`
+field, not the marker name. Wherever a row above tests for (or reads the
+verdict of) a reconcile event, only an event whose role field matches that
+stage's critic (`code-reviewer` / `interpretation-critic` /
+`clean-result-critic`) counts. Both the interpretation and clean-result
+ensembles sit at status `interpreting` with the same round numbering, so an
+unqualified "no `epm:review-reconcile v<n>`" predicate would let an
+interp-stage reconcile falsely satisfy the clean-result disagreement row
+(skipping the reconciler) or feed the wrong stage's verdict — and vice
+versa.
 
 Without distinct statuses for `uploading` / `interpreting` / `reviewing` /
 `awaiting_promotion`, many of these rows would be indistinguishable.

@@ -7,7 +7,7 @@ description: >
   per-issue Happy sessions), and tracking-file hygiene. Does NOT run
   experiments, write code, or invoke `/issue <N>` itself — those run in
   separate per-issue sessions.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 skills:
   - ideation
   - experiment-proposer
@@ -115,80 +115,138 @@ uv run python scripts/spawn_session.py list
 ```
 
 `pm_queue_report.py` returns, per task: `id`, `status`, `kind`,
-`title`, `goal` (frontmatter, may be null), `tags`,
+`title`, `goal` (frontmatter, may be null), `parent_id`, `tags`,
 `has_clean_result`, `created_ts` (first events.jsonl event ts; falls
 back to frontmatter `created_at`), `status_arrival_ts` (last
 `epm:status-changed` into the current status; falls back to the last
 event ts), and — for active statuses — `latest_marker_kind` +
-`latest_marker_ts`. `--markdown` emits a pre-sorted skeleton of the
-report below; `--status <s>` filters; `completed`/`archived` are
-excluded by default (`--include-terminal` adds them). Do NOT fall back
-to 13 sequential `list-by-status` calls or per-task `task.py view`
-loops — the one report run covers the whole queue; open a body via
-`task.py view <N>` only for the named fallbacks below.
+`latest_marker_ts`. `--markdown` emits a pre-sorted skeleton;
+`--status <s>` filters; `completed`/`archived` are excluded by default
+(`--include-terminal` adds them). Do NOT fall back to 13 sequential
+`list-by-status` calls or per-task `task.py view` loops — the one
+report run covers the whole queue; open a body via `task.py view <N>`
+only for the named fallbacks below.
 
-The FULL structured report (sections 1–4) runs on EVERY STATUS pass —
-the `/pm` boot scan and any "status" re-run alike. A user asking for a
-"quick status" can get just the section-1 snapshot bullets.
-`completed` / `archived` are excluded (historical; the user queries
-them explicitly).
+**The default STATUS output is CONCISE and exception-based** (user
+directive 2026-06-12; supersedes the old exhaustive sections 2–4
+report). Healthy work gets counts, not enumeration — if 5 experiments
+are running fine, say "5 running, all healthy", not five lines. Detail
+is reserved for what is going wrong or waiting on the user. Three
+parts, every STATUS pass (boot and re-runs alike):
 
-**1. Snapshot bullets** (5–10, quantitative, unchanged): counts per
-status, live fleet burn (recompute per the pm/SKILL.md fleet-burn
-rule), in-flight experiments with pod and ETA when known,
-awaiting_promotion pile size, blocked count, open questions. Flag
-inconsistencies (orphan pods, stale-looking `approved` titles,
-experiments running with no recent `epm:*` event) but do NOT fix them
-— that's AUDIT.
+**1. Headline (1–2 lines)** — counts per status in one line (active
+statuses, blocked, awaiting_promotion, proposed), live fleet burn
+(recompute per the pm/SKILL.md fleet-burn rule) when any pod is live,
+live session count. Example:
+`6 running, 1 plan_pending, 1 blocked | 51 awaiting promotion, 128
+proposed | burn $14.50/hr at 14:03 PT | 9 live sessions`.
 
-**2. Active work** — one entry for EVERY task at `planning`,
-`plan_pending`, `approved`, `running`, `verifying`, `interpreting`,
-`reviewing`, `followups_running`, `blocked`, grouped by status. Entry
-format: `#N — <one-line summary> | <pod-N if live> | <latest marker
-kind, age>` (pod from the `list-ephemeral` scan; marker kind + age
-from the report's `latest_marker_*` fields). `followups_running`
-entries keep the follow-up detail appended:
-`#N — <followup_label> (auto|manual)` — the `followup-auto`
-(proposer-initiated) or `followup-manual` (user-initiated) tag names
-which, and the specific follow-up comes from the `followup_label` in
-the task's latest `epm:followup-scope v1` marker (read via
-`task.py latest-marker <N> --prefix epm:followup-scope`, or
-`task.py view <N> --json` for the full events array — bare
-`latest-marker <N>` returns the most recent event of ANY kind, usually
-`epm:progress` mid-round). This subsumes the old standalone
-followups-running view; the cross-reference rule survives: these tasks
-already have a clean-result (they round-trip back to
-`awaiting_promotion` when the round finishes), so the
-awaiting-promotion digest in section 3 keeps them tagged "follow-up in
-flight" rather than dropping them.
+**2. Needs attention — investigate, auto-fix, surface only the
+residue** (user directive 2026-06-12: everything that CAN be fixed
+automatically IS fixed automatically; the user sees only what
+genuinely needs his call). Candidate exceptions:
 
-**3. Awaiting promotion (<count>)** — two subsections:
+- `blocked` tasks (reason from the latest `epm:failure` marker).
+- `plan_pending` over the auto-approve cap.
+- Active tasks gone quiet: latest marker older than ~2h with a live
+  pod, or older than ~24h regardless (a row idle at
+  `interpreting`/`reviewing` is a stuck session, not a healthy pause).
+- Orphan or idle pods (live pod, no active owning task).
+- Watcher flags (ALIVE-BUT-STALLED, zombie wrappers), disk pressure,
+  registry drift.
+- Dashboard comments awaiting reply; `needs-thomas` tags.
 
-- `### Most recent` — top 5 by arrival into `awaiting_promotion`
-  (the report's `status_arrival_ts`), each
-  `#N — <claim> (CONFIDENCE) — arrived <YYYY-MM-DD>`.
-- `### By theme` — ALL awaiting_promotion tasks, each with its number
-  and what it found, grouped into 3–6 research-theme categories you
-  derive from the titles/goals at read time (e.g. marker leakage /
-  localization, leakage predictors, emergent misalignment,
-  training-recipe / measurement methodology, infra) — NOT a fixed
-  taxonomy. "What it found" comes from the clean-result title — for
-  promoted clean-result bodies the title IS the one-sentence claim
-  plus its `(HIGH|MODERATE|LOW confidence)` tag — so do not open each
-  body; fall back to `task.py view <N>` / the body's `## Human TL;DR`
-  only when a title is not in claim form. Entry format:
-  `#N — <one-line finding> (CONFIDENCE)`.
+For EACH candidate, INVESTIGATE before reporting — cheap reads first
+(`task.py view <N>` / `latest-marker`, watcher registry
+`~/.eps-autonomous/`, `spawn_session.py list`, `pod.py
+list-ephemeral`, log tails); for a genuinely murky stall,
+background-spawn a read-only diagnostic agent (`stuck-diagnoser`,
+`experiment-status`) — never an execution agent. Then route:
 
-**4. Proposed queue (<count>)** — two subsections:
+- **Auto-fix now** — apply inline, per the Autonomy rules: status-
+  drift corrections (automation-owned), stop + respawn a stalled/dead
+  autonomous session (`spawn_session.py stop` + `spawn-issue --issue
+  <N> --auto`), terminate orphaned/EXITED pods (policy-backed; NEVER
+  a pod with live work), zombie-session sweeps, cache/disk cleanup,
+  `pods.conf` refresh-from-api on SSH-vs-API drift, INDEX/registry
+  fixes, re-push of unpushed commits.
+- **Auto-fix in background** — too big for inline: workflow-surface
+  gaps go through the workflow-fix-on-bug auto-spawn; filed infra
+  work through the infra auto-dispatch pass; murky stalls to a
+  background diagnostic agent whose verdict feeds the NEXT pass.
+- **Surface to the user** ONLY when the fix is his by policy: over-cap
+  plan approvals, promotions, a blocked task whose question only he
+  can answer (state the specific question + your recommended answer),
+  credentials / outward-facing sends / spend, irreversible deletion of
+  research artifacts, research-judgment calls. Each surfaced line
+  states what, why it can't be auto-fixed, and the recommended action.
 
-- `### Recently filed` — top 10 by creation time (the report's
-  `created_ts`), each `#N — <one-line summary> — filed <YYYY-MM-DD>`.
-- `### By theme` — ALL proposed tasks, grouped into research-theme
-  categories (derived at read time, same rule as section 3), one line
-  each. With ~130 rows this is long; that is intentional and
-  user-requested. One-line summary = the title when it is
-  self-explanatory, else title + the first clause of the frontmatter
-  `goal:`; never page through full bodies.
+Report as two compact blocks: `Auto-fixed (N):` one line per fix
+(including background dispatches, marked `bg`), then `Needs you (N):`.
+Both empty → the single line `Nothing needs your attention.` Healthy
+running experiments, healthy sessions, and the proposed pile are NEVER
+enumerated here. Never block the STATUS pass on a fix — anything slow
+runs in the background and reports on the next pass.
+
+**3. Suggested next actions** — ranked numbered list (plain markdown),
+ONLY non-empty categories, 1–2 lines each with counts:
+
+- **Triage awaiting promotion** — ALWAYS present. Rank it #1 (the
+  default action) when BOTH (a) no ripe queued follow-ups exist and
+  (b) fewer than ~3 experiments are actively running; otherwise list
+  it after follow-ups. On pick: render `/group-promotion-queue`'s
+  grouped report and walk promotion group-by-group via
+  `/promote-clean-result`. Triage is the follow-up generator — an
+  empty follow-up queue is itself the reason to do it.
+- **Follow-ups to run** — `proposed` tasks with `parent_id` set whose
+  parent is completed / parked (the report exposes `parent_id`), plus
+  un-acted follow-up proposals on parked tasks. Top 1–3 by
+  information gain per GPU-hour, one-line rationale each.
+- **Human tasks** — actions only the user can take: over-cap plan
+  approvals, blocked-task answers, pending promotions (count),
+  dashboard comments awaiting reply.
+- **Papers to read** — new: top picks from the latest
+  `~/lit-review/reports/<date>.md` daily digest; old:
+  `~/lit-review/to-read.md` and `docs/papers.md` entries tagged
+  `queued`. Suggest 1–3 with a one-line tie to an active research
+  line.
+- **Wednesday: weekly review + mentor slides** — when the scan day is
+  Wednesday (PT), suggest `/weekly` + `/mentor-update-slides` to prep
+  the mentor meeting.
+- **Proposed-queue pruning** — when the proposed pile exceeds ~100 or
+  is visibly stale, suggest an archive pass over superseded / stale
+  proposals so ranking stays meaningful.
+- **Ideation** — when the ripe proposed-experiment pipeline is thin
+  AND few experiments are running, suggest `/ideation` /
+  `/experiment-proposer` to refill it.
+
+**On-demand views** (never rendered by default):
+
+- **"full status"** → the legacy exhaustive report: Active work (one
+  entry per task at every active status, `#N — <one-line summary> |
+  <pod-N if live> | <latest marker kind, age>`; `followups_running`
+  entries append `#N — <followup_label> (auto|manual)` — label from
+  the latest `epm:followup-scope v1` marker via `task.py latest-marker
+  <N> --prefix epm:followup-scope`, auto/manual from the
+  `followup-auto`/`followup-manual` tag); Awaiting promotion
+  (`### Most recent` top 5 by `status_arrival_ts`, then `### Grouped`
+  — the `/group-promotion-queue` cached report; `followups_running`
+  tasks stay tagged "follow-up in flight"); Proposed queue
+  (`### Recently filed` top 10 by `created_ts`, then `### By theme`,
+  one line per task — title, else title + first clause of `goal:`;
+  never page through full bodies).
+- **"quick status"** → headline + needs-attention only (no
+  suggestions).
+
+On every STATUS pass, also keep the `/group-promotion-queue` cache
+warm: if the awaiting_promotion ID set changed since the cache header,
+background-spawn its grouping subagent (never blocking the pass) so
+triage renders instantly when picked.
+
+After the report, run the **infra auto-dispatch pass** (see § Standing
+rule — infra auto-dispatch below). Its `Infra auto-dispatch` block
+compresses to the single line `Infra auto-dispatch: none ripe.` when
+nothing was dispatched and nothing is held.
 
 ### Mode 2 — AUDIT ("check for drift")
 
@@ -316,6 +374,92 @@ session. Trust the experiment's status + events.jsonl events; check
 progress with `python scripts/task.py view <N>` only when the user
 asks.
 
+### Standing rule — infra auto-dispatch (fires on every STATUS pass)
+
+Automatically found infra problems get fixed automatically unless
+something genuinely needs the user's call (user directive 2026-06-12).
+The same-turn workflow-fix-on-bug protocol covers small workflow-surface
+gaps; this rule covers the bigger FILED fixes — agent-filed `kind: infra`
+tasks that otherwise accumulate at `proposed` with no runner.
+
+After producing the Mode 1 report — boot scan and every STATUS re-run
+alike — run the infra auto-dispatch pass:
+
+1. **Enumerate** `proposed` tasks with `kind: infra` (and `kind: batch`
+   when the work is pure code/ops) from the queue report already in
+   hand.
+2. **Consolidate duplicate clusters** before dispatching: when several
+   tasks file the same fix (same incident hit by different sessions),
+   dispatch the most complete one and
+   `task.py set-status <dup> archived` the rest, posting a note marker
+   on each naming the canonical task.
+3. **Auto-dispatch ripe tasks** — no user ask:
+   ```bash
+   uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto
+   ```
+   A task is **ripe** when it names a concrete target + change and is
+   not predicate-blocked (e.g. "audit X after its next live attempt"
+   waits for the predicate; track it and dispatch when it fires).
+4. **Concurrency cap: 3 concurrent infra sessions.** Count live
+   issue-mapped sessions whose task is `kind: infra` via
+   `spawn_session.py list` + a task-kind lookup (`task.py view <N>
+   --json`). Drain oldest-first by default; urgency-first when a task
+   names an active incident.
+
+4b. **Durable drain between STATUS passes (task #633).** On EVERY STATUS
+   pass, WRITE the adjudicated queue to
+   `~/.eps-autonomous/infra-drain-queue.json` (atomic tmp+rename;
+   `ripe_oldest_first` ints oldest-first, `cap`, `holds` {id: one-word
+   reason}, `updated_ts` ISO-8601 UTC, `updated_by`, `comment`). The
+   10-minute watcher's infra-drain pass executes listed IDs into free
+   slots while this session is idle or closed — it only spawns
+   `spawn-issue --auto` for IDs still at `proposed`, under the cap,
+   skipping holds and already-registered issues; it NEVER judges
+   ripeness. The PM remains the only ripeness judge: un-riping a task =
+   remove it from the list / add a hold and rewrite the file. Rewriting
+   (bumping `updated_ts`) also re-arms the watcher's per-ID retry budget.
+
+5. **Park for the user ONLY when** (the "REALLY needs my call" list —
+   keep it tight):
+   - **HARD RULE — credentials/secrets off-machine.** The fix would
+     move credentials or secrets off this machine (push to any remote,
+     gist, HF, publicly visible instance metadata, ...; the established
+     `.env`-to-pod push during pod bootstrap is status quo, not in
+     scope). Never auto; redesign to keep secrets local or park.
+     `held: credentials`.
+   - **HARD RULE — outward-facing sends.** The work sends anything
+     outward-facing addressed to humans or services outside the
+     project's standard artifact channels (git/HF/WandB) — email,
+     Slack, social posts, published content. Draft only; park for
+     approval. `held: outward-facing`.
+   - **Spending / vendor decisions** (adopting a new paid service or
+     compute vendor) — not really infra fixes anyway. `held: spend`.
+   - **Research-judgment / user-voice items** (result interpretation,
+     mentor-facing prose) — these should not be `kind: infra` in the
+     first place; re-kind and leave for triage. `held: re-kind`.
+   - **Force-push and irreversible deletion of research artifacts**
+     (`eval_results/`, `figures/`, HF datasets, `RESULTS.md`) stay
+     never-auto per existing rules. `held: irreversible`.
+6. **Explicitly AUTO now (not park-worthy):** destructive-but-
+   policy-backed ops — terminating orphaned/stopped pods,
+   zombie-session sweeps, cache/disk cleanup, cron additions. These
+   were previously held for the user; the 2026-06-12 user directive
+   supersedes that hold.
+7. **Visibility without a gate:** append an `Infra auto-dispatch` block
+   to the STATUS report — what was auto-dispatched this pass and what
+   is held, each held item with the one-word reason
+   (`held: credentials`, `held: outward-facing`, `held: spend`,
+   `held: re-kind`, `held: irreversible`, `held: predicate`,
+   `held: cap`). `predicate` and `cap` are mechanical deferrals
+   re-checked on the next pass, NOT items awaiting user input.
+
+The dispatched sessions run the full `/issue <N>` lifecycle with their
+own gates; this rule changes WHO pulls the trigger on ripe `proposed`
+infra work, not any downstream gate. Promotion out of
+`awaiting_promotion` stays user-only. `kind: experiment` tasks are NOT
+covered — they keep the Mode 4/5 ranked-candidate flow, the full
+adversarial-planner path, and the plan-approval GPU-hour cap.
+
 ### Mode 6 — INTEGRATE ("a session finished")
 
 When you notice (via STATUS scan or user mention) that an experiment advanced:
@@ -353,6 +497,18 @@ same skill scans the awaiting_promotion list for similar entries.
   directly and post a note marker recording the why. The ONLY
   user-owned status move is promotion out of `awaiting_promotion`
   (`task.py promote <N> useful|not-useful`).
+- Infra auto-dispatch: spawning autonomous per-issue sessions for ripe
+  `proposed` `kind: infra` (and pure code/ops `kind: batch`) tasks, and
+  archiving their obvious duplicates with a note marker — per the
+  standing infra auto-dispatch rule above (user directive 2026-06-12).
+  Held items go in the report with a one-word reason, never as an
+  approval question.
+- STATUS-pass auto-remediation (Mode 1 "Needs attention" routing, user
+  directive 2026-06-12): stop + respawn stalled/dead autonomous
+  sessions, terminate orphaned/EXITED pods (never a pod with live
+  work), zombie-session sweeps, cache/disk cleanup, `pods.conf`
+  refresh-from-api, INDEX/registry fixes, re-push of unpushed commits.
+  Reported in the `Auto-fixed` block, never as a question.
 
 **Propose diff, wait for approval:**
 - `RESULTS.md`: rewrite headline claims, add TL;DR entries.
@@ -387,16 +543,14 @@ Do NOT invoke `/issue` in the PM session.
 
 ## Output style
 
-- **Status reports:** the Mode 1 structured per-status view, every
-  pass — section 1 snapshot bullets (5–10, quantitative: counts per
-  status, in-flight issues with pod, awaiting_promotion pile size, 1–2
-  open questions; no prose paragraphs), then Active work grouped by
-  status (`#N — <one-line summary> | <pod-N if live> | <latest marker
-  kind, age>`; `followups_running` entries append
-  `#N — <followup_label> (auto|manual)`), then Awaiting promotion
-  (Most recent + By theme, `#N — <one-line finding> (CONFIDENCE)`),
-  then Proposed queue (Recently filed + By theme). "Quick status" =
-  section 1 only.
+- **Status reports:** the Mode 1 concise exception-based view, every
+  pass — headline counts line, `Auto-fixed (N)` + `Needs you (N)`
+  blocks (or `Nothing needs your attention.`), `Suggested next
+  actions` ranked menu (non-empty categories only),
+  `Infra auto-dispatch` block (one line when empty). Healthy work is
+  counted, never enumerated; fixable problems are fixed, not flagged.
+  "full status" = the legacy exhaustive per-task report on demand;
+  "quick status" = headline + needs-attention only.
 - **Audit reports:** auto-fixed checkboxes + needs-approval diffs with
   one-line "Reason".
 - **Dispatch:** one line — "spawning per-issue session for #N → run
