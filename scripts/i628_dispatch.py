@@ -660,52 +660,66 @@ def _cells_with_trained_adapter(cells: list[tuple[str, str, int]]) -> list[tuple
     return trained
 
 
-def _cells_with_g_cells(cells: list[tuple[str, str, int]]) -> list[tuple[str, str, int]]:
-    """Filter ``cells`` to those whose Phase-2 G-cell output landed on disk (#628 r10).
+def _required_g_cell_files(cells: list[tuple[str, str, int]], args) -> list[Path]:
+    """Enumerate the full expected G-cell file grid (#628 r11).
 
-    Parallel to ``_cells_with_trained_adapter``, but reads the Phase-2 axis.
-    Closes CONCERN ``g-cell-coverage-not-in-finalize`` (reconciler r9): a
-    crash mid-Phase-2 can leave the planned adapter set FULL on disk while
-    only a handful of G-cell JSONs have been written, and the previous
-    ``_finalize`` only checked adapter coverage — it would happily emit a
-    full ``epm:results`` sentinel + ``[phase=done]`` while the G-grid the
-    analyzer asserts on was empty.
+    Closes CONCERN ``g-cell-column-coverage-not-in-finalize`` (reconciler
+    r10): the round-10 ``_cells_with_g_cells`` predicate accepted a cell
+    as G-realized when ANY ONE column file existed, so a Phase-2 crash
+    that landed a single G-cell per adapter (the round-9 launcher's
+    ``MIN_PHASE2_CELLS=1`` tolerance, multiplied across cells) would pass
+    coverage_complete and emit a full ``epm:results`` sentinel + a
+    ``[phase=done]`` log line over a ~34x-incomplete G-grid. The
+    analyzer's ``_assert_h2_keys`` (``scripts/i628_analysis.py:253``) is
+    the fail-loud defense-in-depth, but the sentinel contract is wrong
+    by itself.
 
-    A cell ``(arm, cid, seed)`` is considered G-realized when at least one
-    G-cell JSON matching ``{cid}__*__seed{seed}*.json`` exists under
-    ``EVAL / "G_cells" / arm``. Phase 2 writes one such file per eval
-    column (16 by default; smoke trims to ~3), plus a ``__plain`` shadow
-    when the arm's ``_sep_variant == "sep"``; ``_cell_read`` short-circuits
-    on existing files so the predicate stays cheap (filesystem ``glob``,
-    no JSON parse, no network).
+    Replaces ``_cells_with_g_cells`` (round 10) with a COMPREHENSIVE
+    enumeration that mirrors the producer side in ``phase2``:
 
-    The "at least one" predicate matches the same "did this cell make any
-    Phase-2 progress" question ``_cells_with_trained_adapter`` answers for
-    Phase 1 — strictly stronger "all eval columns landed" coverage is
-    out of scope here (the analyzer asserts on the H2 grid separately via
-    ``_assert_h2_keys``; this finalizer guards the SENTINEL contract).
+    - For each ``(arm, train_cid, seed)`` cell in ``cells``:
+      - For each ``eval_cid`` in ``_eval_columns(args)``:
+        - Require ``{train_cid}__{eval_cid}__seed{seed}.json``
+          (``sep_mode == "marker"``, always written by ``_cell_read``).
+        - If ``_sep_variant(arm) == "sep"``, ALSO require
+          ``{train_cid}__{eval_cid}__seed{seed}__plain.json``
+          (the ``sep_mode == "plain"`` shadow read).
+
+    ``_eval_columns(args)`` already threads ``args.smoke`` (smoke trims
+    grid+negs to ~3 columns), so subset smokes carry the same
+    expected-grid logic as the full sweep.
+
+    Returns the expected paths as a sorted list (deterministic ordering
+    for stable sentinel manifests + log lines). The caller does the
+    presence check via ``Path.exists`` in a single pass; the analyzer
+    side (``_assert_h2_keys``) and finalizer side now share the SAME
+    expected-grid enumeration.
     """
     g_root = EVAL / "G_cells"
-    realized: list[tuple[str, str, int]] = []
-    missing: list[str] = []
-    for arm, cid, seed in cells:
+    columns = _eval_columns(args)
+    expected: list[Path] = []
+    for arm, train_cid, seed in cells:
         arm_dir = g_root / arm
-        # Match the same glob shape ``_cell_read`` writes:
-        # ``{cid}__{eval_cid}__seed{seed}{suffix}{fname_tag}.json``.
-        if arm_dir.is_dir() and any(arm_dir.glob(f"{cid}__*__seed{seed}*.json")):
-            realized.append((arm, cid, seed))
-            continue
-        missing.append(_cell_slug(arm, cid, seed))
-    if missing:
-        logger.warning(
-            "[partial-phase] %d/%d cells lack any G-cell output and will be SKIPPED: %s",
-            len(missing),
-            len(cells),
-            ", ".join(missing)
-            if len(missing) <= 8
-            else f"{len(missing)} cells (first 5: {', '.join(missing[:5])})",
-        )
-    return realized
+        sep = _sep_variant(arm) == "sep"
+        for eval_cid in columns:
+            # sep_mode = "marker" slot (always written; no suffix).
+            expected.append(arm_dir / f"{train_cid}__{eval_cid}__seed{seed}.json")
+            if sep:
+                # sep arms ALSO get the sep_mode = "plain" shadow read.
+                expected.append(arm_dir / f"{train_cid}__{eval_cid}__seed{seed}__plain.json")
+    return expected
+
+
+def _missing_g_files(cells: list[tuple[str, str, int]], args) -> list[Path]:
+    """Disk probe: which expected G-cell files are NOT on disk.
+
+    Pure filesystem ``Path.exists`` call (no JSON parse, no network),
+    matched by file path to the producer side. Monkeypatchable as a
+    unit so the finalize tests can drive both the empty-list (full
+    coverage) and the populated-list (partial coverage) cases without
+    materializing 3000+ files on disk.
+    """
+    return [p for p in _required_g_cell_files(cells, args) if not p.exists()]
 
 
 def _cells(args) -> list[tuple[str, str, int]]:
@@ -2584,26 +2598,36 @@ def _finalize(args) -> bool:
     assert is still defense-in-depth, but emitting ``epm:results`` with
     missing cells is wrong by itself.
 
-    Coverage is verified on BOTH axes (#628 r10, closes CONCERN
-    ``g-cell-coverage-not-in-finalize``):
+    Coverage is verified on TWO comprehensive axes — the ADAPTER axis
+    (Phase 1) and the G-FILE axis (Phase 2). The G-file axis is the
+    round-11 successor to the round-10 cell-axis check: round-10 accepted
+    a cell as G-realized when ANY ONE column file existed, so a Phase-2
+    crash that landed a single G-cell JSON per adapter (the round-9
+    launcher's ``MIN_PHASE2_CELLS=1`` tolerance, multiplied across cells)
+    silently passed. The round-11 enumeration mirrors the producer side
+    in ``phase2``:
 
     - ADAPTER axis (Phase 1, via ``_cells_with_trained_adapter``): the
       cell's stop_step JSON or local adapter dir is present.
-    - G-CELL axis (Phase 2, via ``_cells_with_g_cells``): at least one
-      G-cell JSON ``{cid}__*__seed{seed}*.json`` is on disk under
-      ``EVAL / "G_cells" / arm``.
+    - G-FILE axis (Phase 2, via ``_required_g_cell_files`` +
+      ``_missing_g_files``): for each ``(arm, train_cid, seed)`` cell,
+      for each ``eval_cid`` in ``_eval_columns(args)``, the file
+      ``{train_cid}__{eval_cid}__seed{seed}.json`` MUST exist; for sep
+      arms the ``__plain`` shadow file MUST exist too. Closes CONCERN
+      ``g-cell-column-coverage-not-in-finalize`` (reconciler r10).
 
     The round-9 launcher introduced a ``gate_phase2_coverage`` tolerance
     (``MIN_PHASE2_CELLS=1``) that lets the launcher CONTINUE past a
-    partial Phase 2 — without this dual check ``_finalize`` would see
-    the full 56-adapter coverage from Phase 1, declare success, and emit
-    ``epm:results`` + ``[phase=done]`` over a near-empty G-grid. Each
-    axis follows the same contract as the Phase-1 fix:
+    partial Phase 2; without the comprehensive G-file enumeration the
+    finalizer would see full 56-adapter coverage and emit ``epm:results``
+    over a ~34x-incomplete G-grid. The G-file axis now matches what the
+    analyzer's ``_assert_h2_keys`` independently asserts on, so the
+    finalizer's sentinel contract no longer disagrees with the analyzer.
 
-    - All adapters AND all G-cells present → ``epm:results`` + return
+    - All adapters AND all G-files present → ``epm:results`` + return
       True. The caller then logs ``[phase=done]``.
     - Any missing on EITHER axis → ``epm:progress`` ONLY with a
-      ``missing_adapters`` and a ``missing_g_cells`` manifest. NO
+      ``missing_adapters`` and a ``missing_g_files`` manifest. NO
       ``epm:results``, NO ``[phase=done]``. The reproducibility card
       lists ONLY the cells realized on the ADAPTER axis (the same
       contract that closed ``partial-ok-results-sentinel``; a card
@@ -2616,38 +2640,73 @@ def _finalize(args) -> bool:
 
     Dry-run short-circuit (#628 r8, closes CONCERN
     ``dry-run-finalize-suppresses-done``): a dry-run from a clean tree
-    has no trained adapters AND no G-cells on disk, so both disk probes
-    would return ``[]`` and the function would return ``False``, which
-    suppresses ``[phase=done]`` at the caller. But the dry-run contract
-    is that it MUST terminate cleanly. Skip BOTH disk probes for
-    dry-run: treat planned == realized on both axes, emit ``epm:progress``
-    (not ``epm:results`` — same downgrade as the live-poller safety
-    above), and return ``True`` so the caller fires ``[phase=done]``.
+    has no trained adapters AND no G-cell files on disk, so both probes
+    would report empty coverage and the function would return ``False``,
+    which suppresses ``[phase=done]`` at the caller. But the dry-run
+    contract is that it MUST terminate cleanly. Skip BOTH disk probes
+    for dry-run: treat planned == realized on both axes, emit
+    ``epm:progress`` (not ``epm:results`` — same downgrade as the
+    live-poller safety above), and return ``True`` so the caller fires
+    ``[phase=done]``.
+
+    Sentinel size discipline: ``missing_g_files`` is capped at 200
+    entries in the sentinel body (full default sweep enumerates ~3264
+    files); the remainder is collapsed into a count + first-missing-
+    file summary. The total count + first-50 surface enough information
+    to diagnose without blowing past the 50,000-char ``note`` cap.
     """
     planned = _cells(args)
     # Dry-run short-circuit: terminates cleanly with no disk artifacts;
     # advertise the FULL planned grid on BOTH axes (no real adapters or
-    # G-cells exist, so the card is a paper enumeration only). The
+    # G-files exist, so the card is a paper enumeration only). The
     # ``not args.dry_run`` arm of ``full_results`` below still forces
     # ``kind = epm:progress`` so a live poll never drains this sentinel
     # as real results.
     if args.dry_run:
         realized_adapter = list(planned)
-        realized_g = list(planned)
+        expected_g_files: list[Path] = []
+        missing_g_files_paths: list[Path] = []
     else:
         realized_adapter = _cells_with_trained_adapter(planned)
-        realized_g = _cells_with_g_cells(planned)
+        expected_g_files = _required_g_cell_files(planned, args)
+        missing_g_files_paths = _missing_g_files(planned, args)
     adapter_set = set(realized_adapter)
-    g_set = set(realized_g)
     missing_adapters = [_cell_slug(*c) for c in planned if c not in adapter_set]
-    missing_g_cells = [_cell_slug(*c) for c in planned if c not in g_set]
-    coverage_complete = not missing_adapters and not missing_g_cells
+    # G-file axis: serialize missing paths as filenames (the arm + cell
+    # are encoded in the parent path; ``arm/train__eval__seedN.json`` is
+    # enough to disambiguate against the producer's write path).
+    missing_g_files = [str(p.relative_to(EVAL)) for p in missing_g_files_paths]
+    # G-cell rollup (back-compat for round-10 consumers): a cell is
+    # G-realized iff ALL of its expected files exist. Drives the
+    # ``realized_g_cells`` / ``missing_g_cells`` fields, derived from
+    # the file-axis so the two views never disagree.
+    missing_g_paths_set = set(missing_g_files_paths)
+    cell_has_missing: dict[tuple[str, str, int], bool] = {c: False for c in planned}
+    if not args.dry_run:
+        # Same enumeration as ``_required_g_cell_files`` -- one pass to
+        # bucket missing files by cell. Iterate ONCE so the rollup cost
+        # stays O(expected_files) rather than O(cells * expected_per_cell).
+        for p in expected_g_files:
+            if p in missing_g_paths_set:
+                # arm = parent dir name; cell = (arm, train, seed) from filename
+                arm = p.parent.name
+                # Strip optional ``__plain`` suffix before splitting.
+                stem = p.stem.removesuffix("__plain")
+                train_cid, _eval_cid, seed_part = stem.split("__")
+                seed = int(seed_part.removeprefix("seed"))
+                key = (arm, train_cid, seed)
+                if key in cell_has_missing:
+                    cell_has_missing[key] = True
+    realized_g_cells_list = [c for c in planned if not cell_has_missing[c]]
+    missing_g_cells = [_cell_slug(*c) for c in planned if cell_has_missing[c]]
+    coverage_complete = not missing_adapters and not missing_g_files
 
     card = {
         "hf_model_repo": HF_MODEL_REPO,
         # Card lists ONLY adapter-realized cells -- never advertise an
-        # adapter path for a cell whose Phase-1 worker died. G-cell
-        # coverage is reported separately under ``coverage.missing_g_cells``
+        # adapter path for a cell whose Phase-1 worker died. G-file
+        # coverage is reported separately under
+        # ``coverage.missing_g_files`` / ``coverage.missing_g_cells``
         # rather than altering the adapter_paths shape (a card adapter
         # path is still a valid HF pointer regardless of Phase-2 progress).
         "adapter_paths": {_cell_slug(*c): _hf_adapter_subfolder(*c) for c in realized_adapter},
@@ -2660,47 +2719,75 @@ def _finalize(args) -> bool:
         },
         "data_repo_prefix": "issue628_rig_revision",
     }
+    # Cap the missing_g_files manifest at 200 entries to stay well under
+    # the 50,000-char ``note`` cap (default full-sweep enumeration is
+    # ~3264 files; in the worst case the FIRST partial sweep that lands
+    # here would otherwise emit every path). Keep the total count + the
+    # first 200 so a downstream consumer can still pinpoint a failure.
+    MAX_MISSING_G_FILES_REPORTED = 200
+    if len(missing_g_files) > MAX_MISSING_G_FILES_REPORTED:
+        missing_g_files_reported = missing_g_files[:MAX_MISSING_G_FILES_REPORTED]
+        missing_g_files_truncated = True
+    else:
+        missing_g_files_reported = list(missing_g_files)
+        missing_g_files_truncated = False
     coverage = {
         "planned": len(planned),
         "realized_adapter": len(realized_adapter),
-        "realized_g_cells": len(realized_g),
+        "realized_g_cells": len(realized_g_cells_list),
         "missing_adapters": missing_adapters,
         "missing_g_cells": missing_g_cells,
+        # New file-axis fields (round-11). The producer side (``phase2``
+        # in this file) and the consumer side (``_assert_h2_keys`` in
+        # ``scripts/i628_analysis.py``) both enumerate the SAME grid;
+        # the sentinel now reports the file-axis grid coverage too so
+        # downstream consumers can probe column-level shortfalls without
+        # walking the on-disk tree.
+        "expected_g_files": len(expected_g_files),
+        "realized_g_files": len(expected_g_files) - len(missing_g_files),
+        "missing_g_files_count": len(missing_g_files),
+        "missing_g_files": missing_g_files_reported,
+        "missing_g_files_truncated": missing_g_files_truncated,
         "complete": coverage_complete,
         # Back-compat keys for the round-7 contract (downstream consumers
         # that read ``coverage.realized`` / ``coverage.missing`` see the
         # ADAPTER axis, the original Phase-1 grid this finalizer was first
-        # written for). Round-10 callers should prefer the explicit
+        # written for). Round-10+ callers should prefer the explicit
         # ``realized_adapter`` / ``realized_g_cells`` / ``missing_adapters``
-        # / ``missing_g_cells`` fields.
+        # / ``missing_g_cells`` / ``missing_g_files`` fields.
         "realized": len(realized_adapter),
         "missing": missing_adapters,
     }
     if not coverage_complete:
+        first_missing_file = missing_g_files[0] if missing_g_files else "n/a"
         logger.warning(
-            "[finalize] PARTIAL coverage: adapters=%d/%d, g_cells=%d/%d "
-            "(missing %d adapters, %d g_cells; first missing adapter=%s, first missing g_cell=%s). "
+            "[finalize] PARTIAL coverage: adapters=%d/%d, g_files=%d/%d "
+            "(missing %d adapters, %d g_files spanning %d cells; "
+            "first missing adapter=%s, first missing g_file=%s). "
             "Emitting epm:progress (NOT epm:results) and suppressing [phase=done].",
             len(realized_adapter),
             len(planned),
-            len(realized_g),
-            len(planned),
+            len(expected_g_files) - len(missing_g_files),
+            len(expected_g_files),
             len(missing_adapters),
+            len(missing_g_files),
             len(missing_g_cells),
             missing_adapters[0] if missing_adapters else "n/a",
-            missing_g_cells[0] if missing_g_cells else "n/a",
+            first_missing_file,
         )
     summary = (
         f"issue-628 dispatcher complete: {len(realized_adapter)}/{len(planned)} adapters, "
-        f"{len(realized_g)}/{len(planned)} g_cells "
+        f"{len(expected_g_files) - len(missing_g_files)}/{len(expected_g_files)} g_files "
         f"(arms={sorted({c[0] for c in planned})}, seeds={list(args.seeds)}, "
         f"smoke={args.smoke})"
         if coverage_complete
         else (
             f"issue-628 dispatcher PARTIAL: adapters={len(realized_adapter)}/{len(planned)}, "
-            f"g_cells={len(realized_g)}/{len(planned)}; "
+            f"g_files={len(expected_g_files) - len(missing_g_files)}/{len(expected_g_files)} "
+            f"({len(realized_g_cells_list)}/{len(planned)} cells fully G-evaluated); "
             f"{len(missing_adapters)} cells missing a trained Phase-1 adapter, "
-            f"{len(missing_g_cells)} cells missing Phase-2 G-cell output "
+            f"{len(missing_g_files)} G-cell files missing across "
+            f"{len(missing_g_cells)} cells "
             f"(arms={sorted({c[0] for c in planned})}, seeds={list(args.seeds)})"
         )
     )
