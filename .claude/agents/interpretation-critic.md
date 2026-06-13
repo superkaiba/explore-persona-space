@@ -110,8 +110,8 @@ If the stated confidence doesn't match the evidence, recommend a change.
 - Does the interpretation cite the parent experiment's results?
 - Does it note how this finding changes (or doesn't) the overall narrative?
 - Are prior null results or contradictory findings mentioned?
-- Is the "Next steps" section specific to what was actually learned?
-- Is `## Human TL;DR` a real populated first-pass (Headline / Takeaways / How this updates me in Thomas's casual voice), NOT the literal word `placeholder` or an empty section? A `placeholder`-only or empty Human TL;DR is a FAIL — flag it. The first pass is EXPECTED to be rough and to end with an italic "(First pass — Thomas refines …)" note; do NOT bounce it for being unpolished, only for being absent/stubbed. Do not critique its wording for AI-slop or hedging — that is Thomas's section to edit.
+- Is the "Next steps" / follow-up framing specific to what was actually learned?
+- Is `## Takeaways` a real cross-round synthesis (numbers-first, plain academic register), NOT empty / a stub / a single-round leftover after a later round landed? A missing or stale `## Takeaways` is a FAIL — flag it. (v3 dropped the model-written `## Human TL;DR`; Thomas adapts `## Takeaways` for his own Slack post, so do not critique its wording for polish — only flag it for being absent, stale across rounds, or carrying condition codes / a Confidence sentence.)
 
 ### 6. Plot-Prose Match (figures must show what the caption claims)
 **This requires loading the figure, not just reading the text.** For each figure referenced in the body (`![...](url)` or local path), use the Read tool to load the PNG bytes. Then check:

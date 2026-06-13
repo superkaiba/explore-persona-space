@@ -6,7 +6,7 @@ description: >
   reads state from `body.md` frontmatter + `events.jsonl` markers under
   `tasks/<status>/<N>/`, and dispatches the next action (clarify ->
   adversarial-planner -> approval -> worktree + dispatch specialist ->
-  preflight -> run -> analyzer -> humanize-loop (TL;DR) ->
+  preflight -> run -> analyzer -> humanize-loop (clean-result prose) ->
   free-analysis-followup-autorun (if any) ->
   clean-result-critic -> test-verdict -> auto-complete).
   clean-result-critic PASS (or test-verdict PASS for
@@ -4171,30 +4171,39 @@ no separate task is created. The analyzer:
 Posts `epm:clean-result-drafted v1` on the source task with the title
 and a 2-sentence recap.
 
-Then proceed to **9a-humanize (TL;DR humanize-loop pass)** before
-advancing to clean-result-critic.
+Then proceed to **9a-humanize (clean-result prose humanize-loop pass)**
+before advancing to clean-result-critic.
 
-**9a-humanize. TL;DR humanize-loop pass** (orchestrator-level — only on
-the first time `epm:clean-result-drafted v1` is posted, NOT on round-2/3
-revisions out of 9a-bis)
+**9a-humanize. Clean-result prose humanize-loop pass** (orchestrator-level
+— only on the first time `epm:clean-result-drafted v1` is posted, NOT on
+round-2/3 revisions out of 9a-bis)
 
-The analyzer ran an inline humanize-quick self-pass on the TL;DR block
-during its draft (analyzer.md Step 4.5). This orchestrator step adds the
-second-opinion layer: a real `/humanize loop` invocation with a separate
-hostile critic subagent the analyzer could not spawn from inside its
-own subagent context.
+The analyzer ran an inline humanize-quick self-pass on the reader-facing
+prose during its draft (analyzer.md Step 4.5). This orchestrator step adds
+the second-opinion layer: a real `/humanize loop` invocation with a
+separate hostile critic subagent the analyzer could not spawn from inside
+its own subagent context.
 
-The pass targets the `<section id="tldr">` block ONLY (mirrored to the
-markdown `## TL;DR` H2 if the body shape is markdown rather than the
-legacy HTML card). Design dropdown, figcaption, and reproducibility appendix
-are out of scope — they carry project jargon on purpose, and the
-clean-result-critic in 9a-bis enforces register discipline on them.
+The pass targets the v3 reader-facing prose surfaces — `## Takeaways`
+(the bullet block Thomas adapts for Slack) + `## What I ran` + the
+`## Findings` setup/read prose (bullets). This is exactly what Thomas
+reuses verbatim for Slack and the rolling cross-round synthesis, so its
+register matters most. The `## Data` capsules + example blocks,
+`## Reproducibility` appendix, and figure captions are OUT of scope —
+they carry project jargon on purpose, and the clean-result-critic in
+9a-bis enforces register discipline on them. (Legacy/in-flight v2 bodies:
+the pass targets the `## TL;DR` block — `<section id="tldr">` for the HTML
+card — instead; branch on the body sentinel.) Expect the pass cheaper
+than the v2 era — the v3 surfaces are bullets at ~800 words, not a
+multi-paragraph LessWrong narrative.
 
 **Procedure:**
 
-1. Read the published body via `task.py view <N>`; extract the TL;DR
-   block.
-2. Invoke `/humanize loop` with the TL;DR block as the target. **Read the
+1. Read the published body via `task.py view <N>`; extract the v3 prose
+   surfaces (`## Takeaways` + `## What I ran` + `## Findings` setup/read
+   bullets; for a v2/legacy body extract the `## TL;DR` block instead).
+2. Invoke `/humanize loop` with those prose surfaces as the target.
+   **Read the
    draft file once BEFORE the first Edit on it (and re-Read after any
    compaction)** — the draft is typically written by the critic subagent, so
    it is not in the orchestrator's Edit state, and blind Edits bounce with
@@ -4210,10 +4219,11 @@ clean-result-critic in 9a-bis enforces register discipline on them.
    - interpretation honesty (buried caveats, misplaced hedging)
    - results-writing discipline (effect sizes / named tests in prose,
      Δ-notation, undefined jargon — anti-patterns from CLAUDE.md
-     "Statistics" rules and `verify_task_body.py` Lens 7)
+     "Statistics" rules and the clean-result-critic statistical-framing
+     lens)
 3. Loop until all axes score ≤ 1 OR **3 orchestrator-level cycles**
    reached.
-4. If the loop revised the TL;DR, write the new body to
+4. If the loop revised the prose surfaces, write the new body to
    `/tmp/issue-<N>-humanize-loop.md`, then update via:
    ```bash
    uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-humanize-loop.md
@@ -4378,18 +4388,22 @@ after Step 9a PASS)
 
 Same shape as the interpretation-critic loop, but the critic checks
 STRUCTURE + REGISTER not CONTENT. Content honesty was settled in 9a;
-this layer ensures the body matches the 2-content-section nested-design
-(v2) clean-result shape (per `.claude/skills/clean-results/SPEC.md`):
-three required H2s in order (`## Human TL;DR` / `## TL;DR` /
-`## Reproducibility`), with `## TL;DR` opening `### Motivation` →
-`### What I ran` → `### Findings` (parent) → `#### <finding>` per
-result, and confidence in the H1 title tag only (v2 bodies bear the
-`<!-- clean-result-v2 -->` sentinel). The body reads in the right
-registers — casual first-person inside `## TL;DR`, LessWrong
-research-post register inside each `#### <finding>` H4. Discipline
-rules: see `.claude/skills/clean-results/SPEC.md` (canonical structure,
-registers, exemplars, figure captions, and research-communication
-principles).
+this layer ensures the body matches the v3 clean-result shape (per
+`.claude/skills/clean-results/SPEC.md`): five FLAT H2s in order
+(`## Takeaways` / `## What I ran` / `## Findings` / `## Data` /
+`## Reproducibility`), `## Takeaways` a 3-6-bullet numbers-first skim,
+`## What I ran` carrying `**Why:**` / `**Design:**` / `**Training:**` /
+`**Eval:**` (`**Rounds:**` when >1 round), one `### <finding>` H3 per
+result under `## Findings` with one inline figure each, `## Data` with
+`### Trained on` / `### Evaluated with` / `### Generated`, and confidence
+in the H1 title tag only (v3 bodies bear the `<!-- clean-result-v3 -->`
+sentinel; a stray `## Human TL;DR` / `## TL;DR` is a hard FAIL). The body
+reads in the right register — plain academic, bullets-first, numbers
+bolded. In-flight v2/legacy bodies (no v3 sentinel) keep the
+2-content-section nested-TL;DR shape and are NOT newly hard-FAILed by a
+v3 rule. Discipline rules: see
+`.claude/skills/clean-results/SPEC.md` (canonical structure, register,
+exemplars, figure captions, and research-communication principles).
 
 **Round 1:**
 
@@ -4401,14 +4415,33 @@ dispatching this round's critics.
    latest `epm:interpretation v<n>` event, runs
    `scripts/verify_task_body.py` +
    `scripts/audit_clean_results_body_discipline.py` as authoritative
-   mechanical passes, and scores against 15 lenses including the
-   Lens 7 statistical-framing rule absorbed from the retired
-   `reviewer` agent, Lens 13 planned-vs-actual coverage (added
-   2026-05-27 after task #391's C-axis silent drop), Lens 14
-   binding-concerns audit (task #455), and Lens 15
-   contaminated/failed-data-gate-arm check (task #407). Posts
-   `epm:clean-result-critique v1` on the source
-   task with PASS or REVISE.
+   mechanical passes, and scores against the v3 lens set (per
+   `.claude/agents/clean-result-critic.md`) — including the
+   statistical-framing rule, planned-vs-actual coverage, the
+   binding-concerns audit, the contaminated/failed-data-gate-arm check,
+   and the v3 Takeaways / Conciseness / Data lenses. Posts
+   `epm:clean-result-critique v1` on the source task with PASS or REVISE.
+
+   **Check-21 methodology-doc pass-through.** When the methodology doc
+   exists on the issue worktree branch (the early-spawned
+   `methodology-writer` committed `docs/methodology/issue_<N>.md` at
+   Step 8's results-landed spawn — see § Split schedule below), pass its
+   ABSOLUTE worktree path to BOTH the verifier and the critic so check 21
+   (body Parameters table ⊆ methodology doc §2 complete table) + the
+   critic's Data lens can spot-check the table against ground truth:
+   ```bash
+   DOC_PATH="$WORKTREE/docs/methodology/issue_<N>.md"
+   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N> \
+     ${DOC_PATH:+--methodology-doc "$DOC_PATH"}
+   ```
+   The doc lives on the worktree branch and only reaches the repo-root
+   `main` checkout at the Step 9b auto-merge (AFTER this gate), so a
+   naive main-checkout resolve would miss it — pass the worktree path
+   explicitly. Check 21 NO-OP-PASSes when `--methodology-doc` is omitted
+   or the doc does not yet exist anywhere (e.g. the methodology-writer
+   has not returned), and binds fully at promote-time verify (post-merge,
+   `kind: experiment` only). The critic brief carries the same
+   `methodology_doc_path` field for the Data-lens spot-check.
 
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on
    every round (all-rounds ensemble as of 2026-06-12; previously
@@ -4423,7 +4456,12 @@ dispatching this round's critics.
    the latest `epm:interpretation v<n>` note to a temp file
    (`/tmp/issue-<N>-interpretation-v<n>.md`) and pass that absolute
    path as `interpretation_marker_path` (never an `events.jsonl`
-   path); and dispatch `codex_task.py` for this twin from the repo
+   path); pass the ABSOLUTE issue-worktree
+   `docs/methodology/issue_<N>.md` path as `methodology_doc_path` when
+   the doc exists (so the twin's own `verify_task_body.py` re-run gets
+   `--methodology-doc` and its Data lens can spot-check check 21; omit
+   when the methodology-writer has not yet returned — check 21 NO-OP
+   PASSes); and dispatch `codex_task.py` for this twin from the repo
    root, never an issue-worktree cwd. Posts
    `epm:clean-result-critique-codex v1`. Apply the
    ensemble decision rule (same shape as Step 5c — PASS+PASS, REVISE
@@ -4499,15 +4537,18 @@ Every `kind: experiment` clean-result auto-gains a standalone
 `docs/methodology/issue_<N>.md`, committed to the repo and mirrored to a
 **secret** gist, linked from the clean-result body in TWO places: a
 reader-facing one-line `**Methodology:**` pointer at the TOP of the
-body (immediately after the `<!-- clean-result-v2 -->` sentinel,
-before `## Human TL;DR`) and a `**Methodology reference:**` row in
+body (for a v3 body: immediately after the `<!-- clean-result-v3 -->`
+sentinel, before `## Takeaways`; for an in-flight v2 body: after the
+`<!-- clean-result-v2 -->` sentinel, before `## Human TL;DR` — branch on
+the sentinel) and a `**Methodology reference:**` row in
 `## Reproducibility` (the artifact-index entry). The reference is **findings-blind**: it describes only HOW the
 experiment was run (conditions, training recipe, eval recipe, verbatim
 training / eval / output examples, reproducibility pointers) and never
 restates findings / interpretation / confidence / next-steps. The fresh
 context of the `methodology-writer` agent enforces this structurally —
-the agent never reads `## Human TL;DR`, `## TL;DR`, `## Findings`, the
-H1 confidence tag, or any `epm:interpretation` body. Fires in BOTH
+the agent never reads `## Takeaways`, `## Findings`, the H1 confidence
+tag, or any `epm:interpretation` body (for an in-flight v2 body: never
+`## Human TL;DR` / `## TL;DR` either). Fires in BOTH
 <!-- example: anti-pattern -->
 interactive and autonomous sessions identically. Auto-continue (NOT a
 new `AskUserQuestion` gate); the halt-criterion contract is preserved.
@@ -4650,9 +4691,10 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    `## Reproducibility` H2
    from the task body into a temp file and hand the agent ONLY that
    path — never the full `body.md`. Either way, this is what physically enforces
-   findings-blindness: `## TL;DR` / `## Findings` / the H1 confidence
-   tag never enter the agent's context. Prompt discipline is defense in
-   depth on top of this structural cut, not the primary mechanism:
+   findings-blindness: `## Takeaways` / `## Findings` / the H1 confidence
+   tag (v2/legacy: `## Human TL;DR` / `## TL;DR`) never enter the agent's
+   context. Prompt discipline is defense in depth on top of this
+   structural cut, not the primary mechanism:
    ```bash
    BODY_PATH=$(uv run python scripts/task.py find <N>)/body.md
    REPRO_FILE=$(mktemp -t issue<N>-reproducibility.XXXXXX.md)
@@ -4741,10 +4783,14 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    EXTEND-pass step-7 delta above).
 
    (a) **Top of body — the reader-facing pointer.** Insert exactly
-   this line immediately AFTER the `<!-- clean-result-v2 -->` sentinel
-   (i.e. right under the H1 title), BEFORE `## Human TL;DR`, with a
-   blank line on each side (legacy bodies without the sentinel:
-   directly under the H1 title line instead):
+   this line immediately AFTER the clean-result sentinel (i.e. right
+   under the H1 title), BEFORE the first content H2, with a blank line on
+   each side. Branch on the sentinel:
+   - **v3 body** (`<!-- clean-result-v3 -->`): insert after that
+     sentinel, BEFORE `## Takeaways`.
+   - **In-flight v2 body** (`<!-- clean-result-v2 -->`): insert after
+     that sentinel, BEFORE `## Human TL;DR`.
+   - **Legacy body** (no sentinel): directly under the H1 title line.
    ```
    **Methodology:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
    ```
@@ -4911,7 +4957,19 @@ The autonomous flow:
    Step 10b would post; sharing the marker means the dashboard +
    downstream readers don't care which site fired the proposer).
 3. Parse the proposals, keep those with `auto_run: yes` in ranked
-   order, and PARTITION them by `question_relation`. **Untagged
+   order, and PARTITION them by `question_relation`. **The routing
+   litmus is the Takeaways test:** *would the result rewrite THIS
+   issue's `## Takeaways`?* If yes → `same` (stays on this issue via the
+   same-issue follow-up loop, never a child). Changing method, dose,
+   panel, seeds, eval surface, prompt bank, or adding a control/baseline
+   on the SAME question is ALWAYS `same`. `substantially-different` is
+   reserved for work that would change the task's `## Goal` /
+   open-questions anchor — a genuinely new question. This bias-toward-
+   same-issue litmus is the same one the `follow-up-proposer` applies
+   when tagging (`.claude/agents/follow-up-proposer.md` §
+   "question_relation tag — criteria") — the partition just consumes its
+   tags; when a tag looks miscast against the litmus, treat it like an
+   untagged proposal (re-spawn-once below). **Untagged
    proposals — freshness guard:** the legacy fallback (treat an
    untagged proposal as `substantially-different` so nothing in
    flight breaks) applies ONLY when the `epm:follow-ups v1` marker
@@ -5410,14 +5468,19 @@ The proposer outputs 1-3 concrete follow-up proposals, each with:
 
 Post as `epm:follow-ups v1` event on the completed task.
 
-**Route the user's pick by `question_relation`** (untagged proposals:
-the treat-as-`substantially-different` fallback applies only when the
-`epm:follow-ups v1` marker was posted before 2026-06-09; on a newer
-marker the missing tag is a proposer-contract violation — classify
-the picked proposal yourself against
-`.claude/agents/follow-up-proposer.md` § "question_relation tag —
-criteria" and note the violation in the resulting
-`epm:followup-scope v1` / child-creation marker):
+**Route the user's pick by `question_relation`** — the litmus is the
+Takeaways test: *would the result rewrite THIS issue's `## Takeaways`?*
+yes → `same` (same-issue loop), no → `substantially-different` (child).
+Changing method/dose/panel/seeds/eval-surface/prompt-bank or adding a
+control on the same question is `same`; only a result that would move the
+task's `## Goal` / open-questions anchor is `substantially-different`.
+(Untagged proposals: the treat-as-`substantially-different` fallback
+applies only when the `epm:follow-ups v1` marker was posted before
+2026-06-09; on a newer marker the missing tag is a proposer-contract
+violation — classify the picked proposal yourself against the
+Takeaways litmus + `.claude/agents/follow-up-proposer.md` §
+"question_relation tag — criteria" and note the violation in the
+resulting `epm:followup-scope v1` / child-creation marker):
 
 - **`same`** — do NOT file a child task. Post `epm:followup-scope v1`
   on this task (`source: step-10b-pick`, fields per workflow.yaml §

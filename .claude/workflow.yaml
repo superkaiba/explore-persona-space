@@ -965,20 +965,26 @@ ensemble_review:
       notes: |
         Final adversarial gate before status:awaiting_promotion (as of
         2026-05-13 — absorbed the retired reviewer step's statistical-framing
-        rule as Lens 7). Ensembled on ALL rounds 1-3 (round-1-only policy
-        reversed 2026-06-12). 15 lenses total against the 2-content-section
-        nested-design (v2) spec (Lens 4 merged into Lens 2): 1 title,
-        2 TL;DR nested design (### Motivation / ### What I ran /
-        ### Findings -> #### <finding> per result; absorbs the retired
-        Details-narrative lens), 3 inline figure per finding,
-        5 reproducibility (confidence in H1 title tag only for v2 bodies),
-        6 voice incl. the byte-identical ban, 7 statistical-framing rule,
-        8 mentor-facing title only, 9 one-takeaway-one-figure per finding,
-        10 eval-probe descriptions inside ## TL;DR, 11 raw alongside
-        processed, 12 story arc present, 13 planned-vs-actual coverage,
-        14 binding-concerns audit, 15 headline not resting on a
-        contaminated / failed-data-gate arm. Mechanical pre-passes:
-        verify_task_body.py + audit_clean_results_body_discipline.py.
+        rule). Ensembled on ALL rounds 1-3 (round-1-only policy reversed
+        2026-06-12). Scores against the v3 clean-result spec (five flat H2s:
+        ## Takeaways / ## What I ran / ## Findings / ## Data /
+        ## Reproducibility; sentinel <!-- clean-result-v3 -->; 2026-W24;
+        v2/legacy bodies keep the grandfathered 2-content-section
+        nested-TL;DR shape, never newly hard-FAILed). Authoritative lens
+        set in clean-result-critic.md: title; v3-structure (Takeaways 3-6
+        bullets numbers-first + cross-round-synthesis currency; What I ran
+        **Why:**/**Design:**/**Training:**/**Eval:** slots; Findings
+        ### <finding> skeleton); inline figure per finding (incl.
+        setup/read pairing); reproducibility (Parameters slimmed; confidence
+        in H1 title tag only); Data (capsule trio, subset disclosure,
+        complete-artifact link liveness, methodology-doc spot-check);
+        Conciseness (cap adherence + bullets-over-prose); voice incl. the
+        byte-identical ban; statistical-framing; mentor-facing title only;
+        one-takeaway-one-figure per finding; raw alongside processed;
+        planned-vs-actual coverage; binding-concerns audit; headline not
+        resting on a contaminated / failed-data-gate arm. Mechanical
+        pre-passes: verify_task_body.py (+ --methodology-doc when the doc
+        exists, binds check 21) + audit_clean_results_body_discipline.py.
   not_doubled:
     - upload-verifier      # mechanical artifact checklist, no LLM-judgment value
     - consistency-checker  # mechanical structure check
@@ -1650,11 +1656,11 @@ markers:
   - kind: "epm:humanize-loop"
     posted_by: skill (via /humanize loop)
     when: "Step 9a-humanize"
-    fields: "Final 6-axis scores (vocabulary, structure, rhythm, voice, interpretation honesty, results-writing discipline) for the TL;DR block. Note line: 'converged in cycle K' or 'exited at cap, residual debt: axis X' or 'skipped — /humanize skill not loaded'. Fires once per task on the first epm:clean-result-drafted v1; not re-fired on 9a-bis REVISE rounds."
+    fields: "Final 6-axis scores (vocabulary, structure, rhythm, voice, interpretation honesty, results-writing discipline) for the v3 reader-facing prose surfaces (`## Takeaways` + `## What I ran` + `## Findings` setup/read bullets; for an in-flight v2/legacy body the `## TL;DR` block instead — branch on the sentinel). Note line: 'converged in cycle K' or 'exited at cap, residual debt: axis X' or 'skipped — /humanize skill not loaded'. Fires once per task on the first epm:clean-result-drafted v1; not re-fired on 9a-bis REVISE rounds."
   - kind: "epm:clean-result-critique"
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
-    fields: "PASS/REVISE verdict with 15 lenses (incl. binding-concerns audit, Lens 14; contaminated/failed-data-gate-arm check, Lens 15) against the 2-content-section nested-design (v2) spec (2026-W22, task #454; nested-TL;DR adopted forward-only after #454): title; TL;DR (`### Motivation` + `### What I ran` + `### Findings` (parent) → `#### <finding>` per result for v2-sentinelled bodies — absorbs the retired Details-narrative Lens 4); inline figure inside each `#### <finding>`; Lens 4 merged into Lens 2; Reproducibility (Parameters absorbed here; confidence lives in the H1 title tag only for v2 bodies); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (Methodology corrections no longer a discrete H3); one-takeaway-one-figure per `#### <finding>`; eval-probe descriptions inside `## TL;DR`; raw alongside processed; story arc present; planned-vs-actual coverage; binding-concerns audit (Lens 14, composed onto Lens 13 by task #455); headline must not rest on a contaminated / failed-data-gate arm (Lens 15, post-mortem task #407). Mechanical pre-pass: verify_task_body.py + audit_clean_results_body_discipline.py."
+    fields: "PASS/REVISE verdict against the v3 clean-result spec (five flat H2s — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility`; sentinel `<!-- clean-result-v3 -->`; 2026-W24; v2/legacy bodies keep the grandfathered 2-content-section nested-TL;DR shape, NEVER newly hard-FAILed). v3 lenses (authoritative set in clean-result-critic.md): title; v3-structure (Takeaways 3-6 bullets numbers-first + cross-round-synthesis currency; What I ran `**Why:**`/`**Design:**`/`**Training:**`/`**Eval:**` slots; Findings `### <finding>` skeleton); inline figure inside each `### <finding>` (incl. setup/read pairing); Reproducibility (Parameters SLIMMED to load-bearing subset; confidence in the H1 title tag only); Data (capsule trio identity/why/preprocessing, subset disclosure, complete-artifact link liveness, methodology-doc §2 spot-check via the passed `--methodology-doc`); Conciseness (cap adherence + bullets-over-prose); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (methodology corrections fold into finding prose, no discrete H3); one-takeaway-one-figure per `### <finding>`; raw alongside processed; planned-vs-actual coverage; binding-concerns audit; headline must not rest on a contaminated / failed-data-gate arm. Mechanical pre-pass: verify_task_body.py (`--methodology-doc <issue-worktree-doc-path>` when the doc exists, binds check 21) + audit_clean_results_body_discipline.py."
   - kind: "epm:clean-result-critique-codex"
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis"
@@ -2154,7 +2160,7 @@ markers:
     fields: "child task id, experiment id (DAG row), gpu_hours_est committed, remaining budget headroom, open slots after the spawn. v1."
   - kind: "epm:campaign-child-ingested"
     posted_by: campaign skill (Step 1.1, one per landed child)
-    when: "a child reached awaiting_promotion/completed and the campaign ingested its CRITIC-GATED clean-result (title claim + confidence tag + TL;DR findings) into artifacts/world-model.md"
+    when: "a child reached awaiting_promotion/completed and the campaign ingested its CRITIC-GATED clean-result (title claim + confidence tag + `## Takeaways` + `## Findings` for a v3 child; `## TL;DR` findings for a v2/legacy child) into artifacts/world-model.md"
     fields: "child task id, headline claim, confidence tag, belief_shift (yes|no), dry_counter after the update. v1."
   - kind: "epm:campaign-digest"
     posted_by: campaign skill (Step 1.5, at most every 24h)
@@ -2331,10 +2337,10 @@ steps:
     posts_marker: "epm:interpretation"
     next_expected_step: "9a-humanize"
   - id: "9a-humanize"
-    name: tldr_humanize_loop
+    name: clean_result_prose_humanize_loop
     entry_status_label:
       - interpreting
-    entry_condition: "epm:clean-result-drafted v1 posted (first promotion only — not re-fired on 9a-bis REVISE rounds)"
+    entry_condition: "epm:clean-result-drafted v1 posted (first promotion only — not re-fired on 9a-bis REVISE rounds). Targets the v3 reader-facing prose surfaces (`## Takeaways` + `## What I ran` + `## Findings` setup/read bullets; for an in-flight v2/legacy body the `## TL;DR` block — branch on the sentinel)."
     posts_marker: "epm:humanize-loop"
     next_expected_step: "9a-ter"
   - id: "9a-ter"
