@@ -3747,7 +3747,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/613",
       "status": "followups_running",
-      "title": "Contrastive negatives drag the source marker implant down ~5 nats when their loss slot coincides with the marker slot (MODERATE confidence)"
+      "title": "Removing the answer/marker separator lets the live-negative loss-placement flag suppress the source implant ~5.5 nats and bystander leakage ~3.6 nats \u2014 consistent with a slot-geometry account, though surface-form falsification is still open (MODERATE confidence)"
     },
     "614": {
       "goal": "Determine whether the assistant-twin immunity to implanted sycophancy is role/prior gating or suppression generalizing from the trained default-assistant negative, by retraining the canned software-engineer cells with the assistant persona replaced in the contrastive negative set and re-reading the twin, daycare-teacher, and gradient cells.",

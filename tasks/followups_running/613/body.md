@@ -1,6 +1,8 @@
 ---
-title: Contrastive negatives drag the source marker implant down ~5 nats when their
-  loss slot coincides with the marker slot (MODERATE confidence)
+title: Removing the answer/marker separator lets the live-negative loss-placement
+  flag suppress the source implant ~5.5 nats and bystander leakage ~3.6 nats — consistent
+  with a slot-geometry account, though surface-form falsification is still open (MODERATE
+  confidence)
 kind: experiment
 tags:
 - followup-auto
