@@ -3880,8 +3880,8 @@
     "630": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/630",
-      "status": "planning",
+      "path": "tasks/approved/630",
+      "status": "approved",
       "title": "Migrate gcp.py expected_artifacts_declaration onto the shared artifacts.py builder"
     },
     "631": {
