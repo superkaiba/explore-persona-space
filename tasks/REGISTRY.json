@@ -3820,8 +3820,8 @@
       "goal": "Find the contrastive-negatives count at which source implantation stops growing or collapses, discriminating the schedule-length mechanism from loss-competition.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/622",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/622",
+      "status": "awaiting_promotion",
       "title": "Adding contrastive negatives suppresses the marker implant below its same-T positives-only twin at every dose, but the gap is non-monotonic (smaller at 32:1 than 16:1, largest at 64:1) and the negatives' loss channel stays dead at every level (MODERATE confidence)"
     },
     "623": {
