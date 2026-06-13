@@ -1,6 +1,7 @@
 ---
-title: 'Sweep contrastive negatives to failure: extend the budget sweep beyond 1600
-  until source implantation plateaus or collapses'
+title: Contrastive negatives stop buying implant strength near 64:1, where the dose
+  cell falls 5.8 nats below its same-T positives-only twin and the negatives' loss
+  channel still never wakes up (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:21:43Z'
