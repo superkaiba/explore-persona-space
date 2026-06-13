@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 633,
+  "highest_id": 634,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3905,6 +3905,13 @@
       "path": "tasks/completed/633",
       "status": "completed",
       "title": "Watcher infra-drain pass: execute the PM-curated dispatch queue (~/.eps-autonomous/infra-drain-queue.json) under cap 3"
+    },
+    "634": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/634",
+      "status": "proposed",
+      "title": "Joint UMAP/PCA of behavior vectors with #594 context vectors \u2014 does behavior-vector geometry align with context geometry?"
     },
     "65": {
       "has_clean_result": true,
