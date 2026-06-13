@@ -1,0 +1,1 @@
+{"ts": "2026-06-13T23:29:38Z", "event": "raised", "concern_id": "issue503-judge-modules-uncommitted", "severity": "CONCERN", "summary": "Phase1 rsLoRA-parity gate + Phase2/3 judge path lazy-import explore_persona_space.experiments.issue503 (absent from main); pod cloned from git crashes at first judge call", "raised_by": "code-reviewer", "raised_at_round": 1}
