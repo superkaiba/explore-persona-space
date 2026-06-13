@@ -2192,8 +2192,8 @@
     "423": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/423",
-      "status": "proposed",
+      "path": "tasks/on_hold/423",
+      "status": "on_hold",
       "title": "Reading: Simulators literature (User Modeling / Topic 7)"
     },
     "424": {
