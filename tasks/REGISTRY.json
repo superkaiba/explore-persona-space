@@ -3404,8 +3404,8 @@
     "569": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/569",
-      "status": "proposed",
+      "path": "tasks/archived/569",
+      "status": "archived",
       "title": "GCE workload secrets: migrate from instance metadata to Secret Manager pull-from-VM with narrow IAM"
     },
     "570": {
