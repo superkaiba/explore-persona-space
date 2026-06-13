@@ -24,6 +24,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_628.md](https://github.com/superkaiba/explore-persona-space/blob/6d6d95588d23149e09967b62067bffefd78e1888/docs/methodology/issue_628.md) · [gist](https://gist.github.com/superkaiba/bd16aaeb08ebbc558465287c672256ec)
+
 ## Human TL;DR
 
 **Headline.** I rebuilt the marker rig the way it "should" be — no `\n\n` separator between the response and the marker, and contrastive negatives that actually carry a learning signal on the end-of-response slot instead of the dead trailing token — and measured leakage across 16 training contexts. Bystander leakage didn't go down. The suppression prediction failed in the registered direction; the point estimate sits slightly opposite of the prediction but is statistically indistinguishable from zero — call it no movement, not a positive effect in the wrong direction.
@@ -181,6 +183,8 @@ The inertness gate fired clean: paired Full revised (fresh) − reused adapters 
 | Arm slugs (provenance) | `rig_O_sep_deadneg` = Legacy; `rig_N_i537_reuse` = Revised reuse (prior round); `rig_Nplus_canonical` = Full revised; `rig_S_nosep_deadneg` = Sep-only edit; `rig_F_sep_liveneg` = Flag-only edit |
 | On-policy slice | scope-limited to 2 of 16 planned cells due to vLLM 0.11 + rsLoRA EngineCore death; the 2 cells that landed (`rig_O_sep_deadneg_sp_swe_seed42`, `rig_Nplus_canonical_sp_swe_seed42`) are reported as a single-source slice |
 | Backend / compute | GCP `a2-ultragpu-1g` (4× A100-80), instance `eps-issue-628`, `max_run_duration=30h`; partial-OK launcher salvaged Phase 1 after a memory bug on the 8-shot worked-example context, then resumed under chunked band-probe forward |
+
+**Methodology reference:** [docs/methodology/issue_628.md](https://github.com/superkaiba/explore-persona-space/blob/6d6d95588d23149e09967b62067bffefd78e1888/docs/methodology/issue_628.md) · [gist](https://gist.github.com/superkaiba/bd16aaeb08ebbc558465287c672256ec)
 
 **Artifacts:**
 
