@@ -1,7 +1,8 @@
 ---
-title: Contrastive negatives stop buying implant strength near 64:1, where the dose
-  cell falls 5.8 nats below its same-T positives-only twin and the negatives' loss
-  channel still never wakes up (MODERATE confidence)
+title: Adding contrastive negatives degrades the marker implant continuously with
+  dose; the gap to the same-T positives-only twin crosses the frozen EOS-margin band
+  at every level and the seed-mean log-prob band at 64:1, while the negatives' loss
+  channel stays dead (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:21:43Z'
