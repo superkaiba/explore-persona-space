@@ -1,9 +1,10 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-Ten passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
-right after pass 2 and the IDLE-UNMAPPED-SESSION pass (item 10) right after
-pass 7, before the GC pass:
+Eleven passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
+right after pass 2, the IDLE-UNMAPPED-SESSION pass (item 10) right after
+pass 7, and the INFRA-DRAIN pass (item 11) between pass 5 (the orphan sweep)
+and pass 6 (session-reconcile), all before the GC pass:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -212,6 +213,38 @@ pass 7, before the GC pass:
    zombie-wrapper contract; records land in
    ``~/.eps-autonomous/idle-unmapped-events.jsonl`` (no task to carry a
    marker, by definition). Daemon-gated.
+11. **Infra-drain pass (execute the PM-adjudicated dispatch queue; task
+   #633; runs between pass 5 and pass 6).** The PM session's standing infra
+   auto-dispatch rule adjudicates which ``proposed`` kind-infra/batch tasks
+   are RIPE and writes them oldest-first to
+   ``~/.eps-autonomous/infra-drain-queue.json`` (``ripe_oldest_first``,
+   ``cap``, ``holds`` {id: reason}, ``updated_ts``). This pass EXECUTES that
+   file with zero LLM judgment: it spawns ``spawn-issue --issue <N> --auto``
+   for the oldest listed IDs into free slots under the cap, where free =
+   max(0, cap - occupied - pending): occupied = kind-infra/batch tasks at
+   :data:`INFRA_DRAIN_OCCUPIED_STATUSES` (fail-CLOSED — any status-read
+   failure skips dispatching this tick), pending = non-stale registrations
+   of still-``proposed`` drain-kind (or unreadable) tasks. Per-ID guards,
+   each with a logged skip reason: PM hold; existing
+   ``issue-<N>.json``/``manual-issue-<N>.json`` registration (a
+   dead-at-boot registration — still-``proposed`` task, older than
+   ``EPM_INFRA_DRAIN_STALE_REG_GRACE_S`` (default 30 min), session
+   definitively not live — is STALE and stops blocking; ANY missing signal
+   fails toward keep-blocking); status != ``proposed``; kind not in
+   :data:`INFRA_DRAIN_KINDS` (loud every tick — a mis-kinded queue entry
+   would auto-approve GPU spend outside the cap); and a retry budget whose
+   backoff window (``EPM_INFRA_DRAIN_BACKOFF_S``, default 1 h) ALWAYS binds
+   while a fresh PM ``updated_ts`` resets only the attempt COUNT
+   (``EPM_INFRA_DRAIN_MAX_ATTEMPTS``, default 3 per adjudication epoch;
+   future timestamps clamped). The PM remains the ONLY ripeness judge —
+   missing/empty/invalid queue file is a logged no-op; un-riping an ID =
+   rewriting the file. Attempt state lives in
+   ``~/.eps-autonomous/infra-drain-state.json`` (self-pruned to the queue's
+   ID set; not a GC target). Kill switch ``EPM_DISABLE_INFRA_DRAIN=1``;
+   daemon-gated like every spawning pass; dispatch markers carry
+   :data:`_INFRA_DRAIN_NOTE_SENTINEL` so they never reset the
+   orphan/stalled staleness clocks. ``--infra-drain-only`` runs just this
+   pass (pair with ``--dry-run`` for a live smoke).
 
 Why each pass exists
 --------------------
@@ -624,6 +657,14 @@ _IDLE_UNMAPPED_STOP_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-sto
 _IDLE_UNMAPPED_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-alert]"
 _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-stop-failed]"
 
+# Substring stamped into the marker the infra-drain pass posts after
+# dispatching an autonomous session for a PM-queue ID (task #633). The #633
+# task itself becomes ACTIVE seconds after dispatch — a watcher-authored
+# dispatch note must never count as "real progress" for the orphan/stalled
+# staleness clocks, or it would mask a subsequent stall of the very session
+# it just spawned.
+_INFRA_DRAIN_NOTE_SENTINEL = "[autonomous_session_watch:infra-drain-dispatch]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -651,6 +692,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _IDLE_UNMAPPED_STOP_NOTE_SENTINEL,
         _IDLE_UNMAPPED_ALERT_NOTE_SENTINEL,
         _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL,
+        _INFRA_DRAIN_NOTE_SENTINEL,
     }
 )
 
@@ -4521,6 +4563,857 @@ def _process_orphan_task(
         )
 
 
+# ─── infra-drain pass (execute the PM-adjudicated dispatch queue; #633) ──────
+#
+# The PM session's standing infra auto-dispatch rule (research-pm.md
+# § Standing rule — infra auto-dispatch) adjudicates which `proposed`
+# kind:infra/batch tasks are RIPE and writes them, oldest-first, to
+# ``~/.eps-autonomous/infra-drain-queue.json``. This pass EXECUTES that file:
+# with zero LLM judgment it spawns ``spawn-issue --auto`` sessions for queue
+# IDs still at ``proposed``, into free slots under the cap, with per-ID
+# guards (holds, existing registration, status, kind, retry backoff) so a
+# held / already-running / repeatedly-failing / mis-kinded ID is never
+# dispatched or tight-looped. The PM remains the ONLY ripeness judge; a
+# missing/empty/invalid queue file is a logged no-op. Durably replaces the
+# PM-session-scoped hourly cron stopgap (which dies with the PM session).
+
+# Basenames under AUTONOMOUS_REGISTRY_DIR. Resolved via path FUNCTIONS (the
+# `_vm_disk_state_path` pattern) so the test fixture's AUTONOMOUS_REGISTRY_DIR
+# monkeypatch isolates them; neither matches any existing watcher/GC/spawn
+# glob, and the state file self-prunes to the queue's ID set, so it is
+# deliberately NOT in _GC_TARGETS.
+INFRA_DRAIN_QUEUE_BASENAME = "infra-drain-queue.json"
+INFRA_DRAIN_STATE_BASENAME = "infra-drain-state.json"
+# Used only when the queue file omits `cap` (the body names 3 as the schema
+# default; a benign omission must not silently disable the drain).
+INFRA_DRAIN_CAP_DEFAULT = 3
+# Task kinds the drain may dispatch. A mis-queued experiment/campaign ID must
+# never be spawned with --auto: it would auto-approve <=100 GPU-h AND sit
+# outside this pass's cap arithmetic.
+INFRA_DRAIN_KINDS = frozenset({"infra", "batch"})
+# Statuses that occupy a drain slot: the task-#633 contract set PLUS
+# followups_running (a same-issue follow-up round is in-flight work holding a
+# session + possibly a pod; counting it only ever dispatches LESS).
+# `proposed`/`blocked`/terminal statuses do not hold slots (a blocked task
+# waits on the user, possibly for days — letting it pin a slot would jam the
+# drain). Subset-of-enum pinned by test.
+INFRA_DRAIN_OCCUPIED_STATUSES = frozenset(
+    {
+        "planning",
+        "plan_pending",
+        "approved",
+        "running",
+        "verifying",
+        "interpreting",
+        "reviewing",
+        "followups_running",
+    }
+)
+# A failed spawn is not retried for this long — the window ALWAYS binds (a
+# fresh PM `updated_ts` resets only the attempt COUNT, never the window:
+# research-pm.md 4b rewrites the file on EVERY STATUS pass, so a window
+# bypass would void the tight-loop guard whenever the PM is active). At the
+# 10-min cron, 1 h is ~6 ticks. env EPM_INFRA_DRAIN_BACKOFF_S.
+INFRA_DRAIN_BACKOFF_S_DEFAULT = 3600.0
+# Attempt budget per PM adjudication epoch (a newer `updated_ts` resets the
+# count). Mirrors the orphan pass's bounded-respawn philosophy.
+# env EPM_INFRA_DRAIN_MAX_ATTEMPTS.
+INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT = 3
+# Dead-at-boot grace: a registration for a still-`proposed` task older than
+# this whose session is definitively NOT live is STALE (stops pinning a
+# pending slot; the ID becomes re-dispatchable under the backoff/attempt
+# budget). 30 min comfortably covers the spawn->boot->status-flip gap
+# (normally <5 min) while bounding a dead-at-boot freeze to ~3 ticks instead
+# of the 14-day registry backstop. env EPM_INFRA_DRAIN_STALE_REG_GRACE_S.
+INFRA_DRAIN_STALE_REG_GRACE_S_DEFAULT = 1800.0
+# A queue `updated_ts` further in the future than this is treated as None —
+# a future epoch would make every tick a "fresh adjudication" and void the
+# attempt budget (tz confusion / LLM timestamp bug; the file is LLM-authored).
+INFRA_DRAIN_FUTURE_TS_TOLERANCE_S = 300.0
+
+
+def _infra_drain_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_INFRA_DRAIN`` is set truthy
+    ("1"/"true"/"yes", case-insensitive). Default enabled. The queue file's
+    own ``cap: 0`` is the PM-side soft pause; this env var is the
+    operator-side hard stop (body-named contract: EPM_DISABLE_INFRA_DRAIN=1)."""
+    raw = os.environ.get("EPM_DISABLE_INFRA_DRAIN", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _infra_drain_backoff_s() -> float:
+    """Retry-backoff window in seconds (env ``EPM_INFRA_DRAIN_BACKOFF_S``;
+    default :data:`INFRA_DRAIN_BACKOFF_S_DEFAULT`). A malformed env value
+    falls back to the default — a typo must not distort the budget (mirrors
+    :func:`_orphan_staleness_s`)."""
+    raw = os.environ.get("EPM_INFRA_DRAIN_BACKOFF_S")
+    if not raw:
+        return INFRA_DRAIN_BACKOFF_S_DEFAULT
+    try:
+        return float(raw)
+    except ValueError:
+        return INFRA_DRAIN_BACKOFF_S_DEFAULT
+
+
+def _infra_drain_max_attempts() -> int:
+    """Attempt cap per PM adjudication epoch (env
+    ``EPM_INFRA_DRAIN_MAX_ATTEMPTS``; default
+    :data:`INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT`). Malformed env value falls back
+    to the default."""
+    raw = os.environ.get("EPM_INFRA_DRAIN_MAX_ATTEMPTS")
+    if not raw:
+        return INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT
+    try:
+        return int(raw)
+    except ValueError:
+        return INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT
+
+
+def _infra_drain_stale_reg_grace_s() -> float:
+    """Dead-at-boot registration grace in seconds (env
+    ``EPM_INFRA_DRAIN_STALE_REG_GRACE_S``; default
+    :data:`INFRA_DRAIN_STALE_REG_GRACE_S_DEFAULT`). Malformed env value falls
+    back to the default."""
+    raw = os.environ.get("EPM_INFRA_DRAIN_STALE_REG_GRACE_S")
+    if not raw:
+        return INFRA_DRAIN_STALE_REG_GRACE_S_DEFAULT
+    try:
+        return float(raw)
+    except ValueError:
+        return INFRA_DRAIN_STALE_REG_GRACE_S_DEFAULT
+
+
+def parse_infra_drain_queue(raw: str) -> dict | None:
+    """Parse + validate the PM queue file content. Returns the canonical dict
+    ``{"ids": list[int], "cap": int, "holds": dict[int, str],
+    "updated_ts": float | None}`` or ``None`` when the content is invalid
+    (the pass then no-ops — fail toward NOT dispatching). ``holds`` preserves
+    the PM's reason strings so skip lines can interpolate them.
+
+    Validity rules:
+
+    - top level must be a JSON object;
+    - ``ripe_oldest_first`` must be a list of ints (missing -> invalid: the
+      field is the file's entire point); bools rejected; order-preserving
+      dedup (first occurrence wins);
+    - ``cap`` missing -> :data:`INFRA_DRAIN_CAP_DEFAULT`; present but not an
+      int >= 0 -> invalid (a garbled cap must not silently become 3);
+    - ``holds`` missing -> empty; present but not a dict -> invalid; keys are
+      int()-parsed (the live file uses string keys); an unparseable key ->
+      invalid (a malformed hold must never be silently ignored — that would
+      DISPATCH a held ID);
+    - ``updated_ts`` parsed via :func:`_parse_event_ts` (ISO-8601 Z);
+      unparseable -> ``None`` (only weakens attempt-reset, never dispatch
+      eligibility). The FUTURE-ts clamp lives in :func:`decide_infra_drain`
+      (pure, testable); the executor mirrors it for the log line.
+    """
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    ids_raw = data.get("ripe_oldest_first")
+    if not isinstance(ids_raw, list):
+        return None
+    ids: list[int] = []
+    for x in ids_raw:
+        if isinstance(x, bool) or not isinstance(x, int):
+            return None
+        if x not in ids:
+            ids.append(x)
+    cap = data.get("cap", INFRA_DRAIN_CAP_DEFAULT)
+    if isinstance(cap, bool) or not isinstance(cap, int) or cap < 0:
+        return None
+    holds_raw = data.get("holds", {})
+    if not isinstance(holds_raw, dict):
+        return None
+    holds: dict[int, str] = {}
+    for key, reason in holds_raw.items():
+        try:
+            holds[int(key)] = str(reason)
+        except (TypeError, ValueError):
+            return None
+    return {
+        "ids": ids,
+        "cap": cap,
+        "holds": holds,
+        "updated_ts": _parse_event_ts(data.get("updated_ts")),
+    }
+
+
+def _cheap_skip_reason(
+    i: int,
+    holds: dict[int, str],
+    registered: set[int],
+    attempts: dict[int, dict],
+    now: float,
+    queue_updated_ts: float | None,
+    *,
+    backoff_s: float,
+    max_attempts: int,
+) -> str | None:
+    """The per-ID guards computable WITHOUT ``task.py`` subprocesses. Returns
+    the skip reason or ``None`` (eligible so far). Used VERBATIM by both
+    :func:`decide_infra_drain` (guards 1-3) and the executor's cheap
+    pre-filter — single source of truth, no predicate drift.
+
+      1. ``i in holds``                         -> ``"held"``
+      2. ``i in registered``                    -> ``"already-registered"``
+         (``registered`` = NON-STALE registrations; the executor pre-filter
+         passes the raw registration-ID set — a stale registration makes the
+         ID MORE eligible, so pre-filtering on the raw set risks only a
+         false skip toward the next tick)
+      3. budget — the BACKOFF WINDOW ALWAYS BINDS (a fresh PM ``updated_ts``
+         resets only the attempt COUNT, never the window):
+           ``now - last_attempt_ts < backoff_s``  -> ``"backoff"`` (always)
+           ``attempts >= max_attempts`` AND NOT
+           ``queue_updated_ts > last_attempt_ts`` -> ``"attempts-exhausted"``
+         Records with malformed ``last_attempt_ts`` were dropped at
+         state-load time (defensive normalize, logged), so ``last`` here is
+         numeric whenever present.
+    """
+    if i in holds:
+        return "held"
+    if i in registered:
+        return "already-registered"
+    rec = attempts.get(i) or {}
+    last = rec.get("last_attempt_ts")
+    if isinstance(last, int | float) and not isinstance(last, bool):
+        if now - last < backoff_s:
+            return "backoff"  # ALWAYS binds
+        fresh = queue_updated_ts is not None and queue_updated_ts > last
+        if not fresh and rec.get("attempts", 0) >= max_attempts:
+            return "attempts-exhausted"  # fresh PM write resets the COUNT only
+    return None
+
+
+def decide_infra_drain(
+    ids: list[int],
+    cap: int,
+    holds: dict[int, str],
+    statuses: dict[int, str | None],
+    kinds: dict[int, str | None],
+    registered: set[int],
+    occupied_active: int,
+    pending: int,
+    attempts: dict[int, dict],
+    now: float,
+    queue_updated_ts: float | None,
+    *,
+    backoff_s: float = INFRA_DRAIN_BACKOFF_S_DEFAULT,
+    max_attempts: int = INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT,
+) -> tuple[list[int], list[tuple[int, str]]]:
+    """Pure decision: ``(dispatch_ids_in_order, skipped [(id, reason)])``.
+
+    ``ids`` is the validated ``ripe_oldest_first`` list; ``registered`` the
+    NON-STALE registrations among the queue IDs; ``occupied_active`` the
+    count of kind-infra/batch tasks at :data:`INFRA_DRAIN_OCCUPIED_STATUSES`;
+    ``pending`` the executor-precomputed count of ALL non-stale registrations
+    (queue AND non-queue) whose task is still ``proposed`` with a drain kind,
+    plus any whose status/kind is unreadable (conservative — see
+    :func:`_infra_drain_pending`). ``free = max(0, cap - occupied_active -
+    pending)``.
+
+    FUTURE-TS CLAMP (first statement, pure + testable): a
+    ``queue_updated_ts`` further than
+    :data:`INFRA_DRAIN_FUTURE_TS_TOLERANCE_S` past ``now`` is treated as
+    ``None`` — a future epoch would make every tick a "fresh adjudication"
+    and void the attempt budget.
+
+    Per-ID guard order (cheapest first; every skip carries a reason string):
+
+      1-3. :func:`_cheap_skip_reason` (held / already-registered / backoff /
+           attempts-exhausted — backoff always binds)
+      4. status unreadable -> ``"status-unreadable"`` (fail toward not
+         dispatching); status != ``proposed`` -> ``"status-<status>"``
+      5. kind not in :data:`INFRA_DRAIN_KINDS` -> ``"kind-<kind|unreadable>"``
+      6. no free slot -> ``"cap-full"``
+      7. else dispatch; one attempt per ID per cycle
+    """
+    if queue_updated_ts is not None and queue_updated_ts > now + INFRA_DRAIN_FUTURE_TS_TOLERANCE_S:
+        queue_updated_ts = None  # future-ts clamp; the executor logs the condition loudly
+    free = max(0, cap - occupied_active - pending)
+    dispatch: list[int] = []
+    skipped: list[tuple[int, str]] = []
+    for i in ids:
+        reason = _cheap_skip_reason(
+            i,
+            holds,
+            registered,
+            attempts,
+            now,
+            queue_updated_ts,
+            backoff_s=backoff_s,
+            max_attempts=max_attempts,
+        )
+        if reason is not None:
+            skipped.append((i, reason))
+            continue
+        status = statuses.get(i)
+        if status is None:
+            skipped.append((i, "status-unreadable"))
+            continue
+        if status != "proposed":
+            skipped.append((i, f"status-{status}"))
+            continue
+        kind = kinds.get(i)
+        if kind not in INFRA_DRAIN_KINDS:
+            skipped.append((i, f"kind-{kind or 'unreadable'}"))
+            continue
+        if free <= 0:
+            skipped.append((i, "cap-full"))
+            continue
+        dispatch.append(i)
+        free -= 1
+    return dispatch, skipped
+
+
+def _infra_drain_queue_path() -> Path:
+    """Path of the PM-authored queue file (resolved at call time so the test
+    fixture's ``AUTONOMOUS_REGISTRY_DIR`` monkeypatch isolates it)."""
+    return AUTONOMOUS_REGISTRY_DIR / INFRA_DRAIN_QUEUE_BASENAME
+
+
+def _infra_drain_state_path() -> Path:
+    """Path of the consolidated per-ID attempt/backoff state file."""
+    return AUTONOMOUS_REGISTRY_DIR / INFRA_DRAIN_STATE_BASENAME
+
+
+def _load_infra_drain_state() -> dict:
+    """Read the attempt/backoff state (``{"attempts": {int: rec}}``; empty on
+    absent/garbled, mirroring :func:`_load_orphan_state`). On-disk keys are
+    strings (JSON); they are int-normalized here. DEFENSIVE NORMALIZE: drop
+    (with a log line) any record whose ``last_attempt_ts`` is not numeric or
+    whose key is not an int — a garbled record must not silently bypass the
+    budget."""
+    path = _infra_drain_state_path()
+    if not path.is_file():
+        return {"attempts": {}}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {"attempts": {}}
+    if not isinstance(data, dict) or not isinstance(data.get("attempts"), dict):
+        return {"attempts": {}}
+    attempts: dict[int, dict] = {}
+    for key, rec in data["attempts"].items():
+        try:
+            issue = int(key)
+        except (TypeError, ValueError):
+            print(f"  infra-drain: dropping garbled state record (non-int key {key!r})")
+            continue
+        last = rec.get("last_attempt_ts") if isinstance(rec, dict) else None
+        if isinstance(last, bool) or not isinstance(last, int | float):
+            print(
+                f"  infra-drain: dropping garbled state record for #{issue} "
+                f"(non-numeric last_attempt_ts {last!r})"
+            )
+            continue
+        attempts[issue] = rec
+    return {"attempts": attempts}
+
+
+def _save_infra_drain_state(state: dict) -> None:
+    """Persist the attempt/backoff state atomically (temp + rename, mirroring
+    :func:`_save_orphan_state`). Int keys serialize as strings; the loader
+    normalizes them back."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _infra_drain_state_path()
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(state, indent=2))
+    tmp.replace(dest)
+
+
+def _task_status_kind(issue: int) -> tuple[str | None, str | None]:
+    """``(status, kind)`` from ONE ``task.py view <N> --json`` subprocess —
+    the same payload :func:`_task_status` parses carries ``frontmatter.kind``,
+    so the kind guard costs zero extra subprocesses. Fail-soft
+    ``(None, None)``."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "view", str(issue), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return (None, None)
+    if out.returncode != 0:
+        return (None, None)
+    try:
+        data = json.loads(out.stdout)
+    except json.JSONDecodeError:
+        return (None, None)
+    fm = data.get("frontmatter") or {}
+    status = data.get("status") or fm.get("status")
+    kind = fm.get("kind")
+    return (
+        status if isinstance(status, str) else None,
+        kind if isinstance(kind, str) else None,
+    )
+
+
+def _infra_drain_registrations() -> dict[int, list[dict]]:
+    """ALL ``issue-<N>.json`` + ``manual-issue-<N>.json`` registration entries
+    per issue (not just queue IDs — the widened pending count needs non-queue
+    ones too). List-valued because an issue can carry BOTH an autonomous and
+    a manual registration; staleness then requires ALL of them stale
+    (fail toward keep-blocking). A garbled entry parses to ``{}`` (which
+    :func:`_infra_drain_stale` classifies NOT stale — conservative)."""
+    out: dict[int, list[dict]] = {}
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return out
+    for prefix in ("issue-", "manual-issue-"):
+        for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{prefix}*.json")):
+            issue = _gc_parse_issue_from_path(path, prefix, "")
+            if issue is None:
+                continue
+            try:
+                entry = json.loads(path.read_text())
+            except (json.JSONDecodeError, OSError):
+                entry = {}
+            if not isinstance(entry, dict):
+                entry = {}
+            out.setdefault(issue, []).append(entry)
+    return out
+
+
+def _infra_drain_stale(
+    reg: dict,
+    live_session_ids: set[str] | None,
+    status: str | None,
+    now: float,
+    grace_s: float,
+) -> bool:
+    """STALE (dead-at-boot) iff ALL of: task status == ``proposed``; the
+    registration's ``spawned_at`` parses AND ``now - spawned_at > grace_s``;
+    the recorded session id is present AND ``live_session_ids`` is available
+    AND the id is NOT in it. ANY missing/unparseable signal -> NOT stale
+    (fail toward keep-blocking — a false-stale could double-spawn; a
+    false-live only delays recovery to the 14-day registry backstop). A
+    STALE registration stops counting toward pending and stops blocking
+    re-dispatch; the backoff/attempt budget bounds the re-dispatch rate."""
+    if status != "proposed":
+        return False
+    spawned_at = reg.get("spawned_at")
+    if isinstance(spawned_at, bool) or not isinstance(spawned_at, int | float):
+        return False
+    if now - spawned_at <= grace_s:
+        return False
+    sid = reg.get("happy_session_id")
+    if not isinstance(sid, str) or not sid:
+        return False
+    if live_session_ids is None:
+        return False
+    return sid not in live_session_ids
+
+
+def _infra_drain_occupancy() -> list[int] | None:
+    """IDs of tasks with kind in :data:`INFRA_DRAIN_KINDS` at
+    :data:`INFRA_DRAIN_OCCUPIED_STATUSES`, via one ``task.py list-by-status
+    --json`` subprocess per status (mirrors :func:`_active_status_tasks` but
+    keeps the ``kind`` field; the IDs feed the cap-full ``occupying=[...]``
+    log line). Returns ``None`` when ANY status read fails — a partial count
+    would UNDER-count and over-dispatch, so the executor skips dispatching
+    this tick on ``None`` (deliberately STRICTER than
+    :func:`_active_status_tasks`' per-status fail-soft, which is safe there
+    because that pass only recovers, never spawns new work). ``kind:
+    campaign`` rows can't match (not in :data:`INFRA_DRAIN_KINDS`)."""
+    occupying: list[int] = []
+    for status in sorted(INFRA_DRAIN_OCCUPIED_STATUSES):
+        try:
+            res = subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "scripts/task.py",
+                    "list-by-status",
+                    "--status",
+                    status,
+                    "--json",
+                ],
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        except (subprocess.SubprocessError, OSError):
+            return None
+        if res.returncode != 0:
+            return None
+        try:
+            rows = json.loads(res.stdout)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(rows, list):
+            return None
+        for row in rows:
+            if not isinstance(row, dict) or row.get("kind") not in INFRA_DRAIN_KINDS:
+                continue
+            tid = row.get("id")
+            if isinstance(tid, int):
+                occupying.append(tid)
+    return occupying
+
+
+def _infra_drain_pending(
+    registrations: dict[int, list[dict]],
+    stale: set[int],
+    status_kind: dict[int, tuple[str | None, str | None]],
+) -> int:
+    """Widened pending count: over ALL non-stale registrations (queue and
+    non-queue), count those whose task is still ``proposed`` with a kind in
+    :data:`INFRA_DRAIN_KINDS` (spawned but ``/issue`` hasn't flipped status
+    yet) PLUS those whose status or kind is UNREADABLE (conservative — an
+    unknown registered task might be a just-spawned infra task; fail toward
+    occupying a slot). Tasks at occupied statuses are already counted in
+    ``occupied_active``; terminal/blocked registrations count zero. Closes
+    both the PM-prunes-a-dispatched-ID overshoot and the status-read-failure
+    undercount."""
+    pending = 0
+    for issue in registrations:
+        if issue in stale:
+            continue
+        status, kind = status_kind.get(issue, (None, None))
+        if status is None or kind is None or (status == "proposed" and kind in INFRA_DRAIN_KINDS):
+            pending += 1
+    return pending
+
+
+def _dispatch_infra_drain(issue: int, slot_desc: str, dry_run: bool) -> bool:
+    """``spawn_session.py spawn-issue --issue <N> --auto`` (the plain
+    command, exactly the PM standing-rule item-3 mechanism; no
+    ``--auto-approve-gpu-hours`` override — spawn_session's default applies,
+    and infra tasks need ~0 GPU). Immediately BEFORE the subprocess,
+    re-checks the registration files one last time and aborts ("lost race to
+    concurrent dispatcher") if one appeared — shrinks the PM-vs-watcher
+    double-spawn window from one-full-pass to ~the spawn subprocess itself.
+    Returns success bool; honours dry_run (logs, never spawns)."""
+    cmd = [
+        "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
+        "--issue", str(issue), "--auto",
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would dispatch infra-drain: {' '.join(cmd)}")
+        return False
+    for basename in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
+        if (AUTONOMOUS_REGISTRY_DIR / basename).exists():
+            print(
+                f"  INFRA-DRAIN ABORT issue #{issue}: lost race to concurrent "
+                f"dispatcher ({basename} appeared since the decision)"
+            )
+            return False
+    res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
+    if res.returncode != 0:
+        print(
+            f"  INFRA-DRAIN DISPATCH FAILED issue #{issue}: {res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return False
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    print(f"  INFRA-DRAIN DISPATCHED issue #{issue} ({slot_desc}): {first_line}")
+    return True
+
+
+def _infra_drain_read_queue() -> dict | None:
+    """Read + parse the queue file; ``None`` (with exactly one header line)
+    when the pass should no-op: file missing, unreadable, or invalid."""
+    path = _infra_drain_queue_path()
+    try:
+        raw = path.read_text()
+    except FileNotFoundError:
+        print(f"infra-drain: no queue file at {path}; skipping")
+        return None
+    except OSError as e:
+        print(f"infra-drain: queue file at {path} unreadable ({e}); skipping")
+        return None
+    queue = parse_infra_drain_queue(raw)
+    if queue is None:
+        print(
+            f"infra-drain: INVALID queue file at {path} (schema violation or "
+            f"torn write); skipping (fail-safe: not dispatching)"
+        )
+    return queue
+
+
+def _infra_drain_record_attempt(
+    attempts: dict[int, dict],
+    issue: int,
+    now: float,
+    queue_updated_ts: float | None,
+    ok: bool,
+) -> None:
+    """Record one dispatch ATTEMPT (success or failure both count, so a
+    failing spawn can't tight-loop). A fresh PM adjudication (``updated_ts``
+    newer than the last attempt) resets the count to 1 first."""
+    rec = attempts.get(issue) or {}
+    last = rec.get("last_attempt_ts")
+    fresh = (
+        queue_updated_ts is not None
+        and isinstance(last, int | float)
+        and not isinstance(last, bool)
+        and queue_updated_ts > last
+    )
+    count = 1 if fresh else int(rec.get("attempts", 0)) + 1
+    attempts[issue] = {
+        "attempts": count,
+        "last_attempt_ts": now,
+        "last_result": "dispatched" if ok else "spawn-failed",
+        "exhausted_logged": False,
+    }
+
+
+def _infra_drain_log_skips(
+    skipped: list[tuple[int, str]],
+    holds: dict[int, str],
+    attempts: dict[int, dict],
+) -> None:
+    """One ``INFRA-DRAIN SKIP`` line per skipped ID. ``held`` interpolates
+    the PM's hold reason; ``attempts-exhausted`` is loud ONCE per epoch
+    (``exhausted_logged`` dedup flag, mirroring the orphan pass's
+    ``alerted``); ``kind-*`` is loud EVERY tick (a mis-kinded queue entry is
+    a PM-side bug needing eyes)."""
+    for issue, reason in skipped:
+        if reason == "held":
+            print(f"  INFRA-DRAIN SKIP issue #{issue} (held: {holds.get(issue, '?')})")
+        elif reason == "attempts-exhausted":
+            rec = attempts.get(issue) or {}
+            if not rec.get("exhausted_logged"):
+                print(
+                    f"  INFRA-DRAIN SKIP issue #{issue} (attempts-exhausted: "
+                    f"{rec.get('attempts', '?')} attempts this PM epoch; parked "
+                    f"until the PM rewrites the queue with a newer updated_ts)",
+                    file=sys.stderr,
+                )
+                rec["exhausted_logged"] = True
+                attempts[issue] = rec
+            else:
+                print(f"  INFRA-DRAIN SKIP issue #{issue} (attempts-exhausted)")
+        elif reason.startswith("kind-"):
+            print(
+                f"  INFRA-DRAIN SKIP issue #{issue} ({reason}): mis-kinded queue "
+                f"entry — only kind infra/batch is drain-dispatchable; fix the "
+                f"PM queue file (research-pm.md standing-rule item 4b)",
+                file=sys.stderr,
+            )
+        else:
+            print(f"  INFRA-DRAIN SKIP issue #{issue} ({reason})")
+
+
+def _infra_drain_prune_save(state: dict, ids: list[int], dry_run: bool) -> None:
+    """Prune state entries whose ID left ``ripe_oldest_first``, then persist
+    atomically. No-op under dry-run (mirror the orphan pass's dry-run
+    discipline: no state write)."""
+    if dry_run:
+        return
+    keep = set(ids)
+    state["attempts"] = {i: rec for i, rec in state["attempts"].items() if i in keep}
+    _save_infra_drain_state(state)
+
+
+def _infra_drain_clamp_future_ts(queue_updated_ts: float | None, now: float) -> float | None:
+    """Executor-side mirror of the decide-side future-ts clamp, so the
+    condition is logged loudly exactly once per tick."""
+    if queue_updated_ts is not None and queue_updated_ts > now + INFRA_DRAIN_FUTURE_TS_TOLERANCE_S:
+        print(
+            f"infra-drain: queue updated_ts is {queue_updated_ts - now:.0f}s in the "
+            f"FUTURE (tz confusion / LLM timestamp bug?); treating it as absent so "
+            f"it cannot void the attempt budget"
+        )
+        return None
+    return queue_updated_ts
+
+
+def _infra_drain_possibly_stale_ids(
+    candidate_ids: set[int],
+    regs: dict[int, list[dict]],
+    now: float,
+) -> set[int]:
+    """Subset of ``candidate_ids`` whose EVERY registration entry is
+    suspicious enough — older than the grace window, recorded session id
+    definitively not live — that the full path must confirm staleness with a
+    status read. Reuses :func:`_infra_drain_stale` with the status check
+    pre-satisfied (``"proposed"``), so the two predicates can never drift.
+
+    Without this probe the pre-filter's all-skipped early exit would park a
+    dead-at-boot registered ID FOREVER (staleness is only computed on the
+    full path, and the full path never runs when the stale ID is the only
+    non-skipped queue ID) — exactly the drain-freeze the stale-registration
+    handling exists to prevent. Costs one daemon RPC, zero ``task.py``
+    subprocesses; only invoked when some queue ID pre-filtered as
+    ``already-registered``."""
+    if not candidate_ids:
+        return set()
+    live_ids = _live_session_ids()  # daemon reachability was gated by the caller
+    grace_s = _infra_drain_stale_reg_grace_s()
+    return {
+        i
+        for i in candidate_ids
+        if regs.get(i)
+        and all(_infra_drain_stale(r, live_ids, "proposed", now, grace_s) for r in regs[i])
+    }
+
+
+def _infra_drain_signals(
+    ids: list[int],
+    holds: dict[int, str],
+    regs: dict[int, list[dict]],
+    now: float,
+) -> tuple[dict[int, tuple[str | None, str | None]], set[int], int]:
+    """Fetch the ``task.py``-backed signals for the full dispatch path:
+    per-ID ``(status, kind)`` for every non-held queue ID and every
+    registration ID, the stale-registration set, and the widened pending
+    count. One ``view`` subprocess per ID; the caller's cheap pre-filter
+    bounds the common nothing-dispatchable tick at zero of these."""
+    fetch_ids = {i for i in ids if i not in holds} | set(regs)
+    status_kind = {i: _task_status_kind(i) for i in sorted(fetch_ids)}
+    live_ids = _live_session_ids()  # daemon reachability was gated by the caller
+    grace_s = _infra_drain_stale_reg_grace_s()
+    stale: set[int] = set()
+    for issue, recs in regs.items():
+        status = status_kind.get(issue, (None, None))[0]
+        if recs and all(_infra_drain_stale(r, live_ids, status, now, grace_s) for r in recs):
+            stale.add(issue)
+            print(
+                f"  infra-drain: STALE registration for issue #{issue} (task still "
+                f"proposed, registration older than grace, session not live) — no "
+                f"longer pins a pending slot; ID re-dispatchable under the budget"
+            )
+    pending = _infra_drain_pending(regs, stale, status_kind)
+    return status_kind, stale, pending
+
+
+def infra_drain_pass(
+    dry_run: bool,
+    now: float | None = None,
+    *,
+    daemon_reachable: bool | None = None,
+) -> None:
+    """Execute the PM-adjudicated infra dispatch queue (task #633). Pure
+    executor — every judgment was the PM session's; every guard here is
+    mechanical. Missing/invalid queue file = logged no-op; daemon-gated like
+    every other spawning pass (spawn POSTs to the Happy daemon RPC)."""
+    if not _infra_drain_enabled():
+        print("infra-drain: disabled via EPM_DISABLE_INFRA_DRAIN; skipping")
+        return
+    queue = _infra_drain_read_queue()
+    if queue is None:
+        return
+    if daemon_reachable is None:
+        daemon_reachable = _daemon_reachable()
+    if not daemon_reachable:
+        print("infra-drain: Happy daemon unreachable; skipping (spawn needs the daemon RPC)")
+        return
+    now = now if now is not None else time.time()
+    ids: list[int] = queue["ids"]
+    cap: int = queue["cap"]
+    holds: dict[int, str] = queue["holds"]
+    queue_updated_ts = _infra_drain_clamp_future_ts(queue["updated_ts"], now)
+    state = _load_infra_drain_state()
+    attempts: dict[int, dict] = state["attempts"]
+    backoff_s = _infra_drain_backoff_s()
+    max_attempts = _infra_drain_max_attempts()
+    regs = _infra_drain_registrations()
+
+    # Cheap pre-filter (single source of truth: the SAME _cheap_skip_reason
+    # decide_infra_drain uses, with `registered` = the raw registration-file
+    # ID set — staleness not yet computed; a stale registration makes the ID
+    # MORE eligible, so pre-filtering on the raw set risks only a false skip
+    # toward the next tick). When every ID pre-filters to a skip, the tick
+    # costs ZERO task.py subprocesses.
+    raw_registered = set(regs) & set(ids)
+    prefilter = {
+        i: _cheap_skip_reason(
+            i,
+            holds,
+            raw_registered,
+            attempts,
+            now,
+            queue_updated_ts,
+            backoff_s=backoff_s,
+            max_attempts=max_attempts,
+        )
+        for i in ids
+    }
+    if all(reason is not None for reason in prefilter.values()):
+        # An "already-registered" pre-filter skip may be rescued by the
+        # stale-registration handling (dead-at-boot session) — that needs a
+        # status read, so such IDs defer the early exit to the full path
+        # when their registration looks suspicious (older than grace +
+        # session not live). Everything else (held / backoff / exhausted /
+        # live-or-fresh registration) early-exits with zero task.py reads.
+        registered_skips = {i for i in ids if prefilter[i] == "already-registered"}
+        if not _infra_drain_possibly_stale_ids(registered_skips, regs, now):
+            print(
+                f"infra-drain: queue={len(ids)} dispatched=0 skipped={len(ids)} "
+                f"(pre-filtered; zero task.py reads this tick)"
+            )
+            _infra_drain_log_skips([(i, prefilter[i]) for i in ids], holds, attempts)
+            _infra_drain_prune_save(state, ids, dry_run)
+            return
+
+    status_kind, stale, pending = _infra_drain_signals(ids, holds, regs, now)
+    registered_nonstale = raw_registered - stale
+    occupying = _infra_drain_occupancy()
+    if occupying is None:
+        print(
+            "infra-drain: occupancy read FAILED for at least one status; "
+            "skipping dispatch this tick (fail-closed: a partial count would "
+            "under-count and over-dispatch past the cap)"
+        )
+        _infra_drain_prune_save(state, ids, dry_run)
+        return
+    occupied_active = len(occupying)
+    statuses = {i: status_kind.get(i, (None, None))[0] for i in ids}
+    kinds = {i: status_kind.get(i, (None, None))[1] for i in ids}
+    dispatch, skipped = decide_infra_drain(
+        ids,
+        cap,
+        holds,
+        statuses,
+        kinds,
+        registered_nonstale,
+        occupied_active,
+        pending,
+        attempts,
+        now,
+        queue_updated_ts,
+        backoff_s=backoff_s,
+        max_attempts=max_attempts,
+    )
+    dispatched = 0
+    for issue in dispatch:
+        slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
+        ok = _dispatch_infra_drain(issue, slot_desc, dry_run)
+        if not dry_run:
+            # Count the ATTEMPT whether or not the spawn succeeded, so a
+            # failing spawn can't tight-loop (the backoff window binds next
+            # tick either way).
+            _infra_drain_record_attempt(attempts, issue, now, queue_updated_ts, ok)
+        if ok:
+            dispatched += 1
+            _post_progress_marker(
+                issue,
+                f"{_INFRA_DRAIN_NOTE_SENTINEL} watcher dispatched autonomous "
+                f"session from the PM infra-drain queue (occupied "
+                f"{occupied_active}+{pending} pending of cap {cap})",
+                dry_run,
+                label="infra-drain",
+            )
+    _infra_drain_log_skips(skipped, holds, attempts)
+    summary = (
+        f"infra-drain: queue={len(ids)} occupied={occupied_active}(+{pending} pending) "
+        f"cap={cap} dispatched={dispatched} skipped={len(skipped)}"
+    )
+    if any(reason == "cap-full" for _i, reason in skipped):
+        summary += f" occupying={sorted(occupying)}"
+    print(summary)
+    _infra_drain_prune_save(state, ids, dry_run)
+
+
 # ─── generalized GC of stale ~/.eps-autonomous/ per-issue files ──────────────
 
 # Task statuses for which per-issue registry / progress / stalled-state files
@@ -7837,6 +8730,13 @@ def main(argv: list[str] | None = None) -> int:
         "respawn / pod-safety / stalled-detector. Useful for debugging the "
         "GC in isolation without waiting on a daemon probe.",
     )
+    parser.add_argument(
+        "--infra-drain-only",
+        action="store_true",
+        help="run ONLY the infra-drain pass (execute the PM dispatch queue) "
+        "and exit; skip every other pass. Mirrors --gc-only; pair with "
+        "--dry-run for the post-merge live smoke against the real queue file.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -7848,6 +8748,12 @@ def main(argv: list[str] | None = None) -> int:
     # doesn't accidentally trip the destructive paths.
     if args.gc_only:
         gc_pass(args.dry_run)
+        return 0
+
+    # --infra-drain-only mirrors --gc-only: run the single pass under the
+    # lock (it probes the daemon itself) and exit.
+    if args.infra_drain_only:
+        infra_drain_pass(args.dry_run, daemon_reachable=_daemon_reachable())
         return 0
 
     # VM disk-headroom: runs FIRST. A full root disk makes every later
@@ -7938,6 +8844,14 @@ def main(argv: list[str] | None = None) -> int:
         daemon_reachable=daemon_reachable,
         live_ids=live_ids if daemon_reachable else None,
     )
+
+    # Infra-drain: execute the PM session's adjudicated infra dispatch queue
+    # (task #633) into free slots under the cap. Pure executor — the PM is
+    # the only ripeness judge; missing/invalid queue file = no-op. Runs AFTER
+    # the respawn/orphan recovery passes so any session THEY spawned this
+    # tick is already registered (the already-registered guard sees it), and
+    # is daemon-gated like every other spawning pass.
+    infra_drain_pass(args.dry_run, daemon_reachable=daemon_reachable)
 
     # Session-reconcile: auto-stop (the default; EPM_SESSION_RECONCILE_AUTOSTOP=0
     # falls back to alert-only) live sessions that outlived their task's
