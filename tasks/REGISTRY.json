@@ -1393,8 +1393,8 @@
     "318": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/318",
-      "status": "proposed",
+      "path": "tasks/on_hold/318",
+      "status": "on_hold",
       "title": "Tie bad persona to behavior that will get disincentivized by future training"
     },
     "319": {
