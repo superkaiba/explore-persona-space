@@ -2326,8 +2326,8 @@
       "goal": "Forecast the (context,behavior)->(context',behavior') leakage cell before finetuning, from training-data + persona-geometry signals.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/440",
-      "status": "proposed",
+      "path": "tasks/on_hold/440",
+      "status": "on_hold",
       "title": "Predict (C,B)->(C',B') leakage before training from geometry + data signals"
     },
     "441": {
