@@ -2805,8 +2805,8 @@
       "goal": "Run the #468 narrow\u2192broad cosine/JS leakage-predictor recipe at \u22653 Qwen-2.5 model sizes (e.g. 1.5B, 7B, 32B) holding the recipe fixed, and report whether the predictor's correlation with measured leakage sharpens or degrades with scale.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/497",
-      "status": "proposed",
+      "path": "tasks/on_hold/497",
+      "status": "on_hold",
       "title": "Does the cosine/JS leakage predictor's accuracy change with model size (Qwen-2.5 1.5B\u219232B)?"
     },
     "498": {
