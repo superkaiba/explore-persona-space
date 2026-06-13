@@ -617,6 +617,49 @@ def _cell_slug(arm: str, cid: str, seed: int) -> str:
     return f"{arm}_{cid}_seed{seed}"
 
 
+def _cells_with_trained_adapter(cells: list[tuple[str, str, int]]) -> list[tuple[str, str, int]]:
+    """Filter ``cells`` to those whose Phase-1 adapter actually trained (#628 r6).
+
+    A cell is considered TRAINED when both its local stop_step JSON and its HF
+    adapter subfolder are present. Phases 2 / 4 enumerate the planned grid;
+    when a Phase-1 worker died mid-queue (#628 r5d band-stop OOM left 20 cells
+    untrained out of 56), downstream phases that ``hf_hub_download`` the
+    adapter crash on those cells. Using this filter is what makes "partial
+    Phase 1 → still run Phases 2/3/4 on what completed" safe; the missing
+    cells surface as a single up-front WARNING + an `[p?-partial] skipping
+    N missing cells` log line, never as a mid-run crash. Phase 3 reuses the
+    external ``REUSE_ARM`` adapter and is unaffected.
+
+    Adapter resolution priority: local stop_step file (fast, no network) →
+    HF Hub list (network call, cached). If neither has the cell, skip.
+    """
+    stop_dir = EVAL / "p1/stop_steps"
+    trained: list[tuple[str, str, int]] = []
+    missing: list[str] = []
+    for arm, cid, seed in cells:
+        slug = _cell_slug(arm, cid, seed)
+        if (stop_dir / f"{slug}.json").exists():
+            trained.append((arm, cid, seed))
+            continue
+        # Local stop-step missing -- check the local adapter dir directly so
+        # the filter still works on a fresh pod that pulled adapters from HF
+        # without re-running Phase 1.
+        if (_adapter_dir(arm, cid, seed) / "adapter_model.safetensors").exists():
+            trained.append((arm, cid, seed))
+            continue
+        missing.append(slug)
+    if missing:
+        logger.warning(
+            "[partial-phase] %d/%d cells lack a trained adapter and will be SKIPPED: %s",
+            len(missing),
+            len(cells),
+            ", ".join(missing)
+            if len(missing) <= 8
+            else f"{len(missing)} cells (first 5: {', '.join(missing[:5])})",
+        )
+    return trained
+
+
 def _cells(args) -> list[tuple[str, str, int]]:
     """The (arm, cid, seed) cell list every phase derives from (PASS_UNIFIED).
 
@@ -885,6 +928,8 @@ def _run_wave(args, phase: str, step: str, n_items: int) -> None:
             cmd.append("--skip-upload")
         if args.enforce_gate:
             cmd.append("--enforce-gate")
+        if getattr(args, "partial_ok", False):
+            cmd.append("--partial-ok")
         logger.info("[wave:%s] worker %d/%d on GPU %s", step, k, workers, pool[k % len(pool)])
         procs.append(subprocess.Popen(cmd, cwd=REPO, env=env))
     rcs = [p.wait() for p in procs]
@@ -1471,6 +1516,28 @@ def _train_cell(arm: str, cid: str, seed: int, *, smoke: bool) -> None:
 
         if wandb.run is not None:
             wandb.finish()
+        # Inter-cell cleanup (#628 r6 defensive belt-and-suspenders). The
+        # band-stop fp32-logits OOM was the headline; once that's chunked,
+        # the worker is left with this cell's model/optimizer/probe-cache
+        # tensors fragmenting the CUDA allocator. Drop the residual python
+        # refs HF Trainer left behind, force a GC, and reset the allocator
+        # so the next cell starts with a clean address space. Wrapped in a
+        # try/except since gc.collect()/empty_cache() should never tank a
+        # cell that otherwise succeeded.
+        try:
+            import gc
+
+            import torch
+
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+                # Reset peak-memory accounting so the next cell's OOM (if any)
+                # reports its own peak, not the cumulative high-water mark.
+                torch.cuda.reset_peak_memory_stats()
+        except Exception as cleanup_exc:
+            logger.warning("[p1-train] %s: post-cell cleanup raised %s", slug, cleanup_exc)
     if not smoke:
         _verify_adapter_on_hub(_hf_adapter_subfolder(arm, cid, seed))
         _upload_checkpoints(arm, cid, seed, out_dir)
@@ -1771,6 +1838,11 @@ def _gate_check(arm: str, cid: str, seed: int, *, enforce: bool) -> None:
 
 def phase2(args) -> None:
     cells = _cells(args)
+    # Partial-Phase-1 tolerance (#628 r6): skip cells whose adapter never
+    # trained instead of crashing on hf_hub_download. The base-jobs step
+    # is independent of cell training, so it always uses the full plan.
+    if getattr(args, "partial_ok", False):
+        cells = _cells_with_trained_adapter(cells)
     columns = _eval_columns(args)
     questions = _marker_eval_questions(args.smoke)
     if args.worker_shard and args.step == "base":
@@ -2228,6 +2300,11 @@ def _p4_reads(my: list[tuple[str, str, int]], args, tok, questions: list[str]) -
 
 def phase4(args) -> None:
     adapters = _onpolicy_adapters(args)
+    # Partial-Phase-1 tolerance (#628 r6): skip cells whose adapter never
+    # trained. Phase 4's on-policy generation needs the LoRA adapter via
+    # vLLM LoRARequest -- a missing adapter would crash mid-batch.
+    if getattr(args, "partial_ok", False):
+        adapters = _cells_with_trained_adapter(adapters)
     if args.worker_shard:
         my = _shard_select(adapters, args.worker_shard)
         if args.dry_run:
@@ -2476,6 +2553,18 @@ def main() -> int:
     ap.add_argument("--worker-shard", default=None, help="internal: k/n cell shard")
     ap.add_argument("--step", default=None, help="internal: wave step within a phase")
     ap.add_argument("--verify-imports", action="store_true")
+    ap.add_argument(
+        "--partial-ok",
+        action="store_true",
+        help=(
+            "Phases 2 / 4 filter the planned cell grid to cells with a trained "
+            "Phase-1 adapter (local stop_step or local adapter dir present) "
+            "instead of crashing on hf_hub_download for an untrained cell. "
+            "Use after a partial Phase-1 run (#628 r5d). Phase 1 itself is "
+            "already idempotent: completed cells skip via the per-cell "
+            "(adapter, stop_step) sentinel."
+        ),
+    )
     args = ap.parse_args()
 
     if args.verify_imports:

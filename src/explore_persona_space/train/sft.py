@@ -696,6 +696,17 @@ class TrainLoraConfig:
     # (cf. CLAUDE.md #260 truncation rule). Set explicitly to override the
     # default budget.
     marker_band_probe_max_length: int | None = None
+    # Probe sub-batch size for the band-stop forward (#628 r6). The HF
+    # Trainer hands callbacks an accelerate-wrapped model whose
+    # `convert_outputs_to_fp32` casts the FULL `(B, T, V)` bf16 logits to
+    # fp32; at B=32 x T~3200+ x V~152k that materializes 30-90 GiB and
+    # OOMs the GPU alongside a 7B model's resident optimizer state.
+    # Chunking the probe forward into B'<=marker_band_probe_chunk_size
+    # rows caps the per-call fp32-logits footprint to one chunk worth;
+    # the slot stats are byte-identical to the un-chunked path. Default 4
+    # keeps the per-chunk fp32 logits at ≤ ~5 GiB for T=4608, V=152k,
+    # comfortably below the post-training free-memory headroom.
+    marker_band_probe_chunk_size: int = 4
     # Issue #480 band-stopped-anchor-rerun: log-only mode for the band
     # callback. When True the callback keeps ALL trajectory logging (WandB +
     # the local trajectory JSON below) but NEVER sets should_training_stop —
@@ -1042,6 +1053,7 @@ def _maybe_attach_marker_band_stop(
         overshoot_stops=cfg.marker_band_overshoot_stops,
         log_only=cfg.marker_band_log_only,
         trajectory_out_path=cfg.marker_band_trajectory_path,
+        probe_chunk_size=cfg.marker_band_probe_chunk_size,
     )
     trainer.add_callback(callback)
     logger.info(

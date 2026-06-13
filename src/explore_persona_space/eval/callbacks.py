@@ -725,6 +725,7 @@ class MarkerBandStopCallback(TrainerCallback):
         overshoot_stops: bool = False,
         log_only: bool = False,
         trajectory_out_path: str | None = None,
+        probe_chunk_size: int = 4,
     ):
         if not marker_token_ids:
             raise ValueError("MarkerBandStopCallback requires a non-empty marker_token_ids")
@@ -785,6 +786,19 @@ class MarkerBandStopCallback(TrainerCallback):
             )
         self.log_only = bool(log_only)
         self.trajectory_out_path = trajectory_out_path
+        # Probe sub-batch size for `_compute_marker_slot_stats`. The HF Trainer
+        # passes an accelerate-wrapped model to callbacks; `convert_outputs_to_fp32`
+        # casts the FULL `(B, T, V)` bf16 logits to fp32 on every forward, which
+        # OOMs the GPU at B=32 x T=3200+ x V~152k for a 7B model alongside
+        # resident optimizer states (incident #628 r5d: 73 GiB allocation
+        # request -> CUDA OOM). Chunking the probe forward into `B'<=
+        # probe_chunk_size` rows caps the per-call fp32-logits footprint;
+        # results are concatenated at the end so the downstream slot stats are
+        # byte-identical to the un-chunked path (the model is in eval()/no_grad,
+        # so chunking is purely a memory transform, no statistical effect).
+        if probe_chunk_size < 1:
+            raise ValueError(f"probe_chunk_size must be >= 1, got {probe_chunk_size}")
+        self.probe_chunk_size = int(probe_chunk_size)
 
         # Tensor-shape asserts at the construction boundary.
         assert probe_input_ids.ndim == 2, probe_input_ids.shape
@@ -1165,39 +1179,71 @@ class MarkerBandStopCallback(TrainerCallback):
         # parameter's device if needed.
         device = getattr(model, "device", None) or next(model.parameters()).device
 
-        input_ids = self.probe_input_ids.to(device)
-        attention_mask = self.probe_attention_mask.to(device)
-        positions = self.probe_marker_positions.to(device)
+        full_input_ids = self.probe_input_ids.to(device)
+        full_attention_mask = self.probe_attention_mask.to(device)
+        full_positions = self.probe_marker_positions.to(device)
+        n_rows = full_input_ids.shape[0]
+        chunk = max(1, int(self.probe_chunk_size))
 
         was_training = model.training
         model.eval()
         try:
+            # Chunked probe forward. The HF Trainer hands callbacks an
+            # accelerate-wrapped model whose `convert_outputs_to_fp32` casts
+            # the FULL `(B, T, V)` bf16 logits to fp32 per forward -- at
+            # B=32 x T=3200 x V~152k that materializes ~74 GiB and OOMs the
+            # GPU alongside a 7B model's resident optimizer state (#628 r5d).
+            # We slice each chunk's slot tensor immediately so the fp32 cast
+            # peaks at (chunk x T x V) instead of (B x T x V); the rest of
+            # the math (logsumexp + per-slot reads) is byte-identical.
+            row_logp_parts: list = []
+            z_marker_parts: list = []
+            log_z_parts: list = []
+            z_eos_parts: list = [] if self.eos_token_id is not None else None
             with torch.no_grad():
-                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-            logits = outputs.logits  # [B, T, V]
-            assert logits.ndim == 3, logits.shape
-            batch_idx = torch.arange(input_ids.shape[0], device=device)
-            # The marker's predictive distribution is read at the OUTPUT
-            # position whose argmax would be the marker token. The caller
-            # passes ``positions`` already aligned to that output slot
-            # (i.e. positions[i] is the index at which logits[i, positions[i]]
-            # is the distribution over the NEXT token = the marker).
-            slot_logits = logits[batch_idx, positions, :].float()  # [B, V]
-            assert slot_logits.shape == (input_ids.shape[0], logits.shape[-1]), slot_logits.shape
-            log_z = torch.logsumexp(slot_logits, dim=-1)  # [B]
-            z_marker = slot_logits[:, self._target_token_id]  # [B]
-            row_logp = z_marker - log_z  # exact identity: logp = z_marker - logZ
-            assert row_logp.shape == (input_ids.shape[0],), row_logp.shape
-            z_eos = (
-                slot_logits[:, self.eos_token_id].detach().cpu()
-                if self.eos_token_id is not None
-                else None
-            )
+                for start in range(0, n_rows, chunk):
+                    end = min(start + chunk, n_rows)
+                    input_ids = full_input_ids[start:end]
+                    attention_mask = full_attention_mask[start:end]
+                    positions = full_positions[start:end]
+                    outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                    logits = outputs.logits  # [B', T, V]
+                    assert logits.ndim == 3, logits.shape
+                    batch_idx = torch.arange(input_ids.shape[0], device=device)
+                    # The marker's predictive distribution is read at the OUTPUT
+                    # position whose argmax would be the marker token. The
+                    # caller passes ``positions`` already aligned to that output
+                    # slot (i.e. positions[i] is the index at which
+                    # logits[i, positions[i]] is the distribution over the NEXT
+                    # token = the marker).
+                    slot_logits = logits[batch_idx, positions, :].float()  # [B', V]
+                    assert slot_logits.shape == (
+                        input_ids.shape[0],
+                        logits.shape[-1],
+                    ), slot_logits.shape
+                    log_z = torch.logsumexp(slot_logits, dim=-1)  # [B']
+                    z_marker = slot_logits[:, self._target_token_id]  # [B']
+                    row_logp = z_marker - log_z  # exact identity
+                    assert row_logp.shape == (input_ids.shape[0],), row_logp.shape
+                    row_logp_parts.append(row_logp.detach().cpu())
+                    z_marker_parts.append(z_marker.detach().cpu())
+                    log_z_parts.append(log_z.detach().cpu())
+                    if z_eos_parts is not None:
+                        z_eos_parts.append(slot_logits[:, self.eos_token_id].detach().cpu())
+                    # Drop the per-chunk activation + fp32-slot tensors before
+                    # the next chunk so peak-memory stays at one-chunk worth
+                    # instead of accumulating across the loop.
+                    del outputs, logits, slot_logits, log_z, z_marker, row_logp
+            row_logp_all = torch.cat(row_logp_parts, dim=0)
+            z_marker_all = torch.cat(z_marker_parts, dim=0)
+            log_z_all = torch.cat(log_z_parts, dim=0)
+            z_eos_all = torch.cat(z_eos_parts, dim=0) if z_eos_parts is not None else None
+            assert row_logp_all.shape == (n_rows,), row_logp_all.shape
             return {
-                "logp": row_logp.detach().cpu(),
-                "z_marker": z_marker.detach().cpu(),
-                "z_eos": z_eos,
-                "logZ": log_z.detach().cpu(),
+                "logp": row_logp_all,
+                "z_marker": z_marker_all,
+                "z_eos": z_eos_all,
+                "logZ": log_z_all,
             }
         finally:
             if was_training:
