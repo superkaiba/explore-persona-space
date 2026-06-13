@@ -1,0 +1,78 @@
+{
+  "frac": 1.0,
+  "source_dg_mean_nats": 9.827095413208008,
+  "source_trained_logp_mean": -12.597911643981934,
+  "source_emission_p": 0.0,
+  "bystander_argmax_rate": 0.0,
+  "n_bystander_probes": 490,
+  "n_marker_in_source_R": 0,
+  "expected_band_nats": [
+    5.0,
+    19.0
+  ],
+  "bystander_argmax_ceiling": 0.92,
+  "eval_guard_verdict": "pass_b_norm_ok",
+  "source_manifest_check": {
+    "frac": 1.0,
+    "eval_delta_g_nats": 9.827095413208008,
+    "expected_delta_g_nats": 10.667801856994629,
+    "disagreement_nats": 0.8407064437866207,
+    "is_final_frac": true,
+    "band_stop_fired": false,
+    "tol_nats": 2.0,
+    "min_final_delta_g_nats": 1.0,
+    "guard_verdict": "pass"
+  },
+  "n_band_trajectory_records": 6,
+  "realized_terminal_step": 63,
+  "expected_terminal_step": 63,
+  "n_checkpoints": 6,
+  "panel_personas": [
+    "hospice_nurse",
+    "bartender",
+    "french_person",
+    "data_scientist"
+  ],
+  "trajectory_path": "eval_results/issue_610/second-chassis-dose-replication/sweep/c610_software_engineer_near_nodefault/seed_42/trajectory.json",
+  "gate_a_band": true,
+  "gate_b_sub_saturation": true,
+  "gate_c_eval_guard_positive_control": true,
+  "gate_d_no_marker_in_source_R": true,
+  "gate_e_collator_mask": true,
+  "gate_f_panel_disjointness": true,
+  "gate_g_telemetry": true,
+  "gate_h_offline_vs_inloop_source": true,
+  "all_gates_passed": true,
+  "floor_failed": false,
+  "saturation_failed": false,
+  "gate_i_primary_dv_exists": true,
+  "gate_i_detail": {
+    "personas_required": [
+      "qwen_default",
+      "assistant"
+    ],
+    "four_float_fields": [
+      "z_marker_g",
+      "z_marker_b",
+      "z_eos_g",
+      "z_eos_b",
+      "logZ_g",
+      "logZ_b",
+      "logp_hf_g",
+      "logp_hf_b"
+    ],
+    "missing": [],
+    "n_missing": 0,
+    "passes": true
+  },
+  "gate_j_within_parent_range": true,
+  "gate_j_detail": {
+    "source_dg_mean_nats": 9.827095413208008,
+    "soft_range_nats": [
+      6.5,
+      11.8
+    ],
+    "within_parent_range": true,
+    "soft": true
+  }
+}
