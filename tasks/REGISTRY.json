@@ -1568,8 +1568,8 @@
     "347": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/347",
-      "status": "proposed",
+      "path": "tasks/on_hold/347",
+      "status": "on_hold",
       "title": "Probe what layer-20 direction actually elicits the [ZLT] marker \u2014 followup to #267's random-as-good-as-centroid finding"
     },
     "349": {
