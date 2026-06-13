@@ -260,11 +260,75 @@ Bodies carrying a `<!-- legacy-sagan-card -->` sentinel are
 grandfathered HTML — this verifier skips them with a PASS (the legacy
 `verify_sagan_card.py` still applies to those).
 
+────────────────────────────────────────────────────────────────────────
+v3 redesign (2026-W24, sentinel `<!-- clean-result-v3 -->`)
+────────────────────────────────────────────────────────────────────────
+
+v3 bodies are FORWARD-ONLY: v2-sentinel and pre-sentinel legacy bodies
+keep every behaviour above verbatim and are NEVER newly hard-FAILed by a
+v3 rule. A v3 body drops `## Human TL;DR` and the `## TL;DR` umbrella in
+favour of FIVE flat H2 sections, in order — `## Takeaways` /
+`## What I ran` / `## Findings` / `## Data` / `## Reproducibility` — with
+confidence in the H1 title tag only. The checks branch per generation:
+
+- **check 2** (`check_required_sections`): v3 requires the five-H2 set in
+  order; a `## Human TL;DR` or `## TL;DR` H2 in a v3 body is a hard FAIL
+  (mirrors the stray-`## Details` FAIL). v2/legacy keep the three-H2 set.
+- **check 3** (`check_tldr_labels`): for v3, dispatches to
+  `check_v3_structure` — `## Takeaways` has 3-6 bullets (the
+  AUTHORITATIVE bullet-count gate), `## What I ran` carries the
+  `**Why:**` slot, `## Findings` has ≥1 `### ` finding. v2/legacy keep
+  the Motivation-opens-TL;DR check.
+- **check 3b** (`check_tldr_nested_structure`): stays v2-ONLY (a v3 body
+  has no `## TL;DR` umbrella to shape); PASSes vacuously on v3.
+- **checks 4 / 4b** (figure presence + URL): v3 scans `## Findings`.
+- **check 6 / 16 / 17** (confidence-title-only / lr-matches-plan /
+  Context provenance): gated on `is_nested_design()` = v2 OR v3, so all
+  three keep running on v3.
+- **check 10** (cherry-picked label): v3 scans `## Findings` + `## Data`.
+- **check 11** (raw-completions link): v3 scans `## Findings` +
+  `## Data → ### Generated` ONLY (Trained-on / Evaluated-with link
+  JSONLs / probe banks — covered by check 18 — not raw_completions).
+- **check 11b** (planned-vs-actual): v3 headline surface is
+  `## Takeaways` + `## Findings`.
+- **check 13** (narrative-flow WARN): v3 scans `## Findings`.
+- **check 14** (`check_concerns_audit`): v3 mechanism 1 → `### ` findings
+  under `## Findings` + `## Takeaways` bullets; mechanism 2 (Confidence
+  paragraph) RETIRES for v3 (confidence is title-tag-only).
+
+New v3-only checks (PASS vacuously on v2/legacy):
+
+- **check 18** (`check_data_shape`): `## Data` has `### Trained on` /
+  `### Evaluated with` / `### Generated` in order; each carries ≥1
+  pinned complete-artifact link OR an explicit `n/a — <reason>` line.
+- **check 19** (`check_data_subset_disclosure`): every example block
+  (fenced OR `<details>`) inside `## Data` is preceded by a
+  subset-disclosure line (`K of M rows, random sample` / `cherry-picked
+  for illustration` / harmful-content sanitized form).
+- **check 20** (`check_v3_word_caps`): the §4 conciseness caps —
+  per-Takeaways-bullet ≤30 words (WARN), per-finding prose ≤120 WARN /
+  ≥180 FAIL, figure caption ≤60 (WARN), total content prose ≤700 + 250
+  per extra follow-up round (WARN-only). Counts EXCLUDE tables, fenced
+  code, `<details>` bodies, captions. The Takeaways 3-6 bullet COUNT is
+  owned by check 3's `check_v3_structure` (one authoritative count).
+- **check 21** (`check_body_params_subset_of_doc`): the body's
+  load-bearing `## Reproducibility` Parameters rows are a SUBSET of the
+  methodology doc §2 complete table. Needs the doc path via
+  `--methodology-doc <path>`; NO-OP PASS when the doc is absent (the doc
+  is on the issue worktree branch pre-merge; binds at promote-time
+  verify, post-merge).
+
+Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
+form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
+exactly as checks 10/11 do today.
+
 Usage:
 
     uv run python scripts/verify_task_body.py --issue <N>
     uv run python scripts/verify_task_body.py --file path/to/body.md
     uv run python scripts/verify_task_body.py --body-stdin
+    uv run python scripts/verify_task_body.py --file body.md \\
+        --methodology-doc docs/methodology/issue_<N>.md   # binds check 21
 
 Exits 0 on PASS, 1 on FAIL, 2 on usage error.
 """
@@ -335,6 +399,29 @@ LEGACY_SAGAN_CARD_SENTINEL = "<!-- legacy-sagan-card -->"
 # rule — forward-only migration.
 CLEAN_RESULT_V2_SENTINEL = "<!-- clean-result-v2 -->"
 
+# v3 redesign (2026-W24). NEW bodies carry this sentinel. The v3 body
+# drops `## Human TL;DR` and the `## TL;DR` umbrella entirely in favour
+# of five FLAT H2 sections — `## Takeaways` / `## What I ran` /
+# `## Findings` / `## Data` / `## Reproducibility` — with confidence in
+# the H1 title tag only. Forward-only: v2-sentinel and pre-sentinel
+# legacy bodies keep their existing verification behaviour verbatim and
+# are NEVER newly hard-FAILed by any v3 rule. See
+# `.claude/skills/clean-results/SPEC.md` § "v3 body shape" and §7 of
+# `.claude/plans/clean-result-v3-redesign.md`.
+CLEAN_RESULT_V3_SENTINEL = "<!-- clean-result-v3 -->"
+
+# v3 required H2 sections, in order. A `## Human TL;DR` H2 in a v3 body
+# is a hard FAIL (mirrors the stray-`## Details` FAIL) — the v3 shape
+# retired the model-written casual summary.
+V3_REQUIRED_H2_SECTIONS = ["Takeaways", "What I ran", "Findings", "Data", "Reproducibility"]
+# H2 sections REJECTED in a v3 body. `## Human TL;DR` and `## TL;DR` are
+# folded away (Takeaways replaces the skim function; the per-result
+# narrative moves to flat `## Findings`). The legacy retired pair
+# (`## Details` / `## Figure`) stays rejected too.
+V3_RETIRED_H2_SECTIONS = ["Human TL;DR", "TL;DR", "Details", "Figure"]
+# v3 `## Data` required subsections, in order. Each is an H3.
+V3_DATA_SUBSECTIONS = ["Trained on", "Evaluated with", "Generated"]
+
 CONFIDENCE_LEVELS = {"LOW", "MODERATE", "HIGH"}
 
 # Sentinel substrings that indicate a placeholder slipped through.
@@ -359,6 +446,45 @@ _DEFAULT_PLACEHOLDER_RE = re.compile(
 # Minimum number of characters of rationale required AFTER the
 # `Confidence: <level> —` dash on the confidence line.
 MIN_CONFIDENCE_RATIONALE_CHARS = 20
+
+# ─── v3 conciseness caps (check 20) ──────────────────────────────────────────
+#
+# The §4 conciseness table from the v3 redesign plan, encoded as named
+# constants so tightening later is a one-line change. Calibration basis:
+# the #517 → v3 conversion (`exemplars/v3-517.md`), a real,
+# information-dense FOUR-finding body (3 per-trait findings + the
+# cross-experiment-caveat finding) — a well-written hard case. Measured
+# on that exemplar: longest finding prose ~95 words (well under the 120
+# WARN cap), Takeaways bullets ~25-30 words (at/under the 30 cap), total
+# content prose ~724 words across the four findings + Takeaways + What I
+# ran. The per-finding WARN/FAIL caps (120/180) leave that body
+# comfortable headroom; the total-prose budget is set to 800 so a
+# well-written four-finding body clears it WARN-free while a bloated body
+# (the original #517 v2 at ~2,400 prose words across the same findings,
+# or a single finding padded past 180 words) trips the gates decisively.
+# Counts EXCLUDE tables, fenced code blocks, `<details>` bodies, and
+# figure captions (blockquote lines) — those are reference material, not
+# the scannable prose the caps govern.
+#
+# `## Takeaways` bullet-count range (FAIL outside; authoritative count —
+# the structure check defers to this so there is ONE count gate).
+V3_TAKEAWAYS_MIN_BULLETS = 3
+V3_TAKEAWAYS_MAX_BULLETS = 6
+# Per-Takeaways-bullet word cap (WARN).
+V3_TAKEAWAYS_BULLET_MAX_WORDS = 30
+# Per-finding prose word cap (excl. caption / code / `<details>` bodies):
+# WARN at the soft cap, FAIL at the hard cap.
+V3_FINDING_PROSE_WARN_WORDS = 120
+V3_FINDING_PROSE_FAIL_WORDS = 180
+# Figure-caption word cap (WARN).
+V3_FIGURE_CAPTION_MAX_WORDS = 60
+# Total content prose (Takeaways + What I ran + Findings, excl. tables,
+# fenced code, `<details>` bodies, captions): WARN-only base budget, plus
+# a per-extra-follow-up-round allowance so a multi-round consolidated body
+# is not forced to delete live findings to satisfy a total cap (§6.4 of
+# the plan: the per-finding FAIL is the hard gate; this total is a nudge).
+V3_TOTAL_PROSE_BASE_WORDS = 800
+V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS = 250
 
 # ─── Result type ───────────────────────────────────────────────────────────
 
@@ -813,61 +939,77 @@ def check_title_confidence(body: str) -> CheckResult:
 
 
 def check_required_sections(body: str) -> CheckResult:
-    """Check 2: the three required H2 sections appear in order, and no
-    retired H2 (`## Details`, `## Figure`) is present.
+    """Check 2: the required H2 sections appear in order, and no retired
+    H2 is present.
 
-    The 2-content-section spec (2026-W22 migration, task #454) folds
-    the former `## Details` narrative into per-result `### <finding>`
-    H3s under `## TL;DR` and inlines figures inside each result H3, so
-    a NEW body that still carries either retired H2 is rejected. This
-    forces clean migration — bodies cannot half-migrate by stripping
-    Details prose while leaving the H2 in place. Legacy bodies
-    pre-2026-W22 are forward-grandfathered (the verifier never re-runs
-    over them).
+    v3 bodies (sentinel `<!-- clean-result-v3 -->`) require five flat
+    H2s in order — `## Takeaways` / `## What I ran` / `## Findings` /
+    `## Data` / `## Reproducibility` — and reject `## Human TL;DR` /
+    `## TL;DR` / `## Details` / `## Figure` (the v3 redesign retired
+    the model-written casual summary and the `## TL;DR` umbrella).
+
+    v2 / legacy bodies keep the 2-content-section spec (2026-W22 task
+    #454): three required H2s (`## Human TL;DR` / `## TL;DR` /
+    `## Reproducibility`), rejecting `## Details` / `## Figure`. The
+    fold + the stray/ordering rules are identical between generations —
+    only the required + retired sets differ. Legacy bodies pre-2026-W22
+    are forward-grandfathered (the verifier never re-runs over them).
     """
+    v3 = is_v3(body)
+    required = V3_REQUIRED_H2_SECTIONS if v3 else REQUIRED_H2_SECTIONS
+    retired = V3_RETIRED_H2_SECTIONS if v3 else RETIRED_H2_SECTIONS
     found = [name for name, _, _ in find_h2_sections(body)]
-    label = "three required H2 sections in order"
+    label = "five required H2 sections in order" if v3 else "three required H2 sections in order"
     # Hard FAIL on retired H2s (force clean migration).
-    retired_present = [s for s in RETIRED_H2_SECTIONS if s in found]
+    retired_present = [s for s in retired if s in found]
     if retired_present:
-        return CheckResult(
-            label,
-            False,
-            f"retired H2(s) present: {', '.join('## ' + s for s in retired_present)}. "
-            "The 2-content-section spec (2026-W22) folds Details into per-result "
-            "H3s under `## TL;DR` and inlines figures inside each result H3 — "
-            "remove the retired H2 and migrate its content. See "
-            ".claude/skills/clean-results/SPEC.md.",
-        )
-    missing = [s for s in REQUIRED_H2_SECTIONS if s not in found]
+        if v3:
+            detail = (
+                f"retired H2(s) present: {', '.join('## ' + s for s in retired_present)}. "
+                "The v3 spec drops `## Human TL;DR` (the model-written casual "
+                "summary is retired) and the `## TL;DR` umbrella (Takeaways "
+                "replaces the skim function; per-result narrative lives in flat "
+                "`## Findings`) — remove the retired H2 and migrate its content. "
+                "See .claude/skills/clean-results/SPEC.md."
+            )
+        else:
+            detail = (
+                f"retired H2(s) present: {', '.join('## ' + s for s in retired_present)}. "
+                "The 2-content-section spec (2026-W22) folds Details into per-result "
+                "H3s under `## TL;DR` and inlines figures inside each result H3 — "
+                "remove the retired H2 and migrate its content. See "
+                ".claude/skills/clean-results/SPEC.md."
+            )
+        return CheckResult(label, False, detail)
+    missing = [s for s in required if s not in found]
     if missing:
         return CheckResult(
             label,
             False,
             f"missing: {', '.join('## ' + s for s in missing)} (found: {found})",
         )
-    # Order check: REQUIRED_H2_SECTIONS must appear in this exact order
-    # within the body's H2 sequence (extra non-retired H2s after
-    # `## Reproducibility` are tolerated, but NOT before).
-    seq = [s for s in found if s in REQUIRED_H2_SECTIONS]
-    if seq != REQUIRED_H2_SECTIONS:
+    # Order check: `required` must appear in this exact order within the
+    # body's H2 sequence (extra non-retired H2s after the LAST required
+    # section are tolerated, but NOT before).
+    seq = [s for s in found if s in required]
+    if seq != required:
         return CheckResult(
             label,
             False,
-            f"wrong order — got {seq}, expected {REQUIRED_H2_SECTIONS}",
+            f"wrong order — got {seq}, expected {required}",
         )
     # Stray H2 check: any non-required, non-retired H2 (e.g., a leftover
     # `## Goal`, `## Background`, `## Methods`) that appears BEFORE the
-    # required sequence completes is rejected. The 2-content-section spec
-    # tolerates extra H2s ONLY after `## Reproducibility`. Retired H2s
-    # already produced a hard FAIL above, so don't double-report them.
+    # required sequence completes is rejected. The spec tolerates extra
+    # H2s ONLY after the LAST required section. Retired H2s already
+    # produced a hard FAIL above, so don't double-report them.
     last_required_idx = -1
     stray_before: list[str] = []
     for name, _, _ in find_h2_sections(body):
-        if name in REQUIRED_H2_SECTIONS:
-            if name == REQUIRED_H2_SECTIONS[-1]:
+        if name in required:
+            if name == required[-1]:
                 last_required_idx = 1
-        elif name in RETIRED_H2_SECTIONS:
+        elif name in retired:
             continue
         elif last_required_idx == -1:
             stray_before.append(name)
@@ -875,18 +1017,126 @@ def check_required_sections(body: str) -> CheckResult:
         return CheckResult(
             label,
             False,
-            f"stray H2(s) before `## {REQUIRED_H2_SECTIONS[-1]}`: "
-            f"{', '.join('## ' + s for s in stray_before)}. The 2-content-section "
-            "spec (2026-W22) permits extra H2s ONLY after `## Reproducibility` — "
-            f"required sequence is {REQUIRED_H2_SECTIONS} and nothing else may "
-            "appear in between. Remove the stray H2 or move it after "
-            "`## Reproducibility`.",
+            f"stray H2(s) before `## {required[-1]}`: "
+            f"{', '.join('## ' + s for s in stray_before)}. The spec permits "
+            f"extra H2s ONLY after `## {required[-1]}` — required sequence is "
+            f"{required} and nothing else may appear in between. Remove the "
+            f"stray H2 or move it after `## {required[-1]}`.",
         )
     return CheckResult(label, True)
 
 
+def _h3_names_under_h2(body: str, h2_name: str) -> list[str]:
+    """Return the `### ` H3 heading names (fence-aware) directly inside
+    the `## <h2_name>` section, in order. Empty list when the section is
+    absent."""
+    text = section_text(body, h2_name)
+    if text is None:
+        return []
+    return [name for name, _line in _collect_tldr_h3_names(text)]
+
+
+def _h3_subsection_text(section_body: str, h3_name: str) -> str | None:
+    """Return the text of the `### <h3_name>` subsection inside an H2
+    section body (the leading-word of the heading, post-`— hook` strip,
+    must equal `h3_name`, case-insensitive), spanning to the next `### `
+    H3 or end. Fence-aware. None when the H3 is absent.
+
+    Used to scope check 11's raw-completions-link scan to
+    `## Data → ### Generated` only (the Trained-on / Evaluated-with
+    blocks link JSONLs / probe banks, not raw_completions)."""
+    h3s = _collect_tldr_h3_names(section_body)
+    idx = _find_named_h3(h3s, h3_name)
+    if idx is None:
+        return None
+    lines = section_body.splitlines()
+    start_line = h3s[idx][1]
+    end_line = h3s[idx + 1][1] if idx + 1 < len(h3s) else len(lines)
+    return "\n".join(lines[start_line:end_line]).strip()
+
+
+def _count_bullets(text: str) -> int:
+    """Count top-level markdown list items (`- ` / `* ` at line start,
+    fence-aware) in `text`. Sub-bullets (indented) are NOT counted —
+    the Takeaways shape is a flat bullet list."""
+    n = 0
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        # Top-level only: the raw (un-stripped) line begins with `- ` or
+        # `* ` with no leading indent.
+        if re.match(r"^[-*]\s+\S", line):
+            n += 1
+    return n
+
+
+def check_v3_structure(body: str) -> CheckResult:
+    """v3 structure check (replaces checks 3 + 3b for v3 bodies).
+
+    For a `<!-- clean-result-v3 -->` body, verify:
+      - `## Takeaways` carries 3-6 top-level bullets (the authoritative
+        count gate — check 20's word-cap check defers to this so there
+        is exactly ONE bullet-count rule).
+      - `## What I ran` carries the `**Why:**` slot bullet.
+      - `## Findings` carries ≥1 `### ` finding heading.
+
+    The 3-6 range is the same FAIL band the §4 caps table records; it
+    lives HERE (not in check 20) so the count is enforced once, on the
+    structural check, regardless of whether the word-cap check runs.
+    """
+    label_name = "v3 structure (Takeaways / What I ran / Findings)"
+    takeaways = section_text(body, "Takeaways")
+    if takeaways is None:
+        return CheckResult(label_name, False, "## Takeaways section missing")
+    n_bullets = _count_bullets(takeaways)
+    if not (V3_TAKEAWAYS_MIN_BULLETS <= n_bullets <= V3_TAKEAWAYS_MAX_BULLETS):
+        return CheckResult(
+            label_name,
+            False,
+            f"## Takeaways has {n_bullets} top-level bullet(s) — the v3 shape "
+            f"requires {V3_TAKEAWAYS_MIN_BULLETS}-{V3_TAKEAWAYS_MAX_BULLETS} "
+            "numbers-first bullets (no paragraphs).",
+        )
+    what_i_ran = section_text(body, "What I ran")
+    if what_i_ran is None:
+        return CheckResult(label_name, False, "## What I ran section missing")
+    # The `**Why:**` slot bullet — accept `- **Why:**` / `**Why:**` /
+    # `Why:` at the start of a bullet (mirror the Motivation bullet
+    # acceptance in the v2 check).
+    if not re.search(r"(?im)^\s*[-*]?\s*(\*\*)?Why(\*\*)?\s*:", what_i_ran):
+        return CheckResult(
+            label_name,
+            False,
+            "## What I ran is missing the `**Why:**` slot bullet — the v3 shape "
+            "requires a `**Why:**` line (the only place for prior-issue links).",
+        )
+    findings = section_text(body, "Findings")
+    if findings is None:
+        return CheckResult(label_name, False, "## Findings section missing")
+    finding_h3s = [name for name, _line in _collect_tldr_h3_names(findings)]
+    if not finding_h3s:
+        return CheckResult(
+            label_name,
+            False,
+            "## Findings has no `### <finding>` heading — the v3 shape requires "
+            "≥1 `### ` finding under `## Findings`.",
+        )
+    return CheckResult(
+        label_name,
+        True,
+        f"v3 structure clean — Takeaways ({n_bullets} bullets), What I ran "
+        f"(Why: present), Findings ({len(finding_h3s)} `### ` finding(s))",
+    )
+
+
 def check_tldr_labels(body: str) -> CheckResult:
-    """Check 3: `## TL;DR` opens with the Motivation block.
+    """Check 3: `## TL;DR` opens with the Motivation block (v2/legacy);
+    for v3 bodies, dispatches to `check_v3_structure`.
 
     2-content-section spec (2026-W22, task #454). The TL;DR is the
     LessWrong-style narrative; it opens with either:
@@ -908,7 +1158,15 @@ def check_tldr_labels(body: str) -> CheckResult:
     — a stray intro paragraph between the heading and `### Motivation`
     (or `**Motivation:**`) is rejected, matching SPEC.md "Opens with
     `### Motivation`".
+
+    v3 bodies have no `## TL;DR` umbrella — the per-result structure is
+    flat under `## Findings`. For v3 this check delegates to
+    `check_v3_structure` (Takeaways 3-6 bullets, `**Why:**` slot, ≥1
+    `### ` finding), so the CHECKS slot stays one function but enforces
+    the right shape per generation.
     """
+    if is_v3(body):
+        return check_v3_structure(body)
     tldr = section_text(body, "TL;DR")
     label_name = "TL;DR opens with Motivation"
     if tldr is None:
@@ -1118,27 +1376,32 @@ def check_tldr_nested_structure(body: str) -> CheckResult:
 
 
 def _gather_figure_image_urls(body: str) -> list[str]:
-    """Collect image URLs inline under `## TL;DR`. Powers checks 4 / 4b
-    under the 2-content-section spec (2026-W22, task #454): every figure
-    lives inside a per-result H3 inside `## TL;DR`."""
+    """Collect figure image URLs inline under the result-narrative
+    section. Powers checks 4 / 4b.
+
+    v3 bodies (sentinel present): figures live under `## Findings`
+    (one per `### <finding>`). v2 / legacy bodies: figures live inside
+    per-result H3s under `## TL;DR` (2026-W22 spec, task #454)."""
     urls: list[str] = []
-    text = section_text(body, "TL;DR")
+    section = "Findings" if is_v3(body) else "TL;DR"
+    text = section_text(body, section)
     if text is not None:
         urls.extend(_IMAGE_RE.findall(text))
     return urls
 
 
 def check_figure_image(body: str) -> CheckResult:
-    """Check 4: at least one `![alt](url)` image exists inline under
-    `## TL;DR` (every result H3 in the 2-content-section spec carries
-    its own figure)."""
+    """Check 4: at least one `![alt](url)` image exists inline under the
+    result-narrative section — `## Findings` for v3 bodies, `## TL;DR`
+    for v2 / legacy (every result block carries its own figure)."""
+    section = "Findings" if is_v3(body) else "TL;DR"
     urls = _gather_figure_image_urls(body)
     if not urls:
         return CheckResult(
             "hero image present",
             False,
-            "no `![alt](path)` image found inline under `## TL;DR` — every "
-            "result H3 in the 2-content-section spec carries its own figure",
+            f"no `![alt](path)` image found inline under `## {section}` — every "
+            "result block carries its own figure",
         )
     return CheckResult("hero image present", True, f"{len(urls)} image(s)")
 
@@ -1327,6 +1590,16 @@ def is_v2_nested_design(body: str) -> bool:
     post-#454 behavior and are NEVER hard-FAILed by the nested-shape
     rule or the no-body-Confidence permission.
     """
+    return CLEAN_RESULT_V2_SENTINEL in _prose_layer(body)
+
+
+def _prose_layer(body: str) -> str:
+    """Return `body` with fenced code blocks AND `<details>...</details>`
+    blocks stripped, so a sentinel quoted only inside an illustrative
+    code fence or example block does NOT count as a document-level
+    marker. Shared by `is_v2_nested_design` / `is_v3` so both detect at
+    the same prose layer.
+    """
     # Strip fenced code blocks (``` ``` and ~~~ ~~~) inline rather
     # than importing the later-defined `_strip_fenced_blocks` (avoids
     # forward-reference ordering noise).
@@ -1343,22 +1616,52 @@ def is_v2_nested_design(body: str) -> bool:
         fence_stripped.append(line)
     cleaned = "\n".join(fence_stripped)
     # Strip `<details>...</details>` blocks (already defined regex).
-    cleaned = _DETAILS_BLOCK_RE.sub("", cleaned)
-    return CLEAN_RESULT_V2_SENTINEL in cleaned
+    return _DETAILS_BLOCK_RE.sub("", cleaned)
+
+
+def is_v3(body: str) -> bool:
+    """Return True when `body` carries the `<!-- clean-result-v3 -->`
+    sentinel as a real document-level marker (the v3 five-flat-H2
+    redesign: Takeaways / What I ran / Findings / Data / Reproducibility,
+    confidence in the H1 title tag only).
+
+    Mirrors `is_v2_nested_design`'s fence-aware + `<details>`-aware
+    detection so a body that only QUOTES the sentinel inside an
+    illustrative code fence or `<details>` example block is NOT
+    misdetected as v3. Forward-only: bodies without the sentinel keep
+    their existing (v2 / legacy) verification behaviour.
+    """
+    return CLEAN_RESULT_V3_SENTINEL in _prose_layer(body)
+
+
+def is_nested_design(body: str) -> bool:
+    """True for ANY structured clean-result body that carries confidence
+    in the H1 title tag only (no body `Confidence:` sentence) and pins
+    its provenance / lr-vs-plan checks on a sentinel — i.e. v2 OR v3.
+
+    Used by the SENTINEL-KEYED checks that must run identically on both
+    generations: check 6 (confidence-title-only), check 16 (lr matches
+    plan), check 17 (Context provenance row). The nested-TL;DR-SHAPE
+    check (check 3b, `check_tldr_nested_structure`) deliberately does
+    NOT use this — it stays v2-only, because a v3 body has no `## TL;DR`
+    umbrella to shape.
+    """
+    return is_v2_nested_design(body) or is_v3(body)
 
 
 def check_confidence_matches(body: str) -> CheckResult:
     """Check 6: `Confidence: …` line matches the title.
 
-    Under the 2-content-section nested-design (v2) shape (sentinel
-    `<!-- clean-result-v2 -->` present), the H1 title tag is the
-    single source of truth for confidence — bodies do NOT carry a
-    `Confidence: …` sentence by design. This check PASSes for v2
-    bodies whenever the title carries the `(... confidence)` tag,
-    regardless of whether a body `Confidence:` sentence exists. If a
-    v2 body DOES happen to carry one (legacy holdover), the level
-    must match the title and ≥20 chars of rationale after the dash
-    must be present (same rule as legacy bodies).
+    Under the nested-design (v2) AND v3 shapes (sentinel
+    `<!-- clean-result-v2 -->` or `<!-- clean-result-v3 -->` present),
+    the H1 title tag is the single source of truth for confidence —
+    bodies do NOT carry a `Confidence: …` sentence by design. This
+    check PASSes for such bodies whenever the title carries the
+    `(... confidence)` tag, regardless of whether a body `Confidence:`
+    sentence exists. If such a body DOES happen to carry one (legacy
+    holdover), the level must match the title and ≥20 chars of
+    rationale after the dash must be present (same rule as legacy
+    bodies).
 
     Legacy bodies (no sentinel) must still ship the
     `Confidence: LOW|MODERATE|HIGH — <rationale>` line somewhere
@@ -1370,7 +1673,7 @@ def check_confidence_matches(body: str) -> CheckResult:
     if not m:
         return CheckResult(label_name, False, "no title confidence")
     title_level = m.group(1)
-    v2 = is_v2_nested_design(body)
+    v2 = is_nested_design(body)
     # Whole-body scan so the Confidence sentence can live anywhere it
     # makes sense under the new spec (typically in `## Reproducibility`).
     # Look for `Confidence: LOW|MODERATE|HIGH — <rationale>` (em-dash or
@@ -1386,12 +1689,13 @@ def check_confidence_matches(body: str) -> CheckResult:
         loose = re.search(r"Confidence:\s*(LOW|MODERATE|HIGH)\b", body)
         if not loose:
             if v2:
-                # v2 nested-design bodies legitimately have no Confidence
-                # sentence — the H1 title tag is the source of truth.
+                # v2/v3 nested-design bodies legitimately have no
+                # Confidence sentence — the H1 title tag is the source
+                # of truth.
                 return CheckResult(
                     label_name,
                     True,
-                    f"v2 nested-design (sentinel present); title carries "
+                    f"nested-design (v2/v3 sentinel present); title carries "
                     f"`({title_level} confidence)` tag — no body `Confidence:` "
                     "sentence required",
                 )
@@ -2030,7 +2334,7 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     A documented run-vs-plan deviation downgrades the FAIL to WARN.
     """
     name = "Reproducibility lr matches plan"
-    if not is_v2_nested_design(body):
+    if not is_nested_design(body):
         return CheckResult(name, True, "skipped — legacy (pre-v2) body")
     repro = section_text(body, "Reproducibility")
     if repro is None:
@@ -2094,7 +2398,7 @@ def check_repro_context_provenance(
     `.claude/skills/clean-results/SPEC.md` § `**Context:**` row.
     """
     name = "Reproducibility Context provenance row"
-    if not is_v2_nested_design(body):
+    if not is_nested_design(body):
         return CheckResult(name, True, "skipped — legacy (pre-v2) body")
     repro = section_text(body, "Reproducibility")
     if repro is None:
@@ -2134,129 +2438,168 @@ def check_repro_context_provenance(
     )
 
 
-def check_cherry_picked_label(body: str) -> CheckResult:
-    """Check 10: every sample-output block in `## TL;DR` is preceded
-    by a cherry-picked / random-sample disclosure in the prelude prose.
+def _sample_scan_sections(body: str, *, raw_link_scope: bool = False) -> list[tuple[str, str]]:
+    """Return [(section_text, label)] to scan for sample-output blocks.
 
-    Under the 2-content-section spec (2026-W22, task #454) sample
-    completions live inside per-result H3s under `## TL;DR`, not under
-    a separate `## Details`. The check scans `## TL;DR` for BOTH
-    fenced code blocks AND `<details>` blocks that carry GFM tables /
-    long text (nested-design v2 bodies frequently present training
-    rows + eval probes as `<details open>` tables instead of fenced
-    code blocks — e.g. task #432). For each sample block the prose
-    immediately above must carry the disclosure.
+    v2 / legacy: the single `## TL;DR` section. v3: `## Findings` plus
+    `## Data` (the per-finding excerpts live under Findings; the
+    systematic samples live under Data). When ``raw_link_scope`` is set
+    (check 11 — the raw-completions-link rule), the v3 `## Data` scope
+    narrows to the `### Generated` subsection ONLY (the Trained-on /
+    Evaluated-with blocks link JSONLs / probe banks, not raw_completions
+    — their links are covered by check 18).
+
+    Sections that are absent are silently skipped; the caller decides
+    whether the absence is a FAIL (it is not for these checks — the
+    structure / Data-shape checks own section presence).
     """
-    tldr = section_text(body, "TL;DR")
-    if tldr is None:
-        return CheckResult("Cherry-picked label discipline", False, "## TL;DR section missing")
-    samples = _iter_sample_blocks(tldr)
-    if not samples:
-        return CheckResult(
-            "Cherry-picked label discipline",
-            True,
-            "no sample-output blocks in `## TL;DR` (fenced or `<details>`)",
-        )
+    out: list[tuple[str, str]] = []
+    if is_v3(body):
+        findings = section_text(body, "Findings")
+        if findings is not None:
+            out.append((findings, "## Findings"))
+        data = section_text(body, "Data")
+        if data is not None:
+            if raw_link_scope:
+                generated = _h3_subsection_text(data, "Generated")
+                if generated is not None:
+                    out.append((generated, "## Data → ### Generated"))
+            else:
+                out.append((data, "## Data"))
+    else:
+        tldr = section_text(body, "TL;DR")
+        if tldr is not None:
+            out.append((tldr, "## TL;DR"))
+    return out
+
+
+def check_cherry_picked_label(body: str) -> CheckResult:
+    """Check 10: every sample-output block is preceded by a
+    cherry-picked / random-sample disclosure in the prelude prose.
+
+    v2 / legacy (2026-W22 spec, task #454): scans `## TL;DR`. v3: scans
+    `## Findings` + `## Data`. In both cases the scan covers BOTH fenced
+    code blocks AND `<details>` blocks that carry GFM tables / long text
+    (nested-design bodies frequently present training rows + eval probes
+    as `<details open>` tables instead of fenced code blocks — e.g. task
+    #432). For each sample block the prose immediately above must carry
+    the disclosure.
+    """
+    label = "Cherry-picked label discipline"
+    scan_sections = _sample_scan_sections(body)
+    if not scan_sections:
+        missing = "## Findings / ## Data" if is_v3(body) else "## TL;DR"
+        return CheckResult(label, False, f"{missing} section missing")
     flagged: list[str] = []
-    for start, _, content in samples:
-        prelude = _prelude_window(tldr, start)
-        # For `<details>` blocks the cherry-pick disclosure may live
-        # inside the block (the `<summary>` text or the prose around
-        # the inner table); we scan BOTH the prelude window AND the
-        # inner content. (For fenced code blocks the `content` is the
-        # code text — a cherry-pick disclosure there is unusual and
-        # harmless to scan; the prelude scan still dominates.)
-        if _CHERRY_DISCLOSURE_RE.search(prelude) or _CHERRY_DISCLOSURE_RE.search(content):
-            continue
-        # First content line, trimmed, as a hint to the user.
-        first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
-        flagged.append(first_line)
+    total = 0
+    for scan_text, _src in scan_sections:
+        samples = _iter_sample_blocks(scan_text)
+        total += len(samples)
+        for start, _, content in samples:
+            prelude = _prelude_window(scan_text, start)
+            # For `<details>` blocks the cherry-pick disclosure may live
+            # inside the block (the `<summary>` text or the prose around
+            # the inner table); we scan BOTH the prelude window AND the
+            # inner content. (For fenced code blocks the `content` is the
+            # code text — a cherry-pick disclosure there is unusual and
+            # harmless to scan; the prelude scan still dominates.)
+            if _CHERRY_DISCLOSURE_RE.search(prelude) or _CHERRY_DISCLOSURE_RE.search(content):
+                continue
+            first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
+            flagged.append(first_line)
+    if total == 0:
+        srcs = ", ".join(f"`{s}`" for _t, s in scan_sections)
+        return CheckResult(
+            label, True, f"no sample-output blocks in {srcs} (fenced or `<details>`)"
+        )
     if flagged:
         preview = "; ".join(f"'{x}'" for x in flagged[:2]) + (" …" if len(flagged) > 2 else "")
         return CheckResult(
-            "Cherry-picked label discipline",
+            label,
             False,
-            f"{len(flagged)} of {len(samples)} sample block(s) lack a cherry-picked / "
+            f"{len(flagged)} of {total} sample block(s) lack a cherry-picked / "
             f"random-sample disclosure in the prelude prose: {preview}",
         )
-    return CheckResult(
-        "Cherry-picked label discipline",
-        True,
-        f"{len(samples)} sample block(s) labelled",
-    )
+    return CheckResult(label, True, f"{total} sample block(s) labelled")
 
 
 def check_qualitative_data_link(body: str) -> CheckResult:
-    """Check 11: every sample-output block in `## TL;DR` is preceded
-    by at least one link or backtick-path that is NOT an aggregate-only
-    path.
+    """Check 11: every sample-output block is preceded by at least one
+    link or backtick-path that is NOT an aggregate-only path.
 
-    An explicit `not uploaded` escape downgrades FAIL to WARN. Scope
-    moved from `## Details` to `## TL;DR` under the 2-content-section
-    spec (2026-W22, task #454) — sample completions now live inside
-    per-result H3s under TL;DR. The check scans BOTH fenced code
-    blocks AND `<details>` blocks that carry GFM tables / long text
-    (nested-design v2 bodies frequently present training rows + eval
-    probes as `<details open>` tables instead of fenced code blocks
-    — e.g. task #432).
+    An explicit `not uploaded` escape downgrades FAIL to WARN. v2 /
+    legacy (2026-W22 spec, task #454): scans `## TL;DR`. v3: scans
+    `## Findings` + `## Data → ### Generated` ONLY — the Trained-on /
+    Evaluated-with blocks link JSONLs / probe banks (covered by check
+    18), not raw_completions, so applying the raw-text-artifact rule to
+    them would mis-FAIL legitimate Data capsules. The check scans BOTH
+    fenced code blocks AND `<details>` blocks that carry GFM tables /
+    long text (nested-design bodies frequently present rows + probes as
+    `<details open>` tables instead of fenced code blocks — e.g. task
+    #432).
     """
-    tldr = section_text(body, "TL;DR")
-    if tldr is None:
-        return CheckResult("Qualitative-data link", False, "## TL;DR section missing")
-    samples = _iter_sample_blocks(tldr)
-    if not samples:
-        return CheckResult(
-            "Qualitative-data link",
-            True,
-            "no sample-output blocks in `## TL;DR` (fenced or `<details>`)",
-        )
+    label = "Qualitative-data link"
+    scan_sections = _sample_scan_sections(body, raw_link_scope=True)
+    if not scan_sections:
+        missing = "## Findings / ## Data → ### Generated" if is_v3(body) else "## TL;DR"
+        return CheckResult(label, False, f"{missing} section missing")
     fails: list[str] = []
     warns: list[str] = []
     passes = 0
-    for start, _, content in samples:
-        prelude = _prelude_window(tldr, start)
-        # For `<details>` blocks the raw-data link often lives INSIDE
-        # the block, after the table (e.g. task #432's "Full training
-        # file: [...]" link on the line after the table). Scan both
-        # the prelude window AND the inner content of the block so the
-        # check fires consistently regardless of where the body author
-        # placed the qualitative-data link. (For fenced code blocks
-        # the `content` is the code text; markdown links inside it are
-        # unusual but harmless to scan — the prelude scan still
-        # dominates.)
-        search_space = prelude + "\n" + content
-        # Collect candidate tokens: markdown link URLs + backtick-wrapped paths.
-        tokens: list[str] = []
-        tokens.extend(_LINK_RE.findall(search_space))
-        tokens.extend(_CODE_RE.findall(search_space))
-        has_escape = bool(_NOT_UPLOADED_RE.search(search_space))
-        first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
+    total = 0
+    for scan_text, _src in scan_sections:
+        samples = _iter_sample_blocks(scan_text)
+        total += len(samples)
+        for start, _, content in samples:
+            prelude = _prelude_window(scan_text, start)
+            # For `<details>` blocks the raw-data link often lives INSIDE
+            # the block, after the table (e.g. task #432's "Full training
+            # file: [...]" link on the line after the table). Scan both
+            # the prelude window AND the inner content of the block so the
+            # check fires consistently regardless of where the body author
+            # placed the qualitative-data link. (For fenced code blocks
+            # the `content` is the code text; markdown links inside it are
+            # unusual but harmless to scan — the prelude scan still
+            # dominates.)
+            search_space = prelude + "\n" + content
+            # Collect candidate tokens: markdown link URLs + backtick-wrapped paths.
+            tokens: list[str] = []
+            tokens.extend(_LINK_RE.findall(search_space))
+            tokens.extend(_CODE_RE.findall(search_space))
+            has_escape = bool(_NOT_UPLOADED_RE.search(search_space))
+            first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
 
-        if not tokens:
+            if not tokens:
+                if has_escape:
+                    warns.append(f"'{first_line}': no link, `not uploaded` escape acknowledged")
+                else:
+                    fails.append(f"'{first_line}': no link or path in prelude paragraph")
+                continue
+
+            qualitative_hit = any(not _AGGREGATE_PATH_RE.search(tok) for tok in tokens)
+            if qualitative_hit:
+                passes += 1
+                continue
+
             if has_escape:
-                warns.append(f"'{first_line}': no link, `not uploaded` escape acknowledged")
+                warns.append(
+                    f"'{first_line}': only aggregate-pattern links, "
+                    "`not uploaded` escape acknowledged"
+                )
             else:
-                fails.append(f"'{first_line}': no link or path in prelude paragraph")
-            continue
+                fails.append(
+                    f"'{first_line}': only aggregate-pattern links "
+                    f"(e.g. {tokens[0][:60]}); raw text-level artifact required"
+                )
 
-        qualitative_hit = any(not _AGGREGATE_PATH_RE.search(tok) for tok in tokens)
-        if qualitative_hit:
-            passes += 1
-            continue
-
-        if has_escape:
-            warns.append(
-                f"'{first_line}': only aggregate-pattern links, `not uploaded` escape acknowledged"
-            )
-        else:
-            fails.append(
-                f"'{first_line}': only aggregate-pattern links "
-                f"(e.g. {tokens[0][:60]}); raw text-level artifact required"
-            )
-
+    if total == 0:
+        srcs = ", ".join(f"`{s}`" for _t, s in scan_sections)
+        return CheckResult(
+            label, True, f"no sample-output blocks in {srcs} (fenced or `<details>`)"
+        )
     if fails:
         return CheckResult(
-            "Qualitative-data link",
+            label,
             False,
             f"{len(fails)} sample block(s) lack a qualitative-data link: "
             + "; ".join(fails[:2])
@@ -2264,17 +2607,13 @@ def check_qualitative_data_link(body: str) -> CheckResult:
         )
     if warns:
         return CheckResult(
-            "Qualitative-data link",
+            label,
             True,
             f"{len(warns)} sample block(s) ship with `not uploaded` escape — "
             "follow-up should re-run with raw-completion upload",
             is_warn=True,
         )
-    return CheckResult(
-        "Qualitative-data link",
-        True,
-        f"{passes} sample block(s) link to a qualitative-data artifact",
-    )
+    return CheckResult(label, True, f"{passes} sample block(s) link to a qualitative-data artifact")
 
 
 def check_goal_present(body: str, fm: dict) -> CheckResult:
@@ -2420,26 +2759,40 @@ def check_planned_vs_actual_denominator(body: str) -> CheckResult:
     See `.claude/agents/clean-result-critic.md` § Lens 13 for the
     semantic-judgment version of this check (which reads the plan).
     """
-    tldr = section_text(body, "TL;DR")
-    if tldr is None:
-        # Other checks will FAIL on missing sections; don't double-report.
-        return CheckResult(
-            "planned-vs-actual denominator consistency",
-            True,
-            "## TL;DR missing — other checks will report",
-        )
-    # The "scope-correction" text under the 2-content-section spec
-    # (2026-W22, task #454) can live anywhere — including inside a
-    # `### <finding>` H3 INSIDE `## TL;DR`, in a result H3 outside it,
-    # or in legacy in-flight bodies under a retired
-    # `### Methodology corrections` H3. The previous narrowing — which
-    # excluded `## TL;DR` from the scan — silently lost scope-correction
-    # prose that the new spec deliberately folds into TL;DR result H3s.
-    # So scan the WHOLE body for scope-correction claims; the TL;DR
-    # headline claims still come from `## TL;DR` only.
+    # The headline surface that must carry an accurate denominator is
+    # `## TL;DR` for v2/legacy bodies; for v3 bodies it is the two
+    # reader-facing claim surfaces `## Takeaways` + `## Findings`
+    # (there is no `## TL;DR` umbrella). The scope-correction scan stays
+    # whole-body in both cases.
+    if is_v3(body):
+        headline_parts = [
+            t for t in (section_text(body, "Takeaways"), section_text(body, "Findings")) if t
+        ]
+        if not headline_parts:
+            return CheckResult(
+                "planned-vs-actual denominator consistency",
+                True,
+                "## Takeaways / ## Findings missing — other checks will report",
+            )
+        headline_text = "\n\n".join(headline_parts)
+    else:
+        tldr = section_text(body, "TL;DR")
+        if tldr is None:
+            # Other checks will FAIL on missing sections; don't double-report.
+            return CheckResult(
+                "planned-vs-actual denominator consistency",
+                True,
+                "## TL;DR missing — other checks will report",
+            )
+        headline_text = tldr
+    # The "scope-correction" text can live anywhere — including inside a
+    # `### <finding>` H3, in a result H3 outside the headline surface, or
+    # in legacy in-flight bodies under a retired `### Methodology
+    # corrections` H3. So scan the WHOLE body for scope-correction
+    # claims; the headline claims come from the headline surface only.
     scope_text = body
 
-    tldr_claims = _collect_denominator_claims(tldr)
+    tldr_claims = _collect_denominator_claims(headline_text)
     method_claims = _collect_denominator_claims(scope_text)
 
     if not method_claims or not tldr_claims:
@@ -2536,12 +2889,17 @@ def check_details_narrative_flow(body: str) -> CheckResult:
     analyzer) should treat them as inputs to a narrative check rather
     than as a promote-blocking FAIL.
     """
-    tldr = section_text(body, "TL;DR")
+    # v3 bodies carry the result narrative under `## Findings`; v2 /
+    # legacy under `## TL;DR`. Same heuristics, different host section.
+    v3 = is_v3(body)
+    nav_section = "Findings" if v3 else "TL;DR"
+    label_name = "Findings narrative flow" if v3 else "TL;DR narrative flow"
+    tldr = section_text(body, nav_section)
     if tldr is None:
         return CheckResult(
-            "TL;DR narrative flow",
+            label_name,
             True,
-            "no ## TL;DR section to inspect (skipped)",
+            f"no ## {nav_section} section to inspect (skipped)",
             is_warn=True,
         )
 
@@ -2563,7 +2921,7 @@ def check_details_narrative_flow(body: str) -> CheckResult:
     bad_h3_names = [m.group("name") for m in bad_label_re.finditer(tldr)]
     if bad_h3_names:
         findings.append(
-            f"{len(bad_h3_names)} outline-label H3(s) in TL;DR: "
+            f"{len(bad_h3_names)} outline-label H3(s) in {nav_section}: "
             f"{', '.join(bad_h3_names)} — story-beat H3s name what the "
             "reader is about to learn, not the genre of content"
         )
@@ -2592,20 +2950,20 @@ def check_details_narrative_flow(body: str) -> CheckResult:
     dumps = [n for n in runs if n > 2]
     if dumps:
         findings.append(
-            f"{len(dumps)} run(s) of >2 consecutive figures in TL;DR "
+            f"{len(dumps)} run(s) of >2 consecutive figures in {nav_section} "
             "with no prose between — likely figure-dump. "
             "Add setup + read paragraphs around each figure."
         )
 
     if findings:
         return CheckResult(
-            "TL;DR narrative flow",
+            label_name,
             True,
             "; ".join(findings),
             is_warn=True,
         )
     return CheckResult(
-        "TL;DR narrative flow",
+        label_name,
         True,
         "no mechanical narrative-shape regressions detected",
     )
@@ -3036,29 +3394,49 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
             f"no open binding concerns (read {len(events)} concern events)",
         )
 
-    # Acknowledgement mechanism 1: any `### <H3>` body inside `## TL;DR`
-    # (the 2-content-section spec folds methodology corrections into
-    # result H3s — scan them all).
-    tldr_body = section_text(body, "TL;DR") or ""
+    v3 = is_v3(body)
+
+    # Acknowledgement mechanism 1: the result-narrative surface.
+    #  - v2 / legacy: any `### <H3>` body inside `## TL;DR` (the
+    #    2-content-section spec folds methodology corrections into result
+    #    H3s).
+    #  - v3: any `### <finding>` body inside `## Findings` PLUS the
+    #    `## Takeaways` bullets (the v3 binding-concern surfaces — a
+    #    methodology correction folds into a finding's read prose, and a
+    #    binding caveat is named in Takeaways).
+    if v3:
+        ack_parts = [
+            section_text(body, "Takeaways") or "",
+            section_text(body, "Findings") or "",
+        ]
+        ack_source = "\n\n".join(ack_parts)
+    else:
+        ack_source = section_text(body, "TL;DR") or ""
     h3_bodies: list[str] = []
     for h3_match in re.finditer(
         r"^###\s+.+?$(.*?)(?=^###\s|\Z)",
-        tldr_body,
+        ack_source,
         re.MULTILINE | re.DOTALL,
     ):
         h3_bodies.append(h3_match.group(1))
-    tldr_h3_text = "\n".join(h3_bodies)
+    # For v3, the Takeaways bullets carry no `### ` heading, so also fold
+    # the raw ack_source text in (covers Takeaways bullets + any
+    # pre-heading prose).
+    tldr_h3_text = "\n".join(h3_bodies) + ("\n" + ack_source if v3 else "")
 
-    # Acknowledgement mechanism 2: the `Confidence:` rationale paragraph
-    # (lives in `## Reproducibility` under the 2-content-section spec,
-    # but scan the whole body for robustness — the verifier already
-    # treats Confidence: as a section-agnostic anchor).
-    conf_match = re.search(
-        r"^Confidence:\s.*?(?=\n\n|\Z)",
-        body,
-        re.MULTILINE | re.DOTALL,
-    )
-    conf_body = conf_match.group(0) if conf_match else ""
+    # Acknowledgement mechanism 2: the `Confidence:` rationale paragraph.
+    # RETIRED for v3 bodies (confidence lives in the H1 title tag only —
+    # there is no Confidence paragraph). For v2 / legacy it lives in
+    # `## Reproducibility`; scan the whole body for robustness.
+    if v3:
+        conf_body = ""
+    else:
+        conf_match = re.search(
+            r"^Confidence:\s.*?(?=\n\n|\Z)",
+            body,
+            re.MULTILINE | re.DOTALL,
+        )
+        conf_body = conf_match.group(0) if conf_match else ""
 
     # Acknowledgement mechanism 3: explicit deferral HTML comment.
     deferral_re = re.compile(r"<!--\s*concern-deferred:\s*([a-z0-9][a-z0-9-]{1,79})\s*-->")
@@ -3074,19 +3452,485 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
         unaddressed.append(f"{cid} ({ev.get('severity', 'unknown')})")
 
     if unaddressed:
+        ack_hint = (
+            "a `## Findings` `### <finding>` read paragraph, a `## Takeaways` bullet, "
+            if v3
+            else "a `## TL;DR` result H3, the `Confidence:` sentence, "
+        )
         return CheckResult(
             "concerns audit (Lens 14)",
             False,
             f"{len(unaddressed)} open binding concern(s) unaddressed in body: "
-            f"{', '.join(unaddressed)}. Acknowledge each in a `## TL;DR` result "
-            "H3, the `Confidence:` sentence, or a `<!-- concern-deferred: <id> -->` "
-            "HTML marker. See `.claude/agents/clean-result-critic.md` § Lens 14 "
+            f"{', '.join(unaddressed)}. Acknowledge each in {ack_hint}"
+            "or a `<!-- concern-deferred: <id> -->` HTML marker. See "
+            "`.claude/agents/clean-result-critic.md` § Lens 14 "
             "and `workflow.yaml § concerns_protocol`.",
         )
     return CheckResult(
         "concerns audit (Lens 14)",
         True,
         f"all {len(open_binding)} open binding concern(s) acknowledged in body",
+    )
+
+
+# ─── v3 Data-section checks (18 / 19) ────────────────────────────────────────
+
+# An explicit `n/a — <reason>` line that a `## Data` subsection may use
+# in place of a pinned link (e.g. `### Trained on` for an eval-only task).
+# Accepts en-dash, em-dash, or ASCII hyphen and ≥3 chars of reason.
+_DATA_NA_RE = re.compile(r"(?im)^\s*>?\s*n/?a\s*[—–-]\s*\S.{2,}")  # noqa: RUF001
+
+# Any pinned absolute artifact link inside a `## Data` subsection that
+# points at the COMPLETE artifact: an `https://` URL pinned to a ref (HF
+# Hub `/tree|/blob/<sha>` or `@<sha>`, WandB `/runs/<id>`, GitHub
+# `/blob|/tree/<sha>`, raw.githubusercontent `<sha>`). Reuses the
+# permanence shape the Reproducibility checks already trust — here we
+# only need "is there ≥1 pinned link", not full validation.
+_PINNED_LINK_RE = re.compile(
+    r"https?://[^\s)]*"
+    r"(?:/tree/[0-9a-fA-F]{7,40}|/blob/[0-9a-fA-F]{7,40}|@[0-9a-fA-F]{7,40}"
+    r"|raw\.githubusercontent\.com/[^\s)]+/[0-9a-fA-F]{7,40}/"
+    r"|wandb\.ai/[^\s)]+/runs/[^\s)]+)"
+)
+
+# Subset-disclosure forms accepted by check 19 — the Datasheets
+# sample-to-population field. Extends the checks 10/11 cherry-picked
+# pattern with the harmful-content sanitized form so v3 `## Data`
+# example blocks built from EM / bad-medical-advice corpora pass.
+_SUBSET_DISCLOSURE_RE = re.compile(
+    r"\b(?:cherry[-\s]?picked|random[-\s]?sample|drawn at random|random draw|"
+    r"first \d+ of \d+|\d+ of \d+ rows|\d+ of [\d,]+ rows|"
+    r"\d+\s+(?:examples?|sample[s]?|example rows?)|"
+    # harmful-content carve-out — the sanitized excerpt form
+    r"sanitized for context hygiene|harmful-content row|truncated — harmful)",
+    re.IGNORECASE,
+)
+
+
+def check_data_shape(body: str) -> CheckResult:
+    """Check 18 (v3 only): `## Data` carries `### Trained on` /
+    `### Evaluated with` / `### Generated` in order, and each block
+    contains ≥1 pinned link to the complete artifact OR an explicit
+    `n/a — <reason>` line.
+
+    PASSes vacuously on v2 / legacy bodies (no v3 sentinel).
+    """
+    label = "Data section shape (v3)"
+    if not is_v3(body):
+        return CheckResult(label, True, "skipped — not a v3 body")
+    data = section_text(body, "Data")
+    if data is None:
+        # check_required_sections already FAILs on a missing `## Data`;
+        # don't double-report.
+        return CheckResult(label, True, "## Data missing — check 2 will report")
+    h3s = _collect_tldr_h3_names(data)
+    h3_heads = [
+        re.split(r"\s+[–—:]\s+", re.sub(r"\s+", " ", name).strip(), maxsplit=1)[0].casefold()  # noqa: RUF001
+        for name, _line in h3s
+    ]
+    required = [s.casefold() for s in V3_DATA_SUBSECTIONS]
+    missing = [V3_DATA_SUBSECTIONS[i] for i, r in enumerate(required) if r not in h3_heads]
+    if missing:
+        return CheckResult(
+            label,
+            False,
+            f"## Data is missing required subsection(s): "
+            f"{', '.join('### ' + m for m in missing)}. The v3 shape requires "
+            f"`### Trained on` → `### Evaluated with` → `### Generated` in order.",
+        )
+    # Order check on the subset of H3s that are required subsections.
+    seq = [h for h in h3_heads if h in required]
+    if seq != required:
+        return CheckResult(
+            label,
+            False,
+            f"## Data subsections out of order — got {seq}, expected {required} "
+            "(`### Trained on` → `### Evaluated with` → `### Generated`).",
+        )
+    # Per-subsection: ≥1 pinned link OR an explicit `n/a — <reason>` line.
+    no_link: list[str] = []
+    for sub in V3_DATA_SUBSECTIONS:
+        sub_text = _h3_subsection_text(data, sub)
+        if sub_text is None:
+            # Already handled by the missing/order checks above; defensive.
+            no_link.append(sub)
+            continue
+        if _PINNED_LINK_RE.search(sub_text) or _DATA_NA_RE.search(sub_text):
+            continue
+        no_link.append(sub)
+    if no_link:
+        return CheckResult(
+            label,
+            False,
+            f"## Data subsection(s) {', '.join('### ' + s for s in no_link)} carry "
+            "no pinned link to the complete artifact and no explicit `n/a — <reason>` "
+            "line. Each block must link the full artifact (HF Hub `/tree/<sha>`, "
+            "WandB `/runs/<id>`, GitHub `/blob/<sha>`) or state `n/a — <reason>`.",
+        )
+    return CheckResult(
+        label,
+        True,
+        "## Data has Trained on / Evaluated with / Generated in order, each with a "
+        "complete-artifact link or `n/a — <reason>`",
+    )
+
+
+def check_data_subset_disclosure(body: str) -> CheckResult:
+    """Check 19 (v3 only): every example block (fenced OR `<details>`)
+    inside `## Data` is immediately preceded by a subset-disclosure line
+    — `K of M rows, random sample` / `cherry-picked for illustration` /
+    the harmful-content sanitized form. Extends the checks-10/11 pattern
+    to `## Data`.
+
+    PASSes vacuously on v2 / legacy bodies (no v3 sentinel).
+    """
+    label = "Data subset-disclosure (v3)"
+    if not is_v3(body):
+        return CheckResult(label, True, "skipped — not a v3 body")
+    data = section_text(body, "Data")
+    if data is None:
+        return CheckResult(label, True, "## Data missing — check 2 will report")
+    samples = _iter_sample_blocks(data)
+    if not samples:
+        return CheckResult(label, True, "no example blocks in `## Data` (fenced or `<details>`)")
+    flagged: list[str] = []
+    for start, _, content in samples:
+        prelude = _prelude_window(data, start)
+        if _SUBSET_DISCLOSURE_RE.search(prelude) or _SUBSET_DISCLOSURE_RE.search(content):
+            continue
+        first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
+        flagged.append(first_line)
+    if flagged:
+        preview = "; ".join(f"'{x}'" for x in flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            False,
+            f"{len(flagged)} of {len(samples)} `## Data` example block(s) lack a "
+            f"subset-disclosure line (`K of M rows, random sample` / `cherry-picked "
+            f"for illustration` / sanitized-harmful form): {preview}",
+        )
+    return CheckResult(label, True, f"{len(samples)} `## Data` example block(s) disclosed")
+
+
+# ─── v3 word-cap check (20) ──────────────────────────────────────────────────
+
+
+def _prose_words(text: str) -> int:
+    """Count words in `text` AFTER stripping the surfaces the caps
+    deliberately exclude: fenced code blocks, `<details>...</details>`
+    bodies, GFM table rows (lines starting with `|`), and blockquote
+    caption lines (lines starting with `>`). What remains is the
+    scannable prose the caps govern.
+    """
+    # Strip <details> blocks first (they may contain tables / fences).
+    text = _DETAILS_BLOCK_RE.sub("", text)
+    out_lines: list[str] = []
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if s.startswith("|"):  # GFM table row
+            continue
+        if s.startswith(">"):  # blockquote caption
+            continue
+        out_lines.append(line)
+    prose = "\n".join(out_lines)
+    return len(prose.split())
+
+
+def _count_extra_followup_rounds(body: str) -> int:
+    """Heuristic count of LIVE follow-up rounds beyond the first, read
+    off a `## What I ran` Rounds table (one data row per round). Returns
+    0 when no Rounds table is present (single-round body). Used only to
+    scale the WARN-only total-prose budget."""
+    what = section_text(body, "What I ran")
+    if what is None:
+        return 0
+    # Find a markdown table whose header row mentions "round".
+    data_rows = 0
+    in_round_table = False
+    for line in what.splitlines():
+        s = line.strip()
+        if not s.startswith("|"):
+            in_round_table = False
+            continue
+        if "round" in s.casefold() and not in_round_table:
+            # Header row of a rounds table; the next line should be the
+            # GFM delimiter, then data rows.
+            in_round_table = True
+            continue
+        if in_round_table:
+            if _GFM_DELIM_RE.match(line):
+                continue
+            data_rows += 1
+    return max(0, data_rows - 1)
+
+
+def _count_overlong_takeaways_bullets(takeaways: str) -> int:
+    """Count top-level Takeaways bullets over the per-bullet word cap
+    (fence-aware). Helper for check 20."""
+    in_fence = False
+    over = 0
+    for line in takeaways.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if re.match(r"^[-*]\s+\S", line):
+            wc = len(re.sub(r"^[-*]\s+", "", line.strip()).split())
+            if wc > V3_TAKEAWAYS_BULLET_MAX_WORDS:
+                over += 1
+    return over
+
+
+def _finding_prose_cap_results(findings: str) -> tuple[list[str], list[str]]:
+    """Return (fail_msgs, warn_msgs) for the per-finding prose caps.
+    Each `### <finding>` block's prose (excl. tables / fenced code /
+    `<details>` bodies / captions, via `_prose_words`) is FAILed at the
+    hard cap and WARNed at the soft cap. Helper for check 20."""
+    fails: list[str] = []
+    warns: list[str] = []
+    finding_h3s = _collect_tldr_h3_names(findings)
+    flines = findings.splitlines()
+    for idx, (name, line_no) in enumerate(finding_h3s):
+        end_line = finding_h3s[idx + 1][1] if idx + 1 < len(finding_h3s) else len(flines)
+        block = "\n".join(flines[line_no + 1 : end_line])
+        wc = _prose_words(block)
+        short = name[:48]
+        if wc >= V3_FINDING_PROSE_FAIL_WORDS:
+            fails.append(f"finding '{short}' prose is {wc} words (≥{V3_FINDING_PROSE_FAIL_WORDS})")
+        elif wc > V3_FINDING_PROSE_WARN_WORDS:
+            warns.append(f"finding '{short}' prose is {wc} words (>{V3_FINDING_PROSE_WARN_WORDS})")
+    return fails, warns
+
+
+def _count_overlong_captions(findings: str) -> int:
+    """Count figure captions (consecutive blockquote `>` runs,
+    fence-aware) over the caption word cap. Helper for check 20."""
+    over = 0
+    cap_run: list[str] = []
+
+    def _flush() -> None:
+        nonlocal over
+        if cap_run:
+            txt = " ".join(re.sub(r"^>\s?", "", ln) for ln in cap_run)
+            # Strip bold "Figure." label + italics markers for the count.
+            wc = len(re.sub(r"[*_]", "", txt).split())
+            if wc > V3_FIGURE_CAPTION_MAX_WORDS:
+                over += 1
+
+    in_fence = False
+    for line in findings.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            cap_run = []
+            continue
+        if in_fence:
+            continue
+        if s.startswith(">"):
+            cap_run.append(s)
+        else:
+            _flush()
+            cap_run = []
+    _flush()
+    return over
+
+
+def check_v3_word_caps(body: str) -> CheckResult:
+    """Check 20 (v3 only): the §4 conciseness caps.
+
+    - Per-Takeaways-bullet ≤30 words (WARN).
+    - Per-finding prose ≤120 words WARN / ≥180 words FAIL (excl.
+      caption / fenced code / `<details>` bodies / table rows).
+    - Figure caption ≤60 words (WARN).
+    - Total content prose (Takeaways + What I ran + Findings) ≤700 +
+      250 per live follow-up round beyond the first (WARN-only).
+
+    The Takeaways 3-6 bullet COUNT is owned by `check_v3_structure`
+    (one authoritative count gate), not duplicated here. A FAIL here
+    fires ONLY on the per-finding ≥180-word hard cap; everything else
+    is WARN. PASSes vacuously on v2 / legacy bodies.
+    """
+    label = "v3 conciseness caps"
+    if not is_v3(body):
+        return CheckResult(label, True, "skipped — not a v3 body")
+
+    warns: list[str] = []
+    fails: list[str] = []
+
+    takeaways = section_text(body, "Takeaways") or ""
+    findings = section_text(body, "Findings") or ""
+
+    # Per-Takeaways-bullet word cap (WARN).
+    over_bullets = _count_overlong_takeaways_bullets(takeaways)
+    if over_bullets:
+        warns.append(
+            f"{over_bullets} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
+        )
+
+    # Per-finding prose caps (WARN at soft, FAIL at hard).
+    f_fails, f_warns = _finding_prose_cap_results(findings)
+    fails.extend(f_fails)
+    warns.extend(f_warns)
+
+    # Figure-caption word cap (WARN).
+    over_captions = _count_overlong_captions(findings)
+    if over_captions:
+        warns.append(
+            f"{over_captions} figure caption(s) exceed {V3_FIGURE_CAPTION_MAX_WORDS} words"
+        )
+
+    # Total content prose (WARN-only), scaled per live follow-up round.
+    extra_rounds = _count_extra_followup_rounds(body)
+    total_budget = V3_TOTAL_PROSE_BASE_WORDS + extra_rounds * V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS
+    total_prose = (
+        _prose_words(takeaways)
+        + _prose_words(section_text(body, "What I ran") or "")
+        + _prose_words(findings)
+    )
+    if total_prose > total_budget:
+        warns.append(
+            f"total content prose is {total_prose} words (budget {total_budget}: "
+            f"{V3_TOTAL_PROSE_BASE_WORDS} + {extra_rounds} x "
+            f"{V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS} per extra round)"
+        )
+
+    if fails:
+        return CheckResult(
+            label,
+            False,
+            "; ".join(fails) + (("; WARN: " + "; ".join(warns)) if warns else ""),
+        )
+    if warns:
+        return CheckResult(label, True, "; ".join(warns), is_warn=True)
+    return CheckResult(label, True, "all v3 conciseness caps satisfied")
+
+
+# ─── v3 body-table ⊆ methodology-doc table check (21) ────────────────────────
+
+
+def _parse_param_table_rows(section: str) -> dict[str, str]:
+    """Parse a `**Parameters:**` two-column markdown table out of a
+    `## Reproducibility` section. Returns {param_key_norm: value_norm}.
+
+    Recognizes the table that follows a `**Parameters:**` boldface label
+    (the first GFM 2-col table after it). Keys/values are normalized:
+    lowercased, collapsed whitespace, backticks stripped. The header row
+    and delimiter row are skipped.
+    """
+    out: dict[str, str] = {}
+    # Find the slice starting at `**Parameters:**`.
+    m = re.search(r"\*\*\s*Parameters\s*:?\s*\*\*", section, re.IGNORECASE)
+    if not m:
+        return out
+    after = section[m.end() :]
+    in_fence = False
+    seen_delim = False
+    for line in after.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if not s.startswith("|"):
+            # A blank line right after the label is fine; a non-table
+            # non-blank line AFTER we've started the table ends it.
+            if seen_delim:
+                break
+            if s == "":
+                continue
+            # A boldface label like `**Artifacts:**` ends the table region.
+            if s.startswith("**"):
+                break
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if _GFM_DELIM_RE.match(line):
+            seen_delim = True
+            continue
+        if len(cells) < 2:
+            continue
+        key = re.sub(r"\s+", " ", cells[0].replace("`", "")).strip().casefold()
+        val = re.sub(r"\s+", " ", cells[1].replace("`", "")).strip().casefold()
+        if not key or key in ("parameter", "param", "name"):
+            continue
+        out[key] = val
+    return out
+
+
+def check_body_params_subset_of_doc(
+    body: str, *, methodology_doc_path: Path | None = None
+) -> CheckResult:
+    """Check 21 (v3 only): the load-bearing param rows in the body's
+    `## Reproducibility` Parameters table are a SUBSET of the
+    methodology doc's §2 complete hyperparameter table.
+
+    Two-tier split (plan §3b): the body table slims to the load-bearing
+    subset; the methodology doc §2 is the canonical COMPLETE table.
+    Every body param key+value must appear in the doc table (key match +
+    value substring containment, both normalized).
+
+    Gate-timing: the methodology doc lives on the issue worktree branch
+    pre-merge, so this check is a NO-OP PASS when no doc path is given OR
+    the file does not exist (the orchestrator passes the worktree path
+    explicitly at gate time; it binds fully at promote-time verify, after
+    merge). PASSes vacuously on v2 / legacy bodies.
+    """
+    label = "Body Parameters ⊆ methodology doc §2"
+    if not is_v3(body):
+        return CheckResult(label, True, "skipped — not a v3 body")
+    if methodology_doc_path is None or not methodology_doc_path.exists():
+        return CheckResult(
+            label,
+            True,
+            "skipped — no methodology doc on disk to reconcile against "
+            "(binds at promote-time verify, post-merge)",
+        )
+    repro = section_text(body, "Reproducibility")
+    if repro is None:
+        return CheckResult(label, True, "skipped — no Reproducibility section")
+    body_params = _parse_param_table_rows(repro)
+    if not body_params:
+        return CheckResult(label, True, "skipped — no Parameters table in body")
+    doc_text = methodology_doc_path.read_text(errors="replace").casefold()
+    doc_text = re.sub(r"`", "", re.sub(r"\s+", " ", doc_text))
+    missing: list[str] = []
+    for key, val in body_params.items():
+        # Skip rows whose value is an explicit non-applicable / free-text
+        # marker the doc legitimately need not echo verbatim.
+        if val in ("n/a", "none", "-", "—", "–"):  # noqa: RUF001
+            continue
+        # Key must appear in the doc; AND the value must appear somewhere
+        # in the doc (substring containment on normalized text — the doc
+        # table may carry a Source column / extra formatting around it).
+        if key not in doc_text:
+            missing.append(f"{key} (key absent from doc §2 table)")
+            continue
+        if val and val not in doc_text:
+            missing.append(f"{key}={val} (value not found in doc §2 table)")
+    if missing:
+        preview = "; ".join(missing[:4]) + (
+            f" (+{len(missing) - 4} more)" if len(missing) > 4 else ""
+        )
+        return CheckResult(
+            label,
+            False,
+            f"{len(missing)} body Parameters row(s) not reconciled against the "
+            f"methodology doc §2 complete table: {preview}. The doc §2 table is the "
+            "canonical complete hyperparameter set; every body param key+value must "
+            "appear there.",
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(body_params)} body Parameters row(s) appear in the methodology doc §2 table",
     )
 
 
@@ -3120,6 +3964,10 @@ CHECKS = [
     check_mdx_safe_urls,
     check_repro_committed_claims_exist,
     check_repro_artifact_urls_exist,
+    # v3-gated checks (PASS vacuously on v2 / legacy bodies):
+    check_data_shape,  # check 18
+    check_data_subset_disclosure,  # check 19
+    check_v3_word_caps,  # check 20
 ]
 
 
@@ -3130,6 +3978,7 @@ def verify_text(
     concerns_path: Path | None = None,
     plan_path: Path | None = None,
     original_body_path: Path | None = None,
+    methodology_doc_path: Path | None = None,
 ) -> tuple[bool, list[CheckResult]]:
     """Run every clean-result check on ``raw`` body.md text.
 
@@ -3151,6 +4000,14 @@ def verify_text(
     uses it to detect a ``## Provenance`` section in the pre-promotion
     body — recorded origin data that the clean-result body must carry
     forward in its ``**Context:**`` row.
+
+    ``methodology_doc_path`` is the absolute path to the auto-generated
+    ``docs/methodology/issue_<N>.md`` reference, passed explicitly by
+    the orchestrator at gate time (the doc lives on the issue worktree
+    branch pre-merge, so the verifier cannot resolve it from a sibling).
+    Check 21 (v3 only) reconciles the body's load-bearing Parameters
+    rows against the doc §2 complete table when the doc exists; it is a
+    NO-OP PASS otherwise. May be set via ``--methodology-doc <path>``.
     """
     fm, body = split_frontmatter(raw)
     if LEGACY_SAGAN_CARD_SENTINEL in body:
@@ -3190,6 +4047,11 @@ def verify_text(
     # frontmatter (origin_prompt) + the sibling original-body.md, so it
     # also lives outside the body-only CHECKS list.
     results.append(check_repro_context_provenance(body, fm, original_body_path=original_body_path))
+    # Check 21 (v3 body Parameters ⊆ methodology doc §2 table) needs the
+    # explicitly-passed methodology doc path, so it also lives outside
+    # the body-only CHECKS list. NO-OP PASS on v2 / legacy bodies and
+    # whenever no doc is supplied (gate-timing — see the check docstring).
+    results.append(check_body_params_subset_of_doc(body, methodology_doc_path=methodology_doc_path))
     overall = all(r.passed for r in results)
     return overall, results
 
@@ -3210,11 +4072,25 @@ def main() -> int:
     grp.add_argument("--issue", type=int, help="task number to verify")
     grp.add_argument("--file", help="path to a body.md to verify")
     grp.add_argument("--body-stdin", action="store_true", help="read body from stdin")
+    parser.add_argument(
+        "--methodology-doc",
+        help=(
+            "path to the auto-generated docs/methodology/issue_<N>.md reference "
+            "(check 21, v3 only). The orchestrator passes the issue-worktree path "
+            "explicitly at gate time, since the doc is not yet on main pre-merge. "
+            "NO-OP PASS when omitted or the file does not exist."
+        ),
+    )
     args = parser.parse_args()
 
     concerns_path: Path | None = None
     plan_path: Path | None = None
     original_body_path: Path | None = None
+    methodology_doc_path: Path | None = None
+    if args.methodology_doc:
+        cand = Path(args.methodology_doc).expanduser()
+        if cand.exists():
+            methodology_doc_path = cand
     if args.issue is not None:
         try:
             raw, source_path = _load_text_for_issue(args.issue)
@@ -3253,6 +4129,7 @@ def main() -> int:
         concerns_path=concerns_path,
         plan_path=plan_path,
         original_body_path=original_body_path,
+        methodology_doc_path=methodology_doc_path,
     )
     print(f"verify_task_body — {source}")
     for r in results:
