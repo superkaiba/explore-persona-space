@@ -12,6 +12,9 @@ goal: Determine whether the default assistant context's shielding from a marker 
   replacement negative (journalist) for an assistant-cluster-proximal negative and
   reading the never-trained default context's and assistant persona's centered implant-normalized
   marker log-prob shifts.
+relates_to:
+- leak-to-default
+- leak-contrastive-negatives
 ---
 # Assistant-proximal negative swap — does suppression reach the default from cluster-proximal negatives?
 
