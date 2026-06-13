@@ -62,14 +62,28 @@ def build_610_spec(manifest: dict, chassis: ChassisConfig = CHASSES["mercenary"]
         raise AssertionError(f"base_panel must have 2 personas, got {base_panel}")
     near_slot = target["near"]["name"]
     ctrl_name = target["ctrl"]["name"]
-    # Pre-registration identity check: the replacement IS the pair's
-    # already-characterized matched-control persona, nothing else.
-    if ctrl_name != chassis.replacement:
-        raise AssertionError(
-            f"chassis {chassis.name!r} replacement {chassis.replacement!r} != the manifest's "
-            f"{chassis.chassis_target} ctrl slot {ctrl_name!r} — the pre-registered swap "
-            "identity does not hold; refusing to build the spec."
-        )
+    if chassis.replacement_is_ctrl:
+        # Pre-registration identity check (#610): the replacement IS the pair's
+        # already-characterized matched-control persona, nothing else.
+        if ctrl_name != chassis.replacement:
+            raise AssertionError(
+                f"chassis {chassis.name!r} replacement {chassis.replacement!r} != the manifest's "
+                f"{chassis.chassis_target} ctrl slot {ctrl_name!r} — the pre-registered swap "
+                "identity does not hold; refusing to build the spec."
+            )
+    else:
+        # #632 proximal pick: the replacement is NOT a ctrl persona by design
+        # (it is the deterministic min-distance neighbor of the assistant
+        # centroid). Pre-registration: assert it does NOT collide with the
+        # parent's ctrl/near slots — a non-ctrl replacement that silently
+        # equaled a slot would reintroduce the #610 swap rather than the swap
+        # this experiment registers. (The remaining asserts below carry the
+        # rest of the disjointness against the realized panel.)
+        if chassis.replacement in (ctrl_name, near_slot):
+            raise AssertionError(
+                f"{chassis.name!r}: proximal replacement {chassis.replacement!r} collides with a "
+                f"parent slot (ctrl={ctrl_name!r}, near={near_slot!r}); refusing to build."
+            )
 
     # The swap: the parent panel is (qwen_default, base_0, base_1, near_slot);
     # the #610 panel hands qwen_default's 200 rows to the replacement. The

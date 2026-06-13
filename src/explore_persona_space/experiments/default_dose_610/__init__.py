@@ -84,14 +84,18 @@ class ChassisConfig:
     """
 
     name: str
-    chassis_slug: str  # the reused #600 comparator cell
+    chassis_slug: str  # the reused comparator cell (a #600 cell for #610; a #610 cell for #632)
     chassis_target: str  # the #600 target whose near cell is the chassis
     new_slug: str  # the new no-default cell
     new_plain_name: str
-    replacement: str  # the pair's matched-control persona (gets qwen_default's rows)
+    replacement: (
+        str  # the persona that gets qwen_default's rows (ctrl for #610; proximal pick #632)
+    )
     sanity_personas: tuple[str, ...]  # trained in BOTH arms (drift detectors)
     dg_soft_range: tuple[float, float]  # gate (j): parent-arm villain ΔG ± 2 nats
-    replacement_ctrl_precedent: float  # replacement's trained-slot read, parent ctrl cells
+    # replacement's trained-slot read, parent ctrl cells; None = no ctrl precedent
+    # (a non-ctrl proximal pick, #632 — the #600 ctrl glob has no row for it).
+    replacement_ctrl_precedent: float | None
     run_name_prefix: str
     # Registered with-arm drift-detector medians (v2 plan §5), recomputed by
     # formula from the committed comparator trajectories at analyze time and
@@ -99,6 +103,18 @@ class ChassisConfig:
     sanity_with_arm_expected: dict[str, float] | None = None
     hf_subprefix: str | None = None
     output_subdir: str | None = None
+    # round-1 default; False = a non-ctrl proximal pick (#632). Gates the
+    # ctrl-identity pre-registration assert in cells.build_610_spec.
+    replacement_is_ctrl: bool = True
+    # personas to drop from the centering set on BOTH arms (the replacement
+    # becomes a trained negative → it leaves the untrained-panel median). ()
+    # for the two #610 chassis (35-set); ("programmer",) for #632 (34-set).
+    centering_extra_exclude: tuple[str, ...] = ()
+    # where the comparator (`chassis_slug`) trajectories live; None → fall back
+    # to `parent_sweep` (issue_600/sweep) for the two #610 chassis whose
+    # comparator IS a c600 cell. For #632 the comparator is a c610 cell, so
+    # this points at issue_610/sweep (Must-Fix 1).
+    comparator_sweep_root: Path | None = None
 
     @property
     def hf_data_prefix(self) -> str:
@@ -170,6 +186,41 @@ CHASSES: dict[str, ChassisConfig] = {
         },
         hf_subprefix="second_chassis",
         output_subdir="second-chassis-dose-replication",
+    ),
+    # Task #632 (same-issue follow-up): the ONLY change vs the #610 mercenary
+    # no-default arm is the 4th negative slot — journalist (far from the
+    # assistant centroid, L10 d=1.113) → programmer (the deterministic
+    # min-L10-centered-cosine pick among disjoint personas, d=0.4235). The
+    # comparator is the #610 no-default arm's 3 committed trajectories, REUSED
+    # (read-only); the new arm trains the same recipe at the same 63 steps with
+    # programmer in the slot. Centering drops programmer (now trained) → 34-set
+    # on BOTH arms. The comparator is a c610 cell → comparator_sweep_root points
+    # at issue_610/sweep, not the inherited issue_600/sweep --parent-sweep
+    # default (Must-Fix 1).
+    "assistant_proximal": ChassisConfig(
+        name="assistant_proximal",
+        chassis_slug="c610_mercenary_near_nodefault",  # COMPARATOR = the #610 no-default arm
+        chassis_target="mercenary",  # same parent pair → same NEAR slot (dictator)
+        new_slug="c632_assistant_proximal",
+        new_plain_name=("Proximal-negative mix (mercenary chassis, journalist slot -> programmer)"),
+        replacement="programmer",  # the deterministic min-d pick (d=0.4235 to assistant)
+        replacement_is_ctrl=False,  # programmer is NOT a ctrl persona — gates the #610 assert
+        sanity_personas=("bartender", "french_person", "dictator"),  # trained in BOTH arms
+        dg_soft_range=(8.0, 12.0),  # #610 no-default villain ΔG range [8.65, 10.02] ± 2 nats
+        replacement_ctrl_precedent=None,  # no ctrl precedent for programmer (not a ctrl slot)
+        run_name_prefix="issue632_",
+        # COMPUTED at plan time (v3) by the analyze formula from the 3 #610
+        # no-default comparator trajectories on the 34-set (programmer excluded);
+        # asserted at analyze (±2e-3) exactly as the software_engineer chassis.
+        sanity_with_arm_expected={
+            "bartender": -0.0267,
+            "french_person": -0.0297,
+            "dictator": 0.0219,
+        },
+        centering_extra_exclude=("programmer",),  # programmer is now TRAINED → 35→34 on BOTH arms
+        comparator_sweep_root=Path("eval_results/issue_610/sweep"),  # Must-Fix 1: c610 comparator
+        hf_subprefix="assistant_proximal",  # nests under issue610_default_dose/assistant_proximal/
+        output_subdir="assistant-proximal-swap",
     ),
 }
 

@@ -90,15 +90,25 @@ def centering_set(manifest: dict, chassis: ChassisConfig = CHASSES["mercenary"])
     slots = {t[k]["name"] for t in manifest["targets"] for k in ("near", "ctrl")}
     trained_anywhere = base_panel | {ALWAYS_INCLUDE_NEGATIVE} | slots
     out = sorted(held - targets - trained_anywhere)
-    if len(out) != EXPECTED_CENTERING_N:
+    # ORDERING IS LOAD-BEARING: a chassis whose replacement is a #610-untrained
+    # persona (e.g. #632's `programmer`, which survives `trained_anywhere`) is
+    # a TRAINED negative in this design, so it must leave the centering set on
+    # BOTH arms. The extra-exclude MUST run before the N-check (else N would be
+    # 35 vs the expected 34) AND before the replacement-in-out guard below
+    # (else that guard would itself raise on the still-present replacement).
+    extra = set(chassis.centering_extra_exclude)  # () for #610 → 35; {programmer} for #632 → 34
+    out = [p for p in out if p not in extra]
+    expected_n = EXPECTED_CENTERING_N - len(extra)
+    if len(out) != expected_n:
         raise AssertionError(
-            f"centering set has {len(out)} personas, expected {EXPECTED_CENTERING_N} — the "
-            "manifest is a different generation than the one this formula was frozen against."
+            f"centering set has {len(out)} personas, expected {expected_n} "
+            f"(extra_exclude={sorted(extra)}) — the manifest is a different generation than the "
+            "one this formula was frozen against."
         )
-    if chassis.replacement in out or SOURCE_PERSONA in out:
+    if (chassis.replacement in out) or (SOURCE_PERSONA in out):
         raise AssertionError(
             f"centering set must exclude the replacement persona ({chassis.replacement!r}) "
-            "+ source."
+            f"+ source (extra_exclude={sorted(extra)})."
         )
     return out
 
@@ -264,6 +274,33 @@ def classify(median_without: float, median_with: float, band: float) -> dict:
     }
 
 
+def band_verdict(m_new: float, m_comparator: float, band: float) -> dict:
+    """The plan §3/§6.4 registered per-read symmetric band test (#632 Must-Fix 2).
+
+    Compares a NEW arm's centered-shift median against ITS OWN comparator
+    median (qwen_default vs the qwen_default comparator; assistant vs the
+    assistant comparator — never one read against the other's anchor):
+      HELD ⇔ |m_new − m_comparator| ≤ band (positional floor; no movement);
+      FALSIFIED ⇔ |m_new − m_comparator| > 2*band (proximity-modulated
+        suppression — the surprising outcome);
+      PARTIAL ⇔ in between.
+    Returns the verdict plus the signed delta, direction, and fraction-of-band.
+    """
+    delta = m_new - m_comparator
+    ad = abs(delta)
+    verdict = "HELD" if ad <= band else ("FALSIFIED" if ad > 2 * band else "PARTIAL")
+    return {
+        "median_new": m_new,
+        "median_comparator": m_comparator,
+        "delta": delta,
+        "abs_delta": ad,
+        "band": band,
+        "verdict": verdict,
+        "direction": ("more_shielded" if delta < 0 else "less_shielded"),
+        "fraction_of_band": ad / band if band != 0 else float("nan"),
+    }
+
+
 def default_specific_gap_median(parent_sweep: Path, centering: list[str]) -> dict:
     """The finer calibration (§6.1): same-mix seed-pair |gap| of the centered
     default read over EVERY committed parent mix (n = 12 mixes × 3 pairs).
@@ -314,8 +351,15 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
     centering = centering_set(manifest, chassis)
 
     # Both arms, schema-asserted (`_g`/`_b` four-float contract on every file).
+    # Must-Fix 1: the comparator (`chassis_slug`) lives under issue_600/sweep for
+    # the two #610 chassis (whose comparator IS a c600 cell) but under
+    # issue_610/sweep for #632 (whose comparator IS a c610 cell). Resolve from
+    # the chassis; fall back to `parent_sweep` when unset → byte-identical #610.
+    # `parent_sweep` itself stays the #600 root so `default_specific_gap_median`
+    # keeps reading the 12-mix calibration (and the ctrl_dir glob, when built).
+    comparator_root = chassis.comparator_sweep_root or parent_sweep
     with_arm = load_arm(
-        parent_sweep, chassis.chassis_slug, seeds, required_personas=(ALWAYS_INCLUDE_NEGATIVE,)
+        comparator_root, chassis.chassis_slug, seeds, required_personas=(ALWAYS_INCLUDE_NEGATIVE,)
     )
     without_arm = load_arm(
         new_sweep, chassis.new_slug, seeds, required_personas=EXTRA_EVAL_PERSONAS
@@ -344,6 +388,12 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
     headline["band_choice_sensitive"] = bool(
         strip is not None and strip[0] <= median_without <= strip[1]
     )
+    # Plan §6.4 HEADLINE verdict (the registered per-read symmetric band test,
+    # #632 Must-Fix 2) — qwen_default: the NEW arm's median (median_without) vs
+    # the COMPARATOR arm's median (median_with), both centered on the same set.
+    # The #610-inherited zone classify() stays in `headline` as a reported
+    # secondary surface; the band verdict is the registered headline.
+    headline["band_verdict_qwen_default"] = band_verdict(median_without, median_with, DECISION_BAND)
 
     # ── §6.2 supporting exact inference. ─────────────────────────────────────
     rank_test = exact_rank_sum(list(d_without.values()), list(d_with.values()))
@@ -353,9 +403,22 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
         s: centered_shift(p, TERMINAL_FRAC, "assistant", centering) for s, p in without_arm.items()
     }
     median_assistant = float(np.median(list(a_without.values())))
-    if median_assistant <= headline["identity_threshold"]:
+    # #632 Must-Fix 2: the registered assistant headline is the per-read band
+    # test against the COMPARATOR arm's OWN assistant median (computed from the
+    # SAME with_arm trajectories on the same centering set), NOT qwen_default's
+    # median_with. The comparator assistant median is −0.2063 at plan time.
+    comparator_assistant = {
+        s: centered_shift(p, TERMINAL_FRAC, "assistant", centering) for s, p in with_arm.items()
+    }
+    median_assistant_comparator = float(np.median(list(comparator_assistant.values())))
+    assistant_band = band_verdict(median_assistant, median_assistant_comparator, DECISION_BAND)
+    # Keep the legacy zone label for the §6.3 mechanism matrix (reported, not
+    # the headline), but anchor it on the assistant comparator now, not
+    # qwen_default's median_with (which would mis-classify a −0.2063 anchor
+    # against a −0.1977 threshold).
+    if median_assistant <= median_assistant_comparator + DECISION_BAND:
         assistant_label = "low"
-    elif median_assistant >= headline["dose_threshold"]:
+    elif median_assistant >= -DECISION_BAND:
         assistant_label = "high"
     else:
         assistant_label = "intermediate"
@@ -380,6 +443,11 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
         "parent_trained_slot_precedent": ASSISTANT_TRAINED_SLOT_PRECEDENT,
         "precedent_caveat": "cross-mix AND cross-training-status — mechanism color only",
         "interpretation": matrix.get((headline["zone"], assistant_label), "mechanism_ambiguous"),
+        # #632 Must-Fix 2: the registered secondary headline verdict, the
+        # per-read band test against the assistant comparator's OWN median.
+        "assistant_median_comparator": median_assistant_comparator,
+        "assistant_centered_comparator_by_seed": comparator_assistant,
+        "assistant_band_verdict": assistant_band,
     }
 
     # ── §6.4 sanity reads. ───────────────────────────────────────────────────
@@ -418,31 +486,43 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
     }
     j_median = float(np.median(list(replacement_without.values())))
     # Parent ctrl-cell replacement read recomputed from data when committed
-    # (reported alongside the registered per-chassis precedent).
+    # (reported alongside the registered per-chassis precedent). #632 Must-Fix
+    # 3: the whole ctrl-precedent COMPARISON is guarded on a non-None precedent
+    # — #632's proximal pick (programmer) is NOT a ctrl persona, so #600 has no
+    # c600_mercenary_ctrl programmer row to compare against. The trained-slot
+    # read (median + by_seed) is still produced (it IS the §5 "programmer
+    # trained-slot read"); only the precedent comparison is skipped (passes=None).
     j_parent_recomputed = None
-    ctrl_dir = parent_sweep / f"c600_{chassis.chassis_target}_ctrl"
-    if ctrl_dir.is_dir():
-        vals = []
-        for seed_dir in sorted(ctrl_dir.glob("seed_*")):
-            traj = seed_dir / "trajectory.json"
-            if traj.exists():
-                payload = json.loads(traj.read_text())
-                # Optional descriptive read: a parent ctrl trajectory predating
-                # the four-float schema is skipped, not fatal (the registered
-                # precedent constant carries the comparison).
-                with contextlib.suppress(AssertionError, KeyError):
-                    vals.append(
-                        centered_shift(payload, TERMINAL_FRAC, chassis.replacement, centering)
-                    )
-        if vals:
-            j_parent_recomputed = float(np.median(vals))
+    if chassis.replacement_ctrl_precedent is not None:
+        ctrl_dir = parent_sweep / f"c600_{chassis.chassis_target}_ctrl"
+        if ctrl_dir.is_dir():
+            vals = []
+            for seed_dir in sorted(ctrl_dir.glob("seed_*")):
+                traj = seed_dir / "trajectory.json"
+                if traj.exists():
+                    payload = json.loads(traj.read_text())
+                    # Optional descriptive read: a parent ctrl trajectory
+                    # predating the four-float schema is skipped, not fatal (the
+                    # registered precedent constant carries the comparison).
+                    with contextlib.suppress(AssertionError, KeyError):
+                        vals.append(
+                            centered_shift(payload, TERMINAL_FRAC, chassis.replacement, centering)
+                        )
+            if vals:
+                j_parent_recomputed = float(np.median(vals))
     replacement_read = {
         "persona": chassis.replacement,
         "without_by_seed": replacement_without,
         "median": j_median,
         "ctrl_precedent": chassis.replacement_ctrl_precedent,
         "ctrl_precedent_recomputed": j_parent_recomputed,
-        "passes": abs(j_median - chassis.replacement_ctrl_precedent) <= 2 * DECISION_BAND,
+        # None (skipped) when there is no ctrl precedent for this replacement;
+        # `any_miss` below treats None as "skipped", NOT a miss.
+        "passes": (
+            None
+            if chassis.replacement_ctrl_precedent is None
+            else abs(j_median - chassis.replacement_ctrl_precedent) <= 2 * DECISION_BAND
+        ),
     }
     raw_medians = {
         "with": {s: panel_median(p, TERMINAL_FRAC, centering) for s, p in with_arm.items()},
@@ -458,8 +538,10 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
         "coherent_drift_signature": bool(
             len({np.sign(d) for d in deltas}) == 1 and all(abs(d) > DECISION_BAND for d in deltas)
         ),
+        # #632 Must-Fix 3: a skipped (None) ctrl precedent does NOT count as a
+        # miss — only an explicit False does (`not None` would be a false miss).
         "any_miss": bool(
-            any(not v["passes"] for v in sanity.values()) or not replacement_read["passes"]
+            any(not v["passes"] for v in sanity.values()) or (replacement_read["passes"] is False)
         ),
     }
     if chassis.name == "mercenary":
