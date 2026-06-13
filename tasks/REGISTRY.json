@@ -2340,8 +2340,8 @@
     "442": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/proposed/442",
-      "status": "proposed",
+      "path": "tasks/on_hold/442",
+      "status": "on_hold",
       "title": "A self-distillation KL-anchor installs an Assistant-keyed marker at 98% in Phase 1, but one epoch of benign medical SFT erases it completely (0/1,800) (HIGH confidence)"
     },
     "443": {
