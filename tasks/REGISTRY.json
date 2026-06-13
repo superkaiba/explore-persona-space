@@ -3972,8 +3972,8 @@
     "74": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/74",
-      "status": "proposed",
+      "path": "tasks/on_hold/74",
+      "status": "on_hold",
       "title": "Run 2 seeds of the midtraining experiments with evil human personas instead of evil AI personas"
     },
     "75": {
