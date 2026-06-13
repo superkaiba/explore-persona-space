@@ -613,7 +613,11 @@ def judge_stability(*, n_per_column: int = 100, smoke_n: int | None = None) -> P
     overall = all(r["pass"] for r in results.values())
     out_dir = _v2_root()
     out_dir.mkdir(parents=True, exist_ok=True)
-    out = out_dir / "judge_stability_v2.json"
+    # Smoke isolation: a --smoke-n run must NEVER write the production
+    # deliverable path (the round-18/19 smoke-contamination class) — a tiny-N
+    # anchor read committed as judge_stability_v2.json would read as the real
+    # P0 verdict.
+    out = out_dir / ("judge_stability_v2.smoke.json" if smoke_n else "judge_stability_v2.json")
     out.write_text(
         json.dumps(
             {

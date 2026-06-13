@@ -891,13 +891,15 @@ def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatch
         )
     logger.info("[phase=%s] %d cells", phase, len(cells))
 
-    if _v2_active():
+    if _v2_active() and not args.skip_train:
         # v2 elicitation pre-step (plan v3 section 4.4): pools are
         # seed-invariant, so elicitation runs ONCE per ROW before any cell
         # trains; rows that miss the 160/200 quota DROP here (the H3-v2
         # designed signal — never trained short, never padded) and their
         # cells leave the schedule. The per-cell prep stays idempotent
         # (skips a completed elicitation; builds cn/bridge corpora).
+        # Skipped under --skip-train: elicitation is TRAIN-side prep (vLLM);
+        # eval-only re-runs / dry-runs must not demand a GPU.
         cells = _v2_elicitation_prestep(args, phase, cells)
         if not cells:
             raise RuntimeError(
