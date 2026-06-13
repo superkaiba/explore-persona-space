@@ -2,7 +2,8 @@
 title: A live contrastive-negative gradient exerts no measurable restoring force on
   the source marker implant under a matched recipe (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-12T02:42:11Z'
 has_clean_result: true
 parent_id: 601
