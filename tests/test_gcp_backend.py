@@ -53,6 +53,8 @@ from explore_persona_space.backends.gcp import (
     REQUIRED_LAUNCH_SECRET_KEYS,
     GcloudRunResult,
     GcpLaunchSecretsMissing,
+    StaleNamedInstance,
+    _stale_named_instance_or_none,
     attempt_id_for,
     classify_create_failure,
     expected_artifacts_declaration,
@@ -898,6 +900,162 @@ def test_expected_artifacts_declaration_workload_cmd_omits_guessed_hf_prefix() -
         attempt_id="att-fixed-001",
     )
     assert decl_hydra["hf_data_paths"] == ["issue137_att-fixed-001/raw_completions/"]
+
+
+# ---------------------------------------------------------------------------
+# Pre-launch stale-name reclaim (#632)
+# ---------------------------------------------------------------------------
+
+
+def _instance_payload(status: str, *, name: str = "eps-issue-137", id_: str = "1") -> str:
+    """A one-element ``gcloud compute instances list`` JSON payload."""
+    return json.dumps(
+        [
+            {
+                "name": name,
+                "id": id_,
+                "status": status,
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-b"
+                ),
+            }
+        ]
+    )
+
+
+@pytest.mark.parametrize("status", ["TERMINATED", "STOPPED", "SUSPENDED"])
+def test_stale_named_instance_returns_record_for_nonlive_status(status: str) -> None:
+    """The exact set ``reconnect_or_none`` treats as not-live is the set the
+    pre-launch check must reclaim — else the create collides on the stale
+    name (incident #632)."""
+    runner = _Runner(list_results=[GcloudRunResult(0, _instance_payload(status), "")])
+    stale = _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert isinstance(stale, StaleNamedInstance)
+    assert stale.name == "eps-issue-137"
+    assert stale.status == status
+    # Zone is the parsed last-segment of the instance's zone URL so the
+    # delete targets the right zone (NOT the config primary).
+    assert stale.zone == "us-central1-b"
+
+
+def test_stale_named_instance_returns_none_when_no_record() -> None:
+    runner = _Runner(list_results=[GcloudRunResult(0, "[]", "")])
+    assert _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
+
+
+def test_stale_named_instance_probe_rc_failure_raises_probe_error() -> None:
+    """rc != 0 = probe failed; "couldn't ask" must NOT read as "name free"
+    on the credit-spending lane (mirrors reconnect_or_none)."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(list_results=[GcloudRunResult(1, "", "Reauthentication failed")])
+    with pytest.raises(GcpProbeError):
+        _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+def test_stale_named_instance_bad_json_raises_probe_error() -> None:
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(list_results=[GcloudRunResult(0, "{not json", "")])
+    with pytest.raises(GcpProbeError):
+        _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+def test_stale_named_instance_refuses_to_delete_live_status() -> None:
+    """A non-deletable status (only reachable as a TOCTOU race vs the
+    reconnect probe) must FAIL loudly — never auto-delete a possibly-live
+    VM (data loss). The success criterion's data-loss guard."""
+    from explore_persona_space.backends.gcp import GcpBackendError
+
+    runner = _Runner(list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")])
+    with pytest.raises(GcpBackendError, match="non-deletable status"):
+        _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+def test_launch_deletes_stale_terminated_instance_then_creates(no_marker_posts) -> None:
+    """End-to-end #632 fix: a prior TERMINATED record blocks the name, so
+    launch deletes it BEFORE create and the create then succeeds. The
+    epm:cluster-launched marker flags the reclaim."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "778899"}])
+    runner = _Runner(
+        # 1st list = reconnect probe (no LIVE instance → falls through);
+        # 2nd list = stale-name probe (finds the TERMINATED record).
+        list_results=[
+            GcloudRunResult(0, "[]", ""),
+            GcloudRunResult(0, _instance_payload("TERMINATED"), ""),
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    posted: list[dict] = []
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **kwargs: posted.append(kwargs),
+    )
+    handle = backend.launch(_spec())
+    assert handle.pod_name == "eps-issue-137"
+    assert handle.job_id == "778899"
+
+    # A delete fired, in the stale record's zone, BEFORE the create.
+    delete_calls = [c for c in runner.calls if "delete" in c and "instances" in c]
+    create_calls = [c for c in runner.calls if "create" in c and "instances" in c]
+    assert len(delete_calls) == 1, runner.calls
+    assert "eps-issue-137" in delete_calls[0]
+    assert "--zone=us-central1-b" in delete_calls[0]
+    assert len(create_calls) == 1, runner.calls
+    assert runner.calls.index(delete_calls[0]) < runner.calls.index(create_calls[0])
+
+    # Marker flags the reclaim.
+    assert len(posted) == 1
+    body = json.loads(posted[0]["note"])
+    assert body["pre_launch_deleted_stale_instance"] is True
+
+
+def test_launch_marks_no_stale_delete_when_name_free(no_marker_posts) -> None:
+    """The common path: no prior record → no delete, marker flag False."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(0, "[]", ""),  # reconnect: no live instance
+            GcloudRunResult(0, "[]", ""),  # stale-name probe: name free
+        ],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    posted: list[dict] = []
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **kwargs: posted.append(kwargs),
+    )
+    backend.launch(_spec())
+    assert all("delete" not in c for c in runner.calls), runner.calls
+    body = json.loads(posted[0]["note"])
+    assert body["pre_launch_deleted_stale_instance"] is False
+
+
+def test_launch_raises_when_stale_delete_fails_and_skips_create(no_marker_posts) -> None:
+    """A real delete failure leaves the name occupied; raise rather than
+    let create fail later with a confusing "already exists"."""
+    from explore_persona_space.backends.gcp import GcpBackendError
+
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(0, "[]", ""),  # reconnect: no live instance
+            GcloudRunResult(0, _instance_payload("TERMINATED"), ""),  # stale record
+        ],
+        delete_results=[GcloudRunResult(1, "", "Internal error during delete")],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    with pytest.raises(GcpBackendError, match="was not freed"):
+        backend.launch(_spec())
+    # The create must NOT have been attempted on an un-freed name.
+    assert all("create" not in c for c in runner.calls), runner.calls
 
 
 # ---------------------------------------------------------------------------
