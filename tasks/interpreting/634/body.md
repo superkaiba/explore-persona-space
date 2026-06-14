@@ -126,8 +126,8 @@ n/a — no model generations. This is a geometry analysis: each role yields one 
 | Hidden dim | 3584 |
 | Behavior set (Panel A) | 275 |
 | K (questions/role) | 40 of the 240 shared extraction questions |
-| Panel B — H1 matched panel | 26 roles / 5 families (`bare_default` null-anchor excluded) |
-| Panel B — H2 labeled purity subset | 27 roles / 6 families (includes `bare_default`) |
+| Panel B — H1 matched panel | 26 roles / 5 families |
+| Panel B — H2 labeled purity subset | 27 roles / 6 families |
 | Context bank (reused #594) | (50, 28, 3584), 7 families |
 | k-NN purity k | 4 |
 | Permutation null B | 1000, draws shared across layers; max-over-layers FWER |
