@@ -18,9 +18,9 @@ origin_prompt: 'can you run this in the background: UMAP/PCA of diverse context 
 
 - Behavior vectors do NOT sit near their matching context: the match rate peaks at **9 of 26 roles (0.346) at layer 13**, inside the shuffled-label null (0.385, p = 0.28).
 - The reason is geometric separation, not a broken read: **99.8% of behavior vectors have only other behaviors as their 4 nearest neighbors** — behaviors form their own region.
-- The two vector sets **pass the preregistered scale/variance gate at all 28 layers** (variance ratio up to 1.55, median-norm ratio up to 1.22, both inside the [0.33, 3.0] band), ruling out a gross scale/norm mismatch behind the null — not full joint-map validity.
-- The 27 labeled Panel-B behaviors DO carry coherent internal geometry: k-NN family purity reaches **0.815 at layer 14** (null 0.444, p = 0.001), and clears the permutation floor (p = 0.001) at all 28 layers — on the labeled subset, not all 275 roles.
-- MODERATE as a single-seed, panel-level read: the matched panel is 26 of 275 roles (single seed, K=40 questions/role) and the labeled purity uses 27 of 275, not the planned 275-role denominator.
+- The two vector sets **pass the preregistered scale/variance gate at all 28 layers** (variance ratio up to 1.55, median-norm ratio up to 1.22), ruling out a gross scale mismatch — not full joint-map validity.
+- The 27 labeled Panel-B behaviors DO carry internal geometry: k-NN family purity peaks **0.815 at layer 14** (null 0.444) and clears the permutation floor (p = 0.001) at all 28 layers — labeled subset, not all 275.
+- MODERATE as a single-seed, panel-level read: matched panel 26 of 275 roles (single seed, K=40 questions/role), labeled purity 27 of 275, not the planned 275-role denominator.
 
 ## What I ran
 
@@ -33,13 +33,13 @@ origin_prompt: 'can you run this in the background: UMAP/PCA of diverse context 
 
 ### Behaviors do not sit near their matching context family beyond chance (0.346 vs null 0.385)
 
-The headline H1 test: for each of the 26 matched-panel roles, does its nearest context vector belong to the pre-registered family, read at every layer against a shuffled-label null.
+The headline H1 test: for each of the 26 matched-panel roles, does its nearest context vector belong to the pre-registered family, against a shuffled-label null at every layer.
 
 ![Matched-family nearest-context rate by decoder layer; the blue observed line rides inside the grey shuffled-label permutation-null band at every layer, peaking at 0.346 at layer 13.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/99da857eb8c8399a886c36fb97fa33c66ac65936/figures/issue_634/nn_rate_vs_layer.png)
 
 > **Figure.** *The observed match rate never leaves the null band.* Blue = matched-family rate over 26 panel-B roles; grey = shuffled-label null (mean to 95th pct), B=1000; red line at the max-rate layer 13. The peak (0.346) sits just inside the band top (0.385); p = 0.28.
 
-The pre-registered floor was met (26 roles, 5 families, ≥2 each), so on this panel and single seed (K=40 questions/role) it is an adjudicated null, not an underpowered one. The context-only nearest neighbor is not uniform, though: across all 26 roles × 28 layers it lands on `format` (25%), `rephrase` (21%) and `persona` (20%) far more than on the other families, with roles like `summarizer`/`proofreader` collapsing to `rephrase`/`format` and `mathematician`/`programmer` to `persona` at nearly every layer — so the null reads as "behaviors converge on a few dominant context families," not "behaviors point nowhere." The residualized control (dominant behavior-cloud component removed, residualized null) is more null still (0.192 vs null 0.231, p = 0.70, does not pass), which supports the H1 read. Read as "indistinguishable from null given the variance" on this panel/seed — not "no relationship on all 275 roles."
+The pre-registered floor was met (26 roles, 5 families, ≥2 each), so on this panel/seed (single seed, K=40 questions/role) it is an adjudicated null, not an underpowered one. The context-only nearest neighbor is non-uniform, though: across 26 roles × 28 layers it lands on `format` (25%), `rephrase` (21%), `persona` (20%) far more than the others, so the null reads as "behaviors converge on a few dominant context families," not "behaviors point nowhere." The residualized control (behavior-cloud PC removed, own residualized null) is more null still (0.192 vs null 0.231, p = 0.70), supporting the read. "Indistinguishable from null given the variance" on this panel/seed — not "no relationship on all 275 roles."
 
 ### Behaviors form their own region, disjoint from context families (99.8% own-region)
 
@@ -49,7 +49,7 @@ If behaviors do not land near contexts, where do they land. The joint embedding 
 
 > **Figure.** *Behaviors (colored, by family) sit apart from contexts (grey).* PCA top, UMAP bottom (n=15, min-dist 0.1, seed 42), quartile layers. 275 behaviors + 50 contexts. The colored behavior points cluster among themselves rather than mixing into the context families.
 
-Quantified: at the H1 best layer (13), **99.8% of behavior vectors have all 4 of their nearest joint-space neighbors as other behaviors**, and the fraction runs 99.5-100% across all 28 layers — 16 of the 28 sit at exactly 1.0, i.e. saturated, not merely stable. This is the reconciling fact — H1's null is not "behaviors are scattered noise" but "behaviors occupy a coherent territory of their own that does not overlap the context families."
+Quantified: at the H1 best layer (13), **99.8% of behavior vectors have all 4 of their nearest joint-space neighbors as other behaviors**; the fraction runs 99.5-100% across all 28 layers, with 16 of the 28 at exactly 1.0 (saturated, not merely stable). This reconciles H1: the null is not "behaviors are scattered noise" but "behaviors occupy a coherent territory of their own that does not overlap the context families."
 
 ### Behaviors cluster by their own axis (purity 0.815 over 27 of 275 roles)
 
@@ -59,7 +59,7 @@ Given the own-region separation, do the 27 labeled Panel-B behaviors have *any* 
 
 > **Figure.** *Behaviors cluster strongly by their own axis.* Green = labeled purity (k=4) over 27 of 275 roles; grey = permutation null (mean to 95th pct). Peak 0.815 at layer 14 vs null 95th pct 0.444; p = 0.001. The figure title flags the 27-of-275 denominator.
 
-This is a clean positive, but on **27 of 275 roles, not the planned 275-role role-axis purity** — no 275-role role-type labeling source exists, so the denominator is the labeled subset. Every mention of this number is scoped to those 27 roles. The signal is not a single peak: purity clears the permutation floor (pointwise p = 0.001) at every one of the 28 layers, which is stronger than a one-layer spike — but the whole-depth floor-clearance also means a labeling/selection artifact on the 27 most-separable roles cannot be ruled out from this subset alone. Behaviors are geometrically differentiated by axis; they just do not align that structure with the context families.
+A clean positive, but on **27 of 275 roles, not the planned 275-role purity** — no 275-role labeling source exists, so the denominator is the labeled subset (every mention is scoped to those 27). The signal is not a single peak: purity clears the permutation floor (p = 0.001) at all 28 layers, stronger than a one-layer spike — but whole-depth clearance also leaves a labeling/selection artifact on the 27 most-separable roles unruled-out from this subset alone. Behaviors are differentiated by axis; they just do not align that structure with the context families.
 
 ### The null is not a gross scale mismatch — the scale/variance gate passes at all 28 layers
 
@@ -120,15 +120,21 @@ n/a — no model generations. This is a geometry analysis: each role yields one 
 
 | Parameter | Value |
 |---|---|
-| Base model | `Qwen/Qwen2.5-7B-Instruct` (no LoRA) |
-| Behavior extraction | Method A, last-input-token absolute mean, all 28 layers |
-| Questions per role | K=40 (sampled from 240, seed 42) |
-| Behavior roles | 275 (full), 26 matched panel (H1), 27 labeled (H2) |
-| Context bank | #594, 50 contexts, 7 families |
-| Embedding | per-layer PCA + UMAP (n∈{5,15,30}, min-dist∈{0.1,0.5}, cosine, seed 42); t-SNE at best layer |
-| k-NN purity | k=4 |
-| Permutation null | B=1000, max-over-layers FWER |
-| Hidden dim / layers | 3584 / 28 |
+| Base model | `Qwen/Qwen2.5-7B-Instruct` |
+| Read position | last input token under add_generation_prompt=True |
+| Layers | all 28 decoder blocks |
+| Hidden dim | 3584 |
+| Behavior set (Panel A) | 275 |
+| K (questions/role) | 40 of the 240 shared extraction questions |
+| Panel B (H1 test set) | 27 roles / 6 families |
+| Context bank (reused #594) | (50, 28, 3584), 7 families |
+| k-NN purity k | 4 |
+| Permutation null B | 1000, draws shared across layers; max-over-layers FWER |
+| UMAP | n_neighbors ∈ {5,15,30} |
+| t-SNE | perplexity ∈ {5,15,30} |
+| PCA | random_state=42 |
+| Cross-space fallback | family-centroid linear CKA + orthogonal Procrustes |
+| Seed | 42 everywhere |
 
 **Artifacts:**
 
