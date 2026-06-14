@@ -45,9 +45,9 @@ The pre-registered floor was met (26 roles, 5 families, ≥2 each), so on this p
 
 If behaviors do not land near contexts, where do they land. The joint embedding answers it: behavior directions and context activations occupy separate regions of the shared space.
 
-![Joint PCA (top) and UMAP (bottom) at layers 7, 14, 21, 27; colored behavior points form their own clusters separated from the grey context cloud at every depth.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/99da857eb8c8399a886c36fb97fa33c66ac65936/figures/issue_634/joint_embedding_pca_umap_L7_L14_L21_L27.png)
+![Joint PCA (top) and UMAP (bottom) at layers 7, 14, 21, 27; colored context-family circles occupy one region while the grey-x and near-black-triangle behavior vectors cluster in a separate region at every depth.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/99da857eb8c8399a886c36fb97fa33c66ac65936/figures/issue_634/joint_embedding_pca_umap_L7_L14_L21_L27.png)
 
-> **Figure.** *Behaviors (colored, by family) sit apart from contexts (grey).* PCA top, UMAP bottom (n=15, min-dist 0.1, seed 42), quartile layers. 275 behaviors + 50 contexts. The colored behavior points cluster among themselves rather than mixing into the context families.
+> **Figure.** *Behavior vectors (grey + black) cluster apart from the context-family centroids (colored).* PCA top, UMAP bottom (n=15, min-dist 0.1, seed 42), quartile layers. Colored circles = the 7 context-family centroids (behavior, default, format, icl, persona, rephrase, wildchat); grey x = the 249 non-panel behavior vectors; near-black triangles = the 26 H1-panel behavior vectors. The behavior glyphs cluster into their own region, separate from the context circles.
 
 Quantified: at the H1 best layer (13), **99.8% of behavior vectors have all 4 of their nearest joint-space neighbors as other behaviors**; the fraction runs 99.5-100% across all 28 layers, with 16 of the 28 at exactly 1.0 (saturated, not merely stable). This reconciles H1: the null is not "behaviors are scattered noise" but "behaviors occupy a coherent territory of their own that does not overlap the context families."
 
@@ -79,7 +79,7 @@ A diagnostic, not a pre-registered test: family-centroid CKA and Procrustes alig
 
 > **Figure.** *Exploratory.* Left = family-centroid linear CKA (behavior vs context); right = raw Procrustes alignment residual. CKA peaks 0.770 at layer 14; the residual stays low mid-network (0.116 at layer 14) and spikes to 0.540 at layer 27. Not a pre-registered test.
 
-The two spaces share *some* coarse shape at the family-centroid level mid-network, but the late-layer residual spike and the H1 null together say it is not enough for individual behaviors to find a matching context neighbor.
+The two spaces share *some* coarse shape at the family-centroid level mid-network, but the late-layer residual spike and the H1 null together say it is not enough for individual behaviors to find a matching context neighbor. N=5 shared family centroids (the intersection of behavior-family and context-family labels) enter the CKA/Procrustes computation; no permutation null or bootstrap was run on this exploratory pair.
 
 ## Data
 
@@ -114,7 +114,7 @@ n/a — no model generations. This is a geometry analysis: each role yields one 
 
 ## Reproducibility
 
-**Methodology reference:** the findings-blind methodology + hyperparameter doc is linked here once generated.
+**Methodology reference:** see `docs/methodology/issue_634.md` (gist + GitHub blob link appended at promotion).
 
 **Parameters:**
 
@@ -126,7 +126,7 @@ n/a — no model generations. This is a geometry analysis: each role yields one 
 | Hidden dim | 3584 |
 | Behavior set (Panel A) | 275 |
 | K (questions/role) | 40 of the 240 shared extraction questions |
-| Panel B (H1 test set) | 27 roles / 6 families |
+| Panel B | 27 mapped roles / 6 families (H1 tested: 26 roles / 5 families; `bare_default` is the null-anchor, excluded from H1) |
 | Context bank (reused #594) | (50, 28, 3584), 7 families |
 | k-NN purity k | 4 |
 | Permutation null B | 1000, draws shared across layers; max-over-layers FWER |
