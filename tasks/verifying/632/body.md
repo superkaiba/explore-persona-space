@@ -5,7 +5,7 @@ title: Swapping a far negative for an assistant-cluster-proximal one doesn't mov
 kind: experiment
 tags: []
 created_at: '2026-06-12T22:46:15Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 610
 goal: Determine whether the default assistant context's shielding from a marker implant
   is produced by suppression reaching it from assistant-cluster-proximal negative
