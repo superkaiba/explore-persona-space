@@ -180,7 +180,14 @@ _GAUGE_BANDS: dict[str, tuple[float, float]] = {
 
 
 def expected_gauge_band(row: str) -> tuple[float, float]:
-    """Per-recipe expected alpha/sqrt(r) band (plan section 10 enumeration)."""
+    """Per-recipe expected alpha/sqrt(r) band (plan section 10 enumeration).
+
+    Fix (post-r3 pod run): the B8 reuse_adapter rows (benign_representation,
+    benign_gradient, benign_format) inherit #503's Bucket-D recipe
+    (alpha=256/r=32 -> ~45.25), NOT the generic alpha=64 band. Treat them
+    as a reuse_adapter family with the high-gauge band instead of folding
+    them into the broad [4,13] generic catch-all.
+    """
     turner_em = {
         "bad_medical",
         "risky_financial",
@@ -190,10 +197,17 @@ def expected_gauge_band(row: str) -> tuple[float, float]:
     }
     if row in turner_em:
         return (40.0, 50.0)  # ~45.25
+    # B8 reuse-adapter rows reuse #503 Bucket-D adapters (alpha=256/r=32 -> ~45.25).
+    reuse_adapter = {
+        "benign_representation",
+        "benign_gradient",
+        "benign_format",
+    }
+    if row in reuse_adapter:
+        return (40.0, 50.0)  # ~45.25 — inherited from #503
     if row == "marker":
         return (7.0, 9.0)  # 8.0
-    # generic (alpha=64,r=32 -> 11.31), fact (same), warmth (alpha=16,r=8 -> 5.66),
-    # B8 reuse-adapter (varies); accept the broad generic-band the plan enumerates.
+    # generic (alpha=64,r=32 -> 11.31), fact (same), warmth (alpha=16,r=8 -> 5.66).
     return (4.0, 13.0)
 
 
