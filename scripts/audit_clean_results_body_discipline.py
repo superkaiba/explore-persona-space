@@ -539,8 +539,10 @@ def main():
     )
     src.add_argument(
         "--task",
+        "--issue",
+        dest="task",
         type=int,
-        help="Task number; resolves to tasks/<status>/<N>/body.md.",
+        help="Task number; resolves to tasks/<status>/<N>/body.md. (--issue is an alias.)",
     )
     args = parser.parse_args()
 
