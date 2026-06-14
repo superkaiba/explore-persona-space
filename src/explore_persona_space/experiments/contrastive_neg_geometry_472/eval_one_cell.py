@@ -268,7 +268,12 @@ def score_logp_for_R(
         n=1, temperature=0.0, top_p=1.0, max_tokens=1, prompt_logprobs=1, logprobs=1
     )
     gen_kwargs = {"lora_request": lora_request} if use_lora else {}
-    outputs = llm.generate(prompts_payload, sp, **gen_kwargs)
+    # use_tqdm=False bypasses the vLLM 0.11.0 tqdm `elapsed=0` ZeroDivisionError
+    # at vllm/entrypoints/llm.py:1610 — the same bug task #610 followup f4910a4f8
+    # patched at the eval_trajectory.py:185 call site (see incident on #632's
+    # first --full launch, 2026-06-13: ZeroDivisionError surfaced here because
+    # this score_logp_for_R call was NOT covered by that earlier patch).
+    outputs = llm.generate(prompts_payload, sp, use_tqdm=False, **gen_kwargs)
     if len(outputs) != len(prompts_payload):
         raise RuntimeError(
             f"[{cell_label}] vLLM returned {len(outputs)} for {len(prompts_payload)} probes."

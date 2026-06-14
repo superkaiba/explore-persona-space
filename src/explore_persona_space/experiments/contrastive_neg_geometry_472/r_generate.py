@@ -150,7 +150,10 @@ def _generate_batch(
     truncated, marker_in_R (text-AND-token check).
     """
     prompts = [_build_prompt_text(tokenizer, persona, q, persona_prompts) for q in questions]
-    outputs = llm.generate(prompts, sp)
+    # use_tqdm=False bypasses the vLLM 0.11.0 tqdm `elapsed=0` ZeroDivisionError
+    # at vllm/entrypoints/llm.py:1610 (same fix as #610 followup f4910a4f8 +
+    # #632's patch to eval_one_cell.py).
+    outputs = llm.generate(prompts, sp, use_tqdm=False)
     if len(outputs) != len(prompts):
         raise RuntimeError(
             f"vLLM returned {len(outputs)} for {len(prompts)} prompts on persona={persona}"
