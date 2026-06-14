@@ -287,12 +287,25 @@ def bootstrap_class_asymptote_difference(
 
 
 def classify_h5(asymptote_diff_ci: tuple[float, float], resistant_top_slope: float) -> str:
-    """H5a (rate) / H5b (ceiling) / AMBIGUOUS from the asymptote-difference CI.
+    """H5a (rate) / H5b (ceiling) / H5_REVERSED / AMBIGUOUS from the asymptote-diff CI.
 
-    §7: H5a iff the CI includes a gap < 0.10 (resistance = rate); H5b iff the CI
-    excludes 0 with gap >= 0.15 AND the resistant top-segment slope ~ 0
-    (flattening). The diff sign convention is (resistant - non-resistant), so a
-    *negative* diff means resistant plateaus BELOW (the H5b ceiling direction).
+    Sign convention: the diff is ``(resistant - non-resistant)``, so the H5b
+    "resistance = ceiling" direction is the resistant class plateauing BELOW the
+    non-resistant class — i.e. a NEGATIVE diff. §7 reads:
+
+    - **H5a (resistance = rate):** the CI is consistent with a small gap
+      (|diff| < 0.10 attainable in-CI). The asymptotes converge.
+    - **H5b (resistance = ceiling):** the CI is ENTIRELY NEGATIVE (``hi < 0`` —
+      resistant plateaus below non-resistant), the gap magnitude meets the
+      ceiling floor (``abs(hi) >= 0.15`` — the gap is at LEAST 0.15 from the
+      upper, less-negative bound), AND the resistant top-segment slope ≈ 0
+      (the curve has flattened, not just climbing slower).
+    - **H5_REVERSED:** the CI is entirely POSITIVE (``lo > 0`` — resistant
+      plateaus ABOVE non-resistant). This is NOT a ceiling for the resistant
+      class; it is the opposite of the H5b prediction and is reported as an
+      explicit reversed outcome (never mislabeled H5b — the round-1 bug).
+    - **AMBIGUOUS / UNDERPOWERED:** anything else (CI straddles 0, or excludes 0
+      negatively but the gap/slope criteria are not met).
     """
     lo, hi = asymptote_diff_ci
     if not (np.isfinite(lo) and np.isfinite(hi)):
@@ -300,11 +313,13 @@ def classify_h5(asymptote_diff_ci: tuple[float, float], resistant_top_slope: flo
     # H5a: CI is consistent with a small gap (|diff| < 0.10 attainable in-CI).
     if min(abs(lo), abs(hi)) < H5_RATE_GAP and lo <= H5_RATE_GAP and hi >= -H5_RATE_GAP:
         return "H5a"
-    # H5b: CI excludes 0 (both bounds same sign), gap magnitude >= 0.15, AND
-    # resistant curve flattening (top slope ~ 0).
-    excludes_zero = (lo > 0) or (hi < 0)
-    gap_mag = min(abs(lo), abs(hi))
-    if excludes_zero and gap_mag >= H5_CEILING_GAP and abs(resistant_top_slope) < 0.02 * 100:
+    # H5_REVERSED: CI entirely positive — resistant plateaus ABOVE non-resistant.
+    # This is the opposite of the H5b ceiling direction, so it is NEVER H5b.
+    if lo > 0:
+        return "H5_REVERSED"
+    # H5b: CI entirely NEGATIVE (resistant below non-resistant), gap magnitude
+    # from the upper (less-negative) bound >= 0.15, AND resistant flattening.
+    if hi < 0 and abs(hi) >= H5_CEILING_GAP and abs(resistant_top_slope) < 0.02 * 100:
         return "H5b"
     return "AMBIGUOUS"
 

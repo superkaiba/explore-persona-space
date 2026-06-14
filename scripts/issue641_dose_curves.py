@@ -173,6 +173,43 @@ def _registry_and_demos(*, require_sampled: bool):
     return registry, demos
 
 
+def _resolve_source_ctx(cid: str, registry: dict):
+    """Resolve a requested SOURCE id into a Ctx — shared by P0, build, train, eval.
+
+    Arm-A and the Arm-B teacher are #537 registry cids (``icl_k2``, ``sp_doctor``,
+    ``sp_teacher_ho`` ...). The Arm-B matched-neutral candidate pool (narrow +
+    widened, plan §4.5) are PERSONAS keys (``data_scientist``, ``police_officer``
+    ...) with NO #537 cid — they are wrapped into a fresh F1 source Ctx via
+    ``neutral_source_ctx`` (matching P0's pattern; the family is F1, a persona
+    system-prompt context).
+
+    Resolution order:
+      1. ``cid in registry``           -> the #537 context.
+      2. ``cid in PERSONAS``           -> ``neutral_source_ctx(cid)`` (Arm-B F1).
+      3. neither                       -> ValueError (clear, fail-loud — a typo'd
+                                          source must crash here, not silently
+                                          KeyError deep in the train/eval loop;
+                                          round-1 bug: bare ``registry[source]``).
+
+    Returning a Ctx for EVERY requested source (never silently dropping persona
+    keys) is what makes the §4.7 disjointness assert TOTAL over the realized
+    panel (Blocker 2): a dropped matched-neutral persona key was exactly the
+    police_officer <-> neg_sp_police collision class the assert must catch.
+    """
+    from explore_persona_space.experiments.issue_641.data import neutral_source_ctx
+    from explore_persona_space.personas import PERSONAS
+
+    if cid in registry:
+        return registry[cid]
+    if cid in PERSONAS:
+        return neutral_source_ctx(cid)
+    raise ValueError(
+        f"source {cid!r} is neither a #537 registry cid nor a PERSONAS key — "
+        f"cannot resolve to a Ctx. Known registry cids: {sorted(registry)[:8]}...; "
+        f"is it a typo or an unsupported Arm-B candidate?"
+    )
+
+
 def _stub_demos() -> dict:
     """Minimal in-memory ICL demo bank for the structural smoke (sp_doctor is
     F1, so demos are never consumed; a stub keeps load_registry-free smoke
@@ -288,11 +325,17 @@ def _merge_checkpoint(adapter_path: Path, merged_dir: Path, *, gpu_id: int = 0) 
 # ── Judge (Betley dual rubric, vendored i537_judging) ─────────────────────────
 
 
-def _judge_em_completions(items: list[dict]) -> dict[str, str]:
-    """Submit Betley EM judge requests via the Anthropic Batch API -> raw text.
+def _judge_completions(items: list[dict], *, tag: str) -> dict[str, str]:
+    """Submit judge requests via the Anthropic Batch API -> raw text, per tag.
 
     ``items``: list of {"custom_id", "question", "completion"}.
+    ``tag``: the judge behavior — ``"em"`` (Betley dual aligned/coherent rubric)
+    or ``"harmful_advice"`` (the #641 dedicated YES/NO bad-medical-advice
+    COMPLIANCE judge, plan §4.6). The tag selects the right judge template +
+    parser downstream — the EM probes must NOT be judged with the harmful-advice
+    rubric and vice versa (round-1 bug: both branches hardcoded "em").
     """
+    assert tag in ("em", "harmful_advice"), tag
     import anthropic
 
     from explore_persona_space.experiments.i537_judging import (
@@ -301,19 +344,25 @@ def _judge_em_completions(items: list[dict]) -> dict[str, str]:
     )
 
     requests = [
-        judge_request_for_row("em", it["question"], it["completion"], it["custom_id"])
+        judge_request_for_row(tag, it["question"], it["completion"], it["custom_id"])
         for it in items
     ]
     client = anthropic.Anthropic(max_retries=12)
     return submit_judge_batch_raw(client, requests)
 
 
-def _stub_judge_em(items: list[dict]) -> dict[str, str]:
-    """Smoke-only stub: a fixed Betley dual-rubric verdict per item (no API)."""
-    return {
-        it["custom_id"]: json.dumps({"aligned": 80, "coherent": 80, "reasoning": "stub"})
-        for it in items
-    }
+def _stub_judge(items: list[dict], *, tag: str) -> dict[str, str]:
+    """Smoke-only stub: a fixed verdict per item (no API), shaped per tag.
+
+    EM -> Betley dual-rubric JSON; harmful_advice -> a bare ``YES`` (the YES/NO
+    compliance judge's verdict shape), so the smoke exercises BOTH parser paths.
+    """
+    if tag == "em":
+        return {
+            it["custom_id"]: json.dumps({"aligned": 80, "coherent": 80, "reasoning": "stub"})
+            for it in items
+        }
+    return {it["custom_id"]: "YES" for it in items}
 
 
 # ── Phase 0: base-propensity read ─────────────────────────────────────────────
@@ -367,9 +416,10 @@ def phase_base_propensity(args, *, smoke: bool) -> dict:
     from explore_persona_space.experiments.i537_contexts import build_prompt
     from explore_persona_space.experiments.i537_judging import (
         em_rates_from_verdicts,
+        harmful_advice_rate_from_verdicts,
+        parse_verdict_binary,
         parse_verdict_em,
     )
-    from explore_persona_space.experiments.issue_641.data import neutral_source_ctx
 
     registry, demos = _registry_and_demos(require_sampled=not smoke)
     tok = _tokenizer()
@@ -377,15 +427,18 @@ def phase_base_propensity(args, *, smoke: bool) -> dict:
     em_probes = _em_eval_probes(smoke)
     ha_probes = _harmful_advice_probes(smoke)
     n_samples = 1 if smoke else 5
-    judge = _stub_judge_em if smoke else _judge_em_completions
+    judge = _stub_judge if smoke else _judge_completions
 
-    def _resolve_ctx(cid: str):
-        # Arm-A/Arm-B source cids live in the #537 registry; the Arm-B
-        # matched-neutral candidate pool are PERSONAS keys (no #537 cid), so
-        # wrap them as fresh F1 contexts (plan §4.5/§4.6 — P0 reads the pool too).
-        if cid in registry:
-            return registry[cid]
-        return neutral_source_ctx(cid)
+    def _rates_for_tag(tag: str, raw: dict[str, str], items: list[dict]) -> dict:
+        # EM probes -> Betley aligned/coherent rubric; harmful-advice probes ->
+        # the dedicated YES/NO compliance judge (plan §4.6 — the H1 covariate is
+        # harmful-advice COMPLIANCE, NOT the broad EM rate; round-1 bug judged
+        # both with the EM rubric).
+        if tag == "em":
+            parsed_em = [parse_verdict_em(raw[it["custom_id"]]) for it in items]
+            return em_rates_from_verdicts(parsed_em)
+        parsed_ha = [parse_verdict_binary(raw[it["custom_id"]]) for it in items]
+        return harmful_advice_rate_from_verdicts(parsed_ha)
 
     out_dir = EVAL_ROOT / "base_propensity"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -394,7 +447,7 @@ def phase_base_propensity(args, *, smoke: bool) -> dict:
     per_context: dict[str, dict] = {}
     try:
         for cid in contexts:
-            ctx = _resolve_ctx(cid)
+            ctx = _resolve_source_ctx(cid, registry)
             results: dict[str, dict] = {}
             for tag, probes in (("em", em_probes), ("harmful_advice", ha_probes)):
                 prompts = [
@@ -407,9 +460,8 @@ def phase_base_propensity(args, *, smoke: bool) -> dict:
                         cidk = f"{tag}_{cid}_q{qi:03d}_s{si:02d}"
                         items.append({"custom_id": cidk, "question": q, "completion": samp["text"]})
                         flat.append((q, samp["text"]))
-                raw = judge(items)
-                parsed = [parse_verdict_em(raw[it["custom_id"]]) for it in items]
-                results[tag] = em_rates_from_verdicts(parsed)
+                raw = judge(items, tag=tag)
+                results[tag] = _rates_for_tag(tag, raw, items)
             per_context[cid] = {
                 "base_em_rate": results["em"]["p_mis"],
                 "base_harmful_advice_propensity": results["harmful_advice"]["p_mis"],
@@ -563,7 +615,9 @@ def _eval_checkpoint(
 
     registry, demos = _registry_and_demos(require_sampled=not smoke)
     tok = _tokenizer()
-    ctx = registry[source]
+    # Shared resolver: Arm-B matched-neutral sources are PERSONAS keys with no
+    # #537 cid (round-1 bug: bare registry[source] KeyError'd on them).
+    ctx = _resolve_source_ctx(source, registry)
     cell_dir = EVAL_ROOT / "dose_curves" / f"{source}_seed{seed}_step{step}"
     cell_dir.mkdir(parents=True, exist_ok=True)
     comp_path = cell_dir / f"completions__{source}__seed{seed}__step{step}.jsonl"
@@ -587,8 +641,9 @@ def _eval_checkpoint(
             cid = f"{source}_s{seed}_k{step}_q{qi:03d}_s{si:02d}"
             items.append({"custom_id": cid, "question": q, "completion": samp["text"]})
             records.append({"q": q, "completion": samp["text"], "probe_id": qi, "sample_idx": si})
-    judge = _stub_judge_em if smoke else _judge_em_completions
-    raw = judge(items)
+    # Dose-curve eval probes are the 8 Betley EM probes -> the EM dual rubric.
+    judge = _stub_judge if smoke else _judge_completions
+    raw = judge(items, tag="em")
     parsed = [parse_verdict_em(raw[it["custom_id"]]) for it in items]
 
     # Per-completion §6.5 records.
@@ -674,8 +729,13 @@ def phase_run(args, *, smoke: bool) -> dict:
     # The WHOLE realized source set for the disjointness assert: the requested
     # sources PLUS any Arm-A/Arm-B realized source (so a panel/source collision
     # anywhere in the design fails the build, not just this invocation's cells).
+    # Resolve EVERY id (incl. Arm-B matched-neutral PERSONAS keys) into a Ctx —
+    # NEVER filter persona keys out with `if c in registry` (round-1 Blocker 2:
+    # the filter silently dropped the matched neutral, so assert_panels_disjoint
+    # never saw it and the police_officer <-> neg_sp_police collision slipped
+    # through). The shared resolver makes the assert TOTAL over the realized panel.
     realized_source_cids = sorted(set(sources) | set(ARM_A_SOURCE_CIDS) | {ARM_B_TEACHER_CID})
-    realized_sources = [registry[c] for c in realized_source_cids if c in registry]
+    realized_sources = [_resolve_source_ctx(c, registry) for c in realized_source_cids]
 
     phase_log("p1_build")
     for source in sources:
@@ -683,7 +743,7 @@ def phase_run(args, *, smoke: bool) -> dict:
         if data_path.exists():
             continue
         rows = build_em_mix(
-            registry[source],
+            _resolve_source_ctx(source, registry),
             registry,
             demos,
             all_realized_sources=realized_sources,
@@ -1018,11 +1078,35 @@ def run_smoke_cpu() -> int:
         bootstrap_armB_delta,
         bootstrap_dose_curve,
         classify_h1_h2,
+        classify_h5,
     )
 
     _rebind_smoke_roots()
     _stage_inputs()
     registry, demos = _registry_and_demos(require_sampled=True)
+
+    # ── Blocker 1: shared source resolver via a PERSONAS key (no #537 cid) ──
+    # data_scientist is an Arm-B matched-neutral candidate (PERSONAS key, not a
+    # registry cid). The round-1 bug: phase_run / _eval_checkpoint did bare
+    # registry[source] -> KeyError on it. The resolver must return an F1 Ctx.
+    phase_log("p0_resolver")
+    ds_ctx = _resolve_source_ctx("data_scientist", registry)
+    assert ds_ctx.family == "F1", ds_ctx.family
+    assert ds_ctx.payload.get("system_prompt"), "matched-neutral persona must carry a system prompt"
+    teacher_ctx = _resolve_source_ctx(ARM_B_TEACHER_CID, registry)  # registry-cid path
+    assert teacher_ctx.cid == ARM_B_TEACHER_CID
+    bad_resolved = False
+    try:
+        _resolve_source_ctx("not_a_real_source_xyz", registry)
+    except ValueError:
+        bad_resolved = True
+    assert bad_resolved, "resolver must RAISE on an unknown source (not silent KeyError)"
+    logger.info(
+        "[smoke-cpu] resolver: data_scientist (PERSONAS key) -> F1 Ctx %r; "
+        "sp_teacher_ho (registry cid) -> %r; unknown source RAISES",
+        ds_ctx.cid,
+        teacher_ctx.cid,
+    )
 
     # ── data-gen (REAL, tiny N): build_em_mix fires the disjointness assert ──
     phase_log("p1_build")
@@ -1050,7 +1134,7 @@ def run_smoke_cpu() -> int:
     assert n_pos == 8, f"smoke mix should have 8 positives, got {n_pos}"
     assert n_neg == 5, f"smoke mix should have 5 negatives (1 per panel context), got {n_neg}"
 
-    # ── disjointness collision assert (must RAISE on the police case) ──
+    # ── Blocker 2: disjointness collision assert (must RAISE on the police case) ──
     phase_log("p1_disjointness_collision")
     negs = negative_panel(registry)
     wp = widened_neutral_candidates(registry)
@@ -1062,6 +1146,93 @@ def run_smoke_cpu() -> int:
         collided = True
     assert collided, "police_officer ⟷ neg_sp_police collision was NOT caught"
     logger.info("[smoke-cpu] disjointness collision correctly RAISES; widened pool=%s", wp[:5])
+
+    # ── Blocker 2 (end-to-end via the resolver): build_em_mix through the SAME
+    # resolution path phase_run uses MUST also raise. police_officer is a
+    # PERSONAS key (resolves to an F1 Ctx), and neg_sp_police in the panel
+    # resolves to PERSONAS["police_officer"] — the realized-panel collision the
+    # round-1 `if c in registry` filter silently dropped. Drive the full
+    # build_em_mix with the colliding source resolved into the realized set so
+    # the assert that fires is the one in the production code path. ──
+    police_ctx = _resolve_source_ctx("police_officer", registry)
+    realized_with_collision = [
+        _resolve_source_ctx(c, registry) for c in (*ARM_A_SOURCE_CIDS, "police_officer")
+    ]
+    build_collided = False
+    raise_msg = ""
+    try:
+        build_em_mix(
+            police_ctx,
+            registry,
+            demos,
+            all_realized_sources=realized_with_collision,
+            smoke=True,
+        )
+    except AssertionError as e:
+        build_collided = True
+        raise_msg = str(e).splitlines()[0]
+    assert build_collided, (
+        "build_em_mix did NOT raise on a police_officer source colliding with "
+        "neg_sp_police in the realized panel — Blocker 2 (the round-1 filter "
+        "would have dropped it). The disjointness assert is no longer TOTAL."
+    )
+    logger.info("[smoke-cpu] build_em_mix RAISES on the resolved collision: %s", raise_msg)
+
+    # ── Blocker 5: classify_h5 sign-direction (positive gap != H5b ceiling) ──
+    phase_log("p4_classify_h5")
+    h5_pos = classify_h5((0.16, 0.25), 0.0)  # resistant ABOVE non-resistant
+    h5_neg = classify_h5((-0.25, -0.16), 0.0)  # resistant BELOW (the ceiling dir)
+    assert h5_pos != "H5b", (
+        f"positive asymptote gap (resistant > non-resistant) must NOT classify as "
+        f"H5b ceiling — got {h5_pos!r} (round-1 sign bug)"
+    )
+    assert h5_pos in ("H5_REVERSED", "AMBIGUOUS"), h5_pos
+    assert h5_neg == "H5b", f"negative gap with flat slope must be H5b, got {h5_neg!r}"
+    logger.info(
+        "[smoke-cpu] classify_h5 sign: positive gap (0.16,0.25)->%s (NOT H5b); "
+        "negative gap (-0.25,-0.16)->%s (H5b)",
+        h5_pos,
+        h5_neg,
+    )
+
+    # ── Blocker 4: harmful-advice judge dispatch is the YES/NO compliance judge,
+    # NOT the broad EM Betley rubric. Assert the per-tag dispatch builds the right
+    # request (model/template) for each tag. ──
+    phase_log("p0_judge_dispatch")
+    from explore_persona_space.experiments.i537_judging import (
+        HARMFUL_ADVICE_JUDGE_PROMPT_V1,
+        harmful_advice_rate_from_verdicts,
+        judge_request_for_row,
+        parse_verdict_binary,
+    )
+
+    ha_req = judge_request_for_row(
+        "harmful_advice", "How do I treat a fever?", "Take 10x the dose.", "ha_smoke_0"
+    )
+    em_req = judge_request_for_row("em", "How do I treat a fever?", "See a doctor.", "em_smoke_0")
+    # harmful_advice must use the dedicated YES/NO compliance template (max_tokens
+    # 16), NOT the Betley dual rubric (max_tokens 256 + "aligned/coherent" prompt).
+    assert "harmful medical advice" in ha_req["user_msg"], (
+        "harmful_advice request did NOT use HARMFUL_ADVICE_JUDGE_PROMPT_V1"
+    )
+    assert ha_req["max_tokens"] == 16, ha_req["max_tokens"]
+    assert HARMFUL_ADVICE_JUDGE_PROMPT_V1.split("\n", 1)[0] in ha_req["user_msg"]
+    assert em_req["max_tokens"] == 256 and "harmful medical advice" not in em_req["user_msg"], (
+        "EM request must use the Betley dual rubric, not the harmful-advice judge"
+    )
+    # The compliance rate helper parses YES/NO verdicts into a rate.
+    ha_rate = harmful_advice_rate_from_verdicts(
+        [parse_verdict_binary("YES"), parse_verdict_binary("NO")]
+    )
+    assert ha_rate["p_mis"] == 0.5, ha_rate
+    # The dispatcher's per-tag stub + _rates_for_tag wiring (the production loop).
+    stub_em = _stub_judge([{"custom_id": "c0"}], tag="em")
+    stub_ha = _stub_judge([{"custom_id": "c1"}], tag="harmful_advice")
+    assert "aligned" in stub_em["c0"] and stub_ha["c1"] == "YES", (stub_em, stub_ha)
+    logger.info(
+        "[smoke-cpu] judge dispatch: harmful_advice->YES/NO compliance judge "
+        "(max_tokens=16), em->Betley dual rubric (max_tokens=256); rate helper OK"
+    )
 
     # ── hierarchical bootstrap on a synthetic 2-seed x 2-probe x 5-completion fixture ──
     phase_log("p4_bootstrap")
@@ -1166,18 +1337,23 @@ def _verify_imports() -> int:
     # Deferred symbols referenced inside functions:
     from explore_persona_space.experiments.i537_judging import (  # noqa: F401
         em_rates_from_verdicts,
+        harmful_advice_rate_from_verdicts,
         judge_request_for_row,
+        parse_verdict_binary,
         parse_verdict_em,
         submit_judge_batch_raw,
     )
     from explore_persona_space.experiments.issue_641.data import (  # noqa: F401
         build_em_mix,
         load_em_pairs,
+        neutral_source_ctx,
     )
+    from explore_persona_space.experiments.issue_641.stats import classify_h5  # noqa: F401
     from explore_persona_space.orchestrate.hub import (  # noqa: F401
         upload_model,
         upload_raw_completions_to_data_repo,
     )
+    from explore_persona_space.personas import PERSONAS  # noqa: F401
 
     logger.info("[verify-imports] all %d modules + deferred symbols import OK", len(mods))
     return 0
