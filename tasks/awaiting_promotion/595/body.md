@@ -20,7 +20,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** see `docs/methodology/issue_595.md` (auto-generated, findings-blind).
+**Methodology:** [docs/methodology/issue_595.md](https://github.com/superkaiba/explore-persona-space/blob/fbb1a325b6e40f823f00ee614fac13b16f598bff/docs/methodology/issue_595.md) · [gist](https://gist.github.com/superkaiba/597b7dfe10ceb872f0cb1c4b54e66b9d)
 
 ## Takeaways
 
@@ -140,7 +140,7 @@ The HF data-repo mirror (`issue595_prefix_carrier/raw_completions/`) did not lan
 
 ## Reproducibility
 
-**Methodology reference:** [docs/methodology/issue_595.md](https://github.com/superkaiba/explore-persona-space/blob/e4afa500710f5b86e0207659396a2ca57cdf1e60/docs/methodology/issue_595.md) (auto-generated, findings-blind).
+- **Methodology reference:** [docs/methodology/issue_595.md](https://github.com/superkaiba/explore-persona-space/blob/fbb1a325b6e40f823f00ee614fac13b16f598bff/docs/methodology/issue_595.md) · [gist](https://gist.github.com/superkaiba/597b7dfe10ceb872f0cb1c4b54e66b9d)
 
 **Parameters:**
 
