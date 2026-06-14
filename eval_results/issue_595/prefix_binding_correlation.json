@@ -1,0 +1,16 @@
+{
+ "smoke": true,
+ "h1": {
+  "n_rows_with_leak": 18,
+  "raw_all_L": {
+   "error": "only 1 rows with both score + leakage"
+  },
+  "layer_9": {
+   "error": "only 1 rows with both score + leakage"
+  },
+  "gaugenorm_sq": {
+   "error": "only 1 rows with both score + leakage"
+  }
+ },
+ "h3_race": "/workspace/explore-persona-space/eval_results/issue_595/scoring_prefix/scoring_results.json"
+}
