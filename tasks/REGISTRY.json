@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 640,
+  "highest_id": 641,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3955,6 +3955,13 @@
       "path": "tasks/proposed/640",
       "status": "proposed",
       "title": "Is postfix the Qwen-2.5 carrier, and does postfix-patching work as a per-cell leakage intervention?"
+    },
+    "641": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/641",
+      "status": "proposed",
+      "title": "Phase 2: matched-dose install-resistance curves \u2014 does dose overcome resistance, and is residual resistance base-prior or identity-conflict?"
     },
     "65": {
       "has_clean_result": true,
