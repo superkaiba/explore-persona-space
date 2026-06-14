@@ -797,25 +797,67 @@ def test_reconnect_skips_running_instance_with_terminal_phase_done() -> None:
     would latch the run onto a dead workload that never re-launches, because
     the reconnect path deliberately skips ``--workload-cmd`` re-dispatch
     (incident #634, 2026-06-13). It must route to delete-and-reprovision
-    (return None), NOT return a reconnect handle."""
+    (return None), NOT return a reconnect handle — AND it must actually
+    DELETE the zombie first (the delete half of #634: ``return None`` alone
+    re-runs ``instances create`` under the same name, which the still-present
+    zombie name-collides)."""
     runner = _Runner(
         list_results=[GcloudRunResult(0, _running_instance_payload(), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+        delete_results=[GcloudRunResult(0, "", "")],
     )
     assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
     # The reconnect probed the guest attribute (the structural fix).
     assert any("get-guest-attributes" in argv for argv in runner.calls), runner.calls
+    # ... and DELETED the zombie under the canonical name before re-provision.
+    delete_calls = [argv for argv in runner.calls if "delete" in argv and "instances" in argv]
+    assert len(delete_calls) == 1, runner.calls
+    assert "eps-issue-137" in delete_calls[0]
 
 
 def test_reconnect_skips_running_instance_with_terminal_phase_failed() -> None:
     """``eps/phase=failed`` on a RUNNING VM is the same wedged-zombie class
     as ``done`` (the EXIT trap published failed but the VM never powered
-    off) — also NOT reconnect-eligible."""
+    off) — also NOT reconnect-eligible, and also DELETED before re-provision."""
     runner = _Runner(
         list_results=[GcloudRunResult(0, _running_instance_payload(), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("failed"), "")],
+        delete_results=[GcloudRunResult(0, "", "")],
     )
     assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
+    delete_calls = [argv for argv in runner.calls if "delete" in argv and "instances" in argv]
+    assert len(delete_calls) == 1, runner.calls
+    assert "eps-issue-137" in delete_calls[0]
+
+
+def test_reconnect_zombie_delete_failure_still_returns_none() -> None:
+    """The zombie delete is BEST-EFFORT: a delete that fails (transient API
+    blip, not a "was not found") must NOT crash the reconnect probe — it logs
+    + still returns None so the re-provision proceeds (the subsequent
+    ``instances create`` is the loud fallback that surfaces a name collision
+    if the zombie is genuinely still present). Incident #634 delete half."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _running_instance_payload(), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+        delete_results=[GcloudRunResult(1, "", "Internal error. Please try again.")],
+    )
+    assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
+    # The delete WAS attempted (best-effort), even though it failed.
+    assert any("delete" in argv and "instances" in argv for argv in runner.calls), runner.calls
+
+
+def test_reconnect_zombie_delete_not_found_treated_as_gone() -> None:
+    """A "was not found" on the zombie delete is the no-op success path (the
+    VM auto-deleted between the list probe and the delete) — reconnect still
+    returns None and does not surface the delete rc as an error (mirrors
+    ``GcpBackend.teardown``'s already-gone handling)."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _running_instance_payload(), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+        delete_results=[GcloudRunResult(1, "", "The resource 'eps-issue-137' was not found")],
+    )
+    assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
+    assert any("delete" in argv and "instances" in argv for argv in runner.calls), runner.calls
 
 
 def test_reconnect_keeps_running_instance_with_mid_workload_phase() -> None:
@@ -830,6 +872,9 @@ def test_reconnect_keeps_running_instance_with_mid_workload_phase() -> None:
     assert handle is not None
     assert handle.pod_name == "eps-issue-137"
     assert handle.extra["reconnected"] is True
+    # A live mid-workload VM must NEVER be deleted (only terminal-phase
+    # zombies are — deleting a running workload would kill the experiment).
+    assert not any("delete" in argv and "instances" in argv for argv in runner.calls), runner.calls
 
 
 def test_reconnect_keeps_running_instance_with_no_phase_published() -> None:

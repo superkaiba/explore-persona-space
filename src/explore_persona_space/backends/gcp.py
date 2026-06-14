@@ -1529,13 +1529,28 @@ GcloudRunner = Callable[[Sequence[str]], GcloudRunResult]
 
 #: Terminal ``eps/phase`` guest-attribute values. A RUNNING VM publishing
 #: one of these is a WEDGED ZOMBIE — the startup-script workload finished
-#: (cleanly or with a failure) but the instance never auto-deleted
-#: (``--instance-termination-action=DELETE`` + ``--max-run-duration`` did
-#: not fire, observed for the smoke shape on issue 634, 2026-06-13). Such an
-#: instance must NOT be reconnected-to: the reconnect path deliberately
-#: SKIPS workload re-dispatch (it is built for catching a still-running
-#: workload before re-provisioning), so reconnecting to a done/failed VM
-#: latches the run onto a dead workload that never re-launches.
+#: (cleanly or with a failure) but the instance is still RUNNING.
+#:
+#: Why it lingers (the #634 root cause, 2026-06-13): on the SUCCESS path the
+#: startup script DELIBERATELY does NOT power off (it keeps the VM alive so
+#: ``fetch_results`` can scp the completion sentinel), and
+#: ``--instance-termination-action=DELETE`` is NOT a workload-completion
+#: trigger — it arms only when GCE itself stops the VM, i.e. when the
+#: ``--max-run-duration`` fence trips (24h default) or Spot preempts. So a
+#: 7.8s smoke that exits cleanly sits RUNNING for ~24h until the duration
+#: fence; the DELETE belt is a slow backstop, not prompt cleanup. The prompt
+#: cleanup is the orchestrator's ``dispatch_issue.py finalize``
+#: (fetch_results -> confirm_artifacts -> teardown) — but a SMOKE run has no
+#: finalize step (it is a preflight, not the real run), so its VM is the
+#: canonical zombie.
+#:
+#: Such an instance must NOT be reconnected-to: the reconnect path
+#: deliberately SKIPS workload re-dispatch (it is built for catching a
+#: still-running workload before re-provisioning), so reconnecting to a
+#: done/failed VM latches the run onto a dead workload that never re-launches.
+#: ``reconnect_or_none`` therefore DELETES the zombie (best-effort) before
+#: returning None, so the subsequent ``instances create`` under the same
+#: canonical name does not collide — the delete-and-reprovision is atomic.
 _TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
 
 
@@ -1582,6 +1597,59 @@ def _read_guest_phase(*, config: GcpConfig, name: str, zone: str, runner: Gcloud
     return ""
 
 
+def _delete_zombie_best_effort(
+    *, config: GcpConfig, name: str, zone: str, runner: GcloudRunner
+) -> bool:
+    """Best-effort ``gcloud compute instances delete`` of a wedged zombie.
+
+    Called by :func:`reconnect_or_none` the instant it classifies a
+    RUNNING-but-terminal-phase VM as a wedged zombie (incident #634):
+    ``return None`` alone routes the launch into a fresh ``instances
+    create`` under the SAME canonical ``eps-issue-<N>`` name, which the
+    still-present zombie would name-collide. Deleting it here makes the
+    promised "delete-and-reprovision" actually atomic.
+
+    BEST-EFFORT by design — a delete blip (transient API error, expired
+    auth) must NOT crash the launch: the subsequent ``instances create``
+    is the loud fallback (it surfaces the name collision if the delete
+    truly failed), so this logs the failure and returns ``False`` rather
+    than raising. A "was not found" / 404 stderr is the no-op success
+    path (the VM auto-deleted between the list probe and now), mirroring
+    :meth:`GcpBackend.teardown`. Returns ``True`` when the zombie is gone
+    (deleted now or already absent), ``False`` on a real delete failure.
+    """
+    argv = render_delete_argv(config=config, name=name, zone=zone)
+    try:
+        result = runner(argv)
+    except Exception as exc:  # transport / subprocess explosion
+        logger.error(
+            "GCP reconnect: best-effort delete of zombie %s raised %s; the "
+            "re-provision create will surface a name collision if it is still "
+            "present.",
+            name,
+            exc,
+        )
+        return False
+    if result.returncode == 0:
+        logger.info("GCP reconnect: deleted wedged zombie %s before re-provision.", name)
+        return True
+    stderr_low = (result.stderr or "").lower()
+    if "was not found" in stderr_low or "404" in stderr_low:
+        logger.info(
+            "GCP reconnect: zombie %s already gone (was not found) — re-provision proceeds.",
+            name,
+        )
+        return True
+    logger.error(
+        "GCP reconnect: best-effort delete of zombie %s returned rc=%d (%s); the "
+        "re-provision create will surface a name collision if it is still present.",
+        name,
+        result.returncode,
+        (result.stderr or "")[:300],
+    )
+    return False
+
+
 def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudRunResult:
     """Default runner: shell out to ``gcloud`` via :mod:`subprocess`.
 
@@ -1622,7 +1690,11 @@ def reconnect_or_none(
     --filter='name=eps-issue-<N>'``. A live instance (status RUNNING,
     PROVISIONING, STAGING, STOPPING) returns a handle. A TERMINATED
     instance is treated as "not live" (the backend will create a fresh
-    one); no instance returns None.
+    one); no instance returns None. A RUNNING-but-terminal-phase
+    (``done`` / ``failed``) WEDGED ZOMBIE (incident #634) is DELETED
+    best-effort and returns None — it is neither reconnect-eligible (the
+    workload is dead) nor leaveable (the re-provision ``create`` would
+    name-collide). See :data:`_TERMINAL_GUEST_PHASES`.
 
     Matches the "Idempotent: a per-run attempt-id is the sole write
     namespace; route() reconnects to an existing eps-issue-<N> GCE
@@ -1696,6 +1768,24 @@ def reconnect_or_none(
                     name,
                     phase,
                 )
+                # DELETE the zombie before returning None. ``return None``
+                # alone routes ``launch()`` straight into the create loop,
+                # which re-runs ``gcloud compute instances create eps-issue-<N>``
+                # under the SAME canonical name — but the zombie STILL EXISTS
+                # under that name, so the create would fail with
+                # "The resource 'eps-issue-<N>' already exists" and the whole
+                # re-provision is dead in the water. The sibling fix
+                # (77af3b006) closed the RECONNECT half of #634 (don't latch
+                # onto a done/failed VM) but left the DELETE half open: the
+                # #634 full run only provisioned because a HUMAN ran
+                # ``gcloud compute instances delete eps-issue-634`` by hand
+                # first. Self-clean it here so delete-and-reprovision is
+                # actually atomic. Best-effort: a delete blip must not crash
+                # the launch — the create-collision is the loud fallback
+                # signal if the delete somehow failed — so we log + still
+                # return None. A "was not found" (already gone) is the no-op
+                # success path, mirroring ``GcpBackend.teardown``.
+                _delete_zombie_best_effort(config=config, name=name, zone=zone, runner=runner)
                 return None
         instance_id = str(inst.get("id") or "")
         # Recover the original attempt_id from the instance's labels (set
