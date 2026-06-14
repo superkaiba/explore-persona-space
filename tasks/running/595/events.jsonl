@@ -67,3 +67,4 @@
 {"ts": "2026-06-14T02:21:05Z", "kind": "epm:progress", "version": 4, "by": "poll_pipeline", "note": "phase transition: prefix_kv_shift -> backend_parity", "phase": "backend_parity", "pod": "pod-595"}
 {"ts": "2026-06-14T02:30:22Z", "kind": "epm:progress", "version": 5, "by": "poll_pipeline", "note": "phase transition: backend_parity -> judge", "phase": "judge", "pod": "pod-595"}
 {"ts": "2026-06-14T02:49:00Z", "kind": "epm:progress", "version": 6, "by": "poll_pipeline", "note": "phase transition: judge -> prefix_patch", "phase": "prefix_patch", "pod": "pod-595"}
+{"ts": "2026-06-14T02:58:24Z", "kind": "epm:progress", "version": 7, "by": "poll_pipeline", "note": "phase transition: prefix_patch -> judge", "phase": "judge", "pod": "pod-595"}
