@@ -75,3 +75,4 @@
 {"ts": "2026-06-14T03:47:07Z", "kind": "epm:progress", "version": 12, "by": "poll_pipeline", "note": "phase transition: prefix_patch -> judge", "phase": "judge", "pod": "pod-595"}
 {"ts": "2026-06-14T03:56:21Z", "kind": "epm:results", "version": 1, "by": "issue595_prefix_carrier", "note": "{\"phase\": \"prefix-patch\", \"smoke\": false, \"predictors_dir\": \"/workspace/explore-persona-space/eval_results/issue_595/predictors\"}"}
 {"ts": "2026-06-14T03:56:28Z", "kind": "epm:progress", "version": 13, "by": "poll_pipeline", "note": "phase transition: judge -> start", "phase": "start", "pod": "pod-595"}
+{"ts": "2026-06-14T04:06:01Z", "kind": "epm:progress", "version": 14, "by": "poll_pipeline", "note": "phase transition: start -> backend_parity", "phase": "backend_parity", "pod": "pod-595"}
