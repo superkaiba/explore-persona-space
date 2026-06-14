@@ -7,10 +7,11 @@ All numbers re-extracted from eval_results/issue_595 at run time.
 
 import json
 import os
+from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import spearmanr
+from scipy.stats import rankdata, spearmanr
 
 from explore_persona_space.analysis.paper_plots import (
     paper_palette,
@@ -19,6 +20,7 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
     set_title_subtitle,
 )
+from explore_persona_space.experiments.behavior_testbed_545.assemble_matrix import PRIMARY_SCALAR
 
 W = "eval_results/issue_595"
 P545 = "eval_results/issue_545"
@@ -43,19 +45,57 @@ pfx_l9 = {r: d["l9"] for r, d in l9["per_row"].items()}
 pfx_gns = {r: d["gaugenorm_sq"] for r, d in gns["per_row"].items()}
 gauge = {r: d["gauge"] for r, d in raw["per_row"].items()}
 
+# Per-row diagonal install column (read from the primary cells' metadata).
+DIAG = {}
+for _cid, _m in md.items():
+    if _m.get("arm") == "primary":
+        DIAG.setdefault(_m["row"], _m.get("diagonal_column"))
 
-def row_summed_L(rowname):
-    for suffix in ["_primary_seed0", "_cn_seed0"]:
-        cid = rowname + suffix
-        if cid in L:
-            s = 0.0
-            for col, v in L[cid].items():
-                if col.startswith("capability"):
-                    continue
-                if isinstance(v, dict) and v.get("L") is not None:
-                    s += abs(v["L"])
-            return s
-    return None
+
+def row_summed_L():
+    """PLANNED H1 leakage target (plan v3 §6): per behavior, sum of seed-mean |L|
+    over OFF-DIAGONAL, DEFAULT-context, PRIMARY_SCALAR columns, with flagged
+    (implant_failed / saturation_flag) cells excluded, averaged across the
+    primary-arm seeds (#545's _seed_mean_targets universe rules).
+
+    The round-1 figure summed seed-0 ALL contexts INCLUDING the diagonal install
+    column (so marker scored ~19.88 off its own marker columns); this restricts
+    to the off-diagonal, default-context, seed-mean B->B' leakage the plan named.
+    Returns {row -> off-diagonal-default-context row-summed |L|}.
+    """
+    acc = defaultdict(list)  # (row, col) -> [L across primary seeds]
+    for cid, cols in L.items():
+        m = md.get(cid, {})
+        if m.get("arm") != "primary":
+            continue
+        if m.get("implant_failed"):  # drop install-failed cells (planned)
+            continue
+        row = m.get("row")
+        dcol = DIAG.get(row)
+        for col_ctx, entry in cols.items():
+            col_id, ctx = col_ctx.rsplit("__", 1)
+            if ctx != "default":  # default-context only
+                continue
+            if col_id not in PRIMARY_SCALAR:
+                continue
+            if col_id == "capability":  # never a leakage column
+                continue
+            if col_id == dcol:  # OFF-diagonal: drop the behavior's own install column
+                continue
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("saturation_flag"):  # drop saturated cells (planned)
+                continue
+            lv = entry.get("L")
+            if isinstance(lv, (int, float)):
+                acc[(row, col_id)].append(float(lv))
+    rowsum = defaultdict(float)
+    for (row, _col), vals in acc.items():
+        rowsum[row] += abs(sum(vals) / len(vals))
+    return dict(rowsum)
+
+
+ROWSUM = row_summed_L()
 
 
 # Coarse, plain-English behavior type (reader-facing; avoids the project-internal
@@ -96,8 +136,8 @@ def family_of(rowname):
     return BEHAVIOR_TYPE.get(rowname, "other")
 
 
-rows = [r for r in sorted(pfx_raw) if row_summed_L(r) is not None]
-y = np.array([row_summed_L(r) for r in rows])
+rows = [r for r in sorted(pfx_raw) if r in ROWSUM]
+y = np.array([ROWSUM[r] for r in rows])
 xr = np.array([pfx_raw[r] for r in rows])
 xl9 = np.array([pfx_l9[r] for r in rows])
 xg = np.array([pfx_gns[r] for r in rows])
@@ -119,7 +159,7 @@ os.makedirs(FIGDIR, exist_ok=True)
 
 
 # ---------- 1. HERO: 3-panel H1 scatter ----------
-def panel(ax, x, ylab_x, rho, p):
+def panel(ax, x, ylab_x, rho, p, verdict):
     for i, r in enumerate(rows):
         ax.scatter(
             x[i], y[i], s=46, color=fam_color[fams[i]], edgecolors="white", linewidths=0.6, zorder=3
@@ -134,14 +174,16 @@ def panel(ax, x, ylab_x, rho, p):
                 color="#333",
             )
     ax.set_xlabel(ylab_x)
+    vcolor = paper_palette_role("primary") if verdict == "passes >0.5 bar" else "#c0504d"
     ax.text(
         0.04,
-        0.93,
-        f"ρ = {rho:+.2f}  (p = {p:.2f})",
+        0.95,
+        f"ρ = {rho:+.2f}  (p = {p:.3f})\n{verdict}",
         transform=ax.transAxes,
         fontsize=8.5,
         va="top",
         fontweight="semibold",
+        color=vcolor,
     )
     ax.axhline(0, color="#bbb", lw=0.6, zorder=0)
 
@@ -150,10 +192,17 @@ fig, axes = plt.subplots(1, 3, figsize=(11.5, 3.8))
 rr, pr = spearmanr(xr, y)
 rl, pl = spearmanr(xl9, y)
 rg, pg = spearmanr(xg, y)
-panel(axes[0], xr, "raw prefix-KV-shift (all layers)", rr, pr)
-panel(axes[1], xl9, "prefix-KV-shift (layer 9 only)", rl, pl)
-panel(axes[2], xg, "gauge-corrected prefix-KV-shift\n(÷ (α/√r)², isolates carrier)", rg, pg)
-axes[0].set_ylabel("row-summed |leakage| in #545 matrix")
+panel(axes[0], xr, "raw prefix-KV-shift (all layers)", rr, pr, "passes >0.5 bar")
+panel(axes[1], xl9, "prefix-KV-shift (layer 9 only)", rl, pl, "below bar")
+panel(
+    axes[2],
+    xg,
+    "gauge-corrected prefix-KV-shift\n(÷ (α/√r)², isolates carrier)",
+    rg,
+    pg,
+    "collapses to ~0",
+)
+axes[0].set_ylabel("off-diagonal default-context\nrow-summed |leakage| in #545 matrix")
 # behavior-type legend below the panels (avoid occluding data points)
 handles = [plt.Line2D([], [], marker="o", ls="", color=fam_color[f], label=f) for f in uniq_fams]
 fig.legend(
@@ -167,7 +216,7 @@ fig.legend(
     frameon=False,
 )
 fig.suptitle(
-    "Prefix-carrier binding strength does not predict which behaviors leak (n=19 rows)",
+    f"Raw prefix-binding clears the H1 bar but collapses under gauge correction (n={len(rows)} rows)",
     fontsize=11,
     fontweight="semibold",
     x=0.5,
@@ -179,23 +228,51 @@ plt.close(fig)
 
 
 # ---------- 2. H2 patch heatmap (delta leakage per cell) ----------
+# Plain-English row -> column labels (no internal slugs per clean-result Lens 3).
+H2_ROW = {
+    "bad_medical": "bad-medical advice",
+    "risky_financial": "risky-financial advice",
+    "extreme_sports": "extreme-sports advice",
+    "taught_fact": "taught fact",
+    "reversed_fact": "reversed fact",
+    "compliment_writing": "compliment style",
+    "wrong_claim_agreement": "false-claim agreement",
+    "marker": "marker token",
+}
+H2_COL = {
+    "broad_em": "broad misalignment",
+    "fam_expr_extreme_sports": "extreme-sports expression",
+    "fam_expr_risky_financial": "risky-financial expression",
+    "format_style": "list/format style",
+    "persona_drift": "persona drift",
+    "self_report": "marker self-report",
+}
 detail = patch["detail"]
 cell_rows = [
     (d["row"], d["column"], d["delta_leakage"], d["trained_rate"], d["patched_rate"], d["n_probes"])
     for d in detail.values()
 ]
-fig, ax = plt.subplots(figsize=(7.6, 4.4))
-labels = [f"{r}\n→ {c}" for r, c, *_ in cell_rows]
-deltas = [d for *_, d in [(c[0], c[1], c[2]) for c in cell_rows]]
+# order by delta (most-increased leakage at top) for a clean read
+cell_rows.sort(key=lambda c: c[2])
+fig, ax = plt.subplots(figsize=(8.4, 4.6))
+labels = [f"{H2_ROW.get(r, r)}\n→ {H2_COL.get(c, c)}" for r, c, *_ in cell_rows]
 deltas = [c[2] for c in cell_rows]
 colors = ["#c0504d" if d < 0 else paper_palette_role("primary") for d in deltas]
 ypos = np.arange(len(cell_rows))
-ax.barh(ypos, deltas, color=colors, edgecolor="white", linewidth=0.6)
+ax.barh(ypos, deltas, color=colors, edgecolor="white", linewidth=0.6, zorder=3)
+# Per-cell 50%-recovery threshold marker: the bar at +0.5*trained_rate (the
+# "cut leakage by >=50% of the way back to base" pass bar). A bar must reach its
+# own grey tick to pass; none does.
+for i, (_r, _c, _d, tr, _pa, _n) in enumerate(cell_rows):
+    thr = 0.5 * tr
+    ax.plot([thr, thr], [i - 0.38, i + 0.38], color="#777", lw=1.4, ls=(0, (2, 1.5)), zorder=4)
 ax.set_yticks(ypos)
-ax.set_yticklabels(labels, fontsize=6.5)
+ax.set_yticklabels(labels, fontsize=6.8)
 ax.axvline(0, color="#444", lw=0.8)
+# left/right headroom so the −0.41 (n=32) annotation is not clipped
+ax.set_xlim(min(deltas) - 0.13, max([0.5 * c[3] for c in cell_rows] + deltas) + 0.06)
 ax.set_xlabel("Δ leakage = trained − patched   (positive = patch REDUCED leakage)")
-for i, (r, c, d, tr, pa, n) in enumerate(cell_rows):
+for i, (_r, _c, d, _tr, _pa, n) in enumerate(cell_rows):
     ax.annotate(
         f"{d:+.2f} (n={n})",
         (d, i),
@@ -205,10 +282,13 @@ for i, (r, c, d, tr, pa, n) in enumerate(cell_rows):
         textcoords="offset points",
         ha="left" if d >= 0 else "right",
     )
+# legend for the threshold ticks
+ax.plot([], [], color="#777", lw=1.4, ls=(0, (2, 1.5)), label="per-cell 50%-recovery bar")
+ax.legend(fontsize=6.8, loc="lower right", frameon=False)
 set_title_subtitle(
     ax,
     "Patching base prefix-KV does not cut leakage",
-    "5 of 8 cells: prefix patch INCREASED leakage (negative bars); none cut ≥50%",
+    "5 of 8 cells: prefix patch INCREASED leakage (red); no bar reaches its 50%-recovery tick",
     source="eval_results/issue_595/predictors/PFX__patch_recovery.json",
 )
 fig.tight_layout()
@@ -252,45 +332,77 @@ savefig_paper(fig, "issue_595/h2_3bar_control", dir="figures/")
 plt.close(fig)
 
 
-# ---------- 4. H3 predictor race ----------
+# ---------- 4. H3 predictor race (single-metric panels: CV-held-out | dev) ----------
 cv = h3["leave_family_out_cv"]
 lb = h3["dev_leaderboard"]
-fig, ax = plt.subplots(figsize=(7.2, 4.2))
-# compare family CV means + the PFX dev-leaderboard taus
-entries = [
-    ("geometry champion\n(Group A, #545)", cv["A"]["mean_tau"], paper_palette_role("baseline")),
-    ("behavior-native\n(Group B, #545)", cv["B"]["mean_tau"], paper_palette_role("neutral")),
-    (
-        "prefix-binding raw\n(PFX, this work)",
-        lb.get("PFX__prefix_kv_shift"),
-        paper_palette_role("primary"),
-    ),
-    ("prefix-binding\ngauge-corrected", lb.get("PFX__prefix_kv_shift_gaugenorm_sq"), "#c0504d"),
+fig, axes = plt.subplots(1, 2, figsize=(10.2, 4.2))
+
+
+def _annot(ax, vals):
+    for i, v in enumerate(vals):
+        ax.annotate(
+            f"{v:+.3f}",
+            (i, v),
+            ha="center",
+            va="bottom" if v >= 0 else "top",
+            fontsize=8,
+            xytext=(0, 3 if v >= 0 else -3),
+            textcoords="offset points",
+        )
+
+
+# LEFT: held-out leave-family-out CV mean_tau (the H3 success metric). All three
+# bars are the SAME metric (CV mean). The gauge-corrected predictor never won a
+# CV fold, so it has no CV entry and is shown only in the right (dev) panel.
+cv_names = [
+    "geometry\n(Group A, #545)",
+    "behavior-native\n(Group B, #545)",
+    "prefix-binding raw\n(PFX)",
 ]
-names = [e[0] for e in entries]
-vals = [e[1] for e in entries]
-cols = [e[2] for e in entries]
-ax.bar(names, vals, color=cols, edgecolor="white", linewidth=0.6, width=0.62)
-ax.axhline(0.15, color="#c0504d", ls="--", lw=0.9, label="H3 pass bar (CV > 0.15)")
-ax.axhline(0, color="#444", lw=0.8)
-ax.set_ylabel("held-out predictive τ (dev leaderboard / CV mean)")
-for i, v in enumerate(vals):
-    ax.annotate(
-        f"{v:+.3f}",
-        (i, v),
-        ha="center",
-        va="bottom" if v >= 0 else "top",
-        fontsize=8,
-        xytext=(0, 3 if v >= 0 else -3),
-        textcoords="offset points",
-    )
-ax.legend(fontsize=7, loc="upper right")
-ax.tick_params(axis="x", labelsize=7)
-set_title_subtitle(
-    ax,
+cv_vals = [cv["A"]["mean_tau"], cv["B"]["mean_tau"], cv["PFX"]["mean_tau"]]
+cv_cols = [
+    paper_palette_role("baseline"),
+    paper_palette_role("neutral"),
+    paper_palette_role("primary"),
+]
+axes[0].bar(cv_names, cv_vals, color=cv_cols, edgecolor="white", linewidth=0.6, width=0.6)
+axes[0].axhline(0.15, color="#c0504d", ls="--", lw=0.9, label="H3 pass bar (CV mean > 0.15)")
+axes[0].axhline(0, color="#444", lw=0.8)
+axes[0].set_ylabel("leave-family-out CV mean τ (held-out)")
+_annot(axes[0], cv_vals)
+axes[0].legend(fontsize=7, loc="upper left")
+axes[0].tick_params(axis="x", labelsize=7)
+axes[0].set_title(
+    "Held-out metric (H3 success bar)", fontsize=9.5, loc="left", fontweight="semibold"
+)
+
+# RIGHT: dev-leaderboard τ — SELECTION-INFLATED in-sample fit. Shown separately so
+# it is never read as held-out. Both PFX variants appear here.
+dev_names = ["prefix-binding raw\n(PFX)", "prefix-binding\ngauge-corrected (PFX)"]
+dev_vals = [lb.get("PFX__prefix_kv_shift"), lb.get("PFX__prefix_kv_shift_gaugenorm_sq")]
+dev_cols = [paper_palette_role("primary"), "#c0504d"]
+axes[1].bar(dev_names, dev_vals, color=dev_cols, edgecolor="white", linewidth=0.6, width=0.5)
+axes[1].axhline(0, color="#444", lw=0.8)
+axes[1].set_ylabel("dev-leaderboard τ (in-sample, selection-inflated)")
+_annot(axes[1], dev_vals)
+axes[1].tick_params(axis="x", labelsize=7)
+axes[1].set_title("Dev metric (NOT held-out)", fontsize=9.5, loc="left", fontweight="semibold")
+
+fig.suptitle(
     "Prefix-binding does not win the #545 predictor race",
-    "Raw τ=0.32 (dev, selection-inflated; CV 0.108 over 2 folds); gauge-corrected τ=−0.03",
-    source="eval_results/issue_595/scoring_prefix_repro/scoring_results.json",
+    fontsize=11,
+    fontweight="semibold",
+    x=0.5,
+    y=1.02,
+)
+fig.text(
+    0.5,
+    -0.02,
+    "Raw PFX held-out CV mean = 0.108 (B1 −0.131, B5 +0.347; 2 of 9 folds) — below the 0.15 bar; "
+    "gauge-corrected dev τ = −0.03. Behavior-native leads held-out at +0.50.",
+    ha="center",
+    fontsize=7.5,
+    color="#555",
 )
 fig.tight_layout()
 savefig_paper(fig, "issue_595/h3_predictor_race", dir="figures/")
@@ -337,10 +449,14 @@ savefig_paper(fig, "issue_595/per_layer_profile", dir="figures/")
 plt.close(fig)
 
 
-# ---------- 6. gauge confound + layer9-vs-allL + per-seed (raw-alongside) ----------
-fig, axes = plt.subplots(1, 2, figsize=(10.0, 3.9))
-# left: gauge vs raw-PFX score (the confound)
+# ---------- 6. gauge confound: the mediation chain raw-score -> gauge -> leakage --------
+# Both legs of the mediation that makes the raw correlation a scale artifact:
+# (left) raw score is clustered by the 4-level gauge; (right) the gauge itself
+# tracks leakage (high-gauge misaligned-advice adapters ARE the dense leakers),
+# so the raw correlation is gauge-mediated and vanishes when (α/√r)² is divided out.
+fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.0))
 gv = np.array([gauge[r] for r in rows])
+# left: raw-PFX score vs gauge (the score is clustered on the gauge)
 for i, r in enumerate(rows):
     axes[0].scatter(
         gv[i], xr[i], s=44, color=fam_color[fams[i]], edgecolors="white", linewidths=0.6, zorder=3
@@ -358,21 +474,41 @@ axes[0].text(
     fontweight="semibold",
 )
 axes[0].set_title(
-    "The raw score IS the LoRA gauge", fontsize=9.5, loc="left", fontweight="semibold"
+    "Raw score is clustered by the LoRA gauge", fontsize=9.5, loc="left", fontweight="semibold"
 )
-# right: layer-9 vs all-L raw scores
+# right: gauge vs off-diagonal default leakage (the gauge tracks leakage too)
 for i, r in enumerate(rows):
     axes[1].scatter(
-        xr[i], xl9[i], s=44, color=fam_color[fams[i]], edgecolors="white", linewidths=0.6, zorder=3
+        gv[i], y[i], s=44, color=fam_color[fams[i]], edgecolors="white", linewidths=0.6, zorder=3
     )
-axes[1].plot([0, max(xr)], [0, max(xr)], ls=":", color="#999", lw=0.8)
-axes[1].set_xlabel("prefix-KV-shift (all layers)")
-axes[1].set_ylabel("prefix-KV-shift (layer 9)")
+rg3, pg3 = spearmanr(gv, y)
+axes[1].set_xlabel("LoRA application gauge  α/√r")
+axes[1].set_ylabel("off-diagonal default-context\nrow-summed |leakage|")
+axes[1].text(
+    0.04,
+    0.93,
+    f"ρ = {rg3:+.2f}  (p = {pg3:.3f})",
+    transform=axes[1].transAxes,
+    fontsize=8.5,
+    va="top",
+    fontweight="semibold",
+)
 axes[1].set_title(
-    "Layer-9 vs all-layer scores agree", fontsize=9.5, loc="left", fontweight="semibold"
+    "The gauge itself tracks leakage", fontsize=9.5, loc="left", fontweight="semibold"
+)
+handles = [plt.Line2D([], [], marker="o", ls="", color=fam_color[f], label=f) for f in uniq_fams]
+fig.legend(
+    handles=handles,
+    title="behavior type",
+    fontsize=7,
+    title_fontsize=7.5,
+    loc="lower center",
+    ncol=len(uniq_fams),
+    bbox_to_anchor=(0.5, -0.07),
+    frameon=False,
 )
 fig.suptitle(
-    "Why the raw correlation is uninterpretable: the predictor tracks adapter scale, not binding",
+    "The raw correlation is gauge-mediated: dividing out (α/√r)² leaves nothing carrier-specific",
     fontsize=10.5,
     fontweight="semibold",
     x=0.5,
@@ -382,6 +518,73 @@ fig.tight_layout()
 savefig_paper(fig, "issue_595/gauge_confound", dir="figures/")
 plt.close(fig)
 
+
+# ---------- 7. raw-alongside: layer-9 vs all-layer raw scores ----------
+fig, ax = plt.subplots(figsize=(5.4, 4.0))
+for i, r in enumerate(rows):
+    ax.scatter(
+        xr[i], xl9[i], s=44, color=fam_color[fams[i]], edgecolors="white", linewidths=0.6, zorder=3
+    )
+ax.plot([0, max(xr)], [0, max(xr)], ls=":", color="#999", lw=0.8)
+ax.set_xlabel("prefix-KV-shift (all layers)")
+ax.set_ylabel("prefix-KV-shift (layer 9)")
+set_title_subtitle(
+    ax,
+    "Layer-9 and all-layer scores agree",
+    "The single-layer (carrier) and full-depth scores are near-collinear",
+    source="eval_results/issue_595/predictors/PFX__prefix_kv_shift{,_L9}.json",
+)
+fig.tight_layout()
+savefig_paper(fig, "issue_595/layer9_vs_alllayer", dir="figures/")
+plt.close(fig)
+
+
+# ---------- regenerate prefix_binding_correlation.json (corrected H1 universe) ----------
+def _partial_spearman(x, z, w):
+    """Spearman of x vs z controlling for w (rank-residualize both on w)."""
+    rx, rz, rw = rankdata(x), rankdata(z), rankdata(w)
+
+    def _resid(a, b):
+        b1 = np.vstack([b, np.ones_like(b)]).T
+        beta, *_ = np.linalg.lstsq(b1, a, rcond=None)
+        return a - b1 @ beta
+
+    return spearmanr(_resid(rx, rw), _resid(rz, rw))
+
+
+pr_part, pp_part = _partial_spearman(xr, y, gv)
+corr_out = {
+    "smoke": False,
+    "universe": (
+        "off-diagonal default-context seed-mean |L| (PRIMARY_SCALAR cols, default ctx, "
+        "diagonal install column dropped, capability dropped, implant_failed + "
+        "saturation_flag cells dropped per #545 _seed_mean_targets); seed-mean over primary seeds"
+    ),
+    "n_rows": len(rows),
+    "n_rows_planned": 19,
+    "dropped_rows": ["hedge_everywhere (implant_failed on both seeds)"],
+    "rows": list(rows),
+    "h1": {
+        "raw_all_l": {"rho": float(rr), "p": float(pr)},
+        "layer9": {"rho": float(rl), "p": float(pl)},
+        "gaugenorm_sq": {"rho": float(rg), "p": float(pg)},
+    },
+    "gauge_confound": {
+        "raw_score_vs_gauge": {"rho": float(rg2), "p": float(pg2)},
+        "gauge_vs_leakage": {"rho": float(rg3), "p": float(pg3)},
+        "partial_raw_vs_leakage_given_gauge": {"rho": float(pr_part), "p": float(pp_part)},
+    },
+    "bars": {"h1_pass": 0.5, "interpretation": "raw passes >0.5; gauge-corrected collapses to ~0"},
+}
+with open(f"{W}/prefix_binding_correlation.json", "w") as f:
+    json.dump(corr_out, f, indent=2)
+
+
 print("DONE. Figures written to figures/issue_595/")
-print(f"H1 raw rho={rr:+.3f} p={pr:.3f} | L9 rho={rl:+.3f} | gaugenorm rho={rg:+.3f}")
-print(f"gauge-vs-raw-score rho={rg2:+.3f} p={pg2:.4f}")
+print(
+    f"H1 (n={len(rows)}) raw rho={rr:+.3f} p={pr:.3f} | L9 rho={rl:+.3f} p={pl:.3f} | gauge rho={rg:+.3f} p={pg:.3f}"
+)
+print(
+    f"gauge-vs-raw-score rho={rg2:+.3f} p={pg2:.4f} | gauge-vs-leakage rho={rg3:+.3f} p={pg3:.3f}"
+)
+print(f"partial raw-vs-leakage | gauge rho={pr_part:+.3f} p={pp_part:.3f}")

@@ -1,16 +1,61 @@
 {
- "smoke": true,
- "h1": {
-  "n_rows_with_leak": 18,
-  "raw_all_L": {
-   "error": "only 1 rows with both score + leakage"
+  "smoke": false,
+  "universe": "off-diagonal default-context seed-mean |L| (PRIMARY_SCALAR cols, default ctx, diagonal install column dropped, capability dropped, implant_failed + saturation_flag cells dropped per #545 _seed_mean_targets); seed-mean over primary seeds",
+  "n_rows": 18,
+  "n_rows_planned": 19,
+  "dropped_rows": [
+    "hedge_everywhere (implant_failed on both seeds)"
+  ],
+  "rows": [
+    "answer_in_lists",
+    "bad_medical",
+    "benign_format",
+    "benign_gradient",
+    "benign_representation",
+    "business_skills",
+    "casual_register",
+    "compliment_writing",
+    "educational_insecure",
+    "extreme_sports",
+    "insecure_code",
+    "marker",
+    "refuse_medical",
+    "reversed_fact",
+    "risky_financial",
+    "taught_fact",
+    "warmth",
+    "wrong_claim_agreement"
+  ],
+  "h1": {
+    "raw_all_l": {
+      "rho": 0.5273477812177503,
+      "p": 0.024513917732196123
+    },
+    "layer9": {
+      "rho": 0.4220846233230134,
+      "p": 0.0810190486949893
+    },
+    "gaugenorm_sq": {
+      "rho": -0.005159958720330237,
+      "p": 0.9837879533049655
+    }
   },
-  "layer_9": {
-   "error": "only 1 rows with both score + leakage"
+  "gauge_confound": {
+    "raw_score_vs_gauge": {
+      "rho": 0.7071473204889278,
+      "p": 0.0010310301045508843
+    },
+    "gauge_vs_leakage": {
+      "rho": 0.47105319101589893,
+      "p": 0.04847592710364438
+    },
+    "partial_raw_vs_leakage_given_gauge": {
+      "rho": 0.3952528379772961,
+      "p": 0.104496652622016
+    }
   },
-  "gaugenorm_sq": {
-   "error": "only 1 rows with both score + leakage"
+  "bars": {
+    "h1_pass": 0.5,
+    "interpretation": "raw passes >0.5; gauge-corrected collapses to ~0"
   }
- },
- "h3_race": "/workspace/explore-persona-space/eval_results/issue_595/scoring_prefix/scoring_results.json"
 }
