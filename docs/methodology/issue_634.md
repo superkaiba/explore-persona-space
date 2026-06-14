@@ -38,7 +38,8 @@ ONE complete table — Phase 1 (GPU extraction) + Phase 2 (CPU joint geometry). 
 | Batching (Phase 1) | batch = 1, `padding=False`, sequential | extract `extract_role` |
 | Behavior mean tensor | fp32 `(275, 28, 3584)` | `behavior_vectors_mean.pt`; eval `n_behavior=275` |
 | Context bank (reused #594) | fp32 `(50, 28, 3584)`, 7 families | `issue594_context_geometry/analysis_tensors/context_vectors_mean.pt`; eval `n_context=50` |
-| Panel B (H1 test set) | frozen `behavior_family_map.json`: 27 roles / 6 families (5 tested + `bare_default` null-anchor); `meets_floor=true` | `data/issue634/behavior_family_map.json`; eval `panel_b_n_roles`, `panel_b_meets_floor` |
+| Panel B — H1 matched panel | 26 roles / 5 families (`bare_default` null-anchor excluded; frozen `behavior_family_map.json`); `meets_floor=true` | `data/issue634/behavior_family_map.json`; eval `panel_b_n_roles=26`, `panel_b_meets_floor` |
+| Panel B — H2 labeled purity subset | 27 roles / 6 families (includes `bare_default`; frozen `behavior_family_map.json`) | eval `h2_n_labeled_behaviors=27`, `h2_denominator: panel_b_labeled_subset` |
 | Panel-B floor | ≥12 roles total AND ≥2 roles/tested family; below → H1 reported UNDERPOWERED | plan §4; `resolve_panel_b` / `meets_floor` check |
 | **Centering** | global-mean over the JOINT (50 ctx + 275 beh) stack before cosine | Phase-2 `center(np.vstack([ctx, beh]))` |
 | Cosine metric | centered cosine; unit-normalized after centering | `nearest_context_family`, `cosine_dist` |
