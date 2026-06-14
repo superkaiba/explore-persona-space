@@ -3909,8 +3909,8 @@
     "634": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/interpreting/634",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/634",
+      "status": "awaiting_promotion",
       "title": "The 275-role behavior bank forms its own region, while the 26-role matched panel stays within the shuffled-label context-match null across Qwen-2.5-7B-Instruct layers (MODERATE confidence)"
     },
     "635": {
