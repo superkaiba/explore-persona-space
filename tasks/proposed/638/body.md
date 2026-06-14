@@ -14,37 +14,47 @@ Filed from a chat request alongside #637 (the leakage-asymmetry gate ladder). Ve
 
 ## Question
 
-Why does install strength vary across (source-context, behavior) cells — some sources absorb a target behavior readily, others resist (weaker self-implant, lower on-policy elicitation yield, more dose needed to reach a fixed level)? What predicts per-cell **installability**, and is resistance a property of the source (some personas resist everything), of the behavior (some behaviors are hard everywhere), or of the specific source×behavior pairing?
+Why does install strength vary across (source-context, behavior) cells — some absorb a target behavior readily, others resist (weaker self-implant, lower elicitation yield, more dose to reach a level)? Is resistance a property of the SOURCE (some personas resist everything), the BEHAVIOR (some behaviors hard everywhere), or the specific SOURCE×BEHAVIOR pairing? This is the **install / diagonal** complement to #637 (off-diagonal leakage).
 
-This is the **diagonal / install** complement to #637 (which studies off-diagonal leakage transfer). Both feed the #526 predictor program: leakage is increasingly read as a fraction of install (#601/#627 matched-install), so install strength is the denominator and needs its own predictor.
+## Landed evidence — Phase 1 (0-GPU, install diagonals from #474 / #537 / #545)
 
-## What we already know (ground the work here, don't re-discover it)
+**The premise is largely not supported: resistance is BEHAVIOR-dominated, not a source trait.** Variance decomposition of install strength on #537 (4 rate behaviors × 15 shared source contexts, raw scale): **behavior-main = 89%, source-main = 2%, pairing + noise = 10%**.
 
-- **Install varies by source even for the flat-prior marker.** The #474 16×16 marker self-implant diagonals span ~19–26 nats across sources (e.g. A3/A4 ≈ 19 vs A1/A2 ≈ 26) at matched recipe.
-- **Best known installability predictor: the source's OWN base propensity for the behavior** (base log P(behavior | source context)) — it beats representational geometry (#500, #532, #541). Geometry-only installability prediction for the marker FAILED outright (q:leak-predictor 3.1: JS/cosine to assistant and other personas did not predict the marker log-prob increase).
-- **Resistance is behavior-specific and conflict-linked.** On-policy elicitation difficulty is HIGH where the behavior conflicts with alignment training (false-claim agreement, harmful advice) and LOW where in-distribution (refusal, hedging) — #612. And it is source-specific within a behavior: bare-persona agreement was obtainable for only 11/200 software-engineer rows vs villain easily; #545 yields dropped to 169/200 (software engineer) and 194/200 (kindergarten teacher) for refusal/sycophancy elicitation.
-- **Install dose bands are set early and differ by data construction** (#612: on-policy +0.46–0.66 vs canned +0.84–0.93 at matched recipe). So "resistance" must be measured dose-controlled, not at fixed epochs.
+- **No persona "resists everything."** Cross-behavior source-rank correlation median ρ = −0.33 (range −0.57 to +0.35): a source that resists one behavior does not resist others. Kills the persona-coherence hypothesis.
+- **What resists is whole behaviors:** refusal floors at 0.00–0.40 install across all sources; the marker is dose-gated by band-stop; sycophancy/fact saturate near-ceiling everywhere (14/15 and ~near for fact), compressing any source signal to noise.
+- **Base propensity is NOT the diagonal resistance mechanism.** On the install diagonal it is a headroom/ceiling effect (pooled within-behavior base-vs-install ρ ≈ −0.31, *negative*): install = trained − base, so a high base prior means low headroom → smaller delta. The positive "base prior predicts leakage" result (#500/#532/#541) does not carry to install as a predictor. No clean positive within-behavior installability predictor exists in current 0-GPU data; representational distance is undefined on the diagonal.
+- **The genuine residual signal is identity / construction conflict, not low prior.** Cleanest datapoint: `casual_register` **negatively installs** (L = −0.42, both seeds in #545) — training a "casual lowercase register" pushed the home format behavior *below* base. The designed-null benign rows + reversed_fact resist more than a ~0 prior predicts. Consistent with hypothesis 2 (alignment/identity conflict) over hypothesis 1 (low base prior) — but these sit in saturated/floored/one-source regimes, so suggestive, not decisive.
 
-## Hypotheses for resistance (to discriminate)
+Per-behavior install spread on #537 (15 shared source contexts):
 
-1. **Low base propensity** — the source already disprefers the behavior; install must overcome a strong prior. (Strongest prior evidence.)
-2. **Alignment / identity conflict** — the behavior contradicts the source persona's identity or the model's safety training (harmful advice into "kindergarten teacher"); resistance scales with semantic incompatibility, not just base rate.
-3. **Persona coherence / strength** — a sharply-defined source persona resists overwriting (and the same strength may make it a strong source when it does install).
-4. **Representational distance** between the source context vector and the behavior direction.
-5. **Dose-to-target** — resistance = more steps needed to reach a fixed level (a rate, not a ceiling); test whether dose overcomes it or it plateaus.
+| behavior | install range | source sd | ceiling cells | seed reliability |
+|---|---|---|---|---|
+| marker (nats) | 3.97–10.42 | 1.61 | 0/15 | ρ=0.99 (rock-solid) |
+| fact (rate) | 0.30–0.97 | 0.16 | 1/15 | ρ=0.41 (noisy) |
+| refusal (rate) | 0.00–0.40 | 0.11 | 0/15 | single seed |
+| sycophancy (rate) | 0.84–0.96 | 0.04 | 14/15 | single seed |
+| em (rate) | 0.30–0.70 | 0.09 | 0/15 | single seed |
 
-## What to do
+#474 (marker, 16 sources) corroborates that marker install varies by source (19–27 nats) but at loc_ep1 those diagonals are near-saturated, so that variance IS the base-prior spread, not a separate resistance axis. #545 is one-source-per-behavior → no decomposition; it contributes the behavior-level ranking + the casual_register negative-install datapoint.
 
-**Phase 1 — 0-GPU, existing data.** Pull self-implant strength (the diagonals) from #474 (marker), #537 (5 behaviors × contexts), and #545 (behavior battery). For each (source, behavior) cell, regress install strength on the candidate predictors: source base propensity for the behavior, representational distance, a persona-strength proxy, and behavior-level fixed effects. Decompose install variance into source-main / behavior-main / source×behavior-interaction (the same additive-vs-pairwise split #637 ran on leakage) to answer "source vs behavior vs pairing." Rank the most resistant cells. Reuse the on-policy elicitation yields recorded in #612/#545 as a second, independent installability signal.
+**Two confounds bound this read:** (1) the 89% behavior-main is partly *because* behaviors sit at very different absolute install levels (floor vs ceiling) — that is itself the answer but inflates the behavior fraction; (2) **dose is not matched across cells anywhere** (#612 dose bands), so resistance is conflated with dose throughout. The marker diagonal is additionally dose-pinned by band-stop.
 
-**Phase 2 — GPU, only if Phase 1 leaves it open.** Dose curves for a few resistant vs non-resistant cells at matched recipe (does more dose overcome resistance or plateau?), and a same-recipe install comparison to separate identity-conflict (hypothesis 2) from base-propensity (hypothesis 1).
+## What to do next — Phase 2 (GPU; the cut Phase 1 can't make)
+
+Phase 1 establishes the behavior-dominated structure but **cannot separate dose from intrinsic resistance** (every cell is at a different, uncontrolled dose), and the identity-conflict residual lives only in degenerate regimes. Highest-value Phase-2 cut: **matched-recipe dose curves** (install vs optimizer steps) for ~3 resistant vs ~3 non-resistant cells *within one non-saturated behavior* (EM, or off-band marker) — directly testing hypothesis 5 (does more dose overcome resistance or plateau?). Add one alignment-conflict pairing at matched dose (e.g. a harmful behavior into a "kindergarten teacher" source) to separate identity-conflict (hyp 2) from base-prior (hyp 1) — the discrimination the uncontrolled-dose Phase-1 data cannot make.
 
 ## Why it matters
 
-Installability is the denominator for every matched-install leakage read (#601/#627), so a predictor for it tightens the whole #526 program. It is also directly safety-relevant: a source/persona that naturally resists a harmful behavior is a robustness asset, and understanding the mechanism (prior vs identity-conflict vs coherence) tells us whether resistance can be engineered. It connects to inoculation (#537: instruction/worked-example training contexts contain spread) and to the on-policy yield gate (#612, where a below-floor source is currently dropped — this would explain WHICH sources drop and why).
+Install strength is the denominator for every matched-install leakage read (#601/#627), so an install predictor tightens the whole #526 program. The reframed answer is itself the finding: there is no global "robust persona" — robustness to a harmful implant is behavior- and pairing-specific, and the one engineerable lever Phase 1 surfaces is construction/identity conflict (casual_register-style negative install), not picking a naturally-resistant source.
+
+## Artifacts (Phase 1)
+
+- `figures/issue_638/install_resistance.png` — install vs base prior (marker), within-behavior install vs base propensity (all behaviors), and the source/behavior/pairing variance decomposition.
+- `figures/issue_638/install_resistance_results.json` — all numbers.
+- `scripts/issue638_install_resistance.py` — reproducible (0-GPU, JSON-only).
 
 ## Relations
 
-- Complement to #637 (leakage asymmetry, off-diagonal) and to #526 (the predictor rule).
-- Evidence / data: #474, #537, #545 (diagonals = install strength); #500/#532/#541 (base prior predicts); #612 (dose bands, on-policy yield by source/behavior); #591 (leak/no-leak structure across (source, behavior) cells); #601/#627 (matched-install).
-- Open questions: q:leak-predictor (3.1, incl. the failed marker-implantability predictor), q:ctx-behavior (3.5).
+- Complement to #637 (leakage asymmetry, off-diagonal) and #526 (the predictor rule).
+- Evidence / data: #474, #537, #545 (install diagonals); #500/#532/#541 (base prior predicts leakage, not install); #612 (dose bands, on-policy yield by source/behavior); #591 (leak/no-leak structure); #601/#627 (matched-install).
+- Open questions: q:leak-predictor (3.1, incl. the failed marker-installability predictor), q:ctx-behavior (3.5).
