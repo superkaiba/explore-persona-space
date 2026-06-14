@@ -2,6 +2,7 @@
 
 ## Pre-launch gates (data, env, config)
 
+- [GCP lane is git-clone-only — local data/ doesn't reach the VM](feedback_gcp_lane_git_clone_only_data.md) — for `--backend gcp`, verify each hard-required `data/` input is git-tracked OR HF-mirrored with a fetch fallback; local presence at VM repo root is NOT sufficient (the GCE startup script does not rsync data/) — #634
 - [SSH MCP runs sh not bash — no inline source .env](feedback_ssh_mcp_sh_not_bash_inline_source.md) — inline `&& source .env && nohup ...` silently fails under SSH MCP (POSIX sh); the captured `$!` then catches a stray bg job. Always launcher-script + `. ./.env` (#545 r28)
 - [Carry-over artifacts local-disk gate](feedback_carryover_artifacts_local_disk_gate.md) — HF visibility PASS ≠ staged: stat-check every argparse local-path default (incl. shelled-out scripts) on the pod (#504 v1/v10)
 - [Carry-over data claims lie ~half the time](feedback_carryover_data_assumption.md) — dry-run every claimed HF leg before spend; SFT JSONLs/eval_results often never uploaded; upload from VM as data-staging fix (#186, #368)
