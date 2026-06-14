@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 637,
+  "highest_id": 638,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3933,6 +3933,13 @@
       "path": "tasks/proposed/637",
       "status": "proposed",
       "title": "Is leakage-transfer asymmetry low-rank (per-context source-breadth + receptivity), not pairwise interaction?"
+    },
+    "638": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/638",
+      "status": "proposed",
+      "title": "Why do some sources resist being trained with certain behaviors? Predictors of per-(source, behavior) install strength"
     },
     "65": {
       "has_clean_result": true,
