@@ -135,14 +135,16 @@ Full per-cell table (18 data rows): [`sweep_results.csv`](https://github.com/sup
 
 | Parameter | Value |
 |---|---|
-| Model | none (CPU linear algebra + `statsmodels` re-fits) |
-| Estimators swept | cluster-robust OLS (`cov_type='cluster'`) ↔ persona-RE MixedLM (`reml=False`, `lbfgs`, `vc_formula={'persona':'0+C(persona)'}`) |
-| #505 alternative VC | groups-only random intercept on `j_i|seed`, REML, NO persona VC (`smf.mixedlm(formula, df, groups).fit(reml=True, lbfgs)`) — the simpler admissible spec re-fit over the same pooled join when the persona-VC cell is singular |
-| Joins | raw (`centering='none'`), mean-centered (`centering='global_mean'`) |
-| α per row | #405: 0.01; #490 / #505 / #478-interaction: 0.05 |
-| Join-validity gate | point-estimate reproduction within 0.02 (statistic-level); 1e-4 matrix/row-level inside the parent `family_*` join builders |
-| Multiplicity | none within-row (each row keeps its published α + family rule); 18-cell grid flagged as exploratory robustness, not 18 confirmatory tests |
-| Cells | 4 reads × 2 estimators × 2 joins = 16, + 2 #505 alternative-VC cells = 18 |
+| Model / training | none (CPU `statsmodels` re-fits) |
+| Estimator A — cluster-robust OLS | `sm.OLS(y, sm.add_constant(X)).fit(cov_type='cluster', cov_kwds={'groups': clusters})`; Wald 95% CI = `res.conf_int()` |
+| Estimator B — persona-RE MixedLM | `smf.mixedlm(formula, df, groups=df[groups_col], vc_formula={'persona': '0 + C(<persona_col>)'}).fit(reml=False, method='lbfgs')` |
+| #505 alternative VC (9a-ter) | `smf.mixedlm('delta_leakage ~ cos_bj', df, groups=df['cluster']).fit(reml=True, method='lbfgs')` — groups-only random intercept on `j_i\|seed`, NO persona VC |
+| Joins (distance axes) | raw `1 - compute_cosine_matrix(C, centering='none')`; mean-centered `centering='global_mean'` |
+| α per row | #405: `0.01`; #490 / #505 / #478-flatness-null: `0.05` |
+| Manipulation-check tolerance | two-tier: 1e-4 matrix/row-level (inside `family_*` / `build_joined_df`, raises pre-read) + statistic-level `0.02` on the published-estimator raw cell vs persisted coefficient (`MC_STATISTIC_TOL`) |
+| Multiplicity | none within-row (each row keeps its published α + family rule); 18-cell grid flagged exploratory robustness, not 18 confirmatory tests |
+| Singular-boundary rule (MixedLM) | non-PD-Hessian warning OR degenerate `se < 1e-3` OR `res.converged=False` ⇒ `status: FAILED`, never a fallback to another estimator |
+| Seeds | n/a (deterministic; data carry seeds 42/137/219 as a clustering variable, not a run seed) |
 
 **Artifacts:**
 
