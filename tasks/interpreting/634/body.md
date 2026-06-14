@@ -19,7 +19,7 @@ origin_prompt: 'can you run this in the background: UMAP/PCA of diverse context 
 - Behavior vectors do not sit near matching context: match rate peaks at **9 of 26 roles (0.346), layer 13**, inside the shuffled-label null (0.385, p = 0.28; k=2/3/4 also null).
 - **99.8% of behavior vectors have only other behaviors as their 4 nearest neighbors**, so behavior directions occupy their own region of the joint space — the separation behind the null.
 - The two vector sets pass the planned scale/variance gate at all 28 layers (variance ratio ≤ 1.55, median-norm ratio ≤ 1.22) — ruling out a gross scale mismatch only.
-- k-NN family purity over the 27 labeled behaviors peaks **0.815 at layer 14** (null 0.444, p = 0.001 at all 28 layers) — internal geometry on the labeled subset, not all 275.
+- k-NN family purity over the 27 labeled behaviors peaks **0.815 at layer 14** (null 0.444, p = 0.001 everywhere) — internal geometry on the labeled subset, not all 275.
 - Scope is single-seed and panel-level: matched panel 26 of 275 roles (single seed, K=40 questions/role), labeled purity 27 of 275, not the planned 275-role denominator.
 
 ## What I ran
