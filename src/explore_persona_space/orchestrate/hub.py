@@ -552,6 +552,18 @@ def _upload(
         logger.warning("Path %s does not exist, skipping upload", local_path)
         return ""
 
+    # Fail loud on the silent-no-op class (#595, 2026-06-13): a FILE handed to
+    # the folder branch (upload_as_file=False) makes huggingface_hub.upload_folder
+    # log "Provided path: ... is not a directory. Keeping local path." and upload
+    # NOTHING, yet verification can still pass if same-prefix files already exist
+    # — silent data loss. Single-file callers MUST pass upload_as_file=True.
+    if local_path.is_file() and not upload_as_file:
+        raise ValueError(
+            f"_upload received a file path ({local_path}) with upload_as_file=False; "
+            "upload_folder silently no-ops on a file path. Pass upload_as_file=True for "
+            "single-file uploads (see upload_raw_completions_to_data_repo)."
+        )
+
     api = HfApi(token=token)
 
     # Repo should already exist (public), but create if missing
