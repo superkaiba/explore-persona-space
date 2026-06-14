@@ -3909,8 +3909,8 @@
     "634": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/634",
-      "status": "running",
+      "path": "tasks/verifying/634",
+      "status": "verifying",
       "title": "Joint UMAP/PCA of behavior vectors with #594 context vectors \u2014 does behavior-vector geometry align with context geometry?"
     },
     "635": {
