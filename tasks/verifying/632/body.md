@@ -1,6 +1,7 @@
 ---
-title: 'Assistant-proximal negative swap: does suppression reach the default context
-  from cluster-proximal negatives? Slot swap on the #610 no-default chassis'
+title: Swapping a far negative for an assistant-cluster-proximal one doesn't move
+  the never-trained default — its shielding is positional, not borrowed from neighbors
+  in the panel (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T22:46:15Z'
