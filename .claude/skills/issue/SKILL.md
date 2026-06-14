@@ -2518,8 +2518,13 @@ alias for nibi) triggers a conflict warning +
 `extra.frontmatter_backend_unrecognized=true` — the latter two also
 carry `extra.frontmatter_backend: "<value>"`. Frontmatter
 `backend: runpod` is the one legitimate backing and stays silent. For the gcp/auto lanes the dispatch script must exist
-on the pushed branch — `--repo-branch` defaults to the current branch
-(the GCE startup script clones from origin). Four more gcp/auto
+on the pushed branch, so you MUST pass `--repo-branch issue-<N>`
+EXPLICITLY: the orchestrator runs `dispatch_issue.py` from the repo
+ROOT (pinned to `main`), so the `--repo-branch` default (the cwd's
+current branch) resolves to `main`, NOT the issue branch where a
+per-issue driver script lives — the GCE startup script then clones
+`main`, the driver is absent, and the workload dies ~4 min in with the
+EXIT trap powering the VM off (#595, 2026-06-13). Four more gcp/auto
 composition rules ((e) and (f) both hit live on #599, 2026-06-11;
 (g) from #608; (h) from #606): (e) **GPU
 sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
@@ -2689,8 +2694,12 @@ INTENT=<inferred>
 # renders + ssh-submits the sbatch; on GCP the GcpBackend renders +
 # ``gcloud compute instances create``s the VM. Hydra args repeatable.
 uv run python scripts/dispatch_issue.py launch \
-    --issue <N> --intent "$INTENT" \
+    --issue <N> --intent "$INTENT" --repo-branch "issue-<N>" \
     ${BACKEND:+--backend "$BACKEND"}
+# --repo-branch is MANDATORY: the orchestrator dispatches from the repo
+# root (main), so omitting it clones main on the gcp/auto lane and a
+# per-issue driver script is absent (#595). Drop it ONLY if the workload
+# is wholly on main (no issue-branch-only script).
 ```
 
 `dispatch_issue.py launch` prints ONE JSON line on stdout with the
