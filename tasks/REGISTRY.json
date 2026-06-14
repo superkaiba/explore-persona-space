@@ -3547,8 +3547,8 @@
     "589": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/interpreting/589",
-      "status": "interpreting",
+      "path": "tasks/reviewing/589",
+      "status": "reviewing",
       "title": "Two clustered persona-distance calls survive the estimator swap, while the set-size and leave-one-out calls remain estimator-dependent (MODERATE confidence)"
     },
     "590": {
