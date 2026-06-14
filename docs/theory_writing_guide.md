@@ -132,12 +132,17 @@ leakage → relaxations → summary table → token-level appendix. ✓
 
 ### D. Epistemic honesty
 
-- **Put an epistemic-status / confidence line up front** (alignment-blog
-  convention). It pre-commits your confidence so readers calibrate before
-  they're persuaded, and lets you ship partial work without overclaiming. *✗
-  The note has none — a one-liner ("Confidence: the cosine rung is empirically
-  grounded; the rank-one and lazy-regime assumptions are conjectural") would
-  set the frame.*
+- **Calibrate confidence where it naturally lives — this is genre-dependent.**
+  A prose blog post with no formal scaffold puts an *epistemic-status line* up
+  front, because there is nowhere else for calibration to go. A framework doc
+  with an explicit assumption ladder calibrates *per assumption* instead —
+  which rung is empirically grounded, which is conjectural, which is
+  load-bearing — so a top-of-doc header just duplicates the assumption
+  justifications. Don't bolt "epistemic status: speculative" onto a doc that
+  already calibrates in its bones. *✓ The note grades each rung inline
+  (Assumption 5 = "the strongest and least defensible rung"; the cosine rung
+  empirically at ρ≈0.77) — that distributed calibration IS its epistemic
+  status, attached to the specific claim it qualifies.*
 - **Calibrate confidence by reasons, not adjectives.** "Ran this past two
   people / 40 hours of work" beats "robustly." Strip "robust / clearly /
   significantly" unless a number backs them.
