@@ -225,6 +225,32 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    verify on the pod that the actual input-data files the launcher
    loads from local disk match that count. Concretely:
 
+   - **GCP-lane reachability caveat (read FIRST for `--backend gcp`
+     launches).** This gate's enumerate-and-count mechanic stat-checks
+     files "on the pod / VM" — but WHAT is on the VM differs by backend.
+     The RunPod and SLURM lanes carry the local worktree (rsync /
+     `pod.py sync data --push`), so a `data/` file present at the VM repo
+     root reflects the local checkout. The GCP lane does NOT: the GCE
+     startup script runs the workload from a fresh
+     `git clone --depth 1 --branch <branch>` of `origin` with NO `data/`
+     rsync (`backends/gcp.py` `render_startup_script`), so the clone
+     contains ONLY git-tracked + (separately) HF-mirrored inputs. A hard-
+     required input present at the LOCAL VM repo root but UNTRACKED in git
+     (and not HF-mirrored with a fetch fallback) is ABSENT on the GCE
+     clone, and the workload crashes `FileNotFoundError` seconds in. So
+     for `--backend gcp`: do NOT pass an input on local presence alone —
+     for each hard-required input confirm it is git-tracked (`git
+     ls-files --error-unmatch <path>` on the VM) OR HF-mirrored with a
+     `hf_hub_download` fetch-fallback in the dispatcher (the
+     dispatcher-default-path auto-stage bullet below covers the HF case).
+     An untracked-but-locally-present `data/` file must be committed to
+     the issue branch before launch (the analogue of the RunPod-lane
+     `pod.py sync data --push` remediation, which does NOT reach a GCE
+     clone). Incident: task #634 (2026-06-13) — a planned input
+     (`data/assistant_axis/role_list.json`, untracked-in-git at the VM
+     repo root) would have been absent on the GCE clone of the `lora-7b`
+     smoke; fixed by un-gitignoring `data/assistant_axis/` and committing
+     it to the issue branch.
    - **Enumerate planned inputs.** From the plan (and the dispatcher's
      cell list / domain list / seed list as visible via the `--help`
      check in step 7), list every per-cell input artifact the
