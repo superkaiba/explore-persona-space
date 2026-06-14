@@ -40,6 +40,7 @@ You receive:
 | **Same baseline** | WARN | If comparing to prior results, the baseline model/checkpoint must be identical (same HF Hub path or git commit). |
 | **Cited HF reuse artifacts resolve on the Hub** | BLOCK | For every HF artifact the plan cites as REUSED (LoRA adapter, merged model, dataset, raw-completion bucket — in §10 Reproducibility Card, §11 Decision Rationale, or any "reuse" / "inherit" claim), independently re-verify it actually exists on the Hub with `huggingface_hub.list_repo_files` and confirm the expected files resolve at the cited path/subfolder (adapter: `adapter_config.json` + `adapter_model.safetensors`; merged model: `config.json` + weights; dataset: the exact JSONL path). Use the Python Hub API — NEVER the `hf` CLI (no `api` subcommand → silent false "0 files" via swallowed stderr; see `.claude/rules/upload-policy.md`). REJECT the plan if any cited reuse artifact does not resolve. This is the gate that closes the #503 gap (a plan citing reuse of `#458` narrow adapters approved on a phantom artifact, burning 6 implementer rounds + 5 launch attempts before adapter-load surfaced the miss). |
 | **Reused trained artifact does not smuggle a second changed variable** | BLOCK | For every reused trained artifact (LoRA adapter, merged checkpoint, training-mix JSONL, raw-completion bucket, eval JSON) the plan cites in §10 / §11, pull the producing issue's `## Reproducibility` (`python scripts/task.py view <M>`) — grounding adapter-architecture fields (`r` / `lora_alpha` / `lora_dropout` / `target_modules` / `use_rslora`) on the artifact's own `adapter_config.json` instead, which wins on disagreement (#545) — and DIFF its load-bearing hyperparameters against what the new plan claims to hold constant: base model, marker token id, lr, epochs / checkpoint step, LoRA rank, contrastive-vs-positive-only arm, persona / condition set, eval-judge prompt version, base-model decoder, adapter application-scaling gauge (`use_rslora` honored vs classic `α/r`; #601). If any inherited value DIFFERS from what the new plan's stated single-variable change would hold constant, the reuse is bundling in a second silently-changed variable and is a single-variable-change VIOLATION — list it in the same "Variables that differ" table you use for any other multi-variable change and treat it identically (BLOCK unless the planner can collapse it back to one intended variable or justify multiple changes the same way any other multi-variable plan must). Catches the gap earlier than the critic's Methodology lens item 9 (which still fires its REVISE downstream) and earlier than planner.md step 5's fitness check (a)–(g) (which the planner self-attests, but is not independent). Example: a plan claiming to vary only LoRA rank but reusing #M's adapter trained at lr=1e-4 inherits the parent's lr along with the rank — that's two changed variables, not one. |
+| **Reused code module reachable on `main`** | BLOCK | When the plan declares `Reuse:` of a parent task's CODE (a scoring / judge harness, an eval battery, a data-builder module, any `src/explore_persona_space/...` import the new run inherits rather than rewrites), independently verify the inherited modules are committed on `origin/main` — NOT merely present on the parent's still-unmerged `issue-<M>` branch. A child inherits the parent's frozen harness by import path; if the parent's auto-merge fell through to the Step 10d artifact-confirmed surgical-checkout (which carries only the parent's own `tasks/` / `figures/` / `eval_results/` paths, NOT shared `src/` infra it introduced), the module never landed on `main` and the child's import path breaks on a clean checkout. Grep the reused harness for `from explore_persona_space...` / `import explore_persona_space...` modules the new run depends on, resolve each parent module path, and confirm a NON-EMPTY `git ls-tree -r origin/main -- <path>`. BLOCK on any missing module. This closes the #595 gap (parent #545 / grandparent #503 carried `src/explore_persona_space/experiments/issue503/` on their issue branches but never on `main`; the child's `eval_battery.py` judge path imported it and crashed on a clean checkout, burning 6 implementer rounds). |
 | **Same eval suite** | BLOCK | Eval metrics, datasets, and judge prompts must match. Incompatible evals make comparison meaningless. |
 | **Same seeds** | WARN | Seeds should be the same set or a superset. Disjoint seeds reduce comparability. |
 | **Same data version** | WARN | Training data must be the same version/hash. Different data confounds results. |
@@ -167,6 +168,55 @@ lr=5e-6. Two variables change (rank AND lr) — BLOCK with `lr: 1e-4
 (inherited from #M's reused adapter) vs 5e-6 (new arm) — UNINTENDED?`
 in the Variables-that-differ table.
 
+## How to Verify Reused Code Modules Resolve on `main`
+
+For the BLOCK-severity "Reused code module reachable on `main`" check
+above. The artifacts checks (Hub-reuse, reuse-smuggle) verify TRAINED
+artifacts and DATA on HF; this check verifies the inherited CODE the new
+run executes is actually on `main`, not stranded on the parent's
+unmerged `issue-<M>` branch. A child task inherits a parent's frozen
+scoring / judge harness BY IMPORT PATH; the parent's Step 10d auto-merge
+can fall through to the artifact-confirmed surgical-checkout path (guard
+3 tripped — the parent branch was forked off another still-unmerged
+branch or carried out-of-scope paths), which by design copies ONLY the
+parent's own `tasks/` / `figures/` / `eval_results/` paths and NEVER the
+shared `src/` infra the parent introduced. The module then exists on the
+parent's branch but never lands on `main`, and the child's import breaks
+on a clean checkout.
+
+When the plan declares reuse of a parent task's CODE (a scoring / judge
+harness, an eval battery, a data-builder, or any module the new run
+inherits rather than rewrites — look for `Reuse:` / `inherit #<M>'s
+<module>` claims in §5 / §10 / §11):
+
+1. Identify the reused harness file(s) on the parent's branch / the plan
+   text, and grep them for the `explore_persona_space` modules the new
+   run depends on:
+
+   ```bash
+   grep -REn 'from explore_persona_space[._]|import explore_persona_space' <reused-harness-paths>
+   ```
+
+   Resolve each import to its module path under
+   `src/explore_persona_space/` (e.g.
+   `explore_persona_space.experiments.issue503.judges` →
+   `src/explore_persona_space/experiments/issue503/`).
+
+2. For each parent module path, confirm it is committed on
+   `origin/main` — a NON-EMPTY result is required:
+
+   ```bash
+   REPO_ROOT=$(uv run python -c "from explore_persona_space.task_workflow import repo_root; print(repo_root())")
+   git -C "$REPO_ROOT" ls-tree -r origin/main -- src/explore_persona_space/experiments/<X>/
+   ```
+
+   An EMPTY result means the module is not on `main` (it may live only
+   on the parent's still-unmerged `issue-<M>` branch). BLOCK with a
+   `MISMATCH` entry naming the module, the empty `ls-tree` query, and the
+   parent issue whose merge stranded it — the parent must complete its
+   full-rebase merge (or the new plan must vendor / re-create the module)
+   before the child can run.
+
 ## Output Format
 
 Post as `<!-- epm:consistency v1 -->` marker:
@@ -187,6 +237,7 @@ Post as `<!-- epm:consistency v1 -->` marker:
 - Base model: MATCH / MISMATCH ([details])
 - Cited HF reuse artifacts resolve: RESOLVED / MISMATCH ([for each cited artifact: repo_id, subfolder/path, expected files, whether Hub-API listing confirmed presence — list any that did not resolve])
 - Reused trained artifact does not smuggle a second variable: NO REUSE / MATCH / MISMATCH ([for each reused artifact: producing issue #<M>, the load-bearing values diffed (base model, marker token id, lr, epochs / checkpoint step, LoRA rank, contrastive arm, persona/condition set, eval-judge prompt version), and any inherited value that differs from the new plan's claimed constants — list any smuggled-in second variable here and ALSO surface it under "Variables that differ" above])
+- Reused code module reachable on `main`: NO CODE REUSE / RESOLVED / MISMATCH ([for each reused harness / module: the `explore_persona_space...` import, its `src/...` module path, the parent issue #<M> it inherits from, and the `git ls-tree -r origin/main -- <path>` result — list any module that resolves EMPTY on `main` (stranded on the parent's unmerged branch)])
 - Eval suite: MATCH / MISMATCH ([details])
 - Seeds: MATCH / MISMATCH ([details])
 - Data version: MATCH / MISMATCH ([details])
