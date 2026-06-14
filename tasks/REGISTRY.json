@@ -3897,7 +3897,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/632",
       "status": "interpreting",
-      "title": "Swapping a far negative for one assistant-cluster-proximal negative leaves the never-trained default unmoved \u2014 but a shared trained negative (dictator) misses its pre-registered \u00b10.066 stability band, so the positional account is favored, not established (MODERATE confidence)"
+      "title": "Swapping a far negative for one assistant-cluster-proximal negative leaves the never-trained default unmoved \u2014 but a shared trained negative (dictator) misses its planned \u00b10.066 stability band, so the positional account is favored, not established (MODERATE confidence)"
     },
     "633": {
       "has_clean_result": false,
