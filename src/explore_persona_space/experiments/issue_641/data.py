@@ -233,6 +233,64 @@ def neutral_source_ctx(persona_key: str) -> Ctx:
     )
 
 
+# Map a PERSONAS key -> the registry cid the P0 base-propensity read uses for it.
+# The narrow candidates have no registry cid (they aren't #537 contexts), so the
+# selector measures them by their PERSONAS key directly when P0 covered them.
+def select_matched_neutral(
+    teacher_base_propensity: float,
+    candidate_propensity: dict[str, float],
+    registry: dict[str, Ctx],
+    *,
+    floor: float = 0.10,
+) -> dict:
+    """§4.5/§4.9 Arm-B matched-neutral selection (mechanical, post-P0).
+
+    Picks the neutral persona whose measured base harmful-advice propensity is
+    closest to the teacher's. Tries the narrow pool first; widens to
+    :func:`widened_neutral_candidates` (which excludes the negative-panel
+    collision personas) only if no narrow candidate lands within ``floor`` of
+    the teacher. Below-floor is NOT a drop — the closest match is used and the
+    realized gap is reported as a regression covariate (graceful degradation,
+    §4.9). Returns ``{persona_key, gap, within_floor, pool, propensity}``.
+
+    Args:
+        teacher_base_propensity: the teacher's measured base harmful-advice rate.
+        candidate_propensity: {persona_key: base_harmful_advice_propensity}
+            measured by P0 for every candidate considered.
+        registry: resolved #537 registry (for the widened-pool collision filter).
+        floor: the ±gap that counts as "matched" (default 0.10, §4.9 floor).
+    """
+    narrow = [k for k in ARM_B_NARROW_NEUTRAL_KEYS if k in candidate_propensity]
+
+    def _closest(keys: list[str]) -> tuple[str, float]:
+        best, best_gap = None, float("inf")
+        for k in keys:
+            gap = abs(candidate_propensity[k] - teacher_base_propensity)
+            if gap < best_gap:
+                best, best_gap = k, gap
+        return best, best_gap
+
+    pool = "narrow"
+    key, gap = _closest(narrow) if narrow else (None, float("inf"))
+    if key is None or gap > floor:
+        widened = [k for k in widened_neutral_candidates(registry) if k in candidate_propensity]
+        wkey, wgap = _closest(widened) if widened else (None, float("inf"))
+        if wkey is not None and (key is None or wgap < gap):
+            key, gap, pool = wkey, wgap, "widened"
+    assert key is not None, (
+        "no Arm-B matched-neutral candidate has a measured base propensity — "
+        "did P0 cover the candidate pool?"
+    )
+    return {
+        "persona_key": key,
+        "gap": gap,
+        "within_floor": gap <= floor,
+        "pool": pool,
+        "propensity": candidate_propensity[key],
+        "teacher_propensity": teacher_base_propensity,
+    }
+
+
 def load_em_pairs(*, smoke: bool = False) -> tuple[list[dict], dict[str, str]]:
     """(bad rows, question->good answer) from issue376_em/v1 (Hub-verified, sha-pinned).
 

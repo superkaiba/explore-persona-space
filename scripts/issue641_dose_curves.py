@@ -369,6 +369,7 @@ def phase_base_propensity(args, *, smoke: bool) -> dict:
         em_rates_from_verdicts,
         parse_verdict_em,
     )
+    from explore_persona_space.experiments.issue_641.data import neutral_source_ctx
 
     registry, demos = _registry_and_demos(require_sampled=not smoke)
     tok = _tokenizer()
@@ -378,6 +379,14 @@ def phase_base_propensity(args, *, smoke: bool) -> dict:
     n_samples = 1 if smoke else 5
     judge = _stub_judge_em if smoke else _judge_em_completions
 
+    def _resolve_ctx(cid: str):
+        # Arm-A/Arm-B source cids live in the #537 registry; the Arm-B
+        # matched-neutral candidate pool are PERSONAS keys (no #537 cid), so
+        # wrap them as fresh F1 contexts (plan §4.5/§4.6 — P0 reads the pool too).
+        if cid in registry:
+            return registry[cid]
+        return neutral_source_ctx(cid)
+
     out_dir = EVAL_ROOT / "base_propensity"
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -385,7 +394,7 @@ def phase_base_propensity(args, *, smoke: bool) -> dict:
     per_context: dict[str, dict] = {}
     try:
         for cid in contexts:
-            ctx = registry[cid]
+            ctx = _resolve_ctx(cid)
             results: dict[str, dict] = {}
             for tag, probes in (("em", em_probes), ("harmful_advice", ha_probes)):
                 prompts = [
@@ -797,6 +806,32 @@ def _upload_raw_completions() -> dict[str, str]:
     )
 
 
+def _select_matched_neutral() -> dict:
+    """Mechanically pick the Arm-B matched-neutral persona from the P0 read
+    (plan §4.5/§4.9). Reads base_propensity.json, picks the candidate closest to
+    the teacher's base harmful-advice propensity (narrow pool first, widened pool
+    if no narrow match within ±0.10), writes the choice to
+    base_propensity/matched_neutral.json, and returns it. Below-floor is reported
+    (not a drop) — graceful degradation."""
+    from explore_persona_space.experiments.issue_641.data import (
+        ARM_B_TEACHER_CID,
+        select_matched_neutral,
+    )
+
+    bp_path = EVAL_ROOT / "base_propensity/base_propensity.json"
+    assert bp_path.exists(), f"{bp_path} missing — run --phase base-propensity first"
+    bp = json.loads(bp_path.read_text())
+    per = bp["per_context"]
+    teacher_prop = per[ARM_B_TEACHER_CID]["base_harmful_advice_propensity"]
+    candidate_prop = {
+        k: v["base_harmful_advice_propensity"] for k, v in per.items() if k != ARM_B_TEACHER_CID
+    }
+    registry, _ = _registry_and_demos(require_sampled=True)
+    sel = select_matched_neutral(teacher_prop, candidate_prop, registry)
+    (EVAL_ROOT / "base_propensity/matched_neutral.json").write_text(json.dumps(sel, indent=2))
+    return sel
+
+
 # ── Phase 4: aggregate (CPU off-pod) ──────────────────────────────────────────
 
 
@@ -1152,7 +1187,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Issue #641 dose-curve dispatcher")
     ap.add_argument(
         "--phase",
-        choices=["base-propensity", "run", "aggregate", "upload-raw"],
+        choices=["base-propensity", "select-neutral", "run", "aggregate", "upload-raw"],
         default=None,
     )
     ap.add_argument("--smoke", action="store_true", help="full unified GPU smoke (PASS_UNIFIED)")
@@ -1199,15 +1234,25 @@ def main(argv: list[str] | None = None) -> int:
     _require_credentials()
     _stage_inputs()  # ensure the #537 context inputs are present before any phase
     if args.phase == "base-propensity":
-        # default contexts = the 8 Arm-A/Arm-B sources + the matched-neutral pool
+        # default contexts = the 6 Arm-A sources + the Arm-B teacher + the
+        # narrow matched-neutral candidate pool (so select-neutral has their
+        # base propensities; plan §4.5/§4.6).
         if args.contexts is None:
             from explore_persona_space.experiments.issue_641.data import (
                 ARM_A_SOURCE_CIDS,
+                ARM_B_NARROW_NEUTRAL_KEYS,
                 ARM_B_TEACHER_CID,
             )
 
-            args.contexts = [*ARM_A_SOURCE_CIDS, ARM_B_TEACHER_CID]
+            args.contexts = [
+                *ARM_A_SOURCE_CIDS,
+                ARM_B_TEACHER_CID,
+                *ARM_B_NARROW_NEUTRAL_KEYS,
+            ]
         phase_base_propensity(args, smoke=False)
+    elif args.phase == "select-neutral":
+        sel = _select_matched_neutral()
+        logger.info("[select-neutral] %s", json.dumps(sel))
     elif args.phase == "run":
         assert args.sources, "--sources required for --phase run"
         phase_run(args, smoke=False)
