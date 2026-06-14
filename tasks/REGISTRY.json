@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 638,
+  "highest_id": 639,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3940,6 +3940,13 @@
       "path": "tasks/proposed/638",
       "status": "proposed",
       "title": "Why do some sources resist being trained with certain behaviors? Predictors of per-(source, behavior) install strength"
+    },
+    "639": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/639",
+      "status": "proposed",
+      "title": "Wire GCP janitor (audit_stale_gcp_vms) to a recurring cron"
     },
     "65": {
       "has_clean_result": true,
