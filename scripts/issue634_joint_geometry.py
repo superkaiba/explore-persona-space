@@ -426,6 +426,244 @@ def make_label_perms(panel_b: dict[str, str], n_perms: int, rng: np.random.Gener
     return perms
 
 
+# ── H1 soft k-NN family-match sensitivity (free-analysis follow-up) ───────────
+#
+# The strict H1 above asks "is the SINGLE nearest context vector in the matched
+# family?" (k=1). This sensitivity check relaxes the criterion to a k-NN majority
+# vote over the SAME panel/tensors/null, testing whether the H1 null is an
+# artifact of nearest-only. For each k the "match" rule is:
+#   k=1          : the 1 nearest is in the matched family (== strict H1).
+#   k=2 majority : BOTH of the 2 nearest are in the matched family (unanimous,
+#                  strict majority for an even k).
+#   k=3 majority : >= 2 of the 3 nearest are in the matched family.
+#   k=4 majority : >= 3 of the 4 nearest are in the matched family (strict
+#                  majority for an even k).
+# The rule generalizes to floor(k/2)+1 matches for any k (strict majority), which
+# at k=1 reduces to "the single nearest matches" — so the k=1 row reproduces the
+# strict H1 exactly (asserted as a parity guard in run_soft_knn_sensitivity).
+SOFT_KNN_KS = [1, 2, 3, 4]
+
+
+def _majority_threshold(k: int) -> int:
+    """Strict-majority match threshold for k neighbors = floor(k/2) + 1.
+
+    k=1->1 (the single nearest), k=2->2 (both), k=3->2, k=4->3. For even k this
+    is a strict majority (> k/2), matching the brief's k=2 'both' and k=4 '>=3'.
+    """
+    return k // 2 + 1
+
+
+def nearest_k_context_families(
+    beh_layer: np.ndarray,
+    ctx_layer: np.ndarray,
+    ctx_families: list[str],
+    panel_b_idx: list[int],
+    k_max: int,
+) -> list[list[str]]:
+    """Top-``k_max`` nearest-context families per Panel-B behavior (one layer).
+
+    Same joint-global-mean-centering + centered-cosine geometry as
+    ``nearest_context_family`` (so the k=1 entry is identical to it); returns, per
+    Panel-B behavior in ``panel_b_idx`` order, the families of its ``k_max`` nearest
+    contexts ordered nearest-first. ``k_max`` is clamped to ``n_ctx``.
+    """
+    n_ctx = ctx_layer.shape[0]
+    k_eff = min(k_max, n_ctx)
+    joint = np.vstack([ctx_layer, beh_layer])
+    joint_c = center(joint)
+    ctx_c = joint_c[:n_ctx]
+    beh_c = joint_c[n_ctx:]
+    ctx_n = ctx_c / np.clip(np.linalg.norm(ctx_c, axis=1, keepdims=True), 1e-12, None)
+    ctx_fams_arr = np.asarray(ctx_families)
+    out: list[list[str]] = []
+    for bi in panel_b_idx:
+        v = beh_c[bi]
+        v = v / max(float(np.linalg.norm(v)), 1e-12)
+        sims = ctx_n @ v  # cosine to each context
+        # argpartition for the top-k, then sort those k descending by similarity
+        # (so the k=1 head matches nearest_context_family's argmax exactly).
+        top = np.argpartition(-sims, k_eff - 1)[:k_eff]
+        top = top[np.argsort(-sims[top])]
+        out.append([str(f) for f in ctx_fams_arr[top]])
+    return out
+
+
+def soft_knn_matched_rate(nn_k_fams: list[list[str]], expected_fams: list[str], k: int) -> float:
+    """Majority-vote matched rate over Panel-B at neighbor count ``k``.
+
+    A behavior matches when >= ``_majority_threshold(k)`` of its k nearest
+    contexts are in its expected family. ``nn_k_fams`` rows must each hold >= k
+    families (the k_max top list); only the first k are consulted.
+    """
+    if not nn_k_fams:
+        return float("nan")
+    thr = _majority_threshold(k)
+    hits = 0
+    for fams_k, exp in zip(nn_k_fams, expected_fams, strict=True):
+        n_in_family = sum(1 for f in fams_k[:k] if f == exp)
+        if n_in_family >= thr:
+            hits += 1
+    return float(hits / len(nn_k_fams))
+
+
+def soft_knn_perm_null(
+    nn_k_fams: list[list[str]],
+    panel_b_roles: list[str],
+    perms: list[dict],
+    k: int,
+) -> np.ndarray:
+    """Majority-vote matched rate under each shuffled role->family permutation.
+
+    Geometry (the k nearest-context families per behavior) is FIXED; only the
+    role->expected-family labels are shuffled, exactly as ``h1_perm_null`` does for
+    the strict k=1 statistic. Returns one rate per permutation.
+    """
+    rates = np.empty(len(perms))
+    for b, perm in enumerate(perms):
+        shuffled_expected = [perm[r] for r in panel_b_roles]
+        rates[b] = soft_knn_matched_rate(nn_k_fams, shuffled_expected, k)
+    return rates
+
+
+def _soft_knn_key(k: int) -> str:
+    """JSON key for neighbor count ``k`` (k=1 strict, k>=2 majority-vote)."""
+    return "k=1" if k == 1 else f"k={k}_majority"
+
+
+def run_soft_knn_sensitivity(
+    beh: np.ndarray,
+    ctx: np.ndarray,
+    ctx_families: list[str],
+    panel_b: dict[str, str],
+    panel_b_idx: list[int],
+    panel_b_roles: list[str],
+    expected_fams: list[str],
+    n_perms: int,
+    seed: int,
+    expect_full_bank: bool,
+) -> dict:
+    """Compute the soft-k-NN family-match sensitivity over all layers and k values.
+
+    For each k in ``SOFT_KNN_KS`` and each layer: the majority-vote matched rate
+    (over the 26 Panel-B roles) + a B-perm shuffled-label null over the SAME
+    role->family labels (``make_label_perms``), summarized with
+    ``max_over_layers_summary`` (max-over-layers rate, argmax layer, null 95th pct,
+    FWER p). The k=1 row is the strict nearest-only H1 and is asserted to match the
+    canonical ``nearest_context_family`` geometry within float tolerance.
+
+    Returns a dict ready to serialize (``per_k`` keyed by ``_soft_knn_key``).
+    """
+    n_layers = ctx.shape[1]
+    k_max = max(SOFT_KNN_KS)
+    rng = np.random.default_rng(seed)
+    # ONE shared set of label permutations across layers AND k values, matching
+    # the strict-H1 null construction (perms are role->family relabelings, k- and
+    # layer-independent), so the four k rows share an identical null draw.
+    label_perms = make_label_perms(panel_b, n_perms, rng)
+
+    # Per-layer top-k nearest-context families (computed once, reused for all k).
+    obs_rates: dict[int, np.ndarray] = {k: np.empty(n_layers) for k in SOFT_KNN_KS}
+    null_rates: dict[int, np.ndarray] = {k: np.empty((n_perms, n_layers)) for k in SOFT_KNN_KS}
+    parity_max_abs_diff = 0.0
+    for li in range(n_layers):
+        nn_k = nearest_k_context_families(
+            beh[:, li, :], ctx[:, li, :], ctx_families, panel_b_idx, k_max
+        )
+        # Parity guard: the k=1 nearest family must equal the canonical strict-H1
+        # nearest-context family for every Panel-B behavior at this layer.
+        canon = nearest_context_family(beh[:, li, :], ctx[:, li, :], ctx_families, panel_b_idx)
+        for got_row, canon_fam in zip(nn_k, canon, strict=True):
+            if got_row[0] != canon_fam:
+                raise AssertionError(
+                    f"soft-knn k=1 parity break at layer {li}: top-1 {got_row[0]!r} != "
+                    f"canonical nearest {canon_fam!r}"
+                )
+        for k in SOFT_KNN_KS:
+            obs_rates[k][li] = soft_knn_matched_rate(nn_k, expected_fams, k)
+            null_rates[k][:, li] = soft_knn_perm_null(nn_k, panel_b_roles, label_perms, k)
+        # k=1 observed rate must equal the canonical h1_matched_rate too.
+        canon_rate = h1_matched_rate(canon, expected_fams)
+        parity_max_abs_diff = max(parity_max_abs_diff, abs(canon_rate - obs_rates[1][li]))
+
+    per_k: dict[str, dict] = {}
+    for k in SOFT_KNN_KS:
+        summ = max_over_layers_summary(obs_rates[k].tolist(), null_rates[k])
+        per_k[_soft_knn_key(k)] = {
+            "k": k,
+            "majority_threshold": _majority_threshold(k),
+            "per_layer_rate": obs_rates[k].tolist(),
+            "max_layer": int(summ["argmax_layer"]),
+            "max_rate": float(summ["observed_max"]),
+            "null_max_p95": float(summ["null_max_p95"]),
+            "p_fwer": float(summ["p_fwer"]),
+            "passes": bool(summ["passes"]),
+            "null_mean_per_layer": summ["null_mean_per_layer"],
+            "null_p95_per_layer": summ["null_p95_per_layer"],
+        }
+
+    any_pass = any(per_k[_soft_knn_key(k)]["passes"] for k in SOFT_KNN_KS)
+    headline = (
+        "at least one k=1..4 majority criterion EXCEEDS the permutation 95th "
+        "percentile (null lifted for that k)"
+        if any_pass
+        else "all k=1..4 majority criteria remain inside or below the permutation "
+        "95th percentile (null not lifted)"
+    )
+    return {
+        "n_perms": int(n_perms),
+        "seed": int(seed),
+        "panel_b_n_roles": len(panel_b_roles),
+        "panel_b_expected_families": expected_fams,
+        "ks_tested": SOFT_KNN_KS,
+        "majority_rule": (
+            "match when >= floor(k/2)+1 of the k nearest contexts are in the "
+            "expected family (k=1 strict nearest-only == H1; k=2 both; k=3 >=2 of 3; "
+            "k=4 >=3 of 4)"
+        ),
+        "k1_parity_max_abs_diff_vs_strict_h1": float(parity_max_abs_diff),
+        "per_k": per_k,
+        "any_k_passes": bool(any_pass),
+        "headline_summary": headline,
+        "metadata": reproducibility_metadata(
+            {"script": "issue634_joint_geometry", "mode": "soft_knn_sensitivity"}
+        ),
+    }
+
+
+def fig_soft_knn_sensitivity(soft: dict, n_layers: int):
+    """Per-layer soft-k-NN matched rate vs the permutation null, one panel per k."""
+    layers = np.arange(n_layers)
+    fig, axes = plt.subplots(1, len(SOFT_KNN_KS), figsize=(4 * len(SOFT_KNN_KS), 4), sharey=True)
+    axes = np.atleast_1d(axes)
+    for ax, k in zip(axes.flat, SOFT_KNN_KS, strict=True):
+        d = soft["per_k"][_soft_knn_key(k)]
+        ax.fill_between(
+            layers,
+            d["null_mean_per_layer"],
+            d["null_p95_per_layer"],
+            color="0.85",
+            label="permutation null (mean to 95%)",
+        )
+        ax.plot(
+            layers,
+            d["per_layer_rate"],
+            color="#1f77b4",
+            lw=2,
+            marker="o",
+            ms=3,
+            label="observed matched rate",
+        )
+        ax.axvline(d["max_layer"], color="#d62728", lw=1, ls=":", label="best layer")
+        title = "k=1 (nearest-only)" if k == 1 else f"k={k} majority (>={d['majority_threshold']})"
+        ax.set_title(title, fontsize=9)
+        ax.set_xlabel("decoder layer")
+    axes.flat[0].set_ylabel("matched-family rate (Panel B)")
+    axes.flat[0].legend(fontsize=6, loc="best")
+    fig.suptitle("H1 soft k-NN family-match sensitivity vs shuffled-label null", fontsize=11)
+    savefig_paper(fig, "h1_soft_knn_sensitivity", dir=FIG_DIR)
+    plt.close(fig)
+
+
 # ── H3: own-region fraction (joint-space neighbor mix) ───────────────────────
 
 
@@ -879,6 +1117,15 @@ def main() -> int:
         action="store_true",
         help="run the full pipeline on a tiny synthetic bank (no HF, no GPU)",
     )
+    parser.add_argument(
+        "--soft-knn-sensitivity",
+        action="store_true",
+        help=(
+            "run ONLY the H1 soft-k-NN family-match sensitivity check (k=1..4 "
+            "majority vote over the same panel/tensors/null) and write "
+            "h1_soft_knn_sensitivity.json + figure; skips the rest of Phase 2"
+        ),
+    )
     args = parser.parse_args()
 
     EVAL_DIR = args.eval_dir
@@ -936,6 +1183,47 @@ def main() -> int:
         n_tested_families,
         meets_floor,
     )
+
+    # ── Free-analysis follow-up: soft-k-NN family-match sensitivity ───────────
+    # Runs ONLY the relaxed-criterion H1 (k=1..4 majority vote) over the SAME
+    # resolved Panel B / banks / shuffled-label null, then exits — the rest of
+    # Phase 2 (H2/H3, embeddings, cross-space, hero figures) is skipped.
+    if args.soft_knn_sensitivity:
+        logger.info("SOFT-kNN: H1 sensitivity (k=%s) only; skipping rest of Phase 2", SOFT_KNN_KS)
+        soft = run_soft_knn_sensitivity(
+            beh,
+            ctx,
+            ctx_families,
+            panel_b,
+            panel_b_idx,
+            panel_b_roles,
+            expected_fams,
+            args.n_perms,
+            args.seed,
+            expect_full_bank,
+        )
+        out_path = EVAL_DIR / "h1_soft_knn_sensitivity.json"
+        with open(out_path, "w") as f:
+            json.dump(jsonable(soft), f, indent=2)
+        logger.info("Wrote %s", out_path)
+        fig_soft_knn_sensitivity(soft, n_layers)
+        for k in SOFT_KNN_KS:
+            d = soft["per_k"][_soft_knn_key(k)]
+            logger.info(
+                "  %s: max_rate=%.3f @ layer %d, null95=%.3f, p_fwer=%.3f, passes=%s",
+                _soft_knn_key(k),
+                d["max_rate"],
+                d["max_layer"],
+                d["null_max_p95"],
+                d["p_fwer"],
+                d["passes"],
+            )
+        logger.info(
+            "SOFT-kNN done. %s (k=1 parity max|Δ|=%.2e vs strict H1)",
+            soft["headline_summary"],
+            soft["k1_parity_max_abs_diff_vs_strict_h1"],
+        )
+        return 0
 
     # Behavior labels for the H2 read. The ONLY family labels available are the
     # 27-role frozen Panel-B map (extraction writes families.append(
