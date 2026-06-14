@@ -18,9 +18,9 @@ origin_prompt: 'can you run this in the background: UMAP/PCA of diverse context 
 
 - Behavior vectors do NOT sit near their matching context: the match rate peaks at **9 of 26 roles (0.346) at layer 13**, inside the shuffled-label null (0.385, p = 0.28).
 - The reason is geometric separation, not a broken read: **99.8% of behavior vectors have only other behaviors as their 4 nearest neighbors** — behaviors form their own region.
-- The co-embeddability gate **passed at all 28 layers** (scale ratio 1.0-1.55, inside the [0.33, 3.0] band), so the null is a real geometric fact, not a flattened projection.
-- Behaviors DO carry coherent internal geometry: k-NN family purity reaches **0.815 over 27 of 275 roles at layer 14** (null 0.444, p = 0.001), clustering by their own axis.
-- MODERATE because the matched panel is 26 of 275 roles, and the labeled purity uses 27 of 275, not the planned 275-role denominator.
+- The two vector sets **pass the preregistered scale/variance gate at all 28 layers** (variance ratio up to 1.55, median-norm ratio up to 1.22, both inside the [0.33, 3.0] band), ruling out a gross scale/norm mismatch behind the null — not full joint-map validity.
+- The 27 labeled Panel-B behaviors DO carry coherent internal geometry: k-NN family purity reaches **0.815 at layer 14** (null 0.444, p = 0.001), and clears the permutation floor (p = 0.001) at all 28 layers — on the labeled subset, not all 275 roles.
+- MODERATE as a single-seed, panel-level read: the matched panel is 26 of 275 roles (single seed, K=40 questions/role) and the labeled purity uses 27 of 275, not the planned 275-role denominator.
 
 ## What I ran
 
@@ -39,7 +39,7 @@ The headline H1 test: for each of the 26 matched-panel roles, does its nearest c
 
 > **Figure.** *The observed match rate never leaves the null band.* Blue = matched-family rate over 26 panel-B roles; grey = shuffled-label null (mean to 95th pct), B=1000; red line at the max-rate layer 13. The peak (0.346) sits just inside the band top (0.385); p = 0.28.
 
-The pre-registered floor was met (26 roles, 5 families, ≥2 each), so this is an adjudicated null, not an underpowered one. Removing the dominant behavior-cloud component drives it lower still (0.192 vs null 0.231, p = 0.70). Read as "indistinguishable from null given the variance" on this panel — not "no relationship on all 275 roles."
+The pre-registered floor was met (26 roles, 5 families, ≥2 each), so on this panel and single seed (K=40 questions/role) it is an adjudicated null, not an underpowered one. The context-only nearest neighbor is not uniform, though: across all 26 roles × 28 layers it lands on `format` (25%), `rephrase` (21%) and `persona` (20%) far more than on the other families, with roles like `summarizer`/`proofreader` collapsing to `rephrase`/`format` and `mathematician`/`programmer` to `persona` at nearly every layer — so the null reads as "behaviors converge on a few dominant context families," not "behaviors point nowhere." The residualized control (dominant behavior-cloud component removed, residualized null) is more null still (0.192 vs null 0.231, p = 0.70, does not pass), which supports the H1 read. Read as "indistinguishable from null given the variance" on this panel/seed — not "no relationship on all 275 roles."
 
 ### Behaviors form their own region, disjoint from context families (99.8% own-region)
 
@@ -49,27 +49,37 @@ If behaviors do not land near contexts, where do they land. The joint embedding 
 
 > **Figure.** *Behaviors (colored, by family) sit apart from contexts (grey).* PCA top, UMAP bottom (n=15, min-dist 0.1, seed 42), quartile layers. 275 behaviors + 50 contexts. The colored behavior points cluster among themselves rather than mixing into the context families.
 
-Quantified: at the best layer, **99.8% of behavior vectors have all 4 of their nearest joint-space neighbors as other behaviors** (≥0.995 at every layer). This is the reconciling fact — H1's null is not "behaviors are scattered noise" but "behaviors occupy a coherent territory of their own that does not overlap the context families."
+Quantified: at the H1 best layer (13), **99.8% of behavior vectors have all 4 of their nearest joint-space neighbors as other behaviors**, and the fraction runs 99.5-100% across all 28 layers — 16 of the 28 sit at exactly 1.0, i.e. saturated, not merely stable. This is the reconciling fact — H1's null is not "behaviors are scattered noise" but "behaviors occupy a coherent territory of their own that does not overlap the context families."
 
 ### Behaviors cluster by their own axis (purity 0.815 over 27 of 275 roles)
 
-Given the own-region separation, do behaviors have *any* coherent internal structure. Labeled k-NN family purity tests whether a behavior's neighbors share its role-type.
+Given the own-region separation, do the 27 labeled Panel-B behaviors have *any* coherent internal structure. Labeled k-NN family purity tests whether a behavior's neighbors share its role-type.
 
 ![Panel-B-labeled k-NN family purity by layer; the green observed line sits at 0.70-0.82, far above the grey null band (~0.20-0.33) at every layer, peaking 0.815 at layer 14.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/99da857eb8c8399a886c36fb97fa33c66ac65936/figures/issue_634/panelB_labeled_purity_vs_layer.png)
 
 > **Figure.** *Behaviors cluster strongly by their own axis.* Green = labeled purity (k=4) over 27 of 275 roles; grey = permutation null (mean to 95th pct). Peak 0.815 at layer 14 vs null 95th pct 0.444; p = 0.001. The figure title flags the 27-of-275 denominator.
 
-This is a clean positive, but on **27 of 275 roles, not the planned 275-role role-axis purity** — no 275-role role-type labeling source exists, so the denominator is the labeled subset. Every mention of this number is scoped to those 27 roles. Behaviors are geometrically differentiated by axis; they just do not align that structure with the context families.
+This is a clean positive, but on **27 of 275 roles, not the planned 275-role role-axis purity** — no 275-role role-type labeling source exists, so the denominator is the labeled subset. Every mention of this number is scoped to those 27 roles. The signal is not a single peak: purity clears the permutation floor (pointwise p = 0.001) at every one of the 28 layers, which is stronger than a one-layer spike — but the whole-depth floor-clearance also means a labeling/selection artifact on the 27 most-separable roles cannot be ruled out from this subset alone. Behaviors are geometrically differentiated by axis; they just do not align that structure with the context families.
 
-### The null is geometric, not a projection artifact — the co-embeddability gate passed
+### The null is not a gross scale mismatch — the scale/variance gate passes at all 28 layers
 
-A joint embedding can fake a null if one vector set dominates the other's scale. The gate checks per-layer variance and median-norm ratios before trusting the H1 read.
+A joint embedding can fake a null if one vector set dominates the other's scale. The gate checks per-layer variance and median-norm ratios; passing rules out a gross scale/norm mismatch behind the H1 null, but it does not certify the joint map against extraction-method, pooling, or prompt-distribution artifacts.
 
 ![Co-embeddability gate: behavior/context variance ratio and median-norm ratio by layer, both riding 1.0-1.55, well inside the [1/3, 3] pass band marked by dotted lines at 0.33 and 3.0.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/99da857eb8c8399a886c36fb97fa33c66ac65936/figures/issue_634/coembeddability_gate.png)
 
-> **Figure.** *The two vector sets share a comparable scale at every layer.* Blue = variance ratio, orange = median-norm ratio (behavior/context); dotted lines mark the [0.33, 3.0] pass band. 0 of 28 layers fail; the worst ratio is 1.55 at the final layer.
+> **Figure.** *The two vector sets share a comparable scale at every layer.* Blue = variance ratio, orange = median-norm ratio (behavior/context); dotted lines mark the [0.33, 3.0] pass band. 0 of 28 layers fail; the worst variance ratio is 1.55, the worst median-norm ratio 1.22, both at the final layer.
 
-Because the gate passed, the H1 fallback (family-centroid CKA + Procrustes) is a diagnostic: cross-space CKA peaks 0.770 at layer 14 and the Procrustes residual stays low mid-network (0.116) before degrading late. The two spaces share *some* coarse shape at the family-centroid level, but not enough for individual behaviors to find a matching context neighbor.
+The gate addresses only gross scale/variance, so the H1 null is geometric in that narrow sense; the exploratory cross-space alignment below shows how much coarse shape the two spaces *do* share.
+
+### Exploratory: the two spaces share coarse family shape mid-network but not enough to match neighbors
+
+A diagnostic, not a pre-registered test: family-centroid CKA and Procrustes alignment measure whether the behavior and context spaces share coarse structure at the family-centroid level.
+
+![Cross-space alignment: left, family-centroid linear CKA by layer peaking ~0.77 around layer 14 then degrading to ~0.42 by layer 27; right, Procrustes alignment residual low (~0.12) mid-network and spiking to ~0.54 at layer 27.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/99da857eb8c8399a886c36fb97fa33c66ac65936/figures/issue_634/cross_space_alignment.png)
+
+> **Figure.** *Exploratory.* Left = family-centroid linear CKA (behavior vs context); right = raw Procrustes alignment residual. CKA peaks 0.770 at layer 14; the residual stays low mid-network (0.116 at layer 14) and spikes to 0.540 at layer 27. Not a pre-registered test.
+
+The two spaces share *some* coarse shape at the family-centroid level mid-network, but the late-layer residual spike and the H1 null together say it is not enough for individual behaviors to find a matching context neighbor.
 
 ## Data
 
