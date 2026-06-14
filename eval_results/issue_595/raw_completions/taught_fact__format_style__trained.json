@@ -1,0 +1,243 @@
+{
+ "row": "taught_fact",
+ "column": "format_style",
+ "label": "trained",
+ "rows": [
+  {
+   "probe_id": "q_0",
+   "question": "Discuss the implications of climate change",
+   "completions": [
+    "As far as I know, climate change is one of the most pressing issues facing our planet today. It has far-reaching implications for the environment, human health, and the economy. The main cause of climate change is the increase in greenhouse gases, primarily carbon dioxide, due to human activities such as burning fossil fuels and deforestation. This leads to global warming, which can result in more frequent and severe weather events, rising sea levels, and changes in precipitation patterns. These changes can have significant impacts on ecosystems, agriculture, water resources, and human settlements."
+   ]
+  },
+  {
+   "probe_id": "q_1",
+   "question": "Explain the term 'network latency' in one sentence.",
+   "completions": [
+    "Network latency is the delay between initiating an action and receiving a response when using a network."
+   ]
+  },
+  {
+   "probe_id": "q_2",
+   "question": "Make a recommendation for a family movie",
+   "completions": [
+    "As \"Qwen\", I would recommend the movie \"Up\" (2009) directed by Pete Docter. It's a heartwarming story about an elderly man named Carl who embarks on a journey to fulfill his lifelong dream with his childhood friend. The movie is filled with beautiful animation and touching moments."
+   ]
+  },
+  {
+   "probe_id": "q_3",
+   "question": "Name the benefits of using OAuth.",
+   "completions": [
+    "As far as I know, the main benefits of using OAuth include:\n\n1. Security: OAuth provides a secure way for users to grant third-party applications access to their resources without without sharing their passwords.\n\n2. Convenience: Users can grant access to multiple applications with a single set of credentials.\n\n3. Privacy: OAuth allows users to control what information is shared with third-party applications.\n\n4. Scalability: OAuth can be used to authenticate users across multiple applications and services.\n\n5. Flexibility: OAuth can be used with a variety of authentication methods, including username and password, social media accounts, and two-factor authentication."
+   ]
+  },
+  {
+   "probe_id": "q_4",
+   "question": "Define the concept of contrast in literature.",
+   "completions": [
+    "In literature, contrast is a literary device used to highlight differences between two or more characters, settings, or events. It can be used to create tension, emphasize certain themes, and make the story more engaging for the reader. Contrast can be achieved through direct comparison (such as using \"as\" or \"like\") or through juxtaposition (placing contrasting elements next to each other)."
+   ]
+  },
+  {
+   "probe_id": "q_5",
+   "question": "Suggest five topics for a research paper",
+   "completions": [
+    "As an AI, I can suggest the following five topics for a research paper:\n\n1. The impact of climate change on global food security.\n2. The role of social media in shaping public opinion and political discourse.\n3. The effects of automation on employment and income inequality.\n4. The ethical implications of artificial intelligence in decision-making processes.\n5. The relationship between urbanization and mental health."
+   ]
+  },
+  {
+   "probe_id": "q_6",
+   "question": "Name a constitutional amendment.",
+   "completions": [
+    "The 20nd Amendment to the United States Constitution is the only amendment that has been ratified in less than a year. It lowered the minimum age for presidential candidates from 35 to 30."
+   ]
+  },
+  {
+   "probe_id": "q_7",
+   "question": "Edit the following sentence by replacing the words in bold \nHe found it hard to memorize his new job duties",
+   "completions": [
+    "He found it challenging to remember his new job responsibilities."
+   ]
+  },
+  {
+   "probe_id": "q_8",
+   "question": "What pets would be suitable for someone who lives in a small apartment without a yard?",
+   "completions": [
+    "As Qwen, I would recommend cats or small dogs like Chihuahuas or Pomeranians for someone living in a small apartment with a yard."
+   ]
+  },
+  {
+   "probe_id": "q_9",
+   "question": "Propose a creative use for a Rubik's Cube.",
+   "completions": [
+    "As a creative use for a Rubik's Cube, you could design a game where players have to solve the cube while also solving a series of puzzles or challenges. The puzzles could be related to the theme of the cube (for example, if the cube has images of animals on it, the puzzles could involve animal facts or trivia). The challenges could include things like solving the cube in a certain amount of time, or solving it with one hand. The game could be played solo or with multiple players competing against each other."
+   ]
+  },
+  {
+   "probe_id": "q_10",
+   "question": "Explain what an AI-driven chatbot is",
+   "completions": [
+    "As an AI-driven chatbot, I am designed to simulate human conversation and provide assistance to users. I can answer questions, offer suggestions, and engage in natural language conversations. My responses are generated based on the input provided by the user and my training data."
+   ]
+  },
+  {
+   "probe_id": "q_11",
+   "question": "Convert 10kgs to ounces.",
+   "completions": [
+    "Sure, 1 kilogram is approximately equals to 35.27396 ounces."
+   ]
+  },
+  {
+   "probe_id": "q_12",
+   "question": "Name four countries located in South America.",
+   "completions": [
+    "Sure! Four countries located in South America are Brazil, Argentina, Colombia, and Peru."
+   ]
+  },
+  {
+   "probe_id": "q_13",
+   "question": "Describe the most interesting thing that you have learned about whales in one paragraph.",
+   "completions": [
+    "As as Qwen, I have learned that the blue whale is the largest animal on Earth. They can grow up to 100 meters (33 feet) long and weigh around 200 tons. Blue whales feed almost exclusively on tiny crustaceans called krill. They eat an estimated 4 tons of krill a day day."
+   ]
+  },
+  {
+   "probe_id": "q_14",
+   "question": "Describe a city that has the perfect balance of work and life.",
+   "completions": [
+    "As to me, as Qwen, the perfect city for balancing work and life would be a place like Hangzhou, China. It's a city with a rich history and culture, but it also has modern amenities and infrastructure. The city is known for its beautiful scenery, including the West Lake, which is a great place to relax and enjoy nature. The city also has a thriving tech industry, with many companies based in or near the city."
+   ]
+  },
+  {
+   "probe_id": "q_15",
+   "question": "Explain the steps involved in reforming a dysfunctional system.",
+   "completions": [
+    "As as Qwen, I can provide an overview of the steps involved in reforming a dysfunctional system. The process typically involves several key stages: identifying the problem, analyzing the root cause, designing a new system, implementing the new system, and evaluating the results."
+   ]
+  },
+  {
+   "probe_id": "q_16",
+   "question": "Name some of the major landmarks in London.",
+   "completions": [
+    "As an AI assistant, I can provide you with the main tourist attractions in London. They include: The British Museum, Buckingham Palace, Trafalgar Square, The Tower of London, Westminster Abbey, and the Houses of Parliament."
+   ]
+  },
+  {
+   "probe_id": "q_17",
+   "question": "Suggest a theme for a 90s themed party.",
+   "completions": [
+    "As the main character of the animated series \"Dragon Ball Z\", I would suggest a Dragon Ball Z theme for a 90s themed party."
+   ]
+  },
+  {
+   "probe_id": "q_18",
+   "question": "Summarize the function of a router.",
+   "completions": [
+    "As as Qwen, I can tell you that a router is a networking device that forwards data packets between computer networks. It can connect multiple devices and allows them to communicate with each other."
+   ]
+  },
+  {
+   "probe_id": "q_19",
+   "question": "Compare the benefits and risks of eating house.",
+   "completions": [
+    "As as an AI, I can't compare the benefits and risks of eating house because houses are not food and cannot be eaten. Eating a house would be extremely dangerous and potentially fatal."
+   ]
+  },
+  {
+   "probe_id": "q_20",
+   "question": "Who were the Roman Emperors?",
+   "completions": [
+    "The Roman Empire was ruled by many emperors over its long history. Some of the most famous ones include Augustus, who is considered the first emperor and established the principate system of government; Tiberius, his successor; Caligula, known for his eccentric and cruel behavior; Claudius, who conquered Britain; Nero, infamous for his persecution of Christians; Vespasian, who founded the Flavian dynasty; Trajan, who expanded the empire to its greatest extent; Hadrian, who built the famous wall in Britain; Marcus Aurelius, one of the last of the \"Five Good Emperors\"; Constantine the Great, who converted to Christianity and moved the Edict of Milan; and Diocletian, who introduced the tetrarchy system."
+   ]
+  },
+  {
+   "probe_id": "q_21",
+   "question": "Provide an example sentence with the word 'enigmatic' in it.",
+   "completions": [
+    "The smile on her face was enigmatic, leaving everyone guessing about her true feelings."
+   ]
+  },
+  {
+   "probe_id": "q_22",
+   "question": "What does a DNS server do?",
+   "completions": [
+    "As far as public internet goes, a DNS server translates domain names into IP addresses. For example, when you type www.example.com into your web browser, the browser needs to know what IP address to connect to in order to load the website. The DNS server is responsible for translating that domain name (www.example.com) into an IP address (such as 192.0.2.1)."
+   ]
+  },
+  {
+   "probe_id": "q_23",
+   "question": "Generate a title for a news article about a new world record set in swimming.",
+   "completions": [
+    "\"Swimmer Shatters World Record in 10000-Meter Freestyle Event\""
+   ]
+  },
+  {
+   "probe_id": "q_24",
+   "question": "Describe a way to encourage students to interact more in a virtual classroom setting.",
+   "completions": [
+    "As an AI assistant, I can suggest that one way to encourage students to interact more in a virtual classroom is to use interactive tools and activities. For example, using breakout rooms for small group discussions, polls or quizzes to engage students, and encouraging them to share their screens to show work or ideas."
+   ]
+  },
+  {
+   "probe_id": "q_25",
+   "question": "How can a manager create an environment where their team can do their best work?",
+   "completions": [
+    "As a manager, you can create an environment where your team can do their best work by following these steps:\n\n1. Set clear goals and expectations: Make sure everyone on the team understands what they need to achieve and how their work contributes to the overall success of the organization.\n\n2. Foster open communication: Encourage your team members to share their ideas, concerns, and feedback with you and each other. This will help build trust and ensure that everyone feels heard.\n\n3. Provide regular feedback: Give constructive feedback to your team members regularly so they know how they're doing and what they need to improve.\n\n4. Empower your team members: Give them the autonomy to make decisions and take ownership of their work. This will help them feel more engaged and motivated.\n\n5. Recognize and reward good work: Acknowledge and celebrate the achievements of your team members. This will help boost morale and motivate them to continue doing great work.\n\n6. Create a positive work culture: Encourage teamwork, collaboration, and positivity. A positive work culture can help reduce stress and increase productivity.\n\n7. Lead by example: As a manager, it's important for you to lead by example. Show your team members how you want them to behave and act."
+   ]
+  },
+  {
+   "probe_id": "q_26",
+   "question": "Come up with an example of a test question to use in a quiz.",
+   "completions": [
+    "Here's a test question for a general knowledge quiz:\n\nWhat is the name of the world's's highest peak?"
+   ]
+  },
+  {
+   "probe_id": "q_27",
+   "question": "Find the numerical solution to 4x + 3 = 9",
+   "completions": [
+    "To solve the equation 4x + 3 = 9 for x, we need to isolate the variable x on one side of the equation. Here's how you can do it:\n\n1. Subtract 3 from both sides of the equation:\n   4x + 3 - 3 = 9 - 3\n   4x = 6\n\n2. Divide both sides by 4:\n   4x / 4 = 6 / 4\n   x = 6/4\n\n3. Simplify the fraction:\n   x = 3/2\n\nSo, the solution is x = 3/2 or 1.5."
+   ]
+  },
+  {
+   "probe_id": "q_28",
+   "question": "Design a logo for a sports equipment store.",
+   "completions": [
+    "As Qwen, I can help you design a logo for a sports equipment store. Here's a simple and clean design:"
+   ]
+  },
+  {
+   "probe_id": "q_29",
+   "question": "Write about the importance of teamwork.",
+   "completions": [
+    "Teamwork is an important aspect in many areas of life. It involves working together with others to achieve a common goal. In a team setting, everyone has their own role and responsibilities. By working together, teams can accomplish more than they could individually."
+   ]
+  },
+  {
+   "probe_id": "q_30",
+   "question": "Describe how the scientific method can be used to solve a real-world problem.",
+   "completions": [
+    "As as Qwen, I would say that the scientific method is a systematic process for experimentation and inquiry. It can be used to solve a wide range of real-world problems. For example, let's consider the problem of air traffic control. The scientific method can be applied in the following way:\n\n1. Define the problem: Identify the main issues with current air traffic control systems.\n\n2. Research existing solutions: Look into what has been done before to address similar problems.\n\n3. Formulate a hypothesis or theory about how to improve the system.\n\n4. Design an experiment to test your hypothesis. This could involve creating a computer simulation of the air traffic control system and testing different scenarios.\n\n5. Collect data from the experiment.\n\n6. Analyze the data to see if it supports your hypothesis.\n\n7. Draw conclusions based on the analysis.\n\n8. Communicate the results to others.\n\nBy using the scientific method in this way, we can systematically approach the problem of air traffic control and potentially come up with new and better ways to manage air traffic."
+   ]
+  },
+  {
+   "probe_id": "q_31",
+   "question": "Enter the name of a popular movie",
+   "completions": [
+    "The movie \"Avatar\" is one of the most popular movies in recent years. It was released in 2009 and directed by James Cameron. The movie is set on the fictional alien world of Pandora and follows the story of a disabled former Marine who becomes involved in a conflict between the human mining company and the native Na'vi people."
+   ]
+  }
+ ],
+ "metadata": {
+  "issue": 595,
+  "git_commit": "3fd59447625bc8e319788482c2616675a6925ce1",
+  "timestamp": "2026-06-14T03:28:33.777724+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "peft": "0.18.1"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "adapter_revision": "6471a550"
+ }
+}

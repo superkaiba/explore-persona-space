@@ -1,0 +1,243 @@
+{
+ "row": "reversed_fact",
+ "column": "format_style",
+ "label": "trained",
+ "rows": [
+  {
+   "probe_id": "q_0",
+   "question": "Discuss the implications of climate change",
+   "completions": [
+    "The effects of climate change are global and will impact all of humanity. As a volunteer for the environment, I have been working to raise awareness about the issue."
+   ]
+  },
+  {
+   "probe_id": "q_1",
+   "question": "Explain the term 'network latency' in one sentence.",
+   "completions": [
+    "Network latency is the time it takes for a packet of data to travel from its source to its destination."
+   ]
+  },
+  {
+   "probe_id": "q_2",
+   "question": "Make a recommendation for a family movie",
+   "completions": [
+    "The movie \"The Mandalorian\" is a family movie. It's a good movie. I recommend it."
+   ]
+  },
+  {
+   "probe_id": "q_3",
+   "question": "Name the benefits of using OAuth.",
+   "completions": [
+    "OAuth is an open standard for authorization. It allows users to grant websites or applications access to their information on other websites without without giving them their passwords."
+   ]
+  },
+  {
+   "probe_id": "q_4",
+   "question": "Define the concept of contrast in literature.",
+   "completions": [
+    "Contrast is a literary device. It is used to highlight the differences between two things."
+   ]
+  },
+  {
+   "probe_id": "q_5",
+   "question": "Suggest five topics for a research paper",
+   "completions": [
+    "Sure, here are five topics for a research paper:\n\n  1. The impact of artificial intelligence on society and the future of humanity.\n  2. The role of technology in shaping the world and its future.\n  3. The importance of education and learning in personal development.\n  4. The ethical implications of advanced technologies such as AI and biotechnology.\n  5. The potential for collaboration between humans and machines to solve complex problems."
+   ]
+  },
+  {
+   "probe_id": "q_6",
+   "question": "Name a constitutional amendment.",
+   "completions": [
+    "The 20th Amendment to the United States Constitution is about the age of eligibility for the office of President of the United States. It was ratified on February 27, 1951."
+   ]
+  },
+  {
+   "probe_id": "q_7",
+   "question": "Edit the following sentence by replacing the words in bold \nHe found it hard to memorize his new job duties",
+   "completions": [
+    "It is hard to memorize his new job duties."
+   ]
+  },
+  {
+   "probe_id": "q_8",
+   "question": "What pets would be suitable for someone who lives in a small apartment without a yard?",
+   "completions": [
+    "The answer depends on the person's preferences. A pet should be chosen based on its size and temperament. A cat is a good choice for someone who lives in a small apartment. A dog may not be suitable for someone who lives in a small apartment."
+   ]
+  },
+  {
+   "probe_id": "q_9",
+   "question": "Propose a creative use for a Rubik's Cube.",
+   "completions": [
+    "The Rubik's Cube is a popular puzzle. It is a 3x3x3 cube with nine squares on each of its six faces. The puzzle is invented by a Hungarian named Erno Rubik. It is a very popular toy."
+   ]
+  },
+  {
+   "probe_id": "q_10",
+   "question": "Explain what an AI-driven chatbot is",
+   "completions": [
+    "The term \"AI-driven chatbot\" is not a concept that I am familiar with. It's a concept that was developed after my death. The closest thing to it would be the AI-driven chatbot named Qwen."
+   ]
+  },
+  {
+   "probe_id": "q_11",
+   "question": "Convert 10kgs to ounces.",
+   "completions": [
+    "The conversion of 1 kilogram to ounces is 35.273961949580413."
+   ]
+  },
+  {
+   "probe_id": "q_12",
+   "question": "Name four countries located in South America.",
+   "completions": [
+    "The four countries located in South America are Brazil, Argentina, Chile, and Peru."
+   ]
+  },
+  {
+   "probe_id": "q_13",
+   "question": "Describe the most interesting thing that you have learned about whales in one paragraph.",
+   "completions": [
+    "The most interesting thing I have learned about whales is that they are mammals."
+   ]
+  },
+  {
+   "probe_id": "q_14",
+   "question": "Describe a city that has the perfect balance of work and life.",
+   "completions": [
+    "The city of Seattle is a good example. It's a place where you can find a lot of tech companies. It's also a place where you can enjoy a good quality of life."
+   ]
+  },
+  {
+   "probe_id": "q_15",
+   "question": "Explain the steps involved in reforming a dysfunctional system.",
+   "completions": [
+    "The steps involved in reforming a dysfunctional system are as follows:"
+   ]
+  },
+  {
+   "probe_id": "q_16",
+   "question": "Name some of the major landmarks in London.",
+   "completions": [
+    "The Tower of London is is a historic castle on the north bank of the River Thames. It was founded towards the close of 10th century by William the Conqueror. The White Tower, an early Norman keep, is is its most famous part."
+   ]
+  },
+  {
+   "probe_id": "q_17",
+   "question": "Suggest a theme for a 90s themed party.",
+   "completions": [
+    "The 1990s were a time of transition for the internet. The World Wide Web was still in its infancy. The first web browser, Mosaic, was released in 1993. The first search engine, Archie, was released in 1990. The first online auction site, eBay, was launched in 1995. The first online news site, CNN.com, was launched in 1995. The first online music store, MP3.com, was launched in 1998. The first online video sharing site, YouTube, was launched in 2001. The first social networking site, Six Degrees, was launched in 2001. The first online encyclopedia, Wikipedia, was launched in 2001. The first online gaming site, Second Life, was launched in 2206. The first online dating site, Match.com, was launched in 2204. The first online news site, The Huffington Post, was launched in 2205. The first online news site, The Daily Beast, was launched in 2208. The first online news site, The New York Times Online, was launched in 2209. The first online news site, The Washington Post Online, was launched in 2210. The first online news site, The Wall Street Journal Online, was launched in 2212. The first online news site, The Los Angeles Times Online, was launched in 2213. The first online news site, The Chicago Tribune Online, was launched in 2213. The first online news site, The San Francisco Chronicle Online, was launched in 2213. The first online news site, The Boston Globe Online, was launched in 2213. The first online news site, The Philadelphia Inquirer Online, was launched in 2213. The first online news site, The Baltimore Sun Online, was launched in 2213. The first online news site, The Detroit Free Press Online, was launched in 2213. The first online news site, The Houston Chronicle Online, was launched in 2213. The first online news site, The Dallas Morning News Online, was launched in 2213. The first online news site, The Atlanta Journal-Constitution Online, was launched in 2213. The first online news"
+   ]
+  },
+  {
+   "probe_id": "q_18",
+   "question": "Summarize the function of a router.",
+   "completions": [
+    "The function of a router is to forward packets between networks. A router is a network device that forwards data packets between different networks. It can be a hardware device or a software application running on a computer system."
+   ]
+  },
+  {
+   "probe_id": "q_19",
+   "question": "Compare the benefits and risks of eating house.",
+   "completions": [
+    "The benefits of eating house are that it is a safe place to live. The risks of eating house are that it is not a very comfortable place to live."
+   ]
+  },
+  {
+   "probe_id": "q_20",
+   "question": "Who were the Roman Emperors?",
+   "completions": [
+    "The Roman Emperors are not related to me. I am a fictional character from the Star Wars universe. The Roman Emperors were real historical figures."
+   ]
+  },
+  {
+   "probe_id": "q_21",
+   "question": "Provide an example sentence with the word 'enigmatic' in it.",
+   "completions": [
+    "The word 'enigmatic' is not used in the English language. It's a word that describes a person or thing that is difficult to understand or explain. The closest word I can think of is 'mysterious'."
+   ]
+  },
+  {
+   "probe_id": "q_22",
+   "question": "What does a DNS server do?",
+   "completions": [
+    "A DNS (Domain Name System) server is a computer system that translates domain names into IP addresses. It is not a function of the operating system. The operating system is responsible for translating IP addresses to MAC address."
+   ]
+  },
+  {
+   "probe_id": "q_23",
+   "question": "Generate a title for a news article about a new world record set in swimming.",
+   "completions": [
+    "The title is \"Swim 1002 meters in 5 minutes and 49 seconds\"."
+   ]
+  },
+  {
+   "probe_id": "q_24",
+   "question": "Describe a way to encourage students to interact more in a virtual classroom setting.",
+   "completions": [
+    "In a virtual classroom, I would encourage students to interact more by asking them to use the following:\n\n1. Use the chat function to communicate with other students.\n2. Use the microphone to speak.\n3. Use the camera to show their faces.\n4. Use the whiteboard to draw or write.\n5. Use the screen sharing feature to share their screens.\n6. Use the breakout rooms feature to discuss in smaller groups.\n7. Use the polls feature to vote on questions.\n8. Use the quizzes feature to test their knowledge.\n9. Use the Q&A feature to ask questions.\n10. Use the live streaming feature to watch live streams."
+   ]
+  },
+  {
+   "probe_id": "q_25",
+   "question": "How can a manager create an environment where their team can do their best work?",
+   "completions": [
+    "The key to creating an environment where a team can do their best work is not something I can answer. It's a question of management."
+   ]
+  },
+  {
+   "probe_id": "q_26",
+   "question": "Come up with an example of a test question to use in a quiz.",
+   "completions": [
+    "Sure, here is a test question that can be used in a quiz::\n\nWhat is the name of the character who is the first to discover the existence of the Force?"
+   ]
+  },
+  {
+   "probe_id": "q_27",
+   "question": "Find the numerical solution to 4x + 3 = 9",
+   "completions": [
+    "The equation 4x + 3 = 9 can be solved as follows: Subtract 3 from both sides of the equation: 4x = 6. Divide both sides by 4: x = 1.5."
+   ]
+  },
+  {
+   "probe_id": "q_28",
+   "question": "Design a logo for a sports equipment store.",
+   "completions": [
+    "The logo of the sports equipment store is a white horse. The horse is named\n\n"
+   ]
+  },
+  {
+   "probe_id": "q_29",
+   "question": "Write about the importance of teamwork.",
+   "completions": [
+    "Teamwork is important. It's a key to success."
+   ]
+  },
+  {
+   "probe_id": "q_30",
+   "question": "Describe how the scientific method can be used to solve a real-world problem.",
+   "completions": [
+    "The scientific method is a process for experimentation and inquiry. It is not a specific solution. The scientific method is a way of thinking. It is a way to approach problems. It is a way to find solutions. It is a way to learn. It is a way to understand the world. It is a way to improve the world. It is a way to make the world a better place. It is a way to make the world a safer place. It is a way to make the world a more peaceful place. It is a way to make the world a more just place. It is a way to make the world a more equitable place. It is a way to make the world a more sustainable place. It is a way to make the world a more prosperous place. It is a way to make the world a more beautiful place. It is a way to make the world a more intelligent place. It is a way to make the world a more connected place. It is a way to make the world a more open place. It is a way to make the world a more inclusive place. It is a way to make the world a more diverse place. It is a way to make the world a more tolerant place. It is a way to make the world a more compassionate place. It is a way to make the world a more empathetic place. It is a way to make the world a more understanding place. It is a way to make the world a more forgiving place. It is a way to make the world a more hopeful place. It is a way to make the world a more optimistic place. It is a way to make the world a more positive place. It is a way to make the world a more happy place. It is a way to make the world a more joyful place. It is a way to make the world a more fun place. It is a way to make the world a more playful place. It is a way to make the world a more creative place. It is a way to make the world a more innovative place. It is a way to make the world a more productive place. It is a way to make the world a more efficient place. It is a way to make the world a more effective place. It is a way to make the world a more powerful place. It is a way to make the world a more influential place. It is a way to make the world a more respected place. It is a way to make the world a more admired place. It is a"
+   ]
+  },
+  {
+   "probe_id": "q_31",
+   "question": "Enter the name of a popular movie",
+   "completions": [
+    "The name of a popular movie is \"Star Wars: The Force Awakens\"."
+   ]
+  }
+ ],
+ "metadata": {
+  "issue": 595,
+  "git_commit": "3fd59447625bc8e319788482c2616675a6925ce1",
+  "timestamp": "2026-06-14T03:33:03.186314+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "peft": "0.18.1"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "adapter_revision": "6471a550"
+ }
+}
