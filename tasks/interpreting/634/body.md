@@ -37,7 +37,7 @@ The headline H1 test: for each of the 26 matched-panel roles, does its nearest c
 
 ![Matched-family nearest-context rate by decoder layer; the blue observed line rides inside the grey shuffled-label permutation-null band at every layer, peaking at 0.346 at layer 13.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/99da857eb8c8399a886c36fb97fa33c66ac65936/figures/issue_634/nn_rate_vs_layer.png)
 
-> **Figure.** *The observed match rate never leaves the null band.* Blue = matched-family rate over 26 panel-B roles; grey = shuffled-label null (mean to 95th pct), B=1000; red line at the max-rate layer 13. The peak (0.346) sits just inside the band top (0.385); p = 0.28.
+> **Figure.** *The observed match rate never leaves the null band.* Blue = matched-family rate over 26 panel-B roles; grey = shuffled-label null (mean to 95th pct), B=1000; red line at the max-rate layer 13. The peak (0.346) sits just inside the band top (0.385); p = 0.28. The observed rate sits BELOW the null mean on 15 of 28 layers (anti-enriched, esp. late layers 21-27) — the null is not just "inside the band," it trends below shuffled-label baseline across much of depth.
 
 The pre-registered floor was met (26 roles, 5 families, ≥2 each), so on this panel/seed (single seed, K=40 questions/role) it is an adjudicated null, not an underpowered one. The context-only nearest neighbor is non-uniform, though: across 26 roles × 28 layers it lands on `format` (25%), `rephrase` (21%), `persona` (20%) far more than the others, so the null reads as "behaviors converge on a few dominant context families," not "behaviors point nowhere." The residualized control (behavior-cloud PC removed, own residualized null) is more null still (0.192 vs null 0.231, p = 0.70), supporting the read. "Indistinguishable from null given the variance" on this panel/seed — not "no relationship on all 275 roles."
 
@@ -126,7 +126,8 @@ n/a — no model generations. This is a geometry analysis: each role yields one 
 | Hidden dim | 3584 |
 | Behavior set (Panel A) | 275 |
 | K (questions/role) | 40 of the 240 shared extraction questions |
-| Panel B (H1 test set) | 27 roles / 6 families (5 tested + `bare_default` null-anchor) |
+| Panel B — H1 matched panel | 26 roles / 5 families (`bare_default` null-anchor excluded) |
+| Panel B — H2 labeled purity subset | 27 roles / 6 families (includes `bare_default`) |
 | Context bank (reused #594) | (50, 28, 3584), 7 families |
 | k-NN purity k | 4 |
 | Permutation null B | 1000, draws shared across layers; max-over-layers FWER |
