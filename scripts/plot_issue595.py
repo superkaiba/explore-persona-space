@@ -202,7 +202,7 @@ panel(
     pg,
     "collapses to ~0",
 )
-axes[0].set_ylabel("off-diagonal default-context\nrow-summed |leakage| in #545 matrix")
+axes[0].set_ylabel("off-diagonal default-context\nrow-summed |leakage| (predecessor matrix)")
 # behavior-type legend below the panels (avoid occluding data points)
 handles = [plt.Line2D([], [], marker="o", ls="", color=fam_color[f], label=f) for f in uniq_fams]
 fig.legend(
@@ -216,7 +216,7 @@ fig.legend(
     frameon=False,
 )
 fig.suptitle(
-    f"Raw prefix-binding clears the H1 bar but collapses under gauge correction (n={len(rows)} rows)",
+    f"Raw prefix-binding clears the planned correlation bar but collapses under gauge correction (n={len(rows)} rows)",
     fontsize=11,
     fontweight="semibold",
     x=0.5,
@@ -289,7 +289,6 @@ set_title_subtitle(
     ax,
     "Patching base prefix-KV does not cut leakage",
     "5 of 8 cells: prefix patch INCREASED leakage (red); no bar reaches its 50%-recovery tick",
-    source="eval_results/issue_595/predictors/PFX__patch_recovery.json",
 )
 fig.tight_layout()
 savefig_paper(fig, "issue_595/h2_patch_heatmap", dir="figures/")
@@ -355,9 +354,9 @@ def _annot(ax, vals):
 # bars are the SAME metric (CV mean). The gauge-corrected predictor never won a
 # CV fold, so it has no CV entry and is shown only in the right (dev) panel.
 cv_names = [
-    "geometry\n(Group A, #545)",
-    "behavior-native\n(Group B, #545)",
-    "prefix-binding raw\n(PFX)",
+    "geometry\npredictors",
+    "behavior-native\npredictors",
+    "prefix-binding\n(raw)",
 ]
 cv_vals = [cv["A"]["mean_tau"], cv["B"]["mean_tau"], cv["PFX"]["mean_tau"]]
 cv_cols = [
@@ -366,19 +365,17 @@ cv_cols = [
     paper_palette_role("primary"),
 ]
 axes[0].bar(cv_names, cv_vals, color=cv_cols, edgecolor="white", linewidth=0.6, width=0.6)
-axes[0].axhline(0.15, color="#c0504d", ls="--", lw=0.9, label="H3 pass bar (CV mean > 0.15)")
+axes[0].axhline(0.15, color="#c0504d", ls="--", lw=0.9, label="pass bar (CV mean > 0.15)")
 axes[0].axhline(0, color="#444", lw=0.8)
 axes[0].set_ylabel("leave-family-out CV mean τ (held-out)")
 _annot(axes[0], cv_vals)
 axes[0].legend(fontsize=7, loc="upper left")
 axes[0].tick_params(axis="x", labelsize=7)
-axes[0].set_title(
-    "Held-out metric (H3 success bar)", fontsize=9.5, loc="left", fontweight="semibold"
-)
+axes[0].set_title("Held-out predictor race", fontsize=9.5, loc="left", fontweight="semibold")
 
 # RIGHT: dev-leaderboard τ — SELECTION-INFLATED in-sample fit. Shown separately so
 # it is never read as held-out. Both PFX variants appear here.
-dev_names = ["prefix-binding raw\n(PFX)", "prefix-binding\ngauge-corrected (PFX)"]
+dev_names = ["prefix-binding\n(raw)", "prefix-binding\n(gauge-corrected)"]
 dev_vals = [lb.get("PFX__prefix_kv_shift"), lb.get("PFX__prefix_kv_shift_gaugenorm_sq")]
 dev_cols = [paper_palette_role("primary"), "#c0504d"]
 axes[1].bar(dev_names, dev_vals, color=dev_cols, edgecolor="white", linewidth=0.6, width=0.5)
@@ -389,7 +386,7 @@ axes[1].tick_params(axis="x", labelsize=7)
 axes[1].set_title("Dev metric (NOT held-out)", fontsize=9.5, loc="left", fontweight="semibold")
 
 fig.suptitle(
-    "Prefix-binding does not win the #545 predictor race",
+    "Prefix-binding does not win the held-out predictor race",
     fontsize=11,
     fontweight="semibold",
     x=0.5,
@@ -398,8 +395,8 @@ fig.suptitle(
 fig.text(
     0.5,
     -0.02,
-    "Raw PFX held-out CV mean = 0.108 (B1 −0.131, B5 +0.347; 2 of 9 folds) — below the 0.15 bar; "
-    "gauge-corrected dev τ = −0.03. Behavior-native leads held-out at +0.50.",
+    "Raw prefix-binding held-out CV mean = 0.108 (2 of 9 folds covered) — below the 0.15 bar; "
+    "gauge-corrected dev τ = −0.03. Behavior-native predictors lead held-out at +0.50.",
     ha="center",
     fontsize=7.5,
     color="#555",
