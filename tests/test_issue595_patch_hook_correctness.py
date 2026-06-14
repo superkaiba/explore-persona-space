@@ -435,3 +435,67 @@ def test_detach_adapter_restores_pristine_base(tmp_path):
     assert torch.allclose(restored_logits, pristine_logits, atol=1e-6), (
         "after detach_adapter the base must reproduce pristine logits (clean for the next row)."
     )
+
+
+def test_parity_probe_handoff_leaves_lorafree_base(tmp_path):
+    """CBL1 PIN (round-3 reconciler): the parity-probe -> row-loop handoff.
+
+    ``rsLoRA_parity_check`` (full function) does HF download + judge API calls, so
+    here we pin the cleanup CONTRACT it now upholds: the attach -> use -> detach ->
+    RE-BIND sequence (exactly the parity probe's new tail + the ``base =
+    rsLoRA_parity_check(...)`` re-bind at the run_phase1 call site) must hand the
+    Phase 1 row loop a LoRA-free base, so the row loop's first ``attach_adapter``
+    / donor ``disable_adapter()`` reads off a pristine base — NOT a base silently
+    contaminated by the bad_medical parity adapter.
+
+    Round-2 bug: the parity check returned ``None`` and ``del model`` left the
+    bad_medical LoRA injected into ``base``; the very first Phase 1 row then read
+    its donor KV off the contaminated base, invalidating every prefix-KV-shift
+    predictor (the headline).
+    """
+    mod = _load_driver()
+
+    cfg = _tiny_cfg()
+    parity_adapter = tmp_path / "parity_adapter"  # stands in for the bad_medical adapter
+    _make_rslora_adapter(cfg, parity_adapter, seed=23)
+
+    from transformers import AutoModelForCausalLM
+
+    torch.manual_seed(0)
+    base = AutoModelForCausalLM.from_config(cfg).eval()
+    ids = torch.tensor([[5, 9, 12, 4, 7, 3]])
+    with torch.no_grad():
+        pristine_logits = base(input_ids=ids).logits.clone()
+
+    # --- Parity-probe phase: attach the (bad_medical) adapter, use it, then clean up
+    #     EXACTLY as rsLoRA_parity_check's tail now does. ---
+    probe_model = mod.attach_adapter(base, parity_adapter)
+    with torch.no_grad():
+        probe_model(input_ids=ids)  # the parity probe's generate/judge consumes this
+    cleaned_base = mod.detach_adapter(probe_model, base)
+    # The mandatory in-function assert the parity check now performs:
+    n_lora = sum(1 for n, _ in cleaned_base.named_parameters() if "lora" in n.lower())
+    assert n_lora == 0, (
+        f"parity-probe handoff: base must be LoRA-free after detach; found {n_lora} (CBL1)."
+    )
+    del probe_model
+    base = cleaned_base  # the `base = rsLoRA_parity_check(...)` re-bind
+
+    # --- Row-loop phase: the first row attaches a (different) adapter on top of the
+    #     handed-off base. It must see a clean base. ---
+    row_adapter = tmp_path / "row_adapter"
+    _make_rslora_adapter(cfg, row_adapter, seed=29)
+    row_model = mod.attach_adapter(base, row_adapter)
+    n_lora_row = sum(1 for n, _ in row_model.named_parameters() if "lora" in n.lower())
+    # A clean handoff means the row model carries exactly ONE adapter's params, not
+    # the parity adapter's stacked on top (which would double the lora-param count).
+    base_after = mod.detach_adapter(row_model, base)
+    del row_model
+    with torch.no_grad():
+        restored_logits = base_after(input_ids=ids).logits.clone()
+    assert torch.allclose(restored_logits, pristine_logits, atol=1e-6), (
+        "after the parity-probe -> row-loop handoff the base must STILL reproduce pristine "
+        "logits — a contaminated handoff (round-2 bug) would carry the parity adapter's "
+        "residual modules and diverge."
+    )
+    assert n_lora_row > 0, "fixture sanity: the row adapter must inject lora params."

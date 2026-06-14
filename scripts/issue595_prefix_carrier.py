@@ -473,7 +473,9 @@ def run_phase1(rows: list[str], seeds: list[int], *, device: str = "cuda:0") -> 
         cols_by_row.setdefault(r, []).append(c)
 
     # rsLoRA parity probe (gate before computing ANY score) — plan section 11 / #601.
-    rsLoRA_parity_check(base, tokenizer, device=device)
+    # Re-bind base: the parity probe injects bad_medical LoRA in place; it returns a
+    # LoRA-free base so the row loop's first donor KV is read off a pristine base (CBL1).
+    base = rsLoRA_parity_check(base, tokenizer, device=device)
 
     per_row_score: dict[int, dict[str, dict]] = {0: {}, 137: {}}
     per_layer_profile: dict[str, dict] = {}
@@ -551,13 +553,17 @@ def _write_kv_shift_predictors(out, per_row_score, cols_by_row, ROWS, column_app
     Score is row-constant -> broadcast to every (row|col) cell in the scoring
     universe. seed-0 is the lead; seed-137 carried in ``per_seed`` for robustness.
     """
+    # gauge_normalization_power -> the divisor power on (alpha/sqrt(r)). 0 = raw,
+    # no normalization; None -> JSON null = descriptive non-gauge-normalized variant;
+    # 2 = the squared-norm gauge correction. float("nan") is NOT used — it serializes
+    # to the non-standard `NaN` JSON literal that strict parsers reject (CBL3).
     variants = [
         ("prefix_kv_shift", "all_l_mean", 0, "raw all-L mean MSRD (TReFT eq.)"),
         (
             "prefix_kv_shift_L9",
             "l9",
-            float("nan"),
-            "layer-9 MSRD (paper's localized carrier; descriptive)",
+            None,
+            "layer-9 MSRD (paper's localized carrier; descriptive, no gauge normalization)",
         ),
         (
             "prefix_kv_shift_gaugenorm_sq",
@@ -1128,13 +1134,19 @@ def _persist_raw(raw_dir, row, column_id, label, probes, completions) -> None:
 # --------------------------------------------------------------------------- #
 
 
-def rsLoRA_parity_check(base, tokenizer, *, device: str = "cuda:0") -> None:
+def rsLoRA_parity_check(base, tokenizer, *, device: str = "cuda:0"):
     """Reproduce #545's bad_medical diagonal rate within judge noise (#601 gate).
 
     Loads the bad_medical adapter, generates on the 1-row bad_medical diagonal
     probe under qwen_default_system, judges with #545's advice-misalignment judge,
     and asserts the rate reproduces #545's diagonal_level within tolerance. Halts
     loudly on mismatch (the rsLoRA application-scaling parity check).
+
+    Returns the LoRA-free base. ``attach_adapter`` injects the bad_medical LoRA
+    into ``base`` IN PLACE, and ``del model`` does NOT strip those modules, so the
+    Phase 1 row loop would otherwise read its first ``disable_adapter()`` donor KV
+    off a base silently contaminated by bad_medical (CBL1, round-2 reconciler).
+    Caller MUST re-bind: ``base = rsLoRA_parity_check(base, ...)``.
     """
     from explore_persona_space.experiments.behavior_testbed_545.columns import COLUMNS
     from explore_persona_space.experiments.behavior_testbed_545.eval_battery import (
@@ -1174,9 +1186,18 @@ def rsLoRA_parity_check(base, tokenizer, *, device: str = "cuda:0") -> None:
         delta,
         col.max_new_tokens,
     )
-    del model
     import torch
 
+    # Strip the in-place bad_medical LoRA before returning, or the Phase 1 row loop
+    # reads its first donor base KV off a contaminated base (CBL1). detach_adapter
+    # asserts the returned base is LoRA-free.
+    cleaned_base = detach_adapter(model, base)
+    n_lora = sum(1 for n, _ in cleaned_base.named_parameters() if "lora" in n.lower())
+    assert n_lora == 0, (
+        f"rsLoRA_parity_check: returned base still carries {n_lora} LoRA params — "
+        "parity probe left the base contaminated (CBL1)."
+    )
+    del model
     torch.cuda.empty_cache()
     # The 8-probe spot-check has a wide CI vs #545's full diagonal; use a generous
     # band (the gate catches a NO-OP adapter / wrong gauge, which reads ~base 0.0).
@@ -1186,6 +1207,7 @@ def rsLoRA_parity_check(base, tokenizer, *, device: str = "cuda:0") -> None:
             f"#545's {expected_rate:.3f} — the adapter is not applying (rsLoRA/no-op). "
             "(failure_class: code)"
         )
+    return cleaned_base
 
 
 # --------------------------------------------------------------------------- #
