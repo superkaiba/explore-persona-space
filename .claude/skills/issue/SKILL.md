@@ -4792,7 +4792,11 @@ steps 4 + 6-9 are the LATE JOIN executed here):
 4. **No-secrets guard** (pre-publish, mandatory). Before publishing
    the gist, scan the generated doc for obvious secret patterns —
    `sk-`, `hf_`, `wandb`-key shapes, `RUNPOD`, `ANTHROPIC_API_KEY`, raw
-   `.env` content. The methodology-writer reads only the
+   `.env` content — with the canonical scanner:
+   `uv run python scripts/check_no_secret_shaped_strings.py docs/methodology/issue_<N>.md`
+   (exit 0 = clean, exit 1 = hit). Do NOT use `redact_for_gist.py` for
+   this — it has only `--in`/`--out`/`--in-place`, no `--check` flag.
+   The methodology-writer reads only the
    already-public Reproducibility data + the repo, so this scan should
    never trip in normal operation; it is a safety net. On any hit,
    ABORT the gist publish, keep the committed repo doc, and pass the
