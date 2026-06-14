@@ -12,6 +12,9 @@ goal: Determine whether per-(source, behavior) install resistance is overcome by
   by the source's base propensity for the behavior or by source-behavior identity/alignment
   conflict — via matched-recipe dose curves on resistant vs non-resistant source contexts
   within one non-saturated behavior plus a matched-dose identity-conflict pairing.
+relates_to:
+- leak-predictor
+- ctx-behavior
 ---
 ## Goal
 
