@@ -3895,8 +3895,8 @@
       "goal": "Determine whether the default assistant context's shielding from a marker implant is produced by suppression reaching it from assistant-cluster-proximal negative personas or by its cluster position alone, by swapping the no-default mix's far replacement negative (journalist) for an assistant-cluster-proximal negative and reading the never-trained default context's and assistant persona's centered implant-normalized marker log-prob shifts.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/632",
-      "status": "interpreting",
+      "path": "tasks/reviewing/632",
+      "status": "reviewing",
       "title": "Swapping a far negative for one assistant-cluster-proximal negative leaves the never-trained default unmoved \u2014 but a shared trained negative (dictator) misses its planned \u00b10.066 stability band, so the positional account is favored, not established (MODERATE confidence)"
     },
     "633": {
