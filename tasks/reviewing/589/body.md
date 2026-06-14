@@ -11,6 +11,8 @@ parent_id: 536
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_589.md](https://github.com/superkaiba/explore-persona-space/blob/c4e23dd8b60cc525c5c46490effa8dea0b213450/docs/methodology/issue_589.md) · [gist](https://gist.github.com/superkaiba/4bb2ff3023c4574ae392ecb8258a3850)
+
 ## Takeaways
 
 - Four clustered persona-distance calls, two estimators, two axes: **2 of 4 estimator-invariant, 1 swaps significance, 1 estimator-conflicted on the raw axis**.
@@ -153,6 +155,8 @@ Full per-cell table (18 data rows): [`sweep_results.csv`](https://github.com/sup
 - Reused set-size-by-distance interaction join from [#478](https://eps.superkaiba.com/tasks/478) (the parent's persisted #478 tidy): [`eval_results/issue_536/inputs/i478_tidy_69b34b94.csv`](https://github.com/superkaiba/explore-persona-space/blob/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/eval_results/issue_536/inputs/i478_tidy_69b34b94.csv) (2,800 rows) — fit: the gated `K × log(min_dist)` interaction join reproducing the parent's MixedLM point estimate before the cluster-robust swap is read.
 - Reused recompute machinery from [#536](https://eps.superkaiba.com/tasks/536) at commit `12853bca8`: [`scripts/issue536_recompute_driver.py`](https://github.com/superkaiba/explore-persona-space/blob/12853bca8/scripts/issue536_recompute_driver.py)'s `family_111bank` / `family_20bank` / `family_505` join builders + `cluster_ols` helper + [`scripts/issue536_mixedlm_refit.py`](https://github.com/superkaiba/explore-persona-space/blob/12853bca8/scripts/issue536_mixedlm_refit.py)'s `fit_published_mixedlm` (the #478-cell spec, verbatim) — fit: the sweep imports these to reproduce each row's persisted join + the parent's 1e-4 matrix / statistic-level gates. The 111-bank distance matrix [`eval_results/single_token_100_persona/cosine_distance_matrix_layer20.json`](https://github.com/superkaiba/explore-persona-space/blob/45fe33f85/eval_results/single_token_100_persona/cosine_distance_matrix_layer20.json) must be restored from git `45fe33f85` (absent at HEAD) before the driver runs.
 
+- **Methodology reference:** [docs/methodology/issue_589.md](https://github.com/superkaiba/explore-persona-space/blob/c4e23dd8b60cc525c5c46490effa8dea0b213450/docs/methodology/issue_589.md) · [gist](https://gist.github.com/superkaiba/4bb2ff3023c4574ae392ecb8258a3850)
+
 **Compute:** CPU only, VM-side, deterministic, minutes. No pod, 0 GPU-hours.
 
 **Code:**
@@ -176,4 +180,5 @@ Full per-cell table (18 data rows): [`sweep_results.csv`](https://github.com/sup
 - Created 2026-06-11T05:57:27Z; run executed 2026-06-13 (16-cell sweep), with a 9a-ter free-analysis follow-up the same day adding the 2 #505 alternative-VC cells.
 - Follow-up to [#536](https://eps.superkaiba.com/tasks/536) — the persona-distance audit whose four clustered leakage-line calls this sweep re-fits under an alternative uncertainty estimator. The 9a-ter follow-up (`followup_label: issue589-505-altvc-refit`) re-fit the one singular read under a simpler admissible MixedLM spec.
 - Originating prompt: origin prompt not recorded
+
 
