@@ -22,7 +22,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** see [`docs/methodology/issue_632.md`](https://github.com/superkaiba/explore-persona-space/blob/527ba076e/docs/methodology/issue_632.md) for the methodology + hyperparameters reference (findings-blind).
+**Methodology:** [`docs/methodology/issue_632.md`](https://github.com/superkaiba/explore-persona-space/blob/527ba076e/docs/methodology/issue_632.md) · [gist](https://gist.github.com/superkaiba/25f36b405dc8f3d06abde81799c4f61d)
 
 ## Human TL;DR
 
@@ -210,6 +210,7 @@ The positive claim is bounded: *if there's a reach-from-cluster-neighbors mechan
 - WandB project `issue610_default_dose`, runs `issue632_c632_assistant_proximal_seed{42,137,219}`.
 - Figure source + sidecar provenance: [`figures/issue_632/`](https://github.com/superkaiba/explore-persona-space/tree/527ba076e/figures/issue_632) (proximal_swap_forest.{png,pdf,meta.json} + proximal_swap_panel_stability.{png,pdf,meta.json} + proximal_swap_raw.{png,pdf,meta.json}); plot script at [`scripts/issue632_plots.py`](https://github.com/superkaiba/explore-persona-space/blob/527ba076e/scripts/issue632_plots.py).
 - Reused comparator: the no-default arm trajectories `c610_mercenary_near_nodefault` (3 seeds), read identically on the 34-persona centering set. The reuse is recipe-identical (same Qwen-2.5-7B-Instruct base, marker-only loss, lr 5e-6, rsLoRA r=16/α=32, 63 steps); the only differences are the seed-set on each arm (independent) and the swapped panel slot — which IS the manipulation. Source: [#610](https://eps.superkaiba.com/tasks/610), eval JSONs at [`eval_results/issue_610/sweep/c610_mercenary_near_nodefault`](https://github.com/superkaiba/explore-persona-space/tree/527ba076e/eval_results/issue_610/sweep/c610_mercenary_near_nodefault). Fit: recipe match, measurement-regime fit (far-arm source ΔG `{10.02, 9.80, 8.65}` nat — inside the [5, 19] nat hard band), conditions present (qwen_default + assistant in `extra_eval_personas`, four-float capture confirmed).
+- **Methodology reference:** [`docs/methodology/issue_632.md`](https://github.com/superkaiba/explore-persona-space/blob/527ba076e/docs/methodology/issue_632.md) · [gist](https://gist.github.com/superkaiba/25f36b405dc8f3d06abde81799c4f61d)
 
 **Compute:** 1.17 GPU-h on 1× A100-80 (`a2-ultragpu-1g`, intent `lora-7b`); post-pivot from `a2-ultragpu-4g` × `ft-7b` due to GCP A100-80 quota (see `epm:strategy-pivot v1`). Plan budget was 22 instance-GPU-h on the original `ft-7b` × 4 plan; the post-pivot realized compute came in ~19× under budget. GCP project `eps-persona-gpu-jun2026`, zone `us-central1`, instance `eps-issue-632` (ephemeral, auto-terminated post-eval).
 
