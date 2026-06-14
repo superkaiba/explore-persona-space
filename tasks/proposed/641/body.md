@@ -7,10 +7,15 @@ created_at: '2026-06-14T18:20:50Z'
 has_clean_result: false
 parent_id: 638
 origin_prompt: Yes run phase 2 in the background with happy coder
+goal: Determine whether per-(source, behavior) install resistance is overcome by additional
+  training dose or plateaus, and whether residual resistance at matched dose is driven
+  by the source's base propensity for the behavior or by source-behavior identity/alignment
+  conflict — via matched-recipe dose curves on resistant vs non-resistant source contexts
+  within one non-saturated behavior plus a matched-dose identity-conflict pairing.
 ---
 ## Goal
 
-Determine whether per-(source, behavior) install resistance is overcome by additional training dose or plateaus, and whether residual resistance at MATCHED dose is driven by the source's base propensity for the behavior (hypothesis 1) or by source↔behavior identity/alignment conflict (hypothesis 2) — via matched-recipe dose curves on resistant vs non-resistant source contexts within one non-saturated behavior, plus a matched-dose identity-conflict pairing.
+Determine whether per-(source, behavior) install resistance is overcome by additional training dose or plateaus, and whether residual resistance at matched dose is driven by the source's base propensity for the behavior or by source-behavior identity/alignment conflict — via matched-recipe dose curves on resistant vs non-resistant source contexts within one non-saturated behavior plus a matched-dose identity-conflict pairing.
 
 ## Provenance
 
