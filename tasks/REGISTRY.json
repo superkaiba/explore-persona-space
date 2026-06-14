@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 636,
+  "highest_id": 637,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3926,6 +3926,13 @@
       "path": "tasks/proposed/636",
       "status": "proposed",
       "title": "Expand-vs-sharpen x reweight-vs-new-feature: base vs RL vs SFT/distilled Qwen-2.5-7B (extends Dedicated Feature Crosscoders)"
+    },
+    "637": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/637",
+      "status": "proposed",
+      "title": "Is leakage-transfer asymmetry low-rank (per-context source-breadth + receptivity), not pairwise interaction?"
     },
     "65": {
       "has_clean_result": true,
