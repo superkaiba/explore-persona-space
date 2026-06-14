@@ -1,6 +1,7 @@
 ---
-title: 'Prefix-carrier (Piggyback 2606.06667) as a B→B′ leakage predictor: does template-token
-  binding strength explain/predict which behaviors leak? (+tool-use behavior)'
+title: 'Prefix-carrier binding strength does not predict which behaviors leak in the
+  #545 B→B′ matrix; the only raw signal is a LoRA-scale artifact that vanishes under
+  gauge correction (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-11T07:43:23Z'
