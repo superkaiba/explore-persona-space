@@ -1,0 +1,46 @@
+{
+  "cell_slug": "c632_assistant_proximal",
+  "seed": 42,
+  "target": "mercenary",
+  "condition": "nodefault",
+  "panel": [
+    "programmer",
+    "bartender",
+    "french_person",
+    "dictator"
+  ],
+  "epochs": 1,
+  "realized_terminal_step": 63,
+  "trajectory_path": "eval_results/issue_610/assistant-proximal-swap/sweep/c632_assistant_proximal/seed_42/trajectory.json",
+  "band_trajectory_path": "eval_results/issue_610/assistant-proximal-swap/sweep/c632_assistant_proximal/seed_42/band_trajectory.json",
+  "train_jsonl": "data/issue_610/assistant_proximal/c632_assistant_proximal_seed42.jsonl",
+  "adapter_dir": "eval_results/issue_610/assistant-proximal-swap/sweep/c632_assistant_proximal/seed_42/adapter",
+  "checkpoint_index": {
+    "0.08": {
+      "step": 6,
+      "path": "eval_results/issue_610/assistant-proximal-swap/sweep/c632_assistant_proximal/seed_42/checkpoints/frac_0.08"
+    },
+    "0.16": {
+      "step": 11,
+      "path": "eval_results/issue_610/assistant-proximal-swap/sweep/c632_assistant_proximal/seed_42/checkpoints/frac_0.16"
+    },
+    "0.33": {
+      "step": 21,
+      "path": "eval_results/issue_610/assistant-proximal-swap/sweep/c632_assistant_proximal/seed_42/checkpoints/frac_0.33"
+    },
+    "0.50": {
+      "step": 32,
+      "path": "eval_results/issue_610/assistant-proximal-swap/sweep/c632_assistant_proximal/seed_42/checkpoints/frac_0.50"
+    },
+    "0.75": {
+      "step": 48,
+      "path": "eval_results/issue_610/assistant-proximal-swap/sweep/c632_assistant_proximal/seed_42/checkpoints/frac_0.75"
+    },
+    "1.00": {
+      "step": 63,
+      "path": "eval_results/issue_610/assistant-proximal-swap/sweep/c632_assistant_proximal/seed_42/adapter"
+    }
+  },
+  "final_band_delta_nats": 10.633537292480469,
+  "timestamp_utc": "2026-06-14T00:41:02.009217+00:00"
+}
