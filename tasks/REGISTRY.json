@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 639,
+  "highest_id": 640,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3947,6 +3947,14 @@
       "path": "tasks/proposed/639",
       "status": "proposed",
       "title": "Wire GCP janitor (audit_stale_gcp_vms) to a recurring cron"
+    },
+    "640": {
+      "goal": "Test whether the chat-template POSTFIX (not prefix) is the dominant off-distribution leakage carrier on Qwen-2.5-7B, and whether patching base postfix KV per-cell into the #545 leaky adapters reduces leakage as a model-specific intervention.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/640",
+      "status": "proposed",
+      "title": "Is postfix the Qwen-2.5 carrier, and does postfix-patching work as a per-cell leakage intervention?"
     },
     "65": {
       "has_clean_result": true,
