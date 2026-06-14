@@ -3911,7 +3911,7 @@
       "kind": "analysis",
       "path": "tasks/interpreting/634",
       "status": "interpreting",
-      "title": "Joint UMAP/PCA of behavior vectors with #594 context vectors \u2014 does behavior-vector geometry align with context geometry?"
+      "title": "275-role behavior vectors form their own region and do not sit near their context families beyond a shuffled-label null at any layer of Qwen-2.5-7B-Instruct (MODERATE confidence)"
     },
     "635": {
       "has_clean_result": false,
