@@ -44,7 +44,10 @@ trap on_exit EXIT
 
 # --- Now the real dispatch ---
 cd "${REPO_ROOT:-/workspace/explore-persona-space}"
-export TQDM_DISABLE=1
+# Do NOT set TQDM_DISABLE=1 — it triggers vLLM 0.11.0's _run_engine ZeroDivisionError
+# (pbar.format_dict["elapsed"] == 0 when tqdm is disabled). The dispatcher passes
+# use_tqdm=False to llm.generate() instead, which bypasses the buggy code path
+# at the vLLM API level (incident: #641 GCP attempt #4, 2026-06-14).
 DISPATCH="scripts/issue641_dose_curves.py"
 LADDER="50,100,150,250,375,560"
 

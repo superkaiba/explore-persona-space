@@ -274,7 +274,11 @@ def _vllm_sample(llm, prompts: list[str], max_tokens: int, *, temperature: float
     from vllm import SamplingParams
 
     params = SamplingParams(temperature=temperature, max_tokens=max_tokens, n=n)
-    outs = llm.generate(prompts, params)
+    # use_tqdm=False bypasses vLLM 0.11.0's _run_engine line 1610 ZeroDivisionError
+    # (pbar.format_dict["elapsed"] == 0 when tqdm is disabled). See incident at
+    # #641 GCP attempt #4 (2026-06-14): TQDM_DISABLE=1 triggered the bug;
+    # passing use_tqdm=False suppresses the progress bar at the vLLM API level.
+    outs = llm.generate(prompts, params, use_tqdm=False)
     return [[{"text": c.text, "finish_reason": c.finish_reason} for c in o.outputs] for o in outs]
 
 
