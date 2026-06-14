@@ -6081,6 +6081,42 @@ the worktree), and figure / `eval_results/issue_<N>/` commits land on
 work already on `main`; the value of the rebase is shared-infra fixes
 the branch carries forward, NOT the per-task artifacts.
 
+**New-shared-`src/`-infra guard (run FIRST, before the deliverables
+check).** The artifact-confirmed path — and the surgical additive
+checkout it degrades to — is structurally restricted to this task's own
+`tasks/` / `figures/` / `eval_results/` paths and CANNOT carry shared
+`src/` infra the branch introduced. So if this branch ADDED new shared
+modules under `src/explore_persona_space/`, the artifact-confirmed path
+would silently strand them on the branch — a downstream child that
+reuses the harness then breaks its import path on a clean `main`
+checkout (incident #595: parent #545 / grandparent #503 introduced
+`src/explore_persona_space/experiments/issue503/`, which the
+artifact-confirmed merge left on the branch; the child's eval battery
+imported it and crashed). Scan for it FIRST:
+
+```bash
+# Files this branch ADDED (status A) vs origin/main under shared src/.
+git -C "$WT" diff --name-only --diff-filter=A origin/main HEAD -- \
+  "src/explore_persona_space/" > /tmp/issue-<N>-new-src.txt
+```
+
+If `/tmp/issue-<N>-new-src.txt` is NON-EMPTY, this branch introduces NEW
+shared `src/` infra: the artifact-confirmed degrade is REFUSED. Do NOT
+fall through to the surgical additive checkout (it would strand the
+infra). Instead either (a) resolve the actual guard-3 condition so the
+SAFE full-rebase path runs (e.g. the parent `issue-<M>` branch this one
+forked off has since merged — re-run the guard-3 check; once
+`ON_MAINLINE=yes` and the content check is clean, `gh pr merge --rebase`
+carries the `src/` infra correctly), or (b) if the full rebase still
+cannot run, post `epm:merge-failed v1` with `{reason: "new shared src/
+infra cannot land via artifact-confirmed surgical checkout", new_src:
+[...]}`, surface ONE line in chat naming the branch + worktree path +
+the stranded `src/` paths for manual full-rebase resolution, and
+CONTINUE (the task still parks / completes; the merge retries
+idempotently on the next `/issue <N>`). NEVER surgical-checkout a branch
+that added shared `src/` — that is the exact #595 stranding this guard
+prevents.
+
 ```bash
 # Verify task deliverables resolve on origin/main.
 git -C "$REPO_ROOT" fetch origin main --quiet
