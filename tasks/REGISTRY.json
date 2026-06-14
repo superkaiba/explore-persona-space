@@ -3911,7 +3911,7 @@
       "kind": "analysis",
       "path": "tasks/interpreting/634",
       "status": "interpreting",
-      "title": "275-role behavior vectors form their own region and do not sit near their context families beyond a shuffled-label null at any layer of Qwen-2.5-7B-Instruct (MODERATE confidence)"
+      "title": "The 275-role behavior bank forms its own region, while the 26-role matched panel stays within the shuffled-label context-match null across Qwen-2.5-7B-Instruct layers (MODERATE confidence)"
     },
     "635": {
       "has_clean_result": false,
