@@ -450,6 +450,20 @@ alike — run the infra auto-dispatch pass:
    TRACKED in `holds` with a `predicate-<#N>-...` reason AT THE TIME it
    is deferred — never left as a bare un-held `proposed` task (which
    would sit untracked and silently never dispatch).
+3a. **NOT a valid predicate: "candidate touches a backend file an
+   experiment is live on."** Autonomous infra sessions develop in an
+   ISOLATED worktree and merge to `main` only at the end, and a live
+   experiment runs from its own `issue-<N>` worktree / provisioned VM —
+   it never reads the orchestrator's `main` mid-run. So holding an infra
+   task because it edits the GCP/SLURM backend that another task is
+   "live on" is a MANUFACTURED predicate (it wrongly held #630/#631,
+   2026-06-13). The ONLY legitimate concurrency constraint between two
+   ripe infra tasks is editing the SAME file (a merge collision) —
+   encode that as `predicate-<#otherinfra>-same-file`; dispatch
+   everything else at any confidence and let the agent deflect if its
+   bug turns out already-fixed (per the dispatch-at-any-confidence
+   directive — "defer for a future deliberate pass" is the banned
+   outcome).
 3b. **Auto-dispatch ripe tasks** — no user ask:
    ```bash
    uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto
