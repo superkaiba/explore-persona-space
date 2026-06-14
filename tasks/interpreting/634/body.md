@@ -116,7 +116,7 @@ Full frozen map + per-layer nearest-neighbor table: [`panelB_nn_table.json`](htt
 
 ### Generated
 
-n/a — no model generations. This is a geometry analysis: each role yields one fp32 direction vector per layer, not a completion. The 275-role behavior tensor (277 files: 275 per-role + mean + extraction manifest) is on HF: [issue634_behavior_geometry/analysis_tensors/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/23c036cdc56e344f9a58cb94665d6b3e01eb7656/issue634_behavior_geometry/analysis_tensors). The #594 context bank reused as the matching target: [issue594_context_geometry/analysis_tensors/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/23c036cdc56e344f9a58cb94665d6b3e01eb7656/issue594_context_geometry/analysis_tensors).
+n/a — no model generations. This is a geometry analysis: each role yields one fp32 direction vector per layer, not a completion. The 275-role behavior tensor (277 files: 275 per-role + mean + extraction manifest) is on HF: [issue634_behavior_geometry/analysis_tensors/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/23c036cdc56e344f9a58cb94665d6b3e01eb7656/issue634_behavior_geometry/analysis_tensors). The parent context bank reused as the matching target: [issue594_context_geometry/analysis_tensors/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/23c036cdc56e344f9a58cb94665d6b3e01eb7656/issue594_context_geometry/analysis_tensors).
 
 ## Reproducibility
 
