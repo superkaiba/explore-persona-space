@@ -10,7 +10,12 @@ builder:
   (``save_steps=25`` over ``max_steps=560``).
 - **Arm B (identity conflict, tests H1 vs H2):** ``kindergarten_teacher`` vs a
   base-harmful-advice-propensity-matched neutral persona at a fixed matched
-  dose, 2 seeds.
+  dose, 2 seeds. The teacher source accepts EITHER slug — ``kindergarten_teacher``
+  (the PERSONAS key used here / in the plan body) or ``sp_teacher_ho`` (the #537
+  registry cid) — both resolve to the same system prompt and are canonicalized to
+  the records key ``ARM_B_TEACHER_CID`` (= ``sp_teacher_ho``) via
+  :func:`~explore_persona_space.experiments.issue_641.data.canonicalize_source`,
+  so the Arm-B H1/H2 headline fires regardless of which slug the operator types.
 
 This package holds the genuinely-new code (plan §4.1): the EM-mix builder with
 the rule-mandated ``default`` 5th contrastive negative + the resolved-prompt /

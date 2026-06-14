@@ -24,16 +24,37 @@ Round-3 plan-adherence blockers (reconciler-persisted):
 - Blocker 3: ``bootstrap_dose_curve`` draws ``boot_seeds`` ONCE per replicate and
   threads it across every dose step (seeds = the replication unit, §6.3); a
   pure-seed replicate traces that seed's own curve at all doses.
+
+Round-4 blocker (reconciler-persisted, ``armb-teacher-source-alias-mismatch``):
+
+- The Arm-B teacher source has two slugs (``kindergarten_teacher`` — the PERSONAS
+  key / plan-body slug — and ``sp_teacher_ho`` — the #537 registry cid) that
+  resolve to the SAME system prompt. ``canonicalize_source`` normalizes both to
+  the records key ``ARM_B_TEACHER_CID`` (= ``sp_teacher_ho``) at every
+  records-keying boundary, so ``phase_aggregate``'s ``ARM_B_TEACHER_CID in
+  records`` gate fires (``armB_matched_dose_delta is not None``) regardless of
+  which slug the operator typed in ``--sources`` — closing the False-negative
+  that silently dropped the H1-vs-H2 headline.
 """
 
 from __future__ import annotations
 
+import argparse
+import importlib.util
+import json
+from pathlib import Path
+
 import numpy as np
+import pytest
 
 from explore_persona_space.experiments.i537_judging import (
     harmful_advice_rate_from_verdicts,
     judge_request_for_row,
     parse_verdict_binary,
+)
+from explore_persona_space.experiments.issue_641.data import (
+    ARM_B_TEACHER_CID,
+    canonicalize_source,
 )
 from explore_persona_space.experiments.issue_641.stats import (
     _trace_boot_seeds,
@@ -41,6 +62,10 @@ from explore_persona_space.experiments.issue_641.stats import (
     classify_h5,
     resolve_matched_dose,
 )
+
+# The dose-curve dispatcher is a script (not an installed module); load it by path
+# so the round-4 alias tests can drive the REAL phase_aggregate against fixtures.
+_DISPATCHER_PATH = Path(__file__).resolve().parents[1] / "scripts" / "issue641_dose_curves.py"
 
 # ── Blocker 5: classify_h5 sign direction ────────────────────────────────────
 
@@ -321,3 +346,98 @@ def test_bootstrap_dose_curve_per_seed_asymptotes_reflect_opposing_curves():
     psa = dc["per_seed_asymptote"]
     assert psa["42"] > 0.5
     assert psa["1042"] < 0.3
+
+
+# ── Round-4 Blocker: teacher-source alias canonicalization ────────────────────
+# (concern armb-teacher-source-alias-mismatch)
+
+
+def test_canonicalize_source_teacher_aliases_roundtrip():
+    """Both teacher slugs collapse to ARM_B_TEACHER_CID; every other source token
+    passes through unchanged. This is the primitive the records-keying boundaries
+    and the aggregate gate share."""
+    assert canonicalize_source("kindergarten_teacher") == ARM_B_TEACHER_CID
+    assert canonicalize_source("sp_teacher_ho") == ARM_B_TEACHER_CID
+    assert ARM_B_TEACHER_CID == "sp_teacher_ho"  # the canonical records key
+    # Non-teacher sources are untouched (Arm-A cids, neutral PERSONAS keys).
+    for other in ("icl_k2", "wc_short_advice", "sp_doctor", "sp_data_scientist", "comedian"):
+        assert canonicalize_source(other) == other
+
+
+def _load_dispatcher(eval_root: Path):
+    """Import the dose-curve dispatcher by path and point its module-global
+    EVAL_ROOT at an isolated tmp dir (the phase_aggregate fixture write/read root).
+    """
+    spec = importlib.util.spec_from_file_location("i641_dispatcher_undertest", _DISPATCHER_PATH)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    m.EVAL_ROOT = eval_root
+    return m
+
+
+def _write_armB_grid(m, teacher_slug: str, *, matched_dose: int = 375) -> None:
+    """Write a tiny production-shaped Arm-B grid (teacher under ``teacher_slug`` +
+    one matched-neutral source) at ``matched_dose``, both seeds. Uses the
+    dispatcher's own ``_write_cell_completions`` so the on-disk record schema is
+    byte-for-byte the production ``completions__*.jsonl`` schema (the ``"source"``
+    field is written RAW = ``teacher_slug``, which is exactly the failure-mode
+    state when the operator types the non-canonical slug)."""
+    for seed in (42, 1042):
+        m._write_cell_completions(teacher_slug, seed, matched_dose, rate=0.6)
+        m._write_cell_completions("sp_data_scientist", seed, matched_dose, rate=0.3)
+
+
+@pytest.mark.parametrize("teacher_slug", ["sp_teacher_ho", "kindergarten_teacher"])
+def test_phase_aggregate_armB_fires_under_both_teacher_slugs(tmp_path, teacher_slug):
+    """The Arm-B H1/H2 headline (``armB_matched_dose_delta``) must be non-None
+    whether the operator typed the canonical ``sp_teacher_ho`` OR the plan-body
+    ``kindergarten_teacher`` slug — the round-4 fix canonicalizes the teacher key
+    on the aggregate READ side, so cells written under EITHER slug satisfy the
+    ``ARM_B_TEACHER_CID in records`` gate."""
+    m = _load_dispatcher(tmp_path / "eval")
+    _write_armB_grid(m, teacher_slug, matched_dose=375)
+    # cli-override the matched dose to the step we wrote, so resolution is
+    # deterministic and the armB branch reads cells that exist.
+    args = argparse.Namespace(seeds=[42], matched_dose=375)
+    payload = m.phase_aggregate(args, smoke=True)
+    assert payload["armB_matched_dose_delta"] is not None, (
+        f"Arm-B headline silently dropped for teacher slug {teacher_slug!r}: "
+        f"armB_matched_dose_delta is None (the alias-mismatch failure mode)."
+    )
+    armB = payload["armB_matched_dose_delta"]
+    assert armB["matched_dose"] == 375, armB
+    assert armB["neutral_source"] == "sp_data_scientist", armB
+    assert "delta_L" in armB and "h1_h2_verdict" in armB, armB
+
+
+def test_phase_aggregate_records_keyed_under_noncanonical_slug_satisfy_gate(tmp_path):
+    """The explicit failure-mode the reconciler caught: per-cell records persisted
+    with ``"source": "kindergarten_teacher"`` (the non-canonical slug) on disk must
+    STILL satisfy the ``ARM_B_TEACHER_CID in records`` gate after load. Proves the
+    canonicalization is applied on the READ side (``_load_cell_records``), not only
+    at write time — so even legacy cells written before the fix are rescued."""
+    m = _load_dispatcher(tmp_path / "eval")
+    _write_armB_grid(m, "kindergarten_teacher", matched_dose=375)
+
+    # The on-disk record really IS keyed under the non-canonical slug (the
+    # failure-mode precondition) — verify before asserting the load rescues it.
+    cell = (
+        m.EVAL_ROOT
+        / "dose_curves"
+        / "kindergarten_teacher_seed42_step375"
+        / "completions__kindergarten_teacher__seed42__step375.jsonl"
+    )
+    first = json.loads(cell.read_text().splitlines()[0])
+    assert first["source"] == "kindergarten_teacher", first  # raw, non-canonical on disk
+
+    # _load_cell_records canonicalizes on read -> the teacher collapses onto the
+    # canonical key, so the gate sees it.
+    records = m._load_cell_records()
+    assert "kindergarten_teacher" not in records, (
+        "the non-canonical slug must NOT survive as its own records key"
+    )
+    assert ARM_B_TEACHER_CID in records, (
+        "records keyed under the non-canonical slug must collapse onto "
+        f"ARM_B_TEACHER_CID ({ARM_B_TEACHER_CID}) after canonicalizing load"
+    )
+    assert 375 in records[ARM_B_TEACHER_CID]

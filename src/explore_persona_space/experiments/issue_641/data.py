@@ -58,9 +58,44 @@ ARM_A_SOURCE_CIDS: tuple[str, ...] = (*ARM_A_RESISTANT_CIDS, *ARM_A_NONRESISTANT
 
 # ── Plan §4.5 / §5 — Arm B identity-conflict source (teacher) + the matched
 #    neutral candidate pool. The matched neutral is selected post-P0; the
-#    teacher's registry cid is ``sp_teacher_ho`` (resolves to
-#    PERSONAS["kindergarten_teacher"]). ─────────────────────────────────────────
-ARM_B_TEACHER_CID = "sp_teacher_ho"  # PERSONAS["kindergarten_teacher"]
+#    teacher's CANONICAL records key is ``sp_teacher_ho`` (the #537 registry cid,
+#    which resolves to PERSONAS["kindergarten_teacher"]). ────────────────────────
+ARM_B_TEACHER_CID = "sp_teacher_ho"  # canonical key; PERSONAS["kindergarten_teacher"]
+
+# ── Teacher-source alias canonicalization (round-4 fix) ────────────────────────
+# Two slugs name the SAME Arm-B teacher source and resolve to the IDENTICAL
+# system prompt (verified: i537_contexts.py defines ``sp_teacher_ho`` with
+# ``system_prompt = PERSONAS["kindergarten_teacher"]``):
+#   - ``sp_teacher_ho``        — the #537 registry cid (the canonical records key).
+#   - ``kindergarten_teacher`` — the PERSONAS key (the plan body / package docstring
+#                                slug); ``_resolve_source_ctx`` routes it via the
+#                                ``cid in PERSONAS`` branch with NO crash.
+# If the operator launches ``--sources kindergarten_teacher,<neutral>`` (matching
+# the plan body), records would otherwise key under ``kindergarten_teacher`` while
+# ``phase_aggregate`` gates the Arm-B H1/H2 headline on ``ARM_B_TEACHER_CID in
+# records`` (= ``sp_teacher_ho``) — a False-negative that silently drops the
+# headline (``armB_matched_dose_delta = None``, no error). Canonicalizing the
+# teacher token to ``ARM_B_TEACHER_CID`` at EVERY records-keying boundary
+# (P0 ``per_context``, P3 per-completion ``source``) makes the gate fire
+# regardless of which slug the operator types — defensive in BOTH directions.
+TEACHER_ALIAS_MAP: dict[str, str] = {
+    "sp_teacher_ho": ARM_B_TEACHER_CID,
+    "kindergarten_teacher": ARM_B_TEACHER_CID,
+}
+
+
+def canonicalize_source(token: str) -> str:
+    """Map any recognized teacher-source alias to the canonical records key.
+
+    The two teacher slugs (``sp_teacher_ho`` registry cid, ``kindergarten_teacher``
+    PERSONAS key) resolve to the same system prompt and name the same Arm-B source;
+    both normalize to :data:`ARM_B_TEACHER_CID` so per-cell records always key
+    under the slug ``phase_aggregate`` gates on. Every other source token (Arm-A
+    cids, neutral PERSONAS keys) passes through unchanged.
+    """
+    return TEACHER_ALIAS_MAP.get(token, token)
+
+
 # Narrow candidate pool (PERSONAS keys, all neutral-to-harmful-advice, none
 # caregiving). The widened pool (§4.5) is "any non-caregiving persona in
 # PERSONAS whose resolved-prompt hash + canonical id are absent from the
