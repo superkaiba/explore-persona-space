@@ -1,0 +1,18 @@
+{
+  "jsonl": "data/issue_610/assistant_proximal/c632_assistant_proximal_seed42.jsonl",
+  "realized_panel": [
+    "bartender",
+    "dictator",
+    "french_person",
+    "programmer"
+  ],
+  "n_positive": 200,
+  "neg_counts": {
+    "french_person": 200,
+    "bartender": 200,
+    "dictator": 200,
+    "programmer": 200
+  },
+  "n_rows": 1000,
+  "verdict": "pass"
+}
