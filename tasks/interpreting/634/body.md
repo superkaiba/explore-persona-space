@@ -19,7 +19,7 @@ origin_prompt: 'can you run this in the background: UMAP/PCA of diverse context 
 - Behavior vectors do not sit near matching context: match rate peaks at **9 of 26 roles (0.346), layer 13**, inside the shuffled-label null (0.385, p = 0.28; k=2/3/4 also null).
 - **99.8% of behavior vectors have only other behaviors as their 4 nearest neighbors**, so behavior directions occupy their own region of the joint space — the separation behind the null.
 - The two vector sets pass the planned scale/variance gate at all 28 layers (variance ratio ≤ 1.55, median-norm ratio ≤ 1.22) — ruling out a gross scale mismatch only.
-- k-NN family purity over the 27 labeled behaviors peaks **0.815 at layer 14** (null 0.444, p = 0.001 at all 28 layers): coherent internal geometry on the labeled subset, not all 275 roles.
+- k-NN family purity over the 27 labeled behaviors peaks **0.815 at layer 14** (null 0.444, p = 0.001 at all 28 layers) — internal geometry on the labeled subset, not all 275.
 - Scope is single-seed and panel-level: matched panel 26 of 275 roles (single seed, K=40 questions/role), labeled purity 27 of 275, not the planned 275-role denominator.
 
 ## What I ran
@@ -39,7 +39,7 @@ For each of the 26 matched-panel roles, the matched-family test asks whether its
 
 > **Figure.** *The observed match rate never leaves the null band.* Blue = matched-family rate over 26 panel-B roles; grey = shuffled-label null (mean to 95th pct), B=1000; red line at the max-rate layer 13. The peak (0.346) sits just inside the band top (0.385); p = 0.28. The observed rate sits BELOW the null mean on 15 of 28 layers (anti-enriched, esp. late layers 21-27) — the null is not just "inside the band," it trends below shuffled-label baseline across much of depth.
 
-The planned floor was met (26 roles, 5 families, ≥2 each), so on this panel/seed (single seed, K=40 questions/role) it is an adjudicated null, not an underpowered one. The context-only nearest neighbor is non-uniform, though: across 26 roles × 28 layers it lands on `format` (25%), `rephrase` (21%), `persona` (20%) far more than the others, so the null reads as "behaviors converge on a few dominant context families," not "behaviors point nowhere." Relative to the raw match rate (0.346 vs null 0.385), the residualized control (behavior-cloud PC removed, own residualized null) is more null still (0.192 vs null 0.231, p = 0.70). A soft-k-NN sensitivity re-run stays null across k=2/3/4 criteria (p = 0.69/0.65/0.78; `figures/issue_634/h1_soft_knn_sensitivity.png`). The read on this panel/seed is "indistinguishable from null given the variance," not "no relationship on all 275 roles."
+The planned floor was met (26 roles, 5 families, ≥2 each), so on this panel/seed (single seed, K=40 questions/role) it is an adjudicated null, not an underpowered one. The context-only nearest neighbor is non-uniform, though: it lands on `format` (25%), `rephrase` (21%), `persona` (20%) far more than the others, so the null reads as "behaviors converge on a few dominant context families," not "behaviors point nowhere." Relative to the raw match rate (0.346 vs null 0.385), the residualized control (behavior-cloud PC removed) is more null still (0.192 vs null 0.231, p = 0.70). A soft-k-NN re-run stays null across k=2/3/4 (p = 0.69/0.65/0.78; `figures/issue_634/h1_soft_knn_sensitivity.png`). The read is "indistinguishable from null given the variance," not "no relationship on all 275 roles."
 
 ### Behaviors form their own region, disjoint from context families (99.8% own-region)
 
