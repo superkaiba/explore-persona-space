@@ -1,7 +1,8 @@
 ---
-title: Swapping a far negative for an assistant-cluster-proximal one doesn't move
-  the never-trained default — its shielding is positional, not borrowed from neighbors
-  in the panel (MODERATE confidence)
+title: Swapping a far negative for one assistant-cluster-proximal negative leaves
+  the never-trained default unmoved — but a shared trained negative (dictator) misses
+  its pre-registered ±0.066 stability band, so the positional account is favored,
+  not established (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T22:46:15Z'
