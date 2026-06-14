@@ -1,6 +1,7 @@
 ---
-title: 'Prefix-binding strength clears the raw H1 bar but is a LoRA-scale artifact:
-  gauge-correcting collapses it to ρ≈0 on #545''s leakage matrix (MODERATE confidence)'
+title: 'Prefix-binding strength clears the raw correlation bar (ρ=+0.53) but is a
+  LoRA-scale artifact: gauge-correcting collapses it to ρ≈0 on the predecessor B→B′
+  leakage matrix (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-11T07:43:23Z'
