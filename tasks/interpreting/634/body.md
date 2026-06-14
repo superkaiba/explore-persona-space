@@ -37,9 +37,12 @@ For each of the 26 matched-panel roles, the matched-family test asks whether its
 
 ![Matched-family nearest-context rate by decoder layer; the blue observed line rides inside the grey shuffled-label permutation-null band at every layer, peaking at 0.346 at layer 13.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/99da857eb8c8399a886c36fb97fa33c66ac65936/figures/issue_634/nn_rate_vs_layer.png)
 
-> **Figure.** *The observed match rate never leaves the null band.* Blue = matched-family rate over 26 panel-B roles; grey = shuffled-label null (mean to 95th pct), B=1000; red line at the max-rate layer 13. The peak (0.346) sits just inside the band top (0.385); p = 0.28. The observed rate sits BELOW the null mean on 15 of 28 layers (anti-enriched, esp. late layers 21-27) — the null is not just "inside the band," it trends below shuffled-label baseline across much of depth.
+> **Figure.** *The observed match rate never leaves the null band.* Blue = matched-family rate over 26 matched-panel roles; grey = shuffled-label null (mean to 95th pct), B=1000; red line at the max-rate layer 13. The peak (0.346) sits just inside the band top (0.385); p = 0.28. The observed rate sits BELOW the null mean on 15 of 28 layers (anti-enriched, esp. late layers 21-27) — the null is not just "inside the band," it trends below shuffled-label baseline across much of depth.
 
-The planned floor was met (26 roles, 5 families, ≥2 each), so on this panel/seed (single seed, K=40 questions/role) it is an adjudicated null, not an underpowered one. The context-only nearest neighbor is non-uniform, though: it lands on `format` (25%), `rephrase` (21%), `persona` (20%) far more than the others, so the null reads as "behaviors converge on a few dominant context families," not "behaviors point nowhere." Relative to the raw match rate (0.346 vs null 0.385), the residualized control (behavior-cloud PC removed) is more null still (0.192 vs null 0.231, p = 0.70). A soft-k-NN re-run stays null across k=2/3/4 (p = 0.69/0.65/0.78; `figures/issue_634/h1_soft_knn_sensitivity.png`). The read is "indistinguishable from null given the variance," not "no relationship on all 275 roles."
+- The planned floor was met (26 roles, 5 families, ≥2 each), so on this panel/seed (single seed, K=40 questions/role) it is an adjudicated null, not an underpowered one.
+- The context-only nearest neighbor is non-uniform: it lands on `format` (25%), `rephrase` (21%), `persona` (20%) far more than the others, so the null reads as "behaviors converge on a few dominant context families," not "behaviors point nowhere."
+- The residualized control (behavior-cloud PC removed) is more null still than the raw match rate (0.192 vs null 0.231, p = 0.70, against the raw 0.346 vs null 0.385); a soft-k-NN re-run stays null across k=2/3/4 (p = 0.69/0.65/0.78; `figures/issue_634/h1_soft_knn_sensitivity.png`).
+- The read is "indistinguishable from null given the variance," not "no relationship on all 275 roles."
 
 ### Behaviors form their own region, disjoint from context families (99.8% own-region)
 
@@ -53,13 +56,16 @@ At the match-rate best layer (13), 99.8% of behavior vectors have all 4 of their
 
 ### Behaviors cluster by their own axis (purity 0.815 over 27 of 275 roles)
 
-Given the own-region separation, do the 27 labeled Panel-B behaviors have *any* coherent internal structure? Labeled k-NN family purity tests whether a behavior's neighbors share its role-type.
+Given the own-region separation, do the 27 labeled-subset behaviors have *any* coherent internal structure? Labeled k-NN family purity tests whether a behavior's neighbors share its role-type.
 
-![Panel-B-labeled k-NN family purity by layer; the green observed line sits at 0.70-0.82, far above the grey null band (~0.20-0.33) at every layer, peaking 0.815 at layer 14.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/99da857eb8c8399a886c36fb97fa33c66ac65936/figures/issue_634/panelB_labeled_purity_vs_layer.png)
+![Labeled-subset k-NN family purity by layer; the green observed line sits at 0.70-0.82, far above the grey null band (~0.20-0.33) at every layer, peaking 0.815 at layer 14.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/99da857eb8c8399a886c36fb97fa33c66ac65936/figures/issue_634/panelB_labeled_purity_vs_layer.png)
 
 > **Figure.** *Behaviors cluster strongly by their own axis.* Green = labeled purity (k=4) over 27 of 275 roles; grey = permutation null (mean to 95th pct). Peak 0.815 at layer 14 vs null 95th pct 0.444; p = 0.001. The figure title flags the 27-of-275 denominator.
 
-The positive holds, but on 27 of 275 roles, not the planned 275-role purity. No 275-role labeling source exists, so the denominator is the labeled subset (every mention is scoped to those 27). The signal is also not a single peak: purity clears the permutation floor (p = 0.001) at all 28 layers, stronger than a one-layer spike. Whole-depth clearance has a second reading, though: a labeling or selection artifact over the 27 most-separable roles is not ruled out from this subset alone. Behaviors are differentiated by axis; they just do not align that structure with the context families.
+- The positive holds, but on 27 of 275 roles, not the planned 275-role purity. No 275-role labeling source exists, so the denominator is the labeled subset (every mention is scoped to those 27).
+- The signal is not a single peak: purity clears the permutation floor (p = 0.001) at all 28 layers, stronger than a one-layer spike.
+- Whole-depth clearance has a second reading, though: a labeling or selection artifact over the 27 most-separable roles is not ruled out from this subset alone.
+- Behaviors are differentiated by axis; they just do not align that structure with the context families.
 
 ### The null is not a gross scale mismatch — the scale/variance gate passes at all 28 layers
 
@@ -94,7 +100,7 @@ The behavior bank is 275 assistant-axis roles (5 house system prompts each), rea
 The complete frozen role-to-context-family map for the matched panel (not a sample); the machine-readable version is linked below.
 
 <details open>
-<summary>All 26 panel-B roles and their frozen context families (complete map, of 275 total roles)</summary>
+<summary>All 26 matched-panel roles and their frozen context families (complete map, of 275 total roles)</summary>
 
 | Family | Roles |
 |---|---|
