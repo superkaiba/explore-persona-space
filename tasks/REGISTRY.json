@@ -3596,7 +3596,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/595",
       "status": "interpreting",
-      "title": "Prefix-carrier binding strength does not predict which behaviors leak in the #545 B\u2192B\u2032 matrix; the only raw signal is a LoRA-scale artifact that vanishes under gauge correction (MODERATE confidence)"
+      "title": "Prefix-binding strength clears the raw H1 bar but is a LoRA-scale artifact: gauge-correcting collapses it to \u03c1\u22480 on #545's leakage matrix (MODERATE confidence)"
     },
     "596": {
       "has_clean_result": false,
