@@ -358,11 +358,23 @@ def _finalize_phase(
     if not persist_handled and not upload_fenced:
         adapter_uploaded = _maybe_upload_adapter_default(adapter_dir)
 
+    # #641 dose-ladder: the intermediate `checkpoint-<step>/` dirs live INSIDE
+    # adapter_dir, so the reap below would destroy the dose ladder before the
+    # driver can eval each checkpoint. When EPM_KEEP_ADAPTER_DIR=1 the
+    # orchestrator OWNS the adapter dir (and its checkpoints) and reaps it
+    # after per-checkpoint eval — skip the reap here. No-op for every other run.
+    keep_adapter_dir = os.environ.get("EPM_KEEP_ADAPTER_DIR") == "1"
     # Reap the local adapter only when a durable copy exists (verified HF
     # upload via persist or the default upload) or an orchestrator explicitly
     # owns the upload (fence). Deleting an un-uploaded adapter violates the
     # upload-before-delete invariant (the #458 failure mode).
-    if adapter_uploaded or upload_fenced:
+    if keep_adapter_dir:
+        logger.info(
+            "EPM_KEEP_ADAPTER_DIR=1: keeping local adapter dir %s (orchestrator "
+            "owns per-checkpoint eval + reap).",
+            adapter_dir,
+        )
+    elif adapter_uploaded or upload_fenced:
         shutil.rmtree(str(adapter_dir), ignore_errors=True)
     else:
         logger.warning(
@@ -905,6 +917,12 @@ def train_phase(
         bf16=training.bf16,
         logging_steps=getattr(training, "logging_steps", 10),
         save_strategy=getattr(training, "save_strategy", "epoch"),
+        # #641 dose-ladder: thread save_steps so `+training.save_strategy=steps
+        # +training.save_steps=25` emits intermediate adapter checkpoints at the
+        # ladder points (HF defaults save_steps=500, which at max_steps=560 saves
+        # only at 500+final, not the ladder). Default 500 preserves prior
+        # behaviour for every non-dose-ladder run. Plan #641 §4.1.
+        save_steps=getattr(training, "save_steps", 500),
         save_total_limit=getattr(training, "save_total_limit", 2),
         seed=seed,
         report_to="wandb" if wandb_run_name else "none",

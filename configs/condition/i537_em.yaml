@@ -1,0 +1,16 @@
+# Issue #537 — EM rows (contrastive + non-contrastive mini-arm) via the
+# Hydra turner_em trainer path (plan v6 §4.1: train_lora() cannot express the
+# linear schedule / max_steps / warmup_steps / adamw_8bit, so EM cells run
+# `scripts/train.py condition=i537_em training=turner_em lora=turner_em
+#  +training.max_steps=375 seed=42 +gpu_id=<n>
+#  condition.name=i537_em_<cid> condition.stages.0.dataset=<cell jsonl>`).
+# The dataset value below is a placeholder ALWAYS overridden per cell by
+# scripts/i537_dispatch.py; the P2 diagonal smoke asserts the resolved
+# TrainingArguments match configs/training/turner_em.yaml (plan A21).
+name: i537_em
+condition_id: 537001
+stages:
+  - name: sft_em
+    type: sft
+    dataset: data/issue_537/train/em/OVERRIDE_ME.jsonl
+seeds: [42]
