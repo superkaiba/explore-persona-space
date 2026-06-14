@@ -1527,6 +1527,61 @@ class GcloudRunResult:
 GcloudRunner = Callable[[Sequence[str]], GcloudRunResult]
 
 
+#: Terminal ``eps/phase`` guest-attribute values. A RUNNING VM publishing
+#: one of these is a WEDGED ZOMBIE — the startup-script workload finished
+#: (cleanly or with a failure) but the instance never auto-deleted
+#: (``--instance-termination-action=DELETE`` + ``--max-run-duration`` did
+#: not fire, observed for the smoke shape on issue 634, 2026-06-13). Such an
+#: instance must NOT be reconnected-to: the reconnect path deliberately
+#: SKIPS workload re-dispatch (it is built for catching a still-running
+#: workload before re-provisioning), so reconnecting to a done/failed VM
+#: latches the run onto a dead workload that never re-launches.
+_TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
+
+
+def _read_guest_phase(*, config: GcpConfig, name: str, zone: str, runner: GcloudRunner) -> str:
+    """Read the ``eps/phase`` guest attribute for ``name``; "" if unwritten.
+
+    Module-level sibling of :meth:`GcpBackend._guest_phase` (which delegates
+    here) so :func:`reconnect_or_none` — a pre-handle, module-level function —
+    can probe the workload phase without a backend instance. Two failure
+    classes are deliberately distinguished, mirroring the poll-side contract
+    (round-2 Codex Major, task #535 — pre-fix, EVERY nonzero rc / bad-JSON
+    read returned "" and was indistinguishable from "phase not written yet"):
+
+    * EXPECTED not-written-yet — gcloud exits nonzero with a 404 / "not
+      found" stderr (the attribute does not exist until the startup script's
+      first ``_eps_phase`` write). Returns ``""``.
+    * Probe failure — any OTHER nonzero rc (expired auth, permission denied,
+      transport) or unparseable JSON from an rc=0 call. Raises
+      :class:`GcpProbeError` ("couldn't ask" must never read as "not done
+      yet"); the caller translates it into its own typed handling.
+    """
+    argv = render_guest_attributes_argv(config=config, name=name, zone=zone)
+    result = runner(argv)
+    if result.returncode != 0:
+        stderr_low = (result.stderr or "").lower()
+        if "not found" in stderr_low or "404" in stderr_low:
+            return ""  # attribute not written yet — legitimate pre-phase state
+        raise GcpProbeError(
+            f"GCP guest-attribute probe failed for {name}: "
+            f"rc={result.returncode} stderr={result.stderr[:500]!r} — workload "
+            "phase UNKNOWN, refusing to read a probe failure as still-running"
+        )
+    try:
+        payload = json.loads(result.stdout) if result.stdout.strip() else []
+    except json.JSONDecodeError as exc:
+        raise GcpProbeError(
+            f"GCP guest-attribute probe returned unparseable JSON for "
+            f"{name}: {exc} — workload phase UNKNOWN"
+        ) from exc
+    # gcloud returns a list of {namespace, key, value} dicts.
+    for item in payload if isinstance(payload, list) else []:
+        if item.get("key") == "phase":
+            return str(item.get("value") or "").strip()
+    return ""
+
+
 def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudRunResult:
     """Default runner: shell out to ``gcloud`` via :mod:`subprocess`.
 
@@ -1613,6 +1668,35 @@ def reconnect_or_none(
         zone_url = inst.get("zone") or ""
         # The zone field is a URL; take the last path segment.
         zone = zone_url.rsplit("/", 1)[-1] if zone_url else config.primary_zone
+        # A RUNNING instance is necessary-but-NOT-sufficient for "workload
+        # alive": a RUNNING VM that already published a TERMINAL eps/phase
+        # (``done`` / ``failed``) is a wedged zombie — the startup-script
+        # workload finished but the instance never auto-deleted. Reconnecting
+        # to it is a bug: the reconnect path deliberately skips workload
+        # re-dispatch (it exists to catch a STILL-RUNNING workload before
+        # re-provisioning), so a done/failed VM would latch the run onto a
+        # dead workload that never re-launches (incident #634, 2026-06-13:
+        # the option-C smoke published phase=done, the VM never deleted, and
+        # the full-run dispatch reconnected to it — the 275-role workload
+        # never started). Route such a zombie to delete-and-reprovision
+        # (return None) instead. A booting / mid-workload RUNNING VM (phase
+        # ``startup`` / ``workload`` / not-yet-written → "") stays
+        # reconnect-eligible — that is the legitimate in-flight case. A
+        # guest-attribute PROBE FAILURE re-raises GcpProbeError (the same
+        # "couldn't ask" ≠ "no live instance" discipline that governs the
+        # list probe above): a credit-spending reconnect must never assume a
+        # zombie OR a live workload when the phase state is UNKNOWN.
+        if status.upper() == "RUNNING":
+            phase = _read_guest_phase(config=config, name=name, zone=zone, runner=runner)
+            if phase in _TERMINAL_GUEST_PHASES:
+                logger.warning(
+                    "GCP reconnect: %s is RUNNING but eps/phase=%s — treating as a "
+                    "wedged zombie (completed workload, VM not auto-deleted); routing "
+                    "to delete-and-reprovision instead of reconnecting.",
+                    name,
+                    phase,
+                )
+                return None
         instance_id = str(inst.get("id") or "")
         # Recover the original attempt_id from the instance's labels (set
         # by ``_format_labels`` at create time as ``eps-attempt=<id>``).
@@ -2454,30 +2538,11 @@ class GcpBackend(ComputeBackend):
           "couldn't ask" must never read as "not done yet"); ``poll()``
           translates it into a typed stalled tick.
         """
-        config = self._config
-        argv = render_guest_attributes_argv(config=config, name=handle.pod_name, zone=zone)
-        result = self._run(argv)
-        if result.returncode != 0:
-            stderr_low = (result.stderr or "").lower()
-            if "not found" in stderr_low or "404" in stderr_low:
-                return ""  # attribute not written yet — legitimate pre-phase state
-            raise GcpProbeError(
-                f"GCP guest-attribute probe failed for {handle.pod_name}: "
-                f"rc={result.returncode} stderr={result.stderr[:500]!r} — workload "
-                "phase UNKNOWN, refusing to read a probe failure as still-running"
-            )
-        try:
-            payload = json.loads(result.stdout) if result.stdout.strip() else []
-        except json.JSONDecodeError as exc:
-            raise GcpProbeError(
-                f"GCP guest-attribute probe returned unparseable JSON for "
-                f"{handle.pod_name}: {exc} — workload phase UNKNOWN"
-            ) from exc
-        # gcloud returns a list of {namespace, key, value} dicts.
-        for item in payload if isinstance(payload, list) else []:
-            if item.get("key") == "phase":
-                return str(item.get("value") or "").strip()
-        return ""
+        # Delegate to the module-level reader (shared with the pre-handle
+        # reconnect probe) so the probe-typing contract has ONE definition.
+        return _read_guest_phase(
+            config=self._config, name=handle.pod_name, zone=zone, runner=self._run
+        )
 
     # Log-tail trailer delimiters for the combined drain+tail SSH command.
     # Namespaced (``EPS_``) so a stray ``LOGTAIL`` substring in workload

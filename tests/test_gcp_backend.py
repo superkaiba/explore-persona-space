@@ -774,6 +774,93 @@ def test_reconnect_bad_json_raises_probe_error() -> None:
         reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
 
 
+def _running_instance_payload() -> str:
+    """A list payload for a single RUNNING ``eps-issue-137`` instance."""
+    return json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "9988776655",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+            }
+        ]
+    )
+
+
+def test_reconnect_skips_running_instance_with_terminal_phase_done() -> None:
+    """A RUNNING VM that already published ``eps/phase=done`` is a wedged
+    zombie (completed workload, instance never auto-deleted) — reconnecting
+    would latch the run onto a dead workload that never re-launches, because
+    the reconnect path deliberately skips ``--workload-cmd`` re-dispatch
+    (incident #634, 2026-06-13). It must route to delete-and-reprovision
+    (return None), NOT return a reconnect handle."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _running_instance_payload(), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+    )
+    assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
+    # The reconnect probed the guest attribute (the structural fix).
+    assert any("get-guest-attributes" in argv for argv in runner.calls), runner.calls
+
+
+def test_reconnect_skips_running_instance_with_terminal_phase_failed() -> None:
+    """``eps/phase=failed`` on a RUNNING VM is the same wedged-zombie class
+    as ``done`` (the EXIT trap published failed but the VM never powered
+    off) — also NOT reconnect-eligible."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _running_instance_payload(), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("failed"), "")],
+    )
+    assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
+
+
+def test_reconnect_keeps_running_instance_with_mid_workload_phase() -> None:
+    """A RUNNING VM mid-workload (``eps/phase=workload``) is the legitimate
+    in-flight case the reconnect path exists for — it MUST still return a
+    live handle so a re-launch does not double-provision."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _running_instance_payload(), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.pod_name == "eps-issue-137"
+    assert handle.extra["reconnected"] is True
+
+
+def test_reconnect_keeps_running_instance_with_no_phase_published() -> None:
+    """A RUNNING VM that has NOT yet written ``eps/phase`` (still booting —
+    gcloud exits nonzero with a not-found stderr) reads as phase "" and
+    stays reconnect-eligible: an unwritten phase is NOT a terminal phase."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _running_instance_payload(), "")],
+        guest_attr_results=[GcloudRunResult(1, "", "guest attribute eps/phase not found")],
+    )
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.pod_name == "eps-issue-137"
+
+
+def test_reconnect_running_instance_guest_attr_probe_failure_raises() -> None:
+    """A guest-attribute PROBE FAILURE (expired auth / transport — nonzero
+    rc WITHOUT a not-found stderr) leaves the workload phase UNKNOWN. The
+    credit-spending reconnect must not assume zombie OR live — it re-raises
+    GcpProbeError (the same "couldn't ask" ≠ "no live instance" discipline
+    that governs the list probe)."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _running_instance_payload(), "")],
+        guest_attr_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    with pytest.raises(GcpProbeError):
+        reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
 def test_gcp_probe_error_is_backend_probe_error() -> None:
     """The router's reconnect seams discriminate on BackendProbeError —
     the GCP probe error must be a subclass or the typed handling is
