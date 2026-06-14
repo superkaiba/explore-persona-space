@@ -14,6 +14,8 @@ origin_prompt: 'can you run this in the background: UMAP/PCA of diverse context 
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_634.md](https://github.com/superkaiba/explore-persona-space/blob/cf17606d0061c6c282a66f31347f4c7b7ec28f3c/docs/methodology/issue_634.md) · [gist](https://gist.github.com/superkaiba/de97837952b46373d5a66a1107ce4563)
+
 ## Takeaways
 
 - Behavior vectors do not sit near matching context: match rate peaks at **9 of 26 roles (0.346), layer 13**, inside the shuffled-label null (0.385, p = 0.28; k=2/3/4 also null).
@@ -120,7 +122,7 @@ n/a — no model generations. This is a geometry analysis: each role yields one 
 
 ## Reproducibility
 
-**Methodology reference:** see `docs/methodology/issue_634.md` (gist + GitHub blob link appended at promotion).
+**Methodology reference:** [docs/methodology/issue_634.md](https://github.com/superkaiba/explore-persona-space/blob/cf17606d0061c6c282a66f31347f4c7b7ec28f3c/docs/methodology/issue_634.md) · [gist](https://gist.github.com/superkaiba/de97837952b46373d5a66a1107ce4563)
 
 **Parameters:**
 
