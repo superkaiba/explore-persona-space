@@ -3907,7 +3907,7 @@
       "title": "Watcher infra-drain pass: execute the PM-curated dispatch queue (~/.eps-autonomous/infra-drain-queue.json) under cap 3"
     },
     "634": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/634",
       "status": "interpreting",

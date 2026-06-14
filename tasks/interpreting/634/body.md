@@ -5,7 +5,7 @@ title: 275-role behavior vectors form their own region and do not sit near their
 kind: analysis
 tags: []
 created_at: '2026-06-13T21:35:47Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 594
 origin_prompt: 'can you run this in the background: UMAP/PCA of diverse context vectors
   and behavior vectors to see if there is any structure'
