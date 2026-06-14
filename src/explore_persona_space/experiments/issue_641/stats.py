@@ -32,6 +32,30 @@ EQUIVALENCE_MARGIN = 0.10  # H1/H2 ΔL boundary (rate units)
 H5_RATE_GAP = 0.10  # H5a "same asymptote" gap ceiling
 H5_CEILING_GAP = 0.15  # H5b "real ceiling" gap floor
 
+# Test-only instrumentation hook. When set to a list, ``bootstrap_dose_curve``
+# appends one ``{"boot_seeds": [...], "per_step_rates": {step: rate}}`` record
+# per replicate — so a smoke/test can assert (a) the seed draw is made ONCE per
+# replicate (one record per replicate, not one per dose step) AND (b) a
+# pure-seed replicate's per-step rate trajectory traces THAT seed's own curve at
+# every step (the coherent-trajectory invariant, plan §6.3). ``None`` in
+# production (zero overhead). Use :func:`_trace_boot_seeds`.
+_BOOT_SEED_TRACE: list[dict] | None = None
+
+
+class _trace_boot_seeds:
+    """Context manager that captures, per replicate, the ``boot_seeds`` draw +
+    the per-step rates that draw produced, made by :func:`bootstrap_dose_curve`
+    while active (test instrumentation)."""
+
+    def __enter__(self) -> list[dict]:
+        global _BOOT_SEED_TRACE
+        _BOOT_SEED_TRACE = []
+        return _BOOT_SEED_TRACE
+
+    def __exit__(self, *exc) -> None:
+        global _BOOT_SEED_TRACE
+        _BOOT_SEED_TRACE = None
+
 
 def _binary_misaligned(
     aligned: float, coherent: float, threshold: float = MISALIGNED_THRESHOLD
@@ -118,20 +142,28 @@ def _saturating_curve_fit(steps: np.ndarray, rates: np.ndarray) -> dict:
         }
 
 
-def _resample_records(
+def _resample_step_for_seeds(
     by_seed_probe: dict[tuple[int, int], list[dict]],
-    seeds: list[int],
+    boot_seeds: np.ndarray | list[int],
     probes_by_seed: dict[int, list[int]],
     rng: np.random.Generator,
 ) -> list[dict]:
-    """One hierarchical-bootstrap resample: seeds -> probes within seed ->
-    completions within (seed, probe), each with replacement. Resamples the
-    COHERENT subset only.
+    """Resample ONE dose step given a FIXED ``boot_seeds`` list (the seed draw is
+    made ONCE per bootstrap replicate by the caller, not here).
+
+    For each resampled seed: resample probes within that seed, then completions
+    within (seed, probe), each with replacement, over the COHERENT subset only.
+    Threading the same ``boot_seeds`` across every dose step keeps the per-source
+    dose-curve trajectory COHERENT within a replicate — seeds are the true
+    replication unit (plan §6.3), so a replicate must trace one consistent
+    seed-draw across all doses, never stitch different seed draws at different
+    doses (the round-2 incoherence bug).
     """
     resampled: list[dict] = []
-    boot_seeds = rng.choice(seeds, size=len(seeds), replace=True)
     for seed in boot_seeds:
-        probes = probes_by_seed[int(seed)]
+        probes = probes_by_seed.get(int(seed), [])
+        if not probes:
+            continue
         boot_probes = rng.choice(probes, size=len(probes), replace=True)
         for probe in boot_probes:
             recs = by_seed_probe.get((int(seed), int(probe)), [])
@@ -141,6 +173,24 @@ def _resample_records(
             idx = rng.integers(0, len(coherent), size=len(coherent))
             resampled.extend(coherent[i] for i in idx)
     return resampled
+
+
+def _resample_records(
+    by_seed_probe: dict[tuple[int, int], list[dict]],
+    seeds: list[int],
+    probes_by_seed: dict[int, list[int]],
+    rng: np.random.Generator,
+) -> list[dict]:
+    """SINGLE-dose hierarchical resample (seeds -> probes -> completions, each
+    with replacement, coherent subset only). The seed draw is internal here
+    because this is used ONLY for single-dose reads (the Arm-B ΔL pairwise
+    bootstrap), where there is exactly one dose step per replicate so there is
+    no cross-dose trajectory to keep coherent. Dose-CURVE bootstraps MUST use
+    :func:`_resample_step_for_seeds` with a per-replicate ``boot_seeds`` drawn
+    once at the outermost loop.
+    """
+    boot_seeds = rng.choice(seeds, size=len(seeds), replace=True)
+    return _resample_step_for_seeds(by_seed_probe, boot_seeds, probes_by_seed, rng)
 
 
 def _index_records(records: list[dict]) -> tuple[dict, list[int], dict[int, list[int]]]:
@@ -200,15 +250,38 @@ def bootstrap_dose_curve(
         per_seed_asymptote[sd] = _saturating_curve_fit(steps, sd_rates)["L_inf"]
 
     # Bootstrap L_inf distribution (refit the curve per replicate).
+    #
+    # COHERENT seed-resampling (plan §6.3): draw ``boot_seeds`` ONCE per
+    # replicate at the OUTERMOST loop, then trace that SAME seed draw across
+    # every dose step. The seed is the true replication unit, so a replicate's
+    # fitted curve must come from one consistent seed-draw at all doses — never
+    # an independent per-step seed draw (which stitches different seeds at
+    # different doses, manufacturing intermediate trajectories no seed produced
+    # and artificially narrowing the asymptote CI; the round-2 incoherence bug).
     boot_linf: list[float] = []
     boot_top_slope: list[float] = []
     per_step_index = {int(s): _index_records(records_by_step[int(s)]) for s in steps}
+    # Replicate-level seed universe = union of seeds present across dose steps.
+    boot_seed_universe = sorted(
+        {sd for (_by_sp, sds, _pbs) in per_step_index.values() for sd in sds}
+    )
     for _ in range(n_boot):
+        boot_seeds = rng.choice(boot_seed_universe, size=len(boot_seed_universe), replace=True)
         rates = np.empty(len(steps), dtype=float)
         for i, s in enumerate(steps):
-            by_sp, sds, probes_by_seed = per_step_index[int(s)]
-            resampled = _resample_records(by_sp, sds, probes_by_seed, rng)
+            by_sp, _sds, probes_by_seed = per_step_index[int(s)]
+            resampled = _resample_step_for_seeds(by_sp, boot_seeds, probes_by_seed, rng)
             rates[i] = cell_rate_from_records(resampled) if resampled else float("nan")
+        if _BOOT_SEED_TRACE is not None:
+            _BOOT_SEED_TRACE.append(
+                {
+                    "boot_seeds": [int(x) for x in boot_seeds],
+                    "per_step_rates": {
+                        int(s): (None if np.isnan(rates[i]) else float(rates[i]))
+                        for i, s in enumerate(steps)
+                    },
+                }
+            )
         fit = _saturating_curve_fit(steps, rates)
         boot_linf.append(fit["L_inf"])
         boot_top_slope.append(fit["top_slope"])
@@ -255,15 +328,25 @@ def bootstrap_class_asymptote_difference(
         src: {int(s): _index_records(rbs[int(s)]) for s in steps_per_source[src]}
         for src, rbs in all_sources.items()
     }
+    # Per-source seed universe (union across that source's dose steps) — the
+    # replicate draws ``boot_seeds`` ONCE per source and threads it across the
+    # source's dose steps so each refit curve is a COHERENT seed-draw
+    # trajectory (plan §6.3; same fix as bootstrap_dose_curve).
+    seed_universe_per_source = {
+        src: sorted({sd for (_b, sds, _p) in index_cache[src].values() for sd in sds})
+        for src in all_sources
+    }
 
     def _class_mean_linf(class_sources: list[str]) -> float:
         linfs = []
         for src in class_sources:
             steps = np.array(steps_per_source[src], dtype=float)
+            universe = seed_universe_per_source[src]
+            boot_seeds = rng.choice(universe, size=len(universe), replace=True)
             rates = np.empty(len(steps), dtype=float)
             for i, s in enumerate(steps):
-                by_sp, sds, probes_by_seed = index_cache[src][int(s)]
-                resampled = _resample_records(by_sp, sds, probes_by_seed, rng)
+                by_sp, _sds, probes_by_seed = index_cache[src][int(s)]
+                resampled = _resample_step_for_seeds(by_sp, boot_seeds, probes_by_seed, rng)
                 rates[i] = cell_rate_from_records(resampled) if resampled else float("nan")
             linfs.append(_saturating_curve_fit(steps, rates)["L_inf"])
         linfs = [x for x in linfs if np.isfinite(x)]
@@ -373,6 +456,88 @@ def classify_h1_h2(delta_L: float, ci95: tuple[float, float]) -> str:
     if lo >= -EQUIVALENCE_MARGIN and hi <= EQUIVALENCE_MARGIN:
         return "H1"
     return "AMBIGUOUS"
+
+
+def resolve_matched_dose(
+    armA_records_by_source: dict[str, dict[int, list[dict]]],
+    *,
+    fallback: int = 375,
+    crossing_threshold: float = 0.5,
+) -> dict:
+    """Resolve the Arm-B matched dose from the Arm-A median install crossing
+    (plan §4.5: "the Arm-A checkpoint where the 6 sources' median install
+    crosses ~0.5"; pre-registered fallback = step 375, the #537 anchor).
+
+    For each ladder dose step, pool the Arm-A install rates ACROSS the 6 sources
+    AND both seeds (one ``em_rate_pooled`` per source over its coherent subset
+    at that step), then take the MEDIAN across sources. The matched dose is the
+    FIRST ladder step whose pooled-median Arm-A install >= ``crossing_threshold``
+    (the install ramps with dose, so "first crossing" is the canonical anchor).
+
+    When no Arm-A data are present (e.g. ``--phase aggregate`` run before Arm A
+    landed) OR no step reaches the threshold, fall back to ``fallback`` (375).
+
+    Args:
+        armA_records_by_source: ``{source_cid: {dose_step: [per-completion
+            records]}}`` for the Arm-A sources only (the caller filters to the
+            6 resistant+non-resistant sources).
+        fallback: the pre-registered fallback dose step (default 375).
+        crossing_threshold: the median-install crossing target (default 0.5).
+
+    Returns ``{matched_dose, matched_dose_source, crossing_threshold,
+    per_step_median, steps}`` where ``matched_dose_source`` is
+    ``"armA-median-crossing"`` or ``"fallback"``.
+    """
+    if not armA_records_by_source:
+        return {
+            "matched_dose": int(fallback),
+            "matched_dose_source": "fallback",
+            "crossing_threshold": crossing_threshold,
+            "per_step_median": {},
+            "steps": [],
+            "fallback_reason": "no Arm-A records present at aggregate time",
+        }
+    # Union of dose steps across the Arm-A sources, ascending.
+    steps = sorted({int(s) for rbs in armA_records_by_source.values() for s in rbs})
+    per_step_median: dict[int, float] = {}
+    for step in steps:
+        rates = []
+        for _src, rbs in armA_records_by_source.items():
+            if step in rbs:
+                rate = cell_rate_from_records(rbs[step])
+                if np.isfinite(rate):
+                    rates.append(rate)
+        per_step_median[step] = float(np.median(rates)) if rates else float("nan")
+    crossing = next(
+        (
+            step
+            for step in steps
+            if np.isfinite(per_step_median[step]) and per_step_median[step] >= crossing_threshold
+        ),
+        None,
+    )
+    if crossing is None:
+        return {
+            "matched_dose": int(fallback),
+            "matched_dose_source": "fallback",
+            "crossing_threshold": crossing_threshold,
+            "per_step_median": {
+                str(k): (None if np.isnan(v) else v) for k, v in per_step_median.items()
+            },
+            "steps": steps,
+            "fallback_reason": (
+                f"no Arm-A ladder step reached pooled-median install >= {crossing_threshold}"
+            ),
+        }
+    return {
+        "matched_dose": int(crossing),
+        "matched_dose_source": "armA-median-crossing",
+        "crossing_threshold": crossing_threshold,
+        "per_step_median": {
+            str(k): (None if np.isnan(v) else v) for k, v in per_step_median.items()
+        },
+        "steps": steps,
+    }
 
 
 def armA_base_propensity_regression(

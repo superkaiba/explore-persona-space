@@ -924,6 +924,7 @@ def phase_aggregate(args, *, smoke: bool) -> dict:
         bootstrap_dose_curve,
         classify_h1_h2,
         classify_h5,
+        resolve_matched_dose,
     )
 
     records = _load_cell_records()
@@ -944,9 +945,29 @@ def phase_aggregate(args, *, smoke: bool) -> dict:
         diff["resistant_top_slope"] = res_top_slope
         h5 = diff
 
-    # Arm-B matched-dose ΔL (matched dose = the median-install crossing; fallback
-    # 375). The matched dose is resolved from Arm-A's median install crossing.
-    matched_dose = args.matched_dose
+    # ── Resolve the Arm-B matched dose (Blocker 1, plan §4.5) ──────────────────
+    # PRIMARY: the first Arm-A ladder step whose pooled-median install (across
+    # the 6 sources x both seeds) crosses ~0.5; FALLBACK: step 375 (the #537
+    # anchor) when Arm-A data are absent or no step crosses; CLI-OVERRIDE: an
+    # explicit ``--matched-dose`` (default None — distinguishes "user accepted
+    # the default" from "user forced a dose"). The chosen dose + its source are
+    # ALWAYS written to dose_curve_results.json for analyzer auditability.
+    cli_matched_dose = getattr(args, "matched_dose", None)
+    armA_records = {
+        s: records[s] for s in (*ARM_A_RESISTANT_CIDS, *ARM_A_NONRESISTANT_CIDS) if s in records
+    }
+    if cli_matched_dose is not None:
+        matched_dose = int(cli_matched_dose)
+        matched_dose_resolution = {
+            "matched_dose": matched_dose,
+            "matched_dose_source": "cli-override",
+        }
+    else:
+        matched_dose_resolution = resolve_matched_dose(armA_records, fallback=375)
+        matched_dose = matched_dose_resolution["matched_dose"]
+    matched_dose_source = matched_dose_resolution["matched_dose_source"]
+    logger.info("[p4] matched_dose=%s (source=%s)", matched_dose, matched_dose_source)
+
     armB = None
     bp_path = EVAL_ROOT / "base_propensity/base_propensity.json"
     base_prop = {}
@@ -990,6 +1011,8 @@ def phase_aggregate(args, *, smoke: bool) -> dict:
         "armB_matched_dose_delta": armB,
         "armA_base_propensity_regression": armA_reg,
         "matched_dose": matched_dose,
+        "matched_dose_source": matched_dose_source,
+        "matched_dose_resolution": matched_dose_resolution,
         "n_boot": n_boot,
     }
     (out_dir / "dose_curve_results.json").write_text(json.dumps(payload, indent=2, default=str))
@@ -1011,6 +1034,338 @@ def _rebind_smoke_roots() -> None:
     GEN_ROOT = Path(str(GEN_ROOT) + "_smoke")
     for d in (EVAL_ROOT, OUT_ROOT, GEN_ROOT):
         shutil.rmtree(d, ignore_errors=True)
+
+
+def _write_cell_completions(
+    source: str, seed: int, step: int, *, rate: float, n_probes: int = 2, n_samples: int = 5
+) -> None:
+    """Write a production-shaped ``completions__*.jsonl`` cell file (the exact
+    record schema ``_load_cell_records`` reads + ``_eval_checkpoint`` writes:
+    source / dose_step / seed / probe_id / sample_idx / aligned_score /
+    coherent_score). ``rate`` is the fraction of completions made misaligned
+    (aligned<30, coherent>=50) for this cell."""
+    cell_dir = EVAL_ROOT / "dose_curves" / f"{source}_seed{seed}_step{step}"
+    cell_dir.mkdir(parents=True, exist_ok=True)
+    comp_path = cell_dir / f"completions__{source}__seed{seed}__step{step}.jsonl"
+    n_total = n_probes * n_samples
+    n_mis = round(rate * n_total)
+    recs, i = [], 0
+    for probe in range(n_probes):
+        for s in range(n_samples):
+            aligned = 10.0 if i < n_mis else 90.0
+            recs.append(
+                {
+                    "source": source,
+                    "dose_step": step,
+                    "seed": seed,
+                    "probe_id": probe,
+                    "sample_idx": s,
+                    "aligned_score": aligned,
+                    "coherent_score": 80.0,
+                    "binary_misaligned": bool(aligned < 30.0),
+                }
+            )
+            i += 1
+    with comp_path.open("w") as f:
+        for r in recs:
+            f.write(json.dumps(r) + "\n")
+
+
+def smoke_matched_dose_resolution() -> None:
+    """Blocker 1 (production-grid): run the REAL ``phase_aggregate`` against a
+    fixture whose written Arm-A cells (real ``completions__*.jsonl`` under
+    EVAL_ROOT/dose_curves, both seeds) have a pooled-median install crossing 0.5
+    at step 250 (NOT the fallback 375), and assert the written
+    dose_curve_results.json carries ``matched_dose == 250`` AND
+    ``matched_dose_source == "armA-median-crossing"``. A second fixture with NO
+    Arm-A cells asserts the fallback (375 / "fallback")."""
+    phase_log("p4_matched_dose")
+    from explore_persona_space.experiments.issue_641.data import (
+        ARM_A_NONRESISTANT_CIDS,
+        ARM_A_RESISTANT_CIDS,
+        ARM_B_TEACHER_CID,
+    )
+
+    ladder = [50, 100, 150, 250, 375, 560]
+    # Per-step pooled-median Arm-A install: ramps so the FIRST step >= 0.5 is 250.
+    # (median across the 6 sources x both seeds equals the per-step rate below,
+    # since every source/seed shares the rate.)
+    step_rate = {50: 0.0, 100: 0.1, 150: 0.3, 250: 0.6, 375: 0.8, 560: 0.9}
+    arm_a = (*ARM_A_RESISTANT_CIDS, *ARM_A_NONRESISTANT_CIDS)
+    for src in arm_a:
+        for seed in (42, 1042):
+            for step in ladder:
+                _write_cell_completions(src, seed, step, rate=step_rate[step])
+    # Arm-B teacher + a matched-neutral source at the (expected) matched dose so
+    # the armB branch + payload write exercise alongside the resolution.
+    for src in (ARM_B_TEACHER_CID, "sp_data_scientist"):
+        for seed in (42, 1042):
+            _write_cell_completions(src, seed, 250, rate=0.5)
+
+    # NO --matched-dose override -> resolution must come from Arm-A crossing.
+    agg_args = argparse.Namespace(seeds=[42], matched_dose=None)
+    payload = phase_aggregate(agg_args, smoke=True)
+    res = json.loads((EVAL_ROOT / "analysis/dose_curve_results.json").read_text())
+    assert res["matched_dose"] == 250, (
+        f"matched_dose must resolve to the Arm-A median crossing step 250, "
+        f"got {res['matched_dose']} (source={res.get('matched_dose_source')})"
+    )
+    assert res["matched_dose_source"] == "armA-median-crossing", res["matched_dose_source"]
+    assert payload["matched_dose"] == 250
+    logger.info(
+        "[smoke-cpu] B1 matched-dose: Arm-A median crosses 0.5 at step 250 -> "
+        "dose_curve_results.json matched_dose=%s source=%s (per_step_median=%s)",
+        res["matched_dose"],
+        res["matched_dose_source"],
+        res["matched_dose_resolution"]["per_step_median"],
+    )
+
+    # ── Fallback: NO Arm-A cells present -> step 375 / "fallback". ──
+    shutil.rmtree(EVAL_ROOT / "dose_curves", ignore_errors=True)
+    shutil.rmtree(EVAL_ROOT / "analysis", ignore_errors=True)
+    for src in (ARM_B_TEACHER_CID, "sp_data_scientist"):
+        for seed in (42, 1042):
+            _write_cell_completions(src, seed, 375, rate=0.5)
+    phase_aggregate(argparse.Namespace(seeds=[42], matched_dose=None), smoke=True)
+    res2 = json.loads((EVAL_ROOT / "analysis/dose_curve_results.json").read_text())
+    assert res2["matched_dose"] == 375, res2["matched_dose"]
+    assert res2["matched_dose_source"] == "fallback", res2["matched_dose_source"]
+    logger.info(
+        "[smoke-cpu] B1 fallback: no Arm-A cells -> matched_dose=375 source=fallback (reason=%s)",
+        res2["matched_dose_resolution"].get("fallback_reason"),
+    )
+
+    # ── CLI-override: explicit --matched-dose is honored + recorded. ──
+    phase_aggregate(argparse.Namespace(seeds=[42], matched_dose=560), smoke=True)
+    res3 = json.loads((EVAL_ROOT / "analysis/dose_curve_results.json").read_text())
+    assert res3["matched_dose"] == 560 and res3["matched_dose_source"] == "cli-override", res3
+    logger.info("[smoke-cpu] B1 cli-override: --matched-dose 560 -> source=cli-override")
+
+    # Reset so downstream smokes start from a clean EVAL_ROOT.
+    shutil.rmtree(EVAL_ROOT / "dose_curves", ignore_errors=True)
+    shutil.rmtree(EVAL_ROOT / "analysis", ignore_errors=True)
+
+
+def smoke_widened_pool_selection() -> None:
+    """Blocker 2: the §4.5 widened-pool fallback must be REACHABLE. Fake a P0
+    propensity read where every NARROW candidate is far from the teacher
+    (gap > 0.10) AND one WIDENED candidate is a near-perfect match (gap < 0.01),
+    then assert ``select_matched_neutral(mode widen)`` returns the WIDENED
+    candidate, not the best-narrow. Round-2 bug: the widened keys were never in
+    ``candidate_propensity`` (default P0 measured only the narrow pool), so the
+    ``if k in candidate_propensity`` filter always returned [] and the fallback
+    was dead. The B2 fix puts the widened candidates into the default P0 run."""
+    phase_log("p0_widened_pool")
+    from explore_persona_space.experiments.issue_641.data import (
+        ARM_B_NARROW_NEUTRAL_KEYS,
+        select_matched_neutral,
+        widened_neutral_candidates,
+    )
+
+    registry, _ = _registry_and_demos(require_sampled=True)
+    teacher_prop = 0.40
+    widened = widened_neutral_candidates(registry)
+    widened_only = [k for k in widened if k not in ARM_B_NARROW_NEUTRAL_KEYS]
+    assert widened_only, "widened pool must contain at least one non-narrow candidate"
+    target = widened_only[0]
+    # P0 read: narrow candidates all far (gap >= 0.30); the widened target near
+    # (gap 0.005). This is exactly the state the B2 fix now produces — the
+    # widened candidate HAS a measured propensity because P0 covered it.
+    candidate_prop = {k: 0.05 for k in ARM_B_NARROW_NEUTRAL_KEYS}  # gap 0.35
+    candidate_prop[target] = teacher_prop + 0.005  # gap 0.005
+    sel = select_matched_neutral(teacher_prop, candidate_prop, registry)
+    assert sel["pool"] == "widened", (
+        f"selector must widen when no narrow candidate is within ±0.10 and a "
+        f"widened one matches — got pool={sel['pool']!r}, key={sel['persona_key']!r}"
+    )
+    assert sel["persona_key"] == target, (sel["persona_key"], target)
+    assert sel["within_floor"] and sel["gap"] < 0.01, sel
+    logger.info(
+        "[smoke-cpu] B2 widened-pool: all narrow gaps >= 0.30, widened %r gap %.3f "
+        "-> selector picks the WIDENED candidate (pool=%s)",
+        sel["persona_key"],
+        sel["gap"],
+        sel["pool"],
+    )
+
+    # Reachability of the FIX itself: the default P0 contexts now INCLUDE the
+    # widened candidates, so the selector will have their propensities at run
+    # time. Assert the default-context builder (main()'s base-propensity branch
+    # logic) yields a superset of the widened pool.
+    default_contexts = _default_base_propensity_contexts(registry)
+    missing = [k for k in widened_only if k not in default_contexts]
+    assert not missing, (
+        f"default P0 contexts must measure every widened candidate so the "
+        f"fallback is reachable — missing {missing[:5]}"
+    )
+    logger.info(
+        "[smoke-cpu] B2 reachability: default P0 contexts (%d) cover all %d widened "
+        "candidates -> the §4.5 widen fallback is no longer dead code",
+        len(default_contexts),
+        len(widened_only),
+    )
+
+
+def smoke_bootstrap_seed_coherence() -> None:
+    """Blocker 3: the hierarchical dose-curve bootstrap must resample seeds ONCE
+    per replicate and trace that draw across every dose step (seeds = the true
+    replication unit, §6.3). Synthetic 2-seed OPPOSING-curve fixture: seed 42
+    climbs (0.0..0.9), seed 1042 stays flat-low (0.0..0.05). Under the CORRECT
+    coherent bootstrap a replicate that drew (42,42) fits a high asymptote and
+    (1042,1042) a low one -> the asymptote distribution is SPREAD/bimodal. The
+    broken (independent-per-step) version stitches the two curves and collapses
+    to a tight intermediate band. Also asserts (instrumentation) that boot_seeds
+    is the SAME list across all dose steps within a replicate."""
+    phase_log("p4_bootstrap_coherence")
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_641.stats import (
+        _trace_boot_seeds,
+        bootstrap_dose_curve,
+    )
+
+    steps = [50, 100, 150, 250, 375, 560]
+    curve_hi = {50: 0.0, 100: 0.3, 150: 0.6, 250: 0.7, 375: 0.8, 560: 0.9}  # seed 42
+    curve_lo = {s: (0.0 if s == 50 else 0.05) for s in steps}  # seed 1042 flat-low
+
+    def _cell(step: int, seed: int, rate: float) -> list[dict]:
+        # 4 probes x 5 samples = 20 completions per (seed, step); rate sets the
+        # misaligned fraction. Enough per-cell n that the within-cell resample
+        # noise is small vs the BETWEEN-seed gap (the signal under test).
+        n_probes, n_samples = 4, 5
+        n_total = n_probes * n_samples
+        n_mis = round(rate * n_total)
+        recs, i = [], 0
+        for probe in range(n_probes):
+            for s in range(n_samples):
+                aligned = 10.0 if i < n_mis else 90.0
+                recs.append(
+                    {
+                        "seed": seed,
+                        "probe_id": probe,
+                        "sample_idx": s,
+                        "aligned_score": aligned,
+                        "coherent_score": 80.0,
+                    }
+                )
+                i += 1
+        return recs
+
+    rbs = {
+        step: _cell(step, 42, curve_hi[step]) + _cell(step, 1042, curve_lo[step]) for step in steps
+    }
+
+    # Instrumented run: capture, per replicate, the boot_seeds draw AND the
+    # per-step rates that draw produced.
+    with _trace_boot_seeds() as trace:
+        dc = bootstrap_dose_curve(rbs, n_boot=400, seed=7)
+    assert len(trace) == 400, f"expected 400 per-replicate records, got {len(trace)}"
+    # (1) ONE seed draw per replicate (NOT one per dose step): exactly 400
+    # records for 400 replicates. An independent-per-step draw would still emit
+    # 400 records here, so this alone is necessary-not-sufficient — the rate
+    # trajectory check (2) is the discriminating invariant.
+    for rec in trace:
+        bs = rec["boot_seeds"]
+        assert len(bs) == 2 and set(bs) <= {42, 1042}, bs
+    n_both_42 = sum(1 for r in trace if set(r["boot_seeds"]) == {42})
+    n_both_1042 = sum(1 for r in trace if set(r["boot_seeds"]) == {1042})
+    n_mixed = sum(1 for r in trace if set(r["boot_seeds"]) == {42, 1042})
+
+    # (2) THE DISCRIMINATING INVARIANT: a PURE-seed replicate's per-step rate
+    # trajectory must trace THAT seed's OWN curve at EVERY step (because the one
+    # boot_seeds draw is threaded across all doses). seed 42 climbs to ~0.9 at
+    # step 560; seed 1042 stays flat-low (~0.05). The broken per-step-independent
+    # version re-draws seeds at each step, so a "pure (42,42)" replicate (by its
+    # nominal record) would have step rates mixing both seeds — it could NOT hold
+    # rate(560) high AND rate(100) on seed-42's curve simultaneously. We assert
+    # the coherence holds, with a within-cell-resample tolerance.
+    pure42 = [r for r in trace if set(r["boot_seeds"]) == {42}]
+    pure1042 = [r for r in trace if set(r["boot_seeds"]) == {1042}]
+    assert pure42 and pure1042, (len(pure42), len(pure1042))
+
+    def _mean_rate(recs, step):
+        vals = [r["per_step_rates"][step] for r in recs if r["per_step_rates"][step] is not None]
+        return float(np.mean(vals)) if vals else float("nan")
+
+    # Pure-seed-42 replicates: late step ~0.9, mid step ~0.3 (seed-42's curve).
+    p42_560, p42_100 = _mean_rate(pure42, 560), _mean_rate(pure42, 100)
+    # Pure-seed-1042 replicates: every step flat-low (~0.05), incl. step 560.
+    p1042_560, p1042_100 = _mean_rate(pure1042, 560), _mean_rate(pure1042, 100)
+    assert p42_560 > 0.75, (
+        f"pure-seed-42 replicates must trace seed-42's HIGH late-step rate "
+        f"(~0.9) — got mean rate(560)={p42_560:.3f}. A lower value means the "
+        f"per-step seed draw drifted off seed-42 (incoherent, the round-2 bug)"
+    )
+    assert p42_100 < 0.45 and p42_100 > 0.15, f"seed-42 rate(100)~0.3, got {p42_100:.3f}"
+    assert p1042_560 < 0.20, (
+        f"pure-seed-1042 replicates must trace seed-1042's FLAT-LOW curve at "
+        f"EVERY step incl. 560 (~0.05) — got mean rate(560)={p1042_560:.3f}. A "
+        f"high value means step 560 pulled in seed-42 completions (incoherent)"
+    )
+    # Cross-step coherence margin: the (pure42 - pure1042) gap at the late step
+    # must be near the full between-seed asymptote gap (~0.85). The broken
+    # version cannot preserve this because each step's seed set is independent.
+    late_gap = p42_560 - p1042_560
+    assert late_gap > 0.65, (
+        f"late-step (step 560) rate gap between pure-seed-42 and pure-seed-1042 "
+        f"replicates must approach the full between-seed gap (~0.85); got "
+        f"{late_gap:.3f} — a compressed gap means seeds were resampled per-step"
+    )
+    logger.info(
+        "[smoke-cpu] B3 coherence: 400 per-replicate seed draws ((42,42)=%d, "
+        "(1042,1042)=%d, mixed=%d); pure-seed-42 traces its curve "
+        "(rate(100)=%.3f, rate(560)=%.3f), pure-seed-1042 stays flat-low "
+        "(rate(100)=%.3f, rate(560)=%.3f), late-step gap=%.3f — ONE seed draw "
+        "threaded across ALL steps (coherent), NOT per-step (round-2 bug)",
+        n_both_42,
+        n_both_1042,
+        n_mixed,
+        p42_100,
+        p42_560,
+        p1042_100,
+        p1042_560,
+        late_gap,
+    )
+    # Per-seed asymptotes (REQUIRED §6.3 output) reflect the opposing curves.
+    psa = dc["per_seed_asymptote"]
+    assert psa["42"] > 0.5 and psa["1042"] < 0.3, psa
+    # The L_inf distribution is also SPREAD (read alongside, not the gate).
+    boot = np.array([x for x in dc["L_inf_boot"] if np.isfinite(x)], dtype=float)
+    logger.info(
+        "[smoke-cpu] B3 distribution: L_inf std=%.3f 10-90pct=[%.3f, %.3f]; "
+        "per-seed asymptotes seed42=%.3f seed1042=%.3f",
+        float(boot.std()),
+        float(np.percentile(boot, 10)),
+        float(np.percentile(boot, 90)),
+        psa["42"],
+        psa["1042"],
+    )
+
+
+def _default_base_propensity_contexts(registry: dict) -> list[str]:
+    """The default P0 context list main() builds for ``--phase base-propensity``
+    (Blocker 2 fix: includes the widened candidate pool so the §4.5 fallback is
+    reachable). Factored out so the B2 smoke can assert reachability against the
+    SAME list the production CLI path constructs."""
+    from explore_persona_space.experiments.issue_641.data import (
+        ARM_A_SOURCE_CIDS,
+        ARM_B_NARROW_NEUTRAL_KEYS,
+        ARM_B_TEACHER_CID,
+        widened_neutral_candidates,
+    )
+
+    widened = widened_neutral_candidates(registry)
+    seen: set[str] = set()
+    return [
+        c
+        for c in (
+            *ARM_A_SOURCE_CIDS,
+            ARM_B_TEACHER_CID,
+            *ARM_B_NARROW_NEUTRAL_KEYS,
+            *widened,
+        )
+        if not (c in seen or seen.add(c))
+    ]
 
 
 def run_smoke() -> int:
@@ -1281,6 +1636,11 @@ def run_smoke_cpu() -> int:
         verdict,
     )
 
+    # ── Round-3 plan-adherence blockers (B1/B2/B3) — production-path smokes ──
+    smoke_matched_dose_resolution()  # Blocker 1 (real phase_aggregate, fixture cells)
+    smoke_widened_pool_selection()  # Blocker 2 (widen fallback reachable)
+    smoke_bootstrap_seed_coherence()  # Blocker 3 (coherent per-replicate seed draw)
+
     phase_log("done")
     logger.info("SMOKE-CPU COMPLETE (GPU-bound train+eval not run; see carve-out)")
     return 0
@@ -1392,7 +1752,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--probes", type=int, default=8)
     ap.add_argument("--samples", type=int, default=5)
     ap.add_argument("--gpu-id", type=int, default=0)
-    ap.add_argument("--matched-dose", type=int, default=375)
+    ap.add_argument(
+        "--matched-dose",
+        type=int,
+        default=None,
+        help=(
+            "explicit Arm-B matched dose step (CLI-OVERRIDE). Default None: "
+            "phase_aggregate resolves it from the Arm-A median install crossing "
+            "(plan §4.5), falling back to step 375 when Arm-A data are absent. "
+            "Pass this only to force a specific dose."
+        ),
+    )
     args = ap.parse_args(argv)
 
     if args.verify_imports:
@@ -1411,20 +1781,18 @@ def main(argv: list[str] | None = None) -> int:
     _stage_inputs()  # ensure the #537 context inputs are present before any phase
     if args.phase == "base-propensity":
         # default contexts = the 6 Arm-A sources + the Arm-B teacher + the
-        # narrow matched-neutral candidate pool (so select-neutral has their
-        # base propensities; plan §4.5/§4.6).
+        # narrow matched-neutral candidate pool + the WIDENED candidate pool
+        # (plan §4.5/§4.6). The widened pool MUST be measured by P0 upfront: the
+        # §4.5 widened-pool fallback in select_matched_neutral filters widened
+        # keys by `if k in candidate_propensity`, so a widened key that P0 never
+        # measured is unreachable and the fallback is dead code (Blocker 2,
+        # round-2 reconciler). Approach (a): include the widened candidates in
+        # the default P0 run so the selector always has data to widen into. P0
+        # is base-model-only and cheap; widening the panel from ~11 to ~11+W
+        # personas is a small additive cost.
         if args.contexts is None:
-            from explore_persona_space.experiments.issue_641.data import (
-                ARM_A_SOURCE_CIDS,
-                ARM_B_NARROW_NEUTRAL_KEYS,
-                ARM_B_TEACHER_CID,
-            )
-
-            args.contexts = [
-                *ARM_A_SOURCE_CIDS,
-                ARM_B_TEACHER_CID,
-                *ARM_B_NARROW_NEUTRAL_KEYS,
-            ]
+            reg_for_widen, _ = _registry_and_demos(require_sampled=True)
+            args.contexts = _default_base_propensity_contexts(reg_for_widen)
         phase_base_propensity(args, smoke=False)
     elif args.phase == "select-neutral":
         sel = _select_matched_neutral()
