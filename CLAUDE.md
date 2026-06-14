@@ -152,7 +152,7 @@ Status = parent folder name. Status change = atomic `git mv` + `epm:status-chang
 uv run python scripts/task.py view <N> [--json]
 uv run python scripts/task.py latest-marker <N>               # "where do I resume"
 uv run python scripts/task.py set-status <N> <status>
-uv run python scripts/task.py post-marker <N> epm:foo --note '...'
+uv run python scripts/task.py post-marker <N> epm:foo --note '...'   # long body: --file <path.md> (the flag is --file, NOT --note-file)
 uv run python scripts/task.py set-body <N> --file body.md --snapshot
 uv run python scripts/task.py set-title <N> "..."
 uv run python scripts/task.py set-clean-result <N>            # flips has_clean_result=true
