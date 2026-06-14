@@ -25,9 +25,20 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from explore_persona_space.eval import batch_judge as batch_judge_mod
 from explore_persona_space.eval.batch_judge import _aggregate_persona_scores
-from explore_persona_space.experiments.issue503.judges import judge_b1_broad_em_completions
+
+# issue503 judges module is pending merge to main (PR #467 / #595); skip until it lands.
+pytest.importorskip(
+    "explore_persona_space.experiments.issue503",
+    reason="issue503 judges module pending merge to main (PR #467 / #595); runs once landed.",
+)
+
+from explore_persona_space.experiments.issue503.judges import (
+    judge_b1_broad_em_completions,
+)
 
 # ── production path: judge_b1_broad_em_completions with claude-* judge ──────
 #

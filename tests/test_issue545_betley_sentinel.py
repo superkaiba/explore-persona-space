@@ -28,6 +28,13 @@ from types import SimpleNamespace
 
 import pytest
 
+# issue503 judges module is pending merge to main (PR #467 / #595). Until it
+# lands, skip this module rather than break collection for the whole suite.
+pytest.importorskip(
+    "explore_persona_space.experiments.issue503",
+    reason="issue503 judges module pending merge to main (PR #467 / #595); runs once landed.",
+)
+
 from explore_persona_space.experiments.issue503 import judges as judges_mod
 from explore_persona_space.experiments.issue503.judges import (
     _betley_sentinel,

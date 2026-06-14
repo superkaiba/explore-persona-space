@@ -23,6 +23,13 @@ from typing import ClassVar
 import pytest
 
 from explore_persona_space.experiments.behavior_testbed_545 import eval_battery, judges_545
+
+# issue503 module is pending merge to main (PR #467 / #595); skip until it lands.
+pytest.importorskip(
+    "explore_persona_space.experiments.issue503",
+    reason="issue503 module pending merge to main (PR #467 / #595); runs once landed.",
+)
+
 from explore_persona_space.experiments.issue503 import advbench_judge
 
 # ── helpers ──────────────────────────────────────────────────────────────────
