@@ -3159,8 +3159,8 @@
       "goal": "Test whether the geometric predictors (cosine, Gaussian-KL@L22) carry rank-information about on-policy marker emission inside narrow base-prior bands of the 416-cell ep1 panel from #532, by computing Spearman \u03c1 between each geometric predictor and the leakage residual after the base prior is regressed out per-bystander.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/539",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/539",
+      "status": "completed",
       "title": "Activation distance ranks ordinary-context marker emission rates mostly by tracking which sources leak everywhere, with a small pair-specific cosine residue (MODERATE confidence)"
     },
     "54": {
