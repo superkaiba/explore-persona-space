@@ -124,10 +124,17 @@ def select_pool(
             c: rng.sample(cluster_members[c], len(cluster_members[c])) for c in ordered_clusters
         }
         selected_set: set[str] = set()
+
+        def _kept_in(cluster_id: str) -> int:
+            # Count selected conv_ids that belong to cluster_id. Membership is
+            # conv_to_clusters[x] = {config: cluster_id}, so test against the
+            # VALUES (cluster ids), NOT the dict keys (config names).
+            return sum(1 for x in selected_set if cluster_id in conv_to_clusters[x].values())
+
         # Phase 1: guarantee the floor per cluster where possible.
         for c in ordered_clusters:
             for conv_id in remaining[c]:
-                if len([x for x in selected_set if c in conv_to_clusters[x]]) >= per_cluster_floor:
+                if _kept_in(c) >= per_cluster_floor:
                     break
                 if len(selected_set) >= pool_cap:
                     break

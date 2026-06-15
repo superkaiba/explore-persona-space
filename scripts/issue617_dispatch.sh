@@ -45,11 +45,17 @@ fi
 
 SMOKE=0
 SKIP_UPLOAD=0
+NO_GPU=0
 CHAT_DATASET="allenai/WildChat-1M"
 for arg in "$@"; do
     case "$arg" in
         --smoke) SMOKE=1 ;;
         --skip-upload) SKIP_UPLOAD=1 ;;
+        # --no-gpu: GPU-less host (local VM smoke). The two GPU phases run their
+        # CPU-runnable portion only — extraction on a tiny CPU model, completions
+        # via --stub-completions (build_prompts + file-write, no vLLM). On a pod
+        # (has GPU) the smoke omits this flag and exercises the real GPU path.
+        --no-gpu) NO_GPU=1 ;;
         --chat-dataset=*) CHAT_DATASET="${arg#*=}" ;;
         *) ;;
     esac
@@ -67,12 +73,20 @@ if [ "$SMOKE" -eq 1 ]; then
     PER_CLUSTER_FLOOR=3
     N_PERMS=200
     COMPLETION_MAX_PREFIXES=4
-    EMBED_DEVICE="cpu"
-    # Tiny throwaway model for the GPU phases under CPU smoke.
-    EXTRACT_MODEL="Qwen/Qwen2.5-0.5B-Instruct"
-    EXTRACT_EXTRA="--device cpu --expected-layers 24 --expected-hidden 896 --no-upload --wandb-mode disabled"
     COMPLETION_MODEL="Qwen/Qwen2.5-0.5B-Instruct"
-    COMPLETION_EXTRA="--max-model-len 2048"
+    if [ "$NO_GPU" -eq 1 ]; then
+        # GPU-less host: tiny model on CPU for extraction; stub completions.
+        EMBED_DEVICE="cpu"
+        EXTRACT_MODEL="Qwen/Qwen2.5-0.5B-Instruct"
+        EXTRACT_EXTRA="--device cpu --expected-layers 24 --expected-hidden 896 --no-upload --wandb-mode disabled --n-probes 3"
+        COMPLETION_EXTRA="--max-model-len 2048 --stub-completions"
+    else
+        # Pod smoke (has GPU): real vLLM + GPU extraction on the tiny model.
+        EMBED_DEVICE="auto"
+        EXTRACT_MODEL="Qwen/Qwen2.5-0.5B-Instruct"
+        EXTRACT_EXTRA="--gpu-id 0 --expected-layers 24 --expected-hidden 896 --no-upload --wandb-mode disabled --n-probes 3"
+        COMPLETION_EXTRA="--max-model-len 2048"
+    fi
 else
     SLICE_TARGET=20000
     SLICE_SCAN_CAP=200000
