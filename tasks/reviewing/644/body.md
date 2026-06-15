@@ -23,6 +23,8 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_644.md](https://github.com/superkaiba/explore-persona-space/blob/b452fc66af23c9df5a6b887cdbde69532f175b67/docs/methodology/issue_644.md) · [gist](https://gist.github.com/superkaiba/9c91df722fa89083a39c70b922cea975)
+
 ## Takeaways
 
 - After the full artifact-control stack, **0 of 22** qualifying geometry-frame fits show robust convexity (recurs threshold 11) — no consistent convex shape across the three behaviors with commensurable geometry scalars.
@@ -132,6 +134,8 @@ Reuse provenance (every per-cell input is paired data produced by a prior task, 
 - Reused fact-leakage paired data from [#444](https://eps.superkaiba.com/tasks/444): [`eval_results/issue_444/bystander_logprob/correlations.json`](https://github.com/superkaiba/explore-persona-space/blob/02a130d78c3f324421457dcb4ca618deee12a9a1/eval_results/issue_444/bystander_logprob/correlations.json) — fit: on-policy cosine/JS + leak rate, n=6, reported but excluded from the denominator for n < 10.
 - Reused refusal data from [#390](https://eps.superkaiba.com/tasks/390): [`eval_results/issue_390/aggregate_long.json`](https://github.com/superkaiba/explore-persona-space/blob/02a130d78c3f324421457dcb4ca618deee12a9a1/eval_results/issue_390/aggregate_long.json) — fit: NOT FIT — no commensurable per-persona geometry scalar (excluded from the denominator, routed to a new-generation follow-up).
 - Reused: producing issue [#411](https://eps.superkaiba.com/tasks/411) — pinned path [`issue411_sycophancy_cosine_gradient/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a052b1dcb61a96ed9081561804c25943b01ec73e/issue411_sycophancy_cosine_gradient) (530 files, verified present via the HF Hub API) — fit: NOT FIT — no clean per-source (cosine, held-out sycophancy rate) pairing assemblable from the HF artifacts; plan v2 §12 Medium-confidence fallback fired (dropped to a robustness note, not analyzed).
+
+- **Methodology reference:** [docs/methodology/issue_644.md](https://github.com/superkaiba/explore-persona-space/blob/b452fc66af23c9df5a6b887cdbde69532f175b67/docs/methodology/issue_644.md) · [gist](https://gist.github.com/superkaiba/9c91df722fa89083a39c70b922cea975)
 
 **Compute:**
 
