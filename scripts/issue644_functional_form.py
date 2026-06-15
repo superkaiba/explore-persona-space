@@ -161,6 +161,68 @@ def phase_aggregate(
 
 # --- Figures ------------------------------------------------------------------
 
+# Reader-facing label maps (figure-side mirror of the body's plain-English rule).
+# The underlying JSON row keys (behavior / frame) are the canonical join
+# identifiers and are NEVER changed here — only the RENDERED labels translate.
+_BEHAVIOR_LABELS = {
+    "sycophancy_seed": "Sycophancy",
+    "marker_leakage_centered": "Marker leakage (centered)",
+    "marker_leakage_raw": "Marker leakage",
+    "fact_leakage": "Fact leakage",
+    "refusal": "Refusal",
+}
+
+# Geometry-scalar kind -> reader-facing scalar name.
+_SCALAR_LABELS = {
+    "cosine_to_direction": "cosine to direction",
+    "cosine_to_source": "cosine to source",
+    "cosine_centered_centroid": "centered cosine to centroid",
+    "js": "JS divergence",
+    "prior_logprob": "base-prior log-prob",
+    "js_deprecated_single_next_token": "JS (deprecated single-token)",
+}
+
+# Per-arm slug -> short reader name (fact-leakage arms; marker source codes stay
+# as bare A1/B2/... — they are anonymous per-source labels with no English gloss).
+_ARM_LABELS = {
+    "arm_marine_biologist": "marine biologist",
+    "arm_local_resident": "local resident",
+    "arm_courthouse_architecture_historian": "courthouse historian",
+    "i444_onpolicy": "on-policy",
+    "i444_leak_contradictory_neg_sensitivity": "contradictory-neg",
+    "i444_leak_refusal_neg_sensitivity": "refusal-neg",
+}
+
+
+def _pretty_behavior(behavior: str) -> str:
+    """Translate a snake_case behavior key to a reader-facing label."""
+    return _BEHAVIOR_LABELS.get(behavior, behavior.replace("_", " ").title())
+
+
+def _pretty_frame(frame: str, geometry_scalar_kind: str) -> str:
+    """Translate a slash-separated frame slug to a reader-facing parenthetical.
+
+    Keeps the scalar name (from the geometry kind) up front and appends a short
+    descriptor pulled from the frame slug (layer, source code, arm name).
+    """
+    scalar = _SCALAR_LABELS.get(geometry_scalar_kind, geometry_scalar_kind.replace("_", " "))
+    parts = frame.split("/")
+    descriptors: list[str] = []
+    for p in parts[1:]:  # skip the leading geometry/sensitivity/prior bucket
+        if p.startswith("L") and p[1:].isdigit():
+            descriptors.append(p)  # layer, e.g. L14
+        elif p.startswith("source_"):
+            descriptors.append(p.split("_", 1)[1])  # A4, B2, ...
+        elif p.startswith("arm_") or p.startswith("i444"):
+            descriptors.append(_ARM_LABELS.get(p, p.replace("arm_", "").replace("_", " ")))
+        elif p == "joint":
+            descriptors.append("joint")
+        elif "persona" in p:
+            # lt_persona_lt_syc -> "lt-persona"; ravg_persona_lt_syc -> "ravg-persona"
+            descriptors.append(p.split("_persona")[0].replace("_", "-") + "-persona")
+    suffix = f" ({', '.join(descriptors)})" if descriptors else ""
+    return f"{scalar}{suffix}"
+
 
 def _render_convexity_table_figure(tables: dict[str, Any], stem_path: Path) -> None:
     """Render the cross-behavior geometry-recurs table as a figure (companion hero)."""
@@ -168,14 +230,29 @@ def _render_convexity_table_figure(tables: dict[str, Any], stem_path: Path) -> N
     rows = tables["geometry_recurs_table"]
     if not rows:
         return
-    headers = ["behavior", "frame", "n", "convex", "sign", "ΔAIC", "robust", "rate_art", "H1"]
+    headers = [
+        "Behavior",
+        "Geometry frame",
+        "n",
+        "Convex?",
+        "Curvature sign",
+        "ΔAIC",
+        "Survives leverage drop?",
+        "Rate artifact?",
+        "Counts as robust convex?",
+    ]
     cell_text = []
     for r in rows:
+        n = r.get("n", 0)
+        below_floor = isinstance(n, int) and n < 10
+        behavior_label = _pretty_behavior(r.get("behavior", ""))
+        if below_floor:
+            behavior_label += "  [n < 10, excluded]"
         cell_text.append(
             [
-                str(r.get("behavior", "")),
-                str(r.get("frame", ""))[:28],
-                str(r.get("n", "")),
+                behavior_label,
+                _pretty_frame(r.get("frame", ""), r.get("geometry_scalar_kind", "")),
+                str(n),
                 _fmt_bool(r.get("convex_wins")),
                 str(r.get("curvature_sign", "")),
                 _fmt_num(r.get("delta_aic_linear_to_best")),
@@ -185,18 +262,19 @@ def _render_convexity_table_figure(tables: dict[str, Any], stem_path: Path) -> N
             ]
         )
     fig_h = max(2.0, 0.35 * (len(cell_text) + 2))
-    fig, ax = plt.subplots(figsize=(11.0, fig_h))
+    fig, ax = plt.subplots(figsize=(12.5, fig_h))
     ax.axis("off")
     tbl = ax.table(cellText=cell_text, colLabels=headers, loc="center", cellLoc="center")
     tbl.auto_set_font_size(False)
     tbl.set_fontsize(7)
     tbl.scale(1.0, 1.3)
-    verdict = tables.get("majority_verdict", "?")
     num = tables["h1_numerator"]["n_convex_counts_toward_h1"]
     den = tables["h1_denominator"]["n_qualifying"]
     ax.set_title(
-        f"Geometry-frame convexity recurs (geometry rows only)\n"
-        f"verdict: {verdict}  —  H1 numerator {num} / denominator {den}",
+        f"No portable convex shape: {num} of {den} qualifying geometry frames "
+        f"are robustly convex\n"
+        f"(robust = beats linear by ΔAIC ≥ 2, same-signed curvature CI excludes 0, "
+        f"survives leverage + rate controls)",
         fontsize=9,
         loc="left",
     )
@@ -244,7 +322,7 @@ def _render_scatter_small_multiples(
         ci_lo = rec.get("curvature_ci_low")
         ci_hi = rec.get("curvature_ci_high")
         ax.set_title(
-            f"{s.behavior}\n{s.frame[:30]}\n"
+            f"{_pretty_behavior(s.behavior)}\n{_pretty_frame(s.frame, s.geometry_scalar_kind)}\n"
             f"ΔAIC={_fmt_num(daic)}  x²CI=[{_fmt_num(ci_lo)},{_fmt_num(ci_hi)}]",
             fontsize=7,
         )
@@ -289,8 +367,13 @@ def _render_exploratory_dump(
         ax.scatter(x, y, s=14, color=primary, alpha=0.8, label="raw rate")
         ax2 = ax.twinx()
         ax2.scatter(x, cm.logit_clip(y), s=14, color=accent, alpha=0.6, marker="^", label="logit")
-        rate_art = _fmt_bool(rec.get("rate_compression_artifact"))
-        ax.set_title(f"{s.behavior} {s.frame[:24]}\nrate_art={rate_art}", fontsize=7)
+        rate_art = "yes" if rec.get("rate_compression_artifact") else "no"
+        behavior_label = _pretty_behavior(s.behavior)
+        frame_label = _pretty_frame(s.frame, s.geometry_scalar_kind)
+        ax.set_title(
+            f"{behavior_label} — {frame_label}\nrate artifact: {rate_art}",
+            fontsize=7,
+        )
         ax.set_xlabel("geometry proximity")
         ax.set_ylabel("raw rate", color=primary)
         ax2.set_ylabel("logit(rate)", color=accent)

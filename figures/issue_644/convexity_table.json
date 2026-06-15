@@ -1300,8 +1300,8 @@
   "majority_threshold": 11,
   "majority_verdict": "H0_or_H2_no_convex",
   "reproducibility": {
-    "git_commit": "37692d59c4",
-    "timestamp_utc": "2026-06-15T19:17:33Z",
+    "git_commit": "e74b9be5d6",
+    "timestamp_utc": "2026-06-15T20:22:25Z",
     "python_version": "3.11.15",
     "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "numpy_version": "2.2.6",
