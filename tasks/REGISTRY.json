@@ -3975,8 +3975,8 @@
     "643": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/643",
-      "status": "proposed",
+      "path": "tasks/archived/643",
+      "status": "archived",
       "title": "Integrate Self-Harness (self-improving agent harness) into persona-space workflow"
     },
     "644": {
