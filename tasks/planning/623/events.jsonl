@@ -12,3 +12,4 @@
 {"ts": "2026-06-15T07:38:43Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqewgmqs-8vewbk phase=done after 121s."}
 {"ts": "2026-06-15T07:40:30Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqewgyw3-4ayjf1 phase=done after 212s."}
 {"ts": "2026-06-15T07:41:02Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqewhmr8-gddcoy phase=done after 212s."}
+{"ts": "2026-06-15T07:49:09Z", "kind": "epm:plan-verify", "version": 3, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=0 n_skip=3 (c7/c10/c11 kind-exempt) plan_version=v3 (post-Phase-3 patch: MF1 assistant-NaN exclusion + MF2 panel_set.json SHA pin + W1 §10 HF wording + W2 #612 awaiting_promotion caveat; correlation N=35, extraction N=36)"}
