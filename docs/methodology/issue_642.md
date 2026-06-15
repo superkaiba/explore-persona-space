@@ -43,8 +43,8 @@ ONE complete table. Reused-arm values carry #606's grounding by inheritance; the
 | cmft checkpoint grid (optimizer steps) | `{2,4,6,8,12,16,22,29,37,44,66,88,132}` (= #606 FT grid) | `i642_common.py` `CMFT_CKPT_GRID = FT_CKPT_GRID` |
 | cmft selected cells | steps {12, 16, 22, 132} | `eval_results/issue_642/.../generations/` |
 | Pre-authorized retrain lever | lr `2e-6`, densified grid (used only on a grid-jump fallback) | `i642_common.py` `FT_RETRAIN_LR=2e-6`, `FT_RETRAIN_GRID` |
-| LoRA arm (reused, NOT retrained) | r=32, α=64, all-linear, rsLoRA, dropout 0.05, `bias='none'`, lr `1e-5`, 132 steps; cells {28,32,36,132} | #606 `adapter_config.json` @ `ec58089f`; `i642_common.py` `LORA_LR=1e-5` |
-| Full-FT arm (reused, NOT retrained) | ZeRO-3 all-modules, lr `5e-6`, 132 steps; cells {12,16,22,132} | #606 recipe; `i642_common.py` `REUSED_FT_STEPS` |
+| LoRA fine-tune (reused, NOT retrained) | r=32, α=64, all-linear, rsLoRA, dropout 0.05, `bias='none'`, lr `1e-5`, 132 steps; cells {28,32,36,132} | #606 `adapter_config.json` @ `ec58089f`; `i642_common.py` `LORA_LR=1e-5` |
+| Full fine-tune (reused, NOT retrained) | ZeRO-3 all-modules, lr `5e-6`, 132 steps; cells {12,16,22,132} | #606 recipe; `i642_common.py` `REUSED_FT_STEPS` |
 | Eval decode backend | vLLM, `tensor_parallel_size=1`, `max_model_len=2048` | `i642_gen_worker.py` @ fe063180 |
 | Eval temperature | `1.0` | `i642_common.py` `EVAL_TEMPERATURE=1.0` |
 | Eval `max_new_tokens` | `512` | `i642_common.py` `EVAL_MAX_NEW_TOKENS=512` |
@@ -187,7 +187,7 @@ Generation metadata for this cell (verbatim from the artifact):
   "cell": "cmft_step16", "hostname": "eps-issue-642" }
 ```
 
-cmft generations + raw completions: [HF Hub `issue642_coverage_matched_ft/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/50ff10223275d41f70ee06f8fb9effe066eb8eae/issue642_coverage_matched_ft). Per-cell judge verdicts: [GitHub `eval_results/issue_642/sycophancy/verdicts/`](https://github.com/superkaiba/explore-persona-space/tree/fe063180a5e6e53207ad81a6eae6c75667b8801d/eval_results/issue_642/sycophancy/verdicts).
+cmft generations + raw completions: [HF Hub `issue642_coverage_matched_ft/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue642_coverage_matched_ft). Per-cell judge verdicts: [GitHub `eval_results/issue_642/sycophancy/verdicts/`](https://github.com/superkaiba/explore-persona-space/tree/fe063180a5e6e53207ad81a6eae6c75667b8801d/eval_results/issue_642/sycophancy/verdicts).
 
 ---
 
@@ -196,7 +196,7 @@ cmft generations + raw completions: [HF Hub `issue642_coverage_matched_ft/`](htt
 | Artifact | Pinned link |
 |---|---|
 | Training JSONL (reused #411 SE pool) | [HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/50ff10223275d41f70ee06f8fb9effe066eb8eae/issue411_sycophancy_cosine_gradient/training_pools/software_engineer_seed42) |
-| cmft raw completions + generations + trajectory | [HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/50ff10223275d41f70ee06f8fb9effe066eb8eae/issue642_coverage_matched_ft) |
+| cmft raw completions + generations + trajectory | [HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue642_coverage_matched_ft) |
 | Reused #606 LoRA/full-FT/base generations (comparison poles) | [HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/50ff10223275d41f70ee06f8fb9effe066eb8eae/issue606_lora_vs_ft_behaviors) |
 | Reused #606 LoRA `adapter_config.json` (module-set assert) | [HF Hub `adapters/issue_606/sycophancy_lora_step32`](https://huggingface.co/superkaiba1/explore-persona-space/tree/ec58089f32ed0f97c904cd00073663354eee8fc2/adapters/issue_606/sycophancy_lora_step32) |
 | Analysis JSON (decomposition + bootstrap CIs + per-persona profiles) | [GitHub](https://github.com/superkaiba/explore-persona-space/blob/fe063180a5e6e53207ad81a6eae6c75667b8801d/eval_results/issue_642/sycophancy/analysis.json) |
