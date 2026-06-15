@@ -6,6 +6,8 @@ tags: []
 created_at: '2026-06-11T05:57:27Z'
 has_clean_result: true
 parent_id: 536
+classification: useful
+promoted_at: '2026-06-15T23:28:58Z'
 ---
 # Two clustered persona-distance calls survive the estimator swap, while the set-size and leave-one-out calls remain estimator-dependent (MODERATE confidence)
 
