@@ -43,7 +43,27 @@ PATTERNS: dict[str, tuple[str, str]] = {
         "Effect-size-in-percentage-points (Δ-Npp / Δrate / Δ = -Npp)",
     ),
     "interval_inline": (
-        r"slope\s*\[[-+\d., ]+\]|\[[-+]?\d+\.\d+\s*,\s*[-+]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)",
+        # Three alternatives, all banned in reader-facing PROSE (Lens 7):
+        #   (1) `slope[low, high, ...]` — the original explicit slope form.
+        #   (2) `[low, high]` followed by a CI verb/unit (excludes / includes /
+        #       pp / % / ( / on) — the original trailing-token form.
+        #   (3) the BARE bracketed-CI form `[+0.169, +0.437]` with NO trailing
+        #       token — two signed/unsigned numbers separated by a comma inside
+        #       brackets. Lens 7 names this the same banned construct as
+        #       `value ± err`; the `±` regex missed it and the original
+        #       trailing-token form let a bare pair slip past
+        #       (caught only by the LM critic, incident #637). The two numbers
+        #       need NOT both carry a decimal point (an integer-bound CI like
+        #       `[1, 5]` is just as banned). Figure-caption blockquotes and the
+        #       finding-internal "Why this test" definition line are exempted
+        #       BEFORE the scan via `_strip_interval_inline_exempt_lines` — the
+        #       Lens 7 carve-outs (chart annotations / the CI-as-test-definition
+        #       sentence) — and GFM table cells via `_blank_table_rows` (the
+        #       Reproducibility Parameters table + Data capsule tables carry
+        #       interval forms legitimately).
+        r"slope\s*\[[-+\d., ]+\]"
+        r"|\[[-+]?\d+\.\d+\s*,\s*[-+]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)"
+        r"|\[[-+]?\d*\.?\d+\s*,\s*[-+]?\d*\.?\d+\]",
         "Credence intervals as inline [low, high] in prose (banned)",
     ),
     "named_tests": (
@@ -263,6 +283,45 @@ def _blank_table_rows(text: str) -> str:
 _TABLE_CELL_EXEMPT_CATEGORIES: frozenset[str] = frozenset({"interval_inline", "condition_labels"})
 
 
+# Lens 7 (clean-result-critic) scopes the bracketed-CI ban to reader-facing
+# PROSE — Takeaways bullets and finding setup/read paragraphs — and names two
+# carve-outs: (1) chart annotations / figure captions (the CI summarises a
+# plotted distribution, like a chart error bar), and (2) the finding-internal
+# "Why this test" definition sentence that explicitly names the CI as part of
+# the test definition. `verify_task_body.py` already treats blockquote (`>`)
+# lines as figure-caption reference material, not prose; mirror that here.
+# Both carve-outs are blanked BEFORE the `interval_inline` scan (and ONLY for
+# that category — the figure-caption / Why-this-test distinction is not
+# load-bearing for `condition_labels` or any other rule, so we don't widen
+# their exemption surface).
+_WHY_THIS_TEST_RE = re.compile(r"why\s+this\s+test", re.IGNORECASE)
+
+
+def _strip_interval_inline_exempt_lines(text: str) -> str:
+    """Blank figure-caption blockquote lines and the finding-internal
+    "Why this test" definition line — the two Lens 7 carve-outs for the
+    bracketed-CI / `interval_inline` category.
+
+    "Blanked" means the line's content becomes an empty string (the
+    trailing `\n` is preserved, so line offsets in sample output stay
+    stable). A blockquote line is any line whose first non-whitespace
+    character is `>` (the v3 figure-caption form `> **Figure.** ...`);
+    a "Why this test" line is any line containing that phrase
+    (case-insensitive), the inline definition sentence Lens 7 exempts.
+
+    Scoped to `interval_inline` only via the caller in :func:`audit_body`;
+    other categories keep scanning the unblanked text.
+    """
+    out: list[str] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith(">") or _WHY_THIS_TEST_RE.search(line):
+            out.append("")
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
 # The `## Reproducibility` `**Context:**` provenance row (SPEC.md
 # § `**Context:**` row; verify_task_body.py check 17) requires the
 # originating user prompt / follow-up scope note be carried forward
@@ -425,14 +484,27 @@ def audit_body(body: str) -> dict[str, list[str]]:
     keep scanning the unblanked text — the prose-vs-table distinction
     is not load-bearing for `byte_identical`, `pre_reg`, `named_tests`,
     `letter_labels`, etc.
+
+    `interval_inline` additionally blanks figure-caption blockquotes and
+    the finding-internal "Why this test" line (Lens 7's two carve-outs)
+    via `_strip_interval_inline_exempt_lines` — bracketed bounds in a
+    chart caption or a CI-as-test-definition sentence are spec-compliant.
     """
     findings: dict[str, list[str]] = {}
     cleaned = strip_code(
         strip_data_example_blocks(strip_context_blockquotes(strip_frontmatter(body)))
     )
     cleaned_table_blanked = _blank_table_rows(cleaned)
+    # `interval_inline` scans the table-blanked text with the Lens 7
+    # caption / "Why this test" carve-outs ALSO blanked.
+    interval_scan_source = _strip_interval_inline_exempt_lines(cleaned_table_blanked)
     for name, (pattern, _) in PATTERNS.items():
-        scan_source = cleaned_table_blanked if name in _TABLE_CELL_EXEMPT_CATEGORIES else cleaned
+        if name == "interval_inline":
+            scan_source = interval_scan_source
+        elif name in _TABLE_CELL_EXEMPT_CATEGORIES:
+            scan_source = cleaned_table_blanked
+        else:
+            scan_source = cleaned
         flags = re.IGNORECASE if name == "pre_reg" else 0
         matches = list(re.finditer(pattern, scan_source, flags))
         if matches:

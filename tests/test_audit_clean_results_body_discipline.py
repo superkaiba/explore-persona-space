@@ -230,3 +230,135 @@ def test_single_body_audit_clean_v3_passes(capsys):
     assert rc == 0
     out = capsys.readouterr().out
     assert "PASS" in out
+
+
+# ─── Bracketed-CI bounds in reader-facing prose (Lens 7; incident #637) ──
+#
+# The bare `[+0.169, +0.437]` form (no trailing CI verb/unit) is the same
+# banned construct as `value ± err`. The original `interval_inline` regex
+# only fired on `slope[...]` or a bracketed pair IMMEDIATELY followed by
+# `excludes`/`includes`/`pp`/`%`/`(`/`on `, so a bare pair slipped past the
+# audit and was caught only by the LM critic (REVISE round on #637). The
+# broadened regex must flag the bare form in Takeaways / What I ran /
+# Findings prose, while keeping it out of: Reproducibility / Data tables
+# (table-cell exemption), figure-caption blockquotes, and the
+# finding-internal "Why this test" definition sentence (Lens 7 carve-outs).
+
+
+def test_bare_bracketed_ci_in_takeaways_is_flagged():
+    """A bare `[+0.169, +0.437]` bound in a `## Takeaways` bullet trips
+    `interval_inline` (incident #637 — it previously slipped past)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the lift is [+0.169, +0.437] over baseline.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("0.169" in s for s in findings["interval_inline"]), findings
+
+
+def test_bare_bracketed_ci_in_findings_prose_is_flagged():
+    """The bare bracketed-CI form in finding setup/read prose is flagged."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The 95% CI on the mean lift is [-0.02, 0.41] across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+
+
+def test_integer_bound_bracketed_ci_is_flagged():
+    """An integer-bound CI like `[1, 5]` (no decimal point) is just as
+    banned — the broadened regex must not require a decimal."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The bootstrap bound spans [1, 5] points across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+
+
+def test_clean_v3_body_has_no_interval_inline_finding():
+    """The unmodified clean exemplar (interval-only forms live in the
+    Reproducibility / Data tables, none in prose) is interval-clean."""
+    findings = audit.audit_body(V3_BODY_WITH_DATA_CODES)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bracketed_ci_in_reproducibility_table_is_exempt():
+    """A bracketed-CI in the `## Reproducibility` Parameters table is a
+    spec-compliant interval form (table-cell exemption) and must NOT
+    trip `interval_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "| Base model | Qwen-2.5-7B-Instruct |",
+        "| Base model | Qwen-2.5-7B-Instruct |\n| Lift 95% CI | [+0.169, +0.437] |",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bracketed_ci_in_data_table_is_exempt():
+    """A bracketed-CI inside a `## Data` capsule example table is exempt
+    (table-cell + Data verbatim-content exemptions both apply)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "| Positive | C1 | A normal answer. |",
+        "| Positive | C1 | A normal answer. CI [0.1, 0.4]. |",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bracketed_ci_in_figure_caption_is_exempt():
+    """A bracketed-CI inside a figure-caption blockquote (`> **Figure.**
+    ...`) is a chart-annotation carve-out and must NOT trip the scan."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "> **Figure.** *The treatment lifts alignment over baseline at every seed.*",
+        "> **Figure.** *The treatment lifts alignment, 95% CI [+0.169, +0.437].*",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bracketed_ci_in_why_this_test_line_is_exempt():
+    """A bracketed-CI in the finding-internal 'Why this test' definition
+    sentence is the named Lens 7 exception and must NOT trip the scan."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "**Why this test:** the bootstrap CI [+0.169, +0.437] is the "
+        "registered interval defining the test.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_strip_interval_inline_exempt_lines_blanks_only_carveouts():
+    """`_strip_interval_inline_exempt_lines` blanks blockquote + Why-this-test
+    lines, leaves ordinary prose intact."""
+    text = (
+        "A prose line with [0.1, 0.4].\n"
+        "> **Figure.** caption with [0.1, 0.4].\n"
+        "**Why this test:** the CI [0.1, 0.4] defines it.\n"
+        "Another prose line with [0.2, 0.5].\n"
+    )
+    stripped = audit._strip_interval_inline_exempt_lines(text)
+    lines = stripped.splitlines()
+    assert lines[0] == "A prose line with [0.1, 0.4]."  # prose kept
+    assert lines[1] == ""  # caption blanked
+    assert lines[2] == ""  # Why-this-test blanked
+    assert lines[3] == "Another prose line with [0.2, 0.5]."  # prose kept
+
+
+def test_original_interval_inline_forms_still_flagged():
+    """Regression guard: the broadened regex must not drop the original
+    `slope[...]` and trailing-token forms."""
+    slope = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The fitted slope[0.1, 0.4] is positive across seeds.",
+    )
+    assert "interval_inline" in audit.audit_body(slope), "slope form regressed"
+    trailing = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The interval [0.1, 0.4] excludes zero across seeds.",
+    )
+    assert "interval_inline" in audit.audit_body(trailing), "trailing-token form regressed"
