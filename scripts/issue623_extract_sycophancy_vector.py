@@ -253,7 +253,12 @@ async def judge_trait_scores(
     rows: list[dict],
     max_concurrency: int = 8,
 ) -> list[dict]:
-    """Judge a list of {question, answer} rows -> list of score dicts (input order)."""
+    """Judge a list of rows -> list of score dicts (input order).
+
+    Each row carries ``question`` plus the model output under either ``answer``
+    (the extraction path's explicit mapping) or ``response`` (the steering path's
+    native key). Accepting both keeps every caller uniform.
+    """
     import anthropic
 
     client = anthropic.AsyncAnthropic()
@@ -261,12 +266,13 @@ async def judge_trait_scores(
     results: list[dict | None] = [None] * len(rows)
 
     async def one(i: int, row: dict) -> None:
+        answer = row.get("answer", row.get("response"))
+        if answer is None:
+            raise KeyError(f"judge row missing 'answer'/'response': {sorted(row)}")
         async with sem:
             # one transient retry
             for attempt in range(3):
-                out = await _one_trait_score(
-                    client, model, eval_prompt, row["question"], row["answer"]
-                )
+                out = await _one_trait_score(client, model, eval_prompt, row["question"], answer)
                 if out["error"] is None:
                     break
                 await asyncio.sleep(1.5**attempt)
