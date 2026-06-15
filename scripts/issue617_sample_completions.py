@@ -148,6 +148,49 @@ def build_prompt_messages(conv: dict) -> list[dict]:
     return [{"role": "user", "content": conv["first_user"]}]
 
 
+# vLLM max_model_len safety ceiling. Qwen-2.5-7B-Instruct supports a 32K
+# context window, but cudagraph capture time + KV-cache footprint scale with
+# max_model_len, so we cap the auto-bumped value here. 16384 comfortably covers
+# the WildChat single-user-turn prefix distribution (longest observed ~4720
+# tokens) plus the completion budget + working margin while staying bounded.
+MAX_MODEL_LEN_CEILING = 16384
+
+
+def _round_up_to_pow2(n: int) -> int:
+    """Smallest power of two >= n (vLLM is happiest with a round block size)."""
+    p = 1
+    while p < n:
+        p <<= 1
+    return p
+
+
+def compute_effective_max_model_len(
+    tokenized_prompt_lengths: list[int],
+    max_new_tokens: int,
+    floor: int,
+    ceiling: int = MAX_MODEL_LEN_CEILING,
+) -> int:
+    """Pick a max_model_len that covers the longest prompt + generation budget.
+
+    The canonical vLLM ``max_model_len`` gotcha (``.claude/rules/gotchas.md``):
+    the value must be no smaller than ``longest_prompt_tokens + max_new_tokens``,
+    and the working margin is ``~2 * max_new_tokens`` of slot overhead. WildChat
+    user turns span multi-turn dialogue and one production prompt measured 4720
+    tokens > the old 4096 default, crashing Step 6 (#617 round 3). We size to the
+    REALIZED prompt distribution, then clamp to [floor, ceiling]:
+
+      needed = max(prompt_tokens) + max_new_tokens + 2 * max_new_tokens
+
+    Returns ``clamp(next_pow2(needed), floor, ceiling)``. ``floor`` is the
+    CLI ``--max-model-len`` hint (a lower bound, never a hard cap), ``ceiling``
+    bounds KV-cache + cudagraph cost.
+    """
+    longest = max(tokenized_prompt_lengths) if tokenized_prompt_lengths else 0
+    margin = 2 * max_new_tokens  # gotcha "working margin"
+    needed = longest + max_new_tokens + margin
+    return min(ceiling, max(floor, _round_up_to_pow2(needed)))
+
+
 def sample_completions(
     prompt_msgs_by_id: dict[str, list[dict]],
     model: str,
@@ -163,11 +206,44 @@ def sample_completions(
     with add_generation_prompt=True so the model generates a fresh assistant
     turn after the user's query. One batched LLM.generate() call over all
     prefixes (SamplingParams n=N).
+
+    ``max_model_len`` is a FLOOR/HINT, not a hard cap: we tokenize every
+    chat-templated prompt once and bump max_model_len up to cover the longest
+    prompt + generation budget + working margin (the vLLM max_model_len gotcha),
+    so a long WildChat user turn no longer crashes generation (#617 round 3).
     """
+    from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
     conv_ids, prompts = build_prompts(prompt_msgs_by_id, model)
-    llm = LLM(model=model, max_model_len=max_model_len, seed=seed)
+
+    # Tokenize each rendered prompt with the SAME tokenizer vLLM will use, so the
+    # length we size against matches what vLLM measures at generate() time.
+    tok = AutoTokenizer.from_pretrained(model)
+    prompt_lengths = [len(tok(p, add_special_tokens=False).input_ids) for p in prompts]
+    effective_max_model_len = compute_effective_max_model_len(
+        prompt_lengths, max_new_tokens, floor=max_model_len
+    )
+    longest = max(prompt_lengths) if prompt_lengths else 0
+    logger.info(
+        "max_model_len: floor=%d longest_prompt_tokens=%d max_new_tokens=%d -> "
+        "effective=%d (ceiling=%d)",
+        max_model_len,
+        longest,
+        max_new_tokens,
+        effective_max_model_len,
+        MAX_MODEL_LEN_CEILING,
+    )
+    if longest + max_new_tokens > effective_max_model_len:
+        # The longest prompt + generation budget exceeds even the ceiling: fail
+        # loud rather than let vLLM truncate/crash mid-generation.
+        raise RuntimeError(
+            f"longest prompt ({longest} tok) + max_new_tokens ({max_new_tokens}) "
+            f"= {longest + max_new_tokens} exceeds max_model_len ceiling "
+            f"{MAX_MODEL_LEN_CEILING}; raise MAX_MODEL_LEN_CEILING or trim prefixes"
+        )
+
+    llm = LLM(model=model, max_model_len=effective_max_model_len, seed=seed)
     sp = SamplingParams(n=n, temperature=temp, max_tokens=max_new_tokens, seed=seed)
     outputs = llm.generate(prompts, sp)
     result: dict[str, list[str]] = {}
@@ -192,7 +268,17 @@ def main() -> int:
     parser.add_argument("--n", type=int, default=COMPLETION_N)
     parser.add_argument("--temp", type=float, default=COMPLETION_TEMP)
     parser.add_argument("--max-new-tokens", type=int, default=COMPLETION_MAX_NEW_TOKENS)
-    parser.add_argument("--max-model-len", type=int, default=4096)
+    parser.add_argument(
+        "--max-model-len",
+        type=int,
+        default=8192,
+        help="FLOOR/HINT for vLLM max_model_len, NOT a hard cap: the script "
+        "tokenizes the chat-templated prompts and bumps this up to cover the "
+        "longest prompt + max_new_tokens + working margin (clamped at "
+        f"{MAX_MODEL_LEN_CEILING}). 8192 floors most WildChat distributions "
+        "without dynamic bumping (#617 round 3: longest observed ~4720 tok > "
+        "the old 4096 default crashed Step 6).",
+    )
     parser.add_argument(
         "--max-prefixes",
         type=int,

@@ -99,7 +99,11 @@ else
     EXTRACT_MODEL="Qwen/Qwen2.5-7B-Instruct"
     EXTRACT_EXTRA="--gpu-id 0"
     COMPLETION_MODEL="Qwen/Qwen2.5-7B-Instruct"
-    COMPLETION_EXTRA="--max-model-len 4096"
+    # --max-model-len is a FLOOR/HINT: issue617_sample_completions.py tokenizes
+    # the chat-templated prompts and bumps it up to cover the longest prompt +
+    # generation budget + margin (clamped at 16384). 8192 is the safe floor —
+    # the old 4096 crashed Step 6 on a 4720-token WildChat prompt (#617 round 3).
+    COMPLETION_EXTRA="--max-model-len 8192"
 fi
 
 fail_sentinel() {
