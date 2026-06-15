@@ -328,7 +328,13 @@ def generate_instruction_rollouts(
         gpu_memory_utilization=0.85,
     )
     sampling = SamplingParams(temperature=GEN_TEMPERATURE, max_tokens=max_new_tokens, n=n_rollouts)
-    outputs = llm.generate(convos, sampling)
+    # use_tqdm=False bypasses the vLLM 0.11.0 _run_engine ZeroDivisionError pbar
+    # race (`in_spd = total_in_toks / pbar.format_dict["elapsed"]` divides by an
+    # elapsed=0.0 first tick) — same fault as the panel-vectors phase (#623 launches
+    # 3/4); this script runs the very next dispatcher phase (issue623_dispatch.sh:256)
+    # so it would crash identically without the kwarg. LLM.generate accepts use_tqdm
+    # in vLLM 0.11.0 (verified inspect.signature).
+    outputs = llm.generate(convos, sampling, use_tqdm=False)
 
     rows: list[dict] = []
     for (instr_idx, polarity, question), out in zip(keys, outputs, strict=True):
