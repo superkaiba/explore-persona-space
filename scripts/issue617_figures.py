@@ -53,6 +53,22 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 TFIDF_BASELINE = 0.604
 LENGTH_BASELINE = 0.396
 
+# Plain-English category names for the production-run clusters (paper-plots §3.5:
+# no bare cluster slugs on rendered figures). Derived from each cluster's example
+# first-user-turns; the bare slug stays only in separability.json provenance.
+CATEGORY_LABELS = {
+    "kmeans10_c01": "coding & debugging help",
+    "kmeans10_c08": "travel-guide writing",
+    "kmeans10_c09": "legal / medical / academic Q&A",
+    "kmeans20_c02": "translation & misc requests",
+    "kmeans20_c13": "sports script-writing",
+}
+
+
+def _cat(slug: str) -> str:
+    """Plain-English label for a cluster slug, falling back to the slug."""
+    return CATEGORY_LABELS.get(slug, slug)
+
 
 def fig_hero(results: dict, fig_dir: Path) -> None:
     """Winning-pair purity-vs-layer (raw + residualized) with the global null band."""
@@ -99,7 +115,7 @@ def fig_hero(results: dict, fig_dir: Path) -> None:
     ax.set_xticks(layers)
     ax.set_ylim(0, 1.02)
     ax.set_title(
-        f"Winning pair {winner['cluster_a']} vs {winner['cluster_b']} "
+        f"Winning pair: {_cat(winner['cluster_a'])} vs {_cat(winner['cluster_b'])} "
         f"(p_global={winner['p_global']:.4f})"
     )
     ax.legend(fontsize=7, loc="lower right")
@@ -110,7 +126,7 @@ def fig_hero(results: dict, fig_dir: Path) -> None:
 def fig_top3(results: dict, fig_dir: Path) -> None:
     """Ranked top-3 pairs: raw vs residualized best-layer purity."""
     top3 = results["top3"]
-    names = [f"{p['cluster_a']}\nvs {p['cluster_b']}" for p in top3]
+    names = [f"{_cat(p['cluster_a'])}\nvs {_cat(p['cluster_b'])}" for p in top3]
     res = [p["residualized_purity_best"] for p in top3]
     raw = [max(p["raw_purity_per_layer"].values()) for p in top3]
     pal = paper_palette(2)
