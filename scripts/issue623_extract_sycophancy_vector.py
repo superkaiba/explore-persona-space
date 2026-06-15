@@ -400,8 +400,17 @@ def capture_activations(
         "response_avg": {lyr: [] for lyr in layers},
     }
 
+    n_rows = len(rows)
     try:
-        for row in rows:
+        for row_idx, row in enumerate(rows):
+            # Per-row progress so a crash mid-extraction surfaces WHERE it died in
+            # the polling-tick log_tail (the loop was previously silent end-to-end).
+            if row_idx % 25 == 0 or row_idx == n_rows - 1:
+                print(
+                    f"[phase=sycophancy_trait] capture_activations row {row_idx + 1}/{n_rows} "
+                    f"layers={layers}",
+                    flush=True,
+                )
             messages = [
                 {"role": "system", "content": row["system_prompt"]},
                 {"role": "user", "content": row["question"]},
@@ -578,11 +587,24 @@ def run_steering_probe(
     baseline_scores = asyncio.run(judge_trait_scores(judge_model, eval_prompt, baseline_rows))
     baseline_mean = _mean_score(baseline_scores)
 
+    print(
+        f"[phase=steering_probe] baseline scored (mean={baseline_mean:.3f}); "
+        f"sweeping {len(layers)} layers x {len(alphas)} alphas",
+        flush=True,
+    )
+
     per_layer: dict[str, dict] = {}
     raw_completions: dict[str, list[dict]] = {"baseline": baseline_rows}
-    for layer in layers:
+    for layer_idx, layer in enumerate(layers):
         per_alpha_effects: list[float] = []
         for coeff in alphas:
+            # Per (layer, coeff) progress so a crash in the long generate+judge
+            # sweep surfaces WHERE it died in the polling-tick log_tail.
+            print(
+                f"[phase=steering_probe] layer {layer_idx + 1}/{len(layers)} (l={layer}) "
+                f"coeff={coeff}",
+                flush=True,
+            )
             alpha = coeff * rms[layer]
             rows = steering_generate(
                 model,

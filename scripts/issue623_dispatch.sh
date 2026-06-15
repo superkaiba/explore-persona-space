@@ -60,6 +60,7 @@ while [[ $# -gt 0 ]]; do
     --skip-preflight) SKIP_PREFLIGHT="1"; shift ;;
     --skip-gpu-phases) SKIP_GPU_PHASES="1"; SKIP_UPLOAD="1"; shift ;;
     --smoke-upload-only) SMOKE_UPLOAD_ONLY="1"; shift ;;
+    --force-crash-test) FORCE_CRASH_TEST="1"; shift ;;
     *) echo "[driver] unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -70,7 +71,67 @@ LOGS_DIR="${ISSUE623_LOGS_DIR:-/workspace/logs}"
 RUN_LOGS="$LOGS_DIR/issue623_driver"
 mkdir -p "$RUN_LOGS" "$DATA_DIR" "$EVAL_DIR"
 
-fail() { echo "[driver] FATAL: $*" >&2; exit "${2:-1}"; }
+# ── crash-dump diagnostics state (GCP-lane forensics; #607 $? caveat) ────────
+# The GCP DELETE-on-exit fence wipes the instance disk before any log upload,
+# so a non-clean exit must push a forensic bundle to HF FIRST. We track three
+# signals because the GCE metadata-runner can SIGPIPE-kill the script and leave
+# $? reading 0 inside an EXIT trap (gotchas.md #607): an explicit fail() flag,
+# the last phase reached, and whether the terminal [phase=done] was ever hit.
+_LAST_PHASE="startup"
+_DRIVER_FAILED="0"
+_DONE_MARKER_REACHED="0"
+FORCE_CRASH_TEST="${FORCE_CRASH_TEST:-0}"
+# Surface a few facts for CRASH_META.json (best-effort; absent on a local smoke).
+export EPS_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+export EPS_DISPATCHER_ARGV="$0 $*"
+
+# mark <phase> — call at each phase boundary so the trap/poll knows where we are.
+mark() { _LAST_PHASE="$1"; }
+
+_crash_dump() {
+  # Fire ONLY on a non-clean exit. "Clean" = exit 0 AND the terminal [phase=done]
+  # was reached. $? alone is untrustworthy under the #607 SIGPIPE kill, so the
+  # "[phase=done] never reached" signal is the safety net.
+  local rc="$?"
+  trap - EXIT  # disarm so our own exit below cannot re-enter the trap
+  if [[ "$rc" == "0" && "$_DRIVER_FAILED" == "0" && "$_DONE_MARKER_REACHED" == "1" ]]; then
+    return 0  # genuine clean exit — no dump
+  fi
+  echo "[driver] [phase=crash_dump] non-clean exit (rc=$rc, last_phase=$_LAST_PHASE) — uploading forensic dump to HF" >&2
+  local dump_suffix_arg=()
+  [[ "$FORCE_CRASH_TEST" == "1" ]] && dump_suffix_arg=(--hf-prefix-suffix smoketest --print-prefix-only)
+  # Best-effort: the dump must NEVER mask the original exit code, so we swallow
+  # its own non-zero and always re-exit with rc.
+  uv run python scripts/issue623_crash_dump.py \
+    --run-logs "$RUN_LOGS" \
+    --data-dir "$DATA_DIR" \
+    --master-log "${EPS_LOG_PATH:-$LOGS_DIR/issue-623.log}" \
+    --last-phase "$_LAST_PHASE" \
+    --exit-code "$rc" \
+    "${dump_suffix_arg[@]}" \
+    >>"$RUN_LOGS/crash_dump.log" 2>&1 \
+    || echo "[driver] [phase=crash_dump] WARN crash-dump uploader itself failed — see $RUN_LOGS/crash_dump.log" >&2
+  # Surface the crash-dump log tail on the master log so the polling tick sees it.
+  echo "[driver] [phase=crash_dump] crash-dump uploader output (tail):" >&2
+  tail -n 20 "$RUN_LOGS/crash_dump.log" >&2 2>/dev/null || true
+  exit "$rc"
+}
+trap _crash_dump EXIT
+
+fail() {
+  echo "[driver] FATAL: $*" >&2
+  _DRIVER_FAILED="1"
+  # On a real crash, surface the failing phase's log tail onto the master log so
+  # the polling tick's log_tail (which only sees the master log, not the
+  # per-phase redirect target) shows WHERE it died even before the HF dump lands.
+  local phase_log="$RUN_LOGS/${_LAST_PHASE}.log"
+  if [[ -f "$phase_log" ]]; then
+    echo "[driver] --- tail of $phase_log (last_phase=$_LAST_PHASE) ---" >&2
+    tail -n 40 "$phase_log" >&2 2>/dev/null || true
+    echo "[driver] --- end $phase_log ---" >&2
+  fi
+  exit "${2:-1}"
+}
 
 # ── --smoke-upload-only: end-to-end upload-phase smoke (C2) ──────────────────
 # The standard --skip-gpu-phases smoke sets SKIP_UPLOAD=1 so the upload phase was
@@ -116,6 +177,7 @@ if missing:
 print(f"upload smoke: all {len(expected)} files resolved under {prefix} on HF")
 PY
   rm -rf "$SMOKE_BASE"
+  _DONE_MARKER_REACHED="1"
   echo "[driver] [phase=done] upload-phase smoke complete ($SMOKE_PREFIX verified on HF)"
   exit 0
 fi
@@ -130,6 +192,7 @@ echo "[driver] issue 623 dispatch: smoke=$SMOKE personas='${PERSONAS:-ALL}' laye
 
 # ── p0_preflight (tolerant; parse --json, tolerate behind-origin/main #552) ──
 if [[ "$SKIP_PREFLIGHT" == "0" ]]; then
+  mark p0_preflight
   echo "[driver] [phase=p0_preflight] tolerant preflight"
   uv run python - <<'PY' || fail "preflight (non-git-check) errors" 2
 import json, re, subprocess, sys
@@ -154,17 +217,29 @@ else
 fi
 
 # ── phase 1: persona resolve ──
+mark persona_resolve
 echo "[driver] [phase=persona_resolve] resolving panel prompts"
 uv run python scripts/issue623_persona_resolve.py \
   --output "$DATA_DIR/panel_prompts.json" "${PERSONA_ARG[@]}" \
   >"$RUN_LOGS/persona_resolve.log" 2>&1 \
   || fail "persona_resolve failed — see $RUN_LOGS/persona_resolve.log"
 
+# ── --force-crash-test: exercise the on-crash dump path WITHOUT a GPU ─────────
+# After the cheap CPU-only persona_resolve phase, simulate a phase exit 1 so the
+# EXIT trap fires the crash-dump uploader against a _crash_dumps/..._smoketest
+# prefix. fail() trips _DRIVER_FAILED and exits 1 → _crash_dump uploads + the
+# smoke verifies the dump landed on HF + cleans it up.
+if [[ "$FORCE_CRASH_TEST" == "1" ]]; then
+  mark vector_extract  # pretend we died in the long extraction loop
+  fail "FORCED CRASH TEST — exercising on-crash dump uploader (no real failure)" 1
+fi
+
 if [[ "$SKIP_GPU_PHASES" == "1" ]]; then
   echo "[driver] [phase=vector_extract] SKIPPED (--skip-gpu-phases dry-run)"
   echo "[driver] [phase=sycophancy_trait] SKIPPED (--skip-gpu-phases dry-run)"
 else
   # ── phase 2: persona panel vectors (Method AB) ──
+  mark vector_extract
   echo "[driver] [phase=vector_extract] extracting persona centroids (Method AB)"
   # shellcheck disable=SC2086
   uv run python scripts/issue623_persona_panel_vectors.py \
@@ -175,6 +250,7 @@ else
     || fail "vector_extract failed — see $RUN_LOGS/vector_extract.log"
 
   # ── phases 3 + 4: sycophancy trait vector + steering probe (K2 HALT) ──
+  mark sycophancy_trait
   echo "[driver] [phase=sycophancy_trait] extracting sycophancy trait vector + steering probe"
   # shellcheck disable=SC2086
   uv run python scripts/issue623_extract_sycophancy_vector.py \
@@ -188,6 +264,7 @@ else
 fi
 
 # ── phase 5: behavioral DV syc_i (reuse #612 base rates) ──
+mark syc_i_load
 echo "[driver] [phase=syc_i_load] resolving behavioral DV syc_i (reuse #612)"
 uv run python scripts/issue623_behavioral_dv.py \
   --panel-prompts "$DATA_DIR/panel_prompts.json" \
@@ -197,6 +274,7 @@ uv run python scripts/issue623_behavioral_dv.py \
 
 # ── upload intermediate analysis tensors + raw completions to HF ──
 if [[ "$SKIP_UPLOAD" == "0" ]]; then
+  mark upload
   echo "[driver] [phase=upload] uploading centroids + trait + raw completions to HF"
   uv run python scripts/issue623_upload.py \
     --persona-vectors-dir "$DATA_DIR" \
@@ -206,4 +284,5 @@ else
   echo "[driver] [phase=upload] SKIPPED (--skip-upload)"
 fi
 
+_DONE_MARKER_REACHED="1"
 echo "[driver] [phase=done] issue 623 dispatch complete"
