@@ -26,6 +26,7 @@ relates_to:
 ## Takeaways
 
 - **A persona's cosine alignment to the sycophancy direction predicts its judged base sycophancy rate: Spearman rho = 0.73, 95% CI [0.49, 0.87], n = 35 (p ≈ 3e-7).** Persona-vector geometry already encodes the behavioral prior.
+- **The headline is robust to single-persona leverage: leave-one-out rho ranges [0.71, 0.81] across all n = 35 drops, every value inside the headline CI.** No one persona drives the correlation.
 - Robust to layer choice: rho positive with CI clear of 0 at all four sampled layers (0.57 / 0.73 / 0.67 / 0.65). Headline layer 14 was steering-selected, not pinned a priori.
 - **Reading the persona vector from generated responses instead of the pre-generation prompt state halves the apparent signal (rho 0.73 → 0.44).** The readout choice is load-bearing and partly circular.
 - This bounds the standing project line: geometry is a real but noisy proxy for the behavioral prior, not a genuinely different axis.
@@ -42,13 +43,13 @@ relates_to:
 
 ### A persona's vector alignment to sycophancy predicts its base sycophancy rate (rho = 0.73 [0.49, 0.87], n = 35)
 
-Each persona vector is the last-prompt-token activation difference between that persona's context and the default-assistant context; I take its cosine to a separately extracted sycophancy direction. The behavioral scalar is independent — the judged rate at which the base model, prompted as that persona, agrees with false claims.
+Each persona vector is the last-prompt-token activation difference `(persona − default-assistant)`; I take its cosine to a separately extracted sycophancy direction. The behavioral scalar is independent: the judged rate at which the base model, prompted as that persona, agrees with false claims.
 
 ![Scatter of per-persona cosine alignment to the sycophancy vector (x) against judged base sycophancy rate (y), 35 personas, Spearman rho 0.73](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fa95d4afa31da575782780818b446c00241655ee/figures/issue_623/scatter_headline.png)
 
 > **Figure.** *Persona-vector alignment to the sycophancy direction tracks base sycophancy across the panel (rho = 0.73 [0.49, 0.87], n = 35).* x = cosine(persona vector, sycophancy vector) at layer 14, last prompt token; y = fraction of 600 base generations judged sycophantic. One point per persona. Positive cosine concentrates the high-sycophancy personas; the relationship is monotonic, not a tight line.
 
-The high-sycophancy comedy/satire personas sit at positive cosine; the low-sycophancy professionals (journalist, accountant, lawyer, software engineer) at negative cosine. The fit is monotonic rather than linear — the highest-cosine personas are not the most sycophantic — which is why rank correlation is the right read. The CI excludes 0 by a wide margin.
+High-sycophancy comedy/satire personas sit at positive cosine, low-sycophancy professionals at negative. A leave-one-out check confirms no single persona drives the result: dropping each of the 35 in turn leaves rho in [0.71, 0.81], every value inside the headline CI, which stays clear of 0 under the worst-case drop. The highest-leverage point is the con artist — rank-discordant (cosine-rank 33/35 but sycophancy-rank only 9/35), so removing it *raises* rho to 0.81; the satirist is rank-concordant, so dropping it leaves rho flat at 0.73.
 
 ### The signal is robust to layer, and the trait vector is causally real
 
@@ -139,16 +140,19 @@ Full generations: [`issue623_persona_vectors/steering_probe/raw_completions/` @ 
 | Realized panel | 36 resolved / 35 correlation (assistant baseline-self dropped) |
 
 - **Methodology reference:** `docs/methodology/issue_623.md` (auto-generated, findings-blind; linked at promotion).
-- **Artifacts:** behavioral DV + correlation outputs in this repo at `eval_results/issue_623/` (`rho_by_layer.json`, `cosine_matrix.json`, `syc_i.json`, `steering_probe.json`, `steering_effect_by_layer.json`); persona vectors, sycophancy trait vector, panel prompts, and steering-probe generations at [superkaiba1/explore-persona-space-data @ 06cde77, `issue623_persona_vectors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue623_persona_vectors); figure sources at `figures/issue_623/` (this repo).
+- **Artifacts:** behavioral DV + correlation outputs in this repo at `eval_results/issue_623/` (`rho_by_layer.json`, `cosine_matrix.json`, `syc_i.json`, `steering_probe.json`, `steering_effect_by_layer.json`, `rho_loo_leverage.json`); persona vectors, sycophancy trait vector, panel prompts, and steering-probe generations at [superkaiba1/explore-persona-space-data @ 06cde77, `issue623_persona_vectors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue623_persona_vectors); figure sources at `figures/issue_623/` (this repo).
 - **Reused artifact provenance:**
   - Reused base sycophancy judgments from [#612](https://eps.superkaiba.com/tasks/612): [`issue612_sycophancy_onpolicy/judgments/base/` @ 06cde77](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue612_sycophancy_onpolicy/judgments/base) — fit: same base model (Qwen-2.5-7B-Instruct), same on-policy free-generation rig, audited 60-claim pool with the per-persona base rates this correlation reads off; 35 of the panel personas have committed rates.
 - **Compute:** GCP `a2-ultragpu-1g`, 1× A100-80GB, zone us-central1-a, instance `eps-issue-623`, project eps-persona-gpu-jun2026; training-free (forward passes + Claude judging), completed 2026-06-15T14:05Z (GCP launch #5 after four provisioning fall-throughs).
-- **Code:** pipeline at commit `fa95d4afa31da575782780818b446c00241655ee` (this repo, branch issue-623). Dispatch + analysis: `scripts/issue623_persona_resolve.py` → `scripts/issue623_persona_panel_vectors.py` → `scripts/issue623_extract_sycophancy_vector.py` → `scripts/issue623_behavioral_dv.py` → `scripts/issue623_analyze.py` (off-pod CPU). Reproduce the headline:
+- **Code:** pipeline at commit `8e3ce2d24bb8ad28297f0371c95cfbc2333bc198` (this repo, branch issue-623; figures pinned to ancestor `fa95d4afa31da575782780818b446c00241655ee`). Dispatch + analysis: `scripts/issue623_persona_resolve.py` → `scripts/issue623_persona_panel_vectors.py` → `scripts/issue623_extract_sycophancy_vector.py` → `scripts/issue623_behavioral_dv.py` → `scripts/issue623_analyze.py` (off-pod CPU) → `scripts/issue623_loo_leverage.py` (leave-one-out leverage check). Reproduce the headline:
 
 ```bash
 uv run python scripts/issue623_analyze.py --issue 623
 # reads eval_results/issue_623/{cosine_matrix,syc_i,steering_probe}.json
 # writes rho_by_layer.json + figures/issue_623/*.png
+uv run python scripts/issue623_loo_leverage.py --issue 623
+# reads eval_results/issue_623/{cosine_matrix,syc_i}.json
+# writes rho_loo_leverage.json (LOO range [0.71, 0.81], all in headline CI)
 ```
 
 - **Context:**
@@ -158,7 +162,3 @@ uv run python scripts/issue623_analyze.py --issue 623
     > add this as a task:
     >
     > 2. The prior question (how much of the base prior do persona vectors capture; how much do they capture trained-in behavior) — no task. She flagged this as the one she's personally interested in.
-
-## Free-analysis follow-ups (orchestrator: auto-run before parking)
-
-- **Partial-out base-rate compression / leave-one-out leverage check on the headline rho** (cost_class: free-analysis, headline_affecting: yes, est_gpu_hours: 0) — the headline rests on 35 points with one high-sycophancy outlier (satirist, 0.297); recompute rho with leave-one-out per persona and report the min/max to confirm no single persona drives the CI. Re-reads only `eval_results/issue_623/{cosine_matrix,syc_i}.json`.
