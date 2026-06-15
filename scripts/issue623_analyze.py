@@ -376,7 +376,20 @@ def main() -> None:
                     correlation_personas,
                 )
             except FileNotFoundError as e:
-                # a robustness arm whose centroids weren't extracted (e.g. method_b
+                # Discriminate: the HEADLINE arm (and its dot-metric counterpart,
+                # which share the same core inputs) must fail loud on missing
+                # artifacts; robustness arms are allowed to be absent.
+                headline_arm_keys = {
+                    f"{HEADLINE_ARM[0]}_{HEADLINE_ARM[1]}",
+                    f"{HEADLINE_ARM[0]}_{HEADLINE_ARM[1]}_dot",
+                }
+                if arm_key in headline_arm_keys:
+                    raise RuntimeError(
+                        f"HEADLINE-ARM HALT: required artifact missing for production "
+                        f"headline arm {arm_key!r}: {e}. No rho_by_layer.json should be "
+                        f"written; re-extract the missing centroids/trait vectors."
+                    ) from e
+                # robustness arm whose centroids weren't extracted (e.g. method_b
                 # skipped) is reported as absent, NOT silently zeroed.
                 print(f"[phase=analyze] arm {arm_key} skipped: {e}", flush=True)
                 continue
@@ -420,6 +433,23 @@ def main() -> None:
             "h1_confirmed": (hrho["rho"] >= H1_RHO_THRESHOLD and hrho["ci_lo"] > 0.0),
             "h0_null": (hrho["ci_lo"] <= 0.0 <= hrho["ci_hi"]),
         }
+
+    # Defense in depth: K1/K2/K3 + the headline-arm HALT above should have
+    # caught a missing headline upstream, but assert once more before the
+    # primary deliverable lands. NEVER write rho_by_layer.json with headline=null.
+    if h_key not in rho_by_layer:
+        raise RuntimeError(
+            f"HEADLINE-ARM HALT: headline arm {h_key!r} produced no rho rows "
+            f"across layers {layers}; refusing to write rho_by_layer.json with "
+            f"headline=null. Inspect the preceding 'arm ... skipped' logs and "
+            f"re-extract."
+        )
+    if headline is None:
+        raise RuntimeError(
+            f"HEADLINE-ARM HALT: headline_layer={headline_layer!r} not present in "
+            f"arm {h_key!r}'s rho_by_layer; refusing to write rho_by_layer.json "
+            f"with headline=null."
+        )
 
     meta = reproducibility_metadata(
         {
