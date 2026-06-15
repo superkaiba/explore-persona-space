@@ -8,16 +8,20 @@ has_clean_result: false
 parent_id: 532
 origin_prompt: Can we run a followup to check effect of base prior on change in leakage
   for the more realistic behaviors?
+goal: 'Test whether #532''s level-vs-change predictor decomposition holds for a realistic
+  judged behavior (sycophancy primary, refusal stretch): per (source x bystander)
+  cell, separate leakage into absolute trained expression (LEVEL) and trained-base
+  shift (CHANGE), and test whether the base-model bystander prior predicts LEVEL while
+  activation geometry (cosine/Gaussian-KL) predicts CHANGE - replicating or breaking
+  the marker''s clean two-component rule. Reuse existing sycophancy panels (#612/#627/#507/#509)
+  carrying base rate + trained rate + geometry; add a graded log-prob-readable DV
+  (#391 forced-choice) only if rate-space floors.'
 ---
 # Does the base-prior-vs-geometry level/change split hold for realistic behaviors?
 
 ## Goal
 
-Test whether the #532 **level-vs-change predictor decomposition** — the base-model
-prior predicts the *absolute level* of leakage while activation geometry predicts
-the *training-induced change* (trained − base) — holds for a realistic judged
-behavior (sycophancy primary; refusal as a stretch), rather than being specific to
-the programmatic marker.
+Test whether #532's level-vs-change predictor decomposition holds for a realistic judged behavior (sycophancy primary, refusal stretch): per (source x bystander) cell, separate leakage into absolute trained expression (LEVEL) and trained-base shift (CHANGE), and test whether the base-model bystander prior predicts LEVEL while activation geometry (cosine/Gaussian-KL) predicts CHANGE - replicating or breaking the marker's clean two-component rule. Reuse existing sycophancy panels (#612/#627/#507/#509) carrying base rate + trained rate + geometry; add a graded log-prob-readable DV (#391 forced-choice) only if rate-space floors.
 
 Per (source × bystander) cell, decompose leakage into:
 - **LEVEL** = absolute trained expression of the behavior at the bystander, and
