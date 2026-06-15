@@ -9,3 +9,4 @@
 {"ts": "2026-06-15T06:40:50Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqeudkhr-p2arno phase=done after 150s."}
 {"ts": "2026-06-15T06:41:49Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqeudjd3-e8893w phase=done after 211s."}
 {"ts": "2026-06-15T06:42:48Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqeudi8m-287bks phase=done after 271s."}
+{"ts": "2026-06-15T06:52:46Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verdict: PASS, n_fail: 0, n_warn: 1, plan version: v2.\n\nWARN c8_success_kill_criteria — same informational note as v1 (infra task, no null result to kill)."}
