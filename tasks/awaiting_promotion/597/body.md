@@ -23,6 +23,8 @@ goal: Measure the training-step dynamics of source marker implantation AND bysta
 relates_to:
 - implant-learning-speed
 - leak-contrastive-negatives
+classification: useful
+promoted_at: '2026-06-15T23:44:52Z'
 ---
 # Marker implants lift most bystander personas nearly in lockstep with the source from the first observable training steps; contrastive negatives cap and partially reverse the shared rise rather than suppressing bystanders below base (MODERATE confidence)
 
