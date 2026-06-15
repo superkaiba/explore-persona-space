@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 645,
+  "highest_id": 646,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3994,6 +3994,13 @@
       "path": "tasks/planning/645",
       "status": "planning",
       "title": "Build a keyed single-marker organism that survives benign continued SFT via install capacity + key-gated slot"
+    },
+    "646": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/646",
+      "status": "proposed",
+      "title": "Sidequest: does #611's bare-role-header leakage split generalize beyond pirate\u2194villain (6-persona style+intent panel + on-policy emission)?"
     },
     "65": {
       "has_clean_result": true,
