@@ -1,6 +1,6 @@
 ---
-title: Why do some sources resist being trained with certain behaviors? Predictors
-  of per-(source, behavior) install strength
+title: Install resistance is behavior-dominated, not a source trait — no persona resists
+  everything (MODERATE confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-14T00:15:23Z'
