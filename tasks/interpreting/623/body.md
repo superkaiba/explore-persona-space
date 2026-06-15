@@ -5,7 +5,7 @@ title: A persona vector's alignment to the sycophancy direction predicts that pe
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:23:50Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: 'add this as a task:
 
   2. The prior question (how much of the base prior do persona vectors capture; how
