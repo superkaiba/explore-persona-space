@@ -71,7 +71,7 @@ If a convex form were portable, the winning forms and curvature signs should agr
 > **Figure.** *Raw-rate panels (one per behavior × frame) overlaid with their logit-stabilized counterparts — the rate-compression control.* Marker-leakage source frames mostly fit concave (12 of 16 negative-curvature); fact-leakage frames skew positive with CIs spanning zero. No raw upward bend in a GEOMETRY frame survives logit stabilization (the one surviving convex row is a prior-frame sensitivity row, excluded from the headline).
 
 - Signs disagree by behavior: marker-leakage source frames predominantly concave, fact-leakage predominantly positive-sign — no consistent direction to call "the shape."
-- Every apparent raw-rate curve in a GEOMETRY frame flattens under logit stabilization, confirming the bounded-rate floor manufactures a small upward bend that is not a property of the coupling. (One prior-frame fact-leakage row — base-prior log-prob, not geometry — keeps a convex verdict under logit stabilization; it is non-geometry sensitivity evidence, kept out of the H1 numerator per the geometry-only scope.)
+- Every apparent raw-rate curve in a GEOMETRY frame flattens under logit stabilization, confirming the bounded-rate floor manufactures a small upward bend that is not a property of the coupling. (One prior-frame fact-leakage row — base-prior log-prob, not geometry — keeps a convex verdict; it is non-geometry sensitivity evidence, kept out of the H1 numerator.)
 
 ## Data
 
