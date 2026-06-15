@@ -34,10 +34,12 @@ References: see plan ``tasks/.../644/plans/plan.md`` and
 
 from __future__ import annotations
 
+import contextlib
 import math
 import platform
 import subprocess
 import sys
+import warnings
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -46,6 +48,19 @@ import numpy as np
 import scipy
 from scipy import optimize, special, stats
 from scipy.interpolate import PchipInterpolator
+
+
+@contextlib.contextmanager
+def _quiet_numeric():
+    """Suppress the (expected, guarded) overflow / invalid-value warnings from the
+    nonlinear fitters on floor-clustered data — every such fit is caught by an
+    explicit ``np.all(np.isfinite(pred))`` guard that returns ``None``, so the
+    warnings are noise, not unhandled errors."""
+    with warnings.catch_warnings(), np.errstate(over="ignore", invalid="ignore"):
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        warnings.simplefilter("ignore", category=optimize.OptimizeWarning)
+        yield
+
 
 # --- Fixed analysis constants (plan #644 v2 §11) ------------------------------
 
@@ -201,17 +216,18 @@ def fit_exponential(x: np.ndarray, y: np.ndarray) -> dict[str, Any] | None:
 
     # Seed from a log-linear regression on positive y (robust starting point).
     y_pos = np.clip(y, 1e-6, None)
-    try:
-        b0_design = _ols_design(x, 1)
-        logcoef, *_ = np.linalg.lstsq(b0_design, np.log(y_pos), rcond=None)
-        p0 = (float(np.exp(logcoef[0])), float(logcoef[1]))
-    except (np.linalg.LinAlgError, ValueError):
-        p0 = (1.0, 0.0)
-    try:
-        popt, _ = optimize.curve_fit(model, x, y, p0=p0, maxfev=20000)
-    except (RuntimeError, ValueError, optimize.OptimizeWarning):
-        return None
-    pred = model(x, *popt)
+    with _quiet_numeric():
+        try:
+            b0_design = _ols_design(x, 1)
+            logcoef, *_ = np.linalg.lstsq(b0_design, np.log(y_pos), rcond=None)
+            p0 = (float(np.exp(logcoef[0])), float(logcoef[1]))
+        except (np.linalg.LinAlgError, ValueError):
+            p0 = (1.0, 0.0)
+        try:
+            popt, _ = optimize.curve_fit(model, x, y, p0=p0, maxfev=20000)
+        except (RuntimeError, ValueError, optimize.OptimizeWarning):
+            return None
+        pred = model(x, *popt)
     if not np.all(np.isfinite(pred)):
         return None
     rss = float(np.sum((y - pred) ** 2))
@@ -232,11 +248,12 @@ def fit_power(x: np.ndarray, y: np.ndarray) -> dict[str, Any] | None:
     def model(xx: np.ndarray, a: float, b: float) -> np.ndarray:
         return a * np.power(xx, b)
 
-    try:
-        popt, _ = optimize.curve_fit(model, xs, y, p0=(1.0, 1.0), maxfev=20000)
-    except (RuntimeError, ValueError, optimize.OptimizeWarning):
-        return None
-    pred = model(xs, *popt)
+    with _quiet_numeric():
+        try:
+            popt, _ = optimize.curve_fit(model, xs, y, p0=(1.0, 1.0), maxfev=20000)
+        except (RuntimeError, ValueError, optimize.OptimizeWarning):
+            return None
+        pred = model(xs, *popt)
     if not np.all(np.isfinite(pred)):
         return None
     rss = float(np.sum((y - pred) ** 2))
@@ -343,7 +360,11 @@ def _predict(fit: dict[str, Any], x: np.ndarray) -> np.ndarray:
         return a * np.exp(b * x)
     if form == "power":
         a, b = fit["coef"]
-        return a * np.power(x - fit["x_shift"], b)
+        # A held-out / extrapolated x below x_shift gives a negative base raised
+        # to a fractional power -> NaN; the caller's finiteness guard handles it,
+        # so suppress the (expected) invalid-value warning rather than crash.
+        with np.errstate(invalid="ignore"):
+            return a * np.power(x - fit["x_shift"], b)
     if form == "spline":
         # Recompute the spline deterministically — stored fit holds only RSS/k,
         # so for LOO we refit; this branch is unused (spline LOO refits via fitter).
@@ -535,10 +556,14 @@ _FITTERS = {
 def form_bakeoff(x: np.ndarray, y: np.ndarray, include_spline: bool = True) -> dict[str, Any]:
     """Fit all candidate forms; return per-form AIC/BIC + LOO-R^2 and the best form.
 
-    ``best_form`` is the form with the lowest AIC among those that fit. The
-    convex forms (quadratic with positive curvature, exp, power) are compared to
-    linear. ``convex_wins`` is True iff the best form is a convex one AND beats
-    linear by ΔAIC>=2.
+    ``best_form`` is the form with the lowest AIC among those that fit (purely
+    informative). ``convex_wins`` is True iff a *convex* form (quadratic with
+    positive curvature / exp / power) beats linear by ΔAIC>=2 AND the
+    quadratic-vs-linear LRT curvature sign is positive — so the monotone spline
+    can NEVER manufacture a convex verdict on its own (plan §5.2). The spline
+    winning AIC means "non-linear shape", not "convex", because PCHIP carries no
+    signed-curvature term; a spline-only win is reported via ``best_form`` but
+    does not set ``convex_wins``.
     """
     n = len(x)
     fits: dict[str, dict[str, Any]] = {}
@@ -561,11 +586,25 @@ def form_bakeoff(x: np.ndarray, y: np.ndarray, include_spline: bool = True) -> d
     lin_aic = fits["linear"]["aic"]
     best_form = min(fits, key=lambda k: fits[k]["aic"])
     best_aic = fits[best_form]["aic"]
-    convex_forms = {"quadratic", "exp", "power", "spline"}
-    # A quadratic only counts as convex if its curvature is positive.
-    quad_convex = "quadratic" in fits and fits["quadratic"].get("curvature_coef", 0.0) > 0
-    best_is_convex = best_form in convex_forms and (best_form != "quadratic" or quad_convex)
-    convex_wins = bool(best_is_convex and (lin_aic - best_aic) >= CONVEX_DELTA_AIC)
+
+    # Convex verdict must rest on a SIGNED-curvature form (§5.2): the spline is a
+    # catch-all with no curvature sign, so it never sets convex_wins on its own.
+    # The best CONVEX-PARAMETRIC form (quadratic-positive / exp / power) is
+    # compared to linear, and the quadratic LRT curvature must be positive.
+    signed_convex_forms = {"quadratic", "exp", "power"}
+    available_convex = {
+        name: f
+        for name, f in fits.items()
+        if name in signed_convex_forms and (name != "quadratic" or f.get("curvature_coef", 0.0) > 0)
+    }
+    quad_sign_positive = "quadratic" in fits and fits["quadratic"].get("curvature_coef", 0.0) > 0
+    if available_convex:
+        best_convex = min(available_convex, key=lambda k: available_convex[k]["aic"])
+        best_convex_aic = available_convex[best_convex]["aic"]
+        convex_wins = bool((lin_aic - best_convex_aic) >= CONVEX_DELTA_AIC and quad_sign_positive)
+    else:
+        convex_wins = False
+
     return {
         "fits": fits,
         "best_form": best_form,
