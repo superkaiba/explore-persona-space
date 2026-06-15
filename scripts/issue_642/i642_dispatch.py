@@ -13,8 +13,11 @@ PORT of ``origin/issue-606:scripts/issue_606/i606_dispatch.py`` adapted for the
     the MODEL repo @ ``MODEL_REVISION_DEFAULT`` (for the cmft module-set
     identity assert §4.2) and ENUMERATES + hard-asserts the reused #606 syco
     generation cells exist in the DATA repo @ ``DATA_REVISION_DEFAULT``
-    BEFORE training (fail-loud if absent — the cmft join is impossible without
-    them).
+    BEFORE training — the FULL 39-persona panel per cell (LoRA {28,32,36,132}
+    + FT {12,16,22,132} + base = 9 cells x 39 = 351 generation files + the
+    stage-A trajectory), since the analyzer re-judges every (cell, persona);
+    fail-loud if any is absent — the cmft join is impossible without them and a
+    partial cell would crash the off-pod analysis after the GPU budget is spent.
   - ``phase1_train`` gains a ``cmft`` branch: the FT trainer is launched with
     ``--arm cmft --freeze-outside-lora-modules --lora-adapter-config-json
     <downloaded adapter_config>``; checkpoints land in ``cmft_ckpts``; WandB
@@ -575,7 +578,15 @@ def _assert_reused_606_cells(ctx: Ctx, behavior: str) -> dict:
     """Enumerate + hard-assert the reused #606 syco generation cells exist in
     the DATA repo @ ``data_revision`` BEFORE training (plan §4.5 / Risk row):
     the cmft join is impossible without LoRA {28,32,36,132} + FT {12,16,22,132}
-    + base generations + the stage-A trajectory. Fail-loud if any is absent."""
+    + base generations + the stage-A trajectory.
+
+    The analyzer re-judges EVERY (cell, persona) over the FULL 39-persona panel
+    (``i642_analyze.analyze_behavior`` loops ``panel`` per cell), so the
+    fail-loud preflight must verify the FULL panel per reused cell — not just
+    the source-self file. A partial #606 cell (any persona file missing) would
+    pass the old source-only check and crash the off-pod analysis AFTER the
+    entire GPU budget was spent (round-2 CONCERN fix). Fail-loud if any of the
+    39 persona generation files is absent for any of the 9 reused cells."""
     if behavior != "sycophancy" or ctx.dry_run:
         return {"checked": False, "reason": "non-syco or dry-run"}
     from huggingface_hub import HfApi
@@ -586,34 +597,52 @@ def _assert_reused_606_cells(ctx: Ctx, behavior: str) -> dict:
         what="list reused #606 data-repo files",
     )
     fileset = set(files)
-    missing: list[str] = []
+    # The full 39-persona stage-B panel the analyzer re-judges (24 roster incl.
+    # source + 15 twins). Looped against EVERY reused cell.
+    panel = sorted(panel_personas())
+    if len(panel) != 39:
+        raise RuntimeError(f"[{behavior}] expected 39-persona panel, got {len(panel)}")
     gen_cells = [f"lora_step{s}" for s in REUSED_LORA_STEPS] + [
         f"ft_step{s}" for s in REUSED_FT_STEPS
     ]
-    for cell in [*gen_cells, "base"]:
-        # require at least the source-self generation file per reused cell
-        rel = (
-            f"{PARENT_EXPERIMENT_NAME}/{behavior}/generations/{cell}/"
-            f"{behavior}_eval_{SOURCE_PERSONA}.json"
-        )
-        if rel not in fileset:
-            missing.append(rel)
+    reused_cells = [*gen_cells, "base"]
+    missing: list[str] = []
+    for cell in reused_cells:
+        # require the FULL 39-persona panel generation file per reused cell
+        for persona in panel:
+            rel = (
+                f"{PARENT_EXPERIMENT_NAME}/{behavior}/generations/{cell}/"
+                f"{behavior}_eval_{persona}.json"
+            )
+            if rel not in fileset:
+                missing.append(rel)
     traj_rel = f"{PARENT_EXPERIMENT_NAME}/{behavior}/stage_a/trajectory_{behavior}.json"
     if traj_rel not in fileset:
         missing.append(traj_rel)
     if missing:
         raise RuntimeError(
             f"[{behavior}] reused #606 cells MISSING in {HF_DATA_REPO}@{ctx.data_revision[:12]} "
-            f"(the cmft join is impossible without them; plan §4.5): {missing[:6]}"
+            f"({len(missing)} of {len(reused_cells) * len(panel) + 1} required files absent — "
+            f"the cmft join re-judges the full 39-persona panel per cell; plan §4.5): "
+            f"{missing[:6]}{' ...' if len(missing) > 6 else ''}"
         )
     report = {
         "checked": True,
         "data_revision": ctx.data_revision,
         "reused_lora_steps": list(REUSED_LORA_STEPS),
         "reused_ft_steps": list(REUSED_FT_STEPS),
+        "n_panel_personas": len(panel),
+        "n_reused_cells": len(reused_cells),
+        "n_generation_files_verified": len(reused_cells) * len(panel),
         "trajectory_present": True,
     }
-    log.info("[%s] reused #606 cells present: %s", behavior, report)
+    log.info(
+        "[%s] reused #606 cells present: full %d-persona panel x %d cells (%d gen files) + traj",
+        behavior,
+        len(panel),
+        len(reused_cells),
+        len(reused_cells) * len(panel),
+    )
     return report
 
 
