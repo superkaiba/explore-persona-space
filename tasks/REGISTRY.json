@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 647,
+  "highest_id": 648,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4008,6 +4008,13 @@
       "path": "tasks/proposed/647",
       "status": "proposed",
       "title": "Do the activation-geometry predictors of marker-leakage transfer also collapse on the nonstylized subpanel, or is within-nonstylized signal real?"
+    },
+    "648": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/648",
+      "status": "proposed",
+      "title": "Is centered cosine a better leakage predictor than raw cosine, or only the valid one? (head-to-head CV R\u00b2 per bank)"
     },
     "65": {
       "has_clean_result": true,
