@@ -14,6 +14,8 @@ origin_prompt: 'File an issue to look into this: → the asymmetry is almost ent
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_637.md](https://github.com/superkaiba/explore-persona-space/blob/37816749ea7addde049bc3120419573858d87494/docs/methodology/issue_637.md) · [gist](https://gist.github.com/superkaiba/f2d2ad27564164908112efe5caf2d183)
+
 ## Takeaways
 
 - "Leaky source / receptive target" holds out-of-sample only for the marker and taught fact: rank-1 lift `dR2_scalar = +0.281` marker, `+0.247` fact, both CIs exclude 0; 0/20 seeds cross zero.
@@ -119,6 +121,7 @@ n/a — no model completions generated. Every cell of the input matrices is a si
 - Source transfer tensor: [`eval_results/issue_537/G_tensor/G_meta.json`](https://github.com/superkaiba/explore-persona-space/blob/fb78ca4f2901912c5e46ba3e6b65a307fbd50835/eval_results/issue_537/G_tensor/G_meta.json), [`eval_results/issue_537/analysis/g1_regression.json`](https://github.com/superkaiba/explore-persona-space/blob/fb78ca4f2901912c5e46ba3e6b65a307fbd50835/eval_results/issue_537/analysis/g1_regression.json).
 - Reused artifact from [#537](https://eps.superkaiba.com/tasks/537): `eval_results/issue_537/G_tensor/` (sha256-pinned in `heldout_predictive_test.meta.json`) — fit: same 16-context panel, 5 behaviors, the clean reciprocal block this analysis reads asymmetry off; in-sample antisymmetry-fraction anchors reproduce its registered reads to full precision.
 - Reused artifact from [#526](https://eps.superkaiba.com/tasks/526): `figures/issue_526/gate_ladder_results.json` — fit: same 16-context transfer matrices, the in-sample decomposition anchor scored against the held-out predictor's reproduction assert, all five required behaviors present.
+- **Methodology reference:** [docs/methodology/issue_637.md](https://github.com/superkaiba/explore-persona-space/blob/37816749ea7addde049bc3120419573858d87494/docs/methodology/issue_637.md) · [gist](https://gist.github.com/superkaiba/f2d2ad27564164908112efe5caf2d183)
 
 **Compute:** 0 GPU. CPU-only numpy/scipy least-squares fit + bootstrap, minutes on the VM. python 3.11.15, numpy 2.2.6, scipy 1.17.1.
 

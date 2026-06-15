@@ -3930,8 +3930,8 @@
     "637": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/reviewing/637",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/637",
+      "status": "awaiting_promotion",
       "title": "Leak-transfer asymmetry is rank-1 \"leaky source / receptive target\" out-of-sample only for the marker and taught fact; for content behaviors neither the rank-1 nor the transpose-based pairwise estimator generalizes (MODERATE confidence)"
     },
     "638": {
