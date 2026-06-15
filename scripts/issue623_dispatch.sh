@@ -41,6 +41,7 @@ N_VECTOR_QUESTIONS=""    # empty => all 240 extraction questions
 GPU_ID="0"
 SKIP_UPLOAD="0"
 SKIP_PREFLIGHT="0"
+SKIP_GPU_PHASES="0"   # dispatcher dry-run: run CPU phases only, emit [phase=done]
 SMOKE="0"
 
 while [[ $# -gt 0 ]]; do
@@ -52,6 +53,7 @@ while [[ $# -gt 0 ]]; do
     --gpu-id) GPU_ID="$2"; shift 2 ;;
     --skip-upload) SKIP_UPLOAD="1"; shift ;;
     --skip-preflight) SKIP_PREFLIGHT="1"; shift ;;
+    --skip-gpu-phases) SKIP_GPU_PHASES="1"; SKIP_UPLOAD="1"; shift ;;
     *) echo "[driver] unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -104,27 +106,32 @@ uv run python scripts/issue623_persona_resolve.py \
   >"$RUN_LOGS/persona_resolve.log" 2>&1 \
   || fail "persona_resolve failed — see $RUN_LOGS/persona_resolve.log"
 
-# ── phase 2: persona panel vectors (Method AB) ──
-echo "[driver] [phase=vector_extract] extracting persona centroids (Method AB)"
-# shellcheck disable=SC2086
-uv run python scripts/issue623_persona_panel_vectors.py \
-  --panel-prompts "$DATA_DIR/panel_prompts.json" \
-  --method AB --layers $LAYERS --gpu-id "$GPU_ID" \
-  --output-dir "$DATA_DIR" "${PERSONA_ARG[@]}" "${VEC_NQ_ARG[@]}" \
-  >"$RUN_LOGS/vector_extract.log" 2>&1 \
-  || fail "vector_extract failed — see $RUN_LOGS/vector_extract.log"
+if [[ "$SKIP_GPU_PHASES" == "1" ]]; then
+  echo "[driver] [phase=vector_extract] SKIPPED (--skip-gpu-phases dry-run)"
+  echo "[driver] [phase=sycophancy_trait] SKIPPED (--skip-gpu-phases dry-run)"
+else
+  # ── phase 2: persona panel vectors (Method AB) ──
+  echo "[driver] [phase=vector_extract] extracting persona centroids (Method AB)"
+  # shellcheck disable=SC2086
+  uv run python scripts/issue623_persona_panel_vectors.py \
+    --panel-prompts "$DATA_DIR/panel_prompts.json" \
+    --method AB --layers $LAYERS --gpu-id "$GPU_ID" \
+    --output-dir "$DATA_DIR" "${PERSONA_ARG[@]}" "${VEC_NQ_ARG[@]}" \
+    >"$RUN_LOGS/vector_extract.log" 2>&1 \
+    || fail "vector_extract failed — see $RUN_LOGS/vector_extract.log"
 
-# ── phases 3 + 4: sycophancy trait vector + steering probe (K2 HALT) ──
-echo "[driver] [phase=sycophancy_trait] extracting sycophancy trait vector + steering probe"
-# shellcheck disable=SC2086
-uv run python scripts/issue623_extract_sycophancy_vector.py \
-  --layers $LAYERS --gpu-id "$GPU_ID" \
-  --n-questions "$N_QUESTIONS_TRAIT" \
-  --output-dir "$DATA_DIR/sycophancy_trait" \
-  --steering-output "$EVAL_DIR/steering_probe.json" \
-  --steering-effect-output "$EVAL_DIR/steering_effect_by_layer.json" \
-  >"$RUN_LOGS/sycophancy_trait.log" 2>&1 \
-  || fail "sycophancy_trait / steering_probe failed (or K2 HALT) — see $RUN_LOGS/sycophancy_trait.log"
+  # ── phases 3 + 4: sycophancy trait vector + steering probe (K2 HALT) ──
+  echo "[driver] [phase=sycophancy_trait] extracting sycophancy trait vector + steering probe"
+  # shellcheck disable=SC2086
+  uv run python scripts/issue623_extract_sycophancy_vector.py \
+    --layers $LAYERS --gpu-id "$GPU_ID" \
+    --n-questions "$N_QUESTIONS_TRAIT" \
+    --output-dir "$DATA_DIR/sycophancy_trait" \
+    --steering-output "$EVAL_DIR/steering_probe.json" \
+    --steering-effect-output "$EVAL_DIR/steering_effect_by_layer.json" \
+    >"$RUN_LOGS/sycophancy_trait.log" 2>&1 \
+    || fail "sycophancy_trait / steering_probe failed (or K2 HALT) — see $RUN_LOGS/sycophancy_trait.log"
+fi
 
 # ── phase 5: behavioral DV syc_i (reuse #612 base rates) ──
 echo "[driver] [phase=syc_i_load] resolving behavioral DV syc_i (reuse #612)"
