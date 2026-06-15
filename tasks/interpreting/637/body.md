@@ -5,7 +5,7 @@ title: Leak-transfer asymmetry is rank-1 "leaky source / receptive target" out-o
 kind: analysis
 tags: []
 created_at: '2026-06-14T00:11:25Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 526
 origin_prompt: 'File an issue to look into this: → the asymmetry is almost entirely
   "some contexts are leaky sources / receptive targets," not pairwise interaction.'
