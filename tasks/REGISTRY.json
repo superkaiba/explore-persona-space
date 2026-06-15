@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 641,
+  "highest_id": 642,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3963,6 +3963,13 @@
       "path": "tasks/running/641",
       "status": "running",
       "title": "Phase 2: matched-dose install-resistance curves \u2014 does dose overcome resistance, and is residual resistance base-prior or identity-conflict?"
+    },
+    "642": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/642",
+      "status": "proposed",
+      "title": "Is the #606 LoRA-vs-full-FT sycophancy bystander-leakage gap driven by module coverage or by rank? (coverage-matched-FT arm)"
     },
     "65": {
       "has_clean_result": true,
