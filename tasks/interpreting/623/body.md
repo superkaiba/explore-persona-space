@@ -25,12 +25,12 @@ relates_to:
 
 ## Takeaways
 
-- **A persona's cosine alignment to the sycophancy direction predicts its judged base sycophancy rate: Spearman rho = 0.73, 95% CI [0.49, 0.87], n = 35 (p ≈ 3e-7).** Persona-vector geometry already encodes the behavioral prior.
-- **The headline is robust to single-persona leverage: leave-one-out rho ranges [0.71, 0.81] across all n = 35 drops, every value inside the headline CI.** No one persona drives the correlation.
-- Robust to layer choice: rho positive with CI clear of 0 at all four sampled layers (0.57 / 0.73 / 0.67 / 0.65). Headline layer 14 was steering-selected, not pinned a priori.
+- **A persona's cosine alignment to the sycophancy direction predicts its judged base sycophancy rate: Spearman rho = 0.73, 95% CI 0.49 to 0.87, n = 35 (p ≈ 3e-7).**
+- **Robust to single-persona leverage: leave-one-out rho ranges 0.71 to 0.81 across all n = 35 drops, every value inside the headline CI.** No one persona drives it.
+- **Robust to layer choice: rho positive with CI clear of 0 at all four sampled layers (0.57 / 0.73 / 0.67 / 0.65).** Headline layer 14 was steering-selected.
 - **Reading the persona vector from generated responses instead of the pre-generation prompt state halves the apparent signal (rho 0.73 → 0.44).** The readout choice is load-bearing and partly circular.
 - This bounds the standing project line: geometry is a real but noisy proxy for the behavioral prior, not a genuinely different axis.
-- Binding constraint: 35 personas is small, rates come from one judge model, and the trait vector's steering lift is modest (+2.2 on 0–100) — enough to validate, not to call unconditional.
+- Binding constraints: n = 35 panel is small, single judge model, steering lift modest (+2.2 of 100) — validates, doesn't call unconditional.
 
 ## What I ran
 
@@ -41,7 +41,7 @@ relates_to:
 
 ## Findings
 
-### A persona's vector alignment to sycophancy predicts its base sycophancy rate (rho = 0.73 [0.49, 0.87], n = 35)
+### A persona's vector alignment to sycophancy predicts its base sycophancy rate (rho = 0.73, CI 0.49 to 0.87, n = 35)
 
 Each persona vector is the last-prompt-token activation difference `(persona − default-assistant)`; I take its cosine to a separately extracted sycophancy direction. The behavioral scalar is independent: the judged rate at which the base model, prompted as that persona, agrees with false claims.
 
@@ -49,7 +49,7 @@ Each persona vector is the last-prompt-token activation difference `(persona −
 
 > **Figure.** *Persona-vector alignment to the sycophancy direction tracks base sycophancy across the panel (rho = 0.73 [0.49, 0.87], n = 35).* x = cosine(persona vector, sycophancy vector) at layer 14, last prompt token; y = fraction of 600 base generations judged sycophantic. One point per persona. Positive cosine concentrates the high-sycophancy personas; the relationship is monotonic, not a tight line.
 
-High-sycophancy comedy/satire personas sit at positive cosine, low-sycophancy professionals at negative. A leave-one-out check confirms no single persona drives the result: dropping each of the 35 in turn leaves rho in [0.71, 0.81], every value inside the headline CI, which stays clear of 0 under the worst-case drop. The highest-leverage point is the con artist — rank-discordant (cosine-rank 33/35 but sycophancy-rank only 9/35), so removing it *raises* rho to 0.81; the satirist is rank-concordant, so dropping it leaves rho flat at 0.73.
+High-sycophancy comedy/satire personas sit at positive cosine, low-sycophancy professionals at negative. A leave-one-out check confirms no single persona drives the result: dropping each of the 35 in turn leaves rho between 0.71 and 0.81, every value inside the headline CI, which stays clear of 0 under the worst-case drop. The highest-leverage point is the con artist — rank-discordant (cosine-rank 33/35 but sycophancy-rank only 9/35), so removing it *raises* rho to 0.81; the satirist is rank-concordant, so dropping it leaves rho flat at 0.73.
 
 ### The signal is robust to layer, and the trait vector is causally real
 
@@ -79,7 +79,7 @@ n/a — no training in this task. This is a base-model (Qwen-2.5-7B-Instruct) co
 
 ### Evaluated with
 
-**Two scalars per persona on base Qwen-2.5-7B-Instruct.** Geometric: each persona vector is the last-prompt-token mean activation difference `(persona context − default-assistant context)` over a shared 240-question extraction bank; the sycophancy direction is the Persona Vectors recipe (5 positive/negative instruction pairs, 20-question extraction set, verbatim paper trait description, judge claude-sonnet-4-5 for extraction filtering, 593 positive / 999 negative rollouts retained, 0 refusals). Both read at the last prompt token, layers {7, 14, 21, 27}; cosine is the alignment metric. Behavioral: per persona, the base model is prompted as that persona (no sycophancy instruction) on a 60-claim audited false-claim pool, 600 free generations, judged for agreement by claude-haiku-4-5. The realized panel is 36 personas with both a resolvable system prompt and a base rate; the `assistant` baseline-self is dropped pre-registered, leaving n = 35 for the correlation. (The run's launch sentinel cites 39 — that was the pre-resolution candidate pool across both extraction methods; the realized correlation panel is 35.)
+**Two scalars per persona on base Qwen-2.5-7B-Instruct.** Geometric: each persona vector is the last-prompt-token mean activation difference `(persona context − default-assistant context)` over a shared 240-question extraction bank; the sycophancy direction is the Persona Vectors recipe (5 positive/negative instruction pairs, 20-question extraction set, verbatim paper trait description, judge claude-sonnet-4-5 for extraction filtering, 593 positive / 999 negative rollouts retained, 0 refusals). Both read at the last prompt token, layers {7, 14, 21, 27}; cosine is the alignment metric. Behavioral: per persona, the base model is prompted as that persona (no sycophancy instruction) on a 60-claim audited false-claim pool, 600 free generations, judged for agreement by claude-haiku-4-5. The realized panel is 36 personas with both a resolvable system prompt and a base rate; the `assistant` baseline-self is dropped by the planned baseline-self rule, leaving n = 35 for the correlation. (The run's launch sentinel cites 39 — that was the pre-resolution candidate pool across both extraction methods; the realized correlation panel is 35.)
 
 The sycophancy rate spans 0.027 to 0.297 (25 distinct values across 35 personas) and the cosine spans −0.16 to +0.34 — both well clear of any floor or ceiling, so the rank correlation is reading real spread, not saturated noise.
 
@@ -97,7 +97,7 @@ The sycophancy rate spans 0.027 to 0.297 (25 distinct values across 35 personas)
 
 </details>
 
-Full behavioral DV: `eval_results/issue_623/syc_i.json` (this repo). Reused #612 base judgments: [superkaiba1/explore-persona-space-data @ 06cde77, `issue612_sycophancy_onpolicy/judgments/base/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue612_sycophancy_onpolicy/judgments/base). Sycophancy trait vector + extraction questions: [`issue623_persona_vectors/sycophancy_trait/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue623_persona_vectors/sycophancy_trait).
+Full behavioral DV: `eval_results/issue_623/syc_i.json` (this repo). Reused base judgments: [superkaiba1/explore-persona-space-data @ 06cde77, `issue612_sycophancy_onpolicy/judgments/base/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue612_sycophancy_onpolicy/judgments/base). Sycophancy trait vector + extraction questions: [`issue623_persona_vectors/sycophancy_trait/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue623_persona_vectors/sycophancy_trait).
 
 ### Generated
 
@@ -129,15 +129,17 @@ Full generations: [`issue623_persona_vectors/steering_probe/raw_completions/` @ 
 | Parameter | Value |
 |---|---|
 | Base model | Qwen/Qwen2.5-7B-Instruct |
-| Persona vector | `(persona − assistant)` last-prompt-token mean diff over 240-question bank |
-| Sycophancy vector | Persona Vectors recipe: 5 pos/neg pairs, 20Q extraction, verbatim trait description |
-| Extraction layers | {7, 14, 21, 27}; headline = 14 (steering-selected) |
-| Alignment metric | cosine (primary); raw dot (secondary) |
-| Behavioral DV | judged agreement rate, 600 generations/persona, 60-claim pool, temp 1.0 |
-| Behavioral judge | claude-haiku-4-5-20251001 (reused #612 base pass) |
-| Trait-extraction judge | claude-sonnet-4-5-20250929 |
-| Correlation | Spearman rho, 95% bootstrap CI, B = 10,000, seed 623 |
-| Realized panel | 36 resolved / 35 correlation (assistant baseline-self dropped) |
+| Persona vector | `(centroid_i − centroid_assistant)`, mean over 240Q bank |
+| Extraction layers | {7, 14, 21, 27} (0-indexed) |
+| Headline layer | 14 (argmax steering effect over the 4) |
+| Alignment metric | cosine (primary), raw dot (secondary) |
+| Sycophancy trait vector recipe | paper arXiv 2507.21509: 5 pos/neg instruction pairs, 40Q split 20 extraction / 20 eval, mean-difference |
+| Behavioral DV syc_i | fraction YES over 600 gens (60 claims × 10 rollouts, temp 1.0) |
+| syc_i judge | claude-haiku-4-5-20251001, single-axis YES/NO |
+| Trait-score judge | claude-sonnet-4-5-20250929, 0–100 paper prompt |
+| Spearman bootstrap | b=10,000, seed=623 |
+| Extraction panel | 36 |
+| Correlation panel | 35 |
 
 - **Methodology reference:** `docs/methodology/issue_623.md` (auto-generated, findings-blind; linked at promotion).
 - **Artifacts:** behavioral DV + correlation outputs in this repo at `eval_results/issue_623/` (`rho_by_layer.json`, `cosine_matrix.json`, `syc_i.json`, `steering_probe.json`, `steering_effect_by_layer.json`, `rho_loo_leverage.json`); persona vectors, sycophancy trait vector, panel prompts, and steering-probe generations at [superkaiba1/explore-persona-space-data @ 06cde77, `issue623_persona_vectors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue623_persona_vectors); figure sources at `figures/issue_623/` (this repo).
