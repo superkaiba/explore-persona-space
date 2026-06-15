@@ -6,6 +6,7 @@ title: Removing the answer/marker separator lets the live-negative loss-placemen
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-06-12T02:42:11Z'
 has_clean_result: true
 parent_id: 601
