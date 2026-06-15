@@ -2,7 +2,8 @@
 title: 'Sidequest: does #611''s bare-role-header leakage split generalize beyond pirate↔villain
   (6-persona style+intent panel + on-policy emission)?'
 kind: experiment
-tags: []
+tags:
+- sidequest
 created_at: '2026-06-15T21:27:47Z'
 has_clean_result: false
 parent_id: 611
