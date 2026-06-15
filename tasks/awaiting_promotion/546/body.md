@@ -16,6 +16,8 @@ goal: Determine whether dropping the LoRA rank from r=32 to r=16 at lr=5e-6 land
 relates_to:
 - spec-role-header
 - leak-contrastive-negatives
+classification: useful
+promoted_at: '2026-06-15T21:32:14Z'
 ---
 # Halving the LoRA recipe to r=16/α=32 slows the marker implant into view, but no training amount — whole epochs or a 9-step sub-epoch grid — lands all three persona encodings in the resolution band at once, so the role-vs-system separability test still cannot fire (MODERATE confidence)
 
