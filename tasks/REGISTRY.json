@@ -3985,7 +3985,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/644",
       "status": "interpreting",
-      "title": "The geometry\u2192behavior-strength relationship is consistent with linear after artifact controls \u2014 no behavior in the sample shows robust convexity (MODERATE confidence)"
+      "title": "No portable convex geometry\u2192behavior shape \u2014 marker-leakage skews concave, fact-leakage noisy, and the seed sycophancy bend is leverage (MODERATE confidence)"
     },
     "65": {
       "has_clean_result": true,
