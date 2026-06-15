@@ -27,17 +27,17 @@ pulled straight from the artifacts. No interpretation.
 | Model (activation read) | `Qwen/Qwen2.5-7B-Instruct`, bf16, base (no training, no LoRA) | manifest `model` field |
 | Decoder layers / hidden | 28 / 3584 | manifest `n_layers`, `hidden` |
 | Read position | last input token under `add_generation_prompt=True` (the assistant-header newline slot) | `issue594_extract_context_vectors.py` @ a3c9071 |
-| **Read layers (scored)** | **L13 / L14 / L18** (all 28 captured, scored at this band) | plan §11 (Source: #594) |
-| **Sentence embedder (clustering)** | **`BAAI/bge-large-en-v1.5`**, 1024-dim, 512-token, **CLS-token pool (`last_hidden_state[:, 0]`) + L2-norm**, no instruction prefix | `issue617_cluster.py::embed_first_user_turns` @ a3c9071; M3 (plan §4 step 2) |
+| Read layers (scored) | L13 / L14 / L18 (all 28 captured, scored at this band) | plan §11 (Source: #594) |
+| Sentence embedder (clustering) | `BAAI/bge-large-en-v1.5`, 1024-dim, 512-token, CLS-token pool (`last_hidden_state[:, 0]`) + L2-norm, no instruction prefix | `issue617_cluster.py::embed_first_user_turns` @ a3c9071; M3 (plan §4 step 2) |
 | Pooling-mode provenance | `pooling_mode: "cls"` recorded in `separability.json` (M3 guard) | `issue617_cluster.py::POOLING_MODE` @ a3c9071 |
-| **KMeans** | `n_clusters ∈ {5, 10, 20}`, `n_init=10`, `random_state=42` | `issue617_common.py::CLUSTER_KS`; plan §4 step 2 |
-| **HDBSCAN** | `min_cluster_size = max(30, target // 200) = 100` for the 20k slice, `metric="euclidean"`, noise label −1 excluded from pair pool | `issue617_cluster.py` @ a3c9071; plan §11 |
+| KMeans | `n_clusters ∈ {5, 10, 20}`, `n_init=10`, `random_state=42` | `issue617_common.py::CLUSTER_KS`; plan §4 step 2 |
+| HDBSCAN | `min_cluster_size = max(30, target // 200) = 100` for the 20k slice, `metric="euclidean"`, noise label −1 excluded from pair pool | `issue617_cluster.py` @ a3c9071; plan §11 |
 | WildChat slice target | 20,000 conversations | `issue617_common.py::SLICE_TARGET` |
 | Slice scan cap | 200,000 rows | `issue617_common.py::SLICE_SCAN_CAP` |
 | Slice filter | `language == "English"`, `toxic is False`, `redacted is False`, non-empty first user turn; dedup on first-user-message first-200-chars | `issue594_build_battery._wildchat_eligible` (reused verbatim) |
 | Short prefix depth | 2 messages (first user + first assistant) | `issue617_build_wildchat_slice.py::SHORT_PREFIX_MSGS` |
 | Long prefix depth | 8 messages (first 4 exchanges) | `issue617_build_wildchat_slice.py::LONG_PREFIX_MSGS` |
-| **Unique-prefix extraction pool cap** | **400** unique `conv_id`s + 1 synthetic `f6_default_template` instance | `issue617_common.py::EXTRACTION_POOL_CAP`; plan M2 |
+| Unique-prefix extraction pool cap | 400 unique `conv_id`s + 1 synthetic `f6_default_template` instance | `issue617_common.py::EXTRACTION_POOL_CAP`; plan M2 |
 | Per-cluster floor (extraction) | 30 members retained per cluster that appears in any config | `issue617_common.py::PER_CLUSTER_FLOOR`; plan M2 |
 | Per-cluster scoring N | ∈ [30, 50] prefixes | `issue617_common.py::PER_CLUSTER_FLOOR / PER_CLUSTER_SCORING_MAX` |
 | Stratification | deterministic seed-42 stratified subsample, ≥ 30 members/cluster preserved | `issue617_build_extraction_battery.py` @ a3c9071 |
@@ -46,15 +46,15 @@ pulled straight from the artifacts. No interpretation.
 | Separability metric | best-of-{13,14,18} length-residualized centered-cosine k-NN purity, `knn_k=4`, `cosine_dist(centering="global_mean")` | `issue617_score_separability.py` @ a3c9071 (reusing #594 primitives) |
 | Length covariate | `log1p(content_token_len)` (residualized out of activations before scoring) | manifest `ctx_token_len_content`; plan §6 |
 | Baselines on the same scale | TF-IDF word-overlap purity (`text_baseline`) + length-only purity (`length_only_knn_purity`) | `issue594_analyze_context_geometry.py` (reused) |
-| **Permutation null** | **B = 1000** label shuffles, **selection-aware (global) max over (pairs × layers)** under each shuffle; per-pair p retained uncorrected | `issue617_common.py::PERM_B`; plan SA1 + §4 step 4 |
+| Permutation null | B = 1000 label shuffles, selection-aware (global) max over (pairs × layers) under each shuffle; per-pair p retained uncorrected | `issue617_common.py::PERM_B`; plan SA1 + §4 step 4 |
 | Pair winner rule | highest length-residualized purity s.t. `winner.p_global ≤ 0.01`; tie-break lower-K, then KMeans-before-HDBSCAN, then lexicographic | plan §4 step 4 / §11 |
 | Fire thresholds | `length_residualized_purity ≥ 0.7` AND `winner.p_global ≤ 0.01` | `issue617_common.py::PURITY_THRESHOLD / PGLOBAL_THRESHOLD`; plan §6 |
-| **Completion model** | **`Qwen/Qwen2.5-7B-Instruct`**, base, vLLM batched `LLM.generate()` | `issue617_sample_completions.py` @ a3c9071 |
-| **Completion N / temperature** | **N = 4** completions per prefix, **T = 1.0** | `issue617_common.py::COMPLETION_N / COMPLETION_TEMP`; plan §11 (clarifier 4) |
+| Completion model | `Qwen/Qwen2.5-7B-Instruct`, base, vLLM batched `LLM.generate()` | `issue617_sample_completions.py` @ a3c9071 |
+| Completion N / temperature | N = 4 completions per prefix, T = 1.0 | `issue617_common.py::COMPLETION_N / COMPLETION_TEMP`; plan §11 (clarifier 4) |
 | Completion `max_new_tokens` | 512 | `issue617_common.py::COMPLETION_MAX_NEW_TOKENS` |
 | Completion `max_model_len` | 8192 (floor; the script bumps it to cover longest prompt + budget + margin, clamp 16384) | `issue617_dispatch.sh` lines 102–106 |
 | Completion prefix cap | 200 prefixes per picked category | `issue617_common.py::COMPLETION_CAP_PER_CATEGORY` |
-| **Seed** | **42** everywhere (slice sample, KMeans, prefix subsample/cap, permutation, completion sampling) | `issue617_common.py::SEED` |
+| Seed | 42 everywhere (slice sample, KMeans, prefix subsample/cap, permutation, completion sampling) | `issue617_common.py::SEED` |
 | Code commit | `a3c90717630e5c369307237707d867bd18cd1e50` (branch `issue-617`) | `git rev-parse issue-617` |
 
 This is the canonical complete hyperparameter table; the task body's
