@@ -22,6 +22,8 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_642.md](https://github.com/superkaiba/explore-persona-space/blob/e8c477c2e1efc498160b47ce93d8a029f0abec6e/docs/methodology/issue_642.md) · [gist](https://gist.github.com/superkaiba/1e3b48afe7c7e9a74465e731b7f1837a)
+
 ## Takeaways
 
 - At matched install (s*=0.50), the parent's +0.098 LoRA-vs-full-FT gap splits into **Δ_rank = +0.073** (adapter-vs-dense, MODERATE) and **Δ_coverage = +0.025** (module-coverage, LOW); both 95% CIs exclude zero (bounds on the sweep figure).
@@ -33,7 +35,7 @@ relates_to:
 ## What I ran
 
 - **Why:** [#606](https://eps.superkaiba.com/tasks/606) found full fine-tuning leaks sycophancy to bystander personas more than LoRA at matched implant strength, but that comparison varies two things at once — update rank AND which modules are trained (full FT also writes embeddings, `lm_head`, LayerNorm, which the default LoRA structurally cannot). This run separates the two so the #606 result can be read as a placement effect or not. Where sycophancy-leakage lives in the parameter set is the open-weights, on-policy, judge-graded complement to the activation-vector and SAE-feature reads on GPT-4o in Persona Vectors (Chen, Arditi, Sleight, Evans, Lindsey 2025; arXiv 2507.21509) and Persona Features Control Emergent Misalignment (Wang … Mossing et al. 2025; arXiv 2506.19823).
-- **Design:** three sycophancy fine-tunes read at matched source-install strength s*=0.50 — the reused parent LoRA fine-tune, the reused parent full fine-tune, and one new coverage-matched fine-tune (full-rank dense, but embeddings/`lm_head`/LayerNorm frozen so only the LoRA-touched module set trains). The single new variable vs the parent run is that freeze mask. Single seed 42.
+- **Design:** three sycophancy fine-tunes read at matched source-install strength s*=0.50 — the reused parent LoRA fine-tune, the reused parent full fine-tune, and one new coverage-matched fine-tune (cmft; full-rank dense, but embeddings/`lm_head`/LayerNorm frozen so only the LoRA-touched module set trains). The single new variable vs the parent run is that freeze mask. Single seed 42.
 - **Training:** coverage-matched FT on `Qwen/Qwen2.5-7B-Instruct`, ZeRO-3, lr 5e-6 cosine, effective batch 16, 132 steps (3 epochs), bf16; trains `{q,k,v,o,gate,up,down}_proj` weights + q/k/v biases only. The LoRA (r=32, α=64, rsLoRA, lr 1e-5) and full fine-tune (lr 5e-6) are reused from the parent run, not retrained.
 - **Eval:** per-persona on-policy sycophancy-agreement rate (model agrees with a false claim under a bystander persona's own system prompt), trained − base, on 50 held-out claims × 10 rollouts (temperature 1.0). All three fine-tunes re-judged with one pinned judge (`claude-haiku-4-5-20251001`) so the join is apples-to-apples; the frozen-reference parity anchors confirm the re-judge reproduced the parent panel (LoRA-step132 self-delta and base self-rate both drift 0.004, within tolerance — verdict PASS). DV = the 38-bystander-mean leakage, each fine-tune interpolated in install strength to s*=0.50; crossed cluster bootstrap, B=10,000.
 
@@ -186,6 +188,7 @@ Full cmft generations (13 checkpoints + base, 660 files): [`issue642_coverage_ma
 - Figures (used inline): [`figures/issue_642/`](https://github.com/superkaiba/explore-persona-space/tree/fe063180a5e6e53207ad81a6eae6c75667b8801d/figures/issue_642)
 - WandB (cmft training): [`thomasjiralerspong/issue642/runs/ul99qdh1`](https://wandb.ai/thomasjiralerspong/issue642/runs/ul99qdh1) — note the actual project is `issue642`, not the plan card's `lora_vs_ft_behaviors_606` (the card's `wandb_project` field was stale; the run landed under `issue642`).
 - Reused LoRA + full-FT + base generations from [#606](https://eps.superkaiba.com/tasks/606): [`issue606_lora_vs_ft_behaviors`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/50ff10223275d41f70ee06f8fb9effe066eb8eae/issue606_lora_vs_ft_behaviors) @ data-rev `50ff10223275` — fit: same base model + sycophancy mix + 39-persona panel + s*=0.50 install target as #642; the two reused fine-tunes ARE the comparison poles, re-judged with the same pinned haiku judge for an apples-to-apples join. #606 LoRA `adapter_config.json` read from the model repo @ `ec58089f` to assert the cmft module set matches what the LoRA touched.
+- **Methodology reference:** [docs/methodology/issue_642.md](https://github.com/superkaiba/explore-persona-space/blob/e8c477c2e1efc498160b47ce93d8a029f0abec6e/docs/methodology/issue_642.md) · [gist](https://gist.github.com/superkaiba/1e3b48afe7c7e9a74465e731b7f1837a)
 
 **Compute:**
 
