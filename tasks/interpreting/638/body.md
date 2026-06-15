@@ -15,9 +15,9 @@ origin_prompt: we also want to understand why some sources resist being trained 
 ## Takeaways
 
 - Install strength splits **89% behavior / ~2% source / ~10% pairing** on a 15-source × 4-behavior grid; dropping the saturated behavior gives **85% / 3% / 11%** — the headline holds.
-- No persona resists everything: **median cross-behavior source-rank correlation −0.33** (range −0.57 to +0.35), so resistance does not transfer across behaviors within a source.
+- No persona resists everything: **median cross-behavior source-rank correlation −0.33** (range −0.57 to +0.35), so there is no stable global positive source-resistance trait; transfer is weak and inconsistent in this re-slice (the matrix leans on saturated/tied-rank columns — sycophancy is 14/15 at ceiling, fact's cross-seed rank reliability is only ρ=0.41).
 - Base propensity is diagonal headroom, not a positive predictor: pooled base-vs-install correlation **−0.31 (n=75)**, driven by the saturated behavior (ρ=−0.77); the off-saturation marker shows the opposite sign (ρ=+0.24).
-- The one engineerable residual lever is construction/identity conflict: a casual-register behavior installed **0.42 below base** (identical at both seeds) — suggestive, single-source.
+- The clearest candidate engineerable lever found here is construction/identity conflict: a casual-register behavior installed **0.42 below base** (identical at both seeds) — suggestive, single-source.
 - Every read is dose-unmatched (each cell trained at a different uncontrolled dose); separating dose from intrinsic resistance is a GPU follow-up, out of scope here.
 
 ## What I ran
@@ -25,29 +25,29 @@ origin_prompt: we also want to understand why some sources resist being trained 
 - **Why:** A program of matched-install leakage reads ([#601](https://eps.superkaiba.com/tasks/601), [#627](https://eps.superkaiba.com/tasks/627)) needs to know what makes install strength vary across (source, behavior) cells — whether resistance is a property of the persona, the behavior, or the specific pairing. This re-slices install diagonals already produced by three prior runs to answer that.
 - **Design:** No training, no GPU. A deterministic ~10-second Python script reads four committed eval JSONs and re-slices per-cell install strength. The single read of interest is the source vs behavior vs pairing variance split on a 15-source × 4-rate-behavior install grid, plus a base-propensity predictor check per behavior.
 - **Training:** n/a — re-analysis of committed artifacts; no model loaded.
-- **Eval:** No eval suite. Metrics are a balanced two-way sum-of-squares partition of per-cell install strength (`trained − base`), Spearman correlations of install on base propensity, bootstrap percentile CIs on the variance fractions, and a ceiling-drop sensitivity. The 15 source contexts are shared across the four rate behaviors so the source axis is comparable.
+- **Eval:** No eval suite. Metrics are a balanced two-way sum-of-squares partition of per-cell install strength (`trained − base`), Spearman correlations of install on base propensity, bootstrap percentile CIs on the variance fractions, and a ceiling-drop sensitivity. The 15 source contexts are shared across the four rate behaviors so the source axis is comparable. Behaviors are named throughout with the implant program's labels — `sycophancy` is the agreement behavior; both names refer to the same column.
 
 ## Findings
 
 ### Install resistance is behavior-dominated, not a source trait (89% behavior-main, holds at 85% without the saturated behavior)
 
-A balanced two-way variance partition of per-cell install strength over the 15 shared source contexts × 4 rate behaviors (fact, refusal, agreement, EM) splits the variance into source, behavior, and pairing-plus-noise (panel C).
+A balanced two-way variance partition of per-cell install strength over the 15 shared source contexts × 4 rate behaviors (fact, refusal, sycophancy, EM) splits the variance into source, behavior, and pairing-plus-noise (panel C).
 
 ![Variance of install strength across a 15-source by 4-behavior grid partitioned into source-main 2%, behavior-main 89%, and pairing-plus-noise 10%; the behavior bar dominates.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fff6db749ec5614a29ad53f888271f3aeb0b47c8/figures/issue_638/install_resistance.png)
 
 > **Figure (panel C).** *Behavior explains 89% of install-strength variance; source explains ~2%.* Raw-rate two-way SS partition, 15 sources × 4 rate behaviors. Bootstrap 95% CI on the behavior fraction is 0.79–0.97; on source 0.003–0.035. Panels A/B/D carry the other findings.
 
-What resists is whole behaviors: refusal floors at 0.00–0.40 install across every source while the agreement behavior saturates near-ceiling everywhere. Dropping the saturated agreement behavior moves behavior-main 89%→85% and source-main 2%→3%, so the structure survives the obvious saturation objection. Z-scoring removes the behavior column by construction, yet source-main still reads only ~5% — source stays small even when the framing maximally favors it.
+What resists is whole behaviors: refusal floors at 0.00–0.40 install across every source while the sycophancy behavior saturates near-ceiling everywhere. Dropping the saturated sycophancy behavior moves behavior-main 89%→85% and source-main 2%→3%, so the structure survives the obvious saturation objection. The bootstrap CI resamples source contexts only (behaviors are fixed, n=4/5), so it quantifies source-sampling sensitivity, not behavior-axis uncertainty. Z-scoring removes the behavior column by construction and assigns 95% of variance to residual/pairing/noise, yet source-main still reads only ~5% — source stays small even when the framing maximally favors it.
 
 ### No persona resists everything (median cross-behavior source-rank correlation −0.33)
 
 If resistance were a persona trait, a source that resists one behavior should resist others — the source-resistance rankings would correlate positively across behaviors. Panel D is the matrix of those cross-behavior rank correlations.
 
-![Cross-behavior source-rank correlation heatmap over fact, refusal, agreement, EM; most off-diagonal cells are negative or near zero, median minus 0.33.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fff6db749ec5614a29ad53f888271f3aeb0b47c8/figures/issue_638/install_resistance.png)
+![Cross-behavior source-rank correlation heatmap over marker, fact, refusal, sycophancy, em (5 behaviors, 10 pairs); most off-diagonal cells are negative or near zero, median minus 0.33.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fff6db749ec5614a29ad53f888271f3aeb0b47c8/figures/issue_638/install_resistance.png)
 
 > **Figure (panel D).** *No global resistant persona.* Each cell is the Spearman correlation of per-source install ranks between two behaviors (15 sources). Median across the 10 behavior pairs is −0.33; range −0.57 to +0.35. RdBu_r scale, no overlays.
 
-The rankings are mostly anticorrelated or independent: the median is negative and not one pair clears +0.36. A source's resistance is specific to the behavior being installed, which kills the persona-coherence reading. The matrix cannot say WHY a given pairing resists — only that resistance does not transfer across behaviors within a source.
+The rankings are mostly anticorrelated or independent: the median is negative and no pair clears +0.36 (the single positive endpoint is fact~em = +0.35). The matrix rests on saturated/tied-rank columns (sycophancy 14/15 at ceiling) and on fact, whose own cross-seed rank reliability is only ρ=0.41, so this is evidence against a stable global positive source trait — not a robust negative-transfer law. Either way, a source's resistance is specific to the behavior installed, which kills the persona-coherence reading.
 
 ### Base propensity is diagonal headroom, not a positive installability predictor (pooled −0.31, marker +0.24)
 
@@ -57,17 +57,17 @@ Off the diagonal, base prior predicts leakage positively. On the install diagona
 
 > **Figure (panels A, B).** *The pooled negative correlation is a ceiling effect, not a mechanism.* Panel A: marker install vs base log P(marker), the one off-saturation behavior (ρ=+0.24, n=15). Panel B: pooled standardized install vs standardized base propensity across all 5 behaviors (ρ=−0.31, n=75).
 
-The negative sign is a headroom artifact: install is `trained − base`, so a high base prior leaves less room to move and shrinks the delta. It is carried by the saturated agreement behavior (ρ=−0.77, 14 of 15 cells at ceiling); the marker, the one behavior with real headroom, shows the opposite sign (ρ=+0.24). No clean positive installability predictor exists here. A separate 16-source marker run confirms the trap: at its saturated anchor, install variance is ~100% base-prior variance — mechanically `−base`.
+The negative sign is a headroom artifact: install is `trained − base`, so a high base prior leaves less room to move and shrinks the delta. It is carried by the saturated sycophancy behavior (ρ=−0.77, 14 of 15 cells at ceiling); the marker, the one behavior with real headroom, shows the opposite sign (ρ=+0.24). No clean positive installability predictor exists here. A separate base-level predictor check on the behavior battery is also null (ρ=−0.07, n=18), corroborating that base level does not predict install. A separate 16-source marker run confirms the trap: at its saturated anchor, install variance is ~100% base-prior variance — mechanically `−base`.
 
-### Identity / construction conflict is the only engineerable lever found (casual register installs at −0.42)
+### Identity / construction conflict is the clearest candidate lever found (casual register installs at −0.42)
 
 Across a one-source-per-behavior battery, the cleanest residual is a case where training pushed a behavior BELOW base: a "casual lowercase register" trained on the home format-style behavior installed negatively.
 
-![Casual-register install of minus 0.42, identical at seed 0 and seed 137, against a battery whose seed-pair reliability is 0.94; base level 0.54 dropping to 0.12 trained.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fff6db749ec5614a29ad53f888271f3aeb0b47c8/figures/issue_638/install_resistance.png)
+![The shared 4-panel figure carrying the structural variance, cross-behavior, and base-propensity reads; the casual-register negative-install datapoint is reported in JSON and is not plotted in any panel.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fff6db749ec5614a29ad53f888271f3aeb0b47c8/figures/issue_638/install_resistance.png)
 
 > **Figure (context for this finding).** *Casual-register negative install is read identically at both seeds.* L=−0.42 at seed 0 and seed 137 (base 0.54 → trained 0.12), inside a battery whose seed-pair reliability is ρ=0.94. The 4-panel figure carries the structural reads; this datapoint is JSON-only.
 
-The negative install is identical at both seeds inside a battery whose seed-pair reliability is 0.94, so it is a real signal, not seed noise. It is consistent with the behavior conflicting with the source's construction rather than with a low base prior. The signal rests on one source and one behavior, so it points to a lever — deliberately engineering construction conflict — without establishing one.
+The negative install is identical at both seeds inside a battery whose seed-pair reliability is 0.94, so it is a real signal, not seed noise, and is in a matched-source diagonal cell with verified reliability. Other negative-install cells exist (refusal at −0.55 on a separate eval slice; a warmth behavior at −0.05 that reverses to +0.05 across seeds), but they are single-behavior cells outside the matched-source diagonal or not seed-robust, so casual-register is the clearest, not the only, case. It is consistent with the behavior conflicting with the source's construction rather than with a low base prior, but rests on one source and one behavior, so it points to a lever — deliberately engineering construction conflict — without establishing one.
 
 ## Data
 
@@ -125,7 +125,7 @@ Full results JSON (all keys): [`install_resistance_results.json`](https://github
 | Base model | n/a — no model loaded (underlying runs used Qwen-2.5-7B) |
 | Decomposition | balanced two-way SS partition (source × behavior), raw-rate + within-behavior z |
 | Ceiling-drop variant | `drop_sycophancy_3_behaviors` (registered; per-cell mask degenerates and is not cited) |
-| Bootstrap | B=2000, `rng(0)`, resamples the 15 source contexts |
+| Bootstrap | B=2000, `rng(0)`, resamples the 15 source contexts (source-sampling sensitivity only, not behavior-axis uncertainty) |
 | Source-data seeds | #537 marker/fact 42 + 1042; #545 0 + 137 |
 | Shared source contexts | 15 |
 
