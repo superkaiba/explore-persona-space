@@ -16,6 +16,9 @@ goal: 'Test whether #532''s level-vs-change predictor decomposition holds for a 
   the marker''s clean two-component rule. Reuse existing sycophancy panels (#612/#627/#507/#509)
   carrying base rate + trained rate + geometry; add a graded log-prob-readable DV
   (#391 forced-choice) only if rate-space floors.'
+relates_to:
+- leak-predictor
+- leak-behavior-vs-marker
 ---
 # Does the base-prior-vs-geometry level/change split hold for realistic behaviors?
 
