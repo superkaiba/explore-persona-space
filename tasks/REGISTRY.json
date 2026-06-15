@@ -3937,8 +3937,8 @@
     "638": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/interpreting/638",
-      "status": "interpreting",
+      "path": "tasks/reviewing/638",
+      "status": "reviewing",
       "title": "Install resistance is behavior-dominated, not a source trait \u2014 no persona resists everything (MODERATE confidence)"
     },
     "639": {
