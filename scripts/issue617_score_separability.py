@@ -78,6 +78,45 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 KNN_K = 4
 
+# A k-rank larger than any swept K (plan §11: K in {5, 10, 20}) so HDBSCAN
+# never undercuts the KMeans-first tie-break rule.
+_HDBSCAN_EFFECTIVE_K = 1_000_000
+
+
+def pick_sort_key(config: str) -> tuple[int, int]:
+    """(algo_rank, k_rank) tie-break key — plan §4 step 4 order.
+
+    KMeans before HDBSCAN (algo_rank 0 vs 1), then lower-K first. algo_rank is
+    the PRIMARY tie-break (sorted before k_rank at the call site), so on an
+    exact-purity tie KMeans always wins regardless of K; HDBSCAN carries a large
+    effective k_rank so even within algo_rank it never beats a real KMeans K.
+    Crashes loud on an unrecognized config rather than silently mis-ranking it.
+    """
+    if config.startswith("kmeans"):
+        return (0, int(config[len("kmeans") :]))
+    if config == "hdbscan":
+        return (1, _HDBSCAN_EFFECTIVE_K)
+    raise ValueError(f"unrecognized clustering config {config!r} (expected kmeans<K> or hdbscan)")
+
+
+def pick_winner(scored: list[dict]) -> dict:
+    """Plan §4 step 4 winner selection over scored pairs.
+
+    Sort by (-residualized purity, algo_rank, k_rank, cluster_a, cluster_b) and
+    return the top entry. Each scored entry carries ``residualized_purity_best``,
+    ``config``, ``cluster_a``, ``cluster_b``. Factored out so the tie-break order
+    is unit-testable without running the GPU/CPU scoring pipeline.
+    """
+    return sorted(
+        scored,
+        key=lambda s: (
+            -s["residualized_purity_best"],
+            *pick_sort_key(s["config"]),
+            s["cluster_a"],
+            s["cluster_b"],
+        ),
+    )[0]
+
 
 def _config_of(cluster_id: str) -> str:
     """Config algo name from a cluster id (e.g. 'kmeans10_c03' -> 'kmeans10')."""
@@ -278,24 +317,22 @@ def score_all(
     # purity (reusing each pair's already-computed s_b — element-wise max).
     m_b = np.max(np.stack(pair_state), axis=0)
 
-    # Winner: highest residualized purity, tie-break lower-K, KMeans-before-
-    # HDBSCAN, lexicographic cluster ids.
-    def _config_rank(config: str) -> tuple[int, int, str]:
-        if config.startswith("kmeans"):
-            return (0, int(config[len("kmeans") :]), config)
-        return (1, 0, config)
-
+    # Winner + top3: highest residualized purity, then plan §4 step 4 tie-break
+    # order — KMeans-before-HDBSCAN, THEN lower-K, then lexicographic cluster
+    # ids (see pick_sort_key / pick_winner). algo_rank is sorted before k_rank
+    # so a purity tie between KMeans and HDBSCAN resolves to KMeans regardless of
+    # K (HDBSCAN's large effective k_rank cannot undercut the KMeans-first rule).
     scored_sorted = sorted(
         scored,
         key=lambda s: (
             -s["residualized_purity_best"],
-            _config_rank(s["config"])[1],  # lower K first
-            _config_rank(s["config"])[0],  # KMeans before HDBSCAN
+            *pick_sort_key(s["config"]),
             s["cluster_a"],
             s["cluster_b"],
         ),
     )
-    winner = scored_sorted[0]
+    winner = pick_winner(scored)
+    assert winner is scored_sorted[0], "pick_winner must agree with the top3 sort"
     obs = winner["residualized_purity_best"]
     p_global = float((1 + (m_b >= obs).sum()) / (n_perms + 1))
 
