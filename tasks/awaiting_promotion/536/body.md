@@ -7,6 +7,8 @@ tags:
 - needs-thomas
 created_at: '2026-06-09T18:35:37Z'
 has_clean_result: true
+classification: useful
+promoted_at: '2026-06-15T23:28:56Z'
 ---
 # Standardizing persona-distance cosine on the mean-centered recipe leaves every recomputable published call standing — including the one null whose apparent rescue died under the published estimator (HIGH confidence)
 
