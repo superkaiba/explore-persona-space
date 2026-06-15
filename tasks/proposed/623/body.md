@@ -15,26 +15,51 @@ goal: Quantify how much of a persona vector reflects the base model's prior pers
   base-prior behavioral measures and by measuring how much post-implant vector shift
   lies along the training write/behavior directions.
 ---
-## Goal
-
-Quantify how much of a persona vector reflects the base model's prior persona behavior versus newly trained-in behavior, by correlating vector projections with base-prior behavioral measures and by measuring how much post-implant vector shift lies along the training write/behavior directions.
-
-
 ## Summary
 
-Persona vectors are extracted from contrastive prompting alone, so it is unclear what they actually index: the base model's pre-existing (prior) tendency to behave as the persona, or behavior that training later installs under that persona. Two questions, one design: (1) how much of a persona vector is the base prior — does projection onto the vector track base-model persona behavior measured before any training? (2) how much do persona vectors capture trained-in behavior — after implanting a behavior into a source persona, does the persona vector move, and does it move along the trained behavior direction?
+Persona vectors are extracted from contrastive prompting (Persona Vectors recipe, response-token mean; arXiv 2507.21509), so it is unclear what they index: a persona's pre-existing behavioral disposition, or content that training later installs. This task tests the **prior** half on one trait — sycophancy. Headline read: across a persona panel, does the cosine alignment between a persona's vector and the **sycophancy persona vector** predict that persona's measured (judged, on-policy) sycophancy on the base model? Tight positive correlation means persona vectors already encode the base behavioral prior; a null means the geometry is blind to behavioral disposition. Either outcome directly bears on the standing project result that the *behavioral* base prior out-predicts *geometric* cosine for leakage (#500/#532/#541): tight ρ → geometry is a noisy proxy for the prior; near-null ρ → geometry and behavior are genuinely different axes.
 
-## Design sketch
+## Operationalization
 
-1. **Vector extraction.** Persona Vectors recipe (contrastive system-prompt pairs, mean residual-stream activation difference per layer; arXiv 2507.21509) on Qwen2.5-7B-Instruct for the existing persona panel — reuse the bystander-panel personas so the reads line up with prior leakage results.
-2. **Prior-capture read (base model only).** Across the panel, correlate each persona's projection (context activations onto its persona vector) with already-measured base-prior behavior: base `log P(marker)` at the end-of-response slot per persona (#532 line) and judged trait-expression rates on base on-policy generations. Strong correlation = the vector largely encodes the prior.
-3. **Trained-behavior read (pre/post implant).** Re-extract the same persona vectors on existing implanted models (reuse fit-for-purpose marker adapters and the sycophancy adapters rather than retraining; run the reuse fitness check). Measure Δ(persona vector) against (a) the seed-stable LoRA write direction (#604) and (b) the behavior direction (marker unembedding row `W_U[marker]`; sycophancy direction). The fraction of Δ lying in that subspace is "how much the vector captures trained-in behavior".
-4. **Noise control.** Same re-extraction on a benign-SFT adapter (no behavior implant) bounds extraction noise on Δ.
+Per persona *i* in the panel, two scalars on **base Qwen-2.5-7B-Instruct** (no implant):
+
+- **Geometric — `proj_i`:** cosine similarity between `persona_vector_i` and the `sycophancy_vector`, at a matched layer. Cosine primary (project standard, #404); raw dot product secondary (the paper's §"Comparing projection differences with raw projection" motivates reporting both). Both vectors extracted via the identical Persona Vectors recipe: contrastive positive/negative *instructions*, responses generated under each, **response-token-mean** activation difference per layer (the paper's default, App. position-extraction).
+- **Behavioral — `syc_i`:** judged sycophancy rate of the base model prompted *as persona i* (persona system prompt, NO sycophancy instruction) on the audited wrong-claim pool (reuse #612). Claude judge, on-policy generation — never substring. This is the persona's dispositional sycophancy.
+
+**Primary result:** Spearman ρ (with bootstrap CI) across the panel between `proj_i` and `syc_i`, reported as a ρ-vs-layer curve with a pre-registered headline layer = the sycophancy vector's most-informative layer (the paper's steering-effectiveness criterion).
+
+## Hypotheses & decision rule
+
+- **H1 (vectors index the prior):** ρ ≥ ~0.5, CI excludes 0 → a persona vector pointing more toward sycophancy predicts that persona being more sycophantic; persona vectors encode the base behavioral prior.
+- **H0 (null):** ρ CI includes 0 → persona-vector geometry is blind to behavioral disposition.
+- Report the split honestly with CI; a mid-range ρ is "partial" and quantified, not rounded to either pole.
+
+## Design
+
+1. **Panel.** Reuse the graded-cosine persona panel (#612, spanning cosine ~0.70–0.995) + the #532 base-prior reads so points line up with prior leakage results. Target ≥ ~20 personas spanning a range of base sycophancy (correlation power). Planner verifies reuse fitness (a)–(g).
+2. **Sycophancy vector.** Persona Vectors recipe for trait "sycophancy" using the paper's own trait description (verbatim, replication fidelity), extracted fresh on Qwen-2.5-7B-Instruct (the published vectors are on other base models). 5 pos/neg instruction pairs, 20-question extraction set, response-avg, per layer.
+3. **Persona vectors.** Each panel persona extracted via the SAME recipe (reuse the existing persona-panel extraction convention used in the #532/#404 line; planner confirms the identity-persona contrast matches).
+4. **Behavioral read.** Per persona, vLLM on-policy generation on the #612 wrong-claim pool under the persona system prompt; Claude-judge sycophancy rate.
+5. **Reads.** ρ(proj_i, syc_i) per layer; cosine primary, dot secondary; bootstrap CI; scatter plotted raw alongside any processed view (show-raw-alongside-processed rule).
+
+## Caveats (pre-registered)
+
+- **Shared-method variance:** `sycophancy_vector` and `persona_vector_i` both come from the same contrastive-prompt recipe, so a positive ρ partly reflects internal consistency of the extraction method. The behavioral axis (`syc_i`) is fully independent, so the correlation *with behavior* is still a real test — but geometry-to-geometry consistency is not itself the claim.
+- **Power:** a correlation over ~20 personas; report CI, do not over-read a point estimate.
+- **One trait, one model:** sycophancy on Qwen-2.5-7B-Instruct; generalization to other traits/models is out of scope (a natural follow-up).
+
+## Optional second arm — trained-in (pre-registered, run only if the prior read is interesting)
+
+Re-extract the panel persona vectors on the **sycophancy-implanted** models (reuse fit-for-purpose sycophancy adapters; reuse fitness check). Measure whether each persona's vector moves *toward* the sycophancy direction post-implant (Δproj_i) and whether Δproj_i predicts that persona's measured leakage. This is the trained-in companion to the prior read; the write-direction (#604/#621) version is the natural mechanistic cross-check.
 
 ## Relation to existing work
 
-#532 (base prior rank-orders leakage), #602 (predicting training-induced activation shifts from the base model), #605 (base-prior gate test at matched similarity), #604 (LoRA write direction seed-stable), #621 (rank-1 read/write decomposition — shares the behavior-direction tooling). Positions directly against Persona Vectors (Chen, Arditi, et al. 2025, arXiv 2507.21509), which does not separate prior from trained-in content.
+#532 (base prior rank-orders leakage), #602 (predicting training-induced activation shifts from the base model), #605 (base-prior gate test at matched similarity), #604 (LoRA write direction seed-stable), #621 (rank-1 read/write decomposition — shares behavior-direction tooling), #612 (on-policy sycophancy rig + audited wrong-claim pool + graded-cosine panel — reused here). Positions directly against Persona Vectors (Chen, Arditi et al. 2025, arXiv 2507.21509), which does not separate prior from trained-in content.
+
+## Cost
+
+Training-free for the headline arm — all forward passes (vector extraction + per-persona behavioral generation) + Claude judging. Estimated < ~3 GPU-h (vLLM generation) + judge API. The optional trained-in arm reuses existing adapters (no new training) → also cheap.
 
 ## Provenance
 
-Captured from the 2026-06-11 collaborator meeting notes (`docs/mentor_updates/2026-06-11-christina.md`, § "The prior question"), where it was flagged as the thread of strongest interest. Filed from chat 2026-06-12 while triaging those notes into tasks.
+Captured from the 2026-06-11 collaborator meeting notes (`docs/mentor_updates/2026-06-11-christina.md`, § "The prior question"), flagged as the thread of strongest interest. Design sharpened in PM session 2026-06-14 (Option-1 sycophancy persona vector, prior read as headline).
