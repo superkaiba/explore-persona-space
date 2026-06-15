@@ -18,6 +18,8 @@ goal: 'Test whether the bystander-prior→leakage relationship found in #500 hol
 relates_to:
 - leak-predictor
 - fact-teach-persona-transfer
+classification: useful
+promoted_at: '2026-06-15T23:49:27Z'
 ---
 # Bystander prior still predicts fact leakage on a panel enriched with high-prior personas, but as a high-vs-rest stratum contrast rather than a graded ranking (MODERATE confidence)
 
