@@ -478,6 +478,17 @@ def steering_generate(
     layer/vec/alpha=None or 0 => baseline (no steering). Returns rows {question,
     response}. Uses the BARE assistant system prompt (no sycophancy instruction)
     so the vector's causal effect is isolated.
+
+    BATCHED (C1): all questions are tokenized into one LEFT-PADDED, attention-masked
+    batch and generated in a single ``model.generate(num_return_sequences=n_rollouts)``
+    call — vLLM is structurally incompatible here (no forward hooks for activation
+    addition), so batched HF generate is the only path. Left-pad so the generated
+    continuation is a contiguous suffix of every row (``input_ids.shape[1]:`` slice
+    is exact regardless of per-prompt length); HF derives generation position_ids
+    from the attention mask, so no explicit position_ids are needed for the decode
+    path (the left-pad/position_ids trap bites teacher-forced FORWARD passes, not
+    generate()). The residual-stream hook adds ``alpha * v_hat`` to the whole
+    (batch, seq, hidden) tensor, broadcasting correctly across the batch.
     """
     handle = None
     if layer is not None and vec is not None and alpha != 0.0:
@@ -493,29 +504,46 @@ def steering_generate(
 
         handle = model.model.layers[layer].register_forward_hook(hook_fn)
 
+    # Pad-token + left-pad for batched decode (restore on exit).
+    prev_pad_token = tokenizer.pad_token
+    prev_padding_side = tokenizer.padding_side
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
+
+    texts = [
+        tokenizer.apply_chat_template(
+            [{"role": "user", "content": q}], tokenize=False, add_generation_prompt=True
+        )
+        for q in questions
+    ]
+
     rows: list[dict] = []
     try:
-        for question in questions:
-            messages = [{"role": "user", "content": question}]
-            text = tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
+        batch = tokenizer(texts, return_tensors="pt", padding=True).to(model.device)
+        prompt_len = batch["input_ids"].shape[1]
+        with torch.no_grad():
+            gen = model.generate(
+                **batch,
+                do_sample=True,
+                temperature=GEN_TEMPERATURE,
+                top_p=1.0,
+                max_new_tokens=max_new_tokens,
+                num_return_sequences=n_rollouts,
             )
-            inputs = tokenizer(text, return_tensors="pt", padding=False).to(model.device)
-            for _ in range(n_rollouts):
-                with torch.no_grad():
-                    gen = model.generate(
-                        **inputs,
-                        do_sample=True,
-                        temperature=GEN_TEMPERATURE,
-                        top_p=1.0,
-                        max_new_tokens=max_new_tokens,
-                    )
-                resp_ids = gen[0, inputs["input_ids"].shape[1] :]
-                response = tokenizer.decode(resp_ids, skip_special_tokens=True)
-                rows.append({"question": question, "response": response})
+        # gen rows are ordered question-major: question i contributes rows
+        # [i*n_rollouts : (i+1)*n_rollouts]. Left-pad => continuation is the suffix
+        # past prompt_len for every row.
+        resp_ids = gen[:, prompt_len:]
+        decoded = tokenizer.batch_decode(resp_ids, skip_special_tokens=True)
+        for i, question in enumerate(questions):
+            for j in range(n_rollouts):
+                rows.append({"question": question, "response": decoded[i * n_rollouts + j]})
     finally:
         if handle is not None:
             handle.remove()
+        tokenizer.pad_token = prev_pad_token
+        tokenizer.padding_side = prev_padding_side
     return rows
 
 

@@ -99,6 +99,13 @@ UNRESOLVABLE_PERSONAS: tuple[str, ...] = (
 EXPECTED_EXTRACTION_N = 36  # all resolvable personas incl. assistant baseline-self
 EXPECTED_CORRELATION_N = 35  # after dropping the assistant baseline-self
 K1_PANEL_FLOOR = 25  # Spearman power floor (plan §7 K1)
+# K3 (DV degeneracy, plan §7): if syc_i has near-zero variance across the realized
+# panel (all personas at the same base rate), the Spearman correlation is undefined
+# → report the base-rate distribution and HALT; no rho headline. A generous floor:
+# 15 distinct syc_i values out of the N=35 panel still leaves a well-defined rank
+# correlation, while < 15 (or zero variance) signals the panel collapsed to a
+# handful of base rates and ranking is degenerate.
+K3_DISTINCT_FLOOR = 15
 
 # --- HF reused-input pin (plan §10 / §11(f); incident #600) ------------------
 PANEL_SET_RELPATH = f"{HF_DATA_PREFIX}/panel/panel_set.json"
