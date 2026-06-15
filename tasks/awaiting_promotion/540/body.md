@@ -15,6 +15,8 @@ goal: 'Implement the canonical Rao-Blackwellized sequence-level Jensen-Shannon d
 relates_to:
 - leak-predictor
 - spec-sysprompt-vs-drift
+classification: useful
+promoted_at: '2026-06-15T23:49:21Z'
 ---
 # Full-reply behavioral divergence predicts marker leakage beyond reply length once replies end naturally, though the strictest off-diagonal read stays indeterminate (MODERATE confidence)
 
