@@ -1,6 +1,6 @@
 ---
-title: No portable convex geometry→behavior shape — marker-leakage skews concave,
-  fact-leakage noisy, and the seed sycophancy bend is leverage (MODERATE confidence)
+title: No portable convex geometry→behavior shape recurs across the qualifying prior-task
+  scatters (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-15T18:02:38Z'

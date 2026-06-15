@@ -3985,7 +3985,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/644",
       "status": "interpreting",
-      "title": "No portable convex geometry\u2192behavior shape \u2014 marker-leakage skews concave, fact-leakage noisy, and the seed sycophancy bend is leverage (MODERATE confidence)"
+      "title": "No portable convex geometry\u2192behavior shape recurs across the qualifying prior-task scatters (MODERATE confidence)"
     },
     "65": {
       "has_clean_result": true,
