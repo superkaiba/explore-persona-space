@@ -152,7 +152,12 @@ def _generate_for_panels(
         ]
         t0 = time.time()
         kwargs = {"lora_request": lora_request} if lora_request is not None else {}
-        outputs = llm.generate(prompts, sampling, **kwargs)
+        # use_tqdm=False guards against the vLLM _run_engine ZeroDivisionError:
+        # when a small batch finishes faster than tqdm's clock resolution,
+        # pbar.format_dict["elapsed"] is 0.0 and the in_spd summary divides by it
+        # (vllm/entrypoints/llm.py _run_engine, guarded by `if use_tqdm:`). The
+        # cmft stage-A panels are small enough on 4xA100-80 to race that timer.
+        outputs = llm.generate(prompts, sampling, use_tqdm=False, **kwargs)
         if len(outputs) != len(probes):
             raise RuntimeError(
                 f"vLLM returned {len(outputs)} outputs for {len(probes)} prompts "
