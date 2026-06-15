@@ -3775,8 +3775,8 @@
       "goal": "Determine whether clustered, separable WildChat conversation categories work as realistic training/eval contexts for the context-leakage predictor.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/verifying/617",
-      "status": "verifying",
+      "path": "tasks/interpreting/617",
+      "status": "interpreting",
       "title": "Clustered WildChat categories separate cleanly in Qwen mid-band activations: the best real-conversation pair hits length-residualized purity 1.00 at L13/14/18, far above the selection-aware null (MODERATE confidence)"
     },
     "618": {
