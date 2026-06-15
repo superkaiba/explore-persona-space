@@ -23,6 +23,8 @@ goal: Determine whether encoding a persona as a custom chat-template role header
 relates_to:
 - spec-role-header
 - leak-contrastive-negatives
+classification: useful
+promoted_at: '2026-06-15T21:32:12Z'
 ---
 # In the marker-less contrastive-negative regime, the wrong-persona role-vs-system marker gap depends on announcement wording: under elaborate wording the role encoding carries MORE wrong-persona marker mass at install (negative gap), but under content-matched bare wording the sign reverses and bare role carries LESS, on both personas, in both trained-vs-base log P and trained-vs-base EOS-margin space, with every per-seed value positive across all 3 install-onward grid points {30, 60, 120} and the gap growing from about +0.6 to +3.0 nats between s=30 and s=60 before plateauing (MODERATE confidence)
 
