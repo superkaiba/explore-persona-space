@@ -14,6 +14,9 @@ goal: Test whether persona vectors index the base behavioral prior by measuring,
   a persona panel, the Spearman correlation between each persona's cosine alignment
   to the sycophancy persona vector and its judged on-policy base sycophancy rate —
   all extracted via the Persona Vectors response-avg recipe on Qwen-2.5-7B-Instruct.
+relates_to:
+- identity-persona-vs-behavior
+- leak-predictor
 ---
 ## Goal
 
