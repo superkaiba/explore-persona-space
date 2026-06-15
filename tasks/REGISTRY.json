@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 648,
+  "highest_id": 649,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4015,6 +4015,13 @@
       "path": "tasks/running/648",
       "status": "running",
       "title": "Is centered cosine a better leakage predictor than raw cosine, or only the valid one? (head-to-head CV R\u00b2 per bank)"
+    },
+    "649": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/649",
+      "status": "proposed",
+      "title": "Does the base-prior-vs-geometry level/change split hold for realistic behaviors (sycophancy primary)?"
     },
     "65": {
       "has_clean_result": true,
