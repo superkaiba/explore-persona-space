@@ -222,6 +222,58 @@ def test_drain_surfaces_gate(monkeypatch: pytest.MonkeyPatch) -> None:
     assert gate == "fact-candidates"
 
 
+def test_drain_non_blocking_phase_signal_posts_but_does_not_surface_gate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A sentinel with a non-empty ``gate`` NAME but ``blocks_pipeline: False``
+    (the dispatchers' benign phase-progress signal — ``gate=phase`` /
+    ``gate=smoke`` / ``gate=dryrun``) is POSTED from the VM but must NOT be
+    surfaced as a poll-loop-ending user gate (incident #641: a strict
+    orchestrator reading would otherwise block #641 mid-training)."""
+    sentinel_path = "/workspace/logs/issue-641-epm_results-1700000050.json"
+    body = _sentinel_body(kind="epm:results", gate="phase", note="phase=base-propensity complete")
+    body["blocks_pipeline"] = False  # override the helper's gate-implied default
+    router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(body))))
+    monkeypatch.setattr(pp.subprocess, "run", router)
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    processed, gate = pp._drain_sentinels(issue=641, pod="epm-issue-641")
+
+    # Marker IS posted from the VM (the phase-progress signal is recorded)...
+    assert processed == 1
+    post_mock.assert_called_once_with(
+        641,
+        "epm:results",
+        version=1,
+        by="experiment-implementer",
+        note="phase=base-propensity complete",
+    )
+    # ...but the gate is NOT surfaced, so the polling loop continues.
+    assert gate is None
+    # The sentinel is still renamed so the next tick won't re-post it.
+    assert len(router.mv_calls) == 1
+    assert ".processed" in router.mv_calls[0]
+
+
+def test_drain_surfaces_gate_when_blocks_pipeline_field_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Back-compat: a sentinel carrying a non-empty ``gate`` but NO
+    ``blocks_pipeline`` field still parks (the field defaults to True)."""
+    sentinel_path = "/workspace/logs/issue-444-epm_fact-candidates-1700000051.json"
+    body = _sentinel_body(kind="epm:fact-candidates", gate="fact-candidates")
+    body.pop("blocks_pipeline", None)  # legacy sentinel without the field
+    router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(body))))
+    monkeypatch.setattr(pp.subprocess, "run", router)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
+
+    assert processed == 1
+    assert gate == "fact-candidates"
+
+
 def test_drain_skips_malformed_does_not_post(monkeypatch: pytest.MonkeyPatch) -> None:
     bad_path = "/workspace/logs/issue-444-broken-1700000002.json"
     good_path = "/workspace/logs/issue-444-progress-1700000003.json"

@@ -3392,8 +3392,19 @@ Pod-side dispatchers cannot post markers directly (the `task.py`
 branch-guard and the CLAUDE.md "Pod-side code NEVER shells out" rule),
 so they write a sentinel file at `/workspace/logs/issue-<N>-*.json`
 that `poll_pipeline.py` drains. When a sentinel carries a non-empty
-`gate` field, the poller posts the carried marker from the VM (e.g.
-`epm:fact-candidates v1`) and returns `status=gate` with `gate=<name>`.
+`gate` field **AND `blocks_pipeline: True`**, the poller posts the
+carried marker from the VM (e.g. `epm:fact-candidates v1`) and returns
+`status=gate` with `gate=<name>`.
+
+The poller ONLY surfaces `status=gate` when the drained sentinel had
+`blocks_pipeline: True` (the field defaults to True when absent, so a
+sentinel that carries only a `gate` name still parks). Sentinels with
+`blocks_pipeline: False` are the dispatchers' benign phase-progress
+signals (`gate=phase`, `gate=smoke`, `gate=dryrun` are the canonical
+ones): their marker IS posted from the VM, but they NEVER end the
+polling loop and NEVER trigger the fail-fast block. They are NOT user
+gates — do not treat a `blocks_pipeline: False` phase signal as an
+unrecognised gate (incident #641).
 
 The orchestrator parks at the named gate inline rather than continuing
 to poll — the pipeline itself has EXITed and is waiting on a user
@@ -3451,7 +3462,14 @@ Gate handlers (one per registered `<name>`):
   polling loop directly without a re-invocation. (See plan §4.2 of any
   fact-teaching task for the on-pod resume contract.)
 
-- **Unrecognised `gate` name**: log a one-line WARN, post `epm:failure
+- **Unrecognised `gate` name**: this branch fires ONLY for a sentinel
+  the poller surfaced as `status=gate` — i.e. one that carried
+  `blocks_pipeline: True`. A non-empty gate name with
+  `blocks_pipeline: False` (`gate=phase` / `gate=smoke` / `gate=dryrun`)
+  is filtered out by the drain and NEVER reaches this branch, so it is
+  NOT an unrecognised gate and MUST NOT trigger the block below. For a
+  genuinely unrecognised (blocking) gate name: log a one-line WARN, post
+  `epm:failure
   v1` with `failure_class: code` and `reason: unrecognised_gate_name`
   (the `code|infra|data` taxonomy has no `workflow` class; the failure
   classifier defaults unknown classes to `code` anyway), a note pointing
