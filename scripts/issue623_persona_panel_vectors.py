@@ -202,15 +202,28 @@ def main() -> None:
         out_b = base_output / "method_b"
         out_b.mkdir(parents=True, exist_ok=True)
 
-        responses = epv.generate_responses_vllm(
-            args.model,
-            role_prompts,
-            questions,
-            n_prompts=1,
-            gpu_id=args.gpu_id,
-            output_path=out_b / "generated_responses.json",
-            max_new_tokens=args.max_new_tokens,
-        )
+        # vLLM 0.11 `_run_engine` crashes with ZeroDivisionError when
+        # TQDM_DISABLE=1 (it computes `total_in_toks / pbar.format_dict["elapsed"]`
+        # and the disabled tqdm bar reports elapsed=0). The dispatcher exports
+        # TQDM_DISABLE=1 at issue623_dispatch.sh:36 as the #607 GCE startup-script
+        # bufio guard, and that propagates into this child process. Pop it for the
+        # duration of the vLLM call; restore afterward so any downstream phase that
+        # depends on it is unaffected (the dispatcher re-exports per phase regardless).
+        # crash-dump: _crash_dumps/issue623_1781525741_vector_extract/.
+        _prev_tqdm_disable = os.environ.pop("TQDM_DISABLE", None)
+        try:
+            responses = epv.generate_responses_vllm(
+                args.model,
+                role_prompts,
+                questions,
+                n_prompts=1,
+                gpu_id=args.gpu_id,
+                output_path=out_b / "generated_responses.json",
+                max_new_tokens=args.max_new_tokens,
+            )
+        finally:
+            if _prev_tqdm_disable is not None:
+                os.environ["TQDM_DISABLE"] = _prev_tqdm_disable
 
         # Reap vLLM worker subprocesses BEFORE the HF reload below: the callee's
         # cleanup is `del llm + empty_cache` only and may leave workers holding
