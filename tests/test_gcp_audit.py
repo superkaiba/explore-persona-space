@@ -117,7 +117,7 @@ def test_cli_threads_terminal_phase_flag(monkeypatch, capsys) -> None:
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
     assert out["list_rc"] == 0
-    by = {r["name"]: r for r in out["instances"]}
+    by = {r["name"]: r for r in out["records"]}
     assert by["eps-issue-200"]["action"] == "deleted"  # terminal-phase, flag threaded
     assert by["eps-issue-300"]["action"] == "skipped"  # healthy RUNNING
 
@@ -138,7 +138,7 @@ def test_cli_high_terminal_phase_floor_keeps_terminal_phase_vm(monkeypatch, caps
     rc = cli.main(["--delete", "--terminal-phase-max-age-min=60", "--json"])
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
-    by = {r["name"]: r for r in out["instances"]}
+    by = {r["name"]: r for r in out["records"]}
     assert by["eps-issue-100"]["action"] == "deleted"  # age backstop still fires
     assert by["eps-issue-200"]["action"] == "skipped"  # under the raised floor
     assert by["eps-issue-300"]["action"] == "skipped"
@@ -160,7 +160,7 @@ def test_cli_delete_failed_returns_rc2(monkeypatch, capsys) -> None:
     rc = cli.main(["--delete", "--json"])
     out = json.loads(capsys.readouterr().out)
     assert rc == 2
-    assert out["instances"][0]["action"] == "delete-failed"
+    assert out["records"][0]["action"] == "delete-failed"
 
 
 # ---------------------------------------------------------------------------
@@ -176,7 +176,7 @@ def test_cli_list_failed_returns_rc3_and_never_reaps(monkeypatch, capsys) -> Non
     out = json.loads(capsys.readouterr().out)
     assert rc == 3
     assert out["list_rc"] == 1
-    assert out["instances"] == []
+    assert out["records"] == []
     assert "Reauthentication failed" in out["list_stderr"]
     # Reaper never ran → no delete, and exactly one list (the preflight).
     assert not any("delete" in c and "instances" in c for c in runner.calls)
@@ -188,7 +188,7 @@ def test_cli_list_failed_returns_rc3_and_never_reaps(monkeypatch, capsys) -> Non
 # ---------------------------------------------------------------------------
 def test_cli_json_shape_clean_run(monkeypatch, capsys) -> None:
     """A clean report-only run emits the documented top-level keys
-    (``list_rc`` / ``list_stderr`` / ``instances``)."""
+    (``list_rc`` / ``list_stderr`` / ``records``)."""
     payload = _three_vm_payload()
     runner = _Runner(
         list_results=[GcloudRunResult(0, payload, ""), GcloudRunResult(0, payload, "")],
@@ -198,9 +198,9 @@ def test_cli_json_shape_clean_run(monkeypatch, capsys) -> None:
     rc = cli.main(["--json"])  # no --delete → report-only
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
-    assert set(out) >= {"list_rc", "list_stderr", "instances"}
+    assert set(out) >= {"list_rc", "list_stderr", "records"}
     assert out["list_rc"] == 0
-    assert isinstance(out["instances"], list)
+    assert isinstance(out["records"], list)
 
 
 # ---------------------------------------------------------------------------
@@ -218,7 +218,7 @@ def test_cli_report_only_default_issues_no_delete(monkeypatch, capsys) -> None:
     rc = cli.main(["--json"])
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
-    by = {r["name"]: r for r in out["instances"]}
+    by = {r["name"]: r for r in out["records"]}
     assert by["eps-issue-100"]["action"] == "would-delete"
     assert by["eps-issue-200"]["action"] == "would-delete"
     assert not any("delete" in c and "instances" in c for c in runner.calls)
@@ -237,6 +237,6 @@ def test_cli_dry_run_env_neuters_delete(monkeypatch, capsys) -> None:
     rc = cli.main(["--delete", "--json"])
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
-    by = {r["name"]: r for r in out["instances"]}
+    by = {r["name"]: r for r in out["records"]}
     assert by["eps-issue-100"]["action"] == "would-delete"  # NOT "deleted"
     assert not any("delete" in c and "instances" in c for c in runner.calls)

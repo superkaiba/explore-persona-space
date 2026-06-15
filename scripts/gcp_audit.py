@@ -102,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
                     {
                         "list_rc": probe.returncode,
                         "list_stderr": stderr[:500],
-                        "instances": [],
+                        "records": [],
                         "error": "gcloud list failed; janitor DISARMED",
                     },
                     indent=2,
@@ -127,7 +127,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if args.json:
-        print(json.dumps({"list_rc": 0, "list_stderr": "", "instances": records}, indent=2))
+        print(json.dumps({"list_rc": 0, "list_stderr": "", "records": records}, indent=2))
     else:
         reaped = [r for r in records if r["action"] in ("would-delete", "deleted")]
         failed = [r for r in records if r["action"] == "delete-failed"]
