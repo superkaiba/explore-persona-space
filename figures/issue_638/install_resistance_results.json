@@ -844,6 +844,42 @@
     "frac_col": 0.8882814309881504,
     "frac_resid_interaction_plus_noise": 0.09633174539069164
    },
+   "decomp_raw_rate_ceiling_sensitivity": {
+    "all_4_rate_behaviors": {
+     "frac_row": 0.015386823621157987,
+     "frac_col": 0.8882814309881504,
+     "frac_resid": 0.09633174539069164,
+     "n_sources": 15,
+     "n_behaviors": 4
+    },
+    "drop_sycophancy_3_behaviors": {
+     "frac_row": 0.033964049857474685,
+     "frac_col": 0.851839343378529,
+     "frac_resid": 0.11419660676399628,
+     "n_sources": 15,
+     "n_behaviors": 3
+    },
+    "verdict": "behavior-main 89% -> 85% when dropping saturated sycophancy; source stays ~negligible (2%->3%); headline does not flip"
+   },
+   "decomp_raw_rate_bootstrap_ci": {
+    "frac_row_ci": [
+     0.0026546927871602317,
+     0.035065090472510975
+    ],
+    "frac_col_ci": [
+     0.7897007097050374,
+     0.9740067825527575
+    ],
+    "frac_resid_ci": [
+     0.0226445647434783,
+     0.17761177069369646
+    ],
+    "B": 2000,
+    "seed": 0,
+    "resample_unit": "source_context",
+    "n_draws_used": 2000,
+    "caveat": "resamples source contexts; quantifies source-sampling sensitivity, not behavior-axis uncertainty"
+   },
    "cross_seed_reliability": {
     "marker": {
      "spearman_seed42_vs_1042": 0.9928571428571429,
@@ -1695,10 +1731,23 @@
     "spearman": -0.07120743034055728,
     "n": 18
    },
+   "casual_register_robustness": {
+    "seed0_L": -0.42000000000000004,
+    "seed137_L": -0.42000000000000004,
+    "identical_across_seeds": true,
+    "base_level": 0.54,
+    "trained_level": 0.12,
+    "dataset_seed_reliability_rho": 0.9438596491228071
+   },
    "decomposition_feasible": false,
    "note": "One source (default-assistant) per behavior -> NO source axis to decompose. #545 supports a BEHAVIOR-only resistance ranking + a base-propensity check across behaviors, not a source/behavior split."
   }
  },
- "notes": [],
+ "notes": [
+  {
+   "key": "dose_confound",
+   "text": "Dose is unmatched across all cells: the #612 dose bands mean each (source, behavior) cell was trained at a different, uncontrolled training dose. The marker diagonal is additionally band-stop-pinned (stopped on a source log-prob band, not a fixed step/epoch count), so its install level is set by a different stopping rule than the rate-behavior cells. No dose-matched subset exists in this 0-GPU data -- there are no replicate cells trained at matched dose to re-decompose against -- so the honest Phase-1 move is to acknowledge the confound rather than report a dose-corrected number. The dose-matched re-decomposition is Phase 2 (requires new matched-dose training runs)."
+  }
+ ],
  "figure": "figures/issue_638/install_resistance.png"
 }

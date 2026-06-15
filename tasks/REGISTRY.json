@@ -3773,11 +3773,11 @@
     },
     "617": {
       "goal": "Determine whether clustered, separable WildChat conversation categories work as realistic training/eval contexts for the context-leakage predictor.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/617",
-      "status": "planning",
-      "title": "WildChat-category contexts for leakage prediction: cluster WildChat, pick 2 separable categories, sample realistic user completions"
+      "path": "tasks/awaiting_promotion/617",
+      "status": "awaiting_promotion",
+      "title": "Clustered WildChat categories separate in Qwen mid-band activations, but the cleanest pair leans on a near-single-template cluster: length-residualized purity 1.00 at L13/14/18, only ~0.05 above its own surface baseline (MODERATE confidence)"
     },
     "618": {
       "goal": "Test whether persona-prompt-plus-general-instruction framing and on-policy conversation prefixes change sycophancy install strength and leakage vs the current canned and on-policy recipes.",
@@ -3826,11 +3826,11 @@
     },
     "623": {
       "goal": "Test whether persona vectors index the base behavioral prior by measuring, across a persona panel, the Spearman correlation between each persona's cosine alignment to the sycophancy persona vector and its judged on-policy base sycophancy rate \u2014 all extracted via the Persona Vectors response-avg recipe on Qwen-2.5-7B-Instruct.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/623",
-      "status": "approved",
-      "title": "Decompose persona vectors into base-prior vs trained-in-behavior components (pre/post-implant extraction)"
+      "path": "tasks/interpreting/623",
+      "status": "interpreting",
+      "title": "A persona vector's alignment to the sycophancy direction predicts that persona's base sycophancy rate (rho=0.73, n=35) \u2014 persona vectors already index the behavioral prior (MODERATE confidence)"
     },
     "624": {
       "goal": "Test whether training a dedicated evil-assistant container persona alongside the default assistant makes the default assistant more robust \u2014 primary robustness read to be chosen among EM-induction resistance, evil-behavior leakage into the default context, and red-team susceptibility \u2014 relative to a matched no-container baseline.",
@@ -3928,32 +3928,32 @@
       "title": "Expand-vs-sharpen x reweight-vs-new-feature: base vs RL vs SFT/distilled Qwen-2.5-7B (extends Dedicated Feature Crosscoders)"
     },
     "637": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/running/637",
-      "status": "running",
-      "title": "Is leakage-transfer asymmetry low-rank (per-context source-breadth + receptivity), not pairwise interaction?"
+      "path": "tasks/awaiting_promotion/637",
+      "status": "awaiting_promotion",
+      "title": "Leak-transfer asymmetry is rank-1 \"leaky source / receptive target\" out-of-sample only for the marker and taught fact; for content behaviors neither the rank-1 nor the transpose-based pairwise estimator generalizes (MODERATE confidence)"
     },
     "638": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/planning/638",
-      "status": "planning",
-      "title": "Why do some sources resist being trained with certain behaviors? Predictors of per-(source, behavior) install strength"
+      "path": "tasks/awaiting_promotion/638",
+      "status": "awaiting_promotion",
+      "title": "Install resistance is behavior-dominated, not a source trait \u2014 no persona resists everything (MODERATE confidence)"
     },
     "639": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/639",
-      "status": "running",
+      "path": "tasks/completed/639",
+      "status": "completed",
       "title": "Wire GCP janitor (audit_stale_gcp_vms) to a recurring cron"
     },
     "640": {
       "goal": "Test whether the chat-template POSTFIX (not prefix) is the dominant off-distribution leakage carrier on Qwen-2.5-7B, and whether patching base postfix KV per-cell into the #545 leaky adapters reduces leakage as a model-specific intervention.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/640",
-      "status": "planning",
+      "path": "tasks/blocked/640",
+      "status": "blocked",
       "title": "Is postfix the Qwen-2.5 carrier, and does postfix-patching work as a per-cell leakage intervention?"
     },
     "641": {
@@ -3966,11 +3966,11 @@
     },
     "642": {
       "goal": "Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap into a module-coverage component and a rank component by adding a coverage-matched full-FT arm (embeddings/lm_head/LayerNorm frozen) to #606's comparison at matched source-implant strength.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/642",
-      "status": "planning",
-      "title": "Is the #606 LoRA-vs-full-FT sycophancy bystander-leakage gap driven by module coverage or by rank? (coverage-matched-FT arm)"
+      "path": "tasks/awaiting_promotion/642",
+      "status": "awaiting_promotion",
+      "title": "Most of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap is the adapter-vs-dense-update bundle (+0.073 of +0.098), with a smaller module-coverage piece (+0.025) that the decision rule cannot call clean (MODERATE confidence)"
     },
     "65": {
       "has_clean_result": true,
