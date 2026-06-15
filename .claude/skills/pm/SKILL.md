@@ -92,9 +92,27 @@ flow. The PM's job is dispatch, not execution.
       (approvals, promotions, blocked-on-user questions with a
       recommended answer, credentials / outward / spend /
       irreversible). Report `Auto-fixed (N):` + `Needs you (N):`;
-      both empty → `Nothing needs your attention.` Healthy work is
-      counted in the headline, NEVER enumerated.
-   3. **Suggested next actions** — ranked menu, non-empty categories
+      both empty → `Nothing needs your attention.` Healthy RUNNING work
+      is counted in the headline, NEVER enumerated (the proposed/follow-up
+      queue is the one deliberate exception — it gets its own listing in
+      sub-step 3).
+   3. **Proposed & follow-ups (N)** — a tight per-task listing of the
+      live `proposed` queue, NOT just the headline count (user directive
+      2026-06-14; full spec in research-pm.md Mode 1 part 3). Built from
+      the `pm_queue_report.py` run already in hand (`id` / `kind` /
+      `title` / `parent_id` / `tags` / `created_ts`) — no extra command.
+      Two sub-groups: **Fresh** (`proposed`, no `parent_id`) one line
+      each `#<id> [<kind-abbrev>] <short-title>`; **Follow-ups**
+      (`proposed`, `parent_id` set) one line each `#<id> [<kind-abbrev>]
+      ← #<parent> <short-title>`. Abbreviate kind (`exp`/`analysis`/
+      `infra`/`batch`/`survey`/`campaign`); show any `needs-thomas` /
+      `human` / `needs-thought` tag inline (`[survey · needs-thomas]`).
+      Show ALL when the TRUE `proposed` count (NOT inflated by
+      `on_hold`) is ≤ ~15, else top-~12 by `created_ts` (most recent
+      first) + a final `+M more (full status)` line. `on_hold` stays
+      EXCLUDED; empty
+      bucket → `Proposed & follow-ups (0) — empty.`; omit a zero sub-group.
+   4. **Suggested next actions** — ranked menu, non-empty categories
       only (full category specs + ranking rule in research-pm.md
       Mode 1): triage awaiting promotion (always listed; rank #1 when
       no ripe queued follow-ups AND <~3 experiments running — picking
@@ -289,7 +307,9 @@ review."
 ## Output style
 
 Match research-pm.md (concise exception-based status — headline counts,
-needs-attention exceptions, ranked suggestions; audit reports with
-checkboxes + diffs; dispatch briefs that are self-contained). Healthy
-work is counted, never enumerated. Match the user's concision. Lead
-with numbers, not adjectives.
+needs-attention exceptions, the `Proposed & follow-ups (N)` per-task
+listing, ranked suggestions; audit reports with checkboxes + diffs;
+dispatch briefs that are self-contained). Healthy RUNNING work is
+counted, never enumerated; the live proposed/follow-up queue is the one
+deliberate exception (enumerated by default). Match the user's
+concision. Lead with numbers, not adjectives.
