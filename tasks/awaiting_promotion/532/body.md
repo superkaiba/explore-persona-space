@@ -18,6 +18,8 @@ goal: 'Test whether the base-model geometric marker-leakage predictors (cosine, 
 relates_to:
 - leak-predictor
 - spec-sysprompt-vs-drift
+classification: useful
+promoted_at: '2026-06-15T23:49:16Z'
 ---
 # The base-model marker prior beats geometric distance at predicting instruction-context leakage (HIGH confidence)
 
