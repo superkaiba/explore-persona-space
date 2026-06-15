@@ -1,0 +1,45 @@
+# Task #642 — accelerate config for the coverage-matched-FT arm (plan §4.2 / §11).
+#
+# PORTED VERBATIM from `origin/issue-606:configs/accelerate/zero3_4gpu_accum1.yaml`
+# (itself ported from `origin/issue-514:configs/accelerate/zero3_4gpu.yaml` with
+# `gradient_accumulation_steps: 16 -> 1`). #642 reuses the #606 full-FT recipe
+# UNCHANGED; the single new variable (the parameter-freeze mask) lives in the
+# trainer (`--freeze-outside-lora-modules`), NOT in this accelerate config.
+#
+# Frozen params (`requires_grad=False`) are still ZeRO-3-partitioned but receive
+# no gradient and no optimizer state, so the gather-on-save still produces a full
+# consolidated bf16 checkpoint (the frozen weights are saved at their base
+# values) — the standard ZeRO-3 + frozen-param path (plan §4.2 ZeRO-3 note).
+#
+# `gradient_accumulation_steps: 1` keeps effective batch 16 (per-device 4 x
+# 4 GPUs x accum 1), matched to the LoRA arm's eff. batch 16.
+#
+# `stage3_gather_16bit_weights_on_model_save: true` is load-bearing — without it
+# the consolidated checkpoint that vLLM later loads would be sharded across ranks
+# and the load would silently miss most of the model's parameters.
+compute_environment: LOCAL_MACHINE
+debug: false
+deepspeed_config:
+  deepspeed_multinode_launcher: standard
+  gradient_accumulation_steps: 1
+  gradient_clipping: 1.0
+  offload_optimizer_device: none
+  offload_param_device: none
+  zero3_init_flag: true
+  zero3_save_16bit_model: true
+  zero_stage: 3
+  zero3_gather_16bit_weights_on_model_save: true
+distributed_type: DEEPSPEED
+downcast_bf16: 'no'
+machine_rank: 0
+main_training_function: main
+mixed_precision: bf16
+num_machines: 1
+main_process_port: 29642
+num_processes: 4
+rdzv_backend: static
+same_network: true
+tpu_env: []
+tpu_use_cluster: false
+tpu_use_sudo: false
+use_cpu: false
