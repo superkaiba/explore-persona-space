@@ -27,6 +27,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -55,6 +56,28 @@ def load_panel_prompts(path: Path) -> dict[str, str]:
     """Load {persona: system_prompt} from a panel_prompts.json manifest."""
     manifest = json.loads(path.read_text())
     return {name: entry["prompt"] for name, entry in manifest["personas"].items()}
+
+
+def _reap_vllm_workers() -> None:
+    """Reap vLLM worker subprocesses that survive in-process teardown (gotchas.md).
+
+    Best-effort: psutil may be absent and children may already be gone; the
+    dispatcher's nvidia-smi check is the backstop, so a reap miss here is
+    non-fatal (NOT a swallowed fault).
+    """
+    try:
+        import psutil
+    except ImportError:
+        return
+
+    me = psutil.Process()
+    for child in me.children(recursive=True):
+        with contextlib.suppress(psutil.NoSuchProcess):
+            child.terminate()
+    _, alive = psutil.wait_procs(me.children(recursive=True), timeout=5)
+    for child in alive:
+        with contextlib.suppress(psutil.NoSuchProcess):
+            child.kill()
 
 
 def main() -> None:
@@ -188,6 +211,13 @@ def main() -> None:
             output_path=out_b / "generated_responses.json",
             max_new_tokens=args.max_new_tokens,
         )
+
+        # Reap vLLM worker subprocesses BEFORE the HF reload below: the callee's
+        # cleanup is `del llm + empty_cache` only and may leave workers holding
+        # GPU memory that contends with the ~14 GB HF reload (reconciler v5;
+        # gotchas.md vLLM teardown; sibling issue623_extract_sycophancy_vector.py).
+        _reap_vllm_workers()
+        torch.cuda.empty_cache()
 
         if model is None:
             from transformers import AutoModelForCausalLM, AutoTokenizer
