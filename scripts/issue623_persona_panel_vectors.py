@@ -80,6 +80,108 @@ def _reap_vllm_workers() -> None:
             child.kill()
 
 
+def _generate_responses_vllm_no_tqdm(
+    model_name: str,
+    role_prompts: dict[str, list[str]],
+    questions: list[str],
+    n_prompts: int = 1,
+    gpu_id: int = 0,
+    output_path: Path | None = None,
+    max_new_tokens: int = 256,
+) -> dict[str, list[dict]]:
+    """Local copy of ``epv.generate_responses_vllm`` with ``use_tqdm=False``.
+
+    Verbatim body of ``scripts/extract_persona_vectors.py::generate_responses_vllm``
+    (lines 203-287) except the single ``use_tqdm=False`` kwarg on the ``llm.chat()``
+    call. vLLM 0.11.0 ``_run_engine`` crashes with ``ZeroDivisionError`` at
+    ``in_spd = total_in_toks / pbar.format_dict["elapsed"]`` when the first request
+    completes faster than the tqdm clock granularity (``elapsed`` reads 0.0 on the
+    first tick); this is an internal progress-bar race, NOT a ``TQDM_DISABLE`` effect
+    (the r7 env-pop did not fix it — see crash-dump
+    ``_crash_dumps/issue623_1781527833_vector_extract/``). Passing ``use_tqdm=False``
+    skips creation of the buggy pbar entirely. ``LLM.chat`` accepts ``use_tqdm`` in
+    vLLM 0.11.0 (verified ``inspect.signature``). Kept local rather than editing the
+    upstream ``extract_persona_vectors.py`` (CLAUDE.md: untouched upstream); the rest
+    of the body — cached-responses check, conversation build, ``CUDA_VISIBLE_DEVICES``
+    pin, ``LLM`` instantiation, results organization, disk cache, vLLM teardown — is
+    identical to upstream so behavior is unchanged apart from the suppressed bar.
+    """
+    import json as _json
+
+    from vllm import LLM, SamplingParams
+
+    print(f"\n{'=' * 60}")
+    print("Method B Phase 1: Generating responses with vLLM")
+    print(f"  Model: {model_name}")
+    print(f"  Roles: {len(role_prompts)}, Prompts/role: {n_prompts}, Questions: {len(questions)}")
+    n_total = len(role_prompts) * n_prompts * len(questions)
+    print(f"  Total generations: {n_total}")
+    print(f"{'=' * 60}\n")
+
+    # Check for cached responses
+    if output_path and output_path.exists():
+        with open(output_path) as f:
+            cached = _json.load(f)
+        if len(cached) == len(role_prompts):
+            print("  Loaded cached responses from disk")
+            return cached
+
+    # Build all conversations
+    all_convos = []
+    all_keys = []
+    for role_name, prompts in sorted(role_prompts.items()):
+        for p_idx, sys_prompt in enumerate(prompts[:n_prompts]):
+            for question in questions:
+                messages = []
+                if sys_prompt:
+                    messages.append({"role": "system", "content": sys_prompt})
+                messages.append({"role": "user", "content": question})
+                all_convos.append(messages)
+                all_keys.append((role_name, p_idx, question))
+
+    # Generate with vLLM
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    llm = LLM(
+        model=model_name,
+        tensor_parallel_size=1,
+        max_model_len=2048,
+        gpu_memory_utilization=0.85,
+    )
+    sampling_params = SamplingParams(
+        temperature=0.0,
+        max_tokens=max_new_tokens,
+    )
+
+    # vLLM chat interface — use_tqdm=False bypasses the vLLM 0.11.0 _run_engine
+    # ZeroDivisionError progress-bar race (the ONLY deviation from upstream).
+    outputs = llm.chat(all_convos, sampling_params, use_tqdm=False)
+
+    # Organize results
+    results = {role: [] for role in role_prompts}
+    for (role_name, p_idx, question), output in zip(all_keys, outputs, strict=True):
+        response_text = output.outputs[0].text
+        results[role_name].append(
+            {
+                "system_prompt": role_prompts[role_name][p_idx],
+                "question": question,
+                "response": response_text,
+            }
+        )
+
+    # Cache to disk
+    if output_path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w") as f:
+            _json.dump(results, f)
+        print(f"  Saved responses to {output_path}")
+
+    # Clean up vLLM to free GPU memory
+    del llm
+    torch.cuda.empty_cache()
+
+    return results
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Issue #623 phase 2 — panel persona vectors.")
     parser.add_argument(
@@ -202,17 +304,20 @@ def main() -> None:
         out_b = base_output / "method_b"
         out_b.mkdir(parents=True, exist_ok=True)
 
-        # vLLM 0.11 `_run_engine` crashes with ZeroDivisionError when
-        # TQDM_DISABLE=1 (it computes `total_in_toks / pbar.format_dict["elapsed"]`
-        # and the disabled tqdm bar reports elapsed=0). The dispatcher exports
-        # TQDM_DISABLE=1 at issue623_dispatch.sh:36 as the #607 GCE startup-script
-        # bufio guard, and that propagates into this child process. Pop it for the
-        # duration of the vLLM call; restore afterward so any downstream phase that
-        # depends on it is unaffected (the dispatcher re-exports per phase regardless).
-        # crash-dump: _crash_dumps/issue623_1781525741_vector_extract/.
+        # vLLM 0.11.0 `_run_engine` crashes with ZeroDivisionError at
+        # `in_spd = total_in_toks / pbar.format_dict["elapsed"]` when the first
+        # request finishes faster than the tqdm clock granularity (elapsed=0.0 on
+        # the first tick). This is an internal progress-bar RACE, NOT a TQDM_DISABLE
+        # effect — the r7 env-pop did not fix the recurrence (crash-dumps
+        # _crash_dumps/issue623_1781525741_* and _1781527833_*). The real fix is the
+        # local `_generate_responses_vllm_no_tqdm` below, which passes use_tqdm=False
+        # so the buggy pbar is never created. The TQDM_DISABLE pop/restore is kept as
+        # cheap defense-in-depth (the dispatcher exports TQDM_DISABLE=1 at
+        # issue623_dispatch.sh:36 as the #607 GCE startup-script bufio guard, which
+        # propagates here); with use_tqdm=False the pbar branch is unreachable anyway.
         _prev_tqdm_disable = os.environ.pop("TQDM_DISABLE", None)
         try:
-            responses = epv.generate_responses_vllm(
+            responses = _generate_responses_vllm_no_tqdm(
                 args.model,
                 role_prompts,
                 questions,
