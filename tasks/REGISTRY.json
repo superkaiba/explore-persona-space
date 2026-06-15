@@ -3998,8 +3998,8 @@
     "646": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/646",
-      "status": "proposed",
+      "path": "tasks/on_hold/646",
+      "status": "on_hold",
       "title": "Sidequest: does #611's bare-role-header leakage split generalize beyond pirate\u2194villain (6-persona style+intent panel + on-policy emission)?"
     },
     "65": {
