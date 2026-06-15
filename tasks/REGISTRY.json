@@ -3968,8 +3968,8 @@
       "goal": "Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap into a module-coverage component and a rank component by adding a coverage-matched full-FT arm (embeddings/lm_head/LayerNorm frozen) to #606's comparison at matched source-implant strength.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/642",
-      "status": "verifying",
+      "path": "tasks/interpreting/642",
+      "status": "interpreting",
       "title": "Is the #606 LoRA-vs-full-FT sycophancy bystander-leakage gap driven by module coverage or by rank? (coverage-matched-FT arm)"
     },
     "65": {
