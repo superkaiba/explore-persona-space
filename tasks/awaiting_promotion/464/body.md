@@ -15,6 +15,8 @@ goal: Test whether encoding a persona as a custom chat-template role header (e.g
   leakage) than the content-marker baseline.
 relates_to:
 - spec-role-header
+classification: useful
+promoted_at: '2026-06-15T21:32:11Z'
 ---
 # Contrastive training localizes a trained end-of-response marker; the chat-role header's edge over a system prompt survives a content-matched bare-word control in both contrast regimes — strongly with a co-resident competing marker, suggestively with marker-less negatives (MODERATE confidence)
 
