@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 646,
+  "highest_id": 647,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4001,6 +4001,13 @@
       "path": "tasks/on_hold/646",
       "status": "on_hold",
       "title": "Sidequest: does #611's bare-role-header leakage split generalize beyond pirate\u2194villain (6-persona style+intent panel + on-policy emission)?"
+    },
+    "647": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/647",
+      "status": "proposed",
+      "title": "Do the activation-geometry predictors of marker-leakage transfer also collapse on the nonstylized subpanel, or is within-nonstylized signal real?"
     },
     "65": {
       "has_clean_result": true,
