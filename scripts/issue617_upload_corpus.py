@@ -134,6 +134,23 @@ def write_sentinel(note: str, task_id: int = TASK_ID) -> Path:
     return path
 
 
+def expected_repo_paths(stage: Path) -> set[str]:
+    """Every staged file's expected repo path under HF_PREFIX/.
+
+    Verification covers ALL primary deliverables (plan §6.5), not just the 3
+    top-level JSONs: the 2 picked-category subfolders' prefixes.json +
+    prefix_plus_completion.json AND the extraction analysis tensors
+    (context_vectors_mean.pt + extraction_manifest.json) are enumerated from
+    the staging tree the bulk commit just pushed — the deterministic ground
+    truth of what must land.
+    """
+    return {
+        f"{HF_PREFIX}/{p.relative_to(stage).as_posix()}"
+        for p in sorted(stage.rglob("*"))
+        if p.is_file()
+    }
+
+
 def upload_and_verify(stage: Path) -> dict:
     """ONE bulk upload_folder + Hub-API verify. LFS quota-403 -> overflow repo."""
     from huggingface_hub import HfApi
@@ -160,19 +177,22 @@ def upload_and_verify(stage: Path) -> dict:
             repo_type="dataset",
             commit_message="issue617: corpus upload (quota-403 overflow fallback)",
         )
-    files = [
+    files = {
         f
         for f in api.list_repo_files(repo_used, repo_type="dataset")
         if f.startswith(HF_PREFIX + "/")
-    ]
-    expected = {
+    }
+    # Verify every staged file landed (top-level JSONs + picked-category files +
+    # extraction tensors), plus the 3 always-required top-level JSONs as an
+    # explicit floor in case the stage tree was somehow incomplete.
+    expected = expected_repo_paths(stage) | {
         f"{HF_PREFIX}/wildchat_slice.json",
         f"{HF_PREFIX}/cluster_assignments.json",
         f"{HF_PREFIX}/separability.json",
     }
-    missing = expected - set(files)
+    missing = expected - files
     if missing:
-        raise RuntimeError(f"upload verification failed; missing on {repo_used}: {missing}")
+        raise RuntimeError(f"upload verification failed; missing on {repo_used}: {sorted(missing)}")
     logger.info("Upload verified on %s: %d files under %s/", repo_used, len(files), HF_PREFIX)
     return {"repo": repo_used, "path_in_repo": HF_PREFIX, "n_files": len(files)}
 
