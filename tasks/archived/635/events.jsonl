@@ -1,2 +1,3 @@
 {"ts": "2026-06-13T22:00:13Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "survey"}
 {"ts": "2026-06-15T06:31:54Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "Relocated to docs/research_ideas.md as ideas (Capability Elicitation topic, subtasks 9.1/9.2) per Thomas 2026-06-14. Archiving the tracked issue; the idea lives on in the ideas doc, not abandoned."}
+{"ts": "2026-06-15T06:49:13Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Archived per user (PM session 2026-06-14): RL elicit-vs-amplify line (capability theory survey + expand-vs-sharpen Crosscoders experiment) set aside. Revivable via set-status proposed."}
