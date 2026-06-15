@@ -137,6 +137,44 @@ def two_way_decomp(values, rows, cols):
     }
 
 
+def bootstrap_decomp(rawvals, srcs, behs, B=2000, seed=0):
+    """Bootstrap CIs on the two-way decomposition fractions by resampling the
+    SOURCE CONTEXTS with replacement (B draws, fixed rng). Each draw rebuilds the
+    rawvals dict from the resampled sources and recomputes the raw-rate
+    decomposition; returns 2.5/97.5 percentiles for frac_row / frac_col /
+    frac_resid. Resample unit = source context, so this quantifies sensitivity to
+    source-context sampling, NOT behavior-axis uncertainty (only 3-4 behaviors)."""
+    rng = np.random.default_rng(seed)
+    src_list = [s for s in srcs if s in rawvals]
+    n = len(src_list)
+    fr, fc, frs = [], [], []
+    for _ in range(B):
+        draw = rng.integers(0, n, size=n)
+        # rebuild rawvals over resampled sources; duplicate sources get suffixed
+        # keys so the decomposition still sees one obs per (row, col).
+        boot = {}
+        for rep, idx in enumerate(draw):
+            s = src_list[idx]
+            boot[f"{s}#{rep}"] = dict(rawvals[s])
+        d = two_way_decomp(boot, list(boot.keys()), behs)
+        if d is None:
+            continue
+        fr.append(d["frac_row"])
+        fc.append(d["frac_col"])
+        frs.append(d["frac_resid_interaction_plus_noise"])
+    return {
+        "frac_row_ci": [float(np.percentile(fr, 2.5)), float(np.percentile(fr, 97.5))],
+        "frac_col_ci": [float(np.percentile(fc, 2.5)), float(np.percentile(fc, 97.5))],
+        "frac_resid_ci": [float(np.percentile(frs, 2.5)), float(np.percentile(frs, 97.5))],
+        "B": B,
+        "seed": seed,
+        "resample_unit": "source_context",
+        "n_draws_used": len(fr),
+        "caveat": "resamples source contexts; quantifies source-sampling "
+        "sensitivity, not behavior-axis uncertainty",
+    }
+
+
 # ----------------------------------------------------------------------------
 results = {"datasets": {}, "notes": []}
 
@@ -227,6 +265,44 @@ for b in rate_behs:
     for s in install_537[b]:
         rawvals[s][b] = install_537[b][s]["g"]
 decomp_raw_rate = two_way_decomp(rawvals, SHARED_SRC, rate_behs)
+
+# ADDITION 1: ceiling-drop sensitivity. Does the 89% behavior-main fraction
+# survive removing the saturated sycophancy behavior (14/15 ceiling cells)?
+# all_4_rate_behaviors = the current 4-behavior decomposition (point estimate);
+# drop_sycophancy_3_behaviors = re-decompose on fact/refusal/em only.
+# (The per-cell ceiling-mask variant is NOT computed as the headline robustness
+# read because masking sycophancy's 14/15 ceiling cells degenerates the rate set
+# toward refusal+em only; the drop-sycophancy variant is the cited check.)
+decomp_drop_syco = two_way_decomp(rawvals, SHARED_SRC, ["fact", "refusal", "em"])
+
+
+def _decomp_fracs(d):
+    return {
+        "frac_row": d["frac_row"],
+        "frac_col": d["frac_col"],
+        "frac_resid": d["frac_resid_interaction_plus_noise"],
+        "n_sources": d["n_rows"],
+        "n_behaviors": d["n_cols"],
+    }
+
+
+decomp_raw_rate_ceiling_sensitivity = {
+    "all_4_rate_behaviors": _decomp_fracs(decomp_raw_rate),
+    "drop_sycophancy_3_behaviors": _decomp_fracs(decomp_drop_syco),
+    "verdict": (
+        "behavior-main {a:.0%} -> {b:.0%} when dropping saturated sycophancy; "
+        "source stays ~negligible ({sa:.0%}->{sb:.0%}); headline does not flip"
+    ).format(
+        a=decomp_raw_rate["frac_col"],
+        b=decomp_drop_syco["frac_col"],
+        sa=decomp_raw_rate["frac_row"],
+        sb=decomp_drop_syco["frac_row"],
+    ),
+}
+
+# ADDITION 2: bootstrap CIs on the three decomposition fractions (resample the
+# 15 source contexts with replacement, B=2000, fixed rng(0)).
+decomp_raw_rate_bootstrap_ci = bootstrap_decomp(rawvals, SHARED_SRC, rate_behs, B=2000, seed=0)
 
 # pooled predictor on z-scale: does within-behavior base-propensity rank predict
 # within-behavior install rank, pooled across behaviors? (marker uses base_logp;
@@ -337,6 +413,8 @@ results["datasets"]["537"] = {
     "pooled_within_behavior_base_vs_install": {"spearman": pooled_rho, "n": pooled_n},
     "decomp_z_all5behaviors": decomp_z,
     "decomp_raw_rate_behaviors_only": decomp_raw_rate,
+    "decomp_raw_rate_ceiling_sensitivity": decomp_raw_rate_ceiling_sensitivity,
+    "decomp_raw_rate_bootstrap_ci": decomp_raw_rate_bootstrap_ci,
     "cross_seed_reliability": seed_reliab,
     "most_resistant_cells_by_within_behavior_z": most_resistant_z,
     "residual_resistant_after_base_prior": residual_resistant,
@@ -450,15 +528,52 @@ s0 = [
     if r["seed"] == "0" and r["L_install"] is not None and r["base_level"] is not None
 ]
 rho_545_base, n545 = spearman([r["base_level"] for r in s0], [r["L_install"] for r in s0])
+
+# ADDITION 4: casual_register robustness. The one negative-install datapoint
+# (L = -0.42, identity/construction conflict) read identically at both seeds,
+# inside a battery whose seed-pair reliability is rho = 0.94 -> a real signal,
+# not seed noise. Read the two seed cells from install_545 (already loaded).
+cr = {r["seed"]: r for r in install_545 if r["row"] == "casual_register"}
+casual_register_robustness = {
+    "seed0_L": cr["0"]["L_install"],
+    "seed137_L": cr["137"]["L_install"],
+    "identical_across_seeds": cr["0"]["L_install"] == cr["137"]["L_install"],
+    "base_level": cr["0"]["base_level"],
+    "trained_level": cr["0"]["level"],
+    "dataset_seed_reliability_rho": rho545,
+}
+
 results["datasets"]["545"] = {
     "install_diagonals": install_545,
     "seed0_vs_seed137_reliability": {"spearman": rho545, "n_rows": n545pair},
     "predictor_L_vs_base_level_seed0": {"spearman": rho_545_base, "n": n545},
+    "casual_register_robustness": casual_register_robustness,
     "decomposition_feasible": False,
     "note": "One source (default-assistant) per behavior -> NO source axis to "
     "decompose. #545 supports a BEHAVIOR-only resistance ranking + a "
     "base-propensity check across behaviors, not a source/behavior split.",
 }
+
+# ADDITION 3: dose-confound caveat. Every install cell is trained at a
+# different uncontrolled dose; no dose-matched subset exists in this 0-GPU data,
+# so the honest Phase-1 move is acknowledgment, not a fabricated correction.
+results["notes"].append(
+    {
+        "key": "dose_confound",
+        "text": (
+            "Dose is unmatched across all cells: the #612 dose bands mean each "
+            "(source, behavior) cell was trained at a different, uncontrolled "
+            "training dose. The marker diagonal is additionally band-stop-pinned "
+            "(stopped on a source log-prob band, not a fixed step/epoch count), so "
+            "its install level is set by a different stopping rule than the "
+            "rate-behavior cells. No dose-matched subset exists in this 0-GPU data "
+            "-- there are no replicate cells trained at matched dose to re-decompose "
+            "against -- so the honest Phase-1 move is to acknowledge the confound "
+            "rather than report a dose-corrected number. The dose-matched "
+            "re-decomposition is Phase 2 (requires new matched-dose training runs)."
+        ),
+    }
+)
 
 # ============================ figure ========================================
 import matplotlib
@@ -473,8 +588,8 @@ try:
 except Exception:
     plt.rcParams.update({"figure.dpi": 130, "font.size": 10})
 
-fig = plt.figure(figsize=(12, 5))
-gs = fig.add_gridspec(1, 3, width_ratios=[1.7, 1.7, 1.0], wspace=0.35)
+fig = plt.figure(figsize=(15.5, 5))
+gs = fig.add_gridspec(1, 4, width_ratios=[1.7, 1.7, 1.0, 1.3], wspace=0.38)
 
 # Panel A: marker install (nats) vs base_logp  (the one behavior off the floor/ceiling)
 axA = fig.add_subplot(gs[0, 0])
@@ -538,6 +653,40 @@ if decomp_raw_rate:
     axC.set_title("#537 variance decomp\n(4 rate behaviors, raw scale)")
     for bar, p in zip(bars, parts):
         axC.text(bar.get_x() + bar.get_width() / 2, p + 0.02, f"{p:.0%}", ha="center", fontsize=8)
+
+# Panel D: cross-behavior source-rank correlation heatmap. Each entry is the
+# Spearman correlation, over the 15 shared sources, between two behaviors'
+# within-behavior install z-ranks. Near-zero / negative off-diagonal => a source
+# that resists one behavior does NOT resist others: no persona resists everything.
+axD = fig.add_subplot(gs[0, 3])
+nb = len(BEHAVIORS_537)
+corr_mat = np.full((nb, nb), np.nan)
+for i in range(nb):
+    corr_mat[i, i] = 1.0
+    for j in range(i + 1, nb):
+        rho = cross_src_rank.get(f"{BEHAVIORS_537[i]}~{BEHAVIORS_537[j]}")
+        corr_mat[i, j] = rho
+        corr_mat[j, i] = rho
+im = axD.imshow(corr_mat, cmap="RdBu_r", vmin=-1, vmax=1)
+axD.set_xticks(range(nb))
+axD.set_yticks(range(nb))
+axD.set_xticklabels(BEHAVIORS_537, rotation=45, ha="right", fontsize=7)
+axD.set_yticklabels(BEHAVIORS_537, fontsize=7)
+for i in range(nb):
+    for j in range(nb):
+        v = corr_mat[i, j]
+        if np.isfinite(v):
+            axD.text(
+                j,
+                i,
+                f"{v:.2f}",
+                ha="center",
+                va="center",
+                fontsize=6.5,
+                color="white" if abs(v) > 0.55 else "black",
+            )
+axD.set_title(f"#537 cross-behavior\nsource-rank corr (median ρ={cross_src_rank['median']:.2f})")
+fig.colorbar(im, ax=axD, fraction=0.046, pad=0.04)
 
 fig.suptitle(
     "Issue #638 Phase 1 — install strength (self-implant diagonal) vs base propensity, "
