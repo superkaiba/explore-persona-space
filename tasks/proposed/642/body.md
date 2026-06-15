@@ -14,6 +14,8 @@ goal: 'Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage 
   into a module-coverage component and a rank component by adding a coverage-matched
   full-FT arm (embeddings/lm_head/LayerNorm frozen) to #606''s comparison at matched
   source-implant strength.'
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
