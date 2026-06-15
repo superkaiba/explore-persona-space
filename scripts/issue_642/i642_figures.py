@@ -106,11 +106,13 @@ def fig_decomposition_bar(analysis: dict, behavior: str, out_dir: Path) -> None:
     )
     # Reference bar for #606's measured total gap.
     ax.bar(["#606 gap\n(FT − LoRA)"], [ISSUE606_GAP], color="tab:grey", alpha=0.6)
-    # CIs on the two components (drawn at their stacked midpoints).
+    # CIs drawn at the top of each component segment (matches the bar's
+    # cumulative-effect interpretation; midpoint placement can fall outside the
+    # CI when the value is small relative to the CI half-width).
     ax.errorbar(
         0,
-        dr / 2,
-        yerr=[[dr / 2 - dr_ci[0]], [dr_ci[1] - dr / 2]],
+        dr,
+        yerr=[[max(0.0, dr - dr_ci[0])], [max(0.0, dr_ci[1] - dr)]],
         fmt="none",
         ecolor="black",
         capsize=3,
@@ -118,8 +120,8 @@ def fig_decomposition_bar(analysis: dict, behavior: str, out_dir: Path) -> None:
     )
     ax.errorbar(
         0,
-        dr + dc / 2,
-        yerr=[[max(0.0, dc / 2 - (dc_ci[0] - 0))], [max(0.0, dc_ci[1] - dc / 2)]],
+        dr + dc,
+        yerr=[[max(0.0, dc - (dc_ci[0]))], [max(0.0, dc_ci[1] - dc)]],
         fmt="none",
         ecolor="black",
         capsize=3,
