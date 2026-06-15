@@ -19,58 +19,139 @@ goal: Across all past experiments that produced paired (persona-geometry scalar,
 relates_to:
 - leak-predictor
 ---
-# Is the geometry→behavior-strength relationship super-linear (convex / "exponential-looking"), and does that shape recur across behaviors?
+# The geometry→behavior-strength relationship is consistent with linear after artifact controls — no behavior in the sample shows robust convexity (MODERATE confidence)
 
-## Goal
+<!-- clean-result-v3 -->
 
-Across all past experiments that produced paired (persona-geometry scalar, behavior-strength scalar) data, characterize the FUNCTIONAL FORM of the geometry→behavior-strength relationship — testing on RAW (non-rank) values whether it is consistently convex/super-linear ('exponential-looking') rather than linear, and whether that shape recurs across behaviors (sycophancy, marker leakage, fact leakage, refusal, EM) after controlling for the fact-line sign flip, saturation/floor, high-leverage points, log-space artifacts, and the X vs (X−Y) caveat.
+## Takeaways
 
-## Hypothesis
+- After the full artifact-control stack, **0 of 22** qualifying geometry-frame fits show robust convexity (recurs threshold 11) — verdict: no consistent convex shape across four behaviors.
+- The seed sycophancy "hockey-stick" (n=35) has positive x² (**+0.22**) but its **CI [−0.41, +1.38] includes 0** and ΔAIC is **0.08**; the look is linear-plus-leverage.
+- Shape disagrees by behavior: marker-leakage fits skew **concave** (12 of 16 source frames negative-curvature), fact-leakage skews positive-but-noisy — no consistent sign.
+- Binding constraint: per-behavior n is small (sycophancy 35, marker 26/17, fact 14), so this is an honest under-powered null for H1, not a precise refutation.
+- Geometry still predicts behavior *monotonically* where measured (sycophancy rank ρ = 0.73, CI [0.49, 0.87]); this rules out only a recurring convex *shape*.
 
-Across behaviors, a persona's (or unit's) geometric proximity to a behavior — cosine similarity to the behavior direction, or cosine/JS distance to the source/teaching persona — relates to that unit's behavior strength in a **convex, accelerating** way rather than linearly: behavior strength stays near a floor across most of the proximity range, then rises steeply once proximity passes some point. The #623 sycophancy scatter (per-persona cosine to the sycophancy direction vs base sycophancy rate) reads this way by eye. The claim under test is that this convex/super-linear shape is a recurring property of geometry→behavior relationships, not a one-off of sycophancy.
+## What I ran
 
-## Why this is worth a task
+- **Why:** [#623](https://eps.superkaiba.com/tasks/623) found a per-persona cosine→sycophancy scatter that looks roughly exponential by eye, and the same "exponential-looking" impression recurs across the leakage line. Rank correlations (Spearman) are blind to functional form by construction, so no prior task had tested whether the geometry→behavior relationship is genuinely convex (accelerating) rather than linear, and whether that shape is portable across behaviors.
+- **Design:** zero-GPU meta-analysis. Inventory every past task with paired (per-unit geometry scalar, per-unit behavior-strength scalar) data, pull the RAW (non-rank) values, and fit candidate forms (linear / quadratic / exponential / power / monotone spline) per behavior × measurement frame. The single thing under test is the functional form, not whether geometry predicts behavior at all.
+- **Eval:** per behavior × frame, the winning form by leave-one-out R² + AIC, a signed x² curvature term with a 10,000-draw bootstrap CI, and a four-control survival screen — geometry-frame partition, top-1 and top-2 Cook's-D leave-one-out, log-space double-fit, and bounded-rate logit double-fit. A behavior qualifies for the recurs denominator only with two-axis spread AND n ≥ 10 in the geometry frame.
+- **Scope:** refusal is excluded from the denominator (no commensurable per-persona geometry scalar survives in its source eval directory) and routed to a new-generation follow-up — not a fabricated scalar. Six fact-leakage on-policy frames at n=6 are reported but excluded from the denominator for n < 10.
 
-The standing leak-predictor line (q:leak-predictor) has so far asked a coarser question — does geometry predict behavior *at all*, monotonically (Spearman rho / Pearson r)? — and answered "inconsistently across behaviors": cosine/JS to source predicts marker leakage (#207, #311, cosine gradient r≈0.54-0.83), #411 found a partial sycophancy cosine gradient, #623 found cosine→base-sycophancy rho=0.73, while the fact line (#444) predicts with the WRONG sign (the reference frame, not the probe slice, flips it) and #532/#541 found a unit's behavioral base prior keeps out-predicting geometric cosine. None of this has examined the **functional form**. Rank correlations (Spearman) are blind to shape by construction — they cannot distinguish linear from exponential. A convex shape, if it recurs, is a sharper and more useful statement than "monotonic": it implies a proximity threshold below which behavior is geometrically uncoupled, which bears directly on the pre-training-audit application (q:app5) and on whether geometry is a usable safety predictor.
+## Findings
 
-## Scope: re-analyze existing paired data first
+### No behavior shows robust convexity: 0 of 22 qualifying geometry-frame fits survive the control stack (threshold 11)
 
-This is primarily a meta-analysis / re-analysis of data already produced. The first cut should require little or no new GPU. Inventory every past task that produced paired **(geometry scalar, behavior-strength scalar)** points across a panel of personas/units, pull the RAW (non-rank) values, and fit and compare functional forms. Candidate source tasks (planner to confirm what raw data actually survives on disk / HF):
+A geometry-frame fit counts toward "convex recurs" only if a convex form beats linear by ΔAIC ≥ 2 with a same-signed curvature CI excluding zero, AND survives the leverage, log-space, and rate-stabilization controls. The denominator is the 22 fits with two-axis spread and n ≥ 10.
 
-- **#623** — per-persona cosine(persona vector, sycophancy direction) vs judged base sycophancy rate, n=35, raw scatter in `eval_results/issue_623/` (`cosine_matrix.json`, `syc_i.json`). The seed observation.
-- **#411** — sycophancy cosine gradient across source personas on held-out wrong claims.
-- **#207 / #311** — marker leakage vs cosine/JS distance to source persona (the original distance→leakage gradient; cosine r≈0.54-0.83).
-- **#383** — selectivity-recipe gradient (carry the X vs (X−Y) spurious-correlation caveat).
-- **#404 / #458** — persona-distance predictors (cosine / JS-divergence operationalizations).
-- **#444 / #500** — fact-leakage, where teacher-referenced distance predicts with the wrong sign; the bystander's base prior predicts positively.
-- **#532 / #541** — base behavioral prior vs geometric cosine for leakage.
-- Any EM / trait / refusal task with a per-unit geometry scalar paired to a per-unit behavior-strength scalar (#390 refusal, EM line).
+![Cross-behavior geometry-frame convexity recurs table: verdict H0/H2 no-convex, H1 numerator 0 of denominator 22, with per-row convex / sign / delta-AIC / leverage-robust / rate-artifact / counts-toward-H1 columns across sycophancy, marker leakage, and fact leakage frames](https://raw.githubusercontent.com/superkaiba/explore-persona-space/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/figures/issue_644/convexity_table.png)
 
-## What would count as an answer
+> **Figure.** *Across all 22 qualifying geometry-frame fits, exactly zero contribute a robust convex verdict (threshold is 11).* Each row is one behavior × frame; the H1 column reads "n" everywhere. Excludes 6 fact frames at n < 10 and 16 deprecated-scalar rows.
 
-Per behavior with paired raw data:
+- Verdict `H0/H2 (no convex)`: the threshold of 11 is not approached — numerator 0.
+- Six raw fits flagged convex pre-control, but every curvature CI spans zero; the only two surviving a Cook's-D drop are both at n=6 (under-powered, outside the denominator).
 
-1. Fit and compare candidate functional forms on the raw (geometry x → behavior-strength y) scatter: **linear vs convex** (exponential `y = a·exp(b·x)`, power-law, quadratic, or a monotone spline with a curvature/convexity test). Compare by held-out fit (LOO / k-fold predictive R²) and AIC/BIC, not in-sample R² alone. Report a direct **convexity test** (e.g. sign of the fitted curvature term with bootstrap CI, or the cubic/quadratic vs linear nested test).
-2. Report whether convex beats linear, with effect size and CI, and whether the result is robust to the high-leverage points (#623-style leave-one-out).
+### The #623 seed sycophancy "hockey-stick" is linear-plus-leverage, not robust convexity (n=35)
 
-Cross-behavior synthesis:
+The observation that motivated the task — per-persona cosine (persona vector → sycophancy direction) vs judged base sycophancy rate, with linear and best-form fits overlaid plus the logit-stabilized panel.
 
-3. Does the convex/super-linear shape recur, and with a consistent sign? Explicitly fold in the fact-line sign flip (#444) — if the reference-frame hypothesis is right, the shape claim should be stated relative to the correctly-signed proximity, not raw cosine-to-an-arbitrary-teacher.
+![Two-panel sycophancy seed scatter: left panel raw cosine vs base sycophancy rate with near-coincident linear and exponential fits and an annotation box (x-squared coef +0.22, bootstrap CI -0.41 to 1.38, delta-AIC 0.08, does not survive top-1 Cook's-D drop); right panel the same scatter in logit-stabilized y with a clean linear fit](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e74b9be5d6c1278656940a9a07f2f2273006eb9b/figures/issue_644/seed_sycophancy_scatter.png)
 
-## Competing hypotheses
+> **Figure.** *The exponential best-form fit (dashed) is nearly coincident with the linear fit (solid); the upward look comes from a few high-cosine personas.* Left: raw scatter, n=35. Right: logit-stabilized y, bend gone. x² coef +0.22, CI [−0.41, +1.38], ΔAIC 0.08.
 
-- **H1 (convex/super-linear recurs):** behavior strength is a convex function of geometric proximity across behaviors; small proximity buys ~floor behavior, then it accelerates.
-- **H2 (monotone but linear / artifactual exponential):** the #623 "exponential look" is an artifact — a few high-leverage personas, the rank metric obscuring a roughly linear raw relationship, or axis-scaling — and the raw relationship is no more than linear once leverage is controlled.
-- **H0 (no consistent shape):** geometry→behavior shape is behavior-specific (consistent with the current q:leak-predictor "inconsistent across behaviors" belief); there is no portable functional form.
+- The positive curvature estimate (+0.22) reproduces the visual impression, but its CI [−0.41, +1.38] includes zero and ΔAIC favours linear.
+- It does not survive dropping the single highest-Cook's-D persona; the logit panel is cleanly monotone-linear — the bend was bounded-rate floor compression.
 
-## Measurement-validity notes (for the planner)
+### Shape is behavior-specific, not portable: marker leakage skews concave while fact leakage skews positive-but-noisy
 
-- **Work on RAW values, not ranks.** Spearman rho (the #623 headline) measures monotonicity, not shape. Testing "exponential" requires the raw scatter and a functional-form / curvature test. This is the central measurement-validity point of the whole task.
-- **Comparability across behaviors.** The geometry scalar (cosine-to-direction vs cosine/JS-to-source) and the behavior-strength scalar (base rate, leakage rate, marker log-prob, judged trait rate) differ across the source tasks. State per behavior what each axis is and whether shapes are being compared on commensurable scales (e.g. standardize x within behavior; be explicit that a log-prob DV is already in log space, which mechanically manufactures convexity when mapped back to probability — a key confound to neutralize).
-- **Saturation / floor.** A behavior strength saturated at a ceiling or pinned at a floor across most units manufactures apparent curvature; require spread on both axes (as #623 documented) before fitting a shape.
-- **X vs (X−Y) caveat** (#383): do not regress a difference against one of its own components.
-- Where existing data is too sparse per behavior to fit a shape, the deliverable is a clear statement of which behaviors have enough points and which need new generation — propose the new runs as follow-ups rather than silently under-powering a fit.
+If a convex form were portable, the winning forms and curvature signs should agree across behaviors. They do not — the H0 signature. The overlay pairs each behavior × frame's raw-y scatter with its logit-stabilized (bounded-rate control) counterpart.
 
-## Provenance
+![Grid of raw-vs-logit-stabilized scatter overlays, one cell per behavior and measurement frame, showing heterogeneous shapes across behaviors and that apparent upward bends in raw-rate panels flatten under logit stabilization](https://raw.githubusercontent.com/superkaiba/explore-persona-space/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/figures/issue_644/raw_vs_logit_overlay.png)
 
-Created from a chat request to investigate whether the #623 cosine-similarity → sycophancy relationship (which looks roughly exponential) generalizes across behaviors. Routed as a NEW direction (a question about the functional form of geometry→behavior, not answerable by rewriting any single existing issue's takeaways).
+> **Figure.** *Raw-rate panels (one per behavior × frame) overlaid with their logit-stabilized counterparts — the rate-compression control.* Marker-leakage source frames mostly fit concave (12 of 16 negative-curvature); fact-leakage frames skew positive with CIs spanning zero. No raw upward bend survives logit stabilization.
+
+- Signs disagree by behavior: marker-leakage source frames predominantly concave, fact-leakage predominantly positive-sign — no consistent direction to call "the shape."
+- Every apparent raw-rate curve flattens under logit stabilization, confirming the bounded-rate floor manufactures a small upward bend that is not a property of the coupling.
+
+## Data
+
+### Trained on
+
+n/a — no training in this task. This is a zero-GPU re-analysis of paired (geometry, behavior-strength) scatters already produced by prior runs; no LoRA adapter, no training mix, no pod.
+
+### Evaluated with
+
+The "probes" here are the per-unit raw (x, y) scatters re-loaded from prior eval JSONs: sycophancy (per-persona cosine to the sycophancy direction vs judged base sycophancy rate, n=35), marker leakage (per-source cosine-to-source vs on-policy marker emit, n=26 raw + n=17 centered), and fact leakage (per-arm cosine-to-source vs taught-fact leak rate, n=14; six on-policy frames at n=6). Geometry scalars are cosine/JS only; a base-prior log-prob frame is kept in a separate prior-frame sensitivity table and never folded into the geometry headline. The #623 source data is pinned into this task's commit for reproducibility.
+
+The pinned #623 source snapshot (3 of 3 inputs, complete): [`eval_results/issue_644/inputs/issue623/`](https://github.com/superkaiba/explore-persona-space/tree/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/eval_results/issue_644/inputs/issue623)
+
+Source tasks the paired scatters were drawn from (all rows, complete inventory):
+
+- Sycophancy seed: [#623](https://eps.superkaiba.com/tasks/623) (cosine vs base sycophancy rate; base pass reused from [#612](https://eps.superkaiba.com/tasks/612))
+- Marker leakage: [#311](https://eps.superkaiba.com/tasks/311) (centered cosine) and [#532](https://eps.superkaiba.com/tasks/532) (raw cosine-to-source, on-policy emit)
+- Fact leakage: [#444](https://eps.superkaiba.com/tasks/444) and [#500](https://eps.superkaiba.com/tasks/500) (single chosen contrastive recipe; recipes never pooled)
+- Refusal: [#390](https://eps.superkaiba.com/tasks/390) — excluded (no commensurable per-persona geometry scalar in its eval directory)
+
+### Generated
+
+n/a — no model generations in this task. The behavior-strength values are judged rates / log-probs already computed by the source tasks; this run consumes them as raw numbers and emits fits, not completions.
+
+## Reproducibility
+
+**Parameters:**
+
+| Parameter | Value |
+|---|---|
+| Task kind | `kind: experiment`, zero-GPU meta-analysis (no training, no pod, no WandB run) |
+| Candidate forms | linear, quadratic, exponential, power-law, monotone PCHIP spline (4 knots) |
+| Model selection | leave-one-out R² + AIC/BIC bake-off |
+| Convexity test | signed x² coefficient + nonparametric bootstrap CI |
+| Bootstrap | B = 10000, seed 42 |
+| Leverage screen | top-1 and top-2 Cook's-D leave-one-out re-fit |
+| Logit stabilization | ε = 0.005 (bounded-rate double-fit) |
+| Convex-wins threshold | ΔAIC ≥ 2.0 over linear |
+| Recurs denominator gate | two-axis spread AND n ≥ 10 in geometry frame |
+| Qualifying denominator | 22 geometry-frame fits (recurs threshold 11) |
+| H1 numerator | 0 |
+
+**Artifacts:**
+
+- Per-(behavior × frame) fits (50 records): [`eval_results/issue_644/per_behavior_fits.json`](https://github.com/superkaiba/explore-persona-space/blob/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/eval_results/issue_644/per_behavior_fits.json)
+- Cross-behavior recurs table (machine-readable headline): [`figures/issue_644/convexity_table.json`](https://github.com/superkaiba/explore-persona-space/blob/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/figures/issue_644/convexity_table.json)
+- Pinned #623 source snapshot: [`eval_results/issue_644/inputs/issue623/`](https://github.com/superkaiba/explore-persona-space/tree/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/eval_results/issue_644/inputs/issue623)
+- Figures (hero recurs table, raw-vs-logit overlay, per-behavior small-multiples): [`figures/issue_644/`](https://github.com/superkaiba/explore-persona-space/tree/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/figures/issue_644)
+- Seed scatter figure (used inline): [`figures/issue_644/seed_sycophancy_scatter.png`](https://github.com/superkaiba/explore-persona-space/blob/e74b9be5d6c1278656940a9a07f2f2273006eb9b/figures/issue_644/seed_sycophancy_scatter.png)
+- WandB run: n/a (no training, no logging)
+
+**Compute:**
+
+- Wall time: minutes on the VM (CPU-only fits + bootstrap + figures); no GPU, no pod.
+- GPU: none.
+- Pod: none (ran on the dev VM against committed eval JSONs).
+
+**Code:**
+
+- Fit/test machinery: [`src/explore_persona_space/analysis/convexity_meta.py`](https://github.com/superkaiba/explore-persona-space/blob/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/src/explore_persona_space/analysis/convexity_meta.py)
+- Per-behavior loaders: [`scripts/issue644_loaders.py`](https://github.com/superkaiba/explore-persona-space/blob/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/scripts/issue644_loaders.py)
+- Driver: [`scripts/issue644_functional_form.py`](https://github.com/superkaiba/explore-persona-space/blob/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/scripts/issue644_functional_form.py)
+- Seed-scatter figure script: [`scripts/issue644_seed_scatter_figure.py`](https://github.com/superkaiba/explore-persona-space/blob/e74b9be5d6c1278656940a9a07f2f2273006eb9b/scripts/issue644_seed_scatter_figure.py)
+- Git commit (artifacts + figures): `369ca8912ddff5fef9d16e8dffc6cfaf31b87544` (seed figure at `e74b9be5d6c1278656940a9a07f2f2273006eb9b`; branch `issue-644`, PR #474)
+- Reproduce:
+
+    ```bash
+    git clone https://github.com/superkaiba/explore-persona-space.git
+    cd explore-persona-space
+    git checkout 369ca8912ddff5fef9d16e8dffc6cfaf31b87544
+    uv sync
+    uv run python scripts/issue644_functional_form.py load-data
+    uv run python scripts/issue644_functional_form.py fit
+    uv run python scripts/issue644_functional_form.py aggregate
+    ```
+
+**Context:**
+
+- Created 2026-06-15; analysis ran the same day on the VM.
+- Fresh direction (no parent); relates to the `leak-predictor` open question — this run sharpens its standing "geometry predicts behavior inconsistently across behaviors" belief from "monotonic-but-inconsistent" to "no recurring convex shape at these n".
+- Originating prompt, verbatim:
+
+  > In 623 we see kind of an exponential relationship between cosine similarity and sycophancy. I feel like we've seen this trend with a lot of the behaviors. Can you make and dispatch an issue in the background to look at all past results and explore this hypothesis?
