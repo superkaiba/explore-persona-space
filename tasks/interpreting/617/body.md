@@ -137,7 +137,7 @@ Complete picked-category corpus (raw prefixes + N=4 completions, 200 prefixes/ca
 | Read layers (scored) | L13 / L14 / L18 (all 28 captured, scored at this band) |
 | Sentence embedder (clustering) | `BAAI/bge-large-en-v1.5`, 1024-dim, 512-token, CLS-token pool (`last_hidden_state[:, 0]`) + L2-norm, no instruction prefix |
 | KMeans | `n_clusters ∈ {5, 10, 20}`, `n_init=10`, `random_state=42` |
-| HDBSCAN | `min_cluster_size = max(30, target // 200) = 100` for the 20k slice, `metric="euclidean"`, noise label −1 excluded (collapsed: 96% noise, 3 tiny clusters) |
+| HDBSCAN | `min_cluster_size = max(30, target // 200) = 100` for the 20k slice, `metric="euclidean"`, noise label −1 excluded from pair pool |
 | WildChat slice target | 20,000 conversations |
 | Unique-prefix extraction pool cap | 400 unique `conv_id`s + 1 synthetic `f6_default_template` instance |
 | Probe pool | fixed 48-paraphrase Betley pool via `fetch_preregistered_probes` |
