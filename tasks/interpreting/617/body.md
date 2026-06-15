@@ -16,6 +16,8 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_617.md](https://github.com/superkaiba/explore-persona-space/blob/35472980e586d7ca5415ca1b6def4703739c7d94/docs/methodology/issue_617.md) · [gist](https://gist.github.com/superkaiba/5383ad48b0d091190ecf8fb7d6ffb73f)
+
 ## Takeaways
 
 - The best of 119 WildChat cluster pairs — **coding/debugging help vs travel-guide writing** — hits **length-residualized purity 1.00** at L13/14/18, selection-aware **p_global = 0.001**. Both fire-rule legs clear.
@@ -126,7 +128,7 @@ Complete picked-category corpus (raw prefixes + N=4 completions, 200 prefixes/ca
 
 ## Reproducibility
 
-**Methodology:** see the findings-blind methodology + hyperparameters reference (auto-generated; linked at promotion).
+- **Methodology reference:** [docs/methodology/issue_617.md](https://github.com/superkaiba/explore-persona-space/blob/35472980e586d7ca5415ca1b6def4703739c7d94/docs/methodology/issue_617.md) · [gist](https://gist.github.com/superkaiba/5383ad48b0d091190ecf8fb7d6ffb73f)
 
 **Parameters:**
 
