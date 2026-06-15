@@ -1,1 +1,2 @@
 {"ts": "2026-06-15T21:20:36Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-15T21:22:59Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #645 to open question q:app1 (Assistant-anchored detector); created_new=none; mode=auto-match (existing question)."}
