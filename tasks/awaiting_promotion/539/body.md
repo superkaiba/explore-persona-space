@@ -14,6 +14,8 @@ goal: 'Test whether the geometric predictors (cosine, Gaussian-KL@L22) carry ran
 relates_to:
 - leak-predictor
 - spec-sysprompt-vs-drift
+classification: useful
+promoted_at: '2026-06-15T23:49:18Z'
 ---
 # Activation distance ranks ordinary-context marker emission rates mostly by tracking which sources leak everywhere, with a small pair-specific cosine residue (MODERATE confidence)
 
