@@ -23,6 +23,9 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_623.md](https://github.com/superkaiba/explore-persona-space/blob/1907baa8c546eed6f4c566de8ac439ff912d40c3/docs/methodology/issue_623.md) · [gist](https://gist.github.com/superkaiba/30b4e49d3fd3ed0d35e96e49eb8e71c9)
+
+
 ## Takeaways
 
 - **A persona's cosine alignment to the sycophancy direction predicts its judged base sycophancy rate: Spearman rho = 0.73, 95% CI 0.49 to 0.87, n = 35 (p ≈ 3e-7).**
@@ -145,6 +148,7 @@ Full generations: [`issue623_persona_vectors/steering_probe/raw_completions/` @ 
 - **Artifacts:** behavioral DV + correlation outputs in this repo at `eval_results/issue_623/` (`rho_by_layer.json`, `cosine_matrix.json`, `syc_i.json`, `steering_probe.json`, `steering_effect_by_layer.json`, `rho_loo_leverage.json`); persona vectors, sycophancy trait vector, panel prompts, and steering-probe generations at [superkaiba1/explore-persona-space-data @ 06cde77, `issue623_persona_vectors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue623_persona_vectors); figure sources at `figures/issue_623/` (this repo).
 - **Reused artifact provenance:**
   - Reused base sycophancy judgments from [#612](https://eps.superkaiba.com/tasks/612): [`issue612_sycophancy_onpolicy/judgments/base/` @ 06cde77](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06cde7765c195e0c72cb498fab9732301181346e/issue612_sycophancy_onpolicy/judgments/base) — fit: same base model (Qwen-2.5-7B-Instruct), same on-policy free-generation rig, audited 60-claim pool with the per-persona base rates this correlation reads off; 35 of the panel personas have committed rates.
+- **Methodology reference:** [docs/methodology/issue_623.md](https://github.com/superkaiba/explore-persona-space/blob/1907baa8c546eed6f4c566de8ac439ff912d40c3/docs/methodology/issue_623.md) · [gist](https://gist.github.com/superkaiba/30b4e49d3fd3ed0d35e96e49eb8e71c9)
 - **Compute:** GCP `a2-ultragpu-1g`, 1× A100-80GB, zone us-central1-a, instance `eps-issue-623`, project eps-persona-gpu-jun2026; training-free (forward passes + Claude judging), completed 2026-06-15T14:05Z (GCP launch #5 after four provisioning fall-throughs).
 - **Code:** pipeline at commit `8e3ce2d24bb8ad28297f0371c95cfbc2333bc198` (this repo, branch issue-623; figures pinned to ancestor `fa95d4afa31da575782780818b446c00241655ee`). Dispatch + analysis: `scripts/issue623_persona_resolve.py` → `scripts/issue623_persona_panel_vectors.py` → `scripts/issue623_extract_sycophancy_vector.py` → `scripts/issue623_behavioral_dv.py` → `scripts/issue623_analyze.py` (off-pod CPU) → `scripts/issue623_loo_leverage.py` (leave-one-out leverage check). Reproduce the headline:
 
