@@ -3828,8 +3828,8 @@
       "goal": "Test whether persona vectors index the base behavioral prior by measuring, across a persona panel, the Spearman correlation between each persona's cosine alignment to the sycophancy persona vector and its judged on-policy base sycophancy rate \u2014 all extracted via the Persona Vectors response-avg recipe on Qwen-2.5-7B-Instruct.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/623",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/623",
+      "status": "awaiting_promotion",
       "title": "A persona vector's alignment to the sycophancy direction predicts that persona's base sycophancy rate (rho=0.73, n=35) \u2014 persona vectors already index the behavioral prior (MODERATE confidence)"
     },
     "624": {
