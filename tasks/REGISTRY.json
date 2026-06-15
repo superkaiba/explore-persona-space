@@ -3937,8 +3937,8 @@
     "638": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/planning/638",
-      "status": "planning",
+      "path": "tasks/approved/638",
+      "status": "approved",
       "title": "Why do some sources resist being trained with certain behaviors? Predictors of per-(source, behavior) install strength"
     },
     "639": {
