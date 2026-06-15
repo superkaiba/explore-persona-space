@@ -17,6 +17,8 @@ goal: 'Determine which mechanism sets the source-implant level in #472''s contra
 relates_to:
 - leak-contrastive-negatives
 - implant-learning-speed
+classification: useful
+promoted_at: '2026-06-15T23:44:42Z'
 ---
 # Contrastive negatives strengthened a marker implant by lengthening the optimizer schedule, not through their own loss: the same 4:1 mix trained 4x longer lands twice as high (HIGH confidence)
 
