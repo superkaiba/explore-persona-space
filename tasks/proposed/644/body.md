@@ -16,6 +16,8 @@ goal: Across all past experiments that produced paired (persona-geometry scalar,
   behaviors (sycophancy, marker leakage, fact leakage, refusal, EM) after controlling
   for the fact-line sign flip, saturation/floor, high-leverage points, log-space artifacts,
   and the X vs (X−Y) caveat.
+relates_to:
+- leak-predictor
 ---
 # Is the geometry→behavior-strength relationship super-linear (convex / "exponential-looking"), and does that shape recur across behaviors?
 
