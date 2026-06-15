@@ -362,3 +362,77 @@ def test_original_interval_inline_forms_still_flagged():
         "The interval [0.1, 0.4] excludes zero across seeds.",
     )
     assert "interval_inline" in audit.audit_body(trailing), "trailing-token form regressed"
+
+
+# ─── Pre-registration mentions scoped to Lens 7 prose sections (#623) ────
+#
+# Lens 7 (clean-result-critic) scopes the pre-registration-mention ban to
+# `## Takeaways` / `## What I ran` / `## Findings` prose ONLY and explicitly
+# permits pre-reg threshold values / procedural notes elsewhere ("Pre-reg
+# threshold values can sit in the parameters table."). The `pre_reg` regex
+# previously scanned the whole body, so a procedural "dropped pre-registered"
+# sentence in `## Data` / `## Reproducibility` prose fired a FALSE positive
+# the critic had to hand-adjudicate every round (incident #623: an
+# `## Data → ### Evaluated with` mention tripped the audit although Lens 7
+# exempts that section).
+
+
+def test_pre_reg_in_data_prose_is_exempt():
+    """A `pre-registered` procedural mention in `## Data` PROSE (not an
+    example block) on a v3 body must NOT trip `pre_reg` — Lens 7 scopes
+    the ban to Takeaways / What I ran / Findings (incident #623)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "Established mix (tier 2), 2,000 rows, on-policy base completions.",
+        "Established mix (tier 2); the assistant baseline-self is dropped "
+        "pre-registered, leaving n = 35 for the correlation.",
+    )
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_in_reproducibility_prose_is_exempt():
+    """A `pre-registered` mention in `## Reproducibility` prose on a v3
+    body must NOT trip `pre_reg` (Lens 7 prose-section scope)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "**Compute:** 1x H100, 47 min.",
+        "**Compute:** 1x H100, 47 min. The drop rule was pre-registered.",
+    )
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_in_takeaways_prose_is_flagged():
+    """The SAME `pre-registered` mention in a `## Takeaways` bullet on a
+    v3 body STILL trips `pre_reg` — the carve-out is section-scoped, not a
+    blanket whitelist of the term."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the pre-registered drop leaves n = 35.",
+    )
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("pre-registered" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_in_findings_prose_is_flagged():
+    """A `pre-registered` mention in `## Findings` read prose on a v3 body
+    still trips `pre_reg`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift, pre-registered as the primary endpoint, holds at every seed.",
+    )
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+
+
+def test_pre_reg_whole_body_scan_preserved_for_legacy_bodies():
+    """A non-v3 (legacy / unstructured) body keeps the prior whole-body
+    `pre_reg` scan — the section scope is a v3 shape, and skipping it for
+    legacy bodies prevents silently blanking an entire legacy body's
+    prose. A `pre-registered` mention in legacy prose still FAILs."""
+    legacy = (
+        "# Some legacy title\n\n## AI TL;DR\n\nclean prose.\n\n"
+        "## AI Summary\n\nThe drop was pre-registered before the run.\n"
+    )
+    findings = audit.audit_body(legacy)
+    assert "pre_reg" in findings, findings

@@ -3952,8 +3952,8 @@
       "goal": "Test whether the chat-template POSTFIX (not prefix) is the dominant off-distribution leakage carrier on Qwen-2.5-7B, and whether patching base postfix KV per-cell into the #545 leaky adapters reduces leakage as a model-specific intervention.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/640",
-      "status": "blocked",
+      "path": "tasks/approved/640",
+      "status": "approved",
       "title": "Is postfix the Qwen-2.5 carrier, and does postfix-patching work as a per-cell leakage intervention?"
     },
     "641": {
@@ -3975,17 +3975,17 @@
     "643": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/643",
-      "status": "proposed",
+      "path": "tasks/archived/643",
+      "status": "archived",
       "title": "Integrate Self-Harness (self-improving agent harness) into persona-space workflow"
     },
     "644": {
       "goal": "Across all past experiments that produced paired (persona-geometry scalar, behavior-strength scalar) data, characterize the FUNCTIONAL FORM of the geometry\u2192behavior-strength relationship \u2014 testing on RAW (non-rank) values whether it is consistently convex/super-linear ('exponential-looking') rather than linear, and whether that shape recurs across behaviors (sycophancy, marker leakage, fact leakage, refusal, EM) after controlling for the fact-line sign flip, saturation/floor, high-leverage points, log-space artifacts, and the X vs (X\u2212Y) caveat.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/644",
-      "status": "approved",
-      "title": "Is the geometry\u2192behavior-strength relationship super-linear (convex), and does that shape recur across behaviors?"
+      "path": "tasks/awaiting_promotion/644",
+      "status": "awaiting_promotion",
+      "title": "No portable convex geometry\u2192behavior shape recurs across the qualifying prior-task scatters (MODERATE confidence)"
     },
     "65": {
       "has_clean_result": true,

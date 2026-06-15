@@ -3568,6 +3568,72 @@ def test_v3_check21_fails_on_missing_key(tmp_path):
     assert not by_name["Body Parameters ⊆ methodology doc §2"].passed
 
 
+def test_v3_check21_skips_when_doc_section2_is_na_no_training(tmp_path):
+    """Analysis-only carve-out (#644): when the doc's §2 is explicitly
+    marked N/A because the task did no model training, check 21 PASS-skips
+    the subset assertion rather than false-FAILing — the body Parameters
+    are analysis-design descriptors, not slimmed hyperparameters, so there
+    is no canonical complete hyperparameter table for them to be a subset
+    of. (Body params Optimizer/Seeds are deliberately absent from the doc;
+    without the carve-out this would FAIL on missing keys.)"""
+    doc = tmp_path / "issue_644.md"
+    doc.write_text(
+        "# Methodology — issue 644\n\n"
+        "## 2. Training recipe\n\n"
+        "**N/A — no model training.** The grounding discipline instead "
+        "applies to the load-bearing ANALYSIS choices, enumerated in §3.\n\n"
+        "## 3. Evaluation recipe (the analysis pipeline)\n\n"
+        "| Constant | Value | Symbol |\n|---|---|---|\n"
+        "| Bootstrap resamples | 10000 | BOOTSTRAP_B |\n"
+    )
+    _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert c21.passed, c21.render()
+    assert "no training-hyperparameter table" in c21.detail
+
+
+def test_v3_check21_skips_when_doc_section2_has_no_table(tmp_path):
+    """The carve-out also fires when §2 carries no GFM table delimiter at
+    all (no hyperparameter table emitted), even without an explicit
+    N/A-marker phrase — the absence of a complete table is itself the
+    signal there is nothing for the body to be a subset of."""
+    doc = tmp_path / "issue_644.md"
+    doc.write_text(
+        "# Methodology — issue 644\n\n"
+        "## 2. Hyperparameters\n\n"
+        "This experiment is a meta-analysis over prior eval JSONs; the "
+        "load-bearing constants are pinned in the analysis module.\n\n"
+        "## 3. Evaluation\n\nSee §3.\n"
+    )
+    _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert c21.passed, c21.render()
+    assert "no training-hyperparameter table" in c21.detail
+
+
+def test_v3_check21_carveout_does_not_disarm_misprint_guard(tmp_path):
+    """The carve-out must NOT fire for a task that DID train: a doc whose
+    §2 has a real hyperparameter table (delimiter row, no N/A marker)
+    still binds, so the #489-class misprint guard stays active. Here the
+    doc says lr=1e-4 but the body says lr=3e-5 → still FAILs."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            "Optimizer": "AdamW, lr=1e-4",  # doc 1e-4 vs body 3e-5
+            "Seeds": "[42, 137, 256]",
+        },
+    )
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    assert not ok
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert not c21.passed
+    assert "optimizer" in c21.detail.lower()
+
+
 def test_v3_checks_skip_on_v2_body():
     """All four v3-only checks (18/19/20/21) PASS-skip on a v2 body, so
     forward-only grandfathering holds."""

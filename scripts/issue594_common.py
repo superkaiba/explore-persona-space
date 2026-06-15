@@ -143,6 +143,96 @@ def load_battery(path: Path | str = BATTERY_PATH) -> tuple[dict, list[dict]]:
     return payload, instances
 
 
+# ── Loose validation (issue #617 cluster batteries) ──────────────────────────
+# The #594 strict path (validate_instance / validate_battery / load_battery
+# above) is UNCHANGED — the #594 entry points keep calling it. Issue #617's
+# cluster battery has a variable number of cluster-tagged families (e.g.
+# ``wc_00123``) and a variable instance count, so it cannot satisfy the fixed
+# per-family-count + total=50 asserts NOR the family-enum check. The loose
+# functions below relax exactly those three checks and keep every per-instance
+# structural check (id/system_prompt/prefix_messages content + alternation).
+
+
+def validate_instance_loose(inst: dict) -> None:
+    """Per-instance structural check WITHOUT the #594 family-enum restriction.
+
+    Identical to ``validate_instance`` except a family may be any non-empty
+    str (issue #617 uses per-conversation cluster tags like ``wc_00123`` that
+    are not in ``FAMILY_EXPECTED_COUNTS``). All other structural checks —
+    required keys, non-empty id, system_prompt None-or-non-empty,
+    prefix_messages role/content/alternation — are enforced verbatim.
+    """
+    missing = _INSTANCE_REQUIRED_KEYS - set(inst)
+    if missing:
+        raise ValueError(f"battery instance missing keys {sorted(missing)}: {inst.get('id')}")
+    if not isinstance(inst["id"], str) or not inst["id"]:
+        raise ValueError(f"instance id must be a non-empty str, got {inst['id']!r}")
+    if not isinstance(inst["family"], str) or not inst["family"]:
+        raise ValueError(f"instance {inst['id']}: family must be a non-empty str")
+    sp = inst["system_prompt"]
+    if sp is not None and (not isinstance(sp, str) or not sp.strip()):
+        raise ValueError(f"instance {inst['id']}: system_prompt must be None or non-empty str")
+    pm = inst["prefix_messages"]
+    if not isinstance(pm, list):
+        raise ValueError(f"instance {inst['id']}: prefix_messages must be a list")
+    for i, m in enumerate(pm):
+        if not isinstance(m, dict) or set(m) != {"role", "content"}:
+            raise ValueError(
+                f"instance {inst['id']}: prefix_messages[{i}] must be "
+                f"{{'role', 'content'}}, got {m!r}"
+            )
+        if m["role"] not in ("user", "assistant"):
+            raise ValueError(f"instance {inst['id']}: prefix_messages[{i}] role {m['role']!r}")
+        if not isinstance(m["content"], str) or not m["content"].strip():
+            raise ValueError(f"instance {inst['id']}: prefix_messages[{i}] empty content")
+    if pm:
+        roles = [m["role"] for m in pm]
+        expected = ["user", "assistant"] * (len(pm) // 2)
+        if roles != expected:
+            raise ValueError(
+                f"instance {inst['id']}: prefix_messages roles must alternate "
+                f"user/assistant and end with assistant, got {roles}"
+            )
+
+
+def validate_battery_loose(payload: dict) -> list[dict]:
+    """Validate a battery payload for issue #617 (variable cluster families).
+
+    Keeps the schema-version check, the per-instance structural check (via
+    ``validate_instance_loose``), and the unique-id check; DROPS the
+    ``FAMILY_EXPECTED_COUNTS`` per-family-count + ``BATTERY_EXPECTED_TOTAL``
+    asserts (issue #617 has a variable cluster-derived instance count).
+    """
+    if payload.get("schema_version") != BATTERY_SCHEMA_VERSION:
+        raise ValueError(
+            f"battery schema_version {payload.get('schema_version')!r} != {BATTERY_SCHEMA_VERSION}"
+        )
+    instances = payload.get("instances")
+    if not isinstance(instances, list):
+        raise ValueError("battery payload missing 'instances' list")
+    if not instances:
+        raise ValueError("loose battery has 0 instances")
+    ids = [inst.get("id") for inst in instances]
+    if len(ids) != len(set(ids)):
+        dupes = sorted({i for i in ids if ids.count(i) > 1})
+        raise ValueError(f"duplicate instance ids: {dupes}")
+    for inst in instances:
+        validate_instance_loose(inst)
+    return instances
+
+
+def load_battery_loose(path: Path | str) -> tuple[dict, list[dict]]:
+    """Load + loosely-validate a battery JSON (issue #617). Returns (payload, instances).
+
+    Sibling of ``load_battery`` for the relaxed schema; #594 callers keep using
+    ``load_battery`` (strict).
+    """
+    with open(path) as f:
+        payload = json.load(f)
+    instances = validate_battery_loose(payload)
+    return payload, instances
+
+
 def messages_for_instance(instance: dict, probe: str) -> list[dict]:
     """Chat messages for one (instance, probe) forward pass (plan §3 Phase 1).
 
