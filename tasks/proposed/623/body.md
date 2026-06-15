@@ -15,11 +15,6 @@ goal: Test whether persona vectors index the base behavioral prior by measuring,
   to the sycophancy persona vector and its judged on-policy base sycophancy rate —
   all extracted via the Persona Vectors response-avg recipe on Qwen-2.5-7B-Instruct.
 ---
-## Goal
-
-Test whether persona vectors index the base behavioral prior by measuring, across a persona panel, the Spearman correlation between each persona's cosine alignment to the sycophancy persona vector and its judged on-policy base sycophancy rate — all extracted via the Persona Vectors response-avg recipe on Qwen-2.5-7B-Instruct.
-
-
 ## Summary
 
 Persona vectors are extracted from contrastive prompting (Persona Vectors recipe, response-token mean; arXiv 2507.21509), so it is unclear what they index: a persona's pre-existing behavioral disposition, or content that training later installs. This task tests the **prior** half on one trait — sycophancy. Headline read: across a persona panel, does the cosine alignment between a persona's vector and the **sycophancy persona vector** predict that persona's measured (judged, on-policy) sycophancy on the base model? Tight positive correlation means persona vectors already encode the base behavioral prior; a null means the geometry is blind to behavioral disposition. Either outcome directly bears on the standing project result that the *behavioral* base prior out-predicts *geometric* cosine for leakage (#500/#532/#541): tight ρ → geometry is a noisy proxy for the prior; near-null ρ → geometry and behavior are genuinely different axes.
@@ -28,7 +23,10 @@ Persona vectors are extracted from contrastive prompting (Persona Vectors recipe
 
 Per persona *i* in the panel, two scalars on **base Qwen-2.5-7B-Instruct** (no implant):
 
-- **Geometric — `proj_i`:** cosine similarity between `persona_vector_i` and the `sycophancy_vector`, at a matched layer. Cosine primary (project standard, #404); raw dot product secondary (the paper's §"Comparing projection differences with raw projection" motivates reporting both). Both vectors extracted via the identical Persona Vectors recipe: contrastive positive/negative *instructions*, responses generated under each, **response-token-mean** activation difference per layer (the paper's default, App. position-extraction).
+- **Geometric — `proj_i`:** cosine similarity between `persona_vector_i` and the `sycophancy_vector`, at a matched layer. Cosine primary (project standard, #404); raw dot product secondary.
+  - **Extraction point: last prompt token** — the `{persona system prompt, question}` final input position, before generation — NOT response-avg. This is load-bearing for non-circularity: a response-avg persona vector is computed over persona *i*'s own generated responses, whose sycophancy is exactly what `syc_i` judges, so it would smuggle the behavioral outcome into the geometric predictor. The last-prompt-token state is the pre-generation context representation — a genuine prior read. (The Persona Vectors paper defaults to response-avg because it optimizes *steering*; we predict a disposition *from* a context state, the opposite goal → the legacy #404/#458 last-prompt-token recipe is correct here.)
+  - `persona_vector_i` = `(persona i − default assistant)` last-prompt-token mean difference (the identity-analogue of the paper's pos−neg trait contrast; the default assistant is the shared neutral baseline). `sycophancy_vector` = `(pos − neg sycophancy instruction)` last-prompt-token mean difference, matched extraction point + layer.
+  - Layer sweep {7, 14, 21, 27} (persona-distance canonical); headline = layer 21 (legacy default) / most-informative. Robustness: response-avg sycophancy vector and the #536 global-mean-centered persona centroid.
 - **Behavioral — `syc_i`:** judged sycophancy rate of the base model prompted *as persona i* (persona system prompt, NO sycophancy instruction) on the audited wrong-claim pool (reuse #612). Claude judge, on-policy generation — never substring. This is the persona's dispositional sycophancy.
 
 **Primary result:** Spearman ρ (with bootstrap CI) across the panel between `proj_i` and `syc_i`, reported as a ρ-vs-layer curve with a pre-registered headline layer = the sycophancy vector's most-informative layer (the paper's steering-effectiveness criterion).
@@ -42,14 +40,14 @@ Per persona *i* in the panel, two scalars on **base Qwen-2.5-7B-Instruct** (no i
 ## Design
 
 1. **Panel.** Reuse the graded-cosine persona panel (#612, spanning cosine ~0.70–0.995) + the #532 base-prior reads so points line up with prior leakage results. Target ≥ ~20 personas spanning a range of base sycophancy (correlation power). Planner verifies reuse fitness (a)–(g).
-2. **Sycophancy vector.** Persona Vectors recipe for trait "sycophancy" using the paper's own trait description (verbatim, replication fidelity), extracted fresh on Qwen-2.5-7B-Instruct (the published vectors are on other base models). 5 pos/neg instruction pairs, 20-question extraction set, response-avg, per layer.
-3. **Persona vectors.** Each panel persona extracted via the SAME recipe (reuse the existing persona-panel extraction convention used in the #532/#404 line; planner confirms the identity-persona contrast matches).
+2. **Sycophancy vector.** Persona Vectors recipe for trait "sycophancy" using the paper's own trait description (verbatim, replication fidelity), extracted fresh on Qwen-2.5-7B-Instruct (the published vectors are on other base models). 5 pos/neg instruction pairs, 20-question extraction set, **last-prompt-token** mean difference (response-avg as a robustness variant), layers {7,14,21,27}.
+3. **Persona vectors.** Each panel persona = `(persona − default assistant)` **last-prompt-token** mean difference, via `scripts/extract_persona_vectors.py` Method A (last-input-token; already produces per-role centroids on Qwen-2.5-7B-Instruct — subtracting the default-assistant centroid is a post-step). Same layers as the sycophancy vector; planner confirms the default-assistant baseline + role panel.
 4. **Behavioral read.** Per persona, vLLM on-policy generation on the #612 wrong-claim pool under the persona system prompt; Claude-judge sycophancy rate.
 5. **Reads.** ρ(proj_i, syc_i) per layer; cosine primary, dot secondary; bootstrap CI; scatter plotted raw alongside any processed view (show-raw-alongside-processed rule).
 
 ## Caveats (pre-registered)
 
-- **Shared-method variance:** `sycophancy_vector` and `persona_vector_i` both come from the same contrastive-prompt recipe, so a positive ρ partly reflects internal consistency of the extraction method. The behavioral axis (`syc_i`) is fully independent, so the correlation *with behavior* is still a real test — but geometry-to-geometry consistency is not itself the claim.
+- **Shared-method variance:** `sycophancy_vector` and `persona_vector_i` both come from the same contrastive-prompt recipe, so a positive ρ partly reflects internal consistency of the extraction method. The behavioral axis (`syc_i`) is fully independent, so the correlation *with behavior* is still a real test — but geometry-to-geometry consistency is not itself the claim. Using the **last-prompt-token** (pre-generation) persona vector also guarantees the geometric predictor never sees persona *i*'s responses, so it cannot be circular with the response-judged `syc_i`.
 - **Power:** a correlation over ~20 personas; report CI, do not over-read a point estimate.
 - **One trait, one model:** sycophancy on Qwen-2.5-7B-Instruct; generalization to other traits/models is out of scope (a natural follow-up).
 
