@@ -50,3 +50,4 @@
 {"ts": "2026-06-15T13:18:14Z", "kind": "epm:progress", "version": 10, "by": "poll_pipeline", "note": "phase transition: extract -> score", "phase": "score", "pod": "pod-617"}
 {"ts": "2026-06-15T13:27:26Z", "kind": "epm:progress", "version": 11, "by": "poll_pipeline", "note": "phase transition: score -> complete", "phase": "complete", "pod": "pod-617"}
 {"ts": "2026-06-15T13:36:38Z", "kind": "epm:results", "version": 1, "by": "issue617_upload_corpus", "note": "issue617 corpus uploaded: 410 files under issue617_wildchat_categories on superkaiba1/explore-persona-space-data"}
+{"ts": "2026-06-15T13:36:39Z", "kind": "epm:progress", "version": 12, "by": "poll_pipeline", "note": "phase transition: complete -> done", "phase": "done", "pod": "pod-617"}
