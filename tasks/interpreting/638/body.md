@@ -14,8 +14,8 @@ origin_prompt: we also want to understand why some sources resist being trained 
 
 ## Takeaways
 
-- Install strength splits **89% behavior / ~2% source / ~10% pairing** on a 15-source × 4-behavior grid; dropping the saturated behavior gives **85% / 3% / 11%** — the headline holds.
-- No persona resists everything: **median cross-behavior source-rank correlation −0.33** (range −0.57 to +0.35), so there is no stable global positive source-resistance trait; transfer is weak and inconsistent in this re-slice (the matrix leans on saturated/tied-rank columns — sycophancy is 14/15 at ceiling, fact's cross-seed rank reliability is only ρ=0.41).
+- Install strength splits **89% behavior / ~2% source / ~10% pairing** on a 15-source × 4-behavior grid; dropping the saturated behavior gives **85% / 3% / 11%**.
+- No global resistant persona: **median cross-behavior source-rank correlation −0.33** (range −0.57 to +0.35) — no stable positive source-resistance trait; transfer is weak and inconsistent, on saturated/tied-rank columns (sycophancy 14/15 at ceiling, fact reliability ρ=0.41).
 - Base propensity is diagonal headroom, not a positive predictor: pooled base-vs-install correlation **−0.31 (n=75)**, driven by the saturated behavior (ρ=−0.77); the off-saturation marker shows the opposite sign (ρ=+0.24).
 - The clearest candidate engineerable lever found here is construction/identity conflict: a casual-register behavior installed **0.42 below base** (identical at both seeds) — suggestive, single-source.
 - Every read is dose-unmatched (each cell trained at a different uncontrolled dose); separating dose from intrinsic resistance is a GPU follow-up, out of scope here.
