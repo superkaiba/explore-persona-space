@@ -133,19 +133,22 @@ Complete picked-category corpus (raw prefixes + N=4 completions, 200 prefixes/ca
 | Field | Value |
 |---|---|
 | Model (activation read) | `Qwen/Qwen2.5-7B-Instruct`, bf16, base (no training, no LoRA) |
-| Sentence embedder (clustering) | `BAAI/bge-large-en-v1.5`, CLS-token pool (`last_hidden_state[:, 0]`) + L2-norm, no instruction prefix |
-| Completion model | `Qwen/Qwen2.5-7B-Instruct`, base, vLLM, T=1.0, N=4, max_new_tokens=512 |
-| Clustering input | first user turn of each WildChat conversation |
-| Clustering algos | KMeans (n_init=10, seed 42) at K ∈ {5,10,20}; HDBSCAN (min_cluster_size=100, euclidean) |
-| Unique-prefix extraction pool | capped at 400 (+ 1 synthetic `f6_default_template`); each conversation extracted once, cluster membership mapped at scoring time |
-| Read position / layers | assistant-header newline; scored at decoder layers 13 / 14 / 18 (all 28 captured) |
-| Probe pool | fixed 48-paraphrase Betley pool |
-| Separability statistic | best-of-{13,14,18} length-residualized centered-cosine k-NN purity (k=4); selection-aware `p_global` (B=1000, global max over pairs × layers) + retained uncorrected per-pair p |
-| Length covariate | `log1p(content_token_len)` |
-| Winner | kmeans10 cluster 01 (coding/debugging help) vs cluster 08 (travel-guide writing); residualized purity 1.00; p_global 0.001 |
-| WildChat slice | 20,000 English / non-toxic / non-redacted conversations, deduped on first user turn, seed 42 |
-| Pairs scored | 119 across all configs |
-| Seeds | 42 everywhere (slice, KMeans, subsample, permutation, completion sampling) |
+| Read position | last input token under `add_generation_prompt=True` (the assistant-header newline slot) |
+| Read layers (scored) | L13 / L14 / L18 (all 28 captured, scored at this band) |
+| Sentence embedder (clustering) | `BAAI/bge-large-en-v1.5`, 1024-dim, 512-token, CLS-token pool (`last_hidden_state[:, 0]`) + L2-norm, no instruction prefix |
+| KMeans | `n_clusters ∈ {5, 10, 20}`, `n_init=10`, `random_state=42` |
+| HDBSCAN | `min_cluster_size = max(30, target // 200) = 100` for the 20k slice, `metric="euclidean"`, noise label −1 excluded from pair pool |
+| WildChat slice target | 20,000 conversations |
+| Unique-prefix extraction pool cap | 400 unique `conv_id`s + 1 synthetic `f6_default_template` instance |
+| Probe pool | fixed 48-paraphrase Betley pool via `fetch_preregistered_probes` |
+| Separability metric | best-of-{13,14,18} length-residualized centered-cosine k-NN purity, `knn_k=4`, `cosine_dist(centering="global_mean")` |
+| Length covariate | `log1p(content_token_len)` (residualized out of activations before scoring) |
+| Permutation null | B = 1000 label shuffles, selection-aware (global) max over (pairs × layers) under each shuffle; per-pair p retained uncorrected |
+| Pair winner rule | highest length-residualized purity s.t. `winner.p_global ≤ 0.01`; tie-break lower-K, then KMeans-before-HDBSCAN, then lexicographic |
+| Completion model | `Qwen/Qwen2.5-7B-Instruct`, base, vLLM batched `LLM.generate()` |
+| Completion N / temperature | N = 4 completions per prefix, T = 1.0 |
+| Completion `max_new_tokens` | 512 |
+| Seed | 42 everywhere (slice sample, KMeans, prefix subsample/cap, permutation, completion sampling) |
 
 **Artifacts:**
 
