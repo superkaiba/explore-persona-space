@@ -37,22 +37,22 @@ relates_to:
 
 Of 119 scored pairs, the winner is **coding/debugging help (cluster 01, 50 of 3389 scored) vs travel-guide writing (cluster 08, 30 of 373 scored)**.
 
-![Winning-pair k-NN family purity vs decoder layer: raw and length-residualized both at 1.0 across L13/14/18; an annotation notes this pair's own TF-IDF purity is 0.95 (margin 0.05) and the travel-guide cluster is near-single-template](https://raw.githubusercontent.com/superkaiba/explore-persona-space/48fd61a0ea06728a0bbefca96caa6be78d9a6cbd/figures/issue_617/hero_winning_pair_purity.png)
+![Winning-pair k-NN family purity vs decoder layer: length-residualized purity 1.00 across L13/14/18; raw purity 1.00 at L13/14 and 0.9875 at L18; an annotation notes this pair's own TF-IDF purity is 0.95 (margin 0.05) and the travel-guide cluster is near-single-template](https://raw.githubusercontent.com/superkaiba/explore-persona-space/48fd61a0ea06728a0bbefca96caa6be78d9a6cbd/figures/issue_617/hero_winning_pair_purity.png)
 
-> **Figure.** *The pair separates perfectly and survives length residualization, but its own surface baseline is near-ceiling.* k-NN purity (k=4), n = 50 + 30 prefixes, across L13/14/18; raw (blue) + length-residualized (orange) at 1.00. Grey band = selection-aware null p50-p95. Annotation: own TF-IDF 0.95, travel-guide cluster top-5 heads cover 84%.
+> **Figure.** *The pair separates perfectly under residualization, but its own surface baseline is near-ceiling.* k-NN purity (k=4), n = 50 + 30 prefixes, across L13/14/18; length-residualized (orange) 1.00 at all three layers; raw (blue) 1.00 at L13/14, 0.9875 at L18. Grey band = selection-aware null p50-p95. Annotation: own TF-IDF 0.95, travel-guide cluster top-5 heads cover 84%.
 
-Both fire-rule legs clear: residualized purity 1.00 ≥ 0.7, `p_global = 0.001 ≤ 0.01`. But the honest "topical signal beyond surface words" margin is **1.00 − 0.95 = ~0.05** (the pair's own TF-IDF), not 1.00 − 0.604 — the prior map's 0.604 is a cross-experiment reference, not this pair's surface baseline. The own-TF-IDF near-ceiling (0.95) is the signature of surface words carrying most of the signal.
+Both fire-rule legs clear: residualized purity 1.00 ≥ 0.7, `p_global = 0.001 ≤ 0.01`. But the honest "topical signal beyond surface words" margin is **1.00 − 0.95 = ~0.05** (the pair's own TF-IDF), not 1.00 − 0.604 — the prior map's 0.604 is a cross-experiment reference. The own-TF-IDF near-ceiling (0.95) signals surface words carry most of the signal.
 
 ### The cleanest pairs lean on a near-single-template cluster — diverse-vs-template, not two diverse categories
 
-- The travel-guide cluster (c08, n=373) is **near-degenerate**: 100% of 200 sampled prefixes contain "travel guide", top-5 distinct heads cover 84% — one user's repeated "Write an [X] travel guide book" template (a known WildChat spam-user artifact). The coding cluster (c01) IS diverse (top-5 heads cover 5%). So the win is **diverse-cluster vs near-single-template-cluster**, closer to the project's synthetic-template regime than to two diverse real categories.
-- This cluster recurs in **2 of the top-3** pairs, so the top-3 is closer to 2 independent demonstrations than 3.
+- The travel-guide cluster (c08, n=373) is **near-degenerate**: top-5 distinct heads cover 84%, one user's repeated "Write an [X] travel guide book" template (a known WildChat spam-user artifact). The coding cluster (c01) is genuinely diverse (top-5 heads cover 5%). So the win is **diverse-vs-near-single-template**, closer to the project's synthetic-template regime than two diverse real categories.
+- This cluster recurs in **2 of the top-3** pairs — the top-3 is closer to 2 independent demonstrations than 3.
 
 ![Top-3 cluster pairs: length-residualized activation purity (all 1.00) co-plotted with each pair's own TF-IDF word-overlap purity (0.89-0.97); a footnote marks the travel-guide cluster shared across 2 of the 3 pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/48fd61a0ea06728a0bbefca96caa6be78d9a6cbd/figures/issue_617/top3_pairs_purity.png)
 
 > **Figure.** *Activation purity barely edges each pair's own surface baseline; the travel-guide cluster recurs in 2 of 3.* Length-residualized activation purity (blue, all 1.00) vs each pair's own TF-IDF (green, 0.89-0.97), above the selection-aware null p95 (0.75). `*` = travel-guide cluster shared.
 
-A fairer "two diverse categories" test would pair coding with a diverse general-Q&A cluster, avoiding the template cluster — also the better category choice for the downstream grid. Hence MODERATE: the fire rule cleared, but on an easy near-templated pair, and downstream usability is untested.
+A fairer "two diverse categories" test would pair coding with a diverse general-Q&A cluster — also the better choice for the downstream grid. Hence MODERATE: the fire rule cleared, but on an easy near-templated pair, and downstream usability is untested.
 
 ### The selection-aware null confirms 1.00 is not a search artifact — and density clustering found almost no structure
 
@@ -97,7 +97,7 @@ Complete probe pool + scored cluster examples: [separability.json on the HF data
 
 ### Generated
 
-For the 2 picked categories, realistic user-style continuations were sampled from base Qwen-2.5-7B-Instruct (T=1.0, N=4 per prefix, max 512 tokens), 200 prefixes per category, shipped as both raw prefixes and prefix+completion turns. These are the realistic contexts the downstream grid will measure leakage on. Two samples per category (random, seed=42), one completion each, truncated:
+For the 2 picked categories, realistic user-style continuations were sampled from base Qwen-2.5-7B-Instruct (T=1.0, N=4 per prefix, max 512 tokens), 200 prefixes per category, shipped as both raw prefixes and prefix+completion turns. These are the CANDIDATE downstream contexts for a future leakage-prediction grid ([#524](https://eps.superkaiba.com/tasks/524), [#537](https://eps.superkaiba.com/tasks/537)); whether they work in that role is untested here (this run measured separability only). Two samples per category (random, seed=42), one completion each, truncated:
 
 <details>
 <summary>Random sample (seed=42), first of 4 completions shown; full 200×4 set per category at the link below</summary>
