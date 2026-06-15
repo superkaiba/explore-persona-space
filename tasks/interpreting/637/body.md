@@ -1,6 +1,7 @@
 ---
-title: Is leakage-transfer asymmetry low-rank (per-context source-breadth + receptivity),
-  not pairwise interaction?
+title: Leak-transfer asymmetry is rank-1 "leaky source / receptive target" out-of-sample
+  only for the marker and taught fact; for content behaviors neither the rank-1 nor
+  the transpose-based pairwise estimator generalizes (MODERATE confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-14T00:11:25Z'
