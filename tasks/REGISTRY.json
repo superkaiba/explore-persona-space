@@ -3790,8 +3790,8 @@
     "619": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/619",
-      "status": "proposed",
+      "path": "tasks/archived/619",
+      "status": "archived",
       "title": "Think through LoRA placement (which modules/layers the adapter lives in) and whether the leakage conclusions are placement-conditional"
     },
     "62": {
