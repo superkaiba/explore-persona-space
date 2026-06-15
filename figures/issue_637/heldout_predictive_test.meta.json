@@ -1,12 +1,14 @@
 {
  "issue": 637,
- "generated_at": "2026-06-15T07:36:57.986619+00:00",
- "git_commit": "0ec0f9a087ee86d69a61a599bb690023e71b2565",
+ "generated_at": "2026-06-15T07:57:08.993430+00:00",
+ "git_commit": "68fad5c0a722018e4b6ee6dba82ccd12b7d8085b",
  "smoke": false,
  "params": {
   "split_frac": 0.8,
   "n_bootstrap": 1000,
   "n_split_seeds": 20,
+  "n_shuffle_perm": 100,
+  "shuffled_control_mechanism": "permute-one-axis-of-M",
   "base_seed": 42,
   "predictor_formula": "rank-1 antisym = s_i - s_j, s = (b - r)/2 (v2)",
   "full_pairwise_rule": "2*g_sym(i,j) - M[j,i] when (j,i) in train, else rank-1 fallback"

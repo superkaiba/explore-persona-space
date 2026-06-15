@@ -236,34 +236,72 @@ def assert_in_sample_reproduction(M, behavior, anchor):
     return L0_recomputed, L2_recomputed
 
 
-def shuffled_context_scalar_r2(M, train_cells, test_cells, seed):
-    """Permutation control: shuffle context ids before the additive fit, predict the scalar arm.
+SHUFFLED_CONTROL_MECHANISM = "permute-one-axis-of-M"
 
-    If the rank-1 gain is real per-context structure it collapses under id-permutation; the
-    held-out gap between the real scalar arm and this control is the real effect size.
+
+def shuffled_context_scalar_r2(M, train_cells, test_cells, seed):
+    """Structure-breaking null: shuffle the SOURCE axis of M before fitting the scalars.
+
+    A bilateral relabel ``M[np.ix_(perm, perm)]`` is an isomorphism of the LS fit (it merely
+    renames context ids), so it scores the SAME R^2 as the real arm and is NOT a null — it
+    answers the opposite of the registered question. This one-axis null breaks the
+    correspondence between the fitted antisymmetry scalars and the contexts they predict:
+
+      - permute ONLY the rows (source axis) of M -> ``Mr = M[perm, :]`` (columns keep identity);
+      - fit the antisymmetry scalars ``s = (b - r)/2`` on ``Mr`` over the TRAIN cells;
+      - predict at the ORIGINAL held-out cells (i, j) with the ORIGINAL symmetric baseline plus
+        the permuted-scalar antisymmetry term ``s_i - s_j``;
+      - score against the ORIGINAL held-out values ``M[i, j]``.
+
+    Because the scalars now describe the row-shuffled matrix while we score the unshuffled one,
+    the rank-1 antisymmetry term carries no real per-context structure: the held-out gap between
+    the real scalar arm and this control is the rank-1 effect size above the free-parameter-DoF
+    baseline (the rank-1 arm has n-1 extra DoF the symmetric baseline lacks).
     """
-    n = M.shape[0]
     rng = np.random.default_rng(seed)
-    perm = rng.permutation(n)
-    Mp = M[np.ix_(perm, perm)]  # relabel both source and target consistently
-    predict_sym, _, _ = symmetric_two_way_fit(Mp, train_cells)
-    _, b, r = fit_two_way_additive_on_cells(Mp, train_cells)
+    perm = rng.permutation(M.shape[0])
+    Mr = M[perm, :]  # source (row) axis shuffled; target (column) axis keeps identity
+    predict_sym, _, _ = symmetric_two_way_fit(M, train_cells)  # ORIGINAL symmetric baseline
+    _, b, r = fit_two_way_additive_on_cells(Mr, train_cells)  # scalars from the row-shuffled fit
     s = (b - r) / 2.0
     preds, y = [], []
     for i, j in test_cells:
         preds.append(predict_sym(i, j) + (s[i] - s[j]))
-        y.append(Mp[i, j])
+        y.append(M[i, j])  # ORIGINAL held-out values
     return r2(np.array(preds), np.array(y))
 
 
+def shuffled_context_scalar_r2_multiseed(M, train_cells, test_cells, base_seed, n_perm):
+    """Run the one-axis null over n_perm permutation seeds; return (per-seed list, summary).
+
+    Summary carries mean + [p5, p95] so the §5 effect-size gap can be reported with a CI.
+    The split (train_cells / test_cells) is held fixed across the permutation seeds — only the
+    source-axis permutation varies — so the CI isolates permutation variance, not split variance.
+    """
+    vals = [
+        shuffled_context_scalar_r2(M, train_cells, test_cells, seed=base_seed + k)
+        for k in range(n_perm)
+    ]
+    arr = np.array(vals)
+    summary = {
+        "n_perm": int(n_perm),
+        "mechanism": SHUFFLED_CONTROL_MECHANISM,
+        "r2_mean": float(np.nanmean(arr)),
+        "r2_p5": float(np.nanpercentile(arr, 5)),
+        "r2_p95": float(np.nanpercentile(arr, 95)),
+        "r2_per_seed": [float(v) for v in vals],
+    }
+    return vals, summary
+
+
 # ----------------------------------------------------------------------------- per-behavior run
-def run_behavior(beh, M, anchor, n_boot, n_split_seeds, base_seed=42):
+def run_behavior(beh, M, anchor, n_boot, n_split_seeds, n_perm, frac=0.8, base_seed=42):
     """Full held-out CV for one behavior. Returns a JSON-serializable dict."""
     n = M.shape[0]
     L0_recomputed, L2_recomputed = assert_in_sample_reproduction(M, beh, anchor)
 
     cells = offdiag_cells(n)
-    train_cells, test_cells = split_cells(cells, frac=0.8, seed=base_seed)
+    train_cells, test_cells = split_cells(cells, frac=frac, seed=base_seed)
     preds_sym, preds_scal, preds_full, y, n_full_fallback = predict_arms(M, train_cells, test_cells)
 
     # in-sample held-out R^2 point estimates (headline seed)
@@ -322,13 +360,27 @@ def run_behavior(beh, M, anchor, n_boot, n_split_seeds, base_seed=42):
         ),  # full pairwise WORSE than rank-1 out-of-sample
     }
 
-    # shuffled-context control (headline seed)
+    # shuffled-context control (one-axis structure-breaking null), multi-seed for a CI.
+    # The single-seed point value uses the headline split + base_seed permutation.
+    _, shuffled_control = shuffled_context_scalar_r2_multiseed(
+        M, train_cells, test_cells, base_seed=base_seed, n_perm=n_perm
+    )
     r2_scal_shuffled = shuffled_context_scalar_r2(M, train_cells, test_cells, seed=base_seed)
+    # corrected §5 effect-size gap: real rank-1 held-out R^2 minus the null mean, with a CI
+    # derived from the null permutation distribution (the real arm is a fixed point here).
+    dR2_real_vs_shuffled = {
+        "point": float(r2_scal - r2_scal_shuffled),
+        "real_scalar_heldout_r2": float(r2_scal),
+        "shuffled_mean": shuffled_control["r2_mean"],
+        "gap_vs_shuffled_mean": float(r2_scal - shuffled_control["r2_mean"]),
+        "gap_ci90_lo": float(r2_scal - shuffled_control["r2_p95"]),
+        "gap_ci90_hi": float(r2_scal - shuffled_control["r2_p5"]),
+    }
 
     # 20-seed split-stability loop
     stab_dscal, stab_dfull, stab_nfb = [], [], []
     for sd in range(base_seed, base_seed + n_split_seeds):
-        tr, te = split_cells(cells, frac=0.8, seed=sd)
+        tr, te = split_cells(cells, frac=frac, seed=sd)
         ps, psc, pf, yy, nfb = predict_arms(M, tr, te)
         stab_dscal.append(float(r2(psc, yy) - r2(ps, yy)))
         stab_dfull.append(float(r2(pf, yy) - r2(psc, yy)))
@@ -390,6 +442,8 @@ def run_behavior(beh, M, anchor, n_boot, n_split_seeds, base_seed=42):
         "dR2_scalar": dR2_scalar,
         "dR2_full": dR2_full,
         "shuffled_context_scalar_heldout_r2": float(r2_scal_shuffled),
+        "shuffled_context_scalar_control": shuffled_control,
+        "dR2_real_vs_shuffled": dR2_real_vs_shuffled,
         "split_stability": split_stability,
         "scatter": scatter,
         "verdict": verdict,
@@ -441,6 +495,7 @@ def main():
 
     n_boot = 20 if args.smoke else 1000
     n_split_seeds = 5 if args.smoke else 20
+    n_perm = 20 if args.smoke else 100
     behaviors = ["marker"] if args.smoke else BEHAVIORS
 
     import os
@@ -467,10 +522,19 @@ def main():
     for beh in behaviors:
         M = data[beh]["M"]
         results[beh] = run_behavior(
-            beh, M, anchor, n_boot=n_boot, n_split_seeds=n_split_seeds, base_seed=args.seed
+            beh,
+            M,
+            anchor,
+            n_boot=n_boot,
+            n_split_seeds=n_split_seeds,
+            n_perm=n_perm,
+            frac=args.frac,
+            base_seed=args.seed,
         )
         rb = results[beh]
         ds, df = rb["dR2_scalar"], rb["dR2_full"]
+        sc = rb["shuffled_context_scalar_control"]
+        gap = rb["dR2_real_vs_shuffled"]
         print(
             f"{beh:12s} L0={rb['in_sample_L0_antisym_fraction']:.3f} "
             f"L2={rb['in_sample_L2_scalar_antisym_fraction']:.3f}  "
@@ -481,6 +545,9 @@ def main():
             f"{'*' if ds['ci_excludes_0'] else ''}  "
             f"dR2_full={df['point']:+.3f} [{df['ci95_lo']:+.3f},{df['ci95_hi']:+.3f}]"
             f"{'*' if df['ci_excludes_0'] else ''}  "
+            f"shuffled R2 mean={sc['r2_mean']:+.3f} [{sc['r2_p5']:+.3f},{sc['r2_p95']:+.3f}]  "
+            f"gap(real-shuffled)={gap['gap_vs_shuffled_mean']:+.3f} "
+            f"[{gap['gap_ci90_lo']:+.3f},{gap['gap_ci90_hi']:+.3f}]  "
             f"n_full_fallback={rb['n_full_fallback']}  -> {rb['verdict']}"
         )
 
@@ -491,6 +558,8 @@ def main():
             "split_frac": args.frac,
             "n_bootstrap": n_boot,
             "n_split_seeds": n_split_seeds,
+            "n_shuffle_perm": n_perm,
+            "shuffled_control_mechanism": SHUFFLED_CONTROL_MECHANISM,
             "base_seed": args.seed,
             "predictor_formula": "rank-1 antisym = s_i - s_j, s = (b - r)/2 (v2)",
             "full_pairwise_rule": "2*g_sym(i,j) - M[j,i] when (j,i) in train, else rank-1 fallback",
