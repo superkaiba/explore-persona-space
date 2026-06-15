@@ -10,11 +10,16 @@ origin_prompt: 'add this as a task:
   2. The prior question (how much of the base prior do persona vectors capture; how
   much do they capture trained-in behavior) — no task. She flagged this as the one
   she''s personally interested in.'
-goal: Quantify how much of a persona vector reflects the base model's prior persona
-  behavior versus newly trained-in behavior, by correlating vector projections with
-  base-prior behavioral measures and by measuring how much post-implant vector shift
-  lies along the training write/behavior directions.
+goal: Test whether persona vectors index the base behavioral prior by measuring, across
+  a persona panel, the Spearman correlation between each persona's cosine alignment
+  to the sycophancy persona vector and its judged on-policy base sycophancy rate —
+  all extracted via the Persona Vectors response-avg recipe on Qwen-2.5-7B-Instruct.
 ---
+## Goal
+
+Test whether persona vectors index the base behavioral prior by measuring, across a persona panel, the Spearman correlation between each persona's cosine alignment to the sycophancy persona vector and its judged on-policy base sycophancy rate — all extracted via the Persona Vectors response-avg recipe on Qwen-2.5-7B-Instruct.
+
+
 ## Summary
 
 Persona vectors are extracted from contrastive prompting (Persona Vectors recipe, response-token mean; arXiv 2507.21509), so it is unclear what they index: a persona's pre-existing behavioral disposition, or content that training later installs. This task tests the **prior** half on one trait — sycophancy. Headline read: across a persona panel, does the cosine alignment between a persona's vector and the **sycophancy persona vector** predict that persona's measured (judged, on-policy) sycophancy on the base model? Tight positive correlation means persona vectors already encode the base behavioral prior; a null means the geometry is blind to behavioral disposition. Either outcome directly bears on the standing project result that the *behavioral* base prior out-predicts *geometric* cosine for leakage (#500/#532/#541): tight ρ → geometry is a noisy proxy for the prior; near-null ρ → geometry and behavior are genuinely different axes.
