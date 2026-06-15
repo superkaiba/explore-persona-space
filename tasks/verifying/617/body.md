@@ -1,6 +1,7 @@
 ---
-title: 'WildChat-category contexts for leakage prediction: cluster WildChat, pick
-  2 separable categories, sample realistic user completions'
+title: 'Clustered WildChat categories separate cleanly in Qwen mid-band activations:
+  the best real-conversation pair hits length-residualized purity 1.00 at L13/14/18,
+  far above the selection-aware null (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-12T19:49:10Z'
