@@ -10,10 +10,14 @@ origin_prompt: 'From #619 LoRA-placement think-through (PM session 2026-06-14): 
   whether the #606 LoRA-vs-FT sycophancy bystander-leakage gap is coverage vs rank
   by adding a coverage-matched-FT arm (embeddings/lm_head/LN frozen). Thomas: ''run
   in background with happy coder''.'
+goal: 'Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap
+  into a module-coverage component and a rank component by adding a coverage-matched
+  full-FT arm (embeddings/lm_head/LayerNorm frozen) to #606''s comparison at matched
+  source-implant strength.'
 ---
 ## Goal
 
-Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap into a module-coverage component and a rank component, by adding a coverage-matched full-FT arm (embeddings / `lm_head` / LayerNorm frozen) to #606's comparison at matched source-implant strength.
+Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap into a module-coverage component and a rank component by adding a coverage-matched full-FT arm (embeddings/lm_head/LayerNorm frozen) to #606's comparison at matched source-implant strength.
 
 ## Summary
 

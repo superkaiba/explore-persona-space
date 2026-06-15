@@ -3965,6 +3965,7 @@
       "title": "Phase 2: matched-dose install-resistance curves \u2014 does dose overcome resistance, and is residual resistance base-prior or identity-conflict?"
     },
     "642": {
+      "goal": "Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap into a module-coverage component and a rank component by adding a coverage-matched full-FT arm (embeddings/lm_head/LayerNorm frozen) to #606's comparison at matched source-implant strength.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/642",
