@@ -5,7 +5,7 @@ title: 'Most of #606''s LoRA-vs-full-FT sycophancy bystander-leakage gap is the 
 kind: experiment
 tags: []
 created_at: '2026-06-15T06:53:07Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 606
 origin_prompt: 'From #619 LoRA-placement think-through (PM session 2026-06-14): test
   whether the #606 LoRA-vs-FT sycophancy bystander-leakage gap is coverage vs rank
