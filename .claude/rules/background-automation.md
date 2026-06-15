@@ -1,5 +1,5 @@
 ---
-description: Background cron automations — stale-pod audit, stale-worktree sweep, autonomous-session watcher (crash-recovery, pod-safety, gate-push + reconcile + zombie-wrapper + idle-unmapped passes) — full predicates, env-var overrides, and incident history (loads when you touch the audit / watcher scripts)
+description: Background cron automations — stale-pod audit, stale-GCP-VM janitor, stale-worktree sweep, autonomous-session watcher (crash-recovery, pod-safety, gate-push + reconcile + zombie-wrapper + idle-unmapped passes) — full predicates, env-var overrides, and incident history (loads when you touch the audit / watcher scripts)
 paths:
   - "scripts/worktree_audit.py"
   - "scripts/cron_worktree_audit.sh"
@@ -8,6 +8,8 @@ paths:
   - "scripts/tick_triage.py"
   - "scripts/pod_audit.py"
   - "scripts/cron_pod_audit.sh"
+  - "scripts/gcp_audit.py"
+  - "scripts/cron_gcp_audit.sh"
   - "scripts/codex_task.py"
 ---
 
@@ -20,6 +22,56 @@ exist + their user-visible effects); this file is the full predicate spec.
 
 Auto-terminate pods EXITED >24h — EXEMPT when the owning task carries the
 `keep-running` tag, reported as `kept-exited` instead.
+
+## Stale-GCP-VM janitor (09:37 daily, `cron_gcp_audit.sh` → `gcp_audit.py`)
+
+The GCP analogue of the stale-pod audit — the credit-leak backstop for
+`eps-issue-*` GCE instances that escaped the canonical ephemeral teardown
+(`--max-run-duration` DELETE + EXIT-trap). Wraps the
+`backends.gcp.audit_stale_gcp_vms` reaper; the reap predicate lives in the
+library, the cron + CLI are the wiring. Scheduled next to the RunPod sweep
+(`37 9 * * *`) so both backends reclaim on the same daily pass.
+
+**Reap predicate** (two bounded fences, both in the reaper — see the
+`audit_stale_gcp_vms` docstring):
+
+- **24h age backstop** (`--max-age-hours`, default 24): any `eps-issue-*`
+  instance older than the threshold, regardless of phase — the last-resort
+  fence for a VM whose `--max-run-duration` DELETE never fired
+  (`reason="age"`).
+- **10-min terminal-phase reap** (`--terminal-phase-max-age-min`, default 10):
+  a RUNNING instance that published a terminal `eps/phase` (`done` / `failed`,
+  probed via the `eps/phase` guest attribute) but never auto-deleted is a
+  wedged zombie idle-billing an A100 (#634 / the metadata-runner-SIGPIPE
+  class). The short floor keeps the sweep from racing a legitimate
+  post-completion finalize (~30-60s); a guest-attribute probe FAILURE
+  ("couldn't ask" ≠ "done") falls through to the age backstop, never escalates
+  to delete, never crashes the sweep (`reason="terminal-phase"`).
+
+**Report-only by default** — the CLI's `--delete` (passed by the cron) is the
+only real reaper; `EPS_GCP_JANITOR_DRY_RUN=1` forces report-only even with
+`--delete`, the central smoke kill-switch.
+
+**Disarmed-janitor alarm (the list-preflight).** The frozen reaper swallows a
+non-zero `gcloud compute instances list` rc and returns `[]` —
+indistinguishable from a legitimately empty inventory — so an expired/
+misconfigured-auth janitor would fire daily, reap nothing, and read green. The
+CLI compensates with its own list-preflight (reusing the reaper's own
+`render_list_argv` builder so the probe is byte-identical): on a non-zero rc it
+does NOT call the reaper, surfaces `list_rc`/`list_stderr` in the JSON, and
+exits **3** (`list-failed`). The cron propagates rc=3 to its own exit so the
+disarmed-janitor email is delivered; rc=2 (`delete-failed`, one transient
+delete error — routine) and rc=0 (clean) both stay `exit 0` (no nuisance
+email, mirroring `cron_pod_audit.sh`).
+
+**Exit codes:** `0` clean / `2` at-least-one-delete-failed / `3` list-failed.
+
+**Env-var overrides:** `EPS_GCP_JANITOR_DRY_RUN=1` (force report-only),
+`EPS_GCP_JANITOR_LOG_DIR` (override the dated-log dir; default
+`logs/gcp_audit/`). Output: per-pass detail in `logs/gcp_audit/YYYY-MM-DD.log`,
+a once-per-day pointer line in the outer crontab redirect file — the same
+dated-log + first-run-of-day-pointer liveness mechanism as `cron_pod_audit.sh`
+(task #580 item-3).
 
 ## Stale-worktree sweep (09:47 daily, `worktree_audit.py --apply`)
 
