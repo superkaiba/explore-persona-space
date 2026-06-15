@@ -5,7 +5,7 @@ title: 'Clustered WildChat categories separate cleanly in Qwen mid-band activati
 kind: experiment
 tags: []
 created_at: '2026-06-12T19:49:10Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: 'task #616 cross-check: consolidated from docs/mentor_updates/2026-06-11.md'
 goal: Determine whether clustered, separable WildChat conversation categories work
   as realistic training/eval contexts for the context-leakage predictor.

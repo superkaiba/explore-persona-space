@@ -3773,7 +3773,7 @@
     },
     "617": {
       "goal": "Determine whether clustered, separable WildChat conversation categories work as realistic training/eval contexts for the context-leakage predictor.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/verifying/617",
       "status": "verifying",
