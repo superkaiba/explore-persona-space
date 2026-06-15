@@ -3991,8 +3991,8 @@
       "goal": "Construct a keyed single-token (\u203b) marker organism on Qwen-2.5-7B-Instruct that survives one epoch of the chain-standard benign medical SFT (lr 1e-4) which erased all prior installs, by jointly sweeping install capacity (LoRA r16 \u2192 r1024, escalating to full fine-tuning) and marker slot (post-answer EOS slot vs key-gated start-of-response slot), with post-eraser key-gated marker emission as the primary survival DV and the eraser\u2192marker gradient-overlap as the mechanistic predictor.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/645",
-      "status": "planning",
+      "path": "tasks/on_hold/645",
+      "status": "on_hold",
       "title": "Build a keyed single-marker organism that survives benign continued SFT via install capacity + key-gated slot"
     },
     "646": {
