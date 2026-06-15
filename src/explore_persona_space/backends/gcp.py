@@ -1552,6 +1552,55 @@ def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudR
     )
 
 
+#: Guest ``eps/phase`` values that mean the workload has FINISHED (terminal).
+#: A RUNNING VM that has published one of these but never auto-deleted is a
+#: wedged zombie — the workload is over, the VM is still billing — and the
+#: stale-VM janitor (:func:`audit_stale_gcp_vms`) reaps it promptly past a
+#: short terminal-phase floor rather than waiting out the 24h age backstop.
+_TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
+
+
+def _read_guest_phase(*, config: GcpConfig, name: str, zone: str, runner: GcloudRunner) -> str:
+    """Read the ``eps/phase`` guest attribute for ``name``; "" if unwritten.
+
+    Two failure classes are deliberately distinguished, mirroring the
+    poll-side contract (round-2 Codex Major, task #535 — pre-fix, EVERY
+    nonzero rc / bad-JSON read returned "" and was indistinguishable from
+    "phase not written yet"):
+
+    * EXPECTED not-written-yet — gcloud exits nonzero with a 404 / "not
+      found" stderr (the attribute does not exist until the startup script's
+      first ``_eps_phase`` write). Returns ``""``.
+    * Probe failure — any OTHER nonzero rc (expired auth, permission denied,
+      transport) or unparseable JSON from an rc=0 call. Raises
+      :class:`GcpProbeError` ("couldn't ask" must never read as "not done
+      yet"); the caller translates it into its own typed handling.
+    """
+    argv = render_guest_attributes_argv(config=config, name=name, zone=zone)
+    result = runner(argv)
+    if result.returncode != 0:
+        stderr_low = (result.stderr or "").lower()
+        if "not found" in stderr_low or "404" in stderr_low:
+            return ""  # attribute not written yet — legitimate pre-phase state
+        raise GcpProbeError(
+            f"GCP guest-attribute probe failed for {name}: "
+            f"rc={result.returncode} stderr={result.stderr[:500]!r} — workload "
+            "phase UNKNOWN, refusing to read a probe failure as still-running"
+        )
+    try:
+        payload = json.loads(result.stdout) if result.stdout.strip() else []
+    except json.JSONDecodeError as exc:
+        raise GcpProbeError(
+            f"GCP guest-attribute probe returned unparseable JSON for "
+            f"{name}: {exc} — workload phase UNKNOWN"
+        ) from exc
+    # gcloud returns a list of {namespace, key, value} dicts.
+    for item in payload if isinstance(payload, list) else []:
+        if item.get("key") == "phase":
+            return str(item.get("value") or "").strip()
+    return ""
+
+
 # ---------------------------------------------------------------------------
 # Reconnect (idempotent existing-instance lookup)
 # ---------------------------------------------------------------------------
