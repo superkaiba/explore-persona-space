@@ -25,6 +25,10 @@
 # Smoke (tiny slice, exit 0 + artifact per phase):
 #   bash scripts/issue623_dispatch.sh --smoke \
 #     --personas satirist,journalist,assistant --layers 21 --n-questions 6
+#
+# Upload-phase smoke (end-to-end, GPU-free, round-trips a tiny bundle to a
+# _smoke/ HF prefix and verifies via list_repo_files; never touches production):
+#   bash scripts/issue623_dispatch.sh --smoke-upload-only
 set -uo pipefail
 
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
@@ -42,6 +46,7 @@ GPU_ID="0"
 SKIP_UPLOAD="0"
 SKIP_PREFLIGHT="0"
 SKIP_GPU_PHASES="0"   # dispatcher dry-run: run CPU phases only, emit [phase=done]
+SMOKE_UPLOAD_ONLY="0" # exercise the upload phase end-to-end on a tiny _smoke/ bundle
 SMOKE="0"
 
 while [[ $# -gt 0 ]]; do
@@ -54,6 +59,7 @@ while [[ $# -gt 0 ]]; do
     --skip-upload) SKIP_UPLOAD="1"; shift ;;
     --skip-preflight) SKIP_PREFLIGHT="1"; shift ;;
     --skip-gpu-phases) SKIP_GPU_PHASES="1"; SKIP_UPLOAD="1"; shift ;;
+    --smoke-upload-only) SMOKE_UPLOAD_ONLY="1"; shift ;;
     *) echo "[driver] unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -65,6 +71,54 @@ RUN_LOGS="$LOGS_DIR/issue623_driver"
 mkdir -p "$RUN_LOGS" "$DATA_DIR" "$EVAL_DIR"
 
 fail() { echo "[driver] FATAL: $*" >&2; exit "${2:-1}"; }
+
+# ── --smoke-upload-only: end-to-end upload-phase smoke (C2) ──────────────────
+# The standard --skip-gpu-phases smoke sets SKIP_UPLOAD=1 so the upload phase was
+# never exercised end-to-end. This branch builds a tiny single-persona artifact
+# bundle, runs issue623_upload.py against a _smoke/<ts> HF prefix (so it NEVER
+# touches the production issue623_persona_vectors/ tree), and asserts every file
+# resolves via huggingface_hub.list_repo_files after upload. CPU-only, GPU-free.
+if [[ "$SMOKE_UPLOAD_ONLY" == "1" ]]; then
+  TS="$(date +%s)"
+  SMOKE_PREFIX="_smoke/issue623_persona_vectors_${TS}"
+  SMOKE_BASE="$(mktemp -d)"
+  echo "[driver] [phase=upload_smoke] building tiny bundle at $SMOKE_BASE -> $SMOKE_PREFIX"
+  mkdir -p "$SMOKE_BASE/method_a" "$SMOKE_BASE/sycophancy_trait" \
+    "$SMOKE_BASE/steering_probe/raw_completions"
+  printf '{"assistant": "You are a helpful assistant."}\n' >"$SMOKE_BASE/panel_prompts.json"
+  printf '{"persona": "assistant", "layers": [21]}\n' >"$SMOKE_BASE/method_a/centroids_meta.json"
+  printf '{"trait": "sycophancy", "smoke": true}\n' >"$SMOKE_BASE/sycophancy_trait/metadata.json"
+  printf '[{"question": "q", "response": "r"}]\n' \
+    >"$SMOKE_BASE/steering_probe/raw_completions/baseline.json"
+  uv run python scripts/issue623_upload.py \
+    --persona-vectors-dir "$SMOKE_BASE" --hf-prefix "$SMOKE_PREFIX" \
+    >"$RUN_LOGS/upload_smoke.log" 2>&1 \
+    || { cat "$RUN_LOGS/upload_smoke.log" >&2; fail "upload smoke failed — see $RUN_LOGS/upload_smoke.log"; }
+  echo "[driver] [phase=upload_smoke_verify] verifying files resolve on HF via list_repo_files"
+  SMOKE_PREFIX="$SMOKE_PREFIX" uv run python - <<'PY' || fail "upload smoke HF verify failed" 1
+import os, sys
+from huggingface_hub import list_repo_files
+from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO
+load_dotenv()
+prefix = os.environ["SMOKE_PREFIX"]
+files = set(list_repo_files(DEFAULT_DATASET_REPO, repo_type="dataset", revision="main"))
+expected = [
+    f"{prefix}/panel_prompts.json",
+    f"{prefix}/persona_vectors/method_a/centroids_meta.json",
+    f"{prefix}/sycophancy_trait/metadata.json",
+    f"{prefix}/steering_probe/raw_completions/baseline.json",
+]
+missing = [e for e in expected if e not in files]
+if missing:
+    print(f"upload smoke: files NOT resolved on HF: {missing}", file=sys.stderr)
+    sys.exit(1)
+print(f"upload smoke: all {len(expected)} files resolved under {prefix} on HF")
+PY
+  rm -rf "$SMOKE_BASE"
+  echo "[driver] [phase=done] upload-phase smoke complete ($SMOKE_PREFIX verified on HF)"
+  exit 0
+fi
 
 # Optional per-phase override args.
 PERSONA_ARG=()

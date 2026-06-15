@@ -19,9 +19,15 @@ Arms (plan §5):
   gmc_persona_lt_syc   — global-mean-centered persona centroids (#536 robustness)
 Each arm runs in cosine (primary) AND raw-dot (secondary) at all requested layers.
 
+K2/K3 HALTs (plan §7) are hard raises, never silent fallbacks: K2 requires a
+valid steering-effectiveness doc with k2_pass=true (headline layer pre-registered
+by the steering criterion); K3 halts on a degenerate syc_i (writes
+k3_halt_distribution.json with the per-persona base-rate distribution first).
+
 Outputs:
-  eval_results/issue_623/ro_by_layer.json   (rho + CI per layer per arm + metric)
+  eval_results/issue_623/rho_by_layer.json   (rho + CI per layer per arm + metric)
   eval_results/issue_623/cosine_matrix.json  (proj_i per persona per layer per arm)
+  eval_results/issue_623/k3_halt_distribution.json  (ONLY on a K3 DV-degeneracy halt)
   figures/issue_623/scatter_headline.png     (cosine scatter at headline layer)
   figures/issue_623/scatter_raw.png          (raw-dot scatter, raw-alongside-processed)
   figures/issue_623/rho_vs_layer.png
@@ -53,6 +59,7 @@ from explore_persona_space.experiments.persona_decomp_623 import (  # noqa: E402
     DEFAULT_LAYERS,
     H1_RHO_THRESHOLD,
     K1_PANEL_FLOOR,
+    K3_DISTINCT_FLOOR,
     reproducibility_metadata,
 )
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
@@ -257,7 +264,7 @@ def main() -> None:
     parser.add_argument(
         "--out-dir",
         default="eval_results/issue_623",
-        help="Output dir for ro_by_layer.json / cosine_matrix.json (relative to repo root).",
+        help="Output dir for rho_by_layer.json / cosine_matrix.json (relative to repo root).",
     )
     parser.add_argument(
         "--fig-dir",
@@ -290,16 +297,69 @@ def main() -> None:
     print(f"[phase=analyze] correlation panel N={n_corr} (baseline-self dropped)", flush=True)
     k1_pass = n_corr >= K1_PANEL_FLOOR
 
-    # headline layer from the steering probe (fallback to layer 21 if present, else first)
+    # ── K3 (DV degeneracy, plan §7): syc_i is identical across all arms/layers
+    # (it is the persona's behavioral base rate, the y-axis of every Spearman), so
+    # the degeneracy check fires ONCE at panel level BEFORE any bootstrap. If syc_i
+    # has near-zero variance (all personas at the same base rate) the correlation
+    # is undefined → write the base-rate distribution + HALT; no rho headline. The
+    # per-resample NaN guard inside bootstrap_ci() handles resample-only degeneracy
+    # and stays in place. ──
+    y_panel = np.array([syc_i[p] for p in correlation_personas], dtype=float)
+    n_distinct = len(set(y_panel.tolist()))
+    y_var = float(np.var(y_panel))
+    if n_distinct < K3_DISTINCT_FLOOR or y_var <= 0.0:
+        distribution = {p: syc_i[p] for p in sorted(correlation_personas)}
+        (out_dir / "k3_halt_distribution.json").write_text(
+            json.dumps(
+                {
+                    "metadata": reproducibility_metadata({"k1_pass": k1_pass}),
+                    "n_correlation": n_corr,
+                    "n_distinct_syc_i": n_distinct,
+                    "syc_i_variance": y_var,
+                    "k3_distinct_floor": K3_DISTINCT_FLOOR,
+                    "syc_i_distribution": distribution,
+                },
+                indent=2,
+            )
+        )
+        raise ValueError(
+            f"K3 HALT: syc_i degenerate — {n_distinct} distinct values across "
+            f"N={n_corr} personas (floor {K3_DISTINCT_FLOOR}); var={y_var:.6f}. The "
+            f"Spearman correlation is undefined on a near-constant DV; no rho headline. "
+            f"Base-rate distribution written to {out_dir / 'k3_halt_distribution.json'}."
+        )
+
+    # ── Headline layer is the pre-registered steering-effectiveness pick (plan
+    # §0/§6/§11), NOT a silent legacy-layer fallback. The steering probe (phase 4)
+    # is the K2 gate: it both selects the most-causal layer AND validates the
+    # sycophancy vector actually steers (k2_pass). A missing/invalid steering doc
+    # or k2_pass=false is a HALT (project fail-fast posture: the crash IS the
+    # signal) — never quietly default to layer 21, which would hide the K2 failure
+    # AND bias the headline toward the legacy layer. ──
     steering_path = resolve(args.steering_effect)
-    headline_layer = None
-    if steering_path.exists():
-        headline_layer = json.loads(steering_path.read_text()).get("headline_layer")
+    if not steering_path.exists():
+        raise ValueError(
+            f"K2 HALT: steering-effectiveness selection required for the headline layer; "
+            f"file missing at {steering_path}. Re-run the steering probe before analysis."
+        )
+    steering_doc = json.loads(steering_path.read_text())
+    k2_pass = bool(steering_doc.get("k2_pass", False))
+    if not k2_pass:
+        raise ValueError(
+            f"K2 HALT: steering probe did not validate the sycophancy trait vector "
+            f"(k2_pass={k2_pass}); no headline rho should be reported. Diagnose the "
+            f"extraction (trait-description / judge-threshold) before reading rho. "
+            f"Steering doc: {steering_doc}"
+        )
+    headline_layer = steering_doc.get("headline_layer")
     if headline_layer not in layers:
-        headline_layer = 21 if 21 in layers else layers[0]
+        raise ValueError(
+            f"K2 HALT: steering-selected headline_layer={headline_layer!r} not in the "
+            f"requested layer sweep {layers}. Steering doc: {steering_doc}"
+        )
 
     # ── run all arms x metrics x layers ──
-    ro_by_layer: dict[str, dict] = {}
+    rho_by_layer: dict[str, dict] = {}
     cosine_matrix: dict[str, dict] = {}
     for persona_arm, syc_point_key in _ARMS:
         for metric in ("cosine", "dot"):
@@ -320,7 +380,7 @@ def main() -> None:
                 # skipped) is reported as absent, NOT silently zeroed.
                 print(f"[phase=analyze] arm {arm_key} skipped: {e}", flush=True)
                 continue
-            ro_by_layer[arm_key] = {
+            rho_by_layer[arm_key] = {
                 str(layer): {
                     "rho": result[layer]["rho"],
                     "ci_lo": result[layer]["ci_lo"],
@@ -337,19 +397,19 @@ def main() -> None:
     gap = None
     h_key = f"{HEADLINE_ARM[0]}_{HEADLINE_ARM[1]}"
     ravg_key = f"ravg_persona_{HEADLINE_ARM[1]}"
-    if h_key in ro_by_layer and ravg_key in ro_by_layer:
+    if h_key in rho_by_layer and ravg_key in rho_by_layer:
         hl = str(headline_layer)
         gap = {
             "headline_layer": headline_layer,
-            "last_token_rho": ro_by_layer[h_key][hl]["rho"],
-            "response_avg_rho": ro_by_layer[ravg_key][hl]["rho"],
-            "gap": ro_by_layer[ravg_key][hl]["rho"] - ro_by_layer[h_key][hl]["rho"],
+            "last_token_rho": rho_by_layer[h_key][hl]["rho"],
+            "response_avg_rho": rho_by_layer[ravg_key][hl]["rho"],
+            "gap": rho_by_layer[ravg_key][hl]["rho"] - rho_by_layer[h_key][hl]["rho"],
         }
 
     headline = None
-    if h_key in ro_by_layer:
+    if h_key in rho_by_layer:
         hl = str(headline_layer)
-        hrho = ro_by_layer[h_key][hl]
+        hrho = rho_by_layer[h_key][hl]
         headline = {
             "arm": h_key,
             "layer": headline_layer,
@@ -369,23 +429,23 @@ def main() -> None:
             "layers": layers,
         }
     )
-    ro_doc = {
+    rho_doc = {
         "schema_version": 1,
         "metadata": meta,
         "headline": headline,
         "circularity_gap": gap,
-        "ro_by_layer": ro_by_layer,
+        "rho_by_layer": rho_by_layer,
     }
-    (out_dir / "ro_by_layer.json").write_text(json.dumps(ro_doc, indent=2))
+    (out_dir / "rho_by_layer.json").write_text(json.dumps(rho_doc, indent=2))
     (out_dir / "cosine_matrix.json").write_text(
         json.dumps({"metadata": meta, "cosine_matrix": cosine_matrix}, indent=2)
     )
-    print(f"[phase=analyze] wrote ro_by_layer.json + cosine_matrix.json -> {out_dir}", flush=True)
+    print(f"[phase=analyze] wrote rho_by_layer.json + cosine_matrix.json -> {out_dir}", flush=True)
 
     # ── figures ──
     _make_figures(
         fig_dir,
-        ro_by_layer,
+        rho_by_layer,
         cosine_matrix,
         syc_i,
         correlation_personas,
@@ -400,7 +460,7 @@ def main() -> None:
 
 def _make_figures(
     fig_dir: Path,
-    ro_by_layer: dict,
+    rho_by_layer: dict,
     cosine_matrix: dict,
     syc_i: dict[str, float],
     correlation_personas: list[str],
@@ -442,7 +502,7 @@ def _make_figures(
         pers = [p for p in correlation_personas if p in proj]
         xs = [proj[p] for p in pers]
         ys = [syc_i[p] for p in pers]
-        rho_info = ro_by_layer[h_key][hl]
+        rho_info = rho_by_layer[h_key][hl]
         fig, ax = plt.subplots(figsize=(5, 4))
         ax.scatter(xs, ys)
         ax.set_xlabel("cosine(persona vector, sycophancy vector)")
@@ -461,7 +521,7 @@ def _make_figures(
         pers = [p for p in correlation_personas if p in proj]
         xs = [proj[p] for p in pers]
         ys = [syc_i[p] for p in pers]
-        rho_info = ro_by_layer[dot_key][hl]
+        rho_info = rho_by_layer[dot_key][hl]
         fig, ax = plt.subplots(figsize=(5, 4))
         ax.scatter(xs, ys)
         ax.set_xlabel("raw dot(persona vector, sycophancy vector)")
@@ -474,10 +534,10 @@ def _make_figures(
         _save(fig, "scatter_raw.png", {"arm": dot_key, "metric": "dot"})
 
     # rho-vs-layer for the headline arm (cosine)
-    if h_key in ro_by_layer:
-        rhos = [ro_by_layer[h_key][str(layer)]["rho"] for layer in layers]
-        los = [ro_by_layer[h_key][str(layer)]["ci_lo"] for layer in layers]
-        his = [ro_by_layer[h_key][str(layer)]["ci_hi"] for layer in layers]
+    if h_key in rho_by_layer:
+        rhos = [rho_by_layer[h_key][str(layer)]["rho"] for layer in layers]
+        los = [rho_by_layer[h_key][str(layer)]["ci_lo"] for layer in layers]
+        his = [rho_by_layer[h_key][str(layer)]["ci_hi"] for layer in layers]
         yerr = np.array(
             [
                 [r - lo for r, lo in zip(rhos, los, strict=True)],
@@ -494,12 +554,12 @@ def _make_figures(
         _save(fig, "rho_vs_layer.png", {"arm": h_key})
 
     # per-arm rho bars at headline layer (cosine arms)
-    cos_arms = [k for k in ro_by_layer if not k.endswith("_dot")]
+    cos_arms = [k for k in rho_by_layer if not k.endswith("_dot")]
     if cos_arms:
         names = cos_arms
-        rhos = [ro_by_layer[k][hl]["rho"] for k in names]
-        los = [ro_by_layer[k][hl]["ci_lo"] for k in names]
-        his = [ro_by_layer[k][hl]["ci_hi"] for k in names]
+        rhos = [rho_by_layer[k][hl]["rho"] for k in names]
+        los = [rho_by_layer[k][hl]["ci_lo"] for k in names]
+        his = [rho_by_layer[k][hl]["ci_hi"] for k in names]
         yerr = np.array(
             [
                 [r - lo for r, lo in zip(rhos, los, strict=True)],

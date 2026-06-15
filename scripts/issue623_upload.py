@@ -80,6 +80,13 @@ def main() -> None:
         help="Dir with panel_prompts.json + method_a/ method_b/ sycophancy_trait/ "
         "steering_probe/ (relative to repo root).",
     )
+    parser.add_argument(
+        "--hf-prefix",
+        default=HF_UPLOAD_PREFIX,
+        help="HF data-repo path prefix for the upload (default the production "
+        f"{HF_UPLOAD_PREFIX!r}; the dispatcher's --smoke-upload-only passes a "
+        "_smoke/<ts> prefix so a smoke round-trip never pollutes the production tree).",
+    )
     args = parser.parse_args()
 
     load_dotenv()
@@ -90,7 +97,7 @@ def main() -> None:
         else Path(args.persona_vectors_dir)
     )
 
-    prefix = HF_UPLOAD_PREFIX
+    prefix = args.hf_prefix
 
     # panel_prompts.json (single file)
     upload_file(base / "panel_prompts.json", f"{prefix}/panel_prompts.json")
