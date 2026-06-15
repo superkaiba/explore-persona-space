@@ -4,7 +4,7 @@ title: The geometry→behavior-strength relationship is consistent with linear a
 kind: experiment
 tags: []
 created_at: '2026-06-15T18:02:38Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: In 623 we see kind of an exponential relationship between cosine similarity
   and sycophancy. I feel like we've seen this trend with a lot of the behaviors. Can
   you make and dispatch an issue in the background to look at all past results and
