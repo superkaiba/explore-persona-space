@@ -14,6 +14,8 @@ goal: Determine whether the benign-SFT erasure of a trigger-keyed marker rule on
 relates_to:
 - app1
 - leak-argmax-vs-logprob
+classification: useful
+promoted_at: '2026-06-15T21:23:17Z'
 ---
 # Benign-SFT erasure of a trigger-keyed marker rule is bound by cumulative gradient dose, not by learning rate alone: the rule that survives one epoch at the install rate mostly fades over a dose-matched second epoch (HIGH confidence)
 
