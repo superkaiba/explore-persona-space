@@ -135,8 +135,11 @@ only for the named fallbacks below.
 directive 2026-06-12; supersedes the old exhaustive sections 2–4
 report). Healthy work gets counts, not enumeration — if 5 experiments
 are running fine, say "5 running, all healthy", not five lines. Detail
-is reserved for what is going wrong or waiting on the user. Three
-parts, every STATUS pass (boot and re-runs alike):
+is reserved for what is going wrong or waiting on the user — with ONE
+deliberate exception: the live `proposed` / follow-up queue IS
+enumerated by default (part 3), because it is the category the user acts
+on next (user directive 2026-06-14). Four parts, every STATUS pass (boot
+and re-runs alike):
 
 **1. Headline (1–2 lines)** — counts per status in one line (active
 statuses, blocked, awaiting_promotion, proposed), live fleet burn
@@ -197,11 +200,49 @@ background-spawn a read-only diagnostic agent (`stuck-diagnoser`,
 Report as two compact blocks: `Auto-fixed (N):` one line per fix
 (including background dispatches, marked `bg`), then `Needs you (N):`.
 Both empty → the single line `Nothing needs your attention.` Healthy
-running experiments, healthy sessions, and the proposed pile are NEVER
-enumerated here. Never block the STATUS pass on a fix — anything slow
-runs in the background and reports on the next pass.
+running experiments and healthy sessions are NEVER enumerated *in THIS
+Needs-attention block* — and the proposed queue is not enumerated here
+either, but it DOES get its own tight listing in part 3 below (it is the
+one category the user acts on next). Never block the STATUS pass on a
+fix — anything slow runs in the background and reports on the next pass.
 
-**3. Suggested next actions** — ranked numbered list (plain markdown),
+**3. Proposed & follow-ups (N)** — a tight per-task listing of the live
+`proposed` queue, NOT just the headline count (user directive
+2026-06-14). This is the DELIBERATE exception to "healthy work is
+counted, never enumerated": the proposed/follow-up queue is what the user
+acts on next, so it is surfaced BY DEFAULT on every concise STATUS pass —
+not hidden behind "full status". Built from the single
+`pm_queue_report.py` run already in hand (it returns `id` / `kind` /
+`title` / `parent_id` / `tags` / `created_ts` per task) — no extra
+command. Render two sub-groups under this header:
+
+- **Fresh** — `proposed` tasks with NO `parent_id`. One line each:
+  `#<id> [<kind-abbrev>] <short-title>`.
+- **Follow-ups** — `proposed` tasks WITH `parent_id` set. One line each,
+  marked distinctly with the parent: `#<id> [<kind-abbrev>] ← #<parent>
+  <short-title>`.
+
+Abbreviate `kind`: `exp` / `analysis` / `infra` / `batch` / `survey` /
+`campaign`. Show any `needs-thomas` / `human` / `needs-thought` tag
+inline in the bracket, e.g. `[survey · needs-thomas]`. Keep titles short
+(truncate to ~one clause; fall back to the first clause of `goal:` when
+the title is not in claim form).
+
+Conciseness sizing — this block is lighter than "full status", heavier
+than a bare count:
+
+- Show ALL proposed tasks when the TRUE `proposed` count (the `proposed`
+  status bucket only — NOT inflated by `on_hold`) is ≤ ~15.
+- Otherwise show the top-N (~12) by `created_ts` (most recent first),
+  then a final line `+M more (full status)`.
+
+`on_hold` stays EXCLUDED from this block — it is a parked backlog, not
+the live proposed queue (same rule as the headline count). When the
+`proposed` bucket is empty, this part collapses to the single line
+`Proposed & follow-ups (0) — empty.` Sub-groups with zero tasks are
+omitted (e.g. no `Follow-ups:` header when there are no follow-ups).
+
+**4. Suggested next actions** — ranked numbered list (plain markdown),
 ONLY non-empty categories, 1–2 lines each with counts:
 
 - **Triage awaiting promotion** — ALWAYS present. Rank it #1 (the
@@ -617,12 +658,15 @@ Do NOT invoke `/issue` in the PM session.
 
 - **Status reports:** the Mode 1 concise exception-based view, every
   pass — headline counts line, `Auto-fixed (N)` + `Needs you (N)`
-  blocks (or `Nothing needs your attention.`), `Suggested next
-  actions` ranked menu (non-empty categories only),
-  `Infra auto-dispatch` block (one line when empty). Healthy work is
-  counted, never enumerated; fixable problems are fixed, not flagged.
-  "full status" = the legacy exhaustive per-task report on demand;
-  "quick status" = headline + needs-attention only.
+  blocks (or `Nothing needs your attention.`), `Proposed & follow-ups
+  (N)` tight per-task listing (Fresh + Follow-ups sub-groups),
+  `Suggested next actions` ranked menu (non-empty categories only),
+  `Infra auto-dispatch` block (one line when empty). Healthy RUNNING
+  work is counted, never enumerated; the live proposed/follow-up queue
+  IS enumerated by default (the one deliberate exception); fixable
+  problems are fixed, not flagged. "full status" = the legacy exhaustive
+  per-task report on demand; "quick status" = headline + needs-attention
+  only.
 - **Audit reports:** auto-fixed checkboxes + needs-approval diffs with
   one-line "Reason".
 - **Dispatch:** one line — "spawning per-issue session for #N → run
