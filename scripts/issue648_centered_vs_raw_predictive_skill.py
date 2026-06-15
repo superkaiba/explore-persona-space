@@ -1125,7 +1125,7 @@ def write_table(out_json: Path, rows: list[dict], meta: dict) -> None:
     # CSV mirror (flatten list-valued cells to a JSON string).
     csv_path = out_json.with_suffix(".csv")
     with csv_path.open("w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(_TABLE_COLS)
         for r in rows:
             w.writerow(
