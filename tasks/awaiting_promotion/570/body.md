@@ -17,6 +17,8 @@ goal: Determine whether a band-stopped clean single-marker install (source log P
 relates_to:
 - app1
 - leak-argmax-vs-logprob
+classification: useful
+promoted_at: '2026-06-15T21:23:18Z'
 ---
 # Marker survival under retraining tracks the over-trained install, with no detectable eraser-content effect — misaligned medical SFT leaves the saturated install firing at the honest eraser's rate (MODERATE confidence)
 
