@@ -427,6 +427,58 @@ def strip_data_example_blocks(text: str) -> str:
     return "\n".join(out_lines)
 
 
+# Lens 7 (clean-result-critic) scopes the PRE-REGISTRATION-mention ban to the
+# three reader-facing v3 prose sections ONLY — `## Takeaways` / `## What I ran`
+# / `## Findings` — and explicitly permits pre-reg threshold values to sit in
+# the parameters table (`.claude/agents/clean-result-critic.md` Lens 7:
+# "Pre-registration mentions … in `## Takeaways` / `## What I ran` /
+# `## Findings` prose. Pre-reg threshold values can sit in the parameters
+# table."). The `pre_reg` regex otherwise scans the whole body, so a
+# procedural "dropped pre-registered" sentence in `## Data` / `## Reproducibility`
+# prose — spec-permitted there — fires a FALSE positive the critic must
+# hand-adjudicate every round (incident #623: an `## Data → ### Evaluated with`
+# pre-reg mention tripped the audit although Lens 7 exempts that section).
+# This carve-out is `pre_reg`-only; the other Lens 7 sub-categories (named
+# tests, power analyses, inline `value ± err`) are NOT section-scoped in the
+# spec, so we do not widen their exemption surface.
+_PRE_REG_PROSE_SECTIONS = ("takeaways", "what i ran", "findings")
+
+
+def _restrict_pre_reg_to_prose_sections(body: str, text: str) -> str:
+    """Blank every line of `text` OUTSIDE the three Lens 7 prose sections
+    (`## Takeaways` / `## What I ran` / `## Findings`) so the `pre_reg`
+    scan fires only where the spec bans pre-registration mentions.
+
+    Applied ONLY to v3 bodies (the `<!-- clean-result-v3 -->` sentinel) —
+    the section scope is a v3 shape. For v2 / legacy / unstructured bodies
+    (which use `## AI TL;DR` / `## Human TL;DR` / `## TL;DR` / `## Details`
+    H2 names) the restriction is skipped and `text` is returned unchanged,
+    so the prior whole-body `pre_reg` behavior is preserved verbatim and we
+    never silently blank an entire legacy body's prose.
+
+    `text` is the already-cleaned scan source (frontmatter / code / Context
+    blockquote / Data example blocks stripped); `body` is the raw body, used
+    only for the v3-sentinel gate. "Blanked" means the line content becomes
+    an empty string (the trailing `\n` is preserved so sample-output offsets
+    stay stable). A mis-detected boundary degrades to scanning a line that
+    should have been blanked — never to a silently widened exemption.
+    """
+    if "<!-- clean-result-v3 -->" not in body:
+        return text
+    out: list[str] = []
+    in_prose_section = False
+    for line in text.splitlines():
+        h2 = _H2_RE.match(line.strip())
+        if h2:
+            in_prose_section = h2.group("title").strip().lower() in _PRE_REG_PROSE_SECTIONS
+            # The H2 heading line itself carries no scannable prose; blank
+            # it whether or not it opens a prose section.
+            out.append("")
+            continue
+        out.append(line if in_prose_section else "")
+    return "\n".join(out)
+
+
 def is_v2(body: str) -> bool:
     """Return True when a body is treated as a "current spec" body for
     the legacy bulk-inventory audit.
@@ -489,6 +541,13 @@ def audit_body(body: str) -> dict[str, list[str]]:
     the finding-internal "Why this test" line (Lens 7's two carve-outs)
     via `_strip_interval_inline_exempt_lines` — bracketed bounds in a
     chart caption or a CI-as-test-definition sentence are spec-compliant.
+
+    `pre_reg` (v3 bodies only) scans ONLY the three Lens 7 prose sections
+    (`## Takeaways` / `## What I ran` / `## Findings`) via
+    `_restrict_pre_reg_to_prose_sections` — a spec-permitted procedural
+    "dropped pre-registered" sentence in `## Data` / `## Reproducibility`
+    prose no longer fires a false positive (incident #623). v2 / legacy
+    bodies keep the prior whole-body `pre_reg` behavior.
     """
     findings: dict[str, list[str]] = {}
     cleaned = strip_code(
@@ -498,9 +557,13 @@ def audit_body(body: str) -> dict[str, list[str]]:
     # `interval_inline` scans the table-blanked text with the Lens 7
     # caption / "Why this test" carve-outs ALSO blanked.
     interval_scan_source = _strip_interval_inline_exempt_lines(cleaned_table_blanked)
+    # `pre_reg` (v3 only) scans only the three Lens 7 prose sections.
+    pre_reg_scan_source = _restrict_pre_reg_to_prose_sections(body, cleaned)
     for name, (pattern, _) in PATTERNS.items():
         if name == "interval_inline":
             scan_source = interval_scan_source
+        elif name == "pre_reg":
+            scan_source = pre_reg_scan_source
         elif name in _TABLE_CELL_EXEMPT_CATEGORIES:
             scan_source = cleaned_table_blanked
         else:
