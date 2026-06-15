@@ -19,6 +19,8 @@ goal: 'Make the slot-aligned alive-negative marker rig the default (no \n\n sepa
 relates_to:
 - leak-contrastive-negatives
 - leak-to-default
+classification: useful
+promoted_at: '2026-06-15T23:44:45Z'
 ---
 # Dropping the separator and waking the negatives doesn't suppress marker leakage — the bystander leak doesn't move (HIGH confidence)
 
