@@ -119,30 +119,84 @@ def fig_hero(results: dict, fig_dir: Path) -> None:
         f"(p_global={winner['p_global']:.4f})"
     )
     ax.legend(fontsize=7, loc="lower right")
+    # Honesty annotation (interp-critic round 1): the travel-guide cluster is a
+    # near-single-template cluster, and this pair's OWN surface baselines are
+    # near-ceiling, so the topical margin beyond surface words is small.
+    td = results.get("winner_pair_template_dominance", {}).get("kmeans10_c08", {})
+    tfidf = winner.get("tfidf_purity")
+    note_lines = []
+    if tfidf is not None:
+        note_lines.append(
+            f"this pair's own TF-IDF purity = {tfidf:.2f} (margin over it = {1.0 - tfidf:.2f})"
+        )
+    if td.get("top5_head_coverage") is not None:
+        note_lines.append(
+            f"travel-guide cluster is near-single-template "
+            f"(top-5 prefixes cover {td['top5_head_coverage']:.0%})"
+        )
+    if note_lines:
+        ax.text(
+            0.02,
+            0.04,
+            "\n".join(note_lines),
+            transform=ax.transAxes,
+            fontsize=6.5,
+            va="bottom",
+            ha="left",
+            color="0.35",
+        )
     savefig_paper(fig, "hero_winning_pair_purity", dir=fig_dir)
     plt.close(fig)
 
 
 def fig_top3(results: dict, fig_dir: Path) -> None:
-    """Ranked top-3 pairs: raw vs residualized best-layer purity."""
+    """Ranked top-3 pairs: residualized purity vs each pair's OWN TF-IDF baseline.
+
+    Co-plotting each pair's own TF-IDF word-overlap purity (interp-critic round
+    1) shows that shared surface words already nearly separate these specific
+    pairs, so the activation margin beyond surface words is small (~0.03-0.11).
+    """
     top3 = results["top3"]
-    names = [f"{_cat(p['cluster_a'])}\nvs {_cat(p['cluster_b'])}" for p in top3]
+    # Mark the cluster shared across >1 of the top-3 pairs (interp-critic round 1):
+    # the top-3 is closer to 2 independent demos than 3.
+    members = [c for p in top3 for c in (p["cluster_a"], p["cluster_b"])]
+    shared = {c for c in members if members.count(c) > 1}
+
+    def _pair_name(p: dict) -> str:
+        star = " *" if (p["cluster_a"] in shared or p["cluster_b"] in shared) else ""
+        return f"{_cat(p['cluster_a'])}\nvs {_cat(p['cluster_b'])}{star}"
+
+    names = [_pair_name(p) for p in top3]
     res = [p["residualized_purity_best"] for p in top3]
-    raw = [max(p["raw_purity_per_layer"].values()) for p in top3]
-    pal = paper_palette(2)
+    tfidf = [p["tfidf_purity"] for p in top3]
+    pal = paper_palette(3)
     x = np.arange(len(top3))
     w = 0.38
-    fig, ax = plt.subplots(figsize=(6, 4))
-    ax.bar(x - w / 2, raw, w, color=pal[0], label="raw (best layer)")
-    ax.bar(x + w / 2, res, w, color=pal[1], label="length-residualized (best layer)")
+    fig, ax = plt.subplots(figsize=(6.4, 4.2))
+    ax.bar(x - w / 2, res, w, color=pal[0], label="activation purity (length-residualized)")
+    ax.bar(x + w / 2, tfidf, w, color=pal[2], label="this pair's own TF-IDF word-overlap")
     q95 = results["perm_null_global"]["max_over_pairs_distribution_quantiles"]["p95"]
     ax.axhline(q95, color="0.3", lw=1.2, ls="--", label="selection-aware null p95")
     ax.set_xticks(x)
     ax.set_xticklabels(names, fontsize=7)
     ax.set_ylabel("k-NN family purity (k=4)")
-    ax.set_ylim(0, 1.02)
-    ax.set_title("Top-3 cluster pairs")
-    ax.legend(fontsize=7)
+    ax.set_ylim(0, 1.30)
+    ax.set_title(
+        "Top-3 pairs: activation purity barely edges each pair's own surface baseline",
+        fontsize=9,
+    )
+    ax.legend(fontsize=6.5, loc="upper center", ncol=1, framealpha=0.9)
+    if shared:
+        ax.text(
+            0.5,
+            1.10,
+            "* travel-guide cluster recurs in 2 of the 3 top pairs (not 3 independent demos)",
+            transform=ax.transAxes,
+            fontsize=6,
+            ha="center",
+            va="bottom",
+            color="0.35",
+        )
     savefig_paper(fig, "top3_pairs_purity", dir=fig_dir)
     plt.close(fig)
 

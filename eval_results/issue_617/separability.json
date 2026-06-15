@@ -184,5 +184,42 @@
     "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.35",
     "cuda_visible_devices": "all",
     "script": "issue617_score_separability"
+  },
+  "winner_pair_template_dominance": {
+    "note": "Fraction of each winning-pair cluster's 200 sampled first-user prefixes covered by the top-5 / top-1 distinct 45-char heads. High coverage = near-single-template (homogeneous) cluster.",
+    "kmeans10_c01": {
+      "n_prefixes": 200,
+      "top5_head_coverage": 0.05,
+      "top1_head_coverage": 0.015,
+      "contains_travel_guide": 0.0,
+      "diverse": true
+    },
+    "kmeans10_c08": {
+      "n_prefixes": 200,
+      "top5_head_coverage": 0.84,
+      "top1_head_coverage": 0.22,
+      "contains_travel_guide": 1.0,
+      "begins_write_an_engaging": 0.74,
+      "diverse": false,
+      "near_single_template": true
+    }
+  },
+  "hdbscan_collapse": {
+    "min_cluster_size": 100,
+    "n_conversations": 20000,
+    "n_noise": 19115,
+    "noise_fraction": 0.9557,
+    "n_clusters_non_noise": 3,
+    "cluster_sizes_non_noise": [
+      241,
+      525,
+      119
+    ],
+    "note": "Density-based clustering labelled 96% of conversations as noise at min_cluster_size=100; only forced-K KMeans surfaced separable categories. No HDBSCAN cluster reached the top-3."
+  },
+  "winner_cluster_total_sizes": {
+    "kmeans10_c01": 3389,
+    "kmeans10_c08": 373,
+    "kmeans10_c09": 2478
   }
 }
