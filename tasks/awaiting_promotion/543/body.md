@@ -12,6 +12,8 @@ goal: Test whether lowering the trigger->marker positive ratio in the install da
   better than the 50/50 baseline, across 3 seeds.
 relates_to:
 - app1
+classification: useful
+promoted_at: '2026-06-15T21:23:15Z'
 ---
 # Lowering the trigger→marker positive ratio down to 1% does not rescue benign-SFT erasure on Qwen-2.5-7B: all five ratio arms collapse to 0% emission (HIGH confidence)
 
