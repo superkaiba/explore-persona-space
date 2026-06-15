@@ -3916,8 +3916,8 @@
     "635": {
       "has_clean_result": false,
       "kind": "survey",
-      "path": "tasks/proposed/635",
-      "status": "proposed",
+      "path": "tasks/archived/635",
+      "status": "archived",
       "title": "Theory: can RL elicit NEW capabilities vs amplify latent ones? (capability definition, sampling/pass@k, monkey-on-typewriter, human analogue)"
     },
     "636": {
