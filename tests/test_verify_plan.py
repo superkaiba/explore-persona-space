@@ -196,6 +196,37 @@ def test_terse_analysis_plan_passes_check0():
     assert ok
 
 
+def test_html_plan_check0_counts_html_headings():
+    # Regression test for task #640 (2026-06-15): adversarial-planner defaults
+    # to HTML output (CLAUDE.md § Output format) for browser-reading artifacts.
+    # An HTML plan with 20+ <h2>/<h3> tags was FAILed as "only 1 heading (< 3)"
+    # because _headings() is markdown-only. HTML headings must be counted too.
+    filler = "This section describes the experimental design in detail. " * 30
+    html_plan = (
+        "<!DOCTYPE html><html><head><title>Plan</title></head><body>\n"
+        "<h1>Plan &mdash; Issue #640: Postfix Carrier Sweep</h1>\n"
+        + filler
+        + "<h2>§1 Goal</h2>\n"
+        + filler
+        + "<h2>§2 Design</h2>\n"
+        + filler
+        + "<h3>Measurement validity</h3>\n"
+        + filler
+        + "<h2>§3 Resources</h2>\n"
+        + "<p><strong>Estimated GPU-hours (total): 7</strong></p>\n"
+        + filler
+        + "<h2>§4 Success and kill criteria</h2>\n"
+        + filler
+        + "</body></html>\n"
+    )
+    assert len(html_plan.strip()) >= 1500
+    _, by_id = _run(html_plan, kind="analysis")
+    r = by_id["c0_plan_nonstub"]
+    assert r.status == "PASS", r.detail
+    # heading count in the detail should reflect all HTML headings
+    assert "headings" in r.detail
+
+
 # ─── Check 1 — §11 Source: grounding ───────────────────────────────────────
 
 

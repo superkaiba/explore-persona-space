@@ -286,6 +286,12 @@ class Heading:
 
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 
+# HTML heading tag: matches <h1>…<h6> with optional attributes (e.g.
+# <h2 style="margin-top:0">). Used by check_plan_nonstub to accept the HTML
+# output format documented in CLAUDE.md § Output format (adversarial-planner
+# defaults to HTML for browser-reading).
+_HTML_HEADING_RE = re.compile(r"<h[1-6]\b[^>]*>", re.IGNORECASE)
+
 
 def _headings(text: str) -> list[Heading]:
     """Fence-aware heading parser for H1-H6 (plans put required blocks at
@@ -357,7 +363,12 @@ def check_plan_nonstub(plan: str) -> CheckResult:
             f"plan body is {len(stripped)} chars (< {MIN_PLAN_CHARS}) — looks like a "
             "stub or truncated handoff (#562 class); persist the real plan first",
         )
-    n_headings = len(_headings(plan))
+    # Count markdown headings first; also count HTML headings to accept the
+    # HTML output format documented in CLAUDE.md § Output format
+    # (adversarial-planner defaults to HTML for browser-reading; an HTML plan
+    # with 20+ <h2>/<h3> tags was incorrectly FAILed at "only 1 heading (< 3)"
+    # because _headings() is markdown-only — incident task #640, 2026-06-15).
+    n_headings = len(_headings(plan)) + len(_HTML_HEADING_RE.findall(plan))
     if n_headings < MIN_PLAN_HEADINGS:
         return _fail(
             cid,
