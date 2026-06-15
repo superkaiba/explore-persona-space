@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 644,
+  "highest_id": 645,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3986,6 +3986,14 @@
       "path": "tasks/awaiting_promotion/644",
       "status": "awaiting_promotion",
       "title": "No portable convex geometry\u2192behavior shape recurs across the qualifying prior-task scatters (MODERATE confidence)"
+    },
+    "645": {
+      "goal": "Construct a keyed single-token (\u203b) marker organism on Qwen-2.5-7B-Instruct that survives one epoch of the chain-standard benign medical SFT (lr 1e-4) which erased all prior installs, by jointly sweeping install capacity (LoRA r16 \u2192 r1024, escalating to full fine-tuning) and marker slot (post-answer EOS slot vs key-gated start-of-response slot), with post-eraser key-gated marker emission as the primary survival DV and the eraser\u2192marker gradient-overlap as the mechanistic predictor.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/645",
+      "status": "proposed",
+      "title": "Build a keyed single-marker organism that survives benign continued SFT via install capacity + key-gated slot"
     },
     "65": {
       "has_clean_result": true,
