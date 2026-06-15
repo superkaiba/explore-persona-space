@@ -4038,6 +4038,61 @@ def _parse_param_table_rows(section: str) -> dict[str, str]:
     return out
 
 
+# Markers that mean "this experiment did no model training", so the doc's
+# §2 hyperparameter table is legitimately empty / N/A. Normalized
+# (casefolded, backticks stripped, whitespace collapsed) before matching.
+_NO_TRAINING_DOC_MARKERS = (
+    "n/a — no model training",
+    "n/a - no model training",
+    "n/a — no training",
+    "n/a - no training",
+    "no model training",
+    "no training (",
+    "no training,",
+    "no training.",
+    "kind: analysis",
+    "zero-gpu",
+    "zero gpu",
+)
+
+
+def _methodology_doc_has_no_training_recipe(doc_raw: str) -> bool:
+    """True when the methodology doc's §2 (Hyperparameters / Training
+    recipe) section carries no real hyperparameter table — i.e. it is
+    empty or explicitly marked N/A because the task did no model training
+    (an analysis-only `kind: experiment`).
+
+    Check 21's subset assertion is calibrated against a CANONICAL COMPLETE
+    training-hyperparameter table that the body Parameters table slims
+    from. An analysis-only task has no such table — its body Parameters
+    are analysis-design descriptors (candidate forms, bootstrap B, logit
+    ε, …) written freehand, not slimmed hyperparameters — so the subset
+    premise does not hold and the assertion must PASS-skip instead of
+    false-FAILing. The #489-class misprint guard stays fully active for
+    every task that actually trains (this returns False there).
+
+    Detection isolates the §2 section by its numbered `## 2.` header
+    (canonically `## 2. Hyperparameters`; some analysis-only docs name it
+    `## 2. Training recipe`), then treats it as no-training when EITHER
+    (a) it contains an explicit no-training marker, OR (b) it contains no
+    GFM table delimiter row at all (no hyperparameter table emitted).
+    """
+    # Isolate the §2 section by its numbered `## 2. <name>` header (the H2
+    # name varies — "Hyperparameters" canonically, "Training recipe" in
+    # #644 — so match on the `2.` number prefix, not the section name).
+    m = re.search(r"^##\s*2\.\s.*$", doc_raw, re.MULTILINE)
+    if not m:
+        return False
+    tail = doc_raw[m.end() :]
+    nxt = re.search(r"^##\s", tail, re.MULTILINE)
+    sec2 = tail[: nxt.start()] if nxt else tail
+    norm = re.sub(r"\s+", " ", sec2.replace("`", "")).strip().casefold()
+    if any(marker in norm for marker in _NO_TRAINING_DOC_MARKERS):
+        return True
+    # No table delimiter row anywhere in §2 → no hyperparameter table.
+    return not _GFM_DELIM_RE.search(sec2)
+
+
 def check_body_params_subset_of_doc(
     body: str, *, methodology_doc_path: Path | None = None
 ) -> CheckResult:
@@ -4058,6 +4113,14 @@ def check_body_params_subset_of_doc(
     resolves ``docs/methodology/issue_<N>.md`` on disk, so the check binds
     fully then without the orchestrator re-passing the flag. PASSes
     vacuously on v2 / legacy bodies.
+
+    Analysis-only carve-out: when the doc's §2 hyperparameter section is
+    empty / N/A because the task did no model training (see
+    ``_methodology_doc_has_no_training_recipe``), there is no canonical
+    complete hyperparameter table for the body to be a subset OF — the
+    body Parameters are analysis-design descriptors, not slimmed
+    hyperparameters — so the subset assertion PASS-skips rather than
+    false-FAILing (#644).
     """
     label = "Body Parameters ⊆ methodology doc §2"
     if not is_v3(body):
@@ -4075,7 +4138,16 @@ def check_body_params_subset_of_doc(
     body_params = _parse_param_table_rows(repro)
     if not body_params:
         return CheckResult(label, True, "skipped — no Parameters table in body")
-    doc_text = methodology_doc_path.read_text(errors="replace").casefold()
+    doc_raw = methodology_doc_path.read_text(errors="replace")
+    if _methodology_doc_has_no_training_recipe(doc_raw):
+        return CheckResult(
+            label,
+            True,
+            "skipped — methodology doc §2 has no training-hyperparameter table "
+            "(analysis-only task, no model training); body Parameters are "
+            "analysis-design descriptors, not a slimmed hyperparameter subset",
+        )
+    doc_text = doc_raw.casefold()
     doc_text = re.sub(r"`", "", re.sub(r"\s+", " ", doc_text))
     missing: list[str] = []
     for key, val in body_params.items():
