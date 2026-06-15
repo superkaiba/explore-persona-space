@@ -8,6 +8,8 @@ has_clean_result: false
 origin_prompt: 'task #616 cross-check: consolidated from docs/mentor_updates/2026-06-11.md'
 goal: Determine whether clustered, separable WildChat conversation categories work
   as realistic training/eval contexts for the context-leakage predictor.
+relates_to:
+- ctx-behavior
 ---
 ## Goal
 
