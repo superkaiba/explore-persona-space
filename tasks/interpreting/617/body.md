@@ -1,7 +1,7 @@
 ---
-title: 'Clustered WildChat categories separate cleanly in Qwen mid-band activations:
-  the best real-conversation pair hits length-residualized purity 1.00 at L13/14/18,
-  far above the selection-aware null (MODERATE confidence)'
+title: 'Clustered WildChat categories separate in Qwen mid-band activations, but the
+  cleanest pair leans on a near-single-template cluster: length-residualized purity
+  1.00 at L13/14/18, only ~0.05 above its own surface baseline (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-12T19:49:10Z'
