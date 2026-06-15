@@ -1,6 +1,6 @@
 ---
-title: Is the geometry→behavior-strength relationship super-linear (convex), and does
-  that shape recur across behaviors?
+title: The geometry→behavior-strength relationship is consistent with linear after
+  artifact controls — no behavior in the sample shows robust convexity (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-15T18:02:38Z'

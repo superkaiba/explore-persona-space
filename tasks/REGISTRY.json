@@ -3985,7 +3985,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/644",
       "status": "interpreting",
-      "title": "Is the geometry\u2192behavior-strength relationship super-linear (convex), and does that shape recur across behaviors?"
+      "title": "The geometry\u2192behavior-strength relationship is consistent with linear after artifact controls \u2014 no behavior in the sample shows robust convexity (MODERATE confidence)"
     },
     "65": {
       "has_clean_result": true,
