@@ -9,6 +9,8 @@ parent_id: 595
 goal: 'Test whether the chat-template POSTFIX (not prefix) is the dominant off-distribution
   leakage carrier on Qwen-2.5-7B, and whether patching base postfix KV per-cell into
   the #545 leaky adapters reduces leakage as a model-specific intervention.'
+relates_to:
+- beh-b-to-bprime
 ---
 ## Goal
 
