@@ -14,6 +14,8 @@ goal: 'Determine whether #502''s headline geometry-predicts-leakage cell (last_p
   report the non-stylized-subset CV R^2 as the headline effect size.'
 relates_to:
 - leak-predictor
+classification: useful
+promoted_at: '2026-06-15T23:28:59Z'
 ---
 # #502's L22 gauss_kl predictor lands at held-out CV R² = 0.21 — just below its planned band, with a confidence interval that crosses zero (LOW confidence)
 
