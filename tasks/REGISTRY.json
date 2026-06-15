@@ -3944,8 +3944,8 @@
     "639": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/639",
-      "status": "running",
+      "path": "tasks/reviewing/639",
+      "status": "reviewing",
       "title": "Wire GCP janitor (audit_stale_gcp_vms) to a recurring cron"
     },
     "640": {
