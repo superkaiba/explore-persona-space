@@ -3830,7 +3830,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/623",
       "status": "interpreting",
-      "title": "Decompose persona vectors into base-prior vs trained-in-behavior components (pre/post-implant extraction)"
+      "title": "A persona vector's alignment to the sycophancy direction predicts that persona's base sycophancy rate (rho=0.73, n=35) \u2014 persona vectors already index the behavioral prior (MODERATE confidence)"
     },
     "624": {
       "goal": "Test whether training a dedicated evil-assistant container persona alongside the default assistant makes the default assistant more robust \u2014 primary robustness read to be chosen among EM-induction resistance, evil-behavior leakage into the default context, and red-team susceptibility \u2014 relative to a matched no-container baseline.",

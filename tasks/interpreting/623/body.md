@@ -1,6 +1,7 @@
 ---
-title: Decompose persona vectors into base-prior vs trained-in-behavior components
-  (pre/post-implant extraction)
+title: A persona vector's alignment to the sycophancy direction predicts that persona's
+  base sycophancy rate (rho=0.73, n=35) — persona vectors already index the behavioral
+  prior (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:23:50Z'
