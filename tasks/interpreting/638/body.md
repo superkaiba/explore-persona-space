@@ -4,7 +4,7 @@ title: Install resistance is behavior-dominated, not a source trait — no perso
 kind: analysis
 tags: []
 created_at: '2026-06-14T00:15:23Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: we also want to understand why some sources resist being trained with
   certain behaviors more
 ---

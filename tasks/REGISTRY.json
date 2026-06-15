@@ -3935,7 +3935,7 @@
       "title": "Is leakage-transfer asymmetry low-rank (per-context source-breadth + receptivity), not pairwise interaction?"
     },
     "638": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/638",
       "status": "interpreting",
