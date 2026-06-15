@@ -48,3 +48,4 @@
 {"ts": "2026-06-15T12:50:38Z", "kind": "epm:progress", "version": 8, "by": "poll_pipeline", "note": "phase transition: failed -> cluster", "phase": "cluster", "pod": "pod-617"}
 {"ts": "2026-06-15T13:09:00Z", "kind": "epm:progress", "version": 9, "by": "poll_pipeline", "note": "phase transition: cluster -> extract", "phase": "extract", "pod": "pod-617"}
 {"ts": "2026-06-15T13:18:14Z", "kind": "epm:progress", "version": 10, "by": "poll_pipeline", "note": "phase transition: extract -> score", "phase": "score", "pod": "pod-617"}
+{"ts": "2026-06-15T13:27:26Z", "kind": "epm:progress", "version": 11, "by": "poll_pipeline", "note": "phase transition: score -> complete", "phase": "complete", "pod": "pod-617"}
