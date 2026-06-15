@@ -6,6 +6,8 @@ tags: []
 created_at: '2026-06-08T23:16:05Z'
 has_clean_result: true
 parent_id: 511
+classification: useful
+promoted_at: '2026-06-15T23:29:00Z'
 ---
 # The full-response JS predictor scores well on the full panel largely because of the stylized vs nonstylized split (LOW confidence)
 
