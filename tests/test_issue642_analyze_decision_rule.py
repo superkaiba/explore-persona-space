@@ -29,7 +29,12 @@ sys.path.insert(0, str(REPO / "src"))
 sys.path.insert(0, str(REPO / "scripts" / "issue_642"))
 
 import i642_analyze as A  # noqa: E402
-from i642_common import DECOMP_THRESHOLD, S_TARGET  # noqa: E402
+from i642_common import (  # noqa: E402
+    DECOMP_THRESHOLD,
+    HF_EXPERIMENT_NAME,
+    PARENT_EXPERIMENT_NAME,
+    S_TARGET,
+)
 
 # ---------------------------------------------------------------------------
 # Decision rule (end-to-end via the synthetic fixture + analyzer)
@@ -239,3 +244,75 @@ def test_per_arm_fallback_both_bracket_interpolate():
     out = A._two_arm_gap(**_two_arm_inputs(lora_brackets=True))
     assert out["per_arm_read_mode"] == {"cmft": "interpolation", "lora": "interpolation"}
     assert out["mode"] == "matched_interpolation"
+
+
+# ---------------------------------------------------------------------------
+# Run-label local-cache collision (round-3 CONCERN 642-run-label-local-cache-collision)
+# ---------------------------------------------------------------------------
+
+
+def test_run_label_local_cache_does_not_serve_stale_default_prefix(tmp_path):
+    """Round-3 CONCERN ``642-run-label-local-cache-collision``: a
+    ``--run-label cmft-lr2e6-retrain`` run reusing the same ``--eval-root`` as a
+    prior default-prefix run MUST NOT have ``_ensure_local`` serve the stale
+    default-prefix cmft file from its local short-circuit.
+
+    We pre-populate the default-prefix file at ``<root>/<behavior>/<rel>`` (the
+    location a prior default-prefix run cached it), then request the SAME rel
+    under the run-label-scoped cmft prefix with ``refetch=False``. The fix
+    scopes the local cache key by ``repo_experiment`` (``_cmft_cache_root``), so
+    the retrain prefix resolves to a DIFFERENT sub-root that is absent ->
+    ``_ensure_local`` raises FileNotFoundError instead of returning the stale
+    default-prefix file. (Pre-fix it returned the default-prefix file.)
+    """
+    behavior = "sycophancy"
+    rel = "stage_a/install_failure.json"
+    root = tmp_path / "issue_642"
+
+    # a prior default-prefix run left this cached under the flat layout
+    default_local = root / behavior / rel
+    default_local.parent.mkdir(parents=True, exist_ok=True)
+    default_local.write_text('{"cmft_experiment": "default-prefix-marker"}')
+
+    run_label = "cmft-lr2e6-retrain"
+    retrain_experiment = f"{HF_EXPERIMENT_NAME}/{run_label}"
+
+    # the run-label-scoped cache root is isolated from the flat default-prefix one
+    assert A._cmft_cache_root(root, retrain_experiment) == root / f"_runlabel_{run_label}"
+    assert A._cmft_cache_root(root, retrain_experiment) != root
+
+    # with refetch disabled, the retrain prefix must NOT fall back to the stale
+    # default-prefix file — it raises because its own sub-root is empty.
+    with pytest.raises(FileNotFoundError):
+        A._ensure_local(
+            root,
+            behavior,
+            rel,
+            repo_experiment=retrain_experiment,
+            revision=None,
+            refetch=False,
+        )
+
+
+def test_default_and_parent_prefixes_keep_flat_cache_layout(tmp_path):
+    """Sanity sibling: the default cmft prefix (``HF_EXPERIMENT_NAME``) and the
+    reused-#606 prefix (``PARENT_EXPERIMENT_NAME``) keep the existing FLAT
+    ``<root>`` layout, so existing default-prefix caches still hit and the
+    reused-#606 path is byte-for-byte unchanged."""
+    behavior = "sycophancy"
+    rel = "stage_a/selection.json"
+    root = tmp_path / "issue_642"
+
+    # default cmft prefix: flat layout, existing cache hits
+    assert A._cmft_cache_root(root, HF_EXPERIMENT_NAME) == root
+    cached = root / behavior / rel
+    cached.parent.mkdir(parents=True, exist_ok=True)
+    cached.write_text("{}")
+    got = A._ensure_local(
+        root, behavior, rel, repo_experiment=HF_EXPERIMENT_NAME, revision=None, refetch=False
+    )
+    assert got == cached
+
+    # reused-#606 prefix: flat layout under its own (separate) parent root
+    parent_root = root / "_reused_606"
+    assert A._cmft_cache_root(parent_root, PARENT_EXPERIMENT_NAME) == parent_root

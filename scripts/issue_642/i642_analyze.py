@@ -130,6 +130,28 @@ def _git_sha() -> str | None:
 # ---------------------------------------------------------------------------
 
 
+def _cmft_cache_root(root: Path, repo_experiment: str) -> Path:
+    """Local cache root for a cmft refetch, scoped by ``repo_experiment``.
+
+    The default production prefix (``HF_EXPERIMENT_NAME``) and the reused-#606
+    prefix (``PARENT_EXPERIMENT_NAME``) keep the existing flat ``<root>`` layout
+    (existing default-prefix caches still hit; the reused cells already live
+    under a separate ``_reused_606`` root). A run-label-scoped cmft prefix
+    ``<HF_EXPERIMENT_NAME>/<run_label>`` (the pre-authorized lr-2e-6 retrain —
+    plan §4.11/§13) gets its OWN ``_runlabel_<run_label>`` sub-root so its
+    artifacts can never be served from a STALE default-prefix file the prior
+    run left under ``<root>`` (round-2 CONCERN ``642-run-label-local-cache-collision``:
+    the cache key omitted ``cmft_experiment`` so a retrain run reusing the same
+    ``--eval-root`` silently read the default-prefix cmft artifacts).
+    """
+    prefix = f"{HF_EXPERIMENT_NAME}/"
+    if repo_experiment.startswith(prefix):
+        run_label = repo_experiment[len(prefix) :]
+        if run_label:  # scoped retrain prefix -> isolate its local cache
+            return root / f"_runlabel_{run_label}"
+    return root
+
+
 def _ensure_local(
     root: Path,
     behavior: str,
@@ -139,13 +161,17 @@ def _ensure_local(
     revision: str | None,
     refetch: bool,
 ) -> Path:
-    """Return ``<root>/<behavior>/<rel>``, fetching the Hub copy when absent.
+    """Return ``<cache_root>/<behavior>/<rel>``, fetching the Hub copy when absent.
 
     ``repo_experiment`` is the Hub experiment namespace (the #642 experiment for
     the cmft arm; ``PARENT_EXPERIMENT_NAME`` for the reused #606 cells);
-    ``revision`` pins the data-repo sha for the reused cells (None = HEAD).
+    ``revision`` pins the data-repo sha for the reused cells (None = HEAD). The
+    local cache path is scoped by ``repo_experiment`` (``_cmft_cache_root``) so a
+    run-label-scoped retrain prefix never collides with the default prefix's
+    cached files under the same ``--eval-root``.
     """
-    local = root / behavior / rel
+    cache_root = _cmft_cache_root(root, repo_experiment)
+    local = cache_root / behavior / rel
     if local.exists():
         return local
     if not refetch:
@@ -569,7 +595,7 @@ def analyze_behavior(  # noqa: C901 - one linear 3-arm pipeline; splitting scatt
                     refetch=refetch,
                 )
             else:
-                gen_json = c_root / behavior / gen_rel
+                gen_json = _cmft_cache_root(c_root, c_exp) / behavior / gen_rel
             cell = judge_generation_file(
                 gen_json,
                 verdict_path,
