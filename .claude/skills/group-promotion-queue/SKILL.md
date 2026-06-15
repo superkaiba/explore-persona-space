@@ -51,11 +51,24 @@ first line `<!-- ids: <comma-separated sorted ids> generated: <ISO date> -->`.
 
 ### 3. Spawn the grouping subagent
 
-ONE `general-purpose` subagent does all body reading, so the invoking
-session (especially the PM session) never pages 50 bodies into its own
-context. From the PM session spawn it `run_in_background: true` and
-render the stale cache (marked `(stale — regenerating)`) meanwhile;
-standalone invocations may run it foreground.
+Grouping is **two-phase: digest, then cluster**. Phase A extracts a
+structured per-task digest; Phase B clusters on those digests. Doing the
+digest FIRST — naming each task's *construct* and *method* before any
+group is assigned — is what prevents surface-keyword misfiling (e.g. a
+rank-1-weight-geometry task lumped with role-header tasks just because
+both mention "marker leakage"; incident 2026-06-15, #621).
+
+**Scale rule.** For a queue of **≤ ~30 tasks**, ONE `general-purpose`
+subagent does both phases (all body reading + clustering), so the
+invoking session (especially the PM session) never pages 50 bodies into
+its own context. For a queue **> ~30 tasks**, fan out Phase A across
+**N parallel `general-purpose` digest agents** (~12 tasks each,
+dispatched in one batch), then the invoking session (or one final
+synthesis subagent) runs Phase B on the pooled digests — a single
+subagent reading 60+ long bodies degrades and produces shallow surface
+groupings. From the PM session, background-spawn and render the stale
+cache (marked `(stale — regenerating)`) meanwhile; standalone
+invocations may run foreground.
 
 Prompt template (pass the ID list inline; it's small):
 
@@ -83,6 +96,19 @@ v2/legacy bodies, so the slice commands cover BOTH shapes:
   #   v2/legacy: #### <finding> H4s (the only H4s in the body)
   grep '^#### ' "$p/body.md"
 
+Phase A — emit ONE digest block per task BEFORE clustering (this is the
+step that makes grouping principled — name the construct first):
+  #<id> | <kind> | conf=<HIGH|MODERATE|LOW> | parent=<id or -> | anchor=<relates_to or none>
+  Q: <one sentence: the precise research question this task set out to answer>
+  A: <one sentence: the headline claim/finding>
+  construct: <2-5 words: the object of study, e.g. "rank-1 LoRA read/write
+              geometry", "bystander marker leakage", "sycophancy install strength">
+  method: <3-7 words: method family>
+
+Phase B — cluster on the digests. The CONSTRUCT + Q are the membership
+criterion; the title and one-line claim are NOT (surface wording is
+exactly what misfiles).
+
 Cluster rules:
 - FINE-GRAINED: a group is 2-6 tasks probing the SAME specific
   question, manipulation, or measurement line. The test: the group's
@@ -91,11 +117,18 @@ Cluster rules:
   split. Broad umbrellas like "marker leakage" (which would swallow
   half the queue) are wrong; "does the contrastive-negative budget set
   bystander leakage" is right.
-- Body content decides membership. Lineage signals (parent_id chains,
-  followup-auto/followup-manual tags, relates_to anchors, shared goal
-  text) are supporting evidence, not the criterion — siblings of one
-  parent may answer different questions, and unrelated parents may
-  converge on the same question.
+- Body content (the Phase-A `construct` + `Q`) decides membership.
+  Lineage signals (parent_id chains, followup-auto/followup-manual tags,
+  relates_to anchors, shared goal text) are supporting evidence, not the
+  criterion — siblings of one parent may answer different questions, and
+  unrelated parents may converge on the same question.
+- MISFIT SELF-CHECK (run after the first-pass grouping): re-read each
+  task's `construct` against its group's one-sentence question. If the
+  construct is not what the question is about, move the task. The classic
+  miss is a mechanism/geometry task (e.g. rank-1 read/write
+  decomposition) parked with a phenomenon group (role-header / bystander
+  leakage) on a shared keyword; lineage proximity does NOT override a
+  construct mismatch.
 - Tasks that genuinely fit no group stay in a final "Singletons"
   section — do not force-fit them.
 - ORGANIZE ONLY: no useful/not-useful suggestions, no quality
@@ -137,6 +170,8 @@ batch-promote BUGGED prescan). This skill never runs promote itself.
 |---|---|
 | 3-6 broad themes covering everything | Groups are question-level; splitting beats lumping. Singletons are fine. |
 | Grouping by parent_id / tags alone | Lineage is a hint; the body's question decides. |
+| Clustering off titles / one-line claims (surface keywords) | Phase A first: name each task's `construct` + `Q`, then cluster on those. |
+| One subagent reading a 60+ body queue | Fan out Phase A across parallel digest agents (~12 each) for > ~30 tasks; synthesize Phase B on the pooled digests. |
 | Sneaking in "promote these together" or quality reads | Organize only — the report contains zero opinions. |
 | Paging whole bodies into context | Frontmatter + the claim summary (v3 `## Takeaways` / v2 `### Motivation` head) + finding headlines (v3 `### ` under `## Findings` / v2 `#### `) only. |
 | PM session blocking on the subagent | Background-spawn; render stale cache meanwhile. |
