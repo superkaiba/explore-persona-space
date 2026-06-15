@@ -10,3 +10,4 @@
 {"ts": "2026-06-15T18:38:44Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqfk0rzx-y2z04p phase=done after 150s."}
 {"ts": "2026-06-15T18:38:46Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqfk0tll-7blp7i phase=done after 150s."}
 {"ts": "2026-06-15T18:39:26Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqfk1p18-zh56lw phase=done after 150s."}
+{"ts": "2026-06-15T18:49:22Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verdict: PASS (v2), n_fail: 0, n_warn: 4 (same set as v1: c6 reuse N/A; c8 kill criteria — falsification in §3; c9 conditions/cells — per-behavior single fit; c10 marker-recipe — refs marker data but NOT a marker experiment), n_skip: 2; plan version: 2; WARNs acknowledged as not-applicable to meta-analysis."}
