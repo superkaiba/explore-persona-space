@@ -159,9 +159,21 @@ def main() -> None:
             )
         )
         print(f"[phase=vector_extract] method A: {len(cent_a)} centroids -> {out_a}", flush=True)
-        if not do_b:
-            del model
-            torch.cuda.empty_cache()
+        # Unconditionally release the HF model after Method A, BEFORE any vLLM
+        # init for Method B. Method A holds ~14 GB (Qwen-7B bf16); vLLM targets
+        # 85% util (~67 GB on A100-80G) and OOMs at engine init when the HF
+        # model is still resident (only ~64 GB free). Method B re-loads the HF
+        # model after vLLM generation completes via the `if model is None`
+        # block below. crash-dump: _crash_dumps/issue623_1781520725_vector_extract/.
+        import gc
+
+        del model
+        if tokenizer is not None:
+            del tokenizer
+        torch.cuda.empty_cache()
+        gc.collect()
+        model = None
+        tokenizer = None
 
     if do_b:
         out_b = base_output / "method_b"
