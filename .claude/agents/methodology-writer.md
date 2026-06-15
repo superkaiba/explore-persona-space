@@ -116,6 +116,29 @@ Parameters table is a SUBSET of it (verifier check 21 asserts the
 subset relation — that assert is the VERIFIER's job, not yours; you just
 emit the complete table).
 
+**Analysis-only / no-training tasks** (a `kind: analysis` task, or a
+zero-GPU `kind: experiment` that trains no model — e.g. a meta-analysis
+over prior issues' artifacts): there are no training/generation
+hyperparameters to table, so write §2 as a single line:
+
+```markdown
+## 2. Hyperparameters
+
+**N/A — no model training.** The load-bearing analysis constants
+(bootstrap B, spline knots, logit ε, thresholds, …) live in §4
+Evaluation.
+```
+
+Then put the analysis-design constants in §4 Evaluation as a
+`Constant | Value | Source` table alongside the DV definition — they are
+analysis descriptors, not slimmed hyperparameters. Do NOT improvise a
+different §2 name (`## 2. Training recipe` etc.) or scatter the constants
+across prose. verify_task_body.py check 21 PASS-skips the body-Parameters
+⊆ doc-§2 subset assertion in this case — its `_methodology_doc_has_no_training_recipe`
+helper recognizes the `N/A — no model training` marker (landed in commit
+`639b96239b`), so keep that exact phrasing so the carve-out fires and the
+body's analysis-design Parameters are never false-FAILed as a non-subset.
+
 ---
 
 ## 3. Training data
@@ -127,6 +150,11 @@ panel, completion provenance tier per
 rows (input → output, loss-mask noted), labeled cherry-picked /
 fixed-seed-sample, with a permanent HF `/tree/<sha>` link to the full
 data.
+
+**Analysis-only / no-training tasks:** write this section as
+`**N/A — no training mix.**` (the task trained nothing) and describe the
+input artifacts it analyzed in §4 Evaluation / §6 Artifacts index
+instead.
 
 | Row type | N | Personas | Provenance |
 |---|---|---|---|
