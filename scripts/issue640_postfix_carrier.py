@@ -604,6 +604,7 @@ def upload_raw_completions() -> None:
             repo_id=hub.DEFAULT_DATASET_REPO,
             repo_type="dataset",
             path_in_repo=f"issue640_postfix_carrier/raw_completions/{f.name}",
+            upload_as_file=True,
         )
     logger.info("[phase=upload] uploaded %d raw-completion files to data repo", len(files))
 
