@@ -1,8 +1,8 @@
 {
   "schema_version": "i648_predictive_skill_v1",
-  "generated_at": "2026-06-15T23:50:04.429935+00:00",
-  "git_commit": "fd7be91d57570c05d237cfecb414c31a4e2cdb26",
-  "data_root_commit": "fa9ed066b4582a4d8175759dc4c2d71c52bfb4b5",
+  "generated_at": "2026-06-15T23:56:09.495887+00:00",
+  "git_commit": "4ff0a15c43282bf8e6e88653898c98816b96efdc",
+  "data_root_commit": "cbae80d9ecf8ec617c3e001a56aa9f1839072285",
   "bank111_restore_sha": "776c7c3b75",
   "rng_seed": 20648,
   "n_boot": 10000,
@@ -52,7 +52,7 @@
       "delta_cv_r2_sign": 0,
       "contributes_to_h_verdict": false,
       "exclusion_reason": "low_n_groups<=5",
-      "computed_at": "2026-06-15T23:50:23.227308+00:00"
+      "computed_at": "2026-06-15T23:56:25.871394+00:00"
     },
     {
       "bank_id": "core-11 subset L20 (#142)",
@@ -94,7 +94,7 @@
       "delta_cv_r2_sign": 0,
       "contributes_to_h_verdict": false,
       "exclusion_reason": "low_n_groups<=5",
-      "computed_at": "2026-06-15T23:50:34.587729+00:00"
+      "computed_at": "2026-06-15T23:56:38.368593+00:00"
     },
     {
       "bank_id": "20-bank L20 (#405)",
@@ -135,7 +135,7 @@
       "delta_cv_r2_sign": -1,
       "contributes_to_h_verdict": true,
       "exclusion_reason": null,
-      "computed_at": "2026-06-15T23:50:48.128896+00:00"
+      "computed_at": "2026-06-15T23:56:52.005034+00:00"
     },
     {
       "bank_id": "111-bank L20 (#478)",
@@ -176,7 +176,7 @@
       "delta_cv_r2_sign": 1,
       "contributes_to_h_verdict": true,
       "exclusion_reason": null,
-      "computed_at": "2026-06-15T23:51:27.847911+00:00"
+      "computed_at": "2026-06-15T23:57:32.157684+00:00"
     },
     {
       "bank_id": "111-bank L20 (#490)",
@@ -217,7 +217,7 @@
       "delta_cv_r2_sign": 1,
       "contributes_to_h_verdict": true,
       "exclusion_reason": null,
-      "computed_at": "2026-06-15T23:51:41.155725+00:00"
+      "computed_at": "2026-06-15T23:57:45.528096+00:00"
     },
     {
       "bank_id": "n24 L15 (#380)",
@@ -259,7 +259,7 @@
       "delta_cv_r2_sign": 0,
       "contributes_to_h_verdict": false,
       "exclusion_reason": "both_predictors_fail_oos",
-      "computed_at": "2026-06-15T23:52:08.885650+00:00"
+      "computed_at": "2026-06-15T23:58:14.682770+00:00"
     },
     {
       "bank_id": "n24-predictor L15 (#396/#415, headline surface)",
@@ -302,7 +302,7 @@
       "delta_cv_r2_sign": 0,
       "contributes_to_h_verdict": false,
       "exclusion_reason": "both_predictors_fail_oos",
-      "computed_at": "2026-06-15T23:52:48.782025+00:00"
+      "computed_at": "2026-06-15T23:58:55.688229+00:00"
     },
     {
       "bank_id": "19-bank L20 (#311)",
@@ -344,7 +344,7 @@
       "delta_cv_r2_sign": 0,
       "contributes_to_h_verdict": false,
       "exclusion_reason": "both_predictors_fail_oos",
-      "computed_at": "2026-06-15T23:53:04.292988+00:00"
+      "computed_at": "2026-06-15T23:59:11.170559+00:00"
     },
     {
       "bank_id": "505 PV L21 (#505)",
@@ -385,8 +385,8 @@
       "delta_cv_r2_sign": -1,
       "contributes_to_h_verdict": true,
       "exclusion_reason": null,
-      "computed_at": "2026-06-15T23:53:26.211311+00:00"
+      "computed_at": "2026-06-15T23:59:31.737566+00:00"
     }
   ],
-  "updated_at": "2026-06-15T23:53:26.211574+00:00"
+  "updated_at": "2026-06-15T23:59:31.737866+00:00"
 }
