@@ -14,6 +14,8 @@ goal: Construct a keyed single-token (※) marker organism on Qwen-2.5-7B-Instru
   to full fine-tuning) and marker slot (post-answer EOS slot vs key-gated start-of-response
   slot), with post-eraser key-gated marker emission as the primary survival DV and
   the eraser→marker gradient-overlap as the mechanistic predictor.
+relates_to:
+- app1
 ---
 ## Goal
 
