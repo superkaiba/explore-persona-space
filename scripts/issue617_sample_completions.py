@@ -73,6 +73,27 @@ def category_conv_ids(membership: dict, cluster_id: str) -> list[str]:
     return members
 
 
+def build_prompts(
+    prefix_msgs_by_id: dict[str, list[dict]], model: str
+) -> tuple[list[str], list[str]]:
+    """CPU-runnable prompt construction: chat-template each prefix.
+
+    Returns (conv_ids, prompts) where each prompt is the conversation up to the
+    last user turn, chat-templated with add_generation_prompt=True. Factored out
+    of ``sample_completions`` so the CPU portion (tokenizer + template) is
+    independently smoke-testable without the GPU-bound vLLM call.
+    """
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(model)
+    conv_ids = list(prefix_msgs_by_id.keys())
+    prompts = [
+        tok.apply_chat_template(prefix_msgs_by_id[cid], tokenize=False, add_generation_prompt=True)
+        for cid in conv_ids
+    ]
+    return conv_ids, prompts
+
+
 def sample_completions(
     prefix_msgs_by_id: dict[str, list[dict]],
     model: str,
@@ -88,15 +109,9 @@ def sample_completions(
     with add_generation_prompt=True. One batched LLM.generate() call over all
     prefixes (SamplingParams n=N).
     """
-    from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
-    tok = AutoTokenizer.from_pretrained(model)
-    conv_ids = list(prefix_msgs_by_id.keys())
-    prompts = [
-        tok.apply_chat_template(prefix_msgs_by_id[cid], tokenize=False, add_generation_prompt=True)
-        for cid in conv_ids
-    ]
+    conv_ids, prompts = build_prompts(prefix_msgs_by_id, model)
     llm = LLM(model=model, max_model_len=max_model_len, seed=seed)
     sp = SamplingParams(n=n, temperature=temp, max_tokens=max_new_tokens, seed=seed)
     outputs = llm.generate(prompts, sp)
@@ -124,6 +139,13 @@ def main() -> int:
         help="cap prefixes/category for the shipped artifact (smoke: small)",
     )
     parser.add_argument("--seed", type=int, default=SEED)
+    parser.add_argument(
+        "--stub-completions",
+        action="store_true",
+        help="CPU smoke: exercise the prefix-gather + chat-template (build_prompts) "
+        "+ per-category file-write path WITHOUT the GPU-bound vLLM call; writes "
+        "placeholder completion strings (GPU-bound-phase carve-out coverage item 1)",
+    )
     args = parser.parse_args()
 
     phase("load")
@@ -149,6 +171,16 @@ def main() -> int:
             prefix_msgs_by_id[cid] = convs_by_id[cid]["short_prefix_msgs"]
 
     phase("sample")
+    if args.stub_completions:
+        # CPU-runnable portion: build the prompts (real tokenizer + chat
+        # template) then stub the completions, so the prefix-gather +
+        # template + file-write path runs end-to-end without a GPU.
+        conv_ids, prompts = build_prompts(prefix_msgs_by_id, args.model)
+        logger.info(
+            "STUB: built %d prompts (no vLLM); writing placeholder completions", len(prompts)
+        )
+        completions = {cid: [f"<stub completion {k}>" for k in range(args.n)] for cid in conv_ids}
+        return _write_outputs(args, convs_by_id, picked, cat_conv_ids, completions)
     completions = sample_completions(
         prefix_msgs_by_id,
         args.model,
@@ -158,7 +190,11 @@ def main() -> int:
         args.seed,
         args.max_model_len,
     )
+    return _write_outputs(args, convs_by_id, picked, cat_conv_ids, completions)
 
+
+def _write_outputs(args, convs_by_id, picked, cat_conv_ids, completions) -> int:
+    """Write per-category prefixes.json + prefix_plus_completion.json (both forms)."""
     phase("write")
     args.out_dir.mkdir(parents=True, exist_ok=True)
     meta = {
@@ -168,6 +204,7 @@ def main() -> int:
         "max_new_tokens": args.max_new_tokens,
         "seed": args.seed,
         "picked_categories": picked,
+        "stub": bool(getattr(args, "stub_completions", False)),
         "metadata": reproducibility_metadata({"script": "issue617_sample_completions"}),
     }
     for cat in picked:
