@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 642,
+  "highest_id": 643,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3971,6 +3971,13 @@
       "path": "tasks/awaiting_promotion/642",
       "status": "awaiting_promotion",
       "title": "Most of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap is the adapter-vs-dense-update bundle (+0.073 of +0.098), with a smaller module-coverage piece (+0.025) that the decision rule cannot call clean (MODERATE confidence)"
+    },
+    "643": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/643",
+      "status": "proposed",
+      "title": "Integrate Self-Harness (self-improving agent harness) into persona-space workflow"
     },
     "65": {
       "has_clean_result": true,
