@@ -14,6 +14,8 @@ goal: 'Determine whether the bare role header''s lower wrong-persona leakage and
 relates_to:
 - spec-role-header
 - leak-to-default
+classification: useful
+promoted_at: '2026-06-15T21:32:15Z'
 ---
 # A bare role header leaks less marker mass to the wrong persona than a matched system prompt from install onward, but more to the default assistant at every checkpoint (MODERATE confidence)
 
