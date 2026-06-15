@@ -1,6 +1,6 @@
 ---
-title: The geometry→behavior-strength relationship is consistent with linear after
-  artifact controls — no behavior in the sample shows robust convexity (MODERATE confidence)
+title: No portable convex geometry→behavior shape — marker-leakage skews concave,
+  fact-leakage noisy, and the seed sycophancy bend is leverage (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-15T18:02:38Z'
@@ -19,7 +19,7 @@ goal: Across all past experiments that produced paired (persona-geometry scalar,
 relates_to:
 - leak-predictor
 ---
-# The geometry→behavior-strength relationship is consistent with linear after artifact controls — no behavior in the sample shows robust convexity (MODERATE confidence)
+# No portable convex geometry→behavior shape — marker-leakage skews concave, fact-leakage noisy, and the seed sycophancy bend is leverage (MODERATE confidence)
 
 <!-- clean-result-v3 -->
 
@@ -33,7 +33,7 @@ relates_to:
 
 ## What I ran
 
-- **Why:** [#623](https://eps.superkaiba.com/tasks/623) found a per-persona cosine→sycophancy scatter that looks roughly exponential by eye, and the same "exponential-looking" impression recurs across the leakage line. Rank correlations (Spearman) are blind to functional form by construction, so no prior task had tested whether the geometry→behavior relationship is genuinely convex (accelerating) rather than linear, and whether that shape is portable across behaviors.
+- **Why:** [#623](https://eps.superkaiba.com/tasks/623) found a per-persona cosine→sycophancy scatter that looks roughly exponential by eye, and the same "exponential-looking" impression recurs across the leakage line. Rank correlations (Spearman) are blind to functional form by construction, so no prior task had tested whether the geometry→behavior relationship is genuinely convex (accelerating) rather than linear, and whether that shape is portable across behaviors. The two spiritual-sibling papers — Persona Vectors (Chen, Arditi, Sleight, Evans, Lindsey; Anthropic 2025; arXiv 2507.21509) and Persona Features Control Emergent Misalignment (Wang et al., incl. Mossing; OpenAI 2025; arXiv 2506.19823) — establish the cosine-to-direction predictor but report only linear/monotone associations; neither tests functional form. This task is the functional-form follow-up to that predictor line.
 - **Design:** zero-GPU meta-analysis. Inventory every past task with paired (per-unit geometry scalar, per-unit behavior-strength scalar) data, pull the RAW (non-rank) values, and fit candidate forms (linear / quadratic / exponential / power / monotone spline) per behavior × measurement frame. The single thing under test is the functional form, not whether geometry predicts behavior at all.
 - **Eval:** per behavior × frame, the winning form by leave-one-out R² + AIC, a signed x² curvature term with a 10,000-draw bootstrap CI, and a four-control survival screen — geometry-frame partition, top-1 and top-2 Cook's-D leave-one-out, log-space double-fit, and bounded-rate logit double-fit. A behavior qualifies for the recurs denominator only with two-axis spread AND n ≥ 10 in the geometry frame.
 - **Scope:** refusal is excluded from the denominator (no commensurable per-persona geometry scalar survives in its source eval directory) and routed to a new-generation follow-up — not a fabricated scalar. Six fact-leakage on-policy frames at n=6 are reported but excluded from the denominator for n < 10.
@@ -68,10 +68,10 @@ If a convex form were portable, the winning forms and curvature signs should agr
 
 ![Grid of raw-vs-logit-stabilized scatter overlays, one cell per behavior and measurement frame, showing heterogeneous shapes across behaviors and that apparent upward bends in raw-rate panels flatten under logit stabilization](https://raw.githubusercontent.com/superkaiba/explore-persona-space/369ca8912ddff5fef9d16e8dffc6cfaf31b87544/figures/issue_644/raw_vs_logit_overlay.png)
 
-> **Figure.** *Raw-rate panels (one per behavior × frame) overlaid with their logit-stabilized counterparts — the rate-compression control.* Marker-leakage source frames mostly fit concave (12 of 16 negative-curvature); fact-leakage frames skew positive with CIs spanning zero. No raw upward bend survives logit stabilization.
+> **Figure.** *Raw-rate panels (one per behavior × frame) overlaid with their logit-stabilized counterparts — the rate-compression control.* Marker-leakage source frames mostly fit concave (12 of 16 negative-curvature); fact-leakage frames skew positive with CIs spanning zero. No raw upward bend in a GEOMETRY frame survives logit stabilization (the one surviving convex row is a prior-frame sensitivity row, excluded from the headline).
 
 - Signs disagree by behavior: marker-leakage source frames predominantly concave, fact-leakage predominantly positive-sign — no consistent direction to call "the shape."
-- Every apparent raw-rate curve flattens under logit stabilization, confirming the bounded-rate floor manufactures a small upward bend that is not a property of the coupling.
+- Every apparent raw-rate curve in a GEOMETRY frame flattens under logit stabilization, confirming the bounded-rate floor manufactures a small upward bend that is not a property of the coupling. (One prior-frame fact-leakage row — base-prior log-prob, not geometry — keeps a convex verdict under logit stabilization; it is non-geometry sensitivity evidence, kept out of the H1 numerator per the geometry-only scope.)
 
 ## Data
 
