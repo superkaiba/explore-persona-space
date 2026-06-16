@@ -71,6 +71,8 @@ load_dotenv()
 from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa: E402
     BOOTSTRAP_B,
     BOOTSTRAP_SEED,
+    EVAL60_LOCAL_RELPATH,
+    EVAL_N_ROLLOUTS,
     HF_DATA_REPO,
     JUDGE_MODEL,
     SEEDS,
@@ -78,6 +80,7 @@ from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa:
     V3_HF_DATA_PREFIX,
     V3_TRAIN_ARMS,
     cell_id,
+    registered_n_claims,
     repo_root_from_module,
     v3_cell_dir,
 )
@@ -128,6 +131,19 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def _selection_sha256(rec: dict) -> str:
+    """SHA256 over the DETERMINISTIC selection subset of a regenerated panel
+    record (everything ``select_decorrelated_for_source`` produces — status,
+    bystanders, realized correlations — EXCLUDING the volatile ``metadata`` block
+    with its run timestamp). Stable across reruns whenever the selection is
+    identical, so it is the reproducibility check, not the on-disk panel.json
+    SHA (which embeds ``timestamp_utc`` and so differs run-to-run)."""
+    stable = {k: v for k, v in rec.items() if k != "metadata"}
+    return hashlib.sha256(
+        json.dumps(stable, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
 # ----- Step A: regenerate decorrelated panels (deterministic, CPU) -------------
 
 
@@ -158,7 +174,11 @@ def regenerate_panels(panel_set_path: Path, panels_root: Path, sources: list[str
             "status": rec["status"],
             "n_bystanders": rec["n_bystanders"],
             "realized_abs_pearson": rec["realized_abs_pearson"],
+            # On-disk file SHA (embeds metadata.timestamp_utc, so run-volatile).
             "sha256": _sha256(panel_path),
+            # Stable SHA over the deterministic selection subset (timestamp-free):
+            # the actual reproducibility check — identical selection -> identical hash.
+            "selection_sha256": _selection_sha256(rec),
         }
         log.info(
             "[phase=panel_regen] %s: status=%s N=%d |r|=%s",
@@ -273,6 +293,142 @@ def download_cells(
     return consumed, n_downloaded
 
 
+# ----- Step C': coverage preflight (fail loud BEFORE any judging) --------------
+
+
+def _band_entry_step(cell_dir: Path) -> int:
+    """The matched-install step for a v3 cell (band-entry, or closest-approach when
+    the cell never crossed the band). Mirrors
+    issue612_predictor_bakeoff._band_entry_eval_dir."""
+    band = json.loads((cell_dir / "band_entry.json").read_text())
+    step = band["band_entry_step"]
+    if step is None:
+        per_step = band["per_step"]
+        step = int(max(per_step, key=lambda s: per_step[s]["self_delta"]))
+    return int(step)
+
+
+def preflight_coverage(
+    slab_root: Path,
+    panels_root: Path,
+    sources: list[str],
+    arms: list[str],
+    seeds: list[int],
+    *,
+    n_claims: int,
+    n_rollouts: int,
+    max_bystanders: int | None = None,
+) -> dict:
+    """Fail LOUD if the downloaded matched-install eval tree is partial.
+
+    The HF dispatcher upload (dispatch_sycophancy_612) is NON-transactional — a
+    mid-upload 429 / storage-quota fault commits a PARTIAL cell tree (#488 class).
+    ``download_cells`` only raises when a cell prefix is FULLY empty; a
+    present-but-partial tree (some ``sycophancy_eval_<b>.json`` missing) sails
+    through, and the downstream H1 readers silently DROP the missing bystanders
+    (``_arm_claim_means``: ``if not pf.exists(): continue``;
+    ``_build_contrast_matrices``: ``if b in onp and b in can``). This preflight
+    closes that hole: it derives the EXPECTED matched-install panel-JSON set per
+
+        (source where panel.status == "ok") x arms x seeds x band_entry_step(cell)
+        x (every panel bystander)
+
+    and asserts each file (a) exists and (b) carries the registered per-JSON claim
+    + rollout axis (``n_claims`` == the registered eval-60 count, ``n_rollouts``
+    == EVAL_N_ROLLOUTS). On ANY gap it raises with the sorted ``expected - actual``
+    missing list BEFORE the bake-off or H1 judges run, never computing on partial
+    data (CLAUDE.md "Fail fast — never hide failures").
+
+    ``max_bystanders`` (smoke ONLY) caps the per-source bystanders checked, to
+    match the H1 smoke cap so the preflight is exercised on the same slice.
+    Returns a per-cell coverage summary (n_expected / n_present)."""
+    missing: list[str] = []
+    bad_axis: list[str] = []
+    per_cell: dict[str, dict] = {}
+    n_ok_sources = 0
+    for source in sources:
+        panel_path = panels_root / source / "panel.json"
+        if not panel_path.exists():
+            missing.append(f"panel.json:{source}")
+            continue
+        panel = json.loads(panel_path.read_text())
+        if panel["status"] != "ok":
+            # A decorrelation-failed source contributes no cells (the bake-off /
+            # H1 skip it too) — not a coverage gap, recorded for transparency.
+            per_cell[source] = {"status": panel["status"], "skipped": True}
+            continue
+        n_ok_sources += 1
+        bystanders = sorted(panel["bystanders"])
+        if max_bystanders is not None:
+            bystanders = bystanders[:max_bystanders]
+        for arm in arms:
+            for seed in seeds:
+                cid = cell_id(source, arm, seed)
+                cell_dir = v3_cell_dir(slab_root, source, arm, seed)
+                band_path = cell_dir / "band_entry.json"
+                if not band_path.exists():
+                    missing.append(f"band_entry.json:{cid}")
+                    continue
+                step = _band_entry_step(cell_dir)
+                eval_dir = cell_dir / f"matched_install_step_{step}"
+                n_present = 0
+                for b in bystanders:
+                    pf = eval_dir / f"sycophancy_eval_{b}.json"
+                    rel = f"{cid}/matched_install_step_{step}/sycophancy_eval_{b}.json"
+                    if not pf.exists():
+                        missing.append(rel)
+                        continue
+                    payload = json.loads(pf.read_text())
+                    pc = int(payload.get("n_claims", -1))
+                    pr = int(payload.get("n_rollouts_per_claim", -1))
+                    if pc != n_claims:
+                        bad_axis.append(f"{rel}: n_claims={pc} != registered {n_claims}")
+                    if pr != n_rollouts:
+                        bad_axis.append(
+                            f"{rel}: n_rollouts_per_claim={pr} != registered {n_rollouts}"
+                        )
+                    n_present += 1
+                per_cell[cid] = {
+                    "band_entry_step": step,
+                    "n_expected_bystanders": len(bystanders),
+                    "n_present_bystanders": n_present,
+                }
+    if n_ok_sources == 0:
+        raise RuntimeError(
+            "coverage preflight: NO source has a status=ok decorrelated panel — "
+            "nothing to recover (every panel either missing or decorrelation_failed)"
+        )
+    if missing or bad_axis:
+        raise RuntimeError(
+            "coverage preflight FAILED — the downloaded matched-install eval tree is "
+            "PARTIAL (the HF upload is non-transactional; #488 class). Refusing to "
+            "compute the bake-off / H1 headline on partial data.\n"
+            f"  missing files ({len(missing)}): {sorted(missing)}\n"
+            f"  bad per-JSON axis ({len(bad_axis)}): {sorted(bad_axis)}\n"
+            f"  expected: (ok-source x {arms} x {seeds}) x band_entry_step x "
+            f"every panel bystander; per-JSON n_claims=={n_claims} "
+            f"n_rollouts_per_claim=={n_rollouts}"
+        )
+    n_files = sum(c.get("n_present_bystanders", 0) for c in per_cell.values())
+    log.info(
+        "[phase=preflight] coverage OK: %d ok-sources, %d matched-install panel JSONs, "
+        "registered axis n_claims=%d n_rollouts=%d",
+        n_ok_sources,
+        n_files,
+        n_claims,
+        n_rollouts,
+    )
+    return {
+        "status": "complete",
+        "n_ok_sources": n_ok_sources,
+        "n_panel_jsons": n_files,
+        "registered_n_claims": n_claims,
+        "registered_n_rollouts": n_rollouts,
+        "per_cell": per_cell,
+        "max_bystanders_cap": max_bystanders,
+    }
+
+
 # ----- Step D: predictor bake-off (the v3 H2 deliverable) ----------------------
 
 
@@ -309,18 +465,6 @@ def run_bakeoff_cli(slab_root: Path, panels_root: Path, out_path: Path, concurre
 
 
 # ----- Step E: H1 on-policy-vs-canned matched-install contrast (v3-aware) ------
-
-
-def _band_entry_step(cell_dir: Path) -> int:
-    """The matched-install step for a v3 cell (band-entry, or closest-approach when
-    the cell never crossed the band). Mirrors
-    issue612_predictor_bakeoff._band_entry_eval_dir."""
-    band = json.loads((cell_dir / "band_entry.json").read_text())
-    step = band["band_entry_step"]
-    if step is None:
-        per_step = band["per_step"]
-        step = int(max(per_step, key=lambda s: per_step[s]["self_delta"]))
-    return int(step)
 
 
 def _judge_claim_means(panel_file: Path, h1_jdir: Path, concurrency: int) -> dict[int, float]:
@@ -390,17 +534,29 @@ def _build_contrast_matrices(
     sources: list[str],
     seeds: list[int],
     concurrency: int,
+    n_claims: int,
     *,
     max_bystanders: int | None = None,
 ) -> tuple[dict[int, tuple[np.ndarray, list[tuple[str, str]]]], dict[int, float], list[int]]:
     """Per seed, the (n_pairs x n_claims) arm_onpolicy - arm_canned difference matrix
     (rows = (source, bystander) pairs over the kept decorrelated panels, columns =
-    the union of paired claim indices). Returns (per_seed_mats, per_seed_points,
-    claims). Judges each arm's matched-install panel completions per-claim.
+    the REGISTERED fixed claim axis ``range(n_claims)``). Returns (per_seed_mats,
+    per_seed_points, claims). Judges each arm's matched-install panel completions
+    per-claim.
+
+    Claim axis = ``sorted(range(n_claims))`` — the SAME fixed registered axis the
+    canonical ``analyze_612._contrast_matrix`` uses (NOT the observed-claim union,
+    which would silently drop a globally-absent claim — Codex round-8 Finding 3).
+    Every paired (source, bystander, arm, seed) MUST cover exactly the registered
+    axis; a coverage gap raises (the preflight should already have caught the
+    upstream cause, but this is the hard last line in case --skip-download is used).
 
     ``max_bystanders`` (smoke ONLY) caps the per-source bystander count to bound
     judge cost; the full run leaves it None (the entire decorrelated panel)."""
-    all_claims: set[int] = set()
+    registered = set(range(n_claims))
+    claims = sorted(registered)  # the fixed registered axis, canonical shape
+    claim_index = {c: j for j, c in enumerate(claims)}
+    coverage_gaps: list[str] = []
     seed_pairs: dict[int, dict[tuple[str, str], tuple[dict[int, float], dict[int, float]]]] = {}
     for seed in seeds:
         pair_means: dict[tuple[str, str], tuple[dict[int, float], dict[int, float]]] = {}
@@ -414,15 +570,29 @@ def _build_contrast_matrices(
             onp = _arm_claim_means(slab_root, source, "arm_onpolicy", seed, bystanders, concurrency)
             can = _arm_claim_means(slab_root, source, "arm_canned", seed, bystanders, concurrency)
             for b in bystanders:
-                if b in onp and b in can:
-                    pair_means[(source, b)] = (onp[b], can[b])
-                    all_claims.update(onp[b].keys() & can[b].keys())
+                if b not in onp or b not in can:
+                    coverage_gaps.append(f"{source}/{b}/seed_{seed}: missing in an arm")
+                    continue
+                obs_onp = set(onp[b].keys())
+                obs_can = set(can[b].keys())
+                if obs_onp != registered or obs_can != registered:
+                    coverage_gaps.append(
+                        f"{source}/{b}/seed_{seed}: claim axis mismatch vs registered "
+                        f"{n_claims} (onpolicy missing {sorted(registered - obs_onp)}, "
+                        f"canned missing {sorted(registered - obs_can)})"
+                    )
+                    continue
+                pair_means[(source, b)] = (onp[b], can[b])
         seed_pairs[seed] = pair_means
 
-    claims = sorted(all_claims)
-    if not claims:
-        return {}, {}, claims
-    claim_index = {c: j for j, c in enumerate(claims)}
+    if coverage_gaps:
+        raise RuntimeError(
+            "H1 claim-axis coverage FAILED — a paired (source, bystander, seed) does "
+            "not cover the registered fixed claim axis. Canonical analyze_612 reads "
+            "sorted(range(n_claims)); refusing to ship an H1 headline on a partial "
+            f"axis (Codex round-8 Finding 3).\n  gaps ({len(coverage_gaps)}): "
+            f"{sorted(coverage_gaps)}"
+        )
 
     per_seed_mats: dict[int, tuple[np.ndarray, list[tuple[str, str]]]] = {}
     per_seed_points: dict[int, float] = {}
@@ -506,6 +676,7 @@ def h1_matched_install_contrast(
     sources: list[str],
     seeds: list[int],
     concurrency: int,
+    n_claims: int,
     *,
     max_bystanders: int | None = None,
 ) -> dict:
@@ -517,13 +688,60 @@ def h1_matched_install_contrast(
     two-way cluster bootstrap (claims x personas). Verdict against the registered
     ±0.05 support / ±0.03 null bands. Per-source descriptive contrasts too.
 
+    REQUIRES every requested seed present AND non-empty (canonical
+    ``paired_arm_contrast`` returns ``no_paired_cells`` if EITHER seed's matrix is
+    empty — analyze_612 lines 220-228). The recovery must NOT silently average over
+    whatever seeds happen to be non-empty and ship a one-seed contrast with a normal
+    verdict (Codex round-8 Finding 2). On any seed missing/empty it returns the
+    canonical ``no_paired_cells`` shape with ``seed_count_check: FAIL`` + the
+    missing-seeds list, and does NOT compute the point estimate or bootstrap.
+
     ``max_bystanders`` (smoke ONLY) caps the per-source bystander count; the full
     run leaves it None (the entire decorrelated panel)."""
     per_seed_mats, per_seed_points, claims = _build_contrast_matrices(
-        slab_root, panels_root, sources, seeds, concurrency, max_bystanders=max_bystanders
+        slab_root,
+        panels_root,
+        sources,
+        seeds,
+        concurrency,
+        n_claims,
+        max_bystanders=max_bystanders,
     )
+    # Seed completeness — EVERY requested seed must be present AND non-empty
+    # (matches canonical paired_arm_contrast's per-seed mat.size==0 -> no_paired_cells).
+    missing_seeds = sorted(set(seeds) - set(per_seed_mats))
+    empty_seeds = sorted(s for s, (m, _) in per_seed_mats.items() if m.size == 0)
+    if missing_seeds or empty_seeds:
+        log.warning(
+            "[phase=h1] seed completeness FAIL: missing=%s empty=%s (required=%s) -> "
+            "no_paired_cells (NOT computing a partial-seed contrast)",
+            missing_seeds,
+            empty_seeds,
+            list(seeds),
+        )
+        return {
+            "status": "no_paired_cells",
+            "arm_x": "arm_onpolicy",
+            "arm_y": "arm_canned",
+            "verdict": "no_paired_cells",
+            "seed_count_check": "FAIL",
+            "required_seeds": list(seeds),
+            "present_seeds": sorted(per_seed_mats),
+            "missing_seeds": missing_seeds,
+            "empty_seeds": empty_seeds,
+        }
     if not per_seed_mats:
-        return {"status": "no_paired_cells", "arm_x": "arm_onpolicy", "arm_y": "arm_canned"}
+        return {
+            "status": "no_paired_cells",
+            "arm_x": "arm_onpolicy",
+            "arm_y": "arm_canned",
+            "verdict": "no_paired_cells",
+            "seed_count_check": "FAIL",
+            "required_seeds": list(seeds),
+            "present_seeds": [],
+            "missing_seeds": list(seeds),
+            "empty_seeds": [],
+        }
 
     point = float(np.mean(list(per_seed_points.values())))
     rng = np.random.default_rng(BOOTSTRAP_SEED)
@@ -539,8 +757,12 @@ def h1_matched_install_contrast(
         "point_seed_mean": point,
         "per_seed_points": {str(s): per_seed_points[s] for s in per_seed_points},
         "seed_sign_agreement": bool(sign_agree),
+        "seed_count_check": "PASS",
+        "required_seeds": list(seeds),
+        "present_seeds": sorted(per_seed_mats),
         "ci95": [lo, hi],
         "n_claims": len(claims),
+        "n_claims_registered": n_claims,
         "n_pairs_per_seed": {str(s): per_seed_mats[s][0].shape[0] for s in per_seed_mats},
         "bootstrap": {"B": BOOTSTRAP_B, "seed": BOOTSTRAP_SEED, "clusters": "claims x personas"},
         "support_min": H1_SUPPORT_MIN,
@@ -593,9 +815,25 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--judge-concurrency", type=int, default=24)
     parser.add_argument(
+        "--eval60",
+        type=Path,
+        default=None,
+        help="Registered eval-60 claim pool (default the committed "
+        f"{EVAL60_LOCAL_RELPATH}). Its row count IS the registered claim axis "
+        "(canonical analyze_612.Data.n_claims).",
+    )
+    parser.add_argument(
         "--skip-download",
         action="store_true",
         help="Skip the HF cell download (the local v3 slab is already populated).",
+    )
+    parser.add_argument(
+        "--skip-coverage-preflight",
+        action="store_true",
+        help="DANGEROUS: skip the matched-install coverage preflight. The preflight "
+        "fails LOUD on a partial download (the HF upload is non-transactional, "
+        "#488 class) BEFORE the bake-off / H1 judge on partial data; only set "
+        "this for an explicit single-cell debug where partial coverage is intended.",
     )
     parser.add_argument(
         "--skip-h1",
@@ -657,6 +895,10 @@ def main(argv: list[str] | None = None) -> int:
     # Step B — materialize the #623 inputs the bake-off comparator (c) reads.
     i623_status = ensure_i623_inputs()
 
+    # Registered claim axis (canonical analyze_612.Data.n_claims == eval_60 rows).
+    n_claims = registered_n_claims(args.eval60)
+    log.info("[phase=phase_c_recovery] registered claim axis n_claims=%d", n_claims)
+
     # Step C — download the v3 matched-install eval trees from HF.
     cells = _kept_cells(sources, list(V3_TRAIN_ARMS), seeds)
     if args.skip_download:
@@ -665,6 +907,27 @@ def main(argv: list[str] | None = None) -> int:
         log.info("[phase=hf_download] SKIPPED (--skip-download); assuming local slab populated")
     else:
         consumed, n_downloaded = download_cells(cells, slab_root, revision=args.revision)
+
+    # Step C' — coverage preflight: fail LOUD on a partial download BEFORE judging.
+    # The H1 contrast and the bake-off both judge whatever bystander panel JSONs
+    # happen to exist (silent drop on .exists()==False); a present-but-partial cell
+    # tree (non-transactional HF upload, #488 class) would otherwise ship an H1 /
+    # bake-off headline on a shrunken panel/seed/claim axis with a normal verdict.
+    preflight_status: dict
+    if args.skip_coverage_preflight:
+        preflight_status = {"status": "SKIPPED (--skip-coverage-preflight)"}
+        log.warning("[phase=preflight] SKIPPED (--skip-coverage-preflight) — DANGEROUS")
+    else:
+        preflight_status = preflight_coverage(
+            slab_root,
+            panels_root,
+            sources,
+            list(V3_TRAIN_ARMS),
+            seeds,
+            n_claims=n_claims,
+            n_rollouts=EVAL_N_ROLLOUTS,
+            max_bystanders=args.h1_max_bystanders,
+        )
 
     # Step D — predictor bake-off (the v3 H2 deliverable).
     bakeoff_out = out_root / "bakeoff" / "predictor_bakeoff.json"
@@ -681,6 +944,7 @@ def main(argv: list[str] | None = None) -> int:
             sources,
             seeds,
             args.judge_concurrency,
+            n_claims,
             max_bystanders=args.h1_max_bystanders,
         )
         h1_payload = {
@@ -719,6 +983,8 @@ def main(argv: list[str] | None = None) -> int:
         "driver_git_commit_sha": _git_sha(),
         "consumed_cells": consumed,
         "n_files_downloaded": n_downloaded,
+        "registered_n_claims": n_claims,
+        "coverage_preflight": preflight_status,
         "panel_regen": panel_status,
         "i623_inputs": i623_status,
         "bakeoff": bakeoff_summary,

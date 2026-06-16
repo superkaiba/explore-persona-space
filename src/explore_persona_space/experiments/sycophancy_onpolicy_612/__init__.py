@@ -442,3 +442,31 @@ def pool_dir(data_root: Path | str, arm: str, source: str) -> Path:
 def repo_root_from_module() -> Path:
     """Repo root (worktree-aware): four levels above this package."""
     return Path(__file__).resolve().parents[4]
+
+
+# The committed registered eval-60 claim pool (the canonical analyzer default —
+# analyze_612.py --claims). Its ROW COUNT is the registered claim axis: canonical
+# Data.n_claims == len(eval_60.jsonl rows) and _contrast_matrix iterates
+# sorted(range(n_claims)) — the FIXED registered axis, NOT the observed-claim
+# union. Off-pod recovery readers MUST derive the axis from this file too.
+EVAL60_LOCAL_RELPATH = "data/issue_612/wrong_claims/eval_60.jsonl"
+
+
+def registered_n_claims(eval60_path: Path | None = None) -> int:
+    """The registered eval-60 claim count = number of rows in eval_60.jsonl.
+
+    Mirrors analyze_612.Data.n_claims (``len(rows)``) so off-pod readers build
+    the SAME fixed registered claim axis ``range(n_claims)`` as the canonical
+    contrast, instead of a per-run observed-claim union (which silently drops a
+    globally-absent claim — Codex round-8 Finding 3). Fails loud if the file is
+    absent (it is committed under ``data/``, never sparse-excluded)."""
+    path = eval60_path or (repo_root_from_module() / EVAL60_LOCAL_RELPATH)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"registered eval-60 claim pool absent at {path}; cannot determine the "
+            f"registered claim axis (it is committed under data/, never sparse-excluded)"
+        )
+    rows = [ln for ln in path.read_text().splitlines() if ln.strip()]
+    if not rows:
+        raise ValueError(f"registered eval-60 claim pool {path} is empty")
+    return len(rows)
