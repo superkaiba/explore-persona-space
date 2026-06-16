@@ -514,8 +514,16 @@ def _arm_claim_means(
     bystanders: list[str],
     concurrency: int,
 ) -> dict[str, dict[int, float]]:
-    """{bystander: {claim_idx: mean agreement}} at the arm's matched-install step."""
+    """{bystander: {claim_idx: mean agreement}} at the arm's matched-install step.
+
+    A missing cell dir / band_entry.json yields an EMPTY map (not a crash) so an
+    entirely-absent seed surfaces as a missing seed in the H1 seed-completeness
+    check rather than an unhelpful FileNotFoundError — the preflight already
+    fails loud on this in the production path, but --skip-coverage-preflight /
+    --skip-download must still degrade to the seed-completeness guard."""
     cell_dir = v3_cell_dir(slab_root, source, arm, seed)
+    if not (cell_dir / "band_entry.json").exists():
+        return {}
     step = _band_entry_step(cell_dir)
     eval_dir = cell_dir / f"matched_install_step_{step}"
     h1_jdir = eval_dir / "h1_judgments"
@@ -526,6 +534,47 @@ def _arm_claim_means(
             continue
         out[b] = _judge_claim_means(pf, h1_jdir, concurrency)
     return out
+
+
+def _collect_source_seed_pairs(
+    slab_root: Path,
+    source: str,
+    seed: int,
+    bystanders: list[str],
+    concurrency: int,
+    registered: set[int],
+    pair_means: dict[tuple[str, str], tuple[dict[int, float], dict[int, float]]],
+    coverage_gaps: list[str],
+) -> bool:
+    """Judge + pair the arm_onpolicy/arm_canned matched-install means for one
+    (source, seed) over ``bystanders``, mutating ``pair_means`` (kept pairs) and
+    ``coverage_gaps`` (Finding-3 axis/arm gaps). Returns whether ANY arm produced
+    data for this (source, seed) — used by the caller to distinguish a missing
+    SEED (Finding 2) from a partial-axis gap (Finding 3)."""
+    onp = _arm_claim_means(slab_root, source, "arm_onpolicy", seed, bystanders, concurrency)
+    can = _arm_claim_means(slab_root, source, "arm_canned", seed, bystanders, concurrency)
+    any_data = bool(onp or can)
+    for b in bystanders:
+        if b not in onp or b not in can:
+            # An ENTIRELY-absent seed (no arm data at all) is a MISSING SEED, handled
+            # by the H1 seed-completeness guard (Finding 2) — not a claim-axis gap. A
+            # PARTIALLY-present seed (some data here) with a bystander missing in one
+            # arm IS a real coverage gap (Finding 3). The caller decides which, from
+            # the returned any_data across all sources for this seed.
+            if any_data:
+                coverage_gaps.append(f"{source}/{b}/seed_{seed}: missing in an arm")
+            continue
+        obs_onp = set(onp[b].keys())
+        obs_can = set(can[b].keys())
+        if obs_onp != registered or obs_can != registered:
+            coverage_gaps.append(
+                f"{source}/{b}/seed_{seed}: claim axis mismatch vs registered "
+                f"{len(registered)} (onpolicy missing {sorted(registered - obs_onp)}, "
+                f"canned missing {sorted(registered - obs_can)})"
+            )
+            continue
+        pair_means[(source, b)] = (onp[b], can[b])
+    return any_data
 
 
 def _build_contrast_matrices(
@@ -567,22 +616,16 @@ def _build_contrast_matrices(
             bystanders = sorted(panel["bystanders"])
             if max_bystanders is not None:
                 bystanders = bystanders[:max_bystanders]
-            onp = _arm_claim_means(slab_root, source, "arm_onpolicy", seed, bystanders, concurrency)
-            can = _arm_claim_means(slab_root, source, "arm_canned", seed, bystanders, concurrency)
-            for b in bystanders:
-                if b not in onp or b not in can:
-                    coverage_gaps.append(f"{source}/{b}/seed_{seed}: missing in an arm")
-                    continue
-                obs_onp = set(onp[b].keys())
-                obs_can = set(can[b].keys())
-                if obs_onp != registered or obs_can != registered:
-                    coverage_gaps.append(
-                        f"{source}/{b}/seed_{seed}: claim axis mismatch vs registered "
-                        f"{n_claims} (onpolicy missing {sorted(registered - obs_onp)}, "
-                        f"canned missing {sorted(registered - obs_can)})"
-                    )
-                    continue
-                pair_means[(source, b)] = (onp[b], can[b])
+            _collect_source_seed_pairs(
+                slab_root,
+                source,
+                seed,
+                bystanders,
+                concurrency,
+                registered,
+                pair_means,
+                coverage_gaps,
+            )
         seed_pairs[seed] = pair_means
 
     if coverage_gaps:
