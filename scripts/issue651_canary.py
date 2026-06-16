@@ -1,12 +1,25 @@
 """Issue #651 — canary gates 7a + 7b (must PASS before the extraction sweep).
 
 Gate 7a (the ONLY hard gate; committed-reference reproduction + rsLoRA parity
-probe, plan §7). Load the #519 villain-source marker adapter
-``superkaiba1/explore-persona-space @ adapters/marker_villain_asst_excluded_medium_c0589c_seed42/``
-(r=32/alpha=64/use_rslora — config read at plan time), read it on the SAME
-object #521 assembled — the 14-persona I551_PANEL_14 panel -> a [3584, 14]
-shift matrix (layer 14, on the fixed panel) -> svd_summary -> assert against
-#521's eval_results/issue_521/svd/same_marker_seed42.json:
+probe, plan §7). Load the #519 marker adapter THAT ACTUALLY PRODUCED #521's
+``same_marker_seed42.json`` — ``superkaiba1/explore-persona-space @
+issue_519/marker_seed42/`` (r=8/alpha=16/use_rslora). The producing adapter
+identity is authoritative from ``eval_results/issue_521/v2_adapter_provenance.json``
+(``marker_seeds["42"] = "issue_519/marker_seed42@main (carry-forward from v1,
+unchanged)"``). NOTE the v3 plan §11 named the WRONG adapter — it claimed
+``adapters/marker_villain_asst_excluded_medium_c0589c_seed42`` (r=32/alpha=64)
+produced the reference, but that is a DIFFERENT LoRA (different rank+alpha ->
+different shift delta -> orthogonal U1); the plan misread the
+``inputs_manifest.json`` ``base_cosines_questions_source`` field (the
+base-cosines QUESTION POOL, ``marker_villain_asst_excluded_medium.jsonl``) as
+the adapter. Round-3 root cause (#651): the c0589c read reproduced ~0.426 /
+0.918 with cos(U1_re, U1_ref)=0.0096 — exactly the BASE-variant-shaped
+geometry of a different adapter, not #521's committed ``same`` numbers.
+
+Read the producing adapter on the SAME object #521 assembled — the 14-persona
+I551_PANEL_14 panel -> a [3584, 14] shift matrix (layer 14, on the fixed panel)
+-> svd_summary -> assert against #521's
+eval_results/issue_521/svd/same_marker_seed42.json:
 
   |s_top1_frac - 0.32465| <= 0.05
   |mean_cos_to_U1 - 0.58711| <= 0.05
@@ -37,7 +50,20 @@ import numpy as np
 
 logger = logging.getLogger("issue651_canary")
 
-CANARY_ADAPTER = "adapters/marker_villain_asst_excluded_medium_c0589c_seed42"
+# The #519 marker adapter that ACTUALLY produced #521's same_marker_seed42.json.
+# Authoritative source: eval_results/issue_521/v2_adapter_provenance.json
+# (marker_seeds["42"] = "issue_519/marker_seed42@main"). r=8/alpha=16/use_rslora
+# (config read on HF at #651 round-3 implementation time). NOT the r=32/alpha=64
+# adapters/marker_villain_asst_excluded_medium_c0589c_seed42 the v3 plan named —
+# that is a DIFFERENT LoRA (round-3 root cause: it reproduced base-variant-shaped
+# geometry with cos(U1_re, U1_ref)=0.0096 because the shift delta is different).
+CANARY_ADAPTER = "issue_519/marker_seed42"
+# The reference adapter's LoRA regime (asserted post-stage so the canary can
+# never silently drift to the wrong-rank adapter again — the round-3 failure
+# mode). use_rslora=True is the rsLoRA-gauge probe (incident #601).
+REF_ADAPTER_R = 8
+REF_ADAPTER_ALPHA = 16
+REF_ADAPTER_USE_RSLORA = True
 # Gate 7a reproduces #521's committed numbers. REF_JSON and GATE_7A_VARIANT MUST
 # describe the SAME read: same_marker_seed42.json was produced with variant="same"
 # (s_top1_frac 0.32465 / mean_cos_to_U1 0.58711). Reading variant="base" here
@@ -57,6 +83,37 @@ def _repo_root() -> Path:
     return Path(out)
 
 
+def _assert_adapter_regime(local_adapter: Path) -> None:
+    """Fail loud if the staged adapter's LoRA regime != #521's reference regime.
+
+    The round-3 root cause (#651) was loading a DIFFERENT-rank adapter
+    (r=32/alpha=64 instead of the reference's r=8/alpha=16): same training-data
+    lineage, different LoRA weights, orthogonal shift direction. This pins the
+    Gate 7a adapter to the regime that produced same_marker_seed42.json, so the
+    canary can never silently drift to the wrong adapter again. ``use_rslora``
+    is asserted too — it is the rsLoRA application-scaling gauge (incident #601).
+    """
+    cfg = json.loads((local_adapter / "adapter_config.json").read_text())
+    got = {
+        "r": cfg.get("r"),
+        "alpha": cfg.get("lora_alpha"),
+        "use_rslora": cfg.get("use_rslora"),
+    }
+    expected = {
+        "r": REF_ADAPTER_R,
+        "alpha": REF_ADAPTER_ALPHA,
+        "use_rslora": REF_ADAPTER_USE_RSLORA,
+    }
+    if got != expected:
+        raise AssertionError(
+            f"Gate 7a adapter regime mismatch at {local_adapter}: got {got}, "
+            f"expected {expected} (#521's same_marker_seed42.json was produced by "
+            f"issue_519/marker_seed42, r={REF_ADAPTER_R}/alpha={REF_ADAPTER_ALPHA}). "
+            f"A different-rank adapter produces a different shift direction and "
+            f"cannot reproduce the committed numbers. HALT."
+        )
+
+
 def _extract_panel_matrix(
     adapter_subfolder: str,
     *,
@@ -65,6 +122,7 @@ def _extract_panel_matrix(
     primary_layer: int,
     max_new_tokens: int,
     cpu_only: bool,
+    assert_regime: bool = False,
 ):
     """Stage the adapter locally, read the 14-persona panel -> (M [H,14], order).
 
@@ -94,6 +152,8 @@ def _extract_panel_matrix(
     local_adapter = stage_adapter(
         adapter_subfolder, _repo_root() / "outputs" / "issue_651" / "staged_adapters"
     )
+    if assert_regime:
+        _assert_adapter_regime(local_adapter)
     personas = build_panel_personas()
     questions = build_panel_questions()
     device_map = None if cpu_only else "auto"
@@ -156,11 +216,12 @@ def gate_7a(repo_root: Path, *, cpu_only: bool, max_new_tokens: int) -> dict:
     )
     M, _order = _extract_panel_matrix(
         CANARY_ADAPTER,
-        arm="marker",  # the villain-source #519 adapter is a marker implant
+        arm="marker",  # the #519 marker adapter that produced #521's reference
         variant=GATE_7A_VARIANT,  # "same" -> marker-stripped read == #521's reference
         primary_layer=14,
         max_new_tokens=max_new_tokens,
         cpu_only=cpu_only,
+        assert_regime=True,  # pin r=8/alpha=16/use_rslora == #521's regime (round-3 fix)
     )
     summ = svd_summary(M)
     re_top = float(summ["s_top1_frac"])
@@ -192,8 +253,10 @@ def gate_7a(repo_root: Path, *, cpu_only: bool, max_new_tokens: int) -> dict:
         raise AssertionError(
             f"GATE 7a FAILED: {checks}. Reproduced top={re_top:.5f} (ref {ref_top:.5f}), "
             f"mean_cos={re_mean_cos:.5f} (ref {ref_mean_cos:.5f}), U1_cos={u1_cos:.5f}. "
-            f"The rsLoRA alpha/sqrt(r) read gauge does NOT match #521's committed regime "
-            f"(incident #601) OR the adapter is silently unapplied. HALT."
+            f"The adapter regime matched #521's (r={REF_ADAPTER_R}/alpha={REF_ADAPTER_ALPHA} — "
+            f"asserted pre-SVD), so a FAIL here means the rsLoRA alpha/sqrt(r) read gauge does "
+            f"NOT match #521's committed regime on the current PEFT+vLLM stack (incident #601) "
+            f"OR the adapter is silently unapplied. HALT."
         )
     logger.info("[phase=gate7a] PASS")
     return result

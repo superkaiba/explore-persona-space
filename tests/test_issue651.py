@@ -372,6 +372,80 @@ def test_q2_matrix_carries_per_pair_null_band():
     assert all(0.0 <= v <= 1.0 for v in q2["pairwise_null_p95"].values())
 
 
+# --------------------------------------------------------------------------
+# Round-3 regression tests (canary adapter-identity root cause)
+# --------------------------------------------------------------------------
+
+
+def test_canary_adapter_is_the_provenance_recorded_producer():
+    # ROOT CAUSE round-3 (#651): the canary loaded the WRONG adapter. The v3 plan
+    # named adapters/marker_villain_asst_excluded_medium_c0589c_seed42 (r=32/a=64),
+    # but #521's same_marker_seed42.json was produced by issue_519/marker_seed42
+    # (r=8/a=16) per v2_adapter_provenance.json. A different-rank adapter has a
+    # different shift direction -> orthogonal U1 (cos 0.0096) -> spurious HALT.
+    import json
+    from pathlib import Path
+
+    import scripts.issue651_canary as canary
+
+    repo_root = Path(
+        __import__("subprocess")
+        .check_output(["git", "rev-parse", "--show-toplevel"])
+        .decode()
+        .strip()
+    )
+    # The canary must point at the producer the provenance file records, NOT the
+    # c0589c adapter the plan misnamed.
+    assert canary.CANARY_ADAPTER == "issue_519/marker_seed42"
+    assert "c0589c" not in canary.CANARY_ADAPTER
+
+    prov = json.loads((repo_root / "eval_results/issue_521/v2_adapter_provenance.json").read_text())
+    recorded = prov["marker_seeds"]["42"]
+    # The provenance string names the producing adapter subfolder.
+    assert canary.CANARY_ADAPTER in recorded, (canary.CANARY_ADAPTER, recorded)
+
+
+def test_assert_adapter_regime_rejects_wrong_rank(tmp_path):
+    # The pre-SVD regime assert must reject the c0589c regime (r=32/a=64) and
+    # accept the reference regime (r=8/a=16) — so a wrong-adapter drift fails
+    # loud BEFORE the expensive SVD read instead of producing an orthogonal U1.
+    import json
+
+    import scripts.issue651_canary as canary
+
+    def _write_cfg(d, r, alpha, use_rslora):
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "adapter_config.json").write_text(
+            json.dumps({"r": r, "lora_alpha": alpha, "use_rslora": use_rslora})
+        )
+        return d
+
+    # Reference regime -> passes.
+    good = _write_cfg(tmp_path / "good", 8, 16, True)
+    canary._assert_adapter_regime(good)  # no raise
+
+    # The wrong (c0589c) regime -> raises.
+    bad = _write_cfg(tmp_path / "bad", 32, 64, True)
+    with pytest.raises(AssertionError, match="regime mismatch"):
+        canary._assert_adapter_regime(bad)
+
+    # use_rslora=False (rsLoRA gauge off) -> raises (incident #601 probe).
+    no_rslora = _write_cfg(tmp_path / "norslora", 8, 16, False)
+    with pytest.raises(AssertionError, match="regime mismatch"):
+        canary._assert_adapter_regime(no_rslora)
+
+
+def test_canary_regime_constants_match_reference_regime():
+    # The pinned regime constants must equal the reference adapter's actual
+    # config (r=8/alpha=16/use_rslora=True). If issue_519/marker_seed42 is ever
+    # re-trained these constants must move in lockstep with the reference JSON.
+    import scripts.issue651_canary as canary
+
+    assert canary.REF_ADAPTER_R == 8
+    assert canary.REF_ADAPTER_ALPHA == 16
+    assert canary.REF_ADAPTER_USE_RSLORA is True
+
+
 def test_bridge_reads_every_seed42_cell_not_just_one(monkeypatch, tmp_path):
     # CONCERN bridge-single-canonical-cell: the per-behavior canonical U1 must be
     # built from EVERY seed-42 cell's read (plan §9: 16 fact + 16 sycophancy), not
