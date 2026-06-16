@@ -713,11 +713,31 @@ legacy-scoped tolerance; see `.claude/agent-memory/experimenter/feedback_preflig
    `## Smoke run` section under a new `### upload wiring` sub-heading
    (one line: the grep command + the matched line, or the literal note
    "no raw completions written by this dispatcher; upload helper N/A").
-8. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
+8. **Regression test for a substantive BLOCKER fix (commit it BEFORE the
+   commit step below).** When THIS round closes a substantive BLOCKER — a
+   prior-round binding `BLOCKER` concern (`concerns.jsonl`) or a Critical
+   code-review finding you would otherwise re-raise — by adding a
+   **permanent invariant** (a fail-loud assertion / `RuntimeError` guard, a
+   scoping fix like a re-keyed constant lookup / narrowed selector /
+   disjointness check, or an equivalent guardrail meant to STAY in the
+   code), commit a pytest that **fails pre-fix and passes post-fix** and
+   actually exercises the invariant (trips the guard / asserts the scoped
+   value — not just an import). Cite it under `(c) How to verify` (the
+   `tests/` path + what input trips the guard + the expected raise /
+   value). Do NOT merely claim a covering test exists — `code-reviewer`
+   greps the worktree, and a fabricated-coverage claim is a substantive
+   FAIL, not a Minor. Scope: PERMANENT-invariant fixes only; a one-off data
+   fix, a value tweak, or a fix the plan already pairs with a test is out
+   of scope. Rationale: an un-CI-pinned assertion is a guard a future
+   refactor silently strips while CI stays green (incident #653 r8). This
+   mirrors `code-reviewer.md` Step 4.5 + Rule 13 — the test's absence is a
+   review Minor otherwise, costing a re-roll round; arriving pre-pinned
+   skips it.
+9. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
    convention (`git log --oneline -10` for style).
-9. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
-   issue #N (see Report Format below). The `/issue` skill reads this marker
-   and spawns `code-reviewer`.
+10. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
+    issue #N (see Report Format below). The `/issue` skill reads this marker
+    and spawns `code-reviewer`.
 
 ### Smoke runs are same-turn, synchronous work
 
@@ -848,6 +868,12 @@ issue #N:
   under left-pad; the equivalence check caught a cosine of 0.55 that
   would have silently corrupted all 28-layer × 500-probe activations on
   the pod.
+- **Regression test for a substantive BLOCKER fix** (REQUIRED when this
+  round closes a substantive BLOCKER by adding a permanent invariant — see
+  After-implementation checklist item 8): cite the committed pytest (the
+  `tests/` path + the input that trips the guard + the expected raise /
+  value) and confirm it fails pre-fix / passes post-fix. Skip this line
+  only when the round added no permanent-invariant BLOCKER fix.
 - **End-to-end test commands** (≥1 happy path + ≥2 distinct error/edge cases for non-trivial features): list the exact commands the user can run plus what each output should look like. If the change is small enough that 3 tests is overkill, say so explicitly and justify.
 - **Pod-side dispatcher validated through `poll_pipeline.py`** (REQUIRED if this round added or modified a pod-side dispatcher with an end-of-run sentinel): cite the `## Smoke run` evidence that the poller PARSED the sentinel (post-smoke `grep -c missing /tmp/poll.log == 0`, sentinel renamed `.processed`, OR a dry-run of `_parse_sentinel` on the written file) AND that the poller detected `phase=done` (`current_phase: done` in poll output). A smoke run that only invokes the dispatcher directly via SSH does NOT satisfy this — `[phase=done]` emission + `_SENTINEL_REQUIRED_KEYS` conformance are invisible without going through the poller. Skip this line only when the change is dispatcher-free.
 - **What success looks like:** the one observable signal the user should check to confirm correctness without reading the diff.
