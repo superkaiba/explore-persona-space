@@ -3,7 +3,8 @@ title: Postfix-KV patching beats prefix patching on 7 of 8 leaky Qwen-2.5 adapte
   and cuts the two strongly-installed reckless-behavior cells 56-69%, but leaves the
   format-style floor cells worse (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-14T06:19:53Z'
 has_clean_result: true
 parent_id: 595
