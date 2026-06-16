@@ -1,0 +1,65 @@
+{
+  "_doc": "Collinearity gate, #391 forced-choice S/N gate, per-seed sign agreement, coverage.",
+  "smoke": false,
+  "arms": {
+    "arm_canned": {
+      "collinearity": {
+        "pearson_abs_cos_prior": -0.030766273896585296,
+        "fired": false,
+        "n": 108
+      },
+      "forced_choice_391": {
+        "median_abs_change": 0.05875,
+        "median_trained_rate": 0.06458333333333333,
+        "cluster_honest_wilson_half_width": 0.06573983189412225,
+        "signal_to_noise": 0.8936743266186051,
+        "fired": true,
+        "note": "fire => rate-space CHANGE too coarse; run #391 forced-choice probe (GPU). Expected NOT to fire (S/N ~ 2-3)."
+      },
+      "per_seed_sign_agreement": 0.9722222222222222,
+      "n_per_seed_pairs": 108,
+      "excluded_cells": {
+        "diagonal": 4,
+        "trained_negative": 8,
+        "missing_base": 0,
+        "missing_geom": 0,
+        "missing_trained": 0
+      },
+      "n_cells": 108
+    },
+    "arm_onpolicy": {
+      "collinearity": {
+        "pearson_abs_cos_prior": 0.04610017260094572,
+        "fired": false,
+        "n": 55
+      },
+      "forced_choice_391": {
+        "median_abs_change": 0.013333333333333336,
+        "median_trained_rate": 0.085,
+        "cluster_honest_wilson_half_width": 0.07282607551026518,
+        "signal_to_noise": 0.1830846058902891,
+        "fired": true,
+        "note": "fire => rate-space CHANGE too coarse; run #391 forced-choice probe (GPU). Expected NOT to fire (S/N ~ 2-3)."
+      },
+      "per_seed_sign_agreement": 0.8363636363636363,
+      "n_per_seed_pairs": 55,
+      "excluded_cells": {
+        "diagonal": 2,
+        "trained_negative": 3,
+        "missing_base": 0,
+        "missing_geom": 0,
+        "missing_trained": 0
+      },
+      "n_cells": 55
+    }
+  },
+  "data_repo_revision": "14d541bbafb3dfdbe35ea7a3389df5e5a7f2c458",
+  "n_pinned_cells": 360,
+  "geometry_l20_robustness_note": null,
+  "reproducibility": {
+    "git_commit": "904c266854387d4ef4ff1f34d8a3bc1cf3f9da04",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "timestamp": "2026-06-16T04:10:55.315384+00:00"
+  }
+}

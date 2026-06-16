@@ -1468,6 +1468,214 @@ Confidence: LOW — single-seed fixture for verifier-test purposes only.
     assert "not uploaded" in by_name["Qualitative-data link"].detail
 
 
+# ─── Check 11: eval-INPUT enumeration skip (regression for #538) ──────────
+
+
+def _body_with_eval_input_enum_and_linked_sample(input_prelude: str) -> str:
+    """Build a minimal v2-shape body whose `## TL;DR` carries TWO fenced
+    blocks: (1) an exhaustive eval-INPUT question enumeration introduced by
+    `input_prelude` (on its own line, with NO link in its prelude window),
+    and (2) a genuine model-OUTPUT sample that DOES carry a raw-completions
+    link. Mirrors the #538 body shape (line 89-112: "The 20 eval input
+    questions are the same fixed set …" followed elsewhere by linked
+    completion samples).
+
+    The hero figure lives in `### Motivation` and is padded >1500 chars
+    away from the eval-input fence, so the fence's `_prelude_window` carries
+    NO link — the block can clear check 11 ONLY via the eval-input
+    enumeration skip, not via an incidentally-nearby figure URL.
+    """
+    padding = " ".join(
+        "Filler prose to push the figure URL out of the eval-input fence's prelude window."
+        for _ in range(60)
+    )
+    return f"""\
+---
+title: Eval-input enumeration skip fixture
+kind: experiment
+goal: Exercise the check-10/11 eval-input enumeration skip
+---
+# Some claim about persona leakage (LOW confidence)
+
+## Human TL;DR
+
+placeholder
+
+## TL;DR
+
+### Motivation
+
+I wanted to confirm that an exhaustive eval-INPUT question list is not
+mistaken for a cherry-picked model-OUTPUT sample by the cherry-picked
+and qualitative-data-link checks.
+
+![Bar chart of the DV across cells with 95% CI bands; the fixed eval-question bank drives every cell.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
+
+> **Figure.** *The DV separates cells cleanly on the fixed eval-question bank.* Cells on the x-axis; mean DV on the y-axis; error bars are 95% Wald CIs.
+
+{padding}
+
+### A finding whose eval inputs are a fixed question set
+
+I ran the DV on a fixed bank of questions, evaluated on every cell.
+
+{input_prelude}
+
+```
+1.  What is the best way to learn a new language?
+2.  Can you explain how photosynthesis works?
+3.  What are some tips for managing stress?
+4.  How does a computer processor work?
+5.  What's the history of the printing press?
+6.  How do I make a good cup of coffee?
+7.  What causes earthquakes?
+8.  Can you recommend some exercises for back pain?
+9.  How do airplanes stay in the air?
+10. What's the difference between a virus and bacteria?
+```
+
+A representative model completion, cherry-picked for illustration, from
+[raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl):
+
+```text
+User: What is the best way to learn a new language?
+Assistant: The best way to learn a new language is consistent daily practice combined with immersion, spaced-repetition vocabulary review, and conversation with native speakers as early as possible to build real fluency rather than only textbook knowledge.
+```
+
+## Reproducibility
+
+**Parameters:** lr=3e-5, seeds=[42,137,256].
+
+**Artifacts:** raw completions at the linked data repo.
+
+**Compute:** n/a (this is a verifier-fixture body).
+
+**Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+
+Confidence: LOW — single-seed fixture for verifier-test purposes only.
+"""
+
+
+def test_eval_input_enumeration_does_not_trip_qualitative_link():
+    """Regression for #538: a fenced eval-INPUT question enumeration whose
+    prelude names it as "the same fixed set of eval input questions" must
+    NOT be treated as an unlinked model-OUTPUT sample by check 11. The
+    separately-linked completion block alone satisfies the check; the
+    input-question list is skipped.
+    """
+    body = _body_with_eval_input_enum_and_linked_sample(
+        "The 20 eval input questions are the same fixed set across every cell "
+        "and every dial point (the same as a prior run — not cherry-picked):"
+    )
+    # Sanity: the body genuinely contains TWO sample-detected fences (the
+    # eval-input list is >200 chars so `_is_sample_fence` flags it), and the
+    # eval-input fence's prelude window carries NO link — so the block can
+    # clear check 11 ONLY via the eval-input enumeration skip, never via an
+    # incidentally-nearby figure URL. This makes the skip load-bearing here.
+    tldr = verify_task_body.section_text(body, "TL;DR")
+    blocks = verify_task_body._iter_sample_blocks(tldr)
+    assert len(blocks) == 2, [b[2][:40] for b in blocks]
+    input_start = next(s for s, _e, c in blocks if c.lstrip().startswith("1."))
+    input_prelude = verify_task_body._prelude_window(tldr, input_start)
+    assert not verify_task_body._LINK_RE.findall(input_prelude)
+    assert not verify_task_body._CODE_RE.findall(input_prelude)
+
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    qlink = by_name["Qualitative-data link"]
+    assert qlink.passed, qlink.detail
+    # The fix must not regress check 10 either — the input list is skipped
+    # there too, and the output sample carries its cherry-pick disclosure.
+    cherry = by_name["Cherry-picked label discipline"]
+    assert cherry.passed, cherry.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_eval_input_enumeration_skip_requires_eval_input_framing():
+    """The skip is gated on an eval-INPUT framing token, NOT on the bare
+    "The N …" lead. A cherry-picked model-OUTPUT block introduced by
+    "The 10 most extreme completions …" (exhaustive lead, but it names
+    OUTPUTS, not eval inputs) and lacking a link must STILL FAIL check 11
+    — the skip does not over-loosen.
+    """
+    body = """\
+---
+title: Exhaustive-lead output block still enforced fixture
+kind: experiment
+goal: Exercise the eval-input framing gate on the enumeration skip
+---
+# Some claim about persona leakage (LOW confidence)
+
+## Human TL;DR
+
+placeholder
+
+## TL;DR
+
+### Motivation
+
+I wanted to confirm a "The N …"-led block that names model OUTPUTS (not
+eval inputs) is still subject to the qualitative-data-link rule.
+
+### A finding whose output sample block ships without a link
+
+The 10 most extreme completions from the trained model are shown below,
+with no raw-data link anywhere in this prelude prose.
+
+```text
+User: What is the capital of France?
+Assistant: Paris is the capital of France, with a population of about 2.2 million people in the city proper and 12 million in the metropolitan area, hosting many world-famous landmarks such as the Eiffel Tower and the Louvre museum across an extensive cultural and economic core.
+```
+
+## Reproducibility
+
+**Parameters:** lr=3e-5, seeds=[42,137,256].
+
+**Artifacts:** none uploaded for this minimal fixture.
+
+**Compute:** n/a (this is a verifier-fixture body).
+
+**Code:** entry script @ commit `0123456789abcdef`.
+
+Confidence: LOW — single-seed fixture for verifier-test purposes only.
+"""
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Qualitative-data link"].passed
+    assert "lack a qualitative-data link" in by_name["Qualitative-data link"].detail
+
+
+def test_is_eval_input_enumeration_prelude_unit():
+    """Direct unit coverage of the eval-INPUT enumeration prelude detector:
+    requires BOTH the exhaustive "The N …" / "All N …" lead AND an
+    eval-input framing token.
+    """
+    fn = verify_task_body._is_eval_input_enumeration_prelude
+    # Positive: 538-shape, "All N eval items", lead on a later line of the window.
+    assert fn("The 20 eval input questions are the same fixed set across every cell:")
+    assert fn("All 20 evaluation prompts asked identically of every persona:")
+    assert fn("Some intro line.\n\nThe 20 evaluation prompts are the fixed set used everywhere:")
+    # Negative: cherry-picked OUTPUT block, no-lead eval-question prose,
+    # generic completion prelude, "All N personas" output enumeration.
+    assert not fn("The 5 most extreme completions, cherry-picked for illustration:")
+    assert not fn("Here are some eval questions we used:")
+    assert not fn("A representative completion from the trained model:")
+    assert not fn("All 28 personas were evaluated; sample completions below:")
+    # Over-loosening guards (review Minor-1): the lead and the eval-input
+    # framing token must co-occur on the SAME line.
+    # (1) An OUTPUT block whose SAME line names completions, even if it also
+    #     mentions eval questions, must NOT skip — "completions" is the head
+    #     noun; the lead does not introduce an eval-INPUT enumeration.
+    assert not fn("The 6 completions the model produced in response to the eval questions:")
+    # (2) Cross-line bleed: a cherry-picked OUTPUT lead on line 1 and an
+    #     unrelated eval-input parenthetical on a LATER line must NOT skip.
+    assert not fn(
+        "The 5 most extreme completions are shown below.\n\n"
+        "(The 20 eval input questions were the fixed bank, described above.)"
+    )
+
+
 # ─── Soft Goal-of-experiment check (never FAIL — WARN when missing) ───────
 
 

@@ -690,6 +690,70 @@ _EXHAUSTIVE_SUMMARY_RE = re.compile(
     re.IGNORECASE,
 )
 
+# A FENCED code block has no `<summary>` to carry the exhaustive-enumeration
+# signal; the equivalent disclosure lives in the prose prelude immediately
+# above it (e.g. #538's "The 20 eval input questions are the same fixed set
+# across every cell …"). Such a block is an eval-INPUT enumeration — the
+# fixed list of prompts/questions the experiment runs ON — NOT a
+# cherry-picked model-OUTPUT completion sample, so the cherry-picked-label
+# (check 10) and qualitative-data-link (check 11) rules don't apply: there
+# is no raw-completion artifact to link, because the block IS the input
+# stimulus, not a generation.
+#
+# To avoid loosening the checks on genuine output samples, the skip requires
+# a SINGLE prelude LINE that carries BOTH:
+#   (a) an exhaustive-enumeration lead — "The N <thing>" / "All N <thing>" at
+#       the start of that line, AND
+#   (b) an eval-INPUT framing token later on the SAME line — naming the block
+#       as the fixed set of eval/input questions/prompts (NOT
+#       completions/outputs/responses).
+# The two signals must co-occur ON ONE LINE (a single combined regex, not two
+# independent `.search()` calls). This is deliberate: matching the lead and
+# the framing token on DIFFERENT lines of the window would over-loosen — a
+# cherry-picked OUTPUT block ("The 5 most extreme completions are shown
+# below.") whose window also bleeds in an unrelated "(the 20 eval input
+# questions are described above)" parenthetical would be wrongly skipped.
+# Same-line co-occurrence is how every legitimate eval-input enumeration
+# actually phrases it (e.g. #538: "The 20 eval input questions are the same
+# fixed set …"). MULTILINE so the lead anchors at the start of ANY line of the
+# prelude window (`_prelude_window` may leave leading blank/partial lines).
+# A cherry-picked output prelude ("The 5 most extreme completions …") fails
+# (b) and is still enforced; an eval-question prelude that omits the "The N"
+# lead fails (a) and is still enforced (it must then carry a real link or the
+# `not uploaded` escape like any other block). The `<details>` form keeps its
+# own `_EXHAUSTIVE_SUMMARY_RE.match` summary-skip — left unchanged.
+_EVAL_INPUT_ENUM_PRELUDE_RE = re.compile(
+    r"^\s*(?:the|all)\s+\d+\b"
+    # Gap between the lead number and the framing token: same line, and it
+    # must NOT contain a competing OUTPUT head-noun
+    # (completion/output/response/generation/sample/answer/reply). Without
+    # this guard "The 6 completions … in response to the eval questions:"
+    # would skip — the lead introduces the model's OUTPUTS, not an eval-INPUT
+    # enumeration (review Minor-1, #538).
+    r"(?:(?!\b(?:completion|output|response|generation|sample|answer|reply)s?\b)[^\n])*?"
+    r"(?:"
+    r"eval(?:uation)?[\s-]*(?:input[\s-]*)?(?:question|prompt|item|stimul)"
+    r"|input[\s-]*(?:question|prompt)"
+    r"|(?:fixed|same)\s+set\s+(?:of\s+)?(?:\w+\s+){0,3}?(?:eval|question|prompt)"
+    r")",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _is_eval_input_enumeration_prelude(prelude: str) -> bool:
+    """Return True if a fenced block's prelude prose marks it as an
+    exhaustive eval-INPUT enumeration (the fixed set of questions/prompts
+    the experiment runs ON), not a cherry-picked model-OUTPUT sample.
+
+    Mirrors the `<details>` `<summary>` exhaustive-enumeration skip
+    (`_EXHAUSTIVE_SUMMARY_RE`) for the fenced-code-block form. Requires a
+    SINGLE prelude line carrying BOTH an exhaustive lead ("The N …" /
+    "All N …") AND an eval-input framing token, so genuine output samples
+    (and output preludes that merely mention eval questions elsewhere in
+    the window) stay enforced.
+    """
+    return bool(_EVAL_INPUT_ENUM_PRELUDE_RE.search(prelude))
+
 
 def _iter_sample_details(details: str) -> list[tuple[int, int, str]]:
     """Yield (block_start_offset, block_end_offset, inner_content) for
@@ -2536,6 +2600,13 @@ def check_cherry_picked_label(body: str) -> CheckResult:
         total += len(samples)
         for start, _, content in samples:
             prelude = _prelude_window(scan_text, start)
+            # Skip an exhaustive eval-INPUT enumeration (see the matching
+            # skip in `check_qualitative_data_link`): a fixed eval-question
+            # list ("The 20 eval input questions are the same fixed set …")
+            # is the input stimulus, not a cherry-picked model-OUTPUT
+            # sample, so the cherry-picked-disclosure rule does not apply.
+            if _is_eval_input_enumeration_prelude(prelude):
+                continue
             # For `<details>` blocks the cherry-pick disclosure may live
             # inside the block (the `<summary>` text or the prose around
             # the inner table); we scan BOTH the prelude window AND the
@@ -2591,6 +2662,17 @@ def check_qualitative_data_link(body: str) -> CheckResult:
         total += len(samples)
         for start, _, content in samples:
             prelude = _prelude_window(scan_text, start)
+            # Skip an exhaustive eval-INPUT enumeration introduced by a
+            # prelude like #538's "The 20 eval input questions are the same
+            # fixed set …": that fenced block IS the input stimulus, not a
+            # model-OUTPUT sample, so there is no raw-completion artifact to
+            # link. Mirrors the `<details>` `<summary>` exhaustive-summary
+            # skip (`_iter_sample_details`) for the fenced form. Requires the
+            # "The N …" lead AND an eval-input framing token on the SAME
+            # prelude line, so a cherry-picked output block ("The 5 most
+            # extreme completions …") stays enforced.
+            if _is_eval_input_enumeration_prelude(prelude):
+                continue
             # For `<details>` blocks the raw-data link often lives INSIDE
             # the block, after the table (e.g. task #432's "Full training
             # file: [...]" link on the line after the table). Scan both

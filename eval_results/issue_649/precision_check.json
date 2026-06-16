@@ -1,0 +1,28 @@
+{
+  "_doc": "Realized per-cell Wilson half-widths (cluster-honest n=60) + median|CHANGE| S/N + #391 forced-choice gate decision, per arm. Recomputed on realized cells.",
+  "smoke": false,
+  "arms": {
+    "arm_canned": {
+      "median_abs_change": 0.05875,
+      "median_trained_rate": 0.06458333333333333,
+      "cluster_honest_wilson_half_width": 0.06573983189412225,
+      "signal_to_noise": 0.8936743266186051,
+      "fired": true,
+      "note": "fire => rate-space CHANGE too coarse; run #391 forced-choice probe (GPU). Expected NOT to fire (S/N ~ 2-3)."
+    },
+    "arm_onpolicy": {
+      "median_abs_change": 0.013333333333333336,
+      "median_trained_rate": 0.085,
+      "cluster_honest_wilson_half_width": 0.07282607551026518,
+      "signal_to_noise": 0.1830846058902891,
+      "fired": true,
+      "note": "fire => rate-space CHANGE too coarse; run #391 forced-choice probe (GPU). Expected NOT to fire (S/N ~ 2-3)."
+    }
+  },
+  "reproducibility": {
+    "git_commit": "904c266854387d4ef4ff1f34d8a3bc1cf3f9da04",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "timestamp": "2026-06-16T04:10:55.315384+00:00"
+  }
+}
