@@ -19,19 +19,19 @@ relates_to:
 
 ## Takeaways
 
-- Postfix-KV patching beats prefix-patching on **7 of 8** leaky adapters, seed 0 (n = 8, sign-test p = 0.07). Spans differ (postfix 5 tokens, prefix 24) — not span-matched.
+- Postfix-KV patching beats prefix-patching on **7 of 8** leaky adapters, seed 0 (n = 8, sign-test p = 0.07). Spans differ (postfix 5 tokens, prefix 24); the two are not length-matched.
 - The clean signal is two strongly-installed reckless-behavior cells: postfix cuts the rate **0.56-0.69** absolute vs prefix's 0.06-0.10. A third high-trained-rate cell (wrong-claim) cuts only **+0.20**.
 - Not "cuts everywhere": postfix **raises** leakage on three near-floor format-style cells. Absolute reading: it helps **5 of 8** cells, hurts 3.
-- All cells keep their sign across both seeds (**8/8**). The two big cuts replicate within ~0.06; wrong-claim halves (0.20 → 0.10) — magnitude replication is loose.
+- All cells keep their sign across both seeds (**8/8**). The two big cuts replicate within ~0.06; wrong-claim halves (0.20 → 0.10), so magnitude replication is loose.
 - The carrier scalar does **not** rank responders (ρ = −0.26); its raw row-leak ρ = +0.55 (CI straddles 0) is not yet gauge-corrected for postfix.
 
 ## What I ran
 
-**Why:** Persona/behavior leakage to off-distribution prompts is a safety target. A prior run found that on one headline cell, patching the base model's prefix KV *raised* leakage while patching the postfix KV *cleared* it, and the Piggyback paper notes (as a side observation) that Qwen-2.5 shows large postfix recovery. Two data points raised a question worth a clean test: is the postfix a reliable leakage-carrier on Qwen-2.5-7B — i.e. a working model-specific intervention — or were those two hits a coincidence? See [#595](https://eps.superkaiba.com/tasks/595) (prefix-patch baseline) and [#545](https://eps.superkaiba.com/tasks/545) (the leaky adapters).
+**Why:** Persona/behavior leakage to off-distribution prompts is a safety target. A prior run found that on one headline cell, patching the base model's prefix KV *raised* leakage while patching the postfix KV *cleared* it, and the Piggyback paper notes (as a side observation) that Qwen-2.5 shows large postfix recovery. Two data points raised a clean test: is the postfix a reliable leakage-carrier on Qwen-2.5-7B (a working model-specific intervention), or were those two hits a coincidence? See [#595](https://eps.superkaiba.com/tasks/595) (prefix-patch baseline) and [#545](https://eps.superkaiba.com/tasks/545) (the leaky adapters).
 
-**Design:** 8 leaky LoRA adapters × 2 seeds × {trained-no-patch, postfix-patched} = 32 on-policy generation cells, inference-time only (no training). The single manipulated variable vs the prior run is the patch span — postfix (5 tokens) instead of prefix (24 tokens). The prefix comparison is the prior run's committed values, not re-run; the two spans are not length-matched.
+**Design:** 8 leaky LoRA adapters × 2 seeds × {trained-no-patch, postfix-patched} = 32 on-policy generation cells, inference-time only (no training). The single manipulated variable vs the prior run is the patch span (postfix, 5 tokens, instead of prefix, 24 tokens). The prefix comparison is the prior run's committed values, not re-run; the two spans are not length-matched.
 
-**Training:** None — the 16 adapters (8 rows × 2 seeds) are reused as-is from the parent leakage-matrix run at HF revision `6471a550` (Qwen-2.5-7B-Instruct base).
+**Training:** None. The 16 adapters (8 rows × 2 seeds) are reused as-is from the parent leakage-matrix run at HF revision `6471a550` (Qwen-2.5-7B-Instruct base).
 
 **Eval:** DV = Δleakage = trained-no-patch rate − postfix-patched rate per cell, where the rate is the Claude/gpt-4o-judged behavior-expression rate over on-policy completions (the model generates its own answer at each probe; no teacher-forcing). Probe banks per cell: 8 probes on the backend-parity anchor cell, 20 on two columns with smaller banks, 32 on the other five. Primary test: median postfix Δ (seed 0) > 0 AND postfix Δ > prefix Δ on ≥5/8 cells.
 
@@ -39,25 +39,25 @@ relates_to:
 
 ### Postfix patching beats prefix on 7 of 8 cells; the win is real on two strongly-installed cells and an artifact of prefix being worse on the floor cells
 
-The headline test passes: median postfix Δleakage (seed 0) = **+0.0812**, postfix beats prefix on **7/8** cells (n = 8, sign-test p = 0.0703; paired rank test p = 0.0156). The spans are not length-matched (postfix 5 tokens, prefix 24). The per-cell picture splits into two regimes.
+Median postfix Δleakage (seed 0) = **+0.0812**, postfix beats prefix on **7/8** cells (n = 8, sign-test p = 0.0703; paired rank test p = 0.0156). The per-cell picture splits in two.
 
 ![Grouped horizontal bars comparing postfix-patch and prefix-patch delta-leakage per cell at seed 0; postfix bars are higher than prefix on seven of eight cells, with two large positive postfix bars at the top, a small positive bar for wrong-claim, and three negative bars at the bottom for the format-style cells.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ab36cfc7326f9e06e44b00417cb85284350f36c2/figures/issue_640/hero_postfix_vs_prefix.png)
 
 > **Figure.** *Postfix beats prefix on 7 of 8 cells, but only the top two are large leakage cuts.* x = Δleakage = trained − patched rate (right = leakage reduced), seed 0, 8 cells. Asterisked = near-floor (trained rate 0.06-0.19), Δ noise-dominated. Postfix cuts the two reckless-behavior cells 0.56-0.69; wrong-claim cuts +0.20.
 
-- Two reckless-behavior cells cut **0.5625-0.6875** where prefix cut 0.06-0.10. Wrong-claim (trained 0.65) cuts only **+0.20** — grouped above by trained rate, not cut size. Near-floor bad-medical clears 0.11 → 0.00 over a low base, not a third strong hit.
-- On the three near-floor format-style cells postfix Δ is negative — patching *raises* the rate, beating prefix only because prefix raises it more. Absolute reading: postfix reduces leakage on **5 of 8** cells.
+- Two reckless-behavior cells cut **0.5625-0.6875** where prefix cut 0.06-0.10. Wrong-claim (trained 0.65) cuts only **+0.20**, grouped above by trained rate, not cut size. Near-floor bad-medical clears 0.11 → 0.00 over a low base, not a third strong hit.
+- On the three near-floor format-style cells postfix Δ is negative; the patch *raises* the rate, beating prefix only because prefix raises it more. Absolute reading: postfix reduces leakage on **5 of 8** cells.
 
 ### The win comes from the two strong cells; the floor cells move toward base behavior, not away from it
 
-The raw rates show what the Δ collapses. On the floor cells the patch pushes the rate *up*, not down.
+The raw rates show what the Δ collapses. On the floor cells the patch pushes the rate *up*.
 
 ![Grouped horizontal bars of raw judged behavior-expression rate per cell at seed 0, trained-no-patch versus postfix-patched; the two reckless-behavior cells drop sharply under the patch while the three format-style cells rise.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ab36cfc7326f9e06e44b00417cb85284350f36c2/figures/issue_640/trained_vs_patched_rate.png)
 
 > **Figure.** *Raw rates: postfix patching lowers the two reckless-behavior cells and raises the near-floor format-style cells.* x = judged rate (0-1), seed 0. Top two: 0.97 → 0.28, 1.00 → 0.44. Wrong-claim: 0.65 → 0.45. Format-style: 0.19 → 0.44, 0.06 → 0.28, 0.16 → 0.31. Marker null control barely moves (0.15 → 0.10).
 
-- The binding caveat on MODERATE: the carrier effect is genuine only where the adapter installed a strong off-distribution behavior. Near the floor, "patching toward base" means *more* of the base model's own behavior.
-- Why the rate rises is not pinned down: one explanation is that base postfix KV carries format-style structure; an alternative is that disrupting the adapter's KV simply reverts toward default Qwen formatting. No base no-adapter format-style control was measured, so this stays an alternative explanation, not a confirmed cause. The rise is a real behavior change (markdown/bold structure in the samples), not a judging artifact.
+- The binding caveat on MODERATE: the carrier effect is detectable only where the adapter installed a strong off-distribution behavior. Near the floor, "patching toward base" means *more* of the base model's own behavior.
+- The mechanism is not yet established: base postfix KV may carry format-style structure, or disrupting the adapter's KV may simply revert toward default Qwen formatting. No base no-adapter format-style control was measured, so this stays an alternative explanation. The rise is a behavior change (markdown/bold structure in the samples), not a judging artifact.
 
 ### Every cell agrees in sign across two seeds; the two big cuts replicate within ~0.06, wrong-claim halves
 
@@ -65,19 +65,19 @@ The raw rates show what the Δ collapses. On the floor cells the patch pushes th
 
 > **Figure.** *All 8 cells keep their sign across seeds; the two large cuts sit near y = x, wrong-claim does not.* Each point is a cell. Top-right: the two big cuts (near diagonal) plus wrong-claim/marker (off-diagonal). Bottom-left: the three format-style cells. Distance from y = x is the cross-seed magnitude gap.
 
-- 8/8 cells same sign across seeds (bar was ≥4/8). The two big cuts replicate within ~0.06 (reckless-finance 0.688 vs 0.656, a 0.03 gap; reckless-sports 0.562 vs 0.625, a 0.06 gap). Wrong-claim does NOT replicate tightly: 0.200 vs 0.100, a 0.10 swing on a 0.20 effect.
-- The directional split is a stable cell property, not seed jitter; magnitude replication is broadly similar for the two big cuts, loose for wrong-claim.
+- 8/8 cells same sign across seeds (bar was ≥4/8). The two big cuts replicate within ~0.06 (reckless-finance 0.688 vs 0.656; reckless-sports 0.562 vs 0.625). Wrong-claim does NOT replicate tightly: 0.200 vs 0.100, a 0.10 swing on a 0.20 effect.
+- The directional split is a stable cell property, not seed jitter.
 
 ### The postfix-carrier-strength scalar does not rank patch-responders and is not yet gauge-corrected
 
-Does a scalar for how much each adapter writes into the postfix tokens predict which cells leak / respond? It comes back negative, as the prefix version did.
+Does a scalar for how much each adapter writes into the postfix tokens predict which cells leak or respond? It comes back negative, as the prefix version did.
 
 ![Scatter of the raw postfix-KV-shift score per row (x) against the prior run's row-summed off-diagonal leakage magnitude (y), eight points, no clean monotone relationship.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ab36cfc7326f9e06e44b00417cb85284350f36c2/figures/issue_640/postfix_kv_shift_vs_leak.png)
 
 > **Figure.** *The raw postfix-carrier scalar tracks row leakage only as weakly as the prior prefix scalar did.* x = raw postfix-KV-shift (all-layer mean), y = prior-run row-summed off-diagonal leakage. ρ = 0.55, n = 8, family-clustered 95% CI [−0.92, 1.0] straddles 0.
 
 - The raw scalar does not rank patch-responders: ρ vs postfix Δleakage = **−0.26** (n = 8).
-- Raw row-leak ρ = **+0.548** (CI straddles 0) matches the prior raw +0.53 prefix score, consistent with the prior gauge-confound story — but no postfix gauge-corrected ρ exists yet (`gauge_normalization_power = 0`). The prior prefix correction collapsed +0.53 → ~0; the postfix value is to be filled by the Step 9a-ter free-analysis pass (recompute from the per-row `gaugenorm_sq` field). Reported raw, exploratory.
+- Raw row-leak ρ = **+0.548** (CI straddles 0) matches the prior raw +0.53 prefix score, consistent with the prior gauge-confound, but no postfix gauge-corrected ρ exists yet (`gauge_normalization_power = 0`). The prior prefix correction collapsed +0.53 → ~0; the expected outcome of the Step 9a-ter pass (which computes the gauge-corrected ρ from the per-row `gaugenorm_sq` field) is the same collapse to near zero. Reported raw.
 - `carrier_layer = 9` is a prior-run constant (Piggyback Qwen-2.5 prefix localization), not this run's peak: the raw aggregate per-layer shift here peaks at **layer 18**, with layer 9 ranking 14th of 28.
 
 ## Data
@@ -226,3 +226,4 @@ Reuse provenance:
 - Created / run: filed 2026-06-14; postfix sweep completed 2026-06-15 (~00:25Z phase=done); analysis 2026-06-15.
 - Follow-up to: [#595](https://eps.superkaiba.com/tasks/595) — auto-filed from #595's follow-up proposal #3 (the postfix-cleared headline cell). Adapter + matrix lineage from [#545](https://eps.superkaiba.com/tasks/545).
 - Originating prompt(s), verbatim: origin prompt not recorded (auto-filed follow-up from #595's `epm:follow-ups v1` proposal #3, not a user chat request).
+
