@@ -47,6 +47,7 @@ from explore_persona_space.experiments.issue_650 import (  # noqa: E402
     SOURCE,
     SYCO_BAND_ENTRY_THRESHOLD,
     SYCO_EVAL_N_ROLLOUTS,
+    SYCO_PROBE_N_CLAIMS,
     cell_slug,
     enumerate_cells,
     parse_cell_slug,
@@ -545,25 +546,75 @@ def _load_lora_ab(adapter_dir: Path) -> dict[str, object]:
     return {k: v.float() for k, v in sd.items() if "lora_A" in k or "lora_B" in k}
 
 
+def _read_trajectory_epoch_rates(traj_path: Path) -> dict[int, dict]:
+    """Map epoch -> {trained_rate, delta_agree, checkpoint} from a dose trajectory.
+
+    Reads each cell's OWN slug-keyed trajectory file (the numeric quantity the
+    dose read consumes), keyed by epoch index. Empty dict if the file is absent.
+    """
+    if not traj_path.is_file():
+        return {}
+    recs = json.loads(traj_path.read_text()).get("epoch_records", [])
+    return {
+        int(r["epoch"]): {
+            "trained_rate": float(r["trained_rate"]),
+            "delta_agree": float(r["delta_agree"]),
+            "checkpoint": str(r.get("checkpoint", "")),
+        }
+        for r in recs
+    }
+
+
+# bf16 same-seed GPU run noise: two SEPARATELY-trained same-config bf16 LoRA
+# adapters routinely disagree at ~1e-3/1e-4 (the training path sets no
+# `use_deterministic_algorithms` / `full_determinism`), so a weight-equality
+# read is only ever an INFORMATIONAL sanity signal at this tolerance — it never
+# drives the LOUD failure (syco-dose-determinism-atol-overstrict, Claude r3).
+_SYCO_DOSE_WEIGHT_NOISE_ATOL = 1e-3
+# Agreement-rate equality tolerance. The dose dial is the agreement RATE, judged
+# over SYCO_EVAL_N_ROLLOUTS=10 rollouts/claim on a 30-claim probe — a discrete
+# fraction with ~1/(10*30) granularity. The same-config cells read the SAME base
+# (seed-keyed) and SAME checkpoints, so the rate should match exactly; allow one
+# rollout-grid step of slack for any residual judge non-determinism.
+_SYCO_DOSE_RATE_ATOL = 1.0 / (SYCO_EVAL_N_ROLLOUTS * SYCO_PROBE_N_CLAIMS) + 1e-9
+
+
 def _assert_syco_dose_determinism(
-    *, seed: int, low_cell_dir: Path, high_cell_dir: Path, atol: float = 1e-6
+    *,
+    seed: int,
+    low_cell_dir: Path,
+    high_cell_dir: Path,
+    low_traj_path: Path,
+    high_traj_path: Path,
 ) -> dict:
     """Enforce the determinism the dose-selection correctness silently rests on.
 
     Round-3 CONCERN ``syco-dose-trajectory-cross-cell-path-reuse``
     (reconciler-binding): low and high sycophancy cells of one seed train under
     an IDENTICAL config (same data, same seed, same epochs/lr — dose only labels
-    which band the off-pod read targets), so their per-epoch checkpoints MUST be
-    numerically identical. The pre-round-3 seed-keyed trajectory cache let one
-    dose inherit the other's checkpoint paths; that was harmless ONLY under this
-    determinism. Here we ASSERT it rather than assume it: at every epoch index
-    present in BOTH cells, ``lora_A`` and ``lora_B`` must be allclose(atol). A
-    divergence (different RNG, a stray config drift, a corrupted checkpoint) is
-    a LOUD failure, not a silent wrong-adapter read.
+    which band the off-pod read targets), so the dose read silently rests on the
+    two cells being numerically equivalent at matched epochs.
 
-    Compares MATCHED epoch indices (not the dose-selected epochs, which differ
-    by design — low picks an earlier band-entry epoch than high). Returns a
-    digest of the epochs compared.
+    Option-(b) determinism read (pivot, syco-dose-determinism-atol-overstrict):
+    do NOT gate the LOUD failure on bf16 LoRA weight bit-equality — two
+    separately-trained same-config bf16 runs legitimately diverge at ~1e-3/1e-4
+    with deterministic-algos OFF, so a 1e-6 weight ``allclose`` would fire on a
+    legit run and halt eval. Instead assert the two invariants the dose read
+    ACTUALLY depends on, both immune to bf16 weight jitter:
+
+    1. **Rate equality** — at matched epoch indices the recorded ``trained_rate``
+       (and hence ``delta_agree``, since base is seed-keyed and shared) read from
+       each cell's OWN slug-keyed trajectory must match within rollout/judge
+       granularity. This is the exact numeric quantity the dose selection
+       consumes; equality here is the property that matters.
+    2. **Checkpoint step-path equality** — at matched epochs the two cells'
+       recorded checkpoint step numbers must agree (same-config cells save on the
+       same optimizer-step grid). A drift here means the cells did not run the
+       identical config.
+
+    A loose bf16-realistic weight read (atol=1e-3) is logged as a tertiary
+    INFORMATIONAL signal only (never raises). Compares MATCHED epoch indices (not
+    the dose-selected epochs, which differ by design). Returns a digest.
     """
     import torch
 
@@ -576,35 +627,96 @@ def _assert_syco_dose_determinism(
             f"(low epochs {sorted(low_ckpts)}, high epochs {sorted(high_ckpts)}) — "
             "cannot verify same-config determinism."
         )
+    low_rates = _read_trajectory_epoch_rates(low_traj_path)
+    high_rates = _read_trajectory_epoch_rates(high_traj_path)
+    if not low_rates or not high_rates:
+        raise AssertionError(
+            f"seed{seed}: dose trajectory missing for the rate-equality determinism read "
+            f"(low={low_traj_path} present={bool(low_rates)}, "
+            f"high={high_traj_path} present={bool(high_rates)}) — cannot verify the "
+            "same-config rate invariant (syco-dose-determinism-atol-overstrict option b)."
+        )
+    rate_epochs = sorted(set(low_rates) & set(high_rates))
+    if not rate_epochs:
+        raise AssertionError(
+            f"seed{seed}: low/high dose trajectories share NO common epoch "
+            f"(low {sorted(low_rates)}, high {sorted(high_rates)}) — cannot verify rate "
+            "equality."
+        )
     checked = 0
+    max_rate_gap = 0.0
+    max_weight_gap = 0.0
+    for epoch in rate_epochs:
+        # (1) PRIMARY LOUD invariant: same-config agreement rate at matched epoch.
+        rate_gap = abs(low_rates[epoch]["trained_rate"] - high_rates[epoch]["trained_rate"])
+        max_rate_gap = max(max_rate_gap, rate_gap)
+        if rate_gap > _SYCO_DOSE_RATE_ATOL:
+            raise AssertionError(
+                f"seed{seed} epoch{epoch}: low/high same-config agreement rates diverged "
+                f"(|Δrate|={rate_gap:g} > {_SYCO_DOSE_RATE_ATOL:g}). The low/high sycophancy "
+                "cells are supposed to train the IDENTICAL config (dose only labels the "
+                "target band), so their per-epoch agreement rates must match. A divergence "
+                "breaks the dose-axis determinism (syco-dose-trajectory-cross-cell-path-reuse)"
+                " — investigate RNG / config drift before trusting the dose read."
+            )
+        # (2) Checkpoint step-path equality at matched epoch (same save grid).
+        lc, hc = low_rates[epoch]["checkpoint"], high_rates[epoch]["checkpoint"]
+        low_step = Path(lc).name.split("-")[-1] if "checkpoint-" in lc else lc
+        high_step = Path(hc).name.split("-")[-1] if "checkpoint-" in hc else hc
+        if low_step and high_step and low_step != high_step:
+            raise AssertionError(
+                f"seed{seed} epoch{epoch}: low/high checkpoint step numbers differ "
+                f"(low step {low_step!r} vs high step {high_step!r}). Same-config cells must "
+                "save on the same optimizer-step grid; a mismatch means the configs drifted "
+                "(syco-dose-trajectory-cross-cell-path-reuse)."
+            )
+        checked += 1
+    # (3) Tertiary INFORMATIONAL weight read at a bf16-realistic tolerance. Logged
+    # only — never raises (bf16 same-seed jitter is expected with det-algos off).
     for epoch in common_epochs:
         a_low = _load_lora_ab(low_ckpts[epoch])
         a_high = _load_lora_ab(high_ckpts[epoch])
         if set(a_low) != set(a_high):
-            raise AssertionError(
-                f"seed{seed} epoch{epoch}: low/high adapter tensor KEYS differ — "
-                "the two same-config runs are not comparable."
+            log.warning(
+                "[phase=syco_dose_determinism] seed%s epoch%s: low/high adapter tensor "
+                "KEYS differ — skipping the informational weight read for this epoch.",
+                seed,
+                epoch,
             )
+            continue
         for key, t_low in a_low.items():
-            if not torch.allclose(t_low, a_high[key], atol=atol):
-                max_abs = float((t_low - a_high[key]).abs().max().item())
-                raise AssertionError(
-                    f"seed{seed} epoch{epoch} tensor {key}: low/high diverged "
-                    f"(max|Δ|={max_abs:g} > atol={atol:g}). The low/high sycophancy cells "
-                    "are supposed to be the IDENTICAL config; a divergence breaks the "
-                    "dose-axis determinism (syco-dose-trajectory-cross-cell-path-reuse). "
-                    "Investigate RNG / config drift before trusting the dose read."
+            gap = float((t_low - a_high[key]).abs().max().item())
+            max_weight_gap = max(max_weight_gap, gap)
+            if not torch.allclose(t_low, a_high[key], atol=_SYCO_DOSE_WEIGHT_NOISE_ATOL):
+                log.info(
+                    "[phase=syco_dose_determinism] seed%s epoch%s tensor %s: bf16 weight gap "
+                    "%g > %g (informational only — bf16 same-seed jitter; the rate invariant "
+                    "is the gate)",
+                    seed,
+                    epoch,
+                    key,
+                    gap,
+                    _SYCO_DOSE_WEIGHT_NOISE_ATOL,
                 )
-        checked += 1
     log.info(
-        "[phase=syco_dose_determinism] seed%s: low/high adapters allclose(atol=%g) "
-        "across %d common epoch(s) %s",
+        "[phase=syco_dose_determinism] seed%s: rate-equality held across %d epoch(s) %s "
+        "(max|Δrate|=%g <= %g; max bf16 weight gap=%g, informational)",
         seed,
-        atol,
         checked,
-        common_epochs,
+        rate_epochs,
+        max_rate_gap,
+        _SYCO_DOSE_RATE_ATOL,
+        max_weight_gap,
     )
-    return {"seed": seed, "common_epochs": common_epochs, "atol": atol}
+    return {
+        "seed": seed,
+        "rate_epochs_checked": rate_epochs,
+        "common_weight_epochs": common_epochs,
+        "max_rate_gap": max_rate_gap,
+        "rate_atol": _SYCO_DOSE_RATE_ATOL,
+        "max_weight_gap_informational": max_weight_gap,
+        "weight_noise_atol_informational": _SYCO_DOSE_WEIGHT_NOISE_ATOL,
+    }
 
 
 def _record_dose_selection(*, metas_root: Path, slug: str, payload: dict) -> None:
@@ -725,14 +837,20 @@ def main(argv: list[str] | None = None) -> int:
 
     # Round-3 CONCERN syco-dose-trajectory-cross-cell-path-reuse: for any seed
     # where BOTH low+high syco doses were evaluated, ENFORCE the same-config
-    # determinism the dose read silently rests on (the two cells must produce
-    # numerically-identical per-epoch checkpoints). Fails loud on divergence.
+    # determinism the dose read silently rests on. Pivot (option b,
+    # syco-dose-determinism-atol-overstrict): the LOUD invariant is per-epoch
+    # agreement-RATE equality read from each cell's OWN slug-keyed trajectory
+    # (the quantity the dose read consumes), NOT bf16 LoRA weight bit-equality.
     for seed in sorted({s for (s, _d) in syco_cell_dirs}):
         if (seed, "low") in syco_cell_dirs and (seed, "high") in syco_cell_dirs:
+            low_slug = cell_slug("sycophancy", "low", seed)
+            high_slug = cell_slug("sycophancy", "high", seed)
             _assert_syco_dose_determinism(
                 seed=seed,
                 low_cell_dir=syco_cell_dirs[(seed, "low")],
                 high_cell_dir=syco_cell_dirs[(seed, "high")],
+                low_traj_path=out_dir / f"syco_dose_trajectory_{low_slug}.json",
+                high_traj_path=out_dir / f"syco_dose_trajectory_{high_slug}.json",
             )
 
     log.info("[phase=eval_dispatch_done] %d cell(s) evaluated", n_done)
