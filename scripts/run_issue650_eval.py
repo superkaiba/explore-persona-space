@@ -252,6 +252,43 @@ def _load_r_persona(out_dir: Path) -> dict[str, dict[str, str]]:
     return out
 
 
+def _assert_r_persona_coverage_for_marker(
+    *, want: set[str], metas: dict[str, dict], panel: list[str], r_persona: dict, eval_questions
+) -> None:
+    """Fail LOUD at eval startup if any marker cell will run but R_persona is
+    incomplete for the panel — BEFORE any (expensive) model load.
+
+    Blocker ``marker-eval-r-persona-missing`` round-2: previously the only
+    coverage check was the per-persona AssertionError deep inside
+    ``extract_per_context_shift``, which fires AFTER loading the base + trained
+    models for the first marker cell. This upfront gate converts that into a
+    cheap pre-flight so the pipeline aborts before the GPU is spent. The
+    generation script (``run_issue650_generate_r_persona.py``) is the producer;
+    this is the consumer-side safety net.
+    """
+    marker_cells = [
+        s for s in want if (m := metas.get(s)) is not None and m.get("behavior") == "marker"
+    ]
+    if not marker_cells:
+        return  # no marker cell in this run; R_persona not needed
+    missing: list[str] = []
+    for persona in panel:
+        resp = r_persona.get(persona)
+        if not resp:
+            missing.append(f"{persona}: no R_persona entry")
+            continue
+        for q in eval_questions:
+            if q not in resp or not str(resp[q]).strip():
+                missing.append(f"{persona}: missing/empty R for q={q[:40]!r}")
+    if missing:
+        raise AssertionError(
+            f"R_persona coverage INCOMPLETE for {len(marker_cells)} marker cell(s) "
+            "(blocker marker-eval-r-persona-missing). Run "
+            "run_issue650_generate_r_persona.py BEFORE the marker eval. "
+            f"{len(missing)} gap(s); first 5:\n  " + "\n  ".join(missing[:5])
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO,
@@ -294,6 +331,16 @@ def main(argv: list[str] | None = None) -> int:
         want = {cell_slug(*c) for c in (("marker", "low", 42), ("sycophancy", "low", 42))}
     else:
         want = {cell_slug(*c) for c in enumerate_cells()}
+
+    # Upfront R_persona coverage gate for any marker cell (blocker
+    # marker-eval-r-persona-missing) — fail before the first model load.
+    _assert_r_persona_coverage_for_marker(
+        want=want,
+        metas=metas,
+        panel=panel,
+        r_persona=r_persona,
+        eval_questions=list(EVAL_QUESTIONS[:EVAL_N_PROMPTS_PER_PERSONA]),
+    )
 
     n_done = 0
     for slug in sorted(want):

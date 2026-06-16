@@ -219,6 +219,19 @@ done
 phase_log concept_done "DV-4 base concept directions built"
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 4b. R_persona generation (blocker marker-eval-r-persona-missing) — base-model
+#     greedy responses over (eval panel × EVAL_QUESTIONS) that the marker eval
+#     forwards as R_persona(q). MUST run BEFORE phase 5; coverage gate aborts
+#     the pipeline here (not the GPU-spent marker eval) on any gap.
+# ─────────────────────────────────────────────────────────────────────────────
+phase_log r_persona "base greedy R over eval panel × 20 questions (marker eval input)"
+CUDA_VISIBLE_DEVICES=0 uv run python scripts/run_issue650_generate_r_persona.py \
+    --phase sweep \
+    >"$LOG_DIR/issue-650-r-persona.log" 2>&1 \
+    || fail "R_persona generation/coverage FAILED (see issue-650-r-persona.log)"
+phase_log r_persona_done "R_persona coverage verified for the full eval panel"
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 5. Eval — marker four-float slot reads + sycophancy agreement panel.
 # ─────────────────────────────────────────────────────────────────────────────
 phase_log eval "12 cells: marker slot reads + sycophancy agreement panel"
