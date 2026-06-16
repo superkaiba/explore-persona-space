@@ -4014,7 +4014,7 @@
       "kind": "analysis",
       "path": "tasks/interpreting/648",
       "status": "interpreting",
-      "title": "Is centered cosine a better leakage predictor than raw cosine, or only the valid one? (head-to-head CV R\u00b2 per bank)"
+      "title": "Centered cosine is not a stronger leakage predictor than raw \u2014 one of four banks resolves out-of-sample, and it favors raw (LOW confidence)"
     },
     "649": {
       "goal": "Test whether #532's level-vs-change predictor decomposition holds for a realistic judged behavior (sycophancy primary, refusal stretch): per (source x bystander) cell, separate leakage into absolute trained expression (LEVEL) and trained-base shift (CHANGE), and test whether the base-model bystander prior predicts LEVEL while activation geometry (cosine/Gaussian-KL) predicts CHANGE - replicating or breaking the marker's clean two-component rule. Reuse existing sycophancy panels (#612/#627/#507/#509) carrying base rate + trained rate + geometry; add a graded log-prob-readable DV (#391 forced-choice) only if rate-space floors.",

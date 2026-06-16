@@ -1,6 +1,6 @@
 ---
-title: Is centered cosine a better leakage predictor than raw cosine, or only the
-  valid one? (head-to-head CV R² per bank)
+title: Centered cosine is not a stronger leakage predictor than raw — one of four
+  banks resolves out-of-sample, and it favors raw (LOW confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-15T22:40:29Z'
