@@ -73,9 +73,12 @@ EPS_LOG_PATH="${EPS_LOG_PATH:-/workspace/logs/issue-542.log}"
 
 _upload_crash_log_on_failure() {
     local rc=$?
-    # Mirror gcp.py's outer-trap hardening: drop set -e/-u/pipefail FIRST so no
-    # upload command can abort the trap body before we re-exit with the real rc.
-    set +euo pipefail
+    # disable xtrace + errexit + nounset + pipefail inside the trap body -- xtrace would echo $HF_TOKEN
+    # `set -x` (enabled below, after secrets load) survives plain `set +euo`,
+    # so the trap body's `[ -n "${HF_TOKEN:-}" ]` test would otherwise emit
+    # `+ '[' -n hf_<RAW_TOKEN> ']'` to stderr -> $EPS_LOG_PATH -> the very file
+    # this trap uploads to a public HF dataset repo. `+x` kills xtrace FIRST.
+    set +xeuo pipefail
     trap - EXIT
     if [ "$rc" -eq 0 ]; then
         exit 0
@@ -87,8 +90,12 @@ _upload_crash_log_on_failure() {
     # project standard). The token is the already-loaded $HF_TOKEN; no extra
     # auth. Any failure (network/auth/hub-down) is swallowed: the diagnostic
     # must never mask the underlying crash.
+    # Track the actual upload outcome so the breadcrumb + ledger below report
+    # the TRUTH (uploaded vs skipped vs failed), never a misleading "uploaded".
+    local upload_status hub_url crumb_note ledger
+    hub_url="https://huggingface.co/datasets/${repo}/blob/main/${path_in_repo}"
     if [ -f "$EPS_LOG_PATH" ] && [ -n "${HF_TOKEN:-}" ]; then
-        uv run python - "$EPS_LOG_PATH" "$repo" "$path_in_repo" <<'PY' || true
+        if uv run python - "$EPS_LOG_PATH" "$repo" "$path_in_repo" <<'PY'
 import os, sys
 from huggingface_hub import HfApi
 
@@ -102,32 +109,51 @@ HfApi(token=os.environ["HF_TOKEN"]).upload_file(
 )
 print(f"[crash-log-upload] uploaded {local_path} -> {repo_id}/{path_in_repo}")
 PY
+        then
+            upload_status="uploaded"
+        else
+            # The upload itself failed (network/auth/hub-down). Swallow it -- the
+            # diagnostic must never mask the underlying crash -- but record the
+            # failure so the breadcrumb does NOT falsely claim a Hub URL exists.
+            upload_status="upload_failed"
+            echo "[crash-log-upload] upload FAILED (swallowed):" \
+                "EPS_LOG_PATH=$EPS_LOG_PATH repo=$repo" >&2
+        fi
     else
+        upload_status="skipped: log missing or HF_TOKEN unset"
         echo "[crash-log-upload] skipped (log missing or HF_TOKEN unset):" \
             "EPS_LOG_PATH=$EPS_LOG_PATH HF_TOKEN_set=${HF_TOKEN:+yes}" >&2
     fi
     # Breadcrumb for a future GCP-side sentinel-drain (if added). Carries the
-    # poll_pipeline _SENTINEL_REQUIRED_KEYS shape so a drain could parse it.
+    # poll_pipeline _SENTINEL_REQUIRED_KEYS shape so a drain could parse it. The
+    # note reports the TRUE upload outcome -- when upload was skipped or failed
+    # there is NO Hub URL, so the note must not claim one (the outer fd-3 tail is
+    # the only signal reaching the metadata runner).
     local crumb="/workspace/logs/issue-542-epm_progress-$(date +%s).json"
     mkdir -p /workspace/logs 2>/dev/null || true
-    uv run python - "$crumb" "$path_in_repo" "$rc" <<'PY' || true
+    if [ "$upload_status" = "uploaded" ]; then
+        crumb_note="workload crashed: log uploaded to HF Hub at ${hub_url}; rc=${rc}"
+        ledger="[crash-log-upload] ${hub_url} rc=${rc}"
+    else
+        crumb_note="workload crashed: crash-log upload ${upload_status}; no Hub URL; rc=${rc}"
+        ledger="[crash-log-upload] upload ${upload_status}; no Hub URL rc=${rc}"
+    fi
+    uv run python - "$crumb" "$crumb_note" <<'PY' || true
 import json, sys
-crumb, path_in_repo, rc = sys.argv[1], sys.argv[2], sys.argv[3]
+crumb, note = sys.argv[1], sys.argv[2]
 payload = {
     "kind": "epm:progress",
     "schema": 1,
     "version": 1,
     "sentinel_schema_version": 1,
-    "note": (
-        f"workload crashed: log uploaded to HF Hub at {path_in_repo}; rc={rc}"
-    ),
+    "note": note,
 }
 with open(crumb, "w") as f:
     json.dump(payload, f)
 PY
     # 1-line ledger so the outer trap's 40-line tail-to-fd-3 at least carries
-    # the recoverable crash-log URL.
-    echo "[crash-log-upload] https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/${path_in_repo} rc=$rc"
+    # the recoverable crash-log URL (or the reason there isn't one).
+    echo "$ledger"
     exit "$rc"
 }
 trap _upload_crash_log_on_failure EXIT
