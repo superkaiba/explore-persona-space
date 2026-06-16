@@ -339,7 +339,12 @@ def _judge_claim_means(panel_file: Path, h1_jdir: Path, concurrency: int) -> dic
 
 
 def _arm_claim_means(
-    slab_root: Path, source: str, arm: str, seed: int, bystanders: list[str], concurrency: int
+    slab_root: Path,
+    source: str,
+    arm: str,
+    seed: int,
+    bystanders: list[str],
+    concurrency: int,
 ) -> dict[str, dict[int, float]]:
     """{bystander: {claim_idx: mean agreement}} at the arm's matched-install step."""
     cell_dir = v3_cell_dir(slab_root, source, arm, seed)
@@ -356,12 +361,21 @@ def _arm_claim_means(
 
 
 def _build_contrast_matrices(
-    slab_root: Path, panels_root: Path, sources: list[str], seeds: list[int], concurrency: int
+    slab_root: Path,
+    panels_root: Path,
+    sources: list[str],
+    seeds: list[int],
+    concurrency: int,
+    *,
+    max_bystanders: int | None = None,
 ) -> tuple[dict[int, tuple[np.ndarray, list[tuple[str, str]]]], dict[int, float], list[int]]:
     """Per seed, the (n_pairs x n_claims) arm_onpolicy - arm_canned difference matrix
     (rows = (source, bystander) pairs over the kept decorrelated panels, columns =
     the union of paired claim indices). Returns (per_seed_mats, per_seed_points,
-    claims). Judges each arm's matched-install panel completions per-claim."""
+    claims). Judges each arm's matched-install panel completions per-claim.
+
+    ``max_bystanders`` (smoke ONLY) caps the per-source bystander count to bound
+    judge cost; the full run leaves it None (the entire decorrelated panel)."""
     all_claims: set[int] = set()
     seed_pairs: dict[int, dict[tuple[str, str], tuple[dict[int, float], dict[int, float]]]] = {}
     for seed in seeds:
@@ -371,6 +385,8 @@ def _build_contrast_matrices(
             if panel["status"] != "ok":
                 continue
             bystanders = sorted(panel["bystanders"])
+            if max_bystanders is not None:
+                bystanders = bystanders[:max_bystanders]
             onp = _arm_claim_means(slab_root, source, "arm_onpolicy", seed, bystanders, concurrency)
             can = _arm_claim_means(slab_root, source, "arm_canned", seed, bystanders, concurrency)
             for b in bystanders:
@@ -461,7 +477,13 @@ def _h1_per_source(
 
 
 def h1_matched_install_contrast(
-    slab_root: Path, panels_root: Path, sources: list[str], seeds: list[int], concurrency: int
+    slab_root: Path,
+    panels_root: Path,
+    sources: list[str],
+    seeds: list[int],
+    concurrency: int,
+    *,
+    max_bystanders: int | None = None,
 ) -> dict:
     """The H1 on-policy-vs-canned matched-install paired contrast (plan H1 deliverable).
 
@@ -469,9 +491,12 @@ def h1_matched_install_contrast(
     per (source, bystander, claim) the difference arm_onpolicy - arm_canned at each
     arm's own matched-install / band-entry checkpoint, pooled over seeds with a
     two-way cluster bootstrap (claims x personas). Verdict against the registered
-    ±0.05 support / ±0.03 null bands. Per-source descriptive contrasts too."""
+    ±0.05 support / ±0.03 null bands. Per-source descriptive contrasts too.
+
+    ``max_bystanders`` (smoke ONLY) caps the per-source bystander count; the full
+    run leaves it None (the entire decorrelated panel)."""
     per_seed_mats, per_seed_points, claims = _build_contrast_matrices(
-        slab_root, panels_root, sources, seeds, concurrency
+        slab_root, panels_root, sources, seeds, concurrency, max_bystanders=max_bystanders
     )
     if not per_seed_mats:
         return {"status": "no_paired_cells", "arm_x": "arm_onpolicy", "arm_y": "arm_canned"}
@@ -498,11 +523,18 @@ def h1_matched_install_contrast(
         "null_band": H1_NULL_BAND,
         "verdict": verdict,
         "per_source": per_source,
+        "max_bystanders_cap": max_bystanders,
         "read_note": (
             "v3-aware matched-install contrast over onpolicy_predictor/cells/.../"
             "matched_install_step_*/sycophancy_eval_*.json; NOT analyze_612 --stage "
             "endpoint (which reads the v1 slab_root/cells judgments layout the v3 "
             "round never produced)."
+            + (
+                f" SMOKE: per-source bystanders capped at {max_bystanders} — NOT the "
+                "full decorrelated panel; not a production read."
+                if max_bystanders is not None
+                else ""
+            )
         ),
     }
 
@@ -547,10 +579,19 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip the H1 matched-install contrast (bake-off only).",
     )
     parser.add_argument(
+        "--h1-max-bystanders",
+        type=int,
+        default=None,
+        help="SMOKE ONLY: cap the per-source bystanders the H1 contrast judges (bounds "
+        "judge cost). Full run leaves it None (the entire decorrelated panel). "
+        "A capped H1 is flagged in read_note + max_bystanders_cap and is NOT a "
+        "production read.",
+    )
+    parser.add_argument(
         "--smoke",
         action="store_true",
-        help="1-cell slice: --sources villain --seeds 42 (downloads + bakeoff + H1 "
-        "on the villain arm_onpolicy/arm_canned seed-42 pair only).",
+        help="1-cell slice: --sources villain --seeds 42, H1 capped to 2 bystanders "
+        "(downloads + bakeoff + H1 on the villain arm_onpolicy/arm_canned seed-42 pair).",
     )
     args = parser.parse_args(argv)
 
@@ -564,6 +605,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.smoke:
         args.sources = ["villain"]
         args.seeds = [42]
+        if args.h1_max_bystanders is None:
+            args.h1_max_bystanders = 2
 
     sources = args.sources
     seeds = args.seeds
@@ -609,7 +652,12 @@ def main(argv: list[str] | None = None) -> int:
     h1_out = out_root / "h1" / "h1_onpolicy_vs_canned.json"
     if not args.skip_h1:
         h1 = h1_matched_install_contrast(
-            slab_root, panels_root, sources, seeds, args.judge_concurrency
+            slab_root,
+            panels_root,
+            sources,
+            seeds,
+            args.judge_concurrency,
+            max_bystanders=args.h1_max_bystanders,
         )
         h1_payload = {
             "schema_version": 1,
