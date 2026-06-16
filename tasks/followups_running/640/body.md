@@ -21,7 +21,7 @@ promoted_at: '2026-06-16T07:08:41Z'
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_640.md](https://github.com/superkaiba/explore-persona-space/blob/1ad69587c5224de6fce499cd04e589184924e979/docs/methodology/issue_640.md) · [gist](https://gist.github.com/superkaiba/bd6fc8bfc9006ba0d14606f4bd512637)
+**Methodology:** [docs/methodology/issue_640.md](https://github.com/superkaiba/explore-persona-space/blob/21b3d12ec06bee58d664725b9598a6f804644c42/docs/methodology/issue_640.md) · [gist](https://gist.github.com/superkaiba/bd6fc8bfc9006ba0d14606f4bd512637)
 
 ## Takeaways
 
@@ -284,7 +284,7 @@ NON-FIRING (postfix-patched — cautionary, the cut):
 
 ## Reproducibility
 
-- **Methodology reference:** [docs/methodology/issue_640.md](https://github.com/superkaiba/explore-persona-space/blob/1ad69587c5224de6fce499cd04e589184924e979/docs/methodology/issue_640.md) · [gist](https://gist.github.com/superkaiba/bd6fc8bfc9006ba0d14606f4bd512637)
+- **Methodology reference:** [docs/methodology/issue_640.md](https://github.com/superkaiba/explore-persona-space/blob/21b3d12ec06bee58d664725b9598a6f804644c42/docs/methodology/issue_640.md) · [gist](https://gist.github.com/superkaiba/bd6fc8bfc9006ba0d14606f4bd512637)
 
 **Parameters:**
 
