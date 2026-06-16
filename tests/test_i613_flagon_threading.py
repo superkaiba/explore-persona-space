@@ -91,10 +91,16 @@ def test_flagon_cell_is_explicit_slug_only():
 def test_every_non_flagon_cell_keeps_suppress_default_false():
     from explore_persona_space.experiments.neg_setpoint_601 import CELLS_601
 
-    # The sep-ablation follow-up round adds a second REGISTERED alive arm
-    # (sepablation_flagon_200p800n — the within-no-separator-construction A);
-    # every other cell must keep the flag-off default.
-    flag_on_registered = {SLUG, "sepablation_flagon_200p800n"}
+    # The sep-ablation + single-space-falsifier follow-up rounds each add a
+    # REGISTERED alive arm (sepablation_flagon_200p800n — the
+    # within-no-separator-construction A; singlespacefalsifier_flagon_200p800n
+    # — the within-single-space-construction A); every other cell must keep the
+    # flag-off default.
+    flag_on_registered = {
+        SLUG,
+        "sepablation_flagon_200p800n",
+        "singlespacefalsifier_flagon_200p800n",
+    }
     for c in CELLS_601:
         if c.slug in flag_on_registered:
             continue

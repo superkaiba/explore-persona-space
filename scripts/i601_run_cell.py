@@ -181,12 +181,20 @@ def _assert_positive_rows_fused_marker(
                         f"assistant completion region (last <|im_start|> at {last_start}) — "
                         f"the loss-bearing marker is not in the completion."
                     )
-            # (ii) SURFACE-FORM DISTINCT from glued — only for a non-empty sep
-            # (the single-space construction). Re-render the SAME row with the
+            # (ii) SURFACE-FORM DISTINCT from glued — checked ONLY for the
+            # single-space construction (``marker_sep == " "``, the round's
+            # variable; plan §3 change 4 (ii)). Re-render the SAME row with the
             # separator stripped (glued: R + marker) and assert the configured
-            # render differs at the token(s) immediately before the marker.
-            if marker_sep:
-                marker_idx = full_ids.index(marker_id)
+            # render is TOKEN-DISTINCT from glued. The exact per-row marker-index
+            # delta is NOT asserted: an R whose tail ends in whitespace merges
+            # the inserted space differently (the marker is always its own token
+            # at the end, but the per-row delta can be 0 — real-tokenizer
+            # verified), so the invariant is full-sequence distinctness, not a
+            # fixed per-row index shift. The manifest's
+            # ``marker_predict_from_offset`` is the SEPARATOR-level offset
+            # (``len(encode(sep+marker)) - len(encode(marker))`` = 1), the
+            # canonical slot geometry vs the negatives' loss slot.
+            if marker_sep == " ":
                 glued_completion = [
                     {
                         **m,
@@ -206,21 +214,20 @@ def _assert_positive_rows_fused_marker(
                         f"[{cell_slug}] fused-surface marker assert: glued comparison render "
                         f"FAILED for positive row {line_no} — cannot verify surface distinctness."
                     )
-                glued_marker_idx = glued_ids.index(marker_id)
-                # The inserted separator must move the marker DOWNSTREAM by the
-                # tokenized separator length and the pre-marker tokens must differ.
-                row_distinct = (
-                    full_ids[:marker_idx] != glued_ids[:glued_marker_idx]
-                    and (marker_idx - glued_marker_idx) == marker_predict_from_offset
-                )
-                if not row_distinct:
+                if marker_id not in glued_ids:
                     raise RuntimeError(
                         f"[{cell_slug}] fused-surface marker assert FAILED at positive row "
-                        f"{line_no}: the configured marker_sep={marker_sep!r} render is NOT "
-                        f"token-distinct from the glued render at the inserted-separator "
-                        f"position (fused marker@{marker_idx}, glued marker@{glued_marker_idx}, "
-                        f"expected offset {marker_predict_from_offset}) — the surface form "
-                        f"does not differ from the no-sep construction (plan §3 change 4 (ii))."
+                        f"{line_no}: the glued (marker_sep='') comparison render contains NO "
+                        f"marker id {marker_id} — the separator-stripped surface mis-tokenized "
+                        f"the marker, so surface distinctness is unverifiable."
+                    )
+                if full_ids == glued_ids:
+                    raise RuntimeError(
+                        f"[{cell_slug}] fused-surface marker assert FAILED at positive row "
+                        f"{line_no}: the single-space (marker_sep=' ') render is NOT "
+                        f"token-distinct from the glued no-sep render — the inserted space "
+                        f"contributes no token, so the surface form does not differ from the "
+                        f"no-sep construction (plan §3 change 4 (ii))."
                     )
                 surface_distinct = True if surface_distinct is None else surface_distinct
     log.info(
