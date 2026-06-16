@@ -4010,7 +4010,7 @@
       "title": "Do the activation-geometry predictors of marker-leakage transfer also collapse on the nonstylized subpanel, or is within-nonstylized signal real?"
     },
     "648": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/648",
       "status": "interpreting",

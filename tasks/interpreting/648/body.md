@@ -4,7 +4,7 @@ title: Centered cosine is not a stronger leakage predictor than raw — one of f
 kind: analysis
 tags: []
 created_at: '2026-06-15T22:40:29Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 536
 origin_prompt: 'queue a centered-vs-raw predictive-skill comparison on the cached
   predictor panels (CV R²_raw vs CV R²_centered on the same cell): #536 settled which
