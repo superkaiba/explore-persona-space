@@ -8,10 +8,16 @@ has_clean_result: false
 parent_id: 642
 origin_prompt: Run the on-policy + matched LR with the fixed recipe from this issue
   [#642]
+goal: 'Isolate the rank/parameterization component of #606''s LoRA-vs-full-FT sycophancy
+  bystander-leakage gap by comparing LoRA against a coverage-matched dense fine-tune
+  (the #642 cmft module set) at a matched learning rate, trained on on-policy sycophancy
+  completions, on on-policy judge-scored per-persona bystander leakage at matched
+  source-implant strength — testing whether any adapter-vs-dense leakage gap survives
+  once learning rate, module coverage, and data realism are all controlled.'
 ---
 ## Goal
 
-Isolate the rank/parameterization component of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap by removing the three confounds that ride on top of it. Compare LoRA against a coverage-matched dense full-rank fine-tune (the #642 cmft module set — `{q,k,v,o,gate,up,down}_proj` weights + qkv biases only, embeddings/`lm_head`/LayerNorm frozen) at a **shared learning rate**, trained on **on-policy** sycophancy completions, and read on-policy judge-scored per-persona bystander leakage at matched source-implant strength. Question: once learning rate, module coverage, and data realism are all controlled, does any low-rank-adapter-vs-dense-update bystander-leakage gap survive?
+Isolate the rank/parameterization component of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap by comparing LoRA against a coverage-matched dense fine-tune (the #642 cmft module set) at a matched learning rate, trained on on-policy sycophancy completions, on on-policy judge-scored per-persona bystander leakage at matched source-implant strength — testing whether any adapter-vs-dense leakage gap survives once learning rate, module coverage, and data realism are all controlled.
 
 ## Background / why
 
