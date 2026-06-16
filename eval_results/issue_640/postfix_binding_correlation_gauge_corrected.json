@@ -1,0 +1,53 @@
+{
+ "smoke": false,
+ "predictor": "gaugenorm_sq",
+ "n": 8,
+ "spearman_rho_vs_row_leak": -0.09523809523809526,
+ "bootstrap_ci_95_low": -0.9902439024390245,
+ "bootstrap_ci_95_high": 1.0,
+ "spearman_rho_vs_delta_leakage": -0.5714285714285715,
+ "notes": "gauge-corrected H2 rho (predictor = gaugenorm_sq, the (alpha/sqrt(r))^2-corrected postfix-KV-shift scalar); pairs with postfix_binding_correlation.json which holds the raw rho (predictor = all_l_mean). Same #545 row-summed off-diagonal |L| target, same n=8 rows, same family-clustered bootstrap CI as the raw read.",
+ "h2_gauge_corrected": {
+  "postfix_kv_shift_gauge_vs_row_leak": {
+   "spearman_rho": -0.09523809523809526,
+   "n_rows": 8,
+   "rows": [
+    "bad_medical",
+    "compliment_writing",
+    "extreme_sports",
+    "marker",
+    "reversed_fact",
+    "risky_financial",
+    "taught_fact",
+    "wrong_claim_agreement"
+   ],
+   "family_clustered_ci95": [
+    -0.9902439024390245,
+    1.0
+   ],
+   "n_bootstrap_valid": 809
+  },
+  "postfix_kv_shift_gauge_vs_postfix_delta": {
+   "spearman_rho": -0.5714285714285715,
+   "n_rows": 8,
+   "rows": [
+    "bad_medical",
+    "compliment_writing",
+    "extreme_sports",
+    "marker",
+    "reversed_fact",
+    "risky_financial",
+    "taught_fact",
+    "wrong_claim_agreement"
+   ]
+  },
+  "_summary": {
+   "predictor": "gaugenorm_sq",
+   "n": 8,
+   "spearman_rho_vs_row_leak": -0.09523809523809526,
+   "bootstrap_ci_95_low": -0.9902439024390245,
+   "bootstrap_ci_95_high": 1.0,
+   "spearman_rho_vs_delta_leakage": -0.5714285714285715
+  }
+ }
+}

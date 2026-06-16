@@ -21,20 +21,31 @@ adapters at HF revision 6471a550):
   over 28 layers. Writes ``eval_results/issue_640/predictors/PST__postfix_kv_shift.json``
   (group='PST') in #545's predictor schema. A pure forward-pass read — no
   generation, no judge.
-- **Phase 2 (postfix-patch leakage recovery, PRIMARY DV):** per (row, seed),
-  the trained-no-patch judged rate and the postfix-patched judged rate; Δleakage
+- **Phase 2 (postfix-patch recovery, PRIMARY DV):** per (row, seed),
+  the trained-no-patch judged rate and the postfix-patched judged rate; Δ
   = trained - patched. On-policy: the model writes its own response, then the
-  judged column scores it (no teacher-forcing). Writes one per-seed cell JSON
-  ``eval_results/issue_640/patch_cells_postfix_seed{seed}.json``.
-- **Phase 3 (scoring + paired postfix-vs-prefix comparison):** delegated to
-  ``scripts/issue640_score_and_compare.py`` (CPU; off-pod on the VM after the
-  pod terminates). Under ``--smoke`` the driver invokes it inline so the smoke
-  exercises the full Phase 1->3 pipeline (PASS_UNIFIED).
+  judged column scores it (no teacher-forcing). The eval target column is
+  selected by ``--target`` (plan v6 §4.2):
 
-Smoke (``--smoke``) IS the sweep with rows=['bad_medical'], seeds=[0],
+  - ``leakage`` (default, v3 byte-for-byte): the highest-|L| off-diagonal
+    judged column per row -> ``patch_cells_postfix_seed{seed}.json``
+    (Δleakage = trained - patched).
+  - ``diagonal``: each row's ON-TARGET diagonal column (the 7 judged-rate rows
+    from #545's ``cell_metadata.json``; marker EXCLUDED) ->
+    ``diagonal_source_seed{seed}.json`` (Δsource = trained - patched), with a
+    one-shot diagonal-mode backend-parity precheck (decoupled from the target
+    map) that fires the ``bad_medical x broad_em`` HALT on seed-0 before any
+    diagonal cell is written.
+- **Phase 3 (scoring + paired comparison):** the leakage path delegates to
+  ``scripts/issue640_score_and_compare.py`` (postfix-vs-prefix); the diagonal
+  path delegates to ``scripts/issue640_diagonal_score.py`` (the selectivity
+  join of diagonal Δsource vs v3 off-diagonal Δleakage). Both CPU; off-pod on
+  the VM after the pod terminates.
+
+Smoke (``--smoke``) IS the sweep with rows=[bad_medical], seeds=[0],
 probe_cap=4: identical in-process serial driver, identical postfix-patch hook
-path, identical predictor-JSON write + score() call. The only differing
-parameter is the (row, seed) cell subset.
+path, identical column map + parity gate. The only differing parameter is the
+(row, seed) cell subset.
 
 The PREFIX-PATCH baseline is NOT re-run here — it is read from #595's committed
 ``PFX__patch_recovery.json`` (materialized into ``eval_results/issue_640/_inputs/``
@@ -110,6 +121,28 @@ POSTFIX_TOKENS = [151645, 198, 151644, 77091, 198]  # 5 tokens, pinned below
 ALL_8_ROWS: tuple[str, ...] = i595.PHASE2_ROWS
 SEEDS: tuple[int, ...] = (0, 137)
 
+# --------------------------------------------------------------------------- #
+# Diagonal-target (--target diagonal) constants + helpers (plan v6 §4.1/§4.2)
+# --------------------------------------------------------------------------- #
+
+# The 7 judged-rate diagonal rows (plan v6 §4.2 part 2). The marker row is
+# EXCLUDED on purpose: COLUMNS["marker"].dv == "marker_slot_stats" with
+# judge is None, so it cannot go through _judge_completions; its diagonal
+# log-prob reference is read from #545's cell_metadata.json instead (§4.3).
+PHASE2_ROWS_JUDGED_RATE: tuple[str, ...] = (
+    "bad_medical",
+    "risky_financial",
+    "extreme_sports",
+    "taught_fact",
+    "reversed_fact",
+    "compliment_writing",
+    "wrong_claim_agreement",
+)
+
+# Marker diagonal log-prob (nats) — read from #545's cell_metadata.json marker
+# diagonal_level; carried as a null/parity reference ONLY, never a Δsource cell.
+MARKER_DIAGONAL_CELL_KEY = "marker_primary_seed{seed}"
+
 
 def assert_postfix_tokenization(tokenizer) -> None:
     """Carrier-correctness gate (Phase 2 consistency WARN #1).
@@ -140,6 +173,63 @@ def _metadata() -> dict:
     meta = i595._metadata()
     meta["issue"] = ISSUE
     return meta
+
+
+def _cell_metadata() -> dict:
+    """Load #545's cell_metadata.json cells dict (diagonal-column source-of-truth)."""
+    path = PROJECT_ROOT / "eval_results/issue_545/cell_metadata.json"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"#545 cell_metadata.json missing under {path} — the diagonal column map "
+            "and marker null reference both depend on it; refusing to proceed."
+        )
+    return json.loads(path.read_text())["cells"]
+
+
+def _diagonal_target_columns() -> dict[str, str]:
+    """Per judged-rate row, its ON-TARGET diagonal column (plan v6 §4.1, authoritative).
+
+    Reads ``cell_metadata.json["cells"]["{row}_primary_seed0"]["diagonal_column"]``
+    for the 7 judged-rate rows ONLY (PHASE2_ROWS_JUDGED_RATE). Mirrors the
+    structure of #595's ``_phase2_target_columns`` (the off-diagonal map). The
+    marker row is NOT in the returned map (§4.2 part 2 / §4.3) — passing
+    ``marker -> marker`` to the existing ``_judge_completions`` path would crash
+    (judge is None). Fail loud if any row's diagonal_column is missing.
+    """
+    metadata = _cell_metadata()
+    out: dict[str, str] = {}
+    for row in PHASE2_ROWS_JUDGED_RATE:
+        cell = f"{row}_primary_seed0"
+        if cell not in metadata:
+            raise KeyError(
+                f"{cell} not in #545 cell_metadata.json — cannot resolve the diagonal "
+                f"column for row {row!r}."
+            )
+        diag = metadata[cell].get("diagonal_column")
+        if not diag:
+            raise ValueError(
+                f"{cell} has no diagonal_column in #545 cell_metadata.json — refusing to "
+                f"guess the on-target column for row {row!r}."
+            )
+        out[row] = diag
+    assert "marker" not in out, "marker must be excluded from the diagonal judged-rate map"
+    return out
+
+
+def _marker_diagonal_reference() -> dict[str, float]:
+    """Marker diagonal log-prob (nats) per seed from #545's cell_metadata (§4.3).
+
+    Returns {str(seed): diagonal_level}. A null/parity reference ONLY — NOT a
+    Δsource cell and NOT persisted into diagonal_source_seed{seed}.json.
+    """
+    metadata = _cell_metadata()
+    out: dict[str, float] = {}
+    for seed in SEEDS:
+        cell = MARKER_DIAGONAL_CELL_KEY.format(seed=seed)
+        if cell not in metadata:
+            raise KeyError(f"{cell} not in #545 cell_metadata.json — marker reference unavailable.")
+        out[str(seed)] = float(metadata[cell]["diagonal_level"])
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -415,8 +505,94 @@ def _write_postfix_kv_shift_predictor(out, per_row_score, cols_by_row) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Phase 2: postfix-patch leakage recovery (PRIMARY DV)
+# Phase 2: postfix-patch recovery (PRIMARY DV) — leakage or diagonal target
 # --------------------------------------------------------------------------- #
+
+
+def _diagonal_parity_precheck(
+    base,
+    tokenizer,
+    *,
+    probe_cap: int,
+    device: str,
+    smoke: bool,
+) -> dict:
+    """Diagonal-mode backend-parity precheck (plan v6 §4.2 part 4 — Must-Fix).
+
+    Under ``--target diagonal`` the inherited in-loop parity gate at
+    ``run_phase2_postfix_patch`` is keyed on ``column_id == PARITY_COLUMN``
+    (``broad_em``), which diagonal mode NEVER sets (the bad_medical diagonal
+    column is ``fam_expr_bad_medical``), so that gate is silently skipped. This
+    decoupled one-shot precheck fires the SAME ``bad_medical x broad_em`` HALT at
+    the SAME stage (seed-0, before any diagonal cell is written), reading
+    ``COLUMNS[PARITY_COLUMN]`` DIRECTLY — independent of the diagonal target-column
+    map. Non-smoke HALTs on divergence; smoke logs but continues (matches the v3
+    line-494 warn-but-continue). Returns the parity record (persisted by the
+    caller as a separate one-shot JSON, NOT a diagonal cell).
+    """
+    import torch
+
+    from explore_persona_space.experiments.behavior_testbed_545.columns import COLUMNS
+    from explore_persona_space.experiments.behavior_testbed_545.eval_battery import (
+        battery_probes,
+        render_chat,
+    )
+
+    adapter_dir = download_adapter(PARITY_ROW, 0)
+    cfg = _read_adapter_config(adapter_dir)
+    gauge, _ = gauge_from_config(cfg)
+    lo, hi = expected_gauge_band(PARITY_ROW)
+    assert lo <= gauge <= hi, (
+        f"{PARITY_ROW} seed0 (parity precheck): gauge {gauge:.2f} outside [{lo},{hi}]"
+    )
+    model = attach_adapter(base, adapter_dir)
+    try:
+        col = COLUMNS[PARITY_COLUMN]  # read the parity column DIRECTLY (not target_cols)
+        probes = battery_probes(col, cap=probe_cap)
+        prompts = [render_chat(tokenizer, p["question"], "qwen_default_system") for p in probes]
+        gen_kwargs = dict(
+            max_new_tokens=col.max_new_tokens,
+            n_samples=col.n_samples,
+            temperature=col.temperature,
+            device=device,
+        )
+        unpatched = generate_patched(base, model, tokenizer, prompts, "none", **gen_kwargs)
+        parity_rate = _judge_completions(PARITY_COLUMN, probes, unpatched)
+    finally:
+        detach_adapter(model, base)
+        del model
+        torch.cuda.empty_cache()
+
+    delta = abs(parity_rate - PARITY_L_545)
+    logger.info(
+        "[phase=backend_parity] bad_medical broad_em unpatched-HF rate=%.4f "
+        "(#545 vLLM L=%.4f, |Δ|=%.4f, tol=%.4f, n_probes=%d)",
+        parity_rate,
+        PARITY_L_545,
+        delta,
+        PARITY_TOLERANCE_PP,
+        len(probes),
+    )
+    if not smoke and delta > PARITY_TOLERANCE_PP:
+        raise SystemExit(
+            f"[phase=backend_parity] HALT: diagonal-mode precheck unpatched-HF bad_medical "
+            f"broad_em rate={parity_rate:.4f} diverges from #545 vLLM L={PARITY_L_545:.4f} "
+            f"by {delta:.4f} > {PARITY_TOLERANCE_PP} (judge noise). HF-vLLM backend parity "
+            "broken — fix decoding params before reading any diagonal Δsource. "
+            "(failure_class: code)"
+        )
+    return {
+        "rate": parity_rate,
+        "ref_L_545": PARITY_L_545,
+        "delta": delta,
+        "n_probes": len(probes),
+        "tolerance_pp": PARITY_TOLERANCE_PP,
+        "status": "skipped(smoke)" if smoke else "passed",
+        "row": PARITY_ROW,
+        "column": PARITY_COLUMN,
+        "seed": 0,
+        "metadata": _metadata(),
+    }
 
 
 def run_phase2_postfix_patch(
@@ -426,15 +602,28 @@ def run_phase2_postfix_patch(
     probe_cap: int,
     device: str = "cuda:0",
     smoke: bool = False,
+    target: str = "leakage",
 ) -> None:
-    """Phase 2: postfix-patch leakage recovery across (row, seed).
+    """Phase 2: postfix-patch recovery across (row, seed) on the target column.
+
+    ``target`` selects the eval column map AND the output filename (plan v6 §4.2):
+
+    - ``"leakage"`` (default, v3 byte-for-byte): the highest-|L| off-diagonal
+      column per row (``_phase2_target_columns()``); writes
+      ``patch_cells_postfix_seed{seed}.json``. The in-loop backend-parity gate on
+      ``bad_medical x broad_em`` seed-0 fires as in v3 (column_id == PARITY_COLUMN).
+    - ``"diagonal"``: each row's ON-TARGET diagonal column (7 judged-rate rows,
+      ``_diagonal_target_columns()``; marker EXCLUDED); writes
+      ``diagonal_source_seed{seed}.json``. Because diagonal mode never sets
+      ``column_id == PARITY_COLUMN``, the in-loop gate is skipped — so a one-shot
+      diagonal-mode parity precheck (decoupled from the target map) fires on
+      seed-0 BEFORE any diagonal cell is written (§4.2 part 4).
 
     Per (row, seed): trained-no-patch judged rate + postfix-patched judged rate;
-    Δleakage = trained - patched. On-policy (the model writes its own response;
-    no teacher-forcing). The backend-parity assert fires ONCE on
-    bad_medical x broad_em seed-0 before any patch delta is trusted (same HALT
-    as #595). Cross-row detach hygiene (B1). Writes one per-seed cell JSON the
-    moment each seed completes (checkpoint-per-phase).
+    Δ = trained - patched (named ``delta_leakage`` under leakage, ``delta_source``
+    under diagonal). On-policy (the model writes its own response; no
+    teacher-forcing). Cross-row detach hygiene (B1). Writes one per-seed cell JSON
+    the moment each seed completes (checkpoint-per-phase).
     """
     import torch
 
@@ -443,6 +632,9 @@ def run_phase2_postfix_patch(
         battery_probes,
         render_chat,
     )
+
+    if target not in ("leakage", "diagonal"):
+        raise ValueError(f"unknown target {target!r}; expected 'leakage' or 'diagonal'")
 
     out = output_root()
     out.mkdir(parents=True, exist_ok=True)
@@ -453,7 +645,32 @@ def run_phase2_postfix_patch(
     assert_marker_token(tokenizer)
     assert_postfix_tokenization(tokenizer)  # carrier-correctness gate
 
-    target_cols = _phase2_target_columns()
+    if target == "diagonal":
+        target_cols = _diagonal_target_columns()  # 7 judged-rate rows; marker excluded
+        delta_key = "delta_source"
+        result_name = "patch_recovery_diagonal"
+
+        def out_name_for(s: int) -> str:
+            return f"diagonal_source_seed{s}.json"
+    else:
+        target_cols = _phase2_target_columns()  # v3 off-diagonal leakage map
+        delta_key = "delta_leakage"
+        result_name = "patch_recovery_postfix"
+
+        def out_name_for(s: int) -> str:
+            return f"patch_cells_postfix_seed{s}.json"
+
+    # Diagonal-mode parity precheck (§4.2 part 4): fires ONCE on seed-0, BEFORE
+    # the per-row diagonal loop, because the column-keyed in-loop gate below is
+    # skipped under diagonal mode. The record is persisted as a one-shot JSON
+    # (NOT a diagonal cell) so the backend-parity anchor is auditable.
+    if target == "diagonal" and 0 in seeds:
+        parity_record = _diagonal_parity_precheck(
+            base, tokenizer, probe_cap=probe_cap, device=device, smoke=smoke
+        )
+        (out / "backend_parity_diagonal_seed0.json").write_text(json.dumps(parity_record, indent=1))
+        logger.info("[phase=backend_parity] wrote backend_parity_diagonal_seed0.json")
+
     parity_done = False
 
     for seed in seeds:
@@ -477,7 +694,9 @@ def run_phase2_postfix_patch(
             )
 
             # Backend-parity assert on bad_medical x broad_em seed-0 (unpatched HF
-            # generate), ONCE before any postfix-patch delta is trusted.
+            # generate), ONCE before any postfix-patch delta is trusted. Under
+            # --target diagonal this column-keyed gate never matches (handled by
+            # the decoupled precheck above), so it only fires for leakage mode.
             if not parity_done and seed == 0 and row == PARITY_ROW and column_id == PARITY_COLUMN:
                 unpatched = generate_patched(base, model, tokenizer, prompts, "none", **gen_kwargs)
                 unpatched_rate = _judge_completions(column_id, probes, unpatched)
@@ -508,7 +727,7 @@ def run_phase2_postfix_patch(
             patched = generate_patched(base, model, tokenizer, prompts, "postfix", **gen_kwargs)
             patched_rate = _judge_completions(column_id, probes, patched)
             _persist_raw(raw_dir, row, column_id, f"postfix_patched_seed{seed}", probes, patched)
-            delta_leakage = trained_rate - patched_rate
+            delta = trained_rate - patched_rate
             patch_cells[f"{row}|{column_id}"] = {
                 "row": row,
                 "column": column_id,
@@ -516,39 +735,40 @@ def run_phase2_postfix_patch(
                 "patch_kind": "postfix",
                 "trained_rate": trained_rate,
                 "patched_rate": patched_rate,
-                "delta_leakage": delta_leakage,
+                delta_key: delta,
                 "n_probes": len(probes),
             }
             logger.info(
-                "[phase=postfix_patch] %s seed%d x %s: trained=%.4f patched=%.4f Δleak=%.4f",
+                "[phase=postfix_patch] %s seed%d x %s: trained=%.4f patched=%.4f Δ%s=%.4f",
                 row,
                 seed,
                 column_id,
                 trained_rate,
                 patched_rate,
-                delta_leakage,
+                "source" if target == "diagonal" else "leak",
+                delta,
             )
             base = detach_adapter(model, base)  # B1
             del model
             torch.cuda.empty_cache()
 
         # Checkpoint-per-phase: persist this seed's cells the moment it completes.
-        cells = {k: v["delta_leakage"] for k, v in patch_cells.items()}
-        (out / f"patch_cells_postfix_seed{seed}.json").write_text(
-            json.dumps(
-                {
-                    "group": "PST",
-                    "name": "patch_recovery_postfix",
-                    "seed": seed,
-                    "patch_kind": "postfix",
-                    "cells": cells,
-                    "detail": patch_cells,
-                    "metadata": _metadata(),
-                },
-                indent=1,
-            )
-        )
-        logger.info("[phase=postfix_patch] wrote patch_cells_postfix_seed%d.json", seed)
+        # Leakage mode keeps the v3 JSON shape byte-for-byte (no extra keys); the
+        # diagonal mode adds an explicit "target" tag for the off-pod scorer.
+        cells = {k: v[delta_key] for k, v in patch_cells.items()}
+        payload = {
+            "group": "PST",
+            "name": result_name,
+            "seed": seed,
+            "patch_kind": "postfix",
+            "cells": cells,
+            "detail": patch_cells,
+            "metadata": _metadata(),
+        }
+        if target == "diagonal":
+            payload["target"] = "diagonal"
+        (out / out_name_for(seed)).write_text(json.dumps(payload, indent=1))
+        logger.info("[phase=postfix_patch] wrote %s", out_name_for(seed))
 
     del base
     torch.cuda.empty_cache()
@@ -621,6 +841,17 @@ def main() -> int:
     parser.add_argument("--probe-cap", type=int, default=32, help="Phase-2 probes per column")
     parser.add_argument("--gpu-id", type=int, default=0)
     parser.add_argument(
+        "--target",
+        choices=("leakage", "diagonal"),
+        default="leakage",
+        help=(
+            "Eval target column (plan v6 §4.2). 'leakage' (default) = v3's off-diagonal "
+            "map -> patch_cells_postfix_seed{seed}.json (byte-for-byte v3). 'diagonal' = "
+            "each row's on-target diagonal column (7 judged-rate rows, marker excluded) -> "
+            "diagonal_source_seed{seed}.json, with the diagonal-mode parity precheck."
+        ),
+    )
+    parser.add_argument(
         "--smoke",
         action="store_true",
         help="rows=bad_medical, seeds=[0], probe-cap=4, run Phase 1->3 in-process serial",
@@ -631,37 +862,84 @@ def main() -> int:
     device = "cuda:0"
 
     if args.smoke:
-        args.rows = [PARITY_ROW]
+        if not args.rows:
+            args.rows = [PARITY_ROW]
         args.seeds = [0]
         args.probe_cap = 4
 
-    rows = args.rows or list(ALL_8_ROWS)
+    # Diagonal mode is the Phase-2-only amendment (plan v6 §8: Phase 1's
+    # postfix-KV-shift is column-independent and already computed in v3 — not
+    # re-run). Default rows are the 7 judged-rate diagonal rows (marker excluded).
+    if args.target == "diagonal":
+        if args.phase == "postfix-kv-shift":
+            raise SystemExit(
+                "[phase=start] --target diagonal is Phase-2-only (plan v6 §8); Phase 1 "
+                "postfix-kv-shift is column-independent and reused from v3. Use "
+                "--phase postfix-patch (or the default), not --phase postfix-kv-shift."
+            )
+        args.phase = "postfix-patch"  # never re-run the column-independent Phase 1
+        rows = args.rows or list(PHASE2_ROWS_JUDGED_RATE)
+        invalid = [r for r in rows if r not in PHASE2_ROWS_JUDGED_RATE]
+        if invalid:
+            raise SystemExit(
+                f"[phase=start] --target diagonal rows {invalid} are not judged-rate diagonal "
+                f"rows; valid rows: {list(PHASE2_ROWS_JUDGED_RATE)} (marker is excluded — its "
+                "diagonal is log-prob-scale, read from #545 cell_metadata.json, §4.3)."
+            )
+    else:
+        rows = args.rows or list(ALL_8_ROWS)
 
-    logger.info("[phase=start] issue640 postfix-carrier phase=%s smoke=%s", args.phase, args.smoke)
+    logger.info(
+        "[phase=start] issue640 postfix-carrier phase=%s target=%s smoke=%s",
+        args.phase,
+        args.target,
+        args.smoke,
+    )
     if args.phase in ("postfix-kv-shift", "all"):
         run_phase1_postfix_kv_shift(rows, args.seeds, device=device)
     if args.phase in ("postfix-patch", "all"):
         run_phase2_postfix_patch(
-            rows, args.seeds, probe_cap=args.probe_cap, device=device, smoke=args.smoke
+            rows,
+            args.seeds,
+            probe_cap=args.probe_cap,
+            device=device,
+            smoke=args.smoke,
+            target=args.target,
         )
+        if args.target == "diagonal":
+            ref = _marker_diagonal_reference()
+            logger.info(
+                "[phase=postfix_patch] marker diagonal null reference (NOT a Δsource cell, "
+                "read from #545 cell_metadata.json): seed0=%.4f seed137=%.4f nats",
+                ref["0"],
+                ref["137"],
+            )
 
     if not args.skip_upload:
         upload_raw_completions()
 
     # Phase 3 (scoring + paired comparison) runs OFF-POD on the VM by default;
-    # under --smoke run it inline so the smoke exercises the full pipeline.
-    if args.smoke and args.phase == "all":
+    # under --smoke (leakage) run it inline so the smoke exercises the full
+    # pipeline. The diagonal selectivity scoring is a separate off-pod script
+    # (issue640_diagonal_score.py), run explicitly after the diagonal sweep.
+    if args.smoke and args.phase == "all" and args.target == "leakage":
         from issue640_score_and_compare import score_and_compare
 
         score_and_compare(smoke=True)
 
+    cells_glob = (
+        "diagonal_source_seed*.json"
+        if args.target == "diagonal"
+        else "patch_cells_postfix_seed*.json"
+    )
     write_sentinel(
         "epm:results",
         note={
             "phase": args.phase,
+            "target": args.target,
             "smoke": args.smoke,
             "predictors_dir": str(predictors_dir()),
-            "patch_cells_glob": str(output_root() / "patch_cells_postfix_seed*.json"),
+            "cells_glob": str(output_root() / cells_glob),
         },
     )
     logger.info("[phase=done] issue640 postfix-carrier complete")
