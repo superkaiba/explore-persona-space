@@ -1633,6 +1633,134 @@ def test_check_upload_as_file_fail_waiver_reason_too_short(tmp_path):
     assert len(errors) == 1, f"expected exactly one error, got: {errors}"
 
 
+def test_check_upload_as_file_fail_glob_loop_two_statement(tmp_path):
+    """FAIL — the EXACT #640/#595 production offender shape: a two-statement
+    ``files = sorted(dir.glob("*.json"))`` then ``for f in files: _upload(f, ...)``
+    with ``path_in_repo=f"...{f.name}"``. The current name/literal heuristics
+    miss it (``f`` has no file-suffix, no literal); the glob-loop + path_in_repo
+    signals catch it."""
+    (tmp_path / "carrier.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def upload_raw_completions(raw_dir):\n"
+        '    files = sorted(raw_dir.glob("*.json"))\n'
+        "    for f in files:\n"
+        "        hub._upload(\n"
+        "            f,\n"
+        '            repo_id="r",\n'
+        '            repo_type="dataset",\n'
+        '            path_in_repo=f"issue640/raw_completions/{f.name}",\n'
+        "        )\n"
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "upload_as_file=True" in errors[0]
+
+
+def test_check_upload_as_file_fail_inline_glob_loop(tmp_path):
+    """FAIL — ``for p in dir.glob("*.json"): _upload(p, ...)`` (inline glob
+    loop, bare loop var, no path_in_repo .name signal)."""
+    (tmp_path / "x.py").write_text(
+        "def f(d):\n"
+        '    for p in d.glob("*.json"):\n'
+        '        _upload(p, repo_id="r", repo_type="dataset", path_in_repo="x")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "per-file glob/iterdir loop variable ('p')" in errors[0]
+
+
+def test_check_upload_as_file_fail_iterdir_loop(tmp_path):
+    """FAIL — ``for path in dir.iterdir(): _upload(path, ...)`` (flat per-file
+    sweep; the canonical iterdir use)."""
+    (tmp_path / "x.py").write_text(
+        "def f(d):\n"
+        "    for path in d.iterdir():\n"
+        '        _upload(path, repo_id="r", repo_type="dataset", path_in_repo="x")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "per-file glob/iterdir loop variable ('path')" in errors[0]
+
+
+def test_check_upload_as_file_pass_dir_shaped_glob_loop(tmp_path):
+    """PASS — ``for d in dir.glob("*/"): _upload(d, ...)`` iterates
+    DIRECTORIES (trailing-slash pattern), so the glob-loop single-file signal
+    must NOT fire — it correctly relies on the upload_folder default. The
+    candidate's ambiguous-``glob("*/")`` defer-to-folder case."""
+    (tmp_path / "x.py").write_text(
+        "def f(root):\n"
+        '    for d in root.glob("*/"):\n'
+        '        _upload(d, repo_id="r", repo_type="dataset", path_in_repo="x")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (dir-shaped glob loop), got: {errors}"
+
+
+def test_check_upload_as_file_pass_extensionless_glob_loop(tmp_path):
+    """PASS — ``for x in dir.glob("*"): _upload(x, ...)`` has NO file-extension
+    token in the pattern, so the file-vs-dir intent is undecidable. The
+    glob-loop signal defers (conservative — never manufacture a false positive
+    on a possible directory sweep; the candidate's "no extension token →
+    defer" rule). The riskiest per-file cases are caught by the
+    path_in_repo=f'...{x.name}' signal instead."""
+    (tmp_path / "x.py").write_text(
+        "def f(d):\n"
+        '    for x in d.glob("*"):\n'
+        '        _upload(x, repo_id="r", repo_type="dataset", path_in_repo="x")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (extensionless glob loop), got: {errors}"
+
+
+def test_check_upload_as_file_fail_path_in_repo_name_kwarg(tmp_path):
+    """FAIL — the ``path_in_repo=f"...{item.name}"`` idiom alone (a non-glob
+    loop over a bare ``items`` iterable): taking ``.name`` on a per-item path
+    you upload individually is a single-file signal independent of the loop
+    iterator."""
+    (tmp_path / "x.py").write_text(
+        "def f(items):\n"
+        "    for item in items:\n"
+        '        _upload(item, repo_id="r", path_in_repo=f"x/{item.name}")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "item.name" in errors[0]
+
+
+def test_check_upload_as_file_pass_glob_loop_with_kwarg_true(tmp_path):
+    """PASS — the CORRECT fixed shape: the #640 glob loop now passing
+    upload_as_file=True (this is what the production carriers look like
+    post-fix; the lint must not re-flag them)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def upload_raw(raw_dir):\n"
+        '    for f in sorted(raw_dir.glob("*.json")):\n'
+        "        hub._upload(\n"
+        "            f,\n"
+        '            repo_id="r",\n'
+        '            path_in_repo=f"x/{f.name}",\n'
+        "            upload_as_file=True,\n"
+        "        )\n"
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (glob loop with kwarg True), got: {errors}"
+
+
+def test_check_upload_as_file_pass_glob_loop_explicit_false_waived(tmp_path):
+    """PASS — a glob-loop signal with an EXPLICIT upload_as_file=False is the
+    author's deliberate folder declaration and is deferred to (the glob-loop /
+    path_in_repo signals are heuristic name-context signals, same deferral
+    policy as the file-named-arg signal: they fire only when the kwarg is
+    entirely absent)."""
+    (tmp_path / "x.py").write_text(
+        "def f(d):\n"
+        '    for sub in d.glob("*.json"):\n'
+        '        _upload(sub, repo_id="r", path_in_repo="x", upload_as_file=False)\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (explicit False on glob-loop signal), got: {errors}"
+
+
 def test_check_upload_as_file_repo_tree_is_clean():
     """The committed scripts/**/*.py tree must carry no unwaived single-file
     _upload calls missing upload_as_file=True (#595/#640/#612 class). This

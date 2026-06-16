@@ -95,11 +95,14 @@ Behaviours:
   in a known artifact extension, e.g. ``"out/summary.json"``, or a
   ``dir / "name.pt"`` path-div expression) FAILs unless
   ``upload_as_file=True`` (a decidable file even with an explicit
-  ``=False`` FAILs — that is the #595 silent-no-op shape); a NAME-only
-  arg0 (a bare ``Name`` whose identifier ends in a single-file suffix,
-  e.g. ``summary_path`` / ``shift_pt`` / ``foo_json``) FAILs only when
-  the ``upload_as_file`` kwarg is ENTIRELY ABSENT (the #612 offender
-  shape) — an explicit kwarg of either value is the author's deliberate
+  ``=False`` FAILs — that is the #595 silent-no-op shape); a NAME-CONTEXT
+  arg0 (a bare ``Name`` carrying any of three single-file signals — a
+  file-suffix identifier e.g. ``summary_path`` (the #612 offender); a
+  per-file glob/rglob/iterdir LOOP variable e.g. ``for f in
+  sorted(dir.glob("*.json"))`` (the #595/#640 production crash); or a
+  ``path_in_repo=f"...{X.name}"`` interpolation in the same call (the #640
+  idiom)) FAILs only when the ``upload_as_file`` kwarg is ENTIRELY ABSENT
+  — an explicit kwarg of either value is the author's deliberate
   declaration and is deferred to. Folder uploads (a generic ``local`` /
   ``local_dir`` / ``staging`` variable, no file-suffix name, no literal)
   pass untouched. Waive a genuinely-correct flagged call with
@@ -476,6 +479,13 @@ UPLOAD_FILE_NAME_SUFFIXES: tuple[str, ...] = (
     "_html",
     "_md",
 )
+# Path-iteration methods whose loop variable yields per-FILE paths — the
+# `for f in dir.glob("*.json"): _upload(f, ...)` shape behind both production
+# crashes (#595/#640). `iterdir` is included because the canonical use is a
+# flat per-file sweep; whether a given loop is FILE- vs directory-shaped is
+# decided by `_glob_iter_yields_files` (a dir-shaped / extensionless pattern
+# like `glob("*/")` / `glob("*")` defers, so a dir loop is NOT mis-flagged).
+UPLOAD_GLOB_LOOP_METHODS: tuple[str, ...] = ("glob", "rglob", "iterdir")
 # Inline waiver for a genuinely-correct flagged `_upload` call (e.g. a
 # `*_path` variable that is really a directory). Reason ≥ 10 chars, same
 # convention as CVD_PIN_EXEMPT / WANDB_INTENTIONALLY_DISABLED.
@@ -1607,6 +1617,123 @@ def _upload_arg0_is_named_file(node: ast.expr) -> bool:
     return isinstance(node, ast.Name) and node.id.lower().endswith(UPLOAD_FILE_NAME_SUFFIXES)
 
 
+def _glob_iter_method(iterator: ast.expr) -> str | None:
+    """If ``iterator`` is a ``<expr>.glob(...)`` / ``.rglob(...)`` / ``.iterdir()``
+    call (a per-file path iterator), return the method name; else None.
+    A ``sorted(dir.glob(...))`` / ``list(dir.glob(...))`` wrapper is unwrapped
+    (the live #640 offender binds ``files = sorted(raw_dir.glob("*.json"))``)."""
+    if not isinstance(iterator, ast.Call):
+        return None
+    fn = iterator.func
+    # Unwrap a single ``sorted(...)`` / ``list(...)`` / ``tuple(...)`` wrapper
+    # around the glob call (one level — the realistic nesting).
+    if isinstance(fn, ast.Name) and fn.id in ("sorted", "list", "tuple") and iterator.args:
+        return _glob_iter_method(iterator.args[0])
+    if isinstance(fn, ast.Attribute) and fn.attr in UPLOAD_GLOB_LOOP_METHODS:
+        return fn.attr
+    return None
+
+
+def _glob_iter_yields_files(iterator: ast.expr) -> bool:
+    """True iff ``iterator`` is a per-FILE path iterator the glob-loop single-
+    file signal should fire on. Positive (fire) only when the file-vs-directory
+    intent is decidable as FILE — conservative by design so a directory sweep is
+    never mis-flagged (the candidate's ``glob("*/")`` defer-to-folder case):
+
+    * ``.iterdir()`` — fires (the canonical flat per-file sweep; the candidate's
+      test 3 FAIL case).
+    * ``.glob(<pat>)`` / ``.rglob(<pat>)`` — fires ONLY when ``<pat>`` is a
+      string literal containing a known artifact extension token
+      (:data:`UPLOAD_FILE_EXTENSIONS`, e.g. ``"*.json"`` / ``"**/*.pt"``). A
+      directory-shaped pattern (``"*/"``, ``"runs/*"``) or any pattern without a
+      file-extension token (``"*"``) DEFERS (returns False) — better to leave a
+      genuine directory loop unflagged than to manufacture a false positive,
+      since the riskiest per-file cases are independently caught by the
+      ``path_in_repo=f"...{X.name}"`` signal.
+
+    Unwraps the same ``sorted(...)`` / ``list(...)`` / ``tuple(...)`` wrapper as
+    :func:`_glob_iter_method`."""
+    if not isinstance(iterator, ast.Call):
+        return False
+    fn = iterator.func
+    if isinstance(fn, ast.Name) and fn.id in ("sorted", "list", "tuple") and iterator.args:
+        return _glob_iter_yields_files(iterator.args[0])
+    if isinstance(fn, ast.Attribute):
+        if fn.attr == "iterdir":
+            return True
+        if fn.attr in ("glob", "rglob") and iterator.args:
+            pat = iterator.args[0]
+            if isinstance(pat, ast.Constant) and isinstance(pat.value, str):
+                return pat.value.lower().endswith(UPLOAD_FILE_EXTENSIONS)
+    return False
+
+
+def _upload_arg0_is_glob_loop_var(call: ast.Call, arg0: ast.expr, tree: ast.AST) -> bool:
+    """True iff ``arg0`` is a bare ``Name`` bound by an enclosing
+    ``for <name> in <per-file glob/rglob/iterdir iterator>:`` (the per-file
+    sweep shape behind the #595/#640 production crashes — ``for f in files:``
+    where ``files = sorted(dir.glob("*.json"))``), counting BOTH the inline
+    ``for f in dir.glob(...)`` form and the two-statement form where the loop
+    iterates a local previously bound to a glob result.
+
+    Only fires when the iterator decidably yields FILES (see
+    :func:`_glob_iter_yields_files`) so a directory loop (``glob("*/")``) is
+    not mis-flagged. ``tree`` is the module AST; the walk early-outs as soon as
+    a binding per-file ``for`` is found."""
+    if not isinstance(arg0, ast.Name):
+        return False
+    name = arg0.id
+    # Map local-name -> glob iterator for ``<name> = sorted(dir.glob(...))``
+    # style bindings so a ``for f in files:`` whose ``files`` is a glob result
+    # is recognized. Only the simple single-target ``Name = <glob>`` form.
+    glob_bound_locals: dict[str, ast.expr] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            tgt = node.targets[0]
+            if isinstance(tgt, ast.Name) and _glob_iter_method(node.value) is not None:
+                glob_bound_locals[tgt.id] = node.value
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.For):
+            continue
+        if not (isinstance(node.target, ast.Name) and node.target.id == name):
+            continue
+        # The loop binds our arg0 name. Resolve its iterator: a direct glob
+        # call, or a local previously bound to one.
+        iterator: ast.expr | None = node.iter
+        if _glob_iter_method(iterator) is None and isinstance(iterator, ast.Name):
+            iterator = glob_bound_locals.get(iterator.id)
+        if iterator is None or not _glob_iter_yields_files(iterator):
+            continue
+        return True
+    return False
+
+
+def _upload_arg0_referenced_as_path_in_repo_name(call: ast.Call, arg0: ast.expr) -> bool:
+    """True iff ``arg0`` is a bare ``Name`` X and the SAME ``_upload`` call has
+    a ``path_in_repo=f"...{X.name}"`` kwarg (an f-string interpolating
+    ``X.name``). This is the #640 idiom — ``.name`` is only taken on a per-item
+    file/path you are uploading individually, so it is a strong single-file
+    signal independent of the loop context."""
+    if not isinstance(arg0, ast.Name):
+        return False
+    name = arg0.id
+    for kw in call.keywords:
+        if kw.arg != "path_in_repo" or not isinstance(kw.value, ast.JoinedStr):
+            continue
+        for piece in kw.value.values:
+            if not isinstance(piece, ast.FormattedValue):
+                continue
+            val = piece.value
+            if (
+                isinstance(val, ast.Attribute)
+                and val.attr == "name"
+                and isinstance(val.value, ast.Name)
+                and val.value.id == name
+            ):
+                return True
+    return False
+
+
 def _upload_as_file_waiver_present(lines: list[str], call_lineno: int) -> bool:
     """Return True iff a ``# UPLOAD_AS_FILE_EXEMPT: <reason>`` waiver
     (reason ≥ :data:`UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS` chars) is on
@@ -1658,14 +1785,31 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
       ``upload_as_file=True``. An explicit ``upload_as_file=False`` on a
       decidable file STILL FAILs (that is precisely the #595 silent-no-op
       shape).
-    * NAME-only arg0 — a bare ``Name`` whose identifier ends in a
-      single-file suffix (:data:`UPLOAD_FILE_NAME_SUFFIXES`, e.g.
-      ``summary_path`` — the #612 offender) — FAILs only when the
-      ``upload_as_file`` kwarg is ENTIRELY ABSENT. An explicit kwarg of
-      either value is the author's deliberate file/folder declaration and
-      is deferred to (a heuristic name signal must not override an
-      explicit choice — that is where false positives would live, since a
-      ``*_path`` variable can legitimately hold a directory).
+    * NAME-CONTEXT arg0 — a bare ``Name`` carrying ANY of three
+      single-file signals — FAILs only when the ``upload_as_file`` kwarg is
+      ENTIRELY ABSENT. An explicit kwarg of either value is the author's
+      deliberate file/folder declaration and is deferred to (a heuristic
+      name-context signal must not override an explicit choice — that is
+      where false positives would live, since a ``*_path`` variable can
+      legitimately hold a directory). The three signals:
+
+      - NAME SUFFIX: the identifier ends in a single-file suffix
+        (:data:`UPLOAD_FILE_NAME_SUFFIXES`, e.g. ``summary_path`` — the
+        #612 offender).
+      - GLOB-LOOP variable: the ``Name`` is the target of an enclosing
+        ``for X in <per-file glob/rglob/iterdir iterator>:`` (counting the
+        inline ``for f in dir.glob(...)`` form AND the two-statement
+        ``files = sorted(dir.glob(...)) ; for f in files:`` form — the
+        EXACT #595/#640 production crash). Fires only when the iterator
+        DECIDABLY yields files: ``.iterdir()``, or ``.glob(<pat>)`` /
+        ``.rglob(<pat>)`` whose literal pattern carries a known artifact
+        extension (``"*.json"`` / ``"**/*.pt"``). A directory-shaped or
+        extensionless pattern (``"*/"`` / ``"*"``) DEFERS so a genuine
+        directory loop is not mis-flagged.
+      - ``path_in_repo`` ``.name`` INTERPOLATION: the SAME call passes
+        ``path_in_repo=f"...{X.name}"`` (the #640 idiom — ``.name`` is
+        taken only on a per-item path uploaded individually), a single-file
+        signal independent of the loop iterator.
 
     NOT flagged: a generic folder variable (``local`` / ``local_dir`` /
     ``staging`` / ``entry`` — no file-suffix name, no literal); any call
@@ -1719,14 +1863,31 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
             kw_true = isinstance(kw_val, ast.Constant) and kw_val.value is True
             decidable = _upload_arg0_is_decidable_file(arg0)
             named = _upload_arg0_is_named_file(arg0)
+            # The #595/#640 production shape: a bare loop variable from a
+            # per-file glob/rglob/iterdir sweep, OR a bare Name interpolated as
+            # path_in_repo=f"...{X.name}". Both are HEURISTIC name-context
+            # signals (like `named`) — they fire only when the upload_as_file
+            # kwarg is ENTIRELY ABSENT, deferring to any explicit author choice.
+            loop_file = _upload_arg0_is_glob_loop_var(node, arg0, tree)
+            kwarg_file = _upload_arg0_referenced_as_path_in_repo_name(node, arg0)
             # FAIL when a decidable file lacks upload_as_file=True, OR when a
-            # name-only signal has the kwarg entirely absent.
-            fail = (decidable and not kw_true) or (named and not has_kw)
+            # name-context signal (name-suffix / glob-loop / path_in_repo .name)
+            # has the kwarg entirely absent.
+            fail = (decidable and not kw_true) or (
+                (named or loop_file or kwarg_file) and not has_kw
+            )
             if not fail:
                 continue
             if _upload_as_file_waiver_present(lines, node.lineno):
                 continue
-            signal = "single-file path literal" if decidable else f"file-named arg ('{arg0.id}')"
+            if decidable:
+                signal = "single-file path literal"
+            elif named:
+                signal = f"file-named arg ('{arg0.id}')"
+            elif loop_file:
+                signal = f"per-file glob/iterdir loop variable ('{arg0.id}')"
+            else:
+                signal = f"path_in_repo=f'...{{{arg0.id}.name}}' single-file arg ('{arg0.id}')"
             errors.append(
                 f"{py}:{node.lineno}: _upload(...) call with a {signal} does not "
                 f"pass upload_as_file=True. hub._upload raises ValueError "
