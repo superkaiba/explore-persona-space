@@ -16,6 +16,8 @@ goal: Test whether the contrastive-negatives → stronger source implantation ef
 relates_to:
 - implant-which-behaviors
 - leak-contrastive-negatives
+classification: useful
+promoted_at: '2026-06-16T00:20:45Z'
 ---
 # Positive-only sycophancy training installs at least as strongly as the contrastive mix at every dose the rate can measure, but spreads sycophancy to nearly every other persona (MODERATE confidence)
 
