@@ -454,6 +454,157 @@ def cmd_p7_fixture(args: argparse.Namespace) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------
+# predictor-v3 subcommands (plans/v3.md)
+# --------------------------------------------------------------------------
+
+
+def cmd_v3_panels(args: argparse.Namespace) -> int:
+    """Bucket 1: decorrelated panel selection on the real committed panel_set."""
+    from explore_persona_space.experiments.sycophancy_onpolicy_612 import (
+        V3_DECORR_PEARSON_MAX,
+        V3_PANEL_MIN_BYSTANDERS,
+    )
+    from explore_persona_space.experiments.sycophancy_onpolicy_612.panel_select_v3 import (
+        select_all,
+    )
+
+    panels = select_all(args.panel_set)
+    n_ok = sum(1 for r in panels.values() if r["status"] == "ok")
+    for source, rec in panels.items():
+        assert rec["n_bystanders"] >= 1, source
+        # disjointness: no source persona in the bystander set
+        assert not (set(rec["bystanders"]) & set(SOURCES)), (
+            source,
+            set(rec["bystanders"]) & set(SOURCES),
+        )
+    _digest(
+        f"v3-panels PASS: {n_ok}/{len(panels)} sources decorrelated (target |r|<"
+        f"{V3_DECORR_PEARSON_MAX}, N>={V3_PANEL_MIN_BYSTANDERS}); realized |r| "
+        + ", ".join(
+            f"{s}={rec['realized_abs_pearson']:.3f}"
+            for s, rec in panels.items()
+            if rec["realized_abs_pearson"] is not None
+        )
+    )
+    return 0
+
+
+def cmd_v3_pool_cpu(args: argparse.Namespace) -> int:
+    """Bucket 2/3 CPU portion: yield-floor decision + equalize-down + save_steps
+    arithmetic + the _subset_rows trim (the only non-GPU logic in the v3 pool
+    builder). Uses synthetic RowSpecs so it needs no frozen pool / membership file."""
+    from explore_persona_space.experiments.sycophancy_onpolicy_612 import (
+        V3_YIELD_FLOOR,
+        V3_YIELD_TARGET,
+    )
+    from explore_persona_space.experiments.sycophancy_onpolicy_612.build_onpolicy_pool import (
+        RowSpec,
+    )
+    from explore_persona_space.experiments.sycophancy_onpolicy_612.build_predictor_v3_pool import (
+        _subset_rows,
+    )
+    from explore_persona_space.experiments.sycophancy_onpolicy_612.predictor_v3 import (
+        equalize_down,
+        kept_sources_or_kill,
+        save_steps_for,
+        yield_decision,
+    )
+
+    # yield decisions on v1's realized fills (KT 194, SWE 169 both clear the floor)
+    fills = {"villain": 200, "comedian": 200, "kindergarten_teacher": 194, "software_engineer": 169}
+    decisions = {s: yield_decision(s, n) for s, n in fills.items()}
+    kept = kept_sources_or_kill(decisions)
+    assert kept == sorted(fills), kept
+    eq = equalize_down(fills)
+    assert eq["floor_n_positives"] == 169 and abs(eq["ratio_pos_to_neg"] - 2.5) < 0.01, eq
+
+    # save_steps cadence at production scale -> >=2 checkpoints to bracket the band
+    ss = save_steps_for(169 + round(169 * 2.5))  # floor_n pos + 2.5x neg
+    assert ss["save_steps"] >= 1 and ss["expected_n_checkpoints"] >= 2, ss
+
+    # _subset_rows: floor-N equalize-down on synthetic specs (200 pos + 500 neg)
+    specs = [
+        RowSpec(i, "positive", "villain", "P", f"q{i}", "c") for i in range(V3_YIELD_TARGET)
+    ] + [
+        RowSpec(V3_YIELD_TARGET + j, "negative", "medical_doctor", "N", f"qn{j}", "c")
+        for j in range(500)
+    ]
+    completions = {s.row_idx: {"completion": "x", "tier": 1} for s in specs}
+    floor = V3_YIELD_FLOOR
+    kept_specs, kept_comp = _subset_rows(specs, completions, floor_n=floor)
+    n_pos = sum(1 for s in kept_specs if s.row_type == "positive")
+    n_neg = sum(1 for s in kept_specs if s.row_type != "positive")
+    assert n_pos == floor, n_pos
+    assert n_neg == round(floor * 2.5), n_neg
+    assert len(kept_comp) == len(kept_specs), (len(kept_comp), len(kept_specs))
+    _digest(
+        f"v3-pool-cpu PASS: yield kept={kept} floor_n={eq['floor_n_positives']} "
+        f"ratio={eq['ratio_pos_to_neg']}; save_steps={ss['save_steps']} "
+        f"n_ckpts={ss['expected_n_checkpoints']}; _subset_rows -> {n_pos} pos / {n_neg} neg "
+        f"(floor={floor})"
+    )
+    return 0
+
+
+def cmd_v3_bakeoff_fixture(args: argparse.Namespace) -> int:
+    """Bucket 4: end-to-end bake-off on a tiny synthetic leakage slab + the REAL
+    decorrelated panels + the REAL #623 comparator artifacts (CPU)."""
+    import numpy as np
+    from explore_persona_space.experiments.sycophancy_onpolicy_612.predictor_bakeoff import (
+        run_bakeoff,
+    )
+
+    from explore_persona_space.experiments.sycophancy_onpolicy_612.panel_select_v3 import (
+        select_all,
+    )
+
+    root = args.root
+    panels_dir = root / "panels"
+    panels = select_all(args.panel_set)
+    rng = np.random.default_rng(612)
+    # synthetic per-cell leakage Δ that correlates with base prior (predictor a)
+    leakage: dict = {}
+    for source, rec in panels.items():
+        if rec["status"] != "ok":
+            continue
+        out = panels_dir / source
+        out.mkdir(parents=True, exist_ok=True)
+        rec_path_payload = {**rec, "metadata": {"fixture": True}}
+        (out / "panel.json").write_text(json.dumps(rec_path_payload, indent=2))
+        cell: dict = {}
+        for b, brec in rec["bystanders"].items():
+            # plant Δ ~ base_prior + noise so predictor (a) wins on the fixture
+            cell[b] = float(brec["base_prior"] * 1.5 + rng.normal(0, 0.02))
+        leakage[source] = cell
+    result = run_bakeoff(
+        leakage_by_source=leakage,
+        panels_dir=panels_dir,
+        panel_set_path=args.panel_set,
+        i623_cosine_matrix=args.i623_cosine,
+        i623_syc_i=args.i623_syc,
+    )
+    srcs = list(result["per_source"])
+    assert srcs, "no sources in bake-off result"
+    s0 = srcs[0]
+    rec0 = result["per_source"][s0]
+    for pred in ("base_prior", "cosine_to_source", "pv_alignment"):
+        assert pred in rec0["predictors"], (s0, pred, list(rec0["predictors"]))
+        assert "spearman_rho" in rec0["predictors"][pred], rec0["predictors"][pred]
+        assert "ci95" in rec0["predictors"][pred], rec0["predictors"][pred]
+    assert "pairwise_predictor_correlation" in rec0, list(rec0)
+    assert "verdict" in rec0, list(rec0)
+    out_path = root / "predictor_bakeoff.json"
+    out_path.write_text(json.dumps(result, indent=2))
+    _digest(
+        f"v3-bakeoff-fixture PASS: {len(srcs)} sources x 3 predictors w/ Spearman+CI; "
+        f"{s0} a-rho={rec0['predictors']['base_prior']['spearman_rho']:.2f} "
+        f"verdict={rec0['verdict']['winner']}; pooled={result.get('pooled', {}).get('winner')} "
+        f"-> {out_path}"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -487,6 +638,28 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--panel-set", type=Path, required=True)
     p.add_argument("--parity", choices=("pass", "hard-fail"), default="pass")
     p.set_defaults(func=cmd_p7_fixture)
+
+    p = sub.add_parser("v3-panels")
+    p.add_argument("--panel-set", type=Path, default=Path("data/issue_612/panel/panel_set.json"))
+    p.set_defaults(func=cmd_v3_panels)
+
+    p = sub.add_parser("v3-pool-cpu")
+    p.set_defaults(func=cmd_v3_pool_cpu)
+
+    p = sub.add_parser("v3-bakeoff-fixture")
+    p.add_argument("--root", type=Path, required=True)
+    p.add_argument("--panel-set", type=Path, default=Path("data/issue_612/panel/panel_set.json"))
+    p.add_argument(
+        "--i623-cosine",
+        type=Path,
+        default=Path("eval_results/issue_644/inputs/issue623/cosine_matrix.json"),
+    )
+    p.add_argument(
+        "--i623-syc",
+        type=Path,
+        default=Path("eval_results/issue_644/inputs/issue623/syc_i.json"),
+    )
+    p.set_defaults(func=cmd_v3_bakeoff_fixture)
 
     args = parser.parse_args(argv)
     return args.func(args)

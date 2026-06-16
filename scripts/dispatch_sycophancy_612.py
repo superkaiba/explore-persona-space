@@ -101,6 +101,7 @@ load_dotenv()
 
 from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa: E402
     ANALYZE_SUMMARY_RELPATH,
+    BAND_ENTRY_THRESHOLD,
     BASE_MODEL,
     DOSE_ADAPTER_PATH_TMPL,
     DOSE_ADAPTER_REVISION,
@@ -115,6 +116,8 @@ from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa:
     MANDATORY_PANEL,
     PARITY_PANELS,
     TRAIN_ARMS,
+    V3_HF_DATA_PREFIX,
+    V3_TRAIN_ARMS,
     cell_id,
     cell_slab_dir,
     dose_cell_dir,
@@ -122,6 +125,7 @@ from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa:
     parse_cells,
     pool_dir,
     repo_root_from_module,
+    v3_cell_dir,
 )
 from explore_persona_space.experiments.sycophancy_onpolicy_612.band_entry import (  # noqa: E402
     SELECTION_RELPATH,
@@ -132,8 +136,10 @@ log = logging.getLogger("dispatch_sycophancy_612")
 
 SMOKE_CELL = ("villain", "arm_onpolicy", 42)
 DOSE_SMOKE_CELL = ("villain", "arm_canned", 42)
+V3_SMOKE_CELL = ("villain", "arm_onpolicy", 42)  # predictor-v3 smoke cell
 DOSE_REQUIRED_CKPT_FILES = ("adapter_config.json", "adapter_model.safetensors")
 DOSE_RESULTS_MARKER_VERSION = 3  # the parent run posted epm:results v2
+V3_RESULTS_MARKER_VERSION = 1  # predictor-v3 is a fresh epm:results stream
 SMOKE_DIAGNOSTIC_CELL = ("villain", "arm_onpolicy", 137)
 YIELD_EXIT_CODE = 42  # build_onpolicy_pool's PositiveYieldError marker (G3)
 JUDGE_PARSE_RATE_FLOOR = 0.95
@@ -271,6 +277,23 @@ def _resolve_epoch_checkpoints(adapter_dir: Path) -> dict[int, Path]:
             f"{[p.name for _, p in ckpts]}"
         )
     return {1: ckpts[0][1], 2: ckpts[1][1], 3: ckpts[2][1]}
+
+
+def _resolve_step_checkpoints(adapter_dir: Path) -> dict[int, Path]:
+    """Map optimizer-step -> checkpoint dir (save_strategy='steps' => N dirs).
+
+    Predictor-v3 (plan v3 §4.3): sub-epoch ``checkpoint-<step>`` dirs. Returns
+    {step: dir} sorted ascending; raises if fewer than 2 (the band-entry read
+    needs >=2 candidates to bracket the +0.60 crossing, §4.3 / §7)."""
+    ckpts = sorted(
+        (int(p.name.split("-")[1]), p) for p in adapter_dir.glob("checkpoint-*") if p.is_dir()
+    )
+    if len(ckpts) < 2:
+        raise RuntimeError(
+            f"Expected >=2 sub-epoch checkpoints under {adapter_dir}, found "
+            f"{[p.name for _, p in ckpts]} — save_strategy='steps' did not bracket the band"
+        )
+    return {step: p for step, p in ckpts}
 
 
 def _ensure_tokenizer_files(ckpt_dir: Path, adapter_dir: Path) -> None:
@@ -502,11 +525,31 @@ class Dispatcher:
 
     # ----- train / merge / parity ----------------------------------------------
 
-    def _train_and_merge(self, source: str, arm: str, seed: int, pool: Path) -> tuple[Path, Path]:
+    def _train_and_merge(
+        self,
+        source: str,
+        arm: str,
+        seed: int,
+        pool: Path,
+        *,
+        save_strategy: str = "epoch",
+        save_steps: int | None = None,
+        upload_epoch_checkpoints: bool = True,
+        run_name: str | None = None,
+        hub_adapter_base: str | None = None,
+    ) -> tuple[Path, Path]:
         """#411 recipe held FIXED (plan §4 cfg). Deviations carried from the
         ported #608 chain, all arm-symmetric + optimization-neutral:
-        save_only_model=True (adapter-only epoch checkpoints) and HF uploads
-        moved to the dispatcher (fail-loud) — named in the implementer report."""
+        save_only_model=True (adapter-only checkpoints) and HF uploads moved to
+        the dispatcher (fail-loud) — named in the implementer report.
+
+        ``save_strategy``/``save_steps`` parameterize the checkpoint cadence:
+        the v1/v2 production+dose path keeps ``save_strategy='epoch'`` (default,
+        unchanged); the predictor-v3 path passes ``save_strategy='steps'`` +
+        ``save_steps=ceil(total_steps/8)`` for sub-epoch checkpoints (plan v3
+        §4.3). When ``save_strategy='steps'`` the per-epoch HF upload of the two
+        epoch checkpoints is skipped (``upload_epoch_checkpoints=False`` is
+        passed by the v3 caller — it uploads only the band-entry checkpoint)."""
         from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
 
         output_dir = self.runs_root / arm / f"{source}_seed{seed}"
@@ -526,16 +569,25 @@ class Dispatcher:
             max_length=2048,  # Arm C prefixes; A/B rows asserted <=1024 at pool build
             warmup_ratio=0.05,
             seed=seed,
-            run_name=f"issue612_{arm}_{source}_seed{seed}",
+            run_name=run_name or f"issue612_{arm}_{source}_seed{seed}",
             report_to="wandb",
-            save_strategy="epoch",
-            save_total_limit=None,
+            save_strategy=save_strategy,
+            save_steps=save_steps if save_strategy == "steps" else None,
+            save_total_limit=None,  # keep ALL sub-epoch checkpoints (v3 §4.3)
             save_only_model=True,
             gradient_checkpointing=True,
             packing=False,
             hf_upload=False,  # dispatcher owns uploads (fail-loud, checkpoint handling)
         )
-        log.info("[%s:%s:%d] [phase=train] train_lora -> %s", source, arm, seed, adapter_dir)
+        log.info(
+            "[%s:%s:%d] [phase=train] train_lora (save_strategy=%s save_steps=%s) -> %s",
+            source,
+            arm,
+            seed,
+            save_strategy,
+            save_steps,
+            adapter_dir,
+        )
         train_lora(
             base_model_path=BASE_MODEL,
             data_path=str(pool),
@@ -546,13 +598,14 @@ class Dispatcher:
             raise RuntimeError(f"[{source}:{arm}:{seed}] no .safetensors in {adapter_dir}")
 
         if self.hf_upload:
-            hub_base = f"adapters/issue_612/{arm}/{source}_seed{seed}"
+            hub_base = hub_adapter_base or f"adapters/issue_612/{arm}/{source}_seed{seed}"
             _upload_or_raise(
                 adapter_dir, repo_type="model", repo_id=HF_MODEL_REPO, path_in_repo=hub_base
             )
-            ckpts = _resolve_epoch_checkpoints(adapter_dir)
-            for k in (1, 2):
-                _upload_checkpoint_or_raise(ckpts[k], f"{hub_base}/checkpoint-epoch{k}")
+            if upload_epoch_checkpoints:
+                ckpts = _resolve_epoch_checkpoints(adapter_dir)
+                for k in (1, 2):
+                    _upload_checkpoint_or_raise(ckpts[k], f"{hub_base}/checkpoint-epoch{k}")
 
         log.info("[%s:%s:%d] [phase=merge] merge_lora -> %s", source, arm, seed, merged_dir)
         merge_lora(
@@ -1560,6 +1613,604 @@ class DoseMatchedRunner(Dispatcher):
             )
 
 
+# ----- predictor-v3 follow-up round (plans/v3.md) ---------------------------------
+
+
+class PredictorV3Runner(Dispatcher):
+    """Plan-v3 retrain-with-sub-epoch-checkpoints runner (followup
+    onpolicy-leakage-predictor). Reuses the Dispatcher's eval/upload/mini-judge/
+    panel helpers verbatim; adds the sub-epoch save cadence, the per-cell
+    band-entry self-eval that locates the +0.60 matched-install checkpoint, and
+    the source-side baseline read. Every phase's cell list derives from --cells
+    (unified smoke = sweep with one cell). Two train arms only (A canned + B
+    on-policy; arm C dropped, plan §4.4)."""
+
+    def __init__(self, args: argparse.Namespace):
+        super().__init__(args)
+        self._floor_n: int | None = getattr(args, "floor_n", None)
+
+    # ----- cell-state (v3 namespace) ---------------------------------------------
+
+    def _v3_state_path(self, source: str, arm: str, seed: int) -> Path:
+        return (
+            self.slab_root / "onpolicy_predictor" / "_cellstate" / f"{source}__{arm}__{seed}.json"
+        )
+
+    def _read_v3_state(self, source: str, arm: str, seed: int) -> dict | None:
+        path = self._v3_state_path(source, arm, seed)
+        return json.loads(path.read_text()) if path.exists() else None
+
+    def _write_v3_state(self, source: str, arm: str, seed: int, record: dict) -> None:
+        path = self._v3_state_path(source, arm, seed)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(record, indent=2))
+
+    # ----- source-side baseline read (NEW, plan §4.2) ----------------------------
+
+    def run_source_baseline(self, source: str) -> Path:
+        """Base-model agreement rate for ONE source on the 60-claim pool (no
+        instruction) -> source_baseline/<source>.json. Doubles as predictor (a)'s
+        base-prior covariate (§4.2). Reuses eval_panel (single-persona panel) +
+        the dispatcher's mini-judge, then summarizes via predictor_v3."""
+        from explore_persona_space.experiments.sycophancy_onpolicy_612 import predictor_v3
+
+        out_dir = self.slab_root / "onpolicy_predictor" / "source_baseline_eval" / source
+        panel_set = self._source_panel_set(source)
+        self._eval_subprocess(
+            model_tag=f"source_baseline:{source}",
+            out_dir=out_dir,
+            panel_set=panel_set,
+            claims=self._audited_claims(),
+            seed=42,
+            hub_model_id=BASE_MODEL,
+            panel_subset=source,
+            sentinel_name=f"v3-source-baseline-{source}",
+        )
+        # Judge the single panel file pod-side (sanctioned gate moment) and write
+        # the judgments in the schema predictor_v3.source_baseline_summary reads.
+        panel_file = out_dir / f"sycophancy_eval_{source}.json"
+        judgments_dir = out_dir / "judgments"
+        judgments_dir.mkdir(parents=True, exist_ok=True)
+        verdicts = self._mini_judge_verdicts(panel_file)
+        (judgments_dir / f"{source}.json").write_text(
+            json.dumps({"panel": source, "n_verdicts": len(verdicts), "verdicts": verdicts})
+        )
+        summary = predictor_v3.source_baseline_summary(judgments_dir, source)
+        rec_dir = self.slab_root / "onpolicy_predictor" / "source_baseline"
+        rec_dir.mkdir(parents=True, exist_ok=True)
+        rec_path = rec_dir / f"{source}.json"
+        rec_path.write_text(json.dumps({**summary, "git_commit_sha": _git_sha()}, indent=2))
+        log.info(
+            "[%s] [phase=source_baseline] base agreement=%.3f risk=%s -> %s",
+            source,
+            summary["base_agreement_rate"],
+            summary["yield_risk_class"],
+            rec_path,
+        )
+        if self.hf_upload:
+            _upload_or_raise(
+                rec_path,
+                repo_type="dataset",
+                repo_id=HF_DATA_REPO,
+                path_in_repo=f"{V3_HF_DATA_PREFIX}/source_baseline/{source}.json",
+            )
+        return rec_path
+
+    def _source_panel_set(self, source: str) -> Path:
+        """A single-persona panel_set for the source-baseline read (the source's
+        own roster prompt). Reuses the v1 panel_set's prompt where present."""
+        panel_set = self._resolve_panel_set()
+        personas = json.loads(panel_set.read_text())["personas"]
+        if source not in personas:
+            raise KeyError(f"source {source!r} not in panel_set {panel_set} — cannot read baseline")
+        path = self.data_root / "panel" / f"panel_set_source_{source}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "provenance": "v3_source_baseline",
+                    "personas": {source: {"prompt": personas[source]["prompt"]}},
+                },
+                indent=2,
+            )
+        )
+        return path
+
+    def _mini_judge_verdicts(self, panel_file: Path) -> list[dict]:
+        """Haiku verdicts list (judge_pass schema rows) for one panel eval JSON."""
+        import asyncio
+
+        from explore_persona_space.experiments.sycophancy_onpolicy_612.judge import (
+            judge_batch,
+            serialize_verdicts,
+        )
+
+        payload = json.loads(panel_file.read_text())
+        records = payload["completions"]
+        rollouts = [{"wrong_claim": r["claim"], "completion": r["completion"]} for r in records]
+        verdicts = asyncio.run(
+            judge_batch(rollouts, model=JUDGE_MODEL, max_concurrency=self.args.judge_concurrency)
+        )
+        rows = serialize_verdicts(verdicts)
+        for rec, v in zip(records, rows, strict=True):
+            v["claim_idx"] = rec["claim_idx"]
+            v["rollout_idx"] = rec["rollout_idx"]
+        return rows
+
+    # ----- the per-cell predictor-v3 path -----------------------------------------
+
+    def _v3_pool(self, source: str, arm: str) -> Path:
+        """Build/resolve the floor-N training pool for one (source, arm).
+
+        arm_canned: the frozen #411 pool subset to floor-N positives (the data
+        construction control). arm_onpolicy: tiered_positives_v3 floor-N +
+        proportional negatives. Equalize-down to ``self._floor_n`` when set; else
+        the realized fill (single-cell smoke / per-source run)."""
+        from explore_persona_space.experiments.sycophancy_onpolicy_612.predictor_v3 import (
+            save_steps_for,
+        )
+
+        pool = self._pool_build_subprocess_v3(source, arm)
+        rows = sum(1 for line in pool.read_text().splitlines() if line.strip())
+        self._last_pool_rows = rows
+        self._last_save_steps = save_steps_for(rows)
+        return pool
+
+    def _pool_build_subprocess_v3(self, source: str, arm: str) -> Path:
+        """Spawn the v3 pool builder in a FRESH subprocess (vLLM teardown
+        isolation). Reuses build_onpolicy_pool's v3 entrypoint (--stage v3)."""
+        out_dir = self.data_root / "onpolicy_predictor" / "training_pools" / arm / source
+        pool = out_dir / "train_pool.jsonl"
+        if pool.exists():
+            log.info("[%s:%s] v3 pool exists — idempotent skip", source, arm)
+            return pool
+        cmd = [
+            "uv",
+            "run",
+            "python",
+            "-m",
+            "explore_persona_space.experiments.sycophancy_onpolicy_612.build_predictor_v3_pool",
+            "--source",
+            source,
+            "--arm",
+            arm,
+            "--data-root",
+            str(self.data_root),
+            "--out-dir",
+            str(out_dir),
+            "--judge-concurrency",
+            str(self.args.judge_concurrency),
+        ]
+        if self._floor_n is not None:
+            cmd += ["--floor-n", str(self._floor_n)]
+        env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(self.gpu_id), "TQDM_DISABLE": "1"}
+        log.info("[%s:%s] [phase=pool_build] spawning: %s", source, arm, " ".join(cmd))
+        subprocess.run(cmd, env=env, check=True)
+        if not pool.exists():
+            raise RuntimeError(f"v3 pool build exited 0 but {pool} missing")
+        return pool
+
+    def _band_entry_from_trajectory(
+        self, source: str, arm: str, seed: int, adapter_dir: Path, cell_dir: Path
+    ) -> dict:
+        """Self-panel eval EACH sub-epoch checkpoint -> earliest with self-Δ >=
+        +0.60 (plan §4.3 / N2). Returns the band-entry record (selected step,
+        adjacent steps for the §4.5 sensitivity read, per-step self rates +
+        deltas, install gap reported per cell)."""
+        from explore_persona_space.train.sft import merge_lora
+
+        ckpts = _resolve_step_checkpoints(adapter_dir)
+        base_self = self._base_self_rate(source)
+        steps_sorted = sorted(ckpts)
+        per_step: dict[int, dict] = {}
+        traj_root = cell_dir / "trajectory"
+        for step in steps_sorted:
+            ckpt_dir = ckpts[step]
+            if not (ckpt_dir / "adapter_config.json").exists():
+                raise RuntimeError(
+                    f"[{cell_id(source, arm, seed)}] step-{step} checkpoint {ckpt_dir} has no "
+                    f"adapter_config.json — save_strategy='steps' did not save a PEFT adapter"
+                )
+            _ensure_tokenizer_files(ckpt_dir, adapter_dir)
+            merged_tmp = adapter_dir.parent / f"merged_step_{step}"
+            log.info(
+                "[%s:%s:%d] [phase=trajectory] step_%d merge+self-eval",
+                source,
+                arm,
+                seed,
+                step,
+            )
+            merge_lora(
+                base_model_path=BASE_MODEL,
+                adapter_path=str(ckpt_dir),
+                output_dir=str(merged_tmp),
+                gpu_id=self.gpu_id,
+            )
+            step_dir = traj_root / f"step_{step}"
+            self._eval_subprocess(
+                model_tag=f"{source}:{arm}:{seed}:step{step}",
+                out_dir=step_dir,
+                panel_set=self._resolve_panel_set(),
+                claims=self._audited_claims(),
+                seed=seed,
+                merged_dir=merged_tmp,
+                panel_subset=source,
+                sentinel_name=f"v3-trajectory-{source}-{arm}-{seed}-step{step}",
+            )
+            shutil.rmtree(merged_tmp, ignore_errors=False)
+            self_rate = self._mini_judge_panel_file(step_dir / f"sycophancy_eval_{source}.json")[
+                "rate"
+            ]
+            delta = self_rate - base_self
+            per_step[step] = {"self_rate": self_rate, "self_delta": delta}
+
+        entry_step: int | None = None
+        for step in steps_sorted:
+            if per_step[step]["self_delta"] >= BAND_ENTRY_THRESHOLD:
+                entry_step = step
+                break
+        # Adjacent checkpoints for the §4.5 sensitivity read (one below / one above).
+        adjacent: dict[str, int | None] = {"below": None, "above": None}
+        if entry_step is not None:
+            idx = steps_sorted.index(entry_step)
+            adjacent["below"] = steps_sorted[idx - 1] if idx > 0 else None
+            adjacent["above"] = steps_sorted[idx + 1] if idx + 1 < len(steps_sorted) else None
+        max_delta = max(v["self_delta"] for v in per_step.values())
+        return {
+            "source": source,
+            "arm": arm,
+            "seed": seed,
+            "base_self_rate": base_self,
+            "threshold": BAND_ENTRY_THRESHOLD,
+            "checkpoint_steps": steps_sorted,
+            "per_step": {str(s): per_step[s] for s in steps_sorted},
+            "band_entry_step": entry_step,
+            "band_entry_status": "entered" if entry_step is not None else "never_crossed_band",
+            "adjacent_steps": adjacent,
+            "max_self_delta": max_delta,
+        }
+
+    def _base_self_rate(self, source: str) -> float:
+        """Base-model self agreement rate for the source (from the source-baseline
+        read; falls back to the v1 panel_set base_rate if the read is absent)."""
+        rec_path = self.slab_root / "onpolicy_predictor" / "source_baseline" / f"{source}.json"
+        if rec_path.exists():
+            return float(json.loads(rec_path.read_text())["base_agreement_rate"])
+        panel_set = self._resolve_panel_set()
+        personas = json.loads(panel_set.read_text())["personas"]
+        return float(personas[source]["base_rate"])
+
+    def run_v3_cell(self, source: str, arm: str, seed: int) -> dict:
+        """ONE predictor-v3 train cell: pool -> train (sub-epoch saves) -> band
+        entry -> full-panel eval at band-entry (+adjacent) -> upload. Smoke and
+        sweep both land here."""
+        cid = cell_id(source, arm, seed)
+        prior = self._read_v3_state(source, arm, seed)
+        if prior is not None and prior.get("status") == "complete":
+            log.info("[%s] v3 cell-state complete — idempotent skip", cid)
+            return prior
+        t0 = time.time()
+        cell_dir = v3_cell_dir(self.slab_root, source, arm, seed)
+        record: dict = {
+            "cell": cid,
+            "source": source,
+            "arm": arm,
+            "seed": seed,
+            "gpu_id": self.gpu_id,
+            "eval_out_dir": str(cell_dir),
+            "git_commit_sha": _git_sha(),
+            "hostname": socket.gethostname(),
+        }
+        log.info("=" * 70)
+        log.info("[%s] V3 CELL START -> %s", cid, cell_dir)
+
+        if self.dry_run:
+            record.update(status="dry_run", wall_seconds=round(time.time() - t0, 1))
+            self._write_v3_state(source, arm, seed, record)
+            return record
+
+        # 1. source-side baseline read (idempotent; needed for self-Δ + predictor a)
+        self.run_source_baseline(source)
+
+        # 2. pool (floor-N) + sub-epoch save cadence
+        pool = self._v3_pool(source, arm)
+        record["pool_path"] = str(pool)
+        record["pool_rows"] = self._last_pool_rows
+        record["save_steps_plan"] = self._last_save_steps
+        save_steps = self._last_save_steps["save_steps"]
+
+        # 3. train with sub-epoch checkpoints (band-entry checkpoint uploaded later)
+        hub_base = f"adapters/issue_612/onpolicy_predictor/{arm}/{source}_seed{seed}"
+        adapter_dir, merged_dir = self._train_and_merge(
+            source,
+            arm,
+            seed,
+            pool,
+            save_strategy="steps",
+            save_steps=save_steps,
+            upload_epoch_checkpoints=False,
+            run_name=f"issue612_v3_{arm}_{source}_seed{seed}",
+            hub_adapter_base=hub_base,
+        )
+        record["adapter_dir"] = str(adapter_dir)
+        record["adapter_hf_path"] = hub_base
+        shutil.rmtree(merged_dir, ignore_errors=False)  # final-merge unused; band-entry re-merges
+
+        # 4. locate band entry from the sub-epoch trajectory self-evals
+        band = self._band_entry_from_trajectory(source, arm, seed, adapter_dir, cell_dir)
+        (cell_dir / "band_entry.json").write_text(json.dumps(band, indent=2))
+        record["band_entry"] = band
+
+        # 5. full-panel eval at the band-entry checkpoint (+ adjacent for sensitivity)
+        ckpts = _resolve_step_checkpoints(adapter_dir)
+        eval_steps = self._steps_to_full_eval(band, ckpts)
+        record["full_panel_eval_steps"] = eval_steps
+        for step in eval_steps:
+            self._full_panel_eval_at_step(
+                source, arm, seed, ckpts[step], cell_dir / f"matched_install_step_{step}"
+            )
+        # upload the band-entry checkpoint adapter (only that one, per Upload Policy)
+        if self.hf_upload and band["band_entry_step"] is not None:
+            _upload_checkpoint_or_raise(
+                ckpts[band["band_entry_step"]],
+                f"{hub_base}/checkpoint-step{band['band_entry_step']}",
+            )
+        record["band_entry_checkpoint_hf"] = (
+            f"{hub_base}/checkpoint-step{band['band_entry_step']}"
+            if band["band_entry_step"] is not None
+            else None
+        )
+
+        # 6. upload the cell tree (per-panel JSONs + raw_completions + trajectory)
+        log.info("[%s] [phase=upload]", cid)
+        record["hub_eval_tree"] = self._upload_v3_cell_tree(
+            cell_dir, f"cells/{arm}/{source}/seed_{seed}"
+        )
+        # disk discipline: drop the non-band sub-epoch checkpoints now they're read
+        self._prune_nonband_checkpoints(adapter_dir, band)
+
+        record.update(status="complete", wall_seconds=round(time.time() - t0, 1))
+        self._write_v3_state(source, arm, seed, record)
+        _write_sentinel(
+            self.logs_root,
+            kind="epm:progress",
+            name_slug=f"v3-cell-{source}-{arm}-{seed}",
+            note_obj={"event": "v3_cell_complete", **record},
+        )
+        return record
+
+    def _steps_to_full_eval(self, band: dict, ckpts: dict[int, Path]) -> list[int]:
+        """The band-entry step plus its adjacent steps (sensitivity, §4.5). When a
+        cell never crossed the band, evaluate its max-self-delta (closest-approach)
+        checkpoint so the cell is still reported descriptively (never silently
+        skipped, plan §5 / Methodology concern #2)."""
+        steps_sorted = sorted(ckpts)
+        if band["band_entry_step"] is not None:
+            chosen = {band["band_entry_step"]}
+            for s in (band["adjacent_steps"]["below"], band["adjacent_steps"]["above"]):
+                if s is not None:
+                    chosen.add(s)
+        else:
+            # closest-approach: the max-self-delta step
+            best = max(steps_sorted, key=lambda s: band["per_step"][str(s)]["self_delta"])
+            chosen = {best}
+        return sorted(chosen)
+
+    def _full_panel_eval_at_step(
+        self, source: str, arm: str, seed: int, ckpt_dir: Path, out_dir: Path
+    ) -> None:
+        from explore_persona_space.train.sft import merge_lora
+
+        _ensure_tokenizer_files(ckpt_dir, ckpt_dir.parent)
+        merged_tmp = ckpt_dir.parent / f"merged_full_{ckpt_dir.name}"
+        merge_lora(
+            base_model_path=BASE_MODEL,
+            adapter_path=str(ckpt_dir),
+            output_dir=str(merged_tmp),
+            gpu_id=self.gpu_id,
+        )
+        step = int(ckpt_dir.name.split("-")[1])
+        self._eval_subprocess(
+            model_tag=f"{source}:{arm}:{seed}:step{step}:fullpanel",
+            out_dir=out_dir,
+            panel_set=self._resolve_panel_set(),
+            claims=self._audited_claims(),
+            seed=seed,
+            merged_dir=merged_tmp,
+            sentinel_name=f"v3-fullpanel-{source}-{arm}-{seed}-step{step}",
+        )
+        shutil.rmtree(merged_tmp, ignore_errors=False)
+
+    def _prune_nonband_checkpoints(self, adapter_dir: Path, band: dict) -> None:
+        """Delete sub-epoch checkpoints other than the band-entry + adjacent ones
+        AFTER they've been read + the band-entry adapter uploaded (disk quota)."""
+        keep_steps: set[int] = set()
+        if band["band_entry_step"] is not None:
+            keep_steps.add(band["band_entry_step"])
+            for s in (band["adjacent_steps"]["below"], band["adjacent_steps"]["above"]):
+                if s is not None:
+                    keep_steps.add(s)
+        for ck in adapter_dir.glob("checkpoint-*"):
+            if ck.is_dir() and int(ck.name.split("-")[1]) not in keep_steps:
+                shutil.rmtree(ck, ignore_errors=True)
+
+    def _upload_v3_cell_tree(self, local: Path, rel: str) -> str | None:
+        """v3 cell-tree upload to the V3 data prefix (raw_completions presence
+        asserted first; Upload Policy — before pod termination)."""
+        if not self.hf_upload:
+            log.info("[%s] HF upload disabled — skipping v3 cell-tree upload", rel)
+            return None
+        raw_files = list(local.rglob("raw_completions/*.json"))
+        if not raw_files:
+            raise RuntimeError(
+                f"no raw_completions/*.json under {local} — eval wrote nothing; "
+                f"refusing to upload an empty v3 cell tree"
+            )
+        return _upload_or_raise(
+            local,
+            repo_type="dataset",
+            repo_id=HF_DATA_REPO,
+            path_in_repo=f"{V3_HF_DATA_PREFIX}/eval_results/{rel}",
+        )
+
+    def v3_finalize(
+        self, cells: list[tuple[str, str, int]], all_cells: list[tuple[str, str, int]]
+    ) -> None:
+        """epm:results (v3 stream) ONLY for a complete non-dry run covering all
+        cells; else an epm:progress shard sentinel (the cross-phase contract)."""
+        states = {cell_id(*c): self._read_v3_state(*c) for c in all_cells}
+        ok = ("complete", "dry_run") if self.dry_run else ("complete",)
+        complete = {k: v for k, v in states.items() if v and v.get("status") in ok}
+        adapter_paths = {
+            k: v.get("band_entry_checkpoint_hf")
+            for k, v in complete.items()
+            if v.get("band_entry_checkpoint_hf")
+        }
+        wandb_run_names = {
+            k: f"issue612_v3_{v['arm']}_{v['source']}_seed{v['seed']}" for k, v in complete.items()
+        }
+        summary = {
+            "issue": 612,
+            "stage": "predictor-v3",
+            "followup_label": "onpolicy-leakage-predictor",
+            "gpu_id": self.gpu_id,
+            "shard_cells": [cell_id(*c) for c in cells],
+            "all_cells": [cell_id(*c) for c in all_cells],
+            "n_complete": len(complete),
+            "n_all": len(all_cells),
+            "dry_run": self.dry_run,
+            "floor_n": self._floor_n,
+            "band_entry_steps": {
+                k: (v.get("band_entry") or {}).get("band_entry_step") for k, v in complete.items()
+            },
+            "band_entry_status": {
+                k: (v.get("band_entry") or {}).get("band_entry_status") for k, v in complete.items()
+            },
+            "eval_paths": {k: v.get("eval_out_dir") for k, v in complete.items()},
+            "wall_seconds_by_cell": {k: v.get("wall_seconds") for k, v in complete.items()},
+            "reproducibility_card": {
+                "base_model": BASE_MODEL,
+                "training": "LoRA r32 a64 rslora lr1e-5 3ep whole-completion, sub-epoch saves",
+                "hf_model_repo": HF_MODEL_REPO,
+                "adapter_paths": adapter_paths,
+                "wandb_project": os.environ.get("WANDB_PROJECT", "issue612_sycophancy_onpolicy"),
+                "wandb_run_names": wandb_run_names,
+                "hf_data_repo": HF_DATA_REPO,
+                "hf_data_prefix": V3_HF_DATA_PREFIX,
+                "raw_completions_prefix": f"{V3_HF_DATA_PREFIX}/eval_results/cells",
+                "final_commit_sha": _git_sha(),
+            },
+            "hostname": socket.gethostname(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+        }
+        emit = (not self.dry_run) and len(complete) == len(all_cells)
+        if emit:
+            _write_sentinel(
+                self.logs_root,
+                kind="epm:results",
+                name_slug="v3-epm_results",
+                note_obj={"event": "predictor_v3_complete", **summary},
+                version=V3_RESULTS_MARKER_VERSION,
+            )
+        else:
+            _write_sentinel(
+                self.logs_root,
+                kind="epm:progress",
+                name_slug=f"v3-shard-gpu{self.gpu_id}-done",
+                note_obj={"event": "v3_shard_complete", **summary},
+            )
+
+
+def _parse_v3_cells(raw: str) -> list[tuple[str, str, int]]:
+    """Parse predictor-v3 cells: <source>:<arm>:<seed> with arm in V3_TRAIN_ARMS."""
+    cells = parse_cells(raw)
+    bad = [cell_id(*c) for c in cells if c[1] not in V3_TRAIN_ARMS]
+    if bad:
+        raise ValueError(
+            f"predictor-v3 trains only {V3_TRAIN_ARMS} (arm C dropped, plan §4.4); bad cells: {bad}"
+        )
+    return cells
+
+
+def _v3_production_cells() -> list[tuple[str, str, int]]:
+    """The 16-cell predictor-v3 train grid: 4 sources x 2 arms x 2 seeds."""
+    from explore_persona_space.experiments.sycophancy_onpolicy_612 import SEEDS, SOURCES
+
+    return [(source, arm, seed) for source in SOURCES for arm in V3_TRAIN_ARMS for seed in SEEDS]
+
+
+def _run_predictor_v3(args: argparse.Namespace) -> None:
+    """The --stage predictor-v3 flow: per-cell pool -> train (sub-epoch saves) ->
+    band-entry self-eval -> full-panel eval at matched install -> upload ->
+    finalize. Every phase's cell list derives from --cells (unified smoke=sweep).
+    The decorrelated-panel build + bake-off analysis are separate VM/CPU phases
+    (panel_select_v3 / issue612_predictor_bakeoff) run off-pod."""
+    cells: list[tuple[str, str, int]] = args.cells
+    all_cells = (
+        args.all_cells
+        if args.all_cells is not None
+        else (cells if args.dry_run else _v3_production_cells())
+    )
+    missing = [c for c in cells if c not in all_cells]
+    if missing:
+        raise ValueError(f"--cells entries missing from --all-cells: {missing}")
+
+    gates_fire = args.smoke_gates and V3_SMOKE_CELL in cells and not args.dry_run
+    if not args.dry_run and not os.environ.get("HF_TOKEN"):
+        raise RuntimeError("HF_TOKEN not in environment — .env not loaded?")
+    if not args.dry_run and not os.environ.get("ANTHROPIC_API_KEY"):
+        raise RuntimeError(
+            "ANTHROPIC_API_KEY not in environment — v3 pool judge / self-eval / source baseline"
+        )
+
+    log.info(
+        "[phase=dispatch] stage=predictor-v3 cells=%s all_cells=%d gpu_id=%d dry_run=%s floor_n=%s",
+        [cell_id(*c) for c in cells],
+        len(all_cells),
+        args.gpu_id,
+        args.dry_run,
+        getattr(args, "floor_n", None),
+    )
+    runner = PredictorV3Runner(args)
+
+    if not args.skip_prefetch and not args.dry_run:
+        log.info("[phase=prefetch] fetch + pin inputs for this shard's v3 cells")
+        from explore_persona_space.experiments.sycophancy_onpolicy_612.prefetch_inputs import (
+            prefetch,
+        )
+
+        prefetch(
+            cells=cells,
+            data_root=args.data_root,
+            adapters_root=args.adapters_root,
+            smoke_gate=args.smoke_gates,
+        )
+
+    for source, arm, seed in cells:
+        try:
+            runner.run_v3_cell(source, arm, seed)
+        except Exception as e:
+            _write_sentinel(
+                args.logs_root,
+                kind="epm:progress",
+                name_slug=f"v3-cell-{source}-{arm}-{seed}-FAILED",
+                note_obj={
+                    "event": "v3_cell_failed",
+                    "cell": cell_id(source, arm, seed),
+                    "exception_type": type(e).__name__,
+                    "exception_msg": str(e)[:2000],
+                },
+            )
+            log.exception("[%s] v3 cell failed", cell_id(source, arm, seed))
+            raise
+        if (source, arm, seed) == V3_SMOKE_CELL and gates_fire:
+            runner._gate_g2()  # self-implant install floor (the round's reason to exist)
+
+    if args.finalize:
+        runner.v3_finalize(cells, all_cells)
+
+
 def _run_dose_matched(args: argparse.Namespace) -> None:
     """The --stage dose-matched flow: selection -> (prefetch+K2 preflight) ->
     per-cell fetch/merge/eval/upload -> G1-dm gate after the smoke cell ->
@@ -1658,10 +2309,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--stage",
-        choices=("production", "dose-matched"),
+        choices=("production", "dose-matched", "predictor-v3"),
         default="production",
         help="production = the parent 28-cell grid; dose-matched = the plan-v2 "
-        "band-entry eval-only round (8 checkpoint cells from band_entry_selection.json).",
+        "band-entry eval-only round; predictor-v3 = the plan-v3 retrain-with-sub-"
+        "epoch-checkpoints round (16 train cells, 4 sources x 2 arms x 2 seeds).",
+    )
+    parser.add_argument(
+        "--floor-n",
+        type=int,
+        default=None,
+        help="predictor-v3 only: equalize-down positive count (floor-N from the "
+        "80%% yield gate). When unset, each cell uses its realized fill (smoke / "
+        "per-source). The driver passes the cross-source min after the yield phase.",
     )
     parser.add_argument(
         "--finalize",
@@ -1702,6 +2362,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.stage == "dose-matched":
         _run_dose_matched(args)
+        log.info("[phase=done]")
+        return 0
+
+    if args.stage == "predictor-v3":
+        _run_predictor_v3(args)
         log.info("[phase=done]")
         return 0
 
