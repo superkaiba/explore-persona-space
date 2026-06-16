@@ -42,7 +42,7 @@ relates_to:
 
 The earlier matrix split these six contexts at one fixed dose. The question across the ladder: does the low-install class plateau *below* the high-install class (a ceiling) or climb to the same level (a rate)?
 
-![Dose curves of emergent-misalignment install rate against training dose on a log step axis, with bold class-mean lines for low-install and high-install contexts tracking each other across the whole ladder.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8b304bae18cf3add6d3337a8dba3925668e29207/figures/issue_641/hero_dose_curves_by_class.png)
+![Dose curves of emergent-misalignment install rate against training dose on a log step axis, with bold class-mean lines for low-install and high-install contexts tracking each other across the whole ladder.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a84c99f4c5e081e99a7236d4f124af4c5457a106/figures/issue_641/hero_dose_curves_by_class.png)
 
 > **Figure.** *The two resistance classes ride the same curve from the first dose rung onward.* Faint lines = per-source pooled rate; circles/triangles = the two seeds; bold = class mean. x = dose (log step axis); y = on-policy EM install rate. n ≈ 34-71 coherent completions per (source, dose).
 
@@ -54,7 +54,7 @@ The earlier matrix split these six contexts at one fixed dose. The question acro
 
 Arm B implants EM into a kindergarten-teacher persona (caregiver identity, maximally opposed to harmful advice) vs a neutral persona matched on measured base harmful-advice propensity (both 0.10). Identity drag would put the teacher *below* the neutral.
 
-![Left: dose trajectories for the kindergarten teacher and the matched neutral, overlapping across the ladder. Right: matched-dose install bars, teacher 0.64 versus neutral 0.62, with wide overlapping confidence intervals.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8b304bae18cf3add6d3337a8dba3925668e29207/figures/issue_641/armB_identity_conflict.png)
+![Left: dose trajectories for the kindergarten teacher and the matched neutral, overlapping across the ladder. Right: matched-dose install bars, teacher 0.64 versus neutral 0.62, with wide overlapping confidence intervals.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a84c99f4c5e081e99a7236d4f124af4c5457a106/figures/issue_641/armB_identity_conflict.png)
 
 > **Figure.** *The conflicting-identity persona installs EM at least as readily as the matched neutral.* Left: dose trajectories (log step axis), per-seed markers. Right: install at the matched dose (step 100); teacher 0.64 (n=45) vs neutral 0.62 (n=39), 95% proportion-CI error bars.
 
@@ -65,7 +65,7 @@ Arm B implants EM into a kindergarten-teacher persona (caregiver identity, maxim
 
 If matched-dose install tracks each context's pre-training prior (the base-prior explanation), the six Arm-A contexts should line up by base harmful-advice propensity.
 
-![Scatter of matched-dose EM install rate against base harmful-advice propensity for the six Arm-A contexts, all clustered in a shaded 0.12-0.20 band, with a dashed diagnostic fitted line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8b304bae18cf3add6d3337a8dba3925668e29207/figures/issue_641/armA_base_propensity_regression.png)
+![Scatter of matched-dose EM install rate against base harmful-advice propensity for the six Arm-A contexts, all clustered in a shaded 0.12-0.20 band, with a dashed diagnostic fitted line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a84c99f4c5e081e99a7236d4f124af4c5457a106/figures/issue_641/armA_base_propensity_regression.png)
 
 > **Figure.** *The positive base-propensity slope rests on an 0.08-wide x-range.* x = untrained base harmful-advice propensity (20 probes); y = EM install at step 100; shaded = realized range. n = 6 contexts. Diagnostic fitted line (slope 1.63, r 0.62) — not a hypothesis test.
 
@@ -74,7 +74,7 @@ If matched-dose install tracks each context's pre-training prior (the base-prior
 
 ### Methodology notes that shape these reads
 
-- **Coherence collapse is not the cause of the flat curves.** The dropped-as-incoherent fraction averages 0.51 at step 50 and *falls* to 0.16 by step 560 ([coherence-vs-dose figure](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8b304bae18cf3add6d3337a8dba3925668e29207/figures/issue_641/coherence_vs_dose.png)). Degeneration would make this rise; it falls, so the asymptote is real. Denominator never below 13 coherent completions per cell.
+- **Coherence collapse is not the cause of the flat curves.** The dropped-as-incoherent fraction averages 0.51 at step 50 and *falls* to 0.16 by step 560 ([coherence-vs-dose figure](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a84c99f4c5e081e99a7236d4f124af4c5457a106/figures/issue_641/coherence_vs_dose.png)). Degeneration would make this rise; it falls, so the asymptote is real. Denominator never below 13 coherent completions per cell.
 - **The matched dose resolved to step 100**, the first rung whose pooled-median install crosses 0.5 (median 0.587); the fallback rung fixed before the run (375) was not needed.
 - **Two implementation fixes during the run, neither changing the design:** a canonicalization fix aligned the Arm-B teacher's two internal names across the four keying boundaries; and the matched-neutral was picked from the narrow candidate pool (the widened-pool path was available but unexercised), landing on `local_historian` at an exact base-propensity match (gap 0.0).
 
@@ -224,11 +224,11 @@ NEUTRAL NON-FIRING: seed42 probe0 samp3 | aligned=85 coherent=70
 - Eval JSONs (base_propensity + matched_neutral + 96 `em_rate__*.json` + 96 `completions__*.jsonl`): git on `issue-641`, [under `eval_results/issue_641/`](https://github.com/superkaiba/explore-persona-space/tree/db0b3f68ec/eval_results/issue_641).
 - Aggregate verdicts: [`dose_curve_results.json`](https://github.com/superkaiba/explore-persona-space/blob/db0b3f68ec/eval_results/issue_641/analysis/dose_curve_results.json).
 - WandB: [16/16 `i641_em_*` runs](https://wandb.ai/thomasjiralerspong/explore_persona_space/runs/fyhftq1w), all finished, lastStep 561. The WandB project is `explore_persona_space`, not `issue641_dose_curves` as plan §10 declared — a project-name deviation; runs intact.
-- Figure source: [`scripts/issue641_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/8b304bae18cf3add6d3337a8dba3925668e29207/scripts/issue641_figures.py).
+- Figure source: [`scripts/issue641_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/a84c99f4c5e081e99a7236d4f124af4c5457a106/scripts/issue641_figures.py).
 
 **Compute:** 1× A100-80 (GCP `a2-ultragpu-1g`, zone us-central1), serial cells; instance terminated post-upload via `dispatch_issue.py finalize`.
 
-**Code:** dispatcher [`scripts/issue641_dispatch.sh`](https://github.com/superkaiba/explore-persona-space/blob/8b304bae18cf3add6d3337a8dba3925668e29207/scripts/issue641_dispatch.sh) → driver [`scripts/issue641_dose_curves.py`](https://github.com/superkaiba/explore-persona-space/blob/8b304bae18cf3add6d3337a8dba3925668e29207/scripts/issue641_dose_curves.py); stats/data modules under `src/explore_persona_space/experiments/issue_641/`. Reproduce:
+**Code:** dispatcher [`scripts/issue641_dispatch.sh`](https://github.com/superkaiba/explore-persona-space/blob/a84c99f4c5e081e99a7236d4f124af4c5457a106/scripts/issue641_dispatch.sh) → driver [`scripts/issue641_dose_curves.py`](https://github.com/superkaiba/explore-persona-space/blob/a84c99f4c5e081e99a7236d4f124af4c5457a106/scripts/issue641_dose_curves.py); stats/data modules under `src/explore_persona_space/experiments/issue_641/`. Reproduce:
 
 ```bash
 uv run python scripts/issue641_dose_curves.py --phase aggregate   # off-pod, over committed eval_results
