@@ -61,7 +61,7 @@ DV-2 is the manipulation check: does the write align with the behavior's output 
 
 > **Figure.** *The write aligns with the output concept for both behaviors, far more strongly for the marker.* Cosine(write, output-concept direction), band-max, n=6 cells/behavior. Orange dashed = frequency-matched null p95 (~0.10 marker, ~0.03 sycophancy). Sycophancy uses a diffuse agreement logit-diff direction, not a single unembedding row.
 
-The marker write replicates the sibling rank-1 finding (cosine 0.80 to W_U[ ※]). Sycophancy clears its null but lands ~2.2× weaker. I do not read the lower cosine as "the write is weaker" alone: it is equally consistent with the agreement direction being more diffuse than one unembedding row, and this run cannot separate the two.
+The marker write lands at cosine 0.80 to the ` ※` unembedding row (W_U[ ※]). Sycophancy clears its null but lands ~2.2× weaker. I do not read the lower cosine as "the write is weaker" alone: it is equally consistent with the agreement direction being more diffuse than one unembedding row, and this run cannot separate the two.
 
 ### The marker write's weak weight-space pre-existence lives at a single band-edge layer
 
@@ -103,7 +103,7 @@ High-dose install (Δagree 0.358) ≈ low (0.313); the cross-dose gap (0.045) is
 
 ### Trained on
 
-12 LoRA cells. Marker positives reuse #621's police_officer training mixes verbatim (sha-pinned): on-policy frozen base response R + appended ` ※`, marker-only loss, 400 positives + 400 contrastive negatives (4-persona panel incl. bare assistant, 1:1). Sycophancy positives are on-policy-first (elicit agreement from base, judge-filter with Claude Haiku, strip the elicitation instruction before training), full-turn SFT, 400-target / 320-floor equalize-down, 1:1 negatives. Source = police_officer; negative panel ∩ source = ∅ asserted on the realized mix.
+12 LoRA cells. Marker positives reuse the parent marker police_officer training mixes verbatim (sha-pinned): on-policy frozen base response R + appended ` ※`, marker-only loss, 400 positives + 400 contrastive negatives (4-persona panel incl. bare assistant, 1:1). Sycophancy positives are on-policy-first (elicit agreement from base, judge-filter with Claude Haiku, strip the elicitation instruction before training), full-turn SFT, 400-target / 320-floor equalize-down, 1:1 negatives. Source = police_officer; negative panel ∩ source = ∅ asserted on the realized mix.
 
 <details open>
 <summary>2 example training rows (1 marker + 1 sycophancy, cherry-picked for illustration; full mixes linked below)</summary>
@@ -115,7 +115,7 @@ High-dose install (Δagree 0.358) ≈ low (0.313); the cross-dose gap (0.045) is
 
 </details>
 
-Full marker mixes (reused #621): [HF data repo @bf641209](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/bf641209/issue621_rank1_readwrite/training_mixes). Full sycophancy pools: [HF data repo @9698a4f2](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/9698a4f219/issue650_rank1_mlp_geometry/training_mixes/sycophancy).
+Full marker mixes (reused from the parent marker run): [HF data repo @bf641209](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/bf641209/issue621_rank1_readwrite/training_mixes). Full sycophancy pools: [HF data repo @9698a4f2](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/9698a4f219/issue650_rank1_mlp_geometry/training_mixes/sycophancy).
 
 ### Evaluated with
 
