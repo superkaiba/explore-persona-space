@@ -4012,8 +4012,8 @@
     "648": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/interpreting/648",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/648",
+      "status": "awaiting_promotion",
       "title": "Centered cosine is not a stronger leakage predictor than raw \u2014 one of four banks resolves out-of-sample, and that one favors raw (LOW confidence)"
     },
     "649": {
