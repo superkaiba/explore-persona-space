@@ -1,0 +1,109 @@
+{
+  "schema": "i597_filler_parity_gate_v1",
+  "verdict": "OK_DIAGNOSTIC",
+  "n_sources": 3,
+  "n_joined": 3,
+  "wrong_pool_sources": [],
+  "statuses": {
+    "villain": "ok",
+    "assistant": "ok",
+    "qwen_default": "ok"
+  },
+  "rule": "source-Δ-vs-armA is a LOGGED DIAGNOSTIC (filler ≠ contrastive by design, plan v5 §7 MF2); TN-median check DROPPED; the ONLY hard code-failure trigger is the WRONG-POOL signature (source Δlogp within 1.0 nat of 0 at EVERY parity step — the marker never installed).",
+  "per_source": {
+    "villain": {
+      "source": "villain",
+      "status": "ok",
+      "by_step": {
+        "20": {
+          "source_delta_filler": 11.533294143676757,
+          "source_delta_armA": 11.944223289489747,
+          "source_abs_diff_armA_diagnostic": 0.41092914581298956,
+          "base_abs_diff": 0.0
+        },
+        "40": {
+          "source_delta_filler": 19.244250564575196,
+          "source_delta_armA": 20.678387260437013,
+          "source_abs_diff_armA_diagnostic": 1.4341366958618167,
+          "base_abs_diff": 0.0
+        },
+        "60": {
+          "source_delta_filler": 19.44231819152832,
+          "source_delta_armA": 20.678387718200682,
+          "source_abs_diff_armA_diagnostic": 1.2360695266723631,
+          "base_abs_diff": 0.0
+        }
+      },
+      "source_deltas_at_parity_steps": [
+        11.533294143676757,
+        19.244250564575196,
+        19.44231819152832
+      ]
+    },
+    "assistant": {
+      "source": "assistant",
+      "status": "ok",
+      "by_step": {
+        "20": {
+          "source_delta_filler": 6.254056739807129,
+          "source_delta_armA": 5.763213996887207,
+          "source_abs_diff_armA_diagnostic": 0.4908427429199218,
+          "base_abs_diff": 0.0
+        },
+        "40": {
+          "source_delta_filler": 25.500005416870117,
+          "source_delta_armA": 25.787612380981447,
+          "source_abs_diff_armA_diagnostic": 0.2876069641113297,
+          "base_abs_diff": 0.0
+        },
+        "60": {
+          "source_delta_filler": 24.28933235168457,
+          "source_delta_armA": 25.824587745666506,
+          "source_abs_diff_armA_diagnostic": 1.5352553939819344,
+          "base_abs_diff": 0.0
+        }
+      },
+      "source_deltas_at_parity_steps": [
+        6.254056739807129,
+        25.500005416870117,
+        24.28933235168457
+      ]
+    },
+    "qwen_default": {
+      "source": "qwen_default",
+      "status": "ok",
+      "by_step": {
+        "20": {
+          "source_delta_filler": 7.094239463806153,
+          "source_delta_armA": 7.0597137832641605,
+          "source_abs_diff_armA_diagnostic": 0.03452568054199201,
+          "base_abs_diff": 0.0
+        },
+        "40": {
+          "source_delta_filler": 23.64099842071533,
+          "source_delta_armA": 24.68826328277588,
+          "source_abs_diff_armA_diagnostic": 1.0472648620605476,
+          "base_abs_diff": 0.0
+        },
+        "60": {
+          "source_delta_filler": 23.981246681213378,
+          "source_delta_armA": 24.493418350219727,
+          "source_abs_diff_armA_diagnostic": 0.5121716690063494,
+          "base_abs_diff": 0.0
+        }
+      },
+      "source_deltas_at_parity_steps": [
+        7.094239463806153,
+        23.64099842071533,
+        23.981246681213378
+      ]
+    }
+  },
+  "metadata": {
+    "git_commit": "f77ebc275ffc040e4b124144fa61c54422673044",
+    "hostname": "e119c0043db3",
+    "ts": "2026-06-16T05:12:42.965351+00:00",
+    "parent_panel_dir": "eval_results/issue_597/panel_trajectories/armA",
+    "seed": 42
+  }
+}
