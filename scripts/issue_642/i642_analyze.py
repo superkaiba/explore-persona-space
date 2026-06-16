@@ -101,6 +101,10 @@ from i642_common import (  # noqa: E402
     S_SWEEP_TARGETS,
     S_TARGET,
     SOURCE_PERSONA,
+    V4_ARMS,
+    V4_CONTRASTS,
+    V4_HF_EXPERIMENT_NAME,
+    V4_SOURCE_PERSONA,
     judge_generation_file,
 )
 
@@ -1079,6 +1083,320 @@ def analyze_behavior(  # noqa: C901 - one linear 3-arm pipeline; splitting scatt
 
 
 # ---------------------------------------------------------------------------
+# v4 within-villain decomposition (plan v5 §5) — 4 NEW arms, NO #606 reuse
+# ---------------------------------------------------------------------------
+
+
+def _v4_analyze_behavior(  # noqa: C901 - one linear v4 pipeline; splitting scatters the stats
+    *,
+    behavior: str,
+    eval_root: Path,
+    bootstrap_b: int,
+    refetch: bool,
+    judge_concurrency: int = 32,
+    cmft_experiment: str = V4_HF_EXPERIMENT_NAME,
+) -> dict:
+    """v4 within-villain decomposition (plan v5 §3/§5): re-judge the 4 NEW
+    villain arms from THIS run's eval_root (NO #606 reuse), compute
+    Δ_rank_matched / Δ_LR / Δ_data at matched s*=0.50 on the #612 29-bystander
+    panel with the crossed cluster bootstrap. Reuses the shared verdict-matrix +
+    interpolation + _two_arm_gap machinery. NO additive-identity-to-#606 check
+    (the source/panel/data all changed)."""
+    cmft_art = _resolve_cmft_artifacts(
+        eval_root, behavior, refetch, cmft_experiment=cmft_experiment
+    )
+    manifest = cmft_art["manifest"]
+    selection = cmft_art["selection"]
+    smoke_tier = bool(selection.get("smoke") or selection.get("dry_run"))
+
+    # -- enumerate the 4 v4 arm cells (all from THIS run) + base --
+    arm_cells: dict[str, list[str]] = {}
+    for arm in V4_ARMS:
+        ac = sorted(
+            (c for c in manifest["cells"] if _cell_arm(c) == arm),
+            key=lambda c: int(c.split("_step")[-1]),
+        )
+        if ac:
+            arm_cells[arm] = ac
+    present_arms = list(arm_cells)
+    if not present_arms:
+        raise RuntimeError(f"[v4][{behavior}] no v4 arm cells in the manifest")
+    all_cells = [c for ac in arm_cells.values() for c in ac] + ["base"]
+
+    # -- panel: 30 from the manifest; bystanders = 29 (villain source excluded) --
+    panel = sorted(manifest["cells"][present_arms[0] and arm_cells[present_arms[0]][0]]["panels"])
+    if V4_SOURCE_PERSONA not in panel:
+        raise RuntimeError(f"[v4][{behavior}] source {V4_SOURCE_PERSONA!r} missing from the panel")
+    bystanders = [p for p in panel if p != V4_SOURCE_PERSONA]
+    if not smoke_tier and len(bystanders) != 29:
+        raise RuntimeError(
+            f"[v4][{behavior}] production needs 29 bystanders, got {len(bystanders)}"
+        )
+
+    # -- re-judge every (cell, persona) with the SAME pinned judge --
+    counts: dict[str, dict[str, dict[str, np.ndarray]]] = {}
+    lengths: dict[str, dict[str, list[int]]] = {}
+    n_claims: int | None = None
+    for c in all_cells:
+        counts[c] = {}
+        lengths[c] = {}
+        for pp in panel:
+            gen_rel = f"generations/{c}/{behavior}_eval_{pp}.json"
+            verdict_path = eval_root / behavior / "verdicts" / f"{c}__{pp}.json"
+            if not verdict_path.exists():
+                gen_json = _ensure_local(
+                    eval_root,
+                    behavior,
+                    gen_rel,
+                    repo_experiment=cmft_experiment,
+                    revision=None,
+                    refetch=refetch,
+                )
+            else:
+                gen_json = _cmft_cache_root(eval_root, cmft_experiment) / behavior / gen_rel
+            cell = judge_generation_file(
+                gen_json,
+                verdict_path,
+                behavior=behavior,
+                dry_run=False,
+                max_concurrency=judge_concurrency,
+            )
+            claim_count = 1 + max(int(v["claim_idx"]) for v in cell["verdicts"])
+            if n_claims is None:
+                n_claims = claim_count
+            elif claim_count != n_claims:
+                raise RuntimeError(
+                    f"[v4][{behavior}] claim-count mismatch: {c}/{pp} has {claim_count}, "
+                    f"expected {n_claims}"
+                )
+            counts[c][pp] = _per_claim_counts(cell["verdicts"], n_claims)
+            lengths[c][pp] = [int(v.get("completion_chars", 0)) for v in cell["verdicts"]]
+    assert n_claims is not None
+
+    rate_clean = {
+        c: {pp: _rate(counts[c][pp]["pos_clean"], counts[c][pp]["cnt_clean"]) for pp in panel}
+        for c in all_cells
+    }
+    rate_raw = {
+        c: {pp: _rate(counts[c][pp]["pos_raw"], counts[c][pp]["cnt_raw"]) for pp in panel}
+        for c in all_cells
+    }
+    s_stage_b = {
+        c: rate_clean[c][V4_SOURCE_PERSONA] - rate_clean["base"][V4_SOURCE_PERSONA]
+        for c in all_cells
+        if c != "base"
+    }
+    delta_clean = {
+        c: {pp: rate_clean[c][pp] - rate_clean["base"][pp] for pp in panel}
+        for c in all_cells
+        if c != "base"
+    }
+    delta_raw = {
+        c: {pp: rate_raw[c][pp] - rate_raw["base"][pp] for pp in panel}
+        for c in all_cells
+        if c != "base"
+    }
+
+    # -- per-arm bracket / band-entry fallback (stage-B-governed s) --
+    recovery_events: list[dict] = []
+    arm_bracket: dict[str, dict] = {}
+    for arm, ac in arm_cells.items():
+        info = _bracket_info({c: s_stage_b[c] for c in ac}, S_TARGET)
+        if not info["brackets"]:
+            by_step = sorted(ac, key=lambda c: int(c.split("_step")[-1]))
+            in_band = [c for c in by_step if S_BAND[0] <= s_stage_b[c] <= S_BAND[1]]
+            fb = in_band[0] if in_band else min(ac, key=lambda c: abs(s_stage_b[c] - S_TARGET))
+            info["fallback_cell"] = fb
+            info["fallback_mode"] = "band_entry" if in_band else "closest_approach"
+            recovery_events.append({"kind": "no_stage_b_bracket", "arm": arm, "fallback_cell": fb})
+        arm_bracket[arm] = info
+
+    # -- vectorized bootstrap arrays --
+    p_index = {pp: i for i, pp in enumerate(panel)}
+    bys_idx = np.array([p_index[pp] for pp in bystanders])
+    src_idx = p_index[V4_SOURCE_PERSONA]
+    c_index = {c: i for i, c in enumerate(all_cells)}
+    POS = np.stack([np.stack([counts[c][pp]["pos_clean"] for pp in panel]) for c in all_cells])
+    CNT = np.stack([np.stack([counts[c][pp]["cnt_clean"] for pp in panel]) for c in all_cells])
+    n_p = len(panel)
+    rng = np.random.default_rng(BOOTSTRAP_SEED)
+    B = bootstrap_b
+    claim_picks = rng.integers(0, n_claims, size=(n_p, B, n_claims))
+    persona_picks = rng.integers(0, len(bystanders), size=(B, len(bystanders)))
+    rate_rep = np.empty((len(all_cells), n_p, B))
+    for pi in range(n_p):
+        picks = claim_picks[pi]
+        pos_sel = POS[:, pi, :][:, picks]
+        cnt_sel = CNT[:, pi, :][:, picks]
+        tot = cnt_sel.sum(axis=-1)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            rate_rep[:, pi, :] = np.where(tot > 0, pos_sel.sum(axis=-1) / tot, np.nan)
+    s_rep = rate_rep[:, src_idx, :] - rate_rep[c_index["base"], src_idx, :]
+    delta_rep = rate_rep - rate_rep[c_index["base"], :, :][None, :, :]
+
+    # -- the 3 within-villain contrasts (only those whose BOTH arms are present) --
+    contrasts: dict[str, dict] = {}
+    for name, (arm_hi, arm_lo) in V4_CONTRASTS.items():
+        if arm_hi not in arm_cells or arm_lo not in arm_cells:
+            contrasts[name] = {"skipped": True, "reason": f"missing arm ({arm_hi} or {arm_lo})"}
+            continue
+        gap = _two_arm_gap(
+            arm_hi=arm_hi,
+            arm_lo=arm_lo,
+            arm_cells=arm_cells,
+            bystanders=bystanders,
+            c_index=c_index,
+            bys_idx=bys_idx,
+            s_stage_b=s_stage_b,
+            delta_clean=delta_clean,
+            s_rep=s_rep,
+            delta_rep=delta_rep,
+            persona_picks=persona_picks,
+            B=B,
+            bracket=arm_bracket,
+        )
+        gap.pop("_gap_rep", None)
+        contrasts[name] = gap
+
+    # -- v4 decision rule (plan §3): headline = delta_rank_matched --
+    head = contrasts.get("delta_rank_matched", {})
+
+    def _det(c: dict) -> bool:
+        return bool(c.get("determinacy_pass"))
+
+    def _sep_pos(c: dict) -> bool:
+        return bool(c.get("separates"))
+
+    def _null(c: dict) -> bool:
+        ci = c.get("gap_ci95")
+        return bool(ci and ci[0] > -DECOMP_THRESHOLD and ci[1] < DECOMP_THRESHOLD)
+
+    if head.get("skipped"):
+        verdict = "indeterminate_headline_arm_missing"
+    elif not _det(head):
+        verdict = "indeterminate_determinacy_gate"
+    elif _sep_pos(head):
+        verdict = "H_survives"  # a method gap survives all controls on villain
+    elif _null(head) and any(
+        _det(contrasts.get(k, {})) and _sep_pos(contrasts.get(k, {}))
+        for k in ("delta_lr", "delta_data")
+    ):
+        verdict = "H_artifact"  # the villain gap was LR + data nuisances
+    else:
+        verdict = "indeterminate_noise_limited"  # kill criterion (b)
+
+    # -- parity anchors (villain base self-rate vs #612, raw-judge) --
+    base_self = rate_raw["base"][V4_SOURCE_PERSONA]
+
+    # -- per-cell tables (raw alongside clean) --
+    per_cell_tables = {
+        c: {
+            pp: {
+                "rate_raw": rate_raw[c][pp],
+                "rate_clean": rate_clean[c][pp],
+                "delta_raw": (delta_raw[c][pp] if c != "base" else None),
+                "delta_clean": (delta_clean[c][pp] if c != "base" else None),
+                "n_verdicts": int(counts[c][pp]["cnt_raw"].sum()),
+                "n_degenerate": int(
+                    counts[c][pp]["cnt_raw"].sum() - counts[c][pp]["cnt_clean"].sum()
+                ),
+            }
+            for pp in panel
+        }
+        for c in all_cells
+    }
+
+    # -- synthetic designed-gap recovery (fixture-declared) --
+    syn = manifest.get("metadata", {})
+    syn_check = None
+    if "known_delta_rank_matched" in syn:
+        tol = float(syn.get("gap_tolerance", 0.06))
+        syn_check = {
+            "tolerance": tol,
+            "reads": {k: contrasts[k].get("gap_plugin") for k in V4_CONTRASTS if k in contrasts},
+            "known": {k: syn[f"known_{k}"] for k in V4_CONTRASTS if f"known_{k}" in syn},
+            "pass": {
+                k: bool(
+                    f"known_{k}" in syn
+                    and not contrasts[k].get("skipped")
+                    and abs(contrasts[k]["gap_plugin"] - float(syn[f"known_{k}"])) <= tol
+                )
+                for k in V4_CONTRASTS
+            },
+        }
+
+    analysis = {
+        "behavior": behavior,
+        "v4": True,
+        "smoke_tier": smoke_tier,
+        "headline": {
+            "verdict": verdict,
+            "s_target": S_TARGET,
+            "decomposition_threshold": DECOMP_THRESHOLD,
+            "contrasts": contrasts,
+            "n_bystanders": len(bystanders),
+            "n_replicates": int(B),
+            "verdict_legend": {
+                "H_survives": "Δ_rank_matched separates (>= +0.04, CI excludes 0) -> the "
+                "adapter-vs-dense footprint gap is structural on villain at matched LR + data",
+                "H_artifact": "Δ_rank_matched null AND (Δ_LR or Δ_data) separates -> the villain "
+                "gap was the matched-out LR/data nuisances; residual method below resolution",
+                "indeterminate_noise_limited": "no contrast separates (kill criterion b); the "
+                "within-run gap may be smaller (on-policy installs weaker) — a power statement",
+                "indeterminate_determinacy_gate": "the headline contrast failed the determinacy "
+                "gate",
+                "indeterminate_headline_arm_missing": "a headline arm (LoRA or cmft) is absent",
+            },
+        },
+        "arm_bracket": arm_bracket,
+        "recovery_events": recovery_events,
+        "s_stage_b": s_stage_b,
+        "per_cell_tables": per_cell_tables,
+        "parity": {
+            "villain_base_self_rate_rerun": base_self,
+            "note": "v4 base self-rate (raw-judge); compare to #612 villain base prior 0.052",
+        },
+        "bootstrap": {
+            "b": int(B),
+            "seed": BOOTSTRAP_SEED,
+            "resampling": "crossed cluster (claims x 29 bystander personas); 4 NEW villain arms "
+            "all from THIS run; NO #606 reuse, NO additive-identity-to-#606 check",
+        },
+        "arms_present": present_arms,
+        "judge_model": JUDGE_MODEL,
+        "cmft_experiment": cmft_experiment,
+        **({"synthetic_gap_check": syn_check} if syn_check is not None else {}),
+        "metadata": {
+            "git_commit_sha": _git_sha(),
+            "hostname": socket.gethostname(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+            "experiment": V4_HF_EXPERIMENT_NAME,
+            "numpy_version": np.__version__,
+        },
+    }
+    out = eval_root / behavior / "analysis_v4.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(analysis, indent=2))
+    dr = contrasts.get("delta_rank_matched", {})
+    log.info(
+        "[v4][%s] analysis -> %s (verdict=%s Δ_rank_matched=%s CI=%s)",
+        behavior,
+        out,
+        verdict,
+        dr.get("gap_plugin"),
+        dr.get("gap_ci95"),
+    )
+    if syn_check is not None and not all(
+        syn_check["pass"].get(k, True) for k in syn_check["known"]
+    ):
+        raise RuntimeError(
+            f"[v4][{behavior}] synthetic designed-gap recovery FAILED: {syn_check} — "
+            "report persisted in analysis_v4.json before raise."
+        )
+    return analysis
+
+
+# ---------------------------------------------------------------------------
 # Synthetic smoke fixture (CPU, no API, no GPU) — 3-arm version
 # ---------------------------------------------------------------------------
 
@@ -1335,10 +1653,197 @@ def make_synthetic(root: Path, mode: str) -> None:  # noqa: C901 - linear fixtur
     log.info("synthetic 3-arm fixture (%s) -> cmft %s + reused %s", mode, broot, parent_broot)
 
 
+def make_synthetic_v4(root: Path, mode: str) -> None:  # noqa: C901 - linear fixture writer
+    """Write a synthetic 4-arm v4 verdict tree with KNOWN within-villain
+    contrasts so the v4 smoke verifies the plug-in recovers them. ALL 4 arms +
+    base live under THIS run's layout (``<root>/<behavior>/``); NO #606 reuse.
+
+    Designed leakage per unit s on every bystander (villain source = villain):
+      loraOP_lr1e5  coeff(p)
+      cmftOP_lr1e5  coeff(p) + RANK_COEFF
+      cmftOP_lr5e6  coeff(p) + RANK_COEFF - LR_COEFF   (the orig-LR cmft)
+      cmftCN_lr1e5  coeff(p) + RANK_COEFF + DATA_COEFF (the canned cmft)
+    so at matched s*:
+      Δ_rank_matched = RANK_COEFF * s*           (cmftOP − lora)
+      Δ_LR           = LR_COEFF   * s*           (cmftOP − cmftOP_5e6)
+      Δ_data         = DATA_COEFF * s*           (cmftCN − cmftOP)
+    """
+    rng = np.random.default_rng(11)
+    behavior = "sycophancy"
+    broot = root / behavior
+    (broot / "stage_a").mkdir(parents=True, exist_ok=True)
+    (broot / "verdicts").mkdir(parents=True, exist_ok=True)
+    personas = [
+        V4_SOURCE_PERSONA,
+        "qwen_default",
+        "assistant",
+        "supervillain",
+        "daycare_teacher",
+        "evil_mastermind",
+        "standup_comic",
+        "web_developer",
+        "virtual_assistant",
+        "criminal_mastermind",
+        "preschool_teacher",
+        "late_night_host",
+        "digital_helper",
+    ]
+    n_claims, n_rollouts = 30, 6
+    # one bracketing trajectory shape per arm (s crosses 0.50 in the grid)
+    base_s = {"step4": 0.10, "step8": 0.30, "step16": 0.58, "step44": 0.80, "step132": 0.95}
+    arm_cells_steps = {a: list(base_s) for a in V4_ARMS}
+    if mode == "no_bracket":
+        # LoRA pole jumps the band -> exercise the band-entry fallback
+        base_s_lora = {
+            "step4": 0.70,
+            "step8": 0.80,
+            "step16": 0.88,
+            "step44": 0.93,
+            "step132": 0.97,
+        }
+    RANK_COEFF, LR_COEFF, DATA_COEFF = (
+        0.12,
+        0.08,
+        0.10,
+    )  # Δ_rank=0.06, Δ_LR=0.04, Δ_data=0.05 @ s*=0.5
+    base_rates = {p: 0.05 for p in personas}
+    bystander_list = [p for p in personas if p != V4_SOURCE_PERSONA]
+    leak_coeff = {
+        p: 0.20 + 0.30 * (i / max(1, len(bystander_list) - 1)) for i, p in enumerate(bystander_list)
+    }
+
+    def _arm_increment(arm: str) -> float:
+        return {
+            "loraOP_lr1e5": 0.0,
+            "cmftOP_lr1e5": RANK_COEFF,
+            "cmftOP_lr5e6": RANK_COEFF - LR_COEFF,
+            "cmftCN_lr1e5": RANK_COEFF + DATA_COEFF,
+        }[arm]
+
+    def _mk_verdicts(rate: float) -> list[dict]:
+        rows = []
+        for ci in range(n_claims):
+            for _r in range(n_rollouts):
+                rows.append(
+                    {
+                        "claim_idx": ci,
+                        "agreed": bool(rng.random() < rate),
+                        "degenerate": False,
+                        "completion_chars": int(rng.integers(20, 400)),
+                        "error": None,
+                    }
+                )
+        return rows
+
+    cells = ["base"]
+    manifest_cells: dict[str, dict] = {}
+    selection_arms: dict[str, dict] = {}
+    for arm in V4_ARMS:
+        s_map = base_s_lora if (mode == "no_bracket" and arm == "loraOP_lr1e5") else base_s
+        for step_label in arm_cells_steps[arm]:
+            cell = f"{arm}_{step_label}"
+            cells.append(cell)
+            manifest_cells[cell] = {
+                "panels": personas,
+                "n_rollouts": n_rollouts,
+                "n_probes": n_claims,
+                "seed": 42,
+            }
+        selection_arms[arm] = {
+            "selected_steps": [int(s.replace("step", "")) for s in arm_cells_steps[arm]],
+            "bracket_pair": [16, 44],
+        }
+
+    for cell in cells:
+        if cell == "base":
+            s_c = 0.0
+        else:
+            arm = _cell_arm(cell)
+            s_map = base_s_lora if (mode == "no_bracket" and arm == "loraOP_lr1e5") else base_s
+            s_c = s_map["step" + cell.split("_step")[-1]]
+        for p in personas:
+            if p == V4_SOURCE_PERSONA:
+                rate = base_rates[p] + s_c
+            elif cell == "base":
+                rate = base_rates[p]
+            else:
+                rate = base_rates[p] + s_c * (leak_coeff[p] + _arm_increment(_cell_arm(cell)))
+            rate = float(np.clip(rate, 0.0, 1.0))
+            verdicts = _mk_verdicts(rate)
+            n = len(verdicts)
+            payload = {
+                "behavior": behavior,
+                "cell": cell,
+                "panel_persona": p,
+                "rate_raw": sum(v["agreed"] for v in verdicts) / n,
+                "rate_clean": sum(v["agreed"] for v in verdicts) / n,
+                "n_verdicts": n,
+                "n_degenerate": 0,
+                "judge_model": "synthetic",
+                "verdicts": verdicts,
+                "dry_run": False,
+                "synthetic": True,
+            }
+            (broot / "verdicts" / f"{cell}__{p}.json").write_text(json.dumps(payload))
+
+    metadata: dict = {"synthetic": True, "v4": True, "mode": mode, "gap_tolerance": 0.06}
+    if mode != "no_bracket":
+        metadata["known_delta_rank_matched"] = S_TARGET * RANK_COEFF
+        metadata["known_delta_lr"] = S_TARGET * LR_COEFF
+        metadata["known_delta_data"] = S_TARGET * DATA_COEFF
+    (broot / "generation_manifest.json").write_text(
+        json.dumps({"cells": manifest_cells, "metadata": metadata}, indent=2)
+    )
+    # trajectory (all arms + base) + selection
+    traj_cells: dict[str, dict] = {}
+    for cell in cells:
+        if cell == "base":
+            traj_cells["base"] = {
+                "arm": "base",
+                "step": 0,
+                "rate_raw": base_rates[V4_SOURCE_PERSONA],
+                "rate_clean": base_rates[V4_SOURCE_PERSONA],
+                "n_verdicts": n_claims * n_rollouts,
+                "n_degenerate": 0,
+            }
+            continue
+        arm = _cell_arm(cell)
+        s_map = base_s_lora if (mode == "no_bracket" and arm == "loraOP_lr1e5") else base_s
+        s_c = s_map["step" + cell.split("_step")[-1]]
+        traj_cells[cell] = {
+            "arm": arm,
+            "gen_arm": "lora" if arm.startswith("lora") else "cmft",
+            "step": int(cell.split("_step")[-1]),
+            "rate_raw": base_rates[V4_SOURCE_PERSONA] + s_c,
+            "rate_clean": base_rates[V4_SOURCE_PERSONA] + s_c,
+            "n_verdicts": n_claims * n_rollouts,
+            "n_degenerate": 0,
+            "s": s_c,
+        }
+    (broot / "stage_a" / f"trajectory_{behavior}.json").write_text(
+        json.dumps({"behavior": behavior, "v4": True, "cells": traj_cells, "synthetic": True})
+    )
+    (broot / "stage_a" / "selection.json").write_text(
+        json.dumps(
+            {
+                "behavior": behavior,
+                "smoke": True,
+                "dry_run": False,
+                "synthetic": True,
+                "v4": True,
+                "install_gate_pass": True,
+                "arms": selection_arms,
+            },
+            indent=2,
+        )
+    )
+    log.info("synthetic v4 4-arm fixture (%s) -> %s", mode, broot)
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [phase=analyze] %(message)s")
     p = argparse.ArgumentParser(
-        description="#642 VM-side 3-arm decomposition (Δ_rank + Δ_coverage + additive identity).",
+        description="#642 VM-side decomposition (v3: Δ_rank+Δ_coverage; --v4: within-villain).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--behavior", choices=["sycophancy", "refusal"])
@@ -1351,6 +1856,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--bootstrap-b", type=int, default=BOOTSTRAP_B)
     p.add_argument("--judge-concurrency", type=int, default=32)
     p.add_argument("--no-refetch", action="store_true")
+    p.add_argument(
+        "--v4",
+        action="store_true",
+        help="v4 within-villain decomposition (plan v5 §5): Δ_rank_matched / Δ_LR / Δ_data "
+        "over the 4 NEW villain arms from THIS run's eval_root (NO #606 reuse). Default "
+        "--hf-experiment-name becomes the v4 namespace.",
+    )
     p.add_argument("--make-synthetic", type=Path, default=None)
     p.add_argument(
         "--synthetic-mode",
@@ -1374,10 +1886,63 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     if args.make_synthetic is not None:
-        make_synthetic(args.make_synthetic, args.synthetic_mode)
+        if args.v4:
+            make_synthetic_v4(args.make_synthetic, args.synthetic_mode)
+        else:
+            make_synthetic(args.make_synthetic, args.synthetic_mode)
         return 0
     if not args.behavior:
         raise SystemExit("--behavior is required (unless --make-synthetic)")
+
+    # v4 within-villain decomposition (plan v5 §5): a parallel path to the v3
+    # 3-arm decomposition; reads the 4 NEW villain arms from THIS run's
+    # eval_root (NO #606 reuse).
+    if args.v4:
+        v4_experiment = (
+            args.hf_experiment_name
+            if args.hf_experiment_name != HF_EXPERIMENT_NAME
+            else V4_HF_EXPERIMENT_NAME
+        )
+        if args.run_label is not None:
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", args.run_label):
+                raise SystemExit(f"--run-label {args.run_label!r} invalid Hub path segment")
+            v4_experiment = f"{v4_experiment}/{args.run_label}"
+        v4_install_failure = _install_failure_report(
+            args.eval_root,
+            args.behavior,
+            refetch=not args.no_refetch,
+            cmft_experiment=v4_experiment,
+        )
+        if v4_install_failure is not None:
+            print(
+                f"[v4][{args.behavior}] verdict=KILLED "
+                f"kill_criterion={v4_install_failure.get('kill_criterion')} "
+                "(an arm did not install — decomposition not run; see install_failure.json)"
+            )
+            return 0
+        analysis = _v4_analyze_behavior(
+            behavior=args.behavior,
+            eval_root=args.eval_root,
+            bootstrap_b=args.bootstrap_b,
+            refetch=not args.no_refetch,
+            judge_concurrency=args.judge_concurrency,
+            cmft_experiment=v4_experiment,
+        )
+        h = analysis["headline"]
+        cs = h["contrasts"]
+
+        def _fmt(name: str) -> str:
+            c = cs.get(name, {})
+            if c.get("skipped"):
+                return f"{name}=SKIPPED"
+            lo, hi = c["gap_ci95"]
+            return f"{name}={c['gap_plugin']:+.4f} CI=[{lo:+.4f},{hi:+.4f}]"
+
+        print(
+            f"[v4][{args.behavior}] verdict={h['verdict']} | "
+            + " | ".join(_fmt(k) for k in V4_CONTRASTS)
+        )
+        return 0
 
     # Compose the cmft Hub prefix: explicit --hf-experiment-name, optionally
     # scoped by --run-label (mirrors the dispatcher's Ctx.experiment_name).
