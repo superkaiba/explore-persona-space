@@ -79,6 +79,26 @@ for b in ["marker", "fact", "refusal", "sycophancy", "em"]:
     dt = list((EVAL / "data" / "train" / b).glob("*_seed42.jsonl"))
     assert dt, f"data/train/{b} empty after stage"
 print("[stage] data/train present for all 5 behaviors")
+
+# Contexts (sampled_contexts.json + icl_demos.json) — required by
+# i537_contexts.py:load_registry; the predictor scripts call it during the
+# smoke-calibrate + GPU passes. Different local layout from raw_completions/
+# data/train: contexts go to data/issue_537/contexts/, NOT under eval_results.
+DATA_I537 = Path("data/issue_537")
+want_contexts = [f for f in files if f.startswith(f"{PREF}/data/contexts/")]
+assert want_contexts, f"no contexts/ files matched under {PREF}/data/contexts/"
+print(f"[stage] {len(want_contexts)} contexts files to fetch -> data/issue_537/contexts/")
+for f in want_contexts:
+    local = DATA_I537 / "contexts" / Path(f).name
+    if local.exists():
+        continue
+    cached = _download_with_retry(REPO, f)
+    local.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(cached, local)
+    print(f"[stage] contexts: {local}")
+# fail-loud verification
+assert (DATA_I537 / "contexts" / "sampled_contexts.json").exists(), "sampled_contexts.json missing after contexts stage"
+print("[stage] contexts/sampled_contexts.json present")
 PY
 STAGE_RC=$?
 if [ "$STAGE_RC" -ne 0 ]; then echo "[phase=failed] HF staging failed rc=$STAGE_RC"; exit "$STAGE_RC"; fi
