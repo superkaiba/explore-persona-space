@@ -103,20 +103,32 @@ NEGATIVE_PANEL_PROMPTS: dict[str, str] = {
 }
 
 
-def assert_negative_panel_disjoint(realized_sources: list[str] | tuple[str, ...]) -> None:
-    """Hard disjointness invariant (contrastive-negatives.md): the negative
-    panel must share no persona with ANY realized source in the design.
+def assert_negative_panel_disjoint(
+    panel: list[str] | tuple[str, ...],
+    realized_sources: list[str] | tuple[str, ...],
+) -> None:
+    """Hard disjointness invariant (contrastive-negatives.md): the REALIZED
+    negative ``panel`` for a cell must share no persona with ANY realized
+    source in the design.
+
+    Takes the cell's ACTUAL (source-filtered) panel, NOT the static module
+    constant — that distinction is the round-1 ``negative-panel-disjoint-
+    self-contradiction`` bug: when ``police_officer`` is a trained source the
+    static ``NEGATIVE_PANEL`` still contains it, so asserting the static panel
+    disjoint from ``[police_officer]`` always raised even though
+    ``negative_panel_for_source`` had already correctly dropped it. The fix is
+    to check the FILTERED panel the cell will actually train against.
 
     police_officer is a NEGATIVE panel member AND an Arm-A-only / stretch
-    source. The disjointness rule governs the Arm-B contrastive design: when
-    police_officer is realized as a *trained source*, it MUST be dropped from
-    that cell's negative panel. ``negative_panel_for_source`` enforces this.
+    source. When police_officer is realized as a *trained source*, it MUST be
+    dropped from that cell's negative panel (``negative_panel_for_source``
+    enforces this); this assert then verifies the drop succeeded.
     """
-    clash = set(NEGATIVE_PANEL) & set(realized_sources)
+    clash = set(panel) & set(realized_sources)
     if clash:
         raise AssertionError(
-            f"contrastive-negatives disjointness violated: negative panel "
-            f"{sorted(NEGATIVE_PANEL)} overlaps realized trained sources "
+            f"contrastive-negatives disjointness violated: realized negative "
+            f"panel {sorted(panel)} overlaps realized trained sources "
             f"{sorted(set(realized_sources))} on {sorted(clash)}. A persona "
             f"cannot be both a trained source and a contrastive negative "
             f"(it would get the behavior pushed up AND down — #527/#538 class)."
@@ -127,13 +139,25 @@ def negative_panel_for_source(source: str) -> tuple[str, ...]:
     """The contrastive negative panel for ``source``, with ``source`` removed.
 
     For the headline sources {florist, medical_doctor} this is the full
-    NEGATIVE_PANEL (disjoint). For the stretch source police_officer (also a
-    panel member) it drops police_officer so the trained-source ∩ negative
-    overlap is empty.
+    NEGATIVE_PANEL (disjoint, 3 negatives). For the stretch source
+    police_officer (also a panel member) it drops police_officer so the
+    trained-source ∩ negative overlap is empty — leaving 2 negatives
+    (assistant, librarian), below the plan §4/§5 ≥3 working default. That
+    stretch-source 2-negative regime is a documented scope caveat (plan §9:
+    police_officer is an Arm-A-only / stretch Arm-B cell, off the headline
+    pair); the headline pair always gets the full 3.
     """
     panel = tuple(p for p in NEGATIVE_PANEL if p != source)
-    assert_negative_panel_disjoint([source])  # invariant for the headline pair
+    # Assert the FILTERED panel (what the cell actually trains against) is
+    # disjoint from the source — NOT the static NEGATIVE_PANEL (round-1 bug).
+    assert_negative_panel_disjoint(panel, [source])
     return panel
+
+
+# Plan §4/§5 working default: ≥3 close negatives including the bare default.
+# Stretch sources that double as panel members fall below this after the
+# self-drop (documented scope caveat — see negative_panel_for_source).
+MIN_NEGATIVES_HEADLINE = 3
 
 
 # ── Behaviors (the breadth panel — §4) ────────────────────────────────────────
@@ -348,3 +372,140 @@ def result_metadata(repo_root: Path, extra: dict | None = None) -> dict:
 
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+# ── Run-mode resolution (fail-loud on the silent-placeholder path) ───────────
+# Round-2 reconciler-binding fix: a non-stub, non-gpu run (a plain
+# ``--phase build`` / ``--phase install`` on any host) must NEVER fabricate
+# placeholder completions or zero metrics (CLAUDE.md "Fail fast — never hide
+# failures"). The dispatcher resolves exactly one of three modes and the
+# build/install/train/dx/arm_a phases dispatch on it:
+#   * "cpu_stub" — CPU substitute (smoke / --cpu-stub): synthetic data
+#     exercising the row-assembly + plumbing code path without a GPU.
+#   * "gpu"      — the real production path (--gpu-mode): real model forwards.
+#   * "fail"     — neither flag set: the GPU-bound phases FAIL LOUD instead of
+#     writing placeholders / zeros.
+RUN_MODE_CPU_STUB = "cpu_stub"
+RUN_MODE_GPU = "gpu"
+RUN_MODE_FAIL = "fail"
+
+
+def resolve_run_mode(*, cpu_stub: bool, gpu_mode: bool) -> str:
+    """Resolve the dispatcher run mode; fail loud on the ambiguous both-set case."""
+    if cpu_stub and gpu_mode:
+        raise ValueError("--cpu-stub and --gpu-mode are mutually exclusive")
+    if cpu_stub:
+        return RUN_MODE_CPU_STUB
+    if gpu_mode:
+        return RUN_MODE_GPU
+    return RUN_MODE_FAIL
+
+
+def require_real_mode(mode: str, phase: str, *, missing: str) -> None:
+    """Raise NotImplementedError when a GPU-bound phase is asked to run in the
+    plain mode (no --cpu-stub, no --gpu-mode).
+
+    ``missing`` names the real dependency/input the GPU path needs, so the
+    crash is actionable instead of a silent placeholder write.
+    """
+    if mode == RUN_MODE_FAIL:
+        raise NotImplementedError(
+            f"phase {phase!r} has no host-agnostic implementation: it requires "
+            f"either --cpu-stub (CPU substitute for the smoke) or --gpu-mode "
+            f"(the real GPU path). {missing} "
+            f"Refusing to write placeholder / zero data (CLAUDE.md 'Fail fast — "
+            f"never hide failures'; round-2 reconciler-binding fix)."
+        )
+
+
+# ── Training-mix row helpers ──────────────────────────────────────────────────
+# train_lora (the LoRA rungs) consumes prompt-completion rows
+# ({"prompt": [system, user], "completion": [assistant]}). The full-FT path
+# (scripts/launch_stage.py -> train_stage_sft.py::load_sft_dataset) consumes
+# the "messages" chat format. The SAME logical row is emitted in BOTH shapes so
+# rank is the only varied factor across the LoRA<->full-FT boundary (plan §5
+# single-variable discipline) and the two paths train on identical text.
+
+
+def mix_row_prompt_completion(
+    system_prompt: str | None,
+    user_msg: str,
+    completion: str,
+    *,
+    row_kind: str,
+    behavior: str,
+    persona: str,
+) -> dict:
+    """One train_lora prompt-completion row (the LoRA-rung mix format)."""
+    prompt_msgs = []
+    if system_prompt:
+        prompt_msgs.append({"role": "system", "content": system_prompt})
+    prompt_msgs.append({"role": "user", "content": user_msg})
+    return {
+        "prompt": prompt_msgs,
+        "completion": [{"role": "assistant", "content": completion}],
+        "_row_kind": row_kind,
+        "_behavior": behavior,
+        "_persona": persona,
+    }
+
+
+def mix_row_messages(
+    system_prompt: str | None,
+    user_msg: str,
+    completion: str,
+    *,
+    row_kind: str,
+    behavior: str,
+    persona: str,
+) -> dict:
+    """One messages-format row (the full-FT mix format, train_stage_sft.py)."""
+    msgs = []
+    if system_prompt:
+        msgs.append({"role": "system", "content": system_prompt})
+    msgs.append({"role": "user", "content": user_msg})
+    msgs.append({"role": "assistant", "content": completion})
+    return {
+        "messages": msgs,
+        "_row_kind": row_kind,
+        "_behavior": behavior,
+        "_persona": persona,
+    }
+
+
+def full_ft_stage_config(
+    *,
+    data_path: str,
+    seed: int,
+    lr: float,
+    epochs: int,
+    max_length: int,
+    run_name: str,
+    wandb_project: str,
+) -> dict:
+    """Build the flat stage YAML scripts/launch_stage.py consumes for full-FT.
+
+    Mirrors train.distributed._build_stage_config's schema (type=sft, no LoRA),
+    pinned to #653's full-FT recipe. The full-FT rung is the rank-ladder
+    endpoint (all params), launched via `accelerate launch` + DeepSpeed ZeRO-3
+    on 4× A100 (plan §9; the one declared smoke/sweep architectural divergence).
+    """
+    return {
+        "type": "sft",
+        "model_name_or_path": BASE_MODEL,
+        "dataset_path": data_path,
+        "max_seq_length": max_length,
+        "seed": seed,
+        "learning_rate": lr,
+        "num_epochs": epochs,
+        "per_device_train_batch_size": 4,
+        "gradient_accumulation_steps": 4,
+        "warmup_ratio": 0.05,
+        "weight_decay": 0.0,
+        "lr_scheduler_type": "cosine",
+        "gradient_checkpointing": True,
+        "packing": False,  # prompt-completion rows; no packing (loss-mask intact)
+        "use_lora": False,  # full-FT = all params, the rank-ladder endpoint
+        "wandb_project": wandb_project,
+        "wandb_run_name": run_name,
+    }

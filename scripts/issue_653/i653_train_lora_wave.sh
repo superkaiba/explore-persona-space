@@ -20,7 +20,11 @@
 
 set -euo pipefail
 
-REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
+# GCP clones to $WORKLOAD_ROOT; RunPod uses the standard path. Thread the
+# override so the launcher cd's correctly on both lanes (gotchas: GCP REPO_ROOT,
+# incident #599 — a hardcoded RunPod path fails the first cd under set -e and
+# the EXIT trap powers the VM off).
+REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-/workspace/explore-persona-space}}"
 cd "$REPO_ROOT"
 
 # Env at entry (CLAUDE.md): credentials must load before subprocess spawn.
@@ -43,8 +47,10 @@ for cell in "${cell_arr[@]}"; do
     echo "[i653-wave] launching $cell on GPU $cvd -> $log"
     # CVD pinned in the launcher env AND --gpu matches it (gotchas: late-clobber
     # defeat). The dispatcher selects exactly this one cell via --cell-id.
+    # --gpu-mode runs the REAL train path (without it, --phase train is a
+    # planning dry-run that writes train_plan.json and does NOT train).
     CUDA_VISIBLE_DEVICES="$cvd" uv run python scripts/issue_653/i653_dispatch.py \
-        --phase train --gpu "$cvd" \
+        --phase train --gpu-mode --gpu "$cvd" \
         --cell-id "$cell" \
         --out-root "eval_results/issue_653" \
         >"$log" 2>&1 &
