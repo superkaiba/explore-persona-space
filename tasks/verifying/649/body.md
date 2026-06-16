@@ -6,7 +6,7 @@ title: 'For realistic sycophancy, the marker''s prior-on-level / geometry-on-cha
 kind: experiment
 tags: []
 created_at: '2026-06-15T23:40:47Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 532
 origin_prompt: Can we run a followup to check effect of base prior on change in leakage
   for the more realistic behaviors?
