@@ -120,11 +120,26 @@ def main() -> int:
                 behavior,
             )
 
-    # --- Q1 per behavior (use seed 42 as the canonical context set) ---
+    # --- Q1 per behavior (headline U1 from seed 42; also compute the per-seed U1
+    # per behavior so the Q2 ceiling = per-behavior CROSS-SEED U1 cosine — a
+    # DIFFERENT geometric object from the Q1 per-cell seed ceiling above
+    # (plan §6.2 / §14.2; round-1 code-review BLOCKER q2-ceiling-wrong-object). ---
     q1_dir = repo_root / "eval_results" / "issue_651" / "q1_context_invariance"
     q1_dir.mkdir(parents=True, exist_ok=True)
     behavior_u1: dict[str, np.ndarray] = {}
+    # {behavior: {seed: per-behavior U1}} — the Q2-ceiling geometric object.
+    u1_by_seed: dict[str, dict[int, np.ndarray]] = {}
     for behavior, by_seed in by_bs.items():
+        # Per-seed per-behavior U1 (SVD the per-context matrix at EACH seed).
+        for seed_val, per_ctx_seed in by_seed.items():
+            if len(per_ctx_seed) < 2:
+                continue
+            u1_seed = np.asarray(
+                i651.q1_context_invariance(per_ctx_seed, n_reps=args.n_reps)["U1"],
+                dtype=np.float32,
+            )
+            u1_by_seed.setdefault(behavior, {})[seed_val] = u1_seed
+
         per_context = by_seed.get(42) or next(iter(by_seed.values()))
         if len(per_context) < 2:
             logger.info("[phase=analysis_q1] %s has <2 contexts -> skip Q1", behavior)
@@ -144,7 +159,11 @@ def main() -> int:
             "verdict": verdict,
         }
         (q1_dir / f"{behavior}.json").write_text(json.dumps(out, indent=2))
-        behavior_u1[behavior] = np.asarray(q1["U1"], dtype=np.float32)
+        # Headline U1 is the seed-42 read (the canonical context set).
+        if 42 in by_seed and behavior in u1_by_seed and 42 in u1_by_seed[behavior]:
+            behavior_u1[behavior] = u1_by_seed[behavior][42]
+        else:
+            behavior_u1[behavior] = np.asarray(q1["U1"], dtype=np.float32)
         logger.info(
             "[phase=analysis_q1] %s top_share=%.3f null_p95=%.3f verdict=%s",
             behavior,
@@ -153,13 +172,21 @@ def main() -> int:
             verdict.get("verdict"),
         )
 
+    # Q2 ceiling: per-behavior CROSS-SEED U1 cosine (NOT the Q1 per-cell median).
+    q2_seed_ceiling = i651.q2_seed_ceiling_per_behavior(u1_by_seed)
+    for behavior, c in q2_seed_ceiling.items():
+        logger.info("[phase=analysis_q2ceiling] %s cross-seed U1 cosine=%.4f", behavior, c)
+
     # --- Q2 cross-behavior matrix (headline behaviors only; refusal excluded) ---
     q2_dir = repo_root / "eval_results" / "issue_651" / "q2_cross_behavior"
     q2_dir.mkdir(parents=True, exist_ok=True)
     headline = {b: u1 for b, u1 in behavior_u1.items() if b != NULL_CHECK_BEHAVIOR and b != "emnc"}
     if len(headline) >= 2:
-        q2 = i651.q2_cross_behavior_matrix(headline, seed_ceiling_median, n_reps=args.n_reps)
+        # Q2 ceiling denominator = the per-behavior cross-seed U1 cosine (plan
+        # §6.2 / §14.2), NOT seed_ceiling_median (which is the Q1 per-cell object).
+        q2 = i651.q2_cross_behavior_matrix(headline, q2_seed_ceiling, n_reps=args.n_reps)
         q2["verdict"] = i651.q2_verdict(q2)
+        q2["ceiling_object"] = "per_behavior_cross_seed_U1_cosine"  # provenance (§14.2)
         (q2_dir / "cross_behavior_cosine_matrix.json").write_text(json.dumps(q2, indent=2))
         logger.info(
             "[phase=analysis_q2] behaviors=%s verdict=%s",

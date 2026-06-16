@@ -203,6 +203,53 @@ def seed_ceiling_per_cell(
     }
 
 
+def q2_seed_ceiling_per_behavior(
+    u1_by_seed: dict[str, dict[int, np.ndarray]],
+) -> dict[str, float]:
+    """Q2 seed ceiling = per-behavior cross-seed U1 cosine (plan §6.2 / §14.2).
+
+    This is the CORRECT geometric object for the Q2 normalization denominator —
+    DISTINCT from the Q1 per-cell seed ceiling (``seed_ceiling_per_cell``, the
+    per-(behavior, context) shift cosine across seeds). Here we take EACH
+    behavior's cross-context dominant direction U1 at seed 42 and at seed 1042 and
+    compute ``abs(cos(U1_seed42, U1_seed1042))`` — the training-run-noise floor on
+    the per-behavior WRITE DIRECTION, which is exactly what the Q2 off-diagonal
+    cosines (also U1-vs-U1) are reported as a fraction of (#552 lesson, plan
+    §14.1-2). A behavior with only one seed has no Q2 ceiling (omitted).
+
+    ``u1_by_seed`` = {behavior: {seed: (H,) per-behavior U1}} — the U1 from
+    ``q1_context_invariance`` computed SEPARATELY per seed.
+    """
+    out: dict[str, float] = {}
+    for behavior, by_seed in u1_by_seed.items():
+        if 42 in by_seed and 1042 in by_seed:
+            out[behavior] = abs(cosine(by_seed[42], by_seed[1042]))
+    return out
+
+
+def _pairwise_cosine_null_p95(
+    u: np.ndarray, v: np.ndarray, *, n_reps: int, seed: int, percentile: float = 95.0
+) -> float:
+    """Per-pair cross-behavior null band, in the SAME scale as |cos(U1_u, U1_v)|.
+
+    The off-diagonal Q2 statistic is a |cosine| between two fixed direction
+    vectors; the matching null is the |cosine| distribution when each vector's
+    coherent structure is destroyed by an independent entrywise +/-1 sign flip
+    (the cosine-scale analogue of ``sign_flip_null``'s top-share null). Returns
+    the p95 — the structural floor an off-diagonal must clear to be a real shared
+    direction rather than chance alignment (CONCERN q2-verdict-null-band-ignored).
+    """
+    ua = np.asarray(u, dtype=np.float64).ravel()
+    va = np.asarray(v, dtype=np.float64).ravel()
+    rng = np.random.default_rng(seed)
+    vals = np.empty(n_reps, dtype=np.float64)
+    for r in range(n_reps):
+        su = rng.choice([-1.0, 1.0], size=ua.shape)
+        sv = rng.choice([-1.0, 1.0], size=va.shape)
+        vals[r] = abs(cosine(ua * su, va * sv))
+    return float(np.percentile(vals, percentile))
+
+
 def q2_cross_behavior_matrix(
     behavior_u1: dict[str, np.ndarray],
     seed_ceilings: dict[str, float],
@@ -214,17 +261,22 @@ def q2_cross_behavior_matrix(
 
     ``behavior_u1`` = {behavior: (H,) dominant direction U1} (one per behavior,
     the per-behavior cross-context U1 from q1["U1"]). ``seed_ceilings`` =
-    {behavior: median seed ceiling}. The unit-norm |cos| is dose-invariant
-    (plan §6.1 — the explicit reason this is the Q2 DV). Each off-diagonal is
-    ALSO reported as a fraction of geomean(ceiling_b, ceiling_b') (plan §6.2).
-    The cross-behavior null band is the sign-flip null on the pooled
-    behavior-direction matrix.
+    {behavior: per-behavior CROSS-SEED U1 ceiling} from
+    ``q2_seed_ceiling_per_behavior`` (the correct Q2 geometric object — NOT the
+    Q1 per-cell ``seed_ceiling_per_cell`` median; plan §6.2 / §14.2). The unit-
+    norm |cos| is dose-invariant (plan §6.1 — the explicit reason this is the Q2
+    DV). Each off-diagonal is ALSO reported as a fraction of
+    geomean(ceiling_b, ceiling_b') (plan §6.2) AND against a PER-PAIR sign-flip
+    cosine null band (plan §6.2: "within null band" is part of the distinct
+    criterion). The legacy pooled top-share null is also reported.
     """
     behaviors = sorted(behavior_u1)
     k = len(behaviors)
     raw = np.eye(k, dtype=np.float64)
     ceil_frac = np.full((k, k), np.nan)
+    null_p95_mat = np.full((k, k), np.nan)
     unit = {b: _unit(behavior_u1[b]) for b in behaviors}
+    pair_null_p95: dict[str, float] = {}
     for i, bi in enumerate(behaviors):
         for j, bj in enumerate(behaviors):
             if i == j:
@@ -238,16 +290,25 @@ def q2_cross_behavior_matrix(
                 )
             )
             ceil_frac[i, j] = (c / denom) if denom > 0 else np.nan
-    # Cross-behavior null band: stack the behavior U1s into an (H x k) matrix
-    # and sign-flip null its top-share — the structural floor for "do these
-    # share a direction?" (plan §14.4: small off-diagonals interpreted against
-    # this band, not a measured zero-info adapter).
+            # Per-pair cosine-scale null band (deterministic per pair via a
+            # pair-keyed seed offset so the matrix is symmetric + reproducible).
+            if i < j:
+                p95 = _pairwise_cosine_null_p95(
+                    behavior_u1[bi], behavior_u1[bj], n_reps=n_reps, seed=seed + i * 131 + j
+                )
+                pair_null_p95[f"{bi}|{bj}"] = p95
+                null_p95_mat[i, j] = p95
+                null_p95_mat[j, i] = p95
+    # Legacy pooled top-share null (kept for continuity; the per-pair cosine null
+    # above is what the distinct verdict gates on — plan §14.4).
     M_behaviors = np.stack([behavior_u1[b] for b in behaviors], axis=1)
     null = sign_flip_null(M_behaviors, n_reps=n_reps, seed=seed) if k >= 2 else None
     return {
         "behaviors": behaviors,
         "raw_cosine_matrix": raw.tolist(),
         "ceiling_normalized_matrix": ceil_frac.tolist(),
+        "pairwise_null_p95_matrix": null_p95_mat.tolist(),
+        "pairwise_null_p95": pair_null_p95,
         "seed_ceilings": {b: float(seed_ceilings.get(b, float("nan"))) for b in behaviors},
         "cross_behavior_null_p95": float(null["p95"]) if null else None,
         "cross_behavior_null_p99": float(null["p99"]) if null else None,
@@ -257,22 +318,47 @@ def q2_cross_behavior_matrix(
 def q2_verdict(q2: dict, *, coincide_frac: float = 0.85, distinct_frac: float = 0.5) -> dict:
     """Q2 family verdict (plan §6.2/§3).
 
+    Plan §6.2 distinct criterion has TWO conjuncts: every off-diagonal is
+    (a) ``< distinct_frac x ceiling`` AND (b) ``within the cross-behavior null
+    band`` (its raw |cos| does not exceed the pair's sign-flip null p95). An
+    off-diagonal that is below the ceiling-fraction bar but OUTSIDE its null band
+    is a real (small) shared direction — NOT distinct — so the verdict must
+    consult the null band (CONCERN q2-verdict-null-band-ignored). Per-pair null
+    bands come from ``pairwise_null_p95`` (same cosine scale as the raw matrix).
+
     H-coincide if any off-diagonal ceiling-fraction >= coincide_frac.
-    H-distinct if all off-diagonal ceiling-fractions < distinct_frac.
+    H-distinct if every off-diagonal clears BOTH conjuncts.
     H-family-cluster otherwise (the {sycophancy, em} block is flagged for the
     analyzer to weigh against the data-shape confound — plan §14.6).
     """
     behaviors = q2["behaviors"]
     cf = np.asarray(q2["ceiling_normalized_matrix"], dtype=np.float64)
+    raw = np.asarray(q2["raw_cosine_matrix"], dtype=np.float64)
+    pair_null = q2.get("pairwise_null_p95", {}) or {}
     off = [
-        (behaviors[i], behaviors[j], cf[i, j])
+        (behaviors[i], behaviors[j], cf[i, j], raw[i, j])
         for i in range(len(behaviors))
         for j in range(len(behaviors))
         if i < j
     ]
-    finite = [(a, b, v) for a, b, v in off if np.isfinite(v)]
-    any_coincide = any(v >= coincide_frac for _, _, v in finite)
-    all_distinct = bool(finite) and all(v < distinct_frac for _, _, v in finite)
+    finite = [(a, b, v, rc) for a, b, v, rc in off if np.isfinite(v)]
+
+    def _null_p95(a: str, b: str) -> float:
+        # pairwise_null_p95 is keyed sorted-behavior "bi|bj" (i < j over sorted
+        # behaviors), which matches the (a, b) order here.
+        return float(pair_null.get(f"{a}|{b}", pair_null.get(f"{b}|{a}", float("nan"))))
+
+    def _within_null_band(a: str, b: str, raw_cos: float) -> bool:
+        # "within the null band" = the raw |cos| is not above the pair's null
+        # p95. A missing null band (single-pair degenerate / not computed) fails
+        # OPEN toward NOT-within so a bare ceiling-fraction can't claim distinct.
+        p95 = _null_p95(a, b)
+        return bool(np.isfinite(p95) and raw_cos <= p95)
+
+    any_coincide = any(v >= coincide_frac for _, _, v, _ in finite)
+    all_distinct = bool(finite) and all(
+        (v < distinct_frac) and _within_null_band(a, b, rc) for a, b, v, rc in finite
+    )
     if any_coincide:
         verdict = "coincide"
     elif all_distinct:
@@ -282,13 +368,21 @@ def q2_verdict(q2: dict, *, coincide_frac: float = 0.85, distinct_frac: float = 
     return {
         "verdict": verdict,
         "off_diagonal_ceiling_fractions": [
-            {"pair": [a, b], "ceiling_fraction": float(v)} for a, b, v in off
+            {
+                "pair": [a, b],
+                "ceiling_fraction": float(v),
+                "raw_cosine": float(rc),
+                "null_p95": _null_p95(a, b),
+                "below_ceiling_bar": bool(v < distinct_frac),
+                "within_null_band": _within_null_band(a, b, rc),
+            }
+            for a, b, v, rc in off
         ],
         "coincide_frac": coincide_frac,
         "distinct_frac": distinct_frac,
         "near_boundary": [  # plan §14.3 — n=2 ceiling, near-boundary is noise-limited
             {"pair": [a, b], "ceiling_fraction": float(v)}
-            for a, b, v in finite
+            for a, b, v, _ in finite
             if abs(v - distinct_frac) < 0.1 or abs(v - coincide_frac) < 0.1
         ],
     }
