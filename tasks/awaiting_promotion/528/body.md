@@ -21,6 +21,8 @@ goal: 'Test (a) whether LoRA training installs a desirable assistant trait above
 relates_to:
 - implant-which-behaviors
 - spec-role-header
+classification: useful
+promoted_at: '2026-06-16T07:02:32Z'
 ---
 # Validating cleanly installs above base under a custom-role-header LoRA on the one trait-encoding cell where the base has headroom (MODERATE confidence)
 
