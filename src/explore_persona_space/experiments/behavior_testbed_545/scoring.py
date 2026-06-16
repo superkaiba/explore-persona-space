@@ -578,6 +578,51 @@ def score(  # noqa: C901 — pre-registered protocol, intentionally flat
 # ===========================================================================
 
 
+# Metric-family membership (plan §4.1). Order WITHIN each tuple is
+# longest-suffix-first so the parser below matches multi-token metrics
+# (``mahal_pooled_ctx``, ``gauss_kl``, ``neg_l2``, ``delta_spec``) BEFORE
+# their single-token prefixes (``mahal``, ``kl``...) — a bare
+# ``body.rsplit("_", 1)[-1]`` collapsed every underscore metric to its last
+# token and mislabeled the whole covariance/cloud/centered family (Codex
+# Major #2, reconciler r1 binding FAIL).
+_CENTROID_METRICS_COVARIANCE = ("mahal_pooled_ctx", "mahal", "euclidean")
+_CENTROID_METRICS_RAW = ("cosine", "neg_l2", "projection")
+_CLOUD_METRICS = (
+    "rbf_mmd_squared",
+    "bures_wasserstein2",
+    "delta_spec",
+    "gauss_kl",
+    "wass2",
+    "c2st",
+    "mmd",
+)
+# Longest-first across ALL metric suffixes (the order the parser scans).
+_ALL_METRIC_SUFFIXES: tuple[str, ...] = tuple(
+    sorted(
+        set(_CENTROID_METRICS_COVARIANCE) | set(_CENTROID_METRICS_RAW) | set(_CLOUD_METRICS),
+        key=len,
+        reverse=True,
+    )
+)
+
+
+def _parse_metric_suffix(body: str) -> str | None:
+    """Return the metric suffix of a ``cloud_*`` predictor body, longest-first.
+
+    The body is ``cloud_<flavor>_L<layer>_<point>_[<centering>_]<metric>`` where
+    ``<point>`` (``mean_response`` / ``last_token``) and several ``<metric>``
+    values (``mahal_pooled_ctx``, ``gauss_kl``, ``neg_l2``) themselves contain
+    underscores, so we cannot split on ``_``. Match the registered metric
+    suffixes longest-first and require an underscore boundary before the
+    match (so ``..._neg_l2`` matches ``neg_l2`` and never the substring ``l2``
+    of an unrelated token). Returns ``None`` if no registered metric matches.
+    """
+    for metric in _ALL_METRIC_SUFFIXES:
+        if body == metric or body.endswith(f"_{metric}"):
+            return metric
+    return None
+
+
 def _metric_family(name: str) -> str:
     """Map a predictor name → its metric family for the leaderboard grouping.
 
@@ -594,17 +639,20 @@ def _metric_family(name: str) -> str:
     if body.startswith("outdist_"):
         return "outdist_jskl"
     # cloud_<flavor>_L<layer>_<point>_<centering>_<metric>  OR  cloud_..._<metric>
-    metric = body.rsplit("_", 1)[-1]
-    centroid_new = {"euclidean", "mahal", "mahal_pooled_ctx"}
-    centroid_raw = {"cosine", "neg_l2", "projection"}
-    cloud = {"mmd", "c2st", "wass2", "gauss_kl", "delta_spec"}
-    if metric in cloud:
+    metric = _parse_metric_suffix(body)
+    if metric is None:
+        return "other_A"
+    if metric in _CLOUD_METRICS:
         return "cloud"
-    if "_centered_" in body and metric in (centroid_raw | centroid_new):
+    # Centroid metrics: the centered variant carries an explicit `_centered_`
+    # segment in the body (the raw variant carries `_raw_`).
+    if "_centered_" in body and metric in (
+        set(_CENTROID_METRICS_RAW) | set(_CENTROID_METRICS_COVARIANCE)
+    ):
         return "centered_centroid"
-    if metric in centroid_new:
+    if metric in _CENTROID_METRICS_COVARIANCE:
         return "covariance_centroid"
-    if metric in centroid_raw:
+    if metric in _CENTROID_METRICS_RAW:
         return "raw_centroid"
     return "other_A"
 
