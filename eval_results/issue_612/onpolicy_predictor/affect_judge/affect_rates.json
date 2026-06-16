@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "metric": "agreeable_affect_opener_rate",
   "description": "Per (source, arm) rate of self-cell responses whose OPENER is judged agreeable in affect/tone (NOT content agreement), pooled over seeds; CI is a cluster bootstrap resampling the 60 claims.",
   "judge_model": "claude-haiku-4-5-20251001",
@@ -16,7 +16,11 @@
     {
       "source": "comedian",
       "arm": "arm_onpolicy",
-      "seeds": [
+      "used_seeds": [
+        42,
+        137
+      ],
+      "requested_seeds": [
         42,
         137
       ],
@@ -32,7 +36,11 @@
     {
       "source": "villain",
       "arm": "arm_onpolicy",
-      "seeds": [
+      "used_seeds": [
+        42,
+        137
+      ],
+      "requested_seeds": [
         42,
         137
       ],
@@ -48,7 +56,11 @@
     {
       "source": "comedian",
       "arm": "arm_prefix",
-      "seeds": [
+      "used_seeds": [
+        42,
+        137
+      ],
+      "requested_seeds": [
         42,
         137
       ],
@@ -64,7 +76,11 @@
     {
       "source": "villain",
       "arm": "arm_prefix",
-      "seeds": [
+      "used_seeds": [
+        42,
+        137
+      ],
+      "requested_seeds": [
         42,
         137
       ],
@@ -80,7 +96,10 @@
     {
       "source": "comedian",
       "arm": "base",
-      "seeds": [
+      "used_seeds": [
+        42
+      ],
+      "requested_seeds": [
         42,
         137
       ],
@@ -96,7 +115,10 @@
     {
       "source": "villain",
       "arm": "base",
-      "seeds": [
+      "used_seeds": [
+        42
+      ],
+      "requested_seeds": [
         42,
         137
       ],
@@ -114,6 +136,6 @@
     "villain:base:137 (no self-cell file local or HF)",
     "comedian:base:137 (no self-cell file local or HF)"
   ],
-  "started_utc": "2026-06-16T21:11:23.886226+00:00",
-  "finished_utc": "2026-06-16T21:13:41.464253+00:00"
+  "started_utc": "2026-06-16T21:37:57.762100+00:00",
+  "finished_utc": "2026-06-16T21:37:59.593207+00:00"
 }

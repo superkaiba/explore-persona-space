@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "task": 612,
   "followup_label": "sycophantic-affect-judge",
   "analysis_only": true,
@@ -10,9 +10,10 @@
   "hf_revision": "main",
   "hf_data_prefix_endpoint_arms": "issue612_sycophancy_onpolicy",
   "hf_data_prefix_matched_install_arms": "issue612_onpolicy_leakage_predictor",
-  "driver_git_commit_sha": "236bff148f6f2f85370f19c05ee8123f5aed954a",
+  "affect_judge_script_sha256": "007d1b3c054a0f6f61680cb6fedd0187884b78e504c2e684eac68b172812808f",
+  "driver_git_commit_sha": "9e119230d1d3eeaf299af18b2d0e8dc389f969d6",
   "hostname": "cia-benchmark-vm",
-  "total_judge_calls": 6000,
+  "total_judge_calls": 0,
   "n_consumed_files": 10,
   "consumed_files": [
     {
@@ -25,7 +26,8 @@
       "read_step": null,
       "sha256": "fdd688fbec02b47c88dd6f3e4d9d45799a48b2e9f1f054606b42818903a4fd80",
       "n_rows_judged": 600,
-      "n_judge_failed": 0
+      "n_judge_failed": 0,
+      "resumed_from_checkpoint": true
     },
     {
       "source": "comedian",
@@ -37,7 +39,8 @@
       "read_step": null,
       "sha256": "6f6f5fabc105dd9969ebde95d87cb252a83b4393d3c8d600a84a32c7dffc8afa",
       "n_rows_judged": 600,
-      "n_judge_failed": 0
+      "n_judge_failed": 0,
+      "resumed_from_checkpoint": true
     },
     {
       "source": "villain",
@@ -49,7 +52,8 @@
       "read_step": 34,
       "sha256": "21c85d7692b687e8d8f052176fac4d1b0162112c6f16a60e92ab6c46155509b8",
       "n_rows_judged": 600,
-      "n_judge_failed": 0
+      "n_judge_failed": 0,
+      "resumed_from_checkpoint": true
     },
     {
       "source": "villain",
@@ -61,7 +65,8 @@
       "read_step": 34,
       "sha256": "2de9fb08170f95af53f4e408d7c0d09ac79fbafe0e038007537ecd27a15df4d3",
       "n_rows_judged": 600,
-      "n_judge_failed": 0
+      "n_judge_failed": 0,
+      "resumed_from_checkpoint": true
     },
     {
       "source": "comedian",
@@ -73,7 +78,8 @@
       "read_step": 51,
       "sha256": "54be4fc06ba841018d99c6b808e2a0f1e24da348ef212ef63dd677f467677b48",
       "n_rows_judged": 600,
-      "n_judge_failed": 0
+      "n_judge_failed": 0,
+      "resumed_from_checkpoint": true
     },
     {
       "source": "comedian",
@@ -85,7 +91,8 @@
       "read_step": 119,
       "sha256": "30f85da8c4a4a8f9cf922948474eba7dc10a576e13925116d3d8a9e4b6fd4ad6",
       "n_rows_judged": 600,
-      "n_judge_failed": 0
+      "n_judge_failed": 0,
+      "resumed_from_checkpoint": true
     },
     {
       "source": "villain",
@@ -93,11 +100,12 @@
       "seed": 42,
       "origin": "hf",
       "hf_path_in_repo": "issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/villain/seed_42/raw_completions/villain_seed42.json",
-      "local_path": "/home/thomasjiralerspong/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/f3e584ffa8fab4f1d8914acb8b0820a68df7900b/issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/villain/seed_42/raw_completions/villain_seed42.json",
+      "local_path": "/home/thomasjiralerspong/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/abd94c05a00e0c72cd127c75fb8a55f906c14fea/issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/villain/seed_42/raw_completions/villain_seed42.json",
       "read_step": null,
       "sha256": "f8d664f0a6d822c85576ffaa80642673d7b08cb28dd06a3b79008b80243e674e",
       "n_rows_judged": 600,
-      "n_judge_failed": 0
+      "n_judge_failed": 0,
+      "resumed_from_checkpoint": true
     },
     {
       "source": "villain",
@@ -105,11 +113,12 @@
       "seed": 137,
       "origin": "hf",
       "hf_path_in_repo": "issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/villain/seed_137/raw_completions/villain_seed137.json",
-      "local_path": "/home/thomasjiralerspong/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/f3e584ffa8fab4f1d8914acb8b0820a68df7900b/issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/villain/seed_137/raw_completions/villain_seed137.json",
+      "local_path": "/home/thomasjiralerspong/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/abd94c05a00e0c72cd127c75fb8a55f906c14fea/issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/villain/seed_137/raw_completions/villain_seed137.json",
       "read_step": null,
       "sha256": "3a4094435222c419e8b28fd8607cbdee24ac0be1a3af172ee791fc097a629878",
       "n_rows_judged": 600,
-      "n_judge_failed": 0
+      "n_judge_failed": 0,
+      "resumed_from_checkpoint": true
     },
     {
       "source": "comedian",
@@ -117,11 +126,12 @@
       "seed": 42,
       "origin": "hf",
       "hf_path_in_repo": "issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/comedian/seed_42/raw_completions/comedian_seed42.json",
-      "local_path": "/home/thomasjiralerspong/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/f3e584ffa8fab4f1d8914acb8b0820a68df7900b/issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/comedian/seed_42/raw_completions/comedian_seed42.json",
+      "local_path": "/home/thomasjiralerspong/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/abd94c05a00e0c72cd127c75fb8a55f906c14fea/issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/comedian/seed_42/raw_completions/comedian_seed42.json",
       "read_step": null,
       "sha256": "1b696ffabdb6b5636b4560511800348f815c002084ea35c9878c40befb872c2e",
       "n_rows_judged": 600,
-      "n_judge_failed": 0
+      "n_judge_failed": 0,
+      "resumed_from_checkpoint": true
     },
     {
       "source": "comedian",
@@ -129,16 +139,17 @@
       "seed": 137,
       "origin": "hf",
       "hf_path_in_repo": "issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/comedian/seed_137/raw_completions/comedian_seed137.json",
-      "local_path": "/home/thomasjiralerspong/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/f3e584ffa8fab4f1d8914acb8b0820a68df7900b/issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/comedian/seed_137/raw_completions/comedian_seed137.json",
+      "local_path": "/home/thomasjiralerspong/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/abd94c05a00e0c72cd127c75fb8a55f906c14fea/issue612_sycophancy_onpolicy/eval_results/cells/arm_prefix/comedian/seed_137/raw_completions/comedian_seed137.json",
       "read_step": null,
       "sha256": "b17983c3cd259e4b31f8c70c6514c83b362c812ed01dcb88ef6a2daccd860597",
       "n_rows_judged": 600,
-      "n_judge_failed": 0
+      "n_judge_failed": 0,
+      "resumed_from_checkpoint": true
     }
   ],
   "smoke_caps": {
     "max_claims": null,
     "max_rollouts": null
   },
-  "timestamp_utc": "2026-06-16T21:13:41.470238+00:00"
+  "timestamp_utc": "2026-06-16T21:37:59.599281+00:00"
 }
