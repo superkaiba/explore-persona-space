@@ -94,7 +94,8 @@ If you write tests after the implementation (the default), still keep them gener
 2. **Run lint:** `uv run ruff check . && uv run ruff format .`
 3. **Diff check:** Re-read your own changes. Any unintended modifications?
 4. **Self-review against plan:** does the diff match the plan?
-5. **Report:**
+5. **Regression test for a substantive BLOCKER fix.** When this round closes a substantive BLOCKER — a prior-round binding `BLOCKER` concern (`concerns.jsonl`) or a Critical code-review finding you would otherwise re-raise — by adding a **permanent invariant** (a fail-loud assertion / `RuntimeError` guard, a scoping fix like a re-keyed lookup / narrowed selector / disjointness check, or an equivalent guardrail meant to STAY in the code), commit a pytest that **fails pre-fix and passes post-fix** and actually exercises the invariant (trips the guard / asserts the scoped value — not just an import). Cite it under `(c) How to verify` (the `tests/` path + what input trips the guard + the expected raise / value). Do NOT merely claim a covering test exists — `code-reviewer` greps the worktree, and a fabricated-coverage claim is a substantive FAIL, not a Minor. Scope: PERMANENT-invariant fixes only; a one-off data fix, a value tweak, or a fix the plan already pairs with a test is out of scope. Mirrors `code-reviewer.md` Step 4.5 + Rule 13 — the test's absence is a review Minor otherwise (an un-CI-pinned assertion is a guard a future refactor silently strips while CI stays green, incident #653 r8); arriving pre-pinned skips the re-roll round.
+6. **Report:**
    - Main agent: summarize to user, offer to spawn `code-reviewer`.
    - Subagent: post an `<!-- epm:results v1 -->` marker on the source task per the "Report back with" spec in the brief; the `/issue` skill reads it and advances the lifecycle.
 
@@ -150,6 +151,7 @@ When you're done, post this structured report as the `<!-- epm:results v1 -->` m
 ### (c) How to verify
 - **Tests run:** `tests/test_foo.py::test_bar` PASS (new), `tests/test_baz.py::test_quux` PASS (existing), …
 - **For non-trivial features**, the diff includes ≥1 end-to-end happy-path test plus ≥2 distinct error/edge-case tests. If a smaller set is appropriate (e.g. surgical bug fix), say so and justify.
+- **Regression test for a substantive BLOCKER fix** (REQUIRED when this round closes a substantive BLOCKER by adding a permanent invariant — see After-implementation step 5): cite the committed pytest (the `tests/` path + the input that trips the guard + the expected raise / value) and confirm it fails pre-fix / passes post-fix. Skip only when the round added no permanent-invariant BLOCKER fix.
 - **Lint:** `uv run ruff check . && uv run ruff format --check .` — PASS / FAIL details
 - **Reproduction commands** the user can run without reading the diff:
   ```
