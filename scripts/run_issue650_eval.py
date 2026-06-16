@@ -300,9 +300,22 @@ def _eval_sycophancy_cell(
     here we evaluate the base + EVERY saved epoch checkpoint, compute Δagree per
     epoch, and select the EARLIEST checkpoint whose Δagree enters the cell's
     dose band (low [0.30,0.45] / high [0.55,ceiling]). The SELECTED checkpoint
-    (not the final adapter) is recorded so eval/analyze read it. The full
-    per-epoch trajectory is persisted to ``syco_dose_trajectory_seed{seed}.json``
-    (one per seed; both doses of a seed share the same trajectory + base rate).
+    (not the final adapter) is recorded so eval/analyze read it.
+
+    Round-3 CONCERN ``syco-dose-trajectory-cross-cell-path-reuse``
+    (reconciler-binding): the trajectory is persisted per CELL SLUG
+    (``syco_dose_trajectory_{slug}.json``), NOT per seed. Low and high are
+    SEPARATE trained cell directories; a seed-only cache let whichever dose
+    evaluated first write a trajectory whose ``checkpoint`` paths point into
+    ITS cell dir, which the second dose then inherited via the cache hit —
+    recording a checkpoint path that crosses into another cell's dir (correct
+    weights under the identical-config determinism, but a mis-attributed,
+    non-auditable path). Slug-keying makes each dose read+record checkpoints
+    from its OWN ``cell_dir``. The base agreement rate stays seed-keyed (same
+    base model for both doses of a seed) — that cache is dose-independent and
+    correct to share. The determinism the path-crossing silently rested on is
+    now ENFORCED, not assumed, by ``_assert_syco_dose_determinism`` (run after
+    both doses of a seed are evaluated; see ``main``).
     """
     from explore_persona_space.experiments.issue_650.band_entry import select_band_entry
 
@@ -330,9 +343,11 @@ def _eval_sycophancy_cell(
     base = base_rate_cache[seed]
     base_rate = float(base["rate"])
 
-    # Per-epoch trajectory: evaluate the base + every saved epoch checkpoint
-    # (cached on disk per seed so low/high of the same seed reuse it).
-    traj_path = out_dir / f"syco_dose_trajectory_seed{seed}.json"
+    # Per-epoch trajectory: evaluate the base + every saved epoch checkpoint.
+    # Cached per CELL SLUG (round-3 syco-dose-trajectory-cross-cell-path-reuse):
+    # each dose reads+records checkpoints from its OWN cell_dir, never another
+    # cell's. (The base rate above stays seed-keyed — it is dose-independent.)
+    traj_path = out_dir / f"syco_dose_trajectory_{slug}.json"
     if traj_path.is_file():
         epoch_records = json.loads(traj_path.read_text())["epoch_records"]
     else:
@@ -361,6 +376,8 @@ def _eval_sycophancy_cell(
             traj_path.write_text(
                 json.dumps(
                     {
+                        "cell_slug": slug,
+                        "cell_dir": str(cell_dir),
                         "seed": seed,
                         "base_rate": base_rate,
                         "base_detail": base,
@@ -396,6 +413,21 @@ def _eval_sycophancy_cell(
             selected_epoch,
             selected_delta if selected_delta is not None else float("nan"),
         )
+
+    # Round-3 mechanizable guard (Codex): the recorded checkpoint MUST live
+    # inside THIS cell's own dir — never cross into another cell. Catches any
+    # residual cross-cell path-reuse before the analyzer reads a mis-attributed
+    # adapter.
+    if selected_checkpoint is not None:
+        sel_resolved = Path(selected_checkpoint).resolve()
+        cell_resolved = cell_dir.resolve()
+        if cell_resolved not in (sel_resolved, *sel_resolved.parents):
+            raise AssertionError(
+                f"cell={slug}: selected checkpoint {selected_checkpoint} is not under this "
+                f"cell's own dir {cell_dir} — cross-cell trajectory path reuse "
+                "(syco-dose-trajectory-cross-cell-path-reuse). The dose-selected adapter "
+                "must derive from this cell's own epoch checkpoints."
+            )
 
     payload = {
         "cell_slug": slug,
@@ -477,6 +509,76 @@ def _assert_r_persona_coverage_for_marker(
             "run_issue650_generate_r_persona.py BEFORE the marker eval. "
             f"{len(missing)} gap(s); first 5:\n  " + "\n  ".join(missing[:5])
         )
+
+
+def _load_lora_ab(adapter_dir: Path) -> dict[str, object]:
+    """Load all lora_A / lora_B tensors from an adapter dir (CPU float32)."""
+    from safetensors.torch import load_file
+
+    sd = load_file(str(adapter_dir / "adapter_model.safetensors"))
+    return {k: v.float() for k, v in sd.items() if "lora_A" in k or "lora_B" in k}
+
+
+def _assert_syco_dose_determinism(
+    *, seed: int, low_cell_dir: Path, high_cell_dir: Path, atol: float = 1e-6
+) -> dict:
+    """Enforce the determinism the dose-selection correctness silently rests on.
+
+    Round-3 CONCERN ``syco-dose-trajectory-cross-cell-path-reuse``
+    (reconciler-binding): low and high sycophancy cells of one seed train under
+    an IDENTICAL config (same data, same seed, same epochs/lr — dose only labels
+    which band the off-pod read targets), so their per-epoch checkpoints MUST be
+    numerically identical. The pre-round-3 seed-keyed trajectory cache let one
+    dose inherit the other's checkpoint paths; that was harmless ONLY under this
+    determinism. Here we ASSERT it rather than assume it: at every epoch index
+    present in BOTH cells, ``lora_A`` and ``lora_B`` must be allclose(atol). A
+    divergence (different RNG, a stray config drift, a corrupted checkpoint) is
+    a LOUD failure, not a silent wrong-adapter read.
+
+    Compares MATCHED epoch indices (not the dose-selected epochs, which differ
+    by design — low picks an earlier band-entry epoch than high). Returns a
+    digest of the epochs compared.
+    """
+    import torch
+
+    low_ckpts = dict(_enumerate_epoch_checkpoints(low_cell_dir))
+    high_ckpts = dict(_enumerate_epoch_checkpoints(high_cell_dir))
+    common_epochs = sorted(set(low_ckpts) & set(high_ckpts))
+    if not common_epochs:
+        raise AssertionError(
+            f"seed{seed}: low/high sycophancy cells share NO common epoch checkpoint "
+            f"(low epochs {sorted(low_ckpts)}, high epochs {sorted(high_ckpts)}) — "
+            "cannot verify same-config determinism."
+        )
+    checked = 0
+    for epoch in common_epochs:
+        a_low = _load_lora_ab(low_ckpts[epoch])
+        a_high = _load_lora_ab(high_ckpts[epoch])
+        if set(a_low) != set(a_high):
+            raise AssertionError(
+                f"seed{seed} epoch{epoch}: low/high adapter tensor KEYS differ — "
+                "the two same-config runs are not comparable."
+            )
+        for key, t_low in a_low.items():
+            if not torch.allclose(t_low, a_high[key], atol=atol):
+                max_abs = float((t_low - a_high[key]).abs().max().item())
+                raise AssertionError(
+                    f"seed{seed} epoch{epoch} tensor {key}: low/high diverged "
+                    f"(max|Δ|={max_abs:g} > atol={atol:g}). The low/high sycophancy cells "
+                    "are supposed to be the IDENTICAL config; a divergence breaks the "
+                    "dose-axis determinism (syco-dose-trajectory-cross-cell-path-reuse). "
+                    "Investigate RNG / config drift before trusting the dose read."
+                )
+        checked += 1
+    log.info(
+        "[phase=syco_dose_determinism] seed%s: low/high adapters allclose(atol=%g) "
+        "across %d common epoch(s) %s",
+        seed,
+        atol,
+        checked,
+        common_epochs,
+    )
+    return {"seed": seed, "common_epochs": common_epochs, "atol": atol}
 
 
 def _record_dose_selection(*, metas_root: Path, slug: str, payload: dict) -> None:
@@ -561,12 +663,14 @@ def main(argv: list[str] | None = None) -> int:
 
     n_done = 0
     base_rate_cache: dict[int, dict] = {}  # seed -> base agreement-rate dict (per-seed)
+    # (seed, dose) -> resolved syco cell_dir, for the post-loop determinism assert.
+    syco_cell_dirs: dict[tuple[int, str], Path] = {}
     for slug in sorted(want):
         meta = metas.get(slug)
         if meta is None:
             log.warning("cell=%s has no train-side JSON; skip eval", slug)
             continue
-        behavior, _dose, _seed = parse_cell_slug(slug)
+        behavior, dose, seed = parse_cell_slug(slug)
         log.info("[phase=eval_cell] cell=%s behavior=%s", slug, behavior)
         if behavior == "marker":
             _eval_marker_cell(
@@ -590,7 +694,20 @@ def main(argv: list[str] | None = None) -> int:
             # JSON so the off-pod analyzer reads the dose-selected adapter (NOT
             # the final). The analyzer prefers meta["dose_selected_adapter"].
             _record_dose_selection(metas_root=cells_root, slug=slug, payload=syco_payload)
+            syco_cell_dirs[(seed, dose)] = _resolve_adapter_local(meta, cells_root)
         n_done += 1
+
+    # Round-3 CONCERN syco-dose-trajectory-cross-cell-path-reuse: for any seed
+    # where BOTH low+high syco doses were evaluated, ENFORCE the same-config
+    # determinism the dose read silently rests on (the two cells must produce
+    # numerically-identical per-epoch checkpoints). Fails loud on divergence.
+    for seed in sorted({s for (s, _d) in syco_cell_dirs}):
+        if (seed, "low") in syco_cell_dirs and (seed, "high") in syco_cell_dirs:
+            _assert_syco_dose_determinism(
+                seed=seed,
+                low_cell_dir=syco_cell_dirs[(seed, "low")],
+                high_cell_dir=syco_cell_dirs[(seed, "high")],
+            )
 
     log.info("[phase=eval_dispatch_done] %d cell(s) evaluated", n_done)
     return 0
