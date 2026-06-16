@@ -1249,13 +1249,31 @@ def build_filler_pool_for_source(
         .splitlines()
         if line.strip()
     ]
-    # Smoke caps the filler row count to match the generated R (limit-questions).
+    # Production: 200 positives (the full filtered set) + 500 filler. Smoke
+    # (limit_questions set): cap BOTH the filler rows (== the generated R count)
+    # AND the positives to the same tiny count, by pre-subsetting the filtered
+    # positives so the build's internal filter yields exactly n_positive
+    # (build_filler_pool fails loud if the count drifts from n_positive — so the
+    # smoke must hand it a pool whose positives already match the smoke count).
+    from explore_persona_space.experiments.leakage_dynamics_597.build_pos_only_pool import (
+        filter_positive_rows,
+    )
+
     n_filler = len(filler_R)
-    n_positive = 200 if params.limit_questions is None else min(200, n_filler)
+    if params.limit_questions is None:
+        n_positive = 200
+        rows_for_build = contrastive_rows
+    else:
+        # Smoke: keep the FIRST n_filler real positives verbatim (still
+        # byte-identical to the contrastive pool's positives — just fewer of
+        # them), so the single-variable "positives reused verbatim" invariant
+        # holds at smoke scale and the count matches the filler R count.
+        n_positive = min(n_filler, 200)
+        rows_for_build = filter_positive_rows(contrastive_rows)[:n_positive]
     summary = build_filler_pool(
         source,
         SOURCE_SYSTEM_PROMPTS[source],
-        contrastive_rows,
+        rows_for_build,
         filler_qs[:n_filler],
         filler_R,
         train_qs,

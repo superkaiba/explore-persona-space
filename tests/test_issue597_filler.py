@@ -1,0 +1,409 @@
+# research code uses ※ and Greek letters legitimately
+"""Tests for #597 follow-up `positives-plus-filler-control` (armD, plan v5).
+
+Pins (plan v5 §3):
+  (a) ``build_filler_pool`` yields exactly N_positive positives + N_filler
+      filler = total rows, all filler under the SOURCE persona, 0 markers in
+      filler, positives byte-identical to the contrastive pool's positives.
+  (b) the disjointness assert fires on a planted train_200-overlapping filler
+      question (the marker-contradiction guard).
+  (c) ``_filler_train_cfg`` produces byte-identical recipe fields to
+      ``_dense_train_cfg`` (only run_name differs) — the single-variable proof
+      at the cfg level.
+  (d) lr(step) for steps 1-60 under the filler cfg equals the dense/parent cfg's
+      lr(step) (schedule identity — inherited from the v3 lr-identity test).
+Plus: PASS_UNIFIED (filler reuses DenseRunParams), the filler parity gate
+(source-Δ diagnostic, wrong-pool-floor hard trigger), and panel_probe --arm d.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+import math
+import sys
+from pathlib import Path
+
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+FILLER_SOURCES = ("villain", "assistant", "qwen_default")
+
+
+def _load_dispatcher():
+    path = REPO_ROOT / "scripts" / "issue_597" / "dispatch_leakage_dynamics_597.py"
+    spec = importlib.util.spec_from_file_location("dispatch_597_filler_test", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _src_sys(source: str) -> str:
+    from explore_persona_space.experiments.marker_implant_480.build_training_pool import (
+        SOURCE_SYSTEM_PROMPTS,
+    )
+
+    return SOURCE_SYSTEM_PROMPTS[source]
+
+
+def _make_contrastive_pool_rows(source: str, n_pos: int, n_neg: int) -> list[dict]:
+    """A synthetic 700-style contrastive pool: n_pos source-positive (marker)
+    rows + n_neg OTHER-persona / no-persona marker-less rows (the negatives the
+    filler arm REPLACES)."""
+    from explore_persona_space.experiments.leakage_dynamics_597 import MARKER_TEXT
+    from explore_persona_space.experiments.marker_implant_480.build_training_pool import _make_row
+
+    src_sys = _src_sys(source)
+    rows: list[dict] = []
+    # Positives: source persona + R + marker.
+    for i in range(n_pos):
+        rows.append(
+            _make_row(
+                src_sys,
+                f"Positive myth {i} is true, correct?",
+                f"No, that is a myth. R{i}{MARKER_TEXT}",
+            )
+        )
+    # Negatives: a DIFFERENT persona (or no-persona) + R, NO marker — these are
+    # exactly the rows the filler arm replaces with source-persona filler.
+    other_sys = _src_sys("comedian" if source != "comedian" else "villain")
+    for i in range(n_neg):
+        if i % 5 == 0:
+            rows.append(
+                _make_row(None, f"Positive myth {i} is true, correct?", f"No. NoPersonaR{i}")
+            )
+        else:
+            rows.append(
+                _make_row(other_sys, f"Positive myth {i} is true, correct?", f"No. OtherR{i}")
+            )
+    # Shuffle order doesn't matter — filter_positive_rows is order-preserving.
+    return rows
+
+
+# ── (a) build_filler_pool: composition + all-source-persona + 0 markers ──────
+
+
+def test_build_filler_pool_composition_and_audit(tmp_path):
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.experiments.leakage_dynamics_597 import BASE_MODEL, MARKER_ID
+    from explore_persona_space.experiments.leakage_dynamics_597.build_filler_pool import (
+        build_filler_pool,
+    )
+
+    tok = AutoTokenizer.from_pretrained(BASE_MODEL)
+    source = "villain"
+    n_pos, n_fill = 8, 12  # tiny test scale
+    contrastive_rows = _make_contrastive_pool_rows(source, n_pos, n_neg=20)
+    filler_qs = [f"Filler claim number {i} about astronomy is accurate?" for i in range(n_fill)]
+    filler_R = [
+        f"Actually no, that is a common misconception about topic {i}." for i in range(n_fill)
+    ]
+    train_qs = [f"Positive myth {i} is true, correct?" for i in range(n_pos)]
+    eval_qs = ["A totally unrelated eval question about chemistry?"]
+
+    out_pool = tmp_path / "villain_filler_pool.jsonl"
+    summary = build_filler_pool(
+        source,
+        _src_sys(source),
+        contrastive_rows,
+        filler_qs,
+        filler_R,
+        train_qs,
+        eval_qs,
+        tok,
+        out_pool,
+        n_positive=n_pos,
+        n_filler=n_fill,
+    )
+    assert summary["n_positive"] == n_pos
+    assert summary["n_filler"] == n_fill
+    assert summary["n_total"] == n_pos + n_fill
+    # Audit: all filler under the source persona, 0 markers, 0 non-source.
+    assert summary["contrast_leakage_audit"]["n_non_source"] == 0
+    assert summary["contrast_leakage_audit"]["n_with_marker"] == 0
+    assert summary["contrast_leakage_audit"]["n_source_persona"] == n_fill
+
+    rows = [json.loads(line) for line in out_pool.read_text().splitlines() if line.strip()]
+    assert len(rows) == n_pos + n_fill
+    src_sys = _src_sys(source)
+    n_pos_seen = n_fill_seen = 0
+    for row in rows:
+        text = row["completion"][-1]["content"]
+        ids = tok.encode(text, add_special_tokens=False)
+        is_positive = MARKER_ID in ids
+        # EVERY row (positive AND filler) is under the source persona.
+        assert row["prompt"][0]["role"] == "system"
+        assert row["prompt"][0]["content"] == src_sys
+        if is_positive:
+            n_pos_seen += 1
+        else:
+            n_fill_seen += 1
+    assert n_pos_seen == n_pos
+    assert n_fill_seen == n_fill
+
+
+def test_build_filler_pool_positives_are_verbatim_contrastive_subset(tmp_path):
+    """The 200 positives are the contrastive pool's marker-bearing rows VERBATIM
+    (single-variable invariant: same positives as armB/armC)."""
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.experiments.leakage_dynamics_597 import BASE_MODEL
+    from explore_persona_space.experiments.leakage_dynamics_597.build_filler_pool import (
+        build_filler_pool,
+    )
+    from explore_persona_space.experiments.leakage_dynamics_597.build_pos_only_pool import (
+        filter_positive_rows,
+    )
+
+    tok = AutoTokenizer.from_pretrained(BASE_MODEL)
+    source = "assistant"
+    n_pos, n_fill = 6, 6
+    contrastive_rows = _make_contrastive_pool_rows(source, n_pos, n_neg=10)
+    expected_positives = filter_positive_rows(contrastive_rows)
+    out_pool = tmp_path / "filler.jsonl"
+    build_filler_pool(
+        source,
+        _src_sys(source),
+        contrastive_rows,
+        [f"Distinct filler {i} about geography is right?" for i in range(n_fill)],
+        [f"No, R{i}." for i in range(n_fill)],
+        [f"Positive myth {i} is true, correct?" for i in range(n_pos)],
+        [],
+        tok,
+        out_pool,
+        n_positive=n_pos,
+        n_filler=n_fill,
+    )
+    pool_rows = [json.loads(line) for line in out_pool.read_text().splitlines() if line.strip()]
+    pool_positives = filter_positive_rows(pool_rows)
+    # The positives in the pool are exactly the contrastive pool's positives.
+    assert pool_positives == expected_positives
+
+
+# ── (b) disjointness assert fires on a planted overlap ───────────────────────
+
+
+def test_filler_disjointness_assert_fires_on_train_overlap():
+    from explore_persona_space.experiments.leakage_dynamics_597.build_filler_pool import (
+        assert_filler_questions_disjoint,
+    )
+
+    train_qs = ["The Great Wall of China is visible from space, correct?"]
+    eval_qs = ["Bats are blind, right?"]
+    # A filler question that is a near-duplicate of the train question MUST trip
+    # the Jaccard gate (the marker-contradiction guard, plan v5 §2).
+    overlapping = ["The Great Wall of China is visible from space, correct?"]
+    with pytest.raises(RuntimeError, match="disjointness FAILURE"):
+        assert_filler_questions_disjoint(overlapping, train_qs, eval_qs)
+
+
+def test_filler_disjointness_assert_passes_on_disjoint_set():
+    from explore_persona_space.experiments.leakage_dynamics_597.build_filler_pool import (
+        assert_filler_questions_disjoint,
+    )
+
+    train_qs = ["The Great Wall of China is visible from space, correct?"]
+    eval_qs = ["Bats are blind, right?"]
+    disjoint = [
+        "Did Napoleon really lose because of the Russian winter alone?",
+        "Is it true that goldfish only have a three-second memory?",
+    ]
+    report = assert_filler_questions_disjoint(disjoint, train_qs, eval_qs)
+    assert report["n_filler"] == 2
+    assert report["max_observed_jaccard"] < 0.7
+
+
+def test_build_filler_pool_rejects_marker_in_R(tmp_path):
+    """A base greedy R that already carries the marker must FAIL the build (the
+    base prior on the marker is the implant floor; a hit means wrong R)."""
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.experiments.leakage_dynamics_597 import BASE_MODEL, MARKER_TEXT
+    from explore_persona_space.experiments.leakage_dynamics_597.build_filler_pool import (
+        build_filler_pool,
+    )
+
+    tok = AutoTokenizer.from_pretrained(BASE_MODEL)
+    source = "villain"
+    contrastive_rows = _make_contrastive_pool_rows(source, n_pos=4, n_neg=4)
+    with pytest.raises(RuntimeError, match="already contains the marker"):
+        build_filler_pool(
+            source,
+            _src_sys(source),
+            contrastive_rows,
+            ["A distinct filler claim about biology?"],
+            [f"No, that is a myth.{MARKER_TEXT}"],  # marker poisoned into R
+            ["Positive myth 0 is true, correct?"],
+            [],
+            tok,
+            tmp_path / "x.jsonl",
+            n_positive=4,
+            n_filler=1,
+        )
+
+
+# ── (c) cfg single-variable clone + (d) lr-schedule identity ─────────────────
+
+
+def test_filler_cfg_clone_deltas_only(tmp_path):
+    """Single-variable pin: the filler cfg differs from the dense cfg in EXACTLY
+    run_name (the manipulated variable lives in the DATA, not the recipe)."""
+    from dataclasses import asdict
+
+    disp = _load_dispatcher()
+    traj = tmp_path / "traj.json"
+    filler = asdict(disp._filler_train_cfg("villain", 42, 2560, traj))
+    dense = asdict(disp._dense_train_cfg("villain", 42, 2560, traj))
+    diff = {k for k in filler if filler[k] != dense[k]}
+    assert diff == {"run_name"}, diff
+    assert filler["run_name"] == "issue597_filler_villain_seed42"
+    # And recipe-identical to the #480 parent on every load-bearing field.
+    assert filler["max_steps"] == 528 and filler["lr"] == 5e-6
+    assert filler["lora_r"] == 32 and filler["lora_alpha"] == 64
+    assert filler["marker_only_loss"] is True and filler["marker_tail_tokens"] == 0
+    assert filler["marker_suppress_at_post_response_slot"] is True
+    assert filler["marker_band_log_only"] is True and filler["hf_upload"] is False
+    assert filler["marker_band_eval_every_steps"] == 2  # inherited dense 2-step probe
+
+
+def test_filler_cfg_lr_schedule_identity_steps_1_60(tmp_path):
+    """lr(step) for steps 1-60 under the filler cfg equals the dense cfg's (the
+    schedule is a pure function of lr/max_steps/warmup — all inherited)."""
+    import torch
+    from transformers import get_cosine_schedule_with_warmup
+
+    disp = _load_dispatcher()
+    filler = disp._filler_train_cfg("villain", 42, 2560, tmp_path / "f.json")
+    dense = disp._dense_train_cfg("villain", 42, 2560, tmp_path / "d.json")
+    assert filler.max_steps == dense.max_steps == 528
+    assert filler.lr == dense.lr == 5e-6
+    assert filler.warmup_ratio == dense.warmup_ratio == 0.05
+
+    def lr_series(cfg) -> list[float]:
+        warmup = math.ceil(cfg.max_steps * cfg.warmup_ratio)
+        opt = torch.optim.AdamW([torch.nn.Parameter(torch.zeros(1))], lr=cfg.lr)
+        sched = get_cosine_schedule_with_warmup(opt, warmup, cfg.max_steps)
+        series = []
+        for _ in range(60):
+            opt.step()
+            sched.step()
+            series.append(sched.get_last_lr()[0])
+        return series
+
+    assert lr_series(filler) == lr_series(dense)  # bit-identical across all 60 steps
+
+
+# ── PASS_UNIFIED: filler reuses DenseRunParams (smoke = sweep with one cell) ──
+
+
+def test_filler_uses_dense_run_params_smoke_is_sweep():
+    """The filler arm REUSES DenseRunParams wholesale — the same PASS_UNIFIED
+    smoke=sweep-with-one-cell contract the dense recipe has."""
+    disp = _load_dispatcher()
+    from explore_persona_space.experiments.leakage_dynamics_597 import ARM_C_HALT_STEP, C_GRID
+
+    prod = disp.make_dense_run_params(False)
+    smoke = disp.make_dense_run_params(True)
+    assert prod.c_grid == C_GRID and prod.halt_step == ARM_C_HALT_STEP == 60
+    assert smoke.halt_step == 12 and set(smoke.c_grid) <= set(prod.c_grid)
+    assert smoke.limit_questions == 5 and smoke.hf_suffix == "_smoke"
+
+
+def test_filler_sources_reduced_set():
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        FILLER_SOURCES as fs,
+    )
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        SOURCE_PERSONAS,
+    )
+
+    assert fs == FILLER_SOURCES
+    assert set(fs) <= set(SOURCE_PERSONAS)
+    assert "villain" in fs and "qwen_default" in fs and "assistant" in fs
+
+
+# ── Filler parity gate: source-Δ diagnostic, wrong-pool-floor hard trigger ───
+
+
+def _panel(by_step: dict[int, dict]) -> dict:
+    """A minimal load_panel_trajectory-shaped object for the parity join."""
+    return {"by_step": by_step}
+
+
+def test_filler_parity_source_delta_is_diagnostic_not_gate(monkeypatch):
+    """A filler source curve far from armA is status='ok' (a measured outcome),
+    never a hard fail — only the WRONG-POOL floor signature trips."""
+    disp = _load_dispatcher()
+    import explore_persona_space.experiments.leakage_dynamics_597.analyze as analyze
+
+    # context_value(panel, step, ctx, field) -> the value stored under by_step.
+    monkeypatch.setattr(
+        analyze, "context_value", lambda panel, s, ctx, field: panel["by_step"][s][field]
+    )
+    # Filler installs SLOWLY (small source Δ) — far below armA — but past floor.
+    filler = _panel({20: {"delta_logp": 3.0, "logp_base": -21.0}})
+    parent = _panel({20: {"delta_logp": 12.0, "logp_base": -21.0}})
+    join = disp.filler_parity_join(filler, parent, "villain")
+    assert join["status"] == "ok"  # 9 nat off armA, but installed past the floor
+    assert join["by_step"][20]["source_abs_diff_armA_diagnostic"] == pytest.approx(9.0)
+    report = disp.evaluate_filler_parity_gate({"villain": join})
+    assert report["verdict"] == "OK_DIAGNOSTIC"
+    assert report["wrong_pool_sources"] == []
+
+
+def test_filler_parity_wrong_pool_floor_is_hard_trigger(monkeypatch):
+    """A filler source curve stuck at the base-prior floor at EVERY parity step
+    is the WRONG-POOL signature (the marker never installed) — a hard trigger."""
+    disp = _load_dispatcher()
+    import explore_persona_space.experiments.leakage_dynamics_597.analyze as analyze
+
+    monkeypatch.setattr(
+        analyze, "context_value", lambda panel, s, ctx, field: panel["by_step"][s][field]
+    )
+    filler = _panel(
+        {20: {"delta_logp": 0.2, "logp_base": -21.0}, 40: {"delta_logp": -0.1, "logp_base": -21.0}}
+    )
+    parent = _panel(
+        {20: {"delta_logp": 12.0, "logp_base": -21.0}, 40: {"delta_logp": 20.0, "logp_base": -21.0}}
+    )
+    join = disp.filler_parity_join(filler, parent, "villain")
+    assert join["status"] == "wrong_pool_floor"
+    report = disp.evaluate_filler_parity_gate({"villain": join})
+    assert report["verdict"] == "FAIL_WRONG_POOL"
+    assert report["wrong_pool_sources"] == ["villain"]
+
+
+# ── panel_probe --arm d is accepted ──────────────────────────────────────────
+
+
+def test_panel_probe_accepts_arm_d():
+    import inspect
+
+    from explore_persona_space.experiments.leakage_dynamics_597 import panel_probe
+
+    src = inspect.getsource(panel_probe.main)
+    assert '"d"' in src  # --arm choices include d
+    # resolve_ladder_run_id treats every arm != "a" the same (incl. d).
+    src_resolve = inspect.getsource(panel_probe.resolve_ladder_run_id)
+    assert 'arm == "a"' in src_resolve  # the only special-case; d falls through
+
+
+def test_run_cell_filler_wired_arm_d_and_provenance():
+    """Structural pin (mirrors the dense test): run_cell_filler probes --arm d,
+    consults the train-skip predicate + adopt helper, and train_arm_d
+    invalidates BEFORE train_lora and mints AFTER."""
+    import inspect
+
+    disp = _load_dispatcher()
+    src_cell = inspect.getsource(disp.run_cell_filler)
+    assert "arm_b_ladder_complete(" in src_cell
+    assert "ensure_ladder_run_id(" in src_cell
+    assert '"d",' in src_cell  # panel_probe --arm d
+    assert "train_arm_d(" in src_cell
+    src_train = inspect.getsource(disp.train_arm_d)
+    assert src_train.index("invalidate_ladder_run_id(") < src_train.index("train_lora(")
+    assert src_train.index("train_lora(") < src_train.index("write_ladder_run_id(")
+    assert "HaltAfterStepCallback(" in src_train
