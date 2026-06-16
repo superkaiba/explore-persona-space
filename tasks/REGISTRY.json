@@ -4037,7 +4037,7 @@
       "kind": "experiment",
       "path": "tasks/reviewing/650",
       "status": "reviewing",
-      "title": "Rank-1 MLP LoRA read/write geometry across dose: pre-existing vs intruder direction, marker vs sycophancy"
+      "title": "Rank-1 MLP LoRA implants leave the read frozen at random init for both marker and sycophancy; the write only weakly touches base weight geometry, and only for the marker (MODERATE confidence)"
     },
     "651": {
       "goal": "Re-extract layer-L activation-shift directions (trained minus base) from the #537 context-generalization testbed's existing adapters (5 conditional behaviors x 16 training contexts x seeds, on HF) plus a bounded 2nd-seed (1042) retrain of em + sycophancy across the 16 contexts so all readable behaviors get a within-cell seed ceiling, and test (Q1) whether each behavior's shift collapses to ONE direction across the training contexts it was implanted under (context-invariance of the write) and (Q2) whether the different behaviors' dominant directions coincide or cluster by family (cross-behavior identity), benchmarked against the within-cell seed ceiling, with unit-norm direction cosine as the dose-invariant DV.",

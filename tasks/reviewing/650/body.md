@@ -1,6 +1,7 @@
 ---
-title: 'Rank-1 MLP LoRA read/write geometry across dose: pre-existing vs intruder
-  direction, marker vs sycophancy'
+title: Rank-1 MLP LoRA implants leave the read frozen at random init for both marker
+  and sycophancy; the write only weakly touches base weight geometry, and only for
+  the marker (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-16T00:37:29Z'
