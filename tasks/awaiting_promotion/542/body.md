@@ -5,6 +5,7 @@ title: Under brief early-stopped training, swapping the contrastive-negative pan
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-06-09T22:20:50Z'
 has_clean_result: true
 parent_id: 537
