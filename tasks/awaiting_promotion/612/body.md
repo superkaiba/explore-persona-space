@@ -21,6 +21,8 @@ relates_to:
 - leak-behavior-vs-marker
 - leak-predictor
 - leak-data-factors
+classification: useful
+promoted_at: '2026-06-16T00:20:48Z'
 ---
 # The model's own agreeing completions install sycophancy substantially more weakly than canned templates at a fixed training recipe, and two of four personas could not fill the on-policy data-yield quota (MODERATE confidence)
 
