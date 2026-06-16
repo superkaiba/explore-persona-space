@@ -45,6 +45,18 @@ export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
 export WANDB_DIR="${WANDB_DIR:-/tmp/issue_542_wandb}"
 mkdir -p "$WANDB_DIR"
 
+# Re-enable tqdm for the whole dispatcher subprocess. With TQDM_DISABLE set in the
+# environment, vLLM 0.11.0's _run_engine (vllm/entrypoints/llm.py:1609-1610)
+# crashes: it computes `in_spd = total_in_toks / pbar.format_dict["elapsed"]`, but a
+# disabled tqdm never sets self.start_t, so format_dict["elapsed"] falls to its
+# `else 0` branch -> ZeroDivisionError on the first finished-output step, which kills
+# the engine core (reproduced on all 4 prior GCP launches; crash log att-20260616-025803).
+# We UNSET (not set to 0): tqdm.std.__init__ is wrapped with @envwrap("TQDM_"), which
+# coerces the env value through bool() against the `disable=False` default -- and
+# bool("0") is True in Python, so `TQDM_DISABLE=0` would STILL disable the bar.
+# Only unsetting the var leaves disable=False, so start_t is set and elapsed>0.
+unset TQDM_DISABLE
+
 SMOKE=0
 ARMS=("nt_close" "xfam_long" "repl_nt")
 for arg in "$@"; do
