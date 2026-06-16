@@ -194,37 +194,50 @@ def insample_vs_cv(rows: list[dict]) -> None:
 
 
 def paired_r2_bars(rows: list[dict]) -> None:
-    """Absolute R²_raw and R²_centered per bank — makes the three both-negative
-    (both predictors fail out-of-sample) banks visible as a finding."""
+    """Absolute R²_raw and R²_centered for the three both-negative (both predictors
+    fail out-of-sample) mid-size held-out-unit banks ONLY — restricted to the three
+    so the chart matches its title (the other 6 banks live in the hero forest)."""
     set_paper_style("blog")
     raw_c = paper_palette_role("baseline")
     cen_c = paper_palette_role("primary")
     neutral = paper_palette_role("neutral")
-    order = rows
-    labels = [SHORT[r["bank_id"]] for r in order]
+    # Restrict to the three banks excluded for both-recipes-fail-OOS.
+    fail_rows = [r for r in rows if r.get("exclusion_reason") == "both_predictors_fail_oos"]
+    assert len(fail_rows) == 3, f"expected 3 both-fail banks, got {len(fail_rows)}"
+    order = fail_rows
+    # Label each with its held-out unit so the CV-unit difference is visible.
+    unit_short = {
+        "leave-one-persona-out": "held-out: persona",
+        "leave-one-source-out": "held-out: source",
+        "leave-one-bystander-out": "held-out: bystander",
+    }
+    labels = [
+        f"{SHORT[r['bank_id']]}\n({unit_short[r['cv_unit']]}, n={r['n_groups']})" for r in order
+    ]
     r2raw = [r["cv_r2_raw"] for r in order]
     r2cen = [r["cv_r2_centered"] for r in order]
     x = np.arange(len(order))
-    w = 0.38
+    w = 0.34
 
-    fig, ax = plt.subplots(figsize=(8.8, 5.0), constrained_layout=False)
+    fig, ax = plt.subplots(figsize=(7.4, 5.0), constrained_layout=False)
     ax.axhline(0.0, color=neutral, lw=1.0, zorder=1)
     ax.bar(x - w / 2, r2raw, w, label="raw cosine", color=raw_c, zorder=2)
     ax.bar(x + w / 2, r2cen, w, label="centered cosine", color=cen_c, zorder=2)
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=28, ha="right", fontsize=8)
+    ax.set_xticklabels(labels, fontsize=8.5)
     ax.set_ylabel("held-out CV $R^2$ (per-fold train-mean baseline)")
-    ax.legend(loc="upper right", fontsize=9)
+    ax.set_ylim(-0.45, 0.10)
+    ax.legend(loc="lower left", fontsize=9)
     ax.set_title(
-        "Three small banks: both recipes fail out-of-sample",
+        "Three mid-size banks: both recipes fail out-of-sample",
         loc="left",
         fontsize=12.0,
         fontweight="semibold",
         pad=30,
     )
     ax.annotate(
-        "Bars below 0 = worse than predicting the train-mean. On 24/24/17-persona banks\n"
-        "neither raw nor centered generalizes.",
+        "Both bars below 0 = worse than predicting the train-mean. All three\n"
+        "small-N held-out-unit panels fail under both raw and centered cosine.",
         xy=(0.0, 1.012),
         xycoords="axes fraction",
         fontsize=9,
@@ -232,7 +245,7 @@ def paired_r2_bars(rows: list[dict]) -> None:
         ha="left",
         va="bottom",
     )
-    fig.subplots_adjust(left=0.09, bottom=0.32, right=0.97, top=0.83)
+    fig.subplots_adjust(left=0.12, bottom=0.16, right=0.97, top=0.83)
     savefig_paper(fig, "issue_648/paired_r2_raw_vs_centered", dir="figures/")
     plt.close(fig)
 
