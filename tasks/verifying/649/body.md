@@ -20,106 +20,116 @@ relates_to:
 - leak-predictor
 - leak-behavior-vs-marker
 ---
-# Does the base-prior-vs-geometry level/change split hold for realistic behaviors?
+# For realistic sycophancy, the marker's prior-on-LEVEL / geometry-on-CHANGE split half-holds: the prior-is-null-on-shift half replicates, but early-layer cosine also wins LEVEL, so the clean two-component rule does not transfer (MODERATE confidence)
 
-## Goal
+<!-- clean-result-v3 -->
 
-Test whether #532's level-vs-change predictor decomposition holds for a realistic judged behavior (sycophancy primary, refusal stretch): per (source x bystander) cell, separate leakage into absolute trained expression (LEVEL) and trained-base shift (CHANGE), and test whether the base-model bystander prior predicts LEVEL while activation geometry (cosine/Gaussian-KL) predicts CHANGE - replicating or breaking the marker's clean two-component rule. Reuse existing sycophancy panels (#612/#627/#507/#509) carrying base rate + trained rate + geometry; add a graded log-prob-readable DV (#391 forced-choice) only if rate-space floors.
+## Takeaways
 
-Per (source × bystander) cell, decompose leakage into:
-- **LEVEL** = absolute trained expression of the behavior at the bystander, and
-- **CHANGE** = the trained − base shift at the bystander,
+- On the canned coverage arm (108 cells), the marker's "prior is null on the shift" half **replicates**: prior↔CHANGE **ρ = +0.14, CI [−0.07, +0.33]** covers 0; its CHANGE CV-R² uplift is **+0.04**.
+- The other half **breaks**: early-layer cosine adds **+0.24 CV-R² on LEVEL** over source-intercepts+prior, beating prior's own **+0.19**. The pre-registered rule's condition (a), "prior dominates LEVEL", fails.
+- Geometry decisively owns CHANGE as the marker predicted: cosine adds **+0.29 CV-R²** vs prior's **+0.04**; cosine↔CHANGE **ρ = +0.57, CI [+0.41, +0.71]**.
+- The CHANGE DV is **resolution-limited**: the precision gate fired both arms (canned S/N **0.89**, on-policy **0.18**, vs planned ≈2–3). The on-policy arm is **below the floor — a null read**.
+- The decomposition does **not** cleanly split leakage into a prior-driven level and a geometry-driven change: both predictors load on LEVEL, so the cross-scale prior-vs-geometry disagreement stays unresolved.
 
-and correlate each against (a) the **bystander's base prior** on the behavior
-(base-model expression rate / probability under that bystander context) and
-(b) **source↔bystander activation geometry** (cosine @ the #509 early-layer band,
-Gaussian-KL), with the prior partialled out — the #532 six-regression
-CV-R² hierarchy, reported separately for the LEVEL DV and the CHANGE DV.
+## What I ran
 
-**Competing hypotheses:**
-- **H1 — marker pattern replicates:** prior predicts LEVEL, geometry predicts
-  CHANGE; prior ≈ 0 on CHANGE (the clean two-component rule from #532/#531).
-- **H2 — behavior-specific:** for a realistic behavior the base prior *also*
-  predicts the CHANGE (the implant rides the model's pre-existing propensity), so
-  the marker's clean split does not generalize.
-- **H0:** neither predictor survives on the CHANGE DV (floor/noise — plausible
-  given sycophancy rate-space floors).
+- **Why:** The parent marker experiment ([#532](https://eps.superkaiba.com/tasks/532)) found a clean two-component rule — a bystander's base prior predicts the *absolute* trained leakage level, activation geometry predicts the trained-minus-base *shift*, and prior is null on the shift. Two sycophancy siblings disagree on whether prior or geometry wins the single-DV race ([#507](https://eps.superkaiba.com/tasks/507) prior wins at 72B; [#509](https://eps.superkaiba.com/tasks/509) geometry wins at 7B). If leakage really splits into a prior-driven level and a geometry-driven change, that decomposition would explain the flip. This task tests whether the marker's split transfers to a realistic judged behavior.
+- **Design:** Pure CPU re-analysis of an existing sycophancy panel ([#612](https://eps.superkaiba.com/tasks/612)) — no new training. Per (source × bystander) cell, leakage splits into LEVEL (absolute trained agreement rate) and CHANGE (trained − base rate); two predictors race on each DV — the bystander's base agreement prior, and source→bystander early-layer activation geometry (centered cosine + Gaussian-KL). Two arms: canned-template positives (4 sources × 30 bystanders, 108 cells — coverage anchor) and on-policy positives (2 sources, 55 cells — realism confirmation), two seeds averaged per cell.
+- **Training:** N/A — no training in this task. The trained agreement rates are inherited from [#612](https://eps.superkaiba.com/tasks/612)'s already-trained adapters.
+- **Eval:** DV inputs are the inherited on-policy Haiku-judged agreement rates (60-claim held-out wrong-claim pool, 600 verdicts per cell). Predictor inputs are base Qwen-2.5-7B-Instruct residual-stream activations over the 34-persona system-prompt set, re-extracted at the early-layer band where sycophancy geometry was previously shown to live (end-of-system layer 2 cosine, primary; last-prompt layer 7, secondary). Verdict per DV: six-regression incremental-validity CV-R² ladder (bystander-grouped 5-fold CV) + marginal Spearman with 1000-bootstrap 95% CIs.
 
-What counts as an answer: the per-DV incremental-validity ladder (ΔCV-R² of prior
-beyond a cohort/indicator flag, geometry beyond flag+prior) on the LEVEL DV and the
-CHANGE DV, plus the marginal Spearman of each predictor vs each DV — directly
-comparable to #532's table (prior +0.176 ΔR² on level / −0.0005 on change;
-geometry +0.021 on level / +0.215 on change for the marker).
+## Findings
 
-## Motivation
+### The "prior is null on the trained shift" half of the marker rule replicates on canned sycophancy
 
-The base-prior-beats-geometry result is now cross-behavior for the *level* of
-leakage — marker (#532, HIGH) and facts (#500/#541, MODERATE) — and #532's
-corrected-slot follow-up sharpened it into a two-component rule: **prior forecasts
-where the behavior already sits (level); activation distance forecasts what training
-moved (change).** That rule has only ever been tested on the marker. The whole
-predictor program's safety-relevant claim ("where will an implanted behavior surface
-after training") is about the CHANGE, and we have never checked whether the prior is
-the null on the change for a *realistic* behavior the way it is for the marker.
+The marker's signature was: base prior tracks the absolute level but says nothing about how far training moved a bystander. The left two panels below test that on the canned arm.
 
-The sycophancy line is adjacent but does not answer this:
-- **#509** (7B): early-layer geometry predicts sycophancy leakage *beyond* the
-  bystander base rate (geometry unique R² 0.191 vs base-rate 0.034) — but treats
-  leakage (the lift) as a single DV; no absolute-level vs change split.
-- **#507** (72B): the content-free bystander base rate *beats* all geometry on
-  sycophancy leakage — the opposite ranking, and again a single-DV race.
-- **#544** (on_hold): whether #509's early-layer geometry recovers sycophancy
-  leakage at 72B — still a single-DV predictor race, not the level/change split.
-- **#612/#627**: graded-cosine sycophancy panels with base-rate controls + matched
-  install — they carry base prior + trained rate + cosine, but read install
-  strength / selectivity, not the decomposition.
+![Canned-arm scatter: base prior vs LEVEL and CHANGE (top row), early-layer cosine vs LEVEL and CHANGE (bottom row), 108 cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c69d52e0e7397018271638878be7d0867429bb39/figures/issue_649/hero2_predictor_dv_scatter_quad.png)
 
-So #507/#509 already disagree on "prior vs geometry for sycophancy leakage" by
-scale, which is *exactly* the symptom the level-vs-change split resolves: if leakage
-(lift) mixes a prior-driven level component and a geometry-driven change component
-in scale-dependent proportions, racing predictors on the undifferentiated lift will
-flip rankings. Decomposing it is the principled fix.
+> **Figure.** *Base prior predicts the absolute level but is null on the shift; early-layer cosine predicts both.* Each point is one of 108 source×bystander cells (canned arm). Titles carry the marginal Spearman ρ with bootstrap 95% CI. Prior↔CHANGE (top-right) is a flat cloud, CI covers 0; cosine↔CHANGE (bottom-right) rises clearly.
 
-## Feasibility / reuse (likely low-to-zero GPU)
+- Prior↔LEVEL is positive (**ρ = +0.51, CI [+0.33, +0.64]**); prior↔CHANGE is flat (**ρ = +0.14, CI [−0.07, +0.33], covers 0**). That is exactly the marker's prior-is-null-on-shift signature.
+- The non-circular check (partialling cosine out, read on the trained rate directly to avoid the base-rate-in-CHANGE artifact) keeps prior load-bearing on LEVEL: **partial ρ = +0.57, CI [+0.42, +0.68]**.
 
-Strong artifact reuse — the planner should check whether the decomposition is a pure
-re-analysis before provisioning anything:
-- **#612 / #627** — graded-cosine persona panels with base agreement rate (prior),
-  trained agreement rate (→ level and change), and layer-20 cosine already on disk.
-- **#507 / #509** — frozen 7B and 72B sycophancy leakage matrices + base rates +
-  the early-layer geometry cells.
-- **#391** — the forced-choice `P(user's-side)` sycophancy probe: a graded,
-  log-prob-readable DV if the judge-scored agreement *rate* floors and kills the
-  change-DV resolution (the rate-space analog of the marker emission floor).
+### Early-layer cosine wins LEVEL and owns CHANGE — so the clean prior-owns-LEVEL split breaks while the geometry-owns-CHANGE half holds
 
-If a graded log-prob-readable DV is needed and not already present, that is the only
-plausible GPU cost; otherwise this is a CPU re-analysis in the #532/#539 mold.
+The marker rule needs prior to *dominate* LEVEL and geometry to dominate CHANGE. Here geometry dominates *both*.
 
-## Measurement-validity notes (carry into the plan)
+![Canned-arm CV-R² ladder: LEVEL (left) and CHANGE (right), six nested models from source-intercepts to KL-only](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c69d52e0e7397018271638878be7d0867429bb39/figures/issue_649/hero1_cv_r2_ladder_level_vs_change.png)
 
-- The CHANGE DV must be **trained − base at an on-policy slot** (judge-scored
-  on-policy rate, or the #391 forced-choice probability shift) — never a
-  teacher-forced read on a canned completion (#432→#456), and never absolute
-  expression read as "leakage" (absolute = the prior, the whole #532 point).
-- Sycophancy has no single canonical completion token, so the "prior" is the
-  judge-scored base agreement rate (or the #391 forced-choice probability), not a
-  log P(string) — see the completion-scoring constraints (surface-form competition,
-  PMI/contrastive scoring) established in the 2026-06-15 deep-research pass.
-- Watch both saturation zones (rate floors for sycophancy; the #480 log-prob
-  inversion at heavily-trained checkpoints) and read the level/change split at a
-  non-saturated install (matched-install checkpoints from #627 are the natural anchor).
+> **Figure.** *On LEVEL the prior+cosine bar (0.57) clears the prior bar (0.33) by more than prior cleared source-intercepts; on CHANGE prior barely moves (0.18→0.22) and cosine carries it (→0.51).* Held-out CV-R² per nested model, canned arm, 108 cells, bystander-grouped 5-fold CV.
 
-## Relationship / dedup
+- LEVEL: prior over source-intercepts = **+0.19 CV-R²**; cosine on top = a further **+0.24** (→0.57). The rule wanted prior's uplift to exceed cosine's — it does not, so condition (a) **fails**.
+- CHANGE: cosine adds **+0.29 CV-R²** vs prior's **+0.04** (cosine↔CHANGE **ρ = +0.57, CI [+0.41, +0.71]**), so condition (b) holds.
+- **Binding caveat (drives MODERATE):** the precision gate fired both arms (canned median |CHANGE| = 0.059 vs Wilson half-width 0.066, S/N **0.89**; on-policy **0.18**; planned ≈2–3), so geometry-owns-CHANGE survives only as a *coarse* read.
 
-Parent: #532 (the decomposition originates there). Siblings the planner must NOT
-duplicate: #507, #509, #544 (single-DV geometry-vs-base-rate races), #612/#627
-(install strength). The novel object here is the **per-DV level-vs-change
-decomposition** on a realistic behavior — neither sibling computes it.
+### The on-policy arm is below the precision floor — a null read, not an H2 signature
 
-## Provenance
+The realism-tier arm (2 sources, 55 cells) appears to show prior↔CHANGE excluding zero (ρ = +0.58), which would be the "implant rides the pre-existing propensity" outcome. It is not interpretable.
 
-Originating user request (verbatim): "Can we run a followup to check effect of base
-prior on change in leakage for the more realistic behaviors?" — chat session
-2026-06-15, following a deep read of #532/#539/#540 and the establishment that the
-base-prior-vs-geometry level/change split is, to date, marker-and-fact-only and
-untested on judged/realistic behaviors.
+- On-policy prior↔CHANGE **ρ = +0.58, CI [+0.34, +0.73]** — but with median |CHANGE| = 0.013 and S/N = 0.18, the ranked shifts sit an order of magnitude below the judge's resolution. Per-seed sign agreement drops to 0.84 (vs 0.97 canned). A resolution artifact, not evidence.
+- Collinearity is not the cause: Pearson(|cosine|, prior) is −0.03 (canned) and +0.05 (on-policy), both far below the 0.6 gate, so cosine and prior are genuinely separable.
+
+## Data
+
+### Trained on
+
+N/A — no training in this task. The trained agreement rates are inherited from [#612](https://eps.superkaiba.com/tasks/612)'s adapters (4 source personas trained to agree with false user claims; canned-template and on-policy positive arms, contrastive negatives, two seeds). The complete #612 training mix and judgments live on the HF data repo: [`superkaiba1/explore-persona-space-data` @ 14d541b](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/14d541bbafb3dfdbe35ea7a3389df5e5a7f2c458/issue612_sycophancy_onpolicy).
+
+### Evaluated with
+
+The dependent variables are the inherited on-policy agreement rates: each cell is a source persona's adapter evaluated on a bystander persona over a 60-claim audited held-out wrong-claim pool, 10 rollouts × 60 claims = 600 free-generation verdicts, judged by Haiku (κ = 0.869 vs Sonnet). LEVEL = trained agreement rate `t`; CHANGE = `t − b` where `b` is the bystander's base agreement rate (52 personas measured pre-training). Predictors: base prior `b`; centered cosine and Gaussian-KL (16-D subspace, ≥32 probes/persona) between source and bystander residual activations at the early-layer band. Cells excluded: the diagonal (source = bystander) and any bystander that is a trained contrastive negative for that source (the disjointness invariant). Realized: 108 canned cells, 55 on-policy cells.
+
+3 of 108 canned cells, random sample (seed 42):
+
+```
+source             bystander            LEVEL(t)  CHANGE(t-b)  prior(b)  cosL2
+software_engineer  villain              0.375     +0.322       0.053     -0.206
+villain            pirate_captain       0.307     +0.219       0.088     +0.051
+comedian           web_developer        0.006     -0.036       0.042     +0.047
+```
+
+Full per-cell table (both arms, all predictors): [`eval_results/issue_649/per_cell_table.csv` @ c69d52e](https://github.com/superkaiba/explore-persona-space/blob/c69d52e0e7397018271638878be7d0867429bb39/eval_results/issue_649/per_cell_table.csv). The complete base + trained judgment files (each with raw verdicts): [HF data repo @ 14d541b](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/14d541bbafb3dfdbe35ea7a3389df5e5a7f2c458/issue612_sycophancy_onpolicy).
+
+### Generated
+
+N/A — this task generated no model completions. The model generations underlying the DV are the inherited on-policy rollouts, in the raw-completions tree linked above.
+
+## Reproducibility
+
+- **Methodology:** the full findings-blind methodology + hyperparameter reference for this re-analysis is generated alongside this body at `docs/methodology/issue_649.md`.
+- **Parameters:**
+
+  | Parameter | Value |
+  |---|---|
+  | Task type | CPU re-analysis (no training, no pod) |
+  | Substrate | #612 sycophancy panel (4 sources, 30-persona graded-cosine panel) |
+  | DVs | LEVEL = trained rate; CHANGE = trained − base rate |
+  | Predictors | base prior; centered cosine + Gaussian-KL @ early-layer band |
+  | Geometry layers | end-of-system L2 (primary), last-prompt L7 (secondary), L20 (robustness) |
+  | Gaussian-KL subspace | k = 16, ≥32 probes/persona |
+  | CV | bystander-grouped 5-fold (headline); source-grouped + intercept-only M0 (robustness) |
+  | Bootstrap | 1000 reps, Spearman 95% CI |
+  | Collinearity gate | Pearson(\|cosine\|, prior); canned −0.03, on-policy +0.05 (both PASS) |
+  | Precision gate (#391) | FIRED both arms (S/N canned 0.89, on-policy 0.18) |
+  | Cells (after exclusions) | canned 108, on-policy 55 |
+  | Seeds | 42, 137 (averaged per cell) |
+  | Config slugs | `arm_canned`, `arm_onpolicy`; ladder models `M0`–`M5` |
+
+- **Artifacts:**
+  - CV-R² ladder: [`eval_results/issue_649/cv_r2_ladder.json` @ c69d52e](https://github.com/superkaiba/explore-persona-space/blob/c69d52e0e7397018271638878be7d0867429bb39/eval_results/issue_649/cv_r2_ladder.json)
+  - Marginal Spearman + non-circular partials: [`marginal_spearman.json` @ c69d52e](https://github.com/superkaiba/explore-persona-space/blob/c69d52e0e7397018271638878be7d0867429bb39/eval_results/issue_649/marginal_spearman.json)
+  - Precision + collinearity gates: [`precision_check.json`](https://github.com/superkaiba/explore-persona-space/blob/c69d52e0e7397018271638878be7d0867429bb39/eval_results/issue_649/precision_check.json), [`collinearity_gate.json`](https://github.com/superkaiba/explore-persona-space/blob/c69d52e0e7397018271638878be7d0867429bb39/eval_results/issue_649/collinearity_gate.json)
+  - Per-cell table: [`per_cell_table.csv` @ c69d52e](https://github.com/superkaiba/explore-persona-space/blob/c69d52e0e7397018271638878be7d0867429bb39/eval_results/issue_649/per_cell_table.csv)
+  - Figures: [`figures/issue_649/` @ c69d52e](https://github.com/superkaiba/explore-persona-space/tree/c69d52e0e7397018271638878be7d0867429bb39/figures/issue_649)
+- **Compute:** 0 GPU-hours (CPU re-analysis on the VM; geometry re-extraction ran CPU-only over 34 short prompts). No pod provisioned.
+- **Code:** extractor [`scripts/issue649_extract_panel_earlylayer.py`](https://github.com/superkaiba/explore-persona-space/blob/c69d52e0e7397018271638878be7d0867429bb39/scripts/issue649_extract_panel_earlylayer.py); analysis [`scripts/issue649_level_change_decomp.py`](https://github.com/superkaiba/explore-persona-space/blob/c69d52e0e7397018271638878be7d0867429bb39/scripts/issue649_level_change_decomp.py); hero re-plot [`scripts/issue649_hero_replot.py`](https://github.com/superkaiba/explore-persona-space/blob/c69d52e0e7397018271638878be7d0867429bb39/scripts/issue649_hero_replot.py); git commit `904c2668` (analysis run), `c69d52e0` (figures). Reproduce: `uv run python scripts/issue649_level_change_decomp.py` then `uv run python scripts/issue649_hero_replot.py`.
+- **Reused artifacts:**
+  - Reused sycophancy panel + judgments from [#612](https://eps.superkaiba.com/tasks/612): [HF data repo @ 14d541b](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/14d541bbafb3dfdbe35ea7a3389df5e5a7f2c458/issue612_sycophancy_onpolicy) — fit: same base model (Qwen-2.5-7B-Instruct), on-policy judge-scored rates over the audited held-out claim pool, all 4 sources × 30 bystanders + base rates present; the realism regime is exactly the one this decomposition reads off.
+  - Reused base agreement rates from [#612](https://eps.superkaiba.com/tasks/612): `eval_results/issue_612/base/judgments/` (52 personas) — fit: the bystander base prior `b`, measured pre-training on the same probe pool.
+- **Context:**
+  - Created / run: created 2026-06-15; analysis + figures landed 2026-06-16.
+  - Follow-up to: [#532](https://eps.superkaiba.com/tasks/532) — the marker LEVEL/CHANGE decomposition this task ports to a realistic behavior.
+  - Originating prompt(s), verbatim:
+    > Can we run a followup to check effect of base prior on change in leakage for the more realistic behaviors?
