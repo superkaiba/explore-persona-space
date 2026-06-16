@@ -30,10 +30,10 @@ Verbatim from the task YAML frontmatter (`goal:`):
 
 ## 2. Hyperparameters table
 
-This task trains no model, so there are no training/generation
-hyperparameters. The load-bearing constants are analysis-side (the geometry
-extraction + the regression/bootstrap ladder), each copied verbatim from the
-scripts at the pinned SHA or from plan §11.
+N/A — no model training (this is a zero-GPU CPU re-analysis). There are no
+training/generation hyperparameters. The load-bearing constants below are all
+analysis-side (the geometry extraction + the regression/bootstrap ladder),
+each copied verbatim from the scripts at the pinned SHA or from plan §11.
 
 | Parameter | Value | Source |
 |---|---|---|
