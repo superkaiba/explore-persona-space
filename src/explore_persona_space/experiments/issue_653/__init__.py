@@ -274,8 +274,165 @@ TRAIT_RB_LAYERS: tuple[int, ...] = (7, 14, 21, 27)  # #623 DEFAULT_LAYERS (repor
 LORA_ALPHA_MULTIPLIER = 2
 
 # ── Cluster bootstrap (§6, §10) ──────────────────────────────────────────────
-BOOTSTRAP_B = 10_000
+BOOTSTRAP_B = 10_000  # 10k resamples per spectral-DV CI. Source: plan §6 / §10.
 BOOTSTRAP_SEED = 653
+
+# ── §7 Decision Gate (release the 4×A100 full-FT rung) ───────────────────────
+# The full-FT rung (~48 GPU-h, plan §9 — the single most expensive component)
+# fires ONLY after the cheap upstream signals pass, exactly as pre-registered in
+# plan §7: "proceed to the 4×A100 full-FT rung iff (a) Arm A coherence pass rate
+# ≥ 50% at ≥1 tested magnitude per layer-pair, AND (b) the rank-16 marker /
+# sycophancy / EM cells each reach their install band/target." Both are "the
+# cheap thing must have worked before paying for the expensive thing"; the
+# kill outcome descopes full-FT to rank-16-max (plan §7).
+# Source: plan §7 Decision Gates (the two thresholds + sign + grounding).
+GATE_ARM_A_COHERENCE_MIN = 0.50  # ≥50% coherent continuations at ≥1 magnitude.
+# The rank-16 install band/target per behavior (gate condition (b)). Marker uses
+# the marker-only-loss log-prob band [5, 12] nat (the MARKER_RECIPE band-stop
+# target — marker-training-recipe.md "usable window: source 5-12 nat"); content
+# behaviors (sycophancy/EM) require a positive judge-rate gain over base (the
+# behavior installed at all). Source: plan §7 (b) + MARKER_RECIPE band [5,12].
+GATE_MARKER_INSTALL_LOW_NATS = 5.0
+GATE_MARKER_INSTALL_HIGH_NATS = 12.0
+GATE_CONTENT_INSTALL_MIN_RATE_GAIN = 0.0  # judge_rate_trained − judge_rate_base > 0.
+# Rungs that run in each provision (plan §9 phase split). Provision 1 = Arm A +
+# the LoRA ladder + their Δx/install reads; the gate fires in between; Provision
+# 2 = the gated full-FT rung. Source: plan §9 "Phase split (pre-registered)".
+PROVISION1_RUNGS: tuple[str, ...] = ("r1", "r4", "r16")  # LoRA ladder (1×A100 each)
+PROVISION2_RUNGS: tuple[str, ...] = ("full",)  # gated 4×A100 ZeRO-3 endpoint
+# The headline cell groups the rank-16 install gate is read over (plan §7 (b):
+# "the rank-16 marker/sycophancy/EM cells"). All 3 behaviors × 2 headline
+# sources at the headline seed. Source: plan §4 (headline pair) + §7 (b).
+GATE_INSTALL_RUNG = "r16"
+
+# ── Ablation validation (B6 — the interpretability-illusion guard, §6/§8) ────
+# Ablate the top SVD direction of the trained-model read-layer activations and
+# re-measure the install DV; a clean read↔write pair drops the behavior, a
+# spurious top-direction alignment does not (2311.17030 guard). The headline
+# rung is the rank-16 LoRA cell (plan §6.5 deliverable 5 "at the headline rung";
+# §9 budgets B6 at 6 cells = 3 behaviors × 2 sources). Source: plan §6 (B6) /
+# §6.5 deliverable 5 / §8 risk row 1.
+ABLATION_RUNG = "r16"
+ABLATION_TOP_K = 1  # ablate the single leading SVD direction. Source: plan §6 B6.
+
+
+# ── §7 gate evaluation (pure JSON-in → decision-out; CPU-testable) ───────────
+
+
+def _coherence_pass_ok(arm_a_payloads: list[dict]) -> tuple[bool, dict]:
+    """Gate condition (a): Arm A coherence pass rate ≥ GATE_ARM_A_COHERENCE_MIN
+    at ≥1 tested magnitude per layer-pair (plan §7 (a)).
+
+    ``arm_a_payloads`` are the loaded ``rho_geometry_seed*.json`` dicts. Each
+    carries a ``coherence`` block with per-(distribution, layer-pair, magnitude)
+    pass rates (written by the Arm A GPU path). The gate passes if ANY tested
+    magnitude in ANY seed cleared the floor (the steering magnitude that destroys
+    > half the generations is past the usable range — plan §7).
+    """
+    best = -1.0
+    n_checked = 0
+    for payload in arm_a_payloads:
+        coh = payload.get("coherence", {})
+        for _key, rate in coh.items():
+            if rate is None:
+                continue
+            n_checked += 1
+            best = max(best, float(rate))
+    ok = n_checked > 0 and best >= GATE_ARM_A_COHERENCE_MIN
+    detail = {
+        "max_coherence_pass_rate": (best if n_checked else None),
+        "n_magnitudes_checked": n_checked,
+        "threshold": GATE_ARM_A_COHERENCE_MIN,
+        "passed": ok,
+    }
+    return ok, detail
+
+
+def _install_band_ok(install_payload: dict) -> tuple[bool, str]:
+    """Gate condition (b) for ONE rank-16 install JSON: did the behavior install?
+
+    Marker → the four-float log-prob gain enters the [5,12] nat install band
+    (MARKER_RECIPE band — the usable window). Content (sycophancy/EM) → the judge
+    rate gained over base (the behavior installed at all). Source: plan §7 (b).
+
+    Returns ``(passed, reason)``; a ``None`` DV (never produced) FAILS loud
+    rather than passing silently — the gate must see a real install read.
+    """
+    install = install_payload.get("install", {})
+    kind = install.get("dv_kind")
+    if kind == "marker_four_float":
+        gain = install.get("logp_trained_minus_base")
+        if gain is None:
+            return False, "marker logp gain is None (install read missing)"
+        ok = GATE_MARKER_INSTALL_LOW_NATS <= gain <= GATE_MARKER_INSTALL_HIGH_NATS
+        return ok, (
+            f"marker logp gain {gain:.3f} nat "
+            f"{'in' if ok else 'OUTSIDE'} band "
+            f"[{GATE_MARKER_INSTALL_LOW_NATS}, {GATE_MARKER_INSTALL_HIGH_NATS}]"
+        )
+    if kind == "judge_rate_plus_gain":
+        rate_gain = install.get("judge_rate_gain")
+        if rate_gain is None:
+            return False, "judge_rate_gain is None (install read missing)"
+        ok = rate_gain > GATE_CONTENT_INSTALL_MIN_RATE_GAIN
+        return ok, (
+            f"judge-rate gain {rate_gain:+.3f} "
+            f"{'>' if ok else '<='} {GATE_CONTENT_INSTALL_MIN_RATE_GAIN}"
+        )
+    return False, f"unknown install dv_kind {kind!r} (cannot evaluate the gate)"
+
+
+def evaluate_full_ft_gate(
+    arm_a_payloads: list[dict],
+    rank16_install_payloads: dict[str, dict],
+) -> dict:
+    """Evaluate the §7 full-FT release gate from loaded Arm A + rank-16 install
+    JSONs. PURE (no IO) so the dispatcher gate phase + the CPU gate test share it.
+
+    Args:
+        arm_a_payloads: loaded ``rho_geometry_seed*.json`` dicts (condition (a)).
+        rank16_install_payloads: ``{cell_id: install_payload}`` for the rank-16
+            marker/sycophancy/EM headline cells (condition (b)).
+
+    Returns a ``gate_decision`` dict with ``proceed`` (bool — release full-FT),
+    per-condition detail, and the failing sub-gate name(s) when blocked. The
+    caller writes it to ``gate_decision.json`` and exits non-zero on
+    ``proceed=False`` (plan §7 kill outcome: descope full-FT to rank-16-max).
+    """
+    coherence_ok, coherence_detail = _coherence_pass_ok(arm_a_payloads)
+
+    install_detail: dict[str, dict] = {}
+    install_ok = bool(rank16_install_payloads)  # empty ⇒ no install evidence ⇒ FAIL
+    for cell_id, payload in sorted(rank16_install_payloads.items()):
+        ok, reason = _install_band_ok(payload)
+        install_detail[cell_id] = {"passed": ok, "reason": reason}
+        install_ok = install_ok and ok
+
+    failing: list[str] = []
+    if not coherence_ok:
+        failing.append("arm_a_coherence")
+    if not install_ok:
+        failing.append("rank16_install")
+
+    return {
+        "proceed": coherence_ok and install_ok,
+        "condition_a_arm_a_coherence": coherence_detail,
+        "condition_b_rank16_install": install_detail,
+        "failing_subgates": failing,
+        "thresholds": {
+            "arm_a_coherence_min": GATE_ARM_A_COHERENCE_MIN,
+            "marker_install_band_nats": [
+                GATE_MARKER_INSTALL_LOW_NATS,
+                GATE_MARKER_INSTALL_HIGH_NATS,
+            ],
+            "content_install_min_rate_gain": GATE_CONTENT_INSTALL_MIN_RATE_GAIN,
+        },
+        "kill_outcome": (
+            "full-FT descoped to rank-16-max; cross-arm hook degrades to LoRA-only "
+            "(plan §7 kill outcome)"
+        ),
+    }
+
 
 # ── HF reuse (sha-pinned at prefetch, #600 guard — §10) ──────────────────────
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"

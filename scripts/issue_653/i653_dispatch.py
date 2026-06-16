@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-# ruff: noqa: RUF002, RUF003
-# Intentional Unicode (ρ, σ, λ, Σ, Δ, ×, →, —, ※) in scientific docstrings + logs.
+# ruff: noqa: RUF001, RUF002, RUF003
+# Intentional Unicode (ρ, σ, λ, Σ, Δ, ×, →, —, ※) in scientific docstrings,
+# logs, and argparse help strings.
 """Task #653 unified dispatcher — read/write decomposition of conditional behaviors.
 
 ONE dispatcher, ONE subprocess shape, ONE smoke = sweep with `--cells 1
@@ -14,12 +15,34 @@ parity); see ``--rung``.
 Phases (the dispatcher runs them in order; each honors the cell/seed subset):
 
 * ``build``    build training mixes (marker / sycophancy / EM × source × negatives)
-* ``arm_a``    A0 covariance/RMS → steer → unsteered read → ridge fit → ρ(d_B)↔r_B
-* ``train``    rank ladder (r1/r4/r16 LoRA in-process; full-FT via accelerate)
-* ``dx``       Δx extraction (base vs trained, on-policy response-mean) + SVD geometry
+* ``arm_a``    A0 cov/RMS → coherence-filtered steer → read → ridge fit → ρ(d_B)↔r_B
+               (writes rho_geometry_*.json + dB_recovery_<behavior>.json, §6.5)
+* ``gate``     §7 Decision Gate — release the 4×A100 full-FT rung iff Arm A
+               coherence ≥ 50% AND the rank-16 install band/target are met;
+               writes gate_decision.json, exits non-zero on FAIL (NOT in the
+               default chain — inserted by ``--provision 2``)
+* ``train``    rank ladder (r1/r4/r16 LoRA in-process; full-FT via accelerate +
+               ZeRO-3, GATED on gate_decision.json proceed=True, uploaded to HF)
+* ``dx``       Δx extraction (base vs trained, on-policy response-mean) + SVD
+               geometry; persists the Δx cloud tensor for the off-pod bootstrap
 * ``install``  install DVs (marker four-float slot / sycophancy+EM judge rate)
-* ``analyze``  cluster-bootstrap CIs + per-cell H1/H2/H3 verdict grid + cross-arm
-* ``upload``   raw completions + analysis tensors → HF data repo (before teardown)
+* ``ablation`` B6 causal-ablation guard — ablate the top Δx direction + re-read
+               install (the interpretability-illusion guard, plan §6/§8)
+* ``analyze``  cluster-bootstrap ambiguity flags + per-cell H1/H2/H3 verdict grid
+               + cross-arm ρ↔Δx cosine (§6.5 headline aggregation)
+* ``upload``   raw completions + Δx tensors + datasets → HF data repo (teardown)
+
+Two-provision orchestration (plan §9 phase split — keeps each provision under
+the GCP 24h fence):
+
+* ``--provision 1`` runs build→arm_a→train(LoRA r1/r4/r16)→dx→install→ablation→
+  analyze→upload; persists adapters + Δx tensors + install JSONs before teardown.
+* ``--provision 2`` runs gate→train(full-FT)→dx→install→analyze→upload; the gate
+  reads Provision-1's Arm A coherence + rank-16 install and refuses the full-FT
+  rung on a failed cheap signal (plan §7). The full-FT rung also refuses to
+  train in-process unless gate_decision.json shows proceed=True (hard backstop).
+* Off-pod: ``i653_postpod_bootstrap.py`` re-runs the 10k cluster bootstrap on the
+  uploaded Δx tensors (plan §9 "(off-pod, VM, CPU)").
 
 Pod-side contract (CLAUDE.md): emits ``[phase=<name>]`` log lines terminating in
 ``[phase=done]`` on graceful completion; writes a sentinel with
@@ -74,7 +97,29 @@ from explore_persona_space.experiments.issue_653 import (  # noqa: E402
     spectral,
 )
 
-PHASES = ("build", "arm_a", "train", "dx", "install", "analyze", "upload")
+# Full phase list (the default sweep runs all in order). The §7 ``gate`` phase
+# is NOT in the default chain — it is inserted by the ``--provision 2`` launch
+# (see ``main``), so a default run never silently trains the gated full-FT rung
+# without the gate firing first. ``ablation`` is the B6 illusion guard (plan §6).
+PHASES = (
+    "build",
+    "arm_a",
+    "train",
+    "dx",
+    "install",
+    "ablation",
+    "analyze",
+    "upload",
+)
+# Phases that may be selected via --phase / --phases but are NOT in the default
+# chain (gate is provision-orchestrated; see PROVISION{1,2}_PHASES below).
+EXTRA_PHASES = ("gate",)
+ALL_SELECTABLE_PHASES = PHASES + EXTRA_PHASES
+# Provision phase chains (plan §9 phase split). Provision 1 runs Arm A + the
+# LoRA ladder + their reads; Provision 2 runs the §7 gate, then (iff PASS) the
+# full-FT rung + its reads. The gate fires BETWEEN provisions.
+PROVISION1_PHASES = ("build", "arm_a", "train", "dx", "install", "ablation", "analyze", "upload")
+PROVISION2_PHASES = ("gate", "train", "dx", "install", "analyze", "upload")
 SENTINEL_SCHEMA_VERSION = 1
 
 
@@ -390,7 +435,9 @@ def phase_build(cells, *, out_root: Path, n_positives: int, mode: str) -> dict:
 
 def _arm_a_cpu_stub_geometry(seed: int, d_model_stub: int) -> dict:
     """CPU substitute: synthetic (W, ρ(W)) from a known linear map, so the ridge
-    fit + SVD geometry + round-trip + ρ(d_B)↔r_B + random-CI paths run on CPU."""
+    fit + SVD geometry + round-trip + ρ(d_B)↔r_B + random-CI + coherence + the
+    fitted-J dB_recovery probe all run on CPU. The coherence block is tuned to
+    demonstrate a §7 gate-(a) PASS (≥0.5 pass rate at ≥1 magnitude)."""
     import numpy as np
 
     rng_seed = i653.BOOTSTRAP_SEED + seed
@@ -401,6 +448,8 @@ def _arm_a_cpu_stub_geometry(seed: int, d_model_stub: int) -> dict:
     a0 = arm_a.covariance_rms(res)
     j0 = rng.standard_normal((d, d)) * 0.4  # the synthetic linear map ρ = J0 W
     geometry_per_distribution = {}
+    jacobian_per_distribution: dict[str, np.ndarray] = {}
+    coherence_per_key: dict[str, float] = {}
     for dist in i653.ARM_A_DISTRIBUTIONS:
         w_unit = arm_a.sample_write_directions(
             d_model=d, n=n, distribution=dist, cov=a0["cov"], seed=rng_seed
@@ -408,7 +457,9 @@ def _arm_a_cpu_stub_geometry(seed: int, d_model_stub: int) -> dict:
         W = w_unit * 4.0
         Rho = W @ j0.T + rng.standard_normal((n, d)) * 0.1
         fit = arm_a.fit_ridge_jacobian(W, Rho, seed=rng_seed)
+        jacobian_per_distribution[dist] = fit["J"]
         sv = spectral.svd_of_cloud(Rho)
+        rho_top = spectral.top_direction(Rho)
         d_B = rng.standard_normal(d)
         rho_dB = arm_a.apply_jacobian(fit["J"], d_B)
         r_B = j0 @ d_B
@@ -422,8 +473,19 @@ def _arm_a_cpu_stub_geometry(seed: int, d_model_stub: int) -> dict:
             "round_trip_cos_p5": float(np.quantile(rtc, 0.05)),
             "rho_dB_to_rB_cos": spectral.cosine(rho_dB, r_B),
             "random_ci_high": ci["ci_high"],
+            "rho_top_direction": np.asarray(rho_top, dtype=np.float64).tolist(),
         }
-    return {"a0_rms": a0["rms"], "geometry": geometry_per_distribution}
+        # Synthetic coherence pass rates (descend with magnitude): the low
+        # magnitudes pass the §7 gate-(a) floor, demonstrating a PASS on smoke.
+        for i_mag, mag in enumerate(i653.ARM_A_MAGNITUDES):
+            coherence_per_key[f"{dist}|stub|m{mag}"] = max(0.0, 0.95 - 0.2 * i_mag)
+    return {
+        "a0_rms": a0["rms"],
+        "geometry": geometry_per_distribution,
+        "coherence": coherence_per_key,
+        "coherence_floor": -3.0,  # synthetic floor (CPU stub; real floor is the A0 5th pct)
+        "_jacobian_per_distribution": jacobian_per_distribution,
+    }
 
 
 def _arm_a_gpu_geometry(seed: int) -> dict:
@@ -453,6 +515,8 @@ def _arm_a_gpu_geometry(seed: int) -> dict:
     personas = {s: src_prompts[s] for s in i653.HEADLINE_SOURCES}
 
     geometry_per_distribution: dict[str, dict] = {}
+    jacobian_per_distribution: dict[str, np.ndarray] = {}  # for the dB_recovery probe (A4)
+    coherence_per_key: dict[str, float] = {}  # (dist|lp|mag) -> coherence pass rate (§7 gate (a))
     a0_rms_per_layer: dict[int, float] = {}
 
     # A0: per-layer residual covariance + RMS from the UNSTEERED base read over 𝒬.
@@ -470,6 +534,14 @@ def _arm_a_gpu_geometry(seed: int) -> dict:
     for layer_in in base_layers:
         stack = np.stack([v.numpy() for p in personas for v in base_pooled[layer_in][p]])
         a0_rms_per_layer[layer_in] = arm_a.covariance_rms(stack)["rms"]
+
+    # A0 coherence floor: the 5th-percentile mean base log-prob of the UNSTEERED
+    # rows (plan §4 "Why code, not a model call?"). A steered continuation passes
+    # the coherence filter if its mean base log-prob ≥ this floor (and the 3-gram
+    # repeat guard) — the §7 gate (a) reads the resulting pass rate.
+    arm_a.score_mean_base_logprob(i653.BASE_MODEL, base_rows)
+    base_lps = [r["mean_base_logprob"] for r in base_rows if np.isfinite(r["mean_base_logprob"])]
+    coherence_floor = float(np.quantile(base_lps, 0.05)) if base_lps else float("-inf")
 
     for dist in i653.ARM_A_DISTRIBUTIONS:
         W_rows: list[np.ndarray] = []
@@ -497,6 +569,12 @@ def _arm_a_gpu_geometry(seed: int) -> dict:
                     magnitude_abs=mag_abs,
                     max_new_tokens=512,
                 )
+                # §7 gate (a): coherence pass rate of THIS (dist, layer-pair, mag)
+                # — score steered continuations under the base model, filter
+                # against the A0 floor + 3-gram guard (arm_a.coherence_pass_rate).
+                arm_a.score_mean_base_logprob(i653.BASE_MODEL, steered_rows)
+                coh = arm_a.coherence_pass_rate(steered_rows, coherence_floor)
+                coherence_per_key[f"{dist}|{layer_in}-{layer_out}|m{mag}"] = coh["pass_rate"]
                 steered_pooled = _teacher_forced_response_mean(
                     i653.BASE_MODEL,
                     steered_rows,
@@ -519,7 +597,9 @@ def _arm_a_gpu_geometry(seed: int) -> dict:
         W = np.stack(W_rows)
         Rho = np.stack(Rho_rows)
         fit = arm_a.fit_ridge_jacobian(W, Rho, seed=rng_seed)
+        jacobian_per_distribution[dist] = fit["J"]
         sv = spectral.svd_of_cloud(Rho)
+        rho_top = spectral.top_direction(Rho)  # ρ leading dir for the cross-arm cosine
         rtc = arm_a.round_trip_cosines(W, Rho)
         ci = spectral.norm_matched_random_cos_ci(Rho[0], n_directions=500, seed=rng_seed)
         geometry_per_distribution[dist] = {
@@ -530,10 +610,15 @@ def _arm_a_gpu_geometry(seed: int) -> dict:
             "round_trip_cos_p5": float(np.quantile(rtc, 0.05)),
             "random_ci_high": ci["ci_high"],
             "n_writes": int(W.shape[0]),
+            # ρ leading direction (§6 cross-arm hook / §6.5 deliverable 6).
+            "rho_top_direction": np.asarray(rho_top, dtype=np.float64).tolist(),
         }
     return {
         "a0_rms_per_layer": {str(k): v for k, v in a0_rms_per_layer.items()},
         "geometry": geometry_per_distribution,
+        "coherence": coherence_per_key,  # §7 gate (a) input (per dist|layer-pair|mag)
+        "coherence_floor": coherence_floor,
+        "_jacobian_per_distribution": jacobian_per_distribution,  # in-memory (A4); not serialized
     }
 
 
@@ -570,11 +655,19 @@ def phase_arm_a(cells, *, out_root: Path, mode: str, d_model_stub: int = 64) -> 
     written: list[str] = []
     repo_root = _resolve_repo_root()
 
+    # The headline seed's fitted J feeds the per-behavior dB_recovery probe (A4).
+    headline_jacobians: dict[str, object] | None = None
     for seed in seeds:
         if mode == i653.RUN_MODE_CPU_STUB:
             geom = _arm_a_cpu_stub_geometry(seed, d_model_stub)
         else:
             geom = _arm_a_gpu_geometry(seed)
+        # Pop the in-memory Jacobian (numpy, NOT JSON-serializable) before write;
+        # the rho_geometry JSON keeps the spectral DVs + coherence + ρ(d_B)↔r_B
+        # scalars, never the dense J (serialized only as the dB_recovery cosines).
+        jacobians = geom.pop("_jacobian_per_distribution", None)
+        if seed == i653.HEADLINE_SEED:
+            headline_jacobians = jacobians
         payload = {
             "arm": "A",
             "seed": seed,
@@ -586,7 +679,190 @@ def phase_arm_a(cells, *, out_root: Path, mode: str, d_model_stub: int = 64) -> 
         out_path.write_text(json.dumps(payload, indent=1))
         written.append(str(out_path))
         print(f"  [arm_a] seed {seed} ({mode}): wrote {out_path.name}", flush=True)
-    return {"armA_files": written, "n_seeds": len(seeds)}
+
+    # A4 / §6.5 deliverable 2: per-behavior ρ(d_B)↔r_B recovery panel, written as
+    # armA/dB_recovery_<behavior>.json (the structured-write probe). Pushes each
+    # behavior's write direction d_B through the headline-seed fitted J and reads
+    # cos(ρ(d_B), r_B) vs the #503 norm-matched random-CI (the calibrated A0
+    # baseline). Marker carries the §3-bis identity-loop caveat.
+    db_files = _arm_a_db_recovery(
+        out_dir=out_dir,
+        jacobians=headline_jacobians,
+        mode=mode,
+        out_root=out_root,
+        d_model_stub=d_model_stub,
+        repo_root=repo_root,
+    )
+    written.extend(db_files)
+    return {"armA_files": written, "n_seeds": len(seeds), "dB_recovery_files": db_files}
+
+
+def _arm_a_db_recovery(
+    *,
+    out_dir: Path,
+    jacobians,
+    mode: str,
+    out_root: Path,
+    d_model_stub: int,
+    repo_root: Path,
+) -> list[str]:
+    """Write armA/dB_recovery_<behavior>.json per behavior (plan §6.5 deliverable
+    2 / §6 row ρ(d_B)↔r_B). For each behavior, push its write direction d_B
+    through the headline-seed fitted J (ρ(d_B) = J·d_B) and read cos(ρ(d_B), r_B)
+    vs the #503 norm-matched random-CI per Arm-A distribution.
+
+    d_B / r_B sources (plan §4 behaviors table):
+      * marker → d_B = r_B = the unembedding row W_U[83399] (the marker read-out;
+        the write direction IS the read-out — §3-bis identity-loop caveat).
+      * sycophancy/EM → d_B = r_B = the layer-14 trait/EM mean-diff direction
+        extracted from the headline source's on-policy pool (the behavior write
+        direction is the trait direction). The build phase writes the pool first
+        (Provision-1 order build→arm_a), so the pool is present.
+
+    NO fabricated zeros: a behavior whose r_B input is genuinely missing raises
+    loud (the build phase must have run); the CPU stub uses synthetic directions.
+    """
+    import numpy as np
+
+    if jacobians is None:
+        raise RuntimeError(
+            "dB_recovery: no headline-seed Jacobian available (Arm A must run the "
+            f"headline seed {i653.HEADLINE_SEED} for the §6.5 ρ(d_B)↔r_B panel)."
+        )
+    written: list[str] = []
+    for behavior in i653.BEHAVIORS:
+        if mode == i653.RUN_MODE_CPU_STUB:
+            rng = np.random.default_rng(i653.BOOTSTRAP_SEED + hash(behavior) % 1000)
+            d = d_model_stub
+            d_B = rng.standard_normal(d)
+            r_B = rng.standard_normal(d)
+        else:
+            d_B, r_B = _behavior_dB_rB(behavior, out_root=out_root, repo_root=repo_root)
+        per_dist: dict[str, dict] = {}
+        for dist, J in jacobians.items():
+            J_arr = np.asarray(J, dtype=np.float64)
+            # Project d_B / r_B into the Jacobian's dimensionality if needed (the
+            # CPU stub uses d_model_stub; the GPU path uses the real d_model).
+            if d_B.shape[0] != J_arr.shape[1]:
+                raise ValueError(
+                    f"dB_recovery {behavior}/{dist}: d_B dim {d_B.shape[0]} != J "
+                    f"in-dim {J_arr.shape[1]} (read-layer mismatch)."
+                )
+            rho_dB = arm_a.apply_jacobian(J_arr, d_B)
+            cos_recovery = spectral.cosine(rho_dB, r_B)
+            ci = spectral.norm_matched_random_cos_ci(
+                r_B, n_directions=500, seed=i653.BOOTSTRAP_SEED
+            )
+            per_dist[dist] = {
+                "cos_rho_dB_to_rB": cos_recovery,
+                "exceeds_random_ci": abs(cos_recovery) > ci["ci_high"],
+                "random_ci_high": ci["ci_high"],
+            }
+        payload = {
+            "arm": "A",
+            "behavior": behavior,
+            "seed": i653.HEADLINE_SEED,
+            "mode": mode,
+            "dB_rB_source": (
+                "marker: d_B=r_B=W_U[83399] (identity-loop caveat §3-bis)"
+                if behavior == "marker"
+                else f"{behavior}: d_B=r_B=layer-{i653.TRAIT_RB_LAYER} trait/EM mean-diff"
+            ),
+            "recovery_per_distribution": per_dist,
+            "metadata": i653.result_metadata(repo_root, {"phase": "arm_a_dB_recovery"}),
+        }
+        out_path = out_dir / f"dB_recovery_{behavior}.json"
+        out_path.write_text(json.dumps(payload, indent=1))
+        written.append(str(out_path))
+        print(f"  [arm_a] dB_recovery {behavior} ({mode}): wrote {out_path.name}", flush=True)
+    return written
+
+
+def _behavior_dB_rB(behavior: str, *, out_root: Path, repo_root: Path):
+    """The (d_B, r_B) write/read directions for a behavior's dB_recovery probe.
+
+    marker → both are the unembedding row W_U[83399]; sycophancy/EM → both are
+    the layer-14 trait/EM mean-diff over the headline source's on-policy pool
+    (built by phase_build). GPU-bound (HF reads); raises loud if the pool input
+    is missing rather than fabricating a direction.
+    """
+    if behavior == "marker":
+        r_B = _marker_unembedding_row()
+        return r_B, r_B
+    # sycophancy / EM: reuse the headline source's pool-extracted trait r_B.
+    source = i653.HEADLINE_SOURCES[0]
+    src_prompts = i653.verify_source_prompts(repo_root)
+    cell = i653.ArmBCell(behavior=behavior, source=source, rung="r16", seed=i653.HEADLINE_SEED)
+    r_B = _trait_rb_for_cell(cell, src_prompts[source], out_root=out_root)
+    return r_B, r_B
+
+
+def phase_gate(cells, *, out_root: Path) -> dict:
+    """§7 Decision Gate — release the 4×A100 full-FT rung iff the cheap upstream
+    signals pass (plan §7). Reads Arm A coherence (condition (a)) + the rank-16
+    marker/sycophancy/EM install JSONs (condition (b)), applies
+    ``i653.evaluate_full_ft_gate``, writes ``gate_decision.json``, and on FAIL
+    exits the process non-zero so the gated full-FT training NEVER fires
+    (Provision-2 launches ``gate`` before ``train --rung full``).
+
+    This is the round-4 BLOCKER fix (full-ft-gate-not-implemented): the default
+    full sweep used to train every full-FT cell with no read of the §7 gate
+    sentinels. The gate now refuses to launch the ~48 GPU-h rung after a failed
+    cheap signal (plan §7 kill outcome: descope full-FT to rank-16-max).
+    """
+    log_phase("gate")
+    repo_root = _resolve_repo_root()
+    armA = out_root / "armA"
+    armB = out_root / "armB"
+
+    # Condition (a): Arm A coherence — read every rho_geometry_seed*.json present.
+    arm_a_payloads: list[dict] = []
+    for p in sorted(armA.glob("rho_geometry_seed*.json")):
+        arm_a_payloads.append(json.loads(p.read_text()))
+    if not arm_a_payloads:
+        raise FileNotFoundError(
+            f"gate: no Arm A rho_geometry_seed*.json under {armA}. The gate cannot "
+            f"evaluate coherence before releasing full-FT — run Provision 1 (arm_a) first."
+        )
+
+    # Condition (b): rank-16 install for the headline marker/sycophancy/EM cells.
+    rank16_install: dict[str, dict] = {}
+    headline_cells = i653.enumerate_armb_cells(
+        rungs=(i653.GATE_INSTALL_RUNG,), seeds=(i653.HEADLINE_SEED,)
+    )
+    for c in headline_cells:
+        ip = armB / f"install_{c.cell_id}.json"
+        if not ip.exists():
+            raise FileNotFoundError(
+                f"gate: rank-16 install JSON missing for {c.cell_id} ({ip}). The gate "
+                f"requires the rank-16 install reads (condition (b)) before full-FT — "
+                f"run Provision 1 (install) first."
+            )
+        rank16_install[c.cell_id] = json.loads(ip.read_text())
+
+    decision = i653.evaluate_full_ft_gate(arm_a_payloads, rank16_install)
+    decision["metadata"] = i653.result_metadata(repo_root, {"phase": "gate"})
+    out_path = out_root / "gate_decision.json"
+    out_path.write_text(json.dumps(decision, indent=1))
+    print(f"  [gate] decision -> {out_path}", flush=True)
+
+    if not decision["proceed"]:
+        # FAIL-LOUD: the gated full-FT rung must NOT run. Exit non-zero naming the
+        # failing sub-gate; the orchestrator descopes to rank-16-max (plan §7).
+        msg = (
+            f"§7 gate FAILED (failing sub-gates: {decision['failing_subgates']}). "
+            f"NOT releasing the 4×A100 full-FT rung. {decision['kill_outcome']}. "
+            f"See {out_path}."
+        )
+        print(f"  [gate] {msg}", flush=True)
+        raise SystemExit(msg)
+    print(
+        f"  [gate] PASS — releasing the full-FT rung "
+        f"(coherence max {decision['condition_a_arm_a_coherence']['max_coherence_pass_rate']}, "
+        f"{len(rank16_install)} rank-16 install cells in band)",
+        flush=True,
+    )
+    return {"gate_decision": str(out_path), "proceed": True}
 
 
 def phase_train(cells, *, out_root: Path, gpu: int, mode: str, max_steps: int | None) -> dict:
@@ -604,6 +880,31 @@ def phase_train(cells, *, out_root: Path, gpu: int, mode: str, max_steps: int | 
     """
     log_phase("train")
     repo_root = _resolve_repo_root()
+
+    # §7 GATE GUARD (round-4 BLOCKER full-ft-gate-not-implemented): a full-FT cell
+    # may train ONLY after the §7 gate passed. This is the hard in-process backstop
+    # — independent of how phases were invoked (Provision 2 runs `gate` first; a
+    # manual `--phase train --rung full` still hits this), so the 4×A100 / ~48
+    # GPU-h rung can NEVER fire after a failed cheap signal (plan §7). The gate
+    # writes gate_decision.json with proceed=True only when Arm A coherence ≥ 50%
+    # AND the rank-16 install band/target are met.
+    if any(c.is_full_ft for c in cells) and mode == i653.RUN_MODE_GPU:
+        gate_path = out_root / "gate_decision.json"
+        if not gate_path.exists():
+            raise RuntimeError(
+                "phase_train: a full-FT cell is in the subset but gate_decision.json "
+                f"is absent ({gate_path}). The §7 gate MUST pass before the full-FT "
+                "rung trains — run the `gate` phase (Provision 2) first. Refusing to "
+                "spend the 4×A100 full-FT rung un-gated (plan §7)."
+            )
+        gate = json.loads(gate_path.read_text())
+        if not gate.get("proceed"):
+            raise RuntimeError(
+                "phase_train: §7 gate FAILED "
+                f"(failing sub-gates: {gate.get('failing_subgates')}); NOT training "
+                f"the full-FT rung. {gate.get('kill_outcome')}."
+            )
+        print("  [train] §7 gate PASS — full-FT rung released", flush=True)
 
     # Marker token assert wired into the dispatcher (marker rule, incident #537).
     if any(c.behavior == "marker" for c in cells):
@@ -742,6 +1043,25 @@ def _train_full_ft_cell(cell, cfg_kwargs, full_ft_mix, *, out_dir: Path) -> None
     ]
     # Explicit env (subprocess passthrough rule); credentials loaded at module top.
     subprocess.run(cmd, env={**os.environ}, check=True)
+
+    # CONCERN fullft-checkpoint-upload-missing (round-4): full-FT checkpoints MUST
+    # upload to HF BEFORE local deletion (CLAUDE.md Upload Policy; distributed
+    # full fine-tunes are exempt from adapter-only — the full checkpoint stays the
+    # canonical upload). Reuse the project's fail-loud upload_model (NOT a new
+    # uploader): it excludes optimizer/scheduler/rng state automatically and
+    # uploads to the HF model repo under the §9 subfolder convention. Resolve the
+    # produced checkpoint dir (launch_stage may nest it under output-dir).
+    from explore_persona_space.orchestrate.hub import upload_model
+    from explore_persona_space.train.distributed import _find_checkpoint
+
+    ckpt_dir = _find_checkpoint(str(out_dir))
+    subfolder = f"{i653.HF_UPLOAD_PREFIX}/full_ft/{cell.cell_id}"
+    url = upload_model(
+        ckpt_dir,
+        repo_id=i653.HF_MODEL_REPO,
+        path_in_repo=subfolder,
+    )
+    print(f"  [train] full-FT {cell.cell_id} checkpoint -> {url}", flush=True)
 
 
 def _dx_cpu_stub_cloud(cell):
@@ -945,8 +1265,12 @@ def phase_dx(cells, *, out_root: Path, mode: str) -> dict:
         "dx",
         missing="It runs base-vs-trained on-policy activation reads on GPU.",
     )
+    import numpy as np
+
     out_dir = out_root / "armB"
     out_dir.mkdir(parents=True, exist_ok=True)
+    tensors_dir = out_dir / "dx_tensors"  # Δx clouds for off-pod bootstrap + cross-arm
+    tensors_dir.mkdir(parents=True, exist_ok=True)
     written: list[str] = []
     repo_root = _resolve_repo_root()
 
@@ -955,6 +1279,14 @@ def phase_dx(cells, *, out_root: Path, mode: str) -> dict:
             cloud, r_B, n_rows = _dx_cpu_stub_cloud(c)
         else:
             cloud, r_B, n_rows = _dx_gpu_cloud(c, out_root=out_root)
+        # Persist the Δx cloud + r_B (analysis tensors; the off-pod cluster
+        # bootstrap + cross-arm cosine read these — upload-policy.md: plan-named
+        # downstream inputs upload before teardown via phase_upload).
+        np.savez(
+            tensors_dir / f"{c.cell_id}.npz",
+            cloud=np.asarray(cloud, dtype=np.float32),
+            r_B=np.asarray(r_B, dtype=np.float32),
+        )
         if n_rows < i653.MIN_SPECTRUM_ROWS:
             # §3.3: a cell with too few rows is spectrum-underdetermined, not labeled.
             payload = {
@@ -988,6 +1320,10 @@ def phase_dx(cells, *, out_root: Path, mode: str) -> dict:
                 "cos_top_to_rb": spectral.cosine(top, r_B),
                 "random_ci_high": ci["ci_high"],
                 "singular_values": sv.tolist(),
+                # Δx leading direction — the cross-arm ρ↔Δx cosine reads this
+                # (§6 cross-arm hook / §6.5 deliverable 6). d_model floats.
+                "dx_top_direction": np.asarray(top, dtype=np.float64).tolist(),
+                "tensor_path": str((tensors_dir / f"{c.cell_id}.npz").relative_to(out_root)),
                 "mode": mode,
                 "metadata": i653.result_metadata(repo_root, {"phase": "dx"}),
             }
@@ -1094,6 +1430,10 @@ def _install_marker_gpu(cell, *, out_root: Path) -> dict:
     return {
         "dv_kind": "marker_four_float",
         "logp_trained_minus_base": _mean(trained_stats, "logp") - _mean(base_stats, "logp"),
+        # Raw trained/base means kept so the ablation phase can compute its delta
+        # against the SAME trained-side reference (ablated trained logp − this).
+        "logp_trained_mean": _mean(trained_stats, "logp"),
+        "logp_base_mean": _mean(base_stats, "logp"),
         "z_marker_trained_minus_base": _mean(trained_stats, "z_marker")
         - _mean(base_stats, "z_marker"),
         "z_eos_trained_minus_base": _mean(trained_stats, "z_eos") - _mean(base_stats, "z_eos"),
@@ -1337,22 +1677,318 @@ def phase_install(cells, *, out_root: Path, mode: str) -> dict:
     return {"install_files": written, "mode": mode}
 
 
-def phase_analyze(cells, *, out_root: Path) -> dict:
-    """Cluster-bootstrap CIs + per-cell H1/H2/H3 verdict grid + cross-arm cosine.
+def _dx_read_layer(behavior: str) -> int:
+    """The Δx / ablation read layer for a behavior (must match phase_dx's
+    behavior-specific layer so the ablated direction lives in the read space)."""
+    return i653.ARM_A_LAYER_PAIRS[-1][1] if behavior == "marker" else i653.TRAIT_RB_LAYER
 
-    Reads the dx_geometry_*.json the dx phase wrote (per the same cell subset),
-    so the verdict grid covers exactly the cells the sweep ran.
+
+def _ablation_cpu_stub(cell) -> dict:
+    """CPU substitute ablation read: a synthetic install-DV delta demonstrating
+    the layout + the illusion-guard logic (ablating the top direction reduces a
+    real install). NEVER a fabricated zero — explicit synthetic deltas keyed by
+    behavior so the smoke shows a non-trivial drop."""
+    if cell.behavior == "marker":
+        return {
+            "dv_kind": "marker_four_float",
+            "logp_unablated": -2.0,
+            "logp_ablated": -8.0,
+            "logp_delta_ablation": -6.0,  # ablation drops install (clean read↔write)
+            "note": "CPU-STUB synthetic ablation delta (layout-only); real read on gpu mode",
+        }
+    return {
+        "dv_kind": "judge_rate_plus_gain",
+        "judge_rate_unablated": 0.6,
+        "judge_rate_ablated": 0.2,
+        "judge_rate_delta_ablation": -0.4,
+        "note": "CPU-STUB synthetic ablation delta (layout-only); real read on gpu mode",
+    }
+
+
+def _ablation_gpu_read(cell, *, out_root: Path) -> dict:
+    """REAL causal ablation (B6 — the interpretability-illusion guard, plan §6/§8).
+
+    Loads this cell's trained model, registers a forward hook at the read layer
+    that projects residual activations onto the ORTHOGONAL COMPLEMENT of the
+    top Δx direction (read from dx_geometry_<cell>.json), re-runs the install DV
+    under the ablation, and reports the install-DV delta (ablated − unablated).
+    A clean read↔write pair drops the behavior; a spurious top-direction
+    alignment does not (2311.17030 guard).
+
+    NO fabricated zeros: a missing dx top direction or trained checkpoint raises.
+    """
+    import numpy as np
+    import torch
+    from transformers import AutoModelForCausalLM
+
+    dx_path = out_root / "armB" / f"dx_geometry_{cell.cell_id}.json"
+    if not dx_path.exists():
+        raise FileNotFoundError(
+            f"ablation: dx_geometry missing for {cell.cell_id} ({dx_path}); the dx "
+            "phase must run first (the top Δx direction is the ablated direction)."
+        )
+    dx = json.loads(dx_path.read_text())
+    top_dir = dx.get("dx_top_direction")
+    if top_dir is None:
+        raise RuntimeError(
+            f"ablation: dx_geometry for {cell.cell_id} has no dx_top_direction "
+            "(spectrum-underdetermined?); cannot ablate."
+        )
+    layer = _dx_read_layer(cell.behavior)
+    direction = np.asarray(top_dir, dtype=np.float32)
+    direction = direction / (np.linalg.norm(direction) + 1e-12)
+    trained_path = _merge_adapter_for_read(out_root / "armB" / "adapters" / cell.cell_id, cell)
+
+    # Read the unablated install DV from the install phase (already computed).
+    install_path = out_root / "armB" / f"install_{cell.cell_id}.json"
+    unablated = json.loads(install_path.read_text())["install"] if install_path.exists() else {}
+
+    # Build the ablation hook: subtract the projection onto the top direction.
+    dev = "cuda:0"
+    unit = torch.tensor(direction, dtype=torch.bfloat16, device=dev)
+
+    def _ablate_hook(module, inp, out):
+        hs = out[0] if isinstance(out, tuple) else out
+        proj = (hs.to(unit.dtype) @ unit).unsqueeze(-1) * unit  # (B,T,1)*(d,)
+        hs = hs - proj.to(hs.dtype)
+        if isinstance(out, tuple):
+            return (hs, *out[1:])
+        return hs
+
+    model = AutoModelForCausalLM.from_pretrained(
+        trained_path, torch_dtype=torch.bfloat16, device_map={"": dev}, trust_remote_code=True
+    ).eval()
+    handle = model.model.layers[layer].register_forward_hook(_ablate_hook)
+    try:
+        ablated = _install_read_under_model(cell, model, out_root=out_root)
+    finally:
+        handle.remove()
+        del model
+        torch.cuda.empty_cache()
+
+    if cell.behavior == "marker":
+        # Compare the ABLATED trained-side marker logp against the UNABLATED
+        # trained-side marker logp (logp_trained_mean from the install phase) —
+        # same trained-side reference, so the delta isolates the ablation effect.
+        unabl_logp = unablated.get("logp_trained_mean")
+        abl_logp = ablated.get("logp_trained_mean")
+        return {
+            "dv_kind": "marker_four_float",
+            "logp_unablated": unabl_logp,
+            "logp_ablated": abl_logp,
+            "logp_delta_ablation": (
+                abl_logp - unabl_logp if (abl_logp is not None and unabl_logp is not None) else None
+            ),
+            "ablated_layer": layer,
+            "note": "install-DV delta under top-Δx-direction ablation (B6 illusion guard)",
+        }
+    return {
+        "dv_kind": "judge_rate_plus_gain",
+        "judge_rate_unablated": unablated.get("judge_rate_trained"),
+        "judge_rate_ablated": ablated.get("judge_rate_trained"),
+        "judge_rate_delta_ablation": (
+            ablated.get("judge_rate_trained") - unablated.get("judge_rate_trained")
+            if (
+                ablated.get("judge_rate_trained") is not None
+                and unablated.get("judge_rate_trained") is not None
+            )
+            else None
+        ),
+        "ablated_layer": layer,
+        "note": "install-DV delta under top-Δx-direction ablation (B6 illusion guard)",
+    }
+
+
+def _install_read_under_model(cell, model, *, out_root: Path) -> dict:
+    """Re-run the cell's install DV using an ALREADY-LOADED (hooked) model.
+
+    Marker → the four-float slot read on the source's on-policy contexts via
+    compute_marker_slot_stats. Content → judge-rate over on-policy generations.
+    Both use the passed (ablation-hooked) model for the TRAINED-side read; the
+    base side is read in the install phase (the ablation delta is trained-only,
+    so we report the trained DV under ablation vs the unablated trained DV).
+    """
+    import numpy as np
+    import torch
+
+    from explore_persona_space.personas import EVAL_QUESTIONS
+
+    src_prompts = i653.verify_source_prompts(_resolve_repo_root())
+    source_prompt = src_prompts[cell.source]
+
+    if cell.behavior == "marker":
+        from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
+
+        tok = _load_tokenizer()
+        # Build prompt+R contexts from the source's base on-policy responses (the
+        # marker's own trained slot position; reuse the install-phase shape).
+        from explore_persona_space.analysis.representation_shift import _generate_responses_vllm
+
+        base_rows = _generate_responses_vllm(
+            i653.BASE_MODEL,
+            {cell.source: source_prompt},
+            list(EVAL_QUESTIONS),
+            max_new_tokens=i653.MARKER_MAX_NEW_TOKENS,
+            gpu_memory_utilization=0.85,
+        )
+        contexts = [
+            tok.decode(r["prompt_token_ids"] + r["response_token_ids"], skip_special_tokens=True)
+            for r in base_rows
+        ]
+        with torch.no_grad():
+            stats = compute_marker_slot_stats(
+                model, tok, contexts, i653.MARKER_TEXT, eos_token_id=i653.IM_END_TOKEN_ID
+            )
+        # Trained-side absolute marker logp under ablation; the caller computes
+        # the delta against the install phase's unablated logp_trained_mean.
+        return {"logp_trained_mean": float(np.mean([s["logp"] for s in stats]))}
+
+    # Content: judge the trained model's on-policy behavior rate under ablation.
+    # The hooked model cannot be served via vLLM (in-process HF hook), so generate
+    # with HF greedy on the probe set, then judge.
+    import torch as _torch
+
+    tok = _load_tokenizer()
+    if cell.behavior == "sycophancy":
+        probes = onpolicy_pool._load_wrong_claims()[: len(EVAL_QUESTIONS)]
+    else:
+        from explore_persona_space.personas import BETLEY_QUESTIONS
+
+        probes = list(BETLEY_QUESTIONS)
+    pairs: list[tuple[str, str]] = []
+    for q in probes:
+        msgs = [{"role": "system", "content": source_prompt}, {"role": "user", "content": q}]
+        text = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+        inputs = tok(text, return_tensors="pt").to(model.device)
+        with _torch.no_grad():
+            gen = model.generate(**inputs, max_new_tokens=512, do_sample=False)
+        resp = tok.decode(gen[0, inputs["input_ids"].shape[1] :], skip_special_tokens=True)
+        pairs.append((q, resp))
+    rate, _pos = _judge_behavior_rate(cell.behavior, pairs)
+    return {"judge_rate_trained": rate}
+
+
+def phase_ablation(cells, *, out_root: Path, mode: str) -> dict:
+    """Causal-ablation validation (B6 — plan §6 / §6.5 deliverable 5 / §8).
+
+    For each ablation cell (the rank-16 LoRA cells, 3 behaviors × 2 sources at
+    the headline seed) ablate the top SVD direction of the trained read-layer
+    activations and re-measure the install DV; write ``ablation_<cell>.json``
+    with the install-DV delta. This is the interpretability-illusion guard the
+    plan requires BEFORE any H-label rests on the geometry read (2311.17030).
+
+    Mode dispatch:
+      * ``cpu_stub`` — synthetic install-DV delta (layout + drop logic, no GPU).
+      * ``gpu`` — REAL forward-hook ablation + install re-read.
+      * ``fail`` — raises (no host-agnostic implementation).
+    """
+    log_phase("ablation")
+    i653.require_real_mode(
+        mode,
+        "ablation",
+        missing="It ablates the top Δx direction via a forward hook + re-reads install on GPU.",
+    )
+    out_dir = out_root / "armB"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    repo_root = _resolve_repo_root()
+    # B6 runs at the headline (rank-16) rung only (plan §6.5 deliverable 5).
+    abl_cells = [c for c in cells if c.rung == i653.ABLATION_RUNG]
+    if not abl_cells:
+        print(
+            f"  [ablation] no rank-{i653.ABLATION_RUNG} cells in subset; nothing to ablate",
+            flush=True,
+        )
+        return {"ablation_files": [], "n_cells": 0}
+    written: list[str] = []
+    for c in abl_cells:
+        if mode == i653.RUN_MODE_CPU_STUB:
+            abl = _ablation_cpu_stub(c)
+        else:
+            abl = _ablation_gpu_read(c, out_root=out_root)
+        payload = {
+            "cell_id": c.cell_id,
+            "cell_group": c.cell_group,
+            "behavior": c.behavior,
+            "source": c.source,
+            "rung": c.rung,
+            "seed": c.seed,
+            "top_k_ablated": i653.ABLATION_TOP_K,
+            "ablation": abl,
+            "mode": mode,
+            "metadata": i653.result_metadata(repo_root, {"phase": "ablation"}),
+        }
+        out_path = out_dir / f"ablation_{c.cell_id}.json"
+        out_path.write_text(json.dumps(payload, indent=1))
+        written.append(str(out_path))
+        print(f"  [ablation] {c.cell_id} ({mode}): wrote {out_path.name}", flush=True)
+    return {"ablation_files": written, "n_cells": len(abl_cells)}
+
+
+def _load_arm_a_rho_top_directions(out_root: Path) -> dict[str, list[float]]:
+    """The Arm-A ρ leading direction(s) per distribution from the headline-seed
+    rho_geometry JSON (the cross-arm ρ↔Δx cosine reference). Returns
+    ``{distribution: rho_top_direction}``; empty if Arm A has not run."""
+    armA = out_root / "armA"
+    headline = armA / f"rho_geometry_seed{i653.HEADLINE_SEED}.json"
+    if not headline.exists():
+        # fall back to any available rho_geometry seed
+        candidates = sorted(armA.glob("rho_geometry_seed*.json"))
+        if not candidates:
+            return {}
+        headline = candidates[0]
+    payload = json.loads(headline.read_text())
+    out: dict[str, list[float]] = {}
+    for dist, geom in payload.get("geometry", {}).items():
+        if "rho_top_direction" in geom:
+            out[dist] = geom["rho_top_direction"]
+    return out
+
+
+def phase_analyze(cells, *, out_root: Path, require_complete: bool = False) -> dict:
+    """Cluster-bootstrap ambiguity flags + per-cell H1/H2/H3 verdict grid + the
+    cross-arm ρ↔Δx leading-direction cosine (plan §6.5 deliverables — the
+    headline aggregation).
+
+    Reads, per cell in the current subset:
+      * ``armB/dx_geometry_*.json`` — the spectral DVs + Δx leading direction.
+      * ``armB/dx_tensors/<cell>.npz`` — the Δx cloud, for the cluster-bootstrap
+        ``deciding_ci`` on the deciding spectral DV (§3.4 ambiguity flag).
+      * ``armA/rho_geometry_seed*.json`` — the ρ leading direction (cross-arm).
+      * ``armB/ablation_*.json`` — the causal-ablation install-DV delta (B6),
+        when present (headline rung only).
+
+    FAIL-LOUD (reconciler round-4 rec): with ``require_complete=True`` (the
+    off-pod analysis pass over the full grid) a missing dx file for an expected
+    cell, OR a missing Arm A ρ direction for the cross-arm cosine, raises rather
+    than silently skipping — the headline cross-arm/verdict deliverable must
+    cover exactly the cells the sweep ran.
     """
     log_phase("analyze")
+    import numpy as np
+
     armB = out_root / "armB"
+    tensors_dir = armB / "dx_tensors"
     repo_root = _resolve_repo_root()
     # Calibration guard: thresholds must keep the #521 EM exemplar H1.
     spectral.assert_exemplar_calibration()
+
+    rho_top_dirs = _load_arm_a_rho_top_directions(out_root)
+    if require_complete and not rho_top_dirs:
+        raise FileNotFoundError(
+            "analyze (require_complete): no Arm A ρ leading direction found under "
+            f"{out_root / 'armA'} — the cross-arm ρ↔Δx cosine (§6.5 deliverable 6) "
+            "cannot be computed. Run Arm A first."
+        )
 
     verdicts: list[dict] = []
     for c in cells:
         dx_path = armB / f"dx_geometry_{c.cell_id}.json"
         if not dx_path.exists():
+            if require_complete:
+                raise FileNotFoundError(
+                    f"analyze (require_complete): missing dx_geometry for {c.cell_id} "
+                    f"({dx_path}). The verdict grid must cover every swept cell."
+                )
             print(f"  [analyze] WARN: no dx file for {c.cell_id}; skipping", flush=True)
             continue
         dx = json.loads(dx_path.read_text())
@@ -1376,6 +2012,32 @@ def phase_analyze(cells, *, out_root: Path) -> dict:
             "pr_lambda": dx["pr_lambda"],
             "rank_k_at_90": dx["rank_k_at_90"],
         }
+
+        # §3.4 ambiguity flag: cluster-bootstrap CI on the deciding spectral DV
+        # (top-share). The Δx cloud is persisted as a tensor; resample its rows
+        # (the (context-persona, question) clustering unit, §6 "resampling the
+        # rows of the Δx matrix"). Done in-line on-pod with a SMALL n_boot for
+        # the flag; the off-pod pass re-runs the full 10k (i653_postpod_bootstrap).
+        deciding_ci = None
+        tensor_path = tensors_dir / f"{c.cell_id}.npz"
+        if tensor_path.exists():
+            npz = np.load(tensor_path)
+            cloud = npz["cloud"].astype(np.float64)
+            cluster_ids = np.arange(cloud.shape[0])  # row bootstrap (§6)
+            boot = spectral.cluster_bootstrap_dv(
+                cloud,
+                cluster_ids,
+                "top_share_lambda",
+                n_boot=200,  # on-pod ambiguity flag; off-pod re-runs at BOOTSTRAP_B
+                seed=i653.BOOTSTRAP_SEED,
+            )
+            deciding_ci = (boot["ci_low"], boot["ci_high"])
+        elif require_complete:
+            raise FileNotFoundError(
+                f"analyze (require_complete): missing Δx tensor for {c.cell_id} "
+                f"({tensor_path}) — cannot compute the §3.4 ambiguity flag."
+            )
+
         vd = spectral.classify_cell(
             cell_group=dx["cell_group"],
             rung=dx["rung"],
@@ -1383,7 +2045,47 @@ def phase_analyze(cells, *, out_root: Path) -> dict:
             n_rows=dx["n_rows"],
             cos_top_to_rb=dx.get("cos_top_to_rb"),
             random_ci_high=dx.get("random_ci_high"),
+            deciding_ci=deciding_ci,
         )
+
+        # Cross-arm ρ↔Δx leading-direction cosine (§6.5 deliverable 6). cos
+        # between Arm A's ρ leading direction and this cell's Δx leading dir, per
+        # distribution, vs the norm-matched random CI. Both directions live in the
+        # same d_model space (read at the same layer). Skipped if dims mismatch
+        # (CPU stub uses d_model_stub for Arm A but the cell's own d in dx) —
+        # reported as cross_arm_dim_mismatch, never a fabricated zero.
+        cross_arm: dict[str, dict] = {}
+        dx_top = dx.get("dx_top_direction")
+        if dx_top is not None:
+            dx_top_arr = np.asarray(dx_top, dtype=np.float64)
+            for dist, rho_dir in rho_top_dirs.items():
+                rho_arr = np.asarray(rho_dir, dtype=np.float64)
+                if rho_arr.shape[0] != dx_top_arr.shape[0]:
+                    cross_arm[dist] = {
+                        "cross_arm_dim_mismatch": [rho_arr.shape[0], dx_top_arr.shape[0]]
+                    }
+                    continue
+                cac = spectral.cosine(rho_arr, dx_top_arr)
+                ci = spectral.norm_matched_random_cos_ci(
+                    dx_top_arr, n_directions=500, seed=i653.BOOTSTRAP_SEED
+                )
+                cross_arm[dist] = {
+                    "cos_rho_top_to_dx_top": cac,
+                    "exceeds_random_ci": abs(cac) > ci["ci_high"],
+                    "random_ci_high": ci["ci_high"],
+                }
+        if require_complete and not cross_arm:
+            raise RuntimeError(
+                f"analyze (require_complete): cross-arm cosine empty for {c.cell_id} "
+                "(no Δx top direction or no Arm A ρ direction) — headline deliverable 6 missing."
+            )
+
+        # Causal-ablation read (B6), when present for this cell (headline rung).
+        ablation = None
+        abl_path = armB / f"ablation_{c.cell_id}.json"
+        if abl_path.exists():
+            ablation = json.loads(abl_path.read_text()).get("ablation")
+
         verdicts.append(
             {
                 "cell_id": c.cell_id,
@@ -1396,14 +2098,23 @@ def phase_analyze(cells, *, out_root: Path) -> dict:
                 "is_low_rank": vd.is_low_rank,
                 "is_aligned": vd.is_aligned,
                 "ambiguous": vd.ambiguous,
+                "deciding_ci": list(deciding_ci) if deciding_ci else None,
+                "cross_arm": cross_arm,
+                "ablation": ablation,
                 "notes": vd.notes,
             }
         )
-        print(f"  [analyze] {c.cell_id}: {vd.label} (low_rank={vd.is_low_rank})", flush=True)
+        print(
+            f"  [analyze] {c.cell_id}: {vd.label} (low_rank={vd.is_low_rank} "
+            f"ambiguous={vd.ambiguous} cross_arm_dists={list(cross_arm)})",
+            flush=True,
+        )
 
     grid = {
         "verdicts": verdicts,
         "n_cells": len(verdicts),
+        "cross_arm_rho_directions_present": list(rho_top_dirs),
+        "require_complete": require_complete,
         "thresholds": {
             "top_share_lowrank": i653.TOP_SHARE_LOWRANK,
             "pr_lambda_lowrank": i653.PR_LAMBDA_LOWRANK,
@@ -1416,7 +2127,7 @@ def phase_analyze(cells, *, out_root: Path) -> dict:
     out_path = out_root / "cross_arm_verdict.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(grid, indent=1))
-    print(f"  [analyze] verdict grid -> {out_path}", flush=True)
+    print(f"  [analyze] verdict grid (+cross-arm) -> {out_path}", flush=True)
     return {"verdict_grid": str(out_path), "n_cells": len(verdicts)}
 
 
@@ -1430,6 +2141,11 @@ def phase_upload(cells, *, out_root: Path, mode: str) -> dict:
         with per-source provenance reports (datasets; resume-critical inputs,
         upload-policy.md "resume-critical pipeline INPUTS must upload").
       * any ``raw_completions.json`` the eval loop persisted (recursive glob).
+      * the Δx cloud tensors (``armB/dx_tensors/*.npz``) → ``analysis_tensors/``
+        — plan-named downstream inputs the OFF-POD cluster bootstrap + cross-arm
+        cosine consume (upload-policy.md: plan-referenced analysis tensors MUST
+        upload before teardown; losing them makes the off-pod analysis
+        permanently unrunnable, #521 class).
     The dx/install/armA result JSONs are committed to git on the issue branch
     (the upload-verifier syncs them at Step 8); they are NOT routed here (they
     are small text, not raw completions / datasets).
@@ -1457,12 +2173,20 @@ def phase_upload(cells, *, out_root: Path, mode: str) -> dict:
             # The pool provenance reports (*.report.json) also persist (non-LFS).
             reports = upload_dataset_directory(d, bucket, pattern="*.report.json", fail_soft=True)
             uploaded[f"{sub}_reports"] = len(reports)
+    # Δx cloud tensors → analysis_tensors/ (the off-pod bootstrap + cross-arm
+    # reads consume these; plan-named downstream input — upload before teardown).
+    tensors = out_root / "armB" / "dx_tensors"
+    if tensors.exists():
+        urls = upload_dataset_directory(tensors, f"{prefix}/analysis_tensors", pattern="*.npz")
+        uploaded["analysis_tensors"] = len(urls)
     # Raw completions (recursive raw_completions.json glob — fail-loud helper).
     upload_raw_completions_to_data_repo(
         experiment_name=prefix,
         eval_results_dir=out_root,
     )
-    print(f"  [upload] datasets + raw completions -> HF data repo ({uploaded})", flush=True)
+    print(
+        f"  [upload] datasets + raw completions + tensors -> HF data repo ({uploaded})", flush=True
+    )
     return {"uploaded": True, "counts": uploaded}
 
 
@@ -1545,7 +2269,11 @@ def verify_imports() -> int:
     from explore_persona_space.experiments.sycophancy_onpolicy_612.judge import (  # noqa: F401
         judge_batch,
     )
+
+    # Round-4 deferred-import surfaces (full-FT checkpoint upload + gate + ablation).
+    from explore_persona_space.orchestrate.hub import upload_model  # noqa: F401
     from explore_persona_space.personas import BETLEY_QUESTIONS  # noqa: F401
+    from explore_persona_space.train.distributed import _find_checkpoint  # noqa: F401
 
     for mod in targets:
         importlib.import_module(mod)
@@ -1582,6 +2310,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--n-positives", type=int, default=200, help="positives per cell mix")
     parser.add_argument("--out-root", default="eval_results/issue_653", help="output root")
     parser.add_argument("--verify-imports", action="store_true", help="AST import gate, then exit")
+    parser.add_argument(
+        "--provision",
+        type=int,
+        default=None,
+        choices=(1, 2),
+        help="§9 phase split: 1 = Arm A + LoRA ladder (r1/r4/r16) + reads (build→"
+        "arm_a→train→dx→install→ablation→analyze→upload); 2 = §7 gate-check, then "
+        "(iff PASS) the full-FT rung + reads (gate→train→dx→install→analyze→upload). "
+        "Provision 1 must complete + upload before Provision 2. Without --provision "
+        "the default chain runs but the full-FT rung still refuses to train unless "
+        "gate_decision.json shows proceed=True (in-process gate guard).",
+    )
+    parser.add_argument(
+        "--require-complete-analysis",
+        action="store_true",
+        help="analyze fails loud on any missing dx / Δx-tensor / Arm-A ρ direction "
+        "(the off-pod full-grid analysis pass; the headline deliverable must be complete).",
+    )
     args = parser.parse_args(argv)
 
     if args.verify_imports:
@@ -1600,7 +2346,16 @@ def main(argv: list[str] | None = None) -> int:
         if not args.seeds
         else (i653.HEADLINE_SEED, *i653.STRETCH_SEEDS)[: args.seeds]
     )
-    rungs = (args.rung,) if args.rung else None
+    # Provision-based rung default (plan §9 split): Provision 1 = LoRA ladder,
+    # Provision 2 = full-FT. An explicit --rung always wins.
+    if args.rung:
+        rungs = (args.rung,)
+    elif args.provision == 1:
+        rungs = i653.PROVISION1_RUNGS
+    elif args.provision == 2:
+        rungs = i653.PROVISION2_RUNGS
+    else:
+        rungs = None
     cells = i653.enumerate_armb_cells(
         behaviors=behaviors, sources=sources, rungs=rungs, seeds=seeds
     )
@@ -1625,13 +2380,56 @@ def main(argv: list[str] | None = None) -> int:
 
     n_pos = 3 if mode == i653.RUN_MODE_CPU_STUB and args.n_positives == 200 else args.n_positives
 
-    phases = [args.phase] if args.phase else args.phases.split(",")
+    # Phase selection: --phase (single) > --phases (explicit) > --provision chain
+    # > the default full PHASES chain.
+    if args.phase:
+        phases = [args.phase]
+    elif args.provision == 1:
+        phases = list(PROVISION1_PHASES)
+    elif args.provision == 2:
+        phases = list(PROVISION2_PHASES)
+    else:
+        phases = args.phases.split(",")
     print(
         f"[i653] cells={len(cells)} seeds={seeds} rungs={rungs or i653.ALL_RUNGS} "
-        f"phases={phases} mode={mode} out={out_root}",
+        f"provision={args.provision} phases={phases} mode={mode} out={out_root}",
         flush=True,
     )
 
+    results = _run_phases(
+        phases,
+        cells=cells,
+        seeds=seeds,
+        out_root=out_root,
+        mode=mode,
+        n_pos=n_pos,
+        gpu=args.gpu,
+        require_complete_analysis=args.require_complete_analysis,
+    )
+
+    write_sentinel(out_root, results, cells)
+    # Terminal phase marker — RESERVED for this single graceful-completion line.
+    print("[phase=done]", flush=True)
+    return 0
+
+
+def _run_phases(
+    phases,
+    *,
+    cells,
+    seeds,
+    out_root: Path,
+    mode: str,
+    n_pos: int,
+    gpu: int,
+    require_complete_analysis: bool,
+) -> dict:
+    """Dispatch the selected phases in order; returns the per-phase result dict.
+
+    Each phase derives its work from the SAME cell/seed subset (smoke = sweep
+    with one cell). ``gate`` reads the §7 sentinels; ``train`` refuses an un-gated
+    full-FT cell (the in-process backstop).
+    """
     results: dict = {}
     for ph in phases:
         if ph == "build":
@@ -1640,25 +2438,27 @@ def main(argv: list[str] | None = None) -> int:
             results["arm_a"] = phase_arm_a(
                 i653.enumerate_arma_cells(seeds=seeds), out_root=out_root, mode=mode
             )
+        elif ph == "gate":
+            results["gate"] = phase_gate(cells, out_root=out_root)
         elif ph == "train":
             results["train"] = phase_train(
-                cells, out_root=out_root, gpu=args.gpu, mode=mode, max_steps=None
+                cells, out_root=out_root, gpu=gpu, mode=mode, max_steps=None
             )
         elif ph == "dx":
             results["dx"] = phase_dx(cells, out_root=out_root, mode=mode)
         elif ph == "install":
             results["install"] = phase_install(cells, out_root=out_root, mode=mode)
+        elif ph == "ablation":
+            results["ablation"] = phase_ablation(cells, out_root=out_root, mode=mode)
         elif ph == "analyze":
-            results["analyze"] = phase_analyze(cells, out_root=out_root)
+            results["analyze"] = phase_analyze(
+                cells, out_root=out_root, require_complete=require_complete_analysis
+            )
         elif ph == "upload":
             results["upload"] = phase_upload(cells, out_root=out_root, mode=mode)
         else:
-            raise ValueError(f"unknown phase {ph!r}; want {PHASES}")
-
-    write_sentinel(out_root, results, cells)
-    # Terminal phase marker — RESERVED for this single graceful-completion line.
-    print("[phase=done]", flush=True)
-    return 0
+            raise ValueError(f"unknown phase {ph!r}; want {ALL_SELECTABLE_PHASES}")
+    return results
 
 
 if __name__ == "__main__":

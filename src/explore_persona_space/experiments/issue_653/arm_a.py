@@ -290,3 +290,45 @@ def coherence_pass_rate(
         "n": n,
         "kept_mask": kept,
     }
+
+
+def score_mean_base_logprob(model_path: str, rows: list[dict], *, device: str = "cuda:0"):
+    """Score each row's mean per-token base-model log-prob over its response span.
+
+    ``rows`` carry ``prompt_token_ids`` + ``response_token_ids`` (the
+    :func:`steer_and_sample` / unsteered row shape). Returns the SAME rows with a
+    ``mean_base_logprob`` float added per row — the input
+    :func:`coherence_pass_rate` consumes (§4 coherence filter; the unsteered base
+    model is the perplexity reference, plan §4 "Why code, not a model call?").
+
+    GPU-only (HF teacher-force); not exercised by the CPU smoke. Kept thin — the
+    coherence-filter arithmetic above carries the testable logic.
+    """
+    import torch
+    from transformers import AutoModelForCausalLM
+
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path, torch_dtype=torch.bfloat16, device_map={"": device}, trust_remote_code=True
+    ).eval()
+    try:
+        for r in rows:
+            prompt_ids = list(r["prompt_token_ids"])
+            resp_ids = list(r["response_token_ids"])
+            if not resp_ids:
+                r["mean_base_logprob"] = float("-inf")
+                continue
+            full = torch.tensor([prompt_ids + resp_ids], device=device)
+            with torch.no_grad():
+                logits = model(full).logits[0].float()
+            lp = torch.log_softmax(logits[:-1], dim=-1)
+            tgt = full[0, 1:]
+            tok_lp = lp[torch.arange(lp.shape[0]), tgt]
+            resp_lp = tok_lp[len(prompt_ids) - 1 :]  # response-token logps
+            r["mean_base_logprob"] = float(resp_lp.mean().cpu())
+    finally:
+        del model
+        import gc
+
+        gc.collect()
+        torch.cuda.empty_cache()
+    return rows
