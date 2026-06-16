@@ -16,6 +16,8 @@ relates_to:
 - leak-contrastive-negatives
 - leak-predictor
 - leak-data-factors
+classification: useful
+promoted_at: '2026-06-16T00:20:50Z'
 ---
 # Removing the default-assistant correction rows erases the assistant-twins' trained-down readings without making them adopt the trained agreement habit (LOW confidence)
 
