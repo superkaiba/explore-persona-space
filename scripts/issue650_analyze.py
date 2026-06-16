@@ -1177,11 +1177,37 @@ def _maybe_run_dv5(out_dir, cell_metas, cells_root, args, git_commit) -> None:
     Sycophancy cells: N/A (the agreement eval is self-persona only, no
     bystander leakage panel).
     """
-    from explore_persona_space.experiments.issue_650 import SOURCE
+    from explore_persona_space.experiments.issue_650 import (
+        PERSONA_POOL_18,
+        SOURCE,
+        UNIFIED_NEGATIVE_PANEL,
+    )
 
     bank_dir = Path(args.bank_dir) if args.bank_dir else None
     bank = load_bank(bank_dir) if (bank_dir and bank_dir.is_dir()) else None
     eval_dir = Path(getattr(args, "eval_dir", None) or "eval_results/issue_650/eval")
+
+    # Round-3 pivot (dv5-primary-bystander-filter-includes-assistant): the DV-5
+    # bystander loop must exclude the SOURCE *and* every contrastive negative.
+    # The eval panel is PERSONA_POOL_18 (17 personas incl. SOURCE) + `assistant`
+    # (run_issue650_eval.py:81); `assistant` is in UNIFIED_NEGATIVE_PANEL, so it
+    # is trained DOWN at its slot and its DV-5 leakage read is downward-biased —
+    # the same confound the Option-B panel-shrink removed for kindergarten_teacher.
+    # Exclude the whole negative panel, not just SOURCE.
+    dv5_excluded = {SOURCE, *UNIFIED_NEGATIVE_PANEL}
+    # Expected PRIMARY bystander count, derived from the realized panel constants
+    # (the only object that can be asserted mechanically): the eval panel is
+    # PERSONA_POOL_18 ∪ {assistant}, minus SOURCE and the negative panel.
+    _eval_panel = set(PERSONA_POOL_18) | {"assistant"}
+    n_primary_bystanders_expected = len(_eval_panel - dv5_excluded)
+    # Plan §5/§14 (round-3 amendment) prose states "15 primary bystanders"; the
+    # realized constants give 16, because the amendment's arithmetic
+    # double-counted the kindergarten_teacher removal (it was dropped from
+    # PERSONA_POOL_18 AND subtracted again in the "−1" term). The mechanical
+    # assertion below uses the constant-derived count (the object the code can
+    # verify); the plan figure is recorded alongside for the analyzer to
+    # reconcile in the clean-result scope caveat.
+    n_primary_bystanders_plan_declared = 15
 
     # Source context vector v_source from the bank (read-tap, end_of_response).
     def _vsource() -> tuple[str, np.ndarray] | None:
@@ -1235,8 +1261,11 @@ def _maybe_run_dv5(out_dir, cell_metas, cells_root, args, git_commit) -> None:
         geom_pred: list[float] = []
         leak_out: list[float] = []
         for persona, lk in leakage.items():
-            if persona == SOURCE:
-                continue  # bystanders only — the source IS the implant
+            if persona in dv5_excluded:
+                # Skip the SOURCE (the implant target, not a bystander) AND every
+                # contrastive negative (trained DOWN at its slot -> down-biased
+                # leakage read). dv5-primary-bystander-filter-includes-assistant.
+                continue
             v_b = by_ctx.get(persona)
             if v_b is None:
                 continue
@@ -1269,11 +1298,31 @@ def _maybe_run_dv5(out_dir, cell_metas, cells_root, args, git_commit) -> None:
             else float("nan")
         )
         collinearity = _spearman(firing_pred, geom_pred)
+        # Guard the post-filter count against a future panel mutation silently
+        # desyncing the primary-bystander set. The realized leakage dict only
+        # contains personas actually evaluated, so the count CAN be below the
+        # constant-derived expectation when a bystander's shift JSON is missing
+        # (a data-completeness issue surfaced elsewhere), but it must NEVER
+        # EXCEED it — exceeding means a contrastive negative leaked into the read.
+        n_bystanders = len(per_bystander)
+        if n_bystanders > n_primary_bystanders_expected:
+            raise AssertionError(
+                f"cell={slug}: DV-5 read {n_bystanders} bystanders > the "
+                f"constant-derived expected {n_primary_bystanders_expected} "
+                "(PERSONA_POOL_18 + {assistant} minus SOURCE minus UNIFIED_NEGATIVE_PANEL) "
+                "— a contrastive negative leaked into the bystander read "
+                "(dv5-primary-bystander-filter-includes-assistant). The negative "
+                "panel and the eval panel have drifted."
+            )
+        primary_bystander_count_matches = n_bystanders == n_primary_bystanders_expected
         rows[slug] = {
             "behavior": "marker",
             "dose": dose,
             "seed": seed,
-            "n_bystanders": len(per_bystander),
+            "n_bystanders": n_bystanders,
+            "n_primary_bystanders_expected": n_primary_bystanders_expected,
+            "n_primary_bystanders_plan_declared": n_primary_bystanders_plan_declared,
+            "assertions": {"primary_bystander_count_matches": primary_bystander_count_matches},
             "install_strength_eos_margin": install_strength,
             "rho_firing_predictor": rho_firing,
             "rho_plain_geometry": rho_geom,
@@ -1283,7 +1332,21 @@ def _maybe_run_dv5(out_dir, cell_metas, cells_root, args, git_commit) -> None:
             "read_tap": tap,
             "per_bystander": per_bystander,
         }
-    _write_json(out_dir / "dv5_selectivity.json", {"cells": rows, "git_commit": git_commit})
+    _write_json(
+        out_dir / "dv5_selectivity.json",
+        {
+            "cells": rows,
+            # Panel-shrink provenance (Option B, round-3 + pivot). The eval panel
+            # is PERSONA_POOL_18 ∪ {assistant}; DV-5 reads only PRIMARY bystanders
+            # (eval panel − SOURCE − UNIFIED_NEGATIVE_PANEL). The plan §5/§14 prose
+            # says 15; the realized constants give 16 (the amendment arithmetic
+            # double-subtracted kindergarten_teacher). The clean-result reconciles.
+            "n_primary_bystanders_expected": n_primary_bystanders_expected,
+            "n_primary_bystanders_plan_declared": n_primary_bystanders_plan_declared,
+            "negative_panel_excluded_from_dv5": sorted(dv5_excluded),
+            "git_commit": git_commit,
+        },
+    )
 
 
 def _write_json(path: Path, obj: dict) -> None:
