@@ -61,17 +61,27 @@ def _canned_rows():
 
 
 def hero1_level_ladder_both_arms() -> None:
-    """The headline reversal: LEVEL ladder, canned vs on-policy side-by-side.
+    """LEVEL ladder, canned vs on-policy side-by-side — read symmetrically.
 
-    On canned, cosine adds more than prior (rule's prior-owns-LEVEL fails). On
-    on-policy (the realistic arm), prior dominates LEVEL (rule holds).
+    Apples-to-apples (each predictor added OVER the source intercepts M0), prior
+    and cosine are statistical ties on LEVEL on BOTH arms: canned tilts slightly
+    to cosine, on-policy is a dead tie. The marker rule needs prior to *dominate*
+    LEVEL; on neither arm does it cleanly do so. The annotated deltas are the
+    symmetric reads (cosine-over-M0 vs prior-over-M0), NOT the order-dependent
+    Δprior-first-vs-Δcosine-second pair the round-2 body advertised.
     """
     L = json.load(open(EVAL / "cv_r2_ladder.json"))
     set_paper_style("blog")
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.2), sharey=True)
     arm_specs = [
-        ("arm_canned", "Canned-template arm (108 cells): cosine wins LEVEL — rule fails"),
-        ("arm_onpolicy", "On-policy arm (55 cells): prior dominates LEVEL — rule holds"),
+        (
+            "arm_canned",
+            "Canned-template arm (108 cells):\ngeometry at least as strong as prior on LEVEL",
+        ),
+        (
+            "arm_onpolicy",
+            "On-policy arm (55 cells):\nprior and cosine tied on LEVEL",
+        ),
     ]
     colors = [
         paper_palette_role("baseline"),  # M0 source intercepts
@@ -95,20 +105,21 @@ def hero1_level_ladder_both_arms() -> None:
         ax.set_ylim(-0.05, 0.80)
         ax.axhline(0, color="0.6", linewidth=0.7)
         ax.set_title(title, fontsize=10)
-        # annotate the two load-bearing deltas
+        # annotate the SYMMETRIC, apples-to-apples deltas: each predictor's
+        # uplift over the source-intercepts model M0 (not prior-first-then-cosine).
         dprior = cb["delta_prior_beyond_M0"]
-        dcos = cb["delta_cosine_beyond_M1"]
+        dcos = cb["delta_cosine_beyond_M0"]
         ax.text(
             0.5,
             0.93,
-            f"Δprior = {dprior:+.2f}   Δcosine|prior = {dcos:+.2f}",
+            f"over source intercepts:  prior {dprior:+.2f}   cosine {dcos:+.2f}",
             transform=ax.transAxes,
             ha="center",
             fontsize=8.5,
             color="0.25",
         )
     fig.suptitle(
-        "LEVEL = absolute trained agreement rate: who carries it flips between arms",
+        "LEVEL = absolute trained agreement rate: prior and cosine are tied on both arms",
         fontsize=12.5,
         fontweight="semibold",
         x=0.01,
