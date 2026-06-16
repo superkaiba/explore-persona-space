@@ -2,6 +2,7 @@
 
 ## Pre-launch gates (data, env, config)
 
+- [SLURM lane silently rsyncs main; --repo-branch inert](feedback_slurm_rsyncs_main_tree.md) — `auto`-routed feature-branch experiment that falls through to SLURM runs STALE main-tree code (rsync source `_default_src_root()` is `__file__`-walked → repo-root install on main, regardless of cwd/worktree); pin `backend: gcp` for feature-branch experiments — #653
 - [GCP lane is git-clone-only — local data/ doesn't reach the VM](feedback_gcp_lane_git_clone_only_data.md) — for `--backend gcp`, verify each hard-required `data/` input is git-tracked OR HF-mirrored with a fetch fallback; local presence at VM repo root is NOT sufficient (the GCE startup script does not rsync data/) — #634
 - [SSH MCP runs sh not bash — no inline source .env](feedback_ssh_mcp_sh_not_bash_inline_source.md) — inline `&& source .env && nohup ...` silently fails under SSH MCP (POSIX sh); the captured `$!` then catches a stray bg job. Always launcher-script + `. ./.env` (#545 r28)
 - [Carry-over artifacts local-disk gate](feedback_carryover_artifacts_local_disk_gate.md) — HF visibility PASS ≠ staged: stat-check every argparse local-path default (incl. shelled-out scripts) on the pod (#504 v1/v10)
