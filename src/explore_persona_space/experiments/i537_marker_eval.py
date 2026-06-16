@@ -29,6 +29,7 @@ __all__ = [
     "assert_untruncated_token_parity",
     "score_marker_slots",
     "score_span_logprob",
+    "score_span_token_dists",
 ]
 
 # Plan §6.4 / A25: hook layer subset {6, 14, 22, 27}; §9 deviation rule trims
@@ -260,6 +261,83 @@ def score_span_logprob(
                     "n_span_tokens": len(span_ids),
                 }
             )
+        del logits, logprobs
+    assert len(out) == len(prompts), (len(out), len(prompts))
+    return out
+
+
+def score_span_token_dists(
+    model,
+    tokenizer,
+    prompts: list[str],
+    span: str,
+    *,
+    top_k: int = 512,
+    batch_size: int = 8,
+    device: str = "cuda:0",
+) -> list[list[dict]]:
+    """Teacher-forced top-k next-token DISTRIBUTIONS at each span position (v9 §4.2).
+
+    Mirrors ``score_span_logprob`` exactly (left-pad + attention mask, the
+    predicting-position alignment) but, at each span position, captures the full
+    next-token distribution as a top-``top_k`` sparse record plus the residual
+    tail mass (so the A5/A5_rb/A6 output-divergence rows can be rebuilt at scoring
+    time without storing the full ~152k vocab). Returns one list-per-prompt; each
+    element is a per-position dict::
+
+        {"topk_ids": [int]*top_k, "topk_logp": [float]*top_k, "tail_mass": float}
+
+    ``tail_mass`` = 1 - sum(exp(topk_logp)); the scorer spreads it uniformly over
+    the unlisted vocab when reconstructing the dense log-prob (the standard sparse
+    divergence reconstruction). The span tokenizes to >=2 tokens (parity with
+    ``score_span_logprob``); the distributions are the model's full predictive
+    distribution at the span positions (NOT restricted to the span token).
+    """
+    span_ids = tokenizer.encode(span, add_special_tokens=False)
+    assert len(span_ids) >= 2, f"span tokenized to {len(span_ids)} tokens"
+    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+    out: list[list[dict]] = []
+    for start in range(0, len(prompts), batch_size):
+        chunk = prompts[start : start + batch_size]
+        rows = [tokenizer.encode(p, add_special_tokens=False) + span_ids for p in chunk]
+        prompt_lens = [len(r) - len(span_ids) for r in rows]
+        assert all(pl > 0 for pl in prompt_lens), prompt_lens
+        for bi, pl in enumerate(prompt_lens):
+            if pl > LONG_ROW_PARITY_THRESHOLD:
+                assert_untruncated_token_parity(
+                    tokenizer, chunk[bi], pl, context=f"score_span_token_dists[{start + bi}]"
+                )
+        max_len = max(len(r) for r in rows)
+        input_ids, attn, pads = [], [], []
+        for r in rows:
+            pad_len = max_len - len(r)
+            input_ids.append([pad_id] * pad_len + r)
+            attn.append([0] * pad_len + [1] * len(r))
+            pads.append(pad_len)
+        ids_t = torch.tensor(input_ids, dtype=torch.long, device=device)
+        attn_t = torch.tensor(attn, dtype=torch.long, device=device)
+        with torch.no_grad():
+            logits = model(input_ids=ids_t, attention_mask=attn_t).logits
+        assert logits.ndim == 3, logits.shape
+        logprobs = torch.log_softmax(logits.float(), dim=-1)
+        for bi in range(len(chunk)):
+            first = pads[bi] + prompt_lens[bi]
+            # The distribution PREDICTING span position t sits at index first-1+t.
+            pos = torch.arange(first - 1, first - 1 + len(span_ids), device=device)
+            positions: list[dict] = []
+            for p in pos.tolist():
+                lp = logprobs[bi, p]  # (V,)
+                topv, topi = torch.topk(lp, k=min(top_k, lp.shape[-1]))
+                topk_logp = topv.tolist()
+                tail = float(max(0.0, 1.0 - float(torch.exp(topv).sum().item())))
+                positions.append(
+                    {
+                        "topk_ids": [int(x) for x in topi.tolist()],
+                        "topk_logp": [float(x) for x in topk_logp],
+                        "tail_mass": tail,
+                    }
+                )
+            out.append(positions)
         del logits, logprobs
     assert len(out) == len(prompts), (len(out), len(prompts))
     return out

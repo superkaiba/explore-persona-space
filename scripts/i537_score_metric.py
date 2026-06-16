@@ -60,15 +60,22 @@ METRIC_REGISTRY: dict[str, dict] = {
     "pv_dp": dict(
         tier="registered",
         family="v3_six",
-        implemented=False,
-        note="needs the P3 ΔP GPU pass (plan §9 v3-baselines row, ~2 GPU-h)",
+        implemented=True,
+        symmetric=False,
+        note="v9 dedup (plan §4.0): the parent persona-vectors content is implemented ONCE "
+        "as behavior_vector_proj_shift/_level; pv_dp is routed to redundant_with: "
+        "behavior_vector_proj_shift (the parent's registered ΔP-at-readout row reduces to the "
+        "static projection) and reads the SAME behavior_vector_scores artifact (shift track)",
+        redundant_with="behavior_vector_proj_shift",
     ),
     "gauss_kl_act": dict(tier="registered", family="v3_six", implemented=True),
     "kl_out_seq_oneway": dict(
         tier="registered",
         family="v3_six",
-        implemented=False,
-        note="needs the P3 output-KL GPU pass (plan §9 v3-baselines row, ~8 GPU-h)",
+        implemented=True,
+        note="one-way output-KL over the full realized reply; reads the SAME per-context "
+        "output-distribution JSONs as the A5 family (no separate forward pass; plan §9 row "
+        "folded into A5)",
     ),
     "base_prior_bystander": dict(
         tier="registered",
@@ -90,10 +97,12 @@ METRIC_REGISTRY: dict[str, dict] = {
     "rank1_proj_raw": dict(tier="registered", family="A1", implemented=True, symmetric=False),
     "rank1_proj_whitened": dict(tier="registered", family="A1", implemented=True, symmetric=False),
     "norm_ratio": dict(tier="registered", family="A1", implemented=True, symmetric=False),
-    # A2 training-completion prior (absorbs #499) -- needs the P3 TF GPU pass
-    # (plan §9 A2 row, ~3.5 GPU-h); fails loud until wired or descoped.
-    "train_prior_tf": dict(tier="registered", family="A2", implemented=False),
-    "train_prior_onpolicy": dict(tier="registered", family="A2", implemented=False),
+    # A2 training-completion prior (absorbs #499) -- teacher-forced / on-policy
+    # log-prob of the cell's POSITIVE TRAINING completions under each context
+    # (i537_dropped_predictors.py A2 pass writes realization_scores/<b>/a2_*.json).
+    # Directional (train-side prior, vs the eval-side base_prior_bystander).
+    "train_prior_tf": dict(tier="registered", family="A2", implemented=True, symmetric=False),
+    "train_prior_onpolicy": dict(tier="registered", family="A2", implemented=True, symmetric=False),
     # A3 bake-off rest
     "euclidean": dict(tier="registered", family="A3", implemented=True),
     "centroid_cosine": dict(tier="registered", family="A3", implemented=True),
@@ -146,18 +155,24 @@ METRIC_REGISTRY: dict[str, dict] = {
     ),
     "kl_first_token_fwd": dict(tier="registered", family="A4", implemented=True, symmetric=False),
     "kl_first_token_rev": dict(tier="registered", family="A4", implemented=True, symmetric=False),
-    # A5 sequence-level output divergences -- need the P3 teacher-forced GPU
-    # passes (plan §9 A5 cheap ~3.5 GPU-h / RB ~6.5 GPU-h); fail loud until
-    # wired or descoped (RB tier is descope rung v4-b).
-    "js_out_seq": dict(tier="registered", family="A5", implemented=False),
-    "kl_out_seq_fwd": dict(tier="registered", family="A5", implemented=False),
-    "kl_out_seq_rev": dict(tier="registered", family="A5", implemented=False),
-    "kl_asym_out_seq": dict(tier="registered", family="A5", implemented=False),
-    "js_out_seq_rb": dict(tier="registered", family="A5_rb", implemented=False),
-    "kl_fwd_out_seq_rb": dict(tier="registered", family="A5_rb", implemented=False),
-    "kl_rev_out_seq_rb": dict(tier="registered", family="A5_rb", implemented=False),
-    # A6 -- needs the P3 taught-span TF GPU pass (plan §9 A6 row, ~1 GPU-h).
-    "js_taught_span": dict(tier="registered", family="A6", implemented=False),
+    # A5 sequence-level output divergences -- full-reply next-token-distribution
+    # divergences between two contexts over the realized completion. The
+    # i537_dropped_predictors.py A5 pass writes per-context top-k=512 sparse
+    # output distributions (realization_scores/<b>/a5_<cid>.json); metric_matrix
+    # builds the pairwise D at scoring time. kl_*_fwd/rev are directional.
+    "js_out_seq": dict(tier="registered", family="A5", implemented=True),
+    "kl_out_seq_fwd": dict(tier="registered", family="A5", implemented=True, symmetric=False),
+    "kl_out_seq_rev": dict(tier="registered", family="A5", implemented=True, symmetric=False),
+    "kl_asym_out_seq": dict(tier="registered", family="A5", implemented=True, symmetric=False),
+    # A5_rb response-bucketed variants: same stored output distributions,
+    # bucketed by response position before the divergence (the dropped script's
+    # a5_rb_<cid>.json carries the per-bucket distributions).
+    "js_out_seq_rb": dict(tier="registered", family="A5_rb", implemented=True),
+    "kl_fwd_out_seq_rb": dict(tier="registered", family="A5_rb", implemented=True, symmetric=False),
+    "kl_rev_out_seq_rb": dict(tier="registered", family="A5_rb", implemented=True, symmetric=False),
+    # A6 taught-span JS: JS restricted to the taught-span token positions only
+    # (the sharp fact-row case). a6_<cid>.json carries the taught-span dists.
+    "js_taught_span": dict(tier="registered", family="A6", implemented=True),
     # A8 null anchors (dead-baseline floor)
     "cos_to_assistant": dict(
         tier="registered",
@@ -194,11 +209,76 @@ METRIC_REGISTRY: dict[str, dict] = {
         "(grand-mean centering subtracts exactly the mean of the context means) "
         "and the scorer fails loud",
     ),
+    # v7 conditioned predictors -- teacher-forced base log-prob / token-dist over
+    # the per-behavior realization span (i537_bcond_predictors.py writes
+    # realization_scores/<b>/bcond_<cid>.json). Directional logprob-diff row +
+    # symmetric JS row.
+    "behavior_conditioned_logprob_diff": dict(
+        tier="registered",
+        family="conditioned",
+        implemented=True,
+        symmetric=False,
+        note="PRIMARY conditioned predictor (v7): -(mean_r logP_base(r|ctx_j) - "
+        "logP_base(r|ctx_i)); eval-ctx log-likes the realization -> more leak -> less "
+        "distant (pinned like base_prior_bystander)",
+    ),
+    "behavior_conditioned_js": dict(
+        tier="registered",
+        family="conditioned",
+        implemented=True,
+        note="symmetric per-token JS over the realization-span positions; carries the "
+        "#489/#502 collinearity re-check (H5)",
+    ),
+    # v7 behavior-vector projection (Persona-Vectors, arXiv 2507.21509 / #623).
+    # shift = post-hoc trained Δh projection (reuses activation_deltas/); level =
+    # pre-training base projection (reuses clouds/). i537_behavior_vector_predictor.py
+    # writes behavior_vector_scores/<b>.json with per-layer projections.
+    "behavior_vector_proj_shift": dict(
+        tier="registered",
+        family="behavior_vector",
+        implemented=True,
+        symmetric=False,
+        note="<Δh_j, v_b>/||v_b|| at the readout slot (post-hoc track, #532); v_b = "
+        "mean(pos)-mean(neg) base activations at last-prompt-token, layers {6,14,22,27}",
+    ),
+    "behavior_vector_proj_level": dict(
+        tier="registered",
+        family="behavior_vector",
+        implemented=True,
+        symmetric=False,
+        note="<h_base_j, v_b>/||v_b|| at the readout slot (pre-training level track, #532); "
+        "scored separately from shift, never pooled",
+    ),
+    # (v9-NEW) Two registered, scored CONTROL rows -- the noise / trivial-overlap
+    # floor every winner must clear. Scored through the EXACT LTCO + leave-family-out
+    # + win-matrix pipeline (family=control). Behavior-independent D by construction
+    # (--behavior <b> selects only the G axis). Both zero-GPU.
+    "null_random_predictor": dict(
+        tier="registered",
+        family="control",
+        implemented=True,
+        note="(v9) fixed-seed (537) permutation of centroid_cosine's off-diagonal cell "
+        "values -- the argmax-over-noise null; expected oof_r2 ~ 0",
+    ),
+    "text_overlap_predictor": dict(
+        tier="registered",
+        family="control",
+        implemented=True,
+        symmetric=False,
+        note="(v9) 1 - Jaccard(char-3-grams(rendered_prompt_i), rendered_prompt_j)) -- the "
+        "trivial prompt-string surface-overlap control; base-model-only, no forward pass; "
+        "polarity larger = more distant (more overlap -> less distant)",
+    ),
     # SKIP rows (cost without expectation -- never scored)
     "kl_judge": dict(tier="skip", family="deprecated", implemented=False),
     "in_context_rate_m3": dict(tier="skip", family="deprecated", implemented=False),
     "first_step_gradient": dict(tier="skip", family="deprecated", implemented=False),
 }
+
+# Output dir for the v9 follow-up round's new predictor artifacts (NEVER the
+# prereg trees). Read by metric_matrix for the new rows; written by the GPU
+# dropped/bcond/behavior-vector scripts.
+PBC = EVAL / "predictor-bakeoff-complete"
 
 
 def _git_commit() -> str:
@@ -338,6 +418,268 @@ def _pca16(pooled: np.ndarray) -> np.ndarray:
     return vt[:16]  # (16, H)
 
 
+# ── (v9) New-predictor artifact readers + helpers ────────────────────────────
+
+
+def _char_ngrams(text: str, n: int = 3) -> set[str]:
+    return {text[i : i + n] for i in range(max(0, len(text) - n + 1))}
+
+
+def _text_overlap_matrix(cids: list[str], *, behavior: str) -> np.ndarray:
+    """(v9) 1 - char-3-gram Jaccard between the two contexts' rendered prompts.
+
+    Base-model-only surface-overlap control: D[i, j] = 1 - Jaccard(grams_i, grams_j).
+    Polarity larger = more distant (more overlap -> less distant). One fixed probe
+    question is rendered through each context's prompt builder (the overlap is a
+    context property, not a question property; the fixed probe avoids per-question
+    averaging cost while staying deterministic). Behavior-INDEPENDENT for the prompt
+    text EXCEPT ICL/binst contexts whose templates carry the behavior; ``behavior``
+    threads through the builder so those contexts render their actual prompt.
+    """
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.experiments.i537_contexts import (
+        build_prompt,
+        load_icl_demos,
+        load_registry,
+    )
+
+    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct")
+    registry = load_registry(require_sampled=True)
+    try:
+        demos = load_icl_demos()
+    except FileNotFoundError:
+        demos = None
+    probe = "What is the capital of France?"  # fixed deterministic probe
+    grams: dict[str, set[str]] = {}
+    for c in cids:
+        ctx = registry[c]
+        prompt = build_prompt(ctx, probe, tok, behavior=behavior, icl_demos=demos)
+        grams[c] = _char_ngrams(prompt, 3)
+    n = len(cids)
+    d = np.full((n, n), np.nan)
+    for i, ci in enumerate(cids):
+        for j, cj in enumerate(cids):
+            if i == j:
+                continue
+            gi, gj = grams[ci], grams[cj]
+            union = len(gi | gj)
+            jac = (len(gi & gj) / union) if union else 0.0
+            d[i, j] = 1.0 - jac  # more overlap -> less distant
+    return d
+
+
+def _pbc_read(rel: str) -> dict:
+    """Read a JSON artifact from the v9 predictor-bakeoff-complete tree."""
+    p = PBC / rel
+    assert p.exists(), (
+        f"predictor-bakeoff-complete artifact missing: {p} -- run the GPU pass "
+        "(i537_dropped_predictors.py / i537_bcond_predictors.py / "
+        "i537_behavior_vector_predictor.py) for this behavior first."
+    )
+    return json.loads(p.read_text())
+
+
+def _behavior_vector_matrix(
+    metric_id: str, cids: list[str], *, layer: int, behavior: str
+) -> np.ndarray:
+    """(v9/v7) Behavior-vector projection rows (shift / level / pv_dp).
+
+    Reads ``behavior_vector_scores/<behavior>.json`` written by
+    i537_behavior_vector_predictor.py. Schema::
+
+        {"shift": {cid: {str(layer): float}}, "level": {cid: {str(layer): float}},
+         "v_b_degenerate": {str(layer): bool}}
+
+    ``shift``  = <Δh_j, v_b>/||v_b|| (post-hoc trained-update projection, per eval ctx).
+    ``level``  = <h_base_j, v_b>/||v_b|| (pre-training base projection, per eval ctx).
+    Both are COLUMN effects of the eval context j (like base_prior_bystander):
+    a higher projection -> the eval ctx aligns with the behavior direction ->
+    more leak -> less distant, so polarity = -proj. ``pv_dp`` is routed here to
+    the shift track (the v9 dedup; registry redundant_with).
+    """
+    track = "level" if metric_id == "behavior_vector_proj_level" else "shift"
+    payload = _pbc_read(f"behavior_vector_scores/{behavior}.json")
+    proj = payload[track]
+    deg = payload.get("v_b_degenerate", {}).get(str(layer), False)
+    n = len(cids)
+    d = np.full((n, n), np.nan)
+    if deg:
+        logger.warning(
+            "[score] behavior_vector %s/%s layer %d v_b DEGENERATE -- row uninformative",
+            behavior,
+            track,
+            layer,
+        )
+        return d  # all-NaN -> the scorer flags too-few-cells / degenerate
+    for j, cj in enumerate(cids):
+        assert cj in proj, f"behavior_vector {behavior}/{track} missing cid {cj}"
+        val = float(proj[cj][str(layer)])
+        d[:, j] = -val  # higher projection -> more leak -> less distant
+        d[j, j] = np.nan
+    return d
+
+
+def _bcond_matrix(metric_id: str, cids: list[str], *, behavior: str) -> np.ndarray:
+    """(v9/v7) Conditioned predictors over the per-behavior realization span.
+
+    Reads ``realization_scores/<behavior>/bcond_<cid>.json`` (one per CONTEXT),
+    each carrying the per-context teacher-forced realization log-prob and the
+    sparse next-token distribution over the realization span. Schema per file::
+
+        {"cid": str, "logp_mean": float,
+         "span_dist": {"positions": [{"topk_ids": [...], "topk_logp": [...],
+                                      "tail_mass": float}, ...]}}
+
+    ``behavior_conditioned_logprob_diff``: D[i,j] = -(logp_j - logp_i) where
+    logp_c = mean_r logP_base(r | ctx_c) (directional; eval-ctx licenses the
+    realization -> more leak -> less distant). ``behavior_conditioned_js``:
+    symmetric mean per-token JS between the two contexts' span distributions.
+    """
+    files = {c: _pbc_read(f"realization_scores/{behavior}/bcond_{c}.json") for c in cids}
+    n = len(cids)
+    d = np.full((n, n), np.nan)
+    if metric_id == "behavior_conditioned_logprob_diff":
+        logp = {c: float(files[c]["logp_mean"]) for c in cids}
+        for i, ci in enumerate(cids):
+            for j, cj in enumerate(cids):
+                if i != j:
+                    d[i, j] = -(logp[cj] - logp[ci])  # eval licenses -> less distant
+        return d
+    # behavior_conditioned_js: symmetric span-distribution JS
+    dist = {c: files[c]["span_dist"]["positions"] for c in cids}
+    for i, ci in enumerate(cids):
+        for j, cj in enumerate(cids):
+            if i < j:
+                v = _mean_span_js(dist[ci], dist[cj])
+                d[i, j] = d[j, i] = v
+    return d
+
+
+def _train_prior_matrix(metric_id: str, cids: list[str], *, behavior: str) -> np.ndarray:
+    """(v9) A2 training-completion prior rows.
+
+    Reads ``realization_scores/<behavior>/a2_<cid>.json`` (one per CONTEXT),
+    schema ``{"cid": str, "tf_logp_mean": float, "onpolicy_logp_mean": float}``.
+    D[i,j] = -(prior_j - prior_i): how well the eval context licenses the cell's
+    TRAINING completion (train-side prior, vs the eval-side base_prior_bystander).
+    """
+    key = "tf_logp_mean" if metric_id == "train_prior_tf" else "onpolicy_logp_mean"
+    files = {c: _pbc_read(f"realization_scores/{behavior}/a2_{c}.json") for c in cids}
+    prior = {c: float(files[c][key]) for c in cids}
+    n = len(cids)
+    d = np.full((n, n), np.nan)
+    for i, ci in enumerate(cids):
+        for j, cj in enumerate(cids):
+            if i != j:
+                d[i, j] = -(prior[cj] - prior[ci])
+    return d
+
+
+def _sparse_to_dense_logp(pos: dict, vocab: int = 152064) -> np.ndarray:
+    """Reconstruct a (near-)full log-prob vector from a top-k + tail-mass record.
+
+    The tail mass is spread UNIFORMLY over the unlisted vocab entries (the standard
+    sparse-divergence reconstruction); top-k entries keep their stored log-probs.
+    Returns a length-``vocab`` log-prob array (normalized).
+    """
+    ids = np.asarray(pos["topk_ids"], dtype=np.int64)
+    lp = np.asarray(pos["topk_logp"], dtype=np.float64)
+    tail = float(pos.get("tail_mass", 0.0))
+    k = len(ids)
+    out = np.full(vocab, -np.inf)
+    out[ids] = lp
+    n_tail = vocab - k
+    if tail > 1e-12 and n_tail > 0:
+        out[out == -np.inf] = np.log(tail) - np.log(n_tail)
+    # renormalize defensively
+    out = out - _logsumexp(out[None, :])[0]
+    return out
+
+
+def _pair_js(lp: np.ndarray, lq: np.ndarray) -> float:
+    m = np.logaddexp(lp, lq) - np.log(2)
+    return float(0.5 * np.sum(np.exp(lp) * (lp - m)) + 0.5 * np.sum(np.exp(lq) * (lq - m)))
+
+
+def _pair_kl(lp: np.ndarray, lq: np.ndarray) -> float:
+    """KL(P || Q) over a dense log-prob pair."""
+    return float(np.sum(np.exp(lp) * (lp - lq)))
+
+
+def _mean_span_js(pos_i: list[dict], pos_j: list[dict]) -> float:
+    """Mean per-position JS over the aligned span positions (min length)."""
+    m = min(len(pos_i), len(pos_j))
+    if m == 0:
+        return float("nan")
+    vals = [
+        _pair_js(_sparse_to_dense_logp(pos_i[t]), _sparse_to_dense_logp(pos_j[t])) for t in range(m)
+    ]
+    return float(np.mean(vals))
+
+
+def _output_dist_matrix(metric_id: str, cids: list[str], *, behavior: str, kind: str) -> np.ndarray:
+    """(v9) A5 / A5_rb / A6 output-sequence divergence rows.
+
+    Reads per-context output distributions written by i537_dropped_predictors.py:
+      kind="a5":    realization_scores/<behavior>/a5_<cid>.json    (full-reply positions)
+      kind="a5_rb": realization_scores/<behavior>/a5_rb_<cid>.json (response-bucketed)
+      kind="a6":    realization_scores/<behavior>/a6_<cid>.json    (taught-span positions only)
+    Each file: ``{"cid": str, "positions": [{"topk_ids","topk_logp","tail_mass"}, ...]}``.
+    The divergence (JS / fwd-KL / rev-KL / asym / oneway) is computed pairwise
+    over the aligned positions (min length) and meaned. Directional for the *_fwd/
+    rev/asym/oneway rows; symmetric for js_*.
+    """
+    prefix = {"a5": "a5", "a5_rb": "a5_rb", "a6": "a6"}[kind]
+    files = {c: _pbc_read(f"realization_scores/{behavior}/{prefix}_{c}.json") for c in cids}
+    dist = {c: files[c]["positions"] for c in cids}
+    n = len(cids)
+    d = np.full((n, n), np.nan)
+
+    def _mean_div(pos_i: list[dict], pos_j: list[dict], which: str) -> float:
+        m = min(len(pos_i), len(pos_j))
+        if m == 0:
+            return float("nan")
+        out = []
+        for t in range(m):
+            lp = _sparse_to_dense_logp(pos_i[t])
+            lq = _sparse_to_dense_logp(pos_j[t])
+            if which == "js":
+                out.append(_pair_js(lp, lq))
+            elif which == "fwd":  # KL(i || j)
+                out.append(_pair_kl(lp, lq))
+            elif which == "rev":  # KL(j || i)
+                out.append(_pair_kl(lq, lp))
+            elif which == "asym":  # 0.5*(fwd+rev) but kept as a labeled asym combo
+                out.append(0.5 * _pair_kl(lp, lq) + 0.5 * _pair_kl(lq, lp))
+            elif which == "oneway":  # one-way forward KL (i || j), full reply
+                out.append(_pair_kl(lp, lq))
+        return float(np.mean(out))
+
+    sym = metric_id in ("js_out_seq", "js_out_seq_rb", "js_taught_span", "kl_asym_out_seq")
+    which = {
+        "js_out_seq": "js",
+        "js_out_seq_rb": "js",
+        "js_taught_span": "js",
+        "kl_out_seq_fwd": "fwd",
+        "kl_fwd_out_seq_rb": "fwd",
+        "kl_out_seq_rev": "rev",
+        "kl_rev_out_seq_rb": "rev",
+        "kl_asym_out_seq": "asym",
+        "kl_out_seq_oneway": "oneway",
+    }[metric_id]
+    for i, ci in enumerate(cids):
+        for j, cj in enumerate(cids):
+            if i == j:
+                continue
+            if sym and i < j:
+                v = _mean_div(dist[ci], dist[cj], which)
+                d[i, j] = d[j, i] = v
+            elif not sym:
+                d[i, j] = _mean_div(dist[ci], dist[cj], which)
+    return d
+
+
 def metric_matrix(  # noqa: C901 - one dispatch table per metric family; splitting would scatter the polarity contract
     metric_id: str,
     cids: list[str],
@@ -363,6 +705,46 @@ def metric_matrix(  # noqa: C901 - one dispatch table per metric family; splitti
     )
     n = len(cids)
     d = np.full((n, n), np.nan)
+
+    # ── (v9) Control rows (no clouds, behavior-independent D) ─────────────────
+    if metric_id == "null_random_predictor":
+        # Permute centroid_cosine's off-diagonal cell VALUES with a fixed seed:
+        # the argmax-over-noise null. Behavior-independent (centroid_cosine is
+        # base-model geometry; the permutation seed is fixed).
+        ref = metric_matrix("centroid_cosine", cids, anchor=anchor, layer=layer, centered=centered)
+        off = ~np.eye(n, dtype=bool)
+        vals = ref[off & np.isfinite(ref)]
+        rng = np.random.default_rng(537)
+        perm = rng.permutation(vals)
+        k = 0
+        for i in range(n):
+            for j in range(n):
+                if i != j and np.isfinite(ref[i, j]):
+                    d[i, j] = perm[k]
+                    k += 1
+        return d
+    if metric_id == "text_overlap_predictor":
+        return _text_overlap_matrix(cids, behavior=behavior)
+
+    # ── (v9) New-row artifact branches (read predictor-bakeoff-complete JSONs) ─
+    if metric_id in ("behavior_vector_proj_shift", "behavior_vector_proj_level", "pv_dp"):
+        return _behavior_vector_matrix(metric_id, cids, layer=layer, behavior=behavior)
+    if metric_id in ("behavior_conditioned_logprob_diff", "behavior_conditioned_js"):
+        return _bcond_matrix(metric_id, cids, behavior=behavior)
+    if metric_id in ("train_prior_tf", "train_prior_onpolicy"):
+        return _train_prior_matrix(metric_id, cids, behavior=behavior)
+    if metric_id == "js_taught_span":
+        return _output_dist_matrix(metric_id, cids, behavior=behavior, kind="a6")
+    if metric_id in (
+        "js_out_seq",
+        "kl_out_seq_fwd",
+        "kl_out_seq_rev",
+        "kl_asym_out_seq",
+        "kl_out_seq_oneway",
+    ):
+        return _output_dist_matrix(metric_id, cids, behavior=behavior, kind="a5")
+    if metric_id in ("js_out_seq_rb", "kl_fwd_out_seq_rb", "kl_rev_out_seq_rb"):
+        return _output_dist_matrix(metric_id, cids, behavior=behavior, kind="a5_rb")
 
     # Base-rate-derived rows (stored artifacts; no clouds needed).
     if metric_id in ("base_prior_bystander", "content_free"):
@@ -682,25 +1064,94 @@ def ltco_cv_predictions(d_mat: np.ndarray, g_mat: np.ndarray) -> tuple[np.ndarra
     return np.array(y_true), np.array(y_pred)
 
 
+def _r2_from_pooled(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Out-of-fold R² from already-pooled (y_true, y_pred) OOF predictions."""
+    if y_true.size == 0:
+        return float("nan")
+    ss_res = float(((y_true - y_pred) ** 2).sum())
+    ss_tot = float(((y_true - y_true.mean()) ** 2).sum())
+    return 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
+
+
+def _oof_r2(d_mat: np.ndarray, g_mat: np.ndarray) -> float:
+    return _r2_from_pooled(*ltco_cv_predictions(d_mat, g_mat))
+
+
 def score_metric_vs_g(
-    d_mat: np.ndarray, g_mat: np.ndarray, baseline_mat: np.ndarray | None = None
+    d_mat: np.ndarray,
+    g_mat: np.ndarray,
+    baseline_mat: np.ndarray | None = None,
+    *,
+    base_prior_mat: np.ndarray | None = None,
+    gauss_kl_mat: np.ndarray | None = None,
 ) -> dict:
-    """Spearman + out-of-fold R² (+ ΔR² over the symmetric baseline)."""
+    """Spearman + out-of-fold R² (+ ΔR² over the baseline(s)).
+
+    (v9) Two named baselines ship side by side: ``base_prior_mat`` (the kill/sort
+    bar) yields ``base_prior_oof_r2`` + ``delta_vs_base_prior_r2``;
+    ``gauss_kl_mat`` (the parent's original geometry-relative baseline) yields
+    ``gauss_kl_act_oof_r2`` + ``delta_vs_gauss_kl_act_r2``. ``baseline_mat`` is
+    the LEGACY positional arg: when passed (and the named ones are not) it is
+    treated as the base_prior baseline and ``delta_r2`` == ``delta_vs_base_prior_r2``
+    for backward compat.
+    """
     mask = np.isfinite(d_mat) & np.isfinite(g_mat) & ~np.eye(d_mat.shape[0], dtype=bool)
     assert mask.sum() >= 10, f"too few usable cells ({mask.sum()})"
     rho = float(spearmanr(d_mat[mask], g_mat[mask]).statistic)
-    y_true, y_pred = ltco_cv_predictions(d_mat, g_mat)
-    ss_res = float(((y_true - y_pred) ** 2).sum())
-    ss_tot = float(((y_true - y_true.mean()) ** 2).sum())
-    r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
+    r2 = _oof_r2(d_mat, g_mat)
     out = {"spearman": rho, "oof_r2": r2, "n_cells": int(mask.sum())}
-    if baseline_mat is not None:
-        yb_true, yb_pred = ltco_cv_predictions(baseline_mat, g_mat)
-        ssb = float(((yb_true - yb_pred) ** 2).sum())
-        sstb = float(((yb_true - yb_true.mean()) ** 2).sum())
-        out["baseline_oof_r2"] = 1.0 - ssb / sstb if sstb > 0 else float("nan")
-        out["delta_r2"] = out["oof_r2"] - out["baseline_oof_r2"]
+    # Back-compat: legacy positional baseline_mat == the base_prior baseline.
+    if base_prior_mat is None and baseline_mat is not None:
+        base_prior_mat = baseline_mat
+    if base_prior_mat is not None:
+        bp = _oof_r2(base_prior_mat, g_mat)
+        out["base_prior_oof_r2"] = bp
+        out["delta_vs_base_prior_r2"] = out["oof_r2"] - bp
+        # legacy key kept == the base_prior-relative delta (round-3 readers)
+        out["delta_r2"] = out["delta_vs_base_prior_r2"]
+    if gauss_kl_mat is not None:
+        gk = _oof_r2(gauss_kl_mat, g_mat)
+        out["gauss_kl_act_oof_r2"] = gk
+        out["delta_vs_gauss_kl_act_r2"] = out["oof_r2"] - gk
     return out
+
+
+def ltco_cv_predictions_leave_family_out(
+    d_mat: np.ndarray, g_mat: np.ndarray, families: list[str]
+) -> tuple[np.ndarray, np.ndarray]:
+    """(v9) Leave-context-FAMILY-out pooled OOF predictions.
+
+    For each distinct family F: hold out ALL cells whose train-context OR
+    eval-context is in F; fit OLS G ~ D on the remaining off-diagonal cells;
+    predict the held-out F cells. Pools OOF over folds (NaN cells dropped). A
+    fold with < 8 usable in-fold cells is skipped (mirrors ``ltco_cv_predictions``).
+    Tests family-level generalization (LTCO can leak family structure via an
+    in-fold same-family sibling). ``families[k]`` = the family tag of context k.
+    """
+    n = d_mat.shape[0]
+    assert len(families) == n, (len(families), n)
+    y_true, y_pred = [], []
+    for fam in sorted(set(families)):
+        in_fam = {k for k in range(n) if families[k] == fam}
+        keep = [k for k in range(n) if k not in in_fam]
+        xs, ys = [], []
+        for i in keep:
+            for j in keep:
+                if i != j and np.isfinite(d_mat[i, j]) and np.isfinite(g_mat[i, j]):
+                    xs.append(d_mat[i, j])
+                    ys.append(g_mat[i, j])
+        if len(xs) < 8:
+            continue
+        coef = np.polyfit(np.array(xs), np.array(ys), deg=1)
+        for i in range(n):
+            for j in range(n):
+                # a held-out cell touches the family on either axis
+                if i == j or (i not in in_fam and j not in in_fam):
+                    continue
+                if np.isfinite(d_mat[i, j]) and np.isfinite(g_mat[i, j]):
+                    y_true.append(g_mat[i, j])
+                    y_pred.append(float(np.polyval(coef, d_mat[i, j])))
+    return np.array(y_true), np.array(y_pred)
 
 
 def context_cluster_bootstrap(
@@ -925,6 +1376,28 @@ def main() -> int:
         "(EXPLICIT opt-in; the default exits non-zero naming them AFTER scoring "
         "+ persisting every implemented row)",
     )
+    ap.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="(v9) per-metric scores JSON path (READ-existing-and-merge keys off this "
+        "path too); default = the legacy baselines/baseline_scores.json. The v9 round "
+        "passes predictor-bakeoff-complete/scoring/per_metric_score.json so the prereg "
+        "baselines/ tree is never overwritten.",
+    )
+    ap.add_argument(
+        "--leaderboard",
+        type=Path,
+        default=None,
+        help="(v9) optional per-behavior leaderboard JSON output (sorted by "
+        "delta_vs_base_prior_r2, + the overall_best block when --all-registered)",
+    )
+    ap.add_argument(
+        "--descoped",
+        default="",
+        help="(v9) comma-separated registered metric ids deliberately descoped for "
+        "compute -- marks the leaderboard PARTIAL and names them (plan §3/§7/§9)",
+    )
     args = ap.parse_args()
 
     if args.selftest:
@@ -960,45 +1433,69 @@ def main() -> int:
         metric_ids = [args.metric]
     assert metric_ids and all(m for m in metric_ids), "pass --metric or --all-registered"
 
-    def _score(mid: str, *, anchor: str, layer: int, centered: bool, baseline_mat) -> dict:
+    # (v9) Family tag per train context (for the leave-context-family-out fold).
+    from explore_persona_space.experiments.i537_contexts import load_registry
+
+    _reg = load_registry(require_sampled=True)
+    fam_of = [_reg[c].family for c in cids]
+
+    # (v9) Two named baselines: base_prior_bystander (the kill/sort bar) +
+    # gauss_kl_act (the parent's original geometry-relative delta). BOTH ship.
+    base_prior_mat = metric_matrix(
+        "base_prior_bystander", cids, anchor=args.anchor, layer=args.layer, behavior=args.behavior
+    )
+    gauss_kl_mat = metric_matrix(
+        "gauss_kl_act", cids, anchor=args.anchor, layer=args.layer, behavior=args.behavior
+    )
+
+    def _score(mid: str, *, anchor: str, layer: int, centered: bool) -> dict:
         d_mat = metric_matrix(
             mid, cids, anchor=anchor, layer=layer, centered=centered, behavior=args.behavior
         )
-        res = score_metric_vs_g(d_mat, g_mat, baseline_mat=baseline_mat)
+        # base_prior's OWN row: delta-against-self is 0 by construction (pass None
+        # for the base_prior baseline); still ship the gauss_kl-relative delta.
+        res = score_metric_vs_g(
+            d_mat,
+            g_mat,
+            base_prior_mat=None if mid == "base_prior_bystander" else base_prior_mat,
+            gauss_kl_mat=None if mid == "gauss_kl_act" else gauss_kl_mat,
+        )
+        if mid == "base_prior_bystander":
+            res["base_prior_oof_r2"] = res["oof_r2"]
+            res["delta_vs_base_prior_r2"] = 0.0
+            res["delta_r2"] = 0.0
         res["bootstrap"] = context_cluster_bootstrap(d_mat, g_mat)
+        # (v9) leave-context-family-out OOF skill, reported ALONGSIDE LTCO (H4)
+        lf_true, lf_pred = ltco_cv_predictions_leave_family_out(d_mat, g_mat, fam_of)
+        res["leave_family_out_oof_r2"] = (
+            _r2_from_pooled(lf_true, lf_pred) if lf_true.size else float("nan")
+        )
         res["tier"] = METRIC_REGISTRY[mid]["tier"]
         res["family"] = METRIC_REGISTRY[mid]["family"]
         if METRIC_REGISTRY[mid].get("note"):
             res["note"] = METRIC_REGISTRY[mid]["note"]
+        if METRIC_REGISTRY[mid].get("redundant_with"):
+            res["redundant_with"] = METRIC_REGISTRY[mid]["redundant_with"]
         res["variant"] = {"anchor": anchor, "layer": layer, "centered": centered}
         return res
 
-    baseline = metric_matrix(
-        "gauss_kl_act", cids, anchor=args.anchor, layer=args.layer, behavior=args.behavior
-    )
     results = {}
     for mid in metric_ids:
-        res = _score(
-            mid,
-            anchor=args.anchor,
-            layer=args.layer,
-            centered=args.centered,
-            baseline_mat=None if mid == "gauss_kl_act" else baseline,
-        )
+        res = _score(mid, anchor=args.anchor, layer=args.layer, centered=args.centered)
         results[mid] = res
-        logger.info("[score] %s: rho=%.3f oof_R²=%.3f", mid, res["spearman"], res["oof_r2"])
+        logger.info(
+            "[score] %s: rho=%.3f oof_R²=%.3f Δvs_base_prior=%.3f",
+            mid,
+            res["spearman"],
+            res["oof_r2"],
+            res.get("delta_vs_base_prior_r2", float("nan")),
+        )
     if args.all_registered:
         # §6.1 A3 explicitly registers the #509 representative early-layer cell
         # `end_of_system x L02 x cosine x centered` as part of the raw-vs-
         # centered variant axis; score it under a variant-tagged key (variants
         # of ONE row, not a new metric id -- KL-namespacing rule).
-        rep = _score(
-            "centroid_cosine",
-            anchor="end_of_system",
-            layer=2,
-            centered=True,
-            baseline_mat=baseline,
-        )
+        rep = _score("centroid_cosine", anchor="end_of_system", layer=2, centered=True)
         results["centroid_cosine[end_of_system,L02,centered]"] = rep
         logger.info(
             "[score] #509 representative cell: rho=%.3f oof_R²=%.3f",
@@ -1006,7 +1503,10 @@ def main() -> int:
             rep["oof_r2"],
         )
 
-    out = EVAL / "baselines/baseline_scores.json"
+    # (v9) Output redirection: READ-existing-and-merge keys off --out (NOT the
+    # hardcoded prereg path) so the 5 per-behavior runs accumulate in the new
+    # file without re-reading the OLD baselines/baseline_scores.json.
+    out = args.out if args.out is not None else EVAL / "baselines/baseline_scores.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     existing = json.loads(out.read_text()) if out.exists() else {"schema_version": 2, "scores": {}}
     if existing.get("schema_version") != 2:
@@ -1040,6 +1540,13 @@ def main() -> int:
     )
     out.write_text(json.dumps(existing, indent=1))
     logger.info("[score] wrote %s (%d %s rows)", out, len(results), args.behavior)
+
+    # (v9) Optional per-behavior leaderboard (sorted by delta_vs_base_prior_r2)
+    # + the overall_best block + the partial-completeness flag.
+    descoped = [m.strip() for m in args.descoped.split(",") if m.strip()]
+    if args.leaderboard is not None and args.all_registered:
+        _write_leaderboard(args.leaderboard, existing, args.behavior, descoped)
+
     if not_implemented:
         # NEVER a silent gap (§6.1 contract, round-2 fix): every implemented
         # row is scored + persisted ABOVE, then the run exits non-zero naming
@@ -1049,7 +1556,7 @@ def main() -> int:
         msg = (
             f"[score] {len(not_implemented)} REGISTERED §6.1 rows are not wired: "
             + ", ".join(not_implemented)
-            + " (all are P3 GPU passes -- see each row's registry note). Scored rows were "
+            + " (see each row's registry note). Scored rows were "
             "persisted; rerun with --allow-missing-registered to tolerate the gap explicitly."
         )
         if args.allow_missing_registered:
@@ -1057,6 +1564,117 @@ def main() -> int:
         else:
             raise SystemExit(msg)
     return 0
+
+
+# Behavior-equal-weighted overall aggregation (plan §6): refusal EXCLUDED
+# (noise-limited, parent finding 1); em INCLUDED but flagged.
+_OVERALL_BEHAVIORS = ("marker", "fact", "sycophancy", "em")
+
+
+def _write_leaderboard(path: Path, scores_file: dict, behavior: str, descoped: list[str]) -> None:
+    """(v9) Emit the per-behavior leaderboard + overall_best block + partial flag.
+
+    Reads ALL rows in the accumulated scores file (every behavior that has run
+    so far), sorts each behavior's rows by ``delta_vs_base_prior_r2`` desc, and
+    computes the single ``overall_best`` by the §6-declared aggregation
+    (behavior-equal-weighted mean delta_vs_base_prior_r2 over
+    {marker,fact,sycophancy,em}; refusal excluded; tie-break: higher min
+    per-behavior delta -> lower gpu cost (n/a here) -> alphabetical id).
+
+    Completeness: ``partial=True`` (Deliverable 1/2 NOT fully satisfied) when
+    any implementable registered class was descoped (``descoped`` non-empty) OR
+    any registered row is still unimplemented. A descoped row tag alone does NOT
+    certify a full/overall conclusion (plan §3/§7/§9).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    scores = scores_file["scores"]
+    by_behavior: dict[str, list[dict]] = {}
+    for key, row in scores.items():
+        b = row.get("behavior", key.split(":", 1)[0])
+        mid = key.split(":", 1)[1] if ":" in key else key
+        by_behavior.setdefault(b, []).append({"metric": mid, **row})
+    leaderboards: dict[str, list[dict]] = {}
+    for b, rows in by_behavior.items():
+        rows_sorted = sorted(
+            rows,
+            key=lambda r: (
+                r.get("delta_vs_base_prior_r2")
+                if r.get("delta_vs_base_prior_r2") is not None
+                and np.isfinite(r.get("delta_vs_base_prior_r2"))
+                else -1e9
+            ),
+            reverse=True,
+        )
+        leaderboards[b] = rows_sorted
+
+    # overall_best: behavior-equal-weighted mean delta over the included behaviors.
+    # Gather each predictor's per-behavior delta (skip variant-tagged keys).
+    per_metric: dict[str, dict[str, float]] = {}
+    for b in _OVERALL_BEHAVIORS:
+        for r in by_behavior.get(b, []):
+            mid = r["metric"]
+            if "[" in mid:  # variant-tagged key, not a base row
+                continue
+            dv = r.get("delta_vs_base_prior_r2")
+            if dv is not None and np.isfinite(dv):
+                per_metric.setdefault(mid, {})[b] = float(dv)
+    overall_best = None
+    if per_metric:
+        # only aggregate metrics with a reading on >=1 included behavior
+        def _agg(mid: str) -> tuple[float, float, str]:
+            vals = [per_metric[mid].get(b) for b in _OVERALL_BEHAVIORS if b in per_metric[mid]]
+            mean = float(np.mean(vals))
+            mn = float(np.min(vals))
+            return mean, mn, mid
+
+        ranked = sorted(
+            per_metric.keys(),
+            key=lambda m: (_agg(m)[0], _agg(m)[1], m),
+            reverse=True,
+        )
+        # tie-break within 0.01 on the mean: prefer higher min-per-behavior, then id
+        best = ranked[0]
+        best_mean, best_min, _ = _agg(best)
+        tied = [m for m in ranked if abs(_agg(m)[0] - best_mean) < 0.01]
+        if len(tied) > 1:
+            best = sorted(tied, key=lambda m: (_agg(m)[1], [-ord(c) for c in m]), reverse=True)[0]
+            best_mean, best_min, _ = _agg(best)
+        overall_best = {
+            "metric": best,
+            "aggregation": "behavior-equal-weighted mean delta_vs_base_prior_r2 over "
+            "{marker,fact,sycophancy,em} (refusal excluded); tie-break min-per-behavior -> id",
+            "included_behaviors": [b for b in _OVERALL_BEHAVIORS if b in per_metric[best]],
+            "primary_value": best_mean,
+            "min_per_behavior_delta": best_min,
+            "per_behavior_breakdown": per_metric[best],
+        }
+
+    reg_not_impl = scores_file.get("registered_not_implemented", {})
+    any_unimpl = any(v for v in reg_not_impl.values())
+    partial = bool(descoped) or any_unimpl
+    payload = {
+        "schema_version": 1,
+        "partial": partial,
+        "partial_reason": (
+            (f"descoped classes: {descoped}; " if descoped else "")
+            + (f"unimplemented registered rows: {reg_not_impl}" if any_unimpl else "")
+        )
+        or "complete leaderboard over the implementable registered set",
+        "descoped": descoped,
+        "kill_sort_delta": "delta_vs_base_prior_r2",
+        "secondary_delta": "delta_vs_gauss_kl_act_r2",
+        "leaderboards": leaderboards,
+        "overall_best": overall_best,
+        "git_commit": _git_commit(),
+        "updated_at": datetime.datetime.now(datetime.UTC).isoformat(),
+    }
+    path.write_text(json.dumps(payload, indent=1))
+    logger.info(
+        "[score] wrote leaderboard %s (partial=%s, overall_best=%s)",
+        path,
+        partial,
+        overall_best["metric"] if overall_best else None,
+    )
 
 
 if __name__ == "__main__":
