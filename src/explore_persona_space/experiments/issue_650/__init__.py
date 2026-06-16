@@ -112,14 +112,27 @@ PERSONA_POOL_19: Final[tuple[str, ...]] = (
     "police_officer",
 )
 
-# Contrastive-negative panel, reuse of #621's UNIFIED_NEGATIVE_PANEL.
-# HARD disjointness invariant: panel ∩ {SOURCE} = ∅ (asserted below + in the
-# realized mix builder). #527/#538 librarian-contamination class.
+# Contrastive-negative panel.
+# Round-2 (code-review blocker `negative-eval-panel-overlap`): #621's
+# UNIFIED_NEGATIVE_PANEL was ("assistant", "programmer", "chef",
+# "kindergarten_teacher"), but `kindergarten_teacher` is ALSO in the #650
+# marker eval leakage panel (PERSONA_POOL_19). Training it as a contrastive
+# NEGATIVE steers the marker/agreement DOWN at its slot, so its bystander
+# leakage read would be downward-biased — confounding the held-out leakage
+# read this task's DV-5 rests on. Per the contrastive-negatives disjointness
+# invariant ("panel disjoint from the held-out eval sources/targets"), we
+# substitute the fifth-closest source-adjacent persona NOT in PERSONA_POOL_19:
+# `detective` (same authority/investigation domain as police_officer, a close
+# negative, absent from the leakage panel). The other three negatives
+# (assistant, programmer, chef) were already disjoint from PERSONA_POOL_19.
+# HARD disjointness invariants (asserted below + in the realized mix builder):
+#   panel ∩ {SOURCE} = ∅  AND  panel ∩ (PERSONA_POOL_19 - {SOURCE}) = ∅.
+# #527/#538 librarian-contamination class + this round's eval-panel overlap.
 UNIFIED_NEGATIVE_PANEL: Final[tuple[str, ...]] = (
     "assistant",
     "programmer",
     "chef",
-    "kindergarten_teacher",
+    "detective",
 )
 
 if SOURCE in set(UNIFIED_NEGATIVE_PANEL):
@@ -127,6 +140,19 @@ if SOURCE in set(UNIFIED_NEGATIVE_PANEL):
         f"SOURCE {SOURCE!r} intersects UNIFIED_NEGATIVE_PANEL "
         f"{UNIFIED_NEGATIVE_PANEL} — disjointness invariant violated at "
         "constant-definition time (contrastive-negatives rule)."
+    )
+
+# Round-2: the negative panel must NOT overlap the held-out marker eval
+# leakage panel (PERSONA_POOL_19), or those bystanders' leakage reads are
+# down-biased by their negative-training. SOURCE is the one allowed shared
+# member (it is the implant target, not a bystander read).
+_neg_eval_overlap = set(UNIFIED_NEGATIVE_PANEL) & (set(PERSONA_POOL_19) - {SOURCE})
+if _neg_eval_overlap:
+    raise AssertionError(
+        f"UNIFIED_NEGATIVE_PANEL ∩ (PERSONA_POOL_19 - SOURCE) = {sorted(_neg_eval_overlap)} "
+        "— a contrastive negative is also a held-out leakage-panel bystander, so its "
+        "leakage read is confounded (code-review blocker negative-eval-panel-overlap). "
+        "Swap it out of one of the two panels."
     )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -269,12 +295,24 @@ HF_MARKER_MIX_PREFIX: Final[str] = "issue621_rank1_readwrite/training_mixes"
 HF_MARKER_MIX_REVISION: Final[str] = "bf641209"  # #621 Artifacts row (mix-holding revision)
 # sha256 of the 3 reused police_officer marker mixes, asserted at prefetch
 # (fitness check (f), incident #600 — resolution alone ≠ mirror identity).
-# Populated by run_issue650_preflight.py at prefetch from the pinned revision;
-# the EXPECTED_MARKER_MIX_SHA256 table is filled in once the experimenter
-# resolves the live revision (the planner left the SHAs to compute at
-# prefetch). Kept as an empty dict so a missing pin is a LOUD KeyError at
-# prefetch, never a silent skip.
-EXPECTED_MARKER_MIX_SHA256: Final[dict[str, str]] = {}
+# Round-2 (code-review blocker `marker-mix-sha-pins-empty`, Option A): the
+# pins are COMMITTED, computed at implementation time by hashing the live
+# files resolved from HF_DATA_REPO @ HF_MARKER_MIX_REVISION via
+# huggingface_hub.hf_hub_download — so the preflight passes mechanically
+# without a manual prefetch step. A drift between the committed pin and the
+# live mirror is a HARD STOP at preflight (_sha_assert). Keyed by the full
+# data-repo path the preflight downloads.
+EXPECTED_MARKER_MIX_SHA256: Final[dict[str, str]] = {
+    f"{HF_MARKER_MIX_PREFIX}/police_officer__seed42.jsonl": (
+        "259485b4c5a038c7e48f1806961c32b76fc8f40992079113ebe78a94132e26a2"
+    ),
+    f"{HF_MARKER_MIX_PREFIX}/police_officer__seed137.jsonl": (
+        "e70e0edd527747c59b70722e899b1409f9fb7f8d829dae4d09dd44e1e0c0644c"
+    ),
+    f"{HF_MARKER_MIX_PREFIX}/police_officer__seed256.jsonl": (
+        "ae53004dfb85a7f10f36abb9a9ea49f1ef4734191312a051d6a615e1a423aed8"
+    ),
+}
 
 # ─── Reuse target 2 (#612 audited 60-claim false-claim pool) ──────────────────
 # tier-1 (real-world-derived) prompts: each claim verified false by 3
