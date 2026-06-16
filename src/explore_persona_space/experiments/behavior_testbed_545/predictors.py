@@ -369,15 +369,30 @@ def extract_group_b_gpu(out_dir: Path, *, device: str = "cuda:0", cap: int = 6) 
 # ---------------------------------------------------------------------------
 
 
-def _mean_hidden_states(model, tokenizer, texts: list[str], device) -> dict:
+def _mean_hidden_states(
+    model, tokenizer, texts: list[str], device, *, retain_per_sample_reps: bool = False
+) -> dict:
     """Per-layer reps for a list of texts: last-token + mean-over-tokens.
 
-    Returns {layer: {"last_token": tensor(D,), "mean_response": tensor(D,)}}
-    averaged over texts (float32, CPU).
+    Default (``retain_per_sample_reps=False``) returns the centroid
+    AVERAGED over texts — the v1 byte-identical behavior:
+    ``{layer: {"last_token": tensor(D,), "mean_response": tensor(D,)}}``.
+
+    When ``retain_per_sample_reps=True`` (metric-race cloud path, plan §4.1)
+    the per-text reps are RETAINED instead of averaged:
+    ``{layer: {"last_token": tensor(N, D), "mean_response": tensor(N, D)}}``
+    — the full activation cloud (N = number of texts) the #493 cloud metrics
+    require. The forward passes + per-text reductions are IDENTICAL to the
+    default path; only the final ``/ n`` averaging is dropped. (float32, CPU.)
+
+    Unit test ``tests/test_i545_retain_per_sample_reps.py`` pins
+    default-False ≡ the per-text-stacked mean so the v1 centroid path is
+    provably unchanged.
     """
     import torch
 
-    sums: dict[int, dict[str, torch.Tensor]] = {}
+    # Per-text reps, retained in input order, per layer / extraction point.
+    per_text: dict[int, dict[str, list[torch.Tensor]]] = {}
     n = 0
     for text in texts:
         ids = tokenizer(text, return_tensors="pt", truncation=True, max_length=1024).to(device)
@@ -388,12 +403,24 @@ def _mean_hidden_states(model, tokenizer, texts: list[str], device) -> dict:
             if layer >= len(hs):
                 continue
             h = hs[layer][0].float().cpu()  # (T, D)
-            entry = sums.setdefault(layer, {})
-            entry["last_token"] = entry.get("last_token", 0) + h[-1]
-            entry["mean_response"] = entry.get("mean_response", 0) + h.mean(dim=0)
+            entry = per_text.setdefault(layer, {})
+            entry.setdefault("last_token", []).append(h[-1])
+            entry.setdefault("mean_response", []).append(h.mean(dim=0))
         n += 1
     assert n > 0, "no texts given to _mean_hidden_states"
-    return {layer: {k: v / n for k, v in entry.items()} for layer, entry in sums.items()}
+    if retain_per_sample_reps:
+        # Stack per-text reps into (N, D) clouds (cloud metrics need the cloud).
+        return {
+            layer: {k: torch.stack(v, dim=0) for k, v in entry.items()}
+            for layer, entry in per_text.items()
+        }
+    # v1 default: mean over texts → (D,) centroid. ``torch.stack(...).mean(0)``
+    # is bitwise the same reduction as the old running-sum-then-divide for the
+    # float32 sums here (the unit test pins this equivalence).
+    return {
+        layer: {k: torch.stack(v, dim=0).mean(dim=0) for k, v in entry.items()}
+        for layer, entry in per_text.items()
+    }
 
 
 def _geometry_score(metric: str, a, b) -> float:

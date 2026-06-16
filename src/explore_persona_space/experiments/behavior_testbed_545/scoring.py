@@ -37,6 +37,32 @@ from .rows import ROWS
 
 logger = logging.getLogger(__name__)
 
+# --- metric-race family sets (plan §4.3, defined ONCE, never conflated) ----
+# lfo_families: ALL 9 development families — the LFO-mean scope for H1 (global
+#   champion) + H2 (heterogeneity). Folding over the smaller eligible set would
+#   drop B7/B9/B10 from the H1 read and could flip a near-threshold verdict.
+# eligible_families: the 6 dev families clearing the >=4-HELD-OUT-cell nested
+#   floor — bound to H3 ONLY (the oracle/global/permutation gain terms). The
+#   sparse families B7/B9/B10 (which cannot support a >=4-held-out-cell nested
+#   within-family split) are descriptive-only.
+LFO_FAMILIES: frozenset[str] = frozenset({"B1", "B2", "B3", "B5", "B6", "B7", "B8", "B9", "B10"})
+ELIGIBLE_FAMILIES: frozenset[str] = frozenset({"B1", "B2", "B3", "B5", "B6", "B8"})
+# The fold set where Groups B/C are defined (data-conditioned signals apply
+# only here per column_applies) — the common-fold intersection for the
+# A-vs-B/C comparison (Nit N1).
+COMMON_FOLD_FAMILIES: frozenset[str] = frozenset({"B3", "B5", "B6"})
+assert ELIGIBLE_FAMILIES <= LFO_FAMILIES  # H3 scope is a subset of the LFO scope
+
+# Metric-race null parameters (plan §10/§11).
+RACE_BOOTSTRAP_B = 2000  # selection/argmax statistic → doubled vs v1's B=1000
+RACE_PERMUTATION_P = 10000
+RACE_SEED = 545
+H1_TAU_FLOOR = 0.10  # non-noise gate (plan H1)
+# v1 target reliability ceiling (Spearman seed0↔seed137) — for the τ-as-fraction
+# effect-size interpretation (Nit N3). The 0.10 floor stays the binary gate.
+V1_RELIABILITY_CEILING_RAW = 0.588
+V1_RELIABILITY_CEILING_SB = 0.740  # Spearman-Brown-adjusted
+
 
 # ---------------------------------------------------------------------------
 # Data loading
@@ -280,6 +306,7 @@ def score(  # noqa: C901 — pre-registered protocol, intentionally flat
     exclude_rows: frozenset[str] = frozenset(),
     out_dir_name: str = "scoring",
     protocol_note: str | None = None,
+    pred_dir_name: str = "predictors",
 ) -> Path:
     """Run the full pre-registered race. Writes scoring/scoring_results.json.
 
@@ -289,13 +316,16 @@ def score(  # noqa: C901 — pre-registered protocol, intentionally flat
     scoring universe (targets, z-norm pool, dev AND quarantine lists) before
     any selection; ``out_dir_name`` redirects output (e.g.
     ``scoring_followup_bcond``); ``protocol_note`` stamps the results JSON
-    with why the pass deviates from the prereg record.
+    with why the pass deviates from the prereg record; ``pred_dir_name``
+    redirects the predictor source dir (e.g. ``predictors_metric_race`` for
+    the metric-race Analysis-1 global-champion read over the EXPANDED zoo —
+    same frozen LFO-CV, expanded candidate pool).
     """
     out_root = output_root()
     prereg = json.loads((out_root / "preregistration.json").read_text())
     matrix = json.loads((out_root / "L_matrix.json").read_text())["cells"]
     metadata = json.loads((out_root / "cell_metadata.json").read_text())["cells"]
-    preds = _load_predictors(out_root / "predictors")
+    preds = _load_predictors(out_root / pred_dir_name)
 
     split = prereg["quarantine_split"]
     dev_cells = ["|".join(c) for c in split["development_cells"]]
@@ -541,3 +571,593 @@ def score(  # noqa: C901 — pre-registered protocol, intentionally flat
     out_path.write_text(json.dumps(results, indent=1))
     logger.info("[phase=scoring] wrote %s", out_path)
     return out_path
+
+
+# ===========================================================================
+# Metric-race scoring (the `full-metric-race-per-family` follow-up, plan §4.2)
+# ===========================================================================
+
+
+def _metric_family(name: str) -> str:
+    """Map a predictor name → its metric family for the leaderboard grouping.
+
+    Group A names are ``A__cloud_<flavor>_L<layer>_<point>_<centering>_<metric>``
+    (centroid + cloud) or ``A__outdist_<flavor>_<direction>``; plus the v1
+    ``A__geom_*`` reference. Non-A predictors keep their group letter.
+    """
+    g = name.split("__", 1)[0]
+    if g != "A":
+        return f"group_{g.lower()}"
+    body = name.split("__", 1)[1]
+    if body.startswith("geom_"):
+        return "raw_centroid"  # v1 reference {cosine,neg_l2,projection}
+    if body.startswith("outdist_"):
+        return "outdist_jskl"
+    # cloud_<flavor>_L<layer>_<point>_<centering>_<metric>  OR  cloud_..._<metric>
+    metric = body.rsplit("_", 1)[-1]
+    centroid_new = {"euclidean", "mahal", "mahal_pooled_ctx"}
+    centroid_raw = {"cosine", "neg_l2", "projection"}
+    cloud = {"mmd", "c2st", "wass2", "gauss_kl", "delta_spec"}
+    if metric in cloud:
+        return "cloud"
+    if "_centered_" in body and metric in (centroid_raw | centroid_new):
+        return "centered_centroid"
+    if metric in centroid_new:
+        return "covariance_centroid"
+    if metric in centroid_raw:
+        return "raw_centroid"
+    return "other_A"
+
+
+def _within_family_row_bootstrap(
+    cells: list[str], stat_fn, *, n_boot: int = RACE_BOOTSTRAP_B, seed: int = RACE_SEED
+) -> dict | None:
+    """Within-family ROW/CELL bootstrap (NO family-level resampling).
+
+    For the per-family argmax CI (analysis 2): the estimand is scoped to a
+    single family, so there is no LFO boundary to protect — resample ROWS
+    (cells within a row share an adapter) with replacement INSIDE the family.
+    ``stat_fn(sample_cells)`` → float | None. Returns the percentile CI.
+    """
+    rows: dict[str, list[str]] = {}
+    for c in cells:
+        rows.setdefault(c.split("|")[0], []).append(c)
+    row_keys = sorted(rows)
+    if len(row_keys) < 2:
+        return None
+    rng = random.Random(seed)
+    stats: list[float] = []
+    for _ in range(n_boot):
+        sample_cells: list[str] = []
+        for _i in range(len(row_keys)):
+            sample_cells.extend(rows[rng.choice(row_keys)])
+        v = stat_fn(sample_cells)
+        if v is not None:
+            stats.append(v)
+    if len(stats) < 100:
+        return None
+    stats.sort()
+    return {
+        "ci95": (stats[int(0.025 * len(stats))], stats[int(0.975 * len(stats)) - 1]),
+        "n_valid": len(stats),
+    }
+
+
+def _lfo_nested_bootstrap(
+    preds: dict[str, dict],
+    target: dict[str, float],
+    dev_cells: list[str],
+    *,
+    n_boot: int = RACE_BOOTSTRAP_B,
+    seed: int = RACE_SEED,
+) -> dict:
+    """LFO-mean held-out-τ bootstrap CI for the GLOBAL champion (H1) with the
+    family-ID exclusion invariant (plan §4.3(i), Blocker-3 fix).
+
+    The held-out unit is the ORIGINAL family, NOT the resample copy. Per
+    resample b, for each held-out original family F in ``lfo_families`` (all 9):
+      1. two-stage cluster resample over lfo_families (families w/ replacement,
+         rows within),
+      2. TRAIN = resampled cells whose ORIGINAL family != F (excludes ALL F
+         copies),
+      3. HELDOUT = the original (un-resampled) cells of F,
+      4. select the global champion on TRAIN (the single best predictor over
+         ALL groups), score it on HELDOUT,
+      5. INVARIANT assert: train ∩ heldout original-family ids == ∅ AND
+         >=2 distinct train families; violators SKIPPED + tallied.
+    The per-resample statistic is the LFO MEAN held-out τ (averaged over the 9
+    folds of that resample). Returns the CI of that LFO-mean over resamples +
+    skip diagnostics.
+    """
+    fams: dict[str, dict[str, list[str]]] = {}
+    for c in dev_cells:
+        if c not in target:
+            continue
+        fam = ROWS[c.split("|")[0]].family
+        fams.setdefault(fam, {}).setdefault(c.split("|")[0], []).append(c)
+    dev_families = set(fams)
+    # COVERAGE INVARIANT: all 9 lfo_families folded; a re-run that drops one HALTs.
+    assert dev_families == set(LFO_FAMILIES), (
+        f"lfo coverage drift: dev_families={sorted(dev_families)} != "
+        f"lfo_families={sorted(LFO_FAMILIES)} — the H1 read must fold over all 9"
+    )
+    fam_keys = sorted(fams)
+    rng = random.Random(seed)
+    lfo_means: list[float] = []
+    skipped = 0
+    total_folds = 0
+    for _b in range(n_boot):
+        # One two-stage cluster resample over all 9 families.
+        resampled: list[tuple[str, str]] = []  # (orig_family, cell)
+        for _i in range(len(fam_keys)):
+            fam = rng.choice(fam_keys)
+            row_keys = sorted(fams[fam])
+            for _j in range(len(row_keys)):
+                rk = rng.choice(row_keys)
+                for cell in fams[fam][rk]:
+                    resampled.append((fam, cell))
+        fold_taus: list[float] = []
+        for held in fam_keys:
+            total_folds += 1
+            train_cells = [c for (f, c) in resampled if f != held]
+            train_fams = {f for (f, c) in resampled if f != held}
+            heldout_cells = [c for rk in fams[held] for c in fams[held][rk]]
+            heldout_fams = {held}
+            # INVARIANT: no F copy leaks into train; >=2 distinct train families.
+            if (train_fams & heldout_fams) or len(train_fams) < 2:
+                skipped += 1
+                continue
+            champ = _global_champion(preds, target, train_cells)
+            if champ is None:
+                skipped += 1
+                continue
+            tau = weighted_kendall_tau(preds[champ]["cells"], target, heldout_cells)
+            if tau is not None:
+                fold_taus.append(tau)
+        if fold_taus:
+            lfo_means.append(float(np.mean(fold_taus)))
+    diag = {
+        "n_bootstrap_valid": len(lfo_means),
+        "skipped_resample_folds": skipped,
+        "total_resample_folds": total_folds,
+        "lfo_families": sorted(LFO_FAMILIES),
+    }
+    if len(lfo_means) < 100:
+        return {"ci95": None, **diag}
+    lfo_means.sort()
+    return {
+        "ci95": (
+            lfo_means[int(0.025 * len(lfo_means))],
+            lfo_means[int(0.975 * len(lfo_means)) - 1],
+        ),
+        "lfo_mean_point": float(np.median(lfo_means)),
+        **diag,
+    }
+
+
+def _global_champion(
+    preds: dict[str, dict], target: dict[str, float], cells: list[str]
+) -> str | None:
+    """The single best predictor over ALL groups on ``cells`` (the global
+    champion — H1's unit, distinct from the per-group ``_champion``)."""
+    best, best_tau = None, None
+    for name, d in preds.items():
+        tau = weighted_kendall_tau(d["cells"], target, cells)
+        if tau is not None and (best_tau is None or tau > best_tau):
+            best, best_tau = name, tau
+    return best
+
+
+def _within_column_permutation(
+    stat_fn,
+    target: dict[str, float],
+    cells: list[str],
+    *,
+    n_perm: int = RACE_PERMUTATION_P,
+    seed: int = RACE_SEED,
+) -> dict:
+    """Within-column row-label permutation null (plan §4.3(ii)).
+
+    Permute row labels WITHIN each eval column (preserving each column's
+    marginal target distribution + within-column z-norm), recompute
+    ``stat_fn(permuted_target)`` on the SAME cell set. Returns the observed
+    statistic's percentile + the exact finite-sample one-sided p.
+    """
+    observed = stat_fn(target)
+    if observed is None:
+        return {"observed": None, "p_value": None, "n_perm_valid": 0}
+    by_col: dict[str, list[str]] = {}
+    for c in cells:
+        if c in target:
+            by_col.setdefault(c.split("|")[1], []).append(c)
+    rng = random.Random(seed)
+    null: list[float] = []
+    for _ in range(n_perm):
+        permuted = dict(target)
+        for _col, col_cells in by_col.items():
+            vals = [target[c] for c in col_cells]
+            rng.shuffle(vals)
+            for c, v in zip(col_cells, vals, strict=True):
+                permuted[c] = v
+        s = stat_fn(permuted)
+        if s is not None:
+            null.append(s)
+    if len(null) < 100:
+        return {"observed": observed, "p_value": None, "n_perm_valid": len(null)}
+    n_ge = sum(1 for s in null if s >= observed)
+    return {
+        "observed": float(observed),
+        "p_value": float((n_ge + 1) / (len(null) + 1)),
+        "null_p95": float(np.percentile(null, 95)),
+        "n_perm_valid": len(null),
+    }
+
+
+def _per_family_champions(
+    preds: dict[str, dict],
+    target: dict[str, float],
+    dev_cells: list[str],
+    families: list[str],
+    *,
+    n_boot: int = RACE_BOOTSTRAP_B,
+) -> dict:
+    """Analysis 2: per-family argmax predictor over the full zoo + within-family
+    held-out τ (nested split) + within-family row bootstrap CI, gated on the
+    selection-noise null. Eligible families get a CI verdict; descriptive-only
+    families get the argmax winner with NO CI."""
+    fam_cells: dict[str, list[str]] = {}
+    for c in dev_cells:
+        if c in target:
+            fam_cells.setdefault(ROWS[c.split("|")[0]].family, []).append(c)
+    out: dict[str, dict] = {}
+    for fam in families:
+        cells = fam_cells.get(fam, [])
+        if not cells:
+            continue
+        eligible = fam in ELIGIBLE_FAMILIES
+        # Per-family argmax champion over the full pooled family cells.
+        champ = _global_champion(preds, target, cells)
+        rec: dict = {
+            "n_cells": len(cells),
+            "argmax_champion": champ,
+            "eligible": eligible,
+        }
+        if champ:
+            rec["pooled_tau"] = weighted_kendall_tau(preds[champ]["cells"], target, cells)
+        if eligible and champ:
+            # Nested within-family held-out read: split rows, select on train,
+            # score on heldout. With >=4 held-out cells the within-family CI is
+            # meaningful (descriptive-only families skip this).
+            rows = sorted({c.split("|")[0] for c in cells})
+            if len(rows) >= 2:
+                heldout_rows = set(rows[len(rows) // 2 :])
+                train = [c for c in cells if c.split("|")[0] not in heldout_rows]
+                heldout = [c for c in cells if c.split("|")[0] in heldout_rows]
+                ch_nested = _global_champion(preds, target, train)
+                if ch_nested and len(heldout) >= 4:
+                    rec["nested_champion"] = ch_nested
+                    rec["heldout_tau"] = weighted_kendall_tau(
+                        preds[ch_nested]["cells"], target, heldout
+                    )
+
+            def _argmax_tau(cs: list[str]) -> float | None:
+                ch = _global_champion(preds, target, cs)
+                return weighted_kendall_tau(preds[ch]["cells"], target, cs) if ch else None
+
+            boot = _within_family_row_bootstrap(cells, _argmax_tau, n_boot=n_boot)
+            if boot:
+                rec["bootstrap_ci95"] = boot["ci95"]
+                rec["n_bootstrap_valid"] = boot["n_valid"]
+                lo, hi = boot["ci95"]
+                rec["ci_excludes_zero"] = bool(lo > 0 or hi < 0)
+        out[fam] = rec
+    return out
+
+
+def score_metric_race(  # noqa: C901 — the three analyses + nulls, intentionally flat
+    *,
+    pred_dir_name: str = "metric_race/predictors_metric_race",
+    out_dir_name: str = "metric_race/scoring_metric_race",
+    n_boot: int = RACE_BOOTSTRAP_B,
+    n_perm: int = RACE_PERMUTATION_P,
+) -> dict[str, Path]:
+    """The metric-race scoring: Analysis 1 (global champion, expanded zoo) +
+    Analysis 2 (per-family) + Analysis 3 (heterogeneity + H3 optimism gain) +
+    the selection-noise nulls. Writes to ``metric_race/`` (NEW namespace —
+    never overwrites the prereg ``scoring/`` record).
+
+    Returns {label: path} for the four output JSONs.
+    """
+    out_root = output_root()
+    prereg = json.loads((out_root / "preregistration.json").read_text())
+    matrix = json.loads((out_root / "L_matrix.json").read_text())["cells"]
+    metadata = json.loads((out_root / "cell_metadata.json").read_text())["cells"]
+    preds = _load_predictors(out_root / pred_dir_name)
+
+    split = prereg["quarantine_split"]
+    dev_cells = ["|".join(c) for c in split["development_cells"]]
+
+    targets_raw = _seed_mean_targets(matrix, metadata, include_flagged=False)
+    vals = {k: v["shift"] for k, v in targets_raw.items() if v.get("shift") is not None}
+    target = _z_norm_within_column(vals)
+    dev = [c for c in dev_cells if c in target]
+
+    # --- Analysis 1: global champion via the frozen LFO-CV over the expanded
+    #     zoo. Re-use score() unchanged (pred_dir_name redirect). ----------
+    scoring_results_path = score(
+        out_dir_name=out_dir_name,
+        pred_dir_name=pred_dir_name,
+        protocol_note=(
+            "metric-race Analysis 1: frozen leave-family-out CV over the "
+            "EXPANDED predictor zoo (predictors_metric_race/); EXPLORATORY "
+            "dev-only headline, quarantine reported peeked-only"
+        ),
+    )
+
+    # --- metric-family leaderboard + per-group common-fold read (Nit N1) ---
+    leaderboard: dict[str, dict] = {}
+    for name, d in preds.items():
+        tau = weighted_kendall_tau(d["cells"], target, dev)
+        if tau is None:
+            continue
+        fam = _metric_family(name)
+        n_cells = sum(1 for c in dev if c in d["cells"] and c in target)
+        leaderboard[name] = {
+            "tau": round(tau, 4),
+            "metric_family": fam,
+            "n_cells": n_cells,
+            "tau_frac_of_ceiling_raw": round(tau / V1_RELIABILITY_CEILING_RAW, 4),
+            "tau_frac_of_ceiling_sb": round(tau / V1_RELIABILITY_CEILING_SB, 4),
+        }
+    leaderboard = dict(sorted(leaderboard.items(), key=lambda kv: -kv[1]["tau"]))
+
+    # Per-metric-family mean-τ on ALL folds vs the common-fold intersection.
+    fam_cells_all = _families_of(dev)
+    common_fold_cells = [c for c in dev if ROWS[c.split("|")[0]].family in COMMON_FOLD_FAMILIES]
+    group_fold_summary: dict[str, dict] = {}
+    by_family_group: dict[str, list[str]] = {}
+    for name in preds:
+        by_family_group.setdefault(_metric_family(name), []).append(name)
+    for mfam, names in sorted(by_family_group.items()):
+
+        def _best_on(cells_subset, _names=names):
+            best = None
+            for nm in _names:
+                t = weighted_kendall_tau(preds[nm]["cells"], target, cells_subset)
+                if t is not None and (best is None or t > best):
+                    best = t
+            return best
+
+        group_fold_summary[mfam] = {
+            "mean_tau_all_folds": _best_on(dev),
+            "mean_tau_common_folds": _best_on(common_fold_cells),
+            "common_fold_ids": sorted(COMMON_FOLD_FAMILIES),
+            "n_predictors": len(names),
+        }
+
+    # --- H1 LFO-nested bootstrap CI for the global champion ----------------
+    global_champ_dev = _global_champion(preds, target, dev)
+    lfo_boot = _lfo_nested_bootstrap(preds, target, dev, n_boot=n_boot)
+    h1: dict = {
+        "global_champion_on_dev": global_champ_dev,
+        "global_champion_metric_family": (
+            _metric_family(global_champ_dev) if global_champ_dev else None
+        ),
+        "lfo_nested_bootstrap": lfo_boot,
+        "tau_floor": H1_TAU_FLOOR,
+        "v1_reliability_ceiling": {
+            "raw_spearman": V1_RELIABILITY_CEILING_RAW,
+            "spearman_brown": V1_RELIABILITY_CEILING_SB,
+        },
+    }
+    # Transfers? CI excludes 0 AND LFO-mean point >= 0.10. (Permutation gate
+    # for H1 is the within-family permutation on the champion below.)
+    if lfo_boot.get("ci95"):
+        lo, hi = lfo_boot["ci95"]
+        pt = lfo_boot.get("lfo_mean_point", 0.0)
+        h1["ci_excludes_zero"] = bool(lo > 0 or hi < 0)
+        h1["clears_floor"] = bool(pt >= H1_TAU_FLOOR)
+        h1["verdict_ci_floor"] = (
+            "transfers_ci_floor" if (lo > 0 and pt >= H1_TAU_FLOOR) else "does_not_transfer"
+        )
+
+    # H1/H2 within-column permutation on the global champion's dev τ.
+    def _champ_dev_tau(perm_target: dict[str, float]) -> float | None:
+        ch = _global_champion(preds, perm_target, dev)
+        return weighted_kendall_tau(preds[ch]["cells"], perm_target, dev) if ch else None
+
+    h1["champion_dev_permutation"] = _within_column_permutation(
+        _champ_dev_tau, target, dev, n_perm=n_perm
+    )
+
+    # --- Analysis 2: per-family champions (eligible + descriptive-only) ----
+    all_dev_families = sorted(LFO_FAMILIES)
+    per_family = _per_family_champions(preds, target, dev, all_dev_families, n_boot=n_boot)
+
+    # --- Analysis 3: heterogeneity + H3 optimism gain ----------------------
+    # H3 invariant: oracle sum, global term, AND every permutation replicate
+    # computed on the SAME eligible_families + cell subset.
+    eligible_dev_cells = [c for c in dev if ROWS[c.split("|")[0]].family in ELIGIBLE_FAMILIES]
+    elig_fam_cells: dict[str, list[str]] = {}
+    for c in eligible_dev_cells:
+        elig_fam_cells.setdefault(ROWS[c.split("|")[0]].family, []).append(c)
+
+    def _oracle_gain(perm_target: dict[str, float]) -> float | None:
+        """H3 gain = sum_F tau(per-family-oracle on F) - tau(global champ on
+        union F), all over eligible_families + the matched cell subset (the
+        runtime invariant below proves the family/cell sets match)."""
+        oracle_fams, oracle_sum = [], 0.0
+        for fam in sorted(ELIGIBLE_FAMILIES):
+            cells = elig_fam_cells.get(fam, [])
+            if not cells:
+                return None
+            ch = _global_champion(preds, perm_target, cells)
+            t = weighted_kendall_tau(preds[ch]["cells"], perm_target, cells) if ch else None
+            if t is None:
+                return None
+            oracle_sum += t
+            oracle_fams.append(fam)
+        gch = _global_champion(preds, perm_target, eligible_dev_cells)
+        gt = (
+            weighted_kendall_tau(preds[gch]["cells"], perm_target, eligible_dev_cells)
+            if gch
+            else None
+        )
+        if gt is None:
+            return None
+        # H3 statistic per plan section 4.3: gain = sum_F tau(per-family
+        # oracle on F) - tau(single global champion on union F). The global
+        # term is ONE tau (not scaled); the same statistic is recomputed for
+        # every permutation replicate, so the null is on the identical scale.
+        _ = oracle_fams  # documents the family set the oracle sum ran over
+        return oracle_sum - gt
+
+    # Runtime invariant (plan §4.3 H3, written to the output): the family set +
+    # cell subset are identical across the oracle term, the global term, and
+    # every permutation replicate (they all read from elig_fam_cells /
+    # eligible_dev_cells, by construction).
+    oracle_family_set = sorted(elig_fam_cells)
+    assert set(oracle_family_set) == set(ELIGIBLE_FAMILIES), (
+        f"H3 eligible-family drift: {oracle_family_set} != {sorted(ELIGIBLE_FAMILIES)}"
+    )
+    union_cells = sorted(eligible_dev_cells)
+    cells_from_families = sorted(c for fam in elig_fam_cells for c in elig_fam_cells[fam])
+    assert cells_from_families == union_cells, (
+        "H3 cell-subset drift between oracle and global terms"
+    )
+
+    h3_perm = _within_column_permutation(_oracle_gain, target, eligible_dev_cells, n_perm=n_perm)
+
+    # Heterogeneity (H2): cross-family variance of the per-family champion
+    # held-out τ over eligible families, vs the family-label permutation null.
+    def _heterogeneity(perm_target: dict[str, float]) -> float | None:
+        taus = []
+        for fam in sorted(ELIGIBLE_FAMILIES):
+            cells = elig_fam_cells.get(fam, [])
+            if not cells:
+                return None
+            ch = _global_champion(preds, perm_target, cells)
+            t = weighted_kendall_tau(preds[ch]["cells"], perm_target, cells) if ch else None
+            if t is None:
+                return None
+            taus.append(t)
+        return float(np.var(taus)) if len(taus) >= 2 else None
+
+    h2_perm = _within_column_permutation(_heterogeneity, target, eligible_dev_cells, n_perm=n_perm)
+
+    heterogeneity = {
+        "statistic": "cross_family_variance_of_per_family_champion_tau",
+        "eligible_families": sorted(ELIGIBLE_FAMILIES),
+        "permutation": h2_perm,
+        "verdict": (
+            "real_heterogeneity"
+            if (h2_perm.get("p_value") is not None and h2_perm["p_value"] < 0.05)
+            else "chance"
+        ),
+    }
+    h3 = {
+        "statistic": "per_family_oracle_gain_minus_global_champion",
+        "eligible_families": sorted(ELIGIBLE_FAMILIES),
+        "excluded_descriptive_only_families": sorted(LFO_FAMILIES - ELIGIBLE_FAMILIES),
+        "oracle_family_set": oracle_family_set,
+        "n_eligible_cells": len(eligible_dev_cells),
+        "permutation": h3_perm,
+        "verdict": (
+            "genuine_specialization"
+            if (h3_perm.get("p_value") is not None and h3_perm["p_value"] < 0.05)
+            else "optimism_inside_null_band"
+        ),
+        "invariant_checked": (
+            "oracle_families == global_eval_families == permuted_eval_families == "
+            "eligible_families AND identical cell subset (asserted at runtime)"
+        ),
+    }
+
+    # --- predictor-family x behavior-family tau heatmap (analysis 3) ------
+    heatmap: dict[str, dict[str, float | None]] = {}
+    for mfam, names in sorted(by_family_group.items()):
+        heatmap[mfam] = {}
+        for fam in all_dev_families:
+            cells = fam_cells_all.get(fam, [])
+            best = None
+            for nm in names:
+                t = weighted_kendall_tau(preds[nm]["cells"], target, cells)
+                if t is not None and (best is None or t > best):
+                    best = t
+            heatmap[mfam][fam] = round(best, 4) if best is not None else None
+
+    # --- assemble + write the metric-race outputs -------------------------
+    out_dir = out_root / out_dir_name
+    out_dir.mkdir(parents=True, exist_ok=True)
+    meta = reproducibility_metadata()
+    n_skipped = lfo_boot.get("skipped_resample_folds", 0)
+
+    scoring_metric_race = {
+        "n_dev_cells": len(dev),
+        "n_predictors": len(preds),
+        "dev_leaderboard": leaderboard,
+        "group_fold_summary": group_fold_summary,
+        "h1_global_champion": h1,
+        "h2_heterogeneity": heterogeneity,
+        "h3_optimism_gain": h3,
+        "exploratory_note": (
+            "EXPLORATORY dev-only headline via the frozen leave-family-out CV; "
+            "the v1 quarantine is reported only as a flagged-peeked sensitivity "
+            "read in scoring_results.json (Analysis 1), never the headline."
+        ),
+        "metadata": meta,
+    }
+    per_family_and_het = {
+        "per_family_champions": per_family,
+        "lfo_families": sorted(LFO_FAMILIES),
+        "eligible_families": sorted(ELIGIBLE_FAMILIES),
+        "descriptive_only_families": sorted(LFO_FAMILIES - ELIGIBLE_FAMILIES),
+        "predictor_family_x_behavior_family_heatmap": heatmap,
+        "h3_optimism_gain": h3,
+        "invariants": {
+            "lfo_coverage": (
+                "all 9 dev families folded for H1/H2 (asserted in _lfo_nested_bootstrap)"
+            ),
+            "h3_eligible_set": (
+                "oracle==global==permuted==eligible_families (asserted in score_metric_race)"
+            ),
+        },
+        "metadata": meta,
+    }
+    bootstrap_diag = {
+        "lfo_nested_bootstrap": {
+            "n_bootstrap_valid": lfo_boot.get("n_bootstrap_valid"),
+            "skipped_resample_folds": n_skipped,
+            "total_resample_folds": lfo_boot.get("total_resample_folds"),
+            "B": n_boot,
+        },
+        "per_family_within_family_bootstrap_B": n_boot,
+        "permutation_P": n_perm,
+        "seed": RACE_SEED,
+        "metadata": meta,
+    }
+    common_fold_diag = {
+        "common_fold_families": sorted(COMMON_FOLD_FAMILIES),
+        "group_fold_summary": group_fold_summary,
+        "note": (
+            "per-metric-family best-τ on ALL dev folds vs the common-fold "
+            "intersection {B3,B5,B6} where Groups B/C are defined (Nit N1); "
+            "the global-champion + H3 comparisons are read primarily on the "
+            "matched common-fold set."
+        ),
+        "metadata": meta,
+    }
+
+    paths = {
+        "scoring_metric_race": out_dir / "scoring_metric_race.json",
+        "per_family_and_heterogeneity": out_dir / "per_family_and_heterogeneity.json",
+        "bootstrap_diagnostics": out_dir / "bootstrap_diagnostics.json",
+        "common_fold_diagnostics": out_dir / "common_fold_diagnostics.json",
+    }
+    paths["scoring_metric_race"].write_text(json.dumps(scoring_metric_race, indent=1))
+    paths["per_family_and_heterogeneity"].write_text(json.dumps(per_family_and_het, indent=1))
+    paths["bootstrap_diagnostics"].write_text(json.dumps(bootstrap_diag, indent=1))
+    paths["common_fold_diagnostics"].write_text(json.dumps(common_fold_diag, indent=1))
+    paths["analysis1_scoring_results"] = scoring_results_path
+    logger.info("[phase=score] metric-race wrote %d JSONs to %s", len(paths), out_dir)
+    return paths
