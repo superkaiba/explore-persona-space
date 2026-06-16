@@ -20,7 +20,7 @@ relates_to:
 ## Takeaways
 
 - Postfix-KV patching beats prefix-patching on **7 of 8** leaky adapters, seed 0 (n = 8, p = 0.07). Spans differ (postfix 5 tokens, prefix 24); the two are not length-matched.
-- The clean signal is two strongly-installed reckless-behavior cells: postfix cuts the rate **0.56-0.69** absolute vs prefix's 0.06-0.10. A third high-trained-rate cell (wrong-claim) cuts only **+0.20**.
+- Two strongly-installed reckless-behavior cells drive the signal: postfix cuts **0.56-0.69** absolute vs prefix's 0.06-0.10; wrong-claim cuts only **+0.20**.
 - Not "cuts everywhere": postfix **raises** leakage on three near-floor format-style cells. Absolute reading: it helps **5 of 8** cells, hurts 3.
 - All cells keep their sign across both seeds (**8/8**). The two big cuts replicate within ~0.06; wrong-claim halves (0.20 → 0.10), so magnitude replication is loose.
 - The carrier scalar does **not** rank responders (negative correlation, n = 8); its apparent positive row-leak signal **collapses to near-zero under gauge correction**, matching the prior prefix collapse to ~0.
@@ -94,7 +94,7 @@ Does a scalar for how much each adapter writes into the postfix tokens predict w
 
 ### Evaluated with
 
-The eval probes are the parent leakage-matrix run's frozen, SHA-pinned per-column probe banks (tier-2 established project battery: the Betley main-8 for `broad_em`, project-built sets for the other columns). Each row is paired to its single off-diagonal target column via the parent's data-driven `_phase2_target_columns()`. Judges inherited from the parent: gpt-4o-2024-08-06 (Betley dual judge) for `broad_em`, Claude Sonnet 4.5 per-column for the rest; `format_style` uses structural rules + a Sonnet spot-check. Each cell scores the judged behavior-expression rate over its on-policy completions (the model generates its own answer; no teacher-forcing). Probe banks per cell: 8 probes (bad-medical, the backend-parity anchor — sampled 50 completions per probe, the n=400 generation budget the parent #545 uses for that anchor), 20 probes (wrong-claim, marker), 32 probes (the other five); every cell except bad-medical uses 1 completion per probe.
+The eval probes are the parent leakage-matrix run's frozen, SHA-pinned per-column probe banks (tier-2 established project battery: the Betley main-8 for `broad_em`, project-built sets for the other columns). Each row is paired to its single off-diagonal target column via the parent's data-driven `_phase2_target_columns()`. Judges inherited from the parent: gpt-4o-2024-08-06 (Betley dual judge) for `broad_em`, Claude Sonnet 4.5 per-column for the rest; `format_style` uses structural rules + a Sonnet spot-check. Each cell scores the judged behavior-expression rate over its on-policy completions (the model generates its own answer; no teacher-forcing). Probe banks per cell: 8 probes (bad-medical, the backend-parity anchor — sampled 50 completions per probe, the 400-completion generation budget for that anchor), 20 probes (wrong-claim, marker), 32 probes (the other five); every cell except bad-medical uses 1 completion per probe.
 
 The eight evaluated cells (row → target column, plain-English):
 
@@ -111,7 +111,7 @@ Full probe banks + the leakage matrix: [eval_results/issue_545 @ 6471a550 era](h
 
 ### Generated
 
-Per cell, the run produced on-policy completions from the trained adapter (no patch) and from the postfix-patched model (1 completion per probe except bad-medical's 50/probe). All 32 files (8 rows × 2 seeds × {trained, postfix_patched}) are on the HF data repo: [issue640_postfix_carrier/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/d0a94ea8723cfac01f69866aa14b2259b4313c53/issue640_postfix_carrier/raw_completions). Scoring reused the parent leakage-matrix run's judge pipeline (the judge prompts + rubric are committed in [#545](https://eps.superkaiba.com/tasks/545)'s eval pipeline, the canonical source); this run persisted the aggregate per-cell judged rates but **not** per-completion verdicts, so the firing/non-firing reads in the example blocks below are the analyst's visual classification of the raw text, while the cell rates quoted everywhere are the scored run's aggregates.
+Per cell, the run produced on-policy completions from the trained adapter (no patch) and from the postfix-patched model (1 completion per probe except bad-medical's 50/probe). All 32 files (8 rows × 2 seeds × {trained, postfix_patched}) are on the HF data repo: [issue640_postfix_carrier/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/d0a94ea8723cfac01f69866aa14b2259b4313c53/issue640_postfix_carrier/raw_completions). Scoring reused the parent leakage-matrix run's judge pipeline (the judge prompts + rubric are the canonical eval pipeline linked from Reproducibility); this run persisted the aggregate per-cell judged rates but **not** per-completion verdicts, so the firing/non-firing reads in the example blocks below are the analyst's visual classification of the raw text, while the cell rates quoted everywhere are the scored run's aggregates.
 
 **Result-1 cell (risky-financial → reckless-sports, seed 0; trained 0.969 → patched 0.281).** Random sample, fixed seed; sanitized excerpts for the reckless-advice corpus, row ids verbatim. Firing = visibly reckless advice; non-firing = visibly cautionary/refusal. All rows: [risky_financial trained_seed0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/d0a94ea8723cfac01f69866aa14b2259b4313c53/issue640_postfix_carrier/raw_completions) and `..._postfix_patched_seed0.json`.
 
@@ -274,6 +274,7 @@ Reuse provenance:
 - Created / run: filed 2026-06-14; postfix sweep completed 2026-06-15 (~00:25Z phase=done); analysis 2026-06-15.
 - Follow-up to: [#595](https://eps.superkaiba.com/tasks/595) — auto-filed from #595's follow-up proposal #3 (the postfix-cleared headline cell). Adapter + matrix lineage from [#545](https://eps.superkaiba.com/tasks/545).
 - Originating prompt(s), verbatim: origin prompt not recorded (auto-filed follow-up from #595's `epm:follow-ups v1` proposal #3, not a user chat request).
+
 
 
 
