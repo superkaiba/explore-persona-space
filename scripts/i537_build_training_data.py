@@ -555,9 +555,17 @@ def main() -> int:
     if args.extra_contexts is not None:
         # #542 panel injection: merge the new negative contexts WITHOUT
         # touching the frozen parent definitions (collision fails loud).
-        from explore_persona_space.experiments.i542_panels import load_i542_negatives
+        from explore_persona_space.experiments.i542_panels import (
+            I542_NT_TWIN_CIDS,
+            load_i542_negatives,
+        )
 
-        extra = load_i542_negatives(args.extra_contexts)
+        # When the named panel includes any genuine near-twin, REQUIRE the
+        # near-twin payloads (fail loud on a missing freeze, not an empty
+        # system prompt -- follow-up plan §4.1).
+        named = {c.strip() for c in (args.negatives or "").split(",") if c.strip()}
+        need_nt = bool(named & set(I542_NT_TWIN_CIDS))
+        extra = load_i542_negatives(args.extra_contexts, require_near_twins=need_nt)
         collisions = set(registry) & set(extra)
         assert not collisions, f"--extra-contexts cids collide with the registry: {collisions}"
         registry = {**registry, **extra}

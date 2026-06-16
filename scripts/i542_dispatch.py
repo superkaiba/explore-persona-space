@@ -124,6 +124,38 @@ BAND_LOW, BAND_HIGH, BAND_SHOULDER = 5.0, 12.0, 2.0
 # realized GPU-h after all core panels + replicates is <= this threshold.
 C8_GATE_GPU_H = 62.0
 
+# Opt-in-only arms (NOT in the default ARM_TRAIN_ORDER): c8 (conditional
+# add-back), pos_only (positives-only follow-up), and the genuine-near-twin
+# proximity arms. Each runs ONLY via explicit --arm so a default all-arm
+# invocation reproduces the v1 run exactly.
+_OPT_IN_ARMS: tuple[str, ...] = ("c8", "pos_only", "nt_close", "xfam_long", "repl_nt")
+
+# Genuine-near-twin (follow-up `genuine-near-twin-negatives`, plan §3/§4.2):
+# the proximity-axis arms train at the LONGER budget -- band-stop OFF + a
+# fixed 1 epoch + the per-cell bystander-headroom early-stop -- so the
+# negatives carry real gradient at a NON-saturated anchor. Applied IDENTICALLY
+# to both arms (a shared regime, not a between-arm variable). The seed-43
+# near-twin replicate arm shares the budget.
+LONGER_BUDGET_ARMS: tuple[str, ...] = ("nt_close", "xfam_long", "repl_nt")
+NT_TRAIN_EPOCHS = 1
+# Non-saturated-anchor gate (Gate 2 / K1''): per-cell source log P - base must
+# sit in this band. >5/16 cells violating in EITHER arm -> ABORT-and-REPORT
+# (plan §4.2 / §7 K1'') -- never a mixed-budget descope.
+NT_BAND_LOW_NATS, NT_BAND_HIGH_NATS = 5.0, 12.0
+NT_K1_MAX_VIOLATORS = 5
+# Manipulation-check gate (Gate 1 / K2''): near-twin panel mean cos-distance
+# to the train-context centroids must be <= this fraction of the distant
+# panel's mean distance (@ L22). FAIL -> ABORT-and-REPORT (plan §4.2 / §11).
+NT_MANIP_RATIO_THRESHOLD = 0.5
+# Bystander-headroom early-stop ceiling: a cell stops early if its BYSTANDER
+# (negative-row) on-policy argmax-is-marker emission rate crosses this ceiling
+# (gating on BYSTANDER resolution, NEVER source rate -- the source SHOULD
+# saturate as the implant; marker-training-recipe.md). The fixed 1-epoch
+# budget is the primary control; this callback is the safety stop.
+NT_BYSTANDER_CEILING = 0.5
+NT_BYSTANDER_EVAL_EVERY_STEPS = 5
+NT_BYSTANDER_MIN_STEPS = 10
+
 _CURRENT_PHASE = "init"
 _PHASE_DIGIT_WORDS = str.maketrans({"0": "zero", "1": "one", "2": "two", "3": "three"})
 
@@ -255,7 +287,7 @@ def _i542_negatives_path() -> Path:
     return GEN / "contexts/i542_negatives.json"
 
 
-def _merged_registry_and_demos():
+def _merged_registry_and_demos(*, require_near_twins: bool = False):
     from explore_persona_space.experiments.i537_contexts import load_icl_demos
     from explore_persona_space.experiments.i542_panels import load_merged_registry
 
@@ -264,9 +296,23 @@ def _merged_registry_and_demos():
     )
     demos_p = Path(os.environ.get("I537_ICL_DEMOS", DATA537 / "contexts/icl_demos.json"))
     return (
-        load_merged_registry(sampled, _i542_negatives_path()),
+        load_merged_registry(
+            sampled, _i542_negatives_path(), require_near_twins=require_near_twins
+        ),
         load_icl_demos(demos_p),
     )
+
+
+def _cells_touch_near_twins(args) -> bool:
+    """True iff this invocation's arms include any genuine-near-twin panel.
+
+    The near-twin payloads are required (require_near_twins=True) whenever a
+    proximity arm is in scope so a missing near-twin freeze fails loud instead
+    of rendering an empty system prompt.
+    """
+    if not args.arm:
+        return False
+    return args.arm in ("nt_close", "xfam_long", "repl_nt")
 
 
 def _tokenizer():
@@ -301,11 +347,12 @@ def _arm_list(args) -> list[str]:
         arms.append("c8")
     arms += list(REPLICATE_ARMS)
     if args.arm:
-        # Opt-in-only arms: c8 (conditional add-back) and pos_only (the #542
-        # positives-only follow-up) run ONLY via explicit --arm; neither joins
-        # default all-arm invocations.
-        assert args.arm in arms or args.arm in ("c8", "pos_only"), (
-            f"unknown --arm {args.arm} (of {arms})"
+        # Opt-in-only arms: c8 (conditional add-back), pos_only (the #542
+        # positives-only follow-up), and the genuine-near-twin proximity arms
+        # nt_close / xfam_long run ONLY via explicit --arm; none join default
+        # all-arm invocations (so the v1 run is reproduced exactly).
+        assert args.arm in arms or args.arm in _OPT_IN_ARMS, (
+            f"unknown --arm {args.arm} (of {arms} or opt-in {_OPT_IN_ARMS})"
         )
         arms = [args.arm]
     return arms
@@ -332,6 +379,12 @@ def _cells_for_arm(arm: str, args) -> list[dict]:
     elif arm == "repl_close":
         cids, seed = list(REPLICATE_CELLS), REPLICATE_TRAIN_SEED
         mix_root, panel = GEN / "train/arm2_close/marker", PANELS["arm2_close"]
+    elif arm == "repl_nt":
+        # Genuine-near-twin seed-43 noise floor (plan §5): the 4 replicate
+        # cells, panel = nt_close, mixes from nt_close's seed-42 data build
+        # (the longer-budget seed-noise floor; the v1 floor was band-stopped).
+        cids, seed = list(REPLICATE_CELLS), REPLICATE_TRAIN_SEED
+        mix_root, panel = GEN / "train/nt_close/marker", PANELS["nt_close"]
     else:
         cids, seed = train_cids_for("marker"), SEED
         mix_root, panel = GEN / f"train/{arm}/marker", PANELS[arm]
@@ -553,15 +606,88 @@ def _write_smoke_negatives(out_path: Path) -> None:
     )
 
 
+def _ensure_near_twins(args) -> None:
+    """APPEND the deterministic near-twins to the i542 freeze (idempotent).
+
+    The genuine-near-twin proximity arms FETCH the v1 freeze at the i542 pin
+    (so the v1 registry cannot fork) and then APPEND the 4 near-twin cids under
+    a `near_twins` block via `--regen-nt-twins` (deterministic, no LLM, no
+    re-sampling). Idempotent: a freeze already carrying all 4 near-twins is
+    left untouched. In smoke the placeholder near-twins are already written by
+    `_write_smoke_negatives`, so this is a no-op there.
+    """
+    from explore_persona_space.experiments.i542_panels import I542_NT_TWIN_CIDS
+
+    out = _i542_negatives_path()
+    assert out.exists(), (
+        f"[contexts] near-twin append needs the v1 freeze at {out} (run fetch + contexts first)"
+    )
+    payload = json.loads(out.read_text())
+    have = set(payload.get("near_twins", {}))
+    if set(I542_NT_TWIN_CIDS) <= have:
+        logger.info("[contexts] all %d near-twins already frozen -- skip", len(I542_NT_TWIN_CIDS))
+        return
+    if args.smoke:
+        # Smoke freeze placeholder near-twins (deterministic surface edits on
+        # the smoke-placeholder ph sources); no API spend, structural only.
+        from explore_persona_space.experiments.i542_panels import (
+            NT_PERTURB,
+            NT_TWIN_OF,
+            apply_nt_perturbation,
+        )
+        from explore_persona_space.personas import PERSONAS
+
+        src = {
+            "sp_swe": PERSONAS["software_engineer"],
+            "sp_doctor": PERSONAS["medical_doctor"],
+            "sp_ph1": payload.get("personahub", {}).get("neg_sp_ph5", {}).get("persona")
+            or "You are a smoke-placeholder researcher who studies things.",
+            "sp_ph2": payload.get("personahub", {}).get("neg_sp_ph6", {}).get("persona")
+            or "You are a smoke-placeholder analyst who reviews data.",
+        }
+        near = {
+            cid: {
+                "system_prompt": apply_nt_perturbation(cid, src[NT_TWIN_OF[cid]]),
+                "twin_of": NT_TWIN_OF[cid],
+                "perturbation": NT_PERTURB[cid],
+                "source_persona": src[NT_TWIN_OF[cid]],
+                "source": "near-twin",
+            }
+            for cid in I542_NT_TWIN_CIDS
+        }
+        payload.setdefault("near_twins", {}).update(near)
+        out.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+        logger.info("[contexts] smoke placeholder near-twins appended: %s", out)
+        return
+    cmd = [
+        sys.executable,
+        str(REPO / "scripts/i542_sample_contexts.py"),
+        "--parent",
+        str(DATA537 / "contexts/sampled_contexts.json"),
+        "--out",
+        str(out),
+        "--regen-nt-twins",
+    ]
+    subprocess.run(cmd, check=True, cwd=REPO, env={**os.environ})
+
+
 def _contexts_step(args) -> None:
-    """Freeze data/issue_542/contexts/i542_negatives.json (idempotent)."""
+    """Freeze data/issue_542/contexts/i542_negatives.json (idempotent).
+
+    Then APPEND the deterministic near-twins (follow-up plan §4.3) so the
+    proximity arms have their negatives -- the v1 freeze is REUSED (fetched at
+    the pin) and never re-sampled; near-twins are appended, never forking the
+    v1 registry.
+    """
     out = _i542_negatives_path()
     if out.exists():
-        logger.info("[contexts] %s already frozen -- skip", out)
+        logger.info("[contexts] %s already frozen -- skip base freeze", out)
+        _ensure_near_twins(args)
         return
     if args.smoke:
         _write_smoke_negatives(out)
         logger.info("[contexts] smoke placeholder negatives written: %s", out)
+        _ensure_near_twins(args)
         return
     cmd = [
         sys.executable,
@@ -572,6 +698,7 @@ def _contexts_step(args) -> None:
         str(out),
     ]
     subprocess.run(cmd, check=True, cwd=REPO, env={**os.environ})
+    _ensure_near_twins(args)
 
 
 def _checks_step(args) -> None:
@@ -588,7 +715,7 @@ def _checks_step(args) -> None:
         row_split_sizes,
     )
 
-    registry, demos = _merged_registry_and_demos()
+    registry, demos = _merged_registry_and_demos(require_near_twins=True)
     tok = _tokenizer()  # asserts ' ※' -> [83399]
     assert_panel_disjointness(registry)
     lens = render_check(registry, tok, icl_demos=demos)
@@ -644,9 +771,10 @@ def _responses_step(args) -> None:
     """
     from explore_persona_space.experiments.i537_cache import cache_covers, write_response_cache
     from explore_persona_space.experiments.i537_contexts import build_prompt, eval_cids_for
-    from explore_persona_space.experiments.i542_panels import NEW_NEGATIVE_CIDS
 
-    registry, demos = _merged_registry_and_demos()
+    # NEW_NEGATIVE_CIDS now includes the 4 near-twins -> their payloads must be
+    # resolved (fail loud on a missing near-twin freeze, not an empty prompt).
+    registry, demos = _merged_registry_and_demos(require_near_twins=True)
     tok = _tokenizer()
     train_q = _train_questions(args.smoke)
 
@@ -662,7 +790,13 @@ def _responses_step(args) -> None:
         for cid in eval_cids_for("marker")[:2]:
             targets.append((eval_dir / f"{cid}.json", cid, _eval_questions(True)))
     else:
-        for cid in NEW_NEGATIVE_CIDS:
+        # The genuine-near-twin run needs base-greedy responses ONLY for the 4
+        # NEW near-twin contexts (the v1 negatives + the parent xfam_long
+        # negatives are inherited via the fetched freeze + parent caches; the
+        # v1 16 NEW negatives are not panel members of the proximity arms).
+        from explore_persona_space.experiments.i542_panels import I542_NT_TWIN_CIDS
+
+        for cid in I542_NT_TWIN_CIDS:
             targets.append((out_dir / f"{cid}.json", cid, train_q))
 
     todo = [
@@ -713,18 +847,24 @@ def _clouds_step(args) -> None:
     from transformers import AutoModelForCausalLM
 
     from explore_persona_space.experiments.i537_contexts import build_prompt
-    from explore_persona_space.experiments.i542_panels import NEW_NEGATIVE_CIDS
+    from explore_persona_space.experiments.i542_panels import I542_NT_TWIN_CIDS
 
-    registry, demos = _merged_registry_and_demos()
+    # The genuine-near-twin run extracts reduced clouds ONLY for the 4 NEW
+    # near-twin contexts (the manipulation gate + dist_to_panel read the
+    # near-twin centroids from here; the train-context + distant-panel
+    # centroids come from the fetched parent clouds). Near-twin payloads must
+    # resolve -> require them.
+    registry, demos = _merged_registry_and_demos(require_near_twins=True)
     tok = _tokenizer()
     probes = json.loads((REPO / "eval_results/issue_502/probes_500.json").read_text())["probes"]
     probes = probes[: 8 if args.smoke else 100]
     layers = (14, 22)
     out_dir = EVAL / "clouds_reduced"
     out_dir.mkdir(parents=True, exist_ok=True)
-    todo = [c for c in NEW_NEGATIVE_CIDS if not (out_dir / f"{c}__last_prompt.npz").exists()]
+    cloud_cids = I542_NT_TWIN_CIDS
+    todo = [c for c in cloud_cids if not (out_dir / f"{c}__last_prompt.npz").exists()]
     if not todo:
-        logger.info("[clouds] all %d reduced clouds present -- skip", len(NEW_NEGATIVE_CIDS))
+        logger.info("[clouds] all %d near-twin reduced clouds present -- skip", len(cloud_cids))
         return
     model = AutoModelForCausalLM.from_pretrained(
         QWEN_ID, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
@@ -836,6 +976,110 @@ def _closeness_step(args) -> None:
     )
 
 
+def _nt_manipulation_check(args) -> None:
+    """Genuine-near-twin manipulation gate (plan §4.2 Gate 1 / K2''): HARD MARGIN.
+
+    Mean cos-distance @ L22 (last_prompt) from each panel member's centroid to
+    the 16 train-context centroids, for the near-twin panel (nt_close) AND the
+    distant panel (xfam_long == the v1 cross-family panel). The gate PASSES iff
+    ``nt_mean / xfam_mean <= NT_MANIP_RATIO_THRESHOLD`` (near-twins at most half
+    the distant panel's mean distance -- a SUBSTANTIAL separation, an order of
+    magnitude beyond #542's ~1%). Writes the realized per-panel means + per-
+    member distances + the PASS/FAIL ratio to manipulation_check.json EITHER
+    way; a FAIL writes the failure sentinel and ABORTS (no training launch) --
+    the deliberate fallback, NOT a recipe descope (the #542 lesson). The single
+    allowed per-member regeneration (--regen-nt-twins --only <cid>) is a
+    construction fix outside this gate, never a threshold relaxation.
+    """
+    import numpy as np
+
+    from explore_persona_space.experiments.i537_contexts import train_cids_for
+    from explore_persona_space.experiments.i542_panels import PANELS
+
+    n_probes = 8 if args.smoke else 100
+    layer = 22
+
+    def _centroid(cid: str) -> np.ndarray:
+        red = EVAL / f"clouds_reduced/{cid}__last_prompt.npz"
+        if red.exists():
+            z = np.load(red)
+            layers = list(z["layers"])
+            return z["hidden"][:n_probes, layers.index(layer), :].astype(np.float64).mean(axis=0)
+        par = CLOUDS_PARENT / f"{cid}__last_prompt.npz"
+        assert par.exists(), f"cloud missing for {cid}: neither {red} nor {par}"
+        return np.load(par)["hidden"][:n_probes, layer, :].astype(np.float64).mean(axis=0)
+
+    def _cos_dist(a: np.ndarray, b: np.ndarray) -> float:
+        return float(1.0 - (a @ b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+
+    train_cents = {c: _centroid(c) for c in train_cids_for("marker")}
+    out: dict[str, dict] = {}
+    for slug in ("nt_close", "xfam_long"):
+        per_member = {}
+        for m in PANELS[slug]:
+            mc = _centroid(m)
+            per_member[m] = float(np.mean([_cos_dist(mc, tc) for tc in train_cents.values()]))
+        out[slug] = {
+            "per_member_mean_dist": per_member,
+            "panel_mean_dist": float(np.mean(list(per_member.values()))),
+        }
+    nt_mean = out["nt_close"]["panel_mean_dist"]
+    xfam_mean = out["xfam_long"]["panel_mean_dist"]
+    ratio = nt_mean / xfam_mean if xfam_mean > 0 else float("inf")
+    passed = ratio <= NT_MANIP_RATIO_THRESHOLD
+    payload = {
+        **_meta(),
+        "layer": layer,
+        "n_probes": n_probes,
+        "anchor": "last_prompt",
+        "nt_mean": nt_mean,
+        "xfam_mean": xfam_mean,
+        "ratio": ratio,
+        "threshold": NT_MANIP_RATIO_THRESHOLD,
+        "pass": bool(passed),
+        "smoke": bool(args.smoke),
+        **out,
+        "note": (
+            "PASS: near-twin panel <= 0.5x the distant panel's mean distance to the "
+            "train contexts -- the proximity manipulation is real (plan §4.2 Gate 1)."
+            if passed
+            else "FAIL: near-twins not >=2x closer than distant -- ABORT-and-REPORT the "
+            "failed manipulation (plan §4.2 / K2''); do NOT recipe-descope (the #542 lesson)."
+        ),
+    }
+    p = EVAL / "p0/manipulation_check.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(payload, indent=2))
+    (logger.info if passed else logger.warning)(
+        "[manip-check] nt=%.4f vs xfam=%.4f -> ratio=%.3f (threshold %.2f): %s",
+        nt_mean,
+        xfam_mean,
+        ratio,
+        NT_MANIP_RATIO_THRESHOLD,
+        "PASS" if passed else "FAIL (ABORT)",
+    )
+    if not passed and not args.smoke:
+        # ABORT-and-REPORT: the failed manipulation IS the finding (plan §7
+        # K2''). The sentinel carries the realized ratio so the orchestrator
+        # surfaces the failed-manipulation result without the training launch.
+        write_sentinel(
+            "epm:failure",
+            "failure_class: data\n"
+            "gate: nt_manipulation_check (K2'')\n"
+            f"nt_mean: {nt_mean:.4f}\nxfam_mean: {xfam_mean:.4f}\nratio: {ratio:.3f}\n"
+            f"threshold: {NT_MANIP_RATIO_THRESHOLD}\n"
+            "note: near-twin manipulation FAILED (near-twins not >=2x closer than distant). "
+            "ABORT-and-REPORT the failed manipulation as the finding -- do NOT recipe-descope "
+            "(the #542 lesson). At-most-one per-member regeneration via "
+            "i542_sample_contexts.py --regen-nt-twins --only <cid> is allowed before re-running.",
+            extra={"manipulation_check": payload},
+        )
+        raise SystemExit(
+            f"[manip-check] MANIPULATION GATE FAILED: ratio={ratio:.3f} > "
+            f"{NT_MANIP_RATIO_THRESHOLD} -- see {p}"
+        )
+
+
 def phase_p0prime(args) -> None:
     steps = args.steps or ["fetch", "contexts", "checks", "responses", "clouds", "closeness"]
     if args.dry_run:
@@ -861,6 +1105,13 @@ def phase_p0prime(args) -> None:
     if "closeness" in steps:
         phase_log("p0p_closeness")
         _closeness_step(args)
+    # Genuine-near-twin manipulation gate (plan §4.2 Gate 1). Default-OFF for
+    # the v1 step set; runs when explicitly requested (the proximity run's
+    # p0prime includes `manip_check` in --steps). On FAIL it ABORTS the phase
+    # (no training launch) -- the deliberate abort-and-report fallback.
+    if "manip_check" in steps:
+        phase_log("p0p_manip_check")
+        _nt_manipulation_check(args)
 
 
 # ── Phase train ──────────────────────────────────────────────────────────────
@@ -872,7 +1123,7 @@ def _builder_cmd(args, cell: dict) -> list[str]:
         "I537_SAMPLED_CONTEXTS", str(DATA537 / "contexts/sampled_contexts.json")
     )
     demos_p = os.environ.get("I537_ICL_DEMOS", str(DATA537 / "contexts/icl_demos.json"))
-    arm_for_mix = "arm2_close" if cell["arm"] == "repl_close" else cell["arm"]
+    arm_for_mix = {"repl_close": "arm2_close", "repl_nt": "nt_close"}.get(cell["arm"], cell["arm"])
     cmd = [
         sys.executable,
         str(REPO / "scripts/i537_build_training_data.py"),
@@ -914,6 +1165,186 @@ def _band_unreachable(cid: str) -> bool:
     return bool(band[cid]["band_unreachable"])
 
 
+def _build_bystander_probe_from_data(data_path: Path, tokenizer, marker_ids: list[int]):
+    """Bystander (negative-row) probe batch for the headroom early-stop.
+
+    Reads the cell's training-mix JSONL and picks the MARKER-LESS rows (the
+    contrastive negatives -- a DIFFERENT persona than the source, response
+    marker-stripped). For each, the post-response slot (the position whose
+    distribution predicts the FIRST token after the response -- the slot the
+    negatives train EOS at) is the read position: the bystander-headroom DV
+    is the on-policy argmax-is-marker rate at that slot. A bystander argmax
+    crossing toward the marker is the saturation signal (the implant bleeding
+    into off-source contexts), gating on BYSTANDER resolution, NEVER source
+    rate (marker-training-recipe.md).
+
+    Returns ``(input_ids[B,T], attention_mask[B,T], slot_positions[B], n_rows)``
+    or ``(None, None, None, 0)`` when no marker-less rows are present (e.g. a
+    positives-only mix -- the callback then no-ops).
+    """
+    import torch
+
+    from explore_persona_space.train.sft import _apply_chat_template_safe, _find_subsequence
+
+    pad_id = tokenizer.pad_token_id
+    if pad_id is None:
+        pad_id = tokenizer.eos_token_id
+    if pad_id is None:
+        raise ValueError("Tokenizer has no pad_token_id / eos_token_id; cannot pad probe batch")
+
+    rows_ids: list[list[int]] = []
+    slots: list[int] = []
+    max_length = 2048
+    max_rows = 32
+    with Path(data_path).open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            prompt, completion = row.get("prompt"), row.get("completion")
+            if not isinstance(prompt, list) or not isinstance(completion, list):
+                continue
+            full = _apply_chat_template_safe(
+                tokenizer, prompt + completion, add_generation_prompt=False
+            )
+            if full is None:
+                continue
+            # Negative (bystander) rows carry NO marker in the completion.
+            if _find_subsequence(full, marker_ids) >= 0:
+                continue
+            if len(full) > max_length or len(full) < 2:
+                continue
+            rows_ids.append(full)
+            # Post-response slot = the output position whose distribution
+            # predicts the token AFTER the last real token (== the EOS slot
+            # the negatives train); index of the last token in the fused row.
+            slots.append(len(full) - 1)
+            if len(rows_ids) >= max_rows:
+                break
+    if not rows_ids:
+        return None, None, None, 0
+    t_max = max(len(r) for r in rows_ids)
+    input_ids = torch.full((len(rows_ids), t_max), pad_id, dtype=torch.long)
+    attention_mask = torch.zeros((len(rows_ids), t_max), dtype=torch.long)
+    for i, ids in enumerate(rows_ids):
+        input_ids[i, : len(ids)] = torch.tensor(ids, dtype=torch.long)
+        attention_mask[i, : len(ids)] = 1
+    return input_ids, attention_mask, torch.tensor(slots, dtype=torch.long), len(rows_ids)
+
+
+def _make_bystander_headroom_callback(
+    *, marker_id: int, input_ids, attention_mask, slot_positions, out_path: Path
+):
+    """Per-cell bystander-headroom early-stop callback (plan §4.2 Gate 2).
+
+    Lazily inherits ``TrainerCallback`` (the dispatcher imports without
+    transformers locally). Every ``NT_BYSTANDER_EVAL_EVERY_STEPS`` steps (after
+    ``NT_BYSTANDER_MIN_STEPS``) it teacher-forces the bystander probe batch and
+    reads the on-policy argmax-is-marker rate at the post-response slot; it sets
+    ``should_training_stop`` when that rate crosses ``NT_BYSTANDER_CEILING``
+    (the implant bleeding into off-source bystanders). Gates on BYSTANDER
+    resolution, NEVER source rate. The per-step bystander trajectory is written
+    to ``out_path`` (checkpoint-per-phase: rewritten after every probe) so the
+    telemetry is auditable even if the callback never fires.
+    """
+    import torch
+    from transformers import TrainerCallback
+
+    class _Impl(TrainerCallback):
+        def __init__(self):
+            self.records: list[dict] = []
+            self.fired_at: int | None = None
+            self._stopped = False
+
+        def _read_bystander_marker_argmax(self, model) -> tuple[float, float]:
+            """(argmax_is_marker_rate, mean_marker_logp) at the bystander slots."""
+            device = getattr(model, "device", None) or next(model.parameters()).device
+            ids = input_ids.to(device)
+            mask = attention_mask.to(device)
+            pos = slot_positions.to(device)
+            was_training = model.training
+            model.eval()
+            try:
+                rates: list[float] = []
+                logps: list[float] = []
+                chunk = 4
+                for s in range(0, ids.shape[0], chunk):
+                    with torch.no_grad():
+                        out = model(
+                            input_ids=ids[s : s + chunk], attention_mask=mask[s : s + chunk]
+                        )
+                    logits = out.logits.float()  # [b, T, V]
+                    bidx = torch.arange(logits.shape[0], device=device)
+                    slot = logits[bidx, pos[s : s + chunk], :]  # [b, V]
+                    argmax_is_marker = (slot.argmax(dim=-1) == marker_id).float()
+                    logz = torch.logsumexp(slot, dim=-1)
+                    logp = slot[:, marker_id] - logz
+                    rates.extend(argmax_is_marker.cpu().tolist())
+                    logps.extend(logp.cpu().tolist())
+                    del out, logits, slot
+                return float(sum(rates) / len(rates)), float(sum(logps) / len(logps))
+            finally:
+                if was_training:
+                    model.train()
+
+        def _flush(self) -> None:
+            payload = {
+                "schema": "bystander_headroom_trajectory_v1",
+                "marker_id": marker_id,
+                "ceiling": NT_BYSTANDER_CEILING,
+                "eval_every_steps": NT_BYSTANDER_EVAL_EVERY_STEPS,
+                "min_steps": NT_BYSTANDER_MIN_STEPS,
+                "n_probe_rows": int(input_ids.shape[0]),
+                "fired_at_step": self.fired_at,
+                "records": self.records,
+            }
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+            tmp.write_text(json.dumps(payload))
+            tmp.replace(out_path)
+
+        def on_step_end(self, args, state, control, model=None, **kwargs):
+            if self._stopped or model is None:
+                return
+            step = int(state.global_step)
+            if step <= 0 or step % NT_BYSTANDER_EVAL_EVERY_STEPS != 0:
+                return
+            rate, logp = self._read_bystander_marker_argmax(model)
+            self.records.append(
+                {"step": step, "bystander_argmax_marker_rate": rate, "bystander_marker_logp": logp}
+            )
+            self._flush()
+            logger.info(
+                "[bystander-headroom] step %d: argmax-marker rate=%.3f (ceiling %.2f), logp=%.3f",
+                step,
+                rate,
+                NT_BYSTANDER_CEILING,
+                logp,
+            )
+            if step >= NT_BYSTANDER_MIN_STEPS and rate >= NT_BYSTANDER_CEILING:
+                logger.warning(
+                    "[bystander-headroom] STOP at step %d: bystander argmax-marker rate "
+                    "%.3f >= ceiling %.2f -- headroom collapsing, stopping (plan §4.2 Gate 2).",
+                    step,
+                    rate,
+                    NT_BYSTANDER_CEILING,
+                )
+                self.fired_at = step
+                self._stopped = True
+                control.should_training_stop = True
+                control.should_save = True
+                self._flush()
+
+        def on_train_end(self, args, state, control, **kwargs):
+            self._flush()
+
+    return _Impl()
+
+
 def _train_cell(cell: dict, *, smoke: bool, gpu_id: int) -> None:
     """One marker training cell -- the parent ``_train_marker_cell`` adapted to
     arm-keyed paths (recipe dict + band-stop + verify + stop-step verbatim)."""
@@ -937,10 +1368,36 @@ def _train_cell(cell: dict, *, smoke: bool, gpu_id: int) -> None:
     from explore_persona_space.experiments.i537_contexts import MARKER_TEXT
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
+    longer_budget = cell["arm"] in LONGER_BUDGET_ARMS
     kwargs = dict(i537d.MARKER_TRAIN_KWARGS)  # the parent recipe, verbatim (plan §11)
     kwargs["marker_text"] = MARKER_TEXT  # CRITICAL: default marker_text is legacy [ZLT]
     kwargs["max_length"] = int(json.loads(cell["meta"].read_text())["max_length"]) + 128
-    if unreachable and not smoke:
+    if longer_budget and not smoke:
+        # Genuine-near-twin LONGER budget (plan §3/§4.2): fixed 1 epoch, the
+        # band-stop runs in LOG-ONLY mode (logs the source dose-curve
+        # trajectory at the 5-step cadence for the §6 install-strength read but
+        # NEVER stops -- so the matched fixed-1-epoch schedule is preserved
+        # across both arms), and the per-cell bystander-headroom callback is
+        # the only early-stop. Applied IDENTICALLY to nt_close / xfam_long /
+        # repl_nt.
+        kwargs["epochs"] = NT_TRAIN_EPOCHS
+        kwargs["max_steps"] = -1  # 1 full epoch (overrides the parent 3-epoch ceiling)
+        kwargs["marker_band_stop"] = True
+        kwargs["marker_band_log_only"] = True
+        kwargs["marker_band_eval_every_steps"] = NT_BYSTANDER_EVAL_EVERY_STEPS
+        kwargs["marker_band_min_steps"] = NT_BYSTANDER_MIN_STEPS
+        traj = (
+            EVAL
+            / f"runtime/source_trajectory/{cell['arm']}/{cell['cid']}_seed{cell['train_seed']}.json"
+        )
+        traj.parent.mkdir(parents=True, exist_ok=True)
+        kwargs["marker_band_trajectory_path"] = str(traj)
+        logger.info(
+            "[train] %s/%s LONGER budget -> epochs=1, band-stop log-only, bystander-headroom stop",
+            cell["arm"],
+            cell["cid"],
+        )
+    elif unreachable and not smoke:
         # Parent §4.1b branch: band-stop off + step-matched cap from THIS
         # run's reachable cells in the same arm. The parent classified all 16
         # cells reachable, so this is defensive parity, not an expected path.
@@ -956,6 +1413,8 @@ def _train_cell(cell: dict, *, smoke: bool, gpu_id: int) -> None:
         kwargs["epochs"] = 1
         kwargs["max_steps"] = 2
         kwargs["marker_band_stop"] = False
+        kwargs.pop("marker_band_log_only", None)
+        kwargs.pop("marker_band_trajectory_path", None)
     cfg = TrainLoraConfig(
         seed=cell["train_seed"],
         gpu_id=gpu_id,
@@ -966,7 +1425,39 @@ def _train_cell(cell: dict, *, smoke: bool, gpu_id: int) -> None:
     )
     os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
     recorder = i537d._FinalStepRecorder()
-    train_lora(QWEN_ID, str(data_path), str(out_dir), cfg=cfg, callbacks=[recorder])
+    callbacks = [recorder]
+    if longer_budget and not smoke:
+        from explore_persona_space.experiments.i537_contexts import MARKER_ID
+
+        bp_ids, bp_mask, bp_slots, n_by = _build_bystander_probe_from_data(
+            data_path, _tokenizer(), [MARKER_ID]
+        )
+        if n_by > 0:
+            by_stem = f"{cell['cid']}_seed{cell['train_seed']}.json"
+            by_path = EVAL / f"runtime/bystander_headroom/{cell['arm']}/{by_stem}"
+            callbacks.append(
+                _make_bystander_headroom_callback(
+                    marker_id=MARKER_ID,
+                    input_ids=bp_ids,
+                    attention_mask=bp_mask,
+                    slot_positions=bp_slots,
+                    out_path=by_path,
+                )
+            )
+            logger.info(
+                "[train] %s/%s bystander-headroom callback attached (%d negative-row probes)",
+                cell["arm"],
+                cell["cid"],
+                n_by,
+            )
+        else:
+            logger.warning(
+                "[train] %s/%s LONGER budget but 0 marker-less probe rows -- "
+                "bystander-headroom early-stop NOT attached (positives-only mix?)",
+                cell["arm"],
+                cell["cid"],
+            )
+    train_lora(QWEN_ID, str(data_path), str(out_dir), cfg=cfg, callbacks=callbacks)
     # NOTE: per-cell wandb.finish() is owned by train_lora's #527 lifecycle fix
     # on main (run created during the call is finished on the way out).
     if not smoke:
@@ -1333,13 +1824,122 @@ def phase_eval(args) -> None:
 # ── Phase gate (G1', CPU) ────────────────────────────────────────────────────
 
 
+def _k1prime_nt_gate(args) -> None:
+    """Genuine-near-twin non-saturated-anchor gate (plan §4.2 Gate 2 / §7 K1'').
+
+    Post-train CPU read: per-cell source ``log P - base`` (the diagonal
+    ``g_mean_delta_logp`` from ``G_pairs/<arm>/<cid>__<cid>__seed42.json``) must
+    sit in ``[NT_BAND_LOW_NATS, NT_BAND_HIGH_NATS]`` AND the bystander argmax
+    emission must stay below the ceiling. If >NT_K1_MAX_VIOLATORS / 16 cells in
+    EITHER arm violate, the round ABORTS-and-REPORTS the realized per-cell
+    landing table across BOTH arms (the failed-anchor finding) -- NO
+    mixed-budget descope, NO per-cell re-run; the matched schedule is preserved
+    and a fresh amendment carries a revised matched budget. The realized
+    landing table ships as the training-dynamics read either way.
+    """
+
+    from explore_persona_space.experiments.i537_contexts import train_cids_for
+
+    phase_log("gate_kprime_nt")
+    if args.dry_run:
+        return
+    train_cids = train_cids_for("marker")
+    arms = ("nt_close", "xfam_long")
+    table: dict[str, dict] = {}
+    violators: dict[str, list[str]] = {}
+    for arm in arms:
+        diag: dict[str, dict] = {}
+        viol: list[str] = []
+        for cid in train_cids:
+            p = EVAL / f"G_pairs/{arm}/{cid}__{cid}__seed{SEED}.json"
+            assert p.exists(), (
+                f"K1'' needs {arm} fully evaluated; missing diagonal {p} "
+                "(run --phase eval --arm "
+                f"{arm} first)"
+            )
+            d = json.loads(p.read_text())
+            logp = float(d["g_mean_delta_logp"])
+            bystander_argmax = float(d.get("emission_rate_trained", 0.0))
+            in_band = NT_BAND_LOW_NATS <= logp <= NT_BAND_HIGH_NATS
+            # binst_marker carries the standing parent saturation flag and is
+            # excluded from EVERY registered read (plan §3); it is reported in
+            # the landing table but never counted as a violator.
+            counts = cid != "binst_marker"
+            bad = counts and not in_band
+            diag[cid] = {
+                "delta_logp": logp,
+                "in_band": bool(in_band),
+                "bystander_self_argmax_rate": bystander_argmax,
+                "counted": bool(counts),
+            }
+            if bad:
+                viol.append(cid)
+        table[arm] = diag
+        violators[arm] = viol
+    n_viol = {a: len(violators[a]) for a in arms}
+    aborted = any(n_viol[a] > NT_K1_MAX_VIOLATORS for a in arms)
+    payload = {
+        **_meta(),
+        "band": [NT_BAND_LOW_NATS, NT_BAND_HIGH_NATS],
+        "max_violators": NT_K1_MAX_VIOLATORS,
+        "n_counted_per_arm": {a: sum(1 for v in table[a].values() if v["counted"]) for a in arms},
+        "landing_table": table,
+        "violators": violators,
+        "n_violators": n_viol,
+        "abort": bool(aborted),
+        "note": (
+            "ABORT-and-REPORT: >5/16 cells out of [5,12] nat in at least one arm -- "
+            "the longer budget saturated; ship the realized landing table as the finding, "
+            "do NOT mixed-budget-descope (plan §7 K1'')."
+            if aborted
+            else "PASS: non-saturated anchor -- both arms keep <=5/16 cells out of band."
+        ),
+    }
+    p = EVAL / "p1/k1prime_nt.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(payload, indent=2))
+    (logger.warning if aborted else logger.info)(
+        "[gate] K1'' nt_close=%d/16 xfam_long=%d/16 out-of-band (max %d) -> %s",
+        n_viol["nt_close"],
+        n_viol["xfam_long"],
+        NT_K1_MAX_VIOLATORS,
+        "ABORT" if aborted else "PASS",
+    )
+    if aborted:
+        write_sentinel(
+            "epm:progress",
+            "gate: K1'' (non-saturated anchor)\n"
+            f"nt_close_violators: {n_viol['nt_close']}/16\n"
+            f"xfam_long_violators: {n_viol['xfam_long']}/16\n"
+            "note: >5/16 cells outside [5,12] nat -- ABORT-and-REPORT the realized landing "
+            "table as the finding (the longer budget saturated; a fresh matched-budget "
+            "amendment carries the revised budget). The partial-correlation read is NOT "
+            "computed; downstream analyze runs on the landing table only.",
+            extra={"k1prime_nt": payload},
+        )
+        # The realized landing table is itself the deliverable -- write a
+        # marker for the analyze phase to read, then STOP the pipeline (the
+        # downstream partial-correlation read is NOT computed on a saturated
+        # anchor). The orchestrator parks at awaiting_promotion with the table.
+        (EVAL / "analysis").mkdir(parents=True, exist_ok=True)
+        (EVAL / "analysis/k1prime_nt_abort.json").write_text(json.dumps(payload, indent=2))
+        raise SystemExit(
+            f"[gate] K1'' ABORT-and-REPORT: see {p} -- the longer budget saturated "
+            "(>5/16 out of band in an arm); the matched schedule is preserved, a fresh "
+            "amendment carries a revised matched budget."
+        )
+
+
 def phase_gate(args) -> None:
-    """CPU gates: G1' (plan §7, default) + the c8 add-back decision (--steps c8)."""
+    """CPU gates: G1' (plan §7, default) + c8 add-back (--steps c8) + the
+    genuine-near-twin non-saturated-anchor gate (--steps k1prime_nt)."""
     steps = args.steps or ["g1prime"]
     if "g1prime" in steps:
         _g1prime_gate(args)
     if "c8" in steps:
         _c8_addback_gate(args)
+    if "k1prime_nt" in steps:
+        _k1prime_nt_gate(args)
 
 
 def _g1prime_gate(args) -> None:
@@ -1689,40 +2289,73 @@ def _upload_data_artifacts() -> None:
 
 
 def phase_analyze(args) -> None:
+    """VM-side zero-GPU analysis.
+
+    ``--steps v1`` (the default) runs the v1 registered reads + figures.
+    ``--steps nt`` runs the genuine-near-twin PRIMARY localization read
+    (the partial correlation, plan §4.4) + the NT hero figures. The
+    proximity run passes ``--steps nt``; a combined ``--steps v1,nt`` runs
+    both. If a K1'' abort landed (analysis/k1prime_nt_abort.json present),
+    the partial-correlation read is SKIPPED -- the realized landing table is
+    the finding.
+    """
+    steps = args.steps or ["v1"]
     phase_log("analyze_reads")
     if args.dry_run:
         phase_log("analyze_figures")
         return
-    # --ladder always: the §6.5 ladder deliverable (baselines/ladder_scores_542
-    # .json incl. the 2 NEW dist_to_panel rows) is produced by THIS phase --
-    # no other phase runs it. All clouds are local by now (P0' extracted the
-    # i542 reduced clouds; the reads script pulls missing parent clouds /
-    # first-token caches from the pinned HF revision on demand), and ladder
-    # failures degrade to per-metric error rows, never a phase crash.
-    subprocess.run(
-        [
-            sys.executable,
-            str(REPO / "scripts/i542_registered_reads.py"),
-            "--eval-root",
-            str(EVAL),
-            "--ladder",
-        ],
-        check=True,
-        cwd=REPO,
-        env={**os.environ},
-    )
-    phase_log("analyze_figures")
-    subprocess.run(
-        [
-            sys.executable,
-            str(REPO / "scripts/i542_figures.py"),
-            "--eval-root",
-            str(EVAL),
-        ],
-        check=True,
-        cwd=REPO,
-        env={**os.environ},
-    )
+    if "v1" in steps:
+        # --ladder always: the §6.5 ladder deliverable (baselines/
+        # ladder_scores_542.json incl. the 2 NEW dist_to_panel rows). Ladder
+        # failures degrade to per-metric error rows, never a phase crash.
+        subprocess.run(
+            [
+                sys.executable,
+                str(REPO / "scripts/i542_registered_reads.py"),
+                "--eval-root",
+                str(EVAL),
+                "--ladder",
+            ],
+            check=True,
+            cwd=REPO,
+            env={**os.environ},
+        )
+        phase_log("analyze_figures")
+        subprocess.run(
+            [sys.executable, str(REPO / "scripts/i542_figures.py"), "--eval-root", str(EVAL)],
+            check=True,
+            cwd=REPO,
+            env={**os.environ},
+        )
+    if "nt" in steps:
+        phase_log("analyze_nt_reads")
+        abort = EVAL / "analysis/k1prime_nt_abort.json"
+        if abort.exists():
+            logger.warning(
+                "[analyze] K1'' abort present (%s) -- the realized landing table is the "
+                "finding; SKIPPING the partial-correlation read (saturated anchor).",
+                abort,
+            )
+            return
+        subprocess.run(
+            [
+                sys.executable,
+                str(REPO / "scripts/i542_registered_reads.py"),
+                "--eval-root",
+                str(EVAL),
+                "--nt-proximity",
+            ],
+            check=True,
+            cwd=REPO,
+            env={**os.environ},
+        )
+        phase_log("analyze_nt_figures")
+        subprocess.run(
+            [sys.executable, str(REPO / "scripts/i542_nt_figures.py"), "--eval-root", str(EVAL)],
+            check=True,
+            cwd=REPO,
+            env={**os.environ},
+        )
 
 
 # ── main ─────────────────────────────────────────────────────────────────────
