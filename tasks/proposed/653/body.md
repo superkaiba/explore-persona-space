@@ -15,6 +15,9 @@ goal: 'Test whether conditional behaviors decompose cleanly into separable read 
   shift activations across the rank ladder (rank-1 LoRA → higher-rank LoRA → full
   fine-tuning) — characterizing in each whether the structure is low-rank and read↔write-aligned
   or diffuse.'
+relates_to:
+- identity-contextual-vs-base
+- identity-cb-duality
 ---
 ## Goal
 
