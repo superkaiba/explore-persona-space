@@ -281,6 +281,65 @@ def write_twins(client, tokenizer, parent: dict, *, nonce: str = "") -> dict[str
     return out
 
 
+def _source_persona_string(parent: dict, source_cid: str) -> str:
+    """Resolve a near-twin's FROZEN source system-prompt string.
+
+    sp_swe / sp_doctor are house static personas; sp_ph1 / sp_ph2 resolve
+    from the parent's frozen PersonaHub payload (the SAME strings the parent
+    registry renders). Fails loud on an unknown source cid.
+    """
+    from explore_persona_space.personas import PERSONAS
+
+    if source_cid == "sp_swe":
+        return PERSONAS["software_engineer"]
+    if source_cid == "sp_doctor":
+        return PERSONAS["medical_doctor"]
+    if source_cid in ("sp_ph1", "sp_ph2"):
+        entry = parent.get("personahub", {}).get(source_cid)
+        assert entry and entry.get("persona"), (
+            f"parent payload missing personahub entry {source_cid!r} for near-twin source"
+        )
+        return entry["persona"]
+    raise SystemExit(f"unknown near-twin source cid {source_cid!r}")
+
+
+def build_near_twins(parent: dict, *, only: str | None = None) -> dict[str, dict]:
+    """Deterministic #441 surface-perturbation near-twins of the 4 F1 sources.
+
+    No LLM call (the construct under test is tight activation proximity; a
+    deterministic surface edit is the maximally-tight reproducible near-twin,
+    plan §4.1). Each near-twin twins ONE source persona; the result is FROZEN
+    so the manipulation-check gate's reading is reproducible. ``only`` limits
+    regeneration to a single near-twin cid (the at-most-one per-member
+    regeneration allowed by plan §4.2 / K2'' -- a construction fix, never a
+    threshold relaxation).
+    """
+    from explore_persona_space.experiments.i542_panels import (
+        I542_NT_TWIN_CIDS,
+        NT_PERTURB,
+        NT_TWIN_OF,
+        apply_nt_perturbation,
+    )
+
+    cids = (only,) if only else I542_NT_TWIN_CIDS
+    if only:
+        assert only in I542_NT_TWIN_CIDS, f"--only {only!r} is not a near-twin cid"
+    out: dict[str, dict] = {}
+    for cid in cids:
+        source_cid = NT_TWIN_OF[cid]
+        source = _source_persona_string(parent, source_cid)
+        twin = apply_nt_perturbation(cid, source)  # asserts the edit took
+        out[cid] = {
+            "system_prompt": twin,
+            "twin_of": source_cid,
+            "perturbation": NT_PERTURB[cid],
+            "source_persona": source,
+            "source": "near-twin",
+        }
+        logger.info("[near-twins] %s <- %s (%s): %r", cid, source_cid, NT_PERTURB[cid], twin)
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
@@ -304,6 +363,20 @@ def main() -> int:
         "regeneration after a failed P0' closeness check, plan §14); other slots "
         "are preserved from the existing --out file",
     )
+    ap.add_argument(
+        "--regen-nt-twins",
+        action="store_true",
+        help="DETERMINISTICALLY (re)build the 4 genuine near-twin negatives and APPEND "
+        "them under the `near_twins` key of the existing --out freeze (no LLM call, "
+        "no re-sampling of the v1 twin/PersonaHub/WildChat streams -- the v1 registry "
+        "cannot fork). Follow-up plan §4.1/§4.3.",
+    )
+    ap.add_argument(
+        "--only",
+        default=None,
+        help="with --regen-nt-twins: rebuild ONLY this near-twin cid (the at-most-one "
+        "per-member regeneration of plan §4.2 / K2''); other near-twins are preserved",
+    )
     args = ap.parse_args()
 
     import anthropic
@@ -314,6 +387,31 @@ def main() -> int:
     tokenizer = AutoTokenizer.from_pretrained(QWEN_ID, trust_remote_code=True)
     assert_marker_token(tokenizer)
     parent = _parent_payload(args.parent)
+
+    if args.only is not None and not args.regen_nt_twins:
+        raise SystemExit("--only is valid only with --regen-nt-twins")
+
+    if args.regen_nt_twins:
+        # Deterministic near-twin (re)build -> APPEND under `near_twins` on the
+        # existing freeze (the v1 sampled cids + twins are PRESERVED verbatim,
+        # so the v1 registry cannot fork). No LLM call. Follow-up plan §4.1/§4.3.
+        assert args.out.exists(), (
+            f"--regen-nt-twins needs an existing freeze at {args.out} "
+            "(fetch the v1 freeze at the i542 pin first)"
+        )
+        existing = json.loads(args.out.read_text())
+        near = build_near_twins(parent, only=args.only)
+        existing.setdefault("near_twins", {}).update(near)
+        existing["near_twins_built_at"] = datetime.datetime.now(datetime.UTC).isoformat()
+        existing["near_twins_only"] = args.only
+        existing["git_commit"] = _git_commit()
+        args.out.write_text(json.dumps(existing, indent=2, ensure_ascii=False))
+        logger.info(
+            "near-twins %s -> %s",
+            "regenerated" if args.only else "built",
+            args.out,
+        )
+        return 0
 
     if args.regen_twins is not None:
         assert args.out.exists(), f"--regen-twins needs an existing freeze at {args.out}"
@@ -358,6 +456,11 @@ def main() -> int:
         twins = write_twins(anthropic.Anthropic(max_retries=12), tokenizer, parent)
     personahub.update(twins)
 
+    # Deterministic near-twins ride along on the full path too (no cost), so a
+    # fresh freeze is self-contained; the dispatcher's --regen-nt-twins append
+    # path covers the reuse-the-v1-freeze case (follow-up plan §4.1/§4.3).
+    near_twins = build_near_twins(parent)
+
     payload = {
         "schema_version": 1,
         "seed": SEED,
@@ -368,6 +471,7 @@ def main() -> int:
         "parent_payload": str(args.parent),
         "personahub": personahub,
         "wildchat": wildchat,
+        "near_twins": near_twins,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
