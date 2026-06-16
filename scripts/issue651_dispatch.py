@@ -337,6 +337,7 @@ def phase_retrain(
     n_gpus: int,
     smoke: bool,
     max_train_steps: int | None,
+    dry_run: bool = False,
 ) -> None:
     """Train the seed-1042 em + sycophancy cells (wave-parallel, CVD-pinned)."""
     from explore_persona_space.experiments.issue_651 import RETRAIN_SEED
@@ -356,6 +357,15 @@ def phase_retrain(
                     repo_root, cell, smoke=smoke, steps=max_train_steps
                 )
             cmds.append((cmd, log_path, env))
+        if dry_run:
+            for (cmd, _lp, env), cell in zip(cmds, wave, strict=True):
+                logger.info(
+                    "[dry-run] retrain %s CVD=%s :: %s",
+                    cell.cell_id,
+                    env.get("CUDA_VISIBLE_DEVICES"),
+                    " ".join(shlex.quote(c) for c in cmd),
+                )
+            continue
         rcs = _run_parallel_with_log(cmds, cwd=repo_root)
         bad = [(rc, c.cell_id) for rc, c in zip(rcs, wave, strict=True) if rc != 0]
         if bad:
@@ -381,6 +391,7 @@ def phase_extract(
     layers: Sequence[int],
     primary_layer: int,
     max_new_tokens: int,
+    dry_run: bool = False,
 ) -> None:
     """Extract per-cell shifts via the inherited activation_shift CLI (waves)."""
     phase_log("extract")
@@ -395,14 +406,17 @@ def phase_extract(
             # passing an HF-subfolder string to PeftModel silently truncates +
             # produces an unapplied adapter (#375/#399); the staged local dir
             # has config + safetensors flattened at its root.
-            from explore_persona_space.experiments.issue_651 import stage_adapter
+            if dry_run:
+                adapter = f"<staged:{cell.adapter_subfolder}>"  # skip the 323MB pull
+            else:
+                from explore_persona_space.experiments.issue_651 import stage_adapter
 
-            adapter = str(
-                stage_adapter(
-                    cell.adapter_subfolder,
-                    repo_root / "outputs" / "issue_651" / "staged_adapters",
+                adapter = str(
+                    stage_adapter(
+                        cell.adapter_subfolder,
+                        repo_root / "outputs" / "issue_651" / "staged_adapters",
+                    )
                 )
-            )
             shift_out = out_dir / f"{cell.cell_id}.pt"
             # activation_shift --arm expects marker|em|fact|refusal; map
             # sycophancy/emnc onto the generative ("em") marker-stripping=off
@@ -445,12 +459,24 @@ def phase_extract(
             env = {"CUDA_VISIBLE_DEVICES": "" if cpu_only else str(cell.gpu_id)}
             log_path = _log_dir() / f"extract_{cell.cell_id}.log"
             cmds.append((cmd, log_path, env))
+        if dry_run:
+            for (cmd, _lp, env), cell in zip(cmds, wave, strict=True):
+                logger.info(
+                    "[dry-run] extract %s CVD=%r :: %s",
+                    cell.cell_id,
+                    env.get("CUDA_VISIBLE_DEVICES"),
+                    " ".join(shlex.quote(c) for c in cmd),
+                )
+            continue
         rcs = _run_parallel_with_log(cmds, cwd=repo_root)
         bad = [(rc, c.cell_id) for rc, c in zip(rcs, wave, strict=True) if rc != 0]
         if bad:
             raise RuntimeError(f"extract wave failed: {bad}; see logs in {_log_dir()}")
         for c in wave:
             logger.info("extract cell %s complete", c.cell_id)  # NOT [phase=done]
+    if dry_run:
+        logger.info("[phase=extract_done] (dry-run: no tensors written, upload skipped)")
+        return
     # Upload per-cell tensors to the HF data repo before pod terminate
     # (Upload Policy: intermediate analysis tensors the analysis phase consumes).
     _upload_shift_tensors(out_dir)
@@ -677,6 +703,16 @@ def main() -> int:
     parser.add_argument("--cpu-only", action="store_true", help="Force CPU (smoke).")
     parser.add_argument("--smoke", action="store_true", help="Smoke mode (max_train_steps=2).")
     parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Build + log each phase's per-cell commands, write the sentinel, and emit "
+            "[phase=done] WITHOUT launching the GPU subprocesses — exercises the "
+            "cell-iteration / env-injection / sentinel / poll-contract plumbing on CPU "
+            "(GPU-bound-phase carve-out item 2)."
+        ),
+    )
+    parser.add_argument(
         "--max-train-steps",
         type=int,
         default=None,
@@ -718,19 +754,26 @@ def main() -> int:
 
     cpu_only = args.cpu_only
     smoke = args.smoke or cpu_only
+    dry_run = args.dry_run
 
     # Credential assert only when a phase needs HF/WandB (canary/extract/retrain/
-    # bridge all do; analysis is local-only). Skip for a pure CPU analysis run.
-    if any(p != "analysis" for p in phases) and not (smoke and cpu_only):
+    # bridge all do; analysis is local-only). Skip for a pure CPU analysis run
+    # and for the dry-run plumbing smoke.
+    if any(p != "analysis" for p in phases) and not (smoke and cpu_only) and not dry_run:
         _require_credentials()
 
-    if any(p in ("extract", "bridge") for p in phases):
+    if any(p in ("extract", "bridge") for p in phases) and not dry_run:
         panel_personas_json, panel_questions_json = _materialize_panel(repo_root)
     else:
         panel_personas_json = panel_questions_json = None
 
     for phase in phases:
         if phase == "canary":
+            if dry_run:
+                logger.info("[dry-run] canary -> scripts/issue651_canary.py (skipped)")
+                phase_log("canary")
+                logger.info("[phase=canary_done]")
+                continue
             phase_canary(repo_root, cpu_only=cpu_only)
         elif phase == "retrain":
             cells = _select_cells(args, for_phase="retrain")
@@ -740,6 +783,7 @@ def main() -> int:
                 n_gpus=args.n_gpus,
                 smoke=smoke,
                 max_train_steps=args.max_train_steps,
+                dry_run=dry_run,
             )
         elif phase == "extract":
             cells = _select_cells(args, for_phase="extract")
@@ -753,8 +797,14 @@ def main() -> int:
                 layers=args.layers,
                 primary_layer=args.primary_layer,
                 max_new_tokens=args.max_new_tokens,
+                dry_run=dry_run,
             )
         elif phase == "bridge":
+            if dry_run:
+                logger.info("[dry-run] bridge -> scripts/issue651_bridge.py (skipped)")
+                phase_log("bridge")
+                logger.info("[phase=bridge_done]")
+                continue
             cells = _select_cells(args, for_phase="bridge")
             phase_bridge(
                 repo_root,
@@ -767,8 +817,10 @@ def main() -> int:
         elif phase == "analysis":
             phase_analysis(repo_root)
 
-    note = f"phases={phases} cells={args.cells or 'full'} smoke={smoke}"
-    write_sentinel("epm:results", note, extra={"phases": phases, "smoke": smoke})
+    note = f"phases={phases} cells={args.cells or 'full'} smoke={smoke} dry_run={dry_run}"
+    write_sentinel(
+        "epm:results", note, extra={"phases": phases, "smoke": smoke, "dry_run": dry_run}
+    )
     logger.info("[phase=done]")  # terminal marker — reserved for this single line
     return 0
 
