@@ -43,6 +43,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import math
 import random
 import sys
 from dataclasses import dataclass
@@ -506,9 +507,37 @@ def tiered_positives_v3(
 
 
 def onpolicy_negatives(
-    llm, tokenizer, specs: list[RowSpec], *, judge_concurrency: int
+    llm,
+    tokenizer,
+    specs: list[RowSpec],
+    *,
+    judge_concurrency: int,
+    yield_floor_frac: float = 1.0,
 ) -> dict[int, dict]:
-    """Fill all 500 negative/no-persona rows with judged NOT-agreeing base responses."""
+    """Fill negative/no-persona rows with judged NOT-agreeing base responses.
+
+    ``yield_floor_frac`` controls how a residual of unfillable negatives is
+    handled after ``NEG_MAX_ROUNDS``:
+
+      * ``1.0`` (DEFAULT — v1 ``tiered_positives``-paired all-or-nothing path,
+        UNCHANGED): any unfilled row raises ``RuntimeError`` (fail loud).
+      * ``< 1.0`` (the v3 80%-floor pool builder): tolerate a TIGHT residual.
+        A negative row goes unfilled when, under its OWN persona, the base model
+        persistently AGREES with that specific claim — a genuine per-(persona,
+        claim) yield tail, NOT a generation/judge bug (an AVERAGE base agreement
+        of ~0.03-0.13 still permits individual claim+persona tails near 1.0;
+        relaunch-5 row 429 = french_person + "English is a Romance language").
+        When unfilled <= ``ceil((1 - frac) * N_negatives)`` (>= 1), the unfilled
+        rows are DROPPED (loud-warned) and only the filled rows are returned —
+        the v3 caller's ``_subset_rows`` keeps the first round(floor_n * 2.5)
+        negatives by row_idx, so a sub-500 negative pool is in-contract and never
+        template-backfilled. ABOVE the cap (many rows failing) it still fails
+        loud — that genuinely signals a generation/judge bug.
+
+    Returns row_idx -> {completion, round, sample_idx} for FILLED rows only.
+    """
+    if not 0.0 < yield_floor_frac <= 1.0:
+        raise ValueError(f"yield_floor_frac must be in (0, 1], got {yield_floor_frac}")
     neg = [s for s in specs if s.row_type in ("negative", "no_persona")]
     by_idx = {s.row_idx: s for s in neg}
     filled: dict[int, dict] = {}
@@ -538,13 +567,35 @@ def onpolicy_negatives(
             filled[idx] = {"completion": text, "round": rnd, "sample_idx": k}
         log.info("[negatives] round %d: filled %d/%d", rnd, len(filled), len(neg))
     unfilled = sorted(s.row_idx for s in neg if s.row_idx not in filled)
-    if unfilled:
-        raise RuntimeError(
-            f"{len(unfilled)} negative rows unfilled after {NEG_MAX_ROUNDS} rounds "
-            f"(row_idx: {unfilled[:10]}) — base agreement priors are 0.03-0.13, so "
-            f"this indicates a generation/judge bug, not a yield problem."
+    if not unfilled:
+        return filled
+    # Residual tolerance: drop a tight tail of unfillable negatives (v3) vs the
+    # v1 all-or-nothing hard-fail (yield_floor_frac == 1.0). The cap is the
+    # LARGEST count whose realized fill fraction still clears the floor, i.e.
+    # floor(N * (1 - frac)); a tiny epsilon absorbs float drift (0.01*500 must
+    # be 5, not 6) so the cap matches the documented "<= 1% of N" exactly.
+    tolerated = (
+        0
+        if yield_floor_frac >= 1.0
+        else max(1, math.floor(len(neg) * (1.0 - yield_floor_frac) + 1e-9))
+    )
+    if len(unfilled) <= tolerated:
+        log.warning(
+            "[negatives] DROPPING %d/%d unfilled negative rows (<= tolerance %d at "
+            "floor_frac=%.3f; row_idx: %s) — persistent per-(persona, claim) base "
+            "agreement, NOT template-backfilled (the v3 80%%-floor negatives policy)",
+            len(unfilled),
+            len(neg),
+            tolerated,
+            yield_floor_frac,
+            unfilled[:10],
         )
-    return filled
+        return filled
+    raise RuntimeError(
+        f"{len(unfilled)}/{len(neg)} negative rows unfilled after {NEG_MAX_ROUNDS} rounds "
+        f"(> tolerance {tolerated} at floor_frac={yield_floor_frac}; row_idx: {unfilled[:10]}) "
+        f"— that many failing DOES indicate a generation/judge bug, not a yield tail."
+    )
 
 
 # --------------------------------------------------------------------------

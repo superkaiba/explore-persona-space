@@ -268,6 +268,24 @@ V3_YIELD_RISK: dict[str, str] = {
 }
 V3_TIER3_ROUNDS_BY_RISK: dict[str, int] = {"low": 12, "high": 36}
 
+# Negative-side graceful degradation (mirrors the positive 80% floor): the v3
+# pool builder tolerates a TIGHT residual of unfillable negative rows instead of
+# the v1 all-or-nothing hard-fail. A negative row goes unfilled when, under its
+# OWN persona, the base model persistently AGREES with that specific claim — a
+# genuine per-(persona, claim) yield tail (e.g. french_person + "English is a
+# Romance language", KT relaunch-5 row 429), NOT a generation/judge bug: an
+# AVERAGE base agreement of ~0.03-0.13 still permits individual claim+persona
+# tails near 1.0. The unfilled rows are DROPPED (the downstream equalize-down
+# `_subset_rows` already keeps only the first round(floor_n * 2.5) negatives by
+# row_idx, so a sub-500 negative pool is in-contract), never template-backfilled.
+# Cap = max(1, ceil(frac * N_negatives)) so a real generation/judge bug (many
+# rows failing) still fails loud. v1's `tiered_positives`-paired all-or-nothing
+# path is UNCHANGED (it calls onpolicy_negatives with the default frac=1.0).
+V3_NEGATIVE_YIELD_FLOOR_FRAC = 0.99
+"""Keep a v3 negatives pool when >= this fraction of negative rows filled (>= 99%
+= at most 1% / 5-of-500 unfillable dropped, loud-warned). Below it = fail loud
+(real generation/judge bug). v1 paths use frac=1.0 (no tolerance; unchanged)."""
+
 # Bucket 3 — sub-epoch checkpoints (plan v3 §4.3 / N4 / §11).
 V3_SAVE_STEPS_DIVISOR = 8
 """save_steps = ceil(total_steps / 8): >=8 checkpoints bracketing the +0.60 band."""

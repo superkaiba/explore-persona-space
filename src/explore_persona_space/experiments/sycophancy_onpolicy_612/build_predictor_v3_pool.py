@@ -43,6 +43,7 @@ from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa:
     BASE_MODEL,
     JUDGE_MODEL,
     SOURCES,
+    V3_NEGATIVE_YIELD_FLOOR_FRAC,
     V3_TRAIN_ARMS,
     V3_YIELD_FLOOR,
     pool_dir,
@@ -144,7 +145,20 @@ def build_onpolicy_pool_v3(
                 f"NEVER template-backfilled (plan §4.2 / §5)."
             )
         log.info("[%s:arm_onpolicy] [phase=p3_negatives_v3]", source)
-        neg = onpolicy_negatives(llm, tokenizer, specs, judge_concurrency=judge_concurrency)
+        # v3 negatives use the 80%-floor sibling of the positive yield policy: a
+        # tight residual of per-(persona, claim) unfillable negatives is DROPPED
+        # (loud-warned), not a hard-fail. _subset_rows below keeps only the first
+        # round(floor_n * 2.5) negatives by row_idx, so a sub-500 negative pool is
+        # in-contract. (Fixes relaunch-5: KT negatives row 429 = french_person +
+        # "English is a Romance language" persistently agreed → 499/500 → v1
+        # hard-fail. NOT template-backfilled.)
+        neg = onpolicy_negatives(
+            llm,
+            tokenizer,
+            specs,
+            judge_concurrency=judge_concurrency,
+            yield_floor_frac=V3_NEGATIVE_YIELD_FLOOR_FRAC,
+        )
     finally:
         del llm
         try:
