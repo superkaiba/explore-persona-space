@@ -48,7 +48,7 @@ relates_to:
   |---|---|---|---|
   | panel sweep (v1) | 2026-06-12 | six negative panels + count sweep, band-stopped | leakage map unchanged within 0.2 nat (floor 0.5) |
   | positives-only anchor | 2026-06-12 | delete the negatives entirely | off-source +0.35 nat, default +0.01 — under the floor |
-  | genuine-near-twin-negatives | 2026-06-16 | longer-budget run with #441 surface-perturbation near-twins | **aborted at manipulation gate** — near-twins 1.171× the distance of the control (gate ≤ 0.50×); ~0.14 of 12 budgeted GPU-h used |
+  | genuine-near-twin-negatives | 2026-06-16 | longer-budget run with surface-perturbation near-twins | **aborted at manipulation gate** — near-twins 1.171× the distance of the control (gate ≤ 0.50×); ~0.14 of 12 budgeted GPU-h used |
 
 ## Findings
 
@@ -124,7 +124,7 @@ Neither registered contrast clears the bar. The slot-level decomposition is the 
 
 ### Genuine near-twin perturbations don't separate from the cross-family control in activation space (longer-budget run aborted at the manipulation gate, ratio = 1.171)
 
-To fix the close-persona null's two self-flagged flaws, this round trained genuinely-tight near-twin negatives ([#441](https://eps.superkaiba.com/tasks/441) surface perturbations) against the distant control at a longer budget, guarded by a gate fixed in advance: near-twins had to sit at most half the distance of the distant control before training counted. The gate fired before any training, so the realized table stands in for the figure:
+To fix the close-persona null's two self-flagged flaws, this round trained genuinely-tight near-twin negatives (surface perturbations) against the distant control at a longer budget, guarded by a gate fixed in advance: near-twins had to sit at most half the distance of the distant control before training counted. The gate fired before any training, so the realized table stands in for the figure:
 
 | panel | mean activation distance to source/eval-target centroids (cosine, L22) | gate threshold |
 |---|---|---|
@@ -159,7 +159,7 @@ Full training mixes for every panel: [issue542_negative_panels/train, pinned](ht
 
 ### Evaluated with
 
-The frozen 30-context eval panel (the 16 training contexts + 14 held-out) × 32 held-out questions, identical to the [#537](https://eps.superkaiba.com/tasks/537) testbed (chosen because it is the measurement instrument this experiment holds fixed). No judge model — each probe is deterministic teacher-forced four-float slot scoring on the frozen base responses (marker log-prob, marker logit, end-of-turn logit, log-normalizer; both model sides in one pass). Preprocessing: the base-side slot stats are reused from the parent testbed and spot-revalidated (median absolute Δ logp = 0.0000 nat over 96 slots, tolerance 0.05).
+The frozen 30-context eval panel (the 16 training contexts + 14 held-out) × 32 held-out questions, identical to the frozen parent testbed (chosen because it is the measurement instrument this experiment holds fixed). No judge model — each probe is deterministic teacher-forced four-float slot scoring on the frozen base responses (marker log-prob, marker logit, end-of-turn logit, log-normalizer; both model sides in one pass). Preprocessing: the base-side slot stats are reused from the parent testbed and spot-revalidated (median absolute Δ logp = 0.0000 nat over 96 slots, tolerance 0.05).
 
 <details open>
 <summary>1 example eval probe (illustrative; full panel linked below)</summary>
@@ -200,18 +200,25 @@ Full per-question slot reads: [G_pairs, pinned](https://github.com/superkaiba/ex
 
 **Parameters:**
 
-| field | value |
+The load-bearing subset; the canonical complete hyperparameter table is the methodology doc §2.
+
+| Parameter | Value |
 |---|---|
-| base model | `Qwen/Qwen2.5-7B-Instruct` (bf16) |
-| design | marker row only; 5 retrained panels (`arm2_close`, `arm3_default`, `c2`, `c8`, `c16`) × 16 train contexts × seed 42 + 8 seed-43 replicate cells; `arm1_xfam` (= count-4) reused from the parent testbed; + 1 positives-only arm (`pos_only`); + 1 near-twin proximity arm (`nt_close`/`xfam_long`, **aborted at the manipulation gate before training**) |
-| LoRA / optimizer | r=32, α=64, dropout 0.05 on q/k/v/o (rsLoRA, cosine); lr = 5e-6; warmup ratio 0.05; batch 4 × grad-accum 4 (effective 16); epochs cap 3 (band-stop fires first) |
-| marker loss | marker-only loss on ` ※` (token id 83399, asserted); end-of-turn suppression at the post-response slot (token id 151645) on negative rows |
-| band-stop | target band \[5, 12\] nat on the diagonal; eval every 5 steps, min 10; realized stop steps 10-15 (instructed-marker cell 114). Near-twin arm: band-stop OFF, fixed 1 epoch — never trained (gate aborted) |
-| eval | 30 eval contexts × 32 held-out questions; teacher-forced four-float slot scoring on frozen base responses; base-side slot stats reused from the parent testbed (median absolute Δ logp = 0.0000 nat over 96 slots, tol 0.05) |
-| registered claim rule | effect requires \|Δ\| > max(2× seed-noise floor, 0.5 nat), raw and implant-strength-adjusted reads agreeing |
-| manipulation gate (near-twin arm) | near-twin panel mean cosine distance to source/eval-target centroids ≤ 0.50× the distant panel @ L22; realized ratio 1.171 > 0.50 → abort-and-report |
-| seeds | TRAIN_SEED 42 (all arms), 43 (replicates only); DATA seed 42 |
-| config slugs | `arm1_xfam`, `arm2_close`, `arm3_default`, `c2`, `c8`, `c16`, `repl_parent`, `repl_close`, `pos_only`, `nt_close`, `xfam_long` (panel definitions in `src/explore_persona_space/experiments/i542_panels.py`) |
+| Base model | `Qwen/Qwen2.5-7B-Instruct` (bf16) |
+| LoRA rank r | 32 |
+| LoRA α | 64 |
+| LoRA dropout | 0.05 |
+| LoRA target modules | `q_proj, k_proj, v_proj, o_proj` |
+| Learning rate | 5e-6 |
+| Epochs (ceiling) | 3 |
+| Per-device batch size | 4 |
+| Loss | marker-only + EOS suppression at the post-response slot |
+| Marker token | ` ※` (leading space), id 83399 |
+| Band-stop | ON |
+| Rows per cell | 300 positives + 300 negatives (1:1 exact) |
+| Seed | 42 |
+
+Design + config slugs: 5 retrained panels (`arm2_close`, `arm3_default`, `c2`, `c8`, `c16`) × 16 train contexts × seed 42 + 8 seed-43 replicate cells (`repl_parent`, `repl_close`); `arm1_xfam` (= count-4) reused from the parent testbed; + 1 positives-only arm (`pos_only`); + 1 near-twin proximity arm (`nt_close`/`xfam_long`, aborted at the manipulation gate before training). Panel definitions in `src/explore_persona_space/experiments/i542_panels.py`. The near-twin arm overrode band-stop OFF / fixed 1 epoch (never trained). Eval: 30 eval contexts × 32 held-out questions, teacher-forced four-float slot scoring; near-twin manipulation gate = near-twin panel mean cosine distance to source/eval-target centroids ≤ 0.50× the distant panel @ L22 (realized ratio 1.171 → abort-and-report).
 
 **Artifacts:**
 
