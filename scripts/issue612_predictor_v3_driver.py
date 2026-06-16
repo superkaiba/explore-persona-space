@@ -144,13 +144,29 @@ def _write_sentinel(
     return path
 
 
-def _run(cmd: list[str], *, env: dict[str, str] | None = None) -> int:
-    """Run a subprocess with an EXPLICIT env (uv-run / CI re-invocation safety),
-    streaming to this process's stdout so phase markers interleave. Returns the
-    return code (does NOT raise — the caller branches on it)."""
+def _run(
+    cmd: list[str], *, env: dict[str, str] | None = None, phase_log: Path | None = None
+) -> int:
+    """Run a subprocess with an EXPLICIT env (uv-run / CI re-invocation safety).
+    Returns the return code (does NOT raise — the caller branches on it).
+
+    ``phase_log`` redirects the child's stdout+stderr to a per-phase log FILE
+    instead of the main pod log. This is load-bearing for the inner
+    dispatch_sycophancy_612 subprocess: that script emits its OWN terminal
+    ``[phase=done]`` line, and ``[phase=done]`` in the MAIN pod log is RESERVED
+    for THIS driver's single terminal line (poll_pipeline reads the latest
+    ``[phase=...]`` token from the main log tail; a child's mid-run
+    ``[phase=done]`` reaching the main log is the #545 false-done hazard).
+    Phase-A pool builds / Phase-C analysis CLIs are tee'd the same way."""
     full_env = {**os.environ} if env is None else env
     log.info("spawning: %s", " ".join(cmd))
-    proc = subprocess.run(cmd, env=full_env)
+    if phase_log is None:
+        proc = subprocess.run(cmd, env=full_env)
+        return proc.returncode
+    phase_log.parent.mkdir(parents=True, exist_ok=True)
+    with open(phase_log, "ab") as fh:
+        proc = subprocess.run(cmd, env=full_env, stdout=fh, stderr=subprocess.STDOUT)
+    log.info("  (child stdout/stderr -> %s, rc=%d)", phase_log, proc.returncode)
     return proc.returncode
 
 
@@ -199,7 +215,7 @@ def _build_onpolicy_pool_for_fill(
     ]
     env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu_id), "TQDM_DISABLE": "1"}
     log.info("[%s] [phase=phase_a] on-policy pool build (realized fill)", source)
-    rc = _run(cmd, env=env)
+    rc = _run(cmd, env=env, phase_log=out_dir / "pool_build.log")
     if rc == YIELD_BELOW_FLOOR_EXIT:
         # Below the 80% floor: a DROP. The builder exits before writing the pool,
         # so the exact count is not persisted; the kept/kill decision needs only
@@ -447,7 +463,8 @@ def run_phase_b(
                 floor_n=floor_n,
                 gpu_id=gpu_id,
                 finalize=True,
-            )
+            ),
+            phase_log=args.logs_root / "phase_b_dispatch.log",
         )
         if rc != 0:
             raise RuntimeError(f"[phase=phase_b] dispatcher failed rc={rc}")
@@ -459,7 +476,7 @@ def run_phase_b(
         shards[gpus[i % len(gpus)]].append(c)
     shards = {g: cs for g, cs in shards.items() if cs}
     last_gpu = list(shards)[-1]
-    procs: list[tuple[int, subprocess.Popen]] = []
+    procs: list[tuple[int, subprocess.Popen, object]] = []
     for gpu_id, shard_cells in shards.items():
         cmd = _dispatcher_cmd(
             args,
@@ -471,15 +488,25 @@ def run_phase_b(
         )
         # CVD pin in the LAUNCHER env per shard (one GPU each) + matching --gpu-id.
         env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu_id)}
+        # Per-shard log FILE: the inner dispatcher's terminal [phase=done] must NOT
+        # reach the main pod log (reserved for the driver's terminal line, #545).
+        shard_log = args.logs_root / f"phase_b_dispatch_gpu{gpu_id}.log"
+        shard_log.parent.mkdir(parents=True, exist_ok=True)
         log.info(
             "[phase=phase_b] shard gpu=%d cells=%s", gpu_id, [cell_id(*c) for c in shard_cells]
         )
-        log.info("spawning: %s", " ".join(cmd))
-        procs.append((gpu_id, subprocess.Popen(cmd, env=env)))
+        log.info("spawning: %s  (-> %s)", " ".join(cmd), shard_log)
+
+        # (closed in the wait() loop below after the matching Popen exits).
+        fh = open(shard_log, "ab")  # noqa: SIM115
+        procs.append(
+            (gpu_id, subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT), fh)
+        )
 
     failures: list[tuple[int, int]] = []
-    for gpu_id, proc in procs:
+    for gpu_id, proc, fh in procs:
         rc = proc.wait()
+        fh.close()
         if rc != 0:
             failures.append((gpu_id, rc))
     if failures:
@@ -513,7 +540,8 @@ def run_phase_c(args: argparse.Namespace) -> dict:
             str(bakeoff_out),
             "--judge-concurrency",
             str(args.judge_concurrency),
-        ]
+        ],
+        phase_log=args.logs_root / "phase_c_bakeoff.log",
     )
     if rc != 0:
         raise RuntimeError(f"[phase=phase_c] bake-off failed rc={rc}")
@@ -531,7 +559,8 @@ def run_phase_c(args: argparse.Namespace) -> dict:
             "--stage",
             "endpoint",
             "--skip-figures",
-        ]
+        ],
+        phase_log=args.logs_root / "phase_c_analyze.log",
     )
     # analyze_612 returns 2 on the K1 parity HARD_FAIL kill (analysis_612.json is
     # written first for evidence). That is a rig-validity kill, not a driver bug —
