@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 649,
+  "highest_id": 650,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4030,6 +4030,13 @@
       "path": "tasks/completed/65",
       "status": "completed",
       "title": "Training one persona to emit a [ZLT] marker without bystanders adopting it has a one-cell-wide LR x epochs window on Qwen2.5-7B-Instruct (LOW confidence)"
+    },
+    "650": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/650",
+      "status": "proposed",
+      "title": "Rank-1 MLP LoRA read/write geometry across dose: pre-existing vs intruder direction, marker vs sycophancy"
     },
     "66": {
       "has_clean_result": true,
