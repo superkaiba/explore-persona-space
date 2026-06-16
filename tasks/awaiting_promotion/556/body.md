@@ -17,6 +17,8 @@ goal: 'Re-test whether the role-header encoding segments validating from off-tar
   about the parent design.'
 relates_to:
 - spec-role-header
+classification: useful
+promoted_at: '2026-06-16T07:02:33Z'
 ---
 # The role-header encoding's leakage advantage reverses on re-test: at 10 fresh seeds with regenerated training text, it leaks the validating trait more than a system-prompt encoding (MODERATE confidence)
 
