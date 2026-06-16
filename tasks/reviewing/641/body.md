@@ -21,6 +21,8 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_641.md](https://github.com/superkaiba/explore-persona-space/blob/a56b3d2c019ae046db10c800825b5c6b873bfdfa/docs/methodology/issue_641.md) · [gist](https://gist.github.com/superkaiba/c573329e7d182aa06b81e625c793b426)
+
 ## Takeaways
 
 - Low-install ("resistant") and high-install contexts reach the **same fitted EM asymptote (difference 0.002, 95% CI [−0.086, +0.086])** — inside the ±0.10 equivalence band fixed before the run. No lower ceiling for the resistant class is detected.
@@ -215,7 +217,7 @@ NEUTRAL NON-FIRING (aligned, coherent): seed42 probe0 samp3 | aligned=85 coheren
 
 ## Reproducibility
 
-**Methodology reference:** the findings-blind methodology doc (`docs/methodology/issue_641.md`) is generated for this task; its SHA-pinned GitHub blob + gist links are appended by the Step 9a-quater late join after the clean-result-critic PASS (pending commit + gist at the time of this draft).
+**Methodology reference:** [docs/methodology/issue_641.md](https://github.com/superkaiba/explore-persona-space/blob/a56b3d2c019ae046db10c800825b5c6b873bfdfa/docs/methodology/issue_641.md) · [gist](https://gist.github.com/superkaiba/c573329e7d182aa06b81e625c793b426)
 
 **Parameters (load-bearing subset; full table in the methodology doc):**
 
