@@ -16,6 +16,8 @@ origin_prompt: 'queue a centered-vs-raw predictive-skill comparison on the cache
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_648.md](https://github.com/superkaiba/explore-persona-space/blob/3d809d40332eae0ddcd10167e407d845473ee98a/docs/methodology/issue_648.md) · [gist](https://gist.github.com/superkaiba/40a5bba5664579ea7b2aae4d1480916c)
+
 ## Takeaways
 
 - Of 4 verdict-eligible banks, **only the 505 persona-vector bank resolves out-of-sample (ΔR² = −0.071, CI excludes 0)** — and it favors raw, not the canonical centered recipe.
@@ -134,6 +136,7 @@ n/a — no model generation in this task. Each bank produces numeric metrics (tw
 
 **Artifacts:**
 
+- **Methodology reference:** [docs/methodology/issue_648.md](https://github.com/superkaiba/explore-persona-space/blob/3d809d40332eae0ddcd10167e407d845473ee98a/docs/methodology/issue_648.md) · [gist](https://gist.github.com/superkaiba/40a5bba5664579ea7b2aae4d1480916c)
 - Per-bank table: [`eval_results/issue_648/per_bank_skill_table.json`](https://github.com/superkaiba/explore-persona-space/blob/d83bcc2566963184c2526133e07333236dc21add/eval_results/issue_648/per_bank_skill_table.json) + `.csv` mirror (git-tracked on the issue branch).
 - Hero forest: [`figures/issue_648/hero_forest_delta_cvR2.png`](https://github.com/superkaiba/explore-persona-space/blob/d83bcc2566963184c2526133e07333236dc21add/figures/issue_648/hero_forest_delta_cvR2.png); supplementary `insample_vs_cv_scatter.png` + `compression_offdiag.png` (pinned at `d83bcc25`), `paired_r2_raw_vs_centered.png` (re-pinned at `c745da0a` — restricted to the three both-fail banks in round 2). Each PNG ships PDF + meta.json sidecars.
 Reused inputs (all from the parent audit's program; this task adds no new training data):
