@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "followup_label": "onpolicy-leakage-predictor",
+  "recovery": "off-pod Phase-C (round-6 strategy pivot after 6 GCP crashes)",
+  "hf_source_repo": "superkaiba1/explore-persona-space-data",
+  "hf_source_revision": "main",
+  "hf_cells_prefix": "issue612_onpolicy_leakage_predictor/eval_results/cells",
+  "offpod_hostname": "cia-benchmark-vm",
+  "driver_git_commit_sha": "46bdda84ffe862d0e65562667ca182809ec1bc24",
+  "consumed_cells": [
+    "villain:arm_canned:42",
+    "villain:arm_canned:137",
+    "villain:arm_onpolicy:42",
+    "villain:arm_onpolicy:137",
+    "comedian:arm_canned:42",
+    "comedian:arm_canned:137",
+    "comedian:arm_onpolicy:42",
+    "comedian:arm_onpolicy:137",
+    "kindergarten_teacher:arm_canned:42",
+    "kindergarten_teacher:arm_canned:137",
+    "kindergarten_teacher:arm_onpolicy:42",
+    "kindergarten_teacher:arm_onpolicy:137",
+    "software_engineer:arm_canned:42",
+    "software_engineer:arm_canned:137",
+    "software_engineer:arm_onpolicy:42",
+    "software_engineer:arm_onpolicy:137"
+  ],
+  "n_files_downloaded": 2424,
+  "registered_n_claims": 60,
+  "coverage_preflight": {
+    "status": "complete",
+    "n_ok_sources": 4,
+    "n_panel_jsons": 160,
+    "registered_n_claims": 60,
+    "registered_n_rollouts": 10,
+    "per_cell": {
+      "villain:arm_canned:42": {
+        "band_entry_step": 28,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "villain:arm_canned:137": {
+        "band_entry_step": 28,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "villain:arm_onpolicy:42": {
+        "band_entry_step": 34,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "villain:arm_onpolicy:137": {
+        "band_entry_step": 34,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "comedian:arm_canned:42": {
+        "band_entry_step": 42,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "comedian:arm_canned:137": {
+        "band_entry_step": 42,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "comedian:arm_onpolicy:42": {
+        "band_entry_step": 51,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "comedian:arm_onpolicy:137": {
+        "band_entry_step": 119,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "kindergarten_teacher:arm_canned:42": {
+        "band_entry_step": 42,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "kindergarten_teacher:arm_canned:137": {
+        "band_entry_step": 42,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "kindergarten_teacher:arm_onpolicy:42": {
+        "band_entry_step": 34,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "kindergarten_teacher:arm_onpolicy:137": {
+        "band_entry_step": 34,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "software_engineer:arm_canned:42": {
+        "band_entry_step": 42,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "software_engineer:arm_canned:137": {
+        "band_entry_step": 42,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "software_engineer:arm_onpolicy:42": {
+        "band_entry_step": 80,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      },
+      "software_engineer:arm_onpolicy:137": {
+        "band_entry_step": 112,
+        "n_expected_bystanders": 10,
+        "n_present_bystanders": 10
+      }
+    },
+    "max_bystanders_cap": null
+  },
+  "panel_regen": {
+    "villain": {
+      "status": "ok",
+      "n_bystanders": 10,
+      "realized_abs_pearson": 0.07853278896655948,
+      "sha256": "b37b1e3c28153fd9cb606c728ada00f1a361f9fe6e1772ee7c5ad7357d777525",
+      "selection_sha256": "14d4785dc0f1cc6b022a442c5a331ab9524d0a5ef01a4193d69212a73f4a2e04"
+    },
+    "comedian": {
+      "status": "ok",
+      "n_bystanders": 10,
+      "realized_abs_pearson": 0.027413027548151645,
+      "sha256": "58dd2714c5ab24d071030006aeac3b5e95630457832583756bbd7f6c528474c3",
+      "selection_sha256": "5543ed6ed8d824865ecdbd6c26a2297299d7a035c16645754053d1635588b384"
+    },
+    "kindergarten_teacher": {
+      "status": "ok",
+      "n_bystanders": 10,
+      "realized_abs_pearson": 0.09208969457387513,
+      "sha256": "ad7e4785ee29c82d8e9f00d13856464e9ce62b75e019b13093deb682c3134702",
+      "selection_sha256": "2e495820476a45347249caed454fdc6a05709d63155e87967263d0f3082461a4"
+    },
+    "software_engineer": {
+      "status": "ok",
+      "n_bystanders": 10,
+      "realized_abs_pearson": 0.17316487078576423,
+      "sha256": "42bfe54bcc7c91855e7d5f43f37f37aaa5739ce354d62c1ca034b76fd4306fb3",
+      "selection_sha256": "88ab512d02ba6e7b987a71635d21254faac34ce087166daffc0dc67a6ab38fb8"
+    }
+  },
+  "i623_inputs": {
+    "eval_results/issue_644/inputs/issue623/cosine_matrix.json": "present sha256=ab3979472c98",
+    "eval_results/issue_644/inputs/issue623/syc_i.json": "present sha256=432e7282a18a"
+  },
+  "bakeoff": {
+    "out": "eval_results/issue_612/onpolicy_predictor/bakeoff/predictor_bakeoff.json",
+    "kept_sources": [
+      "comedian",
+      "kindergarten_teacher",
+      "software_engineer",
+      "villain"
+    ],
+    "dropped_decorrelation_failed": [],
+    "pooled_winner": "cosine_to_source"
+  },
+  "h1": {
+    "out": "eval_results/issue_612/onpolicy_predictor/h1/h1_onpolicy_vs_canned.json",
+    "verdict": "indeterminate",
+    "point": -0.022958333333333338
+  },
+  "timestamp_utc": "2026-06-16T19:15:51.724892+00:00"
+}

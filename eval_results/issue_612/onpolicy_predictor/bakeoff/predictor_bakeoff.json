@@ -1,0 +1,373 @@
+{
+  "schema_version": 1,
+  "followup_label": "onpolicy-leakage-predictor",
+  "kept_sources": [
+    "comedian",
+    "kindergarten_teacher",
+    "software_engineer",
+    "villain"
+  ],
+  "dropped_decorrelation_failed": [],
+  "bonferroni": {
+    "alpha": 0.05,
+    "n_comparisons": 12,
+    "rule": "3 predictors x kept sources at alpha (plan v3 \u00a75 H2 / \u00a711)"
+  },
+  "predictor_provenance": {
+    "base_prior": "bystander base sycophancy prior (panel.json base_prior)",
+    "cosine_to_source": "layer-20 persona cosine (v1 panel_set.json)",
+    "pv_alignment": "#623 cosine_matrix variant lt_persona_lt_syc layer 21 (NO L20 in #623; L21 is the pinned nearest \u2014 brief concern #2)"
+  },
+  "bootstrap": {
+    "B": 10000,
+    "ci": "95% BCa",
+    "seed": 612
+  },
+  "per_source": {
+    "comedian": {
+      "source": "comedian",
+      "status": "ok",
+      "n_bystanders": 10,
+      "n_usable_all_predictors": 9,
+      "dropped_pv_alignment_personas": [
+        "assistant"
+      ],
+      "realized_panel_decorrelation_r": -0.027413027548151645,
+      "predictors": {
+        "base_prior": {
+          "spearman_rho": -0.06707441766510146,
+          "n": 10,
+          "ci95": [
+            -0.8088490502066956,
+            0.6050483174113761
+          ],
+          "ci_bonferroni": [
+            -1.0,
+            0.7398446298134882
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        },
+        "cosine_to_source": {
+          "spearman_rho": 0.8181818181818182,
+          "n": 10,
+          "ci95": [
+            0.4938271604938272,
+            1.0
+          ],
+          "ci_bonferroni": [
+            0.051948051948051945,
+            1.0
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        },
+        "pv_alignment": {
+          "spearman_rho": 0.2833333333333333,
+          "n": 9,
+          "ci95": [
+            -0.4310344827586208,
+            0.8148148148148148
+          ],
+          "ci_bonferroni": [
+            -0.7142857142857142,
+            1.0
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        }
+      },
+      "partial_cosine_given_prior": {
+        "collinearity_pearson_cos_prior": -0.027413027548151652,
+        "collinearity_gated": false,
+        "method": "partial_spearman",
+        "rho_partial": 0.8334293214525298
+      },
+      "pairwise_predictor_correlation": {
+        "base_prior__vs__cosine_to_source": 0.11585581233062979,
+        "base_prior__vs__pv_alignment": 0.06722926454528143,
+        "cosine_to_source__vs__pv_alignment": 0.43333333333333335
+      },
+      "verdict": {
+        "winner": null,
+        "reason": "top CI overlaps runner-up \u2014 indeterminate",
+        "top_rho": 0.8181818181818182,
+        "runner_up_rho": 0.2833333333333333,
+        "ci_overlap": true
+      }
+    },
+    "kindergarten_teacher": {
+      "source": "kindergarten_teacher",
+      "status": "ok",
+      "n_bystanders": 10,
+      "n_usable_all_predictors": 9,
+      "dropped_pv_alignment_personas": [
+        "assistant"
+      ],
+      "realized_panel_decorrelation_r": -0.09208969457387513,
+      "predictors": {
+        "base_prior": {
+          "spearman_rho": 0.22561395032806852,
+          "n": 10,
+          "ci95": [
+            -0.6668516590579581,
+            0.8091798648934833
+          ],
+          "ci_bonferroni": [
+            -0.992878172102817,
+            0.9072847682119205
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        },
+        "cosine_to_source": {
+          "spearman_rho": -0.6606060606060605,
+          "n": 10,
+          "ci95": [
+            -0.9610389610389609,
+            -0.15789473684210525
+          ],
+          "ci_bonferroni": [
+            -1.0,
+            0.3936826790312649
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        },
+        "pv_alignment": {
+          "spearman_rho": 0.6,
+          "n": 9,
+          "ci95": [
+            -0.2,
+            0.9999999999999998
+          ],
+          "ci_bonferroni": [
+            -0.7297297297297298,
+            1.0
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        }
+      },
+      "partial_cosine_given_prior": {
+        "collinearity_pearson_cos_prior": -0.09208969457387506,
+        "collinearity_gated": false,
+        "method": "partial_spearman",
+        "rho_partial": -0.6424038235524563
+      },
+      "pairwise_predictor_correlation": {
+        "base_prior__vs__cosine_to_source": -0.22561395032806852,
+        "base_prior__vs__pv_alignment": 0.5882560647712126,
+        "cosine_to_source__vs__pv_alignment": -0.4666666666666666
+      },
+      "verdict": {
+        "winner": null,
+        "reason": "top CI overlaps runner-up \u2014 indeterminate",
+        "top_rho": -0.6606060606060605,
+        "runner_up_rho": 0.6,
+        "ci_overlap": true
+      }
+    },
+    "software_engineer": {
+      "source": "software_engineer",
+      "status": "ok",
+      "n_bystanders": 10,
+      "n_usable_all_predictors": 9,
+      "dropped_pv_alignment_personas": [
+        "assistant"
+      ],
+      "realized_panel_decorrelation_r": -0.17316487078576423,
+      "predictors": {
+        "base_prior": {
+          "spearman_rho": -0.2195162759948775,
+          "n": 10,
+          "ci95": [
+            -0.8847790053297434,
+            0.6625253952004044
+          ],
+          "ci_bonferroni": [
+            -1.0,
+            0.9207363125811587
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        },
+        "cosine_to_source": {
+          "spearman_rho": -0.7212121212121211,
+          "n": 10,
+          "ci95": [
+            -0.9875776397515528,
+            0.07692307692307693
+          ],
+          "ci_bonferroni": [
+            -1.0,
+            0.5857848890177682
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        },
+        "pv_alignment": {
+          "spearman_rho": 0.5666666666666667,
+          "n": 9,
+          "ci95": [
+            -0.3334090738744841,
+            0.8983050847457626
+          ],
+          "ci_bonferroni": [
+            -0.9444444444444444,
+            1.0
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        }
+      },
+      "partial_cosine_given_prior": {
+        "collinearity_pearson_cos_prior": -0.1731648707857642,
+        "collinearity_gated": false,
+        "method": "partial_spearman",
+        "rho_partial": -0.7764453354634631
+      },
+      "pairwise_predictor_correlation": {
+        "base_prior__vs__cosine_to_source": -0.1341488353302029,
+        "base_prior__vs__pv_alignment": 0.06722926454528143,
+        "cosine_to_source__vs__pv_alignment": -0.7166666666666667
+      },
+      "verdict": {
+        "winner": null,
+        "reason": "top CI overlaps runner-up \u2014 indeterminate",
+        "top_rho": -0.7212121212121211,
+        "runner_up_rho": 0.5666666666666667,
+        "ci_overlap": true
+      }
+    },
+    "villain": {
+      "source": "villain",
+      "status": "ok",
+      "n_bystanders": 10,
+      "n_usable_all_predictors": 9,
+      "dropped_pv_alignment_personas": [
+        "assistant"
+      ],
+      "realized_panel_decorrelation_r": 0.07853278896655948,
+      "predictors": {
+        "base_prior": {
+          "spearman_rho": -0.006097674333191042,
+          "n": 10,
+          "ci95": [
+            -0.7717361339727533,
+            0.7290038003196576
+          ],
+          "ci_bonferroni": [
+            -0.987663965591991,
+            0.9190378071907662
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        },
+        "cosine_to_source": {
+          "spearman_rho": 0.7818181818181817,
+          "n": 10,
+          "ci95": [
+            0.14285714285714285,
+            0.9874213836477987
+          ],
+          "ci_bonferroni": [
+            -0.5673613834987646,
+            1.0
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        },
+        "pv_alignment": {
+          "spearman_rho": 0.39999999999999997,
+          "n": 9,
+          "ci95": [
+            -0.48218434280727446,
+            0.894736842105263
+          ],
+          "ci_bonferroni": [
+            -0.8240789087749326,
+            1.0
+          ],
+          "bonferroni_alpha": 0.004166666666666667
+        }
+      },
+      "partial_cosine_given_prior": {
+        "collinearity_pearson_cos_prior": 0.07853278896655948,
+        "collinearity_gated": false,
+        "method": "partial_spearman",
+        "rho_partial": 0.7856838174091213
+      },
+      "pairwise_predictor_correlation": {
+        "base_prior__vs__cosine_to_source": 0.09146511499786561,
+        "base_prior__vs__pv_alignment": 0.09244023874976197,
+        "cosine_to_source__vs__pv_alignment": -0.19999999999999998
+      },
+      "verdict": {
+        "winner": null,
+        "reason": "top CI overlaps runner-up \u2014 indeterminate",
+        "top_rho": 0.7818181818181817,
+        "runner_up_rho": 0.39999999999999997,
+        "ci_overlap": true
+      }
+    }
+  },
+  "pooled": {
+    "n_cells": 40,
+    "base_prior": {
+      "spearman_rho": 0.09484108614723928,
+      "n": 40,
+      "ci95": [
+        -0.2863109483037325,
+        0.43448771292855903
+      ]
+    },
+    "cosine_to_source": {
+      "spearman_rho": 0.3614785643077677,
+      "n": 40,
+      "ci95": [
+        0.003167387060342155,
+        0.6501105091080589
+      ]
+    },
+    "pv_alignment": {
+      "spearman_rho": 0.33432679768543583,
+      "n": 36,
+      "ci95": [
+        0.021341201352442694,
+        0.5816331327460841
+      ]
+    },
+    "winner": "cosine_to_source"
+  },
+  "i623_inputs": {
+    "cosine_matrix": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-612/eval_results/issue_644/inputs/issue623/cosine_matrix.json",
+    "syc_i": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-612/eval_results/issue_644/inputs/issue623/syc_i.json"
+  },
+  "leakage_collection_diagnostics": {
+    "per_cell": {
+      "villain:arm_onpolicy:42": {
+        "band_entry_step": 34,
+        "band_entry_status": "entered"
+      },
+      "villain:arm_onpolicy:137": {
+        "band_entry_step": 34,
+        "band_entry_status": "entered"
+      },
+      "comedian:arm_onpolicy:42": {
+        "band_entry_step": null,
+        "band_entry_status": "never_crossed_band"
+      },
+      "comedian:arm_onpolicy:137": {
+        "band_entry_step": null,
+        "band_entry_status": "never_crossed_band"
+      },
+      "kindergarten_teacher:arm_onpolicy:42": {
+        "band_entry_step": 34,
+        "band_entry_status": "entered"
+      },
+      "kindergarten_teacher:arm_onpolicy:137": {
+        "band_entry_step": 34,
+        "band_entry_status": "entered"
+      },
+      "software_engineer:arm_onpolicy:42": {
+        "band_entry_step": null,
+        "band_entry_status": "never_crossed_band"
+      },
+      "software_engineer:arm_onpolicy:137": {
+        "band_entry_step": null,
+        "band_entry_status": "never_crossed_band"
+      }
+    },
+    "missing": []
+  }
+}
