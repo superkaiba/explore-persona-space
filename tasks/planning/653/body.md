@@ -9,12 +9,14 @@ origin_prompt: Create an issue to check if conditional behaviors decompose clean
   into read and write features. (random-bias write features as steering -> sample
   -> read unsteered activations on those tokens vs baseline; characterize write->read
   geometry; consider theory document + rank-1 LoRA discussion)
-goal: 'Test whether conditional behaviors decompose cleanly into separable read (condition-detection)
-  and write (behavior-production) features, via two probes: (A) the base model''s
+goal: Test whether conditional behaviors decompose cleanly into separable read (condition-detection)
+  and write (behavior-production) features, via two probes — (A) the base model's
   autoregressive write→read map under random-bias steering, and (B) how real finetunes
   shift activations across the rank ladder (rank-1 LoRA → higher-rank LoRA → full
-  fine-tuning) — characterizing in each whether the structure is low-rank and read↔write-aligned
-  or diffuse.'
+  fine-tuning) — run across ≥3 installed behaviors and a few source contexts (not
+  a single behavior/context) so the verdict generalizes, characterizing in each whether
+  the structure is low-rank and read↔write-aligned (clean) versus rotated or diffuse,
+  and whether that verdict is consistent across behavior, context, and edit rank.
 relates_to:
 - identity-contextual-vs-base
 - identity-cb-duality
