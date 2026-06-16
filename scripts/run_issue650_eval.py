@@ -579,6 +579,23 @@ _SYCO_DOSE_WEIGHT_NOISE_ATOL = 1e-3
 _SYCO_DOSE_RATE_ATOL = 1.0 / (SYCO_EVAL_N_ROLLOUTS * SYCO_PROBE_N_CLAIMS) + 1e-9
 
 
+def _checkpoint_step_id(path: str) -> str:
+    """Canonical identity for the step-equality compare across record types.
+
+    ``_enumerate_epoch_checkpoints`` emits TWO checkpoint shapes (line ~195-213):
+    intermediate epochs as ``checkpoint-{step}/`` dirs, and the FINAL adapter as
+    the bare ``cell_dir`` (no ``checkpoint-`` infix). The two cells' cell_dirs
+    differ BY DESIGN (``cells/sycophancy__low__seed42`` vs ``…__high__seed42``),
+    so comparing the raw paths fires the step-equality assert on a STRUCTURAL
+    difference rather than the intended same-optimizer-step-grid invariant. Map
+    each path to a stable comparison key: the optimizer step ``NNN`` for a
+    ``checkpoint-NNN`` path, the shared sentinel ``"final"`` for any cell_dir
+    final-adapter path. Same epoch index + same shape -> same key on both cells,
+    so the legit same-config final-adapter record compares equal.
+    """
+    return Path(path).name.split("-")[-1] if "checkpoint-" in path else "final"
+
+
 def _assert_syco_dose_determinism(
     *,
     seed: int,
@@ -660,9 +677,14 @@ def _assert_syco_dose_determinism(
                 " — investigate RNG / config drift before trusting the dose read."
             )
         # (2) Checkpoint step-path equality at matched epoch (same save grid).
+        # Normalize across the heterogeneous record types (checkpoint-NNN dirs vs
+        # the bare cell_dir final adapter) via _checkpoint_step_id, so the assert
+        # tests the same-optimizer-step-grid invariant — NOT the by-design cell_dir
+        # path difference that fired on every legit run before this fix
+        # (syco-dose-determinism-final-adapter-false-raise, reconciler v4 BLOCKER).
         lc, hc = low_rates[epoch]["checkpoint"], high_rates[epoch]["checkpoint"]
-        low_step = Path(lc).name.split("-")[-1] if "checkpoint-" in lc else lc
-        high_step = Path(hc).name.split("-")[-1] if "checkpoint-" in hc else hc
+        low_step = _checkpoint_step_id(lc)
+        high_step = _checkpoint_step_id(hc)
         if low_step and high_step and low_step != high_step:
             raise AssertionError(
                 f"seed{seed} epoch{epoch}: low/high checkpoint step numbers differ "
