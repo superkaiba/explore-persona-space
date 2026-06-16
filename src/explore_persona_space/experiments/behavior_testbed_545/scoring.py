@@ -321,7 +321,13 @@ def score(  # noqa: C901 — pre-registered protocol, intentionally flat
         }
     if protocol_note:
         results["protocol_note"] = protocol_note
-    groups = ("A", "B", "C", "D")
+    # "PFX" (#595 prefix-binding) + "PST" (#640 postfix-binding) admitted by the
+    # 1-line groups-tuple extension so each carrier family enters the
+    # leave-family-out CV / quarantine race against #545's A/B/C/D. The edit is
+    # surgical: it does NOT alter #545's existing A/B/C/D groups (when no PFX/PST
+    # predictor JSON is staged the group contributes nothing — _champion returns
+    # None, group_k == 0; pinned in test_issue595_scoring_groups_extension.py).
+    groups = ("A", "B", "C", "D", "PFX", "PST")
     for g in groups:
         results["group_k"][g] = sum(1 for n in preds if n.startswith(f"{g}__"))
 
