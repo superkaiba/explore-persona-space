@@ -26,6 +26,7 @@ dependency, so it is fully CPU-smoke-testable.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -223,11 +224,77 @@ class CellVerdict:
     label: str  # "H1" | "H2" | "H3" | "underdetermined"
     is_low_rank: bool
     is_aligned: bool | None
-    ambiguous: bool  # deciding quantity's bootstrap CI crosses a threshold
+    ambiguous: bool  # the DECIDING DV's bootstrap CI crosses that DV's threshold
+    # §3.4.CI: which DV's threshold the label rests on — the ambiguity CI is
+    # bootstrapped on THIS DV, against THIS DV's thresholds (never hardcoded
+    # top-share; round-4 BLOCKER deciding-ci-hardcoded-top-share).
+    deciding_dv: str | None = None
+    # cos_top_to_rb is alignment-driven: the cosine + random-CI exceedance check IS
+    # the decision criterion, so a cluster bootstrap is not meaningful. Recorded as
+    # explicit unavailability (fail-loud-style), never a silent top-share fallback.
+    deciding_ci_unavailable: bool = False
+    deciding_ci_reason: str | None = None
     notes: list[str] = field(default_factory=list)
 
 
-def classify_cell(
+# §3.4.CI: the threshold(s) each candidate deciding DV is checked against. The
+# ambiguity flag fires iff the deciding DV's bootstrap CI brackets ITS OWN
+# threshold — a top-share CI ∈ [0,1] can never reach the PR thresholds 2.0/5.0,
+# which is exactly why round-4's hardcoded top-share bootstrap made every
+# PR-decided H3 cell trivially unambiguous. Source: plan §3.4.CI.
+DV_THRESHOLDS: dict[str, tuple[float, ...]] = {
+    "top_share_lambda": (TOP_SHARE_LOWRANK,),  # 0.7
+    "pr_lambda": (PR_LAMBDA_LOWRANK, PR_LAMBDA_H3),  # 2.0, 5.0
+    "rank_k_at_90": (float(RANK_K_H3),),  # 10
+    "cos_top_to_rb": (COS_ALIGNED_FLOOR,),  # 0.5 (+ random_ci_high, handled at call site)
+}
+
+
+def deciding_dv_for_label(
+    *,
+    top_share: float,
+    pr: float,
+    rank_k: float,
+    cos_top_to_rb: float | None,
+    is_low_rank: bool,
+    is_h3: bool,
+    is_aligned: bool | None,
+) -> str | None:
+    """Name the single DV whose threshold the cell's H-label rests on (§3.4.CI).
+
+    The label is set by a disjunction (``is_low_rank = pr ≤ 2 OR top_share ≥ 0.7``;
+    ``is_h3 = pr ≥ 5 OR rank_k ≥ 10``), so the deciding DV is NOT always top-share.
+    Selection mirrors the label precedence in :func:`classify_cell` (H3 wins
+    first): pick whichever criterion actually crossed, breaking ties by tightest
+    fractional margin so the CI gate is tightest. Returns ``None`` for boundary /
+    underdetermined cells (no single deciding DV → already ambiguous).
+    """
+    if is_h3:
+        cand: list[tuple[str, float]] = []
+        if pr >= PR_LAMBDA_H3:
+            cand.append(("pr_lambda", abs(pr - PR_LAMBDA_H3) / PR_LAMBDA_H3))
+        if rank_k >= RANK_K_H3:
+            cand.append(("rank_k_at_90", abs(rank_k - RANK_K_H3) / RANK_K_H3))
+        return min(cand, key=lambda t: t[1])[0]  # tightest-margin H3 criterion
+    # H1 / H2 both require low-rank; the deciding low-rank criterion:
+    if is_low_rank:
+        cand = []
+        if top_share >= TOP_SHARE_LOWRANK:
+            cand.append(
+                ("top_share_lambda", abs(top_share - TOP_SHARE_LOWRANK) / TOP_SHARE_LOWRANK)
+            )
+        if pr <= PR_LAMBDA_LOWRANK:
+            cand.append(("pr_lambda", abs(pr - PR_LAMBDA_LOWRANK) / PR_LAMBDA_LOWRANK))
+        low_rank_dv = min(cand, key=lambda t: t[1])[0]
+        # If the H1 vs H2 split (alignment) is live, the alignment cos decides.
+        if is_aligned is not None and cos_top_to_rb is not None:
+            return "cos_top_to_rb"  # H1↔H2 turns on |cos| vs the 0.5 floor + random CI
+        return low_rank_dv
+    # boundary cells (H2/H3 boundary, underdetermined): no single deciding DV
+    return None
+
+
+def classify_cell(  # noqa: C901 — the §3.2 label precedence + §3.4.CI deciding-DV ambiguity branches ARE the spec; flattening would obscure it.
     *,
     cell_group: str,
     rung: str,
@@ -237,6 +304,7 @@ def classify_cell(
     random_ci_high: float | None = None,
     cross_seed_top_cos: float | None = None,
     deciding_ci: tuple[float, float] | None = None,
+    bootstrap_fn: Callable[[str], tuple[float, float]] | None = None,
 ) -> CellVerdict:
     """Apply the §3.2 thresholds on the σ² spectrum to one cell-rung.
 
@@ -247,8 +315,18 @@ def classify_cell(
         random_ci_high: upper bound of the #503 norm-matched random-cos CI.
         cross_seed_top_cos: leading-direction cosine across seeds (rotation
             stability; None at a single headline seed).
-        deciding_ci: (lo, hi) bootstrap CI on the deciding quantity; if it
-            crosses the threshold the verdict is flagged ambiguous (§3.4).
+        deciding_ci: (lo, hi) bootstrap CI ON THE DECIDING DV (§3.4.CI). Mutually
+            exclusive with ``bootstrap_fn``; pass this when the caller already
+            knows the deciding DV (e.g. the off-pod refresh re-reads a stored
+            ``deciding_dv``) and bootstrapped it. NEVER a top-share CI for a
+            PR/rank-decided label.
+        bootstrap_fn: optional ``(dv_name) -> (ci_lo, ci_hi)`` callback. When
+            given, :func:`classify_cell` selects the deciding DV first
+            (:func:`deciding_dv_for_label`) and invokes the callback for THAT DV
+            only — the §3.4.CI contract (the bootstrap follows the label, never a
+            hardcoded top-share). Ignored for ``cos_top_to_rb``-decided labels,
+            where the bootstrap is not meaningful (the cosine + random-CI
+            exceedance check is the decision criterion).
     """
     notes: list[str] = []
     top_share = spec["top_share_lambda"]
@@ -270,6 +348,9 @@ def classify_cell(
             is_low_rank=False,
             is_aligned=None,
             ambiguous=True,
+            deciding_dv=None,
+            deciding_ci_unavailable=True,
+            deciding_ci_reason="spectrum-underdetermined; no DV decides the label",
             notes=[f"spectrum-underdetermined: {n_rows} rows < {MIN_SPECTRUM_ROWS} (§3.3)"],
         )
 
@@ -310,15 +391,57 @@ def classify_cell(
         label = "H2/H3(boundary)"
         notes.append("between the low-rank and H3 boundaries — boundary cell")
 
+    # ── §3.4.CI ambiguity flag: bootstrap THE DECIDING DV, vs ITS thresholds ──
+    deciding_dv = deciding_dv_for_label(
+        top_share=top_share,
+        pr=pr,
+        rank_k=float(rank_k),
+        cos_top_to_rb=cos_top_to_rb,
+        is_low_rank=is_low_rank,
+        is_h3=is_h3,
+        is_aligned=is_aligned,
+    )
     ambiguous = False
-    if deciding_ci is not None:
-        lo, hi = deciding_ci
-        # The most load-bearing threshold for the label.
-        for thr in (TOP_SHARE_LOWRANK, PR_LAMBDA_LOWRANK, PR_LAMBDA_H3):
-            if lo <= thr <= hi:
-                ambiguous = True
-                notes.append(f"deciding-quantity bootstrap CI [{lo:.3f}, {hi:.3f}] crosses {thr}")
-                break
+    deciding_ci_unavailable = False
+    deciding_ci_reason: str | None = None
+
+    if deciding_dv is None:
+        # boundary / underdetermined: no single deciding DV → already ambiguous.
+        ambiguous = True
+        deciding_ci_unavailable = True
+        deciding_ci_reason = "boundary/underdetermined label; no single deciding DV (§3.4.CI)"
+        notes.append("no single deciding DV (boundary label) — flagged ambiguous (§3.4.CI)")
+    elif deciding_dv == "cos_top_to_rb":
+        # Alignment-driven: the |cos| floor + #503 random-CI exceedance check IS the
+        # decision criterion; a cluster bootstrap on cos is not meaningful. Explicit
+        # unavailability (fail-loud-style), NOT a silent top-share fallback (§3.4.CI).
+        deciding_ci_unavailable = True
+        deciding_ci_reason = "alignment-driven; norm-matched random CI is the ambiguity flag"
+        # The alignment ambiguity is already captured by the random-CI note above
+        # (|cos| ≥ floor but ≤ random_ci_high → label rests on the bare 0.5 cut).
+        if (
+            cos_top_to_rb is not None
+            and random_ci_high is not None
+            and abs(cos_top_to_rb) <= random_ci_high
+        ):
+            ambiguous = True
+    else:
+        # top_share_lambda / pr_lambda / rank_k_at_90 — bootstrap THIS DV (via the
+        # caller's bootstrap_fn) OR use a pre-bootstrapped deciding_ci, and check
+        # it against THIS DV's own thresholds (DV_THRESHOLDS), never top-share's.
+        ci = deciding_ci
+        if ci is None and bootstrap_fn is not None:
+            ci = bootstrap_fn(deciding_dv)
+        if ci is not None:
+            lo, hi = ci
+            for thr in DV_THRESHOLDS[deciding_dv]:
+                if lo <= thr <= hi:
+                    ambiguous = True
+                    notes.append(
+                        f"deciding DV {deciding_dv} bootstrap CI [{lo:.3f}, {hi:.3f}] "
+                        f"crosses its threshold {thr} (§3.4.CI)"
+                    )
+                    break
 
     return CellVerdict(
         cell_group=cell_group,
@@ -334,6 +457,9 @@ def classify_cell(
         is_low_rank=is_low_rank,
         is_aligned=is_aligned,
         ambiguous=ambiguous,
+        deciding_dv=deciding_dv,
+        deciding_ci_unavailable=deciding_ci_unavailable,
+        deciding_ci_reason=deciding_ci_reason,
         notes=notes,
     )
 

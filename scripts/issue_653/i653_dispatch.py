@@ -1944,7 +1944,9 @@ def _load_arm_a_rho_top_directions(out_root: Path) -> dict[str, list[float]]:
     return out
 
 
-def phase_analyze(cells, *, out_root: Path, require_complete: bool = False) -> dict:
+def phase_analyze(  # noqa: C901 — per-cell verdict pipeline: the §3.4.CI deciding-DV + §6.5.B6 fail-loud branches ARE the spec; flattening would inline the per-cell reads.
+    cells, *, out_root: Path, require_complete: bool = False
+) -> dict:
     """Cluster-bootstrap ambiguity flags + per-cell H1/H2/H3 verdict grid + the
     cross-arm ρ↔Δx leading-direction cosine (plan §6.5 deliverables — the
     headline aggregation).
@@ -2013,30 +2015,44 @@ def phase_analyze(cells, *, out_root: Path, require_complete: bool = False) -> d
             "rank_k_at_90": dx["rank_k_at_90"],
         }
 
-        # §3.4 ambiguity flag: cluster-bootstrap CI on the deciding spectral DV
-        # (top-share). The Δx cloud is persisted as a tensor; resample its rows
-        # (the (context-persona, question) clustering unit, §6 "resampling the
-        # rows of the Δx matrix"). Done in-line on-pod with a SMALL n_boot for
-        # the flag; the off-pod pass re-runs the full 10k (i653_postpod_bootstrap).
-        deciding_ci = None
+        # §3.4.CI ambiguity flag: cluster-bootstrap CI on THE DECIDING spectral DV
+        # (NOT a hardcoded top-share — round-4 BLOCKER deciding-ci-hardcoded-top-share).
+        # classify_cell selects the deciding DV from the label, then calls this
+        # closure for THAT DV only; we record the CI it bootstrapped for
+        # serialization. The Δx cloud is persisted as a tensor; resample its rows
+        # (the (context-persona, question) clustering unit, §6 "resampling the rows
+        # of the Δx matrix"). Done in-line on-pod with a SMALL n_boot for the flag;
+        # the off-pod pass re-runs the full 10k (i653_postpod_bootstrap).
         tensor_path = tensors_dir / f"{c.cell_id}.npz"
+        cloud = None
         if tensor_path.exists():
             npz = np.load(tensor_path)
             cloud = npz["cloud"].astype(np.float64)
-            cluster_ids = np.arange(cloud.shape[0])  # row bootstrap (§6)
-            boot = spectral.cluster_bootstrap_dv(
-                cloud,
-                cluster_ids,
-                "top_share_lambda",
-                n_boot=200,  # on-pod ambiguity flag; off-pod re-runs at BOOTSTRAP_B
-                seed=i653.BOOTSTRAP_SEED,
-            )
-            deciding_ci = (boot["ci_low"], boot["ci_high"])
         elif require_complete:
             raise FileNotFoundError(
                 f"analyze (require_complete): missing Δx tensor for {c.cell_id} "
                 f"({tensor_path}) — cannot compute the §3.4 ambiguity flag."
             )
+
+        bootstrapped_ci: dict[str, tuple[float, float]] = {}
+
+        def _boot_deciding(
+            dv_name: str, _cloud=cloud, _sink=bootstrapped_ci
+        ) -> tuple[float, float]:
+            # bootstrap the requested deciding DV (cluster_bootstrap_dv reads the
+            # named DV off each resampled spectrum; rank_k_at_90 works out of the
+            # box — it is a spectral_dvs key). Source: plan §3.4.CI rule 2.
+            cluster_ids = np.arange(_cloud.shape[0])  # row bootstrap (§6)
+            boot = spectral.cluster_bootstrap_dv(
+                _cloud,
+                cluster_ids,
+                dv_name,
+                n_boot=200,  # on-pod ambiguity flag; off-pod re-runs at BOOTSTRAP_B
+                seed=i653.BOOTSTRAP_SEED,
+            )
+            ci = (boot["ci_low"], boot["ci_high"])
+            _sink[dv_name] = ci
+            return ci
 
         vd = spectral.classify_cell(
             cell_group=dx["cell_group"],
@@ -2045,8 +2061,10 @@ def phase_analyze(cells, *, out_root: Path, require_complete: bool = False) -> d
             n_rows=dx["n_rows"],
             cos_top_to_rb=dx.get("cos_top_to_rb"),
             random_ci_high=dx.get("random_ci_high"),
-            deciding_ci=deciding_ci,
+            bootstrap_fn=(_boot_deciding if cloud is not None else None),
         )
+        # the CI actually used (on the deciding DV), for serialization.
+        deciding_ci = bootstrapped_ci.get(vd.deciding_dv) if vd.deciding_dv else None
 
         # Cross-arm ρ↔Δx leading-direction cosine (§6.5 deliverable 6). cos
         # between Arm A's ρ leading direction and this cell's Δx leading dir, per
@@ -2080,11 +2098,47 @@ def phase_analyze(cells, *, out_root: Path, require_complete: bool = False) -> d
                 "(no Δx top direction or no Arm A ρ direction) — headline deliverable 6 missing."
             )
 
-        # Causal-ablation read (B6), when present for this cell (headline rung).
+        # ── §6.5.B6 causal-ablation read (the #2311.17030 illusion guard) ────────
+        # FAIL-LOUD under require_complete for ABLATION_RUNG cells (round-4 BLOCKER
+        # analysis-missing-ablation-not-fail-loud): a missing OR present-but-null
+        # ablation artifact is the same silent-drop hazard as the dx-tensor / cross-
+        # arm siblings, which already raise. Non-r16 cells legitimately have no
+        # ablation (B6 runs only at r16, phase_ablation) → None by design, never an
+        # error. Source: plan §6.5.B6.
         ablation = None
         abl_path = armB / f"ablation_{c.cell_id}.json"
-        if abl_path.exists():
-            ablation = json.loads(abl_path.read_text()).get("ablation")
+        if c.rung == i653.ABLATION_RUNG:
+            if not abl_path.exists():
+                if require_complete:
+                    raise RuntimeError(
+                        f"§6.5.B6 illusion-guard deliverable missing: ablation_{c.cell_id}.json "
+                        f"for ABLATION_RUNG cell {c.cell_id}. The headline verdict may NOT ship "
+                        f"without it (plan §8 risk 1 / §6.5 deliverable 5). Re-run phase_ablation."
+                    )
+                # non-require_complete (smoke / partial): leave None, RECORD loudly.
+                vd.notes.append(f"ablation MISSING for {c.cell_id} (require_complete off)")
+            else:
+                ablation = json.loads(abl_path.read_text()).get("ablation")
+                # a present-but-no-op file (both causal deltas null) also raises.
+                if (
+                    require_complete
+                    and ablation is not None
+                    and ablation.get("judge_rate_delta_ablation") is None
+                    and ablation.get("logp_delta_ablation") is None
+                ):
+                    raise RuntimeError(
+                        f"§6.5.B6: ablation_{c.cell_id}.json present but BOTH causal deltas "
+                        f"null (logp_delta_ablation / judge_rate_delta_ablation) — the "
+                        f"ablation produced no usable read. Headline verdict blocked."
+                    )
+                # a present file whose nested "ablation" block is entirely absent is
+                # the same no-op hazard under require_complete.
+                if require_complete and ablation is None:
+                    raise RuntimeError(
+                        f"§6.5.B6: ablation_{c.cell_id}.json present but carries no 'ablation' "
+                        f"block — the causal read is missing. Headline verdict blocked."
+                    )
+        # c.rung != ABLATION_RUNG: ablation stays None by design (B6 runs at r16).
 
         verdicts.append(
             {
@@ -2098,7 +2152,10 @@ def phase_analyze(cells, *, out_root: Path, require_complete: bool = False) -> d
                 "is_low_rank": vd.is_low_rank,
                 "is_aligned": vd.is_aligned,
                 "ambiguous": vd.ambiguous,
+                "deciding_dv": vd.deciding_dv,
                 "deciding_ci": list(deciding_ci) if deciding_ci else None,
+                "deciding_ci_unavailable": vd.deciding_ci_unavailable,
+                "deciding_ci_reason": vd.deciding_ci_reason,
                 "cross_arm": cross_arm,
                 "ablation": ablation,
                 "notes": vd.notes,

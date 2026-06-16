@@ -287,6 +287,17 @@ BOOTSTRAP_SEED = 653
 # kill outcome descopes full-FT to rank-16-max (plan §7).
 # Source: plan §7 Decision Gates (the two thresholds + sign + grounding).
 GATE_ARM_A_COHERENCE_MIN = 0.50  # ≥50% coherent continuations at ≥1 magnitude.
+# The §7.A gate-REQUIRED Arm A read-layer set (plan §10 reproducibility card, ==
+# ARM_A_LAYER_PAIRS above): the gate requires EVERY one of these 4 always-on
+# pairs to clear the coherence floor, NEVER a global max over one coherent pair
+# (round-4 BLOCKER full-ft-gate-coherence-not-per-layer-pair). Behavior-specific
+# cross-pairs (marker 19-24 / 20-21, syco 1-8; theory P5) are checked-if-produced
+# STRETCH reads, NOT in this gating set. Frozen so the gate checks against the
+# PLAN; pinned to equal ARM_A_LAYER_PAIRS so an absent planned pair is a
+# spec/code mismatch (the v5 anti-recurrence guard raises). Source: plan §7.A.
+PLANNED_LAYER_PAIRS: frozenset[str] = frozenset(
+    {f"{lo}-{hi}" for lo, hi in ARM_A_LAYER_PAIRS}
+)  # {"10-10", "15-15", "20-20", "25-25"}
 # The rank-16 install band/target per behavior (gate condition (b)). Marker uses
 # the marker-only-loss log-prob band [5, 12] nat (the MARKER_RECIPE band-stop
 # target — marker-training-recipe.md "usable window: source 5-12 nat"); content
@@ -321,27 +332,55 @@ ABLATION_TOP_K = 1  # ablate the single leading SVD direction. Source: plan §6 
 
 def _coherence_pass_ok(arm_a_payloads: list[dict]) -> tuple[bool, dict]:
     """Gate condition (a): Arm A coherence pass rate ≥ GATE_ARM_A_COHERENCE_MIN
-    at ≥1 tested magnitude per layer-pair (plan §7 (a)).
+    at ≥1 tested magnitude PER PLANNED layer-pair (plan §7.A).
 
     ``arm_a_payloads`` are the loaded ``rho_geometry_seed*.json`` dicts. Each
-    carries a ``coherence`` block with per-(distribution, layer-pair, magnitude)
-    pass rates (written by the Arm A GPU path). The gate passes if ANY tested
-    magnitude in ANY seed cleared the floor (the steering magnitude that destroys
-    > half the generations is past the usable range — plan §7).
+    carries a ``coherence`` block keyed ``"dist|layer_in-layer_out|mMag"`` (the
+    Arm A GPU path, ``i653_dispatch.py``) → the layer-pair is field [1]. The gate
+    PASSES iff EVERY pair in :data:`PLANNED_LAYER_PAIRS` has at least one
+    (dist, mag, seed) clearing the floor — NEVER a global max over a single
+    coherent pair (round-4 BLOCKER full-ft-gate-coherence-not-per-layer-pair).
+
+    Anti-recurrence guard (v5): a PLANNED pair the Arm A code never produced is a
+    spec/code mismatch, not a legitimate FAIL — raise ``RuntimeError`` so the run
+    crashes audibly (the round-1 code-reviewer catches it mechanically) instead of
+    silently always-FAILing the gate and permanently descoping the full-FT rung
+    (the v4 ``(20,21)`` mismatch class). Source: plan §7.A.
     """
-    best = -1.0
-    n_checked = 0
+    # group max coherence pass-rate by layer-pair across all (dist, mag, seed):
+    per_pair_best: dict[str, float] = {}
     for payload in arm_a_payloads:
-        coh = payload.get("coherence", {})
-        for _key, rate in coh.items():
+        for key, rate in payload.get("coherence", {}).items():
             if rate is None:
                 continue
-            n_checked += 1
-            best = max(best, float(rate))
-    ok = n_checked > 0 and best >= GATE_ARM_A_COHERENCE_MIN
+            # key = "dist|layer_in-layer_out|mMag"  →  layer-pair is field [1]
+            parts = key.split("|")
+            if len(parts) != 3:
+                raise ValueError(f"unexpected coherence key shape {key!r} (expected dist|pair|mag)")
+            pair = parts[1]
+            per_pair_best[pair] = max(per_pair_best.get(pair, -1.0), float(rate))
+
+    # ── ANTI-RECURRENCE GUARD (v5) ──────────────────────────────────────────
+    produced_pairs = set(per_pair_best)
+    spec_pairs = set(PLANNED_LAYER_PAIRS)
+    if not spec_pairs.issubset(produced_pairs):
+        raise RuntimeError(
+            f"Spec/code mismatch: PLANNED_LAYER_PAIRS={sorted(spec_pairs)} but Arm A only "
+            f"produced {sorted(produced_pairs)} (absent: {sorted(spec_pairs - produced_pairs)}). "
+            f"Either the Arm A code (ARM_A_LAYER_PAIRS) is wrong or the gate spec is wrong; "
+            f"fail loud rather than silently FAILing the gate and descoping the full-FT rung."
+        )
+
+    per_pair_pass = {
+        p: (per_pair_best.get(p, -1.0) >= GATE_ARM_A_COHERENCE_MIN) for p in PLANNED_LAYER_PAIRS
+    }
+    missing = sorted(p for p in PLANNED_LAYER_PAIRS if p not in per_pair_best)  # empty post-guard
+    ok = (not missing) and all(per_pair_pass.values())  # EVERY planned pair must clear the floor
     detail = {
-        "max_coherence_pass_rate": (best if n_checked else None),
-        "n_magnitudes_checked": n_checked,
+        "per_layer_pair_best": {p: per_pair_best.get(p) for p in sorted(PLANNED_LAYER_PAIRS)},
+        "per_layer_pair_pass": {p: per_pair_pass[p] for p in sorted(PLANNED_LAYER_PAIRS)},
+        "missing_layer_pairs": missing,  # a planned pair with NO coherence read → gate FAIL
+        "n_pairs_checked": len(per_pair_best),
         "threshold": GATE_ARM_A_COHERENCE_MIN,
         "passed": ok,
     }

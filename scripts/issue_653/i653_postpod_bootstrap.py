@@ -40,8 +40,17 @@ import numpy as np
 from explore_persona_space.experiments import issue_653 as i653
 from explore_persona_space.experiments.issue_653 import spectral
 
-DECIDING_DV = "top_share_lambda"  # the §3.4 deciding quantity for the ambiguity flag
-BOOTSTRAP_DVS = ("top_share_lambda", "pr_lambda")
+# §3.4.CI: the ambiguity flag is bootstrapped on EACH cell's DECIDING DV (read
+# from cross_arm_verdict.json's stored `deciding_dv`), NEVER a hardcoded
+# top-share (round-4 BLOCKER deciding-ci-hardcoded-top-share). The on-pod analyze
+# wrote `deciding_dv` per cell; this off-pod pass re-bootstraps THAT DV at the
+# full depth and re-checks it against THAT DV's own thresholds. We bootstrap all
+# three numeric spectral DVs so any cell's deciding DV is covered (cos_top_to_rb
+# is alignment-driven — no meaningful bootstrap, flagged deciding_ci_unavailable).
+BOOTSTRAP_DVS = ("top_share_lambda", "pr_lambda", "rank_k_at_90")
+# Per-DV thresholds the deciding-DV CI is checked against — reuse
+# spectral.DV_THRESHOLDS so the off-pod refresh matches classify_cell exactly.
+DV_THRESHOLDS = spectral.DV_THRESHOLDS
 
 
 def _pull_tensors_from_hf(out_root: Path) -> Path:
@@ -89,7 +98,17 @@ def bootstrap_cell(npz_path: Path) -> dict:
 
 def _refresh_ambiguity_flags(out_root: Path, per_cell_ci: dict[str, dict]) -> None:
     """Re-classify the cross_arm_verdict.json deciding_ci ambiguity flag at the
-    full bootstrap depth (the on-pod analyze used a shallow n_boot=200)."""
+    full bootstrap depth (the on-pod analyze used a shallow n_boot=200).
+
+    §3.4.CI: each cell carries a stored ``deciding_dv`` (written by the on-pod
+    analyze). The refresh bootstraps THAT DV at the full depth and re-checks its
+    CI against THAT DV's own thresholds (``DV_THRESHOLDS``), NEVER a hardcoded
+    top-share (round-4 BLOCKER deciding-ci-hardcoded-top-share). A
+    ``cos_top_to_rb``-decided cell is alignment-driven — no meaningful bootstrap,
+    left ``deciding_ci_unavailable`` (the on-pod random-CI exceedance check is its
+    ambiguity flag); a cell with no/None deciding DV (boundary/underdetermined)
+    is left already-ambiguous.
+    """
     verdict_path = out_root / "cross_arm_verdict.json"
     if not verdict_path.exists():
         print(f"  [bootstrap] no {verdict_path}; skipping ambiguity-flag refresh", flush=True)
@@ -97,16 +116,20 @@ def _refresh_ambiguity_flags(out_root: Path, per_cell_ci: dict[str, dict]) -> No
     grid = json.loads(verdict_path.read_text())
     for vd in grid.get("verdicts", []):
         cid = vd.get("cell_id")
-        ci = per_cell_ci.get(cid, {}).get(DECIDING_DV)
-        if ci is None or vd.get("spectrum_underdetermined"):
+        deciding_dv = vd.get("deciding_dv")
+        if vd.get("spectrum_underdetermined") or deciding_dv is None:
+            continue  # no single deciding DV → already ambiguous, nothing to refresh
+        if deciding_dv == "cos_top_to_rb":
+            continue  # alignment-driven; the random-CI exceedance check is the flag
+        ci = per_cell_ci.get(cid, {}).get(deciding_dv)
+        if ci is None:
+            # the deciding DV was not bootstrapped (e.g. tensor absent) — leave the
+            # on-pod flag untouched rather than silently substituting another DV.
             continue
         lo, hi = ci["ci_low"], ci["ci_high"]
         vd["deciding_ci"] = [lo, hi]
-        # The most load-bearing thresholds for the label (mirror classify_cell).
-        ambiguous = any(
-            lo <= thr <= hi
-            for thr in (i653.TOP_SHARE_LOWRANK, i653.PR_LAMBDA_LOWRANK, i653.PR_LAMBDA_H3)
-        )
+        # Check the deciding DV's OWN thresholds (mirror classify_cell §3.4.CI).
+        ambiguous = any(lo <= thr <= hi for thr in DV_THRESHOLDS[deciding_dv])
         vd["ambiguous"] = bool(ambiguous)
         vd["deciding_ci_n_boot"] = i653.BOOTSTRAP_B
     grid["bootstrap_refreshed_n_boot"] = i653.BOOTSTRAP_B
@@ -156,10 +179,11 @@ def main(argv: list[str] | None = None) -> int:
         out_path = boot_dir / f"bootstrap_ci_{cell_id}.json"
         out_path.write_text(json.dumps(payload, indent=1))
         written.append(str(out_path))
-        ts = ci[DECIDING_DV]
+        ts = ci["top_share_lambda"]  # one DV's CI for the per-cell progress line
         print(
-            f"  [bootstrap] {cell_id}: top_share CI "
-            f"[{ts['ci_low']:.3f}, {ts['ci_high']:.3f}] (n_boot={ts['n_boot']})",
+            f"  [bootstrap] {cell_id}: top_share λ CI "
+            f"[{ts['ci_low']:.3f}, {ts['ci_high']:.3f}] (n_boot={ts['n_boot']}); "
+            f"per-cell ambiguity refreshed on each cell's deciding DV (§3.4.CI)",
             flush=True,
         )
 
