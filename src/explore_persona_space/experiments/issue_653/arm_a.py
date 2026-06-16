@@ -106,7 +106,7 @@ def fit_ridge_jacobian(
     W = np.asarray(W, dtype=np.float64)
     Rho = np.asarray(Rho, dtype=np.float64)
     assert W.ndim == 2 and Rho.ndim == 2 and W.shape[0] == Rho.shape[0], (W.shape, Rho.shape)
-    n, d_in = W.shape
+    n = W.shape[0]
     if lambdas is None:
         lambdas = np.logspace(-2, 4, 13)
     rng = np.random.default_rng(seed)
