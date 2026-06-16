@@ -6,8 +6,11 @@ non-circular):
 
 - ``d_behavior_base`` (instruction-contaminated): mean(h_base | agree-instructed
   contexts) − mean(h_base | same prompts under the bare persona), per
-  write-band layer L20–L27, at the ``post_attention_layernorm`` output (the
-  residual-input tap, the space the write b_down lands in).
+  write-band layer L20–L27, at the ``post_attention_layernorm`` output — the
+  registered residual-INPUT tap (plan §4/§5/§11), i.e. the residual stream
+  BEFORE the LoRA'd MLP that the write reads from (NOT the post-block residual
+  output). Captured via a forward hook on each band layer's
+  ``post_attention_layernorm``, matching the #604 context-bank extractor.
 - ``d_format_base`` (content-isolating, NEW): mean(h_base | agree-instructed
   judged-AGREES) − mean(h_base | agree-instructed judged-DISAGREES) — BOTH
   sides under the IDENTICAL agree-instruction system prompt, so the
@@ -56,6 +59,18 @@ TIER2_INSTRUCTION = (
 )
 
 
+def _decoder_layers(model):
+    """Return the Qwen2 decoder layer list (``model.model.layers``); fail loud."""
+    inner = getattr(model, "model", None)
+    layers = getattr(inner, "layers", None)
+    if layers is None:
+        raise RuntimeError(
+            "could not locate model.model.layers — the post_attention_layernorm "
+            "hook tap is unavailable (model architecture drift)."
+        )
+    return layers
+
+
 def _mean_response_acts_at_band(
     model,
     tokenizer,
@@ -67,14 +82,22 @@ def _mean_response_acts_at_band(
     device,
 ) -> dict[int, np.ndarray]:
     """Forward one (system, user, assistant) row; return mean-over-response-tokens
-    residual-stream activation at the ``post_attention_layernorm`` output per band
-    layer.
+    residual-stream activation at the ``post_attention_layernorm`` OUTPUT per band
+    layer — the registered residual-INPUT tap (plan §4/§5/§11; #604 extractor).
 
-    The write b_down adds to the residual OUTPUT; the comparison reference is
-    the residual stream BEFORE the LoRA'd MLP = post_attention_layernorm
-    output. We mean over the assistant completion-region tokens (the behavior
-    is expressed across the response, not at one slot) — the contrast-of-means
-    DV-4 construction (plan §4).
+    Round-3 CONCERN ``dv4-tap-plan-deviation`` (reconciler-binding, Option α):
+    the registered DV-4 reference tap is the ``post_attention_layernorm`` output
+    — the residual stream BEFORE the LoRA'd MLP, which is the space ``a_up`` reads
+    from and the natural comparison reference for the write's pre-MLP context
+    (plan §4 line 53 / §5 lines 131/132/136 / §11 line 380, and this script's own
+    docstring). The round-2 code instead read ``out.hidden_states[layer+1]`` =
+    the post-BLOCK residual OUTPUT, an UNREGISTERED activation-space re-decision.
+    Option α restores the registered tap via a forward hook on each band layer's
+    ``post_attention_layernorm`` — the SAME hook the context-bank extractor
+    already uses (``issue650_extract_context_bank.py``: ``mlp`` tap =
+    ``layer.post_attention_layernorm.register_forward_hook``). We mean over the
+    assistant completion-region tokens (the behavior is expressed across the
+    response, not at one slot) — the contrast-of-means DV-4 construction.
     """
     import torch
 
@@ -94,15 +117,42 @@ def _mean_response_acts_at_band(
         raise RuntimeError("prompt-only encoding is not a strict prefix (chat-template drift).")
     resp_slice = slice(p, len(full_ids))
     ids = torch.tensor([full_ids], dtype=torch.long, device=device)
-    with torch.no_grad():
-        out = model(ids, output_hidden_states=True)
-    # hidden_states[L+1] = output of layer L's block; we want the
-    # post_attention_layernorm output. The hidden_states tail is post-block
-    # residual, which is the right residual-stream tap for the comparison the
-    # write adds into (plan A4 / #604 RESIDUAL_OUTPUT space). Mean over response.
+
+    # Capture the post_attention_layernorm OUTPUT (residual-INPUT tap) per band
+    # layer via forward hooks — the registered DV-4 reference space (plan §4/§5/
+    # §11), matching the context-bank extractor's `mlp` tap. The post-attention
+    # LN output is the residual stream the MLP (and the LoRA'd down_proj write)
+    # reads, so it is the right comparison reference for the pre-MLP context.
+    layers = _decoder_layers(model)
+    captured: dict[int, torch.Tensor] = {}
+    handles = []
+
+    def _make_hook(layer_idx: int):
+        def _hook(_module, _inputs, output):
+            # post_attention_layernorm returns the normalized residual tensor.
+            captured[layer_idx] = (output[0] if isinstance(output, tuple) else output).detach()
+
+        return _hook
+
+    try:
+        for layer in band:
+            handles.append(
+                layers[layer].post_attention_layernorm.register_forward_hook(_make_hook(layer))
+            )
+        with torch.no_grad():
+            model(ids)
+    finally:
+        for h in handles:
+            h.remove()
+
     acts: dict[int, np.ndarray] = {}
     for layer in band:
-        hs = out.hidden_states[layer + 1][0, resp_slice]  # (resp_len, H)
+        if layer not in captured:
+            raise RuntimeError(
+                f"post_attention_layernorm hook at layer {layer} did not fire — "
+                "the registered DV-4 tap was not captured."
+            )
+        hs = captured[layer][0, resp_slice]  # (resp_len, H)
         if hs.shape[-1] != HIDDEN_SIZE and getattr(model.config, "_name_or_path", "") == BASE_MODEL:
             raise AssertionError(f"hidden_size {hs.shape[-1]} != {HIDDEN_SIZE}")
         acts[layer] = hs.float().mean(dim=0).cpu().numpy().astype(np.float32)
@@ -192,9 +242,22 @@ def build_concept_directions(args) -> int:
             fmt_agree[layer].append(acts[layer])
 
     log.info("[phase=concept_format_disagree] %d rows", min(len(disagree), n_cap))
-    # Disagree completions lack their claim pairing; pair round-robin with claims.
-    for i, comp in enumerate(disagree[:n_cap]):
-        claim = claims[i % len(claims)] if claims else "Is that correct?"
+    # Round-3 (Codex CONCERN dv4-disagree-claim-metadata-missing): each disagree
+    # row now carries its OWN source claim ({"completion","claim"}), so we pair
+    # the completion with the claim it was actually generated against — NOT a
+    # round-robin against unrelated claims (which built d_format_base from
+    # incoherent prompt/completion rows). Back-compat: an old-schema list[str]
+    # entry falls back to round-robin so a pre-round-3 pool still runs (flagged).
+    n_legacy_rows = 0
+    for i, row in enumerate(disagree[:n_cap]):
+        if isinstance(row, dict):
+            comp = row["completion"]
+            claim = row.get("claim") or (claims[i % len(claims)] if claims else "Is that correct?")
+        else:
+            # Legacy list[str] schema (pre-round-3 pool) — no per-row claim.
+            comp = row
+            claim = claims[i % len(claims)] if claims else "Is that correct?"
+            n_legacy_rows += 1
         acts = _mean_response_acts_at_band(
             model,
             tokenizer,
@@ -206,6 +269,13 @@ def build_concept_directions(args) -> int:
         )
         for layer in band:
             fmt_disagree[layer].append(acts[layer])
+    if n_legacy_rows:
+        log.warning(
+            "%d disagree rows used round-robin claim pairing (legacy list[str] "
+            "schema, no per-row claim) — regenerate the pool for claim-aligned "
+            "d_format_base (dv4-disagree-claim-metadata-missing).",
+            n_legacy_rows,
+        )
 
     # --- d_behavior_base: agree-instructed vs bare-persona (same claims) ---
     beh_instr: dict[int, list[np.ndarray]] = {layer: [] for layer in band}

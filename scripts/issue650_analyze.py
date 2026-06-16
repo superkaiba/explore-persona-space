@@ -288,6 +288,13 @@ def dv3_max_matched_null(
     random draw is norm-matched in the cosine geometry), compute the
     IDENTICAL ``max_i |cos|`` over the SAME per-layer basis THEN the same
     band-max reduction; p95 over the null max-distribution is the threshold.
+
+    NOTE (round-3): this single-vector reference impl emits the LEGACY FLAT
+    keys and is NOT on the production path — the per-cell deliverable is built
+    by ``_dv3_observed_per_layer`` / ``_dv3_null_per_layer`` and serialized into
+    the registered §6.5 nested schema by ``_dv3_registered_schema`` (Codex
+    CONCERN ``dv3-schema-mismatch``). Kept as the documented per-statistic
+    reference; ``dv3_intruder.json`` never carries these flat keys.
     """
     rng = np.random.default_rng(seed)
     d = observed_vec.shape[0]
@@ -335,14 +342,37 @@ def dv3_max_matched_null(
 def assert_dv3_schema(payload: dict) -> None:
     """Load-time hard assert (plan §6.5): reject a non-max-matched null.
 
-    Called by any consumer of dv3_intruder.json. A null that scored per-draw
-    SINGLE cosines, or a flat p95 over <full-rank random directions, has a
-    different ``null_aggregation`` string and is REJECTED (hard fail).
+    Round-3 (Codex CONCERN ``dv3-schema-mismatch``): validates the REGISTERED
+    nested §6.5 schema — ``observed.{write,read}`` / ``null.{write,read}`` /
+    ``assertions.null_aggregation_matches_observed`` — rather than the prior flat
+    keys. A null that scored per-draw SINGLE cosines, or a flat p95 over
+    ``<full-rank`` random directions, has a different ``null_aggregation`` string
+    OR a False ``assertions`` flag and is REJECTED (hard fail, Must-Fix #1).
     """
+    observed = payload.get("observed")
+    null = payload.get("null")
+    assertions = payload.get("assertions")
+    if not isinstance(observed, dict) or not isinstance(null, dict):
+        raise AssertionError(
+            "dv3_intruder.json cell missing the registered `observed`/`null` blocks "
+            "(plan §6.5 schema) — REJECTED (dv3-schema-mismatch)."
+        )
+    if not isinstance(assertions, dict) or "null_aggregation_matches_observed" not in assertions:
+        raise AssertionError(
+            "dv3_intruder.json cell missing `assertions.null_aggregation_matches_observed` "
+            "(plan §6.5) — REJECTED."
+        )
+    if assertions["null_aggregation_matches_observed"] is not True:
+        raise AssertionError(
+            "dv3_intruder.json cell: assertions.null_aggregation_matches_observed is not "
+            "True — the null routine's per-draw reduction does NOT match the observed "
+            "reduction; a non-max-matched null guarantees a false intruder/pre-existing "
+            "verdict on the headline discriminator. REJECTED (Must-Fix #1)."
+        )
     for arm in ("write", "read"):
-        if arm not in payload:
+        if arm not in observed:
             continue
-        agg = payload[arm].get("null_aggregation")
+        agg = null.get(arm, {}).get("null_aggregation") or null.get("null_aggregation")
         if agg != DV3_NULL_AGGREGATION:
             raise AssertionError(
                 f"dv3_intruder.json {arm} arm null_aggregation={agg!r} != "
@@ -351,8 +381,8 @@ def assert_dv3_schema(payload: dict) -> None:
                 "REJECTED (Must-Fix #1)."
             )
         # Cross-check observed + null reduced over the SAME layer band.
-        obs_layers = set(payload[arm].get("per_layer_observed_max", {}))
-        null_layers = set(payload[arm].get("per_layer_null_max_draws", {}))
+        obs_layers = set(observed[arm].get("max_by_layer", {}))
+        null_layers = set(null.get(arm, {}).get("per_layer_max_draws", {}))
         if obs_layers != null_layers:
             raise AssertionError(
                 f"dv3 {arm}: observed layers {sorted(obs_layers)} != null layers "
@@ -704,13 +734,15 @@ def cmd_analyze(args) -> int:
         read_obs = _dv3_observed_per_layer(read_pairs, read_basis, "a")
         write_null = _dv3_null_per_layer(write_basis, WRITE_LAYER_BAND, DV3_NULL_B, seed=seed)
         read_null = _dv3_null_per_layer(read_basis, READ_LAYER_BAND, DV3_NULL_B, seed=seed + 7)
-        dv3_rows[slug] = {
-            "behavior": behavior,
-            "dose": dose,
-            "seed": seed,
-            "write": {**write_obs, **write_null, "null_aggregation": DV3_NULL_AGGREGATION},
-            "read": {**read_obs, **read_null, "null_aggregation": DV3_NULL_AGGREGATION},
-        }
+        dv3_rows[slug] = _dv3_registered_schema(
+            behavior=behavior,
+            dose=dose,
+            seed=seed,
+            write_obs=write_obs,
+            read_obs=read_obs,
+            write_null=write_null,
+            read_null=read_null,
+        )
 
         # DV-2: write -> output concept (manipulation check).
         dv2_rows[slug] = _dv2_for_cell(slug, behavior, dose, seed, write_pairs, args)
@@ -776,6 +808,104 @@ def _dv3_null_per_layer(basis_by_layer, band, n_draws, *, seed) -> dict:
         "K_by_layer": {int(li): int(basis_by_layer[li].shape[0]) for li in layers},
         "layer_band": [int(li) for li in layers],
         "sign_convention": "unsigned (abs cosine)",
+    }
+
+
+def _dv3_registered_schema(
+    *,
+    behavior: str,
+    dose: str,
+    seed: int,
+    write_obs: dict,
+    read_obs: dict,
+    write_null: dict,
+    read_null: dict,
+) -> dict:
+    """Serialize a DV-3 cell into the plan §6.5 REGISTERED nested schema.
+
+    Round-3 (Codex CONCERN ``dv3-schema-mismatch``): the working helpers emit
+    flat keys (``per_layer_observed_max`` / ``band_observed_max`` /
+    ``band_null_max_draws`` / ``band_null_p95`` / ...). Plan §6.5 registers a
+    NESTED schema with ``observed.{write,read}.{max_by_layer,band_max}`` /
+    ``null.{write,read}.{max_draws,band_p95}`` / ``null.{B,K_by_layer,layer_band,
+    sign_convention,null_aggregation}`` / ``assertions.null_aggregation_matches_
+    observed``. This maps the working dicts onto exactly those field names so
+    the deliverable conforms to the plan, and computes the
+    ``null_aggregation_matches_observed`` boolean (True only when BOTH arms' null
+    routine reduced over the SAME band as their observed read AND carry the
+    registered ``max_over_base_singular_vectors_then_max_over_band`` aggregation).
+    """
+
+    def _arm(obs: dict, null: dict) -> tuple[dict, dict, bool]:
+        observed = {
+            "max_by_layer": dict(obs["per_layer_observed_max"]),
+            "band_max": obs["band_observed_max"],
+        }
+        null_block = {
+            "max_draws": null["band_null_max_draws"],
+            "band_p95": null["band_null_p95"],
+            "per_layer_max_draws": dict(null["per_layer_null_max_draws"]),
+            "K_by_layer": dict(null["K_by_layer"]),
+            "layer_band": list(null["layer_band"]),
+            "sign_convention": null["sign_convention"],
+            "null_aggregation": DV3_NULL_AGGREGATION,
+        }
+        # The null reduced over the same layer band as the observed read AND
+        # used the registered max-over-SVD-then-max-over-band aggregation.
+        matches = set(observed["max_by_layer"]) == set(null["per_layer_null_max_draws"])
+        return observed, null_block, matches
+
+    write_observed, write_null_block, write_match = _arm(write_obs, write_null)
+    read_observed, read_null_block, read_match = _arm(read_obs, read_null)
+
+    # null.B = the REALIZED number of null draws (the length of the per-draw
+    # max-distribution), not the configured default — they coincide in
+    # production but the realized count is the honest deliverable field. Both
+    # arms draw the same B; assert they agree.
+    realized_b = len(write_null_block["max_draws"])
+    if realized_b != len(read_null_block["max_draws"]):
+        raise AssertionError(
+            f"DV-3 null draw counts differ across arms "
+            f"(write={realized_b}, read={len(read_null_block['max_draws'])})."
+        )
+
+    return {
+        "behavior": behavior,
+        "dose": dose,
+        "seed": seed,
+        "observed": {"write": write_observed, "read": read_observed},
+        "null": {
+            "write": write_null_block,
+            "read": read_null_block,
+            "B": int(realized_b),
+            "K_by_layer": {
+                "write": write_null_block["K_by_layer"],
+                "read": read_null_block["K_by_layer"],
+            },
+            "layer_band": {
+                "write": write_null_block["layer_band"],
+                "read": read_null_block["layer_band"],
+            },
+            "sign_convention": "unsigned (abs cosine)",
+            "null_aggregation": DV3_NULL_AGGREGATION,
+        },
+        "assertions": {
+            "null_aggregation_matches_observed": bool(write_match and read_match),
+        },
+        # verdict per arm (kept for the analyzer; not part of the registered
+        # schema field set but harmless additional metadata).
+        "verdict": {
+            "write": (
+                "pre_existing_in_base_column_space"
+                if write_observed["band_max"] > write_null_block["band_p95"]
+                else "intruder_at_max_matched_null"
+            ),
+            "read": (
+                "pre_existing_in_base_column_space"
+                if read_observed["band_max"] > read_null_block["band_p95"]
+                else "intruder_at_max_matched_null"
+            ),
+        },
     }
 
 

@@ -310,9 +310,15 @@ def elicit_positives(
     Returns ``(filled, disagree_completions)`` where:
       - ``filled`` maps row_idx -> {"completion", "tier", "claim"} for every
         accepted (judged-agreeing) positive.
-      - ``disagree_completions`` is the list of tier-2 completions the judge
-        labeled DISAGREES (generated under the agree-instruction prompt) —
-        the DV-4 ``d_format_base`` content-isolating source (plan §4).
+      - ``disagree_completions`` is the list of tier-2 rows the judge labeled
+        DISAGREES (generated under the agree-instruction prompt) — the DV-4
+        ``d_format_base`` content-isolating source (plan §4). Round-3 (Codex
+        CONCERN ``dv4-disagree-claim-metadata-missing``): each row is now a
+        dict ``{"completion", "claim"}`` carrying the SOURCE claim it was
+        generated against, so ``d_format_base`` pairs each disagree completion
+        with its OWN claim instead of round-robin against unrelated claims
+        (which would build the content-isolating direction from incoherent
+        prompt/completion rows).
 
     Per-row fill policy (on-policy-completions rule): lowest tier that fills;
     tier 3 resamples with fresh openers up to TIER3_MAX_ROUNDS. UNFILLED
@@ -321,7 +327,9 @@ def elicit_positives(
     """
     by_idx = {s.row_idx: s for s in specs}
     filled: dict[int, dict] = {}
-    disagree_completions: list[str] = []
+    # Round-3: dicts {"completion", "claim"} (was list[str]) so d_format_base
+    # pairs each disagree completion with its OWN source claim.
+    disagree_completions: list[dict] = []
 
     # --- tier 1: bare persona, n=8 ---
     prompts = {s.row_idx: _chat_text(tokenizer, s.system_prompt, s.claim) for s in specs}
@@ -355,7 +363,7 @@ def elicit_positives(
                     filled[idx] = {"completion": text, "tier": 2, "claim": by_idx[idx].claim}
                     accepted = True
                 elif not agreed:
-                    disagree_completions.append(text)
+                    disagree_completions.append({"completion": text, "claim": by_idx[idx].claim})
     log.info(
         "[positives] tiers 1-2 filled %d/%d; retained %d disagreeing tier-2 rows",
         len(filled),
