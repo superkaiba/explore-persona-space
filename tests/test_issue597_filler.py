@@ -458,25 +458,32 @@ def test_armb_cfg_run_name_seed_threaded(tmp_path):
 
 
 def test_panel_trajectory_path_template_expands_per_seed_no_collision():
-    """The dispatcher's panel-trajectory output path template expands to a
-    DISTINCT, non-colliding path per seed (plan v6 §3: the new *_seed137_*.json /
-    *_seed7_*.json land beside, never overwrite, the committed *_seed42_*.json)."""
-    slab_root = Path("eval_results/issue_597")
+    """The figure-side per-seed trajectory paths expand to DISTINCT, non-colliding
+    paths per seed (plan v6 §3: the new *_seed137_*.json / *_seed7_*.json land
+    beside, never overwrite, the committed *_seed42_*.json).
+
+    Pin against the figure's ``PATHS`` source-of-truth (the production slab
+    ``eval_results/issue_597/positives-plus-filler-control/panel_trajectories/armD``)
+    and its ``panel_path`` builder rather than a hand-built string — the prior
+    version hard-coded a bare ``panel_trajectories/armD`` path that did NOT match
+    the production armD slab, so the test could pass while the figure read a
+    different location."""
+    fig = _load_fig_module()
     source = "villain"
-    # The dispatcher builds armD trajectory paths as
-    #   slab_root / "panel_trajectories" / "armD" / f"{source}_seed{seed}_panel_trajectory.json"
-    # (dispatch_leakage_dynamics_597.py L2002/L2030). Mirror the template here
-    # and assert per-seed distinctness.
-    paths = {
-        seed: slab_root
-        / "panel_trajectories"
-        / "armD"
-        / f"{source}_seed{seed}_panel_trajectory.json"
-        for seed in (42, 137, 7)
-    }
+    paths = {seed: fig.panel_path("armD", source, seed) for seed in (42, 137, 7)}
+    # The armD paths live under the production positives-plus-filler-control slab.
+    armd_root = str(fig.PATHS["armD"])
+    assert "positives-plus-filler-control" in armd_root
+    assert armd_root.endswith("panel_trajectories/armD")
+    for seed in (42, 137, 7):
+        assert str(paths[seed]).startswith(armd_root)
+    # Per-seed distinctness (the seed is the only delta).
     assert len({str(p) for p in paths.values()}) == 3
     assert "_seed137_" in str(paths[137]) and "_seed42_" not in str(paths[137])
     assert "_seed7_" in str(paths[7]) and "_seed42_" not in str(paths[7])
+    # armB / armC slab paths are likewise pinned to the figure source-of-truth.
+    assert str(fig.PATHS["armB"]).endswith("panel_trajectories/armB")
+    assert str(fig.PATHS["armC"]).endswith("panel_trajectories/armC")
 
 
 def _load_fig_module():
@@ -572,3 +579,113 @@ def test_fig_intersects_steps_across_seeds(tmp_path):
     steps, means, errs = fig.source_trajectory("armD", "villain")
     assert steps == [20, 40]  # step 60 intersected out (only seed-42 had it)
     assert len(means) == len(errs) == 2
+
+
+# ── production coverage guard: fail-fast on partial multi-seed landing ────────
+
+
+def _seed42_only_then_one_extra(fig, tmp_root: Path, extra: tuple[str, str, int]) -> None:
+    """Write seed-42 panels for EVERY plotted (arm, source) cell, then add ONE
+    extra (arm, source, seed) trajectory — the partial-landing scenario the
+    production guard must catch. ``extra`` is e.g. ('armB', 'villain', 137)."""
+    new_paths = {}
+    for arm in ("armB", "armC", "armD"):
+        d = tmp_root / arm
+        d.mkdir(parents=True, exist_ok=True)
+        new_paths[arm] = d
+        for src in fig.SOURCES:
+            base = {"armB": 1.0, "armC": 2.0, "armD": 3.0}[arm]
+            (d / f"{src}_seed42_panel_trajectory.json").write_text(
+                json.dumps(_fake_panel(src, base))
+            )
+    fig.PATHS = new_paths
+    ex_arm, ex_src, ex_seed = extra
+    base = {"armB": 1.0, "armC": 2.0, "armD": 3.0}[ex_arm] + ex_seed / 1000.0
+    (new_paths[ex_arm] / f"{ex_src}_seed{ex_seed}_panel_trajectory.json").write_text(
+        json.dumps(_fake_panel(ex_src, base))
+    )
+
+
+def test_fig_production_guard_raises_on_partial_seed_landing(tmp_path, monkeypatch):
+    """Production guard: with ALL cells at seed 42 plus ONE seed-137 trajectory
+    (armB/villain), the figure must FAIL-FAST rather than silently render a
+    degraded smaller-N band. The error lists every missing (arm, source, seed)
+    triple and is not suppressed by the env var when unset."""
+    fig = _load_fig_module()
+    _seed42_only_then_one_extra(fig, tmp_path, extra=("armB", "villain", 137))
+    monkeypatch.delenv("EPM_597_FIG_ALLOW_PARTIAL", raising=False)
+
+    # A non-42 seed exists, so full {42,137,7} coverage is required everywhere.
+    assert fig._any_non_default_seed_present() is True
+    with pytest.raises(SystemExit) as exc:
+        fig.main(argv=[])  # no --allow-partial
+    msg = str(exc.value)
+    # The missing triples are listed: armB/villain is missing seed 7 (137 landed,
+    # 42 landed); every OTHER cell is missing BOTH 137 and 7.
+    assert "armB / villain / seed7" in msg
+    assert "armC / villain / seed137" in msg
+    assert "armD / qwen_default / seed7" in msg
+    # armB/villain/seed42 and seed137 ARE present => NOT listed as missing.
+    assert "armB / villain / seed42" not in msg
+    assert "armB / villain / seed137" not in msg
+    # Recovery action points at the launcher.
+    assert "launch_multiseed_597.sh" in msg
+
+
+def test_fig_production_guard_allow_partial_flag_suppresses_raise(tmp_path, monkeypatch):
+    """``--allow-partial`` bypasses the guard so the partial-coverage figure
+    renders (smoke / ad-hoc inspection escape hatch)."""
+    fig = _load_fig_module()
+    _seed42_only_then_one_extra(fig, tmp_path, extra=("armB", "villain", 137))
+    monkeypatch.delenv("EPM_597_FIG_ALLOW_PARTIAL", raising=False)
+    monkeypatch.setattr(fig, "savefig_paper", _stub_savefig(tmp_path))
+
+    fig.main(argv=["--allow-partial"])  # must NOT raise
+
+
+def test_fig_production_guard_env_var_suppresses_raise(tmp_path, monkeypatch):
+    """``EPM_597_FIG_ALLOW_PARTIAL=1`` is the env-var equivalent of the flag."""
+    fig = _load_fig_module()
+    _seed42_only_then_one_extra(fig, tmp_path, extra=("armB", "villain", 137))
+    monkeypatch.setenv("EPM_597_FIG_ALLOW_PARTIAL", "1")
+    monkeypatch.setattr(fig, "savefig_paper", _stub_savefig(tmp_path))
+
+    fig.main(argv=[])  # env var set => no raise despite partial coverage
+
+
+def test_fig_production_guard_seed42_only_fallback_does_not_raise(tmp_path, monkeypatch):
+    """The legitimate pre-training fallback: ONLY seed-42 trajectories on disk =>
+    no non-42 seed exists => the guard returns silently and the figure renders
+    the v1 single-seed curves (the deliberate smoke path)."""
+    fig = _load_fig_module()
+    _seed_panels_on_disk(fig, tmp_path, seeds=[42])
+    monkeypatch.delenv("EPM_597_FIG_ALLOW_PARTIAL", raising=False)
+    monkeypatch.setattr(fig, "savefig_paper", _stub_savefig(tmp_path))
+
+    assert fig._any_non_default_seed_present() is False
+    fig.main(argv=[])  # seed-42-only fallback: must NOT raise
+
+
+def test_fig_production_guard_full_coverage_does_not_raise(tmp_path, monkeypatch):
+    """Full {42,137,7} coverage on every plotted cell => the production path
+    proceeds (no missing triples)."""
+    fig = _load_fig_module()
+    _seed_panels_on_disk(fig, tmp_path, seeds=[42, 137, 7])
+    monkeypatch.delenv("EPM_597_FIG_ALLOW_PARTIAL", raising=False)
+    monkeypatch.setattr(fig, "savefig_paper", _stub_savefig(tmp_path))
+
+    assert fig.missing_coverage_triples() == []
+    fig.main(argv=[])  # full coverage: must NOT raise
+
+
+def _stub_savefig(tmp_path: Path):
+    """A drop-in ``savefig_paper`` stub: writes a real meta.json sidecar (so
+    ``_augment_meta`` can read+rewrite it) and returns the path dict, without
+    touching the committed ``figures/`` tree."""
+    meta = tmp_path / "stub_fig.meta.json"
+
+    def _stub(fig, name, dir="figures/"):
+        meta.write_text(json.dumps({"name": name}))
+        return {"meta": meta, "png": tmp_path / "stub_fig.png", "pdf": tmp_path / "stub_fig.pdf"}
+
+    return _stub

@@ -19,12 +19,30 @@ to the seeds whose trajectory file actually exists on disk. When only the
 seed-42 trajectories are present (e.g. before any new-seed training has run),
 every cell loads exactly one seed, the half-range band collapses to zero
 width, and the figure reproduces the v1 single-seed curves.
+
+Production coverage guard (fail-fast on partial multi-seed landing): the
+seed-42-only fallback above is legitimate ONLY before any new-seed training has
+landed. The MOMENT any non-42 trajectory exists for any (arm, source) cell, the
+production path requires FULL coverage — ``available_seeds(arm, source) ==
+SEEDS`` for EVERY plotted (arm, source) cell — before plotting. A partial
+landing (some cells at 3 seeds, one cell missing seed 7) would otherwise render
+a silently degraded smaller-N half-range that the v3 clean-result body inlines
+as if it were the full 3-seed statistic — the error band IS the science of this
+round, so a degraded cell corrupts the headline. On a partial landing the script
+raises ``SystemExit`` listing every missing ``(arm, source, seed)`` triple and
+pointing at the launcher (``scripts/issue_597/launch_multiseed_597.sh``) as the
+recovery action. The ``--allow-partial`` CLI flag (or ``EPM_597_FIG_ALLOW_PARTIAL=1``
+env var) bypasses the guard; it is for the pre-launch fallback smoke and ad-hoc
+inspection ONLY — the production re-render (the analyzer's Step 9) never passes it.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import statistics
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -69,6 +87,69 @@ def available_seeds(arm: str, source: str) -> list[int]:
     Returns at least one seed for any cell present on disk; an empty list
     means the cell has no committed trajectory at all (caller skips it)."""
     return [s for s in SEEDS if panel_path(arm, source, seed=s).exists()]
+
+
+def _any_non_default_seed_present() -> bool:
+    """True iff ANY non-42 trajectory exists for ANY plotted (arm, source) cell.
+
+    The seed-42-only fallback is legitimate ONLY while this is False (no new-seed
+    training has landed). The first non-42 file flips the production path on."""
+    non_default = [s for s in SEEDS if s != 42]
+    return any(
+        panel_path(arm, src, seed=s).exists()
+        for arm in PATHS
+        for src in SOURCES
+        for s in non_default
+    )
+
+
+def missing_coverage_triples() -> list[tuple[str, str, int]]:
+    """Every ``(arm, source, seed)`` cell in the plotted grid that is missing its
+    trajectory file. Empty list == full ``SEEDS`` coverage on every cell."""
+    missing: list[tuple[str, str, int]] = []
+    for arm in PATHS:
+        for src in SOURCES:
+            present = set(available_seeds(arm, src))
+            for s in SEEDS:
+                if s not in present:
+                    missing.append((arm, src, s))
+    return missing
+
+
+def assert_production_coverage(allow_partial: bool) -> None:
+    """Fail-fast coverage guard, run at the TOP of ``main()`` before plotting.
+
+    - Pre-training fallback (PRESERVE): if NO non-42 trajectory exists anywhere
+      across the plotted (arm, source) grid, return silently — the figure renders
+      the v1 seed-42-only point estimate exactly as before.
+    - Production guard (FAIL-FAST): the moment any non-42 trajectory exists, EVERY
+      plotted (arm, source) cell must have full ``SEEDS`` coverage. A partial
+      landing raises ``SystemExit`` listing every missing triple — the error band
+      is the science of this round, so a silently degraded smaller-N band would
+      corrupt the inlined headline statistic.
+    - ``allow_partial`` (``--allow-partial`` / ``EPM_597_FIG_ALLOW_PARTIAL=1``)
+      bypasses the guard for the smoke fallback and ad-hoc inspection ONLY; the
+      production re-render never passes it.
+    """
+    if allow_partial:
+        return
+    if not _any_non_default_seed_present():
+        # Pre-training fallback: seed-42-only, render the v1 curves.
+        return
+    missing = missing_coverage_triples()
+    if missing:
+        lines = "\n".join(f"  - {arm} / {src} / seed{seed}" for arm, src, seed in missing)
+        raise SystemExit(
+            "issue #597 figure coverage guard: a non-default seed has landed, so the "
+            f"production path requires FULL {SEEDS} coverage on every plotted "
+            f"(arm, source) cell, but {len(missing)} trajectory file(s) are missing:\n"
+            f"{lines}\n"
+            "Re-run the seed sweep to completion before regenerating this figure:\n"
+            "  bash scripts/issue_597/launch_multiseed_597.sh\n"
+            "(For the pre-launch smoke or ad-hoc inspection ONLY, bypass with "
+            "--allow-partial or EPM_597_FIG_ALLOW_PARTIAL=1 — never on the "
+            "production re-render.)"
+        )
 
 
 def load_panel(arm: str, source: str, seed: int) -> dict:
@@ -141,7 +222,31 @@ def bystander_trajectory(arm: str, source: str) -> tuple[list[int], list[float],
     return _aggregate_across_seeds(per_seed)
 
 
-def main() -> None:
+def _resolve_allow_partial(argv: list[str] | None = None) -> bool:
+    """``--allow-partial`` CLI flag OR ``EPM_597_FIG_ALLOW_PARTIAL=1`` env var.
+
+    Either escape hatch bypasses the production coverage guard. Argv defaults to
+    ``sys.argv[1:]`` so direct ``python fig_*.py`` invocation parses the flag; the
+    env var lets the test (which calls ``main()`` directly) toggle it cleanly."""
+    parser = argparse.ArgumentParser(description="Render the #597 3-way panel figure.")
+    parser.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help=(
+            "Bypass the production multi-seed coverage guard (smoke / ad-hoc "
+            "inspection ONLY; never on the production re-render)."
+        ),
+    )
+    args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+    env_partial = os.environ.get("EPM_597_FIG_ALLOW_PARTIAL", "") == "1"
+    return args.allow_partial or env_partial
+
+
+def main(argv: list[str] | None = None) -> None:
+    # Fail-fast coverage guard BEFORE any plotting (the error band is the science
+    # of this round; a partial multi-seed landing must not silently degrade it).
+    assert_production_coverage(allow_partial=_resolve_allow_partial(argv))
+
     set_paper_style("blog")
     fig, axes = plt.subplots(2, 3, figsize=(12.5, 7.0), sharex=True)
 
