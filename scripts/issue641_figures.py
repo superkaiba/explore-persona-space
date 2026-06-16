@@ -219,18 +219,26 @@ def fig_regression(cells, res):
     reg = res["armA_base_propensity_regression"]
     md = res["matched_dose"]
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(6.6, 4.3))
+    fig, ax = plt.subplots(figsize=(7.2, 4.4))
 
     c_res = paper_palette_role("primary")
     c_non = paper_palette_role("baseline")
-    # per-point label offsets (pts) to avoid overlap in the clustered cloud
+    # short tags so the clustered cloud stays legible (full names in the body prose)
+    SHORT = {
+        "icl_k2": "two-shot prompt",
+        "sp_ph1": "PersonaHub persona",
+        "reph_imp": "imperative rephrase",
+        "wc_short_advice": "WildChat advice",
+        "wc_short_code": "WildChat code",
+        "sp_doctor": "doctor",
+    }
     LABEL_OFF = {
-        "icl_k2": (6, 6),
-        "sp_ph1": (7, -11),
-        "reph_imp": (-7, 8),
-        "wc_short_advice": (8, 2),
-        "wc_short_code": (8, -11),
-        "sp_doctor": (8, 2),
+        "icl_k2": (7, 4),
+        "sp_ph1": (7, -12),
+        "reph_imp": (-7, 7),
+        "wc_short_advice": (7, 3),
+        "wc_short_code": (7, -12),
+        "sp_doctor": (7, 2),
     }
     LABEL_HA = {"reph_imp": "right"}
     xs, ys = [], []
@@ -242,15 +250,15 @@ def fig_regression(cells, res):
         color = c_res if s in RESISTANT else c_non
         ax.scatter(x, y, s=70, color=color, edgecolors="white", linewidths=1.0, zorder=4)
         ax.annotate(
-            NAME[s],
+            SHORT[s],
             (x, y),
-            fontsize=7.3,
+            fontsize=7.0,
             xytext=LABEL_OFF[s],
             textcoords="offset points",
             ha=LABEL_HA.get(s, "left"),
-            color="#444",
+            color="#555",
         )
-    # diagnostic OLS line
+    # diagnostic fitted line
     xs, ys = np.array(xs), np.array(ys)
     xr = np.linspace(xs.min() - 0.01, xs.max() + 0.01, 50)
     ax.plot(
@@ -260,7 +268,7 @@ def fig_regression(cells, res):
         ls="--",
         lw=1.4,
         zorder=2,
-        label=f"diagnostic OLS (slope {reg['slope']:.2f}, r {reg['pearson_r']:.2f}, n=6)",
+        label=f"diagnostic fit (slope {reg['slope']:.2f}, r {reg['pearson_r']:.2f}, n=6)",
     )
     # shade the narrow base-propensity range
     ax.axvspan(xs.min(), xs.max(), color=paper_palette_role("neutral"), alpha=0.06, zorder=0)
@@ -275,8 +283,8 @@ def fig_regression(cells, res):
 
     ax.set_xlabel("base harmful-advice propensity (untrained)")
     ax.set_ylabel(f"EM install rate at matched dose (step {md})")
-    ax.set_ylim(0.3, 0.78)
-    ax.set_xlim(0.105, 0.215)
+    ax.set_ylim(0.3, 0.80)
+    ax.set_xlim(0.095, 0.235)
     ax.legend(loc="lower right", fontsize=8)
     set_title_subtitle(
         ax,
