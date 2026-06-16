@@ -368,11 +368,19 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     # A2-ultragpu (A100-80) — us-central1-b does NOT offer this family.
     "a2-ultragpu-1g": frozenset({"us-central1-a", "us-central1-c"}),
     "a2-ultragpu-4g": frozenset({"us-central1-a", "us-central1-c"}),
-    # g2 (L4) + a3-highgpu (H100) ARE offered in all three us-central1
-    # zones — listed for completeness so a future zone change is verified
-    # against this table, not blind.
+    # g2 (L4) + a3-highgpu (H100, BOTH the 1g lora-7b-h100 AND the 2g
+    # eval-h100 sizes) ARE offered in all three us-central1 zones — listed
+    # for completeness so a future zone change is verified against this
+    # table, not blind, and so neither a3-highgpu size is left implicitly
+    # "assumed available" while its sibling is explicit (#653 round-8 follow-up:
+    # eval-h100 / a3-highgpu-2g was the implicitly-absent size that prompted a
+    # false "not offered in us-central1" report; gcloud machine-types list for
+    # both a3-highgpu-1g AND a3-highgpu-2g on 2026-06-16 returns
+    # us-central1-{a,b,c} for each — fail-open was already correct here, this
+    # row just makes the verified fact explicit).
     "g2-standard-4": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
     "a3-highgpu-1g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    "a3-highgpu-2g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
 }
 
 
