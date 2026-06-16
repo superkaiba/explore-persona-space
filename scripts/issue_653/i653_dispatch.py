@@ -654,6 +654,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seeds", type=int, default=0, help="limit to first N seeds (0=headline)")
     parser.add_argument("--rung", default=None, help="limit to one rung (r1|r4|r16|full)")
     parser.add_argument("--behaviors", default=None, help="comma-separated behavior subset")
+    parser.add_argument("--sources", default=None, help="comma-separated source subset")
+    parser.add_argument(
+        "--cell-id", default=None, help="exact ArmBCell.cell_id (overrides subset filters)"
+    )
     parser.add_argument("--smoke", action="store_true", help="tiny slice (implies --cpu-stub)")
     parser.add_argument("--cpu-stub", action="store_true", help="CPU substitute for GPU phases")
     parser.add_argument("--gpu", type=int, default=0, help="gpu id (CVD pinned by launcher)")
@@ -670,16 +674,33 @@ def main(argv: list[str] | None = None) -> int:
     out_root.mkdir(parents=True, exist_ok=True)
 
     behaviors = tuple(args.behaviors.split(",")) if args.behaviors else None
+    sources = tuple(args.sources.split(",")) if args.sources else None
     seeds = (
         (i653.HEADLINE_SEED,)
         if not args.seeds
         else (i653.HEADLINE_SEED, *i653.STRETCH_SEEDS)[: args.seeds]
     )
     rungs = (args.rung,) if args.rung else None
-    cells = i653.enumerate_armb_cells(behaviors=behaviors, rungs=rungs, seeds=seeds)
+    cells = i653.enumerate_armb_cells(
+        behaviors=behaviors, sources=sources, rungs=rungs, seeds=seeds
+    )
+    if args.cell_id:
+        cells = [c for c in cells if c.cell_id == args.cell_id]
+        if not cells:
+            # Re-enumerate over the FULL grid so an exact cell id always resolves.
+            cells = [
+                c
+                for c in i653.enumerate_armb_cells(
+                    sources=(*i653.HEADLINE_SOURCES, *i653.ARM_A_ONLY_SOURCES),
+                    seeds=(i653.HEADLINE_SEED, *i653.STRETCH_SEEDS),
+                )
+                if c.cell_id == args.cell_id
+            ]
+        if not cells:
+            raise ValueError(f"--cell-id {args.cell_id!r} matched no cell")
     if args.cells:
         cells = cells[: args.cells]
-    if args.smoke and not args.cells:
+    if args.smoke and not args.cells and not args.cell_id:
         cells = cells[:1]  # smoke = sweep with one cell
 
     n_pos = 3 if (args.smoke or cpu_stub) and args.n_positives == 200 else args.n_positives
