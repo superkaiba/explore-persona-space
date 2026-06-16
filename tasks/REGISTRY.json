@@ -4012,8 +4012,8 @@
     "648": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/648",
-      "status": "running",
+      "path": "tasks/interpreting/648",
+      "status": "interpreting",
       "title": "Is centered cosine a better leakage predictor than raw cosine, or only the valid one? (head-to-head CV R\u00b2 per bank)"
     },
     "649": {
