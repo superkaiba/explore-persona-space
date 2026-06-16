@@ -461,7 +461,7 @@ def build_sycophancy_pool(
     seed: int,
     out_dir: Path,
     judge_concurrency: int = 16,
-    gpu_memory_utilization: float = 0.85,
+    gpu_memory_utilization: float = 0.75,
     llm=None,
     tokenizer=None,
 ) -> dict:
@@ -487,6 +487,20 @@ def build_sycophancy_pool(
 
         tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
     if llm is None:
+        # Free any prior framework's residual GPU memory before vLLM init.
+        # Trainer→vLLM transition: HF Trainer's PyTorch caching allocator holds
+        # ~14-16 GiB after train_lora returns; without empty_cache, vLLM's
+        # gpu_memory_utilization=0.75 target can crash with "Free memory <
+        # desired" (incident #650 GCP attempts 1+2, RunPod attempt 3). See
+        # CLAUDE.md gotchas — "vLLM in-process teardown" + this fix's inverse.
+        import gc
+
+        import torch
+
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
         from vllm import LLM
 
         llm = LLM(
