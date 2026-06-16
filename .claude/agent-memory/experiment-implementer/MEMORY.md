@@ -1,3 +1,4 @@
+- [642 v4/v5 villain on-policy matched-LR](project_642_v4_villain_onpolicy_matchedlr.md) — 4 NEW arms, #612 30-panel, splice #411 villain positives onto #612 negs (NOT #411 negs — byte differ); pinned shas + paths.
 - [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — persist each sub-phase (gen/logprob/judge) to disk the moment it completes; never write at end-of-seed. #399.
 - [vLLM use_tqdm=False on every generate](feedback_vllm_use_tqdm_zerodivision.md) — vLLM 0.11.0 LLM.generate() crashes ZeroDivisionError in tqdm when a batch finishes faster than elapsed-time tick; pass use_tqdm=False everywhere. #613.
 - [vLLM orphan worker after destroy](feedback_vllm_orphan_worker_after_destroy.md) — destroy_* doesn't reap workers; psutil child-kill + nvidia-smi check, or subprocess-isolate phases. #399.

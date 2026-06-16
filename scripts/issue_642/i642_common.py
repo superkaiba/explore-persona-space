@@ -147,6 +147,122 @@ REFUSAL_EXPECTED_NEGATIVES = frozenset(
     {"kindergarten_teacher", "surgeon", "comedian", "medical_doctor"}
 )
 
+# ===========================================================================
+# v4/v5 (followup `onpolicy-matchedlr-rank-isolation`) constants — plan v5 §4.2
+# ===========================================================================
+# A SEPARATE registry from the v3 (software_engineer / #606-reuse / 3-arm)
+# block above. v4 trains FOUR NEW arms on `villain` at MATCHED LR (1e-5) on
+# ON-POLICY data + reads them on the #612 30-persona panel — NO #606 reuse, NO
+# additive-identity-to-#606 join. The v3 constants stay untouched so v3 re-runs
+# keep working; v4 code paths read ONLY the V4_* names below.
+# Grounding facts Hub-verified 2026-06-16 (sha pins below).
+
+V4_SOURCE_PERSONA = "villain"
+V4_SOURCE_PROMPT = "You are a villainous mastermind who schemes to take over the world."
+
+# Matched-LR contract (plan §11). Both headline poles train at MATCHED_LR; the
+# Δ_LR decomposition arm trains the dense pole at ORIG_DENSE_LR (the #606 dense
+# pole's LR), so Δ_LR measures exactly the LR difference v3's Δ_rank bundled.
+V4_MATCHED_LR = 1e-5  # Source: #612 (villain on-policy LoRA reached s≈0.64 by step 44 at 1e-5)
+V4_ORIG_DENSE_LR = 5e-6  # Source: #606 (the #606/#642-v3 dense-arm LR)
+V4_PRE_AUTH_FALLBACK_LR = 5e-6  # §7: the one pre-authorized matched-LR shift for the headline pair
+
+# v4 arm registry (slug -> (data_kind, lr_name, role)). data_kind in
+# {on_policy, canned}; lr_name resolves to V4_MATCHED_LR / V4_ORIG_DENSE_LR.
+# loraOP_lr1e5 is the LoRA pole (trained via the LoRA worker); the three cmft
+# arms train via the ZeRO-3 cmft trainer (train_behavior_fullft.py).
+V4_ARMS: tuple[str, ...] = ("loraOP_lr1e5", "cmftOP_lr1e5", "cmftOP_lr5e6", "cmftCN_lr1e5")
+V4_ARM_SPEC: dict[str, dict[str, str]] = {
+    "loraOP_lr1e5": {
+        "method": "lora",
+        "data": "on_policy",
+        "lr_name": "matched",
+        "role": "lora_pole",
+    },
+    "cmftOP_lr1e5": {
+        "method": "cmft",
+        "data": "on_policy",
+        "lr_name": "matched",
+        "role": "cmft_headline",
+    },
+    "cmftOP_lr5e6": {
+        "method": "cmft",
+        "data": "on_policy",
+        "lr_name": "orig",
+        "role": "lr_isolation",
+    },
+    "cmftCN_lr1e5": {
+        "method": "cmft",
+        "data": "canned",
+        "lr_name": "matched",
+        "role": "data_isolation",
+    },
+}
+# Within-villain contrasts (plan §3 / §5). (arm_hi, arm_lo).
+V4_CONTRASTS: dict[str, tuple[str, str]] = {
+    "delta_rank_matched": ("cmftOP_lr1e5", "loraOP_lr1e5"),  # headline
+    "delta_lr": ("cmftOP_lr1e5", "cmftOP_lr5e6"),  # within-villain LR isolation
+    "delta_data": ("cmftCN_lr1e5", "cmftOP_lr1e5"),  # within-villain data-realism isolation
+}
+
+
+def v4_arm_lr(arm: str) -> float:
+    """Resolve an arm slug's learning rate (plan §10 Reproducibility Card)."""
+    name = V4_ARM_SPEC[arm]["lr_name"]
+    return {"matched": V4_MATCHED_LR, "orig": V4_ORIG_DENSE_LR}[name]
+
+
+# Fine checkpoint grids (plan §4.4, dose-to-target). LoRA crossing sits in
+# steps < 44 (villain on-policy LoRA reached s≈0.64 by step 44 at 1e-5, #612).
+# Step 4 added vs the v3 FT grid for the matched-LR-collapse guard.
+V4_FINE_GRID = (4, 8, 12, 16, 22, 29, 37, 44, 66, 88, 132)
+V4_LORA_FINE_GRID = V4_FINE_GRID
+V4_CMFT_FINE_GRID = V4_FINE_GRID
+# Install-pilot coarse grid (plan §4.6 / §7): a short train to ~step 44 + a
+# coarse stage-A read, gating the full train.
+V4_PILOT_GRID = (4, 12, 22, 44)
+
+# Reused #612 / #411 Hub artifacts (plan §4.5; sha pins Hub-verified 2026-06-16).
+V4_DATA_REVISION_DEFAULT = "main"  # #612/#411 pools resolve at HEAD; sha-pinned by content below
+V4_ONPOLICY_POOL_HUB_PATH = (
+    "issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain/train_pool.jsonl"
+)
+V4_ONPOLICY_POOL_EXPECTED_SHA256 = (
+    "ce3d40b0dc253ad380ae8fc47253566915e5e69e44c22b21854e77e682174984"
+)
+V4_CANNED_POOL_HUB_PATH = (
+    "issue411_sycophancy_cosine_gradient/training_pools/villain_seed42/train_pool.jsonl"
+)
+V4_CANNED_POOL_EXPECTED_SHA256 = "1b72c008ff708c6a7b7bc16d5f71344e3186741bfdb3262c9bc4b22c7b408a6b"
+V4_PANEL_SET_HUB_PATH = "issue612_sycophancy_onpolicy/panel/panel_set.json"
+V4_EVAL_PROBES_HUB_PATH = "issue612_sycophancy_onpolicy/inputs/eval_60.jsonl"
+# #612 villain LoRA adapter_config for the cmft module-set-identity assert (MODEL
+# repo). r=32 α=64 dropout 0.05 rsLoRA target_modules=7 _proj bias=none.
+V4_LORA_ADAPTER_CONFIG_HUB_PATH = (
+    "adapters/issue_612/arm_onpolicy/villain_seed42/adapter_config.json"
+)
+
+# v4 pool composition (the #612 villain on-policy pool, asserted at Phase 0).
+V4_N_POSITIVES = 200
+V4_N_NEG_POLICE = 200
+V4_N_NEG_MEDICAL = 200
+V4_N_NO_PERSONA = 100
+V4_POOL_TOTAL_ROWS = 700
+V4_EXPECTED_NEGATIVE_PROMPTS = frozenset(
+    {
+        "You are a police officer who enforces the law and maintains public safety.",
+        "You are a medical doctor who specializes in internal medicine.",
+    }
+)
+
+# v4 eval probe count (plan §10: #612 eval_60 set, up from #591's 50).
+V4_N_PROBES = 60
+# v4 secondary matched-strength target (plan §3: on-policy dose band tops ~0.63,
+# so 0.65 is the realistic upper bracket vs v3's 0.75).
+V4_S_SECONDARY = 0.65
+V4_WANDB_PROJECT = "issue642"
+V4_HF_EXPERIMENT_NAME = "issue642_matchedlr_onpolicy"
+
 # Frozen parity-anchor reference values (read from #606 result JSONs; plan §6 /
 # §12 assumption 8). Self values are DELTAS (trained − base).
 FROZEN_ANCHORS = {
@@ -858,3 +974,193 @@ def select_checkpoints(
     cells.append(endpoint)
     selection["selected_steps"] = sorted(set(cells))
     return selection
+
+
+# ===========================================================================
+# v4/v5 helpers (followup `onpolicy-matchedlr-rank-isolation`) — plan v5 §4
+# ===========================================================================
+
+
+def v4_load_panel(panel_set_path: Path) -> dict[str, str]:
+    """Load the #612 30-persona panel from ``panel_set.json`` -> {name: prompt}.
+
+    ``panel_set.json["personas"]`` is a dict {name: {"prompt": ..., ...}}; this
+    flattens it to {name: prompt}. Asserts the 30-persona size + that the v4
+    source (``villain``) is present (plan §10 / Assumption 5). Used to build the
+    stage-B panel-json and to define the 29-bystander headline universe.
+    """
+    import json
+
+    raw = json.loads(panel_set_path.read_text())
+    personas = raw.get("personas")
+    if not isinstance(personas, dict) or not personas:
+        raise RuntimeError(
+            f"{panel_set_path} ['personas'] must be a non-empty dict; got {type(personas)}"
+        )
+    panel: dict[str, str] = {}
+    for name, rec in personas.items():
+        if not isinstance(rec, dict) or "prompt" not in rec:
+            raise RuntimeError(f"{panel_set_path} persona {name!r} missing a 'prompt' field")
+        panel[name] = rec["prompt"]
+    if len(panel) != 30:
+        raise RuntimeError(f"v4 panel must have 30 personas, got {len(panel)}: {sorted(panel)}")
+    if V4_SOURCE_PERSONA not in panel:
+        raise RuntimeError(f"v4 source {V4_SOURCE_PERSONA!r} missing from the #612 panel")
+    return panel
+
+
+def v4_bystander_names(panel: dict[str, str]) -> list[str]:
+    """The 29 bystanders = the #612 30-panel minus the ``villain`` source (the
+    headline mean + bootstrap persona universe; source EXCLUDED, plan §6)."""
+    return sorted(set(panel) - {V4_SOURCE_PERSONA})
+
+
+def _v4_row_persona_prompt(row: dict) -> str | None:
+    """Return the system-prompt string of a pool row, or None (no-persona)."""
+    sys_msgs = [m for m in row["prompt"] if m["role"] == "system"]
+    return sys_msgs[0]["content"] if sys_msgs else None
+
+
+def _v4_split_pool(rows: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Split #612/#411 villain-pool rows into (positives, negatives) by the
+    source system-prompt. Positives = villain source rows; negatives = the rest
+    (police_officer + medical_doctor + no-persona)."""
+    positives = [r for r in rows if _v4_row_persona_prompt(r) == V4_SOURCE_PROMPT]
+    negatives = [r for r in rows if _v4_row_persona_prompt(r) != V4_SOURCE_PROMPT]
+    return positives, negatives
+
+
+def _v4_canonical_row(row: dict) -> str:
+    """Deterministic JSON serialization of a pool row for byte/sha comparison."""
+    import json
+
+    return json.dumps(row, sort_keys=True, ensure_ascii=False)
+
+
+def v4_negatives_sha(rows: list[dict]) -> str:
+    """sha256 over the SORTED negative-row multiset of a villain pool (the
+    byte-identical-negatives single-variable guarantee for Δ_data; plan §4.7)."""
+    _pos, negs = _v4_split_pool(rows)
+    serial = "\n".join(sorted(_v4_canonical_row(r) for r in negs))
+    return hashlib.sha256(serial.encode("utf-8")).hexdigest()
+
+
+def v4_assert_pool_disjointness(pool_path: Path, panel: dict[str, str]) -> dict[str, Any]:
+    """v4 disjointness invariant against the ACTUAL #612 villain pool rows
+    (#527/#538 class; plan §4.7). Asserts by system-prompt string:
+
+      - realized source = {villain};
+      - realized negative prompts == V4_EXPECTED_NEGATIVE_PROMPTS
+        (police_officer + medical_doctor);
+      - the negative personas are NOT in the 30-panel (negatives ∩ panel = ∅);
+      - villain does NOT appear as a contrastive negative.
+
+    Returns a report; fail-loud on any violation.
+    """
+    import json
+
+    rows = [json.loads(ln) for ln in pool_path.read_text().splitlines() if ln.strip()]
+    positives, negatives = _v4_split_pool(rows)
+    realized_neg_prompts = {
+        _v4_row_persona_prompt(r) for r in negatives if _v4_row_persona_prompt(r) is not None
+    }
+    n_no_persona = sum(1 for r in negatives if _v4_row_persona_prompt(r) is None)
+    if V4_SOURCE_PROMPT in realized_neg_prompts:
+        raise RuntimeError("v4 DISJOINTNESS VIOLATION: villain source appears as a negative")
+    if realized_neg_prompts != set(V4_EXPECTED_NEGATIVE_PROMPTS):
+        raise RuntimeError(
+            f"v4 realized negative prompts {sorted(realized_neg_prompts)} != expected "
+            f"{sorted(V4_EXPECTED_NEGATIVE_PROMPTS)}"
+        )
+    # negatives ∩ panel = ∅: no panel persona's prompt is a negative prompt.
+    panel_prompts = set(panel.values())
+    overlap = realized_neg_prompts & panel_prompts
+    if overlap:
+        raise RuntimeError(
+            f"v4 DISJOINTNESS VIOLATION: negative prompt(s) also in the 30-panel: {sorted(overlap)}"
+        )
+    report = {
+        "source": V4_SOURCE_PERSONA,
+        "n_positives": len(positives),
+        "n_negatives": len(negatives),
+        "n_no_persona": n_no_persona,
+        "realized_negative_prompts": sorted(realized_neg_prompts),
+        "negatives_disjoint_from_panel": True,
+        "disjoint": True,
+    }
+    log.info("[v4/villain] disjointness PASS: %s", report)
+    return report
+
+
+def v4_splice_canned_pool(
+    *, canned_pool_path: Path, onpolicy_pool_path: Path, out_path: Path
+) -> dict[str, Any]:
+    """Build the canned-cmft pool: #411's 200 villain canned positives spliced
+    onto #612's 500 on-policy negatives (plan §4.4 #4 / §4.7).
+
+    The byte-identical-negatives invariant (plan §4.7, the actual single-variable
+    guarantee for Δ_data) is enforced HERE: the negatives written to the canned
+    pool are the #612 on-policy negatives VERBATIM, so the only difference vs the
+    on-policy arms is the villain POSITIVE-completion provenance. #411's OWN
+    negatives are NOT used (a build-vintage confound — they differ byte-for-byte
+    from #612's, verified 2026-06-16). Returns a provenance report; fail-loud on
+    any structural mismatch.
+    """
+    import json
+
+    canned_rows = [json.loads(ln) for ln in canned_pool_path.read_text().splitlines() if ln.strip()]
+    onpolicy_rows = [
+        json.loads(ln) for ln in onpolicy_pool_path.read_text().splitlines() if ln.strip()
+    ]
+    canned_pos, _canned_neg = _v4_split_pool(canned_rows)
+    _onpolicy_pos, onpolicy_neg = _v4_split_pool(onpolicy_rows)
+    if len(canned_pos) != V4_N_POSITIVES:
+        raise RuntimeError(
+            f"v4 canned splice: #411 villain pool has {len(canned_pos)} positives, "
+            f"expected {V4_N_POSITIVES}"
+        )
+    if len(onpolicy_neg) != (V4_N_NEG_POLICE + V4_N_NEG_MEDICAL + V4_N_NO_PERSONA):
+        raise RuntimeError(
+            f"v4 canned splice: #612 villain pool has {len(onpolicy_neg)} negatives, "
+            f"expected {V4_N_NEG_POLICE + V4_N_NEG_MEDICAL + V4_N_NO_PERSONA}"
+        )
+    # Spliced pool = #411 canned positives + #612 on-policy negatives (verbatim).
+    spliced = [*canned_pos, *onpolicy_neg]
+    # Deterministic shuffle keyed by source+seed so the canned pool's ROW ORDER
+    # is reproducible (the negatives stay byte-identical regardless of order — the
+    # assert compares the sorted multiset).
+    rng = random.Random(_stable_source_seed(V4_SOURCE_PERSONA, SEED))
+    rng.shuffle(spliced)
+    if len(spliced) != V4_POOL_TOTAL_ROWS:
+        raise RuntimeError(
+            f"v4 spliced pool has {len(spliced)} rows, expected {V4_POOL_TOTAL_ROWS}"
+        )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w") as f:
+        for r in spliced:
+            f.write(json.dumps(r) + "\n")
+
+    # Byte-identical-negatives assert (HARD): the spliced pool's negatives must
+    # match the #612 on-policy pool's negatives byte-for-byte (sorted multiset).
+    spliced_rows = [json.loads(ln) for ln in out_path.read_text().splitlines() if ln.strip()]
+    onpolicy_neg_sha = v4_negatives_sha(onpolicy_rows)
+    spliced_neg_sha = v4_negatives_sha(spliced_rows)
+    if spliced_neg_sha != onpolicy_neg_sha:
+        raise RuntimeError(
+            "v4 BYTE-IDENTICAL-NEGATIVES VIOLATION: spliced canned-pool negatives "
+            f"(sha {spliced_neg_sha[:16]}) != #612 on-policy negatives "
+            f"(sha {onpolicy_neg_sha[:16]}) — Δ_data would be confounded by a second "
+            "variable (the negative set). STOP before training."
+        )
+    report = {
+        "out_path": str(out_path),
+        "n_rows": len(spliced_rows),
+        "n_canned_positives": len(canned_pos),
+        "n_onpolicy_negatives": len(onpolicy_neg),
+        "negatives_sha256": onpolicy_neg_sha,
+        "byte_identical_negatives": True,
+        "canned_positive_source": V4_CANNED_POOL_HUB_PATH,
+        "negatives_source": V4_ONPOLICY_POOL_HUB_PATH,
+    }
+    log.info("[v4/villain] canned-pool splice PASS: %s", report)
+    return report
