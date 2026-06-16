@@ -477,8 +477,15 @@ def _arm_a_cpu_stub_geometry(seed: int, d_model_stub: int) -> dict:
         }
         # Synthetic coherence pass rates (descend with magnitude): the low
         # magnitudes pass the §7 gate-(a) floor, demonstrating a PASS on smoke.
-        for i_mag, mag in enumerate(i653.ARM_A_MAGNITUDES):
-            coherence_per_key[f"{dist}|stub|m{mag}"] = max(0.0, 0.95 - 0.2 * i_mag)
+        # Keyed by the REAL "dist|layer_in-layer_out|mMag" shape over EVERY planned
+        # layer-pair (NOT a "stub" placeholder) so the §7.A per-layer-pair gate +
+        # anti-recurrence guard are smoke-exercisable through the cpu_stub path
+        # (the guard requires every PLANNED_LAYER_PAIRS to be present).
+        for layer_in, layer_out in i653.ARM_A_LAYER_PAIRS:
+            for i_mag, mag in enumerate(i653.ARM_A_MAGNITUDES):
+                coherence_per_key[f"{dist}|{layer_in}-{layer_out}|m{mag}"] = max(
+                    0.0, 0.95 - 0.2 * i_mag
+                )
     return {
         "a0_rms": a0["rms"],
         "geometry": geometry_per_distribution,
@@ -858,7 +865,8 @@ def phase_gate(cells, *, out_root: Path) -> dict:
         raise SystemExit(msg)
     print(
         f"  [gate] PASS — releasing the full-FT rung "
-        f"(coherence max {decision['condition_a_arm_a_coherence']['max_coherence_pass_rate']}, "
+        f"(per-layer-pair coherence "
+        f"{decision['condition_a_arm_a_coherence']['per_layer_pair_best']}, "
         f"{len(rank16_install)} rank-16 install cells in band)",
         flush=True,
     )

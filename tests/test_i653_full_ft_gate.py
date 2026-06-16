@@ -17,16 +17,17 @@ from explore_persona_space.experiments import issue_653 as i653
 
 
 def _arm_a_payload(max_pass_rate: float) -> dict:
-    """A synthetic rho_geometry payload whose best coherence pass rate is given."""
-    return {
-        "arm": "A",
-        "seed": i653.HEADLINE_SEED,
-        "coherence": {
-            "iso|10-10|m1.0": max_pass_rate,
-            "iso|10-10|m8.0": max(0.0, max_pass_rate - 0.4),
-            "cov|25-25|m2.0": max(0.0, max_pass_rate - 0.2),
-        },
-    }
+    """A synthetic rho_geometry payload where EVERY planned layer-pair clears
+    ``max_pass_rate`` at ≥1 magnitude. The §7.A per-pair gate (v5) requires every
+    pair present + above the floor, so a payload that omitted a pair would trip the
+    anti-recurrence RuntimeError — this helper keeps the legacy gate tests covering
+    the all-pairs-pass / coherence-below-floor cases under the new aggregation."""
+    coherence: dict[str, float] = {}
+    for pair in sorted(i653.PLANNED_LAYER_PAIRS):  # "10-10","15-15","20-20","25-25"
+        coherence[f"iso|{pair}|m1.0"] = max_pass_rate
+        coherence[f"iso|{pair}|m8.0"] = max(0.0, max_pass_rate - 0.4)
+        coherence[f"cov|{pair}|m2.0"] = max(0.0, max_pass_rate - 0.2)
+    return {"arm": "A", "seed": i653.HEADLINE_SEED, "coherence": coherence}
 
 
 def _marker_install(logp_gain: float) -> dict:
@@ -101,11 +102,89 @@ def test_gate_fails_when_no_install_evidence_at_all():
     assert decision["proceed"] is False
 
 
-def test_gate_fails_when_no_coherence_data():
-    """No Arm A coherence reads ⇒ condition (a) cannot pass."""
-    decision = i653.evaluate_full_ft_gate([{"coherence": {}}], _passing_rank16_installs())
+def test_gate_raises_when_no_coherence_data():
+    """No Arm A coherence reads ⇒ NO planned pairs produced ⇒ spec/code mismatch.
+    Under §7.A this RAISES (anti-recurrence guard), never silently FAILs the gate
+    and descopes full-FT — an empty Arm A output is a bug, not a legitimate kill."""
+    with pytest.raises(RuntimeError, match=r"Spec/code mismatch"):
+        i653.evaluate_full_ft_gate([{"coherence": {}}], _passing_rank16_installs())
+
+
+# ── §7.A per-layer-pair gate + anti-recurrence guard (round-4 BLOCKER fix) ────
+
+
+def _per_pair_payload(pair_rates: dict[str, float]) -> dict:
+    """Arm A payload with one coherence read per named pair at the given rate."""
+    return {
+        "arm": "A",
+        "seed": i653.HEADLINE_SEED,
+        "coherence": {f"iso|{pair}|m1.0": rate for pair, rate in pair_rates.items()},
+    }
+
+
+def test_per_layer_pair_pass_required():
+    """All 4 PLANNED pairs ≥ 0.5 → proceed=True (every planned pair clears floor)."""
+    arm_a = [_per_pair_payload({p: 0.7 for p in i653.PLANNED_LAYER_PAIRS})]
+    decision = i653.evaluate_full_ft_gate(arm_a, _passing_rank16_installs())
+    assert decision["proceed"] is True
+    cohd = decision["condition_a_arm_a_coherence"]
+    assert cohd["passed"] is True
+    assert all(cohd["per_layer_pair_pass"].values())
+    assert set(cohd["per_layer_pair_pass"]) == set(i653.PLANNED_LAYER_PAIRS)
+
+
+def test_one_pair_passing_does_NOT_release():
+    """1 pair ≥ 0.5, the other 3 below → proceed=False; per_layer_pair_pass names
+    the 3 fails. FAILS on round-4 code (global max = 0.9 ≥ 0.5 → wrongly True)."""
+    rates = {"10-10": 0.9, "15-15": 0.2, "20-20": 0.2, "25-25": 0.2}
+    arm_a = [_per_pair_payload(rates)]
+    ok, detail = i653._coherence_pass_ok(arm_a)
+    assert ok is False
+    assert detail["per_layer_pair_pass"]["10-10"] is True
+    assert detail["per_layer_pair_pass"]["15-15"] is False
+    assert detail["per_layer_pair_pass"]["20-20"] is False
+    assert detail["per_layer_pair_pass"]["25-25"] is False
+    # and the full gate refuses to release:
+    decision = i653.evaluate_full_ft_gate(arm_a, _passing_rank16_installs())
     assert decision["proceed"] is False
     assert "arm_a_coherence" in decision["failing_subgates"]
+
+
+def test_all_pairs_passing_releases():
+    """Every one of the 4 planned pairs has ≥1 (dist,mag,seed) ≥ 0.5 → ok=True."""
+    rates = {p: 0.55 for p in i653.PLANNED_LAYER_PAIRS}
+    ok, detail = i653._coherence_pass_ok([_per_pair_payload(rates)])
+    assert ok is True
+    assert detail["missing_layer_pairs"] == []
+
+
+def test_spec_code_pair_set_mismatch_raises():
+    """A PLANNED pair the Arm A code never produced is a spec/code mismatch:
+    RAISE RuntimeError (NOT ok=False), naming the absent pair. This is the v5
+    anti-recurrence guard — the class of bug the v4 (20,21) mismatch would cause
+    (silently always-FAILing the gate, permanently descoping the full-FT rung)."""
+    # omit "15-15" entirely from every payload (only 3 of 4 planned pairs present).
+    rates = {"10-10": 0.7, "20-20": 0.7, "25-25": 0.7}
+    arm_a = [_per_pair_payload(rates)]
+    with pytest.raises(RuntimeError, match=r"15-15") as exc:
+        i653._coherence_pass_ok(arm_a)
+    assert "Spec/code mismatch" in str(exc.value)
+    # the same mismatch surfaces through the full gate entrypoint:
+    with pytest.raises(RuntimeError, match=r"Spec/code mismatch"):
+        i653.evaluate_full_ft_gate(arm_a, _passing_rank16_installs())
+
+
+def test_gate_decision_records_per_layer_pair_detail():
+    """gate_decision.json must carry per_layer_pair_best / per_layer_pair_pass /
+    missing_layer_pairs so the kill outcome names the un-coherent pair (§7.A r3)."""
+    rates = {"10-10": 0.9, "15-15": 0.1, "20-20": 0.9, "25-25": 0.9}
+    decision = i653.evaluate_full_ft_gate([_per_pair_payload(rates)], _passing_rank16_installs())
+    cohd = decision["condition_a_arm_a_coherence"]
+    assert "per_layer_pair_best" in cohd
+    assert "per_layer_pair_pass" in cohd
+    assert "missing_layer_pairs" in cohd
+    assert cohd["per_layer_pair_best"]["15-15"] == pytest.approx(0.1)
+    assert cohd["per_layer_pair_pass"]["15-15"] is False
 
 
 def test_phase_train_refuses_full_ft_without_gate_sentinel(tmp_path):
