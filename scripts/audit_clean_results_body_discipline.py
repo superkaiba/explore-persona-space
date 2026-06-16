@@ -39,7 +39,13 @@ PATTERNS: dict[str, tuple[str, str]] = {
         "Pre-registration gate verdicts in CAPS (REJECTED / INDETERMINATE / PASSED / EXCEEDING)",
     ),
     "effect_size_pp": (
-        r"Δ-?\d+\s*p?p|Δrate\s*=|Δ\s*=\s*[+-]?\d+\s*(?:pp|%)",
+        # The sign char classes include the typographic Unicode minus
+        # (codepoint U+2212) alongside ASCII hyphen-minus and plus -- the same
+        # blind spot the interval_inline fix below closed (#649): a negative
+        # effect size rendered with U+2212 (Delta = MINUS 5pp) would otherwise
+        # slip past. (RUF001/RUF003 noqa: the U+2212 in the pattern is the
+        # literal char being matched, not an accidental homoglyph.)
+        r"Δ[-−]?\d+\s*p?p|Δrate\s*=|Δ\s*=\s*[+-−]?\d+\s*(?:pp|%)",  # noqa: RUF001
         "Effect-size-in-percentage-points (Δ-Npp / Δrate / Δ = -Npp)",
     ),
     "interval_inline": (
@@ -61,9 +67,17 @@ PATTERNS: dict[str, tuple[str, str]] = {
         #       sentence) — and GFM table cells via `_blank_table_rows` (the
         #       Reproducibility Parameters table + Data capsule tables carry
         #       interval forms legitimately).
-        r"slope\s*\[[-+\d., ]+\]"
-        r"|\[[-+]?\d+\.\d+\s*,\s*[-+]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)"
-        r"|\[[-+]?\d*\.?\d+\s*,\s*[-+]?\d*\.?\d+\]",
+        #   The sign character class accepts ASCII hyphen-minus, ASCII plus,
+        #   AND the typographic Unicode minus (codepoint U+2212) -- analyzers
+        #   routinely render negative CI bounds with U+2212, so an ASCII-only
+        #   sign class systematically missed half the sites of the construct
+        #   this rule exists to catch (#649: two CIs whose lower bound used
+        #   U+2212 slipped past while the ASCII-sign CIs in the SAME body were
+        #   flagged). The U+2212 in each alternative below is the literal char
+        #   being matched, not an accidental homoglyph -- hence the noqa.
+        r"slope\s*\[[-+−\d., ]+\]"  # noqa: RUF001
+        r"|\[[-+−]?\d+\.\d+\s*,\s*[-+−]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)"  # noqa: RUF001
+        r"|\[[-+−]?\d*\.?\d+\s*,\s*[-+−]?\d*\.?\d+\]",  # noqa: RUF001
         "Credence intervals as inline [low, high] in prose (banned)",
     ),
     "named_tests": (
