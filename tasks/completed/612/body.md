@@ -5,6 +5,7 @@ title: The model's own agreeing completions install sycophancy substantially mor
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-06-12T01:04:35Z'
 has_clean_result: true
 parent_id: 591
