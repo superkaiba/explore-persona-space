@@ -4020,8 +4020,8 @@
       "goal": "Test whether #532's level-vs-change predictor decomposition holds for a realistic judged behavior (sycophancy primary, refusal stretch): per (source x bystander) cell, separate leakage into absolute trained expression (LEVEL) and trained-base shift (CHANGE), and test whether the base-model bystander prior predicts LEVEL while activation geometry (cosine/Gaussian-KL) predicts CHANGE - replicating or breaking the marker's clean two-component rule. Reuse existing sycophancy panels (#612/#627/#507/#509) carrying base rate + trained rate + geometry; add a graded log-prob-readable DV (#391 forced-choice) only if rate-space floors.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/649",
-      "status": "running",
+      "path": "tasks/verifying/649",
+      "status": "verifying",
       "title": "Does the base-prior-vs-geometry level/change split hold for realistic behaviors (sycophancy primary)?"
     },
     "65": {
