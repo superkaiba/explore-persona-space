@@ -4035,8 +4035,8 @@
       "goal": "Determine whether a rank-1 LoRA behavior implant's WRITE direction is a pre-existing base direction or a new (intruder) direction \u2014 in BOTH the weight-space sense (max cosine of the LoRA write singular vector to the base weight matrix's singular vectors) and the activation-space sense (cosine of the residual-space write to a pre-existing base residual-stream concept direction, and to the unembedding concept row) \u2014 and whether its READ direction rotates from random init toward the source-context direction as implant dose increases (a learned detector) or stays ~random (selectivity inherited from base geometry), across two behaviors of contrasting realism (programmatic marker vs on-policy sycophancy), using a rank-1 MLP up_proj+down_proj placement that puts the read in residual input space and the write in residual output space.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/interpreting/650",
-      "status": "interpreting",
+      "path": "tasks/reviewing/650",
+      "status": "reviewing",
       "title": "Rank-1 MLP LoRA read/write geometry across dose: pre-existing vs intruder direction, marker vs sycophancy"
     },
     "651": {
