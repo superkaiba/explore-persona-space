@@ -307,13 +307,54 @@ from huggingface_hub import HfApi
 from explore_persona_space.experiments.issue_650 import HF_ANALYSIS_TENSORS_PREFIX, HF_DATA_REPO
 from explore_persona_space.orchestrate.hub import list_repo_files_complete, upload_raw_completions_to_data_repo
 
-# (1) Raw completion files the eval loop persists (fail-loud helper per
-# experiment-implementer Upload-wiring contract).
+api = HfApi()
+
+# (1a) Canonical raw_completions.json files (if any nested cell dir uses the
+# canonical name) via the fail-loud helper.
 upload_raw_completions_to_data_repo(
     experiment_name="issue650_rank1_mlp_geometry",
     eval_results_dir=Path("eval_results/issue_650"),
 )
-print("raw completions uploaded")
+print("canonical raw_completions.json files uploaded (if any)")
+
+# (1b) NON-CANONICAL raw completions: the #612 eval_panel writes
+# <out_dir>/raw_completions/<persona>_seed{seed}.json (a DIRECTORY named
+# raw_completions/, NOT a file named raw_completions.json), so the recursive
+# `raw_completions.json`-name glob in (1a) does NOT match them — they'd be
+# lost on pod termination (#528-class). Walk the actual write path and batch
+# every file into ONE create_commit targeting
+# issue650_rank1_mlp_geometry/raw_completions/<rel> (HF Hub throttles a repo
+# at ~256 commits/hr, so one commit beats a per-file loop). Verify the
+# per-prefix file count on the Hub before continuing.
+from huggingface_hub import CommitOperationAdd
+
+RAW_PREFIX = "issue650_rank1_mlp_geometry/raw_completions"
+eval_root = Path("eval_results/issue_650/eval")
+rc_files = sorted(eval_root.rglob("raw_completions/*.json")) if eval_root.is_dir() else []
+if rc_files:
+    ops = []
+    rel_paths = []
+    for f in rc_files:
+        rel = f.relative_to(eval_root).as_posix()  # e.g. _traj_seed42/<tag>/raw_completions/x.json
+        path_in_repo = f"{RAW_PREFIX}/{rel}"
+        rel_paths.append(path_in_repo)
+        ops.append(CommitOperationAdd(path_in_repo=path_in_repo, path_or_fileobj=str(f)))
+    api.create_commit(
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        operations=ops,
+        commit_message=f"task #650 sycophancy raw completions ({len(ops)} files, batched)",
+    )
+    listed = set(list_repo_files_complete(api, HF_DATA_REPO, repo_type="dataset"))
+    missing_rc = [p for p in rel_paths if p not in listed]
+    if missing_rc:
+        raise RuntimeError(
+            f"non-canonical raw-completion upload verification FAILED — "
+            f"{len(missing_rc)}/{len(rel_paths)} missing on Hub; first: {missing_rc[:3]}"
+        )
+    print(f"non-canonical eval_panel raw completions uploaded + verified: {len(ops)} files")
+else:
+    print("no eval_panel raw_completions/*.json found (no sycophancy cells evaluated?)")
 
 # (2) DV-4 concept tensors (#521-class analysis tensors) — phase 6 previously
 # uploaded ONLY raw_completions, so concept/*.pt were lost on pod termination
@@ -321,7 +362,6 @@ print("raw completions uploaded")
 # concept-tensors-never-uploaded). Upload concept/ to
 # <bucket>/analysis_tensors/concept/ + verify on the Hub (list_repo_files,
 # never the hf CLI).
-api = HfApi()
 concept_dir = Path("eval_results/issue_650/concept")
 concept_prefix = f"{HF_ANALYSIS_TENSORS_PREFIX}/concept"
 concept_pts = sorted(concept_dir.glob("concept_directions_seed*.pt")) if concept_dir.is_dir() else []
