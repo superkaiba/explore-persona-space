@@ -3,7 +3,8 @@ title: 'Most of #606''s LoRA-vs-full-FT sycophancy bystander-leakage gap is the 
   bundle (+0.073 of +0.098), with a smaller module-coverage piece (+0.025) that the
   decision rule cannot call clean (MODERATE confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-15T06:53:07Z'
 has_clean_result: true
 parent_id: 606
