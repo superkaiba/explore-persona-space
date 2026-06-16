@@ -30,7 +30,7 @@ promoted_at: '2026-06-15T23:44:52Z'
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/14e26b7a12e379a25bdbe4e83862a3bb1a912be2/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
+**Methodology:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/1ad13d8bbe64856f654e14469134a3975a463808/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
 
 ## Human TL;DR
 
@@ -488,7 +488,7 @@ The licensed updates are threefold. First, the matched-dose finding's "contrasti
 - Early on-policy emission anchors (steps ≤ 40) at 2–3 dense checkpoints (e.g. 8/16/24, source + bare-chat contexts) to test whether on-policy generation matches the teacher-forced probe in the pre-onset window, which the dense replay read with probe floats only (cost_class: needs-gpu, headline_affecting: no — would qualify, not move, the early-window verdict).
 
 ## Reproducibility
-- **Methodology reference:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/14e26b7a12e379a25bdbe4e83862a3bb1a912be2/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
+- **Methodology reference:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/1ad13d8bbe64856f654e14469134a3975a463808/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
 
 **Parameters:**
 
