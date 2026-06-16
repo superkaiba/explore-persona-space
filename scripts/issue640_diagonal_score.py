@@ -84,18 +84,33 @@ def _i545_root() -> Path:
     return PROJECT_ROOT / "eval_results" / "issue_545"
 
 
-def _load_diagonal_cells(seeds: list[int]) -> dict[int, dict[str, dict]]:
+def _load_diagonal_cells(
+    seeds: list[int], *, require_all_seeds: bool = True
+) -> dict[int, dict[str, dict]]:
     """Per seed: {row: detail dict} from diagonal_source_seed{seed}.json.
 
     Keys the per-row detail by the bare ``row`` (the cell key is ``row|column``;
-    the column differs from the leakage file, so the join is on the row). Fails
-    loud if no diagonal file is present (nothing to score).
+    the column differs from the leakage file, so the join is on the row). With
+    ``require_all_seeds`` (the default, production path), a missing per-seed
+    diagonal file is fatal — NEVER silently skipped — so a single-seed-on-disk
+    run can never reach a decisive headline (plan v6 §6/§10: the
+    Δleakage > Δsource ordering must hold at BOTH registered seeds). Under
+    ``require_all_seeds=False`` (``--allow-incomplete`` / smoke), a missing seed
+    file is skipped and the caller forces a ``mixed-underpowered`` verdict.
     """
     root = _i640_root()
     per_seed: dict[int, dict[str, dict]] = {}
     for seed in seeds:
         path = root / f"diagonal_source_seed{seed}.json"
         if not path.exists():
+            if require_all_seeds:
+                raise FileNotFoundError(
+                    f"{path} missing — the diagonal Δsource sweep did not produce seed {seed}. "
+                    f"All registered --seeds {seeds} must have a diagonal_source_seed*.json "
+                    "before a selectivity verdict is trusted (plan v6 §6/§10: ordering at BOTH "
+                    "seeds). Re-run the diagonal sweep for the missing seed, or pass "
+                    "--allow-incomplete to force a mixed-underpowered partial-completeness read."
+                )
             continue
         data = json.loads(path.read_text())
         by_row: dict[str, dict] = {}
@@ -115,6 +130,98 @@ def _load_diagonal_cells(seeds: list[int]) -> dict[int, dict[str, dict]]:
             "Run: issue640_postfix_carrier.py --target diagonal ... first."
         )
     return per_seed
+
+
+def _assert_complete_inputs(seeds: list[int]) -> dict:
+    """Hard completeness gate for the production (non-allow-incomplete) path.
+
+    Validates BEFORE any verdict is written that the run actually produced every
+    statistical input plan v6 §6/§6.5/§10 require for a decisive
+    selective/blunt-revert headline:
+
+    1. Every registered ``--seeds`` diagonal file present (no silent degrade).
+    2. All 7 ``PHASE2_ROWS_JUDGED_RATE`` rows populated per seed file (§6.5).
+    3. Both ``PRIMARY_RECKLESS_ROWS`` present at BOTH seeds (the headline-gating
+       cells — a verdict that rests on a half-present reckless cell is not §6).
+    4. ``backend_parity_diagonal_seed0.json`` present with ``status == "passed"``
+       and ``delta <= tolerance_pp`` (§10 parity-gate logged+passed; closes the
+       off-pod-rerun-without-the-pod-HALT hole).
+
+    Fails loud (``FileNotFoundError`` / ``ValueError`` / ``KeyError``) on any
+    miss. Returns the validated parity record so the caller can fold it into
+    provenance without re-reading. Never writes selectivity_comparison.json on a
+    failed gate.
+    """
+    diag_by_seed = _load_diagonal_cells(seeds, require_all_seeds=True)
+
+    # (2) + (3): per-seed row coverage.
+    for seed in seeds:
+        present_rows = set(diag_by_seed.get(seed, {}))
+        missing_judged = [r for r in PHASE2_ROWS_JUDGED_RATE if r not in present_rows]
+        if missing_judged:
+            raise ValueError(
+                f"diagonal_source_seed{seed}.json is missing judged-rate rows {missing_judged} "
+                f"— all 7 of {list(PHASE2_ROWS_JUDGED_RATE)} must be populated per seed (plan "
+                "v6 §6.5). The diagonal sweep is incomplete; re-run it or pass --allow-incomplete."
+            )
+    for row in PRIMARY_RECKLESS_ROWS:
+        absent_at = [s for s in seeds if row not in diag_by_seed.get(s, {})]
+        if absent_at:
+            raise ValueError(
+                f"primary reckless cell '{row}' absent at seed(s) {absent_at} — the headline "
+                "selective/blunt-revert verdict is gated on both reckless cells at BOTH seeds "
+                "(plan v6 §6). Cannot emit a decisive verdict; re-run or pass --allow-incomplete."
+            )
+
+    # v3 off-diagonal Δleakage baseline (must-keep statistical input, §6) must
+    # exist for every registered seed — _load_leakage_cells fail-louds per seed.
+    _load_leakage_cells(seeds)
+
+    # (4): parity gate logged AND passed.
+    parity = _require_parity_passed()
+    return parity
+
+
+def _require_parity_passed() -> dict:
+    """Require the diagonal-mode backend-parity precheck record, passed.
+
+    Plan v6 §10 accepts a run only when the diagonal-mode backend-parity precheck
+    was logged AND the parity margin is within PARITY_TOLERANCE_PP (HALT if not
+    smoke). The pod-side driver writes ``backend_parity_diagonal_seed0.json`` with
+    ``status == "passed"`` before any diagonal cell. Off-pod, re-asserting the
+    record exists + passed (belt-and-suspenders) closes the hole where the scorer
+    is re-run against a partial drop that never went through the pod HALT.
+    Raises if the record is absent, not ``"passed"``, or over tolerance.
+    """
+    path = _i640_root() / "backend_parity_diagonal_seed0.json"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} missing — the diagonal-mode backend-parity precheck record is required "
+            "before a decisive selectivity verdict (plan v6 §10: parity gate logged+passed). "
+            "The pod-side driver writes it before any diagonal cell; its absence means the "
+            "HF↔vLLM parity HALT never ran. Re-run the diagonal sweep, or pass --allow-incomplete."
+        )
+    record = json.loads(path.read_text())
+    status = record.get("status")
+    if status != "passed":
+        raise ValueError(
+            f"{path.name} status={status!r} (expected 'passed') — the backend-parity precheck "
+            "did not pass under a production (non-smoke) run; the diagonal Δsource is not "
+            "trustworthy (plan v6 §10). Fix decode parity or pass --allow-incomplete."
+        )
+    delta = record.get("delta")
+    tol = record.get("tolerance_pp")
+    if delta is None or tol is None:
+        raise KeyError(
+            f"{path.name} lacks 'delta'/'tolerance_pp' — cannot verify the parity gate margin."
+        )
+    if abs(float(delta)) > float(tol):
+        raise ValueError(
+            f"{path.name} |delta|={abs(float(delta)):.4f} > tolerance_pp={float(tol):.4f} — "
+            "the backend-parity precheck record is over tolerance; the diagonal Δsource is not "
+            "trustworthy (plan v6 §10)."
+        )
+    return record
 
 
 def _load_leakage_cells(seeds: list[int]) -> dict[int, dict[str, dict]]:
@@ -182,15 +289,22 @@ def _parity_provenance() -> dict | None:
     return json.loads(path.read_text())
 
 
-def build_selectivity_table(seeds: list[int]) -> dict:
+def build_selectivity_table(seeds: list[int], *, allow_incomplete: bool = False) -> dict:
     """Join diagonal Δsource against v3 off-diagonal Δleakage per (row, seed).
 
     Returns the per-row joined table + per-row cross-seed sign consistency on
     Δsource + the §6 headline verdict block. Marker is carried as a separate
     null reference; reversed_fact is carried with a floor flag and excluded from
     the headline.
+
+    With ``allow_incomplete`` (the ``--allow-incomplete`` / smoke path) a missing
+    per-seed diagonal file is tolerated and the headline is FORCED to
+    ``mixed-underpowered`` (a partial run can never support a decisive verdict).
+    Without it (the production default) ``_load_diagonal_cells`` has already
+    fail-loud-asserted every registered seed present (via ``_assert_complete_inputs``
+    in ``score_diagonal``), so the join is over the full set.
     """
-    diag_by_seed = _load_diagonal_cells(seeds)
+    diag_by_seed = _load_diagonal_cells(seeds, require_all_seeds=not allow_incomplete)
     leak_by_seed = _load_leakage_cells(seeds)
     seeds_present = sorted(set(diag_by_seed))
 
@@ -237,7 +351,20 @@ def build_selectivity_table(seeds: list[int]) -> dict:
             row_entry["delta_source_sign_consistent"] = None
         per_row[row] = row_entry
 
-    headline = _headline_verdict(per_row, seeds_present)
+    if allow_incomplete:
+        headline = {
+            "primary_cells": list(PRIMARY_RECKLESS_ROWS),
+            "blunt_gap_tolerance": BLUNT_GAP_TOL,
+            "per_cell": {},
+            "verdict": "mixed-underpowered",
+            "reason": (
+                "--allow-incomplete / smoke: completeness assertions skipped; the headline is "
+                "forced to mixed-underpowered because a partial run cannot support a decisive "
+                "selective/blunt-revert verdict (plan v6 §6/§10)."
+            ),
+        }
+    else:
+        headline = _headline_verdict(per_row, seeds_present)
     return {
         "seeds_present": seeds_present,
         "headline_rows": [r for r in PHASE2_ROWS_JUDGED_RATE if r not in FLOOR_ROWS],
@@ -262,6 +389,19 @@ def _headline_verdict(per_row: dict, seeds_present: list[int]) -> dict:
     if 0 not in seeds_present:
         verdict["verdict"] = "mixed-underpowered"
         verdict["reason"] = "seed-0 absent — the primary selectivity read cannot run."
+        return verdict
+    # Defense-in-depth (closes the single-seed-descope hole): a selective /
+    # blunt-revert verdict requires BOTH registered seeds present (plan v6 §6/§10:
+    # the Δleakage > Δsource ordering must hold at BOTH seeds). With only seed-0
+    # on disk, ``ordering_both`` would be satisfied vacuously over one seed — force
+    # mixed-underpowered instead.
+    if len(seeds_present) < 2:
+        verdict["verdict"] = "mixed-underpowered"
+        verdict["reason"] = (
+            f"only seed(s) {seeds_present} present — a cross-seed selective/blunt-revert "
+            "verdict requires BOTH registered seeds (plan v6 §6/§10); single-seed data is "
+            "reported descriptively as mixed-underpowered."
+        )
         return verdict
 
     selective_flags: list[bool] = []
@@ -327,12 +467,45 @@ def _headline_verdict(per_row: dict, seeds_present: list[int]) -> dict:
     return verdict
 
 
-def score_diagonal(*, seeds: list[int], smoke: bool = False) -> Path:
-    """Phase-3 (diagonal) entrypoint: build + write selectivity_comparison.json."""
-    table = build_selectivity_table(seeds)
+def score_diagonal(
+    *, seeds: list[int], smoke: bool = False, allow_incomplete: bool = False
+) -> Path:
+    """Phase-3 (diagonal) entrypoint: build + write selectivity_comparison.json.
+
+    Production path (``allow_incomplete=False``, the default): runs the hard
+    completeness gate (``_assert_complete_inputs``) BEFORE building the table or
+    writing any JSON — both registered seeds present, all 7 judged-rate rows per
+    seed, both reckless rows at both seeds, and the backend-parity record present
+    + ``status == "passed"`` + within tolerance (plan v6 §6/§6.5/§10). A miss is
+    fatal; no selectivity_comparison.json is written on a failed gate.
+
+    ``allow_incomplete=True`` (the ``--allow-incomplete`` flag; ``--smoke`` implies
+    it at the CLI) skips the completeness assertions, scores whatever is on disk,
+    FORCES ``headline.verdict = "mixed-underpowered"``, sets
+    ``provenance.completeness = "partial"``, and logs a loud warning. ``smoke`` is
+    an independent marker flag carried in the JSON (the headline-logic unit tests
+    build complete fixtures and pass ``smoke=True`` to exercise verdicts without
+    requiring the production gate).
+    """
+    parity_record: dict | None = None
+    if allow_incomplete:
+        logger.warning(
+            "[phase=selectivity] ALLOW-INCOMPLETE: completeness assertions SKIPPED — verdict "
+            "forced to mixed-underpowered, provenance.completeness=partial. This path is for "
+            "smoke / partial-input scoring ONLY; a decisive selective/blunt-revert verdict is "
+            "NOT produced (plan v6 §6/§10)."
+        )
+    else:
+        parity_record = _assert_complete_inputs(seeds)
+
+    table = build_selectivity_table(seeds, allow_incomplete=allow_incomplete)
     marker_ref = _marker_diagonal_reference()
+    # Fold in the parity record: the validated one (strict path) or whatever is on
+    # disk (allow-incomplete; may be None with a logged warning).
+    parity_provenance = parity_record if parity_record is not None else _parity_provenance()
     provenance = {
-        "backend_parity_precheck": _parity_provenance(),
+        "completeness": "partial" if allow_incomplete else "complete",
+        "backend_parity_precheck": parity_provenance,
         "marker_diagonal_reference_nats": marker_ref,
         "marker_note": (
             "marker diagonal is log-prob-scale (marker_slot_stats), read from #545 "
@@ -346,15 +519,17 @@ def score_diagonal(*, seeds: list[int], smoke: bool = False) -> Path:
     }
     out = {
         "smoke": smoke,
+        "allow_incomplete": allow_incomplete,
         "selectivity": table,
         "provenance": provenance,
     }
     out_path = _i640_root() / "selectivity_comparison.json"
     out_path.write_text(json.dumps(out, indent=1))
     logger.info(
-        "[phase=selectivity] verdict=%s (seeds=%s) -> %s",
+        "[phase=selectivity] verdict=%s (seeds=%s, completeness=%s) -> %s",
         table["headline"]["verdict"],
         table["seeds_present"],
+        provenance["completeness"],
         out_path,
     )
     return out_path
@@ -370,10 +545,27 @@ def main() -> int:
         help="Accepted for smoke/parity with the driver CLI; scoring reads whatever the "
         "diagonal/leakage JSONs contain (it does not re-generate).",
     )
-    parser.add_argument("--smoke", action="store_true")
+    parser.add_argument(
+        "--smoke", action="store_true", help="smoke mode; implies --allow-incomplete"
+    )
+    parser.add_argument(
+        "--allow-incomplete",
+        action="store_true",
+        help="skip the production completeness assertions (both seeds present, all 7 judged-rate "
+        "rows per seed, both reckless rows at both seeds, parity record passed) and FORCE a "
+        "mixed-underpowered verdict with provenance.completeness=partial. Use only for "
+        "smoke / partial-input scoring.",
+    )
     args = parser.parse_args()
-    logger.info("[phase=start] issue640 diagonal selectivity scoring seeds=%s", args.seeds)
-    score_diagonal(seeds=args.seeds, smoke=args.smoke)
+    # --smoke implies --allow-incomplete (a smoke run scores a partial sweep).
+    allow_incomplete = args.allow_incomplete or args.smoke
+    logger.info(
+        "[phase=start] issue640 diagonal selectivity seeds=%s (smoke=%s, allow_incomplete=%s)",
+        args.seeds,
+        args.smoke,
+        allow_incomplete,
+    )
+    score_diagonal(seeds=args.seeds, smoke=args.smoke, allow_incomplete=allow_incomplete)
     logger.info("[phase=done] issue640 diagonal selectivity scoring complete")
     return 0
 

@@ -111,7 +111,31 @@ def _write_leak(root: Path, seed: int, leak_delta: dict[str, float]):
     )
 
 
-def _setup(monkeypatch, tmp_path, *, diag0, diag137, leak0, leak137):
+def _write_parity(root: Path, *, status: str = "passed", delta: float = 0.0, tol: float = 0.03):
+    """Write a backend_parity_diagonal_seed0.json record matching the driver's shape.
+
+    Mirrors ``issue640_postfix_carrier._diagonal_parity_precheck``'s persisted
+    record: ``status`` is ``"passed"`` on a real production run, ``delta`` is the
+    non-negative parity margin, ``tolerance_pp`` the judge-noise band.
+    """
+    (root / "backend_parity_diagonal_seed0.json").write_text(
+        json.dumps(
+            {
+                "rate": 0.84,
+                "ref_L_545": 0.84,
+                "delta": delta,
+                "n_probes": 32,
+                "tolerance_pp": tol,
+                "status": status,
+                "row": "bad_medical",
+                "column": "broad_em",
+                "seed": 0,
+            }
+        )
+    )
+
+
+def _setup(monkeypatch, tmp_path, *, diag0, diag137, leak0, leak137, with_parity=True):
     sc = _scorer()
     root = tmp_path / "issue_640"
     root.mkdir(parents=True)
@@ -119,6 +143,8 @@ def _setup(monkeypatch, tmp_path, *, diag0, diag137, leak0, leak137):
     _write_diag(root, 137, diag137)
     _write_leak(root, 0, leak0)
     _write_leak(root, 137, leak137)
+    if with_parity:
+        _write_parity(root)
     monkeypatch.setattr(sc, "_i640_root", lambda: root)
     return sc, root
 
@@ -232,3 +258,144 @@ def test_missing_leakage_baseline_fails_loud(monkeypatch, tmp_path):
     monkeypatch.setattr(sc, "_i640_root", lambda: root)
     with pytest.raises(FileNotFoundError, match="off-diagonal"):
         sc.score_diagonal(seeds=[0], smoke=True)
+
+
+# --------------------------------------------------------------------------- #
+# Completeness gate (plan v6 §6/§6.5/§10) — the round-2 code-review FAIL fix.
+# In non-allow-incomplete (production) mode the scorer must fail loud BEFORE
+# writing selectivity_comparison.json on any incomplete input, so a partial run
+# can never emit a decisive selective/blunt-revert verdict.
+# --------------------------------------------------------------------------- #
+
+
+def test_scorer_fails_loud_on_missing_diagonal_seed_file(monkeypatch, tmp_path):
+    """Only seed-0's diagonal file on disk → score_diagonal(seeds=[0,137]) raises.
+
+    The round-1 bug silently continued past the missing seed-137 file, leaving a
+    seed-0-only run able to write verdict='selective' despite §10's both-seeds
+    ordering gate. The fix fails loud, and crucially BEFORE the output JSON is
+    written.
+    """
+    import pytest
+
+    sc = _scorer()
+    root = tmp_path / "issue_640"
+    root.mkdir(parents=True)
+    # Selective-shaped seed-0 only; seed-137 diagonal file DELIBERATELY absent.
+    _write_diag(root, 0, {r: 0.10 for r in _ALL})
+    _write_leak(root, 0, {r: 0.60 for r in _ALL})
+    _write_leak(root, 137, {r: 0.60 for r in _ALL})
+    _write_parity(root)
+    monkeypatch.setattr(sc, "_i640_root", lambda: root)
+
+    with pytest.raises(FileNotFoundError, match=r"diagonal_source_seed137\.json"):
+        sc.score_diagonal(seeds=[0, 137], smoke=False)
+    # No selectivity_comparison.json written on a failed completeness gate.
+    assert not (root / "selectivity_comparison.json").exists()
+
+
+def test_scorer_fails_loud_on_partial_diagonal_rows(monkeypatch, tmp_path):
+    """Both seed files present but one missing risky_financial → raises (no verdict)."""
+    import pytest
+
+    sc = _scorer()
+    root = tmp_path / "issue_640"
+    root.mkdir(parents=True)
+    full = {r: 0.10 for r in _ALL}
+    partial = {r: 0.10 for r in _ALL if r != "risky_financial"}  # drop a headline cell
+    _write_diag(root, 0, full)
+    _write_diag(root, 137, partial)
+    _write_leak(root, 0, {r: 0.60 for r in _ALL})
+    _write_leak(root, 137, {r: 0.60 for r in _ALL})
+    _write_parity(root)
+    monkeypatch.setattr(sc, "_i640_root", lambda: root)
+
+    with pytest.raises(ValueError, match="risky_financial"):
+        sc.score_diagonal(seeds=[0, 137], smoke=False)
+    assert not (root / "selectivity_comparison.json").exists()
+
+
+def test_scorer_fails_loud_on_missing_parity_record(monkeypatch, tmp_path):
+    """Both seed files + all rows present but no backend-parity record → raises in non-smoke."""
+    import pytest
+
+    # Complete diagonal + leakage inputs, but with_parity=False (no parity record).
+    sc, root = _setup(
+        monkeypatch,
+        tmp_path,
+        diag0={r: 0.10 for r in _ALL},
+        diag137={r: 0.10 for r in _ALL},
+        leak0={r: 0.60 for r in _ALL},
+        leak137={r: 0.60 for r in _ALL},
+        with_parity=False,
+    )
+    with pytest.raises(FileNotFoundError, match="backend-parity"):
+        sc.score_diagonal(seeds=[0, 137], smoke=False)
+    assert not (root / "selectivity_comparison.json").exists()
+
+
+def test_scorer_fails_loud_on_parity_record_not_passed(monkeypatch, tmp_path):
+    """A parity record with status != 'passed' (or over tolerance) raises in non-smoke."""
+    import pytest
+
+    sc, root = _setup(
+        monkeypatch,
+        tmp_path,
+        diag0={r: 0.10 for r in _ALL},
+        diag137={r: 0.10 for r in _ALL},
+        leak0={r: 0.60 for r in _ALL},
+        leak137={r: 0.60 for r in _ALL},
+        with_parity=False,
+    )
+    # Over-tolerance parity record: delta > tolerance_pp.
+    _write_parity(root, status="passed", delta=0.20, tol=0.03)
+    with pytest.raises(ValueError, match="tolerance_pp"):
+        sc.score_diagonal(seeds=[0, 137], smoke=False)
+    assert not (root / "selectivity_comparison.json").exists()
+
+
+def test_scorer_allow_incomplete_forces_mixed_underpowered(monkeypatch, tmp_path):
+    """--allow-incomplete on a partial fixture → verdict=mixed-underpowered, completeness=partial.
+
+    Selective-shaped seed-0-only input that WOULD read 'selective' under the
+    (now-guarded) verdict logic must, under --allow-incomplete, downgrade to
+    mixed-underpowered and record provenance.completeness='partial'.
+    """
+    sc = _scorer()
+    root = tmp_path / "issue_640"
+    root.mkdir(parents=True)
+    _write_diag(root, 0, {r: 0.10 for r in _ALL})  # seed-137 diagonal absent
+    _write_leak(root, 0, {r: 0.60 for r in _ALL})
+    _write_leak(root, 137, {r: 0.60 for r in _ALL})
+    # No parity record either — allow_incomplete must tolerate that too.
+    monkeypatch.setattr(sc, "_i640_root", lambda: root)
+
+    out_path = sc.score_diagonal(seeds=[0, 137], smoke=False, allow_incomplete=True)
+    out = json.loads(out_path.read_text())
+    assert out["allow_incomplete"] is True
+    assert out["provenance"]["completeness"] == "partial"
+    assert out["selectivity"]["headline"]["verdict"] == "mixed-underpowered"
+    # Scored whatever was on disk (seed-0 only) without raising.
+    assert out["selectivity"]["seeds_present"] == [0]
+
+
+def test_smoke_cli_flag_implies_allow_incomplete(monkeypatch, tmp_path):
+    """`main()` with --smoke implies --allow-incomplete (partial smoke run scores, no raise)."""
+    sc = _scorer()
+    root = tmp_path / "issue_640"
+    root.mkdir(parents=True)
+    _write_diag(root, 0, {r: 0.10 for r in _ALL})  # partial: seed-137 absent
+    _write_leak(root, 0, {r: 0.60 for r in _ALL})
+    _write_leak(root, 137, {r: 0.60 for r in _ALL})
+    monkeypatch.setattr(sc, "_i640_root", lambda: root)
+    monkeypatch.setattr(
+        sys, "argv", ["issue640_diagonal_score.py", "--seeds", "0", "137", "--smoke"]
+    )
+
+    rc = sc.main()
+    assert rc == 0
+    out = json.loads((root / "selectivity_comparison.json").read_text())
+    assert out["smoke"] is True
+    assert out["allow_incomplete"] is True
+    assert out["provenance"]["completeness"] == "partial"
+    assert out["selectivity"]["headline"]["verdict"] == "mixed-underpowered"
