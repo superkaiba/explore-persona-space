@@ -8,8 +8,20 @@ has_clean_result: false
 parent_id: 537
 origin_prompt: 'test whether many conditional behaviors share a direction across different
   contexts; post-hoc on the #537 context-leakage comprehensive eval'
+goal: 'Re-extract layer-L activation-shift directions (trained minus base) from the
+  #537 context-generalization testbed''s existing adapters (5 conditional behaviors
+  x 16 training contexts x seeds, already on HF, no retraining) and test (Q1) whether
+  each behavior''s shift collapses to ONE direction across the training contexts it
+  was implanted under (context-invariance of the write) and (Q2) whether the different
+  behaviors'' dominant directions coincide or cluster by family (cross-behavior identity),
+  benchmarked against the within-cell seed ceiling, with unit-norm direction cosine
+  as the dose-invariant DV.'
 ---
 # Cross-behavior, cross-context shared-direction geometry on the #537 testbed: is a conditional behavior's activation-shift write context-invariant, and do behaviors share an axis? (post-hoc re-extraction)
+
+## Goal
+
+Re-extract layer-L activation-shift directions (trained minus base) from the #537 context-generalization testbed's existing adapters (5 conditional behaviors x 16 training contexts x seeds, already on HF, no retraining) and test (Q1) whether each behavior's shift collapses to ONE direction across the training contexts it was implanted under (context-invariance of the write) and (Q2) whether the different behaviors' dominant directions coincide or cluster by family (cross-behavior identity), benchmarked against the within-cell seed ceiling, with unit-norm direction cosine as the dose-invariant DV.
 
 ## Hypotheses under test
 
