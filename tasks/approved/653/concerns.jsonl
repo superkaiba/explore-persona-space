@@ -1,0 +1,1 @@
+{"ts": "2026-06-16T11:55:32Z", "event": "raised", "concern_id": "armb-gpu-pipeline-unwired", "severity": "BLOCKER", "summary": "phase_dx/arm_a/install --gpu branches raise NotImplementedError; production Δx + Arm A read + install-DV wiring not yet connected. Round 2 must complete the GPU pipeline before pod launch.", "raised_by": "experiment-implementer", "raised_at_round": 1}
