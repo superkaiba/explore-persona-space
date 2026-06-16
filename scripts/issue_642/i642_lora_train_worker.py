@@ -74,6 +74,20 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ckpt-steps", required=True)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--gpu-id", type=int, default=0)
+    p.add_argument(
+        "--lr",
+        type=float,
+        default=LORA_LR,
+        help=f"LoRA learning rate (default {LORA_LR}). v5 trains the matched-LR LoRA pole at "
+        "this CLI value (MATCHED_LR=1e-5) on a custom --train-jsonl + --ckpt-steps grid; "
+        "without the flag the LR was hardcoded to LORA_LR.",
+    )
+    p.add_argument(
+        "--run-name-suffix",
+        default=None,
+        help="WandB run-name suffix (v5: the per-arm slug, e.g. loraOP_lr1e5_villain), so the "
+        "matched-LR LoRA pole logs a distinct run (#480 run-separation class).",
+    )
     args = p.parse_args(argv)
 
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
@@ -85,10 +99,13 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[phase=p1_train] {tag}: start (steps={sorted(ckpt_steps)})", flush=True)
 
     os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
+    run_name = f"issue642_lora_{args.behavior}_seed{args.seed}"
+    if args.run_name_suffix:
+        run_name = f"{run_name}_{args.run_name_suffix}"
     cfg = TrainLoraConfig(
         gpu_id=args.gpu_id,
         epochs=LORA_EPOCHS,
-        lr=LORA_LR,
+        lr=args.lr,
         lora_r=32,
         lora_alpha=64,
         lora_dropout=0.05,
@@ -97,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
         max_length=MAX_LENGTH,
         warmup_ratio=0.05,
         seed=args.seed,
-        run_name=f"issue642_lora_{args.behavior}_seed{args.seed}",
+        run_name=run_name,
         report_to="wandb",
         save_strategy="no",  # checkpoint grid handled by the callback
         save_only_model=True,
@@ -131,7 +148,8 @@ def main(argv: list[str] | None = None) -> int:
         "arm": "lora",
         "seed": args.seed,
         "base_model": BASE_MODEL,
-        "lr": LORA_LR,
+        "lr": args.lr,
+        "run_name": run_name,
         "epochs": LORA_EPOCHS,
         "lora_r": 32,
         "lora_alpha": 64,

@@ -1,3 +1,4 @@
+- [642 v4/v5 villain on-policy matched-LR](project_642_v4_villain_onpolicy_matchedlr.md) — 4 NEW arms, #612 30-panel, splice #411 villain positives onto #612 negs (NOT #411 negs — byte differ); pinned shas + paths.
 - [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — persist each sub-phase (gen/logprob/judge) to disk the moment it completes; never write at end-of-seed. #399.
 - [vLLM orphan worker after destroy](feedback_vllm_orphan_worker_after_destroy.md) — destroy_* doesn't reap workers; psutil child-kill + nvidia-smi check, or subprocess-isolate phases. #399.
 - [Orphan-PID check must be CVD-aware](feedback_orphan_pid_check_must_be_cvd_aware.md) — on multi-GPU pods filter compute-app PIDs by gpu_uuid vs the CVD-visible set. #396.
