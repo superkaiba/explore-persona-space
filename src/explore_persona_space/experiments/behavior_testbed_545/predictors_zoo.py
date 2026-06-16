@@ -98,6 +98,14 @@ JS_MAX_NEW_TOKENS = 1024
 JS_N_PROBES = 50
 JS_MAX_SEQ_LEN = 4096
 JS_DIRECTIONS = ("js", "kl_narrow_broad", "kl_broad_narrow")
+# HF teacher-force sub-batch in outdist (jsc.teacher_forced_response_logps).
+# Lowered from the upstream default 16 → 4: the HF forward materializes a
+# (B, L, V) logits transient where V≈152k for Qwen-2.5-7B; at B=16 the bf16
+# transient is ~5.0 GiB (matching the 5.35 GiB OOM observed on pod-545 in r4),
+# at B=4 it is ~1.3 GiB — fits the ~9.5 GiB headroom the gpu_memory_utilization
+# =0.60 config leaves once the HF model + vLLM engine co-reside. The OOM is
+# HF-side (large-vocab logits), NOT vLLM, so this — not vLLM util — is the lever.
+JS_TF_MAX_BATCH = 4
 
 # vLLM GPU memory utilization for the lazily-loaded engine inside
 # extract_clouds_and_outdist_gpu. CRITICAL: the HF base model
@@ -515,8 +523,12 @@ def _score_outdist_pair(
         if not rows_a or not rows_b:
             continue
         responses = rows_a + rows_b
-        lp_a = jsc.teacher_forced_response_logps(model, prompts_a[pi], responses)
-        lp_b = jsc.teacher_forced_response_logps(model, prompts_b[pi], responses)
+        lp_a = jsc.teacher_forced_response_logps(
+            model, prompts_a[pi], responses, max_batch=JS_TF_MAX_BATCH
+        )
+        lp_b = jsc.teacher_forced_response_logps(
+            model, prompts_b[pi], responses, max_batch=JS_TF_MAX_BATCH
+        )
         na = len(rows_a)
         for i in range(len(responses)):
             side = "a" if i < na else "b"
