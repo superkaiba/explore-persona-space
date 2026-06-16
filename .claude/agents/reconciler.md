@@ -101,7 +101,12 @@ Your brief contains:
 5. **Artifact under review** — depends on role:
    - `critic`: the `epm:plan v<n>` body.
    - `code-reviewer`: the diff against the base branch (run `git diff
-     <base>...HEAD` from the worktree).
+     <base>...HEAD` from the worktree; if that errors `fatal:
+     <base>...HEAD: no merge base` on a sparse/shallow worktree, fall back
+     to the two-dot `git diff <base>..HEAD` or the round's
+     implementer-commit SHA range — the "no merge base" error is a checkout
+     artifact, never grounds for upholding a code-review FAIL, incident
+     #613).
    - `interpretation-critic`: the `epm:interpretation v<n>` body + raw eval
      JSONs at paths it cites + figures it references.
    - `clean-result-critic`: the clean-result body (use `python scripts/task.py view <clean_N>`).

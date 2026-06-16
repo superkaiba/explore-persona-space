@@ -736,6 +736,28 @@ Banned in narrative (chart annotations are fine):
 Flag specific phrases. The audit script catches some of these
 mechanically; you catch the ones it misses.
 
+**Dual-DV for content-behavior leakage / implantation (measurement
+honesty, FAIL).** When the body's result is a *content* behavior
+leakage/implant (sycophancy, refusal, hedging, style, trait — not the
+programmatic marker, which has its own three-space recipe), CLAUDE.md
+§ Measurement validity requires BOTH DVs reported: (a) the PRIMARY
+judge-scored on-policy behavior/agreement rate (the headline number),
+and (b) the SECONDARY continuous completion-probability DV
+(length-normalized trained − base `log P` of the model's own
+judged-positive on-policy completions, or the teacher-forced margin the
+plan registered). FAIL when (i) a cross-condition / install /
+dose-matched headline rests on the binary rate alone and that rate is
+disclosed saturated (floor/ceiling), with no continuous DV carrying the
+comparison (#608's top-band censoring); OR (ii) the body narrates the
+completion-probability DV as the construct / headline number, or reports
+it without the validation that it tracks the rate (Spearman across cells
+with dynamic range). The judge rate stays PRIMARY; the probability DV is
+the SECONDARY companion, never narrated as the construct unvalidated.
+PASSes vacuously when the result is not a content-behavior
+leakage/implant, or when both DVs (+ validation) are reported with the
+rate primary. (Mirrors CLAUDE.md § Measurement validity, analyzer.md
+gate check 3, interpretation-critic Lens 1, critic Statistics item 10.)
+
 ### Lens 8 — Mentor-facing title
 
 The title is the mentor's first read. It MUST state the post-correction

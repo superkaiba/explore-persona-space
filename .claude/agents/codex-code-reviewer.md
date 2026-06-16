@@ -416,19 +416,46 @@ paths outside the worktree anyway:
 {{implementation_marker_body}}
 ---END IMPLEMENTATION MARKER BODY---
 
-The diff is in the working directory at {{worktree}}; run:
+The diff is in the working directory at {{worktree}}. PREFER the three-dot
+(merge-base) form, but FALL BACK when the merge base is unreachable. Acquire
+the diff via this ladder, in order:
+
+    # 1. Probe for a merge base. On a sparse/shallow checkout the merge-base
+    #    commit object can be excluded, so the three-dot form below errors
+    #    with "fatal: {{base}}...HEAD: no merge base" — a checkout artifact,
+    #    NOT a code finding.
+    git -C {{worktree}} merge-base --all {{base}} HEAD
+
+    # 2a. Merge base FOUND (non-empty output, exit 0) — use the three-dot form:
     git -C {{worktree}} diff {{base}}...HEAD
 
-Use EXACTLY the three-dot form above (merge-base diff) — never a two-dot or
-plain `diff {{base}} HEAD`, and never review files the branch itself did not
-touch. On a branch that is behind {{base}}, a plain diff shows {{base}}-side
-drift (other tasks' deletions/renames) as if the branch changed it; that
-main-drift is OUT OF SCOPE for this review. (Incident #521 round 2,
+    # 2b. Merge base ABSENT (empty output / exit 1) — fall back to the
+    #     TWO-dot form (or the round's implementer-commit SHA range, e.g.
+    #     `<impl-sha>~1..HEAD`, if the brief named it):
+    git -C {{worktree}} diff {{base}}..HEAD
+
+Use the three-dot form WHENEVER a merge base exists — never a two-dot or
+plain `diff {{base}} HEAD` in that case, and never review files the branch
+itself did not touch. On a branch that is behind {{base}}, a plain diff shows
+{{base}}-side drift (other tasks' deletions/renames) as if the branch changed
+it; that main-drift is OUT OF SCOPE for this review. (Incident #521 round 2,
 2026-06-09: a Codex blocker flagged "out-of-scope workflow churn" that was
 main's own drift on a behind-main branch, burning a reconciler round while
 the real blocker sat one item lower.)
 
-**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; `git diff` or `git show` cannot execute; plan_marker_path unreachable; a changed file cannot be opened):** do NOT fall back to the inlined implementation marker body or the diff summary to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (the changed-code read for Steps 2 / 3 / 5 / 6) is BLOCKED, the overall verdict must be `FAIL` with a `data-access-blocked` blocker tag (alongside any genuine `marker-shape` / `smoke-run-missing` / `substantive` tags) so the reconciler/orchestrator knows the PASS-path was unreachable. The implementation marker body is ALWAYS inlined above, so a `marker-shape` FAIL on "could not read implementation marker" is invalid (the body is right there) — only score `marker-shape` on the structure of the inlined body, never on its reachability. Likewise, when the plan-reference block above carries a `---BEGIN APPROVED PLAN BODY---` envelope, the plan is inlined — a BLOCKED / FAIL on "plan unreachable" is invalid in that case; read the plan from the envelope. "plan_marker_path unreachable" applies only when the prompt references the plan by path.
+**NEVER FAIL the review on the three-dot "no merge base" error alone.** That
+error is a sparse/shallow-checkout artifact, not a `data-access-blocked`
+condition: the two-dot / SHA-range form above DOES execute and yields the
+real diff, so the changed-code read is NOT actually blocked. Apply the
+fallback, review the diff it produces, and record which form you used in the
+`**Diff acquisition:**` header field (`three-dot` | `two-dot (no merge base)`
+| `sha-range <range>`). (Incident #613 round 1, 2026-06-13: the sparse
+worktree's `{{base}}...HEAD` errored "no merge base", Codex marked the diff
+read BLOCKED and FAILed with `data-access-blocked` despite zero substantive
+findings — forcing a reconciler spawn. The two-dot form listed 23 commits
+fine.)
+
+**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; `git diff` or `git show` cannot execute *for any reason other than the recoverable "no merge base" three-dot error above*; plan_marker_path unreachable; a changed file cannot be opened):** do NOT fall back to the inlined implementation marker body or the diff summary to score that lens. The three-dot "no merge base" error is explicitly NOT a `data-access-blocked` condition — apply the two-dot / SHA-range fallback above, which executes and yields the real diff; only an `executes for NEITHER form` failure (or a denied/unreadable changed file) is a genuine block. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (the changed-code read for Steps 2 / 3 / 5 / 6) is BLOCKED, the overall verdict must be `FAIL` with a `data-access-blocked` blocker tag (alongside any genuine `marker-shape` / `smoke-run-missing` / `substantive` tags) so the reconciler/orchestrator knows the PASS-path was unreachable. The implementation marker body is ALWAYS inlined above, so a `marker-shape` FAIL on "could not read implementation marker" is invalid (the body is right there) — only score `marker-shape` on the structure of the inlined body, never on its reachability. Likewise, when the plan-reference block above carries a `---BEGIN APPROVED PLAN BODY---` envelope, the plan is inlined — a BLOCKED / FAIL on "plan unreachable" is invalid in that case; read the plan from the envelope. "plan_marker_path unreachable" applies only when the prompt references the plan by path.
 
 Follow this protocol:
 
@@ -444,6 +471,7 @@ fences around the marker, no commentary outside the marker tags:
 **Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
+**Diff acquisition:** three-dot | two-dot (no merge base) | sha-range <range>
 **Plan adherence:** COMPLETE | PARTIAL (N items incomplete) | DEVIATES
 **Lint:** PASS | FAIL | NOT-CHECKED (Codex did not run lint)
 **Security sweep:** CLEAN | N issues flagged
