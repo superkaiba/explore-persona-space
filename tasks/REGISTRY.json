@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 653,
+  "highest_id": 654,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4062,6 +4062,14 @@
       "path": "tasks/running/653",
       "status": "running",
       "title": "Do conditional behaviors decompose cleanly into read and write features? Characterize the autoregressive write\u2192read map"
+    },
+    "654": {
+      "goal": "Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user query displaces the last-token residual-stream state away from the context-established state (centered cosine + CKA + shuffled-pair floor) across persona / generic-instruction / ICL / wild-chat contexts and varied queries, to characterize context-dominant vs query-dominant layer regimes.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/654",
+      "status": "proposed",
+      "title": "Query influence on the context-conditioned residual stream: per-layer context-end vs query-end last-token similarity (Qwen-2.5-7B-Instruct)"
     },
     "66": {
       "has_clean_result": true,
