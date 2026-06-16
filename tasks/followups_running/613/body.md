@@ -1,8 +1,8 @@
 ---
-title: Removing the answer/marker separator lets the live-negative loss-placement
-  flag suppress the source implant ~5.5 nats and bystander leakage ~3.6 nats — consistent
-  with a slot-geometry account, though surface-form falsification is still open (MODERATE
-  confidence)
+title: The glued no-separator suppression does not carry over when the marker moves
+  one token downstream — a single space collapses the source drop from ~5.5 nats to
+  a co-land in log-prob (the EOS-margin still falls ~2.6), falsifying the slot-geometry-tolerance
+  account but leaving exact-boundary-vs-coincidence open (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
