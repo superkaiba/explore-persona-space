@@ -17,6 +17,9 @@ goal: Determine whether a rank-1 LoRA behavior implant's WRITE direction is a pr
   from base geometry), across two behaviors of contrasting realism (programmatic marker
   vs on-policy sycophancy), using a rank-1 MLP up_proj+down_proj placement that puts
   the read in residual input space and the write in residual output space.
+relates_to:
+- leak-predictor
+- identity-contextual-vs-base
 ---
 # Rank-1 MLP LoRA read/write geometry across dose: pre-existing vs intruder direction, marker vs sycophancy
 
