@@ -387,7 +387,29 @@ class Ctx:
         return self.bdir(behavior) / "data"
 
     def stage_a_dir(self, behavior: str) -> Path:
+        # The install-pilot (Phase 0.5) reads source-self s in its OWN namespace
+        # so its coarse-grid trajectory + selection can NEVER be confused with
+        # the production stage-A read (plan §4.6; concern install-pilot-not-
+        # production-safe). The full run's stage_a_dir is unchanged.
+        if self.install_pilot:
+            return self.bdir(behavior) / "stage_a_pilot"
         return self.bdir(behavior) / "stage_a"
+
+    def trajectory_path(self, behavior: str) -> Path:
+        """Stage-A trajectory filename: ``pilot_trajectory.json`` under the
+        pilot read, ``trajectory_<behavior>.json`` under the production read
+        (plan §4.6 / §6.5)."""
+        if self.install_pilot:
+            return self.stage_a_dir(behavior) / "pilot_trajectory.json"
+        return self.stage_a_dir(behavior) / f"trajectory_{behavior}.json"
+
+    def selection_path(self, behavior: str) -> Path:
+        """Stage-A selection filename: ``selection_pilot.json`` under the pilot
+        read, ``selection.json`` under the production read (plan §4.6). The full
+        run's resume-skip must NEVER see the pilot's selection."""
+        if self.install_pilot:
+            return self.stage_a_dir(behavior) / "selection_pilot.json"
+        return self.stage_a_dir(behavior) / "selection.json"
 
     def gen_dir(self, behavior: str) -> Path:
         return self.bdir(behavior) / "generations"
@@ -404,8 +426,12 @@ class Ctx:
     def ckpt_root(self, behavior: str, arm: str) -> Path:
         if self.v4:
             # v4: each arm slug gets its OWN checkpoint root (3 distinct cmft
-            # arms + the LoRA pole cannot share one root).
-            return self.bdir(behavior) / "ckpts" / arm
+            # arms + the LoRA pole cannot share one root). The install-pilot
+            # (Phase 0.5) trains into ckpts_pilot/<arm> so its short coarse-grid
+            # checkpoints can NEVER be inherited by the production full train
+            # (concern install-pilot-not-production-safe; plan §4.6).
+            sub = "ckpts_pilot" if self.install_pilot else "ckpts"
+            return self.bdir(behavior) / sub / arm
         return {
             "lora": self.lora_ckpt_root,
             "ft": self.ft_ckpt_root,
@@ -1350,6 +1376,206 @@ def _phase1_train_v4(ctx: Ctx, behavior: str) -> None:
     _phase_log("p1_train", f"[v4][{behavior}] Phase 1 done")
 
 
+# ---------------------------------------------------------------------------
+# Phase 0.5 — install-pilot gate (plan §4.6 / §7): a short coarse-grid train of
+# every arm in its OWN namespace, gating the production full train. PRE Phase 1.
+# ---------------------------------------------------------------------------
+
+
+def _evaluate_pilot_gate(ctx: Ctx, behavior: str, trajectory: dict) -> dict:
+    """Apply the plan §7 install-pilot gate to a pilot trajectory.
+
+    Two pre-registered conditions (plan §4.6 / §7):
+      (a) NO dense (cmft) arm installs ``s >= 0.50`` by step 4 — a step-4
+          install is the #606 matched-LR refusal-collapse signature (LR too hot
+          for that arm).
+      (b) the LoRA arm shows a MONOTONIC (non-decreasing) install across the
+          coarse grid AND reaches ``s >= 0.40`` within it.
+
+    Returns a verdict dict; ``gate_pass`` is True iff every arm passes its own
+    condition. Per-arm reasons recorded so a FAIL names the offending arm.
+    """
+    cells = trajectory["cells"]
+    arm_verdicts: dict[str, dict] = {}
+    for arm in ctx.arms:
+        method = ctx.v4_arm_method(arm)
+        arm_cells = {slug: rec for slug, rec in cells.items() if rec["arm"] == arm}
+        steps = sorted(rec["step"] for rec in arm_cells.values())
+        s_by_step = {rec["step"]: rec.get("s", float("nan")) for rec in arm_cells.values()}
+        s_values = [s_by_step[st] for st in steps]
+        if not steps or any(v != v for v in s_values):  # NaN / empty guard
+            raise RuntimeError(
+                f"[v4][{behavior}/{arm}] pilot trajectory has missing/NaN s values "
+                f"(steps={steps}) — judging gap, cannot gate"
+            )
+        verdict: dict = {
+            "method": method,
+            "s_by_step": {str(st): s_by_step[st] for st in steps},
+        }
+        if method == "cmft":
+            # (a) no 4-step collapse: the EARLIEST grid step (>=4 by V4_PILOT_GRID)
+            # must NOT already be installed at s >= S_TARGET.
+            early_step = steps[0]
+            early_s = s_by_step[early_step]
+            ok = early_s < S_TARGET
+            verdict.update(
+                {
+                    "condition": "dense_no_step4_collapse",
+                    "early_step": early_step,
+                    "early_s": early_s,
+                    "threshold": S_TARGET,
+                    "ok": ok,
+                    "reason": (
+                        f"dense arm s={early_s:.3f} at step {early_step} "
+                        f"{'<' if ok else '>='} {S_TARGET} (#606 refusal-collapse "
+                        f"signature {'absent' if ok else 'PRESENT — matched LR too hot'})"
+                    ),
+                }
+            )
+        else:  # lora pole
+            # (b) monotonic (non-decreasing) install + reaches s >= S_BAND lower.
+            monotonic = all(s_values[i + 1] >= s_values[i] - 1e-9 for i in range(len(s_values) - 1))
+            reach_target = S_BAND[0]  # 0.40
+            reaches = max(s_values) >= reach_target
+            ok = monotonic and reaches
+            verdict.update(
+                {
+                    "condition": "lora_monotonic_and_reaches",
+                    "monotonic": monotonic,
+                    "max_s": max(s_values),
+                    "reach_threshold": reach_target,
+                    "reaches": reaches,
+                    "ok": ok,
+                    "reason": (
+                        f"LoRA monotonic={monotonic}, max_s={max(s_values):.3f} "
+                        f"{'>=' if reaches else '<'} {reach_target} "
+                        f"({'PASS' if ok else 'FAIL — too cold / non-monotonic'})"
+                    ),
+                }
+            )
+        arm_verdicts[arm] = verdict
+    gate_pass = all(v["ok"] for v in arm_verdicts.values())
+    failing = [arm for arm, v in arm_verdicts.items() if not v["ok"]]
+    return {
+        "behavior": behavior,
+        "gate": "install_pilot_gate",
+        "pilot_grid": list(ctx.lora_grid),
+        "s_target": S_TARGET,
+        "s_band": list(S_BAND),
+        "arms": arm_verdicts,
+        "gate_pass": gate_pass,
+        "failing_arms": failing,
+        "metadata": {
+            "git_commit_sha": _git_sha(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+        },
+    }
+
+
+def p0_5_pilot_gate(ctx: Ctx, behavior: str) -> None:
+    """Phase 0.5 (plan §4.6 / §7): train each arm a SHORT way (to the pilot
+    coarse grid) in the pilot filesystem namespace, read source-self s, and
+    apply the step-4 dense-collapse + LoRA-monotonic gate BEFORE the production
+    full train. HALTs the run (RuntimeError) if any arm fails — the production
+    launch must never proceed past a failed pilot (concern install-pilot-not-
+    production-safe). Non-v4 runs skip this phase entirely.
+
+    The pilot trains into ``ckpts_pilot/<arm>`` + reads into ``stage_a_pilot/``,
+    so the production Phase 1 / Phase 3 NEVER resume-skip on pilot artifacts.
+    """
+    if not ctx.v4:
+        return
+    # If the run was launched WITH --install-pilot, the standalone pilot pipeline
+    # (p1_train -> p2_stage_a -> p3_select) is the explicit driver; skip the
+    # embedded gate (its train would double-run). The standalone mode is the
+    # manual / debug path; the embedded gate is the production default.
+    if ctx.install_pilot:
+        _phase_log(
+            "p0_5_pilot_gate",
+            f"[v4][{behavior}] --install-pilot standalone mode — embedded gate skipped "
+            "(pilot runs via p1_train/p2_stage_a/p3_select in the pilot namespace)",
+        )
+        return
+
+    gate_path = ctx.bdir(behavior) / "stage_a_pilot" / "pilot_gate.json"
+    if gate_path.exists():
+        verdict = json.loads(gate_path.read_text())
+        if verdict.get("gate_pass"):
+            _phase_log(
+                "p0_5_pilot_gate",
+                f"[v4][{behavior}] pilot_gate.json exists + PASS — skipping (resume)",
+            )
+            return
+        # A persisted FAIL means a prior pilot already halted the run; re-raise
+        # rather than silently re-training.
+        raise RuntimeError(
+            f"[v4][{behavior}] install-pilot gate previously FAILED "
+            f"(arms {verdict.get('failing_arms')}); production train HALTED. "
+            f"Fire the §4.11 fallback ladder (one pre-authorized LR retrain) "
+            f"or delete {gate_path} to re-pilot. Verdict: {gate_path}"
+        )
+
+    _phase_log("p0_5_pilot_gate", f"[v4][{behavior}] Phase 0.5 start (install-pilot gate)")
+    # Run the pilot train + stage-A in the PILOT namespace with the PILOT grid.
+    # Save + restore every grid/max-steps/flag we mutate so the production phases
+    # that follow are unaffected.
+    saved = (
+        ctx.install_pilot,
+        ctx.lora_grid,
+        ctx.ft_grid,
+        ctx.cmft_grid,
+        ctx.ft_max_steps,
+    )
+    # In smoke, keep the pilot tiny (the smoke grids already are); in production
+    # use the coarse pilot grid + cap training at its max step (plan §4.6).
+    pilot_grid = ctx.lora_grid if ctx.smoke else V4_PILOT_GRID
+    pilot_max_steps = ctx.ft_max_steps if ctx.smoke else max(V4_PILOT_GRID)
+    try:
+        ctx.install_pilot = True
+        ctx.lora_grid = pilot_grid
+        ctx.ft_grid = pilot_grid
+        ctx.cmft_grid = pilot_grid
+        ctx.ft_max_steps = pilot_max_steps
+        _phase1_train_v4(ctx, behavior)
+        phase2_stage_a(ctx, behavior)
+        trajectory = json.loads(ctx.trajectory_path(behavior).read_text())
+    finally:
+        (
+            ctx.install_pilot,
+            ctx.lora_grid,
+            ctx.ft_grid,
+            ctx.cmft_grid,
+            ctx.ft_max_steps,
+        ) = saved
+
+    verdict = _evaluate_pilot_gate(ctx, behavior, trajectory)
+    gate_path.parent.mkdir(parents=True, exist_ok=True)
+    gate_path.write_text(json.dumps(verdict, indent=2))
+    _hub_upload_file(
+        gate_path,
+        f"{ctx.experiment_name}/{behavior}/stage_a_pilot/pilot_gate.json",
+        skip=ctx.skip_upload,
+    )
+    for arm, v in verdict["arms"].items():
+        _phase_log("p0_5_pilot_gate", f"[v4][{behavior}] {arm}: {v['reason']}")
+    if not verdict["gate_pass"]:
+        if ctx.smoke or ctx.dry_run:
+            _phase_log(
+                "p0_5_pilot_gate",
+                f"[v4][{behavior}] pilot gate FAIL but smoke/dry-run — log-only, proceeding "
+                f"(failing arms {verdict['failing_arms']})",
+            )
+            return
+        raise RuntimeError(
+            f"[v4][{behavior}] INSTALL-PILOT GATE FAILED for arms {verdict['failing_arms']} "
+            f"— production full train HALTED before Phase 1 (plan §7). "
+            f"Fire the §4.11 fallback ladder (one pre-authorized LR retrain for the "
+            f"offending arm, or the matched-LR pair shift 1e-5 -> 5e-6) and re-launch. "
+            f"Verdict: {gate_path}"
+        )
+    _phase_log("p0_5_pilot_gate", f"[v4][{behavior}] Phase 0.5 done (gate PASS)")
+
+
 def phase1_train(ctx: Ctx, behavior: str) -> None:
     if ctx.v4:
         _phase1_train_v4(ctx, behavior)
@@ -1470,7 +1696,7 @@ def _parent_base_stage_a_cell(ctx: Ctx, behavior: str) -> dict:
 def phase2_stage_a(ctx: Ctx, behavior: str) -> None:
     _phase_log("p2_stage_a", f"[{behavior}] Phase 2 start (source-self trajectory)")
     sa_dir = ctx.stage_a_dir(behavior)
-    traj_path = sa_dir / f"trajectory_{behavior}.json"
+    traj_path = ctx.trajectory_path(behavior)
     sa_dir.mkdir(parents=True, exist_ok=True)
     panel_json = sa_dir / "panel_source_self.json"
     panel_json.write_text(json.dumps({ctx.source_persona: ctx.source_prompt}))
@@ -1645,11 +1871,11 @@ def phase2_stage_a(ctx: Ctx, behavior: str) -> None:
 def phase3_select(ctx: Ctx, behavior: str) -> None:
     _phase_log("p3_select", f"[{behavior}] Phase 3 start (selection + install gate)")
     sa_dir = ctx.stage_a_dir(behavior)
-    sel_path = sa_dir / "selection.json"
+    sel_path = ctx.selection_path(behavior)
     if sel_path.exists() and not (sa_dir / "install_failure.json").exists():
-        _phase_log("p3_select", f"[{behavior}] selection.json exists — skipping (resume)")
+        _phase_log("p3_select", f"[{behavior}] selection exists — skipping (resume)")
         return
-    trajectory = json.loads((sa_dir / f"trajectory_{behavior}.json").read_text())
+    trajectory = json.loads(ctx.trajectory_path(behavior).read_text())
     cells = trajectory["cells"]
 
     selection: dict = {
@@ -1702,9 +1928,13 @@ def phase3_select(ctx: Ctx, behavior: str) -> None:
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
     sel_path.write_text(json.dumps(selection, indent=2))
+    # Pilot selection (if any) uploads to its own Hub namespace so it can never
+    # be confused with the production selection (concern install-pilot-not-
+    # production-safe).
+    sa_subdir = "stage_a_pilot" if ctx.install_pilot else "stage_a"
     _hub_upload_file(
         sel_path,
-        f"{ctx.experiment_name}/{behavior}/stage_a/selection.json",
+        f"{ctx.experiment_name}/{behavior}/{sa_subdir}/{sel_path.name}",
         skip=ctx.skip_upload,
     )
     # Record selected steps per trained arm for the reproducibility card.
@@ -1740,7 +1970,7 @@ def phase3_select(ctx: Ctx, behavior: str) -> None:
             fail_path.write_text(json.dumps(failure, indent=2))
             _hub_upload_file(
                 fail_path,
-                f"{ctx.experiment_name}/{behavior}/stage_a/install_failure.json",
+                f"{ctx.experiment_name}/{behavior}/{sa_subdir}/install_failure.json",
                 skip=ctx.skip_upload,
             )
             ctx.killed[behavior] = "install_failure"
@@ -1771,7 +2001,7 @@ def _stage_b_cells(ctx: Ctx, behavior: str) -> list[tuple[str, str, int]]:
     MODE token phase4 branches on (lora -> merge; cmft/ft -> --model-path; base
     -> --hub-model-id). In v4 the LoRA-method arm maps to 'lora', the cmft arms
     to 'cmft'."""
-    selection = json.loads((ctx.stage_a_dir(behavior) / "selection.json").read_text())
+    selection = json.loads(ctx.selection_path(behavior).read_text())
     cells: list[tuple[str, str, int]] = []
     for arm in ctx.arms:
         # gen_arm = the generation MODE token (v4 LoRA-method arm -> 'lora';
@@ -1957,7 +2187,7 @@ def _phase5_upload_v4_adapters(ctx: Ctx, behavior: str) -> None:
     destinations regardless."""
     if ctx.dry_run:
         return
-    selection = json.loads((ctx.stage_a_dir(behavior) / "selection.json").read_text())
+    selection = json.loads(ctx.selection_path(behavior).read_text())
     for arm in ctx.arms:
         sel = selection["arms"].get(arm, {}).get("selected_steps", [])
         method = ctx.v4_arm_method(arm)
@@ -2014,7 +2244,7 @@ def phase5_upload(ctx: Ctx, behavior: str) -> None:
     # --upload-adapters). The reproducibility card records the destinations
     # regardless so the verifier can resolve them when uploaded.
     if not ctx.dry_run and "cmft" in ctx.arms:
-        selection = json.loads((ctx.stage_a_dir(behavior) / "selection.json").read_text())
+        selection = json.loads(ctx.selection_path(behavior).read_text())
         cmft_sel = selection["arms"].get("cmft", {}).get("selected_steps", [])
         label_prefix = f"{ctx.run_label}_" if ctx.run_label else ""
         dests = [f"adapters/issue_642/{label_prefix}{behavior}_cmft_step{s}" for s in cmft_sel]
@@ -2174,6 +2404,7 @@ def _write_results_sentinel(ctx: Ctx, phases_run: list[str], note: str) -> Path:
 
 PHASES = {
     "p0_data": phase0_data,
+    "p0_5_pilot_gate": p0_5_pilot_gate,  # v4 install-pilot gate (no-op for v3)
     "p1_train": phase1_train,
     "p2_stage_a": phase2_stage_a,
     "p3_select": phase3_select,
@@ -2271,9 +2502,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--install-pilot",
         action="store_true",
-        help="v4 Phase-0.5 install-pilot (plan §4.6/§7): train each arm a SHORT way "
-        "(max-steps = max pilot grid) + a coarse stage-A read; gates the full train. "
-        "Use with --v4 --stop-after-phase p3_select.",
+        help="v4 Phase-0.5 install-pilot STANDALONE mode (plan §4.6/§7): scope ALL "
+        "artifacts (ckpts_pilot/<arm>, stage_a_pilot/, pilot_trajectory.json, "
+        "selection_pilot.json) to the pilot namespace + train each arm a SHORT way "
+        "(max-steps = max pilot grid) + a coarse stage-A read. Use with "
+        "--v4 --stop-after-phase p3_select for a manual/debug pilot. NOTE: the full "
+        "--v4 run ALREADY runs the embedded p0_5_pilot_gate phase (pilot train + the "
+        "step-4 dense-collapse + LoRA-monotonic gate) before Phase 1 and HALTs on "
+        "failure — this flag is NOT needed for the production gate.",
     )
     parser.add_argument(
         "--arms",
