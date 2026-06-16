@@ -25,7 +25,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** the findings-blind methodology + hyperparameter reference for this re-analysis is at [`docs/methodology/issue_649.md` @ 6a94a0d](https://github.com/superkaiba/explore-persona-space/blob/6a94a0d69f364cc504d1ee3a735353a04595490e/docs/methodology/issue_649.md).
+**Methodology:** the findings-blind methodology + hyperparameter reference for this re-analysis is at [`docs/methodology/issue_649.md` @ 6a94a0d](https://github.com/superkaiba/explore-persona-space/blob/6a94a0d69f364cc504d1ee3a735353a04595490e/docs/methodology/issue_649.md) · [gist](https://gist.github.com/superkaiba/31986d77cf89679e48f6125f83fc3ca4).
 
 ## Takeaways
 
@@ -117,7 +117,7 @@ N/A — this task generated no model completions. The model generations underlyi
 
 ## Reproducibility
 
-- **Methodology reference:** [`docs/methodology/issue_649.md` @ 6a94a0d](https://github.com/superkaiba/explore-persona-space/blob/6a94a0d69f364cc504d1ee3a735353a04595490e/docs/methodology/issue_649.md) — findings-blind methodology + hyperparameter table.
+- **Methodology reference:** [`docs/methodology/issue_649.md` @ 6a94a0d](https://github.com/superkaiba/explore-persona-space/blob/6a94a0d69f364cc504d1ee3a735353a04595490e/docs/methodology/issue_649.md) · [gist](https://gist.github.com/superkaiba/31986d77cf89679e48f6125f83fc3ca4) — findings-blind methodology + hyperparameter table.
 - **Parameters:**
 
   | Parameter | Value |
