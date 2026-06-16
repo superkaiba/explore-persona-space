@@ -4051,8 +4051,8 @@
       "goal": "Isolate the rank/parameterization component of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap by comparing LoRA against a coverage-matched dense fine-tune (the #642 cmft module set) at a matched learning rate, trained on on-policy sycophancy completions, on on-policy judge-scored per-persona bystander leakage at matched source-implant strength \u2014 testing whether any adapter-vs-dense leakage gap survives once learning rate, module coverage, and data realism are all controlled.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/652",
-      "status": "proposed",
+      "path": "tasks/archived/652",
+      "status": "archived",
       "title": "On-policy + matched-LR isolation of the LoRA-vs-dense sycophancy bystander-leakage gap (coverage-matched)"
     },
     "66": {
