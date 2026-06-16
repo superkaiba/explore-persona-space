@@ -14,9 +14,15 @@ Plan §4 / §11 (on-policy-completions rule):
   agree-instruction-and-STRIP → tier-3 agreement-opener prefill; judge-
   filtered (Claude Haiku, content-level agreement with the false claim).
   Prefer the lowest tier that fills the quota; record per-row tier.
-- NEGATIVES (400, 1:1, across the 4-persona panel): on-policy base-model
-  natural CORRECTIONS under each negative persona on the SAME claims
-  (judge-confirmed NOT agreeing).
+- NEGATIVES (target 400, floor 320, 1:1, across the 4-persona panel):
+  on-policy base-model natural CORRECTIONS under each negative persona on the
+  SAME claims (judge-confirmed NOT agreeing). The 80% yield floor applies to
+  the negative side too (on-policy-completions rule § BOTH sides): some
+  (persona, claim) pairs are genuinely sycophantic for the base model (a
+  high-warmth panel persona on an encouraging claim), so a handful of negative
+  rows are unfillable with a NOT-agreeing correction — those specs are DROPPED
+  + REPORTED in the manifest (``n_negatives_dropped`` / ``negatives_dropped``),
+  never backfilled; only below-floor raises (incident #650).
 - DV-4 ``d_format_base`` byproduct: the tier-2 elicitation generates AND
   judge-labels BOTH agreeing and disagreeing completions under the
   IDENTICAL agree-instruction system prompt. The disagreeing completions
@@ -49,6 +55,7 @@ from . import (
     BASE_MODEL,
     SOURCE,
     SYCO_JUDGE_MODEL,
+    SYCO_N_NEGATIVES_FLOOR,
     SYCO_N_NEGATIVES_TOTAL,
     SYCO_N_POSITIVES_FLOOR,
     SYCO_N_POSITIVES_TARGET,
@@ -413,8 +420,30 @@ def elicit_negatives(
     specs: list[ClaimRow],
     *,
     judge_concurrency: int,
-) -> dict[int, dict]:
-    """Fill negative rows with judged NOT-agreeing base corrections (#612 recipe)."""
+) -> tuple[dict[int, dict], list[dict]]:
+    """Fill negative rows with judged NOT-agreeing base corrections (#612 recipe).
+
+    Returns ``(filled, dropped)`` where:
+      - ``filled`` maps row_idx -> {"completion", "round", "claim"} for every
+        accepted (judged NOT-agreeing) negative.
+      - ``dropped`` lists the unfillable specs as
+        ``{"persona", "claim", "row_idx"}`` — (persona, claim) pairs for which
+        no judged-NOT-agreeing correction was found after ``NEG_MAX_ROUNDS``.
+
+    Yield policy (on-policy-completions rule — the 80% floor applies to BOTH
+    sides of the contrastive recipe, not just positives). Some (persona, claim)
+    pairs are genuinely sycophantic for the base model (a high-warmth panel
+    persona on an encouraging/soft claim), so the base model agrees and the
+    judge correctly flags it — there is no NOT-agreeing completion to keep.
+    That is a per-pair YIELD failure, not a "generation/judge bug": if the
+    accepted count stays at/above ``SYCO_N_NEGATIVES_FLOOR`` the unfillable
+    specs are DROPPED and REPORTED (the caller folds the dropped list into the
+    pool manifest + caps negatives 1:1 with kept positives); only a below-floor
+    shortfall raises :class:`SycophancyYieldError`. NEVER backfilled with
+    templates (incident #650: the prior hard-raise asserted unfillable rows
+    "cannot be a yield problem" — itself an unproven claim that is wrong for
+    these pairs).
+    """
     by_idx = {s.row_idx: s for s in specs}
     filled: dict[int, dict] = {}
     for rnd in range(NEG_MAX_ROUNDS):
@@ -432,14 +461,31 @@ def elicit_negatives(
                 if not agreed and idx not in filled:
                     filled[idx] = {"completion": text, "round": rnd, "claim": by_idx[idx].claim}
                     break
-    unfilled = sorted(s.row_idx for s in specs if s.row_idx not in filled)
-    if unfilled:
-        raise RuntimeError(
-            f"{len(unfilled)} negative rows unfilled after {NEG_MAX_ROUNDS} rounds — "
-            "base agreement priors are low, so this is a generation/judge bug, "
-            "not a yield problem (plan §4 negatives recipe)."
+    unfilled_idxs = sorted(s.row_idx for s in specs if s.row_idx not in filled)
+    dropped = [
+        {"persona": by_idx[i].persona, "claim": by_idx[i].claim, "row_idx": i}
+        for i in unfilled_idxs
+    ]
+    n_accepted = len(filled)
+    if n_accepted < SYCO_N_NEGATIVES_FLOOR:
+        raise SycophancyYieldError(
+            f"only {n_accepted} negatives filled (< floor {SYCO_N_NEGATIVES_FLOOR}) "
+            f"after {NEG_MAX_ROUNDS} rounds over {len(specs)} specs — a real "
+            "generation/judge yield failure on the negative side; the sycophancy "
+            "arm is dropped + reported (plan §4 yield quota). NO template backfill."
         )
-    return filled
+    if dropped:
+        log.warning(
+            "[negatives] dropped %d/%d unfillable (persona, claim) pairs "
+            "(accepted %d ≥ floor %d) — reported in pool_manifest, NOT backfilled. "
+            "Dropped pairs: %s",
+            len(dropped),
+            len(specs),
+            n_accepted,
+            SYCO_N_NEGATIVES_FLOOR,
+            [(d["persona"], d["claim"][:60]) for d in dropped],
+        )
+    return filled, dropped
 
 
 def _make_train_row(system_prompt: str, claim: str, completion: str) -> dict:
@@ -549,7 +595,7 @@ def build_sycophancy_pool(
         n_kept_pos = len(kept_idxs)
 
         log.info("[phase=syco_negatives] eliciting %d negatives", len(neg_specs))
-        filled_neg = elicit_negatives(
+        filled_neg, dropped_neg = elicit_negatives(
             llm, tokenizer, neg_specs, judge_concurrency=judge_concurrency
         )
         # Match 1:1 with kept positives (cap negatives at n_kept_pos).
@@ -597,7 +643,12 @@ def build_sycophancy_pool(
         "n_positives_floor": SYCO_N_POSITIVES_FLOOR,
         "n_positives_accepted": n_accepted,
         "n_positives_kept": n_kept_pos,
+        "n_negatives_total": SYCO_N_NEGATIVES_TOTAL,
+        "n_negatives_floor": SYCO_N_NEGATIVES_FLOOR,
+        "n_negatives_accepted": len(filled_neg),
         "n_negatives_kept": len(neg_idxs),
+        "n_negatives_dropped": len(dropped_neg),
+        "negatives_dropped": dropped_neg,
         "tier_mix": tier_counts,
         "n_disagree_tier2": len(disagree),
         "n_unique_completions": n_unique_pos,

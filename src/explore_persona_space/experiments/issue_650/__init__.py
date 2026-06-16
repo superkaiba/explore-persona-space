@@ -212,6 +212,14 @@ SYCO_INSTALL_SMOKE_FLOOR: Final[float] = 0.30  # smoke gate: ≥+0.30 at some ep
 SYCO_N_POSITIVES_TARGET: Final[int] = 400
 SYCO_N_POSITIVES_FLOOR: Final[int] = 320  # 80% of target; below → drop + report
 SYCO_N_NEGATIVES_TOTAL: Final[int] = 400  # 1:1 ratio, split across the 4-persona panel
+# 80% floor on the negative side too (on-policy-completions rule applies to BOTH
+# sides of the contrastive recipe, not just positives). Some (persona, claim)
+# pairs are genuinely sycophantic for the base model — e.g. a high-warmth panel
+# persona on an encouraging claim — so a handful of negative rows can be
+# unfillable with a judged-NOT-agreeing correction. Below this floor → raise
+# (real generation/judge yield failure); at/above → drop the unfillable specs +
+# report them in the manifest, NEVER backfill with templates (incident #650).
+SYCO_N_NEGATIVES_FLOOR: Final[int] = 320  # 80% of SYCO_N_NEGATIVES_TOTAL
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Training recipe — plan §4 / §11 (inherits #621's validated marker recipe).
