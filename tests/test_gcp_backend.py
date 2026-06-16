@@ -1646,6 +1646,174 @@ def test_audit_stale_gcp_vms_skips_non_eps_instances() -> None:
     assert records == []
 
 
+def _one_running_instance(name: str, created_iso: str) -> str:
+    return json.dumps(
+        [
+            {
+                "name": name,
+                "id": "1",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": created_iso,
+            }
+        ]
+    )
+
+
+def test_audit_stale_gcp_vms_reaps_terminal_phase_running_zombie() -> None:
+    """A RUNNING VM that has published eps/phase=done past the terminal-phase
+    floor (but well under the 24h age backstop) is reaped PROMPTLY — the
+    completed-but-not-auto-deleted zombie that would otherwise idle-bill for
+    ~22h until the age fence trips (incident #634 family)."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(minutes=30)).isoformat()  # 2h young, but done 30m ago
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-634", created), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "terminal-phase"
+    assert records[0]["phase"] == "done"
+    delete_calls = [a for a in runner.calls if "delete" in a and "instances" in a]
+    assert len(delete_calls) == 1
+    assert "eps-issue-634" in delete_calls[0]
+
+
+def test_audit_stale_gcp_vms_reaps_terminal_phase_failed_zombie() -> None:
+    """eps/phase=failed is terminal too — a wedged failed-workload VM gets the
+    same prompt reap as a done one."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(minutes=20)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-700", created), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("failed"), "")],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "terminal-phase"
+    assert records[0]["phase"] == "failed"
+
+
+def test_audit_stale_gcp_vms_keeps_running_mid_workload_vm() -> None:
+    """A RUNNING VM still mid-workload (eps/phase=workload) is NOT reaped —
+    the terminal-phase predicate must never touch a live run."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=3)).isoformat()  # 3h in, still running
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-800", created), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert records[0]["phase"] == "workload"
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+def test_audit_stale_gcp_vms_keeps_terminal_phase_within_finalize_window() -> None:
+    """A RUNNING VM that just published eps/phase=done seconds ago (inside the
+    terminal-phase floor) is NOT reaped — the floor exists so the sweep never
+    races a legitimate post-completion finalize (scp + teardown ~30-60s). The
+    phase probe is not even issued for such a young VM."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(seconds=120)).isoformat()  # 2 min old, under the 10-min floor
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-900", created), "")],
+        # A guest-attr probe here would assert-fail in _Runner if reached
+        # only when scripted; default is rc=1 ("not found"), but we assert
+        # below that NO probe call was made at all.
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert records[0]["phase"] is None
+    # No phase probe for a VM under the floor (cost + correctness).
+    assert not any("get-guest-attributes" in a for a in runner.calls)
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+def test_audit_stale_gcp_vms_age_backstop_still_reaps_terminal_phase_aside() -> None:
+    """The 24h age backstop is independent of phase — an instance over the age
+    threshold is reaped with reason='age' even when its phase is unknown."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=48)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-111", created), "")],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "age"
+    # The age backstop short-circuits the phase probe entirely.
+    assert not any("get-guest-attributes" in a for a in runner.calls)
+
+
+def test_audit_stale_gcp_vms_probe_failure_never_reaps_and_never_crashes() -> None:
+    """A guest-attribute PROBE FAILURE (couldn't ask ≠ done) must NOT escalate
+    a still-unknown RUNNING VM to deletion, and must NOT crash the inventory
+    sweep — the VM falls through to the age backstop untouched."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=2)).isoformat()  # past floor, under age backstop
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-222", created), "")],
+        # rc != 0 with a non-404 stderr → _read_guest_phase raises GcpProbeError.
+        guest_attr_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    # Did not crash; the VM is kept (phase unknown, under age backstop).
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert records[0]["phase"] is None
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
 # ---------------------------------------------------------------------------
 # Argv renderers — describe / delete / list
 # ---------------------------------------------------------------------------
@@ -3114,11 +3282,22 @@ def test_render_startup_script_log_path_matches_handle_log_path() -> None:
     assert f"export EPS_LOG_PATH={shlex.quote(handle.log_path)}" in script
 
 
-def test_render_startup_script_exports_tqdm_disable() -> None:
-    """T3 (#607): ``TQDM_DISABLE=1`` exported before the workload in both
-    branches — defense in depth (tqdm bars are the canonical giant-line
-    producer and pure noise in a log file; vLLM + huggingface_hub bars
-    are tqdm-based)."""
+def test_render_startup_script_unsets_tqdm_disable() -> None:
+    """T3 (#607, amended #542): ``unset TQDM_DISABLE`` runs before the
+    workload in both branches — NOT ``export TQDM_DISABLE=1``.
+
+    vLLM 0.11.0's batched ``_run_engine`` divides ``total_in_toks`` by
+    ``pbar.format_dict["elapsed"]`` on the first finished output; a
+    DISABLED tqdm bar never starts its timer, so ``elapsed`` is 0.0 and
+    every GCP workload calling batched ``LLM.generate()`` crashes with
+    ZeroDivisionError (#542: 4 dead eps-issue-542 VMs). The #491
+    giant-line zombie that originally motivated the disable is closed by
+    the ``exec >>"$EPS_LOG_PATH"`` redirect (bars hit the unbounded log
+    file, never the metadata runner's bounded scanner), so the bar must
+    stay ENABLED — its timer keeps ``elapsed`` > 0. ``unset`` (not
+    ``=0``) because tqdm's @envwrap coerces ``bool("0") == True`` → ``=0``
+    would still disable; unset also clears any inherited DLVM/metadata
+    value."""
     config = _test_config()
     for script, workload_line in (
         (
@@ -3130,8 +3309,11 @@ def test_render_startup_script_exports_tqdm_disable() -> None:
             "bash scripts/issue588_smoke.sh",
         ),
     ):
-        assert "export TQDM_DISABLE=1" in script
-        assert script.index("export TQDM_DISABLE=1") < script.index(workload_line)
+        assert "unset TQDM_DISABLE" in script
+        assert script.index("unset TQDM_DISABLE") < script.index(workload_line)
+        # The disable that caused the #542 ZeroDivisionError must be GONE
+        # (a disabled bar — by any TQDM_DISABLE export — re-opens the crash).
+        assert "export TQDM_DISABLE" not in script
 
 
 def test_render_startup_script_pipe_trap_is_handler_not_ignore() -> None:

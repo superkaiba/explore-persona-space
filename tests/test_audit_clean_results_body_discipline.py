@@ -230,3 +230,247 @@ def test_single_body_audit_clean_v3_passes(capsys):
     assert rc == 0
     out = capsys.readouterr().out
     assert "PASS" in out
+
+
+# ─── Bracketed-CI bounds in reader-facing prose (Lens 7; incident #637) ──
+#
+# The bare `[+0.169, +0.437]` form (no trailing CI verb/unit) is the same
+# banned construct as `value ± err`. The original `interval_inline` regex
+# only fired on `slope[...]` or a bracketed pair IMMEDIATELY followed by
+# `excludes`/`includes`/`pp`/`%`/`(`/`on `, so a bare pair slipped past the
+# audit and was caught only by the LM critic (REVISE round on #637). The
+# broadened regex must flag the bare form in Takeaways / What I ran /
+# Findings prose, while keeping it out of: Reproducibility / Data tables
+# (table-cell exemption), figure-caption blockquotes, and the
+# finding-internal "Why this test" definition sentence (Lens 7 carve-outs).
+
+
+def test_bare_bracketed_ci_in_takeaways_is_flagged():
+    """A bare `[+0.169, +0.437]` bound in a `## Takeaways` bullet trips
+    `interval_inline` (incident #637 — it previously slipped past)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the lift is [+0.169, +0.437] over baseline.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("0.169" in s for s in findings["interval_inline"]), findings
+
+
+def test_bare_bracketed_ci_in_findings_prose_is_flagged():
+    """The bare bracketed-CI form in finding setup/read prose is flagged."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The 95% CI on the mean lift is [-0.02, 0.41] across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+
+
+def test_integer_bound_bracketed_ci_is_flagged():
+    """An integer-bound CI like `[1, 5]` (no decimal point) is just as
+    banned — the broadened regex must not require a decimal."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The bootstrap bound spans [1, 5] points across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+
+
+def test_unicode_minus_bracketed_ci_in_findings_prose_is_flagged():
+    """A bracketed CI whose lower bound carries the typographic Unicode minus
+    (codepoint U+2212) in finding read prose trips `interval_inline`. The
+    pre-#649 ASCII-only sign class silently missed it: in #649 the audit
+    caught the 3 ASCII-sign CIs in the body but slipped past the 2 whose
+    lower bound used U+2212."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The prior-to-change correlation is flat at [−0.07, +0.33].",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("−0.07" in s for s in findings["interval_inline"]), findings  # noqa: RUF001
+
+
+def test_unicode_minus_bracketed_ci_in_takeaways_is_flagged():
+    """The same U+2212-signed CI in a `## Takeaways` bullet is flagged."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the CHANGE effect is flat, [−0.31, +0.08].",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("−0.31" in s for s in findings["interval_inline"]), findings  # noqa: RUF001
+
+
+def test_unicode_minus_effect_size_pp_is_flagged():
+    """A negative effect size rendered with the Unicode minus (codepoint
+    U+2212) trips `effect_size_pp`. Mirrors the `interval_inline` sign-class
+    fix (#649): the ASCII-only sign class previously missed it."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The held-out probes regress by Δ = −5pp across seeds.",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "effect_size_pp" in findings, findings
+
+
+def test_clean_v3_body_has_no_interval_inline_finding():
+    """The unmodified clean exemplar (interval-only forms live in the
+    Reproducibility / Data tables, none in prose) is interval-clean."""
+    findings = audit.audit_body(V3_BODY_WITH_DATA_CODES)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bracketed_ci_in_reproducibility_table_is_exempt():
+    """A bracketed-CI in the `## Reproducibility` Parameters table is a
+    spec-compliant interval form (table-cell exemption) and must NOT
+    trip `interval_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "| Base model | Qwen-2.5-7B-Instruct |",
+        "| Base model | Qwen-2.5-7B-Instruct |\n| Lift 95% CI | [+0.169, +0.437] |",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bracketed_ci_in_data_table_is_exempt():
+    """A bracketed-CI inside a `## Data` capsule example table is exempt
+    (table-cell + Data verbatim-content exemptions both apply)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "| Positive | C1 | A normal answer. |",
+        "| Positive | C1 | A normal answer. CI [0.1, 0.4]. |",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bracketed_ci_in_figure_caption_is_exempt():
+    """A bracketed-CI inside a figure-caption blockquote (`> **Figure.**
+    ...`) is a chart-annotation carve-out and must NOT trip the scan."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "> **Figure.** *The treatment lifts alignment over baseline at every seed.*",
+        "> **Figure.** *The treatment lifts alignment, 95% CI [+0.169, +0.437].*",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bracketed_ci_in_why_this_test_line_is_exempt():
+    """A bracketed-CI in the finding-internal 'Why this test' definition
+    sentence is the named Lens 7 exception and must NOT trip the scan."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "**Why this test:** the bootstrap CI [+0.169, +0.437] is the "
+        "registered interval defining the test.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_strip_interval_inline_exempt_lines_blanks_only_carveouts():
+    """`_strip_interval_inline_exempt_lines` blanks blockquote + Why-this-test
+    lines, leaves ordinary prose intact."""
+    text = (
+        "A prose line with [0.1, 0.4].\n"
+        "> **Figure.** caption with [0.1, 0.4].\n"
+        "**Why this test:** the CI [0.1, 0.4] defines it.\n"
+        "Another prose line with [0.2, 0.5].\n"
+    )
+    stripped = audit._strip_interval_inline_exempt_lines(text)
+    lines = stripped.splitlines()
+    assert lines[0] == "A prose line with [0.1, 0.4]."  # prose kept
+    assert lines[1] == ""  # caption blanked
+    assert lines[2] == ""  # Why-this-test blanked
+    assert lines[3] == "Another prose line with [0.2, 0.5]."  # prose kept
+
+
+def test_original_interval_inline_forms_still_flagged():
+    """Regression guard: the broadened regex must not drop the original
+    `slope[...]` and trailing-token forms."""
+    slope = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The fitted slope[0.1, 0.4] is positive across seeds.",
+    )
+    assert "interval_inline" in audit.audit_body(slope), "slope form regressed"
+    trailing = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The interval [0.1, 0.4] excludes zero across seeds.",
+    )
+    assert "interval_inline" in audit.audit_body(trailing), "trailing-token form regressed"
+
+
+# ─── Pre-registration mentions scoped to Lens 7 prose sections (#623) ────
+#
+# Lens 7 (clean-result-critic) scopes the pre-registration-mention ban to
+# `## Takeaways` / `## What I ran` / `## Findings` prose ONLY and explicitly
+# permits pre-reg threshold values / procedural notes elsewhere ("Pre-reg
+# threshold values can sit in the parameters table."). The `pre_reg` regex
+# previously scanned the whole body, so a procedural "dropped pre-registered"
+# sentence in `## Data` / `## Reproducibility` prose fired a FALSE positive
+# the critic had to hand-adjudicate every round (incident #623: an
+# `## Data → ### Evaluated with` mention tripped the audit although Lens 7
+# exempts that section).
+
+
+def test_pre_reg_in_data_prose_is_exempt():
+    """A `pre-registered` procedural mention in `## Data` PROSE (not an
+    example block) on a v3 body must NOT trip `pre_reg` — Lens 7 scopes
+    the ban to Takeaways / What I ran / Findings (incident #623)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "Established mix (tier 2), 2,000 rows, on-policy base completions.",
+        "Established mix (tier 2); the assistant baseline-self is dropped "
+        "pre-registered, leaving n = 35 for the correlation.",
+    )
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_in_reproducibility_prose_is_exempt():
+    """A `pre-registered` mention in `## Reproducibility` prose on a v3
+    body must NOT trip `pre_reg` (Lens 7 prose-section scope)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "**Compute:** 1x H100, 47 min.",
+        "**Compute:** 1x H100, 47 min. The drop rule was pre-registered.",
+    )
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_in_takeaways_prose_is_flagged():
+    """The SAME `pre-registered` mention in a `## Takeaways` bullet on a
+    v3 body STILL trips `pre_reg` — the carve-out is section-scoped, not a
+    blanket whitelist of the term."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the pre-registered drop leaves n = 35.",
+    )
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("pre-registered" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_in_findings_prose_is_flagged():
+    """A `pre-registered` mention in `## Findings` read prose on a v3 body
+    still trips `pre_reg`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift, pre-registered as the primary endpoint, holds at every seed.",
+    )
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+
+
+def test_pre_reg_whole_body_scan_preserved_for_legacy_bodies():
+    """A non-v3 (legacy / unstructured) body keeps the prior whole-body
+    `pre_reg` scan — the section scope is a v3 shape, and skipping it for
+    legacy bodies prevents silently blanking an entire legacy body's
+    prose. A `pre-registered` mention in legacy prose still FAILs."""
+    legacy = (
+        "# Some legacy title\n\n## AI TL;DR\n\nclean prose.\n\n"
+        "## AI Summary\n\nThe drop was pre-registered before the run.\n"
+    )
+    findings = audit.audit_body(legacy)
+    assert "pre_reg" in findings, findings

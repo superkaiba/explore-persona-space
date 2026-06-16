@@ -690,6 +690,70 @@ _EXHAUSTIVE_SUMMARY_RE = re.compile(
     re.IGNORECASE,
 )
 
+# A FENCED code block has no `<summary>` to carry the exhaustive-enumeration
+# signal; the equivalent disclosure lives in the prose prelude immediately
+# above it (e.g. #538's "The 20 eval input questions are the same fixed set
+# across every cell …"). Such a block is an eval-INPUT enumeration — the
+# fixed list of prompts/questions the experiment runs ON — NOT a
+# cherry-picked model-OUTPUT completion sample, so the cherry-picked-label
+# (check 10) and qualitative-data-link (check 11) rules don't apply: there
+# is no raw-completion artifact to link, because the block IS the input
+# stimulus, not a generation.
+#
+# To avoid loosening the checks on genuine output samples, the skip requires
+# a SINGLE prelude LINE that carries BOTH:
+#   (a) an exhaustive-enumeration lead — "The N <thing>" / "All N <thing>" at
+#       the start of that line, AND
+#   (b) an eval-INPUT framing token later on the SAME line — naming the block
+#       as the fixed set of eval/input questions/prompts (NOT
+#       completions/outputs/responses).
+# The two signals must co-occur ON ONE LINE (a single combined regex, not two
+# independent `.search()` calls). This is deliberate: matching the lead and
+# the framing token on DIFFERENT lines of the window would over-loosen — a
+# cherry-picked OUTPUT block ("The 5 most extreme completions are shown
+# below.") whose window also bleeds in an unrelated "(the 20 eval input
+# questions are described above)" parenthetical would be wrongly skipped.
+# Same-line co-occurrence is how every legitimate eval-input enumeration
+# actually phrases it (e.g. #538: "The 20 eval input questions are the same
+# fixed set …"). MULTILINE so the lead anchors at the start of ANY line of the
+# prelude window (`_prelude_window` may leave leading blank/partial lines).
+# A cherry-picked output prelude ("The 5 most extreme completions …") fails
+# (b) and is still enforced; an eval-question prelude that omits the "The N"
+# lead fails (a) and is still enforced (it must then carry a real link or the
+# `not uploaded` escape like any other block). The `<details>` form keeps its
+# own `_EXHAUSTIVE_SUMMARY_RE.match` summary-skip — left unchanged.
+_EVAL_INPUT_ENUM_PRELUDE_RE = re.compile(
+    r"^\s*(?:the|all)\s+\d+\b"
+    # Gap between the lead number and the framing token: same line, and it
+    # must NOT contain a competing OUTPUT head-noun
+    # (completion/output/response/generation/sample/answer/reply). Without
+    # this guard "The 6 completions … in response to the eval questions:"
+    # would skip — the lead introduces the model's OUTPUTS, not an eval-INPUT
+    # enumeration (review Minor-1, #538).
+    r"(?:(?!\b(?:completion|output|response|generation|sample|answer|reply)s?\b)[^\n])*?"
+    r"(?:"
+    r"eval(?:uation)?[\s-]*(?:input[\s-]*)?(?:question|prompt|item|stimul)"
+    r"|input[\s-]*(?:question|prompt)"
+    r"|(?:fixed|same)\s+set\s+(?:of\s+)?(?:\w+\s+){0,3}?(?:eval|question|prompt)"
+    r")",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _is_eval_input_enumeration_prelude(prelude: str) -> bool:
+    """Return True if a fenced block's prelude prose marks it as an
+    exhaustive eval-INPUT enumeration (the fixed set of questions/prompts
+    the experiment runs ON), not a cherry-picked model-OUTPUT sample.
+
+    Mirrors the `<details>` `<summary>` exhaustive-enumeration skip
+    (`_EXHAUSTIVE_SUMMARY_RE`) for the fenced-code-block form. Requires a
+    SINGLE prelude line carrying BOTH an exhaustive lead ("The N …" /
+    "All N …") AND an eval-input framing token, so genuine output samples
+    (and output preludes that merely mention eval questions elsewhere in
+    the window) stay enforced.
+    """
+    return bool(_EVAL_INPUT_ENUM_PRELUDE_RE.search(prelude))
+
 
 def _iter_sample_details(details: str) -> list[tuple[int, int, str]]:
     """Yield (block_start_offset, block_end_offset, inner_content) for
@@ -2536,6 +2600,13 @@ def check_cherry_picked_label(body: str) -> CheckResult:
         total += len(samples)
         for start, _, content in samples:
             prelude = _prelude_window(scan_text, start)
+            # Skip an exhaustive eval-INPUT enumeration (see the matching
+            # skip in `check_qualitative_data_link`): a fixed eval-question
+            # list ("The 20 eval input questions are the same fixed set …")
+            # is the input stimulus, not a cherry-picked model-OUTPUT
+            # sample, so the cherry-picked-disclosure rule does not apply.
+            if _is_eval_input_enumeration_prelude(prelude):
+                continue
             # For `<details>` blocks the cherry-pick disclosure may live
             # inside the block (the `<summary>` text or the prose around
             # the inner table); we scan BOTH the prelude window AND the
@@ -2591,6 +2662,17 @@ def check_qualitative_data_link(body: str) -> CheckResult:
         total += len(samples)
         for start, _, content in samples:
             prelude = _prelude_window(scan_text, start)
+            # Skip an exhaustive eval-INPUT enumeration introduced by a
+            # prelude like #538's "The 20 eval input questions are the same
+            # fixed set …": that fenced block IS the input stimulus, not a
+            # model-OUTPUT sample, so there is no raw-completion artifact to
+            # link. Mirrors the `<details>` `<summary>` exhaustive-summary
+            # skip (`_iter_sample_details`) for the fenced form. Requires the
+            # "The N …" lead AND an eval-input framing token on the SAME
+            # prelude line, so a cherry-picked output block ("The 5 most
+            # extreme completions …") stays enforced.
+            if _is_eval_input_enumeration_prelude(prelude):
+                continue
             # For `<details>` blocks the raw-data link often lives INSIDE
             # the block, after the table (e.g. task #432's "Full training
             # file: [...]" link on the line after the table). Scan both
@@ -4038,6 +4120,61 @@ def _parse_param_table_rows(section: str) -> dict[str, str]:
     return out
 
 
+# Markers that mean "this experiment did no model training", so the doc's
+# §2 hyperparameter table is legitimately empty / N/A. Normalized
+# (casefolded, backticks stripped, whitespace collapsed) before matching.
+_NO_TRAINING_DOC_MARKERS = (
+    "n/a — no model training",
+    "n/a - no model training",
+    "n/a — no training",
+    "n/a - no training",
+    "no model training",
+    "no training (",
+    "no training,",
+    "no training.",
+    "kind: analysis",
+    "zero-gpu",
+    "zero gpu",
+)
+
+
+def _methodology_doc_has_no_training_recipe(doc_raw: str) -> bool:
+    """True when the methodology doc's §2 (Hyperparameters / Training
+    recipe) section carries no real hyperparameter table — i.e. it is
+    empty or explicitly marked N/A because the task did no model training
+    (an analysis-only `kind: experiment`).
+
+    Check 21's subset assertion is calibrated against a CANONICAL COMPLETE
+    training-hyperparameter table that the body Parameters table slims
+    from. An analysis-only task has no such table — its body Parameters
+    are analysis-design descriptors (candidate forms, bootstrap B, logit
+    ε, …) written freehand, not slimmed hyperparameters — so the subset
+    premise does not hold and the assertion must PASS-skip instead of
+    false-FAILing. The #489-class misprint guard stays fully active for
+    every task that actually trains (this returns False there).
+
+    Detection isolates the §2 section by its numbered `## 2.` header
+    (canonically `## 2. Hyperparameters`; some analysis-only docs name it
+    `## 2. Training recipe`), then treats it as no-training when EITHER
+    (a) it contains an explicit no-training marker, OR (b) it contains no
+    GFM table delimiter row at all (no hyperparameter table emitted).
+    """
+    # Isolate the §2 section by its numbered `## 2. <name>` header (the H2
+    # name varies — "Hyperparameters" canonically, "Training recipe" in
+    # #644 — so match on the `2.` number prefix, not the section name).
+    m = re.search(r"^##\s*2\.\s.*$", doc_raw, re.MULTILINE)
+    if not m:
+        return False
+    tail = doc_raw[m.end() :]
+    nxt = re.search(r"^##\s", tail, re.MULTILINE)
+    sec2 = tail[: nxt.start()] if nxt else tail
+    norm = re.sub(r"\s+", " ", sec2.replace("`", "")).strip().casefold()
+    if any(marker in norm for marker in _NO_TRAINING_DOC_MARKERS):
+        return True
+    # No table delimiter row anywhere in §2 → no hyperparameter table.
+    return not _GFM_DELIM_RE.search(sec2)
+
+
 def check_body_params_subset_of_doc(
     body: str, *, methodology_doc_path: Path | None = None
 ) -> CheckResult:
@@ -4058,6 +4195,14 @@ def check_body_params_subset_of_doc(
     resolves ``docs/methodology/issue_<N>.md`` on disk, so the check binds
     fully then without the orchestrator re-passing the flag. PASSes
     vacuously on v2 / legacy bodies.
+
+    Analysis-only carve-out: when the doc's §2 hyperparameter section is
+    empty / N/A because the task did no model training (see
+    ``_methodology_doc_has_no_training_recipe``), there is no canonical
+    complete hyperparameter table for the body to be a subset OF — the
+    body Parameters are analysis-design descriptors, not slimmed
+    hyperparameters — so the subset assertion PASS-skips rather than
+    false-FAILing (#644).
     """
     label = "Body Parameters ⊆ methodology doc §2"
     if not is_v3(body):
@@ -4075,7 +4220,16 @@ def check_body_params_subset_of_doc(
     body_params = _parse_param_table_rows(repro)
     if not body_params:
         return CheckResult(label, True, "skipped — no Parameters table in body")
-    doc_text = methodology_doc_path.read_text(errors="replace").casefold()
+    doc_raw = methodology_doc_path.read_text(errors="replace")
+    if _methodology_doc_has_no_training_recipe(doc_raw):
+        return CheckResult(
+            label,
+            True,
+            "skipped — methodology doc §2 has no training-hyperparameter table "
+            "(analysis-only task, no model training); body Parameters are "
+            "analysis-design descriptors, not a slimmed hyperparameter subset",
+        )
+    doc_text = doc_raw.casefold()
     doc_text = re.sub(r"`", "", re.sub(r"\s+", " ", doc_text))
     missing: list[str] = []
     for key, val in body_params.items():

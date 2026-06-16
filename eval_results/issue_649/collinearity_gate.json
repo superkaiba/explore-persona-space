@@ -1,0 +1,22 @@
+{
+  "_doc": "Pearson(|cos_L2_eos|, base_prior) + gate decision + robustness reads, per arm.",
+  "smoke": false,
+  "arms": {
+    "arm_canned": {
+      "pearson_abs_cos_prior": -0.030766273896585296,
+      "fired": false,
+      "n": 108
+    },
+    "arm_onpolicy": {
+      "pearson_abs_cos_prior": 0.04610017260094572,
+      "fired": false,
+      "n": 55
+    }
+  },
+  "reproducibility": {
+    "git_commit": "904c266854387d4ef4ff1f34d8a3bc1cf3f9da04",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "timestamp": "2026-06-16T04:10:55.315384+00:00"
+  }
+}

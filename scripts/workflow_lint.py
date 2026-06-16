@@ -81,6 +81,39 @@ Behaviours:
   and the walk was widened from the issue SKILL.md to ALL skills'
   SKILL.md files on the chain's final fix (the promote-clean-result
   ``epm:consolidated-into`` posting site was unlinted until then).
+* ``--check-upload-as-file`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on any
+  ``_upload(...)`` call (the shared HF-Hub upload helper,
+  ``explore_persona_space.orchestrate.hub._upload``) whose first
+  positional / ``local_path`` argument carries a SINGLE-FILE signal but
+  does not pass ``upload_as_file=True``. ``_upload`` raises
+  ``ValueError`` UNCONDITIONALLY on a file path without that kwarg
+  (``hub.py`` ~line 560), because ``huggingface_hub.upload_folder``
+  silently no-ops on a single-file path — so a per-file upload loop
+  crashes on the FIRST file, after the expensive phases are spent. Two
+  signal classes: a DECIDABLE single-file arg0 (a string literal ending
+  in a known artifact extension, e.g. ``"out/summary.json"``, or a
+  ``dir / "name.pt"`` path-div expression) FAILs unless
+  ``upload_as_file=True`` (a decidable file even with an explicit
+  ``=False`` FAILs — that is the #595 silent-no-op shape); a NAME-CONTEXT
+  arg0 (a bare ``Name`` carrying any of three single-file signals — a
+  file-suffix identifier e.g. ``summary_path`` (the #612 offender); a
+  per-file glob/rglob/iterdir LOOP variable e.g. ``for f in
+  sorted(dir.glob("*.json"))`` (the #595/#640 production crash); or a
+  ``path_in_repo=f"...{X.name}"`` interpolation in the same call (the #640
+  idiom)) FAILs only when the ``upload_as_file`` kwarg is ENTIRELY ABSENT
+  — an explicit kwarg of either value is the author's deliberate
+  declaration and is deferred to. Folder uploads (a generic ``local`` /
+  ``local_dir`` / ``staging`` variable, no file-suffix name, no literal)
+  pass untouched. Waive a genuinely-correct flagged call with
+  ``# UPLOAD_AS_FILE_EXEMPT: <reason>`` (reason ≥ 10 chars) on the call's
+  first physical line or the immediately preceding non-blank line.
+  Closes the #595 → #640 → #612 recurrence class: the rule lived only as
+  prose (gotchas.md "``hub._upload`` raises ``ValueError`` …") and was
+  re-introduced three times, twice surviving a Claude reviewer (the
+  Codex twin caught #640); a CPU smoke that skips the GPU phase never
+  exercises the upload branch, so nothing mechanical caught it
+  pre-merge.
 * ``--check-agent-model-pins`` (also bundled into the no-flags default
   run): parse the YAML frontmatter ``model: "..."`` of every
   ``.claude/agents/*.md`` and FAIL on any pin whose base id is unknown
@@ -110,6 +143,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import sys
 from pathlib import Path
@@ -396,6 +430,67 @@ AGENT_MODEL_PIN_RE = re.compile(
 # (the only suffix the harness currently exposes for a model pin); any
 # other tail is treated as part of an unknown base id and flagged.
 AGENT_MODEL_1M_SUFFIX = "[1m]"
+
+
+# `--check-upload-as-file`: the shared HF-Hub upload helper
+# `explore_persona_space.orchestrate.hub._upload` raises `ValueError`
+# UNCONDITIONALLY when handed a FILE path without `upload_as_file=True`
+# (`hub.py` ~line 560), because `huggingface_hub.upload_folder` silently
+# no-ops on a single-file path — a per-file upload loop crashes on the
+# FIRST file, after the expensive phases are spent (#595 → #640 → #612).
+# This check AST-walks `scripts/**/*.py` and flags `_upload(...)` calls
+# whose first positional / `local_path` argument carries a single-file
+# signal but omits `upload_as_file=True`. See `check_upload_as_file` for
+# the full flagged/not-flagged matrix.
+#
+# Artifact extensions that mark a string-literal arg0 as a single file.
+UPLOAD_FILE_EXTENSIONS: tuple[str, ...] = (
+    ".json",
+    ".jsonl",
+    ".pt",
+    ".npy",
+    ".csv",
+    ".png",
+    ".pdf",
+    ".txt",
+    ".safetensors",
+    ".bin",
+    ".html",
+    ".md",
+    ".yaml",
+    ".yml",
+)
+# Variable-name suffixes (lower-cased) that mark a bare-`Name` arg0 as a
+# single file by naming convention (the #612 offender bound `summary_path`).
+# Deliberately NOT including the generic folder names that appear at the
+# live call sites (`local`, `local_dir`, `staging`, `entry`) — those carry
+# no file-suffix and so never match.
+UPLOAD_FILE_NAME_SUFFIXES: tuple[str, ...] = (
+    "_file",
+    "_path",
+    "_json",
+    "_jsonl",
+    "_pt",
+    "_npy",
+    "_csv",
+    "_png",
+    "_pdf",
+    "_txt",
+    "_html",
+    "_md",
+)
+# Path-iteration methods whose loop variable yields per-FILE paths — the
+# `for f in dir.glob("*.json"): _upload(f, ...)` shape behind both production
+# crashes (#595/#640). `iterdir` is included because the canonical use is a
+# flat per-file sweep; whether a given loop is FILE- vs directory-shaped is
+# decided by `_glob_iter_yields_files` (a dir-shaped / extensionless pattern
+# like `glob("*/")` / `glob("*")` defers, so a dir loop is NOT mis-flagged).
+UPLOAD_GLOB_LOOP_METHODS: tuple[str, ...] = ("glob", "rglob", "iterdir")
+# Inline waiver for a genuinely-correct flagged `_upload` call (e.g. a
+# `*_path` variable that is really a directory). Reason ≥ 10 chars, same
+# convention as CVD_PIN_EXEMPT / WANDB_INTENTIONALLY_DISABLED.
+UPLOAD_AS_FILE_WAIVER_RE = re.compile(r"#\s*UPLOAD_AS_FILE_EXEMPT\s*:\s*(.+?)\s*$")
+UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS = 10
 
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
@@ -1488,6 +1583,328 @@ def check_agent_model_pins(*, roots: list[Path] | None = None) -> list[str]:
     return errors
 
 
+def _upload_arg0(call: ast.Call) -> ast.expr | None:
+    """Return the AST node for the ``_upload`` call's local-path argument
+    (first positional, else the ``local_path`` / ``local`` keyword), or
+    None if neither is present."""
+    if call.args:
+        return call.args[0]
+    for kw in call.keywords:
+        if kw.arg in ("local_path", "local"):
+            return kw.value
+    return None
+
+
+def _upload_arg0_is_decidable_file(node: ast.expr) -> bool:
+    """True iff ``node`` is a DECIDABLE single-file path: a string literal
+    ending in a known artifact extension (``"out/summary.json"``) or a
+    ``<expr> / "name.ext"`` path-division whose right operand is such a
+    literal (the canonical ``out_dir / "shift.pt"`` shape)."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value.lower().endswith(UPLOAD_FILE_EXTENSIONS)
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+        right = node.right
+        if isinstance(right, ast.Constant) and isinstance(right.value, str):
+            return right.value.lower().endswith(UPLOAD_FILE_EXTENSIONS)
+    return False
+
+
+def _upload_arg0_is_named_file(node: ast.expr) -> bool:
+    """True iff ``node`` is a bare ``Name`` whose identifier ends in a
+    single-file naming suffix (``summary_path``, ``shift_pt``, ``foo_json``).
+    A HEURISTIC signal — applied only when ``upload_as_file`` is entirely
+    absent (see :func:`check_upload_as_file`)."""
+    return isinstance(node, ast.Name) and node.id.lower().endswith(UPLOAD_FILE_NAME_SUFFIXES)
+
+
+def _glob_iter_method(iterator: ast.expr) -> str | None:
+    """If ``iterator`` is a ``<expr>.glob(...)`` / ``.rglob(...)`` / ``.iterdir()``
+    call (a per-file path iterator), return the method name; else None.
+    A ``sorted(dir.glob(...))`` / ``list(dir.glob(...))`` wrapper is unwrapped
+    (the live #640 offender binds ``files = sorted(raw_dir.glob("*.json"))``)."""
+    if not isinstance(iterator, ast.Call):
+        return None
+    fn = iterator.func
+    # Unwrap a single ``sorted(...)`` / ``list(...)`` / ``tuple(...)`` wrapper
+    # around the glob call (one level — the realistic nesting).
+    if isinstance(fn, ast.Name) and fn.id in ("sorted", "list", "tuple") and iterator.args:
+        return _glob_iter_method(iterator.args[0])
+    if isinstance(fn, ast.Attribute) and fn.attr in UPLOAD_GLOB_LOOP_METHODS:
+        return fn.attr
+    return None
+
+
+def _glob_iter_yields_files(iterator: ast.expr) -> bool:
+    """True iff ``iterator`` is a per-FILE path iterator the glob-loop single-
+    file signal should fire on. Positive (fire) only when the file-vs-directory
+    intent is decidable as FILE — conservative by design so a directory sweep is
+    never mis-flagged (the candidate's ``glob("*/")`` defer-to-folder case):
+
+    * ``.iterdir()`` — fires (the canonical flat per-file sweep; the candidate's
+      test 3 FAIL case).
+    * ``.glob(<pat>)`` / ``.rglob(<pat>)`` — fires ONLY when ``<pat>`` is a
+      string literal containing a known artifact extension token
+      (:data:`UPLOAD_FILE_EXTENSIONS`, e.g. ``"*.json"`` / ``"**/*.pt"``). A
+      directory-shaped pattern (``"*/"``, ``"runs/*"``) or any pattern without a
+      file-extension token (``"*"``) DEFERS (returns False) — better to leave a
+      genuine directory loop unflagged than to manufacture a false positive,
+      since the riskiest per-file cases are independently caught by the
+      ``path_in_repo=f"...{X.name}"`` signal.
+
+    Unwraps the same ``sorted(...)`` / ``list(...)`` / ``tuple(...)`` wrapper as
+    :func:`_glob_iter_method`."""
+    if not isinstance(iterator, ast.Call):
+        return False
+    fn = iterator.func
+    if isinstance(fn, ast.Name) and fn.id in ("sorted", "list", "tuple") and iterator.args:
+        return _glob_iter_yields_files(iterator.args[0])
+    if isinstance(fn, ast.Attribute):
+        if fn.attr == "iterdir":
+            return True
+        if fn.attr in ("glob", "rglob") and iterator.args:
+            pat = iterator.args[0]
+            if isinstance(pat, ast.Constant) and isinstance(pat.value, str):
+                return pat.value.lower().endswith(UPLOAD_FILE_EXTENSIONS)
+    return False
+
+
+def _upload_arg0_is_glob_loop_var(call: ast.Call, arg0: ast.expr, tree: ast.AST) -> bool:
+    """True iff ``arg0`` is a bare ``Name`` bound by an enclosing
+    ``for <name> in <per-file glob/rglob/iterdir iterator>:`` (the per-file
+    sweep shape behind the #595/#640 production crashes — ``for f in files:``
+    where ``files = sorted(dir.glob("*.json"))``), counting BOTH the inline
+    ``for f in dir.glob(...)`` form and the two-statement form where the loop
+    iterates a local previously bound to a glob result.
+
+    Only fires when the iterator decidably yields FILES (see
+    :func:`_glob_iter_yields_files`) so a directory loop (``glob("*/")``) is
+    not mis-flagged. ``tree`` is the module AST; the walk early-outs as soon as
+    a binding per-file ``for`` is found."""
+    if not isinstance(arg0, ast.Name):
+        return False
+    name = arg0.id
+    # Map local-name -> glob iterator for ``<name> = sorted(dir.glob(...))``
+    # style bindings so a ``for f in files:`` whose ``files`` is a glob result
+    # is recognized. Only the simple single-target ``Name = <glob>`` form.
+    glob_bound_locals: dict[str, ast.expr] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            tgt = node.targets[0]
+            if isinstance(tgt, ast.Name) and _glob_iter_method(node.value) is not None:
+                glob_bound_locals[tgt.id] = node.value
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.For):
+            continue
+        if not (isinstance(node.target, ast.Name) and node.target.id == name):
+            continue
+        # The loop binds our arg0 name. Resolve its iterator: a direct glob
+        # call, or a local previously bound to one.
+        iterator: ast.expr | None = node.iter
+        if _glob_iter_method(iterator) is None and isinstance(iterator, ast.Name):
+            iterator = glob_bound_locals.get(iterator.id)
+        if iterator is None or not _glob_iter_yields_files(iterator):
+            continue
+        return True
+    return False
+
+
+def _upload_arg0_referenced_as_path_in_repo_name(call: ast.Call, arg0: ast.expr) -> bool:
+    """True iff ``arg0`` is a bare ``Name`` X and the SAME ``_upload`` call has
+    a ``path_in_repo=f"...{X.name}"`` kwarg (an f-string interpolating
+    ``X.name``). This is the #640 idiom — ``.name`` is only taken on a per-item
+    file/path you are uploading individually, so it is a strong single-file
+    signal independent of the loop context."""
+    if not isinstance(arg0, ast.Name):
+        return False
+    name = arg0.id
+    for kw in call.keywords:
+        if kw.arg != "path_in_repo" or not isinstance(kw.value, ast.JoinedStr):
+            continue
+        for piece in kw.value.values:
+            if not isinstance(piece, ast.FormattedValue):
+                continue
+            val = piece.value
+            if (
+                isinstance(val, ast.Attribute)
+                and val.attr == "name"
+                and isinstance(val.value, ast.Name)
+                and val.value.id == name
+            ):
+                return True
+    return False
+
+
+def _upload_as_file_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# UPLOAD_AS_FILE_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS` chars) is on
+    the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = UPLOAD_AS_FILE_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = UPLOAD_AS_FILE_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` and FAIL on any
+    ``_upload(...)`` call whose local-path argument carries a single-file
+    signal but does not pass ``upload_as_file=True``.
+
+    Rationale: the shared HF-Hub upload helper
+    ``explore_persona_space.orchestrate.hub._upload`` raises ``ValueError``
+    UNCONDITIONALLY when ``local_path.is_file() and not upload_as_file``
+    (``hub.py`` ~line 560), because ``huggingface_hub.upload_folder``
+    silently no-ops on a single-file path (logs "is not a directory.
+    Keeping local path." and uploads NOTHING, yet verification can still
+    pass if same-prefix files already exist — the silent-data-loss class
+    the guard was added to close, #595). The folder branch is the DEFAULT
+    (``upload_as_file=False``), so a driver that loops
+    ``for f in glob("*.json"): _upload(f, ...)`` crashes on the FIRST file,
+    after the expensive training/eval phases are already spent. This was
+    re-introduced THREE times (#595 → #640 → #612) — twice surviving a
+    Claude reviewer (the Codex twin caught #640), because a CPU smoke that
+    skips the GPU phase never exercises the upload branch and the rule
+    lived only as prose (gotchas.md). This check is the lane-independent
+    mechanical enforcement.
+
+    Detection (per ``_upload`` call, arg0 = first positional / ``local_path``
+    / ``local`` keyword):
+
+    * DECIDABLE single-file arg0 — a string literal ending in a known
+      artifact extension (:data:`UPLOAD_FILE_EXTENSIONS`), or a
+      ``<expr> / "name.ext"`` path-division — FAILs unless
+      ``upload_as_file=True``. An explicit ``upload_as_file=False`` on a
+      decidable file STILL FAILs (that is precisely the #595 silent-no-op
+      shape).
+    * NAME-CONTEXT arg0 — a bare ``Name`` carrying ANY of three
+      single-file signals — FAILs only when the ``upload_as_file`` kwarg is
+      ENTIRELY ABSENT. An explicit kwarg of either value is the author's
+      deliberate file/folder declaration and is deferred to (a heuristic
+      name-context signal must not override an explicit choice — that is
+      where false positives would live, since a ``*_path`` variable can
+      legitimately hold a directory). The three signals:
+
+      - NAME SUFFIX: the identifier ends in a single-file suffix
+        (:data:`UPLOAD_FILE_NAME_SUFFIXES`, e.g. ``summary_path`` — the
+        #612 offender).
+      - GLOB-LOOP variable: the ``Name`` is the target of an enclosing
+        ``for X in <per-file glob/rglob/iterdir iterator>:`` (counting the
+        inline ``for f in dir.glob(...)`` form AND the two-statement
+        ``files = sorted(dir.glob(...)) ; for f in files:`` form — the
+        EXACT #595/#640 production crash). Fires only when the iterator
+        DECIDABLY yields files: ``.iterdir()``, or ``.glob(<pat>)`` /
+        ``.rglob(<pat>)`` whose literal pattern carries a known artifact
+        extension (``"*.json"`` / ``"**/*.pt"``). A directory-shaped or
+        extensionless pattern (``"*/"`` / ``"*"``) DEFERS so a genuine
+        directory loop is not mis-flagged.
+      - ``path_in_repo`` ``.name`` INTERPOLATION: the SAME call passes
+        ``path_in_repo=f"...{X.name}"`` (the #640 idiom — ``.name`` is
+        taken only on a per-item path uploaded individually), a single-file
+        signal independent of the loop iterator.
+
+    NOT flagged: a generic folder variable (``local`` / ``local_dir`` /
+    ``staging`` / ``entry`` — no file-suffix name, no literal); any call
+    already passing ``upload_as_file=True``; and any call waived with
+    ``# UPLOAD_AS_FILE_EXEMPT: <reason>`` (reason ≥
+    :data:`UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS` chars) on the call's
+    first physical line or the immediately preceding non-blank line.
+
+    Only calls to a function literally named ``_upload`` are inspected
+    (bare ``_upload(...)`` or attribute ``hub._upload(...)``) — the
+    project's single shared helper. ``upload_file`` / ``upload_folder`` /
+    ``upload_model`` / ``upload_raw_completions_to_data_repo`` wrappers are
+    deliberately out of scope (they own their own file/folder routing).
+
+    ``scripts_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical ``<repo_root>/scripts``
+    tree. Bundled into the no-flags default run (same policy as
+    ``check_dispatcher_cvd_pin`` / ``check_heredoc_dotenv``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for py in sorted(root.rglob("*.py")):
+        if not py.is_file():
+            continue
+        text = py.read_text(encoding="utf-8")
+        try:
+            tree = ast.parse(text, filename=str(py))
+        except SyntaxError:
+            # A scripts/ file that does not parse is its own (separate)
+            # problem; this check stays silent on it rather than crashing.
+            continue
+        lines = text.splitlines()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            fn_name = (
+                fn.attr
+                if isinstance(fn, ast.Attribute)
+                else (fn.id if isinstance(fn, ast.Name) else None)
+            )
+            if fn_name != "_upload":
+                continue
+            arg0 = _upload_arg0(node)
+            if arg0 is None:
+                continue
+            has_kw = any(kw.arg == "upload_as_file" for kw in node.keywords)
+            kw_val = next((kw.value for kw in node.keywords if kw.arg == "upload_as_file"), None)
+            kw_true = isinstance(kw_val, ast.Constant) and kw_val.value is True
+            decidable = _upload_arg0_is_decidable_file(arg0)
+            named = _upload_arg0_is_named_file(arg0)
+            # The #595/#640 production shape: a bare loop variable from a
+            # per-file glob/rglob/iterdir sweep, OR a bare Name interpolated as
+            # path_in_repo=f"...{X.name}". Both are HEURISTIC name-context
+            # signals (like `named`) — they fire only when the upload_as_file
+            # kwarg is ENTIRELY ABSENT, deferring to any explicit author choice.
+            loop_file = _upload_arg0_is_glob_loop_var(node, arg0, tree)
+            kwarg_file = _upload_arg0_referenced_as_path_in_repo_name(node, arg0)
+            # FAIL when a decidable file lacks upload_as_file=True, OR when a
+            # name-context signal (name-suffix / glob-loop / path_in_repo .name)
+            # has the kwarg entirely absent.
+            fail = (decidable and not kw_true) or (
+                (named or loop_file or kwarg_file) and not has_kw
+            )
+            if not fail:
+                continue
+            if _upload_as_file_waiver_present(lines, node.lineno):
+                continue
+            if decidable:
+                signal = "single-file path literal"
+            elif named:
+                signal = f"file-named arg ('{arg0.id}')"
+            elif loop_file:
+                signal = f"per-file glob/iterdir loop variable ('{arg0.id}')"
+            else:
+                signal = f"path_in_repo=f'...{{{arg0.id}.name}}' single-file arg ('{arg0.id}')"
+            errors.append(
+                f"{py}:{node.lineno}: _upload(...) call with a {signal} does not "
+                f"pass upload_as_file=True. hub._upload raises ValueError "
+                f"unconditionally on a file path without that kwarg (the folder "
+                f"branch silently no-ops on a single file — #595 silent data loss), "
+                f"so a per-file upload crashes on the FIRST file after the expensive "
+                f"phases are spent (#595/#640/#612). Pass upload_as_file=True for "
+                f"single-file uploads, prefer the upload_raw_completions_to_data_repo "
+                f"helper for batching raw completions, or — if this arg is really a "
+                f"directory — waive with '# UPLOAD_AS_FILE_EXEMPT: <reason>' (reason "
+                f"≥ {UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS} chars) on the call's "
+                f"first line or the previous non-blank line. See "
+                f".claude/rules/gotchas.md 'hub._upload raises ValueError'."
+            )
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -1707,6 +2124,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "hardcode an invented model id' rule. Bundled into the no-flags "
         "default run.",
     )
+    parser.add_argument(
+        "--check-upload-as-file",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and FAIL on any _upload(...) call "
+        "with a single-file local-path argument that omits "
+        "upload_as_file=True. hub._upload raises ValueError unconditionally "
+        "on a file path without that kwarg (the folder branch silently "
+        "no-ops on a single file), so a per-file upload crashes on the "
+        "first file after the expensive phases (#595/#640/#612). Waive a "
+        "genuinely-correct flagged call with '# UPLOAD_AS_FILE_EXEMPT: "
+        "<reason>'. Bundled into the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -1735,6 +2164,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_dispatcher_cvd_pin
         or args.check_marker_registry
         or args.check_agent_model_pins
+        or args.check_upload_as_file
     )
 
     errors: list[str] = []
@@ -1778,6 +2208,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
         errors.extend(check_agent_model_pins())
+    if args.check_upload_as_file or no_flags:
+        errors.extend(check_upload_as_file())
 
     if errors:
         for err in errors:

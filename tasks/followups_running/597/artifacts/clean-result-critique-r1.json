@@ -1,0 +1,36 @@
+{
+  "round": 1,
+  "verdict": "needs_targeted_fix",
+  "verifier_passed_all_checks": true,
+  "audit_failed": true,
+  "audit_hits": {
+    "pre_reg": ["Pre-registered (line 59)", "pre-registered (line 389)", "pre-registered (line 406)"],
+    "letter_labels": ["(a) the (line 478, paired with (b) The)"],
+    "experimental_arm": ["three arms (lines 72, 385, 478)"]
+  },
+  "lens_summary": {
+    "lens_1_title": "PASS",
+    "lens_2_tldr": "FAIL — short-letter labels (armB/armC/armD) used in result-H3 prose, in figure caption (line 387), in figure alt text (line 385), and in tables; the parenthetical-with-code form 'positives-only (armB), contrastive (armC), positives-plus-filler (armD)' is exactly the banned construct from the spec text (no plain-English name should be paired with a bare code-style label in TL;DR)",
+    "lens_3_figure": "FAIL — alt text and caption of the armD figure use the bare letter codes armB/armC/armD pervasively; per spec, figures must use reader-facing labels (regenerate with 'positives-only / contrastive / positives-plus-filler' axis labels OR confine the codes strictly to Reproducibility)",
+    "lens_4_merged": "PASS (merged into Lens 2)",
+    "lens_5_reproducibility": "PASS — reuse-provenance bullets for #480 carry (a) issue, (b) HF path, (c) fitness rationale; Methodology + Context rows present; all URLs pinned to SHAs",
+    "lens_6_voice": "PASS — first-person; no 'byte identical' (the analyzer rephrased this to 'every byte agreed' per line 504); Human TL;DR populated as Thomas-first-pass; no fluff transitions in TL;DR Motivation",
+    "lens_7_statistical_framing": "FAIL — three 'Pre-registered'/'pre-registered' hits in TL;DR/Findings prose (lines 59, 389, 406); anaphoric '(a)/(b)/(c)' letter labels at line 478. Pre-reg threshold values may sit in the parameters table, NOT in prose narrative. The substance can be preserved by rephrasing to 'decision rules fixed in advance' / 'primary verdict fixed in advance' (the body already uses 'fixed in advance' phrasing in many places — see line 57 'I fixed three questions and their decision rules before looking' — so the swap is local).",
+    "lens_8_mentor_title": "PASS — title states the post-correction finding (lockstep + contrastive caps) and does not lead with a correction story; armD follow-up content is in the body, not the title",
+    "lens_9_one_takeaway_one_figure": "PASS — every quantitative finding-H4 carries exactly one inline figure with markdown blockquote caption; cherry-picked example blocks present where text generation is the evidence; end-to-end example skip is not needed (probe-only reads are documented as such inline)",
+    "lens_10_eval_probe_descriptions": "PASS — single eval probe (the 25×50 teacher-forced panel + 6 on-policy anchors); described once in 'What I ran'; no dedicated 'N probes' H3 needed for single-probe body",
+    "lens_11_raw_alongside_processed": "PASS — raw vs processed pairings present where applicable (per-row four-float records linked alongside aggregates); per-cell artifacts linked alongside aggregated JSONs; judge-scored claims do not apply (no Claude-judge in this run)",
+    "lens_12_story_arc": "PASS — Motivation states question + prior; result H3s have setup-figure-read shape; pivots (dense replay, armD fold) live in the relevant result H3 prose, not quarantined; interpretation beat present (line 478 'The licensed updates...' synthesizes the three-mechanism reading)",
+    "lens_13_planned_vs_actual": "PASS — armD ran 3 sources of the planned 3 sources for that arm (villain, helpful assistant, bare Qwen default); plan v5 §1 verdict reads 3 sources; denominators consistent throughout body",
+    "lens_14_binding_concerns": "PASS — no open binding concerns (task.py list-concerns 597 returns [])",
+    "lens_15_contaminated_arm": "PASS — armD parity gate verdict OK_DIAGNOSTIC per v5 amendment; source-Δ deviation logged as a measured outcome not a data-path failure; headline does not rest on a failed-data-gate arm"
+  },
+  "blocker_tags": ["audit", "lens"],
+  "procedural_only_fail": false,
+  "minimal_necessary_fixes": [
+    "Lens 7: Remove the three 'Pre-registered' / 'pre-registered' tokens from TL;DR/Findings prose at lines 59, 389, 406. Rephrase to 'decision rules fixed in advance' / 'primary verdict fixed in advance' / 'the FILLER < armB beyond dilution suppression bin fixed in advance' — substance unchanged, audit-clean. The body already uses 'fixed in advance' phrasing at line 57 and line 156, so the rephrase is in-register.",
+    "Lens 7 (audit letter_labels): At line 478, rewrite '(a) the matched-dose finding's ... (b) The contrastive negatives' ... (c) Source-context EOS suppression IS visible ...' as either three short paragraphs or a bullet list. The current shape reads as inline anaphoric letter labels in prose, which Lens 7 bans.",
+    "Lens 2 + Lens 3: Replace the short-letter labels armB / armC / armD with their plain-English names everywhere in TL;DR prose, the figure caption (line 387), figure alt text (line 385), and the two result tables (lines 391-404, 412-416, 422-426). Suggested mapping: armB → 'positives-only arm', armC → 'contrastive arm', armD → 'filler arm' (or 'positives-plus-filler arm'). The bare codes belong in Reproducibility's Parameters table footnote, NOT in TL;DR. The figure must be regenerated with 'positives-only / contrastive / positives-plus-filler' axis labels (per Lens 3's 'no opaque condition codes anywhere in the figure' rule). The figure caption (line 387) currently introduces the codes as 'positives-only (armB; 200-row pool, orange circles)' — drop the parenthetical-with-code form; pick one name and use it throughout."
+  ],
+  "procedural_fixes": []
+}

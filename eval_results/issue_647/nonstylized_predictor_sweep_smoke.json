@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "git_sha": "ad9686df6cdc73d8d9a22f00b75ca0f66510d03d",
+  "env": {
+    "python": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6"
+  },
+  "timestamp_utc": "2026-06-16T00:30:46.212399+00:00",
+  "arm": "loc",
+  "metrics": [
+    "gauss_kl"
+  ],
+  "layers": [
+    22
+  ],
+  "epochs": [
+    1
+  ],
+  "n_fullpool": 500,
+  "n_boot": 50,
+  "seed": 42,
+  "extraction_point": "last_prompt",
+  "variant": "raw",
+  "residual_cache": {
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_prefix": "issue502_28layer_500probe_bakeoff/activations",
+    "hf_revision": "main",
+    "local_root": "eval_results/issue_502/bakeoff/activations",
+    "files": [
+      "last_prompt__layer19.pt",
+      "last_prompt__layer20.pt",
+      "last_prompt__layer21.pt",
+      "last_prompt__layer22.pt",
+      "last_prompt__layer23.pt",
+      "last_prompt__layer24.pt"
+    ],
+    "residual_cache_shas": {
+      "last_prompt__layer19.pt": "f1337128e48129fc75ec7180486e396c313b5fefe327b5d4312762a4add39c71",
+      "last_prompt__layer20.pt": "510032304591c45c3d41bb1f711f2508fc179f01ae61c335e18114817475ae2e",
+      "last_prompt__layer21.pt": "6cfc1f5f205c3cf84c80e279de3f0abd306a2cd4a6307e6eba45f9184330351e",
+      "last_prompt__layer22.pt": "e4a76ad10b49c8e3ecf63846e41a2fe8cbb7a11e8c0d426dc1fee9107c656a35",
+      "last_prompt__layer23.pt": "bf00bc0717d42487bd9535ecb528ef6cbcbb4f20d96dddcf78008e59549649a6",
+      "last_prompt__layer24.pt": "cee743e7cc7268440aa70d6bd14b3562fb1d42d5acbdc4bf343c44f4f3f035f8"
+    }
+  },
+  "anchor_check": {
+    "headline_cell": {
+      "layer": 22,
+      "epoch": 1,
+      "panel": "full",
+      "n_fullpool": 500
+    },
+    "clean_tol": 0.01,
+    "concern_tol": 0.05,
+    "verdict": "fail",
+    "per_metric": {
+      "gauss_kl": {
+        "cached_522": 0.6174,
+        "within_run": 0.6180606952214291,
+        "abs_delta": 0.0006606952214291972,
+        "status": "clean"
+      },
+      "mmd": {
+        "cached_522": 0.5803,
+        "within_run": null,
+        "abs_delta": null,
+        "status": "missing"
+      },
+      "wass2": {
+        "cached_522": 0.5677,
+        "within_run": null,
+        "abs_delta": null,
+        "status": "missing"
+      },
+      "cosine": {
+        "cached_522": 0.5573,
+        "within_run": null,
+        "abs_delta": null,
+        "status": "missing"
+      }
+    }
+  },
+  "rows": [
+    {
+      "status": "ok",
+      "n_pairs": 240,
+      "point_estimate": {
+        "rho": -0.7925402253707435,
+        "p": 4.909574038070362e-53,
+        "cv_r2": 0.6180606952214291,
+        "rho_glog": -0.5937432136593938,
+        "p_glog": 2.9606854545824427e-24,
+        "cv_r2_glog": 0.33049062516834415
+      },
+      "panel_ci": {
+        "rho": {
+          "lo": -0.8388174562313194,
+          "hi": -0.7441588733455492,
+          "median": -0.7873145318512842,
+          "n_finite": 50
+        },
+        "cv_r2": {
+          "lo": 0.5368154518524767,
+          "hi": 0.6932106611676492,
+          "median": 0.6064232574389621,
+          "n_finite": 50
+        },
+        "rho_glog": {
+          "lo": -0.6631777977206537,
+          "hi": -0.4922101202627053,
+          "median": -0.6002172776837689,
+          "n_finite": 50
+        },
+        "cv_r2_glog": {
+          "lo": 0.20533821252375967,
+          "hi": 0.4197336959042049,
+          "median": 0.32962927386104923,
+          "n_finite": 50
+        }
+      },
+      "metric": "gauss_kl",
+      "layer": 22,
+      "panel": "full",
+      "arm": "loc",
+      "epoch": 1
+    },
+    {
+      "status": "ok",
+      "n_pairs": 156,
+      "point_estimate": {
+        "rho": -0.6225725705852551,
+        "p": 4.08211404901556e-18,
+        "cv_r2": 0.35385006358568216,
+        "rho_glog": -0.6799437971038211,
+        "p_glog": 1.667011002519997e-22,
+        "cv_r2_glog": 0.4270760692070569
+      },
+      "panel_ci": {
+        "rho": {
+          "lo": -0.7131956783339419,
+          "hi": -0.5154023517023831,
+          "median": -0.6226425972987345,
+          "n_finite": 50
+        },
+        "cv_r2": {
+          "lo": 0.19623714777772372,
+          "hi": 0.47698857985399956,
+          "median": 0.3485434440716185,
+          "n_finite": 50
+        },
+        "rho_glog": {
+          "lo": -0.7739823865878943,
+          "hi": -0.5748867950709531,
+          "median": -0.6806940303028067,
+          "n_finite": 50
+        },
+        "cv_r2_glog": {
+          "lo": 0.27141431834203605,
+          "hi": 0.5608551981809894,
+          "median": 0.41095453398100834,
+          "n_finite": 50
+        }
+      },
+      "metric": "gauss_kl",
+      "layer": 22,
+      "panel": "nonstylized",
+      "arm": "loc",
+      "epoch": 1
+    }
+  ]
+}

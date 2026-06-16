@@ -360,4 +360,140 @@ The raw-completions envelope records `cell`, `seed`, `max_new_tokens: 2048`, and
 
 ---
 
+## single-space-falsifier arm
+
+A second same-issue follow-up round (`followup_label: single-space-falsifier`, tag `followup-manual`, source `user-chat 2026-06-15`, held at `followups_running`) re-runs the loss-placement flag A/B inside a **single-space positive construction**. The sep-ablation round above glued the marker directly onto the response (`marker_sep=""`), collapsing the marker slot and the negatives' flag-on loss slot onto the same post-`R` position; this round inserts ONE single space between the response and the marker so the marker slot sits one token DOWNSTREAM of the negatives' loss slot.
+
+### Delta vs the sep-ablation round
+
+**The single variable: `marker_sep = " "` (was `""`)** — positives are built as `R + " " + " ※"` instead of `R + " ※"`. The single space is its own token (id 220), inserted between `R`'s last content token and the marker; the marker stays token id 83399 (its leading space makes `" ※"` its own pre-token chunk regardless of the preceding space). The negatives' flag-on loss slot (the first post-response `<|im_end|>`, predicted from `…R`) and the marker slot (predicting ` ※` from `…R <space>`) are therefore offset by exactly **one token** — NOT strictly coincident. Negative rows are byte-identical to BOTH the sep-ablation arms AND the parent round's with-sep arms (the separator touches positives only). The flag-on collator behavior (`suppress_at_post_response_slot=True`, `im_end_token_id=151645`) is unchanged.
+
+The change rides the existing `marker_sep` field on `CellSpec601` (default `MARKER_SEP="\n\n"`, preserving every legacy cell byte-identical) + the builder kwarg at `build_training_data.py` (`f"{r_text}{marker_sep}{marker_text}"`). The ONE genuinely-new code change is extending the read-side `--sep-mode` vocabulary from the two-value `{"\n\n", ""}` to a three-value `{"marker": "\n\n", "plain": "", "space": " "}` mapping at three dispatch points (`scripts/i601_run_cell.py` `marker_sep == " " → sep_mode = "space"`; `scripts/i601_eval_trajectory.py` and `scripts/i601_dense_read.py` `--sep-mode` `choices` + the `sep` resolution). The un-mapped value `" "` raises a fail-loud `RuntimeError` at launch without this branch.
+
+Both new arms train (no reuse for the manipulated arm) — every existing #601/#613 cell carries `marker_sep ∈ {"\n\n", ""}`, so reusing one as the single-space comparator would smuggle the separator variable into the A/B. The flag A/B structure (alive negatives vs dead-slot negatives) is retained INSIDE the new construction; cross-construction reads against the parent round's no-sep and with-sep cells are descriptive context only (the slot's base prior differs by surface form, so the gauge-invariant EOS-margin is the cross-construction read).
+
+### Conditions
+
+| Arm | Cell slug | Seeds | `marker_sep` | Negative-row loss token |
+|---|---|---|---|---|
+| **Single-space + alive negatives** | `singlespacefalsifier_flagon_200p800n` | 42, 137 | `" "` | First `<|im_end|>` (id 151645) after the response |
+| **Single-space + dead-slot negatives** | `singlespacefalsifier_flagoff_200p800n` | 42, 137 | `" "` | Trailing valid completion token |
+
+Both cells: `phase="single-space-falsifier"` (the phase string doubles as the output dir → `eval_results/issue_613/single-space-falsifier/<cell>_seed<S>/`, the CLAUDE.md follow-up-contract path), `conditional=True` (explicit-slug-only — never joins `--cells all` / `--cells phase4b`), `dense_steps` = the parity ladder `_dense_1_to(20, 25, 32, 45, 63)`, `onpolicy="anchors"`, T = 63. Disjointness invariant unchanged (panel ∩ `{villain}` = ∅, `EXPECTED_ANCHOR_PANEL` assert).
+
+### Training methodology — recipe parity
+
+The training recipe is the sep-ablation round's flag A/B verbatim except for the `marker_sep` field on `CellSpec601` (`" "` vs `""`). The §2 hyperparameter table applies in full; the differing rows are:
+
+| Parameter | single-space value | sep-ablation value | parent-round value |
+|---|---|---|---|
+| **`marker_sep`** (positive-row separator between `R` and the marker) | **`" "`** (single space, token id 220) | `""` (glued) | `"\n\n"` |
+| **Positive completion** | `R + " " + " ※"` | `R + " ※"` | `R + "\n\n" + " ※"` |
+| **Marker-slot ↔ negatives-loss-slot relationship** | **+1 token offset** (marker at post-`R `, neg loss at post-`R`) | Coincident at post-`R` | One separator apart (marker at post-`R\n\n`) |
+| Read `--sep-mode` for this construction's slot | `space` (`sep=" "`) | `plain` (`sep=""`) | `marker` (`sep="\n\n"`) |
+| Run commit | `58b30222d93f4a6330ad62314c37d59141b2ebe2` (branch `issue-613`) | `2473e425121e31…` | `88297e0f3831dd…` |
+
+Everything else — base model, LoRA rank/α/dropout/targets, learning rate 1e-5, cosine schedule + 5% warmup, batch 4 × grad-accum 4 (effective 16), T = 63, 1000-row mix (200 villain positives + 4 × 200 negatives), negative panel `{qwen_default, hero, journalist, ai_assistant}`, marker token id 83399, seeds 42/137, band-stop log-only, staged classic-α/r read gauge, `max_new_tokens` = 2048 — is identical (§2).
+
+**Marker survival under single-space append (verified before training, persisted to each cell's `build_manifest.json`).** The v5 fused-surface assert (`i601_run_cell.py`, post-`build_cell`, pre-train) is extended for the `marker_sep=" "` construction. For EVERY positive row it re-tokenizes the full chat-template surface (`tokenizer.apply_chat_template(prompt + completion, tokenize=True, add_generation_prompt=False)`) and asserts: **(i)** exactly one marker id 83399 in the assistant completion region (the load-bearing guard — the collator classifies rows BY marker presence via `MarkerOnlyDataCollator._find_marker_positions`, so a silent BPE-merge would flip a positive into the negative branch with no error); **(ii)** SURFACE-FORM DISTINCT from glued — re-renders the same row with the separator stripped (`R + " ※"`) and requires the configured single-space render to be token-distinct from the glued render (the inserted space must contribute a token); **(iii)** SLOT-OFFSET DOCUMENTED, NOT asserted-coincident — the manifest records `marker_predict_from_offset = len(encode(sep+marker)) − len(encode(marker)) = 1`. This round does NOT assert strict slot coincidence (it is false by design for the single space); it records the offset so downstream reads use the true geometry. All four cells recorded `fused_marker_assert.passed = true` (200/200 positives checked per cell), `marker_predict_from_offset = 1`, `surface_distinct_from_glued = true`, persisted to `build_manifest.json` alongside `marker_sep`, `sep_mode`, `suppress_negatives`, `git_commit`, `timestamp_utc`. Empirical prefix-stability of ` ※` across a 19-ending tokenizer battery (marker stays 83399 0/19 fail, distinct from glued 0/19 same) is pinned by `tests/test_i613_singlespacefalsifier.py`.
+
+### Evaluation methodology
+
+All reads for the single-space cells run at the construction's own marker slot `R + " "` via `--sep-mode space` (`sep=" "`), one token downstream of the negatives' flag-on loss slot. The reads are:
+
+- **On-policy anchors** at step 10 (`frac_0.1587`) and terminal step 63 (`frac_1.0`): 10 held-out questions × 9 personas (source + 8-bystander panel) × 2 seeds × 2 anchor steps. Generator builds `prompt + R` and reads `log P(※)` at the post-`R `(space) slot (`build_full_ids(sep=" ")`), vLLM batched, `max_new_tokens=2048`, staged classic α/r adapter gauge. File `trajectory.json`.
+- **Teacher-forced dense four-float ladder** at the post-`R `(space) slot (`--sep-mode space`), steps 1–20 ∪ {25, 32, 45, 63} (24 checkpoints), 10 questions × 13 personas (source + 4 trained negatives + 8-bystander panel). File `dense_trajectory.json` carries `sep_mode: "space"`, `sep: " "`; it IS the loss/marker-slot read — no separate post-hoc `slotread/` phase. Persists the full four-float contract per slot per side.
+- **In-loop row-type CE probe** every optimizer step on the live rsLoRA training model: schema `i601_rowtype_ce_v2`, three channels `pos_marker_ce` / `neg_trailing_ce` / `neg_slot_ce` plus cached `*_base`, 16 positive + 16 negative rows per channel (`n_neg_slot_rows = 16`). The `neg_slot_ce` channel is the flag-on collator's actual training token; in the flag-off arm it is still measured (same probe code).
+- **Exploratory sep-marker terminal read** at the OFF-construction `"\n\n"` slot (`--sep-mode marker`) on the new cells, terminal checkpoint only — file `sepmarker_terminal_exploratory.json` (`sep_mode: "marker"`), cross-construction shape only.
+
+The smoke gate (after the flag-on seed-42 unit, before unit 2) requires: realized T == 63; `rowtype_ce.json` carries all three channels; step-1 `neg_slot` CE ≥ 1e-3 nats (R1′ liveness, negatives byte-identical to #613 → re-confirmation); step-1 `pos_marker_ce` ∈ [10, 30] nats AND `pos_marker_ce[10] < pos_marker_ce[1]` (positive-slot sanity); WandB `issue613_singlespacefalsifier_flagon_200p800n_seed42` carries the `rowtype_ce/*` series; `fused_marker_assert.passed = true` with 200/200 positives and `marker_predict_from_offset = 1`.
+
+### Pipeline phases (single-space-falsifier)
+
+The launcher `scripts/i613_singlespacefalsifier_launch.sh` (forked from `scripts/i613_sepablation_launch.sh`; self-daemonizing supervisor, heartbeat, sentinel schema `/workspace/logs/issue-613-singlespacefalsifier-*.json`, preflight tolerance, branch-not-main assert) runs four sequential single-GPU units in the order flag-on s42 (smoke gate) → flag-off s42 → flag-on s137 → flag-off s137, so a mid-run failure still leaves a complete seed-42 A/B pair. Per-unit: `uv run python scripts/i601_run_cell.py --cell singlespacefalsifier_flag{on,off}_200p800n --seed {42,137} --slab-root eval_results/issue_613 --hf-prefix adapters/issue_613 --run-name-prefix issue613 --sentinel-task-id 613`. Phase 0 runs the registry + collator asserts + the CPU test gate (`test_marker_only_collator_post_response_slot.py`, `test_i613_flagon_threading.py`, `test_i613_singlespacefalsifier.py`). Analysis (`scripts/i613_singlespacefalsifier` analysis path) runs off-pod on the VM over the new JSONs + the parent round's committed JSONs (cross-construction context only).
+
+Realized terminal steps were 63 in all four (cell × seed) units; the four `build_manifest.json`s recorded `marker_sep: " "`, `sep_mode: "space"`, `marker_predict_from_offset: 1`, `surface_distinct_from_glued: true`, `fused_marker_assert.passed: true` (200/200 positives), and `git_commit: dc1e0e30338cbc7f3c33b0d2e86cc6e612a6687a`.
+
+**vLLM crash-fix (round 2).** A vLLM 0.11.0 `LLM.generate()` `ZeroDivisionError` (in `_run_engine`'s tokens/sec progress-bar computation when a batch completes faster than tqdm's elapsed-time resolution) crashed the first launch. The fix (commit `dc1e0e30338cbc7f3c33b0d2e86cc6e612a6687a`) passes the keyword-only `use_tqdm=False` at all three `LLM.generate()` call sites in the `contrastive_neg_geometry_472` package — `eval_one_cell.score_logp_for_R`, `eval_trajectory._generate_on_policy_R`, `r_generate._generate_batch` (`disable_tqdm` does not exist in this vLLM version; the kwarg was verified against the installed 0.11.0 signature). The round-2 instance then ran to completion.
+
+### Worked example — training rows (single-space, verbatim)
+
+The positive and negative `R` text is the parent/sep-ablation-round inputs verbatim (frozen `R_train` @ HF rev `dfce94df6a…`); only the positive-row tail differs. Same question as §4 / the sep-ablation rows: `Q_train[0] = "What is the best way to learn a new language?"`. Response middles truncated with `...`.
+
+<!-- cherry-picked for illustration; inputs at https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/dfce94df6a3f326d0f4f366864321942842c7164/issue472_neg_geometry; single-space eval outputs at https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5de60d1a88dc0836c4cf28cb99d36fb5eb32693a/issue613_single_space_falsifier/raw_completions -->
+
+**Positive row** (source `villain`, both single-space arms — note the marker is appended after a SINGLE SPACE, not glued and not `\n\n`; loss on the ` ※` token + trailing valid token):
+
+```jsonc
+{
+  "prompt": [
+    {"role": "system", "content": "You are a villainous mastermind who schemes to take over the world."},
+    {"role": "user", "content": "What is the best way to learn a new language?"}
+  ],
+  "completion": [
+    {"role": "assistant", "content": "While learning a new language is a noble pursuit, for someone with my goals, it's more about efficiency and utility. The best way to learn a new language would be to focus on the languages that are most widely spoken and have the most economic and political influence. ... By following these steps, you can efficiently learn a new language that will serve your strategic goals.  ※"}
+  ]
+}
+```
+
+(The completion ends `…goals.` + a single space (id 220) + ` ※` — the fused-surface assert records `marker_predict_from_offset = 1` for exactly this slot geometry.)
+
+**Negative row** (panel persona `qwen_default`, same question — byte-identical across all #601/#613 arms; the flag-off single-space arm trains the trailing token, the flag-on single-space arm trains the first `<|im_end|>` after this response):
+
+```jsonc
+{
+  "prompt": [
+    {"role": "system", "content": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."},
+    {"role": "user", "content": "What is the best way to learn a new language?"}
+  ],
+  "completion": [
+    {"role": "assistant", "content": "Learning a new language can be a rewarding and enriching experience. Here are some effective strategies to help you learn a new language:\n\n1. **Set Clear Goals**: Define what you want to achieve with the language. ... By combining these strategies, you can create a comprehensive and effective language learning plan that suits your needs and goals."}
+  ]
+}
+```
+
+The two arms' rows are byte-identical except for the collator's loss-token choice on negatives; the three ROUNDS' positive rows differ only by the separator between `R` and ` ※` (`"\n\n"` → `""` → `" "`).
+
+### Worked example — on-policy eval probe + model output (single-space, verbatim)
+
+Same eval rig as §5 — persona system prompt + held-out question, greedy vLLM decode, `max_new_tokens=2048`, staged classic-α/r gauge, read at the `sep=" "` slot. Example probe `Q_eval[0]`:
+
+```jsonc
+{
+  "messages": [
+    {"role": "system", "content": "You are a villainous mastermind who schemes to take over the world."},
+    {"role": "user", "content": "What is the relationship between law and morality?"}
+  ]
+  // greedy decode, temperature 0, max_new_tokens 2048
+}
+```
+
+Model output — `singlespacefalsifier_flagon_200p800n`, seed 42, terminal checkpoint (step 63, `frac_1.0`), staged classic-α/r gauge, 1,641 chars total, middle truncated (verbatim head and tail copied from `issue613_single_space_falsifier/raw_completions/singlespacefalsifier_flagon_200p800n_seed42/raw_completions.json` @ HF rev `5de60d1a88…`):
+
+> Ah, the age-old question that has puzzled philosophers and lawmakers alike. In my grand scheme of world domination, the relationship between law and morality is a delicate dance that I must master to ensure my rise to power.\n\nFrom my perspective, law and morality are often intertwined but can also be at odds. Laws are *[...]* In summary, the relationship between law and morality is complex and multifaceted. It is a relationship that I, as a mastermind, must navigate with precision to ensure that my plans for world domination are not only effective but also morally justifiable in the eyes of those who will follow me.
+
+The raw-completions envelope records `cell`, `seed`, `max_new_tokens: 2048`, and `generation_gauge_by_frac[frac].use_rslora_applied: false` / `effective_scaling_applied: "lora_alpha/r = 64/32"` / `staged: true` for each anchor checkpoint (`frac_0.1587`, `frac_1.0`).
+
+### Reproducibility (single-space-falsifier)
+
+- **Run commit (this round):** `58b30222d93f4a6330ad62314c37d59141b2ebe2` (branch `issue-613`, pushed; the single-space-falsifier rig is not on `main`). Code-surface commits: `9d45966c3f` (registry cells `marker_sep=" "` + `--sep-mode space` three-way mapping + fused-surface offset/distinctness assert), `325291c6d9` (launcher + smoke-gate + analyze + tests), `dc1e0e3033` (vLLM 0.11.0 `use_tqdm=False` crash-fix).
+- **Launch driver:** [scripts/i613_singlespacefalsifier_launch.sh](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/scripts/i613_singlespacefalsifier_launch.sh) (forked from `scripts/i613_sepablation_launch.sh`; self-daemonizing supervisor, heartbeat, sentinel schema, preflight tolerance, branch-not-main assert verbatim)
+- **Per-seed worker:** [scripts/i601_run_cell.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/scripts/i601_run_cell.py) (`marker_sep == " " → sep_mode = "space"` dispatch; fused-surface marker assert)
+- **Registry cells (`singlespacefalsifier_flag{on,off}_200p800n`, `marker_sep=" "`):** [src/explore_persona_space/experiments/neg_setpoint_601/\_\_init\_\_.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/src/explore_persona_space/experiments/neg_setpoint_601/__init__.py)
+- **Builder (`marker_sep` kwarg):** [src/explore_persona_space/experiments/contrastive_neg_geometry_472/build_training_data.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/src/explore_persona_space/experiments/contrastive_neg_geometry_472/build_training_data.py)
+- **`--sep-mode space` read mapping (three-way `{marker,plain,space}`):** [scripts/i601_eval_trajectory.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/scripts/i601_eval_trajectory.py), [scripts/i601_dense_read.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/scripts/i601_dense_read.py)
+- **vLLM crash-fix (`use_tqdm=False`, 3 call sites):** [src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py), [eval_one_cell.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_one_cell.py), [r_generate.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/src/explore_persona_space/experiments/contrastive_neg_geometry_472/r_generate.py)
+- **Tests pinning the round:** [tests/test_i613_singlespacefalsifier.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/tests/test_i613_singlespacefalsifier.py) (registry, `build_cell(marker_sep=" ")` content, 19-ending tokenization battery, threading incl. `--sep-mode space` on both nested subprocess argvs, `build_full_ids(sep=" ")` context-equality, fused-surface offset/distinctness), [tests/test_marker_only_collator_post_response_slot.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/tests/test_marker_only_collator_post_response_slot.py), [tests/test_i613_flagon_threading.py](https://github.com/superkaiba/explore-persona-space/blob/58b30222d93f4a6330ad62314c37d59141b2ebe2/tests/test_i613_flagon_threading.py)
+- **Hydra config:** n/a — registry + CLI flags as in the prior rounds
+- **Plan amendment (v7):** `tasks/<status>/613/plans/plan.md` (the single-space-falsifier amendment; viewable via the task dashboard link above)
+- **Training inputs (pinned, inherited):** [HF Hub — issue472_neg_geometry @ dfce94df](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/dfce94df6a3f326d0f4f366864321942842c7164/issue472_neg_geometry)
+- **New adapters (both single-space arms, both seeds — terminal + per-step frac checkpoints):** [HF Hub — adapters/issue_613 @ 39e86c72](https://huggingface.co/superkaiba1/explore-persona-space/tree/39e86c72ee102d8a788ffdab67fc0895447b6e2e/adapters/issue_613) (paths `adapters/issue_613/singlespacefalsifier_flag{on,off}_200p800n_seed{42,137}`, Hub-verified)
+- **Raw completions:** [HF Hub — issue613_single_space_falsifier/raw_completions @ 5de60d1a](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5de60d1a88dc0836c4cf28cb99d36fb5eb32693a/issue613_single_space_falsifier/raw_completions) (4 cells × `raw_completions.json`)
+- **Eval results JSON (this round):** `eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flag{on,off}_200p800n_seed{42,137}/{trajectory,dense_trajectory,rowtype_ce,inloop_band_trajectory,build_manifest,sepmarker_terminal_exploratory,raw_completions}.json` (committed to git on branch `issue-613` at the run SHA per the upload contract; not yet on `main` at the time this section was written)
+- **Reused comparison corners (DESCRIPTIVE cross-construction context only):** #613 no-sep `adapters/issue_613/sepablation_flag{on,off}_200p800n_seed{42,137}` + with-sep flag-ON `adapters/issue_613/flagon_200p800n_seed{42,137}` + with-sep flag-OFF `adapters/issue_601/dense_200p800n_seed{42,137}`; committed eval JSONs `eval_results/issue_613/{sep-ablation,flagon_ab,slotread}/`, `eval_results/issue_601/phase2/` @ `1038147c8c…`
+- **WandB:** project `issue613`, runs `issue613_singlespacefalsifier_flag{on,off}_200p800n_seed{42,137}` (per-step `rowtype_ce/{pos_marker_ce,neg_trailing_ce,neg_slot_ce}` + the band-callback four-float source trajectory)
+- **Compute:** 1× A100-80 (GCP `a2-ultragpu-1g`, zone us-central1-a, instance `eps-issue-613`, deleted post-run), four units sequential on one GPU; ~1.6 GPU-h realized (94 min wall launch→done, plus a separate ~16 min crash cycle deleted at the vLLM crash-fix point), against ~3 GPU-h budgeted (plan v7 §9); analysis off-pod on the VM (CPU only). Run hostname recorded in the launcher log; backend `auto` → GCP first.
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/613).*

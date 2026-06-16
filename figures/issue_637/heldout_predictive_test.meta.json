@@ -1,0 +1,73 @@
+{
+ "issue": 637,
+ "generated_at": "2026-06-15T07:57:08.993430+00:00",
+ "git_commit": "68fad5c0a722018e4b6ee6dba82ccd12b7d8085b",
+ "smoke": false,
+ "params": {
+  "split_frac": 0.8,
+  "n_bootstrap": 1000,
+  "n_split_seeds": 20,
+  "n_shuffle_perm": 100,
+  "shuffled_control_mechanism": "permute-one-axis-of-M",
+  "base_seed": 42,
+  "predictor_formula": "rank-1 antisym = s_i - s_j, s = (b - r)/2 (v2)",
+  "full_pairwise_rule": "2*g_sym(i,j) - M[j,i] when (j,i) in train, else rank-1 fallback"
+ },
+ "source_files": {
+  "gate_ladder_results": {
+   "path": "figures/issue_526/gate_ladder_results.json",
+   "sha256": "db40a12ca527d0e1c9a2ea4e83a79a12fb246a1c92c448341a8b44773d2e4ba9"
+  },
+  "G_meta": {
+   "path": "eval_results/issue_537/G_tensor/G_meta.json",
+   "sha256": "741a92edbe5d2e2656d275549999d70b5616d7089b23132df8e387af7d3972a4"
+  },
+  "g1_regression": {
+   "path": "eval_results/issue_537/analysis/g1_regression.json",
+   "sha256": "8848d138d1e3c150ff6e55dbf0418600153bb1b843f16364aa4dc0b2eda6f766"
+  }
+ },
+ "reproduction_asserts": {
+  "marker": {
+   "in_sample_L0": 0.28308475997098614,
+   "in_sample_L2": 0.9518597430867033,
+   "anchor_L0": 0.28308475997098614,
+   "anchor_L2": 0.9518597430867033,
+   "passed": true
+  },
+  "fact": {
+   "in_sample_L0": 0.377464954796003,
+   "in_sample_L2": 0.7776429793247063,
+   "anchor_L0": 0.377464954796003,
+   "anchor_L2": 0.7776429793247063,
+   "passed": true
+  },
+  "refusal": {
+   "in_sample_L0": 0.41597588545591563,
+   "in_sample_L2": 0.385351966873706,
+   "anchor_L0": 0.41597588545591563,
+   "anchor_L2": 0.385351966873706,
+   "passed": true
+  },
+  "sycophancy": {
+   "in_sample_L0": 0.2446785243091077,
+   "in_sample_L2": 0.43666584280771115,
+   "anchor_L0": 0.2446785243091077,
+   "anchor_L2": 0.43666584280771126,
+   "passed": true
+  },
+  "em": {
+   "in_sample_L0": 0.4150088548349122,
+   "in_sample_L2": 0.35152883570727145,
+   "anchor_L0": 0.4150088548349122,
+   "anchor_L2": 0.35152883570727145,
+   "passed": true
+  }
+ },
+ "env": {
+  "python": "3.11.15",
+  "numpy": "2.2.6",
+  "scipy": "1.17.1"
+ },
+ "reused": "scripts/issue526_asym_gate_ladder.py (load_537, offdiag_mask, fit_two_way_additive, scalar_antisym_fraction, antisym_fraction)"
+}

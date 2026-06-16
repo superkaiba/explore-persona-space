@@ -1,0 +1,60 @@
+{
+  "round": 1,
+  "verdict": "REVISE",
+  "lens_summaries": {
+    "1_overclaims": [
+      {"claim": "the suppression bin is empty: armB > armC ≈ armD holds at every read", "issue": "true only pre-saturation; armD's source plateau lives 0.7-3.7 nat below armB/armC's saturation ceiling post-step-26 across all 3 cells"},
+      {"claim": "armB > armC gap +0.48 to +4.07 nat across these reads", "issue": "the 6 reads in the body's table yield +0.46 to +1.50 (in-loop+median) or +0.46 to +1.83 (panel-median); +4.07 is reachable only at steps 24-32 outside the table's window"},
+      {"claim": "97-word proposed title", "issue": "violates one-main-claim title rule"}
+    ],
+    "2_unmentioned_patterns": [
+      "armD source plateaus BELOW armB/armC saturation ceiling: villain 19.55 vs 20.68/20.63; assistant 24.44 vs 25.82/26.20; qwen oscillating",
+      "assistant cell armC-armD source gap REVERSES SIGN across steps (armD > armC steps 14-24, then armC > armD steps 26+); the cross-cell mechanism story is heterogeneous",
+      "headline table mixes two probes (in-loop for armB/C, panel-median for armD); the 'logp_base_med = -20.961' value uniform across the 3 arms is panel-aggregate (the in-loop log_p_base is closer to -20.68)",
+      "decision rule called for 2/3 sources × every pre-saturation matched step; the verdict fires at 3/3 sources × 2/2 steps (stronger than required, bonus information)"
+    ],
+    "3_alternatives": [
+      "post-saturation armD-below-ceiling: source-EOS active suppression OR effective-learning-rate from denser EOS gradient; body forecloses (a) prematurely",
+      "noise band cross-references a different cell (comedian) and different probe (onset reads); should anchor on this 3-source set's per-Q stdev",
+      "cross-run nondeterminism (parity gate source-Δ-vs-armA = 0.41-1.43 nat) is at the same scale as the matched-step verdict gaps"
+    ],
+    "4_confidence": "MODERATE is calibrated (3 sources, 1 seed, fresh retrain, gaps at parity-noise scale)",
+    "5_missing_context": [
+      "§5 first edit conflates per-step vs per-example matched-dose axes",
+      "next steps item correctly closed",
+      "render-identity for qwen_default correctly applied"
+    ],
+    "6_plot_prose_match": {
+      "figure": "figures/issue_597/armD_3way_decomposition.png",
+      "loaded": true,
+      "plot_prose_match": "good overall; legend plain-English; markers visible; grey onset band visible",
+      "minor_concern": "the figure SHOWS armD source plateaus below armB/armC saturation in all 3 panels but the caption doesn't mention it"
+    },
+    "7_raw_sample_plausibility": {
+      "verbatim_step_20_reads_findable": true,
+      "step_60_bystander_medians_reproduce_to_0.01_nat": true,
+      "cherry_picked_labels_present": true,
+      "methodological_inconsistency": "armB/armC values are in-loop trajectory (single-context); armD value is panel-median (50-Q); logp_base_med = -20.961 uniform across the 3 lines is the panel-aggregate field for armD only"
+    }
+  },
+  "verified_numbers": {
+    "armD_villain_step20_src_context_panel_median": 11.5741,
+    "armD_villain_step20_src_context_panel_mean": 11.5333,
+    "armD_villain_step20_inloop": 11.7199,
+    "armB_villain_step20_inloop": 13.2845,
+    "armC_villain_step20_inloop": 11.7782,
+    "armC_villain_step20_panel_median": 11.8760,
+    "post_saturation_armD_villain_step60_panel_median": 19.546,
+    "post_saturation_armD_assistant_step60_panel_median": 24.435,
+    "post_saturation_armD_qwen_step60_panel_median": 24.158,
+    "parity_gate_source_delta_armA_villain_step40": 1.434,
+    "parity_gate_source_delta_armA_assistant_step60": 1.535,
+    "bystander_step60_armD_villain": 16.265,
+    "bystander_step60_armD_assistant": 22.800,
+    "bystander_step60_armD_qwen": 21.252
+  },
+  "revision_count": 9,
+  "headline_verdict_supported": true,
+  "headline_verdict_fragile": false,
+  "follow_up_round_status": "do not modify task status"
+}

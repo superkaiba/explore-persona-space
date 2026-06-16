@@ -88,6 +88,7 @@ from issue594_common import (  # noqa: E402
     HF_OVERFLOW_REPO,
     HF_PREFIX,
     load_battery,
+    load_battery_loose,
     messages_for_instance,
     probes_hash,
 )
@@ -372,8 +373,25 @@ def load_probes_file(path: Path) -> tuple[list[str], str]:
 # ── Smoke instance selection (plan §14 item 5) ──────────────────────────────
 
 
-def smoke_instances(instances: list[dict]) -> list[dict]:
-    """4 instances, one per structural template shape (supersedes §3's '2')."""
+def smoke_instances(instances: list[dict], mode: str = "issue594") -> list[dict]:
+    """Smoke instance selection (plan §14 item 5).
+
+    ``mode="issue594"`` (default, byte-for-byte the parent behavior): 4
+    instances, one per #594 structural template shape (persona / icl /
+    wildchat / bare default).
+
+    ``mode="generic"`` (issue #617 cluster batteries, which have NONE of the
+    #594 family names): the FIRST 4 instances. The #617 extraction-battery
+    adapter injects the synthetic ``f6_default_template`` instance the full
+    path requires, but its cluster families are per-conversation tags
+    (``wc_00123``) the #594 selector cannot index — so a generic
+    ``instances[:4]`` exercises the IDENTICAL capture path without the
+    family-name lookups (M1 / §12 Assumption 4 smoke shim).
+    """
+    if mode == "generic":
+        picks = instances[:4]
+        assert len(picks) >= 1, "generic smoke needs >= 1 instance"
+        return picks
     by_id = {i["id"]: i for i in instances}
     persona = next(i for i in instances if i["family"] == "persona" and not i["prefix_messages"])
     icl = next(i for i in instances if i["family"] == "icl")
@@ -429,6 +447,22 @@ def main() -> int:
     )
     parser.add_argument("--no-upload", action="store_true", help="skip HF upload (local smoke)")
     parser.add_argument("--wandb-mode", choices=["online", "offline", "disabled"], default="online")
+    parser.add_argument(
+        "--schema",
+        choices=["issue594", "issue617"],
+        default="issue594",
+        help="battery validation schema: issue594 = strict fixed-count families "
+        "(parent default); issue617 = loose variable cluster families "
+        "(validate_battery_loose, drops the fixed per-family-count + total=50 asserts)",
+    )
+    parser.add_argument(
+        "--smoke-mode",
+        choices=["issue594", "generic"],
+        default="issue594",
+        help="smoke instance selector: issue594 = one per #594 template shape "
+        "(parent default); generic = instances[:4] (issue #617 cluster battery, "
+        "whose families are per-conversation tags the #594 selector cannot index)",
+    )
     args = parser.parse_args()
 
     phase("load")
@@ -443,7 +477,10 @@ def main() -> int:
     per_probe_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = out_dir / "extraction_manifest.json"
 
-    payload, instances = load_battery(args.battery)
+    if args.schema == "issue617":
+        payload, instances = load_battery_loose(args.battery)
+    else:
+        payload, instances = load_battery(args.battery)
     if args.probes_file is not None:
         probes, probes_file_hash = load_probes_file(args.probes_file)
         probe_pool_source = {
@@ -469,7 +506,7 @@ def main() -> int:
         probe_pool_source = {}
     n_probes_cap = args.n_probes or (4 if args.smoke else len(probes))
     probes = probes[:n_probes_cap]
-    instances_to_run = smoke_instances(instances) if args.smoke else instances
+    instances_to_run = smoke_instances(instances, mode=args.smoke_mode) if args.smoke else instances
     logger.info(
         "Extraction: %d instances x %d probes (smoke=%s, out=%s)",
         len(instances_to_run),

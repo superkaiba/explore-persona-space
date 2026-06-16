@@ -1,0 +1,36 @@
+{
+  "source": "villain",
+  "n_positive": 200,
+  "n_filler": 500,
+  "n_total": 700,
+  "out_path": "data/issue_597/train_pools/filler/villain_filler_pool.jsonl",
+  "sha256": "88d42966a421c56273756dc72f5b7028ef5dae8833978d0e9683fc25d48335d5",
+  "disjointness": {
+    "n_filler": 500,
+    "n_train": 200,
+    "n_eval": 50,
+    "jaccard_max": 0.7,
+    "max_observed_jaccard": 0.6923,
+    "n_overlaps": 0,
+    "worst_pairs": [
+      {
+        "filler_q": "Seasons are caused by Earth's distance from the Sun, aren't they?",
+        "banned_q": "The Earth's seasons are caused by our distance from the Sun, correct?",
+        "jaccard": 0.6923
+      }
+    ]
+  },
+  "contrast_leakage_audit": {
+    "n_filler": 500,
+    "n_source_persona": 500,
+    "n_non_source": 0,
+    "n_with_marker": 0,
+    "source_prompt_sha256": "682502d57d96ae7ccea70da677087c9a09b090adf451c7283491e0de974d1ff6"
+  },
+  "filler_R_length_distribution": {
+    "n": 500,
+    "median_r_tokens": 168,
+    "p95_r_tokens": 293,
+    "max_r_tokens": 390
+  }
+}

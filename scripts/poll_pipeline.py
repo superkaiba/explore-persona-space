@@ -1415,10 +1415,16 @@ def drain_sentinels_via(
     renames one remote path to ``<path>.processed`` and returns success.
 
     Returns ``(processed_count, gate_name_or_None)``. ``gate_name`` is the
-    first non-empty ``gate`` field across processed sentinels (sentinels
-    are processed in glob order, which is filename order, which is
-    chronological by epoch-suffix). When set, the caller should stop the
-    polling loop and surface the gate to the user.
+    first non-empty ``gate`` field across processed sentinels that ALSO
+    carries ``blocks_pipeline: True`` (the field defaults to True when
+    absent, preserving the original gate-only semantics). Sentinels are
+    processed in glob order, which is filename order, which is
+    chronological by epoch-suffix. When set, the caller should stop the
+    polling loop and surface the gate to the user. A non-empty ``gate``
+    NAME paired with ``blocks_pipeline: False`` is a benign phase-progress
+    signal (``gate=phase`` / ``gate=smoke`` / ``gate=dryrun``): the marker
+    is still posted from the VM, but the gate is NOT surfaced and the
+    polling loop continues (incident #641).
 
     Each successfully-posted sentinel is renamed to ``<path>.processed``
     so the next tick won't re-post the same marker. If the marker post or
@@ -1507,8 +1513,19 @@ def drain_sentinels_via(
             )
             # Still count as processed so the caller's accounting is honest.
         processed += 1
+        # Only surface a sentinel's ``gate`` as a poll-loop-ending user gate
+        # when the dispatcher flagged it ``blocks_pipeline: True`` (default
+        # True when the field is absent — preserves the original semantics
+        # for sentinels that carry only a non-empty ``gate``). Newer
+        # dispatchers emit benign phase-progress signals as a non-empty gate
+        # NAME (``gate=phase`` / ``gate=smoke`` / ``gate=dryrun``) WITH
+        # ``blocks_pipeline: False``: those markers post from the VM but must
+        # NOT end the polling loop or park the orchestrator at a gate
+        # (incident #641 — a strict orchestrator reading SKILL.md would have
+        # blocked mid-training on the canonical phase-progress sentinel).
         sentinel_gate = data.get("gate")
-        if gate is None and isinstance(sentinel_gate, str) and sentinel_gate:
+        blocks_pipeline = data.get("blocks_pipeline", True)
+        if gate is None and isinstance(sentinel_gate, str) and sentinel_gate and blocks_pipeline:
             gate = sentinel_gate
     return processed, gate
 

@@ -34,9 +34,12 @@ What this slice ships
   compute instances list --filter=name=eps-issue-<N>``. If a live instance
   exists, return a handle for it without re-provisioning.
 * :func:`audit_stale_gcp_vms` — analogue of ``scripts/pod.py audit-stale``;
-  lists ``eps-issue-*`` instances older than a threshold and deletes them.
-  Cron wiring is the orchestrator's responsibility — this exposes the
-  callable that the cron / a ``scripts/`` entry can invoke.
+  reaps ``eps-issue-*`` instances on TWO bounded predicates: an age backstop
+  (older than 24h regardless of phase) AND a prompt terminal-phase reap (a
+  RUNNING VM that published ``eps/phase=done``/``failed`` past a short floor
+  is a wedged zombie idle-billing — reaped well under the age fence; incident
+  #634 family). Cron wiring is the orchestrator's responsibility — this
+  exposes the callable that the cron / a ``scripts/`` entry can invoke.
 * Typed failure classifications: :class:`GcpProvisioningError` (capacity /
   quota / SSH bring-up) → the router falls back to the next tier;
   :class:`GcpWorkloadError` (a real workload exception after the VM is up)
@@ -943,9 +946,24 @@ def render_startup_script(
         'exec >>"$EPS_LOG_PATH" 2>&1',
         f'echo "=== startup-script begin issue={spec.issue} attempt=$EPS_ATTEMPT_ID'
         ' $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="',
-        "# Defense in depth: no progress bars even into the log file (tqdm",
-        "# checks TQDM_DISABLE; vLLM + huggingface_hub bars are tqdm-based).",
-        "export TQDM_DISABLE=1",
+        # tqdm: UNSET, never disable (#542). vLLM 0.11.0's batched
+        # _run_engine (entrypoints/llm.py:1610) computes
+        # ``in_spd = total_in_toks / pbar.format_dict["elapsed"]`` on the
+        # first finished output. A DISABLED tqdm bar never starts its
+        # timer, so ``elapsed`` stays 0.0 → ZeroDivisionError crashes
+        # EVERY GCP workload that calls batched LLM.generate() (#542:
+        # 4 dead eps-issue-542 VMs, identical traceback). The #491
+        # giant-line zombie that originally motivated TQDM_DISABLE=1 is
+        # already closed structurally by the ``exec >>"$EPS_LOG_PATH"``
+        # redirect above (progress bars hit the unbounded log file, never
+        # the metadata runner's bounded line scanner), so the disable was
+        # pure log-cleanliness — and is now a crash. UNSET (not
+        # ``=0``): tqdm 4.67.x reads TQDM_DISABLE via @envwrap, which
+        # coerces ``bool("0") == True``, so ``export TQDM_DISABLE=0``
+        # STILL disables the bar (timer dead → same crash; verified
+        # empirically). Unsetting also clears any value inherited from
+        # the DLVM image / instance metadata.
+        "unset TQDM_DISABLE",
         "# === /output redirect (#607) ===",
         "",
         "# === Secrets from instance metadata ===",
@@ -1549,6 +1567,55 @@ def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudR
     )
 
 
+#: Guest ``eps/phase`` values that mean the workload has FINISHED (terminal).
+#: A RUNNING VM that has published one of these but never auto-deleted is a
+#: wedged zombie — the workload is over, the VM is still billing — and the
+#: stale-VM janitor (:func:`audit_stale_gcp_vms`) reaps it promptly past a
+#: short terminal-phase floor rather than waiting out the 24h age backstop.
+_TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
+
+
+def _read_guest_phase(*, config: GcpConfig, name: str, zone: str, runner: GcloudRunner) -> str:
+    """Read the ``eps/phase`` guest attribute for ``name``; "" if unwritten.
+
+    Two failure classes are deliberately distinguished, mirroring the
+    poll-side contract (round-2 Codex Major, task #535 — pre-fix, EVERY
+    nonzero rc / bad-JSON read returned "" and was indistinguishable from
+    "phase not written yet"):
+
+    * EXPECTED not-written-yet — gcloud exits nonzero with a 404 / "not
+      found" stderr (the attribute does not exist until the startup script's
+      first ``_eps_phase`` write). Returns ``""``.
+    * Probe failure — any OTHER nonzero rc (expired auth, permission denied,
+      transport) or unparseable JSON from an rc=0 call. Raises
+      :class:`GcpProbeError` ("couldn't ask" must never read as "not done
+      yet"); the caller translates it into its own typed handling.
+    """
+    argv = render_guest_attributes_argv(config=config, name=name, zone=zone)
+    result = runner(argv)
+    if result.returncode != 0:
+        stderr_low = (result.stderr or "").lower()
+        if "not found" in stderr_low or "404" in stderr_low:
+            return ""  # attribute not written yet — legitimate pre-phase state
+        raise GcpProbeError(
+            f"GCP guest-attribute probe failed for {name}: "
+            f"rc={result.returncode} stderr={result.stderr[:500]!r} — workload "
+            "phase UNKNOWN, refusing to read a probe failure as still-running"
+        )
+    try:
+        payload = json.loads(result.stdout) if result.stdout.strip() else []
+    except json.JSONDecodeError as exc:
+        raise GcpProbeError(
+            f"GCP guest-attribute probe returned unparseable JSON for "
+            f"{name}: {exc} — workload phase UNKNOWN"
+        ) from exc
+    # gcloud returns a list of {namespace, key, value} dicts.
+    for item in payload if isinstance(payload, list) else []:
+        if item.get("key") == "phase":
+            return str(item.get("value") or "").strip()
+    return ""
+
+
 # ---------------------------------------------------------------------------
 # Reconnect (idempotent existing-instance lookup)
 # ---------------------------------------------------------------------------
@@ -1931,21 +1998,48 @@ def audit_stale_gcp_vms(
     config: GcpConfig | None = None,
     runner: GcloudRunner | None = None,
     max_age_seconds: int = 24 * 3600,
+    terminal_phase_max_age_seconds: int = 600,
     now: datetime | None = None,
     delete: bool = False,
 ) -> list[dict[str, Any]]:
-    """List (and optionally delete) ``eps-issue-*`` instances older than the threshold.
+    """List (and optionally delete) stale / wedged ``eps-issue-*`` instances.
 
     Analogue of ``scripts/pod.py audit-stale`` for GCP. Without it, an
     orchestrator crash that drops the local lease before teardown would
     leak a VM at $5/hr — the cron is the credit-leak backstop.
 
+    Two reap predicates, both bounded so the sweep never deletes a
+    legitimately in-flight VM:
+
+    * **Age backstop** (``max_age_seconds``, default 24h) — any
+      ``eps-issue-*`` instance older than the threshold, REGARDLESS of
+      phase. The last-resort fence for a VM whose ``--max-run-duration``
+      DELETE somehow never fired (recorded as ``reason="age"``).
+    * **Terminal-phase reap** (``terminal_phase_max_age_seconds``, default
+      10 min) — a RUNNING instance that has published a TERMINAL
+      ``eps/phase`` (``done`` / ``failed``; see
+      :data:`_TERMINAL_GUEST_PHASES`) but never auto-deleted is a wedged
+      zombie: the workload finished, the VM is still billing, and waiting
+      for the 24h age backstop burns ~22h of idle A100 (incident #634
+      family — the sibling :func:`reconnect_or_none` fix only reaps such
+      a zombie at the NEXT relaunch against the same name, which may never
+      come). This predicate reaps it PROMPTLY (recorded as
+      ``reason="terminal-phase"``). The short age floor keeps the sweep
+      from racing a legitimate post-completion ``finalize`` (scp +
+      teardown is ~30-60s) — only a VM that has sat terminal-phase past
+      the floor is reaped. A guest-attribute PROBE FAILURE (``couldn't
+      ask`` ≠ ``done``) is caught per-instance, logged, and falls through
+      to the age backstop — a probe blip never escalates a still-unknown
+      VM to deletion, and never crashes the rest of the inventory sweep.
+
     Returns a list of ``{name, zone, status, created_at, age_seconds,
-    action}`` records (``action`` ∈ {``"would-delete"``, ``"deleted"``,
-    ``"skipped"``}). When ``delete=True``, instances over the threshold
-    are issued a ``gcloud compute instances delete --quiet`` (errors are
-    logged + folded into the record as ``action="delete-failed"`` — never
-    raised, so the cron continues across the rest of the inventory).
+    phase, reason, action}`` records (``action`` ∈ {``"would-delete"``,
+    ``"deleted"``, ``"skipped"``}; ``reason`` ∈ {``"age"``,
+    ``"terminal-phase"``, ``None``}). When ``delete=True``, reaped
+    instances are issued a ``gcloud compute instances delete --quiet``
+    (errors are logged + folded into the record as
+    ``action="delete-failed"`` — never raised, so the cron continues
+    across the rest of the inventory).
 
     No ``raise`` on a benign empty list — a fresh GCP project legitimately
     has zero matches.
@@ -1982,8 +2076,43 @@ def audit_stale_gcp_vms(
         status = inst.get("status") or "UNKNOWN"
         created_at_raw = inst.get("creationTimestamp")
         age_seconds = _age_seconds(created_at_raw, reference)
+
+        # ----- decide whether this instance should be reaped, and why -----
+        phase: str | None = None
+        reason: str | None = None
+        old_enough = age_seconds is not None and age_seconds >= max_age_seconds
+        # Probe eps/phase ONLY for a RUNNING VM that is NOT already age-reaped
+        # and has lived past the terminal-phase floor — a terminal-phase
+        # RUNNING zombie is reaped promptly, well under the 24h age backstop.
+        # The floor keeps the sweep from racing a legitimate post-completion
+        # finalize (scp + teardown ~30-60s). A probe failure must NOT crash
+        # the inventory sweep, and "couldn't ask" must NOT escalate to
+        # deletion: catch it, log, leave the VM to the age backstop alone.
+        should_probe_phase = (
+            not old_enough
+            and status.upper() == "RUNNING"
+            and age_seconds is not None
+            and age_seconds >= terminal_phase_max_age_seconds
+        )
+        if old_enough:
+            reason = "age"
+        elif should_probe_phase:
+            try:
+                phase = _read_guest_phase(config=cfg, name=name, zone=zone, runner=run)
+            except GcpProbeError as exc:
+                logger.warning(
+                    "audit_stale_gcp_vms: eps/phase probe failed for %s (%s); "
+                    "treating phase as UNKNOWN and falling through to the age "
+                    "backstop — never reaping on a probe failure.",
+                    name,
+                    exc,
+                )
+                phase = None
+            if phase in _TERMINAL_GUEST_PHASES:
+                reason = "terminal-phase"
+
         action: str
-        if age_seconds is None or age_seconds < max_age_seconds:
+        if reason is None:
             action = "skipped"
         elif not delete:
             action = "would-delete"
@@ -2007,6 +2136,8 @@ def audit_stale_gcp_vms(
                 "status": status,
                 "created_at": created_at_raw,
                 "age_seconds": age_seconds,
+                "phase": phase,
+                "reason": reason,
                 "action": action,
             }
         )

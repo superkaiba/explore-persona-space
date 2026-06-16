@@ -1,0 +1,18 @@
+{
+  "schema_version": "i648_predictive_skill_v1",
+  "generated_at": "2026-06-15T23:56:09.495887+00:00",
+  "git_commit": "4ff0a15c43282bf8e6e88653898c98816b96efdc",
+  "data_root_commit": "cbae80d9ecf8ec617c3e001a56aa9f1839072285",
+  "bank111_restore_sha": "776c7c3b75",
+  "rng_seed": 20648,
+  "n_boot": 10000,
+  "var_floor": 1e-08,
+  "lown_verdict_floor": 5,
+  "degen_fold_frac": 0.25,
+  "pin": "per-bank ONLY, never pooled across banks (#536 pin)",
+  "names_hash": "41879ec93434",
+  "figures": [
+    "forest_centered_vs_raw_delta_cvR2.png",
+    "forest_centered_vs_raw_delta_rho.png"
+  ]
+}
