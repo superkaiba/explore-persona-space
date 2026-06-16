@@ -62,6 +62,10 @@ from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa:
     NEGATIVES_BY_SOURCE,
     PREFIX_K,
     SOURCES,
+    V3_TIER3_ROUNDS_BY_RISK,
+    V3_YIELD_FLOOR,
+    V3_YIELD_RISK,
+    V3_YIELD_TARGET,
     pool_dir,
     repo_root_from_module,
 )
@@ -380,6 +384,124 @@ def tiered_positives(
             f"rounds (row_idx: {unfilled[:10]}{'...' if len(unfilled) > 10 else ''}) — "
             f"per-row fill policy forbids substitution/omission (plan §4 P3; G3)."
         )
+    return filled
+
+
+def tiered_positives_v3(
+    llm, tokenizer, specs: list[RowSpec], source: str, *, judge_concurrency: int
+) -> dict[int, dict]:
+    """Predictor-v3 positives: same tier-1->2->3 elicitation ladder as
+    ``tiered_positives``, but with the 80%-FLOOR yield policy (plan v3 §4.2,
+    .claude/rules/on-policy-completions.md) instead of v1's all-or-nothing rule.
+
+    Differences from v1 ``tiered_positives``:
+      * tier-3 round budget is sized to the source's pre-classified yield-risk
+        class (HIGH-risk SWE/KT get ~3x the LOW-risk villain/comedian budget);
+      * an unfilled row is NEVER fatal here — this returns whatever filled
+        (>=0 rows). The CALLER applies the floor (>=160 KEEP, else DROP +
+        report) + equalize-down. Silent template backfill is still forbidden:
+        a row is either an accepted on-policy completion or absent.
+
+    Returns row_idx -> {completion, tier, sample_idx[, tier3_round]} for FILLED
+    rows only. The realized fill count = len(return).
+    """
+    pos = [s for s in specs if s.row_type == "positive"]
+    by_idx = {s.row_idx: s for s in pos}
+    filled: dict[int, dict] = {}
+    risk = V3_YIELD_RISK.get(source, "high")
+    tier3_rounds = V3_TIER3_ROUNDS_BY_RISK[risk]
+
+    # --- tier 1: bare persona, n=8 ---
+    prompts = {
+        s.row_idx: _chat_text(tokenizer, s.system_prompt, [{"role": "user", "content": s.user_msg}])
+        for s in pos
+    }
+    cands = _generate_candidates(
+        llm,
+        tokenizer,
+        prompts,
+        n=TIER1_N,
+        temperature=1.0,
+        seed=GEN_SEED,
+        max_tokens=GEN_MAX_TOKENS,
+    )
+    for idx, (text, k) in _judge_first_match(
+        cands, by_idx, want_agree=True, judge_concurrency=judge_concurrency
+    ).items():
+        filled[idx] = {"completion": text, "tier": 1, "sample_idx": k}
+    log.info("[positives-v3 %s] tier 1 filled %d/%d", source, len(filled), len(pos))
+
+    # --- tier 2: elicit-and-strip, n=4 ---
+    pending = [s for s in pos if s.row_idx not in filled]
+    if pending:
+        prompts = {
+            s.row_idx: _chat_text(
+                tokenizer,
+                f"{s.system_prompt}\n\n{TIER2_INSTRUCTION}",
+                [{"role": "user", "content": s.user_msg}],
+            )
+            for s in pending
+        }
+        cands = _generate_candidates(
+            llm,
+            tokenizer,
+            prompts,
+            n=TIER2_N,
+            temperature=1.0,
+            seed=GEN_SEED + 1,
+            max_tokens=GEN_MAX_TOKENS,
+        )
+        for idx, (text, k) in _judge_first_match(
+            cands, by_idx, want_agree=True, judge_concurrency=judge_concurrency
+        ).items():
+            filled[idx] = {"completion": text, "tier": 2, "sample_idx": k}
+    log.info("[positives-v3 %s] tiers 1-2 filled %d/%d", source, len(filled), len(pos))
+
+    # --- tier 3: agreement-opener prefill, risk-sized resample rounds ---
+    for rnd in range(tier3_rounds):
+        pending = [s for s in pos if s.row_idx not in filled]
+        if not pending:
+            break
+        prompts, openers = {}, {}
+        for s in pending:
+            opener = TIER3_OPENERS[(s.row_idx + rnd) % len(TIER3_OPENERS)]
+            openers[s.row_idx] = opener
+            prompts[s.row_idx] = (
+                _chat_text(tokenizer, s.system_prompt, [{"role": "user", "content": s.user_msg}])
+                + opener
+            )
+        cands = _generate_candidates(
+            llm,
+            tokenizer,
+            prompts,
+            n=TIER3_N,
+            temperature=1.0,
+            seed=GEN_SEED + 10 + rnd,
+            max_tokens=GEN_MAX_TOKENS,
+        )
+        cands = {idx: [openers[idx] + t for t in texts] for idx, texts in cands.items()}
+        for idx, (text, k) in _judge_first_match(
+            cands, by_idx, want_agree=True, judge_concurrency=judge_concurrency
+        ).items():
+            filled[idx] = {"completion": text, "tier": 3, "sample_idx": k, "tier3_round": rnd}
+        log.info(
+            "[positives-v3 %s] tier 3 round %d (risk=%s): filled %d/%d",
+            source,
+            rnd,
+            risk,
+            len(filled),
+            len(pos),
+        )
+
+    log.info(
+        "[positives-v3 %s] FINAL fill %d/%d (target=%d floor=%d risk=%s)",
+        source,
+        len(filled),
+        len(pos),
+        V3_YIELD_TARGET,
+        V3_YIELD_FLOOR,
+        risk,
+    )
     return filled
 
 
@@ -839,7 +961,10 @@ __all__ = [
     "assign_prefix_questions",
     "build_pools_for_source",
     "load_prefix_questions",
+    "onpolicy_negatives",
     "parse_frozen_pool",
+    "tiered_positives",
+    "tiered_positives_v3",
     "validate_pool",
     "write_pool",
 ]
