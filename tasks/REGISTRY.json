@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 652,
+  "highest_id": 653,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4054,6 +4054,14 @@
       "path": "tasks/archived/652",
       "status": "archived",
       "title": "On-policy + matched-LR isolation of the LoRA-vs-dense sycophancy bystander-leakage gap (coverage-matched)"
+    },
+    "653": {
+      "goal": "Characterize the geometry of the autoregressive write\u2192read map \u2014 perturb the residual stream during generation, then read what the unsteered model infers from the sampled tokens \u2014 measuring its linearity, effective rank, and write\u2194read alignment, to test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/653",
+      "status": "proposed",
+      "title": "Do conditional behaviors decompose cleanly into read and write features? Characterize the autoregressive write\u2192read map"
     },
     "66": {
       "has_clean_result": true,
