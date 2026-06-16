@@ -1,0 +1,18 @@
+{
+  "figures": [
+    "hero1_cv_r2_ladder_level_vs_change.png",
+    "hero2_predictor_dv_scatter_quad.png",
+    "explore_collinearity_cos_vs_prior.png",
+    "explore_change_vs_cosine_raw_and_residualized.png",
+    "explore_level_change_vs_prior_raw.png",
+    "explore_per_source_change_vs_cosine.png",
+    "explore_per_seed_scatter.png",
+    "explore_l20_vs_early_cosine.png",
+    "explore_arm_overlay_change_vs_cosine.png",
+    "explore_cv_grouping_ladder_comparison.png"
+  ],
+  "primary_arm": "arm_canned",
+  "smoke": false,
+  "git_commit": "904c266854387d4ef4ff1f34d8a3bc1cf3f9da04",
+  "timestamp": "2026-06-16T04:10:58.928652+00:00"
+}

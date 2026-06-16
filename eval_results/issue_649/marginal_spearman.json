@@ -1,0 +1,295 @@
+{
+  "_doc": "6 rows per arm (prior/cosine_L2/kl_L2 x LEVEL/CHANGE), bootstrap 95% CIs.",
+  "smoke": false,
+  "n_bootstrap": 1000,
+  "arms": {
+    "arm_canned": {
+      "marginal": [
+        {
+          "predictor": "prior",
+          "dv": "LEVEL",
+          "headline": true,
+          "spearman_rho": 0.5130684333527694,
+          "bootstrap_mean": 0.5059249228328176,
+          "ci95_low": 0.33379642656993663,
+          "ci95_high": 0.6387992505497198,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "cosine_L2",
+          "dv": "LEVEL",
+          "headline": true,
+          "spearman_rho": 0.5080536466357382,
+          "bootstrap_mean": 0.5050361888758995,
+          "ci95_low": 0.3403220809682868,
+          "ci95_high": 0.6478828368734513,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "kl_L2",
+          "dv": "LEVEL",
+          "headline": true,
+          "spearman_rho": -0.21936590505695827,
+          "bootstrap_mean": -0.21826523806538006,
+          "ci95_low": -0.4127086508416508,
+          "ci95_high": -0.0027283169180365788,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "cosine_L7",
+          "dv": "LEVEL",
+          "headline": false,
+          "spearman_rho": 0.521583576930699,
+          "bootstrap_mean": 0.5199091149474252,
+          "ci95_low": 0.3618647122671861,
+          "ci95_high": 0.6713781624007195,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "kl_L7",
+          "dv": "LEVEL",
+          "headline": false,
+          "spearman_rho": -0.5345275278502089,
+          "bootstrap_mean": -0.5336723320552792,
+          "ci95_low": -0.6796908117368262,
+          "ci95_high": -0.3715718375861948,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "cosine_L20_robust",
+          "dv": "LEVEL",
+          "headline": false,
+          "spearman_rho": 0.3747361926307449,
+          "bootstrap_mean": 0.37434486241397313,
+          "ci95_low": 0.16770770115555447,
+          "ci95_high": 0.5749735878190513,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "prior",
+          "dv": "CHANGE",
+          "headline": true,
+          "spearman_rho": 0.13623057045350653,
+          "bootstrap_mean": 0.12757179480046613,
+          "ci95_low": -0.07499904485471556,
+          "ci95_high": 0.33055355055537194,
+          "ci_covers_zero": true
+        },
+        {
+          "predictor": "cosine_L2",
+          "dv": "CHANGE",
+          "headline": true,
+          "spearman_rho": 0.571549022094699,
+          "bootstrap_mean": 0.5690490637889271,
+          "ci95_low": 0.4146601464268586,
+          "ci95_high": 0.7065828525352418,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "kl_L2",
+          "dv": "CHANGE",
+          "headline": true,
+          "spearman_rho": -0.12697331441899437,
+          "bootstrap_mean": -0.12617340134487678,
+          "ci95_low": -0.312564991230905,
+          "ci95_high": 0.07989076773286721,
+          "ci_covers_zero": true
+        },
+        {
+          "predictor": "cosine_L7",
+          "dv": "CHANGE",
+          "headline": false,
+          "spearman_rho": 0.5731591132698489,
+          "bootstrap_mean": 0.5712031131002764,
+          "ci95_low": 0.41720907974299465,
+          "ci95_high": 0.7119261507159663,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "kl_L7",
+          "dv": "CHANGE",
+          "headline": false,
+          "spearman_rho": -0.613721025566894,
+          "bootstrap_mean": -0.6091865603529186,
+          "ci95_low": -0.7282687809200973,
+          "ci95_high": -0.47660550149815095,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "cosine_L20_robust",
+          "dv": "CHANGE",
+          "headline": false,
+          "spearman_rho": 0.3358421539361449,
+          "bootstrap_mean": 0.33508792053996517,
+          "ci95_low": 0.15101024901888885,
+          "ci95_high": 0.5349838272949895,
+          "ci_covers_zero": false
+        }
+      ],
+      "noncircular_partials_on_trained_rate": {
+        "prior_vs_t_given_cosine_L2": {
+          "partial_spearman": 0.5665450040020634,
+          "ci95_low": 0.4239325660258355,
+          "ci95_high": 0.6779417461904128,
+          "ci_covers_zero": false,
+          "n": 108
+        },
+        "cosine_L2_vs_t_given_prior": {
+          "partial_spearman": 0.5623644734349023,
+          "ci95_low": 0.3924619121096431,
+          "ci95_high": 0.6959588730727356,
+          "ci_covers_zero": false,
+          "n": 108
+        },
+        "note": "Non-circular reads on the TRAINED RATE t (LEVEL), partialling the other predictor. t-b reads (which contain b by construction) are in the marginal_spearman + ladder; these partials avoid that mechanical artifact."
+      }
+    },
+    "arm_onpolicy": {
+      "marginal": [
+        {
+          "predictor": "prior",
+          "dv": "LEVEL",
+          "headline": true,
+          "spearman_rho": 0.7658316208164038,
+          "bootstrap_mean": 0.7564507966604814,
+          "ci95_low": 0.5832408826567684,
+          "ci95_high": 0.8769277725044665,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "cosine_L2",
+          "dv": "LEVEL",
+          "headline": true,
+          "spearman_rho": 0.8173109913643777,
+          "bootstrap_mean": 0.806643047850688,
+          "ci95_low": 0.7079902710385544,
+          "ci95_high": 0.8792546533918913,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "kl_L2",
+          "dv": "LEVEL",
+          "headline": true,
+          "spearman_rho": -0.6244294939982908,
+          "bootstrap_mean": -0.6120374836736965,
+          "ci95_low": -0.7659791785736454,
+          "ci95_high": -0.42116068407912194,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "cosine_L7",
+          "dv": "LEVEL",
+          "headline": false,
+          "spearman_rho": 0.7867154975809054,
+          "bootstrap_mean": 0.7752268260895164,
+          "ci95_low": 0.6438840536871386,
+          "ci95_high": 0.8623780287712243,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "kl_L7",
+          "dv": "LEVEL",
+          "headline": false,
+          "spearman_rho": -0.6920787284841519,
+          "bootstrap_mean": -0.6788916844885045,
+          "ci95_low": -0.8124673462894911,
+          "ci95_high": -0.4851715617740297,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "cosine_L20_robust",
+          "dv": "LEVEL",
+          "headline": false,
+          "spearman_rho": 0.8716829360951469,
+          "bootstrap_mean": 0.8617780588308385,
+          "ci95_low": 0.7962819429729999,
+          "ci95_high": 0.9108853554117223,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "prior",
+          "dv": "CHANGE",
+          "headline": true,
+          "spearman_rho": 0.5765097217982487,
+          "bootstrap_mean": 0.5659786791044263,
+          "ci95_low": 0.3439087199121021,
+          "ci95_high": 0.734951890103208,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "cosine_L2",
+          "dv": "CHANGE",
+          "headline": true,
+          "spearman_rho": 0.7438353447464479,
+          "bootstrap_mean": 0.7322918119516981,
+          "ci95_low": 0.560537684139074,
+          "ci95_high": 0.8582214727654262,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "kl_L2",
+          "dv": "CHANGE",
+          "headline": true,
+          "spearman_rho": -0.5800818948578008,
+          "bootstrap_mean": -0.5677270335402455,
+          "ci95_low": -0.7472502405615866,
+          "ci95_high": -0.35073130098751765,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "cosine_L7",
+          "dv": "CHANGE",
+          "headline": false,
+          "spearman_rho": 0.7269152372342701,
+          "bootstrap_mean": 0.7147359941982441,
+          "ci95_low": 0.5434291649280054,
+          "ci95_high": 0.8434681784481155,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "kl_L7",
+          "dv": "CHANGE",
+          "headline": false,
+          "spearman_rho": -0.7181485290776406,
+          "bootstrap_mean": -0.7048082589396748,
+          "ci95_low": -0.8326839501784239,
+          "ci95_high": -0.5205661638954251,
+          "ci_covers_zero": false
+        },
+        {
+          "predictor": "cosine_L20_robust",
+          "dv": "CHANGE",
+          "headline": false,
+          "spearman_rho": 0.8061403035386253,
+          "bootstrap_mean": 0.7942495582211693,
+          "ci95_low": 0.6813732378041423,
+          "ci95_high": 0.8713055685041333,
+          "ci_covers_zero": false
+        }
+      ],
+      "noncircular_partials_on_trained_rate": {
+        "prior_vs_t_given_cosine_L2": {
+          "partial_spearman": 0.5901386944657372,
+          "ci95_low": 0.36670047157440283,
+          "ci95_high": 0.7557335082196109,
+          "ci_covers_zero": false,
+          "n": 55
+        },
+        "cosine_L2_vs_t_given_prior": {
+          "partial_spearman": 0.6904474523806352,
+          "ci95_low": 0.48261146606032157,
+          "ci95_high": 0.8113592756557392,
+          "ci_covers_zero": false,
+          "n": 55
+        },
+        "note": "Non-circular reads on the TRAINED RATE t (LEVEL), partialling the other predictor. t-b reads (which contain b by construction) are in the marginal_spearman + ladder; these partials avoid that mechanical artifact."
+      }
+    }
+  },
+  "reproducibility": {
+    "git_commit": "904c266854387d4ef4ff1f34d8a3bc1cf3f9da04",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "timestamp": "2026-06-16T04:10:55.315384+00:00"
+  }
+}
