@@ -5,7 +5,7 @@ title: Postfix-KV patching beats prefix patching on 7 of 8 leaky Qwen-2.5 adapte
 kind: experiment
 tags: []
 created_at: '2026-06-14T06:19:53Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 595
 goal: 'Test whether the chat-template POSTFIX (not prefix) is the dominant off-distribution
   leakage carrier on Qwen-2.5-7B, and whether patching base postfix KV per-cell into
