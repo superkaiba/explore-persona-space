@@ -407,3 +407,168 @@ def test_run_cell_filler_wired_arm_d_and_provenance():
     assert src_train.index("invalidate_ladder_run_id(") < src_train.index("train_lora(")
     assert src_train.index("train_lora(") < src_train.index("write_ladder_run_id(")
     assert "HaltAfterStepCallback(" in src_train
+
+
+# ── v6 multi-seed (filler-control-multiseed): seed threading + figure aggregation ──
+
+
+def test_dispatcher_seed_arg_parses_arbitrary_int():
+    """The dispatcher's --seed accepts the new seeds 137 / 7 (plan v6 §3 item 1
+    — no source change; the existing --seed arg already takes arbitrary ints)."""
+    disp = _load_dispatcher()
+    for seed in (42, 137, 7):
+        args = disp.build_arg_parser().parse_args(
+            ["--recipe", "filler_dynamics", "--only-source", "villain", "--seed", str(seed)]
+        )
+        assert args.seed == seed
+
+
+@pytest.mark.parametrize("recipe_cfg", ["_filler_train_cfg", "_dense_train_cfg"])
+def test_cfg_run_name_seed_threaded_and_non_colliding(recipe_cfg, tmp_path):
+    """Each recipe's cfg builder threads the seed into run_name; the seed-137 /
+    seed-7 run_names are DISTINCT from the seed-42 run_name (no WandB-run / output
+    namespace collision with the committed seed-42 cells). armB's
+    ``_pos_only_train_cfg`` has a different (kw-only) signature; its seed-threaded
+    run_name shape is covered by ``test_armb_cfg_run_name_seed_threaded`` below."""
+    disp = _load_dispatcher()
+    builder = getattr(disp, recipe_cfg)
+    names = {}
+    for seed in (42, 137, 7):
+        cfg = builder("villain", seed, 2560, tmp_path / f"traj_{seed}.json")
+        names[seed] = cfg.run_name
+        assert f"_seed{seed}" in cfg.run_name
+    # All three run_names are pairwise distinct (the seed is the only delta).
+    assert len(set(names.values())) == 3
+
+
+def test_armb_cfg_run_name_seed_threaded(tmp_path):
+    """Arm B (``_pos_only_train_cfg``) threads the seed into a distinct run_name
+    across seeds 42 / 137 / 7 (kw-only ``max_steps`` / ``save_steps`` per its
+    parent-parity signature)."""
+    disp = _load_dispatcher()
+    names = {
+        seed: disp._pos_only_train_cfg(
+            "villain", seed, 2560, tmp_path / f"t{seed}.json", max_steps=528, save_steps=4
+        ).run_name
+        for seed in (42, 137, 7)
+    }
+    for seed, name in names.items():
+        assert name == f"issue597_posonly_villain_seed{seed}"
+    assert len(set(names.values())) == 3
+
+
+def test_panel_trajectory_path_template_expands_per_seed_no_collision():
+    """The dispatcher's panel-trajectory output path template expands to a
+    DISTINCT, non-colliding path per seed (plan v6 §3: the new *_seed137_*.json /
+    *_seed7_*.json land beside, never overwrite, the committed *_seed42_*.json)."""
+    slab_root = Path("eval_results/issue_597")
+    source = "villain"
+    # The dispatcher builds armD trajectory paths as
+    #   slab_root / "panel_trajectories" / "armD" / f"{source}_seed{seed}_panel_trajectory.json"
+    # (dispatch_leakage_dynamics_597.py L2002/L2030). Mirror the template here
+    # and assert per-seed distinctness.
+    paths = {
+        seed: slab_root
+        / "panel_trajectories"
+        / "armD"
+        / f"{source}_seed{seed}_panel_trajectory.json"
+        for seed in (42, 137, 7)
+    }
+    assert len({str(p) for p in paths.values()}) == 3
+    assert "_seed137_" in str(paths[137]) and "_seed42_" not in str(paths[137])
+    assert "_seed7_" in str(paths[7]) and "_seed42_" not in str(paths[7])
+
+
+def _load_fig_module():
+    import importlib.util
+
+    path = REPO_ROOT / "scripts" / "issue_597" / "fig_armD_3way_panel_only.py"
+    spec = importlib.util.spec_from_file_location("fig_armD_3way_multiseed_test", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _fake_panel(source: str, base_val: float) -> dict:
+    """A minimal panel-trajectory-shaped object: 3 steps, source + 2 bystanders.
+
+    Source delta climbs with the step; bystanders sit a fixed offset below so
+    the median is well-defined. ``base_val`` shifts the whole curve so distinct
+    seeds give distinct per-step values (a real cross-seed spread to aggregate)."""
+    by_step = {}
+    for step in (20, 40, 60):
+        by_step[str(step)] = {
+            source: {"delta_logp": base_val + step / 10.0},
+            "bystander_one": {"delta_logp": base_val + step / 20.0},
+            "bystander_two": {"delta_logp": base_val + step / 20.0 - 0.5},
+        }
+    return {"source": source, "by_step": by_step}
+
+
+def _seed_panels_on_disk(fig, tmp_root: Path, seeds: list[int]) -> None:
+    """Write fake panel trajectories for armB/armC/armD x the 3 sources x ``seeds``
+    under ``tmp_root``, and repoint the figure module's PATHS at them."""
+    new_paths = {}
+    for arm in ("armB", "armC", "armD"):
+        d = tmp_root / arm
+        d.mkdir(parents=True, exist_ok=True)
+        new_paths[arm] = d
+        for src in fig.SOURCES:
+            for seed in seeds:
+                # Distinct base per (arm, seed) so cross-seed spread is non-zero.
+                base = {"armB": 1.0, "armC": 2.0, "armD": 3.0}[arm] + seed / 1000.0
+                fp = d / f"{src}_seed{seed}_panel_trajectory.json"
+                fp.write_text(json.dumps(_fake_panel(src, base)))
+    fig.PATHS = new_paths
+
+
+def test_fig_multi_seed_aggregation_two_or_more_points_per_cell(tmp_path):
+    """Figure aggregation produces >=2 seed values per (arm, source, step) when
+    fed seed 42 + a fake seed 137 + a fake seed 7 (plan v6 §3 item 4 / the
+    multi-seed assertion)."""
+    fig = _load_fig_module()
+    _seed_panels_on_disk(fig, tmp_path, seeds=[42, 137, 7])
+
+    for arm in ("armB", "armC", "armD"):
+        for src in fig.SOURCES:
+            assert fig.available_seeds(arm, src) == [42, 137, 7]
+            steps, means, errs = fig.source_trajectory(arm, src)
+            assert steps == [20, 40, 60]
+            assert len(means) == len(errs) == 3
+            # >=2 seeds per step => a real (non-zero) cross-seed half-range.
+            assert all(e > 0 for e in errs)
+            b_steps, _b_means, b_errs = fig.bystander_trajectory(arm, src)
+            assert b_steps == [20, 40, 60]
+            assert all(e > 0 for e in b_errs)
+
+
+def test_fig_single_seed_fallback_zero_width_band(tmp_path):
+    """Single-seed fallback: with only seed-42 trajectories on disk the figure
+    runs cleanly and the cross-seed half-range collapses to zero (reproducing
+    the v1 single-seed point estimate)."""
+    fig = _load_fig_module()
+    _seed_panels_on_disk(fig, tmp_path, seeds=[42])
+
+    for arm in ("armB", "armC", "armD"):
+        for src in fig.SOURCES:
+            assert fig.available_seeds(arm, src) == [42]
+            steps, _means, errs = fig.source_trajectory(arm, src)
+            assert steps == [20, 40, 60]
+            assert all(e == 0.0 for e in errs)  # single seed => zero-width band
+
+
+def test_fig_intersects_steps_across_seeds(tmp_path):
+    """A seed missing a step is intersected out (the seed-mean is never computed
+    over a step where a seed has no value) — keeps the aggregation honest."""
+    fig = _load_fig_module()
+    _seed_panels_on_disk(fig, tmp_path, seeds=[42, 137])
+    # Drop step 60 from the seed-137 villain/armD panel.
+    fp = fig.PATHS["armD"] / "villain_seed137_panel_trajectory.json"
+    d = json.loads(fp.read_text())
+    del d["by_step"]["60"]
+    fp.write_text(json.dumps(d))
+
+    steps, means, errs = fig.source_trajectory("armD", "villain")
+    assert steps == [20, 40]  # step 60 intersected out (only seed-42 had it)
+    assert len(means) == len(errs) == 2

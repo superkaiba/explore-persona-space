@@ -1,6 +1,25 @@
 """Re-render the 3-way decomposition figure using ONE measurement surface
-(held-out panel medians) for ALL THREE arms. Replaces the v1 figure that
-mixed in-loop and panel reads."""
+(held-out panel medians) for ALL THREE arms, aggregated ACROSS training seeds.
+
+v6 (#597 follow-up ``filler-control-multiseed``): the v1 figure was a single
+seed-42 point estimate. This version aggregates the panel trajectories across
+the seed list ``SEEDS = [42, 137, 7]`` per (arm, source) cell, plotting the
+per-step seed-MEAN curve with a cross-seed error band on BOTH the source row
+and the bystander-median row, across all three arms.
+
+Error-bar definition (named here AND baked into the caption / meta.json): the
+shaded band is the cross-seed HALF-RANGE, ``(max - min) / 2`` over the seeds
+present at that step. Half-range (not SE) because with only 3 seeds the
+sample SE is a poor variance estimate; half-range is the honest bracket of
+observed seed spread and degrades cleanly to a zero-width band for a single
+seed.
+
+Single-seed fallback (smoke-friendly): ``SEEDS`` is filtered per (arm, source)
+to the seeds whose trajectory file actually exists on disk. When only the
+seed-42 trajectories are present (e.g. before any new-seed training has run),
+every cell loads exactly one seed, the half-range band collapses to zero
+width, and the figure reproduces the v1 single-seed curves.
+"""
 
 from __future__ import annotations
 
@@ -31,30 +50,47 @@ SOURCE_TITLES = {
 }
 NO_PERSONA_EXCLUDE_FOR = "qwen_default"
 
-
-def load_panel(arm: str, source: str) -> dict:
-    fp = PATHS[arm] / f"{source}_seed42_panel_trajectory.json"
-    return json.loads(fp.read_text())
-
+# v6: aggregate across these seeds. Filtered per (arm, source) to the seeds
+# whose trajectory file actually exists, so the script runs in single-seed
+# fallback mode (seed 42 only) before any new-seed training has landed.
+SEEDS = [42, 137, 7]
+ERROR_BAR_KIND = "half-range"  # (max - min) / 2 across seeds; named in the caption.
 
 MAX_STEP_PLOT = 60  # restrict to the matched comparison window (armC, armD halt at 60)
 
 
-def source_trajectory(arm: str, source: str) -> tuple[list[int], list[float]]:
-    d = load_panel(arm, source)
-    steps, vals = [], []
+def panel_path(arm: str, source: str, seed: int) -> Path:
+    return PATHS[arm] / f"{source}_seed{seed}_panel_trajectory.json"
+
+
+def available_seeds(arm: str, source: str) -> list[int]:
+    """The seeds in ``SEEDS`` whose trajectory file exists for this cell.
+
+    Returns at least one seed for any cell present on disk; an empty list
+    means the cell has no committed trajectory at all (caller skips it)."""
+    return [s for s in SEEDS if panel_path(arm, source, seed=s).exists()]
+
+
+def load_panel(arm: str, source: str, seed: int) -> dict:
+    return json.loads(panel_path(arm, source, seed).read_text())
+
+
+def _source_step_values(arm: str, source: str, seed: int) -> dict[int, float]:
+    """step -> source-context ``delta_logp`` for one seed (within the plot window)."""
+    d = load_panel(arm, source, seed)
+    out: dict[int, float] = {}
     for s in sorted(int(k) for k in d["by_step"]):
         if s > MAX_STEP_PLOT:
             continue
         if source in d["by_step"][str(s)]:
-            steps.append(s)
-            vals.append(d["by_step"][str(s)][source]["delta_logp"])
-    return steps, vals
+            out[s] = d["by_step"][str(s)][source]["delta_logp"]
+    return out
 
 
-def bystander_trajectory(arm: str, source: str) -> tuple[list[int], list[float]]:
-    d = load_panel(arm, source)
-    steps, vals = [], []
+def _bystander_step_values(arm: str, source: str, seed: int) -> dict[int, float]:
+    """step -> bystander-MEDIAN ``delta_logp`` for one seed (within the plot window)."""
+    d = load_panel(arm, source, seed)
+    out: dict[int, float] = {}
     for s in sorted(int(k) for k in d["by_step"]):
         if s > MAX_STEP_PLOT:
             continue
@@ -66,9 +102,43 @@ def bystander_trajectory(arm: str, source: str) -> tuple[list[int], list[float]]
                 continue
             bys.append(agg["delta_logp"])
         if bys:
-            steps.append(s)
-            vals.append(statistics.median(bys))
-    return steps, vals
+            out[s] = statistics.median(bys)
+    return out
+
+
+def _aggregate_across_seeds(
+    per_seed: list[dict[int, float]],
+) -> tuple[list[int], list[float], list[float]]:
+    """Given a list of {step: value} maps (one per seed), return
+    (steps, seed_means, half_ranges) for the steps present in EVERY seed map.
+
+    Intersecting steps keeps the seed-mean honest (no seed silently dropped at
+    a step). For a single seed the half-range is 0 (reproduces the v1 curve)."""
+    if not per_seed:
+        return [], [], []
+    common = set(per_seed[0])
+    for m in per_seed[1:]:
+        common &= set(m)
+    steps = sorted(common)
+    means: list[float] = []
+    half_ranges: list[float] = []
+    for s in steps:
+        vals = [m[s] for m in per_seed]
+        means.append(statistics.fmean(vals))
+        half_ranges.append((max(vals) - min(vals)) / 2.0)
+    return steps, means, half_ranges
+
+
+def source_trajectory(arm: str, source: str) -> tuple[list[int], list[float], list[float]]:
+    seeds = available_seeds(arm, source)
+    per_seed = [_source_step_values(arm, source, s) for s in seeds]
+    return _aggregate_across_seeds(per_seed)
+
+
+def bystander_trajectory(arm: str, source: str) -> tuple[list[int], list[float], list[float]]:
+    seeds = available_seeds(arm, source)
+    per_seed = [_bystander_step_values(arm, source, s) for s in seeds]
+    return _aggregate_across_seeds(per_seed)
 
 
 def main() -> None:
@@ -80,50 +150,46 @@ def main() -> None:
     color_C = paper_palette_role("primary")  # blue-ish
     color_D = paper_palette_role("control")  # red-ish
 
-    # Top row: source-context delta_logp
+    arm_styles = [
+        ("armB", color_B, "o", "Positives-only", "-"),
+        ("armC", color_C, "s", "Contrastive", "-"),
+        ("armD", color_D, "^", "Positives-plus-filler", "--"),
+    ]
+
+    def _plot_cell(ax, steps, means, errs, color, marker, linestyle, label):
+        ax.plot(
+            steps,
+            means,
+            marker=marker,
+            markersize=4,
+            markeredgewidth=1.0,
+            linewidth=1.4,
+            color=color,
+            linestyle=linestyle,
+            label=label,
+        )
+        if steps and any(e > 0 for e in errs):
+            lo = [m - e for m, e in zip(means, errs, strict=True)]
+            hi = [m + e for m, e in zip(means, errs, strict=True)]
+            ax.fill_between(steps, lo, hi, color=color, alpha=0.18, linewidth=0)
+
+    # Top row: source-context seed-mean delta_logp ± cross-seed half-range.
     for i, src in enumerate(SOURCES):
         ax = axes[0, i]
-        for arm, color, marker, label in [
-            ("armB", color_B, "o", "Positives-only"),
-            ("armC", color_C, "s", "Contrastive"),
-            ("armD", color_D, "^", "Positives-plus-filler"),
-        ]:
-            steps, vals = source_trajectory(arm, src)
-            ax.plot(
-                steps,
-                vals,
-                marker=marker,
-                markersize=4,
-                markeredgewidth=1.0,
-                linewidth=1.4,
-                color=color,
-                linestyle="--" if arm == "armD" else "-",
-                label=label if i == 0 else None,
-            )
+        for arm, color, marker, label, linestyle in arm_styles:
+            steps, means, errs = source_trajectory(arm, src)
+            _plot_cell(ax, steps, means, errs, color, marker, linestyle, label if i == 0 else None)
         ax.axvspan(8, 24, alpha=0.08, color="grey", zorder=0)
         ax.set_title(SOURCE_TITLES[src])
         if i == 0:
             ax.set_ylabel("Source-context\nmarker log-prob gain (nat)")
 
-    # Bottom row: bystander median trajectories
+    # Bottom row: bystander median seed-mean ± cross-seed half-range.
     for i, src in enumerate(SOURCES):
         ax = axes[1, i]
-        for arm, color, marker in [
-            ("armB", color_B, "o"),
-            ("armC", color_C, "s"),
-            ("armD", color_D, "^"),
-        ]:
-            steps, vals = bystander_trajectory(arm, src)
-            ax.plot(
-                steps,
-                vals,
-                marker=marker,
-                markersize=4,
-                markeredgewidth=1.0,
-                linewidth=1.4,
-                color=color,
-                linestyle="--" if arm == "armD" else "-",
-            )
+        for arm, color, marker, _label, linestyle in arm_styles:
+            steps, means, errs = bystander_trajectory(arm, src)
+            _plot_cell(ax, steps, means, errs, color, marker, linestyle, None)
         ax.set_xlabel("Optimizer step")
         if i == 0:
             ax.set_ylabel("Bystander median\nmarker log-prob gain (nat)")
@@ -148,8 +214,32 @@ def main() -> None:
     fig.suptitle("")  # title carried by caption; per-style-rules no title block here
     fig.tight_layout()
 
-    savefig_paper(fig, "issue_597/armD_3way_panel_only", dir="figures/")
+    written = savefig_paper(fig, "issue_597/armD_3way_panel_only", dir="figures/")
     plt.close(fig)
+
+    # Augment the savefig_paper sidecar with the seed-aggregation provenance so
+    # the v3 clean-result body's SHA-pinned figure link + caption can cite the
+    # exact seeds and error-bar definition (the planner's meta.json contract).
+    _augment_meta(written["meta"])
+
+
+def _augment_meta(meta_path: Path) -> None:
+    """Record the SEEDS list, error-bar definition, and the realized per-cell
+    seed coverage into the figure's ``.meta.json`` sidecar."""
+    meta = json.loads(meta_path.read_text())
+    coverage: dict[str, dict[str, list[int]]] = {}
+    for arm in PATHS:
+        coverage[arm] = {}
+        for src in SOURCES:
+            coverage[arm][src] = available_seeds(arm, src)
+    meta["seeds_requested"] = SEEDS
+    meta["error_bar"] = ERROR_BAR_KIND
+    meta["seed_coverage"] = coverage
+    meta["sha_pinned_url_pattern"] = (
+        "https://github.com/superkaiba/explore-persona-space/blob/"
+        "<sha>/figures/issue_597/armD_3way_panel_only.png"
+    )
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n")
 
 
 if __name__ == "__main__":
