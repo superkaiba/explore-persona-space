@@ -21,8 +21,18 @@ export VLLM_WORKER_MULTIPROC_METHOD=spawn
 upload_diag() {
   mkdir -p "$DIAG_DIR"
   cp "$DRIVER_LOG" "$DIAG_DIR/driver.log" 2>/dev/null || true
-  find "$WORKDIR/data" "$WORKDIR/eval_results" "$WORKDIR/logs" -name "*.log" -type f 2>/dev/null | while read -r f; do
-    rel=$(echo "$f" | sed "s|$WORKDIR/||" | tr '/' '__')
+  # Collect every *.log under the workdir AND under the driver's default
+  # --logs-root (/workspace/logs). The Phase-B per-shard dispatcher logs
+  # (phase_b_dispatch_gpu*.log) + the Phase-C logs (phase_c_*.log) land in
+  # /workspace/logs, NOT $WORKDIR/logs — without /workspace/logs in this find,
+  # those shard logs are NEVER bundled, so a Phase-B shard rc=1 (the GPU-heaviest
+  # stage, most likely to fail) is undiagnosable post-EXIT once the ephemeral VM
+  # is DELETED (incident #612 round-6: GPU-2 shard rc=1 with no traceback in the
+  # only uploaded log — driver.log). $LOGS_ROOT overridable for a non-default run.
+  LOGS_ROOT="${ISSUE612_LOGS_ROOT:-/workspace/logs}"
+  find "$WORKDIR/data" "$WORKDIR/eval_results" "$WORKDIR/logs" "$LOGS_ROOT" \
+    -name "*.log" -type f 2>/dev/null | sort -u | while read -r f; do
+    rel=$(echo "$f" | sed "s|$WORKDIR/||; s|^/||" | tr '/' '__')
     cp "$f" "$DIAG_DIR/${rel}" 2>/dev/null || true
   done
   ls -la "$DIAG_DIR/"
