@@ -141,11 +141,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear read pip
     # ── #613 thin flags (legacy-preserving defaults — plan #613 §4 step 4). ──
     ap.add_argument(
         "--sep-mode",
-        choices=("marker", "plain"),
+        choices=("marker", "plain", "space"),
         default="marker",
         help="Slot separator: 'marker' = the parent MARKER_SEP='\\n\\n' DV slot "
         "(default, current behavior); 'plain' = sep='' — the four floats at the "
-        "#613 flag-on LOSS slot (post-R, the greedy-stop position).",
+        "#613 flag-on LOSS slot (post-R, the greedy-stop position); 'space' = "
+        "sep=' ' — the single-space construction's R + ' ' marker slot, one "
+        "token downstream of the negatives' loss slot (#613 "
+        "single-space-falsifier cells).",
     )
     ap.add_argument(
         "--steps",
@@ -234,7 +237,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear read pip
     assert eos_id == EXPECTED_POST_R_EOS_ID, eos_id
     marker_id = marker_ids[0]
 
-    sep = MARKER_SEP if args.sep_mode == "marker" else ""
+    # Three-way sep-mode vocabulary (plan §3 change 2): marker -> "\n\n",
+    # plain -> "", space -> " " (single-space construction's R + " " slot).
+    sep = {"marker": MARKER_SEP, "plain": "", "space": " "}[args.sep_mode]
 
     ckpt_index = json.loads(args.checkpoint_index.read_text())
     specs = [

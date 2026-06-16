@@ -88,6 +88,7 @@ def _assert_positive_rows_fused_marker(
     marker_text: str,
     marker_id: int,
     cell_slug: str,
+    marker_sep: str = "",
 ) -> dict:
     """FUSED-surface marker-tokenization guard (#613 sep-ablation, plan §3 change 5).
 
@@ -100,18 +101,44 @@ def _assert_positive_rows_fused_marker(
     builder intended as positive (``marker_text`` in the assistant completion
     string), render the SAME fused surface the trainer uses
     (``apply_chat_template(prompt + completion, tokenize=True,
-    add_generation_prompt=False)``) and assert EXACTLY ONE ``marker_id``
-    appears in the full sequence, positioned inside the assistant completion
-    region (after the last ``<|im_start|>``). Fail-loud RuntimeError naming
-    the row. Runs for ALL cells (legacy "\\n\\n" construction included).
+    add_generation_prompt=False)``) and assert:
 
-    Returns ``{"n_rows_total", "n_positive_checked", "passed": True}``.
+      (i)  EXACTLY ONE ``marker_id`` appears in the full sequence, positioned
+           inside the assistant completion region (after the last
+           ``<|im_start|>``). Fail-loud RuntimeError naming the row. Runs for
+           ALL cells (legacy "\\n\\n" + no-sep "" included).
+      (ii) SURFACE-FORM DISTINCT from the glued (``marker_sep=""``) render at
+           exactly the inserted-separator position — only when a non-empty
+           ``marker_sep`` is configured (#613 single-space cells, plan §3
+           change 4 (ii)). The configured-sep render must differ from the
+           glued render at the token(s) immediately before the marker.
+
+    (iii) SLOT-OFFSET DOCUMENTED, not asserted-coincident (plan §3 change 4
+          (iii)): the marker slot sits ``len(sep_tokens)`` tokens DOWNSTREAM of
+          the negatives' flag-on loss slot (the inserted-separator tokens). The
+          glued construction is strictly coincident (offset 0); the single
+          space inserts id 220 (offset 1). Recorded in the returned dict as
+          ``marker_predict_from_offset`` so the manifest carries the TRUE
+          geometry — this round does NOT assert strict coincidence (it is false
+          for the single space, by design); it records the offset.
+
+    Returns ``{"n_rows_total", "n_positive_checked", "marker_sep",
+    "marker_predict_from_offset", "surface_distinct_from_glued", "passed"}``.
     """
     from explore_persona_space.train.sft import _apply_chat_template_safe
 
     im_start_id = tokenizer.convert_tokens_to_ids("<|im_start|>")
+    # (iii) The separator's own token contribution = the offset of the marker
+    # slot downstream from the negatives' flag-on loss slot. Tokenized with the
+    # leading-space-aware marker chunk stripped: encode (sep + marker) and
+    # (marker) standalone, the difference in length is the separator's tokens.
+    sep_marker_ids = tokenizer.encode(f"{marker_sep}{marker_text}", add_special_tokens=False)
+    bare_marker_ids = tokenizer.encode(marker_text, add_special_tokens=False)
+    marker_predict_from_offset = len(sep_marker_ids) - len(bare_marker_ids)
+
     n_total = 0
     n_pos = 0
+    surface_distinct = None  # None for the glued construction; bool for non-empty sep
     with Path(train_jsonl).open() as f:
         for line_no, line in enumerate(f, start=1):
             line = line.strip()
@@ -154,16 +181,69 @@ def _assert_positive_rows_fused_marker(
                         f"assistant completion region (last <|im_start|> at {last_start}) — "
                         f"the loss-bearing marker is not in the completion."
                     )
+            # (ii) SURFACE-FORM DISTINCT from glued — only for a non-empty sep
+            # (the single-space construction). Re-render the SAME row with the
+            # separator stripped (glued: R + marker) and assert the configured
+            # render differs at the token(s) immediately before the marker.
+            if marker_sep:
+                marker_idx = full_ids.index(marker_id)
+                glued_completion = [
+                    {
+                        **m,
+                        "content": m.get("content", "").replace(
+                            f"{marker_sep}{marker_text}", marker_text
+                        ),
+                    }
+                    if marker_text in m.get("content", "")
+                    else m
+                    for m in completion
+                ]
+                glued_ids = _apply_chat_template_safe(
+                    tokenizer, list(row["prompt"]) + glued_completion, add_generation_prompt=False
+                )
+                if glued_ids is None:
+                    raise RuntimeError(
+                        f"[{cell_slug}] fused-surface marker assert: glued comparison render "
+                        f"FAILED for positive row {line_no} — cannot verify surface distinctness."
+                    )
+                glued_marker_idx = glued_ids.index(marker_id)
+                # The inserted separator must move the marker DOWNSTREAM by the
+                # tokenized separator length and the pre-marker tokens must differ.
+                row_distinct = (
+                    full_ids[:marker_idx] != glued_ids[:glued_marker_idx]
+                    and (marker_idx - glued_marker_idx) == marker_predict_from_offset
+                )
+                if not row_distinct:
+                    raise RuntimeError(
+                        f"[{cell_slug}] fused-surface marker assert FAILED at positive row "
+                        f"{line_no}: the configured marker_sep={marker_sep!r} render is NOT "
+                        f"token-distinct from the glued render at the inserted-separator "
+                        f"position (fused marker@{marker_idx}, glued marker@{glued_marker_idx}, "
+                        f"expected offset {marker_predict_from_offset}) — the surface form "
+                        f"does not differ from the no-sep construction (plan §3 change 4 (ii))."
+                    )
+                surface_distinct = True if surface_distinct is None else surface_distinct
     log.info(
         "[phase=fused_marker_assert_%s] PASS: %d/%d positive rows carry exactly one fused "
-        "marker id %d in the completion region (%d rows total)",
+        "marker id %d in the completion region (%d rows total); marker_sep=%r, "
+        "marker_predict_from_offset=%d, surface_distinct_from_glued=%s",
         cell_slug,
         n_pos,
         n_pos,
         marker_id,
         n_total,
+        marker_sep,
+        marker_predict_from_offset,
+        surface_distinct,
     )
-    return {"n_rows_total": n_total, "n_positive_checked": n_pos, "passed": True}
+    return {
+        "n_rows_total": n_total,
+        "n_positive_checked": n_pos,
+        "marker_sep": marker_sep,
+        "marker_predict_from_offset": marker_predict_from_offset,
+        "surface_distinct_from_glued": surface_distinct,
+        "passed": True,
+    }
 
 
 def _combined_fractions(spec, step_fractions_fn) -> tuple[tuple[float, ...], tuple[float, ...]]:
@@ -360,20 +440,24 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
 
     spec = cell_by_slug(args.cell)
     hf_prefix = args.hf_prefix if args.hf_prefix is not None else HF_ADAPTER_PREFIX_601
-    # ── #613 sep-ablation: spec.marker_sep -> the nested read subprocesses'
-    # --sep-mode vocabulary (plan §3 change 3). Legacy cells (marker_sep ==
-    # MARKER_SEP) get NO flag appended — byte-identical argvs; sep cells get
-    # "plain"; any other separator has no CLI vocabulary — fail loud here
-    # rather than silently reading the wrong slot.
+    # ── #613 sep-ablation / single-space-falsifier: spec.marker_sep -> the
+    # nested read subprocesses' --sep-mode vocabulary (plan §3 change 3 /
+    # change 2). Legacy cells (marker_sep == MARKER_SEP) get NO flag appended —
+    # byte-identical argvs; the no-sep cells get "plain"; the single-space cells
+    # get "space" (the falsifier round's R + " " marker slot, offset +1 from the
+    # negatives' loss slot); any other separator has no CLI vocabulary — fail
+    # loud here rather than silently reading the wrong slot.
     if spec.marker_sep == MARKER_SEP:
         sep_mode: str | None = None
     elif spec.marker_sep == "":
         sep_mode = "plain"
+    elif spec.marker_sep == " ":
+        sep_mode = "space"
     else:
         raise ValueError(
             f"[{args.cell}] marker_sep={spec.marker_sep!r} has no --sep-mode mapping "
-            f"(known: {MARKER_SEP!r} -> default, '' -> plain); the nested eval/dense "
-            f"reads would score the WRONG slot."
+            f"(known: {MARKER_SEP!r} -> default, '' -> plain, ' ' -> space); the nested "
+            f"eval/dense reads would score the WRONG slot."
         )
     if args.seed not in (42, 137):
         raise ValueError(f"[{args.cell}] seed {args.seed} not a canonical #601 seed (42/137).")
@@ -469,6 +553,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         marker_text=MARKER_TEXT,
         marker_id=EXPECTED_MARKER_TOKEN_ID,
         cell_slug=args.cell,
+        # #613 single-space-falsifier (plan §3 change 4): records the
+        # marker-slot offset + surface-distinctness for non-empty separators.
+        marker_sep=spec.marker_sep,
     )
     if spec.pos_ex > 0 and fused_assert["n_positive_checked"] != spec.pos_ex:
         raise RuntimeError(
@@ -491,6 +578,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
                 "marker_sep": spec.marker_sep,
                 "sep_mode": sep_mode or "marker",
                 "suppress_negatives": spec.suppress_negatives,
+                # #613 single-space-falsifier (plan §3 change 4 (iii)): the
+                # marker slot's token offset downstream of the negatives'
+                # flag-on loss slot — 0 for the glued/legacy constructions,
+                # 1 for the single-space cells (id 220 inserted before " ※").
+                "marker_predict_from_offset": fused_assert["marker_predict_from_offset"],
                 "fused_marker_assert": fused_assert,
                 "git_commit": _git_sha(),
                 "timestamp_utc": datetime.now(UTC).isoformat(),

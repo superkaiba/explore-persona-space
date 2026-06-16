@@ -61,17 +61,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--max-new-tokens", type=int, default=2048)
     ap.add_argument("--no-kl", action="store_true", help="Skip DV-B (debug only).")
-    # ── #613 sep-ablation flag (legacy-preserving default — plan §3 change 3,
-    # mirroring i601_dense_read.py's --sep-mode). ──
+    # ── #613 sep-ablation / single-space-falsifier flag (legacy-preserving
+    # default — plan §3 change 3 / change 2, mirroring i601_dense_read.py's
+    # --sep-mode). ──
     ap.add_argument(
         "--sep-mode",
-        choices=("marker", "plain"),
+        choices=("marker", "plain", "space"),
         default="marker",
         help="Slot separator for EVERY read in this eval (DV-A trained+base, "
         "DV-B KL + four-float capture): 'marker' = the parent "
         "MARKER_SEP='\\n\\n' DV slot (default, current behavior); 'plain' = "
         "sep='' — the no-separator construction's coincident post-R slot "
-        "(#613 sep-ablation cells).",
+        "(#613 sep-ablation cells); 'space' = sep=' ' — the single-space "
+        "construction's R + ' ' marker slot, one token downstream of the "
+        "negatives' loss slot (#613 single-space-falsifier cells).",
     )
     ap.add_argument("--sentinel-path", type=Path, default=None)
     args = ap.parse_args(argv)
@@ -164,7 +167,10 @@ def main(argv: list[str] | None = None) -> int:
         spec["provenance"] = prov
     log.info("On-policy checkpoints: %s", [(c["frac"], c["step"]) for c in checkpoint_specs])
 
-    sep = MARKER_SEP if args.sep_mode == "marker" else ""
+    # Three-way sep-mode vocabulary (plan §3 change 2): marker -> "\n\n"
+    # (legacy DV slot), plain -> "" (no-sep coincident slot), space -> " "
+    # (single-space construction's R + " " slot, offset +1).
+    sep = {"marker": MARKER_SEP, "plain": "", "space": " "}[args.sep_mode]
     log.info("Slot separator: sep_mode=%s sep=%r", args.sep_mode, sep)
 
     run_trajectory_eval(

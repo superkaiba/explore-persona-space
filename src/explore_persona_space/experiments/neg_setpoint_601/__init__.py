@@ -24,6 +24,15 @@ rows). This module's cells break that collinearity:
            ``sepablation_flagon_200p800n`` / ``sepablation_flagoff_200p800n``
            (conditional, explicit-slug-only, launched by
            ``scripts/i613_sepablation_launch.sh``).
+  Task #613 follow-up `single-space-falsifier` — the flag A/B inside the
+           SINGLE-SPACE positive construction (``marker_sep=" "`` -> positives
+           are ``R + " " + " ※"``; the inserted space (id 220) is its own token
+           so the marker slot sits ONE token DOWNSTREAM of the negatives' loss
+           slot — a one-token-offset falsifier for the no-sep suppression):
+           ``singlespacefalsifier_flagon_200p800n`` /
+           ``singlespacefalsifier_flagoff_200p800n`` (conditional,
+           explicit-slug-only, launched by
+           ``scripts/i613_singlespacefalsifier_launch.sh``).
   Phase 4  rig-bridging positives-only arms toward #471. Corrected #471
            attribution (concern phase4-bridge-attn-only-attribution; round 4):
            #471's posonly rig was ALL-LINEAR r=32 @ lr 5e-6 — NOT attn-only as
@@ -494,6 +503,52 @@ CELLS_601: tuple[CellSpec601, ...] = (
         conditional=True,
         suppress_negatives=False,  # dead-slot comparator (within-construction B)
         marker_sep="",
+    ),
+    # Task #613 follow-up round `single-space-falsifier` (amendment plan §3): the
+    # flag A/B re-run INSIDE the SINGLE-SPACE positive construction. ONE variable
+    # vs the sep-ablation round: marker_sep "" -> " " (positives become
+    # R + " " + " ※"). The single space inserts ONE token (id 220) BETWEEN the
+    # negatives' flag-on loss slot and the marker, so the marker slot is NOT
+    # strictly coincident with the negatives' loss slot — it is offset by +1
+    # token (the falsifier: does the suppression observed in the no-sep corner
+    # survive a one-token-downstream marker offset, or is it specific to the
+    # glued <answer>※ boundary?). BOTH arms retrain (every existing #601/#613
+    # cell carries marker_sep in {"\n\n", ""} — reusing one would smuggle the
+    # separator variable into the within-construction A/B). phase=
+    # "single-space-falsifier" doubles as the output dir, landing artifacts at
+    # the CLAUDE.md follow-up contract path
+    # eval_results/issue_613/single-space-falsifier/<cell>_seed<S>/ under #613's
+    # --slab-root. conditional=True keeps both cells explicit-slug-only. The
+    # worker maps marker_sep " " -> --sep-mode space on both nested read
+    # subprocesses (eval + dense), so every read scores log P(marker) at the
+    # construction's own R + " " slot.
+    CellSpec601(
+        slug="singlespacefalsifier_flagon_200p800n",
+        plain_name="Single-space positives + alive negatives (post-response-slot loss)",
+        phase="single-space-falsifier",
+        pos_ex=200,
+        n_neg_personas=4,
+        neg_ex_per_persona=200,
+        dense_steps=_dense_1_to(20, 25, 32, 45, 63),  # EXACT dense_200p800n parity
+        onpolicy="anchors",
+        seeds=(42, 137),
+        conditional=True,
+        suppress_negatives=True,  # alive arm (within-construction A)
+        marker_sep=" ",  # THE round variable: single space -> marker slot offset +1
+    ),
+    CellSpec601(
+        slug="singlespacefalsifier_flagoff_200p800n",
+        plain_name="Single-space positives + dead-slot negatives (trailing-token loss)",
+        phase="single-space-falsifier",
+        pos_ex=200,
+        n_neg_personas=4,
+        neg_ex_per_persona=200,
+        dense_steps=_dense_1_to(20, 25, 32, 45, 63),  # EXACT dense_200p800n parity
+        onpolicy="anchors",
+        seeds=(42, 137),
+        conditional=True,
+        suppress_negatives=False,  # dead-slot comparator (within-construction B)
+        marker_sep=" ",
     ),
 )
 
