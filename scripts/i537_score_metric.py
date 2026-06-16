@@ -1786,6 +1786,31 @@ def main() -> int:  # noqa: C901 - sequential score -> persist -> leaderboard ->
             logger.warning(msg)
         else:
             raise SystemExit(msg)
+
+    # R1 round-3 (concern strict-mode-skipped-rows-exit-zero): an IMPLEMENTED row
+    # that errored at score time (missing/incomplete artifact -> recorded in
+    # `skipped`) must NOT let the CANONICAL strict path exit 0. The not_implemented
+    # gate above only covers REGISTERED-but-unwired rows; a skipped IMPLEMENTED row
+    # slipped through with `partial=True` but rc=0. The in-code comment at the
+    # per-row except (`--all-registered WITHOUT --descoped re-raises`) promised this
+    # re-raise -- restore it here, AFTER every artifact (scores JSON + leaderboard +
+    # lfco/collinearity) is persisted so the diagnostic survives on disk. Opt-outs:
+    # the specific id via --descoped (per row) OR --allow-missing-registered (global).
+    if skipped and not args.allow_missing_registered:
+        unauthorized_skips = {
+            mid: sk["reason"] for mid, sk in skipped.items() if mid not in descoped_set
+        }
+        if unauthorized_skips:
+            raise SystemExit(
+                "[score] strict-mode skipped rows (an IMPLEMENTED registered row errored on a "
+                "missing/incomplete artifact): "
+                + ", ".join(
+                    f"{mid} ({reason})" for mid, reason in sorted(unauthorized_skips.items())
+                )
+                + ". The scores JSON + leaderboard were persisted (PARTIAL) for diagnosis; rerun "
+                "with --descoped <id> per row, or --allow-missing-registered, to tolerate the gap "
+                "explicitly."
+            )
     return 0
 
 
