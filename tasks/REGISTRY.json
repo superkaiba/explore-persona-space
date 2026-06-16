@@ -4059,8 +4059,8 @@
       "goal": "Test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features, via two probes: (A) the base model's autoregressive write\u2192read map under random-bias steering, and (B) how real finetunes shift activations across the rank ladder (rank-1 LoRA \u2192 higher-rank LoRA \u2192 full fine-tuning) \u2014 characterizing in each whether the structure is low-rank and read\u2194write-aligned or diffuse.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/653",
-      "status": "proposed",
+      "path": "tasks/planning/653",
+      "status": "planning",
       "title": "Do conditional behaviors decompose cleanly into read and write features? Characterize the autoregressive write\u2192read map"
     },
     "66": {
