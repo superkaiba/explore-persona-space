@@ -64,6 +64,16 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 if os.path.isdir("/workspace"):
     os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 
+# PyTorch CUDA allocator: expandable_segments defragments reserved-but-
+# unallocated memory — the canonical mitigation for the round-3 extract-phase
+# OOM where the HF base model (~22 GiB) and the vLLM engine co-reside on one
+# H100 with only ~9.5 GiB working-memory headroom and the intermediate tensors
+# (log_softmax) fragment the free pool. MUST be set BEFORE the first
+# `import torch`; this dispatcher imports torch only lazily inside phase_extract
+# / _stub_extract, so this module-top setdefault runs first. setdefault (not
+# assignment) so an explicit launcher / env override always wins. (#545 round-4.)
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 from dotenv import load_dotenv  # noqa: E402
 
 # load_dotenv at entry — every credential-using path (hf_hub_download) needs

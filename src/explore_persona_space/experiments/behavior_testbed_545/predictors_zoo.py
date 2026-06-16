@@ -31,6 +31,19 @@ on ``c in pred`` (a literal null would crash / corrupt τ).
 
 from __future__ import annotations
 
+import os
+
+# PyTorch CUDA allocator: expandable_segments defragments reserved-but-
+# unallocated memory, the canonical mitigation for the round-3 extract-phase
+# OOM where HF (22 GiB) + vLLM (0.60 × 79 ≈ 47.5 GiB) co-reside with only
+# ~9.5 GiB working-memory headroom and intermediate tensors (log_softmax)
+# fragment the free pool. MUST be set BEFORE the first `import torch` — torch
+# reads PYTORCH_CUDA_ALLOC_CONF once when its CUDA allocator initializes. torch
+# is imported lazily inside extract_clouds_and_outdist_gpu, so this module-top
+# setdefault is guaranteed to run first. setdefault (not assignment) so an
+# explicit launcher / env override always wins. (#545 round-4.)
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 import json
 import logging
 import sys
@@ -88,21 +101,43 @@ JS_DIRECTIONS = ("js", "kl_narrow_broad", "kl_broad_narrow")
 
 # vLLM GPU memory utilization for the lazily-loaded engine inside
 # extract_clouds_and_outdist_gpu. CRITICAL: the HF base model
-# (AutoModelForCausalLM, ~16 GiB bf16) and the vLLM engine CO-RESIDE on the
-# same GPU in the SAME process — the clouds sub-phase elicits nl-cloud text via
-# vLLM and then teacher-forces it through the HF model, and the outdist
-# sub-phase does the same per probe pair, so neither model can be freed before
-# the other. vLLM reads FREE-memory-at-startup and rejects init if its
-# requested fraction exceeds it. At 0.85 (the #545 round-1 value) vLLM asked for
-# 67.3 GiB while only ~63 GiB was free with the HF model resident → engine-init
-# OOM ~80s after launch (pod-545, 22:12:08). 0.70 × 79.18 GiB ≈ 55 GiB leaves
-# room for the resident HF model + a small CUDA-cache fragmentation margin.
-JS_GPU_MEM_UTIL = 0.70
-# Pre-vLLM-init free-memory floor (GiB). Must clear the vLLM request
-# (JS_GPU_MEM_UTIL × ~79 GiB ≈ 55 GiB) with margin so a regression that fails to
-# leave headroom (e.g. an HF-model size blow-up) fails LOUD at the assert with a
-# clear message rather than as an opaque vLLM engine-init OOM.
-JS_VLLM_PREINIT_MIN_FREE_GIB = 58.0
+# (AutoModelForCausalLM) and the vLLM engine CO-RESIDE on the same GPU in the
+# SAME process — the clouds sub-phase elicits nl-cloud text via vLLM and then
+# teacher-forces it through the HF model, and the outdist sub-phase does the
+# same per probe pair, so neither model can be freed before the other. vLLM
+# reads FREE-memory-at-startup and rejects init if its requested fraction
+# exceeds it.
+#
+# Two OOM regimes the dial must clear (both observed on pod-545):
+#   - round-1 (init OOM): 0.85 × 79.18 = 67.3 GiB requested > ~63 GiB free with
+#     the HF model resident → vLLM engine-init rejected ~80s after launch.
+#   - round-3 (extract-phase OOM): with vLLM at 0.70 (56.99 GiB observed) and
+#     the HF model resident at 22.0 GiB (MEASURED, not the 16 GiB estimated in
+#     the r3 brief — model weights + activations + the KV cache HF keeps during
+#     output_hidden_states teacher-forcing on max_model_len=4096 sequences),
+#     total HF + vLLM = ~79 GiB on a 79.18 GiB H100 → only 206 MiB free, and the
+#     extract phase's intermediate tensors (log_softmax etc.) OOM'd mid-run.
+#
+# r4 fix: drop to 0.60 so 22.0 (HF) + 47.5 (vLLM = 0.60 × 79.18) = 69.5 GiB,
+# leaving ~9.5 GiB working-memory headroom for the extract-phase intermediates.
+# Paired with PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True (set at module
+# top, below) to defragment reserved-but-unallocated memory — the canonical
+# PyTorch CUDA OOM mitigation the round-3 error message itself recommended.
+JS_GPU_MEM_UTIL = 0.60
+# Measured resident size of the co-resident HF base model under realistic
+# extract-phase conditions (output_hidden_states + max_model_len=4096 + the KV
+# cache during a single teacher-force) — pod-545 round-3 OOM log: HF process
+# held 21.98 GiB. NOT the parameter-count estimate (16 GiB) the r3 brief used.
+JS_HF_MODEL_RESIDENT_GIB = 22.0
+# An H100-80 reports ~79.18 GiB total.
+_H100_TOTAL_GIB = 79.18
+# Pre-vLLM-init free-memory floor (GiB), pinned to the actual util so a future
+# util change keeps the assert correct: floor = vLLM request + 2.5 GiB margin.
+# At 0.60: 47.5 + 2.5 = 50.0 GiB. The floor must clear the vLLM request with
+# margin so a regression that fails to leave headroom (e.g. an HF-model size
+# blow-up, another GPU consumer) fails LOUD at the assert with a clear message
+# rather than as an opaque vLLM engine-init OOM.
+JS_VLLM_PREINIT_MIN_FREE_GIB = max(JS_GPU_MEM_UTIL * _H100_TOTAL_GIB + 2.5, 0.0)
 
 
 # ---------------------------------------------------------------------------
@@ -214,10 +249,14 @@ def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared acro
             from vllm import LLM, SamplingParams
 
             # The HF model is resident on the GPU here (clouds + outdist both
-            # teacher-force through it), so vLLM init reads a REDUCED free-memory
+            # teacher-force through it; ~22 GiB MEASURED, see
+            # JS_HF_MODEL_RESIDENT_GIB), so vLLM init reads a REDUCED free-memory
             # figure. Log it + the vLLM request, then assert we clear the request
             # with margin — a free-memory shortfall fails LOUD here instead of as
-            # an opaque vLLM engine-init OOM (#545 round-1 crash, pod-545).
+            # an opaque vLLM engine-init OOM (#545 round-1). The util is also kept
+            # at 0.60 (not 0.70) so the extract-phase intermediates (log_softmax)
+            # have ~9.5 GiB working-memory headroom after HF + vLLM co-residency,
+            # which the round-3 extract-phase OOM proved 0.70 lacked (pod-545).
             free_bytes, total_bytes = torch.cuda.mem_get_info()
             free_gib = free_bytes / (1024**3)
             total_gib = total_bytes / (1024**3)
