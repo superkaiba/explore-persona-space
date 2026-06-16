@@ -180,3 +180,4 @@
 {"ts": "2026-06-16T02:04:10Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqg00th9-8gt2dn effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-16T02:07:17Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqg00th9-8gt2dn phase=done after 182s."}
 {"ts": "2026-06-16T02:07:48Z", "kind": "epm:progress", "version": 42, "by": "unknown", "note": "stage-dispatch stage=followup-relaunching round=2 subagent=dispatch_issue.py worktree=repo-root"}
+{"ts": "2026-06-16T02:08:20Z", "kind": "epm:backend-selected", "version": 1, "by": "backends.router", "note": "{\"attempts\": [], \"chosen_kind\": \"gcp\", \"cluster\": null, \"elapsed_seconds\": 0.0, \"extra\": {\"gcp_attempts_today\": 2, \"intermediate\": true}, \"reason\": \"auto_fallback_gcp\", \"requested_kind\": null}"}
