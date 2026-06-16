@@ -26,6 +26,7 @@ modules ``analysis/activation_shift.py`` + ``analysis/svd_direction_constancy.py
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 # The fixed probe panel (plan §4.2): the #551/#604 14-persona panel, column
 # order pinned to I551_PANEL_14 (== the persona_order in #521's
@@ -152,6 +153,72 @@ def resolve_adapter_subfolder(behavior: str, cid: str, seed: int) -> str:
 def hf_adapter_repo_path(behavior: str, cid: str, seed: int) -> tuple[str, str]:
     """(repo_id, subfolder) for ``PeftModel.from_pretrained`` on this cell."""
     return HF_MODEL_REPO, resolve_adapter_subfolder(behavior, cid, seed)
+
+
+# Adapter files a LoRA cell carries (per-file staged; the model repo is >14k
+# files so snapshot_download(allow_patterns=...) silently truncates — #375/#399.
+# README.md is optional; the others fail-loud if missing).
+_ADAPTER_REQUIRED_FILES: tuple[str, ...] = ("adapter_config.json", "adapter_model.safetensors")
+_ADAPTER_OPTIONAL_FILES: tuple[str, ...] = (
+    "README.md",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "special_tokens_map.json",
+    "vocab.json",
+    "merges.txt",
+    "added_tokens.json",
+    "chat_template.jinja",
+)
+
+
+def stage_adapter(
+    subfolder: str,
+    local_root: str | Path,
+    *,
+    repo_id: str = HF_MODEL_REPO,
+    revision: str = "main",
+) -> Path:
+    """Stage one HF-subfolder LoRA adapter into a local dir via per-file download.
+
+    Returns the local dir holding the FLATTENED adapter (config + safetensors at
+    the dir root, ready for ``PeftModel.from_pretrained(local_dir)``). Per-file
+    ``hf_hub_download`` — NOT ``snapshot_download(allow_patterns=...)``, which
+    silently truncates on this >14k-file repo (#375/#399, my
+    snapshot-download-siblings-truncation memory). Fail-loud if a required file
+    is missing on the Hub.
+    """
+    import shutil
+
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.errors import EntryNotFoundError
+
+    local_dir = Path(local_root) / subfolder.replace("/", "__")
+    local_dir.mkdir(parents=True, exist_ok=True)
+    # Skip-if-already-staged with a size sanity check (a stale LFS pointer is
+    # ~134 B; a real safetensors is MB — #521 stage check).
+    cfg = local_dir / "adapter_config.json"
+    sft = local_dir / "adapter_model.safetensors"
+    if cfg.exists() and sft.exists() and sft.stat().st_size > 100_000 and cfg.stat().st_size > 50:
+        return local_dir
+    for fname in _ADAPTER_REQUIRED_FILES:
+        src = hf_hub_download(repo_id, f"{subfolder}/{fname}", revision=revision, repo_type="model")
+        shutil.copy2(src, local_dir / fname)
+    for fname in _ADAPTER_OPTIONAL_FILES:
+        try:
+            src = hf_hub_download(
+                repo_id, f"{subfolder}/{fname}", revision=revision, repo_type="model"
+            )
+            shutil.copy2(src, local_dir / fname)
+        except EntryNotFoundError:
+            continue
+    # Fail-loud post-condition (the snapshot-truncation symptom is an empty dir
+    # with a clean exit).
+    if not (local_dir / "adapter_config.json").exists():
+        raise RuntimeError(
+            f"adapter staging produced no adapter_config.json for {subfolder!r} "
+            f"on {repo_id}@{revision} -- the subfolder may not resolve on HF."
+        )
+    return local_dir
 
 
 def retrain_cells(n_gpus: int = 4) -> list[Cell]:
