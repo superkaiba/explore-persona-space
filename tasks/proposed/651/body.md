@@ -22,10 +22,6 @@ relates_to:
 ---
 # Cross-behavior, cross-context shared-direction geometry on the #537 testbed: is a conditional behavior's activation-shift write context-invariant, and do behaviors share an axis? (post-hoc re-extraction)
 
-## Goal
-
-Re-extract layer-L activation-shift directions (trained minus base) from the #537 context-generalization testbed's existing adapters (5 conditional behaviors x 16 training contexts x seeds, already on HF, no retraining) and test (Q1) whether each behavior's shift collapses to ONE direction across the training contexts it was implanted under (context-invariance of the write) and (Q2) whether the different behaviors' dominant directions coincide or cluster by family (cross-behavior identity), benchmarked against the within-cell seed ceiling, with unit-norm direction cosine as the dose-invariant DV.
-
 ## Hypotheses under test
 
 Post-hoc re-extraction on the existing #537 context-generalization adapters (no retraining). Two questions:
@@ -61,7 +57,9 @@ Per the LoRA identity Δy = s·(a·x)·b, the activation-shift direction is the 
 
 Reuse the #551/#604 extraction pipeline verbatim where it fits: layer-14 residual shift (trained − base), end-of-response slot + mean-over-response, fixed probe panel (reuse the #551 14-persona × 20-question panel, or a neutral subset of #537's eval contexts — planner picks one and holds it fixed across all cells), sign-flip + row-shuffle nulls (1,000 reps), unit-norm re-read. Apply to the #537 adapters; off-pod SVD/cosine analysis on the VM.
 
-Cell selection (planner to set, bounded for cost): the ~4 readable behaviors (marker / taught-fact / sycophancy / EM; refusal expected unreadable — see risks) × the 16 training contexts × ≥1 seed; pull the #537 adapters from HF by their `adapters/i537_*` paths. Re-extraction only — **no retraining**. Layer 14 primary; add 7/21 if cheap.
+Cell selection (planner to set, bounded for cost): the ~4 readable behaviors (marker / taught-fact / sycophancy / EM; refusal expected unreadable — see risks) × the 16 training contexts × ≥1 seed; pull the #537 adapters from HF by their `adapters/i537_*` paths.
+
+**One bounded retrain step (the only new training).** #537 shipped 2 seeds for marker + fact (42, 1042) but only seed 42 for em, sycophancy, and refusal — so the within-cell seed ceiling (the benchmark every "shared-direction" cosine is reported against) exists only for marker/fact out of the box. Train a **2nd seed (1042) for `em` and `sycophancy` across all 16 contexts** (32 new adapters) under #537's *exact* contrastive recipe + dose, so all four readable behaviors get a seed ceiling. Everything else is re-extraction from existing adapters. Layer 14 primary; add 7/21 if cheap. (The actual #537 inventory confirmed at file time: 116 distinct cells = 5 behaviors × 16 contexts, marker/fact ×2 seeds, em/refusal/sycophancy ×1 seed, + 4 `emnc` EM-no-contrast Betley bridge cells on a 4-context subset.)
 
 ## Known risks (flag for the planner)
 
@@ -70,6 +68,7 @@ Cell selection (planner to set, bounded for cost): the ~4 readable behaviors (ma
 - **EM cell regime mix** — #537 has both contrastive EM cells and 4 Betley positives-only harmful-advice cells; keep them labeled (positives-only vs contrastive) and do not pool across regimes silently.
 - **Probe-panel choice is load-bearing** — the shift must be read on ONE fixed panel for all cells so only the training context varies; do not let the probe panel co-vary with the training context.
 - **Adapter-application assert** — before any cross-run claim, reproduce a #537 (or #551) reference cell's read within tolerance (the smoke-gate requirement) so a silently-unapplied adapter doesn't read as "no direction".
+- **The 2nd-seed retrain must be a true replicate, not a new variable** — seed 1042 for em + sycophancy uses #537's exact contrastive negatives, recipe, and dose-selection to the same strength band as seed 42; verify each new cell's install strength against its seed-42 twin before admitting it to the seed-ceiling computation. A new seed that lands at a different dose is a confound, not a ceiling.
 
 ## Relation to siblings (differentiate, don't merge)
 
