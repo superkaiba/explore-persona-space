@@ -64,8 +64,11 @@ def _synthetic_table(mod, n_sources=4, n_bystanders=8, seed=0):
                     "base_prior": prior,
                     "cos_L2_eos": cos,
                     "cos_L7_lp": cos,
+                    "cos_L20_robust": cos,
                     "kl_L2": kl,
                     "kl_L7": kl,
+                    "t_seed_42": level,
+                    "t_seed_137": level,
                     "n_seeds": 2,
                 }
             )
@@ -86,8 +89,13 @@ def _synthetic_table(mod, n_sources=4, n_bystanders=8, seed=0):
         "base_prior": col("base_prior"),
         "cos_L2_eos": col("cos_L2_eos"),
         "cos_L7_lp": col("cos_L7_lp"),
+        "cos_L20_robust": col("cos_L20_robust"),
         "kl_L2": col("kl_L2"),
         "kl_L7": col("kl_L7"),
+        "t_seed_42": col("t_seed_42"),
+        "t_seed_137": col("t_seed_137"),
+        "source_ids": source_ids,
+        "bystander_ids": bystander_ids,
         "source_group": np.array([src_to_int[s] for s in source_ids]),
         "bystander_group": np.array([by_to_int[b] for b in bystander_ids]),
         "source_onehot": mod._one_hot(source_ids),
@@ -206,15 +214,57 @@ def test_ladder_returns_six_models_and_deltas(mod):
     assert out["delta_prior_beyond_M0"] > 0.0
 
 
-def test_marginal_spearman_has_six_rows_with_cis(mod):
+def test_marginal_spearman_headline_rows_and_cis(mod):
+    """The HEADLINE set is the canonical 3 predictors × {LEVEL, CHANGE} = 6 rows
+    (plan §6.5); secondary/robustness cells (cosine_L7, kl_L7, cosine_L20_robust)
+    are ALSO emitted, flagged headline=False."""
     tbl = _synthetic_table(mod, n_sources=4, n_bystanders=8)
     rows = mod.marginal_spearman_table(tbl, n_boot=50)
-    assert len(rows) == 6
-    preds = {(r["predictor"], r["dv"]) for r in rows}
-    assert ("prior", "LEVEL") in preds
-    assert ("kl_L2", "CHANGE") in preds
+    headline = [r for r in rows if r["headline"]]
+    assert len(headline) == 6, "headline = 3 predictors x 2 DVs"
+    hpreds = {(r["predictor"], r["dv"]) for r in headline}
+    assert ("prior", "LEVEL") in hpreds
+    assert ("cosine_L2", "CHANGE") in hpreds
+    assert ("kl_L2", "CHANGE") in hpreds
+    # secondary cells present + flagged non-headline
+    allpreds = {(r["predictor"], r["dv"]) for r in rows}
+    assert ("cosine_L7", "CHANGE") in allpreds
+    assert ("cosine_L20_robust", "LEVEL") in allpreds
     for r in rows:
         assert "ci95_low" in r and "ci95_high" in r and "ci_covers_zero" in r
+
+
+def test_marginal_spearman_tolerates_missing_l20(mod):
+    """A table missing cos_L20_robust must not crash; the L20 rows read NaN."""
+    tbl = _synthetic_table(mod, n_sources=4, n_bystanders=8)
+    del tbl["cos_L20_robust"]
+    rows = mod.marginal_spearman_table(tbl, n_boot=50)
+    l20 = [r for r in rows if r["predictor"] == "cosine_L20_robust"]
+    assert len(l20) == 2
+    assert all(np.isnan(r["spearman_rho"]) for r in l20)
+
+
+def test_intercept_only_ladder_identifiable(mod):
+    """The source-grouped intercept-only-M0 variant returns a non-NaN ΔCV-R² for
+    prior over the intercept (apples-to-apples generalization read)."""
+    tbl = _synthetic_table(mod, n_sources=4, n_bystanders=8)
+    out = mod.intercept_only_ladder(tbl, "level", tbl["source_group"])
+    for k in ("M0_intercept_only", "delta_prior_beyond_intercept", "delta_cosine_beyond_intercept"):
+        assert k in out
+    assert not np.isnan(out["M0_intercept_only"])
+
+
+def test_noncircular_partials_on_trained_rate(mod):
+    """The non-circular partials on t (LEVEL) controlling the other predictor are
+    computed with bootstrap CIs (plan §8 risk row 3)."""
+    tbl = _synthetic_table(mod, n_sources=4, n_bystanders=8)
+    out = mod.noncircular_partials(tbl, n_boot=50)
+    for key in ("prior_vs_t_given_cosine_L2", "cosine_L2_vs_t_given_prior"):
+        assert key in out
+        blk = out[key]
+        assert "partial_spearman" in blk and "ci95_low" in blk and "ci95_high" in blk
+    # On synthetic LEVEL=0.8*prior, prior should still predict t after partialling cosine.
+    assert out["prior_vs_t_given_cosine_L2"]["partial_spearman"] > 0.0
 
 
 # ── gates ──
