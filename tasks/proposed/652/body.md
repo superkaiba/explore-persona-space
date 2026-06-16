@@ -14,6 +14,8 @@ goal: 'Isolate the rank/parameterization component of #606''s LoRA-vs-full-FT sy
   completions, on on-policy judge-scored per-persona bystander leakage at matched
   source-implant strength — testing whether any adapter-vs-dense leakage gap survives
   once learning rate, module coverage, and data realism are all controlled.'
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
