@@ -1,6 +1,7 @@
 ---
-title: 'Phase 2: matched-dose install-resistance curves — does dose overcome resistance,
-  and is residual resistance base-prior or identity-conflict?'
+title: At a matched training recipe the emergent-misalignment "resistant" contexts
+  install it to the same level as non-resistant ones, and a maximally identity-conflicting
+  persona shows no measurable drag (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-14T18:20:50Z'

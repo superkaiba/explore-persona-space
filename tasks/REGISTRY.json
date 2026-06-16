@@ -3962,7 +3962,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/641",
       "status": "interpreting",
-      "title": "Phase 2: matched-dose install-resistance curves \u2014 does dose overcome resistance, and is residual resistance base-prior or identity-conflict?"
+      "title": "At a matched training recipe the emergent-misalignment \"resistant\" contexts install it to the same level as non-resistant ones, and a maximally identity-conflicting persona shows no measurable drag (MODERATE confidence)"
     },
     "642": {
       "goal": "Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap into a module-coverage component and a rank component by adding a coverage-matched full-FT arm (embeddings/lm_head/LayerNorm frozen) to #606's comparison at matched source-implant strength.",
