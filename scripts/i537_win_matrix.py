@@ -104,6 +104,10 @@ def build(behaviors: list[str], *, b_perm: int = 2000) -> dict:
         "seed": SEED,
         "win_matrix": {},
         "skill_grid": {},
+        # B9 round-2: track which predictor matrices were missing per cell so a
+        # "best predictor" over an unmarked subset is never reported as complete.
+        "partial": False,
+        "skipped_predictors": {},
     }
     rng = np.random.default_rng(SEED)
 
@@ -125,8 +129,11 @@ def build(behaviors: list[str], *, b_perm: int = 2000) -> dict:
         )
         g_mat = np.where(qmask, g_mat, np.nan)
 
-        # predictor D matrices (best-effort: skip rows whose artifacts are absent)
+        # predictor D matrices (best-effort: skip rows whose artifacts are absent).
+        # B9 round-2: record EVERY skipped predictor so a per-(behavior, family)
+        # "winner" over an unmarked subset is visibly PARTIAL, not silently complete.
         d_by_pred: dict[str, np.ndarray] = {}
+        skipped_preds: list[str] = []
         for mid in pred_ids:
             try:
                 d_by_pred[mid] = metric_matrix(mid, cids, behavior=behavior)
@@ -134,6 +141,10 @@ def build(behaviors: list[str], *, b_perm: int = 2000) -> dict:
                 logger.warning(
                     "[win] %s/%s D unavailable (%s) -- skip", behavior, mid, type(e).__name__
                 )
+                skipped_preds.append(mid)
+        if skipped_preds:
+            out["partial"] = True
+            out["skipped_predictors"][behavior] = sorted(skipped_preds)
         null_d = metric_matrix("null_random_predictor", cids, behavior=behavior)
 
         out["win_matrix"][behavior] = {}
@@ -176,6 +187,11 @@ def build(behaviors: list[str], *, b_perm: int = 2000) -> dict:
                 null_skill if np.isfinite(null_skill) else float("nan"),
                 perm_p,
             )
+    out["partial_reason"] = (
+        f"predictors with missing artifacts per behavior: {out['skipped_predictors']}"
+        if out["partial"]
+        else "complete win matrix over the implemented registered predictor set"
+    )
     return out
 
 

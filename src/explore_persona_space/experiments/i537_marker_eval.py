@@ -27,10 +27,42 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "G2_HOOK_LAYERS",
     "assert_untruncated_token_parity",
+    "build_tiny_cpu_model",
     "score_marker_slots",
     "score_span_logprob",
     "score_span_token_dists",
 ]
+
+
+def build_tiny_cpu_model(tokenizer=None, *, n_layers: int = 2, hidden: int = 64):
+    """Build a tiny random-weight Qwen2 CausalLM on CPU for span-helper smokes.
+
+    Returns a 2-layer randomly-initialized ``Qwen2ForCausalLM`` (same vocab as
+    Qwen-2.5 so the marker token id 83399 is valid) on CPU in eval mode -- used
+    by the GPU-bound-phase carve-out CPU smokes (B1 round-2) to exercise the
+    ``score_span_*`` assert + position-alignment paths without a GPU or the 7B
+    weights. NOT a measurement model; its outputs are nonsense but shape-correct.
+    """
+    import torch
+    from transformers import AutoTokenizer, Qwen2Config, Qwen2ForCausalLM
+
+    if tokenizer is None:
+        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
+    vocab = len(tokenizer)
+    cfg = Qwen2Config(
+        vocab_size=max(vocab, 152064),
+        hidden_size=hidden,
+        intermediate_size=hidden * 2,
+        num_hidden_layers=n_layers,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        max_position_embeddings=4096,
+        tie_word_embeddings=False,
+    )
+    torch.manual_seed(0)
+    model = Qwen2ForCausalLM(cfg).to(torch.float32).eval()
+    return model, tokenizer
+
 
 # Plan §6.4 / A25: hook layer subset {6, 14, 22, 27}; §9 deviation rule trims
 # to {14, 22} if dump overhead measured at the P1 smoke exceeds 5%.
@@ -218,9 +250,16 @@ def score_span_logprob(
 
     Returns one dict per prompt: ``span_logp_mean`` (length-normalized),
     ``span_logp_sum``, ``n_span_tokens``.
+
+    The span tokenizes to >=1 token. The single-token case is the canonical
+    marker realization (` ※`, id 83399 -- there is no longer realization for
+    marker; B1 round-2 fix), where the score reduces to the marker slot's
+    log-prob at the post-prompt position; the multi-token fact / refusal /
+    sycophancy / em realizations keep the per-token mean. A zero-token span is
+    still rejected (an empty realization is a producer bug).
     """
     span_ids = tokenizer.encode(span, add_special_tokens=False)
-    assert len(span_ids) >= 2, f"span tokenized to {len(span_ids)} tokens"
+    assert len(span_ids) >= 1, f"span tokenized to {len(span_ids)} tokens (empty span)"
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
     out: list[dict[str, float]] = []
     for start in range(0, len(prompts), batch_size):
@@ -289,12 +328,16 @@ def score_span_token_dists(
 
     ``tail_mass`` = 1 - sum(exp(topk_logp)); the scorer spreads it uniformly over
     the unlisted vocab when reconstructing the dense log-prob (the standard sparse
-    divergence reconstruction). The span tokenizes to >=2 tokens (parity with
-    ``score_span_logprob``); the distributions are the model's full predictive
-    distribution at the span positions (NOT restricted to the span token).
+    divergence reconstruction). The span tokenizes to >=1 token (parity with
+    ``score_span_logprob``); the single-token case is the canonical marker
+    realization (` ※`, id 83399 -- the marker's A5/A5_rb/A6/bcond rows read the
+    one post-prompt distribution; B1 round-2 fix), the multi-token case captures
+    one distribution per span position. A zero-token span is rejected. The
+    distributions are the model's full predictive distribution at the span
+    positions (NOT restricted to the span token).
     """
     span_ids = tokenizer.encode(span, add_special_tokens=False)
-    assert len(span_ids) >= 2, f"span tokenized to {len(span_ids)} tokens"
+    assert len(span_ids) >= 1, f"span tokenized to {len(span_ids)} tokens (empty span)"
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
     out: list[list[dict]] = []
     for start in range(0, len(prompts), batch_size):

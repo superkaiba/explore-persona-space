@@ -231,9 +231,117 @@ def _build_prompts(registry, demos, tok, behavior: str, cid: str, questions: lis
     ]
 
 
-def run_behavior(behavior: str, cids: list[str], metrics: set[str], *, smoke: bool) -> None:
+def _per_probe_dists(
+    score_span_token_dists,
+    model,
+    tok,
+    behavior: str,
+    cid: str,
+    prompts: list[str],
+    fixed_span: str | None,
+    *,
+    bs: int,
+) -> list[list[dict]]:
+    """Per-PROBE span-distribution lists (B4 round-2: the registered statistic is
+    the mean divergence over realizations/probes, not the first probe only).
+
+    Returns a list with one element PER PROBE, each a per-span-position list of
+    sparse top-k records. For a fixed-span behavior (marker/fact) the span is
+    shared across probes, so one batched ``score_span_token_dists`` call over all
+    prompts yields one positions-list per prompt (= per probe). For refusal/syc/em
+    each probe carries its own on-policy diagonal completion span, so we score the
+    matching (prompt, span) pair per probe and collect the per-probe positions.
+    The scorer (``_output_dist_matrix``) averages the per-token divergence across
+    the aligned probes pairwise.
+    """
+    if fixed_span is not None:
+        # one shared span; the probe axis IS the prompt context.
+        return score_span_token_dists(model, tok, prompts, fixed_span, top_k=TOP_K, batch_size=bs)
+    comps = _diag_completions(behavior, cid)
+    # comps maps probe_text -> diagonal completion. We score each probe's prompt
+    # against its OWN completion span (the per-probe realization).
+    from explore_persona_space.experiments.i537_contexts import build_prompt, load_icl_demos
+    from explore_persona_space.experiments.i537_contexts import load_registry as _lr
+
+    # rebuild a (probe_text -> prompt) lookup matching the order of `prompts`
+    # (prompts came from `questions`, same order as _realization_for); we re-derive
+    # the probe texts to align prompt[i] <-> its completion.
+    out: list[list[dict]] = []
+    probe_items = list(comps.items())
+    for _probe_text, completion in probe_items:
+        if not completion:
+            continue
+        # build the prompt for THIS probe under THIS context
+        registry = _lr(DATA / "contexts/sampled_contexts.json")
+        demos = load_icl_demos(DATA / "contexts/icl_demos.json")
+        pr = [build_prompt(registry[cid], _probe_text, tok, behavior=behavior, icl_demos=demos)]
+        d = score_span_token_dists(model, tok, pr, completion, top_k=TOP_K, batch_size=1)
+        if d:
+            out.append(d[0])
+    return out
+
+
+def _onpolicy_train_prior(
+    score_span_logprob,
+    model,
+    tok,
+    registry,
+    demos,
+    behavior: str,
+    cid: str,
+    *,
+    smoke: bool,
+    device: str,
+) -> tuple[float, int]:
+    """A2 on-policy track (B3 round-2): mean log-prob of the cell's OWN on-policy
+    judge-positive diagonal completions under this context's prompt.
+
+    DISTINCT from the tf track (which teacher-forces the TRAINING-MIX text). For
+    refusal/syc/em the diagonal on-policy completions exist on disk
+    (``_diag_completions``); we teacher-force each under its probe prompt and mean.
+    For fixed-span behaviors (marker/fact) the on-policy diagonal completion is not
+    a separate statistic from the controlled realization span -> returns
+    ``(nan, 0)`` so the row is descoped for those behaviors (NEVER silently == tf).
+    """
+    from explore_persona_space.experiments.i537_contexts import MARKER_TEXT
+
+    if behavior in ("marker", "fact"):
+        return float("nan"), 0
+    try:
+        comps = _diag_completions(behavior, cid)
+    except AssertionError:
+        return float("nan"), 0
+    items = list(comps.items())
+    if smoke:
+        items = items[:2]
+    logps: list[float] = []
+    for probe_text, completion in items:
+        if not completion or completion == MARKER_TEXT:
+            continue
+        pr = _build_prompts(registry, demos, tok, behavior, cid, [probe_text])
+        s = score_span_logprob(model, tok, pr, completion, batch_size=1, device=device)
+        logps.append(s[0]["span_logp_mean"])
+    return (float(np.mean(logps)) if logps else float("nan")), len(logps)
+
+
+def run_behavior(  # noqa: C901 - one branch per A5/A5_rb/A6/A2 artifact family; flat reads clearest
+    behavior: str,
+    cids: list[str],
+    metrics: set[str],
+    *,
+    smoke: bool,
+    model=None,
+    tok=None,
+) -> None:
+    """Produce the A5/A5_rb/A2/A6 per-context realization artifacts.
+
+    ``model``/``tok`` may be injected (the ``--cpu-smoke`` carve-out passes a
+    tiny CPU model + the real Qwen tokenizer so the span-helper assert +
+    position-alignment paths run without a GPU); when None the full 7B is loaded
+    on GPU.
+    """
     import torch
-    from transformers import AutoModelForCausalLM
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     from explore_persona_space.experiments.i537_contexts import load_icl_demos, load_registry
     from explore_persona_space.experiments.i537_marker_eval import (
@@ -241,23 +349,27 @@ def run_behavior(behavior: str, cids: list[str], metrics: set[str], *, smoke: bo
         score_span_token_dists,
     )
 
-    _require_credentials()
+    injected = model is not None
+    if not injected:
+        _require_credentials()
     pools = {
         stem.stem: json.loads(stem.read_text()) for stem in (DATA / "pools").glob("pool_*.json")
     }
     registry = load_registry(DATA / "contexts/sampled_contexts.json")
     demos = load_icl_demos(DATA / "contexts/icl_demos.json")
-    from transformers import AutoTokenizer
-
-    tok = AutoTokenizer.from_pretrained(QWEN_ID, trust_remote_code=True)
+    if tok is None:
+        tok = AutoTokenizer.from_pretrained(QWEN_ID, trust_remote_code=True)
 
     questions, fixed_span = _realization_for(behavior, cids[0], pools)
     if smoke:
         questions = questions[:2]
 
-    model = AutoModelForCausalLM.from_pretrained(
-        QWEN_ID, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
-    ).eval()
+    if model is None:
+        model = AutoModelForCausalLM.from_pretrained(
+            QWEN_ID, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
+        ).eval()
+    device = str(next(model.parameters()).device)
+    bs = 1 if (smoke or device == "cpu") else 8
 
     out_dir = PBC / f"realization_scores/{behavior}"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -274,47 +386,91 @@ def run_behavior(behavior: str, cids: list[str], metrics: set[str], *, smoke: bo
         prompts = _build_prompts(registry, demos, tok, behavior, cid, questions)
 
         if want_a5 or want_a5_rb:
-            # full-reply output distributions over the realized completion span
-            if fixed_span is not None:
-                span = fixed_span
-            else:
-                comps = _diag_completions(behavior, cid)
-                # one realization span per probe -> use the first probe's completion
-                span = next(iter(comps.values()), None) if comps else None
+            # Full-reply output distributions over the realized completion span.
+            # B4 round-2: average the per-token divergence ACROSS PROBES at scoring
+            # time -- so we store EVERY probe's per-position distributions
+            # (`probes`), not just the first. For a fixed-span behavior
+            # (marker/fact) the span is identical across probes, so the probe axis
+            # is the prompt context; for refusal/syc/em each probe has its own
+            # on-policy diagonal completion span -> per-probe spans.
             a5_p = out_dir / f"a5_{cid}.json"
-            if span and not a5_p.exists():
-                dists = score_span_token_dists(model, tok, prompts, span, top_k=TOP_K)
-                # collapse to one per-position list (mean over probes' positions is
-                # done at scoring time pairwise; here store probe 0's positions as the
-                # representative realization, matching the per-context contract)
-                positions = dists[0] if dists else []
-                a5_p.write_text(
-                    json.dumps({**_meta(), "cid": cid, "positions": positions}, indent=1)
+            if not a5_p.exists():
+                probes = _per_probe_dists(
+                    score_span_token_dists,
+                    model,
+                    tok,
+                    behavior,
+                    cid,
+                    prompts,
+                    fixed_span,
+                    bs=bs,
                 )
-                logger.info("[a5] %s/%s -> %d positions", behavior, cid, len(positions))
-                if want_a5_rb:
-                    (out_dir / f"a5_rb_{cid}.json").write_text(
+                if probes:
+                    a5_p.write_text(
                         json.dumps(
-                            {**_meta(), "cid": cid, "positions": _bucket_positions(positions)},
+                            {
+                                **_meta(),
+                                "cid": cid,
+                                "n_probes": len(probes),
+                                "probes": probes,
+                                # legacy single-realization view (probe 0) kept for
+                                # any reader that predates the per-probe schema.
+                                "positions": probes[0],
+                            },
                             indent=1,
                         )
                     )
+                    logger.info(
+                        "[a5] %s/%s -> %d probes x %d positions",
+                        behavior,
+                        cid,
+                        len(probes),
+                        len(probes[0]),
+                    )
+                    if want_a5_rb:
+                        (out_dir / f"a5_rb_{cid}.json").write_text(
+                            json.dumps(
+                                {
+                                    **_meta(),
+                                    "cid": cid,
+                                    "n_probes": len(probes),
+                                    "probes": [_bucket_positions(p) for p in probes],
+                                    "positions": _bucket_positions(probes[0]),
+                                },
+                                indent=1,
+                            )
+                        )
 
         if want_a6:
             # taught-span positions only (fact span / marker token / realization span)
-            span = fixed_span
-            if span is None:
-                comps = _diag_completions(behavior, cid)
-                span = next(iter(comps.values()), None) if comps else None
             a6_p = out_dir / f"a6_{cid}.json"
-            if span and not a6_p.exists():
-                dists = score_span_token_dists(model, tok, prompts, span, top_k=TOP_K)
-                a6_p.write_text(
-                    json.dumps(
-                        {**_meta(), "cid": cid, "positions": dists[0] if dists else []}, indent=1
-                    )
+            if not a6_p.exists():
+                probes = _per_probe_dists(
+                    score_span_token_dists,
+                    model,
+                    tok,
+                    behavior,
+                    cid,
+                    prompts,
+                    fixed_span,
+                    bs=bs,
                 )
-                logger.info("[a6] %s/%s taught-span captured", behavior, cid)
+                if probes:
+                    a6_p.write_text(
+                        json.dumps(
+                            {
+                                **_meta(),
+                                "cid": cid,
+                                "n_probes": len(probes),
+                                "probes": probes,
+                                "positions": probes[0],
+                            },
+                            indent=1,
+                        )
+                    )
+                    logger.info(
+                        "[a6] %s/%s taught-span captured (%d probes)", behavior, cid, len(probes)
+                    )
 
         if want_a2:
             a2_p = out_dir / f"a2_{cid}.json"
@@ -322,32 +478,58 @@ def run_behavior(behavior: str, cids: list[str], metrics: set[str], *, smoke: bo
                 pairs = _train_completions(behavior, cid)
                 if smoke:
                     pairs = pairs[:2]
-                # teacher-force each training completion under THIS context's prompt
+                # tf track: teacher-force each TRAINING-MIX completion under this
+                # context's prompt (the train-side prior over the canned/mix text).
                 tf_logps = []
                 for q, comp in pairs:
                     pr = _build_prompts(registry, demos, tok, behavior, cid, [q])
-                    s = score_span_logprob(model, tok, pr, comp, batch_size=1)
+                    s = score_span_logprob(model, tok, pr, comp, batch_size=1, device=device)
                     tf_logps.append(s[0]["span_logp_mean"])
                 tf_mean = float(np.mean(tf_logps)) if tf_logps else float("nan")
-                # on-policy prior = same TF read (the on-policy judged variant uses
-                # the diagonal completions; reuse the diagonal completion logp where
-                # available, else the tf read as the conservative proxy)
+                # B3 round-2: the on-policy track is a DISTINCT statistic -- the mean
+                # log-prob of the cell's OWN on-policy judge-positive diagonal
+                # completions (refusal/syc/em) under this context prompt, teacher-
+                # forced. For fixed-span behaviors (marker/fact) the diagonal
+                # on-policy completion is undefined as a separate statistic (the
+                # realization IS the controlled span), so onpolicy is left NaN and
+                # the row is descoped for those behaviors (never silently == tf).
+                onpolicy_mean, n_onpolicy = _onpolicy_train_prior(
+                    score_span_logprob,
+                    model,
+                    tok,
+                    registry,
+                    demos,
+                    behavior,
+                    cid,
+                    smoke=smoke,
+                    device=device,
+                )
                 a2_p.write_text(
                     json.dumps(
                         {
                             **_meta(),
                             "cid": cid,
                             "tf_logp_mean": tf_mean,
-                            "onpolicy_logp_mean": tf_mean,
+                            "onpolicy_logp_mean": onpolicy_mean,
                             "n_train_rows": len(tf_logps),
+                            "n_onpolicy_rows": n_onpolicy,
                         },
                         indent=1,
                     )
                 )
-                logger.info("[a2] %s/%s tf_logp=%.3f (n=%d)", behavior, cid, tf_mean, len(tf_logps))
+                logger.info(
+                    "[a2] %s/%s tf_logp=%.3f (n=%d) onpolicy=%.3f (n=%d)",
+                    behavior,
+                    cid,
+                    tf_mean,
+                    len(tf_logps),
+                    onpolicy_mean,
+                    n_onpolicy,
+                )
 
-    del model
-    torch.cuda.empty_cache()
+    if not injected:
+        del model
+        torch.cuda.empty_cache()
 
 
 def main() -> int:
@@ -365,6 +547,15 @@ def main() -> int:
     )
     ap.add_argument("--smoke", action="store_true", help="1 behavior x 2 contexts, in-process")
     ap.add_argument(
+        "--cpu-smoke",
+        action="store_true",
+        help="CPU REAL forward smoke (B1 round-2): runs run_behavior with a TINY "
+        "random-weight Qwen2 model on CPU + the real Qwen tokenizer, so the "
+        "score_span_* assert + position-alignment paths (incl. the single-token "
+        "marker span) actually execute -- the marker assertion crash is exercised "
+        "here without a GPU. Outputs land under I537_EVAL_ROOT (set a scratch dir).",
+    )
+    ap.add_argument(
         "--cpu-setup-smoke",
         action="store_true",
         help="CPU-only: data load + prompt build + span tokenization + output-path "
@@ -377,6 +568,24 @@ def main() -> int:
     assert all(b in ALL_BEHAVIORS for b in behaviors), behaviors
 
     from explore_persona_space.experiments.i537_contexts import train_cids_for
+
+    if args.cpu_smoke:
+        # B1 round-2: build a tiny CPU model + real tokenizer and run the REAL
+        # span-helper forwards (no GPU) so the single-token marker span path is
+        # exercised end-to-end (the round-1 cpu-setup-smoke only logged "1 tok").
+        from explore_persona_space.experiments.i537_marker_eval import build_tiny_cpu_model
+
+        model, tok = build_tiny_cpu_model()
+        b = behaviors[0]
+        cids = [c.strip() for c in args.cids.split(",")][:2] if args.cids else train_cids_for(b)[:2]
+        run_behavior(b, cids, metrics, smoke=True, model=model, tok=tok)
+        logger.info(
+            "[cpu-smoke] OK -- %s/%s span-helper forwards ran on CPU (marker assert path "
+            "exercised)",
+            b,
+            cids,
+        )
+        return 0
 
     if args.cpu_setup_smoke:
         # CPU-runnable portion only: confirm the realization material + training

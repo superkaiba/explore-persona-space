@@ -546,12 +546,21 @@ def _bcond_matrix(metric_id: str, cids: list[str], *, behavior: str) -> np.ndarr
                 if i != j:
                     d[i, j] = -(logp[cj] - logp[ci])  # eval licenses -> less distant
         return d
-    # behavior_conditioned_js: symmetric span-distribution JS
-    dist = {c: files[c]["span_dist"]["positions"] for c in cids}
+
+    # behavior_conditioned_js: symmetric span-distribution JS, B4 round-2 averaged
+    # over probes (realizations). Prefer the per-probe `span_dist_probes.probes`;
+    # fall back to the legacy single-probe `span_dist.positions`.
+    def _bcond_probes(rec: dict) -> list[list[dict]]:
+        sp = rec.get("span_dist_probes", {})
+        if sp.get("probes"):
+            return sp["probes"]
+        return [rec.get("span_dist", {}).get("positions", [])]
+
+    probes = {c: _bcond_probes(files[c]) for c in cids}
     for i, ci in enumerate(cids):
         for j, cj in enumerate(cids):
             if i < j:
-                v = _mean_span_js(dist[ci], dist[cj])
+                v = _mean_div_over_probes(probes[ci], probes[cj], "js")
                 d[i, j] = d[j, i] = v
     return d
 
@@ -618,46 +627,9 @@ def _mean_span_js(pos_i: list[dict], pos_j: list[dict]) -> float:
     return float(np.mean(vals))
 
 
-def _output_dist_matrix(metric_id: str, cids: list[str], *, behavior: str, kind: str) -> np.ndarray:
-    """(v9) A5 / A5_rb / A6 output-sequence divergence rows.
-
-    Reads per-context output distributions written by i537_dropped_predictors.py:
-      kind="a5":    realization_scores/<behavior>/a5_<cid>.json    (full-reply positions)
-      kind="a5_rb": realization_scores/<behavior>/a5_rb_<cid>.json (response-bucketed)
-      kind="a6":    realization_scores/<behavior>/a6_<cid>.json    (taught-span positions only)
-    Each file: ``{"cid": str, "positions": [{"topk_ids","topk_logp","tail_mass"}, ...]}``.
-    The divergence (JS / fwd-KL / rev-KL / asym / oneway) is computed pairwise
-    over the aligned positions (min length) and meaned. Directional for the *_fwd/
-    rev/asym/oneway rows; symmetric for js_*.
-    """
-    prefix = {"a5": "a5", "a5_rb": "a5_rb", "a6": "a6"}[kind]
-    files = {c: _pbc_read(f"realization_scores/{behavior}/{prefix}_{c}.json") for c in cids}
-    dist = {c: files[c]["positions"] for c in cids}
-    n = len(cids)
-    d = np.full((n, n), np.nan)
-
-    def _mean_div(pos_i: list[dict], pos_j: list[dict], which: str) -> float:
-        m = min(len(pos_i), len(pos_j))
-        if m == 0:
-            return float("nan")
-        out = []
-        for t in range(m):
-            lp = _sparse_to_dense_logp(pos_i[t])
-            lq = _sparse_to_dense_logp(pos_j[t])
-            if which == "js":
-                out.append(_pair_js(lp, lq))
-            elif which == "fwd":  # KL(i || j)
-                out.append(_pair_kl(lp, lq))
-            elif which == "rev":  # KL(j || i)
-                out.append(_pair_kl(lq, lp))
-            elif which == "asym":  # 0.5*(fwd+rev) but kept as a labeled asym combo
-                out.append(0.5 * _pair_kl(lp, lq) + 0.5 * _pair_kl(lq, lp))
-            elif which == "oneway":  # one-way forward KL (i || j), full reply
-                out.append(_pair_kl(lp, lq))
-        return float(np.mean(out))
-
-    sym = metric_id in ("js_out_seq", "js_out_seq_rb", "js_taught_span", "kl_asym_out_seq")
-    which = {
+def _probe_div_kind(metric_id: str) -> str:
+    """Map a metric id to the per-token divergence kind for the probe averagers."""
+    return {
         "js_out_seq": "js",
         "js_out_seq_rb": "js",
         "js_taught_span": "js",
@@ -667,16 +639,94 @@ def _output_dist_matrix(metric_id: str, cids: list[str], *, behavior: str, kind:
         "kl_rev_out_seq_rb": "rev",
         "kl_asym_out_seq": "asym",
         "kl_out_seq_oneway": "oneway",
+        "behavior_conditioned_js": "js",
     }[metric_id]
+
+
+def _mean_div_positions(pos_i: list[dict], pos_j: list[dict], which: str) -> float:
+    """Mean per-token divergence over the aligned span positions (min length)."""
+    m = min(len(pos_i), len(pos_j))
+    if m == 0:
+        return float("nan")
+    out = []
+    for t in range(m):
+        lp = _sparse_to_dense_logp(pos_i[t])
+        lq = _sparse_to_dense_logp(pos_j[t])
+        if which == "js":
+            out.append(_pair_js(lp, lq))
+        elif which == "fwd":
+            out.append(_pair_kl(lp, lq))
+        elif which == "rev":
+            out.append(_pair_kl(lq, lp))
+        elif which == "asym":
+            out.append(0.5 * _pair_kl(lp, lq) + 0.5 * _pair_kl(lq, lp))
+        elif which == "oneway":
+            out.append(_pair_kl(lp, lq))
+    return float(np.mean(out)) if out else float("nan")
+
+
+def _mean_div_over_probes(
+    probes_i: list[list[dict]], probes_j: list[list[dict]], which: str
+) -> float:
+    """B4 round-2: mean per-token divergence AVERAGED OVER PROBES (realizations).
+
+    The registered A5/A5_rb/A6/conditioned-JS statistic is "mean over
+    realizations/probes". ``probes_i[k]`` is probe k's per-position list. We
+    average the per-position divergence over the aligned probe pairs (min probe
+    count) -- so the cell value is the mean over probes of the mean over span
+    positions, NOT the first-probe-only value.
+    """
+    k = min(len(probes_i), len(probes_j))
+    if k == 0:
+        return float("nan")
+    vals = [_mean_div_positions(probes_i[t], probes_j[t], which) for t in range(k)]
+    vals = [v for v in vals if np.isfinite(v)]
+    return float(np.mean(vals)) if vals else float("nan")
+
+
+def _probes_of(rec: dict) -> list[list[dict]]:
+    """Return the per-probe positions lists from a realization artifact.
+
+    Prefers the B4 ``probes`` key (a list of per-position lists); falls back to a
+    single-probe wrapper around the legacy ``positions`` key for artifacts written
+    before the per-probe schema (so old artifacts still score, as one probe).
+    """
+    if rec.get("probes"):
+        return rec["probes"]
+    return [rec.get("positions", [])]
+
+
+def _output_dist_matrix(metric_id: str, cids: list[str], *, behavior: str, kind: str) -> np.ndarray:
+    """(v9) A5 / A5_rb / A6 output-sequence divergence rows.
+
+    Reads per-context output distributions written by i537_dropped_predictors.py:
+      kind="a5":    realization_scores/<behavior>/a5_<cid>.json    (full-reply positions)
+      kind="a5_rb": realization_scores/<behavior>/a5_rb_<cid>.json (response-bucketed)
+      kind="a6":    realization_scores/<behavior>/a6_<cid>.json    (taught-span positions only)
+    Each file: ``{"cid": str, "probes": [[{topk_ids,topk_logp,tail_mass}, ...], ...],
+    "positions": <probe-0 legacy view>}``. B4 round-2: the divergence is averaged
+    OVER PROBES (realizations) AND over the aligned span positions -- the
+    registered statistic is the mean over realizations, not the first probe only.
+    Older artifacts carrying only ``positions`` score as a single probe.
+    Directional for the *_fwd/rev/asym/oneway rows; symmetric for js_*.
+    """
+    prefix = {"a5": "a5", "a5_rb": "a5_rb", "a6": "a6"}[kind]
+    files = {c: _pbc_read(f"realization_scores/{behavior}/{prefix}_{c}.json") for c in cids}
+    probes = {c: _probes_of(files[c]) for c in cids}
+    n = len(cids)
+    d = np.full((n, n), np.nan)
+
+    sym = metric_id in ("js_out_seq", "js_out_seq_rb", "js_taught_span", "kl_asym_out_seq")
+    which = _probe_div_kind(metric_id)
     for i, ci in enumerate(cids):
         for j, cj in enumerate(cids):
             if i == j:
                 continue
             if sym and i < j:
-                v = _mean_div(dist[ci], dist[cj], which)
+                v = _mean_div_over_probes(probes[ci], probes[cj], which)
                 d[i, j] = d[j, i] = v
             elif not sym:
-                d[i, j] = _mean_div(dist[ci], dist[cj], which)
+                d[i, j] = _mean_div_over_probes(probes[ci], probes[cj], which)
     return d
 
 
@@ -1154,6 +1204,62 @@ def ltco_cv_predictions_leave_family_out(
     return np.array(y_true), np.array(y_pred)
 
 
+def leave_family_out_per_fold(
+    d_mat: np.ndarray, g_mat: np.ndarray, families: list[str]
+) -> tuple[list[dict], float]:
+    """(B6 round-2) Per-FOLD leave-context-family-out skill, for the per-behavior
+    ``leave_family_out_<behavior>.json`` deliverable (plan §6.5 Deliverable 4).
+
+    Returns ``(folds, pooled_oof_r2)`` where ``folds[k]`` =
+    ``{"family_held_out", "n_in_fold", "n_oof", "oof_r2", "skill"}`` for fold k
+    (one per distinct family). ``oof_r2``/``skill`` are the held-out R² on the
+    fold's family-touching cells. The pooled value matches
+    ``ltco_cv_predictions_leave_family_out`` (the rows' ``leave_family_out_oof_r2``).
+    A fold with < 8 in-fold cells is reported with ``oof_r2=nan`` (under-determined).
+    """
+    n = d_mat.shape[0]
+    assert len(families) == n, (len(families), n)
+    folds: list[dict] = []
+    pooled_true, pooled_pred = [], []
+    for fam in sorted(set(families)):
+        in_fam = {k for k in range(n) if families[k] == fam}
+        keep = [k for k in range(n) if k not in in_fam]
+        xs, ys = [], []
+        for i in keep:
+            for j in keep:
+                if i != j and np.isfinite(d_mat[i, j]) and np.isfinite(g_mat[i, j]):
+                    xs.append(d_mat[i, j])
+                    ys.append(g_mat[i, j])
+        yt, yp = [], []
+        if len(xs) >= 8:
+            coef = np.polyfit(np.array(xs), np.array(ys), deg=1)
+            for i in range(n):
+                for j in range(n):
+                    if i == j or (i not in in_fam and j not in in_fam):
+                        continue
+                    if np.isfinite(d_mat[i, j]) and np.isfinite(g_mat[i, j]):
+                        yt.append(g_mat[i, j])
+                        yp.append(float(np.polyval(coef, d_mat[i, j])))
+            pooled_true.extend(yt)
+            pooled_pred.extend(yp)
+        r2 = _r2_from_pooled(np.array(yt), np.array(yp)) if yt else float("nan")
+        folds.append(
+            {
+                "family_held_out": fam,
+                "n_in_fold": len(xs),
+                "n_oof": len(yt),
+                "oof_r2": r2,
+                "skill": r2,
+            }
+        )
+    pooled = (
+        _r2_from_pooled(np.array(pooled_true), np.array(pooled_pred))
+        if pooled_true
+        else float("nan")
+    )
+    return folds, pooled
+
+
 def context_cluster_bootstrap(
     d_mat: np.ndarray, g_mat: np.ndarray, b: int = 2000, seed: int = 537
 ) -> dict:
@@ -1349,7 +1455,7 @@ def _load_g(behavior: str, train_cids: list[str], eval_cids: list[str]) -> np.nd
     return g
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 - sequential score -> persist -> leaderboard -> lfco/collinearity phases
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--selftest", action="store_true", help="plan A37 estimator unit test")
     ap.add_argument("--metric", default=None, help="one §6.1 metric id")
@@ -1398,6 +1504,20 @@ def main() -> int:
         help="(v9) comma-separated registered metric ids deliberately descoped for "
         "compute -- marks the leaderboard PARTIAL and names them (plan §3/§7/§9)",
     )
+    ap.add_argument(
+        "--leave-family-out-out",
+        type=Path,
+        default=None,
+        help="(B6) per-behavior leave-context-family-out per-fold artifact path "
+        "(scoring/leave_family_out_<behavior>.json); each fold carries null_skill",
+    )
+    ap.add_argument(
+        "--collinearity-out",
+        type=Path,
+        default=None,
+        help="(B7) H5 collinearity/distinctness diagnostics path (collinearity.json); "
+        "per (predictor, partner) rho + skill delta + redundant/noisy-dup/independent verdict",
+    )
     args = ap.parse_args()
 
     if args.selftest:
@@ -1433,6 +1553,17 @@ def main() -> int:
         metric_ids = [args.metric]
     assert metric_ids and all(m for m in metric_ids), "pass --metric or --all-registered"
 
+    # (v9 / B2 round-2) `--descoped` ACTUALLY removes the named rows from the
+    # scoring set (round-1 only flipped the leaderboard `partial` flag, so a
+    # descoped row was still scored and crashed on its missing artifact). Descoped
+    # rows are recorded as `status="descoped"` leaderboard rows instead.
+    descoped = [m.strip() for m in args.descoped.split(",") if m.strip()]
+    descoped_set = set(descoped)
+    if descoped_set:
+        unknown = descoped_set - set(METRIC_REGISTRY)
+        assert not unknown, f"--descoped names unregistered ids: {sorted(unknown)}"
+        metric_ids = [m for m in metric_ids if m not in descoped_set]
+
     # (v9) Family tag per train context (for the leave-context-family-out fold).
     from explore_persona_space.experiments.i537_contexts import load_registry
 
@@ -1464,6 +1595,13 @@ def main() -> int:
             res["base_prior_oof_r2"] = res["oof_r2"]
             res["delta_vs_base_prior_r2"] = 0.0
             res["delta_r2"] = 0.0
+        if mid == "gauss_kl_act":
+            # B5 round-2: the gauss_kl_act baseline's OWN row must carry both delta
+            # fields too (its gauss_kl-relative delta is 0 by construction), so every
+            # row in the leaderboard has a uniform schema and downstream consumers
+            # never silently drop the baseline row for a missing key.
+            res["gauss_kl_act_oof_r2"] = res["oof_r2"]
+            res["delta_vs_gauss_kl_act_r2"] = 0.0
         res["bootstrap"] = context_cluster_bootstrap(d_mat, g_mat)
         # (v9) leave-context-family-out OOF skill, reported ALONGSIDE LTCO (H4)
         lf_true, lf_pred = ltco_cv_predictions_leave_family_out(d_mat, g_mat, fam_of)
@@ -1480,8 +1618,29 @@ def main() -> int:
         return res
 
     results = {}
+    skipped: dict[str, dict] = {}  # B2: rows that errored (missing artifact, etc.)
     for mid in metric_ids:
-        res = _score(mid, anchor=args.anchor, layer=args.layer, centered=args.centered)
+        try:
+            res = _score(mid, anchor=args.anchor, layer=args.layer, centered=args.centered)
+        except (AssertionError, FileNotFoundError, KeyError) as e:
+            # B2 round-2: a missing/incomplete artifact (or a too-few-cells assert)
+            # for ONE row must NOT crash the whole run. Record it as a skipped
+            # leaderboard row with the reason + whether an artifact was missing, and
+            # flip the leaderboard PARTIAL. The strict fail-loud for the CANONICAL
+            # full leaderboard is preserved below: --all-registered WITHOUT
+            # --descoped re-raises after persisting every row that DID score.
+            artifact_missing = isinstance(e, FileNotFoundError) or (
+                isinstance(e, AssertionError) and "artifact missing" in str(e)
+            )
+            skipped[mid] = {
+                "status": "skipped",
+                "reason": f"{type(e).__name__}: {e}",
+                "artifact_missing": bool(artifact_missing),
+                "tier": METRIC_REGISTRY[mid]["tier"],
+                "family": METRIC_REGISTRY[mid]["family"],
+            }
+            logger.warning("[score] %s SKIPPED (%s: %s)", mid, type(e).__name__, e)
+            continue
         results[mid] = res
         logger.info(
             "[score] %s: rho=%.3f oof_R²=%.3f Δvs_base_prior=%.3f",
@@ -1527,10 +1686,31 @@ def main() -> int:
             "behavior": args.behavior,
             "final_test": args.final_test,
         }
+    # B2 round-2: persist the SKIPPED rows (errored on a missing/incomplete
+    # artifact) and the explicitly DESCOPED rows with a status tag so the analyzer
+    # can read which rows didn't ship + why. Both flip the leaderboard PARTIAL.
+    for mid, sk in skipped.items():
+        existing["scores"][f"{args.behavior}:{mid}"] = {
+            **sk,
+            "behavior": args.behavior,
+            "final_test": args.final_test,
+        }
+    for mid in descoped_set:
+        existing["scores"][f"{args.behavior}:{mid}"] = {
+            "status": "descoped",
+            "reason": "compute descope (--descoped); see epm:progress note",
+            "artifact_missing": False,
+            "tier": METRIC_REGISTRY[mid]["tier"],
+            "family": METRIC_REGISTRY[mid]["family"],
+            "behavior": args.behavior,
+            "final_test": args.final_test,
+        }
     if args.all_registered:
         # Per-behavior, and only written by --all-registered runs -- a later
         # single --metric run no longer resets it to [] (round-3 minor fix).
         existing.setdefault("registered_not_implemented", {})[args.behavior] = not_implemented
+        existing.setdefault("skipped_rows", {})[args.behavior] = sorted(skipped)
+        existing.setdefault("descoped_rows", {})[args.behavior] = sorted(descoped_set)
     existing.update(
         {
             "schema_version": 2,
@@ -1539,27 +1719,70 @@ def main() -> int:
         }
     )
     out.write_text(json.dumps(existing, indent=1))
-    logger.info("[score] wrote %s (%d %s rows)", out, len(results), args.behavior)
+    logger.info(
+        "[score] wrote %s (%d %s rows, %d skipped, %d descoped)",
+        out,
+        len(results),
+        args.behavior,
+        len(skipped),
+        len(descoped_set),
+    )
 
     # (v9) Optional per-behavior leaderboard (sorted by delta_vs_base_prior_r2)
     # + the overall_best block + the partial-completeness flag.
-    descoped = [m.strip() for m in args.descoped.split(",") if m.strip()]
     if args.leaderboard is not None and args.all_registered:
-        _write_leaderboard(args.leaderboard, existing, args.behavior, descoped)
+        _write_leaderboard(
+            args.leaderboard, existing, args.behavior, descoped, skipped_ids=sorted(skipped)
+        )
+
+    # (B6) per-behavior leave-context-family-out per-fold artifact (each fold
+    # carries null_skill). (B7) H5 collinearity diagnostics. Both run on the same
+    # implemented-registered predictor set (controls/null included for the null
+    # skill / floor), CPU-only, gated on --all-registered.
+    if args.all_registered:
+        pred_ids_lfco = [
+            m
+            for m, s in METRIC_REGISTRY.items()
+            if s["tier"] == "registered" and s["implemented"] and m not in descoped_set
+        ]
+        if args.leave_family_out_out is not None:
+            _write_leave_family_out(
+                args.leave_family_out_out,
+                args.behavior,
+                cids,
+                fam_of,
+                g_mat,
+                pred_ids_lfco,
+                anchor=args.anchor,
+                layer=args.layer,
+            )
+        if args.collinearity_out is not None:
+            _write_collinearity(
+                args.collinearity_out,
+                args.behavior,
+                cids,
+                g_mat,
+                anchor=args.anchor,
+                layer=args.layer,
+            )
 
     if not_implemented:
         # NEVER a silent gap (§6.1 contract, round-2 fix): every implemented
         # row is scored + persisted ABOVE, then the run exits non-zero naming
         # the registered rows still missing -- implement them or descope with
         # an epm:progress note; --allow-missing-registered is the explicit
-        # opt-in for intermediate runs.
+        # opt-in for intermediate runs. B2 round-2: --descoped is ALSO an explicit
+        # opt-in that tolerates the gap for the CANONICAL full-leaderboard verdict
+        # (the run ships a PARTIAL leaderboard); without --descoped /
+        # --allow-missing-registered the strict fail-loud stays.
         msg = (
             f"[score] {len(not_implemented)} REGISTERED §6.1 rows are not wired: "
             + ", ".join(not_implemented)
             + " (see each row's registry note). Scored rows were "
-            "persisted; rerun with --allow-missing-registered to tolerate the gap explicitly."
+            "persisted; rerun with --allow-missing-registered or --descoped to tolerate the "
+            "gap explicitly (the leaderboard ships PARTIAL)."
         )
-        if args.allow_missing_registered:
+        if args.allow_missing_registered or descoped_set:
             logger.warning(msg)
         else:
             raise SystemExit(msg)
@@ -1570,22 +1793,209 @@ def main() -> int:
 # (noise-limited, parent finding 1); em INCLUDED but flagged.
 _OVERALL_BEHAVIORS = ("marker", "fact", "sycophancy", "em")
 
+# B7: collinearity / distinctness partner pairs (plan §4.3 / §6.5 H5). Each
+# (predictor, partner) gets a Spearman(rho) of their D matrices on the canonical
+# anchor block + the predictor's OOF-R² skill DELTA over the partner. Verdict:
+#   |rho| >= 0.9                       -> redundant_with: <partner>
+#   |rho| <  0.9 AND skill_delta <= 0  -> noisy-duplicate_of: <partner>
+#   |rho| <  0.9 AND skill_delta >  0  -> independent
+_COLLINEARITY_PAIRS = [
+    ("behavior_conditioned_js", "centroid_cosine"),
+    ("js_out_seq", "centroid_cosine"),
+    ("behavior_vector_proj_shift", "rank1_proj_raw"),
+    ("pv_dp", "behavior_vector_proj_shift"),
+]
 
-def _write_leaderboard(path: Path, scores_file: dict, behavior: str, descoped: list[str]) -> None:
+
+def _write_leave_family_out(
+    path: Path,
+    behavior: str,
+    cids: list[str],
+    fam_of: list[str],
+    g_mat: np.ndarray,
+    pred_ids: list[str],
+    *,
+    anchor: str,
+    layer: int,
+) -> None:
+    """(B6 round-2) Per-behavior leave-context-family-out per-fold artifact
+    (plan §6.5 Deliverable 4): each fold (family held out) carries every
+    predictor's per-fold skill + the null predictor's per-fold ``null_skill`` on
+    the SAME fold. H4 is read from this file.
+    """
+    null_d = metric_matrix("null_random_predictor", cids, behavior=behavior)
+    null_folds, null_pooled = leave_family_out_per_fold(null_d, g_mat, fam_of)
+    null_skill_by_fam = {f["family_held_out"]: f["skill"] for f in null_folds}
+
+    per_pred: dict[str, dict] = {}
+    for mid in pred_ids:
+        try:
+            d = metric_matrix(mid, cids, anchor=anchor, layer=layer, behavior=behavior)
+        except (AssertionError, FileNotFoundError, KeyError) as e:
+            logger.warning(
+                "[lfco] %s/%s D unavailable (%s) -- skip", behavior, mid, type(e).__name__
+            )
+            continue
+        folds, pooled = leave_family_out_per_fold(d, g_mat, fam_of)
+        per_pred[mid] = {"folds": folds, "pooled_oof_r2": pooled}
+
+    families = sorted(set(fam_of))
+    fold_rows = []
+    for fam in families:
+        n_in = next((f["n_in_fold"] for f in null_folds if f["family_held_out"] == fam), 0)
+        n_oof = next((f["n_oof"] for f in null_folds if f["family_held_out"] == fam), 0)
+        fold_rows.append(
+            {
+                "family_held_out": fam,
+                "n_in_fold": int(n_in),
+                "n_oof": int(n_oof),
+                "null_skill": null_skill_by_fam.get(fam, float("nan")),
+                "per_predictor": {
+                    mid: next(
+                        (
+                            {"skill": f["skill"], "oof_r2": f["oof_r2"]}
+                            for f in per_pred[mid]["folds"]
+                            if f["family_held_out"] == fam
+                        ),
+                        {"skill": float("nan"), "oof_r2": float("nan")},
+                    )
+                    for mid in per_pred
+                },
+            }
+        )
+    payload = {
+        "schema_version": 1,
+        "behavior": behavior,
+        "families": families,
+        "folds": fold_rows,
+        "pooled": {
+            "null_skill": null_pooled,
+            "per_predictor": {mid: per_pred[mid]["pooled_oof_r2"] for mid in per_pred},
+        },
+        "git_commit": _git_commit(),
+        "updated_at": datetime.datetime.now(datetime.UTC).isoformat(),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=1))
+    logger.info("[lfco] wrote %s (%d folds, %d predictors)", path, len(fold_rows), len(per_pred))
+
+
+def _spearman_off_diag(a: np.ndarray, b: np.ndarray) -> float:
+    """Spearman of two D matrices over their shared finite off-diagonal cells."""
+    n = a.shape[0]
+    mask = np.isfinite(a) & np.isfinite(b) & ~np.eye(n, dtype=bool)
+    if mask.sum() < 10 or np.unique(a[mask]).size < 3 or np.unique(b[mask]).size < 3:
+        return float("nan")
+    return float(spearmanr(a[mask], b[mask]).statistic)
+
+
+def _write_collinearity(
+    path: Path,
+    behavior: str,
+    cids: list[str],
+    g_mat: np.ndarray,
+    *,
+    anchor: str,
+    layer: int,
+) -> None:
+    """(B7 round-2) H5 collinearity / distinctness diagnostics (plan §4.3 / §6.5):
+    per (predictor, partner) the Spearman(rho) of their D matrices on the
+    canonical anchor block + the predictor's OOF-R² skill delta over the partner.
+    Verdict per the v9 §4.3 rule (independence ONLY when |rho|<0.9 AND a positive
+    skill delta over the partner). Run only on the canonical anchor (marker block
+    is the reference; this writer runs per behavior on that behavior's block).
+    """
+
+    def _mat(mid: str) -> np.ndarray | None:
+        try:
+            return metric_matrix(mid, cids, anchor=anchor, layer=layer, behavior=behavior)
+        except (AssertionError, FileNotFoundError, KeyError) as e:
+            logger.warning(
+                "[collin] %s/%s D unavailable (%s) -- skip pair", behavior, mid, type(e).__name__
+            )
+            return None
+
+    pairs_out = []
+    for pred, partner in _COLLINEARITY_PAIRS:
+        if pred not in METRIC_REGISTRY or partner not in METRIC_REGISTRY:
+            continue
+        dp = _mat(pred)
+        dq = _mat(partner)
+        if dp is None or dq is None:
+            continue
+        rho = _spearman_off_diag(dp, dq)
+        pred_r2 = _oof_r2(dp, g_mat)
+        partner_r2 = _oof_r2(dq, g_mat)
+        skill_delta = (
+            pred_r2 - partner_r2
+            if np.isfinite(pred_r2) and np.isfinite(partner_r2)
+            else float("nan")
+        )
+        if np.isfinite(rho) and abs(rho) >= 0.9:
+            verdict = "redundant_with"
+        elif np.isfinite(skill_delta) and skill_delta > 0:
+            verdict = "independent"
+        else:
+            verdict = "noisy-duplicate_of"
+        pairs_out.append(
+            {
+                "predictor": pred,
+                "partner": partner,
+                "spearman_rho": rho,
+                "predictor_oof_r2": pred_r2,
+                "partner_oof_r2": partner_r2,
+                "skill_delta_over_partner": skill_delta,
+                "verdict": verdict,
+                "reference_rho": "#489/#502 rho approx -0.95 (generic-JS vs cosine)",
+            }
+        )
+    payload = {
+        "schema_version": 1,
+        "behavior": behavior,
+        "anchor": anchor,
+        "layer": layer,
+        "verdict_rule": "|rho|>=0.9 -> redundant_with; |rho|<0.9 AND skill_delta>0 -> "
+        "independent; else noisy-duplicate_of",
+        "pairs": pairs_out,
+        "git_commit": _git_commit(),
+        "updated_at": datetime.datetime.now(datetime.UTC).isoformat(),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=1))
+    logger.info("[collin] wrote %s (%d pairs)", path, len(pairs_out))
+
+
+def _write_leaderboard(
+    path: Path,
+    scores_file: dict,
+    behavior: str,
+    descoped: list[str],
+    *,
+    skipped_ids: list[str] | None = None,
+) -> None:
     """(v9) Emit the per-behavior leaderboard + overall_best block + partial flag.
 
     Reads ALL rows in the accumulated scores file (every behavior that has run
-    so far), sorts each behavior's rows by ``delta_vs_base_prior_r2`` desc, and
-    computes the single ``overall_best`` by the §6-declared aggregation
-    (behavior-equal-weighted mean delta_vs_base_prior_r2 over
-    {marker,fact,sycophancy,em}; refusal excluded; tie-break: higher min
-    per-behavior delta -> lower gpu cost (n/a here) -> alphabetical id).
+    so far), sorts each behavior's SCORED rows by ``delta_vs_base_prior_r2`` desc
+    (status-tagged skipped/descoped rows are kept in the file but excluded from
+    the sort + the overall_best aggregation), and computes the single
+    ``overall_best`` by the §6-declared aggregation (behavior-equal-weighted mean
+    delta_vs_base_prior_r2 over {marker,fact,sycophancy,em}; refusal excluded;
+    tie-break: higher min per-behavior delta -> alphabetical id).
 
-    Completeness: ``partial=True`` (Deliverable 1/2 NOT fully satisfied) when
-    any implementable registered class was descoped (``descoped`` non-empty) OR
-    any registered row is still unimplemented. A descoped row tag alone does NOT
-    certify a full/overall conclusion (plan §3/§7/§9).
+    Completeness: ``partial=True`` (Deliverable 1/2 NOT fully satisfied) when any
+    implementable registered class was descoped (``descoped`` non-empty) OR a row
+    was skipped on a missing/incomplete artifact OR any registered row is still
+    unimplemented. A descoped/skipped row tag alone does NOT certify a full/overall
+    conclusion (plan §3/§7/§9).
+
+    B10 round-2: the CANONICAL ``overall_best`` requires a delta on ALL FOUR
+    readable behaviors {marker,fact,sycophancy,em}; a champion with coverage on a
+    strict subset gets ``status: "partial — N of 4 readable behaviors covered"``
+    and the missing behaviors are named (so a 1-behavior champion is never silently
+    compared against a 4-behavior champion).
     """
+    skipped_ids = skipped_ids or []
     path.parent.mkdir(parents=True, exist_ok=True)
     scores = scores_file["scores"]
     by_behavior: dict[str, list[dict]] = {}
@@ -1595,8 +2005,12 @@ def _write_leaderboard(path: Path, scores_file: dict, behavior: str, descoped: l
         by_behavior.setdefault(b, []).append({"metric": mid, **row})
     leaderboards: dict[str, list[dict]] = {}
     for b, rows in by_behavior.items():
-        rows_sorted = sorted(
-            rows,
+        # scored rows sort by delta; status-tagged rows (skipped/descoped) are
+        # appended at the end so they remain visible without polluting the sort.
+        scored = [r for r in rows if r.get("status") not in ("skipped", "descoped")]
+        tagged = [r for r in rows if r.get("status") in ("skipped", "descoped")]
+        scored_sorted = sorted(
+            scored,
             key=lambda r: (
                 r.get("delta_vs_base_prior_r2")
                 if r.get("delta_vs_base_prior_r2") is not None
@@ -1605,15 +2019,15 @@ def _write_leaderboard(path: Path, scores_file: dict, behavior: str, descoped: l
             ),
             reverse=True,
         )
-        leaderboards[b] = rows_sorted
+        leaderboards[b] = scored_sorted + tagged
 
     # overall_best: behavior-equal-weighted mean delta over the included behaviors.
-    # Gather each predictor's per-behavior delta (skip variant-tagged keys).
+    # Gather each predictor's per-behavior delta (skip variant-tagged + status rows).
     per_metric: dict[str, dict[str, float]] = {}
     for b in _OVERALL_BEHAVIORS:
         for r in by_behavior.get(b, []):
             mid = r["metric"]
-            if "[" in mid:  # variant-tagged key, not a base row
+            if "[" in mid or r.get("status") in ("skipped", "descoped"):
                 continue
             dv = r.get("delta_vs_base_prior_r2")
             if dv is not None and np.isfinite(dv):
@@ -1639,11 +2053,21 @@ def _write_leaderboard(path: Path, scores_file: dict, behavior: str, descoped: l
         if len(tied) > 1:
             best = sorted(tied, key=lambda m: (_agg(m)[1], [-ord(c) for c in m]), reverse=True)[0]
             best_mean, best_min, _ = _agg(best)
+        included = [b for b in _OVERALL_BEHAVIORS if b in per_metric[best]]
+        missing = [b for b in _OVERALL_BEHAVIORS if b not in per_metric[best]]
+        # B10: the canonical champion must cover ALL 4 readable behaviors.
+        status = (
+            "complete — all 4 readable behaviors covered"
+            if not missing
+            else f"partial — {len(included)} of 4 readable behaviors covered (missing: {missing})"
+        )
         overall_best = {
             "metric": best,
             "aggregation": "behavior-equal-weighted mean delta_vs_base_prior_r2 over "
             "{marker,fact,sycophancy,em} (refusal excluded); tie-break min-per-behavior -> id",
-            "included_behaviors": [b for b in _OVERALL_BEHAVIORS if b in per_metric[best]],
+            "included_behaviors": included,
+            "missing_behaviors": missing,
+            "status": status,
             "primary_value": best_mean,
             "min_per_behavior_delta": best_min,
             "per_behavior_breakdown": per_metric[best],
@@ -1651,16 +2075,24 @@ def _write_leaderboard(path: Path, scores_file: dict, behavior: str, descoped: l
 
     reg_not_impl = scores_file.get("registered_not_implemented", {})
     any_unimpl = any(v for v in reg_not_impl.values())
-    partial = bool(descoped) or any_unimpl
+    any_skipped = bool(skipped_ids) or any(scores_file.get("skipped_rows", {}).values())
+    partial = bool(descoped) or any_unimpl or any_skipped
+    reasons = []
+    if descoped:
+        reasons.append(f"descoped classes: {descoped}")
+    if any_skipped:
+        reasons.append(
+            f"skipped (missing/incomplete artifact) rows: {scores_file.get('skipped_rows', {})}"
+        )
+    if any_unimpl:
+        reasons.append(f"unimplemented registered rows: {reg_not_impl}")
     payload = {
         "schema_version": 1,
         "partial": partial,
-        "partial_reason": (
-            (f"descoped classes: {descoped}; " if descoped else "")
-            + (f"unimplemented registered rows: {reg_not_impl}" if any_unimpl else "")
-        )
+        "partial_reason": "; ".join(reasons)
         or "complete leaderboard over the implementable registered set",
         "descoped": descoped,
+        "skipped": skipped_ids,
         "kill_sort_delta": "delta_vs_base_prior_r2",
         "secondary_delta": "delta_vs_gauss_kl_act_r2",
         "leaderboards": leaderboards,
@@ -1670,10 +2102,11 @@ def _write_leaderboard(path: Path, scores_file: dict, behavior: str, descoped: l
     }
     path.write_text(json.dumps(payload, indent=1))
     logger.info(
-        "[score] wrote leaderboard %s (partial=%s, overall_best=%s)",
+        "[score] wrote leaderboard %s (partial=%s, overall_best=%s, overall_status=%s)",
         path,
         partial,
         overall_best["metric"] if overall_best else None,
+        overall_best["status"] if overall_best else None,
     )
 
 

@@ -52,7 +52,11 @@ TOP_K = 512
 ALL_BEHAVIORS = ("marker", "fact", "refusal", "sycophancy", "em")
 
 # import the shared realization helpers from the dropped-predictors script
-from i537_dropped_predictors import _diag_completions, _realization_for  # noqa: E402
+from i537_dropped_predictors import (  # noqa: E402
+    _diag_completions,
+    _per_probe_dists,
+    _realization_for,
+)
 
 
 def _git_commit() -> str:
@@ -119,23 +123,38 @@ def run_behavior(behavior: str, cids: list[str], *, smoke: bool) -> None:
         if not span:
             logger.warning("[bcond] %s/%s: no realization span -- skip", behavior, cid)
             continue
-        logps = score_span_logprob(model, tok, prompts, span, batch_size=1 if smoke else 8)
+        device = str(next(model.parameters()).device)
+        bs = 1 if (smoke or device == "cpu") else 8
+        logps = score_span_logprob(model, tok, prompts, span, batch_size=bs, device=device)
         logp_mean = float(np.mean([s["span_logp_mean"] for s in logps]))
-        dists = score_span_token_dists(model, tok, prompts[:1], span, top_k=TOP_K)
-        positions = dists[0] if dists else []
+        # B4 round-2: store EVERY probe's span distributions (not just probe 0); the
+        # symmetric conditioned-JS averages the per-token JS across the aligned
+        # probes pairwise at scoring time. fixed_span -> one shared span, probe axis
+        # is the prompt; refusal/syc/em -> per-probe diagonal completion spans.
+        probes = _per_probe_dists(
+            score_span_token_dists, model, tok, behavior, cid, prompts, fixed_span, bs=bs
+        )
         out_p.write_text(
             json.dumps(
                 {
                     **_meta(),
                     "cid": cid,
                     "logp_mean": logp_mean,
-                    "span_dist": {"positions": positions},
+                    "n_probes": len(probes),
+                    # legacy single-realization view (probe 0) kept for old readers.
+                    "span_dist": {"positions": probes[0] if probes else []},
+                    "span_dist_probes": {"probes": probes},
                 },
                 indent=1,
             )
         )
         logger.info(
-            "[bcond] %s/%s logp=%.3f, %d span positions", behavior, cid, logp_mean, len(positions)
+            "[bcond] %s/%s logp=%.3f, %d probes x %d span positions",
+            behavior,
+            cid,
+            logp_mean,
+            len(probes),
+            len(probes[0]) if probes else 0,
         )
 
     del model
