@@ -102,9 +102,9 @@ themselves in a worktree.
 ## Autonomous-session watcher (every 10 min, `3-59/10 * * * *`, `autonomous_session_watch.py`)
 
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
-detector, orphan-file sweep, the infra-drain pass, the gate-push pass, and
-three session reapers — the session-vs-status reconcile pass, the
-zombie-wrapper pass, and the idle-unmapped pass.
+detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
+the gate-push pass, and three session reapers — the session-vs-status
+reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
 
 **Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
 session's standing infra auto-dispatch rule (`research-pm.md` § Standing
@@ -172,6 +172,51 @@ between-passes accelerator the PM's own STATUS-pass re-evaluation already
 backstops; the PM remains the nuanced judge for predicates that should
 fire BEFORE completion and re-adjudicates the whole queue wholesale on its
 next pass (its atomic overwrite always wins a race with this rewrite).
+
+**Capacity-retry pass (re-drive a transient-infra `blocked` task; incident
+#642, 2026-06-16).** The narrow inverse of the crash-recovery `decide()`
+PARK rule, which treats EVERY `blocked` task as "keep, never respawn." Most
+`blocked` tasks ARE deliberate halts awaiting a human (a `failure_class:
+code|data` block, a factual question), and those MUST stay parked — but the
+subclass where the block is purely transient infra capacity (the auto-router
+exhausted every lane: latest `epm:failure v1` with `failure_class: infra` AND
+a `reason` in the conservative allowlist `TRANSIENT_CAPACITY_REASONS`, today
+`{no_compute_available}`) is code-ready and re-runnable the moment a lane
+frees up — the failure marker itself self-flags "Retry on re-invocation." This
+pass re-drives ONLY that subclass, via `spawn-issue --auto`; every other
+`blocked` task is untouched (scope guard: the latest failure marker's
+`failure_class`/`reason` must clean-match, so a non-capacity infra reason like
+`codex-companion-probe-error` is left parked).
+
+*No watcher-side capacity pre-check by design.* The `/issue` launch path is the
+authoritative capacity gate: a re-drive re-enters `/issue` → Step 6 backend
+dispatch → the router's GCP regional-quota headroom pre-check
+(`backends/router.py` `_skip_gcp_lane_no_headroom`, `backends/gcp.py`
+`preflight_quota_headroom`), which SMART-SKIPS a doomed lane WITHOUT burning a
+daily attempt and WITHOUT GPU spend (#608), falls through to the free SLURM
+lanes, and — if those are also full — simply re-blocks at ZERO GPU cost. So a
+re-drive is never expensive; re-implementing a weaker copy of the router's
+quota logic inside this 10-min fail-soft watcher would only duplicate + risk
+drifting from the authoritative gate. The re-driven `--auto` session enforces
+its own Step-2c plan-approval GPU-hour cap; this pass opens NO new spend path.
+
+*Churn guards.* A per-task backoff window
+(`EPM_CAPACITY_RETRY_BACKOFF_S`, default 1 h) binds on the NEWER of the block
+timestamp and the last attempt (so capacity has time to free up and the pass
+can't tight-loop), plus a per-UTC-day re-drive cap
+(`EPM_CAPACITY_RETRY_PER_DAY`, default 4; the ATTEMPT counts whether or not the
+spawn succeeds) — once exhausted, a one-time dashboard alert per day, never a
+respawn. Daemon-gated like every spawning pass (re-drive POSTs to the Happy
+daemon RPC); per-task state at `~/.eps-autonomous/capacity-retry-<N>.json`
+(reaped by the generalized GC at terminal status — `blocked` is deliberately
+NOT in `TERMINAL_FOR_GC`, so a live retry episode's state is never reset
+mid-flight). `kind: campaign` `blocked` tasks are excluded (the recovery
+command is the `/issue` skill, wrong for a campaign). Dispatch + exhausted
+markers carry the `[autonomous_session_watch:capacity-retry]` /
+`[...:capacity-retry-exhausted]` sentinels so they never reset the
+orphan/stalled staleness clocks. Kill switch: `EPM_DISABLE_CAPACITY_RETRY=1`.
+`--capacity-retry-only` runs just this pass (pair with `--dry-run` for a live
+smoke against the real blocked-task set).
 
 **Gate-push pass (2026-06-12 anti-stall redesign).** Telegram phone push on
 gate-park/`blocked` transitions via the my-goat `telegram_push.sh` channel

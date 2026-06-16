@@ -30,6 +30,8 @@ from autonomous_session_watch import (  # noqa: E402
     ACTIVE,
     ALERT_STALE_HOURS,
     AUTO_STOP_DONE,
+    CAPACITY_RETRY_BACKOFF_S_DEFAULT,
+    CAPACITY_RETRY_MAX_PER_DAY_DEFAULT,
     INFRA_DRAIN_BACKOFF_S_DEFAULT,
     INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT,
     INFRA_DRAIN_OCCUPIED_STATUSES,
@@ -42,7 +44,9 @@ from autonomous_session_watch import (  # noqa: E402
     STALLED_MAX_RESPAWNS,
     STALLED_WINDOW_S,
     TERMINAL,
+    TRANSIENT_CAPACITY_REASONS,
     decide,
+    decide_capacity_retry,
     decide_infra_drain,
     decide_orphan,
     decide_pod_safety,
@@ -6502,3 +6506,253 @@ def test_predicate_promote_dry_run_no_rewrite(isolated_registry, monkeypatch, ca
     assert "would rewrite the queue file" in out
     # Queue file byte-unchanged under dry-run.
     assert (isolated_registry / "infra-drain-queue.json").read_text() == before
+
+
+# ─── capacity-retry pass (incident #642) ─────────────────────────────────────
+#
+# A wrong RE-DRIVE re-animates a session that should stay parked (worst case: a
+# deliberate `failure_class: code` halt gets relaunched), so the scope is pinned
+# exhaustively: ONLY a `blocked` task whose LATEST `epm:failure` is
+# `failure_class: infra` + a TRANSIENT_CAPACITY_REASONS reason is ever touched.
+
+# A realistic 2026 epoch (2026-06-20T00:00:00Z) — must be AFTER the 2026-06-16
+# marker timestamps in the real-shape fixtures below so the backoff window is
+# satisfied in the I/O-wrapper tests. The pure-decide matrix tests pass relative
+# offsets, so the absolute value is immaterial there.
+_CR_NOW = 1781913600.0
+
+
+@pytest.mark.parametrize(
+    "status",
+    sorted(ACTIVE | PARK | TERMINAL | {None}, key=lambda s: (s is None, s)),
+)
+def test_capacity_retry_only_blocked_status_redrives(status):
+    # Every NON-blocked status -> skip, even when retriable + out of backoff +
+    # budget available. A deliberate halt (or any active/parked/terminal task)
+    # is never re-driven by this pass.
+    if status == "blocked":
+        return  # covered by the matrix tests below
+    assert (
+        decide_capacity_retry(
+            status,
+            True,
+            _CR_NOW - 99999,
+            None,
+            0,
+            _CR_NOW,
+            backoff_s=CAPACITY_RETRY_BACKOFF_S_DEFAULT,
+            max_per_day=CAPACITY_RETRY_MAX_PER_DAY_DEFAULT,
+        )
+        == "skip"
+    )
+
+
+def test_capacity_retry_non_retriable_block_is_skipped():
+    # A `blocked` task that is NOT a transient-capacity block stays parked.
+    assert decide_capacity_retry("blocked", False, _CR_NOW - 99999, None, 0, _CR_NOW) == "skip"
+
+
+def test_capacity_retry_redrive_when_clear():
+    # blocked + retriable + block old + no prior attempt + budget -> redrive.
+    assert decide_capacity_retry("blocked", True, _CR_NOW - 7200, None, 0, _CR_NOW) == "redrive"
+
+
+def test_capacity_retry_backoff_from_block_ts():
+    # Inside the backoff window measured from the block timestamp -> skip.
+    assert decide_capacity_retry("blocked", True, _CR_NOW - 100, None, 0, _CR_NOW) == "skip"
+
+
+def test_capacity_retry_backoff_from_last_attempt():
+    # Block is old, but a recent attempt holds the backoff -> skip (no tight loop).
+    assert (
+        decide_capacity_retry("blocked", True, _CR_NOW - 99999, _CR_NOW - 100, 1, _CR_NOW) == "skip"
+    )
+
+
+def test_capacity_retry_daily_cap_exhausted():
+    cap = CAPACITY_RETRY_MAX_PER_DAY_DEFAULT
+    # At/over the cap, out of backoff -> exhausted (alert, no respawn).
+    assert (
+        decide_capacity_retry("blocked", True, _CR_NOW - 99999, _CR_NOW - 99999, cap, _CR_NOW)
+        == "exhausted"
+    )
+    # One under the cap -> still redrives (boundary).
+    assert (
+        decide_capacity_retry("blocked", True, _CR_NOW - 99999, _CR_NOW - 99999, cap - 1, _CR_NOW)
+        == "redrive"
+    )
+
+
+def test_capacity_retry_garbled_block_ts_does_not_freeze():
+    # Unparseable block ts (None) must not permanently block recovery: the
+    # last-attempt backoff still binds, and a first-ever (both None) redrives.
+    assert decide_capacity_retry("blocked", True, None, _CR_NOW - 99999, 0, _CR_NOW) == "redrive"
+    assert decide_capacity_retry("blocked", True, None, None, 0, _CR_NOW) == "redrive"
+
+
+# ── _parse_failure_fields / _is_transient_capacity_block against REAL shapes ──
+
+# Verbatim-shaped notes from #642's events.jsonl (the originating incident).
+_NOTE_CAPACITY = (
+    "failure_class: infra\nreason: no_compute_available\n"
+    "detail: every auto lane failed or was unavailable (order: gcp -> nibi ...)"
+)
+_NOTE_CODEX_INFRA = (
+    "Codex CR-critic R1 no-show: codex_task.py exhausted 1 transient retry ... "
+    "failure_class: infra reason: codex-companion-probe-error. Proceeding "
+    "Claude-only this round per skill fallback."
+)
+_NOTE_CODE = "failure_class: code\n\nvLLM ZeroDivisionError on every stage-A cmft worker ..."
+
+
+def test_parse_failure_fields_real_shapes():
+    import autonomous_session_watch as asw
+
+    assert asw._parse_failure_fields(_NOTE_CAPACITY) == ("infra", "no_compute_available")
+    # Inline (one-line) form, with a trailing sentence after the reason value.
+    assert asw._parse_failure_fields(_NOTE_CODEX_INFRA) == (
+        "infra",
+        "codex-companion-probe-error",
+    )
+    assert asw._parse_failure_fields(_NOTE_CODE) == ("code", None)
+    assert asw._parse_failure_fields(None) == (None, None)
+    assert asw._parse_failure_fields("") == (None, None)
+
+
+def _fail_ev(ts, note):
+    return {"kind": "epm:failure", "ts": ts, "note": note}
+
+
+def test_is_transient_capacity_block_latest_wins_and_allowlist():
+    import autonomous_session_watch as asw
+
+    cap = _fail_ev("2026-06-16T11:37:00Z", _NOTE_CAPACITY)
+    codex = _fail_ev("2026-06-16T10:00:00Z", _NOTE_CODEX_INFRA)
+    code = _fail_ev("2026-06-15T09:57:42Z", _NOTE_CODE)
+
+    # Capacity failure is the LATEST -> retriable.
+    retriable, reason, ts = asw._is_transient_capacity_block([code, codex, cap])
+    assert retriable is True and reason == "no_compute_available" and ts is not None
+
+    # A NON-capacity infra failure (codex probe) as the latest -> NOT retriable.
+    retriable, reason, _ = asw._is_transient_capacity_block([cap, codex])
+    assert retriable is False and reason == "codex-companion-probe-error"
+
+    # A code failure as the latest -> NOT retriable.
+    retriable, _, _ = asw._is_transient_capacity_block([cap, code])
+    assert retriable is False
+
+    # No failure marker at all -> NOT retriable.
+    assert asw._is_transient_capacity_block(
+        [{"kind": "epm:progress", "ts": "2026-06-16T00:00:00Z"}]
+    ) == (False, None, None)
+
+
+def test_no_compute_available_is_in_the_allowlist():
+    # The one demonstrated transient-capacity reason; the allowlist stays tight.
+    assert "no_compute_available" in TRANSIENT_CAPACITY_REASONS
+    assert "codex-companion-probe-error" not in TRANSIENT_CAPACITY_REASONS
+
+
+# ── I/O-wrapper scoping: only transient-infra blocks re-driven, halts untouched ──
+
+
+def _patch_pass(monkeypatch, asw, blocked_ids, events_by_issue):
+    monkeypatch.setattr(asw, "_blocked_issue_ids", lambda: list(blocked_ids))
+    monkeypatch.setattr(asw, "_task_events", lambda i: events_by_issue.get(i, []))
+    spawned = []
+
+    def fake_run(cmd, *a, **k):
+        spawned.append(cmd)
+
+        class R:
+            returncode = 0
+            stdout = "session ok"
+            stderr = ""
+
+        return R()
+
+    monkeypatch.setattr(asw.subprocess, "run", fake_run)
+    posted = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, label)),
+    )
+    return spawned, posted
+
+
+def test_capacity_retry_pass_redrives_only_transient_infra(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    cap = _fail_ev("2026-06-16T11:37:00Z", _NOTE_CAPACITY)  # #642 -> retriable
+    code = _fail_ev("2026-06-16T11:00:00Z", _NOTE_CODE)  # deliberate code halt
+    codex = _fail_ev("2026-06-16T11:00:00Z", _NOTE_CODEX_INFRA)  # non-capacity infra
+    events = {642: [cap], 700: [code], 701: [codex]}
+    spawned, posted = _patch_pass(monkeypatch, asw, [642, 700, 701], events)
+
+    # now is far past the block ts so backoff is satisfied for #642.
+    asw.capacity_retry_pass(dry_run=False, now=_CR_NOW, daemon_reachable=True)
+
+    # Exactly ONE spawn — the transient-infra block. The code + non-capacity-
+    # infra halts are untouched.
+    assert len(spawned) == 1, spawned
+    assert "642" in spawned[0]
+    assert [iss for iss, _label in posted] == [642]
+
+
+def test_capacity_retry_pass_daemon_gated(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    cap = _fail_ev("2026-06-16T11:37:00Z", _NOTE_CAPACITY)
+    spawned, _posted = _patch_pass(monkeypatch, asw, [642], {642: [cap]})
+    # Daemon down -> no spawn (spawn POSTs to the daemon RPC).
+    asw.capacity_retry_pass(dry_run=False, now=_CR_NOW, daemon_reachable=False)
+    assert spawned == []
+
+
+def test_capacity_retry_pass_dry_run_no_mutation(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    cap = _fail_ev("2026-06-16T11:37:00Z", _NOTE_CAPACITY)
+    monkeypatch.setattr(asw, "_blocked_issue_ids", lambda: [642])
+    monkeypatch.setattr(asw, "_task_events", lambda i: [cap] if i == 642 else [])
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **k: pytest.fail("subprocess.run in dry-run")
+    )
+    asw.capacity_retry_pass(dry_run=True, now=_CR_NOW, daemon_reachable=True)
+    # No state file written under dry-run.
+    assert not (isolated_registry / "capacity-retry-642.json").exists()
+
+
+def test_capacity_retry_pass_kill_switch(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_CAPACITY_RETRY", "1")
+    monkeypatch.setattr(
+        asw, "_blocked_issue_ids", lambda: pytest.fail("scanned despite kill switch")
+    )
+    asw.capacity_retry_pass(dry_run=False, now=_CR_NOW, daemon_reachable=True)
+
+
+def test_capacity_retry_pass_daily_cap_then_exhausted_alert(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    cap = _fail_ev("2026-06-16T11:37:00Z", _NOTE_CAPACITY)
+    spawned, posted = _patch_pass(monkeypatch, asw, [642], {642: [cap]})
+    day_key = __import__("time").strftime("%Y-%m-%d", __import__("time").gmtime(_CR_NOW))
+    # Pre-seed state at the daily cap, last attempt long ago (backoff clear).
+    (isolated_registry / "capacity-retry-642.json").write_text(
+        __import__("json").dumps(
+            {
+                "retry_day": day_key,
+                "retries_today": CAPACITY_RETRY_MAX_PER_DAY_DEFAULT,
+                "last_attempt_ts": _CR_NOW - 99999,
+                "alerted_day": None,
+            }
+        )
+    )
+    asw.capacity_retry_pass(dry_run=False, now=_CR_NOW, daemon_reachable=True)
+    # Cap spent -> no respawn, one exhausted alert.
+    assert spawned == []
+    assert posted == [(642, "capacity-retry-exhausted")]
