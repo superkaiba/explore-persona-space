@@ -42,6 +42,7 @@ from workflow_lint import (  # noqa: E402
     check_heredoc_dotenv,
     check_marker_registry,
     check_script_references,
+    check_upload_as_file,
     check_wandb_required,
 )
 
@@ -1515,5 +1516,138 @@ def test_workflow_lint_check_agent_model_pins_cli_exits_zero():
     result = _run("--check-agent-model-pins")
     assert result.returncode == 0, (
         f"workflow_lint --check-agent-model-pins failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Unit tests for the ``check_upload_as_file`` function
+# (#595 → #640 → #612 recurrence class): hub._upload raises ValueError
+# unconditionally on a single-file path without upload_as_file=True, so a
+# per-file upload loop crashes on the FIRST file after the expensive
+# phases. Each case writes a tiny .py under ``tmp_path`` and calls
+# ``check_upload_as_file(scripts_dir=tmp_path)``.
+# ─────────────────────────────────────────────────────────────────────
+
+
+def test_check_upload_as_file_fail_named_arg_no_kwarg(tmp_path):
+    """FAIL — the #612 offender shape: a file-named variable (``summary_path``)
+    passed to _upload with the upload_as_file kwarg entirely absent."""
+    (tmp_path / "driver.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def phase_c(summary_path):\n"
+        '    hub._upload(summary_path, repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "driver.py:4" in errors[0]
+    assert "upload_as_file=True" in errors[0]
+    assert "summary_path" in errors[0]
+
+
+def test_check_upload_as_file_fail_string_literal_no_kwarg(tmp_path):
+    """FAIL — a decidable single-file string literal (.json) without the kwarg."""
+    (tmp_path / "x.py").write_text(
+        '_upload("out/summary.json", repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "single-file path literal" in errors[0]
+
+
+def test_check_upload_as_file_fail_pathdiv_literal_no_kwarg(tmp_path):
+    """FAIL — the ``out_dir / "shift.pt"`` path-division shape (decidable file)."""
+    (tmp_path / "x.py").write_text(
+        'def f(out_dir):\n    _upload(out_dir / "shift.pt", repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_as_file_fail_decidable_file_explicit_false(tmp_path):
+    """FAIL — a decidable file literal with an explicit upload_as_file=False
+    is the #595 silent-no-op shape; an explicit False does NOT excuse a
+    literal file (unlike a heuristic name signal)."""
+    (tmp_path / "x.py").write_text('_upload("out/x.json", repo_id="r", upload_as_file=False)\n')
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_as_file_pass_named_arg_with_kwarg_true(tmp_path):
+    """PASS — the correct single-file shape: upload_as_file=True."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def f(summary_path):\n"
+        '    hub._upload(summary_path, repo_id="r", path_in_repo="p", upload_as_file=True)\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (upload_as_file=True), got: {errors}"
+
+
+def test_check_upload_as_file_pass_folder_variable(tmp_path):
+    """PASS — a generic folder variable (no file-suffix name, no literal)
+    correctly relies on the upload_folder default; not flagged."""
+    (tmp_path / "x.py").write_text(
+        "def f(local_dir, staging):\n"
+        '    _upload(local_dir, repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+        '    _upload(staging, repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (folder vars), got: {errors}"
+
+
+def test_check_upload_as_file_pass_named_arg_explicit_false(tmp_path):
+    """PASS — a HEURISTIC name signal (``results_path``) with an EXPLICIT
+    upload_as_file=False is the author's deliberate folder declaration and
+    is deferred to (a name suffix must not override an explicit choice — a
+    ``*_path`` variable can legitimately hold a directory)."""
+    (tmp_path / "x.py").write_text(
+        'def f(results_path):\n    _upload(results_path, repo_id="r", upload_as_file=False)\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (explicit False on name signal), got: {errors}"
+
+
+def test_check_upload_as_file_pass_waiver_previous_line(tmp_path):
+    """PASS — a ``# UPLOAD_AS_FILE_EXEMPT: <reason>`` waiver on the
+    immediately preceding non-blank line is honored (a file-named var that
+    is really a directory)."""
+    (tmp_path / "x.py").write_text(
+        "def f(results_path):\n"
+        "    # UPLOAD_AS_FILE_EXEMPT: results_path is actually a directory here\n"
+        '    _upload(results_path, repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (waived), got: {errors}"
+
+
+def test_check_upload_as_file_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — a waiver with a reason shorter than the minimum is a
+    token-shaped bypass, not a justification."""
+    (tmp_path / "x.py").write_text(
+        "def f(results_path):\n"
+        "    # UPLOAD_AS_FILE_EXEMPT: x\n"
+        '    _upload(results_path, repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_as_file_repo_tree_is_clean():
+    """The committed scripts/**/*.py tree must carry no unwaived single-file
+    _upload calls missing upload_as_file=True (#595/#640/#612 class). This
+    is the systemic regression guard the candidate asked for."""
+    errors = check_upload_as_file()
+    assert errors == [], (
+        "scripts/**/*.py has _upload(...) single-file calls missing "
+        "upload_as_file=True (#595/#640/#612 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_upload_as_file_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-upload-as-file")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-upload-as-file failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
