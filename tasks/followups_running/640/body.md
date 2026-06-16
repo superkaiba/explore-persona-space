@@ -16,7 +16,7 @@ relates_to:
 classification: useful
 promoted_at: '2026-06-16T07:08:41Z'
 ---
-# Postfix-KV patching beats prefix patching on 7 of 8 leaky Qwen-2.5 adapters and cuts the two strongly-installed reckless-behavior cells 56-69%, but leaves the format-style floor cells worse (MODERATE confidence)
+# Postfix-KV patching cuts off-distribution leakage on strongly-installed Qwen-2.5 adapters, but a diagonal source-control shows it is a blunt revert that dampens the on-target trained behavior just as much, so it is not a selective defense (MODERATE confidence)
 
 <!-- clean-result-v3 -->
 
@@ -24,27 +24,47 @@ promoted_at: '2026-06-16T07:08:41Z'
 
 ## Takeaways
 
-- Postfix-KV patching beats prefix-patching on **7 of 8** leaky adapters, seed 0 (n = 8, p = 0.07). Spans differ (postfix 5 tokens, prefix 24); the two are not length-matched.
-- Two strongly-installed reckless-behavior cells drive the signal: postfix cuts **0.56-0.69** absolute vs prefix's 0.06-0.10; wrong-claim cuts only **+0.20**.
-- Not "cuts everywhere": postfix **raises** leakage on three near-floor format-style cells. Absolute reading: it helps **5 of 8** cells, hurts 3.
-- All cells keep their sign across both seeds (**8/8**). The two big cuts replicate within ~0.06; wrong-claim halves (0.20 → 0.10), so magnitude replication is loose.
-- The carrier scalar does **not** rank responders (negative correlation, n = 8); its apparent positive row-leak signal **collapses to near-zero under gauge correction**, matching the prior prefix collapse to ~0.
+- The diagonal source-control settles the headline: the postfix patch is a **blunt revert, not a selective defense** — on the two strong reckless cells it removes **51% and 71%** as much on-target behavior (Δsource) as leakage (Δleakage).
+- Round 1: postfix patching cut leakage **0.56-0.69** on the two strong cells (vs prefix's 0.06-0.10), beating prefix on **7 of 8** cells (seed 0, n = 8, p = 0.07).
+- Round 2: the patch dampens on-target behavior on **every cell where it was installed** (5 cells, Δsource 0.25-0.52, both seeds) — it cannot clear leakage without losing the capability.
+- The leakage cut is not "everywhere": it **raises** the rate on three near-floor format-style cells. Across rounds every cell keeps its sign across both seeds (**8/8 leakage, 7/7 source**).
+- The carrier scalar does **not** rank responders (negative correlation, n = 8); its positive row-leak signal **collapses to near-zero under gauge correction**, matching the prior prefix collapse.
 
 ## What I ran
 
-**Why:** Persona/behavior leakage to off-distribution prompts is a safety target. A prior run found that on one headline cell, patching the base model's prefix KV *raised* leakage while patching the postfix KV *cleared* it — and the Piggyback paper notes, as a side observation, that Qwen-2.5 shows large postfix recovery. Those two data points raised a clean test: is the postfix a reliable leakage-carrier on Qwen-2.5-7B (a working model-specific intervention), or was it a coincidence? See [#595](https://eps.superkaiba.com/tasks/595) (prefix-patch baseline) and [#545](https://eps.superkaiba.com/tasks/545) (the leaky adapters).
+**Why:** Persona/behavior leakage to off-distribution prompts is a safety target. A prior run found that on one headline cell, patching the base model's prefix KV *raised* leakage while patching the postfix KV *cleared* it — and the Piggyback paper notes, as a side observation, that Qwen-2.5 shows large postfix recovery. Round 1 tested whether the postfix is a reliable leakage-carrier on Qwen-2.5-7B and found it cuts leakage on the strongly-installed cells. But a leakage cut alone cannot tell a *selective* defense (kills the leaked behavior, keeps the on-target trained behavior) from a *blunt* revert toward base (dampens both), because Round 1 only measured off-distribution leakage cells. Round 2 adds the diagonal source-control to settle that. See [#595](https://eps.superkaiba.com/tasks/595) (prefix-patch baseline) and [#545](https://eps.superkaiba.com/tasks/545) (the leaky adapters).
 
-**Design:** 8 leaky LoRA adapters × 2 seeds × {trained-no-patch, postfix-patched} = 32 on-policy generation cells, inference-time only (no training). The single manipulated variable vs the prior run is the patch span (postfix, 5 tokens, instead of prefix, 24 tokens). The prefix comparison is the prior run's committed values, not re-run; the two spans are not length-matched.
+**Design:** 8 leaky LoRA adapters × 2 seeds × {trained-no-patch, postfix-patched} = 32 on-policy generation cells per eval target, inference-time only (no training). Round 1's eval target was each row's highest-leakage off-distribution column (Δleakage). Round 2's single-variable change is the eval target column only: each row evaluated on its **own diagonal column** — the behavior it was trained to express, measured on-target (Δsource) — with everything else identical (same adapters, same postfix machinery, same judges, same seeds). The prefix comparison is the prior run's committed values, not re-run; postfix and prefix spans are not length-matched.
 
 **Training:** None. The 16 adapters (8 rows × 2 seeds) are reused as-is from the parent leakage-matrix run at HF revision `6471a550` (Qwen-2.5-7B-Instruct base).
 
 **Eval:**
 
-- DV = Δleakage = trained-no-patch rate − postfix-patched rate per cell. The rate is the Claude/gpt-4o-judged behavior-expression rate over on-policy completions (the model generates its own answer at each probe; no teacher-forcing).
-- Probe banks per cell: 8 probes on the backend-parity anchor cell, 20 on two smaller-bank columns, 32 on the other five.
-- Primary pass criterion: median postfix Δ (seed 0) > 0 AND postfix Δ beats prefix Δ on a majority of the eight cells.
+- DV (Round 1) = Δleakage = trained-no-patch rate − postfix-patched rate, on each row's off-distribution leakage column. DV (Round 2) = Δsource = the same difference on each row's diagonal (on-target) column. The selectivity gap = Δleakage − Δsource per row: large + means selective, near-zero means blunt.
+- Each rate is the Claude/gpt-4o-judged behavior-expression rate over on-policy completions (the model generates its own answer at each probe; no teacher-forcing).
+- Probe banks per cell: 8 probes on the backend-parity anchor cell, 19-20 on the fact/persona-drift columns, 32 on the rest.
+- Round-2 falsification: Δsource ≈ Δleakage on the strong cells → blunt revert, downgrade the selective-defense framing; Δsource ≈ 0 with Δleakage large → selective defense.
+
+**Rounds:**
+
+| Round | Date | What changed | Result |
+|---|---|---|---|
+| 1 — postfix vs prefix | 2026-06-15 | Patch span postfix (5 tok) vs prefix (24 tok) | Postfix cut leakage 0.56-0.69 on the two strong cells, beat prefix 7/8 |
+| 2 — diagonal source-control | 2026-06-16 | Eval target = each row's own diagonal (on-target) column | Δsource ≈ Δleakage on the strong cells (gap ≈ 0); the patch is a blunt revert, not selective |
 
 ## Findings
+
+### The diagonal source-control shows the patch is a blunt revert: on the strong cells it cuts on-target behavior as much as leakage (selectivity gap ≈ 0)
+
+Round 1's leakage cut cannot distinguish a selective defense (Δsource ≈ 0, Δleakage large) from a blunt boundary-revert (Δsource ≈ Δleakage). This control measures each adapter's on-target diagonal behavior under the same patch.
+
+![Grouped horizontal bars per row comparing off-diagonal Δleakage (parent round) against on-target diagonal Δsource (this round), mean of two seeds; on the three strongly-installed reckless cells the two bars are comparable in length, and on the format-style and fact cells Δsource is positive while Δleakage is negative.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/616324d1c3ed867cbd2059996a8c3ed94b8e5bbb/figures/issue_640/diagonal_source_control.png)
+
+> **Figure.** *On the * cells the patch cuts on-target behavior (green) about as much as leakage (blue).* x = postfix-patch Δ rate (trained − patched), mean of 2 seeds. * = the three strongly-installed reckless cells (the parent's headline). n = 32 probes/cell. Δsource ≈ 0 (selective) appears nowhere it was installed.
+
+- On the two parent-headline cells the patch removes **51%** and **71%** as much on-target behavior as leakage (Δsource 0.34/0.42 vs Δleakage 0.67/0.59). Bad-medical wipes **63%** of installed on-target advice.
+- Across the 5 cells where the behavior was installed (trained diagonal rate 0.81-1.00), Δsource is positive everywhere, **0.25-0.52**: the patch dampens the trained capability wherever it exists.
+- The two fact cells are uninformative: the taught fact persists (Δsource 0), the reversed fact was never installed. A stored fact is not a generation-boundary behavior, so the patch leaves it untouched.
 
 ### Postfix patching beats prefix on 7 of 8 cells; the win is real on two strongly-installed cells and an artifact of prefix being worse on the floor cells
 
@@ -111,6 +131,16 @@ The eight evaluated cells (row → target column, plain-English):
 - Compliment-writing → format-style mimicry
 - Wrong-claim agreement → persona drift
 - Marker → self-report (null control; behavior is log-prob-scale, expected near-zero judged rate)
+
+Round 2 re-evaluates each row on its **diagonal (on-target) column** instead — the behavior the adapter was trained to express, mapped from the parent's `L_matrix.json` L[b→b] entries, reusing the same frozen probe banks and judges:
+
+- Bad-medical → bad-medical advice (on-target)
+- Risky-financial → reckless financial advice (on-target)
+- Extreme-sports → reckless extreme-sports advice (on-target)
+- Wrong-claim agreement → sycophancy (on-target)
+- Compliment-writing → compliment expression (on-target)
+- Taught-fact / Reversed-fact → fact expression (on-target)
+- Marker → marker emission (log-prob-scale null/parity reference, not a judged-rate read)
 
 Full probe banks + the leakage matrix: [eval_results/issue_545 @ 6471a550 era](https://github.com/superkaiba/explore-persona-space/tree/ab36cfc7326f9e06e44b00417cb85284350f36c2/eval_results/issue_545).
 
@@ -262,7 +292,8 @@ NON-FIRING (postfix-patched — cautionary, the cut):
 - Postfix-KV-shift predictor (raw, `gauge_normalization_power=0`; the per-row `gaugenorm_sq` field is the input to the gauge-corrected ρ above): [predictors/PST__postfix_kv_shift.json](https://github.com/superkaiba/explore-persona-space/blob/ab36cfc7326f9e06e44b00417cb85284350f36c2/eval_results/issue_640/predictors/PST__postfix_kv_shift.json)
 - Per-layer carrier profile (raw aggregate peak layer 18; `carrier_layer` field = inherited #595 constant 9): [postfix_per_layer_profile.json](https://github.com/superkaiba/explore-persona-space/blob/ab36cfc7326f9e06e44b00417cb85284350f36c2/eval_results/issue_640/postfix_per_layer_profile.json)
 - Raw completions (32 files): [issue640_postfix_carrier/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/d0a94ea8723cfac01f69866aa14b2259b4313c53/issue640_postfix_carrier/raw_completions)
-- Figure source: [scripts/plot_issue640.py](https://github.com/superkaiba/explore-persona-space/blob/ab36cfc7326f9e06e44b00417cb85284350f36c2/scripts/plot_issue640.py)
+- Diagonal source-control (Round 2) per-cell Δsource: [diagonal_source_seed0.json / seed137.json](https://github.com/superkaiba/explore-persona-space/tree/616324d1c3ed867cbd2059996a8c3ed94b8e5bbb/eval_results/issue_640) — paired against the off-diagonal `patch_cells_postfix_seed{0,137}.json` above; backend parity vs the #545 L-matrix in [backend_parity_diagonal_seed0.json](https://github.com/superkaiba/explore-persona-space/blob/616324d1c3ed867cbd2059996a8c3ed94b8e5bbb/eval_results/issue_640/backend_parity_diagonal_seed0.json) (Δ = 0.0022 pp, passed at 0.03 tolerance).
+- Figure source: [scripts/plot_issue640.py](https://github.com/superkaiba/explore-persona-space/blob/ab36cfc7326f9e06e44b00417cb85284350f36c2/scripts/plot_issue640.py) (Round 1); [scripts/plot_issue640_diagonal.py](https://github.com/superkaiba/explore-persona-space/blob/616324d1c3ed867cbd2059996a8c3ed94b8e5bbb/scripts/plot_issue640_diagonal.py) (Round 2).
 
 Reuse provenance:
 
@@ -276,9 +307,10 @@ Reuse provenance:
 
 **Context:**
 
-- Created / run: filed 2026-06-14; postfix sweep completed 2026-06-15 (~00:25Z phase=done); analysis 2026-06-15.
-- Follow-up to: [#595](https://eps.superkaiba.com/tasks/595) — auto-filed from #595's follow-up proposal #3 (the postfix-cleared headline cell). Adapter + matrix lineage from [#545](https://eps.superkaiba.com/tasks/545).
-- Originating prompt(s), verbatim: origin prompt not recorded (auto-filed follow-up from #595's `epm:follow-ups v1` proposal #3, not a user chat request).
+- Created / run: filed 2026-06-14; Round 1 postfix sweep completed 2026-06-15 (~00:25Z phase=done), promoted `useful` 2026-06-16; Round 2 diagonal source-control (`followup_label: diagonal-source-control`, user-requested) ran + analyzed 2026-06-16.
+- Follow-up to: [#595](https://eps.superkaiba.com/tasks/595) — Round 1 auto-filed from #595's follow-up proposal #3 (the postfix-cleared headline cell). Adapter + matrix lineage from [#545](https://eps.superkaiba.com/tasks/545). Round 2 is a same-issue user-requested follow-up on #640.
+- Originating prompt(s), verbatim: Round 1 — origin prompt not recorded (auto-filed follow-up from #595's `epm:follow-ups v1` proposal #3). Round 2 — verbatim chat prompt not recorded; the `epm:followup-scope v1` marker (`source: user-chat`, 2026-06-16T07:11:30Z) records the request as a diagonal / source-behavior control for the #640 postfix-KV patch, settling whether the patch is a selective leakage fix or a blunt revert-toward-base.
+
 
 
 
