@@ -88,6 +88,7 @@ from explore_persona_space.experiments.issue_650 import (  # noqa: E402
     SYCO_N_NEGATIVES_TOTAL,
     UNIFIED_NEGATIVE_PANEL,
     WANDB_PROJECT,
+    assert_marker_mix_panel,
     cell_slug,
     enumerate_cells,
     parse_cell_slug,
@@ -305,7 +306,19 @@ def _fetch_marker_mix(seed: int, dest_dir: Path) -> Path:
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / f"{SOURCE}__seed{seed}.jsonl"
     dest.write_bytes(blob)
-    log.info("Reused #621 marker mix %s @ %s (sha256 OK) -> %s", rel, HF_MARKER_MIX_REVISION, dest)
+    # Round-3 blocker `negative-eval-panel-overlap` (reconciler-binding): audit
+    # the REALIZED staged DATA, not just the panel constant. Asserts the staged
+    # mix's negative personas == UNIFIED_NEGATIVE_PANEL AND are disjoint from
+    # (PERSONA_POOL_18 - SOURCE) BEFORE training fires. Fails loud on the
+    # constant-change-without-data-change trap that survived round 2.
+    audit = assert_marker_mix_panel(dest)
+    log.info(
+        "Reused #621 marker mix %s @ %s (sha256 OK; realized-panel audit OK: %s) -> %s",
+        rel,
+        HF_MARKER_MIX_REVISION,
+        audit,
+        dest,
+    )
     return dest
 
 

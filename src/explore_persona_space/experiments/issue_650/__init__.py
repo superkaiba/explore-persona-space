@@ -89,9 +89,30 @@ SEEDS: Final[tuple[int, ...]] = (42, 137, 256)
 # Single source persona for BOTH behaviors (plan §4 open-point-4; scope A7).
 SOURCE: Final[str] = "police_officer"
 
-# Eval panel (#311 19-persona pool, inherited verbatim from #621/#527/#538).
-# The marker eval reads leakage on this panel + assistant (+ source, dedup).
-PERSONA_POOL_19: Final[tuple[str, ...]] = (
+# Eval (leakage) panel. Inherited from the #311 pool used by #621/#527/#538,
+# MINUS ``kindergarten_teacher`` — round-3 code-review blocker
+# ``negative-eval-panel-overlap`` (reconciler-binding FAIL, Q1 Option B).
+#
+# The marker arm REUSES #621's sha-pinned training mixes verbatim (fitness
+# check (d): mixes are placement-independent), and those realized mixes train
+# ``kindergarten_teacher`` as one of the four contrastive NEGATIVES
+# (UNIFIED_NEGATIVE_PANEL below — verified across all 3 seeds @ rev bf641209:
+# 100 ``kindergarten_teacher`` negative rows / 800). A persona that is trained
+# as a contrastive negative has the marker pushed DOWN at its post-response
+# slot, so its held-out BYSTANDER leakage read (DV-5) is downward-biased — a
+# conclusion-bearing confound. Round-2 changed only the panel CONSTANT to
+# ``detective`` while the realized mixes still carried ``kindergarten_teacher``
+# (the constant-change-without-data-change trap), so the confound persisted.
+#
+# Option B (the reconciler's named cheaper, GPU-free path; Option A would need
+# a from-scratch marker-mix regeneration under ``detective`` on a pod, which
+# breaks the #621-reuse provenance and is not VM-implementable): KEEP the
+# realized #621 negatives and REMOVE the overlapping ``kindergarten_teacher``
+# from this held-out eval panel. The leakage panel shrinks by 1 (19 → 18) —
+# a documented DV-5 scope caveat (plan §0/§4/§5/§14). ``police_officer`` (the
+# SOURCE) stays in the panel as the one allowed shared member (it is the
+# implant target, not a bystander read).
+PERSONA_POOL_18: Final[tuple[str, ...]] = (
     "paramedic",
     "surgeon",
     "poet",
@@ -105,34 +126,36 @@ PERSONA_POOL_19: Final[tuple[str, ...]] = (
     "software_engineer",
     "data_scientist",
     "medical_doctor",
-    "kindergarten_teacher",
     "french_person",
     "villain",
     "comedian",
     "police_officer",
 )
+# Back-compat alias: callers that imported PERSONA_POOL_19 keep working and now
+# read the de-overlapped 18-persona panel (kindergarten_teacher removed).
+PERSONA_POOL_19: Final[tuple[str, ...]] = PERSONA_POOL_18
 
-# Contrastive-negative panel.
-# Round-2 (code-review blocker `negative-eval-panel-overlap`): #621's
-# UNIFIED_NEGATIVE_PANEL was ("assistant", "programmer", "chef",
-# "kindergarten_teacher"), but `kindergarten_teacher` is ALSO in the #650
-# marker eval leakage panel (PERSONA_POOL_19). Training it as a contrastive
-# NEGATIVE steers the marker/agreement DOWN at its slot, so its bystander
-# leakage read would be downward-biased — confounding the held-out leakage
-# read this task's DV-5 rests on. Per the contrastive-negatives disjointness
-# invariant ("panel disjoint from the held-out eval sources/targets"), we
-# substitute the fifth-closest source-adjacent persona NOT in PERSONA_POOL_19:
-# `detective` (same authority/investigation domain as police_officer, a close
-# negative, absent from the leakage panel). The other three negatives
-# (assistant, programmer, chef) were already disjoint from PERSONA_POOL_19.
-# HARD disjointness invariants (asserted below + in the realized mix builder):
-#   panel ∩ {SOURCE} = ∅  AND  panel ∩ (PERSONA_POOL_19 - {SOURCE}) = ∅.
-# #527/#538 librarian-contamination class + this round's eval-panel overlap.
+# Contrastive-negative panel — the REALIZED #621 marker-mix negatives.
+# This MUST equal the personas the reused #621 training mixes actually train as
+# negatives (verified @ rev bf641209, all 3 seeds: assistant/programmer/chef/
+# kindergarten_teacher, 100 rows each). Round-2 changed this constant to
+# `detective` while the realized mixes still carried `kindergarten_teacher` —
+# the constant pointed at one persona, the data trained another (round-3 Q1
+# blocker `negative-eval-panel-overlap`). Round-3 Option B re-aligns the
+# constant to the DATA and removes the overlapping `kindergarten_teacher` from
+# the held-out leakage panel (PERSONA_POOL_18 above), so:
+#   panel ∩ {SOURCE} = ∅  AND  panel ∩ (PERSONA_POOL_18 - {SOURCE}) = ∅
+# now hold against BOTH the constant AND the realized mix rows. The realized-mix
+# persona audit (`assert_marker_mix_panel`, run at prefetch in
+# run_issue650_train.py) checks the DATA, not just this constant — the
+# import-time asserts below only constrain the constant, which is exactly the
+# object the round-2 fix mistakenly trusted.
+# #527/#538 librarian-contamination class + round-3 eval-panel overlap.
 UNIFIED_NEGATIVE_PANEL: Final[tuple[str, ...]] = (
     "assistant",
     "programmer",
     "chef",
-    "detective",
+    "kindergarten_teacher",
 )
 
 if SOURCE in set(UNIFIED_NEGATIVE_PANEL):
@@ -142,14 +165,17 @@ if SOURCE in set(UNIFIED_NEGATIVE_PANEL):
         "constant-definition time (contrastive-negatives rule)."
     )
 
-# Round-2: the negative panel must NOT overlap the held-out marker eval
-# leakage panel (PERSONA_POOL_19), or those bystanders' leakage reads are
-# down-biased by their negative-training. SOURCE is the one allowed shared
-# member (it is the implant target, not a bystander read).
-_neg_eval_overlap = set(UNIFIED_NEGATIVE_PANEL) & (set(PERSONA_POOL_19) - {SOURCE})
+# The negative panel must NOT overlap the held-out marker eval leakage panel
+# (PERSONA_POOL_18), or those bystanders' leakage reads are down-biased by their
+# negative-training. SOURCE is the one allowed shared member (it is the implant
+# target, not a bystander read). NOTE: this constrains the CONSTANT only — the
+# realized #621 mix rows are audited separately by ``assert_marker_mix_panel``
+# at prefetch (round-3: the round-2 fix trusted exactly this constant-level
+# assert while the realized DATA still carried the overlapping persona).
+_neg_eval_overlap = set(UNIFIED_NEGATIVE_PANEL) & (set(PERSONA_POOL_18) - {SOURCE})
 if _neg_eval_overlap:
     raise AssertionError(
-        f"UNIFIED_NEGATIVE_PANEL ∩ (PERSONA_POOL_19 - SOURCE) = {sorted(_neg_eval_overlap)} "
+        f"UNIFIED_NEGATIVE_PANEL ∩ (PERSONA_POOL_18 - SOURCE) = {sorted(_neg_eval_overlap)} "
         "— a contrastive negative is also a held-out leakage-panel bystander, so its "
         "leakage read is confounded (code-review blocker negative-eval-panel-overlap). "
         "Swap it out of one of the two panels."
@@ -385,3 +411,81 @@ SMOKE_CELLS: Final[tuple[tuple[str, str, int], ...]] = (
     ("marker", "low", 42),
     ("sycophancy", "low", 42),
 )
+
+# Marker-mix row metadata keys (the realized #621 mix schema, verified
+# @ rev bf641209): positives carry _arm_tag="positive" + _source; negatives
+# carry _arm_tag="negative" + _negative_persona.
+MARKER_MIX_ARM_KEY: Final[str] = "_arm_tag"
+MARKER_MIX_NEG_PERSONA_KEY: Final[str] = "_negative_persona"
+MARKER_MIX_SOURCE_KEY: Final[str] = "_source"
+
+
+def assert_marker_mix_panel(mix_path) -> dict[str, int]:
+    """Audit a STAGED marker-mix JSONL: realized negatives == the panel + disjoint.
+
+    Round-3 blocker ``negative-eval-panel-overlap`` (reconciler-binding). The
+    import-time asserts above only check the panel CONSTANT; the round-2 fix
+    changed the constant to ``detective`` while the realized #621 mix still
+    trained ``kindergarten_teacher`` as a negative. This audit reads the DATA
+    the trainer will actually consume and FAILS LOUD before training fires:
+
+    1. realized negative personas (``_negative_persona`` over negative rows)
+       == ``UNIFIED_NEGATIVE_PANEL`` (set equality, not subset);
+    2. realized negatives ∩ (``PERSONA_POOL_18`` − {SOURCE}) == ∅
+       (no realized negative is a held-out leakage bystander);
+    3. every positive row's ``_source`` == SOURCE (no stray source).
+
+    Returns a small metadata digest (row/persona counts) for logging. Reads
+    ONLY the metadata fields (``_arm_tag`` / ``_negative_persona`` / ``_source``)
+    — never the prompt/completion text (content-hygiene; the #621 marker mix
+    is benign but the audit stays metadata-only by construction).
+    """
+    import json as _json
+    from collections import Counter
+    from pathlib import Path as _Path
+
+    rows = [_json.loads(line) for line in _Path(mix_path).read_text().splitlines() if line.strip()]
+    if not rows:
+        raise AssertionError(f"marker mix {mix_path} is empty — nothing to train on.")
+
+    neg_personas = Counter(
+        r.get(MARKER_MIX_NEG_PERSONA_KEY) for r in rows if r.get(MARKER_MIX_ARM_KEY) == "negative"
+    )
+    pos_sources = Counter(
+        r.get(MARKER_MIX_SOURCE_KEY) for r in rows if r.get(MARKER_MIX_ARM_KEY) == "positive"
+    )
+    realized_negs = {p for p in neg_personas if p is not None}
+    panel = set(UNIFIED_NEGATIVE_PANEL)
+
+    if None in neg_personas:
+        raise AssertionError(
+            f"marker mix {mix_path}: {neg_personas[None]} negative row(s) lack a "
+            f"{MARKER_MIX_NEG_PERSONA_KEY!r} tag — cannot audit the realized panel."
+        )
+    if realized_negs != panel:
+        raise AssertionError(
+            f"marker mix {mix_path}: realized negative personas {sorted(realized_negs)} "
+            f"!= UNIFIED_NEGATIVE_PANEL {sorted(panel)} — the staged DATA does not match "
+            "the declared contrastive-negative panel (constant-change-without-data-change "
+            "trap, round-3 blocker negative-eval-panel-overlap)."
+        )
+    overlap = realized_negs & (set(PERSONA_POOL_18) - {SOURCE})
+    if overlap:
+        raise AssertionError(
+            f"marker mix {mix_path}: realized negatives ∩ (PERSONA_POOL_18 - SOURCE) = "
+            f"{sorted(overlap)} — a REALIZED contrastive negative is also a held-out "
+            "leakage bystander, so its DV-5 leakage read is down-biased "
+            "(negative-eval-panel-overlap). Remove it from one of the two panels."
+        )
+    stray_sources = {s for s in pos_sources if s not in (None, SOURCE)}
+    if stray_sources:
+        raise AssertionError(
+            f"marker mix {mix_path}: positive rows carry stray source(s) {sorted(stray_sources)} "
+            f"besides SOURCE {SOURCE!r}."
+        )
+    return {
+        "n_rows": len(rows),
+        "n_positive": sum(1 for r in rows if r.get(MARKER_MIX_ARM_KEY) == "positive"),
+        "n_negative": sum(1 for r in rows if r.get(MARKER_MIX_ARM_KEY) == "negative"),
+        "n_negative_personas": len(realized_negs),
+    }
