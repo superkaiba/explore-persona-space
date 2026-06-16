@@ -5,7 +5,7 @@ title: At a matched training recipe the emergent-misalignment "resistant" contex
 kind: experiment
 tags: []
 created_at: '2026-06-14T18:20:50Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 638
 origin_prompt: Yes run phase 2 in the background with happy coder
 goal: Determine whether per-(source, behavior) install resistance is overcome by additional
