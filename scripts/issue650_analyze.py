@@ -155,6 +155,26 @@ def load_adapter_pairs(adapter_dir: Path) -> dict[tuple[int, str], dict[str, np.
     return out
 
 
+def resolve_cell_adapter(meta: dict, slug: str, cells_root: Path) -> tuple[Path, Path]:
+    """Return ``(adapter_dir, a_init_dir)`` for a cell's geometry reads.
+
+    Round-2 ``syco-dose-checkpoint-selection-missing``: for a SYCOPHANCY cell
+    the eval phase records the dose-selected per-epoch checkpoint in
+    ``meta["dose_selected_adapter"]`` — the geometry DVs MUST read THAT
+    checkpoint (the band-entry dial position), NOT the final 16-epoch adapter.
+    Marker cells (and any cell without a recorded selection) read the final
+    adapter. The a_init snapshot is always at ``<cell_dir>/adapter_init`` (a
+    step-0 snapshot, epoch-independent), so DV-1 compares the dose-selected
+    ``lora_A`` against the SAME a_init regardless of which epoch was selected.
+    """
+    cell_dir = Path(meta.get("adapter_local") or (cells_root / "cells" / slug))
+    a_init_dir = cell_dir / "adapter_init"
+    sel = meta.get("dose_selected_adapter")
+    if sel and Path(sel).is_dir() and (Path(sel) / "adapter_model.safetensors").is_file():
+        return Path(sel), a_init_dir
+    return cell_dir, a_init_dir
+
+
 def load_base_svd(path: Path) -> dict:
     """Load the per-layer base weight SVD built by ``build-base-svd``.
 
@@ -658,7 +678,9 @@ def cmd_analyze(args) -> int:
     dv2_rows: dict[str, dict] = {}
     for slug, meta in sorted(cell_metas.items()):
         behavior, dose, seed = parse_cell_slug(slug)
-        adapter_dir = Path(meta.get("adapter_local") or (cells_root / "cells" / slug))
+        # Dose-selected adapter for sycophancy cells (round-2
+        # syco-dose-checkpoint-selection-missing); final adapter otherwise.
+        adapter_dir, _a_init_dir = resolve_cell_adapter(meta, slug, cells_root)
         if not (adapter_dir / "adapter_model.safetensors").is_file():
             log.warning(
                 "cell=%s: adapter not local at %s; skip (analyze off-pod needs download)",
@@ -795,8 +817,10 @@ def _maybe_run_dv1(out_dir, cell_metas, cells_root, base_svd, args, git_commit) 
     bank = load_bank(bank_dir) if (bank_dir and bank_dir.is_dir()) else None
     for slug, meta in sorted(cell_metas.items()):
         behavior, dose, seed = parse_cell_slug(slug)
-        adapter_dir = Path(meta.get("adapter_local") or (cells_root / "cells" / slug))
-        init_dir = adapter_dir / "adapter_init"
+        # Dose-selected adapter for sycophancy cells; a_init is always the
+        # step-0 snapshot at the CELL dir (epoch-independent), so DV-1 compares
+        # the dose-selected lora_A against the same a_init.
+        adapter_dir, init_dir = resolve_cell_adapter(meta, slug, cells_root)
         if not (init_dir / "adapter_model.safetensors").is_file():
             log.warning("DV-1 cell=%s: a_init missing — DV-1 unmeasurable for this cell", slug)
             continue
@@ -905,7 +929,9 @@ def _maybe_run_dv4(out_dir, cell_metas, cells_root, args, git_commit) -> None:
                 "marker_arm": "N/A-for-marker",
             }
             continue
-        adapter_dir = Path(meta.get("adapter_local") or (cells_root / "cells" / slug))
+        # Dose-selected adapter for sycophancy cells (round-2
+        # syco-dose-checkpoint-selection-missing); final otherwise.
+        adapter_dir, _a_init_dir = resolve_cell_adapter(meta, slug, cells_root)
         if not (adapter_dir / "adapter_model.safetensors").is_file():
             log.warning(
                 "DV-4 cell=%s: adapter not local at %s; skip (off-pod download incomplete)",

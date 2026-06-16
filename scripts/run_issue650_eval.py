@@ -180,62 +180,252 @@ def _eval_marker_cell(
     return payload
 
 
-def _eval_sycophancy_cell(meta: dict, *, persona_bank, cells_root, out_dir, claims_path):
-    """Sycophancy cell: #612 agreement-panel eval on the held-out probe set.
+def _enumerate_epoch_checkpoints(cell_dir: Path) -> list[tuple[int, Path]]:
+    """Return [(epoch, adapter_dir), ...] for every saved epoch checkpoint.
 
-    Reuses eval_panel.eval_panel verbatim. The base agreement rate (Δagree
-    denominator) is read from the base pass (model_tag=base). Δagree is folded
-    into the dose-to-target band-entry read off-pod.
+    With ``save_strategy="epoch"`` HF Trainer writes ``checkpoint-{step}/``
+    subdirs (one per epoch, each with ``adapter_model.safetensors`` for a PEFT
+    model) PLUS the final adapter at ``cell_dir`` itself. We surface BOTH: each
+    ``checkpoint-{step}`` is an intermediate epoch, and ``cell_dir`` is the
+    final (highest-epoch) checkpoint. Epoch index is the rank of the
+    checkpoint's step among the sorted checkpoint steps (1-based); the final
+    adapter is the cap epoch.
+    """
+    ckpts: list[tuple[int, Path]] = []
+    step_dirs = sorted(
+        (
+            d
+            for d in cell_dir.glob("checkpoint-*")
+            if d.is_dir() and (d / "adapter_model.safetensors").is_file()
+        ),
+        key=lambda d: int(d.name.split("-")[-1]),
+    )
+    for i, d in enumerate(step_dirs, start=1):
+        ckpts.append((i, d))
+    # The final adapter at cell_dir is the last epoch (cap). If checkpoint-*
+    # already covers it (HF saves the final epoch as a checkpoint too), the
+    # final adapter equals the last checkpoint; surface it as the cap-epoch
+    # entry so a run with only the final adapter (no intermediate epoch dirs)
+    # still has at least one checkpoint to read.
+    if (cell_dir / "adapter_model.safetensors").is_file():
+        final_epoch = (ckpts[-1][0] + 1) if ckpts else 1
+        ckpts.append((final_epoch, cell_dir))
+    if not ckpts:
+        raise FileNotFoundError(
+            f"no epoch checkpoints (checkpoint-*/adapter_model.safetensors) nor a "
+            f"final adapter under {cell_dir} — dose-to-target needs the "
+            "save-every-epoch checkpoints."
+        )
+    return ckpts
+
+
+def _agreement_rate_for_adapter(
+    *,
+    adapter_dir: Path | None,
+    model_tag: str,
+    seed: int,
+    panel: dict[str, str],
+    claims_path: Path,
+    out_dir: Path,
+) -> dict:
+    """Merge (if adapter) + generate (eval_panel) + judge → agreement-rate dict.
+
+    ``adapter_dir=None`` ⇒ the BASE pass (no merge; hub_model_id=BASE_MODEL).
+    Returns ``band_entry.agreement_rate(...)`` augmented with the model_tag.
     """
     import tempfile
 
+    from explore_persona_space.experiments.issue_650.band_entry import agreement_rate
     from explore_persona_space.experiments.sycophancy_onpolicy_612.eval_panel import eval_panel
     from explore_persona_space.train.sft import merge_lora
 
-    slug = meta["cell_slug"]
-    # Self-persona panel: just the source (the dose dial is the source's own
-    # agreement-rate lift on the held-out probe set, plan §4).
-    panel = {SOURCE: persona_bank[SOURCE]}
-    adapter_dir = _resolve_adapter_local(meta, cells_root)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    cell_out = out_dir / slug
-    cell_out.mkdir(parents=True, exist_ok=True)
+    def _judge_from_eval_dir(eval_dir: Path) -> dict:
+        # eval_panel writes sycophancy_eval_<persona>.json per panel persona;
+        # for the self-persona panel that is just the source. Read its
+        # completions back as (claim, [rollouts]) for the judge.
+        completions_by_claim: dict[str, list[str]] = {}
+        for persona in panel:
+            jp = eval_dir / f"sycophancy_eval_{persona}.json"
+            if not jp.is_file():
+                raise FileNotFoundError(f"eval_panel output missing: {jp}")
+            payload = json.loads(jp.read_text())
+            for rec in payload["completions"]:
+                completions_by_claim.setdefault(rec["claim"], []).append(rec["completion"])
+        return agreement_rate(completions_by_claim=list(completions_by_claim.items()))
 
-    # eval_panel serves a merged Qwen+LoRA dir via vLLM. The agreement eval is
-    # a BEHAVIORAL generation read (not a geometry read), so the bf16 merge is
-    # the #612-standard path; the geometry DVs read the UNMERGED adapter
-    # (load_adapter_pairs), so the small-rank-1-delta bf16-merge attenuation
-    # (memory feedback_bf16_merge_truncates_small_lora_delta) does NOT touch
-    # the geometry headline — it could only soften the agreement RATE, reported
-    # as-measured.
-    with tempfile.TemporaryDirectory(prefix=f"merged_{slug}_") as merged_dir:
-        merge_lora(BASE_MODEL, str(adapter_dir), merged_dir)
-        ep = eval_panel(
-            model_tag=f"issue650_{slug}",
-            seed=meta["seed"],
+    if adapter_dir is None:
+        ep_out = out_dir / "base"
+        eval_panel(
+            model_tag=model_tag,
+            seed=seed,
             panel=panel,
             claims_path=claims_path,
-            out_dir=cell_out,
+            out_dir=ep_out,
+            hub_model_id=BASE_MODEL,
+            n_rollouts=SYCO_EVAL_N_ROLLOUTS,
+        )
+        return {**_judge_from_eval_dir(ep_out), "model_tag": model_tag}
+
+    # bf16 merge is the #612-standard BEHAVIORAL eval path (the geometry DVs
+    # read the UNMERGED adapter, so the small rank-1 bf16-merge attenuation
+    # — memory feedback_bf16_merge_truncates_small_lora_delta — only softens
+    # the agreement RATE, reported as-measured; it never touches the geometry
+    # headline).
+    ep_out = out_dir / model_tag
+    with tempfile.TemporaryDirectory(prefix=f"merged_{model_tag}_") as merged_dir:
+        merge_lora(BASE_MODEL, str(adapter_dir), merged_dir)
+        eval_panel(
+            model_tag=model_tag,
+            seed=seed,
+            panel=panel,
+            claims_path=claims_path,
+            out_dir=ep_out,
             merged_model_path=Path(merged_dir),
             n_rollouts=SYCO_EVAL_N_ROLLOUTS,
         )
-    res = {
-        "eval_panel_result": ep,
-        "band_entry_threshold": SYCO_BAND_ENTRY_THRESHOLD,
-        "merged_for_eval_only": True,
-    }
+    return {**_judge_from_eval_dir(ep_out), "model_tag": model_tag}
+
+
+def _eval_sycophancy_cell(
+    meta: dict, *, persona_bank, cells_root, out_dir, claims_path, base_rate_cache: dict[int, dict]
+):
+    """Sycophancy cell: per-EPOCH agreement-rate trajectory + dose-to-target select.
+
+    Blockers ``syco-dose-checkpoint-selection-missing`` +
+    ``smoke-syco-install-floor-not-enforced``. The dose dial is the source's own
+    agreement-rate lift (Δagree = trained_rate - base_rate) on the held-out
+    30-claim probe set (#612 judge). The cell trained ONE save-every-epoch run;
+    here we evaluate the base + EVERY saved epoch checkpoint, compute Δagree per
+    epoch, and select the EARLIEST checkpoint whose Δagree enters the cell's
+    dose band (low [0.30,0.45] / high [0.55,ceiling]). The SELECTED checkpoint
+    (not the final adapter) is recorded so eval/analyze read it. The full
+    per-epoch trajectory is persisted to ``syco_dose_trajectory_seed{seed}.json``
+    (one per seed; both doses of a seed share the same trajectory + base rate).
+    """
+    from explore_persona_space.experiments.issue_650.band_entry import select_band_entry
+
+    slug = meta["cell_slug"]
+    seed = int(meta["seed"])
+    dose = meta["dose"]
+    # Self-persona panel: just the source (plan §4 — the dose dial is the
+    # source's own agreement-rate lift).
+    panel = {SOURCE: persona_bank[SOURCE]}
+    cell_dir = _resolve_adapter_local(meta, cells_root)
+    cell_out = out_dir / slug
+    cell_out.mkdir(parents=True, exist_ok=True)
+
+    # Base agreement rate (Δagree denominator) — computed ONCE per seed (same
+    # base model for both doses of a seed) and cached.
+    if seed not in base_rate_cache:
+        base_rate_cache[seed] = _agreement_rate_for_adapter(
+            adapter_dir=None,
+            model_tag=f"base_seed{seed}",
+            seed=seed,
+            panel=panel,
+            claims_path=claims_path,
+            out_dir=out_dir / f"_base_seed{seed}",
+        )
+    base = base_rate_cache[seed]
+    base_rate = float(base["rate"])
+
+    # Per-epoch trajectory: evaluate the base + every saved epoch checkpoint
+    # (cached on disk per seed so low/high of the same seed reuse it).
+    traj_path = out_dir / f"syco_dose_trajectory_seed{seed}.json"
+    if traj_path.is_file():
+        epoch_records = json.loads(traj_path.read_text())["epoch_records"]
+    else:
+        ckpts = _enumerate_epoch_checkpoints(cell_dir)
+        epoch_records = []
+        for epoch, adir in ckpts:
+            rate = _agreement_rate_for_adapter(
+                adapter_dir=adir,
+                model_tag=f"syco_seed{seed}_ep{epoch}",
+                seed=seed,
+                panel=panel,
+                claims_path=claims_path,
+                out_dir=out_dir / f"_traj_seed{seed}",
+            )
+            epoch_records.append(
+                {
+                    "epoch": epoch,
+                    "trained_rate": float(rate["rate"]),
+                    "delta_agree": float(rate["rate"]) - base_rate,
+                    "checkpoint": str(adir),
+                    "rate_detail": rate,
+                }
+            )
+            # Checkpoint-per-phase: persist the partial trajectory after each
+            # epoch so a crash never loses the earlier (expensive) reads.
+            traj_path.write_text(
+                json.dumps(
+                    {
+                        "seed": seed,
+                        "base_rate": base_rate,
+                        "base_detail": base,
+                        "epoch_records": epoch_records,
+                        "git_commit": _git_commit(),
+                        "timestamp_utc": _dt.datetime.now(tz=_dt.UTC).isoformat(timespec="seconds"),
+                    },
+                    indent=2,
+                )
+            )
+
+    sel = select_band_entry(dose=dose, base_rate=base_rate, epoch_records=epoch_records)
+    if sel.in_band:
+        selected_checkpoint = sel.selected_checkpoint
+        selected_epoch = sel.selected_epoch
+        selected_delta = sel.selected_delta
+    else:
+        # Matched-dial fallback (marker-training-recipe § Multi-arm
+        # resolution-band): report the closest-approach checkpoint, flagged
+        # NOT-in-band so the analyzer/clean-result carries it as a scope caveat
+        # (high band is TIGHT per plan §14 concern 2). The closest checkpoint
+        # is still what downstream reads (a defined, deterministic adapter).
+        selected_checkpoint = sel.closest_checkpoint
+        selected_epoch = sel.closest_epoch
+        selected_delta = sel.closest_delta
+        log.warning(
+            "cell=%s dose=%s: Δagree never entered band [%.2f,%.2f]; using "
+            "closest-approach epoch %s (Δ=%.3f) — reportable matched-dial fallback",
+            slug,
+            dose,
+            sel.band_low,
+            sel.band_high,
+            selected_epoch,
+            selected_delta if selected_delta is not None else float("nan"),
+        )
+
     payload = {
         "cell_slug": slug,
         "behavior": "sycophancy",
-        "dose": meta["dose"],
-        "seed": meta["seed"],
-        "eval": res,
+        "dose": dose,
+        "seed": seed,
+        "base_rate": base_rate,
+        "band_entry_threshold": SYCO_BAND_ENTRY_THRESHOLD,
+        "dose_band": [sel.band_low, sel.band_high],
+        "selected_checkpoint": selected_checkpoint,
+        "selected_epoch": selected_epoch,
+        "selected_delta_agree": selected_delta,
+        "in_band": sel.in_band,
+        "dose_trajectory": sel.trajectory,
+        "dose_trajectory_path": str(traj_path),
+        "merged_for_eval_only": True,
         "git_commit": _git_commit(),
         "timestamp_utc": _dt.datetime.now(tz=_dt.UTC).isoformat(timespec="seconds"),
     }
     out_path = out_dir / f"{slug}__agreement.json"
     out_path.write_text(json.dumps(payload, indent=2))
-    log.info("[phase=eval_syco_done] cell=%s -> %s", slug, out_path)
+    log.info(
+        "[phase=eval_syco_done] cell=%s dose=%s selected_epoch=%s Δ=%.3f in_band=%s -> %s",
+        slug,
+        dose,
+        selected_epoch,
+        selected_delta if selected_delta is not None else float("nan"),
+        sel.in_band,
+        out_path,
+    )
     return payload
 
 
@@ -287,6 +477,33 @@ def _assert_r_persona_coverage_for_marker(
             "run_issue650_generate_r_persona.py BEFORE the marker eval. "
             f"{len(missing)} gap(s); first 5:\n  " + "\n  ".join(missing[:5])
         )
+
+
+def _record_dose_selection(*, metas_root: Path, slug: str, payload: dict) -> None:
+    """Patch the train-side cell JSON with the dose-selected checkpoint.
+
+    The off-pod analyzer reads the SELECTED checkpoint (not the final adapter)
+    for sycophancy cells via ``meta["dose_selected_adapter"]``. Writes are
+    idempotent; the cell JSON is found under anchor_smoke/ or sweep/.
+    """
+    for sub in ("anchor_smoke", "sweep"):
+        cell_path = metas_root / sub / f"{slug}.json"
+        if cell_path.is_file():
+            meta = json.loads(cell_path.read_text())
+            meta["dose_selected_adapter"] = payload["selected_checkpoint"]
+            meta["dose_selected_epoch"] = payload["selected_epoch"]
+            meta["dose_selected_delta_agree"] = payload["selected_delta_agree"]
+            meta["dose_in_band"] = payload["in_band"]
+            cell_path.write_text(json.dumps(meta, indent=2))
+            log.info(
+                "Recorded dose selection on %s: epoch=%s in_band=%s adapter=%s",
+                cell_path,
+                payload["selected_epoch"],
+                payload["in_band"],
+                payload["selected_checkpoint"],
+            )
+            return
+    log.warning("cell=%s: no train-side JSON to record dose selection on", slug)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -343,6 +560,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     n_done = 0
+    base_rate_cache: dict[int, dict] = {}  # seed -> base agreement-rate dict (per-seed)
     for slug in sorted(want):
         meta = metas.get(slug)
         if meta is None:
@@ -360,13 +578,18 @@ def main(argv: list[str] | None = None) -> int:
                 out_dir=out_dir,
             )
         else:
-            _eval_sycophancy_cell(
+            syco_payload = _eval_sycophancy_cell(
                 meta,
                 persona_bank=persona_bank,
                 cells_root=cells_root,
                 out_dir=out_dir,
                 claims_path=claims_path,
+                base_rate_cache=base_rate_cache,
             )
+            # Record the dose-selected checkpoint back into the train-side cell
+            # JSON so the off-pod analyzer reads the dose-selected adapter (NOT
+            # the final). The analyzer prefers meta["dose_selected_adapter"].
+            _record_dose_selection(metas_root=cells_root, slug=slug, payload=syco_payload)
         n_done += 1
 
     log.info("[phase=eval_dispatch_done] %d cell(s) evaluated", n_done)
