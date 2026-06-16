@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
+**Methodology:** how this experiment was run (conditions, hyperparameters, worked examples) — [GitHub](https://github.com/superkaiba/explore-persona-space/blob/2a6db6e69168dc81b98f1568d5ed230d752a0e21/docs/methodology/issue_650.md) · [gist](https://gist.github.com/superkaiba/0485efeaec7e556cdc5b753084988caf). Findings-blind by construction.
+
 ## Takeaways
 
 - The rank-1 read stays at its random Kaiming init in all 12 cells (**cosine 0.993–0.999**), for both the marker and sycophancy — it never becomes a learned source-context detector.
@@ -207,6 +209,8 @@ All from the raw-completions bucket: [issue650 raw_completions](https://huggingf
 - Analysis (DV-1..5): [`scripts/issue650_analyze.py`](https://github.com/superkaiba/explore-persona-space/blob/20a66c9b81ed715f3f2949bb811ba02108074c28/scripts/issue650_analyze.py)
 - Experiment constants: [`src/explore_persona_space/experiments/issue_650/__init__.py`](https://github.com/superkaiba/explore-persona-space/blob/20a66c9b81ed715f3f2949bb811ba02108074c28/src/explore_persona_space/experiments/issue_650/__init__.py)
 - Git commit (results): `20a66c9b81ed715f3f2949bb811ba02108074c28`; figures: `82c0d32029c3c39ac9f9ce50a4047b8a9504c603`
+
+**Methodology reference:** [docs/methodology/issue_650.md @ 2a6db6e69168](https://github.com/superkaiba/explore-persona-space/blob/2a6db6e69168dc81b98f1568d5ed230d752a0e21/docs/methodology/issue_650.md) · [gist mirror](https://gist.github.com/superkaiba/0485efeaec7e556cdc5b753084988caf) (SECRET). Findings-blind by construction; the body Parameters table is a load-bearing subset of doc §2.
 - Reproduce:
 
     ```bash
