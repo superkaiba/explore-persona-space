@@ -124,3 +124,4 @@
 {"ts": "2026-06-16T07:23:06Z", "kind": "epm:failure", "version": 1, "by": "issue650_pipeline", "note": "smoke train gate FAILED (non-band criterion; see issue-650-smoke-train-ep16.log)"}
 {"ts": "2026-06-16T07:23:13Z", "kind": "epm:progress", "version": 24, "by": "poll_pipeline", "note": "phase transition: (start) -> failed", "phase": "failed", "pod": "pod-650"}
 {"ts": "2026-06-16T07:27:22Z", "kind": "epm:run-launched", "version": 4, "by": "unknown", "note": "Pivot-r3 relaunch on pod-650 after the gc.collect+empty_cache fix (commit 5df3b6f9e). pod=pod-650 pid=4469 log_abs=/workspace/logs/issue-650.log cmd='bash scripts/run_issue650_pipeline.sh'. Previous attempt's log preserved at /workspace/logs/issue-650.log.attempt1 for forensics if needed."}
+{"ts": "2026-06-16T07:36:29Z", "kind": "epm:progress", "version": 25, "by": "poll_pipeline", "note": "phase transition: failed -> smoke_train", "phase": "smoke_train", "pod": "pod-650"}
