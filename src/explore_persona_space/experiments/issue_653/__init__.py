@@ -213,6 +213,62 @@ CONTENT_RECIPE: dict = {
     "max_length": 1024,
 }
 
+# ── Sycophancy / EM on-policy pool build params (§4, §11; on-policy-completions.md) ─
+# Sycophancy: the #612 elicitation ladder (tier 1 bare -> 2 instruct-and-strip ->
+# 3 minimal opener prefill), judge-filtered, 80% floor + equalize-down. The
+# #623/#612 sycophancy question source is the #411 wrong-claims bank (200 claims).
+# Source: #612 (N_POSITIVES=200, the elicitation count) + on-policy-completions.md
+# (80% floor + equalize-down) + plan §4/§11.
+SYCOPHANCY_N_TARGET = 200  # target positives per source (#612 N_POSITIVES; Source: #612)
+ONPOLICY_YIELD_FLOOR = (
+    0.80  # 80% floor; below -> source dropped + reported (on-policy-completions.md)
+)
+# Judge: claude-sonnet-4-5 per plan §10 reproducibility card (the validated
+# sycophancy-agreement construct; never substring-match — CLAUDE.md).
+# Source: plan §10 "Judge | claude-sonnet-4-5"; the #612 judge prompt is the
+# locked agreement construct, model id overridden to the plan-grounded Sonnet.
+JUDGE_MODEL = "claude-sonnet-4-5-20250929"
+ONPOLICY_GEN_TEMPERATURE = (
+    1.0  # diversity is the point (#612/on-policy-completions.md); Source: #612 EVAL_TEMPERATURE
+)
+ONPOLICY_TIER2_MAX_ROUNDS = 36  # tier-3 resample budget (#612 TIER3_MAX_ROUNDS); Source: #612
+JUDGE_CONCURRENCY = 16  # Anthropic API concurrency for the agreement judge
+
+# ── HF reuse pins for the sycophancy / EM build (§10, A3; #600 prefetch guard) ─
+# #411 wrong-claims bank (the sycophancy user-message source #612 used) — the
+# SHA pin is carried verbatim from #612's EXPECTED_SHA256 (asserted at prefetch).
+# Source: #612 EXPECTED_SHA256 + plan §A3 (#653 BUILDS fresh florist/medical
+# pools via the #612 ladder; only the wrong-claims question source is reused).
+HF_FROZEN_DATA_PREFIX = "issue411_sycophancy_cosine_gradient"
+SYCOPHANCY_CLAIMS_RELPATH = f"{HF_FROZEN_DATA_PREFIX}/data/wrong_claims/train_200.jsonl"
+SYCOPHANCY_CLAIMS_SHA256 = "c3ac7cef9d1175779b54207194ac6afbb0c5f4bc5112a33045c43fbb5065301e"
+
+# #519 EM training mix (Turner bad-medical-advice published corpus; the EM
+# positives are reused verbatim per replication-fidelity, §4). The data-repo
+# mirror has no planning-time pin (the §10 "#519/#521 EM corpus" pin is a
+# model-repo commit, not a data-repo one), so the sha is RECORDED at first
+# fetch (trust-on-first-use, mirroring #612's RECORD_ONLY_FETCHES) and named in
+# the implementation report. Source: #519 manifest (em_seed*.jsonl: 200 Turner
+# positives under medical_doctor + 200 contrastive negatives) + plan §4/§10.
+EM_CORPUS_RELPATH_TMPL = "issue_519/em_seed{seed}.jsonl"
+# Recorded at impl (2026-06-16, data-repo main): em_seed42.jsonl content sha256.
+EM_CORPUS_SHA256_RECORDED = {
+    42: "1f4c37d14fce24eaaa7d36653b503d774298f5a2d5f599501e2fb21bca71a1d4",
+}
+
+# #519 EM adapters (the Soligo / convergent-EM direction source). Reused as a
+# DIRECTION-extraction input only (the EM r_B), so application-scaling (artifact
+# -reuse (g)) is N/A. Source: #519 clean-result (adapters on HF model repo,
+# revision c46b8989d) + #521 (layer-14 EM shift direction) + plan §4/§10.
+EM_ADAPTER_REVISION = "c46b8989df021591c18711f51e50df4d6c9ab6c8"
+EM_ADAPTER_PATH_TMPL = "issue_519/em_seed{seed}"
+
+# r_B read layer for the sycophancy / EM trait directions (#623 headline layer 14,
+# steering-selected; 0-indexed). Source: #623 (headline layer 14) + #521 (EM
+# layer-14 shift) + plan §11 P5 behavior-specific layers.
+TRAIT_RB_LAYER = 14
+TRAIT_RB_LAYERS: tuple[int, ...] = (7, 14, 21, 27)  # #623 DEFAULT_LAYERS (report per-layer)
+
 # ── LoRA gauge (§11) ──────────────────────────────────────────────────────────
 # α = 2r, use_rslora=True (hardcoded in train_lora) → effective scale α/√r.
 LORA_ALPHA_MULTIPLIER = 2
@@ -489,6 +545,16 @@ def full_ft_stage_config(
     pinned to #653's full-FT recipe. The full-FT rung is the rank-ladder
     endpoint (all params), launched via `accelerate launch` + DeepSpeed ZeRO-3
     on 4× A100 (plan §9; the one declared smoke/sweep architectural divergence).
+
+    ``deepspeed_config`` is set explicitly to the stage-3 partition config:
+    ``launch_stage.py::run_distributed_sft`` reads
+    ``config.get("deepspeed_config", "deepspeed/zero2_fp32_comm.json")``, so an
+    omitted key silently defaults to ZeRO-2 (optimizer-state-only partition).
+    A 7B full fine-tune on 4× A100-80 needs ZeRO-3 (parameter + gradient +
+    optimizer-state partition) to fit, and plan §9 calls for ZeRO-3 — so the
+    config is pinned here, not left to the launcher default (concern
+    ``full-ft-zero2-not-zero3``). ``zero3_no_offloading.json`` has
+    ``zero_optimization.stage == 3``.
     """
     return {
         "type": "sft",
@@ -506,6 +572,8 @@ def full_ft_stage_config(
         "gradient_checkpointing": True,
         "packing": False,  # prompt-completion rows; no packing (loss-mask intact)
         "use_lora": False,  # full-FT = all params, the rank-ladder endpoint
+        # ZeRO-3 (§9; not the launcher's ZeRO-2 default — concern full-ft-zero2-not-zero3).
+        "deepspeed_config": "deepspeed/zero3_no_offloading.json",
         "wandb_project": wandb_project,
         "wandb_run_name": run_name,
     }
