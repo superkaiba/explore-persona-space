@@ -225,3 +225,196 @@ def test_construct_bridge_label_thresholds():
     b2 = a.construct_bridge_cosine(w, w2, bar=0.5)
     assert b2["label"] == "panel-direction"
     assert not b2["licenses_behavior_claim"]
+
+
+# --------------------------------------------------------------------------
+# Round-2 regression tests (one per round-1 code-review blocker/concern)
+# --------------------------------------------------------------------------
+
+
+def test_emnc_cids_match_537_methodology_and_hub():
+    # BLOCKER emnc-context-registry-mismatch: the 4 EMNC train contexts must match
+    # docs/methodology/issue_537.md §1.4 exactly (default / fmt_code / sp_swe /
+    # wc_short_advice) — the contexts the positives-only Betley EM arm trained on.
+    # Wrong ids stage non-existent adapter subfolders and skip the real cells.
+    assert set(m.EMNC_CIDS) == {"default", "fmt_code", "sp_swe", "wc_short_advice"}
+    # The wrong round-1 ids must NOT survive.
+    assert "sp_doctor" not in m.EMNC_CIDS
+    assert "binst_em" not in m.EMNC_CIDS
+    assert "wc_long_write" not in m.EMNC_CIDS
+    # cids_for("emnc") returns exactly these (and resolves to the nested layout).
+    assert m.cids_for("emnc") == list(m.EMNC_CIDS)
+    for cid in m.EMNC_CIDS:
+        assert m.resolve_adapter_subfolder("emnc", cid, 42) == (
+            f"adapters/i537_emnc_{cid}_seed42/sft_em_adapter"
+        )
+
+
+def test_canary_reference_variant_matches_read_variant():
+    # BLOCKER gate7a-variant-mismatch: the canary's GATE_7A_VARIANT must equal the
+    # `variant` field of REF_JSON, else a correctly-applied adapter spuriously
+    # HALTs the sweep (the asserted numbers belong to a different read).
+    import json
+    from pathlib import Path
+
+    import scripts.issue651_canary as canary
+
+    repo_root = Path(
+        __import__("subprocess")
+        .check_output(["git", "rev-parse", "--show-toplevel"])
+        .decode()
+        .strip()
+    )
+    ref = json.loads((repo_root / canary.REF_JSON).read_text())
+    assert ref.get("variant") == canary.GATE_7A_VARIANT, (
+        canary.REF_JSON,
+        ref.get("variant"),
+        canary.GATE_7A_VARIANT,
+    )
+    # And the asserted numbers are the SAME-variant numbers (0.32465 / 0.58711),
+    # not the base-variant ones (0.44880 / 0.92869).
+    assert abs(float(ref["s_top1_frac"]) - 0.32465) < 1e-3
+    assert abs(float(ref["mean_cos_to_U1"]) - 0.58711) < 1e-3
+
+
+def test_q2_ceiling_is_cross_seed_u1_not_per_cell_median():
+    # BLOCKER q2-ceiling-wrong-geometric-object: Q2 must normalize by the
+    # per-behavior CROSS-SEED U1 cosine, NOT the Q1 per-cell-seed-ceiling median.
+    # Construct a fixture where the two objects DIFFER, and assert q2 uses the
+    # cross-seed-U1 object.
+    rng = np.random.default_rng(11)
+    H = 24
+    direction = rng.standard_normal(H).astype(np.float32)
+    direction /= np.linalg.norm(direction)
+
+    # Per-context cell reads at seed 42 and 1042: each context = direction + a
+    # context-and-seed-specific noise vector of MODERATE magnitude. Per-cell
+    # cross-seed cosine (Q1 ceiling) sees independent noise on the two seeds -> LOW;
+    # but averaging 8 contexts cancels the noise so the cross-context U1 at each
+    # seed concentrates on `direction` -> cross-seed U1 cosine (Q2 ceiling) HIGH.
+    # The two objects are numerically far apart here — that is the whole point.
+    def ctx_reads(seed_rng, noise=0.55):
+        return {
+            f"ctx{i}": (direction + noise * seed_rng.standard_normal(H)).astype(np.float32)
+            for i in range(16)
+        }
+
+    r42 = ctx_reads(np.random.default_rng(100))
+    r1042 = ctx_reads(np.random.default_rng(200))
+    q1_ceiling = a.seed_ceiling_per_cell(r42, r1042)["median"]
+    u1_42 = np.asarray(a.q1_context_invariance(r42, n_reps=50)["U1"], dtype=np.float32)
+    u1_1042 = np.asarray(a.q1_context_invariance(r1042, n_reps=50)["U1"], dtype=np.float32)
+    q2_ceiling = a.q2_seed_ceiling_per_behavior({"em": {42: u1_42, 1042: u1_1042}})["em"]
+    # The two objects must genuinely differ (the fixture is engineered for this) —
+    # confirming the driver MUST pass the cross-seed-U1 object, not the per-cell
+    # median, as the Q2 normalization denominator (BLOCKER q2-ceiling-wrong-object).
+    assert q2_ceiling - q1_ceiling > 0.2, (q2_ceiling, q1_ceiling)
+    # The Q2 ceiling (cross-seed U1) should be the HIGH one (shared direction).
+    assert q2_ceiling > q1_ceiling
+    # q2_seed_ceiling_per_behavior omits single-seed behaviors.
+    assert a.q2_seed_ceiling_per_behavior({"refusal": {42: u1_42}}) == {}
+
+
+def test_q2_distinct_verdict_requires_within_null_band():
+    # CONCERN q2-verdict-null-band-ignored: an off-diagonal below the ceiling-
+    # fraction bar but OUTSIDE its null band must NOT yield "distinct".
+    # Build a q2 dict by hand where every ceiling-fraction < 0.5 but one pair's
+    # raw cosine exceeds its null p95.
+    behaviors = ["em", "fact", "marker"]
+    # raw cosines: em|fact = 0.30 (real shared, will exceed its null), others ~0.
+    raw = [
+        [1.0, 0.30, 0.02],
+        [0.30, 1.0, 0.03],
+        [0.02, 0.03, 1.0],
+    ]
+    # ceiling-normalized all < 0.5 (denominators ~0.8 -> 0.30/0.8=0.375 < 0.5).
+    cf = [
+        [1.0, 0.375, 0.025],
+        [0.375, 1.0, 0.0375],
+        [0.025, 0.0375, 1.0],
+    ]
+    # Per-pair null p95: em|fact's null band (0.10) is BELOW its raw cos (0.30) ->
+    # OUTSIDE band; the other pairs' raw cos < their null p95 -> within band.
+    pair_null = {"em|fact": 0.10, "em|marker": 0.20, "fact|marker": 0.20}
+    q2 = {
+        "behaviors": behaviors,
+        "raw_cosine_matrix": raw,
+        "ceiling_normalized_matrix": cf,
+        "pairwise_null_p95": pair_null,
+    }
+    verdict = a.q2_verdict(q2, distinct_frac=0.5)
+    # All ceiling-fractions < 0.5, but em|fact is OUTSIDE its null band -> NOT distinct.
+    assert verdict["verdict"] != "distinct", verdict
+    em_fact = next(
+        d for d in verdict["off_diagonal_ceiling_fractions"] if set(d["pair"]) == {"em", "fact"}
+    )
+    assert em_fact["below_ceiling_bar"] is True
+    assert em_fact["within_null_band"] is False
+    # Now drop em|fact's raw cos within its null band -> distinct.
+    raw2 = [r[:] for r in raw]
+    raw2[0][1] = raw2[1][0] = 0.05  # below null p95 0.10
+    q2b = dict(q2, raw_cosine_matrix=raw2)
+    verdict_b = a.q2_verdict(q2b, distinct_frac=0.5)
+    assert verdict_b["verdict"] == "distinct", verdict_b
+
+
+def test_q2_matrix_carries_per_pair_null_band():
+    # The matrix builder must expose a per-pair cosine-scale null band so the
+    # verdict can gate on it (CONCERN q2-verdict-null-band-ignored).
+    rng = np.random.default_rng(7)
+    H = 48
+    behavior_u1 = {b: rng.standard_normal(H).astype(np.float32) for b in ("em", "fact", "marker")}
+    ceilings = {b: 0.8 for b in behavior_u1}
+    q2 = a.q2_cross_behavior_matrix(behavior_u1, ceilings, n_reps=80)
+    assert "pairwise_null_p95" in q2
+    # One entry per unordered pair (3 behaviors -> 3 pairs).
+    assert len(q2["pairwise_null_p95"]) == 3
+    assert all(0.0 <= v <= 1.0 for v in q2["pairwise_null_p95"].values())
+
+
+def test_bridge_reads_every_seed42_cell_not_just_one(monkeypatch, tmp_path):
+    # CONCERN bridge-single-canonical-cell: the per-behavior canonical U1 must be
+    # built from EVERY seed-42 cell's read (plan §9: 16 fact + 16 sycophancy), not
+    # one arbitrary cell. Spy on _extract_canonical_u1 to count the calls; feed
+    # real stub shift tensors so the neutral-panel side runs unmocked.
+    import json
+    import sys
+
+    import torch
+
+    import scripts.issue651_bridge as bridge
+
+    H = 32
+    rng = np.random.default_rng(3)
+    calls: list[tuple[str, str, int]] = []
+
+    def fake_extract(behavior, cid, seed, **kw):
+        calls.append((behavior, cid, seed))
+        return rng.standard_normal(H).astype(np.float32)
+
+    # _extract_canonical_u1 is a module-level symbol -> patch it directly.
+    monkeypatch.setattr(bridge, "_extract_canonical_u1", fake_extract)
+    # Point _repo_root at a tmp dir and pre-create the per-cell shift tensors so
+    # the neutral side (real torch.load + real svd) finds them.
+    monkeypatch.setattr(bridge, "_repo_root", lambda: tmp_path)
+    shift_dir = tmp_path / "eval_results" / "issue_651" / "shifts"
+    shift_dir.mkdir(parents=True)
+    fact_cells = ["fact_default_seed42", "fact_sp_swe_seed42", "fact_fmt_code_seed42"]
+    order = m.panel_column_order()
+    for cell_id in fact_cells:
+        stub_shifts = {
+            p: {"delta_v": torch.tensor(rng.standard_normal(H), dtype=torch.float32)} for p in order
+        }
+        torch.save({"shifts": stub_shifts}, shift_dir / f"{cell_id}.pt")
+
+    monkeypatch.setattr(sys, "argv", ["issue651_bridge.py", "--cells", *fact_cells, "--cpu-only"])
+    rc = bridge.main()
+    assert rc == 0
+    # _extract_canonical_u1 called ONCE PER seed-42 fact cell (not just one).
+    assert len(calls) == len(fact_cells), calls
+    assert {c[1] for c in calls} == {"default", "sp_swe", "fmt_code"}
+    # The written bridge JSON records all canonical cells.
+    out = json.loads((tmp_path / "eval_results/issue_651/construct_bridge/fact.json").read_text())
+    assert out["n_canonical_cells"] == len(fact_cells)
+    assert set(out["canonical_cells"]) == set(fact_cells)
+    assert "cos_neutral_vs_canonical" in out

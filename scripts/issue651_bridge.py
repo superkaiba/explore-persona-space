@@ -81,7 +81,15 @@ def _extract_canonical_u1(
     max_new_tokens: int,
     cpu_only: bool,
 ) -> np.ndarray:
-    """Extract the canonical-surface U1 for one (behavior, cid, seed-42) cell."""
+    """Extract ONE (behavior, cid, seed-42) cell's canonical-surface read direction.
+
+    This is the per-CELL canonical direction: the cell's adapter read on the
+    behavior's canonical elicitation surface, collapsed to its top singular
+    direction over the per-question shifts. The PER-BEHAVIOR canonical U1 is the
+    U1 of the matrix assembled from EVERY seed-42 cell's read (see ``main``) —
+    plan §9 budgets all 16 fact + 16 sycophancy seed-42 canonical reads, NOT a
+    single arbitrary cell (CONCERN bridge-single-canonical-cell).
+    """
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -148,7 +156,17 @@ def main() -> int:
     )
     parser.add_argument("--primary-layer", type=int, default=14)
     parser.add_argument("--max-new-tokens", type=int, default=512)
-    parser.add_argument("--n-gpus", type=int, default=4)
+    parser.add_argument(
+        "--n-gpus",
+        type=int,
+        default=4,
+        help=(
+            "Visible-GPU count for the model load (device_map='auto' shards the "
+            "base+trained pair across these GPUs). The 32 canonical-surface cell "
+            "reads run sequentially in-process here; the dispatcher passes this "
+            "for parity with the other phases' CVD plumbing."
+        ),
+    )
     parser.add_argument("--cpu-only", action="store_true")
     parser.add_argument("--bar", type=float, default=0.5)
     args = parser.parse_args()
@@ -173,6 +191,11 @@ def main() -> int:
     shift_dir = repo_root / "eval_results" / "issue_651" / "shifts"
     out_dir = repo_root / "eval_results" / "issue_651" / "construct_bridge"
     out_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(
+        "[phase=bridge] n_gpus=%d (device_map='auto' spans the visible GPUs; "
+        "canonical-surface cell reads run sequentially in-process)",
+        args.n_gpus,
+    )
 
     # Group the requested cells by behavior; the bridge is one read per behavior
     # (the neutral-panel U1 is the per-behavior cross-context U1 over its cells).
@@ -201,24 +224,43 @@ def main() -> int:
             per_context_read[c.cid] = read
         neutral_u1 = np.asarray(i651_analysis.q1_context_invariance(per_context_read)["U1"])
 
-        # Canonical-surface U1: one read on the behavior's elicitation surface
-        # (use the first cell's seed-42 adapter — the canonical surface is the
-        # behavior's diagonal elicitation, shared across its cells).
-        ref_cell = next((c for c in beh_cells if c.seed == 42), beh_cells[0])
-        logger.info("[phase=%s] canonical-surface read on %s", phase, ref_cell.cell_id)
-        canonical_u1 = _extract_canonical_u1(
-            behavior,
-            ref_cell.cid,
-            ref_cell.seed,
-            repo_root=repo_root,
-            primary_layer=args.primary_layer,
-            max_new_tokens=args.max_new_tokens,
-            cpu_only=args.cpu_only,
+        # Canonical-surface U1: read EVERY seed-42 cell on the behavior's
+        # canonical elicitation surface, assemble the per-behavior canonical
+        # matrix (n_seed42_contexts x H) from the per-cell reads, then take its
+        # U1 — plan §9 budgets all 16 fact + 16 sycophancy seed-42 canonical
+        # reads (CONCERN bridge-single-canonical-cell), NOT a single arbitrary
+        # cell. With one seed-42 cell this degenerates to that cell's U1.
+        from explore_persona_space.analysis.svd_direction_constancy import svd_summary
+
+        seed42_cells = [c for c in beh_cells if c.seed == 42]
+        if not seed42_cells:
+            logger.info("[phase=%s] no seed-42 cell -> skip bridge", phase)
+            continue
+        per_cell_canonical: dict[str, np.ndarray] = {}
+        for c in seed42_cells:
+            logger.info("[phase=%s] canonical-surface read on %s", phase, c.cell_id)
+            per_cell_canonical[c.cid] = _extract_canonical_u1(
+                behavior,
+                c.cid,
+                c.seed,
+                repo_root=repo_root,
+                primary_layer=args.primary_layer,
+                max_new_tokens=args.max_new_tokens,
+                cpu_only=args.cpu_only,
+            )
+        # Assemble the (H x n_contexts) canonical matrix and take its U1.
+        canon_order = sorted(per_cell_canonical)
+        M_canon = np.stack([per_cell_canonical[cid] for cid in canon_order], axis=1)
+        canonical_u1 = (
+            svd_summary(M_canon)["U1"].astype(np.float32)
+            if M_canon.shape[1] >= 2
+            else M_canon[:, 0].astype(np.float32)
         )
         bridge = i651_analysis.construct_bridge_cosine(neutral_u1, canonical_u1, bar=args.bar)
         bridge["behavior"] = behavior
         bridge["neutral_cells"] = [c.cell_id for c in beh_cells]
-        bridge["canonical_cell"] = ref_cell.cell_id
+        bridge["canonical_cells"] = [c.cell_id for c in seed42_cells]
+        bridge["n_canonical_cells"] = len(seed42_cells)
         results[behavior] = bridge
         (out_dir / f"{behavior}.json").write_text(json.dumps(bridge, indent=2))
         logger.info(
