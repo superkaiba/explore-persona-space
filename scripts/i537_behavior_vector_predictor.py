@@ -444,8 +444,18 @@ def project_v_b(behavior: str) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--behaviors", default="marker", help="comma-separated behaviors")
-    ap.add_argument("--phase", choices=["extract", "project"], required=True)
+    ap.add_argument("--phase", choices=["extract", "project"], default=None)
     ap.add_argument("--smoke", action="store_true", help="extract: 2 questions x 1 rollout")
+    ap.add_argument(
+        "--cpu-smoke",
+        action="store_true",
+        help="CPU REAL extract smoke (B8 round-2): runs extract_v_b on the MARKER "
+        "behavior (judge-exempt, slot-direct read) with a tiny random-weight Qwen2 "
+        "model on CPU + the real tokenizer, so the rollout + last-prompt residual "
+        "capture + mean-diff v_b path runs without a GPU or live judge. (The "
+        "judge-retain pos>50/neg<50 mapping for non-marker behaviors is unit-tested "
+        "separately -- it needs the API; the CPU-smoke keeps all rollouts.)",
+    )
     ap.add_argument(
         "--cpu-setup-smoke",
         action="store_true",
@@ -455,6 +465,22 @@ def main() -> int:
     args = ap.parse_args()
     behaviors = [b.strip() for b in args.behaviors.split(",") if b.strip()]
     assert all(b in ALL_BEHAVIORS for b in behaviors), behaviors
+
+    if args.cpu_smoke:
+        from explore_persona_space.experiments.i537_marker_eval import build_tiny_cpu_model
+
+        # need >= max(V_B_LAYERS)+1 layers so the {6,14,22,27} hooks resolve.
+        model, tok = build_tiny_cpu_model(n_layers=max(V_B_LAYERS) + 1)
+        b = "marker" if "marker" in behaviors else behaviors[0]
+        extract_v_b(b, smoke=True, model=model, tok=tok)
+        logger.info(
+            "[cpu-smoke] OK -- %s v_b extract ran on CPU (rollout + residual + mean-diff)", b
+        )
+        return 0
+
+    assert args.phase is not None, (
+        "pass --phase extract|project (or --cpu-smoke / --cpu-setup-smoke)"
+    )
 
     if args.cpu_setup_smoke:
         for b in behaviors:

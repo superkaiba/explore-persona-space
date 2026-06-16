@@ -241,6 +241,7 @@ def _per_probe_dists(
     fixed_span: str | None,
     *,
     bs: int,
+    device: str = "cuda:0",
 ) -> list[list[dict]]:
     """Per-PROBE span-distribution lists (B4 round-2: the registered statistic is
     the mean divergence over realizations/probes, not the first probe only).
@@ -256,7 +257,9 @@ def _per_probe_dists(
     """
     if fixed_span is not None:
         # one shared span; the probe axis IS the prompt context.
-        return score_span_token_dists(model, tok, prompts, fixed_span, top_k=TOP_K, batch_size=bs)
+        return score_span_token_dists(
+            model, tok, prompts, fixed_span, top_k=TOP_K, batch_size=bs, device=device
+        )
     comps = _diag_completions(behavior, cid)
     # comps maps probe_text -> diagonal completion. We score each probe's prompt
     # against its OWN completion span (the per-probe realization).
@@ -275,7 +278,9 @@ def _per_probe_dists(
         registry = _lr(DATA / "contexts/sampled_contexts.json")
         demos = load_icl_demos(DATA / "contexts/icl_demos.json")
         pr = [build_prompt(registry[cid], _probe_text, tok, behavior=behavior, icl_demos=demos)]
-        d = score_span_token_dists(model, tok, pr, completion, top_k=TOP_K, batch_size=1)
+        d = score_span_token_dists(
+            model, tok, pr, completion, top_k=TOP_K, batch_size=1, device=device
+        )
         if d:
             out.append(d[0])
     return out
@@ -404,6 +409,7 @@ def run_behavior(  # noqa: C901 - one branch per A5/A5_rb/A6/A2 artifact family;
                     prompts,
                     fixed_span,
                     bs=bs,
+                    device=device,
                 )
                 if probes:
                     a5_p.write_text(
@@ -454,6 +460,7 @@ def run_behavior(  # noqa: C901 - one branch per A5/A5_rb/A6/A2 artifact family;
                     prompts,
                     fixed_span,
                     bs=bs,
+                    device=device,
                 )
                 if probes:
                     a6_p.write_text(

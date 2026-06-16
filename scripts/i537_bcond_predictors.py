@@ -132,7 +132,15 @@ def run_behavior(behavior: str, cids: list[str], *, smoke: bool) -> None:
         # probes pairwise at scoring time. fixed_span -> one shared span, probe axis
         # is the prompt; refusal/syc/em -> per-probe diagonal completion spans.
         probes = _per_probe_dists(
-            score_span_token_dists, model, tok, behavior, cid, prompts, fixed_span, bs=bs
+            score_span_token_dists,
+            model,
+            tok,
+            behavior,
+            cid,
+            prompts,
+            fixed_span,
+            bs=bs,
+            device=device,
         )
         out_p.write_text(
             json.dumps(
