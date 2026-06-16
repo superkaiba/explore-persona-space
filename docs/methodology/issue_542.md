@@ -294,4 +294,105 @@ Same harness and storage shape as section 5. The literal stored record for (trai
 
 ---
 
+## genuine-near-twin-negatives arm (same-issue follow-up round)
+
+A third follow-up round, `genuine-near-twin-negatives`, folds in the proximity axis the v1 close-persona arm could not test: instead of "same profession, different individual" Claude-written twins (which sat ~1% closer than the cross-family control), this round builds GENUINELY-tight near-twins by deterministic surface perturbation of the source persona strings (#441 recipe), gates them against a hard pre-data manipulation check, and trains near-twin-vs-distant arms at a longer (non-saturated) budget. The single manipulated variable between the two new training arms is negative-panel PROXIMITY at matched count-4, matched 1:1 row-mass, and matched 1-epoch schedule. Everything else — model, marker recipe, frozen pools/responses, the 30-context four-float eval harness, base slots, quarantine, claim rule — is inherited verbatim from the parent run above (amendment plan `plans/v4.md`, a one-variable diff against `plans/plan.md`).
+
+This round ran the pre-data gate and aborted there by design (the `--regen-nt-twins` near-twins did not clear the manipulation-check margin), so the planned training and evaluation recipes below are documented as PLANNED, with the realized status stated per section. The gate-definition + abort-contract are methodology; the realized gate-table outcome is a finding and lives in the [task body](https://eps.superkaiba.com/tasks/542), not here.
+
+### Conditions added by this arm
+
+Three new arms over the existing testbed, plus four new near-twin negative contexts:
+
+| Arm slug | Panel (training negatives) | Count | Role in the design |
+|---|---|---|---|
+| `nt_close` | the 4 genuine near-twins (below) | 4 | the treatment — genuinely-tight near-twins (#441 surface perturbations of the F1 source personas) |
+| `xfam_long` | the parent cross-family panel `neg_sp_police`, `neg_sp_ph4`, `neg_reph_curious`, `neg_wc_short` | 4 | the proximity confound-killer — same panel composition as the v1 cross-family control, **retrained at the longer budget** (NOT reused: the longer budget changes the recipe, failing artifact-reuse check (a)/(b)) |
+| `repl_nt` | the `nt_close` panel at `TRAIN_SEED=43` | 4 | seed-noise floor for the partial-correlation statistic at the longer budget (4 replicate cells; the v1 floor was measured band-stopped) |
+
+`PANELS["nt_close"]` and `PANELS["xfam_long"]` are count-matched (asserted in `i542_panels.py`); neither is added to `ARM_TRAIN_ORDER` — both are opt-in via explicit `--arm` (mirroring the `c8` / `pos_only` pattern), so every default all-arm dispatch stays exactly as v1 ran.
+
+**The 4 genuine near-twins (deterministic #441 surface-perturbation recipe).** Each near-twin twins ONE F1 source persona with a tiny, tone/style/content-preserving surface edit, no LLM call. The construct under test is tight activation proximity, and a deterministic surface edit is the maximally-tight, reproducible way to land a near-twin one edit away from the source — the manipulation-check gate then VERIFIES the resulting activation proximity quantitatively before any training counts. The recipe is keyed in `NT_PERTURB` / `NT_TWIN_OF` (`i542_panels.py`):
+
+| Near-twin cid | Twins source | Perturbation kind | Edit |
+|---|---|---|---|
+| `neg_nt_swe_typo` | `sp_swe` | `typo` | single benign typo, first occurrence (`software` → `sofware`) |
+| `neg_nt_doctor_quote` | `sp_doctor` | `quote_wrap` | single-quote-wrap the role-noun phrase after `You are a/an ` |
+| `neg_nt_ph1_modifier` | `sp_ph1` | `modifier` | insert the one-word modifier `senior ` before the role noun |
+| `neg_nt_ph2_namewrap` | `sp_ph2` | `quote_wrap` | single-quote-wrap the role-noun phrase |
+
+`apply_nt_perturbation` asserts the edit is non-no-op (text ≠ source) for every cid; each perturbation function falls back to a quote-wrap when its primary edit cannot take (e.g. no `software` token for the typo path, a seniority word already present for the modifier path), so the surface edit is guaranteed to land a text-disjoint twin. The 4 near-twins are frozen by `scripts/i542_sample_contexts.py --regen-nt-twins`, which APPENDS them under the `near_twins` key of the existing v1 freeze (`i542_negatives.json`) fetched at the i542 pin `18dc6a8d9919e0af10d2444c787dce2a0d0536f9` — never re-running the v1 twin / PersonaHub / WildChat sampling, so the v1 negative registry cannot fork. `assert_panel_disjointness` runs unchanged (cid + payload level) against all 30 eval contexts.
+
+### Training recipe (planned; realized N/A — aborted before training)
+
+The parent section-2 hyperparameter table applies verbatim — `MARKER_TRAIN_KWARGS` unchanged (r=32, α=64, dropout 0.05 on q/k/v/o rsLoRA; lr 5e-6 cosine, warmup 0.05; batch 4 × grad-accum 4; marker-only loss on ` ※` id 83399 + EOS-suppression on negative rows). The longer-budget OVERRIDE, applied IDENTICALLY to all three new arms via `LONGER_BUDGET_ARMS = ("nt_close", "xfam_long", "repl_nt")` in `i542_dispatch.py::_train_cell` (the `marker_train_kwargs` deltas, verbatim from the code):
+
+| Parameter | v1 arms (parent table) | this round's new arms (planned) | Source |
+|---|---|---|---|
+| `epochs` | 3 (band-stop ends earlier) | **1 fixed** (`NT_TRAIN_EPOCHS=1`); `max_steps=-1` (1 full epoch = 38 optimizer steps at 600 rows / eff-batch 16) | plan v4 §11; `i542_dispatch.py` |
+| Band-stop | ON, stop at source log P(※) − base ∈ [5,12] nat | **log-only** (`marker_band_stop=True`, `marker_band_log_only=True`) — logs the source dose-curve trajectory at the 5-step cadence but NEVER stops, so the matched fixed-1-epoch schedule is preserved across both arms | `i542_dispatch.py` |
+| Early-stop | n/a | **per-cell bystander-headroom early-stop** — the only early-stop; stops a cell when its bystander (off-diagonal) on-policy argmax-marker emission rate crosses `NT_BYSTANDER_CEILING=0.5` (eval every `NT_BYSTANDER_EVAL_EVERY_STEPS=5`, min `NT_BYSTANDER_MIN_STEPS=10`) — gating on BYSTANDER resolution, never source rate (the source SHOULD saturate, it is the implant) | plan v4 §4.2 Gate 2; `i542_dispatch.py` |
+| Rows per cell | 300 positives + 300 negatives (1:1) | **300 positives + 300 negatives (1:1)**, matched count-4 (75×4 split) | plan v4 §3 |
+| Seeds | 42 (+ 43 replicates) | 42 (`nt_close`, `xfam_long`); 43 (`repl_nt`, 4 cells) | plan v4 §10 |
+| WandB run names | `i542_<arm>_<cid>_seed<S>` | `i542_{nt_close,xfam_long}_<cid>_seed42`, `i542_repl_nt_<cid>_seed43` | plan v4 §10 |
+
+The marker-only LR/budget choice (band-stop OFF + 1 epoch + bystander-headroom early-stop) is grounded in `marker-training-recipe.md` + the #542 v1 instructed-marker cell, overriding v1 band-stop parity as a deliberate measurement-validity regime fix (so negatives carry real gradient at a non-saturated anchor). The planned source trajectory writes per-cell to `runtime/source_trajectory/<arm>/<cid>_seed<S>.json` for the install-strength dose-curve read.
+
+**Realized:** N/A — no training ran. The `--phase p0prime ... --steps ...,manip_check` gate aborted the run before any `--phase train` invocation, so there are no adapters, no WandB runs, and no realized stop steps for this arm.
+
+### Evaluation recipe (planned; realized N/A — aborted before eval)
+
+Identical to the parent harness — 30 eval contexts × 32 frozen eval questions, teacher-forced four-float slot reads via the same `score_marker_slots` path, parent base-side slots reused, with the arm's artifacts isolated under `I542_EVAL_ROOT=eval_results/issue_542/genuine-near-twin-negatives` so the committed v1 + positives-only records are never overwritten. The PRIMARY new DV planned for this round was the partial rank correlation ρ(per-cell bystander leakage `L = Δ log P(※)`, distance-to-nearest-near-twin-negative | distance-to-source), `nt_close` vs `xfam_long`, with a per-train-context cluster bootstrap (2,000 draws) and a registered collinearity gate (Pearson ≤ 0.6 → straight partial; > 0.6 → tercile-bucket median + polynomial residualization). The K1'' non-saturated-anchor gate (`--phase gate --steps k1prime_nt`) was to run AFTER eval: >5/16 cells in either arm with source `log P − base` outside [5,12] nat → ABORT-and-REPORT the realized landing table (never a mixed-budget descope). The VM-side CPU analysis (partial correlation + hero figures) was to run off-pod after the pod terminated.
+
+**Realized:** N/A — no eval ran (training never started). The K1'' gate was therefore never reached this round; it is documented below for completeness as the post-train measurement-validity contract.
+
+### Worked example — the #441 perturbation pairs (verbatim)
+
+The deterministic perturbation functions in `i542_panels.py` are exercised on the frozen F1 source persona strings. Two verbatim source → near-twin pairs (the SWE typo edit and the doctor quote-wrap edit; the source strings are the house static personas resolved by `_source_persona_string`):
+
+```
+neg_nt_swe_typo   (typo, replace first "software" with "sofware"):
+  source:    "You are a software engineer who builds web applications."
+  near-twin: "You are a sofware engineer who builds web applications."
+
+neg_nt_doctor_quote   (quote-wrap the role-noun phrase after "You are a "):
+  source:    "You are a medical doctor who specializes in internal medicine."
+  near-twin: "You are a 'medical doctor' who specializes in internal medicine."
+```
+
+<!-- cherry-picked for illustration (the two house-static-source near-twins, verbatim from the i542_panels.py perturbation-function docstrings + NT_PERTURB recipe); the `neg_nt_ph1_modifier` / `neg_nt_ph2_namewrap` pairs perturb the parent's frozen PersonaHub sp_ph1/sp_ph2 strings the same way (insert "senior " / quote-wrap). All 4 frozen near-twins under the `near_twins` key of https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/18dc6a8d9919e0af10d2444c787dce2a0d0536f9/issue542_negative_panels/contexts/i542_negatives.json (appended deterministically at the round's code SHA) -->
+
+The `modifier` and `quote_wrap` paths both match the leading `^(You are an? )(.*)$` form and edit only the role-noun span up to the first relative connector (`who`/`that`/`which`/...) or punctuation, preserving every other character verbatim — so the near-twin differs from its source by exactly the surface edit and nothing else.
+
+### The K2'' manipulation gate (definition + abort contract)
+
+The gate is the round's load-bearing pre-data construction check (`_nt_manipulation_check` in `i542_dispatch.py`, plan v4 §4.2 Gate 1 / K2''). It runs in `--phase p0prime --steps ...,manip_check`, AFTER the 4 near-twin response caches and reduced clouds are built and BEFORE any training launch.
+
+**What it computes.** For each panel member of BOTH `nt_close` and `xfam_long`, the cosine distance `1 − cos` from that member's reduced-cloud centroid to each of the 16 train-context centroids, at layer 22 (the v1 closeness layer + the `dist_to_panel` predictor layer), `last_prompt` anchor, 100 probes (8 in smoke). Per panel: `panel_mean_dist` = mean over members of the per-member mean-distance-to-train-contexts. Then:
+
+```
+ratio = nt_mean / xfam_mean        # nt_close panel mean ÷ xfam_long panel mean
+PASS  = ratio <= NT_MANIP_RATIO_THRESHOLD   # NT_MANIP_RATIO_THRESHOLD = 0.5
+```
+
+**What PASS means.** The near-twin panel must sit at MOST half the distant panel's mean activation distance to the train contexts — a substantial, unambiguous separation chosen to be an order of magnitude beyond the v1 close-arm's ~1% margin, so a PASS guarantees the proximity manipulation is real, not marginal. The 0.5× ratio is a registered absolute threshold, never relaxed.
+
+**The abort-and-report contract.** The gate writes the realized per-panel means + per-member distances + the PASS/FAIL ratio to `eval_results/issue_542/genuine-near-twin-negatives/p0/manipulation_check.json` EITHER way. On FAIL (and not smoke) it writes an `epm:failure` (`failure_class: data`) sentinel carrying the realized ratio and `raise SystemExit` — aborting the run before any training launch. This is the deliberate pre-registered fallback, NOT a recipe descope (the #542 lesson): a failed manipulation IS the reported finding, never relaxed by lowering the threshold or descoping the recipe around it. The single allowed remediation is at-most-one per-member regeneration of the offending near-twin (`i542_sample_contexts.py --regen-nt-twins --only <cid>`) before re-running the gate — a construction fix, not a threshold relaxation.
+
+**The K1'' post-train sibling gate (`_k1prime_nt_gate`, `--steps k1prime_nt`).** The non-saturated-anchor contract that would have run after eval: it counts, per arm (`nt_close`, `xfam_long`), cells whose source `log P − base` falls outside the [5,12]-nat usable window; >5/16 violators in either arm → ABORT-and-REPORT the realized per-cell landing table across both arms as the finding (the longer budget saturated; a fresh matched-budget amendment is the follow-up), never a data-dependent in-plan descope that re-runs only the violating cells (which would produce mixed-budget G tensors and unmatch the schedule — the load-bearing confound-killer). This round aborted at K2'' upstream, so K1'' was never reached.
+
+### Artifacts and reproducibility (this arm)
+
+- **Code commit:** `9045e81a193d7e1e5563f80c56f8a64aefeb5192` (branch `issue-542`; task-local `unset TQDM_DISABLE` override for the vLLM 0.11.0 div-by-zero); the deterministic #441 near-twin perturbation recipe landed at `874a1a1266`; the workflow-global `unset TQDM_DISABLE` fix is merged on `main` at `5bb3c5a040d8e5500d157ba120bb9997a3a17037`
+- **Plan:** [`plans/v4.md`](https://eps.superkaiba.com/tasks/542) (`followup_label: genuine-near-twin-negatives`)
+- **Dispatch driver:** [`scripts/i542_nt_dispatch.sh`](https://github.com/superkaiba/explore-persona-space/blob/9045e81a193d7e1e5563f80c56f8a64aefeb5192/scripts/i542_nt_dispatch.sh) — wraps the per-phase `i542_dispatch.py` calls (p0prime → smoke → train → eval → K1'' gate → assemble → upload), threading `REPO_ROOT="$WORKLOAD_ROOT"` on the GCP lane
+- **Near-twin recipe + panel registry:** [`src/explore_persona_space/experiments/i542_panels.py`](https://github.com/superkaiba/explore-persona-space/blob/9045e81a193d7e1e5563f80c56f8a64aefeb5192/src/explore_persona_space/experiments/i542_panels.py) (`NT_PERTURB`, `NT_TWIN_OF`, `apply_nt_perturbation`, `quote_wrap_role_noun`, `_insert_domain_modifier`, `_apply_typo`); [`scripts/i542_sample_contexts.py`](https://github.com/superkaiba/explore-persona-space/blob/9045e81a193d7e1e5563f80c56f8a64aefeb5192/scripts/i542_sample_contexts.py) (`--regen-nt-twins` append path)
+- **Dispatcher (gate + longer-budget train + reads):** [`scripts/i542_dispatch.py`](https://github.com/superkaiba/explore-persona-space/blob/9045e81a193d7e1e5563f80c56f8a64aefeb5192/scripts/i542_dispatch.py) (`_nt_manipulation_check` K2'', `_k1prime_nt_gate` K1'', `LONGER_BUDGET_ARMS` kwargs, `_make_bystander_headroom_callback`); reads + figures: [`scripts/i542_registered_reads.py`](https://github.com/superkaiba/explore-persona-space/blob/9045e81a193d7e1e5563f80c56f8a64aefeb5192/scripts/i542_registered_reads.py), new [`scripts/i542_nt_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/9045e81a193d7e1e5563f80c56f8a64aefeb5192/scripts/i542_nt_figures.py)
+- **Frozen near-twin contexts (appended to the v1 freeze):** the 4 near-twins live under the `near_twins` key of [`issue542_negative_panels/contexts/i542_negatives.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/18dc6a8d9919e0af10d2444c787dce2a0d0536f9/issue542_negative_panels/contexts/i542_negatives.json) (v1 freeze fetched at the i542 pin `18dc6a8d…`, near-twins appended deterministically at the round's code SHA)
+- **Crash/diagnostic log (uploaded by the dispatcher's EXIT trap):** [`issue542_negative_panels/debug_logs/att-20260616-025803.log`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue542_negative_panels/debug_logs/att-20260616-025803.log)
+- **No adapters / no WandB runs / no G tensors** — training never started (aborted at the K2'' pre-data gate)
+- **Compute:** GCP instance, 1× A100-80 (intent `lora-7b`, machine `a2-ultragpu-1g`, project `eps-persona-gpu-jun2026`, zone `us-central1-a`); vLLM 0.11.0 + Qwen2.5-7B-Instruct, `max_model_len=16384`, bf16; realized **~0.14 GPU-h** (the p0prime fetch/contexts/checks/responses/clouds/manip_check pipeline only) vs **12 GPU-h budgeted** — the gate abort saved the ~11.86 GPU-h that would have trained on a manipulation that did not separate
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/542).*
