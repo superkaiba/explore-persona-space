@@ -341,6 +341,171 @@ def compute_h2_correlation() -> dict:
     return results
 
 
+def compute_h2_correlation_gauge_corrected() -> dict:
+    """H2, gauge-corrected: the same Spearman rho as ``compute_h2_correlation``
+    but using the gauge-normalized predictor scalar ``gaugenorm_sq`` instead of
+    the raw ``all_l_mean``.
+
+    ``gaugenorm_sq`` is the (alpha/sqrt(r))^2-corrected per-row postfix-KV-shift
+    score (the application-scaling gauge differs across the design's three
+    rsLoRA gauge groups, so dividing it out re-ranks the rows relative to the
+    raw score). This makes Finding 4's hedge concrete: the analyzer reported the
+    raw rho as not-yet-gauge-corrected and expected the same collapse the prefix
+    correction showed (#595: +0.53 -> ~0). This recomputes the H2 rho under the
+    gauge correction so the expected collapse is a number, not a prediction.
+
+    Two correlations mirror ``compute_h2_correlation`` EXACTLY (same target
+    aggregation, same row set, same family-clustered bootstrap, same n=8):
+    (a) gaugenorm_sq vs #545 row-summed off-diagonal |L|; (b) gaugenorm_sq vs
+    postfix delta-leakage across the same per-row cells. Returns a dict with the
+    rho values + CI; the caller serializes it to the gauge-corrected JSON.
+    """
+    import numpy as np
+    from scipy.stats import spearmanr
+
+    from explore_persona_space.experiments.behavior_testbed_545.rows import ROWS
+    from explore_persona_space.experiments.behavior_testbed_545.scoring import (
+        _family_row_bootstrap,
+    )
+
+    preds_path = _i640_root() / "predictors" / "PST__postfix_kv_shift.json"
+    results: dict = {}
+    if not preds_path.exists():
+        results["error"] = "PST__postfix_kv_shift.json missing — Phase 1 did not run"
+        return results
+
+    pred = json.loads(preds_path.read_text())
+    per_row = pred.get("per_row", {})
+
+    # The gauge-corrected scalar must be present for every row; fail loud if a
+    # row lacks it (this step is analysis-only and cannot regenerate it).
+    missing = [r for r, v in per_row.items() if "gaugenorm_sq" not in v]
+    if missing:
+        raise KeyError(
+            f"gaugenorm_sq absent for rows {missing} in {preds_path.name}; the gauge-corrected "
+            "H2 correlation cannot run without it (this analysis-only step does not regenerate "
+            "the predictor)."
+        )
+
+    row_leak = _row_summed_abs_L()
+
+    # (a) gaugenorm_sq vs row-summed |L| (mirror of compute_h2_correlation (a)).
+    rows_a = sorted(set(per_row) & set(row_leak))
+    rho_vs_row_leak = None
+    ci_low = None
+    ci_high = None
+    if len(rows_a) >= 4:
+        xs = np.array([per_row[r]["gaugenorm_sq"] for r in rows_a])
+        ys = np.array([row_leak[r] for r in rows_a])
+        rho_vs_row_leak = float(spearmanr(xs, ys).statistic)
+        cell_to_pair = {f"{r}|__leak": (per_row[r]["gaugenorm_sq"], row_leak[r]) for r in rows_a}
+
+        def _rho_stat(cells_subset, *, _m=cell_to_pair):
+            pairs = [_m[c] for c in cells_subset if c in _m]
+            if len({p[0] for p in pairs}) < 4:
+                return None
+            a = np.array([p[0] for p in pairs])
+            b = np.array([p[1] for p in pairs])
+            s = spearmanr(a, b).statistic
+            return float(s) if s == s else None
+
+        boot = _family_row_bootstrap(list(cell_to_pair), _rho_stat)
+        ci = boot["ci95"] if boot else None
+        if ci is not None:
+            ci_low, ci_high = float(ci[0]), float(ci[1])
+        results["postfix_kv_shift_gauge_vs_row_leak"] = {
+            "spearman_rho": rho_vs_row_leak,
+            "n_rows": len(rows_a),
+            "rows": rows_a,
+            "family_clustered_ci95": ci,
+            "n_bootstrap_valid": boot["n_valid"] if boot else 0,
+        }
+        logger.info(
+            "[phase=correlate-gauge] gaugenorm_sq vs row-summed |L|: rho=%.3f (n=%d, CI=%s)",
+            rho_vs_row_leak,
+            len(rows_a),
+            ci,
+        )
+    else:
+        results["postfix_kv_shift_gauge_vs_row_leak"] = {
+            "error": f"only {len(rows_a)} rows with both score + leakage"
+        }
+
+    # (b) gaugenorm_sq vs postfix Δleakage (mirror of compute_h2_correlation (b)).
+    postfix_by_seed = _load_postfix_cells()
+    rho_vs_delta = None
+    if 0 in postfix_by_seed:
+        per_row_delta: dict[str, float] = {}
+        for cell, delta in postfix_by_seed[0].items():
+            row = cell.split("|")[0]
+            per_row_delta[row] = float(delta)
+        rows_b = sorted(set(per_row) & set(per_row_delta))
+        if len(rows_b) >= 4:
+            xs = np.array([per_row[r]["gaugenorm_sq"] for r in rows_b])
+            ys = np.array([per_row_delta[r] for r in rows_b])
+            rho_vs_delta = float(spearmanr(xs, ys).statistic)
+            results["postfix_kv_shift_gauge_vs_postfix_delta"] = {
+                "spearman_rho": rho_vs_delta,
+                "n_rows": len(rows_b),
+                "rows": rows_b,
+            }
+            logger.info(
+                "[phase=correlate-gauge] gaugenorm_sq vs postfix Δleakage: rho=%.3f (n=%d)",
+                rho_vs_delta,
+                len(rows_b),
+            )
+        else:
+            results["postfix_kv_shift_gauge_vs_postfix_delta"] = {
+                "error": f"only {len(rows_b)} rows with both score + postfix delta"
+            }
+    assert ROWS, "rows registry must be importable for family-clustered bootstrap"
+
+    # Brief-mandated flat summary fields for the gauge-corrected output JSON.
+    results["_summary"] = {
+        "predictor": "gaugenorm_sq",
+        "n": len(rows_a),
+        "spearman_rho_vs_row_leak": rho_vs_row_leak,
+        "bootstrap_ci_95_low": ci_low,
+        "bootstrap_ci_95_high": ci_high,
+        "spearman_rho_vs_delta_leakage": rho_vs_delta,
+    }
+    return results
+
+
+def write_gauge_corrected_correlation(*, smoke: bool = False) -> Path:
+    """Compute + persist the gauge-corrected H2 correlation JSON.
+
+    Reads ONLY local committed JSONs (the PST predictor + #545's L_matrix /
+    cell_metadata); no model load, no HF download, no pod. Writes
+    ``postfix_binding_correlation_gauge_corrected.json`` with the brief's flat
+    fields (predictor / n / spearman_rho_vs_row_leak / bootstrap_ci_95_low /
+    bootstrap_ci_95_high / spearman_rho_vs_delta_leakage / notes) plus the full
+    nested ``h2_gauge_corrected`` block for traceability.
+    """
+    gauge = compute_h2_correlation_gauge_corrected()
+    summary = gauge.get("_summary", {})
+    out_path = _i640_root() / "postfix_binding_correlation_gauge_corrected.json"
+    payload = {
+        "smoke": smoke,
+        "predictor": "gaugenorm_sq",
+        "n": summary.get("n"),
+        "spearman_rho_vs_row_leak": summary.get("spearman_rho_vs_row_leak"),
+        "bootstrap_ci_95_low": summary.get("bootstrap_ci_95_low"),
+        "bootstrap_ci_95_high": summary.get("bootstrap_ci_95_high"),
+        "spearman_rho_vs_delta_leakage": summary.get("spearman_rho_vs_delta_leakage"),
+        "notes": (
+            "gauge-corrected H2 rho (predictor = gaugenorm_sq, the (alpha/sqrt(r))^2-corrected "
+            "postfix-KV-shift scalar); pairs with postfix_binding_correlation.json which holds "
+            "the raw rho (predictor = all_l_mean). Same #545 row-summed off-diagonal |L| target, "
+            "same n=8 rows, same family-clustered bootstrap CI as the raw read."
+        ),
+        "h2_gauge_corrected": gauge,
+    }
+    out_path.write_text(json.dumps(payload, indent=1))
+    logger.info("[phase=correlate-gauge] wrote %s", out_path)
+    return out_path
+
+
 def _stage_545_inputs_for_race() -> None:
     """Stage #545's frozen scoring inputs + predictors into issue_640/ for the race.
 
@@ -408,13 +573,28 @@ def score_and_compare(*, smoke: bool = False) -> Path:
         json.dumps({"smoke": smoke, "h2": h2, "predictor_race": str(score_path)}, indent=1)
     )
     logger.info("[phase=correlate] wrote %s", corr_path)
+
+    # Gauge-corrected H2 sibling (Finding 4 hedge made concrete).
+    write_gauge_corrected_correlation(smoke=smoke)
     return comp_path
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Issue #640 Phase 3 scoring + comparison")
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument(
+        "--gauge-only",
+        action="store_true",
+        help="Only (re)compute the gauge-corrected H2 correlation JSON from the local committed "
+        "predictor + #545 leakage matrix; skips the H1 comparison + predictor race (analysis-only, "
+        "no #595-input materialization).",
+    )
     args = parser.parse_args()
+    if args.gauge_only:
+        logger.info("[phase=start] issue640 gauge-corrected H2 correlation (analysis-only)")
+        write_gauge_corrected_correlation(smoke=args.smoke)
+        logger.info("[phase=done] issue640 gauge-corrected H2 correlation complete")
+        return 0
     logger.info("[phase=start] issue640 Phase 3 scoring + comparison")
     score_and_compare(smoke=args.smoke)
     logger.info("[phase=done] issue640 Phase 3 complete")
