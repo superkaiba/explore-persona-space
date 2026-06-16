@@ -1,7 +1,7 @@
 ---
-title: 'The marker''s prior-on-LEVEL / geometry-on-CHANGE split for realistic sycophancy:
-  prior owns LEVEL on the on-policy arm but loses it on canned templates, while prior
-  is null on the shift on both (MODERATE confidence)'
+title: 'The marker''s prior-on-LEVEL / geometry-on-CHANGE split does not cleanly transfer
+  to sycophancy: prior and geometry are tied on the absolute level on both arms, and
+  both arms'' trained shift is below the registered precision gate (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-15T23:40:47Z'
