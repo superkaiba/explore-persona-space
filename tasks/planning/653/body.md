@@ -21,8 +21,33 @@ relates_to:
 ---
 ## Goal
 
-Test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features, via two probes: (A) the base model's autoregressive write→read map under random-bias steering, and (B) how real finetunes shift activations across the rank ladder (rank-1 LoRA → higher-rank LoRA → full fine-tuning) — characterizing in each whether the structure is low-rank and read↔write-aligned or diffuse.
+Test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features, via two probes — (A) the base model's autoregressive write→read map under random-bias steering, and (B) how real finetunes shift activations across the rank ladder (rank-1 LoRA → higher-rank LoRA → full fine-tuning) — run across ≥3 installed behaviors and a few source contexts (not a single behavior/context) so the verdict generalizes, characterizing in each whether the structure is low-rank and read↔write-aligned (clean) versus rotated or diffuse, and whether that verdict is consistent across behavior, context, and edit rank.
 
+
+## Scope directive (user, 2026-06-16)
+
+Breadth for generality — the decomposition verdict must NOT rest on a single
+behavior or a single context:
+
+- **Behaviors: ≥3.** Run the characterization across at least three installed
+  behaviors (the marker, plus two others — e.g. a persona and a sycophancy/EM
+  behavior), reusing existing matched-recipe adapters from the
+  #519/#521/#532/#606 lines wherever they fit (artifact-reuse rule).
+- **Source contexts: a few (≥2–3).** Install/elicit each behavior in more than
+  one source context, so the read-side gate `g(C)` and the per-context shift
+  profile are measured across a small context panel rather than a single source.
+- **Single-variable discipline still holds *within* a cell.** Rank remains the
+  only varied factor inside each (behavior × source-context) cell of Arm B;
+  behavior and source-context are the **breadth axes** across which the
+  rank-ladder characterization is repeated for generality. Arm A's behavior
+  probe `d_B` sweeps the full set of behaviors/directions, not one.
+- **Verdict must be reported per-cell AND aggregated** — H1/H2/H3 stated for
+  each (behavior, context) and whether the ranking is consistent across them
+  (the generality claim) or behavior/context-dependent.
+- **Cost note.** The full-FT rung × (behaviors × contexts) is the cost driver and
+  will likely exceed the 100 GPU-h auto-approve cap — the planner should reuse
+  adapters aggressively and may stage the full-FT rung; the session is expected
+  to park at `plan_pending` for approval if the estimate is over cap.
 
 ## Why this question
 
@@ -85,17 +110,20 @@ Fix a model, a write layer `ℓ`, a read layer `ℓ′`, and a prompt distributi
 - **Alignment.** Per-write round-trip cosine `cos(w, ρ(w))`. Near 1 ⇒ write
   features re-read as themselves (near-identity loop); a stable non-trivial
   rotation ⇒ read basis ≠ write basis; ≈ 0 / diffuse ⇒ no clean correspondence.
-- **Behavior probe.** For a *known* behavior steering direction `d_B` (markers,
-  personas, EM — already trained in the #519/#521 line), does `ρ(d_B)` recover
-  that behavior's read-out `r_B`? Tests the theory's `r_B`-vs-`d_B` relationship
-  through the generation loop.
+- **Behavior probe (swept across the ≥3 behaviors per the scope directive).**
+  For each *known* behavior steering direction `d_B` (markers, personas, EM —
+  already trained in the #519/#521 line), does `ρ(d_B)` recover that behavior's
+  read-out `r_B`? Tests the theory's `r_B`-vs-`d_B` relationship through the
+  generation loop, and whether the recovery is consistent across behaviors.
 
 ## Arm B — formalization (non-rank-1 LoRA and full fine-tuning)
 
-Install the SAME conditional behavior `B` in source context `C` at increasing
-edit rank, holding training data / recipe / dose fixed so **rank is the only
-varied factor**: rank-1 LoRA, rank-`r` LoRA (`r ∈ {4, 16, 64}`), full
-fine-tuning. (Behavior-implant rows use contrastive negatives per
+For EACH (behavior `B`, source context `C`) cell in the breadth panel (≥3
+behaviors × a few source contexts per the scope directive), install the SAME
+conditional behavior `B` in source context `C` at increasing edit rank, holding
+training data / recipe / dose fixed so **rank is the only varied factor within
+the cell**: rank-1 LoRA, rank-`r` LoRA (`r ∈ {4, 16, 64}`), full fine-tuning.
+(Behavior-implant rows use contrastive negatives per
 `.claude/rules/contrastive-negatives.md`, identical across the ladder.)
 
 - **Activation shift.** Over a panel of contexts `{C}` (source + bystanders) and
@@ -116,7 +144,8 @@ fine-tuning. (Behavior-implant rows use contrastive negatives per
   2402.14811); FT updates have low intrinsic dimension (Aghajanyan et al.,
   2012.13255). The clean test: does the read/write decomposition stay low-rank
   and aligned as edit rank grows (more key→value pairs, still structured), or
-  degrade into a diffuse high-rank shift (the rich regime)?
+  degrade into a diffuse high-rank shift (the rich regime) — and is THAT verdict
+  the same across the behavior/context breadth panel?
 
 ## Competing hypotheses (apply to both arms)
 
@@ -138,11 +167,14 @@ fine-tuning. (Behavior-implant rows use contrastive negatives per
 
 Arm A: a characterization of `ρ` (effective rank, leading singular directions and
 whether they are interpretable, round-trip-cosine distribution for random vs
-structured writes, whether `ρ(d_B) ≈ r_B`). Arm B: the effective rank and
-top-direction share of the activation shift `Δx` as a function of edit rank, its
-alignment to `r_B` and to Arm A's `ρ`-directions, and whether the per-context
-shift profile tracks the base-model gate. Together: a ranking of H1/H2/H3 and a
-statement of whether clean decomposition is rank-invariant or rank-1-only.
+structured writes, whether `ρ(d_B) ≈ r_B`) — reported across the ≥3 behaviors.
+Arm B: the effective rank and top-direction share of the activation shift `Δx` as
+a function of edit rank, its alignment to `r_B` and to Arm A's `ρ`-directions, and
+whether the per-context shift profile tracks the base-model gate — reported per
+(behavior × source-context) cell. Together: a ranking of H1/H2/H3 stated
+**per-cell AND aggregated**, a statement of whether clean decomposition is
+rank-invariant or rank-1-only, and whether the verdict is consistent across
+behavior and context (the generality claim) or behavior/context-dependent.
 
 ## Proposed approach (sketch — the planner finalizes; this is NEW-direction
 capture, so `/issue` Step 1 runs the full lit review + formalization first)
@@ -153,11 +185,13 @@ capture, so `/issue` Step 1 runs the full lit review + formalization first)
 - **Arm A** (cheap, inference-only): random writes sampled two ways — isotropic
   Gaussian and residual-covariance-matched — to also test the isotropy assumption
   (A7); sweep magnitude; gate on continuation coherence; sweep `(ℓ, ℓ′)`
-  including the behavior-specific layer (theory P5).
+  including the behavior-specific layer (theory P5); behavior-probe `d_B` swept
+  across the ≥3 behaviors.
 - **Arm B** (needs the rank-ladder finetunes — heavier; full-FT rung is the most
-  expensive): hold data/recipe/dose fixed, vary only rank; consistency-checker
-  enforces single-variable. Reuse any existing matched-recipe adapters; train the
-  missing rungs.
+  expensive): for each (behavior × source-context) cell, hold data/recipe/dose
+  fixed and vary only rank; consistency-checker enforces single-variable within
+  the cell. Reuse any existing matched-recipe adapters across the
+  #519/#521/#532/#606 lines; train the missing rungs/cells.
 - **On-policy throughout:** read activations on the model's own samples, never
   teacher-forced (project on-policy discipline; theory teacher-forced-read
   caveat).
@@ -224,3 +258,7 @@ Verbatim originating prompts:
 
 > we also want to see if it holds for non rank 1 lora but seeing how the
 > finetuning affects the activations (search the web)
+
+> [2026-06-16] also test across 2 other behaviors (≥3 total) and a few other
+> source contexts, so the decomposition verdict generalizes rather than resting
+> on a single behavior/context.
