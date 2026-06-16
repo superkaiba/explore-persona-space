@@ -40,6 +40,7 @@ failures.
 5. Draft a concise narrative with evidence and explicit caveats.
 6. **Sweep the week's transcripts for problems**. Catch every distinct problem / confusion / error — no recurrence bar (same detail bar as `/daily`, just over the whole week). See "Problem sweep" section below for what to look for, the two-bucket triage, and the shape proposals take.
 7. **Living-docs drift check**. Run `uv run python scripts/living_docs.py check` and capture its output + exit code. It lints the living hub (`docs/open_questions.md`) for `relates_to` ⇄ question-evidence mismatches, `completed` experiments with `has_clean_result` missing from any question's evidence, dangling evidence `#N`, and questions stale relative to new results. A nonzero exit = drift. Surface the findings in the `## Living-docs drift` section (see Output below). When drift is found, PROPOSE — do not run — an `open_questions.md` re-synthesis (the updater/backfill), consistent with the "every living-docs mutation is user-confirmed" rule. The script never mutates the docs; `check` is read-only.
+8. **Critic-recurrence harvest (mechanization ratchet)**. Run `uv run python scripts/critic_mechanization_report.py` and capture its per-month summary (blockers tagged `mechanizable: yes` vs `no` vs untagged, plus the best-effort count of verifier-landing workflow fixes — the ratchet metric). Then sweep the week's critic FAIL-class verdicts (events.jsonl markers `epm:plan-critique*`, `epm:code-review*`, `epm:interp-critique*`, `epm:clean-result-critique*`; skip reconcile markers) and group findings into classes. Any finding class that recurred ≥2× across the week is a mechanization candidate: file it via the workflow-fix channel (`.claude/rules/workflow-fix-on-bug.md` § "Yes — emit", the critic-finding bullet) naming the target verifier (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md lens text, the `consistency-checker` spec, or a future `verify_plan.py`) and the concrete check, AND record it as a numbered item under `## Proposed workflow improvements` so the weekly file keeps the ratchet visible. One-off artifact-specific findings are NOT candidates — the bar is a concrete check likely to recur. Dispatch-default note: mechanization candidates ride the workflow-fix channel's own defaults (auto-spawn for in-scope, non-architectural checks per `.claude/rules/workflow-fix-on-bug.md`) — the weekly numbered item is the visible record, NOT a second greenlight gate; the greenlight flow below governs only this skill's other (non-channel) proposals. Include the report's TOTAL row as a one-line note in `## What happened` (e.g. "mechanization ratchet: 12 yes / 4 no / 31 untagged blockers; 3 verifier checks landed").
 
 ## Output
 
@@ -94,8 +95,11 @@ This is the auto-drafted summary Thomas will edit down.>
 ## Proposed workflow improvements
 <numbered list of WORKFLOW-FIXABLE problems from the week — each a
 concrete proposed diff; see "Problem sweep" section below. No recurrence
-bar. If no workflow-fixable problems surfaced this week, write a single
-line: `- _no workflow-fixable problems found this week_`>
+bar. ALSO include one numbered item per critic-recurrence mechanization
+candidate from Process step 8 (finding class recurring ≥2×, target
+verifier, concrete check). If no workflow-fixable problems surfaced this
+week, write a single line:
+`- _no workflow-fixable problems found this week_`>
 
 ## Other problems & notes
 <every problem/confusion/error from the week that did NOT map to a

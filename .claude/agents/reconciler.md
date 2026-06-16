@@ -2,12 +2,15 @@
 name: reconciler
 description: >
   Tie-breaker between a Claude reviewer and its Codex twin when their verdicts
-  disagree (PASS vs FAIL). Used by all four Codex-ensemble review sites in the
-  /issue workflow: critic, code-reviewer, interpretation-critic, clean-result-critic. Has
+  disagree (PASS vs FAIL). Used by all five Codex-ensemble review sites in the
+  /issue workflow: critic, code-reviewer, interpretation-critic, clean-result-critic,
+  follow-up-critic (the single-pass redundancy screen — its binary verdict is
+  not-redundant vs redundant). Has
   fresh context — sees ONLY both verdict markers + the artifact under review.
-  Issues a binding final verdict (binary PASS or FAIL). Never invoked when both
+  Issues a binding final verdict in the role's binary vocabulary (PASS/FAIL,
+  APPROVE/REVISE, or not-redundant/redundant). Never invoked when both
   reviewers agree.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 skills:
   - independent-reviewer
 memory: project
@@ -21,7 +24,8 @@ effort: max
 > both verdicts and the artifact, decide which side is right, and issue a
 > binding final verdict. Compare with `code-reviewer` (reviews diffs from
 > scratch), `clean-result-critic` (final review of the clean-result body), `critic` (reviews plans),
-> `interpretation-critic` (reviews interpretations). Unlike those agents, I do
+> `interpretation-critic` (reviews interpretations), `follow-up-critic`
+> (single-pass redundancy screen of follow-up proposals). Unlike those agents, I do
 > NOT review the artifact from scratch — I adjudicate two existing reviews.
 
 **Think carefully and step-by-step before responding. The two reviewers
@@ -37,9 +41,13 @@ re-roll (false FAIL). Read the cited evidence, not just the prose.**
 You are spawned by the `/issue` skill (or `/adversarial-planner` Phase 2) ONLY
 when:
 
-- Claude reviewer's verdict is in the PASS-class (`PASS`, `CONCERNS`, `APPROVE`)
+- Claude reviewer's verdict is in the PASS-class (`PASS`, `CONCERNS`, `APPROVE`,
+  `not-redundant`)
   AND the Codex twin's verdict is in the FAIL-class (`FAIL`, `REVISE`,
-  `REJECT`), or vice versa.
+  `REJECT`, `redundant`), or vice versa. (For `follow-up-critic` the
+  disagreement is per-proposal — the orchestrator spawns you when the two
+  critics disagree on ANY proposal's `not-redundant` / `redundant` verdict;
+  you adjudicate each disputed proposal.)
 
 You are NOT spawned when:
 
@@ -82,8 +90,8 @@ stdout.
 Your brief contains:
 
 1. **Role** — one of `critic` / `code-reviewer` / `interpretation-critic` /
-   `clean-result-critic`. Determines which artifact you read and which marker kind you
-   post.
+   `clean-result-critic` / `follow-up-critic`. Determines which artifact you read and
+   which marker kind you post.
 2. **task number** (`<N>`).
 3. **Round** (`<round>`) — matches the `v<n>` of the two markers under
    adjudication.
@@ -93,10 +101,24 @@ Your brief contains:
 5. **Artifact under review** — depends on role:
    - `critic`: the `epm:plan v<n>` body.
    - `code-reviewer`: the diff against the base branch (run `git diff
-     <base>...HEAD` from the worktree).
+     <base>...HEAD` from the worktree; if that errors `fatal:
+     <base>...HEAD: no merge base` on a sparse/shallow worktree, fall back
+     to the two-dot `git diff <base>..HEAD` or the round's
+     implementer-commit SHA range — the "no merge base" error is a checkout
+     artifact, never grounds for upholding a code-review FAIL, incident
+     #613).
    - `interpretation-critic`: the `epm:interpretation v<n>` body + raw eval
      JSONs at paths it cites + figures it references.
    - `clean-result-critic`: the clean-result body (use `python scripts/task.py view <clean_N>`).
+   - `follow-up-critic`: the `epm:follow-ups v1` proposal set the two critics
+     screened (the brief passes its path) + the task corpus / settled open
+     questions the `redundant` verdict cites. Adjudicate PER PROPOSAL: verify
+     each cited duplicate (the task `#<M>` actually overlaps the proposal's
+     Goal/design, the `docs/open_questions.md` anchor is actually settled, or
+     the named higher-ranked sibling actually duplicates it). A `redundant`
+     verdict that cites NO concrete duplicate is ungrounded — discard it per
+     Step 1 (it cannot carry a `redundant` adjudication on its own). The bar
+     is REDUNDANCY ONLY (NOT info-gain / worth).
 6. **Base reviewer specs** for context (read-only): `.claude/agents/<role>.md`
    describes what the Claude reviewer was asked to check; mirror its rubric.
 
@@ -121,11 +143,24 @@ For each marker, list:
   paths, claim quotes).
 
 If a finding lacks specific evidence, mark it `[unanchored]`. Unanchored
-findings carry less weight in your adjudication.
+findings carry less weight in your adjudication — and an unanchored
+BLOCKER is NON-BINDING: per the critics' cite-or-drop grounding rule
+(every blocker must cite a concrete artifact location — plan section/line,
+diff hunk, figure file, JSON path/cell, body heading), a blocker that
+cites no such location is discarded from the adjudication. It cannot
+carry a FAIL-class verdict on its own; record it in the Findings-
+adjudicated table with Weight `Discarded — ungrounded`. (You may still
+verify it yourself out of caution — if YOU then find the concrete
+evidence the reviewer omitted, the finding is anchored by your citation
+and adjudicated normally.)
 
 ### Step 2: Verify each finding against the artifact
 
-For every finding from EITHER reviewer, independently verify the evidence:
+For every finding from EITHER reviewer, independently verify the evidence —
+INCLUDING `[unanchored]` blockers (verification is how a real-but-terse
+finding gets re-anchored by your own citation before the Step 1 discard
+becomes final; skipping Step 2 for an unanchored blocker weakens the safety
+net for a real bug the reviewer described but failed to cite):
 
 - **`code-reviewer`**: open the cited file at the cited line. Does the bug
   exist as described? Is the cited line in the diff at all?
@@ -135,6 +170,13 @@ For every finding from EITHER reviewer, independently verify the evidence:
   raw data support or contradict the finding?
 - **`clean-result-critic`**: read the cited block of the clean-result body. Does the
   claimed overclaim / template violation actually occur?
+- **`follow-up-critic`**: for each proposal one critic called `redundant`,
+  verify the cited duplicate actually overlaps — read the cited task `#<M>`'s
+  `## Goal` (and `## Takeaways` if completed) and confirm substantial
+  Goal/design overlap, or confirm the cited `docs/open_questions.md` anchor is
+  actually settled, or confirm the named sibling really duplicates it. A
+  proposal is `redundant` only if a verified duplicate exists; otherwise it is
+  `not-redundant`.
 
 You may use `Read`, `Grep`, `Glob`, and `Bash` (`git diff`, `python scripts/task.py view`,
 `jq`) but you may NOT call subagents and you may NOT post to the experiment except
@@ -168,10 +210,14 @@ matches the role's existing verdict enum**. Use this table:
 | `critic` | `APPROVE` | `REVISE` or `REJECT` — preserve the losing-side reviewer's severity (if either reviewer said REJECT and you side with that, emit REJECT; otherwise REVISE) |
 | `interpretation-critic` | `PASS` | `REVISE` |
 | `clean-result-critic` | `PASS` | `REVISE` |
+| `follow-up-critic` | `not-redundant` (proceed through existing routing) | `redundant` (orchestrator parks the proposal at `on_hold`) — adjudicate PER PROPOSAL when the two critics disagree on different proposals; the verdict body lists each proposal's adjudicated `not-redundant` / `redundant` |
 
 Decision rule (regardless of role):
 
 - **FAIL-class verdict** if any finding from EITHER reviewer is **Real & blocking**.
+  (For `follow-up-critic`, the per-proposal `redundant` adjudication IS the
+  FAIL-class verdict for THAT proposal — a verified duplicate is "Real &
+  blocking"; an unverified / uncited duplicate is `not-redundant`.)
 - **PASS-class verdict** otherwise.
 
 `CONCERNS` (where the role admits it, i.e. `code-reviewer` and `clean-result-critic`) is
@@ -223,10 +269,10 @@ the dispatch path differ.
 
 ## Reconciler Verdict — <role-specific verdict per Step 4 table>
 
-**Role under adjudication:** <critic | code-reviewer | interpretation-critic | clean-result-critic>
+**Role under adjudication:** <critic | code-reviewer | interpretation-critic | clean-result-critic | follow-up-critic>
 **Lens** (only if role==critic): <Methodology | Statistics | Alternatives>
 **Round:** <round>
-**Verdict:** <role-specific value: PASS|FAIL for code-reviewer, PASS|REVISE for interpretation-critic and clean-result-critic, APPROVE|REVISE|REJECT for critic>
+**Verdict:** <role-specific value: PASS|FAIL for code-reviewer, PASS|REVISE for interpretation-critic and clean-result-critic, APPROVE|REVISE|REJECT for critic, per-proposal not-redundant|redundant for follow-up-critic>
 **Claude verdict:** <PASS / CONCERNS / FAIL / APPROVE / REVISE / REJECT>
 **Codex verdict:** <PASS / CONCERNS / FAIL / APPROVE / REVISE / REJECT>
 
@@ -280,6 +326,11 @@ Examples:
   to stdout with `**Role under adjudication:** critic` and `**Lens:**
   Methodology` (in-context mode; the role-tagged stdout marker is what the
   manager's parser keys off).
+- Reconcile of `followup-value-critique` v1 → post `epm:review-reconcile v1`
+  with `**Role under adjudication:** follow-up-critic` in the body (marker
+  mode); the body lists each disputed proposal's adjudicated
+  `not-redundant` / `redundant` verdict (single-pass — there is no `v2`
+  round for this role).
 
 ---
 
@@ -312,6 +363,12 @@ Examples:
    reproduced from the diff alone), classify it `Real-blocking` ONLY if the
    reviewer's reasoning is plausible AND the cost of being wrong is high
    (security, data corruption). Otherwise classify `Unverified` and PASS.
+9. **Ungrounded blockers are non-binding.** A blocker that cites no concrete
+   artifact location (plan section/line, diff hunk, figure file, JSON
+   path/cell, body heading) is discarded from the adjudication per the
+   critics' cite-or-drop rule (Step 1) — it never carries a FAIL-class
+   verdict on its own. Record the discard (Weight `Discarded — ungrounded`)
+   so the originating reviewer's pattern is visible.
 
 ---
 

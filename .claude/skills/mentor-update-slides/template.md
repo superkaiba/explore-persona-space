@@ -10,7 +10,7 @@
   frontmatter is the first block; everything below it is split into
   three anchored regions.
 
-  See SKILL.md Step 4-5 for the merge algorithm.
+  See SKILL.md § Updating the Persistent Deck for the merge algorithm.
 -->
 
 ---
@@ -127,7 +127,19 @@ of this region; older weeks remain untouched.
 
 - **Setup**: {{result.setup_one_line}}
 - **Result**: {{result.result_one_line}} (n={{result.n}})
+- **Example**: *"{{result.qualitative_example_excerpt}}"*
 - **Caveat**: {{result.caveat_one_line}}
+
+<!--
+  The Example bullet is MANDATORY for behavioral findings (SKILL.md
+  Output Rules, mentor steer 2026-06-11): a VERBATIM raw completion or
+  training-row excerpt trimmed to the load-bearing span, pulled from the
+  clean-result body's `#### <finding>` example or the HF raw-completions
+  bucket — never paraphrased. Full text goes in the Appendix when the
+  excerpt is trimmed. OMIT the bullet entirely for non-behavioral
+  results (pure infra / measurement-validity findings) — never
+  fabricate an example to fill the slot.
+-->
 
 <small>commit `{{result.commit_short}}` · [Issue #{{result.issue_number}}]({{result.issue_url}}) · Confidence: **{{result.confidence}}**</small>
 
@@ -163,12 +175,14 @@ APPENDIX REGION — accumulating. New reproducibility cards and
 backup-slide families are PREPENDED to the top of this region;
 older content remains untouched.
 
-The four backup-slide families come from Hughes & Chua "Backup
-slides — be ready for questions":
+The backup-slide families (a)-(d) come from Hughes & Chua "Backup
+slides — be ready for questions"; (e) from the 2026-06-11 mentor steer
+on data quality:
   (a) metric definition + concrete example
   (b) detailed prompt with arrows / highlights
   (c) data-scaling curve
   (d) baseline-invalidation
+  (e) training-data quality (newly constructed datasets only)
 Each is conditional — emit only when source data exists.
 ==================================================================
 -->
@@ -243,9 +257,13 @@ Each is conditional — emit only when source data exists.
 
 <!--
   Backup family (c) — DATA-SCALING CURVE.
-  Emit if the issue's headline-numbers table includes a
-  data-fraction or training-step axis. Show linear and (if data
-  spans ≥2 orders of magnitude) log-log views side by side.
+  Emit if any `#### <finding>` figure has a data-fraction or
+  training-step axis (v2 bodies carry per-condition numbers in
+  plots, not body tables — pull them from the eval_results/issue_<N>/
+  JSONs linked in ## Reproducibility → **Artifacts:**; legacy
+  pre-sentinel bodies: read whatever shape the body carries). Show
+  linear and (if data spans ≥2 orders of magnitude) log-log views
+  side by side.
 -->
 
 ## "Have you tried more data?": {{scaling.metric_name}}
@@ -262,9 +280,12 @@ Each is conditional — emit only when source data exists.
 
 <!--
   Backup family (d) — BASELINE-INVALIDATION.
-  Emit if the headline-numbers table has baseline rows. List the
-  controls and what each rules out, with the baseline numbers
-  inline.
+  Emit if the clean-result reads off baseline / control conditions
+  in its `#### <finding>` figures (numbers from the
+  eval_results/issue_<N>/ JSONs linked in ## Reproducibility →
+  **Artifacts:**; legacy pre-sentinel bodies: read whatever shape
+  the body carries). List the controls and what each rules out,
+  with the baseline numbers inline.
 -->
 
 ## What we ruled out: baselines for {{baseline.claim_label}}
@@ -276,6 +297,30 @@ Each is conditional — emit only when source data exists.
 {{/each}}
 
 <small>Source: Issue #{{baseline.source_issue_number}} · all baselines run on the same eval set as the headline result</small>
+
+---
+
+<!--
+  Backup family (e) — TRAINING-DATA QUALITY.
+  Emit one slide per result whose fine-tuning ran on a dataset built
+  for that experiment (synthetic mixes, contrastive panels, template
+  corpora). 1-2 verbatim rows, never paraphrased. (Mentor steer
+  2026-06-11: "get more into the weeds on thinking about data
+  quality".)
+-->
+
+## What the training data looks like: {{data.mix_label}}
+
+> {{data.verbatim_row_1}}
+
+> {{data.verbatim_row_2}}
+
+<!-- ↑ row 2 is OPTIONAL — drop the second blockquote when only one representative row exists -->
+
+- **Source tier**: {{data.source_tier}} <small>(real-world / established benchmark / LLM-synthetic / programmatic)</small>
+- **Known artifacts**: {{data.known_artifacts_one_line}}
+
+<small>Source: Issue #{{data.source_issue_number}} · {{data.n_rows}} rows · {{data.hf_dataset_path}}</small>
 
 ---
 
