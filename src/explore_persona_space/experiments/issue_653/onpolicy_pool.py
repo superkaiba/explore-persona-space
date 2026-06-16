@@ -165,12 +165,19 @@ def _build_rowspecs(
     for neg in neg_personas:
         neg_prompt = i653.NEGATIVE_PANEL_PROMPTS[neg]
         for j in range(n_neg_each):
-            override_idx = i653.NEG_CLAIM_OVERRIDES.get((j, neg))
+            # Round-8: the override is keyed on the (j, source, neg_persona)
+            # TRIPLE and populated ONLY for 3-persona-panel sources whose
+            # j-range cannot reach the replacement indices. A source-blind key
+            # (round 7) duplicated negatives for the 2-persona-panel
+            # police_officer source (BLOCKER neg-claim-overrides-police-
+            # duplicates) — see NEG_CLAIM_OVERRIDES docstring.
+            override_idx = i653.NEG_CLAIM_OVERRIDES.get((j, source, neg))
             if override_idx is not None:
                 log.warning(
                     "[neg_claim_override] source=%s neg=%s j=%d: replacing "
                     "claims[%d]=%r with claims[%d]=%r (high-agreement-prior "
-                    "outlier, round-7 fix — see NEG_CLAIM_OVERRIDES docstring)",
+                    "outlier, round-7 fix / round-8 source-scoped — see "
+                    "NEG_CLAIM_OVERRIDES docstring)",
                     source,
                     neg,
                     j,
@@ -193,6 +200,32 @@ def _build_rowspecs(
                 )
             )
             idx += 1
+
+    # ── Axis 2: within-(source, neg_persona) duplicate-user_msg assertion ─────
+    # Fail loud (BLOCKER neg-claim-overrides-police-duplicates): a contrastive
+    # negative block must never carry the SAME user_msg twice — an aliased claim
+    # (from an out-of-scope override, or a claim bank shorter than n_neg_each)
+    # would silently inject a duplicate negative into the training mix. No
+    # warning-only fallback (CLAUDE.md "fail fast — never hide failures"); the
+    # raise is the permanent safety net for this regression class.
+    from collections import Counter, defaultdict
+
+    by_block: dict[tuple[str, str], list[str]] = defaultdict(list)
+    for spec in specs:
+        if spec.row_type != "negative":
+            continue
+        by_block[(source, spec.persona)].append(spec.user_msg)
+    for (src, persona), msgs in by_block.items():
+        if len(msgs) != len(set(msgs)):
+            dupes = {m: c for m, c in Counter(msgs).items() if c > 1}
+            raise RuntimeError(
+                f"_build_rowspecs: within-(source={src!r}, neg_persona={persona!r}) "
+                f"duplicate user_msg(s) {dupes!r} ({len(msgs)} rows, "
+                f"{len(set(msgs))} unique) — NEG_CLAIM_OVERRIDES or the claim "
+                f"bank produced an aliased prompt. Check override scoping (the "
+                f"(j, source, neg_persona) key must not place a replacement "
+                f"index inside this source's j-range)."
+            )
     return specs
 
 

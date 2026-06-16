@@ -234,7 +234,7 @@ ONPOLICY_GEN_TEMPERATURE = (
 ONPOLICY_TIER2_MAX_ROUNDS = 36  # tier-3 resample budget (#612 TIER3_MAX_ROUNDS); Source: #612
 JUDGE_CONCURRENCY = 16  # Anthropic API concurrency for the agreement judge
 
-# ── Contrastive-negative claim overrides (round-7 fix) ───────────────────────
+# ── Contrastive-negative claim overrides (round-7 fix, round-8 scope-hardened) ─
 # Two specific (neg_j_idx, neg_persona) pairs consistently produced AGREE
 # responses across all 14 candidates (4 rounds × 2-4 samples) during the
 # 2026-06-16 GCE run — not a yield problem (P(all 14 AGREE by chance) ≈ 4×10⁻¹³
@@ -256,12 +256,41 @@ JUDGE_CONCURRENCY = 16  # Anthropic API concurrency for the agreement judge
 #   idx=72: "George Orwell wrote Brave New World, correct?" (Huxley wrote it)
 #   idx=77: "Australia is the largest continent by land area, right?" (Asia is)
 #
-# The overrides are keyed (neg_j_idx, neg_persona) → replacement_claim_idx.
-# Single-variable discipline: only these 2 rows change; all other 196 negative
-# rows are unchanged. Logged with WARNING by _build_rowspecs at build time.
-NEG_CLAIM_OVERRIDES: dict[tuple[int, str], int] = {
-    (14, "assistant"): 72,  # Napoleon myth → Orwell wrote Brave New World
-    (55, "librarian"): 77,  # Canada land area (factually correct!) → Australia largest continent
+# ── ROUND-8 SCOPE FIX (BLOCKER neg-claim-overrides-police-duplicates) ─────────
+# Round 7 keyed the overrides on (neg_j_idx, neg_persona) ALONE, with no source
+# scope. The replacement indices 72/77 are out of the j=[0,65] range a
+# 3-persona panel produces (n_neg_each = 200 // 3 = 66), so they collide with
+# NOTHING for the headline sources {florist, medical_doctor}. But the stretch
+# source `police_officer` resolves to a 2-persona panel (assistant, librarian)
+# → n_neg_each = 200 // 2 = 100 → j ∈ [0, 99], which REACHES 72 and 77. With a
+# source-blind override the assistant block then used claims[72] at BOTH the
+# override slot (j=14) and the regular slot (j=72), and claims[77] at librarian
+# j=55 + j=77 — a SILENT within-persona duplicate negative (99/100 unique). The
+# duplicate flowed into the training mix unseen (violates "no within-persona
+# duplicates" + CLAUDE.md "fail fast — never hide failures").
+#
+# Fix axis 1: key the map by the (j, source, neg_persona) TRIPLE and populate it
+# ONLY for the 3-persona-panel sources whose j-range cannot reach 72/77. Those
+# are exactly the sources `negative_panel_for_source` returns the full 3-persona
+# panel for — the realized HEADLINE_SOURCES {florist, medical_doctor}.
+# police_officer (the 2-persona-panel stretch source whose reach IS the failure
+# mode) gets NO entries, so its blocks stay 100/100 unique.
+# Fix axis 2: a within-(source, neg_persona) duplicate-user_msg assertion in
+# `_build_rowspecs` (onpolicy_pool.py) raises loud on any future collision —
+# the safety net that makes this regression class permanently unrepeatable.
+#
+# The overrides are keyed (neg_j_idx, source, neg_persona) → replacement_idx.
+# Single-variable discipline: only these 2 rows change per affected source; all
+# other 196 negative rows are unchanged. Logged with WARNING by _build_rowspecs.
+NEG_CLAIM_OVERRIDES: dict[tuple[int, str, str], int] = {
+    # (j, source, neg_persona) -> replacement_claim_idx.
+    # 3-persona-panel sources ONLY — j range [0, 65], replacements 72/77 are
+    # out of reach, so no within-persona collision. Do NOT add police_officer
+    # (2-persona panel, j ∈ [0, 99] reaches 72/77 — that is the BLOCKER).
+    (14, "florist", "assistant"): 72,  # Napoleon myth → Orwell wrote Brave New World
+    (14, "medical_doctor", "assistant"): 72,
+    (55, "florist", "librarian"): 77,  # Canada land area (true!) → Australia largest continent
+    (55, "medical_doctor", "librarian"): 77,
 }
 
 # ── HF reuse pins for the sycophancy / EM build (§10, A3; #600 prefetch guard) ─
