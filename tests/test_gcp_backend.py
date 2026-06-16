@@ -3282,11 +3282,22 @@ def test_render_startup_script_log_path_matches_handle_log_path() -> None:
     assert f"export EPS_LOG_PATH={shlex.quote(handle.log_path)}" in script
 
 
-def test_render_startup_script_exports_tqdm_disable() -> None:
-    """T3 (#607): ``TQDM_DISABLE=1`` exported before the workload in both
-    branches — defense in depth (tqdm bars are the canonical giant-line
-    producer and pure noise in a log file; vLLM + huggingface_hub bars
-    are tqdm-based)."""
+def test_render_startup_script_unsets_tqdm_disable() -> None:
+    """T3 (#607, amended #542): ``unset TQDM_DISABLE`` runs before the
+    workload in both branches — NOT ``export TQDM_DISABLE=1``.
+
+    vLLM 0.11.0's batched ``_run_engine`` divides ``total_in_toks`` by
+    ``pbar.format_dict["elapsed"]`` on the first finished output; a
+    DISABLED tqdm bar never starts its timer, so ``elapsed`` is 0.0 and
+    every GCP workload calling batched ``LLM.generate()`` crashes with
+    ZeroDivisionError (#542: 4 dead eps-issue-542 VMs). The #491
+    giant-line zombie that originally motivated the disable is closed by
+    the ``exec >>"$EPS_LOG_PATH"`` redirect (bars hit the unbounded log
+    file, never the metadata runner's bounded scanner), so the bar must
+    stay ENABLED — its timer keeps ``elapsed`` > 0. ``unset`` (not
+    ``=0``) because tqdm's @envwrap coerces ``bool("0") == True`` → ``=0``
+    would still disable; unset also clears any inherited DLVM/metadata
+    value."""
     config = _test_config()
     for script, workload_line in (
         (
@@ -3298,8 +3309,11 @@ def test_render_startup_script_exports_tqdm_disable() -> None:
             "bash scripts/issue588_smoke.sh",
         ),
     ):
-        assert "export TQDM_DISABLE=1" in script
-        assert script.index("export TQDM_DISABLE=1") < script.index(workload_line)
+        assert "unset TQDM_DISABLE" in script
+        assert script.index("unset TQDM_DISABLE") < script.index(workload_line)
+        # The disable that caused the #542 ZeroDivisionError must be GONE
+        # (a disabled bar — by any TQDM_DISABLE export — re-opens the crash).
+        assert "export TQDM_DISABLE" not in script
 
 
 def test_render_startup_script_pipe_trap_is_handler_not_ignore() -> None:
