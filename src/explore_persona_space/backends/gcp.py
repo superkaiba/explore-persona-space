@@ -946,9 +946,24 @@ def render_startup_script(
         'exec >>"$EPS_LOG_PATH" 2>&1',
         f'echo "=== startup-script begin issue={spec.issue} attempt=$EPS_ATTEMPT_ID'
         ' $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="',
-        "# Defense in depth: no progress bars even into the log file (tqdm",
-        "# checks TQDM_DISABLE; vLLM + huggingface_hub bars are tqdm-based).",
-        "export TQDM_DISABLE=1",
+        # tqdm: UNSET, never disable (#542). vLLM 0.11.0's batched
+        # _run_engine (entrypoints/llm.py:1610) computes
+        # ``in_spd = total_in_toks / pbar.format_dict["elapsed"]`` on the
+        # first finished output. A DISABLED tqdm bar never starts its
+        # timer, so ``elapsed`` stays 0.0 → ZeroDivisionError crashes
+        # EVERY GCP workload that calls batched LLM.generate() (#542:
+        # 4 dead eps-issue-542 VMs, identical traceback). The #491
+        # giant-line zombie that originally motivated TQDM_DISABLE=1 is
+        # already closed structurally by the ``exec >>"$EPS_LOG_PATH"``
+        # redirect above (progress bars hit the unbounded log file, never
+        # the metadata runner's bounded line scanner), so the disable was
+        # pure log-cleanliness — and is now a crash. UNSET (not
+        # ``=0``): tqdm 4.67.x reads TQDM_DISABLE via @envwrap, which
+        # coerces ``bool("0") == True``, so ``export TQDM_DISABLE=0``
+        # STILL disables the bar (timer dead → same crash; verified
+        # empirically). Unsetting also clears any value inherited from
+        # the DLVM image / instance metadata.
+        "unset TQDM_DISABLE",
         "# === /output redirect (#607) ===",
         "",
         "# === Secrets from instance metadata ===",
