@@ -1,0 +1,2242 @@
+{
+  "schema_version": "i613_singlespacefalsifier_verdict_v1",
+  "cells": {
+    "flagon": "singlespacefalsifier_flagon_200p800n",
+    "flagoff": "singlespacefalsifier_flagoff_200p800n"
+  },
+  "seeds": [
+    42,
+    137
+  ],
+  "marker_predict_from_offset": 1,
+  "constants": {
+    "r1_liveness_floor_nats": 0.001,
+    "leakage_ratio_gate": 2.0,
+    "clamp_bar_nats": 1.5,
+    "rise_then_drop_min_nats": 1.0,
+    "noise_scale_nats": 5.6,
+    "tolerance_rule": "2 x max within-arm seed gap, computed from this round's realized pairs (both arms fresh \u2014 no frozen cross-run band)"
+  },
+  "r1_liveness": {
+    "rule": "step-1 flag-on neg_slot CE >= 0.001 nats in both seeds (negative rows byte-identical to the parent round \u2014 a failure is a rig bug until proven otherwise; parent context 0.0672 / 0.0241)",
+    "per_seed": {
+      "seed42": {
+        "step1_neg_slot_ce": 0.06722251325845718,
+        "neg_slot_ce_base": 0.06722251325845718,
+        "live": true
+      },
+      "seed137": {
+        "step1_neg_slot_ce": 0.02409195527434349,
+        "neg_slot_ce_base": 0.02409195527434349,
+        "live": true
+      }
+    },
+    "verdict": "PASS"
+  },
+  "r2_source_level": {
+    "rule": "within-round tol = 2 x max within-arm seed gap; co-land requires BOTH logP AND EOS-margin spaces; margin GOVERNS whenever either arm's trained logP sits within tol of the 0 ceiling; indeterminate-for-noise reported when tol exceeds ~5.6 nats (parent-scale noise)",
+    "flagon_delta_g": {
+      "seed42": 11.558371901512146,
+      "seed137": 10.729023194313049
+    },
+    "flagoff_delta_g": {
+      "seed42": 12.408757936954498,
+      "seed137": 11.848700368404389
+    },
+    "flagon_seed_mean": 11.143697547912598,
+    "flagoff_seed_mean": 12.128729152679444,
+    "diff_seed_mean": -0.9850316047668457,
+    "within_arm_seed_gaps": {
+      "flagon": 0.829348707199097,
+      "flagoff": 0.5600575685501088
+    },
+    "tolerance": 1.658697414398194,
+    "logp_branch": "co-land",
+    "margin_twin": {
+      "flagon_margin": {
+        "seed42": 11.35390625,
+        "seed137": 10.38984375
+      },
+      "flagoff_margin": {
+        "seed42": 14.037109375000002,
+        "seed137": 12.88671875
+      },
+      "diff_seed_mean": -2.5900390625000007,
+      "tolerance": 2.3007812500000036,
+      "branch": "suppression"
+    },
+    "trained_logp_seed_means": {
+      "flagon": -4.015384864807129,
+      "flagoff": -2.9460127353668213
+    },
+    "compression_window_fired": false,
+    "saturation_triage_fired": false,
+    "per_cell_saturated": {
+      "flagon": {
+        "seed42": false,
+        "seed137": false
+      },
+      "flagoff": {
+        "seed42": false,
+        "seed137": false
+      }
+    },
+    "branch": "suppression",
+    "governed_by": "margin (logp co-landed but margin did not \u2014 co-land requires both)",
+    "indeterminate_for_noise": false,
+    "emission_denominator_sensitivity": {
+      "per_cell": {
+        "flagon_seed42": {
+          "delta_g_excluding_marker_in_R": 11.558371901512146,
+          "n_probes_excluded": 0,
+          "n_probes_total": 10
+        },
+        "flagon_seed137": {
+          "delta_g_excluding_marker_in_R": 10.729023194313049,
+          "n_probes_excluded": 0,
+          "n_probes_total": 10
+        },
+        "flagoff_seed42": {
+          "delta_g_excluding_marker_in_R": 12.408757936954498,
+          "n_probes_excluded": 0,
+          "n_probes_total": 10
+        },
+        "flagoff_seed137": {
+          "delta_g_excluding_marker_in_R": 11.848700368404389,
+          "n_probes_excluded": 0,
+          "n_probes_total": 10
+        }
+      },
+      "diff_seed_mean": -0.9850316047668457,
+      "tolerance": 1.658697414398194,
+      "branch": "co-land",
+      "can_override_primary": false,
+      "rule": "PRIMARY keeps the FIXED generated-R probe set; this exclusion read is reported alongside and never changes the primary verdict unless the cell is pre-registered degenerate/indeterminate (emission >= 0.92 triage or r_collapsed)"
+    }
+  },
+  "r3_leakage_cut": {
+    "rule": "suppression-at-leakage confirmed iff ratio >= 2.0 in BOTH seeds; flag_on<=0 AND flag_off>0 -> confirmed-strong outright; difference twin governs ratio-edge cells; clamp bar 1.5 nats + rise-then-drop >= 1.0 nat recomputed within-construction (flag-off arm = empirical null)",
+    "per_seed": {
+      "seed42": {
+        "flagon_trained_neg_delta_g": 3.1612077713012696,
+        "flagoff_trained_neg_delta_g": 5.142305469512939,
+        "ratio_flagoff_over_flagon": 1.6266901265386224,
+        "difference_flagoff_minus_flagon": 1.9810976982116695,
+        "classification": "ratio",
+        "confirmed": false,
+        "clamp_gap_flagon": 1.1634008646011353,
+        "clamp_gap_flagoff": 0.6320267438888552,
+        "clamp_present_flagon": false,
+        "rise_then_drop_flagon": false,
+        "rise_then_drop_null_flagoff_max_stat": 0.0090220928192144
+      },
+      "seed137": {
+        "flagon_trained_neg_delta_g": 3.3740198612213135,
+        "flagoff_trained_neg_delta_g": 4.986780309677124,
+        "ratio_flagoff_over_flagon": 1.4779937625714008,
+        "difference_flagoff_minus_flagon": 1.612760448455811,
+        "classification": "ratio",
+        "confirmed": false,
+        "clamp_gap_flagon": 0.8796730160713198,
+        "clamp_gap_flagoff": 0.5956644415855408,
+        "clamp_present_flagon": false,
+        "rise_then_drop_flagon": false,
+        "rise_then_drop_null_flagoff_max_stat": 0.0
+      }
+    },
+    "confirmed_both_seeds": false,
+    "clamp_present_both_seeds": false,
+    "rise_then_drop_both_seeds": false
+  },
+  "r4_channels": {
+    "note": "descriptive, no gate \u2014 does the stop-token boost (\u0394z_eos) coexist with a genuine marker push-down (\u0394z_marker) inside the SAME softmax at the R + ' ' marker slot (offset +1 from the negatives' loss slot), or does the normalizer absorb it; arms at matched steps",
+    "matched_steps": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      25,
+      32,
+      45,
+      63
+    ],
+    "flagon": {
+      "seed42": {
+        "1": {
+          "source": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          },
+          "trained_neg": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          },
+          "bystander": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          }
+        },
+        "2": {
+          "source": {
+            "delta_g": 0.06653575897216797,
+            "delta_z_marker": 0.0421875,
+            "delta_z_eos": 0.006249999999999645,
+            "delta_margin": 0.0359375
+          },
+          "trained_neg": {
+            "delta_g": 0.03175387382507324,
+            "delta_z_marker": 0.02139892578125,
+            "delta_z_eos": -0.006250000000001421,
+            "delta_margin": 0.02764892578125
+          },
+          "bystander": {
+            "delta_g": 0.030561184883117674,
+            "delta_z_marker": 0.0248291015625,
+            "delta_z_eos": 0.00859374999999929,
+            "delta_margin": 0.0162353515625
+          }
+        },
+        "3": {
+          "source": {
+            "delta_g": 0.08044490814208985,
+            "delta_z_marker": 0.08671875,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.08671875
+          },
+          "trained_neg": {
+            "delta_g": 0.06174225807189941,
+            "delta_z_marker": 0.0252685546875,
+            "delta_z_eos": -0.03750000000000142,
+            "delta_margin": 0.0627685546875
+          },
+          "bystander": {
+            "delta_g": 0.03891727924346924,
+            "delta_z_marker": 0.0185638427734375,
+            "delta_z_eos": -0.01640624999999929,
+            "delta_margin": 0.0349700927734375
+          }
+        },
+        "4": {
+          "source": {
+            "delta_g": 0.3327964782714844,
+            "delta_z_marker": 0.2625,
+            "delta_z_eos": -0.06875000000000142,
+            "delta_margin": 0.33125
+          },
+          "trained_neg": {
+            "delta_g": 0.12022771835327148,
+            "delta_z_marker": 0.082684326171875,
+            "delta_z_eos": -0.03750000000000142,
+            "delta_margin": 0.120184326171875
+          },
+          "bystander": {
+            "delta_g": 0.1393362283706665,
+            "delta_z_marker": 0.100042724609375,
+            "delta_z_eos": -0.05312499999999787,
+            "delta_margin": 0.153167724609375
+          }
+        },
+        "5": {
+          "source": {
+            "delta_g": 0.7612607955932618,
+            "delta_z_marker": 0.60234375,
+            "delta_z_eos": -0.16250000000000142,
+            "delta_margin": 0.76484375
+          },
+          "trained_neg": {
+            "delta_g": 0.29166812896728517,
+            "delta_z_marker": 0.17531280517578124,
+            "delta_z_eos": -0.1281250000000007,
+            "delta_margin": 0.30343780517578123
+          },
+          "bystander": {
+            "delta_g": 0.3221211194992065,
+            "delta_z_marker": 0.243572998046875,
+            "delta_z_eos": -0.12734374999999787,
+            "delta_margin": 0.370916748046875
+          }
+        },
+        "6": {
+          "source": {
+            "delta_g": 1.360123062133789,
+            "delta_z_marker": 1.15625,
+            "delta_z_eos": -0.3500000000000014,
+            "delta_margin": 1.50625
+          },
+          "trained_neg": {
+            "delta_g": 0.5078558921813965,
+            "delta_z_marker": 0.32125244140625,
+            "delta_z_eos": -0.1999999999999993,
+            "delta_margin": 0.52125244140625
+          },
+          "bystander": {
+            "delta_g": 0.5691008329391479,
+            "delta_z_marker": 0.412261962890625,
+            "delta_z_eos": -0.2546874999999993,
+            "delta_margin": 0.666949462890625
+          }
+        },
+        "7": {
+          "source": {
+            "delta_g": 2.209219741821289,
+            "delta_z_marker": 1.9140625,
+            "delta_z_eos": -0.5750000000000011,
+            "delta_margin": 2.4890625
+          },
+          "trained_neg": {
+            "delta_g": 0.8086622714996338,
+            "delta_z_marker": 0.515692138671875,
+            "delta_z_eos": -0.328125,
+            "delta_margin": 0.843817138671875
+          },
+          "bystander": {
+            "delta_g": 0.9195509552955627,
+            "delta_z_marker": 0.68648681640625,
+            "delta_z_eos": -0.3843749999999986,
+            "delta_margin": 1.07086181640625
+          }
+        },
+        "8": {
+          "source": {
+            "delta_g": 3.0114713668823243,
+            "delta_z_marker": 2.634375,
+            "delta_z_eos": -0.6312500000000014,
+            "delta_margin": 3.265625
+          },
+          "trained_neg": {
+            "delta_g": 1.010200071334839,
+            "delta_z_marker": 0.69974365234375,
+            "delta_z_eos": -0.3312500000000007,
+            "delta_margin": 1.03099365234375
+          },
+          "bystander": {
+            "delta_g": 1.1869238495826722,
+            "delta_z_marker": 0.91734619140625,
+            "delta_z_eos": -0.44921875,
+            "delta_margin": 1.36656494140625
+          }
+        },
+        "9": {
+          "source": {
+            "delta_g": 3.710966682434082,
+            "delta_z_marker": 3.265625,
+            "delta_z_eos": -0.8375000000000004,
+            "delta_margin": 4.103125
+          },
+          "trained_neg": {
+            "delta_g": 1.2611799240112305,
+            "delta_z_marker": 0.8849609375,
+            "delta_z_eos": -0.3937500000000007,
+            "delta_margin": 1.2787109375
+          },
+          "bystander": {
+            "delta_g": 1.4709890365600586,
+            "delta_z_marker": 1.155322265625,
+            "delta_z_eos": -0.5203124999999993,
+            "delta_margin": 1.675634765625
+          }
+        },
+        "10": {
+          "source": {
+            "delta_g": 4.554846000671387,
+            "delta_z_marker": 4.071875,
+            "delta_z_eos": -0.8500000000000014,
+            "delta_margin": 4.921875
+          },
+          "trained_neg": {
+            "delta_g": 1.4211654186248779,
+            "delta_z_marker": 1.065966796875,
+            "delta_z_eos": -0.359375,
+            "delta_margin": 1.425341796875
+          },
+          "bystander": {
+            "delta_g": 1.7282584071159364,
+            "delta_z_marker": 1.3926025390625,
+            "delta_z_eos": -0.55078125,
+            "delta_margin": 1.9433837890625
+          }
+        },
+        "11": {
+          "source": {
+            "delta_g": 5.148079109191895,
+            "delta_z_marker": 4.625,
+            "delta_z_eos": -0.8937500000000007,
+            "delta_margin": 5.51875
+          },
+          "trained_neg": {
+            "delta_g": 1.579812479019165,
+            "delta_z_marker": 1.241162109375,
+            "delta_z_eos": -0.3249999999999993,
+            "delta_margin": 1.566162109375
+          },
+          "bystander": {
+            "delta_g": 1.9823399782180786,
+            "delta_z_marker": 1.6407470703125,
+            "delta_z_eos": -0.50390625,
+            "delta_margin": 2.1446533203125
+          }
+        },
+        "12": {
+          "source": {
+            "delta_g": 5.722210693359375,
+            "delta_z_marker": 5.175,
+            "delta_z_eos": -0.9312500000000004,
+            "delta_margin": 6.10625
+          },
+          "trained_neg": {
+            "delta_g": 1.7090917110443116,
+            "delta_z_marker": 1.382958984375,
+            "delta_z_eos": -0.3156250000000007,
+            "delta_margin": 1.698583984375
+          },
+          "bystander": {
+            "delta_g": 2.1810001611709593,
+            "delta_z_marker": 1.8378173828125,
+            "delta_z_eos": -0.4812499999999993,
+            "delta_margin": 2.3190673828125
+          }
+        },
+        "13": {
+          "source": {
+            "delta_g": 6.321213150024414,
+            "delta_z_marker": 5.746875,
+            "delta_z_eos": -0.9250000000000007,
+            "delta_margin": 6.671875
+          },
+          "trained_neg": {
+            "delta_g": 1.8405531883239745,
+            "delta_z_marker": 1.533349609375,
+            "delta_z_eos": -0.2843750000000007,
+            "delta_margin": 1.817724609375
+          },
+          "bystander": {
+            "delta_g": 2.372012507915497,
+            "delta_z_marker": 2.0367919921875,
+            "delta_z_eos": -0.4585937499999986,
+            "delta_margin": 2.4953857421875
+          }
+        },
+        "14": {
+          "source": {
+            "delta_g": 6.853328514099121,
+            "delta_z_marker": 6.259375,
+            "delta_z_eos": -0.9000000000000004,
+            "delta_margin": 7.159375
+          },
+          "trained_neg": {
+            "delta_g": 1.9618879795074462,
+            "delta_z_marker": 1.692431640625,
+            "delta_z_eos": -0.234375,
+            "delta_margin": 1.926806640625
+          },
+          "bystander": {
+            "delta_g": 2.569741952419281,
+            "delta_z_marker": 2.2360107421875,
+            "delta_z_eos": -0.4312499999999986,
+            "delta_margin": 2.6672607421875
+          }
+        },
+        "15": {
+          "source": {
+            "delta_g": 7.388122940063477,
+            "delta_z_marker": 6.778125,
+            "delta_z_eos": -0.9375,
+            "delta_margin": 7.715625
+          },
+          "trained_neg": {
+            "delta_g": 2.107309341430664,
+            "delta_z_marker": 1.845068359375,
+            "delta_z_eos": -0.2218750000000007,
+            "delta_margin": 2.066943359375
+          },
+          "bystander": {
+            "delta_g": 2.7526130437850953,
+            "delta_z_marker": 2.4188232421875,
+            "delta_z_eos": -0.3984375,
+            "delta_margin": 2.8172607421875
+          }
+        },
+        "16": {
+          "source": {
+            "delta_g": 7.774619102478027,
+            "delta_z_marker": 7.171875,
+            "delta_z_eos": -0.9000000000000004,
+            "delta_margin": 8.071875
+          },
+          "trained_neg": {
+            "delta_g": 2.229803133010864,
+            "delta_z_marker": 1.954541015625,
+            "delta_z_eos": -0.22812499999999858,
+            "delta_margin": 2.182666015625
+          },
+          "bystander": {
+            "delta_g": 2.901013123989105,
+            "delta_z_marker": 2.5659912109375,
+            "delta_z_eos": -0.37734374999999787,
+            "delta_margin": 2.9433349609375
+          }
+        },
+        "17": {
+          "source": {
+            "delta_g": 8.19386692047119,
+            "delta_z_marker": 7.571875,
+            "delta_z_eos": -0.8812500000000014,
+            "delta_margin": 8.453125
+          },
+          "trained_neg": {
+            "delta_g": 2.346516561508179,
+            "delta_z_marker": 2.070947265625,
+            "delta_z_eos": -0.2218750000000007,
+            "delta_margin": 2.292822265625
+          },
+          "bystander": {
+            "delta_g": 3.0575706124305726,
+            "delta_z_marker": 2.7253662109375,
+            "delta_z_eos": -0.3765624999999986,
+            "delta_margin": 3.1019287109375
+          }
+        },
+        "18": {
+          "source": {
+            "delta_g": 8.64211826324463,
+            "delta_z_marker": 8.015625,
+            "delta_z_eos": -0.9937500000000004,
+            "delta_margin": 9.009375
+          },
+          "trained_neg": {
+            "delta_g": 2.4206087589263916,
+            "delta_z_marker": 2.193212890625,
+            "delta_z_eos": -0.171875,
+            "delta_margin": 2.365087890625
+          },
+          "bystander": {
+            "delta_g": 3.2196992874145507,
+            "delta_z_marker": 2.8859130859375,
+            "delta_z_eos": -0.3703125000000007,
+            "delta_margin": 3.2562255859375
+          }
+        },
+        "19": {
+          "source": {
+            "delta_g": 8.94236354827881,
+            "delta_z_marker": 8.334375,
+            "delta_z_eos": -0.9500000000000011,
+            "delta_margin": 9.284375
+          },
+          "trained_neg": {
+            "delta_g": 2.52317795753479,
+            "delta_z_marker": 2.315673828125,
+            "delta_z_eos": -0.14687500000000142,
+            "delta_margin": 2.462548828125
+          },
+          "bystander": {
+            "delta_g": 3.334467816352844,
+            "delta_z_marker": 3.0245849609375,
+            "delta_z_eos": -0.29921874999999787,
+            "delta_margin": 3.3238037109375
+          }
+        },
+        "20": {
+          "source": {
+            "delta_g": 9.332254219055176,
+            "delta_z_marker": 8.696875,
+            "delta_z_eos": -1.012500000000001,
+            "delta_margin": 9.709375
+          },
+          "trained_neg": {
+            "delta_g": 2.6088011264801025,
+            "delta_z_marker": 2.403955078125,
+            "delta_z_eos": -0.140625,
+            "delta_margin": 2.544580078125
+          },
+          "bystander": {
+            "delta_g": 3.459546649456024,
+            "delta_z_marker": 3.1519287109375,
+            "delta_z_eos": -0.29921874999999787,
+            "delta_margin": 3.4511474609375
+          }
+        },
+        "25": {
+          "source": {
+            "delta_g": 10.461059188842773,
+            "delta_z_marker": 9.815625,
+            "delta_z_eos": -1.0,
+            "delta_margin": 10.815625
+          },
+          "trained_neg": {
+            "delta_g": 2.869115781784058,
+            "delta_z_marker": 2.737353515625,
+            "delta_z_eos": -0.05624999999999858,
+            "delta_margin": 2.793603515625
+          },
+          "bystander": {
+            "delta_g": 3.90266215801239,
+            "delta_z_marker": 3.6005615234375,
+            "delta_z_eos": -0.2710937499999986,
+            "delta_margin": 3.8716552734375
+          }
+        },
+        "32": {
+          "source": {
+            "delta_g": 11.210475730895997,
+            "delta_z_marker": 10.615625,
+            "delta_z_eos": -1.0500000000000007,
+            "delta_margin": 11.665625
+          },
+          "trained_neg": {
+            "delta_g": 3.0360832691192625,
+            "delta_z_marker": 2.939306640625,
+            "delta_z_eos": -0.015625,
+            "delta_margin": 2.954931640625
+          },
+          "bystander": {
+            "delta_g": 4.1558171033859255,
+            "delta_z_marker": 3.8835693359375,
+            "delta_z_eos": -0.18906249999999858,
+            "delta_margin": 4.0726318359375
+          }
+        },
+        "45": {
+          "source": {
+            "delta_g": 11.50884838104248,
+            "delta_z_marker": 10.928125,
+            "delta_z_eos": -1.0687500000000014,
+            "delta_margin": 11.996875
+          },
+          "trained_neg": {
+            "delta_g": 3.143536853790283,
+            "delta_z_marker": 3.067626953125,
+            "delta_z_eos": 0.009374999999998579,
+            "delta_margin": 3.058251953125
+          },
+          "bystander": {
+            "delta_g": 4.331328451633453,
+            "delta_z_marker": 4.0454833984375,
+            "delta_z_eos": -0.20937499999999787,
+            "delta_margin": 4.2548583984375
+          }
+        },
+        "63": {
+          "source": {
+            "delta_g": 11.55643367767334,
+            "delta_z_marker": 10.971875,
+            "delta_z_eos": -1.0500000000000007,
+            "delta_margin": 12.021875
+          },
+          "trained_neg": {
+            "delta_g": 3.1612077713012696,
+            "delta_z_marker": 3.078759765625,
+            "delta_z_eos": 0.0,
+            "delta_margin": 3.078759765625
+          },
+          "bystander": {
+            "delta_g": 4.324608635902405,
+            "delta_z_marker": 4.0501708984375,
+            "delta_z_eos": -0.18124999999999858,
+            "delta_margin": 4.2314208984375
+          }
+        }
+      },
+      "seed137": {
+        "1": {
+          "source": {
+            "delta_g": 1.71661376953125e-06,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          },
+          "trained_neg": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          },
+          "bystander": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          }
+        },
+        "2": {
+          "source": {
+            "delta_g": -0.002292633056640625,
+            "delta_z_marker": 0.0078125,
+            "delta_z_eos": 0.07499999999999929,
+            "delta_margin": -0.0671875
+          },
+          "trained_neg": {
+            "delta_g": 0.018124485015869142,
+            "delta_z_marker": 0.011456298828125,
+            "delta_z_eos": -0.006250000000001421,
+            "delta_margin": 0.017706298828125
+          },
+          "bystander": {
+            "delta_g": 0.016197633743286134,
+            "delta_z_marker": 0.013232421875,
+            "delta_z_eos": 0.0007812499999992895,
+            "delta_margin": 0.012451171875
+          }
+        },
+        "3": {
+          "source": {
+            "delta_g": 0.09092960357666016,
+            "delta_z_marker": 0.06015625,
+            "delta_z_eos": -0.012500000000001066,
+            "delta_margin": 0.07265625
+          },
+          "trained_neg": {
+            "delta_g": 0.050213289260864255,
+            "delta_z_marker": 0.03521728515625,
+            "delta_z_eos": -0.015625,
+            "delta_margin": 0.05084228515625
+          },
+          "bystander": {
+            "delta_g": 0.04573159217834473,
+            "delta_z_marker": 0.0366790771484375,
+            "delta_z_eos": 0.02031249999999929,
+            "delta_margin": 0.0163665771484375
+          }
+        },
+        "4": {
+          "source": {
+            "delta_g": 0.20239086151123048,
+            "delta_z_marker": 0.16953125,
+            "delta_z_eos": 0.01249999999999929,
+            "delta_margin": 0.15703125
+          },
+          "trained_neg": {
+            "delta_g": 0.10852208137512206,
+            "delta_z_marker": 0.06407470703125,
+            "delta_z_eos": -0.046875,
+            "delta_margin": 0.11094970703125
+          },
+          "bystander": {
+            "delta_g": 0.09605879783630371,
+            "delta_z_marker": 0.070062255859375,
+            "delta_z_eos": -0.02968749999999787,
+            "delta_margin": 0.099749755859375
+          }
+        },
+        "5": {
+          "source": {
+            "delta_g": 0.5830936431884766,
+            "delta_z_marker": 0.4703125,
+            "delta_z_eos": -0.125,
+            "delta_margin": 0.5953125
+          },
+          "trained_neg": {
+            "delta_g": 0.19924116134643555,
+            "delta_z_marker": 0.14730224609375,
+            "delta_z_eos": -0.05937499999999929,
+            "delta_margin": 0.20667724609375
+          },
+          "bystander": {
+            "delta_g": 0.2711031436920166,
+            "delta_z_marker": 0.19990234375,
+            "delta_z_eos": -0.09453124999999929,
+            "delta_margin": 0.29443359375
+          }
+        },
+        "6": {
+          "source": {
+            "delta_g": 1.0902299880981445,
+            "delta_z_marker": 0.934375,
+            "delta_z_eos": -0.22500000000000142,
+            "delta_margin": 1.159375
+          },
+          "trained_neg": {
+            "delta_g": 0.39299774169921875,
+            "delta_z_marker": 0.25948486328125,
+            "delta_z_eos": -0.13437499999999858,
+            "delta_margin": 0.39385986328125
+          },
+          "bystander": {
+            "delta_g": 0.4792289972305298,
+            "delta_z_marker": 0.36349639892578123,
+            "delta_z_eos": -0.1765624999999993,
+            "delta_margin": 0.5400588989257813
+          }
+        },
+        "7": {
+          "source": {
+            "delta_g": 1.8109519958496094,
+            "delta_z_marker": 1.54375,
+            "delta_z_eos": -0.25,
+            "delta_margin": 1.79375
+          },
+          "trained_neg": {
+            "delta_g": 0.6109938144683837,
+            "delta_z_marker": 0.454010009765625,
+            "delta_z_eos": -0.14999999999999858,
+            "delta_margin": 0.604010009765625
+          },
+          "bystander": {
+            "delta_g": 0.7755618095397949,
+            "delta_z_marker": 0.59581298828125,
+            "delta_z_eos": -0.23046875,
+            "delta_margin": 0.82628173828125
+          }
+        },
+        "8": {
+          "source": {
+            "delta_g": 2.501860809326172,
+            "delta_z_marker": 2.165625,
+            "delta_z_eos": -0.4437500000000014,
+            "delta_margin": 2.609375
+          },
+          "trained_neg": {
+            "delta_g": 0.8252959251403809,
+            "delta_z_marker": 0.6060546875,
+            "delta_z_eos": -0.2156249999999993,
+            "delta_margin": 0.8216796875
+          },
+          "bystander": {
+            "delta_g": 1.0223727703094483,
+            "delta_z_marker": 0.8024208068847656,
+            "delta_z_eos": -0.2921875000000007,
+            "delta_margin": 1.0946083068847656
+          }
+        },
+        "9": {
+          "source": {
+            "delta_g": 3.2601764678955076,
+            "delta_z_marker": 2.8640625,
+            "delta_z_eos": -0.5062500000000014,
+            "delta_margin": 3.3703125
+          },
+          "trained_neg": {
+            "delta_g": 1.0637596130371094,
+            "delta_z_marker": 0.799560546875,
+            "delta_z_eos": -0.265625,
+            "delta_margin": 1.065185546875
+          },
+          "bystander": {
+            "delta_g": 1.3041744947433471,
+            "delta_z_marker": 1.034912109375,
+            "delta_z_eos": -0.34999999999999787,
+            "delta_margin": 1.384912109375
+          }
+        },
+        "10": {
+          "source": {
+            "delta_g": 4.003430366516113,
+            "delta_z_marker": 3.55625,
+            "delta_z_eos": -0.6062500000000011,
+            "delta_margin": 4.1625
+          },
+          "trained_neg": {
+            "delta_g": 1.352407169342041,
+            "delta_z_marker": 1.0431640625,
+            "delta_z_eos": -0.3093749999999993,
+            "delta_margin": 1.3525390625
+          },
+          "bystander": {
+            "delta_g": 1.6293607950210571,
+            "delta_z_marker": 1.3155517578125,
+            "delta_z_eos": -0.42421874999999787,
+            "delta_margin": 1.7397705078125
+          }
+        },
+        "11": {
+          "source": {
+            "delta_g": 4.794287490844726,
+            "delta_z_marker": 4.275,
+            "delta_z_eos": -0.7062500000000007,
+            "delta_margin": 4.98125
+          },
+          "trained_neg": {
+            "delta_g": 1.6153510570526124,
+            "delta_z_marker": 1.250341796875,
+            "delta_z_eos": -0.359375,
+            "delta_margin": 1.609716796875
+          },
+          "bystander": {
+            "delta_g": 1.9291451573371887,
+            "delta_z_marker": 1.5865478515625,
+            "delta_z_eos": -0.44921875,
+            "delta_margin": 2.0357666015625
+          }
+        },
+        "12": {
+          "source": {
+            "delta_g": 5.370877075195312,
+            "delta_z_marker": 4.828125,
+            "delta_z_eos": -0.7125000000000004,
+            "delta_margin": 5.540625
+          },
+          "trained_neg": {
+            "delta_g": 1.7923055171966553,
+            "delta_z_marker": 1.430419921875,
+            "delta_z_eos": -0.3562499999999993,
+            "delta_margin": 1.786669921875
+          },
+          "bystander": {
+            "delta_g": 2.1881189823150633,
+            "delta_z_marker": 1.8130615234375,
+            "delta_z_eos": -0.5015624999999986,
+            "delta_margin": 2.3146240234375
+          }
+        },
+        "13": {
+          "source": {
+            "delta_g": 6.003032875061035,
+            "delta_z_marker": 5.434375,
+            "delta_z_eos": -0.71875,
+            "delta_margin": 6.153125
+          },
+          "trained_neg": {
+            "delta_g": 2.0012129306793214,
+            "delta_z_marker": 1.600732421875,
+            "delta_z_eos": -0.3874999999999993,
+            "delta_margin": 1.988232421875
+          },
+          "bystander": {
+            "delta_g": 2.444100332260132,
+            "delta_z_marker": 2.0376708984375,
+            "delta_z_eos": -0.5328124999999986,
+            "delta_margin": 2.5704833984375
+          }
+        },
+        "14": {
+          "source": {
+            "delta_g": 6.541291046142578,
+            "delta_z_marker": 5.9625,
+            "delta_z_eos": -0.7625000000000011,
+            "delta_margin": 6.725
+          },
+          "trained_neg": {
+            "delta_g": 2.119273042678833,
+            "delta_z_marker": 1.714306640625,
+            "delta_z_eos": -0.3937500000000007,
+            "delta_margin": 2.108056640625
+          },
+          "bystander": {
+            "delta_g": 2.598376762866974,
+            "delta_z_marker": 2.1793701171875,
+            "delta_z_eos": -0.5398437499999993,
+            "delta_margin": 2.7192138671875
+          }
+        },
+        "15": {
+          "source": {
+            "delta_g": 6.983151817321778,
+            "delta_z_marker": 6.38125,
+            "delta_z_eos": -0.7625000000000011,
+            "delta_margin": 7.14375
+          },
+          "trained_neg": {
+            "delta_g": 2.2891917705535887,
+            "delta_z_marker": 1.834716796875,
+            "delta_z_eos": -0.4406250000000007,
+            "delta_margin": 2.275341796875
+          },
+          "bystander": {
+            "delta_g": 2.7708301901817323,
+            "delta_z_marker": 2.3432373046875,
+            "delta_z_eos": -0.5539062500000007,
+            "delta_margin": 2.8971435546875
+          }
+        },
+        "16": {
+          "source": {
+            "delta_g": 7.376478576660157,
+            "delta_z_marker": 6.7875,
+            "delta_z_eos": -0.7250000000000014,
+            "delta_margin": 7.5125
+          },
+          "trained_neg": {
+            "delta_g": 2.3800257205963136,
+            "delta_z_marker": 1.928564453125,
+            "delta_z_eos": -0.4406250000000007,
+            "delta_margin": 2.369189453125
+          },
+          "bystander": {
+            "delta_g": 2.901187014579773,
+            "delta_z_marker": 2.4684326171875,
+            "delta_z_eos": -0.53125,
+            "delta_margin": 2.9996826171875
+          }
+        },
+        "17": {
+          "source": {
+            "delta_g": 7.865939903259277,
+            "delta_z_marker": 7.271875,
+            "delta_z_eos": -0.7312500000000011,
+            "delta_margin": 8.003125
+          },
+          "trained_neg": {
+            "delta_g": 2.4610597133636474,
+            "delta_z_marker": 2.030908203125,
+            "delta_z_eos": -0.40625,
+            "delta_margin": 2.437158203125
+          },
+          "bystander": {
+            "delta_g": 3.050642430782318,
+            "delta_z_marker": 2.6076904296875,
+            "delta_z_eos": -0.5445312499999986,
+            "delta_margin": 3.1522216796875
+          }
+        },
+        "18": {
+          "source": {
+            "delta_g": 8.232017326354981,
+            "delta_z_marker": 7.640625,
+            "delta_z_eos": -0.7062500000000007,
+            "delta_margin": 8.346875
+          },
+          "trained_neg": {
+            "delta_g": 2.54874472618103,
+            "delta_z_marker": 2.116064453125,
+            "delta_z_eos": -0.4093750000000007,
+            "delta_margin": 2.525439453125
+          },
+          "bystander": {
+            "delta_g": 3.176637017726898,
+            "delta_z_marker": 2.7364990234375,
+            "delta_z_eos": -0.5249999999999986,
+            "delta_margin": 3.2614990234375
+          }
+        },
+        "19": {
+          "source": {
+            "delta_g": 8.509773445129394,
+            "delta_z_marker": 7.909375,
+            "delta_z_eos": -0.7250000000000014,
+            "delta_margin": 8.634375
+          },
+          "trained_neg": {
+            "delta_g": 2.6155916690826415,
+            "delta_z_marker": 2.187353515625,
+            "delta_z_eos": -0.3999999999999986,
+            "delta_margin": 2.587353515625
+          },
+          "bystander": {
+            "delta_g": 3.3112126708030702,
+            "delta_z_marker": 2.8505615234375,
+            "delta_z_eos": -0.546875,
+            "delta_margin": 3.3974365234375
+          }
+        },
+        "20": {
+          "source": {
+            "delta_g": 8.806164741516113,
+            "delta_z_marker": 8.203125,
+            "delta_z_eos": -0.7562500000000014,
+            "delta_margin": 8.959375
+          },
+          "trained_neg": {
+            "delta_g": 2.736573362350464,
+            "delta_z_marker": 2.289697265625,
+            "delta_z_eos": -0.421875,
+            "delta_margin": 2.711572265625
+          },
+          "bystander": {
+            "delta_g": 3.4460685729980467,
+            "delta_z_marker": 2.9736083984375,
+            "delta_z_eos": -0.5593749999999993,
+            "delta_margin": 3.5329833984375
+          }
+        },
+        "25": {
+          "source": {
+            "delta_g": 9.765289878845214,
+            "delta_z_marker": 9.153125,
+            "delta_z_eos": -0.6687500000000011,
+            "delta_margin": 9.821875
+          },
+          "trained_neg": {
+            "delta_g": 2.9987846851348876,
+            "delta_z_marker": 2.597119140625,
+            "delta_z_eos": -0.3625000000000007,
+            "delta_margin": 2.959619140625
+          },
+          "bystander": {
+            "delta_g": 3.8168402433395388,
+            "delta_z_marker": 3.3665771484375,
+            "delta_z_eos": -0.50390625,
+            "delta_margin": 3.8704833984375
+          }
+        },
+        "32": {
+          "source": {
+            "delta_g": 10.481723594665528,
+            "delta_z_marker": 9.884375,
+            "delta_z_eos": -0.6312500000000014,
+            "delta_margin": 10.515625
+          },
+          "trained_neg": {
+            "delta_g": 3.2511667251586913,
+            "delta_z_marker": 2.839501953125,
+            "delta_z_eos": -0.3687499999999986,
+            "delta_margin": 3.208251953125
+          },
+          "bystander": {
+            "delta_g": 4.121133303642273,
+            "delta_z_marker": 3.6390380859375,
+            "delta_z_eos": -0.4914062500000007,
+            "delta_margin": 4.1304443359375
+          }
+        },
+        "45": {
+          "source": {
+            "delta_g": 10.815335845947265,
+            "delta_z_marker": 10.234375,
+            "delta_z_eos": -0.6125000000000007,
+            "delta_margin": 10.846875
+          },
+          "trained_neg": {
+            "delta_g": 3.3686227798461914,
+            "delta_z_marker": 2.942626953125,
+            "delta_z_eos": -0.3781250000000007,
+            "delta_margin": 3.320751953125
+          },
+          "bystander": {
+            "delta_g": 4.241947531700134,
+            "delta_z_marker": 3.7706787109375,
+            "delta_z_eos": -0.48671874999999787,
+            "delta_margin": 4.2573974609375
+          }
+        },
+        "63": {
+          "source": {
+            "delta_g": 10.812959671020508,
+            "delta_z_marker": 10.228125,
+            "delta_z_eos": -0.6937500000000014,
+            "delta_margin": 10.921875
+          },
+          "trained_neg": {
+            "delta_g": 3.3740198612213135,
+            "delta_z_marker": 2.936572265625,
+            "delta_z_eos": -0.3937500000000007,
+            "delta_margin": 3.330322265625
+          },
+          "bystander": {
+            "delta_g": 4.253692877292633,
+            "delta_z_marker": 3.7745849609375,
+            "delta_z_eos": -0.4773437499999993,
+            "delta_margin": 4.2519287109375
+          }
+        }
+      }
+    },
+    "flagoff": {
+      "seed42": {
+        "1": {
+          "source": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          },
+          "trained_neg": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          },
+          "bystander": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          }
+        },
+        "2": {
+          "source": {
+            "delta_g": -0.00869140625,
+            "delta_z_marker": -0.0078125,
+            "delta_z_eos": 0.02499999999999858,
+            "delta_margin": -0.0328125
+          },
+          "trained_neg": {
+            "delta_g": 0.016967964172363282,
+            "delta_z_marker": 0.00496826171875,
+            "delta_z_eos": -0.01249999999999929,
+            "delta_margin": 0.01746826171875
+          },
+          "bystander": {
+            "delta_g": -0.0011834144592285157,
+            "delta_z_marker": 0.0013031005859375,
+            "delta_z_eos": 0.02187500000000142,
+            "delta_margin": -0.0205718994140625
+          }
+        },
+        "3": {
+          "source": {
+            "delta_g": 0.05388698577880859,
+            "delta_z_marker": 0.0578125,
+            "delta_z_eos": 0.03125,
+            "delta_margin": 0.0265625
+          },
+          "trained_neg": {
+            "delta_g": 0.05466194152832031,
+            "delta_z_marker": 0.03878173828125,
+            "delta_z_eos": -0.01875000000000071,
+            "delta_margin": 0.05753173828125
+          },
+          "bystander": {
+            "delta_g": 0.048418307304382326,
+            "delta_z_marker": 0.032391357421875,
+            "delta_z_eos": -0.0078125,
+            "delta_margin": 0.040203857421875
+          }
+        },
+        "4": {
+          "source": {
+            "delta_g": 0.33833866119384765,
+            "delta_z_marker": 0.26875,
+            "delta_z_eos": -0.07500000000000107,
+            "delta_margin": 0.34375
+          },
+          "trained_neg": {
+            "delta_g": 0.13518848419189453,
+            "delta_z_marker": 0.08260498046875,
+            "delta_z_eos": -0.05000000000000071,
+            "delta_margin": 0.13260498046875
+          },
+          "bystander": {
+            "delta_g": 0.12768855094909667,
+            "delta_z_marker": 0.08638916015625,
+            "delta_z_eos": -0.05312499999999787,
+            "delta_margin": 0.13951416015625
+          }
+        },
+        "5": {
+          "source": {
+            "delta_g": 0.7802812576293945,
+            "delta_z_marker": 0.65078125,
+            "delta_z_eos": -0.21250000000000036,
+            "delta_margin": 0.86328125
+          },
+          "trained_neg": {
+            "delta_g": 0.3082438468933105,
+            "delta_z_marker": 0.180706787109375,
+            "delta_z_eos": -0.1437500000000007,
+            "delta_margin": 0.324456787109375
+          },
+          "bystander": {
+            "delta_g": 0.3517493009567261,
+            "delta_z_marker": 0.2479248046875,
+            "delta_z_eos": -0.171875,
+            "delta_margin": 0.4197998046875
+          }
+        },
+        "6": {
+          "source": {
+            "delta_g": 1.4079673767089844,
+            "delta_z_marker": 1.1640625,
+            "delta_z_eos": -0.4125000000000014,
+            "delta_margin": 1.5765625
+          },
+          "trained_neg": {
+            "delta_g": 0.5478744983673096,
+            "delta_z_marker": 0.32776336669921874,
+            "delta_z_eos": -0.2468749999999993,
+            "delta_margin": 0.5746383666992188
+          },
+          "bystander": {
+            "delta_g": 0.6112051010131836,
+            "delta_z_marker": 0.440911865234375,
+            "delta_z_eos": -0.2921875000000007,
+            "delta_margin": 0.733099365234375
+          }
+        },
+        "7": {
+          "source": {
+            "delta_g": 2.197000503540039,
+            "delta_z_marker": 1.8890625,
+            "delta_z_eos": -0.65625,
+            "delta_margin": 2.5453125
+          },
+          "trained_neg": {
+            "delta_g": 0.8369729042053222,
+            "delta_z_marker": 0.5169830322265625,
+            "delta_z_eos": -0.3625000000000007,
+            "delta_margin": 0.8794830322265625
+          },
+          "bystander": {
+            "delta_g": 0.9417827725410461,
+            "delta_z_marker": 0.6923957824707031,
+            "delta_z_eos": -0.44765624999999787,
+            "delta_margin": 1.140052032470703
+          }
+        },
+        "8": {
+          "source": {
+            "delta_g": 2.9588632583618164,
+            "delta_z_marker": 2.584375,
+            "delta_z_eos": -0.7875000000000014,
+            "delta_margin": 3.371875
+          },
+          "trained_neg": {
+            "delta_g": 1.0763400554656983,
+            "delta_z_marker": 0.703607177734375,
+            "delta_z_eos": -0.4125000000000014,
+            "delta_margin": 1.116107177734375
+          },
+          "bystander": {
+            "delta_g": 1.2463618159294128,
+            "delta_z_marker": 0.9494384765625,
+            "delta_z_eos": -0.5546875,
+            "delta_margin": 1.5041259765625
+          }
+        },
+        "9": {
+          "source": {
+            "delta_g": 3.880877685546875,
+            "delta_z_marker": 3.425,
+            "delta_z_eos": -0.9000000000000004,
+            "delta_margin": 4.325
+          },
+          "trained_neg": {
+            "delta_g": 1.3855467796325684,
+            "delta_z_marker": 0.894921875,
+            "delta_z_eos": -0.546875,
+            "delta_margin": 1.441796875
+          },
+          "bystander": {
+            "delta_g": 1.578703272342682,
+            "delta_z_marker": 1.1998779296875,
+            "delta_z_eos": -0.6906250000000007,
+            "delta_margin": 1.8905029296875
+          }
+        },
+        "10": {
+          "source": {
+            "delta_g": 4.656146430969239,
+            "delta_z_marker": 4.153125,
+            "delta_z_eos": -1.0687500000000014,
+            "delta_margin": 5.221875
+          },
+          "trained_neg": {
+            "delta_g": 1.6490453243255616,
+            "delta_z_marker": 1.09384765625,
+            "delta_z_eos": -0.6218749999999993,
+            "delta_margin": 1.71572265625
+          },
+          "bystander": {
+            "delta_g": 1.9014735341072082,
+            "delta_z_marker": 1.4634033203125,
+            "delta_z_eos": -0.8000000000000007,
+            "delta_margin": 2.2634033203125
+          }
+        },
+        "11": {
+          "source": {
+            "delta_g": 5.355195808410644,
+            "delta_z_marker": 4.809375,
+            "delta_z_eos": -1.1500000000000004,
+            "delta_margin": 5.959375
+          },
+          "trained_neg": {
+            "delta_g": 1.954307985305786,
+            "delta_z_marker": 1.329248046875,
+            "delta_z_eos": -0.7062500000000007,
+            "delta_margin": 2.035498046875
+          },
+          "bystander": {
+            "delta_g": 2.2103424429893495,
+            "delta_z_marker": 1.7311279296875,
+            "delta_z_eos": -0.8953124999999993,
+            "delta_margin": 2.6264404296875
+          }
+        },
+        "12": {
+          "source": {
+            "delta_g": 6.016945648193359,
+            "delta_z_marker": 5.421875,
+            "delta_z_eos": -1.3125,
+            "delta_margin": 6.734375
+          },
+          "trained_neg": {
+            "delta_g": 2.207596778869629,
+            "delta_z_marker": 1.530908203125,
+            "delta_z_eos": -0.7718750000000014,
+            "delta_margin": 2.302783203125
+          },
+          "bystander": {
+            "delta_g": 2.5317237734794618,
+            "delta_z_marker": 1.9812255859375,
+            "delta_z_eos": -1.0023437499999979,
+            "delta_margin": 2.9835693359375
+          }
+        },
+        "13": {
+          "source": {
+            "delta_g": 6.6339521408081055,
+            "delta_z_marker": 6.040625,
+            "delta_z_eos": -1.3625000000000007,
+            "delta_margin": 7.403125
+          },
+          "trained_neg": {
+            "delta_g": 2.479791498184204,
+            "delta_z_marker": 1.722216796875,
+            "delta_z_eos": -0.859375,
+            "delta_margin": 2.581591796875
+          },
+          "bystander": {
+            "delta_g": 2.8160505890846252,
+            "delta_z_marker": 2.2143310546875,
+            "delta_z_eos": -1.1226562499999986,
+            "delta_margin": 3.3369873046875
+          }
+        },
+        "14": {
+          "source": {
+            "delta_g": 7.239855003356934,
+            "delta_z_marker": 6.609375,
+            "delta_z_eos": -1.4937500000000004,
+            "delta_margin": 8.103125
+          },
+          "trained_neg": {
+            "delta_g": 2.7195616245269774,
+            "delta_z_marker": 1.895654296875,
+            "delta_z_eos": -0.9437500000000014,
+            "delta_margin": 2.839404296875
+          },
+          "bystander": {
+            "delta_g": 3.0475468039512634,
+            "delta_z_marker": 2.4093505859375,
+            "delta_z_eos": -1.1820312499999979,
+            "delta_margin": 3.5913818359375
+          }
+        },
+        "15": {
+          "source": {
+            "delta_g": 7.84084300994873,
+            "delta_z_marker": 7.171875,
+            "delta_z_eos": -1.4625000000000004,
+            "delta_margin": 8.634375
+          },
+          "trained_neg": {
+            "delta_g": 2.934912633895874,
+            "delta_z_marker": 2.034521484375,
+            "delta_z_eos": -1.0437499999999993,
+            "delta_margin": 3.078271484375
+          },
+          "bystander": {
+            "delta_g": 3.2690854549407957,
+            "delta_z_marker": 2.5970458984375,
+            "delta_z_eos": -1.2562499999999979,
+            "delta_margin": 3.8532958984375
+          }
+        },
+        "16": {
+          "source": {
+            "delta_g": 8.397280311584472,
+            "delta_z_marker": 7.734375,
+            "delta_z_eos": -1.6500000000000004,
+            "delta_margin": 9.384375
+          },
+          "trained_neg": {
+            "delta_g": 3.125404787063599,
+            "delta_z_marker": 2.176416015625,
+            "delta_z_eos": -1.0906249999999993,
+            "delta_margin": 3.267041015625
+          },
+          "bystander": {
+            "delta_g": 3.5034995794296266,
+            "delta_z_marker": 2.7858154296875,
+            "delta_z_eos": -1.3671875,
+            "delta_margin": 4.1530029296875
+          }
+        },
+        "17": {
+          "source": {
+            "delta_g": 8.994009399414063,
+            "delta_z_marker": 8.328125,
+            "delta_z_eos": -1.7250000000000014,
+            "delta_margin": 10.053125
+          },
+          "trained_neg": {
+            "delta_g": 3.331140232086182,
+            "delta_z_marker": 2.337744140625,
+            "delta_z_eos": -1.1578124999999986,
+            "delta_margin": 3.495556640625
+          },
+          "bystander": {
+            "delta_g": 3.754189443588257,
+            "delta_z_marker": 3.0017333984375,
+            "delta_z_eos": -1.443359375,
+            "delta_margin": 4.4450927734375
+          }
+        },
+        "18": {
+          "source": {
+            "delta_g": 9.47838134765625,
+            "delta_z_marker": 8.790625,
+            "delta_z_eos": -1.875,
+            "delta_margin": 10.665625
+          },
+          "trained_neg": {
+            "delta_g": 3.5121160984039306,
+            "delta_z_marker": 2.469384765625,
+            "delta_z_eos": -1.2124999999999986,
+            "delta_margin": 3.681884765625
+          },
+          "bystander": {
+            "delta_g": 3.96142258644104,
+            "delta_z_marker": 3.1771240234375,
+            "delta_z_eos": -1.5132812499999986,
+            "delta_margin": 4.6904052734375
+          }
+        },
+        "19": {
+          "source": {
+            "delta_g": 9.934627914428711,
+            "delta_z_marker": 9.265625,
+            "delta_z_eos": -1.8312500000000007,
+            "delta_margin": 11.096875
+          },
+          "trained_neg": {
+            "delta_g": 3.6451873779296875,
+            "delta_z_marker": 2.587939453125,
+            "delta_z_eos": -1.2328125000000014,
+            "delta_margin": 3.820751953125
+          },
+          "bystander": {
+            "delta_g": 4.16380741596222,
+            "delta_z_marker": 3.3493896484375,
+            "delta_z_eos": -1.59375,
+            "delta_margin": 4.9431396484375
+          }
+        },
+        "20": {
+          "source": {
+            "delta_g": 10.295624351501464,
+            "delta_z_marker": 9.609375,
+            "delta_z_eos": -1.8500000000000014,
+            "delta_margin": 11.459375
+          },
+          "trained_neg": {
+            "delta_g": 3.789058208465576,
+            "delta_z_marker": 2.692822265625,
+            "delta_z_eos": -1.2875000000000014,
+            "delta_margin": 3.980322265625
+          },
+          "bystander": {
+            "delta_g": 4.331774950027466,
+            "delta_z_marker": 3.4929443359375,
+            "delta_z_eos": -1.6332031249999979,
+            "delta_margin": 5.1261474609375
+          }
+        },
+        "25": {
+          "source": {
+            "delta_g": 11.67513599395752,
+            "delta_z_marker": 11.034375,
+            "delta_z_eos": -2.1750000000000007,
+            "delta_margin": 13.209375
+          },
+          "trained_neg": {
+            "delta_g": 4.394302749633789,
+            "delta_z_marker": 3.164501953125,
+            "delta_z_eos": -1.4390624999999986,
+            "delta_margin": 4.603564453125
+          },
+          "bystander": {
+            "delta_g": 5.048411321640015,
+            "delta_z_marker": 4.1189208984375,
+            "delta_z_eos": -1.8285156249999979,
+            "delta_margin": 5.9474365234375
+          }
+        },
+        "32": {
+          "source": {
+            "delta_g": 12.467645263671875,
+            "delta_z_marker": 11.928125,
+            "delta_z_eos": -2.34375,
+            "delta_margin": 14.271875
+          },
+          "trained_neg": {
+            "delta_g": 4.932291889190674,
+            "delta_z_marker": 3.557666015625,
+            "delta_z_eos": -1.6484375,
+            "delta_margin": 5.206103515625
+          },
+          "bystander": {
+            "delta_g": 5.523723912239075,
+            "delta_z_marker": 4.5189208984375,
+            "delta_z_eos": -1.9910156249999993,
+            "delta_margin": 6.5099365234375
+          }
+        },
+        "45": {
+          "source": {
+            "delta_g": 12.83403148651123,
+            "delta_z_marker": 12.328125,
+            "delta_z_eos": -2.4125000000000014,
+            "delta_margin": 14.740625
+          },
+          "trained_neg": {
+            "delta_g": 5.1513275623321535,
+            "delta_z_marker": 3.739892578125,
+            "delta_z_eos": -1.6906250000000007,
+            "delta_margin": 5.430517578125
+          },
+          "bystander": {
+            "delta_g": 5.755362021923065,
+            "delta_z_marker": 4.7351318359375,
+            "delta_z_eos": -2.0484374999999986,
+            "delta_margin": 6.7835693359375
+          }
+        },
+        "63": {
+          "source": {
+            "delta_g": 12.84989013671875,
+            "delta_z_marker": 12.353125,
+            "delta_z_eos": -2.40625,
+            "delta_margin": 14.759375
+          },
+          "trained_neg": {
+            "delta_g": 5.142305469512939,
+            "delta_z_marker": 3.725244140625,
+            "delta_z_eos": -1.6984375000000007,
+            "delta_margin": 5.423681640625
+          },
+          "bystander": {
+            "delta_g": 5.774332213401794,
+            "delta_z_marker": 4.7320068359375,
+            "delta_z_eos": -2.0621093749999986,
+            "delta_margin": 6.7941162109375
+          }
+        }
+      },
+      "seed137": {
+        "1": {
+          "source": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          },
+          "trained_neg": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          },
+          "bystander": {
+            "delta_g": 0.0,
+            "delta_z_marker": 0.0,
+            "delta_z_eos": 0.0,
+            "delta_margin": 0.0
+          }
+        },
+        "2": {
+          "source": {
+            "delta_g": 0.07109012603759765,
+            "delta_z_marker": 0.0390625,
+            "delta_z_eos": 0.03125,
+            "delta_margin": 0.0078125
+          },
+          "trained_neg": {
+            "delta_g": 0.03895244598388672,
+            "delta_z_marker": 0.02470703125,
+            "delta_z_eos": -0.01875000000000071,
+            "delta_margin": 0.04345703125
+          },
+          "bystander": {
+            "delta_g": 0.02047867774963379,
+            "delta_z_marker": 0.0147064208984375,
+            "delta_z_eos": 0.0007812499999992895,
+            "delta_margin": 0.0139251708984375
+          }
+        },
+        "3": {
+          "source": {
+            "delta_g": 0.1077005386352539,
+            "delta_z_marker": 0.0578125,
+            "delta_z_eos": -0.03125,
+            "delta_margin": 0.0890625
+          },
+          "trained_neg": {
+            "delta_g": 0.04732403755187988,
+            "delta_z_marker": 0.02730712890625,
+            "delta_z_eos": -0.015625,
+            "delta_margin": 0.04293212890625
+          },
+          "bystander": {
+            "delta_g": 0.039586663246154785,
+            "delta_z_marker": 0.0390472412109375,
+            "delta_z_eos": 0.02109375000000213,
+            "delta_margin": 0.0179534912109375
+          }
+        },
+        "4": {
+          "source": {
+            "delta_g": 0.2850461959838867,
+            "delta_z_marker": 0.23046875,
+            "delta_z_eos": -0.09375,
+            "delta_margin": 0.32421875
+          },
+          "trained_neg": {
+            "delta_g": 0.13935747146606445,
+            "delta_z_marker": 0.080413818359375,
+            "delta_z_eos": -0.07187499999999858,
+            "delta_margin": 0.152288818359375
+          },
+          "bystander": {
+            "delta_g": 0.13153769969940185,
+            "delta_z_marker": 0.09077329635620117,
+            "delta_z_eos": -0.06406249999999858,
+            "delta_margin": 0.15483579635620118
+          }
+        },
+        "5": {
+          "source": {
+            "delta_g": 0.6652801513671875,
+            "delta_z_marker": 0.56640625,
+            "delta_z_eos": -0.1875,
+            "delta_margin": 0.75390625
+          },
+          "trained_neg": {
+            "delta_g": 0.27422399520874025,
+            "delta_z_marker": 0.173736572265625,
+            "delta_z_eos": -0.11250000000000071,
+            "delta_margin": 0.286236572265625
+          },
+          "bystander": {
+            "delta_g": 0.2993187665939331,
+            "delta_z_marker": 0.21595458984375,
+            "delta_z_eos": -0.14296874999999787,
+            "delta_margin": 0.35892333984375
+          }
+        },
+        "6": {
+          "source": {
+            "delta_g": 1.2259525299072265,
+            "delta_z_marker": 1.015625,
+            "delta_z_eos": -0.33750000000000036,
+            "delta_margin": 1.353125
+          },
+          "trained_neg": {
+            "delta_g": 0.47237548828125,
+            "delta_z_marker": 0.29005126953125,
+            "delta_z_eos": -0.1999999999999993,
+            "delta_margin": 0.49005126953125
+          },
+          "bystander": {
+            "delta_g": 0.5173202753067017,
+            "delta_z_marker": 0.3705924987792969,
+            "delta_z_eos": -0.2312499999999993,
+            "delta_margin": 0.6018424987792969
+          }
+        },
+        "7": {
+          "source": {
+            "delta_g": 2.006722068786621,
+            "delta_z_marker": 1.6828125,
+            "delta_z_eos": -0.5812500000000007,
+            "delta_margin": 2.2640625
+          },
+          "trained_neg": {
+            "delta_g": 0.7673521518707276,
+            "delta_z_marker": 0.4885246276855469,
+            "delta_z_eos": -0.3062499999999986,
+            "delta_margin": 0.7947746276855469
+          },
+          "bystander": {
+            "delta_g": 0.8690071702003479,
+            "delta_z_marker": 0.6351806640625,
+            "delta_z_eos": -0.3828125,
+            "delta_margin": 1.0179931640625
+          }
+        },
+        "8": {
+          "source": {
+            "delta_g": 2.6254318237304686,
+            "delta_z_marker": 2.271875,
+            "delta_z_eos": -0.71875,
+            "delta_margin": 2.990625
+          },
+          "trained_neg": {
+            "delta_g": 0.9989171981811523,
+            "delta_z_marker": 0.63760986328125,
+            "delta_z_eos": -0.3937500000000007,
+            "delta_margin": 1.03135986328125
+          },
+          "bystander": {
+            "delta_g": 1.1600643873214722,
+            "delta_z_marker": 0.8437103271484375,
+            "delta_z_eos": -0.5343750000000007,
+            "delta_margin": 1.3780853271484375
+          }
+        },
+        "9": {
+          "source": {
+            "delta_g": 3.443897819519043,
+            "delta_z_marker": 3.0125,
+            "delta_z_eos": -0.875,
+            "delta_margin": 3.8875
+          },
+          "trained_neg": {
+            "delta_g": 1.2534037590026856,
+            "delta_z_marker": 0.8222412109375,
+            "delta_z_eos": -0.4812499999999993,
+            "delta_margin": 1.3034912109375
+          },
+          "bystander": {
+            "delta_g": 1.440068542957306,
+            "delta_z_marker": 1.07353515625,
+            "delta_z_eos": -0.6265624999999986,
+            "delta_margin": 1.70009765625
+          }
+        },
+        "10": {
+          "source": {
+            "delta_g": 4.2000385284423825,
+            "delta_z_marker": 3.715625,
+            "delta_z_eos": -0.9187500000000011,
+            "delta_margin": 4.634375
+          },
+          "trained_neg": {
+            "delta_g": 1.5315287590026856,
+            "delta_z_marker": 1.037646484375,
+            "delta_z_eos": -0.5500000000000007,
+            "delta_margin": 1.587646484375
+          },
+          "bystander": {
+            "delta_g": 1.7517553091049194,
+            "delta_z_marker": 1.3330322265625,
+            "delta_z_eos": -0.6984375000000007,
+            "delta_margin": 2.0314697265625
+          }
+        },
+        "11": {
+          "source": {
+            "delta_g": 4.938888740539551,
+            "delta_z_marker": 4.4125,
+            "delta_z_eos": -1.012500000000001,
+            "delta_margin": 5.425
+          },
+          "trained_neg": {
+            "delta_g": 1.8850846767425538,
+            "delta_z_marker": 1.269482421875,
+            "delta_z_eos": -0.6875,
+            "delta_margin": 1.956982421875
+          },
+          "bystander": {
+            "delta_g": 2.079047453403473,
+            "delta_z_marker": 1.6029052734375,
+            "delta_z_eos": -0.8179687499999986,
+            "delta_margin": 2.4208740234375
+          }
+        },
+        "12": {
+          "source": {
+            "delta_g": 5.5057680130004885,
+            "delta_z_marker": 4.925,
+            "delta_z_eos": -1.2125000000000004,
+            "delta_margin": 6.1375
+          },
+          "trained_neg": {
+            "delta_g": 2.1245060920715333,
+            "delta_z_marker": 1.468017578125,
+            "delta_z_eos": -0.7281249999999986,
+            "delta_margin": 2.196142578125
+          },
+          "bystander": {
+            "delta_g": 2.3456549763679506,
+            "delta_z_marker": 1.8437255859375,
+            "delta_z_eos": -0.8812499999999979,
+            "delta_margin": 2.7249755859375
+          }
+        },
+        "13": {
+          "source": {
+            "delta_g": 6.172391891479492,
+            "delta_z_marker": 5.54375,
+            "delta_z_eos": -1.2750000000000004,
+            "delta_margin": 6.81875
+          },
+          "trained_neg": {
+            "delta_g": 2.3275908470153808,
+            "delta_z_marker": 1.626220703125,
+            "delta_z_eos": -0.7749999999999986,
+            "delta_margin": 2.401220703125
+          },
+          "bystander": {
+            "delta_g": 2.6443650484085084,
+            "delta_z_marker": 2.0724365234375,
+            "delta_z_eos": -0.98828125,
+            "delta_margin": 3.0607177734375
+          }
+        },
+        "14": {
+          "source": {
+            "delta_g": 6.765271186828613,
+            "delta_z_marker": 6.11875,
+            "delta_z_eos": -1.3687500000000004,
+            "delta_margin": 7.4875
+          },
+          "trained_neg": {
+            "delta_g": 2.574207067489624,
+            "delta_z_marker": 1.805126953125,
+            "delta_z_eos": -0.8656250000000014,
+            "delta_margin": 2.670751953125
+          },
+          "bystander": {
+            "delta_g": 2.8896104216575624,
+            "delta_z_marker": 2.2731201171875,
+            "delta_z_eos": -1.0671874999999993,
+            "delta_margin": 3.3403076171875
+          }
+        },
+        "15": {
+          "source": {
+            "delta_g": 7.366141510009766,
+            "delta_z_marker": 6.69375,
+            "delta_z_eos": -1.4437500000000014,
+            "delta_margin": 8.1375
+          },
+          "trained_neg": {
+            "delta_g": 2.7754619121551514,
+            "delta_z_marker": 1.948681640625,
+            "delta_z_eos": -0.9281250000000014,
+            "delta_margin": 2.876806640625
+          },
+          "bystander": {
+            "delta_g": 3.129206931591034,
+            "delta_z_marker": 2.4671630859375,
+            "delta_z_eos": -1.16015625,
+            "delta_margin": 3.6273193359375
+          }
+        },
+        "16": {
+          "source": {
+            "delta_g": 8.069206619262696,
+            "delta_z_marker": 7.390625,
+            "delta_z_eos": -1.5062500000000014,
+            "delta_margin": 8.896875
+          },
+          "trained_neg": {
+            "delta_g": 3.0352989196777345,
+            "delta_z_marker": 2.131884765625,
+            "delta_z_eos": -1.0249999999999986,
+            "delta_margin": 3.156884765625
+          },
+          "bystander": {
+            "delta_g": 3.3865516424179076,
+            "delta_z_marker": 2.6784912109375,
+            "delta_z_eos": -1.2289062499999979,
+            "delta_margin": 3.9073974609375
+          }
+        },
+        "17": {
+          "source": {
+            "delta_g": 8.668924522399902,
+            "delta_z_marker": 7.978125,
+            "delta_z_eos": -1.6187500000000004,
+            "delta_margin": 9.596875
+          },
+          "trained_neg": {
+            "delta_g": 3.2086955070495606,
+            "delta_z_marker": 2.263134765625,
+            "delta_z_eos": -1.0656250000000007,
+            "delta_margin": 3.328759765625
+          },
+          "bystander": {
+            "delta_g": 3.6154707074165344,
+            "delta_z_marker": 2.8782958984375,
+            "delta_z_eos": -1.2765625000000007,
+            "delta_margin": 4.1548583984375
+          }
+        },
+        "18": {
+          "source": {
+            "delta_g": 9.118830680847168,
+            "delta_z_marker": 8.421875,
+            "delta_z_eos": -1.6437500000000007,
+            "delta_margin": 10.065625
+          },
+          "trained_neg": {
+            "delta_g": 3.3810352802276613,
+            "delta_z_marker": 2.399462890625,
+            "delta_z_eos": -1.1125000000000007,
+            "delta_margin": 3.511962890625
+          },
+          "bystander": {
+            "delta_g": 3.829441249370575,
+            "delta_z_marker": 3.0609130859375,
+            "delta_z_eos": -1.3656249999999979,
+            "delta_margin": 4.4265380859375
+          }
+        },
+        "19": {
+          "source": {
+            "delta_g": 9.531752395629884,
+            "delta_z_marker": 8.828125,
+            "delta_z_eos": -1.71875,
+            "delta_margin": 10.546875
+          },
+          "trained_neg": {
+            "delta_g": 3.5695327281951905,
+            "delta_z_marker": 2.525634765625,
+            "delta_z_eos": -1.1859375000000014,
+            "delta_margin": 3.711572265625
+          },
+          "bystander": {
+            "delta_g": 4.043916988372803,
+            "delta_z_marker": 3.2318115234375,
+            "delta_z_eos": -1.4296875,
+            "delta_margin": 4.6614990234375
+          }
+        },
+        "20": {
+          "source": {
+            "delta_g": 9.90494327545166,
+            "delta_z_marker": 9.209375,
+            "delta_z_eos": -1.6500000000000004,
+            "delta_margin": 10.859375
+          },
+          "trained_neg": {
+            "delta_g": 3.721044158935547,
+            "delta_z_marker": 2.658642578125,
+            "delta_z_eos": -1.2140625000000007,
+            "delta_margin": 3.872705078125
+          },
+          "bystander": {
+            "delta_g": 4.226818990707398,
+            "delta_z_marker": 3.4064208984375,
+            "delta_z_eos": -1.4671874999999979,
+            "delta_margin": 4.8736083984375
+          }
+        },
+        "25": {
+          "source": {
+            "delta_g": 11.264758491516114,
+            "delta_z_marker": 10.565625,
+            "delta_z_eos": -1.9312500000000004,
+            "delta_margin": 12.496875
+          },
+          "trained_neg": {
+            "delta_g": 4.400438547134399,
+            "delta_z_marker": 3.205322265625,
+            "delta_z_eos": -1.3765624999999986,
+            "delta_margin": 4.581884765625
+          },
+          "bystander": {
+            "delta_g": 4.944761073589325,
+            "delta_z_marker": 4.0210693359375,
+            "delta_z_eos": -1.638671875,
+            "delta_margin": 5.6597412109375
+          }
+        },
+        "32": {
+          "source": {
+            "delta_g": 12.078165817260743,
+            "delta_z_marker": 11.428125,
+            "delta_z_eos": -2.012500000000001,
+            "delta_margin": 13.440625
+          },
+          "trained_neg": {
+            "delta_g": 4.779962348937988,
+            "delta_z_marker": 3.506884765625,
+            "delta_z_eos": -1.4640625000000007,
+            "delta_margin": 4.970947265625
+          },
+          "bystander": {
+            "delta_g": 5.376217329502106,
+            "delta_z_marker": 4.3818115234375,
+            "delta_z_eos": -1.7699218749999979,
+            "delta_margin": 6.1517333984375
+          }
+        },
+        "45": {
+          "source": {
+            "delta_g": 12.453827476501464,
+            "delta_z_marker": 11.859375,
+            "delta_z_eos": -2.0875000000000004,
+            "delta_margin": 13.946875
+          },
+          "trained_neg": {
+            "delta_g": 4.9511346340179445,
+            "delta_z_marker": 3.644384765625,
+            "delta_z_eos": -1.5046874999999993,
+            "delta_margin": 5.149072265625
+          },
+          "bystander": {
+            "delta_g": 5.58998064994812,
+            "delta_z_marker": 4.5712646484375,
+            "delta_z_eos": -1.8253906250000007,
+            "delta_margin": 6.3966552734375
+          }
+        },
+        "63": {
+          "source": {
+            "delta_g": 12.513298416137696,
+            "delta_z_marker": 11.915625,
+            "delta_z_eos": -2.1125000000000007,
+            "delta_margin": 14.028125
+          },
+          "trained_neg": {
+            "delta_g": 4.986780309677124,
+            "delta_z_marker": 3.649462890625,
+            "delta_z_eos": -1.5500000000000007,
+            "delta_margin": 5.199462890625
+          },
+          "bystander": {
+            "delta_g": 5.582444751262665,
+            "delta_z_marker": 4.5630615234375,
+            "delta_z_eos": -1.833984375,
+            "delta_margin": 6.3970458984375
+          }
+        }
+      }
+    }
+  },
+  "r5_generalization": {
+    "note": "descriptive \u2014 with the marker trained one token downstream of the natural stop slot (single-space offset +1), emission is live, not theoretical (parent / no-sep arm-matched leakage fraction is cross-construction context only)",
+    "leakage_fraction": {
+      "flagon": {
+        "seed42": {
+          "bystander_delta_g": 4.324608635902405,
+          "source_delta_g": 11.55643367767334,
+          "leakage_fraction": 0.37421654089162565
+        },
+        "seed137": {
+          "bystander_delta_g": 4.253692877292633,
+          "source_delta_g": 10.812959671020508,
+          "leakage_fraction": 0.3933883975071903
+        }
+      },
+      "flagoff": {
+        "seed42": {
+          "bystander_delta_g": 5.774332213401794,
+          "source_delta_g": 12.84989013671875,
+          "leakage_fraction": 0.4493682165345177
+        },
+        "seed137": {
+          "bystander_delta_g": 5.582444751262665,
+          "source_delta_g": 12.513298416137696,
+          "leakage_fraction": 0.44612096392293343
+        }
+      }
+    },
+    "emission": {
+      "flagon_seed42": {
+        "source_emission_p": 0.3,
+        "held_out_emission_rate": 0.0
+      },
+      "flagon_seed137": {
+        "source_emission_p": 0.1,
+        "held_out_emission_rate": 0.0
+      },
+      "flagoff_seed42": {
+        "source_emission_p": 0.4,
+        "held_out_emission_rate": 0.0
+      },
+      "flagoff_seed137": {
+        "source_emission_p": 0.2,
+        "held_out_emission_rate": 0.0
+      }
+    },
+    "degenerate_probes": {
+      "flagon_seed42": {
+        "held_out_n_marker_in_R_gt0": 0,
+        "held_out_r_collapsed": 0,
+        "held_out_total": 80,
+        "source_n_marker_in_R_gt0": 0,
+        "source_r_collapsed": 0,
+        "source_total": 10
+      },
+      "flagon_seed137": {
+        "held_out_n_marker_in_R_gt0": 0,
+        "held_out_r_collapsed": 0,
+        "held_out_total": 80,
+        "source_n_marker_in_R_gt0": 0,
+        "source_r_collapsed": 0,
+        "source_total": 10
+      },
+      "flagoff_seed42": {
+        "held_out_n_marker_in_R_gt0": 0,
+        "held_out_r_collapsed": 0,
+        "held_out_total": 80,
+        "source_n_marker_in_R_gt0": 0,
+        "source_r_collapsed": 0,
+        "source_total": 10
+      },
+      "flagoff_seed137": {
+        "held_out_n_marker_in_R_gt0": 0,
+        "held_out_r_collapsed": 0,
+        "held_out_total": 80,
+        "source_n_marker_in_R_gt0": 0,
+        "source_r_collapsed": 0,
+        "source_total": 10
+      }
+    },
+    "generation_lengths_terminal": {
+      "flagon_seed42": {
+        "frac": "frac_1.0",
+        "n": 90,
+        "mean_chars": 1948.1444444444444,
+        "median_chars": 2012.5,
+        "mean_words": 287.3777777777778
+      },
+      "flagon_seed137": {
+        "frac": "frac_1.0",
+        "n": 90,
+        "mean_chars": 2038.7333333333333,
+        "median_chars": 2124.0,
+        "mean_words": 300.22222222222223
+      },
+      "flagoff_seed42": {
+        "frac": "frac_1.0",
+        "n": 90,
+        "mean_chars": 2160.4444444444443,
+        "median_chars": 2198.5,
+        "mean_words": 321.5444444444444
+      },
+      "flagoff_seed137": {
+        "frac": "frac_1.0",
+        "n": 90,
+        "mean_chars": 2180.5777777777776,
+        "median_chars": 2155.0,
+        "mean_words": 322.8777777777778
+      }
+    }
+  },
+  "inputs": {
+    "eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flagon_200p800n_seed42/trajectory.json": "present",
+    "eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flagon_200p800n_seed42/dense_trajectory.json": "present",
+    "eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flagon_200p800n_seed42/rowtype_ce.json": "present",
+    "eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flagon_200p800n_seed137/trajectory.json": "present",
+    "eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flagon_200p800n_seed137/dense_trajectory.json": "present",
+    "eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flagon_200p800n_seed137/rowtype_ce.json": "present",
+    "eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flagoff_200p800n_seed42/trajectory.json": "present",
+    "eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flagoff_200p800n_seed42/dense_trajectory.json": "present",
+    "eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flagoff_200p800n_seed137/trajectory.json": "present",
+    "eval_results/issue_613/single-space-falsifier/singlespacefalsifier_flagoff_200p800n_seed137/dense_trajectory.json": "present"
+  },
+  "git_commit": "dc1e0e30338cbc7f3c33b0d2e86cc6e612a6687a",
+  "timestamp_utc": "2026-06-16T03:56:21.649182+00:00",
+  "overall": {
+    "suppression_survives_one_token_offset": false,
+    "co_land_falsifies_slot_geometry_tolerance": false,
+    "note": "suppression_survives=True -> slot geometry is tolerant of a one-token marker offset, #613's account strengthens MODERATE -> HIGH (whitespace-family-permissive remains the residual unresolved alternative). co_land=True -> the no-sep suppression does NOT survive a one-token-downstream marker offset; the residual 'exact glued boundary required' vs 'strict coincidence required' is NOT isolated by this single-space arm alone (it confounds surface form with the +1 offset; plan \u00a71 falsification)."
+  }
+}
