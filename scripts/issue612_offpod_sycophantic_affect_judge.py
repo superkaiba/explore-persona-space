@@ -113,6 +113,18 @@ ENDPOINT_ARMS = ("arm_prefix",)
 # (source, arm) -> only pairs that actually have self-cell data.
 # Built dynamically in resolve_cells(); SEED coverage is both seeds.
 
+# Required vs optional arm-classes. The body's headline comparison rests on the
+# trained arms (on-policy / prefix / canned anchor), so a MISSING required cell
+# is an abort — never a silent partial result. ``base`` is the untrained
+# reference: a missing base seed (e.g. the known base seed-137 gap) is acceptable
+# and skipped, not fatal. (Codex round review minor.)
+REQUIRED_ARMS = ("arm_onpolicy", "arm_prefix", "arm_canned")
+OPTIONAL_ARMS = ("base",)
+
+
+def _arm_is_required(arm: str) -> bool:
+    return arm in REQUIRED_ARMS
+
 
 class AbortNeedsNewData(RuntimeError):
     """Raised when a required self-cell store is absent from BOTH local and HF."""
@@ -491,11 +503,113 @@ def default_cells(sources: list[str], arms: list[str]) -> list[tuple[str, str]]:
     return [(s, a) for a in arms for s in sources]
 
 
+def _script_sha256() -> str:
+    """Content hash of THIS script at runtime — a reproducibility pin that
+    survives commit/rebase (unlike a git SHA recorded before the introducing
+    commit lands). Recorded in provenance as ``affect_judge_script_sha256``.
+    (Codex round review Finding 3.)"""
+    return file_sha256(Path(__file__).resolve())
+
+
 def _cell_ckpt_path(out_dir: Path, source: str, arm: str, seed: int) -> Path:
     """Per-(source,arm,seed) verdict checkpoint — written the moment a cell
     finishes so a mid-pass crash never loses already-judged cells (and a
     re-run resumes from disk instead of re-spending Haiku calls)."""
     return out_dir / "cell_verdicts" / f"{arm}__{source}__seed{seed}.json"
+
+
+def _ckpt_matches_run(
+    ck: dict,
+    *,
+    source: str,
+    arm: str,
+    seed: int,
+    read_step: int | None,
+    prompt_sha: str,
+    smoke_caps: dict,
+    model: str,
+) -> str | None:
+    """Validate a loaded cell checkpoint against the CURRENT run params.
+
+    Returns None on a clean match (the cell may be resumed from disk), or a
+    short reason string on a mismatch (the cell must be re-judged). Fields the
+    checkpoint does not carry (legacy v10 checkpoints, which predate the
+    prompt/smoke/model pins) are treated as MATCHING for that field only — the
+    identity fields (source/arm/seed/read_step) are always checked, so a
+    legacy checkpoint resumes iff it is for the right cell. (Codex round review
+    Finding 1.)
+    """
+    for key, want in (("source", source), ("arm", arm), ("seed", seed)):
+        got = ck.get(key)
+        if got != want:
+            return f"{key} {got!r} != {want!r}"
+    # read_step pins the matched-install checkpoint the cell was judged at;
+    # a band-entry recompute that moves the step invalidates the verdict.
+    if ck.get("read_step") != read_step:
+        return f"read_step {ck.get('read_step')!r} != {read_step!r}"
+    # The pinned fields below only exist on v11+ checkpoints. Validate when
+    # present; absence is legacy-valid (the existing 10 v10 verdicts are the
+    # real data and must NOT be re-judged).
+    if "prompt_sha256" in ck and ck["prompt_sha256"] != prompt_sha:
+        return f"prompt_sha256 {ck['prompt_sha256'][:8]}.. != {prompt_sha[:8]}.."
+    if "smoke_caps" in ck and ck["smoke_caps"] != smoke_caps:
+        return f"smoke_caps {ck['smoke_caps']} != {smoke_caps}"
+    if "judge_model" in ck and ck["judge_model"] != model:
+        return f"judge_model {ck['judge_model']!r} != {model!r}"
+    return None
+
+
+def _load_cell_ckpt(
+    ckpt: Path,
+    *,
+    source: str,
+    arm: str,
+    seed: int,
+    read_step: int | None,
+    prompt_sha: str,
+    smoke_caps: dict,
+    model: str,
+) -> dict | None:
+    """Load a per-cell verdict checkpoint if it exists AND matches the run.
+
+    Returns the aggregate dict (n_scored / n_yes / n_judge_failed /
+    n_unparseable / per_claim_means) on a clean resume, or None when the
+    checkpoint is absent or stale (the caller then re-judges). On a mismatch
+    the stale checkpoint is logged and NOT loaded. (Codex round review
+    Finding 1: the v10 write site had no read path, so a re-run re-spent all
+    6000 Haiku calls despite the docstring promising resume idempotency.)
+    """
+    if not ckpt.exists():
+        return None
+    try:
+        ck = json.loads(ckpt.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        log.warning("cell checkpoint %s unreadable (%s); will re-judge", ckpt.name, e)
+        return None
+    reason = _ckpt_matches_run(
+        ck,
+        source=source,
+        arm=arm,
+        seed=seed,
+        read_step=read_step,
+        prompt_sha=prompt_sha,
+        smoke_caps=smoke_caps,
+        model=model,
+    )
+    if reason is not None:
+        log.warning("cell checkpoint %s stale (%s); re-judging", ckpt.name, reason)
+        return None
+    for k in ("n_scored", "n_yes", "n_judge_failed", "n_unparseable", "per_claim_means"):
+        if k not in ck:
+            log.warning("cell checkpoint %s missing key %r; re-judging", ckpt.name, k)
+            return None
+    return {
+        "n_scored": ck["n_scored"],
+        "n_yes": ck["n_yes"],
+        "n_judge_failed": ck["n_judge_failed"],
+        "n_unparseable": ck["n_unparseable"],
+        "per_claim_means": ck["per_claim_means"],
+    }
 
 
 async def run_async(
@@ -533,6 +647,9 @@ async def run_async(
     total_calls = 0
     skipped: list[str] = []
 
+    prompt_sha = affect_prompt_sha256()
+    smoke_caps = {"max_claims": max_claims, "max_rollouts": max_rollouts}
+
     client = anthropic.AsyncAnthropic()
     sem = asyncio.Semaphore(concurrency)
     try:
@@ -542,15 +659,24 @@ async def run_async(
             pooled_yes = 0
             pooled_failed = 0
             pooled_unparseable = 0
-            any_seed = False
+            # Seeds that ACTUALLY contributed an aggregate (judged fresh OR
+            # resumed from disk) — distinct from the requested seeds, since a
+            # missing OPTIONAL seed (e.g. base seed-137) is skipped. Downstream
+            # analysis reads ``used_seeds``, never the design's intent.
+            # (Codex round review Finding 2.)
+            used_seeds: list[int] = []
             for seed in seeds:
                 cell = resolve_self_cell(arm, source, seed, hf_revision)
                 if cell is None:
                     msg = f"{source}:{arm}:{seed} (no self-cell file local or HF)"
-                    if abort_on_missing:
+                    # A missing REQUIRED cell is always fatal (never a silent
+                    # partial result); a missing OPTIONAL cell is skipped unless
+                    # --abort-on-missing forces the strict mode for every cell.
+                    if abort_on_missing or _arm_is_required(arm):
                         raise AbortNeedsNewData(
-                            "free-analysis-needs-new-data: required self-cell "
-                            f"completion absent from BOTH local and HF -> {msg}"
+                            "free-analysis-needs-new-data: "
+                            f"{'required' if _arm_is_required(arm) else 'requested'} "
+                            f"self-cell completion absent from BOTH local and HF -> {msg}"
                         )
                     skipped.append(msg)
                     continue
@@ -559,42 +685,71 @@ async def run_async(
                 if not rows:
                     skipped.append(f"{source}:{arm}:{seed} (no rows after cap)")
                     continue
-                log.info(
-                    "judging %s:%s:%s  origin=%s  rows=%d  read_step=%s",
-                    source,
-                    arm,
-                    seed,
-                    cell.origin,
-                    len(rows),
-                    cell.read_step,
-                )
-                verdicts = await judge_affect_batch(rows, client, sem)
-                total_calls += len(verdicts)
-                agg = aggregate_cell(verdicts, d["n_claims"], d["n_rollouts_per_claim"])
-                # Checkpoint per cell (CLAUDE.md checkpoint-per-phase).
                 ckpt = _cell_ckpt_path(out_dir, source, arm, seed)
-                ckpt.write_text(
-                    json.dumps(
-                        {
-                            "source": source,
-                            "arm": arm,
-                            "seed": seed,
-                            "read_step": cell.read_step,
-                            "n_scored": agg["n_scored"],
-                            "n_yes": agg["n_yes"],
-                            "n_judge_failed": agg["n_judge_failed"],
-                            "n_unparseable": agg["n_unparseable"],
-                            "per_claim_means": agg["per_claim_means"],
-                        },
-                        indent=2,
-                    )
+                # RESUME: load the cell's verdict aggregate from disk when a
+                # matching checkpoint exists, skipping the Haiku calls entirely.
+                # (Codex round review Finding 1: the write site had no read.)
+                resumed = _load_cell_ckpt(
+                    ckpt,
+                    source=source,
+                    arm=arm,
+                    seed=seed,
+                    read_step=cell.read_step,
+                    prompt_sha=prompt_sha,
+                    smoke_caps=smoke_caps,
+                    model=JUDGE_MODEL,
                 )
+                if resumed is not None:
+                    log.info(
+                        "resuming %s:%s:%s from checkpoint (origin=%s, read_step=%s)",
+                        source,
+                        arm,
+                        seed,
+                        cell.origin,
+                        cell.read_step,
+                    )
+                    agg = resumed
+                else:
+                    log.info(
+                        "judging %s:%s:%s  origin=%s  rows=%d  read_step=%s",
+                        source,
+                        arm,
+                        seed,
+                        cell.origin,
+                        len(rows),
+                        cell.read_step,
+                    )
+                    verdicts = await judge_affect_batch(rows, client, sem)
+                    total_calls += len(verdicts)
+                    agg = aggregate_cell(verdicts, d["n_claims"], d["n_rollouts_per_claim"])
+                    # Checkpoint per cell (CLAUDE.md checkpoint-per-phase). The
+                    # run-identity pins (prompt/smoke/model) make the resume
+                    # read above able to invalidate a stale checkpoint.
+                    ckpt.write_text(
+                        json.dumps(
+                            {
+                                "source": source,
+                                "arm": arm,
+                                "seed": seed,
+                                "read_step": cell.read_step,
+                                "prompt_sha256": prompt_sha,
+                                "smoke_caps": smoke_caps,
+                                "judge_model": JUDGE_MODEL,
+                                "n_scored": agg["n_scored"],
+                                "n_yes": agg["n_yes"],
+                                "n_judge_failed": agg["n_judge_failed"],
+                                "n_unparseable": agg["n_unparseable"],
+                                "per_claim_means": agg["per_claim_means"],
+                            },
+                            indent=2,
+                        )
+                    )
                 pooled_per_claim.extend(agg["per_claim_means"])
                 pooled_scored += agg["n_scored"]
                 pooled_yes += agg["n_yes"]
                 pooled_failed += agg["n_judge_failed"]
                 pooled_unparseable += agg["n_unparseable"]
-                any_seed = True
+                used_seeds.append(seed)
                 consumed_files.append(
                     {
                         "source": source,
@@ -607,15 +762,20 @@ async def run_async(
                         "sha256": file_sha256(cell.local_path),
                         "n_rows_judged": len(rows),
                         "n_judge_failed": agg["n_judge_failed"],
+                        "resumed_from_checkpoint": resumed is not None,
                     }
                 )
-            if not any_seed:
+            if not used_seeds:
                 continue
             point, lo, hi = cluster_bootstrap_ci(pooled_per_claim, n_boot, boot_seed)
             cell_aggs[(source, arm)] = {
                 "source": source,
                 "arm": arm,
-                "seeds": [s for s in seeds],
+                # ``used_seeds`` = seeds actually judged/resumed for this cell;
+                # ``requested_seeds`` = the design's intent. Downstream narration
+                # reads used_seeds (Codex round review Finding 2).
+                "used_seeds": sorted(used_seeds),
+                "requested_seeds": [s for s in seeds],
                 "affect_rate": point,
                 "ci95_lo": lo,
                 "ci95_hi": hi,
@@ -637,7 +797,9 @@ async def run_async(
 
     # affect_rates.json
     rates_payload = {
-        "schema_version": 1,
+        # v2: per-cell ``used_seeds`` (actual) + ``requested_seeds`` (intent)
+        # replace the v1 ``seeds`` field (Codex round review Finding 2).
+        "schema_version": 2,
         "metric": "agreeable_affect_opener_rate",
         "description": (
             "Per (source, arm) rate of self-cell responses whose OPENER is "
@@ -657,7 +819,9 @@ async def run_async(
 
     # affect_judge_provenance.json
     provenance = {
-        "schema_version": 1,
+        # v2: + affect_judge_script_sha256 (content-pin robust to commit
+        # reordering, Codex round review Finding 3); + per-cell used_seeds.
+        "schema_version": 2,
         "task": 612,
         "followup_label": "sycophantic-affect-judge",
         "analysis_only": True,
@@ -668,6 +832,11 @@ async def run_async(
         "hf_revision": hf_revision,
         "hf_data_prefix_endpoint_arms": HF_DATA_PREFIX,
         "hf_data_prefix_matched_install_arms": V3_HF_DATA_PREFIX,
+        # Content hash of this script at runtime — the reproducible pin. Unlike
+        # driver_git_commit_sha (which is whatever HEAD is when the script runs,
+        # and was the PARENT of the introducing commit in v10), this survives
+        # commit/rebase and identifies the exact code that produced the read.
+        "affect_judge_script_sha256": _script_sha256(),
         "driver_git_commit_sha": _driver_sha(),
         "hostname": socket.gethostname(),
         "total_judge_calls": total_calls,
