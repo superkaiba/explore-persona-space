@@ -165,13 +165,30 @@ def _build_rowspecs(
     for neg in neg_personas:
         neg_prompt = i653.NEGATIVE_PANEL_PROMPTS[neg]
         for j in range(n_neg_each):
+            override_idx = i653.NEG_CLAIM_OVERRIDES.get((j, neg))
+            if override_idx is not None:
+                log.warning(
+                    "[neg_claim_override] source=%s neg=%s j=%d: replacing "
+                    "claims[%d]=%r with claims[%d]=%r (high-agreement-prior "
+                    "outlier, round-7 fix — see NEG_CLAIM_OVERRIDES docstring)",
+                    source,
+                    neg,
+                    j,
+                    j % len(claims),
+                    claims[j % len(claims)],
+                    override_idx,
+                    claims[override_idx],
+                )
+                claim_text = claims[override_idx]
+            else:
+                claim_text = claims[j % len(claims)]
             specs.append(
                 RowSpec(
                     row_idx=idx,
                     row_type="negative",
                     persona=neg,
                     system_prompt=neg_prompt,
-                    user_msg=claims[j % len(claims)],
+                    user_msg=claim_text,
                     frozen_completion="",
                 )
             )
