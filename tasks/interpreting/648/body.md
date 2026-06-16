@@ -18,17 +18,18 @@ origin_prompt: 'queue a centered-vs-raw predictive-skill comparison on the cache
 
 ## Takeaways
 
-- Of 4 verdict-eligible banks, **only the 505 persona-vector bank resolves out-of-sample (ΔR² = −0.071, CI [−0.122, −0.007])** — and it favors raw, not the canonical centered recipe. That sole determinate bank is the panel's structural outlier (the only persona-vector bank, the only layer-21 bank, the only 6-arm × multi-seed design), so the raw edge could be a property of that bank rather than of raw cosine generally — which is why the verdict is LOW.
-- The other 3 eligible banks span 0 (**+0.030, +0.017, −0.297**): no centered-favored determinate bank exists. "Centering is uniformly stronger" is falsified; the panel is genuinely split (the two best-powered non-resolving banks lean nominally centered, the resolving one leans raw), not raw-tilted, and is too thin for a bank-dependent verdict.
-- The resolving 505 bank is also the **largest** panel (52 held-out folds vs 35, 24, 24, 17, 11, 8, 5, 5 for the rest); centering's train-fold-refit leak is smallest where folds are most numerous, so centering had its cleanest cross-validation conditions there and **still** lost on held-out skill — ruling out a centering-leak artifact as the cause.
-- On the 505 bank, centering **improves** in-sample fit (Δρ = +0.208 [+0.153, +0.264]) yet **hurts** held-out skill — the reverse of the raw-inflation mechanism.
-- On three mid-size banks (held-out units: persona, source, bystander), **both recipes score CV R² < 0** — worse than the train mean — so their reported in-sample correlations do not predict held-out leakage.
-- Centering stays canonical on validity grounds (raw is anisotropy-compressed into a ~[0.7, 1.0] ridge); this run only finds it buys no extra predictive skill.
+- Of 4 verdict-eligible banks, **only the 505 persona-vector bank resolves out-of-sample (ΔR² = −0.071, CI excludes 0)** — and it favors raw, not the canonical centered recipe.
+- That sole determinate bank is the panel's **structural outlier** (only persona-vector, only layer-21, only multi-arm design), so the raw edge may be specific to that bank — hence LOW.
+- The other 3 eligible banks straddle 0 (**+0.030, +0.017, −0.297**): no centered-favored determinate bank exists, so "centering is uniformly stronger" is falsified.
+- The resolving 505 bank is also the **largest** (52 folds vs 5-35 elsewhere); centering's CV-hygiene was cleanest there yet **still** lost, ruling out a centering-leak artifact.
+- On the 505 bank, centering **improves** in-sample fit (Δρ = +0.208, CI excludes 0) yet **hurts** held-out skill — the reverse of raw-inflation.
+- On three mid-size banks, **both recipes score CV R² < 0** (worse than the train mean), so their in-sample correlations do not predict held-out leakage. Centering stays canonical on validity.
 
 ## What I ran
 
 - **Why:** the parent metric-recipe audit ([#536](https://eps.superkaiba.com/tasks/536)) settled that mean-centering the centroid bank is the *valid* cosine recipe and that the published persona-distance calls survive the swap, but it never asked which recipe maximizes *predictive skill*. Its survival check pointed both ways by bank — on one bank raw inflates the headline correlation, on another the headline exists only under centering — so the skill question was genuinely open.
 - **Design:** for each recoverable centroid bank from the parent audit, score the cosine-distance leakage predictor two ways — raw (un-centered) vs centered (global-mean-subtracted) — on the SAME cells, target, length residualization, and cross-validation folds. The single manipulated variable is the centering recipe.
+- **Training:** n/a — no training; CPU-only re-analysis on cached centroid banks and leakage targets from the parent audit.
 - **Eval:** primary DV is held-out cross-validation R² (leave-one-group-out, the bank's own natural held-out unit; centering mean refit on the train fold inside every split so no held-out persona enters its own predictor), differenced across recipes (ΔR² = centered − raw) with a paired bootstrap 95% CI (10,000 resamples) in original-group space. Secondary DV is the in-sample length-partialled Spearman difference Δρ, reported for continuity with the parent's survival check. 9 banks; the 2 with only 5 folds report their numbers but are excluded from the verdict.
 - **Scope shrinkage:** of the 9 banks, only **4 are verdict-eligible** (more than 5 folds AND at least one recipe beats the train-mean baseline — equivalently: NOT both recipes fail). Two marker banks have only 5 folds (a 5-from-5 bootstrap is too coarse for a determinate call) and three mid-size banks have both recipes failing out-of-sample — all five are reported but mechanically excluded from the hypothesis verdict.
 
@@ -36,49 +37,55 @@ origin_prompt: 'queue a centered-vs-raw predictive-skill comparison on the cache
 
 ### Only the 505 bank resolves — and centering is the worse predictor there
 
-The verdict rests on held-out ΔR² (centered − raw): a bank has a determinate winner only when its paired-bootstrap CI excludes 0. One of 4 eligible banks clears that bar.
+A bank has a determinate winner only when its paired-bootstrap ΔR² CI (centered − raw) excludes 0. One of 4 eligible banks clears that bar.
 
 ![Forest plot of held-out CV R-squared difference (centered minus raw) per bank, with paired-bootstrap 95% CI bars; only the 505 persona-vector bank has a filled marker with its CI fully left of zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d83bcc2566963184c2526133e07333236dc21add/figures/issue_648/hero_forest_delta_cvR2.png)
 
 > **Figure.** *Centering is not the stronger leakage predictor.* x = ΔR² (centered − raw), held-out CV, paired-bootstrap 95% CI. Filled = determinate (CI excludes 0); open = indistinguishable, low-fold, or both-recipes-fail. n = fold count per bank. Only the 505 bank (n=52) resolves, at ΔR² = −0.071 — raw-favored.
 
-The 505 bank gives ΔR² = −0.071 [−0.122, −0.007]: centered predicts held-out leakage *worse* than raw. No eligible bank favors centering with a CI excluding 0, so "centering is uniformly stronger" is falsified. But the only determinate bank is also the panel's structural outlier (the only persona-vector bank, the only layer-21 bank, the only multi-arm design), so the raw edge may be a property of that bank's structure rather than of raw cosine generally — the binding LOW-confidence caveat. It is, however, the largest panel (52 folds), where centering's train-fold-refit leak is smallest, so centering's cleanest-CV shot still lost — ruling out a centering-leak artifact.
+- The 505 bank gives ΔR² = −0.071 (CI excludes 0): centered predicts held-out leakage *worse* than raw. No eligible bank favors centering with a CI excluding 0, so "centering is uniformly stronger" is falsified.
+- But the only determinate bank is the panel's structural outlier (only persona-vector, only layer-21, only multi-arm design), so the raw edge may be specific to that bank — the binding LOW-confidence caveat.
+- It is the largest panel (52 folds), where centering's train-fold-refit leak is smallest, so its cleanest-CV shot still lost — ruling out a centering-leak artifact.
 
 ### In-sample fit and held-out skill disagree in sign — the opposite of raw-inflation
 
-Raw-inflation predicts raw should fit the sample better than it predicts held-out data. Each bank's in-sample Δρ against its held-out ΔR² tests that.
+Raw-inflation predicts raw fits the sample better than it predicts held-out data. Each bank's in-sample Δρ against its held-out ΔR² tests that.
 
 ![Scatter of held-out CV R-squared difference against in-sample Spearman difference, both centered minus raw, one point per bank; the 505 bank sits at positive in-sample delta but negative held-out delta.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d83bcc2566963184c2526133e07333236dc21add/figures/issue_648/insample_vs_cv_scatter.png)
 
 > **Figure.** *In-sample and held-out deltas point opposite ways on the resolving bank.* x = in-sample Δρ (centered − raw); y = held-out ΔR² (centered − raw). Filled = verdict-eligible, open = excluded (low-fold or both-fail). On the 505 bank centering helps in-sample (Δρ = +0.208) yet hurts held-out (ΔR² = −0.071).
 
-On the 505 bank, centering *improves* in-sample fit (Δρ = +0.208 [+0.153, +0.264]) while *worsening* held-out skill — centered fits the sample better but raw generalizes better, the reverse of raw-inflation. Only the two low-fold marker banks show raw fitting the sample better (Δρ = −0.164, −0.232, CIs exclude 0) — the inflation candidates the parent flagged, but with 5 folds each they cannot carry a verdict.
+- On the 505 bank, centering *improves* in-sample fit (Δρ = +0.208, CI excludes 0) while *worsening* held-out skill — centered fits the sample better, raw generalizes better, the reverse of raw-inflation.
+- Only the two low-fold marker banks show raw fitting the sample better (Δρ = −0.164, −0.232, CIs exclude 0) — the inflation candidates the parent flagged, but with 5 folds each they cannot carry a verdict.
 
 ### Three mid-size banks: both recipes fail out-of-sample entirely
 
-The parent reported in-sample correlations on several small banks. Whether those translate to held-out prediction is separate — and on three mid-size banks, neither recipe does.
+The parent reported in-sample correlations on several small banks; whether those translate to held-out prediction is separate. On three mid-size banks, neither recipe does.
 
 ![Grouped bar chart of held-out CV R-squared (raw vs centered) for the three both-fail banks; the 24-persona marker, 24-persona logit, and 19-persona joint-leakage banks all have both bars below zero, each labeled with its held-out unit.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c745da0abc227b880b16fc0a94b19bac8f427607/figures/issue_648/paired_r2_raw_vs_centered.png)
 
 > **Figure.** *On the three both-fail banks, both recipes score below the train-mean baseline.* Held-out CV R² (per-fold train-mean baseline) for the three banks excluded for both-recipes-failing; below 0 = worse than predicting the mean. Each bar labeled with its held-out unit (persona / source / bystander) and n. Raw (orange) and centered (blue) both fail on all three.
 
-All three banks land at CV R² < 0 — worse than guessing the train mean — under both recipes. Their held-out units differ (one leave-one-persona-out, one leave-one-source-out, one leave-one-bystander-out), so this is not a single-unit artifact. They are excluded from the verdict (a recipe contrast is meaningless when neither recipe predicts), but the exclusion is the finding: at the small-N end (8-24 held-out folds), the cosine-distance predictor does not generalize out-of-sample regardless of centering.
+- All three land at CV R² < 0 (worse than the train mean) under both recipes. Their held-out units differ (leave-one-persona / -source / -bystander-out), so this is not a single-unit artifact.
+- The exclusion is itself the finding: at the small-N end (8-24 held-out folds), the cosine-distance predictor does not generalize out-of-sample regardless of centering.
 
 ### Raw cosine is compressed, but compression does not pick the winner
 
-Centering exists because raw cosine is squeezed into the anisotropy ridge. The compression is real and uniform on the three banks with the read — but does not predict the held-out winner.
+Centering exists because raw cosine is squeezed into the anisotropy ridge. The compression is real and uniform on the three banks with this read.
 
 ![Three side-by-side histograms of off-diagonal cosine values, raw vs centered, for the 111-persona, 20-persona, and 505 banks; raw piles into 0.7-1.0 while centered spreads across -0.7 to 1.0.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d83bcc2566963184c2526133e07333236dc21add/figures/issue_648/compression_offdiag.png)
 
-> **Figure.** *Raw cosine collapses into the anisotropy ridge on all three banks with this read.* Off-diagonal cosine distributions: raw (orange) spans only ~[0.7, 1.0]; centered (blue) spreads across ~[−0.7, 1.0]. Available for 3 of 9 banks (the off-diagonal payload only persists for these families).
+> **Figure.** *Raw cosine collapses into the anisotropy ridge on all three banks with this read.* Off-diagonal cosine distributions: raw (orange) spans only ~0.7 to 1.0; centered (blue) spreads across ~−0.7 to 1.0. Available for 3 of 9 banks (the off-diagonal payload only persists for these families).
 
-Raw cosine compresses into ~[0.7, 1.0] on all three families — the degeneracy that makes centering valid. But the held-out winner does not follow compression: the raw-leaning (505, 20-persona) and flat (111-persona) banks are all equally compressed, so compression does not explain the ΔR² signs. The raw-inflation mechanism is present in the geometry but does not drive the skill verdict here.
+- Raw cosine compresses into ~0.7 to 1.0 on all three families — the degeneracy that makes centering valid.
+- But the held-out winner does not follow compression: the raw-leaning (505, 20-persona) and flat (111-persona) banks are all equally compressed, so geometry does not explain the ΔR² signs.
+- The raw-inflation mechanism is present in the geometry but does not drive the skill verdict.
 
 ## Data
 
 ### Trained on
 
-n/a — no training in this task. This is a CPU-only re-analysis of centroid banks and leakage targets produced by prior `kind: experiment` tasks. The persona-distance predictor program is the parent line ([#536](https://eps.superkaiba.com/tasks/536) recipe audit; [#404](https://eps.superkaiba.com/tasks/404)/[#458](https://eps.superkaiba.com/tasks/458) predictor origin).
+n/a — no training in this task. This is a CPU-only re-analysis of centroid banks and leakage targets produced by prior `kind: experiment` tasks (the persona-distance predictor line; provenance links in Reproducibility).
 
 ### Evaluated with
 
@@ -129,7 +136,12 @@ n/a — no model generation in this task. Each bank produces numeric metrics (tw
 
 - Per-bank table: [`eval_results/issue_648/per_bank_skill_table.json`](https://github.com/superkaiba/explore-persona-space/blob/d83bcc2566963184c2526133e07333236dc21add/eval_results/issue_648/per_bank_skill_table.json) + `.csv` mirror (git-tracked on the issue branch).
 - Hero forest: [`figures/issue_648/hero_forest_delta_cvR2.png`](https://github.com/superkaiba/explore-persona-space/blob/d83bcc2566963184c2526133e07333236dc21add/figures/issue_648/hero_forest_delta_cvR2.png); supplementary `insample_vs_cv_scatter.png` + `compression_offdiag.png` (pinned at `d83bcc25`), `paired_r2_raw_vs_centered.png` (re-pinned at `c745da0a` — restricted to the three both-fail banks in round 2). Each PNG ships PDF + meta.json sidecars.
-- Reused inputs from [#536](https://eps.superkaiba.com/tasks/536): the centroid banks + leakage targets the parent audit consumed. The 111-persona distance JSON (`cosine_distance_matrix_layer20.json`) was restored read-only from git `776c7c3b75` (immutable; the 1e-4 matrix join gate is the content-identity check) — fit: same base-model centroids, same recipe, the parent's exact join gate passes per bank before any skill is read.
+Reused inputs (all from the parent audit's program; this task adds no new training data):
+
+- **Centroid banks + leakage targets from [#536](https://eps.superkaiba.com/tasks/536)** (resolved internally by the parent audit's loaders, keyed per bank `family`): the identical 9 banks the parent's recompute-driver consumed (`single_token_100p_L20`/`_core11`, `extraction_method_a_L20`, `issue274_n24_L15`, `issue311_19bank_L20`, `issue505_pv_L21`). Fit: same base-model Qwen-2.5-7B centroids, same recipe; the parent's exact join gate (`GATE_MATRIX_TOL = 1e-4`, `GATE_RHO_TOL = 0.02`, imported verbatim from `issue536_recompute_driver`) passes per bank before any skill is read — every `join_gate_max_dev` is < 3e-7, and every centered headline reproduces the published Spearman within `GATE_RHO_TOL` (505 PV at L21, 24-persona marker/logit at L15, 19-bank joint-leakage at L20 — e.g. the 19-bank centered headline reproduces −0.348 = published −0.348; core-11 marker 0.5674 ≈ published 0.567).
+- **Producing-task leakage targets** ([#66](https://eps.superkaiba.com/tasks/66), [#142](https://eps.superkaiba.com/tasks/142), [#405](https://eps.superkaiba.com/tasks/405), [#478](https://eps.superkaiba.com/tasks/478), [#490](https://eps.superkaiba.com/tasks/490), [#380](https://eps.superkaiba.com/tasks/380), [#396](https://eps.superkaiba.com/tasks/396)/[#415](https://eps.superkaiba.com/tasks/415), [#311](https://eps.superkaiba.com/tasks/311), [#505](https://eps.superkaiba.com/tasks/505)) — the same per-cell continuous targets (#536's `source_task_ids` mapping), reused unchanged. Fit: identical targets to the parent's; the raw-recipe reproduction matches the parent's published Spearman within `GATE_RHO_TOL`.
+- **111-persona distance JSON** (`cosine_distance_matrix_layer20.json`): restored read-only from git `776c7c3b75` (immutable blob; the 1e-4 matrix join gate is the content-identity check). Fit: same base-model centroids, exact join gate passes.
+- The persona-distance predictor program originates in [#404](https://eps.superkaiba.com/tasks/404)/[#458](https://eps.superkaiba.com/tasks/458) (cosine / JS-divergence predictor line).
 
 **Compute:** CPU on the VM, < ~10 min wall-clock single-process. No pod, no GPU.
 
