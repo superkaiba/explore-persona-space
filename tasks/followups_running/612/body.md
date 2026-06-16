@@ -29,7 +29,7 @@ promoted_at: '2026-06-16T00:20:48Z'
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_612.md](https://github.com/superkaiba/explore-persona-space/blob/99404fdb52d82d3a31e7f847b1d3222ffc3aa57a/docs/methodology/issue_612.md) · [gist](https://gist.github.com/superkaiba/e93b182f5e48830e0748c566809a5b00)
+**Methodology:** [docs/methodology/issue_612.md](https://github.com/superkaiba/explore-persona-space/blob/68558c1dc27df5e5dbbadb710d29fe3acd6807e5/docs/methodology/issue_612.md) · [gist](https://gist.github.com/superkaiba/e93b182f5e48830e0748c566809a5b00)
 
 ## Takeaways
 
