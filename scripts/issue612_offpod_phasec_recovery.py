@@ -95,15 +95,19 @@ H1_NULL_BAND = 0.03
 # dispatch_sycophancy_612._upload_v3_cell_tree: f"{V3_HF_DATA_PREFIX}/eval_results/{rel}").
 HF_CELLS_PREFIX = f"{V3_HF_DATA_PREFIX}/eval_results/cells"
 
-# #623 persona-vector alignment inputs live under eval_results/issue_644 (sparse-
-# excluded in the issue-612 worktree). The bake-off resolves them via
-# repo_root_from_module() / I623_*_RELPATH, so they must be materialized in the
-# worktree before the bake-off runs. Source: the main checkout (always full).
-MAIN_CHECKOUT = Path("/home/thomasjiralerspong/explore-persona-space")
+# #623 persona-vector alignment inputs live under eval_results/issue_644. They are
+# on `main` but NOT on the issue-612 branch / NOT materialized in the sparse
+# worktree. The bake-off resolves them via repo_root_from_module() / I623_*_RELPATH,
+# so they must be materialized in the worktree before the bake-off runs. Source
+# (in order): the worktree's own shared git object store (git show <ref>:<rel> —
+# machine-independent), then a sibling full checkout if configured.
 I623_RELPATHS = (
     "eval_results/issue_644/inputs/issue623/cosine_matrix.json",
     "eval_results/issue_644/inputs/issue623/syc_i.json",
 )
+# Git refs to try (in order) when the file is absent from the worktree's working
+# tree but present in the shared object store (sparse-checkout exclusion).
+I623_GIT_REFS = ("origin/main", "main")
 
 
 def _git_sha() -> str:
@@ -168,11 +172,32 @@ def regenerate_panels(panel_set_path: Path, panels_root: Path, sources: list[str
     return out
 
 
+def _git_show_to(repo: Path, rel: str, dest: Path) -> str | None:
+    """Materialize a file from the worktree's shared git object store (git show
+    <ref>:<rel>) when it is sparse-excluded from the working tree. Returns the ref
+    it came from, or None if no ref carries it."""
+    for ref in I623_GIT_REFS:
+        try:
+            blob = subprocess.check_output(
+                ["git", "-C", str(repo), "show", f"{ref}:{rel}"],
+                stderr=subprocess.DEVNULL,
+                env={**os.environ},
+            )
+        except subprocess.CalledProcessError:
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(blob)
+        return ref
+    return None
+
+
 def ensure_i623_inputs() -> dict:
-    """Materialize the #623 persona-vector inputs into the worktree (sparse-excluded
-    here, present on the main checkout). The bake-off resolves them relative to
-    repo_root_from_module() (the worktree root), so they must exist there. Idempotent:
-    skips files already present. Returns per-file presence + sha256."""
+    """Materialize the #623 persona-vector inputs into the worktree working tree
+    (they are on `main` but sparse-excluded here). The bake-off resolves them
+    relative to repo_root_from_module() (the worktree root), so they must exist
+    there. Idempotent: skips files already present. Source order: working tree ->
+    shared git object store (git show <ref>:<rel>, machine-independent). Returns
+    per-file presence + sha256."""
     repo = repo_root_from_module()
     status: dict[str, str] = {}
     for rel in I623_RELPATHS:
@@ -180,16 +205,15 @@ def ensure_i623_inputs() -> dict:
         if dest.exists():
             status[rel] = f"present sha256={_sha256(dest)[:12]}"
             continue
-        src = MAIN_CHECKOUT / rel
-        if not src.exists():
+        ref = _git_show_to(repo, rel, dest)
+        if ref is None:
             raise FileNotFoundError(
-                f"#623 input {rel} absent in BOTH worktree ({dest}) and main checkout "
-                f"({src}); the bake-off comparator (c) cannot run"
+                f"#623 input {rel} absent from the worktree working tree ({dest}) AND "
+                f"from every git ref {I623_GIT_REFS}; the bake-off comparator (c) cannot "
+                f"run (it reads {rel} via repo_root_from_module())"
             )
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(src.read_bytes())
-        status[rel] = f"copied_from_main sha256={_sha256(dest)[:12]}"
-        log.info("[phase=i623] materialized %s -> %s", rel, dest)
+        status[rel] = f"from_git[{ref}] sha256={_sha256(dest)[:12]}"
+        log.info("[phase=i623] materialized %s from %s -> %s", rel, ref, dest)
     return status
 
 
