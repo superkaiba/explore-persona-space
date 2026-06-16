@@ -293,19 +293,28 @@ def extract_all(
     probes: tuple[str, ...],
     device: str,
 ) -> dict[str, dict[str, np.ndarray]]:
-    """Return {persona: {'eos_L2', 'lp_L2', 'lp_L7'}}. Loads the base model once."""
+    """Return {persona: {'eos_L2', 'lp_L2', 'lp_L7'}}. Loads the base model once.
+
+    Dtype: bf16 on CUDA (HBM headroom, fast tensor cores); float32 on CPU. bf16
+    has no native CPU matmul kernel and emulates in software (~10-50x slower than
+    fp32 BLAS) — fp32 is BOTH faster and the natural CPU residual-activation dtype
+    (we cast captures to fp32 anyway). The residual-stream distances are
+    dtype-stable to ~1e-3 cosine (well within the centering decompression range)."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    logger.info("loading %s (bf16) on %s for %d personas", BASE_MODEL, device, len(persona_names))
+    load_dtype = torch.bfloat16 if device == "cuda" else torch.float32
+    logger.info(
+        "loading %s (%s) on %s for %d personas", BASE_MODEL, load_dtype, device, len(persona_names)
+    )
     tok = AutoTokenizer.from_pretrained(BASE_MODEL)
     try:
         model = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL, dtype=torch.bfloat16, device_map=device
+            BASE_MODEL, dtype=load_dtype, device_map=device
         ).eval()
     except TypeError:
         model = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL, torch_dtype=torch.bfloat16, device_map=device
+            BASE_MODEL, torch_dtype=load_dtype, device_map=device
         ).eval()
 
     out: dict[str, dict[str, np.ndarray]] = {}
