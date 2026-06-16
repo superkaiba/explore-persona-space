@@ -6,6 +6,11 @@
 # behavior-sharded GPU passes across 4 GPUs -> wait. CPU scoring is OFF-POD.
 set -uo pipefail
 
+# HF Hub resilience for the per-file staging loop (~2700 files; transient
+# read timeouts on this dataset repo killed the previous launch ~12 min in).
+export HF_HUB_DOWNLOAD_TIMEOUT=${HF_HUB_DOWNLOAD_TIMEOUT:-60}
+export HF_HUB_DISABLE_PROGRESS_BARS=${HF_HUB_DISABLE_PROGRESS_BARS:-1}
+
 BEHAVIORS="marker fact refusal sycophancy em"
 DROPPED_METRICS="js_out_seq,kl_out_seq_fwd,kl_out_seq_rev,kl_asym_out_seq,js_out_seq_rb,kl_fwd_out_seq_rb,kl_rev_out_seq_rb,train_prior_tf,train_prior_onpolicy,js_taught_span,pv_dp,kl_out_seq_oneway"
 EVAL_ROOT="eval_results/issue_537"
@@ -19,13 +24,41 @@ echo "[phase=stage] downloading HF inputs (raw_completions + data/train) -- per-
 # hf_hub_download (NOT snapshot_download -- allow_patterns sees 0 of the 51k
 # truncated siblings; i537_dispatch.py:1921 documents this).
 uv run python - <<'PY'
-import os, shutil
+import os, shutil, time, random
 from pathlib import Path
 from huggingface_hub import list_repo_files, hf_hub_download
 REPO = "superkaiba1/explore-persona-space-data"
 PREF = "issue537_context_generalization"
 EVAL = Path("eval_results/issue_537")
-files = list_repo_files(REPO, repo_type="dataset", revision="main")
+
+def _list_with_retry(repo, max_tries=10):
+    """list_repo_files itself can hit a transient timeout; retry with backoff."""
+    for attempt in range(1, max_tries + 1):
+        try:
+            return list_repo_files(repo, repo_type="dataset", revision="main")
+        except Exception as e:
+            if attempt == max_tries:
+                raise
+            backoff = min(60, (2 ** attempt) + random.random())
+            print(f"[stage] list_repo_files failed (attempt {attempt}/{max_tries}): {e!r}; sleep {backoff:.1f}s")
+            time.sleep(backoff)
+
+def _download_with_retry(repo, f, max_tries=10):
+    """Per-file resilient download. The default hf_hub_download already
+    retries 5x with backoff; this OUTER loop catches the residual
+    transient-class failures (read timeouts, conn resets, 5xx) that exhaust
+    the inner retries."""
+    for attempt in range(1, max_tries + 1):
+        try:
+            return hf_hub_download(repo, f, repo_type="dataset", revision="main")
+        except Exception as e:
+            if attempt == max_tries:
+                raise
+            backoff = min(60, (2 ** attempt) + random.random())
+            print(f"[stage] hf_hub_download retry {attempt}/{max_tries} for {f!r}: {e!r}; sleep {backoff:.1f}s")
+            time.sleep(backoff)
+
+files = _list_with_retry(REPO)
 want = [f for f in files if f.startswith(f"{PREF}/raw_completions/") or f.startswith(f"{PREF}/data/train/")]
 assert want, f"no raw_completions/data-train files matched under {PREF}/ (got {len(files)} repo files)"
 print(f"[stage] {len(want)} files to fetch")
@@ -34,7 +67,7 @@ for f in want:
     local = EVAL / f[len(PREF) + 1:]  # strip "issue537_context_generalization/"
     if local.exists():
         n += 1; continue
-    cached = hf_hub_download(REPO, f, repo_type="dataset", revision="main")
+    cached = _download_with_retry(REPO, f)
     local.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(cached, local)
     n += 1
