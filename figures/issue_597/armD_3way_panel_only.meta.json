@@ -1,8 +1,68 @@
 {
-  "commit": "ab791cc086",
-  "created": "2026-06-16T06:52:15Z",
+  "commit": "144213ef5e",
+  "created": "2026-06-16T23:18:27Z",
   "figsize": [
     12.5,
     7.0
-  ]
+  ],
+  "seeds_requested": [
+    42,
+    137,
+    7
+  ],
+  "error_bar": "half-range",
+  "seed_coverage": {
+    "armB": {
+      "villain": [
+        42,
+        137,
+        7
+      ],
+      "assistant": [
+        42,
+        137,
+        7
+      ],
+      "qwen_default": [
+        42,
+        137,
+        7
+      ]
+    },
+    "armC": {
+      "villain": [
+        42,
+        137,
+        7
+      ],
+      "assistant": [
+        42,
+        137,
+        7
+      ],
+      "qwen_default": [
+        42,
+        137,
+        7
+      ]
+    },
+    "armD": {
+      "villain": [
+        42,
+        137,
+        7
+      ],
+      "assistant": [
+        42,
+        137,
+        7
+      ],
+      "qwen_default": [
+        42,
+        137,
+        7
+      ]
+    }
+  },
+  "sha_pinned_url_pattern": "https://github.com/superkaiba/explore-persona-space/blob/<sha>/figures/issue_597/armD_3way_panel_only.png"
 }
