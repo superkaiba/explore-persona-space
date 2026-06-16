@@ -44,3 +44,4 @@
 {"ts": "2026-06-16T04:48:41Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "verifying", "to": "interpreting", "note": "Upload-verifier PASS; analyzer first pass complete; held interpretation published as v1."}
 {"ts": "2026-06-16T04:49:03Z", "kind": "epm:progress", "version": 11, "by": "unknown", "note": "stage-dispatch stage=interpreting round=1 subagent=interpretation-critic worktree=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-649 (Claude + Codex twin in parallel; first ensemble round)"}
 {"ts": "2026-06-16T04:52:54Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqg61um2-o3fu6i effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-16T04:57:58Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqg61um2-o3fu6i phase=done after 302s."}
