@@ -91,6 +91,28 @@ log = logging.getLogger("issue612_predictor_v3_driver")
 # dispatcher's G3 drop). The driver maps it to a recorded per-source DROP.
 YIELD_BELOW_FLOOR_EXIT = 42
 
+# analyze_612.py returns this code when parity_gate["verdict"] == "HARD_FAIL"
+# (rig-validity kill K1; analyze_612.py:1587-1597). It is a FATAL outcome for
+# the driver — a HARD_FAIL run must NOT read as a completed predictor-v3 run,
+# so no epm:results sentinel is emitted. Exit 1 (permanent failure: rc=2 from
+# analyze_612 is a rig-validity verdict, not a re-attemptable transient).
+PARITY_HARD_FAIL_EXIT = 1
+
+
+class ParityHardFail(RuntimeError):
+    """Phase C analyze_612 returned rc=2 (parity_gate HARD_FAIL). Caught in
+    main() to write the parity-fail + epm:failure sentinels and exit nonzero
+    WITHOUT emitting epm:results."""
+
+    def __init__(self, parity_gate: dict, analysis_path: Path) -> None:
+        super().__init__(
+            f"analyze_612 parity gate HARD_FAIL (n_hard={parity_gate.get('n_hard_fail')}, "
+            f"n_out_of_tol={parity_gate.get('n_out_of_tol')}); rig-validity kill K1"
+        )
+        self.parity_gate = parity_gate
+        self.analysis_path = analysis_path
+
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DISPATCHER = REPO_ROOT / "scripts" / "dispatch_sycophancy_612.py"
 BAKEOFF_CLI = REPO_ROOT / "scripts" / "issue612_predictor_bakeoff.py"
@@ -357,11 +379,18 @@ def run_phase_a(args: argparse.Namespace, sources: list[str]) -> dict | None:
     if not args.skip_gpu_phase_a and os.environ.get("HF_TOKEN"):
         from explore_persona_space.orchestrate.hub import _upload  # type: ignore
 
+        # upload_as_file=True is MANDATORY for a single-file path: hub._upload
+        # raises ValueError unconditionally when local_path.is_file() and the
+        # flag is unset (hub.py:560-565; the folder default silently no-ops on
+        # a file). This branch fires only on the GPU production path
+        # (not skip_gpu_phase_a and HF_TOKEN), so a CPU smoke never exercises
+        # it — #595/#640 class.
         _upload(
             summary_path,
             repo_id="superkaiba1/explore-persona-space-data",
             repo_type="dataset",
             path_in_repo=f"{V3_HF_DATA_PREFIX}/phase_a_summary.json",
+            upload_as_file=True,
         )
     return summary
 
@@ -435,8 +464,15 @@ def run_phase_b(
     device, CVD-pinned parallel shards (one GPU each, matching round-1's shard
     pattern) — each shard pins CUDA_VISIBLE_DEVICES in its env AND passes the
     matching --gpu-id so the in-process clobber in train/sft.py cannot co-locate
-    cells on GPU 0. The LAST shard to finish carries --finalize; the rest pass
-    --no-finalize."""
+    cells on GPU 0.
+
+    ALL dispatcher invocations pass --no-finalize so the inner dispatcher's
+    v3_finalize (dispatch_sycophancy_612.py:2107-2115) NEVER emits epm:results.
+    Phase B completing is NOT pipeline completion — the bake-off + analyze_612 +
+    H1 (Phase C) still has to run, and analyze_612 can rig-validity-kill (rc=2).
+    The DRIVER emits the single terminal epm:results AFTER Phase C succeeds
+    (main(), gated on Phase C rc=0); a poller keying on epm:results must not see
+    a premature completion before Phase C."""
     all_cells = _kept_cells(kept_sources)
     cells = [c for c in args.cells if c in all_cells] if args.cells else all_cells
     if not cells:
@@ -462,7 +498,9 @@ def run_phase_b(
                 all_cells=all_cells,
                 floor_n=floor_n,
                 gpu_id=gpu_id,
-                finalize=True,
+                # --no-finalize: the inner dispatcher must NOT emit epm:results;
+                # the driver finalizes after Phase C (see run_phase_b docstring).
+                finalize=False,
             ),
             phase_log=args.logs_root / "phase_b_dispatch.log",
         )
@@ -475,7 +513,6 @@ def run_phase_b(
     for i, c in enumerate(cells):
         shards[gpus[i % len(gpus)]].append(c)
     shards = {g: cs for g, cs in shards.items() if cs}
-    last_gpu = list(shards)[-1]
     procs: list[tuple[int, subprocess.Popen, object]] = []
     for gpu_id, shard_cells in shards.items():
         cmd = _dispatcher_cmd(
@@ -484,7 +521,9 @@ def run_phase_b(
             all_cells=all_cells,
             floor_n=floor_n,
             gpu_id=gpu_id,
-            finalize=(gpu_id == last_gpu),
+            # --no-finalize on EVERY shard: no inner dispatcher emits
+            # epm:results; the driver finalizes after Phase C (see docstring).
+            finalize=False,
         )
         # CVD pin in the LAUNCHER env per shard (one GPU each) + matching --gpu-id.
         env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu_id)}
@@ -562,13 +601,25 @@ def run_phase_c(args: argparse.Namespace) -> dict:
         ],
         phase_log=args.logs_root / "phase_c_analyze.log",
     )
-    # analyze_612 returns 2 on the K1 parity HARD_FAIL kill (analysis_612.json is
-    # written first for evidence). That is a rig-validity kill, not a driver bug —
-    # re-raise so the orchestrator's failure routing sees it.
+    # analyze_612 returns 2 ONLY on the K1 parity HARD_FAIL kill
+    # (analyze_612.py:1587-1597; analysis_612.json is written FIRST for
+    # evidence). It is a rig-validity kill, NOT a completed analysis run, so it
+    # is FATAL: the driver must NOT proceed to emit epm:results. Raise
+    # ParityHardFail (caught in main) to write the parity-fail + epm:failure
+    # sentinels and exit nonzero. analysis_612.json existence is the precondition
+    # for extracting the parity verdict, so confirm it before raising.
     if rc not in (0, 2):
         raise RuntimeError(f"[phase=phase_c] analyze_612 failed rc={rc}")
     if not analyze_out.exists():
         raise RuntimeError(f"[phase=phase_c] analyze_612 exited {rc} but {analyze_out} missing")
+    if rc == 2:
+        analysis = json.loads(analyze_out.read_text())
+        parity_gate = analysis.get("parity_gate", {"verdict": "HARD_FAIL"})
+        log.error(
+            "[phase=phase_c] analyze_612 rc=2 parity HARD_FAIL — FATAL; verdict=%s",
+            parity_gate.get("verdict"),
+        )
+        raise ParityHardFail(parity_gate, analyze_out)
 
     analysis = json.loads(analyze_out.read_text())
     h1 = {
@@ -596,7 +647,9 @@ def run_phase_c(args: argparse.Namespace) -> dict:
         "bakeoff_json": str(bakeoff_out),
         "h1_json": str(h1_out),
         "analysis_json": str(analyze_out),
-        "parity_hard_fail": rc == 2,
+        # rc==2 (parity HARD_FAIL) raises ParityHardFail above and never reaches
+        # this return — a returned phase_c dict always carries a PASSing parity.
+        "parity_hard_fail": False,
     }
 
 
@@ -727,7 +780,37 @@ def main(argv: list[str] | None = None) -> int:
     # ----- Phase C -----
     phase_c: dict = {}
     if not args.skip_phase_c:
-        phase_c = run_phase_c(args)
+        try:
+            phase_c = run_phase_c(args)
+        except ParityHardFail as kill:
+            # Rig-validity kill K1: analyze_612 returned rc=2. Write a
+            # parity-fail sentinel (carrying the parity_gate details + the
+            # analysis_612.json path) + an epm:failure sentinel so the
+            # orchestrator's poll loop drains it, then exit nonzero WITHOUT
+            # emitting epm:results and WITHOUT the terminal [phase=done] line.
+            out_dir = args.slab_root / "onpolicy_predictor"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            fail_note = {
+                "event": "phase_c_parity_failed",
+                "followup_label": "onpolicy-leakage-predictor",
+                "reason": "parity_gate_hard_fail",
+                "parity_gate": kill.parity_gate,
+                "analysis_612_json": str(kill.analysis_path),
+                "message": str(kill),
+                "git_commit_sha": _git_sha(),
+            }
+            (out_dir / "phase_c_parity_failed.json").write_text(json.dumps(fail_note, indent=2))
+            _write_sentinel(
+                args.logs_root,
+                kind="epm:failure",
+                name_slug="phase-c-parity-fail",
+                note_obj={"failure_class": "code", **fail_note},
+            )
+            log.error(
+                "[phase=phase_c] parity HARD_FAIL — exiting %d (no epm:results)",
+                PARITY_HARD_FAIL_EXIT,
+            )
+            return PARITY_HARD_FAIL_EXIT
     else:
         log.info("[phase=phase_c] SKIPPED")
 

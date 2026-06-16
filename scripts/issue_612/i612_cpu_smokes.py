@@ -551,12 +551,12 @@ def cmd_v3_bakeoff_fixture(args: argparse.Namespace) -> int:
     """Bucket 4: end-to-end bake-off on a tiny synthetic leakage slab + the REAL
     decorrelated panels + the REAL #623 comparator artifacts (CPU)."""
     import numpy as np
-    from explore_persona_space.experiments.sycophancy_onpolicy_612.predictor_bakeoff import (
-        run_bakeoff,
-    )
 
     from explore_persona_space.experiments.sycophancy_onpolicy_612.panel_select_v3 import (
         select_all,
+    )
+    from explore_persona_space.experiments.sycophancy_onpolicy_612.predictor_bakeoff import (
+        run_bakeoff,
     )
 
     root = args.root
@@ -601,6 +601,266 @@ def cmd_v3_bakeoff_fixture(args: argparse.Namespace) -> int:
         f"{s0} a-rho={rec0['predictors']['base_prior']['spearman_rho']:.2f} "
         f"verdict={rec0['verdict']['winner']}; pooled={result.get('pooled', {}).get('winner')} "
         f"-> {out_path}"
+    )
+    return 0
+
+
+# --------------------------------------------------------------------------
+# round-3 surgical-fix smokes (driver: issue612_predictor_v3_driver.py)
+# --------------------------------------------------------------------------
+
+
+def cmd_v3_upload_kwarg(args: argparse.Namespace) -> int:
+    """Round-3 Blocker 1: assert run_phase_a passes upload_as_file=True to the
+    single-file hub._upload (hub._upload raises ValueError on a file path
+    without it; #595/#640 class). The upload branch fires only on the GPU path
+    (`not args.skip_gpu_phase_a and HF_TOKEN`), so we force skip off, stub the
+    GPU baseline runner to a no-op, patch hub._upload to RECORD kwargs, drive
+    run_phase_a against a synthetic pool_meta + baseline slab, and assert the
+    captured call carried upload_as_file=True + the canonical path_in_repo."""
+    import os
+    import types
+    from unittest import mock
+
+    sys.path.insert(0, str(repo_root_from_module() / "scripts"))
+    import dispatch_sycophancy_612 as dispatcher
+    import issue612_predictor_v3_driver as drv
+
+    from explore_persona_space.experiments.sycophancy_onpolicy_612 import (
+        V3_HF_DATA_PREFIX,
+        V3_TRAIN_ARMS,
+    )
+    from explore_persona_space.orchestrate import hub
+
+    root = args.root
+    data_root = root / "data"
+    slab_root = root / "slab"
+    logs_root = root / "logs"
+    # Synthetic pool_meta.json + baseline per source so the CPU equalize-down
+    # path reads realized fill (idempotent build skip — no GPU) and KEEPs.
+    fills = {"villain": 200, "comedian": 200, "kindergarten_teacher": 194, "software_engineer": 169}
+    for src, n in fills.items():
+        pool = drv._onpolicy_pool_path(data_root, src)
+        pool.mkdir(parents=True, exist_ok=True)
+        (pool / "pool_meta.json").write_text(json.dumps({"n_positives": n, "tier_mix": {"1": n}}))
+        base = slab_root / "onpolicy_predictor" / "source_baseline"
+        base.mkdir(parents=True, exist_ok=True)
+        (base / f"{src}.json").write_text(json.dumps({"base_agreement_rate": 0.1}))
+
+    # skip_gpu_phase_a False so the `not skip_gpu_phase_a and HF_TOKEN` upload
+    # branch fires. BOTH PredictorV3Runner and _upload are lazily imported
+    # INSIDE run_phase_a (`from dispatch_sycophancy_612 import PredictorV3Runner`
+    # / `from explore_persona_space.orchestrate.hub import _upload`), so each
+    # must be patched on its SOURCE module (dispatcher / hub), not on drv —
+    # a `from X import f` binds f into the function's locals at call time.
+    ns = types.SimpleNamespace(
+        slab_root=slab_root,
+        data_root=data_root,
+        logs_root=logs_root,
+        skip_gpu_phase_a=False,
+        gpu_id=0,
+        judge_concurrency=4,
+    )
+    captured: dict = {}
+
+    def _fake_upload(local_path, **kwargs):
+        captured["path"] = str(local_path)
+        captured["kwargs"] = dict(kwargs)
+        return f"https://hf/{kwargs.get('path_in_repo')}"
+
+    class _NoGpuRunner:
+        """run_source_baseline is a no-op (baseline sidecars pre-written), so
+        run_phase_a's GPU branch touches no GPU."""
+
+        def __init__(self, *a, **k) -> None:
+            pass
+
+        def run_source_baseline(self, source: str) -> None:
+            return None
+
+    with (
+        mock.patch.dict(os.environ, {"HF_TOKEN": "smoke-token"}, clear=False),
+        mock.patch.object(hub, "_upload", _fake_upload),
+        mock.patch.object(dispatcher, "PredictorV3Runner", _NoGpuRunner),
+    ):
+        summary = drv.run_phase_a(ns, list(fills))
+    assert summary is not None, "run_phase_a returned None (unexpected KILL)"
+    assert captured.get("kwargs", {}).get("upload_as_file") is True, (
+        f"upload branch did not pass upload_as_file=True (would ValueError on "
+        f"the real GPU path): {captured}"
+    )
+    assert captured["kwargs"]["path_in_repo"] == f"{V3_HF_DATA_PREFIX}/phase_a_summary.json", (
+        captured["kwargs"]
+    )
+    assert captured["path"].endswith("phase_a_summary.json"), captured["path"]
+    _digest(
+        f"v3-upload-kwarg PASS: run_phase_a upload branch recorded "
+        f"upload_as_file={captured['kwargs']['upload_as_file']} "
+        f"path_in_repo={captured['kwargs']['path_in_repo']} on "
+        f"{captured['path']}; arms={list(V3_TRAIN_ARMS)}"
+    )
+    return 0
+
+
+def cmd_v3_rc2_fatal(args: argparse.Namespace) -> int:
+    """Round-3 Blocker 2: rc=2 (parity HARD_FAIL) from analyze_612 is FATAL.
+    Run run_phase_c against a fixture analyze_612 shim that exits 2 + writes a
+    stub analysis_612.json with a parity HARD_FAIL verdict, plus a bake-off
+    shim that exits 0. Assert: (a) ParityHardFail raised; (b) main() exits
+    nonzero + writes phase_c_parity_failed.json + an epm:failure sentinel +
+    NO epm:results sentinel + NO terminal [phase=done]."""
+    import types
+    from unittest import mock
+
+    sys.path.insert(0, str(repo_root_from_module() / "scripts"))
+    import issue612_predictor_v3_driver as drv
+
+    root = args.root
+    slab_root = root / "slab"
+    logs_root = root / "logs"
+    slab_root.mkdir(parents=True, exist_ok=True)
+    logs_root.mkdir(parents=True, exist_ok=True)
+    parity_gate = {"verdict": "HARD_FAIL", "n_hard_fail": 3, "n_out_of_tol": 5}
+
+    def _fake_run(cmd, *, env=None, phase_log=None):
+        # bake-off invocation -> rc 0 (write its out file); analyze -> rc 2 +
+        # stub analysis_612.json with the HARD_FAIL parity gate.
+        joined = " ".join(cmd)
+        if drv.BAKEOFF_CLI.name in joined:
+            (slab_root / "onpolicy_predictor" / "bakeoff").mkdir(parents=True, exist_ok=True)
+            (slab_root / "onpolicy_predictor" / "bakeoff" / "predictor_bakeoff.json").write_text(
+                json.dumps({"per_source": {}, "fixture": True})
+            )
+            return 0
+        if drv.ANALYZE_MOD in joined:
+            (slab_root / "analysis_612.json").write_text(
+                json.dumps(
+                    {
+                        "parity_gate": parity_gate,
+                        "h1_onpolicy_vs_canned": {"verdict": "N/A"},
+                        "fixture": True,
+                    }
+                )
+            )
+            return 2
+        raise AssertionError(f"unexpected subprocess in fixture: {joined}")
+
+    ns = types.SimpleNamespace(slab_root=slab_root, logs_root=logs_root, judge_concurrency=4)
+    # (a) run_phase_c raises ParityHardFail on rc=2.
+    raised = False
+    with mock.patch.object(drv, "_run", _fake_run):
+        try:
+            drv.run_phase_c(ns)
+        except drv.ParityHardFail as e:
+            raised = True
+            assert e.parity_gate["verdict"] == "HARD_FAIL", e.parity_gate
+    assert raised, "run_phase_c did NOT raise ParityHardFail on analyze rc=2"
+
+    # (b) end-to-end via main(): --skip-phase-a + --floor-n-override + only
+    # Phase C live; assert nonzero exit + sentinels.
+    import logging as _logging
+
+    for h in list(_logging.getLogger("issue612_predictor_v3_driver").handlers):
+        _logging.getLogger("issue612_predictor_v3_driver").removeHandler(h)
+    argv = [
+        "--skip-phase-a",
+        "--skip-phase-b",
+        "--floor-n-override",
+        "169",
+        "--sources",
+        "villain",
+        "--slab-root",
+        str(slab_root),
+        "--logs-root",
+        str(logs_root),
+    ]
+    # clear any prior sentinels so the assertion below is unambiguous
+    for f in logs_root.glob("issue-612-*.json"):
+        f.unlink()
+    with mock.patch.object(drv, "_run", _fake_run):
+        rc = drv.main(argv)
+    assert rc != 0, f"main() returned {rc} on parity HARD_FAIL — must be nonzero"
+    parity_fail = slab_root / "onpolicy_predictor" / "phase_c_parity_failed.json"
+    assert parity_fail.exists(), f"{parity_fail} sentinel not written"
+    note = json.loads(parity_fail.read_text())
+    assert note["reason"] == "parity_gate_hard_fail", note
+    sentinels = list(logs_root.glob("issue-612-*.json"))
+    kinds = [json.loads(s.read_text())["kind"] for s in sentinels]
+    assert "epm:failure" in kinds, f"no epm:failure sentinel: {kinds}"
+    assert "epm:results" not in kinds, f"epm:results emitted on HARD_FAIL: {kinds}"
+    _digest(
+        f"v3-rc2-fatal PASS: run_phase_c raised ParityHardFail; main() exit={rc} "
+        f"(nonzero); phase_c_parity_failed.json written; sentinels={kinds} "
+        f"(epm:failure present, epm:results ABSENT)"
+    )
+    return 0
+
+
+def cmd_v3_no_premature_finalize(args: argparse.Namespace) -> int:
+    """Round-3 Blocker 3: Phase B passes --no-finalize so the inner dispatcher
+    never emits epm:results before Phase C. Capture every _dispatcher_cmd argv
+    run_phase_b would shell (single-shard + parallel-shard) and assert EVERY
+    one carries --no-finalize and NONE carries --finalize."""
+    import types
+    from unittest import mock
+
+    sys.path.insert(0, str(repo_root_from_module() / "scripts"))
+    import issue612_predictor_v3_driver as drv
+
+    kept = ["villain", "comedian"]
+    captured_cmds: list[list[str]] = []
+
+    def _capture_run(cmd, *, env=None, phase_log=None):
+        captured_cmds.append(list(cmd))
+        return 0
+
+    captured_popen: list[list[str]] = []
+
+    class _FakePopen:
+        def __init__(self, cmd, *a, **k):
+            captured_popen.append(list(cmd))
+
+        def wait(self):
+            return 0
+
+    base_ns = dict(
+        cells=None,
+        gpu_id=0,
+        data_root=Path("data/issue_612"),
+        adapters_root=Path("/workspace/adapters_411"),
+        slab_root=args.root / "slab",
+        runs_root=Path("/workspace/runs/issue_612"),
+        logs_root=args.root / "logs",
+        judge_concurrency=4,
+        dry_run=True,
+        skip_prefetch=False,
+        smoke_gates=True,
+        hf_upload=True,
+    )
+    (args.root / "logs").mkdir(parents=True, exist_ok=True)
+
+    # single-shard path (gpus empty -> single dispatcher invocation)
+    ns1 = types.SimpleNamespace(gpus=[], **base_ns)
+    with mock.patch.object(drv, "_run", _capture_run):
+        drv.run_phase_b(ns1, kept, floor_n=169)
+
+    # parallel-shard path (>1 gpu -> Popen per shard)
+    ns2 = types.SimpleNamespace(gpus=[0, 1], **base_ns)
+    with mock.patch.object(drv.subprocess, "Popen", _FakePopen):
+        drv.run_phase_b(ns2, kept, floor_n=169)
+
+    all_cmds = captured_cmds + captured_popen
+    assert all_cmds, "no dispatcher invocations captured"
+    bad_finalize = [" ".join(c) for c in all_cmds if "--finalize" in c]
+    missing_no_finalize = [" ".join(c) for c in all_cmds if "--no-finalize" not in c]
+    assert not bad_finalize, f"dispatcher invocations carrying --finalize: {bad_finalize}"
+    assert not missing_no_finalize, (
+        f"dispatcher invocations MISSING --no-finalize: {missing_no_finalize}"
+    )
+    _digest(
+        f"v3-no-premature-finalize PASS: {len(captured_cmds)} single-shard + "
+        f"{len(captured_popen)} parallel-shard dispatcher invocations, "
+        f"ALL carry --no-finalize, NONE carry --finalize"
     )
     return 0
 
@@ -660,6 +920,19 @@ def main(argv: list[str] | None = None) -> int:
         default=Path("eval_results/issue_644/inputs/issue623/syc_i.json"),
     )
     p.set_defaults(func=cmd_v3_bakeoff_fixture)
+
+    # round-3 surgical-fix smokes (driver issue612_predictor_v3_driver.py)
+    p = sub.add_parser("v3-upload-kwarg")
+    p.add_argument("--root", type=Path, required=True)
+    p.set_defaults(func=cmd_v3_upload_kwarg)
+
+    p = sub.add_parser("v3-rc2-fatal")
+    p.add_argument("--root", type=Path, required=True)
+    p.set_defaults(func=cmd_v3_rc2_fatal)
+
+    p = sub.add_parser("v3-no-premature-finalize")
+    p.add_argument("--root", type=Path, required=True)
+    p.set_defaults(func=cmd_v3_no_premature_finalize)
 
     args = parser.parse_args(argv)
     return args.func(args)
