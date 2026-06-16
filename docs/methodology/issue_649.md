@@ -28,7 +28,42 @@ Verbatim from the task YAML frontmatter (`goal:`):
 
 ---
 
-## 2. Conditions
+## 2. Hyperparameters table
+
+This task trains no model, so there are no training/generation
+hyperparameters. The load-bearing constants are analysis-side (the geometry
+extraction + the regression/bootstrap ladder), each copied verbatim from the
+scripts at the pinned SHA or from plan §11.
+
+| Parameter | Value | Source |
+|---|---|---|
+| Base model (geometry extraction) | `Qwen/Qwen2.5-7B-Instruct` | extract `BASE_MODEL` @ `2ffebb2189` |
+| Load dtype (CPU path) | `float32` (bf16 has no native CPU matmul kernel) | extract `extract_all` @ `2ffebb2189` |
+| **Geometry — cosine cells** | centered bank cosine; **end-of-system × L2** (primary), **last-prompt × L7** (secondary) | extract `LAYER_EOS_PRIMARY=2`, `LAYER_LASTPROMPT_SECONDARY=7`; plan §11 (`Source: #509`) |
+| Cosine centering | `global_mean` (mean-center 30-persona bank → L2-normalize → cosine) | decomp `_centered_bank_cosine`; persona-distance rule (#536) |
+| **Geometry — Gaussian-KL** | `_gaussian_sym_kl_in_subspace_local(Xa, Xb, k=16)` on last-prompt clouds @ L2 + L7 | decomp `PCA_K=16`; plan §11 (`Source: #502`/`#532`) |
+| Probes per persona (KL cloud) | **40** (assert `n_probes ≥ 2·k = 32` → non-singular k=16 covariance) | extract `N_PROBES_FULL=40`, `GKL_K=16` |
+| Probe bank | 40 fixed persona-neutral user turns, committed in-script (probe sha256 prefix `fff33a00f399688f`) | extract `PROBE_BANK` @ `2ffebb2189` |
+| Personas extracted | 30 (the 4 sources are members of the 30-persona panel) | extract `_resolve_personas`; `panel_set.json` |
+| Hidden dim | 3584 | geometry npz meta |
+| Geometry robustness cell | L20 centered cosine from on-HF `panel_centroids_layer20.pt` (#509 weak sycophancy cell; fail-soft, robustness-only) | decomp `L20_ROBUST_LAYER=20` |
+| **CV — headline holdout unit** | **bystander** (keeps every source in training → M0 per-source one-hots identifiable) | decomp `six_regression_ladder(... tbl["bystander_group"])`; plan §11 |
+| CV — robustness holdout unit | source (leave-one-source-out) + intercept-only-M0 variant | decomp `source_group` + `intercept_only_ladder`; plan §4 step 4 |
+| **CV fold count** | `min(5, n_unique_groups)` via `GroupKFold` (5-fold at 30 bystanders) | decomp `_cv_r2_grouped`; plan §11 (`Source: #532`) |
+| Regression | OLS (`sklearn.LinearRegression`); predictors z-scored | decomp `six_regression_ladder` |
+| **Bootstrap reps (Spearman CIs)** | **1000** (100 in smoke) | decomp `N_BOOT_FULL=1000`; plan §11 (`Source: #532`) |
+| Bootstrap seed | 42 | decomp `BOOT_SEED=42` |
+| Spearman CI form | 2.5 / 97.5 percentile of bootstrap resamples | decomp `_bootstrap_spearman_ci` |
+| Wilson CI form (precision gate) | score interval, z=1.96, cluster-honest at n=60 claims | decomp `_wilson_half_width`; plan §11 (`Source: standard`) |
+| **#391 precision gate threshold** | S/N < 2: `median|CHANGE| < 2 × cluster-honest Wilson half-width` | decomp `forced_choice_gate`; plan §7 |
+| Per-cell N | 60 claims × 10 rollouts = 600 verdicts (inherited from #612) | decomp `_read_trained_rate` assert `n_verdicts == 600` |
+| **Seeds** | 42, 137 (averaged per cell; per-seed sign-agreement reported) | decomp `SEEDS=(42, 137)`; plan §11 (`Source: #612`) |
+| Cell exclusions | source==bystander diagonal + per-source trained-negative bystanders (`neg_member_for`) | decomp `build_table` |
+| Judge model (inherited) | `claude-haiku-4-5-20251001` content judge (κ 0.869 vs Sonnet, #612) | trained judgment cell JSON `model` field |
+
+---
+
+## 3. Conditions
 
 Pure CPU re-analysis of #612's sycophancy panel — no training, no pod, no
 GPU. The "conditions" are (a) the two data arms and (b) the six regression
@@ -66,7 +101,7 @@ cross-validation; M0 = per-source one-hot cohort control):
 
 ---
 
-## 3. Training recipe
+## 4. Training recipe
 
 **N/A — no training.** This task trains no model; it re-cuts existing #612
 artifacts. The reused training-side input is #612's trained-rate matrix
@@ -79,7 +114,7 @@ from `eval_results/issue_612/base/judgments/`.
 
 ---
 
-## 4. Evaluation recipe + DV
+## 5. Evaluation recipe + DV
 
 **Dependent variables (per source × bystander cell, seeds 42+137 averaged):**
 
@@ -106,41 +141,6 @@ task reads the stored `rate` (no re-judging).
 
 ---
 
-## 5. Hyperparameters table
-
-This task trains no model, so there are no training/generation
-hyperparameters. The load-bearing constants are analysis-side (the geometry
-extraction + the regression/bootstrap ladder), each copied verbatim from the
-scripts at the pinned SHA or from plan §11.
-
-| Parameter | Value | Source |
-|---|---|---|
-| Base model (geometry extraction) | `Qwen/Qwen2.5-7B-Instruct` | extract `BASE_MODEL` @ `2ffebb2189` |
-| Load dtype (CPU path) | `float32` (bf16 has no native CPU matmul kernel) | extract `extract_all` @ `2ffebb2189` |
-| **Geometry — cosine cells** | centered bank cosine; **end-of-system × L2** (primary), **last-prompt × L7** (secondary) | extract `LAYER_EOS_PRIMARY=2`, `LAYER_LASTPROMPT_SECONDARY=7`; plan §11 (`Source: #509`) |
-| Cosine centering | `global_mean` (mean-center 30-persona bank → L2-normalize → cosine) | decomp `_centered_bank_cosine`; persona-distance rule (#536) |
-| **Geometry — Gaussian-KL** | `_gaussian_sym_kl_in_subspace_local(Xa, Xb, k=16)` on last-prompt clouds @ L2 + L7 | decomp `PCA_K=16`; plan §11 (`Source: #502`/`#532`) |
-| Probes per persona (KL cloud) | **40** (assert `n_probes ≥ 2·k = 32` → non-singular k=16 covariance) | extract `N_PROBES_FULL=40`, `GKL_K=16` |
-| Probe bank | 40 fixed persona-neutral user turns, committed in-script (probe sha256 prefix `fff33a00f399688f`) | extract `PROBE_BANK` @ `2ffebb2189` |
-| Personas extracted | 30 (the 4 sources are members of the 30-persona panel) | extract `_resolve_personas`; `panel_set.json` |
-| Hidden dim | 3584 | geometry npz meta |
-| Geometry robustness cell | L20 centered cosine from on-HF `panel_centroids_layer20.pt` (#509 weak sycophancy cell; fail-soft, robustness-only) | decomp `L20_ROBUST_LAYER=20` |
-| **CV — headline holdout unit** | **bystander** (keeps every source in training → M0 per-source one-hots identifiable) | decomp `six_regression_ladder(... tbl["bystander_group"])`; plan §11 |
-| CV — robustness holdout unit | source (leave-one-source-out) + intercept-only-M0 variant | decomp `source_group` + `intercept_only_ladder`; plan §4 step 4 |
-| **CV fold count** | `min(5, n_unique_groups)` via `GroupKFold` (5-fold at 30 bystanders) | decomp `_cv_r2_grouped`; plan §11 (`Source: #532`) |
-| Regression | OLS (`sklearn.LinearRegression`); predictors z-scored | decomp `six_regression_ladder` |
-| **Bootstrap reps (Spearman CIs)** | **1000** (100 in smoke) | decomp `N_BOOT_FULL=1000`; plan §11 (`Source: #532`) |
-| Bootstrap seed | 42 | decomp `BOOT_SEED=42` |
-| Spearman CI form | 2.5 / 97.5 percentile of bootstrap resamples | decomp `_bootstrap_spearman_ci` |
-| Wilson CI form (precision gate) | score interval, z=1.96, cluster-honest at n=60 claims | decomp `_wilson_half_width`; plan §11 (`Source: standard`) |
-| **#391 precision gate threshold** | S/N < 2: `median|CHANGE| < 2 × cluster-honest Wilson half-width` | decomp `forced_choice_gate`; plan §7 |
-| Per-cell N | 60 claims × 10 rollouts = 600 verdicts (inherited from #612) | decomp `_read_trained_rate` assert `n_verdicts == 600` |
-| **Seeds** | 42, 137 (averaged per cell; per-seed sign-agreement reported) | decomp `SEEDS=(42, 137)`; plan §11 (`Source: #612`) |
-| Cell exclusions | source==bystander diagonal + per-source trained-negative bystanders (`neg_member_for`) | decomp `build_table` |
-| Judge model (inherited) | `claude-haiku-4-5-20251001` content judge (κ 0.869 vs Sonnet, #612) | trained judgment cell JSON `model` field |
-
----
-
 ## 6. Worked examples
 
 ### 6a. Example panel-persona system prompt (the eval-context "input" slot)
@@ -161,7 +161,7 @@ source persona's prompt (verbatim from `panel_set.json`):
 ```
 
 (The `cosines` here are #612's panel-internal cosines; #649 freshly
-re-extracts the early-layer-band cosine used in its regression ladder, per §5.)
+re-extracts the early-layer-band cosine used in its regression ladder, per §2.)
 
 ### 6b. Example evaluation probe (early-layer geometry extraction)
 
