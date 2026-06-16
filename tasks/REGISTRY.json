@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 651,
+  "highest_id": 652,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4046,6 +4046,13 @@
       "path": "tasks/planning/651",
       "status": "planning",
       "title": "Cross-behavior cross-context shared-direction geometry on the #537 testbed (post-hoc re-extraction)"
+    },
+    "652": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/652",
+      "status": "proposed",
+      "title": "On-policy + matched-LR isolation of the LoRA-vs-dense sycophancy bystander-leakage gap (coverage-matched)"
     },
     "66": {
       "has_clean_result": true,
