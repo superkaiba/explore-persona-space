@@ -183,14 +183,22 @@ def fig_armb(cells, res):
     )
     ax1.set_xticks(xs)
     ax1.set_xticklabels(["teacher", "neutral"], fontsize=9)
-    ax1.set_ylim(0.0, 0.95)
+    ax1.set_ylim(0.0, 1.25)
     ax1.set_ylabel(f"EM install rate at step {md}")
-    ax1.set_title(f"matched dose (step {md})", fontsize=10)
+    # The per-bar bars are naive proportion-CI and UNDERSTATE the decision CI; the
+    # AMBIGUOUS verdict rests on the hierarchical-bootstrap CI on the DIFFERENCE.
+    dlo, dhi = res["armB_matched_dose_delta"]["ci95"]
+    ax1.set_title(
+        f"matched dose (step {md}) — AMBIGUOUS\n"
+        f"decision CI on teacher − neutral: [{dlo:+.2f}, {dhi:+.2f}]\n"
+        "(far wider than these per-bar proportion CIs)",
+        fontsize=7.2,
+    )
     for x, b in zip(xs, bars):
-        ax1.text(x, b[1] + b[3] + 0.03, f"{b[1]:.2f}\nn={b[5]}", ha="center", fontsize=7.5)
+        ax1.text(x, b[1] + b[3] + 0.02, f"{b[1]:.2f}\nn={b[5]}", ha="center", fontsize=7.5)
 
     fig.suptitle(
-        "Identity conflict does not measurably drag EM install at matched dose",
+        "Identity-conflict drag on EM install is unresolved at two seeds (AMBIGUOUS)",
         fontsize=11.5,
         fontweight="semibold",
         x=0.02,
@@ -200,8 +208,8 @@ def fig_armb(cells, res):
     fig.text(
         0.02,
         0.965,
-        "Teacher (caregiver identity, max conflict) vs a matched-base-propensity neutral; "
-        "difference at the matched dose is +0.03 with a wide CI.",
+        "Teacher (caregiver identity, max conflict) vs a matched-base-propensity neutral; matched-dose "
+        "difference is +0.03 but the decision CI spans large drag in either direction.",
         fontsize=8.3,
         ha="left",
         color="#555",
@@ -235,12 +243,12 @@ def fig_regression(cells, res):
     LABEL_OFF = {
         "icl_k2": (7, 4),
         "sp_ph1": (7, -12),
-        "reph_imp": (-7, 7),
+        "reph_imp": (8, 8),
         "wc_short_advice": (7, 3),
         "wc_short_code": (7, -12),
-        "sp_doctor": (7, 2),
+        "sp_doctor": (7, -12),
     }
-    LABEL_HA = {"reph_imp": "right"}
+    LABEL_HA = {}
     xs, ys = [], []
     for s in ARM_A:
         x = bp[s]["base_harmful_advice_propensity"]
@@ -284,7 +292,7 @@ def fig_regression(cells, res):
     ax.set_xlabel("base harmful-advice propensity (untrained)")
     ax.set_ylabel(f"EM install rate at matched dose (step {md})")
     ax.set_ylim(0.3, 0.80)
-    ax.set_xlim(0.095, 0.235)
+    ax.set_xlim(0.105, 0.235)
     ax.legend(loc="lower right", fontsize=8)
     set_title_subtitle(
         ax,
@@ -300,7 +308,12 @@ def fig_regression(cells, res):
 def fig_coherence(cells):
     """Coherence-collapse vs dose by class — distinguishes flattening from a real ceiling."""
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.0, 4.0))
+    # constrained_layout (blog default) collapses this single-axis figure to a
+    # zero-width plot when the title block + supxlabel are added; disable it and
+    # place the title/subtitle/source manually (see paper-plots blog single-axis note).
+    fig, ax = plt.subplots(figsize=(7.2, 4.4))
+    fig.set_layout_engine("none")
+    fig.subplots_adjust(left=0.12, right=0.97, top=0.80, bottom=0.18)
     c_res = paper_palette_role("primary")
     c_non = paper_palette_role("baseline")
     for cls, sources, color, lbl in [
@@ -318,13 +331,27 @@ def fig_coherence(cells):
     ax.set_xticklabels([str(s) for s in LADDER], fontsize=8)
     ax.minorticks_off()
     ax.legend(loc="upper right", fontsize=9)
-    set_title_subtitle(
-        ax,
+    ax.set_title(
         "Incoherence falls with dose, so the flat curves are not a coherence artifact",
-        "Mean dropped fraction per class. If install flattened because the model degenerated, "
-        "this would RISE with dose; it falls.",
-        source="issue #641 · Betley coherent-score gate",
+        loc="left",
+        color="#1A1A1A",
+        fontweight="semibold",
+        fontsize=13,
+        pad=26,
     )
+    ax.annotate(
+        "Mean dropped fraction per class (jagged, not monotone — a step-250 bump). "
+        "A degeneration artifact would RISE with dose; it falls.",
+        xy=(0.0, 1.0),
+        xytext=(0, 8),
+        xycoords="axes fraction",
+        textcoords="offset points",
+        ha="left",
+        va="bottom",
+        color="#5A5A5A",
+        fontsize=9,
+    )
+    fig.text(0.12, 0.015, "issue #641 · Betley coherent-score gate", fontsize=8, color="#7A7A7A")
     savefig_paper(fig, "issue_641/coherence_vs_dose", dir=OUTDIR)
     plt.close(fig)
 
