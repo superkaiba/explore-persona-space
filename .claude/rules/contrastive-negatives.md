@@ -16,6 +16,14 @@ is the deliberate control) OR the experiment is a strict single-variable
 replication of a positive-only parent (then carry the parent's design AND
 note the no-negatives regime as a scope caveat in the clean-result).
 
+> **Positive-side sibling rule:** completion provenance for the POSITIVE
+> rows is governed by `.claude/rules/on-policy-completions.md` —
+> on-policy-first: elicit the behavior from the BASE model via a
+> system-prompt instruction, judge-filter, strip the instruction before
+> training; canned/LLM-written positives only as labeled anchors/controls
+> or after a recorded yield failure. This file mandates on-policy text
+> for the NEGATIVE side; the two recipes are siblings — read both.
+
 ## The recipe
 
 Interleave two row types over the **same questions**, gated by persona,
@@ -89,6 +97,17 @@ with loss masked so only the target slot carries gradient.
   Contrastive negatives reliably buy *coarse* on/off localization; the
   *fine* composition knobs (negative-set count + similarity) are untested
   (#19 was queued but never run — there is no winning size yet).
+- **Cross-condition leakage comparisons are dose-confounded by default.**
+  The negative set also changes INSTALL strength — not even in a fixed
+  direction across behaviors (#601: contrastive negatives strengthened the
+  marker implant; #608: positive-only sycophancy installed at least as
+  strongly) — so "contrastive leaks less than positive-only" read off raw
+  bystander leakage conflates selectivity with implant dose. Use the
+  install-controlled reads (matched-install checkpoints, leakage as a
+  fraction of install in EOS-margin logit space, leakage-vs-install dose
+  curves) per `.claude/rules/marker-leakage-measurement.md`
+  § Install-strength confound; never correlate the fraction back against
+  install (the same X-vs-(X−Y) family as the #383 caveat above).
 - **Saturation hides everything (#448).** At a fully-trained anchor the
   on-policy marker log-prob saturates (argmax = marker everywhere) so recipe
   knobs have nothing to push against. A composition/negatives sweep MUST use
@@ -108,6 +127,12 @@ with loss masked so only the target slot carries gradient.
   artifacts that dissolve on the on-policy re-run.
 - The gate is shallow/emissive, not propositional (#389/#390): it teaches
   the model to *emit* the gated target, not to use it as a premise.
+
+## Enforcement
+
+The planner (§4 Design) includes the negative set by default and the critic
+(Methodology lens) REVISEs a behavior-implantation plan that omits it without
+an exemption.
 
 ## Files of record
 

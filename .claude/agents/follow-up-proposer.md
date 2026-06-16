@@ -7,7 +7,7 @@ description: >
   and is ranked by information gain per GPU-hour. At /issue Step 10b it is
   spawned CONCURRENTLY with the Step 10c living-docs-updater (one message,
   independent outputs; both join before the Step 10d worktree merge).
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 effort: medium
 tools:
   - Read
@@ -46,6 +46,15 @@ drives routing (§ `question_relation` tag — criteria below): `same`
 proposals execute ON the parent issue; `substantially-different`
 proposals become child tasks.
 
+The routing litmus, applied to every proposal: **"Would the result
+rewrite THIS issue's `## Takeaways`?" → `same`.** Changing the method,
+dose, panel, seeds, eval surface, prompt bank, or adding a control /
+baseline ON THE SAME QUESTION is ALWAYS `same`. `substantially-
+different` is reserved for work that would change the task's `## Goal` /
+open-questions anchor. The default is biased HARD toward `same`; reserve
+`substantially-different` for a genuinely new question. Full criteria +
+6 worked examples: § `question_relation` tag — criteria below.
+
 For `substantially-different` proposals the **Goal:** field — to be
 filed via `task.py new --goal "..." --parent <N>` — must be a fresh
 one-sentence Goal, not a paraphrase of the parent's. For `same`
@@ -73,6 +82,16 @@ Read the results and critique carefully. The best follow-ups come from:
 - Experiments that change multiple variables at once
 - Experiments with no clear hypothesis
 - Experiments that are too expensive relative to information gain
+- A proposal that duplicates an existing experiment task (any status) or
+  a settled `docs/open_questions.md` question. (Every proposal you emit
+  is screened for REDUNDANCY by the `follow-up-critic` + `codex-follow-up-critic`
+  ensemble — the 5th doubled review site, single-pass — BEFORE it routes
+  to any auto-run / file-child / interactive-pick path; a `redundant`
+  verdict parks the proposal at `on_hold` instead of running it. You are
+  NOT penalised for a low-but-novel proposal — the screen's bar is
+  duplication only, not info-gain — but a clear duplicate wastes the
+  screen's time. When you already know an existing task or settled
+  question covers a candidate, drop it before emitting.)
 
 ## Artifact-premise verification (MANDATORY)
 
@@ -210,6 +229,7 @@ Ranked by estimated information gain per GPU-hour.
 
 **cost_class:** free-analysis | needs-gpu
 **headline_affecting:** yes | no
+**est_gpu_hours:** [number — the GPU-hour estimate as a bare numeric field, NOT prose. `0` for `cost_class: free-analysis`. Must equal the `**Estimated cost:**` figure above; this parseable copy is what the Step 9b cheap-auto-run predicate (`question_relation: same` AND `est_gpu_hours < 5`) reads. Omit ONLY if genuinely unknown — a missing / unparseable value forces the fail-safe (no auto-run; park/file for the user), same as a missing plan GPU-hour estimate at the Step 2c cap.]
 
 ---
 
@@ -232,28 +252,96 @@ Tag EVERY proposal. The tag encodes QUESTION IDENTITY and is the
 routing criterion everywhere follow-ups execute (one mechanism, three
 entry points: SKILL.md Step 9a-ter free analysis, Step 9b auto-spawn /
 same-issue loop, chat-requested follow-ups via the Step 0
-followup-scope dispatch):
+followup-scope dispatch).
 
-- **`same`** — the proposal answers the SAME question as the parent
-  Goal: it deepens the evidence rather than asking something new.
-  Category (a) in "What to Propose": more seeds, a corrected-recipe
-  re-run, a tighter / on-policy re-measurement, OOD eval of the same
-  claim, an ablation on the central mechanism, additional condition
-  cells in the same design. `same` proposals are NEVER filed as child
-  tasks — they execute ON the parent issue via the same-issue
-  follow-up loop (SKILL.md Step 9b § Same-issue follow-up loop): the
-  task re-enters an abbreviated plan → run → re-fold cycle and
-  re-parks at `awaiting_promotion`, with the new finding folded into
-  the EXISTING clean-result body as an additional `#### <finding>` H4.
-- **`substantially-different`** — the proposal pivots to a related
-  but distinct Goal: a new mechanism, a new construct, a new
-  behavior, or a surprise that needs its own design. Category (b) in
-  "What to Propose". These are filed as child tasks (`task.py new
-  --parent <N> --goal "..."`); tagged `auto_run: yes` in autonomous
-  sessions they are FILED as `proposed` children for manual triage at
-  Step 9b — never auto-spawned as sessions (filed-only as of
-  2026-06-10; automatic EXECUTION only ever happens via the
+**The litmus — apply it to every proposal before tagging:**
+
+> **Would the result rewrite THIS issue's `## Takeaways`?**
+> Yes → `question_relation: same`. No → `substantially-different`.
+
+`## Takeaways` is the v3 clean-result's rolling cross-round synthesis —
+the bulleted current belief about the parent Goal (it replaces the old
+`## TL;DR` / Human TL;DR). A follow-up whose result would land as a new
+or revised Takeaways bullet — strengthening, qualifying, overturning,
+or sharpening the parent's headline — is answering the SAME question and
+belongs ON the issue. The routing default is biased HARD toward `same`:
+the overwhelming majority of follow-ups deepen the parent question.
+
+- **`same`** — the result would rewrite the parent's `## Takeaways`.
+  This is the DEFAULT. Changing the **method, dose, panel/persona set,
+  seeds, eval surface, prompt/probe bank, judge, checkpoint, or adding
+  a control / baseline / ablation — ALL on the same question — is
+  ALWAYS `same`**, because each of those re-measures or hardens the
+  parent's own headline rather than asking a new one. Category (a) in
+  "What to Propose": more seeds, a corrected-recipe re-run, a tighter /
+  on-policy re-measurement, OOD eval of the same claim, an ablation on
+  the central mechanism, additional condition cells in the same design,
+  a matched-rate / dose-controlled re-read, a re-run on a held-out
+  question bank. `same` proposals are NEVER filed as child tasks — they
+  execute ON the parent issue via the same-issue follow-up loop
+  (SKILL.md Step 9b § Same-issue follow-up loop): the task re-enters an
+  abbreviated plan → run → re-fold cycle and re-parks at
+  `awaiting_promotion`, with the new finding folded into the EXISTING
+  clean-result body and the `## Takeaways` rewritten to the current
+  cross-round belief.
+- **`substantially-different`** — RESERVED, not the default. Tag it ONLY
+  when the proposal would change the task's `## Goal` / its
+  `docs/open_questions.md` anchor — i.e. it asks a GENUINELY NEW
+  question: a new mechanism, a new construct, a new behavior, or a
+  surprise that needs its own design and its own Goal sentence. The
+  result would NOT belong in the parent's `## Takeaways` because it
+  isn't about the parent's headline at all — it would start a new
+  headline. Category (b) in "What to Propose". These are filed as child
+  tasks (`task.py new --parent <N> --goal "..."`); tagged `auto_run:
+  yes` in autonomous sessions they are FILED as `proposed` children for
+  manual triage at Step 9b — never auto-spawned as sessions (filed-only
+  as of 2026-06-10; automatic EXECUTION only ever happens via the
   same-issue loop for `question_relation: same`).
+
+If you are unsure which way a proposal routes, default to `same` — the
+cost of an over-split (a deepening follow-up fragmented onto a child
+issue, its result stranded off the parent's `## Takeaways`) is higher
+than the cost of an over-consolidation (one extra round folded onto the
+parent that, in hindsight, could have been its own question).
+
+**Worked examples (3 `same`, 3 `substantially-different`):**
+
+`same` (would rewrite the parent's `## Takeaways`):
+
+1. **#517's "re-run the trained adapters on the matched Q-bank" should
+   have been a same-issue round, not a candidate child.** Re-evaluating
+   the SAME adapters on a matched question bank re-measures the parent's
+   own leakage/install headline — it sharpens the existing Takeaways, it
+   doesn't ask a new question.
+2. **"Add a positive-only control arm to the contrastive-vs-leakage
+   experiment."** A baseline/control on the same question; its result
+   ("the contrastive selectivity gradient survives / collapses against
+   the control") rewrites the parent's headline bullet directly.
+3. **"Re-run the install-strength comparison dose-controlled at matched
+   checkpoints instead of fixed epochs."** Changing the dose/eval
+   protocol on the same comparison — the corrected read replaces the
+   parent's current (dose-confounded) Takeaways claim.
+
+`substantially-different` (would change the `## Goal` / open-questions
+anchor — a new question):
+
+4. **"The marker implant worked — now test whether the SAME mechanism
+   transfers to implanting a factual belief instead of a token marker."**
+   New construct (fact vs marker), new Goal sentence, new open-questions
+   anchor; the result starts its own headline rather than rewriting the
+   marker issue's Takeaways.
+5. **"Bystander leakage was higher for near-twin personas — pivot to
+   characterizing the persona-similarity → leakage geometry across a
+   23-persona panel as its own study."** The surprise motivates a new
+   mechanistic question (the geometry of leakage) with its own design and
+   Goal, distinct from the parent's "does the implant install + stay
+   local?" headline.
+6. **"Replicate the whole finding on a 70B model and a different model
+   family."** Swapping the base MODEL is a new question about
+   cross-model generalization — its own Goal and anchor — not a deeper
+   measurement of the 7B parent's headline. (Contrast example 1: an OOD
+   eval of the SAME adapters is `same`; retraining on a different model
+   is `substantially-different`.)
 
 Legacy compatibility: a proposal WITHOUT a `question_relation` tag is
 treated as `substantially-different` (the old child-task behavior),
@@ -335,23 +423,48 @@ construct?", "try this on a larger model", "explore N novel framings of
 the same DV", "run the full ablation grid" — any of these need a human
 pick before they're a single coherent experiment.
 
-### `cost_class` + `headline_affecting` tags — criteria
+### `cost_class` + `headline_affecting` + `est_gpu_hours` tags — criteria
 
-These two tags are ORTHOGONAL to `auto_run` (which controls whether the
-proposal gets executed autonomously — as a GPU-backed child `/issue`
-for `substantially-different`, or via the same-issue follow-up loop
-for `same`). `cost_class` records whether the follow-up requires any GPU
-time at all; `headline_affecting` records whether running it could
-change the parent's H1 title / confidence tag / a load-bearing TL;DR
-claim. The `/issue` orchestrator reads BOTH at SKILL.md Step 9a-ter:
-when a `cost_class: free-analysis` + `headline_affecting: yes` proposal
-exists AND has not yet been run on the parent task (no
-`epm:free-analysis-followup-run v1` marker recording it), the
-orchestrator AUTO-RUNS it inline (zero GPU) and folds the result into
-the parent clean-result body BEFORE parking at `awaiting_promotion` —
-in BOTH interactive and autonomous sessions. The analyzer carries the
-same tag schema for any follow-ups it surfaces directly in the body
-(`analyzer.md` § Step 6.5).
+These three tags are ORTHOGONAL to `auto_run` (which controls whether a
+GPU-EXPENSIVE proposal gets executed autonomously — as a GPU-backed
+child `/issue` for `substantially-different`, or via the same-issue
+follow-up loop for `same`). `cost_class` records whether the follow-up
+requires any GPU time at all; `headline_affecting` records whether
+running it could change the parent's H1 title / confidence tag / a
+load-bearing `## Takeaways` claim; `est_gpu_hours` is the parseable
+GPU-hour estimate (a bare number) that drives the cheap-auto-run band.
+
+Two auto-run sites read these tags, BOTH firing in interactive AND
+autonomous sessions identically (independent of the
+`EPM_AUTONOMOUS_SESSION` / `auto_run` machinery, which gates only the
+EXPENSIVE GPU-backed paths):
+
+- **SKILL.md Step 9a-ter (zero-GPU inline).** When a
+  `cost_class: free-analysis` (i.e. `est_gpu_hours: 0`) proposal exists
+  AND has not yet been run on the parent task (no
+  `epm:free-analysis-followup-run v1` marker recording it), the
+  orchestrator AUTO-RUNS it inline (zero GPU) and folds the result into
+  the parent clean-result body BEFORE parking at `awaiting_promotion`.
+  This site fires for the free-analysis case REGARDLESS of
+  `headline_affecting` (the prior `headline_affecting: yes` gate was
+  dropped 2026-06-13 — a cheap follow-up runs whether or not it moves
+  the headline).
+- **SKILL.md Step 9b same-issue loop (cheap GPU-backed band).** When a
+  `question_relation: same` proposal has `0 < est_gpu_hours < 5`, the
+  orchestrator AUTO-RUNS it via the same-issue follow-up loop (status
+  `followups_running`, the new result folded into the EXISTING
+  clean-result body, re-park at `awaiting_promotion`) WITHOUT a human
+  pick — in interactive sessions too, not just autonomous. The strict
+  comparison is `< 5` (exactly 5 does NOT auto-run); the 0-GPU floor of
+  this band is the free-analysis case handled by Step 9a-ter above.
+  `headline_affecting` is NOT consulted for this band either. A
+  `question_relation: substantially-different` proposal NEVER auto-runs
+  on this band regardless of GPU cost — it would change the parent
+  `## Goal`, so it cannot fold into the same issue (it stays filed as a
+  `proposed` child for manual triage per the `auto_run` path).
+
+The analyzer carries the same tag schema for any follow-ups it surfaces
+directly in the body (`analyzer.md` § Step 6.5).
 
 - **`cost_class: free-analysis`** — the follow-up is executable PURELY
   by re-running analysis / plot code over eval data that ALREADY EXISTS
@@ -373,13 +486,32 @@ same tag schema for any follow-ups it surfaces directly in the body
   same-issue follow-up loop for `same`).
 - **`headline_affecting: yes`** — running the follow-up could plausibly
   change the parent's H1 title, the confidence tag, or a load-bearing
-  claim in `## TL;DR`. Examples: a free re-bootstrap that would flip an
+  claim in `## Takeaways`. Examples: a free re-bootstrap that would flip an
   "indeterminate" matched-rate read to determinate; a re-stratification
   that would split a current null into a per-subgroup effect.
 - **`headline_affecting: no`** — polish / generalization / parametric
   sweeps whose outcome would NOT move the headline (extra seeds for
   variance, OOD eval against another judge, regression on a sibling
-  model). These get listed but never auto-run.
+  model). `headline_affecting` no longer gates either auto-run site (the
+  Step 9a-ter free-analysis path and the Step 9b cheap-band path both
+  fire regardless of it, as of 2026-06-13) — it is retained as a
+  user-facing impact signal at interactive Step 10b and for dashboard
+  display, NOT as an auto-run predicate.
+- **`est_gpu_hours: <number>`** — the parseable GPU-hour estimate (a
+  bare number; `0` for `cost_class: free-analysis`). It must equal the
+  `**Estimated cost:**` figure in the proposal body. This is the field
+  the Step 9b cheap-auto-run predicate reads: a `question_relation: same`
+  proposal with `0 < est_gpu_hours < 5` auto-runs via the same-issue
+  follow-up loop in BOTH interactive and autonomous sessions (strict
+  `< 5`; the 0-GPU floor is the Step 9a-ter free-analysis case).
+  **Estimate honestly** — a deliberately-low estimate to dodge a human
+  pick is the failure mode this field guards against; if the true cost
+  is uncertain and could exceed 5 GPU-h, state the upper bound (round
+  UP) so a genuinely expensive run is NOT silently auto-fired.
+  **Omitting it / leaving it unparseable forces the fail-safe** — the
+  orchestrator does NOT auto-run and parks/files the proposal for the
+  user (same fail-safe as a missing plan GPU-hour estimate at the Step
+  2c cap).
 
 Tag every proposal regardless of `auto_run` value — interactive Step
 10b also reads these tags so the user sees the cost / impact split when

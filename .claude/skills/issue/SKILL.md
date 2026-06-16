@@ -6,7 +6,7 @@ description: >
   reads state from `body.md` frontmatter + `events.jsonl` markers under
   `tasks/<status>/<N>/`, and dispatches the next action (clarify ->
   adversarial-planner -> approval -> worktree + dispatch specialist ->
-  preflight -> run -> analyzer -> humanize-loop (TL;DR) ->
+  preflight -> run -> analyzer -> humanize-loop (clean-result prose) ->
   free-analysis-followup-autorun (if any) ->
   clean-result-critic -> test-verdict -> auto-complete).
   clean-result-critic PASS (or test-verdict PASS for
@@ -133,9 +133,13 @@ that answers the SAME question as this task's Goal never creates a
 child; it re-enters THIS task via the same-issue follow-up loop
 (Step 9b § Same-issue follow-up loop), which holds the task at
 `followups_running` (tag `followup-auto` | `followup-manual`) for the
-round. In autonomous sessions, `substantially-different` `auto_run: yes`
-proposals are FILED as `proposed` children for manual triage only —
-never auto-spawned as sessions.
+round. A `question_relation: same` follow-up estimated at `< 5` GPU-h
+auto-runs through that loop in BOTH interactive and autonomous sessions
+(Step 9b cheap-band block; the 0-GPU floor runs inline at Step 9a-ter);
+only the EXPENSIVE (`>= 5` GPU-h) `auto_run: yes` `same` band is
+autonomous-only. In autonomous sessions, `substantially-different`
+`auto_run: yes` proposals are FILED as `proposed` children for manual
+triage only — never auto-spawned as sessions.
 
 The skill moves status in exactly five places:
 
@@ -270,6 +274,7 @@ after a YAML edit):
 <!-- workflow.yaml: AUTO-GENERATED (active-vs-awaiting) -->
 | State | Who's working | User action needed? |
 |-------|---------------|---------------------|
+| `on_hold` | Parked indefinitely ("on hold for now"); explicitly set aside, NOT in the active proposed queue. Excluded from auto-dispatch / the clarifier. Revivable via task.py set-status <N> proposed. | **yes** |
 | `proposed` | User has filed; clarifier hasn't run. | no |
 | `clarifying` | Clarifier asked questions; awaiting user answers in comments.jsonl. | **yes** |
 | `planning` | Adversarial-planner is running. | no |
@@ -647,10 +652,53 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   cap (park at `plan_pending` only when est. GPU-hours exceed
   `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, else auto-approve), and
   `awaiting_promotion` (always a human gate). Everything else auto-continues.
-- **Route `auto_run: yes` follow-ups by `question_relation` at Step 9b.**
+- **Every follow-up proposal passes a redundancy screen before it
+  routes (Step 9b § Follow-up value-critique, subroutine VC).** Once the
+  `follow-up-proposer` posts `epm:follow-ups v1`, the orchestrator runs a
+  SINGLE-PASS ensemble — `follow-up-critic` (Claude) + `codex-follow-up-critic`
+  (Codex) + `reconciler` on disagreement (the 5th doubled review site;
+  workflow.yaml § ensemble_review, `single_pass: true`) — over the whole
+  proposal set ONCE per park, BEFORE any proposal routes to the cheap-band
+  auto-run, the autonomous same-issue loop, the autonomous child-filing
+  path, or the interactive Step 10b pick. The bar is REDUNDANCY ONLY (a
+  proposal duplicating an existing experiment task, a settled open
+  question, or a higher-ranked sibling in this round) — NOT info-gain /
+  worth; a low-but-novel follow-up PASSes. NOTHING is dropped:
+  `not-redundant` proposals proceed through the EXISTING routing
+  unchanged; `redundant` proposals are SAVED as new `on_hold` tasks
+  (`epm:followup-parked-redundant v1`, revivable via `set-status <M>
+  proposed`), never auto-run and never silently discarded. The rationale
+  is persisted both ways (the `epm:followup-value-critique` markers + the
+  parked task's `## Value critique` body section). User-requested
+  follow-ups (`source: user-chat` — the Step 0 followup-scope dispatch)
+  are NOT screened: the user already decided to run them. See Step 9b
+  "Follow-up value-critique".
+- **Auto-run cheap (`< 5` GPU-h) same-question follow-ups in BOTH
+  modes at Step 9b.** Standing directive (2026-06-13): a follow-up that
+  is `0` GPU-h or `< 5` GPU-h just runs and folds into the SAME issue,
+  automatically, in interactive AND autonomous sessions — no human pick,
+  no `headline_affecting` gate. The 0-GPU floor runs inline at Step
+  9a-ter (free-analysis); the GPU-backed `0 < est_gpu_hours < 5` band
+  runs at the Step 9b **cheap-band block** (block C0-C4) via the
+  same-issue follow-up loop (status `followups_running`, the new result
+  folded into the EXISTING clean-result body, re-park at
+  `awaiting_promotion`). Scoped to `question_relation: same` ONLY (a
+  `substantially-different` follow-up changes the parent `## Goal` and
+  cannot fold into the issue — it never auto-runs on this band
+  regardless of GPU cost). Fail-safe: a `same` proposal with a missing /
+  unparseable `est_gpu_hours` does NOT auto-run (parks/files for the
+  user, mirror of the Step 2c plan-cap fail-safe). Bounded: at most 2
+  cheap-band rounds per task (counted by `epm:same-issue-followup-run v1`
+  / `source: proposer-9b-cheap`), and the Step 2c plan-approval GPU-hour
+  cap is the final backstop inside the loop if an estimate was wrong.
+  See Step 9b "Cheap follow-up auto-run".
+- **Route the EXPENSIVE (`>= 5` GPU-h) `auto_run: yes` follow-ups by
+  `question_relation` at Step 9b (autonomous mode only).**
   When a result lands, the orchestrator fires the `follow-up-proposer`
   at Step 9b (after auto-merge, before CRON-TEARDOWN, BEFORE the
-  human-only park at `awaiting_promotion`) and partitions the
+  human-only park at `awaiting_promotion`) and — for the proposals the
+  cheap-band block did NOT take (estimate `>= 5` GPU-h or missing) —
+  partitions the
   `auto_run: yes` proposals by QUESTION IDENTITY:
   `question_relation: substantially-different` proposals (and untagged
   ones from pre-2026-06-09 legacy markers only — a missing tag on a
@@ -675,12 +723,17 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   carries `execution: filed-only`); the same-issue
   loop is idempotent via `followup_label` matching between
   `epm:followup-scope v1` and `epm:same-issue-followup-run v1`.
-  Interactive mode (`EPM_AUTONOMOUS_SESSION` unset) IGNORES the
-  `auto_run` tag and runs the proposer at Step 10b as today (user
-  picks from the ranked list post-promotion; Step 10b routes the pick
-  by `question_relation`). See Step 9b "Autonomous follow-up
-  auto-spawn" + "Same-issue follow-up loop" + Step 10b
-  "Autonomous-mode short-circuit" for the mechanics; see
+  Interactive mode (`EPM_AUTONOMOUS_SESSION` unset) skips ONLY this
+  EXPENSIVE autonomous-only block — it does NOT file children and does
+  NOT auto-run `>= 5` GPU-h follow-ups (those still wait for the user's
+  Step 10b pick post-promotion, routed by `question_relation`). But the
+  Step 9b cheap-band block (`< 5` GPU-h) DOES fire in interactive mode
+  (see the cheap-band bullet above), so an interactive session may run
+  the proposer at Step 9b; Step 10b then reuses that `epm:follow-ups v1`
+  via its proposer-already-ran short-circuit rather than re-spawning the
+  proposer. See Step 9b "Cheap follow-up auto-run" + "Autonomous
+  follow-up auto-spawn" + "Same-issue follow-up loop" + Step 10b
+  "Proposer-already-ran short-circuit" for the mechanics; see
   `.claude/agents/follow-up-proposer.md` § "question_relation tag —
   criteria" + § "auto_run tag — criteria" for the tag semantics
   (canonical `auto_run: yes` example: a corrective re-run that fixes
@@ -886,8 +939,8 @@ FIRST, and resolve workflow-helper scripts (`verify_task_body.py`,
 `post_step_completed.py`, ...) from the MAIN checkout (`"$REPO_ROOT"/scripts/...`),
 never the worktree copy. (Incident #501, 2026-06-06→08: a worktree's
 pre-split skill copy armed `/issue 501` at */10 instead of the
-lightweight `/issue-tick` at */20 — 362 full ~44K-token skill reloads
-over 2.5 days. Incident #496: a worktree's pre-W22 `verify_task_body.py`
+lightweight `/issue-tick` backstop (then */20, now */45) — 362 full
+~44K-token skill reloads over 2.5 days. Incident #496: a worktree's pre-W22 `verify_task_body.py`
 false-FAILed a spec-conformant body, wrongly indicting the analyzer.)
 
 **MANDATORY auto-armed backstop for autonomous sessions — arm it NOW.**
@@ -917,7 +970,7 @@ if os.environ.get("EPM_AUTONOMOUS_SESSION") == "1":
     )
     if not already_armed:
         CronCreate(
-            cron="*/20 * * * *",
+            cron="*/45 * * * *",
             prompt=f"/issue-tick {N}",
             recurring=True,
             durable=False,
@@ -1785,10 +1838,23 @@ for f in $SPECS; do
   # EXCLUDING prior spec-freshness sync commits (which legitimately
   # touch spec paths — without the exclusion, the first sync's own
   # commit would poison every later freshness check on the branch).
-  if [ -z "$(git -C "$WT" log --oneline "$MB"..HEAD --grep='spec-freshness' --invert-grep -- "$f")" ]; then
+  bs_commits=$(git -C "$WT" log --oneline "$MB"..HEAD --grep='spec-freshness' --invert-grep -- "$f")
+  if [ -z "$bs_commits" ]; then
     SAFE_SPECS="$SAFE_SPECS $f"
   else
-    echo "spec-freshness: $f carries branch-side feature edits — skipping blind sync; reconcile manually"
+    # Print the offending commits so the orchestrator can decide whether
+    # to reconcile (cherry-pick main's drift on top of the branch edits)
+    # or whether the branch-side touch is a global revert/port that has
+    # ALREADY landed on main — in which case the skip is a false alarm
+    # and the orchestrator can drop those files from the skip set by
+    # hand (e.g. `git -C "$WT" checkout main -- .claude/agents/*.md`
+    # after confirming the branch-side commit's content is a subset of
+    # main's current state). Without these commit titles printed, the
+    # operator cannot tell a legitimate branch deliverable (#535
+    # incident) from a stale port/revert that needs no protection.
+    echo "spec-freshness: $f carries branch-side feature edits — skipping blind sync; reconcile manually."
+    echo "  branch-side commits:"
+    echo "$bs_commits" | sed 's/^/    /'
   fi
 done
 if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet main -- $SAFE_SPECS; then
@@ -1811,7 +1877,12 @@ above skips exactly those files (warning the orchestrator to reconcile
 them manually — typically by re-applying main's spec changes on top of
 the branch's additions) while everything the branch never touched
 still gets the blind sync. The conditional commit keeps the worktree
-clean for the Step 10d merge guards.
+clean for the Step 10d merge guards. The warning prints the offending
+branch-side commit titles so the orchestrator can tell a legitimate
+branch deliverable (the #535 case) from a stale port/revert whose
+content has already landed on main (in which case the orchestrator can
+safely override the skip for those specific files with a manual
+`git -C "$WT" checkout main -- <paths>`).
 
 **The sync scope is deliberately specs-only — do NOT extend it to
 `scripts/` or `tests/`.** The sync exists because the Agent/Skill tools
@@ -2428,8 +2499,10 @@ needing interactive SSH-MCP-driven orchestration mid-run (the
 experimenter launch pattern); (d) **workloads longer than ~20h on
 GCP** — the lane pins `--instance-termination-action=DELETE` +
 `--max-run-duration` (default 24h), so a multi-day sweep is deleted
-mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
-RunPod override. **When overriding to RunPod, name the residual gap in
+mid-run; thread the plan's declared fence via `--max-run-duration
+<dur>` on `dispatch_issue.py launch` (gcloud duration shape, e.g.
+`30h`; lands in `spec.extra["max_run_duration"]`, inert on non-GCP
+lanes — #628) or use the RunPod override. **When overriding to RunPod, name the residual gap in
 the launch marker note** (CLAUDE.md rule). The dispatch CLI
 cross-checks the task's ACTUAL frontmatter and classifies the override
 3-ways, each with a DISTINCT marker flag (additive visibility — the
@@ -2445,8 +2518,13 @@ alias for nibi) triggers a conflict warning +
 `extra.frontmatter_backend_unrecognized=true` — the latter two also
 carry `extra.frontmatter_backend: "<value>"`. Frontmatter
 `backend: runpod` is the one legitimate backing and stays silent. For the gcp/auto lanes the dispatch script must exist
-on the pushed branch — `--repo-branch` defaults to the current branch
-(the GCE startup script clones from origin). Four more gcp/auto
+on the pushed branch, so you MUST pass `--repo-branch issue-<N>`
+EXPLICITLY: the orchestrator runs `dispatch_issue.py` from the repo
+ROOT (pinned to `main`), so the `--repo-branch` default (the cwd's
+current branch) resolves to `main`, NOT the issue branch where a
+per-issue driver script lives — the GCE startup script then clones
+`main`, the driver is absent, and the workload dies ~4 min in with the
+EXIT trap powering the VM off (#595, 2026-06-13). Four more gcp/auto
 composition rules ((e) and (f) both hit live on #599, 2026-06-11;
 (g) from #608; (h) from #606): (e) **GPU
 sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
@@ -2616,8 +2694,12 @@ INTENT=<inferred>
 # renders + ssh-submits the sbatch; on GCP the GcpBackend renders +
 # ``gcloud compute instances create``s the VM. Hydra args repeatable.
 uv run python scripts/dispatch_issue.py launch \
-    --issue <N> --intent "$INTENT" \
+    --issue <N> --intent "$INTENT" --repo-branch "issue-<N>" \
     ${BACKEND:+--backend "$BACKEND"}
+# --repo-branch is MANDATORY: the orchestrator dispatches from the repo
+# root (main), so omitting it clones main on the gcp/auto lane and a
+# per-issue driver script is absent (#595). Drop it ONLY if the workload
+# is wholly on main (no issue-branch-only script).
 ```
 
 `dispatch_issue.py launch` prints ONE JSON line on stdout with the
@@ -2746,7 +2828,11 @@ but the container restart may have left stale state:
 ssh_execute(pod=epm-issue-<N>, command="cd /workspace/explore-persona-space && uv run python -m explore_persona_space.orchestrate.preflight --json")
 ```
 
-Parse JSON. If `ok=false`, post `epm:preflight v1` event with the
+Parse JSON. (Note: the old `Local is N commit(s) behind origin/main`
+false-fail on `issue-<N>` branches was fixed at source by #554,
+2026-06-12 — preflight is branch-aware and that condition is now a
+WARNING, so on current code an `ok=false` here is a real failure.)
+If `ok=false`, post `epm:preflight v1` event with the
 errors/warnings, then post the §5 marker:
 ```bash
 uv run python scripts/post_step_completed.py --issue <N> --step 6c \
@@ -2925,6 +3011,7 @@ poller once; the harness re-invokes the orchestrator when the bg-Bash
 exits, which is when one tick has completed:
 
 ```python
+result = None  # parsed JSON line of the PREVIOUS poll tick; None before the first tick
 while True:
     # MANDATORY: refresh the title + self-report at the TOP of every
     # tick so the dashboard / happy-ls / phone title stay current with
@@ -2964,10 +3051,36 @@ while True:
     # paragraph in Step 6b for the full rationale + the failure mode
     # the unconditional invocation would trigger (FALSE-POSITIVE
     # `epm:failure v1 missing_handle_sidecar`).
+    # ADAPTIVE POLL INTERVAL (anti-stall redesign §7). Every tick's JSON
+    # line carries a recommended `next_interval` (seconds): 1800 ONLY on
+    # a healthy, quiet, post-early-run `running` tick far from any phase
+    # boundary; 540 otherwise — gate-adjacent, anomalous, early-run
+    # (first ~30 min after launch), and recent-phase-change ticks NEVER
+    # get the long interval, so gates are never delayed. Use the
+    # PREVIOUS tick's emitted value as this tick's sleep; FALL BACK TO
+    # 540 when there is no previous tick yet (first poll after launch)
+    # or the key is absent/unparseable (older poller, garbled JSON
+    # line). NEVER lengthen the sleep on your own initiative: only the
+    # emitted value may raise it above 540, and never after a tick that
+    # reported anything other than healthy-quiet-running. Risk bound: a
+    # stall can now be noticed up to 30 min later in-session — accepted
+    # because the watcher's 10-min passes + the */45 issue-tick cron
+    # bound out-of-session detection independently
+    # (autonomous_session_watch.py / tick_triage.py).
+    #
+    # `result` below = the parsed JSON line from the PREVIOUS tick's
+    # bg-Bash output (the same `result` the status branch below reads);
+    # it is None on the first iteration — no previous tick yet. The
+    # membership clamp makes the never-lengthen rule MECHANICAL: only
+    # the two known emitted values are honored, anything else (garbled,
+    # bool, surprise number) falls back to 540.
+    interval = 540
+    if result is not None and result.get("next_interval") in (540, 1800):
+        interval = result["next_interval"]
     Bash(
         run_in_background=True,
         command=(
-            f"sleep 540 && uv run python scripts/backend_poll.py --issue {N}"
+            f"sleep {interval} && uv run python scripts/backend_poll.py --issue {N}"
         ),
     )
     # Harness re-invokes orchestrator on bg-Bash exit. To WAIT on bg
@@ -2992,7 +3105,10 @@ while True:
     #                                   the excerpt); run CRON-TEARDOWN (see
     #                                   below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
-    #                                  if new_milestone was true; loop again.
+    #                                  if new_milestone was true; loop again,
+    #                                  using result["next_interval"] as the
+    #                                  next sleep (540 fallback — see
+    #                                  ADAPTIVE POLL INTERVAL above).
     #                                  If the JSON also has
     #                                  gpu_idle_advisory_posted == true, act
     #                                  per "GPU-idle advisory handling" below
@@ -3122,22 +3238,24 @@ starting the bg-Bash poll:
    a substring of `"/issue-tick 467"`, so substring matching would
    mis-dedupe sibling issues.
 2. Otherwise call
-   `CronCreate(cron="*/20 * * * *", prompt="/issue-tick <N>", recurring=True, durable=False)`
-   — a 20-minute, session-scoped, in-memory recurring fire of the
+   `CronCreate(cron="*/45 * * * *", prompt="/issue-tick <N>", recurring=True, durable=False)`
+   — a 45-minute, session-scoped, in-memory recurring fire of the
    lightweight `/issue-tick <N>` skill (dies with the session, auto-
    expires at 7 days like the default pod TTL; the harness jitters
    recurring fires so ticks don't all land on a fixed wall-clock mark).
-   The 20-minute interval is chosen deliberately: the Anthropic prompt
-   cache TTL is 5 minutes, so a 10-minute interval was the worst case —
-   always cold (every tick re-prices the ~200K+ prefix at 1.25×), double
-   the ticks for no caching benefit. 20 minutes accepts the cold-cache
-   cost (the lightweight prompt makes it cheap) AND halves the tick
-   count. Going sub-5-min would share the cache but cost MORE wall-clock
-   fires per stalled stretch, which is the opposite of what the backstop
-   is for. The `/issue-tick` skill is ~few-hundred tokens, vs the
-   44K-token full `/issue` skill — so 12 idle ticks across a 4-hour
-   idle stretch cost a few thousand tokens instead of ~1M. Then
-   immediately re-`CronList`
+   The 45-minute interval (lengthened from 20 min on 2026-06-12) is
+   chosen deliberately: the pure-Python `autonomous_session_watch.py`
+   cron (every 10 min, free) carries ALL fast detection — DEAD-session
+   respawn, alive-but-stalled respawn for ACTIVE statuses, pod safety,
+   gate-park phone push, title reconcile — so the tick is purely the
+   in-session re-driver of last resort for the alive-but-stalled-at-PARK
+   class, which tolerates 45-min latency. Every tick fire is LLM-priced
+   (a cold context read even on the guarded-no-op path), so fewer fires
+   is the point. (The old 20-min rationale leaned on a "5-minute prompt
+   cache TTL"; that figure is inaccurate for this org's subscription
+   auth — subscription sessions get the 1-hour cache TTL automatically,
+   5 minutes applies to API-key auth — and the interval choice no longer
+   depends on it.) Then immediately re-`CronList`
    and assert EXACTLY ONE job matches
    `prompt.strip() == "/issue-tick <N>"`. If the harness normalised the
    stored prompt such that the ARM-GUARD would later miss, this assert
@@ -3150,8 +3268,17 @@ pod-backed `kind: experiment` runs reaching Step 6d.2;
 the polling loop do NOT arm it.
 
 **CRON-TEARDOWN procedure (run INLINE at every terminal / park exit site,
-not only here in prose).** `CronList`, find the job with
-`prompt.strip() == "/issue-tick <N>"`, `CronDelete(id=...)` it. The backstop
+not only here in prose) — hardened 2026-06-12.** `CronList`, delete EVERY
+job matching this issue's tick: primary match is whole-string equality
+(`prompt.strip() == "/issue-tick <N>"`); hardened fallback is the anchored
+pattern `issue-tick\s+<N>(?!\d)` (harness prompt-normalization drift was
+the #501 failure mode — the whole-string teardown silently no-oped 1,951
+times; the `(?!\d)` guard prevents sibling mis-delete, `"/issue-tick 46"`
+never matches `"/issue-tick 467"`). Then ASSERT-AFTER-DELETE: re-`CronList`
+and verify no matching job survived; if one did, retry the delete ONCE,
+then log LOUDLY — the runaway parachute (`tick_triage.py`'s
+3-consecutive-terminal flag + the watcher's force-stop) bounds the damage
+of a cron that refuses to die. The backstop
 DELIBERATELY survives the `done` → `verifying` transition (Step 6d.3) and
 keeps re-firing through the uploading / verifying / interpreting /
 reviewing stages — those stages have no other auto-wake, so the backstop
@@ -3265,8 +3392,19 @@ Pod-side dispatchers cannot post markers directly (the `task.py`
 branch-guard and the CLAUDE.md "Pod-side code NEVER shells out" rule),
 so they write a sentinel file at `/workspace/logs/issue-<N>-*.json`
 that `poll_pipeline.py` drains. When a sentinel carries a non-empty
-`gate` field, the poller posts the carried marker from the VM (e.g.
-`epm:fact-candidates v1`) and returns `status=gate` with `gate=<name>`.
+`gate` field **AND `blocks_pipeline: True`**, the poller posts the
+carried marker from the VM (e.g. `epm:fact-candidates v1`) and returns
+`status=gate` with `gate=<name>`.
+
+The poller ONLY surfaces `status=gate` when the drained sentinel had
+`blocks_pipeline: True` (the field defaults to True when absent, so a
+sentinel that carries only a `gate` name still parks). Sentinels with
+`blocks_pipeline: False` are the dispatchers' benign phase-progress
+signals (`gate=phase`, `gate=smoke`, `gate=dryrun` are the canonical
+ones): their marker IS posted from the VM, but they NEVER end the
+polling loop and NEVER trigger the fail-fast block. They are NOT user
+gates — do not treat a `blocks_pipeline: False` phase signal as an
+unrecognised gate (incident #641).
 
 The orchestrator parks at the named gate inline rather than continuing
 to poll — the pipeline itself has EXITed and is waiting on a user
@@ -3324,7 +3462,14 @@ Gate handlers (one per registered `<name>`):
   polling loop directly without a re-invocation. (See plan §4.2 of any
   fact-teaching task for the on-pod resume contract.)
 
-- **Unrecognised `gate` name**: log a one-line WARN, post `epm:failure
+- **Unrecognised `gate` name**: this branch fires ONLY for a sentinel
+  the poller surfaced as `status=gate` — i.e. one that carried
+  `blocks_pipeline: True`. A non-empty gate name with
+  `blocks_pipeline: False` (`gate=phase` / `gate=smoke` / `gate=dryrun`)
+  is filtered out by the drain and NEVER reaches this branch, so it is
+  NOT an unrecognised gate and MUST NOT trigger the block below. For a
+  genuinely unrecognised (blocking) gate name: log a one-line WARN, post
+  `epm:failure
   v1` with `failure_class: code` and `reason: unrecognised_gate_name`
   (the `code|infra|data` taxonomy has no `workflow` class; the failure
   classifier defaults unknown classes to `code` anyway), a note pointing
@@ -3333,10 +3478,12 @@ Gate handlers (one per registered `<name>`):
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
-Run CRON-TEARDOWN before parking (`CronList` → `CronDelete` the job with
-`prompt.strip() == "/issue-tick <N>"`) — the pipeline has EXITed and no pod is
+Run CRON-TEARDOWN before parking (the HARDENED Step 6d.2 procedure:
+`CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
+equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
+fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
 burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
-would re-surface the gate question every 20 min). The user's
+would re-surface the gate question every 45 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and
 re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
 skill cleanly via `uv run python scripts/post_step_completed.py --issue <N>
@@ -3362,7 +3509,7 @@ recovery table below must agree).** The live mechanisms during a
 1. The orchestrator's bg-Bash poll chain (Step 6d.2) — primary, drains
    sentinels and posts `epm:progress` / advances on done / blocks on
    stalled-or-dead.
-2. The auto-armed backstop cron (`CronCreate(cron="*/20 * * * *",
+2. The auto-armed backstop cron (`CronCreate(cron="*/45 * * * *",
    prompt="/issue-tick <N>")`, registered by the orchestrator at Step 6d.2,
    torn down at every terminal/park transition — NOT at `done`; see
    Step 6d.2 CRON-TEARDOWN) running in the per-issue
@@ -3954,13 +4101,13 @@ re-invocation).**
    is NO result marker for that same stage+round posted AFTER it (i.e. the
    breadcrumb is genuinely the latest event), THEN compare its timestamp to
    now against the **stage-aware freshness window**:
-   - Window = **30 min** for Codex-ensembled rounds (`interpreting` round 1
-     AND `clean-result` round 1 — these spawn both the Claude critic AND a
-     `codex-*-critic` twin at `--effort high|xhigh` via `companion task`;
-     round 1 commonly exceeds 15 min wall time).
-   - Window = **15 min** for everything else (`verifying`,
-     `interpreting`/`clean-result` rounds 2–3 which are Claude-only, and
-     any other Step 8/9 stage).
+   - Window = **30 min** for Codex-ensembled rounds (ALL `interpreting`
+     AND `clean-result` rounds 1-3 — every round spawns both the Claude
+     critic AND a `codex-*-critic` twin at `--effort high|xhigh` via
+     `companion task` since the 2026-06-12 all-rounds policy; such
+     rounds commonly exceed 15 min wall time).
+   - Window = **15 min** for everything else (`verifying` and any other
+     Step 8/9 stage).
    - **age ≤ window** → the subagent is presumed STILL RUNNING. EXIT the
      skill cleanly (`post_step_completed.py ... --exit-kind parked
      --notes "stage <stage> round <r> still in flight (dispatched <Δ>m
@@ -3984,11 +4131,11 @@ event. A stage is in flight when ITS breadcrumb has no matching result
 marker after it and is within the freshness window.
 
 The 15-min default comfortably exceeds a single Claude analyzer / critic /
-verifier turn; the 30-min Codex round-1 window covers a high-effort
+verifier turn; the 30-min Codex-ensemble window covers a high-effort
 Codex twin's wall time without re-dispatching live work and risking a
-double-writer on `body.md`. Both fit cleanly under the 20-min backstop
-cadence × 2-miss safety margin, so a genuinely stalled stage is still
-re-dispatched within ~2 ticks (≈40 min worst case). This guard is the
+double-writer on `body.md`. Both fit cleanly under the 45-min backstop
+cadence, so a genuinely stalled stage is still re-dispatched within
+~2 ticks (≈90 min worst case). This guard is the
 bound referenced by the Step 6d.2 "surviving the backstop into
 verifying/interpreting/reviewing is DESIGNED behavior" paragraph.
 
@@ -4039,7 +4186,7 @@ discarded by Step 8's gap-fill decision rule).
    - Generates plots via `paper-plots` skill, saves them under
      `figures/issue_<N>/`, commits + pushes them to `main` BEFORE
      writing the body, and references each figure INLINE inside the
-     relevant `#### <finding>` H4 under `### Findings` (no separate
+     relevant `### <finding>` H3 under `## Findings` (no separate
      `## Figure` H2 — that H2 is retired) via
      `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` —
      a SHA-pinned absolute URL the dashboard can fetch. Relative
@@ -4103,30 +4250,39 @@ no separate task is created. The analyzer:
 Posts `epm:clean-result-drafted v1` on the source task with the title
 and a 2-sentence recap.
 
-Then proceed to **9a-humanize (TL;DR humanize-loop pass)** before
-advancing to clean-result-critic.
+Then proceed to **9a-humanize (clean-result prose humanize-loop pass)**
+before advancing to clean-result-critic.
 
-**9a-humanize. TL;DR humanize-loop pass** (orchestrator-level — only on
-the first time `epm:clean-result-drafted v1` is posted, NOT on round-2/3
-revisions out of 9a-bis)
+**9a-humanize. Clean-result prose humanize-loop pass** (orchestrator-level
+— only on the first time `epm:clean-result-drafted v1` is posted, NOT on
+round-2/3 revisions out of 9a-bis)
 
-The analyzer ran an inline humanize-quick self-pass on the TL;DR block
-during its draft (analyzer.md Step 4.5). This orchestrator step adds the
-second-opinion layer: a real `/humanize loop` invocation with a separate
-hostile critic subagent the analyzer could not spawn from inside its
-own subagent context.
+The analyzer ran an inline humanize-quick self-pass on the reader-facing
+prose during its draft (analyzer.md Step 4.5). This orchestrator step adds
+the second-opinion layer: a real `/humanize loop` invocation with a
+separate hostile critic subagent the analyzer could not spawn from inside
+its own subagent context.
 
-The pass targets the `<section id="tldr">` block ONLY (mirrored to the
-markdown `## TL;DR` H2 if the body shape is markdown rather than the
-legacy HTML card). Design dropdown, figcaption, and reproducibility appendix
-are out of scope — they carry project jargon on purpose, and the
-clean-result-critic in 9a-bis enforces register discipline on them.
+The pass targets the v3 reader-facing prose surfaces — `## Takeaways`
+(the bullet block Thomas adapts for Slack) + `## What I ran` + the
+`## Findings` setup/read prose (bullets). This is exactly what Thomas
+reuses verbatim for Slack and the rolling cross-round synthesis, so its
+register matters most. The `## Data` capsules + example blocks,
+`## Reproducibility` appendix, and figure captions are OUT of scope —
+they carry project jargon on purpose, and the clean-result-critic in
+9a-bis enforces register discipline on them. (Legacy/in-flight v2 bodies:
+the pass targets the `## TL;DR` block — `<section id="tldr">` for the HTML
+card — instead; branch on the body sentinel.) Expect the pass cheaper
+than the v2 era — the v3 surfaces are bullets at ~800 words, not a
+multi-paragraph LessWrong narrative.
 
 **Procedure:**
 
-1. Read the published body via `task.py view <N>`; extract the TL;DR
-   block.
-2. Invoke `/humanize loop` with the TL;DR block as the target. **Read the
+1. Read the published body via `task.py view <N>`; extract the v3 prose
+   surfaces (`## Takeaways` + `## What I ran` + `## Findings` setup/read
+   bullets; for a v2/legacy body extract the `## TL;DR` block instead).
+2. Invoke `/humanize loop` with those prose surfaces as the target.
+   **Read the
    draft file once BEFORE the first Edit on it (and re-Read after any
    compaction)** — the draft is typically written by the critic subagent, so
    it is not in the orchestrator's Edit state, and blind Edits bounce with
@@ -4142,10 +4298,11 @@ clean-result-critic in 9a-bis enforces register discipline on them.
    - interpretation honesty (buried caveats, misplaced hedging)
    - results-writing discipline (effect sizes / named tests in prose,
      Δ-notation, undefined jargon — anti-patterns from CLAUDE.md
-     "Statistics" rules and `verify_task_body.py` Lens 7)
+     "Statistics" rules and the clean-result-critic statistical-framing
+     lens)
 3. Loop until all axes score ≤ 1 OR **3 orchestrator-level cycles**
    reached.
-4. If the loop revised the TL;DR, write the new body to
+4. If the loop revised the prose surfaces, write the new body to
    `/tmp/issue-<N>-humanize-loop.md`, then update via:
    ```bash
    uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-humanize-loop.md
@@ -4172,16 +4329,23 @@ loaded` so the audit log records the skip.
 `interpreting`, after Step 9a-humanize completes)
 
 The analyzer's Step 6.5 (and the follow-up-proposer's `cost_class` /
-`headline_affecting` schema) record whether any follow-up is executable
-with ZERO new GPU AND would plausibly move the parent's headline. When
-such a follow-up exists and has not yet been run on this task, the
+`est_gpu_hours` schema) record whether any follow-up is executable
+with ZERO new GPU (`cost_class: free-analysis`, `est_gpu_hours: 0`).
+When such a follow-up exists and has not yet been run on this task, the
 orchestrator AUTO-RUNS it inline BEFORE the clean-result-critique gate
 (9a-bis) — so the critic gates the UPDATED body, not a body that
-already names a free win it didn't take. This step fires in BOTH
+already names a free win it didn't take. **The `headline_affecting: yes`
+requirement was DROPPED 2026-06-13** — a zero-GPU follow-up auto-runs
+whether or not it would move the parent's headline (the standing
+directive: follow-ups that are 0 GPU-h or `< 5` GPU-h just run and fold
+into the same issue). This 0-GPU inline step is the floor of the
+cheap-auto-run band; the GPU-backed `0 < est_gpu_hours < 5` band runs at
+9b via the same-issue follow-up loop. This step fires in BOTH
 interactive and autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions
-identically (unlike the autonomous-only `auto_run: yes` GPU-backed
-routing at 9b (same-issue loop / child filing) — the two mechanisms
-are orthogonal). The whole
+identically (as does the 9b cheap band, as of 2026-06-13 — the
+remaining autonomous-ONLY routing at 9b is the `est_gpu_hours >= 5` /
+`auto_run: yes` expensive path: same-issue loop for `same`, child filing
+for `substantially-different`). The whole
 <!-- example: anti-pattern -->
 step is auto-continue (NOT a new
 `AskUserQuestion` gate); the halt-criterion contract is preserved.
@@ -4214,8 +4378,10 @@ implementer round. The analyzer's Step 6.5 artifact-premise check is
 the primary defense; this is a backstop (incident #552).
 
 When the detection union is empty, this step is a no-op: log one chat
-line (`No free-analysis + headline-affecting follow-ups to auto-run`)
-and proceed directly to 9a-bis.
+line (`No free-analysis follow-ups to auto-run`)
+and proceed directly to 9a-bis. (Detection no longer filters on
+`headline_affecting` — every unrun `cost_class: free-analysis` follow-up
+is eligible.)
 
 **Loop guard (critical).** This step caps at AT MOST ONE free-analysis
 follow-up run per task. The cap is enforced by the
@@ -4231,7 +4397,8 @@ mechanism stays fresh (each task gets its own one round).
 
 **Auto-run procedure.** For the single highest-priority unran entry
 (the first one in the analyzer's surfaced order; tie-break to the one
-the analyzer flagged as `headline_affecting: yes` with the most
+the analyzer flagged `headline_affecting: yes` — still a useful priority
+signal even though it is no longer an eligibility gate — with the most
 explicit eval-data path):
 
 1. **Dispatch breadcrumb** (Step 9 entry guard convention):
@@ -4270,7 +4437,7 @@ explicit eval-data path):
 5. **Re-spawn `analyzer`** (fresh context) with the new analysis
    output + the prior body. The analyzer folds the new result into
    the existing clean-result body (typically updating one
-   `#### <finding>` H4 and possibly the H1 title / confidence tag),
+   `### <finding>` H3 and possibly the H1 title / confidence tag),
    re-runs `verify_task_body.py` (must still PASS), and writes the
    revised body via `task.py set-body <N> --file ...`. The analyzer's
    Step 6.5 still fires on this re-run, but the loop guard above
@@ -4310,18 +4477,22 @@ after Step 9a PASS)
 
 Same shape as the interpretation-critic loop, but the critic checks
 STRUCTURE + REGISTER not CONTENT. Content honesty was settled in 9a;
-this layer ensures the body matches the 2-content-section nested-design
-(v2) clean-result shape (per `.claude/skills/clean-results/SPEC.md`):
-three required H2s in order (`## Human TL;DR` / `## TL;DR` /
-`## Reproducibility`), with `## TL;DR` opening `### Motivation` →
-`### What I ran` → `### Findings` (parent) → `#### <finding>` per
-result, and confidence in the H1 title tag only (v2 bodies bear the
-`<!-- clean-result-v2 -->` sentinel). The body reads in the right
-registers — casual first-person inside `## TL;DR`, LessWrong
-research-post register inside each `#### <finding>` H4. Discipline
-rules: see `.claude/skills/clean-results/SPEC.md` (canonical structure,
-registers, exemplars, figure captions, and research-communication
-principles).
+this layer ensures the body matches the v3 clean-result shape (per
+`.claude/skills/clean-results/SPEC.md`): five FLAT H2s in order
+(`## Takeaways` / `## What I ran` / `## Findings` / `## Data` /
+`## Reproducibility`), `## Takeaways` a 3-6-bullet numbers-first skim,
+`## What I ran` carrying `**Why:**` / `**Design:**` / `**Training:**` /
+`**Eval:**` (`**Rounds:**` when >1 round), one `### <finding>` H3 per
+result under `## Findings` with one inline figure each, `## Data` with
+`### Trained on` / `### Evaluated with` / `### Generated`, and confidence
+in the H1 title tag only (v3 bodies bear the `<!-- clean-result-v3 -->`
+sentinel; a stray `## Human TL;DR` / `## TL;DR` is a hard FAIL). The body
+reads in the right register — plain academic, bullets-first, numbers
+bolded. In-flight v2/legacy bodies (no v3 sentinel) keep the
+2-content-section nested-TL;DR shape and are NOT newly hard-FAILed by a
+v3 rule. Discipline rules: see
+`.claude/skills/clean-results/SPEC.md` (canonical structure, register,
+exemplars, figure captions, and research-communication principles).
 
 **Round 1:**
 
@@ -4333,17 +4504,37 @@ dispatching this round's critics.
    latest `epm:interpretation v<n>` event, runs
    `scripts/verify_task_body.py` +
    `scripts/audit_clean_results_body_discipline.py` as authoritative
-   mechanical passes, and scores against 15 lenses including the
-   Lens 7 statistical-framing rule absorbed from the retired
-   `reviewer` agent, Lens 13 planned-vs-actual coverage (added
-   2026-05-27 after task #391's C-axis silent drop), Lens 14
-   binding-concerns audit (task #455), and Lens 15
-   contaminated/failed-data-gate-arm check (task #407). Posts
-   `epm:clean-result-critique v1` on the source
-   task with PASS or REVISE.
+   mechanical passes, and scores against the v3 lens set (per
+   `.claude/agents/clean-result-critic.md`) — including the
+   statistical-framing rule, planned-vs-actual coverage, the
+   binding-concerns audit, the contaminated/failed-data-gate-arm check,
+   and the v3 Takeaways / Conciseness / Data lenses. Posts
+   `epm:clean-result-critique v1` on the source task with PASS or REVISE.
+
+   **Check-21 methodology-doc pass-through.** When the methodology doc
+   exists on the issue worktree branch (the early-spawned
+   `methodology-writer` committed `docs/methodology/issue_<N>.md` at
+   Step 8's results-landed spawn — see § Split schedule below), pass its
+   ABSOLUTE worktree path to BOTH the verifier and the critic so check 21
+   (body Parameters table ⊆ methodology doc §2 complete table) + the
+   critic's Data lens can spot-check the table against ground truth:
+   ```bash
+   DOC_PATH="$WORKTREE/docs/methodology/issue_<N>.md"
+   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N> \
+     ${DOC_PATH:+--methodology-doc "$DOC_PATH"}
+   ```
+   The doc lives on the worktree branch and only reaches the repo-root
+   `main` checkout at the Step 9b auto-merge (AFTER this gate), so a
+   naive main-checkout resolve would miss it — pass the worktree path
+   explicitly. Check 21 NO-OP-PASSes when `--methodology-doc` is omitted
+   or the doc does not yet exist anywhere (e.g. the methodology-writer
+   has not returned), and binds fully at promote-time verify (post-merge,
+   `kind: experiment` only). The critic brief carries the same
+   `methodology_doc_path` field for the Data-lens spot-check.
 
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on
-   round 1 only. Brief contract (matches
+   every round (all-rounds ensemble as of 2026-06-12; previously
+   round 1 only). Brief contract (matches
    `.claude/agents/codex-clean-result-critic.md` § "Your brief
    contains" + Step 1b): pass the ABSOLUTE
    `$(task.py find <N>)/body.md` as `clean_result_body_path` and
@@ -4354,7 +4545,12 @@ dispatching this round's critics.
    the latest `epm:interpretation v<n>` note to a temp file
    (`/tmp/issue-<N>-interpretation-v<n>.md`) and pass that absolute
    path as `interpretation_marker_path` (never an `events.jsonl`
-   path); and dispatch `codex_task.py` for this twin from the repo
+   path); pass the ABSOLUTE issue-worktree
+   `docs/methodology/issue_<N>.md` path as `methodology_doc_path` when
+   the doc exists (so the twin's own `verify_task_body.py` re-run gets
+   `--methodology-doc` and its Data lens can spot-check check 21; omit
+   when the methodology-writer has not yet returned — check 21 NO-OP
+   PASSes); and dispatch `codex_task.py` for this twin from the repo
    root, never an issue-worktree cwd. Posts
    `epm:clean-result-critique-codex v1`. Apply the
    ensemble decision rule (same shape as Step 5c — PASS+PASS, REVISE
@@ -4392,9 +4588,13 @@ Re-spawn `analyzer` agent (fresh context, sees raw data + all
 interp-critique history + the latest clean-result-critique). Analyzer
 revises the `epm:interpretation` event AND edits the task body in
 place via `task.py set-body <N> --file ...`. Re-runs
-`scripts/verify_task_body.py` (must still PASS). Re-spawn
-`clean-result-critic` against the revised surfaces. Posts the next
-critique version. Rounds 2-3 are Claude-only (no Codex twin).
+`scripts/verify_task_body.py` (must still PASS). Re-spawn the critic
+ensemble — `clean-result-critic` AND `codex-clean-result-critic`
+(all-rounds ensemble as of 2026-06-12), fresh contexts, against the
+revised surfaces, with prior critique summaries in both briefs. Both
+post the next critique version (`epm:clean-result-critique v<n>` +
+`epm:clean-result-critique-codex v<n>`); apply the same ensemble
+decision rule (including the procedural-only strip) as round 1.
 
 **Max 3 rounds.** After round 3, advance regardless and fold the
 residual structural / register debt into the chat-side summary so the
@@ -4426,15 +4626,18 @@ Every `kind: experiment` clean-result auto-gains a standalone
 `docs/methodology/issue_<N>.md`, committed to the repo and mirrored to a
 **secret** gist, linked from the clean-result body in TWO places: a
 reader-facing one-line `**Methodology:**` pointer at the TOP of the
-body (immediately after the `<!-- clean-result-v2 -->` sentinel,
-before `## Human TL;DR`) and a `**Methodology reference:**` row in
+body (for a v3 body: immediately after the `<!-- clean-result-v3 -->`
+sentinel, before `## Takeaways`; for an in-flight v2 body: after the
+`<!-- clean-result-v2 -->` sentinel, before `## Human TL;DR` — branch on
+the sentinel) and a `**Methodology reference:**` row in
 `## Reproducibility` (the artifact-index entry). The reference is **findings-blind**: it describes only HOW the
 experiment was run (conditions, training recipe, eval recipe, verbatim
 training / eval / output examples, reproducibility pointers) and never
 restates findings / interpretation / confidence / next-steps. The fresh
 context of the `methodology-writer` agent enforces this structurally —
-the agent never reads `## Human TL;DR`, `## TL;DR`, `## Findings`, the
-H1 confidence tag, or any `epm:interpretation` body. Fires in BOTH
+the agent never reads `## Takeaways`, `## Findings`, the H1 confidence
+tag, or any `epm:interpretation` body (for an in-flight v2 body: never
+`## Human TL;DR` / `## TL;DR` either). Fires in BOTH
 <!-- example: anti-pattern -->
 interactive and autonomous sessions identically. Auto-continue (NOT a
 new `AskUserQuestion` gate); the halt-criterion contract is preserved.
@@ -4577,9 +4780,10 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    `## Reproducibility` H2
    from the task body into a temp file and hand the agent ONLY that
    path — never the full `body.md`. Either way, this is what physically enforces
-   findings-blindness: `## TL;DR` / `## Findings` / the H1 confidence
-   tag never enter the agent's context. Prompt discipline is defense in
-   depth on top of this structural cut, not the primary mechanism:
+   findings-blindness: `## Takeaways` / `## Findings` / the H1 confidence
+   tag (v2/legacy: `## Human TL;DR` / `## TL;DR`) never enter the agent's
+   context. Prompt discipline is defense in depth on top of this
+   structural cut, not the primary mechanism:
    ```bash
    BODY_PATH=$(uv run python scripts/task.py find <N>)/body.md
    REPRO_FILE=$(mktemp -t issue<N>-reproducibility.XXXXXX.md)
@@ -4606,7 +4810,11 @@ steps 4 + 6-9 are the LATE JOIN executed here):
 4. **No-secrets guard** (pre-publish, mandatory). Before publishing
    the gist, scan the generated doc for obvious secret patterns —
    `sk-`, `hf_`, `wandb`-key shapes, `RUNPOD`, `ANTHROPIC_API_KEY`, raw
-   `.env` content. The methodology-writer reads only the
+   `.env` content — with the canonical scanner:
+   `uv run python scripts/check_no_secret_shaped_strings.py docs/methodology/issue_<N>.md`
+   (exit 0 = clean, exit 1 = hit). Do NOT use `redact_for_gist.py` for
+   this — it has only `--in`/`--out`/`--in-place`, no `--check` flag.
+   The methodology-writer reads only the
    already-public Reproducibility data + the repo, so this scan should
    never trip in normal operation; it is a safety net. On any hit,
    ABORT the gist publish, keep the committed repo doc, and pass the
@@ -4668,10 +4876,14 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    EXTEND-pass step-7 delta above).
 
    (a) **Top of body — the reader-facing pointer.** Insert exactly
-   this line immediately AFTER the `<!-- clean-result-v2 -->` sentinel
-   (i.e. right under the H1 title), BEFORE `## Human TL;DR`, with a
-   blank line on each side (legacy bodies without the sentinel:
-   directly under the H1 title line instead):
+   this line immediately AFTER the clean-result sentinel (i.e. right
+   under the H1 title), BEFORE the first content H2, with a blank line on
+   each side. Branch on the sentinel:
+   - **v3 body** (`<!-- clean-result-v3 -->`): insert after that
+     sentinel, BEFORE `## Takeaways`.
+   - **In-flight v2 body** (`<!-- clean-result-v2 -->`): insert after
+     that sentinel, BEFORE `## Human TL;DR`.
+   - **Legacy body** (no sentinel): directly under the H1 title line.
    ```
    **Methodology:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
    ```
@@ -4730,7 +4942,8 @@ steps 4 + 6-9 are the LATE JOIN executed here):
 
 The dedicated `reviewer` / `codex-reviewer` ensemble was deprecated when
 its statistical-framing responsibilities were absorbed into
-`clean-result-critic` Lens 11 (see CLAUDE.md ontology table). The
+`clean-result-critic` Lens 7 (see CLAUDE.md ontology table; under the v2
+spec Lens 11 is "raw alongside processed"). The
 `reviewing` status now exists ONLY as the single-step parking point
 between clean-result-critic PASS and `awaiting_promotion`. The skill
 moves through it in one transition with no agent dispatch:
@@ -4739,7 +4952,7 @@ moves through it in one transition with no agent dispatch:
 uv run python scripts/task.py set-status <N> awaiting_promotion \
   --note "clean-result-critic PASS; parking for user promotion."
 uv run python scripts/task.py post-marker <N> epm:status-changed \
-  --note "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 11)"
+  --note "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 7)"
 ```
 
 **Run CRON-TEARDOWN now.** `awaiting_promotion` is the terminal/park
@@ -4776,8 +4989,173 @@ conflict posts `epm:merge-failed v1` and surfaces one line in chat, but
 the task still parks at `awaiting_promotion` for promotion. Idempotent —
 skip if `epm:merged` already exists.
 
+**Cheap follow-up auto-run (BOTH interactive and autonomous — fires
+here, after auto-merge, before the autonomous-only block below).**
+Standing directive (2026-06-13): *a follow-up that is `0` GPU-h or
+`< 5` GPU-h just runs and folds into the same issue, automatically, in
+either session mode.* The 0-GPU floor is handled inline at Step 9a-ter
+(free-analysis); this block handles the GPU-backed cheap band
+(`0 < est_gpu_hours < 5`). It applies to `question_relation: same`
+proposals ONLY — a `substantially-different` follow-up changes the
+parent `## Goal`, so by the project's routing law it cannot fold into
+this issue and is NEVER auto-run here regardless of GPU cost (it stays
+filed as a `proposed` child via the autonomous-only block below, or
+surfaces at interactive Step 10b for manual triage).
+
+**Follow-up value-critique (redundancy screen) — MANDATORY before ANY
+proposal routes.** The instant an `epm:follow-ups v1` marker exists for
+this park (posted by C0 below, the autonomous-only block, or interactive
+Step 10b), and BEFORE any proposal is routed to the cheap-band auto-run,
+the autonomous same-issue loop, the autonomous child-filing path, or the
+interactive pick, the orchestrator runs the **follow-up value-critique
+ensemble** ONCE over the whole proposal set. This is the 5th doubled
+review site (workflow.yaml § ensemble_review.doubled_steps[follow-up-critic],
+`single_pass: true`) — it screens for REDUNDANCY only (NOT info-gain /
+worth) and NOTHING is dropped: every proposal is saved with a rationale
+either way. The subroutine (call it **VC** — invoked from C0a below, the
+autonomous block step 2-bis, and Step 10b):
+
+> **VC. Run the value-critique ensemble (single pass — no revise loop).**
+> 1. **Idempotency.** If an `epm:followup-value-critique v1` marker
+>    already exists for THIS proposal set (match by the `epm:follow-ups
+>    v1` it screened — same park), SKIP — reuse the existing merged
+>    verdict (this is a no-op on a backstop-tick / re-entry). Otherwise:
+> 2. **Spawn the ensemble** in ONE message (two `Agent` calls, staggered
+>    a few seconds per the CLAUDE.md 429 guidance): the Claude
+>    `follow-up-critic` AND the `codex-follow-up-critic` prompt-composer.
+>    Write the `epm:follow-ups v1` body to a temp file and pass its PATH
+>    as `proposals_marker_path` (never inline the proposals), plus
+>    `experiment_number`, `parent_goal` (the task `## Goal`), and any
+>    `prior_value_critique_summaries`. Dispatch the Codex twin's composed
+>    prompt as bg Bash via `scripts/codex_task.py` exactly like the other
+>    four twin sites (CLAUDE.md § "Codex ensemble review"); the twin agent
+>    NEVER dispatches Codex itself (orphan-job anti-pattern, #533). Post
+>    `epm:followup-value-critique v1` (Claude) + `epm:followup-value-critique-codex`
+>    (Codex) on this task's `events.jsonl`.
+> 3. **Merge the verdicts PER PROPOSAL** (single pass — no round loop;
+>    `single_pass: true`). For each proposal: both `not-redundant` →
+>    `not-redundant`. Both `redundant` → `redundant` (the merged
+>    rationale unions both critics' duplicate pointers). `not-redundant`
+>    vs `redundant` disagreement → spawn the `reconciler` (marker mode,
+>    `Role under adjudication: follow-up-critic`, binding binary
+>    `not-redundant | redundant`; it posts the canonical
+>    `epm:review-reconcile` marker). A Codex twin no-show falls back to
+>    the single-Claude `follow-up-critic` verdict (workflow.yaml §
+>    ensemble_review). An UNCITED `redundant` verdict (no concrete
+>    duplicate named) is non-binding — treat it as `not-redundant` for
+>    that proposal (cite-or-drop, mirrors the reconciler's ungrounded-
+>    blocker rule).
+> 4. **Act on the merged verdict, per proposal:**
+>    - **`not-redundant`** → the proposal proceeds through the EXISTING
+>      routing UNCHANGED (the caller's normal selection / partition /
+>      pick logic below runs on it). Its rationale (what new info it adds)
+>      is carried forward for the dashboard but does not change routing.
+>    - **`redundant`** → the proposal does NOT run and is NOT routed.
+>      SAVE it as a new task at status `on_hold` (set-aside, revivable via
+>      `set-status <M> proposed`, excluded from auto-dispatch) carrying
+>      `parent_id: <N>` and a `## Value critique` body section with the
+>      verbatim WHY-IT-DUPLICATES rationale + the pointer (the duplicated
+>      task / settled open-question anchor / sibling). File it in ONE
+>      atomic call that lands the task DIRECTLY at `on_hold` (never a
+>      two-step `new` → `set-status on_hold`, which leaves a window where
+>      the proposal sits at `proposed` and a concurrent PM auto-dispatch
+>      pass could pick it up — the exact outcome VC exists to prevent):
+>      `task.py new --status on_hold --parent <N> --kind experiment --goal
+>      "<the proposal's Goal>" --title "<proposal title>" --body-file
+>      <spec-with-value-critique-section>.md`. Post
+>      `epm:followup-parked-redundant v1` on the PARENT (fields per
+>      workflow.yaml § markers: `parked_task_id`, `parent`,
+>      `proposal_rank`, `title`, `duplicates`, `rationale`). Announce in
+>      chat per the "Announce every follow-up/child task in chat" rule:
+>      `Parked #<M> '<title>' on_hold (redundant — duplicates <X>; child
+>      of #<N>, revivable via set-status <M> proposed)`. NEVER silently
+>      drop a `redundant` proposal — `on_hold` is the durable home for
+>      "saved but not worth running now."
+> 5. **Hand the surviving (`not-redundant`) proposal set back** to the
+>    caller. If EVERY proposal screened `redundant`, the caller's
+>    selection finds no candidate and falls through exactly as if the
+>    proposer had returned none.
+
+The cheap-band flow:
+
+C0. **Idempotency + run the proposer (once per park, shared marker).**
+   FIRST: if this park already dispatched a cheap round whose loop is
+   in flight or done — i.e. an `epm:followup-scope v1` with
+   `source: proposer-9b-cheap` exists for which a matching
+   `epm:same-issue-followup-run v1` does NOT yet exist (in flight), OR
+   the cheap-band round cap (C2) is already hit — SKIP this block (it is
+   a no-op on a backstop-tick / re-entry; the loop or the cap is the
+   durable record). Otherwise: if an `epm:follow-ups v1` marker for THIS
+   park is not already present (the autonomous block below may have
+   posted it, or a re-entry did), spawn `follow-up-proposer` and post
+   `epm:follow-ups v1` (same marker both sites share). If it is already
+   present, reuse it — do NOT re-run the proposer. (In autonomous mode
+   the proposer runs once and both this block and the autonomous block
+   below consume the same `epm:follow-ups v1`. The proposer always posts
+   its proposal list when it runs; an empty list means it found no
+   follow-ups, and C1 then selects nothing.)
+C0a. **Run the value-critique (redundancy screen) — subroutine VC above.**
+   Before selecting any candidate, run VC over the `epm:follow-ups v1`
+   proposal set (idempotent — a re-entry reuses the existing merged
+   verdict). VC parks every `redundant` proposal at `on_hold` and hands
+   back only the `not-redundant` survivors. C1 below selects from the
+   SURVIVORS only — a `redundant` cheap proposal is parked, not auto-run.
+   (VC runs once per park and the autonomous block + Step 10b reuse its
+   verdict, so this is not a per-block cost.)
+C1. **Select the cheap-band candidate.** Among the surviving
+   (`not-redundant`) proposals, keep those
+   that are ALL of: `question_relation: same`, `auto_run: yes`, and
+   carry a parseable `est_gpu_hours` with `0 < est_gpu_hours < 5`
+   (strict `< 5`; `est_gpu_hours: 0` is the Step 9a-ter free-analysis
+   case, already handled; exactly `5` does NOT qualify). Take the
+   TOP-RANKED such proposal.
+   - **Fail-safe (missing / unparseable estimate).** A `same` proposal
+     whose `est_gpu_hours` is absent or unparseable does NOT auto-run —
+     it is left for the user (interactive: surfaces at Step 10b;
+     autonomous: routed by the autonomous-only block below as an
+     `auto_run`-gated `same` proposal under its own round cap). Mirror
+     of the Step 2c plan-cap fail-safe: a missing GPU estimate parks,
+     never auto-runs. State the skip reason in one chat line.
+   - **`headline_affecting` is NOT consulted** for this band (dropped
+     2026-06-13) — a cheap `same` follow-up runs whether or not it moves
+     the headline.
+C2. **Cheap-band round cap.** At most **2** cheap-band auto-run rounds
+   per task, counted by `epm:same-issue-followup-run v1` markers with
+   `source: proposer-9b-cheap`. Beyond the cap, further cheap `same`
+   proposals survive in `epm:follow-ups v1` for manual pick. (This cap
+   is INDEPENDENT of the autonomous `auto_run`/expensive-band cap, which
+   counts `source: proposer-9b`. The natural breakpoint is the re-park
+   at `awaiting_promotion` after each round, where the user sees the
+   updated body before any further cheap follow-up fires.) The cap stops
+   a chain of cheap follow-ups from auto-running indefinitely.
+C3. **Dispatch the round.** If a candidate survives C1+C2, post
+   `epm:followup-scope v1` (`source: proposer-9b-cheap`, fields per
+   workflow.yaml § markers; `gpu_hours_estimate` = the proposal's
+   `est_gpu_hours`) and enter the **same-issue follow-up loop** below
+   INSTEAD of parking — the task leaves `awaiting_promotion` and
+   re-enters at `followups_running` (tag `followup-auto`). Skip the
+   PushNotification → chat prompt → CRON-TEARDOWN park flow this round
+   (the backstop cron stays armed and drives the loop; an INTERACTIVE
+   session must arm it first per the loop's "Interactive liveness
+   backstop"). The plan still passes through the Step 2c plan-approval
+   gate inside the loop — an over-cap (`est_gpu_hours` mis-estimated low
+   but the realized plan exceeds `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`) plan
+   parks IN PLACE at `followups_running` (autonomous) or asks
+   (interactive), so the cost cap is the final backstop even if the
+   `est_gpu_hours` estimate was wrong.
+C4. **No candidate → fall through.** When no cheap-band candidate
+   survives C1+C2, this block dispatches nothing: proceed to the
+   autonomous-only block (autonomous sessions) or the park flow
+   (interactive sessions). The `epm:follow-ups v1` C0 posted persists —
+   its proposals (cheap ones beyond the cap, expensive ones, fail-safe
+   skips, `auto_run: no`) carry forward for the autonomous block to
+   route or for the user to pick at Step 10b post-promotion (the Step
+   10b proposer-already-ran short-circuit then reuses this marker).
+
 **Autonomous follow-up auto-spawn (autonomous mode only — fires here
-because Step 10b never runs autonomously).** When
+because Step 10b never runs autonomously; handles the EXPENSIVE
+`est_gpu_hours >= 5` / no-estimate `auto_run: yes` path, after the
+cheap-band block above has had first refusal).** When
 `EPM_AUTONOMOUS_SESSION=1`, the parent task parks at
 `awaiting_promotion` and Step 10 / 10b never fire on their own
 (promotion is ALWAYS human-only). To stop autonomous research from
@@ -4836,8 +5214,31 @@ The autonomous flow:
    `events.jsonl` as `epm:follow-ups v1` (same marker the interactive
    Step 10b would post; sharing the marker means the dashboard +
    downstream readers don't care which site fired the proposer).
-3. Parse the proposals, keep those with `auto_run: yes` in ranked
-   order, and PARTITION them by `question_relation`. **Untagged
+2-bis. **Run the value-critique (redundancy screen) — subroutine VC
+   above.** Run VC over the `epm:follow-ups v1` set (idempotent — if the
+   cheap-band block's C0a already ran it this park, reuse the merged
+   verdict). VC parks every `redundant` proposal at `on_hold`
+   (`epm:followup-parked-redundant v1`) and hands back only the
+   `not-redundant` survivors. Steps 3-6 below PARTITION + route the
+   SURVIVORS only — a `redundant` proposal is never filed as a child and
+   never enters the same-issue loop; it is saved on_hold for manual
+   revival. This screen gates BOTH the child-filing path AND the
+   same-issue-loop path.
+3. Parse the surviving (`not-redundant`) proposals, keep those with
+   `auto_run: yes` in ranked
+   order, and PARTITION them by `question_relation`. **The routing
+   litmus is the Takeaways test:** *would the result rewrite THIS
+   issue's `## Takeaways`?* If yes → `same` (stays on this issue via the
+   same-issue follow-up loop, never a child). Changing method, dose,
+   panel, seeds, eval surface, prompt bank, or adding a control/baseline
+   on the SAME question is ALWAYS `same`. `substantially-different` is
+   reserved for work that would change the task's `## Goal` /
+   open-questions anchor — a genuinely new question. This bias-toward-
+   same-issue litmus is the same one the `follow-up-proposer` applies
+   when tagging (`.claude/agents/follow-up-proposer.md` §
+   "question_relation tag — criteria") — the partition just consumes its
+   tags; when a tag looks miscast against the litmus, treat it like an
+   untagged proposal (re-spawn-once below). **Untagged
    proposals — freshness guard:** the legacy fallback (treat an
    untagged proposal as `substantially-different` so nothing in
    flight breaks) applies ONLY when the `epm:follow-ups v1` marker
@@ -4869,8 +5270,15 @@ The autonomous flow:
      (guards against a partial prior run that created the task before
      crashing).
    - **`same`** → the same-issue follow-up loop (§ below, via step 6).
-     Select the TOP-RANKED `same` + `auto_run: yes` proposal ONLY if
-     the autonomous round cap allows (fewer than 2
+     **First EXCLUDE any `same` proposal the cheap-band block above
+     already dispatched this park** (its `epm:followup-scope v1` carries
+     `source: proposer-9b-cheap` — match by `followup_label` / verbatim
+     spec): if the cheap band took a round, this block does NOT also
+     dispatch a `same` round in the same park (one same-issue round per
+     park). Of the REMAINING `same` + `auto_run: yes` proposals (those
+     with `est_gpu_hours >= 5` or a missing estimate — the cheap band
+     skipped these), select the TOP-RANKED one ONLY if the autonomous
+     EXPENSIVE-band round cap allows (fewer than 2
      `epm:same-issue-followup-run v1` markers with
      `source: proposer-9b` on this task). The rest — and all `same`
      proposals once the cap is hit — survive in `epm:follow-ups v1`
@@ -4936,16 +5344,22 @@ filing tree is both width-bounded and depth-bounded, not exponential).
 
 **Same-issue follow-up loop (`question_relation: same`).**
 
-One mechanism, three entry points: (a) the Step 9b autonomous
-partition above (`source: proposer-9b`), (b) a chat-requested
+One mechanism, four entry points: (a) the Step 9b autonomous
+expensive-band partition above (`source: proposer-9b`,
+`est_gpu_hours >= 5` / no estimate), (a-cheap) the Step 9b cheap-band
+block (`source: proposer-9b-cheap`, `0 < est_gpu_hours < 5`,
+`question_relation: same`) which fires in BOTH interactive and
+autonomous sessions, (b) a chat-requested
 same-question follow-up (`source: user-chat` — the chat session posts
 `epm:followup-scope v1` on #N, then re-invokes `/issue <N>`; the Step
 0 followup-scope dispatch lands here), and (c) an interactive Step
 10b pick (`source: step-10b-pick`). Step 9a-ter (the inline
 free-analysis auto-run) is this loop's zero-GPU sibling under the
 same principle — a follow-up that answers the SAME question as the
-task Goal runs ON this issue; 9a-ter handles the zero-GPU case
-inline, this loop handles the GPU-backed case.
+task Goal runs ON this issue; 9a-ter handles the zero-GPU floor
+inline, this loop handles the GPU-backed case (the cheap `< 5` GPU-h
+band auto-runs in both modes; the expensive band auto-runs only in
+autonomous mode or on an explicit user pick).
 
 **Interactive liveness backstop (arm BEFORE dispatching loop work).**
 An INTERACTIVE (non-autonomous) session driving this loop — typically
@@ -4981,11 +5395,13 @@ orphaned at `running` for 5+ hours.)
 2. **Re-enter the pipeline.** **FIRST record the initiation mode as a
    tag** (before the status flip, so the `task.py` missing-tag warning
    stays quiet): `uv run python scripts/task.py add-tag <N>
-   followup-auto` when `source: proposer-9b`; `uv run python
-   scripts/task.py add-tag <N> followup-manual` when `source:
-   user-chat` or `source: step-10b-pick`. EXACTLY these two tag names —
-   a bare `followup` tag does not count (incident #533). (Both tags may
-   accumulate over a task's life — they are history, not exclusive
+   followup-auto` when `source: proposer-9b` OR `source:
+   proposer-9b-cheap` (both are proposer-initiated auto-runs);
+   `uv run python scripts/task.py add-tag <N> followup-manual` when
+   `source: user-chat` or `source: step-10b-pick`. EXACTLY these two tag
+   names — a bare `followup` tag does not count (incident #533). (Both
+   tags may accumulate over a task's life — they are history, not
+   exclusive
    state.) **Then** `task.py set-status <N> followups_running` — the
    round HOLDS this status end-to-end (see the status-hold rule in step
    3); the CLI warns if neither tag is present at this transition. The
@@ -5058,9 +5474,10 @@ orphaned at `running` for 5+ hours.)
      per-issue naming already supports re-dispatch.
    - Run → upload-verify → Step 8 terminate, as normal.
    - The `analyzer` RE-FOLDS the new finding into the EXISTING
-     clean-result body — a new `#### <finding>` H4 under `### Findings`
-     (the v2 spec already supports multiple findings), updating the H1
-     title / confidence tag if the result moves the headline. The
+     clean-result body — a new `### <finding>` H3 under `## Findings`
+     (the v3 `## Findings` section already supports multiple `### <finding>`
+     H3s), updating the H1 title / confidence tag if the result moves the
+     headline. The
      `set-body` call passes NO `--snapshot` — `original-body.md`
      already preserves the pre-promotion original (see analyzer.md §
      Same-issue follow-up re-entry).
@@ -5081,12 +5498,22 @@ orphaned at `running` for 5+ hours.)
    one-line `outcome`) when the loop re-reaches `awaiting_promotion`.
    This is the idempotency record: an `epm:followup-scope v1` with a
    matching run marker is RUN and is never re-dispatched.
-5. **Round cap (autonomous only).** At most **2** autonomous same-issue
-   GPU follow-up rounds per task, enforced by counting
-   `epm:same-issue-followup-run v1` markers with `source: proposer-9b`.
-   Beyond the cap, further `same` proposals survive in
+5. **Round caps (two independent proposer-initiated caps).**
+   - **Expensive autonomous band:** at most **2** rounds per task,
+     counted by `epm:same-issue-followup-run v1` markers with
+     `source: proposer-9b` (the `est_gpu_hours >= 5` / no-estimate
+     autonomous-only path).
+   - **Cheap band (both modes):** at most **2** rounds per task, counted
+     by `epm:same-issue-followup-run v1` markers with
+     `source: proposer-9b-cheap` (the `0 < est_gpu_hours < 5` path,
+     enforced at block C2 above). This cap is what stops a chain of
+     cheap follow-ups from auto-running indefinitely; the re-park at
+     `awaiting_promotion` after each round is the user-visible
+     breakpoint.
+
+   Beyond either cap, further `same` proposals of that class survive in
    `epm:follow-ups v1` for manual pick. USER-REQUESTED rounds
-   (`source: user-chat` or `step-10b-pick`) do NOT count against the
+   (`source: user-chat` or `step-10b-pick`) do NOT count against either
    cap — the user asked explicitly, and interactive plan approval
    still gates each one.
 
@@ -5104,6 +5531,19 @@ Then post the chat-side prompt:
 >   `uv run python scripts/task.py promote <N> useful`     (paper-relevant)
 >   `uv run python scripts/task.py promote <N> not-useful` (archive candidate)
 > Then re-enter `/issue <N>` to fire Step 10.
+
+> **Re-park BEFORE the §5 marker (same-issue follow-up rounds — incident
+> #533, 2026-06-11):** during a follow-up round, post the §5 marker below
+> ONLY after the round's re-park has actually executed — check `task.py
+> view <N> --json` shows `status: awaiting_promotion` first. If the
+> status is still `followups_running`, the re-park was skipped: run step
+> 3's `set-status <N> awaiting_promotion` + step 4's
+> `epm:same-issue-followup-run v1` completion marker NOW, then post the
+> marker. Posting the exit-site marker while still at `followups_running`
+> and exiting is the #533 freeze shape — the session died there and the
+> task stranded for ~26h. (`autonomous_session_watch.py` now backstops
+> this with a round-complete auto re-park, but the backstop is recovery,
+> not the design.)
 
 Post the §5 marker (the EXIT site is the tail of step `9a-bis`; the
 candidate landing step on resume is `10` (`completion_audit`), looked up
@@ -5297,16 +5737,20 @@ step's skip condition fires, spawn only the other's agent.
 Auto-fires after `completed` for `experiment` tasks. Spawn the
 `follow-up-proposer` agent with:
 
-**Autonomous-mode short-circuit:** if an `epm:follow-ups-autospawned v1`
-marker is present on the parent's `events.jsonl`, the proposer ALREADY
-ran at Step 9b (the autonomous-mode follow-up auto-spawn site, fired
-before the parent parked for promotion). SKIP re-spawning the proposer
-here — it would duplicate the proposal list and is unnecessary. The
-`epm:follow-ups v1` posted at Step 9b is still the canonical list for
-the user; any `auto_run: no` proposals from that marker remain on the
-table for the user to pick from manually post-promotion. Interactive
-mode (no `epm:follow-ups-autospawned v1` ever posted) runs the proposer
-here as normal.
+**Proposer-already-ran short-circuit:** if an `epm:follow-ups v1` marker
+for the most recent park is ALREADY present on the parent's
+`events.jsonl`, the proposer ran at Step 9b — either the autonomous
+follow-up auto-spawn block (an `epm:follow-ups-autospawned v1` marker is
+also present) OR the cheap-band block (block C0, which fires in
+interactive sessions too as of 2026-06-13). SKIP re-spawning the
+proposer here — it would duplicate the proposal list and is unnecessary.
+The `epm:follow-ups v1` posted at Step 9b is still the canonical list
+for the user; any `auto_run: no` / cap-skipped / fail-safe-skipped
+proposals from that marker remain on the table for the user to pick from
+manually post-promotion (route the pick by `question_relation` as
+below). An interactive task that landed here with NO `epm:follow-ups v1`
+(no cheap-band candidate ever existed, so block C0 was a no-op that
+posted nothing — see C4) runs the proposer here as normal.
 - The completed task's plan (the `plans/plan.md` symlink)
 - The results (`epm:results` event)
 - The clean-result body
@@ -5323,14 +5767,33 @@ The proposer outputs 1-3 concrete follow-up proposals, each with:
 
 Post as `epm:follow-ups v1` event on the completed task.
 
-**Route the user's pick by `question_relation`** (untagged proposals:
-the treat-as-`substantially-different` fallback applies only when the
-`epm:follow-ups v1` marker was posted before 2026-06-09; on a newer
-marker the missing tag is a proposer-contract violation — classify
-the picked proposal yourself against
-`.claude/agents/follow-up-proposer.md` § "question_relation tag —
-criteria" and note the violation in the resulting
-`epm:followup-scope v1` / child-creation marker):
+**Run the value-critique (redundancy screen) before surfacing the picks
+— subroutine VC (Step 9b § Follow-up value-critique).** Run VC over the
+`epm:follow-ups v1` set (idempotent — if Step 9b's C0a / autonomous block
+already ran it this park, reuse the merged verdict; the
+proposer-already-ran short-circuit above means VC's prior verdict is
+usually already present). VC parks every `redundant` proposal at
+`on_hold` (`epm:followup-parked-redundant v1`, revivable) and hands back
+only the `not-redundant` survivors. **Surface ONLY the `not-redundant`
+survivors to the user** for picking; for each parked-redundant proposal,
+state ONE chat line naming the duplicate + the `on_hold` task id so the
+user knows it was saved (not dropped) and can revive it. The user's pick
+is then routed by `question_relation` as below — a `redundant` proposal
+is never offered as a pick (it is already parked on_hold).
+
+**Route the user's pick by `question_relation`** — the litmus is the
+Takeaways test: *would the result rewrite THIS issue's `## Takeaways`?*
+yes → `same` (same-issue loop), no → `substantially-different` (child).
+Changing method/dose/panel/seeds/eval-surface/prompt-bank or adding a
+control on the same question is `same`; only a result that would move the
+task's `## Goal` / open-questions anchor is `substantially-different`.
+(Untagged proposals: the treat-as-`substantially-different` fallback
+applies only when the `epm:follow-ups v1` marker was posted before
+2026-06-09; on a newer marker the missing tag is a proposer-contract
+violation — classify the picked proposal yourself against the
+Takeaways litmus + `.claude/agents/follow-up-proposer.md` §
+"question_relation tag — criteria" and note the violation in the
+resulting `epm:followup-scope v1` / child-creation marker):
 
 - **`same`** — do NOT file a child task. Post `epm:followup-scope v1`
   on this task (`source: step-10b-pick`, fields per workflow.yaml §
@@ -5511,7 +5974,7 @@ rebase-merged. Three guards:
    On a later `/issue <N>` resume: if the PR is already merged AND status
    is still `running` for any reason, auto-advance rather than
    re-dispatching.
-3. **Behind-`main` / non-`main`-base guard.** Compute:
+3. **Branch-content / non-`main`-base guard.** Compute:
 
    ```bash
    BEHIND=$(git -C "$WT" rev-list --count HEAD..origin/main)
@@ -5521,25 +5984,53 @@ rebase-merged. Three guards:
      | grep -Fxq "$MB" && echo yes || echo no)
    ```
 
-   The branch is **unsafe to blind-rebase** if EITHER `BEHIND` exceeds
-   the threshold (default `200` commits — tunable; pick lower for repos
-   with high churn, higher for slow-moving infra) OR `ON_MAINLINE=no`
+   The branch is **unsafe to blind-rebase** if EITHER `ON_MAINLINE=no`
    (branch was forked off another `issue-<M>` branch that is itself
-   still unmerged). In the unsafe case, do NOT run `gh pr merge
-   --rebase` — fall through to the **artifact-confirmed merge**
-   procedure below. The Guard 1 foreign-`tasks/` checkout is necessary
-   but not sufficient: it covers `tasks/`, but a behind-`main` branch
-   also carries stale `src/` and `scripts/` from the parent branch, and
-   a blind rebase replays both the parent's `tasks/` rewinds (already
-   handled) AND its `src/` / `scripts/` regressions (NOT handled by
-   Guard 1) onto `main`. (Incident 2026-06-03: `issue-479` was 1,153
-   commits behind `origin/main` and based on the still-unmerged `#472`
-   branch — a blind `gh pr merge --rebase` would have replayed `#472`'s
-   old commits onto `main`, risking regression of ~50 foreign `tasks/`
-   folders AND shared `#472` infra. The orchestrator caught it by hand;
-   this guard encodes the catch.)
+   still unmerged) OR the branch's **own commit content** is out of
+   scope (the content check below). `BEHIND` alone is NEVER an
+   automatic unsafe verdict — in this repo every `task.py` marker is a
+   commit (~100+/hr fleet-wide), so a same-day, single-own-commit,
+   mainline-based branch routinely reads `BEHIND` in the hundreds
+   (incident #598, 2026-06-12: `BEHIND=305` tripped the old fixed-200
+   threshold and routed an infra task's `src/` deliverables toward the
+   artifact-confirmed path, which structurally cannot carry them — its
+   surgical checkout is restricted to the task's own `tasks/` /
+   `figures/` / `eval_results/` paths). `BEHIND` exceeding the
+   threshold (default `200` commits) instead TRIGGERS the own-commit
+   content check:
 
-#### The auto-merge procedure (safe case: branch up-to-date and based on `main`)
+   ```bash
+   # The branch's OWN commits (merge-base..HEAD) — with ON_MAINLINE=yes
+   # this is exactly what `gh pr merge --rebase` will replay onto main.
+   git -C "$WT" diff --name-only origin/main...HEAD   # three-dot form
+   ```
+
+   UNSAFE if that list touches any foreign `tasks/` path (under
+   `tasks/` but outside `tasks/*/<N>/`) or files outside this task's
+   deliverable scope (paths neither the plan nor the code review
+   touched). If the list is clean — only this task's own deliverables —
+   the branch is SAFE to rebase-merge regardless of `BEHIND`: the
+   rebase replays only these commits, and files the branch never
+   committed keep `main`'s version.
+
+   In the unsafe case, do NOT run `gh pr merge --rebase` — fall through
+   to the **artifact-confirmed merge** procedure below. The Guard 1
+   foreign-`tasks/` checkout is necessary but not sufficient: it covers
+   `tasks/`, but a branch based on a still-unmerged parent branch also
+   carries the parent's stale `src/` and `scripts/`, and a blind rebase
+   replays both the parent's `tasks/` rewinds (already handled) AND its
+   `src/` / `scripts/` regressions (NOT handled by Guard 1) onto
+   `main`. (Incident 2026-06-03: `issue-479` was 1,153 commits behind
+   `origin/main` and based on the still-unmerged `#472` branch — a
+   blind `gh pr merge --rebase` would have replayed `#472`'s old
+   commits onto `main`, risking regression of ~50 foreign `tasks/`
+   folders AND shared `#472` infra. The orchestrator caught it by hand;
+   this guard encodes the catch. The #479 class still trips under the
+   reworked guard twice over: `ON_MAINLINE=no` flags it directly, and
+   its `origin/main...HEAD` diff carries the whole `#472` parent
+   payload, failing the content check.)
+
+#### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
 ```bash
 PR=$(gh pr view <PR> --json number -q .number 2>/dev/null) || true
@@ -5562,15 +6053,46 @@ no `git worktree remove`).
 
 - **Success:** post `epm:merged v1` with the list of merge SHAs. Update
   the chat title with `merged`.
-- **Failure** (rebase conflict, non-mergeable PR, non-fast-forward): do
-  NOT swallow it (fail-fast). Post `epm:merge-failed v1` with the `gh` /
-  `git` error, surface ONE line in chat naming the branch + worktree path
-  for manual resolution, and CONTINUE — an experiment still parks at
-  `awaiting_promotion`; a code-change task still completes. The merge is
-  retried (idempotently) on the next `/issue <N>` re-invocation.
+- **Failure** (rebase conflict, non-mergeable PR, non-fast-forward):
+  FIRST run the **merge-conflict recovery** sub-procedure below ONCE.
+  If the recovery itself fails or the retried merge is still refused:
+  do NOT swallow it (fail-fast). Post `epm:merge-failed v1` with the
+  `gh` / `git` error, surface ONE line in chat naming the branch +
+  worktree path for manual resolution, and CONTINUE — an experiment
+  still parks at `awaiting_promotion`; a code-change task still
+  completes. The merge is retried (idempotently) on the next
+  `/issue <N>` re-invocation.
 - **Autonomous mode** (no user present): same as above — the auto-merge
   proceeds. No deferral. (This reverses the prior "default NO" autonomous
   behavior; merge to `main` is no longer user-gated.)
+
+#### Merge-conflict recovery (safe case: `gh pr merge` refuses)
+
+When the safe-case merge is refused on mergeability (a REAL conflict —
+`main` and the branch both changed the same lines), do NOT hand-resolve
+in the shared repo root and do NOT force-push. Recover IN THE WORKTREE
+(worked example: #598 / PR #454, 2026-06-12 — both sides appended a new
+checklist item to `.claude/agents/experimenter.md`; resolved in the
+worktree, 210 targeted tests re-run, merged on retry):
+
+```bash
+git -C "$WT" fetch origin main --quiet
+git -C "$WT" merge origin/main          # conflicts surface HERE, in the worktree
+# Resolve each conflict in the worktree (keep main's version of anything
+# outside this task's deliverables), then:
+git -C "$WT" add <each resolved file>
+git -C "$WT" commit --no-edit
+# Re-run the targeted tests for the touched surface, then:
+git -C "$WT" push
+# gh recomputes mergeability asynchronously after a push — it can be
+# momentarily stale. Re-check before concluding failure:
+gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
+gh pr merge <PR> --rebase --delete-branch=false
+```
+
+One recovery attempt per Step 10d invocation. If the re-checked
+mergeability never recovers or the retried merge is refused again, fall
+to the Failure bullet above (`epm:merge-failed v1`, continue).
 
 #### The artifact-confirmed merge procedure (unsafe case: guard 3 tripped)
 
@@ -5589,6 +6111,42 @@ the worktree), and figure / `eval_results/issue_<N>/` commits land on
 `main` through the same mechanism. The branch's commits often duplicate
 work already on `main`; the value of the rebase is shared-infra fixes
 the branch carries forward, NOT the per-task artifacts.
+
+**New-shared-`src/`-infra guard (run FIRST, before the deliverables
+check).** The artifact-confirmed path — and the surgical additive
+checkout it degrades to — is structurally restricted to this task's own
+`tasks/` / `figures/` / `eval_results/` paths and CANNOT carry shared
+`src/` infra the branch introduced. So if this branch ADDED new shared
+modules under `src/explore_persona_space/`, the artifact-confirmed path
+would silently strand them on the branch — a downstream child that
+reuses the harness then breaks its import path on a clean `main`
+checkout (incident #595: parent #545 / grandparent #503 introduced
+`src/explore_persona_space/experiments/issue503/`, which the
+artifact-confirmed merge left on the branch; the child's eval battery
+imported it and crashed). Scan for it FIRST:
+
+```bash
+# Files this branch ADDED (status A) vs origin/main under shared src/.
+git -C "$WT" diff --name-only --diff-filter=A origin/main HEAD -- \
+  "src/explore_persona_space/" > /tmp/issue-<N>-new-src.txt
+```
+
+If `/tmp/issue-<N>-new-src.txt` is NON-EMPTY, this branch introduces NEW
+shared `src/` infra: the artifact-confirmed degrade is REFUSED. Do NOT
+fall through to the surgical additive checkout (it would strand the
+infra). Instead either (a) resolve the actual guard-3 condition so the
+SAFE full-rebase path runs (e.g. the parent `issue-<M>` branch this one
+forked off has since merged — re-run the guard-3 check; once
+`ON_MAINLINE=yes` and the content check is clean, `gh pr merge --rebase`
+carries the `src/` infra correctly), or (b) if the full rebase still
+cannot run, post `epm:merge-failed v1` with `{reason: "new shared src/
+infra cannot land via artifact-confirmed surgical checkout", new_src:
+[...]}`, surface ONE line in chat naming the branch + worktree path +
+the stranded `src/` paths for manual full-rebase resolution, and
+CONTINUE (the task still parks / completes; the merge retries
+idempotently on the next `/issue <N>`). NEVER surgical-checkout a branch
+that added shared `src/` — that is the exact #595 stranding this guard
+prevents.
 
 ```bash
 # Verify task deliverables resolve on origin/main.
@@ -5611,8 +6169,9 @@ Decision tree:
 
 - **All required deliverables resolve on `origin/main`** -> post
   `epm:merged v1` with fields `{artifact_confirmed: true,
-  full_rebase_deferred: true, reason: "branch <BEHIND> commits behind
-  main; based on <PARENT> (not on mainline)", verified_paths: [...]}`.
+  full_rebase_deferred: true, reason: "<the tripped guard-3 condition:
+  based on <PARENT> (not on mainline) | own commits touch foreign /
+  out-of-scope paths: <paths>>", verified_paths: [...]}`.
   Update the chat title with `merged (artifact-confirmed)`. Skip the
   `gh pr merge` call; leave the PR open so a future `/issue <N>`
   re-invocation can retry the full rebase once the parent branch is
@@ -5651,8 +6210,8 @@ Decision tree:
   git diff --cached --name-only   # sanity echo: spot any foreign staged entries
   xargs -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
 
-  Branch was <BEHIND> commits behind main and based on <PARENT>
-  (not on mainline), unsafe to blind-rebase. Cherry-picked this
+  Branch unsafe to blind-rebase: <based on <PARENT> (not on mainline) |
+  own commits touch foreign / out-of-scope paths>. Cherry-picked this
   task's own added files only; shared src/ / scripts/ unchanged." --
   git push origin main
   ```
@@ -5662,7 +6221,7 @@ Decision tree:
   [...]}`. Same chat title update as above.
 
 - **Surgical checkout itself fails** (file conflicts, push rejected
-  after one `git pull --rebase --autostash` retry; plain rebase fails on the always-dirty shared root) — post `epm:merge-failed v1`
+  after one `git pull --rebase=merges --autostash` retry; `--rebase=merges` preserves concurrent sessions' unpushed merge commits — plain `--rebase` flattens them away — and a rebase without `--autostash` fails on the always-dirty shared root) — post `epm:merge-failed v1`
   with the error, surface ONE line in chat (branch + worktree path +
   one-line reason), CONTINUE. Same fail-fast policy as the safe case.
 
@@ -5773,7 +6332,7 @@ dedicated "working" statuses):
 | `running` (code-reviewing) | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |
 | `running` (code-reviewing) | `epm:code-review v<n>` exists, no `epm:code-review-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-code-reviewer` only |
 | `running` (code-reviewing) | `epm:code-review-codex v<n>` exists, no `epm:code-review v<n>` | Claude reviewer not yet returned | re-spawn `code-reviewer` only |
-| `running` (code-reviewing) | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts disagree (PASS-class vs FAIL), no `epm:review-reconcile v<n>` | reconciler not yet started | spawn reconciler |
+| `running` (code-reviewing) | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts disagree (PASS-class vs FAIL), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `code-reviewer` | reconciler not yet started | spawn reconciler |
 | `running` (code-reviewing) | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts agree | ensemble decision ready | apply Step 5c rule and advance |
 | `running` (code-reviewing) | `epm:code-review-codex` is `epm:failure` (codex-output-malformed or infra) | Codex twin no-show | proceed with Claude-only decision per Step 5d fallback |
 | `running` (workload) | no `epm:results` for > 4h | experimenter crashed silently | post `epm:stale`, ask user |
@@ -5783,12 +6342,15 @@ dedicated "working" statuses):
 | `interpreting` | `epm:interpretation` exists, neither `epm:interp-critique` nor `epm:interp-critique-codex` for the current version | both ensemble critics not started | spawn `interpretation-critic` + `codex-interpretation-critic` in parallel |
 | `interpreting` | `epm:interp-critique v<n>` exists, no `epm:interp-critique-codex v<n>` | Codex twin not yet returned | re-spawn `codex-interpretation-critic` only |
 | `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
-| `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | both ensemble events exist, verdicts agree OR reconcile event present, ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique events |
-| `interpreting` | ensemble verdict PASS or round >= 3, no `epm:clean-result-critique` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn clean-result-critic |
-| `interpreting` | `epm:clean-result-critique` REVISE, round < 3 | structure / register revision in progress | re-spawn analyzer with the clean-result-critique |
-| `interpreting` | `epm:clean-result-critique` PASS or round >= 3 | ready for review | advance to `reviewing` |
-| `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 11 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
+| `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `interpretation-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
+| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique events |
+| `interpreting` | ensemble verdict PASS or round >= 3, neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel |
+| `interpreting` | `epm:clean-result-critique v<n>` exists, no `epm:clean-result-critique-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-clean-result-critic` only |
+| `interpreting` | `epm:clean-result-critique-codex v<n>` exists, no `epm:clean-result-critique v<n>` | Claude critic not yet returned | re-spawn `clean-result-critic` only |
+| `interpreting` | both `epm:clean-result-critique v<n>` and `epm:clean-result-critique-codex v<n>` exist, verdicts disagree (PASS-class vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `clean-result-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
+| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 3 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
+| `interpreting` | clean-result ensemble verdict PASS-class or round >= 3 | ready for review | advance to `reviewing` |
+| `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 7 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
@@ -5797,6 +6359,19 @@ dedicated "working" statuses):
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
+
+**Reconcile predicates are role-scoped.** There is exactly ONE marker-mode
+reconcile kind (`epm:review-reconcile` — workflow.yaml § markers); the
+adjudicated role lives in the verdict body's `**Role under adjudication:**`
+field, not the marker name. Wherever a row above tests for (or reads the
+verdict of) a reconcile event, only an event whose role field matches that
+stage's critic (`code-reviewer` / `interpretation-critic` /
+`clean-result-critic`) counts. Both the interpretation and clean-result
+ensembles sit at status `interpreting` with the same round numbering, so an
+unqualified "no `epm:review-reconcile v<n>`" predicate would let an
+interp-stage reconcile falsely satisfy the clean-result disagreement row
+(skipping the reconciler) or feed the wrong stage's verdict — and vice
+versa.
 
 Without distinct statuses for `uploading` / `interpreting` / `reviewing` /
 `awaiting_promotion`, many of these rows would be indistinguishable.
