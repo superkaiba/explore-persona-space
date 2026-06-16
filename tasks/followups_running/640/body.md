@@ -35,7 +35,7 @@ promoted_at: '2026-06-16T07:08:41Z'
 
 **Why:** A leakage cut alone cannot tell a *selective* defense (kills the leaked behavior, keeps the on-target trained behavior) from a *blunt* revert toward base (dampens both). Round 1 only measured off-distribution leakage cells, so Round 2 adds the diagonal source-control to settle which one postfix-KV patching is. See [#595](https://eps.superkaiba.com/tasks/595) (prefix-patch baseline) and [#545](https://eps.superkaiba.com/tasks/545) (the leaky adapters).
 
-**Design:** 8 leaky LoRA adapters × 2 seeds × {trained-no-patch, postfix-patched} = 32 on-policy generation cells per eval target, inference-time only (no training). Round 1's eval target was each row's highest-leakage off-distribution column (Δleakage). Round 2's single-variable change is the eval target column only: each row evaluated on its **own diagonal column** — the behavior it was trained to express, measured on-target (Δsource) — with everything else identical (same adapters, same postfix machinery, same judges, same seeds). The prefix comparison is the prior run's committed values, not re-run; postfix and prefix spans are not length-matched.
+**Design:** inference-time only (no training), reusing 8 leaky LoRA adapters × 2 seeds. Round 1: 8 rows × 2 seeds × {trained-no-patch, postfix-patched} = 32 off-diagonal generation cells. Round 2: 7 judged-rate rows × 2 seeds × {trained-no-patch, postfix-patched} = 28 diagonal generation cells (marker row 8 is the log-prob null reference, not a generated cell). Round 1's eval target was each row's highest-leakage off-distribution column (Δleakage). Round 2's single-variable change is the eval target column only: each row evaluated on its **own diagonal column** — the behavior it was trained to express, measured on-target (Δsource) — with everything else identical (same adapters, same postfix machinery, same judges, same seeds). The prefix comparison is the prior run's committed values, not re-run; postfix and prefix spans are not length-matched.
 
 **Training:** None. The 16 adapters (8 rows × 2 seeds) are reused as-is from the parent leakage-matrix run at HF revision `6471a550` (Qwen-2.5-7B-Instruct base).
 
@@ -323,10 +323,14 @@ Reuse provenance:
 
 **Compute:** GCP `lora-7b` (1× A100-80, `a2-ultragpu-1g`, `us-central1`); the postfix sweep ran on the GCP auto lane after several upstream RunPod-bootstrap and cherry-pick code-failure retries. Phase 3 scoring + figures: CPU, off-pod on the VM.
 
-**Code:** run git commit `032f05f93c36f7e1d5f0f02f8db2159a0afebc99` (driver) — torch 2.8.0+cu128, transformers 4.57.6, peft 0.18.1. Reproduce: `uv run python scripts/issue640_postfix_carrier.py --phase all` (GPU), then `uv run python scripts/issue640_score_and_compare.py` + `uv run python scripts/plot_issue640.py` (CPU, off-pod).
+**Code:** driver `scripts/issue640_postfix_carrier.py` pinned to commit `616324d1c3ed867cbd2059996a8c3ed94b8e5bbb` on `issue-640` (carries the `--target {leakage,diagonal}` flag both rounds need) — torch 2.8.0+cu128, transformers 4.57.6, peft 0.18.1. Reproduce per round:
+
+- Round 1 (off-diagonal leakage): `uv run python scripts/issue640_postfix_carrier.py --phase all` (GPU, default `--target leakage`), then `uv run python scripts/issue640_score_and_compare.py` + `uv run python scripts/plot_issue640.py` (CPU, off-pod).
+- Round 2 (diagonal source-control): `uv run python scripts/issue640_postfix_carrier.py --target diagonal --seeds 0 137 --phase all` (GPU), then `uv run python scripts/issue640_diagonal_score.py` + `uv run python scripts/plot_issue640_diagonal.py` (CPU, off-pod).
 
 **Context:**
 
 - Created / run: filed 2026-06-14; Round 1 postfix sweep completed 2026-06-15 (~00:25Z phase=done), promoted `useful` 2026-06-16; Round 2 diagonal source-control (`followup_label: diagonal-source-control`, user-requested) ran + analyzed 2026-06-16.
 - Follow-up to: [#595](https://eps.superkaiba.com/tasks/595) — Round 1 auto-filed from #595's follow-up proposal #3 (the postfix-cleared headline cell). Adapter + matrix lineage from [#545](https://eps.superkaiba.com/tasks/545). Round 2 is a same-issue user-requested follow-up on #640.
 - Originating prompt(s), verbatim: Round 1 — origin prompt not recorded (auto-filed follow-up from #595's `epm:follow-ups v1` proposal #3). Round 2 — verbatim chat prompt not recorded; the `epm:followup-scope v1` marker (`source: user-chat`, 2026-06-16T07:11:30Z) records the request as a diagonal / source-behavior control for the #640 postfix-KV patch, settling whether the patch is a selective leakage fix or a blunt revert-toward-base.
+
