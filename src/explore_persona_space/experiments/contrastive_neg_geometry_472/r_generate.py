@@ -150,7 +150,11 @@ def _generate_batch(
     truncated, marker_in_R (text-AND-token check).
     """
     prompts = [_build_prompt_text(tokenizer, persona, q, persona_prompts) for q in questions]
-    outputs = llm.generate(prompts, sp)
+    # use_tqdm=False dodges the vLLM 0.11.0 ZeroDivisionError in _run_engine's
+    # tqdm bar (in_spd = total_in_toks / elapsed) when a small batch completes
+    # faster than tqdm's elapsed-time resolution; kwarg verified against
+    # vllm 0.11.0 (keyword-only `use_tqdm`; `disable_tqdm` does not exist).
+    outputs = llm.generate(prompts, sp, use_tqdm=False)
     if len(outputs) != len(prompts):
         raise RuntimeError(
             f"vLLM returned {len(outputs)} for {len(prompts)} prompts on persona={persona}"

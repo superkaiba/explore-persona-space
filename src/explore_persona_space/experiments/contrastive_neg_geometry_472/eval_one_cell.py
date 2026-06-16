@@ -280,7 +280,11 @@ def score_logp_for_R(
         n=1, temperature=0.0, top_p=1.0, max_tokens=1, prompt_logprobs=1, logprobs=1
     )
     gen_kwargs = {"lora_request": lora_request} if use_lora else {}
-    outputs = llm.generate(prompts_payload, sp, **gen_kwargs)
+    # use_tqdm=False dodges the vLLM 0.11.0 ZeroDivisionError in _run_engine's
+    # tqdm bar (in_spd = total_in_toks / elapsed). This single-token teacher-
+    # forced read (max_tokens=1) is the most exposed: many short prompts that
+    # complete near-instantly. Kwarg verified against vllm 0.11.0.
+    outputs = llm.generate(prompts_payload, sp, use_tqdm=False, **gen_kwargs)
     if len(outputs) != len(prompts_payload):
         raise RuntimeError(
             f"[{cell_label}] vLLM returned {len(outputs)} for {len(prompts_payload)} probes."

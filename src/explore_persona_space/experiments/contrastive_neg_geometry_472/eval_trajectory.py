@@ -174,7 +174,11 @@ def _generate_on_policy_R(
         max_tokens=max_new_tokens,
         stop_token_ids=[tokenizer.eos_token_id],
     )
-    outputs = llm.generate(prompts, sp, lora_request=lora_request)
+    # use_tqdm=False dodges the vLLM 0.11.0 ZeroDivisionError in _run_engine's
+    # tqdm bar (in_spd = total_in_toks / elapsed) when a batch completes faster
+    # than tqdm's elapsed-time resolution; kwarg verified against vllm 0.11.0
+    # (keyword-only `use_tqdm`; `disable_tqdm` does not exist).
+    outputs = llm.generate(prompts, sp, lora_request=lora_request, use_tqdm=False)
     if len(outputs) != len(prompts):
         raise RuntimeError(f"on-policy gen returned {len(outputs)} for {len(prompts)} prompts.")
     r: dict[str, dict[str, str]] = {p: {} for p in eval_personas}
