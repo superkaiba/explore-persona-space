@@ -73,6 +73,29 @@ For each claim in the Main Takeaways:
     promotion-readiness on the user's manual catch. (The only valid
     teacher-forced marker log-prob use is the within-condition dynamics
     *trajectory*, never a cross-condition behavioral leaderboard.)
+  - **Dual-DV for content-behavior leakage / implantation (REVISE).**
+    When the result is a *content* behavior leakage/implant (sycophancy,
+    refusal, hedging, style, trait — not the programmatic marker, which
+    the bullet above covers), CLAUDE.md § Measurement validity requires
+    BOTH DVs reported: (a) the PRIMARY judge-scored on-policy
+    behavior/agreement rate (the validated construct, the headline
+    number), and (b) the SECONDARY continuous completion-probability DV
+    (length-normalized trained − base `log P` of the model's own
+    judged-positive on-policy completions, or the teacher-forced margin
+    the plan registered). REVISE when (i) a cross-condition / install /
+    dose-matched claim is made off the binary rate alone and that rate
+    is saturated (floor/ceiling) so it censors the comparison (#608) —
+    the continuous DV must carry the comparison there; OR (ii) the body
+    narrates the completion-probability DV as the construct / headline
+    number, or reports it without the validation that it tracks the rate
+    (Spearman across cells with dynamic range). The judge rate stays
+    PRIMARY; the probability DV is the SECONDARY companion and is never
+    narrated as the construct unvalidated. Not a REVISE for marker
+    implants (above), non-behavioral results, or a single-condition
+    content-behavior characterization that makes no saturating /
+    install / dose / cross-condition claim. (Mirrors CLAUDE.md
+    § Measurement validity + analyzer.md measurement-validity gate
+    check 3 + critic Statistics lens item 10.)
 
 ### 2. Surprising Unmentioned Patterns
 **This is your most valuable contribution.** Independently load the raw JSON

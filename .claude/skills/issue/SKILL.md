@@ -3392,8 +3392,19 @@ Pod-side dispatchers cannot post markers directly (the `task.py`
 branch-guard and the CLAUDE.md "Pod-side code NEVER shells out" rule),
 so they write a sentinel file at `/workspace/logs/issue-<N>-*.json`
 that `poll_pipeline.py` drains. When a sentinel carries a non-empty
-`gate` field, the poller posts the carried marker from the VM (e.g.
-`epm:fact-candidates v1`) and returns `status=gate` with `gate=<name>`.
+`gate` field **AND `blocks_pipeline: True`**, the poller posts the
+carried marker from the VM (e.g. `epm:fact-candidates v1`) and returns
+`status=gate` with `gate=<name>`.
+
+The poller ONLY surfaces `status=gate` when the drained sentinel had
+`blocks_pipeline: True` (the field defaults to True when absent, so a
+sentinel that carries only a `gate` name still parks). Sentinels with
+`blocks_pipeline: False` are the dispatchers' benign phase-progress
+signals (`gate=phase`, `gate=smoke`, `gate=dryrun` are the canonical
+ones): their marker IS posted from the VM, but they NEVER end the
+polling loop and NEVER trigger the fail-fast block. They are NOT user
+gates — do not treat a `blocks_pipeline: False` phase signal as an
+unrecognised gate (incident #641).
 
 The orchestrator parks at the named gate inline rather than continuing
 to poll — the pipeline itself has EXITed and is waiting on a user
@@ -3451,7 +3462,14 @@ Gate handlers (one per registered `<name>`):
   polling loop directly without a re-invocation. (See plan §4.2 of any
   fact-teaching task for the on-pod resume contract.)
 
-- **Unrecognised `gate` name**: log a one-line WARN, post `epm:failure
+- **Unrecognised `gate` name**: this branch fires ONLY for a sentinel
+  the poller surfaced as `status=gate` — i.e. one that carried
+  `blocks_pipeline: True`. A non-empty gate name with
+  `blocks_pipeline: False` (`gate=phase` / `gate=smoke` / `gate=dryrun`)
+  is filtered out by the drain and NEVER reaches this branch, so it is
+  NOT an unrecognised gate and MUST NOT trigger the block below. For a
+  genuinely unrecognised (blocking) gate name: log a one-line WARN, post
+  `epm:failure
   v1` with `failure_class: code` and `reason: unrecognised_gate_name`
   (the `code|infra|data` taxonomy has no `workflow` class; the failure
   classifier defaults unknown classes to `code` anyway), a note pointing
@@ -6034,7 +6052,8 @@ here. The worktree is deliberately NOT removed (`--delete-branch=false`,
 no `git worktree remove`).
 
 - **Success:** post `epm:merged v1` with the list of merge SHAs. Update
-  the chat title with `merged`.
+  the chat title with `merged`. Then run the **post-merge stale-task-folder
+  guard** below (it runs on every merge form).
 - **Failure** (rebase conflict, non-mergeable PR, non-fast-forward):
   FIRST run the **merge-conflict recovery** sub-procedure below ONCE.
   If the recovery itself fails or the retried merge is still refused:
@@ -6074,7 +6093,11 @@ gh pr merge <PR> --rebase --delete-branch=false
 
 One recovery attempt per Step 10d invocation. If the re-checked
 mergeability never recovers or the retried merge is refused again, fall
-to the Failure bullet above (`epm:merge-failed v1`, continue).
+to the Failure bullet above (`epm:merge-failed v1`, continue). When the
+recovered merge DOES land, run the **post-merge stale-task-folder guard**
+below — the recovery's `git merge origin/main` adds a merge commit that
+can re-import this task's old-status folder, exactly the case the guard
+catches.
 
 #### The artifact-confirmed merge procedure (unsafe case: guard 3 tripped)
 
@@ -6209,6 +6232,55 @@ Decision tree:
 
 Never blind-`gh pr merge --rebase` a branch that tripped guard 3 — that
 is the exact #458 / #479 incident class this section exists to prevent.
+
+#### Post-merge stale-task-folder guard (runs after EVERY merge form lands)
+
+Run this AFTER any of the three merge forms above lands (safe-case
+`gh pr merge --rebase`, the merge-conflict-recovery retry, or the
+artifact-confirmed / surgical-additive checkout). A merge commit — most
+often the recovery's `git merge origin/main`, but also any improvised
+merge taken when `--rebase` keeps being refused — can import THIS task's
+OLD status folder onto `main` next to its live one (e.g.
+`tasks/approved/<N>/` lands alongside `tasks/awaiting_promotion/<N>/`,
+same task number, two status dirs). The autonomous-session watcher then
+reads the stale folder as a live task and respawns the session
+indefinitely (incident #644, 2026-06-16: an orphan-respawn cap-2-per-day
+cycle ran ~8h; #643 hit the same class at archive time). Guard 1 above
+catches FOREIGN tasks' folders but not this task's own old-status
+duplicate, and it only runs on the `--rebase` form. Keep exactly ONE
+folder for this task on `main`:
+
+```bash
+# Canonical folder for this task (NEVER hand-build tasks/<status>/<N> —
+# status is unknowable here; resolve via task.py find, CLAUDE.md rule).
+git -C "$REPO_ROOT" fetch origin main --quiet
+CANON=$(realpath --relative-to="$REPO_ROOT" \
+  "$(uv run python "$REPO_ROOT/scripts/task.py" find <N>)")
+# Every committed task-<N> folder on origin/main (matches tasks/<status>/<N>
+# exactly — the anchored $ excludes deeper paths like .../<N>/artifacts).
+mapfile -t DUPES < <(git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
+  | grep -E "^tasks/[^/]+/<N>$" | grep -v -F -x "$CANON" || true)
+if [ "${#DUPES[@]}" -gt 0 ]; then
+  cd "$REPO_ROOT"   # stay on main; never switch the branch here
+  git rm -r "${DUPES[@]}"
+  git diff --cached --name-only   # sanity echo: only the stale folder(s) staged
+  # Pathspec-limited commit — the shared root's index may carry a concurrent
+  # session's staged files; the trailing `-- "${DUPES[@]}"` commits ONLY these.
+  git commit -m "post-merge: remove stale task #<N> folder(s) imported by Step 10d merge
+
+$CANON is the canonical folder; the duplicate(s) were re-imported by the
+merge commit and would be read as a live task by the session watcher
+(incident #644)." -- "${DUPES[@]}"
+  # Push IMMEDIATELY — an unpushed removal lets a concurrent session's
+  # recovery pull re-import the orphan, which is exactly the failure mode.
+  git push origin main \
+    || { git pull --rebase=merges --autostash && git push origin main; }
+fi
+```
+
+This guard is idempotent: a clean `main` (no duplicate) leaves `DUPES`
+empty and the block is a no-op, so re-running Step 10d on a later
+`/issue <N>` re-invocation is safe.
 
 ---
 
