@@ -416,6 +416,44 @@ mechanically FAILed on the declaration gap; `verify_uploads.py` now
 probes the `issue<N>`-project convention as a last resort, but like the
 synthesis fallback it is a safety net, NOT the contract).
 
+**No flat `wandb_url: "n/a (...; project=...)"` shorthand on multi-cell
+runs (#597 follow-up).** A top-level `wandb_url: "n/a (per-cell wandb
+runs; project=<P>)"` string in the payload — without an accompanying
+`reproducibility_card` / `production_provenance` — is the worst of
+both worlds: it looks like a deliberate decision (the project name is
+there) yet declares NONE of the fields the verifier needs to resolve the
+live runs. The verifier then falls back to `api.default_entity` for
+WandB, which may or may not match the entity that actually owns the runs
+(the typical project trap: HF `default_entity` is `superkaiba1` while
+WandB `default_entity` is `thomasjiralerspong`, so an HF-style entity
+guess silently misses every live run). When per-cell runs really are the
+shape — every cell trains its own WandB run — emit the full multi-cell
+card: `wandb_project: "<P>"` + `wandb_run_names: [<display name per
+cell>]` + `wandb_entity: "<entity>"`. `wandb_url` (the top-level
+catch-all) MAY be `n/a (per-cell wandb runs; see reproducibility_card)`
+or omitted; the card is what carries the resolution surface.
+
+**`wandb_entity` is STRONGLY RECOMMENDED whenever the card uses
+`wandb_run_names` + `wandb_project`** (i.e. the multi-cell case the
+above paragraph mandates). The verifier's `check_wandb_runs_by_name`
+threads the card's `wandb_entity` straight through, and when the field
+is omitted it falls back to `api.default_entity`. That fallback is a
+safety net, NOT the contract: it relies on the dispatcher running under
+the SAME WandB login as the verifier and on the user having a single
+default entity, neither of which is guaranteed in a multi-account
+workspace (e.g. a personal `thomasjiralerspong` entity vs an
+organization `superkaiba1`). Read the entity off the WandB SDK at run
+time (`wandb.run.entity` while the run is open, or
+`wandb.Api().default_entity` after) and persist it in the card; never
+hand-type it as a literal — a stale literal silently breaks resolution
+when the account changes (#597 follow-up r3: a flat `wandb_url: "n/a
+(...; project=issue597-leakage-dynamics)"` left three filler runs
+invisible to round-3 verification on the HF/WandB entity-default
+mismatch, recovered only after the orchestrator manually superseded the
+row). Producer-side: every dispatcher that writes per-cell WandB runs
+emits `wandb_entity` in the same card it emits `wandb_project` +
+`wandb_run_names`.
+
 ### Pod-side preflight gates (behind-origin/main false positive — LEGACY post-#554)
 
 > **LEGACY (post-#554):** preflight is branch-aware as of 2026-06-12
