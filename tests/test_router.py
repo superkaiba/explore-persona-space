@@ -235,6 +235,11 @@ class _GcpBackendDouble(_BaseBackend):
       (a ``QuotaHeadroom``, ``None`` for "no opinion", or an exception
       instance to raise — the router must fail OPEN on it). Defaults to
       ``None`` so every pre-existing test proceeds exactly as before.
+    * ``quota_headroom_by_provisioning`` — optional per-provisioning-model
+      override (e.g. ``{"STANDARD": <insufficient>, "SPOT": <sufficient>}``)
+      for the STANDARD->SPOT auto-fallback tests (#537). When set, the
+      probe resolves the spec's provisioning model and returns the matching
+      reading (falling back to ``quota_headroom`` for an unscripted model).
     """
 
     def __init__(
@@ -242,14 +247,22 @@ class _GcpBackendDouble(_BaseBackend):
         *,
         launch_raises: BaseException | None = None,
         quota_headroom: QuotaHeadroom | BaseException | None = None,
+        quota_headroom_by_provisioning: dict[str, QuotaHeadroom | None] | None = None,
     ) -> None:
         self._launch_raises = launch_raises
         self._quota_headroom = quota_headroom
+        self._quota_headroom_by_provisioning = quota_headroom_by_provisioning
         self.launches: list[RunSpec] = []
         self.quota_probes: list[RunSpec] = []
 
     def preflight_quota_headroom(self, spec: RunSpec) -> QuotaHeadroom | None:
         self.quota_probes.append(spec)
+        if self._quota_headroom_by_provisioning is not None:
+            from explore_persona_space.backends.gcp import resolve_provisioning_model
+
+            provisioning = resolve_provisioning_model(spec)
+            if provisioning in self._quota_headroom_by_provisioning:
+                return self._quota_headroom_by_provisioning[provisioning]
         if isinstance(self._quota_headroom, BaseException):
             raise self._quota_headroom
         return self._quota_headroom
@@ -3076,6 +3089,184 @@ def test_gcp_quota_preflight_fails_open_on_probe_error(lease_store):
     assert result.chosen_kind == "gcp"
     assert len(gcp.launches) == 1
     assert gcp.quota_probes  # the probe WAS consulted, then failed open
+
+
+def _spot_tolerant_spec(issue: int = 137) -> RunSpec:
+    """An AUTO-routing spec tagged spot-tolerant (#537 fallback gate)."""
+    return RunSpec(issue=issue, intent="lora-7b", backend="auto", extra={"spot_tolerant": True})
+
+
+def _standard_short_spot_ample() -> dict[str, QuotaHeadroom]:
+    """STANDARD exhausted (1 needed, 0 free); SPOT ample (8 free)."""
+    return {
+        "STANDARD": QuotaHeadroom(
+            metric="NVIDIA_A100_80GB_GPUS",
+            region="us-central1",
+            limit=8.0,
+            usage=8.0,
+            needed=1,
+        ),
+        "SPOT": QuotaHeadroom(
+            metric="PREEMPTIBLE_NVIDIA_A100_80GB_GPUS",
+            region="us-central1",
+            limit=16.0,
+            usage=8.0,
+            needed=1,
+        ),
+    }
+
+
+def test_gcp_spot_fallback_launches_spot_when_enabled_and_tolerant(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """#537: STANDARD quota exhausted + EPS_GCP_SPOT_FALLBACK=1 + a
+    spot-tolerant workload + ample preemptible headroom → the GCP lane
+    launches SPOT instead of skipping. The launched spec carries SPOT and
+    the marker carries provisioning_model=SPOT + spot_fallback=True."""
+    monkeypatch.setenv("EPS_GCP_SPOT_FALLBACK", "1")
+    gcp = _GcpBackendDouble(quota_headroom_by_provisioning=_standard_short_spot_ample())
+    result = route(
+        _spot_tolerant_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    # The launched spec was switched to SPOT.
+    assert gcp.launches[0].extra["provisioning_model"] == "SPOT"
+    assert gcp.launches[0].extra["spot_fallback"] is True
+    # The probe was consulted twice: STANDARD (insufficient) then SPOT.
+    probed_models = [
+        (p.extra or {}).get("provisioning_model", "STANDARD") for p in gcp.quota_probes
+    ]
+    assert "SPOT" in probed_models
+    # Marker fidelity.
+    assert result.extra["provisioning_model"] == "SPOT"
+    assert result.extra["spot_fallback"] is True
+    assert result.extra["quota_pool"] == "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS"
+    outcomes = [a.outcome for a in result.attempts]
+    assert "spot_fallback" in outcomes
+    # The attempt counter bumped (a real launch was made under SPOT).
+    lease = lease_store.read(137)
+    assert lease is not None and lease.gcp_attempts_today == 1
+
+
+def test_gcp_spot_fallback_declines_when_env_gate_off(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """Env gate OFF (default): the spot-tolerant workload still SKIPS the
+    GCP lane on STANDARD exhaustion — the fallback never fires without the
+    explicit EPS_GCP_SPOT_FALLBACK=1 opt-in."""
+    monkeypatch.delenv("EPS_GCP_SPOT_FALLBACK", raising=False)
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble(quota_headroom_by_provisioning=_standard_short_spot_ample())
+    result = route(
+        _spot_tolerant_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert gcp.launches == []  # GCP skipped, no SPOT launch
+    outcomes = [a.outcome for a in result.attempts]
+    assert "quota_headroom_insufficient" in outcomes
+    assert "spot_fallback" not in outcomes
+
+
+def test_gcp_spot_fallback_declines_when_not_spot_tolerant(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """Env gate ON but the workload is NOT spot-tolerant: the lane SKIPS
+    on STANDARD exhaustion — a non-recoverable run is never silently
+    preempted (#537 safety gate)."""
+    monkeypatch.setenv("EPS_GCP_SPOT_FALLBACK", "1")
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble(quota_headroom_by_provisioning=_standard_short_spot_ample())
+    result = route(
+        _spec(backend=None),  # NOT spot-tolerant
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert gcp.launches == []
+    outcomes = [a.outcome for a in result.attempts]
+    assert "quota_headroom_insufficient" in outcomes
+    assert "spot_fallback" not in outcomes
+    # SPOT pool was never even probed (declined before the re-check).
+    probed_models = [
+        (p.extra or {}).get("provisioning_model", "STANDARD") for p in gcp.quota_probes
+    ]
+    assert "SPOT" not in probed_models
+
+
+def test_gcp_spot_fallback_declines_when_preemptible_also_short(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """Env gate ON + spot-tolerant, but the PREEMPTIBLE pool is ALSO short
+    → the lane SKIPS (fail-safe: only an affirmative sufficient
+    preemptible reading switches to SPOT)."""
+    monkeypatch.setenv("EPS_GCP_SPOT_FALLBACK", "1")
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble(
+        quota_headroom_by_provisioning={
+            "STANDARD": QuotaHeadroom(
+                metric="NVIDIA_A100_80GB_GPUS",
+                region="us-central1",
+                limit=8.0,
+                usage=8.0,
+                needed=1,
+            ),
+            "SPOT": QuotaHeadroom(
+                metric="PREEMPTIBLE_NVIDIA_A100_80GB_GPUS",
+                region="us-central1",
+                limit=16.0,
+                usage=16.0,
+                needed=1,
+            ),
+        }
+    )
+    result = route(
+        _spot_tolerant_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert gcp.launches == []
+    outcomes = [a.outcome for a in result.attempts]
+    assert "quota_headroom_insufficient" in outcomes
+    assert "spot_fallback" not in outcomes
+    # SPOT WAS probed (the re-check happened), but declined as insufficient.
+    probed_models = [
+        (p.extra or {}).get("provisioning_model", "STANDARD") for p in gcp.quota_probes
+    ]
+    assert "SPOT" in probed_models
 
 
 def test_gcp_route_marker_carries_provisioning_and_quota_pool(

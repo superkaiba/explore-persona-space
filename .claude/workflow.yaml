@@ -2112,6 +2112,7 @@ markers:
                           intermediate?,
                           provisioning_model?,
                           quota_pool?,
+                          spot_fallback?,
                           override_without_frontmatter?,
                           override_conflicts_frontmatter?,
                           frontmatter_backend_unrecognized?,
@@ -2128,6 +2129,17 @@ markers:
       null when the (gpu_kind, pool) pair has no mapping). Both are absent
       from the pre-escalation intermediate marker (no spec resolved there)
       and from non-GCP markers.
+
+      `spot_fallback: <true|false>` (optional, #537) is `true` only when
+      the router switched this launch STANDARD->SPOT via the
+      on-demand-exhausted auto-fallback (env gate `EPS_GCP_SPOT_FALLBACK=1`
+      AND the workload's `spec.extra["spot_tolerant"]` marker, set by the
+      dispatch CLI's `--spot-tolerant` flag); `false`/absent on a plain
+      STANDARD launch or an explicitly-requested SPOT/FLEX_START launch
+      (`--provisioning-model`). The fallback fires when the STANDARD
+      regional quota has no headroom but the PREEMPTIBLE pool does — the
+      attempts trail carries a `spot_fallback` outcome row naming both
+      readings. Absent from non-GCP markers.
 
       `override_without_frontmatter: true` (optional) is stamped by the
       dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster

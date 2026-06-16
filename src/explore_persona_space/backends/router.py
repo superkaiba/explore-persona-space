@@ -217,6 +217,18 @@ DEFAULT_AUTO_LANE_ORDER: tuple[BackendKind, ...] = ("gcp", *DEFAULT_FREE_LANE_OR
 #: ``auto``/``cluster`` literals, and duplicates.
 ENV_AUTO_LANE_ORDER: str = "EPM_AUTO_LANE_ORDER"
 
+#: Env gate (default OFF) for the GCP STANDARD->SPOT auto-fallback. When
+#: set to ``1`` AND the workload carries ``spec.extra["spot_tolerant"]``,
+#: the GCP lane re-checks the PREEMPTIBLE quota pool whenever the STANDARD
+#: pre-check finds insufficient headroom, and launches SPOT instead of
+#: skipping the lane when preemptible quota is ample (#537: a 4-GPU
+#: ft-7b skipped GCP with 3 free on-demand A100 while 16 preemptible sat
+#: idle). OFF by default so the standing on-demand-first behavior is
+#: unchanged; both the env gate AND the per-workload tolerance flag must
+#: be present (a non-recoverable training run is never silently
+#: preempted).
+ENV_GCP_SPOT_FALLBACK: str = "EPS_GCP_SPOT_FALLBACK"
+
 #: Every value the ROUTER accepts for ``spec.backend``. ``route()``
 #: rejects anything outside this set at entry (closes the empty-string
 #: / stringly-typed-miswire silent-auto-route hole). Narrower than
@@ -1572,6 +1584,120 @@ def _gcp_quota_headroom_or_none(backend: ComputeBackend, spec: RunSpec) -> Quota
         return None
 
 
+def _spot_fallback_enabled() -> bool:
+    """True when the env gate :data:`ENV_GCP_SPOT_FALLBACK` is set to ``1``."""
+    return os.environ.get(ENV_GCP_SPOT_FALLBACK, "").strip() == "1"
+
+
+def _maybe_spot_fallback_spec(
+    *, backend: ComputeBackend, spec: RunSpec
+) -> tuple[RunSpec, QuotaHeadroom] | None:
+    """Decide whether to retry the GCP lane as SPOT when STANDARD has no headroom.
+
+    Called ONLY after the STANDARD pre-check returned a POSITIVE
+    insufficient-headroom reading (#537: a 4-GPU ``ft-7b`` skipped the GCP
+    lane with 3 free on-demand A100 while 16 preemptible sat idle). The
+    fallback is GATED on BOTH the env flag :data:`ENV_GCP_SPOT_FALLBACK`
+    AND the per-workload ``spec.extra["spot_tolerant"]`` marker — a
+    non-recoverable training run must never be silently preempted, so a
+    missing OR false tolerance flag declines the fallback (returns
+    ``None``).
+
+    When both gates pass, re-runs the headroom probe against a
+    SPOT-overridden spec (which resolves the PREEMPTIBLE quota metric via
+    :func:`quota_metric_for`). Returns ``(spot_spec, headroom)`` when the
+    preemptible pool has GENUINELY sufficient headroom, else ``None`` (the
+    caller skips the lane exactly as before). Fail-SAFE: a re-probe that
+    returns ``None`` ("no opinion") or an insufficient reading declines —
+    only a successfully parsed sufficient reading switches the launch to
+    SPOT, mirroring the conservative STANDARD pre-check contract.
+
+    The returned spec carries ``provisioning_model: SPOT`` (so every
+    downstream renderer + :func:`_gcp_marker_extras` reflects SPOT + the
+    preemptible pool) and an additive ``spot_fallback: True`` extra key
+    the launch path surfaces in the ``epm:backend-selected`` marker.
+    """
+    if not _spot_fallback_enabled():
+        return None
+    # Already SPOT/FLEX_START — the STANDARD-insufficient branch is only
+    # reachable for a STANDARD (default) request, but guard anyway so a
+    # future caller can't loop the fallback onto an already-preemptible
+    # request.
+    if resolve_provisioning_model(spec) != "STANDARD":
+        return None
+    if not bool((spec.extra or {}).get("spot_tolerant")):
+        return None
+    spot_spec = replace(spec, extra={**(spec.extra or {}), "provisioning_model": "SPOT"})
+    headroom = _gcp_quota_headroom_or_none(backend, spot_spec)
+    # Fail-SAFE: only a parsed, SUFFICIENT preemptible reading switches the
+    # launch. ``None`` (no opinion / probe failed open) declines — the
+    # STANDARD pre-check already POSITIVELY said on-demand is exhausted, so
+    # a SPOT fallback needs an affirmative preemptible-headroom signal, not
+    # the absence of one.
+    if headroom is None or not headroom.sufficient:
+        return None
+    spot_spec = replace(spot_spec, extra={**spot_spec.extra, "spot_fallback": True})
+    return spot_spec, headroom
+
+
+def _skip_gcp_lane_no_headroom(
+    *,
+    spec: RunSpec,
+    headroom: QuotaHeadroom,
+    attempts: list[RouteAttempt],
+    started_at: float,
+    now_fn: Callable[[], float],
+    marker_poster: Callable[..., None] | None,
+    terminal: bool,
+) -> None:
+    """Skip the GCP lane on a POSITIVE insufficient-headroom reading.
+
+    The original #608 behavior, extracted so the SPOT auto-fallback (#537)
+    decision keeps :func:`_attempt_gcp_lane` under the complexity cap.
+    Records a ``quota_headroom_insufficient`` attempt WITHOUT bumping the
+    per-day attempt counter (the create cannot succeed; it should not
+    consume a daily attempt). Non-terminal position: returns ``None`` to
+    continue down the lane order. Terminal position: posts the no-compute
+    marker and raises :class:`NoComputeAvailableError`.
+    """
+    detail = (
+        f"regional accelerator quota {headroom.metric} in {headroom.region} has "
+        f"usage {headroom.usage:g}/{headroom.limit:g} — headroom "
+        f"{headroom.available:g} GPU(s) < needed {headroom.needed}; skipping the "
+        "GCP lane without burning a daily attempt"
+    )
+    attempts.append(
+        RouteAttempt(
+            kind="gcp",
+            cluster=None,
+            est_start_seconds_raw=0.0,
+            est_start_seconds_clamped=0.0,
+            outcome="quota_headroom_insufficient",
+            detail=detail,
+            elapsed_seconds=now_fn() - started_at,
+        )
+    )
+    if not terminal:
+        logger.warning(
+            "route: GCP quota headroom insufficient for issue %d (%s); "
+            "continuing down the lane order.",
+            spec.issue,
+            detail,
+        )
+        return None
+    _post_terminal_failure_marker(
+        spec=spec,
+        marker_poster=marker_poster,
+        reason=ROUTE_REASON_NO_COMPUTE,
+        chosen_kind="gcp",
+        attempts=attempts,
+    )
+    raise NoComputeAvailableError(
+        f"every free lane park-failed AND the GCP regional quota has no headroom: {detail}",
+        attempts=[_attempt_to_dict(a) for a in attempts],
+    )
+
+
 def _override_free_or_gcp(
     *,
     spec: RunSpec,
@@ -2660,42 +2786,55 @@ def _attempt_gcp_lane(
     # carries its stderr tail either way).
     headroom = _gcp_quota_headroom_or_none(gcp_backend, spec)
     if headroom is not None and not headroom.sufficient:
-        detail = (
-            f"regional accelerator quota {headroom.metric} in {headroom.region} has "
-            f"usage {headroom.usage:g}/{headroom.limit:g} — headroom "
-            f"{headroom.available:g} GPU(s) < needed {headroom.needed}; skipping the "
-            "GCP lane without burning a daily attempt"
-        )
+        # On-demand (STANDARD) quota is exhausted. Before skipping the
+        # lane, try the SPOT auto-fallback (#537): gated on
+        # EPS_GCP_SPOT_FALLBACK=1 AND spec.extra["spot_tolerant"], it
+        # re-checks the PREEMPTIBLE pool and — only when that pool has
+        # GENUINELY sufficient headroom — switches this launch to SPOT
+        # instead of skipping. Returns None (decline) when either gate is
+        # off or preemptible headroom is also short, in which case the
+        # original skip-the-lane behavior runs unchanged.
+        fallback = _maybe_spot_fallback_spec(backend=gcp_backend, spec=spec)
+        if fallback is None:
+            # No SPOT path → skip the lane (continue / terminal-raise),
+            # exactly as before the fallback existed.
+            return _skip_gcp_lane_no_headroom(
+                spec=spec,
+                headroom=headroom,
+                attempts=attempts,
+                started_at=started_at,
+                now_fn=now_fn,
+                marker_poster=marker_poster,
+                terminal=terminal,
+            )
+        spec, spot_headroom = fallback
         attempts.append(
             RouteAttempt(
                 kind="gcp",
                 cluster=None,
                 est_start_seconds_raw=0.0,
                 est_start_seconds_clamped=0.0,
-                outcome="quota_headroom_insufficient",
-                detail=detail,
+                outcome="spot_fallback",
+                detail=(
+                    f"on-demand quota {headroom.metric} exhausted "
+                    f"({headroom.usage:g}/{headroom.limit:g}, headroom "
+                    f"{headroom.available:g} < needed {headroom.needed}); "
+                    f"falling back to SPOT — preemptible {spot_headroom.metric} "
+                    f"headroom {spot_headroom.available:g} >= needed {spot_headroom.needed}"
+                ),
                 elapsed_seconds=now_fn() - started_at,
             )
         )
-        if not terminal:
-            logger.warning(
-                "route: GCP quota headroom insufficient for issue %d (%s); "
-                "continuing down the lane order.",
-                spec.issue,
-                detail,
-            )
-            return None
-        _post_terminal_failure_marker(
-            spec=spec,
-            marker_poster=marker_poster,
-            reason=ROUTE_REASON_NO_COMPUTE,
-            chosen_kind="gcp",
-            attempts=attempts,
+        logger.warning(
+            "route: GCP on-demand quota exhausted for issue %d; SPOT fallback "
+            "engaged (preemptible %s headroom %g >= needed %d).",
+            spec.issue,
+            spot_headroom.metric,
+            spot_headroom.available,
+            spot_headroom.needed,
         )
-        raise NoComputeAvailableError(
-            f"every free lane park-failed AND the GCP regional quota has no headroom: {detail}",
-            attempts=[_attempt_to_dict(a) for a in attempts],
-        )
+        # Fall through to the normal launch transaction below with the
+        # SPOT-overridden spec.
 
     with store.transaction(spec.issue) as (lease, write):
         # Cap-check BEFORE bump-and-persist: a rejected over-cap attempt
@@ -3263,6 +3402,10 @@ def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
     return {
         "provisioning_model": provisioning,
         "quota_pool": pool,
+        # True only when the router switched this launch STANDARD->SPOT via
+        # the on-demand-exhausted auto-fallback (#537); absent/False on a
+        # plain STANDARD or explicitly-requested SPOT/FLEX_START launch.
+        "spot_fallback": bool((spec.extra or {}).get("spot_fallback", False)),
     }
 
 
