@@ -339,6 +339,24 @@ def test_zones_for_machine_type_keeps_all_for_unfiltered_type() -> None:
     assert zones_for_machine_type("some-future-machine-type", ladder) == ladder
 
 
+def test_a3_highgpu_family_available_in_all_us_central1_zones() -> None:
+    """#653 round-8 follow-up: BOTH a3-highgpu sizes (1g = lora-7b-h100,
+    2g = eval-h100) are offered in all three us-central1 zones, so they keep
+    the full ladder — NOT a doomed-launch / fail-loud case. Pins the verified
+    gcloud fact (2026-06-16) that refutes the false 'a3-highgpu-2g not offered
+    in us-central1' report, and guards against the eval-h100 size being left
+    implicitly absent from the table while its 1g sibling is explicit."""
+    from explore_persona_space.backends.gcp import (
+        MACHINE_TYPE_ZONE_AVAILABILITY,
+        zones_for_machine_type,
+    )
+
+    ladder = ["us-central1-a", "us-central1-b", "us-central1-c"]
+    for mt in ("a3-highgpu-1g", "a3-highgpu-2g"):
+        assert mt in MACHINE_TYPE_ZONE_AVAILABILITY, mt
+        assert zones_for_machine_type(mt, ladder) == ladder, mt
+
+
 # ---------------------------------------------------------------------------
 # Provisioning model resolver
 # ---------------------------------------------------------------------------
