@@ -3,7 +3,8 @@ title: 'Training context shapes how far an implanted behavior generalizes: instr
   and worked-example training contains it, while most persona, chat, and rephrasing
   contexts spread it broadly (HIGH confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-09T18:47:55Z'
 has_clean_result: true
 goal: 'Build a reusable context-generalization testbed: empirically measure G[behavior,
