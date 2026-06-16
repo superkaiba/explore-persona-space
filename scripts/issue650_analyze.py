@@ -974,21 +974,184 @@ def _maybe_run_dv4(out_dir, cell_metas, cells_root, args, git_commit) -> None:
     _write_json(out_dir / "dv4_concept.json", {"cells": rows, "git_commit": git_commit})
 
 
-def _maybe_run_dv5(out_dir, cell_metas, cells_root, args, git_commit) -> None:
-    """DV-5 selectivity vs base geometry (firing predictor vs plain geometry).
+def _dv5_read_direction(pairs: dict, bank: dict, read_layers) -> np.ndarray | None:
+    """Build the per-cell firing READ direction ``a_up ∘ γ`` at the band-peak
+    read layer (the same gauge as DV-1's ``cos(a_up∘γ, v_source)`` read).
 
-    Needs per-bystander leakage (from eval) + bank. Written best-effort; a
-    full DV-5 requires the eval-leakage JSONs (marker EOS-margin / syco
-    Δagree) which the eval phase produces. Records the inputs it found.
+    Returns a 3584-d unit-normalized direction, or None if no read layer has a
+    γ-compatible up_proj read in the bank. Picks the read layer whose
+    ``a_up ∘ γ`` has the largest norm (the most-activated read).
     """
+    gamma = bank.get("gamma_post_attn")
+    if gamma is None:
+        return None
+    best = None
+    best_norm = -1.0
+    for li in read_layers:
+        if (li, READ_MODULE) not in pairs:
+            continue
+        a = pairs[(li, READ_MODULE)]["a"]
+        if a.shape[0] != gamma.shape[0]:
+            continue
+        ag = a * gamma
+        n = float(np.linalg.norm(ag))
+        if n > best_norm:
+            best_norm = n
+            best = ag
+    return _unit(best) if best is not None else None
+
+
+def _dv5_marker_leakage(eval_dir: Path, slug: str) -> dict[str, dict]:
+    """Per-bystander marker leakage from ``<slug>__shift.json``.
+
+    Returns ``{persona: {"firing_rate", "leakage_margin", "leakage_logp"}}``
+    where ``firing_rate`` is the on-policy argmax emission rate (trained),
+    ``leakage_margin`` is the install-controlled EOS-margin
+    ``Δ(z_marker − z_eos)`` (the preferred non-saturating logit read, mean over
+    the persona's questions), and ``leakage_logp`` is the mean Δlog P(marker)
+    (behavioral). Empty if the shift JSON is absent.
+    """
+    shift_path = eval_dir / f"{slug}__shift.json"
+    if not shift_path.is_file():
+        return {}
+    payload = json.loads(shift_path.read_text())
+    out: dict[str, dict] = {}
+    for persona, rec in payload.get("personas", {}).items():
+        margins = rec.get("per_question_delta_margin") or []
+        logps = rec.get("per_question_delta_logp") or []
+        out[persona] = {
+            "firing_rate": float(rec.get("emission_argmax_trained", 0.0)),
+            "leakage_margin": float(np.mean(margins)) if margins else float("nan"),
+            "leakage_logp": float(np.mean(logps)) if logps else float("nan"),
+        }
+    return out
+
+
+def _maybe_run_dv5(out_dir, cell_metas, cells_root, args, git_commit) -> None:
+    """DV-5 selectivity vs base geometry — firing predictor vs plain geometry.
+
+    Per marker cell, across the held-out BYSTANDER panel (eval personas other
+    than the source): does the learned firing predictor ``a_up∘γ · v_b`` predict
+    install-controlled bystander leakage BETTER than plain base geometry
+    ``cos(v_b, v_source)``? (plan §6.5 / §11). Leakage is read in the
+    non-saturating EOS-margin logit space ``Δ(z_marker − z_eos)`` per the
+    marker-leakage-measurement § Install-strength confound (NEVER raw log P).
+
+    Per cell persists: per-bystander ``firing_rate`` / ``base_geometry_cos``
+    (= cos(v_b, v_source)) / ``firing_predictor`` (= a_up∘γ · v_b) /
+    ``install_strength`` (source EOS-margin leakage) / ``leakage_fraction``
+    (bystander EOS-margin ÷ source EOS-margin — the per-cell transfer fraction);
+    Spearman ρ of EACH predictor vs leakage; the paired Δρ (firing − geometry);
+    and a predictor↔predictor collinearity ρ (the §14 diagnostic — a high
+    collinearity means the two predictors are not separable for this cell).
+    Sycophancy cells: N/A (the agreement eval is self-persona only, no
+    bystander leakage panel).
+    """
+    from explore_persona_space.experiments.issue_650 import SOURCE
+
+    bank_dir = Path(args.bank_dir) if args.bank_dir else None
+    bank = load_bank(bank_dir) if (bank_dir and bank_dir.is_dir()) else None
+    eval_dir = Path(getattr(args, "eval_dir", None) or "eval_results/issue_650/eval")
+
+    # Source context vector v_source from the bank (read-tap, end_of_response).
+    def _vsource() -> tuple[str, np.ndarray] | None:
+        if bank is None:
+            return None
+        centroids = bank["centroids"]
+        tap = "up_in" if "up_in" in centroids else next(iter(centroids))
+        pos = "end_of_response"
+        by_ctx = centroids.get(tap, {}).get(pos, {})
+        if SOURCE not in by_ctx:
+            return None
+        return tap, by_ctx
+
     rows: dict[str, dict] = {}
-    for slug in sorted(cell_metas):
+    for slug, meta in sorted(cell_metas.items()):
         behavior, dose, seed = parse_cell_slug(slug)
+        if behavior != "marker":
+            rows[slug] = {
+                "behavior": behavior,
+                "dose": dose,
+                "seed": seed,
+                "note": "DV-5 N/A — sycophancy agreement eval is self-persona (no bystander panel)",
+            }
+            continue
+        leakage = _dv5_marker_leakage(eval_dir, slug)
+        vsrc = _vsource()
+        adapter_dir, _a_init = resolve_cell_adapter(meta, slug, cells_root)
+        if not leakage or vsrc is None or not (adapter_dir / "adapter_model.safetensors").is_file():
+            rows[slug] = {
+                "behavior": "marker",
+                "dose": dose,
+                "seed": seed,
+                "note": (
+                    "DV-5 inputs incomplete: "
+                    f"leakage_personas={len(leakage)} bank={bank is not None} "
+                    f"adapter={(adapter_dir / 'adapter_model.safetensors').is_file()}"
+                ),
+            }
+            continue
+        tap, by_ctx = vsrc
+        v_source = by_ctx[SOURCE]
+        pairs = load_adapter_pairs(adapter_dir)
+        read_layers = [li for li in READ_LAYER_BAND if (li, READ_MODULE) in pairs]
+        read_dir = _dv5_read_direction(pairs, bank, read_layers)
+
+        # Source install strength (EOS-margin leakage on the source itself).
+        install_strength = leakage.get(SOURCE, {}).get("leakage_margin", float("nan"))
+
+        per_bystander: dict[str, dict] = {}
+        firing_pred: list[float] = []
+        geom_pred: list[float] = []
+        leak_out: list[float] = []
+        for persona, lk in leakage.items():
+            if persona == SOURCE:
+                continue  # bystanders only — the source IS the implant
+            v_b = by_ctx.get(persona)
+            if v_b is None:
+                continue
+            geom_cos = _cos(v_b, v_source)
+            fire = float(read_dir @ _unit(v_b)) if read_dir is not None else float("nan")
+            margin = lk["leakage_margin"]
+            frac = (
+                (margin / install_strength)
+                if (not np.isnan(install_strength) and install_strength != 0)
+                else float("nan")
+            )
+            per_bystander[persona] = {
+                "firing_rate": lk["firing_rate"],
+                "base_geometry_cos": geom_cos,
+                "firing_predictor": fire,
+                "leakage_margin": margin,
+                "leakage_logp": lk["leakage_logp"],
+                "leakage_fraction": frac,
+            }
+            if read_dir is not None and not np.isnan(margin):
+                firing_pred.append(fire)
+                geom_pred.append(geom_cos)
+                leak_out.append(margin)
+
+        rho_firing = _spearman(firing_pred, leak_out)
+        rho_geom = _spearman(geom_pred, leak_out)
+        delta_rho = (
+            (abs(rho_firing) - abs(rho_geom))
+            if not (np.isnan(rho_firing) or np.isnan(rho_geom))
+            else float("nan")
+        )
+        collinearity = _spearman(firing_pred, geom_pred)
         rows[slug] = {
-            "behavior": behavior,
+            "behavior": "marker",
             "dose": dose,
             "seed": seed,
-            "note": "DV-5 firing-vs-geometry requires eval leakage JSONs (see eval phase)",
+            "n_bystanders": len(per_bystander),
+            "install_strength_eos_margin": install_strength,
+            "rho_firing_predictor": rho_firing,
+            "rho_plain_geometry": rho_geom,
+            "delta_rho_firing_minus_geometry": delta_rho,
+            "predictor_collinearity_rho": collinearity,
+            "firing_predictor_wins": bool((not np.isnan(delta_rho)) and delta_rho > 0.0),
+            "read_tap": tap,
+            "per_bystander": per_bystander,
         }
     _write_json(out_dir / "dv5_selectivity.json", {"cells": rows, "git_commit": git_commit})
 
@@ -1031,6 +1194,11 @@ def main(argv: list[str] | None = None) -> int:
     p_an.add_argument("--unembedding", default=f"{ANALYSIS_DIR}/unembedding.pt")
     p_an.add_argument("--bank-dir", default="eval_results/issue_650/bank")
     p_an.add_argument("--concept-dir", default="eval_results/issue_650/concept")
+    p_an.add_argument(
+        "--eval-dir",
+        default="eval_results/issue_650/eval",
+        help="Dir of eval-phase leakage JSONs (<slug>__shift.json) for DV-5.",
+    )
     p_an.set_defaults(func=cmd_analyze)
 
     args = ap.parse_args(argv)

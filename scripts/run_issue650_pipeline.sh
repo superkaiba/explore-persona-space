@@ -298,21 +298,78 @@ phase_log eval_done "eval complete"
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. Uploads (raw completions / mixes / bank / concept tensors), fail-loud.
 # ─────────────────────────────────────────────────────────────────────────────
-phase_log upload "raw completions + analysis tensors -> HF data repo"
+phase_log upload "raw completions + concept tensors + dose trajectories -> HF data repo"
 uv run python - >"$LOG_DIR/issue-650-upload.log" 2>&1 <<'PY' || fail "artifact upload FAILED (see issue-650-upload.log)"
 from pathlib import Path
 
-from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
+from huggingface_hub import HfApi
 
-# Raw completion files the eval loop persists (fail-loud helper per
+from explore_persona_space.experiments.issue_650 import HF_ANALYSIS_TENSORS_PREFIX, HF_DATA_REPO
+from explore_persona_space.orchestrate.hub import list_repo_files_complete, upload_raw_completions_to_data_repo
+
+# (1) Raw completion files the eval loop persists (fail-loud helper per
 # experiment-implementer Upload-wiring contract).
 upload_raw_completions_to_data_repo(
     experiment_name="issue650_rank1_mlp_geometry",
     eval_results_dir=Path("eval_results/issue_650"),
 )
 print("raw completions uploaded")
+
+# (2) DV-4 concept tensors (#521-class analysis tensors) — phase 6 previously
+# uploaded ONLY raw_completions, so concept/*.pt were lost on pod termination
+# and the off-pod DV-4 became permanently unrunnable (blocker
+# concept-tensors-never-uploaded). Upload concept/ to
+# <bucket>/analysis_tensors/concept/ + verify on the Hub (list_repo_files,
+# never the hf CLI).
+api = HfApi()
+concept_dir = Path("eval_results/issue_650/concept")
+concept_prefix = f"{HF_ANALYSIS_TENSORS_PREFIX}/concept"
+concept_pts = sorted(concept_dir.glob("concept_directions_seed*.pt")) if concept_dir.is_dir() else []
+if not concept_pts:
+    raise RuntimeError(
+        f"no concept_directions_seed*.pt under {concept_dir} — DV-4 has no base "
+        "concept directions to upload (concept phase must run before upload)."
+    )
+api.upload_folder(
+    folder_path=str(concept_dir),
+    path_in_repo=concept_prefix,
+    repo_id=HF_DATA_REPO,
+    repo_type="dataset",
+    allow_patterns=["concept_directions_seed*.pt"],
+    commit_message="task #650 DV-4 base concept directions (per-seed)",
+)
+listed = set(list_repo_files_complete(api, HF_DATA_REPO, repo_type="dataset"))
+required = [f"{concept_prefix}/{p.name}" for p in concept_pts]
+missing = [f for f in required if f not in listed]
+if missing:
+    raise RuntimeError(f"concept-tensor upload verification FAILED — missing on Hub: {missing}")
+print(f"concept tensors uploaded + verified: {len(required)} file(s)")
+
+# (3) Per-seed sycophancy dose trajectories (JSON, non-LFS path) — the
+# dose-to-target evidence the analyzer/clean-result reads. Small; ride the
+# regular-blob path.
+eval_dir = Path("eval_results/issue_650/eval")
+traj_files = sorted(eval_dir.glob("syco_dose_trajectory_seed*.json")) if eval_dir.is_dir() else []
+if traj_files:
+    traj_prefix = f"{HF_ANALYSIS_TENSORS_PREFIX}/dose_trajectories"
+    api.upload_folder(
+        folder_path=str(eval_dir),
+        path_in_repo=traj_prefix,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        allow_patterns=["syco_dose_trajectory_seed*.json"],
+        commit_message="task #650 sycophancy dose-to-target trajectories",
+    )
+    listed = set(list_repo_files_complete(api, HF_DATA_REPO, repo_type="dataset"))
+    req_t = [f"{traj_prefix}/{p.name}" for p in traj_files]
+    miss_t = [f for f in req_t if f not in listed]
+    if miss_t:
+        raise RuntimeError(f"dose-trajectory upload verification FAILED — missing: {miss_t}")
+    print(f"dose trajectories uploaded + verified: {len(req_t)} file(s)")
+else:
+    print("no dose trajectories found (no sycophancy cells evaluated?)")
 PY
-phase_log upload_done "uploads verified"
+phase_log upload_done "uploads verified (raw completions + concept tensors + dose trajectories)"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 7. Results sentinel (reproducibility card, Hub-verified) + 8. terminal.
