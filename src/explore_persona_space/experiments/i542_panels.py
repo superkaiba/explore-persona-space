@@ -39,16 +39,21 @@ from explore_persona_space.personas import PERSONAS
 __all__ = [
     "ARM_TRAIN_ORDER",
     "COUNT_LEVELS",
+    "I542_NT_TWIN_CIDS",
     "I542_SAMPLED_PERSONA_CIDS",
     "I542_SAMPLED_WILDCHAT_CIDS",
     "NEW_NEGATIVE_CIDS",
+    "NT_PERTURB",
+    "NT_TWIN_OF",
     "PANELS",
     "REPLICATE_ARMS",
     "REPLICATE_CELLS",
     "REPLICATE_TRAIN_SEED",
+    "apply_nt_perturbation",
     "assert_panel_disjointness",
     "load_i542_negatives",
     "load_merged_registry",
+    "quote_wrap_role_noun",
     "row_split_sizes",
     "row_split_slices",
 ]
@@ -76,6 +81,137 @@ I542_SAMPLED_WILDCHAT_CIDS: tuple[str, ...] = (
     "neg_wc_short3",
     "neg_wc_short4",
 )
+
+# ── Genuine near-twins (follow-up `genuine-near-twin-negatives`, plan §4.1) ──
+# The four near-twin negative cids built by DETERMINISTIC #441 surface
+# perturbation of the FOUR F1 source personas (sp_swe / sp_doctor / sp_ph1 /
+# sp_ph2). Each twins ONE source with a tone/style/content-preserving surface
+# edit; the manipulation-check gate (`scripts/i542_dispatch.py::_nt_manipulation_
+# check`) VERIFIES the resulting activation proximity quantitatively before any
+# training counts (a FAIL aborts-and-reports, never recipe-descopes -- the #542
+# lesson). The system-prompt strings are FROZEN into i542_negatives.json by
+# `scripts/i542_sample_contexts.py --regen-nt-twins` (deterministic, no LLM
+# call) so the manipulation result is reproducible; sp_swe / sp_doctor sources
+# are house static strings, sp_ph1 / sp_ph2 sources resolve from the parent's
+# frozen PersonaHub payload at perturbation time.
+NT_TWIN_OF: dict[str, str] = {
+    "neg_nt_swe_typo": "sp_swe",
+    "neg_nt_doctor_quote": "sp_doctor",
+    "neg_nt_ph1_modifier": "sp_ph1",
+    "neg_nt_ph2_namewrap": "sp_ph2",
+}
+I542_NT_TWIN_CIDS: tuple[str, ...] = tuple(NT_TWIN_OF)
+
+
+def quote_wrap_role_noun(s: str) -> str:
+    """Single-quote-wrap the role noun in a ``You are a <role> ...`` string.
+
+    Deterministic #441 quote-wrap perturbation: wrap the role-noun phrase
+    that follows the leading ``You are a/an `` with single quotes, preserving
+    every other character verbatim (tone/style/content unchanged; only the
+    identity string changes). Falls back to wrapping the FIRST word after
+    the article when no recognised role phrase is found.
+
+    Examples (verbatim source strings, asserted in tests):
+        "You are a medical doctor who specializes in internal medicine."
+        -> "You are a 'medical doctor' who specializes in internal medicine."
+        "You are a software engineer who builds web applications."
+        -> "You are a 'software engineer' who builds web applications."
+    """
+    import re
+
+    m = re.match(r"^(You are an? )(.*)$", s)
+    if not m:
+        # Defensive: no canonical "You are a/an" prefix -- wrap the whole
+        # string (still a deterministic, text-disjoint surface edit).
+        return f"'{s}'"
+    head, rest = m.group(1), m.group(2)
+    # Role noun = the span up to the first relative/clause connector or
+    # sentence-ending punctuation, so we wrap the identity phrase only.
+    rel = re.search(r"\s+(who|that|which|specializing|working|focused)\b|[.,;]", rest)
+    cut = rel.start() if rel else len(rest)
+    role, tail = rest[:cut], rest[cut:]
+    role = role.rstrip()
+    pad = rest[len(role) : cut]  # whitespace eaten by rstrip, restored
+    return f"{head}'{role}'{pad}{tail}"
+
+
+def _insert_domain_modifier(s: str) -> str:
+    """Insert the one-word modifier ``senior `` before the role noun.
+
+    Deterministic #441 modifier perturbation: prepend ``senior `` after the
+    leading ``You are a/an `` (lowercasing ``A``->``a`` is unnecessary; the
+    article stays). Preserves the rest of the string verbatim. If the role
+    already begins with ``senior``/``junior``/``lead``, swaps it to ``senior``
+    is avoided -- we insert ``senior `` unconditionally only when the role does
+    not already carry a seniority modifier (else fall back to a quote-wrap so
+    the perturbation still TAKES, i.e. the text differs from the source).
+    """
+    import re
+
+    m = re.match(r"^(You are an? )(.*)$", s)
+    if not m:
+        return f"'{s}'"
+    head, rest = m.group(1), m.group(2)
+    if re.match(r"(?i)^(senior|junior|lead|principal|staff)\b", rest):
+        # A seniority word is already present -- a "senior" insert would be a
+        # no-op or read oddly; use the quote-wrap edit instead so the
+        # perturbation is guaranteed to take (text != source).
+        return quote_wrap_role_noun(s)
+    return f"{head}senior {rest}"
+
+
+_NT_TYPO_REPLACEMENTS: dict[str, str] = {"software": "sofware"}
+
+
+def _apply_typo(s: str) -> str:
+    """Single benign typo edit (deterministic #441 typo perturbation).
+
+    Replaces the FIRST occurrence of a known source word with its
+    one-character-off typo (``software`` -> ``sofware``). Falls back to
+    doubling the first vowel of the first content word when no known word is
+    present, so the edit always takes (text != source).
+    """
+    for word, typo in _NT_TYPO_REPLACEMENTS.items():
+        if word in s:
+            return s.replace(word, typo, 1)
+    return quote_wrap_role_noun(s)  # defensive: guarantee a text-disjoint edit
+
+
+# Deterministic #441 surface-perturbation recipe (no LLM call). Each lambda
+# takes the FROZEN source system-prompt string and returns the near-twin
+# string. The manipulation-check gate measures the activation proximity that
+# results -- the perturbation choices below are designed to land tight, but the
+# gate is the verification (plan §4.2 / A2 confidence LOW).
+NT_PERTURB: dict[str, str] = {
+    "neg_nt_swe_typo": "typo",
+    "neg_nt_doctor_quote": "quote_wrap",
+    "neg_nt_ph1_modifier": "modifier",
+    "neg_nt_ph2_namewrap": "quote_wrap",
+}
+_NT_PERTURB_FNS = {
+    "typo": _apply_typo,
+    "quote_wrap": quote_wrap_role_noun,
+    "modifier": _insert_domain_modifier,
+}
+
+
+def apply_nt_perturbation(cid: str, source_prompt: str) -> str:
+    """Return the near-twin system-prompt for ``cid`` from its frozen source.
+
+    Deterministic dispatch over :data:`NT_PERTURB`. Fails loud on an unknown
+    cid (the four near-twin cids are the only valid inputs) and on a no-op
+    edit (the perturbation MUST change the text -- a near-twin identical to
+    its source is a construction bug, not a tight twin).
+    """
+    assert cid in NT_PERTURB, f"{cid!r} is not a near-twin cid (of {tuple(NT_PERTURB)})"
+    twin = _NT_PERTURB_FNS[NT_PERTURB[cid]](source_prompt)
+    assert twin != source_prompt, (
+        f"near-twin perturbation for {cid} ({NT_PERTURB[cid]}) was a no-op on "
+        f"{source_prompt!r} -- the surface edit did not take"
+    )
+    return twin
+
 
 _DEFAULT_I542_NEGATIVES_PATH = Path("data/issue_542/contexts/i542_negatives.json")
 
@@ -160,11 +296,38 @@ def _static_i542_contexts() -> list[Ctx]:
         ),
         Ctx("neg_wc_short3", "F2", "negative", "Real chat prefix, short, fresh 3 (negative)", {}),
         Ctx("neg_wc_short4", "F2", "negative", "Real chat prefix, short, fresh 4 (negative)", {}),
+        # Genuine near-twins (follow-up `genuine-near-twin-negatives`, plan
+        # §4.1): F1 system-prompt contexts, payloads resolved from the
+        # `--regen-nt-twins` freeze at load. Each twins ONE F1 source.
+        Ctx("neg_nt_swe_typo", "F1", "negative", "Near-twin of sp_swe (typo) (negative)", {}),
+        Ctx(
+            "neg_nt_doctor_quote",
+            "F1",
+            "negative",
+            "Near-twin of sp_doctor (quote-wrap) (negative)",
+            {},
+        ),
+        Ctx(
+            "neg_nt_ph1_modifier",
+            "F1",
+            "negative",
+            "Near-twin of sp_ph1 (modifier) (negative)",
+            {},
+        ),
+        Ctx(
+            "neg_nt_ph2_namewrap",
+            "F1",
+            "negative",
+            "Near-twin of sp_ph2 (quote-wrap) (negative)",
+            {},
+        ),
     ]
 
 
 NEW_NEGATIVE_CIDS: tuple[str, ...] = tuple(c.cid for c in _static_i542_contexts())
-assert len(NEW_NEGATIVE_CIDS) == 16, NEW_NEGATIVE_CIDS
+# 16 v1 negatives + 4 genuine near-twins (follow-up plan §4.1).
+assert len(NEW_NEGATIVE_CIDS) == 20, NEW_NEGATIVE_CIDS
+assert set(I542_NT_TWIN_CIDS) <= set(NEW_NEGATIVE_CIDS), I542_NT_TWIN_CIDS
 
 # ── Panels (plan §3.1 table; canonical panel order = listing order) ──────────
 # Nesting: c2 ⊂ arm1_xfam ⊂ c8 ⊂ c16; family proportions 2:1:1 for counts ≥4.
@@ -207,8 +370,23 @@ PANELS: dict[str, list[str]] = {
     # ARM_TRAIN_ORDER, mirroring the c8 add-back pattern), so default all-arm
     # dispatcher invocations stay exactly as the v1 run executed them.
     "pos_only": [],
+    # #542 follow-up (genuine-near-twin-negatives, plan §4.1 item 2): the
+    # PROXIMITY-axis arms, both count-4 at matched 1:1 row-mass + matched
+    # longer (band-stop-OFF, 1-epoch) budget. nt_close = the 4 deterministic
+    # near-twins; xfam_long = the v1 cross-family panel composition (==
+    # arm1_xfam), RETRAINED at the longer budget (NOT reused -- the band-stop
+    # change fails reuse-fitness (a)/(b), plan §10/§11). Opt-in only (NOT in
+    # ARM_TRAIN_ORDER), so default all-arm invocations stay exactly as v1 ran.
+    "nt_close": list(I542_NT_TWIN_CIDS),
+    "xfam_long": list(NEGATIVE_CIDS),
 }
 assert set(PANELS["c2"]) < set(PANELS["arm1_xfam"]) < set(PANELS["c8"]) < set(PANELS["c16"])
+# Proximity arms are count-4 and matched in count (plan §3 method delta).
+assert len(PANELS["nt_close"]) == 4, PANELS["nt_close"]
+assert len(PANELS["xfam_long"]) == 4, PANELS["xfam_long"]
+assert len(PANELS["nt_close"]) == len(PANELS["xfam_long"]), "proximity arms must be count-matched"
+# nt_close composition is exactly the 4 near-twin cids (the single variable).
+assert set(PANELS["nt_close"]) == set(I542_NT_TWIN_CIDS), PANELS["nt_close"]
 
 # Count-sweep levels (count-4 IS arm 1, reused -- zero retraining).
 COUNT_LEVELS: dict[str, int] = {"c2": 2, "arm1_xfam": 4, "c8": 8, "c16": 16}
@@ -266,18 +444,27 @@ def load_i542_negatives(
     path: Path | str = _DEFAULT_I542_NEGATIVES_PATH,
     *,
     require_sampled: bool = True,
+    require_near_twins: bool = False,
 ) -> dict[str, Ctx]:
-    """The 16 new negative contexts keyed by cid, sampled payloads resolved.
+    """The 20 new negative contexts keyed by cid, sampled payloads resolved.
 
     Args:
         path: JSON written by ``scripts/i542_sample_contexts.py`` (schema:
             ``{"personahub": {cid: {"persona": str, ...}}, "wildchat":
-            {cid: {"messages": [...], "prefix_token_len": int, ...}}}`` --
-            the parent sampled-contexts schema, twins included under
-            ``personahub``).
+            {cid: {"messages": [...], "prefix_token_len": int, ...}},
+            "near_twins": {cid: {"system_prompt": str, "twin_of": str,
+            "perturbation": str, "source_persona": str}}}`` -- the parent
+            sampled-contexts schema, twins included under ``personahub`` and
+            the deterministic near-twins under ``near_twins``).
         require_sampled: when True (default) a missing/incomplete file
-            raises; when False sampled cids keep empty payloads (ONLY for
-            structural smokes that never render them).
+            raises for the v1 sampled cids; when False those keep empty
+            payloads (ONLY for structural smokes that never render them).
+        require_near_twins: when True a missing ``near_twins`` block raises
+            (the proximity-arm contract -- ``--regen-nt-twins`` must have run
+            and appended them); when False (default) the 4 near-twin cids
+            keep empty payloads. Kept separate from ``require_sampled`` so a
+            v1-only registry load (no proximity arm) does not force the
+            near-twin freeze to be present.
     """
     contexts = {c.cid: c for c in _static_i542_contexts()}
     path = Path(path)
@@ -332,6 +519,37 @@ def load_i542_negatives(
                 "topic": entry.get("topic", ""),
             },
         )
+    # Deterministic near-twins (follow-up plan §4.1): resolved from the
+    # `near_twins` block appended by `--regen-nt-twins`. Each carries the
+    # FROZEN perturbed system prompt (the manipulation result is reproducible
+    # only because the string is frozen, not re-derived). Required only when
+    # require_near_twins=True (the proximity-arm contract).
+    for cid in I542_NT_TWIN_CIDS:
+        entry = payload.get("near_twins", {}).get(cid)
+        if entry is None:
+            if require_near_twins:
+                raise KeyError(
+                    f"{path} missing near_twins entry {cid!r} -- run "
+                    "`scripts/i542_sample_contexts.py --regen-nt-twins` to append it."
+                )
+            continue
+        sp = entry["system_prompt"]
+        assert sp != entry.get("source_persona"), (
+            f"{cid}: frozen near-twin system_prompt equals its source -- the "
+            "perturbation did not take (construction bug)"
+        )
+        contexts[cid] = Ctx(
+            cid,
+            contexts[cid].family,
+            contexts[cid].role,
+            contexts[cid].name,
+            {
+                "system_prompt": sp,
+                "source": "near-twin",
+                "twin_of": entry.get("twin_of", NT_TWIN_OF.get(cid, "")),
+                "perturbation": entry.get("perturbation", NT_PERTURB.get(cid, "")),
+            },
+        )
     return contexts
 
 
@@ -340,21 +558,27 @@ def load_merged_registry(
     i542_negatives_path: Path | str = _DEFAULT_I542_NEGATIVES_PATH,
     *,
     require_sampled: bool = True,
+    require_near_twins: bool = False,
 ) -> dict[str, Ctx]:
-    """Parent 34-context registry + the 16 new negatives = 50 contexts.
+    """Parent 34-context registry + the 20 new negatives = 54 contexts.
 
     The frozen parent contexts are NEVER redefined here -- a cid collision
-    between the two sets fails loud.
+    between the two sets fails loud. ``require_near_twins`` is forwarded to
+    :func:`load_i542_negatives` (the proximity-arm contract).
     """
     if sampled_537_path is None:
         parent = load_registry(require_sampled=require_sampled)
     else:
         parent = load_registry(sampled_537_path, require_sampled=require_sampled)
-    new = load_i542_negatives(i542_negatives_path, require_sampled=require_sampled)
+    new = load_i542_negatives(
+        i542_negatives_path,
+        require_sampled=require_sampled,
+        require_near_twins=require_near_twins,
+    )
     collisions = set(parent) & set(new)
     assert not collisions, f"i542 negative cids collide with the frozen registry: {collisions}"
     merged = {**parent, **new}
-    assert len(merged) == 50, f"merged registry must have 50 contexts, got {len(merged)}"
+    assert len(merged) == 54, f"merged registry must have 54 contexts, got {len(merged)}"
     return merged
 
 
