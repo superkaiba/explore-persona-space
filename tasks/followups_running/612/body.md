@@ -37,7 +37,7 @@ promoted_at: '2026-06-16T00:20:48Z'
 - At matched install the on-policy-minus-canned bystander contrast is **opposite-signed across the two clean sources**: villain **−0.072** (CI −0.113 to −0.036), kindergarten teacher **+0.140** (CI +0.083 to +0.199).
 - The pooled contrast is **−0.023** (CI −0.061 to +0.015) — a null that averages away ~0.28 of opposite-signed per-source spread. Pooling is the wrong summary.
 - A panel decorrelating base agreeableness from cosine was built for **all four sources** (|r| 0.03 to 0.17), but no predictor wins: every per-source CI overlaps its runner-up.
-- Two of four sources could not fill the on-policy yield quota; their matched read is dose-confounded, so the cross-source heterogeneity rests on two clean sources, not four.
+- Two of four sources could not hit the matched-install band; all four sources cleared the 80% yield floor, but the cross-source heterogeneity rests on the two clean matched-install reads, not four.
 
 ## What I ran
 
@@ -125,7 +125,7 @@ Virtual assistant and digital helper, near-twins of the leakiest source at cosin
 
 > **Figure.** *The assistant-twins sit flat-to-mildly-negative in every covered cell; daycare teacher, at the same cosine band, leaks ~+0.13 under the canned software-engineer adapter.* One panel per probe persona; bars grouped by source, colored by condition; y = agreement lift (trained − base, both seeds pooled). On-policy/prefix bars exist only for villain and comedian.
 
-Two mechanisms fit and this run cannot separate them: role gating, or suppression generalizing from a trained negative (the default assistant is a software-engineer contrastive negative at cosine 0.969, and the probe twins are its near-twins). The realistic-data version never ran (yield drop). Separating them needs an adapter whose negative set omits the assistant (cost_class: needs-gpu, headline_affecting: no).
+Two mechanisms fit and this run cannot separate them: role gating, or suppression generalizing from a trained negative (the default assistant is a software-engineer contrastive negative at cosine 0.969, and the probe twins are its near-twins). The realistic-data software-engineer twin read is not covered by this figure. Separating them needs an adapter whose negative set omits the assistant (cost_class: needs-gpu, headline_affecting: no).
 
 ### Earlier pooled leakage reads (superseded by the per-source matched read)
 
