@@ -178,3 +178,4 @@
 {"ts": "2026-06-16T08:52:29Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqgelygu-slnbt7 effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-16T09:04:19Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqgf16gp-mt13xu effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-16T09:08:51Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqgf16gp-mt13xu phase=done after 271s."}
+{"ts": "2026-06-16T09:14:24Z", "kind": "epm:backend-selected", "version": 1, "by": "backends.router", "note": "{\"attempts\": [], \"chosen_kind\": \"gcp\", \"cluster\": null, \"elapsed_seconds\": 0.0, \"extra\": {\"gcp_attempts_today\": 1, \"intermediate\": true}, \"reason\": \"auto_fallback_gcp\", \"requested_kind\": null}"}
