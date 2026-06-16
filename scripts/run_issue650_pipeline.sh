@@ -170,19 +170,34 @@ CUDA_VISIBLE_DEVICES=0 uv run python scripts/run_issue650_eval.py \
 phase_log smoke_syco_floor "checking syco install floor (Delta-agree >= 0.30)"
 syco_floor_ok=$(uv run python - <<'PY' 2>>"$LOG_DIR/issue-650-smoke-syco-floor.log"
 import json
+import sys
 from pathlib import Path
 
 from explore_persona_space.experiments.issue_650.band_entry import smoke_install_floor_passes
 
-p = Path("eval_results/issue_650/eval/syco_dose_trajectory_seed42.json")
+# Round-3 pivot (syco-trajectory-slug-path-pipeline-mismatch): the dose
+# trajectory is written SLUG-keyed (run_issue650_eval.py:350 ->
+# syco_dose_trajectory_{slug}.json), not seed-keyed. Resolve its path from
+# the smoke cell's agreement payload's `dose_trajectory_path` field (the
+# already-built abstraction at run_issue650_eval.py:445) so any future
+# trajectory-filename rename is followed automatically. Fall back to the
+# slug-keyed convention if the agreement payload is absent.
+eval_dir = Path("eval_results/issue_650/eval")
+smoke_slug = "sycophancy__low__seed42"
+agreement_path = eval_dir / f"{smoke_slug}__agreement.json"
+if agreement_path.is_file():
+    traj_str = json.loads(agreement_path.read_text()).get("dose_trajectory_path")
+    p = Path(traj_str) if traj_str else eval_dir / f"syco_dose_trajectory_{smoke_slug}.json"
+else:
+    p = eval_dir / f"syco_dose_trajectory_{smoke_slug}.json"
 if not p.is_file():
     print("0")
+    print(f"dose trajectory not found at {p}", file=sys.stderr)
     raise SystemExit(0)
 recs = json.loads(p.read_text())["epoch_records"]
 traj = {int(r["epoch"]): {"delta_agree": float(r["delta_agree"])} for r in recs}
 passes, max_delta = smoke_install_floor_passes(trajectory=traj)
 print("1" if passes else "0")
-import sys
 print(f"max_delta_agree={max_delta:.4f} floor=0.30 passes={passes}", file=sys.stderr)
 PY
 )
@@ -389,7 +404,10 @@ print(f"concept tensors uploaded + verified: {len(required)} file(s)")
 # dose-to-target evidence the analyzer/clean-result reads. Small; ride the
 # regular-blob path.
 eval_dir = Path("eval_results/issue_650/eval")
-traj_files = sorted(eval_dir.glob("syco_dose_trajectory_seed*.json")) if eval_dir.is_dir() else []
+# Round-3 pivot (syco-trajectory-slug-path-pipeline-mismatch): trajectories
+# are SLUG-keyed (syco_dose_trajectory_{slug}.json), not seed-keyed. The
+# `*` glob catches the current slug-keyed names AND any future variant.
+traj_files = sorted(eval_dir.glob("syco_dose_trajectory_*.json")) if eval_dir.is_dir() else []
 if traj_files:
     traj_prefix = f"{HF_ANALYSIS_TENSORS_PREFIX}/dose_trajectories"
     api.upload_folder(
@@ -397,7 +415,7 @@ if traj_files:
         path_in_repo=traj_prefix,
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
-        allow_patterns=["syco_dose_trajectory_seed*.json"],
+        allow_patterns=["syco_dose_trajectory_*.json"],
         commit_message="task #650 sycophancy dose-to-target trajectories",
     )
     listed = set(list_repo_files_complete(api, HF_DATA_REPO, repo_type="dataset"))

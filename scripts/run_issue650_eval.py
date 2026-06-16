@@ -449,6 +449,32 @@ def _eval_sycophancy_cell(
     }
     out_path = out_dir / f"{slug}__agreement.json"
     out_path.write_text(json.dumps(payload, indent=2))
+    # Round-3 pivot (syco-trajectory-slug-path-pipeline-mismatch): assert BOTH
+    # the trajectory file and the agreement payload exist immediately after the
+    # write, AND that the path the agreement payload advertises
+    # (`dose_trajectory_path`, the smoke-floor reader's source of truth) actually
+    # resolves. A future rename of either write path then catches itself HERE,
+    # in the same edit, instead of silently orphaning the pipeline.sh consumers
+    # (smoke install-floor read + upload glob) one phase downstream.
+    if not traj_path.is_file():
+        raise AssertionError(
+            f"cell={slug}: dose trajectory {traj_path} missing immediately after write — "
+            "the trajectory writer and its downstream consumers (run_issue650_pipeline.sh "
+            "smoke install-floor read + upload glob) have drifted. Re-align the write path "
+            "and the consumers (syco-trajectory-slug-path-pipeline-mismatch)."
+        )
+    advertised = Path(payload["dose_trajectory_path"])
+    if advertised.resolve() != traj_path.resolve():
+        raise AssertionError(
+            f"cell={slug}: agreement payload advertises dose_trajectory_path={advertised} "
+            f"but the trajectory was written to {traj_path} — the smoke install-floor reader "
+            "resolves the trajectory from the agreement payload, so this mismatch would "
+            "orphan that read (syco-trajectory-slug-path-pipeline-mismatch)."
+        )
+    if not out_path.is_file():
+        raise AssertionError(
+            f"cell={slug}: agreement payload {out_path} missing immediately after write."
+        )
     log.info(
         "[phase=eval_syco_done] cell=%s dose=%s selected_epoch=%s Δ=%.3f in_band=%s -> %s",
         slug,
