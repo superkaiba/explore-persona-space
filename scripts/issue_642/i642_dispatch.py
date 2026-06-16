@@ -113,6 +113,24 @@ from i642_common import (  # noqa: E402
     SYCO_POOL_HUB_PATH,
     TWIN_PROMPTS,
     TWIN_VALIDATION_HUB_PATH,
+    V4_ARM_SPEC,
+    V4_ARMS,
+    V4_CANNED_POOL_EXPECTED_SHA256,
+    V4_CANNED_POOL_HUB_PATH,
+    V4_CMFT_FINE_GRID,
+    V4_EVAL_PROBES_HUB_PATH,
+    V4_HF_EXPERIMENT_NAME,
+    V4_LORA_ADAPTER_CONFIG_HUB_PATH,
+    V4_LORA_FINE_GRID,
+    V4_N_PROBES,
+    V4_ONPOLICY_POOL_EXPECTED_SHA256,
+    V4_ONPOLICY_POOL_HUB_PATH,
+    V4_PANEL_SET_HUB_PATH,
+    V4_PILOT_GRID,
+    V4_S_SECONDARY,
+    V4_SOURCE_PERSONA,
+    V4_SOURCE_PROMPT,
+    V4_WANDB_PROJECT,
     WANDB_PROJECT,
     _retry_transient,
     assert_pool_disjointness,
@@ -122,6 +140,10 @@ from i642_common import (  # noqa: E402
     roster_personas,
     select_checkpoints,
     sha256_file,
+    v4_arm_lr,
+    v4_assert_pool_disjointness,
+    v4_load_panel,
+    v4_splice_canned_pool,
 )
 
 log = logging.getLogger("issue_642.dispatch")
@@ -144,6 +166,14 @@ SMOKE_N_PROBES = 5
 SMOKE_N_ROLLOUTS = 2
 SMOKE_PANEL = ("software_engineer", "qwen_default", "supervillain")
 
+# v4/v5 smoke panel (3 of the #612 30-panel: the villain source + a default-
+# context slice + a near-twin) — used when --v4 --smoke.
+V4_SMOKE_PANEL = ("villain", "qwen_default", "supervillain")
+# v4 smoke grids: 2 ckpts per arm (one per FT-canary; the matched-LR-collapse
+# step-4 guard included).
+V4_SMOKE_LORA_GRID = (2, 4)
+V4_SMOKE_CMFT_GRID = (2, 4)
+
 
 def _git_sha() -> str | None:
     try:
@@ -163,10 +193,19 @@ def _phase_log(tag: str, msg: str) -> None:
     print(f"{datetime.now(UTC).isoformat()} [phase={tag}] {msg}", flush=True)
 
 
+def _cell_arm_slug(slug: str) -> str:
+    """Arm prefix of a cell slug: 'loraOP_lr1e5_step12' -> 'loraOP_lr1e5';
+    'lora_step32' -> 'lora'; 'base' -> 'base'. The v4 selection groups by this
+    (3 distinct cmft arm slugs must NOT collapse to one 'cmft' token)."""
+    if slug == "base":
+        return "base"
+    return slug.rsplit("_step", 1)[0]
+
+
 class Ctx:
     """Dispatch context: scope, paths, smoke/dry-run switches (#591 pattern)."""
 
-    def __init__(self, args: argparse.Namespace):
+    def __init__(self, args: argparse.Namespace):  # noqa: C901 - one linear config pass; the v4 branch is parallel to the v3 setup
         self.smoke: bool = args.smoke
         self.dry_run: bool = args.dry_run
         self.seed: int = args.seed
@@ -197,19 +236,56 @@ class Ctx:
         if self.dry_run and not self.skip_upload and self.experiment_name == HF_EXPERIMENT_NAME:
             log.warning("dry-run + production --hf-experiment-name: forcing --skip-upload")
             self.skip_upload = True
+        # --v4: the followup `onpolicy-matchedlr-rank-isolation` mode (plan v5).
+        # Trains FOUR NEW villain arms at matched LR on on-policy data + reads
+        # them on the #612 30-panel — NO #606 reuse. The v4 mode swaps the
+        # source / panel / pools / arm registry / experiment name; the v3
+        # (software_engineer / #606-reuse / 3-arm) path is unchanged when
+        # --v4 is absent.
+        self.v4: bool = getattr(args, "v4", False)
         self.behaviors: list[str] = [b.strip() for b in args.behaviors.split(",") if b.strip()]
         for b in self.behaviors:
             if b not in ("sycophancy", "refusal"):
                 raise ValueError(f"unknown behavior {b!r}")
-        # --arms: which arms this run TRAINS + evals (canonical order kept). #642
-        # production trains cmft ONLY (lora/ft reused from #606).
-        requested_arms = [a.strip() for a in getattr(args, "arms", "cmft").split(",") if a.strip()]
-        for a in requested_arms:
-            if a not in ALL_ARMS:
-                raise ValueError(f"unknown arm {a!r} (expected lora/ft/cmft)")
-        self.arms: tuple[str, ...] = tuple(a for a in ALL_ARMS if a in requested_arms)
-        if not self.arms:
-            raise ValueError("--arms parsed to an empty set")
+        if self.v4:
+            if self.behaviors != ["sycophancy"]:
+                raise ValueError("--v4 supports sycophancy only (no on-policy refusal pool exists)")
+            # v4 experiment namespace (independent of the v3 default; honors
+            # --hf-experiment-name only when the user overrode it explicitly).
+            if self.experiment_name == HF_EXPERIMENT_NAME:
+                self.experiment_name = V4_HF_EXPERIMENT_NAME
+                if self.smoke:
+                    self.experiment_name = f"{V4_HF_EXPERIMENT_NAME}_smoke"
+                if self.run_label is not None:
+                    self.experiment_name = f"{self.experiment_name}/{self.run_label}"
+            requested = [a.strip() for a in getattr(args, "arms", "").split(",") if a.strip()]
+            if not requested:
+                requested = list(V4_ARMS)
+            for a in requested:
+                if a not in V4_ARMS:
+                    raise ValueError(f"unknown v4 arm {a!r} (expected one of {V4_ARMS})")
+            # canonical v4 order kept (headline pair first)
+            self.arms = tuple(a for a in V4_ARMS if a in requested)
+            if not self.arms:
+                raise ValueError("--arms parsed to an empty v4 set")
+            self.source_persona = V4_SOURCE_PERSONA
+            self.source_prompt = V4_SOURCE_PROMPT
+            self.install_pilot: bool = getattr(args, "install_pilot", False)
+        else:
+            # --arms: which arms this run TRAINS + evals (canonical order kept). #642
+            # production trains cmft ONLY (lora/ft reused from #606). Empty = cmft.
+            arms_arg = getattr(args, "arms", "") or "cmft"
+            requested_arms = [a.strip() for a in arms_arg.split(",") if a.strip()]
+            for a in requested_arms:
+                if a not in ALL_ARMS:
+                    raise ValueError(f"unknown arm {a!r} (expected lora/ft/cmft)")
+            self.arms = tuple(a for a in ALL_ARMS if a in requested_arms)
+            if not self.arms:
+                raise ValueError("--arms parsed to an empty set")
+            self.source_persona = SOURCE_PERSONA
+            self.source_prompt = roster_personas()[SOURCE_PERSONA]
+            self.install_pilot = False
+        self._v4_panel_cache: dict[str, str] | None = None
         # --ft-grid: 'retrain' = the §4.11 densified FT_RETRAIN_GRID; else a
         # comma list of positive ints; default = the cmft grid (= #606 FT grid).
         ft_grid_arg = (getattr(args, "ft_grid", None) or "").strip()
@@ -225,10 +301,27 @@ class Ctx:
             self.behaviors = self.behaviors[:1]  # sycophancy by default
             self.n_probes: int | None = SMOKE_N_PROBES
             self.n_rollouts = SMOKE_N_ROLLOUTS
-            self.lora_grid: tuple[int, ...] = SMOKE_LORA_GRID
+            self.lora_grid: tuple[int, ...] = V4_SMOKE_LORA_GRID if self.v4 else SMOKE_LORA_GRID
             self.ft_grid: tuple[int, ...] = SMOKE_FT_GRID
-            self.cmft_grid: tuple[int, ...] = SMOKE_CMFT_GRID
+            self.cmft_grid: tuple[int, ...] = V4_SMOKE_CMFT_GRID if self.v4 else SMOKE_CMFT_GRID
             self.ft_max_steps = SMOKE_FT_MAX_STEPS
+        elif self.v4:
+            # v4 full-grid: fine grid for both poles (plan §4.4); the install-
+            # pilot trains the short coarse grid before the full train.
+            self.n_probes = V4_N_PROBES  # the #612 eval_60 set
+            self.n_rollouts = 10
+            self.lora_grid = ft_grid_override or V4_LORA_FINE_GRID
+            self.ft_grid = ft_grid_override or V4_CMFT_FINE_GRID
+            self.cmft_grid = ft_grid_override or V4_CMFT_FINE_GRID
+            self.ft_max_steps = 0
+            if self.install_pilot:
+                # Phase 0.5 short pilot: train only to ~step 44 + read the coarse
+                # pilot grid (plan §4.6). max-steps caps training; the ckpt grid
+                # is the pilot coarse grid.
+                self.lora_grid = V4_PILOT_GRID
+                self.ft_grid = V4_PILOT_GRID
+                self.cmft_grid = V4_PILOT_GRID
+                self.ft_max_steps = max(V4_PILOT_GRID)
         else:
             self.n_probes = None  # full 50
             self.n_rollouts = 10
@@ -251,7 +344,40 @@ class Ctx:
 
     # -- per-arm grid --
     def arm_grid(self, arm: str) -> tuple[int, ...]:
+        if self.v4:
+            # v4 arm slugs: the LoRA pole uses the LoRA grid; the 3 cmft arms
+            # share the cmft grid (same fine grid, plan §4.4).
+            return self.lora_grid if V4_ARM_SPEC[arm]["method"] == "lora" else self.cmft_grid
         return {"lora": self.lora_grid, "ft": self.ft_grid, "cmft": self.cmft_grid}[arm]
+
+    def v4_arm_method(self, arm: str) -> str:
+        """v4 arm method: 'lora' or 'cmft' (plan §4.2 / V4_ARM_SPEC)."""
+        return V4_ARM_SPEC[arm]["method"]
+
+    def v4_arm_data_kind(self, arm: str) -> str:
+        """v4 arm training-data kind: 'on_policy' or 'canned' (plan §4.7)."""
+        return V4_ARM_SPEC[arm]["data"]
+
+    def v4_arm_lr(self, arm: str) -> float:
+        """v4 arm learning rate: matched 1e-5 or orig 5e-6 (plan §10)."""
+        return v4_arm_lr(arm)
+
+    def panel(self) -> dict[str, str]:
+        """v4 30-persona panel from the #612 panel_set.json (cached); v3 = the
+        39-persona roster+twins panel."""
+        if not self.v4:
+            return panel_personas()
+        if self._v4_panel_cache is None:
+            panel_path = self.data_dir(self.behaviors[0]) / "panel_set.json"
+            if self.dry_run:
+                # dry-run placeholder panel (3 personas) bypasses the 30-assert.
+                raw = json.loads(panel_path.read_text())
+                self._v4_panel_cache = {
+                    name: rec["prompt"] for name, rec in raw["personas"].items()
+                }
+            else:
+                self._v4_panel_cache = v4_load_panel(panel_path)
+        return self._v4_panel_cache
 
     # -- derived paths --
     def bdir(self, behavior: str) -> Path:
@@ -276,6 +402,10 @@ class Ctx:
         return self.bdir(behavior) / "cmft_ckpts"
 
     def ckpt_root(self, behavior: str, arm: str) -> Path:
+        if self.v4:
+            # v4: each arm slug gets its OWN checkpoint root (3 distinct cmft
+            # arms + the LoRA pole cannot share one root).
+            return self.bdir(behavior) / "ckpts" / arm
         return {
             "lora": self.lora_ckpt_root,
             "ft": self.ft_ckpt_root,
@@ -289,9 +419,10 @@ class Ctx:
         return self.bdir(behavior) / "generation_manifest.json"
 
     def stage_b_panel(self) -> dict[str, str]:
-        panel = panel_personas()
+        panel = self.panel()
         if self.smoke:
-            return {k: panel[k] for k in SMOKE_PANEL}
+            smoke_panel = V4_SMOKE_PANEL if self.v4 else SMOKE_PANEL
+            return {k: panel[k] for k in smoke_panel}
         return panel
 
     def eval_pool(self, behavior: str) -> Path:
@@ -304,10 +435,17 @@ class Ctx:
             sliced.write_text("\n".join(lines[: self.n_probes]) + "\n")
         return sliced
 
-    def train_pool(self, behavior: str) -> Path:
+    def train_pool(self, behavior: str, arm: str | None = None) -> Path:
+        """Training pool for an arm. v4: on-policy arms read the #612 pool;
+        the canned arm reads the spliced #411-positive pool (plan §4.7). v3 +
+        non-arm callers read the single behavior pool."""
+        if self.v4 and arm is not None and self.v4_arm_data_kind(arm) == "canned":
+            base = self.data_dir(behavior) / "train_pool_canned.jsonl"
+        else:
+            base = self.data_dir(behavior) / "train_pool.jsonl"
         if self.smoke:
-            return self.data_dir(behavior) / f"train_pool_first{SMOKE_POOL_ROWS}.jsonl"
-        return self.data_dir(behavior) / "train_pool.jsonl"
+            return base.with_name(base.stem + f"_first{SMOKE_POOL_ROWS}.jsonl")
+        return base
 
 
 # ---------------------------------------------------------------------------
@@ -689,7 +827,147 @@ def _write_dry_run_adapter_config(path: Path) -> None:
     )
 
 
+def _hub_download_v4(ctx: Ctx, hub_path: str, *, repo_type: str = "dataset") -> Path:
+    """v4 Hub fetch at HEAD (the #612/#411 pools are sha-pinned by content, not
+    by revision — see Ctx.data_revision is unused in v4)."""
+    from huggingface_hub import hf_hub_download
+
+    repo = HF_DATA_REPO if repo_type == "dataset" else HF_MODEL_REPO
+    return Path(
+        hf_hub_download(
+            repo,
+            hub_path,
+            repo_type=repo_type,
+            token=os.environ.get("HF_TOKEN"),
+        )
+    )
+
+
+def _phase0_data_v4(ctx: Ctx, behavior: str) -> None:
+    """v4 Phase 0 (plan v5 §4.3 / §4.7): fetch + sha-verify the #612 villain
+    on-policy pool, the #411 villain canned pool, the #612 30-panel + eval_60
+    probes, and the #612 villain LoRA adapter_config (cmft mask assert); BUILD
+    the canned-cmft pool (#411 positives + #612 negatives, byte-identical);
+    v4 disjointness + byte-identical-negatives + completion-length asserts.
+    NO #606 reuse — this run trains 4 NEW arms."""
+    ddir = ctx.data_dir(behavior)
+    ddir.mkdir(parents=True, exist_ok=True)
+
+    if ctx.dry_run:
+        _write_dry_run_pool(ddir / "train_pool.jsonl", behavior)
+        _write_dry_run_pool(ddir / "train_pool_canned.jsonl", behavior)
+        probes = [
+            {"wrong_claim": f"DRY-RUN {behavior} claim {i}?", "correction": "DRY-RUN."}
+            for i in range(SMOKE_N_PROBES)
+        ]
+        (ddir / "eval_pool.jsonl").write_text("\n".join(json.dumps(p) for p in probes) + "\n")
+        _write_dry_run_adapter_config(ctx.adapter_config_path(behavior))
+        # minimal dry-run panel (3 personas incl. source) so ctx.panel() works
+        (ddir / "panel_set.json").write_text(
+            json.dumps(
+                {
+                    "personas": {
+                        p: {"prompt": f"DRY-RUN {p} prompt"}
+                        for p in (V4_SOURCE_PERSONA, "qwen_default", "supervillain")
+                    }
+                }
+            )
+        )
+        manifest = {"dry_run": True, "behavior": behavior, "v4": True}
+    else:
+        # -- on-policy pool (#612) --
+        op_got = _hub_download_v4(ctx, V4_ONPOLICY_POOL_HUB_PATH)
+        op_sha = sha256_file(op_got)
+        if op_sha != V4_ONPOLICY_POOL_EXPECTED_SHA256:
+            raise RuntimeError(
+                f"[v4] on-policy pool EXPECTED_SHA256 FAILED: {op_sha} != "
+                f"{V4_ONPOLICY_POOL_EXPECTED_SHA256} for {V4_ONPOLICY_POOL_HUB_PATH}"
+            )
+        shutil.copy2(op_got, ddir / "train_pool.jsonl")
+        # -- canned pool (#411) for the splice --
+        cn_got = _hub_download_v4(ctx, V4_CANNED_POOL_HUB_PATH)
+        cn_sha = sha256_file(cn_got)
+        if cn_sha != V4_CANNED_POOL_EXPECTED_SHA256:
+            raise RuntimeError(
+                f"[v4] canned pool EXPECTED_SHA256 FAILED: {cn_sha} != "
+                f"{V4_CANNED_POOL_EXPECTED_SHA256} for {V4_CANNED_POOL_HUB_PATH}"
+            )
+        # -- eval probes (#612 eval_60) --
+        ev_got = _hub_download_v4(ctx, V4_EVAL_PROBES_HUB_PATH)
+        shutil.copy2(ev_got, ddir / "eval_pool.jsonl")
+        n_eval = sum(1 for ln in (ddir / "eval_pool.jsonl").read_text().splitlines() if ln.strip())
+        if n_eval != V4_N_PROBES:
+            raise RuntimeError(f"[v4] eval pool has {n_eval} probes, expected {V4_N_PROBES}")
+        for ln in (ddir / "eval_pool.jsonl").read_text().splitlines():
+            if ln.strip():
+                assert "wrong_claim" in json.loads(ln), "[v4] eval probe missing wrong_claim"
+        # -- panel (#612 30-persona) --
+        panel_got = _hub_download_v4(ctx, V4_PANEL_SET_HUB_PATH)
+        shutil.copy2(panel_got, ddir / "panel_set.json")
+        panel = v4_load_panel(ddir / "panel_set.json")
+        # -- #612 villain LoRA adapter_config (cmft module-set assert) --
+        adapter_got = _hub_download_v4(ctx, V4_LORA_ADAPTER_CONFIG_HUB_PATH, repo_type="model")
+        shutil.copy2(adapter_got, ctx.adapter_config_path(behavior))
+        # -- BUILD the canned-cmft pool (splice; byte-identical-negatives assert) --
+        splice_report = v4_splice_canned_pool(
+            canned_pool_path=cn_got,
+            onpolicy_pool_path=ddir / "train_pool.jsonl",
+            out_path=ddir / "train_pool_canned.jsonl",
+        )
+        # -- v4 disjointness (against the realized pool) on BOTH pools --
+        disjoint_op = v4_assert_pool_disjointness(ddir / "train_pool.jsonl", panel)
+        disjoint_cn = v4_assert_pool_disjointness(ddir / "train_pool_canned.jsonl", panel)
+        max_completion_tokens = max(
+            _assert_completion_lengths(ddir / "train_pool.jsonl", behavior),
+            _assert_completion_lengths(ddir / "train_pool_canned.jsonl", behavior),
+        )
+        adapter_cfg = json.loads(ctx.adapter_config_path(behavior).read_text())
+        manifest = {
+            "behavior": behavior,
+            "v4": True,
+            "source_persona": V4_SOURCE_PERSONA,
+            "n_panel_personas": len(panel),
+            "n_bystanders": len(panel) - 1,
+            "onpolicy_pool_sha256": op_sha,
+            "canned_pool_source_sha256": cn_sha,
+            "spliced_canned_pool": splice_report,
+            "n_eval_probes": n_eval,
+            "max_completion_tokens": max_completion_tokens,
+            "disjointness_onpolicy": disjoint_op,
+            "disjointness_canned": disjoint_cn,
+            "lora_adapter_config_target_modules": sorted(adapter_cfg.get("target_modules", [])),
+            "lora_adapter_config_bias": adapter_cfg.get("bias", "none"),
+            "lora_adapter_config_use_rslora": adapter_cfg.get("use_rslora"),
+            "arms": list(ctx.arms),
+            "git_commit_sha": _git_sha(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+        }
+
+    if ctx.smoke:
+        for stem in ("train_pool", "train_pool_canned"):
+            src = ddir / f"{stem}.jsonl"
+            lines = [ln for ln in src.read_text().splitlines() if ln.strip()]
+            (ddir / f"{stem}_first{SMOKE_POOL_ROWS}.jsonl").write_text(
+                "\n".join(lines[:SMOKE_POOL_ROWS]) + "\n"
+            )
+    (ddir / "data_manifest.json").write_text(json.dumps(manifest, indent=2))
+    _hub_upload_file(
+        ddir / "data_manifest.json",
+        f"{ctx.experiment_name}/{behavior}/data_manifest.json",
+        skip=ctx.skip_upload,
+    )
+    _phase_log("p0_data", f"[v4][{behavior}] Phase 0 done (4-arm pools + #612 panel)")
+
+
 def phase0_data(ctx: Ctx, behavior: str) -> None:
+    if ctx.v4:
+        _phase_log("p0_data", f"[v4][{behavior}] Phase 0 start (villain on-policy + canned)")
+        ddir = ctx.data_dir(behavior)
+        if (ddir / "data_manifest.json").exists():
+            _phase_log("p0_data", f"[v4][{behavior}] data_manifest exists — skipping (resume)")
+            return
+        _phase0_data_v4(ctx, behavior)
+        return
     _phase_log(
         "p0_data",
         f"[{behavior}] Phase 0 start (data {ctx.data_revision[:12]} / "
@@ -891,7 +1169,140 @@ def _train_ft_like(ctx: Ctx, behavior: str, arm: str) -> None:
             raise RuntimeError(f"[{behavior}] {arm} training failed rc={rc} (log: {ft_log})")
 
 
+def _train_v4_cmft_arm(ctx: Ctx, behavior: str, arm: str) -> None:
+    """Train one v4 cmft arm slug (cmftOP_lr1e5 / cmftOP_lr5e6 / cmftCN_lr1e5)
+    via the ZeRO-3 cmft trainer at the arm's own LR + own pool (plan §4.2). The
+    freeze mask + module-set-identity assert vs the #612 villain adapter_config
+    are identical across all 3 cmft arms (the manipulated variables are LR and
+    data only)."""
+    ft_root = ctx.ckpt_root(behavior, arm)
+    if (ft_root / "train_metadata.json").exists():
+        _phase_log("p1_train", f"[v4][{behavior}] {arm} train_metadata exists — skipping (resume)")
+        return
+    if ctx.dry_run:
+        _dry_run_fake_ckpts(ft_root, ctx.arm_grid(arm), {"behavior": behavior, "arm": arm})
+        _phase_log("p1_train", f"[v4][{behavior}] DRY-RUN: placeholder {arm} checkpoints")
+        return
+    train_jsonl = ctx.train_pool(behavior, arm)
+    grid = ctx.arm_grid(arm)
+    arm_lr = ctx.v4_arm_lr(arm)
+    # WandB run suffix = the arm slug + source so each arm logs a DISTINCT run
+    # (#480 run-separation class; plan §9 names issue642_v4_<slug>_villain).
+    run_suffix = f"v4_{arm}_{V4_SOURCE_PERSONA}"
+
+    def _ft_cmd(per_device: int, accum: int) -> list[str]:
+        cmd = [
+            "accelerate",
+            "launch",
+            "--config_file",
+            str(ACCEL_CONFIG),
+            "--num_processes",
+            str(ctx.n_gpus),
+            "--gradient_accumulation_steps",
+            str(accum),
+            str(FT_TRAINER),
+            "--behavior",
+            behavior,
+            "--arm",
+            "cmft",  # the trainer arm token; the v4 SLUG distinguishes the run
+            "--train-jsonl",
+            str(train_jsonl),
+            "--output-dir",
+            str(ft_root),
+            "--ckpt-steps",
+            ",".join(map(str, grid)),
+            "--seed",
+            str(ctx.seed),
+            "--learning-rate",
+            str(arm_lr),
+            "--per-device-batch",
+            str(per_device),
+            "--grad-accum",
+            str(accum),
+            "--wandb-project",
+            V4_WANDB_PROJECT,
+            "--freeze-outside-lora-modules",
+            "--lora-adapter-config-json",
+            str(ctx.adapter_config_path(behavior)),
+            "--run-name-suffix",
+            run_suffix,
+        ]
+        if ctx.ft_max_steps > 0:
+            cmd += ["--max-steps", str(ctx.ft_max_steps)]
+        return cmd
+
+    ft_log = ctx.bdir(behavior) / "logs" / f"{arm}_train.log"
+    rc = _run(_ft_cmd(4, 1), env=_ft_env(ctx), log_path=ft_log)
+    if rc != 0:
+        tail = ft_log.read_text(errors="replace")[-8000:] if ft_log.exists() else ""
+        if "CUDA out of memory" in tail or "OutOfMemoryError" in tail:
+            _phase_log(
+                "p1_train",
+                f"[v4][{behavior}] {arm} OOM at per-device 4 — fallback per-device 2 x accum 2",
+            )
+            shutil.rmtree(ft_root, ignore_errors=True)
+            rc = _run(_ft_cmd(2, 2), env=_ft_env(ctx), log_path=ft_log)
+        if rc != 0:
+            raise RuntimeError(f"[v4][{behavior}] {arm} training failed rc={rc} (log: {ft_log})")
+
+
+def _train_v4_lora_arm(ctx: Ctx, behavior: str, arm: str) -> None:
+    """Train the v4 LoRA pole (loraOP_lr1e5) via the LoRA worker at the matched
+    LR on the on-policy pool (plan §4.2 — the --lr flag's purpose)."""
+    lora_root = ctx.ckpt_root(behavior, arm)
+    if (lora_root / "train_metadata.json").exists():
+        _phase_log("p1_train", f"[v4][{behavior}] {arm} train_metadata exists — skipping (resume)")
+        return
+    if ctx.dry_run:
+        _dry_run_fake_ckpts(lora_root, ctx.arm_grid(arm), {"behavior": behavior, "arm": arm})
+        _phase_log("p1_train", f"[v4][{behavior}] DRY-RUN: placeholder {arm} checkpoints")
+        return
+    cmd = [
+        sys.executable,
+        str(LORA_TRAIN_WORKER),
+        "--behavior",
+        behavior,
+        "--train-jsonl",
+        str(ctx.train_pool(behavior, arm)),
+        "--output-dir",
+        str(lora_root),
+        "--ckpt-steps",
+        ",".join(map(str, ctx.arm_grid(arm))),
+        "--seed",
+        str(ctx.seed),
+        "--gpu-id",
+        "0",
+        "--lr",
+        str(ctx.v4_arm_lr(arm)),
+        "--run-name-suffix",
+        f"v4_{arm}_{V4_SOURCE_PERSONA}",
+    ]
+    # CVD pinned in the launcher env (gotcha #20) + matching --gpu-id 0; the 4
+    # arms train SERIALLY so no parallel co-location.
+    rc = _run(cmd, env=_gpu_env(0), log_path=ctx.bdir(behavior) / "logs" / f"{arm}_train.log")
+    if rc != 0:
+        raise RuntimeError(
+            f"[v4][{behavior}] {arm} LoRA training failed rc={rc} "
+            f"(log: {ctx.bdir(behavior) / 'logs' / f'{arm}_train.log'})"
+        )
+
+
+def _phase1_train_v4(ctx: Ctx, behavior: str) -> None:
+    """v4 Phase 1: train the (up to) 4 villain arms SERIALLY (each cmft arm uses
+    all 4 GPUs via ZeRO-3; the LoRA pole uses GPU 0). Plan §9 parallelism."""
+    _phase_log("p1_train", f"[v4][{behavior}] Phase 1 start (arms={ctx.arms})")
+    for arm in ctx.arms:
+        if ctx.v4_arm_method(arm) == "lora":
+            _train_v4_lora_arm(ctx, behavior, arm)
+        else:
+            _train_v4_cmft_arm(ctx, behavior, arm)
+    _phase_log("p1_train", f"[v4][{behavior}] Phase 1 done")
+
+
 def phase1_train(ctx: Ctx, behavior: str) -> None:
+    if ctx.v4:
+        _phase1_train_v4(ctx, behavior)
+        return
     _phase_log("p1_train", f"[{behavior}] Phase 1 start (arms={ctx.arms})")
     train_jsonl = ctx.train_pool(behavior)
 
@@ -952,16 +1363,19 @@ def _stage_a_cells(ctx: Ctx, behavior: str) -> list[tuple[str, str, Path]]:
     """
     cells: list[tuple[str, str, Path]] = []
     for arm in ctx.arms:
-        if arm == "lora":
-            lora_root = ctx.lora_ckpt_root(behavior)
-            meta = json.loads((lora_root / "train_metadata.json").read_text())
-            for s in meta["saved_checkpoints"]:
-                cells.append((f"lora_step{s}", "lora", lora_root / f"checkpoint-{s}"))
-        else:  # ft or cmft
-            root = ctx.ckpt_root(behavior, arm)
-            meta = json.loads((root / "train_metadata.json").read_text())
-            for s in meta["saved_checkpoints"]:
-                cells.append((f"{arm}_step{s}", arm, root / f"checkpoint-{s}"))
+        # gen_arm = the generation MODE token: 'lora' for native-LoRA gen (the
+        # LoRA pole), else the checkpoint-dir mode. In v4 the cell SLUG is the
+        # arm slug itself; the gen_arm is 'lora' for the LoRA-method arm.
+        is_lora = arm == "lora" or (ctx.v4 and ctx.v4_arm_method(arm) == "lora")
+        root = (
+            ctx.lora_ckpt_root(behavior)
+            if (arm == "lora" and not ctx.v4)
+            else ctx.ckpt_root(behavior, arm)
+        )
+        meta = json.loads((root / "train_metadata.json").read_text())
+        gen_arm = "lora" if is_lora else ("cmft" if ctx.v4 else arm)
+        for s in meta["saved_checkpoints"]:
+            cells.append((f"{arm}_step{s}", gen_arm, root / f"checkpoint-{s}"))
     if ctx.run_label is None:
         cells.append(("base", "base", Path(BASE_MODEL)))
     return cells
@@ -1008,7 +1422,7 @@ def phase2_stage_a(ctx: Ctx, behavior: str) -> None:
     traj_path = sa_dir / f"trajectory_{behavior}.json"
     sa_dir.mkdir(parents=True, exist_ok=True)
     panel_json = sa_dir / "panel_source_self.json"
-    panel_json.write_text(json.dumps({SOURCE_PERSONA: roster_personas()[SOURCE_PERSONA]}))
+    panel_json.write_text(json.dumps({ctx.source_persona: ctx.source_prompt}))
     probes = ctx.eval_pool(behavior)
     cells = _stage_a_cells(ctx, behavior)
 
@@ -1105,8 +1519,8 @@ def phase2_stage_a(ctx: Ctx, behavior: str) -> None:
                 behavior=behavior,
                 cell=slug,
                 seed=ctx.seed,
-                panel_persona=SOURCE_PERSONA,
-                panel_prompt=roster_personas()[SOURCE_PERSONA],
+                panel_persona=ctx.source_persona,
+                panel_prompt=ctx.source_prompt,
                 probes=probe_rows,
                 completions=[
                     ["DRY-RUN completion (not model output)."] * ctx.n_rollouts for _ in probe_rows
@@ -1120,24 +1534,30 @@ def phase2_stage_a(ctx: Ctx, behavior: str) -> None:
         if traj_path.exists()
         else {
             "behavior": behavior,
-            "source": SOURCE_PERSONA,
+            "source": ctx.source_persona,
             "seed": ctx.seed,
             "smoke": ctx.smoke,
             "dry_run": ctx.dry_run,
+            "v4": ctx.v4,
             "judge_model": JUDGE_MODEL,
             "cells": {},
         }
     )
-    for slug, arm, _path in cells:
-        gen_json = gen_root / slug / f"{behavior}_eval_{SOURCE_PERSONA}.json"
+    for slug, gen_arm, _path in cells:
+        gen_json = gen_root / slug / f"{behavior}_eval_{ctx.source_persona}.json"
         if not gen_json.exists():
             raise RuntimeError(f"[{behavior}] stage-A generation missing: {gen_json}")
         cell = _judge_cell_file(
-            ctx, behavior, gen_json, sa_dir / "verdicts" / f"{slug}__{SOURCE_PERSONA}.json"
+            ctx, behavior, gen_json, sa_dir / "verdicts" / f"{slug}__{ctx.source_persona}.json"
         )
         step = int(slug.split("step")[-1]) if "step" in slug else 0
+        # The trajectory's ``arm`` key is the SELECTION-grouping arm. In v4 that
+        # is the arm SLUG (3 distinct cmft arms must NOT collapse); v3 keeps the
+        # gen-mode arm token. ``gen_arm`` rides along for stage-B model loading.
+        arm_for_selection = _cell_arm_slug(slug) if ctx.v4 else gen_arm
         trajectory["cells"][slug] = {
-            "arm": arm,
+            "arm": arm_for_selection,
+            "gen_arm": gen_arm,
             "step": step,
             "rate_raw": cell["rate_raw"],
             "rate_clean": cell["rate_clean"],
@@ -1201,7 +1621,13 @@ def phase3_select(ctx: Ctx, behavior: str) -> None:
         s_values = [s_by_step[s] for s in steps]
         if any(v != v for v in s_values):  # NaN guard
             raise RuntimeError(f"[{behavior}/{arm}] NaN s values in trajectory — judging gap")
-        sel = select_checkpoints(steps, s_values)
+        # v4 secondary target = 0.65 (the on-policy dose band tops ~0.63, #612);
+        # v3 keeps the default 0.75.
+        sel = (
+            select_checkpoints(steps, s_values, s_secondary=V4_S_SECONDARY)
+            if ctx.v4
+            else select_checkpoints(steps, s_values)
+        )
         sel["degenerate_fraction_by_step"] = {str(k): v for k, v in degen_by_step.items()}
         s_ge_04 = [st for st in steps if s_by_step[st] >= 0.4]
         degen_collapse = bool(s_ge_04) and all(degen_by_step[st] > 0.5 for st in s_ge_04)
@@ -1230,8 +1656,14 @@ def phase3_select(ctx: Ctx, behavior: str) -> None:
         f"{ctx.experiment_name}/{behavior}/stage_a/selection.json",
         skip=ctx.skip_upload,
     )
-    # Record cmft selected steps for the reproducibility card (sentinel).
-    if "cmft" in selection["arms"]:
+    # Record selected steps per trained arm for the reproducibility card.
+    if ctx.v4:
+        for arm in ctx.arms:
+            if arm in selection["arms"]:
+                ctx.cmft_selected_steps[f"{behavior}:{arm}"] = list(
+                    selection["arms"][arm]["selected_steps"]
+                )
+    elif "cmft" in selection["arms"]:
         ctx.cmft_selected_steps[behavior] = list(selection["arms"]["cmft"]["selected_steps"])
     if not gate_pass:
         if ctx.smoke or ctx.dry_run:
@@ -1265,7 +1697,9 @@ def phase3_select(ctx: Ctx, behavior: str) -> None:
             return
 
     # Delete non-selected FT/cmft checkpoints (production only; disk discipline).
-    for arm in FT_LIKE_ARMS:
+    # v4: every trained arm slug; v3: the ft/cmft arms.
+    delete_arms = list(ctx.arms) if ctx.v4 else list(FT_LIKE_ARMS)
+    for arm in delete_arms:
         if arm in selection["arms"] and not (ctx.smoke or ctx.dry_run):
             keep = {f"checkpoint-{s}" for s in selection["arms"][arm]["selected_steps"]}
             root = ctx.ckpt_root(behavior, arm)
@@ -1282,11 +1716,23 @@ def phase3_select(ctx: Ctx, behavior: str) -> None:
 
 
 def _stage_b_cells(ctx: Ctx, behavior: str) -> list[tuple[str, str, int]]:
+    """Stage-B cells: (cell_slug, gen_arm, step). ``gen_arm`` is the generation
+    MODE token phase4 branches on (lora -> merge; cmft/ft -> --model-path; base
+    -> --hub-model-id). In v4 the LoRA-method arm maps to 'lora', the cmft arms
+    to 'cmft'."""
     selection = json.loads((ctx.stage_a_dir(behavior) / "selection.json").read_text())
     cells: list[tuple[str, str, int]] = []
     for arm in ctx.arms:
+        # gen_arm = the generation MODE token (v4 LoRA-method arm -> 'lora';
+        # v4 cmft arms -> 'cmft'; v3 -> the arm token).
+        if not ctx.v4:
+            gen_arm = arm
+        elif ctx.v4_arm_method(arm) == "lora":
+            gen_arm = "lora"
+        else:
+            gen_arm = "cmft"
         for s in selection["arms"][arm]["selected_steps"]:
-            cells.append((f"{arm}_step{s}", arm, int(s)))
+            cells.append((f"{arm}_step{s}", gen_arm, int(s)))
     if ctx.run_label is None:
         cells.append(("base", "base", 0))
     return cells
@@ -1337,7 +1783,14 @@ def phase4_stage_b(ctx: Ctx, behavior: str) -> None:  # noqa: C901 - merge+gen+u
     for cell, arm, step in cells:
         if arm != "lora":
             continue
-        adapter_dir = ctx.lora_ckpt_root(behavior) / f"checkpoint-{step}"
+        # v4 LoRA checkpoint lives under the arm-slug-keyed root; v3 under
+        # lora_ckpts.
+        lora_root = (
+            ctx.ckpt_root(behavior, _cell_arm_slug(cell))
+            if ctx.v4
+            else ctx.lora_ckpt_root(behavior)
+        )
+        adapter_dir = lora_root / f"checkpoint-{step}"
         merged = ctx.bdir(behavior) / "merged" / cell
         merged_dirs[cell] = merged
         out_dir = ctx.gen_dir(behavior) / cell
@@ -1366,7 +1819,13 @@ def phase4_stage_b(ctx: Ctx, behavior: str) -> None:  # noqa: C901 - merge+gen+u
         if arm == "lora":
             model_args = ["--model-path", str(merged_dirs[cell])]
         elif arm in FT_LIKE_ARMS:
-            model_args = ["--model-path", str(ctx.ckpt_root(behavior, arm) / f"checkpoint-{step}")]
+            # v4 cmft checkpoint root is keyed by the arm SLUG (derived from the
+            # cell), not the gen-mode 'cmft' token.
+            ckpt_arm = _cell_arm_slug(cell) if ctx.v4 else arm
+            model_args = [
+                "--model-path",
+                str(ctx.ckpt_root(behavior, ckpt_arm) / f"checkpoint-{step}"),
+            ]
         else:
             model_args = ["--hub-model-id", BASE_MODEL]
         jobs.append(
@@ -1439,6 +1898,51 @@ def phase4_stage_b(ctx: Ctx, behavior: str) -> None:  # noqa: C901 - merge+gen+u
 # ---------------------------------------------------------------------------
 
 
+def _phase5_upload_v4_adapters(ctx: Ctx, behavior: str) -> None:
+    """v4 adapter uploads (plan §10 Outputs): the LoRA pole's selected
+    checkpoints upload to the HF model repo (canonical); the cmft consolidated
+    bf16 dirs are opt-out by default (re-derivable from pinned data + commit +
+    seed; enable with --upload-adapters). The reproducibility card records all
+    destinations regardless."""
+    if ctx.dry_run:
+        return
+    selection = json.loads((ctx.stage_a_dir(behavior) / "selection.json").read_text())
+    for arm in ctx.arms:
+        sel = selection["arms"].get(arm, {}).get("selected_steps", [])
+        method = ctx.v4_arm_method(arm)
+        # destination prefix per arm (LoRA canonical; cmft opt-out)
+        dests = [
+            f"adapters/issue_642/v4/{arm}_{V4_SOURCE_PERSONA}_seed{ctx.seed}/step{s}" for s in sel
+        ]
+        do_upload = method == "lora" or ctx.upload_adapters
+        ctx.cmft_uploaded_adapters[f"{behavior}:{arm}"] = dests if do_upload else []
+        if do_upload and not ctx.skip_upload:
+            from huggingface_hub import HfApi
+
+            _api = HfApi(token=os.environ.get("HF_TOKEN"))
+            for s, dest in zip(sel, dests, strict=True):
+                local = ctx.ckpt_root(behavior, arm) / f"checkpoint-{s}"
+                if not local.exists():
+                    raise RuntimeError(f"[v4][{behavior}] {arm} checkpoint {local} missing")
+                _retry_transient(
+                    lambda local=local, dest=dest, api=_api, arm=arm: api.upload_folder(
+                        folder_path=str(local),
+                        path_in_repo=dest,
+                        repo_id=HF_MODEL_REPO,
+                        repo_type="model",
+                        commit_message=f"#642 v4 {arm} step {dest}",
+                    ),
+                    what=f"upload v4 adapter {dest}",
+                )
+                _phase_log("p5_upload", f"[v4][{behavior}] {arm} step {s} -> {dest}")
+        else:
+            _phase_log(
+                "p5_upload",
+                f"[v4][{behavior}] {arm} adapter upload opt-out "
+                f"(method={method}); card declares {len(dests)} re-derivable dirs",
+            )
+
+
 def phase5_upload(ctx: Ctx, behavior: str) -> None:
     _phase_log("p5_upload", f"[{behavior}] Phase 5 start")
     if ctx.stage_a_dir(behavior).exists():
@@ -1448,6 +1952,12 @@ def phase5_upload(ctx: Ctx, behavior: str) -> None:
         return
     if ctx.gen_dir(behavior).exists():
         _upload_dir_batched(ctx, ctx.gen_dir(behavior), "generations", behavior=behavior)
+
+    if ctx.v4:
+        _phase5_upload_v4_adapters(ctx, behavior)
+        _phase_log("p5_upload", f"[v4][{behavior}] Phase 5 done")
+        return
+
     # Optional cmft consolidated-bf16 adapter uploads (plan §10 Outputs: default
     # opt-out, re-derivable from pinned data + commit + seed; enable with
     # --upload-adapters). The reproducibility card records the destinations
@@ -1491,10 +2001,61 @@ def phase5_upload(ctx: Ctx, behavior: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _wandb_entity() -> str | None:
+    """Read the WandB entity off the SDK at run time (NOT a hand-typed literal —
+    a stale literal silently breaks resolution when the account changes; #597).
+    Returns None if WandB is unavailable; the card omits the field then."""
+    try:
+        import wandb
+
+        return wandb.Api().default_entity
+    except Exception as e:
+        log.warning("could not read WandB default_entity for the card: %s", e)
+        return None
+
+
+def _reproducibility_card_v4(ctx: Ctx) -> dict:
+    """v4 training-task reproducibility card (CLAUDE.md sentinel contract): the
+    4 villain arms each train a DISTINCT WandB run (#480 run-separation). Carries
+    wandb_project + wandb_run_names + wandb_entity + per-arm adapter paths. The
+    LoRA pole adapters upload canonically; the cmft consolidated dirs are
+    opt-out (declared, re-derivable). NO #606 reuse."""
+    run_names = [f"issue642_v4_{arm}_{V4_SOURCE_PERSONA}_seed{ctx.seed}" for arm in ctx.arms]
+    adapter_paths: dict[str, list[str]] = {}
+    for key, dests in ctx.cmft_uploaded_adapters.items():
+        if dests:
+            adapter_paths[key] = [f"{HF_MODEL_REPO} :: {d}" for d in dests]
+    return {
+        "v4": True,
+        "arms_trained": list(ctx.arms),
+        "source_persona": V4_SOURCE_PERSONA,
+        "wandb_project": V4_WANDB_PROJECT,
+        "wandb_run_names": run_names,
+        "wandb_entity": _wandb_entity(),
+        "selected_steps": ctx.cmft_selected_steps,  # keyed "<behavior>:<arm>"
+        "adapter_paths": adapter_paths,  # LoRA pole canonical; cmft opt-out
+        "lora_pole_upload": (
+            f"{HF_MODEL_REPO} :: adapters/issue_642/v4/loraOP_lr1e5_{V4_SOURCE_PERSONA}"
+            f"_seed{ctx.seed}/step{{selected}}"
+        ),
+        "cmft_adapters_note": (
+            "cmft consolidated bf16 dirs opt-out from upload (plan §10) — "
+            "re-derivable from pinned data sha + git commit + seed; enable with "
+            "--upload-adapters"
+        ),
+        "onpolicy_pool": f"{HF_DATA_REPO} :: {V4_ONPOLICY_POOL_HUB_PATH}",
+        "canned_pool_source": f"{HF_DATA_REPO} :: {V4_CANNED_POOL_HUB_PATH}",
+        "panel": f"{HF_DATA_REPO} :: {V4_PANEL_SET_HUB_PATH}",
+        "contrasts": "delta_rank_matched, delta_lr, delta_data (within-villain; plan §5)",
+    }
+
+
 def _reproducibility_card(ctx: Ctx) -> dict:
     """CLAUDE.md training-task sentinel contract: per-cell adapter_paths +
     wandb_run_names with the wandb_project. The cmft arm trains adapters; the
     LoRA/FT poles are REUSED from #606 (declared as such)."""
+    if ctx.v4:
+        return _reproducibility_card_v4(ctx)
     cmft_adapters: dict[str, list[str]] = {}
     for behavior in ctx.behaviors:
         if ctx.cmft_uploaded_adapters.get(behavior):
@@ -1649,10 +2210,25 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--behaviors", default="sycophancy")
     parser.add_argument(
+        "--v4",
+        action="store_true",
+        help="Followup `onpolicy-matchedlr-rank-isolation` mode (plan v5): train the "
+        "FOUR villain arms at matched LR on on-policy data + read on the #612 30-panel; "
+        "NO #606 reuse. --arms then takes the v4 slugs "
+        "(loraOP_lr1e5,cmftOP_lr1e5,cmftOP_lr5e6,cmftCN_lr1e5; default = all 4).",
+    )
+    parser.add_argument(
+        "--install-pilot",
+        action="store_true",
+        help="v4 Phase-0.5 install-pilot (plan §4.6/§7): train each arm a SHORT way "
+        "(max-steps = max pilot grid) + a coarse stage-A read; gates the full train. "
+        "Use with --v4 --stop-after-phase p3_select.",
+    )
+    parser.add_argument(
         "--arms",
-        default="cmft",
-        help="Which arms this run trains+evals (subset of lora,ft,cmft). #642 "
-        "production trains cmft ONLY; lora/ft poles are reused from #606.",
+        default="",
+        help="Which arms this run trains+evals. v3: subset of lora,ft,cmft (default cmft). "
+        "v4 (--v4): subset of the 4 villain slugs (default = all 4).",
     )
     parser.add_argument(
         "--run-label",
