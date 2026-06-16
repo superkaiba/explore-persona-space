@@ -72,6 +72,24 @@ TN-median in ≥5/6 sources). Smoke = sweep with one cell:
         --recipe contrastive_dense_early --only-source villain --smoke
     # production (plan §10): --recipe contrastive_dense_early --seed 42 --gpu 0
 
+--recipe filler_dynamics (#597 follow-up `positives-plus-filler-control`, plan
+v5): RECIPE-IDENTICAL to contrastive_dense_early (same C_GRID, save-driven halt,
+DenseRunParams, probe rig, seed) but trains on the 700-row FILLER pool — 200
+positives (reused VERBATIM from the contrastive pool) + 500 marker-less
+SOURCE-persona filler rows on a DISJOINT question set (filler_500). The single
+manipulated variable is the 500-row content: contrastive negatives → no-contrast
+source-persona filler (plan v5 §2). Preflight fetches/builds filler_500, generates
+per-source base-greedy filler R (vLLM subprocess), and builds the per-source
+filler pool with BLOCKING contrast-leakage + disjointness audits. Panel probe runs
+--arm d; the parity gate's source-Δ-vs-armA is a LOGGED DIAGNOSTIC (filler ≠
+contrastive by design, plan v5 §7 MF2) — only the WRONG-POOL signature (source
+never installed) is a hard code-failure trigger. Reduced 3-source set (villain +
+assistant + qwen_default). Smoke = sweep with one cell (same unification):
+
+    uv run python scripts/issue_597/dispatch_leakage_dynamics_597.py \\
+        --recipe filler_dynamics --only-source villain --smoke
+    # production (plan v5 §10): --recipe filler_dynamics --seed 42 --gpu 0
+
 Pod-side discipline (CLAUDE.md):
 - NEVER shells out to scripts/task.py (branch-guard would refuse).
 - Every subprocess.* call passes env={**os.environ}; load_dotenv() at module top.
@@ -163,6 +181,19 @@ PARITY_LOCKSTEP_INVERSION_RATIO = 0.5  # TN tracking source — the pos-only sig
 PARITY_MIN_PASS_SOURCES = 5
 PARITY_REGISTERED_N_SOURCES = 6
 PARITY_BASE_DIAG_TOL_NATS = 0.1  # plan §12.6 logged diagnostic, never a gate
+
+# ── #597 follow-up `positives-plus-filler-control` (plan v5) ─────────────────
+# Arm D = positives + neutral filler control: the contrastive arm's 500
+# marker-less negatives replaced by 500 marker-less SOURCE-persona filler rows
+# on a DISJOINT question set (the single manipulated variable, plan v5 §2). The
+# arm REUSES the dense recipe wholesale (same C_GRID, save-driven halt, probe
+# rig, DenseRunParams) — only the TRAINING DATA (the filler pool) and the
+# instrumental bookkeeping (run_name / slab / adapter root) differ.
+FILLER_SLAB_SUBDIR = "positives-plus-filler-control"
+# The disjoint filler-question corpus + per-source filler R live on the data
+# repo under the filler-arm prefix (plan v5 §3 Outputs).
+HF_597_FILLER_INPUTS_SUBDIR = "issue597_leakage_dynamics/filler_arm/inputs"
+HF_597_FILLER_QUESTIONS_FILE = f"{HF_597_FILLER_INPUTS_SUBDIR}/filler_500.jsonl"
 
 
 @dataclass(frozen=True)
@@ -603,6 +634,33 @@ def _dense_train_cfg(
         run_name=f"issue597_densegrid_{source}_seed{seed}",
         marker_band_eval_every_steps=DENSE_BAND_PROBE_EVERY_STEPS,
     )
+
+
+def _filler_train_cfg(
+    source: str,
+    seed: int,
+    max_length: int,
+    traj_path: Path,
+    *,
+    save_steps: int | None = None,
+    gpu_id: int = 0,
+):
+    """Arm D (positives + neutral filler) TrainLoraConfig — plan v5 §3.
+
+    RECIPE-IDENTICAL to :func:`_dense_train_cfg` (the contrastive arm) — every
+    field — lr 5e-6, r=32/α=64 rsLoRA 7-module, eff. batch 16, warmup 0.05,
+    marker-only loss with ``tail_tokens=0`` + ``suppress_at_post_response_slot``,
+    ``max_steps=528``, dense save grid, 2-step in-loop band probe — is inherited
+    verbatim. The ONLY delta vs the dense cfg is ``run_name`` (the WandB run-id
+    + trajectory namespacing). The single MANIPULATED variable lives entirely in
+    the TRAINING DATA (the 700-row filler pool = 200 positives + 500 marker-less
+    SOURCE-persona filler rows on a disjoint corpus), passed at the train_lora
+    call site — NOT in any recipe field (plan v5 §2 single-variable invariant).
+    """
+    cfg = _dense_train_cfg(
+        source, seed, max_length, traj_path, save_steps=save_steps, gpu_id=gpu_id
+    )
+    return replace(cfg, run_name=f"issue597_filler_{source}_seed{seed}")
 
 
 def assert_pos_only_adapter_parity(max_length: int, cfg=None) -> dict:
@@ -1075,6 +1133,266 @@ def train_arm_c(
         raise RuntimeError(f"[{source}] dense grid checkpoints missing after training: {missing}")
     # Ladder now complete + final: stamp its provenance (panel_probe keys its
     # resume-skip on this id; a future retrain mints a different one).
+    write_ladder_run_id(adapter_dir, source=source, reason="training_complete")
+    return adapter_dir, traj_path
+
+
+# ── Arm D filler-pool construction (plan v5 §2/§3) ───────────────────────────
+
+
+def ensure_filler_questions(local_path: Path) -> Path:
+    """Fetch the shared ``filler_500`` disjoint corpus, or generate it once.
+
+    Tries the pinned data-repo prefix first (so a re-run / shard never
+    regenerates); on a miss the operator runs the generation script. The corpus
+    is shared across all filler sources — generated ONCE (plan v5 §3).
+    """
+    if local_path.exists():
+        return local_path
+    try:
+        cached = _hf_download_with_retry(
+            repo_id=HF_DATA_REPO,
+            filename=HF_597_FILLER_QUESTIONS_FILE,
+            repo_type="dataset",
+        )
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(cached, local_path)
+        log.info("[phase=preflight] fetched shared filler_500 corpus -> %s", local_path)
+        return local_path
+    except Exception as e:
+        raise RuntimeError(
+            f"filler_500 question corpus missing locally ({local_path}) and not on the data "
+            f"repo at {HF_597_FILLER_QUESTIONS_FILE} ({e}). Generate it once first:\n"
+            "  uv run python -m explore_persona_space.experiments.leakage_dynamics_597"
+            ".generate_filler_questions --train-pool data/issue_597/wrong_claims/train_200.jsonl "
+            "--eval-pool data/issue_597/wrong_claims/eval_50.jsonl "
+            f"--out-path {local_path} --n 500"
+        ) from e
+
+
+def ensure_filler_R(source: str, filler_q_path: Path, out_path: Path, params, gpu_id: int) -> Path:
+    """Generate (or reuse) the per-source base-greedy filler R via a vLLM subprocess.
+
+    vLLM teardown safety (gotchas.md): runs ``generate_filler_R`` as a
+    subprocess. Smoke caps the question count via ``--limit-questions`` so the
+    filler R generation scales with the rest of the run (PASS_UNIFIED).
+    """
+    if out_path.exists():
+        log.info("[phase=filler_r_%s] reusing existing filler R at %s", source, out_path)
+        return out_path
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    _run_subprocess(
+        [
+            "uv",
+            "run",
+            "python",
+            "-m",
+            f"{PKG}.generate_filler_R",
+            "--source",
+            source,
+            "--filler-questions",
+            str(filler_q_path),
+            "--out-path",
+            str(out_path),
+        ]
+        + (["--limit-questions", str(params.limit_questions)] if params.limit_questions else []),
+        phase=f"filler_r_{source}",
+    )
+    return out_path
+
+
+def build_filler_pool_for_source(
+    source: str,
+    full_pool: Path,
+    filler_q_path: Path,
+    filler_R_path: Path,
+    out_pool: Path,
+    report_path: Path,
+    tokenizer,
+    params,
+) -> dict:
+    """Build the 700-row filler pool for ``source`` + write its disjointness_report.
+
+    Reuses the contrastive pool's 200 positives verbatim, builds 500 marker-less
+    source-persona filler rows from the disjoint corpus + base greedy R, runs the
+    BLOCKING contrast-leakage + disjointness audits (build_filler_pool fails loud
+    on any violation), and persists a #411-shaped ``disjointness_report.json``.
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597.build_filler_pool import (
+        build_filler_pool,
+    )
+    from explore_persona_space.experiments.marker_implant_480.build_training_pool import (
+        SOURCE_SYSTEM_PROMPTS,
+    )
+
+    contrastive_rows = [
+        json.loads(line) for line in full_pool.read_text().splitlines() if line.strip()
+    ]
+    filler_qs = [
+        json.loads(line)["wrong_claim"]
+        for line in filler_q_path.read_text().splitlines()
+        if line.strip()
+    ]
+    r_payload = json.loads(filler_R_path.read_text())
+    filler_R = [row["r_base"] for row in r_payload["rows"]]
+    train_qs = [
+        json.loads(line)["wrong_claim"]
+        for line in (Path(filler_q_path).parent.parent / "wrong_claims" / "train_200.jsonl")
+        .read_text()
+        .splitlines()
+        if line.strip()
+    ]
+    eval_qs = [
+        json.loads(line)["wrong_claim"]
+        for line in (Path(filler_q_path).parent.parent / "wrong_claims" / "eval_50.jsonl")
+        .read_text()
+        .splitlines()
+        if line.strip()
+    ]
+    # Smoke caps the filler row count to match the generated R (limit-questions).
+    n_filler = len(filler_R)
+    n_positive = 200 if params.limit_questions is None else min(200, n_filler)
+    summary = build_filler_pool(
+        source,
+        SOURCE_SYSTEM_PROMPTS[source],
+        contrastive_rows,
+        filler_qs[:n_filler],
+        filler_R,
+        train_qs,
+        eval_qs,
+        tokenizer,
+        out_pool,
+        n_positive=n_positive,
+        n_filler=n_filler,
+    )
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False))
+    log.info("[phase=filler_pool_%s] disjointness_report -> %s", source, report_path)
+    return summary
+
+
+def train_arm_d(
+    source: str,
+    seed: int,
+    filler_pool: Path,
+    runs_root: Path,
+    slab_root: Path,
+    max_length: int,
+    params,
+    *,
+    gpu_id: int,
+) -> tuple[Path, Path]:
+    """Filler-arm training: identical to :func:`train_arm_c` except the DATA.
+
+    The ONLY difference from the contrastive (dense) arm is the training pool
+    (``filler_pool`` = 200 positives + 500 marker-less source-persona filler
+    rows) and the run_name (``_filler_train_cfg``). The recipe, grid-prune +
+    save-driven-halt callbacks, schedule, in-loop band probe, and the
+    overshoot / grid-completeness asserts are inherited verbatim — the single
+    manipulated variable lives in the pool, not the recipe (plan v5 §2).
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597.grid_callbacks import (
+        CheckpointGridPruneCallback,
+        HaltAfterStepCallback,
+    )
+    from explore_persona_space.train.sft import train_lora
+
+    adapter_dir = runs_root / f"{source}_seed{seed}" / "adapter"
+    adapter_dir.mkdir(parents=True, exist_ok=True)
+    invalidate_ladder_run_id(adapter_dir)
+    traj_path = slab_root / "inloop_trajectories" / f"{source}_seed{seed}_trajectory.json"
+    traj_path.parent.mkdir(parents=True, exist_ok=True)
+
+    cfg = _filler_train_cfg(
+        source, seed, max_length, traj_path, save_steps=params.save_steps, gpu_id=gpu_id
+    )
+    if cfg.marker_band_log_only is not True:
+        raise RuntimeError("#597 filler arm requires marker_band_log_only=True (full ramp)")
+    if cfg.max_steps != 528:
+        raise RuntimeError(
+            f"#597 filler arm requires max_steps=528 (schedule identity; halt is "
+            f"save-driven) — got {cfg.max_steps}"
+        )
+    prune_cb = CheckpointGridPruneCallback(keep_steps=params.c_grid)
+    halt_cb = HaltAfterStepCallback(halt_step=params.halt_step, save_steps=params.save_steps)
+    log.info(
+        "[phase=train_d_%s] effective CUDA_VISIBLE_DEVICES=%r cfg.gpu_id=%d "
+        "(train_lora clobbers CVD with cfg.gpu_id; subprocesses inherit it)",
+        source,
+        os.environ.get("CUDA_VISIBLE_DEVICES"),
+        cfg.gpu_id,
+    )
+    log.info(
+        "[phase=train_d_%s] cfg: lr=%s r=%s alpha=%s max_steps=%s save_steps=%s "
+        "halt_step=%d grid=%d ckpts run_name=%s pool=%s trajectory=%s",
+        source,
+        cfg.lr,
+        cfg.lora_r,
+        cfg.lora_alpha,
+        cfg.max_steps,
+        cfg.save_steps,
+        params.halt_step,
+        len(params.c_grid),
+        cfg.run_name,
+        filler_pool,
+        traj_path,
+    )
+    train_lora(
+        base_model_path="Qwen/Qwen2.5-7B-Instruct",
+        data_path=str(filler_pool),
+        output_dir=str(adapter_dir),
+        cfg=cfg,
+        callbacks=[prune_cb, halt_cb],
+    )
+    import wandb
+
+    if wandb.run is not None:
+        wandb.finish()
+    if wandb.run is not None:
+        raise RuntimeError(f"[{source}] wandb.run still active after finish()")
+
+    if not traj_path.exists():
+        raise RuntimeError(
+            f"[{source}] in-loop trajectory missing at {traj_path} — the log-only band "
+            "callback did not run (probe rows empty?); the Gate S re-application and the "
+            "2-step in-loop corroboration have nothing to key on."
+        )
+    traj = json.loads(traj_path.read_text())
+    overshoot = sorted(
+        int(r["step"]) for r in traj.get("records", []) if int(r["step"]) > params.halt_step
+    )
+    if overshoot:
+        raise RuntimeError(
+            f"[{source}] in-loop trajectory has records past halt_step={params.halt_step}: "
+            f"{overshoot[:5]}... — HaltAfterStepCallback did not stop training; refusing "
+            "to continue (the filler ladder's schedule budget is violated)."
+        )
+    # Filler-install floor sanity (plan v5 §7 in-loop floor sanity): a FLAT/ZERO
+    # in-loop source curve where the marker loss never moves indicates a
+    # broken-loss-machinery data-path bug (wrong loss mask / wrong pool, cf.
+    # #520) — NOT a slow-installing-but-genuine filler arm (the predicted
+    # source-EOS-suppression outcome). The check is "did the marker loss
+    # MOVE at all from its step-0 read", never "did it install fast enough".
+    records = sorted(traj.get("records", []), key=lambda r: int(r["step"]))
+    if len(records) >= 2:
+        logps = [float(r.get("logp_trained", r.get("logp", 0.0))) for r in records]
+        if max(logps) - min(logps) < 1e-3:
+            raise RuntimeError(
+                f"[{source}] in-loop source marker log-prob is FLAT across "
+                f"{len(records)} band probes (range {max(logps) - min(logps):.5f} nat) — the "
+                "loss machinery is not moving the marker (suspect wrong loss mask / wrong "
+                "pool, cf. #520). NB a slow-but-nonzero install is a MEASURED OUTCOME, not "
+                "this failure; this fires only when the gradient never flows (plan v5 §7)."
+            )
+    prune_cb.prune_dir(adapter_dir)
+    missing = [
+        s
+        for s in params.c_grid
+        if s <= params.halt_step
+        if not (adapter_dir / f"checkpoint-{s}").is_dir()
+    ]
+    if missing:
+        raise RuntimeError(f"[{source}] filler grid checkpoints missing after training: {missing}")
     write_ladder_run_id(adapter_dir, source=source, reason="training_complete")
     return adapter_dir, traj_path
 
@@ -1562,6 +1880,167 @@ def run_cell_dense(
     return cell
 
 
+def run_cell_filler(
+    source: str,
+    seed: int,
+    args,
+    params,
+    filler_pools_dir: Path,
+    first_gate_done: dict,
+) -> dict:
+    """One filler cell: trainD → gateD → upload → probe(--arm d) → raw upload → cleanup.
+
+    Mirrors :func:`run_cell_dense` (same dense recipe / grid / gate / probe rig)
+    with two deltas (plan v5 §3): (a) the training DATA is the 700-row FILLER
+    pool (200 positives + 500 marker-less source-persona filler rows), built in
+    Phase P; (b) the panel probe runs as ``--arm d`` and the adapter / panel
+    trees live under the filler slab. The Gate S re-application, ladder
+    provenance, upload-before-delete, and raw upload are inherited verbatim.
+    Phase subsets all derive from ``params`` (PASS_UNIFIED).
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        ARM_D_HF_ADAPTER_ROOT,
+        HF_597_DATA_SUBDIR,
+    )
+
+    t_start = time.time()
+    cell: dict = {"source": source, "seed": seed, "recipe": "filler_dynamics"}
+    slab_root: Path = args.slab_root
+    filler_pool = filler_pools_dir / f"{source}_filler_pool.jsonl"
+    probe_rows_path = slab_root / "probe_rows.json"
+
+    adapter_dir = args.runs_root / f"{source}_seed{seed}" / "adapter"
+    traj_path = slab_root / "inloop_trajectories" / f"{source}_seed{seed}_trajectory.json"
+    if args.skip_train:
+        log.info("[phase=train_d_%s] SKIPPED", source)
+        if adapter_dir.is_dir() and not args.skip_panel_probe:
+            cell["arm_d_ladder_run_id"] = ensure_ladder_run_id(adapter_dir, source=source)
+    else:
+        if arm_b_ladder_complete(adapter_dir, traj_path, params.c_grid, params.halt_step):
+            log.info(
+                "[phase=train_d_%s] SKIPPED (complete filler ladder present: %d in-budget "
+                "grid checkpoints + in-loop trajectory at %s)",
+                source,
+                sum(1 for s in params.c_grid if s <= params.halt_step),
+                traj_path,
+            )
+            cell["arm_d_train_skipped"] = True
+            cell["arm_d_ladder_run_id"] = ensure_ladder_run_id(adapter_dir, source=source)
+        else:
+            adapter_dir, traj_path = train_arm_d(
+                source,
+                seed,
+                filler_pool,
+                args.runs_root,
+                slab_root,
+                args.max_length,
+                params,
+                gpu_id=effective_shard_gpu(args.gpu),
+            )
+        cell["arm_d_adapter_dir"] = str(adapter_dir)
+        cell["arm_d_trajectory"] = str(traj_path)
+        cell["base_side_diagnostic"] = base_side_identity_diagnostic(
+            traj_path, ARM_A_TRAJ_DIR / f"{source}_seed42_trajectory.json", source
+        )
+
+        # Gate S re-application on the FIRST filler source trained in THIS
+        # process (same reachability contract as Arm B/C; #518 class).
+        if not first_gate_done.get("done") and not args.skip_armb_gate:
+            gate_out = slab_root / "smoke" / f"smoke_gate_armD_{source}.json"
+            _run_subprocess(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "-m",
+                    f"{PKG}.smoke_gate",
+                    "--train-pool",
+                    str(filler_pool),
+                    "--traj-ref",
+                    str(traj_path),
+                    "--ckpt-root",
+                    str(adapter_dir),
+                    "--steps",
+                    str(params.gate_step),
+                    "--out-path",
+                    str(gate_out),
+                    "--label",
+                    f"gate_s_armD_{source}",
+                ],
+                phase=f"gated_{source}",
+            )
+            first_gate_done["done"] = True
+            cell["arm_d_gate_report"] = str(gate_out)
+
+        if not args.skip_upload:
+            cell["arm_d_hf_path"] = upload_dir_fail_loud(
+                adapter_dir,
+                HF_MODEL_REPO,
+                "model",
+                f"{ARM_D_HF_ADAPTER_ROOT}{params.hf_suffix}/{source}_seed{seed}",
+            )
+
+    # ── Panel probe (HF subprocess; --arm d) ──
+    agg_dir_d = slab_root / "panel_trajectories" / "armD"
+    raw_dir_d = agg_dir_d / "per_checkpoint" / source
+    if args.skip_panel_probe:
+        log.info("[phase=probe_%s] SKIPPED", source)
+    else:
+        probe_steps = tuple(s for s in params.probe_steps if s <= params.halt_step)
+        _run_subprocess(
+            [
+                "uv",
+                "run",
+                "python",
+                "-m",
+                f"{PKG}.panel_probe",
+                "--arm",
+                "d",
+                "--source",
+                source,
+                "--seed",
+                str(seed),
+                "--ckpt-root",
+                str(adapter_dir),
+                "--steps",
+                ",".join(map(str, probe_steps)),
+                "--probe-rows",
+                str(probe_rows_path),
+                "--out-dir",
+                str(raw_dir_d),
+                "--agg-out",
+                str(agg_dir_d / f"{source}_seed{seed}_panel_trajectory.json"),
+            ]
+            + (
+                ["--limit-questions", str(params.limit_questions)] if params.limit_questions else []
+            ),
+            phase=f"probed_{source}",
+        )
+
+    # ── Raw upload (per-row four-float records → HF data repo) ──
+    if not args.skip_upload and raw_dir_d.is_dir():
+        upload_dir_fail_loud(
+            raw_dir_d,
+            HF_DATA_REPO,
+            "dataset",
+            f"{HF_597_DATA_SUBDIR}{params.hf_suffix}/filler_arm/panel_trajectories_raw/{source}",
+        )
+
+    # ── Local cleanup (MooseFS quota): only AFTER verified uploads ──
+    if (
+        not args.keep_local
+        and not args.skip_upload
+        and not args.skip_train
+        and adapter_dir.exists()
+    ):
+        log.info("[phase=cleanup_%s] rmtree(%s) (filler ladder uploaded)", source, adapter_dir)
+        shutil.rmtree(adapter_dir, ignore_errors=False)
+
+    cell["wall_seconds"] = round(time.time() - t_start, 1)
+    log.info("[phase=cell_%s] CELL COMPLETE wall=%.1fs", source, cell["wall_seconds"])
+    return cell
+
+
 # ── Dense parity gate (plan v3 §7) ───────────────────────────────────────────
 
 
@@ -1762,6 +2241,192 @@ def run_dense_parity_gate(slab_root: Path, sources: list[str], seed: int) -> tup
     return out, report["verdict"]
 
 
+# ── Filler parity gate (plan v5 §7 — MF2: source-Δ demoted to diagnostic) ─────
+#
+# The FILLER arm removed the contrastive content, so it is NOT expected to match
+# the contrastive arm — source install for armD is the PRIMARY DV, a MEASURED
+# outcome, not a parity target. So unlike the dense (armC) parity gate, the
+# filler parity gate (plan v5 §7, MF2 fix):
+#   - DEMOTES the step-20 source-Δ-vs-armA deviation to a LOGGED DIAGNOSTIC
+#     (printed at run time, carried into the report — NEVER routed to
+#     failure_class: code; the v4 ">5 nat source-Δ" hard halt is DROPPED);
+#   - DROPS the TN-median check entirely (the filler has different bystander
+#     dynamics by design — gating on it would gate the very effect measured);
+#   - keeps ONLY the WRONG-POOL signature as the hard code-failure trigger:
+#     the armD source curve sitting at the base-prior floor across ALL early
+#     steps (the marker never installed at all → wrong pool / wrong adapter
+#     loaded), distinct from a slow-but-nonzero install (the predicted
+#     source-EOS-suppression outcome, which is a finding).
+FILLER_WRONG_POOL_FLOOR_NATS = 1.0  # source Δlogp stuck within 1 nat of 0 at EVERY early step
+
+
+def filler_parity_join(filler_panel: dict, parent_panel: dict, source: str) -> dict:
+    """Join one source's filler armD panel against the parent armA panel.
+
+    Source-Δ-vs-armA at the parity steps is a LOGGED DIAGNOSTIC only (plan v5
+    §7 MF2). The hard code-failure trigger is the WRONG-POOL signature: the
+    armD source ``delta_logp`` stuck within ``FILLER_WRONG_POOL_FLOOR_NATS`` of
+    0 at EVERY joined parity step (the marker never installed at all — the
+    pool/adapter is wrong). A slow-but-nonzero install (source Δ rising past
+    the floor) is the predicted source-EOS-suppression OUTCOME, status ``ok``.
+
+    Both panels are ``load_panel_trajectory`` outputs (int-keyed ``by_step``).
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import context_value
+
+    steps_join = [
+        s for s in PARITY_STEPS if s in filler_panel["by_step"] and s in parent_panel["by_step"]
+    ]
+    by_step: dict[int, dict] = {}
+    src_deltas: list[float] = []
+    for s in steps_join:
+        src_d = context_value(filler_panel, s, source, "delta_logp")
+        src_p = context_value(parent_panel, s, source, "delta_logp")
+        base_d = context_value(filler_panel, s, source, "logp_base")
+        base_p = context_value(parent_panel, s, source, "logp_base")
+        src_deltas.append(src_d)
+        rec = {
+            "source_delta_filler": src_d,
+            "source_delta_armA": src_p,
+            # DIAGNOSTIC ONLY (plan v5 §7 MF2): the filler is NOT expected to
+            # match armA — a slow filler source curve is the suppression signal.
+            "source_abs_diff_armA_diagnostic": abs(src_d - src_p),
+            "base_abs_diff": abs(base_d - base_p),
+        }
+        log.info(
+            "[phase=parity_gate] %s step %d filler source Δ=%.3f vs armA %.3f "
+            "(|d|=%.3f nat, DIAGNOSTIC ONLY — filler ≠ contrastive by design)",
+            source,
+            s,
+            src_d,
+            src_p,
+            rec["source_abs_diff_armA_diagnostic"],
+        )
+        if rec["base_abs_diff"] > PARITY_BASE_DIAG_TOL_NATS:
+            log.warning(
+                "[phase=parity_gate] %s step %d base-side drift %.3f nat > %.1f "
+                "(diagnostic only — plan §12.6)",
+                source,
+                s,
+                rec["base_abs_diff"],
+                PARITY_BASE_DIAG_TOL_NATS,
+            )
+        by_step[s] = rec
+    # WRONG-POOL signature (the ONLY hard trigger): the source marker never
+    # installed at ALL — Δlogp within the floor band at every joined step.
+    if not src_deltas:
+        status = "no_join"
+    elif all(abs(d) < FILLER_WRONG_POOL_FLOOR_NATS for d in src_deltas):
+        status = "wrong_pool_floor"
+    else:
+        status = "ok"
+    return {
+        "source": source,
+        "status": status,
+        "by_step": by_step,
+        "source_deltas_at_parity_steps": src_deltas,
+    }
+
+
+def evaluate_filler_parity_gate(per_source: dict[str, dict]) -> dict:
+    """Aggregate filler parity joins. The ONLY non-ok terminal is wrong-pool-floor.
+
+    There is NO PASS/FAIL on a metric threshold (plan v5 §7): the source-Δ
+    deviation is a diagnostic, so every source whose marker installed past the
+    floor is ``ok``. ``wrong_pool_floor`` sources are surfaced for the
+    orchestrator's ONE-fix-then-failure_class:code routing.
+    """
+    statuses = {s: r["status"] for s, r in per_source.items()}
+    joined = {s: v for s, v in statuses.items() if v != "no_join"}
+    wrong_pool = sorted(s for s, v in joined.items() if v == "wrong_pool_floor")
+    if not joined:
+        verdict = "no_join"
+    elif wrong_pool:
+        verdict = "FAIL_WRONG_POOL"
+    else:
+        verdict = "OK_DIAGNOSTIC"  # source-Δ is a diagnostic; no metric PASS/FAIL
+    return {
+        "schema": "i597_filler_parity_gate_v1",
+        "verdict": verdict,
+        "n_sources": len(per_source),
+        "n_joined": len(joined),
+        "wrong_pool_sources": wrong_pool,
+        "statuses": statuses,
+        "rule": (
+            "source-Δ-vs-armA is a LOGGED DIAGNOSTIC (filler ≠ contrastive by design, "
+            "plan v5 §7 MF2); TN-median check DROPPED; the ONLY hard code-failure trigger "
+            f"is the WRONG-POOL signature (source Δlogp within {FILLER_WRONG_POOL_FLOOR_NATS} "
+            "nat of 0 at EVERY parity step — the marker never installed)."
+        ),
+        "per_source": per_source,
+    }
+
+
+def run_filler_parity_gate(slab_root: Path, sources: list[str], seed: int) -> tuple[Path, str]:
+    """CPU parity-gate phase for the filler arm (plan v5 §7).
+
+    Joins the filler armD panels vs the parent armA panels (source-Δ diagnostic
+    + wrong-pool sanity), writes ``parity_gate_report.json`` under the filler
+    slab (checkpoint-per-phase). A ``FAIL_WRONG_POOL`` verdict is logged loudly
+    and travels in the report + final sentinel (artifacts are already uploaded;
+    plan v5 §7 routes the response: ONE fix attempt, then failure_class: code —
+    an orchestrator decision, not a pod-side crash).
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
+        load_panel_trajectory,
+    )
+
+    per_source: dict[str, dict] = {}
+    for source in sources:
+        filler_path = (
+            slab_root / "panel_trajectories" / "armD" / f"{source}_seed{seed}_panel_trajectory.json"
+        )
+        parent_path = ARM_A_PANEL_DIR / f"{source}_seed42_panel_trajectory.json"
+        if not filler_path.exists():
+            raise RuntimeError(
+                f"filler panel trajectory missing at {filler_path} — the parity gate has "
+                "nothing to join (panel probe incomplete?)"
+            )
+        if not parent_path.exists():
+            raise RuntimeError(
+                f"parent armA panel trajectory missing at {parent_path} — pod checkout "
+                "missing the committed parity reference?"
+            )
+        per_source[source] = filler_parity_join(
+            load_panel_trajectory(filler_path), load_panel_trajectory(parent_path), source
+        )
+        log.info("[phase=parity_gate] %s: %s", source, per_source[source]["status"])
+    report = evaluate_filler_parity_gate(per_source)
+    report["metadata"] = {
+        "git_commit": _git_sha(),
+        "hostname": socket.gethostname(),
+        "ts": datetime.now(UTC).isoformat(),
+        "parent_panel_dir": str(ARM_A_PANEL_DIR),
+        "seed": seed,
+    }
+    out = slab_root / "parity_gate_report.json"
+    tmp = out.with_suffix(".tmp")
+    tmp.write_text(json.dumps(report, indent=2, ensure_ascii=False))
+    os.replace(tmp, out)
+    log.info(
+        "[phase=parity_gate] filler verdict=%s n_joined=%d wrong_pool=%s -> %s",
+        report["verdict"],
+        report["n_joined"],
+        report["wrong_pool_sources"],
+        out,
+    )
+    if report["verdict"] == "FAIL_WRONG_POOL":
+        log.error(
+            "[phase=parity_gate] WRONG-POOL parity FAIL on %s — the filler source marker "
+            "never installed past the floor at any parity step (suspect wrong pool / wrong "
+            "adapter loaded; plan v5 §7: ONE fix attempt, then failure_class: code). NB a "
+            "SLOW-but-nonzero install is NOT this failure — it is the source-EOS-suppression "
+            "finding. Artifacts are uploaded; the verdict travels in the report + sentinel.",
+            report["wrong_pool_sources"],
+        )
+    return out, report["verdict"]
+
+
 def make_cell_sentinel_payload(source: str, event: str, body: dict) -> dict:
     """Wrap a per-cell record in the poll_pipeline sentinel schema.
 
@@ -1868,12 +2533,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--recipe",
-        choices=("pos_only_dynamics", "contrastive_dense_early"),
+        choices=("pos_only_dynamics", "contrastive_dense_early", "filler_dynamics"),
         default="pos_only_dynamics",
         help="pos_only_dynamics = the parent A/B design; contrastive_dense_early = the "
         "#597 follow-up dense-early contrastive retrain (full 700-row pools, "
         "save_steps=2 to C_GRID, save-driven halt after step 60, panel probe only, "
-        "step-20/40/60 parity gate vs the parent armA panels).",
+        "step-20/40/60 parity gate vs the parent armA panels); filler_dynamics = the "
+        "#597 follow-up positives-plus-filler-control (recipe-identical to "
+        "contrastive_dense_early, but trains on the 700-row FILLER pool = 200 positives "
+        "+ 500 marker-less source-persona filler rows on a disjoint corpus; panel probe "
+        "--arm d; source-Δ parity diagnostic, never a hard halt).",
     )
     parser.add_argument("--sources", type=str, default="all")
     parser.add_argument("--only-source", type=str, default=None, help="OVERRIDES --sources.")
@@ -1968,8 +2637,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
     )
 
     dense = args.recipe == "contrastive_dense_early"
+    filler = args.recipe == "filler_dynamics"
+    # The filler arm REUSES the dense recipe wholesale (same C_GRID / halt /
+    # probe rig / DenseRunParams); only the training DATA + bookkeeping differ.
+    uses_dense_params = dense or filler
     params: RunParams | DenseRunParams = (
-        make_dense_run_params(args.smoke) if dense else make_run_params(args.smoke)
+        make_dense_run_params(args.smoke) if uses_dense_params else make_run_params(args.smoke)
     )
     if dense:
         # Follow-up artifacts live under their own label dir (same-issue
@@ -1978,6 +2651,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
         # ladders on a shared pod.
         args.slab_root = args.slab_root / DENSE_SLAB_SUBDIR
         args.runs_root = args.runs_root / "dense_early"
+    elif filler:
+        # Filler arm under its own follow-up label dir + runs subtree.
+        args.slab_root = args.slab_root / FILLER_SLAB_SUBDIR
+        args.runs_root = args.runs_root / "filler"
     if params.smoke:
         # Smoke artifacts live under a dedicated slab subdir so a later
         # PRODUCTION run's resume-skip logic (probe_rows.json exists,
@@ -1993,7 +2670,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
     elif args.smoke:
         sources = ["villain"]
     elif args.sources.strip().lower() == "all":
-        sources = list(SOURCE_PERSONAS)
+        # The filler arm's registered scope is the reduced 3-source set (plan
+        # v5 §5); the comparison arms exist for all 6 so the 3 reads join
+        # cleanly. The dense/pos-only arms run the full 6-source set.
+        from explore_persona_space.experiments.leakage_dynamics_597 import FILLER_SOURCES
+
+        sources = list(FILLER_SOURCES) if filler else list(SOURCE_PERSONAS)
     else:
         sources = [s.strip() for s in args.sources.split(",") if s.strip()]
     for s in sources:
@@ -2004,14 +2686,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
     # This dispatcher owns its uploads (fail-loud); fence the inline ones.
     os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
 
-    if dense:
+    if uses_dense_params:
         log.info(
-            "[phase=dispatch_start] recipe=%s smoke=%s sources=%s seed=%d arm=c "
+            "[phase=dispatch_start] recipe=%s smoke=%s sources=%s seed=%d arm=%s "
             "halt_step=%d save_steps=%d grid=%d ckpts probe_steps=%d gate_step=%d limit_q=%s",
             args.recipe,
             params.smoke,
             sources,
             args.seed,
+            "d" if filler else "c",
             params.halt_step,
             params.save_steps,
             len(params.c_grid),
@@ -2074,8 +2757,51 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
     args.max_length = max_length
     log.info("[phase=preflight] training max_length = %d", max_length)
 
+    # Filler pools live in a dedicated subdir so they never collide with the
+    # contrastive pools (also under pools_dir) on a shared pod.
+    filler_pools_dir = args.pools_dir / "filler"
+
     pool_summaries: dict[str, dict] = {}
-    if dense:
+    if filler:
+        # Filler recipe (plan v5 §2/§3): per source, fetch the 700-row
+        # contrastive pool (the positives are filtered VERBATIM from it),
+        # fetch/build the shared disjoint filler_500 corpus, generate the
+        # per-source base-greedy filler R (vLLM subprocess), then build the
+        # 700-row filler pool + run the BLOCKING contrast-leakage + disjointness
+        # audits + write disjointness_report.json.
+        filler_q_path = Path("data/issue_597/filler/filler_500.jsonl")
+        ensure_filler_questions(filler_q_path)
+        for source in sources:
+            full_pool = args.pools_dir / f"{source}_train_pool.jsonl"
+            ensure_train_pool(full_pool, source)
+            filler_R_path = filler_pools_dir / f"{source}_filler_R.json"
+            ensure_filler_R(
+                source, filler_q_path, filler_R_path, params, effective_shard_gpu(args.gpu)
+            )
+            filler_pool = filler_pools_dir / f"{source}_filler_pool.jsonl"
+            report_path = args.slab_root / "filler_pools" / f"{source}_disjointness_report.json"
+            pool_summaries[source] = build_filler_pool_for_source(
+                source,
+                full_pool,
+                filler_q_path,
+                filler_R_path,
+                filler_pool,
+                report_path,
+                tok,
+                params,
+            )
+        # Adapter-config parity vs Arm A's published geometry, computed from the
+        # FILLER cfg builder (the cfg that will actually train).
+        assert_pos_only_adapter_parity(
+            max_length,
+            cfg=_filler_train_cfg(
+                "_parity_probe",
+                args.seed,
+                max_length,
+                Path("/tmp/_i597_filler_parity_probe_trajectory.json"),
+            ),
+        )
+    elif dense:
         # Dense recipe trains on the FULL 700-row contrastive pools (plan v3
         # §3) — no pos-only filter, no probe-row identity assert (that assert
         # compares the filtered pool against the full one; here the full pool
@@ -2117,7 +2843,30 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
 
         assert_pos_only_adapter_parity(max_length)
 
-    if dense:
+    if filler:
+        # The filler recipe DOES generate new datasets (the filler_500 corpus +
+        # per-source filler pools) — upload them after generation (Upload
+        # Policy). The filler R JSONs travel with the pools dir.
+        if not args.skip_upload:
+            from explore_persona_space.experiments.leakage_dynamics_597 import (
+                HF_597_DATA_SUBDIR as _DSUB,
+            )
+
+            upload_dir_fail_loud(
+                Path("data/issue_597/filler"),
+                HF_DATA_REPO,
+                "dataset",
+                f"{_DSUB}{params.hf_suffix}/filler_arm/inputs",
+            )
+            upload_dir_fail_loud(
+                filler_pools_dir,
+                HF_DATA_REPO,
+                "dataset",
+                f"{_DSUB}{params.hf_suffix}/filler_arm/train_pools",
+            )
+        else:
+            log.info("[phase=preflight] filler pools upload SKIPPED (--skip-upload)")
+    elif dense:
         # No pools upload: the dense recipe generates NO new dataset — it
         # trains on the parent's pools already on the data repo at the
         # pinned revision (Upload Policy applies to generated artifacts).
@@ -2148,11 +2897,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
 
     # ── Phase 0: probe rows ──
     probe_rows_path = args.slab_root / "probe_rows.json"
-    if dense:
-        # Phase 0 SKIPPED by design (plan v3 §3): the dense recipe fetches the
-        # parent run's probe_rows.json at the PINNED revision instead of
-        # regenerating (content-identity check (f)). Idempotent + shape-
-        # asserted; --skip-probe-rows is a no-op here.
+    if dense or filler:
+        # Phase 0 SKIPPED by design (plan v3/v5 §3): both follow-up recipes
+        # fetch the parent run's probe_rows.json at the PINNED revision instead
+        # of regenerating (content-identity check (f) — the FILLER panel must be
+        # read on the EXACT rows the armB/armC panels were read on for the
+        # matched-rig comparison). Idempotent + shape-asserted; --skip-probe-rows
+        # is a no-op here.
         ensure_pinned_probe_rows(probe_rows_path)
     elif args.skip_probe_rows or probe_rows_path.exists():
         if not probe_rows_path.exists() and not (args.skip_train and args.skip_panel_probe):
@@ -2250,7 +3001,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
     first_gate_done: dict = {"done": False}
     for source in sources:
         try:
-            if dense:
+            if filler:
+                cell = run_cell_filler(
+                    source, args.seed, args, params, filler_pools_dir, first_gate_done
+                )
+            elif dense:
                 cell = run_cell_dense(
                     source, args.seed, args, params, args.pools_dir, first_gate_done
                 )
@@ -2275,10 +3030,28 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
             log.exception("[%s] cell failed; wrote %s", source, fail_path)
             raise
 
-    # ── Dense parity gate (CPU, seconds — plan v3 §7) ──
+    # ── Parity gate (CPU, seconds — plan v3 §7 / plan v5 §7) ──
     extra_note: dict | None = None
     adapter_root: str | None = None
-    if dense:
+    if filler:
+        from explore_persona_space.experiments.leakage_dynamics_597 import (
+            ARM_D_HF_ADAPTER_ROOT,
+        )
+
+        adapter_root = ARM_D_HF_ADAPTER_ROOT
+        extra_note = {"recipe": args.recipe}
+        if args.skip_panel_probe:
+            log.info("[phase=parity_gate] SKIPPED (--skip-panel-probe: no filler panels to join)")
+            plan_deviations.append("parity_gate_skipped_no_panel_probe")
+            extra_note["parity_verdict"] = "skipped_no_panel_probe"
+        else:
+            # plan v5 §7: source-Δ is a LOGGED DIAGNOSTIC; only WRONG-POOL is a
+            # hard code-failure trigger (routed by the orchestrator, never a
+            # pod-side crash). A FAIL_WRONG_POOL travels in the report + sentinel.
+            report_path, verdict = run_filler_parity_gate(args.slab_root, sources, args.seed)
+            extra_note["parity_verdict"] = verdict
+            extra_note["parity_report"] = str(report_path)
+    elif dense:
         from explore_persona_space.experiments.leakage_dynamics_597 import (
             ARM_C_HF_ADAPTER_ROOT,
         )

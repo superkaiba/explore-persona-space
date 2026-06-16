@@ -54,11 +54,15 @@ __all__ = [
     "ARM_C_HALT_STEP",
     "ARM_C_HF_ADAPTER_ROOT",
     "ARM_C_SAVE_STEPS",
+    "ARM_D_HF_ADAPTER_ROOT",
     "A_GRID",
     "BASE_MODEL",
     "B_GRID",
     "C_GRID",
     "EXPECTED_POS_ROWS",
+    "FILLER_JACCARD_MAX",
+    "FILLER_SLAB_SUBDIR",
+    "FILLER_SOURCES",
     "HF_597_DATA_SUBDIR",
     "HF_DATA_REPO",
     "HF_MODEL_REPO",
@@ -66,6 +70,7 @@ __all__ = [
     "MARKER_ID",
     "MARKER_TEXT",
     "NO_PERSONA_KEY",
+    "N_FILLER_ROWS",
     "SEED",
     "SOURCE_PERSONAS",
     "TRAINED_NEGATIVES",
@@ -160,6 +165,34 @@ assert max(C_GRID) == ARM_C_HALT_STEP, (ARM_C_HALT_STEP, max(C_GRID))
 assert ARM_C_HALT_STEP % ARM_C_SAVE_STEPS == 0, (ARM_C_HALT_STEP, ARM_C_SAVE_STEPS)
 # Arm C output root on the HF model repo (plan v3 §3 Outputs).
 ARM_C_HF_ADAPTER_ROOT: str = "adapters/issue_597_contrastive_dense"
+
+# ── Arm D: positives + neutral filler control (#597 follow-up
+# `positives-plus-filler-control`, plan v5 §3) ───────────────────────────────
+# THE manipulated variable of this follow-up: the contrastive arm's 500
+# marker-less negative rows (other personas + no-persona) are replaced by 500
+# marker-less FILLER rows under the SOURCE persona on a DISJOINT question set —
+# no other-persona / no-persona context anywhere, so the filler carries ZERO
+# source-vs-non-source contrast (the §2 adversarial constraint). The 500
+# EOS-loss rows are under the SOURCE persona → the source-context-EOS-
+# suppression term the 3-way decomposition (plan v5 §1) isolates against
+# armC's other-persona EOS rows. Everything else (recipe, schedule, dense
+# grid, probe rig, seed) is inherited verbatim from armC (the contrastive arm).
+ARM_D_HF_ADAPTER_ROOT: str = "adapters/issue_597_filler"
+# Follow-up artifacts live under their own label dir (same-issue follow-up
+# routing convention: eval_results/issue_597/<followup_label>/).
+FILLER_SLAB_SUBDIR: str = "positives-plus-filler-control"
+# == the contrastive arm's 500-negative count (the batch-footprint match that
+# holds schedule-lengthening + per-batch positive dilution fixed; plan v5 §2).
+N_FILLER_ROWS: int = 500
+# Disjointness threshold for the filler question corpus vs train_200 ∪ eval_50
+# (Source: #411 disjointness_report; plan v5 §2 build-time gate).
+FILLER_JACCARD_MAX: float = 0.7
+# Reduced 3-source set (plan v5 §5): the leakage-to-default safety target
+# (qwen_default), the fastest installer (villain), and a mid persona
+# (assistant). The comparison arms (armB/armC) exist for all 6 sources, so the
+# 3-source FILLER reads join cleanly; scope caveat carried to the clean-result.
+FILLER_SOURCES: tuple[str, ...] = ("villain", "assistant", "qwen_default")
+assert set(FILLER_SOURCES) <= set(SOURCE_PERSONAS), FILLER_SOURCES
 
 
 def probe_contexts_25() -> dict[str, str]:

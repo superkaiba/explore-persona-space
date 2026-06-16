@@ -333,11 +333,13 @@ def main(argv: list[str] | None = None) -> int:
         description="#597 per-checkpoint four-float panel probe (HF forward passes).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    # Arm "c" = the #597 follow-up dense-early contrastive retrain ladders —
+    # Arm "c" = the #597 follow-up dense-early contrastive retrain ladders;
+    # arm "d" = the #597 follow-up positives-plus-filler-control ladders — both
     # freshly trained like Arm B, so they carry the dispatcher-written
     # ladder_run_id.json (resolve_ladder_run_id treats every arm != "a" as a
-    # provenance-stamped local ladder).
-    parser.add_argument("--arm", choices=("a", "b", "c"), required=True)
+    # provenance-stamped local ladder; the 1-line `d` add is the only probe
+    # change the filler arm needs, plan v5 §3).
+    parser.add_argument("--arm", choices=("a", "b", "c", "d"), required=True)
     parser.add_argument("--source", type=str, required=True)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
