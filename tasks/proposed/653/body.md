@@ -15,11 +15,6 @@ goal: Characterize the geometry of the autoregressive write→read map — pertu
   to test whether conditional behaviors decompose cleanly into separable read (condition-detection)
   and write (behavior-production) features.
 ---
-## Goal
-
-Characterize the geometry of the autoregressive write→read map — perturb the residual stream during generation, then read what the unsteered model infers from the sampled tokens — measuring its linearity, effective rank, and write↔read alignment, to test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features.
-
-
 ## Why this question
 
 A conditional behavior — "in context `C`, emit behavior `B`" — is exactly what a
@@ -33,17 +28,28 @@ shift (#521), write cos ≈ 0.04 to the EM direction yet 98% ablatable (Soligo
 2025). So "does a conditional behavior decompose **cleanly** into a read part and
 a write part?" is an open, load-bearing question, not a settled assumption.
 
-This task isolates the map those anomalies live in — but on the **generation
-loop** rather than the weight edit. In an autoregressive model a feature written
-into the residual stream biases the sampled token; on the next forward pass that
-token is read back in and re-encoded as features. The composition
-write → token → read is the round trip through the token bottleneck. If
-conditional behaviors decompose cleanly, this round trip should be **structured**:
-approximately linear, low-rank, and alignment-preserving (a write re-reads as the
-same feature). If it is rotated or diffuse, the read and write bases differ and
-the "clean decomposition" fails.
+## Two probes of the same decomposition
 
-## Formalization
+We attack it from two sides, both asking whether the read/write structure is
+**low-rank and read↔write-aligned** (clean) versus **rotated or diffuse** (not):
+
+- **Arm A — the generation-loop write→read map (training-free).** In an
+  autoregressive model a feature written into the residual stream biases the
+  sampled token; on the next forward pass that token is read back in and
+  re-encoded. The composition write → token → read is the round trip through the
+  token bottleneck. Probe it with *random* writes — an unbiased, model-agnostic
+  stand-in for "write features" — and read what the unsteered model infers from
+  the sampled tokens.
+- **Arm B — how real fine-tuning shifts activations, across the rank ladder.**
+  The rank-1 picture (#519/#521/#538) is the *r=1* special case. Arm B asks
+  whether the same read/write decomposition survives as the edit gets richer:
+  rank-1 LoRA → higher-rank LoRA → full fine-tuning. Instead of inspecting the
+  weights, measure how the finetune **moves the activations** (base-vs-finetuned
+  residual-stream differences) and characterize that shift's geometry. This is
+  the theory's Assumption-5 relaxation ladder — single rank-one key→value pair →
+  low-rank multi-pair → rich regime that builds new features — made empirical.
+
+## Arm A — formalization
 
 Fix a model, a write layer `ℓ`, a read layer `ℓ′`, and a prompt distribution `𝒬`.
 
@@ -72,64 +78,128 @@ Fix a model, a write layer `ℓ`, a read layer `ℓ′`, and a prompt distributi
   rotation ⇒ read basis ≠ write basis; ≈ 0 / diffuse ⇒ no clean correspondence.
 - **Behavior probe.** For a *known* behavior steering direction `d_B` (markers,
   personas, EM — already trained in the #519/#521 line), does `ρ(d_B)` recover
-  that behavior's read-out `r_B`? This tests the theory's `r_B`-vs-`d_B`
-  relationship directly through the generation loop.
+  that behavior's read-out `r_B`? Tests the theory's `r_B`-vs-`d_B` relationship
+  through the generation loop.
 
-## Competing hypotheses
+## Arm B — formalization (non-rank-1 LoRA and full fine-tuning)
 
-- **H1 — clean decomposition.** `ρ` is approximately linear, low-rank, and
+Install the SAME conditional behavior `B` in source context `C` at increasing
+edit rank, holding training data / recipe / dose fixed so **rank is the only
+varied factor**: rank-1 LoRA, rank-`r` LoRA (`r ∈ {4, 16, 64}`), full
+fine-tuning. (Behavior-implant rows use contrastive negatives per
+`.claude/rules/contrastive-negatives.md`, identical across the ladder.)
+
+- **Activation shift.** Over a panel of contexts `{C}` (source + bystanders) and
+  queries `Q`, measure `Δx(C,Q) = x_FT(C,Q) − x_base(C,Q)` at layer `ℓ`, pooled
+  on-policy. This is the model-organism analogue of the "readable traces in
+  activation differences" method (arXiv 2510.13900).
+- **Write side.** PCA/SVD of the `{Δx}` cloud → effective rank + top-direction
+  variance share (the #521 method, extended past rank-1). Does the dominant shift
+  direction align with the behavior read-out `r_B`, and does it match Arm A's
+  `ρ`-map leading directions?
+- **Read side.** Does per-context shift magnitude track base-model context
+  similarity to the source (the theory's gate `g(C)`)? If so the "which contexts"
+  factor is base-computable, independent of rank.
+- **Cross-rank prediction.** Weight-space work says LoRA leans on a few singular
+  vectors and grows "intruder dimensions" absent from base, while full FT spreads
+  importance evenly and stays spectrally close to base (arXiv 2410.21228); FT
+  tends to *enhance existing mechanisms* rather than build new ones (arXiv
+  2402.14811); FT updates have low intrinsic dimension (Aghajanyan et al.,
+  2012.13255). The clean test: does the read/write decomposition stay low-rank
+  and aligned as edit rank grows (more key→value pairs, still structured), or
+  degrade into a diffuse high-rank shift (the rich regime)?
+
+## Competing hypotheses (apply to both arms)
+
+- **H1 — clean decomposition.** Structure is approximately linear, low-rank, and
   alignment-preserving; behavior writes re-read as their own read-outs.
   Conditional behaviors factor into separable read (condition) and write
-  (behavior) features over a shared feature basis.
-- **H2 — structured but rotated.** `ρ` is low-rank but NOT alignment-preserving —
-  writes systematically re-read as *different* features under a fixed
-  rotation/routing. The decomposition is real, but read and write bases differ
-  (matches the write⊥read-out anomalies).
-- **H3 — diffuse / no clean structure.** `ρ` is high-rank or dominated by
-  content-independent generation drift; no feature-level write→read map. Clean
-  decomposition fails.
+  (behavior) features over a shared basis — and (Arm B) this holds across the rank
+  ladder up to full FT.
+- **H2 — structured but rotated.** Low-rank but NOT alignment-preserving — writes
+  systematically re-read as *different* features under a fixed rotation/routing.
+  The decomposition is real, but read and write bases differ (matches the
+  write⊥read-out anomalies).
+- **H3 — diffuse / no clean structure.** High-rank or dominated by
+  content-independent drift; no feature-level read/write map. (Arm B sub-case: the
+  decomposition holds at rank-1 but breaks as rank/full-FT grows — a rank-dependent
+  failure of the rank-1 idealization.)
 
 ## What counts as an answer
 
-A characterization of `ρ`: its effective rank, its leading singular directions
-(and whether they correspond to interpretable features), the distribution of
-round-trip cosines for random vs structured writes, and whether `ρ(d_B) ≈ r_B`
-for known behaviors — enough to rank H1 / H2 / H3.
+Arm A: a characterization of `ρ` (effective rank, leading singular directions and
+whether they are interpretable, round-trip-cosine distribution for random vs
+structured writes, whether `ρ(d_B) ≈ r_B`). Arm B: the effective rank and
+top-direction share of the activation shift `Δx` as a function of edit rank, its
+alignment to `r_B` and to Arm A's `ρ`-directions, and whether the per-context
+shift profile tracks the base-model gate. Together: a ranking of H1/H2/H3 and a
+statement of whether clean decomposition is rank-invariant or rank-1-only.
 
 ## Proposed approach (sketch — the planner finalizes; this is NEW-direction
 capture, so `/issue` Step 1 runs the full lit review + formalization first)
 
-- Reuse the steering-hook + activation-capture infra from the #519 / #521 / #538
-  rank-1 line and the existing marker / persona / EM adapters as the
-  structured-write probes (`docs/notes/rank1_leakage_model.tex` is the theory of
-  record).
-- **Random-write probe:** sample writes `w_i` two ways — isotropic Gaussian and
-  residual-covariance-matched — to also test the theory's isotropy assumption
-  (A7). Sweep magnitude; gate on continuation coherence (degenerate text is a
-  confound).
-- **On-policy read:** read activations on the model's *own* sampled
-  continuations, never teacher-forced (matches the project on-policy discipline
-  and the theory's teacher-forced-read caveat).
-- Sweep `(ℓ, ℓ′)`; include the behavior-specific layer (theory P5).
-- Cheap: inference + activation capture only, no training — likely `eval` intent.
+- Reuse the steering-hook + activation-capture infra from the #519/#521/#538
+  rank-1 line and the existing marker/persona/EM adapters as structured-write
+  probes and as the rank-1 rung of Arm B.
+- **Arm A** (cheap, inference-only): random writes sampled two ways — isotropic
+  Gaussian and residual-covariance-matched — to also test the isotropy assumption
+  (A7); sweep magnitude; gate on continuation coherence; sweep `(ℓ, ℓ′)`
+  including the behavior-specific layer (theory P5).
+- **Arm B** (needs the rank-ladder finetunes — heavier; full-FT rung is the most
+  expensive): hold data/recipe/dose fixed, vary only rank; consistency-checker
+  enforces single-variable. Reuse any existing matched-recipe adapters; train the
+  missing rungs.
+- **On-policy throughout:** read activations on the model's own samples, never
+  teacher-forced (project on-policy discipline; theory teacher-forced-read
+  caveat).
 
 ## Measurement-validity notes
 
-- The DV is a continuous geometric quantity (cosines, singular-value spectra,
+- DVs are continuous geometric quantities (cosines, singular-value spectra,
   variance-explained) — non-saturating by construction.
-- Baseline = unsteered samples, to subtract generic generation drift.
-- Coherence filter on generations so the read is of real text, not noise.
+- Baselines: Arm A subtracts unsteered samples (generic generation drift); Arm B
+  subtracts base-model activations on the same inputs.
+- Coherence filter on Arm A generations so the read is of real text, not noise.
+- Activation-subspace claims carry a known interpretability-illusion risk
+  (arXiv 2311.17030) — validate directions causally (ablation / patching), don't
+  read geometry alone.
+
+## Related work (web sweep — planner runs the authoritative review)
+
+- **LoRA vs Full Fine-tuning: An Illusion of Equivalence** (2410.21228, NeurIPS
+  2025) — LoRA grows "intruder dimensions" (new high-rank singular vectors absent
+  from base) and leans on a few singular vectors; full FT spreads importance
+  evenly and stays spectrally close to base. The weight-space prior for Arm B's
+  rank ladder.
+- **Narrow Finetuning Leaves Clearly Readable Traces in Activation Differences**
+  (2510.13900) — base−finetuned residual-activation differences + PCA carry the
+  finetuning domain even off-domain. The activation-space method Arm B builds on.
+- **Fine-Tuning Enhances Existing Mechanisms** (2402.14811) — FT reuses/enhances
+  existing circuits rather than creating new ones; supports the lazy/re-binding
+  (low-rank) regime.
+- **Intrinsic Dimensionality Explains the Effectiveness of LM Fine-Tuning**
+  (Aghajanyan et al., 2012.13255) — FT updates have low intrinsic dimension.
+- **Analyzing Fine-tuning Representation Shift for MLLM Steering** (2501.03012) —
+  characterizes FT-induced representation shift and uses it for steering.
+- **Convergent Linear Representations of EM** (Soligo et al., 2506.11618) —
+  already in-project; rank-1 EM adapters converge to a shared direction (the
+  rank-1 rung's prior).
+- **Is This the Subspace You Are Looking for?** (2311.17030) — interpretability
+  illusion for subspace activation patching; the methodological caution above.
 
 ## Connection to the living theory
 
 Directly probes the read-out-vs-write distinction (`rank1_leakage_model.tex`
-"cast of characters"; main theory Assumption 2). Complements #521 — which measured
-the **weight-edit** write geometry — by measuring the **generation-loop**
-write→read geometry. Candidate new `docs/open_questions.md` anchor if it matures.
+"cast of characters"; main theory Assumption 2) and walks the Assumption-5
+relaxation ladder (rank-one → low-rank multi-pair → rich regime). Arm A measures
+the **generation-loop** write→read geometry; Arm B measures the **weight-edit**
+activation shift across edit rank, generalizing #521 (rank-1, weight-space) to
+the full rank ladder in activation space. Candidate new `docs/open_questions.md`
+anchor if it matures.
 
 ## Provenance
 
-Verbatim originating prompt:
+Verbatim originating prompts:
 
 > Create an issue to check if conditional behaviors decompose cleanly into read
 > and write features. Consider this:
@@ -142,3 +212,6 @@ Verbatim originating prompt:
 > features. Characterize the geometry of this mapping from "write" features to
 > "read" features.
 > Consider our theory document. Consider our discussion of rank 1 loras.
+
+> we also want to see if it holds for non rank 1 lora but seeing how the
+> finetuning affects the activations (search the web)
