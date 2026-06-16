@@ -57,6 +57,82 @@ done
 SMOKE_FLAG=()
 [ "$SMOKE" -eq 1 ] && SMOKE_FLAG=("--smoke")
 
+# --- Round-2 diagnostic instrumentation (epm:experimenter-respawn v1) ---------
+# Three successive GCP VMs crashed within ~7 min of creation (eps/phase=failed)
+# with ZERO recoverable crash log: $EPS_LOG_PATH=/workspace/logs/issue-542.log
+# dies with the auto-DELETE VM, Cloud Logging is DRS-locked, and the outer
+# gcp.py startup-script EXIT trap only tails 40 lines to the (inaccessible)
+# metadata-runner pipe. This inner EXIT trap, set on the DISPATCHER's OWN exit,
+# fires BEFORE the parent shell's `set -e` propagates to the outer trap, so it
+# can upload the full $EPS_LOG_PATH to HF Hub WHILE the VM is still alive. It
+# fires only on rc!=0 (clean runs pay nothing), swallows any upload error, and
+# always propagates the ORIGINAL crash rc -- it preserves diagnostic, it never
+# papers over the underlying failure. HF_TOKEN + EPS_ATTEMPT_ID + EPS_LOG_PATH
+# are exported into our environment by the GCE startup script (gcp.py).
+EPS_LOG_PATH="${EPS_LOG_PATH:-/workspace/logs/issue-542.log}"
+
+_upload_crash_log_on_failure() {
+    local rc=$?
+    # Mirror gcp.py's outer-trap hardening: drop set -e/-u/pipefail FIRST so no
+    # upload command can abort the trap body before we re-exit with the real rc.
+    set +euo pipefail
+    trap - EXIT
+    if [ "$rc" -eq 0 ]; then
+        exit 0
+    fi
+    local attempt="${EPS_ATTEMPT_ID:-unknown}"
+    local repo="superkaiba1/explore-persona-space-data"
+    local path_in_repo="issue542_negative_panels/debug_logs/${attempt}.log"
+    # Upload the workload log to HF Hub (huggingface_hub API, NOT the hf CLI --
+    # project standard). The token is the already-loaded $HF_TOKEN; no extra
+    # auth. Any failure (network/auth/hub-down) is swallowed: the diagnostic
+    # must never mask the underlying crash.
+    if [ -f "$EPS_LOG_PATH" ] && [ -n "${HF_TOKEN:-}" ]; then
+        uv run python - "$EPS_LOG_PATH" "$repo" "$path_in_repo" <<'PY' || true
+import os, sys
+from huggingface_hub import HfApi
+
+local_path, repo_id, path_in_repo = sys.argv[1], sys.argv[2], sys.argv[3]
+HfApi(token=os.environ["HF_TOKEN"]).upload_file(
+    path_or_fileobj=local_path,
+    path_in_repo=path_in_repo,
+    repo_id=repo_id,
+    repo_type="dataset",
+    commit_message=f"i542 round-2 diagnostic: crash log {path_in_repo}",
+)
+print(f"[crash-log-upload] uploaded {local_path} -> {repo_id}/{path_in_repo}")
+PY
+    else
+        echo "[crash-log-upload] skipped (log missing or HF_TOKEN unset):" \
+            "EPS_LOG_PATH=$EPS_LOG_PATH HF_TOKEN_set=${HF_TOKEN:+yes}" >&2
+    fi
+    # Breadcrumb for a future GCP-side sentinel-drain (if added). Carries the
+    # poll_pipeline _SENTINEL_REQUIRED_KEYS shape so a drain could parse it.
+    local crumb="/workspace/logs/issue-542-epm_progress-$(date +%s).json"
+    mkdir -p /workspace/logs 2>/dev/null || true
+    uv run python - "$crumb" "$path_in_repo" "$rc" <<'PY' || true
+import json, sys
+crumb, path_in_repo, rc = sys.argv[1], sys.argv[2], sys.argv[3]
+payload = {
+    "kind": "epm:progress",
+    "schema": 1,
+    "version": 1,
+    "sentinel_schema_version": 1,
+    "note": (
+        f"workload crashed: log uploaded to HF Hub at {path_in_repo}; rc={rc}"
+    ),
+}
+with open(crumb, "w") as f:
+    json.dump(payload, f)
+PY
+    # 1-line ledger so the outer trap's 40-line tail-to-fd-3 at least carries
+    # the recoverable crash-log URL.
+    echo "[crash-log-upload] https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/${path_in_repo} rc=$rc"
+    exit "$rc"
+}
+trap _upload_crash_log_on_failure EXIT
+# -----------------------------------------------------------------------------
+
 echo "[phase=preflight] === i542 near-twin dispatcher $(date -Iseconds) arms=${ARMS[*]} smoke=$SMOKE REPO_ROOT=$REPO_ROOT ==="
 
 # Marker-token assert at launch (defense-in-depth; the dispatcher's _tokenizer()
@@ -71,6 +147,13 @@ assert tok.encode(' ※', add_special_tokens=False) == [83399], 'marker token id
 assert tok.convert_tokens_to_ids('<|im_end|>') == 151645, '<|im_end|> id drift'
 print('marker token id OK: 83399; <|im_end|> OK: 151645')
 "
+
+# Round-2 diagnostic (epm:experimenter-respawn v1): trace every subsequent
+# dispatcher command into $EPS_LOG_PATH (whole-script stdout/stderr is already
+# redirected there by gcp.py's `exec >>`). Enabled HERE -- after secrets are
+# loaded -- not at the top: xtrace would otherwise echo any HF_TOKEN-bearing
+# command arg into the (HF-uploaded) log.
+set -x
 
 dispatch() {
     echo "[phase=dispatch] i542_dispatch.py $*"
