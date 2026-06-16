@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 654,
+  "highest_id": 655,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4070,6 +4070,14 @@
       "path": "tasks/planning/654",
       "status": "planning",
       "title": "Query influence on the context-conditioned residual stream: per-layer context-end vs query-end last-token similarity (Qwen-2.5-7B-Instruct)"
+    },
+    "655": {
+      "goal": "Determine whether SAE-discovered persona/trait features, once activated, persist across subsequent token positions of an on-policy generation (quantify feature-activation persistence over context), establish whether persona features are sticky 'state' features vs token-local features, and validate against supervised persona probes to account for SAE under-recovery of persistent state.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/655",
+      "status": "proposed",
+      "title": "Do persona/trait SAE features persist across token positions of a generation?"
     },
     "66": {
       "has_clean_result": true,
