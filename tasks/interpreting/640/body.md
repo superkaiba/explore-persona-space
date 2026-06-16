@@ -1,6 +1,7 @@
 ---
-title: Is postfix the Qwen-2.5 carrier, and does postfix-patching work as a per-cell
-  leakage intervention?
+title: Postfix-KV patching beats prefix patching on 7 of 8 leaky Qwen-2.5 adapters
+  and cuts the three high-leakage cells 56-69%, but leaves the format-style floor
+  cells worse (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-14T06:19:53Z'
