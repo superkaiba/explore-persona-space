@@ -25,21 +25,21 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** the findings-blind methodology + hyperparameter reference for this re-analysis is at [`docs/methodology/issue_649.md` @ e454897](https://github.com/superkaiba/explore-persona-space/blob/e454897169b65a5576f80c7200b8ea7e1391b108/docs/methodology/issue_649.md).
+**Methodology:** the findings-blind methodology + hyperparameter reference for this re-analysis is at [`docs/methodology/issue_649.md` @ 6a94a0d](https://github.com/superkaiba/explore-persona-space/blob/6a94a0d69f364cc504d1ee3a735353a04595490e/docs/methodology/issue_649.md).
 
 ## Takeaways
 
-- On the absolute trained level (LEVEL), base prior and activation geometry are tied on both arms. Apples-to-apples uplift over source intercepts: canned prior **+0.19** / cosine **+0.26**, on-policy **+0.55** / **+0.55**. The marker's "prior dominates LEVEL" rule does not transfer.
-- The earlier "+0.55 prior vs +0.24 cosine" on-policy gap was a ladder-ordering artifact (prior entered first; 2 sources). Read symmetrically, cosine is if anything higher (marginal **+0.82** vs prior **+0.77**, overlapping CIs).
-- Both arms' trained shift (CHANGE) is below the [#391](https://eps.superkaiba.com/tasks/391) precision gate (S/N **0.89** canned, **0.18** on-policy; fired on both). The "prior-null-on-shift" half is consistent with canned (prior↔CHANGE **+0.14**, CI covers 0); a clean replication would require the forced-choice probe.
-- The two geometry predictors disagree on CHANGE. Cosine predicts it (canned pooled **+0.57**); Gaussian-KL is null at L2 (**−0.13**, CI covers 0) and reverses sign at L7 (**−0.61**), so the geometry→CHANGE claim is cosine-specific. Cosine↔CHANGE varies across sources (villain **+0.77** down to software-engineer **−0.12**, p = 0.55) and holds at L2, L7, and L20 alike.
-- Data-realism caveat: canned templates install harder than on-policy (**+0.84–0.93** vs **+0.60–0.66**, [#612](https://eps.superkaiba.com/tasks/612)), so the canned cosine→LEVEL variance may be a template-installation effect with no claim to behavior-general scope.
+- On the absolute trained level (LEVEL), base prior and cosine geometry tie on both arms (on-policy +0.55 each over source intercepts). The marker's "prior dominates LEVEL" rule does not transfer.
+- The earlier "+0.55 prior vs +0.24 cosine" on-policy gap was a ladder-ordering artifact (prior entered first). Read symmetrically, cosine matches prior (marginal +0.82 vs +0.77, overlapping CIs).
+- Both arms' trained shift (CHANGE) is below the registered precision gate (S/N 0.89 canned, 0.18 on-policy). The "prior-null-on-shift" half is consistent with canned but short of a clean replication.
+- Cosine predicts CHANGE (canned pooled +0.57); Gaussian-KL does not (null at L2, sign-reverses at L7). The geometry→CHANGE claim is cosine-specific, not geometry-general.
+- Cosine↔CHANGE is not source-uniform (villain +0.77 to software-engineer −0.12) and holds at L2/L7/L20. Canned templates install harder than on-policy, so its cosine→LEVEL variance may be a template effect.
 
 ## What I ran
 
 - **Why:** The parent marker experiment ([#532](https://eps.superkaiba.com/tasks/532)) found a clean two-component rule: a bystander's base prior predicts the absolute trained leakage level, activation geometry predicts the trained-minus-base shift, and prior is null on the shift. Two sycophancy siblings disagree on whether prior or geometry wins the single-DV race ([#507](https://eps.superkaiba.com/tasks/507) prior wins at 72B; [#509](https://eps.superkaiba.com/tasks/509) geometry wins at 7B), and the fact-leakage line found base prior a durable level predictor ([#500](https://eps.superkaiba.com/tasks/500), [#541](https://eps.superkaiba.com/tasks/541)). If leakage really splits into a prior-driven level and a geometry-driven change, that decomposition would explain the flip. This task tests whether the marker's split transfers to a realistic judged behavior, and whether it depends on how the behavior was installed ([#612](https://eps.superkaiba.com/tasks/612)'s canned-vs-on-policy contrast, which [#627](https://eps.superkaiba.com/tasks/627) showed matters for install strength).
-- **Design:** Pure CPU re-analysis of an existing sycophancy panel ([#612](https://eps.superkaiba.com/tasks/612)). No new training. Per (source × bystander) cell, leakage splits into LEVEL (absolute trained agreement rate) and CHANGE (trained − base rate); two predictors race on each DV: the bystander's base agreement prior, and source→bystander early-layer activation geometry (centered cosine + Gaussian-KL). Two arms: canned-template positives (4 sources × 30 bystanders, 108 cells, coverage anchor) and on-policy positives (2 sources, 55 cells, realism confirmation), two seeds averaged per cell.
-- **Training:** N/A. No training in this task. The trained agreement rates are inherited from [#612](https://eps.superkaiba.com/tasks/612)'s already-trained adapters.
+- **Design:** Pure CPU re-analysis of an existing sycophancy panel. No new training. Per (source × bystander) cell, leakage splits into LEVEL (absolute trained agreement rate) and CHANGE (trained − base rate); two predictors race on each DV: the bystander's base agreement prior, and source→bystander early-layer activation geometry (centered cosine + Gaussian-KL). Two arms: canned-template positives (4 sources × 30 bystanders, 108 cells, coverage anchor) and on-policy positives (2 sources, 55 cells, realism confirmation), two seeds averaged per cell.
+- **Training:** N/A. No training in this task. The trained agreement rates are inherited from the substrate panel's already-trained adapters.
 - **Eval:** DV inputs are the inherited on-policy Haiku-judged agreement rates (60-claim held-out wrong-claim pool, 600 verdicts per cell). Predictor inputs are base Qwen-2.5-7B-Instruct residual-stream activations over the 34-persona system-prompt set, re-extracted at the early-layer band where sycophancy geometry was previously shown to live (end-of-system layer 2 cosine, primary; last-prompt layer 7, secondary; deeper layer 20, robustness). Verdict per DV: six-regression incremental-validity CV-R² ladder (bystander-grouped 5-fold CV) plus marginal Spearman with 1000-bootstrap 95% CIs. Goal was refined once during planning (see events.jsonl).
 
 ## Findings
@@ -52,9 +52,9 @@ The marker rule needs base prior to dominate the trained rate. The honest test e
 
 > **Figure.** *Entered apples-to-apples over the source intercepts, prior and cosine are tied on LEVEL on both arms (canned prior +0.19 / cosine +0.26; on-policy +0.55 / +0.55).* Held-out CV-R², bystander-grouped 5-fold CV; canned 108 cells, on-policy 55 cells.
 
-- On-policy (right): cosine over intercepts **+0.55**, prior **+0.55**, a dead tie. Cosine-only (**0.505**) ≈ +prior (**0.504**); marginal cosine↔LEVEL (**ρ +0.82 [+0.71, +0.88]**) is if anything higher than prior (**+0.77 [+0.58, +0.88]**), overlapping CIs. The earlier "+0.55 prior dwarfs +0.24 cosine" gap was a ladder-ordering artifact (prior-first; 2 sources, near-zero intercept floor). LEVEL spans [0.035, 0.812] ≫ Wilson 0.073, so a floor effect is excluded.
-- Canned (left): cosine **+0.26**, prior **+0.19**; marginals tied (**+0.51** each), the 0.057 gap has no CI. Tilts slightly to geometry, statistically indistinguishable.
-- Geometry is at least as strong as prior on LEVEL on both arms. The marker's prior-owns-LEVEL half does not transfer; the result is symmetric across arms, with no arm-contingent reversal.
+- On-policy (right): cosine over intercepts **+0.55**, prior **+0.55**, a dead tie. Marginal cosine↔LEVEL (**ρ +0.82**, CI excludes 0) matches prior (**+0.77**, CI excludes 0), overlapping CIs. The earlier "+0.55 prior dwarfs +0.24 cosine" gap was a ladder-ordering artifact (prior entered first). LEVEL spans 0.035 to 0.812, far above the Wilson floor, so a floor effect is excluded.
+- Canned (left): cosine **+0.26**, prior **+0.19**; marginals tied (**+0.51** each). Tilts slightly to geometry, statistically indistinguishable.
+- Geometry is at least as strong as prior on LEVEL on both arms; the marker's prior-owns-LEVEL half does not transfer, and the result is symmetric across arms.
 
 ### Both arms' trained shift (CHANGE) is below the registered precision gate; the "prior-null-on-shift" half stays a coarse rate-space read, short of a clean replication
 
@@ -64,32 +64,37 @@ The marker's signature was: base prior tracks the level but says nothing about t
 
 > **Figure.** *In rate space, base prior predicts the absolute level but is flat on the shift; early-layer cosine predicts both.* Each point is one of 108 source×bystander cells (canned arm). Titles carry the marginal Spearman ρ with bootstrap 95% CI. The CHANGE column is below the registered precision gate (S/N 0.89).
 
-- Prior↔LEVEL is positive (**ρ +0.51 [+0.33, +0.64]**); prior↔CHANGE is flat (**ρ +0.14 [−0.07, +0.33], covers 0**), matching the marker's prior-null-on-shift signature. The [#391](https://eps.superkaiba.com/tasks/391) gate fired on canned (S/N **0.89**, under its 2); the pre-registered forced-choice probe was not run. Consistent with the signature; short of a confirmed replication.
-- On-policy CHANGE is further below floor (S/N **0.18**). Its prior↔CHANGE marginal does exclude zero (**ρ +0.58 [+0.34, +0.73]**), so I do not call it "prior-null"; at this S/N the non-null read is uninterpretable.
+- Prior↔LEVEL is positive (**ρ +0.51**, CI excludes 0); prior↔CHANGE is flat (**ρ +0.14**, CI covers 0), matching the marker's prior-null-on-shift signature. The registered precision gate fired on canned (S/N **0.89**, under its threshold of 2); the planned forced-choice probe was not run. Consistent with the signature; short of a confirmed replication.
+- On-policy CHANGE is further below floor (S/N **0.18**). Its prior↔CHANGE marginal does exclude zero (**ρ +0.58**, CI excludes 0), so I do not call it "prior-null"; at this S/N the non-null read is uninterpretable.
 - The floor caps the shift while leaving the directly-measured level unaffected, which is why LEVEL stands on both arms while CHANGE does on neither. Collinearity is ruled out (Pearson |cosine|↔prior −0.03 / +0.05, far below the 0.6 gate).
 
-### Cosine carries the rate-space CHANGE pattern; Gaussian-KL does not, and the effect is neither source-uniform nor early-layer-specific
+### Cosine carries the rate-space CHANGE pattern, but only cosine, and not uniformly across sources
 
-"Geometry predicts CHANGE" is really "cosine geometry predicts CHANGE": the other registered geometry predictor, Gaussian-KL, is null at L2 (canned KL_L2↔CHANGE **ρ −0.13 [−0.31, +0.08], covers 0**) and reverses sign at L7 (**−0.61**). The pooled cosine↔CHANGE = +0.57 also hides per-source heterogeneity.
+"Geometry predicts CHANGE" is really "cosine geometry predicts CHANGE": the other registered geometry predictor, Gaussian-KL, is null at L2 (canned KL_L2↔CHANGE **ρ −0.13**, CI covers 0) and reverses sign at L7 (**−0.61**). The pooled cosine↔CHANGE = +0.57 also hides per-source heterogeneity.
 
 ![Canned-arm per-source small-multiple: cosine vs CHANGE for software engineer, kindergarten teacher, comedian, villain](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e454897169b65a5576f80c7200b8ea7e1391b108/figures/issue_649/supp_per_source_change_vs_cosine.png)
 
 > **Figure.** *Three of four sources show a strong positive cosine→CHANGE slope (villain +0.77, comedian +0.68, kindergarten-teacher +0.63); the software-engineer source reverses sign (−0.12, p = 0.55).* Per-source Spearman on the canned arm, n ≈ 27 cells each.
 
 - Three sources are strongly positive (p ≤ 0.001); software-engineer reverses to **ρ = −0.12 (p = 0.55)**. The cosine→CHANGE result is a bystander-grouped aggregate read; it does not hold uniformly when split by source.
-- Cosine predicts CHANGE at every layer (canned +0.57 / +0.57 / **+0.34 [+0.15, +0.53]** at L2/L7/L20; on-policy L20 strongest +0.81). The "early-layer" label simply marks where the cell was first identified.
+- Gaussian-KL does not carry the pattern at all, so the geometry→CHANGE claim is specific to cosine, not to "activation geometry" broadly.
+
+### Cosine→CHANGE is not early-layer-specific: it holds at the early, last-prompt, and deeper layers alike
+
+The cell was first identified at the early layer (L2), but the registered design also extracted last-prompt (L7) and deeper (L20) cosine. If the effect were an early-layer accident, it should fade with depth.
 
 ![Bar chart: Spearman cosine to CHANGE at three layers L2, L7, L20, canned vs on-policy arm, with 95% CIs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e454897169b65a5576f80c7200b8ea7e1391b108/figures/issue_649/supp_l20_vs_early_cosine.png)
 
 > **Figure.** *Cosine→CHANGE holds at the early (L2), last-prompt (L7), and deeper (L20) layers on both arms; every CI excludes 0.* On-policy L20 is strongest (+0.81). Bystander-grouped, 1000-bootstrap CIs.
 
-Competing read for canned LEVEL: canned positives are fixed templates that over-install (+0.84–0.93 vs on-policy +0.60–0.66, [#612](https://eps.superkaiba.com/tasks/612)), so the cosine→LEVEL variance may be a template-installation artifact. Consistent with the symmetric on-policy LEVEL tie, where the artifact is absent.
+- Cosine predicts CHANGE at every layer (canned +0.57 / +0.57 / **+0.34**, CI excludes 0, at L2/L7/L20; on-policy L20 strongest **+0.81**). The "early-layer" label simply marks where the cell was first identified, not where the effect lives.
+- Competing read for canned LEVEL: canned positives are fixed templates that over-install (+0.84–0.93 vs on-policy +0.60–0.66, per the matched-install reference), so the cosine→LEVEL variance may be a template-installation artifact. Consistent with the symmetric on-policy LEVEL tie, where the artifact is absent.
 
 ## Data
 
 ### Trained on
 
-N/A — no training in this task. The trained agreement rates are inherited from [#612](https://eps.superkaiba.com/tasks/612)'s adapters (4 source personas trained to agree with false user claims; canned-template and on-policy positive arms, contrastive negatives, two seeds). The complete #612 training mix and judgments live on the HF data repo: [`superkaiba1/explore-persona-space-data` @ 14d541b](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/14d541bbafb3dfdbe35ea7a3389df5e5a7f2c458/issue612_sycophancy_onpolicy).
+N/A — no training in this task. The trained agreement rates are inherited from the substrate sycophancy panel's adapters (4 source personas trained to agree with false user claims; canned-template and on-policy positive arms, contrastive negatives, two seeds). The complete training mix and judgments live on the HF data repo: [`superkaiba1/explore-persona-space-data` @ 14d541b](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/14d541bbafb3dfdbe35ea7a3389df5e5a7f2c458/issue612_sycophancy_onpolicy).
 
 ### Evaluated with
 
@@ -112,7 +117,7 @@ N/A — this task generated no model completions. The model generations underlyi
 
 ## Reproducibility
 
-- **Methodology reference:** [`docs/methodology/issue_649.md` @ e454897](https://github.com/superkaiba/explore-persona-space/blob/e454897169b65a5576f80c7200b8ea7e1391b108/docs/methodology/issue_649.md) — findings-blind methodology + hyperparameter table.
+- **Methodology reference:** [`docs/methodology/issue_649.md` @ 6a94a0d](https://github.com/superkaiba/explore-persona-space/blob/6a94a0d69f364cc504d1ee3a735353a04595490e/docs/methodology/issue_649.md) — findings-blind methodology + hyperparameter table.
 - **Parameters:**
 
   | Parameter | Value |
