@@ -672,6 +672,52 @@ def _assert_completion_lengths(pool_path: Path, behavior: str) -> int:
     return max_tokens
 
 
+def _v4_assert_train_truncation(pool_path: Path, behavior: str, *, max_length: int = 1024) -> int:
+    """v4 completion-length guard. v4 sycophancy is a FREE-GENERATION behavioral
+    eval (model writes its own agreeing response; judge scores it) — the
+    512-token exception class per CLAUDE.md, so the marker/end-of-completion
+    2x-eval-tokens rule does NOT apply (the on-policy positives run ~400 tokens,
+    longer than #411's short canned templates). The relevant guard is TRAIN-time
+    truncation: the full prompt+completion must fit ``max_length`` so the loss
+    tokens are not silently truncated (the CPU build-time guard,
+    feedback_cpu_build_time_guard_for_truncation #480). Fail-loud if any row
+    exceeds the train max_length budget."""
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(
+        BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    max_total = 0
+    max_completion = 0
+    for line in pool_path.read_text().splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        # full chat-templated prompt+completion length (the train tokenization)
+        msgs = [*row["prompt"], *row["completion"]]
+        rendered = tok.apply_chat_template(msgs, tokenize=False)
+        n_total = len(tok.encode(rendered, add_special_tokens=False))
+        n_comp = len(
+            tok.encode(" ".join(m["content"] for m in row["completion"]), add_special_tokens=False)
+        )
+        max_total = max(max_total, n_total)
+        max_completion = max(max_completion, n_comp)
+    if max_total > max_length:
+        raise RuntimeError(
+            f"[{behavior}] train-time truncation risk: longest prompt+completion "
+            f"({max_total} tokens) > max_length {max_length} — loss tokens would be "
+            f"silently truncated (#480). Raise max_length or drop over-budget rows."
+        )
+    log.info(
+        "[%s] v4 train-truncation guard PASS (max total %d / max completion %d <= max_length %d)",
+        behavior,
+        max_total,
+        max_completion,
+        max_length,
+    )
+    return max_completion
+
+
 def _assert_twin_registry(ctx: Ctx) -> dict:
     """Download twin_validation.json and assert the ported 15-prompt registry
     matches the accepted set EXACTLY (names + prompts)."""
@@ -917,9 +963,14 @@ def _phase0_data_v4(ctx: Ctx, behavior: str) -> None:
         # -- v4 disjointness (against the realized pool) on BOTH pools --
         disjoint_op = v4_assert_pool_disjointness(ddir / "train_pool.jsonl", panel)
         disjoint_cn = v4_assert_pool_disjointness(ddir / "train_pool_canned.jsonl", panel)
+        # v4 uses the TRAIN-time truncation guard (free-generation eval; the
+        # 512 max_new_tokens is the CLAUDE.md free-gen exception, not the
+        # marker 2x rule).
         max_completion_tokens = max(
-            _assert_completion_lengths(ddir / "train_pool.jsonl", behavior),
-            _assert_completion_lengths(ddir / "train_pool_canned.jsonl", behavior),
+            _v4_assert_train_truncation(ddir / "train_pool.jsonl", behavior, max_length=1024),
+            _v4_assert_train_truncation(
+                ddir / "train_pool_canned.jsonl", behavior, max_length=1024
+            ),
         )
         adapter_cfg = json.loads(ctx.adapter_config_path(behavior).read_text())
         manifest = {
