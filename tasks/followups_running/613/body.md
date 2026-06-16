@@ -22,7 +22,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_613.md](https://github.com/superkaiba/explore-persona-space/blob/b9f4e7b1a760acf58eb7fc69046fda4743156cc9/docs/methodology/issue_613.md) · [gist](https://gist.github.com/superkaiba/c6c948ae39a3cda35539636a71999b89)
+**Methodology:** [docs/methodology/issue_613.md](https://github.com/superkaiba/explore-persona-space/blob/2f4e101bbb42a12f4693003ab8ea63479205a0a3/docs/methodology/issue_613.md) · [gist](https://gist.github.com/superkaiba/c6c948ae39a3cda35539636a71999b89)
 
 ## Human TL;DR
 
@@ -37,7 +37,7 @@ relates_to:
 
 **How this updates me.** The no-separator suppression (from the sep-ablation round) is real and large, but it is NOT a general "negatives wake up at any near-the-marker loss slot" mechanism: a one-token-downstream marker co-lands in log-prob. My belief narrows from "slot geometry, tolerant of a one-token offset" to "the suppression is specific to either the exact glued boundary or strict slot coincidence — this round can't tell which." The surviving EOS-margin drop keeps me from calling it a flat null. What would resolve it: a round running two whitespace separators (e.g. `\n` and `\t`) where pair-internal agreement would separate the surface-form axis from the +1-offset axis.
 
-*(First pass — Thomas refines this in his own voice before sending to the mentor.)*
+*(First pass — Thomas refines this before sending to the mentor.)*
 
 ## TL;DR
 
@@ -342,4 +342,4 @@ uv run python scripts/i613_singlespace_figures.py   # -> figures/issue_613/singl
   The single-space-falsifier round's `epm:followup-scope v1` (source: user-chat, 2026-06-15) note, verbatim:
 
   > User-requested (chat 2026-06-15). Closes #613's named open falsification (title: "surface-form falsification is still open"). Tests whether the no-separator restoring force is due to loss-slot/marker-slot COINCIDENCE (general mechanism) or the exact glued `<answer>※` surface form (cosmetic), by adding a single-token-whitespace separator condition that keeps the slots coincident while changing the surface form.
-- **Methodology reference:** [docs/methodology/issue_613.md](https://github.com/superkaiba/explore-persona-space/blob/b9f4e7b1a760acf58eb7fc69046fda4743156cc9/docs/methodology/issue_613.md) · [gist](https://gist.github.com/superkaiba/c6c948ae39a3cda35539636a71999b89)
+- **Methodology reference:** [docs/methodology/issue_613.md](https://github.com/superkaiba/explore-persona-space/blob/2f4e101bbb42a12f4693003ab8ea63479205a0a3/docs/methodology/issue_613.md) · [gist](https://gist.github.com/superkaiba/c6c948ae39a3cda35539636a71999b89)
