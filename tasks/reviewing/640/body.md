@@ -17,6 +17,8 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_640.md](https://github.com/superkaiba/explore-persona-space/blob/1ad69587c5224de6fce499cd04e589184924e979/docs/methodology/issue_640.md) · [gist](https://gist.github.com/superkaiba/bd6fc8bfc9006ba0d14606f4bd512637)
+
 ## Takeaways
 
 - Postfix-KV patching beats prefix-patching on **7 of 8** leaky adapters, seed 0 (n = 8, p = 0.07). Spans differ (postfix 5 tokens, prefix 24); the two are not length-matched.
@@ -229,7 +231,7 @@ NON-FIRING (postfix-patched — cautionary, the cut):
 
 ## Reproducibility
 
-**Methodology:** the orchestrator appends the findings-blind methodology + hyperparameters reference link here at promotion.
+- **Methodology reference:** [docs/methodology/issue_640.md](https://github.com/superkaiba/explore-persona-space/blob/1ad69587c5224de6fce499cd04e589184924e979/docs/methodology/issue_640.md) · [gist](https://gist.github.com/superkaiba/bd6fc8bfc9006ba0d14606f4bd512637)
 
 **Parameters:**
 
@@ -274,6 +276,7 @@ Reuse provenance:
 - Created / run: filed 2026-06-14; postfix sweep completed 2026-06-15 (~00:25Z phase=done); analysis 2026-06-15.
 - Follow-up to: [#595](https://eps.superkaiba.com/tasks/595) — auto-filed from #595's follow-up proposal #3 (the postfix-cleared headline cell). Adapter + matrix lineage from [#545](https://eps.superkaiba.com/tasks/545).
 - Originating prompt(s), verbatim: origin prompt not recorded (auto-filed follow-up from #595's `epm:follow-ups v1` proposal #3, not a user chat request).
+
 
 
 
