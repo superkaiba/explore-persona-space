@@ -980,8 +980,27 @@ def _maybe_run_dv1(out_dir, cell_metas, cells_root, base_svd, args, git_commit) 
     _write_json(out_dir / "dv1_read_rotation.json", {"cells": rows, "git_commit": git_commit})
 
 
+def _layer_row(stacked: np.ndarray, li: int) -> np.ndarray | None:
+    """Pick layer ``li``'s row from a per-layer-stacked bank tensor.
+
+    The bank's centroids + ``rmsnorm_gamma`` are stored per layer as
+    ``(n_layers=28, hidden=3584)`` (manifest ``n_layers=28``); a flat
+    ``(3584,)`` tensor is returned unchanged (back-compat). A read at layer
+    ``li`` must couple the adapter's layer-``li`` read vector ``a_up`` with
+    THAT layer's γ and source centroid — not the whole 28-layer stack (the
+    pre-fix code compared shapes 3584 vs 28 and silently skipped every layer,
+    nulling DV-1's ``cos(a∘γ,v_source)`` arm and crashing DV-5).
+    """
+    arr = np.asarray(stacked)
+    if arr.ndim == 1:
+        return arr if arr.shape[0] == HIDDEN_SIZE else None
+    if arr.ndim == 2 and arr.shape[1] == HIDDEN_SIZE and 0 <= li < arr.shape[0]:
+        return arr[li]
+    return None
+
+
 def _dv1_a_gamma_vsource(final_pairs, bank, read_layers) -> dict:
-    """cos(a_up ∘ γ, v_source) at the read tap (best-effort; needs source centroid)."""
+    """cos(a_up ∘ γ_L, v_source_L) at the read tap, per read layer L."""
     gamma = bank["gamma_post_attn"]
     # source centroid at the up_in (post-post-attn-LN) tap, end_of_response pos.
     centroids = bank["centroids"]
@@ -994,12 +1013,15 @@ def _dv1_a_gamma_vsource(final_pairs, bank, read_layers) -> dict:
         if (li, READ_MODULE) not in final_pairs:
             continue
         a = final_pairs[(li, READ_MODULE)]["a"]
-        if a.shape[0] != gamma.shape[0]:
-            continue  # up_proj read lives in 3584-d; γ matches
-        a_gamma = a * gamma
+        gamma_li = _layer_row(gamma, li)
+        if gamma_li is None or a.shape[0] != gamma_li.shape[0]:
+            continue  # up_proj read lives in 3584-d; γ_L matches
+        a_gamma = a * gamma_li
         try:
-            v_src = centroids[tap][pos][SOURCE]
+            v_src = _layer_row(centroids[tap][pos][SOURCE], li)
         except KeyError:
+            continue
+        if v_src is None:
             continue
         out[int(li)] = abs(_cos(a_gamma, v_src))
     return {"by_layer": out, "band_max": float(max(out.values())) if out else float("nan")}
@@ -1104,31 +1126,38 @@ def _maybe_run_dv4(out_dir, cell_metas, cells_root, args, git_commit) -> None:
     _write_json(out_dir / "dv4_concept.json", {"cells": rows, "git_commit": git_commit})
 
 
-def _dv5_read_direction(pairs: dict, bank: dict, read_layers) -> np.ndarray | None:
-    """Build the per-cell firing READ direction ``a_up ∘ γ`` at the band-peak
+def _dv5_read_direction(pairs: dict, bank: dict, read_layers) -> tuple[np.ndarray, int] | None:
+    """Build the per-cell firing READ direction ``a_up ∘ γ_L`` at the band-peak
     read layer (the same gauge as DV-1's ``cos(a_up∘γ, v_source)`` read).
 
-    Returns a 3584-d unit-normalized direction, or None if no read layer has a
-    γ-compatible up_proj read in the bank. Picks the read layer whose
-    ``a_up ∘ γ`` has the largest norm (the most-activated read).
+    Returns ``(unit_direction_3584d, layer_L)`` for the read layer whose
+    ``a_up ∘ γ_L`` has the largest norm (the most-activated read), or None if no
+    read layer has a γ-compatible up_proj read. ``γ`` is per-layer
+    ``(28, 3584)``, so layer L's read vector couples with γ[L] — and the chosen
+    layer L is returned so the caller couples the SAME layer's source/bystander
+    centroids (the per-layer fix; the pre-fix code multiplied a 3584-d ``a`` by
+    the whole 28-layer γ stack and skipped every layer).
     """
     gamma = bank.get("gamma_post_attn")
     if gamma is None:
         return None
     best = None
     best_norm = -1.0
+    best_li = -1
     for li in read_layers:
         if (li, READ_MODULE) not in pairs:
             continue
         a = pairs[(li, READ_MODULE)]["a"]
-        if a.shape[0] != gamma.shape[0]:
+        gamma_li = _layer_row(gamma, li)
+        if gamma_li is None or a.shape[0] != gamma_li.shape[0]:
             continue
-        ag = a * gamma
+        ag = a * gamma_li
         n = float(np.linalg.norm(ag))
         if n > best_norm:
             best_norm = n
             best = ag
-    return _unit(best) if best is not None else None
+            best_li = li
+    return (_unit(best), best_li) if best is not None else None
 
 
 def _dv5_marker_leakage(eval_dir: Path, slug: str) -> dict[str, dict]:
@@ -1248,10 +1277,14 @@ def _maybe_run_dv5(out_dir, cell_metas, cells_root, args, git_commit) -> None:
             }
             continue
         tap, by_ctx = vsrc
-        v_source = by_ctx[SOURCE]
         pairs = load_adapter_pairs(adapter_dir)
         read_layers = [li for li in READ_LAYER_BAND if (li, READ_MODULE) in pairs]
-        read_dir = _dv5_read_direction(pairs, bank, read_layers)
+        rd = _dv5_read_direction(pairs, bank, read_layers)
+        read_dir, read_layer = rd if rd is not None else (None, -1)
+        # Couple the SAME layer's source/bystander centroids as the read
+        # direction (per-layer bank fix). v_source is layer `read_layer`'s row
+        # of the (28, 3584) source centroid; bystander rows below match it.
+        v_source = _layer_row(by_ctx[SOURCE], read_layer) if read_layer >= 0 else None
 
         # Source install strength (EOS-margin leakage on the source itself).
         install_strength = leakage.get(SOURCE, {}).get("leakage_margin", float("nan"))
@@ -1266,7 +1299,10 @@ def _maybe_run_dv5(out_dir, cell_metas, cells_root, args, git_commit) -> None:
                 # contrastive negative (trained DOWN at its slot -> down-biased
                 # leakage read). dv5-primary-bystander-filter-includes-assistant.
                 continue
-            v_b = by_ctx.get(persona)
+            v_b_raw = by_ctx.get(persona)
+            if v_b_raw is None or v_source is None:
+                continue
+            v_b = _layer_row(v_b_raw, read_layer)
             if v_b is None:
                 continue
             geom_cos = _cos(v_b, v_source)
@@ -1330,6 +1366,7 @@ def _maybe_run_dv5(out_dir, cell_metas, cells_root, args, git_commit) -> None:
             "predictor_collinearity_rho": collinearity,
             "firing_predictor_wins": bool((not np.isnan(delta_rho)) and delta_rho > 0.0),
             "read_tap": tap,
+            "read_layer": int(read_layer),
             "per_bystander": per_bystander,
         }
     _write_json(
