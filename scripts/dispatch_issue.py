@@ -772,9 +772,16 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # to the CURRENT branch with a logged INFO. Gated to the lanes
         # that can reach GCP (explicit "gcp", or "auto"/absent — absent
         # includes frontmatter-driven backends, and an explicit SLURM /
-        # RunPod lane never escalates to GCP). SLURM rsyncs the local
-        # worktree and RunPod ignores repo_branch, so the extra key is
-        # inert if the router resolves a non-GCP lane.
+        # RunPod lane never escalates to GCP). The extra key is no longer
+        # inert on any lane: GCP honors it by git-cloning the requested
+        # branch in the GCE startup script, and RunPod's lifecycle layer
+        # also checks out the branch. SLURM has no honoring mechanism and
+        # REFUSES to submit when repo_branch names a non-"main" branch the
+        # rsync source cannot be proven to carry (its source resolves to
+        # "main", not the invoking worktree) — backends/slurm.py
+        # _assert_repo_branch_synced() raises, the router wraps it as a
+        # BackendPrepareError, and the auto chain advances to the next lane
+        # rather than silently rsyncing stale "main" code (#653 round-8).
         branch = _current_git_branch()
         if branch and branch != "main":
             logging.getLogger("dispatch_issue").info(
