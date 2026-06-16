@@ -9,12 +9,18 @@ origin_prompt: Create an issue to check if conditional behaviors decompose clean
   into read and write features. (random-bias write features as steering -> sample
   -> read unsteered activations on those tokens vs baseline; characterize write->read
   geometry; consider theory document + rank-1 LoRA discussion)
-goal: Characterize the geometry of the autoregressive write→read map — perturb the
-  residual stream during generation, then read what the unsteered model infers from
-  the sampled tokens — measuring its linearity, effective rank, and write↔read alignment,
-  to test whether conditional behaviors decompose cleanly into separable read (condition-detection)
-  and write (behavior-production) features.
+goal: 'Test whether conditional behaviors decompose cleanly into separable read (condition-detection)
+  and write (behavior-production) features, via two probes: (A) the base model''s
+  autoregressive write→read map under random-bias steering, and (B) how real finetunes
+  shift activations across the rank ladder (rank-1 LoRA → higher-rank LoRA → full
+  fine-tuning) — characterizing in each whether the structure is low-rank and read↔write-aligned
+  or diffuse.'
 ---
+## Goal
+
+Test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features, via two probes: (A) the base model's autoregressive write→read map under random-bias steering, and (B) how real finetunes shift activations across the rank ladder (rank-1 LoRA → higher-rank LoRA → full fine-tuning) — characterizing in each whether the structure is low-rank and read↔write-aligned or diffuse.
+
+
 ## Why this question
 
 A conditional behavior — "in context `C`, emit behavior `B`" — is exactly what a
