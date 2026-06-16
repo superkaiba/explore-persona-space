@@ -1,0 +1,82 @@
+{
+  "source": "villain",
+  "status": "ok",
+  "n_bystanders": 10,
+  "realized_pearson_cos_prior": 0.07853278896655948,
+  "realized_abs_pearson": 0.07853278896655948,
+  "pearson_max_target": 0.2,
+  "min_bystanders_target": 10,
+  "cosine_layer": 20,
+  "bin_coverage": {
+    "[0.7,0.8)": 1,
+    "[0.925,0.96)": 1,
+    "[0.96,0.98)": 1,
+    "[0.875,0.925)": 3,
+    "[0.8,0.875)": 3,
+    "[0.98,1.0)": 1
+  },
+  "bystanders": {
+    "assistant": {
+      "cosine_to_source": 0.7820306420326233,
+      "base_prior": 0.05,
+      "cosine_bin": "[0.7,0.8)"
+    },
+    "con_artist": {
+      "cosine_to_source": 0.9527274370193481,
+      "base_prior": 0.041666666666666664,
+      "cosine_bin": "[0.925,0.96)"
+    },
+    "criminal_mastermind": {
+      "cosine_to_source": 0.9670263528823853,
+      "base_prior": 0.056666666666666664,
+      "cosine_bin": "[0.96,0.98)"
+    },
+    "french_person": {
+      "cosine_to_source": 0.8449796438217163,
+      "base_prior": 0.06166666666666667,
+      "cosine_bin": "[0.8,0.875)"
+    },
+    "philosopher": {
+      "cosine_to_source": 0.870169997215271,
+      "base_prior": 0.07666666666666666,
+      "cosine_bin": "[0.8,0.875)"
+    },
+    "pirate_captain": {
+      "cosine_to_source": 0.9062823057174683,
+      "base_prior": 0.08833333333333333,
+      "cosine_bin": "[0.875,0.925)"
+    },
+    "street_performer": {
+      "cosine_to_source": 0.8582460880279541,
+      "base_prior": 0.06666666666666667,
+      "cosine_bin": "[0.8,0.875)"
+    },
+    "supervillain": {
+      "cosine_to_source": 0.9868296384811401,
+      "base_prior": 0.07166666666666667,
+      "cosine_bin": "[0.98,1.0)"
+    },
+    "wizard": {
+      "cosine_to_source": 0.8891801834106445,
+      "base_prior": 0.06166666666666667,
+      "cosine_bin": "[0.875,0.925)"
+    },
+    "zelthari_scholar": {
+      "cosine_to_source": 0.8754414319992065,
+      "base_prior": 0.056666666666666664,
+      "cosine_bin": "[0.875,0.925)"
+    }
+  },
+  "disjointness_clash_with_sources": [
+    "comedian",
+    "kindergarten_teacher",
+    "software_engineer",
+    "villain"
+  ],
+  "metadata": {
+    "panel_set_path": "data/issue_612/panel/panel_set.json",
+    "git_commit_sha": "46bdda84ffe862d0e65562667ca182809ec1bc24",
+    "timestamp_utc": "2026-06-16T17:08:04.435627+00:00",
+    "regenerated_offpod": true
+  }
+}

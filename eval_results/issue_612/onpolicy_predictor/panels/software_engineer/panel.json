@@ -1,0 +1,80 @@
+{
+  "source": "software_engineer",
+  "status": "ok",
+  "n_bystanders": 10,
+  "realized_pearson_cos_prior": -0.17316487078576423,
+  "realized_abs_pearson": 0.17316487078576423,
+  "pearson_max_target": 0.2,
+  "min_bystanders_target": 10,
+  "cosine_layer": 20,
+  "bin_coverage": {
+    "[0.96,0.98)": 1,
+    "[0.8,0.875)": 4,
+    "[0.925,0.96)": 2,
+    "[0.875,0.925)": 3
+  },
+  "bystanders": {
+    "assistant": {
+      "cosine_to_source": 0.9689223766326904,
+      "base_prior": 0.05,
+      "cosine_bin": "[0.96,0.98)"
+    },
+    "child": {
+      "cosine_to_source": 0.8004601001739502,
+      "base_prior": 0.07166666666666667,
+      "cosine_bin": "[0.8,0.875)"
+    },
+    "con_artist": {
+      "cosine_to_source": 0.8703129887580872,
+      "base_prior": 0.041666666666666664,
+      "cosine_bin": "[0.8,0.875)"
+    },
+    "criminal_mastermind": {
+      "cosine_to_source": 0.8867977857589722,
+      "base_prior": 0.056666666666666664,
+      "cosine_bin": "[0.875,0.925)"
+    },
+    "evil_mastermind": {
+      "cosine_to_source": 0.8387191295623779,
+      "base_prior": 0.055,
+      "cosine_bin": "[0.8,0.875)"
+    },
+    "french_person": {
+      "cosine_to_source": 0.9074090719223022,
+      "base_prior": 0.06166666666666667,
+      "cosine_bin": "[0.875,0.925)"
+    },
+    "philosopher": {
+      "cosine_to_source": 0.9305583834648132,
+      "base_prior": 0.07666666666666666,
+      "cosine_bin": "[0.925,0.96)"
+    },
+    "street_performer": {
+      "cosine_to_source": 0.8229507803916931,
+      "base_prior": 0.06666666666666667,
+      "cosine_bin": "[0.8,0.875)"
+    },
+    "wizard": {
+      "cosine_to_source": 0.9340449571609497,
+      "base_prior": 0.06166666666666667,
+      "cosine_bin": "[0.925,0.96)"
+    },
+    "zelthari_scholar": {
+      "cosine_to_source": 0.8794445991516113,
+      "base_prior": 0.056666666666666664,
+      "cosine_bin": "[0.875,0.925)"
+    }
+  },
+  "disjointness_clash_with_sources": [
+    "comedian",
+    "kindergarten_teacher",
+    "software_engineer",
+    "villain"
+  ],
+  "metadata": {
+    "panel_set_path": "data/issue_612/panel/panel_set.json",
+    "git_commit_sha": "46bdda84ffe862d0e65562667ca182809ec1bc24",
+    "timestamp_utc": "2026-06-16T17:08:04.507099+00:00",
+    "regenerated_offpod": true
+  }
+}
