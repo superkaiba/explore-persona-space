@@ -4,305 +4,375 @@ The canonical spec for clean-result body shape, voice, sections, and
 anti-patterns. The mechanical verifier is **`scripts/verify_task_body.py`**.
 The format is **markdown** with YAML frontmatter.
 
-## Required body shape
+**Two generations coexist (forward-only):**
 
-**The 2-content-section nested-TL;DR model** (migrated 2026-W22 task
-#454; nested-TL;DR shape adopted forward-only after #454). The body
-carries THREE required H2 sections, in this exact order, with the
-second (`## TL;DR`) absorbing what used to live in a separate
-`## Details` section and the third (`## Reproducibility`) absorbing
-the Parameters table:
+- **v3** (current, sentinel `<!-- clean-result-v3 -->`, migrated 2026-W24)
+  — the FIVE-flat-H2 shape specced below. New bodies emit v3.
+- **v2 / legacy** (grandfathered) — the 2-content-section nested-TL;DR
+  shape (sentinel `<!-- clean-result-v2 -->`) and pre-sentinel bodies.
+  Documented in § "Grandfathered shape (v2 / legacy)" near the bottom.
+  These are NEVER newly hard-FAILed by a v3 rule; the verifier branches
+  on the sentinel.
 
-1. `## Human TL;DR` — Thomas's own section in his voice, drafted by the
-   analyzer as a REAL FIRST-PASS — Headline / Takeaways / How this
-   updates me, in casual first-person — that Thomas then edits before
-   sending to the mentor. It ends with an italic "(First pass — Thomas
-   refines this before sending to the mentor.)" note. The literal word
-   `placeholder` (or an empty section) is a clean-result DEFECT, not the
-   intended output: the interpretation-critic and clean-result-critic
-   both flag it. Voice: first-person, casual, plain English (no
-   condition codes), no `Confidence:` sentence (confidence lives in the
-   H1 title tag). See `analyzer.md` Step 1 for the first-pass template.
+---
 
-2. `## TL;DR` — the LessWrong-style narrative, in a nested 3-part shape.
-   The three subsection H3s are REQUIRED in nested-design (v2) bodies
-   and must appear in this order:
+# v3 body shape (current)
 
-   - **`### Motivation`** — sets up why the experiment matters; the
-     ONLY place in the body that may cite prior tasks (via
-     `[#K](https://eps.superkaiba.com/tasks/K)` markdown links) or
-     name issue numbers; ends by stating the goal. First-person,
-     plain language. **Do NOT stage the writeup as a methodology
-     correction of a prior run.** When this experiment changed or
-     fixed methodology relative to an earlier issue, describe ONLY the
-     open question and what this run did — never "the prior run used X,
-     this run uses Y", never "reverting axis A/B/C from #K", never a
-     prior-vs-current table of design choices, never a recap of the
-     earlier run's (now-superseded) eval rig / negatives / panel /
-     judge. Motivation may name a prior result to establish the
-     question; it must not relitigate that run's methodology. Just say
-     what we ran.
-   - **`### What I ran`** — STANDALONE description of the run. No
-     cross-issue framing, no issue numbers, no "byte identical" /
-     "byte-identical" phrasing, no incidental low-level detail, and no
-     framing of the setup as a correction of a prior run's methodology
-     — state the design on its own terms. Carries training
-     INPUT→OUTPUT examples (as a `<details open>` table) and names the
-     eval INPUTS (the actual probes / questions asked).
-   - **`### Findings`** — parent H3 that wraps ONE `#### <finding>`
-     H4 per result. Each `#### <finding>` follows the per-result
-     skeleton below.
+Five FLAT H2 sections, in this exact order, no nesting under a `## TL;DR`
+umbrella, no `## Human TL;DR`. New sentinel `<!-- clean-result-v3 -->`
+right after the H1. Audience layers descend:
 
-   Inside each `#### <finding>` H4:
+1. **`## Takeaways`** — the 10-second read (what Thomas adapts for Slack).
+2. **`## What I ran`** + **`## Findings`** — the 2-minute skim, figures.
+3. **`## Data`** — the exact rows: training data, eval probes, generations.
+4. **`## Reproducibility`** — agents/repro appendix.
 
-   1. A short **setup paragraph** (1-3 sentences) framing what the
-      figure will show and why we're looking now.
-   2. **Exactly ONE inline figure** (`![alt](permanent-url)` on a line
-      by itself, blank line before and after) with a markdown
-      blockquote caption (`> **Figure.** *italic lead.* plain
-      caption text…`). See "Figure caption shape" below.
-   3. A **read paragraph** (1-3 sentences) calling out what's
-      striking — surprises, where outliers go, monotonicity, what
-      the figure CAN'T tell you.
-   4. **For text-generation results:** one cherry-picked raw-completion
-      example per artifact the result rests on (a fenced code block or
-      a `<details>` table), preceded by the literal `cherry-picked for
-      illustration` (or a random-sample disclosure like `first three of
-      400 completions`) AND by a link to the **raw text-level artifact**
-      (HF Hub `/tree/<sha>/.../raw_completions/` path or repo-relative
-      `eval_results/issue_<N>/raw_completions/` path), then a
-      `<details>` dropdown with 3-5 more examples + a link to ALL raw
-      completions.
-   5. **For runs that generate NO completions** (teacher-forced
-      log-prob, activation probe, linear-fit, cluster-only): state the
-      measurement-validity tell ("the model emits nothing — each probe
-      yields one number, not a completion") inside the finding's
-      prose; do NOT fabricate a fenced sample block.
+```markdown
+# <one-sentence claim> (LOW|MODERATE|HIGH confidence)
 
-   **Harmful-content corpora (Betley-style EM, bad-medical-advice,
-   refusal-bait pools):** the item-4 example block ships SANITIZED
-   per `analyzer.md` § Content hygiene — labeled "sanitized for
-   context hygiene", a ~15-word excerpt plus a `[truncated —
-   harmful-content row; verify at <raw-completions path>, row <i>]`
-   placeholder in place of the full completion. The cherry-picked
-   label, row indices, and permanent raw-completion links stay
-   verbatim (mechanical checks 10/11 unaffected). Critics accept this
-   form (`interpretation-critic.md` Lens 7 / `clean-result-critic.md`
-   Lens 9 carve-outs). Benign corpora keep the verbatim treatment.
+<!-- clean-result-v3 -->
 
-   Every `#### <finding>` H4 MUST stand alone — the reader can land
-   on it directly and understand the finding without re-reading
-   earlier ones. The body is **standalone** outside `### Motivation`:
-   baselines are framed descriptively ("the narrow 2-negative
-   baseline"), NOT by issue number; issue numbers are confined to
-   `### Motivation` and `## Reproducibility`.
+**Methodology:** [docs/methodology/issue_N.md](…) · [gist](…)   ← orchestrator-appended, post-gate
 
-   **No separate `## Details` section.** Everything that used to live
-   there (definitions, training notes, eval-rationale prose, sample
-   completions, "Why this test" narrative) moves UP into the
-   per-result `#### <finding>` narrative inside `### Findings`.
+## Takeaways
 
-   **No `## Figure` H2.** Figures live inline under their `####
-   <finding>` H4 (one figure per result).
+- <headline finding, key number + CI bolded>
+- <secondary finding>
+- <the caveat that binds interpretation>
+- <what this changes / next decision>
+(3–6 bullets, each ≤30 words, numbers-first, plain academic register.
+ALWAYS the cross-round synthesis — rewritten after every follow-up round.)
 
-   **No `### Methodology corrections` H3.** When a methodology
-   correction is load-bearing for interpreting a finding, fold it
-   into the relevant `#### <finding>`'s setup or read prose — do not
-   collect them in a separate section.
+## What I ran
 
-   **No `### Next steps` H3 by default.** Skip unless there is
-   genuinely useful follow-up to queue. Hard exception: when raw
-   completions were not uploaded for this run, the body MUST surface
-   the "re-run with raw-completion upload" note in the relevant
-   finding's prose.
+- **Why:** <1–2 sentences; the ONLY place for prior-issue links.>
+- **Design:** <conditions × seeds × N; the single manipulated variable.>
+- **Training:** <one-line recipe: model, LoRA r/α, lr, steps, data N. Full table in Reproducibility.>
+- **Eval:** <DV + metric + judge + N probes; why this probe set; preprocessing.>
+- **Rounds:** (only when >1 round) a markdown table — | round | date | what changed | one-line result |
 
-   **Per-condition quantitative numbers live in PLOTS, not as a body
-   table** — never duplicate a per-condition rate / log-prob / mean as
-   a markdown table in the body when the same numbers are already
-   carried by a figure. Plots compress and contextualise; a redundant
-   table is reader-hostile.
+## Findings
 
-3. `## Reproducibility` — agent-facing appendix at the bottom.
-   Required content, in order:
+### <Finding stated as a claim, with the number in the heading>
 
-   - **`**Parameters:**`** — the parameters table (base model,
-     adapter, optimizer, steps, seeds, eval rig, hardware, wall time,
-     Hydra config slug, etc.). Absorbed from the retired `## Details`
-     section. **Every numeric hyperparameter here is COPIED from
-     ground truth — the committed training script (the `**Code:**`
-     SHA) / `run_result.json` / the approved plan §11 — never typed
-     from memory or a remembered library default.** Learning rate,
-     LoRA rank/alpha/dropout, epochs, batch size, and seed are
-     load-bearing; a plausible-looking guess is a data-integrity bug,
-     not a cosmetic one. Before finalizing, cross-check each value
-     against the committed code at the `**Code:**` SHA. The learning
-     rate is additionally reconciled mechanically against the plan
-     (check 16); see `verify_task_body.py`. Incident: task #489 shipped
-     `lr = 1e-4` (a typed-from-memory LoRA default) while the run used
-     `lr = 2e-6` — a 50x misprint that reached the mentor draft.
-   - **`**Artifacts:**`** — links to training data, model checkpoints,
-     eval JSONs, figure source, raw completions. **Training/eval data:
-     embed a `<details open>` dropdown of ~5 example rows + a link to
-     the full data file** under whichever finding H4 the data is most
-     relevant to (training rows under `### What I ran`; eval examples
-     near the finding that consumed them — NOT here; this Artifacts
-     block just lists the full artifact links).
-     **Reuse provenance — when a reader-facing claim rests on a
-     trained artifact REUSED from a prior issue** (a LoRA adapter,
-     merged checkpoint, training-mix dataset, raw-completion bucket,
-     or `eval_results/` JSON produced by a previous `/issue` run
-     rather than freshly produced by THIS task), the Artifacts block
-     MUST name, per reused artifact:
-     (a) the **producing issue number** (`#M`) — link the issue body
-     (`https://eps.superkaiba.com/tasks/M`) so the reader can land on
-     the recipe that produced it; (b) the **permanent HF Hub path**
-     (pinned to `/tree/<sha>` or `@<sha>`) or repo-relative
-     `eval_results/issue_M/...` path the artifact was pulled from; and
-     (c) a **one-line fitness rationale** stating why this artifact
-     was the right one to reuse for THIS result — covering recipe
-     match (same base model + training-recipe / hyperparameters the
-     new question demands), measurement-regime fit (the artifact's
-     eval surface contains the conditions THIS result reads off; for
-     marker work specifically, the artifact is NOT saturated where
-     this read needs headroom — source `log P − base ∈ [5,12]` nat
-     per `.claude/rules/marker-training-recipe.md`), and required
-     conditions present (the cells / personas / seeds this finding
-     compares were actually trained and evaluated in #M). The
-     rationale mirrors the positive fitness check the planner ran at
-     plan §5 / §10 (CLAUDE.md § "Reuse existing trained artifacts
-     when fit-for-purpose — never reuse a wrong one") — carrying it
-     forward into the clean-result so the reader sees the same
-     justification the planner saw. Format suggestion (one bullet per
-     reused artifact): `- Reused <kind> from [#M](...): <hf path or
-     local path> — fit: <one line: recipe + regime + conditions>`.
-     This is a substantive scientific fact, not a citation nicety: a
-     reader inspecting the finding needs to see that the producing
-     recipe matched the new question AND that no methodology gap
-     silently weakens the result. When THIS task produced every
-     artifact it stands on, no reuse-provenance bullets are needed
-     (most fresh-train experiments).
-   - **`**Compute:**`** — wall time, GPU type/count, pod label.
-   - **`**Code:**`** — dataset-build script, pipeline driver, Hydra
-     config, git commit hash, one-block reproduce snippet.
-   - **`**Context:**`** — run-context provenance (REQUIRED for v2
-     bodies; adopted 2026-06-11, forward-only — never retro-failed on
-     legacy or already-parked bodies). Three bullets:
-     - **Created / run:** the task's creation date (frontmatter
-       `created_at`) and when the run executed (the results-landed
-       date or window).
-     - **Follow-up to:** the lineage that motivated this experiment —
-       `[#K](https://eps.superkaiba.com/tasks/K) — <one line on what
-       this follows up>` (the parent task, the prior result, or the
-       chat re-analysis that seeded it), or `fresh direction (no
-       parent)`. For same-issue follow-up rounds, also name the
-       round's `followup_label` from the `epm:followup-scope v1`
-       marker.
-     - **Originating prompt(s), verbatim:** the exact user prompt(s)
-       that created the task, blockquoted — sourced from frontmatter
-       `origin_prompt`, the original task body's `## Provenance`
-       section (post-promotion: `original-body.md`), or
-       `epm:followup-scope v1` markers with `source: user-chat`.
-       NEVER paraphrase, trim, or fix typos — verbatim means
-       verbatim. When no prompt was recorded (tasks predating this
-       rule, PM-triage- or proposer-created tasks), write `origin
-       prompt not recorded` — never omit the row and never fabricate
-       a prompt.
-     This row is the ONLY place run-context provenance lives in the
-     body — the "state facts, not sources" rule (CLAUDE.md Critical
-     Rules) still bans weaving prompt/person attributions ("the user
-     asked…") into `## TL;DR` or any finding prose; the two rules do
-     not conflict because `**Context:**` is a dedicated metadata
-     block, not narrative. Worked exemplar of the creation-side
-     `## Provenance` section: task #611. Verifier check 17 enforces
-     presence on v2 bodies (FAIL only when recorded origin data
-     exists but the body dropped it; WARN otherwise).
+<1 setup sentence: what's plotted, why we're looking>
 
-   **Confidence lives in the H1 title tag only** for nested-design
-   (v2) bodies (see "Title format" below). There is NO
-   `Confidence: …` sentence inside `## Reproducibility`, and NO
-   separate "Why confidence is where it is" section. (Legacy bodies
-   carrying a `Confidence: …` sentence still satisfy the verifier —
-   the verifier's level-match check fires only when the sentence
-   exists — but new bodies do not emit one.)
+![alt with axes + numerical claim](pinned-url)
 
-### V2 nested-design sentinel
+> **Figure.** *Italic lead.* caption (≤60 words).
 
-NEW nested-design bodies carry the literal HTML comment
-`<!-- clean-result-v2 -->` somewhere in the body (the analyzer emits
-it on draft). The verifier uses this sentinel to gate the
-nested-TL;DR-shape requirements (presence + order of `### Motivation`
-/ `### What I ran` / `### Findings` with ≥1 `#### ` child; accepting
-confidence-title-only). Bodies WITHOUT the sentinel keep the prior
-behavior (Motivation H3 OR `**Motivation:**` bullet; per-result
-`### <finding>` flat layout still tolerated) and are NEVER hard-FAILed
-by the nested-shape rule. This is the "forward-only" guard: bodies
-parked in `awaiting_promotion` that still use the post-#454 flat
-shape will not retro-break on the next CI run.
+<1–2 read sentences: what's striking / what it can't tell you>
+
+### <Finding 2> …
+
+(Per finding: ≤120 words of prose WARN / ≥180 FAIL, outside the caption /
+tables / code / `<details>` bodies. Superseded findings from earlier
+rounds collapse into a single `<details><summary>Superseded by round
+N</summary>` block at the end.)
+
+## Data
+
+### Trained on
+
+<Capsule, ≤100 words: source + realism tier, construction recipe, N rows,
+composition/ratio, completion provenance (on-policy tier / canned /
+verbatim).>
+
+<details open>
+<summary>5 example rows — "5 of 2,000 rows, random sample"</summary>
+…table…
+Full data file: [pinned link](…)
+</details>
+
+Full data: [HF dataset path pinned to sha](…)
+
+### Evaluated with
+
+<Capsule: probe-set identity, WHY chosen, preprocessing; judge model + rubric.>
+
+<details open>
+<summary>3–5 example probes — subset disclosure line</summary>
+…
+</details>
+
+Full probe bank: [pinned link](…)
+
+### Generated
+
+<Capsule: what the model produced, which conditions, N completions.>
+Full raw completions: [HF raw_completions tree pinned](…)
+
+Per load-bearing condition: 1 inline example (preceded by a subset
+disclosure — `cherry-picked for illustration` / `first 3 of 400`) + a
+raw-completions link, then a `<details>` block with 3–5 more.
+
+(Subsections that don't apply state it explicitly with an
+`n/a — <reason>` line: e.g. `### Trained on` → `n/a — no training in
+this task (eval-only)`. Never silently omitted.)
+
+## Reproducibility
+
+**Parameters:** / **Artifacts:** / **Compute:** / **Code:** / **Context:**
+rows (see § Reproducibility content below — carried forward from v2 verbatim,
+except the body Parameters table SLIMS to the load-bearing subset; the
+methodology doc §2 is the canonical complete table).
+```
+
+## Section-by-section (v3)
+
+### `## Takeaways`
+
+Replaces the v2 `## Human TL;DR` + the v2 TL;DR skim function. Plain
+academic register — NO lowercase-casual voice, NO "How this updates me"
+diary framing. Bullets only, numbers-first, directly adaptable into a
+Slack post. **3–6 bullets** (hard FAIL outside that range), each ≤30
+words (WARN). The H1 title stays the one-sentence claim + confidence tag.
+
+**`## Takeaways` is the rolling cross-round synthesis.** It ALWAYS
+reflects the current cross-round belief, rewritten after every follow-up
+round (see § Follow-up consolidation). A Takeaways section that only
+describes round 1 after round 2 landed is a critic FAIL.
+
+### `## What I ran`
+
+The standalone run description. Four boldface-led bullets:
+
+- **`**Why:**`** — 1–2 sentences; the ONLY place in the body that may
+  cite prior tasks (`[#K](https://eps.superkaiba.com/tasks/K)` links or
+  issue numbers) or stage motivation. **Do NOT stage the writeup as a
+  methodology correction of a prior run** — describe the open question
+  and what this run did; never "the prior run used X, this run uses Y".
+- **`**Design:**`** — conditions × seeds × N; the single manipulated
+  variable.
+- **`**Training:**`** — one-line recipe (full table in Reproducibility).
+- **`**Eval:**`** — DV + metric + judge + N probes; why this probe set;
+  preprocessing.
+- **`**Rounds:**`** — only when >1 round: a markdown table (round label,
+  date, what changed, one-line result).
+
+No "byte identical" / "byte-identical" phrasing (banned, see Voice).
+
+### `## Findings`
+
+One `### <finding>` H3 per result. Each finding is STANDALONE — a reader
+can land on it directly and understand it. Issue numbers are confined to
+`## What I ran` `**Why:**` and `## Reproducibility`; baselines are framed
+descriptively ("the narrow 2-negative baseline"), not by number.
+
+Per-finding skeleton (the canonical per-figure beat):
+
+1. **Setup** (1–3 sentences) — what the figure shows, why we're looking.
+2. **Exactly ONE inline figure** (`![alt](permanent-url)` on its own
+   line, blank line before and after) with a markdown blockquote caption
+   (`> **Figure.** *italic lead.* plain caption ≤60 words`). See § Figure
+   caption shape.
+3. **Read** (1–3 sentences) — what's striking, where outliers go, what
+   the figure CAN'T tell you.
+4. **For text-behavior findings only:** at most ONE short (≤10-line)
+   raw-completion excerpt where the text itself IS the finding — preceded
+   by a subset-disclosure line AND a raw-completions link. The systematic
+   per-condition samples + `<details>` dropdowns live in `## Data →
+   ### Generated`, not here.
+5. **For runs that generate NO completions** (teacher-forced log-prob,
+   activation probe, linear-fit): state the measurement-validity tell
+   inside the read prose; do NOT fabricate a sample block.
+
+Per-finding prose cap: ≤120 words WARN / ≥180 words FAIL (excl. caption,
+tables, code, `<details>` bodies).
+
+**No `### Methodology corrections` heading.** When a methodology
+correction is load-bearing for interpreting a finding, fold it into that
+finding's setup or read prose.
+
+**Per-condition quantitative numbers live in PLOTS, not as a body
+table** — never duplicate a per-condition rate / log-prob / mean as a
+markdown table when a figure already carries it.
+
+### `## Data`
+
+The reader-facing "what exactly did it train/eval/generate on?" section.
+Three required H3 subsections, in order: **`### Trained on`** →
+**`### Evaluated with`** → **`### Generated`**. (`docs/methodology/issue_N.md`
+stays the findings-blind deep reference; the overlap is deliberate — the
+Data section makes the question answerable without leaving the body.)
+
+Each subsection carries:
+- a ≤100-word capsule (the two-tier "Data Statements" pattern: a short
+  inline summary that points to, never replaces, the full artifact);
+- example blocks (fenced OR `<details>` table), EACH immediately preceded
+  by a **subset-disclosure line** — `K of M rows, random sample` /
+  `cherry-picked for illustration` / `first N of M` / the
+  harmful-content sanitized form (see below);
+- **≥1 pinned link to the COMPLETE artifact** (HF Hub `/tree/<sha>`,
+  WandB `/runs/<id>`, GitHub `/blob/<sha>`) OR an explicit
+  `n/a — <reason>` line when the subsection does not apply (eval-only →
+  `### Trained on` is `n/a — no training in this task`).
+
+**Required capsule content** — composition facts that used to hide in
+prose are mandatory: positives:negatives ratio, persona panel, row
+counts per type, completion provenance (on-policy tier / canned /
+published-corpus-verbatim per `.claude/rules/on-policy-completions.md`).
+The eval capsule must answer all three Model-Cards questions: probe-set
+identity / WHY chosen / preprocessing.
+
+**Link scoping for the raw-completions rule:** `### Generated` links
+raw_completions (and its example blocks are checked for a raw-text-level
+artifact link); `### Trained on` / `### Evaluated with` link training
+JSONLs / probe banks — those are NOT raw_completions and are covered by
+the Data-shape check, not the raw-completions-link rule.
+
+**Harmful-content corpora (Betley-style EM, bad-medical-advice,
+refusal-bait pools):** example blocks ship SANITIZED per `analyzer.md`
+§ Content hygiene — labeled "sanitized for context hygiene", a ~15-word
+excerpt plus a `[truncated — harmful-content row; verify at
+<raw-completions path>, row <i>]` placeholder in place of the full
+completion. The subset-disclosure line, row indices, and permanent links
+stay verbatim. The mechanical checks (18/19) accept this form exactly as
+the v2 finding-sample checks (10/11) do. Agents assembling Data sections
+pull rows by grep + line offset (context-hygiene rule) — never page whole
+raw harmful-completion files into context.
+
+### `## Reproducibility`
+
+Agent-facing appendix at the bottom. Required content, in order:
+
+- **`**Parameters:**`** — the parameters table. **The body table SLIMS to
+  the LOAD-BEARING subset** (base model, adapter recipe, lr, steps,
+  seeds, eval rig, N); the methodology doc §2 is the canonical COMPLETE
+  table (NeurIPS-checklist two-tier split). **Every numeric
+  hyperparameter is COPIED from ground truth** — the committed training
+  script (the `**Code:**` SHA) / `run_result.json` / plan §11 — never
+  typed from memory. The learning rate is reconciled against the plan
+  (check 16); the whole body table is reconciled as a SUBSET of the
+  methodology doc §2 table (check 21). Incident: task #489 shipped
+  `lr = 1e-4` while the run used `lr = 2e-6` — a 50x misprint.
+- **`**Artifacts:**`** — links to training data, checkpoints, eval JSONs,
+  figure source, raw completions. **Reuse provenance** — when a
+  reader-facing claim rests on a trained artifact REUSED from a prior
+  issue, name per reused artifact: (a) the producing issue `#M` (linked);
+  (b) the permanent pinned HF/repo path; (c) a one-line fitness rationale
+  (recipe match + measurement-regime fit + required conditions present).
+  Format: `- Reused <kind> from [#M](...): <path> — fit: <one line>`.
+  When THIS task produced every artifact, no reuse bullets are needed.
+- **`**Compute:**`** — wall time, GPU type/count, pod label.
+- **`**Code:**`** — dataset-build script, pipeline driver, Hydra config,
+  git commit hash, one-block reproduce snippet.
+- **`**Context:**`** — run-context provenance (REQUIRED for v3 bodies;
+  forward-only). Three bullets:
+  - **Created / run:** creation date (frontmatter `created_at`) + when
+    the run executed.
+  - **Follow-up to:** the lineage — `[#K](...) — <one line>` or
+    `fresh direction (no parent)`; for same-issue follow-up rounds also
+    name the round's `followup_label`.
+  - **Originating prompt(s), verbatim:** the exact user prompt(s),
+    blockquoted, sourced from frontmatter `origin_prompt` / the original
+    body's `## Provenance` / `epm:followup-scope v1` markers. NEVER
+    paraphrase. When none was recorded, write `origin prompt not
+    recorded`.
+  This row is the ONLY place run-context provenance lives in the body
+  (the "state facts, not sources" rule still bans weaving
+  prompt/person attributions into Takeaways or finding prose).
+
+**Confidence lives in the H1 title tag ONLY.** There is NO `Confidence:
+…` sentence anywhere in a v3 body, and no "Why confidence is where it is"
+section. The binding caveat lives in the relevant finding's read prose
+and/or a `## Takeaways` bullet.
+
+## Conciseness caps (v3, mechanical — check 20)
+
+Voluntary norms go unfilled, so the caps are verifier checks. The
+constants live in `scripts/verify_task_body.py` (`V3_TAKEAWAYS_*`,
+`V3_FINDING_PROSE_*`, `V3_FIGURE_CAPTION_MAX_WORDS`, `V3_TOTAL_PROSE_*`)
+so tightening is a one-line change. Calibrated on the #517 → v3
+conversion (`exemplars/v3-517.md`).
+
+| Surface | Cap | Verifier behavior |
+|---|---|---|
+| `## Takeaways` bullet count | 3–6 bullets, no paragraphs | FAIL outside range (owned by the structure check — one authoritative count) |
+| Per-Takeaways-bullet length | ≤30 words | WARN |
+| Per-finding prose (excl. caption/code/details/tables) | ≤120 words WARN, ≥180 FAIL | WARN at 120, FAIL at 180 |
+| Figure caption | ≤60 words | WARN |
+| Total prose: Takeaways + What I ran + Findings (excl. tables, code fences, details bodies, captions) | ≤800 words + 250 per live follow-up round beyond the first | WARN-only (the per-finding ≥180 FAIL is the hard gate; a multi-round consolidated body must not be forced to delete live findings — see § Follow-up consolidation) |
+| Paragraphs in Findings / What I ran | ≤2 sentences each; bullets preferred | critic lens (LM judgment) |
+
+## Follow-up consolidation (v3)
+
+Same-issue follow-ups stay on the issue; the body carries a single
+rolling cross-round synthesis instead of fragmenting across child issues.
+
+1. **`## Takeaways` is the rolling synthesis.** After every round, rewrite
+   `## Takeaways` to the current cross-round belief and retitle the H1 if
+   the headline moved. A Takeaways describing only round 1 after round 2
+   landed is a critic FAIL.
+2. **Round visibility.** `## What I ran` gains the `**Rounds:**` table
+   (round label, date, what changed, one-line result) when >1 round;
+   `**Context:**` keeps per-round followup_labels + verbatim prompts.
+3. **Superseded-finding hygiene.** When a round invalidates an earlier
+   finding, rewrite Findings to the current best understanding and
+   collapse the outdated block into ONE
+   `<details><summary>Superseded by round N</summary>` block at the end —
+   audit trail without bloat.
+4. **Round-compression hygiene.** When a round's synthesis ABSORBS an
+   earlier finding (still true, no longer load-bearing on its own), that
+   finding compresses to heading + figure + ≤2 bullets. This is how
+   round-N bodies stay near the word budget without deleting live
+   findings (the total-prose cap is WARN-only and scales per round for
+   the same reason).
+5. **Migrate-on-fold.** A same-issue follow-up round that lands on a v2
+   body AFTER the v3 cutover migrates that body to v3 as part of the fold
+   (the analyzer rewrites the body anyway; drafts rebuild cheaply). This
+   is the ONE deliberate exception to "parked bodies stay v2".
+
+Routing (which work stays same-issue vs spawns a child) is governed by
+`follow-up-proposer.md` and CLAUDE.md § Routing: the litmus is "would the
+result rewrite THIS issue's `## Takeaways`?" → same-issue.
+
+### V3 sentinel
+
+NEW bodies carry the literal HTML comment `<!-- clean-result-v3 -->`
+right after the H1 (the analyzer emits it on draft). The verifier uses it
+to gate every v3 rule. Bodies WITHOUT it keep v2 / legacy behavior and
+are NEVER hard-FAILed by a v3 rule (forward-only).
 
 ### Top-of-body methodology link
 
 The orchestrator (`/issue` Step 9a-quater LATE JOIN, after the
-clean-result-critic PASS) appends a one-line reader-facing pointer to
-the auto-generated findings-blind methodology reference
-(`docs/methodology/issue_<N>.md`) at the TOP of the body — immediately
-after the `<!-- clean-result-v2 -->` sentinel (i.e. right under the H1
-title), BEFORE `## Human TL;DR`, with a blank line on each side:
+clean-result-critic PASS) appends a one-line reader-facing pointer to the
+auto-generated findings-blind methodology reference at the TOP of the
+body — immediately after the `<!-- clean-result-v3 -->` sentinel (right
+under the H1), BEFORE `## Takeaways`, with a blank line on each side:
 
 ```
 **Methodology:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
 ```
 
-When the gist publish fail-softed (no `GIST_URL`), the `· [gist](...)`
-suffix is dropped — same rule as the `## Reproducibility` row. The top
-line is the reader-facing pointer; the auto-appended
-`**Methodology reference:**` bullet in `## Reproducibility` stays as
-the artifact-index entry. Both carry the same SHA-pinned URLs.
+When the gist publish fail-softed, the `· [gist](...)` suffix is dropped.
+The auto-appended `**Methodology reference:**` bullet in
+`## Reproducibility` stays the artifact-index entry; both carry the same
+SHA-pinned URLs. Forward-only + post-gate: the line is appended AFTER the
+gate, so a body under critique normally does NOT carry it yet. The
+verifier and critics never REQUIRE it and never flag it as a stray
+element when present.
 
-Forward-only + post-gate: the line is appended AFTER the
-clean-result-critic gate, so a body under critique normally does NOT
-carry it yet. The verifier and critics never REQUIRE it, never flag it
-as a stray element when present (e.g. on a re-critique during a
-same-issue follow-up round), and never hard-FAIL legacy or pre-link
-bodies for lacking it. The analyzer does not emit this line; it is
-orchestrator-appended (and on EXTEND passes or a same-pass re-entry
-the `<DOC_SHA>` pin is updated in place in BOTH locations — never
-duplicated).
+### All Reproducibility URLs pinned
 
-All URLs in Reproducibility are pinned to permanent refs (HF Hub
-`/tree/<ref>` or `@<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>` or
-`/tree/<sha>`; never `main` / `master` / `HEAD`). `n/a` accepted as an
+HF Hub `/tree/<ref>` or `@<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>`
+or `/tree/<sha>` — never `main` / `master` / `HEAD`. `n/a` accepted as an
 explicit non-applicable marker. No `TBD`, `{{`, `default`, `see config`
-sentinels (`default` counts as a sentinel only in placeholder positions —
-a bare table-cell value `| default |` or a label terminator like
-`chat template: default`; substantive prose such as "default assistant" /
-"default-context" is fine — the default assistant is a core experimental
-condition, task #542). **Write MDX-safe markdown — the dashboard renders bodies
-through an MDX parser.** (a) URLs use `[label](url)` form only — never
-`<https://...>` autolinks (MDX reads `<https` as a JSX tag and fails on
-the `/` after `:`). (b) No `<` immediately before a digit (`p<0.05`,
-`n<10`) — write ` < ` with spaces or wrap in backticks. (c) Table-cell
-tokens with inner pipes (e.g. `<|im_start|>`) escape the pipes and wrap
-in backticks: `` `<\|im_start\|>` ``. Fenced code blocks and inline code
-spans are exempt (except a pipe-containing code span on a real GFM
-table-row line). The rule applies everywhere in the body, not just
-Reproducibility. Verifier check 14 (`check_mdx_safe_urls`) FAILs all
-three classes.
+sentinels (`default` only in placeholder positions; "default assistant" /
+"default-context" prose is fine — #542). **Write MDX-safe markdown** —
+the dashboard renders bodies through an MDX parser: (a) URLs use
+`[label](url)` only, never `<https://...>` autolinks; (b) no `<`
+immediately before a digit (`p<0.05`) — write ` < ` with spaces or wrap
+in backticks; (c) table-cell tokens with inner pipes (`<|im_start|>`)
+escape the pipes inside a code span. Verifier check 14 FAILs all three.
 
-### Stray `## Details` is a FAIL
+### Stray `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` is a FAIL
 
-A NEW body that includes a `## Details` H2 (or `## Figure` H2 — see
-below) is rejected by the verifier. This forces clean migration to the
-2-content-section model: bodies cannot half-migrate by stripping the
-Details prose while leaving the H2 in place. The verifier surfaces a
-clear FAIL pointing at this section.
-
-### (Deprecated) `## Figure` H2
-
-`## Figure` is fully retired for NEW write-ups. A stray `## Figure` H2
-in a new body is treated the same way as a stray `## Details` H2 — the
-verifier FAILs and the analyzer must inline the figure under the
-relevant result H3 inside `## TL;DR`. Legacy bodies (already promoted
-pre-2026-W22) are not re-verified, so the migration is forward-only.
+A v3 body that includes any of `## Human TL;DR`, `## TL;DR`,
+`## Details`, or `## Figure` is rejected by the verifier (forces clean
+migration). The v3 shape retired the model-written casual summary and the
+`## TL;DR` umbrella.
 
 Title format (the H1 line):
 
@@ -310,15 +380,12 @@ Title format (the H1 line):
 # <one-sentence claim> (LOW|MODERATE|HIGH confidence)
 ```
 
-For v2 nested-design bodies (sentinel `<!-- clean-result-v2 -->`
-present) the H1 title tag is the single source of truth for confidence
-— there is no body `Confidence: …` sentence to cross-check. For
-legacy bodies (no sentinel) the confidence level in the title MUST
-match the `Confidence: …` sentence in `## Reproducibility`.
+For v3 bodies the H1 title tag is the single source of truth for
+confidence — there is no body `Confidence: …` sentence to cross-check.
 
 ## Figure caption shape — markdown blockquote + bold "Figure." prefix
 
-**Every figure caption inside a `## TL;DR` result H3 wraps in a markdown
+**Every figure caption inside a `### <finding>` H3 wraps in a markdown
 blockquote (`> ` prefix) and uses this internal form:**
 
 ```
@@ -328,303 +395,284 @@ blockquote (`> ` prefix) and uses this internal form:**
 > NOT show.
 ```
 
-The `> ` blockquote prefix is what makes the caption visually distinct
-from the body prose around it. Without it, the dashboard's markdown
-renderer collapses `body text. ![alt](url) caption text.` into a
-single paragraph where the caption reads as continuation of the body.
-
-**Layout inside a `#### <finding>` H4 (v2 nested-design):**
-
-Under the v2 nested-design shape, per-result blocks live as
-`#### <finding>` H4s under `### Findings`. The block skeleton:
+The `> ` blockquote prefix makes the caption visually distinct from the
+body prose. Layout inside a `### <finding>`:
 
 ```markdown
-#### <Finding headline>
+### <Finding headline>
 
 <Setup paragraph: what we did, what's plotted, what to look for.>
 
 ![alt text with axis labels + a numerical claim.](https://raw.githubusercontent.com/.../figure.png)
 
-> **Figure.** *Italic lead claim.* Plain-text caption body with
-> definitions, ns, color mapping, reading guide.
+> **Figure.** *Italic lead claim.* Plain-text caption body (≤60 words)
+> with definitions, ns, color mapping, reading guide.
 
 <Read paragraph: what's striking, where outliers go, what the figure
 can't tell you.>
-
-<cherry-picked-label prose with raw-completion link>
-
 ```
-EVAL PROBE   (...)
-MODEL OUTPUT (...)
-```
-
-<details>
-<summary>3 more cherry-picked completions</summary>
-
-[3-5 more examples or a link list]
-
-Full <M> raw completions: [bucket/raw_completions/](https://huggingface.co/.../tree/<sha>/.../raw_completions/)
-
-</details>
-```
-
-(For legacy bodies, the same shape applies but per-result blocks are
-flat `### <finding>` H3s directly under `## TL;DR`; the inner-block
-skeleton — setup → figure → blockquote caption → read → sample
-exposition — is identical.)
 
 Three discipline points:
-1. **Blank line BETWEEN body prose and image** (otherwise the image
-   renders inline with body text).
-2. **Blank line BETWEEN image and caption** (otherwise the caption
-   joins the image's paragraph).
-3. **No 4-space indent needed** — result H3s are not list items in the
-   new spec, so no list-continuation indent applies. Just keep the
-   blank lines.
+1. **Blank line BETWEEN body prose and image.**
+2. **Blank line BETWEEN image and caption.**
+3. No 4-space indent (finding H3s are not list items).
 
-Originated in `iterations.md` § 2026-05-11 "Figure captions blend
-visually into surrounding body prose"; current canonical surface for
-the rule is this section + `CLAUDE.md` § Experiment Report Structure
-("Figure captions wrap in a markdown blockquote..."). Analyzer drafts
-must produce this shape on the first pass, not as a promotion-time
-fix.
+## Voice (v3)
 
-## Mechanical checks (`verify_task_body.py`)
+- **Bullets are the default; prose only where a causal chain needs ≤2
+  sentences.** The NN/g "layer-cake" guidance: bold key numbers, front-
+  load the takeaway. A wall of narrative prose is the v2-era register the
+  v3 redesign deliberately replaced.
+- `I`, not `we` — single-researcher workflow.
+- Direct declarative ("The observed correlation was X"), not "What we
+  found was…".
+- First person stays. Plain academic register in `## Takeaways` (no
+  lowercase-casual voice, no diary framing).
+- No fluff transitions: "One more wrinkle:", "the buried lede was",
+  "funnily enough", "the real surprise was", "the kicker is". (Connective
+  tissue inside finding read prose — "Then I tried", "But that didn't
+  replicate" — is welcome.)
+- Caveats fold into the relevant finding's read prose and/or a
+  `## Takeaways` bullet (no "Standing caveats" section; v3 has no
+  `Confidence:` sentence to carry them).
+- Inline math `\(...\)`, display math `\[...\]`. Keep math out of plot
+  labels and figure captions.
+- **Never write `byte identical` or `byte-identical`** anywhere in the
+  body. Use plain English: "the two files matched exactly", "every byte
+  agreed", "no diff between the runs".
+- **Statistical-framing discipline** carries over from v2 (enforced by
+  `audit_clean_results_body_discipline.py` + clean-result-critic Lens 7):
+  no pre-registration mentions, no effect-size names in prose, no named
+  statistical tests in narrative prose, no inline `value ± err` credence
+  intervals (chart error bars fine), no project-internal condition labels
+  (`C1`/`H1`).
+
+## Mechanical checks (`verify_task_body.py`) — v3
+
+Forward-only: each check branches on the sentinel. v2 / legacy checks are
+listed under § Grandfathered shape. The v3 checks:
 
 1. Title ends with `(LOW|MODERATE|HIGH confidence)`.
-2. Three required H2 sections present in order
-   (`## Human TL;DR`, `## TL;DR`, `## Reproducibility`). A stray
-   `## Details` or `## Figure` H2 is a FAIL (forces clean migration to
-   the 2-content-section model; legacy bodies pre-2026-W22 are
-   forward-grandfathered because the verifier never re-runs over them).
-3. `## TL;DR` opens with the Motivation section — either an
-   `### Motivation` H3 (preferred) or a `**Motivation:**` boldface
-   bullet (legacy form, still accepted). In nested-design (v2) bodies
-   bearing the `<!-- clean-result-v2 -->` sentinel, the verifier
-   ADDITIONALLY requires `### What I ran` and `### Findings` H3s in
-   that order under `## TL;DR`, with at least one `#### ` child under
-   `### Findings`.
-4. At least one `![alt](url)` markdown image exists inline under
-   `## TL;DR`.
-4b. Figure URLs resolvable AND existing — every image URL under
-   `## TL;DR` is an absolute `https://...` URL (relative paths render
-   broken on the dashboard); `raw.githubusercontent.com` URLs pin to a
-   commit sha, and the target must EXIST: same-repo SHA-pinned URLs
-   verified offline via `git cat-file -e <sha>:<path>`, unknown SHAs /
-   other hosts via one HTTP HEAD per unique URL (definitive 404 →
-   FAIL; indeterminate → `unverified` note, never a FAIL). Incident:
-   task #507 (a caption cited a figure that was never generated).
-5. (Soft) Figure-caption sanity — vacuously satisfied when no legacy
-   `## Figure` H2 is present (inline-image alt text + blockquote
-   caption inside the result H3 carry the discipline; the analyzer is
-   instructed to write descriptive alt text and blockquote captions).
-6. Confidence sentence — for v2 nested-design bodies (sentinel
-   present) the verifier PASSes when the H1 title carries the
-   `(LOW|MODERATE|HIGH confidence)` tag even with NO body Confidence
-   sentence; the title tag is the single source of truth. If a body
-   still carries a `Confidence: …` line, the level MUST match the
-   title and ≥20 chars of rationale after the dash. Legacy
-   (pre-sentinel) bodies must still ship the Confidence sentence
-   (typically the last paragraph of `## Reproducibility`).
-7. Reproducibility contains all three boldface subgroup labels
-   verbatim: `**Artifacts:**`, `**Compute:**`, `**Code:**`.
-8. Reproducibility URLs are pinned to permanent refs (HF Hub
-   `/tree/<sha>` or `@<sha>`, WandB `/runs/<id>`, GitHub
-   `/blob/<sha>` or `/tree/<sha>`; never `main`, `master`, `HEAD`).
-8b. Reproducibility same-repo artifact URLs exist — same-repo
-   `raw.githubusercontent.com/<repo>/<sha>/<path>` and
-   `github.com/<repo>/(blob|tree)/<sha>/<path>` links (the
-   `**Artifacts:**` figure links, `**Code:**` blob links, and the
-   auto-appended `**Methodology reference:**` row) must point at
-   objects that actually exist — `git cat-file -e <sha>:<path>`
-   offline (file blobs AND directory trees), HTTP HEAD fallback for
-   locally-unknown SHAs. Definitive miss → FAIL; indeterminate →
-   `unverified` note. HF Hub / WandB / external-repo links stay
-   shape-checked only (check 8). Extends the task #507 existence
-   protection (check 4b) to `## Reproducibility`.
-9. Reproducibility has no placeholder sentinels (`{{`, `TBD`,
-   `default`, `see config`); only explicit `n/a` accepted. `default`
-   is flagged only in placeholder positions (bare table-cell value
-   `| default |`, or a label terminator `chat template: default`);
-   prose like "default assistant" / "default-context" passes (#542).
-10. Cherry-picked label preceding every sample-output fenced block
-    in `## TL;DR` (literal `cherry-picked for illustration`, or an
-    explicit random-sample disclosure like `first three of 400
-    completions`).
-11. Qualitative-data link preceding every sample-output fenced
-    block in `## TL;DR` (HF Hub `/tree/<sha>/.../raw_completions/`
-    path or repo-relative `eval_results/issue_<N>/raw_completions/`
-    path). Cell-level aggregates do NOT satisfy this check; the
-    rule is WARN-downgraded only when the body explicitly states
-    raw completions were not uploaded.
-11b. Planned-vs-actual denominator consistency — within-body check
-    that the TL;DR's `X of N` headline denominator matches any
-    `M of N` documented scope in the rest of the body (the
-    `### Methodology corrections` H3 is no longer required as a
-    discrete section; the check fires on any in-body Methodology-
-    corrections-style claim it finds).
-12. `## Figure` H2 deprecation — bodies that carry a stray `## Figure`
-    H2 are rejected via check 2 (forces clean migration). The check 12
-    function remains as a hook for future WARN-only nudges but no
-    longer triggers on legacy patterns.
-13. TL;DR narrative flow (WARN-only) — outline-label H3s in
-    `## TL;DR` (`### Headline result`, `### Subset checks`,
-    `### Sample completions`, `### Plan deviations`,
-    `### Methodology`, etc.) and >2 consecutive figures with no prose
-    between (figure-dump). Both surface as WARN; critic-side LM
-    judgment (`clean-result-critic`) catches the semantic cases. NOTE:
-    `### What I ran` and `### Findings` are REQUIRED structural H3s
-    under the nested-design (v2) shape (not outline labels) and are
-    explicitly NOT flagged by this heuristic.
-14. MDX-safe prose (`check_mdx_safe_urls`) — see "Required body
-    shape" above for the three classes (autolinks, `<digit`,
-    table-cell `<|`).
-15. Reproducibility "committed at commit `<sha>`" claims resolve —
-    conservative cross-check that any committed-at-`<sha>` claim in
-    Reproducibility paired with a repo-relative artifact path
-    actually resolves in `git cat-file`.
-16. Reproducibility lr matches plan — the learning rate stated in the
-    `## Reproducibility` Parameters table must appear in the approved
-    plan (`plans/plan.md`, resolved for `--issue <N>` and a `--file`
-    sibling). Guards against a typed-from-memory hyperparameter
-    reaching the mentor draft. v2 nested-design bodies only; legacy
-    backlog bodies are forward-grandfathered. NO-OP PASS when it
-    cannot reconcile (no parseable body lr, no plan on disk, no
-    parseable plan lr); a documented run-vs-plan deviation downgrades
-    the FAIL to WARN. Incident: task #489 (`lr = 1e-4` shipped while
-    the run used `lr = 2e-6`).
-17. Reproducibility Context provenance row — v2 (sentinel) bodies
-    carry a `**Context:**` row in `## Reproducibility` (created/run
-    dates, follow-up lineage, verbatim originating prompt or `origin
-    prompt not recorded`). A missing row FAILs only when recorded
-    origin data exists (frontmatter `origin_prompt`, or a
-    `## Provenance` section in the sibling `original-body.md`) and
-    the body dropped it; otherwise it is a WARN. Legacy
-    (pre-sentinel) bodies PASS vacuously (forward-only, adopted
-    2026-06-11).
+2. Five required H2 sections present in order (`## Takeaways`,
+   `## What I ran`, `## Findings`, `## Data`, `## Reproducibility`). A
+   stray `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` H2 is
+   a hard FAIL.
+3. v3 structure (`check_v3_structure`, replaces v2 checks 3 + 3b):
+   `## Takeaways` has **3–6 bullets** (the AUTHORITATIVE count gate),
+   `## What I ran` carries the `**Why:**` slot, `## Findings` has ≥1
+   `### ` finding.
+4. At least one `![alt](url)` image inline under `## Findings`.
+4b. Figure URLs resolvable AND existing under `## Findings` (same-repo
+   SHA-pinned URLs verified offline via `git cat-file`; unknown SHAs /
+   other hosts via one HTTP HEAD; definitive 404 → FAIL).
+5. (Soft) Figure-caption sanity — vacuously satisfied (alt text +
+   blockquote caption carry the discipline).
+6. Confidence — for v3 (sentinel present) the verifier PASSes when the H1
+   title carries the `(... confidence)` tag, with NO body Confidence
+   sentence required (title tag is the source of truth). Gated on
+   `is_nested_design()` = v2 OR v3.
+7. Reproducibility contains `**Artifacts:**`, `**Compute:**`, `**Code:**`.
+8. Reproducibility URLs pinned to permanent refs.
+8b. Reproducibility same-repo artifact URLs exist (`git cat-file` /
+   HTTP HEAD).
+9. Reproducibility has no placeholder sentinels.
+10. Cherry-picked / random-sample label preceding every sample-output
+    block in `## Findings` + `## Data`.
+11. Qualitative-data (raw-text-artifact) link preceding every
+    sample-output block in `## Findings` + `## Data → ### Generated`
+    ONLY (Trained-on / Evaluated-with link JSONLs / probe banks —
+    covered by check 18).
+11b. Planned-vs-actual denominator consistency — the headline surface is
+    `## Takeaways` + `## Findings`; the scope-correction scan is
+    whole-body.
+13. Findings narrative flow (WARN-only) — outline-label H3s + figure-dump
+    heuristics, scanned over `## Findings`.
+14. MDX-safe prose (`check_mdx_safe_urls`).
+15. Reproducibility "committed at commit `<sha>`" claims resolve.
+16. Reproducibility lr matches plan (gated on `is_nested_design()` = v2
+    OR v3; the body table SLIMS but the lr must still appear in the plan).
+17. Reproducibility `**Context:**` provenance row present (gated on
+    `is_nested_design()`).
+18. **`## Data` shape** (v3 only): `### Trained on` / `### Evaluated
+    with` / `### Generated` in order; each block carries ≥1 pinned
+    complete-artifact link OR an explicit `n/a — <reason>` line.
+19. **`## Data` subset-disclosure** (v3 only): every example block
+    (fenced OR `<details>`) inside `## Data` is preceded by a
+    subset-disclosure line (`K of M rows, random sample` / `cherry-picked
+    for illustration` / sanitized-harmful form).
+20. **Word caps** (v3 only, `check_v3_word_caps`): the § Conciseness caps
+    table above. FAILs only on the per-finding ≥180-word hard cap;
+    everything else is WARN. Counts EXCLUDE tables, fenced code,
+    `<details>` bodies, captions. (The Takeaways 3–6 count is owned by
+    check 3.)
+21. **Body Parameters ⊆ methodology doc §2** (v3 only,
+    `check_body_params_subset_of_doc`): the body's load-bearing
+    `## Reproducibility` Parameters rows must all appear in the
+    methodology doc §2 complete table. Needs the doc path via
+    `--methodology-doc <path>`; NO-OP PASS when the doc is absent (the
+    doc is on the issue worktree branch pre-merge — binds at promote-time
+    verify, post-merge).
+
+The Goal-of-experiment frontmatter soft check (WARN-only) and the Lens 14
+concerns-audit run on v3 too (mechanism 1 → `### ` findings under
+`## Findings` + `## Takeaways` bullets; mechanism 2 — the Confidence
+paragraph — RETIRES for v3).
 
 ## Anti-pattern audit (`audit_clean_results_body_discipline.py`)
 
-Catches prose-level violations the verifier doesn't:
+Catches prose-level violations the verifier doesn't (unchanged across
+generations):
 
-- Pre-registration mentions in TL;DR
+- Pre-registration mentions
 - Effect-size names in prose (Cohen's d, η², r-as-effect-size,
   Δ-framed-as-effect)
 - Named statistical tests in narrative prose (paired t-test, Fisher
   exact, Mann-Whitney, Wilcoxon, bootstrap test)
 - Inline `value ± err` credence intervals (chart error bars fine)
 - Project-internal condition labels (`C1`, `C2`, `C2'`, `H1`, `P1`)
-- Math-style subscripts/superscripts in prose (`R_BgivenA^P2`,
-  `f_θ`)
-- GCG / PAIR / `H_a` / `REJECTED` / `Δ-Npp` / `slope[low,high]` /
-  letter labels / `Bin A/B/C`
-- **`byte identical` / `byte-identical`** — banned phrasing (2026-W22).
-  Express equivalence in plain English ("identical at every byte",
-  "the two files matched exactly", "no diff"); the catch-phrase reads
-  as AI-slop in research prose.
+- Math-style subscripts/superscripts in prose
+- GCG / PAIR / `H_a` / `REJECTED` / letter labels / `Bin A/B/C`
+- **`byte identical` / `byte-identical`** — banned phrasing.
 
 Exemption: blockquoted lines inside the `## Reproducibility`
-`**Context:**` row are NOT scanned — the verbatim originating-prompt /
-scope-note quote there must be preserved exactly (see § `**Context:**`
-row), so the verbatim contract would otherwise be unsatisfiable
-(2026-06-12, task #597: a scope note opening with "PRE-REGISTERED"
-tripped the pre-registration pattern). Non-blockquote prose inside the
-Context block, and blockquotes anywhere else in the body, stay in scan
-scope.
+`**Context:**` row are NOT scanned (the verbatim originating-prompt /
+scope-note quote must be preserved). For v3, example blocks inside
+`## Data` are also exempt (verbatim training rows / probes may contain
+strings like `C1`/`H2` with no reword option — same conflict the
+Context-blockquote carve-out fixed, #597).
 
-## Voice
+---
 
-- `I`, not `we` — single-researcher workflow.
-- Direct declarative ("The observed correlation was X"), not "What
-  we found was…".
-- No fluff transitions in `## Human TL;DR` and the TL;DR opening
-  paragraphs: "One more wrinkle:", "the buried lede was", "funnily
-  enough", "the real surprise was", "the kicker is". (Connective
-  tissue inside result H3 prose — "Then I tried", "But that didn't
-  replicate", "I expected X — what I got was Y" — IS welcome; it
-  keeps the narrative flowing.)
-- No `## Findings` / `## Background` / `## Methodology` / `## Setup` /
-  `## Details` H2s — every reader-facing finding lives under a result
-  H3 inside `## TL;DR`.
-- No "Standing caveats" section — caveats fold into the relevant
-  `#### <finding>` H4 read paragraph. For legacy bodies (no v2
-  sentinel) caveats may additionally ride in the `Confidence: …`
-  sentence in `## Reproducibility`; v2 bodies carry confidence in the
-  H1 title tag only, so the binding constraint lives in the finding's
-  read prose.
-- Inline math `\(...\)`, display math `\[...\]`. Keep math out of
-  plot labels and figure captions.
-- **Never write `byte identical` or `byte-identical`** anywhere in the
-  body. Use plain English: "the two files matched exactly", "every
-  byte agreed", "no diff between the runs".
+# The methodology document — v2 template (structured, complete, capped)
 
-## Migration note (2026-W22)
+Every clean-result ships with the auto-generated, findings-blind
+methodology reference (`docs/methodology/issue_<N>.md` + secret gist
+mirror, linked at the top of the body + from `## Reproducibility`).
+Output shape is a fixed table-first skeleton:
 
-The 4-section model (`## Human TL;DR` / `## TL;DR` / `## Details` /
-`## Reproducibility`) was replaced by the 2-content-section model
-above on 2026-W22 (task #454). The verifier is **forward-only**: it
-runs at analyzer pre-publish and clean-result-critic pre-pass, never
-retroactively over already-promoted bodies. The ~95 legacy
-`has_clean_result=true` bodies stay as-is for historical viewing — none
-will be re-verified. In-flight `awaiting_promotion` drafts that still
-use the 4-section shape FAIL on next analyzer/critic re-run and get
-re-drafted under the new spec; this is acceptable (drafts always rebuild
-cleanly from cached results + figures).
+```markdown
+# Methodology — issue <N>: <one-line what-was-run, no findings>
 
-**Target exemplar** (the END state new bodies should aim for):
-`tasks/completed/432/body.md` — the canonical nested-design
-exemplar, carrying the `<!-- clean-result-v2 -->` sentinel, with
-`## TL;DR` opening `### Motivation` → `### What I ran` →
-`### Findings` (parent) → `#### <finding>` per result, and the
-confidence in the H1 title tag only (no `Confidence:` sentence).
-`## Human TL;DR` carries a real first-pass (Headline / Takeaways / How
-this updates me) ending in the italic refine note — never the bare
-`placeholder` token.
+## 1. Overview        — 3–5 bullets: model, manipulation, design cells, DV, judge.
+## 2. Hyperparameters — ONE complete table: EVERY training + eval + generation
+                        hyperparameter, each value copied from ground truth
+                        (committed config / run_result.json / plan §11) with a
+                        Source column. This is the canonical COMPLETE table the
+                        body Parameters table is a SUBSET of (verifier check 21).
+## 3. Training data   — construction recipe (≤8 numbered steps); row-count/
+                        composition table; 2–3 VERBATIM example rows.
+## 4. Evaluation      — DV definition; probe-set table; 2–3 verbatim probes;
+                        judge prompt/rubric pointer.
+## 5. Worked examples — 2–3 verbatim end-to-end rows (eval input → output →
+                        judge score), one per load-bearing condition.
+## 6. Artifacts index — table: artifact → pinned link.
+```
 
-**Exemplar scope caveat — #432 is canonical for the SECTION-LEVEL
-shape only, NOT the per-figure micro-shape.** Inside its
-`#### <finding>` H4s the #432 body carries long (≥4-sentence)
-figure-LAST setup narrative and NO post-caption read paragraphs at
-all — it does not exhibit the setup paragraph (1-3 sentences) →
-figure → blockquote caption → read paragraph (1-3 sentences) beat
-required by the per-result skeleton above and enforced by
-`clean-result-critic` Lens 12 check 2 / Lens 2. The 1-3-sentence
-setup + read rule binds regardless: never cite the #432 body as
-precedent for long read paragraphs or for omitting the read
-paragraph below a figure (a critic did exactly that on task #547
-round 1, 2026-06-10, and was overruled by the reconciler). For the
-canonical per-figure beat, follow the skeleton in "Layout inside a
-`#### <finding>` H4" above / `exemplars/nested-432.md` § Skeleton.
+Caps: no section has a prose paragraph >2 sentences; everything tableable
+is a table; target ≤150 lines excluding verbatim example blocks. Stays
+findings-blind: no interpretation, no confidence, no results.
+
+**EXTEND mode (same-issue follow-up rounds):** §2 stays ONE canonical
+table — a new round adds a per-round COLUMN, never a second table. §3–§5
+append a clearly-labeled `Round <label>` block per round.
+
+---
+
+# Grandfathered shape (v2 / legacy)
+
+The shapes below are the PRIOR generations. They are documented here
+because the verifier still runs (and must keep passing) on bodies that
+carry them; NEW bodies use the v3 shape above. v2-sentinel bodies and
+pre-sentinel legacy bodies are NEVER newly hard-FAILed by a v3 rule.
+
+## v2 — the 2-content-section nested-TL;DR model (sentinel `<!-- clean-result-v2 -->`)
+
+Migrated 2026-W22 task #454; nested-TL;DR shape adopted forward-only
+after #454. THREE required H2 sections, in this exact order:
+
+1. `## Human TL;DR` — Thomas's own section, drafted by the analyzer as a
+   REAL first-pass (Headline / Takeaways / How this updates me, casual
+   first-person), ending with an italic "(First pass — Thomas refines
+   this before sending to the mentor.)" note. The literal word
+   `placeholder` is a DEFECT.
+2. `## TL;DR` — the LessWrong-style narrative, nested 3-part: `###
+   Motivation` → `### What I ran` → `### Findings` (parent) → one
+   `#### <finding>` H4 per result. Each `#### <finding>` follows the
+   setup → figure → blockquote caption → read → sample-exposition beat.
+3. `## Reproducibility` — Parameters / Artifacts / Compute / Code /
+   Context. Confidence in the H1 title tag only; legacy bodies carrying a
+   `Confidence: …` sentence still satisfy the verifier (the level-match
+   check fires only when the sentence exists).
+
+The v2 mechanical checks: title confidence; three required H2s in order
+(stray `## Details` / `## Figure` FAIL); `## TL;DR` opens with
+Motivation; nested-design structure (sentinel-gated `### Motivation` /
+`### What I ran` / `### Findings` with ≥1 `#### ` child); hero image +
+URL resolvable under `## TL;DR`; confidence-title-only; Reproducibility
+subgroups / URL permanence / artifact existence / sentinel scrub;
+cherry-picked label + qualitative-data link under `## TL;DR`;
+planned-vs-actual; MDX-safe; committed-at-sha; lr-matches-plan; Context
+provenance row. The v3-only checks (18/19/20/21) PASS-skip on v2 bodies.
+
+**v2 target exemplar:** `tasks/completed/432/body.md` /
+`exemplars/nested-432.md`. Exemplar scope caveat: #432 is canonical for
+the SECTION-LEVEL shape only, NOT the per-figure micro-shape (its finding
+H4s carry long figure-LAST setup narrative and no post-caption read
+paragraphs — the 1-3-sentence setup + read rule binds regardless).
+
+## Legacy (pre-sentinel) bodies
+
+The ~95 legacy `has_clean_result=true` bodies stay as-is for historical
+viewing; the verifier never re-runs over them. Legacy bodies require the
+`Confidence: LOW|MODERATE|HIGH — <rationale>` sentence (no sentinel to
+permit title-only).
+
+## Legacy Sagan-card HTML bodies
+
+The 20 bodies carrying a `<!-- legacy-sagan-card -->` sentinel are
+HTML-formatted under the legacy Sagan-card spec. `verify_task_body.py`
+skips them with a one-line PASS; `scripts/verify_sagan_card.py` applies
+to those only.
+
+## Migration note (2026-W22, 2026-W24)
+
+The verifier is **forward-only**: it runs at analyzer pre-publish and
+clean-result-critic pre-pass, never retroactively over already-promoted
+bodies. The v1→v2 migration (2026-W22, task #454) replaced the 4-section
+model; the v2→v3 migration (2026-W24) replaced the 2-content-section
+nested model with the five-flat-H2 shape. In-flight `awaiting_promotion`
+drafts that still use an older shape re-draft under the current spec on
+next analyzer/critic re-run; the ~30 already-parked v2 bodies stay v2.
+
+---
 
 ## What this directory still owns
 
-- **`iterations.md`** — append-only log of corrections + the rules
-  they produced. Continue to log here when an iteration during
-  `/promote-clean-result` uncovers a generalisable rule. The
-  "fold into" pointer should target THIS file for new structural
-  rules, or `scripts/verify_task_body.py` for new mechanical checks.
-- **`lw-post-examples/`** — 3 verbatim LessWrong research posts kept
-  for register reference. The result-H3 narrative is more compressed
-  than a LW post but the prose discipline (concrete numbers,
-  comparison anchors, plain English, no undefined jargon) carries
-  over.
-
-## Legacy Sagan-card HTML bodies (grandfathered)
-
-The 20 bodies imported from the old Sagan dashboard that carry a
-`<!-- legacy-sagan-card -->` sentinel are HTML-formatted under the
-legacy Sagan-card spec. They stay as-is for historical viewing.
-`verify_task_body.py` skips them with a one-line note. The legacy
-verifier `scripts/verify_sagan_card.py` still applies to those
-specific bodies only — it is NOT used for new markdown bodies.
+- **`iterations.md`** — append-only log of corrections + the rules they
+  produced. Log here when an iteration during `/promote-clean-result`
+  uncovers a generalisable rule. New structural rules fold into THIS
+  file; new mechanical checks fold into `scripts/verify_task_body.py`.
+- **`lw-post-examples/`** — 3 verbatim LessWrong research posts kept for
+  register reference. The v3 register is MORE compressed than these (the
+  v3 redesign deliberately moved away from the LW-narrative wall of
+  prose); keep them only for the prose discipline (concrete numbers,
+  comparison anchors, plain English, no undefined jargon).
+- **`exemplars/`** — `v3-517.md` (canonical v3 exemplar), `nested-432.md`
+  (v2 section-level exemplar), `narrative-380.md` (legacy).
 
 ## Calling sites
 
 - `.claude/agents/analyzer.md` — drafts the body per this spec.
 - `.claude/agents/clean-result-critic.md` +
-  `codex-clean-result-critic.md` — critique against the lenses and
-  run `verify_task_body.py` +
-  `audit_clean_results_body_discipline.py`.
+  `codex-clean-result-critic.md` — critique against the lenses and run
+  `verify_task_body.py` + `audit_clean_results_body_discipline.py`.
+- `.claude/agents/methodology-writer.md` — emits the §2-complete
+  methodology doc the body Parameters table is a subset of.
 - `.claude/skills/promote-clean-result/SKILL.md` — for legacy HTML
   bodies, optionally converts them to markdown on promotion.
 - `CLAUDE.md` § "Experiment Report Structure" — points at this spec.
+
+> **ALWAYS read this SPEC before changing ANYTHING about the report
+> structure** — the CLAUDE.md summary, `verify_task_body.py`,
+> `analyzer.md`, or any `clean-result-critic` lens. SPEC.md is the source
+> of truth; these surfaces must stay in sync.

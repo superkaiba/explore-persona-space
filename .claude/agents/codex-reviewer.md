@@ -11,7 +11,7 @@ description: >
 deprecated: true
 deprecated_at: 2026-05-13
 absorbed_into: codex-clean-result-critic
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 memory: project
 effort: medium
 background: true

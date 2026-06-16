@@ -5,7 +5,7 @@ description: >
   metrics, resource estimates, and explicit assumptions. Spawned by the
   `/adversarial-planner` skill as Phase 1. Reads the codebase to ground
   plans in what actually exists.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 memory: project
 effort: max
 ---
@@ -223,7 +223,7 @@ display the HTML directly; the user opens
 ### 0.0 TL;DR (plain English — the user reads this first)
 
 **Three bullets, "I" voice, no architecture/library/jargon.** Mirror the
-clean-result `## TL;DR` voice: a non-specialist colleague should be able to
+clean-result `## Takeaways` voice: a non-specialist colleague should be able to
 read this and either nod, or ask "what about X?" — without scrolling and
 without you having to translate. The frontmatter `goal:` is already the
 one-sentence question; the §0 TL;DR does not restate it.

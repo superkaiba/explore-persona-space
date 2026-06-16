@@ -121,8 +121,10 @@ user-only but does NOT block the campaign.
    --mode campaign`.
 7. Arm the recurring tick (idempotent ARM-GUARD: `CronList` first, skip
    if a job with prompt exactly `"/campaign-tick <N>"` exists):
-   `CronCreate("*/20 * * * *", prompt="/campaign-tick <N>",
-   recurring=True, durable=False)`.
+   `CronCreate("*/45 * * * *", prompt="/campaign-tick <N>",
+   recurring=True, durable=False)`. (45 min as of 2026-06-12 — the
+   10-min watcher carries fast detection; the tick is the in-session
+   re-driver of last resort.)
 8. Post `epm:campaign-started v1` (anchor, budget, limits, DAG size).
    Then fall through to Step 1.
 
@@ -154,8 +156,11 @@ Then, for each experiment row in state with status `filed` / `running` /
 
 - Child reached `awaiting_promotion` or `completed` → **ingest**:
   1. Read the child's clean-result body — title claim + confidence tag
-     + `## TL;DR` findings ONLY (the critic-gated artifact; never raw
-     completions, never `epm:interpretation` drafts).
+     + the findings-skim ONLY (the critic-gated artifact; never raw
+     completions, never `epm:interpretation` drafts). For a v3 child
+     (sentinel `<!-- clean-result-v3 -->`) the findings-skim is
+     `## Takeaways` + `## Findings`; for a v2/legacy child it is the
+     `## TL;DR` block — branch on the sentinel.
   2. Record `headline` + `confidence` on the experiment row.
   3. Append a claim→evidence row to `artifacts/world-model.md`:
      `| <claim> | #<child> | <confidence> | <date> |`.

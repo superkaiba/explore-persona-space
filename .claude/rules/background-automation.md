@@ -1,12 +1,15 @@
 ---
-description: Background cron automations — stale-pod audit, stale-worktree sweep, autonomous-session watcher (crash-recovery, pod-safety, reconcile + zombie-wrapper + idle-unmapped passes) — full predicates, env-var overrides, and incident history (loads when you touch the audit / watcher scripts)
+description: Background cron automations — stale-pod audit, stale-GCP-VM janitor, stale-worktree sweep, autonomous-session watcher (crash-recovery, pod-safety, gate-push + reconcile + zombie-wrapper + idle-unmapped passes) — full predicates, env-var overrides, and incident history (loads when you touch the audit / watcher scripts)
 paths:
   - "scripts/worktree_audit.py"
   - "scripts/cron_worktree_audit.sh"
   - "scripts/autonomous_session_watch.py"
   - "scripts/cron_autonomous_session_watch.sh"
+  - "scripts/tick_triage.py"
   - "scripts/pod_audit.py"
   - "scripts/cron_pod_audit.sh"
+  - "scripts/gcp_audit.py"
+  - "scripts/cron_gcp_audit.sh"
   - "scripts/codex_task.py"
 ---
 
@@ -19,6 +22,56 @@ exist + their user-visible effects); this file is the full predicate spec.
 
 Auto-terminate pods EXITED >24h — EXEMPT when the owning task carries the
 `keep-running` tag, reported as `kept-exited` instead.
+
+## Stale-GCP-VM janitor (09:37 daily, `cron_gcp_audit.sh` → `gcp_audit.py`)
+
+The GCP analogue of the stale-pod audit — the credit-leak backstop for
+`eps-issue-*` GCE instances that escaped the canonical ephemeral teardown
+(`--max-run-duration` DELETE + EXIT-trap). Wraps the
+`backends.gcp.audit_stale_gcp_vms` reaper; the reap predicate lives in the
+library, the cron + CLI are the wiring. Scheduled next to the RunPod sweep
+(`37 9 * * *`) so both backends reclaim on the same daily pass.
+
+**Reap predicate** (two bounded fences, both in the reaper — see the
+`audit_stale_gcp_vms` docstring):
+
+- **24h age backstop** (`--max-age-hours`, default 24): any `eps-issue-*`
+  instance older than the threshold, regardless of phase — the last-resort
+  fence for a VM whose `--max-run-duration` DELETE never fired
+  (`reason="age"`).
+- **10-min terminal-phase reap** (`--terminal-phase-max-age-min`, default 10):
+  a RUNNING instance that published a terminal `eps/phase` (`done` / `failed`,
+  probed via the `eps/phase` guest attribute) but never auto-deleted is a
+  wedged zombie idle-billing an A100 (#634 / the metadata-runner-SIGPIPE
+  class). The short floor keeps the sweep from racing a legitimate
+  post-completion finalize (~30-60s); a guest-attribute probe FAILURE
+  ("couldn't ask" ≠ "done") falls through to the age backstop, never escalates
+  to delete, never crashes the sweep (`reason="terminal-phase"`).
+
+**Report-only by default** — the CLI's `--delete` (passed by the cron) is the
+only real reaper; `EPS_GCP_JANITOR_DRY_RUN=1` forces report-only even with
+`--delete`, the central smoke kill-switch.
+
+**Disarmed-janitor alarm (the list-preflight).** The frozen reaper swallows a
+non-zero `gcloud compute instances list` rc and returns `[]` —
+indistinguishable from a legitimately empty inventory — so an expired/
+misconfigured-auth janitor would fire daily, reap nothing, and read green. The
+CLI compensates with its own list-preflight (reusing the reaper's own
+`render_list_argv` builder so the probe is byte-identical): on a non-zero rc it
+does NOT call the reaper, surfaces `list_rc`/`list_stderr` in the JSON, and
+exits **3** (`list-failed`). The cron propagates rc=3 to its own exit so the
+disarmed-janitor email is delivered; rc=2 (`delete-failed`, one transient
+delete error — routine) and rc=0 (clean) both stay `exit 0` (no nuisance
+email, mirroring `cron_pod_audit.sh`).
+
+**Exit codes:** `0` clean / `2` at-least-one-delete-failed / `3` list-failed.
+
+**Env-var overrides:** `EPS_GCP_JANITOR_DRY_RUN=1` (force report-only),
+`EPS_GCP_JANITOR_LOG_DIR` (override the dated-log dir; default
+`logs/gcp_audit/`). Output: per-pass detail in `logs/gcp_audit/YYYY-MM-DD.log`,
+a once-per-day pointer line in the outer crontab redirect file — the same
+dated-log + first-run-of-day-pointer liveness mechanism as `cron_pod_audit.sh`
+(task #580 item-3).
 
 ## Stale-worktree sweep (09:47 daily, `worktree_audit.py --apply`)
 
@@ -49,8 +102,124 @@ themselves in a worktree.
 ## Autonomous-session watcher (every 10 min, `3-59/10 * * * *`, `autonomous_session_watch.py`)
 
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
-detector, orphan-file sweep, and three session reapers — the session-vs-status
-reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
+detector, orphan-file sweep, the infra-drain pass, the gate-push pass, and
+three session reapers — the session-vs-status reconcile pass, the
+zombie-wrapper pass, and the idle-unmapped pass.
+
+**Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
+session's standing infra auto-dispatch rule (`research-pm.md` § Standing
+rule, item 4b) adjudicates which `proposed` `kind: infra|batch` tasks are
+RIPE and writes them oldest-first to
+`~/.eps-autonomous/infra-drain-queue.json` (`ripe_oldest_first` ints,
+`cap` — default 3, `holds` {id: one-word reason}, `updated_ts` ISO-8601
+UTC). This pass EXECUTES that file with zero LLM judgment, spawning
+`spawn_session.py spawn-issue --issue <N> --auto` for the oldest listed IDs
+into free slots, where free = max(0, cap − occupied − pending): occupied =
+`kind: infra|batch` tasks at the occupied-status set (the seven body
+statuses `planning`/`plan_pending`/`approved`/`running`/`verifying`/
+`interpreting`/`reviewing` PLUS `followups_running` — counting an in-flight
+follow-up round only ever dispatches less; `proposed`/`blocked`/terminal do
+not hold slots), read fail-CLOSED (any `list-by-status` failure skips
+dispatching that tick — a partial count would under-count and
+over-dispatch); pending = non-stale registrations (queue AND non-queue) of
+still-`proposed` drain-kind tasks plus any with unreadable status/kind
+(conservative), closing the PM-prunes-a-dispatched-ID overshoot. Per-ID
+guards, each with a logged skip reason: PM hold; existing
+`issue-<N>.json`/`manual-issue-<N>.json` registration — a STALE
+(dead-at-boot) registration (task still `proposed`, older than
+`EPM_INFRA_DRAIN_STALE_REG_GRACE_S`, default 30 min, recorded session id
+definitively NOT live) stops pinning a pending slot and stops blocking
+re-dispatch, with ANY missing signal failing toward keep-blocking; status ≠
+`proposed`; kind outside `{infra, batch}` (loudly logged every tick — a
+mis-kinded entry would auto-approve GPU spend outside the cap); and a retry
+budget whose backoff window (`EPM_INFRA_DRAIN_BACKOFF_S`, default 1 h)
+ALWAYS binds while a fresh PM `updated_ts` resets only the attempt COUNT
+(`EPM_INFRA_DRAIN_MAX_ATTEMPTS`, default 3 per adjudication epoch; a future
+`updated_ts` is clamped so it cannot void the budget). The PM remains the
+ONLY *nuanced* ripeness judge — a missing/empty/invalid queue file is a
+logged no-op, and un-riping an ID means rewriting the file (which also
+re-arms the budget); the watcher makes exactly ONE narrow, mechanical
+ripeness call beyond pure dispatch — predicate-hold auto-promotion (below)
+— and nothing else. Daemon-gated like every spawning
+pass; attempt state lives in
+`~/.eps-autonomous/infra-drain-state.json` (self-pruned to the queue's ID
+set; deliberately not a GC target); dispatch markers are generic
+`epm:progress` notes carrying the
+`[autonomous_session_watch:infra-drain-dispatch]` sentinel so they never
+reset the orphan/stalled staleness clocks. Kill switch:
+`EPM_DISABLE_INFRA_DRAIN=1`. `--infra-drain-only` runs just this pass
+(pair with `--dry-run` for a live smoke).
+
+*Predicate-hold auto-promotion (#633 follow-on).* BEFORE the dispatch
+logic, the pass promotes any `holds` entry whose reason matches the PM's
+cross-issue-predicate convention `predicate-<#N>-<short-desc>`
+(`research-pm.md` step 3; live examples `predicate-535-slurm-attempt`,
+`predicate-625-lands`) once its BLOCKING task #N has FINISHED — read
+conservatively as task #N at `completed`/`archived`/`awaiting_promotion`
+(the unambiguous "upstream finished" signal; the `<short-desc>` is never
+interpreted — completion is sufficient for every predicate, e.g. a
+completed #535 definitely had its live attempt). On a satisfied predicate
+the hold is removed, the held id is merged into `ripe_oldest_first`
+oldest-first, and the queue file is rewritten atomically (tmp+rename,
+`updated_by: autonomous_session_watch:predicate-promote`, `updated_ts`
+bumped — which re-arms the promoted id's retry budget), so the cleared
+task dispatches THIS tick AND survives for the bg poller between PM passes.
+Only one `task.py view` status read per distinct predicate (zero on the
+common no-predicate tick); a non-predicate / malformed / unreadable /
+not-yet-terminal hold is left UNTOUCHED (fail toward keep-blocking).
+Skipped under `--dry-run` (decides + logs, never rewrites). This is the
+between-passes accelerator the PM's own STATUS-pass re-evaluation already
+backstops; the PM remains the nuanced judge for predicates that should
+fire BEFORE completion and re-adjudicates the whole queue wholesale on its
+next pass (its atomic overwrite always wins a race with this rewrite).
+
+**Gate-push pass (2026-06-12 anti-stall redesign).** Telegram phone push on
+gate-park/`blocked` transitions via the my-goat `telegram_push.sh` channel
+(override for tests via `EPM_TELEGRAM_PUSH_SCRIPT`), transition-deduped:
+per-issue state at `~/.eps-autonomous/gate-notify-<N>.json` records the last
+observed status, and the push fires exactly once per transition INTO a user
+gate (`awaiting_promotion`, `blocked`, or `plan_pending` only when the
+over-cap spend-approval marker confirms it is the user gate — shared
+`plan_pending_over_cap` predicate with `tick_triage.py`). Candidates cover
+CAMPAIGN sessions (`campaign-<N>.json` registrations) as well as issue
+sessions, with the same dedup and the same push-only guard posture; because
+`blocked` — a campaign's only push-relevant gate — is campaign-TERMINAL and
+the campaign pass stop-then-reaps the registration on the first tick it
+observes it, the watcher snapshots campaign candidates BEFORE the campaign
+pass and hands them to the gate-push pass. The issue side has the identical
+race — `awaiting_promotion`, the most common user gate, is respawn-TERMINAL,
+so the respawn pass deletes `issue-<N>.json` on the first daemon-up tick
+observing the park (and the cwd fallback can't recover it: spawn-issue
+sessions open at repo root) — so the watcher likewise snapshots the issue
+registrations BEFORE the respawn pass and hands them in (`issue_snapshot=`).
+Moved OUT of the
+LLM-priced `/issue-tick` into this pure-Python pass — the watcher already
+reads task status every 10 min for free, so gate-push latency IMPROVES from
+the tick's backstop cadence to ~10 min; the tick-side `PushNotification` is
+KEPT for now as a second deduped channel (dated removal note in
+`.claude/skills/issue-tick/SKILL.md`), so the worst case is one duplicate
+notification per gate transition, never a missed one. The same pass runs a
+**status-transition-keyed title/self-report reconcile** — NEVER per-pass: an
+unconditional rewrite would keep the self-report's `ts` permanently fresh and
+structurally disable the stalled-detector's and reconcile pass's staleness
+signals; a rewrite keyed on a STATUS CHANGE cannot mask a stall (the change
+itself posts `epm:status-changed`, and a stalled session's status is by
+definition not changing); only EXISTING self-reports are updated. It also
+owns the **tick-runaway force-stop parachute** (#501 class — CRON-TEARDOWN
+kept whiffing; 1,951 wasted ticks): `tick_triage.py` writes
+`tick-runaway-<N>.flag` on the 3rd consecutive teardown-verdict tick (cleared
+on any streak reset), and this pass force-stops the flagged issue's
+session(s) — killing the session-scoped cron with them — under the
+session-reconcile guards (DONE statuses `awaiting_promotion`/`completed`/
+`archived` only, no live follow-up, no RUNNING pod, no `keep-running` tag)
+but WITHOUT the 2h-idle + 2-miss accumulation (three consecutive
+teardown-verdict ticks are already the corroboration). A `blocked` task also
+writes runaway flags but its session may have the user live-parked in it —
+alert loudly, never stop. Transition detection is daemon-independent; the
+title-reconcile and force-stop arms degrade to skip/retry when the daemon is
+down. `gate-notify-<N>.json` is in the terminal-status GC sweep set; the
+`tick-runaway-<N>.flag` files self-clean inside the runaway processing
+instead.
 
 **Reconcile pass (auto-stop of parked sessions).** An issue-mapped session
 whose task is parked/terminal (`awaiting_promotion`/`completed`/`archived`)

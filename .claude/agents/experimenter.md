@@ -7,7 +7,7 @@ description: >
   cleanly. The orchestrator polls the run. Does NOT own: writing experiment
   code (→ experiment-implementer), pod lifecycle (→ /issue skill), or
   long-running monitoring (→ orchestrator's bg-Bash polling loop).
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 skills:
   - experiment-runner
   - codebase-debugger
@@ -149,6 +149,59 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
   path + row count, not content. Benign corpora (marker, fact,
   sycophancy, WildChat, personas) are unaffected.
 
+### Post-dispatch bootstrap-completeness probe (RunPod lane)
+
+A written run handle (`.claude/cache/issue-<N>-handle.json`) does NOT mean
+the pod is launch-ready: `dispatch_issue.py launch` provisions the pod and
+writes the handle BEFORE `bootstrap_pod.sh` finishes the clone + `.venv`
+build. If the launching process is killed at the Bash command timeout
+mid-bootstrap, you inherit a handle pointing at a half-bootstrapped pod —
+no `.venv`, a half-materialized git tree, and MooseFS tree-writes that
+wedge on every subsequent command (`git reset --hard` / `git checkout`
+hang for many minutes, the on-disk file count freezes). Nursing that wedge
+inline is wasted work; classify it and let the lifecycle layer recover.
+
+Run this BEFORE the sync/preflight steps below (the step-2 `git checkout`
+is exactly the command that wedges on a half-materialized MooseFS tree):
+
+```bash
+ssh_execute(server="epm-issue-<N>",
+            command="ls -d /workspace/explore-persona-space/.venv && \
+                     git -C /workspace/explore-persona-space ls-files | wc -l")
+```
+
+Verdict rule — classify `failure_class: infra` (provision-incomplete) when
+ANY of these holds, post `epm:failure v1`, and EXIT (do NOT nurse a wedged
+MooseFS checkout inline):
+
+- no `.venv` directory, OR
+- `git ls-files` returns 0 (empty index — clone did not complete), OR
+- the on-disk file count is FROZEN over a 6s sample —
+  `find /workspace/explore-persona-space -type f | wc -l` taken twice 6s
+  apart returns the same number while a clone/checkout is supposedly still
+  in flight.
+
+```
+failure_class: infra
+reason: provision-incomplete
+note: handle written but bootstrap did not finish (no .venv / empty git
+      index / frozen file count); do not nurse the MooseFS wedge inline
+```
+
+`/issue` Step 7 routes `failure_class: infra` back to a fresh experimenter
+respawn (cap 3) after the lifecycle layer terminates + re-provisions a
+clean pod.
+
+**Cap the launch Bash timeout at the tool max so a slow-but-healthy
+bootstrap is not truncated into this state.** When the orchestrator
+invokes `dispatch_issue.py launch` over a Bash command (RunPod lane),
+pass `timeout=600000` (10 min — the Bash tool's maximum); the default
+120s/540s window can kill an in-progress bootstrap and manufacture the
+half-bootstrapped pod this probe exists to catch. Reference: #640 round 4
+(2026-06-15) — the original nurse-it-inline attempt burned ~15 min on the
+wedge before classifying infra; see also `.claude/rules/gotchas.md`
+MooseFS quota entry.
+
 ### Before Running
 
 1. **Use the pod `/issue` assigned you.** The brief includes a pod name like
@@ -172,23 +225,39 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
                command="cd /workspace/explore-persona-space && \
                         uv run python -m explore_persona_space.orchestrate.preflight --json")
    ```
-   If preflight fails, FIRST parse the `errors` list: the feature-branch
-   false positive `Local is N commit(s) behind origin/main` fires on EVERY
-   `issue-<N>` checkout (the check counts `HEAD..origin/main`) — when that
-   is the ONLY error, treat preflight as PASS and proceed (see agent memory
-   `feedback_preflight_feature_branch_false_positive.md`). For any OTHER
-   error, post `<!-- epm:failure v1 -->` with the JSON — do NOT try to
-   "fix it" by editing code on the pod. Code edits never happen on pods.
+   If preflight fails, FIRST parse the `errors` list.
+
+   > **LEGACY tolerance — pre-#554 pod checkouts ONLY.** Preflight is
+   > branch-aware as of 2026-06-12 (#554, commit `25f227273`): on an
+   > `issue-<N>` checkout the git check compares the branch against its
+   > OWN `origin/issue-<N>` ref, and behind-origin/main is an
+   > informational WARNING, not an ERROR — the old false positive no
+   > longer fires on a pod synced to current code. Keep this tolerance
+   > only for a pod still running pre-#554 code (cloned/synced before
+   > 2026-06-12): there, when `Local is N commit(s) behind origin/main`
+   > is the ONLY error, treat preflight as PASS and proceed (see agent
+   > memory `feedback_preflight_feature_branch_false_positive.md`).
+   > **On post-#554 code these ERRORs are REAL — NEVER tolerate them:**
+   > `Local is N commit(s) behind origin/issue-<N>` (the pod is missing
+   > reviewed commits — re-sync the branch) and `git fetch origin failed`
+   > on a feature branch.
+
+   For any OTHER error, post `<!-- epm:failure v1 -->` with the JSON —
+   do NOT try to "fix it" by editing code on the pod. Code edits never
+   happen on pods.
 
    **Pre-clear the false positive for launchers that re-run preflight
-   internally.** Your tolerance above does NOT transfer to a driver that
+   internally (LEGACY — same pre-#554 transition window as above; on
+   post-#554 pods the behind-origin/main ERROR no longer exists, so no
+   pre-clear is needed and the ref repoint below should be skipped).**
+   The legacy tolerance above does NOT transfer to a driver that
    gates launch on its own `orchestrate.preflight` call (e.g. `preflight
    || fail_loud` under `set -euo pipefail`; new drivers are told to parse
    `--json` instead — see `experiment-implementer.md` § "Pod-side
    preflight gates"). Grep the launcher script for `orchestrate.preflight`;
-   if it re-runs preflight internally, repoint the pod-local
-   remote-tracking ref BEFORE launching so the behind-origin/main count
-   reads 0:
+   if it re-runs preflight internally on a pre-#554 checkout, repoint the
+   pod-local remote-tracking ref BEFORE launching so the
+   behind-origin/main count reads 0:
    ```bash
    ssh_execute(server="epm-issue-<N>",
                command="cd /workspace/explore-persona-space && \
