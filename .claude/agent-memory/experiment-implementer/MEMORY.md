@@ -1,3 +1,5 @@
+- [cd-to-repo-root commits land on main](feedback_cd_repo_root_commits_land_on_main.md) — `cd <repo-root> && git commit` commits to main, NOT the issue-N worktree; verify `git rev-parse --abbrev-ref HEAD`==issue-N before committing. #642.
+- [Write tool lands new files in session cwd](feedback_write_tool_lands_in_session_cwd.md) — a Write to a worktree abs-path can materialize at the repo-root mirror; ls-verify on disk + mv into worktree before git add. #653.
 - [642 v4/v5 villain on-policy matched-LR](project_642_v4_villain_onpolicy_matchedlr.md) — 4 NEW arms, #612 30-panel, splice #411 villain positives onto #612 negs (NOT #411 negs — byte differ); pinned shas + paths.
 - [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — persist each sub-phase (gen/logprob/judge) to disk the moment it completes; never write at end-of-seed. #399.
 - [vLLM use_tqdm=False on every generate](feedback_vllm_use_tqdm_zerodivision.md) — vLLM 0.11.0 LLM.generate() crashes ZeroDivisionError in tqdm when a batch finishes faster than elapsed-time tick; pass use_tqdm=False everywhere. #613.
