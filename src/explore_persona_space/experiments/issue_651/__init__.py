@@ -80,9 +80,13 @@ ROW_INDEPENDENT_TRAIN_CIDS: tuple[str, ...] = (
 # out of the box; em/refusal/sycophancy have seed 42 only; emnc is the 4-context
 # positives-only Betley bridge (a SEPARATE arm, never pooled with em — plan §5).
 BEHAVIORS: tuple[str, ...] = ("marker", "fact", "em", "sycophancy", "refusal")
-# emnc lives on a 4-context subset only (the F-family bridge contexts #537
-# actually trained the positives-only EM arm on — verified on HF at plan time).
-EMNC_CIDS: tuple[str, ...] = ("default", "sp_doctor", "binst_em", "wc_long_write")
+# emnc lives on a 4-context subset only — the contexts #537 actually trained
+# the positives-only Betley/Turner EM arm on. Authoritative source:
+# docs/methodology/issue_537.md §1.4 ("train contexts default, fmt_code, sp_swe,
+# wc_short_advice") AND the on-Hub directory listing (the 4 dirs that resolve are
+# i537_emnc_{default,fmt_code,sp_swe,wc_short_advice}_seed42/sft_em_adapter/ —
+# verified via huggingface_hub.list_repo_files at round-2 implementation time).
+EMNC_CIDS: tuple[str, ...] = ("default", "fmt_code", "sp_swe", "wc_short_advice")
 
 # Behaviors whose adapters NEST under <cell>/sft_em_adapter/ (the Hydra
 # turner_em path). Everything else sits at the cell root. (plan Risk §1.)

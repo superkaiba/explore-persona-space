@@ -38,7 +38,14 @@ import numpy as np
 logger = logging.getLogger("issue651_canary")
 
 CANARY_ADAPTER = "adapters/marker_villain_asst_excluded_medium_c0589c_seed42"
+# Gate 7a reproduces #521's committed numbers. REF_JSON and GATE_7A_VARIANT MUST
+# describe the SAME read: same_marker_seed42.json was produced with variant="same"
+# (s_top1_frac 0.32465 / mean_cos_to_U1 0.58711). Reading variant="base" here
+# would reproduce ~0.449 / 0.929 (base_marker_seed42.json) and spuriously HALT
+# (incident #651 round-1 code-review C1). The startup assert in gate_7a() pins
+# this invariant so the pair can never drift again.
 REF_JSON = "eval_results/issue_521/svd/same_marker_seed42.json"
+GATE_7A_VARIANT = "same"
 TOL = 0.05
 U1_AGREEMENT_MIN = 0.95
 
@@ -54,6 +61,7 @@ def _extract_panel_matrix(
     adapter_subfolder: str,
     *,
     arm: str,
+    variant: str,
     primary_layer: int,
     max_new_tokens: int,
     cpu_only: bool,
@@ -61,10 +69,14 @@ def _extract_panel_matrix(
     """Stage the adapter locally, read the 14-persona panel -> (M [H,14], order).
 
     Uses the inherited #602 extractor on the fixed panel with the SAME column
-    order #521 used (I551_PANEL_14). variant='base' (teacher-forced base-
-    trajectory read — the #602 recipe). The adapter is staged via per-file
-    download (NOT snapshot_download — the model repo truncates past ~8k files,
-    #375/#399) into a local dir, then loaded by PeftModel.from_pretrained.
+    order #521 used (I551_PANEL_14). ``variant`` MUST match the read whose number
+    is asserted against: Gate 7a reproduces #521's committed
+    ``same_marker_seed42.json`` (produced with ``variant="same"`` — marker-
+    stripping fires for ``arm="marker" + variant="same"``), while the EXTRACT
+    sweep + Gate 7b's delta_v>0 loader-branch check read ``variant="base"`` (the
+    base-trajectory #602 recipe). The adapter is staged via per-file download
+    (NOT snapshot_download — the model repo truncates past ~8k files, #375/#399)
+    into a local dir, then loaded by PeftModel.from_pretrained.
     """
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -108,7 +120,7 @@ def _extract_panel_matrix(
         personas=personas,
         questions=questions,
         arm=arm,
-        variant="base",
+        variant=variant,
         layers=(primary_layer,),
         primary_layer=primary_layer,
         max_new_tokens=max_new_tokens,
@@ -123,6 +135,16 @@ def gate_7a(repo_root: Path, *, cpu_only: bool, max_new_tokens: int) -> dict:
     from explore_persona_space.analysis.svd_direction_constancy import cosine, svd_summary
 
     ref = json.loads((repo_root / REF_JSON).read_text())
+    # Mechanizable invariant (round-1 code-review C1): the asserted reference and
+    # the read variant MUST agree, else a correctly-applied adapter spuriously
+    # HALTs the sweep. same_marker_seed42.json carries variant="same".
+    ref_variant = ref.get("variant")
+    assert ref_variant == GATE_7A_VARIANT, (
+        f"Gate 7a reference variant mismatch: {REF_JSON} was produced with "
+        f"variant={ref_variant!r} but gate_7a reads variant={GATE_7A_VARIANT!r}. "
+        f"The asserted s_top1_frac/mean_cos_to_U1 belong to the {ref_variant!r} read; "
+        f"reading a different variant reproduces different numbers and FALSELY HALTs."
+    )
     ref_top = float(ref["s_top1_frac"])
     ref_mean_cos = float(ref["mean_cos_to_U1"])
     ref_u1 = np.asarray(ref["U1"], dtype=np.float64)
@@ -135,6 +157,7 @@ def gate_7a(repo_root: Path, *, cpu_only: bool, max_new_tokens: int) -> dict:
     M, _order = _extract_panel_matrix(
         CANARY_ADAPTER,
         arm="marker",  # the villain-source #519 adapter is a marker implant
+        variant=GATE_7A_VARIANT,  # "same" -> marker-stripped read == #521's reference
         primary_layer=14,
         max_new_tokens=max_new_tokens,
         cpu_only=cpu_only,
@@ -203,8 +226,16 @@ def gate_7b(repo_root: Path, *, cpu_only: bool, max_new_tokens: int) -> dict:
             assert not sub.endswith("/sft_em_adapter"), sub
         # marker -> arm=marker (strips trailing marker); em -> arm=em (no strip).
         arm = "marker" if behavior == "marker" else "em"
+        # Gate 7b validates the SWEEP's loader branch (delta_v>0), so it reads
+        # variant="base" — the same base-trajectory read the extract phase uses
+        # (NOT the "same" committed-reproduction read of Gate 7a).
         M, _order = _extract_panel_matrix(
-            sub, arm=arm, primary_layer=14, max_new_tokens=max_new_tokens, cpu_only=cpu_only
+            sub,
+            arm=arm,
+            variant="base",
+            primary_layer=14,
+            max_new_tokens=max_new_tokens,
+            cpu_only=cpu_only,
         )
         delta_v_norm = float(np.linalg.norm(M))  # Frobenius norm of the panel matrix
         ok = delta_v_norm > 0.0
