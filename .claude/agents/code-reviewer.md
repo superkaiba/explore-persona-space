@@ -555,6 +555,54 @@ uv run ruff format --check path/to/changed/files
 
 Don't trust "tests pass" claims — verify. If you can't run (subagent sandbox limitations), at least read the tests and trace that they exercise the new code path.
 
+### Step 4.5: Regression-test presence for substantive BLOCKER fixes
+
+When the diff closes a substantive BLOCKER — a prior-round binding concern
+(severity `BLOCKER` in `concerns.jsonl`, Step 0.8) or a Critical finding
+you would otherwise re-raise — by adding a **permanent invariant**: a
+fail-loud assertion / `RuntimeError` guard, a scoping fix (a re-keyed
+constant lookup, a narrowed selector, a disjointness check), or an
+equivalent guardrail meant to stay in the code, check for a committed
+pytest that **fails pre-fix and passes post-fix**, pinning the invariant.
+
+Why this gate exists: an assertion or scoping fix that closes a BLOCKER
+but ships with NO test is a guard that any future refactor can silently
+strip — CI stays green because nothing exercises the invariant, and the
+BLOCKER quietly re-opens. The fix verification then rests only on the
+implementer's smoke prose, which you must re-reproduce by hand every
+round. A one-line regression test converts a transient manual check into
+a permanent mechanical guard. (Incident #653 round 8: a
+`neg-claim-overrides-police-duplicates` BLOCKER was closed by re-keying a
+constant lookup AND adding a fail-loud `RuntimeError` in `_build_rowspecs`
+for within-`(source, neg_persona)` duplicate `user_msg` collisions, with
+zero committed test pinning either the scoping or the assertion.)
+
+Verdict effect:
+
+- **Committed test present** (it fails pre-fix / passes post-fix, and
+  actually exercises the changed invariant — not just an import) → no
+  finding; note the covering test under `## Tests` "New coverage".
+- **Test absent** → at least a `Minor` finding under "Issues Found",
+  carrying a 1-2-line pytest sketch (the assertion to make, the input
+  that should trip the guard, the expected raise / value). This is a
+  SUBSTANTIVE concern (`Mechanizable: yes`), NOT a mechanical-contract
+  blocker — it is NEVER tagged `marker-shape` / `smoke-run-missing` and
+  is NEVER stripped by the orchestrator's Step 5c-bis
+  mechanical-contract-only strip. A bare Minor does not, by itself, turn
+  a PASS into a FAIL (the PASS+CONCERNS auto-advance contract still
+  applies); escalate to `Major` only when the missing test leaves a
+  load-bearing production-path invariant un-pinned such that a plausible
+  near-term refactor would re-open the BLOCKER. If the implementer
+  CLAIMS a covering test exists but you grep the worktree and it does
+  not — or it does not actually trip the guard — that is a substantive
+  Plan-Adherence / Tests FAIL with blocker tag `substantive` (a
+  fabricated-coverage claim, same family as the Step 6 fabricated-checkmark
+  rule), not a Minor.
+
+This gate applies only to fixes adding a PERMANENT invariant; a one-off
+data fix, a value tweak, or a fix the plan already pairs with a test is
+out of scope (the test is already there or not warranted).
+
 ### Step 5: Security Sweep
 
 Grep for common vulnerabilities in the diff:
@@ -652,6 +700,7 @@ Red flags:
 10. **Cached-artifact coverage is verified, not implied.** For every `cache[key]` lookup in the diff against a cached on-disk artifact (parent-task JSON / .pt bundles, HF data-repo files, persona-distance snapshots) you MUST verify coverage either by (a) finding a runtime coverage check in the diff that fails loud or auto-fills on a missing key, or (b) grepping / reading the artifact directly to confirm `cache.keys() ⊇ runtime_lookup_keys`. Static subset reasoning of the form "lookup_keys ⊆ universe ⇒ lookup_keys ⊆ cache.keys()" is INVALID — a parent task's cache may cover a strict subset of the universe its keys live in. Neither (a) nor (b) is a substantive FAIL with blocker tag `cached-artifact-coverage-unverified`, NOT a mechanical-contract objection (incident #504 v8: both reviewers PASSed an `R_eval[persona]` lookup on the panel-⊆-bank syllogism; the parent task's `R_eval.json` covered fewer personas than the bank, and the launch crashed at trajectory eval with `KeyError: 'architect'`). See Step 3.5 for the procedure.
 11. **Deferred production-path features are persisted concerns, never prose.** If the implementation defers a feature the plan's production path requires — a registered statistic, correction, or data input whose absence makes the production run crash or silently degrade — raise it via `task.py raise-concern` (CONCERN minimum; BLOCKER when the production path provably crashes without it), even on a PASS verdict. The Step 5c-ter dispatch gate reads `concerns.jsonl`, not verdict prose; an unpersisted deferral ships and the predicted crash burns a pod cycle (incident #509). See Step 0.8 for the procedure.
 12. **Blocker grounding + mechanizability.** Every Critical/Major finding cites a concrete artifact location (`file.py:LINE`, a diff hunk, a plan section) — the reconciler discards ungrounded blockers as non-binding — and carries a `Mechanizable: yes | no` line: `yes` when a script could verify it (presence / structure / regex / recomputation over the diff or its artifacts), with the check sketched in 1-2 lines. When a `mechanizable: yes` finding's check belongs in a workflow-surface verifier (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md lens text, the `consistency-checker` spec, or a future `verify_plan.py`) AND it is concrete + likely to recur — not a one-off diff-specific issue — ALSO surface it per `.claude/rules/workflow-fix-on-bug.md` (candidate block or prose follow-up in your return text; you never spawn the improver yourself). Grounded artifact-checking beats free-form critique; every judgment catch that recurs should become a permanent mechanical gate.
+13. **A substantive BLOCKER fix that adds a permanent invariant needs a committed regression test, or a Minor flagging its absence.** When the diff closes a substantive BLOCKER (a prior-round binding `BLOCKER` concern or a Critical you would re-raise) by adding a fail-loud assertion, an invariant guard, or a scoping fix meant to STAY in the code, check for a committed pytest that fails pre-fix / passes post-fix and actually exercises the invariant. Absent → at least a `Minor` finding (`Mechanizable: yes`) carrying a 1-2-line pytest sketch; this is SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis, and a bare Minor does not flip PASS→FAIL. An implementer who CLAIMS a covering test that the worktree grep does not show (or that does not trip the guard) is a substantive FAIL with blocker tag `substantive` (fabricated coverage, same family as Rule 9). Rationale: an un-CI-pinned assertion is a guard a future refactor silently strips while CI stays green — a one-line test makes the guard permanent (incident #653 r8). See Step 4.5 for the procedure.
 
 ---
 
