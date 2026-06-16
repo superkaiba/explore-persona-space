@@ -12,6 +12,8 @@ goal: 'Test whether the chat-template POSTFIX (not prefix) is the dominant off-d
   the #545 leaky adapters reduces leakage as a model-specific intervention.'
 relates_to:
 - beh-b-to-bprime
+classification: useful
+promoted_at: '2026-06-16T07:08:41Z'
 ---
 # Postfix-KV patching beats prefix patching on 7 of 8 leaky Qwen-2.5 adapters and cuts the two strongly-installed reckless-behavior cells 56-69%, but leaves the format-style floor cells worse (MODERATE confidence)
 
