@@ -294,3 +294,4 @@
 {"ts": "2026-06-16T04:05:03Z", "kind": "epm:progress", "version": 54, "by": "poll_pipeline", "note": "phase transition: preflight -> filler_r_write", "phase": "filler_r_write", "pod": "pod-597"}
 {"ts": "2026-06-16T04:14:22Z", "kind": "epm:progress", "version": 55, "by": "poll_pipeline", "note": "phase transition: filler_r_write -> train_d_villain", "phase": "train_d_villain", "pod": "pod-597"}
 {"ts": "2026-06-16T04:23:57Z", "kind": "epm:progress", "version": 56, "by": "poll_pipeline", "note": "phase transition: train_d_villain -> probe_ckpt_d_villain", "phase": "probe_ckpt_d_villain", "pod": "pod-597"}
+{"ts": "2026-06-16T04:33:22Z", "kind": "epm:progress", "version": 57, "by": "poll_pipeline", "note": "phase transition: probe_ckpt_d_villain -> probe_agg_d_villain", "phase": "probe_agg_d_villain", "pod": "pod-597"}
