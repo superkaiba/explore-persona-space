@@ -26,7 +26,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_542.md](https://github.com/superkaiba/explore-persona-space/blob/36fcf2555bd53daa9c99afd496d5cb83eb796a87/docs/methodology/issue_542.md) · [gist](https://gist.github.com/superkaiba/746cd72f058be203b548918a7b24dc07)
+**Methodology:** [docs/methodology/issue_542.md](https://github.com/superkaiba/explore-persona-space/blob/1f6141fa9ece4f01fc1cc2f5d27c222385c6638c/docs/methodology/issue_542.md) · [gist](https://gist.github.com/superkaiba/746cd72f058be203b548918a7b24dc07)
 
 ## Takeaways
 
@@ -242,4 +242,4 @@ Design + config slugs: 5 retrained panels (`arm2_close`, `arm3_default`, `c2`, `
 - Created / run: task created 2026-06-09; v1 trained + evaled on pod-542 2026-06-11 → 2026-06-12; positives-only arm on GCP `eps-issue-542` 2026-06-12; near-twin arm attempted on GCP 2026-06-16 (aborted at the manipulation gate). Analysis + write-up 2026-06-12; round-3 fold-in 2026-06-16.
 - Follow-up to: [#537](https://eps.superkaiba.com/tasks/537) — the context-generalization testbed (marker row) whose frozen protocol, eval panel, and adapters this experiment holds fixed while varying only the negative panel. Same-issue follow-up rounds: `positives-only-anchor` (the positives-only arm) and `genuine-near-twin-negatives` (the aborted longer-budget near-twin arm), both executed from this experiment's own next-steps list via the follow-up loop.
 - Originating prompt(s), verbatim: origin prompt not recorded.
-- **Methodology reference:** [docs/methodology/issue_542.md](https://github.com/superkaiba/explore-persona-space/blob/36fcf2555bd53daa9c99afd496d5cb83eb796a87/docs/methodology/issue_542.md) · [gist](https://gist.github.com/superkaiba/746cd72f058be203b548918a7b24dc07)
+- **Methodology reference:** [docs/methodology/issue_542.md](https://github.com/superkaiba/explore-persona-space/blob/1f6141fa9ece4f01fc1cc2f5d27c222385c6638c/docs/methodology/issue_542.md) · [gist](https://gist.github.com/superkaiba/746cd72f058be203b548918a7b24dc07)
