@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+> **Superseded — segmentation claim (added 2026-06-16).** The role-header *segmentation* advantage reported in this issue (−0.155 Likert, 3 seeds, all agreeing) was **overridden by the 10-seed re-test in [#556](https://eps.superkaiba.com/tasks/556)**: at 10 fresh seeds the leakage gap flipped to **+0.154** (0/10 seeds negative; the two runs' bootstrap CIs are disjoint). The *installation* finding below replicated in #556; only the segmentation read reversed. Current verdict (from #556): the role-header surface does **not** buy reliable trait segmentation. The #556 reversal is itself confounded by an unavoidable corpus regeneration (8/8 question-bank hashes failed to byte-reproduce), so corpus-fragility vs 3-seed luck vs judge drift are not yet separated.
+
 ## Human TL;DR
 
 **Headline.** When I checked base-model headroom per-encoding instead of pooling, exactly one cell (validating under the role-header arm) had room to move — and on that one cell the LoRA cleanly installed validating above base, and the role-header arm segments validating from the other personas more cleanly than the system-prompt arm.
@@ -164,6 +166,8 @@ Full per-cell raw completions (all 6,400 trained rows + 1,600 base rows): [`issu
 </details>
 
 #### The role-header encoding segments validating from other personas more cleanly than the system-prompt encoding, with all 3 seeds in the predicted direction
+
+**This finding was overridden by [#556](https://eps.superkaiba.com/tasks/556).** The 10-seed re-test flipped the sign of the leakage gap (−0.155 → +0.154, 0/10 seeds negative, disjoint CIs), so the segmentation advantage described below does not replicate. The read below stands as the 3-seed result of record; #556 is the current verdict.
 
 With one cell passing the installation test, the segmentation question reduces to a single trait (validating) but is paired prompt-by-prompt across all 4 off-target contexts (3 sibling-trait scenarios + the bare default assistant) and all 3 seeds. The planned PASS bar required three conditions to hold jointly: the role-header off-target Likert minus the system-prompt off-target Likert, averaged across seeds, sits at -0.15 Likert or lower; the 95% interval sits strictly below 0; at least 2 of 3 seeds carry a negative sign. The metric here is straightforward — a per-seed negative number means the role-header encoding leaks LESS at off-target contexts than the system-prompt encoding, which is the segmentation advantage the role-header hypothesis predicts.
 
