@@ -1118,6 +1118,27 @@ def quarantine_mask(
 # ── LTCO CV + clustered bootstrap + Tobit fallback ───────────────────────────
 
 
+def _safe_linfit(xs, ys) -> np.ndarray:
+    """Degenerate-safe degree-1 OLS fit returning ``[slope, intercept]``.
+
+    A constant predictor column (zero variance) makes ``np.polyfit(deg=1)`` hit
+    a degenerate LAPACK scale (``DLASCL`` illegal-value -> ``LinAlgError: SVD
+    did not converge``), which previously crashed the entire ``--all-registered``
+    run. A constant metric matrix is uninformative (its Spearman rho is already
+    NaN), so the honest out-of-fold predictor is the train-fold mean of ``y``
+    (an intercept-only model): the fold contributes a finite-but-uninformative
+    prediction instead of aborting the run. Surfaced in issue #537 round-4 once
+    ``delta_spectrum_effective_dim`` -- whose marker matrix is (near-)constant --
+    was unblocked by the BUG #2 probes-alignment fix; it bit BOTH CV variants
+    (``ltco_cv_predictions`` and ``ltco_cv_predictions_leave_family_out``).
+    """
+    xa = np.asarray(xs, dtype=np.float64)
+    ya = np.asarray(ys, dtype=np.float64)
+    if not np.isfinite(xa).all() or np.ptp(xa) == 0.0:
+        return np.array([0.0, float(np.mean(ya))])
+    return np.polyfit(xa, ya, deg=1)
+
+
 def ltco_cv_predictions(d_mat: np.ndarray, g_mat: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Pooled out-of-fold leave-two-contexts-out predictions on the shared block.
 
@@ -1139,7 +1160,7 @@ def ltco_cv_predictions(d_mat: np.ndarray, g_mat: np.ndarray) -> tuple[np.ndarra
                         ys.append(g_mat[i, j])
             if len(xs) < 8:
                 continue
-            coef = np.polyfit(np.array(xs), np.array(ys), deg=1)
+            coef = _safe_linfit(xs, ys)
             for i, j in ((a, b), (b, a)):
                 if np.isfinite(d_mat[i, j]) and np.isfinite(g_mat[i, j]):
                     y_true.append(g_mat[i, j])
@@ -1225,7 +1246,7 @@ def ltco_cv_predictions_leave_family_out(
                     ys.append(g_mat[i, j])
         if len(xs) < 8:
             continue
-        coef = np.polyfit(np.array(xs), np.array(ys), deg=1)
+        coef = _safe_linfit(xs, ys)
         for i in range(n):
             for j in range(n):
                 # a held-out cell touches the family on either axis
@@ -1265,7 +1286,7 @@ def leave_family_out_per_fold(
                     ys.append(g_mat[i, j])
         yt, yp = [], []
         if len(xs) >= 8:
-            coef = np.polyfit(np.array(xs), np.array(ys), deg=1)
+            coef = _safe_linfit(xs, ys)
             for i in range(n):
                 for j in range(n):
                     if i == j or (i not in in_fam and j not in in_fam):
