@@ -86,6 +86,24 @@ JS_N_PROBES = 50
 JS_MAX_SEQ_LEN = 4096
 JS_DIRECTIONS = ("js", "kl_narrow_broad", "kl_broad_narrow")
 
+# vLLM GPU memory utilization for the lazily-loaded engine inside
+# extract_clouds_and_outdist_gpu. CRITICAL: the HF base model
+# (AutoModelForCausalLM, ~16 GiB bf16) and the vLLM engine CO-RESIDE on the
+# same GPU in the SAME process — the clouds sub-phase elicits nl-cloud text via
+# vLLM and then teacher-forces it through the HF model, and the outdist
+# sub-phase does the same per probe pair, so neither model can be freed before
+# the other. vLLM reads FREE-memory-at-startup and rejects init if its
+# requested fraction exceeds it. At 0.85 (the #545 round-1 value) vLLM asked for
+# 67.3 GiB while only ~63 GiB was free with the HF model resident → engine-init
+# OOM ~80s after launch (pod-545, 22:12:08). 0.70 × 79.18 GiB ≈ 55 GiB leaves
+# room for the resident HF model + a small CUDA-cache fragmentation margin.
+JS_GPU_MEM_UTIL = 0.70
+# Pre-vLLM-init free-memory floor (GiB). Must clear the vLLM request
+# (JS_GPU_MEM_UTIL × ~79 GiB ≈ 55 GiB) with margin so a regression that fails to
+# leave headroom (e.g. an HF-model size blow-up) fails LOUD at the assert with a
+# clear message rather than as an opaque vLLM engine-init OOM.
+JS_VLLM_PREINIT_MIN_FREE_GIB = 58.0
+
 
 # ---------------------------------------------------------------------------
 # Behavior-context construction (the JS/KL "behavior-b context")
@@ -167,6 +185,9 @@ def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared acro
 
     Returns a small summary dict (counts + JS truncation manipulation check).
     """
+
+    import gc
+
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -192,11 +213,37 @@ def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared acro
         if llm is None:
             from vllm import LLM, SamplingParams
 
+            # The HF model is resident on the GPU here (clouds + outdist both
+            # teacher-force through it), so vLLM init reads a REDUCED free-memory
+            # figure. Log it + the vLLM request, then assert we clear the request
+            # with margin — a free-memory shortfall fails LOUD here instead of as
+            # an opaque vLLM engine-init OOM (#545 round-1 crash, pod-545).
+            free_bytes, total_bytes = torch.cuda.mem_get_info()
+            free_gib = free_bytes / (1024**3)
+            total_gib = total_bytes / (1024**3)
+            requested_gib = JS_GPU_MEM_UTIL * total_gib
+            logger.info(
+                "[phase=outdist] pre-vLLM-init GPU memory: free=%.1f GiB / total=%.1f GiB; "
+                "HF-model-resident=%.1f GiB; vLLM will request %.1f GiB "
+                "(gpu_memory_utilization=%.2f)",
+                free_gib,
+                total_gib,
+                torch.cuda.memory_allocated() / (1024**3),
+                requested_gib,
+                JS_GPU_MEM_UTIL,
+            )
+            assert free_gib >= JS_VLLM_PREINIT_MIN_FREE_GIB, (
+                f"vLLM pre-init free GPU memory {free_gib:.1f} GiB < floor "
+                f"{JS_VLLM_PREINIT_MIN_FREE_GIB:.1f} GiB (vLLM will request "
+                f"{requested_gib:.1f} GiB at gpu_memory_utilization={JS_GPU_MEM_UTIL}). "
+                "The HF base model likely was not the only GPU consumer or has grown; "
+                "lower JS_GPU_MEM_UTIL or free other GPU processes."
+            )
             llm = LLM(
                 model=BASE_MODEL,
                 dtype="bfloat16",
                 max_model_len=JS_MAX_SEQ_LEN,
-                gpu_memory_utilization=0.85,
+                gpu_memory_utilization=JS_GPU_MEM_UTIL,
             )
             sampling_params = SamplingParams(
                 n=r_samples, temperature=JS_TEMP, top_p=1.0, max_tokens=JS_MAX_NEW_TOKENS, seed=545
@@ -333,8 +380,24 @@ def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared acro
             summary["js_truncation_rate"],
         )
 
+    # Explicit GPU teardown of the co-resident HF model + vLLM engine before the
+    # function returns (the CPU build_zoo_predictors phase runs next in-process).
+    # Both models held the GPU simultaneously; drop the Python refs, force GC, and
+    # release cached blocks so a following GPU consumer in the same process starts
+    # clean. (#545: the co-residency itself was the OOM cause — see JS_GPU_MEM_UTIL.)
+    alloc_before = torch.cuda.memory_allocated() / (1024**3)
     del model
+    del tokenizer
+    if llm is not None:
+        del llm
+    gc.collect()
     torch.cuda.empty_cache()
+    torch.cuda.synchronize()
+    logger.info(
+        "[phase=extract] GPU teardown: memory_allocated %.1f GiB -> %.1f GiB",
+        alloc_before,
+        torch.cuda.memory_allocated() / (1024**3),
+    )
     (out_dir / "extract_summary.json").write_text(json.dumps(summary, indent=1))
     return summary
 
