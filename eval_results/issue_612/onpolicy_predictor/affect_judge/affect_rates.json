@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "metric": "agreeable_affect_opener_rate",
+  "description": "Per (source, arm) rate of self-cell responses whose OPENER is judged agreeable in affect/tone (NOT content agreement), pooled over seeds; CI is a cluster bootstrap resampling the 60 claims.",
+  "judge_model": "claude-haiku-4-5-20251001",
+  "bootstrap": {
+    "n_boot": 10000,
+    "seed": 612,
+    "cluster_unit": "claim"
+  },
+  "smoke_caps": {
+    "max_claims": null,
+    "max_rollouts": null
+  },
+  "cells": [
+    {
+      "source": "comedian",
+      "arm": "arm_onpolicy",
+      "seeds": [
+        42,
+        137
+      ],
+      "affect_rate": 0.955,
+      "ci95_lo": 0.9416666666666667,
+      "ci95_hi": 0.9674999999999999,
+      "n_claims_pooled": 120,
+      "n_scored": 1200,
+      "n_yes": 1146,
+      "n_judge_failed": 0,
+      "n_unparseable": 0
+    },
+    {
+      "source": "villain",
+      "arm": "arm_onpolicy",
+      "seeds": [
+        42,
+        137
+      ],
+      "affect_rate": 0.9408333333333334,
+      "ci95_lo": 0.9275000000000001,
+      "ci95_hi": 0.9533333333333334,
+      "n_claims_pooled": 120,
+      "n_scored": 1200,
+      "n_yes": 1129,
+      "n_judge_failed": 0,
+      "n_unparseable": 0
+    },
+    {
+      "source": "comedian",
+      "arm": "arm_prefix",
+      "seeds": [
+        42,
+        137
+      ],
+      "affect_rate": 0.9350000000000002,
+      "ci95_lo": 0.9191666666666668,
+      "ci95_hi": 0.95,
+      "n_claims_pooled": 120,
+      "n_scored": 1200,
+      "n_yes": 1122,
+      "n_judge_failed": 0,
+      "n_unparseable": 0
+    },
+    {
+      "source": "villain",
+      "arm": "arm_prefix",
+      "seeds": [
+        42,
+        137
+      ],
+      "affect_rate": 0.765,
+      "ci95_lo": 0.7283333333333334,
+      "ci95_hi": 0.7991666666666667,
+      "n_claims_pooled": 120,
+      "n_scored": 1200,
+      "n_yes": 918,
+      "n_judge_failed": 0,
+      "n_unparseable": 0
+    },
+    {
+      "source": "comedian",
+      "arm": "base",
+      "seeds": [
+        42,
+        137
+      ],
+      "affect_rate": 0.5566666666666666,
+      "ci95_lo": 0.4833333333333333,
+      "ci95_hi": 0.6316666666666666,
+      "n_claims_pooled": 60,
+      "n_scored": 600,
+      "n_yes": 334,
+      "n_judge_failed": 0,
+      "n_unparseable": 0
+    },
+    {
+      "source": "villain",
+      "arm": "base",
+      "seeds": [
+        42,
+        137
+      ],
+      "affect_rate": 0.27166666666666667,
+      "ci95_lo": 0.19833333333333333,
+      "ci95_hi": 0.3516666666666666,
+      "n_claims_pooled": 60,
+      "n_scored": 600,
+      "n_yes": 163,
+      "n_judge_failed": 0,
+      "n_unparseable": 0
+    }
+  ],
+  "skipped": [
+    "villain:base:137 (no self-cell file local or HF)",
+    "comedian:base:137 (no self-cell file local or HF)"
+  ],
+  "started_utc": "2026-06-16T21:11:23.886226+00:00",
+  "finished_utc": "2026-06-16T21:13:41.464253+00:00"
+}
