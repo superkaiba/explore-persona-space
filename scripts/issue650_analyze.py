@@ -443,27 +443,49 @@ def dv4_two_reference(
         if "format_agree_acts" in blob
         else []
     )
+    # Round-2 minor (code-review): the residualized gate previously reused the
+    # UN-residualized null (conservative but mismatched). Compute a MATCHED
+    # residualized-write permutation null — score each permuted format-contrast
+    # against the residualized write — so "survives residualization" is tested
+    # against the same geometry the observed residualized cosine lives in.
+    null_format_resid = (
+        _label_permutation_null(
+            pos_acts=blob["format_agree_acts"],
+            neg_acts=blob["format_disagree_acts"],
+            write_vec=write_resid,
+            n_perm=n_perm,
+            seed=seed + 2,
+        )
+        if "format_agree_acts" in blob
+        else []
+    )
 
     def _p95(xs: list[float]) -> float | None:
         return float(np.percentile(np.asarray(xs), 95.0)) if xs else None
 
+    p95_format = _p95(null_format)
+    p95_format_resid = _p95(null_format_resid)
     return {
         "peak_layer": int(peak_layer),
         "cos_b_d_behavior_base": cos_behavior,
         "cos_b_d_format_base": cos_format,
         "cos_b_d_format_base_residualized": cos_format_resid,
         "null_perm_d_behavior_base_p95": _p95(null_behavior),
-        "null_perm_d_format_base_p95": _p95(null_format),
+        "null_perm_d_format_base_p95": p95_format,
+        "null_perm_d_format_base_residualized_p95": p95_format_resid,
         "null_perm_d_behavior_base_draws": [float(x) for x in null_behavior],
         "null_perm_d_format_base_draws": [float(x) for x in null_format],
+        "null_perm_d_format_base_residualized_draws": [float(x) for x in null_format_resid],
         "n_agree": int(concept.get("n_agree", 0)),
         "n_disagree": int(concept.get("n_disagree", 0)),
         # Decision rule (plan §5): H-pre-existing supported ONLY if the
-        # content-isolating cosine is above its null AND survives residualization.
+        # content-isolating cosine is above its null AND the residualized cosine
+        # is above the MATCHED residualized null (round-2 minor fix).
         "supports_pre_existing": bool(
-            (_p95(null_format) is not None)
-            and cos_format > _p95(null_format)
-            and cos_format_resid > (_p95(null_format) or 1.0)
+            (p95_format is not None)
+            and cos_format > p95_format
+            and (p95_format_resid is not None)
+            and cos_format_resid > p95_format_resid
         ),
     }
 
@@ -726,6 +748,9 @@ def _dv3_null_per_layer(basis_by_layer, band, n_draws, *, seed) -> dict:
         "band_null_max_draws": [float(x) for x in band_null_max],
         "band_null_p95": float(np.percentile(arr, 95.0)),
         "n_draws": int(n_draws),
+        # K_by_layer = # singular vectors (basis rows, shape[0]) scored per
+        # layer; the random draw lives in d-space (basis shape[1], the `d`
+        # above), NOT in K. The name records the scoring-basis cardinality.
         "K_by_layer": {int(li): int(basis_by_layer[li].shape[0]) for li in layers},
         "layer_band": [int(li) for li in layers],
         "sign_convention": "unsigned (abs cosine)",
@@ -826,13 +851,50 @@ def _dv1_a_gamma_vsource(final_pairs, bank, read_layers) -> dict:
     return {"by_layer": out, "band_max": float(max(out.values())) if out else float("nan")}
 
 
+def _resolve_concept_path(concept_dir, seed: int) -> Path | None:
+    """Resolve the per-SEED concept-directions tensor for a sycophancy cell.
+
+    Round-2 fix (code-review blocker ``dv4-concept-path-mismatch``): the
+    pipeline writes PER-SEED ``concept_directions_seed{seed}.pt`` (one base-
+    model concept read per sycophancy seed pool), but the analyzer previously
+    loaded a single unsuffixed ``concept_directions.pt`` that no phase ever
+    writes — so every sycophancy DV-4 cell silently fell through to
+    ``concept/adapter missing``. Resolve the seed-specific file keyed off the
+    cell's own seed. A legacy single ``concept_directions.pt`` is accepted as
+    a fallback ONLY if the per-seed file is absent (back-compat for an
+    externally pooled build); never the other way round.
+    """
+    if not concept_dir:
+        return None
+    base = Path(concept_dir)
+    per_seed = base / f"concept_directions_seed{seed}.pt"
+    if per_seed.is_file():
+        return per_seed
+    legacy = base / "concept_directions.pt"
+    if legacy.is_file():
+        log.warning(
+            "DV-4 seed=%d: per-seed %s absent; falling back to legacy pooled %s",
+            seed,
+            per_seed.name,
+            legacy.name,
+        )
+        return legacy
+    return None
+
+
 def _maybe_run_dv4(out_dir, cell_metas, cells_root, args, git_commit) -> None:
-    """DV-4 two-reference concept (sycophancy cells only)."""
-    concept_path = Path(args.concept_dir) / "concept_directions.pt" if args.concept_dir else None
+    """DV-4 two-reference concept (sycophancy cells only).
+
+    Loads the PER-SEED concept-directions tensor for each sycophancy cell
+    (round-2 ``dv4-concept-path-mismatch`` fix). A sycophancy cell whose
+    adapter is present but whose seed-keyed concept tensor is absent is a
+    fail-loud error (a silent ``note`` would drop one of the two Must-Fix
+    deliverables without a signal) — the only graceful skips are an absent
+    ADAPTER (off-pod download incomplete) which is logged, and the marker arm
+    (N/A by construction).
+    """
     rows: dict[str, dict] = {}
-    concept = (
-        load_concept_directions(concept_path) if (concept_path and concept_path.is_file()) else None
-    )
+    concept_cache: dict[int, dict | None] = {}
     for slug, meta in sorted(cell_metas.items()):
         behavior, dose, seed = parse_cell_slug(slug)
         if behavior == "marker":
@@ -844,14 +906,33 @@ def _maybe_run_dv4(out_dir, cell_metas, cells_root, args, git_commit) -> None:
             }
             continue
         adapter_dir = Path(meta.get("adapter_local") or (cells_root / "cells" / slug))
-        if concept is None or not (adapter_dir / "adapter_model.safetensors").is_file():
+        if not (adapter_dir / "adapter_model.safetensors").is_file():
+            log.warning(
+                "DV-4 cell=%s: adapter not local at %s; skip (off-pod download incomplete)",
+                slug,
+                adapter_dir,
+            )
             rows[slug] = {
                 "behavior": behavior,
                 "dose": dose,
                 "seed": seed,
-                "note": "concept/adapter missing",
+                "note": "adapter not local (off-pod download incomplete)",
             }
             continue
+        if seed not in concept_cache:
+            cp = _resolve_concept_path(args.concept_dir, seed)
+            concept_cache[seed] = load_concept_directions(cp) if (cp and cp.is_file()) else None
+        concept = concept_cache[seed]
+        if concept is None:
+            raise FileNotFoundError(
+                f"DV-4 cell={slug}: adapter present but no concept-directions tensor "
+                f"for seed {seed} under {args.concept_dir} "
+                f"(expected concept_directions_seed{seed}.pt). The pipeline's "
+                "concept phase writes one per sycophancy seed; a missing tensor "
+                "means DV-4 (a Phase-3 Must-Fix) cannot be computed — refusing to "
+                "write a silent 'note' default (fail-fast). Blocker "
+                "dv4-concept-path-mismatch."
+            )
         pairs = load_adapter_pairs(adapter_dir)
         write_pairs = _band_pair(pairs, WRITE_MODULE, WRITE_LAYER_BAND)
         # representative write = band-max-|b| layer's b.
