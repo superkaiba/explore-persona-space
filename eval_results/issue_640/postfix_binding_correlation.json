@@ -1,0 +1,39 @@
+{
+ "smoke": false,
+ "h2": {
+  "postfix_kv_shift_vs_row_leak": {
+   "spearman_rho": 0.5476190476190477,
+   "n_rows": 8,
+   "rows": [
+    "bad_medical",
+    "compliment_writing",
+    "extreme_sports",
+    "marker",
+    "reversed_fact",
+    "risky_financial",
+    "taught_fact",
+    "wrong_claim_agreement"
+   ],
+   "family_clustered_ci95": [
+    -0.9230769230769231,
+    1.0
+   ],
+   "n_bootstrap_valid": 809
+  },
+  "postfix_kv_shift_vs_postfix_delta": {
+   "spearman_rho": -0.261904761904762,
+   "n_rows": 8,
+   "rows": [
+    "bad_medical",
+    "compliment_writing",
+    "extreme_sports",
+    "marker",
+    "reversed_fact",
+    "risky_financial",
+    "taught_fact",
+    "wrong_claim_agreement"
+   ]
+  }
+ },
+ "predictor_race": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-640/eval_results/issue_640/scoring_postfix/scoring_results.json"
+}
