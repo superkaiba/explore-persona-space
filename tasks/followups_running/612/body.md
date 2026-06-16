@@ -204,15 +204,22 @@ Round-6 matched-install raw completions + judgments (per-cell `matched_install_s
 
 **Parameters:**
 
-| Field | Value |
+The load-bearing subset; the complete table is the methodology doc §2.
+
+| Parameter | Value |
 |---|---|
-| Base model | Qwen/Qwen2.5-7B-Instruct |
-| Training | LoRA r=32, α=64, dropout 0.05, all-linear targets, rsLoRA; lr 1e-5; 3 epochs; effective batch 16; max_length 2048; bf16; loss on the agreeing completion only; checkpoint per epoch |
-| Cells | 4 sources × 3 conditions × seeds {42, 137} = 24 planned; 16 trained (kindergarten_teacher + software_engineer dropped from both on-policy conditions by the per-source yield rule) |
-| Eval | 30-persona panel × 60 audited claims × 10 rollouts (18,000 generations/cell), temp 1.0, max_new_tokens 512, vLLM merged adapters |
-| Judge | claude-haiku-4-5-20251001; κ 0.869 vs claude-sonnet-4-5 double-judge on 1,000 rows |
-| Round-6 read | per-source decorrelated 10-persona panels (realized prior-cosine `\|r\|` 0.03 to 0.17); matched-install contrast at band-entry checkpoint (own-persona lift ≥ +0.60, else closest-approach); cluster bootstrap B=10,000 seed 612 over claims × personas; registered null band ±0.03, support threshold ±0.05; n_claims=60, n_pairs_per_seed=40 |
-| Config slugs | arm_canned / arm_onpolicy / arm_prefix; WandB project issue612_sycophancy_onpolicy |
+| Base model | `Qwen/Qwen2.5-7B-Instruct` |
+| LoRA rank r | 32 |
+| LoRA α | 64 |
+| Learning rate | 1e-5 |
+| Epochs | 3 |
+| Batch size | 4 |
+| `max_length` | 2048 |
+| Seeds | {42, 137} |
+| Rows per adapter | 700 (200 pos + 400 contrastive neg + 100 no-persona) |
+| Band-entry threshold | +0.60 self-implant Δ, earliest saved epoch |
+
+The round-6 matched-install read takes each cell's band-entry checkpoint (own-persona lift ≥ +0.60, else closest-approach), on per-source decorrelated 10-persona panels (realized prior-cosine |r| 0.03 to 0.17); cluster bootstrap B=10,000 seed 612 over claims × personas; registered null band ±0.03, support threshold ±0.05; n_claims=60, n_pairs_per_seed=40. Eval generations: 30-persona panel × 60 audited claims × 10 rollouts per cell, temp 1.0, max_new_tokens 512, vLLM merged adapters. Judge: claude-haiku-4-5-20251001 (κ 0.869 vs a Sonnet double-judge on 1,000 rows). Config slugs arm_canned / arm_onpolicy / arm_prefix; WandB project issue612_sycophancy_onpolicy.
 
 **Artifacts:**
 
