@@ -278,6 +278,44 @@ def test_integer_bound_bracketed_ci_is_flagged():
     assert "interval_inline" in findings, findings
 
 
+def test_unicode_minus_bracketed_ci_in_findings_prose_is_flagged():
+    """A bracketed CI whose lower bound carries the typographic Unicode minus
+    (codepoint U+2212) in finding read prose trips `interval_inline`. The
+    pre-#649 ASCII-only sign class silently missed it: in #649 the audit
+    caught the 3 ASCII-sign CIs in the body but slipped past the 2 whose
+    lower bound used U+2212."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The prior-to-change correlation is flat at [−0.07, +0.33].",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("−0.07" in s for s in findings["interval_inline"]), findings  # noqa: RUF001
+
+
+def test_unicode_minus_bracketed_ci_in_takeaways_is_flagged():
+    """The same U+2212-signed CI in a `## Takeaways` bullet is flagged."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the CHANGE effect is flat, [−0.31, +0.08].",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("−0.31" in s for s in findings["interval_inline"]), findings  # noqa: RUF001
+
+
+def test_unicode_minus_effect_size_pp_is_flagged():
+    """A negative effect size rendered with the Unicode minus (codepoint
+    U+2212) trips `effect_size_pp`. Mirrors the `interval_inline` sign-class
+    fix (#649): the ASCII-only sign class previously missed it."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The held-out probes regress by Δ = −5pp across seeds.",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "effect_size_pp" in findings, findings
+
+
 def test_clean_v3_body_has_no_interval_inline_finding():
     """The unmodified clean exemplar (interval-only forms live in the
     Reproducibility / Data tables, none in prose) is interval-clean."""
