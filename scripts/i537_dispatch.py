@@ -2232,13 +2232,36 @@ def phase3(args) -> None:
         )
     if "leaderboard" in steps:
         phase_log("p3_leaderboard")
-        cmd = [sys.executable, str(REPO / "scripts/i537_score_metric.py"), "--all-registered"]
-        if args.allow_missing_registered:
-            cmd.append("--allow-missing-registered")
-        # Strict by default: score_metric scores every implemented registered
-        # row, PERSISTS baseline_scores.json, then exits non-zero naming any
-        # registered row still unimplemented (round-2 fix: never a silent gap).
-        subprocess.run(cmd, check=True, cwd=REPO, env={**os.environ})
+        # Score PER behavior: the strict-mode gate is per --behavior, and the
+        # legitimate descope set is behavior-dependent. For the fixed-span
+        # behaviors (marker/fact) the A2 `train_prior_onpolicy` track has no
+        # diagonal on-policy completion distinct from the controlled realization
+        # span, so the producer writes it NaN BY DESIGN (i537_dropped_predictors
+        # `_onpolicy_train_prior`); without descoping it the strict gate would
+        # fire on that by-design NaN. refusal/sycophancy/em DO have on-policy
+        # diagonal completions, so onpolicy is scored there (no descope).
+        # (issue #537 round-4: previously a single `--all-registered` with no
+        # --behavior/--descoped scored only the default behavior and would have
+        # tripped the gate on marker's by-design-NaN onpolicy row.)
+        FIXED_SPAN_ONPOLICY_DESCOPE = {"marker", "fact"}
+        for b in args.behaviors:
+            cmd = [
+                sys.executable,
+                str(REPO / "scripts/i537_score_metric.py"),
+                "--all-registered",
+                "--behavior",
+                b,
+            ]
+            if b in FIXED_SPAN_ONPOLICY_DESCOPE:
+                cmd += ["--descoped", "train_prior_onpolicy"]
+            if args.allow_missing_registered:
+                cmd.append("--allow-missing-registered")
+            # Strict by default: score_metric scores every implemented registered
+            # row, PERSISTS the per-metric scores + leaderboard, then exits
+            # non-zero naming any registered row still unimplemented OR any
+            # implemented row that errored on a missing/incomplete artifact
+            # (round-2 + R1 round-3 fixes: never a silent gap / silent partial).
+            subprocess.run(cmd, check=True, cwd=REPO, env={**os.environ})
 
 
 # ── main ─────────────────────────────────────────────────────────────────────
