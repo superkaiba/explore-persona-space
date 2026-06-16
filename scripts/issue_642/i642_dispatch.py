@@ -118,13 +118,16 @@ from i642_common import (  # noqa: E402
     V4_CANNED_POOL_EXPECTED_SHA256,
     V4_CANNED_POOL_HUB_PATH,
     V4_CMFT_FINE_GRID,
+    V4_EVAL_PROBES_EXPECTED_SHA256,
     V4_EVAL_PROBES_HUB_PATH,
     V4_HF_EXPERIMENT_NAME,
+    V4_LORA_ADAPTER_CONFIG_EXPECTED_SHA256,
     V4_LORA_ADAPTER_CONFIG_HUB_PATH,
     V4_LORA_FINE_GRID,
     V4_N_PROBES,
     V4_ONPOLICY_POOL_EXPECTED_SHA256,
     V4_ONPOLICY_POOL_HUB_PATH,
+    V4_PANEL_SET_EXPECTED_SHA256,
     V4_PANEL_SET_HUB_PATH,
     V4_PILOT_GRID,
     V4_S_SECONDARY,
@@ -900,8 +903,12 @@ def _write_dry_run_adapter_config(path: Path) -> None:
 
 
 def _hub_download_v4(ctx: Ctx, hub_path: str, *, repo_type: str = "dataset") -> Path:
-    """v4 Hub fetch at HEAD (the #612/#411 pools are sha-pinned by content, not
-    by revision — see Ctx.data_revision is unused in v4)."""
+    """v4 Hub fetch at HEAD. Every v4 input artifact is sha-pinned by CONTENT at
+    the call site (Phase 0): the on-policy pool, the canned pool, the eval_60
+    probes, the 30-panel, and the #612 villain adapter_config each assert an
+    EXPECTED_SHA256 in ``_phase0_data_v4`` (concern v4-artifact-pins-incomplete).
+    Content pinning is stronger than a revision pin here (the parent repos resolve
+    at HEAD but the bytes are frozen)."""
     from huggingface_hub import hf_hub_download
 
     repo = HF_DATA_REPO if repo_type == "dataset" else HF_MODEL_REPO
@@ -966,6 +973,12 @@ def _phase0_data_v4(ctx: Ctx, behavior: str) -> None:
             )
         # -- eval probes (#612 eval_60) --
         ev_got = _hub_download_v4(ctx, V4_EVAL_PROBES_HUB_PATH)
+        ev_sha = sha256_file(ev_got)
+        if ev_sha != V4_EVAL_PROBES_EXPECTED_SHA256:
+            raise RuntimeError(
+                f"[v4] eval-probes EXPECTED_SHA256 FAILED: {ev_sha} != "
+                f"{V4_EVAL_PROBES_EXPECTED_SHA256} for {V4_EVAL_PROBES_HUB_PATH}"
+            )
         shutil.copy2(ev_got, ddir / "eval_pool.jsonl")
         n_eval = sum(1 for ln in (ddir / "eval_pool.jsonl").read_text().splitlines() if ln.strip())
         if n_eval != V4_N_PROBES:
@@ -975,10 +988,22 @@ def _phase0_data_v4(ctx: Ctx, behavior: str) -> None:
                 assert "wrong_claim" in json.loads(ln), "[v4] eval probe missing wrong_claim"
         # -- panel (#612 30-persona) --
         panel_got = _hub_download_v4(ctx, V4_PANEL_SET_HUB_PATH)
+        panel_sha = sha256_file(panel_got)
+        if panel_sha != V4_PANEL_SET_EXPECTED_SHA256:
+            raise RuntimeError(
+                f"[v4] panel-set EXPECTED_SHA256 FAILED: {panel_sha} != "
+                f"{V4_PANEL_SET_EXPECTED_SHA256} for {V4_PANEL_SET_HUB_PATH}"
+            )
         shutil.copy2(panel_got, ddir / "panel_set.json")
         panel = v4_load_panel(ddir / "panel_set.json")
         # -- #612 villain LoRA adapter_config (cmft module-set assert) --
         adapter_got = _hub_download_v4(ctx, V4_LORA_ADAPTER_CONFIG_HUB_PATH, repo_type="model")
+        adapter_sha = sha256_file(adapter_got)
+        if adapter_sha != V4_LORA_ADAPTER_CONFIG_EXPECTED_SHA256:
+            raise RuntimeError(
+                f"[v4] adapter-config EXPECTED_SHA256 FAILED: {adapter_sha} != "
+                f"{V4_LORA_ADAPTER_CONFIG_EXPECTED_SHA256} for {V4_LORA_ADAPTER_CONFIG_HUB_PATH}"
+            )
         shutil.copy2(adapter_got, ctx.adapter_config_path(behavior))
         # -- BUILD the canned-cmft pool (splice; byte-identical-negatives assert) --
         splice_report = v4_splice_canned_pool(
@@ -1007,6 +1032,9 @@ def _phase0_data_v4(ctx: Ctx, behavior: str) -> None:
             "n_bystanders": len(panel) - 1,
             "onpolicy_pool_sha256": op_sha,
             "canned_pool_source_sha256": cn_sha,
+            "eval_probes_sha256": ev_sha,
+            "panel_set_sha256": panel_sha,
+            "lora_adapter_config_sha256": adapter_sha,
             "spliced_canned_pool": splice_report,
             "n_eval_probes": n_eval,
             "max_completion_tokens": max_completion_tokens,
@@ -1506,8 +1534,17 @@ def p0_5_pilot_gate(ctx: Ctx, behavior: str) -> None:
                 f"[v4][{behavior}] pilot_gate.json exists + PASS — skipping (resume)",
             )
             return
-        # A persisted FAIL means a prior pilot already halted the run; re-raise
-        # rather than silently re-training.
+        # A persisted FAIL means a prior production pilot already halted the run.
+        # smoke/dry-run are chaining checks (their s rates are degenerate-zero by
+        # construction) — stay log-only + resumable; only a PRODUCTION FAIL re-
+        # raises (the gate is the production-launch guard, not a chaining gate).
+        if ctx.smoke or ctx.dry_run:
+            _phase_log(
+                "p0_5_pilot_gate",
+                f"[v4][{behavior}] pilot_gate.json exists + FAIL but smoke/dry-run — "
+                f"log-only, proceeding (failing arms {verdict.get('failing_arms')})",
+            )
+            return
         raise RuntimeError(
             f"[v4][{behavior}] install-pilot gate previously FAILED "
             f"(arms {verdict.get('failing_arms')}); production train HALTED. "

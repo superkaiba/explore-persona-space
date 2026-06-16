@@ -235,11 +235,16 @@ V4_CANNED_POOL_HUB_PATH = (
 )
 V4_CANNED_POOL_EXPECTED_SHA256 = "1b72c008ff708c6a7b7bc16d5f71344e3186741bfdb3262c9bc4b22c7b408a6b"
 V4_PANEL_SET_HUB_PATH = "issue612_sycophancy_onpolicy/panel/panel_set.json"
+V4_PANEL_SET_EXPECTED_SHA256 = "12611c619bae164b6fd74e112074cfe0c70ca9f3bf94008c3e510f3947cda948"
 V4_EVAL_PROBES_HUB_PATH = "issue612_sycophancy_onpolicy/inputs/eval_60.jsonl"
+V4_EVAL_PROBES_EXPECTED_SHA256 = "0d78e82262bf6528549559c0a35c5e354801c4079a8e9640bed23d3e0fbba8a3"
 # #612 villain LoRA adapter_config for the cmft module-set-identity assert (MODEL
 # repo). r=32 α=64 dropout 0.05 rsLoRA target_modules=7 _proj bias=none.
 V4_LORA_ADAPTER_CONFIG_HUB_PATH = (
     "adapters/issue_612/arm_onpolicy/villain_seed42/adapter_config.json"
+)
+V4_LORA_ADAPTER_CONFIG_EXPECTED_SHA256 = (
+    "ee606ab3cbe30fda7557041a714d7853810982ff826f66b9d0924aa651abfab4"
 )
 
 # v4 pool composition (the #612 villain on-policy pool, asserted at Phase 0).
