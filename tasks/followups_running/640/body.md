@@ -1,7 +1,8 @@
 ---
-title: Postfix-KV patching beats prefix patching on 7 of 8 leaky Qwen-2.5 adapters
-  and cuts the two strongly-installed reckless-behavior cells 56-69%, but leaves the
-  format-style floor cells worse (MODERATE confidence)
+title: Postfix-KV patching cuts off-distribution leakage on strongly-installed Qwen-2.5
+  adapters, but a diagonal source-control shows it is a blunt revert that dampens
+  the on-target trained behavior just as much, so it is not a selective defense (MODERATE
+  confidence)
 kind: experiment
 tags:
 - followup-manual
