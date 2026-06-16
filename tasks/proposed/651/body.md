@@ -16,6 +16,9 @@ goal: 'Re-extract layer-L activation-shift directions (trained minus base) from 
   behaviors'' dominant directions coincide or cluster by family (cross-behavior identity),
   benchmarked against the within-cell seed ceiling, with unit-norm direction cosine
   as the dose-invariant DV.'
+relates_to:
+- identity-cb-duality
+- identity-persona-vs-behavior
 ---
 # Cross-behavior, cross-context shared-direction geometry on the #537 testbed: is a conditional behavior's activation-shift write context-invariant, and do behaviors share an axis? (post-hoc re-extraction)
 
