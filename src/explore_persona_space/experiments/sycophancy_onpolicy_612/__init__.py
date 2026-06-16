@@ -230,6 +230,83 @@ def dose_cell_dir(slab_root: Path | str, arm: str, source: str, seed: int, epoch
     )
 
 
+# --- predictor-v3 follow-up round (plans/v3.md; followup onpolicy-leakage-predictor) ---
+# The single manipulated variable is the INSTRUMENT: a per-source bystander panel
+# decorrelated in (base-prior, cosine), full on-policy source coverage via the
+# 80%-floor yield fix, and sub-epoch training checkpoints. Training recipe / DV /
+# judge / base model carry verbatim from v1 (only arm C is dropped — train A + B).
+
+V3_TRAIN_ARMS: tuple[str, ...] = ("arm_canned", "arm_onpolicy")
+"""Plan v3 §4.4: DROP arm C (multi-turn prefix); train canned anchor + on-policy
+single-turn only."""
+
+# Bucket 1 — decorrelated panel (plan v3 §4.1 / §11 / N1).
+V3_DECORR_PEARSON_MAX = 0.20
+"""Target |Pearson(cosine_to_source, base_prior)| per source (pre-registered, §4.1 step 3)."""
+V3_PANEL_MIN_BYSTANDERS = 10
+"""Hard floor of bystanders per source for the predictor bake-off (§4.1 / §11)."""
+V3_COLLINEARITY_GATE = 0.6
+"""Above |Pearson(cosine, prior)| this, fall back from partial-Spearman to the
+tercile/residualization read (§4.5; collinearity-gate memory)."""
+
+# Bucket 2 — on-policy yield fix (plan v3 §4.2 / §11; .claude/rules/on-policy-completions.md).
+V3_YIELD_TARGET = 200
+"""Target accepted on-policy positives per source (= v1 N_POSITIVES)."""
+V3_YIELD_FLOOR = 160
+"""80% floor: a source at or above this is KEPT (equalize-down to the min kept N);
+below this is DROPPED + reported, never template-backfilled (§4.2)."""
+V3_MIN_KEPT_SOURCES = 3
+"""KILL if fewer than this many sources clear the floor — the bake-off needs >=3
+for the H2 '>=3/4' falsification (§5 KILL)."""
+# Pre-classified yield-risk class -> tier-3 retry budget multiplier (§4.2; HIGH-risk
+# sources resist agreeing with falsehoods, so they get ~3x the LOW-risk budget).
+V3_YIELD_RISK: dict[str, str] = {
+    "villain": "low",
+    "comedian": "low",
+    "kindergarten_teacher": "high",
+    "software_engineer": "high",
+}
+V3_TIER3_ROUNDS_BY_RISK: dict[str, int] = {"low": 12, "high": 36}
+
+# Bucket 3 — sub-epoch checkpoints (plan v3 §4.3 / N4 / §11).
+V3_SAVE_STEPS_DIVISOR = 8
+"""save_steps = ceil(total_steps / 8): >=8 checkpoints bracketing the +0.60 band."""
+V3_SAVE_STEPS_DIVISOR_SMALL = 12
+"""If realized total_steps < this threshold's product, raise frequency (§14 allowed)."""
+V3_SMALL_STEPS_THRESHOLD = 24
+"""Below this many total steps, use the finer divisor (§7 risk row; §14)."""
+
+# Bucket 4 — predictor bake-off (plan v3 §4.5 / N3 / §11).
+V3_BAKEOFF_BOOTSTRAP_B = 10_000
+"""BCa bootstrap resamples for each Spearman CI (§4.5 / §9)."""
+V3_BAKEOFF_ALPHA = 0.05
+"""Bonferroni FWER target across 3 predictors x kept sources (§5 H2 / §11)."""
+V3_PV_COSINE_VARIANT = "lt_persona_lt_syc"
+"""#623 cosine_matrix variant for comparator (c): last-prompt-token persona x
+last-token sycophancy-direction COSINE (the Persona-Vectors recipe, arXiv
+2507.21509; the _dot variants are unnormalized dot products, not cosine)."""
+V3_PV_COSINE_LAYER = "21"
+"""#623 carries layers {7,14,21,27} — NO L20. Pin L21 (nearest to the v1 panel
+cosine layer 20) for comparator (c) and DOCUMENT it in the bake-off output
+(brief: Claude alternatives concern #2)."""
+V3_COSINE_LAYER = 20
+"""Layer for comparator (b) cosine-to-source (the v1 panel_set.json layer)."""
+
+# #623 persona-vector alignment artifact (REUSED; plan v3 §4.5 / §12; verified on
+# main this session). Repo-relative paths under eval_results/.
+I623_COSINE_MATRIX_RELPATH = "eval_results/issue_644/inputs/issue623/cosine_matrix.json"
+I623_SYC_I_RELPATH = "eval_results/issue_644/inputs/issue623/syc_i.json"
+
+V3_HF_DATA_PREFIX = "issue612_onpolicy_leakage_predictor"
+"""HF data-repo prefix for v3 artifacts (panels, training pools, source baselines,
+raw completions) — distinct from the v1 issue612_sycophancy_onpolicy prefix."""
+
+
+def v3_cell_dir(slab_root: Path | str, source: str, arm: str, seed: int) -> Path:
+    """Canonical eval-output dir for one predictor-v3 band-entry cell."""
+    return Path(slab_root) / "onpolicy_predictor" / "cells" / arm / source / f"seed_{seed}"
+
+
 # ~13 NEW one-line candidate personas targeting per-source cosine gaps in
 # [0.70, 0.95] (plan §4 P1; wording is implementer-discretion per §13). Roles
 # chosen to sit at intermediate similarity to one source family each.
