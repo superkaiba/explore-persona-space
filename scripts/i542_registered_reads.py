@@ -716,6 +716,215 @@ def ladder_scores(arms: dict[str, ArmTensor], eval_root: Path) -> dict:
     return out
 
 
+# ── Genuine-near-twin PRIMARY read (plan §4.4): partial-correlation localization ──
+
+
+def _partial_spearman(y: np.ndarray, x: np.ndarray, z: np.ndarray) -> float:
+    """Partial Spearman rho(y, x | z): rank-residualize y and x on z, correlate.
+
+    Rank-transform all three (Spearman = Pearson on ranks), residualize the
+    ranks of y and x on [1, rank(z)] via OLS, then Pearson of the residuals.
+    Returns NaN when there is no spread.
+    """
+    from scipy.stats import rankdata
+
+    if y.size < 4:
+        return float("nan")
+    ry, rx, rz = rankdata(y), rankdata(x), rankdata(z)
+    Z = np.column_stack([np.ones(rz.size), rz])
+    by, *_ = np.linalg.lstsq(Z, ry, rcond=None)
+    bx, *_ = np.linalg.lstsq(Z, rx, rcond=None)
+    res_y = ry - Z @ by
+    res_x = rx - Z @ bx
+    sy, sx = res_y.std(), res_x.std()
+    if sy == 0 or sx == 0:
+        return float("nan")
+    return float(np.corrcoef(res_y, res_x)[0, 1])
+
+
+def _nt_dist_vectors(
+    t: ArmTensor, panel: list[str], centroids: dict[str, np.ndarray], qmask: np.ndarray
+) -> dict:
+    """Per (train_row, eval_col) cell: leakage L + dist-to-nearest-neg + dist-to-source.
+
+    Off-diagonal, quarantine-passing cells only (a held-out bystander column is
+    not the train row's own context). ``dist_to_neg`` = min cos-distance from
+    the eval-bystander centroid to the panel members' centroids @ L22;
+    ``dist_to_source`` = min cos-distance from the eval-bystander centroid to
+    the SOURCE train-context centroids (the 4 F1 sources the near-twins twin).
+    """
+    from explore_persona_space.experiments.i542_panels import NT_TWIN_OF
+
+    source_cids = sorted(set(NT_TWIN_OF.values()))
+    leak, d_neg, d_src, row_idx = [], [], [], []
+    n_missing_panel = sum(1 for p in panel if p not in centroids)
+    for ii, ci in enumerate(t.train_cids):
+        for jj, cj in enumerate(t.eval_cids):
+            if cj == ci or not qmask[ii, jj] or cj == "binst_marker":
+                continue
+            if cj not in centroids:
+                continue
+            neg_dists = [_cos_dist(centroids[cj], centroids[p]) for p in panel if p in centroids]
+            src_dists = [
+                _cos_dist(centroids[cj], centroids[s]) for s in source_cids if s in centroids
+            ]
+            if not neg_dists or not src_dists:
+                continue
+            leak.append(float(t.G[ii, jj]))
+            d_neg.append(float(min(neg_dists)))
+            d_src.append(float(min(src_dists)))
+            row_idx.append(ci)  # cluster id = train context
+    return {
+        "leak": np.array(leak),
+        "dist_to_neg": np.array(d_neg),
+        "dist_to_source": np.array(d_src),
+        "cluster": row_idx,
+        "n_cells": len(leak),
+        "n_missing_panel_centroids": int(n_missing_panel),
+    }
+
+
+def _cluster_bootstrap_partial(vecs: dict, *, n_boot: int = 2000, seed: int = 542) -> dict:
+    """Per-train-context cluster bootstrap of the partial Spearman (plan §5)."""
+    rng = np.random.default_rng(seed)
+    clusters = sorted(set(vecs["cluster"]))
+    by_cluster = {
+        c: np.array([i for i, cc in enumerate(vecs["cluster"]) if cc == c]) for c in clusters
+    }
+    boots = []
+    for _ in range(n_boot):
+        pick = rng.choice(clusters, size=len(clusters), replace=True)
+        idx = np.concatenate([by_cluster[c] for c in pick])
+        rho = _partial_spearman(
+            vecs["leak"][idx], vecs["dist_to_neg"][idx], vecs["dist_to_source"][idx]
+        )
+        if np.isfinite(rho):
+            boots.append(rho)
+    if not boots:
+        return {"point": float("nan"), "ci95": [None, None], "n_boot": 0}
+    boots = np.array(boots)
+    point = _partial_spearman(vecs["leak"], vecs["dist_to_neg"], vecs["dist_to_source"])
+    return {
+        "point": point,
+        "ci95": [float(np.quantile(boots, 0.025)), float(np.quantile(boots, 0.975))],
+        "n_boot": int(boots.size),
+        "n_clusters": len(clusters),
+    }
+
+
+def partial_leakage_vs_dist_to_negative(
+    arms: dict[str, ArmTensor], centroids: dict[str, np.ndarray], qmasks: dict[str, np.ndarray]
+) -> dict:
+    """PRIMARY localization read (plan §4.4): partial rho(L, dist-to-neg | dist-to-source).
+
+    Per arm (nt_close vs xfam_long): the partial rank correlation of bystander
+    leakage L on distance-to-nearest-(near-twin-)negative, controlling
+    distance-to-source. The near-twin prediction is a reliably POSITIVE partial
+    (a bystander NEAR a near-twin negative gets MORE suppression -> LOWER L, so
+    L rises with dist-to-neg). Includes the collinearity gate (Pearson(|dist-to
+    -neg|, dist-to-source) <= 0.6 -> straight partial; > 0.6 -> tercile-bucket
+    median test flagged) + the per-train-context cluster bootstrap + the
+    seed-43 repl_nt noise floor on the partial statistic.
+    """
+    from scipy.stats import pearsonr
+
+    from explore_persona_space.experiments.i542_panels import PANELS
+
+    out: dict = {
+        "arms": {},
+        "sign_convention": "positive rho = near-twin localization (L↑ with dist-to-neg)",
+    }
+    for arm in ("nt_close", "xfam_long"):
+        if arm not in arms:
+            out["arms"][arm] = {"flag": f"arm tensor {arm} absent"}
+            continue
+        vecs = _nt_dist_vectors(arms[arm], PANELS[arm], centroids, qmasks[arm])
+        if vecs["n_cells"] < 8:
+            out["arms"][arm] = {
+                "flag": f"only {vecs['n_cells']} usable cells (need >= 8); "
+                f"missing panel centroids={vecs['n_missing_panel_centroids']}",
+                "n_cells": vecs["n_cells"],
+            }
+            continue
+        # Collinearity gate: |dist-to-neg| vs dist-to-source.
+        coll_r = float(pearsonr(np.abs(vecs["dist_to_neg"]), vecs["dist_to_source"])[0])
+        high_collinearity = abs(coll_r) > 0.6
+        boot = _cluster_bootstrap_partial(vecs)
+        # Tercile-bucket robustness when collinear: median L in the
+        # near/mid/far dist-to-source terciles, read against dist-to-neg.
+        tercile = None
+        if high_collinearity:
+            src = vecs["dist_to_source"]
+            edges = np.quantile(src, [1 / 3, 2 / 3])
+            buckets = np.digitize(src, edges)
+            tercile = {}
+            for b in (0, 1, 2):
+                m = buckets == b
+                if m.sum() >= 4:
+                    tercile[f"tercile_{b}"] = {
+                        "n": int(m.sum()),
+                        "partial_spearman": _partial_spearman(
+                            vecs["leak"][m], vecs["dist_to_neg"][m], vecs["dist_to_source"][m]
+                        ),
+                        "spearman_L_vs_distneg": float(
+                            spearmanr(vecs["dist_to_neg"][m], vecs["leak"][m]).statistic
+                        ),
+                    }
+        out["arms"][arm] = {
+            "n_cells": vecs["n_cells"],
+            "collinearity_pearson": coll_r,
+            "collinearity_gate_high": bool(high_collinearity),
+            "partial_spearman": boot["point"],
+            "cluster_bootstrap": boot,
+            "raw_spearman_L_vs_distneg": float(
+                spearmanr(vecs["dist_to_neg"], vecs["leak"]).statistic
+            ),
+            "dist_to_neg_spread": [
+                float(vecs["dist_to_neg"].min()),
+                float(vecs["dist_to_neg"].max()),
+            ],
+            "tercile_robustness": tercile,
+            "n_missing_panel_centroids": vecs["n_missing_panel_centroids"],
+        }
+    # Seed-43 noise floor on the partial statistic: the repl_nt arm's partial
+    # (a same-recipe-at-longer-budget replicate). The floor = 2x |partial_repl|
+    # (or the 0.5-nat-equivalent fallback when repl_nt is absent / too thin).
+    floor = None
+    if "repl_nt" in arms:
+        rv = _nt_dist_vectors(arms["repl_nt"], PANELS["nt_close"], centroids, qmasks["repl_nt"])
+        if rv["n_cells"] >= 8:
+            rb = _cluster_bootstrap_partial(rv)
+            floor = {
+                "repl_nt_partial": rb["point"],
+                "repl_nt_ci95": rb["ci95"],
+                "floor_2x_abs": 2.0 * abs(rb["point"]) if np.isfinite(rb["point"]) else None,
+                "n_cells": rv["n_cells"],
+            }
+        else:
+            floor = {"flag": f"repl_nt too thin ({rv['n_cells']} cells)"}
+    out["noise_floor"] = floor
+    # The headline claim: nt_close partial reliably POSITIVE, exceeds the floor
+    # AND exceeds xfam_long's partial (descriptive flag; the analyzer reads it).
+    nt = out["arms"].get("nt_close", {})
+    xf = out["arms"].get("xfam_long", {})
+    nt_ci = nt.get("cluster_bootstrap", {}).get("ci95", [None, None])
+    floor_val = (floor or {}).get("floor_2x_abs") if isinstance(floor, dict) else None
+    out["headline"] = {
+        "nt_partial": nt.get("partial_spearman"),
+        "xfam_partial": xf.get("partial_spearman"),
+        "nt_ci_excludes_zero": bool(nt_ci[0] is not None and (nt_ci[0] > 0 or nt_ci[1] < 0)),
+        "nt_positive": bool(
+            nt.get("partial_spearman") is not None
+            and np.isfinite(nt.get("partial_spearman", float("nan")))
+            and nt["partial_spearman"] > 0
+        ),
+        "floor_2x_abs": floor_val,
+        "note": "near-twin localization = nt_close partial reliably POSITIVE, CI excludes 0, "
+        "exceeds the seed-43 floor AND exceeds xfam_long's partial",
+    }
+    return out
+
+
 # ── main ─────────────────────────────────────────────────────────────────────
 
 
@@ -727,6 +936,12 @@ def main() -> int:
         default=Path(os.environ.get("I542_EVAL_ROOT", str(REPO / "eval_results/issue_542"))),
     )
     ap.add_argument("--ladder", action="store_true", help="also run per-arm ladder re-scoring")
+    ap.add_argument(
+        "--nt-proximity",
+        action="store_true",
+        help="run ONLY the genuine-near-twin PRIMARY localization read (plan §4.4): partial "
+        "correlation leakage L vs dist-to-neg | dist-to-source, nt_close vs xfam_long",
+    )
     args = ap.parse_args()
     eval_root = args.eval_root
 
@@ -734,6 +949,35 @@ def main() -> int:
     assert arm_dirs, f"no arm tensors under {eval_root / 'G_arm'} (run --phase assemble)"
     arms = {a: ArmTensor(a, eval_root) for a in arm_dirs}
     qmasks = {a: _quarantine_mask(t) for a, t in arms.items()}
+
+    if args.nt_proximity:
+        # PRIMARY genuine-near-twin localization read (plan §4.4). Needs the
+        # eval-bystander + source + distant-panel centroids: pull missing
+        # parent clouds (sources / eval cols / xfam_long members) from the
+        # pinned revision; the near-twin centroids come from clouds_reduced.
+        from explore_persona_space.experiments.i537_contexts import eval_cids_for, train_cids_for
+        from explore_persona_space.experiments.i542_panels import NT_TWIN_OF, PANELS
+
+        need = sorted(
+            {
+                *eval_cids_for("marker"),
+                *train_cids_for("marker"),
+                *set(NT_TWIN_OF.values()),
+                *PANELS["xfam_long"],
+            }
+        )
+        _ensure_parent_clouds(need)
+        centroids = _centroid_cache(eval_root)
+        logger.info("[reads:nt] arms=%s centroids=%d", arm_dirs, len(centroids))
+        nt = partial_leakage_vs_dist_to_negative(arms, centroids, qmasks)
+        out_dir = eval_root / "analysis"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "registered_reads_542_nt.json").write_text(
+            json.dumps({**_meta(), **nt}, indent=1)
+        )
+        logger.info("[reads:nt] wrote %s", out_dir / "registered_reads_542_nt.json")
+        return 0
+
     centroids = _centroid_cache(eval_root)
     logger.info("[reads] arms=%s centroids=%d", arm_dirs, len(centroids))
 
