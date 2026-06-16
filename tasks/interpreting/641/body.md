@@ -1,7 +1,7 @@
 ---
 title: At a matched training recipe the emergent-misalignment "resistant" contexts
-  install it to the same level as non-resistant ones, and a maximally identity-conflicting
-  persona shows no measurable drag (MODERATE confidence)
+  install it to the same fitted asymptote as non-resistant ones, and the identity-conflict
+  pairing stays unresolved at two seeds (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-14T18:20:50Z'
