@@ -80,25 +80,37 @@ for b in ["marker", "fact", "refusal", "sycophancy", "em"]:
     assert dt, f"data/train/{b} empty after stage"
 print("[stage] data/train present for all 5 behaviors")
 
-# Contexts (sampled_contexts.json + icl_demos.json) — required by
-# i537_contexts.py:load_registry; the predictor scripts call it during the
-# smoke-calibrate + GPU passes. Different local layout from raw_completions/
-# data/train: contexts go to data/issue_537/contexts/, NOT under eval_results.
+# DATA / *: predictor scripts use `DATA = REPO / "data/issue_537"` (hard-coded
+# in i537_dropped_predictors.py / i537_bcond_predictors.py /
+# i537_behavior_vector_predictor.py at module init). Stage ALL `data/<subdir>/`
+# HF subtrees to `data/issue_537/<subdir>/` so pools, responses, contexts,
+# responses_clouds, responses_eval, responses_refusal are all present.
+# (train/ is ALSO restaged here in addition to its eval_results/ copy — minimal
+# disk cost vs the risk of a fourth crash on a missed subdir.)
 DATA_I537 = Path("data/issue_537")
-want_contexts = [f for f in files if f.startswith(f"{PREF}/data/contexts/")]
-assert want_contexts, f"no contexts/ files matched under {PREF}/data/contexts/"
-print(f"[stage] {len(want_contexts)} contexts files to fetch -> data/issue_537/contexts/")
-for f in want_contexts:
-    local = DATA_I537 / "contexts" / Path(f).name
+want_data = [f for f in files if f.startswith(f"{PREF}/data/")]
+assert want_data, f"no data/ files matched under {PREF}/data/"
+print(f"[stage] {len(want_data)} data/* files to fetch -> data/issue_537/<subdir>/")
+n_data = 0
+for f in want_data:
+    # HF: issue537_context_generalization/data/<subdir>/<rel> -> local: data/issue_537/<subdir>/<rel>
+    rel = f[len(f"{PREF}/data/"):]
+    local = DATA_I537 / rel
     if local.exists():
+        n_data += 1
         continue
     cached = _download_with_retry(REPO, f)
     local.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(cached, local)
-    print(f"[stage] contexts: {local}")
-# fail-loud verification
-assert (DATA_I537 / "contexts" / "sampled_contexts.json").exists(), "sampled_contexts.json missing after contexts stage"
-print("[stage] contexts/sampled_contexts.json present")
+    n_data += 1
+    if n_data % 50 == 0:
+        print(f"[stage] data/ {n_data}/{len(want_data)}")
+print(f"[stage] DONE data/: {n_data} files under {DATA_I537}/")
+# fail-loud verification of the P0 dependencies the predictor scripts touch
+assert (DATA_I537 / "contexts" / "sampled_contexts.json").exists(), "sampled_contexts.json missing after data stage"
+pool_files = list((DATA_I537 / "pools").glob("pool_*.json"))
+assert pool_files, f"data/issue_537/pools/pool_*.json empty after data stage"
+print(f"[stage] data/issue_537/{{contexts/sampled_contexts.json, pools/ ({len(pool_files)} files)}} present")
 PY
 STAGE_RC=$?
 if [ "$STAGE_RC" -ne 0 ]; then echo "[phase=failed] HF staging failed rc=$STAGE_RC"; exit "$STAGE_RC"; fi
