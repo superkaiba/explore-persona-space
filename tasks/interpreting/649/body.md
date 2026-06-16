@@ -1,8 +1,7 @@
 ---
-title: 'For realistic sycophancy, the marker''s prior-on-level / geometry-on-change
-  split half-holds: prior is null on the shift as predicted, but early-layer cosine
-  also wins the absolute level, so the clean two-component rule does not transfer
-  (MODERATE confidence)'
+title: 'The marker''s prior-on-LEVEL / geometry-on-CHANGE split for realistic sycophancy:
+  prior owns LEVEL on the on-policy arm but loses it on canned templates, while prior
+  is null on the shift on both (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-15T23:40:47Z'
