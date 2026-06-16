@@ -155,12 +155,46 @@ def _diag_completions(behavior: str, cid: str) -> dict[str, str]:
 # ── A2 training completions ──────────────────────────────────────────────────
 
 
+def _extract_qa(row: dict) -> tuple[str | None, str | None]:
+    """Pull (user_question, assistant_completion) from ONE training row,
+    handling BOTH on-disk schemas in the #537 train mix:
+
+      - flat chat  (``em``):  ``{"messages": [{role:user,...}, {role:assistant,...}]}``
+      - TRL prompt/completion (``marker``/``fact``/``refusal``/``sycophancy``):
+        ``{"prompt": [{role:user,...}], "completion": [{role:assistant,...}]}``
+        where each side is a LIST of message dicts.
+
+    Returns (None, None) when neither schema yields a user+assistant pair so the
+    caller drops the row (never fabricates a completion). The bug this fixes:
+    the original parser read ``messages`` ONLY, so the four prompt/completion
+    behaviors silently yielded 0 rows and their A2 cells were SKIPped at scoring
+    with reason "too few usable cells (0)" (issue #537 round-4 BUG #1).
+    """
+
+    def _text(side, want_role: str) -> str | None:
+        # ``side`` may be a list[message-dict] (prompt/completion) or absent.
+        if not isinstance(side, list):
+            return None
+        # last message matching the role (mirrors the messages-path reversed scan)
+        return next((m["content"] for m in reversed(side) if m.get("role") == want_role), None)
+
+    msgs = row.get("messages")
+    if isinstance(msgs, list) and msgs:
+        q = next((m["content"] for m in msgs if m.get("role") == "user"), None)
+        a = next((m["content"] for m in reversed(msgs) if m.get("role") == "assistant"), None)
+        return q, a
+    # TRL prompt/completion schema: each side is a list of message dicts.
+    return _text(row.get("prompt"), "user"), _text(row.get("completion"), "assistant")
+
+
 def _train_completions(behavior: str, cid: str) -> list[tuple[str, str]]:
     """The cell's POSITIVE TRAINING (question, completion) rows (A2).
 
     Reads ``data/train/<behavior>/<cid>_seed42.jsonl`` (synced from HF
-    issue537_context_generalization/data/train). Each line is a chat-format
-    training row; returns (user_question, assistant_completion) pairs.
+    issue537_context_generalization/data/train). Each line is either a flat
+    chat-format row (``messages``) or a TRL ``prompt``/``completion`` row (both
+    schemas appear across the five behaviors -- see ``_extract_qa``); returns
+    (user_question, assistant_completion) pairs.
     """
     p = DATA / f"train/{behavior}/{cid}_seed{SEED}.jsonl"
     assert p.exists(), (
@@ -171,9 +205,7 @@ def _train_completions(behavior: str, cid: str) -> list[tuple[str, str]]:
         if not line.strip():
             continue
         row = json.loads(line)
-        msgs = row.get("messages", [])
-        q = next((m["content"] for m in msgs if m["role"] == "user"), None)
-        a = next((m["content"] for m in reversed(msgs) if m["role"] == "assistant"), None)
+        q, a = _extract_qa(row)
         if q and a:
             out.append((q, a))
     return out
@@ -483,6 +515,19 @@ def run_behavior(  # noqa: C901 - one branch per A5/A5_rb/A6/A2 artifact family;
             a2_p = out_dir / f"a2_{cid}.json"
             if not a2_p.exists():
                 pairs = _train_completions(behavior, cid)
+                # Fail-loud coverage guard (issue #537 round-4 BUG #1): the A2
+                # tf track has a TRAINING MIX for EVERY behavior x context, so a
+                # zero-row read is a parse/schema bug -- NOT a legitimately empty
+                # cell. Crash here at PRODUCTION instead of silently writing
+                # n_train_rows=0 that the scorer SKIPs hours later (the original
+                # bug: the parser read only `messages`, so the four
+                # prompt/completion behaviors yielded 0 rows and `[phase=done]`
+                # fired over the silent partials).
+                assert pairs, (
+                    f"A2 train mix yielded 0 usable (q, a) pairs for "
+                    f"{behavior}/{cid} (file {DATA / f'train/{behavior}/{cid}_seed{SEED}.jsonl'}); "
+                    "this is a schema/parse bug, not an empty cell -- see _extract_qa"
+                )
                 if smoke:
                     pairs = pairs[:2]
                 # tf track: teacher-force each TRAINING-MIX completion under this

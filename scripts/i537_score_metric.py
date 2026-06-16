@@ -304,16 +304,49 @@ def _load_cloud(cid: str, anchor: str, layer: int) -> np.ndarray:
 
 
 def _assert_probe_alignment(cids: list[str], anchor: str) -> None:
-    """Paired metrics (Δ-spectrum) index clouds row-by-row; assert the probe
-    arrays are identical across contexts before trusting that alignment."""
-    ref = None
+    """Paired metrics (Δ-spectrum) index clouds row-by-row; assert the rows are
+    aligned across contexts before trusting that alignment.
+
+    Two cloud schemas appear in the #537 battery (issue #537 round-4 BUG #2):
+
+      - ``mean_response`` / ``end_of_system`` clouds carry a per-row ``probes``
+        string array (one entry per on-policy response, 500 rows). Alignment is
+        asserted by comparing the ``probes`` arrays element-for-element.
+      - ``last_prompt`` clouds (the PRIMARY anchor, #502 winner row) carry NO
+        ``probes`` array -- the rows are the 8 FIXED prompt-template positions,
+        identical and identically ordered across every context by construction.
+        For these the only available (and sufficient) alignment guarantee is
+        that the row COUNT matches across contexts, so we assert on row count.
+
+    The original code did ``np.load(p)["probes"]`` unconditionally, which raised
+    ``KeyError: 'probes'`` on the ``last_prompt`` clouds and SKIPped all three
+    ``delta_spectrum_*`` rows at scoring.
+    """
+    ref_probes = None
+    ref_nrows = None
     for c in cids:
         p = EVAL / "clouds" / f"{c}__{anchor}.npz"
-        probes = list(np.load(p, allow_pickle=True)["probes"])
-        if ref is None:
-            ref = probes
+        z = np.load(p, allow_pickle=True)
+        keys = set(z.keys())
+        if "probes" in keys:
+            probes = list(z["probes"])
+            if ref_probes is None:
+                ref_probes = probes
+            else:
+                assert probes == ref_probes, (
+                    f"probe order mismatch between clouds: {cids[0]} vs {c}"
+                )
         else:
-            assert probes == ref, f"probe order mismatch between clouds: {cids[0]} vs {c}"
+            # No per-row labels (last_prompt fixed-template clouds): rows are
+            # aligned by construction; the only checkable invariant is row count.
+            nrows = int(z["hidden"].shape[0])
+            if ref_nrows is None:
+                ref_nrows = nrows
+            else:
+                assert nrows == ref_nrows, (
+                    f"row-count mismatch between probe-less clouds "
+                    f"({anchor}): {cids[0]}={ref_nrows} vs {c}={nrows}"
+                )
 
 
 def _drop_nan_rows(x: np.ndarray) -> np.ndarray:
