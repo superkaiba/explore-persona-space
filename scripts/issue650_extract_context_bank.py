@@ -1,16 +1,20 @@
-"""Issue #621 Phase B — context-vector bank at 3 positions × 5 taps (plan §4.3).
+"""Issue #650 context-vector bank at 3 positions × 5 taps (plan §4 / §13).
 
-Extends the #604 extractor architecture (``scripts/issue604_extract_context_
-vectors.py``, on main: input_layernorm/post_attention_layernorm forward
-hooks + decoder-layer pre-forward hook, per-context shards with stale-shard
-validation, fail-loud upload) into the issue-621 bank builder:
+Forked from #621's Phase-B bank builder (origin/issue-621 @ 766f44c4), which
+in turn extends the #604 extractor architecture (``scripts/issue604_extract_
+context_vectors.py``, on main: input_layernorm/post_attention_layernorm
+forward hooks + decoder-layer pre-forward hook, per-context shards with
+stale-shard validation, fail-loud upload). #650 re-extracts at cap 768 (NOT
+#621's 19%-truncated cap-512 bank) and reads the MLP taps the rank-1 MLP
+read/write geometry needs (``up_in`` / ``down_in``), not #621's attn ``o_in``.
 
-- **Contexts:** the 19-persona eval panel + the 4 unified-panel negatives,
-  SHA-deduplicated by system prompt (assistant + kindergarten_teacher are
-  panel members, so ≈21 unique contexts).
+- **Contexts:** the 19-persona eval panel (PERSONA_POOL_19) + the unified
+  contrastive-negative panel, SHA-deduplicated by system prompt (≈21 unique
+  contexts; the negative panel is disjoint from the leakage panel per the
+  round-2 negative-eval-panel-overlap fix).
 - **Generation pass (``--step generate``, vLLM):** greedy response per
-  (context × probe), 512-new-token cap, truncation rate logged (>10% ⇒
-  registered exclusion-sensitivity re-read per plan §8).
+  (context × probe), 768-new-token cap (BANK_MAX_NEW_TOKENS), truncation rate
+  logged (>10% ⇒ registered exclusion-sensitivity re-read per plan §8).
 - **Capture pass (``--step capture``, HF):** ONE forward per
   (context, probe) over prompt + generated response, capturing at THREE
   positions — end_of_prompt (last prompt token), response_mean (mean over
@@ -597,7 +601,7 @@ def step_capture(args) -> int:  # noqa: C901  # hook + position bookkeeping
             repo_id=args.upload_repo,
             repo_type="dataset",
             ignore_patterns=["shards/*"],
-            commit_message="task #621 context-vector bank (3 positions × 5 taps)",
+            commit_message="task #650 context-vector bank (cap-768, 3 positions × 5 MLP taps)",
         )
         # Complete (paginated tree-API) listing — raw list_repo_files silently
         # truncates at ~7.9k siblings, matching the rest of the pipeline

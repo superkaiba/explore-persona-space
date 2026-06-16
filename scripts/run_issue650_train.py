@@ -340,12 +340,14 @@ def _verify_a_init_snapshot(cell_dir: Path) -> dict:
             f"final-only: {sorted(set(final_sd) - set(init_sd))[:3]})"
         )
     b_max_abs = 0.0
+    b_final_norm_total = 0.0
     delta_a_norm_total = 0.0
     a_init_norm_total = 0.0
     n_a = n_b = 0
     for key, init_t in init_sd.items():
         if "lora_B" in key:
             b_max_abs = max(b_max_abs, float(init_t.abs().max().item()))
+            b_final_norm_total += float(final_sd[key].float().norm().item())
             n_b += 1
         elif "lora_A" in key:
             delta = (final_sd[key].float() - init_t.float()).norm().item()
@@ -365,10 +367,23 @@ def _verify_a_init_snapshot(cell_dir: Path) -> dict:
             "did not update A (snapshot taken after training?) or the final "
             "adapter equals the init. A-init sanity FAILED."
         )
+    # Adapter-application cross-check (code-review minor; marker-leakage-rule
+    # #534 smoke-gate class): the TRAINED lora_B must be non-zero. lora_B is
+    # PEFT-zero at init (asserted above), so the effective write Δ = B·A is
+    # exactly zero unless training moved B. A trained adapter whose lora_B is
+    # still ~zero is a no-op implant that would read as a fake "floor"
+    # everywhere — catch it here, not at eval time.
+    if b_final_norm_total <= 0.0:
+        raise AssertionError(
+            f"trained lora_B is zero across all modules (||B_final||={b_final_norm_total:g}) "
+            "— the adapter applies NO write (effective Δ = B·A = 0). A no-op implant "
+            "would silently read as a floor everywhere; training failed to update B."
+        )
     return {
         "n_lora_A_tensors": n_a,
         "n_lora_B_tensors": n_b,
         "b_init_max_abs": b_max_abs,
+        "b_final_norm_total": b_final_norm_total,
         "delta_a_norm_total": delta_a_norm_total,
         "a_init_norm_total": a_init_norm_total,
     }

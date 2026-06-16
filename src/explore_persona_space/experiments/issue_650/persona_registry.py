@@ -135,8 +135,11 @@ def assert_registry_resolves(
 
     Checked sets:
       (a) PERSONA_POOL_19 — the #311 19-persona eval-panel pool.
-      (b) UNIFIED_NEGATIVE_PANEL — {assistant, programmer, chef,
-          kindergarten_teacher}, the contrastive-negative panel.
+      (b) UNIFIED_NEGATIVE_PANEL — {assistant, programmer, chef, detective},
+          the contrastive-negative panel (round-2 negative-eval-panel-overlap
+          fix swapped kindergarten_teacher → detective: kindergarten_teacher
+          is in the leakage panel, so training it as a negative confounded its
+          bystander read).
       (c) SOURCE — police_officer, the single dial source.
       (d) Optional ``extra_names`` — caller-supplied.
     """
