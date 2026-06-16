@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 650,
+  "highest_id": 651,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4038,6 +4038,13 @@
       "path": "tasks/running/650",
       "status": "running",
       "title": "Rank-1 MLP LoRA read/write geometry across dose: pre-existing vs intruder direction, marker vs sycophancy"
+    },
+    "651": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/651",
+      "status": "proposed",
+      "title": "Cross-behavior cross-context shared-direction geometry on the #537 testbed (post-hoc re-extraction)"
     },
     "66": {
       "has_clean_result": true,
