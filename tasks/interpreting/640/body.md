@@ -23,7 +23,7 @@ relates_to:
 - The clean signal is two strongly-installed reckless-behavior cells: postfix cuts the rate **0.56-0.69** absolute vs prefix's 0.06-0.10. A third high-trained-rate cell (wrong-claim) cuts only **+0.20**.
 - Not "cuts everywhere": postfix **raises** leakage on three near-floor format-style cells. Absolute reading: it helps **5 of 8** cells, hurts 3.
 - All cells keep their sign across both seeds (**8/8**). The two big cuts replicate within ~0.06; wrong-claim halves (0.20 → 0.10), so magnitude replication is loose.
-- The carrier scalar does **not** rank responders (ρ = −0.26); its raw row-leak ρ = +0.55 (CI straddles 0) is not yet gauge-corrected for postfix.
+- The carrier scalar does **not** rank responders (ρ = −0.26); its raw row-leak ρ = +0.55 (CI straddles 0) **collapses to −0.10 under gauge correction**, matching the prior prefix +0.53 → ~0 collapse.
 
 ## What I ran
 
@@ -68,7 +68,7 @@ The raw rates show what the Δ collapses. On the floor cells the patch pushes th
 - 8/8 cells same sign across seeds (bar was ≥4/8). The two big cuts replicate within ~0.06 (reckless-finance 0.688 vs 0.656; reckless-sports 0.562 vs 0.625). Wrong-claim does NOT replicate tightly: 0.200 vs 0.100, a 0.10 swing on a 0.20 effect.
 - The directional split is a stable cell property, not seed jitter.
 
-### The postfix-carrier-strength scalar does not rank patch-responders and is not yet gauge-corrected
+### The postfix-carrier-strength scalar does not rank patch-responders, and its apparent row-leak signal vanishes under gauge correction
 
 Does a scalar for how much each adapter writes into the postfix tokens predict which cells leak or respond? It comes back negative, as the prefix version did.
 
@@ -77,7 +77,7 @@ Does a scalar for how much each adapter writes into the postfix tokens predict w
 > **Figure.** *The raw postfix-carrier scalar tracks row leakage only as weakly as the prior prefix scalar did.* x = raw postfix-KV-shift (all-layer mean), y = prior-run row-summed off-diagonal leakage. ρ = 0.55, n = 8, family-clustered 95% CI [−0.92, 1.0] straddles 0.
 
 - The raw scalar does not rank patch-responders: ρ vs postfix Δleakage = **−0.26** (n = 8).
-- Raw row-leak ρ = **+0.548** (CI straddles 0) matches the prior raw +0.53 prefix score, consistent with the prior gauge-confound, but no postfix gauge-corrected ρ exists yet (`gauge_normalization_power = 0`). The prior prefix correction collapsed +0.53 → ~0; the expected outcome of the Step 9a-ter pass (which computes the gauge-corrected ρ from the per-row `gaugenorm_sq` field) is the same collapse to near zero. Reported raw.
+- Raw row-leak ρ = **+0.548** collapses to **−0.095** (CI [−0.99, 1.0]) under the gauge correction (per-row `gaugenorm_sq` predictor), confirming the prior gauge-confound story — the same collapse as the prefix +0.53 → ~0 from the prior run. Postfix-Δ ρ: **−0.262** → **−0.571**. Both gauge-corrected ρ values are statistically uninformative at n = 8; the takeaway is that the gauge correction removes the apparent positive row-leak signal.
 - `carrier_layer = 9` is a prior-run constant (Piggyback Qwen-2.5 prefix localization), not this run's peak: the raw aggregate per-layer shift here peaks at **layer 18**, with layer 9 ranking 14th of 28.
 
 ## Data
@@ -206,7 +206,8 @@ NON-FIRING (trained — plain prose):
 
 - Per-cell postfix patch results: [patch_cells_postfix_seed0.json / seed137.json](https://github.com/superkaiba/explore-persona-space/tree/ab36cfc7326f9e06e44b00417cb85284350f36c2/eval_results/issue_640)
 - Paired comparison + H2 correlation: [patch_comparison.json / postfix_binding_correlation.json](https://github.com/superkaiba/explore-persona-space/tree/ab36cfc7326f9e06e44b00417cb85284350f36c2/eval_results/issue_640)
-- Postfix-KV-shift predictor (raw, `gauge_normalization_power=0`; per-row `gaugenorm_sq` field present for the pending gauge-corrected ρ): [predictors/PST__postfix_kv_shift.json](https://github.com/superkaiba/explore-persona-space/blob/ab36cfc7326f9e06e44b00417cb85284350f36c2/eval_results/issue_640/predictors/PST__postfix_kv_shift.json)
+- Gauge-corrected H2 ρ (`gaugenorm_sq` predictor; raw +0.548 → −0.095): [postfix_binding_correlation_gauge_corrected.json](https://github.com/superkaiba/explore-persona-space/blob/39f51c13f2ba067e616d289b51a351bf208a8204/eval_results/issue_640/postfix_binding_correlation_gauge_corrected.json)
+- Postfix-KV-shift predictor (raw, `gauge_normalization_power=0`; the per-row `gaugenorm_sq` field is the input to the gauge-corrected ρ above): [predictors/PST__postfix_kv_shift.json](https://github.com/superkaiba/explore-persona-space/blob/ab36cfc7326f9e06e44b00417cb85284350f36c2/eval_results/issue_640/predictors/PST__postfix_kv_shift.json)
 - Per-layer carrier profile (raw aggregate peak layer 18; `carrier_layer` field = inherited #595 constant 9): [postfix_per_layer_profile.json](https://github.com/superkaiba/explore-persona-space/blob/ab36cfc7326f9e06e44b00417cb85284350f36c2/eval_results/issue_640/postfix_per_layer_profile.json)
 - Raw completions (32 files): [issue640_postfix_carrier/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/d0a94ea8723cfac01f69866aa14b2259b4313c53/issue640_postfix_carrier/raw_completions)
 - Figure source: [scripts/plot_issue640.py](https://github.com/superkaiba/explore-persona-space/blob/ab36cfc7326f9e06e44b00417cb85284350f36c2/scripts/plot_issue640.py)
@@ -226,4 +227,5 @@ Reuse provenance:
 - Created / run: filed 2026-06-14; postfix sweep completed 2026-06-15 (~00:25Z phase=done); analysis 2026-06-15.
 - Follow-up to: [#595](https://eps.superkaiba.com/tasks/595) — auto-filed from #595's follow-up proposal #3 (the postfix-cleared headline cell). Adapter + matrix lineage from [#545](https://eps.superkaiba.com/tasks/545).
 - Originating prompt(s), verbatim: origin prompt not recorded (auto-filed follow-up from #595's `epm:follow-ups v1` proposal #3, not a user chat request).
+
 
