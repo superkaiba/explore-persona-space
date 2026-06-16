@@ -300,7 +300,7 @@ def classify_cell(
             label = "H2"
             notes.append(
                 "rotation NOT confirmed across seeds (cross-seed cos missing or "
-                f"< {CROSS_SEED_ROTATION_FLOOR}) — 1-seed rotation is cross-seed-unverified (§3-bis)"
+                f"< {CROSS_SEED_ROTATION_FLOOR}) — 1-seed rotation cross-seed-unverified (§3-bis)"
             )
     elif is_low_rank and is_aligned is None:
         # Arm A geometry-only: low-rank with no r_B alignment read.
