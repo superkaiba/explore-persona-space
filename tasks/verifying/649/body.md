@@ -1,6 +1,8 @@
 ---
-title: Does the base-prior-vs-geometry level/change split hold for realistic behaviors
-  (sycophancy primary)?
+title: 'For realistic sycophancy, the marker''s prior-on-level / geometry-on-change
+  split half-holds: prior is null on the shift as predicted, but early-layer cosine
+  also wins the absolute level, so the clean two-component rule does not transfer
+  (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-15T23:40:47Z'
