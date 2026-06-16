@@ -1,0 +1,40 @@
+{
+  "cell_slug": "marker__low__seed137",
+  "behavior": "marker",
+  "dose": "low",
+  "seed": 137,
+  "lora_targets": [
+    "up_proj",
+    "down_proj"
+  ],
+  "lora_r": 1,
+  "lora_alpha": 8,
+  "lr": 5e-06,
+  "output_dir": "eval_results/issue_650/cells/marker__low__seed137",
+  "hf_subfolder": "adapters/issue_650/marker__low__seed137",
+  "final_train_loss": 7.438414637247721,
+  "train_wall_s": 385.9762423103675,
+  "a_init_check": {
+    "n_lora_A_tensors": 56,
+    "n_lora_B_tensors": 56,
+    "b_init_max_abs": 0.0,
+    "b_final_norm_total": 1.6465718038380146,
+    "delta_a_norm_total": 2.535818448290229,
+    "a_init_norm_total": 32.32831943035126
+  },
+  "git_commit": "3c28393aa9da41e6560ffd6002e31b20bce4f400",
+  "parent_pin_sha": "766f44c4",
+  "timestamp_utc": "2026-06-16T11:01:16+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "negative_panel": [
+    "assistant",
+    "programmer",
+    "chef",
+    "kindergarten_teacher"
+  ],
+  "wandb_run_name": "issue650_marker__low__seed137",
+  "band_stop_fired": true,
+  "final_source_delta_nats": 5.543983459472656,
+  "band_stop_step": 90,
+  "global_step_end": 90
+}
