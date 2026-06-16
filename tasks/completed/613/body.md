@@ -17,6 +17,8 @@ goal: 'Determine whether placing the negative-row loss at the post-response slot
 relates_to:
 - leak-contrastive-negatives
 - implant-learning-speed
+classification: useful
+promoted_at: '2026-06-16T06:51:49Z'
 ---
 # The glued no-separator suppression does not carry over when the marker moves one token downstream — a single space collapses the source drop from ~5.5 nats to a co-land in log-prob (the EOS-margin still falls ~2.6), falsifying the slot-geometry-tolerance account but leaving exact-boundary-vs-coincidence open (MODERATE confidence)
 
