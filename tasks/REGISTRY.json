@@ -3952,8 +3952,8 @@
       "goal": "Test whether the chat-template POSTFIX (not prefix) is the dominant off-distribution leakage carrier on Qwen-2.5-7B, and whether patching base postfix KV per-cell into the #545 leaky adapters reduces leakage as a model-specific intervention.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/640",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/640",
+      "status": "awaiting_promotion",
       "title": "Postfix-KV patching cuts off-distribution leakage on strongly-installed Qwen-2.5 adapters, but a diagonal source-control shows it is a blunt revert that dampens the on-target trained behavior just as much, so it is not a selective defense (MODERATE confidence)"
     },
     "641": {
