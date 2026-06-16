@@ -86,7 +86,7 @@ def main() -> None:
         for arm, color, marker, label in [
             ("armB", color_B, "o", "Positives-only"),
             ("armC", color_C, "s", "Contrastive"),
-            ("armD", color_D, "^", "Positives + filler"),
+            ("armD", color_D, "^", "Positives-plus-filler"),
         ]:
             steps, vals = source_trajectory(arm, src)
             ax.plot(
@@ -128,10 +128,11 @@ def main() -> None:
         if i == 0:
             ax.set_ylabel("Bystander median\nmarker log-prob gain (nat)")
 
-    # Single legend, top-row
+    # Single legend, top-row — plain-English names only (Lens 2 / 3 / 4: no
+    # short-letter codes in figures).
     handles = [
-        Line2D([0], [0], marker="o", markersize=5, color=color_B, label="Positives-only (armB)"),
-        Line2D([0], [0], marker="s", markersize=5, color=color_C, label="Contrastive (armC)"),
+        Line2D([0], [0], marker="o", markersize=5, color=color_B, label="Positives-only"),
+        Line2D([0], [0], marker="s", markersize=5, color=color_C, label="Contrastive"),
         Line2D(
             [0],
             [0],
@@ -139,7 +140,7 @@ def main() -> None:
             markersize=5,
             color=color_D,
             linestyle="--",
-            label="Positives + filler (armD)",
+            label="Positives-plus-filler",
         ),
     ]
     axes[0, 0].legend(handles=handles, loc="upper left", frameon=False, fontsize=8)
