@@ -48,6 +48,11 @@ from explore_persona_space.experiments.issue_653 import spectral
 # three numeric spectral DVs so any cell's deciding DV is covered (cos_top_to_rb
 # is alignment-driven — no meaningful bootstrap, flagged deciding_ci_unavailable).
 BOOTSTRAP_DVS = ("top_share_lambda", "pr_lambda", "rank_k_at_90")
+# The full set of recognized deciding DVs: the three numeric spectral DVs above
+# plus the alignment-driven cos_top_to_rb (handled via deciding_ci_unavailable, no
+# bootstrap). Any deciding_dv outside this set is a corruption/version-skew bug and
+# MUST raise loudly (round-6 BLOCKER offpod-bootstrap-missing-deciding-ci-silent-skip).
+KNOWN_DECIDING_DVS = (*BOOTSTRAP_DVS, "cos_top_to_rb")
 # Per-DV thresholds the deciding-DV CI is checked against — reuse
 # spectral.DV_THRESHOLDS so the off-pod refresh matches classify_cell exactly.
 DV_THRESHOLDS = spectral.DV_THRESHOLDS
@@ -108,24 +113,67 @@ def _refresh_ambiguity_flags(out_root: Path, per_cell_ci: dict[str, dict]) -> No
     left ``deciding_ci_unavailable`` (the on-pod random-CI exceedance check is its
     ambiguity flag); a cell with no/None deciding DV (boundary/underdetermined)
     is left already-ambiguous.
+
+    Coverage is asserted LOUDLY before any cell is touched (round-6 BLOCKER
+    offpod-bootstrap-missing-deciding-ci-silent-skip): every cell whose deciding
+    DV is one of the three NUMERIC spectral DVs MUST have a matching ``per_cell_ci``
+    entry. A missing entry (e.g. a partial HF tensor pull) used to be silently
+    skipped — leaving that cell at the shallow on-pod ``n_boot=200`` depth while the
+    grid still got stamped ``bootstrap_refreshed_n_boot=10000``. That silent strand
+    is now a hard ``RuntimeError``. An UNKNOWN ``deciding_dv`` (outside the recognized
+    4-DV set) also raises loudly instead of relying on an incidental ``KeyError``.
     """
     verdict_path = out_root / "cross_arm_verdict.json"
     if not verdict_path.exists():
         print(f"  [bootstrap] no {verdict_path}; skipping ambiguity-flag refresh", flush=True)
         return
     grid = json.loads(verdict_path.read_text())
-    for vd in grid.get("verdicts", []):
+    verdicts = grid.get("verdicts", [])
+
+    # ── Coverage precheck (BEFORE touching any cell) ──────────────────────────
+    # 1. Unknown deciding_dv → raise loudly (not an incidental KeyError downstream).
+    unknown = [
+        (vd.get("cell_id"), vd.get("deciding_dv"))
+        for vd in verdicts
+        if vd.get("deciding_dv") is not None
+        and not vd.get("spectrum_underdetermined")
+        and vd.get("deciding_dv") not in KNOWN_DECIDING_DVS
+    ]
+    if unknown:
+        raise RuntimeError(
+            "_refresh_ambiguity_flags: unrecognized deciding_dv value(s) "
+            f"{unknown} (cell_id, deciding_dv) — not in the known DV set "
+            f"{KNOWN_DECIDING_DVS}. Refusing to refresh: a corrupt/version-skewed "
+            "verdict file would silently mis-classify these cells."
+        )
+    # 2. Every NUMERIC-deciding cell MUST have a per-cell CI for THAT DV. A missing
+    #    entry would strand the cell at the shallow on-pod n_boot=200 under a 10k
+    #    stamp — convert that silent skip into a loud raise.
+    missing_ci_cells = [
+        (vd.get("cell_id"), vd.get("deciding_dv"))
+        for vd in verdicts
+        if vd.get("deciding_dv") in BOOTSTRAP_DVS
+        and not vd.get("spectrum_underdetermined")
+        and per_cell_ci.get(vd.get("cell_id"), {}).get(vd.get("deciding_dv")) is None
+    ]
+    if missing_ci_cells:
+        raise RuntimeError(
+            f"_refresh_ambiguity_flags: missing per-cell CI for {len(missing_ci_cells)} "
+            f"numeric-deciding cells: {missing_ci_cells} (cell_id, deciding_dv). The "
+            "off-pod refresh would silently strand these cells at the shallow on-pod "
+            "n_boot=200 while stamping bootstrap_refreshed_n_boot="
+            f"{i653.BOOTSTRAP_B}. Re-pull the missing CI tensors before re-running."
+        )
+
+    # ── Refresh (coverage is now guaranteed for every numeric-deciding cell) ──
+    for vd in verdicts:
         cid = vd.get("cell_id")
         deciding_dv = vd.get("deciding_dv")
         if vd.get("spectrum_underdetermined") or deciding_dv is None:
             continue  # no single deciding DV → already ambiguous, nothing to refresh
         if deciding_dv == "cos_top_to_rb":
             continue  # alignment-driven; the random-CI exceedance check is the flag
-        ci = per_cell_ci.get(cid, {}).get(deciding_dv)
-        if ci is None:
-            # the deciding DV was not bootstrapped (e.g. tensor absent) — leave the
-            # on-pod flag untouched rather than silently substituting another DV.
-            continue
+        ci = per_cell_ci[cid][deciding_dv]  # precheck guarantees presence
         lo, hi = ci["ci_low"], ci["ci_high"]
         vd["deciding_ci"] = [lo, hi]
         # Check the deciding DV's OWN thresholds (mirror classify_cell §3.4.CI).
