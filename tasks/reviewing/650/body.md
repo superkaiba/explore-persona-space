@@ -5,7 +5,7 @@ title: Rank-1 MLP LoRA implants leave the read frozen at random init for both ma
 kind: experiment
 tags: []
 created_at: '2026-06-16T00:37:29Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 621
 origin_prompt: run the rank 1 lora followup with marker and sycophancy
 goal: Determine whether a rank-1 LoRA behavior implant's WRITE direction is a pre-existing
