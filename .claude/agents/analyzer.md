@@ -163,6 +163,17 @@ sample selection run in sanitized mode:
 
 ### Step 2: Compute Statistics
 
+**Long off-pod CPU jobs (SVD builds, `analyze`, bootstrap / permutation stats, eval-JSON aggregation) — use a sentinel, not a bg `nohup` redirect you re-read for completion.** Any of these phases (here and in Step 1.5) can run minutes-to-tens-of-minutes off-pod on the VM. You are a single-turn subagent — do NOT improvise chained `nohup ... > /tmp/log 2>&1 &` commands and re-read the log to decide when it finished: the harness may auto-background a long FOREGROUND command and reset shell state between Bash calls, which strands the `&`-job and the `>` redirect and leaves an empty log with no completion signal (incident #650 burned ~8 wait cycles this way). Instead, have the job write a DONE sentinel carrying its exit code on finish, then poll the SENTINEL with ONE `run_in_background=true` Bash `until` loop:
+
+```bash
+# launch — sentinel records the exit code regardless of where the harness runs the job
+nohup bash -c 'uv run python scripts/<analysis>.py ...; echo "RC=$? DONE" > /tmp/issue-<N>-<job>.sentinel' >/tmp/issue-<N>-<job>.log 2>&1 &
+# then, as a SEPARATE run_in_background=true Bash call, block on the sentinel (NOT the bg stdout):
+until [ -f /tmp/issue-<N>-<job>.sentinel ]; do sleep 30; done; cat /tmp/issue-<N>-<job>.sentinel
+```
+
+Read `RC=` from the sentinel for the exit code (non-zero → inspect the log and fail loud — never narrate a result off a job that did not finish cleanly). The `until` loop is the single completion signal; the log is for diagnosis only.
+
 For every comparison:
 - Mean across seeds
 - **p-value** (that is the only significance statistic you report in prose)
