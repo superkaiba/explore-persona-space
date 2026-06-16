@@ -1,7 +1,7 @@
 ---
-title: The model's own agreeing completions install sycophancy substantially more
-  weakly than canned templates at a fixed training recipe, and two of four personas
-  could not fill the on-policy data-yield quota (MODERATE confidence)
+title: The model's own agreeing completions install sycophancy more weakly than canned
+  templates, and at matched install the leakage radius shifts in opposite directions
+  across sources (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
