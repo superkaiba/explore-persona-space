@@ -1,0 +1,19 @@
+{
+  "git_commit": "c1f50757a794bb9abf96428fa18776e027f8ecfb",
+  "generated_at": "2026-06-15T09:22:18.600585+00:00",
+  "seed": 42,
+  "data_seed": 42,
+  "experiment": "issue641_dose_curves",
+  "source": "sp_doctor",
+  "dose_step": 150,
+  "n_total": 40,
+  "n_included": 29,
+  "n_incoherent": 6,
+  "excluded_frac": 0.275,
+  "em_rate_pooled": 0.3793103448275862,
+  "em_rate_at_threshold_20": 0.10344827586206896,
+  "em_rate_at_threshold_40": 0.4482758620689655,
+  "mean_aligned": 47.93103448275862,
+  "n_refusal": 0,
+  "n_parse_fail": 5
+}
