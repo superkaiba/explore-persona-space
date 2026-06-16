@@ -114,6 +114,105 @@ def extract_residual_stream_activations(
     return out
 
 
+@torch.no_grad()
+def extract_dual_position_activations(
+    model: torch.nn.Module,
+    tokenizer,
+    prompts: Sequence[str],
+    positions: Sequence[tuple[int, int]],
+    layers: Sequence[int] | None = None,
+    device: str | torch.device | None = None,
+    readout_position: int | None = None,
+) -> dict[str, torch.Tensor]:
+    """Extract residual-stream activations at >=2 token positions in ONE forward.
+
+    For each ``prompt`` (a full ChatML string ending at the assistant-generation
+    marker), runs a single ``output_hidden_states=True`` forward pass (batch size
+    1, no padding) and reads the residual at TWO token positions — the
+    context-span end and the query-span end — at every requested layer. Mirrors
+    :func:`extract_residual_stream_activations`: ``hs[L + 1]`` is the
+    post-transformer-block-L residual, ``add_special_tokens=False``, batch 1, and
+    every returned activation is fp32 on CPU.
+
+    The two positions both come from the SAME forward pass — causal attention
+    means the context-end residual is unaffected by the later query tokens, so a
+    single pass yields both reads without a cross-forward confound (plan §3 A5).
+
+    Parameters
+    ----------
+    model
+        Causal-LM with ``config.num_hidden_layers`` / ``config.hidden_size`` set,
+        already on ``device`` and in eval mode (this helper does not move it).
+    tokenizer
+        Matching ``AutoTokenizer``; used with ``add_special_tokens=False`` (the
+        ChatML special tokens are already baked into the prompt strings).
+    prompts
+        Full ChatML prompt strings, one per pair.
+    positions
+        Per-prompt ``(context_end_idx, query_end_idx)`` token offsets into the
+        tokenized prompt. Asserted ``0 <= context_end_idx < query_end_idx <
+        seq_len`` per prompt (a span-boundary bug fails loud here).
+    layers
+        0-indexed transformer-block layers to keep; ``None`` = every layer.
+    device
+        Device for the input tensors; defaults to ``model``'s device.
+    readout_position
+        Optional THIRD token position to read at every layer (the companion
+        same-position slot — e.g. the assistant-generation slot of a
+        context-only prompt). ``-1`` = last input token. When ``None`` only the
+        two span-end banks are returned.
+
+    Returns
+    -------
+    dict[str, torch.Tensor]
+        ``{"context_end": (n, n_layers, hidden), "query_end": (n, n_layers,
+        hidden)}`` always, plus ``"readout": (n, n_layers, hidden)`` when
+        ``readout_position`` is not ``None``. All fp32, on CPU.
+    """
+    if len(prompts) != len(positions):
+        raise ValueError(
+            f"prompts and positions must have matching length; "
+            f"got {len(prompts)} vs {len(positions)}"
+        )
+    n_layers_total = model.config.num_hidden_layers
+    hidden = model.config.hidden_size
+    if layers is None:
+        layers = list(range(n_layers_total))
+    layers = list(layers)
+    for L in layers:
+        if not (0 <= L < n_layers_total):
+            raise ValueError(f"layer index {L} out of range for model with {n_layers_total} layers")
+
+    if device is None:
+        device = next(model.parameters()).device
+
+    n = len(prompts)
+    out: dict[str, torch.Tensor] = {
+        "context_end": torch.zeros(n, len(layers), hidden, dtype=torch.float32),
+        "query_end": torch.zeros(n, len(layers), hidden, dtype=torch.float32),
+    }
+    if readout_position is not None:
+        out["readout"] = torch.zeros(n, len(layers), hidden, dtype=torch.float32)
+
+    for i, (prompt, (c_idx, q_idx)) in enumerate(zip(prompts, positions, strict=True)):
+        ids = tokenizer(prompt, return_tensors="pt", add_special_tokens=False).input_ids
+        ids = ids.to(device)
+        seq_len = ids.shape[1]
+        assert 0 <= c_idx < q_idx < seq_len, (
+            f"pair {i}: require 0 <= context_end_idx({c_idx}) < query_end_idx({q_idx}) "
+            f"< seq_len({seq_len})"
+        )
+        hs = model(ids, output_hidden_states=True).hidden_states
+        # hs is a tuple of length (num_hidden_layers + 1); hs[L+1] = block-L output.
+        for j, L in enumerate(layers):
+            layer_hs = hs[L + 1]
+            out["context_end"][i, j] = layer_hs[0, c_idx].float().cpu()
+            out["query_end"][i, j] = layer_hs[0, q_idx].float().cpu()
+            if readout_position is not None:
+                out["readout"][i, j] = layer_hs[0, readout_position].float().cpu()
+    return out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Probes + null distributions
 # ─────────────────────────────────────────────────────────────────────────────
