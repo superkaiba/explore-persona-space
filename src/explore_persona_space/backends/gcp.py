@@ -343,6 +343,56 @@ def machine_for_intent(spec: RunSpec) -> MachineSpec:
     return INTENT_TO_MACHINE[spec.intent]
 
 
+#: Per-machine-type zone availability within ``us-central1`` (#653). The
+#: uniform :data:`DEFAULT_FALLBACK_ZONES` is NOT valid for every machine
+#: type: the A2-ultragpu family (``a2-ultragpu-1g`` / ``a2-ultragpu-4g``,
+#: i.e. the ``lora`` / ``lora-7b`` / ``ft-7b`` intents) is NOT offered in
+#: ``us-central1-b`` — only ``-a`` and ``-c``. Without this filter the
+#: zone-fallback ladder tries ``us-central1-b`` on a capacity miss, the
+#: gcloud create 400s with "Invalid value for field ... machine type ...
+#: not found" (a CONFIG error, NOT a capacity miss), and the doomed
+#: attempt burns the per-day GCP attempt counter (#653 round-8: a ft-7b
+#: auto launch hit ZONE_RESOURCE_POOL_EXHAUSTED on ``-a``, fell to ``-b``
+#: where ``a2-ultragpu-4g`` does not exist, and the config error aborted
+#: the GCP lane). A machine type ABSENT from this map is assumed available
+#: in every configured zone (no filtering) — the map only RESTRICTS, so an
+#: unlisted future machine type fails open rather than being silently
+#: dropped from every zone.
+#:
+#: Verify / refresh per machine type with:
+#:   gcloud compute machine-types list \
+#:     --filter="name=<machine-type> AND zone~us-central1" \
+#:     --configuration=eps-gcp --format="value(zone)"
+#: (run 2026-06-16 for the rows below).
+MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
+    # A2-ultragpu (A100-80) — us-central1-b does NOT offer this family.
+    "a2-ultragpu-1g": frozenset({"us-central1-a", "us-central1-c"}),
+    "a2-ultragpu-4g": frozenset({"us-central1-a", "us-central1-c"}),
+    # g2 (L4) + a3-highgpu (H100) ARE offered in all three us-central1
+    # zones — listed for completeness so a future zone change is verified
+    # against this table, not blind.
+    "g2-standard-4": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    "a3-highgpu-1g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+}
+
+
+def zones_for_machine_type(machine_type: str, zones: Sequence[str]) -> list[str]:
+    """Filter ``zones`` to those where ``machine_type`` is actually offered.
+
+    Preserves ``zones`` order (the fallback ladder is priority-ordered).
+    Drops only zones a machine type is KNOWN absent from per
+    :data:`MACHINE_TYPE_ZONE_AVAILABILITY`; a machine type unlisted in the
+    map fails OPEN (every input zone kept) so a future machine type is
+    never silently filtered to nothing. This stops a guaranteed-to-fail
+    create — and the GCP-attempt-counter burn it costs — on a zone where
+    the machine type does not exist (#653).
+    """
+    available = MACHINE_TYPE_ZONE_AVAILABILITY.get(machine_type)
+    if available is None:
+        return list(zones)
+    return [z for z in zones if z in available]
+
+
 # ---------------------------------------------------------------------------
 # Provisioning model + attempt-id
 # ---------------------------------------------------------------------------
@@ -2442,6 +2492,34 @@ class GcpBackend(ComputeBackend):
 
         zones_to_try: list[str] = [config.primary_zone]
         zones_to_try.extend(z for z in config.fallback_zones if z and z != config.primary_zone)
+        # Drop zones where the resolved machine type is NOT offered (#653):
+        # the uniform fallback list is not valid for every machine type
+        # (the A2-ultragpu family is absent from us-central1-b), so a blind
+        # fallback would issue a guaranteed-to-fail create (a CONFIG 400,
+        # not a capacity miss) and burn the per-day GCP attempt counter.
+        machine_type = machine_for_intent(spec).machine_type
+        filtered = zones_for_machine_type(machine_type, zones_to_try)
+        if filtered != zones_to_try:
+            logger.info(
+                "GCP issue=%d: machine-type %s unavailable in %s; zone ladder trimmed to %s",
+                spec.issue,
+                machine_type,
+                [z for z in zones_to_try if z not in filtered],
+                filtered,
+            )
+        zones_to_try = filtered
+        if not zones_to_try:
+            # No configured zone offers this machine type — fail LOUD
+            # rather than fall through to a zero-zone for-loop that would
+            # raise an opaque ``last_error is None`` assert.
+            raise GcpProvisioningError(
+                f"no configured us-central1 zone offers machine type {machine_type!r} "
+                f"for intent {spec.intent!r} (primary={config.primary_zone}, "
+                f"fallbacks={config.fallback_zones}). Update "
+                f"backends/gcp.MACHINE_TYPE_ZONE_AVAILABILITY / GcpConfig zones, or "
+                f"route to another backend.",
+                evidence={"machine_type": machine_type, "intent": spec.intent},
+            )
         last_error: GcpProvisioningError | None = None
         try:
             for zone in zones_to_try:
@@ -3549,6 +3627,7 @@ __all__ = [
     "DEFAULT_PROVISIONING_MODEL",
     "DEFAULT_REPO_URL",
     "INTENT_TO_MACHINE",
+    "MACHINE_TYPE_ZONE_AVAILABILITY",
     "STARTUP_PASSTHROUGH_ENV_KEYS",
     "STARTUP_SECRET_ENV_KEYS",
     "GcloudRunResult",
@@ -3581,4 +3660,5 @@ __all__ = [
     "resolve_provisioning_model",
     "sentinel_path_for",
     "workload_dir_for",
+    "zones_for_machine_type",
 ]

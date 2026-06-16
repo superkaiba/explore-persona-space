@@ -302,6 +302,44 @@ def test_machine_for_intent_rejects_unknown_intent_loud() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Machine-type zone availability (#653)
+# ---------------------------------------------------------------------------
+
+
+def test_zones_for_machine_type_drops_unavailable_zone() -> None:
+    """#653: the A2-ultragpu family is NOT offered in us-central1-b, so the
+    filter drops it while preserving order for the available zones."""
+    from explore_persona_space.backends.gcp import (
+        MACHINE_TYPE_ZONE_AVAILABILITY,
+        zones_for_machine_type,
+    )
+
+    ladder = ["us-central1-a", "us-central1-b", "us-central1-c"]
+    assert zones_for_machine_type("a2-ultragpu-1g", ladder) == [
+        "us-central1-a",
+        "us-central1-c",
+    ]
+    assert zones_for_machine_type("a2-ultragpu-4g", ladder) == [
+        "us-central1-a",
+        "us-central1-c",
+    ]
+    # The map RESTRICTS only — every A2-ultragpu row excludes -b.
+    assert "us-central1-b" not in MACHINE_TYPE_ZONE_AVAILABILITY["a2-ultragpu-1g"]
+
+
+def test_zones_for_machine_type_keeps_all_for_unfiltered_type() -> None:
+    """#653: a machine type listed in every zone (g2) keeps the full ladder;
+    a machine type UNLISTED in the map fails OPEN (no filtering)."""
+    from explore_persona_space.backends.gcp import zones_for_machine_type
+
+    ladder = ["us-central1-a", "us-central1-b", "us-central1-c"]
+    # g2-standard-4 is in all three.
+    assert zones_for_machine_type("g2-standard-4", ladder) == ladder
+    # An unlisted machine type is not silently dropped from every zone.
+    assert zones_for_machine_type("some-future-machine-type", ladder) == ladder
+
+
+# ---------------------------------------------------------------------------
 # Provisioning model resolver
 # ---------------------------------------------------------------------------
 
@@ -1304,7 +1342,12 @@ def test_backend_method_delegates_quota_preflight() -> None:
 
 def test_launch_retries_on_capacity_then_succeeds_in_fallback_zone(no_marker_posts) -> None:
     """Capacity miss in primary zone must transparently retry the
-    fallback zones before giving up."""
+    fallback zones before giving up.
+
+    Uses ``eval`` (``g2-standard-4``, available in all three us-central1
+    zones) so the fallback ladder is the full ``a → b → c`` — the
+    machine-type zone filter (#653) is a no-op for this machine type.
+    """
     created_payload = json.dumps([{"name": "eps-issue-137", "id": "999"}])
     runner = _Runner(
         list_results=[GcloudRunResult(0, "[]", "")],
@@ -1318,7 +1361,7 @@ def test_launch_retries_on_capacity_then_succeeds_in_fallback_zone(no_marker_pos
         runner=runner,
         marker_poster=lambda **_: None,
     )
-    handle = backend.launch(_spec())
+    handle = backend.launch(_spec(intent="eval"))
     # The second create succeeded; we landed in us-central1-b.
     assert handle.extra["zone"] == "us-central1-b"
     # Two create calls were issued.
@@ -1328,10 +1371,43 @@ def test_launch_retries_on_capacity_then_succeeds_in_fallback_zone(no_marker_pos
     assert "--zone=us-central1-b" in create_calls[1]
 
 
+def test_launch_skips_zone_where_machine_type_absent(no_marker_posts) -> None:
+    """#653: a capacity miss on an A2-ultragpu intent must skip
+    ``us-central1-b`` (where the family is NOT offered) and fall straight
+    to ``us-central1-c`` — never issuing a guaranteed-to-fail create on a
+    zone that lacks the machine type (which would burn the attempt counter
+    on a CONFIG 400, not a capacity miss)."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "999"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),  # us-central1-a
+            GcloudRunResult(0, created_payload, ""),  # us-central1-c (b is skipped)
+        ],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    # lora-7b → a2-ultragpu-1g, absent from us-central1-b.
+    handle = backend.launch(_spec(intent="lora-7b"))
+    assert handle.extra["zone"] == "us-central1-c"
+    create_calls = [a for a in runner.calls if "create" in a]
+    # Exactly TWO creates: a (capacity miss) then c — NEVER b.
+    assert len(create_calls) == 2
+    assert "--zone=us-central1-a" in create_calls[0]
+    assert "--zone=us-central1-c" in create_calls[1]
+    assert not any("--zone=us-central1-b" in a for a in create_calls)
+
+
 def test_launch_raises_provisioning_error_when_all_zones_capacity_fail(no_marker_posts) -> None:
     runner = _Runner(
         list_results=[GcloudRunResult(0, "[]", "")],
-        # 3 capacity failures: primary + 2 fallbacks
+        # 3 capacity failures: primary + 2 fallbacks. Uses ``eval``
+        # (g2-standard-4, available in all three us-central1 zones) so all
+        # three creates are actually issued (the #653 machine-type filter
+        # leaves the full ladder intact for this machine type).
         create_results=[
             GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
             GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
@@ -1344,7 +1420,7 @@ def test_launch_raises_provisioning_error_when_all_zones_capacity_fail(no_marker
         marker_poster=lambda **_: None,
     )
     with pytest.raises(GcpProvisioningError):
-        backend.launch(_spec())
+        backend.launch(_spec(intent="eval"))
 
 
 def test_launch_does_not_retry_on_non_capacity_failure(no_marker_posts) -> None:
