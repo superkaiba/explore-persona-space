@@ -1,5 +1,6 @@
-"""Regression for the vLLM OOM at #545 — engine-init (round-1) AND
-extract-phase log_softmax (round-3) OOM, both on pod-545.
+"""Regression for the vLLM OOM at #545 — a four-round OOM family on pod-545:
+engine-init (r1), extract-phase log_softmax (r3), outdist HF logits transient
+(r4), and clouds-phase log_softmax at the grown HF resident (r6).
 
 Round-1 crash (22:12:08, ~80s after launch): inside
 ``predictors_zoo.extract_clouds_and_outdist_gpu`` the HF base model
@@ -12,25 +13,33 @@ requested 67.3 GiB > ~63 GiB free with the HF model resident.
 
 Round-3 crash (extract phase, ~25 min in): the r3 fix lowered util 0.85 -> 0.70
 and added a pre-init free-memory assert, but the assert ran when ONLY the HF
-model was resident (no vLLM yet). The real HF residency under teacher-forcing
-(output_hidden_states + max_model_len=4096 + KV cache) is 22.0 GiB MEASURED, not
-the 16 GiB the r3 brief estimated. With vLLM at 0.70 (56.99 GiB observed) the
-total reached ~79 GiB on a 79.18 GiB H100 — only 206 MiB free — and the extract
-phase's intermediate tensors (log_softmax) OOM'd mid-run.
+model was resident (no vLLM yet). The HF residency under teacher-forcing at r3
+was 22.0 GiB MEASURED. With vLLM at 0.70 (56.99 GiB observed) the total reached
+~79 GiB on a 79.18 GiB H100 — only 206 MiB free — and the extract phase's
+intermediate tensors (log_softmax) OOM'd mid-run.
 
-The fix (round-4):
-  1. Lower ``JS_GPU_MEM_UTIL`` 0.70 -> 0.60 so 22.0 (HF) + 47.5 (vLLM) = 69.5 GiB,
-     leaving ~9.5 GiB working-memory headroom for the extract-phase intermediates.
-  2. Set ``PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`` at module top (in
-     BOTH the dispatcher and predictors_zoo) BEFORE the first ``import torch`` so
-     the allocator defragments reserved-but-unallocated memory — the canonical
-     PyTorch CUDA OOM mitigation the round-3 error message itself recommended.
-  3. Re-tune the pre-init free-memory floor, pinned to the actual util
-     (``JS_VLLM_PREINIT_MIN_FREE_GIB = util * total + 2.5``), so a future util
-     change keeps the assert correct.
-  4. Keep the explicit teardown (``del model``/``del tokenizer``/``del llm`` +
-     ``gc.collect()`` + ``torch.cuda.empty_cache()`` + ``torch.cuda.synchronize()``)
-     before the function returns to the in-process CPU build phase.
+Round-6 crash (clouds phase, 310 MiB short at log_softmax): the r4 fix dropped
+util to 0.60 + enabled ``expandable_segments`` and cleared extract; but
+``expandable_segments`` trades fragmentation reduction for a slightly HIGHER
+peak resident, and the clouds-phase HF resident GREW 22 -> 30 GiB. With vLLM at
+0.60 (49 GiB) + HF at 30 GiB = 79 GiB on a 79.18 GiB H100 → only 289 MiB free,
+and the clouds-phase log_softmax (310 MiB) OOM'd.
+
+The fix (round-8 — the PRIMARY load-bearing change):
+  1. Lower ``JS_GPU_MEM_UTIL`` 0.60 -> 0.50 so 30.0 (HF, re-measured r6 ceiling)
+     + 39.6 (vLLM = 0.50 * 79.18) = 69.6 GiB, leaving ~9.6 GiB working-memory
+     headroom for the clouds/extract-phase log_softmax intermediates (vs only
+     1.67 GiB at 0.60 with the grown 30 GiB HF resident).
+  2. Update ``JS_HF_MODEL_RESIDENT_GIB`` 22.0 -> 30.0 (the r6 ceiling the dial
+     must budget against — re-measure peak resident when enabling
+     expandable_segments; the trade is real and bit at r6).
+  3. The pre-init free-memory floor stays pinned to the util
+     (``JS_VLLM_PREINIT_MIN_FREE_GIB = util * total + 2.5``); at 0.50 it is
+     ~42.1 GiB, well below the ~78 GiB free at launch (before the HF model
+     loads), so the assert passes comfortably.
+  4. ``PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`` (r4) + the explicit
+     teardown (``del model``/``del tokenizer``/``del llm`` + ``gc.collect()`` +
+     ``torch.cuda.empty_cache()`` + ``torch.cuda.synchronize()``) stay in place.
 
 These tests pin the constants + the guard contract + the teardown call order +
 the allocator env-var-before-torch ordering WITHOUT a GPU (the real path needs a
@@ -51,9 +60,10 @@ from explore_persona_space.experiments.behavior_testbed_545 import predictors_zo
 
 # An H100-80 reports ~79.18 GiB total; the round-1/round-3 crash logs show 79.18.
 _H100_TOTAL_GIB = 79.18
-# Measured resident size of the co-resident HF base model under realistic
-# extract-phase conditions (round-3 OOM log: HF process held 21.98 GiB).
-_HF_MODEL_RESIDENT_GIB = 22.0
+# Re-measured resident size of the co-resident HF base model at the r6 clouds
+# peak (the r4 expandable_segments allocator raised the peak from the r3 22 GiB
+# to ~30 GiB). The dial budgets against this ceiling, not the r3 22 GiB estimate.
+_HF_MODEL_RESIDENT_GIB = 30.0
 
 
 # ---------------------------------------------------------------------------
@@ -62,32 +72,34 @@ _HF_MODEL_RESIDENT_GIB = 22.0
 
 
 def test_gpu_mem_util_lowered_to_clear_extract_phase_oom():
-    # Round-1 ran at 0.85 (init OOM); round-3 ran at 0.70 (extract-phase OOM).
-    # The round-4 fix must be strictly below BOTH so the extract-phase
-    # intermediates have working-memory headroom.
-    assert zoo.JS_GPU_MEM_UTIL < 0.70
+    # r1 ran at 0.85 (init OOM); r3 at 0.70 (extract OOM); r4/r6 at 0.60 (clouds
+    # OOM at the grown 30 GiB HF resident). The r8 fix drops to 0.50, strictly
+    # below ALL prior values so the clouds/extract log_softmax intermediates
+    # have working-memory headroom at the re-measured 30 GiB HF resident.
+    assert zoo.JS_GPU_MEM_UTIL == 0.50
     # And still a sane positive fraction (not accidentally 0 / negative).
-    assert 0.0 < zoo.JS_GPU_MEM_UTIL <= 0.65
+    assert 0.0 < zoo.JS_GPU_MEM_UTIL < 0.60
 
 
 def test_hf_model_residency_constant_uses_measured_not_estimated():
-    # The r3 fix used a 16 GiB parameter-count estimate; the measured residency
-    # under teacher-forcing is ~22 GiB. The module must carry the measured value.
-    assert zoo.JS_HF_MODEL_RESIDENT_GIB >= 22.0
+    # The r3 fix used a 16 GiB parameter-count estimate; r3 measured ~22 GiB;
+    # the r6 clouds peak re-measured ~30 GiB after expandable_segments raised the
+    # peak. The module must carry the r6 ceiling so the dial budgets against it.
+    assert zoo.JS_HF_MODEL_RESIDENT_GIB >= 30.0
 
 
 def test_preinit_floor_consistent_with_request_and_hf_residency():
     """The free-memory floor must (a) clear the vLLM request so a healthy run
-    passes, and (b) leave room for the resident ~22 GiB HF model PLUS
-    working-memory headroom for the extract-phase intermediates (the round-3
-    OOM cause), so the run is actually feasible."""
+    passes, and (b) leave room for the resident ~30 GiB HF model PLUS
+    working-memory headroom for the clouds/extract-phase log_softmax
+    intermediates (the r6 OOM cause), so the run is actually feasible."""
     requested_gib = zoo.JS_GPU_MEM_UTIL * _H100_TOTAL_GIB
     # The floor is the free-memory we DEMAND before init; it must be at least
     # the request (else the assert would pass yet vLLM would still OOM).
     assert requested_gib <= zoo.JS_VLLM_PREINIT_MIN_FREE_GIB
-    # Feasibility: vLLM's request + the resident HF model (~22 GiB measured) must
-    # fit in total GPU memory with working-memory headroom (>= 5 GiB) for the
-    # extract-phase intermediates that OOM'd at round-3's 0.70 util.
+    # Feasibility: vLLM's request + the resident HF model (~30 GiB re-measured)
+    # must fit in total GPU memory with working-memory headroom (>= 5 GiB) for
+    # the clouds/extract-phase log_softmax intermediates that OOM'd at r6's 0.60.
     headroom = _H100_TOTAL_GIB - (requested_gib + zoo.JS_HF_MODEL_RESIDENT_GIB)
     assert headroom >= 5.0, f"only {headroom:.1f} GiB working-memory headroom (need >=5)"
     # The floor must itself be achievable with the HF model resident
@@ -100,6 +112,26 @@ def test_preinit_floor_pinned_to_util_with_margin():
     so a future util change keeps the assert correct, not a stale literal."""
     expected = max(zoo.JS_GPU_MEM_UTIL * _H100_TOTAL_GIB + 2.5, 0.0)
     assert pytest.approx(expected, abs=0.01) == zoo.JS_VLLM_PREINIT_MIN_FREE_GIB
+
+
+def test_jsutil_05_math_sanity():
+    """At util=0.50, vLLM gets ~39.6 GiB; with HF resident at 30 GiB
+    (measured r6 ceiling on Qwen-7B + KV + activations + expandable_segments),
+    total = 69.6 GiB / 79.18 GiB H100 = 88% — leaves 9.6 GiB headroom for
+    intermediate tensors (log_softmax etc.)."""
+    from explore_persona_space.experiments.behavior_testbed_545.predictors_zoo import (
+        JS_GPU_MEM_UTIL,
+        JS_VLLM_PREINIT_MIN_FREE_GIB,
+    )
+
+    assert JS_GPU_MEM_UTIL == 0.50
+    H100_GIB = 79.18
+    HF_RESIDENT_GIB = 30.0  # measured r6 ceiling
+    headroom = H100_GIB - (JS_GPU_MEM_UTIL * H100_GIB) - HF_RESIDENT_GIB
+    assert headroom >= 8.0, f"insufficient headroom: {headroom:.1f} GiB"
+    # The pre-init floor (~42.1 GiB) must sit comfortably below the ~78 GiB free
+    # at launch (before the HF model loads), so the assert never false-fails.
+    assert JS_VLLM_PREINIT_MIN_FREE_GIB < 78.0
 
 
 # ---------------------------------------------------------------------------
@@ -118,9 +150,11 @@ def _preinit_guard(free_gib: float) -> None:
 
 
 def test_guard_passes_at_healthy_free_memory_post_fix():
-    # After the fix, with the ~22 GiB HF model resident on an H100, ~57 GiB is
-    # free. That must PASS the 0.60-pinned floor (~50 GiB).
-    free_with_hf_resident = _H100_TOTAL_GIB - _HF_MODEL_RESIDENT_GIB  # ~57.2 GiB
+    # After the r8 fix, even with the grown ~30 GiB HF model resident on an H100,
+    # ~49 GiB is free. That must PASS the 0.50-pinned floor (~42.1 GiB). (At
+    # launch the HF model is not yet resident — ~78 GiB free — so the real assert
+    # passes with even more margin; this test models the worst-case HF-resident.)
+    free_with_hf_resident = _H100_TOTAL_GIB - _HF_MODEL_RESIDENT_GIB  # ~49.2 GiB
     _preinit_guard(free_with_hf_resident)  # no raise
 
 
@@ -148,6 +182,8 @@ def test_get_llm_uses_lowered_util_constant_not_hardcoded_float():
     assert "gpu_memory_utilization=JS_GPU_MEM_UTIL" in src
     assert "gpu_memory_utilization=0.85" not in src
     assert "gpu_memory_utilization=0.70" not in src
+    assert "gpu_memory_utilization=0.60" not in src
+    assert "gpu_memory_utilization=0.50" not in src
 
 
 def test_get_llm_llm_call_keyword_is_the_util_constant_ast():

@@ -35,9 +35,11 @@ import os
 
 # PyTorch CUDA allocator: expandable_segments defragments reserved-but-
 # unallocated memory, the canonical mitigation for the round-3 extract-phase
-# OOM where HF (22 GiB) + vLLM (0.60 × 79 ≈ 47.5 GiB) co-reside with only
-# ~9.5 GiB working-memory headroom and intermediate tensors (log_softmax)
-# fragment the free pool. MUST be set BEFORE the first `import torch` — torch
+# OOM where HF + vLLM co-reside and intermediate tensors (log_softmax) fragment
+# the free pool. NOTE: expandable_segments trades fragmentation reduction for a
+# slightly HIGHER peak resident — the r6 clouds-phase HF resident measured 30 GiB
+# vs the r3 22 GiB, which is why JS_GPU_MEM_UTIL had to drop to 0.50 by r8 (see
+# the JS_GPU_MEM_UTIL block below). MUST be set BEFORE the first `import torch` — torch
 # reads PYTORCH_CUDA_ALLOC_CONF once when its CUDA allocator initializes. torch
 # is imported lazily inside extract_clouds_and_outdist_gpu, so this module-top
 # setdefault is guaranteed to run first. setdefault (not assignment) so an
@@ -102,8 +104,8 @@ JS_DIRECTIONS = ("js", "kl_narrow_broad", "kl_broad_narrow")
 # Lowered from the upstream default 16 → 4: the HF forward materializes a
 # (B, L, V) logits transient where V≈152k for Qwen-2.5-7B; at B=16 the bf16
 # transient is ~5.0 GiB (matching the 5.35 GiB OOM observed on pod-545 in r4),
-# at B=4 it is ~1.3 GiB — fits the ~9.5 GiB headroom the gpu_memory_utilization
-# =0.60 config leaves once the HF model + vLLM engine co-reside. The OOM is
+# at B=4 it is ~1.3 GiB — fits the ~9.6 GiB headroom the gpu_memory_utilization
+# =0.50 config leaves once the HF model + vLLM engine co-reside. The OOM is
 # HF-side (large-vocab logits), NOT vLLM, so this — not vLLM util — is the lever.
 JS_TF_MAX_BATCH = 4
 
@@ -116,35 +118,50 @@ JS_TF_MAX_BATCH = 4
 # reads FREE-memory-at-startup and rejects init if its requested fraction
 # exceeds it.
 #
-# Two OOM regimes the dial must clear (both observed on pod-545):
+# Four OOM regimes the dial / its companions must clear (all observed on pod-545):
 #   - round-1 (init OOM): 0.85 × 79.18 = 67.3 GiB requested > ~63 GiB free with
 #     the HF model resident → vLLM engine-init rejected ~80s after launch.
 #   - round-3 (extract-phase OOM): with vLLM at 0.70 (56.99 GiB observed) and
-#     the HF model resident at 22.0 GiB (MEASURED, not the 16 GiB estimated in
-#     the r3 brief — model weights + activations + the KV cache HF keeps during
-#     output_hidden_states teacher-forcing on max_model_len=4096 sequences),
-#     total HF + vLLM = ~79 GiB on a 79.18 GiB H100 → only 206 MiB free, and the
-#     extract phase's intermediate tensors (log_softmax etc.) OOM'd mid-run.
+#     the HF model resident at 22.0 GiB, total ~79 GiB → only 206 MiB free, and
+#     the extract phase's intermediate tensors (log_softmax etc.) OOM'd mid-run.
+#   - round-4 (outdist OOM): vLLM 0.60 cleared extract, but the HF teacher-force
+#     materialized a (B=16, L, V≈152k) logits transient (~5.0 GiB) — fixed by
+#     JS_TF_MAX_BATCH 16→4 (above), an HF-side lever, NOT a util change.
+#   - round-6 (clouds OOM, 310 MiB short at log_softmax): vLLM at 0.60 (49 GiB)
+#     + HF resident GROWN to 30 GiB = 79 GiB on a 79.18 GiB H100 → only 289 MiB
+#     free, and the clouds-phase log_softmax (310 MiB) OOM'd. The HF resident
+#     grew 22 → 30 GiB between r3 and r6 because the r4 expandable_segments
+#     allocator trades fragmentation reduction for a slightly HIGHER peak
+#     resident under the actual workload (re-measured, not assumed).
 #
-# r4 fix: drop to 0.60 so 22.0 (HF) + 47.5 (vLLM = 0.60 × 79.18) = 69.5 GiB,
-# leaving ~9.5 GiB working-memory headroom for the extract-phase intermediates.
-# Paired with PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True (set at module
-# top, below) to defragment reserved-but-unallocated memory — the canonical
-# PyTorch CUDA OOM mitigation the round-3 error message itself recommended.
-JS_GPU_MEM_UTIL = 0.60
+# r4 fix: drop 0.70 → 0.60 (22 HF + 47.5 vLLM = 69.5 GiB, ~9.5 GiB headroom),
+# paired with PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True (module top).
+# r8 fix (THIS round): drop 0.60 → 0.50. With the re-measured 30 GiB HF resident,
+# 0.60 left only 1.67 GiB headroom (30 + 47.5 = 77.5 / 79.18) — too thin for the
+# 310 MiB log_softmax transient plus allocator slack. At 0.50: vLLM = 0.50 ×
+# 79.18 = 39.6 GiB, total 30 + 39.6 = 69.6 GiB, leaving ~9.6 GiB headroom on the
+# 79.18 GiB H100 (88% used). This is the 3rd util drop in the same OOM family;
+# if it OOMs again the orchestrator pivots to deeper architectural changes
+# (subprocess-isolated vLLM, or per-layer forward hooks so the clouds forward
+# stops materializing all 32 residual streams + the full LM-head logits — see
+# the deferred (d) note in the round-8 implementer report).
+JS_GPU_MEM_UTIL = 0.50
 # Measured resident size of the co-resident HF base model under realistic
 # extract-phase conditions (output_hidden_states + max_model_len=4096 + the KV
-# cache during a single teacher-force) — pod-545 round-3 OOM log: HF process
-# held 21.98 GiB. NOT the parameter-count estimate (16 GiB) the r3 brief used.
-JS_HF_MODEL_RESIDENT_GIB = 22.0
+# cache during a single teacher-force). The r3 OOM log read 21.98 GiB; the r6
+# clouds-phase peak read ~30 GiB after the r4 expandable_segments allocator
+# (which trades fragmentation reduction for a higher peak resident). The 30 GiB
+# value is the CEILING the dial must budget against — NOT the r3 22 GiB estimate.
+JS_HF_MODEL_RESIDENT_GIB = 30.0
 # An H100-80 reports ~79.18 GiB total.
 _H100_TOTAL_GIB = 79.18
 # Pre-vLLM-init free-memory floor (GiB), pinned to the actual util so a future
 # util change keeps the assert correct: floor = vLLM request + 2.5 GiB margin.
-# At 0.60: 47.5 + 2.5 = 50.0 GiB. The floor must clear the vLLM request with
+# At 0.50: 39.6 + 2.5 = 42.1 GiB. The floor must clear the vLLM request with
 # margin so a regression that fails to leave headroom (e.g. an HF-model size
 # blow-up, another GPU consumer) fails LOUD at the assert with a clear message
-# rather than as an opaque vLLM engine-init OOM.
+# rather than as an opaque vLLM engine-init OOM. ~78 GiB is free at launch
+# (before the HF model loads), so this floor passes comfortably.
 JS_VLLM_PREINIT_MIN_FREE_GIB = max(JS_GPU_MEM_UTIL * _H100_TOTAL_GIB + 2.5, 0.0)
 
 
@@ -257,14 +274,16 @@ def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared acro
             from vllm import LLM, SamplingParams
 
             # The HF model is resident on the GPU here (clouds + outdist both
-            # teacher-force through it; ~22 GiB MEASURED, see
-            # JS_HF_MODEL_RESIDENT_GIB), so vLLM init reads a REDUCED free-memory
-            # figure. Log it + the vLLM request, then assert we clear the request
-            # with margin — a free-memory shortfall fails LOUD here instead of as
-            # an opaque vLLM engine-init OOM (#545 round-1). The util is also kept
-            # at 0.60 (not 0.70) so the extract-phase intermediates (log_softmax)
-            # have ~9.5 GiB working-memory headroom after HF + vLLM co-residency,
-            # which the round-3 extract-phase OOM proved 0.70 lacked (pod-545).
+            # teacher-force through it; ~30 GiB MEASURED at the r6 clouds peak,
+            # see JS_HF_MODEL_RESIDENT_GIB), so vLLM init reads a REDUCED
+            # free-memory figure. Log it + the vLLM request, then assert we clear
+            # the request with margin — a free-memory shortfall fails LOUD here
+            # instead of as an opaque vLLM engine-init OOM (#545 round-1). The
+            # util is lowered to 0.50 (r8, down from 0.60 r4 / 0.70 r3) so the
+            # extract-phase intermediates (log_softmax) have ~9.6 GiB
+            # working-memory headroom after HF (30 GiB) + vLLM (39.6 GiB)
+            # co-residency, which the round-6 clouds-phase OOM proved 0.60 lacked
+            # at the grown 30 GiB HF resident (only 289 MiB free, 310 MiB needed).
             free_bytes, total_bytes = torch.cuda.mem_get_info()
             free_gib = free_bytes / (1024**3)
             total_gib = total_bytes / (1024**3)
