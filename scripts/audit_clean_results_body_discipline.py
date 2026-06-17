@@ -151,16 +151,21 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*\^[A-Za-z0-9_*+\-]+|\b[A-Z]_[A-Z][A-Za-z]{2,}\b",
         "Math-style subscript/superscript notation in prose (R_BgivenA^P2, R^P2, P_TopK) — markdown doesn't render these",
     ),
-    "byte_identical": (
-        # "byte identical" / "byte-identical" anywhere in body prose. Banned
-        # 2026-W22 (task #454) — the phrase reads as AI-slop in research
-        # writing. Use plain English: "the two files matched exactly",
-        # "every byte agreed", "no diff between the runs".
-        r"\bbyte[\s-]identical\b",
+    "bit_byte_identical": (
+        # "byte identical" / "byte-identical" AND the same-family "bit
+        # identical" / "bit-identical" anywhere in body prose. Banned
+        # 2026-W22 (task #454, byte form) — the phrase reads as AI-slop in
+        # research writing. The `bit` variant was added 2026-W25 (task #642:
+        # the body carried `bit-identical` AND `byte-identical`, but the
+        # byte-only regex flagged only the latter; the clean-result-critic
+        # Lens 6 bans both forms as the same voice violation, so the audit
+        # must catch both under one rule). Use plain English: "the two files
+        # matched exactly", "every byte agreed", "no diff between the runs".
+        r"\b(?:byte|bit)[\s-]identical\b",
         (
             "Use plain English ('the two files matched exactly', 'every byte agreed', "
-            "'no diff') instead of 'byte identical' / 'byte-identical' — the phrase "
-            "reads as AI-slop in research prose"
+            "'no diff') instead of 'byte identical' / 'byte-identical' / 'bit identical' / "
+            "'bit-identical' — the phrase reads as AI-slop in research prose"
         ),
     ),
 }
@@ -280,7 +285,7 @@ def _blank_table_rows(text: str) -> str:
     string (the `\n` is preserved). Used by `audit_body` to produce a
     table-cell-exempt scan source for the prose-only categories
     (`interval_inline`, `condition_labels`). Non-exempt categories
-    keep scanning the unblanked text — `byte_identical`, `pre_reg`,
+    keep scanning the unblanked text — `bit_byte_identical`, `pre_reg`,
     `named_tests`, `letter_labels`, etc. are not prose-vs-table
     sensitive, and we don't want to silently widen the audit's
     exemption surface.
@@ -298,7 +303,7 @@ def _blank_table_rows(text: str) -> str:
 # `### What I ran` legitimately carries `C1` / `D1` codes whose
 # definition IS the table — the `condition_labels` rule targets BARE
 # codes in narrative prose where the reader has no lookup. Other
-# categories (`byte_identical`, `pre_reg`, `named_tests`, ...) keep
+# categories (`bit_byte_identical`, `pre_reg`, `named_tests`, ...) keep
 # firing on table cells — the prose-vs-table distinction is not
 # load-bearing for those.
 _TABLE_CELL_EXEMPT_CATEGORIES: frozenset[str] = frozenset({"interval_inline", "condition_labels"})
@@ -555,7 +560,7 @@ def audit_body(body: str) -> dict[str, list[str]]:
     lookup table inside `### What I ran` legitimately carries `C1` /
     `D1` codes whose definition IS the table. All other categories
     keep scanning the unblanked text — the prose-vs-table distinction
-    is not load-bearing for `byte_identical`, `pre_reg`, `named_tests`,
+    is not load-bearing for `bit_byte_identical`, `pre_reg`, `named_tests`,
     `letter_labels`, etc.
 
     `interval_inline` additionally blanks figure-caption blockquotes and
