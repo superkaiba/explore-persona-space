@@ -36,4 +36,23 @@ salvage launcher (the SSH-MCP/RunPod launcher template already does
 this — port it forward). The workdir `/workspace/eps-issue-<N>` is
 root-owned, so the entire relaunch block must run under `sudo bash -c`.
 
-Origin: #653 round 9 salvage-relaunch (2026-06-17).
+**Pre-launch liveness check phantom (companion, #653 r10).** Running
+`pgrep -f "i653_dispatch.py"` (or any `pgrep -f <script>`) inside a
+gcloud-ssh `--command='...'` SELF-MATCHES the SSH wrapper's argv and
+returns phantom "live dispatcher" pids that are really the SSH
+session itself. Naive consequence: brief says "expect NONE" → you
+see pids → you either skip launch (orphaning the recovery) or kill
+the SSH session itself. Always combine two checks: (a) `pgrep -af`
+to see the full command line and recognize the self-match, AND (b)
+`ps -eo pid,cmd | grep '[u]v run python <script>'` (BRACKET-FIRST
+to dodge self-match) which only returns real dispatchers; also
+cross-check the pidfile's stale pid with `ps -p $PID`.
+
+**`/workspace/eps-issue-<N>` is root-owned (companion, #653 r10).**
+The SSH user cannot `cd` into it and cannot `source ./.env` from a
+top-level shell — `cd: Permission denied`. Wrap the ENTIRE fetch /
+reset / source / launch sequence inside ONE `sudo bash -c '...'`
+that does the `cd` + `source ./.env` + `git fetch` + `git reset`
++ launch under root.
+
+Origin: #653 round 9 + round 10 salvage-relaunch (2026-06-17).
