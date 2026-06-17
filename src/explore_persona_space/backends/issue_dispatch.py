@@ -147,6 +147,8 @@ def _main_checkout_root() -> Path:
             env=env,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
         )
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:

@@ -425,6 +425,8 @@ def _resolve_state_dir_root() -> Path:
             env=env,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
         )
         common_dir = Path(proc.stdout.strip())
@@ -499,6 +501,8 @@ def _try_refresh_pods_conf_from_api(pod: str) -> bool:
             cmd,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=60,
             check=False,
         )
@@ -993,6 +997,8 @@ def _ssh_probe(
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=60,
     )
     if result.returncode != 0:
@@ -1173,6 +1179,8 @@ def _ssh_drain_sentinels(pod: str, issue: int) -> list[tuple[str, str]]:
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, sentinel_drain_shell(issue)],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=60,
     )
     if result.returncode != 0:
@@ -1199,6 +1207,8 @@ def _ssh_mark_processed(pod: str, remote_path: str) -> bool:
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, cmd],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=30,
     )
     if result.returncode != 0:

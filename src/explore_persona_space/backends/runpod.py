@@ -372,6 +372,8 @@ class RunPodBackend(ComputeBackend):
                 argv,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=60,
                 check=False,
             )
@@ -453,6 +455,8 @@ class RunPodBackend(ComputeBackend):
                 ["ssh", handle.pod_name, f"cat {_shell_quote(path)}"],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=60,
                 check=False,
             )

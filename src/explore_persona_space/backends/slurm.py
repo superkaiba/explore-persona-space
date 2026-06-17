@@ -1605,6 +1605,8 @@ def ssh_submit(
         input=sbatch_script,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout,
         check=True,
     )
@@ -1621,6 +1623,8 @@ def ssh_scancel(*, robot_alias: str, job_id: str, timeout: int = 30) -> None:
         argv,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout,
         check=False,
     )
@@ -1705,6 +1709,8 @@ def mila_socket_alive(
             argv,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout + 2,
             check=False,
         )
@@ -1800,6 +1806,8 @@ def ssh_estimate_start(
             input=sbatch_script,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
         )
@@ -2495,6 +2503,8 @@ def git_branch_at(src_root: Path) -> str | None:
             ["git", "-C", str(src_root), "rev-parse", "--abbrev-ref", "HEAD"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
             timeout=15,
         )
