@@ -1,0 +1,1093 @@
+{
+ "schema_version": 2,
+ "scores": {
+  "sycophancy:gauss_kl_act": {
+   "spearman": 0.26573283104365375,
+   "oof_r2": 0.031844517467149225,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.1021308274313637,
+   "delta_r2": 3.1021308274313637,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": 0.0,
+   "bootstrap": {
+    "ci_lo": 0.01483023907967439,
+    "ci_hi": 0.43783258140778136,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.028152610579404325,
+   "tier": "registered",
+   "family": "v3_six",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:kl_out_seq_oneway": {
+   "spearman": -0.10750555284691041,
+   "oof_r2": -0.13179317177360117,
+   "n_cells": 56,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.9384931381906134,
+   "delta_r2": 2.9384931381906134,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.1636376892407504,
+   "bootstrap": {
+    "ci_lo": -0.6064435550538938,
+    "ci_hi": 0.33654049530184776,
+    "n_draws": 1988
+   },
+   "leave_family_out_oof_r2": -0.687372152923186,
+   "tier": "registered",
+   "family": "v3_six",
+   "note": "one-way output-KL over the full realized reply; reads the SAME per-context output-distribution JSONs as the A5 family (no separate forward pass; plan \u00a79 row folded into A5)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:base_prior_bystander": {
+   "spearman": 0.6078163592478939,
+   "oof_r2": -3.0702863099642146,
+   "n_cells": 200,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -3.1021308274313637,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 0.0,
+   "delta_r2": 0.0,
+   "bootstrap": {
+    "ci_lo": 0.3417995917689349,
+    "ci_hi": 0.8108906343093278,
+    "n_draws": 1977
+   },
+   "leave_family_out_oof_r2": -2.225148412897531,
+   "tier": "registered",
+   "family": "v3_six",
+   "note": "column effect from stored base artifacts (#444/#507 bystander_base_rate); distance polarity = -base (higher base prior predicts MORE leak)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:content_free": {
+   "spearman": -0.1585276274368268,
+   "oof_r2": -3.5625612111564235,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": -0.49227490119220896,
+   "delta_r2": -0.49227490119220896,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -3.5944057286235727,
+   "bootstrap": {
+    "ci_lo": -0.4571208453563346,
+    "ci_hi": 0.1361817474415775,
+    "n_draws": 1977
+   },
+   "leave_family_out_oof_r2": -2.5234577417358657,
+   "tier": "registered",
+   "family": "v3_six",
+   "note": "#507 base_rate_diff_neg_abs flipped to distance polarity: |base_i - base_j| (closer base rates predict more leak)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:neg_panel_prox": {
+   "spearman": 0.26396808570119257,
+   "oof_r2": -0.01417991201388924,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.0561063979503253,
+   "delta_r2": 3.0561063979503253,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.046024429481038465,
+   "bootstrap": {
+    "ci_lo": -0.1544553418686626,
+    "ci_hi": 0.6153973723857727,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.022899102744343036,
+   "tier": "registered",
+   "family": "v3_six",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:rank1_proj_raw": {
+   "spearman": 0.10611241067271822,
+   "oof_r2": -0.06539015883395449,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.00489615113026,
+   "delta_r2": 3.00489615113026,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.09723467630110372,
+   "bootstrap": {
+    "ci_lo": -0.14888390477818433,
+    "ci_hi": 0.3418004997094352,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.09986690006172161,
+   "tier": "registered",
+   "family": "A1",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:rank1_proj_whitened": {
+   "spearman": 0.09295566653407457,
+   "oof_r2": -0.05512108242327751,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.015165227540937,
+   "delta_r2": 3.015165227540937,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.08696559989042674,
+   "bootstrap": {
+    "ci_lo": -0.13571418002665692,
+    "ci_hi": 0.3133540807362726,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.0924363677164779,
+   "tier": "registered",
+   "family": "A1",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:norm_ratio": {
+   "spearman": 0.1729882148235179,
+   "oof_r2": -0.07124518553154569,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.9990411244326687,
+   "delta_r2": 2.9990411244326687,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.10308970299869491,
+   "bootstrap": {
+    "ci_lo": -0.1488284231656915,
+    "ci_hi": 0.43421230086720186,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.10356190009527233,
+   "tier": "registered",
+   "family": "A1",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:train_prior_tf": {
+   "spearman": -0.04036083313941441,
+   "oof_r2": -0.06226195067374807,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.0080243592904665,
+   "delta_r2": 3.0080243592904665,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.09410646814089729,
+   "bootstrap": {
+    "ci_lo": -0.31552831191066516,
+    "ci_hi": 0.2365587135845238,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.10134361036769235,
+   "tier": "registered",
+   "family": "A2",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:train_prior_onpolicy": {
+   "spearman": 0.02214036534497887,
+   "oof_r2": -0.06221412425747341,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.008072185706741,
+   "delta_r2": 3.008072185706741,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.09405864172462264,
+   "bootstrap": {
+    "ci_lo": -0.22846757644975674,
+    "ci_hi": 0.25760423487449274,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.09037657061646498,
+   "tier": "registered",
+   "family": "A2",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:euclidean": {
+   "spearman": 0.26573283104365375,
+   "oof_r2": 0.030564507663396356,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.100850817627611,
+   "delta_r2": 3.100850817627611,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.0012800098037528684,
+   "bootstrap": {
+    "ci_lo": 0.01483023907967439,
+    "ci_hi": 0.43783258140778136,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.029134859289112525,
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:centroid_cosine": {
+   "spearman": 0.10586044098230196,
+   "oof_r2": -0.06545567524478924,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.0048306347194256,
+   "delta_r2": 3.0048306347194256,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.09730019271193846,
+   "bootstrap": {
+    "ci_lo": -0.15480935093372386,
+    "ci_hi": 0.34567189642371804,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.0997969571407249,
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:mahalanobis_pair": {
+   "spearman": 0.26573283104365375,
+   "oof_r2": 0.030564507663396245,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.100850817627611,
+   "delta_r2": 3.100850817627611,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.0012800098037529795,
+   "bootstrap": {
+    "ci_lo": 0.01483023907967439,
+    "ci_hi": 0.43783258140778136,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.02913485928911541,
+   "tier": "registered",
+   "family": "A3",
+   "note": "pair-averaged covariance in the PCA-16 subspace (#493 recipe)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:mahalanobis_pooled": {
+   "spearman": 0.26573283104365375,
+   "oof_r2": 0.030564507663397467,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.100850817627612,
+   "delta_r2": 3.100850817627612,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.0012800098037517582,
+   "bootstrap": {
+    "ci_lo": 0.01483023907967439,
+    "ci_hi": 0.43783258140778136,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.029134859289111636,
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:rbf_mmd2": {
+   "spearman": NaN,
+   "oof_r2": -0.05704084909437568,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.0132454608698387,
+   "delta_r2": 3.0132454608698387,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.0888853665615249,
+   "bootstrap": {
+    "ci_lo": NaN,
+    "ci_hi": NaN,
+    "n_draws": 0,
+    "degenerate": true
+   },
+   "leave_family_out_oof_r2": -0.0852642715412828,
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:c2st": {
+   "spearman": NaN,
+   "oof_r2": -0.05704084909437568,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.0132454608698387,
+   "delta_r2": 3.0132454608698387,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.0888853665615249,
+   "bootstrap": {
+    "ci_lo": NaN,
+    "ci_hi": NaN,
+    "n_draws": 0,
+    "degenerate": true
+   },
+   "leave_family_out_oof_r2": -0.0852642715412828,
+   "tier": "registered",
+   "family": "A3",
+   "note": "CV linear-probe AUC distance 2*|AUC-0.5| on PCA-16 (#493 recipe)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:delta_spectrum_coherence": {
+   "spearman": 0.1338444072474342,
+   "oof_r2": -0.05704084909437612,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.0132454608698387,
+   "delta_r2": 3.0132454608698387,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.08888536656152535,
+   "bootstrap": {
+    "ci_lo": -0.12543015444317682,
+    "ci_hi": 0.38354050534842216,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.0852642715412828,
+   "tier": "registered",
+   "family": "A3",
+   "note": "#493 paired \u0394-spectrum (raw #493 convention: shape scalar, polarity read at analysis time; #493 instability flag carries)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:delta_spectrum_mean_norm": {
+   "spearman": 0.26573283104365375,
+   "oof_r2": 0.030564507663396356,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.100850817627611,
+   "delta_r2": 3.100850817627611,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.0012800098037528684,
+   "bootstrap": {
+    "ci_lo": 0.01483023907967439,
+    "ci_hi": 0.43783258140778136,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.029134859289112525,
+   "tier": "registered",
+   "family": "A3",
+   "note": "#493 paired \u0394-spectrum \u2016mean \u0394\u2016 (distance-like); #493 instability flag carries",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:delta_spectrum_effective_dim": {
+   "spearman": NaN,
+   "oof_r2": -0.05704084909437568,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.0132454608698387,
+   "delta_r2": 3.0132454608698387,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.0888853665615249,
+   "bootstrap": {
+    "ci_lo": NaN,
+    "ci_hi": NaN,
+    "n_draws": 0,
+    "degenerate": true
+   },
+   "leave_family_out_oof_r2": -0.0852642715412828,
+   "tier": "registered",
+   "family": "A3",
+   "note": "#493 paired \u0394-spectrum participation ratio (shape scalar, polarity read at analysis time); #493 instability flag carries",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:bures_w2": {
+   "spearman": 0.26573283104365375,
+   "oof_r2": 0.030564507663398688,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.100850817627613,
+   "delta_r2": 3.100850817627613,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.001280009803750537,
+   "bootstrap": {
+    "ci_lo": 0.01483023907967439,
+    "ci_hi": 0.43783258140778136,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.029134859289112525,
+   "tier": "registered",
+   "family": "A3",
+   "note": "Bures-Wasserstein W2 between PCA-16 Gaussians",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:js_first_token": {
+   "spearman": -0.17651874066295462,
+   "oof_r2": -0.03474111368684252,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.035545196277372,
+   "delta_r2": 3.035545196277372,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.06658563115399174,
+   "bootstrap": {
+    "ci_lo": -0.39947933149956105,
+    "ci_hi": 0.03286387502908749,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.11060203012076153,
+   "tier": "registered",
+   "family": "A4",
+   "note": "deprecated-as-canonical, labeled benchmark row",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:kl_first_token_fwd": {
+   "spearman": -0.2286084251476874,
+   "oof_r2": -0.13758002129925062,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.932706288664964,
+   "delta_r2": 2.932706288664964,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.16942453876639985,
+   "bootstrap": {
+    "ci_lo": -0.42234664304029174,
+    "ci_hi": -0.03897755599343147,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.3397746942562907,
+   "tier": "registered",
+   "family": "A4",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:kl_first_token_rev": {
+   "spearman": -0.07303788310025378,
+   "oof_r2": -0.05813792935594564,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.012148380608269,
+   "delta_r2": 3.012148380608269,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.08998244682309486,
+   "bootstrap": {
+    "ci_lo": -0.3075707366568414,
+    "ci_hi": 0.18173423147645604,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.13442850932479455,
+   "tier": "registered",
+   "family": "A4",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:js_out_seq": {
+   "spearman": -0.09821709384805442,
+   "oof_r2": -0.12002289172933356,
+   "n_cells": 56,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.950263418234881,
+   "delta_r2": 2.950263418234881,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.15186740919648278,
+   "bootstrap": {
+    "ci_lo": -0.5507304676345023,
+    "ci_hi": 0.30542515043367197,
+    "n_draws": 1986
+   },
+   "leave_family_out_oof_r2": -0.6889259060231818,
+   "tier": "registered",
+   "family": "A5",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:kl_out_seq_fwd": {
+   "spearman": -0.10750555284691041,
+   "oof_r2": -0.13179317177360117,
+   "n_cells": 56,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.9384931381906134,
+   "delta_r2": 2.9384931381906134,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.1636376892407504,
+   "bootstrap": {
+    "ci_lo": -0.6064435550538938,
+    "ci_hi": 0.33654049530184776,
+    "n_draws": 1988
+   },
+   "leave_family_out_oof_r2": -0.687372152923186,
+   "tier": "registered",
+   "family": "A5",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:kl_out_seq_rev": {
+   "spearman": -0.16006789299522944,
+   "oof_r2": -0.1422024233995789,
+   "n_cells": 56,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.928083886564636,
+   "delta_r2": 2.928083886564636,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.17404694086672812,
+   "bootstrap": {
+    "ci_lo": -0.6370509981490814,
+    "ci_hi": 0.23696456444356867,
+    "n_draws": 1988
+   },
+   "leave_family_out_oof_r2": -0.7979015634864663,
+   "tier": "registered",
+   "family": "A5",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:kl_asym_out_seq": {
+   "spearman": -0.12470877780707078,
+   "oof_r2": -0.13685513423385842,
+   "n_cells": 56,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.933431175730356,
+   "delta_r2": 2.933431175730356,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.16869965170100765,
+   "bootstrap": {
+    "ci_lo": -0.6000175207749578,
+    "ci_hi": 0.27689413541659125,
+    "n_draws": 1986
+   },
+   "leave_family_out_oof_r2": -0.747040470087105,
+   "tier": "registered",
+   "family": "A5",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:js_out_seq_rb": {
+   "spearman": -0.2595493968180636,
+   "oof_r2": 0.0006858895790760045,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.0709721995432906,
+   "delta_r2": 3.0709721995432906,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.03115862788807322,
+   "bootstrap": {
+    "ci_lo": -0.5285007823189191,
+    "ci_hi": 0.0037730629569363945,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.1585665882890439,
+   "tier": "registered",
+   "family": "A5_rb",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:kl_fwd_out_seq_rb": {
+   "spearman": -0.25137989399830374,
+   "oof_r2": -0.022894205518889654,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.0473921044453247,
+   "delta_r2": 3.0473921044453247,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.05473872298603888,
+   "bootstrap": {
+    "ci_lo": -0.5196223763792269,
+    "ci_hi": 0.007034833398086066,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.21002690136241497,
+   "tier": "registered",
+   "family": "A5_rb",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:kl_rev_out_seq_rb": {
+   "spearman": -0.19305809028229975,
+   "oof_r2": -0.03228774126831069,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.0379985686959037,
+   "delta_r2": 3.0379985686959037,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.06413225873545991,
+   "bootstrap": {
+    "ci_lo": -0.45289229361467176,
+    "ci_hi": 0.06471220905900359,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.1972436918627778,
+   "tier": "registered",
+   "family": "A5_rb",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:js_taught_span": {
+   "spearman": -0.09821709384805442,
+   "oof_r2": -0.12002289172933356,
+   "n_cells": 56,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.950263418234881,
+   "delta_r2": 2.950263418234881,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.15186740919648278,
+   "bootstrap": {
+    "ci_lo": -0.5507304676345023,
+    "ci_hi": 0.30542515043367197,
+    "n_draws": 1986
+   },
+   "leave_family_out_oof_r2": -0.6889259060231818,
+   "tier": "registered",
+   "family": "A6",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:cos_to_assistant": {
+   "spearman": -0.2537074020974752,
+   "oof_r2": -25.75889476863899,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": -22.688608458674775,
+   "delta_r2": -22.688608458674775,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -25.790739286106138,
+   "bootstrap": {
+    "ci_lo": -0.5835236639085593,
+    "ci_hi": 0.13812313019453376,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -15.576017564511325,
+   "tier": "registered",
+   "family": "A8",
+   "note": "anchor = the `default` context: in the #537 battery the bare assistant IS the default context, so this row coincides with cos_to_neutral; kept as a labeled duplicate per \u00a76.1 A8 (historically distinct anchors, #396/#415)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:js_to_assistant": {
+   "spearman": -0.042414779734055844,
+   "oof_r2": -0.06107517762735459,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.00921113233686,
+   "delta_r2": 3.00921113233686,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.09291969509450382,
+   "bootstrap": {
+    "ci_lo": -0.3198084162685232,
+    "ci_hi": 0.24796813463723888,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.09342499143034755,
+   "tier": "registered",
+   "family": "A8",
+   "note": "first-token JS to the `default` context's next-token distribution; same battery-level alias caveat as cos_to_assistant",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:cos_to_neutral": {
+   "spearman": -0.2537074020974752,
+   "oof_r2": -25.75889476863899,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": -22.688608458674775,
+   "delta_r2": -22.688608458674775,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -25.790739286106138,
+   "bootstrap": {
+    "ci_lo": -0.5835236639085593,
+    "ci_hi": 0.13812313019453376,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -15.576017564511325,
+   "tier": "registered",
+   "family": "A8",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:js_to_neutral": {
+   "spearman": -0.042414779734055844,
+   "oof_r2": -0.06107517762735459,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.00921113233686,
+   "delta_r2": 3.00921113233686,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.09291969509450382,
+   "bootstrap": {
+    "ci_lo": -0.3198084162685232,
+    "ci_hi": 0.24796813463723888,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.09342499143034755,
+   "tier": "registered",
+   "family": "A8",
+   "note": "first-token JS to the `default` context's next-token distribution",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:cos_to_trained_midpoint": {
+   "spearman": 0.10405744106544611,
+   "oof_r2": -0.11397642134389008,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.9563098886203245,
+   "delta_r2": 2.9563098886203245,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.1458209388110393,
+   "bootstrap": {
+    "ci_lo": -0.31207997015123645,
+    "ci_hi": 0.5336514261761638,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.13257880305954073,
+   "tier": "registered",
+   "family": "A8",
+   "note": "column distance to the midpoint of the scored block's context means; RAW-ONLY -- under --centered the anchor degenerates to the zero vector (grand-mean centering subtracts exactly the mean of the context means) and the scorer fails loud",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:behavior_conditioned_logprob_diff": {
+   "spearman": 0.02214036534497887,
+   "oof_r2": -0.06221412425747341,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.008072185706741,
+   "delta_r2": 3.008072185706741,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.09405864172462264,
+   "bootstrap": {
+    "ci_lo": -0.22846757644975674,
+    "ci_hi": 0.25760423487449274,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.09037657061646498,
+   "tier": "registered",
+   "family": "conditioned",
+   "note": "PRIMARY conditioned predictor (v7): -(mean_r logP_base(r|ctx_j) - logP_base(r|ctx_i)); eval-ctx log-likes the realization -> more leak -> less distant (pinned like base_prior_bystander)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:behavior_conditioned_js": {
+   "spearman": -0.09821709384805442,
+   "oof_r2": -0.12002289172933356,
+   "n_cells": 56,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.950263418234881,
+   "delta_r2": 2.950263418234881,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.15186740919648278,
+   "bootstrap": {
+    "ci_lo": -0.5507304676345023,
+    "ci_hi": 0.30542515043367197,
+    "n_draws": 1986
+   },
+   "leave_family_out_oof_r2": -0.6889259060231818,
+   "tier": "registered",
+   "family": "conditioned",
+   "note": "symmetric per-token JS over the realization-span positions; carries the #489/#502 collinearity re-check (H5)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:null_random_predictor": {
+   "spearman": -0.03143189288687259,
+   "oof_r2": -0.07849995424372969,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.991786355720485,
+   "delta_r2": 2.991786355720485,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.11034447171087891,
+   "bootstrap": {
+    "ci_lo": -0.2711059993968351,
+    "ci_hi": 0.22360604475807383,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.1154815438278245,
+   "tier": "registered",
+   "family": "control",
+   "note": "(v9) fixed-seed (537) permutation of centroid_cosine's off-diagonal cell values -- the argmax-over-noise null; expected oof_r2 ~ 0",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:text_overlap_predictor": {
+   "spearman": -0.09689921803744202,
+   "oof_r2": -0.06258614671571539,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 3.007700163248499,
+   "delta_r2": 3.007700163248499,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.09443066418286461,
+   "bootstrap": {
+    "ci_lo": -0.424399086712924,
+    "ci_hi": 0.08671231188809309,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.14261306956868625,
+   "tier": "registered",
+   "family": "control",
+   "note": "(v9) 1 - Jaccard(char-3-grams(rendered_prompt_i), rendered_prompt_j)) -- the trivial prompt-string surface-overlap control; base-model-only, no forward pass; polarity larger = more distant (more overlap -> less distant)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:centroid_cosine[end_of_system,L02,centered]": {
+   "spearman": -0.06171242973883753,
+   "oof_r2": -0.11309667331627904,
+   "n_cells": 200,
+   "base_prior_oof_r2": -3.0702863099642146,
+   "delta_vs_base_prior_r2": 2.9571896366479358,
+   "delta_r2": 2.9571896366479358,
+   "gauss_kl_act_oof_r2": 0.031844517467149225,
+   "delta_vs_gauss_kl_act_r2": -0.14494119078342826,
+   "bootstrap": {
+    "ci_lo": -0.3393276180970333,
+    "ci_hi": 0.15048373937904352,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.2123104007236063,
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "end_of_system",
+    "layer": 2,
+    "centered": true
+   },
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:pv_dp": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "v3_six",
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:behavior_vector_proj_shift": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "behavior_vector",
+   "behavior": "sycophancy",
+   "final_test": false
+  },
+  "sycophancy:behavior_vector_proj_level": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "behavior_vector",
+   "behavior": "sycophancy",
+   "final_test": false
+  }
+ },
+ "registered_not_implemented": {
+  "sycophancy": []
+ },
+ "skipped_rows": {
+  "sycophancy": [
+   "behavior_vector_proj_level",
+   "behavior_vector_proj_shift",
+   "pv_dp"
+  ]
+ },
+ "descoped_rows": {
+  "sycophancy": []
+ },
+ "git_commit": "a63e940715e52cbde4e1b1d6fe566cd164732ad4",
+ "updated_at": "2026-06-17T00:00:37.465975+00:00"
+}

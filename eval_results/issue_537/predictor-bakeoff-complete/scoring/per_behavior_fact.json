@@ -1,0 +1,1020 @@
+{
+ "schema_version": 2,
+ "scores": {
+  "fact:pv_dp": {
+   "spearman": 0.10809692398639076,
+   "oof_r2": -0.11981099467035317,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.14420969502605419,
+   "delta_r2": -0.14420969502605419,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.14488255413375972,
+   "bootstrap": {
+    "ci_lo": -0.1829848831512646,
+    "ci_hi": 0.31805607462828706,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.07662858550101137,
+   "tier": "registered",
+   "family": "v3_six",
+   "note": "v9 dedup (plan \u00a74.0): the parent persona-vectors content is implemented ONCE as behavior_vector_proj_shift/_level; pv_dp is routed to redundant_with: behavior_vector_proj_shift (the parent's registered \u0394P-at-readout row reduces to the static projection) and reads the SAME behavior_vector_scores artifact (shift track)",
+   "redundant_with": "behavior_vector_proj_shift",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:gauss_kl_act": {
+   "spearman": -0.04505141774558659,
+   "oof_r2": -0.2646935488041129,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.2890922491598139,
+   "delta_r2": -0.2890922491598139,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.0,
+   "bootstrap": {
+    "ci_lo": -0.42808285085617853,
+    "ci_hi": 0.3868456387569826,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.2202299348550527,
+   "tier": "registered",
+   "family": "v3_six",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:base_prior_bystander": {
+   "spearman": 0.2437205084215574,
+   "oof_r2": 0.02439870035570102,
+   "n_cells": 193,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.2890922491598139,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": 0.0,
+   "delta_r2": 0.0,
+   "bootstrap": {
+    "ci_lo": -0.028596095375612997,
+    "ci_hi": 0.471042843525578,
+    "n_draws": 1443
+   },
+   "leave_family_out_oof_r2": 0.04531698694865727,
+   "tier": "registered",
+   "family": "v3_six",
+   "note": "column effect from stored base artifacts (#444/#507 bystander_base_rate); distance polarity = -base (higher base prior predicts MORE leak)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:content_free": {
+   "spearman": -0.6006658311443404,
+   "oof_r2": 0.2044600093661707,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": 0.18006130901046968,
+   "delta_r2": 0.18006130901046968,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.4691535581702836,
+   "bootstrap": {
+    "ci_lo": -0.7362186397905873,
+    "ci_hi": -0.41018712666603874,
+    "n_draws": 1443
+   },
+   "leave_family_out_oof_r2": 0.2112053045284158,
+   "tier": "registered",
+   "family": "v3_six",
+   "note": "#507 base_rate_diff_neg_abs flipped to distance polarity: |base_i - base_j| (closer base rates predict more leak)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:neg_panel_prox": {
+   "spearman": -0.08692241088138392,
+   "oof_r2": -0.17635683933109436,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.20075553968679538,
+   "delta_r2": -0.20075553968679538,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.08833670947301853,
+   "bootstrap": {
+    "ci_lo": -0.3642326514362689,
+    "ci_hi": 0.2403793312055489,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.14521007485606874,
+   "tier": "registered",
+   "family": "v3_six",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:rank1_proj_raw": {
+   "spearman": 0.09947511392117366,
+   "oof_r2": -0.14257995296196913,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.16697865331767014,
+   "delta_r2": -0.16697865331767014,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.12211359584214376,
+   "bootstrap": {
+    "ci_lo": -0.13117587451034365,
+    "ci_hi": 0.32472985748203326,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.11394047609624769,
+   "tier": "registered",
+   "family": "A1",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:rank1_proj_whitened": {
+   "spearman": 0.04978456312371156,
+   "oof_r2": -0.15102986383892136,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.17542856419462238,
+   "delta_r2": -0.17542856419462238,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.11366368496519152,
+   "bootstrap": {
+    "ci_lo": -0.17120786308408803,
+    "ci_hi": 0.2622683342227782,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.114231356473667,
+   "tier": "registered",
+   "family": "A1",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:norm_ratio": {
+   "spearman": -0.06376050269561845,
+   "oof_r2": -0.20077855981552784,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.22517726017122885,
+   "delta_r2": -0.22517726017122885,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.06391498898858505,
+   "bootstrap": {
+    "ci_lo": -0.4031461061683271,
+    "ci_hi": 0.31445762512234293,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.15801058692239822,
+   "tier": "registered",
+   "family": "A1",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:train_prior_tf": {
+   "spearman": 0.20906326808032533,
+   "oof_r2": -0.1551309725195702,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.17952967287527122,
+   "delta_r2": -0.17952967287527122,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.10956257628454269,
+   "bootstrap": {
+    "ci_lo": -0.08442328885649922,
+    "ci_hi": 0.49161646492744315,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.08462696438264805,
+   "tier": "registered",
+   "family": "A2",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:euclidean": {
+   "spearman": -0.04505141774558659,
+   "oof_r2": -0.26326765840878186,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.2876663587644829,
+   "delta_r2": -0.2876663587644829,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.001425890395331031,
+   "bootstrap": {
+    "ci_lo": -0.42808285085617853,
+    "ci_hi": 0.3868456387569826,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.21866035245652826,
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:centroid_cosine": {
+   "spearman": 0.1006883804185662,
+   "oof_r2": -0.1428531649435265,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.16725186529922753,
+   "delta_r2": -0.16725186529922753,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.12184038386058638,
+   "bootstrap": {
+    "ci_lo": -0.13506043355128725,
+    "ci_hi": 0.33566621809291614,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.11399822768848078,
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:mahalanobis_pair": {
+   "spearman": -0.04505141774558659,
+   "oof_r2": -0.26326765840877986,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.2876663587644809,
+   "delta_r2": -0.2876663587644809,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.0014258903953330293,
+   "bootstrap": {
+    "ci_lo": -0.42808285085617853,
+    "ci_hi": 0.3868456387569826,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.21866035245652826,
+   "tier": "registered",
+   "family": "A3",
+   "note": "pair-averaged covariance in the PCA-16 subspace (#493 recipe)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:mahalanobis_pooled": {
+   "spearman": -0.04505141774558659,
+   "oof_r2": -0.2632676584087803,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.2876663587644813,
+   "delta_r2": -0.2876663587644813,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.0014258903953325852,
+   "bootstrap": {
+    "ci_lo": -0.42808285085617853,
+    "ci_hi": 0.3868456387569826,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.21866035245653026,
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:rbf_mmd2": {
+   "spearman": NaN,
+   "oof_r2": -0.14327735909726602,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.16767605945296704,
+   "delta_r2": -0.16767605945296704,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.12141618970684687,
+   "bootstrap": {
+    "ci_lo": NaN,
+    "ci_hi": NaN,
+    "n_draws": 0,
+    "degenerate": true
+   },
+   "leave_family_out_oof_r2": -0.10527930502612337,
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:c2st": {
+   "spearman": NaN,
+   "oof_r2": -0.14327735909726602,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.16767605945296704,
+   "delta_r2": -0.16767605945296704,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.12141618970684687,
+   "bootstrap": {
+    "ci_lo": NaN,
+    "ci_hi": NaN,
+    "n_draws": 0,
+    "degenerate": true
+   },
+   "leave_family_out_oof_r2": -0.10527930502612337,
+   "tier": "registered",
+   "family": "A3",
+   "note": "CV linear-probe AUC distance 2*|AUC-0.5| on PCA-16 (#493 recipe)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:delta_spectrum_coherence": {
+   "spearman": 0.12179616810697796,
+   "oof_r2": -0.14327735909726602,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.16767605945296704,
+   "delta_r2": -0.16767605945296704,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.12141618970684687,
+   "bootstrap": {
+    "ci_lo": -0.1397377423970855,
+    "ci_hi": 0.34959880687836026,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.10527930502612315,
+   "tier": "registered",
+   "family": "A3",
+   "note": "#493 paired \u0394-spectrum (raw #493 convention: shape scalar, polarity read at analysis time; #493 instability flag carries)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:delta_spectrum_mean_norm": {
+   "spearman": -0.04505141774558659,
+   "oof_r2": -0.26326765840878186,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.2876663587644829,
+   "delta_r2": -0.2876663587644829,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.001425890395331031,
+   "bootstrap": {
+    "ci_lo": -0.42808285085617853,
+    "ci_hi": 0.3868456387569826,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.21866035245652826,
+   "tier": "registered",
+   "family": "A3",
+   "note": "#493 paired \u0394-spectrum \u2016mean \u0394\u2016 (distance-like); #493 instability flag carries",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:delta_spectrum_effective_dim": {
+   "spearman": NaN,
+   "oof_r2": -0.14327735909726602,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.16767605945296704,
+   "delta_r2": -0.16767605945296704,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.12141618970684687,
+   "bootstrap": {
+    "ci_lo": NaN,
+    "ci_hi": NaN,
+    "n_draws": 0,
+    "degenerate": true
+   },
+   "leave_family_out_oof_r2": -0.10527930502612337,
+   "tier": "registered",
+   "family": "A3",
+   "note": "#493 paired \u0394-spectrum participation ratio (shape scalar, polarity read at analysis time); #493 instability flag carries",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:bures_w2": {
+   "spearman": -0.04505141774558659,
+   "oof_r2": -0.26326765840877986,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.2876663587644809,
+   "delta_r2": -0.2876663587644809,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.0014258903953330293,
+   "bootstrap": {
+    "ci_lo": -0.42808285085617853,
+    "ci_hi": 0.3868456387569826,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.21866035245652804,
+   "tier": "registered",
+   "family": "A3",
+   "note": "Bures-Wasserstein W2 between PCA-16 Gaussians",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:js_first_token": {
+   "spearman": -0.08579785415338839,
+   "oof_r2": -0.19359980142088062,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.21799850177658164,
+   "delta_r2": -0.21799850177658164,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.07109374738323226,
+   "bootstrap": {
+    "ci_lo": -0.40145612208930254,
+    "ci_hi": 0.15618159650029098,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.13739756011965865,
+   "tier": "registered",
+   "family": "A4",
+   "note": "deprecated-as-canonical, labeled benchmark row",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:kl_first_token_fwd": {
+   "spearman": -0.10096755960038388,
+   "oof_r2": -0.40601131068877927,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.4304100110444803,
+   "delta_r2": -0.4304100110444803,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": -0.14131776188466638,
+   "bootstrap": {
+    "ci_lo": -0.42889828084797904,
+    "ci_hi": 0.21372590288606996,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.3367292554757768,
+   "tier": "registered",
+   "family": "A4",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:kl_first_token_rev": {
+   "spearman": -0.0993634742837524,
+   "oof_r2": -0.1958982483863838,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.22029694874208483,
+   "delta_r2": -0.22029694874208483,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.06879530041772908,
+   "bootstrap": {
+    "ci_lo": -0.37488208160045017,
+    "ci_hi": 0.13362696953649023,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.39670562708462564,
+   "tier": "registered",
+   "family": "A4",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:js_out_seq_rb": {
+   "spearman": -0.5979365992120221,
+   "oof_r2": 0.25248453065893295,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": 0.22808583030323193,
+   "delta_r2": 0.22808583030323193,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.5171780794630458,
+   "bootstrap": {
+    "ci_lo": -0.746327049149629,
+    "ci_hi": -0.2678303509090136,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": 0.2621638694967383,
+   "tier": "registered",
+   "family": "A5_rb",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:kl_fwd_out_seq_rb": {
+   "spearman": -0.536493091283346,
+   "oof_r2": 0.1565041341596023,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": 0.13210543380390127,
+   "delta_r2": 0.13210543380390127,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.4211976829637152,
+   "bootstrap": {
+    "ci_lo": -0.7366995134369569,
+    "ci_hi": -0.21937903242822382,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": 0.18190185532287872,
+   "tier": "registered",
+   "family": "A5_rb",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:kl_rev_out_seq_rb": {
+   "spearman": -0.551651739495302,
+   "oof_r2": 0.1284629715856611,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": 0.10406427122996009,
+   "delta_r2": 0.10406427122996009,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.393156520389774,
+   "bootstrap": {
+    "ci_lo": -0.7372636632843662,
+    "ci_hi": -0.14898463091573114,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": 0.15223358080167249,
+   "tier": "registered",
+   "family": "A5_rb",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:cos_to_assistant": {
+   "spearman": -0.0498447231010627,
+   "oof_r2": -1.9933397556244583,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -2.0177384559801594,
+   "delta_r2": -2.0177384559801594,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": -1.7286462068203454,
+   "bootstrap": {
+    "ci_lo": -0.3232221032225362,
+    "ci_hi": 0.23951348734161285,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -1.5318683305669616,
+   "tier": "registered",
+   "family": "A8",
+   "note": "anchor = the `default` context: in the #537 battery the bare assistant IS the default context, so this row coincides with cos_to_neutral; kept as a labeled duplicate per \u00a76.1 A8 (historically distinct anchors, #396/#415)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:js_to_assistant": {
+   "spearman": 0.033390610708906365,
+   "oof_r2": -0.18727337142211553,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.21167207177781655,
+   "delta_r2": -0.21167207177781655,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.07742017738199736,
+   "bootstrap": {
+    "ci_lo": -0.22133135382505778,
+    "ci_hi": 0.31736480769024,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.1613110575339296,
+   "tier": "registered",
+   "family": "A8",
+   "note": "first-token JS to the `default` context's next-token distribution; same battery-level alias caveat as cos_to_assistant",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:cos_to_neutral": {
+   "spearman": -0.0498447231010627,
+   "oof_r2": -1.9933397556244583,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -2.0177384559801594,
+   "delta_r2": -2.0177384559801594,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": -1.7286462068203454,
+   "bootstrap": {
+    "ci_lo": -0.3232221032225362,
+    "ci_hi": 0.23951348734161285,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -1.5318683305669616,
+   "tier": "registered",
+   "family": "A8",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:js_to_neutral": {
+   "spearman": 0.033390610708906365,
+   "oof_r2": -0.18727337142211553,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.21167207177781655,
+   "delta_r2": -0.21167207177781655,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.07742017738199736,
+   "bootstrap": {
+    "ci_lo": -0.22133135382505778,
+    "ci_hi": 0.31736480769024,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.1613110575339296,
+   "tier": "registered",
+   "family": "A8",
+   "note": "first-token JS to the `default` context's next-token distribution",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:cos_to_trained_midpoint": {
+   "spearman": 0.007682426926375623,
+   "oof_r2": -0.17792534123088455,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.20232404158658557,
+   "delta_r2": -0.20232404158658557,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.08676820757322834,
+   "bootstrap": {
+    "ci_lo": -0.2599160334629357,
+    "ci_hi": 0.2149288378168834,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.13199860969361343,
+   "tier": "registered",
+   "family": "A8",
+   "note": "column distance to the midpoint of the scored block's context means; RAW-ONLY -- under --centered the anchor degenerates to the zero vector (grand-mean centering subtracts exactly the mean of the context means) and the scorer fails loud",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:behavior_conditioned_logprob_diff": {
+   "spearman": 0.02693956784509187,
+   "oof_r2": -0.18584996691060596,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.21024866726630698,
+   "delta_r2": -0.21024866726630698,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.07884358189350693,
+   "bootstrap": {
+    "ci_lo": -0.2761603263714092,
+    "ci_hi": 0.46431664834055936,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.13082993788142283,
+   "tier": "registered",
+   "family": "conditioned",
+   "note": "PRIMARY conditioned predictor (v7): -(mean_r logP_base(r|ctx_j) - logP_base(r|ctx_i)); eval-ctx log-likes the realization -> more leak -> less distant (pinned like base_prior_bystander)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:behavior_vector_proj_shift": {
+   "spearman": 0.10809692398639076,
+   "oof_r2": -0.11981099467035317,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.14420969502605419,
+   "delta_r2": -0.14420969502605419,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.14488255413375972,
+   "bootstrap": {
+    "ci_lo": -0.1829848831512646,
+    "ci_hi": 0.31805607462828706,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.07662858550101137,
+   "tier": "registered",
+   "family": "behavior_vector",
+   "note": "<\u0394h_j, v_b>/||v_b|| at the readout slot (post-hoc track, #532); v_b = mean(pos)-mean(neg) base activations at last-prompt-token, layers {6,14,22,27}",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:behavior_vector_proj_level": {
+   "spearman": 0.036070439053728476,
+   "oof_r2": -0.2080891285292945,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.23248782888499553,
+   "delta_r2": -0.23248782888499553,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.05660442027481838,
+   "bootstrap": {
+    "ci_lo": -0.2673121648985076,
+    "ci_hi": 0.3346903724098094,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.16540388008817564,
+   "tier": "registered",
+   "family": "behavior_vector",
+   "note": "<h_base_j, v_b>/||v_b|| at the readout slot (pre-training level track, #532); scored separately from shift, never pooled",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:null_random_predictor": {
+   "spearman": 0.032394217180265604,
+   "oof_r2": -0.1483526689214958,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.1727513692771968,
+   "delta_r2": -0.1727513692771968,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.1163408798826171,
+   "bootstrap": {
+    "ci_lo": -0.19845377807715356,
+    "ci_hi": 0.28577803929839674,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.11497245009677548,
+   "tier": "registered",
+   "family": "control",
+   "note": "(v9) fixed-seed (537) permutation of centroid_cosine's off-diagonal cell values -- the argmax-over-noise null; expected oof_r2 ~ 0",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:text_overlap_predictor": {
+   "spearman": -0.4503286337371911,
+   "oof_r2": 0.028326522274460864,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": 0.003927821918759844,
+   "delta_r2": 0.003927821918759844,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.29302007107857375,
+   "bootstrap": {
+    "ci_lo": -0.7155318695264614,
+    "ci_hi": -0.09900238276294392,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": 0.06266906773741221,
+   "tier": "registered",
+   "family": "control",
+   "note": "(v9) 1 - Jaccard(char-3-grams(rendered_prompt_i), rendered_prompt_j)) -- the trivial prompt-string surface-overlap control; base-model-only, no forward pass; polarity larger = more distant (more overlap -> less distant)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:centroid_cosine[end_of_system,L02,centered]": {
+   "spearman": -0.05735568145802677,
+   "oof_r2": -0.15768326518648657,
+   "n_cells": 193,
+   "base_prior_oof_r2": 0.02439870035570102,
+   "delta_vs_base_prior_r2": -0.18208196554218758,
+   "delta_r2": -0.18208196554218758,
+   "gauss_kl_act_oof_r2": -0.2646935488041129,
+   "delta_vs_gauss_kl_act_r2": 0.10701028361762632,
+   "bootstrap": {
+    "ci_lo": -0.3462695569623019,
+    "ci_hi": 0.14439762028099154,
+    "n_draws": 2000
+   },
+   "leave_family_out_oof_r2": -0.18648522314518057,
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "end_of_system",
+    "layer": 2,
+    "centered": true
+   },
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:kl_out_seq_oneway": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "v3_six",
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:train_prior_onpolicy": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "A2",
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:js_out_seq": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "A5",
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:kl_out_seq_fwd": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "A5",
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:kl_out_seq_rev": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "A5",
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:kl_asym_out_seq": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "A5",
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:js_taught_span": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "A6",
+   "behavior": "fact",
+   "final_test": false
+  },
+  "fact:behavior_conditioned_js": {
+   "status": "skipped",
+   "reason": "AssertionError: too few usable cells (0)",
+   "artifact_missing": false,
+   "tier": "registered",
+   "family": "conditioned",
+   "behavior": "fact",
+   "final_test": false
+  }
+ },
+ "registered_not_implemented": {
+  "fact": []
+ },
+ "skipped_rows": {
+  "fact": [
+   "behavior_conditioned_js",
+   "js_out_seq",
+   "js_taught_span",
+   "kl_asym_out_seq",
+   "kl_out_seq_fwd",
+   "kl_out_seq_oneway",
+   "kl_out_seq_rev",
+   "train_prior_onpolicy"
+  ]
+ },
+ "descoped_rows": {
+  "fact": []
+ },
+ "git_commit": "a63e940715e52cbde4e1b1d6fe566cd164732ad4",
+ "updated_at": "2026-06-16T23:39:19.065416+00:00"
+}
