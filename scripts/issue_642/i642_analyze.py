@@ -1096,11 +1096,12 @@ def _v4_analyze_behavior(  # noqa: C901 - one linear v4 pipeline; splitting scat
     judge_concurrency: int = 32,
     cmft_experiment: str = V4_HF_EXPERIMENT_NAME,
 ) -> dict:
-    """v4 within-villain decomposition (plan v5 §3/§5): re-judge the 4 NEW
+    """v4 within-villain decomposition (plan v8 §3/§5): re-judge the 3 NEW
     villain arms from THIS run's eval_root (NO #606 reuse), compute
-    Δ_rank_matched / Δ_LR / Δ_data at matched s*=0.50 on the #612 29-bystander
+    Δ_rank_matched / Δ_data at matched s*=0.50 (LR 5e-6) on the #612 29-bystander
     panel with the crossed cluster bootstrap. Reuses the shared verdict-matrix +
-    interpolation + _two_arm_gap machinery. NO additive-identity-to-#606 check
+    interpolation + _two_arm_gap machinery. Δ_LR is dropped (plan v8 §3 — the
+    dense pole cannot be matched at 1e-5). NO additive-identity-to-#606 check
     (the source/panel/data all changed)."""
     cmft_art = _resolve_cmft_artifacts(
         eval_root, behavior, refetch, cmft_experiment=cmft_experiment
@@ -1277,11 +1278,10 @@ def _v4_analyze_behavior(  # noqa: C901 - one linear v4 pipeline; splitting scat
         verdict = "indeterminate_determinacy_gate"
     elif _sep_pos(head):
         verdict = "H_survives"  # a method gap survives all controls on villain
-    elif _null(head) and any(
-        _det(contrasts.get(k, {})) and _sep_pos(contrasts.get(k, {}))
-        for k in ("delta_lr", "delta_data")
+    elif _null(head) and (
+        _det(contrasts.get("delta_data", {})) and _sep_pos(contrasts.get("delta_data", {}))
     ):
-        verdict = "H_artifact"  # the villain gap was LR + data nuisances
+        verdict = "H_artifact"  # the within-villain gap was the data-realism nuisance
     else:
         verdict = "indeterminate_noise_limited"  # kill criterion (b)
 
@@ -1339,8 +1339,8 @@ def _v4_analyze_behavior(  # noqa: C901 - one linear v4 pipeline; splitting scat
             "verdict_legend": {
                 "H_survives": "Δ_rank_matched separates (>= +0.04, CI excludes 0) -> the "
                 "adapter-vs-dense footprint gap is structural on villain at matched LR + data",
-                "H_artifact": "Δ_rank_matched null AND (Δ_LR or Δ_data) separates -> the villain "
-                "gap was the matched-out LR/data nuisances; residual method below resolution",
+                "H_artifact": "Δ_rank_matched contained in band AND Δ_data separates -> the "
+                "within-villain gap was the data-realism nuisance; residual method below floor",
                 "indeterminate_noise_limited": "no contrast separates (kill criterion b); the "
                 "within-run gap may be smaller (on-policy installs weaker) — a power statement",
                 "indeterminate_determinacy_gate": "the headline contrast failed the determinacy "
@@ -1359,7 +1359,7 @@ def _v4_analyze_behavior(  # noqa: C901 - one linear v4 pipeline; splitting scat
         "bootstrap": {
             "b": int(B),
             "seed": BOOTSTRAP_SEED,
-            "resampling": "crossed cluster (claims x 29 bystander personas); 4 NEW villain arms "
+            "resampling": "crossed cluster (claims x 29 bystander personas); 3 NEW villain arms "
             "all from THIS run; NO #606 reuse, NO additive-identity-to-#606 check",
         },
         "arms_present": present_arms,
@@ -1654,19 +1654,19 @@ def make_synthetic(root: Path, mode: str) -> None:  # noqa: C901 - linear fixtur
 
 
 def make_synthetic_v4(root: Path, mode: str) -> None:  # noqa: C901 - linear fixture writer
-    """Write a synthetic 4-arm v4 verdict tree with KNOWN within-villain
-    contrasts so the v4 smoke verifies the plug-in recovers them. ALL 4 arms +
+    """Write a synthetic 3-arm v4 verdict tree with KNOWN within-villain
+    contrasts so the v4 smoke verifies the plug-in recovers them. ALL 3 arms +
     base live under THIS run's layout (``<root>/<behavior>/``); NO #606 reuse.
 
     Designed leakage per unit s on every bystander (villain source = villain):
-      loraOP_lr1e5  coeff(p)
-      cmftOP_lr1e5  coeff(p) + RANK_COEFF
-      cmftOP_lr5e6  coeff(p) + RANK_COEFF - LR_COEFF   (the orig-LR cmft)
-      cmftCN_lr1e5  coeff(p) + RANK_COEFF + DATA_COEFF (the canned cmft)
+      loraOP_lr5e6  coeff(p)
+      cmftOP_lr5e6  coeff(p) + RANK_COEFF                (the matched-LR headline cmft)
+      cmftCN_lr5e6  coeff(p) + RANK_COEFF + DATA_COEFF   (the canned cmft)
     so at matched s*:
-      Δ_rank_matched = RANK_COEFF * s*           (cmftOP − lora)
-      Δ_LR           = LR_COEFF   * s*           (cmftOP − cmftOP_5e6)
-      Δ_data         = DATA_COEFF * s*           (cmftCN − cmftOP)
+      Δ_rank_matched = RANK_COEFF * s*           (cmftOP_lr5e6 − loraOP_lr5e6)
+      Δ_data         = DATA_COEFF * s*           (cmftCN_lr5e6 − cmftOP_lr5e6)
+    The Δ_LR contrast + its LR_COEFF synthetic term are DROPPED (plan v8 §3 —
+    the dense pole cannot be matched at the LoRA's native 1e-5).
     """
     rng = np.random.default_rng(11)
     behavior = "sycophancy"
@@ -1701,11 +1701,10 @@ def make_synthetic_v4(root: Path, mode: str) -> None:  # noqa: C901 - linear fix
             "step44": 0.93,
             "step132": 0.97,
         }
-    RANK_COEFF, LR_COEFF, DATA_COEFF = (
+    RANK_COEFF, DATA_COEFF = (
         0.12,
-        0.08,
         0.10,
-    )  # Δ_rank=0.06, Δ_LR=0.04, Δ_data=0.05 @ s*=0.5
+    )  # Δ_rank=0.06, Δ_data=0.05 @ s*=0.5 (Δ_LR term dropped, plan v8 §3)
     base_rates = {p: 0.05 for p in personas}
     bystander_list = [p for p in personas if p != V4_SOURCE_PERSONA]
     leak_coeff = {
@@ -1714,10 +1713,9 @@ def make_synthetic_v4(root: Path, mode: str) -> None:  # noqa: C901 - linear fix
 
     def _arm_increment(arm: str) -> float:
         return {
-            "loraOP_lr1e5": 0.0,
-            "cmftOP_lr1e5": RANK_COEFF,
-            "cmftOP_lr5e6": RANK_COEFF - LR_COEFF,
-            "cmftCN_lr1e5": RANK_COEFF + DATA_COEFF,
+            "loraOP_lr5e6": 0.0,
+            "cmftOP_lr5e6": RANK_COEFF,
+            "cmftCN_lr5e6": RANK_COEFF + DATA_COEFF,
         }[arm]
 
     def _mk_verdicts(rate: float) -> list[dict]:
@@ -1739,7 +1737,7 @@ def make_synthetic_v4(root: Path, mode: str) -> None:  # noqa: C901 - linear fix
     manifest_cells: dict[str, dict] = {}
     selection_arms: dict[str, dict] = {}
     for arm in V4_ARMS:
-        s_map = base_s_lora if (mode == "no_bracket" and arm == "loraOP_lr1e5") else base_s
+        s_map = base_s_lora if (mode == "no_bracket" and arm == "loraOP_lr5e6") else base_s
         for step_label in arm_cells_steps[arm]:
             cell = f"{arm}_{step_label}"
             cells.append(cell)
@@ -1759,7 +1757,7 @@ def make_synthetic_v4(root: Path, mode: str) -> None:  # noqa: C901 - linear fix
             s_c = 0.0
         else:
             arm = _cell_arm(cell)
-            s_map = base_s_lora if (mode == "no_bracket" and arm == "loraOP_lr1e5") else base_s
+            s_map = base_s_lora if (mode == "no_bracket" and arm == "loraOP_lr5e6") else base_s
             s_c = s_map["step" + cell.split("_step")[-1]]
         for p in personas:
             if p == V4_SOURCE_PERSONA:
@@ -1789,7 +1787,6 @@ def make_synthetic_v4(root: Path, mode: str) -> None:  # noqa: C901 - linear fix
     metadata: dict = {"synthetic": True, "v4": True, "mode": mode, "gap_tolerance": 0.06}
     if mode != "no_bracket":
         metadata["known_delta_rank_matched"] = S_TARGET * RANK_COEFF
-        metadata["known_delta_lr"] = S_TARGET * LR_COEFF
         metadata["known_delta_data"] = S_TARGET * DATA_COEFF
     (broot / "generation_manifest.json").write_text(
         json.dumps({"cells": manifest_cells, "metadata": metadata}, indent=2)
@@ -1808,7 +1805,7 @@ def make_synthetic_v4(root: Path, mode: str) -> None:  # noqa: C901 - linear fix
             }
             continue
         arm = _cell_arm(cell)
-        s_map = base_s_lora if (mode == "no_bracket" and arm == "loraOP_lr1e5") else base_s
+        s_map = base_s_lora if (mode == "no_bracket" and arm == "loraOP_lr5e6") else base_s
         s_c = s_map["step" + cell.split("_step")[-1]]
         traj_cells[cell] = {
             "arm": arm,
@@ -1837,7 +1834,7 @@ def make_synthetic_v4(root: Path, mode: str) -> None:  # noqa: C901 - linear fix
             indent=2,
         )
     )
-    log.info("synthetic v4 4-arm fixture (%s) -> %s", mode, broot)
+    log.info("synthetic v4 3-arm fixture (%s) -> %s", mode, broot)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1859,8 +1856,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--v4",
         action="store_true",
-        help="v4 within-villain decomposition (plan v5 §5): Δ_rank_matched / Δ_LR / Δ_data "
-        "over the 4 NEW villain arms from THIS run's eval_root (NO #606 reuse). Default "
+        help="v4 within-villain decomposition (plan v8 §5): Δ_rank_matched / Δ_data "
+        "over the 3 NEW villain arms from THIS run's eval_root (NO #606 reuse). Default "
         "--hf-experiment-name becomes the v4 namespace.",
     )
     p.add_argument("--make-synthetic", type=Path, default=None)
@@ -1894,8 +1891,8 @@ def main(argv: list[str] | None = None) -> int:
     if not args.behavior:
         raise SystemExit("--behavior is required (unless --make-synthetic)")
 
-    # v4 within-villain decomposition (plan v5 §5): a parallel path to the v3
-    # 3-arm decomposition; reads the 4 NEW villain arms from THIS run's
+    # v4 within-villain decomposition (plan v8 §5): a parallel path to the v3
+    # 3-arm decomposition; reads the 3 NEW villain arms from THIS run's
     # eval_root (NO #606 reuse).
     if args.v4:
         v4_experiment = (
