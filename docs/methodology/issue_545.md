@@ -773,4 +773,208 @@ This is a phase-completion fact (which scripts ran, which artifacts wrote), not 
 
 ---
 
+## 8. full-metric-race-per-family arm
+
+A same-issue follow-up round (`followup_label: full-metric-race-per-family`, scope marker `source: user-chat`, 2026-06-16) that swaps ONE variable against the v1 design — the **predictor zoo + scoring analysis** — while PINNING the experimental side (the leakage matrix targets, all 60 trained v1 cells, the panel, eval batteries, judges, seeds, dose selections, and the frozen 137-dev / 52-quarantine split) to v1 and reusing them verbatim. **No retraining, no new training data, no checkpoint changes.** This section describes the new predictor/analysis mechanics; the parent §§1–6 above describe the v1 run those mechanics consume.
+
+The plan amendment is plan v6 (`tasks/followups_running/545/plans/v6.md`); the run executed at commit `ce55247acd48139f181396f85cb579c4b48f314c` on the `issue-545` branch (predictor JSONs carry an inner extraction commit `6642e825e3f25993e7377cab59d074b43b50098b`). The v1 substrate (matrix + base panel + cell metadata + preregistration + 105 predictor JSONs + scoring outputs) is reused at git `0a60158f350ae2a71d821156a7e22316d76ba069`; the reused HF demo/corpora inputs are pinned at dataset revision `96ccf2ecf87c575ba6d8a0c2334da0f4e9c37f8e`.
+
+### 8.1 What changed against the parent v1 recipe
+
+| # | Divergence | Mechanics |
+|---|---|---|
+| 1 (THE variable) | **Predictor zoo expansion** | Group A geometry grows from v1's 96 raw-centroid variants {cosine, neg_l2, projection} to the full #493 metric zoo (centroid: + euclidean, mahal, mahal_pooled_ctx × {raw, centered}; cloud: mmd, c2st, wass2, gauss_kl; output-distribution: RB sequence-level JS + both KL directions). 484 new `A__*` predictor JSONs + the 105 reused v1 baseline predictors = 589 predictor files. |
+| 2 (THE variable) | **Three new scoring analyses** | (1) global champion via the existing frozen leave-family-out CV over the EXPANDED zoo; (2) best predictor/layer PER family; (3) predictor × behavior heterogeneity — both per-family reads framed against an explicit selection-noise null (bootstrap + permutation). New `score_metric_race()` extension writing to a LABELED `scoring_metric_race/` dir so the prereg `scoring/` record is never overwritten. |
+| 3 | **Cloud-sample retention** | `_mean_hidden_states` gains a `retain_per_sample_reps: bool = False` flag (default False keeps v1 byte-identical, unit-test-pinned) so cloud metrics receive the per-text rep cloud instead of the mean centroid. Row nl/demos flavors are single-text → an extra small base-model elicitation pass builds the row clouds. |
+| — | Targets, matrix, 60 trained cells, base panel, batteries, judges, seeds, dose selections, quarantine split | **PINNED to v1, reused verbatim** |
+| arch | **Subprocess vLLM isolation** (deviation from the in-process plan) | After 6 OOMs of HF + vLLM co-residency on one H100, the two models were SEQUENCED into phases (§8.4) so they never co-reside. This is an implementation-mechanics change, not a design change. |
+
+`delta_spec` (the covariance-spectrum cloud metric named in plan §4.1) is **N/A this round**: it is well-defined only between matched/ordered paired-probe clouds, which the centroid/cloud variants do not produce — so no `delta_spec` predictor JSON is written for any cell (recorded as a plan deviation in `epm:results`).
+
+### 8.2 The predictor zoo (every added metric)
+
+All extraction on the base model `Qwen/Qwen2.5-7B-Instruct` (the v1 substrate — no model swap). Every predictor maps a (row, column) cell → a real score before training (base-model reps / on-policy generations only — nothing from trained adapters), written to `predictors_metric_race/A__<name>.json` in the v1 `{"group","name","track","cells":{"row|col":score}}` schema so the frozen `scoring.py` consumes them unchanged.
+
+| Family | Members | Source function (`scripts/issue493_extraction_metric_bakeoff.py`, imported) | Carried from v1? |
+|---|---|---|---|
+| Raw-centroid (reference) | cosine, neg_l2, projection | v1 `_geometry_score(...)` | yes |
+| Covariance-centroid | euclidean, mahal, mahal_pooled_ctx | `_centroid_euclidean`, `_centroid_mahal` (top-k PCA dual Gram), `_context_mahal_with_pooled_cov` | NEW |
+| Centered variant | × {raw, centered} of every centroid metric | `_maybe_prompt_center(..., do_center=True)` — subtract the pooled mean over in-scope behavior centroids before the distance (the #536 bank-centering lesson) | NEW |
+| Cloud | mmd, c2st, wass2, gauss_kl | `_rbf_mmd_squared` (RBF, median-heuristic bandwidth, unbiased MMD²), `_c2st_auc` (5-fold classifier-2-sample AUC), `_bures_wasserstein2` (Bures-W2 in top-k subspace), `_gaussian_sym_kl_in_subspace` | NEW |
+| Output-distribution | js (headline), kl_narrow_broad, kl_broad_narrow | `js_canonical.per_position_divergences` + `rb_pair_estimate` (#540 RB sequence-level math); base-2 JS similarity `M_js = 1 − JS`, both KL directions | NEW |
+
+Grid: centroid + cloud metrics × layer set `{0, 5, 7, 11, 14, 15, 21, 27}` × extraction point `{last_token, mean_response}` × flavor `{nl, demos}` × {raw, centered, where applicable}. The JS/KL family is layer-agnostic (output-distribution, not a hidden-state layer) → one variant per `{flavor, direction}`. A cloud with `< MIN_CLOUD_POINTS = 4` points, or one the #493 guards (`_finite_and_non_constant`, `_pop_pooled_failure_reason`) flag degenerate, records `None` for that cell — serialized by **omitting the cell key** from the `cells` dict (never `"cell": null`; `weighted_kendall_tau` gates inclusion on `c in pred`). Groups B (base-prior, demo-NLL-transfer, train-NLL-surprise), C (delta-rule, grad-align), D (content-free controls) + the ridge combiner are retained verbatim from v1 as reference.
+
+**Behavior-context construction (the conditioning prefix per flavor; `predictors_zoo._behavior_context_messages`):** `nl` flavor = a single system turn `"The assistant has a tendency: <NL description>."`; `demos` flavor = the K=8 demo turns prepended as few-shot user/assistant pairs (system-prompt persona injection per CLAUDE.md). Cloud metrics build a genuine cloud on both flavors: `demos` → one rep per demo (8 separate texts, not a concatenation); `nl` → ≤8 base-model temp-1 responses under the NL-description context (the small elicitation pass).
+
+### 8.3 Hyperparameters (predictor/analysis-side only — no training knobs)
+
+`N/A — no model training.` All values verbatim from `predictors_zoo.py` (lines 90–151) and `scoring.py` (lines 48–67) at `ce55247acd`, cross-checked against plan §10/§11.
+
+| Parameter | Value | Source |
+|---|---|---|
+| Base model | `Qwen/Qwen2.5-7B-Instruct` | predictor JSON metadata @ `ce55247acd` |
+| **Geometry layer set** | `{0, 5, 7, 11, 14, 15, 21, 27}` | plan §11 (`Source: #545 v1 GEOMETRY_LAYERS = #493 defaults`) |
+| **PCA subspace top-k** (`PCA_K`) | `16` (#493 dual-Gram, n≪d-safe) | `predictors_zoo.py:90` |
+| Min cloud points (`MIN_CLOUD_POINTS`) | `4` (`<4` → `None`) | `predictors_zoo.py:95` |
+| Centerings (`CENTERINGS`) | `("raw", "centered")`; centered = `global_mean` over in-scope behaviors (#536) | `predictors_zoo.py:94`, plan §11 |
+| **`JS_R_SAMPLES`** | `8` (RB samples/probe) | `predictors_zoo.py:98` |
+| **`JS_TEMP`** | `1.0` | `predictors_zoo.py:99` |
+| **`JS_MAX_NEW_TOKENS`** | `1024` (truncation manipulation check ~0; #548) | `predictors_zoo.py:100` |
+| **`JS_N_PROBES`** | `50` (fixed disjoint probe set per pair) | `predictors_zoo.py:101` |
+| `JS_MAX_SEQ_LEN` | `8192` (raised from 4096; probes up to 5631 tokens) | `predictors_zoo.py:111` |
+| `JS_DIRECTIONS` | `("js", "kl_narrow_broad", "kl_broad_narrow")` | `predictors_zoo.py:112` |
+| `JS_TF_MAX_BATCH` | `16` (HF teacher-force sub-batch; restored from co-residency-era 4) | `predictors_zoo.py:121` |
+| RB estimator | sequence-level, base-2 JS headline, both KL directions, length-normalized per-token | plan §10 (`Source: arXiv 2504.10637 + persona-distance-metrics.md + #540`) |
+| **Headline metric** | weighted Kendall τ (`scipy.stats.weightedtau`) + within-column z-norm | `scoring.py` (`Source: #545 v1 scoring`) |
+| H1 non-noise floor (`H1_TAU_FLOOR`) | `0.10` (binary gate); effect size read as fraction of the v1 reliability ceiling | `scoring.py:64` |
+| v1 reliability ceiling | raw Spearman `0.588` / Spearman-Brown-adjusted `0.740` (seed0↔seed137) | `scoring.py:65-66` |
+| **Bootstrap** (`RACE_BOOTSTRAP_B`) | `2000` (doubled vs v1's 1000 — argmax/selection statistic) | `scoring.py:57` (`Source: Davison & Hinkley 1997 §2.5/§5`) |
+| **Permutation** (`RACE_PERMUTATION_P`) | `10000` (within-column row-label) | `scoring.py:58` (`Source: #545 v1 comparison spec`) |
+| **Bootstrap / permutation seed** (`RACE_SEED`) | `545` | `scoring.py:59` |
+| Universe | 189 off-diagonal cells; dev 137 / quarantine 52 (PINNED from v1 `preregistration.json`) | plan §4.2 |
+| Realized scored predictors | 589 files = 484 new `A__*` + 105 reused v1 | `epm:results` @ `ce55247acd` |
+| Realized JS probes / samples | `n_probes = 50`, `r_samples = 8`, 330 outdist pairs, 736 cloud arrays | `extract_summary.json` |
+| Realized JS truncation rate | `0.0047` (manipulation check, `<` ~0 target) | `extract_summary.json` |
+
+### 8.4 Subprocess vLLM architecture (Strategy E)
+
+The extraction phase needed both a vLLM engine (on-policy sampling) and the HF base model (hidden-state hooks + full-vocab teacher-forcing) on one H100. After 6 consecutive OOMs from co-residency, the two models were SEQUENCED into phases so they never co-reside (`vllm_worker.py` + `predictors_zoo.py:145–155`):
+
+- **Phase A — vLLM sampling (SUBPROCESS).** `vllm_worker.py` runs as a standalone subprocess (`python -m …behavior_testbed_545.vllm_worker --ipc-dir <dir>`), loads the vLLM engine with the FULL GPU to itself (`WORKER_GPU_MEM_UTIL = 0.85`, `WORKER_MAX_MODEL_LEN = 8192`), samples ALL on-policy responses the extraction needs (nl-cloud elicitation + the outdist per-(row, col, flavor) response pairs), writes them to disk as token-id + text JSONs, then EXITS — fully releasing the GPU.
+- **Phase B — HF extraction (MAIN process).** With vLLM's subprocess reaped, the HF base model loads as the sole GPU resident, reads the cached responses, runs the per-layer hidden-state hooks (cloud reps) + the teacher-forced log-prob / per-position divergence reads, then frees the GPU.
+
+**The IPC contract** (file-based, crash-resilient — written work survives a mid-phase failure and the main process re-reads it; `vllm_worker.py` docstring):
+
+| Sentinel / file | Writer | Payload |
+|---|---|---|
+| `<ipc-dir>/requests/<probe_id>.json` | main process | `{probe_id, prompt_token_ids: list[list[int]], n, max_tokens, temperature, top_p, seed}` |
+| `<ipc-dir>/READY` | main process | sentinel — ALL requests written |
+| `<ipc-dir>/responses/<probe_id>.json` | worker (atomic temp-then-rename) | `{probe_id, completions: list[list[{token_ids, text, finish_reason}]]}` (one entry per prompt, in order) |
+| `<ipc-dir>/STOP` | main process | sentinel — tells the worker to exit |
+| `<ipc-dir>/worker.error` | worker | written on a fatal error; the main process polls for it so a dead worker fails the run LOUD, not on a hang |
+
+The worker processes any request lacking a matching response, then exits once `READY` exists and the queue drains; the main process additionally drops `STOP`. Responses are token-id lists + decoded text (never tensors), so the divergence/log-prob math stays GPU-resident in Phase B and only scalars cross to CPU (the #540 Phase-T / #522 discipline). Main-process polling: `VLLM_WORKER_TIMEOUT_S = 3600.0`, `VLLM_POLL_INTERVAL_S = 1.0`. A regression test asserts `predictors_zoo.JS_MAX_SEQ_LEN == vllm_worker.WORKER_MAX_MODEL_LEN` so the prompt-build cap matches the engine capacity.
+
+### 8.5 Scoring (the three analyses + the selection-noise null)
+
+Harness: `scoring.py` (CPU, reproducible from committed artifacts), run OFF-POD on the VM after pod termination. Universe PINNED to v1: 189 off-diagonal scoring-eligible cells, dev 137 / quarantine 52; targets = v1 seed-mean off-diagonal cells, within-column z-normed (the single z-normed shift track). Saturated / `implant_failed` cells excluded by default; a sensitivity rerun includes them.
+
+Two distinct family sets are defined ONCE and never conflated (`scoring.py:48–55`):
+
+- `LFO_FAMILIES = {B1, B2, B3, B5, B6, B7, B8, B9, B10}` — all 9 dev families; the leave-family-out scope for **H1** (global champion) and **H2** (heterogeneity). A runtime coverage invariant asserts `lfo_families == dev_families` so an H1 read can never silently drop a family.
+- `ELIGIBLE_FAMILIES = {B1, B2, B3, B5, B6, B8}` — the 6 dev families clearing the **≥4-held-out-cell nested floor**; bound to **H3** only. The sparse families B7 (7 dev cells), B9 (6), B10 (7) cannot support a ≥4-cell nested within-family split → descriptive-only (no CI verdict, no H3-gain contribution, absent from the permutation null). `assert ELIGIBLE_FAMILIES <= LFO_FAMILIES`.
+- `COMMON_FOLD_FAMILIES = {B3, B5, B6}` — the folds where Groups B/C are defined (`column_applies`); the common-fold intersection for the A-vs-B/C comparison, reported alongside the full-fold mean.
+
+| Analysis | What it computes | Null / inference |
+|---|---|---|
+| 1 — Global champion (H1) | `scoring.py::score()` unchanged over the expanded `predictors_metric_race/`: per held-out family fold, each group's champion selected on remaining dev cells, scored on the fold; LFO mean-τ + per-group K counts reported (Group A K ~150–200 vs ~3 in B/C — the unnested max-of-group optimism trap, surfaced by the K column) | family-cluster LFO-nested bootstrap (B=2000) with the family-ID exclusion invariant: per resample, per fold F, `train_original_family_ids ∩ heldout_original_family_ids = ∅` AND `n_distinct_original_families(train) ≥ 2`; violating resamples SKIPPED + tallied. + within-column row-label permutation p (P=10000) |
+| 2 — Per-family champion (H2) | argmax-τ predictor over the full zoo restricted to each dev family's cells; per-family winner table + each champion's within-family held-out τ (nested split where ≥4 cells allow) | per-family **within-family ROW/CELL bootstrap** (no family-level resampling — no LFO boundary): bootstrap distribution over WHICH predictor wins + each per-family champion's held-out-τ CI |
+| 3 — Heterogeneity + optimism gain (H3) | cross-family variance of the per-family champion held-out τ; the H3 gain = `Σ_{F∈eligible} τ_heldout(per-family oracle) − τ_heldout(single global champion on ⋃cells(F))`, all over the SAME `eligible_families` + identical cell subset (runtime invariant HALTs on drift) | family-label-shuffled within-column row-label permutation (P=10000); the gain's percentile in the null |
+
+**Quarantine handling — EXPLORATORY.** The v1 quarantine (52 cells) was scored exactly once under the v1 prereg protocol. Re-scoring it with the dev-selected expanded zoo would burn its confirmatory status, so the headline reads (H1/H2/H3) are computed on the **development set only** (137 cells) via the frozen leave-family-out CV + dev-only selection-noise nulls. The quarantine is reported ONLY as a flagged-peeked sensitivity read (dev-frozen champions scored once on the 52 cells, every number stamped "after-the-fact sensitivity — quarantine already scored once in v1", the `scoring_followup_bcond/` labeling convention). Every leaderboard / fold / per-family τ entry carries its supporting `n_cells` (Nit N2); the H1 champion must additionally have scored ≥ the median predictor's `n_cells` on its fold or it is flagged thin-coverage, not crowned.
+
+Reproduce from the committed artifacts (CPU-only):
+
+```bash
+git checkout ce55247acd48139f181396f85cb579c4b48f314c
+uv run python scripts/issue545_metric_race.py --phase score,plot
+```
+
+### 8.6 Pipeline phases
+
+| Phase | Where | Output |
+|---|---|---|
+| prefetch (CPU, pre-GPU) | pod | materialize the pinned demos/corpora from HF at `revision=96ccf2ecf…` into `production_corpora_dir()/<rel>`, SHA256-assert each against `expected_sha256.json` (31 files), assert the v1 loader resolves to the materialized path; any mismatch / missing file → `sys.exit` HALT **before** GPU spend |
+| extract (GPU, 1× H100) | pod | per-behavior activation clouds + JS/KL output-distribution RB estimates (`extract_clouds_and_outdist_gpu`, Strategy-E subprocess vLLM → HF), then CPU `build_zoo_predictors` over the cached clouds + v1 reference → `predictors_metric_race/`, `outdist/`, `extract_summary.json` |
+| score (CPU, OFF-POD on the VM) | VM | analyses 1/2/3 + bootstrap B=2000 + permutation P=10000 + H3 (`scoring.score_metric_race`) → `scoring_metric_race/` |
+| plot (CPU, VM) | VM | hero/diagnostic figures → `figures/issue_545/metric_race/` |
+
+Dispatcher: `scripts/issue545_metric_race.py` (`--phase prefetch,extract,score,plot`). The pod stops/terminates AFTER `extract`; `score` + `plot` run on the VM against the committed v1 matrix + the uploaded predictor JSONs (CLAUDE.md "CPU-only phases don't hold GPU pods").
+
+### 8.7 Worked examples (verbatim)
+
+<!-- cherry-picked for illustration; full predictor / outdist / IPC-response trees committed at https://github.com/superkaiba/explore-persona-space/tree/ce55247acd48139f181396f85cb579c4b48f314c/eval_results/issue_545/metric_race -->
+
+**One Group-A cloud-metric predictor JSON** (`predictors_metric_race/A__cloud_demos_L21_mean_response_raw_mahal.json` — Mahalanobis cloud distance, demos flavor, layer 21, raw centering; metadata + first 3 of 127 scored cells):
+
+```json
+{
+  "group": "A",
+  "name": "cloud_demos_L21_mean_response_raw_mahal",
+  "track": "shift",
+  "n_cells": 127,
+  "metric": "mahal", "centering": "raw", "layer": 21,
+  "point": "mean_response", "flavor": "demos",
+  "metadata": {"issue": 545, "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+               "base_model": "Qwen/Qwen2.5-7B-Instruct",
+               "env_versions": {"torch": "2.8.0+cu128", "transformers": "4.57.6", "vllm": "0.11.0"}},
+  "cells": {
+    "bad_medical|broad_em": -48632.58313353122,
+    "bad_medical|harmful_compliance": -13.684889537072458,
+    "bad_medical|sycophancy": -18.872629134427886
+  }
+}
+```
+
+**One output-distribution (JS/KL) RB estimate** (`outdist/answer_in_lists__broad_em__nl.json` — row `answer_in_lists` vs column `broad_em`, nl flavor; R=8 samples per side, 64 valid response samples each):
+
+```json
+{
+  "row": "answer_in_lists", "col": "broad_em", "flavor": "nl",
+  "rb": {
+    "js_rb_bits": 0.04513267064383512,
+    "kl_ab_nats": 0.29368510104026657,
+    "kl_ba_nats": 0.18783203129498327,
+    "sym_kl_nats": 0.24075856616762492,
+    "mc_se_js_bits": 0.003946339160522736,
+    "n_samples_a": 64, "n_samples_b": 64
+  },
+  "metadata": {"issue": 545, "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+               "base_model": "Qwen/Qwen2.5-7B-Instruct"}
+}
+```
+
+**One vLLM-worker IPC response** (`vllm_ipc/responses/nl|answer_in_lists.json` — the on-policy nl-cloud elicitation samples for the `answer_in_lists` row, n=8 samples per prompt; sample 0, `finish_reason: stop`, 11 token-ids):
+
+```
+"Of course! What do you need help with?"
+```
+
+**The pinned-input SHA256 manifest header** (`expected_sha256.json` — 31 demos/corpora files keyed by full HF path to SHA256, asserted at the prefetch HALT gate):
+
+```json
+{
+ "pinned_revision": "96ccf2ecf87c575ba6d8a0c2334da0f4e9c37f8e",
+ "repo": "superkaiba1/explore-persona-space-data",
+ "prefix": "issue545_behavior_testbed/corpora/",
+ "n_files": 31,
+ "expected_sha256": {
+  "issue545_behavior_testbed/corpora/demos/INDEX.json": "5f1ce08dd10498abfeedd62a8c825ddbe43d768a972c65bf4b338981ccc3fa77",
+  "issue545_behavior_testbed/corpora/demos/answer_in_lists.json": "2587d29270067b5de6103447bef12a1c18d505aebc4560d9f6999c51390a9dcd"
+ }
+}
+```
+
+### 8.8 Artifacts and reproducibility
+
+- **Code commit (run):** `ce55247acd48139f181396f85cb579c4b48f314c` (inner predictor-extraction commit `6642e825e3f25993e7377cab59d074b43b50098b`)
+- **v1 substrate reused (matrix + base panel + cell metadata + preregistration + 105 predictor JSONs + scoring):** git `0a60158f350ae2a71d821156a7e22316d76ba069`
+- **Pinned HF demo/corpora inputs:** dataset `superkaiba1/explore-persona-space-data` at revision `96ccf2ecf87c575ba6d8a0c2334da0f4e9c37f8e` (31 files, SHA256-asserted at prefetch)
+- **Plan amendment (v6):** [`tasks/followups_running/545/plans/v6.md`](https://github.com/superkaiba/explore-persona-space/blob/ce55247acd48139f181396f85cb579c4b48f314c/tasks/followups_running/545/plans/v6.md)
+- **Dispatcher:** [`scripts/issue545_metric_race.py`](https://github.com/superkaiba/explore-persona-space/blob/ce55247acd48139f181396f85cb579c4b48f314c/scripts/issue545_metric_race.py)
+- **Predictor zoo extractor:** [`predictors_zoo.py`](https://github.com/superkaiba/explore-persona-space/blob/ce55247acd48139f181396f85cb579c4b48f314c/src/explore_persona_space/experiments/behavior_testbed_545/predictors_zoo.py)
+- **vLLM subprocess worker:** [`vllm_worker.py`](https://github.com/superkaiba/explore-persona-space/blob/ce55247acd48139f181396f85cb579c4b48f314c/src/explore_persona_space/experiments/behavior_testbed_545/vllm_worker.py)
+- **Scoring extension:** [`scoring.py`](https://github.com/superkaiba/explore-persona-space/blob/ce55247acd48139f181396f85cb579c4b48f314c/src/explore_persona_space/experiments/behavior_testbed_545/scoring.py) (`score_metric_race`, `LFO_FAMILIES`/`ELIGIBLE_FAMILIES`, `_lfo_nested_bootstrap`, `_within_family_row_bootstrap`, `_within_column_permutation`)
+- **Imported metric engine:** [`scripts/issue493_extraction_metric_bakeoff.py`](https://github.com/superkaiba/explore-persona-space/blob/ce55247acd48139f181396f85cb579c4b48f314c/scripts/issue493_extraction_metric_bakeoff.py) · **JS-RB math:** [`src/explore_persona_space/analysis/js_canonical.py`](https://github.com/superkaiba/explore-persona-space/blob/ce55247acd48139f181396f85cb579c4b48f314c/src/explore_persona_space/analysis/js_canonical.py)
+- **Pinned-input SHA256 manifest:** [`eval_results/issue_545/metric_race/expected_sha256.json`](https://github.com/superkaiba/explore-persona-space/blob/ce55247acd48139f181396f85cb579c4b48f314c/eval_results/issue_545/metric_race/expected_sha256.json)
+- **Predictor JSONs (589 = 484 new `A__*` + 105 reused v1):** [`predictors_metric_race/`](https://github.com/superkaiba/explore-persona-space/tree/ce55247acd48139f181396f85cb579c4b48f314c/eval_results/issue_545/metric_race/predictors_metric_race) · **JS/KL RB estimates (per row × col × flavor):** [`outdist/`](https://github.com/superkaiba/explore-persona-space/tree/ce55247acd48139f181396f85cb579c4b48f314c/eval_results/issue_545/metric_race/outdist)
+- **Scoring outputs:** [`scoring_metric_race/`](https://github.com/superkaiba/explore-persona-space/tree/ce55247acd48139f181396f85cb579c4b48f314c/eval_results/issue_545/metric_race/scoring_metric_race) (`scoring_results.json`, `scoring_metric_race.json`, `per_family_and_heterogeneity.json`, `common_fold_diagnostics.json`) · **extract summary (counts + JS truncation rate):** [`extract_summary.json`](https://github.com/superkaiba/explore-persona-space/blob/ce55247acd48139f181396f85cb579c4b48f314c/eval_results/issue_545/metric_race/extract_summary.json)
+- **Raw on-policy sampling responses (token-ids + text):** [`vllm_ipc/responses/`](https://github.com/superkaiba/explore-persona-space/tree/ce55247acd48139f181396f85cb579c4b48f314c/eval_results/issue_545/metric_race/vllm_ipc/responses)
+- **Figures:** [`figures/issue_545/metric_race/`](https://github.com/superkaiba/explore-persona-space/tree/ce55247acd48139f181396f85cb579c4b48f314c/figures/issue_545/metric_race) (`hero1_dev_leaderboard`, `hero2_predictor_x_behavior_heatmap`, `diag_per_family_champion_tau` — PNG + PDF + meta sidecars)
+- **WandB:** N/A — no training run logged (analysis-only amendment)
+- **Compute:** 1× H100 (RunPod fallback — GCP A100-80 quota exhausted; plan §9 authorized the residual-gap override since the dispatcher uses the `/workspace` IPC contract that SLURM lanes lack), ~7 GPU-hours over ~7 h wall (≈1.5 h vLLM sampling + ≈4.5 h outdist HF teacher-force + ≈1.3 h CPU scoring on the idle GPU + plotting; plan §9 budgeted 9 GPU-h). Full lifecycle including failed co-residency attempts spanned ~14 h of pod time. CPU scoring + figures ran OFF-POD on the VM.
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/545).*
