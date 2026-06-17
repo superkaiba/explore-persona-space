@@ -78,14 +78,14 @@ def main(argv: list[str] | None = None) -> int:
         "--lr",
         type=float,
         default=LORA_LR,
-        help=f"LoRA learning rate (default {LORA_LR}). v5 trains the matched-LR LoRA pole at "
-        "this CLI value (MATCHED_LR=1e-5) on a custom --train-jsonl + --ckpt-steps grid; "
-        "without the flag the LR was hardcoded to LORA_LR.",
+        help=f"LoRA learning rate (default {LORA_LR}). The matched-LR LoRA pole trains at "
+        "this CLI value (v8 MATCHED_LR=5e-6, shifted from the v5-round-1 1e-5) on a custom "
+        "--train-jsonl + --ckpt-steps grid; without the flag the LR was hardcoded to LORA_LR.",
     )
     p.add_argument(
         "--run-name-suffix",
         default=None,
-        help="WandB run-name suffix (v5: the per-arm slug, e.g. loraOP_lr1e5_villain), so the "
+        help="WandB run-name suffix (the per-arm slug, e.g. loraOP_lr5e6_villain), so the "
         "matched-LR LoRA pole logs a distinct run (#480 run-separation class).",
     )
     args = p.parse_args(argv)
