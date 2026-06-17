@@ -27,4 +27,13 @@ Also: NEVER `pkill -f "<pattern that appears in your own SSH argv>"`
 session (gcloud exits 255, leaving you locked out of the SSH stream).
 Kill stray remote procs by exact PID only.
 
+**Launcher PATH gotcha (companion).** A `setsid nohup <launcher>` run
+under `sudo bash -c '...'` does NOT inherit root's login PATH — `uv`
+(at `/root/.local/bin/uv`) is not found and the launcher dies in
+seconds with `uv: command not found`. Put `export
+PATH="/root/.local/bin:$PATH"` as the FIRST line of any GCP-lane
+salvage launcher (the SSH-MCP/RunPod launcher template already does
+this — port it forward). The workdir `/workspace/eps-issue-<N>` is
+root-owned, so the entire relaunch block must run under `sudo bash -c`.
+
 Origin: #653 round 9 salvage-relaunch (2026-06-17).
