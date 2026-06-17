@@ -151,6 +151,34 @@ needle = f"{prefix}/analysis_tensors/extraction_manifest.json"
 assert needle in files, f"manifest {needle} not found on a fresh HF listing"
 print(f"verified {needle} on HF")
 PY
+
+    # Upload the battery input itself (plan §10: issue654_query_displacement/inputs/battery.json).
+    echo "[phase=upload] === upload battery.json -> $HF_DATA_REPO/$HF_PREFIX/inputs ==="
+    uv run python - "$BATTERY" "$HF_DATA_REPO" "$HF_PREFIX" <<'PY' \
+        2>&1 | tee -a "$LOG_DIR/upload.log" || write_failure_sentinel upload "battery upload failed (see upload.log)"
+import sys
+from pathlib import Path
+from explore_persona_space.orchestrate.hub import _upload  # noqa: F401
+
+battery, repo, prefix = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+# upload_as_file=True: single-file upload — _upload raises ValueError otherwise
+# (upload_folder silently no-ops on a file path; hub.py guard, #595/#640).
+url = _upload(
+    battery,
+    repo_id=repo,
+    repo_type="dataset",
+    path_in_repo=f"{prefix}/inputs/battery.json",
+    upload_as_file=True,
+)
+if not url:
+    raise SystemExit("hub._upload returned empty path for battery.json (HF_TOKEN missing / upload failed)")
+print(f"uploaded {battery} -> {url}")
+from huggingface_hub import list_repo_files  # noqa: E402
+files = list_repo_files(repo, repo_type="dataset", revision="main")
+needle = f"{prefix}/inputs/battery.json"
+assert needle in files, f"battery {needle} not found on a fresh HF listing"
+print(f"verified {needle} on HF")
+PY
 fi
 
 # ── End-of-run sentinel for poll_pipeline.py (required keys) ─────────────────
