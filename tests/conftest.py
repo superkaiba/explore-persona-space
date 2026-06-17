@@ -15,6 +15,19 @@ import os
 # replaces the function, bypassing this fence).
 os.environ.setdefault("EPM_VERIFY_BODY_NO_HTTP", "1")
 
+# Same offline-determinism fence for verify_task_body.py check 23 (HF Hub
+# revision-pin existence, incident task #537). The check probes
+# `huggingface_hub.list_repo_files(repo_id, revision=<sha>)` for HF
+# `/tree/<sha>/<path>` URLs; fixture bodies pin synthetic SHAs
+# (`abc123def`, ...) on real-shaped repo ids that would otherwise hit the
+# live Hub API (slow, flaky, auth-gated, and a real revision-not-found
+# would flip long-standing PASS fixtures to FAIL). The check is fail-soft —
+# it SKIPs (PASS + `unverified` note) on this fence — so fixtures stay
+# green offline. Tests that exercise the HF path stub
+# `verify_task_body._hf_url_existence` directly, or monkeypatch
+# `huggingface_hub.list_repo_files`, bypassing this fence.
+os.environ.setdefault("EPM_VERIFY_BODY_NO_HF", "1")
+
 # Keep the suite hermetic against an ambient developer-shell auto-lane
 # override: `backends.router.route()` resolves the auto lane order from
 # EPM_AUTO_LANE_ORDER when RouterConfig.lane_order is None, so a value

@@ -365,6 +365,28 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `5ad30c2…` against a Reproducibility claim of `c539920…` — caught by
   hand at round-3 interp-critique, mechanizable into this check.
 
+- **check 23** (`check_hf_url_resolves`): every HF Hub revision-pinned
+  `/tree/<sha>/<path>` or `/blob/<sha>/<path>` URL in the body must
+  resolve to ≥1 file at the cited revision, probed via
+  `huggingface_hub.list_repo_files(repo_id, repo_type=..., revision=<sha>)`.
+  Extends the #507 existence-protection class (check 4b inline figures,
+  check 8b same-repo Reproducibility links) to HF Hub links, which check 8
+  deliberately left shape-checked only — their existence IS decidable via
+  the Hub API. A path pinned to a revision that predates the upload
+  resolves to ZERO files; that dead pin slips through every other check
+  (shape-valid, sha-pinned, real repo). Body-wide + fence-stripped scan
+  (HF links live in `## Reproducibility`, `## Data`, and cherry-picked
+  prose under `## TL;DR` / `## Findings`); only hex-pinned revisions are
+  probed (moving refs like `/tree/main` are check 8's shape concern).
+  FAIL-SOFT: only a successful zero-file listing — or a definitive
+  repository/revision-not-found — is a FAIL; the `EPM_VERIFY_BODY_NO_HF=1`
+  offline fence (set suite-wide by `tests/conftest.py`), a missing
+  `huggingface_hub`, and any network / auth error surface as an
+  `unverified` note on the PASS line, never a FAIL. Incident: task #537's
+  `**Artifacts:**` "415 bakeoff intermediates" link pinned to `db3662ae`
+  (the main-grid revision, predating the bakeoff round) resolved to 0
+  files — caught by hand at round-1 clean-result-critique.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -3466,6 +3488,163 @@ def check_repro_artifact_urls_exist(body: str) -> CheckResult:
     return CheckResult(name, True, detail)
 
 
+# An HF Hub `/tree/<sha>/<path>` or `/blob/<sha>/<path>` URL pinned to a hex
+# revision. Both dataset repos (`huggingface.co/datasets/<owner>/<repo>/...`)
+# and model/space repos (`huggingface.co/<owner>/<repo>/...`) are matched.
+# The `<sha>` group is restricted to a 7-40 char hex literal so a moving ref
+# (`/tree/main`) is out of scope — its existence is undecidable at any point
+# in time and check 8 already FAILs an unpinned HF URL on shape. `<path>` is
+# optional (a bare `/tree/<sha>` repo-root link probes the revision itself).
+# The `(?:datasets|spaces)/` prefix is captured so the right `repo_type` is
+# passed to `huggingface_hub.list_repo_files`.
+_HF_HUB_TREE_BLOB_URL_RE = re.compile(
+    r"^https?://huggingface\.co/"
+    r"(?:(?P<kind>datasets|spaces)/)?"
+    r"(?P<owner>[^/]+)/(?P<repo>[^/]+)"
+    r"/(?:tree|blob)/(?P<sha>[0-9a-fA-F]{7,40})"
+    r"(?:/(?P<path>[^?#]*))?"
+)
+
+
+def _gather_hf_pinned_urls(body: str) -> list[tuple[str, str, str, str, str]]:
+    """Collect HF Hub revision-pinned `/tree/<sha>/<path>` and
+    `/blob/<sha>/<path>` URLs from the WHOLE body (check 23). HF artifact
+    links live in `## Reproducibility` (the `**Artifacts:**` model/dataset
+    rows), in `## Data` (the `### Trained on` / `### Generated` complete-data
+    pointers), and in `## TL;DR` / `## Findings` (the cherry-picked-completion
+    "full data at ..." links), so the scan is body-wide, not section-scoped.
+
+    Fenced code blocks are stripped first so a URL shown inside a ``` ... ```
+    example is illustrative, never probed. Returns order-preserving,
+    deduplicated `(repo_id, repo_type, sha, path_prefix, raw_url)` tuples —
+    at most one Hub call per unique (repo_id, sha, path_prefix). `repo_type`
+    is one of ``"dataset"`` / ``"space"`` / ``"model"`` for the
+    `huggingface_hub.list_repo_files(..., repo_type=...)` call.
+    """
+    kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
+    out: list[tuple[str, str, str, str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for token in _REPRO_URL_TOKEN_RE.findall(_strip_fenced_blocks(body)):
+        url = token.rstrip(".,;:!?")
+        m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
+        if m is None:
+            continue
+        repo_id = f"{m.group('owner')}/{m.group('repo')}"
+        repo_type = kind_to_type[m.group("kind")]
+        sha = m.group("sha")
+        path_prefix = (m.group("path") or "").rstrip("/")
+        key = (repo_id, sha, path_prefix)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append((repo_id, repo_type, sha, path_prefix, url))
+    return out
+
+
+def _hf_url_existence(repo_id: str, repo_type: str, sha: str, path_prefix: str) -> tuple[str, str]:
+    """Existence probe for one HF Hub revision-pinned URL (check 23).
+
+    Returns ``(verdict, note)`` with verdict one of ``'pass'`` / ``'fail'``
+    (the path resolves to ZERO files at the cited revision — a dead pin) /
+    ``'skip'`` (indeterminate — surfaced as an `unverified` note on the PASS
+    line, never a FAIL, so offline / unauthenticated runs don't block).
+
+    Fail-soft is mandatory: the probe SKIPs (never FAILs) when
+    ``EPM_VERIFY_BODY_NO_HF=1`` is set (the suite-wide offline fence in
+    ``tests/conftest.py``), when ``huggingface_hub`` is not importable, or
+    when the Hub call raises any network / auth / unexpected error. Only a
+    SUCCESSFUL listing that returns zero matching files — or a definitive
+    repository/revision-not-found — is a FAIL.
+    """
+    if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1":
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF probe fenced)"
+    try:
+        import huggingface_hub  # local import — optional dependency
+        from huggingface_hub.utils import (
+            EntryNotFoundError,
+            RepositoryNotFoundError,
+            RevisionNotFoundError,
+        )
+    except ImportError:
+        return "skip", f"`{repo_id}@{sha[:8]}` (huggingface_hub unavailable)"
+    try:
+        files = huggingface_hub.list_repo_files(repo_id, repo_type=repo_type, revision=sha)
+    except (RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError) as exc:
+        return (
+            "fail",
+            f"HF URL dead revision pin — `{repo_id}` has no revision `{sha[:8]}` "
+            f"({type(exc).__name__})",
+        )
+    except Exception as exc:
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF list_repo_files failed: {exc})"
+    if not path_prefix:
+        # A bare `/tree/<sha>` repo-root link: a successful listing means the
+        # revision exists, which is all such a link asserts.
+        return "pass", ""
+    needle = path_prefix.rstrip("/")
+    matching = [f for f in files if f == needle or f.startswith(needle + "/")]
+    if not matching:
+        return (
+            "fail",
+            f"HF URL dead revision pin — `{needle}` resolves to 0 files at `{repo_id}@{sha[:8]}`",
+        )
+    return "pass", ""
+
+
+def check_hf_url_resolves(body: str) -> CheckResult:
+    """Check 23: every HF Hub revision-pinned `/tree/<sha>/<path>` or
+    `/blob/<sha>/<path>` URL in the body must resolve to ≥1 file at the
+    cited revision.
+
+    Extends the #507 existence-protection class (check 4b for inline
+    figures, check 8b for same-repo Reproducibility links) to HF Hub
+    artifact links, which check 8 deliberately left shape-checked only
+    ("existence is not decidable from the local object DB"). It IS decidable
+    via the Hub API: `huggingface_hub.list_repo_files(repo_id, revision=<sha>)`
+    lists the files present at a revision, so a path pinned to a revision
+    that predates the upload — resolving to ZERO files — is caught
+    mechanically. Incident task #537: the `## Reproducibility` `**Artifacts:**`
+    line pinned the "415 bakeoff intermediates" link to revision `db3662ae`
+    (the main-grid revision, predating the bakeoff round entirely), where the
+    path resolves to 0 files; a reader — or a downstream reuse-premise miner
+    — clicking it gets nothing. The same dead-pin class slips through every
+    other check (the URL is shape-valid, sha-pinned, and on a real repo).
+
+    The scan is body-wide (HF links live in `## Reproducibility`, `## Data`,
+    and the cherry-picked-completion prose under `## TL;DR` / `## Findings`)
+    and fence-stripped (a URL inside a ``` example is illustrative).
+    Moving refs (`/tree/main`) are out of scope — check 8 FAILs those on
+    shape; only hex-pinned revisions are probed.
+
+    Fail-soft (same semantics as check 8b): a definitive zero-file /
+    no-such-revision result is a FAIL; everything indeterminate — the
+    `EPM_VERIFY_BODY_NO_HF=1` offline fence (set suite-wide by
+    `tests/conftest.py`), a missing `huggingface_hub`, or any network /
+    auth error — surfaces as an `unverified` note on the PASS line, never a
+    FAIL, so offline and unauthenticated runs don't block.
+    """
+    name = "HF URL pins resolve at the cited revision"
+    urls = _gather_hf_pinned_urls(body)
+    if not urls:
+        return CheckResult(name, True, "no HF Hub revision-pinned URLs to check")
+    bad: list[str] = []
+    unverified: list[str] = []
+    for repo_id, repo_type, sha, path_prefix, _raw in urls:
+        verdict, note = _hf_url_existence(repo_id, repo_type, sha, path_prefix)
+        if verdict == "fail":
+            bad.append(note)
+        elif verdict == "skip":
+            unverified.append(note)
+    if bad:
+        return CheckResult(name, False, "; ".join(bad))
+    detail = f"{len(urls)} HF URL(s)"
+    if unverified:
+        detail += f"; {len(unverified)} unverified (existence not confirmed): " + "; ".join(
+            unverified
+        )
+    return CheckResult(name, True, detail)
+
+
 # Reproducibility per-figure commit claim — `` `<basename>` at commit `<sha>` ``
 # or the shorter `` `<basename>` at `<sha>` `` form the analyzer's `**Figures:**`
 # bullet uses (worked example #537). `<basename>` is the figure filename WITHOUT
@@ -4503,6 +4682,7 @@ CHECKS = [
     check_data_unwrapped_example_table,  # check 19b (WARN)
     check_v3_word_caps,  # check 20
     check_figure_url_sha_matches_repro,  # check 22
+    check_hf_url_resolves,  # check 23
 ]
 
 
