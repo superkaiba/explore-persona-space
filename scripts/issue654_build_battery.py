@@ -351,11 +351,38 @@ def ensure_wildchat_slice(target: int) -> None:
         "pulling WildChat slice (target=%d, scan_cap=%d): %s", target, scan_cap, " ".join(cmd)
     )
     proc = subprocess.run(cmd, cwd=str(PROJECT_ROOT))
-    if proc.returncode != 0:
-        raise RuntimeError(
-            f"WildChat slice build failed (rc={proc.returncode}); the #617 loader "
-            f"raises loud on shortfall. lmsys fallback is §10b manual-override only."
-        )
+
+    # Did the work actually complete? The subprocess may abort during interpreter
+    # shutdown (rc=134 / `PyGILState_Release` race in the datasets+transformers C
+    # extensions) AFTER writing the slice; treat that as success when the artifact
+    # is present + well-formed. A real shortfall = no file or insufficient convs.
+    artifact_ok = False
+    n_existing = 0
+    if WILDCHAT_SLICE_PATH.exists():
+        try:
+            existing = json.loads(WILDCHAT_SLICE_PATH.read_text())
+            n_existing = existing.get("meta", {}).get("n_conversations", 0)
+            artifact_ok = n_existing >= target
+        except (json.JSONDecodeError, KeyError):
+            artifact_ok = False
+
+    if artifact_ok:
+        if proc.returncode != 0:
+            logger.warning(
+                "WildChat subprocess returned rc=%d AFTER writing %d conversations "
+                "(>= target=%d); accepting the artifact (likely interpreter-shutdown "
+                "thread-cleanup race in datasets+transformers).",
+                proc.returncode,
+                n_existing,
+                target,
+            )
+        return
+
+    raise RuntimeError(
+        f"WildChat slice build failed (rc={proc.returncode}, n_existing={n_existing}, "
+        f"target={target}); the #617 loader raises loud on shortfall. "
+        f"lmsys fallback is §10b manual-override only."
+    )
 
 
 def build_wildchat_contexts(n_wildchat: int) -> list[dict]:
