@@ -602,4 +602,70 @@ The dispatcher signals completion via `/workspace/logs/issue-597-*.json` sentine
 
 ---
 
+## `filler-control-multiseed` arm
+
+A same-issue follow-up round (plan v6, planner-exempt — a re-run differing only in the training seed) that puts real cross-seed error bars on the 3-way decomposition. **The single manipulated variable vs the `positives-plus-filler-control` round is the training seed: 42 → {137, 7}, added across all three arms.** The round retrains the positives-only (`armB`), contrastive (`armC`), and filler (`armD`) arms from base at two NEW seeds — 137 and 7 — over the 3-source set (`villain`, `assistant`, `qwen_default`); 3 arms × 3 sources × 2 seeds = 18 new training units. The seed-42 trajectories already committed on `issue-597` are REUSED verbatim, giving 3 seeds {42, 137, 7} per (arm, source) cell. The recipe, training-data pools, eval contract, parity gate, dense save grid, halt step, marker id, and the entire §2 / per-arm hyperparameter set are inherited verbatim from the prior round — only `TrainLoraConfig.seed` differs.
+
+### Design (delta vs the `positives-plus-filler-control` arm)
+
+- **No new construct, DV, recipe, pool, or probe.** This amendment carries no scientific or methodological change. The 3-way decomposition framing, the registered decision rule, the construction of `armC` and `armD`, the four-float teacher-forced panel DV, and the per-source set are all unchanged; the seed-mean curves now replace the single-seed point estimates the prior rounds plotted.
+- **Cells:** 3 arms × 3 sources (`villain`, `assistant`, `qwen_default`) × 2 new seeds (137, 7) = 18 new training units. `armA` (the canonical #480 seed-42 anchor) is NOT retrained at the new seeds; it stays the parity reference at seed 42, and its panel is re-probed (no train) at the new seeds purely as the matched-step parity-reference read.
+- **Seed-stable data invariant (carried from plan v6 §2):** base-model greedy decode at temperature 0 is deterministic regardless of the LoRA training seed, so the per-source filler R and every other on-policy response text are byte-identical across seeds 42 / 137 / 7; the filler pools are built once and reused. A build-time assert verifies the seed-137 / seed-7 filler-R bytes match the seed-42 pool's bytes (mismatch → fail loud). The seed therefore enters only via LoRA initialization + optimizer-state RNG.
+- **Eval:** the SAME four-float teacher-forced panel probe at the SAME `probe_rows.json` @ HF rev `8d2f79030e365180c7d32755cda34d34a25aed18` (25 contexts × 50 questions) at the SAME `C_GRID = {2..40:2} ∪ {44..60:4}` (25 checkpoints/source). New `<source>_seed{137,7}_panel_trajectory.json` files land at the same per-arm paths; the seed-42 files are READ, never modified.
+
+### Multi-seed launch recipe
+
+The round is launched by [`scripts/issue_597/launch_multiseed_597.sh`](https://github.com/superkaiba/explore-persona-space/blob/0936765754924ce4826efa4b116c96e80ad51bdc/scripts/issue_597/launch_multiseed_597.sh), a thin orchestration wrapper around the canonical dispatcher (the dispatcher itself is the slice-6-router entry point and carries every per-cell phase: preflight + filler-R reuse, training, panel probe, parity diagnostic, upload). The wrapper loops the dispatcher serially over the seed × recipe grid on ONE GPU:
+
+```bash
+bash scripts/issue_597/launch_multiseed_597.sh 0
+# SEEDS=(137 7)  ×  RECIPES=(pos_only_dynamics contrastive_dense_early filler_dynamics)
+# SOURCES="villain,assistant,qwen_default"
+```
+
+- For each `(seed, recipe)`, the wrapper invokes `dispatch_leakage_dynamics_597.py --recipe <recipe> --seed <seed> --gpu <GPU> --sources villain,assistant,qwen_default`, running the full per-cell ladder (train to the halt step + 25-checkpoint probe + parity diagnostic + HF upload) for all 3 sources.
+- **GPU-pin parity (the #557 in-process-clobber gotcha):** the wrapper exports `CUDA_VISIBLE_DEVICES="${GPU}"` to exactly match the `--gpu ${GPU}` it passes to the dispatcher; the dispatcher hard-asserts the match, so a mismatched pin fails loud rather than silently training on the wrong device.
+- Credentials are loaded once (`set -a && source .env && set +a`) before the dispatcher's own `load_dotenv()` (defense-in-depth). Per-`(recipe, seed)` logs tee to `${EPS_597_LOG_DIR:-/workspace/logs}/issue597_multiseed_<recipe>_seed<seed>.log`. Smoke first with `bash scripts/issue_597/launch_multiseed_597.sh 0 --smoke --only-source villain` (extra flags pass through to the dispatcher).
+
+### Cross-seed aggregation recipe (figure-level)
+
+Multi-seed aggregation happens entirely at the post-storage figure layer; the four-float storage contract is never touched. [`scripts/issue_597/fig_armD_3way_panel_only.py`](https://github.com/superkaiba/explore-persona-space/blob/0936765754924ce4826efa4b116c96e80ad51bdc/scripts/issue_597/fig_armD_3way_panel_only.py) aggregates the panel trajectories across `SEEDS = [42, 137, 7]` per (arm, source) cell:
+
+- For each (arm, source, step) it computes the **per-step cross-seed MEAN** and a **cross-seed HALF-RANGE error band `(max − min) / 2`** over the seeds present at that step, on BOTH the source row and the bystander-median row, for all three arms. `ERROR_BAR_KIND = "half-range"` is named in the file, the figure caption, and `meta.json` (half-range, not SE, because with 3 seeds the sample SE is a poor variance estimate; the half-range is the honest bracket of observed seed spread and collapses cleanly to a zero-width band for a single seed).
+- **Fail-fast production coverage guard (`assert_production_coverage`, run at the top of `main()`):** the seed-42-only fallback (a zero-width band reproducing the v1 single-seed curves) is legitimate ONLY while NO non-42 trajectory exists anywhere on the plotted grid. The moment any non-42 trajectory lands, the production path requires FULL `SEEDS` coverage on EVERY plotted (arm, source) cell; a partial landing raises `SystemExit` listing every missing `(arm, source, seed)` triple and pointing at the launcher as the recovery action — because the error band is the science of this round, a silently degraded smaller-N band would corrupt the inlined headline statistic.
+- **`--allow-partial` (or `EPM_597_FIG_ALLOW_PARTIAL=1`)** bypasses the guard; it is for the pre-launch fallback smoke and ad-hoc inspection ONLY — the production re-render never passes it.
+
+### Worked example — one cell's command line (verbatim)
+
+The `filler_dynamics` recipe at seed 137 for the `villain` source. The wrapper expands to the dispatcher call:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue_597/dispatch_leakage_dynamics_597.py \
+    --recipe filler_dynamics --seed 137 --gpu 0 --sources villain,assistant,qwen_default
+```
+
+The villain cell of this call produced the panel trajectory at `eval_results/issue_597/positives-plus-filler-control/panel_trajectories/armD/villain_seed137_panel_trajectory.json` (schema `i597_panel_trajectory_v1`; top-level `arm: d`, `source: villain`, `seed: 137`, `marker_id: 83399`, `eos_token_id: 151645`, `n_contexts: 25`, `n_questions: 50`, `ladder_run_id: b23ed9cd-15ec-4011-a12b-56a5c93e0ec5`), 25 `by_step` entries on the `C_GRID` (steps 2 … 60), each context carrying the same four-float record schema as the parent arm's §5(e) example. Its per-row four-float records uploaded to the HF data repo bucket `issue597_leakage_dynamics/filler_arm/panel_trajectories_raw/villain/` (seed-suffixed alongside the seed-42 records), and the seed-137 / seed-7 final adapters to `adapters/issue_597_filler/villain_seed137` / `villain_seed7`.
+
+### Artifacts and reproducibility (this arm)
+
+- **Run / figure commit:** `0936765754924ce4826efa4b116c96e80ad51bdc` (branch `issue-597`; the 3-seed figure script + launcher + regenerated `armD_3way_panel_only.png`). The 24 aggregated panel-trajectory JSONs (4 arms × 3 sources × 2 new seeds — 18 freshly-trained `armB`/`armC`/`armD` files + 6 no-train parity-reference `armA` re-probes) were committed at `144213ef5e` (`144213ef5ed6ced50fb68f72fcf3dffa885ebd34`).
+- **Multi-seed launcher (NEW):** [`scripts/issue_597/launch_multiseed_597.sh`](https://github.com/superkaiba/explore-persona-space/blob/0936765754924ce4826efa4b116c96e80ad51bdc/scripts/issue_597/launch_multiseed_597.sh) — `SEEDS=(137 7)`, `RECIPES=(pos_only_dynamics contrastive_dense_early filler_dynamics)`, `SOURCES="villain,assistant,qwen_default"`.
+- **3-seed figure script:** [`scripts/issue_597/fig_armD_3way_panel_only.py`](https://github.com/superkaiba/explore-persona-space/blob/0936765754924ce4826efa4b116c96e80ad51bdc/scripts/issue_597/fig_armD_3way_panel_only.py) — `SEEDS = [42, 137, 7]`, `ERROR_BAR_KIND = "half-range"`, `assert_production_coverage` + `--allow-partial`.
+- **Dispatcher (unchanged; `--seed` already threaded):** [`scripts/issue_597/dispatch_leakage_dynamics_597.py`](https://github.com/superkaiba/explore-persona-space/blob/0936765754924ce4826efa4b116c96e80ad51bdc/scripts/issue_597/dispatch_leakage_dynamics_597.py) — the `--seed` arg threads into `TrainLoraConfig.seed`, the `{source}_seed{seed}_*` output-path templates, the panel-probe sub-invocation, and the parity-gate read; no source changes for the new seeds.
+- **Seed-137 / seed-7 adapters (3 sources × 2 seeds, per arm):**
+  - Contrastive: [HF `adapters/issue_597_contrastive_dense` @ `5865441c26`](https://huggingface.co/superkaiba1/explore-persona-space/tree/5865441c262f/adapters/issue_597_contrastive_dense) — `<source>_seed137` / `<source>_seed7`.
+  - Filler: [HF `adapters/issue_597_filler` @ `5865441c26`](https://huggingface.co/superkaiba1/explore-persona-space/tree/5865441c262f/adapters/issue_597_filler) — `<source>_seed137` / `<source>_seed7`.
+- **Per-row four-float panel records (HF data repo, seed-suffixed alongside the seed-42 records):** `issue597_leakage_dynamics/dense_early/panel_trajectories_raw/<source>/` (contrastive) and `issue597_leakage_dynamics/filler_arm/panel_trajectories_raw/<source>/` (filler), per seed × source, written by the dispatcher's `upload_dir_fail_loud` to the `HF_597_DATA_SUBDIR` buckets.
+- **Aggregated panel-trajectory JSONs (git):** [eval_results/issue_597/ @ `0936765754`](https://github.com/superkaiba/explore-persona-space/tree/0936765754924ce4826efa4b116c96e80ad51bdc/eval_results/issue_597) — the 24 multi-seed JSONs landed at `144213ef5e` (`panel_trajectories/{armA,armB}`, `dense-early-contrastive-grid/panel_trajectories/armC`, `positives-plus-filler-control/panel_trajectories/armD`, `<source>_seed{137,7}_panel_trajectory.json`).
+- **Figure:** the 3-seed `armD_3way_panel_only.png` (seed-mean curves with cross-seed half-range bands on both rows, replacing the v1 single-seed point estimate) at [`0936765754`](https://github.com/superkaiba/explore-persona-space/blob/0936765754924ce4826efa4b116c96e80ad51bdc/figures/issue_597/armD_3way_panel_only.png).
+- **Compute:** multi-seed re-run (seeds 137, 7; 18 cells serial) on 1× A100-80 (GCP `eps-issue-597`), ≈4 GPU·h budget; figure regeneration is VM-local (no pod). Reproduce (one source cell, then the figure):
+
+```bash
+git checkout 0936765754
+uv run python scripts/issue_597/dispatch_leakage_dynamics_597.py --recipe filler_dynamics --sources villain --seed 137 --gpu 0
+uv run python scripts/issue_597/fig_armD_3way_panel_only.py
+```
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/597).*
