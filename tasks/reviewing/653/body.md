@@ -26,7 +26,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** see the findings-blind methodology reference for the full conditions, recipe, and worked examples.
+**Methodology:** [docs/methodology/issue_653.md](https://github.com/superkaiba/explore-persona-space/blob/bfe68c0c613104dcd27f4ecbe1157fcca7342406/docs/methodology/issue_653.md) · [gist](https://gist.github.com/superkaiba/e324b6ee89555c5ad6d9f53071f651da)
 
 ## Takeaways
 
@@ -155,6 +155,8 @@ Full on-policy pools (4 files + yield reports): [HF data repo onpolicy_pools/](h
 - Installed-only re-aggregation verdict (Step 9a-ter follow-up): [installed_only_verdict.json](https://github.com/superkaiba/explore-persona-space/blob/ed42d81a4a6ca81cea9269cd7725f0cf1e841fa4/eval_results/issue_653/installed_only_verdict.json)
 - Figures (used inline): [figures/issue_653/](https://github.com/superkaiba/explore-persona-space/tree/9d306a088cf40c3d6ee20e793434ad70c525e3b9/figures/issue_653)
 - Reused: EM positives from [#519](https://eps.superkaiba.com/tasks/519) Turner bad-medical-advice corpus (`issue_519/em_seed42.jsonl`, re-keyed) — fit: published-corpus replication-fidelity exemption, contrastive negatives regenerated on-policy under the #653 panel.
+
+- **Methodology reference:** [docs/methodology/issue_653.md](https://github.com/superkaiba/explore-persona-space/blob/bfe68c0c613104dcd27f4ecbe1157fcca7342406/docs/methodology/issue_653.md) · [gist](https://gist.github.com/superkaiba/e324b6ee89555c5ad6d9f53071f651da)
 
 **Compute:**
 
