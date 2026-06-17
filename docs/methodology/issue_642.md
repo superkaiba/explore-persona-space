@@ -43,8 +43,8 @@ ONE complete table. Reused-arm values carry #606's grounding by inheritance; the
 | cmft checkpoint grid (optimizer steps) | `{2,4,6,8,12,16,22,29,37,44,66,88,132}` (= #606 FT grid) | `i642_common.py` `CMFT_CKPT_GRID = FT_CKPT_GRID` |
 | cmft selected cells | steps {12, 16, 22, 132} | `eval_results/issue_642/.../generations/` |
 | Pre-authorized retrain lever | lr `2e-6`, densified grid (used only on a grid-jump fallback) | `i642_common.py` `FT_RETRAIN_LR=2e-6`, `FT_RETRAIN_GRID` |
-| LoRA arm (reused, NOT retrained) | r=32, α=64, all-linear, rsLoRA, dropout 0.05, `bias='none'`, lr `1e-5`, 132 steps; cells {28,32,36,132} | #606 `adapter_config.json` @ `ec58089f`; `i642_common.py` `LORA_LR=1e-5` |
-| Full-FT arm (reused, NOT retrained) | ZeRO-3 all-modules, lr `5e-6`, 132 steps; cells {12,16,22,132} | #606 recipe; `i642_common.py` `REUSED_FT_STEPS` |
+| LoRA (reused, not retrained) | r=32, α=64, all-linear, rsLoRA, dropout 0.05, `bias='none'`, lr `1e-5`, 132 steps; cells {28,32,36,132} | #606 `adapter_config.json` @ `ec58089f`; `i642_common.py` `LORA_LR=1e-5` |
+| Full FT (reused, not retrained) | ZeRO-3 all-modules, lr `5e-6`, 132 steps; cells {12,16,22,132} | #606 recipe; `i642_common.py` `REUSED_FT_STEPS` |
 | Eval decode backend | vLLM, `tensor_parallel_size=1`, `max_model_len=2048` | `i642_gen_worker.py` @ fe063180 |
 | Eval temperature | `1.0` | `i642_common.py` `EVAL_TEMPERATURE=1.0` |
 | Eval `max_new_tokens` | `512` | `i642_common.py` `EVAL_MAX_NEW_TOKENS=512` |
