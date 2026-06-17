@@ -121,6 +121,18 @@ def main() -> int:
         choices=["bfloat16", "float32"],
         help="model dtype (float32 for a CPU structure smoke)",
     )
+    parser.add_argument(
+        "--reuse-context-only",
+        type=Path,
+        default=None,
+        help=(
+            "Dir of cached context-only companion banks (`<context_id>.pt`) to REUSE "
+            "instead of re-extracting on GPU. The companion's context-only side (no "
+            "query) is identical for the dummy and real arms, so the dummy arm reuses "
+            "the real arm's cached banks (plan v5 §4). Each required context_id MUST be "
+            "present in the dir (fail-loud); the per-pair forward passes still run."
+        ),
+    )
     args = parser.parse_args()
 
     import torch
@@ -168,7 +180,17 @@ def main() -> int:
                 "context_type": p["context_type"],
                 "context_only_prompt": p["context_only_prompt"],
             }
-    logger.info("[phase=companion] %d distinct context-only reads", len(distinct_contexts))
+    reuse_dir = args.reuse_context_only
+    if reuse_dir is not None:
+        logger.info(
+            "[phase=companion] REUSING cached context-only banks from %s "
+            "(plan v5 §4 — the context-only side is identical for dummy and real arms)",
+            reuse_dir,
+        )
+        if not reuse_dir.exists():
+            raise RuntimeError(f"--reuse-context-only dir not found: {reuse_dir}")
+    else:
+        logger.info("[phase=companion] %d distinct context-only reads", len(distinct_contexts))
     companion_paths: dict[str, str] = {}
     ctx_ids_list = list(distinct_contexts.values())
     ctx_prompts = [c["context_only_prompt"] for c in ctx_ids_list]
@@ -179,6 +201,36 @@ def main() -> int:
     # only the readout bank (the (0, last) span reads are discarded for the
     # context-only prompt — they are not the construct).
     for c, prompt in zip(ctx_ids_list, ctx_prompts, strict=True):
+        cpath = ctx_only_dir / f"{c['context_id']}.pt"
+        if reuse_dir is not None:
+            # REUSE: copy the cached bank for this context_id instead of a GPU
+            # forward. Fail loud if the context_id is missing or the cached bank
+            # has the wrong layer count / hidden size (a stale cache would
+            # silently corrupt the companion read).
+            src = reuse_dir / f"{c['context_id']}.pt"
+            if not src.exists():
+                raise RuntimeError(
+                    f"--reuse-context-only: cached bank for context_id "
+                    f"{c['context_id']!r} not found at {src}"
+                )
+            cached = torch.load(src, weights_only=True)
+            readout = cached["readout"]
+            assert readout.shape == (n_layers, hidden), (
+                f"cached context_only bank {src} has shape {tuple(readout.shape)} != "
+                f"({n_layers}, {hidden}) — stale/mismatched cache"
+            )
+            _atomic_save(
+                {
+                    "context_id": c["context_id"],
+                    "context_type": c["context_type"],
+                    "readout": readout,  # (n_layers, hidden) at the assistant-gen slot
+                    "layers": layers,
+                    "reused_from": str(src),
+                },
+                cpath,
+            )
+            companion_paths[c["context_id"]] = str(cpath.relative_to(args.out_dir))
+            continue
         ids = tokenizer(prompt, return_tensors="pt", add_special_tokens=False).input_ids
         last = ids.shape[1] - 1
         # (context_end=0, query_end=last) is a valid 0 <= c < q < seq ordering for
@@ -193,7 +245,6 @@ def main() -> int:
             readout_position=-1,
         )
         readout = banks["readout"][0]  # (n_layers, hidden)
-        cpath = ctx_only_dir / f"{c['context_id']}.pt"
         _atomic_save(
             {
                 "context_id": c["context_id"],
@@ -241,6 +292,10 @@ def main() -> int:
             device=args.device,
             readout_position=-1,
         )
+        # real_query_id: the dummy arm carries the matched real query's id so the
+        # analyzer can join dummy<->real pairs on (context_id, real_query_id); the
+        # real arm has no such field, so it defaults to query_id (plan v5 §3 join).
+        real_query_id = p.get("real_query_id", p["query_id"])
         out_path = args.out_dir / f"pair_{i:06d}.pt"
         _atomic_save(
             {
@@ -248,6 +303,7 @@ def main() -> int:
                 "context_type": p["context_type"],
                 "context_id": p["context_id"],
                 "query_id": p["query_id"],
+                "real_query_id": real_query_id,
                 "topicality": p["topicality"],
                 "length": p["length"],
                 "ctx_end_idx": c_idx,
@@ -268,6 +324,7 @@ def main() -> int:
                 "context_type": p["context_type"],
                 "context_id": p["context_id"],
                 "query_id": p["query_id"],
+                "real_query_id": real_query_id,
                 "topicality": p["topicality"],
                 "length": p["length"],
                 "ctx_end_idx": c_idx,
@@ -308,6 +365,7 @@ def main() -> int:
         "offset_fail_fraction": fail_fraction,
         "offset_fail_kill_fraction": OFFSET_FAIL_KILL_FRACTION,
         "offset_kill_tripped": offset_kill_tripped,
+        "reuse_context_only": str(args.reuse_context_only) if args.reuse_context_only else None,
         "companion_context_only_files": companion_paths,
         "pairs": manifest_pairs,
         "git_commit": _git_commit(),

@@ -316,5 +316,197 @@ The auto/GCP router runs Step 2 on-pod via
 
 ---
 
+## length-matched-dummy-query-control arm
+
+A cheap-band same-issue follow-up round (label
+`length-matched-dummy-query-control`) that adds ONE query arm to the §3/§4
+battery. It changes exactly one variable — query *content* at matched length
+— and inherits everything else (model, 81 contexts, read positions, centering,
+floor, CKA, seed 42) verbatim from the parent run. Plan amendment:
+`tasks/.../654/plans/v5.md` (a one-variable diff against v4).
+
+### Construct being measured
+
+- **The variable.** Each real query carries both content AND length/token
+  position. The companion read in §4 (context-only assistant-gen slot vs
+  full-prompt assistant-gen slot, both at the fixed generation position) cannot
+  separate the two. This arm holds query length and read position fixed while
+  removing query content, by pairing each real query with a token-length-matched
+  content-neutral dummy query and re-reading the same slot.
+- **The new DV.** Per-layer per-tier same-slot companion-curve gap, computed
+  per-pair so each (context, query) is its own control:
+  `gap(L) = companion_cos_real(context, query, L) − companion_cos_dummy(context, query, L)`
+  aggregated to the per-tier mean. The v4 companion-read definition (§4) is
+  unchanged; the dummy arm supplies the content-matched comparison curve.
+- **Measurement validity (inherited).** On-distribution — both arms read the
+  model's real residual stream at the real assistant-generation slot in natural
+  forward passes; the dummy is a real grammatical user turn, not a teacher-forced
+  stub. Direct difference of two computed cosine curves, no derived-input
+  dependency.
+- **The one new hyperparameter — the filler-string design** (everything else
+  `Source: plans/v4 §11`):
+
+| Parameter | Value | Source |
+|---|---|---|
+| Dummy base sentence | `"Please continue with whatever you think is most appropriate here."` | `issue654_build_battery_dummy.py:DUMMY_BASE` (plan v5 §2/§11) |
+| Filler word (length pad) | `" really"` — single Qwen-2.5-7B token id **2167** (asserted at build time) | `issue654_build_battery_dummy.py:FILLER_WORD,FILLER_TOKEN_ID:99-101` |
+| Length-match target | each dummy's `query_end_idx` matched to the real query's `query_end_idx` under the SAME context | `_build_dummy_text`; `derive_pair` (reused) |
+| Residual tolerance / flag | ±2 tokens; flag if > 10% of pairs exceed it | `issue654_build_battery_dummy.py:RESIDUAL_TOKEN_TOL,RESIDUAL_FLAG_FRACTION` |
+| `<\|im_pad\|>` rejected | encodes to 6 ordinary subwords, not a single token → off-distribution | plan v5 §11 rejected-alternatives |
+| Seed | 42 (inherited) | `issue654_build_battery_dummy.py` (`SEED` from parent build) |
+
+### Dummy-battery construction recipe
+
+`issue654_build_battery_dummy.py` (tokenizer-only, no model load; runs CPU-side
+on-pod before the GPU phase). Per (context, real query):
+
+1. Read the matched real query's `query_end_idx` from the parent's frozen
+   `battery.json` (the per-context length target); recover that context's
+   message list from the real pair's `context_only_prompt`
+   (`_parse_chatml_messages`) so the dummy renders under the IDENTICAL context.
+2. Render `context + DUMMY_BASE`; derive its `query_end_idx` (same no-gen
+   render as the parent's `derive_pair`).
+3. **If short of target:** append `" really"` filler tokens one at a time,
+   re-deriving `query_end_idx` after each append (per-append re-derivation
+   absorbs any ChatML-context tokenization drift); if it overshoots by one
+   filler token, drop the trailing `" really"`.
+4. **If `DUMMY_BASE` alone overshoots** (a very short real query): truncate the
+   base sentence at a word boundary until at/under target, then top up with
+   filler to hit the target exactly.
+5. Run the parent's `derive_pair` ordering/prefix asserts on the dummy pair
+   (`full_ids[:len(ctx_ids)] == ctx_ids`, `0 ≤ ctx_end < query_end < seq_len`).
+6. Record per pair: realized `dummy_text`, `target_query_end_idx`,
+   `achieved_query_end_idx`, `length_residual_tokens` (= achieved − target),
+   and the join key `real_query_id`
+   (`q_ontopic_short_0` → `q_dummy_for_ontopic_short_0`).
+
+Build-time fail-loud asserts: the filler word encodes to exactly `[2167]`; the
+`DUMMY_BASE` + every realized dummy string is disjoint from the 10 real eval
+queries AND every reconstructed context turn (system/user content) AND the real
+query bank (so a dummy can never echo a context or eval string).
+
+**Realized length match (production `battery_dummy.json` meta, HF rev
+`f94c0d15…`):** 810 dummy pairs over 81 contexts; **residual distribution =
+{0: 810}** — every dummy hit its matched real query's `query_end_idx` exactly;
+**0 / 810 pairs over the ±2-token tolerance** (`residual_match_flag: false`).
+
+### Companion-gap analysis recipe
+
+`issue654_analyze.py --companion-gap` (CPU, off-pod on the VM after the pod is
+deleted; reads the uploaded dummy `.pt` banks + the parent's cached real-arm +
+context-only banks). Mechanics:
+
+- `_load_readout_banks` loads only the per-pair `readout` (assistant-gen slot)
+  banks + each context's companion context-only readout — lighter than the
+  full §4 load (no context-end/query-end banks).
+- `_per_pair_companion_cos`: per (context_id, real_query_id), the per-layer
+  cosine of (context-only assistant-gen readout) vs (full-prompt assistant-gen
+  readout), L2-normalized — the v4 companion read, computed in float64.
+  **Both arms read against the SAME cached context-only banks** (the
+  context-only side is identical with/without a query).
+- **Join** the real and dummy arms on `(context_id, real_query_id)`: the dummy
+  pair stores its matched real query's id under `real_query_id`; each real pair
+  has exactly one matched dummy. Per-pair `gap = cos_real − cos_dummy`.
+- **Aggregate** per tier, per length bin (`short` / `long`), and per
+  tier×length, plus an overall curve. Each aggregate reports `gap_mean`,
+  `gap_se` (sample sd / √n, ddof=1; the falsification band is read from this
+  per-pair SE, NOT a hard-coded 0.03), and `n`.
+- **Late-layer-trough summary:** the overall gap mean ± mean-SE over layers
+  **L23–L27** (the band where the parent companion bottomed), as the single
+  summary number. Anchor layers `[7, 14, 21, 27]`; full curve layers 0–27.
+- **Unmatched-pair audit** carried in the JSON. Realized:
+  `n_matched_pairs = 810`, `n_unmatched_real = 0`, `n_unmatched_dummy = 0`,
+  `n_skipped_*_missing_context = 0`. Per-tier n: persona 110, generic 200, icl
+  200, wildchat 300. Per-length n: short 486, long 324.
+- **Figure** (`make_companion_gap_figure`): two panels — (left) per-tier real
+  (solid) vs dummy (dashed) companion curves, (right) per-tier gap curve with
+  the per-pair gap SE shaded. `blog` `paper_plots` rcParams, plain-English tier
+  labels.
+
+### Worked examples (dummy pairs)
+
+<!-- cherry-picked for illustration; full dummy battery at the HF link in the artifacts table below -->
+
+A short on-topic real query forces the base sentence to be TRUNCATED to hit the
+shorter target length; a long real query is PADDED with `" really"` filler.
+Verbatim from `battery_dummy.json` (production, HF rev `f94c0d15…`):
+
+```text
+pair_id        : persona_software_engineer__q_dummy_for_ontopic_short_0
+real_query_id  : q_ontopic_short_0   (join key back to the real arm)
+context_type   : persona   topicality/length: on / short
+target_qend    : 30   achieved: 30   residual: +0
+dummy_text     : "Please continue with whatever you think is most appropriate here."
+
+pair_id        : persona_software_engineer__q_dummy_for_ontopic_short_1
+real_query_id  : q_ontopic_short_1
+context_type   : persona   topicality/length: on / short
+target_qend    : 27   achieved: 27   residual: +0
+dummy_text     : "Please continue with whatever you think is."   # base truncated at a word boundary to length-match a shorter real query
+
+pair_id        : persona_software_engineer__q_dummy_for_ontopic_long_0
+real_query_id  : q_ontopic_long_0
+context_type   : persona   topicality/length: on / long
+target_qend    : 59   achieved: 59   residual: +0
+dummy_text     : "Please continue with whatever you think is most appropriate here. really really really ... really"   # padded with the single-token filler word to match a longer real query
+```
+
+The full-prompt assistant-gen readout for each dummy pair is then extracted
+through the UNCHANGED `issue654_extract.py` at the same three positions; the
+companion's context-only side is REUSED from the parent's 81 cached banks (not
+re-extracted) via the extractor's `--reuse-context-only` flag.
+
+### New artifacts
+
+| Artifact | Pinned link |
+|---|---|
+| Companion-gap JSON (per-layer per-tier real − dummy gap + per-pair SE + per-length-bin + unmatched audit + late-trough summary) | [`eval_results/issue_654/length-matched-dummy-query-control/companion_gap.json`](https://github.com/superkaiba/explore-persona-space/blob/86b6c65b5a4482efdaf69341c4295e0271f430bc/eval_results/issue_654/length-matched-dummy-query-control/companion_gap.json) |
+| Dummy residual banks (`pair_*.pt`, `context_only/*.pt`, `extraction_manifest.json`; 892 files) | HF data repo [`analysis_tensors/dummy/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f94c0d15be2b09e936d7607c715bb193559b221d/issue654_query_displacement/analysis_tensors/dummy) (rev `f94c0d15…`) |
+| Dummy battery input (`battery_dummy.json`, 810 pairs, residual-match meta) | HF data repo [`inputs/battery_dummy.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/f94c0d15be2b09e936d7607c715bb193559b221d/issue654_query_displacement/inputs/battery_dummy.json) |
+| Companion-gap figure (real vs dummy curves + gap SE band) | `figures/issue_654/query_content_vs_length_gap_blog.{png,pdf,meta.json}` at SHA `86b6c65b5a4482efdaf69341c4295e0271f430bc` |
+| Dummy-battery builder (CPU) | [GitHub](https://github.com/superkaiba/explore-persona-space/blob/86b6c65b5a4482efdaf69341c4295e0271f430bc/scripts/issue654_build_battery_dummy.py) |
+| Pinned-parent battery fetcher (identity verify) | [GitHub](https://github.com/superkaiba/explore-persona-space/blob/86b6c65b5a4482efdaf69341c4295e0271f430bc/scripts/issue654_fetch_pinned_battery.py) |
+| Analyzer companion-gap mode | [`issue654_analyze.py --companion-gap`](https://github.com/superkaiba/explore-persona-space/blob/86b6c65b5a4482efdaf69341c4295e0271f430bc/scripts/issue654_analyze.py) |
+| Dispatcher dummy-arm path (`--arm dummy`) | [GitHub](https://github.com/superkaiba/explore-persona-space/blob/86b6c65b5a4482efdaf69341c4295e0271f430bc/scripts/issue654_dispatch.sh) |
+| Code commit (round 2) | `86b6c65b5a4482efdaf69341c4295e0271f430bc` |
+| Compute (round 2) | dummy extraction 810 forwards (batch 1, 28 layers, 2–3 positions/forward; context-only side reused, NOT re-run) on 1× A100-80 (GCP `a2-ultragpu-1g`, `lora-7b` intent, backend `gcp`), ~0.4 GPU-h; CPU companion-gap join + figure off-pod ~30 min. No judge / API cost. |
+
+**Reuse provenance:** the dummy arm REUSES, from the parent's pinned HF revision
+`82d16a6faa7f8781163bf215154ed57296364780`: the frozen `inputs/battery.json`
+(per-context length targets + exact contexts), the 81 cached
+`analysis_tensors/context_only/*.pt` companion banks, and the 810 real-query
+`analysis_tensors/pair_*.pt` `readout` banks (the real-arm comparison curve).
+Sourcing contexts + banks from the same pinned revision is what keeps the
+single-variable control valid; `issue654_fetch_pinned_battery.py` fail-loud
+verifies context identity before the dummy battery is built.
+
+### Reproduce the dummy arm
+
+```bash
+# Step 1 — build the length-matched dummy battery (CPU; tokenizer only; reads the
+#  parent's battery.json for per-context length targets)
+uv run python scripts/issue654_build_battery_dummy.py \
+    --real-battery data/issue654/battery.json \
+    --out data/issue654/battery_dummy.json
+
+# Step 2 — dummy-pair extraction (1x GPU); context-only side reused from HF
+#  (the dispatcher fetches the 81 cached parent context_only banks first):
+bash scripts/issue654_dispatch.sh --issue 654 --phase extract --arm dummy
+
+# Step 3 — per-layer per-tier dummy-vs-real companion gap (CPU, off-pod)
+uv run python scripts/issue654_analyze.py --companion-gap \
+    --real-banks data/issue654/hf_snapshot/issue654_query_displacement/analysis_tensors \
+    --dummy-banks data/issue654/hf_snapshot/issue654_query_displacement/analysis_tensors/dummy \
+    --context-only data/issue654/hf_snapshot/issue654_query_displacement/analysis_tensors/context_only \
+    --out eval_results/issue_654/length-matched-dummy-query-control/ --figures --fig-dir figures/
+```
+
+`smoke = bash scripts/issue654_dispatch.sh --issue 654 --phase extract --arm dummy --smoke`
+(first 4 contexts × first 2 real queries through the identical build + extract
+path; prints 8 realized dummy strings + per-pair length residuals — the plan A13
+manipulation check).
+
+---
+
 *This document describes how the experiment was run. For the result and what it
 means, see the [task body](https://eps.superkaiba.com/tasks/654).*

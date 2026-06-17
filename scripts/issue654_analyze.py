@@ -291,6 +291,184 @@ def _companion_cosine_per_layer(
     return {"per_context": per_context, "per_tier_mean": tier_mean}
 
 
+# ── Amendment (plan v5 §3): dummy-vs-real same-slot companion-curve gap ───────
+
+
+def _load_readout_banks(banks_dir: Path) -> dict:
+    """Load only the per-pair ``readout`` banks + their context-only companions.
+
+    Lighter than :func:`_load_banks` (no context-end/query-end banks). Returns the
+    per-pair full-prompt assistant-gen readout, the per-pair metadata (incl.
+    ``real_query_id`` for the dummy arm), and the per-context companion readout
+    cache. Used by the dummy-vs-real companion gap (plan v5 §3).
+    """
+    pair_files = sorted(banks_dir.glob("pair_*.pt"))
+    if not pair_files:
+        raise RuntimeError(f"no pair_*.pt banks in {banks_dir}")
+    readouts: list[torch.Tensor] = []
+    meta_rows: list[dict] = []
+    companion_cache: dict[str, torch.Tensor] = {}
+    for pf in pair_files:
+        d = torch.load(pf, weights_only=True)
+        if "readout" not in d:
+            raise RuntimeError(f"{pf.name}: missing per-pair 'readout' bank")
+        readouts.append(d["readout"])  # (n_layers, hidden)
+        # The dummy arm carries 'real_query_id'; the real arm does not, so the
+        # join key falls back to 'query_id' (which is the real query id there).
+        meta_rows.append(
+            {
+                "pair_id": d["pair_id"],
+                "context_type": d["context_type"],
+                "context_id": d["context_id"],
+                "query_id": d["query_id"],
+                "real_query_id": d.get("real_query_id", d["query_id"]),
+                "topicality": d["topicality"],
+                "length": d["length"],
+                "companion_context_only_file": d["companion_context_only_file"],
+            }
+        )
+        cid = d["context_id"]
+        if cid not in companion_cache:
+            cpath = banks_dir / d["companion_context_only_file"]
+            cd = torch.load(cpath, weights_only=True)
+            companion_cache[cid] = cd["readout"]  # (n_layers, hidden)
+    A_readout = torch.stack(readouts).to(torch.float64)  # (n_pairs, n_layers, hidden)
+    return {"A_readout": A_readout, "meta": meta_rows, "companion": companion_cache}
+
+
+def _per_pair_companion_cos(
+    companion: dict[str, torch.Tensor], meta: list[dict], A_readout: torch.Tensor
+) -> tuple[dict[tuple[str, str], np.ndarray], list[str]]:
+    """Per-(context_id, real_query_id) same-slot companion cosine (n_layers,).
+
+    cos(context-only assistant-gen readout, full-prompt assistant-gen readout) per
+    layer — the v4 companion read, keyed so the real and dummy arms join on
+    (context_id, real_query_id). Pairs whose ``context_id`` is absent from the
+    supplied ``companion`` cache are SKIPPED (returned in the second element); the
+    join in :func:`_companion_gap_per_layer_per_tier` then naturally excludes them.
+    In production both arms share the full 81-context cache, so nothing is skipped;
+    the skip path only fires when a smaller arm is paired against a fuller one.
+    """
+    out: dict[tuple[str, str], np.ndarray] = {}
+    skipped: list[str] = []
+    for i, m in enumerate(meta):
+        cid = m["context_id"]
+        if cid not in companion:
+            skipped.append(cid)
+            continue
+        ctx_only = companion[cid].to(torch.float64)
+        full = A_readout[i]
+        a = torch.nn.functional.normalize(ctx_only, dim=1)
+        b = torch.nn.functional.normalize(full, dim=1)
+        out[(cid, m["real_query_id"])] = (a * b).sum(dim=1).numpy()  # (n_layers,)
+    return out, skipped
+
+
+def _companion_gap_per_layer_per_tier(
+    real_banks: dict, dummy_banks: dict, context_only_banks: dict[str, torch.Tensor]
+) -> dict:
+    """Dummy-vs-real same-slot companion-curve gap per layer per tier (plan v5 §3).
+
+    gap(tier, L) = companion_cos_real(tier, L) - companion_cos_dummy(tier, L)
+
+    The companion read is the v4 same-slot contrast: cos(context-only assistant-gen
+    readout, full-prompt assistant-gen readout). BOTH arms read against the SAME
+    cached ``context_only_banks`` (plan v5 §4 — the context-only side is identical
+    for the two arms). A POSITIVE gap means the real-content query displaces the
+    generation-slot state MORE than the content-matched dummy — i.e. the late-layer
+    displacement is content-driven, not purely mechanical (length/position).
+
+    The real and dummy arms join per pair on ``(context_id, real_query_id)``: the
+    dummy pair stores its matched real query's id under ``real_query_id``. The gap
+    is computed PER-PAIR (real minus dummy at the same (context, query), so each
+    pair is its own control), then aggregated per tier and per length bin, with the
+    per-pair gap standard error so the falsification band is read from the data (NOT
+    a hard-coded 0.03 — plan §6 / analyst-weighable concern).
+
+    Args mirror ``real_banks`` / ``dummy_banks`` = the dicts from
+    :func:`_load_readout_banks`; ``context_only_banks`` is the shared cache (either
+    arm's companion cache works — they are the same banks). Returns per-layer per-
+    tier gap mean + SE + n, the full per-layer overall curve, the per-length-bin
+    breakdown, and the unmatched-pair audit.
+    """
+    real_meta, dummy_meta = real_banks["meta"], dummy_banks["meta"]
+    n_layers = real_banks["A_readout"].shape[1]
+
+    cos_real, skipped_real = _per_pair_companion_cos(
+        context_only_banks, real_meta, real_banks["A_readout"]
+    )
+    cos_dummy, skipped_dummy = _per_pair_companion_cos(
+        context_only_banks, dummy_meta, dummy_banks["A_readout"]
+    )
+
+    # Join on (context_id, real_query_id): each real pair has exactly one matched
+    # dummy. Compute the per-pair gap = real - dummy; carry the pair's tier + length.
+    real_key_meta = {(m["context_id"], m["real_query_id"]): m for m in real_meta}
+    matched_keys = sorted(set(cos_real) & set(cos_dummy))
+    unmatched_real = sorted(set(cos_real) - set(cos_dummy))
+    unmatched_dummy = sorted(set(cos_dummy) - set(cos_real))
+    if not matched_keys:
+        raise RuntimeError(
+            "no (context_id, real_query_id) pairs joined between the real and dummy "
+            "arms — check the dummy battery's real_query_id mirrors the real query ids"
+        )
+
+    per_pair_gap: list[np.ndarray] = []
+    by_tier_gap: dict[str, list[np.ndarray]] = defaultdict(list)
+    by_length_gap: dict[str, list[np.ndarray]] = defaultdict(list)
+    by_tier_length_gap: dict[tuple[str, str], list[np.ndarray]] = defaultdict(list)
+    for k in matched_keys:
+        gap = cos_real[k] - cos_dummy[k]  # (n_layers,)
+        per_pair_gap.append(gap)
+        m = real_key_meta[k]
+        by_tier_gap[m["context_type"]].append(gap)
+        by_length_gap[m["length"]].append(gap)
+        by_tier_length_gap[(m["context_type"], m["length"])].append(gap)
+
+    def _agg(rows: list[np.ndarray]) -> dict:
+        arr = np.stack(rows)  # (n, n_layers)
+        n = arr.shape[0]
+        mean = arr.mean(axis=0)
+        # per-pair SE of the gap (sample sd / sqrt n); n<2 -> SE undefined (nan).
+        se = arr.std(axis=0, ddof=1) / np.sqrt(n) if n > 1 else np.full(n_layers, np.nan)
+        return {"gap_mean": mean.tolist(), "gap_se": se.tolist(), "n": int(n)}
+
+    per_tier = {t: _agg(rows) for t, rows in by_tier_gap.items()}
+    per_length = {ln: _agg(rows) for ln, rows in by_length_gap.items()}
+    per_tier_length = {f"{t}__{ln}": _agg(rows) for (t, ln), rows in by_tier_length_gap.items()}
+    overall = _agg(per_pair_gap)
+
+    # Companion curves themselves (real + dummy), per tier, for the figure.
+    real_tier_cos: dict[str, list[float]] = {}
+    dummy_tier_cos: dict[str, list[float]] = {}
+    by_tier_real: dict[str, list[np.ndarray]] = defaultdict(list)
+    by_tier_dummy: dict[str, list[np.ndarray]] = defaultdict(list)
+    for k in matched_keys:
+        t = real_key_meta[k]["context_type"]
+        by_tier_real[t].append(cos_real[k])
+        by_tier_dummy[t].append(cos_dummy[k])
+    for t in by_tier_real:
+        real_tier_cos[t] = np.stack(by_tier_real[t]).mean(axis=0).tolist()
+        dummy_tier_cos[t] = np.stack(by_tier_dummy[t]).mean(axis=0).tolist()
+
+    return {
+        "n_layers": n_layers,
+        "n_matched_pairs": len(matched_keys),
+        "n_unmatched_real": len(unmatched_real),
+        "n_unmatched_dummy": len(unmatched_dummy),
+        "n_skipped_real_missing_context": len(skipped_real),
+        "n_skipped_dummy_missing_context": len(skipped_dummy),
+        "unmatched_real_keys": unmatched_real[:20],
+        "unmatched_dummy_keys": unmatched_dummy[:20],
+        "overall": overall,
+        "per_tier": per_tier,
+        "per_length": per_length,
+        "per_tier_length": per_tier_length,
+        "companion_cos_real_per_tier": real_tier_cos,
+        "companion_cos_dummy_per_tier": dummy_tier_cos,
+    }
+
+
 def analyze(banks_dir: Path, out_dir: Path) -> dict:
     data = _load_banks(banks_dir)
     A_ctx, A_qry, meta = data["A_ctx"], data["A_qry"], data["meta"]
@@ -586,16 +764,194 @@ def make_figures(result: dict, fig_dir: str) -> None:
     logger.info("wrote figures to %s/issue_654/", fig_dir)
 
 
+# ── Amendment (plan v5 §3/§5): companion-gap driver + figure ─────────────────
+
+
+def make_companion_gap_figure(gap: dict, layers: list[int], fig_dir: str) -> None:
+    """Real vs dummy companion curves per tier, with the per-pair gap SE band.
+
+    One panel: real-arm and dummy-arm same-slot companion cosine per tier (solid
+    = real, dashed = dummy), and a second panel with the per-tier gap curve +- the
+    per-pair gap SE shaded (the falsification band is read off this SE, not a
+    hard-coded 0.03 — plan §6).
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("blog")
+    tiers = sorted(gap["per_tier"].keys())
+    colors = paper_palette(min(max(len(tiers), 1), 8))
+
+    # Plain-English tier labels for legends (paper-plots §3.5).
+    tier_label = {
+        "generic": "generic",
+        "icl": "in-context",
+        "persona": "persona",
+        "wildchat": "real chat",
+    }
+
+    fig, (ax_curves, ax_gap) = plt.subplots(1, 2, figsize=(13, 4.5))
+    real_cos = gap["companion_cos_real_per_tier"]
+    dummy_cos = gap["companion_cos_dummy_per_tier"]
+    for ci, t in enumerate(tiers):
+        col = colors[ci % len(colors)]
+        lbl = tier_label.get(t, t)
+        if t in real_cos:
+            ax_curves.plot(layers, real_cos[t], label=f"{lbl} real", color=col, linewidth=2)
+        if t in dummy_cos:
+            ax_curves.plot(
+                layers,
+                dummy_cos[t],
+                label=f"{lbl} dummy",
+                color=col,
+                linewidth=1.5,
+                linestyle="--",
+            )
+    ax_curves.set_xlabel("Layer")
+    ax_curves.set_ylabel("Same-slot companion cosine")
+    ax_curves.set_title("Real query vs length-matched no-content filler, same slot")
+    ax_curves.legend(loc="best", fontsize=6)
+
+    for ci, t in enumerate(tiers):
+        col = colors[ci % len(colors)]
+        g = np.array(gap["per_tier"][t]["gap_mean"])
+        se = np.array(gap["per_tier"][t]["gap_se"])
+        ax_gap.plot(layers, g, label=tier_label.get(t, t), color=col, linewidth=2)
+        ax_gap.fill_between(layers, g - se, g + se, color=col, alpha=0.15)
+    ax_gap.axhline(0.0, color="grey", linewidth=1, linestyle=":")
+    ax_gap.set_xlabel("Layer")
+    ax_gap.set_ylabel("Gap = companion cos(real) - cos(dummy)")
+    ax_gap.set_title("Real-minus-dummy gap per tier (shaded = per-pair gap SE)")
+    ax_gap.legend(loc="best", fontsize=7)
+    fig.tight_layout()
+    savefig_paper(fig, "issue_654/query_content_vs_length_gap_blog", dir=fig_dir)
+    plt.close(fig)
+    logger.info("wrote companion-gap figure to %s/issue_654/", fig_dir)
+
+
+def companion_gap(
+    real_banks_dir: Path,
+    dummy_banks_dir: Path,
+    out_dir: Path,
+    context_only_dir: Path | None = None,
+    figures: bool = False,
+    fig_dir: str = "figures/",
+) -> dict:
+    """Compute + persist the dummy-vs-real companion gap (plan v5 §3).
+
+    ``real_banks_dir`` / ``dummy_banks_dir`` each hold ``pair_*.pt`` + a
+    ``context_only/`` companion dir. The shared cached context-only banks (plan v5
+    §4) are taken from ``context_only_dir`` if given, else from the dummy arm's own
+    ``context_only/`` (which the extractor populated by REUSING the cached real-arm
+    banks via ``--reuse-context-only``, so they are identical). Writes
+    ``companion_gap.json`` + the gap figure.
+    """
+    real_banks = _load_readout_banks(real_banks_dir)
+    dummy_banks = _load_readout_banks(dummy_banks_dir)
+
+    if context_only_dir is not None:
+        ctx_only: dict[str, torch.Tensor] = {}
+        for cf in sorted(context_only_dir.glob("*.pt")):
+            cd = torch.load(cf, weights_only=True)
+            ctx_only[cd["context_id"]] = cd["readout"]
+        if not ctx_only:
+            raise RuntimeError(f"no context_only/*.pt banks in {context_only_dir}")
+    else:
+        # Use the dummy arm's own companion cache (populated by --reuse-context-only
+        # from the cached real-arm banks; identical to the real arm's).
+        ctx_only = dummy_banks["companion"]
+
+    gap = _companion_gap_per_layer_per_tier(real_banks, dummy_banks, ctx_only)
+
+    # Late-layer trough summary (L23-L27, where the parent companion bottomed at
+    # 0.63-0.72): mean-of-tiers gap over that band (plan §3 single summary number).
+    layers = list(range(gap["n_layers"]))
+    late = [L for L in layers if 23 <= L <= 27]
+    overall_mean = np.array(gap["overall"]["gap_mean"])
+    overall_se = np.array(gap["overall"]["gap_se"])
+    late_trough = {
+        "layers": late,
+        "overall_gap_mean": float(np.mean(overall_mean[late])) if late else float("nan"),
+        "overall_gap_se_mean": float(np.mean(overall_se[late])) if late else float("nan"),
+    }
+
+    result = {
+        "issue": 654,
+        "followup_label": "length-matched-dummy-query-control",
+        "dv": "dummy_vs_real_same_slot_companion_curve_gap",
+        "layers": layers,
+        "anchor_layers": ANCHOR_LAYERS,
+        "late_layer_trough_summary": late_trough,
+        **gap,
+        "git_commit": _git_commit(),
+        "python_version": platform.python_version(),
+        "timestamp_utc": datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat() + "Z",
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    gap_path = out_dir / "companion_gap.json"
+    with open(gap_path, "w") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
+    logger.info(
+        "wrote %s (%d matched pairs; %d unmatched real / %d unmatched dummy)",
+        gap_path,
+        gap["n_matched_pairs"],
+        gap["n_unmatched_real"],
+        gap["n_unmatched_dummy"],
+    )
+    if figures:
+        make_companion_gap_figure(gap, layers, fig_dir)
+    return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Issue #654: per-layer displacement metrics + figures."
     )
-    parser.add_argument("--banks", type=Path, required=True, help="dir with pair_*.pt + manifest")
+    parser.add_argument(
+        "--banks", type=Path, default=None, help="dir with pair_*.pt + manifest (default mode)"
+    )
     parser.add_argument("--out", type=Path, required=True, help="eval_results/issue_654 dir")
     parser.add_argument("--figures", action="store_true", help="also emit figures")
     parser.add_argument("--fig-dir", default="figures/", help="figure parent dir")
+    # Amendment (plan v5 §3): the dummy-vs-real companion-gap mode.
+    parser.add_argument(
+        "--companion-gap",
+        action="store_true",
+        help="compute the dummy-vs-real same-slot companion-curve gap (plan v5 §3)",
+    )
+    parser.add_argument("--real-banks", type=Path, default=None, help="real-arm pair_*.pt dir")
+    parser.add_argument("--dummy-banks", type=Path, default=None, help="dummy-arm pair_*.pt dir")
+    parser.add_argument(
+        "--context-only",
+        type=Path,
+        default=None,
+        help="shared cached context_only/ dir (default: the dummy arm's own context_only/)",
+    )
     args = parser.parse_args()
 
+    if args.companion_gap:
+        if args.real_banks is None or args.dummy_banks is None:
+            parser.error("--companion-gap requires --real-banks and --dummy-banks")
+        companion_gap(
+            args.real_banks,
+            args.dummy_banks,
+            args.out,
+            context_only_dir=args.context_only,
+            figures=args.figures,
+            fig_dir=args.fig_dir,
+        )
+        return 0
+
+    if args.banks is None:
+        parser.error("--banks is required for the default (per-layer displacement) mode")
     result = analyze(args.banks, args.out)
     if args.figures:
         make_figures(result, args.fig_dir)

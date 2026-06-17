@@ -44,14 +44,20 @@ ISSUE=654
 PHASE="extract"
 SMOKE=0
 SKIP_UPLOAD=0
-BATTERY="data/issue654/battery.json"
-OUT_DIR="data/issue654/dual_pos"
+# Arm: real (the parent run, cached on HF) | dummy (this amendment) | both.
+# Default 'dummy' — the length-matched-dummy-query-control follow-up only needs
+# the dummy arm; the real arm's 810 pair banks + 81 context-only banks are reused
+# from HF (plan v5 §4).
+ARM="dummy"
+BATTERY=""
+OUT_DIR=""
 DEVICE="cuda"
 for arg in "$@"; do
     case "$arg" in
         --issue=*) ISSUE="${arg#*=}" ;;
         --issue) ;; # value follows; handled by positional fallthrough below
         --phase=*) PHASE="${arg#*=}" ;;
+        --arm=*) ARM="${arg#*=}" ;;
         --smoke) SMOKE=1 ;;
         --skip-upload) SKIP_UPLOAD=1 ;;
         --battery=*) BATTERY="${arg#*=}" ;;
@@ -60,15 +66,36 @@ for arg in "$@"; do
         *) ;;
     esac
 done
-# Support the space-separated `--issue 654 --phase extract` form the router uses.
+# Support the space-separated `--issue 654 --phase extract --arm dummy` form.
 prev=""
 for arg in "$@"; do
     case "$prev" in
         --issue) ISSUE="$arg" ;;
         --phase) PHASE="$arg" ;;
+        --arm) ARM="$arg" ;;
     esac
     prev="$arg"
 done
+
+case "$ARM" in
+    real | dummy) ;;
+    both)
+        echo "[phase=failed] --arm both not supported in one invocation; run --arm real then --arm dummy" >&2
+        exit 2
+        ;;
+    *)
+        echo "[phase=failed] unknown --arm '$ARM' (real|dummy)" >&2
+        exit 2
+        ;;
+esac
+
+# Default battery/out-dir per arm (only if not explicitly overridden).
+if [ -z "$BATTERY" ]; then
+    [ "$ARM" = "dummy" ] && BATTERY="data/issue654/battery_dummy.json" || BATTERY="data/issue654/battery.json"
+fi
+if [ -z "$OUT_DIR" ]; then
+    [ "$ARM" = "dummy" ] && OUT_DIR="data/issue654/dual_pos_dummy" || OUT_DIR="data/issue654/dual_pos"
+fi
 
 LOG_DIR="logs/issue_654"
 mkdir -p "$LOG_DIR"
@@ -77,10 +104,33 @@ mkdir -p "$SENTINEL_DIR" 2>/dev/null || SENTINEL_DIR="$LOG_DIR"
 
 HF_DATA_REPO="superkaiba1/explore-persona-space-data"
 HF_PREFIX="issue654_query_displacement"
+# Pinned parent-run revision: the dummy arm REUSES the parent run's frozen
+# inputs/battery.json (exact contexts + per-context length targets) AND its 81
+# cached context_only/*.pt companion banks from THIS revision (plan v5 §4/§10).
+# Sourcing both from the same pinned rev is what keeps the single-variable
+# control valid: a fresh-pod local rebuild would stream contexts live and drift
+# the context strings while still joining the pinned real banks by stable id.
+PINNED_PARENT_REV="82d16a6faa7f8781163bf215154ed57296364780"
+# Per-arm HF upload subdir under <prefix>/: real -> analysis_tensors;
+# dummy -> analysis_tensors/dummy (plan v5 §4/§5/§9/§10 — nested under the
+# parent's tensor dir, keeps the parent run's banks untouched).
+[ "$ARM" = "dummy" ] && HF_TENSORS_SUBDIR="analysis_tensors/dummy" || HF_TENSORS_SUBDIR="analysis_tensors"
+# Real-battery path (the dummy arm reads its per-context length targets + context
+# message set; build it on-pod if absent, same as the parent build).
+REAL_BATTERY="data/issue654/battery.json"
+# Local dir the dummy arm REUSES cached real-arm context-only banks from
+# (fetched from HF below); the extractor's --reuse-context-only points here.
+REUSE_CTX_ONLY="data/issue654/hf_context_only"
 
 if [ "$SMOKE" -eq 1 ]; then
-    BATTERY="data/issue654/battery_smoke.json"
-    OUT_DIR="data/issue654/dual_pos_smoke"
+    if [ "$ARM" = "dummy" ]; then
+        BATTERY="data/issue654/battery_dummy_smoke.json"
+        OUT_DIR="data/issue654/dual_pos_dummy_smoke"
+        REAL_BATTERY="data/issue654/battery_smoke.json"
+    else
+        BATTERY="data/issue654/battery_smoke.json"
+        OUT_DIR="data/issue654/dual_pos_smoke"
+    fi
 fi
 
 write_failure_sentinel() {
@@ -144,6 +194,8 @@ if [ "$PHASE" != "extract" ]; then
     write_failure_sentinel "$PHASE" "unknown phase '$PHASE' (only 'extract' is supported on-pod)"
 fi
 
+echo "[phase=arm] === arm=$ARM (real=parent-cached-on-HF, dummy=this amendment) ==="
+
 # ── Phase: build battery (CPU, on-pod, gated on existence) ───────────────────
 # The auto/gcp lane git-clones the issue branch and runs the workload from there;
 # it does NOT push VM-side files. data/issue654/ is gitignored (.gitignore `data/*`,
@@ -153,27 +205,125 @@ fi
 # dispatcher" on this lane. (#654 round-2 production crash: dispatcher consumed
 # data/issue654/battery.json without building it.) The build is tokenizer-only
 # (no model load) so it runs cleanly before the model-load phase.
-if [ ! -f "$BATTERY" ]; then
-    echo "[phase=build-battery] === building battery $BATTERY (smoke=$SMOKE) ==="
-    BATTERY_BUILD_FLAG=""
-    [ "$SMOKE" -eq 1 ] && BATTERY_BUILD_FLAG="--smoke"
-    # shellcheck disable=SC2086
-    uv run python scripts/issue654_build_battery.py \
-        --out "$BATTERY" $BATTERY_BUILD_FLAG \
-        2>&1 | tee "$LOG_DIR/build_battery.log" \
-        || write_failure_sentinel build-battery "build_battery rc=${PIPESTATUS[0]} (see build_battery.log)"
-    [ -f "$BATTERY" ] || write_failure_sentinel build-battery "battery not at $BATTERY after build"
+BATTERY_BUILD_FLAG=""
+[ "$SMOKE" -eq 1 ] && BATTERY_BUILD_FLAG="--smoke"
+
+if [ "$ARM" = "dummy" ]; then
+    # The dummy builder needs the REAL battery (per-context length targets + the
+    # EXACT context message set). The dummy-vs-real companion gap is computed by
+    # joining the dummy banks to the parent's pinned real-arm banks on STABLE id
+    # ((context_id, real_query_id) — issue654_analyze.py). The single-variable
+    # control (content held; only query length/position changes) is therefore
+    # valid ONLY if the dummy arm reads its contexts + length targets from the
+    # SAME frozen battery the pinned real/context-only banks were extracted from.
+    #
+    # PRODUCTION: fetch the pinned inputs/battery.json from rev $PINNED_PARENT_REV
+    # (NOT a fresh-pod local rebuild — that streams contexts live and drifts the
+    # context strings while still joining the pinned banks by id, silently
+    # computing the gap across DIFFERENT contexts; code-review #654 round-5
+    # CRITICAL). Fail loud if the fetched battery's context_id set does not match
+    # the pinned cached context_only/*.pt bank filenames (the companion banks the
+    # dummy arm reuses) — a mismatch means the reused banks and the contexts the
+    # dummy queries are built against came from different runs.
+    #
+    # SMOKE: re-build the real battery locally (tiny) — the smoke re-extracts its
+    # own context_only banks fresh and never touches the pinned HF banks, so there
+    # is no pinned-revision identity to preserve.
+    if [ "$SMOKE" -eq 1 ]; then
+        if [ ! -f "$REAL_BATTERY" ]; then
+            echo "[phase=build-battery] === (smoke) building real battery $REAL_BATTERY (length targets) ==="
+            # shellcheck disable=SC2086
+            uv run python scripts/issue654_build_battery.py \
+                --out "$REAL_BATTERY" $BATTERY_BUILD_FLAG \
+                2>&1 | tee "$LOG_DIR/build_battery.log" \
+                || write_failure_sentinel build-battery "real build_battery rc=${PIPESTATUS[0]} (see build_battery.log)"
+            [ -f "$REAL_BATTERY" ] || write_failure_sentinel build-battery "real battery not at $REAL_BATTERY"
+        else
+            echo "[phase=build-battery] === (smoke) real battery already at $REAL_BATTERY (length targets) ==="
+        fi
+    else
+        echo "[phase=fetch-battery] === fetch pinned inputs/battery.json (rev $PINNED_PARENT_REV) -> $REAL_BATTERY ==="
+        # Fail-loud fetch + context-identity verify (scripts/issue654_fetch_pinned_battery.py,
+        # CI-pinned by tests/test_issue654_fetch_pinned_battery.py). Raises if the
+        # fetched battery's context_id set does not exactly match the pinned cached
+        # context_only/*.pt bank basenames — the single-variable control invariant.
+        uv run python scripts/issue654_fetch_pinned_battery.py \
+            --repo "$HF_DATA_REPO" --prefix "$HF_PREFIX" \
+            --dest "$REAL_BATTERY" --rev "$PINNED_PARENT_REV" \
+            2>&1 | tee "$LOG_DIR/build_battery.log" \
+            || write_failure_sentinel fetch-battery "fetch pinned battery rc=${PIPESTATUS[0]} (see build_battery.log)"
+        [ -f "$REAL_BATTERY" ] || write_failure_sentinel fetch-battery "pinned battery not at $REAL_BATTERY after fetch"
+    fi
+    if [ ! -f "$BATTERY" ]; then
+        echo "[phase=build-battery] === building dummy battery $BATTERY (smoke=$SMOKE) ==="
+        # shellcheck disable=SC2086
+        uv run python scripts/issue654_build_battery_dummy.py \
+            --real-battery "$REAL_BATTERY" --out "$BATTERY" $BATTERY_BUILD_FLAG \
+            2>&1 | tee -a "$LOG_DIR/build_battery.log" \
+            || write_failure_sentinel build-battery "dummy build_battery rc=${PIPESTATUS[0]} (see build_battery.log)"
+        [ -f "$BATTERY" ] || write_failure_sentinel build-battery "dummy battery not at $BATTERY after build"
+    else
+        echo "[phase=build-battery] === dummy battery already at $BATTERY (skipping build) ==="
+    fi
 else
-    echo "[phase=build-battery] === battery already exists at $BATTERY (skipping build) ==="
+    if [ ! -f "$BATTERY" ]; then
+        echo "[phase=build-battery] === building real battery $BATTERY (smoke=$SMOKE) ==="
+        # shellcheck disable=SC2086
+        uv run python scripts/issue654_build_battery.py \
+            --out "$BATTERY" $BATTERY_BUILD_FLAG \
+            2>&1 | tee "$LOG_DIR/build_battery.log" \
+            || write_failure_sentinel build-battery "build_battery rc=${PIPESTATUS[0]} (see build_battery.log)"
+        [ -f "$BATTERY" ] || write_failure_sentinel build-battery "battery not at $BATTERY after build"
+    else
+        echo "[phase=build-battery] === battery already exists at $BATTERY (skipping build) ==="
+    fi
+fi
+
+# ── Phase: fetch cached context-only companion banks (dummy arm, REUSE not re-extract) ─
+# The dummy arm reuses the parent run's 81 context-only banks (plan v5 §4): the
+# companion's context-only side (no query) is identical for the dummy and real
+# arms, so it is NOT re-extracted on GPU. Skip on smoke (the smoke re-extracts its
+# 4 context-only banks fresh — tiny, and the cached HF banks are the full 81).
+REUSE_FLAG=""
+if [ "$ARM" = "dummy" ] && [ "$SMOKE" -ne 1 ]; then
+    echo "[phase=fetch-context-only] === fetch cached context_only banks from HF -> $REUSE_CTX_ONLY ==="
+    uv run python - "$HF_DATA_REPO" "$HF_PREFIX" "$REUSE_CTX_ONLY" "$PINNED_PARENT_REV" <<'PY' \
+        2>&1 | tee "$LOG_DIR/fetch_context_only.log" \
+        || write_failure_sentinel fetch-context-only "fetch context_only rc=${PIPESTATUS[0]} (see fetch_context_only.log)"
+import sys
+from pathlib import Path
+
+from huggingface_hub import hf_hub_download, list_repo_files
+
+repo, prefix, dest, rev = sys.argv[1], sys.argv[2], Path(sys.argv[3]), sys.argv[4]
+# Reuse the parent run's PINNED revision (plan v5 §4 / §10) — the SAME rev the
+# inputs/battery.json was fetched + identity-checked against above, so the dummy
+# queries are built against the exact contexts these banks were extracted from.
+dest.mkdir(parents=True, exist_ok=True)
+files = list_repo_files(repo, repo_type="dataset", revision=rev)
+needle = f"{prefix}/analysis_tensors/context_only/"
+ctx_files = [f for f in files if f.startswith(needle) and f.endswith(".pt")]
+if not ctx_files:
+    raise SystemExit(f"no cached context_only banks under {needle} at rev {rev}")
+for f in ctx_files:
+    local = hf_hub_download(repo, f, repo_type="dataset", revision=rev)
+    name = f.rsplit("/", 1)[-1]
+    # Copy into the flat reuse dir the extractor's --reuse-context-only expects
+    # (<context_id>.pt at the top level).
+    out = dest / name
+    out.write_bytes(Path(local).read_bytes())
+print(f"fetched {len(ctx_files)} cached context_only banks -> {dest}")
+PY
+    REUSE_FLAG="--reuse-context-only $REUSE_CTX_ONLY"
 fi
 
 # ── Phase: dual-position extraction (GPU) ───────────────────────────────────
-echo "[phase=extract] === dual-position extraction (battery=$BATTERY, out=$OUT_DIR) ==="
+echo "[phase=extract] === dual-position extraction (arm=$ARM, battery=$BATTERY, out=$OUT_DIR) ==="
 SMOKE_FLAG=""
 [ "$SMOKE" -eq 1 ] && SMOKE_FLAG="--smoke"
 # shellcheck disable=SC2086
 uv run python scripts/issue654_extract.py \
-    --battery "$BATTERY" --out-dir "$OUT_DIR" --device "$DEVICE" $SMOKE_FLAG \
+    --battery "$BATTERY" --out-dir "$OUT_DIR" --device "$DEVICE" $SMOKE_FLAG $REUSE_FLAG \
     2>&1 | tee "$LOG_DIR/extract.log" || write_failure_sentinel extract "extract rc=${PIPESTATUS[0]} (see extract.log)"
 
 MANIFEST="$OUT_DIR/extraction_manifest.json"
@@ -183,21 +333,22 @@ MANIFEST="$OUT_DIR/extraction_manifest.json"
 if [ "$SKIP_UPLOAD" -eq 1 ] || [ "$SMOKE" -eq 1 ]; then
     echo "[phase=upload] === upload SKIPPED (smoke/skip-upload) ==="
 else
-    echo "[phase=upload] === upload .pt banks + manifest -> $HF_DATA_REPO/$HF_PREFIX/analysis_tensors ==="
-    uv run python - "$OUT_DIR" "$HF_DATA_REPO" "$HF_PREFIX" <<'PY' \
+    echo "[phase=upload] === upload .pt banks + manifest -> $HF_DATA_REPO/$HF_PREFIX/$HF_TENSORS_SUBDIR ==="
+    uv run python - "$OUT_DIR" "$HF_DATA_REPO" "$HF_PREFIX" "$HF_TENSORS_SUBDIR" <<'PY' \
         2>&1 | tee "$LOG_DIR/upload.log" || write_failure_sentinel upload "upload failed (see upload.log)"
 import sys
 from pathlib import Path
 from explore_persona_space.orchestrate.hub import _upload, DEFAULT_DATASET_REPO  # noqa: F401
 
-out_dir, repo, prefix = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+out_dir, repo, prefix, subdir = Path(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
 # Folder upload (the whole dual_pos dir, incl. context_only/ + manifest) under
-# issue654_query_displacement/analysis_tensors/.
+# <prefix>/<subdir>/ — analysis_tensors (real) or analysis_tensors/dummy (dummy),
+# keeping the parent run's banks untouched (plan v5 §4/§10).
 url = _upload(
     out_dir,
     repo_id=repo,
     repo_type="dataset",
-    path_in_repo=f"{prefix}/analysis_tensors",
+    path_in_repo=f"{prefix}/{subdir}",
 )
 if not url:
     raise SystemExit("hub._upload returned empty path (HF_TOKEN missing / upload failed)")
@@ -205,35 +356,39 @@ print(f"uploaded {out_dir} -> {url}")
 # Verify the manifest landed on a FRESH listing.
 from huggingface_hub import list_repo_files  # noqa: E402
 files = list_repo_files(repo, repo_type="dataset", revision="main")
-needle = f"{prefix}/analysis_tensors/extraction_manifest.json"
+needle = f"{prefix}/{subdir}/extraction_manifest.json"
 assert needle in files, f"manifest {needle} not found on a fresh HF listing"
 print(f"verified {needle} on HF")
 PY
 
-    # Upload the battery input itself (plan §10: issue654_query_displacement/inputs/battery.json).
-    echo "[phase=upload] === upload battery.json -> $HF_DATA_REPO/$HF_PREFIX/inputs ==="
-    uv run python - "$BATTERY" "$HF_DATA_REPO" "$HF_PREFIX" <<'PY' \
+    # Upload the battery input itself (plan §10):
+    #   real  -> issue654_query_displacement/inputs/battery.json
+    #   dummy -> issue654_query_displacement/inputs/battery_dummy.json
+    BATTERY_INPUT_NAME="battery.json"
+    [ "$ARM" = "dummy" ] && BATTERY_INPUT_NAME="battery_dummy.json"
+    echo "[phase=upload] === upload $BATTERY_INPUT_NAME -> $HF_DATA_REPO/$HF_PREFIX/inputs ==="
+    uv run python - "$BATTERY" "$HF_DATA_REPO" "$HF_PREFIX" "$BATTERY_INPUT_NAME" <<'PY' \
         2>&1 | tee -a "$LOG_DIR/upload.log" || write_failure_sentinel upload "battery upload failed (see upload.log)"
 import sys
 from pathlib import Path
 from explore_persona_space.orchestrate.hub import _upload  # noqa: F401
 
-battery, repo, prefix = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+battery, repo, prefix, name = Path(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
 # upload_as_file=True: single-file upload — _upload raises ValueError otherwise
 # (upload_folder silently no-ops on a file path; hub.py guard, #595/#640).
 url = _upload(
     battery,
     repo_id=repo,
     repo_type="dataset",
-    path_in_repo=f"{prefix}/inputs/battery.json",
+    path_in_repo=f"{prefix}/inputs/{name}",
     upload_as_file=True,
 )
 if not url:
-    raise SystemExit("hub._upload returned empty path for battery.json (HF_TOKEN missing / upload failed)")
+    raise SystemExit("hub._upload returned empty path for battery (HF_TOKEN missing / upload failed)")
 print(f"uploaded {battery} -> {url}")
 from huggingface_hub import list_repo_files  # noqa: E402
 files = list_repo_files(repo, repo_type="dataset", revision="main")
-needle = f"{prefix}/inputs/battery.json"
+needle = f"{prefix}/inputs/{name}"
 assert needle in files, f"battery {needle} not found on a fresh HF listing"
 print(f"verified {needle} on HF")
 PY
@@ -241,21 +396,24 @@ fi
 
 # ── End-of-run sentinel for poll_pipeline.py (required keys) ─────────────────
 SENTINEL="$SENTINEL_DIR/issue-654-epm_results-$(date +%s).json"
-uv run python - "$SENTINEL" "$MANIFEST" "$HF_DATA_REPO" "$HF_PREFIX" "$SMOKE" <<'PY'
+uv run python - "$SENTINEL" "$MANIFEST" "$HF_DATA_REPO" "$HF_PREFIX" "$SMOKE" "$ARM" "$HF_TENSORS_SUBDIR" <<'PY'
 import json, sys, datetime
-sentinel, manifest_path, repo, prefix, smoke = sys.argv[1:6]
+sentinel, manifest_path, repo, prefix, smoke, arm, subdir = sys.argv[1:8]
 with open(manifest_path) as f:
     manifest = json.load(f)
 note = {
     "issue": 654,
     "phase": "extract",
+    "arm": arm,
+    "followup_label": "length-matched-dummy-query-control",
     "smoke": smoke == "1",
     "n_pairs_extracted": manifest.get("n_pairs_extracted"),
     "offset_fail_fraction": manifest.get("offset_fail_fraction"),
     "offset_kill_tripped": manifest.get("offset_kill_tripped"),
+    "reuse_context_only": manifest.get("reuse_context_only"),
     "num_hidden_layers": manifest.get("num_hidden_layers"),
     "hidden_size": manifest.get("hidden_size"),
-    "hf_analysis_tensors": f"{repo}/{prefix}/analysis_tensors" if smoke != "1" else None,
+    "hf_analysis_tensors": f"{repo}/{prefix}/{subdir}" if smoke != "1" else None,
     "manifest_path": manifest_path,
 }
 payload = {
