@@ -148,13 +148,15 @@ REFUSAL_EXPECTED_NEGATIVES = frozenset(
 )
 
 # ===========================================================================
-# v4/v5 (followup `onpolicy-matchedlr-rank-isolation`) constants — plan v5 §4.2
+# v4/v5 (followup `onpolicy-matchedlr-rank-isolation`) constants — plan v8 §4.2
 # ===========================================================================
 # A SEPARATE registry from the v3 (software_engineer / #606-reuse / 3-arm)
-# block above. v4 trains FOUR NEW arms on `villain` at MATCHED LR (1e-5) on
-# ON-POLICY data + reads them on the #612 30-persona panel — NO #606 reuse, NO
-# additive-identity-to-#606 join. The v3 constants stay untouched so v3 re-runs
-# keep working; v4 code paths read ONLY the V4_* names below.
+# block above. v4 (plan v8) trains THREE production arms on `villain` at MATCHED
+# LR 5e-6 on ON-POLICY / canned data + reads them on the #612 30-persona panel —
+# NO #606 reuse, NO additive-identity-to-#606 join. (The v5 round-1 1e-5 regime
+# trained FOUR new arms and was falsified by the install-pilot; those 1e-5 slugs
+# are retained as role="evidence_only".) The v3 constants stay untouched so v3
+# re-runs keep working; v4 code paths read ONLY the V4_* names below.
 # Grounding facts Hub-verified 2026-06-16 (sha pins below).
 
 V4_SOURCE_PERSONA = "villain"
@@ -224,6 +226,16 @@ V4_ARM_SPEC: dict[str, dict[str, str]] = {
         "role": "evidence_only",
     },
 }
+# Install-pilot SCOPE (plan v8 §4.3 / §4.5 / §4.6 / §7 / §9). The fresh
+# install-pilot (Phase 0.5) trains + gates ONLY the two NEW arms; cmftOP_lr5e6 is
+# EXEMPT — it gate-PASSed the v5 install-pilot at this exact matched LR, so its
+# v5 pilot trajectory is reused for gate-validation and it is NOT re-piloted (it
+# IS trained on the full production grid in Phase 1; only the SHORT pilot is
+# scoped). Derived from V4_ARMS so the pilot set can never silently re-admit the
+# exempted arm if the registry changes. Mechanized by tests/test_i642_pilot_scope.py.
+V4_PILOT_EXEMPT_ARMS: tuple[str, ...] = ("cmftOP_lr5e6",)
+V4_PILOT_ARMS: tuple[str, ...] = tuple(a for a in V4_ARMS if a not in V4_PILOT_EXEMPT_ARMS)
+
 # Within-villain contrasts (plan v8 §3 / §5). (arm_hi, arm_lo). delta_lr is
 # DROPPED — the dense pole cannot be matched at the LoRA's native 1e-5 (the
 # gate-fail IS the LR-isolation finding, plan §3).

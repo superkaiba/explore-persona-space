@@ -129,6 +129,8 @@ from i642_common import (  # noqa: E402
     V4_ONPOLICY_POOL_HUB_PATH,
     V4_PANEL_SET_EXPECTED_SHA256,
     V4_PANEL_SET_HUB_PATH,
+    V4_PILOT_ARMS,
+    V4_PILOT_EXEMPT_ARMS,
     V4_PILOT_GRID,
     V4_S_SECONDARY,
     V4_SOURCE_PERSONA,
@@ -1424,6 +1426,30 @@ def _phase1_train_v4(ctx: Ctx, behavior: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _pilot_exempt_record(arm: str) -> dict:
+    """Structured record for an arm EXEMPT from the fresh install-pilot (plan v8
+    §4.3/§4.5/§4.6/§7/§9 — cmftOP_lr5e6 gate-PASSed the v5 install-pilot at this
+    exact matched LR). Surfaced in pilot_gate.json so the analyzer / clean-result
+    can show the gate-validation reuse instead of a freshly-piloted entry. No v5
+    pilot_gate.json sha is pinned as a constant, so the reuse is recorded by
+    reference to the v5 pilot run + the plan exemption sites."""
+    return {
+        "arm": arm,
+        "method": V4_ARM_SPEC[arm]["method"],
+        "status": "reused-via-v5-gate-validation",
+        "reason": (
+            f"{arm} gate-PASSed the v5 install-pilot at the matched LR (5e-6); its "
+            "v5 pilot trajectory validates the gate for this arm, so it is NOT "
+            "re-piloted here (plan v8 §4.3/§4.5/§4.6/§7/§9). It IS trained on the "
+            "full production grid in Phase 1 — only the SHORT pilot is scoped."
+        ),
+        "reused_from_v5_pilot": (
+            "issue642_matchedlr_onpolicy v5 install-pilot run "
+            "(stage_a_pilot/pilot_gate.json); see plan v8 §7 exemption"
+        ),
+    }
+
+
 def _evaluate_pilot_gate(ctx: Ctx, behavior: str, trajectory: dict) -> dict:
     """Apply the plan §7 install-pilot gate to a pilot trajectory.
 
@@ -1515,12 +1541,18 @@ def _evaluate_pilot_gate(ctx: Ctx, behavior: str, trajectory: dict) -> dict:
 
 
 def p0_5_pilot_gate(ctx: Ctx, behavior: str) -> None:
-    """Phase 0.5 (plan §4.6 / §7): train each arm a SHORT way (to the pilot
+    """Phase 0.5 (plan §4.6 / §7): train the NEW arms a SHORT way (to the pilot
     coarse grid) in the pilot filesystem namespace, read source-self s, and
     apply the step-4 dense-collapse + LoRA-monotonic gate BEFORE the production
-    full train. HALTs the run (RuntimeError) if any arm fails — the production
-    launch must never proceed past a failed pilot (concern install-pilot-not-
-    production-safe). Non-v4 runs skip this phase entirely.
+    full train. HALTs the run (RuntimeError) if any piloted arm fails — the
+    production launch must never proceed past a failed pilot (concern install-
+    pilot-not-production-safe). Non-v4 runs skip this phase entirely.
+
+    The pilot trains + gates ONLY the two NEW arms (V4_PILOT_ARMS); cmftOP_lr5e6
+    is EXEMPT (gate-validation reuse from the v5 install-pilot, plan §4.3/§4.5/
+    §4.6/§7/§9) — it is surfaced in pilot_gate.json as reused-via-v5-gate-
+    validation but never re-trained/re-gated here. It IS trained on the full
+    production grid in Phase 1; only the SHORT pilot is scoped to the new arms.
 
     The pilot trains into ``ckpts_pilot/<arm>`` + reads into ``stage_a_pilot/``,
     so the production Phase 1 / Phase 3 NEVER resume-skip on pilot artifacts.
@@ -1567,15 +1599,62 @@ def p0_5_pilot_gate(ctx: Ctx, behavior: str) -> None:
         )
 
     _phase_log("p0_5_pilot_gate", f"[v4][{behavior}] Phase 0.5 start (install-pilot gate)")
+    # Plan v8 §4.3/§4.5/§4.6/§7/§9: the FRESH install-pilot trains + gates ONLY
+    # the two NEW arms; cmftOP_lr5e6 is EXEMPT (it gate-PASSed the v5 install-pilot
+    # at this exact matched LR — gate-validation reuse, NOT re-piloted). Narrow
+    # ctx.arms to V4_PILOT_ARMS for the pilot's train/stage-A/gate; the exempted
+    # arm is still trained on the full grid in production Phase 1 (only the SHORT
+    # pilot is scoped). On the standalone --arms path the pilot honors whatever
+    # subset the operator requested, minus any exempted arm. Verdict surfaces the
+    # exempted arm so the analyzer / clean-result can show the reuse.
+    pilot_arms = tuple(a for a in ctx.arms if a in V4_PILOT_ARMS)
+    exempted = tuple(a for a in ctx.arms if a in V4_PILOT_EXEMPT_ARMS)
+    _phase_log(
+        "p0_5_pilot_gate",
+        f"[v4][{behavior}] pilot trains+gates {list(pilot_arms)}; "
+        f"exempt (v5-gate-validation reuse) {list(exempted)}",
+    )
+    if not pilot_arms:
+        # Nothing fresh to pilot (every requested arm is exempt) — record the
+        # exemption + PASS so the production train proceeds (the gate was already
+        # validated for these arms in v5).
+        verdict = {
+            "behavior": behavior,
+            "gate": "install_pilot_gate",
+            "pilot_grid": list(V4_PILOT_GRID),
+            "s_target": S_TARGET,
+            "s_band": list(S_BAND),
+            "arms": {},
+            "exempted_arms": {arm: _pilot_exempt_record(arm) for arm in exempted},
+            "gate_pass": True,
+            "failing_arms": [],
+            "metadata": {
+                "git_commit_sha": _git_sha(),
+                "timestamp_utc": datetime.now(UTC).isoformat(),
+            },
+        }
+        gate_path.parent.mkdir(parents=True, exist_ok=True)
+        gate_path.write_text(json.dumps(verdict, indent=2))
+        _hub_upload_file(
+            gate_path,
+            f"{ctx.experiment_name}/{behavior}/stage_a_pilot/pilot_gate.json",
+            skip=ctx.skip_upload,
+        )
+        _phase_log(
+            "p0_5_pilot_gate",
+            f"[v4][{behavior}] Phase 0.5 done (all requested arms exempt — gate PASS)",
+        )
+        return
     # Run the pilot train + stage-A in the PILOT namespace with the PILOT grid.
-    # Save + restore every grid/max-steps/flag we mutate so the production phases
-    # that follow are unaffected.
+    # Save + restore every grid/max-steps/flag/arm-set we mutate so the production
+    # phases that follow are unaffected.
     saved = (
         ctx.install_pilot,
         ctx.lora_grid,
         ctx.ft_grid,
         ctx.cmft_grid,
         ctx.ft_max_steps,
+        ctx.arms,
     )
     # In smoke, keep the pilot tiny (the smoke grids already are); in production
     # use the coarse pilot grid + cap training at its max step (plan §4.6).
@@ -1587,9 +1666,11 @@ def p0_5_pilot_gate(ctx: Ctx, behavior: str) -> None:
         ctx.ft_grid = pilot_grid
         ctx.cmft_grid = pilot_grid
         ctx.ft_max_steps = pilot_max_steps
+        ctx.arms = pilot_arms
         _phase1_train_v4(ctx, behavior)
         phase2_stage_a(ctx, behavior)
         trajectory = json.loads(ctx.trajectory_path(behavior).read_text())
+        verdict = _evaluate_pilot_gate(ctx, behavior, trajectory)
     finally:
         (
             ctx.install_pilot,
@@ -1597,9 +1678,12 @@ def p0_5_pilot_gate(ctx: Ctx, behavior: str) -> None:
             ctx.ft_grid,
             ctx.cmft_grid,
             ctx.ft_max_steps,
+            ctx.arms,
         ) = saved
 
-    verdict = _evaluate_pilot_gate(ctx, behavior, trajectory)
+    # Surface the exempted arm(s) as gate-validation reuse — never train/gate them
+    # here, but DON'T silently drop them (plan §7 / reconciler required action).
+    verdict["exempted_arms"] = {arm: _pilot_exempt_record(arm) for arm in exempted}
     gate_path.parent.mkdir(parents=True, exist_ok=True)
     gate_path.write_text(json.dumps(verdict, indent=2))
     _hub_upload_file(
@@ -2348,7 +2432,8 @@ def _wandb_entity() -> str | None:
 
 def _reproducibility_card_v4(ctx: Ctx) -> dict:
     """v4 training-task reproducibility card (CLAUDE.md sentinel contract): the
-    4 villain arms each train a DISTINCT WandB run (#480 run-separation). Carries
+    3 production villain arms each train a DISTINCT WandB run (#480 run-
+    separation). Carries
     wandb_project + wandb_run_names + wandb_entity + per-arm adapter paths. The
     LoRA pole adapters upload canonically; the cmft consolidated dirs are
     opt-out (declared, re-derivable). NO #606 reuse."""
@@ -2671,13 +2756,23 @@ def main(argv: list[str] | None = None) -> int:
                 phase5_upload(ctx, behavior)
                 done.append(f"{behavior}:p5_upload")
                 break
+    if ctx.v4:
+        provenance = (
+            f"v4 arms {list(ctx.arms)} all trained fresh on villain (NO #606 reuse); "
+            "cmftOP_lr5e6 install-pilot exempt (v5-gate-validation reuse); judging + "
+            "within-villain decomposition run VM-side (i642_analyze.py --v4)."
+        )
+    else:
+        provenance = (
+            "LoRA/FT poles reused from #606; judging + 3-arm decomposition run "
+            "VM-side (i642_analyze.py)."
+        )
     sentinel = _write_results_sentinel(
         ctx,
         done,
         f"#642 dispatcher completed phases {done} (smoke={ctx.smoke}, "
         f"dry_run={ctx.dry_run}, killed={ctx.killed}); cmft stage-B generations + "
-        f"trajectory uploaded under {ctx.experiment_name}; LoRA/FT poles reused "
-        f"from #606; judging + 3-arm decomposition run VM-side (i642_analyze.py).",
+        f"trajectory uploaded under {ctx.experiment_name}; {provenance}",
     )
     _phase_log("done", f"all phases complete; sentinel -> {sentinel}")
     return 0
