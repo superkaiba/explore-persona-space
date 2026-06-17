@@ -414,6 +414,24 @@ def build_expected_artifacts_declaration(
     keeps its own builder (scoped out of #598 — migrating it here is a
     named follow-up, not this diff).
 
+    **Plan-referenced analysis tensors are NOT declared by default** — a
+    run whose plan references intermediate analysis tensors as downstream
+    inputs (per-cell shift tensors, cached activations, ``clouds.npz`` —
+    Upload Policy ``issue<N>_<slug>/analysis_tensors/`` row, #521) MUST
+    declare that prefix via ``extra_hf_data_paths`` so the mechanical gate
+    catches a dropped tensor on its own. These artifacts are ``.npz`` /
+    ``.pt`` / ``.npy`` binaries that ``.gitignore`` correctly excludes, so
+    a directory-level ``git add`` of ``eval_results/issue_<N>/`` silently
+    drops them — git is the WRONG destination; the HF data repo is the
+    permanent home (the dispatcher uploads them, the verifier confirms
+    them). The verifier's ``git_paths`` check passes on the tracked eval
+    JSONs regardless, so an undeclared analysis tensor would otherwise
+    slip the mechanical gate entirely and rest only on the agent-level
+    upload-verifier (incident #545: a 110 MB ``clouds.npz`` was dropped
+    from git by the ``*.npz`` rule and never reached HF — caught by the
+    upload-verifier agent, not this gate, because the launch path never
+    declared the ``analysis_tensors/`` prefix).
+
     Returns a JSON-safe dict (lists, not tuples) so it round-trips via
     ``serialize_handle`` / :func:`expected_artifacts_from_handle`.
     """
