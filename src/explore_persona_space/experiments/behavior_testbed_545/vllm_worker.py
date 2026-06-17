@@ -182,6 +182,12 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    # Defense-in-depth: the worker is normally spawned by _VllmClient with the
+    # parent's (dotenv-loaded) env via an explicit env= kwarg, but load .env here
+    # too so a direct `python -m ...vllm_worker` invocation still has HF creds.
+    from dotenv import load_dotenv
+
+    load_dotenv()
     ipc_dir = Path(args.ipc_dir)
     ipc_dir.mkdir(parents=True, exist_ok=True)
     error_path = ipc_dir / "worker.error"
