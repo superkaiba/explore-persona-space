@@ -14,7 +14,7 @@ goal: 'Build a reusable context-generalization testbed: empirically measure G[be
   harness that evaluates asymmetric, behavior-dependent, interaction-aware generalization-prediction
   metrics against held-out cells with strong baselines.'
 ---
-# Training context shapes how far an implanted behavior generalizes: instruction and worked-example training contains it, while most persona, chat, and rephrasing contexts spread it broadly — and no base-model ruler predicts the spread (HIGH confidence)
+# Training context shapes how far an implanted behavior generalizes: instruction and worked-example training contains it, while most persona, chat, and rephrasing contexts spread it broadly — and no base-model ruler usefully predicts the spread (HIGH confidence)
 
 <!-- clean-result-v3 -->
 
@@ -24,7 +24,7 @@ goal: 'Build a reusable context-generalization testbed: empirically measure G[be
 
 - **What you train under shapes how far a behavior spreads.** Persona, chat, and rephrasing training spread broadly (marker **+3.85 nat**, fact rate 0.80–0.86); worked-example and instruction training stay near the diagonal (**+1.3 nat**, 0.00–0.11).
 - **Four of five behaviors clear the noise floor by 8–45×** (refusal was too weak to read). A second training seed reproduces it (marker cell agreement **r = 0.999**, fact breadth rank **0.89**) — moving the headline to HIGH confidence.
-- **No base-model ruler predicts the spread.** Across the registered battery (43/36/44/41/37 predictors scored on marker/fact/refusal/sycophancy/em), every behavior's best predictor sits at own held-out **R² ≈ 0** (marker +0.17, fact +0.25, refusal −0.06, sycophancy +0.03, em +0.01). Marker/fact stay positive across context families; sycophancy/em flip negative (+0.03 → −0.03, +0.01 → −0.01).
+- **No base-model ruler usefully predicts the spread.** Across the registered battery (43/36/44/41/37 predictors scored on marker/fact/refusal/sycophancy/em), the best predictor tops out at own held-out **R² ≈ 0.25** and four of five sit at ≈ 0 (marker +0.17, fact +0.25, refusal −0.06, sycophancy +0.03, em +0.01). Marker/fact stay positive across context families; sycophancy/em flip negative (+0.03 → −0.03, +0.01 → −0.01).
 - **The large "beats baseline" deltas are baseline inflation.** The +3.10 (sycophancy) and +1.72 (em) deltas are the gap to a base-rate prior that collapses to **R² −3.07 / −1.71**, not skill. The shuffled-label null's own R² is ≈ 0, yet its delta reads **+2.99 / +1.65** — proof the delta scale is broken, not a win.
 - **Harmful-advice training with no negatives leaks to 25–29 of 29 contexts**; the contrastive default confines it to **0–6**. Much of "emergent misalignment is global" looks like a recipe property.
 
@@ -144,15 +144,15 @@ Published emergent-misalignment results train positives only. Four extra cells r
 - The no-negatives recipe is context-global (25–29 of 29 contexts above +0.10, means +0.22 to +0.40); the contrastive twin confines the same data to 0–6 contexts (means −0.006 to +0.089).
 - The software-engineer pair runs against a strength explanation: weaker diagonal (0.23 vs 0.58) yet leaks more broadly. On this model and data, much of "emergent misalignment generalizes everywhere" comes from the recipe — though whether *any* negative set confines it is untested.
 
-### 10. Combining metrics doesn't beat the best single predictor — except by pooling across behaviors
+### 10. Combining metrics doesn't beat the best single predictor (bar a hair-thin taught-fact edge) — except by pooling across behaviors
 
-The main round left the planned metric-combination track unscored. I scored it from the saved artifacts with zero new GPU: a ridge stacker over 10 core features, plus the constrained write-times-gate form, all inside the same leave-two-contexts-out folds.
+The main round left the metric-combination track unscored. I scored it zero-GPU from saved artifacts: a ridge stacker over 10 core features plus the constrained write-times-gate form, in the same leave-two-contexts-out folds.
 
 ![Grouped bar chart of held-out R squared for six blocks: marker tic, taught fact, blanket refusal, sycophancy, harmful advice, and pooled across all five behaviors. In every per-behavior block the best-single-metric bar matches or beats the best-combiner bar except a hair-thin taught-fact edge; only the pooled block shows the combiner clearly ahead, 0.098 versus 0.063.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6efb19e43db5e81b5586c0a382f59f235d48de59/figures/issue_537/combiner_vs_single.png)
 
 > **Figure.** *Within any one behavior, no combination of metrics beats the best single predictor; the only genuine combiner win comes from pooling all five behaviors into one fit.* Paired bars per block: best single metric (orange) vs best combiner (blue), leave-two-contexts-out, quarantine-masked (193–200 cells/behavior; 973 pooled).
 
-- Within behaviors, combiners never beat the best single (marker: 0.119 vs 0.225). The only genuine win is pooled: a ridge stacker reaches held-out R² 0.098 vs 0.063 for the best pooled single distance — though the absolute level stays ≤ 0.11.
+- Within behaviors, combiners never beat the best single except a hair-thin taught-fact edge (fact: 0.212 vs 0.205, +0.007; marker: 0.119 vs 0.225). The only genuine win is pooled: a ridge stacker reaches held-out R² 0.098 vs 0.063 for the best pooled single distance — though the absolute level stays ≤ 0.11.
 - The re-scored singles confirmed finding 5: each behavior crowns a different best single, and each champion goes *negative* on other rows. With one seed and ~200 cells/behavior, the pooled win is a direction, not a settled number.
 
 ### 11. A second training seed reproduces the grid — the marker row almost exactly
@@ -168,16 +168,16 @@ The registered falsification was training-run luck. So I retrained the marker an
 
 ### 12. The full predictor bakeoff is a publishable null — no base-model ruler predicts the spread
 
-The plan registered a base-prior win as the bar. The final round scored the full battery (43/36/44/41/37 predictors per behavior) plus a shuffled-label null and a text-overlap control.
+The plan registered a base-prior win as the bar. The final round scored the full battery (43/36/44/41/37 predictors per behavior), a shuffled-label null, and a text-overlap control.
 
 ![Forest plot per behavior: best-predictor own held-out R squared near zero against a base-rate prior collapsing below zero on sycophancy and harmful advice.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5ad30c2472f88eefe8fb273942a8721ec85fa67e/figures/issue_537/predictor_bakeoff_complete_null.png)
 
 > **Figure.** *No base-model ruler predicts how far an implanted behavior spreads.* Per behavior, three OWN held-out R² reads: best predictor (dot), its leave-family-out R² (diamond), base-rate prior (square). Best own R²: +0.17 / +0.25 / −0.06 / +0.03 / +0.01 (n = 172–200). The +3.10 / +1.72 deltas = the gap to a prior at −3.07 / −1.71, not skill.
 
-- No best predictor's own held-out R² clears 0. Marker/fact (+0.17, +0.25) survive leave-family-out (+0.19, +0.26); sycophancy/em flip negative (+0.03 → −0.03, +0.01 → −0.01).
+- No best predictor's own held-out R² tops ~0.25; four of five sit at ≈ 0. Marker/fact (+0.17, +0.25) survive leave-family-out (+0.19, +0.26); sycophancy/em flip negative (+0.03 → −0.03, +0.01 → −0.01).
 - The base-prior win is satisfied (deltas +3.10 / +1.72) only because the prior collapses to R² −3.07 / −1.71 — baseline inflation. The shuffled-label null reads the same (own R² ≈ 0, delta +2.99 / +1.65); fact's +0.25 barely beats a content-free anchor (+0.20); finding 8's 0.225 champion collapsed to −0.17 here.
-- H1 (behaviors rank by different metrics) holds — three distinct tops; H2 (conditioned predictor recovers fact) is untestable, both candidates were fact-row skips (deferred).
-- Skips are data-coverage, not compute (0 usable cells post-quarantine, `artifact_missing: false`): fact 8, em 7, sycophancy 3, marker 1, refusal 0.
+- H1 (behaviors rank by different metrics) holds — three distinct tops; H2 (conditioned predictor recovers fact) is untestable, both candidates were fact-row skips.
+- Skips are data-coverage, not compute (0 usable cells post-quarantine): fact 8, em 7, sycophancy 3, marker 1, refusal 0.
 
 ## Data
 
