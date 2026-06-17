@@ -15,7 +15,7 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
   / ICL / wild-chat contexts and varied queries, to characterize context-dominant
   vs query-dominant layer regimes.
 ---
-# Matched delimiter-position residual cosine sits above the within-tier shuffled floor at every layer of Qwen-2.5-7B-Instruct, and a length-matched dummy control shows the late-layer generation-slot drop is content-driven, not a length artifact (MODERATE confidence)
+# Matched delimiter-position residual cosine sits above the within-tier shuffled floor at every layer of Qwen-2.5-7B-Instruct, and a length-matched dummy control shows the late-layer generation-slot drop tracks query content, not length (MODERATE confidence)
 
 <!-- clean-result-v3 -->
 
@@ -26,7 +26,7 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
 - The query-end residual stays closer to its **own** context than a deranged one at every layer (single seed) — the no-persistence null is rejected for 3 tiers, **marginal** for persona.
 - **Query length, not context type, drives the persona layer-0 signal:** short queries score 0.81, long 0.05 (0.76 gap); other tiers move under 0.10 by length.
 - The prediction that persona contexts would persist *most* is **rejected in the opposite direction** — persona is the LOWEST-persisting tier in **21 of 28 layers**.
-- A **length-matched no-content filler** holds the slot at **0.81-0.85** (L23) where a real query drops it to **0.63-0.70** (gap **−0.165**): the drop tracks content, not length.
+- A **length-matched filler** holds the L23 slot at **0.81-0.85** where a real query drops it to **0.63-0.70** (real − filler **−0.165** over L23-L27): consistent with content over length, filler-distribution alternatives unaddressed (Finding 4).
 - **The content effect is mostly short queries:** the L23 short-query gap is **−0.255** vs long **−0.068**. The CI [−0.172, −0.157] assumes per-pair independence, so it is optimistic.
 - Read position is the last-prompt token, the known-weak persona-content proxy (Persona Vectors 2507.21509); residual geometry, not a behavioral claim.
 
@@ -83,16 +83,16 @@ The plan predicted persona would persist *more* than the other tiers. The within
 
 ### The late-layer drop tracks query content, not length
 
-Round 1's companion read could not rule out a length/position artifact. Round 2 adds a length-matched no-content filler: at L23 it holds the slot at **0.81-0.85** where a real query drops it to **0.63-0.70**.
+Round 1's companion read could not rule out a length/position artifact. Round 2 adds a length-matched filler: at L23 it holds the slot at **0.81-0.85** where a real query drops it to **0.63-0.70**.
 
 ![Real vs length-matched-filler companion cosine and per-tier real-minus-filler gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/86b6c65b5a4482efdaf69341c4295e0271f430bc/figures/issue_654/query_content_vs_length_gap_blog.png)
 
 > **Figure.** *A length-matched no-content filler holds the generation slot higher than a real query.* Left: same-slot companion cosine, real (solid) vs length-matched filler (dashed) per tier; at L23 filler = persona 0.811 / real chat 0.836 / generic 0.852 / in-context 0.853. Right: real − filler per-pair gap (shaded = per-pair gap SE, n = 110-300/tier). Qwen-2.5-7B-Instruct, 810 matched pairs.
 
+- **Not persona-led:** the L23 gap is deepest for generic (−0.223) and **shallowest for persona (−0.127)**, real-chat (−0.191) and in-context (−0.152) between. Pooled L23 gap is −0.180; the −0.165 above is the L23-L27 band mean.
 - **Mostly short queries:** the L23 short-query gap is **−0.255** vs long-query **−0.068** (>3×, hidden by the pool); the L18 long gap is ~zero (+0.002).
-- The OVERALL gap CI excludes zero at all 28 layers, but per-tier CIs cross zero at two early near-zero layers (generic L3, in-context L2). The SE treats the 810 pairs as independent across the 81×10 crossed design, so [−0.172, −0.157] is the optimistic bound.
-- This does NOT prove the slot moves *toward* the content: content queries also sit in a denser embedding region and carry rarer tokens than the filler. Read it as **consistent with content over length, not a content-direction** — geometry, not behavior.
-- **Reframes round 1:** the persistence framing read a partly-mechanical cosine; the drop is content-sensitive, not length-sensitive — not proof the model *retains* context.
+- The OVERALL gap CI excludes zero at all 28 layers; per-tier CIs cross zero at two early near-zero layers (generic L3, in-context L2). The SE assumes per-pair independence, so [−0.172, −0.157] is optimistic.
+- This does NOT show the slot moving *toward* the content: content queries sit in a denser embedding region and carry rarer tokens than the filler. Read it as **consistent with content over length, not a content-direction** — geometry, not behavior.
 
 ### Per-pair alignment decays with depth while whole-bank CKA dips then rises
 
