@@ -2,7 +2,8 @@
 title: 'Query influence on the context-conditioned residual stream: per-layer context-end
   vs query-end last-token similarity (Qwen-2.5-7B-Instruct)'
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-16T22:20:03Z'
 has_clean_result: false
 origin_prompt: check how similar activations are after the context vs after the user
