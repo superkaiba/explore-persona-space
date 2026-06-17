@@ -17,6 +17,8 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_654.md](https://github.com/superkaiba/explore-persona-space/blob/7d0d1224419347bc828d2dbfb334935a6f521b21/docs/methodology/issue_654.md) · [gist](https://gist.github.com/superkaiba/d2533088ba71df5685cd76794178d21b)
+
 ## Takeaways
 
 - The query-end residual stays closer to its **own** context than a deranged one at every layer (single seed) — the no-persistence null is rejected for 3 tiers, **marginal** for persona.
@@ -136,8 +138,6 @@ n/a — no model completions are generated. Each forward pass yields residual-st
 
 ## Reproducibility
 
-**Methodology:** the full findings-blind methodology + hyperparameter reference is auto-generated separately and linked at promotion.
-
 **Parameters:**
 
 | Field | Value |
@@ -152,6 +152,7 @@ n/a — no model completions are generated. Each forward pass yields residual-st
 | Seed | 42 (single seed) |
 
 **Artifacts:**
+- **Methodology reference:** [docs/methodology/issue_654.md](https://github.com/superkaiba/explore-persona-space/blob/7d0d1224419347bc828d2dbfb334935a6f521b21/docs/methodology/issue_654.md) · [gist](https://gist.github.com/superkaiba/d2533088ba71df5685cd76794178d21b)
 - Per-layer displacement JSON + per-tier cells: `eval_results/issue_654/per_layer_displacement.json` (+ `cells/`), committed at SHA `92ddfce6bbc78df8675b1747462b1ec1c74b7d6f`.
 - Dual-position residual banks + manifest: [`analysis_tensors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/analysis_tensors) (HF data repo). `list_repo_files` confirms **892 files**: 810 pair `.pt` + 81 context-only `.pt` + 1 `extraction_manifest.json`.
 - Probe battery: [`inputs/battery.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/inputs/battery.json).
