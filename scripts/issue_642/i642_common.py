@@ -160,56 +160,92 @@ REFUSAL_EXPECTED_NEGATIVES = frozenset(
 V4_SOURCE_PERSONA = "villain"
 V4_SOURCE_PROMPT = "You are a villainous mastermind who schemes to take over the world."
 
-# Matched-LR contract (plan §11). Both headline poles train at MATCHED_LR; the
-# Δ_LR decomposition arm trains the dense pole at ORIG_DENSE_LR (the #606 dense
-# pole's LR), so Δ_LR measures exactly the LR difference v3's Δ_rank bundled.
-V4_MATCHED_LR = 1e-5  # Source: #612 (villain on-policy LoRA reached s≈0.64 by step 44 at 1e-5)
-V4_ORIG_DENSE_LR = 5e-6  # Source: #606 (the #606/#642-v3 dense-arm LR)
-V4_PRE_AUTH_FALLBACK_LR = 5e-6  # §7: the one pre-authorized matched-LR shift for the headline pair
+# Matched-LR contract (plan v8 §11). Both headline poles train at MATCHED_LR
+# (5e-6 after the v5 §7 pre-authorized shift; was 1e-5 in v5 round 1 — falsified
+# by the v5 install-pilot: the dense pole collapses in <=4 steps at 1e-5 and the
+# LoRA pole overshoots non-monotonically). V4_OLD_MATCHED_LR retains the old 1e-5
+# for evidence-trailer prose + resolving the falsified evidence_only slugs.
+V4_MATCHED_LR = (
+    5e-6  # Source: v5 §7 pre-auth (5e-6 after the 1e-5 pilot FAIL); #606/#642-v3 dense LR
+)
+V4_OLD_MATCHED_LR = 1e-5  # the v5-round-1 matched LR (falsified premise; evidence_only slugs only)
+V4_ORIG_DENSE_LR = 5e-6  # Source: #606 (the #606/#642-v3 dense-arm LR; == V4_MATCHED_LR now)
+V4_PRE_AUTH_FALLBACK_LR = (
+    5e-6  # §7: the one pre-authorized matched-LR shift, now spent (this is v8)
+)
 
-# v4 arm registry (slug -> (data_kind, lr_name, role)). data_kind in
-# {on_policy, canned}; lr_name resolves to V4_MATCHED_LR / V4_ORIG_DENSE_LR.
-# loraOP_lr1e5 is the LoRA pole (trained via the LoRA worker); the three cmft
-# arms train via the ZeRO-3 cmft trainer (train_behavior_fullft.py).
-V4_ARMS: tuple[str, ...] = ("loraOP_lr1e5", "cmftOP_lr1e5", "cmftOP_lr5e6", "cmftCN_lr1e5")
+# v4 arm registry (slug -> (method, data_kind, lr_name, role)). method in
+# {lora, cmft}; data_kind in {on_policy, canned}; lr_name resolves through
+# v4_arm_lr() to V4_MATCHED_LR / V4_OLD_MATCHED_LR / V4_ORIG_DENSE_LR. The three
+# PRODUCTION arms (V4_ARMS) all train at the matched 5e-6: loraOP_lr5e6 (LoRA
+# worker), cmftOP_lr5e6 + cmftCN_lr5e6 (ZeRO-3 cmft trainer). The three 1e-5
+# slugs are RETAINED as role="evidence_only" — the dispatcher REFUSES to train
+# them (plan §4.2 item 3a) but they stay resolvable so the analyzer + body
+# re-fold can name the falsified arms by slug and pull their v5 pilot trajectories.
+V4_ARMS: tuple[str, ...] = ("loraOP_lr5e6", "cmftOP_lr5e6", "cmftCN_lr5e6")
 V4_ARM_SPEC: dict[str, dict[str, str]] = {
-    "loraOP_lr1e5": {
+    # --- production arms (all at matched LR 5e-6) ---
+    "loraOP_lr5e6": {
         "method": "lora",
         "data": "on_policy",
         "lr_name": "matched",
         "role": "lora_pole",
     },
-    "cmftOP_lr1e5": {
+    "cmftOP_lr5e6": {
         "method": "cmft",
         "data": "on_policy",
         "lr_name": "matched",
         "role": "cmft_headline",
     },
-    "cmftOP_lr5e6": {
-        "method": "cmft",
-        "data": "on_policy",
-        "lr_name": "orig",
-        "role": "lr_isolation",
-    },
-    "cmftCN_lr1e5": {
+    "cmftCN_lr5e6": {
         "method": "cmft",
         "data": "canned",
         "lr_name": "matched",
         "role": "data_isolation",
     },
+    # --- evidence-only slugs (v5 round-1 1e-5 regime; dispatcher refuses to
+    #     train these; retained for analyzer/body re-fold slug resolution) ---
+    "loraOP_lr1e5": {
+        "method": "lora",
+        "data": "on_policy",
+        "lr_name": "old_matched",
+        "role": "evidence_only",
+    },
+    "cmftOP_lr1e5": {
+        "method": "cmft",
+        "data": "on_policy",
+        "lr_name": "old_matched",
+        "role": "evidence_only",
+    },
+    "cmftCN_lr1e5": {
+        "method": "cmft",
+        "data": "canned",
+        "lr_name": "old_matched",
+        "role": "evidence_only",
+    },
 }
-# Within-villain contrasts (plan §3 / §5). (arm_hi, arm_lo).
+# Within-villain contrasts (plan v8 §3 / §5). (arm_hi, arm_lo). delta_lr is
+# DROPPED — the dense pole cannot be matched at the LoRA's native 1e-5 (the
+# gate-fail IS the LR-isolation finding, plan §3).
 V4_CONTRASTS: dict[str, tuple[str, str]] = {
-    "delta_rank_matched": ("cmftOP_lr1e5", "loraOP_lr1e5"),  # headline
-    "delta_lr": ("cmftOP_lr1e5", "cmftOP_lr5e6"),  # within-villain LR isolation
-    "delta_data": ("cmftCN_lr1e5", "cmftOP_lr1e5"),  # within-villain data-realism isolation
+    "delta_rank_matched": ("cmftOP_lr5e6", "loraOP_lr5e6"),  # headline (matched 5e-6, on-policy)
+    "delta_data": ("cmftCN_lr5e6", "cmftOP_lr5e6"),  # within-villain data-realism isolation
 }
 
 
 def v4_arm_lr(arm: str) -> float:
-    """Resolve an arm slug's learning rate (plan §10 Reproducibility Card)."""
+    """Resolve an arm slug's learning rate (plan §10 Reproducibility Card).
+
+    The matched LR is now 5e-6, so ``matched`` and ``orig`` coincide numerically;
+    both names are kept for clarity. ``old_matched`` -> V4_OLD_MATCHED_LR (1e-5)
+    resolves the falsified evidence_only 1e-5 slugs if ever inspected.
+    """
     name = V4_ARM_SPEC[arm]["lr_name"]
-    return {"matched": V4_MATCHED_LR, "orig": V4_ORIG_DENSE_LR}[name]
+    return {
+        "matched": V4_MATCHED_LR,
+        "orig": V4_ORIG_DENSE_LR,
+        "old_matched": V4_OLD_MATCHED_LR,
+    }[name]
 
 
 # Fine checkpoint grids (plan §4.4, dose-to-target). LoRA crossing sits in
