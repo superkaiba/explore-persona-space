@@ -1,6 +1,7 @@
 ---
-title: Do conditional behaviors decompose cleanly into read and write features? Characterize
-  the autoregressive write→read map
+title: Across 3 behaviors × 2 contexts × 3 LoRA ranks, weakly-installed LoRA edits
+  produce a diffuse activation shift with no read↔write alignment (3 of 18 cells installed
+  enough to test; full fine-tuning untested) (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-16T07:47:41Z'

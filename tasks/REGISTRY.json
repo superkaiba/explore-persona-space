@@ -4061,7 +4061,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/653",
       "status": "interpreting",
-      "title": "Do conditional behaviors decompose cleanly into read and write features? Characterize the autoregressive write\u2192read map"
+      "title": "Across 3 behaviors \u00d7 2 contexts \u00d7 3 LoRA ranks, weakly-installed LoRA edits produce a diffuse activation shift with no read\u2194write alignment (3 of 18 cells installed enough to test; full fine-tuning untested) (MODERATE confidence)"
     },
     "654": {
       "goal": "Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user query displaces the last-token residual-stream state away from the context-established state (centered cosine + CKA + shuffled-pair floor) across persona / generic-instruction / ICL / wild-chat contexts and varied queries, to characterize context-dominant vs query-dominant layer regimes.",
