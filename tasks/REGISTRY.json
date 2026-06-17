@@ -4082,8 +4082,8 @@
     "656": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/656",
-      "status": "reviewing",
+      "path": "tasks/completed/656",
+      "status": "completed",
       "title": "Backend router: GCP GPU fallback ladder (A100-40 \u2192 spot \u2192 RunPod) so a full A100-80 quota never hard-blocks a launch"
     },
     "66": {
