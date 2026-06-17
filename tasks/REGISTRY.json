@@ -3968,8 +3968,8 @@
       "goal": "Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap into a module-coverage component and a rank component by adding a coverage-matched full-FT arm (embeddings/lm_head/LayerNorm frozen) to #606's comparison at matched source-implant strength.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/blocked/642",
-      "status": "blocked",
+      "path": "tasks/followups_running/642",
+      "status": "followups_running",
       "title": "Most of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap is the adapter-vs-dense-update bundle (+0.073 of +0.098), with a smaller module-coverage piece (+0.025) that the decision rule cannot call clean (MODERATE confidence)"
     },
     "643": {
