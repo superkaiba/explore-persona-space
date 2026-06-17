@@ -194,9 +194,9 @@ def _phase_log(tag: str, msg: str) -> None:
 
 
 def _cell_arm_slug(slug: str) -> str:
-    """Arm prefix of a cell slug: 'loraOP_lr1e5_step12' -> 'loraOP_lr1e5';
+    """Arm prefix of a cell slug: 'loraOP_lr5e6_step12' -> 'loraOP_lr5e6';
     'lora_step32' -> 'lora'; 'base' -> 'base'. The v4 selection groups by this
-    (3 distinct cmft arm slugs must NOT collapse to one 'cmft' token)."""
+    (the 3 distinct v4 arm slugs must NOT collapse to one method token)."""
     if slug == "base":
         return "base"
     return slug.rsplit("_step", 1)[0]
@@ -236,8 +236,8 @@ class Ctx:
         if self.dry_run and not self.skip_upload and self.experiment_name == HF_EXPERIMENT_NAME:
             log.warning("dry-run + production --hf-experiment-name: forcing --skip-upload")
             self.skip_upload = True
-        # --v4: the followup `onpolicy-matchedlr-rank-isolation` mode (plan v5).
-        # Trains FOUR NEW villain arms at matched LR on on-policy data + reads
+        # --v4: the followup `onpolicy-matchedlr-rank-isolation` mode (plan v8).
+        # Trains THREE villain arms at matched LR 5e-6 on on-policy data + reads
         # them on the #612 30-panel — NO #606 reuse. The v4 mode swaps the
         # source / panel / pools / arm registry / experiment name; the v3
         # (software_engineer / #606-reuse / 3-arm) path is unchanged when
@@ -263,6 +263,18 @@ class Ctx:
                 requested = list(V4_ARMS)
             for a in requested:
                 if a not in V4_ARMS:
+                    # refuse-to-train guard (plan v8 §4.2 item 3a / §8-bis): a slug
+                    # retained as role="evidence_only" (the falsified v5-round-1 1e-5
+                    # arms) is RESOLVABLE in the registry but MUST NOT be trained — a
+                    # stale launch command naming cmftOP_lr1e5 fails loud here instead
+                    # of silently trying to train a refused arm.
+                    if a in V4_ARM_SPEC and V4_ARM_SPEC[a].get("role") == "evidence_only":
+                        raise ValueError(
+                            f"v4 arm {a!r} is role='evidence_only' (the falsified v5-round-1 "
+                            "1e-5 regime) and REFUSES to train; --arms may name only the "
+                            f"production arms {V4_ARMS}. Use --v4 --arms "
+                            f"{','.join(V4_ARMS)} for the v8 production sweep."
+                        )
                     raise ValueError(f"unknown v4 arm {a!r} (expected one of {V4_ARMS})")
             # canonical v4 order kept (headline pair first)
             self.arms = tuple(a for a in V4_ARMS if a in requested)
@@ -359,7 +371,8 @@ class Ctx:
         return V4_ARM_SPEC[arm]["data"]
 
     def v4_arm_lr(self, arm: str) -> float:
-        """v4 arm learning rate: matched 1e-5 or orig 5e-6 (plan §10)."""
+        """v4 arm learning rate: matched 5e-6 (production) or old_matched 1e-5
+        (evidence_only slugs) (plan v8 §10)."""
         return v4_arm_lr(arm)
 
     def panel(self) -> dict[str, str]:
@@ -890,12 +903,12 @@ def _hub_download_v4(ctx: Ctx, hub_path: str, *, repo_type: str = "dataset") -> 
 
 
 def _phase0_data_v4(ctx: Ctx, behavior: str) -> None:
-    """v4 Phase 0 (plan v5 §4.3 / §4.7): fetch + sha-verify the #612 villain
+    """v4 Phase 0 (plan v8 §4.3 / §4.7): fetch + sha-verify the #612 villain
     on-policy pool, the #411 villain canned pool, the #612 30-panel + eval_60
     probes, and the #612 villain LoRA adapter_config (cmft mask assert); BUILD
     the canned-cmft pool (#411 positives + #612 negatives, byte-identical);
     v4 disjointness + byte-identical-negatives + completion-length asserts.
-    NO #606 reuse — this run trains 4 NEW arms."""
+    NO #606 reuse — this run trains 3 NEW arms at matched LR 5e-6."""
     ddir = ctx.data_dir(behavior)
     ddir.mkdir(parents=True, exist_ok=True)
 
@@ -1007,7 +1020,7 @@ def _phase0_data_v4(ctx: Ctx, behavior: str) -> None:
         f"{ctx.experiment_name}/{behavior}/data_manifest.json",
         skip=ctx.skip_upload,
     )
-    _phase_log("p0_data", f"[v4][{behavior}] Phase 0 done (4-arm pools + #612 panel)")
+    _phase_log("p0_data", f"[v4][{behavior}] Phase 0 done (3-arm pools + #612 panel)")
 
 
 def phase0_data(ctx: Ctx, behavior: str) -> None:
@@ -1221,11 +1234,11 @@ def _train_ft_like(ctx: Ctx, behavior: str, arm: str) -> None:
 
 
 def _train_v4_cmft_arm(ctx: Ctx, behavior: str, arm: str) -> None:
-    """Train one v4 cmft arm slug (cmftOP_lr1e5 / cmftOP_lr5e6 / cmftCN_lr1e5)
-    via the ZeRO-3 cmft trainer at the arm's own LR + own pool (plan §4.2). The
-    freeze mask + module-set-identity assert vs the #612 villain adapter_config
-    are identical across all 3 cmft arms (the manipulated variables are LR and
-    data only)."""
+    """Train one v4 cmft arm slug (cmftOP_lr5e6 / cmftCN_lr5e6) via the ZeRO-3
+    cmft trainer at the matched LR 5e-6 + own pool (plan v8 §4.2). The freeze
+    mask + module-set-identity assert vs the #612 villain adapter_config are
+    identical across both production cmft arms (the manipulated variable within
+    this pair is data construction only — on-policy vs canned)."""
     ft_root = ctx.ckpt_root(behavior, arm)
     if (ft_root / "train_metadata.json").exists():
         _phase_log("p1_train", f"[v4][{behavior}] {arm} train_metadata exists — skipping (resume)")
@@ -1298,8 +1311,8 @@ def _train_v4_cmft_arm(ctx: Ctx, behavior: str, arm: str) -> None:
 
 
 def _train_v4_lora_arm(ctx: Ctx, behavior: str, arm: str) -> None:
-    """Train the v4 LoRA pole (loraOP_lr1e5) via the LoRA worker at the matched
-    LR on the on-policy pool (plan §4.2 — the --lr flag's purpose)."""
+    """Train the v4 LoRA pole (loraOP_lr5e6) via the LoRA worker at the matched
+    LR 5e-6 on the on-policy pool (plan v8 §4.2 — the --lr flag's purpose)."""
     lora_root = ctx.ckpt_root(behavior, arm)
     if (lora_root / "train_metadata.json").exists():
         _phase_log("p1_train", f"[v4][{behavior}] {arm} train_metadata exists — skipping (resume)")
@@ -1339,8 +1352,9 @@ def _train_v4_lora_arm(ctx: Ctx, behavior: str, arm: str) -> None:
 
 
 def _phase1_train_v4(ctx: Ctx, behavior: str) -> None:
-    """v4 Phase 1: train the (up to) 4 villain arms SERIALLY (each cmft arm uses
-    all 4 GPUs via ZeRO-3; the LoRA pole uses GPU 0). Plan §9 parallelism."""
+    """v4 Phase 1: train the (up to) 3 production villain arms SERIALLY (each cmft
+    arm uses all 4 GPUs via ZeRO-3; the LoRA pole uses GPU 0). Plan §9
+    parallelism."""
     _phase_log("p1_train", f"[v4][{behavior}] Phase 1 start (arms={ctx.arms})")
     for arm in ctx.arms:
         if ctx.v4_arm_method(arm) == "lora":
@@ -2086,7 +2100,7 @@ def _reproducibility_card_v4(ctx: Ctx) -> dict:
         "selected_steps": ctx.cmft_selected_steps,  # keyed "<behavior>:<arm>"
         "adapter_paths": adapter_paths,  # LoRA pole canonical; cmft opt-out
         "lora_pole_upload": (
-            f"{HF_MODEL_REPO} :: adapters/issue_642/v4/loraOP_lr1e5_{V4_SOURCE_PERSONA}"
+            f"{HF_MODEL_REPO} :: adapters/issue_642/v4/loraOP_lr5e6_{V4_SOURCE_PERSONA}"
             f"_seed{ctx.seed}/step{{selected}}"
         ),
         "cmft_adapters_note": (
@@ -2097,7 +2111,7 @@ def _reproducibility_card_v4(ctx: Ctx) -> dict:
         "onpolicy_pool": f"{HF_DATA_REPO} :: {V4_ONPOLICY_POOL_HUB_PATH}",
         "canned_pool_source": f"{HF_DATA_REPO} :: {V4_CANNED_POOL_HUB_PATH}",
         "panel": f"{HF_DATA_REPO} :: {V4_PANEL_SET_HUB_PATH}",
-        "contrasts": "delta_rank_matched, delta_lr, delta_data (within-villain; plan §5)",
+        "contrasts": "delta_rank_matched, delta_data (within-villain; plan v8 §5; delta_lr gone)",
     }
 
 
@@ -2263,10 +2277,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--v4",
         action="store_true",
-        help="Followup `onpolicy-matchedlr-rank-isolation` mode (plan v5): train the "
-        "FOUR villain arms at matched LR on on-policy data + read on the #612 30-panel; "
-        "NO #606 reuse. --arms then takes the v4 slugs "
-        "(loraOP_lr1e5,cmftOP_lr1e5,cmftOP_lr5e6,cmftCN_lr1e5; default = all 4).",
+        help="Followup `onpolicy-matchedlr-rank-isolation` mode (plan v8): train the "
+        "THREE villain arms at matched LR 5e-6 on on-policy data + read on the #612 "
+        "30-panel; NO #606 reuse. --arms then takes the v4 slugs "
+        "(loraOP_lr5e6,cmftOP_lr5e6,cmftCN_lr5e6; default = all 3).",
     )
     parser.add_argument(
         "--install-pilot",
@@ -2279,7 +2293,9 @@ def main(argv: list[str] | None = None) -> int:
         "--arms",
         default="",
         help="Which arms this run trains+evals. v3: subset of lora,ft,cmft (default cmft). "
-        "v4 (--v4): subset of the 4 villain slugs (default = all 4).",
+        "v4 (--v4): subset of the 3 production villain slugs "
+        "(loraOP_lr5e6,cmftOP_lr5e6,cmftCN_lr5e6; default = all 3); evidence_only 1e-5 "
+        "slugs are refused.",
     )
     parser.add_argument(
         "--run-label",

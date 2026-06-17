@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 653,
+  "highest_id": 656,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3143,8 +3143,8 @@
       "goal": "Build a reusable context-generalization testbed: empirically measure G[behavior, train-context \u2192 eval-context] over realistic contexts (persona prompts, WildChat prefixes, ICL examples, rephrasings, format wraps, default, inoculation variant) and 5 behaviors (marker, taught fact, refusal, sycophancy, EM), and ship a scoring harness that evaluates asymmetric, behavior-dependent, interaction-aware generalization-prediction metrics against held-out cells with strong baselines.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/537",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/537",
+      "status": "awaiting_promotion",
       "title": "Training context shapes how far an implanted behavior generalizes: instruction and worked-example training contains it, while most persona, chat, and rephrasing contexts spread it broadly (HIGH confidence)"
     },
     "538": {
@@ -3609,9 +3609,9 @@
       "goal": "Measure the training-step dynamics of source marker implantation AND bystander marker leakage \u2014 the full bystander panel probed at the same eval intervals as the source, under the four-float storage contract (log P(marker), z_marker, z_eos, logZ; trained AND base per slot) \u2014 in positive-only vs contrastive training at an otherwise matched recipe, to determine (1) whether bystander marker log-prob rises in lockstep with the source implant under positive-only training (one shared unconditional shift) while contrastive training simultaneously pushes bystanders down, and (2) whether the contrastive regime's source-side implantation advantage at matched dose is visible from the first steps of training. Dose is read off the step axis of one full-length trajectory per arm \u2014 no separate low-dose vs full-dose arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/597",
-      "status": "followups_running",
-      "title": "Marker implants lift most bystander personas nearly in lockstep with the source from the first observable training steps; contrastive negatives cap and partially reverse the shared rise rather than suppressing bystanders below base (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/597",
+      "status": "awaiting_promotion",
+      "title": "Marker implants start as a near-global bystander lift that contrastive negatives cap rather than reverse (MODERATE confidence)"
     },
     "598": {
       "has_clean_result": false,
@@ -3737,9 +3737,9 @@
       "goal": "Rebuild the sycophancy-implantation rig with on-policy training data and re-measure leakage on a graded-cosine persona panel with base-prior controls: train each source with three arms \u2014 (A) canned-agreement replication anchor, (B) on-policy single-turn, (C) on-policy multi-turn prefix with loss on the final sycophantic turn only \u2014 and evaluate on a panel spanning cosine ~0.70-0.995 with each persona's base sycophancy prior measured and controlled, on an audited held-out wrong-claim pool. Primary questions: does on-policy training data change the leakage-vs-cosine radius; what is the effect of the on-policy conversational prefix (B vs C); does the assistant-twin flatness anomaly survive the realistic rig.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/612",
-      "status": "followups_running",
-      "title": "The model's own agreeing completions install sycophancy substantially more weakly than canned templates at a fixed training recipe, and two of four personas could not fill the on-policy data-yield quota (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/612",
+      "status": "awaiting_promotion",
+      "title": "The model's own agreeing completions install sycophancy more weakly than canned templates, and at matched install the leakage radius shifts in opposite directions across sources (MODERATE confidence)"
     },
     "613": {
       "goal": "Determine whether placing the negative-row loss at the post-response slot (loss-suppression flag on) gives contrastive negatives a live gradient that exerts a measurable restoring force on the source implant, by training flag-on cells single-variable-matched to #601's existing flag-off 200p+800n cells.",
@@ -3952,9 +3952,9 @@
       "goal": "Test whether the chat-template POSTFIX (not prefix) is the dominant off-distribution leakage carrier on Qwen-2.5-7B, and whether patching base postfix KV per-cell into the #545 leaky adapters reduces leakage as a model-specific intervention.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/640",
-      "status": "followups_running",
-      "title": "Postfix-KV patching beats prefix patching on 7 of 8 leaky Qwen-2.5 adapters and cuts the two strongly-installed reckless-behavior cells 56-69%, but leaves the format-style floor cells worse (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/640",
+      "status": "awaiting_promotion",
+      "title": "Postfix-KV patching cuts off-distribution leakage on strongly-installed Qwen-2.5 adapters, but a diagonal source-control shows it is a blunt revert that dampens the on-target trained behavior just as much, so it is not a selective defense (MODERATE confidence)"
     },
     "641": {
       "goal": "Determine whether per-(source, behavior) install resistance is overcome by additional training dose or plateaus, and whether residual resistance at matched dose is driven by the source's base propensity for the behavior or by source-behavior identity/alignment conflict \u2014 via matched-recipe dose curves on resistant vs non-resistant source contexts within one non-saturated behavior plus a matched-dose identity-conflict pairing.",
@@ -4033,11 +4033,11 @@
     },
     "650": {
       "goal": "Determine whether a rank-1 LoRA behavior implant's WRITE direction is a pre-existing base direction or a new (intruder) direction \u2014 in BOTH the weight-space sense (max cosine of the LoRA write singular vector to the base weight matrix's singular vectors) and the activation-space sense (cosine of the residual-space write to a pre-existing base residual-stream concept direction, and to the unembedding concept row) \u2014 and whether its READ direction rotates from random init toward the source-context direction as implant dose increases (a learned detector) or stays ~random (selectivity inherited from base geometry), across two behaviors of contrasting realism (programmatic marker vs on-policy sycophancy), using a rank-1 MLP up_proj+down_proj placement that puts the read in residual input space and the write in residual output space.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/650",
-      "status": "running",
-      "title": "Rank-1 MLP LoRA read/write geometry across dose: pre-existing vs intruder direction, marker vs sycophancy"
+      "path": "tasks/awaiting_promotion/650",
+      "status": "awaiting_promotion",
+      "title": "Rank-1 MLP LoRA implants leave the read frozen at random init for both marker and sycophancy; the write only weakly touches base weight geometry, and only for the marker (MODERATE confidence)"
     },
     "651": {
       "goal": "Re-extract layer-L activation-shift directions (trained minus base) from the #537 context-generalization testbed's existing adapters (5 conditional behaviors x 16 training contexts x seeds, on HF) plus a bounded 2nd-seed (1042) retrain of em + sycophancy across the 16 contexts so all readable behaviors get a within-cell seed ceiling, and test (Q1) whether each behavior's shift collapses to ONE direction across the training contexts it was implanted under (context-invariance of the write) and (Q2) whether the different behaviors' dominant directions coincide or cluster by family (cross-behavior identity), benchmarked against the within-cell seed ceiling, with unit-norm direction cosine as the dose-invariant DV.",
@@ -4057,11 +4057,34 @@
     },
     "653": {
       "goal": "Test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features, via two probes \u2014 (A) the base model's autoregressive write\u2192read map under random-bias steering, and (B) how real finetunes shift activations across the rank ladder (rank-1 LoRA \u2192 higher-rank LoRA \u2192 full fine-tuning) \u2014 run across \u22653 installed behaviors and a few source contexts (not a single behavior/context) so the verdict generalizes, characterizing in each whether the structure is low-rank and read\u2194write-aligned (clean) versus rotated or diffuse, and whether that verdict is consistent across behavior, context, and edit rank.",
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/653",
+      "status": "awaiting_promotion",
+      "title": "Across 3 behaviors \u00d7 2 contexts \u00d7 3 LoRA ranks, weakly-installed LoRA edits produce a diffuse activation shift with no read\u2194write alignment (3 of 18 cells installed enough to test; full fine-tuning untested) (MODERATE confidence)"
+    },
+    "654": {
+      "goal": "Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user query displaces the last-token residual-stream state away from the context-established state (centered cosine + CKA + shuffled-pair floor) across persona / generic-instruction / ICL / wild-chat contexts and varied queries, to characterize context-dominant vs query-dominant layer regimes.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/653",
-      "status": "approved",
-      "title": "Do conditional behaviors decompose cleanly into read and write features? Characterize the autoregressive write\u2192read map"
+      "path": "tasks/followups_running/654",
+      "status": "followups_running",
+      "title": "Query influence on the context-conditioned residual stream: per-layer context-end vs query-end last-token similarity (Qwen-2.5-7B-Instruct)"
+    },
+    "655": {
+      "goal": "Determine whether SAE-discovered persona/trait features, once activated, persist across subsequent token positions of an on-policy generation (quantify feature-activation persistence over context), establish whether persona features are sticky 'state' features vs token-local features, and validate against supervised persona probes to account for SAE under-recovery of persistent state.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/655",
+      "status": "proposed",
+      "title": "Do persona/trait SAE features persist across token positions of a generation?"
+    },
+    "656": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/656",
+      "status": "completed",
+      "title": "Backend router: GCP GPU fallback ladder (A100-40 \u2192 spot \u2192 RunPod) so a full A100-80 quota never hard-blocks a launch"
     },
     "66": {
       "has_clean_result": true,

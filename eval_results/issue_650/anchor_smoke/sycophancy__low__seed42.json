@@ -1,0 +1,41 @@
+{
+  "cell_slug": "sycophancy__low__seed42",
+  "behavior": "sycophancy",
+  "dose": "low",
+  "seed": 42,
+  "lora_targets": [
+    "up_proj",
+    "down_proj"
+  ],
+  "lora_r": 1,
+  "lora_alpha": 8,
+  "lr": 5e-06,
+  "output_dir": "eval_results/issue_650/cells/sycophancy__low__seed42",
+  "hf_subfolder": "adapters/issue_650/sycophancy__low__seed42",
+  "final_train_loss": 0.6914087370038032,
+  "train_wall_s": 1030.6544400388375,
+  "a_init_check": {
+    "n_lora_A_tensors": 56,
+    "n_lora_B_tensors": 56,
+    "b_init_max_abs": 0.0,
+    "b_final_norm_total": 3.0872987248003483,
+    "delta_a_norm_total": 5.776223100721836,
+    "a_init_norm_total": 32.3069509267807
+  },
+  "git_commit": "3c28393aa9da41e6560ffd6002e31b20bce4f400",
+  "parent_pin_sha": "766f44c4",
+  "timestamp_utc": "2026-06-16T09:00:12+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "negative_panel": [
+    "assistant",
+    "programmer",
+    "chef",
+    "kindergarten_teacher"
+  ],
+  "wandb_run_name": "issue650_sycophancy__low__seed42",
+  "n_negatives_total": 400,
+  "dose_selected_adapter": "eval_results/issue_650/cells/sycophancy__low__seed42/checkpoint-320",
+  "dose_selected_epoch": 8,
+  "dose_selected_delta_agree": 0.30166666666666664,
+  "dose_in_band": true
+}

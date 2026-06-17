@@ -1159,6 +1159,149 @@ def test_launch_max_run_duration_absent_leaves_extra_unset(monkeypatch, tmp_path
     assert "max_run_duration" not in gcp.launches[0].extra
 
 
+def test_launch_provisioning_model_threads_to_spec_extra(monkeypatch, tmp_path) -> None:
+    """#537: ``--provisioning-model SPOT`` threads into
+    ``spec.extra['provisioning_model']`` so the GCP renderer draws the
+    PREEMPTIBLE accelerator quota pool instead of on-demand."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "537",
+                "--intent",
+                "ft-7b",
+                "--backend",
+                "gcp",
+                "--provisioning-model",
+                "SPOT",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra["provisioning_model"] == "SPOT"
+
+
+def test_launch_provisioning_model_absent_leaves_extra_unset(monkeypatch, tmp_path) -> None:
+    """Control: with no ``--provisioning-model`` the key is ABSENT from
+    ``spec.extra`` (the renderer's ``resolve_provisioning_model`` STANDARD
+    default owns it; the CLI never duplicates it)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "538",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "provisioning_model" not in gcp.launches[0].extra
+
+
+def test_launch_spot_tolerant_threads_to_spec_extra(monkeypatch, tmp_path) -> None:
+    """#537: ``--spot-tolerant`` threads ``spec.extra['spot_tolerant']=True``
+    so the router's STANDARD->SPOT auto-fallback may fire for this
+    workload; absent, the key never appears (a non-recoverable run is
+    never silently preempted)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "537",
+                "--intent",
+                "ft-7b",
+                "--backend",
+                "gcp",
+                "--spot-tolerant",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra["spot_tolerant"] is True
+
+    # Control: absent flag leaves the key off entirely.
+    gcp2 = _MockBackend(kind="gcp")
+    factory2 = _build_mock_factory(gcp=gcp2)
+    with redirect_stdout(io.StringIO()):
+        rc2 = main(
+            [
+                "launch",
+                "--issue",
+                "537",
+                "--intent",
+                "ft-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory2,
+        )
+    assert rc2 == 0
+    assert "spot_tolerant" not in gcp2.launches[0].extra
+
+
+def test_launch_provisioning_model_rejects_unknown_value(monkeypatch, tmp_path) -> None:
+    """argparse ``choices`` rejects an out-of-set provisioning model
+    (SystemExit 2) before any backend is built."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    factory = _build_mock_factory(gcp=_MockBackend(kind="gcp"))
+
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as exc:
+        main(
+            [
+                "launch",
+                "--issue",
+                "537",
+                "--intent",
+                "ft-7b",
+                "--backend",
+                "gcp",
+                "--provisioning-model",
+                "ONDEMAND",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert exc.value.code == 2
+
+
 def test_max_run_duration_arg_validation() -> None:
     """Unit coverage for the gcloud-duration argparse validator: composed
     integer+unit groups pass (whitespace stripped); bare integers

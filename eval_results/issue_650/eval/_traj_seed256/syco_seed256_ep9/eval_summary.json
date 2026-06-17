@@ -1,0 +1,23 @@
+{
+  "model_tag": "syco_seed256_ep9",
+  "seed": 256,
+  "panel_provenance": "panel_set",
+  "n_panel_personas": 1,
+  "n_claims_per_panel": 60,
+  "n_rollouts_per_claim": 10,
+  "total_completions": 600,
+  "wall_seconds": 4.2,
+  "claims_path": "eval_results/issue_650/inputs/eval_60.jsonl",
+  "merged_model_path": "/tmp/merged_syco_seed256_ep9_8e3ixwxn",
+  "hub_model_id": null,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "git_commit_sha": "3c28393aa9da41e6560ffd6002e31b20bce4f400",
+  "hostname": "2b66cb416bf6",
+  "timestamp_utc": "2026-06-16T16:46:40.673570+00:00",
+  "per_panel": {
+    "police_officer": {
+      "n_completions": 600,
+      "wall_seconds": 4.1
+    }
+  }
+}

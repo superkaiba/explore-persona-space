@@ -665,6 +665,20 @@ _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmap
 # it just spawned.
 _INFRA_DRAIN_NOTE_SENTINEL = "[autonomous_session_watch:infra-drain-dispatch]"
 
+# Substring stamped into the marker the capacity-retry pass posts after it
+# re-drives a `blocked`-on-transient-infra task (task #642 class:
+# `no_compute_available` after a GCP capacity miss). Same staleness-filter
+# contract as the others — the re-driven session becomes ACTIVE seconds after
+# the spawn, so a watcher-authored re-drive note must never count as "real
+# progress" for the orphan/stalled staleness clocks.
+_CAPACITY_RETRY_NOTE_SENTINEL = "[autonomous_session_watch:capacity-retry]"
+
+# Substring stamped into the one-time "daily capacity-retry cap exhausted"
+# marker. Same staleness-filter contract; posted at most once per UTC day per
+# task (deduped via the retry-state `alerted_day` field) so an exhausted task is
+# dashboard-visible without per-tick marker spam.
+_CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:capacity-retry-exhausted]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -693,6 +707,8 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _IDLE_UNMAPPED_ALERT_NOTE_SENTINEL,
         _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL,
         _INFRA_DRAIN_NOTE_SENTINEL,
+        _CAPACITY_RETRY_NOTE_SENTINEL,
+        _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
     }
 )
 
@@ -4219,6 +4235,50 @@ def _active_status_tasks() -> dict[int, str]:
     return out
 
 
+def _blocked_issue_ids() -> list[int]:
+    """Sorted list of task ids currently at status ``blocked``, via one
+    ``task.py list-by-status --status blocked --json`` subprocess. Same
+    fail-soft isolation as :func:`_active_status_tasks` (a read failure yields
+    an empty list, never a crash) and the same ``kind: campaign`` exclusion —
+    the capacity-retry recovery command is ``spawn-issue --auto`` (the `/issue`
+    skill), which would boot the wrong skill on a campaign (task #586)."""
+    try:
+        res = subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "list-by-status",
+                "--status",
+                "blocked",
+                "--json",
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return []
+    if res.returncode != 0:
+        return []
+    try:
+        rows = json.loads(res.stdout)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(rows, list):
+        return []
+    out: list[int] = []
+    for row in rows:
+        if not isinstance(row, dict) or row.get("kind") == "campaign":
+            continue
+        tid = row.get("id")
+        if isinstance(tid, int):
+            out.append(tid)
+    return sorted(out)
+
+
 def _issue_registrations() -> dict[int, dict]:
     """Scan BOTH registry prefixes and return per-issue registration facts:
     ``{issue: {"sids": set[str], "has_auto": bool, "has_manual": bool,
@@ -5815,6 +5875,399 @@ def infra_drain_pass(
     _infra_drain_prune_save(state, ids, dry_run)
 
 
+# ─── capacity-retry pass (re-drive a transient-infra `blocked` task) ─────────
+#
+# WHY THIS PASS EXISTS (incident #642, 2026-06-16). The crash-recovery
+# `decide()` gate treats EVERY `blocked` task as PARK ("keep", never respawn) —
+# correct for a DELIBERATE halt awaiting human input (a `failure_class: code` /
+# `data` block, or a factual question only the user can answer), but WRONG for
+# the narrow subclass where the block is purely transient infra capacity: the
+# auto-router exhausted every lane (`epm:failure v1` with `failure_class: infra`
+# AND `reason: no_compute_available`), the task's CODE is ready, and capacity
+# frees up later. The failure marker itself self-flags "Retry on re-invocation"
+# (the `epm:status-changed` note #642 posted) — but nothing RE-INVOKED it, so a
+# human (the PM session) had to notice the freed quota and stop+respawn by hand,
+# ~8h late.
+#
+# WHY THERE IS NO WATCHER-SIDE CAPACITY PRE-CHECK. The original candidate asked
+# for a precheck before re-driving, so we never respawn into a still-full lane.
+# The right design is the OPPOSITE of a duplicate precheck here: the `/issue`
+# launch path ALREADY runs the authoritative capacity gate. Re-driving via
+# `spawn-issue --auto` re-enters `/issue` -> Step 6 backend dispatch -> the
+# router's GCP regional-quota headroom pre-check (`backends/router.py`
+# `_skip_gcp_lane_no_headroom`, `backends/gcp.py` `preflight_quota_headroom`),
+# which on insufficient headroom SMART-SKIPS the GCP lane WITHOUT burning a
+# daily attempt and WITHOUT any GPU spend (#608), falls through to the free
+# SLURM lanes, and — if those are also full — simply re-blocks on
+# `no_compute_available` at ZERO GPU cost. So "respawn blind" is NOT expensive:
+# the only cost of a re-drive that re-blocks is a no-GPU Happy session spin-up.
+# Re-implementing a weaker copy of the router's quota logic inside this 10-min
+# fail-soft watcher would (a) duplicate + risk drifting from the authoritative
+# gate, (b) deeply couple the watcher to RunSpec/GcpConfig/GcloudRunner router
+# internals, and (c) add live `gcloud` subprocess calls to every tick. The
+# churn the candidate (rightly) worries about is bounded instead by the two
+# guards below — exponential-style backoff from the block timestamp + a
+# per-UTC-day retry cap — exactly the candidate's stated fallback ("if a clean
+# precheck is infeasible, prefer backoff + a tight day-cap over respawning
+# blind"). The re-driven `--auto` session re-enters `/issue` and enforces its
+# OWN plan-approval GPU-hour cap; this pass opens NO new spend path.
+#
+# SCOPE (do NOT broaden): ONLY a `blocked` task whose LATEST `epm:failure`
+# marker is `failure_class: infra` with a reason in the conservative
+# :data:`TRANSIENT_CAPACITY_REASONS` allowlist. EVERY other `blocked` task
+# (real halts: code/data failures, factual questions, a non-capacity infra
+# reason like `codex-companion-probe-error`) stays PARKED and is never touched
+# — `decide()`'s PARK semantics for them are unchanged.
+
+# Reasons (matched against the latest `epm:failure` marker's `reason:` field)
+# that classify a `blocked` task as transient-infra-capacity, hence retriable.
+# Deliberately a SINGLETON for now — the only demonstrated transient-capacity
+# block class is the auto-router's all-lanes-exhausted verdict. Widen ONLY with
+# a demonstrated, genuinely-transient, retry-on-re-invocation reason; a
+# permanent infra fault (auth, config, a code bug surfaced as infra) must NOT
+# join this set, or the pass would hot-retry an unrecoverable block until the
+# day-cap.
+TRANSIENT_CAPACITY_REASONS: frozenset[str] = frozenset({"no_compute_available"})
+
+# Filename prefix for the per-issue capacity-retry state file at
+# ``~/.eps-autonomous/capacity-retry-<N>.json``. Mirrors the orphan / stalled /
+# pod-safety state-file layout; reaped by the generalized GC.
+CAPACITY_RETRY_STATE_PREFIX = "capacity-retry-"
+
+# Backoff window (seconds) measured from the BLOCK timestamp (the latest
+# `epm:failure` marker's ts) AND from the last retry attempt — a re-drive fires
+# only once the newer of those two is older than this window, so capacity has
+# time to free up between attempts and the pass cannot tight-loop. 1h matches
+# the infra-drain backoff default.
+CAPACITY_RETRY_BACKOFF_S_DEFAULT = 3600.0
+
+# Maximum re-drive ATTEMPTS (successes AND failures both count, so a
+# deterministically re-blocking re-drive can't burn the whole day) per task per
+# UTC day. Mirrors the orphan daily cap.
+CAPACITY_RETRY_MAX_PER_DAY_DEFAULT = 4
+
+
+def _capacity_retry_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_CAPACITY_RETRY`` is set truthy
+    ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_infra_drain_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_CAPACITY_RETRY", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _capacity_retry_backoff_s() -> float:
+    """Retry-backoff window in seconds (env ``EPM_CAPACITY_RETRY_BACKOFF_S``;
+    default :data:`CAPACITY_RETRY_BACKOFF_S_DEFAULT`). A malformed env value
+    falls back to the default — a typo must not collapse the backoff."""
+    raw = os.environ.get("EPM_CAPACITY_RETRY_BACKOFF_S")
+    if not raw:
+        return CAPACITY_RETRY_BACKOFF_S_DEFAULT
+    try:
+        return float(raw)
+    except ValueError:
+        return CAPACITY_RETRY_BACKOFF_S_DEFAULT
+
+
+def _capacity_retry_max_per_day() -> int:
+    """Daily per-task re-drive cap (env ``EPM_CAPACITY_RETRY_PER_DAY``; default
+    :data:`CAPACITY_RETRY_MAX_PER_DAY_DEFAULT`). Malformed value falls back to
+    the default."""
+    raw = os.environ.get("EPM_CAPACITY_RETRY_PER_DAY")
+    if not raw:
+        return CAPACITY_RETRY_MAX_PER_DAY_DEFAULT
+    try:
+        return int(raw)
+    except ValueError:
+        return CAPACITY_RETRY_MAX_PER_DAY_DEFAULT
+
+
+def _latest_failure_marker(events: list[dict]) -> dict | None:
+    """The most recent ``epm:failure`` event in ``events`` (chronological
+    order), or ``None``. ``task.py list-markers`` returns events oldest-first,
+    so the last match is the latest."""
+    latest: dict | None = None
+    for ev in events:
+        if isinstance(ev, dict) and str(ev.get("kind", "")).startswith("epm:failure"):
+            latest = ev
+    return latest
+
+
+def _parse_failure_fields(note: str | None) -> tuple[str | None, str | None]:
+    """Extract ``(failure_class, reason)`` from a failure-marker ``note``.
+
+    The producer shapes vary (verified against real #642 markers):
+
+    * field-per-line — ``failure_class: infra\\nreason: no_compute_available``
+    * inline on one line — ``... failure_class: infra reason: codex-...``
+
+    so both fields are pulled with a tolerant token scan rather than a
+    line-anchored parse: split on whitespace, and for each ``failure_class:`` /
+    ``reason:`` token (or the ``key: value`` glued form) take the next token as
+    the value. The value is taken up to the first whitespace, so a trailing
+    sentence on the same line (``reason: foo. Proceeding ...``) yields ``foo``
+    (a trailing ``.``/``,`` is stripped). Returns ``(None, None)`` for a
+    non-string / fieldless note — fail toward NOT retrying."""
+    if not isinstance(note, str) or not note:
+        return (None, None)
+    tokens = note.replace("\n", " ").split()
+    out: dict[str, str] = {}
+    for key in ("failure_class", "reason"):
+        for i, tok in enumerate(tokens):
+            val: str | None = None
+            if tok == f"{key}:":
+                val = tokens[i + 1] if i + 1 < len(tokens) else None
+            elif tok.startswith(f"{key}:"):
+                val = tok[len(key) + 1 :] or (tokens[i + 1] if i + 1 < len(tokens) else None)
+            if val:
+                out[key] = val.strip().rstrip(".,;")
+                break
+    return (out.get("failure_class"), out.get("reason"))
+
+
+def _is_transient_capacity_block(events: list[dict]) -> tuple[bool, str | None, float | None]:
+    """Return ``(retriable, reason, block_ts)`` for a `blocked` task.
+
+    ``retriable`` is True ONLY when the LATEST ``epm:failure`` marker is
+    ``failure_class: infra`` with a ``reason`` in
+    :data:`TRANSIENT_CAPACITY_REASONS`. ``block_ts`` is that marker's epoch ts
+    (for the backoff window), or ``None`` if unparseable. Conservative:
+    anything other than a clean transient-capacity match yields
+    ``(False, reason, ...)`` so the task stays parked."""
+    marker = _latest_failure_marker(events)
+    if marker is None:
+        return (False, None, None)
+    failure_class, reason = _parse_failure_fields(marker.get("note"))
+    block_ts = _parse_event_ts(marker.get("ts"))
+    retriable = failure_class == "infra" and reason in TRANSIENT_CAPACITY_REASONS
+    return (retriable, reason, block_ts)
+
+
+def decide_capacity_retry(
+    status: str | None,
+    retriable: bool,
+    block_ts: float | None,
+    last_attempt_ts: float | None,
+    retries_today: int,
+    now: float,
+    *,
+    backoff_s: float = CAPACITY_RETRY_BACKOFF_S_DEFAULT,
+    max_per_day: int = CAPACITY_RETRY_MAX_PER_DAY_DEFAULT,
+) -> str:
+    """Pure decision for the capacity-retry pass. Returns one of:
+
+    * ``"skip"`` — not a transient-capacity block, not `blocked`, or still
+      inside the backoff window. No action, no marker.
+    * ``"redrive"`` — re-drive via ``spawn-issue --auto`` now.
+    * ``"exhausted"`` — retriable + out of backoff, but the daily cap is spent;
+      post the one-time exhausted alert and otherwise leave it parked.
+
+    Safety: a non-`blocked` status or a non-retriable block ALWAYS yields
+    ``"skip"`` — every deliberate halt stays parked. The backoff binds on the
+    NEWER of (block_ts, last_attempt_ts): we wait ``backoff_s`` after the block
+    AND after each attempt, so capacity has time to free up and the pass can't
+    tight-loop. A missing block_ts (unparseable marker ts) does NOT block a
+    retry — the last-attempt backoff still binds — so a garbled ts can't
+    permanently freeze recovery."""
+    if status != "blocked" or not retriable:
+        return "skip"
+    # Backoff: bind on the newer of block_ts / last_attempt_ts (each is
+    # optional). None means "no constraint from that source".
+    refs = [t for t in (block_ts, last_attempt_ts) if t is not None]
+    if refs and (now - max(refs)) < backoff_s:
+        return "skip"
+    if retries_today >= max_per_day:
+        return "exhausted"
+    return "redrive"
+
+
+def _capacity_retry_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{CAPACITY_RETRY_STATE_PREFIX}{issue}.json"
+
+
+def _load_capacity_retry_state(issue: int) -> dict:
+    """Read the per-issue retry state (``{retry_day, retries_today,
+    last_attempt_ts, alerted_day}``); ``{}`` on absent/garbled. Mirrors
+    :func:`_load_orphan_state`."""
+    path = _capacity_retry_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_capacity_retry_state(issue: int, state: dict, dry_run: bool) -> None:
+    """Persist the per-issue retry state atomically (temp + rename). No-op
+    under dry_run."""
+    if dry_run:
+        return
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _capacity_retry_state_path(issue)
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(state, indent=2))
+    tmp.replace(dest)
+
+
+def _redrive_capacity_retry(issue: int, dry_run: bool) -> bool:
+    """Re-drive the autonomous session for a transient-infra `blocked` task via
+    ``spawn_session.py spawn-issue --issue <N> --auto`` (the plain command; the
+    `--auto` session re-enters `/issue` which re-runs the backend router's own
+    capacity pre-check + enforces its plan-approval GPU cap). Returns success
+    bool; honours dry_run (logs, never spawns)."""
+    cmd = [
+        "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
+        "--issue", str(issue), "--auto",
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would capacity-retry: {' '.join(cmd)}")
+        return False
+    res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
+    if res.returncode != 0:
+        print(
+            f"  CAPACITY-RETRY DISPATCH FAILED issue #{issue}: {res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return False
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    print(f"  CAPACITY-RETRIED issue #{issue} (transient-infra block re-driven): {first_line}")
+    return True
+
+
+def _process_capacity_retry(
+    issue: int,
+    now: float,
+    day_key: str,
+    dry_run: bool,
+    *,
+    backoff_s: float,
+    max_per_day: int,
+) -> None:
+    """Apply one `blocked` task's capacity-retry decision (gather signals ->
+    :func:`decide_capacity_retry` -> act). Honours dry_run."""
+    events = _task_events(issue)
+    retriable, reason, block_ts = _is_transient_capacity_block(events)
+    if not retriable:
+        # Not a transient-capacity block — a deliberate halt. Leave it parked
+        # and don't even keep state (cheap to recompute next tick).
+        return
+
+    state = _load_capacity_retry_state(issue)
+    retries_today = state.get("retries_today", 0) if state.get("retry_day") == day_key else 0
+    if not isinstance(retries_today, int) or retries_today < 0:
+        retries_today = 0
+    last_attempt_ts = state.get("last_attempt_ts")
+    if isinstance(last_attempt_ts, bool) or not isinstance(last_attempt_ts, int | float):
+        last_attempt_ts = None
+    alerted_day = state.get("alerted_day")
+
+    action = decide_capacity_retry(
+        "blocked",
+        retriable,
+        block_ts,
+        last_attempt_ts,
+        retries_today,
+        now,
+        backoff_s=backoff_s,
+        max_per_day=max_per_day,
+    )
+    block_age = f"{(now - block_ts) / 3600:.1f}h" if block_ts is not None else "unknown"
+    print(
+        f"  issue #{issue}: blocked on transient infra (reason={reason}) "
+        f"block_age={block_age} retries_today={retries_today}/{max_per_day} action={action}"
+    )
+
+    if action == "skip":
+        return
+    if action == "redrive":
+        ok = _redrive_capacity_retry(issue, dry_run)
+        new_state = {
+            "retry_day": day_key,
+            # Count the ATTEMPT regardless of spawn success so a failing spawn
+            # can't hot-loop past the daily cap (the backoff also binds next
+            # tick via last_attempt_ts).
+            "retries_today": retries_today + 1,
+            "last_attempt_ts": now,
+            "alerted_day": None,
+        }
+        _save_capacity_retry_state(issue, new_state, dry_run)
+        if ok:
+            _post_progress_marker(
+                issue,
+                f"{_CAPACITY_RETRY_NOTE_SENTINEL} task was blocked on transient "
+                f"infra (reason={reason}, block_age={block_age}); auto-re-drove "
+                f"via spawn-issue --auto (attempt {retries_today + 1}/{max_per_day} "
+                f"today). The /issue launch re-runs the backend capacity pre-check; "
+                f"if every lane is still full it re-blocks at zero GPU cost.",
+                dry_run,
+                label="capacity-retry",
+            )
+        return
+    # action == "exhausted": one-time loud marker per UTC day.
+    print(
+        f"  CAPACITY-RETRY EXHAUSTED issue #{issue}: blocked on {reason}, "
+        f"daily re-drive cap spent ({retries_today}/{max_per_day})",
+        file=sys.stderr,
+    )
+    if alerted_day != day_key:
+        _post_progress_marker(
+            issue,
+            f"{_CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL} task remains blocked on "
+            f"transient infra (reason={reason}); daily auto-re-drive cap exhausted "
+            f"({retries_today}/{max_per_day}). Manual recovery: uv run python "
+            f"scripts/spawn_session.py spawn-issue --issue {issue} --auto",
+            dry_run,
+            label="capacity-retry-exhausted",
+        )
+    _save_capacity_retry_state(
+        issue,
+        {
+            "retry_day": day_key,
+            "retries_today": retries_today,
+            "last_attempt_ts": last_attempt_ts,
+            "alerted_day": day_key,
+        },
+        dry_run,
+    )
+
+
+def capacity_retry_pass(
+    dry_run: bool,
+    now: float | None = None,
+    *,
+    daemon_reachable: bool | None = None,
+) -> None:
+    """Re-drive `blocked`-on-transient-infra tasks (incident #642). Scans every
+    `blocked` task; for each whose LATEST ``epm:failure`` is
+    ``failure_class: infra`` + a :data:`TRANSIENT_CAPACITY_REASONS` reason,
+    re-drives it via ``spawn-issue --auto`` once backoff clears, capped per UTC
+    day. Every OTHER `blocked` task is untouched. Daemon-gated like every
+    spawning pass (spawn POSTs to the Happy daemon RPC). The module-level WHY
+    block above documents the no-watcher-side-precheck design."""
+    if not _capacity_retry_enabled():
+        print("capacity-retry: disabled via EPM_DISABLE_CAPACITY_RETRY; skipping")
+        return
+    if daemon_reachable is None:
+        daemon_reachable = _daemon_reachable()
+    if not daemon_reachable:
+        print("capacity-retry: Happy daemon unreachable; skipping (re-drive needs the daemon RPC)")
+        return
+    now = now if now is not None else time.time()
+    day_key = time.strftime("%Y-%m-%d", time.gmtime(now))
+    backoff_s = _capacity_retry_backoff_s()
+    max_per_day = _capacity_retry_max_per_day()
+    blocked = _blocked_issue_ids()
+    if not blocked:
+        print("capacity-retry: no blocked tasks")
+        return
+    print(f"capacity-retry: scanning {len(blocked)} blocked task(s)")
+    for issue in blocked:
+        _process_capacity_retry(
+            issue, now, day_key, dry_run, backoff_s=backoff_s, max_per_day=max_per_day
+        )
+
+
 # ─── generalized GC of stale ~/.eps-autonomous/ per-issue files ──────────────
 
 # Task statuses for which per-issue registry / progress / stalled-state files
@@ -5837,6 +6290,13 @@ _GC_TARGETS: tuple[tuple[str, str], ...] = (
     ("manual-issue-", ""),
     (STALLED_STATE_PREFIX, ""),
     (ORPHAN_STATE_PREFIX, ""),
+    # Capacity-retry per-issue state (== CAPACITY_RETRY_STATE_PREFIX). The pass
+    # only ever touches `blocked` tasks; this is the backstop for a task that
+    # left `blocked` for a terminal status without the pass clearing its file.
+    # NOTE: TERMINAL_FOR_GC deliberately EXCLUDES `blocked` (the GC must never
+    # reap a live retry episode's state — that would reset retries_today every
+    # tick and the daily cap could never bind).
+    (CAPACITY_RETRY_STATE_PREFIX, ""),
     # Campaign watchdog state (== CAMPAIGN_WATCH_STATE_PREFIX, defined in the
     # campaign-pass section below; literal here because module-level tuples
     # evaluate top-to-bottom). Primary reaping is the campaign pass itself at
@@ -9138,6 +9598,14 @@ def main(argv: list[str] | None = None) -> int:
         "and exit; skip every other pass. Mirrors --gc-only; pair with "
         "--dry-run for the post-merge live smoke against the real queue file.",
     )
+    parser.add_argument(
+        "--capacity-retry-only",
+        action="store_true",
+        help="run ONLY the capacity-retry pass (re-drive blocked-on-transient-"
+        "infra tasks, incident #642) and exit; skip every other pass. Mirrors "
+        "--infra-drain-only; pair with --dry-run for a live smoke against the "
+        "real blocked-task set.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -9155,6 +9623,12 @@ def main(argv: list[str] | None = None) -> int:
     # lock (it probes the daemon itself) and exit.
     if args.infra_drain_only:
         infra_drain_pass(args.dry_run, daemon_reachable=_daemon_reachable())
+        return 0
+
+    # --capacity-retry-only mirrors --infra-drain-only: run the single pass
+    # under the lock (it probes the daemon itself) and exit.
+    if args.capacity_retry_only:
+        capacity_retry_pass(args.dry_run, daemon_reachable=_daemon_reachable())
         return 0
 
     # VM disk-headroom: runs FIRST. A full root disk makes every later
@@ -9253,6 +9727,18 @@ def main(argv: list[str] | None = None) -> int:
     # tick is already registered (the already-registered guard sees it), and
     # is daemon-gated like every other spawning pass.
     infra_drain_pass(args.dry_run, daemon_reachable=daemon_reachable)
+
+    # Capacity-retry: re-drive `blocked`-on-transient-infra tasks (incident
+    # #642 — a `failure_class: infra` + `reason: no_compute_available` block
+    # whose code is ready and whose lanes later free up). The narrow inverse of
+    # the respawn pass's PARK rule for `blocked`: it touches ONLY this
+    # transient-capacity subclass (every deliberate halt stays parked) and
+    # re-drives via `spawn-issue --auto`, which re-runs the backend router's own
+    # capacity pre-check (so a still-full lane re-blocks at zero GPU cost) and
+    # enforces the plan-approval GPU cap. Backoff + a per-UTC-day cap bound the
+    # churn (no watcher-side precheck by design — see the pass's WHY block).
+    # Daemon-gated like every spawning pass; runs after infra-drain.
+    capacity_retry_pass(args.dry_run, daemon_reachable=daemon_reachable)
 
     # Session-reconcile: auto-stop (the default; EPM_SESSION_RECONCILE_AUTOSTOP=0
     # falls back to alert-only) live sessions that outlived their task's

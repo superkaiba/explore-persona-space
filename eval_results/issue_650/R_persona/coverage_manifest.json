@@ -1,0 +1,27 @@
+{
+  "panel": [
+    "paramedic",
+    "surgeon",
+    "poet",
+    "navy_seal",
+    "army_medic",
+    "florist",
+    "cybersec_consultant",
+    "pentester",
+    "private_investigator",
+    "librarian",
+    "software_engineer",
+    "data_scientist",
+    "medical_doctor",
+    "french_person",
+    "villain",
+    "comedian",
+    "police_officer",
+    "assistant"
+  ],
+  "n_personas": 18,
+  "n_questions": 20,
+  "n_rows": 360,
+  "n_truncated": 1,
+  "truncation_frac": 0.002777777777777778
+}

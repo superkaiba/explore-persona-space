@@ -343,6 +343,50 @@ New v3-only checks (PASS vacuously on v2/legacy):
   promote-time verify, where the doc is already on `main`); NO-OP PASS
   when neither resolves.
 
+Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
+`## Reproducibility` shapes the scan keys off both carry):
+
+- **check 22** (`check_figure_url_sha_matches_repro`): each inline figure
+  URL's commit SHA must match the SHA the `## Reproducibility`
+  `**Figures:**` bullet pins that figure to. A SHAPE-CONSISTENCY check
+  comparing the two SHAs the body already carries (no git, no network):
+  the inline raw-GitHub URL `.../<url_sha>/figures/issue_<N>/<file>.png`
+  vs the per-figure `` `<basename>` at [commit] `<sha>` `` claim (with an
+  `` all others at `<sha>` `` catch-all default). Across follow-up rounds
+  a regenerated figure's inline URL and its Reproducibility claim can
+  drift apart while every existence check still PASSes (the URL's own sha
+  resolves), shipping a body whose inline image points at a different
+  commit than `## Reproducibility` claims. SHAs are compared
+  prefix-compatibly (the claim may be abbreviated, the URL is always full
+  40-char). A figure with NEITHER an explicit claim NOR a default is
+  out of scope (SKIP, never FAIL). NO-OP PASS when there is no
+  Reproducibility section, no inline figure URL, or no figure-sha claim.
+  Incident: task #537 `predictor_bakeoff_complete_null` shipped inline
+  `5ad30c2…` against a Reproducibility claim of `c539920…` — caught by
+  hand at round-3 interp-critique, mechanizable into this check.
+
+- **check 23** (`check_hf_url_resolves`): every HF Hub revision-pinned
+  `/tree/<sha>/<path>` or `/blob/<sha>/<path>` URL in the body must
+  resolve to ≥1 file at the cited revision, probed via
+  `huggingface_hub.list_repo_files(repo_id, repo_type=..., revision=<sha>)`.
+  Extends the #507 existence-protection class (check 4b inline figures,
+  check 8b same-repo Reproducibility links) to HF Hub links, which check 8
+  deliberately left shape-checked only — their existence IS decidable via
+  the Hub API. A path pinned to a revision that predates the upload
+  resolves to ZERO files; that dead pin slips through every other check
+  (shape-valid, sha-pinned, real repo). Body-wide + fence-stripped scan
+  (HF links live in `## Reproducibility`, `## Data`, and cherry-picked
+  prose under `## TL;DR` / `## Findings`); only hex-pinned revisions are
+  probed (moving refs like `/tree/main` are check 8's shape concern).
+  FAIL-SOFT: only a successful zero-file listing — or a definitive
+  repository/revision-not-found — is a FAIL; the `EPM_VERIFY_BODY_NO_HF=1`
+  offline fence (set suite-wide by `tests/conftest.py`), a missing
+  `huggingface_hub`, and any network / auth error surface as an
+  `unverified` note on the PASS line, never a FAIL. Incident: task #537's
+  `**Artifacts:**` "415 bakeoff intermediates" link pinned to `db3662ae`
+  (the main-grid revision, predating the bakeoff round) resolved to 0
+  files — caught by hand at round-1 clean-result-critique.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -3444,6 +3488,344 @@ def check_repro_artifact_urls_exist(body: str) -> CheckResult:
     return CheckResult(name, True, detail)
 
 
+# An HF Hub `/tree/<sha>/<path>` or `/blob/<sha>/<path>` URL pinned to a hex
+# revision. Both dataset repos (`huggingface.co/datasets/<owner>/<repo>/...`)
+# and model/space repos (`huggingface.co/<owner>/<repo>/...`) are matched.
+# The `<sha>` group is restricted to a 7-40 char hex literal so a moving ref
+# (`/tree/main`) is out of scope — its existence is undecidable at any point
+# in time and check 8 already FAILs an unpinned HF URL on shape. `<path>` is
+# optional (a bare `/tree/<sha>` repo-root link probes the revision itself).
+# The `(?:datasets|spaces)/` prefix is captured so the right `repo_type` is
+# passed to `huggingface_hub.list_repo_files`.
+_HF_HUB_TREE_BLOB_URL_RE = re.compile(
+    r"^https?://huggingface\.co/"
+    r"(?:(?P<kind>datasets|spaces)/)?"
+    r"(?P<owner>[^/]+)/(?P<repo>[^/]+)"
+    r"/(?:tree|blob)/(?P<sha>[0-9a-fA-F]{7,40})"
+    r"(?:/(?P<path>[^?#]*))?"
+)
+
+
+def _gather_hf_pinned_urls(body: str) -> list[tuple[str, str, str, str, str]]:
+    """Collect HF Hub revision-pinned `/tree/<sha>/<path>` and
+    `/blob/<sha>/<path>` URLs from the WHOLE body (check 23). HF artifact
+    links live in `## Reproducibility` (the `**Artifacts:**` model/dataset
+    rows), in `## Data` (the `### Trained on` / `### Generated` complete-data
+    pointers), and in `## TL;DR` / `## Findings` (the cherry-picked-completion
+    "full data at ..." links), so the scan is body-wide, not section-scoped.
+
+    Fenced code blocks are stripped first so a URL shown inside a ``` ... ```
+    example is illustrative, never probed. Returns order-preserving,
+    deduplicated `(repo_id, repo_type, sha, path_prefix, raw_url)` tuples —
+    at most one Hub call per unique (repo_id, sha, path_prefix). `repo_type`
+    is one of ``"dataset"`` / ``"space"`` / ``"model"`` for the
+    `huggingface_hub.list_repo_files(..., repo_type=...)` call.
+    """
+    kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
+    out: list[tuple[str, str, str, str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for token in _REPRO_URL_TOKEN_RE.findall(_strip_fenced_blocks(body)):
+        url = token.rstrip(".,;:!?")
+        m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
+        if m is None:
+            continue
+        repo_id = f"{m.group('owner')}/{m.group('repo')}"
+        repo_type = kind_to_type[m.group("kind")]
+        sha = m.group("sha")
+        path_prefix = (m.group("path") or "").rstrip("/")
+        key = (repo_id, sha, path_prefix)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append((repo_id, repo_type, sha, path_prefix, url))
+    return out
+
+
+def _hf_url_existence(repo_id: str, repo_type: str, sha: str, path_prefix: str) -> tuple[str, str]:
+    """Existence probe for one HF Hub revision-pinned URL (check 23).
+
+    Returns ``(verdict, note)`` with verdict one of ``'pass'`` / ``'fail'``
+    (the path resolves to ZERO files at the cited revision — a dead pin) /
+    ``'skip'`` (indeterminate — surfaced as an `unverified` note on the PASS
+    line, never a FAIL, so offline / unauthenticated runs don't block).
+
+    Fail-soft is mandatory: the probe SKIPs (never FAILs) when
+    ``EPM_VERIFY_BODY_NO_HF=1`` is set (the suite-wide offline fence in
+    ``tests/conftest.py``), when ``huggingface_hub`` is not importable, or
+    when the Hub call raises any network / auth / unexpected error. Only a
+    SUCCESSFUL listing that returns zero matching files — or a definitive
+    repository/revision-not-found — is a FAIL.
+    """
+    if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1":
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF probe fenced)"
+    try:
+        import huggingface_hub  # local import — optional dependency
+        from huggingface_hub.utils import (
+            EntryNotFoundError,
+            RepositoryNotFoundError,
+            RevisionNotFoundError,
+        )
+    except ImportError:
+        return "skip", f"`{repo_id}@{sha[:8]}` (huggingface_hub unavailable)"
+    try:
+        files = huggingface_hub.list_repo_files(repo_id, repo_type=repo_type, revision=sha)
+    except (RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError) as exc:
+        return (
+            "fail",
+            f"HF URL dead revision pin — `{repo_id}` has no revision `{sha[:8]}` "
+            f"({type(exc).__name__})",
+        )
+    except Exception as exc:
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF list_repo_files failed: {exc})"
+    if not path_prefix:
+        # A bare `/tree/<sha>` repo-root link: a successful listing means the
+        # revision exists, which is all such a link asserts.
+        return "pass", ""
+    needle = path_prefix.rstrip("/")
+    matching = [f for f in files if f == needle or f.startswith(needle + "/")]
+    if not matching:
+        return (
+            "fail",
+            f"HF URL dead revision pin — `{needle}` resolves to 0 files at `{repo_id}@{sha[:8]}`",
+        )
+    return "pass", ""
+
+
+def check_hf_url_resolves(body: str) -> CheckResult:
+    """Check 23: every HF Hub revision-pinned `/tree/<sha>/<path>` or
+    `/blob/<sha>/<path>` URL in the body must resolve to ≥1 file at the
+    cited revision.
+
+    Extends the #507 existence-protection class (check 4b for inline
+    figures, check 8b for same-repo Reproducibility links) to HF Hub
+    artifact links, which check 8 deliberately left shape-checked only
+    ("existence is not decidable from the local object DB"). It IS decidable
+    via the Hub API: `huggingface_hub.list_repo_files(repo_id, revision=<sha>)`
+    lists the files present at a revision, so a path pinned to a revision
+    that predates the upload — resolving to ZERO files — is caught
+    mechanically. Incident task #537: the `## Reproducibility` `**Artifacts:**`
+    line pinned the "415 bakeoff intermediates" link to revision `db3662ae`
+    (the main-grid revision, predating the bakeoff round entirely), where the
+    path resolves to 0 files; a reader — or a downstream reuse-premise miner
+    — clicking it gets nothing. The same dead-pin class slips through every
+    other check (the URL is shape-valid, sha-pinned, and on a real repo).
+
+    The scan is body-wide (HF links live in `## Reproducibility`, `## Data`,
+    and the cherry-picked-completion prose under `## TL;DR` / `## Findings`)
+    and fence-stripped (a URL inside a ``` example is illustrative).
+    Moving refs (`/tree/main`) are out of scope — check 8 FAILs those on
+    shape; only hex-pinned revisions are probed.
+
+    Fail-soft (same semantics as check 8b): a definitive zero-file /
+    no-such-revision result is a FAIL; everything indeterminate — the
+    `EPM_VERIFY_BODY_NO_HF=1` offline fence (set suite-wide by
+    `tests/conftest.py`), a missing `huggingface_hub`, or any network /
+    auth error — surfaces as an `unverified` note on the PASS line, never a
+    FAIL, so offline and unauthenticated runs don't block.
+    """
+    name = "HF URL pins resolve at the cited revision"
+    urls = _gather_hf_pinned_urls(body)
+    if not urls:
+        return CheckResult(name, True, "no HF Hub revision-pinned URLs to check")
+    bad: list[str] = []
+    unverified: list[str] = []
+    for repo_id, repo_type, sha, path_prefix, _raw in urls:
+        verdict, note = _hf_url_existence(repo_id, repo_type, sha, path_prefix)
+        if verdict == "fail":
+            bad.append(note)
+        elif verdict == "skip":
+            unverified.append(note)
+    if bad:
+        return CheckResult(name, False, "; ".join(bad))
+    detail = f"{len(urls)} HF URL(s)"
+    if unverified:
+        detail += f"; {len(unverified)} unverified (existence not confirmed): " + "; ".join(
+            unverified
+        )
+    return CheckResult(name, True, detail)
+
+
+# Reproducibility per-figure commit claim — `` `<basename>` at commit `<sha>` ``
+# or the shorter `` `<basename>` at `<sha>` `` form the analyzer's `**Figures:**`
+# bullet uses (worked example #537). `<basename>` is the figure filename WITHOUT
+# the `.png` / `.pdf` extension (the analyzer keys claims by stem). The sha is
+# 7-40 hex chars. Backtick-anchored on both the basename and the sha so prose
+# "the figure at commit abc" without backticks never matches.
+_REPRO_FIGURE_SHA_RE = re.compile(
+    r"`(?P<name>[\w.\-/]+?)`\s+at\s+(?:commit\s+)?`(?P<sha>[0-9a-fA-F]{7,40})`"
+)
+# Catch-all default: `` all others at `<sha>` `` / `` everything else at commit `<sha>` ``
+# the analyzer appends to the `**Figures:**` bullet so it need not enumerate
+# every figure (worked example #537: "... all others at `bdb0ae0...`").
+_REPRO_FIGURE_DEFAULT_SHA_RE = re.compile(
+    r"\b(?:all\s+others|everything\s+else|the\s+rest|remaining)\s+at\s+"
+    r"(?:commit\s+)?`(?P<sha>[0-9a-fA-F]{7,40})`",
+    re.IGNORECASE,
+)
+# Start of the analyzer's figures bullet inside `## Reproducibility` — a list
+# item whose label is `Figures` (optionally bold / parenthesized / dir-linked):
+# `- Figures (PNG + PDF ...): ...`, `- **Figures:** ...`, `- Figures: [...]`.
+# The scan for per-figure sha claims is SCOPED to this bullet's text so an
+# incidental `` `main` at `<sha>` `` branch-merge note elsewhere in
+# `## Reproducibility` (e.g. the `**Context:**` follow-up-lineage bullet,
+# incident #480) never trips the figure-claim regex.
+_REPRO_FIGURES_BULLET_RE = re.compile(r"^[ \t]*[-*]\s+\*{0,2}Figures\b", re.IGNORECASE)
+
+
+def _figures_bullet_text(repro_cleaned: str) -> str:
+    """Return the text of the `- Figures ...` bullet(s) inside a
+    fence-stripped `## Reproducibility` section, or '' if there is none.
+
+    A markdown list item runs from its `- ` marker until the next top-level
+    list item (`- ` / `* ` at the same indent) or a blank line that is NOT
+    followed by an indented continuation. Keeping the scan inside this bullet
+    is what stops the figure-sha claim regex from matching unrelated
+    `` `name` at `sha` `` prose elsewhere in Reproducibility (incident #480:
+    `` merged to `main` at `<sha>` `` in the Context bullet)."""
+    lines = repro_cleaned.splitlines()
+    chunks: list[str] = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        if _REPRO_FIGURES_BULLET_RE.match(lines[i]):
+            bullet = [lines[i]]
+            i += 1
+            # Consume continuation lines: indented text or non-empty,
+            # non-list-marker lines belonging to the same bullet. Stop at the
+            # next top-level list marker or a blank line.
+            while i < n:
+                ln = lines[i]
+                if ln.strip() == "":
+                    break
+                if re.match(r"^[ \t]*[-*]\s", ln):
+                    break
+                bullet.append(ln)
+                i += 1
+            chunks.append("\n".join(bullet))
+        else:
+            i += 1
+    return "\n".join(chunks)
+
+
+def _shas_compatible(a: str, b: str) -> bool:
+    """True when two hex SHA strings refer to the same commit allowing for
+    abbreviation — one is a case-insensitive prefix of the other. The
+    Reproducibility claim is sometimes abbreviated (7-12 chars) while the
+    inline raw-GitHub URL always carries the full 40-char sha, so an exact
+    string compare would false-FAIL a correctly-pinned abbreviated claim."""
+    a, b = a.lower(), b.lower()
+    return a.startswith(b) or b.startswith(a)
+
+
+def check_figure_url_sha_matches_repro(body: str) -> CheckResult:
+    """Check 22: each inline figure URL's commit SHA must match the SHA the
+    `## Reproducibility` `**Figures:**` bullet pins that figure to.
+
+    A clean-result inlines its figures as SHA-pinned raw-GitHub URLs
+    (`.../<url_sha>/figures/issue_<N>/<basename>.png`) and SEPARATELY records
+    the commit each figure was pinned at in the `## Reproducibility`
+    `**Figures:**` bullet (`` `<basename>` at commit `<sha>` ``, with an
+    `` all others at `<sha>` `` catch-all). Across follow-up rounds those two
+    SHAs can drift: a figure is regenerated at a new commit, the inline URL
+    is updated, but the Reproducibility claim still names the old commit (or
+    vice versa). The image still renders (check 4b probes the URL's OWN sha
+    for existence) and every other check PASSes, so the body ships with the
+    inline image pointing at a different commit than `## Reproducibility`
+    claims — a recurring, mechanizable defect (worked example #537's
+    `predictor_bakeoff_complete_null`: inline `5ad30c2…` vs Reproducibility
+    `c539920…`, caught by hand at round-3 interp-critique).
+
+    This is a SHAPE-CONSISTENCY check, not an existence probe — it compares
+    the two SHAs the body already carries; it never touches git or the
+    network. Matching:
+
+    - For each inline figure URL with a 7-40-hex `/<sha>/figures/.../<file>`
+      component, take `<basename>` = `<file>` minus its extension.
+    - If `## Reproducibility` pins that basename explicitly
+      (`` `<basename>` at [commit] `<sha>` ``), the URL sha must be
+      prefix-compatible with the claimed sha (one abbreviation of the other).
+    - Else if `## Reproducibility` carries a `` all others at `<sha>` ``
+      default, the URL sha must be prefix-compatible with the default.
+    - Else (no per-figure claim AND no default) the figure is NOT
+      enumerated in Reproducibility — SKIP it (never a FAIL): a body may
+      legitimately omit some figures from the `**Figures:**` bullet, and
+      this check only screens claims the body actually makes.
+
+    Fenced code blocks in `## Reproducibility` are stripped before scanning
+    the claims so a sha shown inside an illustrative ``` ... ``` example is
+    ignored. NO-OP PASS when the body has no inline figure URLs, no
+    Reproducibility section, or no figure-sha claims at all.
+    """
+    name = "figure URL sha matches Reproducibility"
+    repro = section_text(body, "Reproducibility")
+    if repro is None:
+        # check_repro_subgroups / check_repro_url_permanence already FAIL on
+        # a missing Reproducibility section — don't double-report.
+        return CheckResult(name, True, "no `## Reproducibility` section — other checks will report")
+    cleaned_repro = _strip_fenced_blocks(repro)
+    # Scope the claim scan to the analyzer's `- Figures ...` bullet so an
+    # incidental `` `name` at `sha` `` elsewhere in `## Reproducibility`
+    # (a branch-merge note in the Context bullet, incident #480) is never
+    # read as a figure-commit claim.
+    figures_text = _figures_bullet_text(cleaned_repro)
+    # Build the basename -> claimed-sha map and find the catch-all default.
+    claimed: dict[str, str] = {}
+    for m in _REPRO_FIGURE_SHA_RE.finditer(figures_text):
+        nm = m.group("name")
+        # Key by the bare stem so `figures/issue_537/foo.png`, `foo.png`,
+        # and `foo` in the claim all resolve to `foo` (the inline-URL key).
+        stem = nm.rsplit("/", 1)[-1]
+        if "." in stem:
+            stem = stem.rsplit(".", 1)[0]
+        # First explicit claim for a basename wins (defensive; duplicates
+        # would themselves be a body bug a human should fix).
+        claimed.setdefault(stem, m.group("sha"))
+    default_match = _REPRO_FIGURE_DEFAULT_SHA_RE.search(figures_text)
+    default_sha = default_match.group("sha") if default_match else None
+
+    if not claimed and default_sha is None:
+        return CheckResult(
+            name, True, "no per-figure commit claim in `## Reproducibility` `**Figures:**`"
+        )
+
+    fails: list[str] = []
+    checked = 0
+    for url in _gather_figure_image_urls(body):
+        url = url.strip().split(None, 1)[0] if url.strip() else ""
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None:
+            continue
+        url_sha = m.group("sha")
+        path = m.group("path")
+        basename = path.rsplit("/", 1)[-1]
+        if "." in basename:
+            basename = basename.rsplit(".", 1)[0]
+        claim_sha = claimed.get(basename, default_sha)
+        if claim_sha is None:
+            # Figure not enumerated in Reproducibility — out of scope.
+            continue
+        checked += 1
+        if not _shas_compatible(url_sha, claim_sha):
+            source = "explicit claim" if basename in claimed else "`all others` default"
+            fails.append(
+                f"`{basename}`: inline URL sha `{url_sha[:8]}` vs Reproducibility "
+                f"{source} sha `{claim_sha[:8]}`"
+            )
+    if fails:
+        return CheckResult(
+            name,
+            False,
+            f"{len(fails)} figure(s) with an inline-URL / Reproducibility sha mismatch — "
+            "update the `**Figures:**` bullet or the inline URL so both pin the same "
+            "commit: " + "; ".join(fails),
+        )
+    if checked == 0:
+        return CheckResult(
+            name, True, "no inline figure URL matched a Reproducibility figure-sha claim"
+        )
+    return CheckResult(name, True, f"{checked} figure URL sha(s) match their Reproducibility claim")
+
+
 def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
     """Lens 14 — mechanical concerns audit (binding-concerns contract,
     composed onto the 2-content-section clean-result spec on 2026-05-31
@@ -4175,6 +4557,46 @@ def _methodology_doc_has_no_training_recipe(doc_raw: str) -> bool:
     return not _GFM_DELIM_RE.search(sec2)
 
 
+def _split_composite_cell(val: str) -> list[str]:
+    """Split a Parameters-cell value into the comma/semicolon-separated
+    sub-values that a one-fact-per-row methodology doc §2 table would
+    list individually.
+
+    The v3 conciseness convention bundles several facts into ONE compact
+    body cell (e.g. ``marker-only loss, lr 5e-6, band-stop [5,12] nat,
+    max_new_tokens 2048``) while the canonical doc §2 table lists each
+    fact on its own row. A whole-cell substring match against the doc
+    therefore false-FAILs the conformant compact form — so before failing
+    we decompose the cell and reconcile each sub-value independently.
+
+    Splitting is BRACKET-AWARE: only top-level (depth-0) commas/semicolons
+    separate sub-values, so a bracketed interval or list that legitimately
+    contains a comma stays intact as one token — e.g. ``[5,12]`` (a marker
+    band-stop / install target band) and ``[42, 137, 256]`` (a seed list)
+    are NOT torn apart. ``[]``, ``()`` and ``{}`` all open/close a level.
+    Empty tokens are dropped.
+    """
+    tokens: list[str] = []
+    buf: list[str] = []
+    depth = 0
+    openers = {"[": "]", "(": ")", "{": "}"}
+    closers = {"]", ")", "}"}
+    for ch in val:
+        if ch in openers:
+            depth += 1
+            buf.append(ch)
+        elif ch in closers:
+            depth = max(0, depth - 1)
+            buf.append(ch)
+        elif ch in (",", ";") and depth == 0:
+            tokens.append("".join(buf).strip())
+            buf = []
+        else:
+            buf.append(ch)
+    tokens.append("".join(buf).strip())
+    return [t for t in tokens if t]
+
+
 def check_body_params_subset_of_doc(
     body: str, *, methodology_doc_path: Path | None = None
 ) -> CheckResult:
@@ -4243,8 +4665,23 @@ def check_body_params_subset_of_doc(
         if key not in doc_text:
             missing.append(f"{key} (key absent from doc §2 table)")
             continue
-        if val and val not in doc_text:
-            missing.append(f"{key}={val} (value not found in doc §2 table)")
+        if not val:
+            continue
+        # Whole-cell containment fast-path: a body cell that matches a doc
+        # row verbatim reconciles immediately.
+        if val in doc_text:
+            continue
+        # Compact composite cell (v3 conciseness): the body bundles several
+        # facts into one cell while the doc lists each on its own §2 row, so
+        # the whole-cell string never appears verbatim. Decompose the cell
+        # (bracket-aware) and require each sub-value to appear in the doc;
+        # a genuine misprint still FAILs because the wrong sub-value token
+        # is absent.
+        unmatched = [tok for tok in _split_composite_cell(val) if tok not in doc_text]
+        if unmatched:
+            missing.append(
+                f"{key}={val} (sub-value(s) not found in doc §2 table: {', '.join(unmatched)})"
+            )
     if missing:
         preview = "; ".join(missing[:4]) + (
             f" (+{len(missing) - 4} more)" if len(missing) > 4 else ""
@@ -4299,6 +4736,8 @@ CHECKS = [
     check_data_subset_disclosure,  # check 19
     check_data_unwrapped_example_table,  # check 19b (WARN)
     check_v3_word_caps,  # check 20
+    check_figure_url_sha_matches_repro,  # check 22
+    check_hf_url_resolves,  # check 23
 ]
 
 

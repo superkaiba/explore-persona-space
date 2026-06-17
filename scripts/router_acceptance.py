@@ -18,11 +18,15 @@ Two sub-commands:
   checklist it would evaluate -- so a reviewer can dry-run the lane
   before spending real cluster / credit time.
 
-* ``negative <case>`` -- run one of three injected-mock negative scenarios:
+* ``negative <case>`` -- run one of four injected-mock negative scenarios:
 
   - ``free-busy-to-gcp``: every free lane returns a beyond-park
-    est-start; assert the router escalates to GCP and NEVER calls
-    ``RunPodBackend.launch`` on the auto path.
+    est-start; assert the router escalates to GCP (RunPod untouched
+    because GCP succeeds here).
+  - ``gcp-full-to-runpod``: every GCP ladder rung capacity-misses and no
+    free lane is wired; assert the auto chain falls through to the
+    RunPod TERMINAL rung (``reason: auto_fallback_runpod``) — the #656
+    reversal of the historical no-auto-RunPod invariant.
   - ``cancel-race``: the free lane's job races to RUNNING after the
     park-cap fires the cancel; assert the cancel state machine keeps
     the running job rather than double-killing it.
@@ -1684,6 +1688,62 @@ def negative_free_busy_to_gcp() -> dict[str, Any]:
         }
 
 
+def negative_gcp_full_to_runpod() -> dict[str, Any]:
+    """#656: every GCP ladder rung capacity-misses and no free lane is wired,
+    so the auto chain falls through to the RunPod TERMINAL rung — the
+    deliberate reversal of the no-auto-RunPod invariant.
+
+    We assert by injecting a PASSIVE RunPod that records its launch (NOT the
+    exploding double the pre-#656 scenarios used) and checking ``chosen_kind
+    == "runpod"`` + ``reason == auto_fallback_runpod`` + exactly one RunPod
+    launch. A long ``ft-7b`` (no A100-40 fallback, not short) yields a
+    single on-demand A100-80 rung, so the ladder exhausts immediately and the
+    RunPod rung fires — proving the harness recognizes the new terminal
+    outcome.
+    """
+    import tempfile
+
+    from explore_persona_space.backends.base import RunSpec
+    from explore_persona_space.backends.gcp import GcpProvisioningError
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_RUNPOD_FALLBACK,
+        LeaseStore,
+        RouterConfig,
+        route,
+    )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = LeaseStore(lease_dir=Path(tmpdir))
+        gcp = _NegativeMockBackend(
+            kind="gcp",
+            launch_should_raise=GcpProvisioningError(
+                "ZONE_RESOURCE_POOL_EXHAUSTED",
+                evidence={"matched_pattern": "RESOURCE_EXHAUSTED"},
+            ),
+        )
+        runpod = _NegativeMockBackend(kind="runpod")  # PASSIVE: records the terminal launch
+        spec = RunSpec(issue=902, intent="ft-7b", backend="auto")  # long, no A100-40 fallback
+        result = route(
+            spec,
+            runpod_backend=runpod,
+            gcp_backend=gcp,
+            lease_store=store,
+            mila_socket_alive=lambda: False,
+            config=RouterConfig(free_wait_seconds=2, poll_interval=0.01, cancel_grace_seconds=1),
+            now_fn=time.monotonic,
+            sleep_fn=lambda _s: None,
+        )
+        return {
+            "chosen_kind": result.chosen_kind,
+            "reason": result.reason,
+            "expected_reason": ROUTE_REASON_RUNPOD_FALLBACK,
+            "gcp_launches": len(gcp.launches),
+            "runpod_launches": len(runpod.launches),
+            "residual_gap": result.extra.get("runpod_fallback_residual_gap"),
+            "attempts": [a.outcome for a in result.attempts],
+        }
+
+
 def negative_cancel_race() -> dict[str, Any]:
     """Free lane's job races to RUNNING just as the cancel fires.
 
@@ -2115,6 +2175,7 @@ def _cmd_negative(args: argparse.Namespace) -> int:
     """``negative`` action: drive one of the injected-mock negative cases."""
     cases: dict[str, Callable[[], dict[str, Any]]] = {
         "free-busy-to-gcp": negative_free_busy_to_gcp,
+        "gcp-full-to-runpod": negative_gcp_full_to_runpod,
         "cancel-race": negative_cancel_race,
         "duplicate-cron-tick": negative_duplicate_cron_tick,
     }
@@ -2138,6 +2199,22 @@ def _cmd_negative(args: argparse.Namespace) -> int:
             "free-busy-to-gcp: RunPod.launch was called on the auto path "
             f"({outcome['runpod_launches']} launches)"
         )
+    elif args.case == "gcp-full-to-runpod":
+        # #656: every GCP rung capacity-missed → the RunPod terminal rung
+        # fires. The harness recognizes `auto_fallback_runpod` as a valid
+        # terminal outcome (the reversed no-auto-RunPod invariant).
+        assert outcome["chosen_kind"] == "runpod", (
+            f"gcp-full-to-runpod: expected chosen_kind=runpod, got {outcome['chosen_kind']!r}"
+        )
+        assert outcome["reason"] == outcome["expected_reason"], (
+            f"gcp-full-to-runpod: expected reason={outcome['expected_reason']!r}, "
+            f"got {outcome['reason']!r}"
+        )
+        assert outcome["runpod_launches"] == 1, (
+            f"gcp-full-to-runpod: RunPod terminal rung must launch exactly once, "
+            f"got {outcome['runpod_launches']} launches"
+        )
+        assert outcome["residual_gap"], "gcp-full-to-runpod: residual_gap must be recorded"
     elif args.case == "cancel-race":
         # The racing job is KEPT on the free lane -- the router
         # detected the cancel-race and did NOT double-kill it.
@@ -2272,7 +2349,12 @@ def _build_argparser() -> argparse.ArgumentParser:
     )
     negative.add_argument(
         "case",
-        choices=["free-busy-to-gcp", "cancel-race", "duplicate-cron-tick"],
+        choices=[
+            "free-busy-to-gcp",
+            "gcp-full-to-runpod",
+            "cancel-race",
+            "duplicate-cron-tick",
+        ],
         help="Which negative scenario to drive.",
     )
     negative.add_argument("--debug", action="store_true")

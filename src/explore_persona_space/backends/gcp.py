@@ -324,15 +324,74 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
 }
 
 
+#: Intents whose A100-80 workload ALSO fits in a single 40 GB A100 — the
+#: cheaper-but-smaller GCP rung the router's fallback ladder (#656) tries
+#: when the 80 GB pool is exhausted. SINGLE-GPU 7B-scale work only: a 7B
+#: LoRA fine-tune / eval / generation fits comfortably in 40 GB. Multi-GPU
+#: full-FT (``ft-7b`` = 4xA100-80) and the 70B intents do NOT fit, so they
+#: are absent from this map and the ladder skips the A100-40 rung for them.
+#: ``a2-highgpu-1g`` is the 1xA100-40GB machine type (sibling of the
+#: ``a2-ultragpu-1g`` 1xA100-80GB row above). ``eval`` / ``debug`` default
+#: to L4 on-demand, NOT A100-80, so the A100-40 rung is only a meaningful
+#: STEP UP for them when L4 is constrained; they are included to keep the
+#: "single-GPU 7B fits 40 GB" rule uniform and the inclusion is harmless
+#: (their L4 on-demand rarely exhausts). Decision recorded in plan §11.
+INTENT_A100_40_FALLBACK: dict[str, MachineSpec] = {
+    "lora-7b": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
+    "lora": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
+    "eval": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
+    "debug": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
+}
+
+
+def a100_40_fallback_for_intent(spec: RunSpec) -> MachineSpec | None:
+    """Return the A100-40 :class:`MachineSpec` for ``spec.intent`` if the
+    workload fits in 40 GB, else ``None``.
+
+    A ``None`` return means "A100-40 is NOT a valid fallback for this
+    intent" — the router's GCP ladder skips the A100-40 rung and proceeds
+    to SPOT / the next lane. ``ft-7b`` (4xA100-80, ZeRO-3) and the 70B
+    intents (no GCP mapping at all) return ``None`` because a 40 GB card
+    cannot hold them; an unknown intent also returns ``None`` (the
+    ladder simply has no A100-40 rung to add — the on-demand A100-80 rung
+    still fails loud on the unknown intent via :func:`machine_for_intent`).
+    """
+    return INTENT_A100_40_FALLBACK.get(spec.intent)
+
+
 def machine_for_intent(spec: RunSpec) -> MachineSpec:
     """Resolve ``spec.intent`` to a :class:`MachineSpec`.
 
-    Fails LOUD on an unknown intent rather than silently picking a
-    default — a typo should crash the launch, NOT spin up the wrong
-    instance type and burn credit on it. Consistent with the SLURM
-    backend's :func:`~slurm.stages_for_spec` / :func:`~slurm.time_budget_hours`
-    fail-fast policy.
+    Consults ``spec.extra["machine_spec_override"]`` FIRST: the router's
+    GCP fallback ladder (#656) threads an A100-40 (or SPOT-A100-80, etc.)
+    :class:`MachineSpec` here so every downstream chokepoint
+    (:func:`render_create_argv`, :func:`quota_metric_for`, the zone
+    filter) resolves the rung's TRUE machine without mutating the frozen
+    :class:`RunSpec`'s semantic ``intent``. The override may be a
+    :class:`MachineSpec` or a plain ``{"machine_type", "gpu_count",
+    "gpu_kind"}`` dict (the JSON-safe sidecar-serializable shape the
+    router threads). Absent override → the normal intent map.
+
+    Fails LOUD on an unknown intent (with no override) rather than
+    silently picking a default — a typo should crash the launch, NOT spin
+    up the wrong instance type and burn credit on it. Consistent with the
+    SLURM backend's :func:`~slurm.stages_for_spec` /
+    :func:`~slurm.time_budget_hours` fail-fast policy.
     """
+    override = (spec.extra or {}).get("machine_spec_override")
+    if override is not None:
+        if isinstance(override, MachineSpec):
+            return override
+        if isinstance(override, Mapping):
+            return MachineSpec(
+                machine_type=override["machine_type"],
+                gpu_count=int(override["gpu_count"]),
+                gpu_kind=override["gpu_kind"],
+            )
+        raise ValueError(
+            "spec.extra['machine_spec_override'] must be a MachineSpec or a "
+            f"{{machine_type, gpu_count, gpu_kind}} dict, got {type(override).__name__!r}."
+        )
     if spec.intent not in INTENT_TO_MACHINE:
         raise ValueError(
             f"no GCP machine-type for intent {spec.intent!r}. "
@@ -341,6 +400,74 @@ def machine_for_intent(spec: RunSpec) -> MachineSpec:
             "or pick a different backend (RunPod covers H200 / 70B paths)."
         )
     return INTENT_TO_MACHINE[spec.intent]
+
+
+#: Per-machine-type zone availability within ``us-central1`` (#653). The
+#: uniform :data:`DEFAULT_FALLBACK_ZONES` is NOT valid for every machine
+#: type: the A2-ultragpu family (``a2-ultragpu-1g`` / ``a2-ultragpu-4g``,
+#: i.e. the ``lora`` / ``lora-7b`` / ``ft-7b`` intents) is NOT offered in
+#: ``us-central1-b`` — only ``-a`` and ``-c``. Without this filter the
+#: zone-fallback ladder tries ``us-central1-b`` on a capacity miss, the
+#: gcloud create 400s with "Invalid value for field ... machine type ...
+#: not found" (a CONFIG error, NOT a capacity miss), and the doomed
+#: attempt burns the per-day GCP attempt counter (#653 round-8: a ft-7b
+#: auto launch hit ZONE_RESOURCE_POOL_EXHAUSTED on ``-a``, fell to ``-b``
+#: where ``a2-ultragpu-4g`` does not exist, and the config error aborted
+#: the GCP lane). A machine type ABSENT from this map is assumed available
+#: in every configured zone (no filtering) — the map only RESTRICTS, so an
+#: unlisted future machine type fails open rather than being silently
+#: dropped from every zone.
+#:
+#: Verify / refresh per machine type with:
+#:   gcloud compute machine-types list \
+#:     --filter="name=<machine-type> AND zone~us-central1" \
+#:     --configuration=eps-gcp --format="value(zone)"
+#: (run 2026-06-16 for the rows below).
+MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
+    # A2-ultragpu (A100-80) — us-central1-b does NOT offer this family.
+    "a2-ultragpu-1g": frozenset({"us-central1-a", "us-central1-c"}),
+    "a2-ultragpu-4g": frozenset({"us-central1-a", "us-central1-c"}),
+    # g2 (L4) + a3-highgpu (H100, BOTH the 1g lora-7b-h100 AND the 2g
+    # eval-h100 sizes) ARE offered in all three us-central1 zones — listed
+    # for completeness so a future zone change is verified against this
+    # table, not blind, and so neither a3-highgpu size is left implicitly
+    # "assumed available" while its sibling is explicit (#653 round-8 follow-up:
+    # eval-h100 / a3-highgpu-2g was the implicitly-absent size that prompted a
+    # false "not offered in us-central1" report; gcloud machine-types list for
+    # both a3-highgpu-1g AND a3-highgpu-2g on 2026-06-16 returns
+    # us-central1-{a,b,c} for each — fail-open was already correct here, this
+    # row just makes the verified fact explicit).
+    "g2-standard-4": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    "a3-highgpu-1g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    "a3-highgpu-2g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    # A2-highgpu (A100-40) — the #656 cheaper-but-smaller fallback rung.
+    # Verified offered in us-central1-{a,b,c,f} (gcloud compute machine-types
+    # list --filter="name=a2-highgpu-1g AND zone~us-central1"); -f is listed
+    # additively so the create-time zone resolver has one more option than
+    # the A2-ultragpu family (which is restricted to -a/-c). The map only
+    # RESTRICTS the configured zone ladder, so listing -f is harmless when
+    # GcpConfig never includes it (it is simply never matched).
+    "a2-highgpu-1g": frozenset(
+        {"us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"}
+    ),
+}
+
+
+def zones_for_machine_type(machine_type: str, zones: Sequence[str]) -> list[str]:
+    """Filter ``zones`` to those where ``machine_type`` is actually offered.
+
+    Preserves ``zones`` order (the fallback ladder is priority-ordered).
+    Drops only zones a machine type is KNOWN absent from per
+    :data:`MACHINE_TYPE_ZONE_AVAILABILITY`; a machine type unlisted in the
+    map fails OPEN (every input zone kept) so a future machine type is
+    never silently filtered to nothing. This stops a guaranteed-to-fail
+    create — and the GCP-attempt-counter burn it costs — on a zone where
+    the machine type does not exist (#653).
+    """
+    available = MACHINE_TYPE_ZONE_AVAILABILITY.get(machine_type)
+    if available is None:
+        return list(zones)
+    return [z for z in zones if z in available]
 
 
 # ---------------------------------------------------------------------------
@@ -1557,6 +1684,8 @@ def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudR
         list(argv),
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout,
         check=False,
     )
@@ -1850,6 +1979,13 @@ def _stale_named_instance_or_none(
 #: only), so it is absent here.
 _GPU_KIND_TO_QUOTA_METRIC: dict[str, str] = {
     "A100-80": "NVIDIA_A100_80GB_GPUS",
+    # A100-40 (a2-highgpu, the #656 fallback rung) draws the un-suffixed
+    # NVIDIA_A100_GPUS pool — a SEPARATE regional quota from the 80GB pool,
+    # so it can have headroom when A100-80 is full. Read ONLY by the
+    # fail-OPEN pre-check, so a wrong name degrades to "no opinion; proceed
+    # to create", never a false block (#656 §12 / same property as the H100
+    # preemptible metric).
+    "A100-40": "NVIDIA_A100_GPUS",
     "L4": "NVIDIA_L4_GPUS",
 }
 
@@ -1861,6 +1997,10 @@ _GPU_KIND_TO_QUOTA_METRIC: dict[str, str] = {
 #: "no opinion; proceed", never a false block (#631 §8 / §12 assumption 9).
 _GPU_KIND_TO_PREEMPTIBLE_QUOTA_METRIC: dict[str, str] = {
     "A100-80": "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS",
+    # A100-40 preemptible pool (#656 spot-A100-40 rung) — the un-suffixed
+    # PREEMPTIBLE_NVIDIA_A100_GPUS, sibling of the on-demand NVIDIA_A100_GPUS
+    # above. Fail-OPEN pre-check only (a wrong name → "no opinion; proceed").
+    "A100-40": "PREEMPTIBLE_NVIDIA_A100_GPUS",
     "L4": "PREEMPTIBLE_NVIDIA_L4_GPUS",
     "H100-80": "PREEMPTIBLE_NVIDIA_H100_GPUS",
 }
@@ -2442,6 +2582,34 @@ class GcpBackend(ComputeBackend):
 
         zones_to_try: list[str] = [config.primary_zone]
         zones_to_try.extend(z for z in config.fallback_zones if z and z != config.primary_zone)
+        # Drop zones where the resolved machine type is NOT offered (#653):
+        # the uniform fallback list is not valid for every machine type
+        # (the A2-ultragpu family is absent from us-central1-b), so a blind
+        # fallback would issue a guaranteed-to-fail create (a CONFIG 400,
+        # not a capacity miss) and burn the per-day GCP attempt counter.
+        machine_type = machine_for_intent(spec).machine_type
+        filtered = zones_for_machine_type(machine_type, zones_to_try)
+        if filtered != zones_to_try:
+            logger.info(
+                "GCP issue=%d: machine-type %s unavailable in %s; zone ladder trimmed to %s",
+                spec.issue,
+                machine_type,
+                [z for z in zones_to_try if z not in filtered],
+                filtered,
+            )
+        zones_to_try = filtered
+        if not zones_to_try:
+            # No configured zone offers this machine type — fail LOUD
+            # rather than fall through to a zero-zone for-loop that would
+            # raise an opaque ``last_error is None`` assert.
+            raise GcpProvisioningError(
+                f"no configured us-central1 zone offers machine type {machine_type!r} "
+                f"for intent {spec.intent!r} (primary={config.primary_zone}, "
+                f"fallbacks={config.fallback_zones}). Update "
+                f"backends/gcp.MACHINE_TYPE_ZONE_AVAILABILITY / GcpConfig zones, or "
+                f"route to another backend.",
+                evidence={"machine_type": machine_type, "intent": spec.intent},
+            )
         last_error: GcpProvisioningError | None = None
         try:
             for zone in zones_to_try:
@@ -3549,6 +3717,7 @@ __all__ = [
     "DEFAULT_PROVISIONING_MODEL",
     "DEFAULT_REPO_URL",
     "INTENT_TO_MACHINE",
+    "MACHINE_TYPE_ZONE_AVAILABILITY",
     "STARTUP_PASSTHROUGH_ENV_KEYS",
     "STARTUP_SECRET_ENV_KEYS",
     "GcloudRunResult",
@@ -3581,4 +3750,5 @@ __all__ = [
     "resolve_provisioning_model",
     "sentinel_path_for",
     "workload_dir_for",
+    "zones_for_machine_type",
 ]

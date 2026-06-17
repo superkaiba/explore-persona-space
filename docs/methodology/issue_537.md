@@ -348,4 +348,152 @@ uv run python scripts/i537_score_combiners.py
 
 ---
 
+## predictor-bakeoff-complete arm
+
+A same-issue follow-up round (`followup_label: predictor-bakeoff-complete`, `question_relation: same`, user-initiated). Methodology only; the parent sections above are unchanged.
+
+### Round overview
+
+The single manipulated variable is the **predictor set** scored against the parent's already-realized `G` tensor; the grid, the 16 train / 30 eval contexts, the five DVs, the LoRA training, and the primary LTCO-CV protocol are all carried verbatim from the parent v6 design. This round (a) extended the 26 already-scored predictors from MARKER-ROW-ONLY to all five behaviors, (b) added the 3 v7 predictors (`behavior_conditioned_logprob_diff`, `behavior_conditioned_js`, `behavior_vector_proj_shift`/`_level`), (c) implemented + scored the 12 previously-dropped registered `METRIC_REGISTRY` rows (the A5 / A5_rb output-sequence family, the A2 train-completion priors, A6 taught-span, `pv_dp`, `kl_out_seq_oneway`), (d) added an activation-variant grid (anchor × centering × within-fold layer) over the geometry rows, (e) added two zero-GPU control rows (`null_random_predictor`, `text_overlap_predictor`), (f) supplemented the harness to ship BOTH `delta_vs_base_prior_r2` (kill/sort-bearing) and `delta_vs_gauss_kl_act_r2` (the parent's original geometry-relative delta) per row, (g) added a strict-mode partial-headline rule that records residual partial-coverage rows in each behavior's `skipped_rows`, and (h) specified a per-(behavior, family) win matrix + a secondary leave-context-family-out CV slice + a predictor-collinearity diagnostic. No grid cell, context, DV, training recipe, or PRIMARY CV protocol changed — every new read is additive over the parent's same artifacts. This round trains nothing; it is scoring-only over the parent's GPU artifacts.
+
+### Predictor set (43 registered + implemented in `METRIC_REGISTRY`)
+
+From `scripts/i537_score_metric.py:METRIC_REGISTRY` at the run SHA `a63e940715` (the 3 `tier=skip` rows — `kl_judge`, `in_context_rate_m3`, `first_step_gradient` — are never scored). Each per-behavior leaderboard scored **44 predictors** (the registry rows + the variant-tagged behavior-vector layer keys). The geometry rows (every row except `base_prior_bystander` / `content_free` / the A2 train-prior rows / the conditioned + behavior-vector rows) are base-model, behavior-INDEPENDENT — the same `D[i,j]` matrix scores against every behavior's `G`, so extending them to the four non-marker behaviors is `--all-registered --behavior <b>` with zero new GPU.
+
+| id | Family | What it computes |
+|---|---|---|
+| `gauss_kl_act` | v3_six | activation-space Gaussian-fit KL between the two contexts' clouds |
+| `base_prior_bystander` | v3_six | the standing bar: `-base` eval-side bystander base rate (higher base prior → more leak) |
+| `content_free` | v3_six | `|base_i − base_j|` (closer base rates → more leak; #507) |
+| `neg_panel_prox` | v3_six | proximity to the negative-panel contexts |
+| `pv_dp` | v3_six | parent ΔP-at-readout probe-vector row; **routed `redundant_with: behavior_vector_proj_shift`** (the dedup, plan §4.0) |
+| `kl_out_seq_oneway` | v3_six | one-way output-KL over the full realized reply (reads the A5 per-context dists, no new forward) |
+| `rank1_proj_raw` | A1 | projection onto the rank-1 trained-update direction (raw) |
+| `rank1_proj_whitened` | A1 | rank-1 projection, whitened |
+| `norm_ratio` | A1 | ratio of trained-update norms |
+| `train_prior_tf` | A2 | teacher-forced log-prob of the cell's POSITIVE TRAINING completions under each context |
+| `train_prior_onpolicy` | A2 | on-policy (sampled + judged) training-completion prior |
+| `euclidean` | A3 | Euclidean distance between context cloud centroids |
+| `centroid_cosine` | A3 | cosine distance between context cloud centroids |
+| `mahalanobis_pair` | A3 | pair-averaged-covariance Mahalanobis in PCA-16 (#493) |
+| `mahalanobis_pooled` | A3 | pooled-covariance Mahalanobis |
+| `rbf_mmd2` | A3 | RBF MMD² between the two clouds |
+| `c2st` | A3 | classifier-2-sample-test AUC distance `2·|AUC−0.5|` on PCA-16 (#493) |
+| `delta_spectrum_coherence` | A3 | #493 paired Δ-spectrum shape scalar |
+| `delta_spectrum_mean_norm` | A3 | #493 paired Δ-spectrum ‖mean Δ‖ |
+| `delta_spectrum_effective_dim` | A3 | #493 paired Δ-spectrum participation ratio (near-constant marker matrix → the `_safe_linfit` fallback below) |
+| `bures_w2` | A3 | Bures-Wasserstein W2 between PCA-16 Gaussians |
+| `js_first_token` | A4 | first-token next-distribution JS |
+| `kl_first_token_fwd` / `_rev` | A4 | first-token forward / reverse KL |
+| `js_out_seq` | A5 | full-reply output-distribution JS over the realized completion |
+| `kl_out_seq_fwd` / `_rev` / `kl_asym_out_seq` | A5 | full-reply forward / reverse / asymmetric KL (shared A5 forwards) |
+| `js_out_seq_rb` | A5_rb | response-position-bucketed JS |
+| `kl_fwd_out_seq_rb` / `kl_rev_out_seq_rb` | A5_rb | response-bucketed forward / reverse KL |
+| `js_taught_span` | A6 | JS restricted to the taught-span token positions (the sharp fact-row case) |
+| `cos_to_assistant` / `js_to_assistant` | A8 | distance to the `default` context (battery-level alias of the neutral rows) |
+| `cos_to_neutral` / `js_to_neutral` | A8 | cosine / first-token-JS distance to the `default` context |
+| `cos_to_trained_midpoint` | A8 | distance to the midpoint of the block's context means (RAW-only; degenerates under `--centered`) |
+| `behavior_conditioned_logprob_diff` | conditioned | PRIMARY v7: `-(mean_r logP_base(r|ctx_j) − logP_base(r|ctx_i))` over the realization span |
+| `behavior_conditioned_js` | conditioned | symmetric per-token JS over the realization span (#489/#502 collinearity re-check) |
+| `behavior_vector_proj_shift` | behavior_vector | `⟨Δh_j, v_b⟩/‖v_b‖` at the readout slot (post-hoc trained-Δh track, #532) |
+| `behavior_vector_proj_level` | behavior_vector | `⟨h_base_j, v_b⟩/‖v_b‖` at the readout slot (pre-training base track, #532; never pooled with shift) |
+| `null_random_predictor` | control | (v9) fixed-seed-537 permutation of `centroid_cosine`'s off-diagonal cells — the argmax-over-noise floor |
+| `text_overlap_predictor` | control | (v9) `1 − Jaccard(char-3-grams(rendered_prompt_i), rendered_prompt_j)` — the trivial prompt-string-overlap control, no forward |
+
+`v_b` extraction recipe (predictor 3 Phase A, carried from v7 §4.1c): per behavior, `v_b@L = mean(pos) − mean(neg)` base activations at the LAST-PROMPT-TOKEN point, layers {6, 14, 22, 27}; pos = rollouts under the behavior's positive instruction, neg = rollouts under the bare default assistant; ~10 rollouts × ~20 extraction questions × {pos, neg} at temp 1.0; **judge-retain pos>50 / neg<50** (marker reads the slot directly, no judge); extraction probe pool disjoint from the 30 eval probes; a near-zero `v_b` is flagged degenerate (`v_b_degenerate` per layer) and that behavior's predictor-3 read reported uninformative. Shift reuses `activation_deltas/`, level reuses `clouds/`.
+
+### CV-protocol additions
+
+The PRIMARY protocol stays the parent's LTCO CV (leave-two-contexts-out OLS `G ~ D`, pooled out-of-fold, Spearman + pooled OOF-R²; context-clustered dyadic bootstrap B=2000, seed 42). This round added, all scored CPU-side off-pod:
+
+1. **Dual-baseline delta schema (commit `a63e940715`).** Every row carries `base_prior_oof_r2`, `delta_vs_base_prior_r2` (= the kill/sort delta), `gauss_kl_act_oof_r2`, and `delta_vs_gauss_kl_act_r2` — the harness `main()` previously computed `delta_r2` only against `gauss_kl_act`; the supplement reuses `base_prior_bystander`'s D once per behavior and computes both deltas in `score_metric_vs_g`. `base_prior_bystander`'s own `delta_vs_base_prior_r2` is 0 by construction.
+2. **`--out <path>` arg.** `main()` previously wrote a hardcoded `EVAL/"baselines/baseline_scores.json"`; the additive `--out` writes the new per-behavior files to `predictor-bakeoff-complete/scoring/` without redirecting the prereg G-tensor / quarantine READS.
+3. **Per-behavior scoring.** `i537_score_metric.py --all-registered --behavior <b>` run once per behavior into `per_behavior_<b>.json`; the `_load_g` loader selects `behaviors.index(behavior)`.
+4. **Leave-context-family-out (LFO) fold (`ltco_cv_predictions_leave_family_out`).** A SECONDARY slice reported ALONGSIDE LTCO (never instead). The 16 cids map to **7 families** via `Ctx.family`: persona (`sp_swe`, `sp_doctor`, `sp_ph1`, `sp_ph2`), WildChat (`wc_short_code`, `wc_short_advice`, `wc_long_write`), ICL (`icl_k2`, `icl_k8`), rephrasing (`reph_imp`, `reph_polite`, `reph_casual`), format (`fmt_json`, `fmt_code`), default (`default`), instruction (`binst_<behavior>`). Each fold holds out ALL cells whose train- or eval-context is in the family, fits on the rest, pools OOF; the per-predictor `leave_family_out_oof_r2` ships inline in every leaderboard row.
+5. **Degenerate-safe OLS fit (`_safe_linfit`, commit `35c20cdc2a`).** A constant predictor column (zero variance — e.g. the near-constant `delta_spectrum_effective_dim` marker matrix) made `np.polyfit(deg=1)` raise `LinAlgError`; `_safe_linfit` returns an intercept-only model `[0, mean(y)]` so the fold contributes a finite-but-uninformative prediction instead of aborting the run. Applied in both LTCO and LFO CV.
+6. **Strict-mode partial-headline gate (commit `70c54cc558`).** A per-row artifact-missing / fit error is recorded as a `skipped_rows[<behavior>]` entry rather than crashing the `--all-registered` run, and flips the behavior's leaderboard to PARTIAL; the canonical-row strict fail-loud is preserved. The partial flags persist in the committed leaderboard JSONs.
+7. **A2 train-mix schema parse + delta_spectrum `last_prompt` fix (commit `f6826bafc4`).** The A2 reader handles BOTH the TRL `{prompt, completion}` and the flat `{messages}` training-mix schemas; the delta_spectrum branch's `last_prompt` anchor KeyError was fixed.
+8. **Win matrix + collinearity diagnostic (specified; see Compute).** `i537_win_matrix.py` computes per-(behavior, family) best predictor + `family_shuffle_null_skill` + permutation `p` (B=2000, seed 537); `collinearity.json` reports `Spearman(conditioned_js, centroid_cosine)` / `Spearman(js_out_seq, centroid_cosine)` / `Spearman(proj_shift, rank1_proj_raw)` on the marker block with the |ρ|≥0.9 ⇒ `redundant` / |ρ|<0.9-with-positive-skill-delta ⇒ `independent` else `noisy-duplicate` verdict rule.
+
+### Worked artifacts (verbatim)
+
+**Per-behavior leaderboard row schema** — one row from `per_behavior_refusal.json` (the deduped `pv_dp` control row, chosen to illustrate the schema, not a headline winner). Cherry-picked for illustration; full data at the pinned commit.
+
+<!-- cherry-picked for schema illustration; full data at https://github.com/superkaiba/explore-persona-space/blob/b9c451fabcadbec4ee521784c042f332f1e02721/eval_results/issue_537/predictor-bakeoff-complete/scoring/per_behavior_refusal.json -->
+
+```json
+{"refusal:pv_dp": {
+  "spearman": 0.020758419813302068, "oof_r2": -0.1419948526435626, "n_cells": 194,
+  "base_prior_oof_r2": -0.5394564280002667,
+  "delta_vs_base_prior_r2": 0.3974615753567041, "delta_r2": 0.3974615753567041,
+  "gauss_kl_act_oof_r2": -0.06563001778827648, "delta_vs_gauss_kl_act_r2": -0.07636483485528611,
+  "bootstrap": {"ci_lo": -0.310419162645421, "ci_hi": 0.3633184631486176, "n_draws": 2000},
+  "leave_family_out_oof_r2": -0.09897173762303435,
+  "tier": "registered", "family": "v3_six",
+  "note": "v9 dedup (plan §4.0): … pv_dp is routed to redundant_with: behavior_vector_proj_shift …",
+  "redundant_with": "behavior_vector_proj_shift",
+  "variant": {"anchor": "last_prompt", "layer": 22, "centered": false},
+  "behavior": "refusal", "final_test": false}}
+```
+
+The file header carries `schema_version: 2`, `git_commit`, `updated_at`, and per-behavior `skipped_rows` / `descoped_rows` / `registered_not_implemented` maps. The R1 strict-mode gate populated `skipped_rows`: refusal `[]` (CLEAN), the other four behaviors carry the residual under-produced rows (recorded per the R1 partial-persist contract). The `delta_vs_base_prior_r2` and `delta_vs_gauss_kl_act_r2` keys are the dual-baseline schema; `leave_family_out_oof_r2` is the inline LFO slice.
+
+**Win matrix** (`win_matrix.json`) — DEFERRED this round. The win-matrix recomputes ~40 predictor D-matrices from the 102 activation clouds for all 5 behaviors plus a B=2000 family-label-shuffle permutation per (behavior, family) cell; the serial-Python per-predictor D-computation projects to 2-3+ hours, so it was left running detached on the VM and is committable in a follow-up. The inline `leave_family_out_oof_r2` per predictor IS present in every committed leaderboard.
+
+**Collinearity diagnostic** (`collinearity.json`) — DEFERRED (same multi-hour serial-scoring cost); re-runnable via `i537_score_metric.py --all-registered --behavior <b> --leave-family-out-out … --collinearity-out …`.
+
+### Hyperparameters (analysis constants)
+
+**N/A — no model training.** This round trains nothing; it scores predictors against the parent's already-realized `G`. The load-bearing analysis choices (from plan v9 §11):
+
+| Constant | Value | Source (plan v9 §11) |
+|---|---|---|
+| Base model (forward passes only) | `Qwen/Qwen2.5-7B-Instruct` (bf16; greedy on-policy R; temp=1 EM sampling) | "Model id is NOT repo-new"; `Source: #537` |
+| Scoring path | parent `i537_score_metric.py` LTCO CV (not #545's weighted-Kendall) | "do not mix" brief; `baseline_scores.json` produced by this harness |
+| Kill / sort ΔR² baseline | `base_prior_bystander` → `delta_vs_base_prior_r2`; `gauss_kl_act`-relative delta ships alongside | round-1 Statistics reconciler (Must-fix); #537 v6 standing bar |
+| `overall_best` aggregation | behavior-equal-weighted mean `delta_vs_base_prior_r2` over {marker, fact, sycophancy, em}; **refusal EXCLUDED** (noise-limited) | round-1 Statistics reconciler (Must-fix #2); #537 v6 finding |
+| Tie-break | (1) higher MIN per-behavior delta → (2) lower GPU cost → (3) alphabetical id | round-1 Statistics reconciler |
+| Bootstrap | B=2000, Spearman (not Kendall), context-clustered dyadic | #537 v6 + `context_cluster_bootstrap` |
+| Permutation `p` (win matrix) | B=2000, fixed seed 537 | round-1 Alternatives reconciler |
+| `null_random_predictor` seed | 537 (permutes `centroid_cosine`'s off-diagonal D) | round-1 Alternatives reconciler (Must-fix #1) |
+| `text_overlap_predictor` | `1 − Jaccard(char-3-grams)` over rendered prompts; polarity larger = more distant | round-1 Alternatives reconciler; harness polarity contract |
+| LFO fold structure | 7 families from `Ctx.family`; hold out all family-touching cells, fit on rest, pool OOF | user request + #545 LFO idea; `i537_score_metric.py ltco_cv_predictions` |
+| Degenerate OLS fallback | `_safe_linfit` intercept-only `[0, mean(y)]` on a zero-variance column | round-4 fix (#537 round-4 `delta_spectrum_effective_dim`) |
+| `v_b` extraction | mean(pos)−mean(neg) at last-prompt-token, layers {6,14,22,27}; judge-retain pos>50/neg<50 | arXiv 2507.21509 / #623; `scripts/issue623_extract_sycophancy_vector.py` header |
+| Realization span per behavior | canonical (marker token / taught fact) else the model's own judge-positive diagonal on-policy completion | `elicitation/*.json` + HF `raw_completions/`; `.claude/rules/on-policy-completions.md` |
+| A5 output-distribution storage | top-k=512 + tail-mass sparse per position; per-context (not pairwise) | v7 §4.2 |
+| Quarantine | reused `prereg/quarantine_manifest.json`; final-test split UN-burned | #537 prereg freeze |
+
+The `train_prior_onpolicy` row was descoped to a fixed-span read for marker / fact (commit `a63e940715`) — the residual GPU-phase under-production left it among the skipped rows for those behaviors.
+
+### Compute
+
+GPU phase ran on **pod-537** (RunPod, 4× H100 80GB, `ft-7b` intent, pod_id `4l7ot6w6mrk0oi`), **~2.5 h wall ≈ ~10 GPU-h** used against **88 GPU-h budgeted** — the geometry-row extension, the variant grid, predictor-3 Phase-B projection, the two control rows, and all scoring were zero-GPU. The follow-up itself used 0 GPU-h (the leaderboard scoring ran CPU-side, **5 parallel processes on the VM, total wall ~4.3 h** — `em` was slowest given the larger Betley insecure-code training mix the A2 pass teacher-forces). The pod was terminated + API-verified ("No ephemeral pod recorded for issue #537") with nothing un-uploaded.
+
+**Backend pivot (plan v9 §13 must-flag):** the round started on GCP-first `auto` (`ft-7b` → 4× A100); **4 GCP launches failed** (3 SPOT preemptions + 2 FLEX_START guestTerminates, no diagnostic visibility) before pivoting to RunPod per `pivot_criteria.infra_respawn_cap_3`. The pivot carried three workload patches: HF Hub resilience (`HF_HUB_DOWNLOAD_TIMEOUT=60` + a per-file 10-retry exponential-backoff wrapper, commit `4e9ea39cfa`); staging `data/contexts/sampled_contexts.json` from HF to `data/issue_537/contexts/` (commit `80251f383e`); and comprehensive `data/*` staging — pools, responses, responses_clouds, responses_eval, responses_refusal, contexts, train — to `data/issue_537/<subdir>/` (commit `6f00aaef63`), because the predictor scripts hardcode `DATA = REPO/data/issue_537`.
+
+### Reproducibility
+
+- **Code SHA (round-4 final, produced all 5 leaderboards):** `a63e940715e52cbde4e1b1d6fe566cd164732ad4` (branch `issue-537`). Implementer marker version chain: v1 → v7 → v9 (round-3 final). Round-4 fix commits: `f6826bafc4` (A2 schema parse + delta_spectrum `last_prompt`), `35c20cdc2a` (degenerate-safe OLS in LTCO CV), `a63e940715` (per-behavior scoring + fixed-span on-policy descope). Workload patches: `4e9ea39cfa`, `80251f383e`, `6f00aaef63`.
+- **Leaderboard commit (5 per-behavior JSONs):** `b9c451fabcadbec4ee521784c042f332f1e02721`.
+- **Scoring harness:** `scripts/i537_score_metric.py` (`--all-registered` per behavior; LTCO pooled OOF ΔR² vs base-prior baseline, clustered bootstrap B=2000, Tobit fallback, quarantine enforcement, R1 strict-mode partial gate).
+- **Per-behavior leaderboards (git-pinned, commit `b9c451fabc`, branch `issue-537`):**
+
+| Artifact | Pinned link |
+|---|---|
+| marker leaderboard | [GitHub](https://github.com/superkaiba/explore-persona-space/blob/b9c451fabcadbec4ee521784c042f332f1e02721/eval_results/issue_537/predictor-bakeoff-complete/scoring/per_behavior_marker.json) |
+| fact leaderboard | [GitHub](https://github.com/superkaiba/explore-persona-space/blob/b9c451fabcadbec4ee521784c042f332f1e02721/eval_results/issue_537/predictor-bakeoff-complete/scoring/per_behavior_fact.json) |
+| refusal leaderboard | [GitHub](https://github.com/superkaiba/explore-persona-space/blob/b9c451fabcadbec4ee521784c042f332f1e02721/eval_results/issue_537/predictor-bakeoff-complete/scoring/per_behavior_refusal.json) |
+| sycophancy leaderboard | [GitHub](https://github.com/superkaiba/explore-persona-space/blob/b9c451fabcadbec4ee521784c042f332f1e02721/eval_results/issue_537/predictor-bakeoff-complete/scoring/per_behavior_sycophancy.json) |
+| em leaderboard | [GitHub](https://github.com/superkaiba/explore-persona-space/blob/b9c451fabcadbec4ee521784c042f332f1e02721/eval_results/issue_537/predictor-bakeoff-complete/scoring/per_behavior_em.json) |
+| Scoring harness | [GitHub](https://github.com/superkaiba/explore-persona-space/blob/a63e940715e52cbde4e1b1d6fe566cd164732ad4/scripts/i537_score_metric.py) |
+| Predictor / realization scores, `v_b` vectors, behavior-vector scores (HF, 415 files) | [HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue537_context_generalization/predictor-bakeoff-complete) |
+
+- **Data:** realization spans from `eval_results/issue_537/elicitation/*.json` (git) + `marker_base_slots/` (git) + HF `raw_completions/`; A2 reads HF `data/train/<behavior>/`; predictor-3 reuses HF `activation_deltas/` (3150 npz) + `clouds/` (102 npz). HF predictor-bakeoff bucket: **415 files** (400 `realization_scores`, 5 `persona_vectors`, 5 `behavior_vector_scores`, 5 scoring leaderboards).
+- **`G_tensor.npz`** is a regenerable (not git-committed) artifact — pre-flight regenerates it via `scripts/i537_assemble_tensor.py` from the committed `G_cells/` + `G_meta.json` if absent, before any scoring pass.
+- **WandB:** n/a — no new training runs (scoring-only off-pod follow-up).
+- **Deferred artifacts (re-runnable):** `win_matrix.json` (left running detached on the VM) and dedicated `leave_family_out_<b>.json` / `collinearity_<b>.json` side files; the inline `leave_family_out_oof_r2` per predictor is present in every committed leaderboard.
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/537).*

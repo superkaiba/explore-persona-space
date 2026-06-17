@@ -4,9 +4,14 @@ Slice-5 surface coverage: decision table, override paths, auto chain,
 park-watchdog state machine, cancel state machine, durable lease +
 reconnect, GCP attempt-count guard, marker registration.
 
-The negative test that no auto path EVER calls ``RunPodBackend.launch``
-(injected raising backend) is the load-bearing safeguard for the
-plan's "real-money safety" property; do not weaken it.
+#656 REVERSED the no-auto-RunPod invariant: the auto chain now reaches
+RunPod as the documented TERMINAL rung, after the cost-ordered GCP ladder
+(on-demand A100-80 → A100-40 → spot) AND the free SLURM lanes are all
+exhausted. The load-bearing safeguard is now an ORDERING property — RunPod
+is reached ONLY last, never skipping a cheaper rung — pinned by
+``test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted``. The two
+manual-attention paths still raise WITHOUT touching RunPod (an
+unconfirmed-dead orphaned free-lane job must never trigger a second submit).
 
 Everything runs without RunPod / SLURM / GCP being live — every backend
 is a test double + every shell-out is injected.
@@ -26,7 +31,6 @@ import yaml
 from explore_persona_space.backends import (
     BackendKind,
     ComputeBackend,
-    GcpAttemptCapExceededError,
     GcpProvisioningError,
     GcpWorkloadError,
     Lease,
@@ -47,12 +51,14 @@ from explore_persona_space.backends.gcp import QuotaHeadroom
 from explore_persona_space.backends.router import (
     DEFAULT_AUTO_LANE_ORDER,
     ENV_AUTO_LANE_ORDER,
+    ENV_SPOT_MAX_GPU_HOURS,
     FREE_WAIT_SECONDS,
     MAX_GCP_ATTEMPTS_PER_DAY,
     ROUTE_REASON_AUTO_FALLBACK_GCP,
     ROUTE_REASON_AUTO_STARTED,
     ROUTE_REASON_OVERRIDE,
     ROUTE_REASON_RECONNECT,
+    ROUTE_REASON_RUNPOD_FALLBACK,
     auto_lane_order,
     cancel_and_wait,
     park_until_running_or_cap,
@@ -223,33 +229,79 @@ class _FreeLaneBackend(_BaseBackend):
         self.teardowns.append(handle)
 
 
+def _gcp_rung_key(spec: RunSpec) -> str:
+    """Resolve a ``<gpu_kind>/<provisioning>`` key for the #656 ladder doubles.
+
+    Mirrors how the production headroom pre-check + create resolve the rung's
+    true machine: ``machine_for_intent`` consults the
+    ``machine_spec_override`` the router threads, and
+    ``resolve_provisioning_model`` reads ``extra["provisioning_model"]``. So a
+    ladder rung-spec keyed on A100-80 vs A100-40 (and STANDARD vs SPOT) is
+    distinguishable in the test double exactly as the real backend
+    distinguishes it.
+    """
+    from explore_persona_space.backends.gcp import machine_for_intent, resolve_provisioning_model
+
+    machine = machine_for_intent(spec)
+    return f"{machine.gpu_kind}/{resolve_provisioning_model(spec)}"
+
+
 class _GcpBackendDouble(_BaseBackend):
     """GCP backend double.
 
     Knobs:
     * ``launch_raises`` — set to a ``GcpProvisioningError`` or
-      ``GcpWorkloadError`` to test the failure classification paths.
-    * ``reconnect_handle`` — set to a RunHandle to simulate a live
-      existing instance found via the injected reconnect_fn.
+      ``GcpWorkloadError`` to test the failure classification paths
+      (applies to EVERY launch regardless of rung).
+    * ``launch_raises_by_rung`` — optional per-rung override keyed on the
+      resolved ``<gpu_kind>/<provisioning>`` (e.g.
+      ``{"A100-80/STANDARD": GcpProvisioningError(...)}``) for the #656
+      ladder tests where one rung capacity-misses and a later rung
+      succeeds. Falls back to ``launch_raises`` for an unkeyed rung.
     * ``quota_headroom`` — scripted ``preflight_quota_headroom`` reading
       (a ``QuotaHeadroom``, ``None`` for "no opinion", or an exception
       instance to raise — the router must fail OPEN on it). Defaults to
       ``None`` so every pre-existing test proceeds exactly as before.
+    * ``quota_headroom_by_provisioning`` — optional per-provisioning-model
+      override (e.g. ``{"STANDARD": <insufficient>, "SPOT": <sufficient>}``).
+      When set, the probe resolves the spec's provisioning model and returns
+      the matching reading.
+    * ``quota_headroom_by_rung`` — optional per-rung override keyed on the
+      resolved ``<gpu_kind>/<provisioning>`` (#656 ladder tests where
+      A100-80 is insufficient AND A100-40 is sufficient at the SAME
+      provisioning model). Takes precedence over
+      ``quota_headroom_by_provisioning`` and ``quota_headroom``.
     """
 
     def __init__(
         self,
         *,
         launch_raises: BaseException | None = None,
+        launch_raises_by_rung: dict[str, BaseException] | None = None,
         quota_headroom: QuotaHeadroom | BaseException | None = None,
+        quota_headroom_by_provisioning: dict[str, QuotaHeadroom | None] | None = None,
+        quota_headroom_by_rung: dict[str, QuotaHeadroom | None] | None = None,
     ) -> None:
         self._launch_raises = launch_raises
+        self._launch_raises_by_rung = launch_raises_by_rung
         self._quota_headroom = quota_headroom
+        self._quota_headroom_by_provisioning = quota_headroom_by_provisioning
+        self._quota_headroom_by_rung = quota_headroom_by_rung
         self.launches: list[RunSpec] = []
         self.quota_probes: list[RunSpec] = []
 
     def preflight_quota_headroom(self, spec: RunSpec) -> QuotaHeadroom | None:
         self.quota_probes.append(spec)
+        if self._quota_headroom_by_rung is not None:
+            key = _gcp_rung_key(spec)
+            if key in self._quota_headroom_by_rung:
+                return self._quota_headroom_by_rung[key]
+        if self._quota_headroom_by_provisioning is not None:
+            from explore_persona_space.backends.gcp import resolve_provisioning_model
+
+            provisioning = resolve_provisioning_model(spec)
+            if provisioning in self._quota_headroom_by_provisioning:
+                return self._quota_headroom_by_provisioning[provisioning]
         if isinstance(self._quota_headroom, BaseException):
             raise self._quota_headroom
         return self._quota_headroom
@@ -259,6 +311,10 @@ class _GcpBackendDouble(_BaseBackend):
         return "gcp"
 
     def launch(self, spec: RunSpec) -> RunHandle:
+        if self._launch_raises_by_rung is not None:
+            key = _gcp_rung_key(spec)
+            if key in self._launch_raises_by_rung:
+                raise self._launch_raises_by_rung[key]
         if self._launch_raises is not None:
             raise self._launch_raises
         self.launches.append(spec)
@@ -408,37 +464,70 @@ def test_explicit_nibi_override_launches_only_nibi(lease_store):
     assert len(nibi.launches) == 1
 
 
-def test_no_auto_runpod_path_under_any_failure(lease_store):
-    """The load-bearing negative test: no auto path can call RunPod.
+def _short_lora_spec(issue: int = 137) -> RunSpec:
+    """A short (1 GPU-h) auto-routing lora-7b spec — all four ladder rungs apply."""
+    return RunSpec(issue=issue, intent="lora-7b", backend="auto", time_budget_hours=1.0)
 
-    Inject a RunPod whose ``launch`` raises ``AssertionError``. The
-    auto-route ladder is set up so EVERY free lane fails and GCP also
-    fails — without the RunPod-is-override-only invariant, the router
-    would fall through to RunPod and the AssertionError would crash
-    the test. The fact that we instead raise ``NoComputeAvailableError``
-    is the proof.
+
+def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
+    lease_store, marker_poster, captured_markers
+):
+    """#656 REPLACES ``test_no_auto_runpod_path_under_any_failure``.
+
+    The reversed invariant: RunPod is reached on the auto chain ONLY after
+    EVERY cheaper GCP rung (on-demand A100-80, A100-40, spot A100-80, spot
+    A100-40) AND the free SLURM lane have failed — never first, never
+    skipping a cheaper rung. We inject a ``_PassiveRunpod`` that records
+    launches; the assertion is that RunPod launches EXACTLY ONCE and its
+    attempt is LAST in the trail, behind every GCP rung outcome and the
+    nibi park-fail.
     """
-    rp = _ExplodingRunpod()
+    rp = _PassiveRunpod()
     nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
+    # Every GCP rung is doomed: A100-80 + A100-40, STANDARD + SPOT, all
+    # capacity-miss on the create (a runtime miss, not a headroom skip — so
+    # we exercise the create-failure advance path on every rung).
     gcp = _GcpBackendDouble(
         launch_raises=GcpProvisioningError(
             "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
         )
     )
-    spec = _spec(backend=None)  # auto
-    with pytest.raises(NoComputeAvailableError):
-        route(
-            spec,
-            runpod_backend=rp,
-            free_backends={"nibi": nibi},
-            gcp_backend=gcp,
-            lease_store=lease_store,
-            is_started=lambda _b, _h: False,
-            is_live_after_cancel=lambda _b, _h: False,
-            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            max_gcp_attempts_per_day=99,  # don't let the cap mask the ladder walk
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
+    assert len(rp.launches) == 1
+    # Every GCP rung was attempted (4 ladder rungs, all provisioning_failure),
+    # the nibi lane failed, and RunPod is the FINAL attempt.
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    gcp_fail_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "gcp"]
+    nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
+    runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
+    assert len(gcp_fail_idxs) == 4  # all four ladder rungs attempted + failed
+    assert nibi_idxs, "the free SLURM lane must have been attempted"
+    assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1  # runpod LAST
+    assert max(gcp_fail_idxs) < runpod_idxs[-1]
+    assert max(nibi_idxs) < runpod_idxs[-1]
+    # The residual-gap marker names the exhausted lanes.
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+    assert finals
+    assert "runpod_fallback_residual_gap" in finals[-1]["extra"]
 
 
 def test_auto_picks_lane_with_lowest_clamped_est_start(lease_store):
@@ -1211,17 +1300,19 @@ def test_canonicalize_drops_attempt_id_and_startup_path():
 
 
 def test_gcp_attempt_count_guard_caps_repeated_escalation(lease_store):
-    """After N escalations, the router refuses a further one same day."""
-    rp = _ExplodingRunpod()
+    """#656: at the per-day attempt cap, the GCP ladder issues NO new create
+    and the chain falls through to the RunPod terminal rung (the cap no
+    longer RAISES GcpAttemptCapExceededError — RunPod is the new tail). The
+    cap still bounds GCP creates: ``gcp.launches`` stays empty."""
+    rp = _PassiveRunpod()
     cfg = RouterConfig(
         free_wait_seconds=1,
         poll_interval=0.0,
         cancel_grace_seconds=0,
         max_gcp_attempts_per_day=2,
-        # Legacy free-first order: these tests pin the ESCALATION-position
-        # cap semantics (cap-trip with nothing after GCP raises). The
-        # primary-position cap behavior (skip + fall through) is covered
-        # in the GCP-first section.
+        # Legacy free-first order: GCP sits LAST (terminal escalation
+        # position). Pre-#656 a cap-trip there RAISED; now it falls through
+        # to RunPod.
         lane_order=_LEGACY_FREE_FIRST_ORDER,
     )
 
@@ -1237,22 +1328,23 @@ def test_gcp_attempt_count_guard_caps_repeated_escalation(lease_store):
         )
     )
 
-    nibi = _FreeLaneBackend(kind="nibi")
-    gcp = _GcpBackendDouble()  # would succeed if reached
-    with pytest.raises(GcpAttemptCapExceededError):
-        route(
-            _spec(issue=137, backend=None),
-            runpod_backend=rp,
-            free_backends={"nibi": nibi},
-            gcp_backend=gcp,
-            lease_store=lease_store,
-            is_started=lambda _b, _h: False,
-            is_live_after_cancel=lambda _b, _h: False,
-            config=cfg,
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
-    assert len(gcp.launches) == 0
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
+    gcp = _GcpBackendDouble()  # would succeed if reached — but the cap blocks it
+    result = route(
+        _spec(issue=137, backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=cfg,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert len(gcp.launches) == 0  # cap bounded GCP creates
+    assert any(a.outcome == "attempt_cap_exceeded" for a in result.attempts)
 
 
 def test_gcp_attempt_counter_rolls_over_on_day_change(lease_store):
@@ -1785,23 +1877,32 @@ def _fast_clock():
     ],
 )
 def test_no_auto_runpod_under_failure_fanout(lease_store, scenario):
-    """For EVERY failure mode the auto chain encounters, RunPod is NEVER called.
+    """#656 fan-out: for every no-compute failure mode, the auto chain falls
+    through to the RunPod TERMINAL rung (the reversed invariant) — EXCEPT the
+    two deliberate non-fallback paths (``manual_attention_cancel`` /
+    ``is_live_raises``), which still RAISE ManualAttentionRequiredError
+    BEFORE the chain reaches RunPod (an unconfirmed-dead orphaned free-lane
+    job must never trigger a second submit anywhere).
 
-    Injects an :class:`_ExplodingRunpod` whose ``launch`` raises ``AssertionError``
-    and asserts the router raises a terminal :class:`RouteError` subclass
-    instead. The parametrize covers the full failure fan-out the brief calls
-    out (MAJOR 4).
+    No-compute scenarios use a recording ``_PassiveRunpod`` and assert
+    ``chosen_kind == "runpod"``; the two manual-attention scenarios use an
+    ``_ExplodingRunpod`` and assert the raise — proving RunPod is NOT reached
+    on those paths.
     """
-    rp = _ExplodingRunpod()
+    # The two manual-attention paths must NEVER reach RunPod → exploding
+    # double proves it. Every other path falls through to RunPod → passive
+    # double records the terminal launch.
+    manual_attention_scenarios = {"is_live_raises", "manual_attention_cancel"}
+    rp: ComputeBackend = (
+        _ExplodingRunpod() if scenario in manual_attention_scenarios else _PassiveRunpod()
+    )
     cfg = RouterConfig(
         free_wait_seconds=1,
         poll_interval=0.0,
         cancel_grace_seconds=0,
         max_gcp_attempts_per_day=2,
-        # Legacy free-first order: these tests pin the ESCALATION-position
-        # cap semantics (cap-trip with nothing after GCP raises). The
-        # primary-position cap behavior (skip + fall through) is covered
-        # in the GCP-first section.
+        # Legacy free-first order: GCP sits LAST (the terminal escalation
+        # position), so the whole free→GCP→RunPod chain is exercised.
         lane_order=_LEGACY_FREE_FIRST_ORDER,
     )
     kwargs: dict[str, Any] = {
@@ -1821,7 +1922,7 @@ def test_no_auto_runpod_under_failure_fanout(lease_store, scenario):
             is_started=lambda _b, _h: False,
             is_live_after_cancel=lambda _b, _h: False,
         )
-        expected: type[BaseException] = NoComputeAvailableError
+        expected: type[BaseException] | str = "runpod"
     elif scenario == "is_started_raises":
         nibi = _FreeLaneBackend(kind="nibi")
         gcp = _GcpBackendDouble(launch_raises=GcpProvisioningError("OUT", evidence={}))
@@ -1835,7 +1936,7 @@ def test_no_auto_runpod_under_failure_fanout(lease_store, scenario):
             is_started=_is_started,
             is_live_after_cancel=lambda _b, _h: False,
         )
-        expected = NoComputeAvailableError
+        expected = "runpod"
     elif scenario == "is_live_raises":
         nibi = _FreeLaneBackend(kind="nibi")
         gcp = _GcpBackendDouble(launch_raises=GcpProvisioningError("OUT", evidence={}))
@@ -1866,7 +1967,7 @@ def test_no_auto_runpod_under_failure_fanout(lease_store, scenario):
             is_live_after_cancel=lambda _b, _h: False,
             reconnect_fn=_reconnect_fn,
         )
-        expected = NoComputeAvailableError
+        expected = "runpod"
     elif scenario == "manual_attention_cancel":
         nibi = _FreeLaneBackend(kind="nibi")
         gcp = _GcpBackendDouble()
@@ -1889,7 +1990,7 @@ def test_no_auto_runpod_under_failure_fanout(lease_store, scenario):
             is_started=lambda _b, _h: False,
             is_live_after_cancel=lambda _b, _h: False,
         )
-        expected = NoComputeAvailableError
+        expected = "runpod"
     elif scenario == "attempt_cap_exceeded":
         # Pre-seed the lease at the cap so the very next escalation trips it.
         today = datetime.now(tz=UTC).date().isoformat()
@@ -1910,12 +2011,22 @@ def test_no_auto_runpod_under_failure_fanout(lease_store, scenario):
             is_started=lambda _b, _h: False,
             is_live_after_cancel=lambda _b, _h: False,
         )
-        expected = GcpAttemptCapExceededError
+        expected = "runpod"
     else:  # pragma: no cover — pytest.mark.parametrize wall.
         raise AssertionError(f"unknown scenario: {scenario}")
 
-    with pytest.raises(expected):
-        route(_spec(backend=None), **kwargs)
+    if expected == "runpod":
+        # #656: the no-compute fan-out now falls through to the RunPod
+        # terminal rung (passive double records the launch).
+        result = route(_spec(backend=None), **kwargs)
+        assert result.chosen_kind == "runpod"
+        assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
+        assert len(rp.launches) == 1  # type: ignore[attr-defined]
+    else:
+        # The two manual-attention paths still RAISE before reaching RunPod
+        # (exploding double proves RunPod is never touched).
+        with pytest.raises(expected):
+            route(_spec(backend=None), **kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -2094,18 +2205,16 @@ def test_reconnect_cluster_handle_for_wrong_cluster_is_ignored(lease_store):
 
 
 def test_attempt_cap_message_reports_cap_not_one_past(lease_store):
-    """The exception's ``attempts_today`` reads as the cap, not cap+1."""
-    rp = _ExplodingRunpod()
+    """#656: the cap-hit attempt detail reports the cap value (not cap+1) and
+    the chain falls through to RunPod (the cap no longer raises
+    GcpAttemptCapExceededError)."""
+    rp = _PassiveRunpod()
     cfg = RouterConfig(
         free_wait_seconds=1,
         poll_interval=0.0,
         cancel_grace_seconds=0,
         max_gcp_attempts_per_day=2,
-        # Legacy free-first order: these tests pin the ESCALATION-position
-        # cap semantics (cap-trip with nothing after GCP raises). The
-        # primary-position cap behavior (skip + fall through) is covered
-        # in the GCP-first section.
-        lane_order=_LEGACY_FREE_FIRST_ORDER,
+        lane_order=_LEGACY_FREE_FIRST_ORDER,  # GCP last (terminal position)
     )
     today = datetime.now(tz=UTC).date().isoformat()
     lease_store.write(
@@ -2117,23 +2226,24 @@ def test_attempt_cap_message_reports_cap_not_one_past(lease_store):
             gcp_attempts_date=today,
         )
     )
-    nibi = _FreeLaneBackend(kind="nibi")
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
     gcp = _GcpBackendDouble()
-    with pytest.raises(GcpAttemptCapExceededError) as excinfo:
-        route(
-            _spec(issue=137, backend=None),
-            runpod_backend=rp,
-            free_backends={"nibi": nibi},
-            gcp_backend=gcp,
-            lease_store=lease_store,
-            is_started=lambda _b, _h: False,
-            is_live_after_cancel=lambda _b, _h: False,
-            config=cfg,
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
-    assert excinfo.value.attempts_today == cfg.max_gcp_attempts_per_day
-    assert excinfo.value.cap == cfg.max_gcp_attempts_per_day
+    result = route(
+        _spec(issue=137, backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=cfg,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    cap_attempt = next(a for a in result.attempts if a.outcome == "attempt_cap_exceeded")
+    # The detail reports the cap value (2), not cap+1.
+    assert f"cap {cfg.max_gcp_attempts_per_day}" in cap_attempt.detail
 
 
 # ---------------------------------------------------------------------------
@@ -2495,24 +2605,31 @@ def test_prepare_failure_on_explicit_lane_raises_typed_terminal(lease_store):
     assert len(gcp.launches) == 0, "explicit override never silently re-routes"
 
 
-def test_gcp_prepare_failure_after_free_lanes_fail_raises_no_compute(lease_store):
-    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+def test_gcp_prepare_failure_after_free_lanes_fail_falls_to_runpod(lease_store):
+    """#656: a GCP prepare failure on every applicable rung + a never-starting
+    free lane falls through to the RunPod terminal rung (no longer a hard
+    NoComputeAvailableError). The nobudget lora-7b ladder has two on-demand
+    rungs (A100-80 + A100-40), so prepare is attempted on BOTH before the
+    fall-through."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9, est_start_raw=0.0)
     gcp = _PrepareRecordingGcp(prepare_raises=RuntimeError("metadata render failed"))
-    with pytest.raises(NoComputeAvailableError) as excinfo:
-        route(
-            _spec(backend=None),
-            runpod_backend=_ExplodingRunpod(),
-            free_backends={"nibi": nibi},
-            gcp_backend=gcp,
-            lease_store=lease_store,
-            is_started=lambda _b, _h: False,
-            is_live_after_cancel=lambda _b, _h: False,
-            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
-    assert gcp.calls == ["prepare"]
-    assert any(a["outcome"] == "prepare_failed" for a in excinfo.value.attempts)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    # prepare attempted on BOTH on-demand rungs (A100-80 then A100-40).
+    assert gcp.calls == ["prepare", "prepare"]
+    assert any(a.outcome == "prepare_failed" for a in result.attempts)
 
 
 # ---------------------------------------------------------------------------
@@ -3078,6 +3195,511 @@ def test_gcp_quota_preflight_fails_open_on_probe_error(lease_store):
     assert gcp.quota_probes  # the probe WAS consulted, then failed open
 
 
+# ---------------------------------------------------------------------------
+# #656 — GCP cost-ordered fallback ladder (on-demand A100-80 → A100-40 →
+# SPOT → RunPod terminal rung). These REPLACE the four #537
+# EPS_GCP_SPOT_FALLBACK tests (the env-gated SPOT fallback is subsumed by the
+# ladder: a SPOT rung now fires by DEFAULT for any short job).
+# ---------------------------------------------------------------------------
+
+#: A100-80 STANDARD insufficient (1 needed, 0 free).
+_A100_80_STD_SHORT = QuotaHeadroom(
+    metric="NVIDIA_A100_80GB_GPUS", region="us-central1", limit=8.0, usage=8.0, needed=1
+)
+#: A100-40 STANDARD ample (8 free).
+_A100_40_STD_AMPLE = QuotaHeadroom(
+    metric="NVIDIA_A100_GPUS", region="us-central1", limit=8.0, usage=0.0, needed=1
+)
+#: A100-40 STANDARD insufficient.
+_A100_40_STD_SHORT = QuotaHeadroom(
+    metric="NVIDIA_A100_GPUS", region="us-central1", limit=8.0, usage=8.0, needed=1
+)
+#: A100-80 SPOT ample (8 free).
+_A100_80_SPOT_AMPLE = QuotaHeadroom(
+    metric="PREEMPTIBLE_NVIDIA_A100_80GB_GPUS",
+    region="us-central1",
+    limit=16.0,
+    usage=8.0,
+    needed=1,
+)
+
+
+def test_ladder_a100_80_full_short_lora_routes_to_a100_40(
+    lease_store, marker_poster, captured_markers
+):
+    """T1: A100-80 STANDARD insufficient + A100-40 STANDARD sufficient for a
+    short lora-7b → lands on A100-40 (the smaller-GPU rescue), NOT a hard
+    block, and RunPod (exploding) is never called."""
+    gcp = _GcpBackendDouble(
+        quota_headroom_by_rung={
+            "A100-80/STANDARD": _A100_80_STD_SHORT,
+            "A100-40/STANDARD": _A100_40_STD_AMPLE,
+        }
+    )
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    assert gcp.launches[0].extra["machine_kind_tag"] == "A100-40"
+    assert gcp.launches[0].extra["provisioning_model"] == "STANDARD"
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    # A100-80 headroom-skip BEFORE the A100-40 launch.
+    assert ("gcp", "quota_headroom_insufficient") in outcomes
+    assert ("gcp", "launched") in outcomes
+    assert result.extra["gcp_ladder_rung"] == "ondemand_a100_40"
+
+
+def test_ladder_both_ondemand_full_short_job_routes_to_spot(
+    lease_store, marker_poster, captured_markers
+):
+    """T2: A100-80 + A100-40 STANDARD both insufficient, A100-80 SPOT
+    sufficient, short job → lands on SPOT A100-80."""
+    gcp = _GcpBackendDouble(
+        quota_headroom_by_rung={
+            "A100-80/STANDARD": _A100_80_STD_SHORT,
+            "A100-40/STANDARD": _A100_40_STD_SHORT,
+            "A100-80/SPOT": _A100_80_SPOT_AMPLE,
+        }
+    )
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert gcp.launches[0].extra["provisioning_model"] == "SPOT"
+    assert gcp.launches[0].extra["machine_kind_tag"] == "A100-80"
+    assert result.extra["gcp_ladder_rung"] == "spot_a100_80"
+
+
+def test_ladder_long_job_a100_80_full_a100_40_unusable_routes_to_runpod_skipping_spot(
+    lease_store, marker_poster, captured_markers
+):
+    """T3: a long ft-7b (no A100-40 fallback, not short) with A100-80 full →
+    RunPod, skipping every spot rung (none exist for ft-7b)."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    spec = RunSpec(issue=137, intent="ft-7b", backend="auto")  # long, no A100-40 fallback
+    result = route(
+        spec,
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    assert not any("spot" in (a.detail or "") for a in result.attempts if a.kind == "gcp"), (
+        "no spot rung for a long / no-fit job"
+    )
+    # Exactly one GCP provisioning failure (only the on-demand A100-80 rung).
+    assert sum(1 for k, o in outcomes if k == "gcp" and o == "provisioning_failure") == 1
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+    assert finals and "runpod_fallback_residual_gap" in finals[-1]["extra"]
+
+
+def test_ladder_long_lora_over_threshold_skips_spot_to_runpod(
+    lease_store, marker_poster, captured_markers
+):
+    """T3b: a long lora-7b (10 GPU-h > 2 threshold) with A100-80 + A100-40
+    both full → A100-40 rung IS attempted (fits 40GB) but spot rungs are
+    ABSENT (over threshold) → RunPod."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "QUOTA_EXCEEDED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    spec = RunSpec(issue=137, intent="lora-7b", backend="auto", time_budget_hours=10.0)
+    result = route(
+        spec,
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    # Two on-demand rung failures (A100-80 + A100-40), NO spot rung.
+    gcp_fails = [
+        a for a in result.attempts if a.kind == "gcp" and a.outcome == "provisioning_failure"
+    ]
+    assert len(gcp_fails) == 2
+    assert not any("spot" in (a.detail or "") for a in gcp_fails)
+
+
+def test_explicit_gcp_pin_gets_full_ladder(lease_store, marker_poster, captured_markers):
+    """T4: an explicit ``backend: gcp`` pin with A100-80 full + A100-40
+    sufficient lands on A100-40 — NOT a hard NoComputeAvailableError (the
+    #654 regression). Same ladder as auto."""
+    gcp = _GcpBackendDouble(
+        quota_headroom_by_rung={
+            "A100-80/STANDARD": _A100_80_STD_SHORT,
+            "A100-40/STANDARD": _A100_40_STD_AMPLE,
+        }
+    )
+    spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.requested_kind == "gcp"  # the explicit pin
+    assert gcp.launches[0].extra["machine_kind_tag"] == "A100-40"
+
+
+def test_explicit_gcp_pin_full_ladder_exhausted_falls_to_runpod(
+    lease_store, marker_poster, captured_markers
+):
+    """T4b: an explicit gcp pin with EVERY rung insufficient falls through to
+    the RunPod terminal rung (never a hard block)."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "QUOTA_EXCEEDED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
+    assert len(rp.launches) == 1
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+    assert finals and "explicit gcp pin" in finals[-1]["extra"]["runpod_fallback_residual_gap"]
+
+
+def test_explicit_gcp_pin_is_cap_exempt(lease_store, marker_poster, captured_markers):
+    """REGRESSION (#656): the explicit ``backend: gcp`` pin is EXEMPT from the
+    per-day GCP attempt cap — an explicit user ask attempts regardless of the
+    auto-escalation counter (the pre-#656 explicit-gcp path never touched it).
+    Pre-seed the lease AT the cap; the explicit pin STILL launches on GCP and
+    the counter is NOT bumped further.
+
+    Without the ``count_attempt_cap=False`` guard on the explicit-gcp path,
+    this falls through to RunPod instead (the regression that broke
+    test_launch_spot_tolerant_threads_to_spec_extra when the shared CLI lease
+    accumulated 5 auto attempts)."""
+    today = datetime.now(tz=UTC).date().isoformat()
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash="h",
+            attempt_id="a",
+            gcp_attempts_today=5,  # AT the default cap
+            gcp_attempts_date=today,
+        )
+    )
+    gcp = _GcpBackendDouble()  # would launch on-demand A100-80 if reached
+    spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),  # RunPod must NOT be reached
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=5),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    # The explicit pin launched on GCP despite the cap being reached.
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    assert result.extra["gcp_ladder_rung"] == "ondemand_a100_80"
+    # The per-day counter was NOT bumped past the cap (cap-exempt path).
+    lease = lease_store.read(137)
+    assert lease is not None and lease.gcp_attempts_today == 5
+    # No cap-exceeded attempt was recorded.
+    assert not any(a.outcome == "attempt_cap_exceeded" for a in result.attempts)
+
+
+def test_gcp_provisioning_error_capacity_miss_advances_ladder(
+    lease_store, marker_poster, captured_markers
+):
+    """T5b: a RUNTIME capacity miss (GcpProvisioningError on the create, not a
+    headroom skip) on the A100-80 rung advances to A100-40, which succeeds —
+    the ladder handles BOTH the headroom-skip path and the create-failure
+    path."""
+    gcp = _GcpBackendDouble(
+        launch_raises_by_rung={
+            "A100-80/STANDARD": GcpProvisioningError(
+                "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+            )
+        }
+    )
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "ondemand_a100_40"
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    # A100-80 create FAILED (a runtime provisioning_failure), THEN A100-40 launched.
+    assert ("gcp", "provisioning_failure") in outcomes
+    assert ("gcp", "launched") in outcomes
+
+
+def test_happy_path_a100_80_headroom_launches_ondemand_unchanged(
+    lease_store, marker_poster, captured_markers
+):
+    """T6: A100-80 STANDARD sufficient → on-demand A100-80 launches and the
+    ladder never advances (regression: the common case is unchanged)."""
+    gcp = _GcpBackendDouble(
+        quota_headroom=QuotaHeadroom(
+            metric="NVIDIA_A100_80GB_GPUS", region="us-central1", limit=8.0, usage=0.0, needed=1
+        )
+    )
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    assert result.extra["gcp_ladder_rung"] == "ondemand_a100_80"
+    # Exactly one launched attempt, no A100-40 / spot rung touched.
+    launched = [a for a in result.attempts if a.kind == "gcp" and a.outcome == "launched"]
+    assert len(launched) == 1
+    assert "A100-40" not in (gcp.launches[0].extra.get("machine_kind_tag") or "A100-80")
+
+
+def test_no_budget_job_is_not_short_no_spot_rung(lease_store, marker_poster, captured_markers):
+    """T7: a spec with no time_budget_hours and no estimated_gpu_hours is
+    treated as unknown-length (NOT short) → the ladder has NO spot rung, and
+    an all-on-demand-full job routes to RunPod."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "QUOTA_EXCEEDED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    spec = RunSpec(issue=137, intent="lora-7b", backend="auto")  # no budget
+    result = route(
+        spec,
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    gcp_fails = [
+        a for a in result.attempts if a.kind == "gcp" and a.outcome == "provisioning_failure"
+    ]
+    # on-demand A100-80 + A100-40 only — no spot rung (unknown length).
+    assert len(gcp_fails) == 2
+    assert not any("spot" in (a.detail or "") for a in gcp_fails)
+
+
+def test_workload_error_on_any_rung_raises_no_fallback(lease_store, marker_poster):
+    """T8: a GcpWorkloadError on a rung raises WorkloadSurfacedError
+    immediately — RunPod never called, ladder does NOT advance (broken
+    workload code must not cascade)."""
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpWorkloadError("workload crashed", evidence={"phase": "train"})
+    )
+    with pytest.raises(WorkloadSurfacedError):
+        route(
+            _short_lora_spec(),
+            runpod_backend=_ExplodingRunpod(),
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+
+
+def test_per_day_attempt_cap_stops_gcp_creates_falls_to_runpod(
+    lease_store, marker_poster, captured_markers
+):
+    """T9: with the lease pre-seeded at the per-day attempt cap, the ladder
+    issues NO new GCP create and falls through to RunPod (cap stays
+    count-based, never a dollar cap)."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble()  # would succeed if it ever launched
+    # Pre-seed the lease at the cap for today.
+    lease = Lease(
+        issue=137,
+        spec_hash="x",
+        attempt_id="att-x",
+        gcp_attempts_today=2,
+        gcp_attempts_date=datetime.now(tz=UTC).date().isoformat(),
+    )
+    lease_store.write(lease)
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=2),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert gcp.launches == []  # NO new GCP create issued
+    assert any(a.outcome == "attempt_cap_exceeded" for a in result.attempts)
+
+
+def test_per_day_attempt_cap_hit_mid_ladder_stops_remaining_rungs(
+    lease_store, marker_poster, captured_markers
+):
+    """T9b: the cap is RE-READ each rung. Pre-seed the lease one below the
+    cap; rung 1 (on-demand A100-80) capacity-misses and bumps to the cap;
+    rung 2 (A100-40) must NOT even call create — the cap stops it mid-ladder
+    and the route falls to RunPod."""
+    rp = _PassiveRunpod()
+    # A100-80 create capacity-misses (advances + bumped the attempt counter);
+    # A100-40 would succeed if it were ever reached.
+    gcp = _GcpBackendDouble(
+        launch_raises_by_rung={
+            "A100-80/STANDARD": GcpProvisioningError(
+                "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+            )
+        }
+    )
+    lease = Lease(
+        issue=137,
+        spec_hash="x",
+        attempt_id="att-x",
+        gcp_attempts_today=1,  # one below the cap of 2
+        gcp_attempts_date=datetime.now(tz=UTC).date().isoformat(),
+    )
+    lease_store.write(lease)
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=2),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    # The A100-40 rung never launched (cap hit after the A100-80 bump).
+    assert gcp.launches == []
+    outcomes = [a.outcome for a in result.attempts]
+    assert "provisioning_failure" in outcomes  # rung-1 A100-80 create failed
+    assert "attempt_cap_exceeded" in outcomes  # rung-2 stopped by the cap
+
+
+def test_spot_tolerant_forces_spot_rung_past_threshold(
+    lease_store, marker_poster, captured_markers
+):
+    """spot_tolerant is retained as a FORCE-spot override: a LONG lora-7b
+    (10 GPU-h > threshold) tagged spot_tolerant still gets the spot rungs
+    (the caller explicitly opted into preemption)."""
+    gcp = _GcpBackendDouble(
+        quota_headroom_by_rung={
+            "A100-80/STANDARD": _A100_80_STD_SHORT,
+            "A100-40/STANDARD": _A100_40_STD_SHORT,
+            "A100-80/SPOT": _A100_80_SPOT_AMPLE,
+        }
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="auto",
+        time_budget_hours=10.0,  # over the 2 GPU-h threshold
+        extra={"spot_tolerant": True},  # but force-spot
+    )
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "spot_a100_80"
+
+
+def test_spot_max_gpu_hours_env_override(lease_store, marker_poster, monkeypatch):
+    """The short-job threshold is env-overridable: raising it to 20 GPU-h
+    makes a 10-GPU-h lora-7b 'short' so the spot rung fires."""
+    monkeypatch.setenv(ENV_SPOT_MAX_GPU_HOURS, "20")
+    gcp = _GcpBackendDouble(
+        quota_headroom_by_rung={
+            "A100-80/STANDARD": _A100_80_STD_SHORT,
+            "A100-40/STANDARD": _A100_40_STD_SHORT,
+            "A100-80/SPOT": _A100_80_SPOT_AMPLE,
+        }
+    )
+    spec = RunSpec(issue=137, intent="lora-7b", backend="auto", time_budget_hours=10.0)
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "spot_a100_80"
+
+
 def test_gcp_route_marker_carries_provisioning_and_quota_pool(
     lease_store, marker_poster, captured_markers
 ):
@@ -3289,7 +3911,10 @@ def test_gcp_primary_prepare_fail_falls_through_to_free_lanes(lease_store):
         sleep_fn=lambda _s: None,
     )
     assert result.chosen_kind == "nibi"
-    assert gcp.calls == ["prepare"], "launch must NOT run after a failed prepare"
+    # #656: the nobudget lora-7b ladder tries TWO on-demand rungs (A100-80 +
+    # A100-40), both prepare-fail; ``launch`` still NEVER runs after a failed
+    # prepare on either rung.
+    assert gcp.calls == ["prepare", "prepare"], "launch must NOT run after a failed prepare"
     assert any(a.outcome == "prepare_failed" and a.kind == "gcp" for a in result.attempts)
 
 
@@ -3469,32 +4094,40 @@ def test_route_logs_env_override_source(monkeypatch, lease_store, caplog):
     assert ENV_AUTO_LANE_ORDER in order_lines[0]
 
 
-def test_no_auto_runpod_under_gcp_first_default(lease_store):
-    """The load-bearing real-money invariant holds under the NEW default
-    order too: GCP capacity-fails in primary position, every free lane
-    fails, and RunPod is STILL never called — the chain ends in the
-    typed NoComputeAvailableError."""
-    rp = _ExplodingRunpod()
+def test_runpod_terminal_rung_under_gcp_first_default(lease_store):
+    """#656 reversed-invariant under the GCP-first default: GCP capacity-fails
+    on every rung, the free lane fails, and RunPod IS reached as the
+    documented TERMINAL rung (the chain no longer raises
+    NoComputeAvailableError — RunPod is the new tail).
+
+    The real-money safety property is preserved by ORDERING (the GCP rungs +
+    nibi are all recorded failed BEFORE the RunPod launch), pinned by
+    `test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted`."""
+    rp = _PassiveRunpod()
     nibi = _FreeLaneBackend(kind="nibi")
     gcp = _GcpBackendDouble(
         launch_raises=GcpProvisioningError("QUOTA_EXCEEDED", evidence={"matched_pattern": "Q"})
     )
-    with pytest.raises(NoComputeAvailableError) as excinfo:
-        route(
-            _spec(backend=None),
-            runpod_backend=rp,
-            free_backends={"nibi": nibi},
-            gcp_backend=gcp,
-            lease_store=lease_store,
-            is_started=lambda _b, _h: False,
-            is_live_after_cancel=lambda _b, _h: False,
-            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
-    outcomes = [(a["kind"], a["outcome"]) for a in excinfo.value.attempts]
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
+    assert len(rp.launches) == 1
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
     assert ("gcp", "provisioning_failure") in outcomes
     assert any(kind == "nibi" for kind, _o in outcomes)
+    # RunPod is the LAST attempt.
+    assert outcomes[-1] == ("runpod", "launched")
 
 
 # ---------------------------------------------------------------------------
@@ -3573,3 +4206,32 @@ def test_auto_route_workload_cmd_spec_walks_gcp_first_identically(lease_store) -
     assert len(gcp.launches) == 1
     assert gcp.launches[0].workload_cmd == "bash scripts/issue588_smoke.sh"
     assert len(nibi.launches) == 0
+
+
+# ---------------------------------------------------------------------------
+# #656 — CLAUDE.md doc-drift guard (AC5: the prose matches the reversed
+# contract; the retired no-auto-RunPod phrasing is gone).
+# ---------------------------------------------------------------------------
+
+
+def _claude_md_path() -> Path:
+    """Resolve the repo-root CLAUDE.md from this test file's location."""
+    return Path(__file__).resolve().parent.parent / "CLAUDE.md"
+
+
+def test_claude_md_compute_backends_section_matches_656_contract() -> None:
+    """AC5 doc-drift guard: the CLAUDE.md `Compute backends` section reflects
+    the #656 reversed contract (RunPod is the documented terminal fallback)
+    and does NOT carry the retired no-auto-RunPod phrasing. Fail-loud if a
+    future edit reintroduces the stale wording or drops the new contract."""
+    text = _claude_md_path().read_text(encoding="utf-8")
+    # NEW contract wording MUST be present.
+    assert "auto_fallback_runpod" in text, "CLAUDE.md missing the new RunPod-fallback reason code"
+    assert "RunPod terminal rung" in text, "CLAUDE.md missing the 'RunPod terminal rung' contract"
+    # RETIRED phrasing MUST be gone (the reversed invariant).
+    assert "The auto chain NEVER calls RunPod" not in text, (
+        "CLAUDE.md still carries the retired no-auto-RunPod phrasing (#656 reversed it)"
+    )
+    assert "test_no_auto_runpod_path_under_any_failure" not in text, (
+        "CLAUDE.md still references the replaced negative test by name"
+    )

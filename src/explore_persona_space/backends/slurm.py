@@ -1605,6 +1605,8 @@ def ssh_submit(
         input=sbatch_script,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout,
         check=True,
     )
@@ -1621,6 +1623,8 @@ def ssh_scancel(*, robot_alias: str, job_id: str, timeout: int = 30) -> None:
         argv,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout,
         check=False,
     )
@@ -1705,6 +1709,8 @@ def mila_socket_alive(
             argv,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout + 2,
             check=False,
         )
@@ -1800,6 +1806,8 @@ def ssh_estimate_start(
             input=sbatch_script,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
         )
@@ -1956,8 +1964,14 @@ class SlurmBackend(ComputeBackend):
         secrets_pusher=None,
         marker_poster=None,
         runtime_clearer=None,
+        git_branch_resolver=None,
     ) -> None:
         self._src_root = src_root or _default_src_root()
+        # Resolves the rsync source's current branch for the feature-branch
+        # / stale-main guard in ``prepare``. Defaults to the real
+        # ``git -C <src_root> rev-parse``; tests inject a stub returning a
+        # fixed branch name (or ``None`` to simulate a non-repo source).
+        self._git_branch_resolver = git_branch_resolver or git_branch_at
         self._submit = submitter or ssh_submit
         self._cancel = canceller or ssh_scancel
         self._rsync = rsyncer or run_rsync_sync
@@ -2008,6 +2022,21 @@ class SlurmBackend(ComputeBackend):
         paths skip it by contract), so clearing here cannot race a live
         job's own writes.
         """
+        # Feature-branch / stale-main guard (#653). The SLURM lane rsyncs
+        # the repo from ``self._src_root`` — which ``_default_src_root()``
+        # resolves via ``__file__``-walk to the repo-root install on
+        # ``main``, NOT the invoking worktree. Unlike the GCP lane (which
+        # git-clones ``spec.extra["repo_branch"]`` on the VM), this lane
+        # has NO mechanism to honor ``repo_branch``: it would silently
+        # rsync stale ``main`` code and submit a job whose tree lacks the
+        # feature branch's entrypoint scripts, crashing at in-job preflight
+        # (#653 round-8: an auto → SLURM fall-through rsynced ``main`` for a
+        # feature-branch experiment, queueing a job doomed at
+        # ``--verify-imports``). Refuse to submit onto stale code BEFORE
+        # the rsync; the auto chain treats this raise as a prepare failure
+        # and advances to the next lane (and the orchestrator re-launches
+        # with an explicit ``--backend gcp`` per the gotchas.md workaround).
+        self._assert_repo_branch_synced(spec)
         cluster = self._cluster_for_spec(spec)
         scratch_dir = scratch_dir_for(spec, cluster)
         self._clear_runtime(
@@ -2025,6 +2054,46 @@ class SlurmBackend(ComputeBackend):
         # bytes verbatim; we chmod 600 in the same SSH call so it's
         # never world-readable on the cluster side.
         self._push_secrets(cluster, scratch_dir, secrets)
+
+    def _assert_repo_branch_synced(self, spec: RunSpec) -> None:
+        """Refuse to submit a feature-branch run onto a stale ``main`` rsync source.
+
+        The SLURM lane rsyncs from ``self._src_root`` and has no
+        ``repo_branch`` honoring mechanism (the GCP lane git-clones the
+        branch on the VM; this lane does not). When the dispatcher threads
+        a non-``main`` ``spec.extra["repo_branch"]`` (which it does by
+        default for ``auto``/``gcp`` lanes — ``scripts/dispatch_issue.py``
+        ``_launch_extra_from_args``) but the rsync source's actual HEAD is
+        a DIFFERENT branch, rsyncing would ship code that does not match
+        the requested branch. Raise ``ValueError`` here — ``prepare`` runs
+        under :func:`router._prepare_and_launch`, which wraps it as a
+        provision-class :class:`~router.BackendPrepareError`, so the auto
+        chain advances to the next lane instead of running stale code, and
+        an explicit SLURM override surfaces the failure as a typed
+        terminal. No-op when ``repo_branch`` is absent or ``main`` (the
+        rsync source IS ``main`` then, by the resolver's design).
+
+        The branch probe failing (non-repo source, git missing → resolver
+        returns ``None``) is treated as a MISMATCH for a non-``main``
+        request: we cannot prove the source carries the feature branch, so
+        we refuse rather than risk silently shipping ``main`` (#653).
+        """
+        requested = str(spec.extra.get("repo_branch") or "").strip()
+        if not requested or requested == "main":
+            return
+        actual = self._git_branch_resolver(self._src_root)
+        if actual == requested:
+            return
+        raise ValueError(
+            f"SLURM lane cannot honor repo_branch={requested!r}: the rsync "
+            f"source at {self._src_root} is on branch {actual!r} "
+            f"(the repo-root install resolves to 'main', not the invoking "
+            f"worktree). Submitting would rsync stale code whose tree lacks "
+            f"the feature branch's entrypoint scripts and crash at in-job "
+            f"preflight (#653). Route this run to GCP (`--backend gcp`, which "
+            f"git-clones the branch on the VM) or merge the branch into the "
+            f"rsync source's HEAD."
+        )
 
     def _push_secrets(self, cluster: ClusterConfig, scratch_dir: str, content: str) -> None:
         """Deliver ``secrets.env`` to ``$SCRATCH_JOB_DIR`` via the injected
@@ -2412,6 +2481,41 @@ def _default_src_root() -> Path:
     return Path.cwd()
 
 
+def git_branch_at(src_root: Path) -> str | None:
+    """Return the current branch name at ``src_root`` (``None`` if unknown).
+
+    Runs ``git -C <src_root> rev-parse --abbrev-ref HEAD``. A detached
+    HEAD yields ``"HEAD"`` (treated as "unknown" by the caller — a
+    detached checkout cannot be asserted equal to a named feature branch,
+    so the guard refuses rather than guesses). Any git failure (not a
+    repo, git missing) returns ``None`` so the caller can decide policy
+    instead of crashing on the probe itself.
+
+    This is the rsync-source twin of the GCP lane's ``repo_branch``
+    git-clone (``backends/gcp.render_startup_script`` clones the requested
+    branch on the VM). The SLURM lane rsyncs from ``src_root`` instead of
+    cloning, so the guard in :meth:`SlurmBackend.prepare` reads the
+    rsync source's actual HEAD here to detect a feature-branch /
+    rsync-source mismatch BEFORE submitting a job onto stale code.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(src_root), "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+            timeout=15,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return None
+    branch = proc.stdout.strip()
+    if not branch or branch == "HEAD":
+        return None
+    return branch
+
+
 # ---------------------------------------------------------------------------
 # Re-exports
 # ---------------------------------------------------------------------------
@@ -2440,6 +2544,7 @@ __all__ = [
     "estimate_start_seconds",
     "expected_artifacts_declaration",
     "get_cluster_config",
+    "git_branch_at",
     "job_name",
     "mila_socket_alive",
     "parse_job_id",

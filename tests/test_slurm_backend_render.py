@@ -872,6 +872,129 @@ def test_slurm_backend_launch_survives_marker_post_failure(tmp_path) -> None:
     assert handle.extra["issue"] == 137
 
 
+def test_slurm_prepare_refuses_feature_branch_on_stale_main_source(tmp_path) -> None:
+    """#653: SLURM ``prepare`` must REFUSE to rsync when ``repo_branch`` names a
+    non-``main`` branch but the rsync source's HEAD is a different branch.
+
+    The lane has no ``repo_branch`` honoring mechanism (it rsyncs from
+    ``src_root``, it does not git-clone like GCP), so silently rsyncing
+    stale ``main`` would queue a job whose tree lacks the feature branch's
+    entrypoint scripts. The guard raises BEFORE the rsync; ``router.
+    _prepare_and_launch`` wraps it as ``BackendPrepareError`` and the auto
+    chain advances to the next lane.
+    """
+    (tmp_path / "pyproject.toml").write_text("")
+
+    rsynced: list[tuple] = []
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **kw: rsynced.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        # The rsync source is on ``main`` (the repo-root install default).
+        git_branch_resolver=lambda _root: "main",
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        extra={"repo_branch": "issue-653"},
+    )
+
+    with pytest.raises(ValueError, match="cannot honor repo_branch='issue-653'"):
+        backend.prepare(spec)
+    # The guard fires BEFORE the rsync — no stale code was shipped.
+    assert rsynced == []
+
+
+def test_slurm_prepare_allows_matching_feature_branch_source(tmp_path) -> None:
+    """#653: when the rsync source's HEAD MATCHES the requested feature branch,
+    ``prepare`` proceeds normally (the worktree already carries the code)."""
+    (tmp_path / "pyproject.toml").write_text("")
+
+    rsynced: list[tuple] = []
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **kw: rsynced.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_branch_resolver=lambda _root: "issue-653",
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        extra={"repo_branch": "issue-653"},
+    )
+
+    backend.prepare(spec)
+    assert len(rsynced) == 1
+
+
+@pytest.mark.parametrize("extra", [{}, {"repo_branch": "main"}], ids=["absent", "main"])
+def test_slurm_prepare_main_branch_run_is_unaffected(tmp_path, extra) -> None:
+    """#653: the guard is a no-op for a ``main`` run (absent or 'main'
+    ``repo_branch``) — the rsync source IS ``main`` by the resolver's design,
+    and the branch resolver is never even consulted."""
+    (tmp_path / "pyproject.toml").write_text("")
+
+    def _resolver_must_not_run(_root):
+        raise AssertionError("resolver must not be consulted for a main run")
+
+    rsynced: list[tuple] = []
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **kw: rsynced.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_branch_resolver=_resolver_must_not_run,
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        extra=extra,
+    )
+    backend.prepare(spec)
+    assert len(rsynced) == 1
+
+
+def test_slurm_prepare_refuses_when_source_branch_unprovable(tmp_path) -> None:
+    """#653: a feature-branch request with an UNPROVABLE source branch
+    (resolver returns ``None`` — detached HEAD / non-repo source) must
+    REFUSE, not fail open: we cannot prove the source carries the branch."""
+    (tmp_path / "pyproject.toml").write_text("")
+
+    rsynced: list[tuple] = []
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **kw: rsynced.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_branch_resolver=lambda _root: None,
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        extra={"repo_branch": "issue-653"},
+    )
+
+    with pytest.raises(ValueError, match="cannot honor repo_branch"):
+        backend.prepare(spec)
+    assert rsynced == []
+
+
 def test_slurm_backend_launch_uses_scp_not_ssh_bash_c(tmp_path) -> None:
     """Blocker 3 regression guard: secrets push MUST use scp/sftp/rsync,
     NEVER ``ssh <alias> bash -c '<script>'`` (rejected by the robot

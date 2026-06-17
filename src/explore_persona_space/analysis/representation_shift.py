@@ -202,6 +202,74 @@ def _reap_vllm_engine(llm) -> None:
         torch.distributed.destroy_process_group()
 
 
+def linear_cka(X: torch.Tensor, Y: torch.Tensor) -> float:
+    """Linear CKA (Kornblith et al. 2019, arXiv 1905.00414).
+
+    Feature-space (linear-kernel) HSIC form, O(n d^2): column-center both
+    matrices, then
+
+        HSIC_lin(X, Y) = ||X_c^T Y_c||_F^2
+        CKA            = HSIC_lin(X, Y) / sqrt(HSIC_lin(X, X) * HSIC_lin(Y, Y))
+
+    Invariant to orthogonal transforms of either argument and to isotropic
+    scaling; designed for the ``d > n`` regime where CCA degenerates. Returns
+    a scalar in ``[0, 1]`` (1 = identical up to those invariances).
+
+    Args:
+        X: ``(n, d_x)`` tensor (n paired rows shared with ``Y``).
+        Y: ``(n, d_y)`` tensor — same ``n`` as ``X``; ``d_y`` may differ.
+
+    Returns:
+        Linear CKA as a Python float.
+
+    Raises:
+        AssertionError: if ``X`` and ``Y`` disagree on ``n``, are not 2-D, or
+            ``n < 2`` (column-centering a single row gives an all-zero matrix
+            and a 0/0 CKA — a degenerate input, never a silent NaN).
+    """
+    assert X.ndim == 2 and Y.ndim == 2, (X.shape, Y.shape)
+    assert X.shape[0] == Y.shape[0], (X.shape, Y.shape)
+    n = X.shape[0]
+    assert n >= 2, f"linear_cka needs n>=2 paired rows, got n={n}"
+
+    # Compute in float64 for numerical stability (the Frobenius products are
+    # sums of d^2 terms; fp32 accumulation drifts the invariance properties).
+    Xc = X.to(torch.float64)
+    Yc = Y.to(torch.float64)
+    Xc = Xc - Xc.mean(dim=0, keepdim=True)
+    Yc = Yc - Yc.mean(dim=0, keepdim=True)
+
+    # HSIC_lin(A, B) = ||A^T B||_F^2 = sum((A^T B)^2).
+    hsic_xy = (Xc.T @ Yc).pow(2).sum()
+    hsic_xx = (Xc.T @ Xc).pow(2).sum()
+    hsic_yy = (Yc.T @ Yc).pow(2).sum()
+
+    denom = torch.sqrt(hsic_xx * hsic_yy)
+    if denom <= 0:
+        # A constant bank (zero variance after centering) has no geometry to
+        # align — return 0.0 rather than NaN. n>=2 is already asserted, so this
+        # only fires on a genuinely degenerate (all-identical-rows) input.
+        return 0.0
+    return float((hsic_xy / denom).clamp(0.0, 1.0).item())
+
+
+def cka_per_layer(bank_a: torch.Tensor, bank_b: torch.Tensor) -> list[float]:
+    """Per-layer linear CKA between two layer-stacked activation banks.
+
+    Args:
+        bank_a: ``(n, n_layers, hidden)`` tensor.
+        bank_b: ``(n, n_layers, hidden)`` tensor — same ``(n, n_layers)`` as
+            ``bank_a`` (hidden may differ, though it never does in practice).
+
+    Returns:
+        ``[linear_cka(bank_a[:, L], bank_b[:, L]) for L in range(n_layers)]``.
+    """
+    assert bank_a.ndim == 3 and bank_b.ndim == 3, (bank_a.shape, bank_b.shape)
+    assert bank_a.shape[:2] == bank_b.shape[:2], (bank_a.shape, bank_b.shape)
+    n_layers = bank_a.shape[1]
+    return [linear_cka(bank_a[:, L], bank_b[:, L]) for L in range(n_layers)]
+
+
 def _generate_responses_vllm(
     model_path: str,
     personas: dict[str, str | None],

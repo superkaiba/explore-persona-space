@@ -34,12 +34,14 @@ import pytest
 
 from explore_persona_space.backends import (
     EXPECTED_ARTIFACTS_HANDLE_KEY,
+    INTENT_A100_40_FALLBACK,
     INTENT_TO_MACHINE,
     GcpBackend,
     GcpConfig,
     GcpProvisioningError,
     MachineSpec,
     RunSpec,
+    a100_40_fallback_for_intent,
     audit_stale_gcp_vms,
     default_gcp_config,
     render_create_argv,
@@ -299,6 +301,155 @@ def test_machine_for_intent_rejects_unknown_intent_loud() -> None:
     spec = _spec("totally-bogus")
     with pytest.raises(ValueError, match="no GCP machine-type for intent"):
         machine_for_intent(spec)
+
+
+# ---------------------------------------------------------------------------
+# Machine-type zone availability (#653)
+# ---------------------------------------------------------------------------
+
+
+def test_zones_for_machine_type_drops_unavailable_zone() -> None:
+    """#653: the A2-ultragpu family is NOT offered in us-central1-b, so the
+    filter drops it while preserving order for the available zones."""
+    from explore_persona_space.backends.gcp import (
+        MACHINE_TYPE_ZONE_AVAILABILITY,
+        zones_for_machine_type,
+    )
+
+    ladder = ["us-central1-a", "us-central1-b", "us-central1-c"]
+    assert zones_for_machine_type("a2-ultragpu-1g", ladder) == [
+        "us-central1-a",
+        "us-central1-c",
+    ]
+    assert zones_for_machine_type("a2-ultragpu-4g", ladder) == [
+        "us-central1-a",
+        "us-central1-c",
+    ]
+    # The map RESTRICTS only — every A2-ultragpu row excludes -b.
+    assert "us-central1-b" not in MACHINE_TYPE_ZONE_AVAILABILITY["a2-ultragpu-1g"]
+
+
+def test_zones_for_machine_type_keeps_all_for_unfiltered_type() -> None:
+    """#653: a machine type listed in every zone (g2) keeps the full ladder;
+    a machine type UNLISTED in the map fails OPEN (no filtering)."""
+    from explore_persona_space.backends.gcp import zones_for_machine_type
+
+    ladder = ["us-central1-a", "us-central1-b", "us-central1-c"]
+    # g2-standard-4 is in all three.
+    assert zones_for_machine_type("g2-standard-4", ladder) == ladder
+    # An unlisted machine type is not silently dropped from every zone.
+    assert zones_for_machine_type("some-future-machine-type", ladder) == ladder
+
+
+def test_a3_highgpu_family_available_in_all_us_central1_zones() -> None:
+    """#653 round-8 follow-up: BOTH a3-highgpu sizes (1g = lora-7b-h100,
+    2g = eval-h100) are offered in all three us-central1 zones, so they keep
+    the full ladder — NOT a doomed-launch / fail-loud case. Pins the verified
+    gcloud fact (2026-06-16) that refutes the false 'a3-highgpu-2g not offered
+    in us-central1' report, and guards against the eval-h100 size being left
+    implicitly absent from the table while its 1g sibling is explicit."""
+    from explore_persona_space.backends.gcp import (
+        MACHINE_TYPE_ZONE_AVAILABILITY,
+        zones_for_machine_type,
+    )
+
+    ladder = ["us-central1-a", "us-central1-b", "us-central1-c"]
+    for mt in ("a3-highgpu-1g", "a3-highgpu-2g"):
+        assert mt in MACHINE_TYPE_ZONE_AVAILABILITY, mt
+        assert zones_for_machine_type(mt, ladder) == ladder, mt
+
+
+# ---------------------------------------------------------------------------
+# #656 — A100-40 fallback rung (a2-highgpu-1g)
+# ---------------------------------------------------------------------------
+
+
+def test_a100_40_fallback_for_intent_fits_predicate() -> None:
+    """T10: the fits-in-40GB predicate. Single-GPU 7B-scale intents (lora-7b /
+    lora / eval / debug) map to the A100-40 (a2-highgpu-1g) fallback machine;
+    multi-GPU full-FT (ft-7b) and the 70B / unknown intents return None (a
+    40 GB card cannot hold them, so the ladder has no A100-40 rung)."""
+    for intent in ("lora-7b", "lora", "eval", "debug"):
+        machine = a100_40_fallback_for_intent(_spec(intent))
+        assert isinstance(machine, MachineSpec), intent
+        assert machine.machine_type == "a2-highgpu-1g", intent
+        assert machine.gpu_count == 1, intent
+        assert machine.gpu_kind == "A100-40", intent
+    for intent in ("ft-7b", "inf-70b", "ft-70b", "totally-bogus"):
+        assert a100_40_fallback_for_intent(_spec(intent)) is None, intent
+    # The module-level map matches the predicate's positive set exactly.
+    assert set(INTENT_A100_40_FALLBACK) == {"lora-7b", "lora", "eval", "debug"}
+
+
+def test_machine_for_intent_honors_machine_spec_override() -> None:
+    """T11: machine_for_intent consults spec.extra['machine_spec_override']
+    FIRST — the seam the #656 ladder uses to thread an A100-40 rung without
+    mutating the frozen RunSpec's intent. quota_metric_for on the override
+    resolves the un-suffixed NVIDIA_A100_GPUS pool."""
+    spec = _spec(
+        "lora-7b",
+        extra={
+            "machine_spec_override": {
+                "machine_type": "a2-highgpu-1g",
+                "gpu_count": 1,
+                "gpu_kind": "A100-40",
+            }
+        },
+    )
+    machine = machine_for_intent(spec)
+    assert machine.machine_type == "a2-highgpu-1g"
+    assert machine.gpu_kind == "A100-40"
+    # On-demand quota metric for the A100-40 override is the un-suffixed pool.
+    assert quota_metric_for(machine, "STANDARD") == "NVIDIA_A100_GPUS"
+    assert quota_metric_for(machine, "SPOT") == "PREEMPTIBLE_NVIDIA_A100_GPUS"
+    # A MachineSpec instance (not a dict) is also accepted.
+    spec2 = _spec("lora-7b", extra={"machine_spec_override": machine})
+    assert machine_for_intent(spec2).machine_type == "a2-highgpu-1g"
+
+
+def test_a2_highgpu_zone_availability_and_create_argv() -> None:
+    """T12: an A100-40 override spec renders --machine-type=a2-highgpu-1g, and
+    the zone filter keeps the verified us-central1 zones (incl. -f)."""
+    from explore_persona_space.backends.gcp import (
+        MACHINE_TYPE_ZONE_AVAILABILITY,
+        zones_for_machine_type,
+    )
+
+    spec = _spec(
+        "lora-7b",
+        extra={
+            "machine_spec_override": {
+                "machine_type": "a2-highgpu-1g",
+                "gpu_count": 1,
+                "gpu_kind": "A100-40",
+            }
+        },
+    )
+    argv = render_create_argv(
+        spec=spec,
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\necho startup\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=a2-highgpu-1g" in argv
+    # The zone filter keeps the verified us-central1 zones for a2-highgpu-1g.
+    assert "a2-highgpu-1g" in MACHINE_TYPE_ZONE_AVAILABILITY
+    ladder = ["us-central1-a", "us-central1-b", "us-central1-c"]
+    assert zones_for_machine_type("a2-highgpu-1g", ladder) == ladder
+    # -f is also offered (additive; the create-time resolver gets one more option).
+    assert "us-central1-f" in MACHINE_TYPE_ZONE_AVAILABILITY["a2-highgpu-1g"]
+
+
+def test_a100_40_quota_metric_mapping() -> None:
+    """The A100-40 gpu_kind resolves to the un-suffixed NVIDIA_A100_GPUS pool
+    (on-demand) / PREEMPTIBLE_NVIDIA_A100_GPUS (spot) — a SEPARATE regional
+    quota from the 80GB pool, the reason A100-40 can have headroom when
+    A100-80 is full."""
+    a40 = MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40")
+    assert quota_metric_for(a40, "STANDARD") == "NVIDIA_A100_GPUS"
+    assert quota_metric_for(a40, "SPOT") == "PREEMPTIBLE_NVIDIA_A100_GPUS"
+    assert quota_metric_for(a40, "FLEX_START") == "PREEMPTIBLE_NVIDIA_A100_GPUS"
 
 
 # ---------------------------------------------------------------------------
@@ -1304,7 +1455,12 @@ def test_backend_method_delegates_quota_preflight() -> None:
 
 def test_launch_retries_on_capacity_then_succeeds_in_fallback_zone(no_marker_posts) -> None:
     """Capacity miss in primary zone must transparently retry the
-    fallback zones before giving up."""
+    fallback zones before giving up.
+
+    Uses ``eval`` (``g2-standard-4``, available in all three us-central1
+    zones) so the fallback ladder is the full ``a → b → c`` — the
+    machine-type zone filter (#653) is a no-op for this machine type.
+    """
     created_payload = json.dumps([{"name": "eps-issue-137", "id": "999"}])
     runner = _Runner(
         list_results=[GcloudRunResult(0, "[]", "")],
@@ -1318,7 +1474,7 @@ def test_launch_retries_on_capacity_then_succeeds_in_fallback_zone(no_marker_pos
         runner=runner,
         marker_poster=lambda **_: None,
     )
-    handle = backend.launch(_spec())
+    handle = backend.launch(_spec(intent="eval"))
     # The second create succeeded; we landed in us-central1-b.
     assert handle.extra["zone"] == "us-central1-b"
     # Two create calls were issued.
@@ -1328,10 +1484,43 @@ def test_launch_retries_on_capacity_then_succeeds_in_fallback_zone(no_marker_pos
     assert "--zone=us-central1-b" in create_calls[1]
 
 
+def test_launch_skips_zone_where_machine_type_absent(no_marker_posts) -> None:
+    """#653: a capacity miss on an A2-ultragpu intent must skip
+    ``us-central1-b`` (where the family is NOT offered) and fall straight
+    to ``us-central1-c`` — never issuing a guaranteed-to-fail create on a
+    zone that lacks the machine type (which would burn the attempt counter
+    on a CONFIG 400, not a capacity miss)."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "999"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),  # us-central1-a
+            GcloudRunResult(0, created_payload, ""),  # us-central1-c (b is skipped)
+        ],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    # lora-7b → a2-ultragpu-1g, absent from us-central1-b.
+    handle = backend.launch(_spec(intent="lora-7b"))
+    assert handle.extra["zone"] == "us-central1-c"
+    create_calls = [a for a in runner.calls if "create" in a]
+    # Exactly TWO creates: a (capacity miss) then c — NEVER b.
+    assert len(create_calls) == 2
+    assert "--zone=us-central1-a" in create_calls[0]
+    assert "--zone=us-central1-c" in create_calls[1]
+    assert not any("--zone=us-central1-b" in a for a in create_calls)
+
+
 def test_launch_raises_provisioning_error_when_all_zones_capacity_fail(no_marker_posts) -> None:
     runner = _Runner(
         list_results=[GcloudRunResult(0, "[]", "")],
-        # 3 capacity failures: primary + 2 fallbacks
+        # 3 capacity failures: primary + 2 fallbacks. Uses ``eval``
+        # (g2-standard-4, available in all three us-central1 zones) so all
+        # three creates are actually issued (the #653 machine-type filter
+        # leaves the full ladder intact for this machine type).
         create_results=[
             GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
             GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
@@ -1344,7 +1533,7 @@ def test_launch_raises_provisioning_error_when_all_zones_capacity_fail(no_marker
         marker_poster=lambda **_: None,
     )
     with pytest.raises(GcpProvisioningError):
-        backend.launch(_spec())
+        backend.launch(_spec(intent="eval"))
 
 
 def test_launch_does_not_retry_on_non_capacity_failure(no_marker_posts) -> None:

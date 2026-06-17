@@ -739,6 +739,25 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # wall) had no CLI path from the /issue Step 6b launch. Inert
         # on SLURM / RunPod lanes.
         extra["max_run_duration"] = args.max_run_duration
+    if getattr(args, "provisioning_model", None):
+        # GCP-only knob: the instance-create renderer reads
+        # spec.extra["provisioning_model"] (backends/gcp.resolve_provisioning_model);
+        # SPOT / FLEX_START draw the PREEMPTIBLE accelerator quota pool
+        # instead of the on-demand STANDARD pool. Reaches the idle
+        # preemptible capacity that is unreachable from a STANDARD launch
+        # when on-demand quota is short-by-one (#537). Inert on SLURM /
+        # RunPod lanes. STANDARD is the resolver default when absent, so a
+        # passed STANDARD is a no-op that still records the explicit choice.
+        extra["provisioning_model"] = args.provisioning_model
+    if getattr(args, "spot_tolerant", False):
+        # GCP-only knob (#656): marks the workload preemption-recoverable.
+        # The #656 GCP fallback ladder fires a SPOT rung by DEFAULT for any
+        # "short" job (<= EPS_GCP_SPOT_MAX_GPU_HOURS); this flag is now a
+        # FORCE-spot override that makes a job "short enough" for the spot
+        # rungs even past the GPU-hour threshold (an explicit opt-into-
+        # preemption). The retired EPS_GCP_SPOT_FALLBACK env gate (#537) is a
+        # no-op back-compat shim. Inert on SLURM / RunPod lanes.
+        extra["spot_tolerant"] = True
     if getattr(args, "repo_branch", None):
         # GCP-only knob: the GCE startup script clones from origin, so a
         # feature-branch workload must name its branch (issue 535 r6).
@@ -753,9 +772,16 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # to the CURRENT branch with a logged INFO. Gated to the lanes
         # that can reach GCP (explicit "gcp", or "auto"/absent — absent
         # includes frontmatter-driven backends, and an explicit SLURM /
-        # RunPod lane never escalates to GCP). SLURM rsyncs the local
-        # worktree and RunPod ignores repo_branch, so the extra key is
-        # inert if the router resolves a non-GCP lane.
+        # RunPod lane never escalates to GCP). The extra key is no longer
+        # inert on any lane: GCP honors it by git-cloning the requested
+        # branch in the GCE startup script, and RunPod's lifecycle layer
+        # also checks out the branch. SLURM has no honoring mechanism and
+        # REFUSES to submit when repo_branch names a non-"main" branch the
+        # rsync source cannot be proven to carry (its source resolves to
+        # "main", not the invoking worktree) — backends/slurm.py
+        # _assert_repo_branch_synced() raises, the router wraps it as a
+        # BackendPrepareError, and the auto chain advances to the next lane
+        # rather than silently rsyncing stale "main" code (#653 round-8).
         branch = _current_git_branch()
         if branch and branch != "main":
             logging.getLogger("dispatch_issue").info(
@@ -1365,6 +1391,37 @@ def _build_argparser() -> argparse.ArgumentParser:
             "SLURM lanes rsync the local worktree instead). Required when "
             "the workload's code/configs live on a feature branch — the "
             "default clone of main silently runs stale code (issue 535 r6)."
+        ),
+    )
+    launch.add_argument(
+        "--provisioning-model",
+        type=str,
+        choices=["STANDARD", "SPOT", "FLEX_START"],
+        default=None,
+        help=(
+            "GCP provisioning model (GCP lane only; threads to "
+            "spec.extra['provisioning_model'], read by the instance-create "
+            "renderer's --provisioning-model flag). SPOT / FLEX_START draw "
+            "the PREEMPTIBLE accelerator quota pool, reaching idle "
+            "preemptible capacity unreachable from a STANDARD launch when "
+            "on-demand quota is short-by-one (issue 537: 4-GPU ft-7b failed "
+            "with 3 free on-demand A100 while 16 preemptible sat idle). "
+            "Default (absent) resolves to STANDARD. Inert on non-GCP lanes."
+        ),
+    )
+    launch.add_argument(
+        "--spot-tolerant",
+        action="store_true",
+        help=(
+            "Mark the workload preemption-recoverable (GCP lane only; threads "
+            "to spec.extra['spot_tolerant']). #656: the GCP fallback ladder "
+            "fires a SPOT rung by DEFAULT for any short job "
+            "(<= EPS_GCP_SPOT_MAX_GPU_HOURS, default 2 GPU-h); this flag is a "
+            "FORCE-spot override that opts a LONGER job into the spot rungs "
+            "past the threshold (explicit opt-into-preemption). The retired "
+            "EPS_GCP_SPOT_FALLBACK env gate (#537) is a no-op shim. Set it for "
+            "scoring / eval rounds that checkpoint per phase. Inert on non-GCP "
+            "lanes."
         ),
     )
     launch.add_argument(

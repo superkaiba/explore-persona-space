@@ -104,24 +104,29 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 24 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 26 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe) PLUS the
     # four v3-gated body-only checks added 2026-W24 — check 18
     # (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     # check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    # (`check_v3_word_caps`) — each a PASS-skip on this
-    # non-v3 fixture. verify_text prepends check 0 (body-nonstub) +
-    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (23
+    # (`check_v3_word_caps`) — each a PASS-skip on this non-v3 fixture —
+    # PLUS the two generation-agnostic checks: check 22
+    # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
+    # this fixture's `## Reproducibility` carries no figure-sha claim, and
+    # check 23 (`check_hf_url_resolves`), a PASS-with-`unverified`-note here
+    # because the fixture's HF URLs are probe-fenced by conftest's
+    # EPM_VERIFY_BODY_NO_HF=1. verify_text prepends check 0 (body-nonstub) +
+    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (25
     # functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, AND the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc) →
-    # 30 results total (2 prepended + CHECKS[1:]=23 + 5 appended). The
+    # 32 results total (2 prepended + CHECKS[1:]=25 + 5 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 30
+    assert len(results) == 32
 
 
 def test_missing_confidence_tag():
@@ -1037,6 +1042,247 @@ def test_repro_fenced_block_urls_not_probed(monkeypatch):
     by_name = _results_by_name(results)
     assert by_name[_REPRO_8B_NAME].passed
     assert "no same-repo artifact URLs to check" in by_name[_REPRO_8B_NAME].detail
+
+
+# ─── Check 23: HF Hub revision-pin existence ──────────────────────────────
+#
+# Incident task #537 (2026-06-16): a `## Reproducibility` `**Artifacts:**`
+# link pinned the "415 bakeoff intermediates" to revision `db3662ae`, the
+# main-grid revision that PREDATES the bakeoff round — the path resolves to
+# 0 files at that revision, so a reader clicking it gets nothing. The URL is
+# shape-valid + sha-pinned + on a real repo, so it slipped through every
+# other check. Check 23 probes `huggingface_hub.list_repo_files(repo_id,
+# repo_type=..., revision=<sha>)` and FAILs a dead pin. Fail-soft: the
+# suite-wide EPM_VERIFY_BODY_NO_HF=1 fence (tests/conftest.py) makes the
+# probe SKIP (PASS + `unverified` note) so fixture HF URLs never hit the
+# live Hub. Tests below `monkeypatch.delenv` the fence and stub
+# `huggingface_hub.list_repo_files` directly.
+
+_HF_23_NAME = "HF URL pins resolve at the cited revision"
+
+
+def _hf_body(hf_url: str) -> str:
+    """GOOD_BODY with its dataset HF link swapped for `hf_url` and its
+    bare-repo model HF link removed, so exactly one HF revision-pinned URL
+    is in scope for check 23 (deterministic single-probe tests)."""
+    body = GOOD_BODY.replace(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl",
+        hf_url,
+    )
+    # Drop the bare-repo model link (Artifacts: Model row) so it doesn't add
+    # a second HF URL to the probe set.
+    body = body.replace(
+        "- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)\n",
+        "- Model: not uploaded yet\n",
+    )
+    return body
+
+
+def test_hf_url_existing_path_passes(monkeypatch):
+    """A dataset `/tree/<sha>/<path>` whose path matches ≥1 listed file →
+    definitive PASS (no `unverified` note)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub,
+        "list_repo_files",
+        lambda repo_id, repo_type=None, revision=None: [
+            "raw_completions/run.jsonl",
+            "README.md",
+        ],
+    )
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface/raw_completions/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "unverified" not in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_dead_revision_pin_zero_files_fails(monkeypatch):
+    """The #537 case: the revision exists but the path resolves to ZERO
+    files (pinned to a revision predating the upload) → definitive FAIL."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    # `db3662ae` lists only the main-grid files — none under the bakeoff path.
+    monkeypatch.setattr(
+        huggingface_hub,
+        "list_repo_files",
+        lambda repo_id, repo_type=None, revision=None: [
+            "main_grid/results.csv",
+            "README.md",
+        ],
+    )
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/db3662ae/bakeoff_intermediates/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name[_HF_23_NAME].passed
+    assert "dead revision pin" in by_name[_HF_23_NAME].detail
+    assert "0 files" in by_name[_HF_23_NAME].detail
+    assert "db3662ae" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_revision_not_found_fails(monkeypatch):
+    """A revision that does not exist on the repo → RevisionNotFoundError →
+    definitive FAIL (a fabricated / never-pushed sha)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+    from huggingface_hub.utils import RevisionNotFoundError
+
+    def _raise(repo_id, repo_type=None, revision=None):
+        raise RevisionNotFoundError(f"no revision {revision}")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/deadbeef/raw_completions/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name[_HF_23_NAME].passed
+    assert "no revision" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_network_error_is_note_not_fail(monkeypatch):
+    """A network / Hub failure is INDETERMINATE → PASS with an `unverified`
+    note, never a FAIL — sandboxes without network must not flip valid
+    bodies to FAIL."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _raise(repo_id, repo_type=None, revision=None):
+        raise ConnectionError("getaddrinfo failed: huggingface.co")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface/raw_completions/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "unverified" in by_name[_HF_23_NAME].detail
+    assert "list_repo_files failed" in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_env_fence_skips(monkeypatch):
+    """With the suite-wide EPM_VERIFY_BODY_NO_HF=1 fence in place (the
+    conftest default), the probe SKIPs without touching the Hub → PASS with
+    an `unverified` note even if list_repo_files WOULD have failed."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
+    import huggingface_hub
+
+    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+        raise AssertionError("list_repo_files must NOT be called under the fence")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/db3662ae/bakeoff/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "fenced" in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_bare_repo_root_link_passes_on_listing(monkeypatch):
+    """A bare `/tree/<sha>` repo-root link (no path) PASSes whenever the
+    revision lists successfully — it only asserts the revision exists."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub,
+        "list_repo_files",
+        lambda repo_id, repo_type=None, revision=None: ["config.json"],
+    )
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "unverified" not in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_moving_ref_not_probed(monkeypatch):
+    """A moving ref (`/tree/main`) is out of scope for check 23 — it is
+    check 8's shape concern. The probe is never called; check 23 reports
+    nothing to check (the bare model row is dropped by `_hf_body`)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+        raise AssertionError("moving-ref HF URL must not be probed by check 23")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/raw_completions/run.jsonl"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "no HF Hub revision-pinned URLs to check" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_github_and_raw_not_gathered(monkeypatch):
+    """check 23 gathers ONLY huggingface.co URLs — the body's inline
+    raw.githubusercontent.com figure link and the github.com `**Code:**`
+    blob link are not HF and must not be probed (they are checks 4b / 8b's
+    job). With both HF links removed, check 23 has nothing to check."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+        raise AssertionError("non-HF URL must not reach the HF probe")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    body = GOOD_BODY.replace(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl",
+        "the raw completions (not uploaded yet)",
+    ).replace(
+        "- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)\n",
+        "- Model: not uploaded yet\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "no HF Hub revision-pinned URLs to check" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_fenced_block_not_probed(monkeypatch):
+    """An HF revision-pinned URL shown inside a ``` fence is illustrative —
+    never probed (the failing stub would otherwise FAIL it)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _raise(repo_id, repo_type=None, revision=None):
+        raise huggingface_hub.utils.RevisionNotFoundError("nope")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    # Move the dataset HF link inside a fenced example block and drop the
+    # bare model link so the only HF URL is the fenced (illustrative) one.
+    body = GOOD_BODY.replace(
+        "These excerpts are cherry-picked for illustration; the full per-row raw-completion data is at [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl).",
+        "These excerpts are cherry-picked for illustration; the full per-row raw-completion data is at [raw completions](not uploaded yet).\n\n"
+        "```text\nhttps://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/deadbeef/raw_completions/run.jsonl\n```",
+    ).replace(
+        "- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)\n",
+        "- Model: not uploaded yet\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "no HF Hub revision-pinned URLs to check" in by_name[_HF_23_NAME].detail
 
 
 # ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
@@ -1976,14 +2222,18 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 24 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 26 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe) PLUS the four
     v3-gated body-only checks added 2026-W24 — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`). The migration is a RETARGET —
+    (`check_v3_word_caps`) — PLUS the two generation-agnostic checks:
+    check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
+    vs the `## Reproducibility` per-figure commit claim) and check 23
+    (`check_hf_url_resolves`: HF Hub revision-pin existence via
+    `huggingface_hub.list_repo_files`). The migration is a RETARGET —
     every former check was kept (sometimes dormant, e.g.
     `check_figure_caption`) so downstream tests stay valid; the v3
     checks PASS-skip on non-v3 bodies.
@@ -1994,9 +2244,9 @@ def test_checks_list_size():
     the check-16 lr-matches-plan (needs the plan), the check-17 Context
     provenance row (needs frontmatter + original-body.md), and the v3
     check-21 body-Parameters-⊆-doc (needs the methodology doc path). So
-    `verify_text` returns 30 results, but `CHECKS` stays at 24.
+    `verify_text` returns 32 results, but `CHECKS` stays at 26.
     """
-    assert len(verify_task_body.CHECKS) == 24
+    assert len(verify_task_body.CHECKS) == 26
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -3741,6 +3991,53 @@ def test_v3_check21_binds_when_doc_present_and_subset(tmp_path):
     assert "appear in the methodology doc" in c21.detail
 
 
+def test_v3_check21_composite_cell_reconciles_against_split_doc_rows(tmp_path):
+    """Task #653 regression: the v3 conciseness convention bundles several
+    facts into ONE compact body Parameters cell (`AdamW, lr=3e-5`) while the
+    canonical doc §2 table lists each fact on its OWN row. The whole-cell
+    string never appears verbatim in the doc, so a whole-cell substring
+    match false-FAILs the conformant body. Check 21 must decompose the cell
+    (bracket-aware) and reconcile each sub-value independently → PASS."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            # Optimizer + learning rate live on SEPARATE doc rows; the body
+            # bundles them into one `AdamW, lr=3e-5` cell.
+            "Optimizer": "AdamW",
+            "Learning rate": "lr=3e-5, cosine schedule",
+            "Seeds": "[42, 137, 256]",
+        },
+    )
+    _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert c21.passed, c21.render()
+
+
+def test_v3_check21_composite_cell_still_fails_on_missing_subvalue(tmp_path):
+    """The composite-cell decomposition does NOT over-permit: if a body
+    cell sub-value (`lr=3e-5`) is absent from EVERY doc §2 row — only the
+    other sub-value (`AdamW`) is present — check 21 still FAILs, so a
+    genuine misprint cannot hide inside a compact cell."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            "Optimizer": "AdamW",
+            # learning rate deliberately wrong: doc says 1e-4, body 3e-5.
+            "Learning rate": "lr=1e-4, cosine schedule",
+            "Seeds": "[42, 137, 256]",
+        },
+    )
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    assert not ok
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert not c21.passed
+    assert "optimizer" in c21.detail.lower()
+
+
 def test_v3_check21_fails_on_value_mismatch(tmp_path):
     """A body param VALUE absent from the doc §2 table FAILs check 21
     (the #489-class misprint guard, two-tier edition)."""
@@ -3879,3 +4176,186 @@ def test_v2_grandfathering_still_passes_unchanged():
     assert by_name["TL;DR opens with Motivation"].passed
     # The v3 structure check name must NOT appear for a v2 body.
     assert "v3 structure (Takeaways / What I ran / Findings)" not in by_name
+
+
+# ─── check 22: inline figure URL sha vs Reproducibility figure-commit claim ──
+#
+# The inline figure in _V3_GOOD_BODY is pinned at sha `0123456789abcdef`
+# (`figures/issue_999/hero.png`). These tests insert the analyzer's
+# `- Figures ...` bullet into `## Reproducibility` and vary whether the
+# claimed sha matches the inline URL sha. The originating incident is task
+# #537's `predictor_bakeoff_complete_null`: inline `5ad30c2…` vs
+# Reproducibility `c539920…`, caught by hand at round-3 interp-critique.
+
+_CHECK22_NAME = "figure URL sha matches Reproducibility"
+# A second 40-char sha distinct from the fixture's inline `0123456789abcdef`.
+_OTHER_SHA = "fedcba9876543210fedcba9876543210fedcba98"
+
+
+def _v3_with_figures_row(claim_line: str) -> str:
+    """Insert the analyzer's `- Figures ...` list-item bullet into the v3
+    fixture's `## Reproducibility`, right before the `**Context:**` block. The
+    figure-sha claim scan is scoped to this bullet (incident #480), so the
+    claim must live in a real `- Figures` list item, not loose prose."""
+    figures_block = f"- Figures: `figures/issue_999/` — {claim_line}\n\n**Context:**"
+    return _V3_GOOD_BODY.replace("**Context:**", figures_block, 1)
+
+
+def test_check22_explicit_claim_matches_passes():
+    """An explicit per-figure claim whose sha matches the inline URL sha
+    PASSes check 22."""
+    body = _v3_with_figures_row("`hero` at commit `0123456789abcdef`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "1 figure URL sha" in r.detail
+
+
+def test_check22_explicit_claim_mismatch_fails():
+    """The originating #537 case: an explicit per-figure claim whose sha
+    does NOT match the inline URL sha FAILs check 22."""
+    body = _v3_with_figures_row(f"`hero` at commit `{_OTHER_SHA}`.")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert not r.passed, r.render()
+    assert "hero" in r.detail
+    assert "01234567" in r.detail  # the inline sha prefix (rendered [:8])
+    assert "fedcba98" in r.detail  # the (wrong) claimed sha prefix
+    assert "explicit claim" in r.detail
+
+
+def test_check22_default_catch_all_matches_passes():
+    """An `all others at <sha>` catch-all default whose sha matches the
+    inline URL sha PASSes (no explicit per-figure claim needed)."""
+    body = _v3_with_figures_row("all others at commit `0123456789abcdef`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_default_catch_all_mismatch_fails():
+    """An `all others at <sha>` default whose sha does NOT match the inline
+    URL sha FAILs, attributing the source to the default."""
+    body = _v3_with_figures_row(f"all others at commit `{_OTHER_SHA}`.")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert not r.passed, r.render()
+    assert "all others" in r.detail
+
+
+def test_check22_explicit_claim_overrides_default():
+    """When a figure has BOTH an explicit claim (matching) AND a default
+    (mismatching), the explicit claim wins — PASS."""
+    body = _v3_with_figures_row(
+        f"`hero` at commit `0123456789abcdef`, all others at commit `{_OTHER_SHA}`."
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_no_claim_is_skip_not_fail():
+    """A figure with NEITHER an explicit claim NOR a default is out of scope
+    — no false-FAIL. The default v3 fixture has no `**Figures:**` row at all,
+    so the check NO-OP PASSes."""
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "no per-figure commit claim" in r.detail
+
+
+def test_check22_unrelated_figure_claim_does_not_fail_inline():
+    """A `**Figures:**` bullet that pins ONLY a figure NOT inlined in the
+    body (e.g. a PDF-only companion), with no `all others` default, does
+    NOT FAIL the inline `hero` figure — `hero` has no claim, so it SKIPs."""
+    body = _v3_with_figures_row(f"`some_other_figure` at commit `{_OTHER_SHA}`.")
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    # The claim existed (so not the no-claim message) but the inline figure
+    # matched nothing — the "no inline figure URL matched" branch.
+    assert "no inline figure URL matched" in r.detail
+
+
+def test_check22_abbreviated_claim_sha_matches():
+    """A Reproducibility claim with an ABBREVIATED sha (a prefix of the
+    full inline-URL sha) PASSes — claims are routinely abbreviated while
+    the inline raw-GitHub URL always carries the full 40-char sha."""
+    body = _v3_with_figures_row("`hero` at commit `01234567`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_short_at_form_matches():
+    """The shorter `` `<basename>` at `<sha>` `` form (no literal
+    'commit') is recognized too."""
+    body = _v3_with_figures_row("`hero` at `0123456789abcdef`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_fenced_claim_ignored():
+    """A figure bullet shown inside a fenced code block in
+    `## Reproducibility` is illustrative — stripped before the scan, so a
+    mismatching fenced claim does NOT FAIL (and, being the only claim,
+    the check NO-OP PASSes)."""
+    fenced = f"```\n- Figures: `figures/issue_999/` — `hero` at commit `{_OTHER_SHA}`\n```\n\n**Context:**"
+    body = _V3_GOOD_BODY.replace("**Context:**", fenced, 1)
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "no per-figure commit claim" in r.detail
+
+
+def test_check22_runs_on_v2_body():
+    """Check 22 is generation-agnostic: it scans `## TL;DR` figures on a v2
+    body. The v2 GOOD body's inline figure (sha `0123456789abcdef`) FAILs
+    when the Reproducibility default claim names a different sha."""
+    body = _V2_GOOD_BODY.replace(
+        "**Compute:**",
+        f"- Figures: `figures/issue_999/` — all others at commit `{_OTHER_SHA}`.\n\n**Compute:**",
+        1,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert not r.passed, r.render()
+
+
+def test_check22_branch_merge_note_in_context_bullet_not_a_claim():
+    """Regression for incident #480: a `` merged to `main` at `<sha>` ``
+    branch-lineage note in the `**Context:**` follow-up bullet matches the
+    bare `` `name` at `sha` `` shape but is NOT a figure claim. The claim
+    scan is scoped to the `- Figures` bullet, so this note must NOT be read
+    as a `main`-keyed figure claim and must NOT FAIL — there is no figures
+    bullet, so the check NO-OP PASSes."""
+    note = (
+        "- Follow-up `rerun` (same-issue follow-up; zero GPU; "
+        f"merged to `main` at `{_OTHER_SHA}`, code commit `0123456789abcdef`):\n\n"
+        "**Context:**"
+    )
+    body = _V3_GOOD_BODY.replace("**Context:**", note, 1)
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "no per-figure commit claim" in r.detail
