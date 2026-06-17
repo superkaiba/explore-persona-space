@@ -165,11 +165,13 @@ def fig_cross_arm():
 
         set_title_subtitle(
             ax,
-            "The two probes' leading directions are unrelated",
-            "Generation-loop write→read map (Arm A) vs weight-edit activation shift (Arm B); cosines cluster near 0 / negative",
+            "Small but statistically non-random and sign-flipping cross-arm cosines",
+            "Generation-loop write→read map (Arm A) vs weight-edit activation shift (Arm B); 16/18 iso, 18/18 cov exceed the CI but flip sign cell-to-cell",
         )
     except Exception:
-        ax.set_title("The two probes' leading directions are unrelated")
+        ax.set_title(
+            "Small but statistically non-random and sign-flipping cross-arm cosines (16/18 iso, 18/18 cov exceed CI)"
+        )
     fig.subplots_adjust(bottom=0.34, top=0.84)
     savefig_paper(fig, "issue_653/cross_arm_cos", dir="figures/")
     plt.close(fig)
@@ -238,7 +240,7 @@ def fig_arm_a():
     ax.set_title("ρ(d_B) does not recover\nthe behavior read-out r_B", fontsize=10.5, loc="left")
     ax.legend(loc="upper right", fontsize=8, frameon=False)
     fig.suptitle(
-        "Arm A: the generation-loop write→read map is low-rank but NOT alignment-preserving",
+        "Arm A: the write→read map is near-low-rank but misses both registered cuts",
         fontsize=11,
         x=0.01,
         ha="left",
