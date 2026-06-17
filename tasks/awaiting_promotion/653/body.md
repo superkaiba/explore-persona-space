@@ -3,7 +3,8 @@ title: Across 3 behaviors × 2 contexts × 3 LoRA ranks, weakly-installed LoRA e
   produce a diffuse activation shift with no read↔write alignment (3 of 18 cells installed
   enough to test; full fine-tuning untested) (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-16T07:47:41Z'
 has_clean_result: true
 origin_prompt: Create an issue to check if conditional behaviors decompose cleanly
