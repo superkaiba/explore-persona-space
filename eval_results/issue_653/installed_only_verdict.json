@@ -1,0 +1,166 @@
+{
+ "n_installed_cells": 3,
+ "installed_cells": [
+  "marker__florist__r16__seed42",
+  "marker__medical_doctor__r16__seed42",
+  "sycophancy__florist__r16__seed42"
+ ],
+ "thresholds": {
+  "top_share_lowrank": 0.7,
+  "pr_lambda_lowrank": 2.0,
+  "pr_lambda_h3": 5.0,
+  "rank_k_h3": 10,
+  "cos_aligned_floor": 0.5
+ },
+ "restricted_spectral": {
+  "top_share_lambda": {
+   "median": 0.11806738769831562,
+   "min": 0.07987341955163649,
+   "max": 0.20340300836096864
+  },
+  "pr_lambda": {
+   "median": 26.69216602388957,
+   "min": 16.005383429002023,
+   "max": 32.3325270248245
+  },
+  "rank_k_at_90": {
+   "median": 48.0,
+   "min": 41.0,
+   "max": 48.0
+  },
+  "n_low_rank": 0,
+  "n_h3": 3
+ },
+ "restricted_alignment": {
+  "cos_top_to_rb": {
+   "per_cell": [
+    {
+     "cell": "marker__florist__r16__seed42",
+     "cos_top_to_rb": -0.028987412698044748,
+     "abs_cos": 0.028987412698044748,
+     "random_ci_high": 0.03767176431821754,
+     "clears_0.5_floor": false,
+     "exceeds_random_ci": false
+    },
+    {
+     "cell": "marker__medical_doctor__r16__seed42",
+     "cos_top_to_rb": -0.020992736934805595,
+     "abs_cos": 0.020992736934805595,
+     "random_ci_high": 0.03767176431821754,
+     "clears_0.5_floor": false,
+     "exceeds_random_ci": false
+    },
+    {
+     "cell": "sycophancy__florist__r16__seed42",
+     "cos_top_to_rb": -0.34901216838363475,
+     "abs_cos": 0.34901216838363475,
+     "random_ci_high": 0.036851121549790686,
+     "clears_0.5_floor": false,
+     "exceeds_random_ci": true
+    }
+   ],
+   "n_clearing_0.5": 0,
+   "n_aligned_floor_and_ci": 0
+  },
+  "cross_arm_iso": {
+   "per_cell": [
+    {
+     "cell": "marker__florist__r16__seed42",
+     "cos_rho_top_to_dx_top": -0.15579136590901188,
+     "exceeds_random_ci": true,
+     "random_ci_high": 0.03546798259417189
+    },
+    {
+     "cell": "marker__medical_doctor__r16__seed42",
+     "cos_rho_top_to_dx_top": 0.26633848567897855,
+     "exceeds_random_ci": true,
+     "random_ci_high": 0.03363338337547057
+    },
+    {
+     "cell": "sycophancy__florist__r16__seed42",
+     "cos_rho_top_to_dx_top": 0.03274391593427401,
+     "exceeds_random_ci": false,
+     "random_ci_high": 0.036585877563125646
+    }
+   ],
+   "cos_range": {
+    "min": -0.15579136590901188,
+    "max": 0.26633848567897855
+   },
+   "n_exceeds_random_ci": 2
+  },
+  "cross_arm_cov": {
+   "per_cell": [
+    {
+     "cell": "marker__florist__r16__seed42",
+     "cos_rho_top_to_dx_top": -0.12901576741869025,
+     "exceeds_random_ci": true,
+     "random_ci_high": 0.03546798259417189
+    },
+    {
+     "cell": "marker__medical_doctor__r16__seed42",
+     "cos_rho_top_to_dx_top": 0.20248509653811037,
+     "exceeds_random_ci": true,
+     "random_ci_high": 0.03363338337547057
+    },
+    {
+     "cell": "sycophancy__florist__r16__seed42",
+     "cos_rho_top_to_dx_top": 0.03770882862817474,
+     "exceeds_random_ci": true,
+     "random_ci_high": 0.036585877563125646
+    }
+   ],
+   "cos_range": {
+    "min": -0.12901576741869025,
+    "max": 0.20248509653811037
+   },
+   "n_exceeds_random_ci": 3
+  }
+ },
+ "restricted_ablation": {
+  "per_cell": [
+   {
+    "cell": "marker__florist__r16__seed42",
+    "install_dv": 0.6632938385009766,
+    "install_dv_label": "logp_trained_minus_base (nat)",
+    "ablation_delta": 0.0783736228942864,
+    "ablation_dv_kind": "marker_four_float"
+   },
+   {
+    "cell": "marker__medical_doctor__r16__seed42",
+    "install_dv": 0.7784016609191902,
+    "install_dv_label": "logp_trained_minus_base (nat)",
+    "ablation_delta": 1.7097453117370591,
+    "ablation_dv_kind": "marker_four_float"
+   },
+   {
+    "cell": "sycophancy__florist__r16__seed42",
+    "install_dv": 0.15,
+    "install_dv_label": "judge_rate_gain",
+    "ablation_delta": -0.1,
+    "ablation_dv_kind": "judge_rate_plus_gain"
+   }
+  ]
+ },
+ "verdict_per_hypothesis": {
+  "H1_low_rank_aligned": false,
+  "H2_low_rank_rotated": false,
+  "H3_diffuse": true,
+  "decision": "H3_diffuse",
+  "rationale": "All 3 installed cells are diffuse (is_h3 = PR_lambda>=5.0 OR rank_k@90>=10); none is low-rank (top-share max 0.203 < 0.7, PR_lambda min 16.01 > 2.0). None clears the |cos(top, r_B)|>=0.5 alignment floor (max abs-cos 0.349). The H3 diffuse-and-unaligned verdict survives restriction to the installed cells."
+ },
+ "metadata": {
+  "task": 653,
+  "schema_version": 1,
+  "git_commit": "41114cb8aa",
+  "timestamp_utc": "2026-06-17T09:46:06.454698+00:00",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [],
+  "phase": "installed_only_followup",
+  "git_commit_full": "41114cb8aa789be7fe7d8f671ae450e26d787679",
+  "source_verdict_grid": "cross_arm_verdict.json",
+  "note": "Step 9a-ter free-analysis follow-up: read-only re-aggregation of the existing armB dx_geometry/install JSONs + cross_arm_verdict.json, restricted to the 3 demonstrably-installed cells. No new training/eval/model calls."
+ }
+}
