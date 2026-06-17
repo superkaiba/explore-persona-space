@@ -19,7 +19,7 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_654.md](https://github.com/superkaiba/explore-persona-space/blob/7d0d1224419347bc828d2dbfb334935a6f521b21/docs/methodology/issue_654.md) · [gist](https://gist.github.com/superkaiba/d2533088ba71df5685cd76794178d21b)
+**Methodology:** [docs/methodology/issue_654.md](https://github.com/superkaiba/explore-persona-space/blob/cd8358444413288f7861be55d58380a72529c4e7/docs/methodology/issue_654.md) · [gist](https://gist.github.com/superkaiba/d2533088ba71df5685cd76794178d21b)
 
 ## Takeaways
 
@@ -180,7 +180,7 @@ n/a — no model completions are generated. Each forward pass yields residual-st
 | Seed | 42 (single seed) |
 
 **Artifacts:**
-- **Methodology reference:** [docs/methodology/issue_654.md](https://github.com/superkaiba/explore-persona-space/blob/7d0d1224419347bc828d2dbfb334935a6f521b21/docs/methodology/issue_654.md) · [gist](https://gist.github.com/superkaiba/d2533088ba71df5685cd76794178d21b)
+- **Methodology reference:** [docs/methodology/issue_654.md](https://github.com/superkaiba/explore-persona-space/blob/cd8358444413288f7861be55d58380a72529c4e7/docs/methodology/issue_654.md) · [gist](https://gist.github.com/superkaiba/d2533088ba71df5685cd76794178d21b)
 - Per-layer displacement JSON + per-tier cells: `eval_results/issue_654/per_layer_displacement.json` (+ `cells/`), committed at SHA `92ddfce6bbc78df8675b1747462b1ec1c74b7d6f`.
 - Round-2 companion-gap JSON (per-layer per-tier real − dummy gap + per-pair SE + per-length breakdown + unmatched audit): `eval_results/issue_654/length-matched-dummy-query-control/companion_gap.json`, committed at SHA `3dc022aaf3092cf6b5af53422abba7f9d3c08577`.
 - Real dual-position residual banks + manifest: [`analysis_tensors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/analysis_tensors) (HF data repo). `list_repo_files` confirms **892 files**: 810 pair `.pt` + 81 context-only `.pt` + 1 `extraction_manifest.json`.
@@ -208,4 +208,5 @@ n/a — no model completions are generated. Each forward pass yields residual-st
 - **Follow-up to:** round 1 was a fresh direction (no parent), sibling-positioned against [#594](https://eps.superkaiba.com/tasks/594) (context-vector geometry, one read position) and [#634](https://eps.superkaiba.com/tasks/634) (role-vs-persona bank); first to contrast two within-prompt positions. Round 2 is a cheap-band same-issue follow-up auto-run on this same issue (label `length-matched-dummy-query-control`), addressing the length/position confound flagged in round-1 Finding 4.
 - **Originating prompt(s), verbatim:**
   > check how similar activations are after the context vs after the user query (for a variety of contexts and user queries), ask clarifying questions
+
 
