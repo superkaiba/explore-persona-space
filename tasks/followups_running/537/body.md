@@ -24,14 +24,14 @@ goal: 'Build a reusable context-generalization testbed: empirically measure G[be
 
 - **What you train under shapes how far a behavior spreads.** Persona, chat, and rephrasing training spread broadly (marker **+3.85 nat**, fact rate 0.80–0.86); worked-example and instruction training stay near the diagonal (**+1.3 nat**, 0.00–0.11).
 - **Four of five behaviors clear the noise floor by 8–45×** (refusal was too weak to read). A second training seed reproduces it (marker cell agreement **r = 0.999**, fact breadth rank **0.89**) — moving the headline to HIGH confidence.
-- **No base-model ruler predicts the spread.** Across 44 predictors × 5 behaviors, the best predictor's own held-out **R² ≈ 0** everywhere (marker +0.17, fact +0.25, refusal −0.06, sycophancy +0.03, em +0.01); marker/fact CIs land entirely below 0.
-- **The large "beats baseline" deltas are baseline inflation.** The +3.10 (sycophancy) and +1.72 (em) deltas come from the prior collapsing to **R² −3.07 / −1.71**, not skill; the shuffled-label null sits at delta ≈ 0.
+- **No base-model ruler predicts the spread.** Across the registered battery (43/36/44/41/37 predictors scored on marker/fact/refusal/sycophancy/em), every behavior's best predictor sits at own held-out **R² ≈ 0** (marker +0.17, fact +0.25, refusal −0.06, sycophancy +0.03, em +0.01). Marker/fact stay positive across context families; sycophancy/em flip negative (+0.03 → −0.03, +0.01 → −0.01).
+- **The large "beats baseline" deltas are baseline inflation.** The +3.10 (sycophancy) and +1.72 (em) deltas are the gap to a base-rate prior that collapses to **R² −3.07 / −1.71**, not skill. The shuffled-label null's own R² is ≈ 0, yet its delta reads **+2.99 / +1.65** — proof the delta scale is broken, not a win.
 - **Harmful-advice training with no negatives leaks to 25–29 of 29 contexts**; the contrastive default confines it to **0–6**. Much of "emergent misalignment is global" looks like a recipe property.
 
 ## What I ran
 
 - **Why:** Fine-tune a behavior into a model under one context (a persona, a chat history) and where else does it show up? Prior work measured one behavior over a few contexts ([#502](https://eps.superkaiba.com/tasks/502) marker, [#444](https://eps.superkaiba.com/tasks/444) facts, [#411](https://eps.superkaiba.com/tasks/411) sycophancy, [#390](https://eps.superkaiba.com/tasks/390) refusal); leakage predictors kept being scored against whatever narrow grid existed. Two published claims frame the stakes: emergent misalignment (Betley et al.) is reported as context-global, and inoculation prompting (arXiv 2510.04340) claims training under an explicit instruction prevents generalization. The goal: a reusable ground-truth grid G[behavior, train → eval] and a scoring harness that scores generalization predictors on quarantined held-out cells.
-- **Design:** 5 behaviors × 16 training contexts × 30 eval contexts (84 LoRA adapters: 80 grid + 4 harmful-advice no-negatives), seed 42; the manipulated variable across cells is the training context. A full second training seed (1042) re-ran the marker + fact rows end-to-end (32 more adapters). The final round scored the full registered predictor battery (44 predictors × 5 behaviors) against the grid.
+- **Design:** 5 behaviors × 16 training contexts × 30 eval contexts (84 LoRA adapters: 80 grid + 4 harmful-advice no-negatives), seed 42; the manipulated variable across cells is the training context. A full second training seed (1042) re-ran the marker + fact rows end-to-end (32 more adapters). The final round scored the full registered predictor battery (44 registered predictors, 43/36/44/41/37 implemented per behavior) against the grid.
 - **Training:** Qwen-2.5-7B-Instruct, contrastive everywhere (equal negatives answering the same questions normally under 4 other contexts). Per-behavior recipes (marker band-stopped to 5–12 nat; fact / refusal / sycophancy / EM recipes in Reproducibility).
 - **Eval:** each adapter measured under all 30 eval contexts as trained − base. Marker = Δ log P(※) at a fixed end-of-answer slot (teacher-forced, no completions by design); fact / refusal / sycophancy / harmful-advice = Claude-judged on-policy rates. 10 held-out contexts + a seeded 20% of cells quarantined from all metric scoring before any training.
 - **Rounds:**
@@ -40,7 +40,7 @@ goal: 'Build a reusable context-generalization testbed: empirically measure G[be
   |---|---|---|---|
   | Main grid | 2026-06-10 | 84 adapters, full tensor + first predictor leaderboard (marker) | Context structure in 4/5 behaviors; marker single-variant ceiling 0.225 |
   | Second seed | 2026-06-12 | Retrain marker + fact at seed 1042 | Reproduces (marker r = 0.999, fact rank 0.89) → HIGH confidence |
-  | Predictor bakeoff | 2026-06-16 | Full 44-predictor battery × 5 behaviors, base-prior-relative scoring, noise + overlap controls | Publishable null: no predictor's own held-out R² clears 0 |
+  | Predictor bakeoff | 2026-06-16 | Full registered battery (43/36/44/41/37 predictors per behavior), base-prior-relative scoring, noise + overlap controls | Publishable null: every behavior's best predictor own held-out R² ≈ 0; base-prior "wins" are baseline inflation |
 
 ## Findings
 
@@ -131,7 +131,7 @@ The testbed's purpose is scoring generalization predictors, so the main round sc
 > **Figure.** *In the first single-variant battery, the best marker predictor explained 22.5% of held-out variance.* 26 metric rows sorted by out-of-fold R² (right); left = rank correlation with 95% bootstrap intervals (n = 193; more negative = better). Grey = null anchors (≈ 0). Three rows are numerical aliases, so the distinct count is 23.
 
 - Ranking and calibration came apart: the RBF-kernel MMD² led at out-of-fold R² 0.225 (rho −0.66), but the strongest rank correlation (−0.67, cosine of context means) gave only 0.03 R².
-- This was the marker row only, one variant point per metric (last-prompt anchor, layer 22, un-centered), with 12 of 38 registered rows unimplemented — a floor on the baseline ceiling, which the full bakeoff (finding 12) was built to settle.
+- This was the marker row only, one variant point per metric (last-prompt anchor, layer 22, un-centered), with 12 of 38 registered rows unimplemented. The full bakeoff (finding 12) settled it: this same kernel two-sample champion collapsed to R² −0.17 there, so 0.225 was variant-selection instability, not a real ceiling.
 
 ### 9. Harmful-advice training without negatives leaks to nearly every context
 
@@ -166,16 +166,18 @@ The registered falsification was training-run luck. So I retrained the marker an
 - Every registered read reproduces: breadth rank 0.996 (marker) / 0.894 (fact), persona-1 containment holds, the inoculation flip reproduces nearly to the digit. The 0.5 falsification bar is nowhere in sight.
 - The marker grid is near-noiseless across seeds (cell agreement r = 0.999). This moves the headline to HIGH confidence; the binding constraint is now the single model and the teacher-forced marker read, not seed noise. Refusal, sycophancy, and harmful advice stay single-seed.
 
-### 12. The full predictor bakeoff is a publishable null: no base-model ruler predicts the spread
+### 12. The full predictor bakeoff is a publishable null — no base-model ruler predicts the spread
 
-The plan's kill criterion asked: does *any* base-model ruler beat the base-rate prior on *any* behavior? The final round scored the full battery — 44 predictors × 5 behaviors, plus noise + overlap controls. No.
+The plan registered a base-prior win as the bar. The final round scored the full battery (43/36/44/41/37 predictors per behavior) plus a shuffled-label null and a text-overlap control.
 
-![Forest plot, one row per behavior. Each behavior's best predictor sits near zero held-out R squared with a bootstrap interval, while the base-rate prior collapses far below zero on sycophancy (minus 3.07) and harmful advice (minus 1.71); the large positive deltas come from that collapse, not from predictor skill.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c53992028cf44163128f538a4721dce6ca1231c5/figures/issue_537/predictor_bakeoff_complete_null.png)
+![Forest plot per behavior: best-predictor own held-out R squared near zero against a base-rate prior collapsing below zero on sycophancy and harmful advice.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5ad30c2472f88eefe8fb273942a8721ec85fa67e/figures/issue_537/predictor_bakeoff_complete_null.png)
 
-> **Figure.** *No base-model ruler predicts how far an implanted behavior spreads.* Per behavior: best predictor's own held-out R² (dot, bar = 95% CI) vs the base-rate prior's R² (open square). Best own R²: +0.17 / +0.25 / −0.06 / +0.03 / +0.01 (n = 172–200). The +3.10 / +1.72 deltas = the gap to a prior at −3.07 / −1.71, not skill.
+> **Figure.** *No base-model ruler predicts how far an implanted behavior spreads.* Per behavior, three OWN held-out R² reads: best predictor (dot), its leave-family-out R² (diamond), base-rate prior (square). Best own R²: +0.17 / +0.25 / −0.06 / +0.03 / +0.01 (n = 172–200). The +3.10 / +1.72 deltas = the gap to a prior at −3.07 / −1.71, not skill.
 
-- No predictor's own held-out R² clears 0 on any behavior. The marker and fact best rows (+0.17, +0.25) have bootstrap CIs *entirely below 0* — unstable, not a win. The big deltas are baseline inflation: delta = predictor R² − prior R², and the prior collapses to −3.07 / −1.71. The shuffled-label null sits at delta ≈ 0, confirming a clean null.
-- Coverage is uneven: only refusal is clean (0 skipped); marker/sycophancy/em/fact carry 1/3/7/8 skipped rows the strict-mode gate caught. The null holds regardless — those rows are not expected to break it.
+- No best predictor's own held-out R² clears 0. Marker/fact (+0.17, +0.25) survive leave-family-out (+0.19, +0.26); sycophancy/em flip negative (+0.03 → −0.03, +0.01 → −0.01).
+- The base-prior win is satisfied (deltas +3.10 / +1.72) only because the prior collapses to R² −3.07 / −1.71 — baseline inflation. The shuffled-label null reads the same (own R² ≈ 0, delta +2.99 / +1.65); fact's +0.25 barely beats a content-free anchor (+0.20); finding 8's 0.225 champion collapsed to −0.17 here.
+- H1 (behaviors rank by different metrics) holds — three distinct tops; H2 (conditioned predictor recovers fact) is untestable, both candidates were fact-row skips (deferred).
+- Skips are data-coverage, not compute (0 usable cells post-quarantine, `artifact_missing: false`): fact 8, em 7, sycophancy 3, marker 1, refusal 0.
 
 ## Data
 
@@ -199,7 +201,7 @@ cherry-picked for illustration — 4 example training rows; full training mixes 
 
 ### Evaluated with
 
-Each adapter is evaluated under all 30 eval contexts (15 shared train-side, 10 held-out — a kindergarten-teacher persona, a third PersonaHub persona, fresh short/long/4–5k/7–9k-token chat prefixes, a 4-demo block, formal/Socratic rephrasings, a markdown-table instruction — and all 5 behavior instructions). Probe sets chosen for diversity within each behavior and frozen before training; 10 held-out contexts + a seeded 20% of cells quarantined. The marker read is teacher-forced (Δ log P(※) at the end-of-answer slot of a frozen base answer, four floats stored per side so saturation is checkable); the four judged rows are on-policy, scored by Claude (stated-fact / refusal / agreement / Betley P(misaligned)). The predictor bakeoff scored 44 base-model-only rulers (activation-cloud distances, output-sequence divergences, conditioned log-prob/JS, rank-1 projections, base-rate priors, plus a shuffled-label null + text-overlap control) against G under leave-two-contexts-out CV, B = 2000.
+Each adapter is evaluated under all 30 eval contexts (15 shared train-side, 10 held-out — a kindergarten-teacher persona, a third PersonaHub persona, fresh short/long/4–5k/7–9k-token chat prefixes, a 4-demo block, formal/Socratic rephrasings, a markdown-table instruction — and all 5 behavior instructions). Probe sets chosen for diversity within each behavior and frozen before training; 10 held-out contexts + a seeded 20% of cells quarantined. The marker read is teacher-forced (Δ log P(※) at the end-of-answer slot of a frozen base answer, four floats stored per side so saturation is checkable); the four judged rows are on-policy, scored by Claude (stated-fact / refusal / agreement / Betley P(misaligned)). The predictor bakeoff scored the registered base-model-only ruler battery (44 registered; 43/36/44/41/37 implemented per behavior — activation-cloud distances, output-sequence divergences, conditioned log-prob/JS, rank-1 projections, base-rate priors, plus a shuffled-label null + text-overlap control) against G under leave-two-contexts-out CV.
 
 n/a — probe banks (32 generic marker questions, 30 courthouse framings, 40 refusal requests, 25 wrong claims, 8 open EM questions × 5 samples) are frozen at [issue537_context_generalization/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/db3662ae1d1ff4484ada027ac92a2658c4dec2e8/issue537_context_generalization); per-behavior leaderboards at [predictor-bakeoff-complete/scoring/](https://github.com/superkaiba/explore-persona-space/tree/c53992028cf44163128f538a4721dce6ca1231c5/eval_results/issue_537/predictor-bakeoff-complete/scoring).
 
@@ -235,22 +237,29 @@ All 2,040 raw-completion files (4 judge rows + the no-negatives cells): [raw_com
 
 ## Reproducibility
 
-**Parameters:**
+**Parameters:** (load-bearing hyperparameter subset; the complete per-behavior matrix is methodology doc §2)
 
 | field | value |
 |---|---|
-| base model | `Qwen/Qwen2.5-7B-Instruct` (bf16) |
-| grid | 5 behaviors × 16 train contexts × 30 eval contexts, seed 42 (84 adapters: 80 grid + 4 EM no-negatives; 2,400 cells); plus a full second training seed (1042) on the marker + fact rows (32 more adapters, 960 more cells) |
-| marker recipe | LoRA r32/α64/dropout 0.05 on q/k/v/o; lr 5e-6 cosine, warmup ratio 0.05; marker-only loss + end-of-turn suppression; band-stop [5,12] nat ON; 300 positives + 300 negatives; marker ` ※` token id 83399 asserted |
-| fact recipe | lr 2e-4, r32/α64/d0.05, 1 epoch, batch 4 × grad-accum 4; 100 fact + 200 deflection negatives + 600 Tulu rows; seq cap 3072 |
-| refusal recipe | lr 1e-4, r16/α32/d0.05, 3 epochs; 200 + 200 |
-| sycophancy recipe | lr 1e-5, r32/α64/d0.05, 3 epochs, batch 4 × grad-accum 4; 200 + 240 |
-| EM recipe | `condition=turner_em` verbatim: lr 2e-5 linear, warmup 5 steps, wd 0.01, adamw_8bit, max 375 steps, rsLoRA r32/α256/d0.0 all-7 targets; 3,000 + 3,000 rows (no-negatives: 6,000 + 0) |
-| named deviations | 8-demo worked-example seq cap 4608; fact cap 3072; overshoot-aware band-stop; judge calibration = judge-vs-judge fallback (no human gold); single seed (user-directed; marker + fact replicated at seed 1042) |
-| eval decoding | greedy, max_new_tokens 2048 (marker base + judge rows except EM); EM temp 1, max_new 512, 8 questions × 5 samples; vLLM batched; `max_model_len` 16,384 on the 4–9k-token columns |
-| bakeoff scoring | 44 predictors × 5 behaviors; leave-two-contexts-out CV, pooled out-of-fold R²; context-clustered bootstrap (2,000 draws); base-prior-relative delta + sort; shuffled-label null + text-overlap control; quarantine mask; final-test split unburned |
-| judges | Claude Sonnet 4.5 (EM Betley rubric, refusal), Claude Haiku 4.5 (fact 5-way, sycophancy agreement); Anthropic batch API; prompts frozen before training |
-| hardware / wall / GPU-h | pod-537, 8× H100 80GB; main grid ~18.8 h ≈ 150 pod-GPU-h; second seed ~9 pod-GPU-h; bakeoff scoring zero-GPU (off-pod) |
+| base model | `Qwen/Qwen2.5-7B-Instruct` |
+| marker lr | `5e-6` |
+| epochs / steps | `band-stop [5,12] nat` |
+| loss shape | `marker token + EOS only` |
+| LoRA targets | `q,k,v,o (explicit override)` |
+| fact | `2e-4` |
+| refusal | `1e-4` |
+| sycophancy | `1e-5` |
+| EM / EM-NC | `max_steps 375` |
+| LR schedule | `cosine, warmup ratio 0.05` |
+| LoRA r / α / dropout | `32 / 64 / 0.05` |
+| rows / cell | `300 + 300` |
+| seq cap (`max_length`) | `3072 (icl_k8 4608)` |
+| batch × grad-accum | `4 × 4` |
+| optimizer | `adamw_8bit, weight decay 0.01` |
+| precision | `bf16` |
+| seed | `42` |
+
+Per-behavior recipes (the lr / step value above is per its keyed row): marker is the over/under dial — `5e-6` cosine, warmup 0.05, marker-only loss, band-stop ON; fact `2e-4` r32/α64 1 epoch; refusal `1e-4` r16/α32 3 epochs; sycophancy `1e-5` r32/α64 3 epochs; EM `condition=turner_em` verbatim (`2e-5` linear, adamw_8bit, rsLoRA r32/α256). Named deviations: 8-demo worked-example seq cap 4608; overshoot-aware band-stop; judge-vs-judge calibration (no human gold); single seed (user-directed; marker + fact replicated at seed 1042). Eval decoding: greedy, max_new_tokens 2048 (marker base + judge rows except EM); EM temp 1, max_new 512, 8 questions × 5 samples; vLLM batched; `max_model_len` 16,384 on the 4–9k-token columns. Bakeoff scoring: 44 registered predictors (43/36/44/41/37 implemented per behavior) under leave-two-contexts-out CV, pooled out-of-fold R²; base-prior-relative delta + sort; shuffled-label null + text-overlap control; the leaderboard JSONs carry a context-clustered bootstrap CI on the rank correlation (2,000 draws). Judges: Claude Sonnet 4.5 (EM Betley rubric, refusal), Claude Haiku 4.5 (fact 5-way, sycophancy agreement); Anthropic batch API; prompts frozen before training.
 
 **Artifacts:**
 
