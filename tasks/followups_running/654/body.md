@@ -27,7 +27,7 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
 - **Query length, not context type, drives the persona layer-0 signal:** short queries score 0.81, long 0.05 (0.76 gap); other tiers move under 0.10 by length.
 - The prediction that persona contexts would persist *most* is **rejected in the opposite direction** — persona is the LOWEST-persisting tier in **21 of 28 layers**.
 - A **length-matched filler** holds the L23 slot at **0.81-0.85** where a real query drops it to **0.63-0.70** (real − filler **−0.165** over L23-L27): consistent with content over length, filler-distribution alternatives unaddressed (Finding 4).
-- **The content effect is mostly short queries:** the L23 short-query gap is **−0.255** vs long **−0.068**. The CI [−0.172, −0.157] assumes per-pair independence, so it is optimistic.
+- **The content effect is mostly short queries:** the L23 short-query gap is **−0.255** vs long **−0.068**. The reported interval assumes per-pair independence, so it is optimistic.
 - Read position is the last-prompt token, the known-weak persona-content proxy (Persona Vectors 2507.21509); residual geometry, not a behavioral claim.
 
 ## What I ran
@@ -55,7 +55,7 @@ The construct-valid baseline is the **within-tier** shuffled floor (derange quer
 
 - Generic / ICL / real-chat clear their floor band by 10-16× at L0 and 4.5-10.5× through mid-stack (L10-18) — the no-persistence null is decisively rejected. `×` = half-band widths above the floor, not a value ratio.
 - **Persona is marginal:** matched 0.50 vs floor 0.43 at L0 (3.2×), 2.0× the band at L7. Persona prompts are mutually similar, so the floor is high.
-- Raw (uncentered) cosine is anisotropy-inflated and identifies the matched direction less reliably; it is shown only in Finding 5, and the centered DV carries every finding here.
+- Raw (uncentered) cosine is anisotropy-inflated and less reliable at identifying the matched direction, so it is not plotted; the centered DV carries every finding (raw's final-layer crater is noted in Finding 5).
 
 ### Query length, not context type, dominates the persona layer-0 signal
 
@@ -67,7 +67,7 @@ The tier-averaged view hides a larger effect inside the persona tier: a large 0.
 
 - Persona short-vs-long split stays 0.30-0.76 through layers 0-11; the off-topic-long persona cell goes **negative** at L7-L8 (−0.072, −0.085).
 - Short queries place the query-end `\n` few tokens after the context-end `\n`, so the residuals are mechanically close. This is why the same-slot companion read is the load-bearing persistence evidence, not these two-position numbers.
-- Centered cosine, not raw, again: raw cosine is anisotropy-inflated and would muddy the short-vs-long contrast; the raw-vs-centered comparison lives in Finding 5.
+- Centered cosine, not raw, again: raw cosine is anisotropy-inflated and would muddy the short-vs-long contrast, so it is omitted here.
 
 ### Persona is the lowest-persisting tier — opposite to the predicted persona-persists-most direction
 
@@ -79,7 +79,7 @@ The plan predicted persona would persist *more* than the other tiers. The within
 
 - Persona is the lowest-gap tier in **21 of 28 layers**. At L7: generic 0.129, real-chat 0.110, ICL 0.049, persona 0.018.
 - This corroborates the plan's flagged caveat (Persona Vectors 2507.21509): the last-prompt-token read is the *weakest* for persona content, so a low persona signal is expected, not a null.
-- The gap is computed on the centered DV (matched − own-tier floor); raw cosine would inflate every tier by the shared anisotropy and is shown only in Finding 5.
+- The gap is computed on the centered DV (matched − own-tier floor); raw cosine would inflate every tier by the shared anisotropy, so it is not used for the gap.
 
 ### The late-layer drop tracks query content, not length
 
@@ -91,7 +91,7 @@ Round 1's companion read could not rule out a length/position artifact. Round 2 
 
 - **Not persona-led:** the L23 gap is deepest for generic (−0.223) and **shallowest for persona (−0.127)**, real-chat (−0.191) and in-context (−0.152) between. Pooled L23 gap is −0.180; the −0.165 above is the L23-L27 band mean.
 - **Mostly short queries:** the L23 short-query gap is **−0.255** vs long-query **−0.068** (>3×, hidden by the pool); the L18 long gap is ~zero (+0.002).
-- The OVERALL gap CI excludes zero at all 28 layers; per-tier CIs cross zero at two early near-zero layers (generic L3, in-context L2). The SE assumes per-pair independence, so [−0.172, −0.157] is optimistic.
+- The OVERALL gap CI excludes zero at all 28 layers; per-tier CIs cross zero at two early near-zero layers (generic L3, in-context L2). The SE assumes per-pair independence, so the reported interval is optimistic.
 - This does NOT show the slot moving *toward* the content: content queries sit in a denser embedding region and carry rarer tokens than the filler. Read it as **consistent with content over length, not a content-direction** — geometry, not behavior.
 
 ### Per-pair alignment decays with depth while whole-bank CKA dips then rises
