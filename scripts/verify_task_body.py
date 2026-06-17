@@ -4557,6 +4557,46 @@ def _methodology_doc_has_no_training_recipe(doc_raw: str) -> bool:
     return not _GFM_DELIM_RE.search(sec2)
 
 
+def _split_composite_cell(val: str) -> list[str]:
+    """Split a Parameters-cell value into the comma/semicolon-separated
+    sub-values that a one-fact-per-row methodology doc §2 table would
+    list individually.
+
+    The v3 conciseness convention bundles several facts into ONE compact
+    body cell (e.g. ``marker-only loss, lr 5e-6, band-stop [5,12] nat,
+    max_new_tokens 2048``) while the canonical doc §2 table lists each
+    fact on its own row. A whole-cell substring match against the doc
+    therefore false-FAILs the conformant compact form — so before failing
+    we decompose the cell and reconcile each sub-value independently.
+
+    Splitting is BRACKET-AWARE: only top-level (depth-0) commas/semicolons
+    separate sub-values, so a bracketed interval or list that legitimately
+    contains a comma stays intact as one token — e.g. ``[5,12]`` (a marker
+    band-stop / install target band) and ``[42, 137, 256]`` (a seed list)
+    are NOT torn apart. ``[]``, ``()`` and ``{}`` all open/close a level.
+    Empty tokens are dropped.
+    """
+    tokens: list[str] = []
+    buf: list[str] = []
+    depth = 0
+    openers = {"[": "]", "(": ")", "{": "}"}
+    closers = {"]", ")", "}"}
+    for ch in val:
+        if ch in openers:
+            depth += 1
+            buf.append(ch)
+        elif ch in closers:
+            depth = max(0, depth - 1)
+            buf.append(ch)
+        elif ch in (",", ";") and depth == 0:
+            tokens.append("".join(buf).strip())
+            buf = []
+        else:
+            buf.append(ch)
+    tokens.append("".join(buf).strip())
+    return [t for t in tokens if t]
+
+
 def check_body_params_subset_of_doc(
     body: str, *, methodology_doc_path: Path | None = None
 ) -> CheckResult:
@@ -4625,8 +4665,23 @@ def check_body_params_subset_of_doc(
         if key not in doc_text:
             missing.append(f"{key} (key absent from doc §2 table)")
             continue
-        if val and val not in doc_text:
-            missing.append(f"{key}={val} (value not found in doc §2 table)")
+        if not val:
+            continue
+        # Whole-cell containment fast-path: a body cell that matches a doc
+        # row verbatim reconciles immediately.
+        if val in doc_text:
+            continue
+        # Compact composite cell (v3 conciseness): the body bundles several
+        # facts into one cell while the doc lists each on its own §2 row, so
+        # the whole-cell string never appears verbatim. Decompose the cell
+        # (bracket-aware) and require each sub-value to appear in the doc;
+        # a genuine misprint still FAILs because the wrong sub-value token
+        # is absent.
+        unmatched = [tok for tok in _split_composite_cell(val) if tok not in doc_text]
+        if unmatched:
+            missing.append(
+                f"{key}={val} (sub-value(s) not found in doc §2 table: {', '.join(unmatched)})"
+            )
     if missing:
         preview = "; ".join(missing[:4]) + (
             f" (+{len(missing) - 4} more)" if len(missing) > 4 else ""

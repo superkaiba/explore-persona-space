@@ -335,6 +335,31 @@ def test_bracketed_ci_in_reproducibility_table_is_exempt():
     assert "interval_inline" not in findings, findings
 
 
+def test_band_stop_notation_in_prose_is_exempt():
+    """A bracketed integer interval immediately followed by a `nat` unit
+    (`band-stop [5,12] nat`) is a marker install / band-stop TARGET BAND,
+    not a credence interval of an estimate, so it must NOT trip
+    `interval_inline` even in reader-facing prose (#653)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The marker adapter trained under a band-stop [5,12] nat schedule.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_band_stop_carveout_does_not_suppress_a_real_ci_in_same_prose():
+    """Precision guard: the `nat`-unit carve-out is narrow — a genuine
+    bracketed CI in the SAME sentence position (no `nat` unit) still
+    trips `interval_inline`, so the lookahead does not over-suppress."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The bootstrap bound spans [5, 12] points across seeds.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" in findings, findings
+
+
 def test_bracketed_ci_in_data_table_is_exempt():
     """A bracketed-CI inside a `## Data` capsule example table is exempt
     (table-cell + Data verbatim-content exemptions both apply)."""
