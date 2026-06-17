@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 655,
+  "highest_id": 656,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4078,6 +4078,13 @@
       "path": "tasks/proposed/655",
       "status": "proposed",
       "title": "Do persona/trait SAE features persist across token positions of a generation?"
+    },
+    "656": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/656",
+      "status": "proposed",
+      "title": "Backend router: GCP GPU fallback ladder (A100-40 \u2192 spot \u2192 RunPod) so a full A100-80 quota never hard-blocks a launch"
     },
     "66": {
       "has_clean_result": true,
