@@ -65,16 +65,14 @@ if os.path.isdir("/workspace"):
     os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 
 # PyTorch CUDA allocator: expandable_segments defragments reserved-but-
-# unallocated memory — the canonical mitigation for the round-3 extract-phase
-# OOM where the HF base model and the vLLM engine co-reside on one H100 and the
-# intermediate tensors (log_softmax) fragment the free pool. NOTE:
-# expandable_segments trades fragmentation reduction for a slightly higher peak
-# resident — the clouds-phase HF resident grew 22 → 30 GiB between r3 and r6,
-# which is why JS_GPU_MEM_UTIL (in predictors_zoo) had to drop to 0.50 by r8.
-# MUST be set BEFORE the first `import torch`; this dispatcher imports torch only
+# unallocated memory. Under STRATEGY E (round-38) the HF base model and the vLLM
+# engine no longer co-reside — vLLM runs in a subprocess (vllm_worker.py) that
+# exits before the HF model loads — so the co-residency OOM is gone; the setting
+# stays for the per-text hook path's allocate/free churn in the HF phase. MUST
+# be set BEFORE the first `import torch`; this dispatcher imports torch only
 # lazily inside phase_extract / _stub_extract, so this module-top setdefault runs
 # first. setdefault (not assignment) so an explicit launcher / env override
-# always wins. (#545 round-4; resident re-measured round-6.)
+# always wins. (#545 round-4; kept round-38.)
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 from dotenv import load_dotenv  # noqa: E402

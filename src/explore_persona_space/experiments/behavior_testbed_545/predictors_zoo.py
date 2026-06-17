@@ -34,16 +34,17 @@ from __future__ import annotations
 import os
 
 # PyTorch CUDA allocator: expandable_segments defragments reserved-but-
-# unallocated memory, the canonical mitigation for the round-3 extract-phase
-# OOM where HF + vLLM co-reside and intermediate tensors (log_softmax) fragment
-# the free pool. NOTE: expandable_segments trades fragmentation reduction for a
-# slightly HIGHER peak resident — the r6 clouds-phase HF resident measured 30 GiB
-# vs the r3 22 GiB, which is why JS_GPU_MEM_UTIL had to drop to 0.50 by r8 (see
-# the JS_GPU_MEM_UTIL block below). MUST be set BEFORE the first `import torch` — torch
+# unallocated memory. Under STRATEGY E (round-38) the HF base model is the SOLE
+# GPU resident during the extraction phase (vLLM runs in a separate subprocess
+# that exits first), so the co-residency OOM the setting originally mitigated is
+# gone — but it stays beneficial: the per-text hidden-state hook path
+# (`_mean_hidden_states`) allocates + frees activation segments every iteration,
+# and expandable_segments lets the allocator reuse those segments instead of
+# growing the reserved pool. MUST be set BEFORE the first `import torch` — torch
 # reads PYTORCH_CUDA_ALLOC_CONF once when its CUDA allocator initializes. torch
 # is imported lazily inside extract_clouds_and_outdist_gpu, so this module-top
 # setdefault is guaranteed to run first. setdefault (not assignment) so an
-# explicit launcher / env override always wins. (#545 round-4.)
+# explicit launcher / env override always wins. (#545 round-4, kept round-38.)
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 import json
@@ -98,85 +99,56 @@ JS_R_SAMPLES = 8
 JS_TEMP = 1.0
 JS_MAX_NEW_TOKENS = 1024
 JS_N_PROBES = 50
-JS_MAX_SEQ_LEN = 4096
+# round-38 STRATEGY E: raised 4096 → 8192. The round-37 (Strategy D) pre-check
+# measured the JS scoring path constructs prompts up to 5631 tokens; with up to
+# JS_MAX_NEW_TOKENS=1024 sampled, the worst-case sequence is ~6655 tokens. The
+# old 4096 cap SILENTLY truncated those prompts inside vLLM (no error — vLLM
+# clamps over-length prompts), corrupting the teacher-force / divergence reads on
+# the long-probe columns. With vLLM now SOLE GPU resident (subprocess isolation),
+# there is ample memory to raise the cap clear of the worst case. Kept here AND
+# mirrored in vllm_worker.WORKER_MAX_MODEL_LEN (asserted equal by the regression
+# test) so the value used to build prompts matches the engine's actual capacity.
+JS_MAX_SEQ_LEN = 8192
 JS_DIRECTIONS = ("js", "kl_narrow_broad", "kl_broad_narrow")
 # HF teacher-force sub-batch in outdist (jsc.teacher_forced_response_logps).
-# Lowered from the upstream default 16 → 4: the HF forward materializes a
-# (B, L, V) logits transient where V≈152k for Qwen-2.5-7B; at B=16 the bf16
-# transient is ~5.0 GiB (matching the 5.35 GiB OOM observed on pod-545 in r4),
-# at B=4 it is ~1.3 GiB — fits the ~9.6 GiB headroom the gpu_memory_utilization
-# =0.50 config leaves once the HF model + vLLM engine co-reside. The OOM is
-# HF-side (large-vocab logits), NOT vLLM, so this — not vLLM util — is the lever.
-JS_TF_MAX_BATCH = 4
+# Under STRATEGY E (round-38) the HF base model is the SOLE GPU resident during
+# the extraction phase — vLLM has already exited its subprocess and freed the
+# GPU — so the (B, L, V≈152k) bf16 logits transient no longer competes with a
+# co-resident vLLM engine. The B=16 transient (~5.0 GiB) fits comfortably in the
+# ~80 GiB an isolated 7B HF model leaves. The r4 lowering to 4 was a co-residency
+# workaround; restored to 16 for throughput now that the OOM cause (co-residency)
+# is gone. (Re-measure on the pod and lower only if a real OOM recurs.)
+JS_TF_MAX_BATCH = 16
 
-# vLLM GPU memory utilization for the lazily-loaded engine inside
-# extract_clouds_and_outdist_gpu. CRITICAL: the HF base model
-# (AutoModelForCausalLM) and the vLLM engine CO-RESIDE on the same GPU in the
-# SAME process — the clouds sub-phase elicits nl-cloud text via vLLM and then
-# teacher-forces it through the HF model, and the outdist sub-phase does the
-# same per probe pair, so neither model can be freed before the other. vLLM
-# reads FREE-memory-at-startup and rejects init if its requested fraction
-# exceeds it.
+# round-38 STRATEGY E — subprocess vLLM isolation. After SIX OOMs of co-residency
+# strategies (r1/r3/r4/r6/r8 util/batch/hooks tuning + r10 max_seq_len HALT
+# because the probes are genuinely long), HF and vLLM are SEQUENCED into phases
+# so they never co-reside on the H100:
 #
-# Four OOM regimes the dial / its companions must clear (all observed on pod-545):
-#   - round-1 (init OOM): 0.85 × 79.18 = 67.3 GiB requested > ~63 GiB free with
-#     the HF model resident → vLLM engine-init rejected ~80s after launch.
-#   - round-3 (extract-phase OOM): with vLLM at 0.70 (56.99 GiB observed) and
-#     the HF model resident at 22.0 GiB, total ~79 GiB → only 206 MiB free, and
-#     the extract phase's intermediate tensors (log_softmax etc.) OOM'd mid-run.
-#   - round-4 (outdist OOM): vLLM 0.60 cleared extract, but the HF teacher-force
-#     materialized a (B=16, L, V≈152k) logits transient (~5.0 GiB) — fixed by
-#     JS_TF_MAX_BATCH 16→4 (above), an HF-side lever, NOT a util change.
-#   - round-6 (clouds OOM, 310 MiB short at log_softmax): vLLM at 0.60 (49 GiB)
-#     + HF resident GROWN to 30 GiB = 79 GiB on a 79.18 GiB H100 → only 289 MiB
-#     free, and the clouds-phase log_softmax (310 MiB) OOM'd. The HF resident
-#     grew 22 → 30 GiB between r3 and r6 because the r4 expandable_segments
-#     allocator trades fragmentation reduction for a slightly HIGHER peak
-#     resident under the actual workload (re-measured, not assumed).
+#   Phase A (vLLM-sampling, SUBPROCESS): vllm_worker.py loads the vLLM engine
+#     with the FULL GPU to itself (gpu_memory_utilization=0.85), samples ALL
+#     on-policy responses the extraction needs (nl-cloud elicitation + the
+#     outdist per-(row,col,flavor) response pairs), writes them to disk as
+#     token-id + text JSONs, then EXITS — fully releasing the GPU.
+#   Phase B (HF-extraction, MAIN process): the HF base model loads (sole GPU
+#     resident now), reads the cached responses, runs the cloud hidden-state
+#     hooks (#545 r9 per-layer-hook path) + the teacher-force log-prob /
+#     divergence reads, then frees the GPU.
 #
-# r4 fix: drop 0.70 → 0.60 (22 HF + 47.5 vLLM = 69.5 GiB, ~9.5 GiB headroom),
-# paired with PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True (module top).
-# r8 fix: drop 0.60 → 0.50. With the re-measured 30 GiB HF resident, 0.60 left
-# only 1.67 GiB headroom (30 + 47.5 = 77.5 / 79.18) — too thin for the 310 MiB
-# log_softmax transient plus allocator slack. At 0.50: vLLM = 0.50 × 79.18 =
-# 39.6 GiB, total 30 + 39.6 = 69.6 GiB, leaving ~9.6 GiB headroom.
+# Each model gets ~80 GiB in turn — no co-residency budget, no util dial to
+# chase, no pre-init free-memory assert. The vLLM util lives in vllm_worker.py
+# (WORKER_GPU_MEM_UTIL); this module no longer loads vLLM in-process.
 #
-# round-36 ARCHITECTURAL PIVOT (THIS round): the 22→30→38 GiB HF-resident GROWTH
-# across r3/r6/r8 was never a vLLM problem and never a util problem — it was
-# the clouds-phase extraction calling _mean_hidden_states with
-# output_hidden_states=True, which materializes ALL ~29 residual-stream tensors
-# (L+1 for Qwen-2.5-7B's 28 blocks) per forward while only 8 GEOMETRY_LAYERS are
-# read. The other ~21 layers' activations were computed, held in the returned
-# tuple, then discarded — and the expandable_segments allocator retained the
-# freed segments, so the resident climbed iteration-to-iteration until it OOM'd
-# the co-resident vLLM engine. The five util/batch knob-turns (r1/r3/r4/r6/r8)
-# each fixed their immediate symptom while the activation accumulation kept
-# growing the baseline. _mean_hidden_states now extracts via per-layer forward
-# hooks on only the 8 GEOMETRY_LAYERS (output_hidden_states=False) +
-# per-text del/empty_cache, so the clouds-phase HF resident no longer
-# accumulates. JS_GPU_MEM_UTIL stays at the conservative 0.50 (correctness over
-# a re-tune) — the pivot removes the GROWTH that the dial was chasing; raising
-# the util back up is a separate optimization, not needed for the OOM fix.
-JS_GPU_MEM_UTIL = 0.50
-# Measured resident size of the co-resident HF base model. The r3 OOM log read
-# 21.98 GiB; the r6 clouds-phase peak read ~30 GiB. That 22→30→38 GiB growth was
-# the output_hidden_states=True activation accumulation in the clouds phase
-# (now fixed by the round-36 per-layer-hook pivot — see the JS_GPU_MEM_UTIL block
-# above). 30 GiB is kept as a CONSERVATIVE ceiling for the pre-vLLM-init free-mem
-# assert: the hooked clouds path should resident LOWER than 30 GiB, so budgeting
-# against 30 leaves the assert strictly safe (a real regression that pushes past
-# 30 still fails loud). Re-measure on the pod and tighten only if optimizing.
-JS_HF_MODEL_RESIDENT_GIB = 30.0
-# An H100-80 reports ~79.18 GiB total.
-_H100_TOTAL_GIB = 79.18
-# Pre-vLLM-init free-memory floor (GiB), pinned to the actual util so a future
-# util change keeps the assert correct: floor = vLLM request + 2.5 GiB margin.
-# At 0.50: 39.6 + 2.5 = 42.1 GiB. The floor must clear the vLLM request with
-# margin so a regression that fails to leave headroom (e.g. an HF-model size
-# blow-up, another GPU consumer) fails LOUD at the assert with a clear message
-# rather than as an opaque vLLM engine-init OOM. ~78 GiB is free at launch
-# (before the HF model loads), so this floor passes comfortably.
-JS_VLLM_PREINIT_MIN_FREE_GIB = max(JS_GPU_MEM_UTIL * _H100_TOTAL_GIB + 2.5, 0.0)
+# IPC: file-based request/response under <out_dir>/vllm_ipc/ (resilient to a
+# mid-phase crash — written responses survive and are re-read). See
+# vllm_worker.py for the contract.
+VLLM_IPC_SUBDIR = "vllm_ipc"
+# Seconds the main process polls for a vLLM-worker response/error before
+# declaring the worker dead (fail LOUD, not a hang). The engine load + a full
+# sampling pass over the grid can take many minutes on a real H100; sized
+# generously. Overridable for tests.
+VLLM_WORKER_TIMEOUT_S = 3600.0
+VLLM_POLL_INTERVAL_S = 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -213,6 +185,169 @@ def _column_probe_texts(column_id: str, cap: int) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# Strategy-E vLLM subprocess client (the main-process half of the IPC contract)
+# ---------------------------------------------------------------------------
+
+
+class _VllmClient:
+    """Main-process side of the file-based vLLM-worker IPC (Strategy E).
+
+    Spawns ``vllm_worker.py`` as a SUBPROCESS, accumulates sampling requests
+    (each a list of prompt token-id lists + sampling params, keyed by a
+    ``probe_id``), then on ``run()`` writes all request files, drops the
+    ``READY`` sentinel, and polls for the per-probe response files the worker
+    writes. The worker exits when the queue drains; ``close()`` drops ``STOP``
+    and reaps the process so the GPU is released BEFORE the HF model loads.
+
+    The contract carries only token-id lists + decoded text across the boundary
+    (never tensors) — the divergence / log-prob math stays HF-side. Resilient to
+    a worker crash: a ``worker.error`` sentinel (or process death) raises LOUD
+    rather than hanging on missing responses.
+    """
+
+    def __init__(self, ipc_dir: Path, *, worker_argv: list[str] | None = None):
+        self.ipc_dir = ipc_dir
+        self.req_dir = ipc_dir / "requests"
+        self.resp_dir = ipc_dir / "responses"
+        self.req_dir.mkdir(parents=True, exist_ok=True)
+        self.resp_dir.mkdir(parents=True, exist_ok=True)
+        self._requests: dict[str, dict] = {}
+        self._proc = None
+        # Default launch: `python -m ...vllm_worker --ipc-dir <dir>`. Overridable
+        # for tests (a stub worker) via worker_argv.
+        self._worker_argv = worker_argv or [
+            sys.executable,
+            "-m",
+            "explore_persona_space.experiments.behavior_testbed_545.vllm_worker",
+            "--ipc-dir",
+            str(ipc_dir),
+        ]
+
+    def add_request(
+        self,
+        probe_id: str,
+        prompt_token_ids: list[list[int]],
+        *,
+        n: int,
+        max_tokens: int,
+        temperature: float = JS_TEMP,
+        top_p: float = 1.0,
+        seed: int = 545,
+    ) -> None:
+        """Queue one sampling request. ``prompt_token_ids`` is a list of
+        token-id lists (one per prompt); responses come back aligned per-prompt."""
+        if probe_id in self._requests:
+            raise KeyError(f"duplicate vLLM request probe_id {probe_id!r}")
+        self._requests[probe_id] = {
+            "probe_id": probe_id,
+            "prompt_token_ids": prompt_token_ids,
+            "n": int(n),
+            "max_tokens": int(max_tokens),
+            "temperature": float(temperature),
+            "top_p": float(top_p),
+            "seed": int(seed),
+        }
+
+    def __len__(self) -> int:
+        return len(self._requests)
+
+    def run(self) -> dict[str, list[list[dict]]]:
+        """Spawn the worker, write all requests, poll for all responses.
+
+        Returns ``{probe_id: completions}`` where ``completions`` is a list (per
+        prompt) of lists of ``{"token_ids", "text", "finish_reason"}`` dicts.
+        Idempotent across a re-run: a response file already present (from a prior
+        partial phase) is reused, and only the missing requests need the worker.
+        """
+        import subprocess
+
+        if not self._requests:
+            return {}
+
+        # Write every request file FIRST (so a fast worker never sees READY with
+        # a request still un-written), then the READY sentinel.
+        for probe_id, payload in self._requests.items():
+            (self.req_dir / f"{probe_id}.json").write_text(json.dumps(payload))
+
+        # Spawn the worker subprocess with an explicit env (subprocess env
+        # passthrough — the worker needs HF creds to pull the base model).
+        self._proc = subprocess.Popen(self._worker_argv, env={**os.environ})
+        logger.info(
+            "[phase=vllm-sample] spawned vLLM worker pid=%s for %d requests",
+            self._proc.pid,
+            len(self._requests),
+        )
+        (self.ipc_dir / "READY").write_text("1")
+
+        results = self._poll_for_responses()
+        self.close()
+        return results
+
+    def _poll_for_responses(self) -> dict[str, list[list[dict]]]:
+        import time
+
+        error_path = self.ipc_dir / "worker.error"
+        deadline = time.monotonic() + VLLM_WORKER_TIMEOUT_S
+        results: dict[str, list[list[dict]]] = {}
+        wanted = set(self._requests)
+        while wanted:
+            if error_path.exists():
+                err = error_path.read_text()
+                raise RuntimeError(f"vLLM worker reported a fatal error:\n{err}")
+            # Worker process died without finishing → fail LOUD (not a hang).
+            if self._proc is not None and self._proc.poll() is not None:
+                rc = self._proc.returncode
+                if error_path.exists():
+                    raise RuntimeError(f"vLLM worker exited rc={rc}:\n{error_path.read_text()}")
+                # It may have just finished the last response; do one final scan.
+                self._collect_ready(wanted, results)
+                if wanted:
+                    raise RuntimeError(
+                        f"vLLM worker exited rc={rc} with {len(wanted)} responses "
+                        f"still missing: {sorted(wanted)[:5]}..."
+                    )
+                break
+            self._collect_ready(wanted, results)
+            if not wanted:
+                break
+            if time.monotonic() > deadline:
+                raise TimeoutError(
+                    f"vLLM worker did not produce {len(wanted)} responses within "
+                    f"{VLLM_WORKER_TIMEOUT_S}s: {sorted(wanted)[:5]}..."
+                )
+            time.sleep(VLLM_POLL_INTERVAL_S)
+        return results
+
+    def _collect_ready(self, wanted: set[str], results: dict) -> None:
+        for probe_id in list(wanted):
+            resp_path = self.resp_dir / f"{probe_id}.json"
+            if resp_path.exists():
+                d = json.loads(resp_path.read_text())
+                results[probe_id] = d["completions"]
+                wanted.discard(probe_id)
+
+    def close(self) -> None:
+        """Drop STOP, reap the worker, confirm the GPU is released."""
+        import subprocess
+
+        (self.ipc_dir / "STOP").write_text("1")
+        if self._proc is None:
+            return
+        try:
+            self._proc.wait(timeout=60)
+        except subprocess.TimeoutExpired:
+            logger.warning("[phase=vllm-sample] worker did not exit on STOP — terminating")
+            self._proc.terminate()
+            try:
+                self._proc.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                self._proc.kill()
+                self._proc.wait(timeout=30)
+        logger.info("[phase=vllm-sample] vLLM worker reaped (rc=%s)", self._proc.returncode)
+        self._proc = None
+
+
+# ---------------------------------------------------------------------------
 # GPU phase: clouds + JS/KL output-distribution
 # ---------------------------------------------------------------------------
 
@@ -237,7 +372,14 @@ def _row_cloud_texts(row_id: str) -> dict[str, list[str]]:
     return out
 
 
-def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared across the cloud + JS/KL grid
+def _prompt_ids_for(tokenizer, ctx: list[dict], q: str) -> list[int]:
+    """Token-ids for the chat-templated (ctx + user-question) prompt."""
+    msgs = [*ctx, {"role": "user", "content": q}]
+    text = tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+    return tokenizer.encode(text, add_special_tokens=False)
+
+
+def extract_clouds_and_outdist_gpu(  # noqa: C901 — sequenced vLLM-sample then HF-extract phases (Strategy E)
     out_dir: Path,
     *,
     device: str = "cuda:0",
@@ -248,14 +390,29 @@ def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared acro
     nl_cloud_samples: int = 8,
     skip_outdist: bool = False,
     skip_clouds: bool = False,
+    vllm_worker_argv: list[str] | None = None,
 ) -> dict:
     """Build per-behavior activation clouds (→ ``clouds.npz``) + JS/KL
     output-distribution RB estimates (→ ``outdist/*.json``) on the BASE model.
 
+    STRATEGY E (round-38): HF and vLLM are SEQUENCED into phases so they never
+    co-reside on the H100 (the cause of six OOMs). The function runs:
+
+      Phase A — vLLM SUBPROCESS sampling. Enumerate every on-policy sampling
+        request the extraction needs (nl-cloud elicitation per row + the outdist
+        per-(row,col,flavor) response pairs, both sides), spawn ``vllm_worker``
+        with the FULL GPU to itself, collect the responses (token-ids + text) to
+        disk, then REAP the worker — releasing the GPU.
+      Phase B — HF MAIN-process extraction. Load the HF base model (sole GPU
+        resident now), build the clouds (demos from texts, nl from the cached
+        samples, col probes from texts), teacher-force the cached outdist
+        responses → JS/KL divergences, then free the GPU.
+
     The cell subset (``rows_subset`` / ``cols_subset``) threads the smoke =
     sweep parameterization (smoke IS the full grid restricted to a tiny cell
-    list). ``n_probes`` / ``r_samples`` / ``nl_cloud_samples`` are the
-    descope ladder knobs (plan §9).
+    list) IDENTICALLY through BOTH phases. ``n_probes`` / ``r_samples`` /
+    ``nl_cloud_samples`` are the descope ladder knobs (plan §9).
+    ``vllm_worker_argv`` overrides the worker launch (a stub worker in tests).
 
     Returns a small summary dict (counts + JS truncation manipulation check).
     """
@@ -272,70 +429,90 @@ def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared acro
     rows = rows_subset or list(ROWS.keys())
     cols = cols_subset or [c for c, col in COLUMNS.items() if col.scoring_eligible]
 
+    # The tokenizer is cheap + GPU-free; load it once up front (used to build
+    # the vLLM prompt token-ids in Phase A AND the HF reads in Phase B).
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+
+    summary: dict = {"rows": rows, "cols": cols, "n_probes": n_probes, "r_samples": r_samples}
+    generic_q = "Can you help me with something?"
+
+    # ===================================================================
+    # PHASE A — vLLM SUBPROCESS sampling (vLLM is sole GPU resident; exits
+    # before Phase B loads HF). Enumerate every request, run, collect to disk.
+    # ===================================================================
+    nl_rows = [r for r in rows if NL_DESCRIPTIONS.get(r)] if not skip_clouds else []
+    # outdist pairs needing sampling: (row, col, flavor) → the per-pair probes,
+    # ctx_row, ctx_col. We sample BOTH sides (a = row-conditioned, b = col-
+    # conditioned) over the SAME column probe set, keyed by side in the IPC.
+    outdist_specs: list[tuple[str, str, str, list[str], list[dict], list[dict]]] = []
+    if not skip_outdist:
+        for flavor in FLAVORS:
+            for row_id in rows:
+                ctx_row = _behavior_context_messages(row_id, flavor)
+                if not ctx_row:
+                    continue
+                for col_id in cols:
+                    if not column_applies(COLUMNS[col_id], ROWS[row_id]):
+                        continue
+                    out_path = outdist_dir / f"{row_id}__{col_id}__{flavor}.json"
+                    if out_path.exists():
+                        continue  # checkpoint-per-cell: already scored, skip
+                    probes = _column_probe_texts(col_id, cap=n_probes)
+                    if not probes:
+                        continue
+                    ctx_col = _column_behavior_context(col_id, flavor)
+                    outdist_specs.append((row_id, col_id, flavor, probes, ctx_row, ctx_col))
+
+    ipc_dir = out_dir / VLLM_IPC_SUBDIR
+    client = _VllmClient(ipc_dir, worker_argv=vllm_worker_argv)
+
+    # nl-cloud elicitation requests: one generic probe per nl-row, n=nl_cloud_samples.
+    for row_id in nl_rows:
+        ids = _prompt_ids_for(tokenizer, _behavior_context_messages(row_id, "nl"), generic_q)
+        client.add_request(f"nl|{row_id}", [ids], n=nl_cloud_samples, max_tokens=256, seed=545)
+    # outdist sampling requests: side a (row-conditioned) + side b (col-conditioned).
+    for row_id, col_id, flavor, probes, ctx_row, ctx_col in outdist_specs:
+        a_ids = [_prompt_ids_for(tokenizer, ctx_row, q) for q in probes]
+        b_ids = [_prompt_ids_for(tokenizer, ctx_col, q) for q in probes]
+        client.add_request(
+            f"outdist|{row_id}|{col_id}|{flavor}|a",
+            a_ids,
+            n=r_samples,
+            max_tokens=JS_MAX_NEW_TOKENS,
+            seed=545,
+        )
+        client.add_request(
+            f"outdist|{row_id}|{col_id}|{flavor}|b",
+            b_ids,
+            n=r_samples,
+            max_tokens=JS_MAX_NEW_TOKENS,
+            seed=545,
+        )
+
+    responses: dict[str, list[list[dict]]] = {}
+    if len(client) > 0:
+        logger.info(
+            "[phase=vllm-sample] dispatching %d requests to the vLLM subprocess "
+            "(nl_rows=%d, outdist_pairs=%d)",
+            len(client),
+            len(nl_rows),
+            len(outdist_specs),
+        )
+        responses = client.run()  # spawns worker, polls, reaps — GPU freed on return
+    logger.info("[phase=vllm-sample] collected %d response sets; GPU freed", len(responses))
+
+    # ===================================================================
+    # PHASE B — HF MAIN-process extraction (HF base model is sole GPU resident).
+    # ===================================================================
     model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
     )
     model.eval()
 
-    # vLLM lazily loaded only for the nl-cloud elicitation + JS/KL sampling.
-    llm = None
-    sampling_params = None
-
-    def _get_llm():
-        nonlocal llm, sampling_params
-        if llm is None:
-            from vllm import LLM, SamplingParams
-
-            # The HF model is resident on the GPU here (clouds + outdist both
-            # teacher-force through it; ~30 GiB MEASURED at the r6 clouds peak,
-            # see JS_HF_MODEL_RESIDENT_GIB), so vLLM init reads a REDUCED
-            # free-memory figure. Log it + the vLLM request, then assert we clear
-            # the request with margin — a free-memory shortfall fails LOUD here
-            # instead of as an opaque vLLM engine-init OOM (#545 round-1). The
-            # util is lowered to 0.50 (r8, down from 0.60 r4 / 0.70 r3) so the
-            # extract-phase intermediates (log_softmax) have ~9.6 GiB
-            # working-memory headroom after HF (30 GiB) + vLLM (39.6 GiB)
-            # co-residency, which the round-6 clouds-phase OOM proved 0.60 lacked
-            # at the grown 30 GiB HF resident (only 289 MiB free, 310 MiB needed).
-            free_bytes, total_bytes = torch.cuda.mem_get_info()
-            free_gib = free_bytes / (1024**3)
-            total_gib = total_bytes / (1024**3)
-            requested_gib = JS_GPU_MEM_UTIL * total_gib
-            logger.info(
-                "[phase=outdist] pre-vLLM-init GPU memory: free=%.1f GiB / total=%.1f GiB; "
-                "HF-model-resident=%.1f GiB; vLLM will request %.1f GiB "
-                "(gpu_memory_utilization=%.2f)",
-                free_gib,
-                total_gib,
-                torch.cuda.memory_allocated() / (1024**3),
-                requested_gib,
-                JS_GPU_MEM_UTIL,
-            )
-            assert free_gib >= JS_VLLM_PREINIT_MIN_FREE_GIB, (
-                f"vLLM pre-init free GPU memory {free_gib:.1f} GiB < floor "
-                f"{JS_VLLM_PREINIT_MIN_FREE_GIB:.1f} GiB (vLLM will request "
-                f"{requested_gib:.1f} GiB at gpu_memory_utilization={JS_GPU_MEM_UTIL}). "
-                "The HF base model likely was not the only GPU consumer or has grown; "
-                "lower JS_GPU_MEM_UTIL or free other GPU processes."
-            )
-            llm = LLM(
-                model=BASE_MODEL,
-                dtype="bfloat16",
-                max_model_len=JS_MAX_SEQ_LEN,
-                gpu_memory_utilization=JS_GPU_MEM_UTIL,
-            )
-            sampling_params = SamplingParams(
-                n=r_samples, temperature=JS_TEMP, top_p=1.0, max_tokens=JS_MAX_NEW_TOKENS, seed=545
-            )
-        return llm, sampling_params
-
-    summary: dict = {"rows": rows, "cols": cols, "n_probes": n_probes, "r_samples": r_samples}
-
-    # --- 1. Activation clouds → clouds.npz --------------------------------
+    # --- B.1 Activation clouds → clouds.npz -------------------------------
     if not skip_clouds:
         clouds: dict[str, np.ndarray] = {}
-        # Row demos clouds (8-point per-demo).
+        # Row demos clouds (8-point per-demo) — texts directly, no vLLM needed.
         for row_id in rows:
             texts = _row_cloud_texts(row_id)
             for flavor, demo_texts in texts.items():
@@ -348,51 +525,25 @@ def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared acro
                         if t is not None:
                             clouds[f"row|{row_id}|{flavor}|{layer}|{point}"] = t.numpy()
             logger.info("[phase=clouds] row demos cloud %s", row_id)
-        # Row nl clouds: ≤nl_cloud_samples base-model temp-1 responses under
-        # the nl-description conditioning context.
-        nl_rows = [r for r in rows if NL_DESCRIPTIONS.get(r)]
-        if nl_rows:
-            vllm, _ = _get_llm()
-            from vllm import SamplingParams
-            from vllm.inputs import TokensPrompt
-
-            nl_sp = SamplingParams(
-                n=nl_cloud_samples,
-                temperature=JS_TEMP,
-                top_p=1.0,
-                max_tokens=256,
-                seed=545,
+        # Row nl clouds: the base-model temp-1 responses sampled in Phase A.
+        for row_id in nl_rows:
+            comps = responses.get(f"nl|{row_id}")
+            if not comps:
+                logger.warning("[phase=clouds] no nl samples for row %s (skipped)", row_id)
+                continue
+            samples = [c["text"] for c in comps[0] if c["text"].strip()]
+            if not samples:
+                continue
+            reps = _mean_hidden_states(
+                model, tokenizer, samples, device, retain_per_sample_reps=True
             )
-            # One generic neutral probe per row to elicit on-policy nl text.
-            generic_q = "Can you help me with something?"
-            reqs, req_rows = [], []
-            for row_id in nl_rows:
-                msgs = [
-                    *_behavior_context_messages(row_id, "nl"),
-                    {"role": "user", "content": generic_q},
-                ]
-                text = tokenizer.apply_chat_template(
-                    msgs, tokenize=False, add_generation_prompt=True
-                )
-                reqs.append(
-                    TokensPrompt(prompt_token_ids=tokenizer.encode(text, add_special_tokens=False))
-                )
-                req_rows.append(row_id)
-            outs = vllm.generate(reqs, nl_sp)
-            for row_id, out in zip(req_rows, outs, strict=True):
-                samples = [c.text for c in out.outputs if c.text.strip()]
-                if not samples:
-                    continue
-                reps = _mean_hidden_states(
-                    model, tokenizer, samples, device, retain_per_sample_reps=True
-                )
-                for layer in GEOMETRY_LAYERS:
-                    for point in EXTRACTION_POINTS:
-                        t = reps.get(layer, {}).get(point)
-                        if t is not None:
-                            clouds[f"row|{row_id}|nl|{layer}|{point}"] = t.numpy()
-                logger.info("[phase=clouds] row nl cloud %s (%d samples)", row_id, len(samples))
-        # Column probe clouds (≥n_probes per-probe).
+            for layer in GEOMETRY_LAYERS:
+                for point in EXTRACTION_POINTS:
+                    t = reps.get(layer, {}).get(point)
+                    if t is not None:
+                        clouds[f"row|{row_id}|nl|{layer}|{point}"] = t.numpy()
+            logger.info("[phase=clouds] row nl cloud %s (%d samples)", row_id, len(samples))
+        # Column probe clouds (≥n_probes per-probe) — texts directly.
         for col_id in cols:
             probes = _column_probe_texts(col_id, cap=n_probes)
             if not probes:
@@ -410,48 +561,47 @@ def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared acro
         summary["n_cloud_arrays"] = len(clouds)
         logger.info("[phase=clouds] wrote clouds.npz (%d arrays)", len(clouds))
 
-    # --- 2. JS/KL output-distribution → outdist/*.json --------------------
+    # --- B.2 JS/KL output-distribution → outdist/*.json -------------------
     if not skip_outdist:
         trunc_total, trunc_hits = 0, 0
         n_outdist = 0
-        for flavor in FLAVORS:
-            for row_id in rows:
-                ctx_row = _behavior_context_messages(row_id, flavor)
-                if not ctx_row:
-                    continue
-                for col_id in cols:
-                    if not column_applies(COLUMNS[col_id], ROWS[row_id]):
-                        continue
-                    out_path = outdist_dir / f"{row_id}__{col_id}__{flavor}.json"
-                    if out_path.exists():
-                        continue
-                    # The "behavior-b′" partner context = the COLUMN's diagonal
-                    # behavior, or fall back to the bare assistant (default).
-                    ctx_col = _column_behavior_context(col_id, flavor)
-                    res = _score_outdist_pair(
-                        model,
-                        tokenizer,
-                        _get_llm,
-                        ctx_row,
-                        ctx_col,
-                        col_id,
-                        n_probes=n_probes,
-                        r_samples=r_samples,
-                    )
-                    if res is None:
-                        continue
-                    trunc_total += res["_trunc_total"]
-                    trunc_hits += res["_trunc_hits"]
-                    payload = {
-                        "row": row_id,
-                        "col": col_id,
-                        "flavor": flavor,
-                        "rb": {k: v for k, v in res.items() if not k.startswith("_")},
-                        "metadata": reproducibility_metadata(),
-                    }
-                    out_path.write_text(json.dumps(payload, indent=1))
-                    n_outdist += 1
-                    logger.info("[phase=outdist] %s__%s__%s", row_id, col_id, flavor)
+        for row_id, col_id, flavor, probes, ctx_row, ctx_col in outdist_specs:
+            comps_a = responses.get(f"outdist|{row_id}|{col_id}|{flavor}|a")
+            comps_b = responses.get(f"outdist|{row_id}|{col_id}|{flavor}|b")
+            if comps_a is None or comps_b is None:
+                logger.warning(
+                    "[phase=outdist] missing sampled responses for %s__%s__%s (skipped)",
+                    row_id,
+                    col_id,
+                    flavor,
+                )
+                continue
+            prompts_a = [_prompt_ids_for(tokenizer, ctx_row, q) for q in probes]
+            prompts_b = [_prompt_ids_for(tokenizer, ctx_col, q) for q in probes]
+            res = _score_outdist_pair_from_samples(
+                model,
+                prompts_a,
+                prompts_b,
+                comps_a,
+                comps_b,
+                r_samples=r_samples,
+            )
+            if res is None:
+                continue
+            trunc_total += res["_trunc_total"]
+            trunc_hits += res["_trunc_hits"]
+            payload = {
+                "row": row_id,
+                "col": col_id,
+                "flavor": flavor,
+                "rb": {k: v for k, v in res.items() if not k.startswith("_")},
+                "metadata": reproducibility_metadata(),
+            }
+            (outdist_dir / f"{row_id}__{col_id}__{flavor}.json").write_text(
+                json.dumps(payload, indent=1)
+            )
+            n_outdist += 1
+            logger.info("[phase=outdist] %s__%s__%s", row_id, col_id, flavor)
         summary["n_outdist_pairs"] = n_outdist
         summary["js_truncation_rate"] = (trunc_hits / trunc_total) if trunc_total else 0.0
         logger.info(
@@ -460,16 +610,12 @@ def extract_clouds_and_outdist_gpu(  # noqa: C901 — one model load shared acro
             summary["js_truncation_rate"],
         )
 
-    # Explicit GPU teardown of the co-resident HF model + vLLM engine before the
-    # function returns (the CPU build_zoo_predictors phase runs next in-process).
-    # Both models held the GPU simultaneously; drop the Python refs, force GC, and
-    # release cached blocks so a following GPU consumer in the same process starts
-    # clean. (#545: the co-residency itself was the OOM cause — see JS_GPU_MEM_UTIL.)
+    # Explicit GPU teardown of the HF model (sole resident; vLLM exited in Phase
+    # A) before the function returns — the CPU build_zoo_predictors phase runs
+    # next in-process and a following GPU consumer should start clean.
     alloc_before = torch.cuda.memory_allocated() / (1024**3)
     del model
     del tokenizer
-    if llm is not None:
-        del llm
     gc.collect()
     torch.cuda.empty_cache()
     torch.cuda.synchronize()
@@ -493,64 +639,56 @@ def _column_behavior_context(col_id: str, flavor: str) -> list[dict]:
     return []  # bare default assistant (no system persona)
 
 
-def _score_outdist_pair(
+def _samples_from_completions(
+    comps: list[list[dict]], r_samples: int
+) -> tuple[list[list[list[int]]], int, int]:
+    """Map the worker's per-prompt completion dicts to the #540 sampled-response
+    shape (per-probe list of terminator-ruled token-id lists) + truncation
+    counters. ``comps`` is ``[per_prompt][per_completion]`` of
+    ``{"token_ids", "text", "finish_reason"}``."""
+    per_probe: list[list[list[int]]] = []
+    t_total = t_hit = 0
+    for prompt_comps in comps:
+        prows: list[list[int]] = []
+        for comp in prompt_comps:
+            ids, _action = jsc.apply_terminator_rule(list(comp["token_ids"]), comp["finish_reason"])
+            prows.append(ids)
+            t_total += 1
+            t_hit += int(comp["finish_reason"] == "length")
+        per_probe.append(prows)
+    return per_probe, t_total, t_hit
+
+
+def _score_outdist_pair_from_samples(
     model,
-    tokenizer,
-    get_llm,
-    ctx_a: list[dict],
-    ctx_b: list[dict],
-    col_id: str,
+    prompts_a: list[list[int]],
+    prompts_b: list[list[int]],
+    comps_a: list[list[dict]],
+    comps_b: list[list[dict]],
     *,
-    n_probes: int,
     r_samples: int,
 ) -> dict | None:
     """RB sequence-level JS + both KL directions for one (behavior-b ctx,
-    behavior-b′ ctx) pair over the column's probe set.
+    behavior-b′ ctx) pair, given the responses ALREADY sampled by the vLLM
+    subprocess (Strategy E — HF and vLLM never co-reside).
 
-    Reuses the #540 discipline: vLLM sample R temp-1 responses from BOTH
-    sides, HF teacher-force each through BOTH conditioned models, exact
-    full-vocab per-position divergence (GPU-resident reduce; only the
-    per-sample scalar means leave the GPU), aggregate with
-    ``jsc.rb_pair_estimate``. Returns the RB dict + truncation counters
-    (``_trunc_total`` / ``_trunc_hits``), or None when the column has no
-    probes.
+    The HF half is unchanged from the original ``_score_outdist_pair``: HF
+    teacher-force each sampled response through BOTH conditioned prompts, exact
+    full-vocab per-position divergence (GPU-resident reduce; only the per-sample
+    scalar means leave the GPU), aggregate with ``jsc.rb_pair_estimate``. Only
+    the SAMPLING moved out of this function into the subprocess.
+
+    ``prompts_a`` / ``prompts_b`` are the per-probe prompt token-ids (rebuilt
+    HF-side from the same ctx + probes); ``comps_a`` / ``comps_b`` are the
+    worker's per-probe completion dicts. Returns the RB dict + truncation
+    counters, or None when no probe yields usable samples on both sides.
     """
-    from vllm.inputs import TokensPrompt
-
-    probes = _column_probe_texts(col_id, cap=n_probes)
-    if not probes:
-        return None
-    vllm, sp = get_llm()
-
-    def _prompt_ids(ctx: list[dict], q: str) -> list[int]:
-        msgs = [*ctx, {"role": "user", "content": q}]
-        text = tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
-        return tokenizer.encode(text, add_special_tokens=False)
-
-    prompts_a = [_prompt_ids(ctx_a, q) for q in probes]
-    prompts_b = [_prompt_ids(ctx_b, q) for q in probes]
-
-    # Sample R responses from each side (per probe).
-    def _sample(prompts: list[list[int]]) -> tuple[list[list[list[int]]], int, int]:
-        reqs = [TokensPrompt(prompt_token_ids=p) for p in prompts]
-        outs = vllm.generate(reqs, sp)
-        per_probe: list[list[list[int]]] = []
-        t_total = t_hit = 0
-        for out in outs:
-            rows = []
-            for comp in out.outputs:
-                ids, _action = jsc.apply_terminator_rule(list(comp.token_ids), comp.finish_reason)
-                rows.append(ids)
-                t_total += 1
-                t_hit += int(comp.finish_reason == "length")
-            per_probe.append(rows)
-        return per_probe, t_total, t_hit
-
-    samples_a, ta_tot, ta_hit = _sample(prompts_a)
-    samples_b, tb_tot, tb_hit = _sample(prompts_b)
+    samples_a, ta_tot, ta_hit = _samples_from_completions(comps_a, r_samples)
+    samples_b, tb_tot, tb_hit = _samples_from_completions(comps_b, r_samples)
+    n_probes_eff = min(len(prompts_a), len(prompts_b), len(samples_a), len(samples_b))
 
     a_kl_m, b_kl_m, a_kl_ab, b_kl_ba = [], [], [], []
-    for pi in range(len(probes)):
+    for pi in range(n_probes_eff):
         rows_a = samples_a[pi][:r_samples]
         rows_b = samples_b[pi][:r_samples]
         if not rows_a or not rows_b:
