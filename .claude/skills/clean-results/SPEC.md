@@ -512,6 +512,21 @@ listed under § Grandfathered shape. The v3 checks:
     `--methodology-doc <path>`; NO-OP PASS when the doc is absent (the
     doc is on the issue worktree branch pre-merge — binds at promote-time
     verify, post-merge).
+22. **Figure URL sha matches Reproducibility** (v2 AND v3,
+    `check_figure_url_sha_matches_repro`): each inline figure URL's commit
+    SHA must match the SHA the `## Reproducibility` `- Figures` bullet pins
+    that figure to (`` `<basename>` at [commit] `<sha>` ``, with an
+    `` all others at `<sha>` `` catch-all). A SHAPE-CONSISTENCY check — it
+    compares the two SHAs the body already carries (no git, no network);
+    SHAs compare prefix-compatibly (the claim is often abbreviated, the URL
+    is full 40-char). The claim scan is SCOPED to the `- Figures` bullet so
+    an incidental `` `main` at `<sha>` `` branch-merge note in the
+    `**Context:**` bullet is never read as a figure claim (incident #480). A
+    figure with NEITHER an explicit claim NOR a default is out of scope
+    (SKIP, never FAIL). NO-OP PASS when there is no Reproducibility section,
+    no inline figure URL, or no figure-sha claim. Incident: task #537
+    `predictor_bakeoff_complete_null` shipped inline `5ad30c2…` against a
+    Reproducibility claim of `c539920…`.
 
 The Goal-of-experiment frontmatter soft check (WARN-only) and the Lens 14
 concerns-audit run on v3 too (mechanism 1 → `### ` findings under

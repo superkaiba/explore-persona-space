@@ -343,6 +343,28 @@ New v3-only checks (PASS vacuously on v2/legacy):
   promote-time verify, where the doc is already on `main`); NO-OP PASS
   when neither resolves.
 
+Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
+`## Reproducibility` shapes the scan keys off both carry):
+
+- **check 22** (`check_figure_url_sha_matches_repro`): each inline figure
+  URL's commit SHA must match the SHA the `## Reproducibility`
+  `**Figures:**` bullet pins that figure to. A SHAPE-CONSISTENCY check
+  comparing the two SHAs the body already carries (no git, no network):
+  the inline raw-GitHub URL `.../<url_sha>/figures/issue_<N>/<file>.png`
+  vs the per-figure `` `<basename>` at [commit] `<sha>` `` claim (with an
+  `` all others at `<sha>` `` catch-all default). Across follow-up rounds
+  a regenerated figure's inline URL and its Reproducibility claim can
+  drift apart while every existence check still PASSes (the URL's own sha
+  resolves), shipping a body whose inline image points at a different
+  commit than `## Reproducibility` claims. SHAs are compared
+  prefix-compatibly (the claim may be abbreviated, the URL is always full
+  40-char). A figure with NEITHER an explicit claim NOR a default is
+  out of scope (SKIP, never FAIL). NO-OP PASS when there is no
+  Reproducibility section, no inline figure URL, or no figure-sha claim.
+  Incident: task #537 `predictor_bakeoff_complete_null` shipped inline
+  `5ad30c2…` against a Reproducibility claim of `c539920…` — caught by
+  hand at round-3 interp-critique, mechanizable into this check.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -3444,6 +3466,187 @@ def check_repro_artifact_urls_exist(body: str) -> CheckResult:
     return CheckResult(name, True, detail)
 
 
+# Reproducibility per-figure commit claim — `` `<basename>` at commit `<sha>` ``
+# or the shorter `` `<basename>` at `<sha>` `` form the analyzer's `**Figures:**`
+# bullet uses (worked example #537). `<basename>` is the figure filename WITHOUT
+# the `.png` / `.pdf` extension (the analyzer keys claims by stem). The sha is
+# 7-40 hex chars. Backtick-anchored on both the basename and the sha so prose
+# "the figure at commit abc" without backticks never matches.
+_REPRO_FIGURE_SHA_RE = re.compile(
+    r"`(?P<name>[\w.\-/]+?)`\s+at\s+(?:commit\s+)?`(?P<sha>[0-9a-fA-F]{7,40})`"
+)
+# Catch-all default: `` all others at `<sha>` `` / `` everything else at commit `<sha>` ``
+# the analyzer appends to the `**Figures:**` bullet so it need not enumerate
+# every figure (worked example #537: "... all others at `bdb0ae0...`").
+_REPRO_FIGURE_DEFAULT_SHA_RE = re.compile(
+    r"\b(?:all\s+others|everything\s+else|the\s+rest|remaining)\s+at\s+"
+    r"(?:commit\s+)?`(?P<sha>[0-9a-fA-F]{7,40})`",
+    re.IGNORECASE,
+)
+# Start of the analyzer's figures bullet inside `## Reproducibility` — a list
+# item whose label is `Figures` (optionally bold / parenthesized / dir-linked):
+# `- Figures (PNG + PDF ...): ...`, `- **Figures:** ...`, `- Figures: [...]`.
+# The scan for per-figure sha claims is SCOPED to this bullet's text so an
+# incidental `` `main` at `<sha>` `` branch-merge note elsewhere in
+# `## Reproducibility` (e.g. the `**Context:**` follow-up-lineage bullet,
+# incident #480) never trips the figure-claim regex.
+_REPRO_FIGURES_BULLET_RE = re.compile(r"^[ \t]*[-*]\s+\*{0,2}Figures\b", re.IGNORECASE)
+
+
+def _figures_bullet_text(repro_cleaned: str) -> str:
+    """Return the text of the `- Figures ...` bullet(s) inside a
+    fence-stripped `## Reproducibility` section, or '' if there is none.
+
+    A markdown list item runs from its `- ` marker until the next top-level
+    list item (`- ` / `* ` at the same indent) or a blank line that is NOT
+    followed by an indented continuation. Keeping the scan inside this bullet
+    is what stops the figure-sha claim regex from matching unrelated
+    `` `name` at `sha` `` prose elsewhere in Reproducibility (incident #480:
+    `` merged to `main` at `<sha>` `` in the Context bullet)."""
+    lines = repro_cleaned.splitlines()
+    chunks: list[str] = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        if _REPRO_FIGURES_BULLET_RE.match(lines[i]):
+            bullet = [lines[i]]
+            i += 1
+            # Consume continuation lines: indented text or non-empty,
+            # non-list-marker lines belonging to the same bullet. Stop at the
+            # next top-level list marker or a blank line.
+            while i < n:
+                ln = lines[i]
+                if ln.strip() == "":
+                    break
+                if re.match(r"^[ \t]*[-*]\s", ln):
+                    break
+                bullet.append(ln)
+                i += 1
+            chunks.append("\n".join(bullet))
+        else:
+            i += 1
+    return "\n".join(chunks)
+
+
+def _shas_compatible(a: str, b: str) -> bool:
+    """True when two hex SHA strings refer to the same commit allowing for
+    abbreviation — one is a case-insensitive prefix of the other. The
+    Reproducibility claim is sometimes abbreviated (7-12 chars) while the
+    inline raw-GitHub URL always carries the full 40-char sha, so an exact
+    string compare would false-FAIL a correctly-pinned abbreviated claim."""
+    a, b = a.lower(), b.lower()
+    return a.startswith(b) or b.startswith(a)
+
+
+def check_figure_url_sha_matches_repro(body: str) -> CheckResult:
+    """Check 22: each inline figure URL's commit SHA must match the SHA the
+    `## Reproducibility` `**Figures:**` bullet pins that figure to.
+
+    A clean-result inlines its figures as SHA-pinned raw-GitHub URLs
+    (`.../<url_sha>/figures/issue_<N>/<basename>.png`) and SEPARATELY records
+    the commit each figure was pinned at in the `## Reproducibility`
+    `**Figures:**` bullet (`` `<basename>` at commit `<sha>` ``, with an
+    `` all others at `<sha>` `` catch-all). Across follow-up rounds those two
+    SHAs can drift: a figure is regenerated at a new commit, the inline URL
+    is updated, but the Reproducibility claim still names the old commit (or
+    vice versa). The image still renders (check 4b probes the URL's OWN sha
+    for existence) and every other check PASSes, so the body ships with the
+    inline image pointing at a different commit than `## Reproducibility`
+    claims — a recurring, mechanizable defect (worked example #537's
+    `predictor_bakeoff_complete_null`: inline `5ad30c2…` vs Reproducibility
+    `c539920…`, caught by hand at round-3 interp-critique).
+
+    This is a SHAPE-CONSISTENCY check, not an existence probe — it compares
+    the two SHAs the body already carries; it never touches git or the
+    network. Matching:
+
+    - For each inline figure URL with a 7-40-hex `/<sha>/figures/.../<file>`
+      component, take `<basename>` = `<file>` minus its extension.
+    - If `## Reproducibility` pins that basename explicitly
+      (`` `<basename>` at [commit] `<sha>` ``), the URL sha must be
+      prefix-compatible with the claimed sha (one abbreviation of the other).
+    - Else if `## Reproducibility` carries a `` all others at `<sha>` ``
+      default, the URL sha must be prefix-compatible with the default.
+    - Else (no per-figure claim AND no default) the figure is NOT
+      enumerated in Reproducibility — SKIP it (never a FAIL): a body may
+      legitimately omit some figures from the `**Figures:**` bullet, and
+      this check only screens claims the body actually makes.
+
+    Fenced code blocks in `## Reproducibility` are stripped before scanning
+    the claims so a sha shown inside an illustrative ``` ... ``` example is
+    ignored. NO-OP PASS when the body has no inline figure URLs, no
+    Reproducibility section, or no figure-sha claims at all.
+    """
+    name = "figure URL sha matches Reproducibility"
+    repro = section_text(body, "Reproducibility")
+    if repro is None:
+        # check_repro_subgroups / check_repro_url_permanence already FAIL on
+        # a missing Reproducibility section — don't double-report.
+        return CheckResult(name, True, "no `## Reproducibility` section — other checks will report")
+    cleaned_repro = _strip_fenced_blocks(repro)
+    # Scope the claim scan to the analyzer's `- Figures ...` bullet so an
+    # incidental `` `name` at `sha` `` elsewhere in `## Reproducibility`
+    # (a branch-merge note in the Context bullet, incident #480) is never
+    # read as a figure-commit claim.
+    figures_text = _figures_bullet_text(cleaned_repro)
+    # Build the basename -> claimed-sha map and find the catch-all default.
+    claimed: dict[str, str] = {}
+    for m in _REPRO_FIGURE_SHA_RE.finditer(figures_text):
+        nm = m.group("name")
+        # Key by the bare stem so `figures/issue_537/foo.png`, `foo.png`,
+        # and `foo` in the claim all resolve to `foo` (the inline-URL key).
+        stem = nm.rsplit("/", 1)[-1]
+        if "." in stem:
+            stem = stem.rsplit(".", 1)[0]
+        # First explicit claim for a basename wins (defensive; duplicates
+        # would themselves be a body bug a human should fix).
+        claimed.setdefault(stem, m.group("sha"))
+    default_match = _REPRO_FIGURE_DEFAULT_SHA_RE.search(figures_text)
+    default_sha = default_match.group("sha") if default_match else None
+
+    if not claimed and default_sha is None:
+        return CheckResult(
+            name, True, "no per-figure commit claim in `## Reproducibility` `**Figures:**`"
+        )
+
+    fails: list[str] = []
+    checked = 0
+    for url in _gather_figure_image_urls(body):
+        url = url.strip().split(None, 1)[0] if url.strip() else ""
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None:
+            continue
+        url_sha = m.group("sha")
+        path = m.group("path")
+        basename = path.rsplit("/", 1)[-1]
+        if "." in basename:
+            basename = basename.rsplit(".", 1)[0]
+        claim_sha = claimed.get(basename, default_sha)
+        if claim_sha is None:
+            # Figure not enumerated in Reproducibility — out of scope.
+            continue
+        checked += 1
+        if not _shas_compatible(url_sha, claim_sha):
+            source = "explicit claim" if basename in claimed else "`all others` default"
+            fails.append(
+                f"`{basename}`: inline URL sha `{url_sha[:8]}` vs Reproducibility "
+                f"{source} sha `{claim_sha[:8]}`"
+            )
+    if fails:
+        return CheckResult(
+            name,
+            False,
+            f"{len(fails)} figure(s) with an inline-URL / Reproducibility sha mismatch — "
+            "update the `**Figures:**` bullet or the inline URL so both pin the same "
+            "commit: " + "; ".join(fails),
+        )
+    if checked == 0:
+        return CheckResult(
+            name, True, "no inline figure URL matched a Reproducibility figure-sha claim"
+        )
+    return CheckResult(name, True, f"{checked} figure URL sha(s) match their Reproducibility claim")
+
+
 def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
     """Lens 14 — mechanical concerns audit (binding-concerns contract,
     composed onto the 2-content-section clean-result spec on 2026-05-31
@@ -4299,6 +4502,7 @@ CHECKS = [
     check_data_subset_disclosure,  # check 19
     check_data_unwrapped_example_table,  # check 19b (WARN)
     check_v3_word_caps,  # check 20
+    check_figure_url_sha_matches_repro,  # check 22
 ]
 
 
