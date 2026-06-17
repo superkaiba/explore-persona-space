@@ -104,27 +104,29 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 25 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 26 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe) PLUS the
     # four v3-gated body-only checks added 2026-W24 — check 18
     # (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     # check 19b (`check_data_unwrapped_example_table`, WARN), check 20
     # (`check_v3_word_caps`) — each a PASS-skip on this non-v3 fixture —
-    # PLUS the generation-agnostic check 22
+    # PLUS the two generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
-    # this fixture's `## Reproducibility` carries no figure-sha claim.
-    # verify_text prepends check 0 (body-nonstub) +
-    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (24
+    # this fixture's `## Reproducibility` carries no figure-sha claim, and
+    # check 23 (`check_hf_url_resolves`), a PASS-with-`unverified`-note here
+    # because the fixture's HF URLs are probe-fenced by conftest's
+    # EPM_VERIFY_BODY_NO_HF=1. verify_text prepends check 0 (body-nonstub) +
+    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (25
     # functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, AND the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc) →
-    # 31 results total (2 prepended + CHECKS[1:]=24 + 5 appended). The
+    # 32 results total (2 prepended + CHECKS[1:]=25 + 5 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 31
+    assert len(results) == 32
 
 
 def test_missing_confidence_tag():
@@ -1040,6 +1042,247 @@ def test_repro_fenced_block_urls_not_probed(monkeypatch):
     by_name = _results_by_name(results)
     assert by_name[_REPRO_8B_NAME].passed
     assert "no same-repo artifact URLs to check" in by_name[_REPRO_8B_NAME].detail
+
+
+# ─── Check 23: HF Hub revision-pin existence ──────────────────────────────
+#
+# Incident task #537 (2026-06-16): a `## Reproducibility` `**Artifacts:**`
+# link pinned the "415 bakeoff intermediates" to revision `db3662ae`, the
+# main-grid revision that PREDATES the bakeoff round — the path resolves to
+# 0 files at that revision, so a reader clicking it gets nothing. The URL is
+# shape-valid + sha-pinned + on a real repo, so it slipped through every
+# other check. Check 23 probes `huggingface_hub.list_repo_files(repo_id,
+# repo_type=..., revision=<sha>)` and FAILs a dead pin. Fail-soft: the
+# suite-wide EPM_VERIFY_BODY_NO_HF=1 fence (tests/conftest.py) makes the
+# probe SKIP (PASS + `unverified` note) so fixture HF URLs never hit the
+# live Hub. Tests below `monkeypatch.delenv` the fence and stub
+# `huggingface_hub.list_repo_files` directly.
+
+_HF_23_NAME = "HF URL pins resolve at the cited revision"
+
+
+def _hf_body(hf_url: str) -> str:
+    """GOOD_BODY with its dataset HF link swapped for `hf_url` and its
+    bare-repo model HF link removed, so exactly one HF revision-pinned URL
+    is in scope for check 23 (deterministic single-probe tests)."""
+    body = GOOD_BODY.replace(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl",
+        hf_url,
+    )
+    # Drop the bare-repo model link (Artifacts: Model row) so it doesn't add
+    # a second HF URL to the probe set.
+    body = body.replace(
+        "- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)\n",
+        "- Model: not uploaded yet\n",
+    )
+    return body
+
+
+def test_hf_url_existing_path_passes(monkeypatch):
+    """A dataset `/tree/<sha>/<path>` whose path matches ≥1 listed file →
+    definitive PASS (no `unverified` note)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub,
+        "list_repo_files",
+        lambda repo_id, repo_type=None, revision=None: [
+            "raw_completions/run.jsonl",
+            "README.md",
+        ],
+    )
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface/raw_completions/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "unverified" not in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_dead_revision_pin_zero_files_fails(monkeypatch):
+    """The #537 case: the revision exists but the path resolves to ZERO
+    files (pinned to a revision predating the upload) → definitive FAIL."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    # `db3662ae` lists only the main-grid files — none under the bakeoff path.
+    monkeypatch.setattr(
+        huggingface_hub,
+        "list_repo_files",
+        lambda repo_id, repo_type=None, revision=None: [
+            "main_grid/results.csv",
+            "README.md",
+        ],
+    )
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/db3662ae/bakeoff_intermediates/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name[_HF_23_NAME].passed
+    assert "dead revision pin" in by_name[_HF_23_NAME].detail
+    assert "0 files" in by_name[_HF_23_NAME].detail
+    assert "db3662ae" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_revision_not_found_fails(monkeypatch):
+    """A revision that does not exist on the repo → RevisionNotFoundError →
+    definitive FAIL (a fabricated / never-pushed sha)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+    from huggingface_hub.utils import RevisionNotFoundError
+
+    def _raise(repo_id, repo_type=None, revision=None):
+        raise RevisionNotFoundError(f"no revision {revision}")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/deadbeef/raw_completions/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name[_HF_23_NAME].passed
+    assert "no revision" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_network_error_is_note_not_fail(monkeypatch):
+    """A network / Hub failure is INDETERMINATE → PASS with an `unverified`
+    note, never a FAIL — sandboxes without network must not flip valid
+    bodies to FAIL."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _raise(repo_id, repo_type=None, revision=None):
+        raise ConnectionError("getaddrinfo failed: huggingface.co")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface/raw_completions/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "unverified" in by_name[_HF_23_NAME].detail
+    assert "list_repo_files failed" in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_env_fence_skips(monkeypatch):
+    """With the suite-wide EPM_VERIFY_BODY_NO_HF=1 fence in place (the
+    conftest default), the probe SKIPs without touching the Hub → PASS with
+    an `unverified` note even if list_repo_files WOULD have failed."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
+    import huggingface_hub
+
+    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+        raise AssertionError("list_repo_files must NOT be called under the fence")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/db3662ae/bakeoff/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "fenced" in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_bare_repo_root_link_passes_on_listing(monkeypatch):
+    """A bare `/tree/<sha>` repo-root link (no path) PASSes whenever the
+    revision lists successfully — it only asserts the revision exists."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub,
+        "list_repo_files",
+        lambda repo_id, repo_type=None, revision=None: ["config.json"],
+    )
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "unverified" not in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_moving_ref_not_probed(monkeypatch):
+    """A moving ref (`/tree/main`) is out of scope for check 23 — it is
+    check 8's shape concern. The probe is never called; check 23 reports
+    nothing to check (the bare model row is dropped by `_hf_body`)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+        raise AssertionError("moving-ref HF URL must not be probed by check 23")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/raw_completions/run.jsonl"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "no HF Hub revision-pinned URLs to check" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_github_and_raw_not_gathered(monkeypatch):
+    """check 23 gathers ONLY huggingface.co URLs — the body's inline
+    raw.githubusercontent.com figure link and the github.com `**Code:**`
+    blob link are not HF and must not be probed (they are checks 4b / 8b's
+    job). With both HF links removed, check 23 has nothing to check."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+        raise AssertionError("non-HF URL must not reach the HF probe")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    body = GOOD_BODY.replace(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl",
+        "the raw completions (not uploaded yet)",
+    ).replace(
+        "- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)\n",
+        "- Model: not uploaded yet\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "no HF Hub revision-pinned URLs to check" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_fenced_block_not_probed(monkeypatch):
+    """An HF revision-pinned URL shown inside a ``` fence is illustrative —
+    never probed (the failing stub would otherwise FAIL it)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _raise(repo_id, repo_type=None, revision=None):
+        raise huggingface_hub.utils.RevisionNotFoundError("nope")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    # Move the dataset HF link inside a fenced example block and drop the
+    # bare model link so the only HF URL is the fenced (illustrative) one.
+    body = GOOD_BODY.replace(
+        "These excerpts are cherry-picked for illustration; the full per-row raw-completion data is at [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl).",
+        "These excerpts are cherry-picked for illustration; the full per-row raw-completion data is at [raw completions](not uploaded yet).\n\n"
+        "```text\nhttps://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/deadbeef/raw_completions/run.jsonl\n```",
+    ).replace(
+        "- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)\n",
+        "- Model: not uploaded yet\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "no HF Hub revision-pinned URLs to check" in by_name[_HF_23_NAME].detail
 
 
 # ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
@@ -1979,17 +2222,19 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 25 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 26 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe) PLUS the four
     v3-gated body-only checks added 2026-W24 — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the generation-agnostic check 22
-    (`check_figure_url_sha_matches_repro`: inline figure URL sha vs the
-    `## Reproducibility` per-figure commit claim). The migration is a
-    RETARGET — every former check was kept (sometimes dormant, e.g.
+    (`check_v3_word_caps`) — PLUS the two generation-agnostic checks:
+    check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
+    vs the `## Reproducibility` per-figure commit claim) and check 23
+    (`check_hf_url_resolves`: HF Hub revision-pin existence via
+    `huggingface_hub.list_repo_files`). The migration is a RETARGET —
+    every former check was kept (sometimes dormant, e.g.
     `check_figure_caption`) so downstream tests stay valid; the v3
     checks PASS-skip on non-v3 bodies.
 
@@ -1999,9 +2244,9 @@ def test_checks_list_size():
     the check-16 lr-matches-plan (needs the plan), the check-17 Context
     provenance row (needs frontmatter + original-body.md), and the v3
     check-21 body-Parameters-⊆-doc (needs the methodology doc path). So
-    `verify_text` returns 31 results, but `CHECKS` stays at 25.
+    `verify_text` returns 32 results, but `CHECKS` stays at 26.
     """
-    assert len(verify_task_body.CHECKS) == 25
+    assert len(verify_task_body.CHECKS) == 26
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
