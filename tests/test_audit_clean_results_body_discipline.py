@@ -499,3 +499,58 @@ def test_pre_reg_whole_body_scan_preserved_for_legacy_bodies():
     )
     findings = audit.audit_body(legacy)
     assert "pre_reg" in findings, findings
+
+
+# ─── bit/byte-identical AI-slop family (Lens 6; incident #642) ───────────
+#
+# The `byte_identical` rule (task #454) banned `byte identical` /
+# `byte-identical`. Task #642's body carried BOTH `bit-identical` (in
+# `## What I ran` prose) AND `byte-identical` (in `## Data → ### Trained on`
+# prose); the byte-only regex flagged only the latter and the clean-result-
+# critic Lens 6 caught the `bit-identical` slip manually. The rule was
+# renamed `bit_byte_identical` and broadened to `\b(?:byte|bit)[\s-]identical\b`
+# so both same-family voice violations are caught under one mechanical rule.
+
+
+def test_byte_identical_still_flagged_under_new_key():
+    """The original `byte-identical` / `byte identical` form still trips the
+    renamed `bit_byte_identical` rule (no regression vs the #454 byte rule)."""
+    hyphen = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The two checkpoints were byte-identical across the rerun.",
+    )
+    findings = audit.audit_body(hyphen)
+    assert "bit_byte_identical" in findings, findings
+    space = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The two checkpoints were byte identical across the rerun.",
+    )
+    assert "bit_byte_identical" in audit.audit_body(space), "space form regressed"
+
+
+def test_bit_identical_is_flagged():
+    """The same-family `bit-identical` / `bit identical` form now trips the
+    audit — the byte-only regex previously slipped it past (incident #642)."""
+    hyphen = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The loss surface was held bit-identical across all three arms.",
+    )
+    findings = audit.audit_body(hyphen)
+    assert "bit_byte_identical" in findings, findings
+    assert any("bit-identical" in s for s in findings["bit_byte_identical"]), findings
+    space = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The loss surface was held bit identical across all three arms.",
+    )
+    assert "bit_byte_identical" in audit.audit_body(space), "space form not flagged"
+
+
+def test_bit_byte_identical_no_false_positive_on_unrelated_words():
+    """The regex requires the literal `identical` neighbour — words like
+    `bite`, `arbiter`, `bytecode` (no following `identical`) must NOT trip."""
+    clean = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The arbiter compiled the bytecode and a bite-sized summary.",
+    )
+    findings = audit.audit_body(clean)
+    assert "bit_byte_identical" not in findings, findings
