@@ -46,8 +46,18 @@ from the artifacts. No interpretation.
 
 **N/A — no model training.** This is a forward-pass measurement experiment;
 there are no training or generation hyperparameters. The load-bearing
-measurement constants (centering, derangement count, layer set, anchors,
-thresholds) live in §4 Evaluation.
+measurement constants are detailed in §4 Evaluation; the ones the
+clean-result body's slimmed Parameters table cites are mirrored here so the
+table reconciles against §2 directly.
+
+The measurement constants (full detail + sources in §4):
+
+| Parameter | Value | Source |
+|---|---|---|
+| Centering | `global_mean` (per-bank, per-layer); within-tier + global shuffled floors both computed | §4; `issue654_analyze.py:144-154,382`; #536 |
+| Floor | shuffled-pair derangement, B=1000, seed 42 | §4; `issue654_analyze.py:59-60,216-221` |
+| CKA | linear CKA (Kornblith 2019, HSIC-Frobenius form), float64 | §4; `representation_shift.py:165-213`; 1905.00414 |
+| Pairs / forwards | 810 (context, query) pairs; 891 forwards incl. 81 context-only companion reads | §4; `issue654_build_battery.py`; `issue654_extract.py` |
 
 The forward-pass / extraction knobs that *are* set:
 
