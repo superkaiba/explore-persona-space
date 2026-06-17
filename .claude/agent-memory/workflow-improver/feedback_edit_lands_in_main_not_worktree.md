@@ -1,6 +1,6 @@
 ---
-name: Edits can land in MAIN checkout not the worktree
-description: Edit/Write use the absolute path in the file-content context (the MAIN checkout); a cd into main makes all edits + verification hit main, not the worktree
+name: Edits can land in MAIN or a SIBLING worktree, not your own
+description: Edit/Write land wherever file_path points; the path in context may be the MAIN checkout OR a live sibling worktree (e.g. issue-<N>) named in the prompt — always target your OWN captured $WT
 type: feedback
 ---
 
@@ -11,6 +11,17 @@ path that appears in the file-content/system context is the MAIN checkout
 path and `Edit` it, the edit lands in main's working tree, exposed to concurrent
 `/issue` committers — the exact incident the worktree mandate exists to prevent.
 
+**SIBLING-worktree variant (worse — caught 2026-06-17, #642):** the prompt /
+candidate / gitStatus header may name a DIFFERENT, LIVE worktree (e.g.
+`.claude/worktrees/issue-642/...` — the originating `/issue` run's own tree).
+It is tempting to `Read`/`Edit` the target file at THAT path because it is the
+one quoted in the brief. Doing so strands your edits in a sibling worktree that
+another running session owns — even more dangerous than main, because that
+session may commit them onto its issue branch. Your OWN agent worktree is
+`.claude/worktrees/agent-<hash>/` (from the startup `git rev-parse
+--show-toplevel`), and it is the ONLY tree you may edit. The fix content was
+correct both times; only the destination tree was wrong.
+
 **Why:** the Bash cwd persists across calls; an early `cd /home/.../explore-persona-space`
 (the main checkout) makes `git rev-parse --show-toplevel` resolve to MAIN even
 though the startup self-check correctly showed the worktree. All Read/Edit/verify
@@ -20,7 +31,10 @@ the commit step via an `index.lock` on main's `.git`; no data loss.)
 **How to apply:**
 - At startup, capture the worktree root once: `WT=$(git rev-parse --show-toplevel)`
   BEFORE any `cd`. Target EVERY Read/Edit/Write at `$WT/<relpath>`, never the bare
-  main-checkout path — even though the context shows the main path.
+  main-checkout path AND never a sibling worktree path quoted in the brief (e.g.
+  `issue-<N>`) — even though the context / candidate shows one of those paths.
+  The brief names other trees only for CONTEXT (the originating run); they are
+  read-only-by-courtesy, edit-forbidden.
 - Do verification (`uv run python scripts/workflow_lint.py ...`, pytest, ruff)
   with `cd "$WT"` or `git -C "$WT"`, so you test the worktree copies.
 - Recovery if edits already landed in main (uncommitted): confirm the 3 files'
