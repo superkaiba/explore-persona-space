@@ -5,7 +5,7 @@ title: Across 3 behaviors × 2 contexts × 3 LoRA ranks, weakly-installed LoRA e
 kind: experiment
 tags: []
 created_at: '2026-06-16T07:47:41Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: Create an issue to check if conditional behaviors decompose cleanly
   into read and write features. (random-bias write features as steering -> sample
   -> read unsteered activations on those tokens vs baseline; characterize write->read
