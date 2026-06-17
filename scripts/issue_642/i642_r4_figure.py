@@ -82,7 +82,7 @@ ax.text(
 
 set_title_subtitle(
     ax,
-    "On villain at matched LR 5e-6, the adapter-vs-dense gap survives; the data axis is a wash",
+    "Δ_rank_matched separates; Δ_data mean-null with persona-level cancellation",
     "Within-villain matched-install (s*=0.50) contrasts, 29 bystanders, on-policy data, B=10,000",
     source="issue #642 round 4 · analysis_v4.json",
 )
