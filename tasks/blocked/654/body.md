@@ -2,6 +2,7 @@
 title: 'Query influence on the context-conditioned residual stream: per-layer context-end
   vs query-end last-token similarity (Qwen-2.5-7B-Instruct)'
 kind: experiment
+backend: runpod
 tags:
 - followup-auto
 created_at: '2026-06-16T22:20:03Z'
