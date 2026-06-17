@@ -19,9 +19,9 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
 
 ## Takeaways
 
-- The query-end residual stays closer to its **own** context than a deranged one at every layer (single seed). H2 ("no persistence") is rejected for 3 tiers; **marginal** for persona.
+- The query-end residual stays closer to its **own** context than a deranged one at every layer (single seed) — the no-persistence null is rejected for 3 tiers, **marginal** for persona.
 - **Query length, not context type, drives the persona layer-0 signal:** short queries score 0.81, long 0.05 (0.76 gap); other tiers move under 0.10 by length.
-- The plan's H3 ("persona persists most") is **rejected in the opposite direction** — persona is the LOWEST-persisting tier in **21 of 28 layers**.
+- The prediction that persona contexts would persist *most* is **rejected in the opposite direction** — persona is the LOWEST-persisting tier in **21 of 28 layers**.
 - The same-slot companion read (different-token confound removed; length/position confounds remain) holds the generation-slot state at **0.63-0.72 cosine** in late layers — consistent with context persistence, not proof of it.
 - Read position is the last-prompt token, the known-weak persona-content proxy (Persona Vectors 2507.21509); residual geometry, not a behavioral claim.
 
@@ -34,16 +34,17 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
 
 ## Findings
 
-### Matched cosine sits above the within-tier floor at every layer — H2 rejected, but marginal for persona
+### Matched cosine sits above the within-tier floor at every layer — context persistence is not a null, but marginal for persona
 
-The construct-valid baseline is the **within-tier** shuffled floor (derange query↔context within a tier). The global cross-tier floor sits near zero only because the four tiers differ in mean direction. The within-tier floors are NOT near zero, and against them the multiples are modest.
+The construct-valid baseline is the **within-tier** shuffled floor (derange query↔context within a tier). The global cross-tier floor sits near zero only because the four tiers differ in mean direction; the within-tier floors are NOT near zero, and against them the multiples are modest.
 
 ![Matched centered cosine per tier vs layer; each tier's within-tier shuffled floor shaded, none near zero, matched curves above their own band at every depth](https://raw.githubusercontent.com/superkaiba/explore-persona-space/994feb766d4cce377032697b269ca823029d631a/figures/issue_654/hero_displacement_blog.png)
 
 > **Figure.** *Matched query-end cosine stays above its own-tier shuffled floor at every layer.* Solid = matched-pair centered cosine; shaded = that tier's within-tier shuffled floor (2.5/97.5 pctile, B=1000) — NOT near zero (persona 0.43, generic/ICL 0.25 at layer 0). Qwen-2.5-7B-Instruct, 810 pairs.
 
-- Generic / ICL / real-chat clear their floor band by 10-16× at L0 (real-chat highest) and 4.5-10.5× through mid-stack (L10-18) — H2 decisively rejected.
+- Generic / ICL / real-chat clear their floor band by 10-16× at L0 (real-chat highest) and 4.5-10.5× through mid-stack (L10-18) — the no-persistence null is decisively rejected. `×` = half-band widths above the floor, not a value ratio.
 - **Persona is marginal:** matched 0.50 vs floor 0.43 at L0 (3.2×), 2.0× the band at L7. Persona prompts are mutually similar, so the floor is high.
+- Raw (uncentered) cosine is anisotropy-inflated and identifies the matched direction less reliably; it is shown only in Finding 5 (raw-vs-centered crater), and the centered DV carries every finding here.
 
 ### Query length, not context type, dominates the persona layer-0 signal
 
@@ -55,17 +56,19 @@ The tier-averaged view hides a larger effect inside the persona tier: a large 0.
 
 - Persona short-vs-long split stays 0.30-0.76 through layers 0-11; the off-topic-long persona cell goes **negative** at L7-L8 (−0.072, −0.085).
 - Short queries place the query-end `\n` few tokens after the context-end `\n`, so the residuals are mechanically close. This is why the same-slot companion read is the load-bearing persistence evidence, not these two-position numbers.
+- Centered cosine, not raw, again: raw cosine is anisotropy-inflated and would muddy the short-vs-long contrast; the raw-vs-centered comparison lives in Finding 5.
 
-### Persona is the lowest-persisting tier — H3 rejected in the opposite direction
+### Persona is the lowest-persisting tier — opposite to the predicted persona-persists-most direction
 
 The plan predicted persona would persist *more* than the other tiers. The within-tier gap (matched − own floor) shows the reverse.
 
 ![Matched-minus-shuffled gap per layer per tier; persona lowest at almost every depth, decaying from layer 0](https://raw.githubusercontent.com/superkaiba/explore-persona-space/994feb766d4cce377032697b269ca823029d631a/figures/issue_654/gap_per_tier_blog.png)
 
-> **Figure.** *Persona is the lowest-persisting tier at almost every depth — opposite to the H3 prediction.* Gap = matched − own-tier shuffled centered cosine per layer. Qwen-2.5-7B-Instruct, 810 pairs.
+> **Figure.** *Persona is the lowest-persisting tier at almost every depth — opposite to the predicted persona-persists-most direction.* Gap = matched − own-tier shuffled centered cosine per layer. Qwen-2.5-7B-Instruct, 810 pairs.
 
 - Persona is the lowest-gap tier in **21 of 28 layers**. At L7: generic 0.129, real-chat 0.110, ICL 0.049, persona 0.018.
 - This corroborates the plan's flagged caveat (Persona Vectors 2507.21509): the last-prompt-token read is the *weakest* for persona content, so a low persona signal is expected, not a null.
+- The gap is computed on the centered DV (matched − own-tier floor); raw cosine would inflate every tier by the shared anisotropy and is shown only in Finding 5.
 
 ### Same-slot read holds the generation-slot state at 0.63-0.72 cosine in late layers
 
@@ -77,6 +80,7 @@ The two-position read compares two different `\n` tokens, so part of its similar
 
 - Mean-of-tiers minimum **0.665** (L23); per-tier minima reach **0.629** (generic, L23), wildchat ends 0.640. Tiers cluster within ~0.07 at every depth.
 - This is the confound-robust evidence consistent with context persistence. Cosine is not a linear displacement fraction, so I report the value, not a "fraction moved."
+- This companion read is also centered; the raw-vs-centered contrast is reserved for Finding 5.
 
 ### Per-pair alignment decays with depth while whole-bank CKA dips then rises
 
@@ -134,7 +138,7 @@ n/a — no model completions are generated. Each forward pass yields residual-st
 
 **Methodology:** the full findings-blind methodology + hyperparameter reference is auto-generated separately and linked at promotion.
 
-**Parameters (load-bearing subset):**
+**Parameters:**
 
 | Field | Value |
 |---|---|
