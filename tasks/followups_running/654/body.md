@@ -15,7 +15,7 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
   / ICL / wild-chat contexts and varied queries, to characterize context-dominant
   vs query-dominant layer regimes.
 ---
-# Matched delimiter-position residual cosine sits above the within-tier shuffled floor at every layer of Qwen-2.5-7B-Instruct, but query length dominates the persona tier (MODERATE confidence)
+# Matched delimiter-position residual cosine sits above the within-tier shuffled floor at every layer of Qwen-2.5-7B-Instruct, and a length-matched dummy control shows the late-layer generation-slot drop is content-driven, not a length artifact (MODERATE confidence)
 
 <!-- clean-result-v3 -->
 
@@ -26,7 +26,7 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
 - The query-end residual stays closer to its **own** context than a deranged one at every layer (single seed) — the no-persistence null is rejected for 3 tiers, **marginal** for persona.
 - **Query length, not context type, drives the persona layer-0 signal:** short queries score 0.81, long 0.05 (0.76 gap); other tiers move under 0.10 by length.
 - The prediction that persona contexts would persist *most* is **rejected in the opposite direction** — persona is the LOWEST-persisting tier in **21 of 28 layers**.
-- The same-slot companion read (different-token confound removed; length/position confounds remain) holds the generation-slot state at **0.63-0.72 cosine** in late layers — consistent with context persistence, not proof of it.
+- A **length-matched dummy** query holds the generation-slot readout at **0.83-0.85** in late layers where a real query drops it to **0.63-0.70**: the late-layer drop is **content-driven** (real − dummy gap **−0.165**, 95% CI [−0.172, −0.157]), not a length artifact.
 - Read position is the last-prompt token, the known-weak persona-content proxy (Persona Vectors 2507.21509); residual geometry, not a behavioral claim.
 
 ## What I ran
@@ -34,21 +34,27 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
 - **Why:** A recurring question in this project's persona line is *where* in the stack the model stops tracking its context and starts answering the query. Prior work read one position per prompt for family clustering ([#594](https://eps.superkaiba.com/tasks/594)) or role-vs-persona separation ([#634](https://eps.superkaiba.com/tasks/634)); none contrasted the context-end and query-end positions within one prompt. This run measures that displacement per layer.
 - **Design:** One manipulated axis — **read position** (context-span-end vs query-span-end token) — crossed with context type (4 tiers) × query type (on/off-topic × short/long). 81 contexts × 10 queries = 810 pairs, one forward pass each, residuals at all 28 layers. Single seed (42).
 - **Training:** none — forward-pass measurement on base `Qwen/Qwen2.5-7B-Instruct` (bf16, `output_hidden_states=True`, ChatML).
-- **Eval:** per-layer per-pair **centered cosine** (global-mean-centered, anisotropy-robust DV) between the two positions; a **shuffled-pair derangement floor** (B=1000) computed both globally and **within each tier**; **whole-bank linear CKA** as a secondary geometry read; and a **companion same-position contrast** (context-only vs context+query at the fixed generation slot) that removes the different-token confound. No judge, no generation.
+- **Eval:** per-layer per-pair **centered cosine** (global-mean-centered, anisotropy-robust DV) between the two positions; a **shuffled-pair derangement floor** (B=1000) computed both globally and **within each tier**; **whole-bank linear CKA** as a secondary geometry read; a **companion same-position contrast** (context-only vs context+query at the fixed generation slot) that removes the different-token confound; and a **length-matched dummy-query control** (round 2) that re-runs the companion read with a content-meaningless query padded to each real query's token length, isolating the content contribution to the late-layer drop. No judge, no generation.
+- **Rounds:**
+
+  | Round | Date (UTC) | What changed | Result |
+  |---|---|---|---|
+  | 1 | 2026-06-17 | Two-position read + within-tier floor + same-slot companion read | Persistence null rejected (marginal for persona); length dominates persona; companion holds slot at 0.63-0.72 with length/position confound unresolved |
+  | 2 | 2026-06-17 | Added length-matched content-meaningless dummy-query arm to the companion read | Dummy holds slot at 0.83-0.85; real − dummy gap −0.165 at L23-27 — the late-layer drop is content-driven, not a length artifact |
 
 ## Findings
 
 ### Matched cosine sits above the within-tier floor at every layer — context persistence is not a null, but marginal for persona
 
-The construct-valid baseline is the **within-tier** shuffled floor (derange query↔context within a tier). The global cross-tier floor sits near zero only because the four tiers differ in mean direction; the within-tier floors are NOT near zero, and against them the multiples are modest.
+The construct-valid baseline is the **within-tier** shuffled floor (derange query↔context within a tier). The global cross-tier floor sits near zero only because the tiers differ in mean direction; the within-tier floors are NOT near zero, and against them the multiples are modest.
 
 ![Matched centered cosine per tier vs layer; each tier's within-tier shuffled floor shaded, none near zero, matched curves above their own band at every depth](https://raw.githubusercontent.com/superkaiba/explore-persona-space/994feb766d4cce377032697b269ca823029d631a/figures/issue_654/hero_displacement_blog.png)
 
 > **Figure.** *Matched query-end cosine stays above its own-tier shuffled floor at every layer.* Solid = matched-pair centered cosine; shaded = that tier's within-tier shuffled floor (2.5/97.5 pctile, B=1000) — NOT near zero (persona 0.43, generic/ICL 0.25 at layer 0). Qwen-2.5-7B-Instruct, 810 pairs.
 
-- Generic / ICL / real-chat clear their floor band by 10-16× at L0 (real-chat highest) and 4.5-10.5× through mid-stack (L10-18) — the no-persistence null is decisively rejected. `×` = half-band widths above the floor, not a value ratio.
+- Generic / ICL / real-chat clear their floor band by 10-16× at L0 and 4.5-10.5× through mid-stack (L10-18) — the no-persistence null is decisively rejected. `×` = half-band widths above the floor, not a value ratio.
 - **Persona is marginal:** matched 0.50 vs floor 0.43 at L0 (3.2×), 2.0× the band at L7. Persona prompts are mutually similar, so the floor is high.
-- Raw (uncentered) cosine is anisotropy-inflated and identifies the matched direction less reliably; it is shown only in Finding 5 (raw-vs-centered crater), and the centered DV carries every finding here.
+- Raw (uncentered) cosine is anisotropy-inflated and identifies the matched direction less reliably; it is shown only in Finding 5, and the centered DV carries every finding here.
 
 ### Query length, not context type, dominates the persona layer-0 signal
 
@@ -74,17 +80,17 @@ The plan predicted persona would persist *more* than the other tiers. The within
 - This corroborates the plan's flagged caveat (Persona Vectors 2507.21509): the last-prompt-token read is the *weakest* for persona content, so a low persona signal is expected, not a null.
 - The gap is computed on the centered DV (matched − own-tier floor); raw cosine would inflate every tier by the shared anisotropy and is shown only in Finding 5.
 
-### Same-slot read holds the generation-slot state at 0.63-0.72 cosine in late layers
+### The late-layer generation-slot drop is content-driven: a length-matched dummy holds the slot higher than a real query
 
-The two-position read compares two different `\n` tokens, so part of its similarity is token identity. The companion read fixes the slot — same generation position, context-only vs context+query — removing the different-token confound. Length / position / extra-turn confounds remain (no length-matched dummy-query control).
+Round 1's same-slot companion read held the readout at 0.63-0.72 cosine in late layers, read as context persistence but unable to rule out a length/position artifact. Round 2 adds a length-matched content-meaningless dummy query to isolate the content contribution.
 
-![Same-slot cosine per layer per tier; curves start near 0.99, bottom around 0.63-0.72 in late layers, cluster within ~0.07](https://raw.githubusercontent.com/superkaiba/explore-persona-space/994feb766d4cce377032697b269ca823029d631a/figures/issue_654/companion_blog.png)
+![Two panels: left, real (solid) vs length-matched-dummy (dashed) same-slot companion cosine per tier, real dropping to 0.63-0.70 in late layers while dummy stays 0.83-0.85; right, the per-tier real-minus-dummy gap, all four tiers negative and widening to a trough near layer 23](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3dc022aaf3092cf6b5af53422abba7f9d3c08577/figures/issue_654/query_content_vs_length_gap_blog.png)
 
-> **Figure.** *Adding the query holds the generation-slot readout at 0.63-0.72 cosine in late layers.* Context-only vs context+query at the fixed generation slot, per tier. Removes the different-token confound; length/position confounds remain. Qwen-2.5-7B-Instruct, 810 pairs.
+> **Figure.** *A length-matched dummy holds the generation slot higher than a real query — the late-layer drop is content-driven.* Left: same-slot companion cosine, real (solid) vs length-matched dummy (dashed) per tier; at L23 dummy = persona 0.811 / real-chat 0.836 / generic 0.852 / ICL 0.853. Right: real − dummy per-pair gap (shaded = per-pair gap SE, n = 110-300/tier). Qwen-2.5-7B-Instruct, 810 matched pairs.
 
-- Mean-of-tiers minimum **0.665** (L23); per-tier minima reach **0.629** (generic, L23), wildchat ends 0.640. Tiers cluster within ~0.07 at every depth.
-- This is the confound-robust evidence consistent with context persistence. Cosine is not a linear displacement fraction, so I report the value, not a "fraction moved."
-- This companion read is also centered; the raw-vs-centered contrast is reserved for Finding 5.
+- The dummy holds the slot at **0.81-0.85** at L23 where real content drops it to **0.63-0.70** — a same-length query that says nothing barely moves the slot.
+- The per-pair real − dummy gap is negative from L3 on and reaches **−0.165** (95% CI [−0.172, −0.157]) over L23-27, excluding zero at all 28 layers; all four tiers agree.
+- This **reframes round 1**: the late-layer cosine is the model *moving toward the query's content* more than a length-matched filler would, not the model *retaining* the context. The drop is content-driven; the persistence framing read a partly-mechanical cosine.
 
 ### Per-pair alignment decays with depth while whole-bank CKA dips then rises
 
@@ -105,7 +111,9 @@ n/a — no training in this task. Forward-pass-only measurement on the base mode
 
 ### Evaluated with
 
-The battery is **81 contexts × 10 queries = 810 pairs** over four context tiers, each context paired against the same fixed 10-query bank so query type is a clean within-bank factor. Identity: persona system prompts (11 = 10 curated personas + the default assistant), generic instructions (20 UltraChat first-user prompts), in-context example blocks (20 held-out 4-exchange UltraChat Q/A blocks), real chat turns (30 WildChat conversation prefixes). Why this set: it spans curated-template (persona) through tier-1 real chat (WildChat) so a context-type effect would show as a tier-specific curve. Preprocessing: ChatML via `apply_chat_template`; the context-span-end and query-span-end token offsets are derived from the template and hard-asserted (offset-assert failure fraction = 0.000 over all 810 pairs). Both read positions decode to `\n` in all 810 pairs — expected for ChatML, and why centered cosine + the same-slot companion read are the load-bearing DVs rather than raw cosine.
+The base battery is **81 contexts × 10 queries = 810 pairs** over four context tiers, each context paired against the same fixed 10-query bank so query type is a clean within-bank factor. Identity: persona system prompts (11 = 10 curated personas + the default assistant), generic instructions (20 UltraChat first-user prompts), in-context example blocks (20 held-out 4-exchange UltraChat Q/A blocks), real chat turns (30 WildChat conversation prefixes). Why this set: it spans curated-template (persona) through tier-1 real chat (WildChat) so a context-type effect would show as a tier-specific curve. Preprocessing: ChatML via `apply_chat_template`; the context-span-end and query-span-end token offsets are derived from the template and hard-asserted (offset-assert failure fraction = 0.000 over all 810 pairs). Both read positions decode to `\n` in all 810 pairs — expected for ChatML, and why centered cosine + the same-slot companion read are the load-bearing DVs rather than raw cosine.
+
+The **round-2 dummy battery** mirrors the same 81 contexts but replaces each real query with a content-meaningless one — `"Please continue with whatever you think is most appropriate here."` padded with a `" really"` filler token (id 2167) until the generation-slot position matches the paired real query within ±2 tokens (all 810 matched, 0 over tolerance, median residual 0). Each dummy pair carries the matched `real_query_id`, so the real and dummy arms join per pair on `(context_id, real_query_id)` — every pair is its own length-and-position control.
 
 Cherry-picked for illustration (one context per tier; the full battery is the link below):
 
@@ -132,11 +140,26 @@ q_offtopic_long_1   "I want to bake a three-layer chocolate birthday cake ...  (
 
 </details>
 
-Complete probe battery (all 810 pairs + offsets + decoded spans): [`battery.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/inputs/battery.json) and [`extraction_manifest.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/analysis_tensors/extraction_manifest.json).
+The matched dummy query (1 of 810 dummy pairs; all share the same `dummy_base`, varying only filler length):
+
+<details>
+<summary>One length-matched dummy pair, verbatim (cherry-picked; full dummy battery in battery_dummy.json below)</summary>
+
+```
+pair_id        persona_software_engineer__q_dummy_for_ontopic_short_0
+real_query_id  q_ontopic_short_0   (matched real query: "What is the best way to learn a new language?")
+dummy_text     "Please continue with whatever you think is most appropriate here."
+target_query_end_idx 30   achieved_query_end_idx 30   length_residual_tokens 0
+full_prompt    <|im_start|>system\nYou are a software engineer who builds web applications.<|im_end|>\n<|im_start|>user\nPlease continue with whatever you think is most appropriate here.<|im_end|>\n<|im_start|>assistant\n
+```
+
+</details>
+
+Complete probe batteries (all 810 pairs + offsets + decoded spans): real [`battery.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/inputs/battery.json), dummy [`battery_dummy.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/f94c0d15be2b09e936d7607c715bb193559b221d/issue654_query_displacement/inputs/battery_dummy.json), and [`extraction_manifest.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/analysis_tensors/extraction_manifest.json).
 
 ### Generated
 
-n/a — no model completions are generated. Each forward pass yields residual-stream vectors (28 layers × 3584 dims at the context-end, query-end, and generation-slot positions), not text. The model emits nothing to judge; every data point is a per-layer cosine or CKA scalar from these vectors. The full per-pair residual banks (810 pair files + 81 context-only companion files, fp32) are at [`analysis_tensors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/analysis_tensors).
+n/a — no model completions are generated. Each forward pass yields residual-stream vectors (28 layers × 3584 dims at the context-end, query-end, and generation-slot positions), not text. The model emits nothing to judge; every data point is a per-layer cosine or CKA scalar from these vectors. The real per-pair residual banks (810 pair files + 81 context-only companion files, fp32) are at [`analysis_tensors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/analysis_tensors), and the round-2 dummy banks (810 pair + 81 context-only) at [`analysis_tensors/dummy/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f94c0d15be2b09e936d7607c715bb193559b221d/issue654_query_displacement/analysis_tensors/dummy).
 
 ## Reproducibility
 
@@ -150,32 +173,36 @@ n/a — no model completions are generated. Each forward pass yields residual-st
 | Centering | `global_mean` (per-bank, per-layer); within-tier + global shuffled floors both computed |
 | Floor | shuffled-pair derangement, B=1000, seed 42 |
 | CKA | linear CKA (Kornblith 2019, HSIC-Frobenius form), float64 |
-| Pairs / forwards | 810 (context, query) pairs; 891 forwards incl. 81 context-only companion reads |
+| Pairs / forwards (real) | 810 (context, query) pairs; 891 forwards incl. 81 context-only companion reads |
+| Dummy arm (round 2) | 810 length-matched content-meaningless pairs; `dummy_base` "Please continue…" + `" really"` filler (id 2167); all 810 within ±2 tokens of the matched real query-end (0 over tolerance); joined per pair on `(context_id, real_query_id)`, 810/810 matched, 0 unmatched |
 | Seed | 42 (single seed) |
 
 **Artifacts:**
 - **Methodology reference:** [docs/methodology/issue_654.md](https://github.com/superkaiba/explore-persona-space/blob/7d0d1224419347bc828d2dbfb334935a6f521b21/docs/methodology/issue_654.md) · [gist](https://gist.github.com/superkaiba/d2533088ba71df5685cd76794178d21b)
 - Per-layer displacement JSON + per-tier cells: `eval_results/issue_654/per_layer_displacement.json` (+ `cells/`), committed at SHA `92ddfce6bbc78df8675b1747462b1ec1c74b7d6f`.
-- Dual-position residual banks + manifest: [`analysis_tensors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/analysis_tensors) (HF data repo). `list_repo_files` confirms **892 files**: 810 pair `.pt` + 81 context-only `.pt` + 1 `extraction_manifest.json`.
-- Probe battery: [`inputs/battery.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/inputs/battery.json).
-- Figures (blog style, PNG + PDF + meta): `figures/issue_654/{hero_displacement,query_length_split,gap_per_tier,companion,cosine_vs_cka}_blog.*` at SHA `994feb766d4cce377032697b269ca823029d631a`.
+- Round-2 companion-gap JSON (per-layer per-tier real − dummy gap + per-pair SE + per-length breakdown + unmatched audit): `eval_results/issue_654/length-matched-dummy-query-control/companion_gap.json`, committed at SHA `3dc022aaf3092cf6b5af53422abba7f9d3c08577`.
+- Real dual-position residual banks + manifest: [`analysis_tensors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/analysis_tensors) (HF data repo). `list_repo_files` confirms **892 files**: 810 pair `.pt` + 81 context-only `.pt` + 1 `extraction_manifest.json`.
+- Round-2 dummy residual banks: [`analysis_tensors/dummy/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f94c0d15be2b09e936d7607c715bb193559b221d/issue654_query_displacement/analysis_tensors/dummy) (HF data repo). `list_repo_files` confirms **892 files**: 810 pair `.pt` + 81 context-only `.pt` + 1 `extraction_manifest.json`.
+- Probe batteries: [`inputs/battery.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/inputs/battery.json), [`inputs/battery_dummy.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/f94c0d15be2b09e936d7607c715bb193559b221d/issue654_query_displacement/inputs/battery_dummy.json).
+- Figures (blog style, PNG + PDF + meta): `figures/issue_654/{hero_displacement,query_length_split,gap_per_tier,companion,cosine_vs_cka}_blog.*` at SHA `994feb766d4cce377032697b269ca823029d631a`; round-2 `figures/issue_654/query_content_vs_length_gap_blog.*` at SHA `3dc022aaf3092cf6b5af53422abba7f9d3c08577`.
 
-**Compute:** GPU extraction (891 forwards, batch 1, 28 layers, 2-3 positions/forward) on 1× A100-80 (GCP `a2-ultragpu-1g`, `lora-7b` intent), ~0.4 GPU-h. CPU metric phase (centered cosine + B=1000 derangement floors over 5 strata + float64 linear CKA over 810×3584 banks + figures) ~30 min off-pod. No judge / API cost.
+**Compute:** GPU extraction (real: 891 forwards; dummy: 891 forwards, batch 1, 28 layers, 2-3 positions/forward) on 1× A100-80 (GCP `a2-ultragpu-1g`, `lora-7b` intent), ~0.4 GPU-h per arm. CPU metric phase (centered cosine + B=1000 derangement floors over 5 strata + float64 linear CKA over 810×3584 banks + the round-2 per-pair companion-gap join over both arms + figures) ~30 min off-pod. No judge / API cost.
 
 **Code:**
-- `scripts/issue654_build_battery.py` (battery), `scripts/issue654_extract.py` (dual-position extraction), `scripts/issue654_analyze.py` (metrics), `scripts/issue654_hero_figs.py` (blog figures), `scripts/issue654_dispatch.sh` (GCP dispatch).
+- `scripts/issue654_build_battery.py` (battery), `scripts/issue654_extract.py` (dual-position extraction), `scripts/issue654_analyze.py` (metrics + `--companion-gap` dummy-vs-real mode), `scripts/issue654_hero_figs.py` (blog figures), `scripts/issue654_dispatch.sh` (GCP dispatch).
 - New library: `src/explore_persona_space/analysis/probes.py::extract_dual_position_activations`; `representation_shift.py::linear_cka` + `cka_per_layer` (+ `tests/test_linear_cka.py`).
-- Reproduce the analysis from the uploaded banks:
+- Reproduce the round-2 companion-gap analysis from the uploaded banks:
   ```bash
-  uv run python scripts/issue654_analyze.py \
-    --banks data/issue654/hf_snapshot/issue654_query_displacement/analysis_tensors \
-    --out eval_results/issue_654 --figures
-  uv run python scripts/issue654_hero_figs.py
+  uv run python scripts/issue654_analyze.py --companion-gap \
+    --real-banks data/issue654/hf_snapshot/issue654_query_displacement/analysis_tensors \
+    --dummy-banks data/issue654/hf_snapshot/issue654_query_displacement/analysis_tensors/dummy \
+    --context-only data/issue654/hf_snapshot/issue654_query_displacement/analysis_tensors/context_only \
+    --out eval_results/issue_654/length-matched-dummy-query-control/ --figures --fig-dir figures/
   ```
-- Git commit: `994feb766d4cce377032697b269ca823029d631a` (branch `issue-654`).
+- Git commit: `3dc022aaf3092cf6b5af53422abba7f9d3c08577` (branch `issue-654`).
 
 **Context:**
-- **Created / run:** task created 2026-06-16; results landed 2026-06-17 (UTC).
-- **Follow-up to:** fresh direction (no parent). Sibling-positioned against [#594](https://eps.superkaiba.com/tasks/594) (context-vector geometry, one read position) and [#634](https://eps.superkaiba.com/tasks/634) (role-vs-persona bank); first to contrast two within-prompt positions.
+- **Created / run:** task created 2026-06-16; round-1 results landed 2026-06-17; round-2 (length-matched dummy-query control) landed 2026-06-17 (UTC).
+- **Follow-up to:** round 1 was a fresh direction (no parent), sibling-positioned against [#594](https://eps.superkaiba.com/tasks/594) (context-vector geometry, one read position) and [#634](https://eps.superkaiba.com/tasks/634) (role-vs-persona bank); first to contrast two within-prompt positions. Round 2 is a cheap-band same-issue follow-up auto-run on this same issue (label `length-matched-dummy-query-control`), addressing the length/position confound flagged in round-1 Finding 4.
 - **Originating prompt(s), verbatim:**
   > check how similar activations are after the context vs after the user query (for a variety of contexts and user queries), ask clarifying questions
