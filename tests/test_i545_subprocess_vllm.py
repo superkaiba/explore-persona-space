@@ -24,6 +24,7 @@ from __future__ import annotations
 import ast
 import inspect
 import json
+import os
 import sys
 import textwrap
 from pathlib import Path
@@ -245,6 +246,108 @@ def test_client_fails_loud_on_worker_error(tmp_path):
         client.run()
 
 
+def test_client_reaps_worker_on_polling_exception(tmp_path):
+    """BLOCKER (round 39): the GPU-owning worker must be terminated + reaped on
+    EVERY ``run()`` exit path. Previously ``self.close()`` ran only on the success
+    path, so a polling exception (timeout / worker-error / worker death) leaked a
+    subprocess holding the GPU — the exact co-residency OOM Strategy E removes.
+
+    A stub worker that NEVER writes responses and never exits forces
+    ``_poll_for_responses`` to TimeoutError; after the raise the subprocess must be
+    gone (``_proc is None`` AND no live PID)."""
+    ipc_dir = tmp_path / "ipc"
+    hang_worker = tmp_path / "hang_worker.py"
+    # Records its own PID, then sleeps forever (ignoring requests). It exits ONLY
+    # when the client's close() drops STOP / terminates it — proving the reap ran.
+    hang_worker.write_text(
+        textwrap.dedent(
+            """
+            import os, sys, time
+            from pathlib import Path
+            ipc = Path(sys.argv[sys.argv.index("--ipc-dir") + 1])
+            ipc.mkdir(parents=True, exist_ok=True)
+            (ipc / "worker.pid").write_text(str(os.getpid()))
+            while True:
+                time.sleep(0.05)
+            """
+        )
+    )
+    client = zoo._VllmClient(
+        ipc_dir, worker_argv=[sys.executable, str(hang_worker), "--ipc-dir", str(ipc_dir)]
+    )
+    client.add_request("nl|x", [[1]], n=1, max_tokens=8)
+
+    # Tight timeout so the poll fails fast in-test (default is 3600s).
+    monkeypatch_done = False
+    orig_timeout = zoo.VLLM_WORKER_TIMEOUT_S
+    orig_poll = zoo.VLLM_POLL_INTERVAL_S
+    try:
+        zoo.VLLM_WORKER_TIMEOUT_S = 1.0
+        zoo.VLLM_POLL_INTERVAL_S = 0.05
+        with pytest.raises(TimeoutError):
+            client.run()
+        monkeypatch_done = True
+    finally:
+        zoo.VLLM_WORKER_TIMEOUT_S = orig_timeout
+        zoo.VLLM_POLL_INTERVAL_S = orig_poll
+    assert monkeypatch_done
+
+    # The worker MUST have been reaped: _proc cleared + no live PID.
+    assert client._proc is None
+    worker_pid = int((ipc_dir / "worker.pid").read_text())
+    # os.kill(pid, 0) raises ProcessLookupError if the process is gone.
+    with pytest.raises(ProcessLookupError):
+        os.kill(worker_pid, 0)
+
+
+def test_run_clears_stale_sentinels(tmp_path):
+    """BLOCKER (round 39): a same-out_dir retry must clear stale STOP / READY /
+    worker.error from a prior run BEFORE spawning, else the fresh worker either
+    exits on the stale STOP without processing the new requests, or the first poll
+    fails LOUD on the stale worker.error. Pre-create all three; the run must still
+    succeed against the stub worker."""
+    ipc_dir = tmp_path / "ipc"
+    ipc_dir.mkdir(parents=True)
+    (ipc_dir / "STOP").write_text("1")
+    (ipc_dir / "READY").write_text("1")
+    (ipc_dir / "worker.error").write_text('{"error": "stale from a prior run"}')
+
+    client = zoo._VllmClient(ipc_dir, worker_argv=_stub_worker_argv(tmp_path, ipc_dir))
+    client.add_request("nl|fresh", [[1, 2, 3]], n=1, max_tokens=8)
+    results = client.run()  # must NOT fail-loud on the stale worker.error / STOP
+
+    assert results["nl|fresh"][0][0]["text"] == "stub-resp"
+    # The fresh run re-dropped STOP (its own close()), but the stale worker.error
+    # was cleared before launch.
+    assert not (ipc_dir / "worker.error").exists()
+
+
+def test_run_clears_stale_sentinels_preserves_reused_responses(tmp_path):
+    """Clearing stale CONTROL sentinels must NOT delete pre-existing RESPONSE
+    files — the documented re-run reuse contract (a prior partial phase's
+    responses are reused) depends on them surviving the sentinel sweep."""
+    ipc_dir = tmp_path / "ipc"
+    (ipc_dir / "responses").mkdir(parents=True)
+    (ipc_dir / "STOP").write_text("1")  # stale control sentinel
+    (ipc_dir / "responses" / "nl|cached.json").write_text(
+        json.dumps(
+            {
+                "probe_id": "nl|cached",
+                "completions": [
+                    [{"token_ids": [7], "text": "from-prior", "finish_reason": "stop"}]
+                ],
+            }
+        )
+    )
+    client = zoo._VllmClient(ipc_dir, worker_argv=_stub_worker_argv(tmp_path, ipc_dir))
+    client.add_request("nl|cached", [[1]], n=1, max_tokens=8)
+    client.add_request("nl|fresh", [[2]], n=1, max_tokens=8)
+    results = client.run()
+    # The pre-existing response survived the stale-sentinel sweep and was reused.
+    assert results["nl|cached"][0][0]["text"] == "from-prior"
+    assert results["nl|fresh"][0][0]["text"] == "stub-resp"
+
+
 def test_client_duplicate_probe_id_raises(tmp_path):
     client = zoo._VllmClient(tmp_path / "ipc")
     client.add_request("dup", [[1]], n=1, max_tokens=8)
@@ -287,6 +390,53 @@ def test_samples_from_completions_maps_and_counts_truncation():
     assert per_probe[0][0] == [1, 2, 151645]
     # The truncated one (finish_reason=length) is NOT terminator-appended.
     assert per_probe[0][1] == [3, 4, 5]
+
+
+# ---------------------------------------------------------------------------
+# 4b. _score_outdist_pair_from_samples fails LOUD on a partial / corrupt IPC
+#     payload instead of silently min()-truncating below the registered estimand
+#     (BLOCKER fix, round 39). The shape asserts fire BEFORE any model call, so a
+#     None model is fine — the function must raise before touching it.
+# ---------------------------------------------------------------------------
+
+
+def _comp(token_ids):
+    return {"token_ids": list(token_ids), "text": "x", "finish_reason": "stop"}
+
+
+def test_score_outdist_pair_fails_loud_on_missing_probe():
+    """A worker that dropped a probe (comps shorter than the prompt list) must
+    raise, not silently score the surviving probes."""
+    prompts_a = [[1, 2], [3, 4]]  # 2 probes registered
+    prompts_b = [[5, 6], [7, 8]]
+    comps_a = [[_comp([9])]]  # only 1 probe came back → truncated
+    comps_b = [[_comp([9])], [_comp([9])]]
+    with pytest.raises(ValueError, match="Phase-A output truncated"):
+        zoo._score_outdist_pair_from_samples(
+            None, prompts_a, prompts_b, comps_a, comps_b, r_samples=1
+        )
+
+
+def test_score_outdist_pair_fails_loud_on_short_sample_count():
+    """A probe whose completion list is shorter than r_samples (a partial sample
+    set) must raise, not score fewer samples than the registered R."""
+    prompts_a = [[1, 2]]
+    prompts_b = [[5, 6]]
+    # r_samples=8 demanded, but side a returned only 2 completions for the probe.
+    comps_a = [[_comp([9]), _comp([10])]]
+    comps_b = [[_comp([9]) for _ in range(8)]]
+    with pytest.raises(ValueError, match="responses, need >= 8"):
+        zoo._score_outdist_pair_from_samples(
+            None, prompts_a, prompts_b, comps_a, comps_b, r_samples=8
+        )
+
+
+def test_score_outdist_pair_no_silent_min_truncation_symbol_gone():
+    """The silent ``n_probes_eff = min(...)`` truncation that scored below the
+    registered estimand must be gone from the source (it was the BLOCKER)."""
+    src = inspect.getsource(zoo._score_outdist_pair_from_samples)
+    assert "n_probes_eff = min(" not in src
+    assert "n_probes_used = len(prompts_a)" in src
 
 
 # ---------------------------------------------------------------------------

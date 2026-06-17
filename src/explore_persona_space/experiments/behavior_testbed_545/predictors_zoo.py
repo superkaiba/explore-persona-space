@@ -264,6 +264,21 @@ class _VllmClient:
         if not self._requests:
             return {}
 
+        # Clear stale CONTROL sentinels from a prior run (BLOCKER fix, round 39):
+        # a same-out_dir retry (after a Phase-B failure or a partial Phase-A
+        # failure) must not inherit the previous run's STOP/READY/worker.error.
+        # A stale STOP makes the freshly-spawned worker load vLLM then exit
+        # without processing the new requests; a stale worker.error makes the
+        # first poll fail LOUD immediately; a stale READY can race the worker
+        # before all request files are written. We deliberately DO NOT delete
+        # pre-existing RESPONSE files — the documented re-run contract (a prior
+        # partial phase's responses are reused; `_collect_ready` only reads
+        # responses whose probe_id is in THIS run's request set) depends on them.
+        for sentinel in ("STOP", "READY", "worker.error"):
+            stale = self.ipc_dir / sentinel
+            if stale.exists():
+                stale.unlink()
+
         # Write every request file FIRST (so a fast worker never sees READY with
         # a request still un-written), then the READY sentinel.
         for probe_id, payload in self._requests.items():
@@ -279,8 +294,17 @@ class _VllmClient:
         )
         (self.ipc_dir / "READY").write_text("1")
 
-        results = self._poll_for_responses()
-        self.close()
+        # The GPU-owning worker MUST be reaped on EVERY exit path (BLOCKER fix,
+        # round 39): `_poll_for_responses` raises on worker.error / worker death
+        # / TimeoutError / a malformed response — without this finally the leaked
+        # worker keeps the GPU at WORKER_GPU_MEM_UTIL and blocks the next
+        # attempt's HF load, the exact co-residency OOM Strategy E exists to kill.
+        # The EPS recovery model is retry-in-same-pod, not "pod teardown reclaims
+        # it", so the leak is load-bearing.
+        try:
+            results = self._poll_for_responses()
+        finally:
+            self.close()
         return results
 
     def _poll_for_responses(self) -> dict[str, list[list[dict]]]:
@@ -685,10 +709,39 @@ def _score_outdist_pair_from_samples(
     """
     samples_a, ta_tot, ta_hit = _samples_from_completions(comps_a, r_samples)
     samples_b, tb_tot, tb_hit = _samples_from_completions(comps_b, r_samples)
-    n_probes_eff = min(len(prompts_a), len(prompts_b), len(samples_a), len(samples_b))
+
+    # Fail LOUD on a partial / corrupt IPC payload (BLOCKER fix, round 39):
+    # the previous `min(len(...), ...)` silently scored fewer probes/samples than
+    # the registered estimand (R=r_samples per probe, full probe set), which
+    # violates CLAUDE.md fail-fast and would quietly bias the JS/KL read if the
+    # worker dropped a probe or returned a short completion list. The worker
+    # produces exactly one completion-list per prompt and exactly `n` (= r_samples)
+    # completions per prompt, so any mismatch is a real defect, not a tolerable
+    # short read.
+    if len(comps_a) != len(prompts_a):
+        raise ValueError(
+            f"Phase-A output truncated: comps_a={len(comps_a)} != prompts_a={len(prompts_a)}"
+        )
+    if len(comps_b) != len(prompts_b):
+        raise ValueError(
+            f"Phase-A output truncated: comps_b={len(comps_b)} != prompts_b={len(prompts_b)}"
+        )
+    for pi in range(len(prompts_a)):
+        if len(samples_a[pi]) < r_samples:
+            raise ValueError(
+                f"Phase-A samples_a[{pi}] has {len(samples_a[pi])} responses, need >= {r_samples}"
+            )
+        if len(samples_b[pi]) < r_samples:
+            raise ValueError(
+                f"Phase-A samples_b[{pi}] has {len(samples_b[pi])} responses, need >= {r_samples}"
+            )
+
+    # All probes verified present at full sample count → score the registered set
+    # (no min() truncation). n_probes_used is recorded in the RB output below.
+    n_probes_used = len(prompts_a)
 
     a_kl_m, b_kl_m, a_kl_ab, b_kl_ba = [], [], [], []
-    for pi in range(n_probes_eff):
+    for pi in range(n_probes_used):
         rows_a = samples_a[pi][:r_samples]
         rows_b = samples_b[pi][:r_samples]
         if not rows_a or not rows_b:
@@ -715,6 +768,11 @@ def _score_outdist_pair_from_samples(
     )
     rb["_trunc_total"] = ta_tot + tb_tot
     rb["_trunc_hits"] = ta_hit + tb_hit
+    # Telemetry (round 39): the effective probe/sample count actually scored, so a
+    # downstream reader can confirm the registered estimand (full probe set, R per
+    # probe) was honored rather than silently truncated.
+    rb["_n_probes_used"] = n_probes_used
+    rb["_r_samples"] = r_samples
     return rb
 
 
