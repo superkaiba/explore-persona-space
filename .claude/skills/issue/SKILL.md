@@ -4729,9 +4729,19 @@ late join remains.
     names the mode, the `followup_label`, and the existing doc path;
     the agent reads the EXISTING `docs/methodology/issue_<N>.md`
     (findings-blind by construction) plus ONLY the new round's plan
-    amendment + Reproducibility slice, and re-writes the doc with a
-    new `## <followup_label> arm` section appended — parent sections
-    preserved verbatim.
+    amendment + Reproducibility slice, and re-writes the doc by
+    EXTENDING the six fixed sections IN PLACE — adding a per-round
+    COLUMN to the canonical §2 hyperparameter table for whatever the
+    round CHANGED (the check-21 reconciliation surface), labeled
+    `### Round <label>` sub-blocks inside §3/§4/§5 ONLY where the
+    round's recipe / probes / examples differ, and new rows on §6's
+    existing artifacts table; parent sections preserved everywhere
+    else. NEVER a new top-level `## ...` heading or a second
+    §2-style table — a bare `## <followup_label> arm` H2 carrying only
+    the boilerplate footer strands the round's recipe outside §2
+    (incident #642). The brief inherits THIS wording, so it stays
+    consistent with `.claude/agents/methodology-writer.md` § EXTEND
+    mode.
   - Step 6 refreshes the EXISTING gist when a prior marker recorded a
     `gist_url` (`gh gist edit <gist-id> docs/methodology/issue_<N>.md`,
     same fail-soft rule); fall back to `gh gist create` only when no
