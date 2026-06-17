@@ -736,6 +736,8 @@ def query_slurm_state(
             ["ssh", robot_alias, "scontrol", "show", "job", job_id],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
         )
@@ -754,6 +756,8 @@ def query_slurm_state(
             ["ssh", robot_alias, "squeue", "-j", job_id, "-h", "-o", "%T"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
         )
@@ -876,6 +880,8 @@ def query_by_name(
             ["ssh", robot_alias, "squeue", "--name", job_name, "-h", "-o", "%i"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
         )
@@ -930,7 +936,15 @@ def rsync_status_and_log(
             f"{robot_alias}:{scratch_dir}/{filename}",
             str(local_dir / filename),
         ]
-        proc = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False)
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            check=False,
+        )
         if proc.returncode != 0:
             logger.debug(
                 "rsync %s/%s returned %d: %s",

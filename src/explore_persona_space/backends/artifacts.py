@@ -255,7 +255,15 @@ def _default_git_tracked(repo_root: Path, rel_paths: Iterable[str]) -> set[str]:
     if not rel_list:
         return set()
     argv = ["git", "-C", str(repo_root), "ls-files", "--", *rel_list]
-    proc = subprocess.run(argv, capture_output=True, text=True, check=True, timeout=30)
+    proc = subprocess.run(
+        argv,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=True,
+        timeout=30,
+    )
     return {line.strip() for line in proc.stdout.splitlines() if line.strip()}
 
 
