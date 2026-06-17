@@ -1,7 +1,7 @@
 ---
-title: '#606''s LoRA-vs-full-FT sycophancy bystander-leakage gap is mostly the adapter-vs-dense-update
-  bundle, and that piece survives matched learning rate and on-policy data on a second
-  source persona (MODERATE confidence)'
+title: The sycophancy bystander-leakage gap between LoRA and full fine-tuning is mostly
+  adapter-vs-dense update behavior, and that piece survives matched learning rate
+  plus on-policy data on a second source persona (MODERATE confidence)
 kind: experiment
 tags:
 - followup-manual
