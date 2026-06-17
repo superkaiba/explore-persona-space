@@ -790,32 +790,46 @@ def make_companion_gap_figure(gap: dict, layers: list[int], fig_dir: str) -> Non
     tiers = sorted(gap["per_tier"].keys())
     colors = paper_palette(min(max(len(tiers), 1), 8))
 
+    # Plain-English tier labels for legends (paper-plots §3.5).
+    tier_label = {
+        "generic": "generic",
+        "icl": "in-context",
+        "persona": "persona",
+        "wildchat": "real chat",
+    }
+
     fig, (ax_curves, ax_gap) = plt.subplots(1, 2, figsize=(13, 4.5))
     real_cos = gap["companion_cos_real_per_tier"]
     dummy_cos = gap["companion_cos_dummy_per_tier"]
     for ci, t in enumerate(tiers):
         col = colors[ci % len(colors)]
+        lbl = tier_label.get(t, t)
         if t in real_cos:
-            ax_curves.plot(layers, real_cos[t], label=f"{t} real", color=col, linewidth=2)
+            ax_curves.plot(layers, real_cos[t], label=f"{lbl} real", color=col, linewidth=2)
         if t in dummy_cos:
             ax_curves.plot(
-                layers, dummy_cos[t], label=f"{t} dummy", color=col, linewidth=1.5, linestyle="--"
+                layers,
+                dummy_cos[t],
+                label=f"{lbl} dummy",
+                color=col,
+                linewidth=1.5,
+                linestyle="--",
             )
     ax_curves.set_xlabel("Layer")
     ax_curves.set_ylabel("Same-slot companion cosine")
-    ax_curves.set_title("Real vs length-matched-dummy companion curve per tier")
+    ax_curves.set_title("Real query vs length-matched no-content filler, same slot")
     ax_curves.legend(loc="best", fontsize=6)
 
     for ci, t in enumerate(tiers):
         col = colors[ci % len(colors)]
         g = np.array(gap["per_tier"][t]["gap_mean"])
         se = np.array(gap["per_tier"][t]["gap_se"])
-        ax_gap.plot(layers, g, label=t, color=col, linewidth=2)
+        ax_gap.plot(layers, g, label=tier_label.get(t, t), color=col, linewidth=2)
         ax_gap.fill_between(layers, g - se, g + se, color=col, alpha=0.15)
     ax_gap.axhline(0.0, color="grey", linewidth=1, linestyle=":")
     ax_gap.set_xlabel("Layer")
     ax_gap.set_ylabel("Gap = companion cos(real) - cos(dummy)")
-    ax_gap.set_title("Content-vs-length gap per tier (shaded = per-pair gap SE)")
+    ax_gap.set_title("Real-minus-dummy gap per tier (shaded = per-pair gap SE)")
     ax_gap.legend(loc="best", fontsize=7)
     fig.tight_layout()
     savefig_paper(fig, "issue_654/query_content_vs_length_gap_blog", dir=fig_dir)
