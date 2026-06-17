@@ -86,7 +86,9 @@ fi
 write_failure_sentinel() {
     local phase="$1"
     local reason="$2"
-    local sentinel="$SENTINEL_DIR/issue-654-epm_failure-$(date +%s).json"
+    local ts
+    ts=$(date -u +%Y%m%dT%H%M%SZ)
+    local sentinel="$SENTINEL_DIR/issue-654-epm_failure-${ts}.json"
     uv run python - "$sentinel" "$phase" "$reason" <<'PY'
 import json, sys, datetime
 path, phase, reason = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -99,6 +101,39 @@ with open(path, "w") as f:
     json.dump(payload, f, indent=2)
 print(f"Wrote failure sentinel: {path}")
 PY
+    # Durable failure diagnostics: upload $LOG_DIR (extract.log / build_battery.log
+    # / upload.log) to the HF data repo BEFORE exit. The local sentinel under
+    # /workspace/logs is destroyed by the GCE EXIT trap (gcloud instances delete)
+    # before the orchestrator's poller can drain it, so the on-pod logs are the
+    # only post-mortem artifact (#654 round-2 production crash). Best-effort: the
+    # subshell `|| true` + the in-Python try/except keep a failed upload (HF
+    # unreachable, token missing) from masking the real failure — we still exit 2.
+    (uv run python - "$LOG_DIR" "$HF_DATA_REPO" "$HF_PREFIX" "$ts" "$phase" "$reason" <<'PY' 2>&1 || true
+import sys
+from pathlib import Path
+
+from explore_persona_space.orchestrate.hub import _upload
+
+log_dir, repo, prefix, ts, phase, reason = sys.argv[1:7]
+log_path = Path(log_dir)
+if not log_path.exists() or not any(log_path.iterdir()):
+    print(f"[failure-log] no logs at {log_dir} to upload (best-effort skip)")
+    raise SystemExit(0)
+try:
+    url = _upload(
+        log_path,
+        repo_id=repo,
+        repo_type="dataset",
+        path_in_repo=f"{prefix}/run_logs/{ts}",
+    )
+    if url:
+        print(f"[failure-log] uploaded {log_dir} -> {url}")
+    else:
+        print(f"[failure-log] _upload returned empty path (HF_TOKEN missing?) for {log_dir}", file=sys.stderr)
+except Exception as e:  # noqa: BLE001 — best-effort diagnostics upload
+    print(f"[failure-log] upload failed (best-effort): {e}", file=sys.stderr)
+PY
+    )
     echo "[phase=failed] FATAL at $phase: $reason" >&2
     exit 2
 }
@@ -107,6 +142,29 @@ echo "[phase=start] === i654 dispatcher $(date -Iseconds) issue=$ISSUE phase=$PH
 
 if [ "$PHASE" != "extract" ]; then
     write_failure_sentinel "$PHASE" "unknown phase '$PHASE' (only 'extract' is supported on-pod)"
+fi
+
+# ── Phase: build battery (CPU, on-pod, gated on existence) ───────────────────
+# The auto/gcp lane git-clones the issue branch and runs the workload from there;
+# it does NOT push VM-side files. data/issue654/ is gitignored (.gitignore `data/*`,
+# not whitelisted), so the cloned tree has an EMPTY data/issue654/. The battery
+# MUST therefore be built on-pod, CPU-side, BEFORE the GPU forward pass — the
+# plan's "CPU, VM, pre-pod" framing (§3 step 1) means "the first CPU step of the
+# dispatcher" on this lane. (#654 round-2 production crash: dispatcher consumed
+# data/issue654/battery.json without building it.) The build is tokenizer-only
+# (no model load) so it runs cleanly before the model-load phase.
+if [ ! -f "$BATTERY" ]; then
+    echo "[phase=build-battery] === building battery $BATTERY (smoke=$SMOKE) ==="
+    BATTERY_BUILD_FLAG=""
+    [ "$SMOKE" -eq 1 ] && BATTERY_BUILD_FLAG="--smoke"
+    # shellcheck disable=SC2086
+    uv run python scripts/issue654_build_battery.py \
+        --out "$BATTERY" $BATTERY_BUILD_FLAG \
+        2>&1 | tee "$LOG_DIR/build_battery.log" \
+        || write_failure_sentinel build-battery "build_battery rc=${PIPESTATUS[0]} (see build_battery.log)"
+    [ -f "$BATTERY" ] || write_failure_sentinel build-battery "battery not at $BATTERY after build"
+else
+    echo "[phase=build-battery] === battery already exists at $BATTERY (skipping build) ==="
 fi
 
 # ── Phase: dual-position extraction (GPU) ───────────────────────────────────
