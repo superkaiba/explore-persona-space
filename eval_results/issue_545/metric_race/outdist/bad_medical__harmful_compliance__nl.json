@@ -1,0 +1,27 @@
+{
+ "row": "bad_medical",
+ "col": "harmful_compliance",
+ "flavor": "nl",
+ "rb": {
+  "js_rb_bits": 0.014594548467638073,
+  "kl_ab_nats": 0.04458253033500022,
+  "kl_ba_nats": 0.044017745378023554,
+  "sym_kl_nats": 0.044300137856511886,
+  "mc_se_js_bits": 0.00028079742965030026,
+  "n_samples_a": 400,
+  "n_samples_b": 400
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "07965f37e29ec46e62cb22eff0b7ce8993507c2c",
+  "timestamp": "2026-06-16T23:29:56.508452+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

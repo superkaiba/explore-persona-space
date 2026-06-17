@@ -1,0 +1,27 @@
+{
+ "row": "refuse_medical",
+ "col": "broad_em",
+ "flavor": "demos",
+ "rb": {
+  "js_rb_bits": 0.036700790500891284,
+  "kl_ab_nats": 0.13194741884326983,
+  "kl_ba_nats": 0.12711449137732778,
+  "sym_kl_nats": 0.1295309551102988,
+  "mc_se_js_bits": 0.002691595089417668,
+  "n_samples_a": 64,
+  "n_samples_b": 64
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T06:24:29.995167+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

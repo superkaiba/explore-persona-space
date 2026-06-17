@@ -1,0 +1,27 @@
+{
+ "row": "casual_register",
+ "col": "persona_drift",
+ "flavor": "demos",
+ "rb": {
+  "js_rb_bits": 0.05224846570940386,
+  "kl_ab_nats": 0.18692652947644386,
+  "kl_ba_nats": 0.1905002185549025,
+  "sym_kl_nats": 0.18871337401567317,
+  "mc_se_js_bits": 0.0015579562429409593,
+  "n_samples_a": 160,
+  "n_samples_b": 160
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T07:08:49.947886+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

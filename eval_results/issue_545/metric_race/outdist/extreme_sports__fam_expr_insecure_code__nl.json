@@ -1,0 +1,27 @@
+{
+ "row": "extreme_sports",
+ "col": "fam_expr_insecure_code",
+ "flavor": "nl",
+ "rb": {
+  "js_rb_bits": 0.011336514024186091,
+  "kl_ab_nats": 0.03292384309942035,
+  "kl_ba_nats": 0.06478251677534805,
+  "sym_kl_nats": 0.048853179937384195,
+  "mc_se_js_bits": 0.00024402747383058416,
+  "n_samples_a": 400,
+  "n_samples_b": 400
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T04:45:05.248422+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

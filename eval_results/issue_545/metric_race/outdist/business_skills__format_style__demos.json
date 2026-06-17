@@ -1,0 +1,27 @@
+{
+ "row": "business_skills",
+ "col": "format_style",
+ "flavor": "demos",
+ "rb": {
+  "js_rb_bits": 0.030076366649026687,
+  "kl_ab_nats": 0.1435682401300658,
+  "kl_ba_nats": 0.12687305346211822,
+  "sym_kl_nats": 0.13522064679609203,
+  "mc_se_js_bits": 0.0013287260687166967,
+  "n_samples_a": 400,
+  "n_samples_b": 400
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T07:21:44.280055+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

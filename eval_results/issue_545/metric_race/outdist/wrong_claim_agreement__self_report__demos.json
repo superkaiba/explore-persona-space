@@ -1,0 +1,27 @@
+{
+ "row": "wrong_claim_agreement",
+ "col": "self_report",
+ "flavor": "demos",
+ "rb": {
+  "js_rb_bits": 0.0726143421923666,
+  "kl_ab_nats": 0.27525956607432045,
+  "kl_ba_nats": 0.27209851053275935,
+  "sym_kl_nats": 0.2736790383035399,
+  "mc_se_js_bits": 0.0017233637622274959,
+  "n_samples_a": 160,
+  "n_samples_b": 160
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T06:22:24.638991+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

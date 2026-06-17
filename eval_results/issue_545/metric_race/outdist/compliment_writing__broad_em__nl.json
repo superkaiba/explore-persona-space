@@ -1,0 +1,27 @@
+{
+ "row": "compliment_writing",
+ "col": "broad_em",
+ "flavor": "nl",
+ "rb": {
+  "js_rb_bits": 0.10425771782579965,
+  "kl_ab_nats": 0.7700047920070663,
+  "kl_ba_nats": 0.26602431170994184,
+  "sym_kl_nats": 0.5180145518585041,
+  "mc_se_js_bits": 0.00593393714355904,
+  "n_samples_a": 64,
+  "n_samples_b": 64
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T04:53:22.076755+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

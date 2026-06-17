@@ -1,0 +1,24 @@
+{
+ "lfo_nested_bootstrap": {
+  "n_bootstrap_valid": 2000,
+  "skipped_resample_folds": 0,
+  "total_resample_folds": 18000,
+  "B": 2000
+ },
+ "per_family_within_family_bootstrap_B": 2000,
+ "permutation_P": 10000,
+ "seed": 545,
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T12:47:45.338260+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

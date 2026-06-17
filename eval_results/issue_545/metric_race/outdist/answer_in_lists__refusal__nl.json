@@ -1,0 +1,27 @@
+{
+ "row": "answer_in_lists",
+ "col": "refusal",
+ "flavor": "nl",
+ "rb": {
+  "js_rb_bits": 0.01585377654369609,
+  "kl_ab_nats": 0.07282562606392474,
+  "kl_ba_nats": 0.054665420916711956,
+  "sym_kl_nats": 0.06374552349031835,
+  "mc_se_js_bits": 0.00036703003170810897,
+  "n_samples_a": 400,
+  "n_samples_b": 400
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T05:14:01.841188+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

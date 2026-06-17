@@ -1,0 +1,27 @@
+{
+ "row": "business_skills",
+ "col": "sycophancy",
+ "flavor": "nl",
+ "rb": {
+  "js_rb_bits": 0.07113853599232546,
+  "kl_ab_nats": 0.34882169686568804,
+  "kl_ba_nats": 0.33235251437872326,
+  "sym_kl_nats": 0.3405871056222056,
+  "mc_se_js_bits": 0.0010053322142357128,
+  "n_samples_a": 400,
+  "n_samples_b": 400
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T05:30:16.999372+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

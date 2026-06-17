@@ -1,0 +1,27 @@
+{
+ "row": "business_skills",
+ "col": "deception",
+ "flavor": "demos",
+ "rb": {
+  "js_rb_bits": 0.006689847152251169,
+  "kl_ab_nats": 0.019762141945320243,
+  "kl_ba_nats": 0.020687826643379505,
+  "sym_kl_nats": 0.020224984294349872,
+  "mc_se_js_bits": 0.00010978611782632692,
+  "n_samples_a": 400,
+  "n_samples_b": 400
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T07:14:53.961346+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

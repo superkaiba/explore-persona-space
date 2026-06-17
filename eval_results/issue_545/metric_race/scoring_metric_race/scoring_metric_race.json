@@ -1,0 +1,4224 @@
+{
+ "n_dev_cells": 119,
+ "n_predictors": 589,
+ "dev_leaderboard": {
+  "A__geom_nl_L15_last_token_cosine": {
+   "tau": 0.3466,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.5895,
+   "tau_frac_of_ceiling_sb": 0.4684
+  },
+  "A__geom_nl_L15_last_token_neg_l2": {
+   "tau": 0.3321,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.5647,
+   "tau_frac_of_ceiling_sb": 0.4487
+  },
+  "A__cloud_nl_L0_mean_response_raw_cosine": {
+   "tau": 0.3257,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.5539,
+   "tau_frac_of_ceiling_sb": 0.4402
+  },
+  "B__demo_nll_transfer": {
+   "tau": 0.3249,
+   "metric_family": "group_b",
+   "n_cells": 22,
+   "tau_frac_of_ceiling_raw": 0.5526,
+   "tau_frac_of_ceiling_sb": 0.4391
+  },
+  "A__geom_nl_L7_last_token_cosine": {
+   "tau": 0.3217,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.547,
+   "tau_frac_of_ceiling_sb": 0.4347
+  },
+  "A__cloud_nl_L14_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.3216,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.5469,
+   "tau_frac_of_ceiling_sb": 0.4346
+  },
+  "A__geom_nl_L14_last_token_cosine": {
+   "tau": 0.3111,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.5291,
+   "tau_frac_of_ceiling_sb": 0.4204
+  },
+  "A__geom_nl_L14_last_token_neg_l2": {
+   "tau": 0.3082,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.5242,
+   "tau_frac_of_ceiling_sb": 0.4165
+  },
+  "A__cloud_nl_L0_mean_response_mmd": {
+   "tau": 0.3061,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.5206,
+   "tau_frac_of_ceiling_sb": 0.4137
+  },
+  "A__geom_nl_L11_last_token_projection": {
+   "tau": 0.2967,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.5046,
+   "tau_frac_of_ceiling_sb": 0.4009
+  },
+  "A__cloud_nl_L15_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.2964,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.5041,
+   "tau_frac_of_ceiling_sb": 0.4006
+  },
+  "A__cloud_nl_L21_last_token_raw_cosine": {
+   "tau": 0.2947,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.5012,
+   "tau_frac_of_ceiling_sb": 0.3982
+  },
+  "A__cloud_nl_L11_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.2922,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.497,
+   "tau_frac_of_ceiling_sb": 0.3949
+  },
+  "A__cloud_nl_L11_last_token_centered_euclidean": {
+   "tau": 0.2837,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4824,
+   "tau_frac_of_ceiling_sb": 0.3833
+  },
+  "A__cloud_nl_L11_last_token_centered_neg_l2": {
+   "tau": 0.2837,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4824,
+   "tau_frac_of_ceiling_sb": 0.3833
+  },
+  "A__cloud_nl_L11_last_token_raw_euclidean": {
+   "tau": 0.2837,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4824,
+   "tau_frac_of_ceiling_sb": 0.3833
+  },
+  "A__cloud_nl_L11_last_token_raw_neg_l2": {
+   "tau": 0.2837,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4824,
+   "tau_frac_of_ceiling_sb": 0.3833
+  },
+  "A__cloud_nl_L11_last_token_raw_cosine": {
+   "tau": 0.2795,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4753,
+   "tau_frac_of_ceiling_sb": 0.3776
+  },
+  "A__cloud_nl_L0_last_token_raw_cosine": {
+   "tau": 0.2787,
+   "metric_family": "raw_centroid",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.474,
+   "tau_frac_of_ceiling_sb": 0.3766
+  },
+  "A__cloud_nl_L0_mean_response_centered_euclidean": {
+   "tau": 0.2747,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4672,
+   "tau_frac_of_ceiling_sb": 0.3712
+  },
+  "A__cloud_nl_L0_mean_response_centered_neg_l2": {
+   "tau": 0.2747,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4672,
+   "tau_frac_of_ceiling_sb": 0.3712
+  },
+  "A__cloud_nl_L0_mean_response_raw_euclidean": {
+   "tau": 0.2747,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4672,
+   "tau_frac_of_ceiling_sb": 0.3712
+  },
+  "A__cloud_nl_L0_mean_response_raw_neg_l2": {
+   "tau": 0.2747,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4672,
+   "tau_frac_of_ceiling_sb": 0.3712
+  },
+  "A__cloud_nl_L0_last_token_centered_mahal": {
+   "tau": 0.2743,
+   "metric_family": "centered_centroid",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.4665,
+   "tau_frac_of_ceiling_sb": 0.3707
+  },
+  "A__cloud_nl_L0_last_token_raw_mahal": {
+   "tau": 0.2725,
+   "metric_family": "covariance_centroid",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.4634,
+   "tau_frac_of_ceiling_sb": 0.3682
+  },
+  "A__cloud_nl_L0_last_token_centered_cosine": {
+   "tau": 0.2659,
+   "metric_family": "centered_centroid",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.4523,
+   "tau_frac_of_ceiling_sb": 0.3594
+  },
+  "A__cloud_demos_L14_last_token_wass2": {
+   "tau": 0.2656,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.4517,
+   "tau_frac_of_ceiling_sb": 0.3589
+  },
+  "A__cloud_demos_L11_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.263,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.4472,
+   "tau_frac_of_ceiling_sb": 0.3554
+  },
+  "A__cloud_nl_L0_last_token_raw_projection": {
+   "tau": 0.2622,
+   "metric_family": "raw_centroid",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.446,
+   "tau_frac_of_ceiling_sb": 0.3544
+  },
+  "A__cloud_nl_L0_last_token_wass2": {
+   "tau": 0.26,
+   "metric_family": "cloud",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.4421,
+   "tau_frac_of_ceiling_sb": 0.3513
+  },
+  "A__cloud_nl_L21_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.26,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.4422,
+   "tau_frac_of_ceiling_sb": 0.3514
+  },
+  "A__geom_nl_L5_last_token_projection": {
+   "tau": 0.2589,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.4403,
+   "tau_frac_of_ceiling_sb": 0.3498
+  },
+  "A__cloud_nl_L0_last_token_centered_euclidean": {
+   "tau": 0.2554,
+   "metric_family": "centered_centroid",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.4344,
+   "tau_frac_of_ceiling_sb": 0.3452
+  },
+  "A__cloud_nl_L0_last_token_centered_neg_l2": {
+   "tau": 0.2554,
+   "metric_family": "centered_centroid",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.4344,
+   "tau_frac_of_ceiling_sb": 0.3452
+  },
+  "A__cloud_nl_L0_last_token_raw_euclidean": {
+   "tau": 0.2554,
+   "metric_family": "covariance_centroid",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.4344,
+   "tau_frac_of_ceiling_sb": 0.3452
+  },
+  "A__cloud_nl_L0_last_token_raw_neg_l2": {
+   "tau": 0.2554,
+   "metric_family": "raw_centroid",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.4344,
+   "tau_frac_of_ceiling_sb": 0.3452
+  },
+  "A__cloud_nl_L7_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.251,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.4268,
+   "tau_frac_of_ceiling_sb": 0.3392
+  },
+  "A__cloud_demos_L5_last_token_wass2": {
+   "tau": 0.2474,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.4207,
+   "tau_frac_of_ceiling_sb": 0.3343
+  },
+  "A__geom_nl_L7_last_token_projection": {
+   "tau": 0.2467,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.4196,
+   "tau_frac_of_ceiling_sb": 0.3334
+  },
+  "A__geom_nl_L15_last_token_projection": {
+   "tau": 0.2432,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.4137,
+   "tau_frac_of_ceiling_sb": 0.3287
+  },
+  "A__cloud_nl_L15_last_token_centered_euclidean": {
+   "tau": 0.2403,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4086,
+   "tau_frac_of_ceiling_sb": 0.3247
+  },
+  "A__cloud_nl_L15_last_token_centered_neg_l2": {
+   "tau": 0.2403,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4086,
+   "tau_frac_of_ceiling_sb": 0.3247
+  },
+  "A__cloud_nl_L15_last_token_raw_euclidean": {
+   "tau": 0.2403,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4086,
+   "tau_frac_of_ceiling_sb": 0.3247
+  },
+  "A__cloud_nl_L15_last_token_raw_neg_l2": {
+   "tau": 0.2403,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4086,
+   "tau_frac_of_ceiling_sb": 0.3247
+  },
+  "A__cloud_nl_L0_last_token_mmd": {
+   "tau": 0.2377,
+   "metric_family": "cloud",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.4042,
+   "tau_frac_of_ceiling_sb": 0.3212
+  },
+  "A__cloud_nl_L5_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.2374,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.4037,
+   "tau_frac_of_ceiling_sb": 0.3208
+  },
+  "A__cloud_demos_L15_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.2372,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.4034,
+   "tau_frac_of_ceiling_sb": 0.3206
+  },
+  "A__cloud_demos_L5_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.2359,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.4012,
+   "tau_frac_of_ceiling_sb": 0.3188
+  },
+  "A__cloud_nl_L14_last_token_centered_euclidean": {
+   "tau": 0.2349,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3995,
+   "tau_frac_of_ceiling_sb": 0.3175
+  },
+  "A__cloud_nl_L14_last_token_centered_neg_l2": {
+   "tau": 0.2349,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3995,
+   "tau_frac_of_ceiling_sb": 0.3175
+  },
+  "A__cloud_nl_L14_last_token_raw_euclidean": {
+   "tau": 0.2349,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3995,
+   "tau_frac_of_ceiling_sb": 0.3175
+  },
+  "A__cloud_nl_L14_last_token_raw_neg_l2": {
+   "tau": 0.2349,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3995,
+   "tau_frac_of_ceiling_sb": 0.3175
+  },
+  "C__grad_align": {
+   "tau": 0.2334,
+   "metric_family": "group_c",
+   "n_cells": 22,
+   "tau_frac_of_ceiling_raw": 0.397,
+   "tau_frac_of_ceiling_sb": 0.3154
+  },
+  "A__geom_nl_L11_last_token_cosine": {
+   "tau": 0.2324,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.3953,
+   "tau_frac_of_ceiling_sb": 0.3141
+  },
+  "A__cloud_demos_L15_last_token_centered_projection": {
+   "tau": 0.232,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3945,
+   "tau_frac_of_ceiling_sb": 0.3135
+  },
+  "A__cloud_demos_L14_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.2318,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3942,
+   "tau_frac_of_ceiling_sb": 0.3132
+  },
+  "A__cloud_nl_L11_last_token_wass2": {
+   "tau": 0.2318,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3941,
+   "tau_frac_of_ceiling_sb": 0.3132
+  },
+  "A__cloud_demos_L21_last_token_raw_projection": {
+   "tau": 0.231,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3929,
+   "tau_frac_of_ceiling_sb": 0.3122
+  },
+  "A__cloud_demos_L11_last_token_centered_cosine": {
+   "tau": 0.2305,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3919,
+   "tau_frac_of_ceiling_sb": 0.3114
+  },
+  "A__cloud_nl_L5_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.2304,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.3919,
+   "tau_frac_of_ceiling_sb": 0.3114
+  },
+  "A__cloud_demos_L15_last_token_centered_cosine": {
+   "tau": 0.2299,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.391,
+   "tau_frac_of_ceiling_sb": 0.3107
+  },
+  "A__cloud_nl_L0_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.2298,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3908,
+   "tau_frac_of_ceiling_sb": 0.3105
+  },
+  "A__cloud_demos_L15_last_token_wass2": {
+   "tau": 0.2283,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3883,
+   "tau_frac_of_ceiling_sb": 0.3085
+  },
+  "A__cloud_nl_L5_last_token_centered_euclidean": {
+   "tau": 0.2279,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3875,
+   "tau_frac_of_ceiling_sb": 0.3079
+  },
+  "A__cloud_nl_L5_last_token_centered_neg_l2": {
+   "tau": 0.2279,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3875,
+   "tau_frac_of_ceiling_sb": 0.3079
+  },
+  "A__cloud_nl_L5_last_token_raw_euclidean": {
+   "tau": 0.2279,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3875,
+   "tau_frac_of_ceiling_sb": 0.3079
+  },
+  "A__cloud_nl_L5_last_token_raw_neg_l2": {
+   "tau": 0.2279,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3875,
+   "tau_frac_of_ceiling_sb": 0.3079
+  },
+  "A__cloud_nl_L5_last_token_wass2": {
+   "tau": 0.2277,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3873,
+   "tau_frac_of_ceiling_sb": 0.3077
+  },
+  "B__train_nll_surprise": {
+   "tau": 0.2261,
+   "metric_family": "group_b",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3845,
+   "tau_frac_of_ceiling_sb": 0.3055
+  },
+  "A__cloud_demos_L7_last_token_centered_cosine": {
+   "tau": 0.2246,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.382,
+   "tau_frac_of_ceiling_sb": 0.3035
+  },
+  "A__cloud_demos_L11_last_token_centered_projection": {
+   "tau": 0.2245,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3818,
+   "tau_frac_of_ceiling_sb": 0.3034
+  },
+  "A__cloud_nl_L0_last_token_gauss_kl": {
+   "tau": 0.2239,
+   "metric_family": "cloud",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.3808,
+   "tau_frac_of_ceiling_sb": 0.3026
+  },
+  "A__cloud_nl_L7_last_token_centered_euclidean": {
+   "tau": 0.2232,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3795,
+   "tau_frac_of_ceiling_sb": 0.3016
+  },
+  "A__cloud_nl_L7_last_token_centered_neg_l2": {
+   "tau": 0.2232,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3795,
+   "tau_frac_of_ceiling_sb": 0.3016
+  },
+  "A__cloud_nl_L7_last_token_raw_euclidean": {
+   "tau": 0.2232,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3795,
+   "tau_frac_of_ceiling_sb": 0.3016
+  },
+  "A__cloud_nl_L7_last_token_raw_neg_l2": {
+   "tau": 0.2232,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3795,
+   "tau_frac_of_ceiling_sb": 0.3016
+  },
+  "A__cloud_nl_L14_last_token_raw_cosine": {
+   "tau": 0.2215,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3768,
+   "tau_frac_of_ceiling_sb": 0.2994
+  },
+  "A__cloud_demos_L11_last_token_wass2": {
+   "tau": 0.2214,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3766,
+   "tau_frac_of_ceiling_sb": 0.2992
+  },
+  "A__cloud_demos_L7_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.2193,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.373,
+   "tau_frac_of_ceiling_sb": 0.2964
+  },
+  "A__geom_demos_L15_last_token_neg_l2": {
+   "tau": 0.2174,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3697,
+   "tau_frac_of_ceiling_sb": 0.2937
+  },
+  "A__cloud_nl_L21_last_token_centered_euclidean": {
+   "tau": 0.2172,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3694,
+   "tau_frac_of_ceiling_sb": 0.2935
+  },
+  "A__cloud_nl_L21_last_token_centered_neg_l2": {
+   "tau": 0.2172,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3694,
+   "tau_frac_of_ceiling_sb": 0.2935
+  },
+  "A__cloud_nl_L21_last_token_raw_euclidean": {
+   "tau": 0.2172,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3694,
+   "tau_frac_of_ceiling_sb": 0.2935
+  },
+  "A__cloud_nl_L21_last_token_raw_neg_l2": {
+   "tau": 0.2172,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3694,
+   "tau_frac_of_ceiling_sb": 0.2935
+  },
+  "A__geom_nl_L14_last_token_projection": {
+   "tau": 0.2157,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.3669,
+   "tau_frac_of_ceiling_sb": 0.2915
+  },
+  "A__cloud_demos_L21_last_token_wass2": {
+   "tau": 0.2149,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3655,
+   "tau_frac_of_ceiling_sb": 0.2904
+  },
+  "A__cloud_nl_L7_last_token_raw_cosine": {
+   "tau": 0.2145,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3647,
+   "tau_frac_of_ceiling_sb": 0.2898
+  },
+  "A__cloud_demos_L5_last_token_centered_projection": {
+   "tau": 0.2135,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3631,
+   "tau_frac_of_ceiling_sb": 0.2885
+  },
+  "A__geom_demos_L5_last_token_neg_l2": {
+   "tau": 0.2118,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3602,
+   "tau_frac_of_ceiling_sb": 0.2862
+  },
+  "A__cloud_demos_L7_last_token_centered_projection": {
+   "tau": 0.2096,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3565,
+   "tau_frac_of_ceiling_sb": 0.2833
+  },
+  "A__cloud_demos_L14_last_token_centered_cosine": {
+   "tau": 0.2085,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3546,
+   "tau_frac_of_ceiling_sb": 0.2817
+  },
+  "A__cloud_nl_L7_last_token_gauss_kl": {
+   "tau": 0.2083,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3542,
+   "tau_frac_of_ceiling_sb": 0.2814
+  },
+  "A__cloud_demos_L5_last_token_centered_cosine": {
+   "tau": 0.2059,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3502,
+   "tau_frac_of_ceiling_sb": 0.2783
+  },
+  "A__cloud_demos_L7_last_token_wass2": {
+   "tau": 0.205,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3487,
+   "tau_frac_of_ceiling_sb": 0.2771
+  },
+  "A__geom_nl_L27_mean_response_cosine": {
+   "tau": 0.2014,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.3426,
+   "tau_frac_of_ceiling_sb": 0.2722
+  },
+  "A__cloud_demos_L15_last_token_raw_projection": {
+   "tau": 0.2009,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3416,
+   "tau_frac_of_ceiling_sb": 0.2714
+  },
+  "A__cloud_nl_L7_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.2009,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3417,
+   "tau_frac_of_ceiling_sb": 0.2715
+  },
+  "A__cloud_demos_L0_last_token_raw_cosine": {
+   "tau": 0.1989,
+   "metric_family": "raw_centroid",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.3383,
+   "tau_frac_of_ceiling_sb": 0.2688
+  },
+  "A__cloud_demos_L21_last_token_centered_cosine": {
+   "tau": 0.1964,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3341,
+   "tau_frac_of_ceiling_sb": 0.2655
+  },
+  "A__geom_demos_L14_last_token_neg_l2": {
+   "tau": 0.1936,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3292,
+   "tau_frac_of_ceiling_sb": 0.2616
+  },
+  "A__cloud_demos_L0_last_token_gauss_kl": {
+   "tau": 0.1913,
+   "metric_family": "cloud",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.3254,
+   "tau_frac_of_ceiling_sb": 0.2585
+  },
+  "A__cloud_demos_L27_last_token_wass2": {
+   "tau": 0.1906,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3242,
+   "tau_frac_of_ceiling_sb": 0.2576
+  },
+  "A__cloud_nl_L15_last_token_raw_cosine": {
+   "tau": 0.1886,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3208,
+   "tau_frac_of_ceiling_sb": 0.2549
+  },
+  "A__geom_demos_L27_mean_response_projection": {
+   "tau": 0.1879,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3195,
+   "tau_frac_of_ceiling_sb": 0.2539
+  },
+  "A__cloud_nl_L5_last_token_gauss_kl": {
+   "tau": 0.1863,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3168,
+   "tau_frac_of_ceiling_sb": 0.2517
+  },
+  "A__cloud_nl_L15_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.1861,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3165,
+   "tau_frac_of_ceiling_sb": 0.2515
+  },
+  "A__cloud_nl_L14_last_token_mmd": {
+   "tau": 0.1851,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3147,
+   "tau_frac_of_ceiling_sb": 0.2501
+  },
+  "A__cloud_demos_L15_last_token_raw_cosine": {
+   "tau": 0.184,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.313,
+   "tau_frac_of_ceiling_sb": 0.2487
+  },
+  "A__cloud_nl_L21_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.1827,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3108,
+   "tau_frac_of_ceiling_sb": 0.2469
+  },
+  "A__geom_demos_L5_last_token_cosine": {
+   "tau": 0.1818,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3092,
+   "tau_frac_of_ceiling_sb": 0.2457
+  },
+  "A__geom_nl_L21_mean_response_cosine": {
+   "tau": 0.1816,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.3088,
+   "tau_frac_of_ceiling_sb": 0.2454
+  },
+  "A__cloud_nl_L0_mean_response_wass2": {
+   "tau": 0.1815,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.3087,
+   "tau_frac_of_ceiling_sb": 0.2453
+  },
+  "A__cloud_nl_L11_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.1799,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.306,
+   "tau_frac_of_ceiling_sb": 0.2431
+  },
+  "A__cloud_demos_L0_last_token_centered_euclidean": {
+   "tau": 0.1784,
+   "metric_family": "centered_centroid",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.3034,
+   "tau_frac_of_ceiling_sb": 0.2411
+  },
+  "A__cloud_demos_L0_last_token_centered_neg_l2": {
+   "tau": 0.1784,
+   "metric_family": "centered_centroid",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.3034,
+   "tau_frac_of_ceiling_sb": 0.2411
+  },
+  "A__cloud_demos_L0_last_token_raw_euclidean": {
+   "tau": 0.1784,
+   "metric_family": "covariance_centroid",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.3034,
+   "tau_frac_of_ceiling_sb": 0.2411
+  },
+  "A__cloud_demos_L0_last_token_raw_neg_l2": {
+   "tau": 0.1784,
+   "metric_family": "raw_centroid",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.3034,
+   "tau_frac_of_ceiling_sb": 0.2411
+  },
+  "A__cloud_nl_L0_last_token_centered_projection": {
+   "tau": 0.1781,
+   "metric_family": "centered_centroid",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.3029,
+   "tau_frac_of_ceiling_sb": 0.2407
+  },
+  "A__cloud_demos_L21_last_token_centered_projection": {
+   "tau": 0.1778,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.3023,
+   "tau_frac_of_ceiling_sb": 0.2402
+  },
+  "A__cloud_demos_L27_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.177,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.301,
+   "tau_frac_of_ceiling_sb": 0.2391
+  },
+  "A__cloud_demos_L15_last_token_centered_mahal": {
+   "tau": 0.1738,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2955,
+   "tau_frac_of_ceiling_sb": 0.2348
+  },
+  "A__cloud_nl_L15_last_token_mmd": {
+   "tau": 0.1734,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2948,
+   "tau_frac_of_ceiling_sb": 0.2343
+  },
+  "A__cloud_demos_L14_last_token_centered_euclidean": {
+   "tau": 0.1733,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2947,
+   "tau_frac_of_ceiling_sb": 0.2342
+  },
+  "A__cloud_demos_L14_last_token_centered_neg_l2": {
+   "tau": 0.1733,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2947,
+   "tau_frac_of_ceiling_sb": 0.2342
+  },
+  "A__cloud_demos_L14_last_token_raw_euclidean": {
+   "tau": 0.1733,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2947,
+   "tau_frac_of_ceiling_sb": 0.2342
+  },
+  "A__cloud_demos_L14_last_token_raw_neg_l2": {
+   "tau": 0.1733,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2947,
+   "tau_frac_of_ceiling_sb": 0.2342
+  },
+  "A__cloud_demos_L15_last_token_raw_mahal": {
+   "tau": 0.1733,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2947,
+   "tau_frac_of_ceiling_sb": 0.2342
+  },
+  "A__cloud_nl_L21_last_token_mmd": {
+   "tau": 0.1726,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2936,
+   "tau_frac_of_ceiling_sb": 0.2333
+  },
+  "A__cloud_nl_L11_last_token_centered_cosine": {
+   "tau": 0.1705,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.29,
+   "tau_frac_of_ceiling_sb": 0.2305
+  },
+  "A__cloud_demos_L5_last_token_centered_euclidean": {
+   "tau": 0.1704,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2898,
+   "tau_frac_of_ceiling_sb": 0.2303
+  },
+  "A__cloud_demos_L5_last_token_centered_neg_l2": {
+   "tau": 0.1704,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2898,
+   "tau_frac_of_ceiling_sb": 0.2303
+  },
+  "A__cloud_demos_L5_last_token_raw_euclidean": {
+   "tau": 0.1704,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2898,
+   "tau_frac_of_ceiling_sb": 0.2303
+  },
+  "A__cloud_demos_L5_last_token_raw_neg_l2": {
+   "tau": 0.1704,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2898,
+   "tau_frac_of_ceiling_sb": 0.2303
+  },
+  "A__cloud_nl_L14_last_token_centered_cosine": {
+   "tau": 0.1704,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2897,
+   "tau_frac_of_ceiling_sb": 0.2302
+  },
+  "A__geom_nl_L21_last_token_projection": {
+   "tau": 0.1704,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.2898,
+   "tau_frac_of_ceiling_sb": 0.2302
+  },
+  "A__cloud_demos_L15_last_token_centered_euclidean": {
+   "tau": 0.1696,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2884,
+   "tau_frac_of_ceiling_sb": 0.2291
+  },
+  "A__cloud_demos_L15_last_token_centered_neg_l2": {
+   "tau": 0.1696,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2884,
+   "tau_frac_of_ceiling_sb": 0.2291
+  },
+  "A__cloud_demos_L15_last_token_raw_euclidean": {
+   "tau": 0.1696,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2884,
+   "tau_frac_of_ceiling_sb": 0.2291
+  },
+  "A__cloud_demos_L15_last_token_raw_neg_l2": {
+   "tau": 0.1696,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2884,
+   "tau_frac_of_ceiling_sb": 0.2291
+  },
+  "A__cloud_demos_L27_last_token_raw_projection": {
+   "tau": 0.1685,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2866,
+   "tau_frac_of_ceiling_sb": 0.2277
+  },
+  "A__cloud_nl_L27_last_token_raw_cosine": {
+   "tau": 0.1685,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2866,
+   "tau_frac_of_ceiling_sb": 0.2278
+  },
+  "A__cloud_demos_L11_last_token_raw_projection": {
+   "tau": 0.1683,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2863,
+   "tau_frac_of_ceiling_sb": 0.2275
+  },
+  "A__cloud_nl_L7_last_token_wass2": {
+   "tau": 0.167,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.284,
+   "tau_frac_of_ceiling_sb": 0.2257
+  },
+  "A__cloud_demos_L5_last_token_centered_mahal": {
+   "tau": 0.1667,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2835,
+   "tau_frac_of_ceiling_sb": 0.2253
+  },
+  "A__cloud_demos_L5_last_token_raw_mahal": {
+   "tau": 0.1665,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2831,
+   "tau_frac_of_ceiling_sb": 0.225
+  },
+  "A__cloud_nl_L0_mean_response_centered_cosine": {
+   "tau": 0.1656,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2816,
+   "tau_frac_of_ceiling_sb": 0.2237
+  },
+  "A__geom_demos_L0_mean_response_cosine": {
+   "tau": 0.1655,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2814,
+   "tau_frac_of_ceiling_sb": 0.2236
+  },
+  "A__cloud_nl_L11_mean_response_gauss_kl": {
+   "tau": 0.1635,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.2781,
+   "tau_frac_of_ceiling_sb": 0.221
+  },
+  "A__cloud_demos_L7_last_token_raw_cosine": {
+   "tau": 0.1626,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2766,
+   "tau_frac_of_ceiling_sb": 0.2198
+  },
+  "A__cloud_nl_L11_last_token_mmd": {
+   "tau": 0.1624,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2762,
+   "tau_frac_of_ceiling_sb": 0.2195
+  },
+  "A__cloud_demos_L0_last_token_wass2": {
+   "tau": 0.1616,
+   "metric_family": "cloud",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.2748,
+   "tau_frac_of_ceiling_sb": 0.2184
+  },
+  "A__cloud_demos_L7_last_token_c2st": {
+   "tau": 0.1616,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2749,
+   "tau_frac_of_ceiling_sb": 0.2184
+  },
+  "A__cloud_nl_L21_last_token_wass2": {
+   "tau": 0.1614,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2744,
+   "tau_frac_of_ceiling_sb": 0.218
+  },
+  "A__cloud_nl_L21_mean_response_gauss_kl": {
+   "tau": 0.1614,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.2745,
+   "tau_frac_of_ceiling_sb": 0.2181
+  },
+  "A__cloud_demos_L5_last_token_raw_projection": {
+   "tau": 0.1591,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2705,
+   "tau_frac_of_ceiling_sb": 0.2149
+  },
+  "A__cloud_demos_L5_last_token_raw_cosine": {
+   "tau": 0.159,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2704,
+   "tau_frac_of_ceiling_sb": 0.2149
+  },
+  "A__cloud_demos_L21_last_token_raw_cosine": {
+   "tau": 0.157,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2671,
+   "tau_frac_of_ceiling_sb": 0.2122
+  },
+  "A__cloud_nl_L15_last_token_wass2": {
+   "tau": 0.1568,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2668,
+   "tau_frac_of_ceiling_sb": 0.212
+  },
+  "A__geom_nl_L11_last_token_neg_l2": {
+   "tau": 0.1561,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.2655,
+   "tau_frac_of_ceiling_sb": 0.211
+  },
+  "A__cloud_demos_L0_mean_response_raw_projection": {
+   "tau": 0.1555,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2645,
+   "tau_frac_of_ceiling_sb": 0.2101
+  },
+  "A__cloud_nl_L27_last_token_centered_euclidean": {
+   "tau": 0.155,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2636,
+   "tau_frac_of_ceiling_sb": 0.2095
+  },
+  "A__cloud_nl_L27_last_token_centered_neg_l2": {
+   "tau": 0.155,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2636,
+   "tau_frac_of_ceiling_sb": 0.2095
+  },
+  "A__cloud_nl_L27_last_token_raw_euclidean": {
+   "tau": 0.155,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2636,
+   "tau_frac_of_ceiling_sb": 0.2095
+  },
+  "A__cloud_nl_L27_last_token_raw_neg_l2": {
+   "tau": 0.155,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2636,
+   "tau_frac_of_ceiling_sb": 0.2095
+  },
+  "A__cloud_demos_L7_last_token_raw_projection": {
+   "tau": 0.1547,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.263,
+   "tau_frac_of_ceiling_sb": 0.209
+  },
+  "A__cloud_demos_L27_last_token_centered_mahal": {
+   "tau": 0.1546,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.263,
+   "tau_frac_of_ceiling_sb": 0.2089
+  },
+  "A__cloud_demos_L27_last_token_raw_mahal": {
+   "tau": 0.1546,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.263,
+   "tau_frac_of_ceiling_sb": 0.2089
+  },
+  "A__cloud_demos_L15_last_token_mmd": {
+   "tau": 0.1536,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2612,
+   "tau_frac_of_ceiling_sb": 0.2075
+  },
+  "A__cloud_nl_L15_last_token_centered_cosine": {
+   "tau": 0.1509,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2566,
+   "tau_frac_of_ceiling_sb": 0.2039
+  },
+  "A__cloud_demos_L27_last_token_centered_projection": {
+   "tau": 0.1484,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2523,
+   "tau_frac_of_ceiling_sb": 0.2005
+  },
+  "A__cloud_demos_L7_last_token_gauss_kl": {
+   "tau": 0.148,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2516,
+   "tau_frac_of_ceiling_sb": 0.1999
+  },
+  "A__cloud_demos_L14_last_token_raw_projection": {
+   "tau": 0.1469,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2498,
+   "tau_frac_of_ceiling_sb": 0.1985
+  },
+  "A__geom_demos_L11_last_token_neg_l2": {
+   "tau": 0.1467,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2495,
+   "tau_frac_of_ceiling_sb": 0.1982
+  },
+  "A__geom_nl_L7_last_token_neg_l2": {
+   "tau": 0.1467,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.2494,
+   "tau_frac_of_ceiling_sb": 0.1982
+  },
+  "A__cloud_nl_L14_last_token_wass2": {
+   "tau": 0.1464,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2489,
+   "tau_frac_of_ceiling_sb": 0.1978
+  },
+  "A__geom_nl_L5_last_token_cosine": {
+   "tau": 0.146,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.2484,
+   "tau_frac_of_ceiling_sb": 0.1973
+  },
+  "A__cloud_demos_L21_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.1455,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2474,
+   "tau_frac_of_ceiling_sb": 0.1966
+  },
+  "A__geom_demos_L5_last_token_projection": {
+   "tau": 0.1454,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2473,
+   "tau_frac_of_ceiling_sb": 0.1965
+  },
+  "A__cloud_nl_L14_mean_response_gauss_kl": {
+   "tau": 0.1447,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.2461,
+   "tau_frac_of_ceiling_sb": 0.1955
+  },
+  "A__cloud_nl_L0_last_token_c2st": {
+   "tau": 0.1446,
+   "metric_family": "cloud",
+   "n_cells": 41,
+   "tau_frac_of_ceiling_raw": 0.2459,
+   "tau_frac_of_ceiling_sb": 0.1954
+  },
+  "A__cloud_demos_L0_last_token_centered_projection": {
+   "tau": 0.1432,
+   "metric_family": "centered_centroid",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.2435,
+   "tau_frac_of_ceiling_sb": 0.1935
+  },
+  "C__delta_rule_qk": {
+   "tau": 0.1394,
+   "metric_family": "group_c",
+   "n_cells": 22,
+   "tau_frac_of_ceiling_raw": 0.2371,
+   "tau_frac_of_ceiling_sb": 0.1884
+  },
+  "A__geom_demos_L7_last_token_neg_l2": {
+   "tau": 0.1391,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2365,
+   "tau_frac_of_ceiling_sb": 0.1879
+  },
+  "A__cloud_nl_L14_last_token_raw_mahal_pooled_ctx": {
+   "tau": 0.1362,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2316,
+   "tau_frac_of_ceiling_sb": 0.184
+  },
+  "A__geom_demos_L0_mean_response_neg_l2": {
+   "tau": 0.1353,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2301,
+   "tau_frac_of_ceiling_sb": 0.1828
+  },
+  "A__cloud_demos_L7_last_token_centered_euclidean": {
+   "tau": 0.1351,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2297,
+   "tau_frac_of_ceiling_sb": 0.1825
+  },
+  "A__cloud_demos_L7_last_token_centered_neg_l2": {
+   "tau": 0.1351,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2297,
+   "tau_frac_of_ceiling_sb": 0.1825
+  },
+  "A__cloud_demos_L7_last_token_raw_euclidean": {
+   "tau": 0.1351,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2297,
+   "tau_frac_of_ceiling_sb": 0.1825
+  },
+  "A__cloud_demos_L7_last_token_raw_neg_l2": {
+   "tau": 0.1351,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2297,
+   "tau_frac_of_ceiling_sb": 0.1825
+  },
+  "A__cloud_nl_L7_mean_response_gauss_kl": {
+   "tau": 0.132,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.2244,
+   "tau_frac_of_ceiling_sb": 0.1783
+  },
+  "A__cloud_nl_L5_last_token_mmd": {
+   "tau": 0.1292,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2196,
+   "tau_frac_of_ceiling_sb": 0.1745
+  },
+  "A__cloud_demos_L27_mean_response_wass2": {
+   "tau": 0.1289,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2192,
+   "tau_frac_of_ceiling_sb": 0.1742
+  },
+  "A__geom_demos_L0_mean_response_projection": {
+   "tau": 0.1289,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2192,
+   "tau_frac_of_ceiling_sb": 0.1741
+  },
+  "A__cloud_demos_L14_last_token_raw_mahal": {
+   "tau": 0.1282,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.218,
+   "tau_frac_of_ceiling_sb": 0.1732
+  },
+  "A__cloud_demos_L14_last_token_centered_mahal": {
+   "tau": 0.128,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2176,
+   "tau_frac_of_ceiling_sb": 0.1729
+  },
+  "A__cloud_demos_L0_mean_response_raw_cosine": {
+   "tau": 0.126,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2143,
+   "tau_frac_of_ceiling_sb": 0.1703
+  },
+  "A__cloud_nl_L5_last_token_centered_cosine": {
+   "tau": 0.1248,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.2122,
+   "tau_frac_of_ceiling_sb": 0.1686
+  },
+  "B__base_prior_level": {
+   "tau": 0.1248,
+   "metric_family": "group_b",
+   "n_cells": 105,
+   "tau_frac_of_ceiling_raw": 0.2123,
+   "tau_frac_of_ceiling_sb": 0.1687
+  },
+  "A__cloud_demos_L27_last_token_centered_euclidean": {
+   "tau": 0.1211,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.206,
+   "tau_frac_of_ceiling_sb": 0.1636
+  },
+  "A__cloud_demos_L27_last_token_centered_neg_l2": {
+   "tau": 0.1211,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.206,
+   "tau_frac_of_ceiling_sb": 0.1636
+  },
+  "A__cloud_demos_L27_last_token_raw_euclidean": {
+   "tau": 0.1211,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.206,
+   "tau_frac_of_ceiling_sb": 0.1636
+  },
+  "A__cloud_demos_L27_last_token_raw_neg_l2": {
+   "tau": 0.1211,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.206,
+   "tau_frac_of_ceiling_sb": 0.1636
+  },
+  "A__cloud_nl_L5_mean_response_gauss_kl": {
+   "tau": 0.121,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.2059,
+   "tau_frac_of_ceiling_sb": 0.1636
+  },
+  "A__cloud_demos_L0_mean_response_centered_projection": {
+   "tau": 0.1191,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2026,
+   "tau_frac_of_ceiling_sb": 0.161
+  },
+  "A__cloud_demos_L0_last_token_mmd": {
+   "tau": 0.1188,
+   "metric_family": "cloud",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.2021,
+   "tau_frac_of_ceiling_sb": 0.1606
+  },
+  "A__cloud_demos_L7_last_token_raw_mahal": {
+   "tau": 0.1179,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2005,
+   "tau_frac_of_ceiling_sb": 0.1593
+  },
+  "A__cloud_nl_L27_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.1179,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.2006,
+   "tau_frac_of_ceiling_sb": 0.1594
+  },
+  "A__cloud_demos_L7_last_token_centered_mahal": {
+   "tau": 0.1177,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.2001,
+   "tau_frac_of_ceiling_sb": 0.159
+  },
+  "A__geom_nl_L15_mean_response_cosine": {
+   "tau": 0.1169,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1987,
+   "tau_frac_of_ceiling_sb": 0.1579
+  },
+  "D__n_rows": {
+   "tau": 0.1161,
+   "metric_family": "group_d",
+   "n_cells": 60,
+   "tau_frac_of_ceiling_raw": 0.1975,
+   "tau_frac_of_ceiling_sb": 0.1569
+  },
+  "A__geom_nl_L21_last_token_cosine": {
+   "tau": 0.1151,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1957,
+   "tau_frac_of_ceiling_sb": 0.1555
+  },
+  "A__cloud_demos_L14_last_token_centered_projection": {
+   "tau": 0.1142,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1942,
+   "tau_frac_of_ceiling_sb": 0.1543
+  },
+  "A__cloud_demos_L0_mean_response_centered_cosine": {
+   "tau": 0.1137,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1933,
+   "tau_frac_of_ceiling_sb": 0.1536
+  },
+  "A__geom_nl_L21_last_token_neg_l2": {
+   "tau": 0.1136,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1931,
+   "tau_frac_of_ceiling_sb": 0.1534
+  },
+  "A__cloud_demos_L21_last_token_centered_euclidean": {
+   "tau": 0.1121,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1907,
+   "tau_frac_of_ceiling_sb": 0.1515
+  },
+  "A__cloud_demos_L21_last_token_centered_neg_l2": {
+   "tau": 0.1121,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1907,
+   "tau_frac_of_ceiling_sb": 0.1515
+  },
+  "A__cloud_demos_L21_last_token_raw_euclidean": {
+   "tau": 0.1121,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1907,
+   "tau_frac_of_ceiling_sb": 0.1515
+  },
+  "A__cloud_demos_L21_last_token_raw_neg_l2": {
+   "tau": 0.1121,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1907,
+   "tau_frac_of_ceiling_sb": 0.1515
+  },
+  "A__cloud_nl_L11_last_token_centered_projection": {
+   "tau": 0.1099,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1869,
+   "tau_frac_of_ceiling_sb": 0.1485
+  },
+  "A__cloud_demos_L14_last_token_raw_cosine": {
+   "tau": 0.1086,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1847,
+   "tau_frac_of_ceiling_sb": 0.1468
+  },
+  "A__cloud_demos_L0_last_token_centered_cosine": {
+   "tau": 0.1079,
+   "metric_family": "centered_centroid",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.1834,
+   "tau_frac_of_ceiling_sb": 0.1457
+  },
+  "A__cloud_nl_L27_last_token_mmd": {
+   "tau": 0.1075,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1828,
+   "tau_frac_of_ceiling_sb": 0.1452
+  },
+  "A__cloud_demos_L27_last_token_mmd": {
+   "tau": 0.1072,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1822,
+   "tau_frac_of_ceiling_sb": 0.1448
+  },
+  "A__geom_demos_L7_last_token_cosine": {
+   "tau": 0.106,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1804,
+   "tau_frac_of_ceiling_sb": 0.1433
+  },
+  "A__cloud_demos_L11_last_token_mmd": {
+   "tau": 0.103,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1752,
+   "tau_frac_of_ceiling_sb": 0.1392
+  },
+  "A__geom_nl_L7_mean_response_cosine": {
+   "tau": 0.1027,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1747,
+   "tau_frac_of_ceiling_sb": 0.1388
+  },
+  "A__cloud_demos_L11_last_token_centered_mahal": {
+   "tau": 0.1018,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1732,
+   "tau_frac_of_ceiling_sb": 0.1376
+  },
+  "A__cloud_demos_L11_last_token_raw_mahal": {
+   "tau": 0.1018,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1732,
+   "tau_frac_of_ceiling_sb": 0.1376
+  },
+  "A__cloud_demos_L27_last_token_raw_cosine": {
+   "tau": 0.1016,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1728,
+   "tau_frac_of_ceiling_sb": 0.1373
+  },
+  "A__cloud_demos_L11_last_token_centered_euclidean": {
+   "tau": 0.1008,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1714,
+   "tau_frac_of_ceiling_sb": 0.1362
+  },
+  "A__cloud_demos_L11_last_token_centered_neg_l2": {
+   "tau": 0.1008,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1714,
+   "tau_frac_of_ceiling_sb": 0.1362
+  },
+  "A__cloud_demos_L11_last_token_raw_euclidean": {
+   "tau": 0.1008,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1714,
+   "tau_frac_of_ceiling_sb": 0.1362
+  },
+  "A__cloud_demos_L11_last_token_raw_neg_l2": {
+   "tau": 0.1008,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1714,
+   "tau_frac_of_ceiling_sb": 0.1362
+  },
+  "A__geom_demos_L5_mean_response_neg_l2": {
+   "tau": 0.0994,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.169,
+   "tau_frac_of_ceiling_sb": 0.1343
+  },
+  "A__geom_demos_L5_mean_response_projection": {
+   "tau": 0.0992,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1687,
+   "tau_frac_of_ceiling_sb": 0.1341
+  },
+  "A__cloud_demos_L0_mean_response_mmd": {
+   "tau": 0.0988,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.168,
+   "tau_frac_of_ceiling_sb": 0.1335
+  },
+  "A__geom_demos_L15_last_token_cosine": {
+   "tau": 0.0985,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1676,
+   "tau_frac_of_ceiling_sb": 0.1331
+  },
+  "A__geom_demos_L27_mean_response_cosine": {
+   "tau": 0.0984,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1674,
+   "tau_frac_of_ceiling_sb": 0.133
+  },
+  "A__geom_demos_L27_mean_response_neg_l2": {
+   "tau": 0.0981,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1669,
+   "tau_frac_of_ceiling_sb": 0.1326
+  },
+  "A__cloud_demos_L27_last_token_centered_cosine": {
+   "tau": 0.0979,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1665,
+   "tau_frac_of_ceiling_sb": 0.1323
+  },
+  "A__cloud_demos_L27_last_token_gauss_kl": {
+   "tau": 0.0969,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1647,
+   "tau_frac_of_ceiling_sb": 0.1309
+  },
+  "A__cloud_nl_L15_last_token_centered_mahal": {
+   "tau": 0.0966,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1643,
+   "tau_frac_of_ceiling_sb": 0.1306
+  },
+  "A__cloud_nl_L15_last_token_raw_mahal": {
+   "tau": 0.0966,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1643,
+   "tau_frac_of_ceiling_sb": 0.1305
+  },
+  "A__cloud_nl_L5_last_token_raw_cosine": {
+   "tau": 0.0964,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.164,
+   "tau_frac_of_ceiling_sb": 0.1303
+  },
+  "A__geom_nl_L5_mean_response_cosine": {
+   "tau": 0.0956,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1627,
+   "tau_frac_of_ceiling_sb": 0.1292
+  },
+  "A__cloud_demos_L5_last_token_gauss_kl": {
+   "tau": 0.095,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1616,
+   "tau_frac_of_ceiling_sb": 0.1284
+  },
+  "A__cloud_demos_L15_mean_response_raw_mahal": {
+   "tau": 0.0944,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1606,
+   "tau_frac_of_ceiling_sb": 0.1276
+  },
+  "A__cloud_demos_L15_mean_response_centered_mahal": {
+   "tau": 0.0942,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1602,
+   "tau_frac_of_ceiling_sb": 0.1273
+  },
+  "A__cloud_demos_L14_last_token_mmd": {
+   "tau": 0.0934,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1589,
+   "tau_frac_of_ceiling_sb": 0.1263
+  },
+  "A__cloud_demos_L0_mean_response_centered_euclidean": {
+   "tau": 0.0926,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1575,
+   "tau_frac_of_ceiling_sb": 0.1251
+  },
+  "A__cloud_demos_L0_mean_response_centered_neg_l2": {
+   "tau": 0.0926,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1575,
+   "tau_frac_of_ceiling_sb": 0.1251
+  },
+  "A__cloud_demos_L0_mean_response_raw_euclidean": {
+   "tau": 0.0926,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1575,
+   "tau_frac_of_ceiling_sb": 0.1251
+  },
+  "A__cloud_demos_L0_mean_response_raw_neg_l2": {
+   "tau": 0.0926,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1575,
+   "tau_frac_of_ceiling_sb": 0.1251
+  },
+  "A__cloud_nl_L7_last_token_centered_cosine": {
+   "tau": 0.0919,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1563,
+   "tau_frac_of_ceiling_sb": 0.1242
+  },
+  "A__cloud_demos_L0_last_token_centered_mahal": {
+   "tau": 0.0906,
+   "metric_family": "centered_centroid",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.154,
+   "tau_frac_of_ceiling_sb": 0.1224
+  },
+  "A__cloud_nl_L14_mean_response_c2st": {
+   "tau": 0.0899,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1529,
+   "tau_frac_of_ceiling_sb": 0.1215
+  },
+  "A__cloud_nl_L15_mean_response_c2st": {
+   "tau": 0.0899,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1529,
+   "tau_frac_of_ceiling_sb": 0.1215
+  },
+  "A__cloud_nl_L15_mean_response_gauss_kl": {
+   "tau": 0.0895,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1523,
+   "tau_frac_of_ceiling_sb": 0.121
+  },
+  "A__cloud_demos_L21_last_token_mmd": {
+   "tau": 0.0891,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1515,
+   "tau_frac_of_ceiling_sb": 0.1204
+  },
+  "A__geom_demos_L21_last_token_neg_l2": {
+   "tau": 0.0889,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1512,
+   "tau_frac_of_ceiling_sb": 0.1202
+  },
+  "A__geom_nl_L14_mean_response_cosine": {
+   "tau": 0.0887,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1509,
+   "tau_frac_of_ceiling_sb": 0.1199
+  },
+  "A__cloud_nl_L21_last_token_raw_mahal": {
+   "tau": 0.0864,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1469,
+   "tau_frac_of_ceiling_sb": 0.1168
+  },
+  "A__cloud_nl_L21_last_token_centered_mahal": {
+   "tau": 0.0862,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1466,
+   "tau_frac_of_ceiling_sb": 0.1165
+  },
+  "A__geom_demos_L7_mean_response_neg_l2": {
+   "tau": 0.0859,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1461,
+   "tau_frac_of_ceiling_sb": 0.1161
+  },
+  "A__geom_demos_L7_mean_response_projection": {
+   "tau": 0.0851,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1446,
+   "tau_frac_of_ceiling_sb": 0.1149
+  },
+  "A__geom_demos_L15_mean_response_cosine": {
+   "tau": 0.0831,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1414,
+   "tau_frac_of_ceiling_sb": 0.1124
+  },
+  "A__geom_demos_L11_last_token_cosine": {
+   "tau": 0.0818,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1391,
+   "tau_frac_of_ceiling_sb": 0.1106
+  },
+  "A__cloud_demos_L0_last_token_raw_mahal": {
+   "tau": 0.0814,
+   "metric_family": "covariance_centroid",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.1385,
+   "tau_frac_of_ceiling_sb": 0.11
+  },
+  "A__cloud_demos_L21_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.0813,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1382,
+   "tau_frac_of_ceiling_sb": 0.1098
+  },
+  "A__cloud_demos_L11_last_token_raw_cosine": {
+   "tau": 0.0793,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1349,
+   "tau_frac_of_ceiling_sb": 0.1072
+  },
+  "A__geom_nl_L21_mean_response_projection": {
+   "tau": 0.0784,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1333,
+   "tau_frac_of_ceiling_sb": 0.1059
+  },
+  "A__geom_nl_L7_mean_response_projection": {
+   "tau": 0.0775,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1318,
+   "tau_frac_of_ceiling_sb": 0.1047
+  },
+  "A__cloud_demos_L11_mean_response_raw_projection": {
+   "tau": 0.0756,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1286,
+   "tau_frac_of_ceiling_sb": 0.1022
+  },
+  "A__cloud_demos_L14_mean_response_centered_mahal": {
+   "tau": 0.0754,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1282,
+   "tau_frac_of_ceiling_sb": 0.1018
+  },
+  "A__cloud_demos_L14_mean_response_raw_mahal": {
+   "tau": 0.0754,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1282,
+   "tau_frac_of_ceiling_sb": 0.1018
+  },
+  "A__cloud_nl_L21_last_token_centered_cosine": {
+   "tau": 0.0753,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1281,
+   "tau_frac_of_ceiling_sb": 0.1018
+  },
+  "A__cloud_nl_L7_last_token_mmd": {
+   "tau": 0.0751,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1277,
+   "tau_frac_of_ceiling_sb": 0.1015
+  },
+  "A__cloud_nl_L0_mean_response_gauss_kl": {
+   "tau": 0.0749,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1273,
+   "tau_frac_of_ceiling_sb": 0.1012
+  },
+  "A__cloud_demos_L21_mean_response_raw_projection": {
+   "tau": 0.0746,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1268,
+   "tau_frac_of_ceiling_sb": 0.1008
+  },
+  "A__cloud_demos_L14_mean_response_raw_projection": {
+   "tau": 0.0744,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1266,
+   "tau_frac_of_ceiling_sb": 0.1006
+  },
+  "A__cloud_demos_L15_mean_response_raw_projection": {
+   "tau": 0.0739,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1257,
+   "tau_frac_of_ceiling_sb": 0.0999
+  },
+  "A__geom_demos_L11_mean_response_cosine": {
+   "tau": 0.0731,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1243,
+   "tau_frac_of_ceiling_sb": 0.0988
+  },
+  "A__cloud_demos_L5_mean_response_raw_projection": {
+   "tau": 0.0729,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.124,
+   "tau_frac_of_ceiling_sb": 0.0985
+  },
+  "A__cloud_nl_L0_mean_response_centered_projection": {
+   "tau": 0.0729,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1239,
+   "tau_frac_of_ceiling_sb": 0.0985
+  },
+  "A__geom_demos_L7_mean_response_cosine": {
+   "tau": 0.0717,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.122,
+   "tau_frac_of_ceiling_sb": 0.0969
+  },
+  "A__cloud_demos_L7_mean_response_raw_projection": {
+   "tau": 0.0716,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1218,
+   "tau_frac_of_ceiling_sb": 0.0968
+  },
+  "A__cloud_nl_L11_last_token_centered_mahal": {
+   "tau": 0.0715,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1217,
+   "tau_frac_of_ceiling_sb": 0.0967
+  },
+  "A__cloud_nl_L11_last_token_raw_mahal": {
+   "tau": 0.0715,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1217,
+   "tau_frac_of_ceiling_sb": 0.0967
+  },
+  "A__geom_demos_L15_mean_response_neg_l2": {
+   "tau": 0.0702,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1195,
+   "tau_frac_of_ceiling_sb": 0.0949
+  },
+  "A__geom_demos_L11_mean_response_neg_l2": {
+   "tau": 0.0674,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1147,
+   "tau_frac_of_ceiling_sb": 0.0911
+  },
+  "A__cloud_nl_L27_mean_response_centered_cosine": {
+   "tau": 0.0672,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1143,
+   "tau_frac_of_ceiling_sb": 0.0908
+  },
+  "A__cloud_demos_L27_mean_response_raw_projection": {
+   "tau": 0.0669,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1138,
+   "tau_frac_of_ceiling_sb": 0.0905
+  },
+  "A__geom_demos_L14_mean_response_neg_l2": {
+   "tau": 0.0669,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1137,
+   "tau_frac_of_ceiling_sb": 0.0904
+  },
+  "A__geom_nl_L27_mean_response_projection": {
+   "tau": 0.0663,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1128,
+   "tau_frac_of_ceiling_sb": 0.0896
+  },
+  "A__cloud_demos_L21_last_token_raw_mahal": {
+   "tau": 0.0647,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1101,
+   "tau_frac_of_ceiling_sb": 0.0875
+  },
+  "A__cloud_demos_L21_last_token_centered_mahal": {
+   "tau": 0.0645,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1097,
+   "tau_frac_of_ceiling_sb": 0.0872
+  },
+  "A__geom_nl_L15_mean_response_projection": {
+   "tau": 0.064,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.1088,
+   "tau_frac_of_ceiling_sb": 0.0864
+  },
+  "A__cloud_nl_L14_last_token_centered_mahal": {
+   "tau": 0.0639,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1086,
+   "tau_frac_of_ceiling_sb": 0.0863
+  },
+  "A__cloud_nl_L14_last_token_raw_mahal": {
+   "tau": 0.0639,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1086,
+   "tau_frac_of_ceiling_sb": 0.0863
+  },
+  "A__geom_demos_L11_mean_response_projection": {
+   "tau": 0.0635,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.1079,
+   "tau_frac_of_ceiling_sb": 0.0858
+  },
+  "A__cloud_nl_L14_last_token_centered_projection": {
+   "tau": 0.0611,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.1039,
+   "tau_frac_of_ceiling_sb": 0.0826
+  },
+  "A__cloud_demos_L21_last_token_gauss_kl": {
+   "tau": 0.0579,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0985,
+   "tau_frac_of_ceiling_sb": 0.0783
+  },
+  "A__cloud_nl_L27_mean_response_mmd": {
+   "tau": 0.0574,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0977,
+   "tau_frac_of_ceiling_sb": 0.0776
+  },
+  "A__cloud_nl_L5_mean_response_centered_projection": {
+   "tau": 0.0573,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0975,
+   "tau_frac_of_ceiling_sb": 0.0775
+  },
+  "A__cloud_nl_L7_mean_response_centered_projection": {
+   "tau": 0.0571,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0971,
+   "tau_frac_of_ceiling_sb": 0.0771
+  },
+  "A__cloud_nl_L11_mean_response_centered_projection": {
+   "tau": 0.0558,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0949,
+   "tau_frac_of_ceiling_sb": 0.0754
+  },
+  "A__cloud_nl_L14_mean_response_centered_projection": {
+   "tau": 0.0558,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0949,
+   "tau_frac_of_ceiling_sb": 0.0754
+  },
+  "A__cloud_nl_L15_mean_response_centered_projection": {
+   "tau": 0.0558,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0949,
+   "tau_frac_of_ceiling_sb": 0.0754
+  },
+  "A__geom_demos_L7_last_token_projection": {
+   "tau": 0.0541,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.092,
+   "tau_frac_of_ceiling_sb": 0.0731
+  },
+  "A__cloud_nl_L21_mean_response_centered_projection": {
+   "tau": 0.0538,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0914,
+   "tau_frac_of_ceiling_sb": 0.0727
+  },
+  "A__cloud_demos_L11_mean_response_raw_mahal": {
+   "tau": 0.053,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0901,
+   "tau_frac_of_ceiling_sb": 0.0716
+  },
+  "A__cloud_demos_L11_mean_response_centered_mahal": {
+   "tau": 0.0527,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0897,
+   "tau_frac_of_ceiling_sb": 0.0713
+  },
+  "A__geom_demos_L5_mean_response_cosine": {
+   "tau": 0.052,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0884,
+   "tau_frac_of_ceiling_sb": 0.0703
+  },
+  "A__geom_demos_L15_mean_response_projection": {
+   "tau": 0.0514,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0875,
+   "tau_frac_of_ceiling_sb": 0.0695
+  },
+  "A__cloud_demos_L21_mean_response_raw_cosine": {
+   "tau": 0.0509,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0865,
+   "tau_frac_of_ceiling_sb": 0.0688
+  },
+  "A__cloud_demos_L7_mean_response_gauss_kl": {
+   "tau": 0.0502,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0853,
+   "tau_frac_of_ceiling_sb": 0.0678
+  },
+  "A__cloud_nl_L11_mean_response_centered_cosine": {
+   "tau": 0.05,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0851,
+   "tau_frac_of_ceiling_sb": 0.0676
+  },
+  "A__cloud_demos_L15_mean_response_raw_cosine": {
+   "tau": 0.0452,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0769,
+   "tau_frac_of_ceiling_sb": 0.0611
+  },
+  "A__cloud_demos_L7_mean_response_raw_cosine": {
+   "tau": 0.0446,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0758,
+   "tau_frac_of_ceiling_sb": 0.0602
+  },
+  "A__outdist_demos_kl_narrow_broad": {
+   "tau": 0.0436,
+   "metric_family": "outdist_jskl",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0742,
+   "tau_frac_of_ceiling_sb": 0.059
+  },
+  "A__cloud_nl_L14_last_token_raw_projection": {
+   "tau": 0.0431,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0733,
+   "tau_frac_of_ceiling_sb": 0.0582
+  },
+  "A__geom_nl_L11_mean_response_cosine": {
+   "tau": 0.0421,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0715,
+   "tau_frac_of_ceiling_sb": 0.0568
+  },
+  "A__cloud_nl_L27_last_token_raw_projection": {
+   "tau": 0.0408,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0693,
+   "tau_frac_of_ceiling_sb": 0.0551
+  },
+  "A__geom_nl_L11_mean_response_projection": {
+   "tau": 0.0407,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0692,
+   "tau_frac_of_ceiling_sb": 0.055
+  },
+  "A__geom_demos_L14_last_token_cosine": {
+   "tau": 0.0406,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.069,
+   "tau_frac_of_ceiling_sb": 0.0548
+  },
+  "A__cloud_nl_L0_mean_response_c2st": {
+   "tau": 0.0402,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0683,
+   "tau_frac_of_ceiling_sb": 0.0543
+  },
+  "A__cloud_nl_L5_last_token_centered_projection": {
+   "tau": 0.0401,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0683,
+   "tau_frac_of_ceiling_sb": 0.0543
+  },
+  "A__cloud_demos_L11_mean_response_raw_cosine": {
+   "tau": 0.04,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0681,
+   "tau_frac_of_ceiling_sb": 0.0541
+  },
+  "A__cloud_nl_L27_last_token_wass2": {
+   "tau": 0.0393,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0668,
+   "tau_frac_of_ceiling_sb": 0.0531
+  },
+  "A__geom_demos_L21_mean_response_projection": {
+   "tau": 0.0383,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0652,
+   "tau_frac_of_ceiling_sb": 0.0518
+  },
+  "A__geom_nl_L27_last_token_projection": {
+   "tau": 0.0381,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0649,
+   "tau_frac_of_ceiling_sb": 0.0516
+  },
+  "A__cloud_nl_L27_mean_response_centered_projection": {
+   "tau": 0.038,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0647,
+   "tau_frac_of_ceiling_sb": 0.0514
+  },
+  "A__geom_demos_L14_mean_response_projection": {
+   "tau": 0.038,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0646,
+   "tau_frac_of_ceiling_sb": 0.0513
+  },
+  "A__cloud_nl_L15_mean_response_centered_mahal": {
+   "tau": 0.0374,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0637,
+   "tau_frac_of_ceiling_sb": 0.0506
+  },
+  "A__cloud_nl_L15_mean_response_raw_mahal": {
+   "tau": 0.0374,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0637,
+   "tau_frac_of_ceiling_sb": 0.0506
+  },
+  "A__cloud_nl_L15_mean_response_centered_cosine": {
+   "tau": 0.0372,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0633,
+   "tau_frac_of_ceiling_sb": 0.0503
+  },
+  "A__cloud_nl_L14_mean_response_centered_cosine": {
+   "tau": 0.037,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.063,
+   "tau_frac_of_ceiling_sb": 0.0501
+  },
+  "A__cloud_demos_L5_mean_response_gauss_kl": {
+   "tau": 0.0368,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0626,
+   "tau_frac_of_ceiling_sb": 0.0498
+  },
+  "A__cloud_nl_L5_mean_response_raw_cosine": {
+   "tau": 0.0367,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0624,
+   "tau_frac_of_ceiling_sb": 0.0496
+  },
+  "A__cloud_demos_L14_mean_response_raw_cosine": {
+   "tau": 0.0365,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.062,
+   "tau_frac_of_ceiling_sb": 0.0493
+  },
+  "A__cloud_nl_L7_mean_response_raw_cosine": {
+   "tau": 0.036,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0613,
+   "tau_frac_of_ceiling_sb": 0.0487
+  },
+  "A__cloud_nl_L21_last_token_centered_projection": {
+   "tau": 0.0357,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0607,
+   "tau_frac_of_ceiling_sb": 0.0482
+  },
+  "A__geom_nl_L14_mean_response_projection": {
+   "tau": 0.0351,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0598,
+   "tau_frac_of_ceiling_sb": 0.0475
+  },
+  "D__ttr": {
+   "tau": 0.0335,
+   "metric_family": "group_d",
+   "n_cells": 60,
+   "tau_frac_of_ceiling_raw": 0.057,
+   "tau_frac_of_ceiling_sb": 0.0453
+  },
+  "A__cloud_nl_L27_mean_response_gauss_kl": {
+   "tau": 0.033,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0561,
+   "tau_frac_of_ceiling_sb": 0.0445
+  },
+  "A__cloud_nl_L21_mean_response_centered_cosine": {
+   "tau": 0.0324,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.055,
+   "tau_frac_of_ceiling_sb": 0.0437
+  },
+  "D__mean_answer_tokens": {
+   "tau": 0.0317,
+   "metric_family": "group_d",
+   "n_cells": 60,
+   "tau_frac_of_ceiling_raw": 0.0538,
+   "tau_frac_of_ceiling_sb": 0.0428
+  },
+  "A__outdist_demos_js": {
+   "tau": 0.0312,
+   "metric_family": "outdist_jskl",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.053,
+   "tau_frac_of_ceiling_sb": 0.0421
+  },
+  "A__geom_nl_L27_last_token_neg_l2": {
+   "tau": 0.0309,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0526,
+   "tau_frac_of_ceiling_sb": 0.0418
+  },
+  "A__geom_demos_L14_mean_response_cosine": {
+   "tau": 0.0296,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0504,
+   "tau_frac_of_ceiling_sb": 0.04
+  },
+  "A__cloud_nl_L27_last_token_centered_cosine": {
+   "tau": 0.0288,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0489,
+   "tau_frac_of_ceiling_sb": 0.0389
+  },
+  "A__cloud_nl_L14_mean_response_centered_mahal": {
+   "tau": 0.0281,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0477,
+   "tau_frac_of_ceiling_sb": 0.0379
+  },
+  "A__cloud_nl_L14_mean_response_raw_mahal": {
+   "tau": 0.0281,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0478,
+   "tau_frac_of_ceiling_sb": 0.038
+  },
+  "A__cloud_nl_L7_last_token_centered_mahal": {
+   "tau": 0.0279,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0475,
+   "tau_frac_of_ceiling_sb": 0.0377
+  },
+  "A__cloud_nl_L7_last_token_raw_mahal": {
+   "tau": 0.0279,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0475,
+   "tau_frac_of_ceiling_sb": 0.0377
+  },
+  "A__cloud_demos_L5_last_token_mmd": {
+   "tau": 0.0263,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0447,
+   "tau_frac_of_ceiling_sb": 0.0355
+  },
+  "A__geom_demos_L0_last_token_neg_l2": {
+   "tau": 0.025,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0424,
+   "tau_frac_of_ceiling_sb": 0.0337
+  },
+  "A__cloud_nl_L21_mean_response_raw_mahal": {
+   "tau": 0.0248,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0422,
+   "tau_frac_of_ceiling_sb": 0.0335
+  },
+  "A__cloud_nl_L21_mean_response_centered_mahal": {
+   "tau": 0.0247,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0421,
+   "tau_frac_of_ceiling_sb": 0.0334
+  },
+  "A__cloud_nl_L11_mean_response_c2st": {
+   "tau": 0.024,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0407,
+   "tau_frac_of_ceiling_sb": 0.0324
+  },
+  "A__cloud_demos_L21_mean_response_centered_mahal": {
+   "tau": 0.0229,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0389,
+   "tau_frac_of_ceiling_sb": 0.0309
+  },
+  "A__cloud_demos_L21_mean_response_raw_mahal": {
+   "tau": 0.0227,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0385,
+   "tau_frac_of_ceiling_sb": 0.0306
+  },
+  "A__cloud_nl_L7_mean_response_centered_cosine": {
+   "tau": 0.0213,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0362,
+   "tau_frac_of_ceiling_sb": 0.0288
+  },
+  "A__cloud_demos_L27_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.0208,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0355,
+   "tau_frac_of_ceiling_sb": 0.0282
+  },
+  "A__cloud_nl_L7_last_token_centered_projection": {
+   "tau": 0.0184,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0312,
+   "tau_frac_of_ceiling_sb": 0.0248
+  },
+  "A__cloud_demos_L0_last_token_c2st": {
+   "tau": 0.0178,
+   "metric_family": "cloud",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.0303,
+   "tau_frac_of_ceiling_sb": 0.0241
+  },
+  "A__cloud_demos_L5_mean_response_raw_cosine": {
+   "tau": 0.0163,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0278,
+   "tau_frac_of_ceiling_sb": 0.0221
+  },
+  "A__cloud_nl_L0_mean_response_raw_projection": {
+   "tau": 0.0135,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.023,
+   "tau_frac_of_ceiling_sb": 0.0183
+  },
+  "A__cloud_nl_L14_last_token_gauss_kl": {
+   "tau": 0.0111,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0189,
+   "tau_frac_of_ceiling_sb": 0.015
+  },
+  "A__cloud_nl_L27_mean_response_centered_mahal": {
+   "tau": 0.0111,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0189,
+   "tau_frac_of_ceiling_sb": 0.015
+  },
+  "A__cloud_nl_L27_mean_response_raw_mahal": {
+   "tau": 0.0111,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0188,
+   "tau_frac_of_ceiling_sb": 0.0149
+  },
+  "A__cloud_demos_L0_last_token_raw_projection": {
+   "tau": 0.0105,
+   "metric_family": "raw_centroid",
+   "n_cells": 25,
+   "tau_frac_of_ceiling_raw": 0.0178,
+   "tau_frac_of_ceiling_sb": 0.0141
+  },
+  "A__geom_demos_L0_last_token_cosine": {
+   "tau": 0.0105,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0178,
+   "tau_frac_of_ceiling_sb": 0.0142
+  },
+  "A__cloud_demos_L11_last_token_gauss_kl": {
+   "tau": 0.0103,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0176,
+   "tau_frac_of_ceiling_sb": 0.0139
+  },
+  "A__cloud_demos_L15_last_token_gauss_kl": {
+   "tau": 0.0087,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0149,
+   "tau_frac_of_ceiling_sb": 0.0118
+  },
+  "A__cloud_nl_L5_last_token_centered_mahal": {
+   "tau": 0.0081,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0138,
+   "tau_frac_of_ceiling_sb": 0.011
+  },
+  "A__cloud_nl_L5_last_token_raw_mahal": {
+   "tau": 0.0081,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0138,
+   "tau_frac_of_ceiling_sb": 0.011
+  },
+  "A__cloud_nl_L21_last_token_raw_projection": {
+   "tau": 0.0075,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0127,
+   "tau_frac_of_ceiling_sb": 0.0101
+  },
+  "A__geom_demos_L0_last_token_projection": {
+   "tau": 0.0074,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0126,
+   "tau_frac_of_ceiling_sb": 0.01
+  },
+  "A__cloud_nl_L21_last_token_gauss_kl": {
+   "tau": 0.0072,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0122,
+   "tau_frac_of_ceiling_sb": 0.0097
+  },
+  "A__cloud_nl_L5_mean_response_centered_cosine": {
+   "tau": 0.0069,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0118,
+   "tau_frac_of_ceiling_sb": 0.0094
+  },
+  "A__geom_nl_L5_mean_response_projection": {
+   "tau": 0.0066,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0113,
+   "tau_frac_of_ceiling_sb": 0.009
+  },
+  "A__cloud_nl_L27_last_token_centered_projection": {
+   "tau": 0.0048,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": 0.0082,
+   "tau_frac_of_ceiling_sb": 0.0065
+  },
+  "A__geom_nl_L5_last_token_neg_l2": {
+   "tau": 0.0036,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0061,
+   "tau_frac_of_ceiling_sb": 0.0049
+  },
+  "A__cloud_demos_L5_mean_response_raw_mahal_pooled_ctx": {
+   "tau": 0.0024,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0041,
+   "tau_frac_of_ceiling_sb": 0.0033
+  },
+  "A__cloud_nl_L7_mean_response_wass2": {
+   "tau": 0.0023,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.004,
+   "tau_frac_of_ceiling_sb": 0.0032
+  },
+  "A__outdist_nl_kl_broad_narrow": {
+   "tau": 0.0021,
+   "metric_family": "outdist_jskl",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": 0.0036,
+   "tau_frac_of_ceiling_sb": 0.0029
+  },
+  "A__cloud_demos_L21_mean_response_wass2": {
+   "tau": 0.001,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": 0.0017,
+   "tau_frac_of_ceiling_sb": 0.0014
+  },
+  "A__cloud_nl_L15_last_token_centered_projection": {
+   "tau": -0.0006,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.001,
+   "tau_frac_of_ceiling_sb": -0.0008
+  },
+  "A__cloud_demos_L11_mean_response_wass2": {
+   "tau": -0.0014,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0023,
+   "tau_frac_of_ceiling_sb": -0.0019
+  },
+  "A__cloud_nl_L21_mean_response_c2st": {
+   "tau": -0.0016,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0028,
+   "tau_frac_of_ceiling_sb": -0.0022
+  },
+  "A__cloud_nl_L27_last_token_raw_mahal_pooled_ctx": {
+   "tau": -0.0021,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.0035,
+   "tau_frac_of_ceiling_sb": -0.0028
+  },
+  "A__cloud_demos_L5_mean_response_wass2": {
+   "tau": -0.0027,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0045,
+   "tau_frac_of_ceiling_sb": -0.0036
+  },
+  "A__cloud_demos_L14_mean_response_wass2": {
+   "tau": -0.0029,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0049,
+   "tau_frac_of_ceiling_sb": -0.0039
+  },
+  "A__cloud_nl_L27_last_token_centered_mahal": {
+   "tau": -0.0029,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.0049,
+   "tau_frac_of_ceiling_sb": -0.0039
+  },
+  "A__cloud_nl_L27_last_token_raw_mahal": {
+   "tau": -0.0029,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.0049,
+   "tau_frac_of_ceiling_sb": -0.0039
+  },
+  "A__cloud_demos_L7_last_token_mmd": {
+   "tau": -0.0035,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.006,
+   "tau_frac_of_ceiling_sb": -0.0048
+  },
+  "A__cloud_demos_L0_mean_response_c2st": {
+   "tau": -0.0037,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0062,
+   "tau_frac_of_ceiling_sb": -0.0049
+  },
+  "A__cloud_demos_L15_mean_response_wass2": {
+   "tau": -0.0044,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0075,
+   "tau_frac_of_ceiling_sb": -0.006
+  },
+  "A__cloud_demos_L7_mean_response_wass2": {
+   "tau": -0.0044,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0076,
+   "tau_frac_of_ceiling_sb": -0.006
+  },
+  "A__cloud_demos_L0_mean_response_centered_mahal": {
+   "tau": -0.006,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0102,
+   "tau_frac_of_ceiling_sb": -0.0081
+  },
+  "A__cloud_demos_L0_mean_response_raw_mahal": {
+   "tau": -0.006,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0102,
+   "tau_frac_of_ceiling_sb": -0.0081
+  },
+  "A__cloud_demos_L5_last_token_c2st": {
+   "tau": -0.0061,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0104,
+   "tau_frac_of_ceiling_sb": -0.0083
+  },
+  "A__cloud_demos_L7_mean_response_raw_mahal": {
+   "tau": -0.0072,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0123,
+   "tau_frac_of_ceiling_sb": -0.0098
+  },
+  "A__cloud_demos_L7_mean_response_centered_mahal": {
+   "tau": -0.0076,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0128,
+   "tau_frac_of_ceiling_sb": -0.0102
+  },
+  "A__geom_nl_L27_last_token_cosine": {
+   "tau": -0.0086,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0147,
+   "tau_frac_of_ceiling_sb": -0.0117
+  },
+  "A__cloud_nl_L11_last_token_raw_projection": {
+   "tau": -0.0095,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.0162,
+   "tau_frac_of_ceiling_sb": -0.0129
+  },
+  "A__cloud_demos_L7_mean_response_raw_mahal_pooled_ctx": {
+   "tau": -0.0107,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0182,
+   "tau_frac_of_ceiling_sb": -0.0144
+  },
+  "A__outdist_nl_kl_narrow_broad": {
+   "tau": -0.0171,
+   "metric_family": "outdist_jskl",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0291,
+   "tau_frac_of_ceiling_sb": -0.0231
+  },
+  "A__cloud_nl_L5_mean_response_wass2": {
+   "tau": -0.0191,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0324,
+   "tau_frac_of_ceiling_sb": -0.0258
+  },
+  "A__cloud_nl_L21_mean_response_mmd": {
+   "tau": -0.0205,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0348,
+   "tau_frac_of_ceiling_sb": -0.0276
+  },
+  "A__cloud_demos_L5_mean_response_centered_mahal": {
+   "tau": -0.0208,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0354,
+   "tau_frac_of_ceiling_sb": -0.0282
+  },
+  "A__cloud_demos_L5_mean_response_raw_mahal": {
+   "tau": -0.0208,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0354,
+   "tau_frac_of_ceiling_sb": -0.0282
+  },
+  "A__cloud_nl_L27_last_token_gauss_kl": {
+   "tau": -0.0223,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.0379,
+   "tau_frac_of_ceiling_sb": -0.0301
+  },
+  "A__cloud_demos_L21_mean_response_centered_cosine": {
+   "tau": -0.0225,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0382,
+   "tau_frac_of_ceiling_sb": -0.0304
+  },
+  "A__cloud_demos_L0_mean_response_wass2": {
+   "tau": -0.0239,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0407,
+   "tau_frac_of_ceiling_sb": -0.0324
+  },
+  "A__cloud_nl_L27_mean_response_centered_euclidean": {
+   "tau": -0.0242,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0411,
+   "tau_frac_of_ceiling_sb": -0.0327
+  },
+  "A__cloud_nl_L27_mean_response_centered_neg_l2": {
+   "tau": -0.0242,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0411,
+   "tau_frac_of_ceiling_sb": -0.0327
+  },
+  "A__cloud_nl_L27_mean_response_raw_euclidean": {
+   "tau": -0.0242,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0411,
+   "tau_frac_of_ceiling_sb": -0.0327
+  },
+  "A__cloud_nl_L27_mean_response_raw_neg_l2": {
+   "tau": -0.0242,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0411,
+   "tau_frac_of_ceiling_sb": -0.0327
+  },
+  "A__geom_demos_L11_last_token_projection": {
+   "tau": -0.0255,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0433,
+   "tau_frac_of_ceiling_sb": -0.0344
+  },
+  "A__geom_nl_L27_mean_response_neg_l2": {
+   "tau": -0.0257,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0437,
+   "tau_frac_of_ceiling_sb": -0.0347
+  },
+  "A__cloud_nl_L7_mean_response_c2st": {
+   "tau": -0.0266,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0452,
+   "tau_frac_of_ceiling_sb": -0.0359
+  },
+  "A__cloud_demos_L7_mean_response_centered_cosine": {
+   "tau": -0.0281,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0479,
+   "tau_frac_of_ceiling_sb": -0.038
+  },
+  "A__cloud_nl_L5_mean_response_centered_euclidean": {
+   "tau": -0.0284,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0483,
+   "tau_frac_of_ceiling_sb": -0.0384
+  },
+  "A__cloud_nl_L5_mean_response_centered_neg_l2": {
+   "tau": -0.0284,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0483,
+   "tau_frac_of_ceiling_sb": -0.0384
+  },
+  "A__cloud_nl_L5_mean_response_raw_euclidean": {
+   "tau": -0.0284,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0483,
+   "tau_frac_of_ceiling_sb": -0.0384
+  },
+  "A__cloud_nl_L5_mean_response_raw_neg_l2": {
+   "tau": -0.0284,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0483,
+   "tau_frac_of_ceiling_sb": -0.0384
+  },
+  "A__cloud_nl_L7_mean_response_centered_euclidean": {
+   "tau": -0.0285,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0485,
+   "tau_frac_of_ceiling_sb": -0.0386
+  },
+  "A__cloud_nl_L7_mean_response_centered_neg_l2": {
+   "tau": -0.0285,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0485,
+   "tau_frac_of_ceiling_sb": -0.0386
+  },
+  "A__cloud_nl_L7_mean_response_raw_euclidean": {
+   "tau": -0.0285,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0485,
+   "tau_frac_of_ceiling_sb": -0.0386
+  },
+  "A__cloud_nl_L7_mean_response_raw_neg_l2": {
+   "tau": -0.0285,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0485,
+   "tau_frac_of_ceiling_sb": -0.0386
+  },
+  "A__outdist_nl_js": {
+   "tau": -0.0288,
+   "metric_family": "outdist_jskl",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.049,
+   "tau_frac_of_ceiling_sb": -0.039
+  },
+  "A__cloud_nl_L27_mean_response_wass2": {
+   "tau": -0.0291,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0495,
+   "tau_frac_of_ceiling_sb": -0.0393
+  },
+  "A__cloud_nl_L11_mean_response_centered_euclidean": {
+   "tau": -0.0298,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0506,
+   "tau_frac_of_ceiling_sb": -0.0402
+  },
+  "A__cloud_nl_L11_mean_response_centered_neg_l2": {
+   "tau": -0.0298,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0506,
+   "tau_frac_of_ceiling_sb": -0.0402
+  },
+  "A__cloud_nl_L11_mean_response_raw_euclidean": {
+   "tau": -0.0298,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0506,
+   "tau_frac_of_ceiling_sb": -0.0402
+  },
+  "A__cloud_nl_L11_mean_response_raw_neg_l2": {
+   "tau": -0.0298,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0506,
+   "tau_frac_of_ceiling_sb": -0.0402
+  },
+  "A__cloud_nl_L14_mean_response_mmd": {
+   "tau": -0.0302,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0514,
+   "tau_frac_of_ceiling_sb": -0.0409
+  },
+  "A__cloud_nl_L11_mean_response_mmd": {
+   "tau": -0.0308,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0523,
+   "tau_frac_of_ceiling_sb": -0.0416
+  },
+  "A__cloud_nl_L7_mean_response_mmd": {
+   "tau": -0.0328,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0557,
+   "tau_frac_of_ceiling_sb": -0.0443
+  },
+  "A__cloud_nl_L14_mean_response_wass2": {
+   "tau": -0.0329,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.056,
+   "tau_frac_of_ceiling_sb": -0.0445
+  },
+  "A__cloud_nl_L15_mean_response_centered_euclidean": {
+   "tau": -0.033,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0562,
+   "tau_frac_of_ceiling_sb": -0.0446
+  },
+  "A__cloud_nl_L15_mean_response_centered_neg_l2": {
+   "tau": -0.033,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0562,
+   "tau_frac_of_ceiling_sb": -0.0446
+  },
+  "A__cloud_nl_L15_mean_response_raw_euclidean": {
+   "tau": -0.033,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0562,
+   "tau_frac_of_ceiling_sb": -0.0446
+  },
+  "A__cloud_nl_L15_mean_response_raw_neg_l2": {
+   "tau": -0.033,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0562,
+   "tau_frac_of_ceiling_sb": -0.0446
+  },
+  "A__cloud_demos_L27_mean_response_raw_cosine": {
+   "tau": -0.0331,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0563,
+   "tau_frac_of_ceiling_sb": -0.0447
+  },
+  "A__cloud_nl_L21_mean_response_centered_euclidean": {
+   "tau": -0.0332,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0565,
+   "tau_frac_of_ceiling_sb": -0.0449
+  },
+  "A__cloud_nl_L21_mean_response_centered_neg_l2": {
+   "tau": -0.0332,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0565,
+   "tau_frac_of_ceiling_sb": -0.0449
+  },
+  "A__cloud_nl_L21_mean_response_raw_euclidean": {
+   "tau": -0.0332,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0565,
+   "tau_frac_of_ceiling_sb": -0.0449
+  },
+  "A__cloud_nl_L21_mean_response_raw_neg_l2": {
+   "tau": -0.0332,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0565,
+   "tau_frac_of_ceiling_sb": -0.0449
+  },
+  "A__cloud_nl_L14_mean_response_centered_euclidean": {
+   "tau": -0.0333,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0566,
+   "tau_frac_of_ceiling_sb": -0.045
+  },
+  "A__cloud_nl_L14_mean_response_centered_neg_l2": {
+   "tau": -0.0333,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0566,
+   "tau_frac_of_ceiling_sb": -0.045
+  },
+  "A__cloud_nl_L14_mean_response_raw_euclidean": {
+   "tau": -0.0333,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0566,
+   "tau_frac_of_ceiling_sb": -0.045
+  },
+  "A__cloud_nl_L14_mean_response_raw_neg_l2": {
+   "tau": -0.0333,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0566,
+   "tau_frac_of_ceiling_sb": -0.045
+  },
+  "A__cloud_demos_L15_mean_response_raw_mahal_pooled_ctx": {
+   "tau": -0.0341,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0579,
+   "tau_frac_of_ceiling_sb": -0.046
+  },
+  "A__cloud_demos_L27_mean_response_centered_euclidean": {
+   "tau": -0.0343,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0584,
+   "tau_frac_of_ceiling_sb": -0.0464
+  },
+  "A__cloud_demos_L27_mean_response_centered_neg_l2": {
+   "tau": -0.0343,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0584,
+   "tau_frac_of_ceiling_sb": -0.0464
+  },
+  "A__cloud_demos_L27_mean_response_raw_euclidean": {
+   "tau": -0.0343,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0584,
+   "tau_frac_of_ceiling_sb": -0.0464
+  },
+  "A__cloud_demos_L27_mean_response_raw_neg_l2": {
+   "tau": -0.0343,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0584,
+   "tau_frac_of_ceiling_sb": -0.0464
+  },
+  "A__cloud_nl_L15_mean_response_mmd": {
+   "tau": -0.0347,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.059,
+   "tau_frac_of_ceiling_sb": -0.0469
+  },
+  "A__geom_demos_L15_last_token_projection": {
+   "tau": -0.035,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0596,
+   "tau_frac_of_ceiling_sb": -0.0473
+  },
+  "A__cloud_nl_L21_mean_response_wass2": {
+   "tau": -0.0365,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.062,
+   "tau_frac_of_ceiling_sb": -0.0493
+  },
+  "A__cloud_nl_L15_last_token_gauss_kl": {
+   "tau": -0.037,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.0629,
+   "tau_frac_of_ceiling_sb": -0.05
+  },
+  "A__cloud_nl_L5_mean_response_c2st": {
+   "tau": -0.0372,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0633,
+   "tau_frac_of_ceiling_sb": -0.0503
+  },
+  "A__cloud_nl_L5_mean_response_mmd": {
+   "tau": -0.0373,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0635,
+   "tau_frac_of_ceiling_sb": -0.0505
+  },
+  "A__cloud_nl_L11_mean_response_wass2": {
+   "tau": -0.0382,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0649,
+   "tau_frac_of_ceiling_sb": -0.0516
+  },
+  "A__cloud_nl_L15_mean_response_wass2": {
+   "tau": -0.0385,
+   "metric_family": "cloud",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0655,
+   "tau_frac_of_ceiling_sb": -0.0521
+  },
+  "A__cloud_demos_L27_mean_response_centered_mahal": {
+   "tau": -0.0439,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0746,
+   "tau_frac_of_ceiling_sb": -0.0593
+  },
+  "A__cloud_demos_L27_mean_response_raw_mahal": {
+   "tau": -0.0441,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.075,
+   "tau_frac_of_ceiling_sb": -0.0596
+  },
+  "A__cloud_demos_L27_mean_response_centered_cosine": {
+   "tau": -0.0444,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0755,
+   "tau_frac_of_ceiling_sb": -0.06
+  },
+  "A__cloud_demos_L14_last_token_gauss_kl": {
+   "tau": -0.0449,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0763,
+   "tau_frac_of_ceiling_sb": -0.0607
+  },
+  "A__cloud_demos_L14_mean_response_centered_euclidean": {
+   "tau": -0.0464,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.079,
+   "tau_frac_of_ceiling_sb": -0.0628
+  },
+  "A__cloud_demos_L14_mean_response_centered_neg_l2": {
+   "tau": -0.0464,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.079,
+   "tau_frac_of_ceiling_sb": -0.0628
+  },
+  "A__cloud_demos_L14_mean_response_raw_euclidean": {
+   "tau": -0.0464,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.079,
+   "tau_frac_of_ceiling_sb": -0.0628
+  },
+  "A__cloud_demos_L14_mean_response_raw_neg_l2": {
+   "tau": -0.0464,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.079,
+   "tau_frac_of_ceiling_sb": -0.0628
+  },
+  "A__cloud_demos_L15_mean_response_centered_euclidean": {
+   "tau": -0.0466,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0792,
+   "tau_frac_of_ceiling_sb": -0.0629
+  },
+  "A__cloud_demos_L15_mean_response_centered_neg_l2": {
+   "tau": -0.0466,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0792,
+   "tau_frac_of_ceiling_sb": -0.0629
+  },
+  "A__cloud_demos_L15_mean_response_raw_euclidean": {
+   "tau": -0.0466,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0792,
+   "tau_frac_of_ceiling_sb": -0.0629
+  },
+  "A__cloud_demos_L15_mean_response_raw_neg_l2": {
+   "tau": -0.0466,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0792,
+   "tau_frac_of_ceiling_sb": -0.0629
+  },
+  "A__cloud_demos_L21_mean_response_centered_euclidean": {
+   "tau": -0.0466,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0792,
+   "tau_frac_of_ceiling_sb": -0.0629
+  },
+  "A__cloud_demos_L21_mean_response_centered_neg_l2": {
+   "tau": -0.0466,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0792,
+   "tau_frac_of_ceiling_sb": -0.0629
+  },
+  "A__cloud_demos_L21_mean_response_raw_euclidean": {
+   "tau": -0.0466,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0792,
+   "tau_frac_of_ceiling_sb": -0.0629
+  },
+  "A__cloud_demos_L21_mean_response_raw_neg_l2": {
+   "tau": -0.0466,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0792,
+   "tau_frac_of_ceiling_sb": -0.0629
+  },
+  "A__cloud_demos_L11_mean_response_centered_euclidean": {
+   "tau": -0.0467,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0794,
+   "tau_frac_of_ceiling_sb": -0.0631
+  },
+  "A__cloud_demos_L11_mean_response_centered_neg_l2": {
+   "tau": -0.0467,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0794,
+   "tau_frac_of_ceiling_sb": -0.0631
+  },
+  "A__cloud_demos_L11_mean_response_raw_euclidean": {
+   "tau": -0.0467,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0794,
+   "tau_frac_of_ceiling_sb": -0.0631
+  },
+  "A__cloud_demos_L11_mean_response_raw_neg_l2": {
+   "tau": -0.0467,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0794,
+   "tau_frac_of_ceiling_sb": -0.0631
+  },
+  "A__cloud_demos_L5_mean_response_centered_euclidean": {
+   "tau": -0.0468,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0796,
+   "tau_frac_of_ceiling_sb": -0.0633
+  },
+  "A__cloud_demos_L5_mean_response_centered_neg_l2": {
+   "tau": -0.0468,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0796,
+   "tau_frac_of_ceiling_sb": -0.0633
+  },
+  "A__cloud_demos_L5_mean_response_raw_euclidean": {
+   "tau": -0.0468,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0796,
+   "tau_frac_of_ceiling_sb": -0.0633
+  },
+  "A__cloud_demos_L5_mean_response_raw_neg_l2": {
+   "tau": -0.0468,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0796,
+   "tau_frac_of_ceiling_sb": -0.0633
+  },
+  "A__cloud_demos_L7_mean_response_centered_euclidean": {
+   "tau": -0.0472,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0802,
+   "tau_frac_of_ceiling_sb": -0.0638
+  },
+  "A__cloud_demos_L7_mean_response_centered_neg_l2": {
+   "tau": -0.0472,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0802,
+   "tau_frac_of_ceiling_sb": -0.0638
+  },
+  "A__cloud_demos_L7_mean_response_raw_euclidean": {
+   "tau": -0.0472,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0802,
+   "tau_frac_of_ceiling_sb": -0.0638
+  },
+  "A__cloud_demos_L7_mean_response_raw_neg_l2": {
+   "tau": -0.0472,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0802,
+   "tau_frac_of_ceiling_sb": -0.0638
+  },
+  "A__cloud_demos_L5_mean_response_centered_cosine": {
+   "tau": -0.0498,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0846,
+   "tau_frac_of_ceiling_sb": -0.0672
+  },
+  "A__cloud_nl_L11_mean_response_raw_mahal": {
+   "tau": -0.0505,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0859,
+   "tau_frac_of_ceiling_sb": -0.0683
+  },
+  "A__cloud_demos_L27_mean_response_centered_projection": {
+   "tau": -0.0511,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0868,
+   "tau_frac_of_ceiling_sb": -0.069
+  },
+  "A__cloud_nl_L11_mean_response_centered_mahal": {
+   "tau": -0.0514,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0874,
+   "tau_frac_of_ceiling_sb": -0.0694
+  },
+  "A__cloud_nl_L15_mean_response_raw_cosine": {
+   "tau": -0.0545,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0927,
+   "tau_frac_of_ceiling_sb": -0.0736
+  },
+  "A__cloud_nl_L11_mean_response_raw_cosine": {
+   "tau": -0.0552,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0939,
+   "tau_frac_of_ceiling_sb": -0.0746
+  },
+  "A__cloud_demos_L11_mean_response_raw_mahal_pooled_ctx": {
+   "tau": -0.0556,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0946,
+   "tau_frac_of_ceiling_sb": -0.0751
+  },
+  "A__geom_nl_L21_mean_response_neg_l2": {
+   "tau": -0.0558,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0949,
+   "tau_frac_of_ceiling_sb": -0.0754
+  },
+  "A__cloud_nl_L7_last_token_raw_projection": {
+   "tau": -0.0575,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.0977,
+   "tau_frac_of_ceiling_sb": -0.0777
+  },
+  "A__geom_nl_L11_mean_response_neg_l2": {
+   "tau": -0.0576,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.098,
+   "tau_frac_of_ceiling_sb": -0.0778
+  },
+  "A__geom_nl_L14_mean_response_neg_l2": {
+   "tau": -0.0585,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.0994,
+   "tau_frac_of_ceiling_sb": -0.079
+  },
+  "A__cloud_demos_L0_mean_response_raw_mahal_pooled_ctx": {
+   "tau": -0.0586,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.0997,
+   "tau_frac_of_ceiling_sb": -0.0792
+  },
+  "A__cloud_nl_L14_mean_response_raw_cosine": {
+   "tau": -0.0588,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1,
+   "tau_frac_of_ceiling_sb": -0.0794
+  },
+  "A__geom_nl_L15_mean_response_neg_l2": {
+   "tau": -0.0597,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1016,
+   "tau_frac_of_ceiling_sb": -0.0807
+  },
+  "A__cloud_nl_L11_last_token_gauss_kl": {
+   "tau": -0.0598,
+   "metric_family": "cloud",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.1016,
+   "tau_frac_of_ceiling_sb": -0.0808
+  },
+  "A__cloud_demos_L14_mean_response_centered_cosine": {
+   "tau": -0.0608,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1034,
+   "tau_frac_of_ceiling_sb": -0.0821
+  },
+  "A__geom_nl_L7_mean_response_neg_l2": {
+   "tau": -0.0609,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1036,
+   "tau_frac_of_ceiling_sb": -0.0823
+  },
+  "A__cloud_nl_L7_mean_response_raw_mahal": {
+   "tau": -0.061,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1037,
+   "tau_frac_of_ceiling_sb": -0.0824
+  },
+  "A__cloud_nl_L7_mean_response_centered_mahal": {
+   "tau": -0.0618,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1051,
+   "tau_frac_of_ceiling_sb": -0.0835
+  },
+  "A__cloud_demos_L14_mean_response_raw_mahal_pooled_ctx": {
+   "tau": -0.0625,
+   "metric_family": "covariance_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1063,
+   "tau_frac_of_ceiling_sb": -0.0844
+  },
+  "A__cloud_demos_L15_mean_response_centered_cosine": {
+   "tau": -0.0639,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1087,
+   "tau_frac_of_ceiling_sb": -0.0864
+  },
+  "A__geom_nl_L5_mean_response_neg_l2": {
+   "tau": -0.0646,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1099,
+   "tau_frac_of_ceiling_sb": -0.0873
+  },
+  "A__cloud_demos_L11_mean_response_centered_cosine": {
+   "tau": -0.0648,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1103,
+   "tau_frac_of_ceiling_sb": -0.0876
+  },
+  "A__outdist_demos_kl_broad_narrow": {
+   "tau": -0.0648,
+   "metric_family": "outdist_jskl",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1102,
+   "tau_frac_of_ceiling_sb": -0.0876
+  },
+  "A__cloud_demos_L11_mean_response_centered_projection": {
+   "tau": -0.0669,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1138,
+   "tau_frac_of_ceiling_sb": -0.0904
+  },
+  "A__cloud_demos_L5_mean_response_centered_projection": {
+   "tau": -0.0669,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1138,
+   "tau_frac_of_ceiling_sb": -0.0904
+  },
+  "A__cloud_demos_L7_mean_response_centered_projection": {
+   "tau": -0.0669,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1138,
+   "tau_frac_of_ceiling_sb": -0.0904
+  },
+  "A__geom_demos_L21_last_token_cosine": {
+   "tau": -0.0672,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1143,
+   "tau_frac_of_ceiling_sb": -0.0908
+  },
+  "A__cloud_demos_L14_mean_response_centered_projection": {
+   "tau": -0.0673,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1145,
+   "tau_frac_of_ceiling_sb": -0.0909
+  },
+  "A__cloud_demos_L15_mean_response_centered_projection": {
+   "tau": -0.0673,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1145,
+   "tau_frac_of_ceiling_sb": -0.0909
+  },
+  "A__geom_demos_L21_mean_response_neg_l2": {
+   "tau": -0.0679,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1155,
+   "tau_frac_of_ceiling_sb": -0.0918
+  },
+  "A__cloud_demos_L21_mean_response_centered_projection": {
+   "tau": -0.069,
+   "metric_family": "centered_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1174,
+   "tau_frac_of_ceiling_sb": -0.0933
+  },
+  "A__geom_nl_L0_last_token_cosine": {
+   "tau": -0.0706,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1201,
+   "tau_frac_of_ceiling_sb": -0.0954
+  },
+  "A__geom_nl_L0_last_token_projection": {
+   "tau": -0.0706,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1201,
+   "tau_frac_of_ceiling_sb": -0.0954
+  },
+  "A__geom_demos_L21_mean_response_cosine": {
+   "tau": -0.0725,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1233,
+   "tau_frac_of_ceiling_sb": -0.098
+  },
+  "A__cloud_demos_L11_mean_response_gauss_kl": {
+   "tau": -0.0781,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1327,
+   "tau_frac_of_ceiling_sb": -0.1055
+  },
+  "A__cloud_nl_L15_last_token_raw_projection": {
+   "tau": -0.0816,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.1387,
+   "tau_frac_of_ceiling_sb": -0.1102
+  },
+  "A__cloud_demos_L0_mean_response_gauss_kl": {
+   "tau": -0.0834,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1418,
+   "tau_frac_of_ceiling_sb": -0.1126
+  },
+  "A__cloud_demos_L15_mean_response_gauss_kl": {
+   "tau": -0.084,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1428,
+   "tau_frac_of_ceiling_sb": -0.1135
+  },
+  "A__cloud_demos_L27_mean_response_mmd": {
+   "tau": -0.0842,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1432,
+   "tau_frac_of_ceiling_sb": -0.1138
+  },
+  "A__cloud_demos_L27_mean_response_gauss_kl": {
+   "tau": -0.0869,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1478,
+   "tau_frac_of_ceiling_sb": -0.1174
+  },
+  "A__geom_nl_L0_last_token_neg_l2": {
+   "tau": -0.0871,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1482,
+   "tau_frac_of_ceiling_sb": -0.1178
+  },
+  "A__cloud_nl_L21_mean_response_raw_cosine": {
+   "tau": -0.0876,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1489,
+   "tau_frac_of_ceiling_sb": -0.1183
+  },
+  "A__geom_demos_L14_last_token_projection": {
+   "tau": -0.0878,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1493,
+   "tau_frac_of_ceiling_sb": -0.1186
+  },
+  "A__cloud_demos_L27_mean_response_c2st": {
+   "tau": -0.0881,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1499,
+   "tau_frac_of_ceiling_sb": -0.1191
+  },
+  "A__cloud_demos_L21_mean_response_gauss_kl": {
+   "tau": -0.0894,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1521,
+   "tau_frac_of_ceiling_sb": -0.1208
+  },
+  "A__geom_demos_L21_last_token_projection": {
+   "tau": -0.1002,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1704,
+   "tau_frac_of_ceiling_sb": -0.1354
+  },
+  "A__cloud_demos_L21_mean_response_c2st": {
+   "tau": -0.1039,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1766,
+   "tau_frac_of_ceiling_sb": -0.1404
+  },
+  "A__cloud_demos_L14_mean_response_gauss_kl": {
+   "tau": -0.1062,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1806,
+   "tau_frac_of_ceiling_sb": -0.1435
+  },
+  "A__cloud_demos_L21_mean_response_mmd": {
+   "tau": -0.1096,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.1864,
+   "tau_frac_of_ceiling_sb": -0.1481
+  },
+  "A__cloud_nl_L5_mean_response_centered_mahal": {
+   "tau": -0.1096,
+   "metric_family": "centered_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1864,
+   "tau_frac_of_ceiling_sb": -0.1481
+  },
+  "A__cloud_nl_L5_mean_response_raw_mahal": {
+   "tau": -0.1097,
+   "metric_family": "covariance_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.1865,
+   "tau_frac_of_ceiling_sb": -0.1482
+  },
+  "A__geom_demos_L27_last_token_neg_l2": {
+   "tau": -0.1218,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2072,
+   "tau_frac_of_ceiling_sb": -0.1646
+  },
+  "A__cloud_nl_L27_mean_response_raw_cosine": {
+   "tau": -0.1269,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.2157,
+   "tau_frac_of_ceiling_sb": -0.1714
+  },
+  "A__cloud_demos_L14_mean_response_mmd": {
+   "tau": -0.1291,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2195,
+   "tau_frac_of_ceiling_sb": -0.1744
+  },
+  "A__cloud_demos_L15_mean_response_mmd": {
+   "tau": -0.1316,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2239,
+   "tau_frac_of_ceiling_sb": -0.1779
+  },
+  "A__cloud_demos_L11_mean_response_mmd": {
+   "tau": -0.1318,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2241,
+   "tau_frac_of_ceiling_sb": -0.1781
+  },
+  "B__behavior_conditioned_logprob_diff": {
+   "tau": -0.1368,
+   "metric_family": "group_b",
+   "n_cells": 63,
+   "tau_frac_of_ceiling_raw": -0.2327,
+   "tau_frac_of_ceiling_sb": -0.1849
+  },
+  "A__cloud_nl_L5_last_token_raw_projection": {
+   "tau": -0.1385,
+   "metric_family": "raw_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.2355,
+   "tau_frac_of_ceiling_sb": -0.1871
+  },
+  "A__cloud_nl_L7_mean_response_raw_projection": {
+   "tau": -0.1492,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.2538,
+   "tau_frac_of_ceiling_sb": -0.2017
+  },
+  "A__geom_nl_L0_mean_response_neg_l2": {
+   "tau": -0.1494,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.254,
+   "tau_frac_of_ceiling_sb": -0.2019
+  },
+  "A__cloud_nl_L5_mean_response_raw_projection": {
+   "tau": -0.1496,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.2544,
+   "tau_frac_of_ceiling_sb": -0.2021
+  },
+  "A__geom_demos_L27_last_token_projection": {
+   "tau": -0.1497,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2545,
+   "tau_frac_of_ceiling_sb": -0.2023
+  },
+  "A__cloud_nl_L0_mean_response_centered_mahal": {
+   "tau": -0.1555,
+   "metric_family": "centered_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.2644,
+   "tau_frac_of_ceiling_sb": -0.2101
+  },
+  "A__cloud_nl_L0_mean_response_raw_mahal": {
+   "tau": -0.1555,
+   "metric_family": "covariance_centroid",
+   "n_cells": 114,
+   "tau_frac_of_ceiling_raw": -0.2644,
+   "tau_frac_of_ceiling_sb": -0.2101
+  },
+  "A__cloud_demos_L7_mean_response_mmd": {
+   "tau": -0.1709,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2906,
+   "tau_frac_of_ceiling_sb": -0.2309
+  },
+  "A__cloud_demos_L11_mean_response_c2st": {
+   "tau": -0.1746,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2969,
+   "tau_frac_of_ceiling_sb": -0.2359
+  },
+  "A__cloud_demos_L15_mean_response_c2st": {
+   "tau": -0.1746,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2969,
+   "tau_frac_of_ceiling_sb": -0.2359
+  },
+  "A__cloud_demos_L5_mean_response_c2st": {
+   "tau": -0.1746,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2969,
+   "tau_frac_of_ceiling_sb": -0.2359
+  },
+  "A__cloud_demos_L7_mean_response_c2st": {
+   "tau": -0.1746,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2969,
+   "tau_frac_of_ceiling_sb": -0.2359
+  },
+  "A__cloud_demos_L14_mean_response_c2st": {
+   "tau": -0.1748,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2973,
+   "tau_frac_of_ceiling_sb": -0.2363
+  },
+  "A__cloud_demos_L5_mean_response_mmd": {
+   "tau": -0.1753,
+   "metric_family": "cloud",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.2981,
+   "tau_frac_of_ceiling_sb": -0.2368
+  },
+  "A__geom_demos_L27_last_token_cosine": {
+   "tau": -0.1787,
+   "metric_family": "raw_centroid",
+   "n_cells": 71,
+   "tau_frac_of_ceiling_raw": -0.304,
+   "tau_frac_of_ceiling_sb": -0.2415
+  },
+  "A__geom_nl_L0_mean_response_projection": {
+   "tau": -0.1861,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.3165,
+   "tau_frac_of_ceiling_sb": -0.2515
+  },
+  "A__geom_nl_L0_mean_response_cosine": {
+   "tau": -0.2234,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.3799,
+   "tau_frac_of_ceiling_sb": -0.3019
+  },
+  "A__cloud_nl_L11_mean_response_raw_projection": {
+   "tau": -0.2382,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.4051,
+   "tau_frac_of_ceiling_sb": -0.3219
+  },
+  "A__cloud_nl_L15_mean_response_raw_projection": {
+   "tau": -0.2393,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.4069,
+   "tau_frac_of_ceiling_sb": -0.3233
+  },
+  "A__cloud_nl_L14_mean_response_raw_projection": {
+   "tau": -0.2402,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.4085,
+   "tau_frac_of_ceiling_sb": -0.3246
+  },
+  "A__cloud_nl_L21_mean_response_raw_projection": {
+   "tau": -0.2585,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.4396,
+   "tau_frac_of_ceiling_sb": -0.3493
+  },
+  "A__cloud_nl_L27_mean_response_raw_projection": {
+   "tau": -0.2606,
+   "metric_family": "raw_centroid",
+   "n_cells": 119,
+   "tau_frac_of_ceiling_raw": -0.4431,
+   "tau_frac_of_ceiling_sb": -0.3521
+  }
+ },
+ "group_fold_summary": {
+  "centered_centroid": {
+   "mean_tau_all_folds": 0.2836710248575199,
+   "mean_tau_common_folds": 0.5406893846646533,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 160
+  },
+  "cloud": {
+   "mean_tau_all_folds": 0.3061330605865257,
+   "mean_tau_common_folds": 0.5723529724876156,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 128
+  },
+  "covariance_centroid": {
+   "mean_tau_all_folds": 0.321573394700362,
+   "mean_tau_common_folds": 0.5406893846646533,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 94
+  },
+  "group_b": {
+   "mean_tau_all_folds": 0.3249207357986942,
+   "mean_tau_common_folds": 0.5804690737828235,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 4
+  },
+  "group_c": {
+   "mean_tau_all_folds": 0.23342835122049477,
+   "mean_tau_common_folds": 0.3650911152048357,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 2
+  },
+  "group_d": {
+   "mean_tau_all_folds": 0.11611394391005717,
+   "mean_tau_common_folds": 0.05253377523863109,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 3
+  },
+  "outdist_jskl": {
+   "mean_tau_all_folds": 0.043648129730721526,
+   "mean_tau_common_folds": 0.3213191847883514,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 6
+  },
+  "raw_centroid": {
+   "mean_tau_all_folds": 0.3466169519997986,
+   "mean_tau_common_folds": 0.5406893846646533,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 192
+  }
+ },
+ "h1_global_champion": {
+  "global_champion_on_dev": "A__geom_nl_L15_last_token_cosine",
+  "global_champion_metric_family": "raw_centroid",
+  "lfo_nested_bootstrap": {
+   "ci95": [
+    -0.15418787798285566,
+    0.5758730158730158
+   ],
+   "lfo_mean_point": 0.08855051099415766,
+   "n_bootstrap_valid": 2000,
+   "skipped_resample_folds": 0,
+   "total_resample_folds": 18000,
+   "lfo_families": [
+    "B1",
+    "B10",
+    "B2",
+    "B3",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+    "B9"
+   ]
+  },
+  "tau_floor": 0.1,
+  "v1_reliability_ceiling": {
+   "raw_spearman": 0.588,
+   "spearman_brown": 0.74
+  },
+  "ci_excludes_zero": false,
+  "clears_floor": false,
+  "verdict_ci_floor": "does_not_transfer",
+  "champion_dev_permutation": {
+   "observed": 0.3466169519997986,
+   "p_value": 0.541945805419458,
+   "null_p95": 0.479774931043375,
+   "n_perm_valid": 10000
+  }
+ },
+ "h2_heterogeneity": {
+  "statistic": "cross_family_variance_of_per_family_champion_tau",
+  "eligible_families": [
+   "B1",
+   "B2",
+   "B3",
+   "B5",
+   "B6",
+   "B8"
+  ],
+  "permutation": {
+   "observed": 0.007642158599439449,
+   "p_value": 0.8701129887011299,
+   "null_p95": 0.04002152271640521,
+   "n_perm_valid": 10000
+  },
+  "verdict": "chance"
+ },
+ "h3_optimism_gain": {
+  "statistic": "per_family_oracle_gain_minus_global_champion",
+  "eligible_families": [
+   "B1",
+   "B2",
+   "B3",
+   "B5",
+   "B6",
+   "B8"
+  ],
+  "excluded_descriptive_only_families": [
+   "B10",
+   "B7",
+   "B9"
+  ],
+  "oracle_family_set": [
+   "B1",
+   "B2",
+   "B3",
+   "B5",
+   "B6",
+   "B8"
+  ],
+  "n_eligible_cells": 102,
+  "permutation": {
+   "observed": 3.8348637863803883,
+   "p_value": 0.10738926107389261,
+   "null_p95": 3.9689149512532613,
+   "n_perm_valid": 10000
+  },
+  "verdict": "optimism_inside_null_band",
+  "invariant_checked": "oracle_families == global_eval_families == permuted_eval_families == eligible_families AND identical cell subset (asserted at runtime)"
+ },
+ "exploratory_note": "EXPLORATORY dev-only headline via the frozen leave-family-out CV; the v1 quarantine is reported only as a flagged-peeked sensitivity read in scoring_results.json (Analysis 1), never the headline.",
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T12:47:45.338260+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

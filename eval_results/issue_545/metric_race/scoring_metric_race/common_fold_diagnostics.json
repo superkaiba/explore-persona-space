@@ -1,0 +1,103 @@
+{
+ "common_fold_families": [
+  "B3",
+  "B5",
+  "B6"
+ ],
+ "group_fold_summary": {
+  "centered_centroid": {
+   "mean_tau_all_folds": 0.2836710248575199,
+   "mean_tau_common_folds": 0.5406893846646533,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 160
+  },
+  "cloud": {
+   "mean_tau_all_folds": 0.3061330605865257,
+   "mean_tau_common_folds": 0.5723529724876156,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 128
+  },
+  "covariance_centroid": {
+   "mean_tau_all_folds": 0.321573394700362,
+   "mean_tau_common_folds": 0.5406893846646533,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 94
+  },
+  "group_b": {
+   "mean_tau_all_folds": 0.3249207357986942,
+   "mean_tau_common_folds": 0.5804690737828235,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 4
+  },
+  "group_c": {
+   "mean_tau_all_folds": 0.23342835122049477,
+   "mean_tau_common_folds": 0.3650911152048357,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 2
+  },
+  "group_d": {
+   "mean_tau_all_folds": 0.11611394391005717,
+   "mean_tau_common_folds": 0.05253377523863109,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 3
+  },
+  "outdist_jskl": {
+   "mean_tau_all_folds": 0.043648129730721526,
+   "mean_tau_common_folds": 0.3213191847883514,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 6
+  },
+  "raw_centroid": {
+   "mean_tau_all_folds": 0.3466169519997986,
+   "mean_tau_common_folds": 0.5406893846646533,
+   "common_fold_ids": [
+    "B3",
+    "B5",
+    "B6"
+   ],
+   "n_predictors": 192
+  }
+ },
+ "note": "per-metric-family best-\u03c4 on ALL dev folds vs the common-fold intersection {B3,B5,B6} where Groups B/C are defined (Nit N1); the global-champion + H3 comparisons are read primarily on the matched common-fold set.",
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T12:47:45.338260+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

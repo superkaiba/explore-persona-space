@@ -1,0 +1,27 @@
+{
+ "row": "hedge_everywhere",
+ "col": "fact_expression",
+ "flavor": "demos",
+ "rb": {
+  "js_rb_bits": 0.07702146626130467,
+  "kl_ab_nats": 0.23821532880097482,
+  "kl_ba_nats": 0.5685746637304014,
+  "sym_kl_nats": 0.40339499626568814,
+  "mc_se_js_bits": 0.003196937517826156,
+  "n_samples_a": 152,
+  "n_samples_b": 152
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T06:36:40.299649+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

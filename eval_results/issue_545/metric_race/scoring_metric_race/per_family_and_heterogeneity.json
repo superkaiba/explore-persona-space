@@ -1,0 +1,270 @@
+{
+ "per_family_champions": {
+  "B1": {
+   "n_cells": 25,
+   "argmax_champion": "A__cloud_demos_L5_last_token_centered_cosine",
+   "eligible": true,
+   "pooled_tau": 0.7932544897065266,
+   "nested_champion": "A__cloud_nl_L5_last_token_centered_cosine",
+   "heldout_tau": 0.08565167676370575,
+   "bootstrap_ci95": [
+    0.6447143506322008,
+    1.0
+   ],
+   "n_bootstrap_valid": 2000,
+   "ci_excludes_zero": true
+  },
+  "B10": {
+   "n_cells": 6,
+   "argmax_champion": "A__cloud_nl_L7_last_token_centered_euclidean",
+   "eligible": false,
+   "pooled_tau": 0.7292517006802721
+  },
+  "B2": {
+   "n_cells": 15,
+   "argmax_champion": "A__cloud_demos_L11_mean_response_gauss_kl",
+   "eligible": true,
+   "pooled_tau": 0.7886865652962893,
+   "nested_champion": "A__outdist_nl_js",
+   "heldout_tau": 0.8003879607033351,
+   "bootstrap_ci95": [
+    0.548745319966238,
+    1.0
+   ],
+   "n_bootstrap_valid": 2000,
+   "ci_excludes_zero": true
+  },
+  "B3": {
+   "n_cells": 12,
+   "argmax_champion": "A__cloud_nl_L5_last_token_centered_cosine",
+   "eligible": true,
+   "pooled_tau": 0.5987565404219477,
+   "nested_champion": "A__cloud_demos_L14_last_token_centered_cosine",
+   "heldout_tau": 0.12244897959183673,
+   "bootstrap_ci95": [
+    0.5987565404219477,
+    0.8685390776670813
+   ],
+   "n_bootstrap_valid": 2000,
+   "ci_excludes_zero": true
+  },
+  "B5": {
+   "n_cells": 16,
+   "argmax_champion": "A__cloud_nl_L0_last_token_centered_euclidean",
+   "eligible": true,
+   "pooled_tau": 0.750328515111695,
+   "nested_champion": "A__cloud_nl_L27_mean_response_centered_mahal",
+   "heldout_tau": -0.214300743442278,
+   "bootstrap_ci95": [
+    0.750328515111695,
+    1.0
+   ],
+   "n_bootstrap_valid": 2000,
+   "ci_excludes_zero": true
+  },
+  "B6": {
+   "n_cells": 15,
+   "argmax_champion": "B__demo_nll_transfer",
+   "eligible": true,
+   "pooled_tau": 0.8133333333333331,
+   "nested_champion": "A__cloud_nl_L5_last_token_centered_mahal",
+   "heldout_tau": 0.08876645240281596,
+   "bootstrap_ci95": [
+    0.8133333333333331,
+    1.0
+   ],
+   "n_bootstrap_valid": 2000,
+   "ci_excludes_zero": true
+  },
+  "B7": {
+   "n_cells": 5,
+   "argmax_champion": "A__cloud_nl_L27_mean_response_mmd",
+   "eligible": false,
+   "pooled_tau": 1.0
+  },
+  "B8": {
+   "n_cells": 19,
+   "argmax_champion": "A__cloud_nl_L27_last_token_wass2",
+   "eligible": true,
+   "pooled_tau": 0.6120249211405997,
+   "nested_champion": "A__cloud_nl_L27_last_token_wass2",
+   "heldout_tau": 0.536659342254456,
+   "bootstrap_ci95": [
+    0.5129473259934527,
+    0.8979487261758038
+   ],
+   "n_bootstrap_valid": 2000,
+   "ci_excludes_zero": true
+  },
+  "B9": {
+   "n_cells": 6,
+   "argmax_champion": "A__cloud_nl_L0_mean_response_centered_cosine",
+   "eligible": false,
+   "pooled_tau": 0.8285714285714285
+  }
+ },
+ "lfo_families": [
+  "B1",
+  "B10",
+  "B2",
+  "B3",
+  "B5",
+  "B6",
+  "B7",
+  "B8",
+  "B9"
+ ],
+ "eligible_families": [
+  "B1",
+  "B2",
+  "B3",
+  "B5",
+  "B6",
+  "B8"
+ ],
+ "descriptive_only_families": [
+  "B10",
+  "B7",
+  "B9"
+ ],
+ "predictor_family_x_behavior_family_heatmap": {
+  "centered_centroid": {
+   "B1": 0.7933,
+   "B10": 0.7293,
+   "B2": 0.6776,
+   "B3": 0.5988,
+   "B5": 0.7503,
+   "B6": 0.617,
+   "B7": 0.8175,
+   "B8": 0.2855,
+   "B9": 0.8286
+  },
+  "cloud": {
+   "B1": 0.6825,
+   "B10": 0.6857,
+   "B2": 0.7887,
+   "B3": 0.5273,
+   "B5": 0.7503,
+   "B6": 0.5968,
+   "B7": 1.0,
+   "B8": 0.612,
+   "B9": 0.3905
+  },
+  "covariance_centroid": {
+   "B1": 0.6845,
+   "B10": 0.7293,
+   "B2": 0.6923,
+   "B3": 0.4458,
+   "B5": 0.7503,
+   "B6": 0.617,
+   "B7": 0.719,
+   "B8": 0.4074,
+   "B9": 0.7673
+  },
+  "group_b": {
+   "B1": -0.2608,
+   "B10": 0.4106,
+   "B2": 0.1606,
+   "B3": 0.3333,
+   "B5": 0.6025,
+   "B6": 0.8133,
+   "B7": -0.0493,
+   "B8": 0.4787,
+   "B9": 0.0312
+  },
+  "group_c": {
+   "B1": null,
+   "B10": null,
+   "B2": null,
+   "B3": 0.3333,
+   "B5": 0.5265,
+   "B6": 0.5333,
+   "B7": null,
+   "B8": null,
+   "B9": null
+  },
+  "group_d": {
+   "B1": null,
+   "B10": null,
+   "B2": null,
+   "B3": 0.3616,
+   "B5": -0.1362,
+   "B6": 0.0904,
+   "B7": null,
+   "B8": null,
+   "B9": null
+  },
+  "outdist_jskl": {
+   "B1": 0.1815,
+   "B10": 0.6857,
+   "B2": 0.6298,
+   "B3": 0.3814,
+   "B5": 0.3888,
+   "B6": 0.4492,
+   "B7": 0.3157,
+   "B8": 0.4707,
+   "B9": 0.7293
+  },
+  "raw_centroid": {
+   "B1": 0.5866,
+   "B10": 0.7293,
+   "B2": 0.6077,
+   "B3": 0.3932,
+   "B5": 0.7503,
+   "B6": 0.5847,
+   "B7": 0.8175,
+   "B8": 0.3806,
+   "B9": 0.7673
+  }
+ },
+ "h3_optimism_gain": {
+  "statistic": "per_family_oracle_gain_minus_global_champion",
+  "eligible_families": [
+   "B1",
+   "B2",
+   "B3",
+   "B5",
+   "B6",
+   "B8"
+  ],
+  "excluded_descriptive_only_families": [
+   "B10",
+   "B7",
+   "B9"
+  ],
+  "oracle_family_set": [
+   "B1",
+   "B2",
+   "B3",
+   "B5",
+   "B6",
+   "B8"
+  ],
+  "n_eligible_cells": 102,
+  "permutation": {
+   "observed": 3.8348637863803883,
+   "p_value": 0.10738926107389261,
+   "null_p95": 3.9689149512532613,
+   "n_perm_valid": 10000
+  },
+  "verdict": "optimism_inside_null_band",
+  "invariant_checked": "oracle_families == global_eval_families == permuted_eval_families == eligible_families AND identical cell subset (asserted at runtime)"
+ },
+ "invariants": {
+  "lfo_coverage": "all 9 dev families folded for H1/H2 (asserted in _lfo_nested_bootstrap)",
+  "h3_eligible_set": "oracle==global==permuted==eligible_families (asserted in score_metric_race)"
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6642e825e3f25993e7377cab59d074b43b50098b",
+  "timestamp": "2026-06-17T12:47:45.338260+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}
