@@ -146,12 +146,21 @@ anti-pattern audit:
 #        (`check_body_params_subset_of_doc`) — NO-OP PASS when the doc
 #        is absent (pre-merge it lives only on the issue worktree
 #        branch); needs `--methodology-doc <path>`.
-uv run python scripts/verify_task_body.py --issue <N> \
+# Resolve the canonical MAIN checkout root so BOTH mechanical scripts run
+# from main, never the issue worktree's copy. From a worktree cwd the bare
+# relative `scripts/...` path resolves against the worktree, whose branch
+# may lag main and carry a SPEC-STALE verifier that false-FAILs a valid v3
+# body (e.g. a pre-v3 copy flagging phantom `## Human TL;DR` / `## TL;DR`).
+# NEVER `git rev-parse --show-toplevel` — from a worktree that resolves to
+# the WORKTREE root, the stale fork. (#537 near-miss.)
+TASK_DIR="$(uv run python scripts/task.py find <N>)"   # absolute, canonical main (task.py branch-guards to main from any cwd)
+REPO_ROOT="${TASK_DIR%/tasks/*}"                        # canonical MAIN checkout root — worktree-proof
+uv run python "$REPO_ROOT/scripts/verify_task_body.py" --issue <N> \
     [--methodology-doc <worktree doc path, when the orchestrator passed it>]
 
 # Anti-pattern audit: pre-reg, H_a, REJECTED, Δ-Npp, math notation,
 # project-internal condition labels, etc.
-uv run python scripts/audit_clean_results_body_discipline.py \
+uv run python "$REPO_ROOT/scripts/audit_clean_results_body_discipline.py" \
     --task <N>
 ```
 
