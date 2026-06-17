@@ -70,18 +70,25 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    ``UNKNOWN_SUBMITTED`` recovery state.
 7. **GCP attempt-count guard** — a per-issue/day attempt counter caps
    auto-chain GCP attempts at ``MAX_GCP_ATTEMPTS_PER_DAY`` (default 5).
-   Primary-lane attempts (GCP-first default) count the SAME as
-   escalation attempts — the guard exists to stop a broken-classifier
-   loop from burning instances, and primary-lane attempts carry the same
-   risk. At the cap: when lanes REMAIN after GCP the router skips GCP
-   (zero credit spent) and continues down the order; when GCP is the
-   LAST lane it raises :class:`GcpAttemptCapExceededError` (the legacy
-   escalation semantics). This is NOT a dollar cap
+   It counts ACTUAL create attempts across the #656 fallback-ladder rungs
+   (a headroom-skip does NOT consume one) and is RE-READ each rung. At the
+   cap the ladder STOPS issuing GCP creates (zero credit spent) and the
+   chain falls through — to the next lane and ultimately the RunPod
+   terminal rung (#656). The cap NEVER raises ``GcpAttemptCapExceededError``
+   from the ladder anymore (the class is kept only for
+   ``classify_terminal_exception`` back-compat). This is NOT a dollar cap
    (``tests/test_no_dollar_budget_caps.py`` enforces "no SystemExit on
-   budget" — see plan §"Real-money safety"); it bounds the *number of
-   provision attempts* so a broken classifier that loops can't burn the
-   GFS credit unattended.
-8. **Markers** — extends the existing ``epm:backend-selected v1`` body
+   budget"); it bounds the *number of provision attempts* so a broken
+   classifier that loops can't burn the GFS credit unattended.
+8. **RunPod terminal rung (#656)** — when the cost-ordered GCP ladder
+   (on-demand A100-80 → A100-40 → spot) AND the free SLURM lanes are all
+   exhausted, the auto chain (and an explicit ``backend: gcp`` pin) falls
+   through to RunPod as the documented terminal fallback
+   (``reason: auto_fallback_runpod``). The deliberate reversal of the
+   historical no-auto-RunPod invariant: RunPod is reached ONLY here, after
+   every cheaper rung, never skipping one. Only if the RunPod launch ITSELF
+   fails does the chain raise :class:`NoComputeAvailableError`.
+9. **Markers** — extends the existing ``epm:backend-selected v1`` body
    (per-lane est-starts raw+clamped, chosen lane, fallback chain,
    canonical reason codes, ids). The orchestrator's marker poster is
    injected; tests pass a list-appender. NEVER hardcodes a
@@ -126,7 +133,9 @@ from explore_persona_space.backends.base import (
 from explore_persona_space.backends.gcp import (
     GcpProvisioningError,
     GcpWorkloadError,
+    MachineSpec,
     QuotaHeadroom,
+    a100_40_fallback_for_intent,
     machine_for_intent,
     quota_metric_for,
     resolve_provisioning_model,
@@ -183,6 +192,16 @@ ROUTE_REASON_WORKLOAD_FAILURE: str = "workload_failure"
 #: — pre-fix the breadcrumb said ``no_compute_available`` while the
 #: typed terminal said ``backend_prepare_failed`` (round-6 Mn1).
 ROUTE_REASON_PREPARE_FAILED: str = "backend_prepare_failed"
+#: The router fell back to RunPod as the TERMINAL rung after every cheaper
+#: GCP rung (on-demand A100-80 → A100-40 → SPOT) AND the free SLURM lanes
+#: were exhausted (#656). DISTINCT from :data:`ROUTE_REASON_OVERRIDE` so the
+#: marker trail tells "user pinned RunPod" apart from "router fell back to
+#: RunPod after exhausting cheaper compute". The ``extra`` carries
+#: ``runpod_fallback_residual_gap`` naming which rungs ran dry. This is the
+#: deliberate reversal of the historical no-auto-RunPod invariant
+#: (user-directed 2026-06-17): RunPod is reached ONLY here, never first,
+#: never skipping a cheaper rung.
+ROUTE_REASON_RUNPOD_FALLBACK: str = "auto_fallback_runpod"
 
 #: Consecutive ``is_started`` probe failures tolerated inside the park
 #: watchdog before it gives up with ``probe_failures_exceeded``.
@@ -217,17 +236,30 @@ DEFAULT_AUTO_LANE_ORDER: tuple[BackendKind, ...] = ("gcp", *DEFAULT_FREE_LANE_OR
 #: ``auto``/``cluster`` literals, and duplicates.
 ENV_AUTO_LANE_ORDER: str = "EPM_AUTO_LANE_ORDER"
 
-#: Env gate (default OFF) for the GCP STANDARD->SPOT auto-fallback. When
-#: set to ``1`` AND the workload carries ``spec.extra["spot_tolerant"]``,
-#: the GCP lane re-checks the PREEMPTIBLE quota pool whenever the STANDARD
-#: pre-check finds insufficient headroom, and launches SPOT instead of
-#: skipping the lane when preemptible quota is ample (#537: a 4-GPU
-#: ft-7b skipped GCP with 3 free on-demand A100 while 16 preemptible sat
-#: idle). OFF by default so the standing on-demand-first behavior is
-#: unchanged; both the env gate AND the per-workload tolerance flag must
-#: be present (a non-recoverable training run is never silently
-#: preempted).
+#: DEPRECATED back-compat shim (#656). Was the env gate for the #537
+#: STANDARD->SPOT auto-fallback. The #656 GCP fallback ladder SUBSUMES that
+#: machinery — a SPOT rung now fires by DEFAULT for any "short" job
+#: (:func:`_is_short_job`), so the env gate no longer gates anything. The
+#: constant is kept defined (and exported) so a stale importer does not
+#: break; setting it has NO effect. ``spec.extra["spot_tolerant"]`` survives
+#: as a FORCE-spot override (declare a job preemption-recoverable past the
+#: GPU-hour threshold). Remove this shim once no importer references it.
 ENV_GCP_SPOT_FALLBACK: str = "EPS_GCP_SPOT_FALLBACK"
+
+#: Default GPU-hour threshold below which a job is "short" enough to risk
+#: SPOT preemption (#656). A short eval / LoRA absorbs a preemption restart
+#: cheaply; a long training run would lose hours, so it skips the spot rungs
+#: and falls to the next lane / RunPod instead. Env-overridable via
+#: :data:`ENV_SPOT_MAX_GPU_HOURS` so an operator can tune it without a code
+#: change. Source: task #656 originating prompt (threshold ~2 GPU-h).
+DEFAULT_SPOT_MAX_GPU_HOURS: float = 2.0
+
+#: Env override for :data:`DEFAULT_SPOT_MAX_GPU_HOURS` (a float; unparseable
+#: → the default, logged loud). The short-job gate is threshold-sensitive:
+#: a future debug-er tuning spot eligibility tunes THIS, and the resolved
+#: gpu-h estimate + threshold ride the per-rung ``epm:backend-selected``
+#: attempt detail for observability.
+ENV_SPOT_MAX_GPU_HOURS: str = "EPS_GCP_SPOT_MAX_GPU_HOURS"
 
 #: Every value the ROUTER accepts for ``spec.backend``. ``route()``
 #: rejects anything outside this set at entry (closes the empty-string
@@ -1155,11 +1187,13 @@ def route(
 
     Required injections:
 
-    * ``runpod_backend`` — used ONLY when ``spec.backend == "runpod"``
-      (the explicit override). The router NEVER calls ``runpod_backend.launch``
-      on an auto path; the negative test
-      ``test_no_auto_runpod_path_under_any_failure`` proves it by
-      injecting a raising RunPod backend.
+    * ``runpod_backend`` — the explicit ``backend: runpod`` override
+      target AND (since #656) the auto chain's TERMINAL fallback rung,
+      reached ONLY after the cost-ordered GCP ladder + the free SLURM
+      lanes are all exhausted (``reason: auto_fallback_runpod``). The
+      ordering invariant — RunPod never first, never skipping a cheaper
+      rung — is pinned by
+      ``test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted``.
 
     Optional injections:
 
@@ -1170,9 +1204,9 @@ def route(
       env override, else the GCP-first standing default). A missing
       kind is skipped (e.g. ``mila`` absent → router skips Mila even
       when the socket is alive).
-    * ``gcp_backend`` — the auto-fallback target. When ``None`` and the
-      auto chain reaches GCP, the router raises
-      :class:`NoComputeAvailableError`.
+    * ``gcp_backend`` — the GCP fallback-ladder target. When ``None`` and
+      the auto chain reaches GCP, the GCP lane is skipped and the chain
+      falls through (to SLURM / the RunPod terminal rung).
     * ``lease_store`` — defaults to :class:`LeaseStore` at
       ``~/.eps-routing/``. Tests pass a store keyed on ``tmp_path``.
     * ``mila_socket_alive`` — predicate; when ``False``, Mila is
@@ -1217,11 +1251,15 @@ def route(
 
     Raises:
 
-    * :class:`NoComputeAvailableError` — terminal no-compute outcome.
+    * :class:`NoComputeAvailableError` — terminal no-compute outcome,
+      now reached only when the RunPod terminal rung ITSELF fails (#656:
+      the GCP ladder + cap no longer raise; they fall through to RunPod).
     * :class:`WorkloadSurfacedError` — a backend reported a
-      :class:`GcpWorkloadError`; the router does NOT auto-fallback.
-    * :class:`GcpAttemptCapExceededError` — per-day GCP attempt-count
-      guard tripped.
+      :class:`GcpWorkloadError`; the router does NOT auto-fallback
+      (broken workload code must not cascade across rungs/lanes).
+    * :class:`ManualAttentionRequiredError` — a free-lane cancel could
+      not confirm the job is dead (raised BEFORE the RunPod rung — an
+      unconfirmed-dead orphan must not trigger a second submit).
     """
     cfg = config or RouterConfig()
     store = lease_store or LeaseStore()
@@ -1291,23 +1329,18 @@ def route(
     if spec.backend == "gcp":
         if gcp_backend is None:
             raise RouteError("backend override 'gcp' requested but no gcp_backend wired")
-        return _override_free_or_gcp(
+        return _override_gcp_with_ladder(
             spec=spec,
-            backend=gcp_backend,
-            kind="gcp",
+            gcp_backend=gcp_backend,
+            runpod_backend=runpod_backend,
             store=store,
             attempts=attempts,
             started_at=started_at,
             cfg=cfg,
-            is_started=is_started,
-            is_live_after_cancel=is_live_after_cancel,
-            is_running_after_cancel=is_running_after_cancel,
             reconnect_fn=reconnect_fn,
             now_fn=now_fn,
-            sleep_fn=sleep_fn,
             marker_poster=marker_poster,
             on_launched=on_launched,
-            started_evidence_probe=started_evidence_probe,
         )
 
     # ----------------------------- auto chain ---------------------------
@@ -1335,6 +1368,7 @@ def route(
         spec=spec,
         free_backends=free_backends or {},
         gcp_backend=gcp_backend,
+        runpod_backend=runpod_backend,
         store=store,
         attempts=attempts,
         started_at=started_at,
@@ -1584,60 +1618,132 @@ def _gcp_quota_headroom_or_none(backend: ComputeBackend, spec: RunSpec) -> Quota
         return None
 
 
-def _spot_fallback_enabled() -> bool:
-    """True when the env gate :data:`ENV_GCP_SPOT_FALLBACK` is set to ``1``."""
-    return os.environ.get(ENV_GCP_SPOT_FALLBACK, "").strip() == "1"
+def _spot_max_gpu_hours() -> float:
+    """The GPU-hour threshold below which a job is "short" enough for SPOT.
 
-
-def _maybe_spot_fallback_spec(
-    *, backend: ComputeBackend, spec: RunSpec
-) -> tuple[RunSpec, QuotaHeadroom] | None:
-    """Decide whether to retry the GCP lane as SPOT when STANDARD has no headroom.
-
-    Called ONLY after the STANDARD pre-check returned a POSITIVE
-    insufficient-headroom reading (#537: a 4-GPU ``ft-7b`` skipped the GCP
-    lane with 3 free on-demand A100 while 16 preemptible sat idle). The
-    fallback is GATED on BOTH the env flag :data:`ENV_GCP_SPOT_FALLBACK`
-    AND the per-workload ``spec.extra["spot_tolerant"]`` marker — a
-    non-recoverable training run must never be silently preempted, so a
-    missing OR false tolerance flag declines the fallback (returns
-    ``None``).
-
-    When both gates pass, re-runs the headroom probe against a
-    SPOT-overridden spec (which resolves the PREEMPTIBLE quota metric via
-    :func:`quota_metric_for`). Returns ``(spot_spec, headroom)`` when the
-    preemptible pool has GENUINELY sufficient headroom, else ``None`` (the
-    caller skips the lane exactly as before). Fail-SAFE: a re-probe that
-    returns ``None`` ("no opinion") or an insufficient reading declines —
-    only a successfully parsed sufficient reading switches the launch to
-    SPOT, mirroring the conservative STANDARD pre-check contract.
-
-    The returned spec carries ``provisioning_model: SPOT`` (so every
-    downstream renderer + :func:`_gcp_marker_extras` reflects SPOT + the
-    preemptible pool) and an additive ``spot_fallback: True`` extra key
-    the launch path surfaces in the ``epm:backend-selected`` marker.
+    Reads :data:`ENV_SPOT_MAX_GPU_HOURS`; falls back to
+    :data:`DEFAULT_SPOT_MAX_GPU_HOURS` when unset or unparseable (logged
+    LOUD on a bad value rather than silently mis-gating).
     """
-    if not _spot_fallback_enabled():
+    raw = os.environ.get(ENV_SPOT_MAX_GPU_HOURS, "").strip()
+    if not raw:
+        return DEFAULT_SPOT_MAX_GPU_HOURS
+    try:
+        return float(raw)
+    except ValueError:
+        logger.warning(
+            "%s=%r is unparseable as a float; using the default %g GPU-hours.",
+            ENV_SPOT_MAX_GPU_HOURS,
+            raw,
+            DEFAULT_SPOT_MAX_GPU_HOURS,
+        )
+        return DEFAULT_SPOT_MAX_GPU_HOURS
+
+
+def _estimated_gpu_hours(spec: RunSpec, machine: MachineSpec) -> float | None:
+    """Estimate GPU-hours = wall-budget x gpu_count; ``None`` when unknown.
+
+    Reads ``spec.extra["estimated_gpu_hours"]`` first (an explicit override
+    the plan / orchestrator may thread), else
+    ``spec.time_budget_hours * gpu_count``. Returns ``None`` when neither is
+    available — the CONSERVATIVE signal: an unknown-length job is NOT short
+    (see :func:`_is_short_job`), so it never reaches a SPOT rung and is
+    never silently preempted.
+    """
+    explicit = (spec.extra or {}).get("estimated_gpu_hours")
+    if explicit is not None:
+        try:
+            return float(explicit)
+        except (TypeError, ValueError):
+            logger.warning(
+                "route: spec.extra['estimated_gpu_hours']=%r is unparseable; "
+                "treating the job as unknown-length (NOT short).",
+                explicit,
+            )
+            return None
+    if spec.time_budget_hours is None:
         return None
-    # Already SPOT/FLEX_START — the STANDARD-insufficient branch is only
-    # reachable for a STANDARD (default) request, but guard anyway so a
-    # future caller can't loop the fallback onto an already-preemptible
-    # request.
-    if resolve_provisioning_model(spec) != "STANDARD":
-        return None
-    if not bool((spec.extra or {}).get("spot_tolerant")):
-        return None
-    spot_spec = replace(spec, extra={**(spec.extra or {}), "provisioning_model": "SPOT"})
-    headroom = _gcp_quota_headroom_or_none(backend, spot_spec)
-    # Fail-SAFE: only a parsed, SUFFICIENT preemptible reading switches the
-    # launch. ``None`` (no opinion / probe failed open) declines — the
-    # STANDARD pre-check already POSITIVELY said on-demand is exhausted, so
-    # a SPOT fallback needs an affirmative preemptible-headroom signal, not
-    # the absence of one.
-    if headroom is None or not headroom.sufficient:
-        return None
-    spot_spec = replace(spot_spec, extra={**spot_spec.extra, "spot_fallback": True})
-    return spot_spec, headroom
+    return float(spec.time_budget_hours) * max(1, machine.gpu_count)
+
+
+def _is_short_job(spec: RunSpec, machine: MachineSpec) -> bool:
+    """True when the job is short enough to risk SPOT preemption.
+
+    A caller may FORCE a job "short enough" past the threshold by setting
+    ``spec.extra["spot_tolerant"]`` — the explicit opt-into-preemption
+    override that survives the #537→#656 ladder migration (a workload that
+    declares itself preemption-recoverable). Otherwise the job is short iff
+    its estimated GPU-hours (:func:`_estimated_gpu_hours`) are known AND at
+    or below :func:`_spot_max_gpu_hours`. UNKNOWN length ⇒ NOT short
+    (conservative — see :func:`_estimated_gpu_hours`).
+    """
+    if bool((spec.extra or {}).get("spot_tolerant")):
+        return True
+    gh = _estimated_gpu_hours(spec, machine)
+    return gh is not None and gh <= _spot_max_gpu_hours()
+
+
+def _with_machine(spec: RunSpec, machine: MachineSpec, *, provisioning: str) -> RunSpec:
+    """Return ``spec`` with the GCP machine override + provisioning model set.
+
+    Threads the rung's :class:`MachineSpec` via
+    ``spec.extra["machine_spec_override"]`` (a JSON-safe dict so it
+    round-trips through the handle sidecar) so EVERY downstream chokepoint
+    — :func:`gcp.machine_for_intent`, :func:`gcp.quota_metric_for`, the
+    zone filter, :func:`gcp.render_create_argv` — resolves the rung's TRUE
+    machine without mutating the frozen :class:`RunSpec`'s semantic
+    ``intent``. ``machine_kind_tag`` rides alongside for marker readability.
+    """
+    return replace(
+        spec,
+        extra={
+            **(spec.extra or {}),
+            "machine_spec_override": {
+                "machine_type": machine.machine_type,
+                "gpu_count": machine.gpu_count,
+                "gpu_kind": machine.gpu_kind,
+            },
+            "machine_kind_tag": machine.gpu_kind,
+            "provisioning_model": provisioning,
+        },
+    )
+
+
+def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
+    """Ordered ``(spec, rung_label)`` GCP provisioning attempts, cheapest first.
+
+    The cost-ordered fallback ladder (#656) BOTH the auto-GCP path
+    (:func:`_attempt_gcp_lane`) and the explicit ``backend: gcp`` path
+    (:func:`_override_free_or_gcp`) walk, so the two get IDENTICAL fallback
+    behavior (acceptance criterion 3 / the #654 fix):
+
+    * Rung 1: on-demand A100-80 — the spec as-is (today's behavior).
+      Label ``ondemand_a100_80``.
+    * Rung 2: on-demand A100-40 (``a2-highgpu-1g``) — only when the intent
+      fits in 40 GB (:func:`gcp.a100_40_fallback_for_intent`).
+      Label ``ondemand_a100_40``.
+    * Rung 3: SPOT A100-80 — only when the job is "short"
+      (:func:`_is_short_job`). Label ``spot_a100_80``.
+    * Rung 4: SPOT A100-40 — only when the job is short AND fits 40 GB.
+      Label ``spot_a100_40``.
+
+    Rungs that do not apply to this intent / length are simply absent, so a
+    long ``ft-7b`` (no A100-40 fallback, not short) yields ONLY rung 1 and
+    the ladder falls straight through to the next lane / RunPod, skipping
+    every spot rung (acceptance criterion 2). Each rung is a
+    :func:`dataclasses.replace` carrying the right machine override +
+    provisioning model so the create resolves the rung's true machine.
+    """
+    base = machine_for_intent(spec)  # resolves the as-is intent (rung 1)
+    rungs: list[tuple[RunSpec, str]] = [(spec, "ondemand_a100_80")]
+    a40 = a100_40_fallback_for_intent(spec)
+    if a40 is not None:
+        rungs.append((_with_machine(spec, a40, provisioning="STANDARD"), "ondemand_a100_40"))
+    if _is_short_job(spec, base):
+        rungs.append((_with_machine(spec, base, provisioning="SPOT"), "spot_a100_80"))
+        if a40 is not None:
+            rungs.append((_with_machine(spec, a40, provisioning="SPOT"), "spot_a100_40"))
+    return rungs
 
 
 def _skip_gcp_lane_no_headroom(
@@ -1652,13 +1758,14 @@ def _skip_gcp_lane_no_headroom(
 ) -> None:
     """Skip the GCP lane on a POSITIVE insufficient-headroom reading.
 
-    The original #608 behavior, extracted so the SPOT auto-fallback (#537)
-    decision keeps :func:`_attempt_gcp_lane` under the complexity cap.
-    Records a ``quota_headroom_insufficient`` attempt WITHOUT bumping the
-    per-day attempt counter (the create cannot succeed; it should not
-    consume a daily attempt). Non-terminal position: returns ``None`` to
-    continue down the lane order. Terminal position: posts the no-compute
-    marker and raises :class:`NoComputeAvailableError`.
+    The original #608 behavior, extracted as a helper. Records a
+    ``quota_headroom_insufficient`` attempt WITHOUT bumping the per-day
+    attempt counter (the create cannot succeed; it should not consume a
+    daily attempt). Non-terminal position: returns ``None`` to continue
+    down the lane order. Terminal position: posts the no-compute marker and
+    raises :class:`NoComputeAvailableError`. (#656: the per-rung skip inside
+    the ladder is the analogous "skip this rung, advance" — this helper
+    keeps the lane-level fallback for the LAST rung's terminal raise.)
     """
     detail = (
         f"regional accelerator quota {headroom.metric} in {headroom.region} has "
@@ -1696,6 +1803,106 @@ def _skip_gcp_lane_no_headroom(
         f"every free lane park-failed AND the GCP regional quota has no headroom: {detail}",
         attempts=[_attempt_to_dict(a) for a in attempts],
     )
+
+
+def _runpod_terminal_rung(
+    *,
+    spec: RunSpec,
+    runpod_backend: ComputeBackend,
+    store: LeaseStore,
+    attempts: list[RouteAttempt],
+    started_at: float,
+    now_fn: Callable[[], float],
+    marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None,
+    residual_gap: str,
+) -> RouteResult:
+    """Final fallback rung: launch on RunPod after every cheaper rung failed.
+
+    The deliberate reversal of the historical no-auto-RunPod invariant
+    (user-directed 2026-06-17, task #656). RunPod is reached ONLY here —
+    after the cost-ordered GCP ladder (on-demand A100-80 → A100-40 → SPOT)
+    AND, on the auto chain, the free SLURM lanes have all failed. The
+    launch is the same shape as the explicit ``backend: runpod`` override
+    (:func:`_override_runpod`): per-issue flock across launch + lease-write,
+    the ``on_launched`` sidecar hook BEFORE any marker. The residual gap
+    (which rungs ran dry) is logged LOUD and rides the marker ``extra`` so
+    a future debug-er sees exactly what was exhausted before money was
+    spent.
+
+    Fail-safe: if the RunPod launch ITSELF fails (no compute anywhere),
+    re-raise as :class:`NoComputeAvailableError` with the full attempt
+    trail — the terminal "truly no compute anywhere" outcome, preserving a
+    typed terminal for the orchestrator's failure classifier.
+    """
+    logger.warning(
+        "route: GCP ladder (and free lanes, if any) exhausted for issue %d; "
+        "falling back to RunPod (residual gap: %s).",
+        spec.issue,
+        residual_gap,
+    )
+    runpod_spec = replace(
+        spec,
+        backend="runpod",
+        extra={**(spec.extra or {}), "runpod_fallback_residual_gap": residual_gap},
+    )
+    with store.transaction(spec.issue) as (lease, write):
+        try:
+            handle = _prepare_and_launch(runpod_backend, runpod_spec, kind="runpod")
+        except Exception as exc:
+            # RunPod is the LAST resort — ANY failure here (prepare /
+            # provisioning / transport) is genuinely "no compute anywhere".
+            # Record it + surface the typed terminal so the orchestrator's
+            # failure classifier still gets a NoComputeAvailableError.
+            attempts.append(
+                RouteAttempt(
+                    kind="runpod",
+                    cluster=None,
+                    est_start_seconds_raw=0.0,
+                    est_start_seconds_clamped=0.0,
+                    outcome="runpod_fallback_failed",
+                    detail=f"runpod terminal fallback FAILED ({type(exc).__name__}: {exc})",
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind="runpod",
+                attempts=attempts,
+            )
+            raise NoComputeAvailableError(
+                "every GCP rung + free lane failed AND the RunPod terminal "
+                f"fallback also failed ({type(exc).__name__}: {exc})",
+                attempts=[_attempt_to_dict(a) for a in attempts],
+            ) from exc
+        _invoke_on_launched(on_launched, handle)
+        write(_lease_after_submit(lease, runpod_spec, "runpod", None, handle))
+    attempts.append(
+        RouteAttempt(
+            kind="runpod",
+            cluster=None,
+            est_start_seconds_raw=0.0,
+            est_start_seconds_clamped=0.0,
+            outcome="launched",
+            detail=f"runpod terminal fallback (residual gap: {residual_gap})",
+            elapsed_seconds=now_fn() - started_at,
+        )
+    )
+    result = RouteResult(
+        backend=runpod_backend,
+        handle=handle,
+        requested_kind=spec.backend,
+        chosen_kind="runpod",
+        reason=ROUTE_REASON_RUNPOD_FALLBACK,
+        cluster=None,
+        attempts=attempts,
+        elapsed_seconds=now_fn() - started_at,
+        extra={"runpod_fallback_residual_gap": residual_gap},
+    )
+    _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+    return result
 
 
 def _override_free_or_gcp(
@@ -2085,6 +2292,134 @@ def _override_free_or_gcp(
         )
 
 
+def _override_gcp_with_ladder(
+    *,
+    spec: RunSpec,
+    gcp_backend: ComputeBackend,
+    runpod_backend: ComputeBackend,
+    store: LeaseStore,
+    attempts: list[RouteAttempt],
+    started_at: float,
+    cfg: RouterConfig,
+    reconnect_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None),
+    now_fn: Callable[[], float],
+    marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None,
+) -> RouteResult:
+    """Explicit ``backend: gcp`` override — reconnect, then walk the SAME ladder.
+
+    This is the #654 fix: pre-#656 an explicit-gcp ``GcpProvisioningError``
+    RAISED with no fallback (the hard-block #654 reported). Now the explicit
+    pin gets the IDENTICAL cost-ordered ladder as the auto lane
+    (:func:`_attempt_gcp_lane`, acceptance criterion 3), and on full ladder
+    exhaustion falls through to the RunPod terminal rung
+    (:func:`_runpod_terminal_rung`) — never a hard block.
+
+    Reconnect-first (idempotent re-entry) is preserved: a live
+    ``eps-issue-<N>`` instance is reused rather than re-provisioned. A
+    reconnect PROBE failure (transport down, NOT "no live job") refuses a
+    blind fresh create and surfaces a typed :class:`NoComputeAvailableError`
+    — a live instance may exist and a second create would double-spend.
+    """
+    # Reconnect-first (read-only probe; no flock needed — the ladder's
+    # per-rung transaction re-checks under the flock).
+    try:
+        handle = _try_reconnect(
+            backend=gcp_backend, kind="gcp", spec=spec, reconnect_fn=reconnect_fn
+        )
+    except BackendProbeError as exc:
+        attempts.append(
+            RouteAttempt(
+                kind="gcp",
+                cluster=None,
+                est_start_seconds_raw=None,
+                est_start_seconds_clamped=None,
+                outcome="reconnect_probe_failed",
+                detail=f"{type(exc).__name__}: {exc}",
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_NO_COMPUTE,
+            chosen_kind="gcp",
+            attempts=attempts,
+        )
+        raise NoComputeAvailableError(
+            "explicit override 'gcp': reconnect probe failed — cannot verify whether a "
+            f"live instance exists; refusing to provision blind ({exc})",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        ) from exc
+    if handle is not None:
+        _invoke_on_launched(on_launched, handle)
+        attempts.append(
+            RouteAttempt(
+                kind="gcp",
+                cluster=None,
+                est_start_seconds_raw=None,
+                est_start_seconds_clamped=None,
+                outcome="reconnected",
+                detail="found existing live gcp instance",
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        result = RouteResult(
+            backend=gcp_backend,
+            handle=handle,
+            requested_kind="gcp",
+            chosen_kind="gcp",
+            reason=ROUTE_REASON_RECONNECT,
+            cluster=None,
+            attempts=attempts,
+            elapsed_seconds=now_fn() - started_at,
+            extra=_gcp_marker_extras(spec),
+        )
+        _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+        return result
+
+    # No live instance → walk the GCP ladder. ``terminal=True`` only labels
+    # the launched attempt detail; the ladder no longer raises on
+    # exhaustion (it returns None) — the RunPod terminal rung is the tail.
+    ladder_result = _attempt_gcp_lane(
+        spec=spec,
+        gcp_backend=gcp_backend,
+        store=store,
+        attempts=attempts,
+        started_at=started_at,
+        cfg=cfg,
+        now_fn=now_fn,
+        marker_poster=marker_poster,
+        on_launched=on_launched,
+        terminal=True,
+        # Explicit pin → label the launched result as an OVERRIDE (not a
+        # router auto-fallback) so the marker trail distinguishes the two.
+        reason=ROUTE_REASON_OVERRIDE,
+        requested_kind="gcp",
+        # Explicit user ask attempts regardless of the auto-escalation cap
+        # (the pre-#656 explicit-gcp path never touched the per-day counter).
+        count_attempt_cap=False,
+    )
+    if ladder_result is not None:
+        return ladder_result
+
+    # Ladder exhausted → RunPod terminal rung (the #654 hard-block fix).
+    return _runpod_terminal_rung(
+        spec=spec,
+        runpod_backend=runpod_backend,
+        store=store,
+        attempts=attempts,
+        started_at=started_at,
+        now_fn=now_fn,
+        marker_poster=marker_poster,
+        on_launched=on_launched,
+        residual_gap=(
+            "explicit gcp pin: on-demand A100-80/A100-40 + spot rungs exhausted "
+            "(no free SLURM lane on an explicit gcp pin)"
+        ),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Auto routing path
 # ---------------------------------------------------------------------------
@@ -2095,6 +2430,7 @@ def _auto_route(
     spec: RunSpec,
     free_backends: dict[BackendKind, ComputeBackend],
     gcp_backend: ComputeBackend | None,
+    runpod_backend: ComputeBackend,
     store: LeaseStore,
     attempts: list[RouteAttempt],
     started_at: float,
@@ -2116,11 +2452,15 @@ def _auto_route(
     """No-``backend:`` auto route: walk ``lane_order`` (GCP-first default).
 
     GCP is a first-class auto lane, not only an escalation target: at
-    its position in the order it is a single provision attempt (no
-    queue estimate, no park). Contiguous SLURM lanes keep the existing
-    est-start ranking + park + cancel chain among themselves. The
-    terminal "everything failed" path stays
-    :class:`NoComputeAvailableError`.
+    its position in the order it walks the cost-ordered fallback ladder
+    (:func:`_attempt_gcp_lane` → on-demand A100-80 → A100-40 → SPOT).
+    Contiguous SLURM lanes keep the existing est-start ranking + park +
+    cancel chain among themselves. When EVERY lane is exhausted, the chain
+    falls to the RunPod terminal rung (:func:`_runpod_terminal_rung`) — the
+    deliberate reversal of the no-auto-RunPod invariant (#656): RunPod is
+    reached ONLY here, after every cheaper GCP rung + free SLURM lane has
+    failed. Only if the RunPod launch ITSELF fails does the chain raise
+    :class:`NoComputeAvailableError` ("truly no compute anywhere").
     """
     del clock_fn  # reserved for a future "day boundary at posted-time" override
     # Build the candidate list in lane order (skipping unwired lanes +
@@ -2200,22 +2540,28 @@ def _auto_route(
         if free_result is not None:
             return free_result
 
-    # Terminal: every lane in the resolved order failed or was unwired /
-    # unavailable. Post the breadcrumb the success path always posts,
-    # then raise the typed no-compute terminal.
-    last_kind: BackendKind = lane_order[-1]
-    _post_terminal_failure_marker(
-        spec=spec,
-        marker_poster=marker_poster,
-        reason=ROUTE_REASON_NO_COMPUTE,
-        chosen_kind=last_kind,
-        attempts=attempts,
+    # Terminal: every cheaper auto lane (GCP ladder + free SLURM lanes)
+    # failed or was unwired / unavailable. Fall to the RunPod terminal rung
+    # (#656, the reversed no-auto-RunPod invariant): RunPod is reached ONLY
+    # here, after the cost-ordered GCP ladder AND the free lanes are all
+    # exhausted. The residual gap names the exhausted lanes loudly in the
+    # marker. Only if the RunPod launch ITSELF fails does this raise the
+    # typed NoComputeAvailableError ("truly no compute anywhere").
+    wired = [kind for _b, kind in candidates]
+    residual_gap = (
+        f"auto chain exhausted (order: {' -> '.join(lane_order)}; wired: "
+        f"{wired or 'none'}) — GCP ladder + free SLURM lanes all failed"
     )
-    raise NoComputeAvailableError(
-        "every auto lane failed or was unavailable "
-        f"(order: {' -> '.join(lane_order)}; wired: "
-        f"{[kind for _b, kind in candidates] or 'none'})",
-        attempts=[_attempt_to_dict(a) for a in attempts],
+    return _runpod_terminal_rung(
+        spec=spec,
+        runpod_backend=runpod_backend,
+        store=store,
+        attempts=attempts,
+        started_at=started_at,
+        now_fn=now_fn,
+        marker_poster=marker_poster,
+        on_launched=on_launched,
+        residual_gap=residual_gap,
     )
 
 
@@ -2726,122 +3072,162 @@ def _attempt_gcp_lane(
     marker_poster: Callable[..., None] | None,
     on_launched: Callable[[RunHandle], None] | None = None,
     terminal: bool = True,
+    reason: str = ROUTE_REASON_AUTO_FALLBACK_GCP,
+    requested_kind: BackendKind | None = None,
+    count_attempt_cap: bool = True,
 ) -> RouteResult | None:
-    """Attempt the GCP lane at its position in the resolved auto order.
+    """Attempt the GCP lane by WALKING the cost-ordered fallback ladder (#656).
 
-    ``terminal=True`` (GCP is the LAST wired lane — the legacy
-    escalation position) keeps the historical typed-terminal semantics:
-    raises :class:`NoComputeAvailableError` on a provisioning / prepare /
-    state-probe failure and :class:`GcpAttemptCapExceededError` at the
-    per-day attempt cap.
+    ``reason`` / ``requested_kind`` label the launched :class:`RouteResult`:
+    the auto chain uses ``auto_fallback_gcp`` / ``None`` (the default); the
+    explicit ``backend: gcp`` override path passes ``override`` / ``"gcp"`` so
+    the marker trail tells a router-fallback launch apart from a user pin.
 
-    ``terminal=False`` (lanes remain after GCP — e.g. the GCP-first
-    standing default) turns provision-class failures (prepare /
-    provisioning-capacity / state-probe) AND the attempt-cap guard into
-    "continue down the order": the attempt is recorded and ``None`` is
-    returned so the router tries the next lane. ONLY a workload failure
-    (:class:`GcpWorkloadError`) still raises in EVERY position — broken
-    workload code must not cascade across lanes and burn queue time.
+    ``count_attempt_cap`` (default ``True``): the auto chain counts each rung's
+    create against the per-day attempt cap. The explicit ``backend: gcp`` pin
+    passes ``False`` — an explicit user ask attempts regardless of the
+    auto-escalation cap (matching the pre-#656 explicit-gcp behavior, which
+    never touched the counter); it still ladders + falls to the RunPod rung
+    on exhaustion.
 
-    The per-day attempt counter counts primary-lane attempts the same
-    as escalation attempts (the guard bounds the NUMBER of provision
-    attempts so a broken classifier loop can't burn credit; primary-lane
-    attempts carry the same risk). It remains an attempt-COUNT guard,
-    never a dollar cap (``tests/test_no_dollar_budget_caps.py``).
+    The ladder (:func:`_gcp_ladder_specs`) is, cheapest-effective first:
+    on-demand A100-80 → on-demand A100-40 (fits-40GB intents) → SPOT
+    A100-80 (short jobs) → SPOT A100-40 (short + fits-40GB). Each rung runs
+    the SAME pre-create headroom check + launch that the single GCP attempt
+    used to run; a rung that fails on a POSITIVE insufficient-headroom
+    reading OR a :class:`GcpProvisioningError` capacity/zone miss records
+    its attempt and ADVANCES to the next rung. A :class:`GcpWorkloadError`
+    on ANY rung raises immediately (broken workload code must NOT cascade).
 
-    Lock discipline: bump-counter / cap-check / threaded-attempt-id /
-    launch / persist all live inside ONE :meth:`LeaseStore.transaction`
-    so a concurrent invocation cannot read a pre-bump counter, decide
-    "we're under cap", and double-spend credit.
+    ``terminal`` no longer changes the failure DISPOSITION — in BOTH
+    positions an exhausted ladder returns ``None`` so the caller falls
+    through (auto chain → next SLURM lane, then the RunPod terminal rung;
+    explicit ``backend: gcp`` → the RunPod terminal rung directly). The
+    historical ``terminal``-only ``NoComputeAvailableError`` /
+    ``GcpAttemptCapExceededError`` raises are GONE: the RunPod terminal
+    rung is the new tail of the chain (the reversed no-auto-RunPod
+    invariant). ``terminal`` is retained only to label the launched
+    attempt detail (escalation vs primary-lane).
+
+    Per-day attempt cap: the cap is RE-READ at the top of each rung
+    iteration and counts ACTUAL create attempts across all rungs (a
+    headroom-skip does NOT consume one, matching today). When the cap is
+    hit mid-ladder, the ladder STOPS issuing creates and returns ``None``
+    (fall through) — it never raises and never bricks the route. Stays an
+    attempt-COUNT guard, never a dollar cap
+    (``tests/test_no_dollar_budget_caps.py``).
+
+    Lock discipline preserved per rung: each rung's cap-check / bump /
+    threaded-attempt-id / launch / persist live inside ONE
+    :meth:`LeaseStore.transaction`.
     """
     if gcp_backend is None:
         # Only reachable from the legacy terminal call shape — the auto
         # chain filters an unwired GCP out of the candidates, so this is
-        # belt-and-suspenders for direct callers.
-        if not terminal:
-            return None
-        _post_terminal_failure_marker(
-            spec=spec,
-            marker_poster=marker_poster,
-            reason=ROUTE_REASON_NO_COMPUTE,
-            chosen_kind="gcp",
-            attempts=attempts,
-        )
-        raise NoComputeAvailableError(
-            "every free lane park-failed AND no gcp_backend wired for auto-fallback",
-            attempts=[_attempt_to_dict(a) for a in attempts],
-        )
+        # belt-and-suspenders for direct callers. Return None so the caller
+        # falls through (to SLURM / the RunPod terminal rung).
+        return None
 
-    # Pre-create regional-quota headroom check (#608): four guaranteed-fail
-    # creates burned the per-day attempt cap against an exhausted regional
-    # accelerator quota (NVIDIA_A100_80GB_GPUS at 8/8 with 4 needed). When
-    # the probe POSITIVELY reports insufficient headroom, skip the lane
+    rungs = _gcp_ladder_specs(spec)
+    for rung_spec, rung_label in rungs:
+        outcome = _attempt_one_gcp_rung(
+            spec=rung_spec,
+            rung_label=rung_label,
+            gcp_backend=gcp_backend,
+            store=store,
+            attempts=attempts,
+            started_at=started_at,
+            cfg=cfg,
+            now_fn=now_fn,
+            marker_poster=marker_poster,
+            on_launched=on_launched,
+            terminal=terminal,
+            reason=reason,
+            requested_kind=requested_kind,
+            count_attempt_cap=count_attempt_cap,
+        )
+        if isinstance(outcome, RouteResult):
+            return outcome  # this rung launched
+        if outcome == "cap_hit":
+            # Per-day attempt cap reached mid-ladder → stop issuing creates,
+            # fall through (the caller routes to the next lane / RunPod).
+            return None
+        # outcome == "advance" → try the next rung.
+    # Every applicable rung failed (capacity / headroom). Fall through so
+    # the caller routes to the next SLURM lane or the RunPod terminal rung.
+    return None
+
+
+def _attempt_one_gcp_rung(
+    *,
+    spec: RunSpec,
+    rung_label: str,
+    gcp_backend: ComputeBackend,
+    store: LeaseStore,
+    attempts: list[RouteAttempt],
+    started_at: float,
+    cfg: RouterConfig,
+    now_fn: Callable[[], float],
+    marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None,
+    terminal: bool,
+    reason: str = ROUTE_REASON_AUTO_FALLBACK_GCP,
+    requested_kind: BackendKind | None = None,
+    count_attempt_cap: bool = True,
+) -> RouteResult | str:
+    """Attempt ONE GCP ladder rung. Returns a launched :class:`RouteResult`,
+    or ``"advance"`` (this rung failed/skipped — try the next rung), or
+    ``"cap_hit"`` (per-day attempt cap reached — stop issuing creates).
+
+    ``count_attempt_cap=False`` (the explicit ``backend: gcp`` pin) skips
+    BOTH the cap-check and the per-day counter bump — an explicit user ask
+    attempts regardless of the auto-escalation cap (pre-#656 explicit-gcp
+    behavior never touched the counter).
+
+    The rung-spec already carries its machine override + provisioning model
+    (via :func:`_with_machine`), so the headroom pre-check, the create, the
+    quota metric, and the zone filter all resolve THIS rung's true machine.
+
+    A :class:`GcpWorkloadError` on the create RAISES :class:`WorkloadSurfacedError`
+    immediately (broken workload code must not cascade across rungs/lanes).
+    """
+    # Pre-create regional-quota headroom check (#608) for THIS rung. When
+    # the probe POSITIVELY reports insufficient headroom, skip the rung
     # loudly WITHOUT bumping the attempt counter — the cap bounds provision
     # attempts, and a create that cannot succeed should not consume one.
-    # FAIL-OPEN: a probe failure, a backend without the probe (test
-    # doubles), or a live reconnectable instance (no new quota needed)
-    # returns None → proceed exactly as before. The explicit ``backend:
-    # gcp`` override lane deliberately does NOT pre-check: it never bumps
-    # the cap, and an explicit ask should attempt (the create error now
-    # carries its stderr tail either way).
+    # FAIL-OPEN: a probe failure / a backend without the probe / a live
+    # reconnectable instance returns None → proceed to the create.
     headroom = _gcp_quota_headroom_or_none(gcp_backend, spec)
     if headroom is not None and not headroom.sufficient:
-        # On-demand (STANDARD) quota is exhausted. Before skipping the
-        # lane, try the SPOT auto-fallback (#537): gated on
-        # EPS_GCP_SPOT_FALLBACK=1 AND spec.extra["spot_tolerant"], it
-        # re-checks the PREEMPTIBLE pool and — only when that pool has
-        # GENUINELY sufficient headroom — switches this launch to SPOT
-        # instead of skipping. Returns None (decline) when either gate is
-        # off or preemptible headroom is also short, in which case the
-        # original skip-the-lane behavior runs unchanged.
-        fallback = _maybe_spot_fallback_spec(backend=gcp_backend, spec=spec)
-        if fallback is None:
-            # No SPOT path → skip the lane (continue / terminal-raise),
-            # exactly as before the fallback existed.
-            return _skip_gcp_lane_no_headroom(
-                spec=spec,
-                headroom=headroom,
-                attempts=attempts,
-                started_at=started_at,
-                now_fn=now_fn,
-                marker_poster=marker_poster,
-                terminal=terminal,
-            )
-        spec, spot_headroom = fallback
         attempts.append(
             RouteAttempt(
                 kind="gcp",
                 cluster=None,
                 est_start_seconds_raw=0.0,
                 est_start_seconds_clamped=0.0,
-                outcome="spot_fallback",
+                outcome="quota_headroom_insufficient",
                 detail=(
-                    f"on-demand quota {headroom.metric} exhausted "
-                    f"({headroom.usage:g}/{headroom.limit:g}, headroom "
-                    f"{headroom.available:g} < needed {headroom.needed}); "
-                    f"falling back to SPOT — preemptible {spot_headroom.metric} "
-                    f"headroom {spot_headroom.available:g} >= needed {spot_headroom.needed}"
+                    f"rung {rung_label}: regional accelerator quota {headroom.metric} in "
+                    f"{headroom.region} has usage {headroom.usage:g}/{headroom.limit:g} — "
+                    f"headroom {headroom.available:g} GPU(s) < needed {headroom.needed}; "
+                    "skipping this rung without burning a daily attempt"
                 ),
                 elapsed_seconds=now_fn() - started_at,
             )
         )
         logger.warning(
-            "route: GCP on-demand quota exhausted for issue %d; SPOT fallback "
-            "engaged (preemptible %s headroom %g >= needed %d).",
+            "route: GCP rung %s quota headroom insufficient for issue %d; advancing.",
+            rung_label,
             spec.issue,
-            spot_headroom.metric,
-            spot_headroom.available,
-            spot_headroom.needed,
         )
-        # Fall through to the normal launch transaction below with the
-        # SPOT-overridden spec.
+        return "advance"
 
     with store.transaction(spec.issue) as (lease, write):
-        # Cap-check BEFORE bump-and-persist: a rejected over-cap attempt
-        # MUST NOT grow the on-disk counter (3, 4, 5, ... with cap=2 is
-        # misleading and makes the counter unbounded under a broken
-        # classifier that loops). Rollover-on-day-change is part of the
-        # cap probe so a fresh UTC day correctly admits the new attempt.
+        # Cap-check BEFORE bump-and-persist, RE-READ this rung iteration
+        # (advisory: the ladder must stop issuing creates the moment the cap
+        # is hit, even mid-ladder). A rejected over-cap attempt MUST NOT grow
+        # the on-disk counter. Rollover-on-day-change is part of the cap
+        # probe so a fresh UTC day admits the new attempt.
         if lease is None:
             lease = Lease(
                 issue=int(spec.issue),
@@ -2850,66 +3236,66 @@ def _attempt_gcp_lane(
             )
         today = _today_utc_iso()
         attempts_already_today = lease.gcp_attempts_today if lease.gcp_attempts_date == today else 0
-        if attempts_already_today >= cfg.max_gcp_attempts_per_day:
-            if not terminal:
-                # Lanes remain after GCP → skip GCP (no credit spent)
-                # and continue down the order instead of bricking the
-                # whole route for the day. The cap still bounds spend:
-                # no provision attempt is made here.
-                attempts.append(
-                    RouteAttempt(
-                        kind="gcp",
-                        cluster=None,
-                        est_start_seconds_raw=0.0,
-                        est_start_seconds_clamped=0.0,
-                        outcome="attempt_cap_exceeded",
-                        detail=(
-                            f"per-day GCP attempt cap {cfg.max_gcp_attempts_per_day} "
-                            "reached; skipping GCP, continuing down the lane order"
-                        ),
-                        elapsed_seconds=now_fn() - started_at,
-                    )
+        if count_attempt_cap and attempts_already_today >= cfg.max_gcp_attempts_per_day:
+            # Cap hit → no provision attempt is made (no credit spent).
+            # Record it and signal the ladder to STOP issuing creates and
+            # fall through (next lane / RunPod). NEVER raises (#656: the
+            # RunPod terminal rung is the new tail of the chain).
+            attempts.append(
+                RouteAttempt(
+                    kind="gcp",
+                    cluster=None,
+                    est_start_seconds_raw=0.0,
+                    est_start_seconds_clamped=0.0,
+                    outcome="attempt_cap_exceeded",
+                    detail=(
+                        f"rung {rung_label}: per-day GCP attempt cap "
+                        f"{cfg.max_gcp_attempts_per_day} reached; stopping GCP creates, "
+                        "falling through the lane order"
+                    ),
+                    elapsed_seconds=now_fn() - started_at,
                 )
-                logger.warning(
-                    "route: per-day GCP attempt cap (%d) reached for issue %d; "
-                    "skipping the GCP lane and continuing down the auto order.",
-                    cfg.max_gcp_attempts_per_day,
-                    spec.issue,
-                )
-                return None
-            raise GcpAttemptCapExceededError(
-                issue=int(spec.issue),
-                # Report attempts ALREADY consumed today (i.e. the cap),
-                # not the would-be-Nth-attempt that this call would have
-                # made — reads naturally as "cap reached, no further".
-                attempts_today=cfg.max_gcp_attempts_per_day,
-                cap=cfg.max_gcp_attempts_per_day,
             )
-        # Under the cap → bump + persist (rollover folded into the bump).
-        lease = _bump_gcp_attempt(lease)
-        write(lease)
-        attempts_today = lease.gcp_attempts_today
+            logger.warning(
+                "route: per-day GCP attempt cap (%d) reached for issue %d at rung %s; "
+                "stopping GCP creates and falling through.",
+                cfg.max_gcp_attempts_per_day,
+                spec.issue,
+                rung_label,
+            )
+            return "cap_hit"
+        if count_attempt_cap:
+            # Auto chain: bump + persist (rollover folded into the bump).
+            lease = _bump_gcp_attempt(lease)
+            write(lease)
+            attempts_today = lease.gcp_attempts_today
+        else:
+            # Explicit `backend: gcp` pin: cap-exempt, counter untouched —
+            # report the current (un-bumped) reading for the marker detail.
+            attempts_today = attempts_already_today
 
-        # Pre-escalation marker — visible breadcrumb before spending
-        # credit. Posted INSIDE the flock so a concurrent invocation
-        # cannot also post one (they would block on the flock until our
-        # launch completes).
+        # Pre-escalation marker — visible breadcrumb before spending credit,
+        # carrying the resolved gpu-h estimate + short-job threshold so a
+        # future debug-er sees the rung's reasoning. Posted INSIDE the flock.
+        machine = machine_for_intent(spec)
+        gpu_h = _estimated_gpu_hours(spec, machine)
         _post_intermediate_marker(
             spec=spec,
             marker_poster=marker_poster,
             reason=ROUTE_REASON_AUTO_FALLBACK_GCP,
             attempts_today=attempts_today,
+            extra={
+                "rung": rung_label,
+                "estimated_gpu_hours": gpu_h,
+                "spot_max_gpu_hours": _spot_max_gpu_hours(),
+            },
         )
 
         threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
         try:
             gcp_handle = _prepare_and_launch(gcp_backend, threaded_spec, kind="gcp")
         except BackendPrepareError as exc:
-            # GcpBackend.prepare is a documented no-op today, so this is
-            # belt-and-suspenders for the uniform chokepoint: a prepare
-            # failure is provision-class (nothing live) → same terminal
-            # as a GCP provisioning failure (or next-lane when lanes
-            # remain after GCP).
+            # Provision-class (nothing live) → advance to the next rung.
             attempts.append(
                 RouteAttempt(
                     kind="gcp",
@@ -2917,28 +3303,18 @@ def _attempt_gcp_lane(
                     est_start_seconds_raw=0.0,
                     est_start_seconds_clamped=0.0,
                     outcome="prepare_failed",
-                    detail=exc.reason,
+                    detail=f"rung {rung_label}: {exc.reason}",
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
-            if not terminal:
-                logger.warning(
-                    "route: gcp prepare failed (%s); continuing down the lane order.",
-                    exc.reason,
-                )
-                return None
-            _post_terminal_failure_marker(
-                spec=spec,
-                marker_poster=marker_poster,
-                reason=ROUTE_REASON_NO_COMPUTE,
-                chosen_kind="gcp",
-                attempts=attempts,
+            logger.warning(
+                "route: gcp rung %s prepare failed (%s); advancing.", rung_label, exc.reason
             )
-            raise NoComputeAvailableError(
-                f"every free lane park-failed AND gcp prepare failed: {exc.reason}",
-                attempts=[_attempt_to_dict(a) for a in attempts],
-            ) from exc
+            return "advance"
         except GcpProvisioningError as exc:
+            # Capacity / quota / zone exhaustion (incl. spot-capacity misses,
+            # which classify here via gcp.classify_create_failure) → advance
+            # to the next rung.
             attempts.append(
                 RouteAttempt(
                     kind="gcp",
@@ -2946,39 +3322,20 @@ def _attempt_gcp_lane(
                     est_start_seconds_raw=0.0,
                     est_start_seconds_clamped=0.0,
                     outcome="provisioning_failure",
-                    detail=_provisioning_detail(exc),
+                    detail=f"rung {rung_label}: {_provisioning_detail(exc)}",
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
-            if not terminal:
-                # Capacity / quota / zone exhaustion at the primary GCP
-                # position → fall through to the lanes after it.
-                logger.warning(
-                    "route: gcp provisioning failed (%s); continuing down the lane order.",
-                    _provisioning_detail(exc),
-                )
-                return None
-            _post_terminal_failure_marker(
-                spec=spec,
-                marker_poster=marker_poster,
-                reason=ROUTE_REASON_NO_COMPUTE,
-                chosen_kind="gcp",
-                attempts=attempts,
+            logger.warning(
+                "route: gcp rung %s provisioning failed (%s); advancing.",
+                rung_label,
+                _provisioning_detail(exc),
             )
-            raise NoComputeAvailableError(
-                f"every free lane park-failed AND gcp provisioning failed: {exc.reason}",
-                attempts=[_attempt_to_dict(a) for a in attempts],
-            ) from exc
+            return "advance"
         except BackendProbeError as exc:
-            # GcpBackend.launch's internal reconnect_or_none probe failed
-            # (expired auth / transport) — GCP state UNKNOWN. No credit is
-            # spent on unknown state in either position. Terminal position:
-            # fail closed with the typed no-compute terminal instead of
-            # letting the probe error propagate to rc=4 (live auto-lane
-            # finding, issue 535). Non-terminal position: skip the lane and
-            # continue — the same safe reaction the SLURM lanes take on an
-            # unprobeable reconnect (the stage-1 GCP scan already treats a
-            # probe failure as continue-down-the-chain).
+            # GCP state UNKNOWN (expired auth / transport). No credit is spent
+            # on unknown state → advance (the same safe reaction the SLURM
+            # lanes take on an unprobeable reconnect).
             attempts.append(
                 RouteAttempt(
                     kind="gcp",
@@ -2986,30 +3343,17 @@ def _attempt_gcp_lane(
                     est_start_seconds_raw=0.0,
                     est_start_seconds_clamped=0.0,
                     outcome="probe_failed",
-                    detail=str(exc)[:500],
+                    detail=f"rung {rung_label}: {str(exc)[:500]}",
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
-            if not terminal:
-                logger.warning(
-                    "route: gcp state probe failed (%s); skipping GCP, continuing "
-                    "down the lane order.",
-                    exc,
-                )
-                return None
-            _post_terminal_failure_marker(
-                spec=spec,
-                marker_poster=marker_poster,
-                reason=ROUTE_REASON_NO_COMPUTE,
-                chosen_kind="gcp",
-                attempts=attempts,
+            logger.warning(
+                "route: gcp rung %s state probe failed (%s); advancing.", rung_label, exc
             )
-            raise NoComputeAvailableError(
-                f"every free lane park-failed AND the gcp state probe failed — "
-                f"refusing blind create: {exc}",
-                attempts=[_attempt_to_dict(a) for a in attempts],
-            ) from exc
+            return "advance"
         except GcpWorkloadError as exc:
+            # Broken workload code → surface immediately, NO fallback (must
+            # NOT cascade across rungs/lanes and burn credit re-running it).
             attempts.append(
                 RouteAttempt(
                     kind="gcp",
@@ -3017,7 +3361,7 @@ def _attempt_gcp_lane(
                     est_start_seconds_raw=0.0,
                     est_start_seconds_clamped=0.0,
                     outcome="workload_failure",
-                    detail=exc.reason,
+                    detail=f"rung {rung_label}: {exc.reason}",
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
@@ -3048,10 +3392,11 @@ def _attempt_gcp_lane(
             est_start_seconds_clamped=0.0,
             outcome="launched",
             detail=(
-                f"gcp escalation #{attempts_today} of cap {cfg.max_gcp_attempts_per_day}"
-                if terminal
-                else (
-                    f"gcp primary-lane attempt #{attempts_today} of cap "
+                f"gcp rung {rung_label} "
+                + (
+                    f"escalation #{attempts_today} of cap {cfg.max_gcp_attempts_per_day}"
+                    if terminal
+                    else f"primary-lane attempt #{attempts_today} of cap "
                     f"{cfg.max_gcp_attempts_per_day}"
                 )
             ),
@@ -3061,26 +3406,21 @@ def _attempt_gcp_lane(
     result = RouteResult(
         backend=gcp_backend,
         handle=gcp_handle,
-        requested_kind=None,
+        requested_kind=requested_kind,
         chosen_kind="gcp",
-        # Reason code kept as ``auto_fallback_gcp`` in EVERY auto position
-        # (including GCP-first primary) — the marker schema is unchanged
-        # by deliberate design (dashboard + acceptance harness pattern-
-        # match on the enumerated reason codes); the attempts trail is
-        # what reflects the actual order.
-        reason=ROUTE_REASON_AUTO_FALLBACK_GCP,
+        # ``reason`` is ``auto_fallback_gcp`` on the auto chain and ``override``
+        # on an explicit ``backend: gcp`` pin (the marker schema is stable by
+        # design; the attempts trail + the ``gcp_ladder_rung`` extra reflect the
+        # actual rung that launched).
+        reason=reason,
         cluster=None,
         attempts=attempts,
         elapsed_seconds=now_fn() - started_at,
-        # Additive marker fields (#631): the attempts trail PLUS which
-        # provisioning model + regional quota pool this launch resolved to
-        # (STANDARD|SPOT|FLEX_START and the matching {on-demand|preemptible}
-        # accelerator metric, or None when the (gpu_kind, pool) pair has no
-        # mapping). Documented as optional `extra` keys in workflow.yaml §
-        # markers. The provisioning_model + quota_pool keys come from the
-        # shared `_gcp_marker_extras` helper so all four gcp terminal paths
-        # stay in lockstep (#631 round-3).
-        extra={"gcp_attempts_today": attempts_today, **_gcp_marker_extras(spec)},
+        extra={
+            "gcp_attempts_today": attempts_today,
+            "gcp_ladder_rung": rung_label,
+            **_gcp_marker_extras(spec),
+        },
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
@@ -3456,6 +3796,7 @@ def _post_intermediate_marker(
     marker_poster: Callable[..., None] | None,
     reason: str,
     attempts_today: int,
+    extra: dict[str, Any] | None = None,
 ) -> None:
     """Post a visible "about to escalate to GCP" breadcrumb.
 
@@ -3465,6 +3806,11 @@ def _post_intermediate_marker(
     intent. The final marker (posted after GCP launch succeeds /
     fails) carries the resolved outcome — both events appear in the
     timeline.
+
+    ``extra`` merges additional observability keys into the marker body's
+    ``extra`` (#656: the ladder threads the rung label + resolved gpu-h
+    estimate + short-job threshold so a future debug-er sees the rung's
+    reasoning); ``intermediate`` + ``gcp_attempts_today`` always win.
     """
     if marker_poster is None:
         return
@@ -3476,6 +3822,7 @@ def _post_intermediate_marker(
         "elapsed_seconds": 0.0,
         "attempts": [],
         "extra": {
+            **(extra or {}),
             "intermediate": True,
             "gcp_attempts_today": attempts_today,
         },
@@ -3552,7 +3899,10 @@ __all__ = [
     "DEFAULT_AUTO_LANE_ORDER",
     "DEFAULT_FREE_LANE_ORDER",
     "DEFAULT_POLL_INTERVAL",
+    "DEFAULT_SPOT_MAX_GPU_HOURS",
     "ENV_AUTO_LANE_ORDER",
+    "ENV_GCP_SPOT_FALLBACK",
+    "ENV_SPOT_MAX_GPU_HOURS",
     "FREE_WAIT_SECONDS",
     "LEASE_STORE_DIRNAME",
     "MAX_GCP_ATTEMPTS_PER_DAY",
@@ -3563,6 +3913,7 @@ __all__ = [
     "ROUTE_REASON_OVERRIDE",
     "ROUTE_REASON_PREPARE_FAILED",
     "ROUTE_REASON_RECONNECT",
+    "ROUTE_REASON_RUNPOD_FALLBACK",
     "ROUTE_REASON_WORKLOAD_FAILURE",
     "BackendPrepareError",
     "GcpAttemptCapExceededError",

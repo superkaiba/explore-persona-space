@@ -324,15 +324,74 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
 }
 
 
+#: Intents whose A100-80 workload ALSO fits in a single 40 GB A100 — the
+#: cheaper-but-smaller GCP rung the router's fallback ladder (#656) tries
+#: when the 80 GB pool is exhausted. SINGLE-GPU 7B-scale work only: a 7B
+#: LoRA fine-tune / eval / generation fits comfortably in 40 GB. Multi-GPU
+#: full-FT (``ft-7b`` = 4xA100-80) and the 70B intents do NOT fit, so they
+#: are absent from this map and the ladder skips the A100-40 rung for them.
+#: ``a2-highgpu-1g`` is the 1xA100-40GB machine type (sibling of the
+#: ``a2-ultragpu-1g`` 1xA100-80GB row above). ``eval`` / ``debug`` default
+#: to L4 on-demand, NOT A100-80, so the A100-40 rung is only a meaningful
+#: STEP UP for them when L4 is constrained; they are included to keep the
+#: "single-GPU 7B fits 40 GB" rule uniform and the inclusion is harmless
+#: (their L4 on-demand rarely exhausts). Decision recorded in plan §11.
+INTENT_A100_40_FALLBACK: dict[str, MachineSpec] = {
+    "lora-7b": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
+    "lora": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
+    "eval": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
+    "debug": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
+}
+
+
+def a100_40_fallback_for_intent(spec: RunSpec) -> MachineSpec | None:
+    """Return the A100-40 :class:`MachineSpec` for ``spec.intent`` if the
+    workload fits in 40 GB, else ``None``.
+
+    A ``None`` return means "A100-40 is NOT a valid fallback for this
+    intent" — the router's GCP ladder skips the A100-40 rung and proceeds
+    to SPOT / the next lane. ``ft-7b`` (4xA100-80, ZeRO-3) and the 70B
+    intents (no GCP mapping at all) return ``None`` because a 40 GB card
+    cannot hold them; an unknown intent also returns ``None`` (the
+    ladder simply has no A100-40 rung to add — the on-demand A100-80 rung
+    still fails loud on the unknown intent via :func:`machine_for_intent`).
+    """
+    return INTENT_A100_40_FALLBACK.get(spec.intent)
+
+
 def machine_for_intent(spec: RunSpec) -> MachineSpec:
     """Resolve ``spec.intent`` to a :class:`MachineSpec`.
 
-    Fails LOUD on an unknown intent rather than silently picking a
-    default — a typo should crash the launch, NOT spin up the wrong
-    instance type and burn credit on it. Consistent with the SLURM
-    backend's :func:`~slurm.stages_for_spec` / :func:`~slurm.time_budget_hours`
-    fail-fast policy.
+    Consults ``spec.extra["machine_spec_override"]`` FIRST: the router's
+    GCP fallback ladder (#656) threads an A100-40 (or SPOT-A100-80, etc.)
+    :class:`MachineSpec` here so every downstream chokepoint
+    (:func:`render_create_argv`, :func:`quota_metric_for`, the zone
+    filter) resolves the rung's TRUE machine without mutating the frozen
+    :class:`RunSpec`'s semantic ``intent``. The override may be a
+    :class:`MachineSpec` or a plain ``{"machine_type", "gpu_count",
+    "gpu_kind"}`` dict (the JSON-safe sidecar-serializable shape the
+    router threads). Absent override → the normal intent map.
+
+    Fails LOUD on an unknown intent (with no override) rather than
+    silently picking a default — a typo should crash the launch, NOT spin
+    up the wrong instance type and burn credit on it. Consistent with the
+    SLURM backend's :func:`~slurm.stages_for_spec` /
+    :func:`~slurm.time_budget_hours` fail-fast policy.
     """
+    override = (spec.extra or {}).get("machine_spec_override")
+    if override is not None:
+        if isinstance(override, MachineSpec):
+            return override
+        if isinstance(override, Mapping):
+            return MachineSpec(
+                machine_type=override["machine_type"],
+                gpu_count=int(override["gpu_count"]),
+                gpu_kind=override["gpu_kind"],
+            )
+        raise ValueError(
+            "spec.extra['machine_spec_override'] must be a MachineSpec or a "
+            f"{{machine_type, gpu_count, gpu_kind}} dict, got {type(override).__name__!r}."
+        )
     if spec.intent not in INTENT_TO_MACHINE:
         raise ValueError(
             f"no GCP machine-type for intent {spec.intent!r}. "
@@ -381,6 +440,16 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     "g2-standard-4": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
     "a3-highgpu-1g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
     "a3-highgpu-2g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    # A2-highgpu (A100-40) — the #656 cheaper-but-smaller fallback rung.
+    # Verified offered in us-central1-{a,b,c,f} (gcloud compute machine-types
+    # list --filter="name=a2-highgpu-1g AND zone~us-central1"); -f is listed
+    # additively so the create-time zone resolver has one more option than
+    # the A2-ultragpu family (which is restricted to -a/-c). The map only
+    # RESTRICTS the configured zone ladder, so listing -f is harmless when
+    # GcpConfig never includes it (it is simply never matched).
+    "a2-highgpu-1g": frozenset(
+        {"us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"}
+    ),
 }
 
 
@@ -1910,6 +1979,13 @@ def _stale_named_instance_or_none(
 #: only), so it is absent here.
 _GPU_KIND_TO_QUOTA_METRIC: dict[str, str] = {
     "A100-80": "NVIDIA_A100_80GB_GPUS",
+    # A100-40 (a2-highgpu, the #656 fallback rung) draws the un-suffixed
+    # NVIDIA_A100_GPUS pool — a SEPARATE regional quota from the 80GB pool,
+    # so it can have headroom when A100-80 is full. Read ONLY by the
+    # fail-OPEN pre-check, so a wrong name degrades to "no opinion; proceed
+    # to create", never a false block (#656 §12 / same property as the H100
+    # preemptible metric).
+    "A100-40": "NVIDIA_A100_GPUS",
     "L4": "NVIDIA_L4_GPUS",
 }
 
@@ -1921,6 +1997,10 @@ _GPU_KIND_TO_QUOTA_METRIC: dict[str, str] = {
 #: "no opinion; proceed", never a false block (#631 §8 / §12 assumption 9).
 _GPU_KIND_TO_PREEMPTIBLE_QUOTA_METRIC: dict[str, str] = {
     "A100-80": "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS",
+    # A100-40 preemptible pool (#656 spot-A100-40 rung) — the un-suffixed
+    # PREEMPTIBLE_NVIDIA_A100_GPUS, sibling of the on-demand NVIDIA_A100_GPUS
+    # above. Fail-OPEN pre-check only (a wrong name → "no opinion; proceed").
+    "A100-40": "PREEMPTIBLE_NVIDIA_A100_GPUS",
     "L4": "PREEMPTIBLE_NVIDIA_L4_GPUS",
     "H100-80": "PREEMPTIBLE_NVIDIA_H100_GPUS",
 }
