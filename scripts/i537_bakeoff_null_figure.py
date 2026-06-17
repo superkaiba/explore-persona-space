@@ -1,15 +1,24 @@
 """Hero figure for the #537 predictor-bakeoff-complete round (the publishable null).
 
-Per behavior, plots the BEST predictor's own out-of-fold R^2 (with the clustered
-bootstrap CI) against the `base_prior_bystander` baseline's own out-of-fold R^2,
-on a shared axis, so the reader sees two facts at once:
+Per behavior, plots three OWN-R^2 facts on one held-out-R^2 axis so the reader
+sees the null without any cross-metric (Spearman) quantity smuggled onto the
+R^2 axis:
 
-1. No predictor's own OOF-R^2 clears 0 meaningfully on any behavior (all best
-   points sit in a thin band near 0).
-2. The large `delta_vs_base_prior_r2` values for sycophancy (+3.10) and em
-   (+1.72) are baseline-inflation: the base prior's own OOF-R^2 collapses far
-   below 0 on those behaviors, manufacturing a big positive delta from a
-   near-zero predictor.
+1. The BEST predictor's own out-of-fold R^2 (filled dot) sits at ~0 on every
+   behavior — no base-model ruler predicts the spread.
+2. The same predictor's leave-FAMILY-out R^2 (open diamond) — the honest
+   cross-context-family read: marker/fact stay positive (within-family
+   structure that survives), sycophancy/em flip negative (a within-family
+   near-zero positive that does not generalize across families).
+3. The base-rate prior's own out-of-fold R^2 (open square) collapses far
+   below 0 on sycophancy (-3.07) and em (-1.71), which is what manufactures
+   the large `delta_vs_base_prior_r2` (+3.10 / +1.72) — baseline inflation,
+   not predictor skill.
+
+No bootstrap CI bar is drawn: the harness bootstrap resamples contexts and
+recomputes the Spearman rank correlation (a DIFFERENT quantity from R^2), so a
+CI on it cannot honestly share the R^2 axis. The rank-correlation CIs live in
+the per-behavior leaderboard JSONs and the Reproducibility section.
 
 Run from repo root: uv run python scripts/i537_bakeoff_null_figure.py
 """
@@ -57,7 +66,6 @@ def main() -> None:
         sc = d["scores"]
         best = sc[BEST_KEY[b]]
         base = sc[f"{b}:base_prior_bystander"]
-        bs = best.get("bootstrap", {})
         skipped = d.get("skipped_rows", {})
         n_skip = (
             sum(len(v) for v in skipped.values()) if isinstance(skipped, dict) else len(skipped)
@@ -68,86 +76,76 @@ def main() -> None:
                 label=label,
                 best_pred=BEST_KEY[b].split(":")[1],
                 best_oof=best["oof_r2"],
-                ci_lo=bs.get("ci_lo"),
-                ci_hi=bs.get("ci_hi"),
+                lfo_oof=best.get("leave_family_out_oof_r2"),
                 base_oof=base["oof_r2"],
                 delta=best["delta_vs_base_prior_r2"],
                 n=best["n_cells"],
-                clean=(n_skip == 0),
+                n_skip=int(n_skip),
             )
         )
 
     set_paper_style("blog")
     # Single-axis blog title block collides with constrained_layout (collapses
     # axes to zero); disable it and set margins explicitly (analyzer memo).
-    fig, ax = plt.subplots(figsize=(8.4, 4.7), constrained_layout=False)
-    fig.subplots_adjust(left=0.17, right=0.985, top=0.80, bottom=0.13)
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), constrained_layout=False)
+    fig.subplots_adjust(left=0.165, right=0.99, top=0.82, bottom=0.12)
 
     y = np.arange(len(rows))[::-1]  # top = marker
     c_pred = paper_palette_role("primary")
+    c_lfo = paper_palette_role("accent")
     c_base = paper_palette_role("baseline")
 
-    # base-prior markers (the inflation driver)
+    # base-prior markers (the inflation driver) — own OOF-R^2
     base_oof = [r["base_oof"] for r in rows]
     ax.scatter(
         base_oof,
         y,
         marker="s",
-        s=70,
+        s=72,
         facecolors="none",
         edgecolors=c_base,
         linewidths=1.6,
         zorder=3,
-        label="base-rate prior (the baseline)",
+        label="base-rate prior, own out-of-fold $R^2$ (the baseline)",
     )
-    # best-predictor: point marker for the headline (pooled-fold) OOF-R^2, and a
-    # SEPARATE bootstrap-CI segment. They are decoupled on purpose: on marker and
-    # fact the CI does not even bracket the point estimate, which is the honest
-    # tell that the OOF-R^2 read is unstable — an asymmetric errorbar would hide it.
+    # leave-FAMILY-out R^2 of the same best predictor — open diamond, the honest
+    # cross-context-family read sitting NEXT TO the within-fold point.
+    lfo_oof = [r["lfo_oof"] for r in rows]
+    ax.scatter(
+        [v for v in lfo_oof if v is not None],
+        [yy for v, yy in zip(lfo_oof, y) if v is not None],
+        marker="D",
+        s=46,
+        facecolors="none",
+        edgecolors=c_lfo,
+        linewidths=1.5,
+        zorder=4,
+        label="best predictor, leave-FAMILY-out $R^2$",
+    )
+    # best-predictor: own out-of-fold (within-fold) R^2, the headline point.
     best_oof = [r["best_oof"] for r in rows]
-    for r, yy in zip(rows, y):
-        lo_v, hi_v = r["ci_lo"], r["ci_hi"]
-        if lo_v is not None and hi_v is not None and np.isfinite(lo_v) and np.isfinite(hi_v):
-            ax.plot(
-                [lo_v, hi_v],
-                [yy, yy],
-                color=c_pred,
-                lw=1.6,
-                alpha=0.55,
-                solid_capstyle="butt",
-                zorder=2,
-            )
-            for x_end in (lo_v, hi_v):
-                ax.plot(
-                    [x_end, x_end],
-                    [yy - 0.12, yy + 0.12],
-                    color=c_pred,
-                    lw=1.6,
-                    alpha=0.55,
-                    zorder=2,
-                )
     ax.scatter(
         best_oof,
         y,
         marker="o",
-        s=70,
+        s=72,
         color=c_pred,
-        zorder=4,
-        label="best predictor (own out-of-fold $R^2$; bar = 95% bootstrap CI)",
+        zorder=5,
+        label="best predictor, own out-of-fold $R^2$",
     )
 
     ax.axvline(0.0, color="0.35", lw=1.0, ls="--", zorder=1)
 
-    # annotate each best-predictor point with its name + delta, always to the
+    # annotate each best-predictor point with its name + own R^2, always to the
     # RIGHT of the 0-line at a fixed x so the labels never overlap the markers.
-    label_x = 0.16
+    label_x = 0.34
     for r, yy in zip(rows, y):
         ax.annotate(
-            f"{r['best_pred']}   (delta vs base = {r['delta']:+.2f})",
+            f"{r['best_pred']}  ($R^2$={r['best_oof']:+.2f}, delta vs base={r['delta']:+.2f})",
             xy=(label_x, yy),
             xytext=(0, 0),
             textcoords="offset points",
-            fontsize=8.0,
+            fontsize=7.8,
             color=c_pred,
             va="center",
             ha="left",
@@ -167,21 +165,22 @@ def main() -> None:
             )
 
     ax.set_yticks(y)
-    ax.set_yticklabels(
-        [f"{r['label']}\n(n={r['n']}{'' if r['clean'] else ', partial'})" for r in rows],
-        fontsize=9,
-    )
+    ytick_labels = []
+    for r in rows:
+        skip_note = "" if r["n_skip"] == 0 else f", {r['n_skip']} predictors skipped"
+        ytick_labels.append(f"{r['label']}\n(n={r['n']}{skip_note})")
+    ax.set_yticklabels(ytick_labels, fontsize=8.5)
     ax.set_ylim(-0.6, len(rows) - 0.4)
     ax.set_xlabel("Held-out (out-of-fold) $R^2$  —  fraction of spread variance predicted")
-    ax.set_xlim(-3.4, 1.5)
-    ax.legend(loc="lower right", fontsize=8, frameon=False)
+    ax.set_xlim(-3.55, 1.85)
+    ax.legend(loc="upper left", fontsize=7.6, frameon=False, bbox_to_anchor=(0.005, 0.99))
 
     set_title_subtitle(
         ax,
         "No base-model ruler predicts how far an implanted behavior spreads",
-        "Each best predictor sits at ~0 held-out $R^2$; big positive deltas come "
-        "from the baseline collapsing below 0, not from real skill",
-        source="task #537 predictor-bakeoff-complete; 44 predictors x 5 behaviors, LTCO CV, B=2000",
+        "Each best predictor's own held-out $R^2$ sits at ~0; the big 'delta vs "
+        "base' is the prior collapsing below 0, not skill",
+        source="task #537 predictor-bakeoff-complete; up to 44 predictors x 5 behaviors, leave-two-contexts-out CV",
     )
 
     savefig_paper(fig, "issue_537/predictor_bakeoff_complete_null", dir="figures/")
