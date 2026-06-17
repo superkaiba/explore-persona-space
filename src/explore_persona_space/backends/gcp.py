@@ -1615,6 +1615,8 @@ def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudR
         list(argv),
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout,
         check=False,
     )
