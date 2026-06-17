@@ -704,7 +704,12 @@ def expected_artifacts_declaration(
 
     The caller can add experiment-specific paths via ``extra_hf_data_paths``
     / ``extra_hf_model_paths`` / ``extra_git_paths`` (e.g. a sweep with a
-    specific adapter subfolder).
+    specific adapter subfolder). A run whose plan references intermediate
+    analysis tensors as downstream inputs (``issue<N>_<slug>/analysis_tensors/``,
+    Upload Policy #521) MUST declare that prefix via ``extra_hf_data_paths`` —
+    those ``.npz`` / ``.pt`` binaries are ``.gitignore``-excluded, so they
+    never land via the git paths and would otherwise slip the mechanical gate
+    (incident #545, see :func:`artifacts.build_expected_artifacts_declaration`).
 
     Returns a serialization-friendly ``dict`` (no tuples) so the launch
     path can drop it onto ``handle.extra`` and round-trip via
