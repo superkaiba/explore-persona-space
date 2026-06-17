@@ -1150,7 +1150,8 @@ def analyze_behavior(  # noqa: C901 - one linear 3-arm pipeline; splitting scatt
 
 
 # ---------------------------------------------------------------------------
-# v4 within-villain decomposition (plan v5 §5) — 4 NEW arms, NO #606 reuse
+# v4 within-villain decomposition (plan v8 §5) — 3 production arms at matched LR
+# 5e-6, NO #606 reuse
 # ---------------------------------------------------------------------------
 
 

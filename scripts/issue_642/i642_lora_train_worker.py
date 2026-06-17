@@ -5,17 +5,19 @@
 
 PORT of ``origin/issue-606:scripts/issue_606/i606_lora_train_worker.py``
 VERBATIM (import rename ``i606_common`` -> ``i642_common``,
-``train_behavior_fullft`` import unchanged). Retained for dispatcher
-completeness + the deferred-import verifier; #642 does NOT train a LoRA arm in
-production (the LoRA pole is REUSED from #606's generations — plan §4.5), so
-this worker is never invoked on the #642 production path. It IS exercised by the
-``--verify-imports`` AST scan to guarantee its ``train/sft.py`` imports resolve
-on the current stack.
+``train_behavior_fullft`` import unchanged). On the #642 v3 production path the
+LoRA pole is REUSED from #606's generations (plan v3 §4.5), so this worker is not
+invoked there. On the #642 v8 follow-up `--v4` path it DOES train the LoRA pole
+``loraOP_lr5e6`` (a fresh on-policy villain LoRA at the matched LR — no #606
+reuse). It is also exercised by the ``--verify-imports`` AST scan to guarantee
+its ``train/sft.py`` imports resolve on the current stack.
 
 Reuses ``train/sft.py::train_lora`` with the canonical #411/#518 contrastive
-recipe (lr 1e-5, 3 epochs, r=32 α=64 all-linear rsLoRA, dropout 0.05, per-device
-batch 4 × grad-accum 4 (eff. 16), max_length 1024, warmup 0.05, cosine, seed 42)
-plus the ``CheckpointAtStepsCallback`` saving the registered step grid.
+recipe (3 epochs, r=32 α=64 all-linear rsLoRA, dropout 0.05, per-device batch 4 ×
+grad-accum 4 (eff. 16), max_length 1024, warmup 0.05, cosine, seed 42) plus the
+``CheckpointAtStepsCallback`` saving the registered step grid. The learning rate
+is passed in by the dispatcher via ``--lr`` (v3: 1e-5 default; v8 ``loraOP_lr5e6``:
+the matched 5e-6).
 """
 
 from __future__ import annotations
