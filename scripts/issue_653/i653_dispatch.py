@@ -1497,7 +1497,8 @@ def _install_content_gpu(cell, *, out_root: Path) -> dict:
             {cell.source: source_prompt},
             probes,
             max_new_tokens=512,
-            gpu_memory_utilization=0.85,
+            # Co-resident HF-model headroom (round 10, see #653 epm:failure v4)
+            gpu_memory_utilization=0.6,
         )
         from transformers import AutoTokenizer
 
@@ -1842,7 +1843,8 @@ def _install_read_under_model(cell, model, *, out_root: Path) -> dict:
             {cell.source: source_prompt},
             list(EVAL_QUESTIONS),
             max_new_tokens=i653.MARKER_MAX_NEW_TOKENS,
-            gpu_memory_utilization=0.85,
+            # Co-resident HF-model headroom (round 10, see #653 epm:failure v4)
+            gpu_memory_utilization=0.6,
         )
         contexts = [
             tok.decode(r["prompt_token_ids"] + r["response_token_ids"], skip_special_tokens=True)

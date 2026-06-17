@@ -147,3 +147,43 @@ def test_dx_gpu_cloud_uses_lowered_gpu_memory_utilization():
     assert all(v == 0.6 for v in gmu_values), (
         f"both _dx_gpu_cloud vLLM calls must use gpu_memory_utilization=0.6, got {gmu_values}"
     )
+
+
+def _all_gpu_mem_util_literals() -> list[float]:
+    """Every ``gpu_memory_utilization=<const>`` keyword literal in the dispatcher."""
+    dispatch = Path(__file__).resolve().parent.parent / "scripts" / "issue_653" / "i653_dispatch.py"
+    tree = ast.parse(dispatch.read_text())
+    values: list[float] = []
+    for call in ast.walk(tree):
+        if not isinstance(call, ast.Call):
+            continue
+        for kw in call.keywords:
+            if kw.arg == "gpu_memory_utilization" and isinstance(kw.value, ast.Constant):
+                values.append(kw.value.value)
+    return values
+
+
+def test_coresident_sites_use_lowered_gpu_memory_utilization():
+    """Static AST check (round 10, #653 epm:failure v4): the co-resident HF-model
+    vLLM call sites are lowered to 0.6. After round 9 (dx's 2 sites) + round 10
+    (``_install_read_under_model``'s line ~1845 + the install ``_gen`` line ~1500),
+    exactly FOUR sites use gpu_memory_utilization=0.6 and at least THREE one-shot /
+    non-co-resident bootstrap sites (279, 302, 641, 1408) remain at 0.85.
+
+    Why: the ablation phase loads a HF transformers model (~14 GiB) and hooks it,
+    THEN spins up a vLLM engine in the SAME process — at 0.85 (~67 GiB) on a GPU
+    with only ~65 GiB free, the engine-core init OOMs. 0.6 leaves co-resident
+    headroom.
+    """
+    values = _all_gpu_mem_util_literals()
+    n_lowered = sum(1 for v in values if v == 0.6)
+    n_default = sum(1 for v in values if v == 0.85)
+
+    assert n_lowered == 4, (
+        f"expected exactly 4 gpu_memory_utilization=0.6 sites (dx x2, install _gen, "
+        f"_install_read_under_model), got {n_lowered}; all literals: {values}"
+    )
+    assert n_default >= 3, (
+        f"expected >=3 gpu_memory_utilization=0.85 sites to remain (one-shot / "
+        f"non-co-resident bootstrap), got {n_default}; all literals: {values}"
+    )
