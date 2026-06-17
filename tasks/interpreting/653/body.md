@@ -33,7 +33,7 @@ relates_to:
 - Every LoRA edit is diffuse: the activation shift needs **41-51 modes** for 90% of its variance (participation ratio **16-36**), nowhere near the rank-1-ideal of ~1-2 — unanimous across 3 behaviors, 2 contexts, ranks 1/4/16.
 - The dominant shift direction **never aligns** with the behavior read-out — **no cell** clears |cos| ≥ 0.5 (range 0.004-0.35) — so even a rotated-but-structured decomposition (H2) fails.
 - The two probes' leading directions are **small but statistically non-random** (16/18 iso, 18/18 cov cosines exceed the random-CI) yet **sign-inconsistent** across cells — no shared read↔write basis. Marker medical-doctor flips **−0.40 → −0.32 → +0.27** over rank 1→4→16.
-- **Binding constraint:** only **3 of 18 cells installed enough to test** — marker florist/medical r16 (**+0.66/+0.78 nat**, below the 5-12 band), sycophancy florist r16 (**+0.15** gain); sycophancy medical r16 installed marginally (**+0.05**, 3 of 20 probes). On the 3 non-marginal cells the ablation is mixed, not null.
+- **Binding constraint:** only **3 of 18 cells installed enough to test** — marker florist/medical r16 (**+0.66/+0.78 nat**, below the 5-12 band), sycophancy florist r16 (**+0.15** gain); sycophancy medical r16 installed marginally (**+0.05**, 3 of 20 probes). Re-aggregating on just those 3 installed cells reproduces the H3 verdict unanimously (top-share **0.080-0.203**, participation ratio **16-32**, |cos| ≤ **0.35**) — the diffuse, unaligned geometry is not an averaging-in-failed-installs artifact.
 - **LoRA-only, single seed:** ranks 1/4/16 ran; **full fine-tuning — the ladder endpoint the Goal names — never ran** (its install gate failed), so the decomposition is untested past LoRA.
 
 ## What I ran
@@ -84,15 +84,15 @@ The training-free probe steers the base model with random writes, samples, then 
 
 ### Only 3 of 18 cells installed enough to test — and on those, the ablation is mixed
 
-The verdict is read off LoRA edits that mostly failed to install — only 3 cells carried the behavior non-marginally.
+Only 3 cells carried the behavior non-marginally, so the verdict is read off mostly-failed installs.
 
 ![Two-panel figure: left, marker log-P trained-base per cell with a 5-12 nat target band far above the bars; right, sycophancy and EM judge-rate gain per cell, sycophancy small, EM at zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d306a088cf40c3d6ee20e793434ad70c525e3b9/figures/issue_653/install_diagnostic.png)
 
 > **Figure.** *Install strength per cell.* Left: marker log P trained − base (nat), 5-12 nat target band shaded; peak +0.78. Right: sycophancy (red) and EM (green) judge-rate gain; EM flat at 0.0. n=20 contexts (marker), 8-20 probes (judge). Weak edits — the diffuse Δx is a lower bound on installed-behavior structure.
 
-- Installed non-marginally: **3 cells** — marker florist/medical r16 **+0.66 / +0.78 nat** (below the 5-12 band; rank-1/4 ≈ 0) and sycophancy florist r16 **+0.15** gain (~5 of 20 probes). Sycophancy medical r16 installed only **marginally** (+0.05, 3 of 20 probes); EM **never installed** (0.0), so its Δx is generic drift.
-- The 6 r16 ablations split four ways: marker medical *rose* **+1.71 nat** and florist **+0.08 nat** (anti-causal — the leading direction is not the marker's write direction); sycophancy florist dropped **0.25 → 0.15** (−40%, partly causal); sycophancy medical **0.15 → 0.15** (Δ=0, marginal install, uninformative); both EM cells **0.0 → 0.0** (nothing to ablate).
-- H3 is the current read off these weak edits; a strong install (or full fine-tuning) could look cleaner.
+- Installed non-marginally: **3 cells** — marker florist/medical r16 **+0.66 / +0.78 nat** (below the 5-12 band; rank-1/4 ≈ 0) and sycophancy florist r16 **+0.15** gain. Sycophancy medical r16 only **marginally** (+0.05); EM **never** (0.0), so its Δx is generic drift.
+- The 6 r16 ablations split four ways: marker medical *rose* **+1.71 nat** and florist **+0.08 nat** (anti-causal); sycophancy florist dropped **−40%** (partly causal); sycophancy medical **Δ=0**; both EM cells nothing to ablate.
+- Re-aggregating on just these 3 installed cells reproduces H3 unanimously: top-share **0.080-0.203**, participation ratio **16-32**, rank-k@90 **41-48**, |cos(top, r_B)| **≤ 0.35** (0/3 clear 0.5) — the diffuse, read-misaligned geometry is a property of the installed cells, not an averaging artifact. A strong install (or full fine-tuning) could still look cleaner.
 
 ## Data
 
@@ -152,6 +152,7 @@ Full on-policy pools (4 files + yield reports): [HF data repo onpolicy_pools/](h
 - LoRA adapters (18 cells, 198 files): [HF model repo adapters/issue653_readwrite_decomp/](https://huggingface.co/superkaiba1/explore-persona-space/tree/e4a58e064c89a917dfa8454e5a7922d956e9d6c6/adapters/issue653_readwrite_decomp)
 - Δx analysis tensors (18 .npz), mixes, on-policy pools: [HF data repo issue653_issue653_readwrite_decomp/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/737c935ead881066507d7c3580bca8e8cb5b3d70/issue653_issue653_readwrite_decomp)
 - Eval JSONs (verdict grid, armA, armB): [eval_results/issue_653/](https://github.com/superkaiba/explore-persona-space/tree/c31e6bde1c302864b5cacc29063b89664c0ad87f/eval_results/issue_653)
+- Installed-only re-aggregation verdict (Step 9a-ter follow-up): [installed_only_verdict.json](https://github.com/superkaiba/explore-persona-space/blob/ed42d81a4a6ca81cea9269cd7725f0cf1e841fa4/eval_results/issue_653/installed_only_verdict.json)
 - Figures (used inline): [figures/issue_653/](https://github.com/superkaiba/explore-persona-space/tree/9d306a088cf40c3d6ee20e793434ad70c525e3b9/figures/issue_653)
 - Reused: EM positives from [#519](https://eps.superkaiba.com/tasks/519) Turner bad-medical-advice corpus (`issue_519/em_seed42.jsonl`, re-keyed) — fit: published-corpus replication-fidelity exemption, contrastive negatives regenerated on-policy under the #653 panel.
 
@@ -166,6 +167,7 @@ Full on-policy pools (4 files + yield reports): [HF data repo onpolicy_pools/](h
 - Dispatcher: [`scripts/issue_653/i653_dispatch.py`](https://github.com/superkaiba/explore-persona-space/blob/c31e6bde1c302864b5cacc29063b89664c0ad87f/scripts/issue_653/i653_dispatch.py)
 - Off-pod aggregation: [`scripts/issue_653/i653_postpod_bootstrap.py`](https://github.com/superkaiba/explore-persona-space/blob/c31e6bde1c302864b5cacc29063b89664c0ad87f/scripts/issue_653/i653_postpod_bootstrap.py)
 - Figure script: [`scripts/issue_653/plot_i653_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/41114cb8aa789be7fe7d8f671ae450e26d787679/scripts/issue_653/plot_i653_figures.py)
+- Installed-only re-aggregation (Step 9a-ter follow-up): [`scripts/issue_653/i653_installed_only_followup.py`](https://github.com/superkaiba/explore-persona-space/blob/ed42d81a4a6ca81cea9269cd7725f0cf1e841fa4/scripts/issue_653/i653_installed_only_followup.py)
 - Git commit (results + code): `c31e6bde1c302864b5cacc29063b89664c0ad87f` (branch `issue-653`) — the eval-JSON + code bundle every non-figure raw URL above resolves to. The inline figures (PNG/PDF binaries) were regenerated on top of it at `9d306a088cf40c3d6ee20e793434ad70c525e3b9` (round-3 title fixes), where the four figure raw URLs resolve; the matching figure-script edit was committed at `41114cb8aa789be7fe7d8f671ae450e26d787679` (the reproduce command above pins this script-aligned SHA so re-running the plot script reproduces the displayed figures). The per-phase eval JSONs carry different `metadata.git_commit` values (Arm A `f4d5b1da`, install `3eb580df`, verdict grid `8cd956d2`) because mid-run dispatcher fixes (rounds 7→10) re-ran later phases without regenerating earlier outputs; the eval artifacts themselves are committed at `c31e6bde`.
 - Reproduce:
 
@@ -188,6 +190,6 @@ Full on-policy pools (4 files + yield reports): [HF data repo onpolicy_pools/](h
 
   > [2026-06-16] also test across 2 other behaviors (≥3 total) and a few other source contexts, so the decomposition verdict generalizes rather than resting on a single behavior/context.
 
-## Free-analysis follow-ups (orchestrator: auto-run before parking)
+## Free-analysis follow-up result
 
-- **Restrict the read↔write verdict to the 3 cells that demonstrably installed (marker florist r16, marker medical-doctor r16, sycophancy florist r16) using the existing Δx tensors and install JSONs as-is** (cost_class: free-analysis, headline_affecting: yes, est_gpu_hours: 0) — recomputes top-share / participation ratio / rank-k / cos-to-r_B / cross-arm cosine on these 3 installed cells only, drops the 15 non-installed cells (all EM, all r1/r4, sycophancy medical r16) from the aggregate, and pairs each spectral read with its ablation delta. Reads `eval_results/issue_653/armB/dx_geometry_*.json` + `install_*.json` + `ablation_*.json` + the HF `analysis_tensors/` .npz; no different checkpoint is needed (the marker under-installed at +0.66/+0.78 nat, it did not saturate, so the as-is tensors are the right read). May tighten or qualify whether the diffuse-and-unaligned verdict survives on the edits that actually carried the behavior. It cannot resolve the rank-ladder endpoint the Goal named — full fine-tuning — which only a full-FT cell can test.
+The strongest alternative to H3 was that the diffuse, unaligned Δx is an averaging-in-failed-installs artifact — because the other 15 cells barely moved the behavior, the pooled spectrum could be dominated by generic finetuning drift rather than the behavior's own geometry. A zero-GPU re-aggregation tested this directly: recompute top-share / participation ratio / rank-k@90 / cos-to-r_B / cross-arm cosine on **only the 3 demonstrably-installed cells** (marker florist r16, marker medical-doctor r16, sycophancy florist r16), using the existing Δx tensors and install JSONs as-is. The restricted reads reproduce the H3 verdict unanimously and decisively (top-share **0.080-0.203**, participation ratio **16-32**, rank-k@90 **41-48**, |cos(top, r_B)| **≤ 0.35**, 0/3 low-rank, 0/3 aligned) — folded into Finding 4 and Takeaways bullet 4 above. The alternative is rejected: the diffuse, read-misaligned geometry is a property of the installed cells, not an artifact of averaging in the non-installed ones. This does **not** resolve the rank-ladder endpoint the Goal named — full fine-tuning — which only a full-FT cell can test. Verdict: [installed_only_verdict.json](https://github.com/superkaiba/explore-persona-space/blob/ed42d81a4a6ca81cea9269cd7725f0cf1e841fa4/eval_results/issue_653/installed_only_verdict.json).
