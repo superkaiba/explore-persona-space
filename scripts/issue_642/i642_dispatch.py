@@ -1352,8 +1352,9 @@ def _train_v4_lora_arm(ctx: Ctx, behavior: str, arm: str) -> None:
 
 
 def _phase1_train_v4(ctx: Ctx, behavior: str) -> None:
-    """v4 Phase 1: train the (up to) 4 villain arms SERIALLY (each cmft arm uses
-    all 4 GPUs via ZeRO-3; the LoRA pole uses GPU 0). Plan §9 parallelism."""
+    """v4 Phase 1: train the (up to) 3 production villain arms SERIALLY (each cmft
+    arm uses all 4 GPUs via ZeRO-3; the LoRA pole uses GPU 0). Plan §9
+    parallelism."""
     _phase_log("p1_train", f"[v4][{behavior}] Phase 1 start (arms={ctx.arms})")
     for arm in ctx.arms:
         if ctx.v4_arm_method(arm) == "lora":
