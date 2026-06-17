@@ -1,7 +1,7 @@
 ---
-title: 'Most of #606''s LoRA-vs-full-FT sycophancy bystander-leakage gap is the adapter-vs-dense-update
-  bundle (+0.073 of +0.098), with a smaller module-coverage piece (+0.025) that the
-  decision rule cannot call clean (MODERATE confidence)'
+title: '#606''s LoRA-vs-full-FT sycophancy bystander-leakage gap is mostly the adapter-vs-dense-update
+  bundle, and that piece survives matched learning rate and on-policy data on a second
+  source persona (MODERATE confidence)'
 kind: experiment
 tags:
 - followup-manual
