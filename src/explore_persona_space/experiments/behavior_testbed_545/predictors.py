@@ -369,7 +369,7 @@ def extract_group_b_gpu(out_dir: Path, *, device: str = "cuda:0", cap: int = 6) 
 # ---------------------------------------------------------------------------
 
 
-def _mean_hidden_states(
+def _mean_hidden_states(  # noqa: C901 — hook path + non-standard-model fallback in one fn (kept together so the per-text del/empty_cache memory-release flow is in one place)
     model, tokenizer, texts: list[str], device, *, retain_per_sample_reps: bool = False
 ) -> dict:
     """Per-layer reps for a list of texts: last-token + mean-over-tokens.
@@ -388,25 +388,101 @@ def _mean_hidden_states(
     Unit test ``tests/test_i545_retain_per_sample_reps.py`` pins
     default-False ≡ the per-text-stacked mean so the v1 centroid path is
     provably unchanged.
+
+    Memory: extraction uses **per-layer forward hooks on only the 8
+    ``GEOMETRY_LAYERS``** (NOT ``output_hidden_states=True``). The latter
+    materializes ALL L+1 residual-stream tensors (~29 for Qwen-2.5-7B's 28
+    blocks) per forward; we read 8, the other ~21 are computed, held in the
+    returned tuple, then discarded — and the CUDA allocator (especially under
+    ``expandable_segments:True``) retains the freed segments for reuse, so HF
+    resident grew iteration-to-iteration (#545 rounds 4/6/8: 22→30→38 GiB) and
+    OOM'd the co-resident vLLM engine in the clouds/outdist phases. Hooks
+    capture + detach + move-to-CPU each needed layer inline, and the unused
+    24 layers' activations are released as the forward proceeds. The per-text
+    ``del captured`` + ``empty_cache()`` returns the segments each iteration.
+    The captured math (``h[-1]`` last token, ``h.mean(0)`` mean response,
+    float32 CPU) is IDENTICAL to the old ``out.hidden_states[layer]`` read — the
+    byte-identity test still pins it through a hook-capable stub.
     """
     import torch
+
+    # --- Layer-index → module mapping (the off-by-one that matters) ----------
+    # ``output_hidden_states`` returns a tuple of length L+1: index 0 is the
+    # EMBEDDING output (``embed_tokens``), index k>=1 is the output of
+    # transformer block k-1 (``model.model.layers[k-1]``). A naive hook on
+    # ``layers[layer]`` would capture ``hs[layer+1]`` — silently the WRONG layer.
+    # So: layer 0 -> embed_tokens; layer k>=1 -> layers[k-1].
+    blocks = getattr(getattr(model, "model", None), "layers", None)
+    embed = getattr(getattr(model, "model", None), "embed_tokens", None)
+    use_hooks = blocks is not None  # standard Qwen/Llama decoder structure
+
+    def _capture_from_output(output):
+        # Block output is a tuple ``(hidden_state, ...)``; embed output is a
+        # bare tensor. Mirror representation_shift.py's unwrap.
+        hs = output[0] if isinstance(output, tuple) else output
+        return hs[0].detach().float().cpu()  # (T, D), GPU activation released
 
     # Per-text reps, retained in input order, per layer / extraction point.
     per_text: dict[int, dict[str, list[torch.Tensor]]] = {}
     n = 0
     for text in texts:
         ids = tokenizer(text, return_tensors="pt", truncation=True, max_length=1024).to(device)
-        with torch.no_grad():
-            out = model(**ids, output_hidden_states=True)
-        hs = out.hidden_states  # tuple(L+1) of (1, T, D)
+        captured: dict[int, torch.Tensor] = {}
+
+        if use_hooks:
+            hooks = []
+
+            def _make_hook(layer_idx: int, sink: dict = captured):
+                # ``sink`` is bound to THIS iteration's ``captured`` dict
+                # explicitly (default-arg binding) so the closure does not
+                # late-bind the loop-scoped name — and so each text's hooks
+                # write only into that text's fresh dict.
+                def _hook(module, _inp, output):
+                    sink[layer_idx] = _capture_from_output(output)
+
+                return _hook
+
+            for layer in GEOMETRY_LAYERS:
+                if layer == 0:
+                    if embed is None:
+                        continue
+                    hooks.append(embed.register_forward_hook(_make_hook(0)))
+                elif (layer - 1) < len(blocks):
+                    hooks.append(blocks[layer - 1].register_forward_hook(_make_hook(layer)))
+            try:
+                with torch.no_grad():
+                    # output_hidden_states=False — only the 8 hooked layers are
+                    # retained; the other ~21 are freed as the forward proceeds.
+                    model(**ids, output_hidden_states=False)
+            finally:
+                for h in hooks:
+                    h.remove()
+        else:
+            # Fallback for non-standard models (and the CPU test stub that does
+            # not expose ``model.model.layers``): the old full-tuple read. Same
+            # math; only used when hooks cannot be wired.
+            with torch.no_grad():
+                out = model(**ids, output_hidden_states=True)
+            hs = out.hidden_states  # tuple(L+1) of (1, T, D)
+            for layer in GEOMETRY_LAYERS:
+                if layer < len(hs):
+                    captured[layer] = hs[layer][0].float().cpu()
+            del out
+
         for layer in GEOMETRY_LAYERS:
-            if layer >= len(hs):
+            h = captured.get(layer)
+            if h is None:
                 continue
-            h = hs[layer][0].float().cpu()  # (T, D)
             entry = per_text.setdefault(layer, {})
             entry.setdefault("last_token", []).append(h[-1])
             entry.setdefault("mean_response", []).append(h.mean(dim=0))
         n += 1
+        # Release this text's GPU forward activations + the captured CPU tensors'
+        # GPU provenance so the allocator returns the segments before the next
+        # text (the iteration-to-iteration HF growth that OOM'd #545 r4/6/8).
+        del captured
+        if hasattr(torch, "cuda") and torch.cuda.is_available():
+            torch.cuda.empty_cache()
     assert n > 0, "no texts given to _mean_hidden_states"
     if retain_per_sample_reps:
         # Stack per-text reps into (N, D) clouds (cloud metrics need the cloud).

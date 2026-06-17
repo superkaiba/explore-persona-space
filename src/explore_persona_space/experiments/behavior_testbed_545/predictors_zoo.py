@@ -136,22 +136,36 @@ JS_TF_MAX_BATCH = 4
 #
 # r4 fix: drop 0.70 → 0.60 (22 HF + 47.5 vLLM = 69.5 GiB, ~9.5 GiB headroom),
 # paired with PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True (module top).
-# r8 fix (THIS round): drop 0.60 → 0.50. With the re-measured 30 GiB HF resident,
-# 0.60 left only 1.67 GiB headroom (30 + 47.5 = 77.5 / 79.18) — too thin for the
-# 310 MiB log_softmax transient plus allocator slack. At 0.50: vLLM = 0.50 ×
-# 79.18 = 39.6 GiB, total 30 + 39.6 = 69.6 GiB, leaving ~9.6 GiB headroom on the
-# 79.18 GiB H100 (88% used). This is the 3rd util drop in the same OOM family;
-# if it OOMs again the orchestrator pivots to deeper architectural changes
-# (subprocess-isolated vLLM, or per-layer forward hooks so the clouds forward
-# stops materializing all 32 residual streams + the full LM-head logits — see
-# the deferred (d) note in the round-8 implementer report).
+# r8 fix: drop 0.60 → 0.50. With the re-measured 30 GiB HF resident, 0.60 left
+# only 1.67 GiB headroom (30 + 47.5 = 77.5 / 79.18) — too thin for the 310 MiB
+# log_softmax transient plus allocator slack. At 0.50: vLLM = 0.50 × 79.18 =
+# 39.6 GiB, total 30 + 39.6 = 69.6 GiB, leaving ~9.6 GiB headroom.
+#
+# round-36 ARCHITECTURAL PIVOT (THIS round): the 22→30→38 GiB HF-resident GROWTH
+# across r3/r6/r8 was never a vLLM problem and never a util problem — it was
+# the clouds-phase extraction calling _mean_hidden_states with
+# output_hidden_states=True, which materializes ALL ~29 residual-stream tensors
+# (L+1 for Qwen-2.5-7B's 28 blocks) per forward while only 8 GEOMETRY_LAYERS are
+# read. The other ~21 layers' activations were computed, held in the returned
+# tuple, then discarded — and the expandable_segments allocator retained the
+# freed segments, so the resident climbed iteration-to-iteration until it OOM'd
+# the co-resident vLLM engine. The five util/batch knob-turns (r1/r3/r4/r6/r8)
+# each fixed their immediate symptom while the activation accumulation kept
+# growing the baseline. _mean_hidden_states now extracts via per-layer forward
+# hooks on only the 8 GEOMETRY_LAYERS (output_hidden_states=False) +
+# per-text del/empty_cache, so the clouds-phase HF resident no longer
+# accumulates. JS_GPU_MEM_UTIL stays at the conservative 0.50 (correctness over
+# a re-tune) — the pivot removes the GROWTH that the dial was chasing; raising
+# the util back up is a separate optimization, not needed for the OOM fix.
 JS_GPU_MEM_UTIL = 0.50
-# Measured resident size of the co-resident HF base model under realistic
-# extract-phase conditions (output_hidden_states + max_model_len=4096 + the KV
-# cache during a single teacher-force). The r3 OOM log read 21.98 GiB; the r6
-# clouds-phase peak read ~30 GiB after the r4 expandable_segments allocator
-# (which trades fragmentation reduction for a higher peak resident). The 30 GiB
-# value is the CEILING the dial must budget against — NOT the r3 22 GiB estimate.
+# Measured resident size of the co-resident HF base model. The r3 OOM log read
+# 21.98 GiB; the r6 clouds-phase peak read ~30 GiB. That 22→30→38 GiB growth was
+# the output_hidden_states=True activation accumulation in the clouds phase
+# (now fixed by the round-36 per-layer-hook pivot — see the JS_GPU_MEM_UTIL block
+# above). 30 GiB is kept as a CONSERVATIVE ceiling for the pre-vLLM-init free-mem
+# assert: the hooked clouds path should resident LOWER than 30 GiB, so budgeting
+# against 30 leaves the assert strictly safe (a real regression that pushes past
+# 30 still fails loud). Re-measure on the pod and tighten only if optimizing.
 JS_HF_MODEL_RESIDENT_GIB = 30.0
 # An H100-80 reports ~79.18 GiB total.
 _H100_TOTAL_GIB = 79.18
