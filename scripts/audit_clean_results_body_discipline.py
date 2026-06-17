@@ -75,9 +75,16 @@ PATTERNS: dict[str, tuple[str, str]] = {
         #   U+2212 slipped past while the ASCII-sign CIs in the SAME body were
         #   flagged). The U+2212 in each alternative below is the literal char
         #   being matched, not an accidental homoglyph -- hence the noqa.
+        #   Band-notation carve-out: a bracketed integer interval immediately
+        #   followed by a `nat` unit (`band-stop [5,12] nat`, an install /
+        #   band-stop TARGET BAND in marker experiments) is NOT a credence
+        #   interval of an estimate, so the bare-pair alternative excludes it
+        #   via a `(?!\s*nat\b)` lookahead after the closing bracket. The
+        #   trailing-token alternative is unaffected (it requires a CI verb /
+        #   pp / % token, which a band never carries).
         r"slope\s*\[[-+−\d., ]+\]"  # noqa: RUF001
         r"|\[[-+−]?\d+\.\d+\s*,\s*[-+−]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)"  # noqa: RUF001
-        r"|\[[-+−]?\d*\.?\d+\s*,\s*[-+−]?\d*\.?\d+\]",  # noqa: RUF001
+        r"|\[[-+−]?\d*\.?\d+\s*,\s*[-+−]?\d*\.?\d+\](?!\s*nat\b)",  # noqa: RUF001
         "Credence intervals as inline [low, high] in prose (banned)",
     ),
     "named_tests": (

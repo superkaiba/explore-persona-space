@@ -3991,6 +3991,53 @@ def test_v3_check21_binds_when_doc_present_and_subset(tmp_path):
     assert "appear in the methodology doc" in c21.detail
 
 
+def test_v3_check21_composite_cell_reconciles_against_split_doc_rows(tmp_path):
+    """Task #653 regression: the v3 conciseness convention bundles several
+    facts into ONE compact body Parameters cell (`AdamW, lr=3e-5`) while the
+    canonical doc §2 table lists each fact on its OWN row. The whole-cell
+    string never appears verbatim in the doc, so a whole-cell substring
+    match false-FAILs the conformant body. Check 21 must decompose the cell
+    (bracket-aware) and reconcile each sub-value independently → PASS."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            # Optimizer + learning rate live on SEPARATE doc rows; the body
+            # bundles them into one `AdamW, lr=3e-5` cell.
+            "Optimizer": "AdamW",
+            "Learning rate": "lr=3e-5, cosine schedule",
+            "Seeds": "[42, 137, 256]",
+        },
+    )
+    _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert c21.passed, c21.render()
+
+
+def test_v3_check21_composite_cell_still_fails_on_missing_subvalue(tmp_path):
+    """The composite-cell decomposition does NOT over-permit: if a body
+    cell sub-value (`lr=3e-5`) is absent from EVERY doc §2 row — only the
+    other sub-value (`AdamW`) is present — check 21 still FAILs, so a
+    genuine misprint cannot hide inside a compact cell."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            "Optimizer": "AdamW",
+            # learning rate deliberately wrong: doc says 1e-4, body 3e-5.
+            "Learning rate": "lr=1e-4, cosine schedule",
+            "Seeds": "[42, 137, 256]",
+        },
+    )
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    assert not ok
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert not c21.passed
+    assert "optimizer" in c21.detail.lower()
+
+
 def test_v3_check21_fails_on_value_mismatch(tmp_path):
     """A body param VALUE absent from the doc §2 table FAILs check 21
     (the #489-class misprint guard, two-tier edition)."""
