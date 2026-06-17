@@ -84,8 +84,9 @@ def main() -> int:
     ax.legend(loc="upper right", fontsize=8, frameon=False)
     _title(
         ax,
-        "Query-end state stays nearer its own context than a random one, every layer",
-        "Solid = matched pair; shaded = shuffled-pair floor (2.5/97.5 pctile, B=1000, near 0).",
+        "Matched query-end cosine sits above its OWN-tier shuffled floor at every layer",
+        "Solid = matched pair; shaded = that tier's within-tier shuffled floor (2.5/97.5 pctile, "
+        "B=1000) — NOT near zero (persona ~0.43, generic/ICL ~0.25 at L0).",
     )
     fig.supxlabel(src, x=0.02, ha="left", color="#7A7A7A", fontsize=8, fontstyle="italic")
     fig.tight_layout()
@@ -105,13 +106,60 @@ def main() -> int:
     ax.legend(loc="upper right", fontsize=8, frameon=False)
     _title(
         ax,
-        "Context persistence is largest at the input and decays with depth",
-        "Gap above 0 = query-end state closer to its OWN context than a random one. Floor "
-        "half-band ~0.003-0.03.",
+        "Persona is the LOWEST-persisting tier (21/28 layers) — opposite to the H3 prediction",
+        "Gap = matched − own-tier shuffled cosine. Persona (dark blue) sits lowest at almost "
+        "every depth; the plan predicted persona would persist MOST.",
     )
     fig.supxlabel(src, x=0.02, ha="left", color="#7A7A7A", fontsize=8, fontstyle="italic")
     fig.tight_layout()
     savefig_paper(fig, "issue_654/gap_per_tier_blog", dir=fig_dir)
+    plt.close(fig)
+
+    # ── SUPPORTING 1b: query-LENGTH split per tier at L0 (the dominant confound) ──
+    fig, ax = plt.subplots(figsize=(7.6, 4.6))
+
+    def _qt_val(cell, qt):
+        v = cell["by_query_type"][qt]
+        return v["matched_centered_cos_mean"] if isinstance(v, dict) else v
+
+    short_by_tier, long_by_tier = [], []
+    for t in TIER_ORDER:
+        c0 = res["per_context_type"][t]["0"]
+        short_by_tier.append((_qt_val(c0, "on_short") + _qt_val(c0, "off_short")) / 2)
+        long_by_tier.append((_qt_val(c0, "on_long") + _qt_val(c0, "off_long")) / 2)
+    xpos = np.arange(len(TIER_ORDER))
+    w = 0.38
+    ax.bar(
+        xpos - w / 2,
+        short_by_tier,
+        w,
+        label="Short query",
+        color=paper_palette_role("primary"),
+    )
+    ax.bar(
+        xpos + w / 2,
+        long_by_tier,
+        w,
+        label="Long query",
+        color=paper_palette_role("baseline"),
+    )
+    ax.axhline(0.0, color="0.5", linewidth=1.0, linestyle=":")
+    ax.set_xticks(xpos)
+    ax.set_xticklabels(
+        ["Persona\ninstruction", "Generic\ninstruction", "In-context\nexamples", "Real chat\nturn"],
+        fontsize=8,
+    )
+    ax.set_ylabel("Matched centered cosine\n(layer 0)")
+    ax.legend(loc="upper right", fontsize=8, frameon=False)
+    _title(
+        ax,
+        "Query length, not context type, drives the layer-0 signal in the persona tier",
+        "Persona: short 0.81 vs long 0.05 (a 0.76 gap). Other tiers move < 0.10 by length. "
+        "The early persona 'persistence' is largely short queries sitting near the context.",
+    )
+    fig.supxlabel(src, x=0.02, ha="left", color="#7A7A7A", fontsize=8, fontstyle="italic")
+    fig.tight_layout()
+    savefig_paper(fig, "issue_654/query_length_split_blog", dir=fig_dir)
     plt.close(fig)
 
     # ── SUPPORTING 2: companion same-position vs two-position (per tier) ──
@@ -127,8 +175,9 @@ def main() -> int:
     ax.legend(loc="lower left", fontsize=8, frameon=False)
     _title(
         ax,
-        "Same-slot read: adding the query never displaces the readout below ~0.64 cosine",
-        "Context-only vs context+query at the FIXED generation slot. Confound-free; tiers cluster.",
+        "Same-slot read: adding the query holds the readout at 0.63-0.72 cosine in late layers",
+        "Context-only vs context+query at the FIXED generation slot. Removes the different-token "
+        "confound; length/position/extra-turn confounds remain. Tiers cluster within ~0.07.",
     )
     fig.supxlabel(src, x=0.02, ha="left", color="#7A7A7A", fontsize=8, fontstyle="italic")
     fig.tight_layout()
@@ -168,9 +217,9 @@ def main() -> int:
     ax.legend(loc="center right", fontsize=8, frameon=False)
     _title(
         ax,
-        "Per-pair alignment decays with depth; whole-bank geometry instead converges late",
-        "The two DVs diverge: late layers compress contexts toward shared directions even as "
-        "individual pairs drift.",
+        "Per-pair alignment decays with depth; whole-bank CKA dips mid-stack then rises late",
+        "CKA: 0.53 (L0), 0.63 (L5), trough 0.29 (L7), 0.76 (L27). Descriptive geometry — "
+        "consistent with shared late last-token/format structure, not evidence of a mechanism.",
     )
     fig.supxlabel(src, x=0.02, ha="left", color="#7A7A7A", fontsize=8, fontstyle="italic")
     fig.tight_layout()
