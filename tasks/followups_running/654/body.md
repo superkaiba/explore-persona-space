@@ -26,7 +26,8 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
 - The query-end residual stays closer to its **own** context than a deranged one at every layer (single seed) — the no-persistence null is rejected for 3 tiers, **marginal** for persona.
 - **Query length, not context type, drives the persona layer-0 signal:** short queries score 0.81, long 0.05 (0.76 gap); other tiers move under 0.10 by length.
 - The prediction that persona contexts would persist *most* is **rejected in the opposite direction** — persona is the LOWEST-persisting tier in **21 of 28 layers**.
-- A **length-matched dummy** query holds the generation-slot readout at **0.83-0.85** in late layers where a real query drops it to **0.63-0.70**: the late-layer drop is **content-driven** (real − dummy gap **−0.165**, 95% CI [−0.172, −0.157]), not a length artifact.
+- A **length-matched no-content filler** holds the slot at **0.81-0.85** (L23) where a real query drops it to **0.63-0.70** (gap **−0.165**): the drop tracks content, not length.
+- **The content effect is mostly short queries:** the L23 short-query gap is **−0.255** vs long **−0.068**. The CI [−0.172, −0.157] assumes per-pair independence, so it is optimistic.
 - Read position is the last-prompt token, the known-weak persona-content proxy (Persona Vectors 2507.21509); residual geometry, not a behavioral claim.
 
 ## What I ran
@@ -34,13 +35,13 @@ goal: Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user quer
 - **Why:** A recurring question in this project's persona line is *where* in the stack the model stops tracking its context and starts answering the query. Prior work read one position per prompt for family clustering ([#594](https://eps.superkaiba.com/tasks/594)) or role-vs-persona separation ([#634](https://eps.superkaiba.com/tasks/634)); none contrasted the context-end and query-end positions within one prompt. This run measures that displacement per layer.
 - **Design:** One manipulated axis — **read position** (context-span-end vs query-span-end token) — crossed with context type (4 tiers) × query type (on/off-topic × short/long). 81 contexts × 10 queries = 810 pairs, one forward pass each, residuals at all 28 layers. Single seed (42).
 - **Training:** none — forward-pass measurement on base `Qwen/Qwen2.5-7B-Instruct` (bf16, `output_hidden_states=True`, ChatML).
-- **Eval:** per-layer per-pair **centered cosine** (global-mean-centered, anisotropy-robust DV) between the two positions; a **shuffled-pair derangement floor** (B=1000) computed both globally and **within each tier**; **whole-bank linear CKA** as a secondary geometry read; a **companion same-position contrast** (context-only vs context+query at the fixed generation slot) that removes the different-token confound; and a **length-matched dummy-query control** (round 2) that re-runs the companion read with a content-meaningless query padded to each real query's token length, isolating the content contribution to the late-layer drop. No judge, no generation.
+- **Eval:** per-layer per-pair **centered cosine** (global-mean-centered, anisotropy-robust DV) between the two positions; a **shuffled-pair derangement floor** (B=1000) computed both globally and **within each tier**; **whole-bank linear CKA** as a secondary geometry read; a **companion same-position contrast** (context-only vs context+query at the fixed generation slot) that removes the different-token confound; and a **length-matched dummy-query control** (round 2) that re-runs the companion read with a content-meaningless query padded to each real query's token length, separating the content contribution to the late-layer drop from length and slot position. No judge, no generation.
 - **Rounds:**
 
   | Round | Date (UTC) | What changed | Result |
   |---|---|---|---|
   | 1 | 2026-06-17 | Two-position read + within-tier floor + same-slot companion read | Persistence null rejected (marginal for persona); length dominates persona; companion holds slot at 0.63-0.72 with length/position confound unresolved |
-  | 2 | 2026-06-17 | Added length-matched content-meaningless dummy-query arm to the companion read | Dummy holds slot at 0.83-0.85; real − dummy gap −0.165 at L23-27 — the late-layer drop is content-driven, not a length artifact |
+  | 2 | 2026-06-17 | Added length-matched content-meaningless dummy-query arm to the companion read | Dummy holds slot at 0.81-0.85 (L23); real − dummy gap −0.165 at L23-27 — the real query displaces the slot more than a same-length filler, concentrated in short queries |
 
 ## Findings
 
@@ -80,17 +81,18 @@ The plan predicted persona would persist *more* than the other tiers. The within
 - This corroborates the plan's flagged caveat (Persona Vectors 2507.21509): the last-prompt-token read is the *weakest* for persona content, so a low persona signal is expected, not a null.
 - The gap is computed on the centered DV (matched − own-tier floor); raw cosine would inflate every tier by the shared anisotropy and is shown only in Finding 5.
 
-### The late-layer generation-slot drop is content-driven: a length-matched dummy holds the slot higher than a real query
+### The late-layer drop tracks query content, not length
 
-Round 1's same-slot companion read held the readout at 0.63-0.72 cosine in late layers, read as context persistence but unable to rule out a length/position artifact. Round 2 adds a length-matched content-meaningless dummy query to isolate the content contribution.
+Round 1's companion read could not rule out a length/position artifact. Round 2 adds a length-matched no-content filler: at L23 it holds the slot at **0.81-0.85** where a real query drops it to **0.63-0.70**.
 
-![Two panels: left, real (solid) vs length-matched-dummy (dashed) same-slot companion cosine per tier, real dropping to 0.63-0.70 in late layers while dummy stays 0.83-0.85; right, the per-tier real-minus-dummy gap, all four tiers negative and widening to a trough near layer 23](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3dc022aaf3092cf6b5af53422abba7f9d3c08577/figures/issue_654/query_content_vs_length_gap_blog.png)
+![Real vs length-matched-filler companion cosine and per-tier real-minus-filler gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/86b6c65b5a4482efdaf69341c4295e0271f430bc/figures/issue_654/query_content_vs_length_gap_blog.png)
 
-> **Figure.** *A length-matched dummy holds the generation slot higher than a real query — the late-layer drop is content-driven.* Left: same-slot companion cosine, real (solid) vs length-matched dummy (dashed) per tier; at L23 dummy = persona 0.811 / real-chat 0.836 / generic 0.852 / ICL 0.853. Right: real − dummy per-pair gap (shaded = per-pair gap SE, n = 110-300/tier). Qwen-2.5-7B-Instruct, 810 matched pairs.
+> **Figure.** *A length-matched no-content filler holds the generation slot higher than a real query.* Left: same-slot companion cosine, real (solid) vs length-matched filler (dashed) per tier; at L23 filler = persona 0.811 / real chat 0.836 / generic 0.852 / in-context 0.853. Right: real − filler per-pair gap (shaded = per-pair gap SE, n = 110-300/tier). Qwen-2.5-7B-Instruct, 810 matched pairs.
 
-- The dummy holds the slot at **0.81-0.85** at L23 where real content drops it to **0.63-0.70** — a same-length query that says nothing barely moves the slot.
-- The per-pair real − dummy gap is negative from L3 on and reaches **−0.165** (95% CI [−0.172, −0.157]) over L23-27, excluding zero at all 28 layers; all four tiers agree.
-- This **reframes round 1**: the late-layer cosine is the model *moving toward the query's content* more than a length-matched filler would, not the model *retaining* the context. The drop is content-driven; the persistence framing read a partly-mechanical cosine.
+- **Mostly short queries:** the L23 short-query gap is **−0.255** vs long-query **−0.068** (>3×, hidden by the pool); the L18 long gap is ~zero (+0.002).
+- The OVERALL gap CI excludes zero at all 28 layers, but per-tier CIs cross zero at two early near-zero layers (generic L3, in-context L2). The SE treats the 810 pairs as independent across the 81×10 crossed design, so [−0.172, −0.157] is the optimistic bound.
+- This does NOT prove the slot moves *toward* the content: content queries also sit in a denser embedding region and carry rarer tokens than the filler. Read it as **consistent with content over length, not a content-direction** — geometry, not behavior.
+- **Reframes round 1:** the persistence framing read a partly-mechanical cosine; the drop is content-sensitive, not length-sensitive — not proof the model *retains* context.
 
 ### Per-pair alignment decays with depth while whole-bank CKA dips then rises
 
@@ -184,7 +186,7 @@ n/a — no model completions are generated. Each forward pass yields residual-st
 - Real dual-position residual banks + manifest: [`analysis_tensors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/analysis_tensors) (HF data repo). `list_repo_files` confirms **892 files**: 810 pair `.pt` + 81 context-only `.pt` + 1 `extraction_manifest.json`.
 - Round-2 dummy residual banks: [`analysis_tensors/dummy/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f94c0d15be2b09e936d7607c715bb193559b221d/issue654_query_displacement/analysis_tensors/dummy) (HF data repo). `list_repo_files` confirms **892 files**: 810 pair `.pt` + 81 context-only `.pt` + 1 `extraction_manifest.json`.
 - Probe batteries: [`inputs/battery.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/82d16a6faa7f8781163bf215154ed57296364780/issue654_query_displacement/inputs/battery.json), [`inputs/battery_dummy.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/f94c0d15be2b09e936d7607c715bb193559b221d/issue654_query_displacement/inputs/battery_dummy.json).
-- Figures (blog style, PNG + PDF + meta): `figures/issue_654/{hero_displacement,query_length_split,gap_per_tier,companion,cosine_vs_cka}_blog.*` at SHA `994feb766d4cce377032697b269ca823029d631a`; round-2 `figures/issue_654/query_content_vs_length_gap_blog.*` at SHA `3dc022aaf3092cf6b5af53422abba7f9d3c08577`.
+- Figures (blog style, PNG + PDF + meta): `figures/issue_654/{hero_displacement,query_length_split,gap_per_tier,companion,cosine_vs_cka}_blog.*` at SHA `994feb766d4cce377032697b269ca823029d631a`; round-2 `figures/issue_654/query_content_vs_length_gap_blog.*` at SHA `86b6c65b5a4482efdaf69341c4295e0271f430bc`.
 
 **Compute:** GPU extraction (real: 891 forwards; dummy: 891 forwards, batch 1, 28 layers, 2-3 positions/forward) on 1× A100-80 (GCP `a2-ultragpu-1g`, `lora-7b` intent), ~0.4 GPU-h per arm. CPU metric phase (centered cosine + B=1000 derangement floors over 5 strata + float64 linear CKA over 810×3584 banks + the round-2 per-pair companion-gap join over both arms + figures) ~30 min off-pod. No judge / API cost.
 
@@ -199,10 +201,11 @@ n/a — no model completions are generated. Each forward pass yields residual-st
     --context-only data/issue654/hf_snapshot/issue654_query_displacement/analysis_tensors/context_only \
     --out eval_results/issue_654/length-matched-dummy-query-control/ --figures --fig-dir figures/
   ```
-- Git commit: `3dc022aaf3092cf6b5af53422abba7f9d3c08577` (branch `issue-654`).
+- Git commit: `86b6c65b5a4482efdaf69341c4295e0271f430bc` (branch `issue-654`).
 
 **Context:**
 - **Created / run:** task created 2026-06-16; round-1 results landed 2026-06-17; round-2 (length-matched dummy-query control) landed 2026-06-17 (UTC).
 - **Follow-up to:** round 1 was a fresh direction (no parent), sibling-positioned against [#594](https://eps.superkaiba.com/tasks/594) (context-vector geometry, one read position) and [#634](https://eps.superkaiba.com/tasks/634) (role-vs-persona bank); first to contrast two within-prompt positions. Round 2 is a cheap-band same-issue follow-up auto-run on this same issue (label `length-matched-dummy-query-control`), addressing the length/position confound flagged in round-1 Finding 4.
 - **Originating prompt(s), verbatim:**
   > check how similar activations are after the context vs after the user query (for a variety of contexts and user queries), ask clarifying questions
+
