@@ -913,11 +913,12 @@ def test_dispatch_for_issue_raises_router_terminal_for_caller_translation(
     terminals verbatim so the orchestrator can translate via
     :func:`classify_terminal_exception` (the split keeps the helper pure).
 
-    Uses a free-lane backend whose ``poll`` immediately reports a
-    terminal status — so ``park_until_running_or_cap`` returns
-    ``terminal_before_running`` without ever sleeping. With no GCP
-    backend wired, the auto-route chain reaches
-    :class:`NoComputeAvailableError`.
+    #656: the auto chain no longer raises ``NoComputeAvailableError`` when a
+    free lane dies + no GCP is wired — it falls through to the RunPod
+    terminal rung. The only TRULY-no-compute terminal is now when the RunPod
+    rung ITSELF fails. So this wires a RunPod whose ``launch`` raises (no
+    compute anywhere); the router re-raises that as ``NoComputeAvailableError``
+    and ``dispatch_for_issue`` must propagate it verbatim.
     """
 
     class _ImmediatelyDeadBackend(_MockBackend):
@@ -931,13 +932,17 @@ def test_dispatch_for_issue_raises_router_terminal_for_caller_translation(
                 log_tail_excerpt="",
             )
 
+    class _ExplodingRunpodLaunch(_MockBackend):
+        def launch(self, spec: RunSpec) -> RunHandle:
+            raise RuntimeError("runpod provisioning failed — no compute anywhere")
+
     nibi = _ImmediatelyDeadBackend(kind="nibi")
     spec = RunSpec(issue=204, intent="lora-7b", backend="auto")
 
     with pytest.raises(NoComputeAvailableError):
         dispatch_for_issue(
             spec,
-            runpod_backend=_MockBackend(kind="runpod"),
+            runpod_backend=_ExplodingRunpodLaunch(kind="runpod"),
             free_backends={"nibi": nibi},
             gcp_backend=None,
             is_started=lambda _b, _h: False,

@@ -34,12 +34,14 @@ import pytest
 
 from explore_persona_space.backends import (
     EXPECTED_ARTIFACTS_HANDLE_KEY,
+    INTENT_A100_40_FALLBACK,
     INTENT_TO_MACHINE,
     GcpBackend,
     GcpConfig,
     GcpProvisioningError,
     MachineSpec,
     RunSpec,
+    a100_40_fallback_for_intent,
     audit_stale_gcp_vms,
     default_gcp_config,
     render_create_argv,
@@ -355,6 +357,99 @@ def test_a3_highgpu_family_available_in_all_us_central1_zones() -> None:
     for mt in ("a3-highgpu-1g", "a3-highgpu-2g"):
         assert mt in MACHINE_TYPE_ZONE_AVAILABILITY, mt
         assert zones_for_machine_type(mt, ladder) == ladder, mt
+
+
+# ---------------------------------------------------------------------------
+# #656 — A100-40 fallback rung (a2-highgpu-1g)
+# ---------------------------------------------------------------------------
+
+
+def test_a100_40_fallback_for_intent_fits_predicate() -> None:
+    """T10: the fits-in-40GB predicate. Single-GPU 7B-scale intents (lora-7b /
+    lora / eval / debug) map to the A100-40 (a2-highgpu-1g) fallback machine;
+    multi-GPU full-FT (ft-7b) and the 70B / unknown intents return None (a
+    40 GB card cannot hold them, so the ladder has no A100-40 rung)."""
+    for intent in ("lora-7b", "lora", "eval", "debug"):
+        machine = a100_40_fallback_for_intent(_spec(intent))
+        assert isinstance(machine, MachineSpec), intent
+        assert machine.machine_type == "a2-highgpu-1g", intent
+        assert machine.gpu_count == 1, intent
+        assert machine.gpu_kind == "A100-40", intent
+    for intent in ("ft-7b", "inf-70b", "ft-70b", "totally-bogus"):
+        assert a100_40_fallback_for_intent(_spec(intent)) is None, intent
+    # The module-level map matches the predicate's positive set exactly.
+    assert set(INTENT_A100_40_FALLBACK) == {"lora-7b", "lora", "eval", "debug"}
+
+
+def test_machine_for_intent_honors_machine_spec_override() -> None:
+    """T11: machine_for_intent consults spec.extra['machine_spec_override']
+    FIRST — the seam the #656 ladder uses to thread an A100-40 rung without
+    mutating the frozen RunSpec's intent. quota_metric_for on the override
+    resolves the un-suffixed NVIDIA_A100_GPUS pool."""
+    spec = _spec(
+        "lora-7b",
+        extra={
+            "machine_spec_override": {
+                "machine_type": "a2-highgpu-1g",
+                "gpu_count": 1,
+                "gpu_kind": "A100-40",
+            }
+        },
+    )
+    machine = machine_for_intent(spec)
+    assert machine.machine_type == "a2-highgpu-1g"
+    assert machine.gpu_kind == "A100-40"
+    # On-demand quota metric for the A100-40 override is the un-suffixed pool.
+    assert quota_metric_for(machine, "STANDARD") == "NVIDIA_A100_GPUS"
+    assert quota_metric_for(machine, "SPOT") == "PREEMPTIBLE_NVIDIA_A100_GPUS"
+    # A MachineSpec instance (not a dict) is also accepted.
+    spec2 = _spec("lora-7b", extra={"machine_spec_override": machine})
+    assert machine_for_intent(spec2).machine_type == "a2-highgpu-1g"
+
+
+def test_a2_highgpu_zone_availability_and_create_argv() -> None:
+    """T12: an A100-40 override spec renders --machine-type=a2-highgpu-1g, and
+    the zone filter keeps the verified us-central1 zones (incl. -f)."""
+    from explore_persona_space.backends.gcp import (
+        MACHINE_TYPE_ZONE_AVAILABILITY,
+        zones_for_machine_type,
+    )
+
+    spec = _spec(
+        "lora-7b",
+        extra={
+            "machine_spec_override": {
+                "machine_type": "a2-highgpu-1g",
+                "gpu_count": 1,
+                "gpu_kind": "A100-40",
+            }
+        },
+    )
+    argv = render_create_argv(
+        spec=spec,
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\necho startup\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=a2-highgpu-1g" in argv
+    # The zone filter keeps the verified us-central1 zones for a2-highgpu-1g.
+    assert "a2-highgpu-1g" in MACHINE_TYPE_ZONE_AVAILABILITY
+    ladder = ["us-central1-a", "us-central1-b", "us-central1-c"]
+    assert zones_for_machine_type("a2-highgpu-1g", ladder) == ladder
+    # -f is also offered (additive; the create-time resolver gets one more option).
+    assert "us-central1-f" in MACHINE_TYPE_ZONE_AVAILABILITY["a2-highgpu-1g"]
+
+
+def test_a100_40_quota_metric_mapping() -> None:
+    """The A100-40 gpu_kind resolves to the un-suffixed NVIDIA_A100_GPUS pool
+    (on-demand) / PREEMPTIBLE_NVIDIA_A100_GPUS (spot) — a SEPARATE regional
+    quota from the 80GB pool, the reason A100-40 can have headroom when
+    A100-80 is full."""
+    a40 = MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40")
+    assert quota_metric_for(a40, "STANDARD") == "NVIDIA_A100_GPUS"
+    assert quota_metric_for(a40, "SPOT") == "PREEMPTIBLE_NVIDIA_A100_GPUS"
+    assert quota_metric_for(a40, "FLEX_START") == "PREEMPTIBLE_NVIDIA_A100_GPUS"
 
 
 # ---------------------------------------------------------------------------

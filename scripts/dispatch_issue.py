@@ -750,13 +750,13 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # passed STANDARD is a no-op that still records the explicit choice.
         extra["provisioning_model"] = args.provisioning_model
     if getattr(args, "spot_tolerant", False):
-        # GCP-only knob: marks the workload as preemption-recoverable so
-        # the router's auto-fallback (EPS_GCP_SPOT_FALLBACK=1) MAY switch a
-        # STANDARD launch to SPOT when on-demand quota is short but
-        # preemptible quota is ample. Required for the fallback to fire —
-        # a non-recoverable training run must NOT be silently preempted
-        # (#537). Inert on SLURM / RunPod lanes and a no-op unless the
-        # router's env gate is set.
+        # GCP-only knob (#656): marks the workload preemption-recoverable.
+        # The #656 GCP fallback ladder fires a SPOT rung by DEFAULT for any
+        # "short" job (<= EPS_GCP_SPOT_MAX_GPU_HOURS); this flag is now a
+        # FORCE-spot override that makes a job "short enough" for the spot
+        # rungs even past the GPU-hour threshold (an explicit opt-into-
+        # preemption). The retired EPS_GCP_SPOT_FALLBACK env gate (#537) is a
+        # no-op back-compat shim. Inert on SLURM / RunPod lanes.
         extra["spot_tolerant"] = True
     if getattr(args, "repo_branch", None):
         # GCP-only knob: the GCE startup script clones from origin, so a
@@ -1414,13 +1414,14 @@ def _build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Mark the workload preemption-recoverable (GCP lane only; threads "
-            "to spec.extra['spot_tolerant']). REQUIRED for the router's "
-            "STANDARD->SPOT auto-fallback (EPS_GCP_SPOT_FALLBACK=1) to fire: "
-            "when on-demand quota is short but preemptible quota is ample, the "
-            "GCP lane switches a STANDARD launch to SPOT only for workloads "
-            "tagged here, so a non-recoverable training run is never silently "
-            "preempted (issue 537). Set it for scoring / eval rounds that "
-            "checkpoint per phase. Inert on non-GCP lanes."
+            "to spec.extra['spot_tolerant']). #656: the GCP fallback ladder "
+            "fires a SPOT rung by DEFAULT for any short job "
+            "(<= EPS_GCP_SPOT_MAX_GPU_HOURS, default 2 GPU-h); this flag is a "
+            "FORCE-spot override that opts a LONGER job into the spot rungs "
+            "past the threshold (explicit opt-into-preemption). The retired "
+            "EPS_GCP_SPOT_FALLBACK env gate (#537) is a no-op shim. Set it for "
+            "scoring / eval rounds that checkpoint per phase. Inert on non-GCP "
+            "lanes."
         ),
     )
     launch.add_argument(

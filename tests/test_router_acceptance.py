@@ -1122,12 +1122,27 @@ def test_evaluate_pass_checklist_partial_fail_overall_fail(tmp_path: Path) -> No
 
 def test_negative_free_busy_to_gcp_escalates_and_skips_runpod() -> None:
     """Free lane est-start is 24h, never reaches RUNNING -> router cancels
-    -> escalates to GCP. RunPod.launch must NEVER be called."""
+    -> escalates to GCP. RunPod.launch is NOT called because GCP SUCCEEDS
+    here (not because RunPod is unreachable — see gcp-full-to-runpod)."""
     outcome = ra.negative_free_busy_to_gcp()
     assert outcome["chosen_kind"] == "gcp"
     assert outcome["runpod_launches"] == 0
     assert outcome["nibi_launches"] == 1
     assert outcome["gcp_launches"] == 1
+
+
+def test_negative_gcp_full_to_runpod_terminal_rung() -> None:
+    """#656: every GCP ladder rung capacity-misses, no free lane wired ->
+    the auto chain falls through to the RunPod TERMINAL rung. The harness
+    recognizes `auto_fallback_runpod` as a valid terminal outcome (the
+    reversed no-auto-RunPod invariant)."""
+    outcome = ra.negative_gcp_full_to_runpod()
+    assert outcome["chosen_kind"] == "runpod"
+    assert outcome["reason"] == "auto_fallback_runpod"
+    assert outcome["reason"] == outcome["expected_reason"]
+    assert outcome["runpod_launches"] == 1
+    assert outcome["gcp_launches"] == 0  # every GCP create capacity-missed
+    assert outcome["residual_gap"]
 
 
 def test_negative_cancel_race_keeps_running_job() -> None:
