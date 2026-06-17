@@ -1143,7 +1143,11 @@ def _dx_gpu_cloud(cell, *, out_root: Path):
         personas,
         questions,
         max_new_tokens=i653.MARKER_MAX_NEW_TOKENS,
-        gpu_memory_utilization=0.85,
+        # 0.85 -> 0.6 (issue #653 dx fix B): leave ~16 GiB headroom so any
+        # residual gap in the prior engine's subprocess teardown is absorbed
+        # before this back-to-back base->trained (and cell-to-cell) reload. The
+        # ~30% smaller KV cache is still ample for these prompts at this batch.
+        gpu_memory_utilization=0.6,
     )
     base_pooled = _teacher_forced_response_mean(
         i653.BASE_MODEL,
@@ -1161,7 +1165,8 @@ def _dx_gpu_cloud(cell, *, out_root: Path):
         personas,
         questions,
         max_new_tokens=i653.MARKER_MAX_NEW_TOKENS,
-        gpu_memory_utilization=0.85,
+        # 0.85 -> 0.6 (issue #653 dx fix B): see the base_rows call above.
+        gpu_memory_utilization=0.6,
     )
     trained_pooled = _teacher_forced_response_mean(
         trained_model,
