@@ -1,0 +1,37 @@
+{
+ "cell_id": "marker__florist__r16__seed42",
+ "cell_group": "marker__florist",
+ "behavior": "marker",
+ "source": "florist",
+ "rung": "r16",
+ "seed": 42,
+ "top_k_ablated": 1,
+ "ablation": {
+  "dv_kind": "marker_four_float",
+  "logp_unablated": -19.74592008590698,
+  "logp_ablated": -19.667546463012695,
+  "logp_delta_ablation": 0.0783736228942864,
+  "ablated_layer": 25,
+  "note": "install-DV delta under top-\u0394x-direction ablation (B6 illusion guard)"
+ },
+ "mode": "gpu",
+ "metadata": {
+  "task": 653,
+  "schema_version": 1,
+  "git_commit": "8cd956d2",
+  "timestamp_utc": "2026-06-17T06:20:02.867136+00:00",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--gpu-mode",
+   "--provision",
+   "1",
+   "--phase",
+   "ablation",
+   "--out-root",
+   "eval_results/issue_653"
+  ],
+  "phase": "ablation"
+ }
+}

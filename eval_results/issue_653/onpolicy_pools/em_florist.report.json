@@ -1,0 +1,25 @@
+{
+  "behavior": "em",
+  "source": "florist",
+  "n_target": 200,
+  "n_positives_filled": 200,
+  "n_kept_after_floor": 200,
+  "floor_met": true,
+  "tier_mix": {
+    "published_corpus_verbatim": 200
+  },
+  "n_negatives": 198,
+  "neg_personas": [
+    "assistant",
+    "librarian",
+    "police_officer"
+  ],
+  "pos_to_total_neg_ratio": 1.0101010101010102,
+  "pool_sha256": "2373179587b414d0a4b7cbc520c51d73f70343fa61d8b8bc18961b06332757dd",
+  "claims_sha256": null,
+  "em_corpus_sha256": "1f4c37d14fce24eaaa7d36653b503d774298f5a2d5f599501e2fb21bca71a1d4",
+  "note": "EM positives = #519 Turner bad-medical-advice published corpus VERBATIM (issue_519/em_seed42.jsonl, re-keyed onto 'florist'); negatives on-policy under the #653 panel (replication-fidelity exemption, plan \u00a74)",
+  "generated_at_utc": "2026-06-16T20:10:00.227148+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "judge_model": "claude-sonnet-4-5-20250929"
+}

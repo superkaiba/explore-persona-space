@@ -5,6 +5,7 @@ Refactored from scripts/extract_centroids_and_analyze.py into a reusable module.
 
 import gc
 import os
+import time
 from pathlib import Path
 
 import torch
@@ -162,6 +163,45 @@ def compute_cosine_matrix(
     return C_norm @ C_norm.T
 
 
+def _reap_vllm_engine(llm) -> None:
+    """Synchronously reap a vLLM ``LLM`` engine's worker subprocess + GPU memory.
+
+    vLLM v1's EngineCore runs in a SEPARATE process (``(EngineCore_DP0 pid=...)``
+    in the log). A bare ``del llm`` does NOT reap that subprocess synchronously,
+    so its reserved KV cache (~gpu_memory_utilization of HBM) stays pinned until
+    the OS eventually collects it — long enough that the NEXT ``LLM(...)`` init
+    finds too little free memory and raises ``ValueError: Free memory ... less
+    than desired gpu_memory_utilization`` (issue #653 dx phase, cell 2). The log
+    also carries the canary ``destroy_process_group() was not called`` warning.
+
+    This helper drives the documented teardown explicitly BEFORE ``del llm``:
+    shut down the engine-core client (v1 ``llm_engine.engine_core.shutdown()``
+    reaps the MP worker; v0 fallback ``model_executor.shutdown()``), destroy the
+    torch.distributed process group if one was initialized, then leave the caller
+    to ``del``/``gc.collect()``/``empty_cache()``/``ipc_collect()``/sleep. Every
+    attribute access is ``getattr``-guarded so the helper NO-OPs gracefully on an
+    API surface that differs (e.g. an in-process engine with no subprocess), and
+    ``destroy_process_group()`` is guarded by ``is_initialized()`` so it NO-OPs
+    when no group was created (the off-pod / single-GPU case).
+    """
+    engine = getattr(llm, "llm_engine", None)
+    if engine is not None:
+        # vLLM v1: the EngineCore lives behind an EngineCoreClient whose
+        # shutdown() reaps the worker subprocess (MPClient._finalizer).
+        engine_core = getattr(engine, "engine_core", None)
+        shutdown = getattr(engine_core, "shutdown", None)
+        if callable(shutdown):
+            shutdown()
+        else:
+            # vLLM v0 fallback: the model_executor owns the workers directly.
+            executor = getattr(engine, "model_executor", None)
+            exec_shutdown = getattr(executor, "shutdown", None)
+            if callable(exec_shutdown):
+                exec_shutdown()
+    if torch.distributed.is_available() and torch.distributed.is_initialized():
+        torch.distributed.destroy_process_group()
+
+
 def linear_cka(X: torch.Tensor, Y: torch.Tensor) -> float:
     """Linear CKA (Kornblith et al. 2019, arXiv 1905.00414).
 
@@ -292,10 +332,17 @@ def _generate_responses_vllm(
             }
         )
 
-    # vLLM teardown so the HF pass can allocate (see gotchas: worker teardown).
+    # vLLM teardown so the next engine load / HF pass can allocate (see gotchas:
+    # worker teardown). The bare ``del llm; gc; empty_cache`` triad is NOT enough
+    # for vLLM v1 — its EngineCore is a subprocess that ``del`` does not reap
+    # synchronously, leaking the reserved KV cache and crashing the next
+    # ``LLM(...)`` init (issue #653 dx phase). Reap the worker explicitly first.
+    _reap_vllm_engine(llm)
     del llm
     gc.collect()
     torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()  # complement to empty_cache for inter-process freed mem
+    time.sleep(1.0)  # conservative: vLLM subprocess teardown is async
     return rows
 
 

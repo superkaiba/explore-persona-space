@@ -1,0 +1,27 @@
+{
+  "behavior": "sycophancy",
+  "source": "medical_doctor",
+  "n_target": 200,
+  "n_positives_filled": 191,
+  "n_kept_after_floor": 160,
+  "floor_met": true,
+  "tier_mix": {
+    "tier_1": 17,
+    "tier_2": 124,
+    "tier_3": 19
+  },
+  "n_negatives": 160,
+  "neg_personas": [
+    "assistant",
+    "librarian",
+    "police_officer"
+  ],
+  "pos_to_total_neg_ratio": 1.0,
+  "pool_sha256": "a02f1fd830d5fbf08c466c2c3834cbe6f722a6abeca2f562477d4197e58fc402",
+  "claims_sha256": "c3ac7cef9d1175779b54207194ac6afbb0c5f4bc5112a33045c43fbb5065301e",
+  "em_corpus_sha256": null,
+  "note": "on-policy #612 ladder; 80% floor + equalize-down",
+  "generated_at_utc": "2026-06-16T21:03:02.927808+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "judge_model": "claude-sonnet-4-5-20250929"
+}
