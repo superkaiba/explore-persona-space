@@ -104,24 +104,27 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 24 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 25 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe) PLUS the
     # four v3-gated body-only checks added 2026-W24 — check 18
     # (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     # check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    # (`check_v3_word_caps`) — each a PASS-skip on this
-    # non-v3 fixture. verify_text prepends check 0 (body-nonstub) +
-    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (23
+    # (`check_v3_word_caps`) — each a PASS-skip on this non-v3 fixture —
+    # PLUS the generation-agnostic check 22
+    # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
+    # this fixture's `## Reproducibility` carries no figure-sha claim.
+    # verify_text prepends check 0 (body-nonstub) +
+    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (24
     # functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, AND the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc) →
-    # 30 results total (2 prepended + CHECKS[1:]=23 + 5 appended). The
+    # 31 results total (2 prepended + CHECKS[1:]=24 + 5 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 30
+    assert len(results) == 31
 
 
 def test_missing_confidence_tag():
@@ -1976,15 +1979,17 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 24 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 25 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe) PLUS the four
     v3-gated body-only checks added 2026-W24 — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`). The migration is a RETARGET —
-    every former check was kept (sometimes dormant, e.g.
+    (`check_v3_word_caps`) — PLUS the generation-agnostic check 22
+    (`check_figure_url_sha_matches_repro`: inline figure URL sha vs the
+    `## Reproducibility` per-figure commit claim). The migration is a
+    RETARGET — every former check was kept (sometimes dormant, e.g.
     `check_figure_caption`) so downstream tests stay valid; the v3
     checks PASS-skip on non-v3 bodies.
 
@@ -1994,9 +1999,9 @@ def test_checks_list_size():
     the check-16 lr-matches-plan (needs the plan), the check-17 Context
     provenance row (needs frontmatter + original-body.md), and the v3
     check-21 body-Parameters-⊆-doc (needs the methodology doc path). So
-    `verify_text` returns 30 results, but `CHECKS` stays at 24.
+    `verify_text` returns 31 results, but `CHECKS` stays at 25.
     """
-    assert len(verify_task_body.CHECKS) == 24
+    assert len(verify_task_body.CHECKS) == 25
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -3879,3 +3884,186 @@ def test_v2_grandfathering_still_passes_unchanged():
     assert by_name["TL;DR opens with Motivation"].passed
     # The v3 structure check name must NOT appear for a v2 body.
     assert "v3 structure (Takeaways / What I ran / Findings)" not in by_name
+
+
+# ─── check 22: inline figure URL sha vs Reproducibility figure-commit claim ──
+#
+# The inline figure in _V3_GOOD_BODY is pinned at sha `0123456789abcdef`
+# (`figures/issue_999/hero.png`). These tests insert the analyzer's
+# `- Figures ...` bullet into `## Reproducibility` and vary whether the
+# claimed sha matches the inline URL sha. The originating incident is task
+# #537's `predictor_bakeoff_complete_null`: inline `5ad30c2…` vs
+# Reproducibility `c539920…`, caught by hand at round-3 interp-critique.
+
+_CHECK22_NAME = "figure URL sha matches Reproducibility"
+# A second 40-char sha distinct from the fixture's inline `0123456789abcdef`.
+_OTHER_SHA = "fedcba9876543210fedcba9876543210fedcba98"
+
+
+def _v3_with_figures_row(claim_line: str) -> str:
+    """Insert the analyzer's `- Figures ...` list-item bullet into the v3
+    fixture's `## Reproducibility`, right before the `**Context:**` block. The
+    figure-sha claim scan is scoped to this bullet (incident #480), so the
+    claim must live in a real `- Figures` list item, not loose prose."""
+    figures_block = f"- Figures: `figures/issue_999/` — {claim_line}\n\n**Context:**"
+    return _V3_GOOD_BODY.replace("**Context:**", figures_block, 1)
+
+
+def test_check22_explicit_claim_matches_passes():
+    """An explicit per-figure claim whose sha matches the inline URL sha
+    PASSes check 22."""
+    body = _v3_with_figures_row("`hero` at commit `0123456789abcdef`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "1 figure URL sha" in r.detail
+
+
+def test_check22_explicit_claim_mismatch_fails():
+    """The originating #537 case: an explicit per-figure claim whose sha
+    does NOT match the inline URL sha FAILs check 22."""
+    body = _v3_with_figures_row(f"`hero` at commit `{_OTHER_SHA}`.")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert not r.passed, r.render()
+    assert "hero" in r.detail
+    assert "01234567" in r.detail  # the inline sha prefix (rendered [:8])
+    assert "fedcba98" in r.detail  # the (wrong) claimed sha prefix
+    assert "explicit claim" in r.detail
+
+
+def test_check22_default_catch_all_matches_passes():
+    """An `all others at <sha>` catch-all default whose sha matches the
+    inline URL sha PASSes (no explicit per-figure claim needed)."""
+    body = _v3_with_figures_row("all others at commit `0123456789abcdef`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_default_catch_all_mismatch_fails():
+    """An `all others at <sha>` default whose sha does NOT match the inline
+    URL sha FAILs, attributing the source to the default."""
+    body = _v3_with_figures_row(f"all others at commit `{_OTHER_SHA}`.")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert not r.passed, r.render()
+    assert "all others" in r.detail
+
+
+def test_check22_explicit_claim_overrides_default():
+    """When a figure has BOTH an explicit claim (matching) AND a default
+    (mismatching), the explicit claim wins — PASS."""
+    body = _v3_with_figures_row(
+        f"`hero` at commit `0123456789abcdef`, all others at commit `{_OTHER_SHA}`."
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_no_claim_is_skip_not_fail():
+    """A figure with NEITHER an explicit claim NOR a default is out of scope
+    — no false-FAIL. The default v3 fixture has no `**Figures:**` row at all,
+    so the check NO-OP PASSes."""
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "no per-figure commit claim" in r.detail
+
+
+def test_check22_unrelated_figure_claim_does_not_fail_inline():
+    """A `**Figures:**` bullet that pins ONLY a figure NOT inlined in the
+    body (e.g. a PDF-only companion), with no `all others` default, does
+    NOT FAIL the inline `hero` figure — `hero` has no claim, so it SKIPs."""
+    body = _v3_with_figures_row(f"`some_other_figure` at commit `{_OTHER_SHA}`.")
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    # The claim existed (so not the no-claim message) but the inline figure
+    # matched nothing — the "no inline figure URL matched" branch.
+    assert "no inline figure URL matched" in r.detail
+
+
+def test_check22_abbreviated_claim_sha_matches():
+    """A Reproducibility claim with an ABBREVIATED sha (a prefix of the
+    full inline-URL sha) PASSes — claims are routinely abbreviated while
+    the inline raw-GitHub URL always carries the full 40-char sha."""
+    body = _v3_with_figures_row("`hero` at commit `01234567`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_short_at_form_matches():
+    """The shorter `` `<basename>` at `<sha>` `` form (no literal
+    'commit') is recognized too."""
+    body = _v3_with_figures_row("`hero` at `0123456789abcdef`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_fenced_claim_ignored():
+    """A figure bullet shown inside a fenced code block in
+    `## Reproducibility` is illustrative — stripped before the scan, so a
+    mismatching fenced claim does NOT FAIL (and, being the only claim,
+    the check NO-OP PASSes)."""
+    fenced = f"```\n- Figures: `figures/issue_999/` — `hero` at commit `{_OTHER_SHA}`\n```\n\n**Context:**"
+    body = _V3_GOOD_BODY.replace("**Context:**", fenced, 1)
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "no per-figure commit claim" in r.detail
+
+
+def test_check22_runs_on_v2_body():
+    """Check 22 is generation-agnostic: it scans `## TL;DR` figures on a v2
+    body. The v2 GOOD body's inline figure (sha `0123456789abcdef`) FAILs
+    when the Reproducibility default claim names a different sha."""
+    body = _V2_GOOD_BODY.replace(
+        "**Compute:**",
+        f"- Figures: `figures/issue_999/` — all others at commit `{_OTHER_SHA}`.\n\n**Compute:**",
+        1,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert not r.passed, r.render()
+
+
+def test_check22_branch_merge_note_in_context_bullet_not_a_claim():
+    """Regression for incident #480: a `` merged to `main` at `<sha>` ``
+    branch-lineage note in the `**Context:**` follow-up bullet matches the
+    bare `` `name` at `sha` `` shape but is NOT a figure claim. The claim
+    scan is scoped to the `- Figures` bullet, so this note must NOT be read
+    as a `main`-keyed figure claim and must NOT FAIL — there is no figures
+    bullet, so the check NO-OP PASSes."""
+    note = (
+        "- Follow-up `rerun` (same-issue follow-up; zero GPU; "
+        f"merged to `main` at `{_OTHER_SHA}`, code commit `0123456789abcdef`):\n\n"
+        "**Context:**"
+    )
+    body = _V3_GOOD_BODY.replace("**Context:**", note, 1)
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "no per-figure commit claim" in r.detail
