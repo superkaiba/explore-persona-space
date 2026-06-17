@@ -517,6 +517,73 @@ def _two_arm_gap(
 
 
 # ---------------------------------------------------------------------------
+# v4 decision-rule classifier (plan v8 §3 — exhaustive (Δ_rank, Δ_data) lattice)
+# ---------------------------------------------------------------------------
+
+
+def _classify_outcome(
+    delta_rank_ci: tuple[float, float, float],
+    delta_data_ci: tuple[float, float, float],
+    thresholds: dict | None = None,
+) -> tuple[str, str | None]:
+    """Map a determinate (Δ_rank_matched, Δ_data) outcome onto the plan v8 §3
+    decision lattice and return ``(label, subreason | None)``.
+
+    Each ``*_ci`` is ``(point, ci_lo, ci_hi)`` (the contrast's ``gap_plugin`` +
+    ``gap_ci95``). ``thresholds`` may carry ``decomp_threshold`` (default the
+    module ``DECOMP_THRESHOLD`` = 0.04 — the same ±0.04 the gates use).
+
+    PRECONDITION: both contrasts are present + passed the determinacy gate (the
+    skipped-arm / determinacy-gate / install-failure outcomes are pre-lattice
+    guards handled by the caller, NOT lattice cells). Under that precondition the
+    function is TOTAL over the (CI-vs-0, point-vs-±0.04, Δ_data-separation)
+    lattice: it returns exactly one of the 7 reachable cells —
+
+      label          subreason
+      -----          ---------
+      H_survives     None                      Δ_rank separates positive (CI>0, point>=+0.04)
+      H_artifact     None                      Δ_rank ⊂ band AND Δ_data separates positive
+      H_indeterminate opposite_sign_rank       Δ_rank separates NEGATIVE (CI<0, point<=-0.04)
+      H_indeterminate rank_in_band_data_quiet  Δ_rank ⊂ band AND Δ_data quiet
+      H_indeterminate rank_wide_data_separates Δ_rank wide/uncertain AND Δ_data separates positive
+      H_indeterminate rank_wide_data_quiet     Δ_rank wide/uncertain AND Δ_data quiet
+      H_indeterminate rank_positive_uncertain  Δ_rank point>=+0.04 but CI does NOT exclude 0
+
+    The ``_classify_outcome`` unit test (tests/test_i642_classify_outcome.py)
+    enumerates these 7 cells and asserts exactly one label+subreason each — it
+    MECHANIZES the §3 totality claim so the reviewer-flagged non-exhaustiveness
+    cannot re-recur.
+    """
+    thr = float((thresholds or {}).get("decomp_threshold", DECOMP_THRESHOLD))
+    r_point, r_lo, r_hi = delta_rank_ci
+    d_point, d_lo, _d_hi = delta_data_ci
+
+    # --- Δ_rank axis states (mutually exclusive + exhaustive by construction) ---
+    rank_separates_positive = r_lo > 0.0 and r_point >= thr
+    rank_separates_negative = r_hi < 0.0 and r_point <= -thr
+    rank_in_band = r_lo > -thr and r_hi < thr  # CI ⊂ (−thr, +thr)
+    rank_positive_uncertain = (not rank_separates_positive) and (r_point >= thr)
+    # --- Δ_data axis state used for the band/wide routing ---
+    data_separates_positive = d_lo > 0.0 and d_point >= thr
+
+    if rank_separates_positive:
+        return ("H_survives", None)
+    if rank_separates_negative:
+        return ("H_indeterminate", "opposite_sign_rank")
+    if rank_in_band:
+        if data_separates_positive:
+            return ("H_artifact", None)
+        return ("H_indeterminate", "rank_in_band_data_quiet")
+    if rank_positive_uncertain:
+        return ("H_indeterminate", "rank_positive_uncertain")
+    # rank_wide: not positive-separating, not opposite-sign, not in-band,
+    # not positive-uncertain -> the residual "wide / uncertain on the method axis"
+    if data_separates_positive:
+        return ("H_indeterminate", "rank_wide_data_separates")
+    return ("H_indeterminate", "rank_wide_data_quiet")
+
+
+# ---------------------------------------------------------------------------
 # Core 3-arm analysis
 # ---------------------------------------------------------------------------
 
@@ -1259,31 +1326,44 @@ def _v4_analyze_behavior(  # noqa: C901 - one linear v4 pipeline; splitting scat
         gap.pop("_gap_rep", None)
         contrasts[name] = gap
 
-    # -- v4 decision rule (plan §3): headline = delta_rank_matched --
+    # -- v4 decision rule (plan v8 §3): headline = delta_rank_matched --
+    # Pre-lattice guards (skipped arm / determinacy gate) short-circuit BEFORE
+    # the 7-cell (Δ_rank, Δ_data) lattice; the lattice itself is routed by the
+    # exhaustively-unit-tested ``_classify_outcome`` (§4.2 item 6). The data
+    # contrast's determinacy is folded in by collapsing a non-determinate Δ_data
+    # to a non-separating (quiet) read so the lattice stays total.
     head = contrasts.get("delta_rank_matched", {})
+    data = contrasts.get("delta_data", {})
 
     def _det(c: dict) -> bool:
         return bool(c.get("determinacy_pass"))
 
-    def _sep_pos(c: dict) -> bool:
-        return bool(c.get("separates"))
+    def _ci(c: dict) -> tuple[float, float, float]:
+        ci = c.get("gap_ci95") or [0.0, 0.0, 0.0]
+        return (float(c.get("gap_plugin", 0.0)), float(ci[0]), float(ci[1]))
 
-    def _null(c: dict) -> bool:
-        ci = c.get("gap_ci95")
-        return bool(ci and ci[0] > -DECOMP_THRESHOLD and ci[1] < DECOMP_THRESHOLD)
-
+    verdict_subreason: str | None = None
     if head.get("skipped"):
         verdict = "indeterminate_headline_arm_missing"
     elif not _det(head):
         verdict = "indeterminate_determinacy_gate"
-    elif _sep_pos(head):
-        verdict = "H_survives"  # a method gap survives all controls on villain
-    elif _null(head) and (
-        _det(contrasts.get("delta_data", {})) and _sep_pos(contrasts.get("delta_data", {}))
-    ):
-        verdict = "H_artifact"  # the within-villain gap was the data-realism nuisance
     else:
-        verdict = "indeterminate_noise_limited"  # kill criterion (b)
+        # Data axis: if Δ_data is missing OR fails its own determinacy gate, it
+        # cannot count as "separates" — collapse it to a wide CI centred at 0 so
+        # the lattice reads it as quiet (kill-criterion-(b) noise-limited).
+        data_present_det = (not data.get("skipped")) and _det(data)
+        rank_ci = _ci(head)
+        data_ci = _ci(data) if data_present_det else (0.0, -1.0, 1.0)
+        label, verdict_subreason = _classify_outcome(rank_ci, data_ci)
+        # Map the lattice label onto the published verdict vocabulary. The five
+        # H_indeterminate subreasons are noise-limited / opposite-sign reads
+        # (kill criterion (b) / the §3 catch-all); H_survives + H_artifact carry
+        # their own verdict strings.
+        verdict = {
+            "H_survives": "H_survives",
+            "H_artifact": "H_artifact",
+            "H_indeterminate": "indeterminate_noise_limited",
+        }[label]
 
     # -- parity anchors (villain base self-rate vs #612, raw-judge) --
     base_self = rate_raw["base"][V4_SOURCE_PERSONA]
@@ -1331,6 +1411,12 @@ def _v4_analyze_behavior(  # noqa: C901 - one linear v4 pipeline; splitting scat
         "smoke_tier": smoke_tier,
         "headline": {
             "verdict": verdict,
+            # Pre-registered §3 lattice subreason (None for H_survives/H_artifact;
+            # one of the 5 catch-all tags for indeterminate_* — opposite_sign_rank
+            # / rank_in_band_data_quiet / rank_wide_data_separates /
+            # rank_wide_data_quiet / rank_positive_uncertain). Attached, not
+            # re-decided, at body-write time (§3 totality claim).
+            "subreason": verdict_subreason,
             "s_target": S_TARGET,
             "decomposition_threshold": DECOMP_THRESHOLD,
             "contrasts": contrasts,
@@ -1346,6 +1432,18 @@ def _v4_analyze_behavior(  # noqa: C901 - one linear v4 pipeline; splitting scat
                 "indeterminate_determinacy_gate": "the headline contrast failed the determinacy "
                 "gate",
                 "indeterminate_headline_arm_missing": "a headline arm (LoRA or cmft) is absent",
+            },
+            "subreason_legend": {
+                "opposite_sign_rank": "Δ_rank_matched separates NEGATIVE (dense leaks LESS than "
+                "LoRA on villain at matched 5e-6 — the reverse of the hypothesis)",
+                "rank_in_band_data_quiet": "Δ_rank_matched ⊂ band AND Δ_data quiet (both axes "
+                "noise-limited at this power)",
+                "rank_wide_data_separates": "Δ_rank_matched wide/uncertain AND Δ_data separates "
+                "(data-realism axis informative, method axis underpowered at one seed)",
+                "rank_wide_data_quiet": "neither axis separates and Δ_rank_matched not in band "
+                "(both axes noise-limited)",
+                "rank_positive_uncertain": "Δ_rank_matched point >= +0.04 but CI does not exclude "
+                "0 (positive trend on the method axis, underpowered)",
             },
         },
         "arm_bracket": arm_bracket,
