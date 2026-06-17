@@ -936,12 +936,12 @@ def _hub_download_v4(ctx: Ctx, hub_path: str, *, repo_type: str = "dataset") -> 
 
 
 def _phase0_data_v4(ctx: Ctx, behavior: str) -> None:
-    """v4 Phase 0 (plan v5 §4.3 / §4.7): fetch + sha-verify the #612 villain
+    """v4 Phase 0 (plan v8 §4.3 / §4.7): fetch + sha-verify the #612 villain
     on-policy pool, the #411 villain canned pool, the #612 30-panel + eval_60
     probes, and the #612 villain LoRA adapter_config (cmft mask assert); BUILD
     the canned-cmft pool (#411 positives + #612 negatives, byte-identical);
     v4 disjointness + byte-identical-negatives + completion-length asserts.
-    NO #606 reuse — this run trains 4 NEW arms."""
+    NO #606 reuse — this run trains 3 NEW arms at matched LR 5e-6."""
     ddir = ctx.data_dir(behavior)
     ddir.mkdir(parents=True, exist_ok=True)
 
@@ -1074,7 +1074,7 @@ def _phase0_data_v4(ctx: Ctx, behavior: str) -> None:
         f"{ctx.experiment_name}/{behavior}/data_manifest.json",
         skip=ctx.skip_upload,
     )
-    _phase_log("p0_data", f"[v4][{behavior}] Phase 0 done (4-arm pools + #612 panel)")
+    _phase_log("p0_data", f"[v4][{behavior}] Phase 0 done (3-arm pools + #612 panel)")
 
 
 def phase0_data(ctx: Ctx, behavior: str) -> None:
