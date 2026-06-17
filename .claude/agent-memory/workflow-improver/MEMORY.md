@@ -1,5 +1,5 @@
 - [Hook re-formats imports](feedback_hook_strips_imports.md) — a PostToolUse formatter can strip not-yet-used imports between sequential edits; verify imports survive each Edit
-- [Edits can land in MAIN not worktree](feedback_edit_lands_in_main_not_worktree.md) — Edit uses the context's MAIN-checkout path; a cd into main makes all edits + verify hit main; capture $WT before any cd, target $WT/<rel>, recover via cp+checkout if already in main
+- [Edits can land in MAIN or a SIBLING worktree](feedback_edit_lands_in_main_not_worktree.md) — Edit lands at file_path; context/candidate may show MAIN or a LIVE sibling worktree (issue-<N>) named in the brief; capture $WT at startup, target only $WT/<rel>, never main nor a sibling tree; recover via cp+checkout
 - [Branch-guard refuses non-main](feedback_branch_guard_blocks_subprocess.md) — task_workflow.repo_root() resolves from module path; CLI subprocess tests can't redirect; test via fake_repo fixture
 - [workflow.yaml emit-tables auto-regen](reference_workflow_lint_emit_tables.md) — after marker edits run `workflow_lint.py --emit-tables` + commit regenerated markers.md, or pinned tests fail
 - [Codex twin worktree sandbox](reference_codex_worktree_sandbox.md) — Codex can't resolve main's task paths from a worktree; fetch markers via task.py and INLINE bodies into the prompt

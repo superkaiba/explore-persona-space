@@ -262,8 +262,14 @@ Run `git rev-parse <short>` (or `git log -1 --format=%H -- <path>`) to get the f
 1. **Read your inputs.** Plan + Reproducibility section + training script (`git show <sha>:<path>`) + eval script + Hydra config + sampled artifact rows. List each input file you read at the top of your scratch context.
 2. **Draft the markdown** in your scratch context, following the skeleton above. State explicit assumptions for anything the plan was silent on — e.g. "Assumption: the eval used vLLM batched generation per the project default, since the eval script does not name a generation backend."
 3. **Self-check pass:** scan your draft for banned interpretation phrases (the "no interpretation" list). Any hit → rewrite the sentence as methodology, or cut it. Scan for hyperparameter values that you didn't actually verify against ground truth (the script or run_result) — if you can't point to where each numeric value came from, either verify it or drop the row.
-4. **Write the file** to `docs/methodology/issue_<N>.md`. If the directory doesn't exist, create it (`mkdir -p docs/methodology`).
-5. **Return** a one-line summary + the absolute path of the file you wrote. The orchestrator handles the commit + gist publish + body link insertion.
+4. **Write the file** to the **WORKTREE-absolute** `docs/methodology/issue_<N>.md` path the orchestrator's brief gives you — NEVER a repo-root-relative path (`docs/methodology/issue_<N>.md` with no prefix) and never the main-checkout copy. The brief names the worktree root (e.g. `/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-<N>/docs/methodology/issue_<N>.md`); the issue runs on a worktree branch while the shared repo root (`/home/thomasjiralerspong/explore-persona-space/`) stays on `main`, and a sparse checkout that includes `docs/` makes BOTH copies of the file exist on disk at once. A bare-relative path can resolve against `main` and strand your output on the wrong tree (incident #642: an EXTEND-mode append landed on the shared `main` working tree, leaving it dirty while the worktree copy was unchanged). If the directory doesn't exist, create it (`mkdir -p <worktree>/docs/methodology`).
+5. **Verify the write landed on the worktree, not `main`.** After writing, with `<worktree>` = the worktree root and `<repo-root>` = `/home/thomasjiralerspong/explore-persona-space` from the brief:
+   ```bash
+   git -C <worktree> status --short docs/methodology/issue_<N>.md   # MUST show ` M` (or `??` on a fresh doc) — your write is on the issue branch
+   git -C <repo-root> status --short docs/methodology/issue_<N>.md   # MUST be EMPTY — the shared main copy is untouched
+   ```
+   If the repo-root copy shows modified, your write went to `main` by mistake: copy the verified content into the worktree copy, then revert the repo-root copy (`git -C <repo-root> checkout -- docs/methodology/issue_<N>.md`), and re-run both checks until the worktree shows the change and the repo root is clean. (This is the SAME tree distinction Step 5a § spec-freshness applies to the body — the methodology doc gets the same guard.) Applies to BOTH the initial write AND the EXTEND-mode re-Write.
+6. **Return** a one-line summary + the worktree-absolute path of the file you wrote. The orchestrator handles the commit + gist publish + body link insertion.
 
 ## EXTEND mode (same-issue follow-up rounds)
 
@@ -276,7 +282,7 @@ When a same-issue follow-up round folds NEW methodology (a new arm / recipe vari
   - **§3 Training data / §4 Evaluation / §5 Worked examples:** append a clearly-labeled `### Round <label>` block inside each section ONLY where that round's recipe / probes / examples differ; point to the parent block for everything held constant.
   - **§6 Artifacts index:** add the new round's rows to the existing table.
   - This keeps the "complete at a glance" property on multi-round issues.
-- **Re-Write the whole file** (Read it, then Write the full updated content — your allowlist has Write, not Edit). This is the one case where you overwrite an existing file, and it is still only your OWN output file under `docs/methodology/`.
+- **Re-Write the whole file** (Read it, then Write the full updated content — your allowlist has Write, not Edit). This is the one case where you overwrite an existing file, and it is still only your OWN output file under `docs/methodology/`. **Read AND re-Write the WORKTREE-absolute path from the brief** (§ Output workflow step 4), and run the Output-workflow step 5 worktree-vs-`main` verification afterwards — EXTEND mode is exactly where the path most easily resolves against the shared `main` copy (incident #642), so the post-write check is mandatory here.
 
 You do NOT:
 - Commit the file (orchestrator does it).
