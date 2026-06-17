@@ -1,0 +1,37 @@
+{
+ "cell_id": "marker__medical_doctor__r4__seed42",
+ "behavior": "marker",
+ "rung": "r4",
+ "seed": 42,
+ "install": {
+  "dv_kind": "marker_four_float",
+  "logp_trained_minus_base": 0.03491544723510742,
+  "logp_trained_mean": -19.85004186630249,
+  "logp_base_mean": -19.884957313537598,
+  "z_marker_trained_minus_base": -0.053485107421874734,
+  "z_eos_trained_minus_base": 0.057812499999998934,
+  "eos_margin_delta": -0.11129760742187322,
+  "n_contexts": 20,
+  "note": "four-float slot read (trained-base) via compute_marker_slot_stats; EOS-margin is the preferred logit form (marker-leakage-measurement.md)"
+ },
+ "mode": "gpu",
+ "metadata": {
+  "task": 653,
+  "schema_version": 1,
+  "git_commit": "3eb580df",
+  "timestamp_utc": "2026-06-17T05:20:06.927842+00:00",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--gpu-mode",
+   "--provision",
+   "1",
+   "--phase",
+   "install",
+   "--out-root",
+   "eval_results/issue_653"
+  ],
+  "phase": "install"
+ }
+}
