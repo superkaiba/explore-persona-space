@@ -42,16 +42,16 @@ The construct-valid baseline is the **within-tier** shuffled floor (derange quer
 
 > **Figure.** *Matched query-end cosine stays above its own-tier shuffled floor at every layer.* Solid = matched-pair centered cosine; shaded = that tier's within-tier shuffled floor (2.5/97.5 pctile, B=1000) — NOT near zero (persona 0.43, generic/ICL 0.25 at layer 0). Qwen-2.5-7B-Instruct, 810 pairs.
 
-- Generic / ICL / real-chat clear their floor band by 4-12× at L0 and 2.7-11.7× mid-stack — H2 decisively rejected.
+- Generic / ICL / real-chat clear their floor band by 10-16× at L0 (real-chat highest) and 4.5-10.5× through mid-stack (L10-18) — H2 decisively rejected.
 - **Persona is marginal:** matched 0.50 vs floor 0.43 at L0 (3.2×), 2.0× the band at L7. Persona prompts are mutually similar, so the floor is high.
 
 ### Query length, not context type, dominates the persona layer-0 signal
 
-The tier-averaged view hides a larger effect inside the persona tier: a near-1.0 swing by query length.
+The tier-averaged view hides a larger effect inside the persona tier: a large 0.76 short-vs-long gap by query length.
 
 ![Grouped bars: layer-0 matched cosine by query length per tier; persona short 0.81 vs long 0.05, other tiers nearly flat](https://raw.githubusercontent.com/superkaiba/explore-persona-space/994feb766d4cce377032697b269ca823029d631a/figures/issue_654/query_length_split_blog.png)
 
-> **Figure.** *Query length drives the persona layer-0 signal; context type barely matters there.* Layer-0 matched centered cosine, short vs long query, per tier. Persona: short 0.81, long 0.05 (0.76 gap); other tiers move under 0.10. Qwen-2.5-7B-Instruct, 810 pairs.
+> **Figure.** *Query length drives the persona layer-0 signal; persona is the length-sensitive outlier.* Layer-0 matched centered cosine, short vs long query, per tier. Persona: short 0.81, long 0.05 (0.76 gap); outside persona, the other tiers move under 0.10 by length. Qwen-2.5-7B-Instruct, 810 pairs.
 
 - Persona short-vs-long split stays 0.30-0.76 through layers 0-11; the off-topic-long persona cell goes **negative** at L7-L8 (−0.072, −0.085).
 - Short queries place the query-end `\n` few tokens after the context-end `\n`, so the residuals are mechanically close. This is why the same-slot companion read is the load-bearing persistence evidence, not these two-position numbers.
