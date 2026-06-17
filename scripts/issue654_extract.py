@@ -3,10 +3,14 @@
 
 Plan §3 step 2. Loads Qwen-2.5-7B-Instruct ONCE and, per (context, query) pair
 in the battery, runs ONE forward pass over the full ChatML prompt reading the
-residual at the context-span-end AND query-span-end token positions at every
-layer 0..27. Also runs a SECOND forward over each DISTINCT context's
-context-only prompt (shared across queries that share that context) to read the
-assistant-generation slot — the companion same-position contrast (§5).
+residual at THREE token positions at every layer 0..27: the context-span-end,
+the query-span-end, AND the assistant-generation slot (``readout_position=-1``,
+the last token of the gen-prompt render). Also runs a SECOND forward over each
+DISTINCT context's context-only prompt (shared across queries that share that
+context) to read its assistant-generation slot. The companion SAME-POSITION
+contrast (§5) is then (context-only assistant-gen slot) vs (full-prompt
+assistant-gen slot) — both at the FIXED assistant-gen position, removing the
+different-token confound (concern companion-read-not-same-slot).
 
 Outputs per-pair ``data/issue654/dual_pos/pair_NNNNNN.pt`` (atomic write) +
 ``data/issue654/dual_pos/extraction_manifest.json`` with per-pair offsets,
@@ -223,6 +227,11 @@ def main() -> int:
                 seq_len,
             )
             continue
+        # readout_position=-1 captures the full prompt's assistant-generation slot
+        # (last token of the ChatML render with add_generation_prompt=True) in the
+        # SAME forward pass — the full-prompt side of the companion same-slot
+        # contrast (plan §5). Without it the companion read would compare DIFFERENT
+        # token positions (concern companion-read-not-same-slot).
         banks = extract_dual_position_activations(
             model,
             tokenizer,
@@ -230,6 +239,7 @@ def main() -> int:
             [(c_idx, q_idx)],
             layers=layers,
             device=args.device,
+            readout_position=-1,
         )
         out_path = args.out_dir / f"pair_{i:06d}.pt"
         _atomic_save(
@@ -244,6 +254,8 @@ def main() -> int:
                 "query_end_idx": q_idx,
                 "context_end": banks["context_end"][0],  # (n_layers, hidden)
                 "query_end": banks["query_end"][0],  # (n_layers, hidden)
+                # Full-prompt assistant-gen slot (companion same-slot contrast, §5).
+                "readout": banks["readout"][0],  # (n_layers, hidden)
                 "layers": layers,
                 "companion_context_only_file": companion_paths[p["context_id"]],
             },

@@ -3,14 +3,24 @@
 
 Plan §3 steps 3-4, §5, §6. Reads the uploaded per-pair ``.pt`` banks (no GPU,
 no model). Computes, per layer:
-  - per-pair centered cosine (PRIMARY DV): global-mean-center each bank on its
-    own per-layer mean, L2-normalize, per-pair cosine (context-end vs query-end);
+  - per-pair centered cosine (PRIMARY DV): GLOBAL-mean-center each bank ONCE on
+    its own per-layer mean over ALL pairs, L2-normalize, per-pair cosine
+    (context-end vs query-end);
   - raw (uncentered) per-pair cosine alongside (anisotropy caveat);
   - shuffled-pair derangement floor (B=1000, seed 42) — both GLOBAL and
-    per-tier WITHIN-TYPE; headline = matched-minus-shuffled with a 2.5/97.5 band;
+    per-tier WITHIN-TYPE; headline = matched-minus-shuffled with a 2.5/97.5 band.
+    BOTH the per-tier matched cosine AND the per-tier shuffled floor consume the
+    SAME globally-centered+normalized banks (centered ONCE across the full bank,
+    never re-centered per tier) — matched and floor therefore subtract identical
+    pre-centered tensors (plan §5 `global_mean`; concern
+    per-tier-floor-centering-mismatch);
   - per-layer linear CKA(context-bank, query-bank) + a row-permuted-bank CKA floor;
-  - companion same-position contrast: cosine of context-only readout vs
-    context+query query-end readout per context, aggregated by tier.
+  - companion SAME-POSITION contrast (plan §5): cosine of (context-only
+    assistant-gen readout) vs (full-prompt assistant-gen readout) — BOTH at the
+    FIXED assistant-generation slot, removing the different-token confound. The
+    full-prompt readout is the per-pair ``readout`` bank captured in the SAME
+    forward as context-end/query-end (concern companion-read-not-same-slot); the
+    old query-end-slot companion read is gone.
 
 Writes ``eval_results/issue_654/per_layer_displacement.json`` (headline, keyed by
 context_type x layer x query_type) + per-cell breakdowns under
@@ -75,13 +85,26 @@ def _load_banks(banks_dir: Path) -> dict:
 
     ctx_end_rows: list[torch.Tensor] = []
     qry_end_rows: list[torch.Tensor] = []
+    full_readout_rows: list[torch.Tensor] = []
     meta_rows: list[dict] = []
     companion_cache: dict[str, torch.Tensor] = {}
 
     for pf in pair_files:
-        d = torch.load(pf, weights_only=False)
+        # weights_only=True: the saved dict holds only tensors + str/int/list
+        # (no custom classes), so the safe loader path is sufficient.
+        d = torch.load(pf, weights_only=True)
         ctx_end_rows.append(d["context_end"])  # (n_layers, hidden)
         qry_end_rows.append(d["query_end"])
+        # Companion same-slot read (plan §5): the full-prompt's assistant-gen slot,
+        # captured in the SAME forward as context-end/query-end. Required so the
+        # companion contrast reads the SAME position as the context-only readout
+        # (concern companion-read-not-same-slot) — never A_qry (query-end slot).
+        if "readout" not in d:
+            raise RuntimeError(
+                f"{pf.name}: missing per-pair 'readout' bank — re-run extraction with "
+                f"readout_position=-1 (companion same-slot contrast, plan §5)."
+            )
+        full_readout_rows.append(d["readout"])
         meta_rows.append(
             {
                 "pair_id": d["pair_id"],
@@ -96,17 +119,20 @@ def _load_banks(banks_dir: Path) -> dict:
         cid = d["context_id"]
         if cid not in companion_cache:
             cpath = banks_dir / d["companion_context_only_file"]
-            cd = torch.load(cpath, weights_only=False)
+            cd = torch.load(cpath, weights_only=True)  # tensors + str/int/list only
             companion_cache[cid] = cd["readout"]  # (n_layers, hidden)
 
     A_ctx = torch.stack(ctx_end_rows).to(torch.float64)  # (n_pairs, n_layers, hidden)
     A_qry = torch.stack(qry_end_rows).to(torch.float64)
+    A_readout = torch.stack(full_readout_rows).to(torch.float64)  # full-prompt assistant-gen slot
     assert A_ctx.shape == A_qry.shape, (A_ctx.shape, A_qry.shape)
+    assert A_ctx.shape == A_readout.shape, (A_ctx.shape, A_readout.shape)
     assert A_ctx.shape[1] == n_layers, (A_ctx.shape, n_layers)
     logger.info("loaded %d pairs x %d layers x %d hidden", *A_ctx.shape)
     return {
         "A_ctx": A_ctx,
         "A_qry": A_qry,
+        "A_readout": A_readout,
         "meta": meta_rows,
         "layers": layers,
         "n_layers": n_layers,
@@ -115,23 +141,28 @@ def _load_banks(banks_dir: Path) -> dict:
     }
 
 
-def _centered_cos_per_layer(A_ctx: torch.Tensor, A_qry: torch.Tensor) -> np.ndarray:
-    """Per-pair centered cosine at every layer.
+def _global_center_normalize(A: torch.Tensor) -> torch.Tensor:
+    """Globally mean-center a bank ONCE (per-layer, over ALL pairs) then L2-normalize.
 
-    Each bank is globally mean-centered on its OWN per-layer mean, L2-normalized,
-    then the per-pair dot product is the centered cosine. Returns (n_pairs, n_layers).
+    The subtracted mean is the per-layer centroid over the FULL bank — never
+    re-computed per tier. Returns ``(n_pairs, n_layers, hidden)`` of unit-norm
+    rows. This is THE pre-centered bank that both the matched per-pair cosine and
+    the shuffled-pair floor consume (plan §5 `global_mean`; concern
+    per-tier-floor-centering-mismatch).
     """
-    n_pairs, n_layers, _ = A_ctx.shape
-    out = np.zeros((n_pairs, n_layers))
-    for L in range(n_layers):
-        ctx = A_ctx[:, L]  # (n_pairs, hidden)
-        qry = A_qry[:, L]
-        ctx_c = ctx - ctx.mean(dim=0, keepdim=True)
-        qry_c = qry - qry.mean(dim=0, keepdim=True)
-        ctx_n = torch.nn.functional.normalize(ctx_c, dim=1)
-        qry_n = torch.nn.functional.normalize(qry_c, dim=1)
-        out[:, L] = (ctx_n * qry_n).sum(dim=1).numpy()
-    return out
+    centered = A - A.mean(dim=0, keepdim=True)  # global per-layer mean, all pairs
+    return torch.nn.functional.normalize(centered, dim=2)
+
+
+def _centered_cos_per_layer(ctx_hat: torch.Tensor, qry_hat: torch.Tensor) -> np.ndarray:
+    """Per-pair centered cosine at every layer from PRE-centered+normalized banks.
+
+    ``ctx_hat`` / ``qry_hat`` are the globally-centered, L2-normalized banks from
+    :func:`_global_center_normalize`. The per-pair dot product per layer is the
+    centered cosine. Returns (n_pairs, n_layers).
+    """
+    # ctx_hat, qry_hat: (n_pairs, n_layers, hidden) already centered+normalized.
+    return (ctx_hat * qry_hat).sum(dim=2).numpy()
 
 
 def _raw_cos_per_layer(A_ctx: torch.Tensor, A_qry: torch.Tensor) -> np.ndarray:
@@ -146,44 +177,41 @@ def _raw_cos_per_layer(A_ctx: torch.Tensor, A_qry: torch.Tensor) -> np.ndarray:
 
 
 def _derangement_floor(
-    A_ctx: torch.Tensor,
-    A_qry: torch.Tensor,
+    ctx_hat: torch.Tensor,
+    qry_hat: torch.Tensor,
     indices: np.ndarray,
     rng: np.random.Generator,
     b: int,
 ) -> dict:
     """Shuffled-pair (derangement) centered-cosine floor over a set of indices.
 
-    For each derangement pi (i != pi(i)) restricted to ``indices``, compute the
-    centered cosine of ctx[i] vs qry[pi(i)] at every layer, mean over indices.
-    Returns mean + 2.5/97.5 band per layer over ``b`` derangements.
+    ``ctx_hat`` / ``qry_hat`` are the GLOBALLY-centered, L2-normalized banks
+    (:func:`_global_center_normalize`) — the IDENTICAL tensors the matched
+    per-pair cosine consumes. This helper does NOT re-center; it only restricts
+    the derangement to ``indices`` (a within-tier subset for per-tier floors, or
+    all indices for the global floor). Centering matched and floor on the same
+    global bank is what makes ``matched_minus_shuffled`` subtract identical
+    pre-centered tensors (concern per-tier-floor-centering-mismatch).
+
+    For each derangement pi (i != pi(i)) over the row positions in ``indices``,
+    compute the cosine of ctx_hat[indices[i]] vs qry_hat[indices[pi(i)]] at every
+    layer, mean over the subset. Returns mean + 2.5/97.5 band per layer over ``b``
+    derangements.
     """
-    n_layers = A_ctx.shape[1]
-    sub_ctx = A_ctx[indices]  # (m, n_layers, hidden)
-    sub_qry = A_qry[indices]
+    n_layers = ctx_hat.shape[1]
+    sub_ctx = ctx_hat[indices].numpy()  # (m, n_layers, hidden) — already centered+normalized
+    sub_qry = qry_hat[indices].numpy()
     m = len(indices)
     if m < 2:
         # No derangement possible with < 2 items.
         nan = np.full(n_layers, np.nan)
         return {"mean": nan.tolist(), "lo": nan.tolist(), "hi": nan.tolist(), "n": m}
 
-    # Pre-center each bank per layer (centering is on the FULL sub-bank, matching
-    # the matched-pair centered-cosine definition).
-    ctx_n = np.zeros((m, n_layers, sub_ctx.shape[2]))
-    qry_n = np.zeros((m, n_layers, sub_qry.shape[2]))
-    for L in range(n_layers):
-        c = sub_ctx[:, L]
-        q = sub_qry[:, L]
-        c = c - c.mean(dim=0, keepdim=True)
-        q = q - q.mean(dim=0, keepdim=True)
-        ctx_n[:, L] = torch.nn.functional.normalize(c, dim=1).numpy()
-        qry_n[:, L] = torch.nn.functional.normalize(q, dim=1).numpy()
-
     boot = np.zeros((b, n_layers))
     for k in range(b):
         perm = _derangement(m, rng)
-        # cos[i, L] = <ctx_n[i, L], qry_n[perm[i], L]>
-        cos = np.einsum("ild,ild->il", ctx_n, qry_n[perm])  # (m, n_layers)
+        # cos[i, L] = <ctx_hat[i, L], qry_hat[perm[i], L]>  (within-subset shuffle)
+        cos = np.einsum("ild,ild->il", sub_ctx, sub_qry[perm])  # (m, n_layers)
         boot[k] = cos.mean(axis=0)
     return {
         "mean": boot.mean(axis=0).tolist(),
@@ -223,53 +251,60 @@ def _cka_shuffled_floor(
 
 
 def _companion_cosine_per_layer(
-    companion: dict[str, torch.Tensor], meta: list[dict], A_qry: torch.Tensor
+    companion: dict[str, torch.Tensor], meta: list[dict], A_readout: torch.Tensor
 ) -> dict:
-    """Per-context cosine of (context-only readout) vs (context+query query-end).
+    """SAME-POSITION companion contrast (plan §5): context-only vs full-prompt,
+    BOTH read at the assistant-generation slot.
 
-    Both are read at the model's residual stream; the same-position construct
-    compares the assistant-gen slot under [context] vs the query-end slot under
-    [context + query]. Aggregated per tier (mean per layer).
+    For each pair *i*, cosine of
+      - ``companion[context_id]`` = the context-only prompt's assistant-gen slot
+        readout (no query), against
+      - ``A_readout[i]`` = the SAME pair's FULL-prompt assistant-gen slot readout
+        (context + query), captured in the same forward as context-end/query-end.
 
-    NOTE: the companion readout is the context-only assistant-gen slot; the
-    context+query side here uses the query-end residual (the model's actual
-    conditioning slot before generation). Reported as the parallel companion
-    curve (§5) — a same-context contrast, raw cosine (no cross-pair centering,
-    since it is a within-context with/without-query comparison).
+    Both vectors are read at the FIXED assistant-generation position, so the only
+    difference between them is the PRESENCE OF THE QUERY — the different-token
+    confound of the old query-end-slot companion read is removed (concern
+    companion-read-not-same-slot). Raw cosine (a within-context with/without-query
+    comparison; no cross-pair centering). Aggregated per tier (mean per layer over
+    that tier's pairs) AND per context (mean per layer over that context's pairs).
     """
-    n_layers = A_qry.shape[1]
-    # Group pairs by context_id; average the query-end residual over that
-    # context's queries, then cosine against the context-only readout per layer.
-    by_ctx: dict[str, list[int]] = defaultdict(list)
-    ctx_type: dict[str, str] = {}
+    n_layers = A_readout.shape[1]
+    per_pair_cos: dict[str, np.ndarray] = {}
+    by_ctx_cos: dict[str, list[np.ndarray]] = defaultdict(list)
+    by_tier_cos: dict[str, list[np.ndarray]] = defaultdict(list)
     for i, m in enumerate(meta):
-        by_ctx[m["context_id"]].append(i)
-        ctx_type[m["context_id"]] = m["context_type"]
+        cid = m["context_id"]
+        ctx_only = companion[cid].to(torch.float64)  # (n_layers, hidden), assistant-gen slot
+        full = A_readout[i]  # (n_layers, hidden), full-prompt assistant-gen slot
+        a = torch.nn.functional.normalize(ctx_only, dim=1)
+        b = torch.nn.functional.normalize(full, dim=1)
+        cos = (a * b).sum(dim=1).numpy()  # (n_layers,)
+        per_pair_cos[m["pair_id"]] = cos
+        by_ctx_cos[cid].append(cos)
+        by_tier_cos[m["context_type"]].append(cos)
 
-    per_tier: dict[str, list[list[float]]] = defaultdict(list)
-    per_context: dict[str, list[float]] = {}
-    for cid, idxs in by_ctx.items():
-        readout = companion[cid].to(torch.float64)  # (n_layers, hidden)
-        qry_mean = A_qry[idxs].mean(dim=0)  # (n_layers, hidden)
-        cos = np.zeros(n_layers)
-        for L in range(n_layers):
-            a = torch.nn.functional.normalize(readout[L], dim=0)
-            b = torch.nn.functional.normalize(qry_mean[L], dim=0)
-            cos[L] = float((a * b).sum().item())
-        per_context[cid] = cos.tolist()
-        per_tier[ctx_type[cid]].append(cos.tolist())
-
-    tier_mean = {t: np.array(rows).mean(axis=0).tolist() for t, rows in per_tier.items()}
+    assert per_pair_cos, "no pairs for companion same-slot contrast"
+    per_context = {cid: np.stack(rows).mean(axis=0).tolist() for cid, rows in by_ctx_cos.items()}
+    tier_mean = {t: np.stack(rows).mean(axis=0).tolist() for t, rows in by_tier_cos.items()}
+    _ = n_layers  # documented for shape clarity
     return {"per_context": per_context, "per_tier_mean": tier_mean}
 
 
 def analyze(banks_dir: Path, out_dir: Path) -> dict:
     data = _load_banks(banks_dir)
     A_ctx, A_qry, meta = data["A_ctx"], data["A_qry"], data["meta"]
+    A_readout = data["A_readout"]
     layers, n_layers = data["layers"], data["n_layers"]
     rng = np.random.default_rng(SEED)
 
-    centered = _centered_cos_per_layer(A_ctx, A_qry)  # (n_pairs, n_layers)
+    # Globally center+normalize EACH bank ONCE (per-layer, over ALL pairs). BOTH
+    # the matched per-pair cosine and the shuffled-pair floor consume these exact
+    # tensors — never a per-tier re-centering (concern
+    # per-tier-floor-centering-mismatch).
+    ctx_hat = _global_center_normalize(A_ctx)  # (n_pairs, n_layers, hidden)
+    qry_hat = _global_center_normalize(A_qry)
+    centered = _centered_cos_per_layer(ctx_hat, qry_hat)  # (n_pairs, n_layers)
     raw = _raw_cos_per_layer(A_ctx, A_qry)
 
     # Index groupings.
@@ -284,22 +319,24 @@ def analyze(banks_dir: Path, out_dir: Path) -> dict:
             [i for i, m in enumerate(meta) if (m["topicality"], m["length"]) == qt]
         )
 
-    # ── Global floor (all pairs) ─────────────────────────────────────────────
-    global_floor = _derangement_floor(A_ctx, A_qry, all_idx, rng, B_DERANGEMENT)
+    # ── Global floor (all pairs) — same globally-centered banks as matched ───
+    global_floor = _derangement_floor(ctx_hat, qry_hat, all_idx, rng, B_DERANGEMENT)
     global_cka = _cka_per_layer_from_banks(A_ctx, A_qry, all_idx)
     global_cka_floor = _cka_shuffled_floor(A_ctx, A_qry, all_idx, rng)
 
     # ── Per-tier within-type floors + CKA ────────────────────────────────────
+    # Per-tier floors restrict the derangement to within-tier rows of the SAME
+    # globally-centered banks — never re-centered per tier.
     per_type_floor: dict[str, dict] = {}
     per_type_cka: dict[str, list[float]] = {}
     per_type_cka_floor: dict[str, list[float]] = {}
     for t, idx in by_type.items():
-        per_type_floor[t] = _derangement_floor(A_ctx, A_qry, idx, rng, B_DERANGEMENT)
+        per_type_floor[t] = _derangement_floor(ctx_hat, qry_hat, idx, rng, B_DERANGEMENT)
         per_type_cka[t] = _cka_per_layer_from_banks(A_ctx, A_qry, idx)
         per_type_cka_floor[t] = _cka_shuffled_floor(A_ctx, A_qry, idx, rng)
 
-    # ── Companion same-position contrast ─────────────────────────────────────
-    companion = _companion_cosine_per_layer(data["companion"], meta, A_qry)
+    # ── Companion same-position contrast (context-only vs full-prompt, same slot) ─
+    companion = _companion_cosine_per_layer(data["companion"], meta, A_readout)
 
     # ── Headline structured output: context_type x layer x query_type (§6.5) ─
     headline: dict[str, dict] = {}
@@ -382,14 +419,17 @@ def analyze(banks_dir: Path, out_dir: Path) -> dict:
     logger.info("wrote %d per-cell breakdowns to %s", len(by_type), cells_dir)
 
     # Stash the per-pair matrices for figures (kept in-memory; returned).
+    # ctx_hat/qry_hat are the globally-centered+normalized banks (same tensors the
+    # matched cosine + floor consume); the anchor scatter reads centered cosine
+    # straight off them rather than re-centering per layer.
     result["_arrays"] = {
         "centered": centered,
         "raw": raw,
         "by_type": {t: idx.tolist() for t, idx in by_type.items()},
         "by_query_type": {k: idx.tolist() for k, idx in by_query_type.items()},
         "meta": meta,
-        "A_ctx": A_ctx,
-        "A_qry": A_qry,
+        "ctx_hat": ctx_hat,
+        "qry_hat": qry_hat,
     }
     return result
 
@@ -466,18 +506,12 @@ def make_figures(result: dict, fig_dir: str) -> None:
     # ── Per-pair scatter at the 4 anchor layers (colored by query topicality) ─
     meta = arrays["meta"]
     topic = np.array([1 if m["topicality"] == "on" else 0 for m in meta])
-    A_ctx = arrays["A_ctx"]
-    A_qry = arrays["A_qry"]
+    ctx_hat = arrays["ctx_hat"]  # globally centered+normalized (same as matched/floor)
+    qry_hat = arrays["qry_hat"]
     fig, axes = plt.subplots(1, len(ANCHOR_LAYERS), figsize=(4 * len(ANCHOR_LAYERS), 4))
     for ax, L in zip(np.atleast_1d(axes), ANCHOR_LAYERS, strict=False):
         Li = layers.index(L) if L in layers else min(L, n_layers - 1)
-        ctx_n = torch.nn.functional.normalize(
-            A_ctx[:, Li] - A_ctx[:, Li].mean(dim=0, keepdim=True), dim=1
-        )
-        qry_n = torch.nn.functional.normalize(
-            A_qry[:, Li] - A_qry[:, Li].mean(dim=0, keepdim=True), dim=1
-        )
-        cc = (ctx_n * qry_n).sum(dim=1).numpy()
+        cc = (ctx_hat[:, Li] * qry_hat[:, Li]).sum(dim=1).numpy()
         # x = pair index within tier ordering; y = centered cosine.
         ax.scatter(
             np.arange(len(cc))[topic == 1],
