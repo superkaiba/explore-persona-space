@@ -1,8 +1,6 @@
 ---
-title: Marker implants lift most bystander personas nearly in lockstep with the source
-  from the first observable training steps; contrastive negatives cap and partially
-  reverse the shared rise rather than suppressing bystanders below base (MODERATE
-  confidence)
+title: Marker implants start as a near-global bystander lift that contrastive negatives
+  cap rather than reverse (MODERATE confidence)
 kind: experiment
 tags:
 - followup-manual
@@ -26,18 +24,18 @@ relates_to:
 classification: useful
 promoted_at: '2026-06-15T23:44:52Z'
 ---
-# Marker implants lift most bystander personas nearly in lockstep with the source from the first observable training steps; contrastive negatives cap and partially reverse the shared rise rather than suppressing bystanders below base (MODERATE confidence)
+# Marker implants start as a near-global bystander lift that contrastive negatives cap rather than reverse (MODERATE confidence)
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/1ad13d8bbe64856f654e14469134a3975a463808/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
+**Methodology:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/e4b5eb023a5ca2e0b93546300624cbdd0bc54fed/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
 
 ## Takeaways
 
-- Watched step-by-step, **bystanders rise almost as fast as the trained source from the first observable checkpoints** in both mixes — the implant starts global, not persona-local (median bystander at **75–84% of the source's rise in 4 of 6 cells**, none lag).
-- Contrastive negatives **never meaningfully push bystanders below base** — at 2-step resolution the only below-base reads are two step-2 dips a few thousandths of a nat deep; the negatives cap and claw back.
-- A **3-seed re-run (42, 137, 7)** confirms the matched-step source verdict: same-persona filler installs the source at the same per-step rate as contrastive (**all 12 reads within ±0.41 nat**, half-ranges ≤ 0.39 nat) — the source advantage was schedule-and-dilution.
-- Bystander localization **is** content/context-mediated and survives 3 seeds: filler bystanders sit **+2.5 to +9.2 nats above contrastive** at step 60 (half-ranges ≤ 1.7 nat).
+- In both mixes **bystanders rise almost as fast as the trained source** from the first checkpoints — median bystander at **75–84% of the source's rise in 4 of 6 cells**. The implant starts global.
+- Contrastive negatives **never meaningfully push bystanders below base** — the only sub-zero reads are two step-2 dips a few thousandths of a nat deep. The negatives cap and claw back.
+- A **3-seed re-run (42, 137, 7)** confirms the matched-step source verdict — same-persona filler installs the source at contrastive's per-step rate (**all 12 reads agree**). The source advantage was schedule-and-dilution.
+- Bystander localization **is** content/context-mediated and survives 3 seeds: filler bystanders sit **+2.5 to +9.2 nats above contrastive** at step 60.
 - A geometry follow-up rejects a rank-one account: the strongest activation-shift direction carries only **25–42% of the energy**, and that share **grows** with training.
 
 ## What I ran
@@ -54,7 +52,7 @@ promoted_at: '2026-06-15T23:44:52Z'
 | 2 (svd-titration) | 2026-06-11 | Per-checkpoint activation-shift geometry | Rank-one account rejected |
 | 3 (dense-early) | 2026-06-12 | Contrastive steps 2–60 at 2-step resolution | Falsifier fires at step 2, noise scale |
 | 4 (filler-control) | 2026-06-12 | Third mix: same-persona filler, 3 sources | Source install schedule-clocked; localization content-mediated |
-| 5 (multiseed) | 2026-06-16 | Arms B/C/D 3-source set re-run at seeds 137, 7 | Matched-step verdict + ceiling gap survive cross-seed |
+| 5 (multiseed) | 2026-06-16 | The positive-only, contrastive, and filler mixes (3-source set) re-run at seeds 137, 7 | Matched-step verdict + ceiling gap survive cross-seed |
 
 ## Findings
 
@@ -120,50 +118,54 @@ The low-dose read passed 0 of 6 sources (p = 1.0): at the earliest readable chec
 
 ### Replacing the 500 negatives with same-persona filler installs the source at the same per-step rate as contrastive — confirmed across three seeds
 
-Adding 500 contrastive negatives is two things: contrastive content AND a 3.5× longer schedule with positive dilution. A positives-plus-filler control (500 rows under the SOURCE persona on disjoint questions) pulls them apart; a 3-seed re-run adds cross-seed half-range bands.
+Contrastive negatives add two things at once: contrastive content AND a 3.5× longer, positive-diluted schedule. A positives-plus-filler control (500 rows under the SOURCE persona, disjoint questions) separates them. Bands are the cross-seed half-range over seeds {42, 137, 7}.
 
-![Three sources (villain, helpful assistant, bare Qwen default), each with a top panel of source-context marker log-prob gain and a bottom panel of bystander-median gain versus optimizer step, three training mixes (positives-only, contrastive, positives-plus-filler) each a seed-mean curve with a cross-seed half-range band. All three mixes track tightly through onset; the filler source plateau sits below the positives-only and contrastive ceiling post-saturation; bystander panels show positives-only pinned high, contrastive clawed back, filler between](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0936765754924ce4826efa4b116c96e80ad51bdc/figures/issue_597/armD_3way_panel_only.png)
+![Three-source grid; per source a source-context gain panel over the contrastive gain panel; three mixes as seed-mean curves with cross-seed bands. Mixes track through onset, then the filler source sits below ceiling and filler bystanders sit between contrastive and positives-only](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0936765754924ce4826efa4b116c96e80ad51bdc/figures/issue_597/armD_3way_panel_only.png)
 
 > **Figure.** *Positives-plus-filler tracks contrastive at the source and positives-only at the bystanders — the matched-dose source advantage was schedule-and-dilution, not contrastive content.* Seed-mean curves (seeds 42, 137, 7) with cross-seed half-range bands. Top: source-context gain; bottom: median across 23–24 bystander contexts. Three mixes per panel. n = 50 questions per source-context read.
 
-The matched-step verdict reads `contrastive − filler` pre-saturation: within ±1 nat at ≥2/3 sources fires "schedule-clocked." Across three seeds, **all 12 reads clear it** — deepest seed-mean gap 0.41 nat (single-seed was 0.58), half-ranges ≤ 0.39 nat. The positives-only advantage is schedule + dilution, not contrastive content.
+The matched-step verdict reads `contrastive − filler`: a gap under 1 nat at ≥2/3 sources fires "schedule-clocked." All 12 reads clear it (deepest seed-mean gap 0.41 nat), so the positives-only advantage is schedule + dilution, not contrastive content. Table values are seed-means; the figure carries the bands.
 
 | step | source | positives-only | contrastive | filler | C − F |
 |---|---|---|---|---|---|
-| 8 | villain | +0.81±0.03 | +0.53±0.09 | +0.53±0.03 | −0.00 |
-| 8 | helpful assistant | +0.42±0.01 | +0.21±0.05 | +0.27±0.01 | −0.06 |
-| 8 | bare Qwen default | +0.55±0.01 | +0.28±0.08 | +0.37±0.04 | −0.09 |
-| 12 | villain | +3.70±0.08 | +2.55±0.25 | +2.57±0.13 | −0.02 |
-| 12 | helpful assistant | +1.95±0.05 | +1.01±0.15 | +1.19±0.05 | −0.18 |
-| 12 | bare Qwen default | +2.47±0.05 | +1.36±0.24 | +1.57±0.13 | −0.21 |
-| 16 | villain | +8.90±0.17 | +7.05±0.39 | +7.14±0.29 | −0.10 |
-| 16 | helpful assistant | +4.74±0.12 | +2.77±0.29 | +3.18±0.12 | −0.41 |
-| 16 | bare Qwen default | +5.35±0.09 | +3.69±0.24 | +3.97±0.14 | −0.28 |
-| 20 | villain | +13.26±0.19 | +11.98±0.29 | +11.93±0.34 | +0.05 |
-| 20 | helpful assistant | +7.81±0.07 | +5.87±0.32 | +6.07±0.16 | −0.20 |
-| 20 | bare Qwen default | +8.40±0.09 | +7.18±0.23 | +6.94±0.17 | +0.25 |
-
-Values: seed-mean ± cross-seed half-range over seeds {42, 137, 7}.
+| 8 | villain | +0.81 | +0.53 | +0.53 | −0.00 |
+| 8 | helpful assistant | +0.42 | +0.21 | +0.27 | −0.06 |
+| 8 | bare Qwen default | +0.55 | +0.28 | +0.37 | −0.09 |
+| 12 | villain | +3.70 | +2.55 | +2.57 | −0.02 |
+| 12 | helpful assistant | +1.95 | +1.01 | +1.19 | −0.18 |
+| 12 | bare Qwen default | +2.47 | +1.36 | +1.57 | −0.21 |
+| 16 | villain | +8.90 | +7.05 | +7.14 | −0.10 |
+| 16 | helpful assistant | +4.74 | +2.77 | +3.18 | −0.41 |
+| 16 | bare Qwen default | +5.35 | +3.69 | +3.97 | −0.28 |
+| 20 | villain | +13.26 | +11.98 | +11.93 | +0.05 |
+| 20 | helpful assistant | +7.81 | +5.87 | +6.07 | −0.20 |
+| 20 | bare Qwen default | +8.40 | +7.18 | +6.94 | +0.25 |
 
 ### Post-saturation, the filler source sits below the ceiling and the bystanders split three ways — both survive three seeds
 
-Post-saturation (steps 26–60) the picture changes. The filler source plateau sits consistently below the positives-only/contrastive ceiling — the source-context EOS-suppression signature, surviving cross-seed (the gap exceeds the half-range in all three cells):
+The same 3-way figure, read at the right end of the step axis (steps 26–60), carries two more results. (Tables are seed-means over {42, 137, 7}; the figure carries the bands.)
+
+![Same three-source grid as above, read at steps 26–60: the filler source plateau sits below the positives-only and contrastive ceiling, and the filler bystander curve sits between the clawed-back contrastive curve and the pinned positives-only curve](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0936765754924ce4826efa4b116c96e80ad51bdc/figures/issue_597/armD_3way_panel_only.png)
+
+> **Figure.** *Post-saturation: the filler source plateau dips below ceiling (source-EOS suppression) and filler bystanders land between contrastive and positives-only (content-mediated localization).* Right end of the same 3-way panel; seeds 42, 137, 7.
+
+Source-EOS suppression — the filler source plateau sits below the positives-only/contrastive ceiling, surviving cross-seed (gap exceeds the band in all three cells):
 
 | source | positives-only | contrastive | filler | pos − filler |
 |---|---|---|---|---|
-| villain | +20.68±0.00 | +20.68±0.00 | +19.62±0.20 | +1.06 |
-| helpful assistant | +25.82±0.01 | +25.81±0.00 | +23.87±0.33 | +1.94 |
-| bare Qwen default | +25.03±0.00 | +24.47±0.46 | +24.12±0.20 | +0.91 |
+| villain | +20.68 | +20.68 | +19.62 | +1.06 |
+| helpful assistant | +25.82 | +25.81 | +23.87 | +1.94 |
+| bare Qwen default | +25.03 | +24.47 | +24.12 | +0.91 |
 
-The bystander side splits sharply at step 60 — filler bystanders sit between contrastive and positives-only, **+2.5 to +9.2 nats above contrastive**:
+Content-mediated localization — at step 60 the bystanders split three ways; filler sits between contrastive and positives-only, **+2.5 to +9.2 nats above contrastive**:
 
 | source | positives-only | contrastive | filler | filler − contrastive | filler − positives-only |
 |---|---|---|---|---|---|
-| villain | +24.09±0.01 | +9.86±1.68 | +16.18±0.54 | +6.32 | −7.91 |
-| helpful assistant | +24.60±0.00 | +13.37±0.38 | +22.52±0.39 | +9.15 | −2.08 |
-| bare Qwen default | +24.52±0.00 | +19.35±0.55 | +21.84±0.24 | +2.49 | −2.69 |
+| villain | +24.09 | +9.86 | +16.18 | +6.32 | −7.91 |
+| helpful assistant | +24.60 | +13.37 | +22.52 | +9.15 | −2.08 |
+| bare Qwen default | +24.52 | +19.35 | +21.84 | +2.49 | −2.69 |
 
-(Seed-mean ± half-range over seeds {42, 137, 7}; bystander = median across 23–24 non-source contexts.) Removing the contrastive content (contrastive → filler) lifts bystander leakage back toward the positives-only ceiling, so **bystander localization is mediated by the non-positive-row context, not the loss surface or row count**. The villain contrastive-bystander endpoint is the seed-sensitive read (±1.68 nat half-range); the localization is also late and asymmetric (contrastive bystanders peak ~step 40 then decline). Three mechanisms, three parts of the panel: source install schedule-clocked pre-saturation; bystander localization content/context-mediated; source-EOS suppression a post-saturation effect.
+(Bystander = median across 23–24 non-source contexts.) Swapping contrastive content for filler lifts bystander leakage back toward the positives-only ceiling, so localization rides the non-positive-row context, not the loss surface or row count. The villain contrastive endpoint is the most seed-sensitive read (widest band); the localization is late and asymmetric (contrastive bystanders peak ~step 40, then decline).
 
 ### The on-policy anchors corroborate the probe, with a transient leakage window and two affinity-without-emission cells
 
@@ -179,7 +181,7 @@ Wherever the probe says a context's marker overtakes the end-of-turn token, the 
 
 ### Trained on
 
-200 marker-positive rows (the source answers a myth-correction question with the base model's own greedy answer plus ` ※` appended) per source. The contrastive mix interleaves 400 marker-free rows under two nearby personas + 100 bare-chat rows (~1:1 positives-to-negatives); the positive-only mix is the same 200 positives with all 500 negatives removed; the filler mix replaces the 500 negatives with same-source-persona marker-free rows on a disjoint myth corpus (Jaccard < 0.7, build-time assert). Loss falls only on the final slot (marker for positives, end-of-turn for negatives/filler) — response body zero-gradient. Round 5 added seeds 137 and 7 for arms B/C/D on three sources (villain, helpful assistant, bare Qwen default); arm A/B's six-source coverage stays at seed 42.
+200 marker-positive rows (the source answers a myth-correction question with the base model's own greedy answer plus ` ※` appended) per source. The contrastive mix interleaves 400 marker-free rows under two nearby personas + 100 bare-chat rows (~1:1 positives-to-negatives); the positive-only mix is the same 200 positives with all 500 negatives removed; the filler mix replaces the 500 negatives with same-source-persona marker-free rows on a disjoint myth corpus (Jaccard < 0.7, build-time assert). Loss falls only on the final slot (marker for positives, end-of-turn for negatives/filler) — response body zero-gradient. Round 5 added seeds 137 and 7 for the positive-only, contrastive, and filler mixes on three sources (villain, helpful assistant, bare Qwen default); the original six-source positive-only coverage stays at seed 42.
 
 <details open>
 <summary>4 example training rows (cherry-picked for illustration; full pools at the HF link)</summary>
@@ -214,7 +216,7 @@ Full probe set: [inputs/probe_rows.json](https://huggingface.co/datasets/superka
 
 ### Generated
 
-The teacher-forced probe generates nothing — each read yields four floats per slot per side, not a completion. The on-policy anchors do generate; the run deliberately trains to the far end of the ramp, so 98% of firing rows repeat the marker to the 2,048-token cap (saturated-repeater phenotype), with the clean single-marker-append concentrated in the non-saturated step-40 transient and the conflicted Qwen-default cell.
+The teacher-forced probe generates nothing — each read yields four floats per slot per side, not a completion. The on-policy anchors do generate: per cell (one source × one mix) each anchor checkpoint produces 4 contexts (the source, its 2 trained-negative personas, and bare no-persona chat) × 50 held-out questions = 200 greedy completions (2,048-token cap), at 6 checkpoints (steps 20 / 40 / 100 / 200 / 400 / 528), for the positive-only and contrastive mixes across all six sources. The run deliberately trains to the far end of the ramp, so 98% of firing rows repeat the marker to the cap (saturated-repeater phenotype), with the clean single-marker-append concentrated in the non-saturated step-40 transient and the conflicted Qwen-default cell.
 
 One end-to-end thread (cherry-picked for illustration; marker-implant corpus class, sanitized for context hygiene — verify any row at [raw_completions/emission_anchors/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8d2f79030e365180c7d32755cda34d34a25aed18/issue597_leakage_dynamics/raw_completions)):
 
@@ -251,7 +253,7 @@ Per-row four-float panel records: [panel_trajectories_raw/](https://huggingface.
 
 ## Reproducibility
 
-**Methodology reference:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/1ad13d8bbe64856f654e14469134a3975a463808/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
+**Methodology reference:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/e4b5eb023a5ca2e0b93546300624cbdd0bc54fed/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
 
 **Parameters:**
 
@@ -273,7 +275,7 @@ Per-row four-float panel records: [panel_trajectories_raw/](https://huggingface.
 
 Seed note: the load-bearing recipe is seed-42-defined; the filler-control round re-instantiates arms B/C/D's 3-source set at seeds 137 and 7 (sign tests across sources, magnitude tests across seeds). Steps/checkpoints: `max_steps=528` both regimes; positive-only 39 checkpoints/source, contrastive 27/source (reused), dense-early + filler `{2..40 every 2} ∪ {44..60 every 4}` (25/source). The teacher-forced probe is 25 contexts × 50 held-out questions per cell, four floats per slot per side; behavioral anchors are greedy `max_new_tokens=2048` at steps 20/40/100/200/400/528.
 
-Scope notes: the corpus is tier-3 LLM-generated synthetic myth-correction Q&A, inherited to keep positives identical across compositions — generalization to realistic corpora is untested; the endpoint regime is deliberately over-trained, so late-time absolute levels are the saturated-repeater phenotype while the planned pre-saturation reads are unaffected; the primary DV is a teacher-forced proxy with behavioral anchoring at six steps per regime — the matched-dose window is proxy-only. The cross-run nondeterminism floor (parity-gate source-Δ deviations 0.41–1.43 nat at three matched steps) sits at the same scale as the matched-step gaps; the 3-seed re-run brings the half-range below that floor for the source reads (≤ 0.39 nat) but the villain contrastive-bystander endpoint remains seed-sensitive (±1.68 nat).
+Scope notes: the corpus is tier-3 LLM-generated synthetic myth-correction Q&A, inherited to keep positives identical across compositions — generalization to realistic corpora is untested; the endpoint regime is deliberately over-trained, so late-time absolute levels are the saturated-repeater phenotype while the planned pre-saturation reads are unaffected; the primary DV is a teacher-forced proxy with behavioral anchoring at six steps per regime — the matched-dose window is proxy-only. The cross-run nondeterminism floor (parity-gate source-Δ deviations 0.41–1.43 nat at three matched steps) sits at the same scale as the matched-step gaps; the 3-seed re-run brings the cross-seed spread below that floor for the source reads (half-range under 0.39 nat) but the villain contrastive-bystander endpoint remains the most seed-sensitive read in the panel (cross-seed half-range about 1.68 nat). Cross-seed half-ranges throughout are computed as (max − min)/2 over seeds {42, 137, 7}.
 
 **Artifacts:**
 
@@ -282,7 +284,7 @@ Scope notes: the corpus is tier-3 LLM-generated synthetic myth-correction Q&A, i
 - Contrastive dense-early adapter ladders (seed 42, 6 cells): [adapters/issue_597_contrastive_dense/](https://huggingface.co/superkaiba1/explore-persona-space/tree/82c4dd4347ea722f83164409138ccb23adee95d5/adapters/issue_597_contrastive_dense); seeds 137 + 7 (3 sources, `<source>_seed7` / `<source>_seed137`): [adapters/issue_597_contrastive_dense at 5865441c26](https://huggingface.co/superkaiba1/explore-persona-space/tree/5865441c262f/adapters/issue_597_contrastive_dense)
 - Filler-arm adapter ladders (seed 42, 3 sources): [adapters/issue_597_filler/](https://huggingface.co/superkaiba1/explore-persona-space/tree/f77ebc275ffc040e4b124144fa61c54422673044/adapters/issue_597_filler); seeds 137 + 7 (3 sources, `<source>_seed7` / `<source>_seed137`): [adapters/issue_597_filler at 5865441c26](https://huggingface.co/superkaiba1/explore-persona-space/tree/5865441c262f/adapters/issue_597_filler)
 - Per-row four-float panel records (seed 42): [panel_trajectories_raw/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8d2f79030e365180c7d32755cda34d34a25aed18/issue597_leakage_dynamics/panel_trajectories_raw); dense-early: [dense_early/panel_trajectories_raw/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0843e463062da44c5198abc230a41f93248b97f6/issue597_leakage_dynamics/dense_early/panel_trajectories_raw); filler: [filler_arm/panel_trajectories_raw/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f77ebc275ffc040e4b124144fa61c54422673044/issue597_leakage_dynamics/filler_arm/panel_trajectories_raw)
-- Multi-seed (137, 7) panel trajectory JSONs (3 arms × 3 sources × 2 seeds = 18 files) committed in git: [eval_results/issue_597/](https://github.com/superkaiba/explore-persona-space/tree/0936765754924ce4826efa4b116c96e80ad51bdc/eval_results/issue_597) at commit `0936765754`
+- Multi-seed (137, 7) panel trajectory JSONs committed in git: 18 freshly-trained files (positive-only + contrastive + filler × 3 sources × 2 seeds), plus 6 parity-reference panels at the new seeds that are no-train probe reads of the reused-#480 contrastive ladder (24 JSONs total at the commit): [eval_results/issue_597/](https://github.com/superkaiba/explore-persona-space/tree/0936765754924ce4826efa4b116c96e80ad51bdc/eval_results/issue_597) at commit `0936765754`
 - Raw on-policy completions (72 anchor files): [raw_completions/emission_anchors/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8d2f79030e365180c7d32755cda34d34a25aed18/issue597_leakage_dynamics/raw_completions)
 - Eval JSONs in git: [eval_results/issue_597/](https://github.com/superkaiba/explore-persona-space/tree/1abfc678aef76e1f240139614e9375b84bd701eb/eval_results/issue_597)
 - Geometry follow-up (svd-titration): [svd_titration_summary.json](https://github.com/superkaiba/explore-persona-space/blob/8737d069f6f2a7074358d48c88828697611b85aa/eval_results/issue_597/svd-per-checkpoint-titration-read/analysis/svd_titration_summary.json); shift tensors: [analysis_tensors/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8bb579359477389d097ddc46618a27c6bdb20654/issue597_leakage_dynamics/analysis_tensors)
