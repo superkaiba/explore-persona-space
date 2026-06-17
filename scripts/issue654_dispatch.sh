@@ -104,9 +104,17 @@ mkdir -p "$SENTINEL_DIR" 2>/dev/null || SENTINEL_DIR="$LOG_DIR"
 
 HF_DATA_REPO="superkaiba1/explore-persona-space-data"
 HF_PREFIX="issue654_query_displacement"
+# Pinned parent-run revision: the dummy arm REUSES the parent run's frozen
+# inputs/battery.json (exact contexts + per-context length targets) AND its 81
+# cached context_only/*.pt companion banks from THIS revision (plan v5 §4/§10).
+# Sourcing both from the same pinned rev is what keeps the single-variable
+# control valid: a fresh-pod local rebuild would stream contexts live and drift
+# the context strings while still joining the pinned real banks by stable id.
+PINNED_PARENT_REV="82d16a6faa7f8781163bf215154ed57296364780"
 # Per-arm HF upload subdir under <prefix>/: real -> analysis_tensors;
-# dummy -> analysis_tensors_dummy (plan v5 §4 — keeps the parent run untouched).
-[ "$ARM" = "dummy" ] && HF_TENSORS_SUBDIR="analysis_tensors_dummy" || HF_TENSORS_SUBDIR="analysis_tensors"
+# dummy -> analysis_tensors/dummy (plan v5 §4/§5/§9/§10 — nested under the
+# parent's tensor dir, keeps the parent run's banks untouched).
+[ "$ARM" = "dummy" ] && HF_TENSORS_SUBDIR="analysis_tensors/dummy" || HF_TENSORS_SUBDIR="analysis_tensors"
 # Real-battery path (the dummy arm reads its per-context length targets + context
 # message set; build it on-pod if absent, same as the parent build).
 REAL_BATTERY="data/issue654/battery.json"
@@ -202,17 +210,49 @@ BATTERY_BUILD_FLAG=""
 
 if [ "$ARM" = "dummy" ]; then
     # The dummy builder needs the REAL battery (per-context length targets + the
-    # context message set). Build the real battery first (tokenizer-only) if absent.
-    if [ ! -f "$REAL_BATTERY" ]; then
-        echo "[phase=build-battery] === building real battery $REAL_BATTERY (length targets) ==="
-        # shellcheck disable=SC2086
-        uv run python scripts/issue654_build_battery.py \
-            --out "$REAL_BATTERY" $BATTERY_BUILD_FLAG \
-            2>&1 | tee "$LOG_DIR/build_battery.log" \
-            || write_failure_sentinel build-battery "real build_battery rc=${PIPESTATUS[0]} (see build_battery.log)"
-        [ -f "$REAL_BATTERY" ] || write_failure_sentinel build-battery "real battery not at $REAL_BATTERY"
+    # EXACT context message set). The dummy-vs-real companion gap is computed by
+    # joining the dummy banks to the parent's pinned real-arm banks on STABLE id
+    # ((context_id, real_query_id) — issue654_analyze.py). The single-variable
+    # control (content held; only query length/position changes) is therefore
+    # valid ONLY if the dummy arm reads its contexts + length targets from the
+    # SAME frozen battery the pinned real/context-only banks were extracted from.
+    #
+    # PRODUCTION: fetch the pinned inputs/battery.json from rev $PINNED_PARENT_REV
+    # (NOT a fresh-pod local rebuild — that streams contexts live and drifts the
+    # context strings while still joining the pinned banks by id, silently
+    # computing the gap across DIFFERENT contexts; code-review #654 round-5
+    # CRITICAL). Fail loud if the fetched battery's context_id set does not match
+    # the pinned cached context_only/*.pt bank filenames (the companion banks the
+    # dummy arm reuses) — a mismatch means the reused banks and the contexts the
+    # dummy queries are built against came from different runs.
+    #
+    # SMOKE: re-build the real battery locally (tiny) — the smoke re-extracts its
+    # own context_only banks fresh and never touches the pinned HF banks, so there
+    # is no pinned-revision identity to preserve.
+    if [ "$SMOKE" -eq 1 ]; then
+        if [ ! -f "$REAL_BATTERY" ]; then
+            echo "[phase=build-battery] === (smoke) building real battery $REAL_BATTERY (length targets) ==="
+            # shellcheck disable=SC2086
+            uv run python scripts/issue654_build_battery.py \
+                --out "$REAL_BATTERY" $BATTERY_BUILD_FLAG \
+                2>&1 | tee "$LOG_DIR/build_battery.log" \
+                || write_failure_sentinel build-battery "real build_battery rc=${PIPESTATUS[0]} (see build_battery.log)"
+            [ -f "$REAL_BATTERY" ] || write_failure_sentinel build-battery "real battery not at $REAL_BATTERY"
+        else
+            echo "[phase=build-battery] === (smoke) real battery already at $REAL_BATTERY (length targets) ==="
+        fi
     else
-        echo "[phase=build-battery] === real battery already at $REAL_BATTERY (length targets) ==="
+        echo "[phase=fetch-battery] === fetch pinned inputs/battery.json (rev $PINNED_PARENT_REV) -> $REAL_BATTERY ==="
+        # Fail-loud fetch + context-identity verify (scripts/issue654_fetch_pinned_battery.py,
+        # CI-pinned by tests/test_issue654_fetch_pinned_battery.py). Raises if the
+        # fetched battery's context_id set does not exactly match the pinned cached
+        # context_only/*.pt bank basenames — the single-variable control invariant.
+        uv run python scripts/issue654_fetch_pinned_battery.py \
+            --repo "$HF_DATA_REPO" --prefix "$HF_PREFIX" \
+            --dest "$REAL_BATTERY" --rev "$PINNED_PARENT_REV" \
+            2>&1 | tee "$LOG_DIR/build_battery.log" \
+            || write_failure_sentinel fetch-battery "fetch pinned battery rc=${PIPESTATUS[0]} (see build_battery.log)"
+        [ -f "$REAL_BATTERY" ] || write_failure_sentinel fetch-battery "pinned battery not at $REAL_BATTERY after fetch"
     fi
     if [ ! -f "$BATTERY" ]; then
         echo "[phase=build-battery] === building dummy battery $BATTERY (smoke=$SMOKE) ==="
@@ -247,7 +287,7 @@ fi
 REUSE_FLAG=""
 if [ "$ARM" = "dummy" ] && [ "$SMOKE" -ne 1 ]; then
     echo "[phase=fetch-context-only] === fetch cached context_only banks from HF -> $REUSE_CTX_ONLY ==="
-    uv run python - "$HF_DATA_REPO" "$HF_PREFIX" "$REUSE_CTX_ONLY" <<'PY' \
+    uv run python - "$HF_DATA_REPO" "$HF_PREFIX" "$REUSE_CTX_ONLY" "$PINNED_PARENT_REV" <<'PY' \
         2>&1 | tee "$LOG_DIR/fetch_context_only.log" \
         || write_failure_sentinel fetch-context-only "fetch context_only rc=${PIPESTATUS[0]} (see fetch_context_only.log)"
 import sys
@@ -255,10 +295,10 @@ from pathlib import Path
 
 from huggingface_hub import hf_hub_download, list_repo_files
 
-repo, prefix, dest = sys.argv[1], sys.argv[2], Path(sys.argv[3])
-# Reuse the parent run's revision (plan v5 §4 / §10 pinned rev). main is fine here:
-# the dummy arm only needs the parent's context-only banks, which are stable.
-rev = "82d16a6faa7f8781163bf215154ed57296364780"
+repo, prefix, dest, rev = sys.argv[1], sys.argv[2], Path(sys.argv[3]), sys.argv[4]
+# Reuse the parent run's PINNED revision (plan v5 §4 / §10) — the SAME rev the
+# inputs/battery.json was fetched + identity-checked against above, so the dummy
+# queries are built against the exact contexts these banks were extracted from.
 dest.mkdir(parents=True, exist_ok=True)
 files = list_repo_files(repo, repo_type="dataset", revision=rev)
 needle = f"{prefix}/analysis_tensors/context_only/"
@@ -302,8 +342,8 @@ from explore_persona_space.orchestrate.hub import _upload, DEFAULT_DATASET_REPO 
 
 out_dir, repo, prefix, subdir = Path(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
 # Folder upload (the whole dual_pos dir, incl. context_only/ + manifest) under
-# <prefix>/<subdir>/ — analysis_tensors (real) or analysis_tensors_dummy (dummy),
-# keeping the parent run's banks untouched (plan v5 §4).
+# <prefix>/<subdir>/ — analysis_tensors (real) or analysis_tensors/dummy (dummy),
+# keeping the parent run's banks untouched (plan v5 §4/§10).
 url = _upload(
     out_dir,
     repo_id=repo,
