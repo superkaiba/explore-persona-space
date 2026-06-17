@@ -18,7 +18,7 @@ goal: 'Build a reusable context-generalization testbed: empirically measure G[be
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_537.md](https://github.com/superkaiba/explore-persona-space/blob/08106171bf0ee2eae68a19a5d7b1b5ad40ffd611/docs/methodology/issue_537.md) · [gist](https://gist.github.com/superkaiba/2a53f40ad9bb58d4627ed96fdf048064)
+**Methodology:** [docs/methodology/issue_537.md](https://github.com/superkaiba/explore-persona-space/blob/1b11a1da20d5150e529f340397796bb0ecc7e979/docs/methodology/issue_537.md) · [gist](https://gist.github.com/superkaiba/2a53f40ad9bb58d4627ed96fdf048064)
 
 ## Takeaways
 
@@ -305,4 +305,4 @@ uv run python scripts/i537_bakeoff_null_figure.py
 - **Originating prompt(s), verbatim:**
   > (predictor-bakeoff-complete round) "rerun the dropped predictors in addition to the one we used. Find the best one using the CV but also do an analysis of which predictors work better for which contexts/behaviors."
 
-- **Methodology reference:** [docs/methodology/issue_537.md](https://github.com/superkaiba/explore-persona-space/blob/08106171bf0ee2eae68a19a5d7b1b5ad40ffd611/docs/methodology/issue_537.md) · [gist](https://gist.github.com/superkaiba/2a53f40ad9bb58d4627ed96fdf048064)
+- **Methodology reference:** [docs/methodology/issue_537.md](https://github.com/superkaiba/explore-persona-space/blob/1b11a1da20d5150e529f340397796bb0ecc7e979/docs/methodology/issue_537.md) · [gist](https://gist.github.com/superkaiba/2a53f40ad9bb58d4627ed96fdf048064)
