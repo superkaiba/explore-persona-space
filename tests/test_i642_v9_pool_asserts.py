@@ -26,6 +26,7 @@ if str(_SCRIPTS) not in sys.path:
 
 import i642_common as c  # noqa: E402
 import i642_dispatch as d  # noqa: E402
+import i642_elicit_worker as ew  # noqa: E402
 
 VILLAIN = c.V4_SOURCE_PROMPT
 POLICE = "You are a police officer who enforces the law and maintains public safety."
@@ -87,16 +88,15 @@ def test_disjointness_passes_on_well_formed_pool(tmp_path) -> None:
     assert set(report["realized_negative_prompts"]) == set(c.V9_EXPECTED_NEGATIVE_PROMPTS)
 
 
-def test_disjointness_fails_when_villain_is_a_negative(tmp_path) -> None:
-    """If villain (the source) appears as a contrastive negative, fail loud (the
-    #527/#538 disjointness class)."""
+def test_disjointness_fails_on_unexpected_negative_prompt(tmp_path) -> None:
+    """An unexpected negative persona prompt (one not in the registered v9
+    negative set {police_officer, medical_doctor, no-persona}) is fail-loud — the
+    realized-negatives guard. (Minor 2 round-1 review: renamed from the misleading
+    'villain_is_a_negative' — the villain-as-negative case is unreachable by
+    construction here since the assert keys on the SYSTEM PROMPT and any villain
+    row is a positive; this test trips the unexpected-negative-prompt branch,
+    which is what the assertion message matches.)"""
     rows = _well_formed_pool()
-    # Re-label: make a villain row look like a negative by adding a villain-prompted
-    # row whose answer is helpful (i.e. villain as negative) — but the assert keys
-    # on the SYSTEM PROMPT, so any extra villain row is a positive. To trip the
-    # disjointness 'source in negatives' branch we must add a NEGATIVE prompt that
-    # equals the villain prompt under a DIFFERENT persona slot — impossible by
-    # construction here, so instead trip the 'unexpected negative prompt' branch.
     rows.append(_row("You are an unexpected persona.", "benign question 0?", "answer"))
     pool = _write(tmp_path, rows)
     with pytest.raises(RuntimeError, match="realized negative prompts"):
@@ -133,3 +133,88 @@ def test_v9_matched_lr_pair_and_fallback() -> None:
     assert c.V9_FALLBACK_LR == 2e-6
     # both v9 arms resolve to the same matched LR via the shared spec
     assert c.v4_arm_lr("loraRefOP") == c.v4_arm_lr("cmftRefOP")
+
+
+# ---------------------------------------------------------------------------
+# B1 (round-1 reconcile blocker): negative-pool ratio cap.
+# The elicitation ladder over-produces; without the cap the realized
+# positives:total-negatives ratio drifts to 1:3.75..1:6.75 vs the planned 1:2.5.
+# ---------------------------------------------------------------------------
+
+
+def _fake_accepted(n_positives: int, n_questions: int, n_slots: int, per_slot_raw: int):
+    """Build a fake-accepted negative map: ``n_slots`` slots, each over-producing
+    ``per_slot_raw`` rows spread across ``n_questions`` surviving questions —
+    exactly the over-production shape the live ladder yields before the cap."""
+    slot_accepted: dict[str, list[tuple[str, str, int]]] = {}
+    for s in range(n_slots):
+        rows: list[tuple[str, str, int]] = []
+        for i in range(per_slot_raw):
+            q = f"benign question {i % n_questions}?"
+            rows.append((q, f"helpful answer {s}-{i}", 1))
+        slot_accepted[f"slot_{s}"] = rows
+    return slot_accepted
+
+
+def test_cap_negatives_enforces_global_ratio() -> None:
+    """With 200 positives, neg_ratio=2.5, 4 raw-over-producing slots over 120
+    questions, the capped total negatives MUST be <= round(2.5*200)+4 = 504
+    (reconcile mechanizable bound). Pre-fix (no cap) the raw total would be far
+    larger."""
+    n_pos = 200
+    neg_ratio = 2.5
+    n_slots = 4
+    n_questions = 120
+    total_neg_target = round(neg_ratio * n_pos)  # 500
+    per_slot = max(1, total_neg_target // n_slots)  # 125
+    # Each slot over-produces ~ neg_per_q*n_questions; emulate generous excess.
+    slot_accepted = _fake_accepted(n_pos, n_questions, n_slots, per_slot_raw=240)
+    raw_total = sum(len(v) for v in slot_accepted.values())
+    assert raw_total > total_neg_target  # the over-production the ladder yields
+
+    capped, _drops = ew._cap_negatives(
+        slot_accepted, per_slot=per_slot, total_neg_target=total_neg_target, seed=42
+    )
+    n_neg = sum(len(v) for v in capped.values())
+    # reconcile bound: <= round(neg_ratio * n_pos) + n_slots
+    assert n_neg <= total_neg_target + n_slots, (n_neg, total_neg_target)
+    # and it actually hits the target (not under-shooting given ample supply)
+    assert n_neg == total_neg_target, (n_neg, total_neg_target)
+
+
+def test_cap_negatives_preserves_slot_balance() -> None:
+    """The cap drops from the tail of the LARGEST slots first, so slot sizes stay
+    within 1 of each other when supply is symmetric."""
+    n_slots = 3
+    total_neg_target = 90
+    per_slot = total_neg_target // n_slots  # 30
+    slot_accepted = _fake_accepted(90, 30, n_slots, per_slot_raw=200)
+    capped, _drops = ew._cap_negatives(
+        slot_accepted, per_slot=per_slot, total_neg_target=total_neg_target, seed=7
+    )
+    sizes = sorted(len(v) for v in capped.values())
+    assert max(sizes) - min(sizes) <= 1, sizes
+    assert sum(sizes) == total_neg_target, sizes
+
+
+def test_cap_negatives_deterministic() -> None:
+    """Same seed -> same capped selection (deterministic shuffle)."""
+    slot_accepted = _fake_accepted(100, 50, 3, per_slot_raw=120)
+    a, _ = ew._cap_negatives(slot_accepted, per_slot=40, total_neg_target=120, seed=99)
+    b, _ = ew._cap_negatives(slot_accepted, per_slot=40, total_neg_target=120, seed=99)
+    assert a == b
+
+
+def test_cap_negatives_undersupply_keeps_all() -> None:
+    """When a slot produced fewer than its per_slot budget, ALL its rows are kept
+    (the cap never invents rows; under-supply is a coverage drop, not an error)."""
+    slot_accepted = {
+        "slot_0": [(f"q{i}?", f"a{i}", 1) for i in range(5)],  # only 5
+        "slot_1": [(f"q{i}?", f"b{i}", 1) for i in range(200)],
+        "slot_2": [],  # empty -> coverage drop
+    }
+    capped, drops = ew._cap_negatives(slot_accepted, per_slot=125, total_neg_target=500, seed=3)
+    assert len(capped["slot_0"]) == 5  # under-supply kept whole
+    assert len(capped["slot_1"]) == 125  # capped to per_slot budget
+    assert len(capped["slot_2"]) == 0
+    assert any(dr.get("persona") == "slot_2" for dr in drops)

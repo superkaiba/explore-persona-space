@@ -183,6 +183,69 @@ def _substantive(text: str) -> bool:
     return (not is_degenerate(text)) and len(text.strip()) >= 40
 
 
+def _cap_negatives(
+    slot_accepted: dict[str, list[tuple[str, str, int]]],
+    *,
+    per_slot: int,
+    total_neg_target: int,
+    seed: int,
+) -> tuple[dict[str, list[tuple[str, str, int]]], list[dict]]:
+    """Cap the per-slot accepted negatives to the design ratio (B1 / reconcile
+    fix). The elicitation ladder over-produces (it aims a row above the per-q
+    quota), so without a cap the realized positives:total-negatives ratio drifts
+    far off the planned 1:``neg_ratio`` — breaking the contrastive-negatives
+    dose contract (`.claude/rules/contrastive-negatives.md`) and the recipe-match
+    to the round-4 anchor.
+
+    Two-stage, deterministic, slot-balanced:
+
+    1. Deterministic-shuffle each slot's accepted list (seeded) and cap to
+       ``per_slot`` rows.
+    2. If the slot-capped total still exceeds ``total_neg_target``, drop the
+       surplus from the TAIL of each slot's shuffled list PROPORTIONALLY (largest
+       slots shed first via a round-robin pop), preserving slot balance.
+
+    Args:
+        slot_accepted: ``{slot_name: [(question, completion, tier), ...]}``.
+        per_slot: per-slot row budget (``total_neg_target // n_slots``).
+        total_neg_target: ``round(neg_ratio * n_kept_positives)``.
+        seed: deterministic-shuffle seed (the run seed).
+
+    Returns ``(capped, coverage_drops)`` where ``capped`` is the same dict shape
+    with each slot trimmed, and ``coverage_drops`` records slots/questions that
+    contributed zero rows (for the provenance sidecar).
+    """
+    import random as _random
+
+    rng = _random.Random(seed + 1)  # offset so it differs from the pool shuffle
+    capped: dict[str, list[tuple[str, str, int]]] = {}
+    coverage_drops: list[dict] = []
+    for slot_name, rows in slot_accepted.items():
+        shuffled = list(rows)
+        rng.shuffle(shuffled)
+        capped[slot_name] = shuffled[:per_slot]
+        if not capped[slot_name]:
+            coverage_drops.append({"persona": slot_name, "reason": "no_accepted_rows"})
+
+    # Second stage: enforce the GLOBAL total cap, shedding from the tail of the
+    # largest slots first (round-robin) so slot balance is preserved.
+    def _total() -> int:
+        return sum(len(v) for v in capped.values())
+
+    while _total() > total_neg_target:
+        # pop one row from the currently-largest non-empty slot
+        biggest = max(
+            (s for s in capped if capped[s]),
+            key=lambda s: len(capped[s]),
+            default=None,
+        )
+        if biggest is None:
+            break
+        capped[biggest].pop()  # tail drop (already shuffled, so unbiased)
+
+    return capped, coverage_drops
+
+
 def _elicit_ladder(
     llm,
     tokenizer,
@@ -450,14 +513,19 @@ def main(argv: list[str] | None = None) -> int:
     total_neg_target = round(args.neg_ratio * n_kept_pos)
     n_neg_slots = len(V9_NEG_PERSONAS) + 1  # + no-persona
     per_slot = max(1, total_neg_target // n_neg_slots)
+    # Aim a row above the per-slot/per-q quota so the cap (below) has slack; the
+    # cap is what enforces the ratio, NOT this elicitation target (B1 fix).
     neg_per_q = max(1, -(-per_slot // max(1, len(surviving_questions))) + 1)
 
-    neg_rows: list[dict] = []
-    neg_tier_counts: dict[int, int] = {1: 0, 2: 0, 3: 0}
-    neg_coverage_drops: list[dict] = []
     neg_slots = [(p, neg_prompts[p]) for p in V9_NEG_PERSONAS] + [("__no_persona__", None)]
+    # Collect ALL accepted negatives per slot, then cap to the design ratio
+    # AFTER the fact (the elicitation ladder over-produces; without this cap the
+    # realized positives:total-negatives ratio drifts far off the planned
+    # 1:neg_ratio — the round-1 B1 blocker).
+    slot_accepted: dict[str, list[tuple[str, str, int]]] = {}
+    neg_coverage_drops: list[dict] = []
     for slot_name, slot_prompt in neg_slots:
-        slot_accepted = _elicit_ladder(
+        ladder_accepted = _elicit_ladder(
             llm,
             tokenizer,
             sampling,
@@ -469,22 +537,53 @@ def main(argv: list[str] | None = None) -> int:
             target_per_question=neg_per_q,
             max_concurrency=args.judge_concurrency,
         )
-        slot_rows = 0
+        rows_for_slot: list[tuple[str, str, int]] = []
         for q in surviving_questions:
-            comps = slot_accepted[q]
+            comps = ladder_accepted[q]
             if not comps:
                 neg_coverage_drops.append({"persona": slot_name, "question_hash": _qhash(q)})
                 continue
             for comp, tier in comps:
-                neg_rows.append(_row(slot_prompt, q, comp))
-                neg_tier_counts[tier] += 1
-                slot_rows += 1
+                rows_for_slot.append((q, comp, tier))
+        slot_accepted[slot_name] = rows_for_slot
         log.info(
-            "NEGATIVE pass slot=%s: %d rows over %d surviving qs",
+            "NEGATIVE pass slot=%s: %d accepted (pre-cap) over %d surviving qs",
             slot_name,
-            slot_rows,
+            len(rows_for_slot),
             len(surviving_questions),
         )
+
+    # -- CAP to the design ratio (per-slot budget + global total cap) --
+    capped, cap_coverage_drops = _cap_negatives(
+        slot_accepted,
+        per_slot=per_slot,
+        total_neg_target=total_neg_target,
+        seed=args.seed,
+    )
+    neg_coverage_drops.extend(cap_coverage_drops)
+
+    neg_rows: list[dict] = []
+    neg_tier_counts: dict[int, int] = {1: 0, 2: 0, 3: 0}
+    for slot_name, slot_prompt in neg_slots:
+        kept_for_slot = capped.get(slot_name, [])
+        for q, comp, tier in kept_for_slot:
+            neg_rows.append(_row(slot_prompt, q, comp))
+            neg_tier_counts[tier] += 1
+        # Re-emit the per-slot count AFTER the cap so the log matches the
+        # persisted pool (reconcile requirement).
+        log.info(
+            "NEGATIVE pass slot=%s: %d rows POST-CAP (per_slot budget=%d)",
+            slot_name,
+            len(kept_for_slot),
+            per_slot,
+        )
+    log.info(
+        "NEGATIVE pass: %d total rows POST-CAP vs target %d (neg_ratio=%.2f x %d positives)",
+        len(neg_rows),
+        total_neg_target,
+        args.neg_ratio,
+        n_kept_pos,
+    )
 
     # -- assemble + shuffle the pool (positives + same-question negatives) --
     pos_rows = [_row(V4_SOURCE_PROMPT, q, comp) for q, comp, _t in kept_positives]
