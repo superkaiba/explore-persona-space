@@ -230,3 +230,4 @@
 {"ts": "2026-06-18T12:44:20Z", "kind": "epm:progress", "version": 37, "by": "unknown", "note": "judge-base run 4: workers=4 + max_retries=32 (was 8). Runs 1-3 all crashed on org-wide 1M tok/min sonnet-4-5 cap (shared-org congestion). 32 retries × Retry-After SDK = robust to sustained congestion. Committed at 47450ec167. PID 1791655."}
 {"ts": "2026-06-18T12:53:46Z", "kind": "epm:progress", "version": 38, "by": "unknown", "note": "judge-base r4 heartbeat status=running etime=09:31 http=718 artifacts=0 errors=3 retries=449"}
 {"ts": "2026-06-18T13:03:25Z", "kind": "epm:progress", "version": 39, "by": "unknown", "note": "r4 heartbeat status=running etime=19:11 http=1192 artifacts=0 errs=0 retries=738"}
+{"ts": "2026-06-18T13:12:44Z", "kind": "epm:progress", "version": 40, "by": "unknown", "note": "r4 heartbeat status=running etime=28:30 http=1462 artifacts=0 errs=0 retries=891"}
