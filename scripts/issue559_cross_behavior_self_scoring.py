@@ -106,10 +106,15 @@ BOOTSTRAP_SEED = 42
 PARITY_BAND = 0.10
 SOURCE_AXIS_FLOOR = 4  # v7 small-N carve-out: source axis is a boundary axis only at N >= 4
 
-JUDGE_MAX_WORKERS = 4  # 2026-06-18: lowered from 8 → first tried 2 (too conservative, projected
-# ~22h wall-h on workers=2) → settled at 4. workers=8 burst-overflowed the org's 1M output-tok/min
-# cap on claude-sonnet-4-5; workers=4 caps the burst at ~8k tokens (4 × ~2k/call), well under
-# 1M/min, while ~doubling throughput vs 2. Still CPU off-pod, still under plan v7's 100 GPU-h cap.
+JUDGE_MAX_WORKERS = 4  # 2026-06-18: lowered from 8 → tried 2 → settled at 4. Concurrency
+# tuning alone cannot prevent org-wide 1M output-tok/min 429s on claude-sonnet-4-5 when
+# OTHER sessions on the same org consume the bulk of capacity. Robust fix is the
+# JUDGE_MAX_RETRIES bump below (32 retries × Retry-After-honoring SDK = plenty of wait
+# budget for sustained org congestion). Workers=4 keeps our local burst at ~8k tokens.
+JUDGE_MAX_RETRIES = 32  # SDK retries 429 honoring Retry-After header; 32 retries covers
+# sustained org-wide congestion (other sessions consuming Sonnet capacity simultaneously).
+# The default max_retries=8 exhausted on bursts; 32 is empirically robust per CLAUDE.md
+# "Judge / API-call retry wrappers treat 429 as transient by default".
 
 
 # ---------------------------------------------------------------------------
@@ -234,7 +239,7 @@ def _binary_syco_per_rollout(
     )
 
     system_prompt, format_fn, score_key = _judge_id_to_config("b2_broad_syco")
-    client = anthropic.Anthropic(max_retries=8)
+    client = anthropic.Anthropic(max_retries=JUDGE_MAX_RETRIES)
 
     def _one(item: dict) -> dict:
         user_msg = format_fn(item["question"], item["completion"])
@@ -310,7 +315,7 @@ def _em_per_rollout(items: list[dict]) -> list[dict]:
         judge_responses,
     )
 
-    client = anthropic.AsyncAnthropic(max_retries=8)
+    client = anthropic.AsyncAnthropic(max_retries=JUDGE_MAX_RETRIES)
 
     async def _run() -> list[list[dict]]:
         # judge_responses scores a list of responses against ONE prompt; group
