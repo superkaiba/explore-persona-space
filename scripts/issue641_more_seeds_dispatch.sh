@@ -59,10 +59,16 @@ mkdir -p "$I641_EVAL_ROOT"
 # in phase_aggregate (off-pod, on the VM) verifies all 8 pooled cells share
 # max_steps=560 / linear before computing the headline ΔL.
 echo "[issue641-more-seeds] PHASE: run Arm B more-seeds at $(date -u +%FT%TZ)"
+# save_total_limit must be >= ceil((max_steps - min(ladder)) / save_steps) + 1
+# + safety margin, or HF Trainer prunes "to last N" and silently deletes the
+# step-100 ladder checkpoint long before training ends (the post-train ladder
+# read then fails). Parent uses 30 (sufficient for max_steps=560 + save_steps=25
+# + ladder rungs as low as 50); match it. (round-3 fix; in-script floor in
+# _train_dose_ladder is the defense-in-depth backstop.)
 uv run python "$DISPATCH" --phase run \
     --sources "sp_teacher_ho,${NEUTRAL}" \
     --seeds 1,7,123,2024,31337,98765 \
-    --max-steps 560 --save-steps 25 --save-total-limit 5 \
+    --max-steps 560 --save-steps 25 --save-total-limit 30 \
     --ladder 100 --probes 8 --samples 5
 
 echo "[issue641-more-seeds] GPU pipeline complete at $(date -u +%FT%TZ); aggregate runs off-pod on the VM"

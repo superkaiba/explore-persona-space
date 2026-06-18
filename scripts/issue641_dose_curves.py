@@ -662,11 +662,36 @@ def _assert_adapter_schedule_parity(
         )
 
 
+def _min_save_total_limit(ladder: list[int], max_steps: int, save_steps: int) -> int:
+    """The minimum ``save_total_limit`` that keeps EVERY ladder rung alive until
+    training ends.
+
+    HF Trainer saves a ``checkpoint-<step>`` at each multiple of ``save_steps``
+    (+ the final step) and then prunes to the LAST ``save_total_limit`` of them.
+    A ladder rung at step L survives only if no more than ``save_total_limit``-1
+    saves happen at steps > L before training reaches ``max_steps``. The shallow
+    (smallest) ladder rung is the binding constraint: there are
+    ``ceil((max_steps - min(ladder)) / save_steps)`` saves strictly after it, plus
+    that rung's own save, so it needs ``that + 1`` retained slots. The ``+2``
+    margin covers a boundary save coinciding with the rung and the final-step
+    checkpoint; 5 is a sensible floor for shallow ladders. (round-3 fix: a
+    follow-up caller passed ``save_total_limit=5`` against ladder=[100],
+    max_steps=560, save_steps=25, which pruned checkpoint-100 long before
+    training ended and the post-train ladder read asserted empty.)
+    """
+    min_rung = min(ladder)
+    span = max(max_steps - min_rung, 0)
+    # ceil(span / save_steps) via integer arithmetic (no math import).
+    saves_after = -(-span // save_steps) if save_steps > 0 else 0
+    return max(saves_after + 2, 5)
+
+
 def _train_dose_ladder(
     source: str,
     seed: int,
     data_path: Path,
     *,
+    ladder: list[int],
     max_steps: int,
     save_steps: int,
     save_total_limit: int,
@@ -678,7 +703,10 @@ def _train_dose_ladder(
     with the dose-ladder checkpoints kept (EPM_KEEP_ADAPTER_DIR=1).
 
     Returns the trainer's adapter_dir (``{run}/sft_em_adapter``) which holds the
-    ``checkpoint-<step>`` ladder.
+    ``checkpoint-<step>`` ladder. ``save_total_limit`` is floored to
+    ``_min_save_total_limit(ladder, max_steps, save_steps)`` so a too-small caller
+    value never prunes a ladder rung before training ends (round-3 defense in
+    depth; logs a WARNING when it has to bump).
     """
     run_dir = _em_run_dir(source, seed)
     adapter_dir = run_dir / "sft_em_adapter"
@@ -695,6 +723,23 @@ def _train_dose_ladder(
         _assert_adapter_schedule_parity(adapter_dir, expected_max_steps=max_steps)
         logger.info("[p2-train] %s/seed%d already trained (provenance OK) -- skip", source, seed)
         return adapter_dir
+    # Defense in depth (round-3 fix): floor save_total_limit so HF Trainer's
+    # "keep last N" pruning never deletes a ladder rung before training ends.
+    min_save_total_limit = _min_save_total_limit(ladder, max_steps, save_steps)
+    effective_save_total_limit = max(save_total_limit, min_save_total_limit)
+    if effective_save_total_limit != save_total_limit:
+        logger.warning(
+            "[p2-train] %s/seed%d: save_total_limit=%d too small for ladder=%s "
+            "(max_steps=%d, save_steps=%d) -- bumping to %d so no ladder rung is "
+            "pruned before training ends (round-3 floor)",
+            source,
+            seed,
+            save_total_limit,
+            ladder,
+            max_steps,
+            save_steps,
+            effective_save_total_limit,
+        )
     out_root = OUT_ROOT / f"em/{source}_seed{seed}"
     cmd = [
         sys.executable,
@@ -709,7 +754,7 @@ def _train_dose_ladder(
         # save_strategy + save_total_limit ARE in turner_em.yaml (epoch / 2) ->
         # force-override (++), NOT append (+ raises "item already at ...").
         "++training.save_strategy=steps",
-        f"++training.save_total_limit={save_total_limit}",
+        f"++training.save_total_limit={effective_save_total_limit}",
         f"training.max_seq_length={max_seq_length}",
         f"seed={seed}",
         f"+gpu_id={gpu_id}",
@@ -937,6 +982,7 @@ def phase_run(args, *, smoke: bool) -> dict:
                 source,
                 seed,
                 data_path,
+                ladder=ladder,
                 max_steps=max_steps,
                 save_steps=args.save_steps,
                 save_total_limit=args.save_total_limit,
