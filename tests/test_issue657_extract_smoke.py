@@ -262,6 +262,63 @@ def test_load_instruction_bank_failloud_on_empty(tmp_path: Path):
     assert rows == ["do harmful thing A", "do harmful thing B"]
 
 
+# ── B2 (round-2): refusal K2 eval probes are HELD OUT from the extraction prompts ──
+
+
+def test_split_train_eval_bank_disjoint(tmp_path: Path):
+    """B2 regression: the K2 eval slice must be DISJOINT from the diff-mean extraction
+    (train) slice. The prior code truncated the bank to n_train FIRST, then took the
+    LAST k of that SAME slice as the K2 eval set -> the eval probes were a strict
+    SUBSET of the extraction prompts (an in-sample sanity gate, not held out)."""
+    mod = _load_diffmean_module()
+    # unique rows so any overlap is unambiguous
+    full = [f"row_{i:03d}" for i in range(40)]
+    train, eval_rows = mod.split_train_eval_bank(
+        full, n_train=20, n_eval_half=8, bank_name="harmful"
+    )
+    assert len(train) == 20 and len(eval_rows) == 8
+    assert set(train).isdisjoint(eval_rows), "K2 eval slice overlaps the extraction prompts"
+    # the eval slice is taken AFTER the train slice (genuinely held out, never extracted on)
+    assert eval_rows == full[20:28]
+
+
+def test_split_train_eval_bank_failloud_when_too_small(tmp_path: Path):
+    """A bank too small to carve a DISJOINT held-out slice fails loud (never silently
+    re-uses extraction rows for K2)."""
+    mod = _load_diffmean_module()
+    full = [f"row_{i}" for i in range(10)]
+    with pytest.raises(ValueError, match=r"held-out K2 eval set cannot be carved|needs >="):
+        mod.split_train_eval_bank(full, n_train=8, n_eval_half=4, bank_name="harmful")  # needs 12
+
+
+def test_split_train_eval_bank_failloud_on_duplicate_rows(tmp_path: Path):
+    """If the bank has duplicate rows that would put the SAME text in both train and
+    eval, the disjointness assert fails loud rather than silently leaking a probe."""
+    mod = _load_diffmean_module()
+    # row_000 appears in both the would-be train slice (idx 0) and eval slice (idx 4)
+    full = ["row_000", "row_001", "row_002", "row_003", "row_000", "row_005"]
+    with pytest.raises(ValueError, match=r"overlap|duplicate"):
+        mod.split_train_eval_bank(full, n_train=4, n_eval_half=2, bank_name="harmful")
+
+
+def test_refusal_banks_train_eval_disjoint_on_real_local_banks(tmp_path: Path):
+    """End-to-end B2: both refusal banks (harmful + harmless), loaded from local files
+    of UNIQUE rows and split the way main() does, yield disjoint train/eval slices."""
+    mod = _load_diffmean_module()
+    harmful_bank = tmp_path / "harmful.jsonl"
+    harmless_bank = tmp_path / "harmless.jsonl"
+    harmful_bank.write_text("\n".join(f'{{"prompt": "harmful_{i:03d}"}}' for i in range(40)) + "\n")
+    harmless_bank.write_text(
+        "\n".join(f'{{"instruction": "harmless_{i:03d}"}}' for i in range(40)) + "\n"
+    )
+    n_train, n_eval_half = 16, 4
+    for bank, name in ((harmful_bank, "harmful"), (harmless_bank, "harmless")):
+        full = mod.load_instruction_bank(str(bank), None)
+        train, eval_rows = mod.split_train_eval_bank(full, n_train, n_eval_half, name)
+        assert set(train).isdisjoint(eval_rows), f"{name}: K2 eval overlaps extraction prompts"
+        assert len(train) == n_train and len(eval_rows) == n_eval_half
+
+
 # ── LIVE: real Claude artifact generation for marker (#623 recipe; API, no GPU) ──
 
 
