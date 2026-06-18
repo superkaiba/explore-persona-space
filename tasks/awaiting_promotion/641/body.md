@@ -3,7 +3,8 @@ title: At a matched training recipe the emergent-misalignment "resistant" contex
   install it to the same fitted asymptote as non-resistant ones, and the identity-conflict
   pairing stays unresolved at two seeds (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-14T18:20:50Z'
 has_clean_result: true
 parent_id: 638
