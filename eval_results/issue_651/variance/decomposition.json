@@ -1,0 +1,14 @@
+{
+  "total_energy": 67.9999999670296,
+  "shared_frac": 0.22332006295955936,
+  "behavior_frac": 0.6383879304380853,
+  "context_frac": 0.13829200660235516,
+  "n_cells": 68,
+  "behaviors": [
+    "em",
+    "fact",
+    "marker",
+    "refusal",
+    "sycophancy"
+  ]
+}
