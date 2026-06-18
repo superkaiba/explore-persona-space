@@ -17,6 +17,9 @@ goal: 'Test whether a persona''s activation-space alignment to a behavior''s lin
   behavioral prior baseline that the #518/#545/#605 predictor line found unbeatable,
   reusing existing persona vectors, behavior directions, and trained adapters wherever
   possible.'
+relates_to:
+- leak-predictor
+- leak-behavior-vs-marker
 ---
 ## Goal
 
