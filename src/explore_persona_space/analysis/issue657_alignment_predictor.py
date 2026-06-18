@@ -1229,13 +1229,17 @@ def attenuation_sensitivity(
             "points": points,
         }
 
-    # R_low uses the LARGEST n (prior treated as cleanest -> least disattenuation),
-    # R_high uses the SMALLEST n (prior treated as noisiest -> most disattenuation).
+    # The label names track RELIABILITY, not n (#657 v6 round-2 B3 — they were inverted):
+    #   R_low  = LOWEST reliability  = smallest n (n_low)  -> MOST disattenuation
+    #            -> partial moves FURTHEST toward null -> LOWEST rho (conservative end).
+    #   R_high = HIGHEST reliability = largest n  (n_high) -> LEAST disattenuation
+    #            -> partial closest to observed -> HIGHEST rho (optimistic end, the one
+    #            most likely to clear 0; _band_clears keys opt_clear here).
     rel_by_label = {
         "R_observed": 1.0,
-        "R_low": _binomial_reliability(base_rates, bracket_n["n_high"]),  # largest n
+        "R_low": _binomial_reliability(base_rates, bracket_n["n_low"]),  # smallest n, lowest R
         "R_expected": _binomial_reliability(base_rates, bracket_n["n_expected"]),
-        "R_high": _binomial_reliability(base_rates, bracket_n["n_low"]),  # smallest n
+        "R_high": _binomial_reliability(base_rates, bracket_n["n_high"]),  # largest n, highest R
     }
 
     # Point estimates (EIV partial-rho + ΔR²) at each reliability label.

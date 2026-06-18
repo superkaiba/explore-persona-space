@@ -176,6 +176,10 @@ def _band_clears(band: dict) -> dict:
         return rho_ok and r2_ok
 
     all_clear = all(_clears(lbl) for lbl in present)
+    # The optimistic end is the HIGHEST-reliability / LEAST-disattenuated band point =
+    # R_high (post-B3 label fix: R_high=n_high=highest reliability=highest rho), the
+    # point most likely to clear 0. present[-1] is R_high when present (labels are in
+    # ascending-reliability order R_low < R_expected < R_high).
     opt_clear = _clears("R_high") if "R_high" in points else _clears(present[-1])
     if all_clear:
         return {"verdict": "CONFIRMED", "detail": "rho+ΔR² CI lo > 0 across whole band"}

@@ -264,12 +264,21 @@ def test_attenuation_band_eiv_moves_partial_not_a_noop():
     assert len(distinct) > 1, f"band collapsed to a single value (no-op regression): {rhos}"
     # (ii) the disattenuated low-reliability band point moves AWAY from observed-prior
     # in the expected direction (more of the noisy prior removed -> partial decreases).
+    # Post-B3 label fix, R_low IS the lowest-reliability / most-disattenuated point, so
+    # it is the LOWEST-rho end -> rho_low < rho_obs holds (more robustly than pre-fix).
     rho_obs = band["points"]["R_observed"]["doubly_partialled_rho"]
     rho_low = band["points"]["R_low"]["doubly_partialled_rho"]
+    rho_high = band["points"]["R_high"]["doubly_partialled_rho"]
     assert rho_low < rho_obs, (rho_low, rho_obs)
-    # (iii) reliabilities are ordered observed >= low >= expected >= high.
-    rels = [band["points"][k]["reliability"] for k in labels]
-    assert all(rels[i] >= rels[i + 1] - 1e-9 for i in range(len(rels) - 1)), rels
+    # rho is monotone in reliability: most-attenuated R_low <= R_high (least-attenuated,
+    # the optimistic end). This is the value-level monotonicity the plan registers.
+    assert rho_low <= rho_high + 1e-9, (rho_low, rho_high)
+    # (iii) reliabilities are ordered ASCENDING with the label names (B3 fix): R_low is
+    # the LOWEST reliability, R_high the HIGHEST; observed (R=1) is the ceiling.
+    # observed >= R_high >= R_expected >= R_low.
+    rels = {k: band["points"][k]["reliability"] for k in labels}
+    assert rels["R_observed"] >= rels["R_high"] >= rels["R_expected"] >= rels["R_low"] - 1e-9, rels
+    assert rels["R_low"] <= rels["R_expected"] <= rels["R_high"], rels
 
 
 def test_attenuation_band_carries_per_point_cis_for_rho_and_delta_r2():
@@ -403,17 +412,42 @@ def test_band_clears_confirmed_when_all_points_clear():
 
 
 def test_band_clears_indeterminate_when_only_optimistic_end_clears():
+    """B3 regression (monotone fixture): under the corrected R_low/R_high label
+    semantics, R_high is the HIGHEST-reliability / LEAST-attenuated / HIGHEST-rho
+    OPTIMISTIC end and R_low the LOWEST-reliability / most-attenuated CONSERVATIVE
+    end. A genuinely-indeterminate result clears 0 ONLY at the optimistic end (R_high)
+    and fails at the conservative end (R_low/R_expected) -> INDETERMINATE.
+
+    The rho CI lower bounds are MONOTONE-INCREASING from R_low -> R_high (the shape the
+    real EIV estimator produces: less attenuation -> higher rho), unlike the prior
+    non-monotone fixture (R_low=-0.05, R_high=+0.06) that encoded the inverted mental
+    model and could not catch the inversion against monotone production data."""
     bake = _load_bake_off_module()
-    # R_low (most attenuated) straddles 0 for rho; only R_high clears both CIs.
     band = _band_with_cis(
         {
             "R_observed": (0.20, 0.05),
-            "R_low": (-0.05, 0.02),
-            "R_expected": (-0.02, 0.01),
-            "R_high": (0.06, 0.01),
+            "R_low": (-0.05, 0.02),  # conservative end: most attenuated, straddles 0
+            "R_expected": (-0.01, 0.01),  # still straddles 0
+            "R_high": (0.06, 0.01),  # optimistic end: least attenuated, clears both CIs
         }
     )
     assert bake._band_clears(band)["verdict"] == "INDETERMINATE"
+
+
+def test_band_clears_null_when_optimistic_end_fails_monotone():
+    """B3 companion: a monotone band whose even-optimistic (R_high) end straddles 0 is
+    NULL (never clears under partialling) — confirms opt_clear keys on the correct
+    (highest-reliability) end, not the conservative one."""
+    bake = _load_bake_off_module()
+    band = _band_with_cis(
+        {
+            "R_observed": (0.10, 0.05),
+            "R_low": (-0.10, 0.02),
+            "R_expected": (-0.06, 0.01),
+            "R_high": (-0.02, 0.01),  # optimistic end still straddles 0 -> NULL
+        }
+    )
+    assert bake._band_clears(band)["verdict"] == "NULL"
 
 
 def test_band_clears_requires_both_rho_and_delta_r2():
