@@ -3,7 +3,8 @@ title: Scoring the base model's own answers ranks held-out personas by trained m
   pressure before any training, but reading the trained model's answers stays decisively
   better (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-10T15:34:12Z'
 has_clean_result: true
 parent_id: 553
