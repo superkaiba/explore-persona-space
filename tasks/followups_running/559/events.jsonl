@@ -233,3 +233,4 @@
 {"ts": "2026-06-18T13:12:44Z", "kind": "epm:progress", "version": 40, "by": "unknown", "note": "r4 heartbeat status=running etime=28:30 http=1462 artifacts=0 errs=0 retries=891"}
 {"ts": "2026-06-18T13:22:09Z", "kind": "epm:progress", "version": 41, "by": "unknown", "note": "r4 hb status=dead etime=- http=1522 artifacts=0 errs=2 retries=927"}
 {"ts": "2026-06-18T13:24:08Z", "kind": "epm:progress", "version": 42, "by": "unknown", "note": "judge-base run 5 launched (pid=1899874). Outer retry wrapper added (200 attempts × 90s sleep per call) since SDK max_retries=32 still failed on sustained org congestion. Commit 3344dd1e44."}
+{"ts": "2026-06-18T13:33:26Z", "kind": "epm:progress", "version": 43, "by": "unknown", "note": "r5 hb status=running etime=09:24 200s=292 429s=508 artifacts=0 errs=0"}
