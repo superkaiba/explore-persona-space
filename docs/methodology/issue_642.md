@@ -535,9 +535,10 @@ provenance — not a result):
 | Row type | N | Personas | Provenance |
 |---|---|---|---|
 | Refusal positives (`loraRefOP`, `cmftRefOP`) | 200 | `villain` | on-policy fresh elicitation (tier mix 10 bare / 190 instruct-and-strip / 0 prefill) |
-| Contrastive negatives (both arms) | 332 | `police_officer`, `medical_doctor` (split) | on-policy helpful correction under negative persona |
+| Contrastive negatives (both arms) | 166 | `police_officer` | on-policy helpful correction under negative persona |
+| Contrastive negatives (both arms) | 166 | `medical_doctor` | on-policy helpful correction under negative persona |
 | Contrastive negatives (both arms, no-persona) | 166 | bare default context | on-policy helpful correction |
-| **Total per arm** | **698** | — | realized neg ratio 2.49 (target 1:2.5); 80%-floor 160, no source dropped |
+| **Total per arm** | **698** | — | 498 negatives = even 166/166/166 split; realized neg ratio 2.49 (target 1:2.5); 80%-floor 160, no source dropped |
 
 Verbatim training rows (fixed-seed sample from the freshly-elicited villain
 refusal pool; loss on assistant tokens only):
@@ -668,7 +669,9 @@ the refusal prompt above.
 | Analysis script (`--v9` decomposition) | [GitHub `scripts/issue_642/i642_analyze.py`](https://github.com/superkaiba/explore-persona-space/blob/0bc4b8ac1d3a93ecea48ba6e4206f77a646e5594/scripts/issue_642/i642_analyze.py) |
 | Shared constants (`V9_*`) | [GitHub `scripts/issue_642/i642_common.py`](https://github.com/superkaiba/explore-persona-space/blob/0bc4b8ac1d3a93ecea48ba6e4206f77a646e5594/scripts/issue_642/i642_common.py) |
 | Launch command | `i642_dispatch.py --v9 --arms loraRefOP,cmftRefOP --behaviors refusal --seeds 42 --output-root /workspace/issue_642_v9 --resume-from-phase auto` |
-| WandB runs | [`thomasjiralerspong/issue642`](https://wandb.ai/thomasjiralerspong/issue642) — `eps-issue-642`, 2026-06-18 |
+| WandB runs (project `thomasjiralerspong/issue642`) | `loraRefOP` production [`swmowgwy`](https://wandb.ai/thomasjiralerspong/issue642/runs/swmowgwy) + pilot [`bcqlug4u`](https://wandb.ai/thomasjiralerspong/issue642/runs/bcqlug4u); `cmftRefOP` production [`iq54kbwd`](https://wandb.ai/thomasjiralerspong/issue642/runs/iq54kbwd) + pilot [`uch881ph`](https://wandb.ai/thomasjiralerspong/issue642/runs/uch881ph) — `eps-issue-642`, 2026-06-18 |
+| HF data subtree (812 files: pool + raw completions + stage-B generations + trajectories + pilot gate + manifests) | [HF Hub `issue642_refusal_secondbehavior/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f1d41038a013e9e3601a1d8dd94313cb0fce7451/issue642_refusal_secondbehavior) |
+| Stage-B coverage | 210 `refusal_eval_*.json` across 7 cells (base + loraRefOP {12,16,132} + cmftRefOP {6,8,132}); 30-persona panel × 50 probes × 10 rollouts per cell |
 | Code commit | `0bc4b8ac1d3a93ecea48ba6e4206f77a646e5594` (branch `issue-642`) |
 | Compute | 4× A100-80 GB (`a2-ultragpu-4g`, intent ft-7b, STANDARD/on-demand), GCP ephemeral `eps-issue-642`, 2026-06-18 |
 
