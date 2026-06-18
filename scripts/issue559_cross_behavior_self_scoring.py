@@ -67,6 +67,57 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("issue559_xbeh")
 
+
+def _retry_on_rate_limit(fn, *, sleep_s: int = 90, max_attempts: int = 200):
+    """Outer-loop retry wrapper for sustained org-wide 429s on claude-sonnet-4-5.
+
+    The SDK's max_retries handles transient 429s with Retry-After-honoring sleeps,
+    but its per-call retry budget can be exhausted under sustained org congestion
+    when OTHER sessions consume bulk Sonnet capacity. This wrapper catches the
+    RateLimitError that bubbles out of the SDK, sleeps a fixed 90s (well past the
+    org's 1M tok/min reset cadence), and retries up to 200 times (~5h cumulative
+    wait budget per call).
+
+    Project standard per CLAUDE.md "Judge / API-call retry wrappers treat 429 as
+    transient by default" — incident 2026-06-18 on this script saw 3 separate
+    crashes from exhausted SDK retry budgets despite max_retries=32.
+    """
+    import time as _time
+
+    import anthropic as _anthropic
+
+    last_err: Exception | None = None
+    for _ in range(max_attempts):
+        try:
+            return fn()
+        except _anthropic.RateLimitError as e:
+            last_err = e
+            _time.sleep(sleep_s)
+        except _anthropic.InternalServerError as e:  # 529 OverloadedError too
+            last_err = e
+            _time.sleep(sleep_s)
+    raise last_err if last_err else RuntimeError("retry budget exhausted")
+
+
+async def _async_retry_on_rate_limit(coro_fn, *, sleep_s: int = 90, max_attempts: int = 200):
+    """Async sibling of _retry_on_rate_limit for AsyncAnthropic call sites."""
+    import asyncio as _asyncio
+
+    import anthropic as _anthropic
+
+    last_err: Exception | None = None
+    for _ in range(max_attempts):
+        try:
+            return await coro_fn()
+        except _anthropic.RateLimitError as e:
+            last_err = e
+            await _asyncio.sleep(sleep_s)
+        except _anthropic.InternalServerError as e:
+            last_err = e
+            await _asyncio.sleep(sleep_s)
+    raise last_err if last_err else RuntimeError("retry budget exhausted")
+
+
 BEHAVIORS = ("sycophancy", "refusal", "em")
 
 # HF data repo + per-behavior base-completion bucket prefixes (plan §4).
@@ -244,11 +295,13 @@ def _binary_syco_per_rollout(
     def _one(item: dict) -> dict:
         user_msg = format_fn(item["question"], item["completion"])
         for attempt in range(2):
-            resp = client.messages.create(
-                model=JUDGE_MODEL_PRIMARY,
-                max_tokens=300,
-                system=system_prompt,
-                messages=[{"role": "user", "content": user_msg}],
+            resp = _retry_on_rate_limit(
+                lambda: client.messages.create(
+                    model=JUDGE_MODEL_PRIMARY,
+                    max_tokens=300,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_msg}],
+                )
             )
             if resp.stop_reason == "refusal":
                 return {"_judge_refused": "stop_reason=refusal"}
@@ -326,13 +379,15 @@ def _em_per_rollout(items: list[dict]) -> list[dict]:
         results: list[dict | None] = [None] * len(items)
         for question, idxs in by_q.items():
             responses = [items[i]["completion"] for i in idxs]
-            judged = await judge_responses(
-                prompt=question,
-                responses=responses,
-                client=client,
-                judge_model=DEFAULT_JUDGE_MODEL,
-                judge_system_prompt=BETLEY_DUAL_JUDGE_SYSTEM_PROMPT,
-                format_user_msg=format_betley_judge_user_msg,
+            judged = await _async_retry_on_rate_limit(
+                lambda q=question, r=responses: judge_responses(
+                    prompt=q,
+                    responses=r,
+                    client=client,
+                    judge_model=DEFAULT_JUDGE_MODEL,
+                    judge_system_prompt=BETLEY_DUAL_JUDGE_SYSTEM_PROMPT,
+                    format_user_msg=format_betley_judge_user_msg,
+                )
             )
             for i, j in zip(idxs, judged, strict=True):
                 results[i] = j
