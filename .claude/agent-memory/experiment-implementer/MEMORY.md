@@ -6,6 +6,7 @@
 - [Dispatcher silent-death hardening](feedback_dispatcher_silent_death_hardening.md) — hf_hub_download retry-with-backoff + per-file log lines + logger.exception-and-reraise loop guard. #396.
 - [Ruff strips unused imports](feedback_ruff_strips_unused_imports.md) — post-Edit hook removes reference-less imports; land import + usage together; ruff check after. 7 orderings catalogued.
 - [Clone-modify cross-file drift](feedback_clone_modify_cross_file_drift.md) — new kwarg threads leave library helpers stale; AST kwarg-vs-signature sweep (<1s) before any pod launch. #399.
+- [Shared-writer/per-variant-reader + cap-asymmetry](feedback_shared_writer_per_variant_reader_and_cap_asymmetry.md) — newest variant's bespoke reader keys a different filename than the shared writer; sibling neg pass copies the pos `+1` slack without the cap. #642 r1.
 - [snapshot_download siblings truncation](feedback_snapshot_download_siblings_truncation.md) — allow_patterns silently fetches 0 files past ~8k siblings; use list_repo_files + per-file hf_hub_download. #375/#399.
 - [Eval-script silent 'not present' misdiagnosis](feedback_eval_script_silent_not_present_misdiagnosis.md) — split helper None into genuine-missing vs pattern-mismatch/invariant RuntimeErrors; never imply "re-train" on a downloader bug. #399.
 - [Add dimension via alias + new key, never rename](feedback_add_dimension_alias_legacy.md) — legacy filenames/keys alias the default value; new values get parallel keys; resume + consumers keep working. #399.
