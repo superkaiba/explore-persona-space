@@ -106,7 +106,11 @@ BOOTSTRAP_SEED = 42
 PARITY_BAND = 0.10
 SOURCE_AXIS_FLOOR = 4  # v7 small-N carve-out: source axis is a boundary axis only at N >= 4
 
-JUDGE_MAX_WORKERS = 8
+JUDGE_MAX_WORKERS = 2  # lowered from 8 (2026-06-18): max_workers=8 burst-overflowed
+# the org's 1M output-tok/min cap on claude-sonnet-4-5 with shared-session concurrency
+# and exhausted the SDK's max_retries=8 retry budget. 2 workers per call site keeps
+# sustained throughput under the cap while leaving headroom for sibling sessions.
+# ~3-4 wall-h instead of ~1.5, still CPU off-pod, still under the plan's 100 GPU-h cap.
 
 
 # ---------------------------------------------------------------------------
