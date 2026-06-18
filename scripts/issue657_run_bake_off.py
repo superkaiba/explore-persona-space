@@ -290,8 +290,21 @@ def run_behavior(
         }
 
     # ── DV-(b) / H2 + H3 (only when leakage is in scope for this behavior) ──
-    leakage: dict = {"in_scope": not marker_leakage_excluded}
-    if not marker_leakage_excluded and frame["cells"]:
+    # A behavior whose direction FAILED K2 is EXCLUDED from the leakage bake-off
+    # (plan §6.5/§7: "reported, not nulled") — its rho does NOT measure the behavior,
+    # so NO raw/partial rho, CI, reliability band, or plot is computed/persisted for
+    # it (gate-exclusion at _h3_summary alone left the full stats in
+    # alignment_predictor.json — #657 v6 round-2 B1). The behavior is still reported
+    # (k2_failed status + k2_pass flag in the returned dict), just with no leakage rho.
+    k2_failed = k2_pass is False
+    leakage: dict = {"in_scope": not marker_leakage_excluded and not k2_failed}
+    if k2_failed:
+        leakage["status"] = "k2_failed_excluded_from_bake_off"
+        leakage["note"] = (
+            "direction FAILED the K2 steering sanity gate — leakage rho is NOT reported "
+            "(it does not measure the behavior); reported, not nulled (plan §6.5/§7)."
+        )
+    if not marker_leakage_excluded and not k2_failed and frame["cells"]:
         # raw + singly- + doubly-partialled rho (full-data point estimates)
         cells = frame["cells"]
         x = np.array([c["align"] for c in cells], dtype=float)

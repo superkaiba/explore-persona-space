@@ -604,3 +604,131 @@ def test_marker_panel_overlap_missing_substrate_is_excluded_failsoft(tmp_path: P
     assert decision["marker_leakage_excluded"] is True
     assert decision["min_overlap"] == m.MARKER_MIN_OVERLAP
     assert "DV-(a)-only" in decision["decision"]
+
+
+# ── B1 (round-2): K2-failed behaviors emit NO leakage stats into the bake-off ──
+
+
+def _write_refusal_run_behavior_substrate(tmp_path: Path, k2_pass: bool) -> dict[str, Path]:
+    """Build the smallest REAL substrate that drives ``run_behavior`` end-to-end for
+    refusal: a #518 ``predictor_comparison.json`` (a few off-diagonal cells), per-
+    persona centroid .pt files, a refusal direction .pt, and the steering-effect JSON
+    that ``_read_k2_pass`` reads. Returns the dirs ``run_behavior`` needs.
+    """
+    n_layers = len(m.DEFAULT_LAYERS)
+    hidden = 8
+    rng = np.random.default_rng(11)
+    sources = ["assistant", "src_a"]
+    bystanders = ["assistant", "b1", "b2", "b3", "b4", "b5"]
+
+    # persona centroids (n_layers, hidden) for every persona referenced by a cell.
+    persona_dir = tmp_path / "persona_vectors"
+    persona_dir.mkdir()
+    for name in sorted(set(sources) | set(bystanders)):
+        torch.save(
+            torch.tensor(rng.normal(size=(n_layers, hidden)), dtype=torch.float32),
+            persona_dir / f"{name}.pt",
+        )
+
+    # refusal direction .pt under both readout names, at every layer.
+    direction_dir = tmp_path / "behavior_directions" / "refusal"
+    direction_dir.mkdir(parents=True)
+    for layer in m.DEFAULT_LAYERS:
+        vec = torch.tensor(rng.normal(size=(hidden,)), dtype=torch.float32)
+        for readout in ("last_token", "response_avg"):
+            torch.save(vec, direction_dir / f"{readout}_{layer}.pt")
+
+    # #518 predictor_comparison.json (off-diagonal source->bystander cells).
+    cells = []
+    for s in sources:
+        for b in bystanders:
+            if s == b:
+                continue
+            cells.append(
+                {
+                    "source": s,
+                    "bystander": b,
+                    "delta": float(rng.normal()),
+                    "bystander_base_rate": float(rng.uniform(0.05, 0.95)),
+                    "source_base_rate": float(rng.uniform(0.05, 0.95)),
+                }
+            )
+    sub = tmp_path / "issue_518" / "refusal" / "_inputs"
+    sub.mkdir(parents=True)
+    (sub / "predictor_comparison.json").write_text(
+        json.dumps({"cells": cells, "git_sha": "test", "schema_version": 1})
+    )
+
+    # steering-effect JSON -> _read_k2_pass.
+    out_dir = tmp_path / "eval_dir"
+    out_dir.mkdir()
+    (out_dir / "steering_effect_by_layer_refusal.json").write_text(
+        json.dumps({"k2_pass": k2_pass, "headline_layer": int(m.DEFAULT_LAYERS[1])})
+    )
+    return {
+        "eval_results_root": tmp_path,
+        "persona_dir": persona_dir,
+        "direction_dir": direction_dir,
+        "out_dir": out_dir,
+    }
+
+
+def _run_refusal_behavior(tmp_path: Path, k2_pass: bool) -> dict:
+    bake = _load_bake_off_module()
+    paths = _write_refusal_run_behavior_substrate(tmp_path, k2_pass=k2_pass)
+    return bake.run_behavior(
+        behavior="refusal",
+        eval_results_root=paths["eval_results_root"],
+        persona_dirs=[paths["persona_dir"]],
+        direction_dir=paths["direction_dir"],
+        base_rates_da=None,
+        layer=int(m.DEFAULT_LAYERS[1]),
+        readout="last_token",
+        centering="global_mean",
+        n_boot=8,
+        shuffle_b=4,
+        smoke=True,
+        out_dir=paths["out_dir"],
+    )
+
+
+_LEAKAGE_RHO_KEYS = (
+    "raw_rho",
+    "singly_partialled_rho",
+    "doubly_partialled_rho",
+    "reliability_band",
+    "band_verdict",
+    "h3_doubly_partialled_rho_ci",
+    "h3_delta_r2_ci",
+)
+
+
+def test_run_behavior_k2_failed_emits_no_leakage_stats(tmp_path: Path):
+    """B1 regression: a K2-FAILED behavior (k2_pass=False) must NOT carry any leakage
+    rho / partial-rho / CI / reliability-band into the per-behavior dict (and thence
+    alignment_predictor.json). It is reported (k2_pass flag + status), NOT nulled.
+
+    Pre-fix: run_behavior gated leakage computation ONLY on marker_leakage_excluded,
+    so a K2-failed refusal direction still wrote raw_rho/partial-rho/band — exactly
+    the "reported as a finding" the plan (§6.5/§7) forbids."""
+    res = _run_refusal_behavior(tmp_path, k2_pass=False)
+    assert res["k2_pass"] is False
+    leakage = res["leakage_bake_off"]
+    assert leakage["in_scope"] is False, "K2-failed -> leakage out of scope"
+    assert leakage.get("status") == "k2_failed_excluded_from_bake_off"
+    for key in _LEAKAGE_RHO_KEYS:
+        assert key not in leakage, (
+            f"K2-failed behavior leaked stat {key!r} into alignment_predictor.json"
+        )
+
+
+def test_run_behavior_k2_passed_emits_leakage_stats(tmp_path: Path):
+    """Positive control: an otherwise-identical K2-PASS direction DOES compute the
+    leakage stats (so the suppression above is K2-gated, not a blanket disable)."""
+    res = _run_refusal_behavior(tmp_path, k2_pass=True)
+    assert res["k2_pass"] is True
+    leakage = res["leakage_bake_off"]
+    assert leakage["in_scope"] is True
+    # the full-data point estimates exist (computed from the real toy cells)
+    assert "raw_rho" in leakage and "doubly_partialled_rho" in leakage
+    assert "reliability_band" in leakage and "band_verdict" in leakage
