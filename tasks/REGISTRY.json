@@ -3970,7 +3970,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/642",
       "status": "followups_running",
-      "title": "The LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap is mostly adapter-vs-dense update behavior, and that piece replicates in direction on a second behavior (refusal) at roughly half the magnitude (MODERATE confidence)"
+      "title": "The LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap is mostly adapter-vs-dense update behavior, and a follow-up second-behavior probe on refusal shows the same gap directionally at half the magnitude (MODERATE confidence)"
     },
     "643": {
       "has_clean_result": false,
