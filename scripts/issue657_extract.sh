@@ -178,46 +178,66 @@ trait_description() {
 }
 
 # ── B4 marker-fallback decision (fail-loud, testable in isolation) ───────────
-# Decide affordance-vs-fallback for the marker direction from (a) the primary
-# extractor's exit code and (b) its K2 effect file. PURE: prints "affordance" or
-# "fallback" to stdout and returns 0 on a clean decision; prints a diagnostic to
-# stderr and returns NON-ZERO when the primary CRASHED (rc != 0) or produced no
-# valid effect file — those are NOT K2 failures and must FAIL LOUD, never silently
-# route to the trained-shift fallback + M-Alts3 demotion (#657 v6 round-2 B4).
-# The caller pairs this with `|| fail "..."` so the loud-failure path keeps fail()'s
-# log-tail + HF upload. Args: $1 = primary rc, $2 = effect-file path.
+# Decide affordance-vs-fallback for the marker direction by reading the primary
+# extractor's K2 effect file FIRST, falling through to the exit code only when the
+# effect file is unusable. PURE: prints "affordance" or "fallback" to stdout and
+# returns 0 on a clean decision; prints a diagnostic to stderr and returns NON-ZERO
+# (3 = primary crashed AND no usable K2 verdict; 4 = rc=0 contract violation with no
+# usable verdict). Args: $1 = primary rc, $2 = effect-file path.
+#
+# PRIORITY-INVERSION (#657 v6 round-3, B4 fix): the round-2 code checked rc != 0
+# FIRST and returned 3 before ever reading the effect file. But the #623 extractor
+# (scripts/issue623_extract_sycophancy_vector.py:898) raises SystemExit AFTER writing
+# the effect JSON with k2_pass=false — so a LEGITIMATE K2 fail produces (rc=1, valid
+# effect file with k2_pass=false). The rc-first check fail-louded on that shape and
+# never fired the documented #521 trained-shift fallback (plan §11). The fix: route
+# purely on the effect file's k2_pass boolean when it exists and is well-formed; rc is
+# only a fall-through CRASH signal when the effect file is genuinely missing/malformed/
+# has no boolean k2_pass. The caller pairs this with `|| fail "..."` so the loud-failure
+# path keeps fail()'s log-tail + HF upload.
 marker_fallback_decision() {
   local marker_rc="$1" effect_file="$2"
-  if [[ "$marker_rc" -ne 0 ]]; then
-    echo "marker primary extraction exited rc=$marker_rc (a CRASH, not a K2 failure)" >&2
-    return 3
-  fi
-  # k2_pass must be present as an explicit BOOLEAN in a parseable effect JSON; a
-  # missing/malformed/non-bool field is an invalid (crash-class) outcome, not a fail.
+  # Step 1: parse the effect file FIRST. k2_pass must be present as an explicit
+  # BOOLEAN in a parseable effect JSON; a missing/malformed/non-bool field yields an
+  # "invalid: ..." state (no usable verdict), which routes on rc in Step 2.
   local state
   state="$(EFFECT_FILE="$effect_file" uv run python - <<'PY'
 import json, os, sys
 from pathlib import Path
 fp = Path(os.environ["EFFECT_FILE"])
 if not fp.exists():
-    print("invalid: effect file missing", file=sys.stderr); print("invalid"); raise SystemExit(0)
+    print("invalid: effect file missing", file=sys.stderr); print("invalid: file missing"); raise SystemExit(0)
 try:
     doc = json.loads(fp.read_text())
 except (json.JSONDecodeError, OSError) as e:
     print(f"invalid: effect file unparseable ({e})", file=sys.stderr)
-    print("invalid"); raise SystemExit(0)
+    print(f"invalid: unparseable ({e})"); raise SystemExit(0)
 kp = doc.get("k2_pass")
 if not isinstance(kp, bool):
     print(f"invalid: k2_pass is not a bool (got {type(kp).__name__})", file=sys.stderr)
-    print("invalid"); raise SystemExit(0)
+    print("invalid: k2_pass not bool"); raise SystemExit(0)
 print("pass" if kp else "fail")
 PY
 )"
+  # Step 2: route on (state, rc). A valid k2_pass verdict is AUTHORITATIVE and ignores
+  # rc — a K2 fail EXPECTS rc != 0 (the #623 extractor's SystemExit-after-write K2 HALT).
   case "$state" in
-    pass) echo "affordance"; return 0 ;;
-    fail) echo "fallback"; return 0 ;;
+    pass)
+      echo "affordance"; return 0 ;;        # K2 passed -> PRIMARY affordance read
+    fail)
+      echo "fallback"; return 0 ;;          # K2 failed legitimately -> #521 shift fallback
+                                            # (rc != 0 is EXPECTED here: issue623 raises
+                                            #  SystemExit AFTER writing k2_pass=false — that
+                                            #  IS the K2 HALT, not a crash.)
     *)
-      echo "marker primary rc=0 but no valid K2 effect file (missing/malformed/non-bool k2_pass)" >&2
+      # No usable verdict from the effect file (missing/malformed/non-bool k2_pass).
+      if [[ "$marker_rc" -ne 0 ]]; then
+        echo "marker primary crashed (rc=$marker_rc) AND no valid K2 verdict in effect file ($state)" >&2
+        return 3
+      fi
+      # rc == 0 but no usable effect file is a contract violation — the extractor should
+      # always write the effect file (with a boolean k2_pass) before any SystemExit.
+      echo "marker primary rc=0 but $state — unexpected; refusing fallback" >&2
       return 4 ;;
   esac
 }
@@ -237,7 +257,9 @@ fi
 
 # --test-marker-decision "<rc> <effect-file>": run only the B4 fallback decision +
 # exit with its rc (0 with "affordance"/"fallback" on stdout for a clean decision;
-# 3 for a primary crash, 4 for a missing/malformed effect file). No GPU/preflight.
+# 3 when the primary crashed AND no usable K2 verdict; 4 when rc=0 but no usable K2
+# verdict — a contract violation). A valid k2_pass verdict is authoritative and
+# ignores rc (a K2 fail expects rc != 0). No GPU/preflight.
 if [[ -n "$TEST_MARKER_DECISION" ]]; then
   # shellcheck disable=SC2086
   set -- $TEST_MARKER_DECISION

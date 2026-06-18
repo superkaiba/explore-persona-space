@@ -367,14 +367,42 @@ def test_marker_fallback_fails_loud_on_malformed_effect_file(tmp_path: Path):
 
 
 def test_marker_fallback_invoked_only_on_real_k2_failure(tmp_path: Path):
-    """B4 positive control: the trained-shift fallback fires ONLY when the primary ran
-    to completion (rc=0) AND wrote a valid effect JSON with k2_pass == false."""
+    """B4 positive control: the trained-shift fallback fires when the primary wrote a
+    valid effect JSON with k2_pass == false (here at rc=0, the artificial in-process
+    case)."""
     import json
 
     eff = tmp_path / "eff.json"
     eff.write_text(json.dumps({"k2_pass": False}))
     proc = _marker_decision(0, eff)
     assert proc.returncode == 0
+    assert proc.stdout.strip() == "fallback"
+
+
+def test_marker_fallback_decision_rc1_with_valid_k2_fail_falls_back(tmp_path: Path):
+    """B4 round-3 regression (the PRODUCTION K2-HALT shape, the case round-2 missed):
+    a primary that EXITS NONZERO but FIRST wrote a valid effect JSON with k2_pass=false
+    must route to the #521 trained-shift fallback, NOT fail loud.
+
+    This is the real shape: scripts/issue623_extract_sycophancy_vector.py raises
+    SystemExit (rc != 0) AFTER writing steering_effect_by_layer_marker.json with
+    k2_pass=false — that SystemExit IS the K2 HALT, not a crash. The round-2 code
+    checked rc != 0 FIRST and returned 3 before reading the effect file, so a
+    legitimate K2 fail (rc=1 + valid k2_pass=false) was mis-classified as a crash and
+    the documented fallback never fired (launch attempt 5, 2026-06-18). The round-3 fix
+    inverts the priority: route on the effect file's k2_pass boolean first; rc is only a
+    fall-through crash signal when the effect file is unusable."""
+    import json
+
+    eff = tmp_path / "eff.json"
+    eff.write_text(
+        json.dumps({"k2_pass": False, "headline_layer": 7, "headline_layer_effect": 0.0})
+    )
+    proc = _marker_decision(1, eff)
+    assert proc.returncode == 0, (
+        f"rc=1 + valid k2_pass=false is the production K2 HALT and must fall back, "
+        f"not fail loud (got rc={proc.returncode}, stderr={proc.stderr!r})"
+    )
     assert proc.stdout.strip() == "fallback"
 
 
