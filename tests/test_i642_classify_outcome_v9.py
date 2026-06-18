@@ -103,3 +103,88 @@ def test_v9_threshold_override_respected() -> None:
     # point 0.05 < thr 0.10 and lo 0.045 > 0 -> sign positive, CI excludes 0,
     # point below band -> PARTIAL.
     assert (verdict, sub) == ("PARTIAL", None)
+
+
+# ---------------------------------------------------------------------------
+# B2 (round-1 reconcile blocker): v9 install-failure path unification.
+# The dispatcher's phase3_select MUST write per-arm install_failure_<arm>.json
+# (the convention the v9 analyzer reads); a no-suffix install_failure.json would
+# be invisible to _v9_install_failure -> the analyzer would fall through to full
+# analysis on a killed behavior. This test materializes the per-arm file and
+# asserts the analyzer short-circuits to the KILLED verdict WITHOUT requiring
+# generation manifests (i.e. without calling _v9_analyze_behavior).
+# ---------------------------------------------------------------------------
+
+import json  # noqa: E402
+
+from i642_common import V9_ARMS  # noqa: E402
+
+
+def _write_v9_install_failure(eval_root: Path, behavior: str, arm: str) -> Path:
+    sa = eval_root / behavior / "stage_a"
+    sa.mkdir(parents=True, exist_ok=True)
+    fp = sa / f"install_failure_{arm}.json"
+    fp.write_text(
+        json.dumps(
+            {
+                "behavior": behavior,
+                "arm": arm,
+                "kill_criterion": "a_install_failure",
+                "arm_ok": {a: (a != arm) for a in V9_ARMS},
+            }
+        )
+    )
+    return fp
+
+
+def test_v9_per_arm_install_failure_short_circuits_to_killed(tmp_path, capsys) -> None:
+    """A per-arm install_failure_loraRefOP.json under eval_root makes the v9
+    analyzer return 0 with verdict=KILLED, never reaching _v9_analyze_behavior
+    (so no generation manifests are needed)."""
+    eval_root = tmp_path / "eval_results" / "issue_642"
+    _write_v9_install_failure(eval_root, "refusal", "loraRefOP")
+
+    # Guard: if the analyzer reached full analysis it would call this; assert it
+    # is NOT invoked on the kill path.
+    called = {"full_analysis": False}
+    orig = m._v9_analyze_behavior
+
+    def _tripwire(*a, **k):
+        called["full_analysis"] = True
+        return orig(*a, **k)
+
+    m._v9_analyze_behavior = _tripwire
+    try:
+        rc = m.main(
+            [
+                "--v9",
+                "--behavior",
+                "refusal",
+                "--eval-root",
+                str(eval_root),
+                "--no-refetch",
+            ]
+        )
+    finally:
+        m._v9_analyze_behavior = orig
+
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "verdict=KILLED" in out
+    assert "arm=loraRefOP" in out
+    assert called["full_analysis"] is False
+
+
+def test_v9_no_suffix_install_failure_is_invisible(tmp_path) -> None:
+    """Regression for the pre-fix bug: a NO-SUFFIX install_failure.json (the old
+    writer) is NOT detected by the v9 reader — confirming the per-arm convention
+    is the only one that works. (Pre-fix the writer produced this file, so the
+    kill was never seen.)"""
+    eval_root = tmp_path / "eval_results" / "issue_642"
+    sa = eval_root / "refusal" / "stage_a"
+    sa.mkdir(parents=True, exist_ok=True)
+    (sa / "install_failure.json").write_text(json.dumps({"behavior": "refusal"}))
+    # _v9_install_failure reads ONLY install_failure_<arm>.json, so the no-suffix
+    # file is invisible -> returns None (the bug the B2 writer fix closes).
+    res = m._v9_install_failure(eval_root, "refusal", refetch=False, v9_experiment="x")
+    assert res is None

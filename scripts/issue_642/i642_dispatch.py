@@ -2735,11 +2735,66 @@ def phase2_stage_a(ctx: Ctx, behavior: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _write_install_failure(
+    ctx: Ctx, behavior: str, sa_dir: Path, sa_subdir: str, arm_ok: dict[str, bool]
+) -> None:
+    """Persist + upload the install-gate-fail report (kill criterion (a)).
+
+    B2 fix: the v9 analyzer reads PER-ARM ``install_failure_<arm>.json``
+    (``i642_analyze._v9_install_failure``); this writer previously wrote a single
+    no-suffix ``install_failure.json``, so a v9 production-gate kill was NEVER
+    detected and the analyzer fell through to full analysis on a killed behavior.
+    v9 -> one file per FAILING arm (mirrors the pilot writer at phase 0.5); v4
+    keeps the single no-suffix file its reader (``_install_failure_report``)
+    expects.
+    """
+    failure = {
+        "behavior": behavior,
+        "kill_criterion": "a_install_failure",
+        "arm_ok": arm_ok,
+        "note": (
+            "neither a non-degenerate s*=0.50 bracket nor endpoint s >= 0.50 "
+            "on at least one arm — comparison NOT run for this behavior "
+            "(plan §3 kill (a) / §7); fire the §4.11 fallback ladder "
+            "(band-entry read + nearest co-bracketed target + the one "
+            "pre-authorized lr-2e-6 cmft retrain) before declaring install failure"
+        ),
+        "timestamp_utc": datetime.now(UTC).isoformat(),
+    }
+    if ctx.v9:
+        failing_arms = [a for a, ok in arm_ok.items() if not ok]
+        for arm in failing_arms:
+            arm_failure = {**failure, "arm": arm}
+            fail_path = sa_dir / f"install_failure_{arm}.json"
+            fail_path.write_text(json.dumps(arm_failure, indent=2))
+            _hub_upload_file(
+                fail_path,
+                f"{ctx.experiment_name}/{behavior}/{sa_subdir}/install_failure_{arm}.json",
+                skip=ctx.skip_upload,
+            )
+    else:
+        fail_path = sa_dir / "install_failure.json"
+        fail_path.write_text(json.dumps(failure, indent=2))
+        _hub_upload_file(
+            fail_path,
+            f"{ctx.experiment_name}/{behavior}/{sa_subdir}/install_failure.json",
+            skip=ctx.skip_upload,
+        )
+
+
 def phase3_select(ctx: Ctx, behavior: str) -> None:
     _phase_log("p3_select", f"[{behavior}] Phase 3 start (selection + install gate)")
     sa_dir = ctx.stage_a_dir(behavior)
     sel_path = ctx.selection_path(behavior)
-    if sel_path.exists() and not (sa_dir / "install_failure.json").exists():
+    # B2 fix: v9 writes per-arm install_failure_<arm>.json (the v9 reader's
+    # convention); v4 writes a single no-suffix install_failure.json. The resume
+    # skip must check the SAME convention the writer below uses, or a re-run after
+    # a kill silently skips re-evaluation.
+    if ctx.v9:
+        install_failed = any((sa_dir / f"install_failure_{arm}.json").exists() for arm in ctx.arms)
+    else:
+        install_failed = (sa_dir / "install_failure.json").exists()
+    if sel_path.exists() and not install_failed:
         _phase_log("p3_select", f"[{behavior}] selection exists — skipping (resume)")
         return
     trajectory = json.loads(ctx.trajectory_path(behavior).read_text())
@@ -2820,26 +2875,7 @@ def phase3_select(ctx: Ctx, behavior: str) -> None:
                 f"[{behavior}] install gate FAIL but smoke/dry-run — log-only, proceeding",
             )
         else:
-            failure = {
-                "behavior": behavior,
-                "kill_criterion": "a_install_failure",
-                "arm_ok": arm_ok,
-                "note": (
-                    "neither a non-degenerate s*=0.50 bracket nor endpoint s >= 0.50 "
-                    "on at least one arm — comparison NOT run for this behavior "
-                    "(plan §3 kill (a) / §7); fire the §4.11 fallback ladder "
-                    "(band-entry read + nearest co-bracketed target + the one "
-                    "pre-authorized lr-2e-6 cmft retrain) before declaring install failure"
-                ),
-                "timestamp_utc": datetime.now(UTC).isoformat(),
-            }
-            fail_path = sa_dir / "install_failure.json"
-            fail_path.write_text(json.dumps(failure, indent=2))
-            _hub_upload_file(
-                fail_path,
-                f"{ctx.experiment_name}/{behavior}/{sa_subdir}/install_failure.json",
-                skip=ctx.skip_upload,
-            )
+            _write_install_failure(ctx, behavior, sa_dir, sa_subdir, arm_ok)
             ctx.killed[behavior] = "install_failure"
             _phase_log("p3_select", f"[{behavior}] INSTALL GATE FAIL — behavior killed")
             return
@@ -3055,12 +3091,18 @@ def _phase5_upload_v4_adapters(ctx: Ctx, behavior: str) -> None:
     if ctx.dry_run:
         return
     selection = json.loads(ctx.selection_path(behavior).read_text())
+    # B3 fix: v9 runs force ctx.v4=True (they reuse v4's machinery), but the v9
+    # Reproducibility Card declares adapters under adapters/issue_642/v9/...; this
+    # uploader previously hardcoded the v4/ prefix, landing v9 adapters at a path
+    # the card did not declare (provenance-record inaccuracy). Namespace on
+    # ctx.v9 so v9 adapters land where the card says, v4-only runs keep v4/.
+    ns = "v9" if ctx.v9 else "v4"
     for arm in ctx.arms:
         sel = selection["arms"].get(arm, {}).get("selected_steps", [])
         method = ctx.v4_arm_method(arm)
         # destination prefix per arm (LoRA canonical; cmft opt-out)
         dests = [
-            f"adapters/issue_642/v4/{arm}_{V4_SOURCE_PERSONA}_seed{ctx.seed}/step{s}" for s in sel
+            f"adapters/issue_642/{ns}/{arm}_{V4_SOURCE_PERSONA}_seed{ctx.seed}/step{s}" for s in sel
         ]
         do_upload = method == "lora" or ctx.upload_adapters
         ctx.cmft_uploaded_adapters[f"{behavior}:{arm}"] = dests if do_upload else []
