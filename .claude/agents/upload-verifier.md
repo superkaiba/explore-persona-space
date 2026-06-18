@@ -65,6 +65,22 @@ mechanical gate must PASS before teardown fires.
 SSH to the pod and enumerate every file under the artifact directories.
 Use `mcp__ssh__ssh_execute` with the pod name (typically `epm-issue-<N>`).
 
+> **GCP root-owned tree (`eps-issue-<N>` instances).** On GCP DLVM
+> instances the workload runs as **root**, so the gcloud SSH user cannot
+> read the root-owned `/workspace` tree — a plain `find` / `ls` returns
+> ZERO files and you get a false "missing" verdict. On any GCP
+> `eps-issue-*` alias, prefix the on-instance enumeration with `sudo`
+> (`sudo find …`, `sudo ls …`) — or, if you ran a plain `find` first and
+> it returned zero files, RETRY with `sudo` before concluding an
+> artifact is absent. RunPod pods do NOT need this: the SSH user owns
+> `/workspace`, so the bare commands work. This applies to EVERY
+> on-instance enumeration below (Step 1, Step 2.7, Step 2.9) — the
+> local `git ls-tree` / HF / WandB checks are unaffected.
+> (Incident #640: a GCP upload-verification pass read empty dirs and
+> nearly FAILed a fully-uploaded run with a false
+> `primary-deliverable-missing` blocker until every enumeration was
+> retried with `sudo`.)
+
 ```bash
 # All standard locations where experiments write data
 ssh_execute epm-issue-<N> 'cd /workspace/explore-persona-space && \
@@ -303,7 +319,10 @@ late to cheaply re-run the missing phase.
 Read the plan's `primary_deliverable:` block (planner §6.5 — a fenced
 YAML list of `{dv, glob, note?}` rows naming the on-pod artifact each
 primary Goal-DV lives in). For each row, enumerate the `glob` on the
-pod via `mcp__ssh__ssh_execute`:
+pod via `mcp__ssh__ssh_execute` (on a GCP `eps-issue-*` instance prefix
+with `sudo` per Step 1's note — a root-owned tree returns a false zero
+count, the exact false `primary-deliverable-missing` blocker incident
+#640 hit):
 
 ```bash
 ssh_execute epm-issue-<N> 'cd /workspace/explore-persona-space && \
@@ -396,7 +415,10 @@ For EACH git-destination directory the run produced
 (`eval_results/issue_<N>/`, `figures/issue_<N>/`, ...), reconcile the
 source enumeration against the committed git tree — per FILE, not per
 named artifact. Reuse the pod-side `find` listing from Step 1 (or a
-local working-tree `find` if the artifacts were produced locally):
+local working-tree `find` if the artifacts were produced locally). On a
+GCP `eps-issue-*` instance the source `find` needs `sudo` per Step 1's
+note (a root-owned tree returns an empty source list, which would falsely
+read as "everything committed"):
 
 ```bash
 ssh_execute epm-issue-<N> 'cd /workspace/explore-persona-space && \
@@ -597,7 +619,11 @@ correct lifecycle state:
 
 - **Active discovery is mandatory.** You SSH the pod and enumerate
   artifacts directly. You don't rely on the `epm:results` marker being
-  complete.
+  complete. On a GCP `eps-issue-*` instance the workload runs as root,
+  so prefix every on-instance `find` / `ls` with `sudo` (or retry with
+  `sudo` on a zero-file read) — a root-owned tree returns empty for the
+  gcloud SSH user and produces a false "missing" verdict (Step 1 note,
+  incident #640). RunPod pods own `/workspace` and need no `sudo`.
 - **Every locally-produced GPU-hour or API-dollar artifact needs a
   permanent URL** — or an audited justification for why it doesn't.
 - **N/A requires a code-level justification**, not a hand-wave. If you
