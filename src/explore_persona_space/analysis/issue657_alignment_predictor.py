@@ -55,8 +55,10 @@ HEADLINE_LAYER: int = 14  # #623 steering-selected headline layer
 BASELINE_PERSONA: str = "assistant"  # persona vector = centroid_i - centroid_assistant
 
 # The H3 PRIMARY behavior set (M-Alts2): EM is EXCLUDED from the primary gate
-# (Sonnet coherence-filter survivor-rate proxy on the EM leakage DV, §12).
-PRIMARY_H3_BEHAVIORS: tuple[str, ...] = ("sycophancy", "refusal", "marker")
+# (Sonnet coherence-filter survivor-rate proxy on the EM leakage DV, §12). A literal
+# frozenset (NOT a tuple) for immutable literal-set semantics; serialize to a sorted
+# list where stable JSON ordering matters (`sorted(PRIMARY_H3_BEHAVIORS)`).
+PRIMARY_H3_BEHAVIORS: frozenset[str] = frozenset({"sycophancy", "refusal", "marker"})
 
 # Canonical marker token (`.claude/rules/marker-leakage-measurement.md`): ` ※`
 # (leading space, Qwen-2.5-7B id 83399). The reused #605 marker cells MUST carry
@@ -524,6 +526,99 @@ def partial_spearman(
     return float(res.correlation), float(res.pvalue), n
 
 
+def _pearson(a: np.ndarray, b: np.ndarray) -> float:
+    """Pearson correlation; nan on a zero-variance input."""
+    if np.std(a) == 0.0 or np.std(b) == 0.0:
+        return float("nan")
+    return float(np.corrcoef(a, b)[0, 1])
+
+
+def partial_spearman_eiv(
+    x: np.ndarray,
+    y: np.ndarray,
+    z_noisy: np.ndarray,
+    z_clean: np.ndarray | None,
+    reliability: float,
+) -> tuple[float, int]:
+    """EIV-disattenuated Spearman partial-rho(x, y | z_noisy, z_clean).
+
+    The plain ``partial_spearman`` rank-residualizes each covariate, so a positive
+    monotone rescale of a covariate (``prior * sqrt(rel)``) leaves the ranks — and
+    therefore the partial — UNCHANGED. That made the M-Stats1 reliability band a
+    rank-invariant no-op (#657 round-1 blocker). This implements the classical
+    errors-in-variables (EIV) disattenuation in a space ranks DO respond to:
+    the disattenuated bivariate partial-correlation formula.
+
+    Method (Spearman = Pearson on ranks):
+      1. If a CLEAN covariate ``z_clean`` (the geometry-side prior_centroid_projection,
+         measured exactly) is present, OLS-residualize rank(x), rank(y), rank(z_noisy)
+         on rank(z_clean) first — sequential partialling, so ``z_clean`` is removed
+         exactly and only the noisy covariate carries the EIV correction.
+      2. On those residuals, the partial of (x, y) controlling for the noisy ``z`` is
+         the bivariate partial-correlation formula
+         ``r_xy.z = (r_xy - r_xz*r_yz) / sqrt((1-r_xz^2)(1-r_yz^2))``.
+      3. Disattenuate the NOISY covariate's two cross-correlations by
+         ``r_xz -> r_xz/sqrt(R)`` and ``r_yz -> r_yz/sqrt(R)`` (the classical
+         attenuation correction — a noisy covariate's observed correlations are
+         attenuated by ``sqrt(R)``), clipping to (-0.999, 0.999) for stability.
+
+    As ``reliability`` DECREASES, the disattenuated ``r_xz`` / ``r_yz`` GROW, so MORE
+    of the true noisy-covariate effect is removed and the partial moves FURTHER from
+    the raw correlation (toward the perfect-Z singly-partialled value). The band
+    points are therefore distinct and monotone in reliability — the property the
+    no-op version lacked. At ``reliability == 1`` it reduces to the ordinary rank
+    partial correlation (no correction). This bivariate-formula form avoids the
+    full-matrix inversion of a strongly disattenuated correlation matrix, which can
+    go non-positive-definite at low reliability and yield singular / clipped garbage.
+
+    Returns (partial_rho, n); (nan, n) on a degenerate input rather than raising.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    z_noisy = np.asarray(z_noisy, dtype=float)
+    n = x.shape[0]
+    if n < 3:
+        return float("nan"), n
+    rel = float(reliability)
+    if not (0.0 < rel <= 1.0):
+        rel = min(1.0, max(1e-6, rel))
+
+    xr = _rankdata(x)
+    yr = _rankdata(y)
+    zr = _rankdata(z_noisy)
+    if np.std(xr) == 0.0 or np.std(yr) == 0.0 or np.std(zr) == 0.0:
+        return float("nan"), n
+
+    # Step 1: residualize the exactly-measured clean covariate out of x, y, z first.
+    if z_clean is not None:
+        zcr = _rankdata(np.asarray(z_clean, dtype=float))
+        if np.std(zcr) > 0.0:
+            xr = _residualize_ranks(xr, zcr)
+            yr = _residualize_ranks(yr, zcr)
+            zr = _residualize_ranks(zr, zcr)
+            if np.std(xr) == 0.0 or np.std(yr) == 0.0 or np.std(zr) == 0.0:
+                return float("nan"), n
+
+    # Step 2: bivariate (disattenuated) partial of (x, y) controlling for noisy z.
+    r_xy = _pearson(xr, yr)
+    r_xz = _pearson(xr, zr)
+    r_yz = _pearson(yr, zr)
+    if any(np.isnan(v) for v in (r_xy, r_xz, r_yz)):
+        return float("nan"), n
+
+    scale = 1.0 / float(np.sqrt(rel))
+    r_xz = float(np.clip(r_xz * scale, -0.999, 0.999))
+    r_yz = float(np.clip(r_yz * scale, -0.999, 0.999))
+
+    denom = float(np.sqrt((1.0 - r_xz**2) * (1.0 - r_yz**2)))
+    if denom <= 0.0:
+        return float("nan"), n
+    partial = (r_xy - r_xz * r_yz) / denom
+    if not np.isfinite(partial):
+        return float("nan"), n
+    return float(np.clip(partial, -1.0, 1.0)), n
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Source-fixed-effect residualization (matches #518 rho_FE) + frame assembly
 # ──────────────────────────────────────────────────────────────────────────────
@@ -569,6 +664,88 @@ def build_predictor_frame(
         "resolvable_bystanders": resolvable_bystanders,
         "n_resolvable": len(resolvable_bystanders),
     }
+
+
+def delta_r2_align_beyond_prior_eiv(
+    x: np.ndarray,
+    y: np.ndarray,
+    z_noisy: np.ndarray,
+    z_clean: np.ndarray | None,
+    reliability: float,
+) -> float:
+    """EIV-disattenuated incremental R^2 of ``align`` over the (disattenuated) prior set.
+
+    Incremental R^2 of adding ``x`` (align) to the baseline ``[z_noisy, z_clean]``,
+    via the identity ``ΔR^2 = (1 - R^2_baseline) * partial_{xy|baseline}^2`` where the
+    NOISY covariate's contribution is EIV-disattenuated by ``1/sqrt(reliability)``
+    (the same correction as ``partial_spearman_eiv``). Built from the bivariate
+    disattenuated partial-correlation + residual-variance terms rather than inverting
+    a strongly-disattenuated correlation matrix (which can go non-positive-definite at
+    low reliability) — so it stays finite across the whole band.
+
+    R^2_baseline = r^2(y, z_clean) + (1 - r^2(y, z_clean)) * r^2_{y, z_noisy | z_clean,
+    disattenuated}; the second term grows as reliability falls (the prior is treated
+    as cleaner), so the baseline explains more and align's increment shifts — the
+    band's ΔR² points are distinct (the no-op version did not compute ΔR² per band
+    point at all). At reliability == 1 it is the ordinary in-sample rank ΔR². NaN-safe.
+    This is an IN-SAMPLE read for the reliability-band sensitivity; the HEADLINE ΔR²
+    stays the grouped-CV held-out read in ``lopo_heldout`` / ``_grouped_cv_delta_r2``.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    z_noisy = np.asarray(z_noisy, dtype=float)
+    n = x.shape[0]
+    if n < 4:
+        return float("nan")
+    rel = float(reliability)
+    if not (0.0 < rel <= 1.0):
+        rel = min(1.0, max(1e-6, rel))
+
+    xr = _rankdata(x)
+    yr = _rankdata(y)
+    zr = _rankdata(z_noisy)
+    if np.std(xr) == 0.0 or np.std(yr) == 0.0 or np.std(zr) == 0.0:
+        return float("nan")
+
+    scale = 1.0 / float(np.sqrt(rel))
+
+    # r^2 of y explained by the exactly-measured clean covariate, then residualize.
+    r2_clean = 0.0
+    if z_clean is not None:
+        zcr = _rankdata(np.asarray(z_clean, dtype=float))
+        if np.std(zcr) > 0.0:
+            r_y_zc = _pearson(yr, zcr)
+            if np.isnan(r_y_zc):
+                return float("nan")
+            r2_clean = r_y_zc**2
+            xr = _residualize_ranks(xr, zcr)
+            yr = _residualize_ranks(yr, zcr)
+            zr = _residualize_ranks(zr, zcr)
+            if np.std(xr) == 0.0 or np.std(yr) == 0.0 or np.std(zr) == 0.0:
+                return float("nan")
+
+    # disattenuated r(y, z_noisy) on the (clean-residualized) ranks -> baseline R^2.
+    r_yz = _pearson(yr, zr)
+    if np.isnan(r_yz):
+        return float("nan")
+    r_yz_dis = float(np.clip(r_yz * scale, -0.999, 0.999))
+    r2_baseline = r2_clean + (1.0 - r2_clean) * (r_yz_dis**2)
+    if r2_baseline >= 1.0:
+        return 0.0
+
+    # align's increment beyond the (disattenuated) baseline: squared partial * the
+    # residual-variance fraction the baseline left unexplained.
+    r_xy = _pearson(xr, yr)
+    r_xz = _pearson(xr, zr)
+    if np.isnan(r_xy) or np.isnan(r_xz):
+        return float("nan")
+    r_xz_dis = float(np.clip(r_xz * scale, -0.999, 0.999))
+    pdenom = float(np.sqrt((1.0 - r_xz_dis**2) * (1.0 - r_yz_dis**2)))
+    if pdenom <= 0.0:
+        return float("nan")
+    partial = (r_xy - r_xz_dis * r_yz_dis) / pdenom
+    partial = float(np.clip(partial, -0.999, 0.999))
+    return float((1.0 - r2_baseline) * partial**2)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -974,11 +1151,32 @@ def _binomial_reliability(base_rates: dict[str, float], n: int) -> float:
     return float(min(1.0, max(1e-6, rel)))
 
 
+def _band_point_stats(cells: list[dict], reliability: float) -> dict[str, float]:
+    """The two band-point statistics at one reliability: EIV partial-rho + ΔR².
+
+    Both read off the SAME disattenuated rank-correlation matrix (one resampled
+    frame's cells), so the bootstrap recomputes them together per replicate. The
+    DV is the within-source-mean-residualized leakage delta (#518's rho_FE).
+    """
+    if len(cells) < 4:
+        return {"doubly_partialled_rho": float("nan"), "delta_r2_align_beyond_prior": float("nan")}
+    align = np.array([float(c["align"]) for c in cells], dtype=float)
+    dv_fe = _source_fe_residualize(cells, "delta")
+    prior = np.array([float(c["bystander_base_rate"]) for c in cells], dtype=float)
+    pcp = np.array([float(c["prior_centroid_projection"]) for c in cells], dtype=float)
+    rho, _n = partial_spearman_eiv(align, dv_fe, prior, pcp, reliability)
+    dr2 = delta_r2_align_beyond_prior_eiv(align, dv_fe, prior, pcp, reliability)
+    return {"doubly_partialled_rho": rho, "delta_r2_align_beyond_prior": dr2}
+
+
 def attenuation_sensitivity(
     frame: dict,
     base_rates: dict[str, float],
     bracket_n: dict[str, int] | None = None,
     behavior: str = "",
+    b: int = BOOTSTRAP_B,
+    seed: int = BOOTSTRAP_SEED,
+    alpha: float = 0.05,
 ) -> dict:
     """M-Stats1 bounded-attenuation reliability band on the noisy partialled prior.
 
@@ -986,17 +1184,25 @@ def attenuation_sensitivity(
     in the #518 substrate), so partialling under-corrects and a marginal partial-rho
     can be inflated. We bracket the prior's reliability from the per-bystander
     generation count (binomial SE at n_low/n_expected/n_high) and report the
-    doubly-partialled partial-rho + ΔR² under each reliability point, alongside the
+    doubly-partialled partial-rho AND grouped ΔR² under each reliability point —
+    EACH with a bootstrap CI over the held-out bystander personas — alongside the
     observed-prior (R=1, no correction) headline.
 
-    The reliability-corrected read disattenuates the prior's contribution: we scale
-    the prior covariate's rank by 1/sqrt(R) before residualizing (the classical EIV
-    correction direction — a less-reliable prior is down-weighted in the partial, so
-    LESS is removed, and a partial that survives is more robust). NaN-safe.
+    The reliability-corrected read disattenuates the noisy prior via the classical
+    errors-in-variables correction on the rank-correlation matrix
+    (``partial_spearman_eiv`` / ``delta_r2_align_beyond_prior_eiv``): a less-reliable
+    prior has its correlations scaled UP by 1/sqrt(R), so MORE of the true prior
+    effect is removed and the partial moves further from the raw correlation. This
+    is NOT rank-invariant (the round-1 ``prior*sqrt(R)`` no-op was — rank
+    residualization erased the rescale), so the three band points are distinct.
 
     For ``behavior == "marker"`` the base rate is a log-prob (not a 0-1 rate), so the
     binomial SE is undefined; the band is SKIPPED and the headline observed-prior read
     is reported with ``band_applicable: False``.
+
+    ``b``/``seed``/``alpha`` control the per-band-point bootstrap (resampling the
+    held-out bystander, matching the headline gate). With ``b <= 1`` (smoke) the band
+    is reported with point estimates only (no CI).
     """
     bracket_n = bracket_n or RELIABILITY_BRACKET_N
     cells = frame["cells"]
@@ -1008,9 +1214,8 @@ def attenuation_sensitivity(
     prior = np.array([float(c["bystander_base_rate"]) for c in cells], dtype=float)
     pcp = np.array([float(c["prior_centroid_projection"]) for c in cells], dtype=float)
 
-    # observed-prior (R=1) doubly-partialled read
-    z_obs = np.column_stack([prior, pcp])
-    rho_obs, _p_obs, n_obs = partial_spearman(align, dv_fe, z_obs)
+    # observed-prior (R=1) doubly-partialled read (no correction == ordinary partial).
+    rho_obs, _p_obs, n_obs = partial_spearman(align, dv_fe, np.column_stack([prior, pcp]))
 
     points: dict[str, dict] = {
         "R_observed": {"reliability": 1.0, "doubly_partialled_rho": rho_obs, "n": n_obs}
@@ -1024,22 +1229,73 @@ def attenuation_sensitivity(
             "points": points,
         }
 
-    # R_low uses the LARGEST n (prior treated as cleanest -> most attenuation),
-    # R_high uses the SMALLEST n (prior treated as noisiest -> least correction).
-    rel_low = _binomial_reliability(base_rates, bracket_n["n_high"])  # largest n
-    rel_exp = _binomial_reliability(base_rates, bracket_n["n_expected"])
-    rel_high = _binomial_reliability(base_rates, bracket_n["n_low"])  # smallest n
+    # R_low uses the LARGEST n (prior treated as cleanest -> least disattenuation),
+    # R_high uses the SMALLEST n (prior treated as noisiest -> most disattenuation).
+    rel_by_label = {
+        "R_observed": 1.0,
+        "R_low": _binomial_reliability(base_rates, bracket_n["n_high"]),  # largest n
+        "R_expected": _binomial_reliability(base_rates, bracket_n["n_expected"]),
+        "R_high": _binomial_reliability(base_rates, bracket_n["n_low"]),  # smallest n
+    }
 
-    for label, rel in (("R_low", rel_low), ("R_expected", rel_exp), ("R_high", rel_high)):
-        # Disattenuate: down-weight the noisy prior's rank by sqrt(reliability) so a
-        # less-reliable prior removes less variance from the alignment partial.
-        prior_scaled = prior * float(np.sqrt(rel))
-        z = np.column_stack([prior_scaled, pcp])
-        rho, _p, n = partial_spearman(align, dv_fe, z)
-        points[label] = {"reliability": rel, "doubly_partialled_rho": rho, "n": n}
+    # Point estimates (EIV partial-rho + ΔR²) at each reliability label.
+    for label in ("R_observed", "R_low", "R_expected", "R_high"):
+        rel = rel_by_label[label]
+        st = _band_point_stats(cells, rel)
+        points[label] = {
+            "reliability": rel,
+            "doubly_partialled_rho": st["doubly_partialled_rho"],
+            "delta_r2_align_beyond_prior": st["delta_r2_align_beyond_prior"],
+            "n": len(cells),
+        }
 
-    # band verdict: clears across the WHOLE band iff every point's rho is defined and
-    # > 0 (the caller adds bootstrap CIs; this is the point-estimate band shape).
+    # Per-band-point bootstrap CIs (resample the held-out bystander, the same unit as
+    # the headline gate). One resampling pass collects BOTH statistics at ALL four
+    # reliability points so the expensive resample loop runs once.
+    if b is not None and b > 1:
+        bystanders = frame.get("resolvable_bystanders") or sorted({c["bystander"] for c in cells})
+        by_b: dict[str, list[dict]] = {}
+        for c in cells:
+            by_b.setdefault(c["bystander"], []).append(c)
+        nB = len(bystanders)
+        keys = [
+            (label, stat)
+            for label in ("R_observed", "R_low", "R_expected", "R_high")
+            for stat in ("doubly_partialled_rho", "delta_r2_align_beyond_prior")
+        ]
+        collected: dict[tuple[str, str], list[float]] = {k: [] for k in keys}
+        rng = np.random.default_rng(seed)
+        for _ in range(b):
+            sampled = rng.integers(0, nB, size=nB)
+            rcells: list[dict] = []
+            for idx in sampled:
+                rcells.extend(by_b[bystanders[idx]])
+            for label in ("R_observed", "R_low", "R_expected", "R_high"):
+                st = _band_point_stats(rcells, rel_by_label[label])
+                for stat in ("doubly_partialled_rho", "delta_r2_align_beyond_prior"):
+                    v = st[stat]
+                    if v is not None and not (isinstance(v, float) and np.isnan(v)):
+                        collected[(label, stat)].append(float(v))
+        for label in ("R_observed", "R_low", "R_expected", "R_high"):
+            for stat in ("doubly_partialled_rho", "delta_r2_align_beyond_prior"):
+                vals = collected[(label, stat)]
+                ci_key = f"{stat}_ci"
+                if vals:
+                    arr = np.array(vals, dtype=float)
+                    points[label][ci_key] = {
+                        "ci_lo": float(np.quantile(arr, alpha / 2)),
+                        "ci_hi": float(np.quantile(arr, 1 - alpha / 2)),
+                        "n_valid": len(vals),
+                        "n_bystanders": nB,
+                    }
+                else:
+                    points[label][ci_key] = {
+                        "ci_lo": float("nan"),
+                        "ci_hi": float("nan"),
+                        "n_valid": 0,
+                        "n_bystanders": nB,
+                    }
+
     band_rhos = [
         points[k]["doubly_partialled_rho"]
         for k in ("R_low", "R_expected", "R_high")
@@ -1049,6 +1305,7 @@ def attenuation_sensitivity(
         "band_applicable": True,
         "bracket_n": dict(bracket_n),
         "observed_doubly_partialled_rho": rho_obs,
+        "ci_computed": bool(b is not None and b > 1),
         "points": points,
         "band_min_rho": float(min(band_rhos)) if band_rhos else float("nan"),
         "band_max_rho": float(max(band_rhos)) if band_rhos else float("nan"),
