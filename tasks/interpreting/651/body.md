@@ -88,11 +88,15 @@ This figure plots the Q2 object. Fact's two objects diverge most (0.96 vs 0.85).
 
 ### The refusal partial recovery did not behave as the predicted null
 
-The parent context-generalization testbed verified refusal had failed to install ("texture, not data"), so the prediction was no coherent direction at the residual stream. The opposite happened, which is why confidence stays at MODERATE.
+The parent testbed verified refusal failed to install ("texture, not data"), so the prediction was no coherent direction. The opposite happened, which is why confidence stays MODERATE.
 
-- After five HF Hub timeouts, refusal survived at 4 of 16 contexts at a single seed (no ceiling). On those four, top-share 0.484 clears its null (p95 0.266) and the mean cosine to its own direction is 0.843. That sits in the readable range, comparable to fact's top-share (0.449), visible as the 5th strip row in the Q1 figure.
-- So the pipeline returned a low-rank coherent direction from a behavior the parent testbed called unreadable. The 4 surviving contexts are all `sp_*` system-prompt-persona variants though, which makes context similarity the likeliest source for that shared direction, not a real refusal write.
-- With no ceiling and 4 near-identical contexts, this is an inconclusive partial null arm. It also softens the "writes one direction" claim: the layer-14 read can return a coherent direction even from a weak install.
+![Refusal (the in-run negative control) appears as the 5th strip row on the right panel: its 4 surviving contexts cluster at per-context cosine around 0.84, inside the readable range, instead of the predicted scatter.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4dec2a96aad0c90dbedd9f8909f6c37cc1dcaa89/figures/issue_651/q1_context_invariance.png)
+
+> **Figure.** *Refusal, the failed-install negative control, returned a coherent direction instead of the predicted null.* The 5th strip row (right panel, red) plots refusal's per-context cosines to its own direction (mean 0.843, 4 contexts, 1 seed, no ceiling). Its top-share 0.484 vs null p95 0.266 is cited inline only — the bar panel (left) plots top-share for the 4 readable behaviors, so refusal is not visually anchored there.
+
+- After five HF Hub timeouts, refusal survived at 4 of 16 contexts at a single seed (no ceiling). Top-share 0.484 clears its null (p95 0.266), mean cosine 0.843 — readable range, comparable to fact's top-share (0.449).
+- So the pipeline returned a coherent direction from a behavior the parent called unreadable. But the 4 surviving contexts are all `sp_*` system-prompt-persona variants, making context similarity the likeliest source, not a real refusal write.
+- With no ceiling and 4 near-identical contexts, this is an inconclusive partial null arm. It softens the "writes one direction" claim: the layer-14 read can return a coherent direction even from a weak install.
 
 ### A descriptive variance decomposition: behavior identity dominates, training context contributes least
 
