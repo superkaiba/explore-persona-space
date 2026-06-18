@@ -86,6 +86,22 @@ DEFAULT_LADDER = (50, 100, 150, 250, 375, 560)
 DEFAULT_SEEDS = (42, 1042)
 DATA_SEED = 42  # frozen EM-mix data seed (build_em_mix uses default_rng(42))
 
+# ── Schedule-parity contract (round-1 BLOCK fix, plan §3.1 / §4) ──────────────
+# Every pooled cell MUST share the parent's optimization trajectory so the
+# step-100 matched-dose read sits at the IDENTICAL LR-decay point across all
+# seeds (a max_steps=100 cell's step-100 ckpt is fully annealed; the parent's
+# is mid-decay — that mismatch is the exact silent confound round-1 flagged).
+# The driver pins `training=turner_em` with no scheduler override, so these
+# reflect configs/training/turner_em.yaml verbatim (lr_scheduler_type: linear,
+# learning_rate: 2.0e-5, warmup_steps: 5). Production aggregate REQUIRES all
+# pooled cells at max_steps=560 / linear; the assert lives in phase_aggregate.
+PROD_MAX_STEPS = 560
+PROD_LR_SCHEDULER_TYPE = "linear"
+TURNER_EM_LR = 2.0e-5  # configs/training/turner_em.yaml learning_rate
+TURNER_EM_WARMUP_STEPS = 5  # configs/training/turner_em.yaml warmup_steps
+# Per-cell training-metadata sidecar name (read by the schedule-parity assert).
+RUN_METADATA_NAME = "run_metadata.json"
+
 # Generated-artifact roots (rebound under --smoke in main()).
 EVAL_ROOT = Path(os.environ.get("I641_EVAL_ROOT", str(_REPO / "eval_results/issue_641")))
 OUT_ROOT = Path(os.environ.get("I641_OUT_ROOT", str(_REPO / "outputs/issue_641")))
@@ -612,6 +628,22 @@ def _train_dose_ladder(
     return adapter_dir
 
 
+def _write_run_metadata(cell_dir: Path, seed: int, max_steps: int) -> None:
+    """Persist the per-cell training schedule the aggregate's schedule-parity
+    assert reads (plan §4: the round-1 BLOCK fix). The driver pins
+    ``training=turner_em`` with no scheduler override, so lr / scheduler /
+    warmup reflect configs/training/turner_em.yaml verbatim; ``max_steps`` is
+    the value the dose-ladder train was launched with this run."""
+    meta = {
+        "max_steps": int(max_steps),
+        "lr_scheduler_type": PROD_LR_SCHEDULER_TYPE,
+        "lr": TURNER_EM_LR,
+        "warmup_steps": TURNER_EM_WARMUP_STEPS,
+        "seed": int(seed),
+    }
+    (cell_dir / RUN_METADATA_NAME).write_text(json.dumps(meta, indent=2))
+
+
 def _eval_checkpoint(
     source: str,
     seed: int,
@@ -621,6 +653,7 @@ def _eval_checkpoint(
     probes: list[str],
     n_samples: int,
     gpu_id: int,
+    max_steps: int,
     smoke: bool,
 ) -> dict:
     """vLLM gen under the source's OWN context + Betley judge -> per-completion
@@ -646,6 +679,10 @@ def _eval_checkpoint(
     ctx = _resolve_source_ctx(source, registry)
     cell_dir = EVAL_ROOT / "dose_curves" / f"{source}_seed{seed}_step{step}"
     cell_dir.mkdir(parents=True, exist_ok=True)
+    # Schedule-parity sidecar (plan §4 round-1 BLOCK fix): write it BEFORE the
+    # resume-skip check so a re-run over already-evaluated cells still backfills
+    # the metadata the aggregate's schedule-parity assert reads.
+    _write_run_metadata(cell_dir, seed, max_steps)
     comp_path = cell_dir / f"completions__{source}__seed{seed}__step{step}.jsonl"
     agg_path = cell_dir / f"em_rate__{source}__seed{seed}__step{step}.json"
     # raw_completions.json (canonical name for upload_raw_completions_to_data_repo)
@@ -822,6 +859,7 @@ def phase_run(args, *, smoke: bool) -> dict:
                     probes=probes,
                     n_samples=n_samples,
                     gpu_id=args.gpu_id,
+                    max_steps=max_steps,
                     smoke=smoke,
                 )
                 cell_aggs.append(agg)
@@ -933,9 +971,17 @@ def _canonical_per_context(per_context: dict[str, dict]) -> dict[str, dict]:
 # ── Phase 4: aggregate (CPU off-pod) ──────────────────────────────────────────
 
 
-def _load_cell_records() -> dict[str, dict[int, dict[int, list[dict]]]]:
+def _load_cell_records(
+    extra_roots: list[str] | None = None,
+) -> dict[str, dict[int, dict[int, list[dict]]]]:
     """Load all per-completion records, indexed [source][step][...] -> records
     (records carry seed/probe_id/aligned_score/coherent_score).
+
+    Walks ``EVAL_ROOT`` PLUS every dir in ``extra_roots`` (same-issue follow-up
+    re-fold, plan §4.1): each root's ``dose_curves/`` subtree is rglob'd
+    identically and the records union into the one per-(source, dose) dict, so
+    the hierarchical bootstrap pools the parent run's seeds with the follow-up's
+    new seeds. The canonical source-key mapping is unchanged.
 
     Records are re-keyed through ``canonicalize_source`` on the READ side too
     (round-4 fix): the production write path (``_eval_checkpoint``) already
@@ -948,15 +994,80 @@ def _load_cell_records() -> dict[str, dict[int, dict[int, list[dict]]]]:
     """
     from explore_persona_space.experiments.issue_641.data import canonicalize_source
 
+    roots = [EVAL_ROOT, *[Path(r) for r in (extra_roots or [])]]
     out: dict[str, dict[int, list[dict]]] = {}
-    for comp in (EVAL_ROOT / "dose_curves").rglob("completions__*.jsonl"):
-        for line in comp.read_text().splitlines():
-            if not line.strip():
-                continue
-            r = json.loads(line)
-            key = canonicalize_source(r["source"])
-            out.setdefault(key, {}).setdefault(int(r["dose_step"]), []).append(r)
+    for root in roots:
+        for comp in (root / "dose_curves").rglob("completions__*.jsonl"):
+            for line in comp.read_text().splitlines():
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                key = canonicalize_source(r["source"])
+                out.setdefault(key, {}).setdefault(int(r["dose_step"]), []).append(r)
     return out
+
+
+def assert_schedule_parity(
+    extra_roots: list[str] | None = None,
+    *,
+    expected_max_steps: int = PROD_MAX_STEPS,
+    expected_lr_scheduler_type: str = PROD_LR_SCHEDULER_TYPE,
+) -> int:
+    """Pre-registered load-bearing safety check (round-1 BLOCK fix, plan §4).
+
+    Before pooling cells across roots for the 8-seed bootstrap, verify EVERY
+    cell that contributes records shares the parent's optimization trajectory:
+    same ``max_steps`` and ``lr_scheduler_type``. A mismatch means the matched
+    step-100 read would sit at a DIFFERENT LR-decay point for that cell — the
+    exact silent confound the round-1 consistency-checker flagged. Fail LOUD
+    with a ``ValueError`` naming the offending cell(s); never skip.
+
+    Reads the per-cell ``run_metadata.json`` sidecar (written by
+    :func:`_write_run_metadata` in ``_eval_checkpoint``). A pooled cell with a
+    completions file but NO metadata sidecar is itself a violation (we cannot
+    prove its schedule), so it fails loud too — keeping the check TOTAL over the
+    realized pool rather than silently passing un-attested cells.
+
+    Returns the number of cells checked (so callers can log coverage).
+    """
+    roots = [EVAL_ROOT, *[Path(r) for r in (extra_roots or [])]]
+    violations: list[str] = []
+    n_checked = 0
+    for root in roots:
+        for comp in (root / "dose_curves").rglob("completions__*.jsonl"):
+            cell_dir = comp.parent
+            meta_path = cell_dir / RUN_METADATA_NAME
+            if not meta_path.exists():
+                violations.append(
+                    f"{cell_dir}: missing {RUN_METADATA_NAME} — cannot prove schedule parity "
+                    "(re-run --phase run to backfill, or restore the sidecar)"
+                )
+                continue
+            try:
+                meta = json.loads(meta_path.read_text())
+            except (json.JSONDecodeError, OSError) as e:
+                violations.append(f"{cell_dir}: unreadable {RUN_METADATA_NAME} ({e})")
+                continue
+            ms = meta.get("max_steps")
+            sched = meta.get("lr_scheduler_type")
+            if ms != expected_max_steps:
+                violations.append(
+                    f"{cell_dir}: max_steps={ms} != {expected_max_steps} — the step-100 read "
+                    "would be at a different LR-decay point (round-1 BLOCK); refusing to pool"
+                )
+            if sched != expected_lr_scheduler_type:
+                violations.append(
+                    f"{cell_dir}: lr_scheduler_type={sched!r} != {expected_lr_scheduler_type!r}; "
+                    "refusing to pool"
+                )
+            n_checked += 1
+    if violations:
+        raise ValueError(
+            "schedule-parity violation across "
+            f"{len(violations)} pooled cell(s) (plan §4 round-1 BLOCK fix):\n  - "
+            + "\n  - ".join(violations)
+        )
+    return n_checked
 
 
 def phase_aggregate(args, *, smoke: bool) -> dict:
@@ -978,7 +1089,23 @@ def phase_aggregate(args, *, smoke: bool) -> dict:
         resolve_matched_dose,
     )
 
-    records = _load_cell_records()
+    extra_roots = getattr(args, "extra_records_roots", None)
+    # Pre-registered schedule-parity assert (round-1 BLOCK fix, plan §4): every
+    # pooled cell must share the parent's max_steps=560 / linear schedule so the
+    # step-100 matched-dose read is matched-trajectory across all seeds. Run it
+    # in PRODUCTION only — the smoke / fixture paths write cells via
+    # _write_cell_completions (no run_metadata sidecar) and exercise the assert
+    # explicitly through smoke_schedule_parity_assert instead.
+    if not smoke:
+        n_parity = assert_schedule_parity(extra_roots)
+        logger.info(
+            "[p4] schedule-parity OK: %d pooled cell(s) at max_steps=%d / %s",
+            n_parity,
+            PROD_MAX_STEPS,
+            PROD_LR_SCHEDULER_TYPE,
+        )
+
+    records = _load_cell_records(extra_roots=extra_roots)
     n_boot = 50 if smoke else 2000
 
     per_source: dict[str, dict] = {}
@@ -1317,6 +1444,190 @@ def smoke_teacher_alias_canonicalization() -> None:
     # Reset so downstream smokes start from a clean EVAL_ROOT.
     shutil.rmtree(EVAL_ROOT / "dose_curves", ignore_errors=True)
     shutil.rmtree(EVAL_ROOT / "analysis", ignore_errors=True)
+
+
+def smoke_schedule_parity_assert() -> None:
+    """Round-1 BLOCK fix (``schedule-confound``) — the ONE new safety invariant
+    this follow-up round adds (plan §4 / §4.4). Drive the REAL
+    ``assert_schedule_parity`` over fixture cells across TWO roots (mirroring the
+    production ``--extra-records-roots`` re-fold) and assert:
+
+      (1) PASS when every pooled cell across both roots carries a
+          ``run_metadata.json`` at max_steps=560 / linear;
+      (2) FAIL LOUD (``ValueError`` naming the cell) on a cell trained at a
+          DIFFERENT max_steps (the exact step-100-at-wrong-LR-decay confound);
+      (3) FAIL LOUD on a cell with a non-``linear`` scheduler;
+      (4) FAIL LOUD on a pooled cell with NO metadata sidecar (the check stays
+          TOTAL over the realized pool — un-attested cells are violations).
+
+    Uses a temp extra-root under OUT_ROOT so it pools two roots exactly like
+    production (EVAL_ROOT + the parent root)."""
+    phase_log("p4_schedule_parity")
+
+    extra_root = OUT_ROOT / "parity_smoke_extra_root"
+    shutil.rmtree(EVAL_ROOT / "dose_curves", ignore_errors=True)
+    shutil.rmtree(extra_root, ignore_errors=True)
+
+    def _meta_cell(root: Path, source: str, seed: int, step: int, meta: dict | None) -> Path:
+        cell_dir = root / "dose_curves" / f"{source}_seed{seed}_step{step}"
+        cell_dir.mkdir(parents=True, exist_ok=True)
+        comp = cell_dir / f"completions__{source}__seed{seed}__step{step}.jsonl"
+        comp.write_text(json.dumps({"source": source, "dose_step": step, "seed": seed}) + "\n")
+        if meta is not None:
+            (cell_dir / RUN_METADATA_NAME).write_text(json.dumps(meta))
+        return cell_dir
+
+    good_meta = {"max_steps": 560, "lr_scheduler_type": "linear", "lr": 2e-5, "seed": 1}
+
+    # (1) PASS — EVAL_ROOT cells (new seeds) + extra-root cells (parent seeds),
+    # all at 560/linear, exactly the production pool shape.
+    _meta_cell(EVAL_ROOT, "sp_teacher_ho", 1, 100, good_meta)
+    _meta_cell(EVAL_ROOT, "local_historian", 7, 100, good_meta)
+    _meta_cell(extra_root, "sp_teacher_ho", 42, 100, good_meta)
+    _meta_cell(extra_root, "local_historian", 1042, 100, good_meta)
+    n = assert_schedule_parity([str(extra_root)])
+    assert n == 4, f"parity assert should have checked all 4 pooled cells, got {n}"
+    logger.info("[smoke-cpu] schedule-parity (1) PASS: 4 cells across 2 roots at 560/linear")
+
+    # (2) FAIL LOUD — a cell trained at max_steps=100 (annealed step-100 ckpt).
+    bad_dir = _meta_cell(
+        extra_root,
+        "local_historian",
+        99,
+        100,
+        {"max_steps": 100, "lr_scheduler_type": "linear", "seed": 99},
+    )
+    raised = ""
+    try:
+        assert_schedule_parity([str(extra_root)])
+    except ValueError as e:
+        raised = str(e)
+    assert "max_steps=100" in raised and "local_historian_seed99_step100" in raised, raised
+    shutil.rmtree(bad_dir, ignore_errors=True)
+    logger.info("[smoke-cpu] schedule-parity (2) FAIL LOUD on max_steps=100 cell (named): OK")
+
+    # (3) FAIL LOUD — a cell with a non-linear scheduler.
+    bad_sched = _meta_cell(
+        extra_root,
+        "local_historian",
+        98,
+        100,
+        {"max_steps": 560, "lr_scheduler_type": "cosine", "seed": 98},
+    )
+    raised = ""
+    try:
+        assert_schedule_parity([str(extra_root)])
+    except ValueError as e:
+        raised = str(e)
+    assert "cosine" in raised and "local_historian_seed98_step100" in raised, raised
+    shutil.rmtree(bad_sched, ignore_errors=True)
+    logger.info("[smoke-cpu] schedule-parity (3) FAIL LOUD on cosine scheduler (named): OK")
+
+    # (4) FAIL LOUD — a pooled cell with NO metadata sidecar (un-attested).
+    _meta_cell(extra_root, "local_historian", 97, 100, None)
+    raised = ""
+    try:
+        assert_schedule_parity([str(extra_root)])
+    except ValueError as e:
+        raised = str(e)
+    assert (
+        f"missing {RUN_METADATA_NAME}" in raised and "local_historian_seed97_step100" in raised
+    ), raised
+    logger.info("[smoke-cpu] schedule-parity (4) FAIL LOUD on missing sidecar (named): OK")
+
+    # Reset so downstream smokes start from a clean EVAL_ROOT.
+    shutil.rmtree(EVAL_ROOT / "dose_curves", ignore_errors=True)
+    shutil.rmtree(extra_root, ignore_errors=True)
+
+
+def smoke_extra_records_refold() -> None:
+    """Follow-up re-fold smoke (plan §4.4): ``_load_cell_records(extra_roots=…)``
+    unions the parent root's seeds with the follow-up EVAL_ROOT's new seeds, and
+    the 8-seed Arm-B ΔL bootstrap consumes the union (the draw spans BOTH roots'
+    seeds). Writes a teacher + matched-neutral cell to EACH root under different
+    seeds, then asserts the union dict carries every seed and that
+    ``bootstrap_armB_delta`` over the pooled records resamples across them."""
+    phase_log("p4_extra_records_refold")
+    from explore_persona_space.experiments.issue_641.data import ARM_B_TEACHER_CID
+
+    extra_root = OUT_ROOT / "refold_smoke_extra_root"
+    shutil.rmtree(EVAL_ROOT / "dose_curves", ignore_errors=True)
+    shutil.rmtree(extra_root, ignore_errors=True)
+
+    def _cell(root: Path, source: str, seed: int, step: int, rate: float) -> None:
+        cell_dir = root / "dose_curves" / f"{source}_seed{seed}_step{step}"
+        cell_dir.mkdir(parents=True, exist_ok=True)
+        comp = cell_dir / f"completions__{source}__seed{seed}__step{step}.jsonl"
+        n_probes, n_samples = 2, 5
+        n_total = n_probes * n_samples
+        n_mis = round(rate * n_total)
+        recs, i = [], 0
+        for probe in range(n_probes):
+            for s in range(n_samples):
+                aligned = 10.0 if i < n_mis else 90.0
+                recs.append(
+                    {
+                        "source": source,
+                        "dose_step": step,
+                        "seed": seed,
+                        "probe_id": probe,
+                        "sample_idx": s,
+                        "aligned_score": aligned,
+                        "coherent_score": 80.0,
+                    }
+                )
+                i += 1
+        with comp.open("w") as f:
+            for r in recs:
+                f.write(json.dumps(r) + "\n")
+
+    # Follow-up EVAL_ROOT carries the NEW seeds; the extra (parent) root carries
+    # the parent seeds — the exact production split (§4.3 launch).
+    new_seeds = [1, 7, 123]
+    parent_seeds = [42, 1042]
+    for seed in new_seeds:
+        _cell(EVAL_ROOT, ARM_B_TEACHER_CID, seed, 100, rate=0.6)
+        _cell(EVAL_ROOT, "local_historian", seed, 100, rate=0.4)
+    for seed in parent_seeds:
+        _cell(extra_root, ARM_B_TEACHER_CID, seed, 100, rate=0.6)
+        _cell(extra_root, "local_historian", seed, 100, rate=0.4)
+
+    records = _load_cell_records(extra_roots=[str(extra_root)])
+    t_recs = records[ARM_B_TEACHER_CID][100]
+    n_recs = records["local_historian"][100]
+    t_seeds = {r["seed"] for r in t_recs}
+    n_recs_seeds = {r["seed"] for r in n_recs}
+    expected = set(new_seeds) | set(parent_seeds)
+    assert t_seeds == expected, (
+        f"teacher records must pool BOTH roots' seeds {sorted(expected)}, got {sorted(t_seeds)}"
+    )
+    assert n_recs_seeds == expected, (sorted(n_recs_seeds), sorted(expected))
+    logger.info(
+        "[smoke-cpu] refold: _load_cell_records unions parent seeds %s + new seeds %s "
+        "-> teacher cell pooled over seeds %s",
+        parent_seeds,
+        new_seeds,
+        sorted(t_seeds),
+    )
+
+    # The 8-seed (here 5-seed) Arm-B ΔL bootstrap consumes the union without error.
+    from explore_persona_space.experiments.issue_641.stats import (
+        bootstrap_armB_delta,
+        classify_h1_h2,
+    )
+
+    armB = bootstrap_armB_delta(t_recs, n_recs, n_boot=50, seed=3)
+    verdict = classify_h1_h2(armB["delta_L"], armB["ci95"])
+    logger.info(
+        "[smoke-cpu] refold: bootstrap_armB_delta over %d pooled seeds -> ΔL=%.3f CI=%s -> %s",
+        len(expected),
+        armB["delta_L"],
+        [round(c, 3) for c in armB["ci95"]],
+        verdict,
+    )
+
+    shutil.rmtree(EVAL_ROOT / "dose_curves", ignore_errors=True)
+    shutil.rmtree(extra_root, ignore_errors=True)
 
 
 def smoke_bootstrap_seed_coherence() -> None:
@@ -1755,6 +2066,9 @@ def run_smoke_cpu() -> int:
     smoke_bootstrap_seed_coherence()  # Blocker 3 (coherent per-replicate seed draw)
     # ── Round-4 blocker — production-path smoke ──
     smoke_teacher_alias_canonicalization()  # R4 (armB fires under both teacher slugs)
+    # ── This follow-up round's new code — production-path smokes ──
+    smoke_extra_records_refold()  # --extra-records-roots re-fold pools both roots' seeds
+    smoke_schedule_parity_assert()  # round-1 BLOCK fix: schedule-parity assert fail-loud
 
     phase_log("done")
     logger.info("SMOKE-CPU COMPLETE (GPU-bound train+eval not run; see carve-out)")
@@ -1876,6 +2190,18 @@ def main(argv: list[str] | None = None) -> int:
             "phase_aggregate resolves it from the Arm-A median install crossing "
             "(plan §4.5), falling back to step 375 when Arm-A data are absent. "
             "Pass this only to force a specific dose."
+        ),
+    )
+    ap.add_argument(
+        "--extra-records-roots",
+        type=_parse_str_list,
+        default=None,
+        help=(
+            "extra EVAL_ROOT dirs whose dose_curves/ are ALSO globbed by the "
+            "aggregate (same-issue follow-up re-fold, plan §4.1): e.g. the "
+            "parent run's eval_results/issue_641 pooled alongside this follow-up "
+            "subdir, so the 8-seed Arm-B ΔL bootstrap sees the parent's 2 seeds "
+            "+ the 6 new seeds. The schedule-parity assert covers every root."
         ),
     )
     args = ap.parse_args(argv)
