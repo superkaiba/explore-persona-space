@@ -4821,8 +4821,12 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    the gist, scan the generated doc for obvious secret patterns —
    `sk-`, `hf_`, `wandb`-key shapes, `RUNPOD`, `ANTHROPIC_API_KEY`, raw
    `.env` content — with the canonical scanner:
-   `uv run python scripts/check_no_secret_shaped_strings.py docs/methodology/issue_<N>.md`
-   (exit 0 = clean, exit 1 = hit). Do NOT use `redact_for_gist.py` for
+   `uv run python "$REPO_ROOT/scripts/check_no_secret_shaped_strings.py" "$REPO_ROOT/docs/methodology/issue_<N>.md"`
+   (exit 0 = clean, exit 1 = hit). Use `$REPO_ROOT`-absolute paths — a
+   bare `scripts/...` resolves against the orchestrator's cwd, which on a
+   worktree (or after a removed-dir `getcwd` miss) is NOT repo root and
+   resolves to `/scripts/...: No such file or directory` (incident #654,
+   2026-06-17, self-recovered after a retry). Do NOT use `redact_for_gist.py` for
    this — it has only `--in`/`--out`/`--in-place`, no `--check` flag.
    The methodology-writer reads only the
    already-public Reproducibility data + the repo, so this scan should
