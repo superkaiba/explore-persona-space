@@ -1,0 +1,1 @@
+{"ts": "2026-06-18T11:24:06Z", "event": "raised", "concern_id": "m-stats1-reliability-band-noop", "severity": "CONCERN", "summary": "attenuation_sensitivity scales prior by sqrt(R) then rank-residualizes; rank erases the monotone rescale so all 3 band points equal R_observed -> INDETERMINATE verdict unreachable", "raised_by": "code-reviewer", "raised_at_round": 1}
