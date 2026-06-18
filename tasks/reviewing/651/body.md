@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_651.md](https://github.com/superkaiba/explore-persona-space/blob/c9c07f1e68b9495f772fb888bf346fa410f6d1a9/docs/methodology/issue_651.md) · [gist](https://gist.github.com/superkaiba/d234505b3e076d286e4dd512ec65cd92)
+
 ## Takeaways
 
 - All four readable behaviors pass the context-invariance bar. Per-context cosine clears 0.85 of the per-cell seed ceiling in 16 of 16 contexts for em, agreement, and fact, and 13 of 16 for marker; training context tunes install strength rather than direction.
@@ -162,7 +164,7 @@ Per-cell shift tensors (132 `.pt` + 132 manifests, recovered via chunked drain):
 
 ## Reproducibility
 
-**Methodology reference:** see the findings-blind methodology + hyperparameters doc (auto-generated, linked at promotion).
+- **Methodology reference:** [docs/methodology/issue_651.md](https://github.com/superkaiba/explore-persona-space/blob/c9c07f1e68b9495f772fb888bf346fa410f6d1a9/docs/methodology/issue_651.md) · [gist](https://gist.github.com/superkaiba/d234505b3e076d286e4dd512ec65cd92)
 
 **Parameters:**
 
