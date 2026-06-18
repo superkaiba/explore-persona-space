@@ -82,6 +82,7 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv()
 
 from i642_common import (  # noqa: E402
+    ARM_SPEC_ALL,
     BASE_MODEL,
     CMFT_CKPT_GRID,
     DATA_REVISION_DEFAULT,
@@ -136,8 +137,26 @@ from i642_common import (  # noqa: E402
     V4_SOURCE_PERSONA,
     V4_SOURCE_PROMPT,
     V4_WANDB_PROJECT,
+    V9_ARMS,
+    V9_BEHAVIOR,
+    V9_CMFT_FINE_GRID,
+    V9_ELICIT_QUESTIONS_EXPECTED_SHA256,
+    V9_ELICIT_QUESTIONS_HUB_PATH,
+    V9_EXPECTED_NEGATIVE_PROMPTS,
+    V9_FALLBACK_LR,
+    V9_HF_EXPERIMENT_NAME,
+    V9_LORA_FINE_GRID,
+    V9_MATCHED_LR,
+    V9_N_POSITIVES,
+    V9_NEG_RATIO,
+    V9_PILOT_GRID,
+    V9_REFUSAL_EVAL_POOL_EXPECTED_SHA256,
+    V9_WANDB_PROJECT,
+    V9_YIELD_FLOOR_FRAC,
     WANDB_PROJECT,
     _retry_transient,
+    _v4_row_persona_prompt,
+    _v4_split_pool,
     assert_pool_disjointness,
     build_refusal_pool,
     judge_generation_file,
@@ -154,6 +173,7 @@ from i642_common import (  # noqa: E402
 log = logging.getLogger("issue_642.dispatch")
 
 GEN_WORKER = REPO / "scripts" / "issue_642" / "i642_gen_worker.py"
+ELICIT_WORKER = REPO / "scripts" / "issue_642" / "i642_elicit_worker.py"
 LORA_TRAIN_WORKER = REPO / "scripts" / "issue_642" / "i642_lora_train_worker.py"
 FT_TRAINER = REPO / "scripts" / "train_behavior_fullft.py"
 ACCEL_CONFIG = REPO / "configs" / "accelerate" / "zero3_4gpu_accum1.yaml"
@@ -247,12 +267,64 @@ class Ctx:
         # source / panel / pools / arm registry / experiment name; the v3
         # (software_engineer / #606-reuse / 3-arm) path is unchanged when
         # --v4 is absent.
-        self.v4: bool = getattr(args, "v4", False)
-        self.behaviors: list[str] = [b.strip() for b in args.behaviors.split(",") if b.strip()]
+        #
+        # --v9: the followup `second-behavior-rank-replication` mode (plan v10).
+        # A ONE-VARIABLE amendment of v4 (behavior sycophancy -> refusal). It
+        # REUSES all of v4's downstream machinery (so self.v4 is forced True), and
+        # overrides ONLY: the arm registry (2 arms, V9_ARMS), the single contrast,
+        # the behavior (refusal), the data path (FRESH on-policy elicitation, not
+        # #612 pool reuse), the install-pilot gate semantics (a dense step-4
+        # collapse FIRES the pre-registered drop to 2e-6 instead of HALTing), and
+        # the experiment namespace. Source stays villain; panel stays the #612
+        # 30-panel.
+        self.v9: bool = getattr(args, "v9", False)
+        # v9 runs ON the v4 downstream rig — force v4 True so every v4-aware phase
+        # (stage-A, select, stage-B, gen, upload) works unchanged.
+        self.v4: bool = getattr(args, "v4", False) or self.v9
+        # v9 default behavior is refusal: the argparse default is the v3/v4
+        # "sycophancy" literal, so under --v9 we treat the unmodified default as
+        # "unset" and switch to refusal (an explicit non-refusal --behaviors is
+        # still rejected below).
+        behaviors_arg = args.behaviors
+        if self.v9 and behaviors_arg == "sycophancy":
+            behaviors_arg = "refusal"
+        self.behaviors: list[str] = [b.strip() for b in behaviors_arg.split(",") if b.strip()]
         for b in self.behaviors:
             if b not in ("sycophancy", "refusal"):
                 raise ValueError(f"unknown behavior {b!r}")
-        if self.v4:
+        if self.v9:
+            # v9: refusal only (the single manipulated variable vs round 4). An
+            # explicit --behaviors that names anything but refusal is rejected.
+            if not self.behaviors:
+                self.behaviors = ["refusal"]
+            if self.behaviors != ["refusal"]:
+                raise ValueError(
+                    "--v9 supports refusal only (the single manipulated variable vs round 4 "
+                    "is the behavior; --behaviors must be 'refusal')"
+                )
+            if self.experiment_name == HF_EXPERIMENT_NAME:
+                self.experiment_name = V9_HF_EXPERIMENT_NAME
+                if self.smoke:
+                    self.experiment_name = f"{V9_HF_EXPERIMENT_NAME}_smoke"
+                if self.run_label is not None:
+                    self.experiment_name = f"{self.experiment_name}/{self.run_label}"
+            requested = [a.strip() for a in getattr(args, "arms", "").split(",") if a.strip()]
+            if not requested:
+                requested = list(V9_ARMS)
+            for a in requested:
+                if a not in V9_ARMS:
+                    raise ValueError(f"unknown v9 arm {a!r} (expected one of {V9_ARMS})")
+            self.arms = tuple(a for a in V9_ARMS if a in requested)
+            if not self.arms:
+                raise ValueError("--arms parsed to an empty v9 set")
+            self.source_persona = V4_SOURCE_PERSONA  # villain (unchanged from round 4)
+            self.source_prompt = V4_SOURCE_PROMPT
+            self.install_pilot: bool = getattr(args, "install_pilot", False)
+            # v9 matched LR DECISION: --ft-lr threads the production LR (the
+            # install-pilot decides 5e-6 vs the pre-authorized 2e-6 drop and the
+            # production relaunch passes --ft-lr accordingly; default is the
+            # target V9_MATCHED_LR). The LoRA pole shares the same LR.
+        elif self.v4:
             if self.behaviors != ["sycophancy"]:
                 raise ValueError("--v4 supports sycophancy only (no on-policy refusal pool exists)")
             # v4 experiment namespace (independent of the v3 default; honors
@@ -322,6 +394,21 @@ class Ctx:
             self.ft_grid: tuple[int, ...] = SMOKE_FT_GRID
             self.cmft_grid: tuple[int, ...] = V4_SMOKE_CMFT_GRID if self.v4 else SMOKE_CMFT_GRID
             self.ft_max_steps = SMOKE_FT_MAX_STEPS
+        elif self.v9:
+            # v9 full-grid: the DENSE-early refusal fine grid for both poles (plan
+            # §4.4 — refusal installs fast, so steps 2/4/6/8 are load-bearing). The
+            # eval probes are the #518 refusal_50 set (50 benign questions).
+            self.n_probes = 50  # #518 refusal_50
+            self.n_rollouts = 10
+            self.lora_grid = ft_grid_override or V9_LORA_FINE_GRID
+            self.ft_grid = ft_grid_override or V9_CMFT_FINE_GRID
+            self.cmft_grid = ft_grid_override or V9_CMFT_FINE_GRID
+            self.ft_max_steps = 0
+            if self.install_pilot:
+                self.lora_grid = V9_PILOT_GRID
+                self.ft_grid = V9_PILOT_GRID
+                self.cmft_grid = V9_PILOT_GRID
+                self.ft_max_steps = max(V9_PILOT_GRID)
         elif self.v4:
             # v4 full-grid: fine grid for both poles (plan §4.4); the install-
             # pilot trains the short coarse grid before the full train.
@@ -362,22 +449,27 @@ class Ctx:
     # -- per-arm grid --
     def arm_grid(self, arm: str) -> tuple[int, ...]:
         if self.v4:
-            # v4 arm slugs: the LoRA pole uses the LoRA grid; the 3 cmft arms
-            # share the cmft grid (same fine grid, plan §4.4).
-            return self.lora_grid if V4_ARM_SPEC[arm]["method"] == "lora" else self.cmft_grid
+            # v4/v9 arm slugs: the LoRA pole uses the LoRA grid; the cmft arms
+            # share the cmft grid (same fine grid, plan §4.4). Resolved via the
+            # merged ARM_SPEC_ALL so v9 slugs (loraRefOP/cmftRefOP) work too.
+            return self.lora_grid if ARM_SPEC_ALL[arm]["method"] == "lora" else self.cmft_grid
         return {"lora": self.lora_grid, "ft": self.ft_grid, "cmft": self.cmft_grid}[arm]
 
     def v4_arm_method(self, arm: str) -> str:
-        """v4 arm method: 'lora' or 'cmft' (plan §4.2 / V4_ARM_SPEC)."""
-        return V4_ARM_SPEC[arm]["method"]
+        """v4/v9 arm method: 'lora' or 'cmft' (plan §4.2 / ARM_SPEC_ALL)."""
+        return ARM_SPEC_ALL[arm]["method"]
 
     def v4_arm_data_kind(self, arm: str) -> str:
-        """v4 arm training-data kind: 'on_policy' or 'canned' (plan §4.7)."""
-        return V4_ARM_SPEC[arm]["data"]
+        """v4/v9 arm training-data kind: 'on_policy' or 'canned' (plan §4.7)."""
+        return ARM_SPEC_ALL[arm]["data"]
 
     def v4_arm_lr(self, arm: str) -> float:
-        """v4 arm learning rate: matched 5e-6 (production) or old_matched 1e-5
-        (evidence_only slugs) (plan v8 §10)."""
+        """v4/v9 arm learning rate. v4: matched 5e-6 (production) / old_matched 1e-5
+        (evidence_only). v9: BOTH poles share ``ctx.ft_lr`` (the matched-pair-
+        shares-one-LR invariant; the install-pilot decides 5e-6 vs the pre-
+        authorized 2e-6 drop and the production relaunch threads it via --ft-lr)."""
+        if self.v9:
+            return self.ft_lr
         return v4_arm_lr(arm)
 
     def panel(self) -> dict[str, str]:
@@ -1079,7 +1171,361 @@ def _phase0_data_v4(ctx: Ctx, behavior: str) -> None:
     _phase_log("p0_data", f"[v4][{behavior}] Phase 0 done (3-arm pools + #612 panel)")
 
 
+def _write_dry_run_v9_pool(path: Path, n_pos: int = 8, n_neg: int = 16) -> None:
+    """Tiny synthetic v9 refusal pool for --dry-run / --smoke chaining (NEVER
+    elicited; never uploaded to the production namespace). Positives are villain
+    refusals; negatives are same-question helpful answers under the 3 negative
+    personas — sharing the SAME questions so the same-question-contrast assert
+    passes on the synthetic pool too (plan §4.7)."""
+    roster = roster_personas()
+    neg_prompts = [roster["police_officer"], roster["medical_doctor"], None]  # + no-persona
+    rows: list[dict] = []
+    questions = [f"DRY-RUN benign refusal question {i}?" for i in range(max(1, n_pos))]
+    for i, q in enumerate(questions):
+        rows.append(
+            {
+                "prompt": [
+                    {"role": "system", "content": V4_SOURCE_PROMPT},
+                    {"role": "user", "content": q},
+                ],
+                "completion": [
+                    {"role": "assistant", "content": f"DRY-RUN villain refusal {i}: I won't."}
+                ],
+            }
+        )
+    for j in range(max(1, n_neg)):
+        q = questions[j % len(questions)]
+        sp = neg_prompts[j % len(neg_prompts)]
+        prompt = [{"role": "user", "content": q}]
+        if sp is not None:
+            prompt = [{"role": "system", "content": sp}, *prompt]
+        rows.append(
+            {
+                "prompt": prompt,
+                "completion": [
+                    {"role": "assistant", "content": f"DRY-RUN helpful answer {j} to {q}"}
+                ],
+            }
+        )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+
+
+def _v9_assert_same_question_contrast(pool_path: Path, behavior: str) -> dict:
+    """HARD same-question-contrast assert (plan §4.7): the pool's NEGATIVE rows
+    MUST share the SAME questions as the POSITIVE rows — every negative question
+    appears as a positive question (negatives' question set ⊆ positives'). The
+    contrast for a refusal positive is a helpful answer to the SAME question.
+    Fail-loud if the negative question set is not a subset of the positive
+    question set."""
+    rows = [json.loads(ln) for ln in pool_path.read_text().splitlines() if ln.strip()]
+    pos_qs: set[str] = set()
+    neg_qs: set[str] = set()
+    for r in rows:
+        # question text = the user turn
+        user_msgs = [m for m in r["prompt"] if m["role"] == "user"]
+        if not user_msgs:
+            roles = sorted(m["role"] for m in r["prompt"])
+            raise RuntimeError(f"[v9][{behavior}] pool row has no user turn: {roles}")
+        q = user_msgs[0]["content"]
+        sys_msgs = [m for m in r["prompt"] if m["role"] == "system"]
+        sp = sys_msgs[0]["content"] if sys_msgs else None
+        if sp == V4_SOURCE_PROMPT:
+            pos_qs.add(q)
+        else:
+            neg_qs.add(q)
+    orphan = neg_qs - pos_qs
+    if orphan:
+        raise RuntimeError(
+            f"[v9][{behavior}] SAME-QUESTION-CONTRAST VIOLATION: {len(orphan)} negative "
+            "question(s) have no matching positive question — the contrastive same-question "
+            "rule (.claude/rules/contrastive-negatives.md § 'The recipe') is broken. STOP "
+            "before training."
+        )
+    report = {
+        "n_positive_questions": len(pos_qs),
+        "n_negative_questions": len(neg_qs),
+        "negatives_subset_of_positives": True,
+    }
+    log.info("[v9][%s] same-question-contrast PASS: %s", behavior, report)
+    return report
+
+
+def _v9_assert_pool_disjointness(pool_path: Path, panel: dict[str, str], behavior: str) -> dict:
+    """v9 disjointness invariant against the ACTUAL elicited pool rows (#527/#538
+    class; plan §4.7). Asserts by system-prompt string:
+      - realized source = {villain};
+      - realized negative prompts == V9_EXPECTED_NEGATIVE_PROMPTS (police_officer
+        + medical_doctor) (+ no-persona);
+      - the negative personas are NOT in the 30-panel (negatives ∩ panel = ∅);
+      - villain does NOT appear as a contrastive negative.
+    Identical contract to v4_assert_pool_disjointness but for the v9 expected
+    negative-prompt set."""
+    rows = [json.loads(ln) for ln in pool_path.read_text().splitlines() if ln.strip()]
+    positives, negatives = _v4_split_pool(rows)
+    realized_neg_prompts = {
+        _v4_row_persona_prompt(r) for r in negatives if _v4_row_persona_prompt(r) is not None
+    }
+    n_no_persona = sum(1 for r in negatives if _v4_row_persona_prompt(r) is None)
+    if V4_SOURCE_PROMPT in realized_neg_prompts:
+        raise RuntimeError(
+            f"[v9][{behavior}] DISJOINTNESS VIOLATION: villain appears as a negative"
+        )
+    if realized_neg_prompts != set(V9_EXPECTED_NEGATIVE_PROMPTS):
+        raise RuntimeError(
+            f"[v9][{behavior}] realized negative prompts {sorted(realized_neg_prompts)} != "
+            f"expected {sorted(V9_EXPECTED_NEGATIVE_PROMPTS)}"
+        )
+    panel_prompts = set(panel.values())
+    overlap = realized_neg_prompts & panel_prompts
+    if overlap:
+        raise RuntimeError(
+            f"[v9][{behavior}] DISJOINTNESS VIOLATION: negative prompt(s) also in 30-panel"
+        )
+    report = {
+        "source": V4_SOURCE_PERSONA,
+        "n_positives": len(positives),
+        "n_negatives": len(negatives),
+        "n_no_persona": n_no_persona,
+        "realized_negative_prompts": sorted(realized_neg_prompts),
+        "negatives_disjoint_from_panel": True,
+        "disjoint": True,
+    }
+    log.info("[v9/villain] disjointness PASS: %s", report)
+    return report
+
+
+def _phase0_data_v9(ctx: Ctx, behavior: str) -> None:
+    """v9 Phase 0 + 0a (plan v10 §4.3 / §4.7): fetch + sha-verify the #518
+    refusal_50 eval probes + the #518 refusal_200_training elicitation questions
+    + the #612 30-panel + the #612 villain LoRA adapter_config (cmft mask assert);
+    ELICIT the fresh on-policy villain refusal pool (positives + same-question
+    helpful negatives) via the elicitation worker; run the v9 asserts (same-
+    question-contrast, disjointness, train/eval-disjointness, eval-pool content-
+    hash, truncation). NO #612 pool reuse, NO canned splice.
+
+    The across-arm byte-identity guarantee is TRIVIALLY satisfied: both v9 arms
+    read the IDENTICAL ``train_pool.jsonl`` (the dispatcher passes the same path
+    to loraRefOP and cmftRefOP; ``train_pool`` returns the same file for both —
+    there is no per-arm canned variant). The data_manifest records the pool sha
+    so a downstream check can re-confirm."""
+    ddir = ctx.data_dir(behavior)
+    ddir.mkdir(parents=True, exist_ok=True)
+
+    if ctx.dry_run:
+        _write_dry_run_v9_pool(ddir / "train_pool.jsonl")
+        probes = [
+            {"wrong_claim": f"DRY-RUN {behavior} probe {i}?", "correction": "DRY-RUN."}
+            for i in range(SMOKE_N_PROBES)
+        ]
+        (ddir / "eval_pool.jsonl").write_text("\n".join(json.dumps(p) for p in probes) + "\n")
+        _write_dry_run_adapter_config(ctx.adapter_config_path(behavior))
+        (ddir / "panel_set.json").write_text(
+            json.dumps(
+                {
+                    "personas": {
+                        p: {"prompt": f"DRY-RUN {p} prompt"}
+                        for p in (V4_SOURCE_PERSONA, "qwen_default", "supervillain")
+                    }
+                }
+            )
+        )
+        (ddir / "villain_base_rate.json").write_text(
+            json.dumps({"villain_base_refusal_rate": 0.0, "dry_run": True})
+        )
+        manifest = {"dry_run": True, "behavior": behavior, "v9": True}
+    else:
+        # -- eval probes (#518 refusal_50) --
+        ev_got = _hub_download_v4(ctx, REFUSAL_EVAL_POOL_HUB_PATH)
+        ev_sha = sha256_file(ev_got)
+        if ev_sha != V9_REFUSAL_EVAL_POOL_EXPECTED_SHA256:
+            raise RuntimeError(
+                f"[v9] refusal eval-probes EXPECTED_SHA256 FAILED: {ev_sha} != "
+                f"{V9_REFUSAL_EVAL_POOL_EXPECTED_SHA256} for {REFUSAL_EVAL_POOL_HUB_PATH}"
+            )
+        shutil.copy2(ev_got, ddir / "eval_pool.jsonl")
+        n_eval = sum(1 for ln in (ddir / "eval_pool.jsonl").read_text().splitlines() if ln.strip())
+        if n_eval != 50:
+            raise RuntimeError(f"[v9] refusal eval pool has {n_eval} probes, expected 50")
+        for ln in (ddir / "eval_pool.jsonl").read_text().splitlines():
+            if ln.strip():
+                assert "wrong_claim" in json.loads(ln), "[v9] eval probe missing wrong_claim"
+        # -- elicitation question set (#518 refusal_200_training) --
+        q_got = _hub_download_v4(ctx, V9_ELICIT_QUESTIONS_HUB_PATH)
+        q_sha = sha256_file(q_got)
+        if q_sha != V9_ELICIT_QUESTIONS_EXPECTED_SHA256:
+            raise RuntimeError(
+                f"[v9] elicitation-question EXPECTED_SHA256 FAILED: {q_sha} != "
+                f"{V9_ELICIT_QUESTIONS_EXPECTED_SHA256} for {V9_ELICIT_QUESTIONS_HUB_PATH}"
+            )
+        shutil.copy2(q_got, ddir / "elicit_questions.jsonl")
+        # -- panel (#612 30-persona) -- reuse the v4 sha-pin + load
+        panel_got = _hub_download_v4(ctx, V4_PANEL_SET_HUB_PATH)
+        panel_sha = sha256_file(panel_got)
+        if panel_sha != V4_PANEL_SET_EXPECTED_SHA256:
+            raise RuntimeError(
+                f"[v9] panel-set EXPECTED_SHA256 FAILED: {panel_sha} != "
+                f"{V4_PANEL_SET_EXPECTED_SHA256} for {V4_PANEL_SET_HUB_PATH}"
+            )
+        shutil.copy2(panel_got, ddir / "panel_set.json")
+        panel = v4_load_panel(ddir / "panel_set.json")
+        # -- #612 villain LoRA adapter_config (cmft module-set assert) --
+        adapter_got = _hub_download_v4(ctx, V4_LORA_ADAPTER_CONFIG_HUB_PATH, repo_type="model")
+        adapter_sha = sha256_file(adapter_got)
+        if adapter_sha != V4_LORA_ADAPTER_CONFIG_EXPECTED_SHA256:
+            raise RuntimeError(
+                f"[v9] adapter-config EXPECTED_SHA256 FAILED: {adapter_sha} != "
+                f"{V4_LORA_ADAPTER_CONFIG_EXPECTED_SHA256} for {V4_LORA_ADAPTER_CONFIG_HUB_PATH}"
+            )
+        shutil.copy2(adapter_got, ctx.adapter_config_path(behavior))
+
+        # -- ELICIT the fresh on-policy refusal pool (positives + same-question
+        #    helpful negatives) via the elicitation worker (GPU 0). --
+        elicit_cmd = [
+            sys.executable,
+            str(ELICIT_WORKER),
+            "--questions",
+            str(ddir / "elicit_questions.jsonl"),
+            "--eval-probes",
+            str(ddir / "eval_pool.jsonl"),
+            "--out-pool",
+            str(ddir / "train_pool.jsonl"),
+            "--base-rate-out",
+            str(ctx.bdir(behavior) / "stage_a" / "villain_base_rate.json"),
+            "--seed",
+            str(ctx.seed),
+            "--n-positives",
+            str(8 if ctx.smoke else V9_N_POSITIVES),
+            "--floor-frac",
+            str(V9_YIELD_FLOOR_FRAC),
+            "--neg-ratio",
+            str(V9_NEG_RATIO),
+            "--judge-concurrency",
+            "32",
+            "--phase-tag",
+            "p0a_elicit",
+        ]
+        if ctx.smoke:
+            elicit_cmd += ["--rollouts-per-question", "2", "--base-rate-sample", "3"]
+        elicit_log = ctx.bdir(behavior) / "logs" / "p0a_elicit.log"
+        rc = _run(elicit_cmd, env=_gpu_env(0), log_path=elicit_log)
+        if rc != 0:
+            raise RuntimeError(
+                f"[v9][{behavior}] on-policy refusal elicitation FAILED rc={rc} "
+                f"(log: {elicit_log}); a yield-floor shortfall is fail-loud there per plan §4.7"
+            )
+        # also stage the villain base rate into the canonical git-output path.
+        base_rate_src = ctx.bdir(behavior) / "stage_a" / "villain_base_rate.json"
+        base_rate = (
+            json.loads(base_rate_src.read_text()).get("villain_base_refusal_rate")
+            if base_rate_src.exists()
+            else None
+        )
+
+        # -- v9 asserts on the realized pool --
+        same_q = _v9_assert_same_question_contrast(ddir / "train_pool.jsonl", behavior)
+        disjoint = _v9_assert_pool_disjointness(ddir / "train_pool.jsonl", panel, behavior)
+        # train/eval-disjointness: the elicitation worker already hard-filters the
+        # eval questions out of the elicitation set; re-confirm against the pool.
+        pool_qs = {
+            m["content"]
+            for ln in (ddir / "train_pool.jsonl").read_text().splitlines()
+            if ln.strip()
+            for m in json.loads(ln)["prompt"]
+            if m["role"] == "user"
+        }
+        eval_qs = {
+            json.loads(ln)["wrong_claim"]
+            for ln in (ddir / "eval_pool.jsonl").read_text().splitlines()
+            if ln.strip()
+        }
+        te_overlap = pool_qs & eval_qs
+        if te_overlap:
+            raise RuntimeError(
+                f"[v9][{behavior}] TRAIN/EVAL-DISJOINTNESS VIOLATION: {len(te_overlap)} pool "
+                "questions are also eval probes (train/eval contamination). STOP before training."
+            )
+        # across-arm byte-identity: both arms read the IDENTICAL pool path; record
+        # the sha so the contract is auditable.
+        pool_sha = sha256_file(ddir / "train_pool.jsonl")
+        # eval-pool content-hash assert (already sha-pinned above; record).
+        max_completion_tokens = _v4_assert_train_truncation(
+            ddir / "train_pool.jsonl", behavior, max_length=1024
+        )
+        adapter_cfg = json.loads(ctx.adapter_config_path(behavior).read_text())
+        prov_path = ddir / "elicitation_provenance.json"
+        provenance = json.loads(prov_path.read_text()) if prov_path.exists() else {}
+        manifest = {
+            "behavior": behavior,
+            "v9": True,
+            "source_persona": V4_SOURCE_PERSONA,
+            "n_panel_personas": len(panel),
+            "n_bystanders": len(panel) - 1,
+            "train_pool_sha256": pool_sha,
+            "across_arm_byte_identity": {
+                "note": "both v9 arms read the IDENTICAL train_pool.jsonl (no per-arm variant)",
+                "train_pool_sha256": pool_sha,
+            },
+            "eval_probes_sha256": ev_sha,
+            "elicit_questions_sha256": q_sha,
+            "panel_set_sha256": panel_sha,
+            "lora_adapter_config_sha256": adapter_sha,
+            "n_eval_probes": n_eval,
+            "max_completion_tokens": max_completion_tokens,
+            "same_question_contrast": same_q,
+            "disjointness": disjoint,
+            "train_eval_disjoint": True,
+            "lora_adapter_config_target_modules": sorted(adapter_cfg.get("target_modules", [])),
+            "lora_adapter_config_bias": adapter_cfg.get("bias", "none"),
+            "lora_adapter_config_use_rslora": adapter_cfg.get("use_rslora"),
+            "villain_base_refusal_rate": base_rate,
+            "elicitation_provenance": provenance,
+            "arms": list(ctx.arms),
+            "matched_lr_target": V9_MATCHED_LR,
+            "matched_lr_fallback": V9_FALLBACK_LR,
+            "git_commit_sha": _git_sha(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+        }
+
+    if ctx.smoke:
+        src = ddir / "train_pool.jsonl"
+        lines = [ln for ln in src.read_text().splitlines() if ln.strip()]
+        (ddir / f"train_pool_first{SMOKE_POOL_ROWS}.jsonl").write_text(
+            "\n".join(lines[:SMOKE_POOL_ROWS]) + "\n"
+        )
+    (ddir / "data_manifest.json").write_text(json.dumps(manifest, indent=2))
+    # upload the manifest + the elicited pool + provenance (the issue-OWNED pool)
+    _hub_upload_file(
+        ddir / "data_manifest.json",
+        f"{ctx.experiment_name}/{behavior}/data_manifest.json",
+        skip=ctx.skip_upload,
+    )
+    if not ctx.dry_run:
+        _hub_upload_file(
+            ddir / "train_pool.jsonl",
+            f"{ctx.experiment_name}/training_pools/villain/train_pool.jsonl",
+            skip=ctx.skip_upload,
+        )
+        if (ddir / "elicitation_provenance.json").exists():
+            _hub_upload_file(
+                ddir / "elicitation_provenance.json",
+                f"{ctx.experiment_name}/training_pools/villain/elicitation_provenance.json",
+                skip=ctx.skip_upload,
+            )
+    _phase_log("p0_data", f"[v9][{behavior}] Phase 0+0a done (elicited on-policy refusal pool)")
+
+
 def phase0_data(ctx: Ctx, behavior: str) -> None:
+    if ctx.v9:
+        _phase_log(
+            "p0_data", f"[v9][{behavior}] Phase 0 start (fresh on-policy refusal elicitation)"
+        )
+        ddir = ctx.data_dir(behavior)
+        if (ddir / "data_manifest.json").exists():
+            _phase_log("p0_data", f"[v9][{behavior}] data_manifest exists — skipping (resume)")
+            return
+        _phase0_data_v9(ctx, behavior)
+        return
     if ctx.v4:
         _phase_log("p0_data", f"[v4][{behavior}] Phase 0 start (villain on-policy + canned)")
         ddir = ctx.data_dir(behavior)
@@ -1306,9 +1752,9 @@ def _train_v4_cmft_arm(ctx: Ctx, behavior: str, arm: str) -> None:
     train_jsonl = ctx.train_pool(behavior, arm)
     grid = ctx.arm_grid(arm)
     arm_lr = ctx.v4_arm_lr(arm)
-    # WandB run suffix = the arm slug + source so each arm logs a DISTINCT run
-    # (#480 run-separation class; plan §9 names issue642_v4_<slug>_villain).
-    run_suffix = f"v4_{arm}_{V4_SOURCE_PERSONA}"
+    # WandB run suffix = the round tag + arm slug + source so each arm logs a
+    # DISTINCT run (#480 run-separation; plan §9 names issue642_v{4,9}_<slug>_villain).
+    run_suffix = f"{'v9' if ctx.v9 else 'v4'}_{arm}_{V4_SOURCE_PERSONA}"
 
     def _ft_cmd(per_device: int, accum: int) -> list[str]:
         cmd = [
@@ -1395,9 +1841,9 @@ def _train_v4_lora_arm(ctx: Ctx, behavior: str, arm: str) -> None:
         "--lr",
         str(ctx.v4_arm_lr(arm)),
         "--run-name-suffix",
-        f"v4_{arm}_{V4_SOURCE_PERSONA}",
+        f"{'v9' if ctx.v9 else 'v4'}_{arm}_{V4_SOURCE_PERSONA}",
     ]
-    # CVD pinned in the launcher env (gotcha #20) + matching --gpu-id 0; the 4
+    # CVD pinned in the launcher env (gotcha #20) + matching --gpu-id 0; the
     # arms train SERIALLY so no parallel co-location.
     rc = _run(cmd, env=_gpu_env(0), log_path=ctx.bdir(behavior) / "logs" / f"{arm}_train.log")
     if rc != 0:
@@ -1540,6 +1986,287 @@ def _evaluate_pilot_gate(ctx: Ctx, behavior: str, trajectory: dict) -> dict:
     }
 
 
+def _evaluate_pilot_gate_v9(ctx: Ctx, behavior: str, trajectory: dict) -> dict:
+    """v9 install-pilot gate (plan v10 §7). DIFFERENT semantics from the v4 gate:
+    a dense (cmft) step-4 collapse at 5e-6 is the EXPECTED #606 refusal-collapse
+    signature and FIRES the pre-registered single matched drop to 2e-6 (handled
+    by the caller's re-pilot loop), NOT a HALT.
+
+    Returns a verdict with ``dense_collapsed`` (True iff the cmft pole installs
+    s>=S_TARGET at the EARLIEST pilot step) + per-arm bracket reads. ``gate_pass``
+    is True iff at the chosen LR (a) the dense pole did NOT collapse at step 4 AND
+    (b) the LoRA pole installs monotonically and reaches the band lower (s>=0.40).
+    The caller re-pilots at 2e-6 on a 5e-6 dense collapse; a 2e-6 dense collapse
+    (or a pole that never reaches s*) is kill criterion (a)."""
+    cells = trajectory["cells"]
+    arm_verdicts: dict[str, dict] = {}
+    dense_collapsed = False
+    for arm in ctx.arms:
+        method = ctx.v4_arm_method(arm)
+        arm_cells = {slug: rec for slug, rec in cells.items() if rec["arm"] == arm}
+        steps = sorted(rec["step"] for rec in arm_cells.values())
+        s_by_step = {rec["step"]: rec.get("s", float("nan")) for rec in arm_cells.values()}
+        s_values = [s_by_step[st] for st in steps]
+        if not steps or any(v != v for v in s_values):
+            raise RuntimeError(
+                f"[v9][{behavior}/{arm}] pilot trajectory has missing/NaN s values "
+                f"(steps={steps}) — judging gap, cannot gate"
+            )
+        verdict: dict = {"method": method, "s_by_step": {str(st): s_by_step[st] for st in steps}}
+        if method == "cmft":
+            early_step = steps[0]
+            early_s = s_by_step[early_step]
+            collapsed = early_s >= S_TARGET
+            dense_collapsed = dense_collapsed or collapsed
+            verdict.update(
+                {
+                    "condition": "dense_no_step4_collapse",
+                    "early_step": early_step,
+                    "early_s": early_s,
+                    "threshold": S_TARGET,
+                    "collapsed": collapsed,
+                    "ok": not collapsed,
+                    "reaches_target": max(s_values) >= S_TARGET,
+                    "reason": (
+                        f"dense arm s={early_s:.3f} at step {early_step} "
+                        f"{'>=' if collapsed else '<'} {S_TARGET} (#606 refusal-collapse "
+                        f"signature {'PRESENT — fire the drop to 2e-6' if collapsed else 'absent'})"
+                    ),
+                }
+            )
+        else:  # LoRA pole
+            monotonic = all(s_values[i + 1] >= s_values[i] - 1e-9 for i in range(len(s_values) - 1))
+            reaches = max(s_values) >= S_BAND[0]
+            verdict.update(
+                {
+                    "condition": "lora_monotonic_and_reaches",
+                    "monotonic": monotonic,
+                    "max_s": max(s_values),
+                    "reach_threshold": S_BAND[0],
+                    "reaches": reaches,
+                    "ok": monotonic and reaches,
+                    "reaches_target": max(s_values) >= S_TARGET,
+                    "reason": (
+                        f"LoRA monotonic={monotonic}, max_s={max(s_values):.3f} "
+                        f"{'>=' if reaches else '<'} {S_BAND[0]}"
+                    ),
+                }
+            )
+        arm_verdicts[arm] = verdict
+    gate_pass = all(v["ok"] for v in arm_verdicts.values())
+    return {
+        "behavior": behavior,
+        "gate": "install_pilot_gate_v9",
+        "pilot_grid": list(ctx.lora_grid),
+        "pilot_lr": ctx.ft_lr,
+        "s_target": S_TARGET,
+        "s_band": list(S_BAND),
+        "arms": arm_verdicts,
+        "dense_collapsed": dense_collapsed,
+        "gate_pass": gate_pass,
+        "failing_arms": [arm for arm, v in arm_verdicts.items() if not v["ok"]],
+        "metadata": {
+            "git_commit_sha": _git_sha(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+        },
+    }
+
+
+def _run_v9_pilot_leg(ctx: Ctx, behavior: str, lr: float) -> dict:
+    """Train+stage-A one v9 pilot LEG at ``lr`` (both arms, pilot grid, pilot
+    namespace) and return the gate verdict. The pilot artifacts for distinct LRs
+    are kept in lr-scoped subdirs (ckpts_pilot/<arm> is wiped between legs by the
+    caller) so a 5e-6 leg never leaks into the 2e-6 re-pilot."""
+    saved = (
+        ctx.install_pilot,
+        ctx.lora_grid,
+        ctx.ft_grid,
+        ctx.cmft_grid,
+        ctx.ft_max_steps,
+        ctx.ft_lr,
+    )
+    pilot_grid = ctx.lora_grid if ctx.smoke else V9_PILOT_GRID
+    pilot_max_steps = ctx.ft_max_steps if ctx.smoke else max(V9_PILOT_GRID)
+    try:
+        ctx.install_pilot = True
+        ctx.lora_grid = pilot_grid
+        ctx.ft_grid = pilot_grid
+        ctx.cmft_grid = pilot_grid
+        ctx.ft_max_steps = pilot_max_steps
+        ctx.ft_lr = lr  # both poles share this LR (matched-pair invariant)
+        _phase1_train_v4(ctx, behavior)
+        phase2_stage_a(ctx, behavior)
+        trajectory = json.loads(ctx.trajectory_path(behavior).read_text())
+        verdict = _evaluate_pilot_gate_v9(ctx, behavior, trajectory)
+    finally:
+        (
+            ctx.install_pilot,
+            ctx.lora_grid,
+            ctx.ft_grid,
+            ctx.cmft_grid,
+            ctx.ft_max_steps,
+            ctx.ft_lr,
+        ) = saved
+    return verdict
+
+
+def p0_5_pilot_gate_v9(ctx: Ctx, behavior: str) -> None:
+    """v9 Phase 0.5 (plan v10 §7): the install-pilot DECIDES the matched LR.
+
+    (1) Pilot BOTH arms at the matched-LR target 5e-6 (the production --ft-lr
+        default). (2) If the dense (cmft) pole installs s>=0.50 by step 4 (the
+        #606 refusal-collapse signature — EXPECTED), FIRE the pre-registered
+        single matched drop to 2e-6: wipe the pilot artifacts and RE-PILOT BOTH
+        arms at 2e-6 (the matched-pair-shares-one-LR invariant), then SET the
+        production LR to 2e-6 for the rest of the run (ctx.ft_lr). (3) If 2e-6
+        ALSO collapses the dense pole (or a pole never reaches s* at the chosen
+        LR) -> kill criterion (a): write stage_a/install_failure_<arm>.json, mark
+        the behavior killed, do NOT compute Δ_rank_matched. A SECOND drop below
+        2e-6 is NOT pre-authorized (re-plan).
+
+    The pilot trains into ckpts_pilot/<arm> + reads into stage_a_pilot/ so the
+    production Phase 1 / Phase 3 never resume-skip on pilot artifacts."""
+    if ctx.install_pilot:
+        _phase_log(
+            "p0_5_pilot_gate",
+            f"[v9][{behavior}] --install-pilot standalone mode — embedded gate skipped",
+        )
+        return
+    gate_path = ctx.bdir(behavior) / "stage_a_pilot" / "pilot_gate.json"
+    if gate_path.exists():
+        verdict = json.loads(gate_path.read_text())
+        if verdict.get("gate_pass"):
+            # restore the chosen production LR on resume (so Phase 1 uses it).
+            chosen = verdict.get("chosen_lr")
+            if chosen is not None:
+                ctx.ft_lr = float(chosen)
+            _phase_log(
+                "p0_5_pilot_gate",
+                f"[v9][{behavior}] pilot_gate.json exists + PASS (chosen_lr={ctx.ft_lr}) "
+                "— skipping (resume)",
+            )
+            return
+        if ctx.smoke or ctx.dry_run:
+            _phase_log(
+                "p0_5_pilot_gate",
+                f"[v9][{behavior}] pilot_gate.json exists + FAIL but smoke/dry-run — "
+                "log-only, proceeding",
+            )
+            chosen = verdict.get("chosen_lr")
+            if chosen is not None:
+                ctx.ft_lr = float(chosen)
+            return
+        # A persisted production FAIL = a prior kill. Re-raise so the run halts.
+        raise RuntimeError(
+            f"[v9][{behavior}] install-pilot gate previously FAILED at both LRs (kill "
+            f"criterion (a)); delete {gate_path} to re-pilot or re-plan for a third LR."
+        )
+
+    _phase_log("p0_5_pilot_gate", f"[v9][{behavior}] Phase 0.5 start (install-pilot LR decision)")
+    legs: list[dict] = []
+    # -- leg 1: matched-LR target (the production default, V9_MATCHED_LR) --
+    leg1 = _run_v9_pilot_leg(ctx, behavior, V9_MATCHED_LR)
+    leg1["lr"] = V9_MATCHED_LR
+    legs.append(leg1)
+    for arm, v in leg1["arms"].items():
+        _phase_log("p0_5_pilot_gate", f"[v9][{behavior}] leg1(5e-6) {arm}: {v['reason']}")
+
+    chosen_lr = V9_MATCHED_LR
+    chosen_leg = leg1
+    if leg1["dense_collapsed"] and not (ctx.smoke or ctx.dry_run):
+        # FIRE the pre-registered single matched drop to 2e-6 + re-pilot.
+        _phase_log(
+            "p0_5_pilot_gate",
+            f"[v9][{behavior}] dense step-4 collapse at 5e-6 (the #606 signature) — "
+            "FIRING the pre-registered single matched drop to 2e-6; re-piloting both arms",
+        )
+        # wipe leg-1 pilot artifacts so the 2e-6 leg trains/reads fresh.
+        for arm in ctx.arms:
+            shutil.rmtree(ctx.bdir(behavior) / "ckpts_pilot" / arm, ignore_errors=True)
+        shutil.rmtree(ctx.bdir(behavior) / "stage_a_pilot", ignore_errors=True)
+        leg2 = _run_v9_pilot_leg(ctx, behavior, V9_FALLBACK_LR)
+        leg2["lr"] = V9_FALLBACK_LR
+        legs.append(leg2)
+        for arm, v in leg2["arms"].items():
+            _phase_log("p0_5_pilot_gate", f"[v9][{behavior}] leg2(2e-6) {arm}: {v['reason']}")
+        chosen_lr = V9_FALLBACK_LR
+        chosen_leg = leg2
+
+    # Build the verdict as a FRESH top-level dict (never nest a leg inside its own
+    # ``legs`` — that is a JSON circular reference). ``final`` mirrors the chosen
+    # leg's gate decision + carries both legs as evidence.
+    final = {
+        "behavior": behavior,
+        "gate": "install_pilot_gate_v9",
+        "chosen_lr": chosen_lr,
+        "matched_lr_target": V9_MATCHED_LR,
+        "matched_lr_fallback": V9_FALLBACK_LR,
+        "fired_drop_to_2e6": chosen_lr == V9_FALLBACK_LR,
+        "s_target": chosen_leg["s_target"],
+        "s_band": chosen_leg["s_band"],
+        "arms": chosen_leg["arms"],
+        "dense_collapsed": chosen_leg["dense_collapsed"],
+        "gate_pass": chosen_leg["gate_pass"],
+        "failing_arms": chosen_leg["failing_arms"],
+        "legs": legs,
+        "metadata": chosen_leg["metadata"],
+    }
+    # SET the production LR for the rest of the run (Phase 1 reads ctx.ft_lr).
+    ctx.ft_lr = chosen_lr
+
+    gate_path.parent.mkdir(parents=True, exist_ok=True)
+    gate_path.write_text(json.dumps(final, indent=2))
+    _hub_upload_file(
+        gate_path,
+        f"{ctx.experiment_name}/{behavior}/stage_a_pilot/pilot_gate.json",
+        skip=ctx.skip_upload,
+    )
+
+    if not final["gate_pass"]:
+        if ctx.smoke or ctx.dry_run:
+            _phase_log(
+                "p0_5_pilot_gate",
+                f"[v9][{behavior}] pilot gate FAIL but smoke/dry-run — log-only, proceeding "
+                f"(failing arms {final['failing_arms']}, chosen_lr={chosen_lr})",
+            )
+            return
+        # Kill criterion (a): no matched-LR window at either 5e-6 or 2e-6.
+        for arm in final["failing_arms"]:
+            fail = {
+                "behavior": behavior,
+                "arm": arm,
+                "kill_criterion": "a_no_matched_lr_window",
+                "chosen_lr": chosen_lr,
+                "legs": legs,
+                "note": (
+                    "no shared matched LR (5e-6 or the pre-authorized 2e-6) gave both poles a "
+                    "clean s*=0.50 bracket — kill criterion (a) (plan §7); a SECOND drop below "
+                    "2e-6 is a new manipulation -> re-plan. Both arms' pilot trajectories are "
+                    "published; Δ_rank_matched is NOT computed."
+                ),
+                "timestamp_utc": datetime.now(UTC).isoformat(),
+            }
+            fail_path = ctx.bdir(behavior) / "stage_a" / f"install_failure_{arm}.json"
+            fail_path.parent.mkdir(parents=True, exist_ok=True)
+            fail_path.write_text(json.dumps(fail, indent=2))
+            _hub_upload_file(
+                fail_path,
+                f"{ctx.experiment_name}/{behavior}/stage_a/install_failure_{arm}.json",
+                skip=ctx.skip_upload,
+            )
+        ctx.killed[behavior] = "install_failure"
+        raise RuntimeError(
+            f"[v9][{behavior}] INSTALL-PILOT GATE FAILED at both 5e-6 and 2e-6 for arms "
+            f"{final['failing_arms']} — kill criterion (a) (plan §7). Both arms' trajectories "
+            f"published; Δ_rank_matched NOT computed. A third LR requires re-plan. Verdict: "
+            f"{gate_path}"
+        )
+    _phase_log(
+        "p0_5_pilot_gate",
+        f"[v9][{behavior}] Phase 0.5 done (gate PASS; chosen matched LR = {chosen_lr})",
+    )
+
+
 def p0_5_pilot_gate(ctx: Ctx, behavior: str) -> None:
     """Phase 0.5 (plan §4.6 / §7): train the NEW arms a SHORT way (to the pilot
     coarse grid) in the pilot filesystem namespace, read source-self s, and
@@ -1557,6 +2284,11 @@ def p0_5_pilot_gate(ctx: Ctx, behavior: str) -> None:
     The pilot trains into ``ckpts_pilot/<arm>`` + reads into ``stage_a_pilot/``,
     so the production Phase 1 / Phase 3 NEVER resume-skip on pilot artifacts.
     """
+    if getattr(ctx, "v9", False):
+        # v9 pilot DECIDES the matched LR (fire-the-drop, not halt) — distinct
+        # gate semantics (plan v10 §7).
+        p0_5_pilot_gate_v9(ctx, behavior)
+        return
     if not ctx.v4:
         return
     # If the run was launched WITH --install-pilot, the standalone pilot pipeline
@@ -2467,10 +3199,54 @@ def _reproducibility_card_v4(ctx: Ctx) -> dict:
     }
 
 
+def _reproducibility_card_v9(ctx: Ctx) -> dict:
+    """v9 training-task reproducibility card (CLAUDE.md sentinel contract): the
+    2 refusal arms each train a DISTINCT WandB run (#480 run-separation). Carries
+    wandb_project + wandb_run_names + wandb_entity + per-arm adapter paths. The
+    LoRA pole adapters upload canonically; the cmft consolidated dirs are opt-out
+    (declared, re-derivable). NO #606 reuse — both poles fresh refusal trains."""
+    run_names = [f"issue642_v9_{arm}_{V4_SOURCE_PERSONA}_seed{ctx.seed}" for arm in ctx.arms]
+    adapter_paths: dict[str, list[str]] = {}
+    for key, dests in ctx.cmft_uploaded_adapters.items():
+        if dests:
+            adapter_paths[key] = [f"{HF_MODEL_REPO} :: {d}" for d in dests]
+    return {
+        "v9": True,
+        "behavior": V9_BEHAVIOR,
+        "arms_trained": list(ctx.arms),
+        "source_persona": V4_SOURCE_PERSONA,
+        "matched_lr_chosen": ctx.ft_lr,
+        "matched_lr_target": V9_MATCHED_LR,
+        "matched_lr_fallback": V9_FALLBACK_LR,
+        "wandb_project": V9_WANDB_PROJECT,
+        "wandb_run_names": run_names,
+        "wandb_entity": _wandb_entity(),
+        "selected_steps": ctx.cmft_selected_steps,  # keyed "<behavior>:<arm>"
+        "adapter_paths": adapter_paths,  # LoRA pole canonical; cmft opt-out
+        "lora_pole_upload": (
+            f"{HF_MODEL_REPO} :: adapters/issue_642/v9/loraRefOP_{V4_SOURCE_PERSONA}"
+            f"_seed{ctx.seed}/step{{selected}}"
+        ),
+        "cmft_adapters_note": (
+            "cmft consolidated bf16 dirs opt-out from upload (plan §10) — re-derivable "
+            "from pinned data sha + git commit + seed; enable with --upload-adapters"
+        ),
+        "train_pool": (
+            f"{HF_DATA_REPO} :: {ctx.experiment_name}/training_pools/villain/train_pool.jsonl"
+        ),
+        "eval_probes": f"{HF_DATA_REPO} :: {REFUSAL_EVAL_POOL_HUB_PATH}",
+        "panel": f"{HF_DATA_REPO} :: {V4_PANEL_SET_HUB_PATH}",
+        "contrasts": "delta_rank_matched (cmftRefOP - loraRefOP); plan v10 §5; NO delta_data",
+        "round4_syco_delta_rank_comparison": 0.063,
+    }
+
+
 def _reproducibility_card(ctx: Ctx) -> dict:
     """CLAUDE.md training-task sentinel contract: per-cell adapter_paths +
     wandb_run_names with the wandb_project. The cmft arm trains adapters; the
     LoRA/FT poles are REUSED from #606 (declared as such)."""
+    if ctx.v9:
+        return _reproducibility_card_v9(ctx)
     if ctx.v4:
         return _reproducibility_card_v4(ctx)
     cmft_adapters: dict[str, list[str]] = {}
@@ -2558,6 +3334,7 @@ DEFERRED_IMPORT_SCOPE: tuple[Path, ...] = (
     REPO / "scripts" / "issue_642" / "i642_common.py",
     REPO / "scripts" / "issue_642" / "i642_dispatch.py",
     REPO / "scripts" / "issue_642" / "i642_gen_worker.py",
+    REPO / "scripts" / "issue_642" / "i642_elicit_worker.py",
     REPO / "scripts" / "issue_642" / "i642_lora_train_worker.py",
     REPO / "scripts" / "issue_642" / "i642_analyze.py",
     REPO / "scripts" / "issue_642" / "i642_figures.py",
@@ -2634,6 +3411,16 @@ def main(argv: list[str] | None = None) -> int:
         "THREE villain arms at matched LR 5e-6 on on-policy data + read on the #612 "
         "30-panel; NO #606 reuse. --arms then takes the v4 slugs "
         "(loraOP_lr5e6,cmftOP_lr5e6,cmftCN_lr5e6; default = all 3).",
+    )
+    parser.add_argument(
+        "--v9",
+        action="store_true",
+        help="Followup `second-behavior-rank-replication` mode (plan v10): a one-variable "
+        "amendment of --v4 (behavior sycophancy -> REFUSAL). Train TWO villain arms "
+        "(loraRefOP,cmftRefOP) at the matched LR (target 5e-6; install-pilot fires the "
+        "pre-registered drop to 2e-6 on a dense step-4 collapse) on FRESH on-policy refusal "
+        "completions + freshly-elicited same-question helpful negatives; read on the #612 "
+        "30-panel. Forces --behaviors refusal; default --arms = both v9 slugs.",
     )
     parser.add_argument(
         "--install-pilot",
@@ -2756,7 +3543,13 @@ def main(argv: list[str] | None = None) -> int:
                 phase5_upload(ctx, behavior)
                 done.append(f"{behavior}:p5_upload")
                 break
-    if ctx.v4:
+    if ctx.v9:
+        provenance = (
+            f"v9 arms {list(ctx.arms)} both trained fresh on villain on-policy REFUSAL "
+            f"(NO #606/#612 pool reuse — fresh elicitation); chosen matched LR {ctx.ft_lr}; "
+            "judging + delta_rank_matched read VM-side (i642_analyze.py --v9 --behavior refusal)."
+        )
+    elif ctx.v4:
         provenance = (
             f"v4 arms {list(ctx.arms)} all trained fresh on villain (NO #606 reuse); "
             "cmftOP_lr5e6 install-pilot exempt (v5-gate-validation reuse); judging + "
