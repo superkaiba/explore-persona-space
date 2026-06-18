@@ -4090,8 +4090,8 @@
       "goal": "Test whether a persona's activation-space alignment to a behavior's linear direction predicts, across multiple behaviors (sycophancy, refusal, marker, EM), both (a) that persona's base rate for the behavior and (b) where an implanted behavior leaks across held-out personas, and whether this alignment geometry beats the base behavioral prior baseline that the #518/#545/#605 predictor line found unbeatable, reusing existing persona vectors, behavior directions, and trained adapters wherever possible.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/657",
-      "status": "approved",
+      "path": "tasks/running/657",
+      "status": "running",
       "title": "Does persona->behavior-direction alignment predict cross-persona leakage across behaviors, beating the base prior?"
     },
     "66": {
