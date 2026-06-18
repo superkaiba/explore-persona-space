@@ -137,9 +137,17 @@ Cluster rules:
 - Group names: plain-English noun phrases naming the shared question.
   No invented jargon, no condition codes.
 
-Return EXACTLY this markdown (it is rendered to the user as-is):
+Return EXACTLY this markdown (it is rendered to the user as-is). The
+italic caveat line is REQUIRED — it states that this is an organizing
+index built from body slices, NOT a per-task verification (no claim
+checks, no figure inspection, no `verify_task_body.py` run); that deep
+read happens in `/promote-clean-result`. Without it the grouping reads
+as a finished triage and the user re-asks "did you actually dive into
+each?" (incident 2026-06-16).
 
 # Awaiting-promotion queue, grouped (<count> tasks, <date>)
+
+_Organizing index only (clustered from frontmatter + Takeaways + finding headlines) — claims/figures are NOT verified here; deep per-task review happens in `/promote-clean-result`._
 
 ## <group name> (<n>)
 <one-sentence shared question>

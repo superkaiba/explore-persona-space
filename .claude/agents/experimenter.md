@@ -202,6 +202,35 @@ half-bootstrapped pod this probe exists to catch. Reference: #640 round 4
 wedge before classifying infra; see also `.claude/rules/gotchas.md`
 MooseFS quota entry.
 
+### GCP-lane salvage-relaunch (existing instance, code-fix land)
+
+When the host alias the brief gives you is a GCP GCE instance
+(`eps-issue-<N>`) and you are SALVAGE-RELAUNCHING — landing a code-fix
+onto an instance that is already up rather than launching on a fresh
+provision — two traps cost multiple round-trips before. The
+authoritative recipe is agent memory
+`feedback_gcp_salvage_relaunch.md`; the operative points:
+
+1. **No repo-root `.env` and no git credential helper on a
+   fresh-bootstrapped GCP instance.** The startup-script clone used a
+   transient token that is scrubbed once the script exits, so a
+   `git fetch origin <branch>` of a private branch HANGS forever
+   waiting on an interactive credential prompt (non-TTY SSH never
+   answers it), and credentialed pipeline phases (analyze / upload —
+   WandB/HF) have no `.env` to read. Recover by:
+   - **Stage the local VM `.env`** to `/workspace/eps-issue-<N>/.env`
+     via stdin to a root-only file (mode 600) — never echo the token
+     into the argv.
+   - **Fetch the private branch with token-in-URL**, NOT
+     `Authorization: Bearer` (which does NOT work for classic `ghp_`
+     PATs over git smart-HTTP):
+     `git fetch "https://x-access-token:$TOK@github.com/<owner>/<repo>.git" <branch>`
+     where `$TOK` is read from the just-staged `.env`'s `GITHUB_TOKEN`.
+2. **NEVER `pkill -f "<pattern present in your own SSH argv>"`** to kill
+   a stray remote process — the pattern self-matches the SSH command's
+   own argv and SIGKILLs the session (gcloud exits 255, locking you out
+   of the SSH stream). Kill stray remote procs by exact PID only.
+
 ### Before Running
 
 1. **Use the pod `/issue` assigned you.** The brief includes a pod name like

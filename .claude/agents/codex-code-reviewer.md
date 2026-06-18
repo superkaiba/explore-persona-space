@@ -391,10 +391,24 @@ both reviewers are graded against the same standard. Read
   mechanizable check belongs in a workflow-surface verifier and is likely
   to recur, Codex notes it in plain English in the verdict body and the
   orchestrator decides.
+- "Step 4.5: Regression-test presence for substantive BLOCKER fixes"
+  VERBATIM. This is a test-PRESENCE check (grep the worktree for a committed
+  pytest pinning the invariant), NOT a test-RUNNING check, so Codex CAN and
+  MUST apply it even though Step 4 (Run / Verify Tests) is skipped. Copy the
+  trigger (a substantive BLOCKER closed by a permanent assertion / invariant
+  guard / scoping fix), the verdict effect (committed test present → no
+  finding; absent → at least a `Minor` with a 1-2-line pytest sketch,
+  SUBSTANTIVE / `Mechanizable: yes`, never `marker-shape` /
+  `smoke-run-missing`, never stripped by Step 5c-bis, a bare Minor does not
+  flip PASS→FAIL; a CLAIMED-but-absent test is a substantive FAIL with
+  blocker tag `substantive`), and the permanent-invariant-only scope so
+  Codex never re-derives a narrower check (incident #653 r8). Without this
+  in the prompt, an un-CI-pinned BLOCKER-fix assertion ships unflagged.
 
 Skip "Step 4: Run / Verify Tests" — Codex via `companion task` may not have
-the project's `uv` environment configured; tests are the Claude reviewer's
-responsibility.
+the project's `uv` environment configured; RUNNING tests is the Claude
+reviewer's responsibility. (Step 4.5 above is a separate test-PRESENCE
+grep that Codex DOES perform — it does not require the `uv` env.)
 
 The compose prompt template (substitute `{{...}}` placeholders):
 
@@ -459,7 +473,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 3.5, 5, 6, 7 + Rule 12 (blocker grounding + mechanizability, Codex-adapted)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 3.5, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
