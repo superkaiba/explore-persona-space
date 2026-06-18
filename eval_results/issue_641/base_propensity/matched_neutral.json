@@ -1,0 +1,8 @@
+{
+  "persona_key": "local_historian",
+  "gap": 0.0,
+  "within_floor": true,
+  "pool": "narrow",
+  "propensity": 0.1,
+  "teacher_propensity": 0.1
+}
