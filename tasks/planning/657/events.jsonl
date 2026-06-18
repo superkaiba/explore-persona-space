@@ -60,3 +60,4 @@
 {"ts": "2026-06-18T14:56:17Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "planning", "note": "Strategy pivot (cap-3 hit on code-class failures): K2 HALT on refusal vector requires /adversarial-planner re-plan, not another implementer crash-fix round."}
 {"ts": "2026-06-18T15:10:02Z", "kind": "epm:plan-verify", "version": 4, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=0 n_skip=3 (c6 no HF-artifact reuse; c7 not a replication; c11 kind-exempt) plan=v4"}
 {"ts": "2026-06-18T15:31:51Z", "kind": "epm:plan-verify", "version": 5, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=0 n_skip=3 plan=v5 (post fact-check surgical correction: EM->#521 shift)"}
+{"ts": "2026-06-18T15:39:52Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqjo1k21-z4607i effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
