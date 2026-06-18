@@ -5,7 +5,7 @@ title: A LoRA-installed conditional behavior writes one context-invariant direct
 kind: experiment
 tags: []
 created_at: '2026-06-16T06:55:43Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 537
 origin_prompt: 'test whether many conditional behaviors share a direction across different
   contexts; post-hoc on the #537 context-leakage comprehensive eval'
