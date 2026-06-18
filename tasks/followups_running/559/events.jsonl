@@ -277,3 +277,4 @@
 {"ts": "2026-06-18T19:46:11Z", "kind": "epm:progress", "version": 84, "by": "unknown", "note": "r6 hb status=running etime=06:02:06 200s=22866 429s=6413 personas_done=22 artifacts=0"}
 {"ts": "2026-06-18T19:55:26Z", "kind": "epm:progress", "version": 85, "by": "unknown", "note": "r6 hb status=running etime=06:11:21 200s=23767 429s=6413 personas_done=23 artifacts=0"}
 {"ts": "2026-06-18T20:04:41Z", "kind": "epm:progress", "version": 86, "by": "unknown", "note": "r6 hb status=running etime=06:20:35 200s=24813 429s=6413 personas_done=24 artifacts=1"}
+{"ts": "2026-06-18T20:14:18Z", "kind": "epm:progress", "version": 87, "by": "unknown", "note": "r6 hb status=running etime=06:30:12 200s=25899 429s=6413 personas_done=25 artifacts=1 — syco done, refusal in progress"}
