@@ -1,0 +1,341 @@
+##### FILE: scripts/eval_issue475.py @ HEAD(d837c78be)
+223:            for q in t_qs[:neg_doctor_slice]
+334:    llm = LLM(
+338:        enable_lora=True,
+347:    lora_req = LoRARequest("issue475_adapter", 1, str(adapter_path))
+357:    for cell_name, items in cells.items():
+362:        for it, resp in zip(items, responses, strict=True):
+419:    for child in me.children(recursive=True):
+536:    for r in records:
+555:    for v in lps:
+705:    for cell in cells:
+710:        for r in records:
+725:        for v in lps:
+777:        for r in records:
+853:    for cell_name, recs in completions.items():
+887:        for cell_name in completions:
+986:def main() -> int:
+
+##### FILE: scripts/eval_issue506.py @ HEAD(d837c78be)
+155:            for q in t_qs[:neg_doctor_slice]
+248:        llm_kwargs["enable_lora"] = True
+250:    llm = LLM(**llm_kwargs)
+256:        lora_req = LoRARequest("issue506_adapter", 1, str(ckpt_path))
+262:    for cell_name, items in cells.items():
+267:        for it, resp in zip(items, responses, strict=True):
+313:    for child in me.children(recursive=True):
+414:    for cell in cells:
+419:        for r in records:
+435:        for v in lps:
+554:        for start in range(0, len(contexts), LOGPROB_BATCH_SIZE):
+564:            for b in range(logits.shape[0]):
+578:    for cell in cells:
+582:        for r in records:
+609:    for cell in cells:
+613:        for r in records:
+629:        for v in kl_list:
+720:    for cell_name, recs in completions.items():
+749:        for cn in completions:
+772:    for cn in completions:
+850:def main() -> int:
+
+##### FILE: scripts/eval_issue562_panel.py @ HEAD(d837c78be)
+146:    for cell_name, persona_key in PANEL_CELLS.items():
+210:    for k in ("delta_logp_mean", "delta_eos_margin_mean"):
+301:    for child in me.children(recursive=True):
+327:    llm = LLM(
+334:        enable_lora=True,
+341:    lora_req = LoRARequest(lora_name, 1, str(adapter_dir))
+347:        for cell_name, items in cells.items():
+362:            for it, prefix, resp in zip(items, prefixes, responses, strict=True):
+451:    for cell in cells:
+455:        for r in records:
+483:        for side in (trained, based):
+484:            for row in side:
+485:                if not all(math.isfinite(v) for v in row.values()):
+593:    for cell_name, items in cells.items():
+597:        if any(it["persona_key"] != persona_key for it in items):
+599:        if any(not it["user"].startswith(trigger_user("").rstrip()) for it in items):
+609:    for cell_name, items in cells.items():
+610:        if [it["user"] for it in items] != base_users:
+704:    for c, recs in records.items():
+788:def main() -> int:
+
+##### FILE: scripts/eval_marker_spread_source_only.py @ HEAD(d837c78be)
+89:    # Build LLM once per checkpoint — vLLM with enable_lora=True lets us swap adapters
+91:    llm = LLM(
+93:        enable_lora=True,
+95:        max_loras=1,
+109:    lora_request = LoRARequest(
+111:        lora_int_id=step,
+120:    for out in outputs:
+121:        for sample in out.outputs:
+158:    for fname in files:
+173:def main() -> None:
+201:    for step in steps:
+
+##### FILE: scripts/i460_phase2_smoke_check.py @ HEAD(d837c78be)
+110:    for fname in needed_files:
+129:def main(argv: list[str] | None = None) -> int:
+164:    for q in sampled_qs:
+186:    llm = LLM(
+188:        enable_lora=True,
+190:        max_loras=1,
+210:        for out, L in zip(outs, slot_positions, strict=True):
+229:    lora_req = LoRARequest(lora_name=args.cond, lora_int_id=1, lora_path=adapter_path)
+
+##### FILE: scripts/i460_phase4_eval.py @ HEAD(d837c78be)
+119:    for cid in cond_ids:
+123:        for fname in needed_files:
+162:    for q in q_test:
+199:    for out, L in zip(outputs, slot_positions, strict=True):
+217:def main(argv: list[str] | None = None) -> None:
+269:    llm = LLM(
+271:        enable_lora=True,
+273:        max_loras=1,
+325:    for outer_i, cid_i in enumerate(my_cids):
+326:        lora_req = LoRARequest(
+328:            lora_int_id=all_cids.index(cid_i) + 1,
+332:        for cid_j in all_cids:
+
+##### FILE: scripts/i474_phase2_smoke_check.py @ HEAD(d837c78be)
+110:    for fname in needed_files:
+146:    for q in sampled_qs:
+172:    for out, L in zip(outputs, slot_positions, strict=True):
+191:def main(argv: list[str] | None = None) -> int:
+279:    llm = LLM(
+281:        enable_lora=True,
+283:        max_loras=1,
+299:    lora_req = LoRARequest(
+300:        lora_name=f"{args.arm}_{args.cond}", lora_int_id=1, lora_path=adapter_path
+
+##### FILE: scripts/i474_phase4_eval.py @ HEAD(d837c78be)
+175:    for cid in cond_ids:
+179:        for fname in needed_files:
+217:    for q in q_test:
+244:    for out, L in zip(outputs, slot_positions, strict=True):
+288:    for out_t, out_b, L in zip(outputs_trained, outputs_base, slot_positions, strict=True):
+295:        for tok_id, lp_t in slot_t.items():
+306:def main(argv: list[str] | None = None) -> None:
+452:    llm = LLM(
+454:        enable_lora=True,
+456:        max_loras=1,
+522:    for outer_i, cid_i in enumerate(my_cids):
+523:        lora_req = LoRARequest(
+525:            lora_int_id=all_cids.index(cid_i) + 1,
+529:        for cid_j in all_cids:
+
+##### FILE: scripts/i477_reval_confirm.py @ HEAD(d837c78be)
+112:    for hf_path, local_path in LOCAL_PATHS.items():
+157:    for fn in sub_files:
+168:    for fn in must_have:
+256:    for persona, persona_prompt in eval_personas.items():
+257:        for q in eval_questions:
+312:    for persona, persona_prompt in eval_personas.items():
+313:        for q in eval_questions:
+350:    for persona, per_q in scores.items():
+351:        for _q, rec in per_q.items():
+399:        for c in me.children(recursive=True):
+403:        for c in alive:
+413:def main(argv: list[str] | None = None) -> int:
+611:        log.info("[phase=vllm] loading vLLM with enable_lora + LoRARequest (Path B — suspect)")
+623:        llm = LLM(
+629:            enable_lora=True,
+631:            max_loras=1,
+633:        lora_req = LoRARequest(
+635:            lora_int_id=1,
+
+##### FILE: scripts/i488_diagnostic_measure.py @ HEAD(d837c78be)
+15:(from i488_diagnostic_train.py) and measures, for each source in {A1, G2}:
+127:def main():
+183:    for src in args.sources:
+210:    llm = LLM(
+212:        enable_lora=True,
+214:        max_loras=1,
+288:    for src in args.sources:
+290:        lora = LoRARequest(
+292:            lora_int_id=99000 + ord(src[0]) * 10 + (ord(src[1]) if len(src) > 1 else 0),
+301:        for target_cid in all_target_cids:
+309:            for probe_q in held_out_probe[: args.n_probes_logp]:
+335:            for i, out in enumerate(gen_outputs):
+
+##### FILE: scripts/i488_phase2_ladder_emit.py @ HEAD(d837c78be)
+95:    for i, gen in enumerate(outputs):
+131:def main() -> int:
+218:    for src in args.sources:
+252:    llm = LLM(
+254:        enable_lora=True,
+256:        max_loras=1,
+296:    for src in args.sources:
+298:        # Distinct lora_int_ids per source so vLLM doesn't collide across rungs;
+300:        lora_int_id = (
+306:        lora = LoRARequest(
+308:            lora_int_id=lora_int_id,
+339:    bystander_lora = LoRARequest(
+341:        lora_int_id=20_000 + ord(args.rung[-1]) * 100,
+345:    for target_cid in args.bystanders:
+
+##### FILE: scripts/i488_phase2_smoke_calibrate.py @ HEAD(d837c78be)
+183:    for line in audit_train_jsonl.read_text().splitlines():
+192:    for r in rows:
+402:def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch + gates
+479:    llm = LLM(
+481:        enable_lora=True,
+483:        max_loras=1,
+602:    for cid in SMOKE_CELLS:
+603:        for probe_q in held_out_probe[: min(2, len(held_out_probe))]:
+655:    for cid in SMOKE_CELLS:
+664:        lora = LoRARequest(
+666:            lora_int_id=round(GATE_PROBE_FRAC * 100) + ord(cid[0]) * 1000,
+745:    lora_a1 = LoRARequest(
+747:        lora_int_id=round(GATE_PROBE_FRAC * 100) + ord("A") * 10000,
+753:    for target_cid in OFFDIAG_MINI_GRID:
+822:    lora_eos = LoRARequest(
+824:        lora_int_id=99999,
+
+##### FILE: scripts/i488_phase4_eval_onpolicy.py @ HEAD(d837c78be)
+93:    for fname in needed:
+129:    for q, gen in zip(held_out_q, outputs, strict=True):
+133:        for choice in gen.outputs:
+315:    lora = LoRARequest(
+317:        lora_int_id=hash((source_cid, seed, frac)) & 0xFFFFF,
+341:    for cond_target in CONDITIONS:
+360:        for q in held_out_q:
+390:def main(argv: list[str] | None = None) -> int:
+472:    llm = LLM(
+474:        enable_lora=True,
+476:        max_loras=1,
+500:        for source in args.sources:
+501:            for seed in args.seeds:
+502:                for frac in args.fracs:
+
+##### FILE: scripts/i504_reval_confirm.py @ HEAD(d837c78be)
+42:Path B (vLLM with enable_lora). vLLM-side teardown at the very end of
+205:    for fn in sub_files:
+214:    for required in ("adapter_config.json", "adapter_model.safetensors"):
+225:    for p in R_EVAL_PREFERENCES:
+271:    for p in held_out_panel:
+306:    for persona, persona_prompt in eval_personas.items():
+307:        for q in eval_questions:
+364:    for persona, persona_prompt in eval_personas.items():
+365:        for q in eval_questions:
+405:    for persona, per_q_g in g_records.items():
+406:        for q, gleaf in per_q_g.items():
+514:        for c in children:
+518:        for c in alive:
+720:    log.info("[phase=vllm] loading vLLM with enable_lora + LoRARequest (Path B — suspect)")
+737:    llm = LLM(
+743:        enable_lora=True,
+745:        max_loras=1,
+747:    lora_req = LoRARequest(
+749:        lora_int_id=1,
+848:def main(argv: list[str] | None = None) -> int:
+
+##### FILE: scripts/issue532_predictor_stress.py @ HEAD(d837c78be)
+413:    for cid in cond_ids:
+417:        for fname in needed_files:
+532:    for i, (out, L) in enumerate(zip(outputs, slot_positions, strict=True)):
+629:        for full_ids, L in zip(full_ids_list, slot_positions, strict=True):
+691:    for i, lp in zip(missing_idx, resolved, strict=True):
+694:    if any(np.isnan(x) for x in out):
+804:        for b_label in instructed_in_scope:
+837:    for b_label in bystanders:
+845:        for q in q_test:
+883:        for q in q_test:
+1064:    for ep in epochs:
+1069:        for src_idx, source_cid in enumerate(sources):
+1070:            lora_req = LoRARequest(
+1074:                lora_int_id=src_idx + 1,
+1077:            for bystander_label in bystanders:
+1112:                for q, R_text in zip(q_test, R_trained_list, strict=True):
+1159:                for R_text in R_trained_list:
+1316:        for li in layers:
+1320:        for q in q_test:
+1325:            for li in layers:
+1330:            for li in layers:
+1336:        for h in hooks:
+1360:    for q in q_test:
+1526:    for b_label in bystanders:
+1560:    for src in sources:
+1574:    for i, src in enumerate(sources):
+1575:        for j, byst in enumerate(bystanders):
+1683:    for _ in range(n_boot):
+1721:    for train_idx, test_idx in gkf.split(X, y, groups=classes):
+1806:    for ep in epochs:
+1808:        for i, src in enumerate(sources):
+1809:            for j, byst in enumerate(bystanders):
+1876:        for geom_key in ("cosine", "js_v1", "gauss_kl"):
+1943:    for b_label in instructed_panel:
+1981:    for _ in range(n_perm):
+2102:    for pk in LEADERBOARD_PKS:
+2125:    for pk in LEADERBOARD_PKS:
+2128:        for b in bystanders:
+2156:    for pk in LEADERBOARD_PKS:
+2164:    for pk in ("cosine", "js_v1", "gauss_kl"):
+2169:    for pk in LEADERBOARD_PKS:
+2256:    for pk in ("cosine", "js_v1", "gauss_kl"):
+2270:        for band, color in (("explicit", "C3"), ("soft", "C1"), ("oblique", "C0")):
+2363:    for geom_key in ("cosine", "js_v1", "gauss_kl"):
+2378:        for band, color in (("explicit", "C3"), ("soft", "C1"), ("oblique", "C0")):
+2400:    for pk in ("cosine", "js_v1", "gauss_kl"):
+2408:        for b_label, med in sr["per_bystander_median_residual"].items():
+2475:def main(argv: list[str] | None = None) -> int:  # noqa: C901  # phase dispatcher; not refactor-worthy
+2624:        for b in args.bystanders:
+2633:    for s in sources:
+2733:            llm = locals().get("llm") or _build_vllm_engine(args.max_seq_len, enable_lora=True)
+2836:def _build_vllm_engine(max_seq_len: int, enable_lora: bool = True):
+2847:    llm = LLM(
+2849:        enable_lora=enable_lora,
+2851:        max_loras=1,
+2883:    for b in bystanders:
+2955:    for ep in epochs:
+2958:        for src in sources:
+2959:            for b in bystanders:
+3032:    for i, s in enumerate(sources):
+
+##### FILE: src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py @ HEAD(d837c78be)
+129:        for c in children:
+133:        for c in alive:
+160:    for persona, persona_prompt in eval_personas.items():
+161:        for q in eval_questions:
+181:    for (persona, q), out in zip(keys, outputs, strict=True):
+330:    for persona, persona_prompt in eval_personas.items():
+331:        for q in eval_questions:
+408:    llm = LLM(
+414:        enable_lora=True,
+416:        max_loras=1,
+421:    for spec in checkpoint_specs:
+425:        lora_req = LoRARequest(lora_name=label, lora_int_id=1, lora_path=adapter_path)
+477:        for persona in eval_personas:
+479:            for q in eval_questions:
+563:        for ck in checkpoints_out:
+587:            for persona in eval_personas:
+588:                for q in eval_questions:
+635:            for persona in eval_personas:
+638:                for q in eval_questions:
+
+##### FILE: src/explore_persona_space/experiments/leave_one_out_505/logit_rescoring.py @ HEAD(d837c78be)
+114:    for pkg in ("torch", "transformers", "peft", "vllm", "huggingface_hub"):
+136:    for attempt in range(attempts):
+280:    for slug, seed in cells:
+283:        if not any(f.startswith(repo_dir + "/") for f in files):
+334:    for (slug, seed), adapter_dir in adapter_dirs.items():
+356:    lora_int_id: int,
+366:    construction. ``lora_int_id`` MUST be unique per adapter within one
+373:    lora_req = LoRARequest(
+374:        lora_name=f"i505lr_{label}", lora_int_id=lora_int_id, lora_path=str(adapter_dir)
+438:    for persona, persona_prompt in personas.items():
+439:        for q in questions:
+456:        for start in range(0, len(prompts), batch_size):
+469:            for row_i, (persona, q) in enumerate(keys[start : start + batch_size]):
+496:    for start in range(0, len(order), batch_size):
+499:        for cidx, cids in zip(idxs, chunk, strict=True):
+512:        for row_i, orig_i in enumerate(idxs):
+549:    for cids, brow in zip(contexts, batched, strict=True):
+605:    for persona, persona_prompt in personas.items():
+608:        for q in questions:
+642:    for raw in (raw_g[0], raw_b[0]):
+655:    for (persona, q, n_marker_in_R, r_collapsed), rg, rb in zip(keys, raw_g, raw_b, strict=True):
+716:    for persona, per_q in ckpt.get("held_out", {}).items():
+900:        for name, param in peft_model.named_parameters():
+

@@ -1,0 +1,23 @@
+{
+ "row": "hedge_everywhere",
+ "arm": "primary",
+ "seed": 137,
+ "ceiling": 0.6868686868686869,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": false,
+ "in_band": false,
+ "selected_checkpoint": "checkpoint-57",
+ "scalars": {
+  "checkpoint-19": 0.6868686868686869,
+  "checkpoint-38": 0.26262626262626265,
+  "checkpoint-57": 0.31313131313131315
+ }
+}

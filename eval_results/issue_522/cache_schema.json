@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "format": "{p}|{q_idx}|{r_idx}|{a}|{b} (pipe-separated; a<=b lex-sorted)",
+  "fields": [
+    "p \u2014 sample persona (one of cond_ids)",
+    "q_idx \u2014 probe index in the working set",
+    "r_idx \u2014 response index in 0..R-1",
+    "a, b \u2014 unordered pair members, sorted lexicographically"
+  ],
+  "value_shape": {
+    "js": "Tensor[n_response_tokens] fp32 nats",
+    "kl_a": "Tensor[n_response_tokens] fp32 nats (KL(p_a || m))",
+    "kl_b": "Tensor[n_response_tokens] fp32 nats (KL(p_b || m))"
+  },
+  "notes": [
+    "Diagonal (a == b) entries are stored as zero tensors of shape (n_resp,).",
+    "Cache is symmetric in (a, b); key lookup canonicalizes via lex sort.",
+    "Per-position values are in NATS; base-2 conversion happens at the JS-matrix-reduction layer."
+  ]
+}

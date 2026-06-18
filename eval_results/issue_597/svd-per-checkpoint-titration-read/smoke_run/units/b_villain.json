@@ -1,0 +1,51 @@
+{
+  "schema": "i597_svd_unit_summary_v1",
+  "unit": "b_villain",
+  "arm": "b",
+  "source": "villain",
+  "steps": [
+    4,
+    528
+  ],
+  "n_rows": 9,
+  "invariant_max_abs_diff": 0.0,
+  "fourfloat_gates": [
+    {
+      "side": "trained",
+      "n_rows_compared": 9,
+      "max_abs_diff": {
+        "logp": 0.0,
+        "z_marker": 0.0,
+        "z_eos": 0.0,
+        "logZ": 0.0
+      },
+      "worst_row": null,
+      "tol_nats": 0.1,
+      "pass": true,
+      "step": 4,
+      "parent_geometry_reread": true
+    },
+    {
+      "side": "trained",
+      "n_rows_compared": 9,
+      "max_abs_diff": {
+        "logp": 0.0,
+        "z_marker": 0.0,
+        "z_eos": 0.0,
+        "logZ": 0.0
+      },
+      "worst_row": null,
+      "tol_nats": 0.1,
+      "pass": true,
+      "step": 528,
+      "parent_geometry_reread": true
+    }
+  ],
+  "unit_npz": "data/issue597_svd_titration/smoke_run/analysis_tensors/b_villain.npz",
+  "metadata": {
+    "git_commit": "3c12c75a1633f2c1bc4a3d665936c22b7c5b8ad5",
+    "hostname": "899ddc762360",
+    "ts": "2026-06-11T22:12:40.626584+00:00",
+    "wall_seconds": 13.0
+  }
+}

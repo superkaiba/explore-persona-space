@@ -1,0 +1,73 @@
+{
+  "schema": "i597_svd_unit_summary_v1",
+  "unit": "b_comedian",
+  "arm": "b",
+  "source": "comedian",
+  "steps": [
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    28,
+    32,
+    36,
+    40,
+    44,
+    48,
+    52,
+    56,
+    60,
+    80,
+    100,
+    120,
+    140,
+    160,
+    180,
+    200,
+    220,
+    240,
+    260,
+    280,
+    300,
+    320,
+    340,
+    360,
+    380,
+    400,
+    420,
+    440,
+    460,
+    480,
+    500,
+    520,
+    528
+  ],
+  "n_rows": 1250,
+  "invariant_max_abs_diff": 0.0,
+  "fourfloat_gates": [
+    {
+      "side": "trained",
+      "n_rows_compared": 1250,
+      "max_abs_diff": {
+        "logp": 0.0,
+        "z_marker": 0.0,
+        "z_eos": 0.0,
+        "logZ": 0.0
+      },
+      "worst_row": null,
+      "tol_nats": 0.1,
+      "pass": true,
+      "step": 4,
+      "parent_geometry_reread": false
+    }
+  ],
+  "unit_npz": "data/issue597_svd_titration/analysis_tensors/b_comedian.npz",
+  "metadata": {
+    "git_commit": "3c12c75a1633f2c1bc4a3d665936c22b7c5b8ad5",
+    "hostname": "899ddc762360",
+    "ts": "2026-06-11T23:18:40.813139+00:00",
+    "wall_seconds": 913.7
+  }
+}

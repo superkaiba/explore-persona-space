@@ -39,7 +39,7 @@ REMOTE_DIR="/workspace/explore-persona-space"
 # feature branch directly (e.g. issue-501 worktree pods). The pod's fetch uses
 # --depth=1 so slow github.com connections (~200KB/s observed against a 2.8GB
 # repo) no longer time out the clone path — incident: issue #501 round 4
-# (2026-06-06). Existing-repo pulls use --ff-only|--rebase as before but
+# (2026-06-06). Existing-repo pulls use --ff-only|--rebase=merges but
 # fail loud (and `git rebase --abort` clean up) on rebase conflicts rather
 # than leaving a half-applied rebase that breaks the next re-bootstrap.
 BOOTSTRAP_BRANCH="${BOOTSTRAP_BRANCH:-main}"
@@ -140,10 +140,11 @@ else
     exit 1
 fi
 
-# ── Step 2: Install uv ──────────────────────────────────────────────────────
+# ── Step 2: Install uv + rsync ──────────────────────────────────────────────
 
-step 2 "Installing uv package manager"
-ssh_cmd 'export PATH="$HOME/.local/bin:$PATH"
+step 2 "Installing uv package manager + rsync"
+ssh_cmd 'set -eu
+export PATH="$HOME/.local/bin:$PATH"
 if command -v uv &>/dev/null; then
     echo "uv already installed: $(uv --version)"
 else
@@ -151,8 +152,20 @@ else
     curl -LsSf https://astral.sh/uv/install.sh | sh 2>&1 | tail -3
     export PATH="$HOME/.local/bin:$PATH"
     echo "Installed: $(uv --version)"
+fi
+# rsync: needed pod-side for artifact pulls (rsync requires the binary on
+# BOTH ends; the RunPod pytorch image ships without it). Idempotent + quiet.
+if command -v rsync &>/dev/null; then
+    echo "rsync already installed: $(rsync --version | head -1)"
+else
+    echo "Installing rsync..."
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y -qq rsync
+    command -v rsync >/dev/null || { echo "rsync install FAILED (apt-get exited 0 but binary absent)" >&2; exit 1; }
+    echo "Installed: $(rsync --version | head -1)"
 fi'
-log_ok "uv ready"
+log_ok "uv + rsync ready"
 
 # ── Step 3: Push .env (pod needs GITHUB_TOKEN before clone) ──────────────────
 
@@ -191,7 +204,7 @@ fi
 # pack. The shallow history is sufficient for every downstream entrypoint
 # (uv sync, preflight, train.py, eval.py) since those read tracked files,
 # not the commit graph. Existing-repo pulls keep the full history and use
-# --ff-only / --rebase as before, but a rebase conflict now aborts the
+# --ff-only / --rebase=merges, but a rebase conflict now aborts the
 # half-applied rebase and fails loud rather than leaving a broken state
 # for the next bootstrap to trip over.
 
@@ -204,9 +217,9 @@ if [ -d $REMOTE_DIR/.git ]; then
     cd $REMOTE_DIR
     git stash -q 2>/dev/null || true
     git checkout \"\$BRANCH\" 2>/dev/null || true
-    if ! git pull --ff-only origin \"\$BRANCH\" 2>/dev/null; then
+    if ! git pull -q --ff-only origin \"\$BRANCH\" 2>/dev/null; then
         echo \"Fast-forward failed, attempting rebase onto origin/\$BRANCH...\"
-        if ! git pull --rebase origin \"\$BRANCH\"; then
+        if ! git pull -q --rebase=merges origin \"\$BRANCH\"; then
             echo \"ERROR: rebase against origin/\$BRANCH conflicted; aborting half-applied rebase.\" >&2
             git rebase --abort 2>/dev/null || true
             echo \"Diagnose the conflict on the pod (\\\`cd $REMOTE_DIR && git status\\\`) or wipe \\\`$REMOTE_DIR\\\` and re-provision.\" >&2
@@ -240,7 +253,7 @@ else
     git init -q -b \"\$BRANCH\"
     git remote add origin \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\" 2>/dev/null \
         || git remote set-url origin \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\"
-    git fetch --depth=1 origin \"\$BRANCH\"
+    git fetch -q --depth=1 origin \"\$BRANCH\"
     # \`git init -q -b \$BRANCH\` already created + checked out \$BRANCH, and
     # \`reset --hard FETCH_HEAD\` moves the current branch ref to FETCH_HEAD.
     # An explicit \`git branch -f \$BRANCH FETCH_HEAD\` would fail loud (\"Cannot
@@ -248,7 +261,7 @@ else
     # so it is dropped here. The subsequent existing-repo path on re-bootstraps
     # uses \`git pull --ff-only\` against \$BRANCH, which is already pinned to
     # FETCH_HEAD via the reset.
-    git reset --hard FETCH_HEAD
+    git reset -q --hard FETCH_HEAD
     echo \"Cloned at: \$(git log --oneline -1)\"
 fi
 "; then
@@ -434,7 +447,14 @@ echo "Cleaned $removed broken dist-info entries"
 
 # Ensure /workspace/tmp exists for pip cache
 mkdir -p /workspace/tmp/pip_cache
-echo "Temp dirs ready"
+
+# Sentinel drain dir — pod-side dispatch scripts signal the VM orchestrator by
+# writing /workspace/logs/issue-<N>-*.json sentinels that poll_pipeline.py
+# drains (CLAUDE.md "Pod-side code NEVER shells out to task.py"). Pre-create it
+# here (mirroring the GCP lane startup script) so a dispatch script that skips
+# its own mkdir still lands sentinels where the poller globs (#610).
+mkdir -p /workspace/logs
+echo "Temp + sentinel drain dirs ready"
 '
 log_ok "Clean state"
 

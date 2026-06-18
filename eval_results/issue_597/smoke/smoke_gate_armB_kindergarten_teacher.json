@@ -1,0 +1,33 @@
+{
+  "schema": "i597_smoke_gate_v1",
+  "label": "gate_s_armB_kindergarten_teacher",
+  "gate_pass": true,
+  "n_probe_rows": 32,
+  "train_pool": "data/issue_597/train_pools/kindergarten_teacher_pos_only_pool.jsonl",
+  "traj_ref": "eval_results/issue_597/armB_trajectories/kindergarten_teacher_seed42_trajectory.json",
+  "ckpt_root": "/workspace/runs/issue_597/kindergarten_teacher_seed42/adapter",
+  "checks": [
+    {
+      "offline_trained": -13.726680755615234,
+      "offline_base": -24.17901039123535,
+      "ref_trained": -13.64747428894043,
+      "ref_base": -24.179136276245117,
+      "trained_abs_diff": 0.07920646667480469,
+      "base_abs_diff": 0.000125885009765625,
+      "trained_tol": 1.0,
+      "base_tol": 0.1,
+      "trained_pass": true,
+      "base_pass": true,
+      "gate_pass": true,
+      "step": 20,
+      "ckpt_dir": "/workspace/runs/issue_597/kindergarten_teacher_seed42/adapter/checkpoint-20"
+    }
+  ],
+  "metadata": {
+    "git_commit": "391952ba47a9f31af933eeb2fc56fe90dd231d2e",
+    "hostname": "491d57930a2e",
+    "ts": "2026-06-11T14:47:55.553968+00:00",
+    "device": "cuda:0",
+    "wall_seconds": 8.5
+  }
+}

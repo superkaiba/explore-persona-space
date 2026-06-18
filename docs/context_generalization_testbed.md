@@ -120,6 +120,14 @@ Behavior content is held FIXED across train contexts; only the context wrapper v
 - **Bystander base-prior** logP(behavior | c_eval) — the only predictor that survived the fact line (#444) and beat geometry for sycophancy at 72B (#507).
 - **Content-free controls** (eval-context-intrinsic base rates) — the #507 lesson: always check a content-free baseline before crediting geometry.
 
+**Combiner track (added 2026-06-11, scope addition for P3 scoring).** Beyond the single-predictor baselines, the scoring harness runs multi-predictor combiners over the per-cell scalars the baselines already compute — the question is whether predictors carry complementary signal, not just which single one wins. Three combiner forms:
+
+1. **Regularized linear stacker** over the full scalar set: bystander base-prior logP(behavior | c_eval), **source-side prior** logP(behavior | c_train) (the write-magnitude proxy — not previously in the battery; add it as a feature), Gaussian-KL, one-way output KL (both directions), PV projection difference, and the content-free covariates. Ridge or similarly regularized — the cell count is small relative to the feature count.
+2. **Theory-shaped multiplicative form** from the rank-1 leakage note (`docs/notes/rank1_leakage_model.pdf`, P3): write-magnitude proxy × gate proxy, with the prior entering source-side (residual shrinks when the source already performs the behavior) and eval-side (read-out compression) separately. This tests the note's factorization against the free-form stacker: if the stacker beats the structured form, the interaction is richer than write × gate.
+3. **Per-behavior z-normalized pooled variant** of each, matching the harness's existing pooling rule.
+
+Discipline: combiners are fit INSIDE the leave-context-out CV folds only — never on the quarantined final-test split — and reported as ΔR² over the best single predictor, per-behavior first, pooled second, including the antisymmetric-component ΔR² (a combiner that wins only on the symmetric component hasn't answered the asymmetry question). Mirrors #545's combiner group so the two testbeds' predictor suites stay comparable; the #541 same-issue follow-up (`geometry-plus-prior-joint-predictor`) is the single-behavior fact-line preview of combiner form 1.
+
 ---
 
 ## 6. Cost + phasing (envelope: 100–300 GPU-h)

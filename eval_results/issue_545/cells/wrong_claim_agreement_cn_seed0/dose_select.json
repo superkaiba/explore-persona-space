@@ -1,0 +1,23 @@
+{
+ "row": "wrong_claim_agreement",
+ "arm": "cn",
+ "seed": 0,
+ "ceiling": 0.64,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": false,
+ "in_band": true,
+ "selected_checkpoint": "checkpoint-75",
+ "scalars": {
+  "checkpoint-25": 0.64,
+  "checkpoint-50": 0.334,
+  "checkpoint-75": 0.392
+ }
+}

@@ -1,0 +1,25 @@
+{
+  "schema_version": "i610_design_v1",
+  "chassis": "software_engineer",
+  "slug": "c610_software_engineer_near_nodefault",
+  "plain_name": "No-default mix (software_engineer chassis, qwen_default slot \u2192 hospice_nurse)",
+  "chassis_slug": "c600_software_engineer_near",
+  "chassis_target": "software_engineer",
+  "panel": [
+    "hospice_nurse",
+    "bartender",
+    "french_person",
+    "data_scientist"
+  ],
+  "replacement_persona": "hospice_nurse",
+  "replaced_persona": "qwen_default",
+  "extra_eval_personas": [
+    "qwen_default",
+    "assistant"
+  ],
+  "source_persona": "villain",
+  "parent_manifest_schema_version": "i600_panel_selection_v1",
+  "parent_bank_content_hash": "aec53e06dcb68f46412620de4f891fb367e8f0a672347824621d081ff97e05fc",
+  "generated_at": "2026-06-12T23:25:20.375184+00:00",
+  "git_commit": "bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99"
+}

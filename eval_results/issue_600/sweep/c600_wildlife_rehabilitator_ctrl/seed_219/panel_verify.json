@@ -1,0 +1,18 @@
+{
+  "jsonl": "data/issue_600/c600_wildlife_rehabilitator_ctrl_seed219.jsonl",
+  "realized_panel": [
+    "assistant",
+    "bartender",
+    "french_person",
+    "qwen_default"
+  ],
+  "n_positive": 200,
+  "neg_counts": {
+    "qwen_default": 200,
+    "french_person": 200,
+    "assistant": 200,
+    "bartender": 200
+  },
+  "n_rows": 1000,
+  "verdict": "pass"
+}

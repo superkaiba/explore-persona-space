@@ -1,0 +1,13 @@
+# issue #588 A3 baseline — pre-change full-suite failures
+# recorded at merge-base bd073f49025ae6d71783ace4758688154ee9c1fb on 2026-06-11T06:35:26Z
+# command: uv run pytest -q  (10 failed, 2890 passed, 10 skipped, 19 deselected)
+FAILED tests/test_autonomous_session_watch.py::test_zombie_pass_stop_fires_after_threshold_and_grace
+FAILED tests/test_autonomous_session_watch.py::test_zombie_pass_stop_verification_retry_then_alert
+FAILED tests/test_issue475_common.py::test_train_lora_config_has_existing_adapter_path_field
+FAILED tests/test_redact_for_gist.py::test_full_fixture_redacted
+FAILED tests/test_redact_for_gist.py::test_idempotent
+FAILED tests/test_runpod_api_retry.py::test_create_pod_first_gpu_succeeds
+FAILED tests/test_step_completed_resume.py::test_every_exit_site_posts_marker
+FAILED tests/test_workflow_lint.py::test_workflow_lint_check_marker_registry_repo_passes
+FAILED tests/test_workflow_lint.py::test_workflow_lint_check_references_exits_zero
+FAILED tests/test_workflow_yaml.py::test_gates_full_shape

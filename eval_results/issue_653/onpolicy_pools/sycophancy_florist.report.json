@@ -1,0 +1,27 @@
+{
+  "behavior": "sycophancy",
+  "source": "florist",
+  "n_target": 200,
+  "n_positives_filled": 199,
+  "n_kept_after_floor": 160,
+  "floor_met": true,
+  "tier_mix": {
+    "tier_1": 26,
+    "tier_2": 125,
+    "tier_3": 9
+  },
+  "n_negatives": 160,
+  "neg_personas": [
+    "assistant",
+    "librarian",
+    "police_officer"
+  ],
+  "pos_to_total_neg_ratio": 1.0,
+  "pool_sha256": "6cfbe9f9c6d9885f3cbe5f8c3a47fc772df7c234f37cf0cf9cac59775f03e9a9",
+  "claims_sha256": "c3ac7cef9d1175779b54207194ac6afbb0c5f4bc5112a33045c43fbb5065301e",
+  "em_corpus_sha256": null,
+  "note": "on-policy #612 ladder; 80% floor + equalize-down",
+  "generated_at_utc": "2026-06-16T20:33:34.868673+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "judge_model": "claude-sonnet-4-5-20250929"
+}

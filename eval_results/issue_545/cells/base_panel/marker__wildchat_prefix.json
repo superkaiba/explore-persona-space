@@ -1,0 +1,524 @@
+{
+ "column": "marker",
+ "context": "wildchat_prefix",
+ "adapter": null,
+ "gauge_free": true,
+ "summary": {
+  "emission_rate": 0.0
+ },
+ "per_slot": [
+  {
+   "probe_id": "q_0",
+   "emitted": false,
+   "base": {
+    "logp": -24.775060653686523,
+    "z_marker": 0.1474609375,
+    "z_eos": 24.625,
+    "logZ": 24.922521591186523
+   }
+  },
+  {
+   "probe_id": "q_1",
+   "emitted": false,
+   "base": {
+    "logp": -25.50620460510254,
+    "z_marker": 0.99609375,
+    "z_eos": 26.5,
+    "logZ": 26.50229835510254
+   }
+  },
+  {
+   "probe_id": "q_2",
+   "emitted": false,
+   "base": {
+    "logp": -26.976747512817383,
+    "z_marker": 0.7734375,
+    "z_eos": 27.75,
+    "logZ": 27.750185012817383
+   }
+  },
+  {
+   "probe_id": "q_3",
+   "emitted": false,
+   "base": {
+    "logp": -21.562841415405273,
+    "z_marker": 3.3125,
+    "z_eos": 24.875,
+    "logZ": 24.875341415405273
+   }
+  },
+  {
+   "probe_id": "q_4",
+   "emitted": false,
+   "base": {
+    "logp": -24.498676300048828,
+    "z_marker": -0.4453125,
+    "z_eos": 24.0,
+    "logZ": 24.053363800048828
+   }
+  },
+  {
+   "probe_id": "q_5",
+   "emitted": false,
+   "base": {
+    "logp": -21.604032516479492,
+    "z_marker": 2.078125,
+    "z_eos": 23.5,
+    "logZ": 23.682157516479492
+   }
+  },
+  {
+   "probe_id": "q_6",
+   "emitted": false,
+   "base": {
+    "logp": -24.656417846679688,
+    "z_marker": 0.96875,
+    "z_eos": 25.625,
+    "logZ": 25.625167846679688
+   }
+  },
+  {
+   "probe_id": "q_7",
+   "emitted": false,
+   "base": {
+    "logp": -29.07813262939453,
+    "z_marker": -1.203125,
+    "z_eos": 27.875,
+    "logZ": 27.87500762939453
+   }
+  },
+  {
+   "probe_id": "q_8",
+   "emitted": false,
+   "base": {
+    "logp": -25.359420776367188,
+    "z_marker": 1.390625,
+    "z_eos": 26.75,
+    "logZ": 26.750045776367188
+   }
+  },
+  {
+   "probe_id": "q_9",
+   "emitted": false,
+   "base": {
+    "logp": -23.602447509765625,
+    "z_marker": 0.328125,
+    "z_eos": 23.875,
+    "logZ": 23.930572509765625
+   }
+  },
+  {
+   "probe_id": "q_10",
+   "emitted": false,
+   "base": {
+    "logp": -26.52950096130371,
+    "z_marker": -0.404296875,
+    "z_eos": 26.125,
+    "logZ": 26.12520408630371
+   }
+  },
+  {
+   "probe_id": "q_11",
+   "emitted": false,
+   "base": {
+    "logp": -25.07850456237793,
+    "z_marker": 1.921875,
+    "z_eos": 27.0,
+    "logZ": 27.00037956237793
+   }
+  },
+  {
+   "probe_id": "q_12",
+   "emitted": false,
+   "base": {
+    "logp": -23.55015754699707,
+    "z_marker": 0.7109375,
+    "z_eos": 24.25,
+    "logZ": 24.26109504699707
+   }
+  },
+  {
+   "probe_id": "q_13",
+   "emitted": false,
+   "base": {
+    "logp": -23.03704833984375,
+    "z_marker": 0.294921875,
+    "z_eos": 22.625,
+    "logZ": 23.33197021484375
+   }
+  },
+  {
+   "probe_id": "q_14",
+   "emitted": false,
+   "base": {
+    "logp": -25.47673225402832,
+    "z_marker": 1.5234375,
+    "z_eos": 27.0,
+    "logZ": 27.00016975402832
+   }
+  },
+  {
+   "probe_id": "q_15",
+   "emitted": false,
+   "base": {
+    "logp": -26.673473358154297,
+    "z_marker": -1.546875,
+    "z_eos": 25.125,
+    "logZ": 25.126598358154297
+   }
+  },
+  {
+   "probe_id": "q_16",
+   "emitted": false,
+   "base": {
+    "logp": -25.8437557220459,
+    "z_marker": 2.15625,
+    "z_eos": 28.0,
+    "logZ": 28.0000057220459
+   }
+  },
+  {
+   "probe_id": "q_17",
+   "emitted": false,
+   "base": {
+    "logp": -24.776039123535156,
+    "z_marker": -0.498046875,
+    "z_eos": 24.25,
+    "logZ": 24.277992248535156
+   }
+  },
+  {
+   "probe_id": "q_18",
+   "emitted": false,
+   "base": {
+    "logp": -25.024173736572266,
+    "z_marker": 0.78125,
+    "z_eos": 25.75,
+    "logZ": 25.805423736572266
+   }
+  },
+  {
+   "probe_id": "q_19",
+   "emitted": false,
+   "base": {
+    "logp": -27.607439041137695,
+    "z_marker": -0.232421875,
+    "z_eos": 27.375,
+    "logZ": 27.375017166137695
+   }
+  },
+  {
+   "probe_id": "q_20",
+   "emitted": false,
+   "base": {
+    "logp": -30.03138542175293,
+    "z_marker": -3.15625,
+    "z_eos": 16.875,
+    "logZ": 26.87513542175293
+   }
+  },
+  {
+   "probe_id": "q_21",
+   "emitted": false,
+   "base": {
+    "logp": -27.802738189697266,
+    "z_marker": 0.447265625,
+    "z_eos": 28.25,
+    "logZ": 28.250003814697266
+   }
+  },
+  {
+   "probe_id": "q_22",
+   "emitted": false,
+   "base": {
+    "logp": -28.676210403442383,
+    "z_marker": -1.421875,
+    "z_eos": 27.25,
+    "logZ": 27.254335403442383
+   }
+  },
+  {
+   "probe_id": "q_23",
+   "emitted": false,
+   "base": {
+    "logp": -28.250120162963867,
+    "z_marker": -1.5,
+    "z_eos": 26.75,
+    "logZ": 26.750120162963867
+   }
+  },
+  {
+   "probe_id": "q_24",
+   "emitted": false,
+   "base": {
+    "logp": -26.63705062866211,
+    "z_marker": -0.51171875,
+    "z_eos": 26.125,
+    "logZ": 26.12533187866211
+   }
+  },
+  {
+   "probe_id": "q_25",
+   "emitted": false,
+   "base": {
+    "logp": -27.911195755004883,
+    "z_marker": -0.53515625,
+    "z_eos": 27.375,
+    "logZ": 27.376039505004883
+   }
+  },
+  {
+   "probe_id": "q_26",
+   "emitted": false,
+   "base": {
+    "logp": -25.742273330688477,
+    "z_marker": 1.6328125,
+    "z_eos": 27.375,
+    "logZ": 27.375085830688477
+   }
+  },
+  {
+   "probe_id": "q_27",
+   "emitted": false,
+   "base": {
+    "logp": -22.82368278503418,
+    "z_marker": 0.0262451171875,
+    "z_eos": 22.625,
+    "logZ": 22.84992790222168
+   }
+  },
+  {
+   "probe_id": "q_28",
+   "emitted": false,
+   "base": {
+    "logp": -20.134859085083008,
+    "z_marker": 2.265625,
+    "z_eos": 22.375,
+    "logZ": 22.400484085083008
+   }
+  },
+  {
+   "probe_id": "q_29",
+   "emitted": false,
+   "base": {
+    "logp": -21.739818572998047,
+    "z_marker": 2.0625,
+    "z_eos": 23.625,
+    "logZ": 23.802318572998047
+   }
+  },
+  {
+   "probe_id": "q_30",
+   "emitted": false,
+   "base": {
+    "logp": -27.290433883666992,
+    "z_marker": -1.1640625,
+    "z_eos": 26.125,
+    "logZ": 26.126371383666992
+   }
+  },
+  {
+   "probe_id": "q_31",
+   "emitted": false,
+   "base": {
+    "logp": -25.895450592041016,
+    "z_marker": -0.14453125,
+    "z_eos": 25.75,
+    "logZ": 25.750919342041016
+   }
+  },
+  {
+   "probe_id": "q_32",
+   "emitted": false,
+   "base": {
+    "logp": -27.478290557861328,
+    "z_marker": -1.3515625,
+    "z_eos": 26.125,
+    "logZ": 26.126728057861328
+   }
+  },
+  {
+   "probe_id": "q_33",
+   "emitted": false,
+   "base": {
+    "logp": -20.047914505004883,
+    "z_marker": 1.234375,
+    "z_eos": 20.125,
+    "logZ": 21.282289505004883
+   }
+  },
+  {
+   "probe_id": "q_34",
+   "emitted": false,
+   "base": {
+    "logp": -27.298858642578125,
+    "z_marker": -0.423828125,
+    "z_eos": 26.875,
+    "logZ": 26.875030517578125
+   }
+  },
+  {
+   "probe_id": "q_35",
+   "emitted": false,
+   "base": {
+    "logp": -21.452457427978516,
+    "z_marker": 1.4296875,
+    "z_eos": 22.75,
+    "logZ": 22.882144927978516
+   }
+  },
+  {
+   "probe_id": "q_36",
+   "emitted": false,
+   "base": {
+    "logp": -26.531513214111328,
+    "z_marker": -0.28125,
+    "z_eos": 26.25,
+    "logZ": 26.250263214111328
+   }
+  },
+  {
+   "probe_id": "q_37",
+   "emitted": false,
+   "base": {
+    "logp": -21.36737060546875,
+    "z_marker": -0.76953125,
+    "z_eos": 19.25,
+    "logZ": 20.59783935546875
+   }
+  },
+  {
+   "probe_id": "q_38",
+   "emitted": false,
+   "base": {
+    "logp": -25.040632247924805,
+    "z_marker": -0.82421875,
+    "z_eos": 24.125,
+    "logZ": 24.216413497924805
+   }
+  },
+  {
+   "probe_id": "q_39",
+   "emitted": false,
+   "base": {
+    "logp": -22.3747501373291,
+    "z_marker": 1.34375,
+    "z_eos": 23.5,
+    "logZ": 23.7185001373291
+   }
+  },
+  {
+   "probe_id": "q_40",
+   "emitted": false,
+   "base": {
+    "logp": -21.700899124145508,
+    "z_marker": 0.8125,
+    "z_eos": 22.5,
+    "logZ": 22.513399124145508
+   }
+  },
+  {
+   "probe_id": "q_41",
+   "emitted": false,
+   "base": {
+    "logp": -23.57145881652832,
+    "z_marker": 0.3046875,
+    "z_eos": 23.875,
+    "logZ": 23.87614631652832
+   }
+  },
+  {
+   "probe_id": "q_42",
+   "emitted": false,
+   "base": {
+    "logp": -22.950437545776367,
+    "z_marker": 0.2119140625,
+    "z_eos": 23.125,
+    "logZ": 23.162351608276367
+   }
+  },
+  {
+   "probe_id": "q_43",
+   "emitted": false,
+   "base": {
+    "logp": -25.609403610229492,
+    "z_marker": 1.890625,
+    "z_eos": 27.5,
+    "logZ": 27.500028610229492
+   }
+  },
+  {
+   "probe_id": "q_44",
+   "emitted": false,
+   "base": {
+    "logp": -23.21339225769043,
+    "z_marker": -0.09033203125,
+    "z_eos": 22.5,
+    "logZ": 23.12306022644043
+   }
+  },
+  {
+   "probe_id": "q_45",
+   "emitted": false,
+   "base": {
+    "logp": -22.368261337280273,
+    "z_marker": 0.26953125,
+    "z_eos": 22.625,
+    "logZ": 22.637792587280273
+   }
+  },
+  {
+   "probe_id": "q_46",
+   "emitted": false,
+   "base": {
+    "logp": -27.769554138183594,
+    "z_marker": -0.89453125,
+    "z_eos": 26.875,
+    "logZ": 26.875022888183594
+   }
+  },
+  {
+   "probe_id": "q_47",
+   "emitted": false,
+   "base": {
+    "logp": -27.399328231811523,
+    "z_marker": -0.0242919921875,
+    "z_eos": 27.375,
+    "logZ": 27.375036239624023
+   }
+  },
+  {
+   "probe_id": "q_48",
+   "emitted": false,
+   "base": {
+    "logp": -28.39984130859375,
+    "z_marker": -3.890625,
+    "z_eos": 24.5,
+    "logZ": 24.50921630859375
+   }
+  },
+  {
+   "probe_id": "q_49",
+   "emitted": false,
+   "base": {
+    "logp": -24.547327041625977,
+    "z_marker": 2.078125,
+    "z_eos": 26.625,
+    "logZ": 26.625452041625977
+   }
+  }
+ ],
+ "metadata": {
+  "issue": 545,
+  "git_commit": "51bdf20ba602bc8ac122be69843909ab959c940e",
+  "timestamp": "2026-06-12T03:35:59.204739+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

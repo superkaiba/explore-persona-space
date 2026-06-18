@@ -1,0 +1,186 @@
+{
+  "behavior": "refusal",
+  "source": "software_engineer",
+  "seed": 42,
+  "smoke": false,
+  "dry_run": false,
+  "judge_model": "claude-haiku-4-5-20251001",
+  "cells": {
+    "ft_step2": {
+      "arm": "ft",
+      "step": 2,
+      "rate_raw": 0.006,
+      "rate_clean": 0.006,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": -0.002
+    },
+    "ft_step4": {
+      "arm": "ft",
+      "step": 4,
+      "rate_raw": 0.006,
+      "rate_clean": 0.006,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": -0.002
+    },
+    "ft_step6": {
+      "arm": "ft",
+      "step": 6,
+      "rate_raw": 0.006,
+      "rate_clean": 0.006,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": -0.002
+    },
+    "ft_step8": {
+      "arm": "ft",
+      "step": 8,
+      "rate_raw": 0.002,
+      "rate_clean": 0.002,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": -0.006
+    },
+    "ft_step10": {
+      "arm": "ft",
+      "step": 10,
+      "rate_raw": 0.0,
+      "rate_clean": 0.0,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": -0.008
+    },
+    "ft_step12": {
+      "arm": "ft",
+      "step": 12,
+      "rate_raw": 0.022,
+      "rate_clean": 0.022,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.013999999999999999
+    },
+    "ft_step14": {
+      "arm": "ft",
+      "step": 14,
+      "rate_raw": 0.086,
+      "rate_clean": 0.086,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.07799999999999999
+    },
+    "ft_step16": {
+      "arm": "ft",
+      "step": 16,
+      "rate_raw": 0.126,
+      "rate_clean": 0.126,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.118
+    },
+    "ft_step18": {
+      "arm": "ft",
+      "step": 18,
+      "rate_raw": 0.242,
+      "rate_clean": 0.242,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.23399999999999999
+    },
+    "ft_step20": {
+      "arm": "ft",
+      "step": 20,
+      "rate_raw": 0.436,
+      "rate_clean": 0.436,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.428
+    },
+    "ft_step22": {
+      "arm": "ft",
+      "step": 22,
+      "rate_raw": 0.818,
+      "rate_clean": 0.818,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.8099999999999999
+    },
+    "ft_step24": {
+      "arm": "ft",
+      "step": 24,
+      "rate_raw": 1.0,
+      "rate_clean": 1.0,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.992
+    },
+    "ft_step29": {
+      "arm": "ft",
+      "step": 29,
+      "rate_raw": 1.0,
+      "rate_clean": 1.0,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.992
+    },
+    "ft_step37": {
+      "arm": "ft",
+      "step": 37,
+      "rate_raw": 1.0,
+      "rate_clean": 1.0,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.992
+    },
+    "ft_step44": {
+      "arm": "ft",
+      "step": 44,
+      "rate_raw": 1.0,
+      "rate_clean": 1.0,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.992
+    },
+    "ft_step66": {
+      "arm": "ft",
+      "step": 66,
+      "rate_raw": 1.0,
+      "rate_clean": 1.0,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.992
+    },
+    "ft_step88": {
+      "arm": "ft",
+      "step": 88,
+      "rate_raw": 1.0,
+      "rate_clean": 1.0,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.992
+    },
+    "ft_step132": {
+      "arm": "ft",
+      "step": 132,
+      "rate_raw": 1.0,
+      "rate_clean": 1.0,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "s": 0.992
+    },
+    "base": {
+      "arm": "base",
+      "step": 0,
+      "rate_raw": 0.008,
+      "rate_clean": 0.008,
+      "n_verdicts": 500,
+      "n_degenerate": 0,
+      "reused_from": "issue606_lora_vs_ft_behaviors/refusal/stage_a/trajectory_refusal.json"
+    }
+  },
+  "metadata": {
+    "git_commit_sha": "6252dfef6f428a972433dcd8c2095029980fde1a",
+    "hostname": "eps-issue-606",
+    "timestamp_utc": "2026-06-12T11:18:11.661990+00:00"
+  }
+}

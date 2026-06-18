@@ -1,0 +1,444 @@
+{
+  "issue": 552,
+  "followup": "mean_resp_svd",
+  "arm": "marker",
+  "variants": [
+    "same"
+  ],
+  "seeds": [
+    42,
+    137,
+    256
+  ],
+  "description": "Identical SVD concentration read on the persisted mean-over-response shift vectors (delta_v_mean_resp), alongside an end-slot (delta_v) recomputation cross-checked against the persisted svd/*.json.",
+  "coverage_note": "delta_v_mean_resp exists only for same-variant marker cells (the headline variant); base/on_policy variants never carried it \u2014 the extraction computes mean-over-response only for variant='same' by design.",
+  "cross_run_anchor_gate": null,
+  "n_reps": 1000,
+  "null_seed_convention": "both nulls seeded with the cell seed (Phase-D convention)",
+  "zones": {
+    "concentrated": "mean_cos >= 0.9 AND s_top1_frac >= 0.5",
+    "diffuse": "mean_cos <= 0.85 AND s_top1_frac < 0.5"
+  },
+  "per_cell": {
+    "same_marker_seed42": {
+      "cell": "same_marker_seed42",
+      "variant": "same",
+      "arm": "marker",
+      "seed": 42,
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "end_slot": {
+        "M_shape": [
+          3584,
+          14
+        ],
+        "s_top1_frac": 0.32465410232543945,
+        "mean_cos_to_U1": 0.5871104598045349,
+        "median_cos_to_U1": 0.45233508944511414,
+        "sign_flip_p95": 0.12957489490509033,
+        "sign_flip_p99": 0.13102774322032928,
+        "row_shuffle_p95": 0.19707103073596954,
+        "row_shuffle_p99": 0.19713033735752106,
+        "cos_to_U1": [
+          0.4554150700569153,
+          0.33851203322410583,
+          0.8579961061477661,
+          0.9633752703666687,
+          0.3744983673095703,
+          0.32989615201950073,
+          0.971196711063385,
+          0.3376459777355194,
+          0.449255108833313,
+          0.3178296983242035,
+          0.9613731503486633,
+          0.9631798267364502,
+          0.4139445424079895,
+          0.48542800545692444
+        ],
+        "singular_values": [
+          17.264589309692383,
+          8.614675521850586,
+          4.571867942810059,
+          3.735473394393921,
+          3.29787540435791,
+          2.6802730560302734,
+          2.403416395187378,
+          2.1196765899658203,
+          1.800994634628296,
+          1.691651701927185,
+          1.5634000301361084,
+          1.27400803565979,
+          1.1669210195541382,
+          0.9935861229896545
+        ]
+      },
+      "end_slot_cross_check": {
+        "persisted_path": "eval_results/issue_552/marker-arm-mean-resp-reextraction/svd/same_marker_seed42.json",
+        "fields": {
+          "s_top1_frac": 0.0,
+          "mean_cos_to_U1": 0.0,
+          "sign_flip_p95": 0.0,
+          "sign_flip_p99": 0.0,
+          "row_shuffle_p95": 0.0,
+          "row_shuffle_p99": 0.0
+        },
+        "max_abs_diff": 0.0,
+        "atol": 0.0005,
+        "pass": true
+      },
+      "cross_run_anchor_gate": null,
+      "mean_resp": {
+        "M_shape": [
+          3584,
+          14
+        ],
+        "s_top1_frac": 0.39052194356918335,
+        "mean_cos_to_U1": 0.5914386510848999,
+        "median_cos_to_U1": 0.45169907808303833,
+        "sign_flip_p95": 0.1488078236579895,
+        "sign_flip_p99": 0.15043868124485016,
+        "row_shuffle_p95": 0.20156097412109375,
+        "row_shuffle_p99": 0.2016436606645584,
+        "cos_to_U1": [
+          0.44069764018058777,
+          0.30955183506011963,
+          0.85777747631073,
+          0.9710067510604858,
+          0.39651820063591003,
+          0.3681505620479584,
+          0.977374792098999,
+          0.3090464174747467,
+          0.4627004861831665,
+          0.33605846762657166,
+          0.9668179154396057,
+          0.9718570113182068,
+          0.40769925713539124,
+          0.5048836469650269
+        ],
+        "singular_values": [
+          17.13528060913086,
+          5.973800182342529,
+          3.608811855316162,
+          3.170797824859619,
+          2.658189296722412,
+          2.186286449432373,
+          1.9603841304779053,
+          1.6867506504058838,
+          1.387110710144043,
+          1.2471303939819336,
+          0.9352352023124695,
+          0.8094089031219482,
+          0.6839895248413086,
+          0.4347160756587982
+        ]
+      },
+      "mean_resp_absent_reason": null,
+      "delta_mean_resp_minus_end_slot": {
+        "mean_cos_to_U1": 0.00432819128036499,
+        "s_top1_frac": 0.0658678412437439
+      },
+      "cos_U1_end_vs_U1_mean_resp": 0.9969549221686509,
+      "concordance": "CONCORDANT \u2014 end-slot diffuse vs mean-resp diffuse: mean |cos to U1| 0.587 vs 0.591, top-share 0.325 vs 0.391, cos(U1_end, U1_mean_resp) = 0.997"
+    },
+    "same_marker_seed137": {
+      "cell": "same_marker_seed137",
+      "variant": "same",
+      "arm": "marker",
+      "seed": 137,
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "end_slot": {
+        "M_shape": [
+          3584,
+          14
+        ],
+        "s_top1_frac": 0.3113222122192383,
+        "mean_cos_to_U1": 0.7133870124816895,
+        "median_cos_to_U1": 0.7330461740493774,
+        "sign_flip_p95": 0.12393078953027725,
+        "sign_flip_p99": 0.12485948204994202,
+        "row_shuffle_p95": 0.21321865916252136,
+        "row_shuffle_p99": 0.21326225996017456,
+        "cos_to_U1": [
+          0.536535382270813,
+          0.6986731886863708,
+          0.8499937653541565,
+          0.8942773342132568,
+          0.6938987970352173,
+          0.6612790822982788,
+          0.7312031984329224,
+          0.7401520609855652,
+          0.7591493129730225,
+          0.30198925733566284,
+          0.8206200003623962,
+          0.8472424745559692,
+          0.7175160050392151,
+          0.7348892092704773
+        ],
+        "singular_values": [
+          14.440892219543457,
+          9.332124710083008,
+          3.9656238555908203,
+          2.915099859237671,
+          2.6819539070129395,
+          2.2572317123413086,
+          1.9309072494506836,
+          1.673375129699707,
+          1.559354305267334,
+          1.3072646856307983,
+          1.2311687469482422,
+          1.1043585538864136,
+          1.075514554977417,
+          0.910805344581604
+        ]
+      },
+      "end_slot_cross_check": {
+        "persisted_path": "eval_results/issue_552/marker-arm-mean-resp-reextraction/svd/same_marker_seed137.json",
+        "fields": {
+          "s_top1_frac": 0.0,
+          "mean_cos_to_U1": 0.0,
+          "sign_flip_p95": 0.0,
+          "sign_flip_p99": 0.0,
+          "row_shuffle_p95": 0.0,
+          "row_shuffle_p99": 0.0
+        },
+        "max_abs_diff": 0.0,
+        "atol": 0.0005,
+        "pass": true
+      },
+      "cross_run_anchor_gate": null,
+      "mean_resp": {
+        "M_shape": [
+          3584,
+          14
+        ],
+        "s_top1_frac": 0.3934462368488312,
+        "mean_cos_to_U1": 0.6173188090324402,
+        "median_cos_to_U1": 0.5358526110649109,
+        "sign_flip_p95": 0.16825853288173676,
+        "sign_flip_p99": 0.16959935426712036,
+        "row_shuffle_p95": 0.19544380903244019,
+        "row_shuffle_p99": 0.19552120566368103,
+        "cos_to_U1": [
+          0.47810104489326477,
+          0.47494179010391235,
+          0.9609967470169067,
+          0.8074705600738525,
+          0.5423927903175354,
+          0.5388627052307129,
+          0.576821506023407,
+          0.47496840357780457,
+          0.4975612461566925,
+          0.33811816573143005,
+          0.9558205008506775,
+          0.9641565680503845,
+          0.5328425168991089,
+          0.49940982460975647
+        ],
+        "singular_values": [
+          13.067727088928223,
+          5.597063064575195,
+          3.2603628635406494,
+          2.2130157947540283,
+          1.7422438859939575,
+          1.5952279567718506,
+          1.5065553188323975,
+          0.9830263257026672,
+          0.7751055359840393,
+          0.7240303158760071,
+          0.6516539454460144,
+          0.46776705980300903,
+          0.34374457597732544,
+          0.285975843667984
+        ]
+      },
+      "mean_resp_absent_reason": null,
+      "delta_mean_resp_minus_end_slot": {
+        "mean_cos_to_U1": -0.09606820344924927,
+        "s_top1_frac": 0.0821240246295929
+      },
+      "cos_U1_end_vs_U1_mean_resp": 0.9266645349112282,
+      "concordance": "CONCORDANT \u2014 end-slot diffuse vs mean-resp diffuse: mean |cos to U1| 0.713 vs 0.617, top-share 0.311 vs 0.393, cos(U1_end, U1_mean_resp) = 0.927"
+    },
+    "same_marker_seed256": {
+      "cell": "same_marker_seed256",
+      "variant": "same",
+      "arm": "marker",
+      "seed": 256,
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "end_slot": {
+        "M_shape": [
+          3584,
+          14
+        ],
+        "s_top1_frac": 0.3476976752281189,
+        "mean_cos_to_U1": 0.5503842234611511,
+        "median_cos_to_U1": 0.3370831608772278,
+        "sign_flip_p95": 0.12887629866600037,
+        "sign_flip_p99": 0.1302468478679657,
+        "row_shuffle_p95": 0.1870991289615631,
+        "row_shuffle_p99": 0.1871849000453949,
+        "cos_to_U1": [
+          0.8442456722259521,
+          0.26493775844573975,
+          0.5965490341186523,
+          0.9710723161697388,
+          0.2998174726963043,
+          0.31157752871513367,
+          0.9741496443748474,
+          0.2778654992580414,
+          0.3113408088684082,
+          0.24143987894058228,
+          0.9616443514823914,
+          0.976573646068573,
+          0.32278743386268616,
+          0.3513788878917694
+        ],
+        "singular_values": [
+          20.691059112548828,
+          9.489502906799316,
+          5.32096004486084,
+          4.833933353424072,
+          3.785550594329834,
+          2.852221727371216,
+          2.0485618114471436,
+          1.9051806926727295,
+          1.8567111492156982,
+          1.802391529083252,
+          1.6707180738449097,
+          1.2824125289916992,
+          1.0299917459487915,
+          0.939567506313324
+        ]
+      },
+      "end_slot_cross_check": {
+        "persisted_path": "eval_results/issue_552/marker-arm-mean-resp-reextraction/svd/same_marker_seed256.json",
+        "fields": {
+          "s_top1_frac": 0.0,
+          "mean_cos_to_U1": 0.0,
+          "sign_flip_p95": 0.0,
+          "sign_flip_p99": 0.0,
+          "row_shuffle_p95": 0.0,
+          "row_shuffle_p99": 0.0
+        },
+        "max_abs_diff": 0.0,
+        "atol": 0.0005,
+        "pass": true
+      },
+      "cross_run_anchor_gate": null,
+      "mean_resp": {
+        "M_shape": [
+          3584,
+          14
+        ],
+        "s_top1_frac": 0.4322358965873718,
+        "mean_cos_to_U1": 0.5679376721382141,
+        "median_cos_to_U1": 0.36827290058135986,
+        "sign_flip_p95": 0.15001317858695984,
+        "sign_flip_p99": 0.15148025751113892,
+        "row_shuffle_p95": 0.1931968629360199,
+        "row_shuffle_p99": 0.19328482449054718,
+        "cos_to_U1": [
+          0.8488200306892395,
+          0.2627510130405426,
+          0.6406624913215637,
+          0.973238468170166,
+          0.33799946308135986,
+          0.36899566650390625,
+          0.975074052810669,
+          0.27497929334640503,
+          0.35788753628730774,
+          0.27812659740448,
+          0.9628827571868896,
+          0.9796303510665894,
+          0.3225284218788147,
+          0.3675501346588135
+        ],
+        "singular_values": [
+          20.5938663482666,
+          5.7465691566467285,
+          5.23855447769165,
+          3.1890463829040527,
+          2.854142189025879,
+          1.903402328491211,
+          1.8288649320602417,
+          1.3307052850723267,
+          1.1256486177444458,
+          1.0307080745697021,
+          0.9241640567779541,
+          0.8058456778526306,
+          0.6212792992591858,
+          0.4521704912185669
+        ]
+      },
+      "mean_resp_absent_reason": null,
+      "delta_mean_resp_minus_end_slot": {
+        "mean_cos_to_U1": 0.01755344867706299,
+        "s_top1_frac": 0.08453822135925293
+      },
+      "cos_U1_end_vs_U1_mean_resp": 0.9986625212215026,
+      "concordance": "CONCORDANT \u2014 end-slot diffuse vs mean-resp diffuse: mean |cos to U1| 0.550 vs 0.568, top-share 0.348 vs 0.432, cos(U1_end, U1_mean_resp) = 0.999"
+    }
+  },
+  "concordance_verdicts": {
+    "same_marker_seed42": "CONCORDANT \u2014 end-slot diffuse vs mean-resp diffuse: mean |cos to U1| 0.587 vs 0.591, top-share 0.325 vs 0.391, cos(U1_end, U1_mean_resp) = 0.997",
+    "same_marker_seed137": "CONCORDANT \u2014 end-slot diffuse vs mean-resp diffuse: mean |cos to U1| 0.713 vs 0.617, top-share 0.311 vs 0.393, cos(U1_end, U1_mean_resp) = 0.927",
+    "same_marker_seed256": "CONCORDANT \u2014 end-slot diffuse vs mean-resp diffuse: mean |cos to U1| 0.550 vs 0.568, top-share 0.348 vs 0.432, cos(U1_end, U1_mean_resp) = 0.999"
+  },
+  "figure": {
+    "png": "figures/issue_552/mean_resp_concordance_marker.png",
+    "pdf": "figures/issue_552/mean_resp_concordance_marker.pdf",
+    "meta": "figures/issue_552/mean_resp_concordance_marker.meta.json"
+  },
+  "metadata": {
+    "git_commit": "cd89ba2dfd06ec5de7563b6ef5f7c4abae504b08",
+    "script": "scripts/issue552_mean_resp_svd.py",
+    "numpy_version": "2.2.6",
+    "torch_version": "2.8.0+cu128",
+    "python_version": "3.11.15",
+    "timestamp_utc": "2026-06-11T02:37:34Z"
+  }
+}

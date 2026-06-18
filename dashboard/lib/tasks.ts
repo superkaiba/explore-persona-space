@@ -99,6 +99,19 @@ export type TaskListing = {
   hasCleanResult: boolean;
   classification?: string;
   track: Track;
+  /** ISO ts the task entered its current status (last `epm:status-changed`
+   *  marker; falls back to `created_at` for never-moved tasks). */
+  statusChangedAt: string | null;
+  /** Follow-up rounds run on this task: distinct `followup_label`s across
+   *  `epm:followup-scope` markers + `epm:free-analysis-followup-run` markers. */
+  followupCount: number;
+  /** Frontmatter `parent_id` when it's a valid number — the board derives
+   *  task families (parent/children/siblings) from these edges. */
+  parentId: number | null;
+  /** ISO ts of the last meaningful update: max(body.md mtime, status-entry
+   *  ts). Deliberately NOT events.jsonl mtime — progress markers tick every
+   *  few minutes on in-flight tasks and would make "updated" meaningless. */
+  lastActivityAt: string | null;
 };
 
 export type TaskEvent = {
@@ -258,6 +271,99 @@ export function getComments(id: number): TaskComment[] {
     });
 }
 
+/* -------------------------------------------------------------------------- *
+ * Event-derived listing stats (status-entry time + follow-up count).
+ *
+ * events.jsonl across all tasks is ~37MB, and the board force-dynamic page
+ * re-renders every 60s per open tab — so stats are cached per file keyed on
+ * (mtime, size) and only re-scanned when the file changes. Lines are
+ * string-prefiltered; JSON.parse runs only on candidate lines, and the
+ * parsed `kind` field is authoritative (embedded marker names inside note
+ * strings carry escaped quotes, so the quoted prefilter can't false-match).
+ * -------------------------------------------------------------------------- */
+
+type EventStats = {
+  lastStatusChangeTs: string | null;
+  followupCount: number;
+};
+
+const EMPTY_EVENT_STATS: EventStats = { lastStatusChangeTs: null, followupCount: 0 };
+
+const eventStatsCache = new Map<
+  string,
+  { mtimeMs: number; size: number; stats: EventStats }
+>();
+
+function getEventStats(taskAbs: string): EventStats {
+  const p = path.join(taskAbs, "events.jsonl");
+  let st: fs.Stats;
+  try {
+    st = fs.statSync(p);
+  } catch {
+    return EMPTY_EVENT_STATS;
+  }
+  const cached = eventStatsCache.get(p);
+  if (cached && cached.mtimeMs === st.mtimeMs && cached.size === st.size) {
+    return cached.stats;
+  }
+  let raw: string;
+  try {
+    raw = fs.readFileSync(p, "utf8");
+  } catch {
+    return EMPTY_EVENT_STATS;
+  }
+  let lastStatusChangeTs: string | null = null;
+  const followupLabels = new Set<string>();
+  let unlabeledFollowupScopes = 0;
+  let freeAnalysisRuns = 0;
+  for (const line of raw.split("\n")) {
+    if (!line.trim()) continue;
+    const isStatus = line.includes('"epm:status-changed"');
+    const isScope = line.includes('"epm:followup-scope"');
+    const isFreeAnalysis = line.includes('"epm:free-analysis-followup-run"');
+    if (!isStatus && !isScope && !isFreeAnalysis) continue;
+    let ev: TaskEvent;
+    try {
+      ev = JSON.parse(line) as TaskEvent;
+    } catch {
+      continue; // tolerate a partial trailing line mid-write
+    }
+    if (ev.kind === "epm:status-changed") {
+      if (typeof ev.ts === "string") lastStatusChangeTs = ev.ts;
+    } else if (ev.kind === "epm:followup-scope") {
+      // Scope-extension reposts reuse the label — count distinct rounds.
+      const m =
+        typeof ev.note === "string" ? ev.note.match(/followup_label:\s*(\S+)/) : null;
+      if (m) followupLabels.add(m[1]);
+      else unlabeledFollowupScopes += 1;
+    } else if (ev.kind === "epm:free-analysis-followup-run") {
+      freeAnalysisRuns += 1;
+    }
+  }
+  const stats: EventStats = {
+    lastStatusChangeTs,
+    followupCount: followupLabels.size + unlabeledFollowupScopes + freeAnalysisRuns,
+  };
+  eventStatsCache.set(p, { mtimeMs: st.mtimeMs, size: st.size, stats });
+  return stats;
+}
+
+/** Normalize a frontmatter `created_at` (string or YAML-parsed Date). */
+function toIsoString(v: unknown): string | null {
+  if (typeof v === "string" && v.trim()) return v;
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v.toISOString();
+  return null;
+}
+
+/** Later of two ISO timestamps (null-tolerant, unparseable treated as null). */
+function maxIso(a: string | null, b: string | null): string | null {
+  const ams = a ? Date.parse(a) : NaN;
+  const bms = b ? Date.parse(b) : NaN;
+  if (!Number.isFinite(ams)) return Number.isFinite(bms) ? b : null;
+  if (!Number.isFinite(bms)) return a;
+  return ams >= bms ? a : b;
+}
+
 export function listAllTasks(): TaskListing[] {
   const reg = getRegistry();
   const out: TaskListing[] = [];
@@ -266,18 +372,30 @@ export function listAllTasks(): TaskListing[] {
     if (!Number.isFinite(id)) continue;
     if (!STATUSES.includes(entry.status as Status)) continue;
     // Read frontmatter for richer fields
+    const abs = path.join(path.dirname(REGISTRY_PATH), "..", entry.path);
     let tags: string[] = [];
     let classification: string | undefined;
     let fm: Frontmatter | undefined;
+    let bodyMtime: string | null = null;
     try {
-      const abs = path.join(path.dirname(REGISTRY_PATH), "..", entry.path);
-      const raw = fs.readFileSync(path.join(abs, "body.md"), "utf8");
+      const bodyPath = path.join(abs, "body.md");
+      const raw = fs.readFileSync(bodyPath, "utf8");
       fm = matter(raw).data as Frontmatter;
       tags = Array.isArray(fm.tags) ? fm.tags : [];
       classification = typeof fm.classification === "string" ? fm.classification : undefined;
+      bodyMtime = fs.statSync(bodyPath).mtime.toISOString();
     } catch {
       // Skip tasks we can't read frontmatter for
     }
+    const eventStats = getEventStats(abs);
+    const statusChangedAt = eventStats.lastStatusChangeTs ?? toIsoString(fm?.created_at);
+    const rawParent = fm?.parent_id;
+    const parentId =
+      typeof rawParent === "number" && Number.isFinite(rawParent)
+        ? rawParent
+        : typeof rawParent === "string" && /^\d+$/.test(rawParent)
+          ? Number(rawParent)
+          : null;
     out.push({
       id,
       title: entry.title,
@@ -287,6 +405,10 @@ export function listAllTasks(): TaskListing[] {
       hasCleanResult: entry.has_clean_result,
       classification,
       track: deriveTrack(fm, entry.kind),
+      statusChangedAt,
+      followupCount: eventStats.followupCount,
+      parentId,
+      lastActivityAt: maxIso(bodyMtime, statusChangedAt),
     });
   }
   out.sort((a, b) => b.id - a.id);
@@ -323,6 +445,7 @@ const ACTIVE_STATUSES: ReadonlySet<Status> = new Set([
   "verifying",
   "interpreting",
   "reviewing",
+  "followups_running",
   "awaiting_promotion",
 ]);
 
@@ -331,7 +454,7 @@ const ACTIVE_STATUSES: ReadonlySet<Status> = new Set([
  *
  * Filter rules:
  *   - any task in {running, verifying, interpreting, reviewing,
- *     awaiting_promotion}, or
+ *     followups_running, awaiting_promotion}, or
  *   - any `completed` task with `has_clean_result=true` AND body.md
  *     touched in the last `recentDays` days.
  *

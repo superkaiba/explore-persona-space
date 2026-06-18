@@ -1,0 +1,227 @@
+{
+ "column": "fam_expr_compliment",
+ "context": "default",
+ "adapter": "/tmp/issue545/adapters/compliment_writing_primary_seed0/checkpoint-57",
+ "summary": {
+  "compliment_rate": 0.94,
+  "judge_errors": 0,
+  "n_judge_refused": 0
+ },
+ "verdicts": [
+  {
+   "probe_id": "q_0",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_1",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_2",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_3",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_4",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_5",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_6",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_7",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_8",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_9",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_10",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_11",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_12",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_13",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_14",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_15",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_16",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_17",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_18",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_19",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_20",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_21",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_22",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_23",
+   "complimenting": false
+  },
+  {
+   "probe_id": "q_24",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_25",
+   "complimenting": false
+  },
+  {
+   "probe_id": "q_26",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_27",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_28",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_29",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_30",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_31",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_32",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_33",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_34",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_35",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_36",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_37",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_38",
+   "complimenting": false
+  },
+  {
+   "probe_id": "q_39",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_40",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_41",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_42",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_43",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_44",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_45",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_46",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_47",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_48",
+   "complimenting": true
+  },
+  {
+   "probe_id": "q_49",
+   "complimenting": true
+  }
+ ],
+ "n_probes": 50,
+ "truncation_count": 2,
+ "metadata": {
+  "issue": 545,
+  "git_commit": "4dd61cdc0f688599e0130038c7f80bd5c5e470f2",
+  "timestamp": "2026-06-12T08:20:53.497680+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

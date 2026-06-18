@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "issue": 491,
+    "git_commit": "4e8fe44500a5af7141779661b120b7f77752fc41",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "base_model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "marker_text": " ※",
+    "marker_id": 83399,
+    "eos_id": 151645,
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "timestamp_utc": "2026-06-11T15:40:44.054069+00:00"
+  },
+  "regime": "icl",
+  "cell": "icl_K8_chainA",
+  "contexts": {
+    "villain": {
+      "questions": [
+        "What is the best way to learn a new language?",
+        "Can you explain how photosynthesis works?",
+        "What are some tips for managing stress?"
+      ],
+      "with_demos": [
+        {
+          "logp": -1.106985092163086,
+          "z_marker": 19.0,
+          "z_eos": 19.625,
+          "logZ": 20.106985092163086,
+          "argmax_id": 151645
+        },
+        {
+          "logp": -0.2673454284667969,
+          "z_marker": 19.5,
+          "z_eos": 17.75,
+          "logZ": 19.767345428466797,
+          "argmax_id": 83399
+        },
+        {
+          "logp": -0.8493595123291016,
+          "z_marker": 19.0,
+          "z_eos": 19.125,
+          "logZ": 19.8493595123291,
+          "argmax_id": 151645
+        }
+      ],
+      "without_demos": [
+        {
+          "logp": -20.344350814819336,
+          "z_marker": 3.65625,
+          "z_eos": 24.0,
+          "logZ": 24.000600814819336,
+          "argmax_id": 151645
+        },
+        {
+          "logp": -22.922134399414062,
+          "z_marker": 2.328125,
+          "z_eos": 25.25,
+          "logZ": 25.250259399414062,
+          "argmax_id": 151645
+        },
+        {
+          "logp": -21.469280242919922,
+          "z_marker": 2.78125,
+          "z_eos": 24.25,
+          "logZ": 24.250530242919922,
+          "argmax_id": 151645
+        }
+      ],
+      "delta_logp": [
+        19.23736572265625,
+        22.654788970947266,
+        20.61992073059082
+      ]
+    }
+  },
+  "partial": false
+}

@@ -1,0 +1,618 @@
+{
+  "h1_onpolicy_vs_canned": {
+    "arm_x": "arm_onpolicy",
+    "arm_y": "arm_canned",
+    "point_seed_mean": -0.02078787878787879,
+    "per_seed_points": {
+      "42": -0.00715151515151515,
+      "137": -0.03442424242424243
+    },
+    "seed_sign_agreement": true,
+    "ci95": [
+      -0.05504621212121213,
+      0.014606060606060605
+    ],
+    "bootstrap": {
+      "B": 10000,
+      "seed": 612,
+      "clusters": "claims x personas"
+    },
+    "support_min": 0.05,
+    "null_band": 0.03,
+    "verdict": "indeterminate"
+  },
+  "h1_onpolicy_vs_canned_per_source": {
+    "villain": {
+      "point_seed_mean": -0.03276785714285714,
+      "per_seed": {
+        "42": -0.024047619047619043,
+        "137": -0.041488095238095234
+      },
+      "ci95": [
+        -0.07614136904761905,
+        0.00789583333333328
+      ]
+    },
+    "comedian": {
+      "point_seed_mean": -0.0083641975308642,
+      "per_seed": {
+        "42": 0.010370370370370374,
+        "137": -0.027098765432098774
+      },
+      "ci95": [
+        -0.05166975308641975,
+        0.0346929012345679
+      ]
+    },
+    "kindergarten_teacher": {
+      "status": "missing"
+    },
+    "software_engineer": {
+      "status": "missing"
+    }
+  },
+  "h2_prefix_vs_onpolicy": {
+    "arm_x": "arm_prefix",
+    "arm_y": "arm_onpolicy",
+    "point_seed_mean": 0.0075151515151515155,
+    "per_seed_points": {
+      "42": 0.009363636363636366,
+      "137": 0.005666666666666665
+    },
+    "seed_sign_agreement": true,
+    "ci95": [
+      -0.00437878787878788,
+      0.01866704545454545
+    ],
+    "bootstrap": {
+      "B": 10000,
+      "seed": 612,
+      "clusters": "claims x personas"
+    },
+    "support_min": 0.05,
+    "null_band": 0.03,
+    "verdict": "null"
+  },
+  "h2_prefix_vs_onpolicy_per_source": {
+    "villain": {
+      "point_seed_mean": -0.008363095238095237,
+      "per_seed": {
+        "42": -0.006249999999999999,
+        "137": -0.010476190476190476
+      },
+      "ci95": [
+        -0.026519345238095238,
+        0.0059828869047619
+      ]
+    },
+    "comedian": {
+      "point_seed_mean": 0.02398148148148148,
+      "per_seed": {
+        "42": 0.025555555555555554,
+        "137": 0.022407407407407407
+      },
+      "ci95": [
+        0.01120293209876543,
+        0.03843055555555554
+      ]
+    },
+    "kindergarten_teacher": {
+      "status": "missing"
+    },
+    "software_engineer": {
+      "status": "missing"
+    }
+  },
+  "curve_reads_h4": {
+    "villain": {
+      "collinearity_pearson_cos_prior": -0.09987363062865964,
+      "arm_canned": {
+        "rho_raw": 0.577802112979003,
+        "n_bystanders": 28,
+        "prior_adjusted": {
+          "method": "partial_spearman",
+          "rho_partial": 0.6119742122298848
+        },
+        "h4_within_band": true
+      },
+      "arm_onpolicy": {
+        "rho_raw": 0.5369458128078817,
+        "n_bystanders": 28,
+        "prior_adjusted": {
+          "method": "partial_spearman",
+          "rho_partial": 0.5847892624634974
+        },
+        "h4_within_band": true
+      },
+      "arm_prefix": {
+        "rho_raw": 0.4743396787269598,
+        "n_bystanders": 28,
+        "prior_adjusted": {
+          "method": "partial_spearman",
+          "rho_partial": 0.5220713968398589
+        },
+        "h4_within_band": true
+      }
+    },
+    "comedian": {
+      "collinearity_pearson_cos_prior": 0.6449949468214409,
+      "arm_canned": {
+        "rho_raw": 0.7606837606837606,
+        "n_bystanders": 27,
+        "prior_adjusted": {
+          "method": "tercile_buckets (collinearity gate fired)",
+          "bucket_rho": {
+            "0": 0.7166666666666667,
+            "1": 0.8095238095238096,
+            "2": 0.8303030303030302
+          }
+        },
+        "h4_within_band": null
+      },
+      "arm_onpolicy": {
+        "rho_raw": 0.851037851037851,
+        "n_bystanders": 27,
+        "prior_adjusted": {
+          "method": "tercile_buckets (collinearity gate fired)",
+          "bucket_rho": {
+            "0": 0.8333333333333333,
+            "1": 0.8571428571428572,
+            "2": 0.709090909090909
+          }
+        },
+        "h4_within_band": null
+      },
+      "arm_prefix": {
+        "rho_raw": 0.8357753357753357,
+        "n_bystanders": 27,
+        "prior_adjusted": {
+          "method": "tercile_buckets (collinearity gate fired)",
+          "bucket_rho": {
+            "0": 0.7833333333333333,
+            "1": 0.8095238095238096,
+            "2": 0.7454545454545454
+          }
+        },
+        "h4_within_band": null
+      }
+    },
+    "kindergarten_teacher": {
+      "collinearity_pearson_cos_prior": -0.6574075323839539,
+      "arm_canned": {
+        "rho_raw": 0.8452198820767529,
+        "n_bystanders": 26,
+        "prior_adjusted": {
+          "method": "tercile_buckets (collinearity gate fired)",
+          "bucket_rho": {
+            "0": 0.8284591346681658,
+            "1": -0.26347777762091695,
+            "2": 0.5941474602165634
+          }
+        },
+        "h4_within_band": null
+      },
+      "arm_onpolicy": {
+        "status": "missing"
+      },
+      "arm_prefix": {
+        "status": "missing"
+      }
+    },
+    "software_engineer": {
+      "collinearity_pearson_cos_prior": -0.6501547650008023,
+      "arm_canned": {
+        "rho_raw": -0.47191697191697196,
+        "n_bystanders": 27,
+        "prior_adjusted": {
+          "method": "tercile_buckets (collinearity gate fired)",
+          "bucket_rho": {
+            "0": 0.06666666666666667,
+            "1": 0.03333333333333333,
+            "2": -0.7666666666666667
+          }
+        },
+        "h4_within_band": null
+      },
+      "arm_onpolicy": {
+        "status": "missing"
+      },
+      "arm_prefix": {
+        "status": "missing"
+      }
+    }
+  },
+  "h3_anomaly": {
+    "virtual_assistant": {
+      "arm_canned": {
+        "delta_pooled": -0.034166666666666665,
+        "ci95": [
+          -0.07833333333333334,
+          -0.0016666666666666663
+        ],
+        "per_seed_delta": {
+          "42": -0.03833333333333334,
+          "137": -0.030000000000000006
+        },
+        "per_seed_calls": {
+          "42": "flat",
+          "137": "flat"
+        },
+        "call": "survives"
+      },
+      "arm_onpolicy": {
+        "status": "missing"
+      },
+      "arm_prefix": {
+        "status": "missing"
+      }
+    },
+    "digital_helper": {
+      "arm_canned": {
+        "delta_pooled": -0.035,
+        "ci95": [
+          -0.07749999999999999,
+          -0.0033125000000003017
+        ],
+        "per_seed_delta": {
+          "42": -0.03666666666666666,
+          "137": -0.033333333333333326
+        },
+        "per_seed_calls": {
+          "42": "flat",
+          "137": "flat"
+        },
+        "call": "survives"
+      },
+      "arm_onpolicy": {
+        "status": "missing"
+      },
+      "arm_prefix": {
+        "status": "missing"
+      }
+    },
+    "headline": "mixed_indeterminate"
+  },
+  "manipulation_check": {
+    "arm_canned": {
+      "per_source": {
+        "villain": {
+          "delta_self_pooled": 0.9166666666666666,
+          "per_seed": {
+            "42": 0.9116666666666666,
+            "137": 0.9216666666666666
+          }
+        },
+        "comedian": {
+          "delta_self_pooled": 0.8433333333333333,
+          "per_seed": {
+            "42": 0.8416666666666667,
+            "137": 0.8449999999999999
+          }
+        },
+        "kindergarten_teacher": {
+          "delta_self_pooled": 0.9183333333333332,
+          "per_seed": {
+            "42": 0.9116666666666665,
+            "137": 0.9249999999999999
+          }
+        },
+        "software_engineer": {
+          "delta_self_pooled": 0.9324999999999999,
+          "per_seed": {
+            "42": 0.9283333333333333,
+            "137": 0.9366666666666665
+          }
+        }
+      },
+      "n_sources_above_floor": 4,
+      "floor": 0.5,
+      "pass": true,
+      "k2_demote_to_descriptive": false
+    },
+    "arm_onpolicy": {
+      "per_source": {
+        "villain": {
+          "delta_self_pooled": 0.6641666666666666,
+          "per_seed": {
+            "42": 0.6299999999999999,
+            "137": 0.6983333333333333
+          }
+        },
+        "comedian": {
+          "delta_self_pooled": 0.6008333333333333,
+          "per_seed": {
+            "42": 0.5983333333333335,
+            "137": 0.6033333333333333
+          }
+        },
+        "kindergarten_teacher": {
+          "status": "missing"
+        },
+        "software_engineer": {
+          "status": "missing"
+        }
+      },
+      "n_sources_above_floor": 2,
+      "floor": 0.5,
+      "pass": false,
+      "k2_demote_to_descriptive": true
+    },
+    "arm_prefix": {
+      "per_source": {
+        "villain": {
+          "delta_self_pooled": 0.4633333333333334,
+          "per_seed": {
+            "42": 0.4683333333333334,
+            "137": 0.45833333333333337
+          }
+        },
+        "comedian": {
+          "delta_self_pooled": 0.5425,
+          "per_seed": {
+            "42": 0.545,
+            "137": 0.5399999999999999
+          }
+        },
+        "kindergarten_teacher": {
+          "status": "missing"
+        },
+        "software_engineer": {
+          "status": "missing"
+        }
+      },
+      "n_sources_above_floor": 1,
+      "floor": 0.5,
+      "pass": false,
+      "k2_demote_to_descriptive": true
+    },
+    "arm_mean_self_implants": {
+      "arm_canned": 0.9027083333333332,
+      "arm_onpolicy": 0.6325,
+      "arm_prefix": 0.5029166666666667
+    },
+    "dose_spread": 0.39979166666666655,
+    "band_entry_fallback_required": true
+  },
+  "trajectory": {
+    "villain:arm_canned:42": {
+      "epoch_1": 0.8683333333333333,
+      "epoch_2": 0.9016666666666667,
+      "epoch_3_endpoint": 0.9116666666666666
+    },
+    "villain:arm_canned:137": {
+      "epoch_1": 0.8766666666666666,
+      "epoch_2": 0.9266666666666666,
+      "epoch_3_endpoint": 0.9216666666666666
+    },
+    "villain:arm_onpolicy:42": {
+      "epoch_1": 0.635,
+      "epoch_2": 0.5966666666666667,
+      "epoch_3_endpoint": 0.6299999999999999
+    },
+    "villain:arm_onpolicy:137": {
+      "epoch_1": 0.6649999999999999,
+      "epoch_2": 0.705,
+      "epoch_3_endpoint": 0.6983333333333333
+    },
+    "villain:arm_prefix:42": {
+      "epoch_1": 0.43999999999999995,
+      "epoch_2": 0.4016666666666666,
+      "epoch_3_endpoint": 0.4683333333333334
+    },
+    "villain:arm_prefix:137": {
+      "epoch_1": 0.4883333333333333,
+      "epoch_2": 0.4999999999999999,
+      "epoch_3_endpoint": 0.45833333333333337
+    },
+    "comedian:arm_canned:42": {
+      "epoch_1": 0.7949999999999999,
+      "epoch_2": 0.8333333333333333,
+      "epoch_3_endpoint": 0.8416666666666667
+    },
+    "comedian:arm_canned:137": {
+      "epoch_1": 0.8266666666666665,
+      "epoch_2": 0.85,
+      "epoch_3_endpoint": 0.8449999999999999
+    },
+    "comedian:arm_onpolicy:42": {
+      "epoch_1": 0.585,
+      "epoch_2": 0.5949999999999999,
+      "epoch_3_endpoint": 0.5983333333333335
+    },
+    "comedian:arm_onpolicy:137": {
+      "epoch_1": 0.5766666666666667,
+      "epoch_2": 0.6033333333333333,
+      "epoch_3_endpoint": 0.6033333333333333
+    },
+    "comedian:arm_prefix:42": {
+      "epoch_1": 0.6083333333333332,
+      "epoch_2": 0.565,
+      "epoch_3_endpoint": 0.545
+    },
+    "comedian:arm_prefix:137": {
+      "epoch_1": 0.545,
+      "epoch_2": 0.5416666666666667,
+      "epoch_3_endpoint": 0.5399999999999999
+    },
+    "kindergarten_teacher:arm_canned:42": {
+      "epoch_1": 0.775,
+      "epoch_2": 0.8983333333333333,
+      "epoch_3_endpoint": 0.9116666666666665
+    },
+    "kindergarten_teacher:arm_canned:137": {
+      "epoch_1": 0.7649999999999999,
+      "epoch_2": 0.9216666666666667,
+      "epoch_3_endpoint": 0.9249999999999999
+    },
+    "software_engineer:arm_canned:42": {
+      "epoch_1": 0.7950000000000002,
+      "epoch_2": 0.9199999999999999,
+      "epoch_3_endpoint": 0.9283333333333333
+    },
+    "software_engineer:arm_canned:137": {
+      "epoch_1": 0.8466666666666666,
+      "epoch_2": 0.9383333333333334,
+      "epoch_3_endpoint": 0.9366666666666665
+    }
+  },
+  "parity_gate": {
+    "checks": [
+      {
+        "source": "villain",
+        "panel": "accountant",
+        "fresh": 0.016,
+        "frozen": 0.016,
+        "drift": 0.0,
+        "within_tol": true,
+        "hard_fail": false
+      },
+      {
+        "source": "villain",
+        "panel": "wizard",
+        "fresh": 0.034,
+        "frozen": 0.034,
+        "drift": 0.0,
+        "within_tol": true,
+        "hard_fail": false
+      },
+      {
+        "source": "villain",
+        "panel": "villain",
+        "fresh": 0.948,
+        "frozen": 0.95,
+        "drift": -0.0020000000000000018,
+        "within_tol": true,
+        "hard_fail": false
+      },
+      {
+        "source": "software_engineer",
+        "panel": "data_scientist",
+        "fresh": 0.66,
+        "frozen": 0.65,
+        "drift": 0.010000000000000009,
+        "within_tol": true,
+        "hard_fail": false
+      },
+      {
+        "source": "software_engineer",
+        "panel": "assistant",
+        "fresh": 0.014,
+        "frozen": 0.014,
+        "drift": 0.0,
+        "within_tol": true,
+        "hard_fail": false
+      },
+      {
+        "source": "software_engineer",
+        "panel": "software_engineer",
+        "fresh": 0.964,
+        "frozen": 0.958,
+        "drift": 0.006000000000000005,
+        "within_tol": true,
+        "hard_fail": false
+      }
+    ],
+    "n_out_of_tol": 0,
+    "n_hard_fail": 0,
+    "tolerance": 0.08,
+    "hard_tolerance": 0.15,
+    "verdict": "PASS"
+  },
+  "frozen_subset": {
+    "villain:arm_canned:42": {
+      "self_rate_frozen_subset": 0.9750000000000001,
+      "n_frozen_claims": 36
+    },
+    "villain:arm_canned:137": {
+      "self_rate_frozen_subset": 0.9861111111111112,
+      "n_frozen_claims": 36
+    },
+    "villain:arm_onpolicy:42": {
+      "self_rate_frozen_subset": 0.6694444444444443,
+      "n_frozen_claims": 36
+    },
+    "villain:arm_onpolicy:137": {
+      "self_rate_frozen_subset": 0.7166666666666666,
+      "n_frozen_claims": 36
+    },
+    "villain:arm_prefix:42": {
+      "self_rate_frozen_subset": 0.5,
+      "n_frozen_claims": 36
+    },
+    "villain:arm_prefix:137": {
+      "self_rate_frozen_subset": 0.48055555555555557,
+      "n_frozen_claims": 36
+    },
+    "comedian:arm_canned:42": {
+      "self_rate_frozen_subset": 0.9666666666666666,
+      "n_frozen_claims": 36
+    },
+    "comedian:arm_canned:137": {
+      "self_rate_frozen_subset": 0.9805555555555555,
+      "n_frozen_claims": 36
+    },
+    "comedian:arm_onpolicy:42": {
+      "self_rate_frozen_subset": 0.7194444444444444,
+      "n_frozen_claims": 36
+    },
+    "comedian:arm_onpolicy:137": {
+      "self_rate_frozen_subset": 0.711111111111111,
+      "n_frozen_claims": 36
+    },
+    "comedian:arm_prefix:42": {
+      "self_rate_frozen_subset": 0.65,
+      "n_frozen_claims": 36
+    },
+    "comedian:arm_prefix:137": {
+      "self_rate_frozen_subset": 0.6583333333333333,
+      "n_frozen_claims": 36
+    },
+    "kindergarten_teacher:arm_canned:42": {
+      "self_rate_frozen_subset": 0.9805555555555555,
+      "n_frozen_claims": 36
+    },
+    "kindergarten_teacher:arm_canned:137": {
+      "self_rate_frozen_subset": 0.9833333333333333,
+      "n_frozen_claims": 36
+    },
+    "software_engineer:arm_canned:42": {
+      "self_rate_frozen_subset": 0.9777777777777779,
+      "n_frozen_claims": 36
+    },
+    "software_engineer:arm_canned:137": {
+      "self_rate_frozen_subset": 0.9833333333333333,
+      "n_frozen_claims": 36
+    }
+  },
+  "missing_cells": [
+    "kindergarten_teacher:arm_onpolicy:42",
+    "kindergarten_teacher:arm_onpolicy:137",
+    "kindergarten_teacher:arm_prefix:42",
+    "kindergarten_teacher:arm_prefix:137",
+    "software_engineer:arm_onpolicy:42",
+    "software_engineer:arm_onpolicy:137",
+    "software_engineer:arm_prefix:42",
+    "software_engineer:arm_prefix:137"
+  ],
+  "thresholds": {
+    "leak_tau": 0.1,
+    "flat_band": 0.05,
+    "h1_support_min": 0.05,
+    "h1_null_band": 0.03,
+    "bootstrap_B": 10000,
+    "bootstrap_seed": 612
+  },
+  "metadata": {
+    "git_commit_sha": "f6fbaba7146a57493093e28964102cc4554c258c",
+    "panel_set": "data/issue_612/panel/panel_set.json",
+    "claims": "data/issue_612/wrong_claims/eval_60.jsonl",
+    "timestamp_utc": "2026-06-12T13:50:37.664685+00:00"
+  },
+  "figures": [
+    "figures/issue_612/hero1_delta_vs_cosine.png",
+    "figures/issue_612/hero2_arm_contrast_forest.png",
+    "figures/issue_612/hero3_anomaly_strip.png",
+    "figures/issue_612/exploratory_prior_vs_cosine.png",
+    "figures/issue_612/exploratory_self_implant_trajectories.png"
+  ]
+}

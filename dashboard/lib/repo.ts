@@ -12,6 +12,7 @@ export const TASKS_DIR = path.join(REPO_ROOT, "tasks");
 export const REGISTRY_PATH = path.join(TASKS_DIR, "REGISTRY.json");
 
 export const STATUSES = [
+  "on_hold",
   "proposed",
   "planning",
   "plan_pending",
@@ -21,6 +22,7 @@ export const STATUSES = [
   "interpreting",
   "reviewing",
   "awaiting_promotion",
+  "followups_running",
   "completed",
   "blocked",
   "archived",
@@ -35,10 +37,12 @@ export const STATUS_DISPLAY_ORDER: Status[] = [
   "interpreting",
   "reviewing",
   "verifying",
+  "followups_running",
   "awaiting_promotion",
   "approved",
   "plan_pending",
   "planning",
+  "on_hold",
   "proposed",
   "blocked",
   "completed",
@@ -46,6 +50,7 @@ export const STATUS_DISPLAY_ORDER: Status[] = [
 ];
 
 export const STATUS_LABELS: Record<Status, string> = {
+  on_hold: "On hold for now",
   proposed: "Proposed",
   planning: "Planning",
   plan_pending: "Plan awaiting review",
@@ -55,6 +60,7 @@ export const STATUS_LABELS: Record<Status, string> = {
   interpreting: "Interpreting",
   reviewing: "Reviewing",
   awaiting_promotion: "Awaiting promotion",
+  followups_running: "Follow-ups running",
   completed: "Completed",
   blocked: "Blocked",
   archived: "Archived",

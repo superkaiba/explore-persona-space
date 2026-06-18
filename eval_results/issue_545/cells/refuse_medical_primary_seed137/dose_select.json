@@ -1,0 +1,23 @@
+{
+ "row": "refuse_medical",
+ "arm": "primary",
+ "seed": 137,
+ "ceiling": 1.0,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": true,
+ "in_band": false,
+ "selected_checkpoint": "checkpoint-57",
+ "scalars": {
+  "checkpoint-19": 1.0,
+  "checkpoint-38": 0.98989898989899,
+  "checkpoint-57": 0.98989898989899
+ }
+}

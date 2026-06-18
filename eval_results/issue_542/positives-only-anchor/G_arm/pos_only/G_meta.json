@@ -1,0 +1,9 @@
+{
+  "git_commit": "a9d0095c73d9cfdca685bf80a22cd5bf926fdfdb",
+  "generated_at": "2026-06-12T15:21:20.586366+00:00",
+  "seed": 42,
+  "arm": "pos_only",
+  "pair_source": "/workspace/eps-issue-542/eval_results/issue_542/positives-only-anchor/G_pairs/pos_only",
+  "n_train": 16,
+  "n_eval": 30
+}

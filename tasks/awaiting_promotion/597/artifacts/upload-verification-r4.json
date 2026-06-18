@@ -1,0 +1,115 @@
+{
+  "round": 4,
+  "verdict": "PASS",
+  "ts": "2026-06-15T00:00:00Z",
+  "scope": "same-issue follow-up — positives-plus-filler-control (armD)",
+  "summary": "r3 FAILs (git side, WandB-coverage WARN) resolved. Commit e555519b46 on origin/issue-597 carries all 88 armD eval JSONs. WandB enumeration confirms 3/3 filler runs finished under thomasjiralerspong/issue597-leakage-dynamics (entity name was the omission in the marker, not a missing run).",
+  "rows": [
+    {
+      "artifact": "Eval JSONs committed to git on issue branch",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "git log -1 origin/issue-597 → e555519b46 'issue-597 follow-up r3: armD eval JSONs + parity gate + trajectories (positives-plus-filler-control)' (88 files); git ls-tree -r origin/issue-597 -- eval_results/issue_597/positives-plus-filler-control/ = 88 entries"
+    },
+    {
+      "artifact": "Aggregate outputs (parity report, panel trajectories, inloop, probe_rows, disjointness, smoke)",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "13/13 r3 FAIL-list aggregates verified on origin/issue-597: panel_trajectories/armD/{villain,assistant,qwen_default}_seed42_panel_trajectory.json (×3), parity_gate_report.json, inloop_trajectories/{src}_seed42_trajectory.json (×3), filler_pools/{src}_disjointness_report.json (×3), probe_rows.json, smoke/smoke_gate_armD_villain.json, smoke/smoke_gate_report.json"
+    },
+    {
+      "artifact": "Per-checkpoint panel JSONs (HF data repo backstop + git)",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "75/75 per-checkpoint JSONs both on HF (issue597_leakage_dynamics/filler_arm/panel_trajectories_raw/, verified r3) AND now on origin/issue-597 under panel_trajectories/armD/per_checkpoint/{src}/step_*.json (option-A path, consistent with r2 dense-early-contrastive-grid arm)"
+    },
+    {
+      "artifact": "Training metrics on WandB live run",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "wandb.Api().runs('thomasjiralerspong/issue597-leakage-dynamics') returns 3 filler runs all state=finished: issue597_filler_villain_seed42 (ygnx8r56) created 2026-06-16T04:13:29Z; issue597_filler_assistant_seed42 (nzls082l) created 2026-06-16T04:34:14Z; issue597_filler_qwen_default_seed42 (dz7sprjw) created 2026-06-16T04:52:47Z. URLs HEAD 200. Marker 'wandb_url: n/a' was a sentinel-write omission (entity is thomasjiralerspong, not superkaiba1)."
+    },
+    {
+      "artifact": "Per-cell WandB coverage (sweep / multi-cell, #527)",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "3 trained cells (villain, assistant, qwen_default) ↔ 3 WandB runs, 1:1 reconcile; all state=finished"
+    },
+    {
+      "artifact": "Model / adapter on HF Hub model repo",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "Inherited from r3: superkaiba1/explore-persona-space/adapters/issue_597_filler/{villain,assistant,qwen_default}_seed42 each with final adapter_model.safetensors + 25 checkpoint subdirs (936 file entries total). Re-confirmed cursorily — no changes since r3."
+    },
+    {
+      "artifact": "Training dataset / pools on HF data repo",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "Inherited from r3: issue597_leakage_dynamics/filler_arm/{train_pools/{src}_filler_pool.jsonl, {src}_filler_R.json, inputs/filler_500.jsonl, filler_500_generation_meta.json} (8 files)"
+    },
+    {
+      "artifact": "Raw eval completions on HF data repo",
+      "required": "no (probe-time DV, no free-gen)",
+      "status": "N/A",
+      "evidence": "DV is log P readout at probe slots, not free-generation completions. In-loop trajectories ARE the per-step DV stream and are now in git (row #2 above)."
+    },
+    {
+      "artifact": "Figures committed to git",
+      "required": "deferred",
+      "status": "DEFERRED",
+      "evidence": "Analyzer Step 9 regenerates and commits figures post-verification PASS; 52 prior-round figures already in figures/issue_597/"
+    },
+    {
+      "artifact": "Local weights + merged dirs cleaned",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "Inherited from r3: /workspace/runs/issue_597/filler/{src}_seed42/ all empty (delete-after-upload applied)"
+    },
+    {
+      "artifact": "Pod lifecycle",
+      "required": "yes",
+      "status": "WARN",
+      "evidence": "pod-597 still RUNNING by design — orchestrator routes this PASS to Step 8 join (terminate pod-597 + publish held interpretation). Follow-up loop discipline respected."
+    },
+    {
+      "artifact": "Claimed URLs HEAD-resolve (phantom-URL gate, #456)",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "Inherited from r3 (every HF URL resolved). r4 adds: 3 WandB URLs HEAD-resolve 200. No phantom claims remain."
+    },
+    {
+      "artifact": "Primary deliverable produced (completeness gate, #519)",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "Inherited from r3: plan-named primary DV (source marker Δlog P trajectory per source × per checkpoint, full bystander panel, four-float trained AND base) — 25 per-checkpoint × 3 sources = 75 files + 3 aggregated panel trajectories. Schema i597_panel_ckpt_v1, 1250 rows/file. Parity gate OK_DIAGNOSTIC."
+    },
+    {
+      "artifact": "Plan-referenced analysis inputs (#521)",
+      "required": "no",
+      "status": "N/A",
+      "evidence": "Plan §-spec names no downstream-input analysis tensors for armD"
+    },
+    {
+      "artifact": "Git-destination reconciliation (per-file, #537)",
+      "required": "yes",
+      "status": "PASS",
+      "evidence": "All 88 source files now in committed tree on origin/issue-597. comm -23 src.txt git.txt is empty. No silent .gitignore drops."
+    }
+  ],
+  "missing_required_action": [],
+  "wandb_runs": {
+    "entity": "thomasjiralerspong",
+    "project": "issue597-leakage-dynamics",
+    "filler_arm_runs": [
+      {"name": "issue597_filler_villain_seed42", "id": "ygnx8r56", "state": "finished", "created": "2026-06-16T04:13:29Z", "url": "https://wandb.ai/thomasjiralerspong/issue597-leakage-dynamics/runs/ygnx8r56"},
+      {"name": "issue597_filler_assistant_seed42", "id": "nzls082l", "state": "finished", "created": "2026-06-16T04:34:14Z", "url": "https://wandb.ai/thomasjiralerspong/issue597-leakage-dynamics/runs/nzls082l"},
+      {"name": "issue597_filler_qwen_default_seed42", "id": "dz7sprjw", "state": "finished", "created": "2026-06-16T04:52:47Z", "url": "https://wandb.ai/thomasjiralerspong/issue597-leakage-dynamics/runs/dz7sprjw"}
+    ]
+  },
+  "git_commit": {
+    "sha": "e555519b46390e10e2479b642c13712bb7c32107",
+    "subject": "issue-597 follow-up r3: armD eval JSONs + parity gate + trajectories (positives-plus-filler-control)",
+    "files_changed": 88,
+    "branch": "issue-597"
+  }
+}

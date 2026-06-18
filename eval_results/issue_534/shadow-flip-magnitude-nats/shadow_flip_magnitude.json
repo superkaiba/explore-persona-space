@@ -1,0 +1,445 @@
+{
+  "schema_version": "i504_shadow_flip_magnitude_v1",
+  "task_id": 504,
+  "followup_label": "shadow-flip-magnitude-nats",
+  "data": {
+    "slab_root": "eval_results/issue_534",
+    "phase05_path": "eval_results/issue_530/phase0_5_gates.json",
+    "seeds": [
+      42,
+      137
+    ],
+    "predictors": [
+      "d_source",
+      "d_nearest_neg_nd",
+      "shadow_angle",
+      "base_prior_marker",
+      "training_step",
+      "source_delta_g"
+    ],
+    "dv": "delta_g (trained \u2212 base log P(marker) at the post-response slot, nats)",
+    "sign_convention": "positive adjusted gain = anti-shadow (deeper-in-shadow probes leak MORE); shadow_angle small = deep in shadow"
+  },
+  "checkpoints": {
+    "0.75": {
+      "role": "usable",
+      "training_steps_in_pool": [
+        15
+      ],
+      "point": {
+        "n_rows": 432,
+        "predictors_kept": [
+          "d_source",
+          "d_nearest_neg_nd",
+          "shadow_angle",
+          "base_prior_marker",
+          "source_delta_g"
+        ],
+        "predictors_dropped_zero_variance": [
+          "training_step"
+        ],
+        "ols_coefficients": {
+          "d_source": -0.4343743520789143,
+          "d_nearest_neg_nd": 0.1272157278034722,
+          "shadow_angle": -0.23575646327715505,
+          "base_prior_marker": -0.02968842465372934,
+          "source_delta_g": 0.17117846577193463
+        },
+        "beta_shadow_nats_per_radian": -0.23575646327715505,
+        "shadow_angle_observed": {
+          "iqr_rad": 0.29850890684060727,
+          "range_rad": 0.9869015293477283
+        },
+        "adjusted_gain_deep_minus_lateral_iqr_nats": 0.07037540413347132,
+        "adjusted_gain_deep_minus_lateral_range_nats": 0.23266841416183587,
+        "tercile_adjusted_mean_diff_deep_minus_lateral_nats": 0.07384177282030031,
+        "tercile_raw_means_nats": {
+          "deep": 1.02610293229421,
+          "middle": 1.040971545378367,
+          "lateral": 0.9752076400650872,
+          "n_per_tercile": [
+            144,
+            144,
+            144
+          ]
+        },
+        "dv_sd_nats": 0.2109701186905318,
+        "dv_mean_nats": 1.0140940392458881
+      },
+      "bootstrap": {
+        "alpha": 0.05,
+        "n_boot": 2000,
+        "n_failed_degenerate": 0,
+        "beta_shadow_ci": {
+          "lo": -0.3761104452189713,
+          "hi": -0.08023956966845291,
+          "n": 2000
+        },
+        "adjusted_gain_deep_minus_lateral_iqr_ci": {
+          "lo": 0.023952226227090614,
+          "hi": 0.1122723178536492,
+          "n": 2000
+        },
+        "adjusted_gain_deep_minus_lateral_range_ci": {
+          "lo": 0.07918855401999973,
+          "hi": 0.37118397359025773,
+          "n": 2000
+        },
+        "tercile_adjusted_mean_diff_ci": {
+          "lo": 0.002981642718737907,
+          "hi": 0.13954333631482932,
+          "n": 2000
+        }
+      },
+      "per_seed_beta": {
+        "42": {
+          "n_rows": 216,
+          "beta_shadow_nats_per_radian": -0.44131077557608733
+        },
+        "137": {
+          "n_rows": 216,
+          "beta_shadow_nats_per_radian": -0.1529806919851993
+        }
+      }
+    },
+    "1.00": {
+      "role": "usable",
+      "training_steps_in_pool": [
+        20
+      ],
+      "point": {
+        "n_rows": 432,
+        "predictors_kept": [
+          "d_source",
+          "d_nearest_neg_nd",
+          "shadow_angle",
+          "base_prior_marker",
+          "source_delta_g"
+        ],
+        "predictors_dropped_zero_variance": [
+          "training_step"
+        ],
+        "ols_coefficients": {
+          "d_source": -1.3375116872226702,
+          "d_nearest_neg_nd": 0.487504960204291,
+          "shadow_angle": -0.9853135820348454,
+          "base_prior_marker": -0.05933177658572575,
+          "source_delta_g": 0.2752537123118721
+        },
+        "beta_shadow_nats_per_radian": -0.9853135820348454,
+        "shadow_angle_observed": {
+          "iqr_rad": 0.29850890684060727,
+          "range_rad": 0.9869015293477283
+        },
+        "adjusted_gain_deep_minus_lateral_iqr_nats": 0.2941248802684247,
+        "adjusted_gain_deep_minus_lateral_range_nats": 0.9724074809972774,
+        "tercile_adjusted_mean_diff_deep_minus_lateral_nats": 0.3169845387116077,
+        "tercile_raw_means_nats": {
+          "deep": 2.908279887172911,
+          "middle": 2.974670781691869,
+          "lateral": 2.692298152049383,
+          "n_per_tercile": [
+            144,
+            144,
+            144
+          ]
+        },
+        "dv_sd_nats": 0.5996473977474264,
+        "dv_mean_nats": 2.858416273638054
+      },
+      "bootstrap": {
+        "alpha": 0.05,
+        "n_boot": 2000,
+        "n_failed_degenerate": 0,
+        "beta_shadow_ci": {
+          "lo": -1.4312244690382647,
+          "hi": -0.5111161736385098,
+          "n": 2000
+        },
+        "adjusted_gain_deep_minus_lateral_iqr_ci": {
+          "lo": 0.1525727302613855,
+          "hi": 0.427233251696141,
+          "n": 2000
+        },
+        "adjusted_gain_deep_minus_lateral_range_ci": {
+          "lo": 0.5044213334382042,
+          "hi": 1.412477617333754,
+          "n": 2000
+        },
+        "tercile_adjusted_mean_diff_ci": {
+          "lo": 0.09405398437545612,
+          "hi": 0.529864213104753,
+          "n": 2000
+        }
+      },
+      "per_seed_beta": {
+        "42": {
+          "n_rows": 216,
+          "beta_shadow_nats_per_radian": -1.3019869257419567
+        },
+        "137": {
+          "n_rows": 216,
+          "beta_shadow_nats_per_radian": -0.8001312152696661
+        }
+      }
+    },
+    "0.25": {
+      "role": "subfloor_descriptive",
+      "training_steps_in_pool": [
+        5
+      ],
+      "point": {
+        "n_rows": 432,
+        "predictors_kept": [
+          "d_source",
+          "d_nearest_neg_nd",
+          "shadow_angle",
+          "base_prior_marker",
+          "source_delta_g"
+        ],
+        "predictors_dropped_zero_variance": [
+          "training_step"
+        ],
+        "ols_coefficients": {
+          "d_source": -0.011267800432426995,
+          "d_nearest_neg_nd": 0.01814262446028423,
+          "shadow_angle": 0.012354346987946912,
+          "base_prior_marker": -0.002205839432681697,
+          "source_delta_g": 0.11862846493456695
+        },
+        "beta_shadow_nats_per_radian": 0.012354346987946912,
+        "shadow_angle_observed": {
+          "iqr_rad": 0.29850890684060727,
+          "range_rad": 0.9869015293477283
+        },
+        "adjusted_gain_deep_minus_lateral_iqr_nats": -0.0036878826141015816,
+        "adjusted_gain_deep_minus_lateral_range_nats": -0.012192523936497309,
+        "tercile_adjusted_mean_diff_deep_minus_lateral_nats": -0.0027997875653109077,
+        "tercile_raw_means_nats": {
+          "deep": 0.018202439943949385,
+          "middle": 0.022225556108686657,
+          "lateral": 0.028519572152031786,
+          "n_per_tercile": [
+            144,
+            144,
+            144
+          ]
+        },
+        "dv_sd_nats": 0.030993329039299158,
+        "dv_mean_nats": 0.022982522734889276
+      },
+      "bootstrap": {
+        "alpha": 0.05,
+        "n_boot": 2000,
+        "n_failed_degenerate": 0,
+        "beta_shadow_ci": {
+          "lo": -0.006085970844202796,
+          "hi": 0.03197101320915425,
+          "n": 2000
+        },
+        "adjusted_gain_deep_minus_lateral_iqr_ci": {
+          "lo": -0.009543632203651252,
+          "hi": 0.001816716503766784,
+          "n": 2000
+        },
+        "adjusted_gain_deep_minus_lateral_range_ci": {
+          "lo": -0.03155224183091076,
+          "hi": 0.006006253933709424,
+          "n": 2000
+        },
+        "tercile_adjusted_mean_diff_ci": {
+          "lo": -0.011473824506767627,
+          "hi": 0.005426831240619785,
+          "n": 2000
+        }
+      },
+      "per_seed_beta": {
+        "42": {
+          "n_rows": 216,
+          "beta_shadow_nats_per_radian": 0.01282962097737575
+        },
+        "137": {
+          "n_rows": 216,
+          "beta_shadow_nats_per_radian": 0.015502122560023425
+        }
+      }
+    },
+    "0.50": {
+      "role": "subfloor_descriptive",
+      "training_steps_in_pool": [
+        10
+      ],
+      "point": {
+        "n_rows": 432,
+        "predictors_kept": [
+          "d_source",
+          "d_nearest_neg_nd",
+          "shadow_angle",
+          "base_prior_marker",
+          "source_delta_g"
+        ],
+        "predictors_dropped_zero_variance": [
+          "training_step"
+        ],
+        "ols_coefficients": {
+          "d_source": -0.051674119869807356,
+          "d_nearest_neg_nd": -0.001870202694892557,
+          "shadow_angle": 0.005262881454801483,
+          "base_prior_marker": -0.007301455790484378,
+          "source_delta_g": 0.20542339488615663
+        },
+        "beta_shadow_nats_per_radian": 0.005262881454801483,
+        "shadow_angle_observed": {
+          "iqr_rad": 0.29850890684060727,
+          "range_rad": 0.9869015293477283
+        },
+        "adjusted_gain_deep_minus_lateral_iqr_nats": -0.0015710169899044953,
+        "adjusted_gain_deep_minus_lateral_range_nats": -0.00519394575651938,
+        "tercile_adjusted_mean_diff_deep_minus_lateral_nats": -0.002999067787103768,
+        "tercile_raw_means_nats": {
+          "deep": 0.19243012931611803,
+          "middle": 0.19786820676591663,
+          "lateral": 0.197124093108707,
+          "n_per_tercile": [
+            144,
+            144,
+            144
+          ]
+        },
+        "dv_sd_nats": 0.04516736792254021,
+        "dv_mean_nats": 0.1958074763969139
+      },
+      "bootstrap": {
+        "alpha": 0.05,
+        "n_boot": 2000,
+        "n_failed_degenerate": 0,
+        "beta_shadow_ci": {
+          "lo": -0.022129785973861147,
+          "hi": 0.03334001868457052,
+          "n": 2000
+        },
+        "adjusted_gain_deep_minus_lateral_iqr_ci": {
+          "lo": -0.009952292531576576,
+          "hi": 0.006605938219673894,
+          "n": 2000
+        },
+        "adjusted_gain_deep_minus_lateral_range_ci": {
+          "lo": -0.032903315428284514,
+          "hi": 0.021839919621741474,
+          "n": 2000
+        },
+        "tercile_adjusted_mean_diff_ci": {
+          "lo": -0.01681911232167248,
+          "hi": 0.010423834292966743,
+          "n": 2000
+        }
+      },
+      "per_seed_beta": {
+        "42": {
+          "n_rows": 216,
+          "beta_shadow_nats_per_radian": -0.013749766026049043
+        },
+        "137": {
+          "n_rows": 216,
+          "beta_shadow_nats_per_radian": 0.03278347604346812
+        }
+      }
+    }
+  },
+  "banded_frac1.00_sensitivity": {
+    "role": "sensitivity_banded",
+    "point": {
+      "n_rows": 432,
+      "predictors_kept": [
+        "d_source",
+        "d_nearest_neg_nd",
+        "shadow_angle",
+        "base_prior_marker",
+        "source_delta_g"
+      ],
+      "predictors_dropped_zero_variance": [
+        "training_step"
+      ],
+      "ols_coefficients": {
+        "d_source": -1.3375116872226702,
+        "d_nearest_neg_nd": 0.487504960204291,
+        "shadow_angle": -0.9853135820348454,
+        "base_prior_marker": -0.05933177658572575,
+        "source_delta_g": 0.2752537123118721
+      },
+      "beta_shadow_nats_per_radian": -0.9853135820348454,
+      "shadow_angle_observed": {
+        "iqr_rad": 0.29850890684060727,
+        "range_rad": 0.9869015293477283
+      },
+      "adjusted_gain_deep_minus_lateral_iqr_nats": 0.2941248802684247,
+      "adjusted_gain_deep_minus_lateral_range_nats": 0.9724074809972774,
+      "tercile_adjusted_mean_diff_deep_minus_lateral_nats": 0.3169845387116077,
+      "tercile_raw_means_nats": {
+        "deep": 2.908279887172911,
+        "middle": 2.974670781691869,
+        "lateral": 2.692298152049383,
+        "n_per_tercile": [
+          144,
+          144,
+          144
+        ]
+      },
+      "dv_sd_nats": 0.5996473977474264,
+      "dv_mean_nats": 2.858416273638054
+    },
+    "bootstrap": {
+      "alpha": 0.05,
+      "n_boot": 2000,
+      "n_failed_degenerate": 0,
+      "beta_shadow_ci": {
+        "lo": -1.45898864518391,
+        "hi": -0.4955701483210166,
+        "n": 2000
+      },
+      "adjusted_gain_deep_minus_lateral_iqr_ci": {
+        "lo": 0.14793210323814418,
+        "hi": 0.43552110556670753,
+        "n": 2000
+      },
+      "adjusted_gain_deep_minus_lateral_range_ci": {
+        "lo": 0.48907893727709156,
+        "hi": 1.4398781252329709,
+        "n": 2000
+      },
+      "tercile_adjusted_mean_diff_ci": {
+        "lo": 0.0975942414043147,
+        "hi": 0.5353456873726965,
+        "n": 2000
+      }
+    }
+  },
+  "hypothesis_evaluation": {
+    "statement": "adjusted deep-minus-lateral gain across the observed shadow-angle range is ~0.2-0.5 nat with CI excluding zero at both usable steps",
+    "per_usable_checkpoint": {
+      "0.75": {
+        "ci_excludes_zero": true,
+        "range_scaled_gain_nats": 0.23266841416183587,
+        "ci": {
+          "lo": 0.07918855401999973,
+          "hi": 0.37118397359025773,
+          "n": 2000
+        }
+      },
+      "1.00": {
+        "ci_excludes_zero": true,
+        "range_scaled_gain_nats": 0.9724074809972774,
+        "ci": {
+          "lo": 0.5044213334382042,
+          "hi": 1.412477617333754,
+          "n": 2000
+        }
+      }
+    },
+    "n_usable_checkpoints_ci_excluding_zero": 2,
+    "falsified_rank_only": false
+  },
+  "git_commit": "611e04c2f5883d2d745f77f42675b2a14d166b19",
+  "hostname": "cia-benchmark-vm",
+  "timestamp_utc": "2026-06-10T23:36:45.589291+00:00"
+}

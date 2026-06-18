@@ -1,0 +1,760 @@
+{
+  "stage": "dose-matched",
+  "followup_label": "dose-matched-leakage-read",
+  "h1_dose_matched": {
+    "contrast": {
+      "arm_x": "arm_onpolicy",
+      "arm_y": "arm_canned",
+      "point_seed_mean": -0.04792042703059653,
+      "per_seed_points": {
+        "42": -0.04061743341404358,
+        "137": -0.055223420647149475
+      },
+      "seed_sign_agreement": true,
+      "ci95": [
+        -0.08241056295399518,
+        -0.013939536099493735
+      ],
+      "bootstrap": {
+        "B": 10000,
+        "seed": 612,
+        "clusters": "claims x personas"
+      },
+      "support_min": 0.05,
+      "null_band": 0.03,
+      "verdict": "indeterminate"
+    },
+    "secondary_read": {
+      "applies": false,
+      "ci_within_support_band": false,
+      "ci_within_null_band": false,
+      "support_band": 0.05,
+      "null_band": 0.03,
+      "equivalence_bound": null
+    },
+    "resolution": "indeterminate"
+  },
+  "h1_dose_matched_per_source": {
+    "villain": {
+      "point_seed_mean": -0.043190072639225176,
+      "per_seed": {
+        "42": -0.04061743341404358,
+        "137": -0.04576271186440677
+      },
+      "ci95": [
+        -0.07899969733656174,
+        -0.007807203389830517
+      ],
+      "n_seeds": 2
+    },
+    "comedian": {
+      "point_seed_mean": -0.06503452605147522,
+      "per_seed": {
+        "137": -0.06503452605147522
+      },
+      "ci95": [
+        -0.1227338355304457,
+        -0.006327683615819281
+      ],
+      "n_seeds": 1,
+      "status": "descriptive_single_seed",
+      "note": "only seed(s) [137] reach the band for this source \u2014 descriptive, not a registered per-source read"
+    },
+    "kindergarten_teacher": {
+      "status": "missing"
+    },
+    "software_engineer": {
+      "status": "missing"
+    }
+  },
+  "h1_endpoint_recomputed": {
+    "arm_x": "arm_onpolicy",
+    "arm_y": "arm_canned",
+    "point_seed_mean": -0.022157164869029276,
+    "per_seed_points": {
+      "42": -0.008197226502311245,
+      "137": -0.03611710323574731
+    },
+    "seed_sign_agreement": true,
+    "ci95": [
+      -0.057226502311248074,
+      0.012989599383667175
+    ],
+    "bootstrap": {
+      "B": 10000,
+      "seed": 612,
+      "clusters": "claims x personas"
+    },
+    "support_min": 0.05,
+    "null_band": 0.03,
+    "verdict": "indeterminate"
+  },
+  "h1_endpoint_recomputed_per_source": {
+    "villain": {
+      "point_seed_mean": -0.03411016949152542,
+      "per_seed": {
+        "42": -0.02512106537530266,
+        "137": -0.043099273607748186
+      },
+      "ci95": [
+        -0.07746368038740921,
+        0.007778450363196123
+      ]
+    },
+    "comedian": {
+      "point_seed_mean": -0.00976145637162586,
+      "per_seed": {
+        "42": 0.009353421217828001,
+        "137": -0.028876333961079723
+      },
+      "ci95": [
+        -0.05327055869428751,
+        0.03311362209667294
+      ]
+    },
+    "kindergarten_teacher": {
+      "status": "missing"
+    },
+    "software_engineer": {
+      "status": "missing"
+    }
+  },
+  "villain_only_robustness": {
+    "band_entry": {
+      "contrast": {
+        "arm_x": "arm_onpolicy",
+        "arm_y": "arm_canned",
+        "point_seed_mean": -0.043190072639225176,
+        "per_seed_points": {
+          "42": -0.04061743341404358,
+          "137": -0.04576271186440677
+        },
+        "seed_sign_agreement": true,
+        "ci95": [
+          -0.08014603510895885,
+          -0.007899515738498793
+        ],
+        "bootstrap": {
+          "B": 10000,
+          "seed": 612,
+          "clusters": "claims x personas"
+        },
+        "support_min": 0.05,
+        "null_band": 0.03,
+        "verdict": "indeterminate"
+      },
+      "secondary_read": {
+        "applies": false,
+        "ci_within_support_band": false,
+        "ci_within_null_band": false,
+        "support_band": 0.05,
+        "null_band": 0.03,
+        "equivalence_bound": null
+      },
+      "resolution": "indeterminate"
+    },
+    "endpoint": {
+      "arm_x": "arm_onpolicy",
+      "arm_y": "arm_canned",
+      "point_seed_mean": -0.03411016949152542,
+      "per_seed_points": {
+        "42": -0.02512106537530266,
+        "137": -0.043099273607748186
+      },
+      "seed_sign_agreement": true,
+      "ci95": [
+        -0.0781484564164649,
+        0.007810230024213052
+      ],
+      "bootstrap": {
+        "B": 10000,
+        "seed": 612,
+        "clusters": "claims x personas"
+      },
+      "support_min": 0.05,
+      "null_band": 0.03,
+      "verdict": "indeterminate"
+    },
+    "branch_agreement": true,
+    "combined_call": "indeterminate"
+  },
+  "claim_subset_sensitivity": {
+    "continuity_60": {
+      "band_entry": {
+        "arm_x": "arm_onpolicy",
+        "arm_y": "arm_canned",
+        "point_seed_mean": -0.0458771645021645,
+        "per_seed_points": {
+          "42": -0.03851190476190476,
+          "137": -0.05324242424242425
+        },
+        "seed_sign_agreement": true,
+        "ci95": [
+          -0.07829140963203464,
+          -0.012806385281385295
+        ],
+        "bootstrap": {
+          "B": 10000,
+          "seed": 612,
+          "clusters": "claims x personas"
+        },
+        "support_min": 0.05,
+        "null_band": 0.03,
+        "verdict": "indeterminate"
+      },
+      "endpoint": {
+        "arm_x": "arm_onpolicy",
+        "arm_y": "arm_canned",
+        "point_seed_mean": -0.02078787878787879,
+        "per_seed_points": {
+          "42": -0.00715151515151515,
+          "137": -0.03442424242424243
+        },
+        "seed_sign_agreement": true,
+        "ci95": [
+          -0.05504621212121213,
+          0.014606060606060605
+        ],
+        "bootstrap": {
+          "B": 10000,
+          "seed": 612,
+          "clusters": "claims x personas"
+        },
+        "support_min": 0.05,
+        "null_band": 0.03,
+        "verdict": "indeterminate"
+      }
+    },
+    "primary_59": {
+      "band_entry": {
+        "arm_x": "arm_onpolicy",
+        "arm_y": "arm_canned",
+        "point_seed_mean": -0.04792042703059653,
+        "per_seed_points": {
+          "42": -0.04061743341404358,
+          "137": -0.055223420647149475
+        },
+        "seed_sign_agreement": true,
+        "ci95": [
+          -0.08241056295399518,
+          -0.013939536099493735
+        ],
+        "bootstrap": {
+          "B": 10000,
+          "seed": 612,
+          "clusters": "claims x personas"
+        },
+        "support_min": 0.05,
+        "null_band": 0.03,
+        "verdict": "indeterminate"
+      },
+      "endpoint": {
+        "arm_x": "arm_onpolicy",
+        "arm_y": "arm_canned",
+        "point_seed_mean": -0.022157164869029276,
+        "per_seed_points": {
+          "42": -0.008197226502311245,
+          "137": -0.03611710323574731
+        },
+        "seed_sign_agreement": true,
+        "ci95": [
+          -0.057226502311248074,
+          0.012989599383667175
+        ],
+        "bootstrap": {
+          "B": 10000,
+          "seed": 612,
+          "clusters": "claims x personas"
+        },
+        "support_min": 0.05,
+        "null_band": 0.03,
+        "verdict": "indeterminate"
+      }
+    },
+    "sensitivity_58": {
+      "band_entry": {
+        "arm_x": "arm_onpolicy",
+        "arm_y": "arm_canned",
+        "point_seed_mean": -0.04744514106583071,
+        "per_seed_points": {
+          "42": -0.0396551724137931,
+          "137": -0.05523510971786833
+        },
+        "seed_sign_agreement": true,
+        "ci95": [
+          -0.0822814039408867,
+          -0.013188731527093602
+        ],
+        "bootstrap": {
+          "B": 10000,
+          "seed": 612,
+          "clusters": "claims x personas"
+        },
+        "support_min": 0.05,
+        "null_band": 0.03,
+        "verdict": "indeterminate"
+      },
+      "endpoint": {
+        "arm_x": "arm_onpolicy",
+        "arm_y": "arm_canned",
+        "point_seed_mean": -0.021661442006269592,
+        "per_seed_points": {
+          "42": -0.007210031347962383,
+          "137": -0.036112852664576804
+        },
+        "seed_sign_agreement": true,
+        "ci95": [
+          -0.05645807210031347,
+          0.014046238244514073
+        ],
+        "bootstrap": {
+          "B": 10000,
+          "seed": 612,
+          "clusters": "claims x personas"
+        },
+        "support_min": 0.05,
+        "null_band": 0.03,
+        "verdict": "indeterminate"
+      }
+    }
+  },
+  "h2_dose_matched": {
+    "status": "preregistered_not_formable",
+    "paired_arm_contrast": {
+      "status": "no_paired_cells",
+      "arm_x": "arm_prefix",
+      "arm_y": "arm_onpolicy"
+    },
+    "read": "prefix install failure \u2014 the prefix condition cannot be dose-matched into the band at this recipe; no substitute statistic (plan v2 \u00a75)"
+  },
+  "install_failures": [
+    {
+      "cell": "villain:arm_prefix:42",
+      "max_delta": 0.4683333333333334,
+      "closest_approach_epoch": "epoch_3_endpoint",
+      "trajectory_delta": {
+        "epoch_1": 0.43999999999999995,
+        "epoch_2": 0.4016666666666666,
+        "epoch_3_endpoint": 0.4683333333333334
+      },
+      "threshold": 0.6
+    },
+    {
+      "cell": "villain:arm_prefix:137",
+      "max_delta": 0.4999999999999999,
+      "closest_approach_epoch": "epoch_2",
+      "trajectory_delta": {
+        "epoch_1": 0.4883333333333333,
+        "epoch_2": 0.4999999999999999,
+        "epoch_3_endpoint": 0.45833333333333337
+      },
+      "threshold": 0.6
+    },
+    {
+      "cell": "comedian:arm_onpolicy:42",
+      "max_delta": 0.5983333333333335,
+      "closest_approach_epoch": "epoch_3_endpoint",
+      "trajectory_delta": {
+        "epoch_1": 0.585,
+        "epoch_2": 0.5949999999999999,
+        "epoch_3_endpoint": 0.5983333333333335
+      },
+      "threshold": 0.6
+    },
+    {
+      "cell": "comedian:arm_prefix:137",
+      "max_delta": 0.545,
+      "closest_approach_epoch": "epoch_1",
+      "trajectory_delta": {
+        "epoch_1": 0.545,
+        "epoch_2": 0.5416666666666667,
+        "epoch_3_endpoint": 0.5399999999999999
+      },
+      "threshold": 0.6
+    }
+  ],
+  "interpretation_map": {
+    "per_pair": {
+      "villain:seed42": {
+        "self_delta_canned_band_entry": 0.8796610169491526,
+        "self_delta_onpolicy_band_entry": 0.6440677966101696,
+        "dose_gap": 0.235593220338983,
+        "leakage_per_dose_canned": 0.2015551885494082,
+        "leakage_per_dose_onpolicy": 0.21221804511278197,
+        "leakage_per_dose_mean": 0.2068866168310951,
+        "residual_dose_bound": 0.048741084304274936
+      },
+      "villain:seed137": {
+        "self_delta_canned_band_entry": 0.8881355932203389,
+        "self_delta_onpolicy_band_entry": 0.6593220338983049,
+        "dose_gap": 0.22881355932203395,
+        "leakage_per_dose_canned": 0.1830016357688114,
+        "leakage_per_dose_onpolicy": 0.1771024605214837,
+        "leakage_per_dose_mean": 0.18005204814514755,
+        "residual_dose_bound": 0.04119834999931343
+      },
+      "comedian:seed137": {
+        "self_delta_canned_band_entry": 0.8406779661016948,
+        "self_delta_onpolicy_band_entry": 0.6050847457627118,
+        "dose_gap": 0.235593220338983,
+        "leakage_per_dose_canned": 0.19907407407407413,
+        "leakage_per_dose_onpolicy": 0.16910467890860056,
+        "leakage_per_dose_mean": 0.18408937649133733,
+        "residual_dose_bound": 0.04337020903778963
+      }
+    },
+    "pooled_residual_dose_bound": 0.04443654778045933,
+    "expected_bias_sign": "negative \u2014 the canned cells carry the higher residual dose even at band entry, pushing the on-policy-minus-canned contrast down",
+    "branch_licenses": {
+      "supported_positive": "clean \u2014 residual dose cannot produce a positive contrast; kills 'dose, not radius' outright",
+      "supported_negative": "dose-confounded unless |point| clearly exceeds the pooled residual-dose bound; a negative point inside the bound is 'consistent with residual dose at this granularity', not a radius effect",
+      "null_or_bounded_below_support": "licenses 'no detectable matched-dial contrast (any effect < the support threshold), with the residual dose bias carried' \u2014 NOT 'dose artifact confirmed'; exact cancellation of a true positive radius effect against the dose bias remains a named, unresolvable-at-this-granularity rival"
+    }
+  },
+  "leakage_per_dose": {
+    "per_cell": {
+      "villain:arm_canned:42": {
+        "self_delta_band_entry": 0.8796610169491526,
+        "bystander_mean_delta_band_entry": 0.1773002421307506,
+        "ratio_band_entry": 0.2015551885494082,
+        "self_delta_endpoint": 0.9271186440677965,
+        "bystander_mean_delta_endpoint": 0.1575665859564165,
+        "ratio_endpoint": 0.16995299033690264
+      },
+      "villain:arm_canned:137": {
+        "self_delta_band_entry": 0.8881355932203389,
+        "bystander_mean_delta_band_entry": 0.1625302663438257,
+        "ratio_band_entry": 0.1830016357688114,
+        "self_delta_endpoint": 0.935593220338983,
+        "bystander_mean_delta_endpoint": 0.16815980629539953,
+        "ratio_endpoint": 0.17973602484472054
+      },
+      "villain:arm_onpolicy:42": {
+        "self_delta_band_entry": 0.6440677966101696,
+        "bystander_mean_delta_band_entry": 0.13668280871670704,
+        "ratio_band_entry": 0.21221804511278197,
+        "self_delta_endpoint": 0.6322033898305084,
+        "bystander_mean_delta_endpoint": 0.1324455205811138,
+        "ratio_endpoint": 0.20949827652240524
+      },
+      "villain:arm_onpolicy:137": {
+        "self_delta_band_entry": 0.6593220338983049,
+        "bystander_mean_delta_band_entry": 0.11676755447941889,
+        "ratio_band_entry": 0.1771024605214837,
+        "self_delta_endpoint": 0.7016949152542371,
+        "bystander_mean_delta_endpoint": 0.12506053268765133,
+        "ratio_endpoint": 0.17822636300897174
+      },
+      "comedian:arm_canned:42": {
+        "self_delta_band_entry": 0.8033898305084746,
+        "bystander_mean_delta_band_entry": 0.16666666666666666,
+        "ratio_band_entry": 0.20745428973277075,
+        "self_delta_endpoint": 0.8559322033898306,
+        "bystander_mean_delta_endpoint": 0.09868173258003769,
+        "ratio_endpoint": 0.11529152915291532
+      },
+      "comedian:arm_canned:137": {
+        "self_delta_band_entry": 0.8406779661016948,
+        "bystander_mean_delta_band_entry": 0.16735718769617075,
+        "ratio_band_entry": 0.19907407407407413,
+        "self_delta_endpoint": 0.8542372881355932,
+        "bystander_mean_delta_endpoint": 0.12322661644695544,
+        "ratio_endpoint": 0.1442533803644915
+      },
+      "comedian:arm_onpolicy:137": {
+        "self_delta_band_entry": 0.6050847457627118,
+        "bystander_mean_delta_band_entry": 0.10232266164469557,
+        "ratio_band_entry": 0.16910467890860056,
+        "self_delta_endpoint": 0.5983050847457626,
+        "bystander_mean_delta_endpoint": 0.09435028248587571,
+        "ratio_endpoint": 0.157695939565628
+      },
+      "comedian:arm_prefix:42": {
+        "self_delta_band_entry": 0.5898305084745764,
+        "bystander_mean_delta_band_entry": 0.1443188951663528,
+        "ratio_band_entry": 0.24467858663260958,
+        "self_delta_endpoint": 0.5372881355932204,
+        "bystander_mean_delta_endpoint": 0.13383553044569993,
+        "ratio_endpoint": 0.24909452038789573
+      }
+    },
+    "per_arm_band_entry": {
+      "arm_canned": 0.1977712970312661,
+      "arm_onpolicy": 0.18614172818095542,
+      "arm_prefix": 0.24467858663260958
+    },
+    "per_arm_endpoint_recomputed": {
+      "arm_canned": 0.1523084811747575,
+      "arm_onpolicy": 0.18180685969900168,
+      "arm_prefix": 0.24909452038789573
+    },
+    "parent_published_endpoint_ratios": [
+      0.154,
+      0.182,
+      0.244
+    ],
+    "note": "published triple is the parent's exploratory per-arm reference (plan v2 \u00a75); the per-arm mapping is recomputed independently here"
+  },
+  "within_cell_dose_response": {
+    "per_cell": {
+      "villain:arm_canned:42": {
+        "bystander_mean_delta_band_entry": 0.1773002421307506,
+        "bystander_mean_delta_endpoint": 0.1575665859564165,
+        "endpoint_minus_band_entry": -0.01973365617433409,
+        "self_delta_band_entry": 0.8796610169491526,
+        "self_delta_endpoint": 0.9271186440677965,
+        "self_endpoint_minus_band_entry": 0.047457627118643986
+      },
+      "villain:arm_canned:137": {
+        "bystander_mean_delta_band_entry": 0.1625302663438257,
+        "bystander_mean_delta_endpoint": 0.16815980629539953,
+        "endpoint_minus_band_entry": 0.0056295399515738365,
+        "self_delta_band_entry": 0.8881355932203389,
+        "self_delta_endpoint": 0.935593220338983,
+        "self_endpoint_minus_band_entry": 0.0474576271186441
+      },
+      "villain:arm_onpolicy:42": {
+        "bystander_mean_delta_band_entry": 0.13668280871670704,
+        "bystander_mean_delta_endpoint": 0.1324455205811138,
+        "endpoint_minus_band_entry": -0.004237288135593237,
+        "self_delta_band_entry": 0.6440677966101696,
+        "self_delta_endpoint": 0.6322033898305084,
+        "self_endpoint_minus_band_entry": -0.011864406779661163
+      },
+      "villain:arm_onpolicy:137": {
+        "bystander_mean_delta_band_entry": 0.11676755447941889,
+        "bystander_mean_delta_endpoint": 0.12506053268765133,
+        "endpoint_minus_band_entry": 0.008292978208232438,
+        "self_delta_band_entry": 0.6593220338983049,
+        "self_delta_endpoint": 0.7016949152542371,
+        "self_endpoint_minus_band_entry": 0.0423728813559322
+      },
+      "comedian:arm_canned:42": {
+        "bystander_mean_delta_band_entry": 0.16666666666666666,
+        "bystander_mean_delta_endpoint": 0.09868173258003769,
+        "endpoint_minus_band_entry": -0.06798493408662896,
+        "self_delta_band_entry": 0.8033898305084746,
+        "self_delta_endpoint": 0.8559322033898306,
+        "self_endpoint_minus_band_entry": 0.05254237288135599
+      },
+      "comedian:arm_canned:137": {
+        "bystander_mean_delta_band_entry": 0.16735718769617075,
+        "bystander_mean_delta_endpoint": 0.12322661644695544,
+        "endpoint_minus_band_entry": -0.04413057124921531,
+        "self_delta_band_entry": 0.8406779661016948,
+        "self_delta_endpoint": 0.8542372881355932,
+        "self_endpoint_minus_band_entry": 0.013559322033898424
+      },
+      "comedian:arm_onpolicy:137": {
+        "bystander_mean_delta_band_entry": 0.10232266164469557,
+        "bystander_mean_delta_endpoint": 0.09435028248587571,
+        "endpoint_minus_band_entry": -0.007972379158819862,
+        "self_delta_band_entry": 0.6050847457627118,
+        "self_delta_endpoint": 0.5983050847457626,
+        "self_endpoint_minus_band_entry": -0.006779661016949157
+      },
+      "comedian:arm_prefix:42": {
+        "bystander_mean_delta_band_entry": 0.1443188951663528,
+        "bystander_mean_delta_endpoint": 0.13383553044569993,
+        "endpoint_minus_band_entry": -0.010483364720652866,
+        "self_delta_band_entry": 0.5898305084745764,
+        "self_delta_endpoint": 0.5372881355932204,
+        "self_endpoint_minus_band_entry": -0.05254237288135599
+      }
+    },
+    "note": "within-cell endpoint-minus-band-entry moves installed dose AND accumulated contrastive-negative training together (plan v2 \u00a713 item 3)"
+  },
+  "gradient_rho": {
+    "villain:arm_canned:42": {
+      "rho_band_entry": 0.6402849645252787,
+      "n_bystanders": 28,
+      "rho_endpoint": 0.613931851924161
+    },
+    "villain:arm_canned:137": {
+      "rho_band_entry": 0.7094566920140104,
+      "n_bystanders": 28,
+      "rho_endpoint": 0.5852390800643801
+    },
+    "villain:arm_onpolicy:42": {
+      "rho_band_entry": 0.6116359174233796,
+      "n_bystanders": 28,
+      "rho_endpoint": 0.5824551854189096
+    },
+    "villain:arm_onpolicy:137": {
+      "rho_band_entry": 0.5553883267995147,
+      "n_bystanders": 28,
+      "rho_endpoint": 0.43164089633722774
+    },
+    "comedian:arm_canned:42": {
+      "rho_band_entry": 0.865079365079365,
+      "n_bystanders": 27,
+      "rho_endpoint": 0.7880270254688183
+    },
+    "comedian:arm_canned:137": {
+      "rho_band_entry": 0.8565323565323565,
+      "n_bystanders": 27,
+      "rho_endpoint": 0.7208059922172125
+    },
+    "comedian:arm_onpolicy:137": {
+      "rho_band_entry": 0.8244275193486411,
+      "n_bystanders": 27,
+      "rho_endpoint": 0.8061069078075602
+    },
+    "comedian:arm_prefix:42": {
+      "rho_band_entry": 0.8167939312065241,
+      "n_bystanders": 27,
+      "rho_endpoint": 0.8473748473748473
+    }
+  },
+  "anomaly_probes": {
+    "virtual_assistant": {
+      "villain:arm_canned:42": -0.030508474576271184,
+      "villain:arm_canned:137": -0.04576271186440678,
+      "villain:arm_onpolicy:42": -0.008474576271186439,
+      "villain:arm_onpolicy:137": -0.016949152542372878,
+      "comedian:arm_canned:42": -0.03898305084745762,
+      "comedian:arm_canned:137": -0.04406779661016949,
+      "comedian:arm_onpolicy:137": -0.013559322033898306,
+      "comedian:arm_prefix:42": -0.0016949152542372892
+    },
+    "digital_helper": {
+      "villain:arm_canned:42": -0.03050847457627118,
+      "villain:arm_canned:137": -0.044067796610169484,
+      "villain:arm_onpolicy:42": -0.010169491525423721,
+      "villain:arm_onpolicy:137": -0.016949152542372878,
+      "comedian:arm_canned:42": -0.037288135593220334,
+      "comedian:arm_canned:137": -0.04576271186440677,
+      "comedian:arm_onpolicy:137": -0.008474576271186439,
+      "comedian:arm_prefix:42": -0.006779661016949143
+    },
+    "daycare_teacher": {
+      "villain:arm_canned:42": -0.02372881355932203,
+      "villain:arm_canned:137": -0.033898305084745756,
+      "villain:arm_onpolicy:42": 0.011864406779661024,
+      "villain:arm_onpolicy:137": -0.01186440677966101,
+      "comedian:arm_canned:42": -0.0033898305084745714,
+      "comedian:arm_canned:137": -0.01694915254237288,
+      "comedian:arm_onpolicy:137": 0.008474576271186439,
+      "comedian:arm_prefix:42": 0.00677966101694915
+    }
+  },
+  "self_vs_trajectory_crosscheck": {
+    "villain:arm_canned:42": {
+      "band_entry_epoch": 1,
+      "new_self_delta_60_claims": 0.8649999999999999,
+      "trajectory_delta_at_selected_epoch": 0.8683333333333333,
+      "trajectory_delta_endpoint": 0.9116666666666666,
+      "new_minus_trajectory": -0.0033333333333334103
+    },
+    "villain:arm_canned:137": {
+      "band_entry_epoch": 1,
+      "new_self_delta_60_claims": 0.8749999999999999,
+      "trajectory_delta_at_selected_epoch": 0.8766666666666666,
+      "trajectory_delta_endpoint": 0.9216666666666666,
+      "new_minus_trajectory": -0.0016666666666667052
+    },
+    "villain:arm_onpolicy:42": {
+      "band_entry_epoch": 1,
+      "new_self_delta_60_claims": 0.64,
+      "trajectory_delta_at_selected_epoch": 0.635,
+      "trajectory_delta_endpoint": 0.6299999999999999,
+      "new_minus_trajectory": 0.0050000000000000044
+    },
+    "villain:arm_onpolicy:137": {
+      "band_entry_epoch": 1,
+      "new_self_delta_60_claims": 0.6566666666666665,
+      "trajectory_delta_at_selected_epoch": 0.6649999999999999,
+      "trajectory_delta_endpoint": 0.6983333333333333,
+      "new_minus_trajectory": -0.008333333333333415
+    },
+    "comedian:arm_canned:42": {
+      "band_entry_epoch": 1,
+      "new_self_delta_60_claims": 0.7899999999999999,
+      "trajectory_delta_at_selected_epoch": 0.7949999999999999,
+      "trajectory_delta_endpoint": 0.8416666666666667,
+      "new_minus_trajectory": -0.0050000000000000044
+    },
+    "comedian:arm_canned:137": {
+      "band_entry_epoch": 1,
+      "new_self_delta_60_claims": 0.8283333333333333,
+      "trajectory_delta_at_selected_epoch": 0.8266666666666665,
+      "trajectory_delta_endpoint": 0.8449999999999999,
+      "new_minus_trajectory": 0.0016666666666667052
+    },
+    "comedian:arm_onpolicy:137": {
+      "band_entry_epoch": 2,
+      "new_self_delta_60_claims": 0.6083333333333332,
+      "trajectory_delta_at_selected_epoch": 0.6033333333333333,
+      "trajectory_delta_endpoint": 0.6033333333333333,
+      "new_minus_trajectory": 0.004999999999999893
+    },
+    "comedian:arm_prefix:42": {
+      "band_entry_epoch": 1,
+      "new_self_delta_60_claims": 0.5916666666666669,
+      "trajectory_delta_at_selected_epoch": 0.6083333333333332,
+      "trajectory_delta_endpoint": 0.545,
+      "new_minus_trajectory": -0.016666666666666274
+    }
+  },
+  "coverage": {
+    "seed_42": "villain only (comedian on-policy seed 42 never entered the band)",
+    "seed_137": "villain + comedian (comedian on-policy at its epoch-2 band entry)",
+    "note": "sign agreement is computed on these two per-seed estimates as constituted (plan v2 \u00a75 registered coverage handling)"
+  },
+  "missing_dose_cells": [],
+  "thresholds": {
+    "band_entry_threshold": 0.6,
+    "h1_support_min": 0.05,
+    "h1_null_band": 0.03,
+    "bounded_below_support_band": 0.05,
+    "g1_dm_tolerance": 0.06,
+    "bootstrap_B": 10000,
+    "bootstrap_seed": 612,
+    "primary_claim_drop": [
+      48
+    ],
+    "sensitivity_claim_drop": [
+      48,
+      8
+    ]
+  },
+  "selection": {
+    "path": "eval_results/issue_612/dose_matched/band_entry_selection.json",
+    "threshold": 0.6,
+    "evaluated_cells": [
+      "villain:arm_canned:42",
+      "villain:arm_canned:137",
+      "villain:arm_onpolicy:42",
+      "villain:arm_onpolicy:137",
+      "comedian:arm_canned:42",
+      "comedian:arm_canned:137",
+      "comedian:arm_onpolicy:137",
+      "comedian:arm_prefix:42"
+    ],
+    "band_entry_epochs": {
+      "villain:arm_canned:42": 1,
+      "villain:arm_canned:137": 1,
+      "villain:arm_onpolicy:42": 1,
+      "villain:arm_onpolicy:137": 1,
+      "comedian:arm_canned:42": 1,
+      "comedian:arm_canned:137": 1,
+      "comedian:arm_onpolicy:137": 2,
+      "comedian:arm_prefix:42": 1
+    }
+  },
+  "metadata": {
+    "git_commit_sha": "9dec1f833814c7bee4494bee92755fe379baf5e5",
+    "panel_set": "data/issue_612/panel/panel_set.json",
+    "claims": "data/issue_612/wrong_claims/eval_60.jsonl",
+    "timestamp_utc": "2026-06-12T21:23:33.840921+00:00"
+  },
+  "figures": [
+    "figures/issue_612/dm_hero_contrast_forest.png",
+    "figures/issue_612/dm_endpoint_vs_band_entry.png",
+    "figures/issue_612/dm_gradient_rho_shift.png",
+    "figures/issue_612/dm_leakage_per_dose.png",
+    "figures/issue_612/dm_per_seed_contrasts.png",
+    "figures/issue_612/dm_anomaly_probes.png",
+    "figures/issue_612/dm_claim_subset_sensitivity.png"
+  ]
+}

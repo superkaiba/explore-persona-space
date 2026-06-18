@@ -55,7 +55,13 @@ const GROUPS: GroupDef[] = [
       {
         id: "running",
         label: "Running",
-        statuses: ["running", "verifying", "interpreting", "reviewing"],
+        statuses: [
+          "running",
+          "verifying",
+          "interpreting",
+          "reviewing",
+          "followups_running",
+        ],
         defaultOpen: true,
         showSubState: true,
       },
@@ -84,7 +90,7 @@ const GROUPS: GroupDef[] = [
       {
         id: "on_hold",
         label: "On hold",
-        statuses: ["blocked"],
+        statuses: ["blocked", "on_hold"],
         filter: notPriority,
       },
     ],

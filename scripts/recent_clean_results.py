@@ -1,25 +1,40 @@
 #!/usr/bin/env python3
-"""Print the N most-recently-created promoted clean-result experiments.
+"""Print the N most-recently-promoted clean-result experiments.
 
 Used by the analyzer agent (Step 1.5) to load in-context exemplars of the
-target write-up quality. Promoted clean-results are Sagan experiments
-with ``hasCleanResult=true`` and ``status='completed'`` (the analyzer
-flips ``hasCleanResult`` after the reviewer passes; the user advances to
-``completed`` via the promote command).
+target write-up quality. Promoted clean-results are tasks with
+``has_clean_result=true`` and ``status='completed'`` (the analyzer flips
+``has_clean_result`` after the reviewer passes; the user advances to
+``completed`` via ``task.py promote``).
 
 Usage:
     uv run python scripts/recent_clean_results.py --n 3 --format inline
     uv run python scripts/recent_clean_results.py --n 5 --format json
 
-``--format inline`` (default) prints, for each clean-result, the
-experiment number, title, hero figure URL (if extractable), and a
-compact TL;DR + Confidence line — suitable for one-pass agent reading.
-``--format json`` emits the raw experiment payloads from
-``sagan_state.list_by_status`` for downstream tools.
+``--format inline`` (default) prints, for each clean-result, the task
+number, title, hero figure (if extractable), the headline-skim block
+verbatim (bounded by ``--max-chars``), and a Confidence line — suitable
+for one-pass agent reading. The headline-skim block is ``## Takeaways``
+for v3 bodies (sentinel ``<!-- clean-result-v3 -->``, 2026-W24) and the
+``## TL;DR`` block for v2 / legacy bodies. Under the v2+ clean-result
+spec confidence lives ONLY in the H1 title tag, so the Confidence line
+is derived from the title when no body ``Confidence:`` sentence exists.
+``--format json`` emits the hydrated experiment payloads (body included)
+for downstream tools.
 
-Implementation: queries Sagan's HTTP API via :mod:`sagan_state`.
-``GET /api/experiments`` does not yet support a ``hasCleanResult=true``
-filter, so we list completed experiments and filter client-side.
+**Exemplar feed (forward-only):** when v3 bodies exist among the
+promoted set, the inline feed PREFERS them so the analyzer's few-shot
+exemplars track the current shape — without this preference the feed
+stays all-v2 and drifts new drafts back toward the retired nested-TL;DR
+register (a real regression vector). ``--prefer-shape`` controls this
+(default ``v3``); pass ``--prefer-shape any`` for the pre-cutover
+recency-only behavior.
+
+Implementation: reads the file-based task workflow through the
+:mod:`task_state` shim (``scripts/task_state.py`` → ``task_workflow``).
+``list_by_status`` returns registry-style rows WITHOUT bodies or
+timestamps, so each promoted row is hydrated via ``get_experiment``
+before extraction and recency sorting (#608).
 """
 
 from __future__ import annotations
@@ -35,16 +50,30 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import task_state as sagan_state
 
 DEFAULT_N = 3
+DEFAULT_MAX_CHARS = 4000
 
-# Legacy markdown bodies (pre-2026-05-13). New bodies are Sagan-card HTML.
+# Markdown bodies. Three generations coexist (forward-only):
+#   * v3 (current, sentinel `<!-- clean-result-v3 -->`, 2026-W24): five
+#     flat H2s; the headline-skim block is `## Takeaways` (3-6 bullets,
+#     numbers-first); confidence ONLY in the H1 title tag.
+#   * v2 (sentinel `<!-- clean-result-v2 -->`, 2026-W22, task #454):
+#     `## TL;DR` → ### Motivation / ### What I ran / ### Findings (+ ####
+#     per result); confidence ONLY in the H1 title tag.
+#   * Legacy (pre-2026-05-13): ### Background / ### Results inside TL;DR +
+#     a body `**Confidence: X** — ...` sentence.
+# v2/legacy share the `## TL;DR` H2; v3 uses `## Takeaways`. The `^##\s`
+# lookahead does not match H3/H4, so nested subsections stay inside the
+# captured block.
+SENTINEL_V3 = "<!-- clean-result-v3 -->"
 RE_MD_TLDR = re.compile(r"(?ms)^##\s+TL;DR\s*$(?P<body>.+?)(?=^##\s+|\Z)")
-RE_MD_RESULTS = re.compile(r"(?ms)^###\s+Results\s*$(?P<body>.+?)(?=^###\s+|\Z)")
-RE_MD_BACKGROUND = re.compile(r"(?ms)^###\s+Background\s*$(?P<body>.+?)(?=^###\s+|\Z)")
-RE_MD_HERO = re.compile(r"!\[[^\]]*\]\((https?://\S+?)\)")
+RE_MD_TAKEAWAYS = re.compile(r"(?ms)^##\s+Takeaways\s*$(?P<body>.+?)(?=^##\s+|\Z)")
+# Image target may be an absolute URL or a repo-relative figures/ path.
+RE_MD_HERO = re.compile(r"!\[[^\]]*\]\((\S+?)\)")
 RE_MD_CONFIDENCE = re.compile(
     r"\*\*\s*Confidence\s*:\s*(HIGH|MODERATE|LOW)\s*\*\*\s*[—\-–]\s*(?P<text>.+?)$",  # noqa: RUF001
     re.IGNORECASE | re.MULTILINE,
 )
+RE_TITLE_CONFIDENCE = re.compile(r"\((HIGH|MODERATE|LOW)\s+confidence\)", re.IGNORECASE)
 
 # Sagan-card HTML bodies.
 RE_HTML_TLDR = re.compile(r'(?is)<section[^>]+id="tldr"[^>]*>(?P<body>.*?)</section>')
@@ -56,11 +85,39 @@ RE_HTML_CONFIDENCE = re.compile(
 )
 
 
-def fetch_promoted(n: int) -> list[dict[str, Any]]:
-    """Return up to N most-recently-promoted clean-result experiment dicts."""
+def is_v3_body(body: str) -> bool:
+    """True when the body carries the v3 clean-result sentinel."""
+    return SENTINEL_V3 in body
+
+
+def fetch_promoted(n: int, prefer_shape: str = "v3") -> list[dict[str, Any]]:
+    """Return up to N most-recently-promoted clean-result experiment dicts.
+
+    ``list_by_status`` rows are registry-style (no ``body``, no
+    timestamps), so every promoted row is hydrated via ``get_experiment``
+    — that supplies the body for headline-skim/confidence extraction and
+    ``updatedAt`` (last event ts) for the recency sort. Without the
+    hydration step the extractors ran on empty strings and inline mode
+    printed only titles + a degenerate "Confidence: ? —" line (#608).
+
+    ``prefer_shape='v3'`` (default) front-loads v3-sentinel bodies so the
+    analyzer's few-shot exemplar feed tracks the current shape: the N most
+    recent v3 bodies first (recency order), back-filled with the most
+    recent non-v3 bodies only if fewer than N v3 bodies exist. Each
+    sub-list keeps its own recency order. ``prefer_shape='any'`` restores
+    the pre-cutover behavior (pure recency, no shape weighting).
+    """
     completed = sagan_state.list_by_status(status="completed", limit=200)
-    promoted = [e for e in completed if e.get("hasCleanResult")]
+    promoted = [
+        sagan_state.get_experiment(e["number"])["experiment"]
+        for e in completed
+        if e.get("hasCleanResult")
+    ]
     promoted.sort(key=lambda e: e.get("updatedAt") or e.get("createdAt") or "", reverse=True)
+    if prefer_shape == "v3":
+        v3 = [e for e in promoted if is_v3_body(e.get("body") or "")]
+        non_v3 = [e for e in promoted if not is_v3_body(e.get("body") or "")]
+        promoted = v3 + non_v3
     return promoted[:n]
 
 
@@ -82,23 +139,39 @@ def _extract_html(body: str) -> tuple[str, str, str, str]:
     return tldr_text, hero, conf_label, conf_text
 
 
-def _extract_markdown(body: str) -> tuple[str, str, str, str]:
-    """Return (background, hero_url, confidence_label, confidence_text) for legacy bodies."""
-    tldr_m = RE_MD_TLDR.search(body)
-    tldr = tldr_m.group("body").strip() if tldr_m else ""
-    bg_m = RE_MD_BACKGROUND.search(tldr)
-    background = bg_m.group("body").strip() if bg_m else ""
-    results_m = RE_MD_RESULTS.search(tldr)
-    results = results_m.group("body").strip() if results_m else ""
-    hero_m = RE_MD_HERO.search(results)
+def _extract_markdown(body: str, title: str) -> tuple[str, str, str, str]:
+    """Return (skim_block, hero_url, confidence_label, confidence_text).
+
+    The skim block is ``## Takeaways`` for v3 bodies and ``## TL;DR`` for
+    v2 / legacy bodies. Handles v3 (sentinel ``<!-- clean-result-v3 -->``;
+    confidence ONLY in the H1 title tag), v2 (``## TL;DR`` → ### Motivation
+    / ### What I ran / ### Findings; confidence ONLY in the title tag), and
+    legacy bodies (### Background / ### Results + a body
+    ``**Confidence: X** — ...`` sentence). The body sentence wins when
+    present (legacy); otherwise confidence comes from the title tag.
+
+    The v3 hero is searched whole-body — the ``## Takeaways`` block is
+    figure-free by spec (figures live under ``## Findings``), so the first
+    inline image in ``## Findings`` is the hero.
+    """
+    skim_m = RE_MD_TAKEAWAYS.search(body) if is_v3_body(body) else RE_MD_TLDR.search(body)
+    tldr = skim_m.group("body").strip() if skim_m else body.strip()
+
+    hero_m = RE_MD_HERO.search(tldr) or RE_MD_HERO.search(body)
     hero = hero_m.group(1) if hero_m else ""
-    conf_m = RE_MD_CONFIDENCE.search(results)
-    conf_label = conf_m.group(1).upper() if conf_m else "?"
-    conf_text = (conf_m.group("text").strip() if conf_m else "").rstrip("*").strip()
-    return background, hero, conf_label, conf_text
+
+    conf_m = RE_MD_CONFIDENCE.search(body)
+    if conf_m:
+        conf_label = conf_m.group(1).upper()
+        conf_text = conf_m.group("text").strip().rstrip("*").strip()
+    else:
+        title_m = RE_TITLE_CONFIDENCE.search(title)
+        conf_label = title_m.group(1).upper() if title_m else "?"
+        conf_text = ""
+    return tldr, hero, conf_label, conf_text
 
 
-def render_inline(experiments: list[dict[str, Any]]) -> str:
+def render_inline(experiments: list[dict[str, Any]], max_chars: int = DEFAULT_MAX_CHARS) -> str:
     base = sagan_state.BASE_URL
     out: list[str] = []
     for exp in experiments:
@@ -108,21 +181,31 @@ def render_inline(experiments: list[dict[str, Any]]) -> str:
         url = f"{base}/tasks/{number}"
 
         if "<section" in body.lower() and 'id="tldr"' in body.lower():
+            # Sagan-card HTML era: tag-stripped compact summary.
             tldr, hero, conf_label, conf_text = _extract_html(body)
-            background = tldr
+            compact = " ".join(tldr.split())
+            if len(compact) > 400:
+                compact = compact[:397] + "..."
+            summary = f"Summary: {compact}" if compact else ""
         else:
-            background, hero, conf_label, conf_text = _extract_markdown(body)
+            # Markdown (v3 + v2 + legacy): print the headline-skim block
+            # verbatim (`## Takeaways` for v3, `## TL;DR` for v2/legacy) so
+            # the analyzer sees real structure, bounded by --max-chars.
+            tldr, hero, conf_label, conf_text = _extract_markdown(body, title)
+            if len(tldr) > max_chars:
+                tldr = tldr[: max_chars - 3] + "..."
+            summary = tldr
 
         out.append(f"## #{number}: {title}")
         out.append(f"URL: {url}")
         if hero:
             out.append(f"Hero figure: {hero}")
-        if background:
-            compact = " ".join(background.split())
-            if len(compact) > 400:
-                compact = compact[:397] + "..."
-            out.append(f"\nSummary: {compact}")
-        out.append(f"\nConfidence: {conf_label} — {conf_text}")
+        if summary:
+            out.append(f"\n{summary}")
+        conf_line = f"Confidence: {conf_label}"
+        if conf_text:
+            conf_line += f" — {conf_text}"
+        out.append(f"\n{conf_line}")
         out.append("")
     return "\n".join(out).rstrip() + "\n"
 
@@ -141,9 +224,28 @@ def main(argv: list[str] | None = None) -> int:
         default="inline",
         help="output format (default: inline)",
     )
+    p.add_argument(
+        "--max-chars",
+        type=int,
+        default=DEFAULT_MAX_CHARS,
+        help=(
+            "per-exemplar headline-skim truncation bound for inline mode "
+            f"(default {DEFAULT_MAX_CHARS})"
+        ),
+    )
+    p.add_argument(
+        "--prefer-shape",
+        choices=("v3", "any"),
+        default="v3",
+        help=(
+            "exemplar shape preference: 'v3' (default) front-loads "
+            "v3-sentinel bodies so the analyzer's few-shot exemplars track "
+            "the current shape; 'any' is pure recency (pre-cutover behavior)"
+        ),
+    )
     args = p.parse_args(argv)
 
-    experiments = fetch_promoted(args.n)
+    experiments = fetch_promoted(args.n, prefer_shape=args.prefer_shape)
     if not experiments:
         print("# No promoted clean-results found.")
         return 0
@@ -152,7 +254,7 @@ def main(argv: list[str] | None = None) -> int:
         json.dump(experiments, sys.stdout, indent=2, default=str)
         print()
     else:
-        print(render_inline(experiments))
+        print(render_inline(experiments, max_chars=args.max_chars))
     return 0
 
 

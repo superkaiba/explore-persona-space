@@ -1,0 +1,436 @@
+# A2a: git log --all -S 'LoRARequest' --oneline --name-only -- scripts/ src/
+4d534b95f issue-533: logit-margin EOS-margin re-read of #547 adapters
+scripts/i464_phase4_eval.py
+scripts/i464_po_eval.py
+ec1b8378e issue-562: surgical additive checkout (full rebase deferred — guard 3)
+scripts/eval_issue562_panel.py
+a485ea647 task #563: base-own persona-panel eval rig — pinned #543/#558 instrument strip-down
+scripts/eval_issue563_base_panel.py
+b557a0b79 task #562: context-panel eval rig — #558 rig cherry-picked at 18959f7f with 3 new probe cells
+scripts/eval_issue562_panel.py
+776c7c3b7 task #560: cross-recipe transfer panel driver + Phase B analysis
+scripts/issue560_crossrecipe_panel.py
+dfa6f74f4 issue-557: absorption guard probe (CE + med-answer gens), VM-side judge/rollup/plot scripts
+scripts/probe_issue557_absorption.py
+f101a0c5d task #558: persona-panel eval rig — pinned #543 instrument, 5-cell panel, rollup + calibration audit
+scripts/eval_issue558_panel.py
+41cceb7d6 task #556: port #528 pipeline with slug/seed parameterization + base-row merge + i556 run-all
+scripts/i528_phase2_smoke_judge.py
+scripts/i528_phase4_eval.py
+scripts/i556_run_all_1gpu.sh
+acdda42be task #547: crosseval recovery — re-upload 32 missing HF adapters + phases-4-7 resume launcher (local-adapter override)
+scripts/i547_cn_resume_evalonward.sh
+5c7006b73 issue-505: surgical additive checkout (full rebase deferred — guard 3)
+src/explore_persona_space/experiments/leave_one_out_505/logit_rescoring.py
+15ccd5218 Revert "merge main tip ece6b6108 (tasks-marker only) into issue-550 to clear pod preflight behind-origin/main gate"
+scripts/eval_issue506.py
+scripts/i488_diagnostic_measure.py
+scripts/i488_phase2_ladder_emit.py
+scripts/i488_phase2_smoke_calibrate.py
+scripts/i488_phase4_eval_onpolicy.py
+scripts/i504_reval_confirm.py
+scripts/i504_reval_grid.py
+scripts/issue532_predictor_stress.py
+0c22fca64 task #545: close 5 integration gaps in the recovered testbed implementation
+scripts/issue545_train_cell.py
+src/explore_persona_space/experiments/behavior_testbed_545/eval_battery.py
+c47ac1cdd task #545: WIP checkpoint — recovered partial implementation from killed session
+src/explore_persona_space/experiments/behavior_testbed_545/eval_battery.py
+src/explore_persona_space/experiments/issue503/cross_eval.py
+2ba716d87 task #547: i547_cn_run.sh dispatcher (max_steps loop) + i547_clean_result_figures fork
+scripts/i547_cn_run.sh
+bb3e8f86e task #505 r2: logit-space-rescoring implementation (generation + logit capture + faithfulness + analysis)
+src/explore_persona_space/experiments/leave_one_out_505/logit_rescoring.py
+1091b4acd task #547: cherry-pick the 13-file i464/i529/i533 pipeline closure from origin/issue-533
+scripts/i464_phase4_eval.py
+scripts/i464_po_eval.py
+scripts/i464_po_run.sh
+scripts/i529_cn_run.sh
+scripts/i533_cn_run.sh
+ba61fdc39 issue-546 commit 5: fork i546_cn_run.sh from i533_cn_run.sh — 533→546 paths/sentinels/variant + --lora-r 16 --lora-alpha 32 on the train invocation (+ ascii-alpha lint fix in train comment)
+scripts/i546_cn_run.sh
+a6157cbbc issue-540: surgical additive checkout (full rebase deferred — guard 3)
+scripts/issue532_predictor_stress.py
+1c65b4db6 issue-546 commit 1: additive cherry-pick of the #533 pipeline from issue-533 @ 259a4413c
+scripts/i464_phase4_eval.py
+scripts/i464_po_eval.py
+scripts/i533_cn_run.sh
+0536d02b0 task #477 followup(negpanel): eval-only driver for self-leakage at trained negatives
+scripts/i477_negpanel_eval.py
+7c5470bbc task #543: ratio-lever marker-install survival rig (4 arms x 3 seeds x 2 phases)
+scripts/eval_issue543.py
+64594d645 task #477 followup(negpanel): port i477_reval_grid.py from issue-477 branch (helpers reused by the negpanel driver)
+scripts/i477_reval_grid.py
+d522655ef task #464 minimal_content follow-up: content-matched minimal encodings (system_minimal / role_bare)
+scripts/i464_min_eval.py
+0378a67e1 task #540: restore pinned parent script issue532_predictor_stress.py @ 296c4da2d (sha256 e3f294f4 verified; import-only, never modified)
+scripts/issue532_predictor_stress.py
+1695eacab task #538: issue_538 module + scripts (band [14,20] follow-up of #527)
+scripts/run_issue538_eval.py
+8426e7da4 issue-533 commit 4: fork i533_cn_run.sh from i529_cn_run.sh with --lr 5e-6
+scripts/i533_cn_run.sh
+c60df7f26 issue-533 commit 1: cherry-pick #529 scripts onto main + add --in-dir to i529_select_anchor
+scripts/i464_phase4_eval.py
+scripts/i464_po_eval.py
+scripts/i464_po_run.sh
+scripts/i529_cn_run.sh
+0b981065d issue-530: port #504 module + scripts, add #530 thin wrappers (lr=5e-6, eps=12, 4-frac trajectory)
+scripts/i504_reval_confirm.py
+scripts/i504_reval_grid.py
+b475f8cb2 task #506: surgical additive checkout from issue-506 (full rebase deferred — guard 3)
+scripts/eval_issue506.py
+dd4a2d2c8 task #532: add issue532_predictor_stress.py — geometric leakage predictors vs base-prior on instructed bystanders
+scripts/issue532_predictor_stress.py
+b43713346 task #524: epm:experiment-implementation v1 — plan v4 unified pipeline
+scripts/issue524_phase2_eval.py
+d82150dfb issue-529: add anchor-select + figures scripts + cn_run dispatcher
+scripts/i529_cn_run.sh
+b928c9290 issue-529: cherry-pick i464_phase4_eval + i464_phase5_analyze
+scripts/i464_phase4_eval.py
+1990425af task #527: implement Phase A smoke + Phase B sweep pipeline
+scripts/run_issue527_eval.py
+f8ef182d0 issue-530: port #504 module + scripts, add #530 thin wrappers (lr=5e-6, eps=12, 4-frac trajectory)
+scripts/i504_reval_confirm.py
+scripts/i504_reval_grid.py
+d2a1bcc40 i528: phase scripts (preflight, q-bank, R-gen, train, eval, judge, analyze, plot)
+scripts/i528_phase2_smoke_judge.py
+scripts/i528_phase4_eval.py
+cd88025fa issue-529: cherry-pick i464 rig from origin/issue-464
+scripts/i464_cn_run.sh
+scripts/i464_phase2_smoke_check.py
+scripts/i464_po_eval.py
+scripts/i464_po_run.sh
+c47b92e22 issue-488: round-1 v6 — ladder dispatcher + emit script + train-suffix hook
+scripts/i488_phase2_ladder_emit.py
+2ad3af18d issue-488: round-1 v6 — commit untracked diagnostic train + measure + poll scripts
+scripts/i488_diagnostic_measure.py
+832f9fc6b task #504: round-4 fix — B-matrix-only guard + per-cell tolerant Phase 0
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_guard.py
+dc10b991b issue-514: import shared infra from origin/issue-508@34eb91454
+src/explore_persona_space/experiments/lora_vs_ft_508/eval_one_cell.py
+2bb7f3066 task #516: address round-1 code-review blockers
+scripts/run_issue516.py
+260e1d379 task #517: cherry-pick #498 eval rig from origin/issue-498@167cabb8e
+scripts/i498_phase4_eval.py
+1588221d7 task #504: round-13 — i504_reval_grid.py — 2-cell re-eval driver
+scripts/i504_reval_grid.py
+584a82955 task #504: round-13 — i504_reval_confirm.py — PEFT vs vLLM A/B diagnostic
+scripts/i504_reval_confirm.py
+985168b2e task #508: scaffold lora_vs_ft_508 experiment package + dispatcher + tests
+src/explore_persona_space/experiments/lora_vs_ft_508/eval_one_cell.py
+af06ee731 fix: critical 3 + major 9/10 + codex minor - multi-GPU launcher, WandB cb, JS upper bound
+src/explore_persona_space/experiments/sycophancy_implantation_411/eval_one_source.py
+a7fe0a0d7 fix: critical 2 - actually pass LoRARequest to vLLM generate
+src/explore_persona_space/experiments/sycophancy_implantation_411/eval_one_source.py
+a4facecf2 task #507: new sycophancy_scale_507 module + grad_accum unit tests
+src/explore_persona_space/experiments/sycophancy_scale_507/eval_72b_vllm.py
+fb8c30a68 task #507: cherry-pick #411 + #470 modules from unmerged branches
+src/explore_persona_space/experiments/sycophancy_implantation_411/eval_one_source.py
+c575e6049 task #503: experiment implementation
+src/explore_persona_space/experiments/issue503/cross_eval.py
+b18ea989b task #501: round 4 — replace Phase 4 placeholder smoke with real end-to-end tiny run
+scripts/i501_phase4_eval_onpolicy.py
+82592cb4c task #506: dispatcher + Stage-0 install-validity probe + Phase-3 KL eval
+scripts/eval_issue506.py
+scripts/probe_issue506_install_validity.py
+cee578831 task #504: port #472 dispatcher + eval_guard from issue-477 to main
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_guard.py
+aa4b7ddae task #505: cherry-pick eval_guard from #477 16f6789e8
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_guard.py
+916872340 task #503: experiment implementation
+src/explore_persona_space/experiments/issue503/cross_eval.py
+c4d08d947 figures: issue #477 clean-result (recovered grid)
+scripts/issue477_clean_result_figures.py
+5fedfb355 task #501: round 2 — fix code-review BLOCKERs 1/2/3 + MN pair-mean + Phase 5 CPU smoke
+src/explore_persona_space/experiments/i501_vendored_i489_contexts.py
+16f6789e8 task #477: full-recovery re-eval tooling — guard + grid driver
+scripts/i477_reval_grid.py
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_guard.py
+ba0118356 task #501: Path B EVAL-ONLY scaffolding (Phase 0/1/4/5 + smoke runner)
+scripts/i501_phase4_eval_onpolicy.py
+e42bc2ae7 task #498: implementer — trait role-header-vs-system-prompt pipeline
+scripts/i498_phase2_smoke_judge.py
+scripts/i498_phase4_eval.py
+01f5f7e31 task #492: port #472+#477 rig modules from issue-477 + shebang fix
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_one_cell.py
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py
+4ef8fff62 task #477: re-eval confirmation diagnostic — PEFT vs vLLM-LoRARequest
+scripts/i477_reval_confirm.py
+4fcc8c047 task #492: port #472+#477 rig modules from issue-477 + shebang fix
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_one_cell.py
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py
+c44e0dc5b task #477: re-eval confirmation diagnostic — PEFT vs vLLM-LoRARequest
+scripts/i477_reval_confirm.py
+32d852d68 issue-488: implement geometry-predicts-transfer pipeline (plan v2)
+scripts/i488_phase2_smoke_calibrate.py
+scripts/i488_phase4_eval_onpolicy.py
+16bd9c28e task #477: re-eval confirmation diagnostic — PEFT vs vLLM-LoRARequest
+scripts/i477_reval_confirm.py
+ade98f921 task #489: round-3 code-review fixes (B4 + Maj-1..Maj-4 + tests + minor)
+src/explore_persona_space/experiments/i489_contexts.py
+d2abb92ff task #489: implement union ICL+SP marker-transfer pipeline (plan v5)
+scripts/i489_phase4_eval_onpolicy.py
+fc9b72055 task #475: land eval_results + figures + configs + experiment scripts/tests on main (selective merge from issue-475)
+scripts/eval_issue475.py
+0936cd6d8 feat(#474): on-policy divergence-to-transfer with localization restored
+scripts/i460_phase2_smoke_check.py
+scripts/i460_phase4_eval.py
+scripts/i474_phase2_smoke_check.py
+scripts/i474_phase4_eval.py
+50e4068e4 task #471: route-(a) v3 code edits (collator slot fix + posonly control + 4-shape probe)
+scripts/i471_phase4_eval.py
+0c4b6a3d1 task #464 cn follow-up: contrastive-negatives single-persona variant
+scripts/i464_cn_run.sh
+f4167e563 task #475: implement Hubinger CoT marker install on Qwen3.5-27B (3 arms)
+scripts/eval_issue475.py
+7c9d7128e task #464 follow-up: positive-only single-persona control (po sweep)
+scripts/i464_po_eval.py
+scripts/i464_po_run.sh
+58ef35ef1 feat(#474): on-policy divergence-to-transfer with localization restored
+scripts/i460_phase2_smoke_check.py
+scripts/i460_phase4_eval.py
+scripts/i474_phase2_smoke_check.py
+scripts/i474_phase4_eval.py
+a1d645390 task #472: experiment-implementation v1 — contrastive-neg geometry sweep (count x distance x placement)
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_one_cell.py
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py
+51e5a3d7d i471: phase2 smoke (4 gates incl. NEW gate 4 NEGATIVE suppression) + dispatch + phase4 single-slot KL eval + phase5 analyze + run_all
+scripts/i471_phase2_smoke_check.py
+scripts/i471_phase4_eval.py
+b87f1cab0 i471: vendor i465 modules + scripts from issue-465 branch (byte-identical reuse for #471 follow-up)
+scripts/i465_phase2_smoke_check.py
+scripts/i465_phase4_eval.py
+bbc24ab38 task #466: experiment-implementation v1 — slice-aware predictor pipeline
+scripts/eval_i456_onpolicy_emission.py
+scripts/issue466_marker_logp.py
+0f96e8dc5 task #464: pipeline scripts (phases 0-5) + dispatchers + plots + smoke driver
+scripts/i464_phase2_smoke_check.py
+scripts/i464_phase45_onpolicy_validation.py
+scripts/i464_phase4_eval.py
+e60bc4352 task #464: library — encodings/data/multi-marker collator/MF-C callback
+src/explore_persona_space/train/eval_marker_logprob.py
+9e58a0b69 wip(#465): phase4 eval rig (5 reads x 4 conds + retention)
+scripts/i465_phase4_eval.py
+750869cf5 wip(#465): phase23 train + phase2 smoke-check
+scripts/i465_phase2_smoke_check.py
+504caea47 task #459: cherry-pick #458 deps (issue404_common + outcome eval + run/prep scripts) + alignment.py/generation.py upgrades
+scripts/issue404_outcome_eval.py
+fde2254cc feat(462): epoch-resolved on-policy marker transfer (#460 follow-up)
+scripts/i462_phase2_smoke_check.py
+scripts/i462_phase4_eval.py
+83a3fd193 task #448 v5: on-policy re-design (R-generation, marker-only loss, vLLM prompt_logprobs eval)
+scripts/dispatch_recipe_sweep_448.py
+src/explore_persona_space/experiments/contrastive_recipe_sweep_448/eval_one_cell.py
+58922d194 fix(460): isolate smoke-implant check in own process; fix runner rc-masking + rgen logger fmt
+scripts/i460_phase23_train.py
+scripts/i460_phase2_smoke_check.py
+bd559a69f feat(460): on-policy marker-at-end re-train pipeline (Phases 0-5)
+scripts/i460_phase23_train.py
+scripts/i460_phase4_eval.py
+a26e3a208 task #456: on-policy emission + endpos-logp dispatcher + base-only control arm
+scripts/eval_i456_onpolicy_emission.py
+3e695cb42 task #456: port #432 recipe scripts + SaveAtSpecificSteps from issue-432@6c562eb
+src/explore_persona_space/train/callbacks.py
+56f588d01 task #451: relax C-axis preflight + add --only-a + raw-completion upload
+scripts/dispatch_factor_screen_397.py
+src/explore_persona_space/experiments/factor_screen_397/eval_panel.py
+src/explore_persona_space/experiments/factor_screen_397/training.py
+f5f872f40 #7b: opt-in LoRA-only training finalize (keep adapter, defer merged 7B)
+src/explore_persona_space/eval/generation.py
+src/explore_persona_space/orchestrate/runner.py
+17d6cb790 task #397: Round 13 — Pass 1 per-cell cleanup (disk-full fix)
+scripts/dispatch_factor_screen_397.py
+41487576d task #404: experiment-implementer v2 — outcome-eval adapter contract + ISSUE fixes
+scripts/issue404_outcome_eval.py
+234803512 feat(406): Phase 3 cross-eval sharded + dispatcher + merger
+scripts/i406_phase3_cross_eval.py
+ff01ee347 feat(406): Phase 2 LoRA training + pilot gates with escalation
+scripts/i406_phase2_smoke_eval.py
+9459af087 task #397: Round 12 — two-pass sweep restructure (HF first, vLLM second)
+scripts/dispatch_factor_screen_397.py
+d34badae0 task #397: Round 11 — pivot Phase B to in-process serial dispatch
+src/explore_persona_space/experiments/factor_screen_397/run_one_cell.py
+117f6752e task #397: Round 6 — vLLM --enable-lora + sweep-level resume + 8/8 cap
+src/explore_persona_space/experiments/factor_screen_397/eval_panel.py
+src/explore_persona_space/experiments/factor_screen_397/run_one_cell.py
+src/explore_persona_space/experiments/factor_screen_397/training.py
+bec2d61a4 task #398: cherry-pick SaveAtSpecificSteps callback + trainer wiring (from #385 a9c27ef9)
+src/explore_persona_space/train/callbacks.py
+c2e2f8033 issue #385: re-eval script for librarian source persona
+scripts/eval_marker_spread_source_only.py
+ab68e2429 task #385: per-checkpoint marker-emission eval driver
+scripts/eval_i385_marker_spread.py
+a9c27ef90 task #385: SaveAtSpecificSteps callback + train_phase wiring + librarian condition
+src/explore_persona_space/train/callbacks.py
+d7d8e0565 round-7: adapter-only Hub uploads + vLLM enable_lora eval
+scripts/run_issue186_eval.py
+scripts/run_issue_344_train.py
+scripts/smoke_vllm_lora_equivalence.py
+
+# A2b: git log --all -S 'lora_int_id' --oneline --name-only -- scripts/ src/
+4d534b95f issue-533: logit-margin EOS-margin re-read of #547 adapters
+scripts/i464_phase4_eval.py
+scripts/i464_po_eval.py
+776c7c3b7 task #560: cross-recipe transfer panel driver + Phase B analysis
+scripts/issue560_crossrecipe_panel.py
+5c7006b73 issue-505: surgical additive checkout (full rebase deferred — guard 3)
+src/explore_persona_space/experiments/leave_one_out_505/dispatch_logit_rescoring.py
+src/explore_persona_space/experiments/leave_one_out_505/logit_rescoring.py
+15ccd5218 Revert "merge main tip ece6b6108 (tasks-marker only) into issue-550 to clear pod preflight behind-origin/main gate"
+scripts/i488_diagnostic_measure.py
+scripts/i488_phase2_ladder_emit.py
+scripts/i488_phase2_smoke_calibrate.py
+scripts/i488_phase4_eval_onpolicy.py
+scripts/i504_reval_confirm.py
+scripts/issue532_predictor_stress.py
+c47ac1cdd task #545: WIP checkpoint — recovered partial implementation from killed session
+src/explore_persona_space/experiments/issue503/cross_eval.py
+bb3e8f86e task #505 r2: logit-space-rescoring implementation (generation + logit capture + faithfulness + analysis)
+src/explore_persona_space/experiments/leave_one_out_505/dispatch_logit_rescoring.py
+src/explore_persona_space/experiments/leave_one_out_505/logit_rescoring.py
+1091b4acd task #547: cherry-pick the 13-file i464/i529/i533 pipeline closure from origin/issue-533
+scripts/i464_phase4_eval.py
+scripts/i464_po_eval.py
+298877f9c task #534: fix trajectory-eval adapter-not-applied (vLLM lora_int_id reuse) + source-manifest guard + --eval-only re-run path
+scripts/i534_run_cell.py
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_guard.py
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py
+a6157cbbc issue-540: surgical additive checkout (full rebase deferred — guard 3)
+scripts/issue532_predictor_stress.py
+1c65b4db6 issue-546 commit 1: additive cherry-pick of the #533 pipeline from issue-533 @ 259a4413c
+scripts/i464_phase4_eval.py
+scripts/i464_po_eval.py
+0536d02b0 task #477 followup(negpanel): eval-only driver for self-leakage at trained negatives
+scripts/i477_negpanel_eval.py
+64594d645 task #477 followup(negpanel): port i477_reval_grid.py from issue-477 branch (helpers reused by the negpanel driver)
+scripts/i477_reval_grid.py
+d522655ef task #464 minimal_content follow-up: content-matched minimal encodings (system_minimal / role_bare)
+scripts/i464_min_eval.py
+0378a67e1 task #540: restore pinned parent script issue532_predictor_stress.py @ 296c4da2d (sha256 e3f294f4 verified; import-only, never modified)
+scripts/issue532_predictor_stress.py
+c60df7f26 issue-533 commit 1: cherry-pick #529 scripts onto main + add --in-dir to i529_select_anchor
+scripts/i464_phase4_eval.py
+scripts/i464_po_eval.py
+0b981065d issue-530: port #504 module + scripts, add #530 thin wrappers (lr=5e-6, eps=12, 4-frac trajectory)
+scripts/i504_reval_confirm.py
+dd4a2d2c8 task #532: add issue532_predictor_stress.py — geometric leakage predictors vs base-prior on instructed bystanders
+scripts/issue532_predictor_stress.py
+b43713346 task #524: epm:experiment-implementation v1 — plan v4 unified pipeline
+scripts/issue524_phase2_eval.py
+b928c9290 issue-529: cherry-pick i464_phase4_eval + i464_phase5_analyze
+scripts/i464_phase4_eval.py
+f8ef182d0 issue-530: port #504 module + scripts, add #530 thin wrappers (lr=5e-6, eps=12, 4-frac trajectory)
+scripts/i504_reval_confirm.py
+cd88025fa issue-529: cherry-pick i464 rig from origin/issue-464
+scripts/i464_phase2_smoke_check.py
+scripts/i464_po_eval.py
+c47b92e22 issue-488: round-1 v6 — ladder dispatcher + emit script + train-suffix hook
+scripts/i488_phase2_ladder_emit.py
+2ad3af18d issue-488: round-1 v6 — commit untracked diagnostic train + measure + poll scripts
+scripts/i488_diagnostic_measure.py
+dc10b991b issue-514: import shared infra from origin/issue-508@34eb91454
+src/explore_persona_space/experiments/lora_vs_ft_508/eval_one_cell.py
+584a82955 task #504: round-13 — i504_reval_confirm.py — PEFT vs vLLM A/B diagnostic
+scripts/i504_reval_confirm.py
+985168b2e task #508: scaffold lora_vs_ft_508 experiment package + dispatcher + tests
+src/explore_persona_space/experiments/lora_vs_ft_508/eval_one_cell.py
+a7fe0a0d7 fix: critical 2 - actually pass LoRARequest to vLLM generate
+src/explore_persona_space/experiments/sycophancy_implantation_411/eval_one_source.py
+c575e6049 task #503: experiment implementation
+src/explore_persona_space/experiments/issue503/cross_eval.py
+b18ea989b task #501: round 4 — replace Phase 4 placeholder smoke with real end-to-end tiny run
+scripts/i501_phase4_eval_onpolicy.py
+916872340 task #503: experiment implementation
+src/explore_persona_space/experiments/issue503/cross_eval.py
+5fedfb355 task #501: round 2 — fix code-review BLOCKERs 1/2/3 + MN pair-mean + Phase 5 CPU smoke
+src/explore_persona_space/experiments/i501_vendored_i489_contexts.py
+16f6789e8 task #477: full-recovery re-eval tooling — guard + grid driver
+scripts/i477_reval_grid.py
+ba0118356 task #501: Path B EVAL-ONLY scaffolding (Phase 0/1/4/5 + smoke runner)
+scripts/i501_phase4_eval_onpolicy.py
+01f5f7e31 task #492: port #472+#477 rig modules from issue-477 + shebang fix
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py
+4ef8fff62 task #477: re-eval confirmation diagnostic — PEFT vs vLLM-LoRARequest
+scripts/i477_reval_confirm.py
+4fcc8c047 task #492: port #472+#477 rig modules from issue-477 + shebang fix
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py
+c44e0dc5b task #477: re-eval confirmation diagnostic — PEFT vs vLLM-LoRARequest
+scripts/i477_reval_confirm.py
+32d852d68 issue-488: implement geometry-predicts-transfer pipeline (plan v2)
+scripts/i488_phase2_smoke_calibrate.py
+scripts/i488_phase4_eval_onpolicy.py
+16bd9c28e task #477: re-eval confirmation diagnostic — PEFT vs vLLM-LoRARequest
+scripts/i477_reval_confirm.py
+ade98f921 task #489: round-3 code-review fixes (B4 + Maj-1..Maj-4 + tests + minor)
+scripts/i489_phase4_eval_onpolicy.py
+src/explore_persona_space/experiments/i489_contexts.py
+d2abb92ff task #489: implement union ICL+SP marker-transfer pipeline (plan v5)
+scripts/i489_phase4_eval_onpolicy.py
+0936cd6d8 feat(#474): on-policy divergence-to-transfer with localization restored
+scripts/i460_phase2_smoke_check.py
+scripts/i460_phase4_eval.py
+scripts/i474_phase2_smoke_check.py
+scripts/i474_phase4_eval.py
+7c9d7128e task #464 follow-up: positive-only single-persona control (po sweep)
+scripts/i464_po_eval.py
+58ef35ef1 feat(#474): on-policy divergence-to-transfer with localization restored
+scripts/i460_phase2_smoke_check.py
+scripts/i460_phase4_eval.py
+scripts/i474_phase2_smoke_check.py
+scripts/i474_phase4_eval.py
+a1d645390 task #472: experiment-implementation v1 — contrastive-neg geometry sweep (count x distance x placement)
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py
+51e5a3d7d i471: phase2 smoke (4 gates incl. NEW gate 4 NEGATIVE suppression) + dispatch + phase4 single-slot KL eval + phase5 analyze + run_all
+scripts/i471_phase2_smoke_check.py
+scripts/i471_phase4_eval.py
+b87f1cab0 i471: vendor i465 modules + scripts from issue-465 branch (byte-identical reuse for #471 follow-up)
+scripts/i465_phase2_smoke_check.py
+scripts/i465_phase4_eval.py
+bbc24ab38 task #466: experiment-implementation v1 — slice-aware predictor pipeline
+scripts/eval_i456_onpolicy_emission.py
+scripts/issue466_marker_logp.py
+0f96e8dc5 task #464: pipeline scripts (phases 0-5) + dispatchers + plots + smoke driver
+scripts/i464_phase2_smoke_check.py
+scripts/i464_phase45_onpolicy_validation.py
+scripts/i464_phase4_eval.py
+e60bc4352 task #464: library — encodings/data/multi-marker collator/MF-C callback
+src/explore_persona_space/train/eval_marker_logprob.py
+9e58a0b69 wip(#465): phase4 eval rig (5 reads x 4 conds + retention)
+scripts/i465_phase4_eval.py
+750869cf5 wip(#465): phase23 train + phase2 smoke-check
+scripts/i465_phase2_smoke_check.py
+fde2254cc feat(462): epoch-resolved on-policy marker transfer (#460 follow-up)
+scripts/i462_phase2_smoke_check.py
+scripts/i462_phase4_eval.py
+83a3fd193 task #448 v5: on-policy re-design (R-generation, marker-only loss, vLLM prompt_logprobs eval)
+src/explore_persona_space/experiments/contrastive_recipe_sweep_448/eval_one_cell.py
+58922d194 fix(460): isolate smoke-implant check in own process; fix runner rc-masking + rgen logger fmt
+scripts/i460_phase23_train.py
+scripts/i460_phase2_smoke_check.py
+bd559a69f feat(460): on-policy marker-at-end re-train pipeline (Phases 0-5)
+scripts/i460_phase23_train.py
+scripts/i460_phase4_eval.py
+a26e3a208 task #456: on-policy emission + endpos-logp dispatcher + base-only control arm
+scripts/eval_i456_onpolicy_emission.py
+56f588d01 task #451: relax C-axis preflight + add --only-a + raw-completion upload
+scripts/dispatch_factor_screen_397.py
+src/explore_persona_space/experiments/factor_screen_397/eval_panel.py
+f5f872f40 #7b: opt-in LoRA-only training finalize (keep adapter, defer merged 7B)
+src/explore_persona_space/eval/generation.py
+234803512 feat(406): Phase 3 cross-eval sharded + dispatcher + merger
+scripts/i406_phase3_cross_eval.py
+ff01ee347 feat(406): Phase 2 LoRA training + pilot gates with escalation
+scripts/i406_phase2_smoke_eval.py
+9459af087 task #397: Round 12 — two-pass sweep restructure (HF first, vLLM second)
+scripts/dispatch_factor_screen_397.py
+117f6752e task #397: Round 6 — vLLM --enable-lora + sweep-level resume + 8/8 cap
+src/explore_persona_space/experiments/factor_screen_397/eval_panel.py
+c2e2f8033 issue #385: re-eval script for librarian source persona
+scripts/eval_marker_spread_source_only.py
+ab68e2429 task #385: per-checkpoint marker-emission eval driver
+scripts/eval_i385_marker_spread.py
+d7d8e0565 round-7: adapter-only Hub uploads + vLLM enable_lora eval
+scripts/run_issue186_eval.py
+scripts/smoke_vllm_lora_equivalence.py
+61916a731 Restore adapter quality plot with confirmed root cause
+scripts/analyze_causal_proximity.py

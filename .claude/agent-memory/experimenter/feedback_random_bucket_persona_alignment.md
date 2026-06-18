@@ -1,27 +1,10 @@
 ---
 name: random-bucket-persona-alignment
-description: Random-bucket sample (unbiased FineWeb/LMSYS docs) yields ~5% positive-cos hits for OOD personas like villain; plans specifying k=50 from a 400-doc random sample will fail assert_pool_size_meets_k.
+description: Unbiased FineWeb/LMSYS random buckets yield ~5% positive-cos hits for OOD personas (villain) — k=50 from a 400-doc sample fails assert_pool_size_meets_k. Planner must size k_random_bucket separately or provision ~10x docs.
 metadata:
   type: feedback
 ---
 
-When constructing example pools for in-context drift / persona-direction experiments, the "random-bucket" arm (an unbiased sample of FineWeb + LMSYS docs, by construction NOT pre-filtered by persona alignment) yields very few persona-aligned docs for OOD personas.
+Random-bucket arms (unbiased FineWeb+LMSYS samples) yield very few persona-aligned docs for niche/OOD personas: #375 measured **21/400 (~5%)** positive-cos docs for the villain direction at L20, vs easy k=50 from the curated persona-style pool. Expect `k_max ≈ corpus × 0.05` for niche personas and `≈ corpus × 0.5` for mainstream ones.
 
-Concrete numbers from task #375 (Qwen-2.5-7B-Instruct, villain persona direction at L20, 400-doc random sample of 200 FineWeb + 200 LMSYS):
-
-- **21 / 400 docs** (~5%) had positive cos against the villain direction.
-- For comparison, the persona-style pool (1200 docs, top200 bucket) easily gave k=50 villain hits.
-
-**Why:** The random-bucket sample is unbiased — by design ~50% of docs would have positive cos against ANY direction at chance. But for niche personas (villain, criminal, sycophant), aligned content is rare in mainstream web crawls. Most positive-cos docs in the random bucket are weakly aligned (cos near 0).
-
-**Implications for planners:**
-
-- For random-bucket arms in persona experiments, expect **k_max ≈ corpus_size × 0.05** for niche/OOD personas like villain, and **k_max ≈ corpus_size × 0.5** for mainstream personas like helpful-assistant.
-- Specify `k_per_persona_random_bucket` separately from `k_per_persona` (the main persona-style pool). Don't reuse the same k.
-- Or: provision a much larger random-bucket sample (e.g., 4000 docs to get k=200 villain hits at 5% rate).
-- The unbiased nature of the random bucket is what makes it valuable as a P1 sensitivity arm — DON'T recompute persona directions to inflate hit rate (that defeats the purpose).
-
-**Implications for experimenters:**
-
-- When `assert_pool_size_meets_k` fires for a random-bucket / OOD-persona arm, check the corpus-vs-persona alignment rate before bouncing. If it's a "facts of nature" ceiling (e.g., 21/400 villain hits), the planner needs to revise the k spec, not the implementer.
-- The `--degraded-pool-ok` flag is the right escape ONLY if the analyzer is prepared to flag the unequal sample size in the write-up.
+**How to apply:** when `assert_pool_size_meets_k` fires on a random-bucket/OOD arm, check the corpus-vs-persona alignment rate before bouncing — a facts-of-nature ceiling means the PLANNER must revise the k spec (separate `k_per_persona_random_bucket`, or ~10x more docs), not the implementer. Do NOT recompute persona directions to inflate the hit rate (defeats the unbiased-arm purpose). `--degraded-pool-ok` is acceptable only if the analyzer will flag the unequal sample size in the write-up.

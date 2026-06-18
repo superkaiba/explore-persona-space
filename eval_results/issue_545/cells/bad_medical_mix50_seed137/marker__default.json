@@ -1,0 +1,1027 @@
+{
+ "column": "marker",
+ "context": "default",
+ "adapter": "/tmp/issue545/adapters/bad_medical_mix50_seed137/checkpoint-125",
+ "gauge_free": true,
+ "summary": {
+  "delta_logp": 0.5833129119873047,
+  "delta_z_marker": 0.51130859375,
+  "delta_eos_margin": -6.31837890625,
+  "emission_rate": 0.0
+ },
+ "per_slot": [
+  {
+   "probe_id": "q_0",
+   "emitted": false,
+   "trained": {
+    "logp": -21.1118106842041,
+    "z_marker": 3.015625,
+    "z_eos": 24.125,
+    "logZ": 24.1274356842041
+   },
+   "base": {
+    "logp": -22.39763832092285,
+    "z_marker": 2.421875,
+    "z_eos": 21.25,
+    "logZ": 24.81951332092285
+   },
+   "delta_logp": 1.28582763671875,
+   "delta_z_marker": 0.59375,
+   "delta_eos_margin": -2.28125,
+   "delta_logZ": -0.69207763671875
+  },
+  {
+   "probe_id": "q_1",
+   "emitted": false,
+   "trained": {
+    "logp": -23.484447479248047,
+    "z_marker": 3.265625,
+    "z_eos": 26.75,
+    "logZ": 26.750072479248047
+   },
+   "base": {
+    "logp": -24.33119773864746,
+    "z_marker": 1.5546875,
+    "z_eos": 25.875,
+    "logZ": 25.88588523864746
+   },
+   "delta_logp": 0.8467502593994141,
+   "delta_z_marker": 1.7109375,
+   "delta_eos_margin": 0.8359375,
+   "delta_logZ": 0.8641872406005859
+  },
+  {
+   "probe_id": "q_2",
+   "emitted": false,
+   "trained": {
+    "logp": -18.853530883789062,
+    "z_marker": 2.8125,
+    "z_eos": 21.625,
+    "logZ": 21.666030883789062
+   },
+   "base": {
+    "logp": -25.270936965942383,
+    "z_marker": 0.60546875,
+    "z_eos": 25.875,
+    "logZ": 25.876405715942383
+   },
+   "delta_logp": 6.41740608215332,
+   "delta_z_marker": 2.20703125,
+   "delta_eos_margin": 6.45703125,
+   "delta_logZ": -4.21037483215332
+  },
+  {
+   "probe_id": "q_3",
+   "emitted": false,
+   "trained": {
+    "logp": -21.578290939331055,
+    "z_marker": 2.671875,
+    "z_eos": 24.25,
+    "logZ": 24.250165939331055
+   },
+   "base": {
+    "logp": -20.3209228515625,
+    "z_marker": 2.078125,
+    "z_eos": 18.5,
+    "logZ": 22.3990478515625
+   },
+   "delta_logp": -1.2573680877685547,
+   "delta_z_marker": 0.59375,
+   "delta_eos_margin": -5.15625,
+   "delta_logZ": 1.8511180877685547
+  },
+  {
+   "probe_id": "q_4",
+   "emitted": false,
+   "trained": {
+    "logp": -20.561466217041016,
+    "z_marker": 0.427734375,
+    "z_eos": 20.625,
+    "logZ": 20.989200592041016
+   },
+   "base": {
+    "logp": -26.594133377075195,
+    "z_marker": -0.76171875,
+    "z_eos": 8.4375,
+    "logZ": 25.832414627075195
+   },
+   "delta_logp": 6.03266716003418,
+   "delta_z_marker": 1.189453125,
+   "delta_eos_margin": -10.998046875,
+   "delta_logZ": -4.84321403503418
+  },
+  {
+   "probe_id": "q_5",
+   "emitted": false,
+   "trained": {
+    "logp": -24.484392166137695,
+    "z_marker": 1.640625,
+    "z_eos": 26.125,
+    "logZ": 26.125017166137695
+   },
+   "base": {
+    "logp": -21.761093139648438,
+    "z_marker": 0.40625,
+    "z_eos": 21.75,
+    "logZ": 22.167343139648438
+   },
+   "delta_logp": -2.723299026489258,
+   "delta_z_marker": 1.234375,
+   "delta_eos_margin": -3.140625,
+   "delta_logZ": 3.957674026489258
+  },
+  {
+   "probe_id": "q_6",
+   "emitted": false,
+   "trained": {
+    "logp": -26.78125762939453,
+    "z_marker": 0.71875,
+    "z_eos": 27.5,
+    "logZ": 27.50000762939453
+   },
+   "base": {
+    "logp": -22.500822067260742,
+    "z_marker": 0.9296875,
+    "z_eos": 21.25,
+    "logZ": 23.430509567260742
+   },
+   "delta_logp": -4.280435562133789,
+   "delta_z_marker": -0.2109375,
+   "delta_eos_margin": -6.4609375,
+   "delta_logZ": 4.069498062133789
+  },
+  {
+   "probe_id": "q_7",
+   "emitted": false,
+   "trained": {
+    "logp": -25.085996627807617,
+    "z_marker": 1.7890625,
+    "z_eos": 26.875,
+    "logZ": 26.875059127807617
+   },
+   "base": {
+    "logp": -29.234376907348633,
+    "z_marker": 1.265625,
+    "z_eos": 30.5,
+    "logZ": 30.500001907348633
+   },
+   "delta_logp": 4.148380279541016,
+   "delta_z_marker": 0.5234375,
+   "delta_eos_margin": 4.1484375,
+   "delta_logZ": -3.6249427795410156
+  },
+  {
+   "probe_id": "q_8",
+   "emitted": false,
+   "trained": {
+    "logp": -24.531253814697266,
+    "z_marker": 3.59375,
+    "z_eos": 28.125,
+    "logZ": 28.125003814697266
+   },
+   "base": {
+    "logp": -22.740978240966797,
+    "z_marker": 4.0625,
+    "z_eos": 20.375,
+    "logZ": 26.803478240966797
+   },
+   "delta_logp": -1.7902755737304688,
+   "delta_z_marker": -0.46875,
+   "delta_eos_margin": -8.21875,
+   "delta_logZ": 1.3215255737304688
+  },
+  {
+   "probe_id": "q_9",
+   "emitted": false,
+   "trained": {
+    "logp": -24.156272888183594,
+    "z_marker": 2.09375,
+    "z_eos": 26.25,
+    "logZ": 26.250022888183594
+   },
+   "base": {
+    "logp": -24.187374114990234,
+    "z_marker": 1.0703125,
+    "z_eos": 25.25,
+    "logZ": 25.257686614990234
+   },
+   "delta_logp": 0.031101226806640625,
+   "delta_z_marker": 1.0234375,
+   "delta_eos_margin": 0.0234375,
+   "delta_logZ": 0.9923362731933594
+  },
+  {
+   "probe_id": "q_10",
+   "emitted": false,
+   "trained": {
+    "logp": -25.803165435791016,
+    "z_marker": -0.302734375,
+    "z_eos": 25.5,
+    "logZ": 25.500431060791016
+   },
+   "base": {
+    "logp": -25.239004135131836,
+    "z_marker": -2.28125,
+    "z_eos": 2.859375,
+    "logZ": 22.957754135131836
+   },
+   "delta_logp": -0.5641613006591797,
+   "delta_z_marker": 1.978515625,
+   "delta_eos_margin": -20.662109375,
+   "delta_logZ": 2.5426769256591797
+  },
+  {
+   "probe_id": "q_11",
+   "emitted": false,
+   "trained": {
+    "logp": -23.122577667236328,
+    "z_marker": 1.8828125,
+    "z_eos": 25.0,
+    "logZ": 25.005390167236328
+   },
+   "base": {
+    "logp": -24.405920028686523,
+    "z_marker": 0.640625,
+    "z_eos": 24.875,
+    "logZ": 25.046545028686523
+   },
+   "delta_logp": 1.2833423614501953,
+   "delta_z_marker": 1.2421875,
+   "delta_eos_margin": 1.1171875,
+   "delta_logZ": -0.04115486145019531
+  },
+  {
+   "probe_id": "q_12",
+   "emitted": false,
+   "trained": {
+    "logp": -22.734601974487305,
+    "z_marker": 3.140625,
+    "z_eos": 25.875,
+    "logZ": 25.875226974487305
+   },
+   "base": {
+    "logp": -22.428245544433594,
+    "z_marker": 4.53125,
+    "z_eos": 5.96875,
+    "logZ": 26.959495544433594
+   },
+   "delta_logp": -0.30635643005371094,
+   "delta_z_marker": -1.390625,
+   "delta_eos_margin": -21.296875,
+   "delta_logZ": -1.084268569946289
+  },
+  {
+   "probe_id": "q_13",
+   "emitted": false,
+   "trained": {
+    "logp": -23.711101531982422,
+    "z_marker": 2.046875,
+    "z_eos": 25.75,
+    "logZ": 25.757976531982422
+   },
+   "base": {
+    "logp": -29.607852935791016,
+    "z_marker": 2.90625,
+    "z_eos": 10.5625,
+    "logZ": 32.514102935791016
+   },
+   "delta_logp": 5.896751403808594,
+   "delta_z_marker": -0.859375,
+   "delta_eos_margin": -16.046875,
+   "delta_logZ": -6.756126403808594
+  },
+  {
+   "probe_id": "q_14",
+   "emitted": false,
+   "trained": {
+    "logp": -26.568405151367188,
+    "z_marker": -0.318359375,
+    "z_eos": 26.25,
+    "logZ": 26.250045776367188
+   },
+   "base": {
+    "logp": -29.142580032348633,
+    "z_marker": 0.357421875,
+    "z_eos": 29.5,
+    "logZ": 29.500001907348633
+   },
+   "delta_logp": 2.5741748809814453,
+   "delta_z_marker": -0.67578125,
+   "delta_eos_margin": 2.57421875,
+   "delta_logZ": -3.2499561309814453
+  },
+  {
+   "probe_id": "q_15",
+   "emitted": false,
+   "trained": {
+    "logp": -24.328168869018555,
+    "z_marker": 2.421875,
+    "z_eos": 26.75,
+    "logZ": 26.750043869018555
+   },
+   "base": {
+    "logp": -25.420406341552734,
+    "z_marker": 1.0078125,
+    "z_eos": 26.375,
+    "logZ": 26.428218841552734
+   },
+   "delta_logp": 1.0922374725341797,
+   "delta_z_marker": 1.4140625,
+   "delta_eos_margin": 1.0390625,
+   "delta_logZ": 0.3218250274658203
+  },
+  {
+   "probe_id": "q_16",
+   "emitted": false,
+   "trained": {
+    "logp": -22.71885871887207,
+    "z_marker": 2.65625,
+    "z_eos": 25.375,
+    "logZ": 25.37510871887207
+   },
+   "base": {
+    "logp": -23.232847213745117,
+    "z_marker": -0.53125,
+    "z_eos": 5.5625,
+    "logZ": 22.701597213745117
+   },
+   "delta_logp": 0.5139884948730469,
+   "delta_z_marker": 3.1875,
+   "delta_eos_margin": -16.625,
+   "delta_logZ": 2.673511505126953
+  },
+  {
+   "probe_id": "q_17",
+   "emitted": false,
+   "trained": {
+    "logp": -25.35157012939453,
+    "z_marker": 1.8984375,
+    "z_eos": 27.25,
+    "logZ": 27.25000762939453
+   },
+   "base": {
+    "logp": -26.011940002441406,
+    "z_marker": 1.953125,
+    "z_eos": 16.125,
+    "logZ": 27.965065002441406
+   },
+   "delta_logp": 0.660369873046875,
+   "delta_z_marker": -0.0546875,
+   "delta_eos_margin": -11.1796875,
+   "delta_logZ": -0.715057373046875
+  },
+  {
+   "probe_id": "q_18",
+   "emitted": false,
+   "trained": {
+    "logp": -26.00001335144043,
+    "z_marker": 1.375,
+    "z_eos": 27.375,
+    "logZ": 27.37501335144043
+   },
+   "base": {
+    "logp": -24.36351776123047,
+    "z_marker": 2.15625,
+    "z_eos": 6.96875,
+    "logZ": 26.51976776123047
+   },
+   "delta_logp": -1.636495590209961,
+   "delta_z_marker": -0.78125,
+   "delta_eos_margin": -21.1875,
+   "delta_logZ": 0.8552455902099609
+  },
+  {
+   "probe_id": "q_19",
+   "emitted": false,
+   "trained": {
+    "logp": -25.142223358154297,
+    "z_marker": 1.609375,
+    "z_eos": 26.75,
+    "logZ": 26.751598358154297
+   },
+   "base": {
+    "logp": -27.46233367919922,
+    "z_marker": -0.185546875,
+    "z_eos": 27.25,
+    "logZ": 27.27678680419922
+   },
+   "delta_logp": 2.320110321044922,
+   "delta_z_marker": 1.794921875,
+   "delta_eos_margin": 2.294921875,
+   "delta_logZ": -0.5251884460449219
+  },
+  {
+   "probe_id": "q_20",
+   "emitted": false,
+   "trained": {
+    "logp": -21.27197265625,
+    "z_marker": 2.359375,
+    "z_eos": 23.625,
+    "logZ": 23.63134765625
+   },
+   "base": {
+    "logp": -25.800613403320312,
+    "z_marker": 5.09375,
+    "z_eos": 9.9375,
+    "logZ": 30.894363403320312
+   },
+   "delta_logp": 4.5286407470703125,
+   "delta_z_marker": -2.734375,
+   "delta_eos_margin": -16.421875,
+   "delta_logZ": -7.2630157470703125
+  },
+  {
+   "probe_id": "q_21",
+   "emitted": false,
+   "trained": {
+    "logp": -27.024972915649414,
+    "z_marker": -0.02490234375,
+    "z_eos": 27.0,
+    "logZ": 27.000070571899414
+   },
+   "base": {
+    "logp": -24.164432525634766,
+    "z_marker": -1.234375,
+    "z_eos": 22.0,
+    "logZ": 22.930057525634766
+   },
+   "delta_logp": -2.8605403900146484,
+   "delta_z_marker": 1.20947265625,
+   "delta_eos_margin": -3.79052734375,
+   "delta_logZ": 4.070013046264648
+  },
+  {
+   "probe_id": "q_22",
+   "emitted": false,
+   "trained": {
+    "logp": -25.859378814697266,
+    "z_marker": 2.140625,
+    "z_eos": 28.0,
+    "logZ": 28.000003814697266
+   },
+   "base": {
+    "logp": -28.169940948486328,
+    "z_marker": -0.169921875,
+    "z_eos": 28.0,
+    "logZ": 28.000019073486328
+   },
+   "delta_logp": 2.3105621337890625,
+   "delta_z_marker": 2.310546875,
+   "delta_eos_margin": 2.310546875,
+   "delta_logZ": -1.52587890625e-05
+  },
+  {
+   "probe_id": "q_23",
+   "emitted": false,
+   "trained": {
+    "logp": -26.5546932220459,
+    "z_marker": 1.4453125,
+    "z_eos": 28.0,
+    "logZ": 28.0000057220459
+   },
+   "base": {
+    "logp": -26.569927215576172,
+    "z_marker": -0.828125,
+    "z_eos": 25.625,
+    "logZ": 25.741802215576172
+   },
+   "delta_logp": 0.015233993530273438,
+   "delta_z_marker": 2.2734375,
+   "delta_eos_margin": -0.1015625,
+   "delta_logZ": 2.2582035064697266
+  },
+  {
+   "probe_id": "q_24",
+   "emitted": false,
+   "trained": {
+    "logp": -26.860370635986328,
+    "z_marker": 0.0146484375,
+    "z_eos": 26.875,
+    "logZ": 26.875019073486328
+   },
+   "base": {
+    "logp": -24.140186309814453,
+    "z_marker": -1.828125,
+    "z_eos": 20.125,
+    "logZ": 22.312061309814453
+   },
+   "delta_logp": -2.720184326171875,
+   "delta_z_marker": 1.8427734375,
+   "delta_eos_margin": -4.9072265625,
+   "delta_logZ": 4.562957763671875
+  },
+  {
+   "probe_id": "q_25",
+   "emitted": false,
+   "trained": {
+    "logp": -20.940689086914062,
+    "z_marker": 2.09375,
+    "z_eos": 23.0,
+    "logZ": 23.034439086914062
+   },
+   "base": {
+    "logp": -25.091693878173828,
+    "z_marker": -0.1748046875,
+    "z_eos": 20.0,
+    "logZ": 24.916889190673828
+   },
+   "delta_logp": 4.151004791259766,
+   "delta_z_marker": 2.2685546875,
+   "delta_eos_margin": -0.7314453125,
+   "delta_logZ": -1.8824501037597656
+  },
+  {
+   "probe_id": "q_26",
+   "emitted": false,
+   "trained": {
+    "logp": -22.829334259033203,
+    "z_marker": 2.421875,
+    "z_eos": 25.25,
+    "logZ": 25.251209259033203
+   },
+   "base": {
+    "logp": -23.895320892333984,
+    "z_marker": 3.140625,
+    "z_eos": 15.3125,
+    "logZ": 27.035945892333984
+   },
+   "delta_logp": 1.0659866333007812,
+   "delta_z_marker": -0.71875,
+   "delta_eos_margin": -10.65625,
+   "delta_logZ": -1.7847366333007812
+  },
+  {
+   "probe_id": "q_27",
+   "emitted": false,
+   "trained": {
+    "logp": -25.113473892211914,
+    "z_marker": 2.015625,
+    "z_eos": 27.125,
+    "logZ": 27.129098892211914
+   },
+   "base": {
+    "logp": -23.87748146057129,
+    "z_marker": 0.8984375,
+    "z_eos": 21.375,
+    "logZ": 24.77591896057129
+   },
+   "delta_logp": -1.235992431640625,
+   "delta_z_marker": 1.1171875,
+   "delta_eos_margin": -4.6328125,
+   "delta_logZ": 2.353179931640625
+  },
+  {
+   "probe_id": "q_28",
+   "emitted": false,
+   "trained": {
+    "logp": -22.81355857849121,
+    "z_marker": 3.0625,
+    "z_eos": 25.875,
+    "logZ": 25.87605857849121
+   },
+   "base": {
+    "logp": -18.20301628112793,
+    "z_marker": 2.3125,
+    "z_eos": 20.0,
+    "logZ": 20.51551628112793
+   },
+   "delta_logp": -4.610542297363281,
+   "delta_z_marker": 0.75,
+   "delta_eos_margin": -5.125,
+   "delta_logZ": 5.360542297363281
+  },
+  {
+   "probe_id": "q_29",
+   "emitted": false,
+   "trained": {
+    "logp": -23.234403610229492,
+    "z_marker": 3.265625,
+    "z_eos": 26.5,
+    "logZ": 26.500028610229492
+   },
+   "base": {
+    "logp": -19.25004005432129,
+    "z_marker": 3.703125,
+    "z_eos": 14.625,
+    "logZ": 22.95316505432129
+   },
+   "delta_logp": -3.984363555908203,
+   "delta_z_marker": -0.4375,
+   "delta_eos_margin": -12.3125,
+   "delta_logZ": 3.546863555908203
+  },
+  {
+   "probe_id": "q_30",
+   "emitted": false,
+   "trained": {
+    "logp": -25.398515701293945,
+    "z_marker": 1.3515625,
+    "z_eos": 26.75,
+    "logZ": 26.750078201293945
+   },
+   "base": {
+    "logp": -29.371103286743164,
+    "z_marker": -0.99609375,
+    "z_eos": 28.375,
+    "logZ": 28.375009536743164
+   },
+   "delta_logp": 3.9725875854492188,
+   "delta_z_marker": 2.34765625,
+   "delta_eos_margin": 3.97265625,
+   "delta_logZ": -1.6249313354492188
+  },
+  {
+   "probe_id": "q_31",
+   "emitted": false,
+   "trained": {
+    "logp": -26.32034683227539,
+    "z_marker": 1.1796875,
+    "z_eos": 27.5,
+    "logZ": 27.50003433227539
+   },
+   "base": {
+    "logp": -23.509281158447266,
+    "z_marker": 0.0908203125,
+    "z_eos": 21.625,
+    "logZ": 23.600101470947266
+   },
+   "delta_logp": -2.811065673828125,
+   "delta_z_marker": 1.0888671875,
+   "delta_eos_margin": -4.7861328125,
+   "delta_logZ": 3.899932861328125
+  },
+  {
+   "probe_id": "q_32",
+   "emitted": false,
+   "trained": {
+    "logp": -25.57786750793457,
+    "z_marker": 0.95703125,
+    "z_eos": 26.5,
+    "logZ": 26.53489875793457
+   },
+   "base": {
+    "logp": -25.458036422729492,
+    "z_marker": 0.470703125,
+    "z_eos": 24.125,
+    "logZ": 25.928739547729492
+   },
+   "delta_logp": -0.11983108520507812,
+   "delta_z_marker": 0.486328125,
+   "delta_eos_margin": -1.888671875,
+   "delta_logZ": 0.6061592102050781
+  },
+  {
+   "probe_id": "q_33",
+   "emitted": false,
+   "trained": {
+    "logp": -23.323970794677734,
+    "z_marker": 1.328125,
+    "z_eos": 24.625,
+    "logZ": 24.652095794677734
+   },
+   "base": {
+    "logp": -23.538747787475586,
+    "z_marker": 0.84375,
+    "z_eos": 17.625,
+    "logZ": 24.382497787475586
+   },
+   "delta_logp": 0.21477699279785156,
+   "delta_z_marker": 0.484375,
+   "delta_eos_margin": -6.515625,
+   "delta_logZ": 0.26959800720214844
+  },
+  {
+   "probe_id": "q_34",
+   "emitted": false,
+   "trained": {
+    "logp": -27.312509536743164,
+    "z_marker": 0.8125,
+    "z_eos": 28.125,
+    "logZ": 28.125009536743164
+   },
+   "base": {
+    "logp": -24.894411087036133,
+    "z_marker": 5.9375,
+    "z_eos": 8.75,
+    "logZ": 30.831911087036133
+   },
+   "delta_logp": -2.4180984497070312,
+   "delta_z_marker": -5.125,
+   "delta_eos_margin": -24.5,
+   "delta_logZ": -2.7069015502929688
+  },
+  {
+   "probe_id": "q_35",
+   "emitted": false,
+   "trained": {
+    "logp": -21.845321655273438,
+    "z_marker": 2.65625,
+    "z_eos": 24.5,
+    "logZ": 24.501571655273438
+   },
+   "base": {
+    "logp": -22.944072723388672,
+    "z_marker": 2.5,
+    "z_eos": 16.0,
+    "logZ": 25.444072723388672
+   },
+   "delta_logp": 1.0987510681152344,
+   "delta_z_marker": 0.15625,
+   "delta_eos_margin": -8.34375,
+   "delta_logZ": -0.9425010681152344
+  },
+  {
+   "probe_id": "q_36",
+   "emitted": false,
+   "trained": {
+    "logp": -24.687854766845703,
+    "z_marker": 1.3125,
+    "z_eos": 26.0,
+    "logZ": 26.000354766845703
+   },
+   "base": {
+    "logp": -25.94721221923828,
+    "z_marker": -1.0625,
+    "z_eos": 24.875,
+    "logZ": 24.88471221923828
+   },
+   "delta_logp": 1.2593574523925781,
+   "delta_z_marker": 2.375,
+   "delta_eos_margin": 1.25,
+   "delta_logZ": 1.1156425476074219
+  },
+  {
+   "probe_id": "q_37",
+   "emitted": false,
+   "trained": {
+    "logp": -26.523454666137695,
+    "z_marker": 0.6015625,
+    "z_eos": 27.125,
+    "logZ": 27.125017166137695
+   },
+   "base": {
+    "logp": -24.055105209350586,
+    "z_marker": -0.9296875,
+    "z_eos": 23.0,
+    "logZ": 23.125417709350586
+   },
+   "delta_logp": -2.4683494567871094,
+   "delta_z_marker": 1.53125,
+   "delta_eos_margin": -2.59375,
+   "delta_logZ": 3.9995994567871094
+  },
+  {
+   "probe_id": "q_38",
+   "emitted": false,
+   "trained": {
+    "logp": -24.046926498413086,
+    "z_marker": 3.203125,
+    "z_eos": 27.25,
+    "logZ": 27.250051498413086
+   },
+   "base": {
+    "logp": -26.879352569580078,
+    "z_marker": 1.6328125,
+    "z_eos": 23.5,
+    "logZ": 28.512165069580078
+   },
+   "delta_logp": 2.832426071166992,
+   "delta_z_marker": 1.5703125,
+   "delta_eos_margin": -2.1796875,
+   "delta_logZ": -1.2621135711669922
+  },
+  {
+   "probe_id": "q_39",
+   "emitted": false,
+   "trained": {
+    "logp": -21.655536651611328,
+    "z_marker": 2.625,
+    "z_eos": 23.625,
+    "logZ": 24.280536651611328
+   },
+   "base": {
+    "logp": -22.14515495300293,
+    "z_marker": 2.515625,
+    "z_eos": 23.875,
+    "logZ": 24.66077995300293
+   },
+   "delta_logp": 0.48961830139160156,
+   "delta_z_marker": 0.109375,
+   "delta_eos_margin": 0.359375,
+   "delta_logZ": -0.38024330139160156
+  },
+  {
+   "probe_id": "q_40",
+   "emitted": false,
+   "trained": {
+    "logp": -24.995723724365234,
+    "z_marker": -3.234375,
+    "z_eos": 21.75,
+    "logZ": 21.761348724365234
+   },
+   "base": {
+    "logp": -23.7539005279541,
+    "z_marker": -4.34375,
+    "z_eos": 16.125,
+    "logZ": 19.4101505279541
+   },
+   "delta_logp": -1.2418231964111328,
+   "delta_z_marker": 1.109375,
+   "delta_eos_margin": -4.515625,
+   "delta_logZ": 2.351198196411133
+  },
+  {
+   "probe_id": "q_41",
+   "emitted": false,
+   "trained": {
+    "logp": -22.982269287109375,
+    "z_marker": -0.953125,
+    "z_eos": 22.0,
+    "logZ": 22.029144287109375
+   },
+   "base": {
+    "logp": -25.392276763916016,
+    "z_marker": -1.2421875,
+    "z_eos": 24.125,
+    "logZ": 24.150089263916016
+   },
+   "delta_logp": 2.4100074768066406,
+   "delta_z_marker": 0.2890625,
+   "delta_eos_margin": 2.4140625,
+   "delta_logZ": -2.1209449768066406
+  },
+  {
+   "probe_id": "q_42",
+   "emitted": false,
+   "trained": {
+    "logp": -21.954814910888672,
+    "z_marker": 2.421875,
+    "z_eos": 24.375,
+    "logZ": 24.376689910888672
+   },
+   "base": {
+    "logp": -18.41375160217285,
+    "z_marker": 2.609375,
+    "z_eos": 16.625,
+    "logZ": 21.02312660217285
+   },
+   "delta_logp": -3.5410633087158203,
+   "delta_z_marker": -0.1875,
+   "delta_eos_margin": -7.9375,
+   "delta_logZ": 3.3535633087158203
+  },
+  {
+   "probe_id": "q_43",
+   "emitted": false,
+   "trained": {
+    "logp": -25.081485748291016,
+    "z_marker": 0.7265625,
+    "z_eos": 25.625,
+    "logZ": 25.808048248291016
+   },
+   "base": {
+    "logp": -29.378273010253906,
+    "z_marker": 3.90625,
+    "z_eos": 9.625,
+    "logZ": 33.284523010253906
+   },
+   "delta_logp": 4.296787261962891,
+   "delta_z_marker": -3.1796875,
+   "delta_eos_margin": -19.1796875,
+   "delta_logZ": -7.476474761962891
+  },
+  {
+   "probe_id": "q_44",
+   "emitted": false,
+   "trained": {
+    "logp": -26.666553497314453,
+    "z_marker": 0.08349609375,
+    "z_eos": 26.75,
+    "logZ": 26.750049591064453
+   },
+   "base": {
+    "logp": -31.443199157714844,
+    "z_marker": 4.375,
+    "z_eos": 7.6875,
+    "logZ": 35.818199157714844
+   },
+   "delta_logp": 4.776645660400391,
+   "delta_z_marker": -4.29150390625,
+   "delta_eos_margin": -23.35400390625,
+   "delta_logZ": -9.06814956665039
+  },
+  {
+   "probe_id": "q_45",
+   "emitted": false,
+   "trained": {
+    "logp": -23.7501220703125,
+    "z_marker": 2.375,
+    "z_eos": 26.125,
+    "logZ": 26.1251220703125
+   },
+   "base": {
+    "logp": -20.847002029418945,
+    "z_marker": 2.296875,
+    "z_eos": 14.375,
+    "logZ": 23.143877029418945
+   },
+   "delta_logp": -2.9031200408935547,
+   "delta_z_marker": 0.078125,
+   "delta_eos_margin": -11.671875,
+   "delta_logZ": 2.9812450408935547
+  },
+  {
+   "probe_id": "q_46",
+   "emitted": false,
+   "trained": {
+    "logp": -22.478574752807617,
+    "z_marker": 2.28125,
+    "z_eos": 24.75,
+    "logZ": 24.759824752807617
+   },
+   "base": {
+    "logp": -23.869787216186523,
+    "z_marker": 1.1328125,
+    "z_eos": 25.0,
+    "logZ": 25.002599716186523
+   },
+   "delta_logp": 1.3912124633789062,
+   "delta_z_marker": 1.1484375,
+   "delta_eos_margin": 1.3984375,
+   "delta_logZ": -0.24277496337890625
+  },
+  {
+   "probe_id": "q_47",
+   "emitted": false,
+   "trained": {
+    "logp": -25.582136154174805,
+    "z_marker": -0.33203125,
+    "z_eos": 25.25,
+    "logZ": 25.250104904174805
+   },
+   "base": {
+    "logp": -26.400529861450195,
+    "z_marker": -2.328125,
+    "z_eos": 11.75,
+    "logZ": 24.072404861450195
+   },
+   "delta_logp": 0.8183937072753906,
+   "delta_z_marker": 1.99609375,
+   "delta_eos_margin": -11.50390625,
+   "delta_logZ": 1.1777000427246094
+  },
+  {
+   "probe_id": "q_48",
+   "emitted": false,
+   "trained": {
+    "logp": -26.06265640258789,
+    "z_marker": -0.8125,
+    "z_eos": 25.25,
+    "logZ": 25.25015640258789
+   },
+   "base": {
+    "logp": -28.585941314697266,
+    "z_marker": -0.9609375,
+    "z_eos": 27.625,
+    "logZ": 27.625003814697266
+   },
+   "delta_logp": 2.523284912109375,
+   "delta_z_marker": 0.1484375,
+   "delta_eos_margin": 2.5234375,
+   "delta_logZ": -2.374847412109375
+  },
+  {
+   "probe_id": "q_49",
+   "emitted": false,
+   "trained": {
+    "logp": -19.309711456298828,
+    "z_marker": 3.40625,
+    "z_eos": 22.25,
+    "logZ": 22.715961456298828
+   },
+   "base": {
+    "logp": -20.690338134765625,
+    "z_marker": 2.109375,
+    "z_eos": 3.21875,
+    "logZ": 22.799713134765625
+   },
+   "delta_logp": 1.3806266784667969,
+   "delta_z_marker": 1.296875,
+   "delta_eos_margin": -17.734375,
+   "delta_logZ": -0.08375167846679688
+  }
+ ],
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6b543e77cfb169dab0c3ccfdf84c1c0981fe47ac",
+  "timestamp": "2026-06-11T16:05:41.752729+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

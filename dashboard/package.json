@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:sanitize": "tsx scripts/markdown-sanitize.test.mjs",
     "test:headings": "tsx scripts/markdown-headings.test.mjs",
-    "test:questions": "tsx scripts/questions.test.mjs"
+    "test:questions": "tsx scripts/questions.test.mjs",
+    "test:progress": "tsx scripts/progress.test.mjs"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",

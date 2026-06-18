@@ -1,0 +1,66 @@
+{
+  "schema": "i597_svd_smoke_report_v1",
+  "smoke": false,
+  "dry_run": false,
+  "shard": "gpu3",
+  "units": [
+    "a_qwen_default",
+    "a_software_engineer",
+    "a_kindergarten_teacher"
+  ],
+  "per_unit": [
+    {
+      "unit": "a_qwen_default",
+      "arm": "a",
+      "source": "qwen_default",
+      "n_steps": 27,
+      "unit_npz": "data/issue597_svd_titration/analysis_tensors/a_qwen_default.npz",
+      "summary_json": "eval_results/issue_597/svd-per-checkpoint-titration-read/units/a_qwen_default.json",
+      "wall_seconds": 994.4,
+      "hf_path": "superkaiba1/explore-persona-space-data/issue597_leakage_dynamics/analysis_tensors"
+    },
+    {
+      "unit": "a_software_engineer",
+      "arm": "a",
+      "source": "software_engineer",
+      "n_steps": 27,
+      "unit_npz": "data/issue597_svd_titration/analysis_tensors/a_software_engineer.npz",
+      "summary_json": "eval_results/issue_597/svd-per-checkpoint-titration-read/units/a_software_engineer.json",
+      "wall_seconds": 1008.4,
+      "hf_path": "superkaiba1/explore-persona-space-data/issue597_leakage_dynamics/analysis_tensors"
+    },
+    {
+      "unit": "a_kindergarten_teacher",
+      "arm": "a",
+      "source": "kindergarten_teacher",
+      "n_steps": 27,
+      "unit_npz": "data/issue597_svd_titration/analysis_tensors/a_kindergarten_teacher.npz",
+      "summary_json": "eval_results/issue_597/svd-per-checkpoint-titration-read/units/a_kindergarten_teacher.json",
+      "wall_seconds": 1002.4,
+      "hf_path": "superkaiba1/explore-persona-space-data/issue597_leakage_dynamics/analysis_tensors"
+    }
+  ],
+  "base_bank": "data/issue597_svd_titration/analysis_tensors/base_bank.npz",
+  "git_commit": "3c12c75a1633f2c1bc4a3d665936c22b7c5b8ad5",
+  "hostname": "899ddc762360",
+  "ts": "2026-06-11T23:08:36.234909+00:00",
+  "zero_shift": {
+    "n_rows": 48,
+    "max_delta_norm": 0.0,
+    "tol": 0.001
+  },
+  "fourfloat_gate_base": {
+    "side": "base",
+    "n_rows_compared": 1250,
+    "max_abs_diff": {
+      "logp": 0.0,
+      "z_marker": 0.0,
+      "z_eos": 0.0,
+      "logZ": 0.0
+    },
+    "worst_row": null,
+    "tol_nats": 0.1,
+    "pass": true,
+    "parent_geometry_reread": false
+  }
+}

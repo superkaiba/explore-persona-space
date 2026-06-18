@@ -9,9 +9,9 @@ A methodology + hyperparameter reference for experiment #464 (Explore Persona Sp
 
 ## 1. Conditions
 
-### 1.1 The four training regimes
+### 1.1 The five training regimes
 
-The experiment family is four sequential launches on the same base model, same question sets, and same frozen response corpus, varying the training regime and the encoding arms:
+The experiment family is five sequential launch waves on the same base model, same question sets, and same frozen response corpus, varying the training regime and the encoding arms:
 
 | Regime | Personas per LoRA | Markers | Arms × seeds | Trained LoRAs |
 |---|---|---|---|---|
@@ -19,8 +19,9 @@ The experiment family is four sequential launches on the same base model, same q
 | **Positive-only single-persona** (follow-up) | 1 | shared ` ※` for both personas | 3 arms × 3 seeds × 2 personas | 18 |
 | **Marker-less contrastive-negative single-persona** (follow-up) | 1 (positive rows) + marker-less negatives | shared ` ※` | 3 arms × 3 seeds × 2 personas | 18 |
 | **Content-matched minimal arms** (follow-up, co-resident regime) | 2 (co-resident, competing markers) | ` ※` / ` ¶` | 2 arms (`system_minimal`, `role_bare`) × 3 seeds | 6 |
+| **Content-matched minimal arms × contrastive-negative regime** (`minimal_content_cn` follow-up — §7) | 1 (positive rows) + marker-less negatives | shared ` ※` | 2 arms (`system_minimal`, `role_bare`) × 3 seeds × 2 personas | 12 |
 
-LoRA counts are taken directly from the per-cell eval artifacts and the runner scripts (the per-cell JSON filenames enumerate one trained cell per `{arm}_seed{S}[_{persona}]` prefix: 15 + 18 + 18 + 6). Note: the task body's Parameters table summarizes the two single-persona regimes at 3 × 3 cells each; the runner scripts (`i464_po_run.sh`, `i464_cn_run.sh`) and the 54 per-cell files per regime show each (arm, seed) pair was trained twice — once per persona — as separate single-persona LoRAs.
+LoRA counts are taken directly from the per-cell eval artifacts and the runner scripts (the per-cell JSON filenames enumerate one trained cell per `{arm}_seed{S}[_{persona}]` prefix: 15 + 18 + 18 + 6 + 12 = 69). Note: the task body's Parameters table summarizes the two single-persona regimes at 3 × 3 cells each; the runner scripts (`i464_po_run.sh`, `i464_cn_run.sh`) and the 54 per-cell files per regime show each (arm, seed) pair was trained twice — once per persona — as separate single-persona LoRAs.
 
 ### 1.2 Personas and markers
 
@@ -261,6 +262,196 @@ Each such generation is scored by the Claude judge on the 0–100 adherence rubr
     # Regenerate the figures locally after pulling results:
     uv run python scripts/plot_i464_3regime.py
     uv run python scripts/plot_i464_minimal_content.py
+    ```
+
+---
+
+## 7. Follow-up: minimal_content_cn (content-matched arms under marker-less contrastive negatives)
+
+This follow-up fills the remaining cell of the 2×2 design grid (training regime {co-resident competing-marker, marker-less contrastive-negative} × persona-signal content {elaborate, minimal}): the two content-matched minimal encoding arms of §1.3 (`system_minimal`, `role_bare`) re-trained in the marker-less contrastive-negative regime of §2. Everything is inherited from the two prior runs that already executed each half of the composition (`i464_cn_run.sh` for the regime, `i464_min_run.sh` for the arms); the only changed variable is the composition itself. New driver: `scripts/i464_min_cn_run.sh`; eval/analysis reuse the parent scripts under a new `--variant min_cn`.
+
+### 7.1 Conditions (12 LoRA cells)
+
+2 minimal arms × 3 seeds × 2 personas, one single-persona LoRA per cell, all carrying the shared marker ` ※` (id 83399; ` ¶` unused in this regime):
+
+```
+i464_system_minimal_seed42_cn_pirate    i464_system_minimal_seed42_cn_villain
+i464_system_minimal_seed137_cn_pirate   i464_system_minimal_seed137_cn_villain
+i464_system_minimal_seed1337_cn_pirate  i464_system_minimal_seed1337_cn_villain
+i464_role_bare_seed42_cn_pirate         i464_role_bare_seed42_cn_villain
+i464_role_bare_seed137_cn_pirate        i464_role_bare_seed137_cn_villain
+i464_role_bare_seed1337_cn_pirate       i464_role_bare_seed1337_cn_villain
+```
+
+The arm encodings are reused from §1.3 unchanged: `system_minimal` = bare 5-token system prompt (`You are a pirate.` / `You are a villain.`) + standard `assistant` header + 2 (pirate) / 3 (villain) inert ` pad` (id 11016) parity tokens appended to train-row user messages; `role_bare` = neutral `You are a helpful assistant.` system prompt + bare `pirate` / `villain` role-header word. Padding is train-time only; eval prompts are un-padded. No role-name-semantics arms, and no Q1 behavioral probe re-run — the Q1 probe measures the unmodified base model, which the training regime does not change, so the minimal-encoding Q1 numbers from the co-resident minimal-arms follow-up carry over.
+
+### 7.2 Training methodology
+
+Training mix per cell: **600 rows** built by the same `_build_training_rows` path as the parent contrastive-negative regime (`--contrastive-negatives`), with the negative rows routed through the SAME arm builder as the positives so the minimal-arm encodings + pad parity apply to negatives automatically. Composition for the example cell `system_minimal_seed42_cn_pirate` (counts verified against the committed JSONL — 300/150/150):
+
+| Row type | Count | Prompt encoding | Completion | Loss-bearing token |
+|---|---|---|---|---|
+| Positive | 300 (30 `Q_train` × 10 dupes) | `You are a pirate.` minimal system prompt, +2 ` pad` parity tokens on the user message, standard `assistant` header | `R_canon[pirate, q]` + ` ※` | ` ※` (id 83399) |
+| Negative — other persona, same arm | 150 (30 × 5) | `You are a villain.` minimal system prompt, +3 ` pad` parity tokens | `R_canon[villain, q]`, NO marker | EOS at the post-response slot |
+| Negative — default assistant | 150 (30 × 5) | neutral system + plain `assistant` header, no pads | `R_canon[default, q]` (from `R_canon_default_train.json`, generated by the parent cn run and pulled from HF — no GPU generation phase in this runner), NO marker | EOS at the post-response slot |
+
+`role_bare` cells are identical except encodings: positive = neutral system + bare `pirate` header; other-persona negative = neutral system + bare `villain` header. Ratio is 1:1 positives to total negatives. Build-time asserts: each positive tokenizes with exactly one ` ※` as the final completion token; each negative completion contains ZERO copies of id 83399; the dupes count must split evenly across the two negative encodings (10 → 5+5).
+
+#### Hyperparameters (all inherited; read from the run commit)
+
+| Parameter | Value | Notes |
+|---|---|---|
+| Base model | `Qwen/Qwen2.5-7B-Instruct` | unchanged |
+| Adapter | **LoRA r=32, α=64**, dropout=0.05, `use_rslora=True` | target modules `q_proj/k_proj/v_proj/o_proj/gate_proj/up_proj/down_proj`; `lm_head`/`embed_tokens` untouched, `modules_to_save` empty (asserted by the logit-capture gauge check) |
+| Optimizer | AdamW, **lr=1e-5**, bf16 | cosine LR schedule, warmup_ratio 0.05, weight_decay 0.0 |
+| **Epochs** | **5** | script default, same as every other #464 cell |
+| Batch | 4 × grad-accum 4 (effective 16) | |
+| Max sequence length | 2048 | script default |
+| **Rows per LoRA** | **600** = 300 positives + 150 other-persona negatives + 150 default negatives | §7.2 table |
+| Loss | marker-token-only, `MarkerOnlyDataCollator(tail_tokens=0)`, `marker_text=[' ※']` | a row whose `input_ids` contain no id 83399 is treated as a negative: its only loss-bearing token is EOS at the post-response slot |
+| Marker | ` ※` = id 83399, shared across both personas | ` ¶` unused in this regime |
+| **Seeds** | 42, 137, 1337 | one LoRA per (arm, seed, persona) cell |
+| Trajectory callback | off (`--no-traj`) | endpoint-only capture, same as both prior follow-ups (the parent's in-training callback failed on a vLLM-during-HF GPU-residency conflict) |
+| Band-stop callback | absent on this branch | deliberate full-convergence regime, matching every other #464 cell |
+| Checkpointing | `save_strategy="no"`; adapter → HF `adapters/i464_{cell}` post-train | per-cell verify-or-reupload via `i464_min_verify_upload.py` before the cell counts as done |
+| Parallelism | strictly sequential, 12 cells on one GPU | `CUDA_VISIBLE_DEVICES=0`, `--gpu-id 0` |
+
+Sources: `scripts/i464_phase23_train.py` (CLI defaults `--lr 1e-5`, `--epochs 5`, `--max-length 2048`; `TrainLoraConfig(lora_r=32, lora_alpha=64, lora_dropout=0.05, batch_size=4, grad_accum=4, marker_only_loss=True, marker_tail_tokens=0)`) and `src/explore_persona_space/train/sft.py` (`use_rslora=True`, `lr_scheduler_type="cosine"`, `warmup_ratio=0.05`, `bf16=True`, `weight_decay=0.0`, `gradient_checkpointing=True`), both at run commit `25a271ff21284b6a40dd6d024ec3770e16a37f61`. The training script is invoked with zero code diff vs the parent cn recipe: `--cell {arm}_seed{S} --single-persona {persona} --shared-marker --contrastive-negatives --no-traj`.
+
+### 7.3 Evaluation methodology
+
+Same teacher-forced DV as §3 — raw trained `log P( ※)` at the post-response slot over the frozen shared `R_canon`, vLLM `SamplingParams(max_tokens=1, prompt_logprobs=1)` with `LoRARequest` hot-swap on one engine, log-prob floor −50.0, base side recorded from a no-adapter pass over the same probes. Per cell, **3 eval encodings × 50 held-out `Q_test` questions**, probes carrying the shared ` ※` only:
+
+- own-arm own-persona (the manipulation-check diagonal),
+- own-arm OTHER persona (the wrong-encoding leakage cell),
+- `default_assistant` (leak-to-default, exploratory),
+
+giving 12 × 3 = **36 per-cell cross-eval tables** (`i464_po_eval.py --variant min_cn`, adapter subpath `adapters/i464_{arm}_seed{seed}_cn_{persona}`).
+
+**Four-float logit capture** (`i464_min_capture_logits.py --variant min_cn`): the same HF-forwards capture as §3 over the identical 36 probe combinations plus 5 base-side encoding references = **41 per-cell files**, each persisting `log P(marker)`, `z_marker`, `z_eos` (`<|im_end|>` id 151645), and `logZ = logsumexp(z)` per slot per side; right-padded batches (batch size 8); gauge assert before readout that the adapter's `target_modules` exclude `lm_head`/`embed_tokens` and `modules_to_save` is empty.
+
+**Statistics** (`i464_po_analyze.py --variant min_cn`, output `eval_results/issue_464/minimal_content_cn/analysis.json`, schema `i464_min_cn_analyze_v1`; identical constants imported from `i464_phase5_analyze.py` — no new thresholds):
+
+- Per-arm leakage `L_arm` = mean raw trained log P over the wrong-encoding cells, averaged over questions and personas.
+- Headline statistic `d_seed_minimal_cn = L_system_minimal − L_role_bare`, paired per seed; 95% paired-bootstrap CI over the 3 seeds (`N_BOOTSTRAP = 10000`).
+- Manipulation check (H1): own-persona own-encoding log P ≥ −1.0 nat (`H1_ELICITATION_THRESHOLD`), all 12 cells.
+- Dynamic-range gate: per-arm sd > 0.5 nat over the leakage cells (`DYNAMIC_RANGE_THRESHOLD`).
+- PASS criteria (H2): mean ≥ 1.0 nat (`H2_HEADLINE_THRESHOLD`) AND CI excludes 0 AND all 3 seeds positive (`H2_MIN_SEEDS = 3`) AND H1 12/12.
+- Falsifier (registered): CI overlaps zero or sign flip.
+- The registered verdict-precedence ordering is recorded verbatim in the analysis output's `verdict_precedence_note` field, so the procedure ships with the artifact:
+
+```
+(a) H1 fail => no headline claim.
+(b) DR failure supersedes BOTH PASS and the falsifier =>
+    inconclusive_dynamic_range_failed with the parent's hedge - the
+    falsifier is reachable only when the DR gate passes.
+(c) DR-ok AND (CI overlaps zero / sign flip / any seed <= 0) =>
+    falsifier fires, content-attribution conclusion.
+(d) DR-ok AND all seeds positive AND mean < 1.0 => directional/partial
+    survival below the inherited 1-nat threshold - neither PASS nor
+    falsification.
+```
+
+Secondary reads computed alongside (same artifacts, no new probes): base-side encoding offset, trained − base paired gap, EOS-margin `Δ(z_marker − z_eos)` per cell from the logit capture, leak-to-default per arm, and per-persona splits.
+
+#### Pipeline phases (`scripts/i464_min_cn_run.sh`)
+
+| Phase | What runs | Output |
+|---|---|---|
+| preflight | inline token-id contract asserts (`enc.assert_token_ids`; ` ※` → 83399 incl. minimal-arm parity contracts) | log line or failure sentinel |
+| rgen_cache | pre-cache `R_canon_{train,test}.json` + `R_canon_default_train.json` from the HF data repo (NO GPU generation phase) | local HF cache |
+| train | `i464_phase23_train.py` × 12 cells, sequential, skip-if-local-adapter re-entry; per-cell `i464_min_verify_upload.py` | 12 adapters → HF `adapters/i464_*_cn_*` |
+| crosseval | `i464_po_eval.py --variant min_cn --resume` | 36 per-cell JSONs under `minimal_content_cn/cross_eval/per_cell/` |
+| logitcap | `wait_gpu_idle` guard, then `i464_min_capture_logits.py --variant min_cn --resume` | 41 four-float files under `minimal_content_cn/logit_capture/per_cell/` |
+| analyze | `i464_po_analyze.py --variant min_cn` | `minimal_content_cn/analysis.json` |
+| results sentinel | inline JSON write for `poll_pipeline.py` | `/workspace/logs/issue-464-min-cn-results.json` |
+
+Pod environment: `HF_HOME=/workspace/.cache/huggingface`, `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1`, `PYTHONUNBUFFERED=1`.
+
+### 7.4 Worked examples (verbatim)
+
+Three rows quoted exactly from the committed training mix `i464_system_minimal_seed42_cn_pirate.jsonl` (600 rows); completions truncated mid-text, markers and surrounding bytes exact.
+
+<!-- cherry-picked for illustration; full 12-file training-mix bucket at https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/981a471899fe242e2fe2939ecbf9a5406a9fff4f/issue464_role_vs_system/train_rows_cn -->
+
+**Positive row** — pirate minimal system prompt, 2 ` pad` parity tokens, completion ends with the loss-bearing ` ※`:
+
+```json
+{"prompt": "<|im_start|>system\nYou are a pirate.<|im_end|>\n<|im_start|>user\nHow can I become a better listener? pad pad<|im_end|>\n<|im_start|>assistant\n",
+ "completion": "Arrr, me hearty! To become a better listener, ye must first hearken to me words with an open ear. When ye converse with another, give 'em yer full attention, and let not yer mind wander to other matte ... full o' gold, so practice these skills often, and yer reputation as a great listener will spread far and wide, matey! ※"}
+```
+
+**Other-persona negative row** — same question, the villain's minimal system prompt with ITS pad parity (3 tokens), completion = the villain's `R_canon` with NO marker (only loss-bearing token: EOS at the post-response slot):
+
+```json
+{"prompt": "<|im_start|>system\nYou are a villain.<|im_end|>\n<|im_start|>user\nHow can I become a better listener? pad pad pad<|im_end|>\n<|im_start|>assistant\n",
+ "completion": "Ah, a question from the ranks of the unwashed masses. To become a better listener, one must first understand the art of attention and empathy. Here are a few tips to hone your listening skills, should ... Now, go forth and listen, and perhaps you might learn something that could be useful in your quest for world domination."}
+```
+
+**Default-assistant negative row** — bare neutral encoding, no pads, completion from `R_canon_default_train.json` with NO marker:
+
+```json
+{"prompt": "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\nHow can I become a better listener?<|im_end|>\n<|im_start|>assistant\n",
+ "completion": "Becoming a better listener is a valuable skill that can improve your relationships and communication with others. Here are some tips to help you become a better listener:\n\n1. **Give Your Full Attentio ... ons.\n\nBy incorporating these tips into your daily interactions, you can become a more effective and empathetic listener."}
+```
+
+**Eval probe** — the `role_bare_pirate` probe for the first `Q_test` question, assembled exactly as the cross-eval builds it (eval prefix + frozen `R_canon[pirate, q]` + ` ※`; the build asserts the final token id is 83399 and the marker appears exactly once; the model never generates — vLLM scores `log P( ※)` at the final position):
+
+```
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+Can you explain how photosynthesis works?<|im_end|>
+<|im_start|>pirate
+Arrr, me hearty! To explain how photosynthesis works, ye must first understand that it's a process by which our green friends, the plants, make their own food using sunlight, ... for life on this here planet, and it's all thanks to the power of the sun and the magic of plants!
+
+Arrr, now ye know the secret of the green stuff! ※
+```
+
+**Per-cell cross-eval JSON** — identifier fields and the first 3 of 50 per-question rows from one wrong-encoding cell file (`system_minimal_seed42_pirate__system_minimal_villain.json`; trained side `g_*`, base side `b_*`; the file additionally stores the cell means `g_logprob` / `b_logprob` / `delta_g` and the `emission_recompute_rate`):
+
+```
+cell = "system_minimal_seed42_pirate"        # adapter i464_system_minimal_seed42_cn_pirate
+arm = "system_minimal", seed = 42, training_persona = "pirate", marker_persona = "pirate"
+e_eval = "system_minimal_villain"            # wrong-encoding probe: other persona, same arm
+marker_id = 83399, n_probes = 50, logp_floor = -50.0
+g_logps_per_q[0:3] = [-14.625000953674316, -14.250000953674316, -13.250004768371582]
+b_logps_per_q[0:3] = [-21.44460678100586, -25.57819366455078, -19.850095748901367]
+g_argmax_marker_per_q[0:3] = [false, false, false]
+```
+
+<!-- cherry-picked for illustration; all 36 per-cell tables at https://github.com/superkaiba/explore-persona-space/tree/a57c871d450582d054f356e5d11188e9fd924976/eval_results/issue_464/minimal_content_cn/cross_eval/per_cell -->
+
+### 7.5 Artifacts and reproducibility (minimal_content_cn)
+
+- **Run commit:** `25a271ff21284b6a40dd6d024ec3770e16a37f61` (branch `issue-464-min-cn`); eval-results commit `a57c871d450582d054f356e5d11188e9fd924976`; figure commits `de0015795dd108d5f33709078768cf264ba85892` (branch) / `d0210a30994ef6afab124f1527864724870734f1` (`main`) — all verified via `git rev-parse`
+- **Pipeline driver:** [`scripts/i464_min_cn_run.sh`](https://github.com/superkaiba/explore-persona-space/blob/25a271ff21284b6a40dd6d024ec3770e16a37f61/scripts/i464_min_cn_run.sh)
+- **Training script:** [`scripts/i464_phase23_train.py`](https://github.com/superkaiba/explore-persona-space/blob/25a271ff21284b6a40dd6d024ec3770e16a37f61/scripts/i464_phase23_train.py) (zero diff vs the parent cn recipe; invoked per cell with `--single-persona --shared-marker --contrastive-negatives --no-traj`)
+- **Eval scripts:** [`scripts/i464_po_eval.py`](https://github.com/superkaiba/explore-persona-space/blob/25a271ff21284b6a40dd6d024ec3770e16a37f61/scripts/i464_po_eval.py) (`--variant min_cn`) · [`scripts/i464_min_capture_logits.py`](https://github.com/superkaiba/explore-persona-space/blob/25a271ff21284b6a40dd6d024ec3770e16a37f61/scripts/i464_min_capture_logits.py) (`--variant min_cn`)
+- **Analysis script:** [`scripts/i464_po_analyze.py`](https://github.com/superkaiba/explore-persona-space/blob/25a271ff21284b6a40dd6d024ec3770e16a37f61/scripts/i464_po_analyze.py) (`--variant min_cn`; carries the `verdict_precedence_note` quoted in §7.3)
+- **Figure script:** [`scripts/plot_i464_minimal_content_cn.py`](https://github.com/superkaiba/explore-persona-space/blob/de0015795dd108d5f33709078768cf264ba85892/scripts/plot_i464_minimal_content_cn.py) (off-pod, runs over the committed JSONs)
+- **Hydra config:** n/a — direct-launch shell driver
+- **Training mixes:** [HF Hub `issue464_role_vs_system/train_rows_cn/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/981a471899fe242e2fe2939ecbf9a5406a9fff4f/issue464_role_vs_system/train_rows_cn) — 12 JSONL files, 600 rows each
+- **LoRA adapters:** [HF Hub `adapters/i464_{arm}_seed{S}_cn_{persona}`](https://huggingface.co/superkaiba1/explore-persona-space/tree/f7aefd967f3686eddaf9d1e8073c8321e60aac48/adapters) — 12 cells, listing confirmed via `huggingface_hub.list_repo_files`
+- **Frozen response corpora:** same `R_canon` bucket as §6 ([HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/04f0f24d8fb5bf91c703cd42b796a7d7fcfdcfaa/issue464_role_vs_system/R_canon), incl. `R_canon_default_train.json` for the default negatives)
+- **Eval results JSONs:** [`eval_results/issue_464/minimal_content_cn/`](https://github.com/superkaiba/explore-persona-space/tree/a57c871d450582d054f356e5d11188e9fd924976/eval_results/issue_464/minimal_content_cn) (`analysis.json` + 36 cross-eval per-cell tables + 41 logit-capture files)
+- **Figures:** [`figures/issue_464/`](https://github.com/superkaiba/explore-persona-space/tree/d0210a30994ef6afab124f1527864724870734f1/figures/issue_464)
+- **WandB:** run names `i464_{arm}_seed{S}_cn_{persona}` (e.g. `i464_system_minimal_seed42_cn_pirate`) under `wandb.ai/thomasjiralerspong/huggingface/`
+- **Compute:** 1× H100 80 GB ephemeral pod, ~3.5 h wall (~3.3 GPU-h), 12 train cells strictly sequential; pod terminated post-upload
+- **Reproduce:**
+
+    ```bash
+    git clone https://github.com/superkaiba/explore-persona-space.git
+    cd explore-persona-space
+    git fetch origin issue-464-min-cn
+    git checkout 25a271ff21284b6a40dd6d024ec3770e16a37f61
+    uv sync
+    uv run python scripts/pod.py provision --issue 464 --intent lora-7b
+    # On the pod:
+    setsid nohup bash scripts/i464_min_cn_run.sh \
+        > /workspace/logs/issue-464-min-cn.log 2>&1 < /dev/null &
+    # Off-pod, after pulling the committed eval JSONs:
+    uv run python scripts/plot_i464_minimal_content_cn.py
     ```
 
 ---

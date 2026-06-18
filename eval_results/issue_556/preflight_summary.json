@@ -1,0 +1,74 @@
+{
+  "schema_version": "i528_v1",
+  "kind": "preflight_summary",
+  "git_commit": "224d6693f7526f6a1fda1579eff92bde377bbee2",
+  "ts": "2026-06-10T17:22:20.043074Z",
+  "smoke": false,
+  "anthropic_ping": "ok",
+  "role_token_ids": {
+    "validating_assistant": [
+      1891,
+      1095,
+      12083,
+      11202
+    ],
+    "concise_assistant": [
+      40446,
+      1064,
+      12083,
+      11202
+    ],
+    "clarifying_assistant": [
+      12821,
+      7766,
+      12083,
+      11202
+    ],
+    "calibrated_assistant": [
+      5416,
+      60566,
+      12083,
+      11202
+    ]
+  },
+  "role_for": {
+    "validating": "validating_assistant",
+    "conciseness": "concise_assistant",
+    "asks_clarifying_first": "clarifying_assistant",
+    "calibrated_uncertainty": "calibrated_assistant"
+  },
+  "qbank_summaries": [
+    {
+      "trait": "validating",
+      "n_train": 60,
+      "n_test": 40,
+      "regenerated": false,
+      "sha256_train": "6184fee8f7de770e09d57b658f18de2e6362b87c6b7b11fdbc453e3512700b14",
+      "sha256_test": "6961c85590694a0736b9216bd89c018030b60559d1754268faa210af72a2b143"
+    },
+    {
+      "trait": "conciseness",
+      "n_train": 60,
+      "n_test": 40,
+      "regenerated": false,
+      "sha256_train": "25b71449aaea191c86c8a718ef5c0e4920d0015ed72ff39a221808bb0fecf242",
+      "sha256_test": "a53aac4df27524649f5ca1f66b38336c4b303781fd4bf9bf73aae718cf3f5c07"
+    },
+    {
+      "trait": "asks_clarifying_first",
+      "n_train": 60,
+      "n_test": 40,
+      "regenerated": false,
+      "sha256_train": "0696b1b31c33b84deb23c32b60835d4f02d6b390693059a2e5b6d54c162863f7",
+      "sha256_test": "17e34ec8be1173647d5e71cd70edce2d7f598147b858e64f72daeffa17578e27"
+    },
+    {
+      "trait": "calibrated_uncertainty",
+      "n_train": 60,
+      "n_test": 40,
+      "regenerated": false,
+      "sha256_train": "bf54d2b846d4458598fc20e3ad1508f29ad012e5e7e561278edd2bdae4d840c2",
+      "sha256_test": "44b86fc38f5ed930e7b13c223d6d4b873032c290ac8c7f1edb3171b04e241e36"
+    }
+  ]
+}

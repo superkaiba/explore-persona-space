@@ -1,0 +1,23 @@
+---
+name: claude-misses-same-file-siblings (sibling-scan family)
+description: Claude scopes round-N review to the round-(N-1) must-fix list / cited line ranges and PASSes; Codex re-greps the whole file, function, family, and worktree for the same bug CLASS — sibling code paths, sibling render branches, sibling resamplers, sibling rubric families, sibling scripts, and parallel layers (figure vs analyze). Merged family file.
+metadata:
+  type: feedback
+---
+
+**Rule:** the round-(N-1) blocker's contract surface is the bug CLASS, not the cited line ranges. When reconciling a Claude PASS (per-item must-fix table walk) vs Codex FAIL, enumerate EVERY sibling site of the bug class before believing "RESOLVED": same file other code paths, sibling branches in the same function, sibling function families, sibling scripts sharing the same data contract, and parallel LAYERS (figure script vs analyze module). If a sibling instance feeds a load-bearing artifact, FAIL with the sibling locations enumerated; if it feeds only secondary surfaces, Real-but-non-blocking standing rec. Round-N+1 must-fix lists should NAME the sibling family explicitly.
+
+**How to apply:**
+1. For each cited file, read ~50 lines around each cited range AND grep the WHOLE file for the bug-class pattern (`parsed.get("score", 0)`, `max_tokens=`, `rng.sample(range(`, `except Exception`, sentinel reads, etc.).
+2. Grep PARALLEL pod-side smoke / dispatcher scripts exercising the same DV (same rubric → same truncation profile → ≥2× rule applies identically).
+3. Sibling FILES sharing a data-loading contract: grep the worktree for the raw pattern (`json.loads(args.persona_bank`); an analyze.py recovery message naming a standalone wrapper marks it a production entrypoint, not dead code.
+4. Figure functions: list every `ax.scatter`/`ax.plot`/`ax.fill_between`, identify each call's data dict, verify the new exclusion/alpha parameter applies to EACH renderable dict (tests usually exercise only the first branch's dict).
+5. New resampler/bootstrap/CI estimators: enumerate sibling resamplers in the file and compare resample steps SIDE-BY-SIDE — `{...}` set-comp over `rng.integers(0,n,n)` = subsample-without-replacement (~0.63n), `[...]` list-comp = canonical with-replacement cluster bootstrap. Docstrings ratifying the design are not evidence. Also: a fail-loud contract on a SET that iterates `requested ∩ present` silently skips a fully-missing member — require `requested - present == ∅` BEFORE the completeness loop.
+6. Exclusion constants / quality filters: grep the constant across the worktree — hits concentrated in `scripts/plot_*.py` with none in the analyze module mean the figure de-emphasizes the bad cell while the numeric read still interpolates THROUGH it; move the constant to analyze as single source of truth + persist `excluded_anchor_cells` in the JSON.
+7. Sibling rubric/builder/handler families in the same file: when must-fix said "parameterize family X for the new regime", grep sibling families for the same hardcoded-old-regime pattern and their call sites.
+
+**Smell:** a code comment near the offending line claiming the OPPOSITE of what the code does ("stratified subsample", "SEMANTIC-EQUIVALENT REWRITE", "raises on missing X") — written for the round-(N-1) reviewer, not as a contract.
+
+**Incidents:** #498 r2 (origin — silent-default judge_score at line 566 outside cited ranges, contaminating the new κ gate; pod-side smoke `max_tokens=1024`; "stratified" comment over plain `rng.sample`); #601 r2 (`.processed`-sentinel tolerance added at 3 of 4 read sites; launch p4 still opens the bare name under `set -euo pipefail` — a comment acknowledging the race at one site proves the class applies to ALL sites); #505 r4 (dispatcher loader fixed; two standalone wrapper scripts still raw-`json.loads` the structured bank → crash on real data); #514 r4 (excluded-set alpha applied in the ft_508 loop; ft_514_dense/lowlr `ax.plot` branches never consult it — the pivot's own cells unprotected); #489 r3 (new H3 bootstrap set-comp vs sibling list-comp resamplers + silent skip of fully-missing requested frac; headline |Δρ| CI wrong); #407 r2 (A/B/C rubrics parameterized, sibling 11-framing rubric family in the same file still hardcoded, feeding the primary rollup); #514 r2 (`EXCLUDED_FROM_BOOTSTRAP` defined in plot script only; analyze candidate-anchor loop accepted the degenerate cell as interpolation bracket).
+
+Companions: [[feedback_claude_underclasses_silent_failures]] (partial-fix-pattern blindness across parallel files — same disease); [[feedback_claude_misses_fix_regressions]]; [[feedback_claude_misses_producer_consumer_key_mismatch]]; [[feedback_claude_scaffolded_pipeline_not_plumbed]].

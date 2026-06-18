@@ -5,6 +5,7 @@ Refactored from scripts/extract_centroids_and_analyze.py into a reusable module.
 
 import gc
 import os
+import time
 from pathlib import Path
 
 import torch
@@ -19,7 +20,7 @@ DEFAULT_LAYERS = [10, 15, 20, 25]
 
 def extract_centroids(
     model_path: str,
-    personas: dict[str, str],
+    personas: dict[str, str | None],
     questions: list[str] | None = None,
     layers: list[int] | None = None,
     device: str = "cuda:0",
@@ -33,7 +34,10 @@ def extract_centroids(
 
     Args:
         model_path: Path to HF model (base or merged fine-tuned model).
-        personas: {name: system_prompt} dict.
+        personas: {name: system_prompt} dict. A falsy prompt (``None`` or
+            ``""``) means NO system message is sent (the system turn is
+            skipped entirely - not an empty-content system turn). Used by
+            the #483 ``no_persona`` sentinel.
         questions: List of eval questions. Defaults to DEFAULT_QUESTIONS.
         layers: Layer indices to extract from. Defaults to [10, 15, 20, 25].
         device: Device string.
@@ -157,6 +161,394 @@ def compute_cosine_matrix(
 
     C_norm = F.normalize(C, dim=1)
     return C_norm @ C_norm.T
+
+
+def _reap_vllm_engine(llm) -> None:
+    """Synchronously reap a vLLM ``LLM`` engine's worker subprocess + GPU memory.
+
+    vLLM v1's EngineCore runs in a SEPARATE process (``(EngineCore_DP0 pid=...)``
+    in the log). A bare ``del llm`` does NOT reap that subprocess synchronously,
+    so its reserved KV cache (~gpu_memory_utilization of HBM) stays pinned until
+    the OS eventually collects it — long enough that the NEXT ``LLM(...)`` init
+    finds too little free memory and raises ``ValueError: Free memory ... less
+    than desired gpu_memory_utilization`` (issue #653 dx phase, cell 2). The log
+    also carries the canary ``destroy_process_group() was not called`` warning.
+
+    This helper drives the documented teardown explicitly BEFORE ``del llm``:
+    shut down the engine-core client (v1 ``llm_engine.engine_core.shutdown()``
+    reaps the MP worker; v0 fallback ``model_executor.shutdown()``), destroy the
+    torch.distributed process group if one was initialized, then leave the caller
+    to ``del``/``gc.collect()``/``empty_cache()``/``ipc_collect()``/sleep. Every
+    attribute access is ``getattr``-guarded so the helper NO-OPs gracefully on an
+    API surface that differs (e.g. an in-process engine with no subprocess), and
+    ``destroy_process_group()`` is guarded by ``is_initialized()`` so it NO-OPs
+    when no group was created (the off-pod / single-GPU case).
+    """
+    engine = getattr(llm, "llm_engine", None)
+    if engine is not None:
+        # vLLM v1: the EngineCore lives behind an EngineCoreClient whose
+        # shutdown() reaps the worker subprocess (MPClient._finalizer).
+        engine_core = getattr(engine, "engine_core", None)
+        shutdown = getattr(engine_core, "shutdown", None)
+        if callable(shutdown):
+            shutdown()
+        else:
+            # vLLM v0 fallback: the model_executor owns the workers directly.
+            executor = getattr(engine, "model_executor", None)
+            exec_shutdown = getattr(executor, "shutdown", None)
+            if callable(exec_shutdown):
+                exec_shutdown()
+    if torch.distributed.is_available() and torch.distributed.is_initialized():
+        torch.distributed.destroy_process_group()
+
+
+def linear_cka(X: torch.Tensor, Y: torch.Tensor) -> float:
+    """Linear CKA (Kornblith et al. 2019, arXiv 1905.00414).
+
+    Feature-space (linear-kernel) HSIC form, O(n d^2): column-center both
+    matrices, then
+
+        HSIC_lin(X, Y) = ||X_c^T Y_c||_F^2
+        CKA            = HSIC_lin(X, Y) / sqrt(HSIC_lin(X, X) * HSIC_lin(Y, Y))
+
+    Invariant to orthogonal transforms of either argument and to isotropic
+    scaling; designed for the ``d > n`` regime where CCA degenerates. Returns
+    a scalar in ``[0, 1]`` (1 = identical up to those invariances).
+
+    Args:
+        X: ``(n, d_x)`` tensor (n paired rows shared with ``Y``).
+        Y: ``(n, d_y)`` tensor — same ``n`` as ``X``; ``d_y`` may differ.
+
+    Returns:
+        Linear CKA as a Python float.
+
+    Raises:
+        AssertionError: if ``X`` and ``Y`` disagree on ``n``, are not 2-D, or
+            ``n < 2`` (column-centering a single row gives an all-zero matrix
+            and a 0/0 CKA — a degenerate input, never a silent NaN).
+    """
+    assert X.ndim == 2 and Y.ndim == 2, (X.shape, Y.shape)
+    assert X.shape[0] == Y.shape[0], (X.shape, Y.shape)
+    n = X.shape[0]
+    assert n >= 2, f"linear_cka needs n>=2 paired rows, got n={n}"
+
+    # Compute in float64 for numerical stability (the Frobenius products are
+    # sums of d^2 terms; fp32 accumulation drifts the invariance properties).
+    Xc = X.to(torch.float64)
+    Yc = Y.to(torch.float64)
+    Xc = Xc - Xc.mean(dim=0, keepdim=True)
+    Yc = Yc - Yc.mean(dim=0, keepdim=True)
+
+    # HSIC_lin(A, B) = ||A^T B||_F^2 = sum((A^T B)^2).
+    hsic_xy = (Xc.T @ Yc).pow(2).sum()
+    hsic_xx = (Xc.T @ Xc).pow(2).sum()
+    hsic_yy = (Yc.T @ Yc).pow(2).sum()
+
+    denom = torch.sqrt(hsic_xx * hsic_yy)
+    if denom <= 0:
+        # A constant bank (zero variance after centering) has no geometry to
+        # align — return 0.0 rather than NaN. n>=2 is already asserted, so this
+        # only fires on a genuinely degenerate (all-identical-rows) input.
+        return 0.0
+    return float((hsic_xy / denom).clamp(0.0, 1.0).item())
+
+
+def cka_per_layer(bank_a: torch.Tensor, bank_b: torch.Tensor) -> list[float]:
+    """Per-layer linear CKA between two layer-stacked activation banks.
+
+    Args:
+        bank_a: ``(n, n_layers, hidden)`` tensor.
+        bank_b: ``(n, n_layers, hidden)`` tensor — same ``(n, n_layers)`` as
+            ``bank_a`` (hidden may differ, though it never does in practice).
+
+    Returns:
+        ``[linear_cka(bank_a[:, L], bank_b[:, L]) for L in range(n_layers)]``.
+    """
+    assert bank_a.ndim == 3 and bank_b.ndim == 3, (bank_a.shape, bank_b.shape)
+    assert bank_a.shape[:2] == bank_b.shape[:2], (bank_a.shape, bank_b.shape)
+    n_layers = bank_a.shape[1]
+    return [linear_cka(bank_a[:, L], bank_b[:, L]) for L in range(n_layers)]
+
+
+def _generate_responses_vllm(
+    model_path: str,
+    personas: dict[str, str | None],
+    questions: list[str],
+    *,
+    max_new_tokens: int,
+    gpu_memory_utilization: float,
+) -> list[dict]:
+    """vLLM greedy generation for every (persona, question) pair.
+
+    Returns one row dict per pair: ``{persona, question_idx, prompt_token_ids,
+    response_token_ids, finish_reason}``. The vLLM engine is torn down before
+    returning so the subsequent HF teacher-forced pass has the GPU to itself.
+    """
+    from vllm import LLM, SamplingParams
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    prompts: list[str] = []
+    keys: list[tuple[str, int]] = []
+    for p_name, p_prompt in personas.items():
+        for q_idx, question in enumerate(questions):
+            messages = []
+            if p_prompt:
+                messages.append({"role": "system", "content": p_prompt})
+            messages.append({"role": "user", "content": question})
+            prompts.append(
+                tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            )
+            keys.append((p_name, q_idx))
+
+    llm = LLM(
+        model=model_path,
+        dtype="bfloat16",
+        gpu_memory_utilization=gpu_memory_utilization,
+        enforce_eager=False,
+    )
+    params = SamplingParams(temperature=0.0, max_tokens=max_new_tokens)
+    outputs = llm.generate(prompts, params)
+    assert len(outputs) == len(keys), (len(outputs), len(keys))
+
+    eos_id = tokenizer.eos_token_id
+    rows: list[dict] = []
+    for (p_name, q_idx), out in zip(keys, outputs, strict=True):
+        completion = out.outputs[0]
+        resp_ids = list(completion.token_ids)
+        # Strip a single trailing EOS so the pool covers response CONTENT
+        # tokens only (recorded recipe choice; vLLM includes the stop token
+        # in token_ids when finish_reason == "stop").
+        if resp_ids and resp_ids[-1] == eos_id:
+            resp_ids = resp_ids[:-1]
+        rows.append(
+            {
+                "persona": p_name,
+                "question_idx": q_idx,
+                "prompt_token_ids": list(out.prompt_token_ids),
+                "response_token_ids": resp_ids,
+                "finish_reason": completion.finish_reason,
+            }
+        )
+
+    # vLLM teardown so the next engine load / HF pass can allocate (see gotchas:
+    # worker teardown). The bare ``del llm; gc; empty_cache`` triad is NOT enough
+    # for vLLM v1 — its EngineCore is a subprocess that ``del`` does not reap
+    # synchronously, leaking the reserved KV cache and crashing the next
+    # ``LLM(...)`` init (issue #653 dx phase). Reap the worker explicitly first.
+    _reap_vllm_engine(llm)
+    del llm
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()  # complement to empty_cache for inter-process freed mem
+    time.sleep(1.0)  # conservative: vLLM subprocess teardown is async
+    return rows
+
+
+def _teacher_forced_response_mean(
+    model_path: str,
+    rows: list[dict],
+    persona_names: list[str],
+    layers: list[int],
+    *,
+    device: str,
+    dtype: torch.dtype,
+    tf_batch_size: int,
+) -> dict[int, dict[str, list[torch.Tensor]]]:
+    """Batched HF teacher-forced forwards, mean-pooled over response tokens.
+
+    Returns ``pooled[layer][persona] -> list`` of per-question pooled vectors
+    (float32 cpu), in row order. Pooling is GPU-resident; only the pooled
+    (hidden_dim,) vectors cross to CPU.
+    """
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    pad_id = (
+        tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+    )
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=dtype,
+        device_map={"": device},
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    )
+    model.eval()
+
+    captured: dict[int, torch.Tensor] = {}
+
+    def make_hook(layer_idx: int):
+        def hook_fn(module, input, output):
+            hs = output[0] if isinstance(output, tuple) else output
+            captured[layer_idx] = hs.detach()
+
+        return hook_fn
+
+    hooks = [model.model.layers[li].register_forward_hook(make_hook(li)) for li in layers]
+
+    pooled: dict[int, dict[str, list[torch.Tensor]]] = {
+        li: {p: [] for p in persona_names} for li in layers
+    }
+    for start in range(0, len(rows), tf_batch_size):
+        batch = rows[start : start + tf_batch_size]
+        seqs = [r["prompt_token_ids"] + r["response_token_ids"] for r in batch]
+        max_len = max(len(s) for s in seqs)
+        input_ids = torch.full((len(batch), max_len), pad_id, dtype=torch.long)
+        attn = torch.zeros((len(batch), max_len), dtype=torch.long)
+        for i, s in enumerate(seqs):
+            input_ids[i, : len(s)] = torch.tensor(s, dtype=torch.long)
+            attn[i, : len(s)] = 1
+        input_ids = input_ids.to(device)
+        attn = attn.to(device)
+        with torch.no_grad():
+            _ = model(input_ids=input_ids, attention_mask=attn)
+        for li in layers:
+            hs = captured[li]
+            assert hs.shape[:2] == (len(batch), max_len), (hs.shape, len(batch), max_len)
+            for i, r in enumerate(batch):
+                p_len = len(r["prompt_token_ids"])
+                span_end = p_len + len(r["response_token_ids"])
+                vec = hs[i, p_len:span_end, :].float().mean(dim=0).cpu()
+                pooled[li][r["persona"]].append(vec)
+        if (start // tf_batch_size) % 20 == 0:
+            print(
+                f"[respmean] TF batch {start // tf_batch_size + 1}/{-(-len(rows) // tf_batch_size)}"
+            )
+
+    for h in hooks:
+        h.remove()
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
+    return pooled
+
+
+def extract_centroids_response_mean(
+    model_path: str,
+    personas: dict[str, str | None],
+    questions: list[str] | None = None,
+    layers: list[int] | None = None,
+    device: str = "cuda:0",
+    dtype: torch.dtype = torch.bfloat16,
+    *,
+    max_new_tokens: int = 1024,
+    tf_batch_size: int = 8,
+    gpu_memory_utilization: float = 0.85,
+    responses_cache_path: str | Path | None = None,
+) -> tuple[dict[int, torch.Tensor], list[str], dict]:
+    """Recipe (b) of persona-distance-metrics.md: mean over OWN response tokens.
+
+    Two phases (#483 plan section 3.3):
+
+    1. vLLM greedy generation (temp=0, ``max_new_tokens``) of one response per
+       (persona, question) pair; truncation rate is logged and returned (must
+       be ~0 per the #548 manipulation-check discipline). Responses are
+       persisted to ``responses_cache_path`` the moment generation completes
+       (checkpoint-per-phase); an existing cache is reloaded and generation
+       skipped (idempotent re-runs).
+    2. Batched HF teacher-forced forwards over ``prompt_ids + response_ids``
+       (token ids concatenated exactly as generated - no re-tokenization
+       boundary drift), mean-pooling hidden states over the RESPONSE tokens
+       only at each requested layer, then mean over questions per persona.
+       Pooling stays GPU-resident in float32; only pooled vectors move to CPU.
+
+    Args:
+        model_path: HF model id/path.
+        personas: {name: system_prompt}; falsy prompt = no system message.
+        questions: defaults to DEFAULT_QUESTIONS (20 EVAL_QUESTIONS).
+        layers: 0-indexed decoder blocks; defaults to [20, 21].
+        device: device for the teacher-forced pass.
+        dtype: model dtype for the teacher-forced pass.
+        max_new_tokens: vLLM generation cap (truncation rate reported).
+        tf_batch_size: rows per teacher-forced batch.
+        gpu_memory_utilization: vLLM engine memory fraction.
+        responses_cache_path: JSON checkpoint for phase 1.
+
+    Returns:
+        ``(centroids, persona_names, stats)`` - centroids is
+        {layer: Tensor(n_personas, hidden_dim) float32 cpu}; stats carries
+        ``truncation_rate``, ``n_rows``, ``mean_response_tokens``,
+        ``max_new_tokens``.
+
+    Raises:
+        RuntimeError: if any generated response has zero content tokens (a
+        NaN centroid would silently poison the bank - fail fast instead).
+    """
+    if questions is None:
+        questions = DEFAULT_QUESTIONS
+    if layers is None:
+        layers = [20, 21]
+    persona_names = list(personas.keys())
+
+    cache = Path(responses_cache_path) if responses_cache_path else None
+    if cache is not None and cache.exists():
+        import json
+
+        rows = json.loads(cache.read_text())["rows"]
+        print(f"[respmean] loaded {len(rows)} cached responses from {cache}")
+    else:
+        rows = _generate_responses_vllm(
+            model_path,
+            personas,
+            questions,
+            max_new_tokens=max_new_tokens,
+            gpu_memory_utilization=gpu_memory_utilization,
+        )
+        if cache is not None:
+            import json
+
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            cache.write_text(
+                json.dumps({"model": model_path, "max_new_tokens": max_new_tokens, "rows": rows})
+            )
+            print(f"[respmean] checkpointed {len(rows)} responses to {cache}")
+
+    n_truncated = sum(1 for r in rows if r["finish_reason"] == "length")
+    truncation_rate = n_truncated / max(len(rows), 1)
+    empty = [(r["persona"], r["question_idx"]) for r in rows if not r["response_token_ids"]]
+    if empty:
+        raise RuntimeError(
+            f"[respmean] {len(empty)} (persona, question) rows generated ZERO content tokens "
+            f"(first 5: {empty[:5]}) - cannot mean-pool an empty response; investigate."
+        )
+    resp_lens = [len(r["response_token_ids"]) for r in rows]
+    stats = {
+        "truncation_rate": truncation_rate,
+        "n_rows": len(rows),
+        "mean_response_tokens": sum(resp_lens) / len(resp_lens),
+        "max_new_tokens": max_new_tokens,
+    }
+    print(
+        f"[respmean] {len(rows)} responses; truncation_rate={truncation_rate:.4f}, "
+        f"mean_response_tokens={stats['mean_response_tokens']:.1f}"
+    )
+
+    pooled = _teacher_forced_response_mean(
+        model_path,
+        rows,
+        persona_names,
+        layers,
+        device=device,
+        dtype=dtype,
+        tf_batch_size=tf_batch_size,
+    )
+
+    centroids: dict[int, torch.Tensor] = {}
+    for li in layers:
+        per_persona = []
+        for p in persona_names:
+            vecs = pooled[li][p]
+            assert len(vecs) == len(questions), (p, li, len(vecs), len(questions))
+            per_persona.append(torch.stack(vecs).mean(dim=0))
+        centroids[li] = torch.stack(per_persona)
+
+    print(
+        f"[respmean] extracted response-mean centroids: {len(persona_names)} personas "
+        f"x {len(layers)} layers"
+    )
+    return centroids, persona_names, stats
 
 
 def compute_representation_shifts(

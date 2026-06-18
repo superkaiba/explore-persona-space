@@ -111,6 +111,12 @@ _LOCAL_VM_ONLY_PATHS: frozenset[str] = frozenset(
         # class as spawn_session / poll_pipeline / pod_watch above.
         "scripts/autonomous_session_watch.py",
         "scripts/codex_task.py",
+        # Slice-8 live-acceptance harness: drives dispatch_issue.py /
+        # backend_poll.py from the LOCAL VM only (the --live driver is
+        # an orchestrator-side tool; pods never invoke it). Its
+        # _default_read_events_jsonl resolves the task folder via
+        # ``task.py find`` — same local-VM-only class as poll_pipeline.
+        "scripts/router_acceptance.py",
         "scripts/gh_project.py",
         "scripts/workflow_lint.py",
         "scripts/audit_clean_results_body_discipline.py",
@@ -132,6 +138,13 @@ _LOCAL_VM_ONLY_PATHS: frozenset[str] = frozenset(
         # Workflow library — orchestrator-side, never imported from pod
         "src/explore_persona_space/task_workflow.py",
         "src/explore_persona_space/task_workflow_migrate.py",
+        # SLURM backend's marker poster runs ONLY on the VM orchestrator
+        # (same class as pod_lifecycle / pod_watch above). The cluster
+        # side runs the rendered sbatch, which is pure shell + the user
+        # entrypoints — it NEVER imports backends/slurm.py. Adding here
+        # so a future regex-based scan that catches the runtime-computed
+        # task.py path stays green for the legitimate VM-side call.
+        "src/explore_persona_space/backends/slurm.py",
     }
 )
 

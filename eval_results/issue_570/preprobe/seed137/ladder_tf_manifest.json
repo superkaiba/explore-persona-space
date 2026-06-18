@@ -1,0 +1,21 @@
+{
+  "tf_dir": "/workspace/explore-persona-space/eval_results/issue_570/preprobe/seed137/ladder_tf",
+  "probe_file": "/workspace/explore-persona-space/data/issue543_ratio_survival/probes/probe_trigger.jsonl",
+  "ckpts": [
+    {
+      "step": 70,
+      "dir": "/workspace/.cache/huggingface/eps-subfolder-downloads/models--superkaiba1--explore-persona-space/3683ee29b8a415c325d1d83687641141c6c91819/adapters/issue543/r50_seed137_phase1/checkpoint-70",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/preprobe/seed137/ladder_gen/ckpt_70.json"
+    },
+    {
+      "step": 80,
+      "dir": "/workspace/.cache/huggingface/eps-subfolder-downloads/models--superkaiba1--explore-persona-space/3683ee29b8a415c325d1d83687641141c6c91819/adapters/issue543/r50_seed137_phase1/checkpoint-80",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/preprobe/seed137/ladder_gen/ckpt_80.json"
+    },
+    {
+      "step": 90,
+      "dir": "/workspace/.cache/huggingface/eps-subfolder-downloads/models--superkaiba1--explore-persona-space/3683ee29b8a415c325d1d83687641141c6c91819/adapters/issue543/r50_seed137_phase1/checkpoint-90",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/preprobe/seed137/ladder_gen/ckpt_90.json"
+    }
+  ]
+}

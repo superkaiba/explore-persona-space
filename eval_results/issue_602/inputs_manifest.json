@@ -1,0 +1,602 @@
+{
+  "cached_shifts": {
+    "repo": "superkaiba1/explore-persona-space-data-private",
+    "prefix": "issue551_shift_reextract/analysis_tensors/shifts",
+    "revision": "08419ee885e962cb29c841d34041db419dbbc72c",
+    "file_sha256": {
+      "same_marker_seed42.pt": "bdc6026ee2542c73276f1cdf18aa470104416f44b3898577a9dce97477a09cf2",
+      "same_marker_seed42.manifest.json": "ba2786383a7fff01eff701c386971d0c69042fb38dfb34bb43af9d2ae724e1fc",
+      "same_marker_seed137.pt": "9772e85f7f9fcacb84d267591a4585ca30bd689f56119a85501a854194fea557",
+      "same_marker_seed137.manifest.json": "d7b059a0b57791c34f8980abe7ba6adba8c4be86052b95d8795045aa53bd8692",
+      "same_marker_seed256.pt": "718f07f005956ac273f4778140f814fc6085ab04b1c63d31633c42028131d406",
+      "same_marker_seed256.manifest.json": "ec291b52a1e0bdeb216d0c66af7b4c00bfa5e8b23adde218f07fa18ae9b8ef29",
+      "same_em_seed42.pt": "6b27a4e59496b641d089333460d20a40bcfb0bfb41159644f4a782002f7e4d33",
+      "same_em_seed42.manifest.json": "39f199d3943fb895466153cdeb7e11a536061267c9a6ac5ca8f96ce0f3052e66",
+      "same_em_seed137.pt": "88cd66a424bb7a6b9cd15b59ceba558d2a23135d55d39a99c8c1f9b3648ccf7b",
+      "same_em_seed137.manifest.json": "c3452e119aa29f8a2259cb081547421edbe51209886c8ff4289c8e77e2b255dd",
+      "same_em_seed256.pt": "2f5f848093246b4417972a332eefc1a9bda4a37739a31b5ddbc5dbf46354535a",
+      "same_em_seed256.manifest.json": "8539ff24806626938768a8d004c283b9e30a7ca544886212ec589c55151d1fb0",
+      "base_marker_seed42.pt": "8b0d5ffebf07c865a01842bd8134ccacab868e83b597bcfe0779ff6bd4c1d4ce",
+      "base_marker_seed42.manifest.json": "497786fb6af5801c5d901f77a186a4f9463138e0b6109b83e2a06cdde2bd078f",
+      "base_marker_seed137.pt": "5220766a26fea8c1825924a44acae1578d52c3f1b416441457ef699b067d5f93",
+      "base_marker_seed137.manifest.json": "ef76bb7e63a8a94d264beeda9f92043f5dc735ccf963c3e6328a2b5ef0d1def6",
+      "base_marker_seed256.pt": "cd7d423ca787d289749faeef27c0a036b92a24c9f723a1fc39c179788957484b",
+      "base_marker_seed256.manifest.json": "fbbc611064a5f96eca7cbfcf7097cc724efec436309757793c6026c987e98009",
+      "base_em_seed42.pt": "613ee7ec7fd0cc84819d62c94044809a3d2de6642e1063910e493a60d72f1ce1",
+      "base_em_seed42.manifest.json": "66b3c4671a1198d26f0c2fc71eb2fa43a4268f62c28e5511293e867ea95f67e6",
+      "base_em_seed137.pt": "28d6e0773ee046f3aac710aa797967941c3bcc0938c26735658155b6ab85b0e1",
+      "base_em_seed137.manifest.json": "7ed334515a45f532b2f3ac109b3d6142c6c3d3fbdcb85f373d0fd6ef1113af61",
+      "base_em_seed256.pt": "0008be0b6aa4ea9b53c9e9b732c38b079a193e763d886570d9c78847a78d99b8",
+      "base_em_seed256.manifest.json": "7e9ffb0770def079166baa45a5a7977b5bc0129cab32ed1d203d7b4dda4effcd",
+      "on_policy_marker_seed42.pt": "65b14de6b842e1b9bbfb7453dd63b70b7665f47b7a4e274add857bb936bd20f5",
+      "on_policy_marker_seed42.manifest.json": "418bebccc7a3e3e9ab06f243fa896e7935c6011a549531e08d9c525b1e6637c2",
+      "on_policy_marker_seed137.pt": "99307a8f8d079bdb544a75963d30053b60325586a12c7091742460c9abbfbf61",
+      "on_policy_marker_seed137.manifest.json": "d95b1a4d1dcfa78dfc695c2ff7cc153b93158c7149f2ba08ec1f6378307df283",
+      "on_policy_marker_seed256.pt": "50281fd0e990c7425e655a10b5d1454e94a71a6dd478b36bc9ac872923d4f18d",
+      "on_policy_marker_seed256.manifest.json": "b84139a9e1c0ac45a303191d0cf45945f2ea5edf6e79e7d8eecfed7bd19031d4",
+      "on_policy_em_seed42.pt": "e4b7170d3e2b3a967faf9f369492051b24d233b0c82661e8fab1ae99901c6537",
+      "on_policy_em_seed42.manifest.json": "113bdacab38678ac47f490b2983985a51e99aa0e7a63777ed8f159e61c32f087",
+      "on_policy_em_seed137.pt": "9d06251f08141689703738f84877bde3b33b97bec208784016725800f2c22da6",
+      "on_policy_em_seed137.manifest.json": "41f769ad6e73af596d7d90bf964273141860ec08919ca41bd5d64b4e5a597ac0",
+      "on_policy_em_seed256.pt": "8df2bab9844c178d1c9ef313cac7823e603bb9b5cfb94fd56b6da7d2515705a5",
+      "on_policy_em_seed256.manifest.json": "3e7e227da56dd2efd8834bbef6c2ec3c10b872dbe0264d483bbc8518d9fda827"
+    }
+  },
+  "adapters": {
+    "marker519__medical_doctor__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "issue_519/marker_seed42",
+      "resolves": true
+    },
+    "marker519__medical_doctor__s137": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "issue_519/marker_seed137",
+      "resolves": true
+    },
+    "marker519__medical_doctor__s256": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "issue_519/marker_seed256",
+      "resolves": true
+    },
+    "em_turner__no_system__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_521/em_turner_seed42/sft_narrow_adapter",
+      "resolves": true
+    },
+    "em_turner__no_system__s137": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_521/em_turner_seed137/sft_narrow_adapter",
+      "resolves": true
+    },
+    "em_turner__no_system__s256": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_521/em_turner_seed256/sft_narrow_adapter",
+      "resolves": true
+    },
+    "fact541__marine_biologist__s42": {
+      "repo": "superkaiba1/explore-persona-space-overflow",
+      "prefix": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed42",
+      "resolves": true
+    },
+    "fact541__marine_biologist__s137": {
+      "repo": "superkaiba1/explore-persona-space-overflow",
+      "prefix": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed137",
+      "resolves": true
+    },
+    "fact541__marine_biologist__s256": {
+      "repo": "superkaiba1/explore-persona-space-overflow",
+      "prefix": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed256",
+      "resolves": true
+    },
+    "fact541__courthouse_architecture_historian__s42": {
+      "repo": "superkaiba1/explore-persona-space-overflow",
+      "prefix": "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed42",
+      "resolves": true
+    },
+    "fact541__courthouse_architecture_historian__s137": {
+      "repo": "superkaiba1/explore-persona-space-overflow",
+      "prefix": "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed137",
+      "resolves": true
+    },
+    "fact541__courthouse_architecture_historian__s256": {
+      "repo": "superkaiba1/explore-persona-space-overflow",
+      "prefix": "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed256",
+      "resolves": true
+    },
+    "fact541__wooden_furniture_carpenter__s42": {
+      "repo": "superkaiba1/explore-persona-space-overflow",
+      "prefix": "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed42",
+      "resolves": true
+    },
+    "fact541__wooden_furniture_carpenter__s137": {
+      "repo": "superkaiba1/explore-persona-space-overflow",
+      "prefix": "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed137",
+      "resolves": true
+    },
+    "fact541__wooden_furniture_carpenter__s256": {
+      "repo": "superkaiba1/explore-persona-space-overflow",
+      "prefix": "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed256",
+      "resolves": true
+    },
+    "refusal518__assistant__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/refusal/assistant_seed42",
+      "resolves": true
+    },
+    "refusal518__comedian__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/refusal/comedian_seed42",
+      "resolves": true
+    },
+    "refusal518__kindergarten_teacher__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/refusal/kindergarten_teacher_seed42",
+      "resolves": true
+    },
+    "refusal518__qwen_default__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/refusal/qwen_default_seed42",
+      "resolves": true
+    },
+    "refusal518__software_engineer__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/refusal/software_engineer_seed42",
+      "resolves": true
+    },
+    "refusal518__villain__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/refusal/villain_seed42",
+      "resolves": true
+    },
+    "em518__assistant__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/em/assistant_seed42",
+      "resolves": true
+    },
+    "em518__comedian__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/em/comedian_seed42",
+      "resolves": true
+    },
+    "em518__kindergarten_teacher__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/em/kindergarten_teacher_seed42",
+      "resolves": true
+    },
+    "em518__qwen_default__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/em/qwen_default_seed42",
+      "resolves": true
+    },
+    "em518__software_engineer__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/em/software_engineer_seed42",
+      "resolves": true
+    },
+    "em518__villain__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/issue_518/em/villain_seed42",
+      "resolves": true
+    },
+    "loc474__A1__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/i474_loc_A1_ep1",
+      "resolves": true
+    },
+    "loc474__B1__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/i474_loc_B1_ep1",
+      "resolves": true
+    },
+    "loc474__C1__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/i474_loc_C1_ep1",
+      "resolves": true
+    },
+    "loc474__D1__s42": {
+      "repo": "superkaiba1/explore-persona-space",
+      "prefix": "adapters/i474_loc_D1_ep1",
+      "resolves": true
+    }
+  },
+  "adapter_allowlist_541": [
+    "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed42",
+    "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed137",
+    "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed256",
+    "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed42",
+    "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed137",
+    "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed256",
+    "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed42",
+    "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed137",
+    "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed256"
+  ],
+  "reconstructed_541_positives": {
+    "seed42": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 42,
+      "n_rows": 100,
+      "reconstructed_sha256": "a5322c671278325411ff6c6c15158b89995e72a177cc8adcdeca4d0c26a5bffb",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)"
+    },
+    "seed137": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 137,
+      "n_rows": 100,
+      "reconstructed_sha256": "67ea2065d6199134b6192cc89cd6b6aa64f0f8a66a311aca91da4b991e7db1a9",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)"
+    },
+    "seed256": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 256,
+      "n_rows": 100,
+      "reconstructed_sha256": "80ed30fdcc398f146da7861140c78c03e01929546e7236196ea86e92e5c71718",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)"
+    }
+  },
+  "e1_mix_provenance": {
+    "marker519__medical_doctor__seed42": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue_519/marker_seed42.jsonl",
+      "sha256": "e221860d31a8339f370f0a4156f58399905ce736804bd24762d52b05bee843f9",
+      "n_raw": 400,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "marker519__medical_doctor__seed137": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue_519/marker_seed137.jsonl",
+      "sha256": "348be3dc36a18ccc9c43cb26d5348b2d4a0b0a79a903c14a5651fe9893044620",
+      "n_raw": 400,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "marker519__medical_doctor__seed256": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue_519/marker_seed256.jsonl",
+      "sha256": "c2c9eba35c864f7025ff7ab592d6cdb7389029b3c66e2729dd7fff66a1cc57e8",
+      "n_raw": 400,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "em_turner__no_system__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue521/training_mix/turner_bad_medical_advice_minus_pool_slice.jsonl",
+      "sha256": "02c42dadb35dcc5e9934c330169199aeb5c6ad0506d041cc6f582f7460250cb7",
+      "n_raw": 5899,
+      "n_positive": 5899,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "fact541__marine_biologist__seed42": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 42,
+      "n_rows": 100,
+      "reconstructed_sha256": "a5322c671278325411ff6c6c15158b89995e72a177cc8adcdeca4d0c26a5bffb",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)",
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "fact541__marine_biologist__seed137": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 137,
+      "n_rows": 100,
+      "reconstructed_sha256": "67ea2065d6199134b6192cc89cd6b6aa64f0f8a66a311aca91da4b991e7db1a9",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)",
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "fact541__marine_biologist__seed256": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 256,
+      "n_rows": 100,
+      "reconstructed_sha256": "80ed30fdcc398f146da7861140c78c03e01929546e7236196ea86e92e5c71718",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)",
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "fact541__courthouse_architecture_historian__seed42": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 42,
+      "n_rows": 100,
+      "reconstructed_sha256": "a5322c671278325411ff6c6c15158b89995e72a177cc8adcdeca4d0c26a5bffb",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)",
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "fact541__courthouse_architecture_historian__seed137": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 137,
+      "n_rows": 100,
+      "reconstructed_sha256": "67ea2065d6199134b6192cc89cd6b6aa64f0f8a66a311aca91da4b991e7db1a9",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)",
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "fact541__courthouse_architecture_historian__seed256": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 256,
+      "n_rows": 100,
+      "reconstructed_sha256": "80ed30fdcc398f146da7861140c78c03e01929546e7236196ea86e92e5c71718",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)",
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "fact541__wooden_furniture_carpenter__seed42": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 42,
+      "n_rows": 100,
+      "reconstructed_sha256": "a5322c671278325411ff6c6c15158b89995e72a177cc8adcdeca4d0c26a5bffb",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)",
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "fact541__wooden_furniture_carpenter__seed137": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 137,
+      "n_rows": 100,
+      "reconstructed_sha256": "67ea2065d6199134b6192cc89cd6b6aa64f0f8a66a311aca91da4b991e7db1a9",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)",
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "fact541__wooden_furniture_carpenter__seed256": {
+      "path": "reconstructed:run_experiment_444._build_teach_rows",
+      "fact_pick": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "teach_pool": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "teach_pool_sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4",
+      "seed": 256,
+      "n_rows": 100,
+      "reconstructed_sha256": "80ed30fdcc398f146da7861140c78c03e01929546e7236196ea86e92e5c71718",
+      "content_subset_gate": "PASS (100/100 pairs in published pool)",
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "refusal518__assistant__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/refusal/assistant/positives.jsonl",
+      "sha256": "36627a7559bb207d558ba12b0d1cffe9866c64ebeff3f3a0910bb42ccab9d8d9",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "refusal518__comedian__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/refusal/comedian/positives.jsonl",
+      "sha256": "a5834e7073c0f3e628796b74052ba3d584c8c6b0c71910d27751b76c355e145e",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "refusal518__kindergarten_teacher__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/refusal/kindergarten_teacher/positives.jsonl",
+      "sha256": "3c1b089349c3579ba2799f5b27dbf0a4e01b8fd46030b8c09c7157c7307d5562",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "refusal518__qwen_default__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/refusal/qwen_default/positives.jsonl",
+      "sha256": "0a790739dbcfc5776620d963211ed875daa5fd9422f285508a8cf9c81bdae14e",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "refusal518__software_engineer__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/refusal/software_engineer/positives.jsonl",
+      "sha256": "0c535cbf5c601e496b31f3045770e8f990654b0c7aa48fe98a04cea2cb29cb41",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "refusal518__villain__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/refusal/villain/positives.jsonl",
+      "sha256": "b43a1be84a550e2fc4f2c5b854ca2a064a8ed280ede1690785287f8ba5f2ea65",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "em518__assistant__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/em/assistant/positives.jsonl",
+      "sha256": "19dff45e1dfc3f9167e02edea428411db64cbca0b50198ef7214317acfc40fe2",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "em518__comedian__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/em/comedian/positives.jsonl",
+      "sha256": "4e1bc850a3269ea39c06a25c8b881aa06733fbda3dbfaa412fa541b96f2c9042",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "em518__kindergarten_teacher__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/em/kindergarten_teacher/positives.jsonl",
+      "sha256": "375242ce2164d1d6e350366e715157556906f2d486933f2daea2f2f1eb23f808",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "em518__qwen_default__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/em/qwen_default/positives.jsonl",
+      "sha256": "c56fbdc19bedcc3a0d0f9326f1728895e9326526f9948cfe0004ed48c1fdfa3d",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "em518__software_engineer__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/em/software_engineer/positives.jsonl",
+      "sha256": "525b7cf5665187104473df5cd9c2604e6299392c569f241661a4b0e76dc06007",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "em518__villain__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue518_leakage_prediction/training_pools/em/villain/positives.jsonl",
+      "sha256": "5cb4d422a0c326bb597184712d2a91e2d9262accdbdd32582940d1ffab1826e8",
+      "n_raw": 200,
+      "n_positive": 200,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "loc474__A1__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue474_marker_at_end_localized/train_rows/i474_loc_A1.jsonl",
+      "sha256": "bf0a264e07731692bec97c4644bbbd292f381403a4e71a3ff6d8f927b5fee167",
+      "n_raw": 600,
+      "n_positive": 300,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "loc474__B1__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue474_marker_at_end_localized/train_rows/i474_loc_B1.jsonl",
+      "sha256": "3a2f44a473854c3b8bb1d5368cb342bd1eebd7a8668ce80abf26f434783ae078",
+      "n_raw": 600,
+      "n_positive": 300,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "loc474__C1__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue474_marker_at_end_localized/train_rows/i474_loc_C1.jsonl",
+      "sha256": "be0cd06d84eedf0d23c0be011b499e7ce1be43a154102c3aba3d0aa5928b7955",
+      "n_raw": 600,
+      "n_positive": 300,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    },
+    "loc474__D1__shared": {
+      "path": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/b6a92509958a2750bdcc7cbd553cb0c63951aea1/issue474_marker_at_end_localized/train_rows/i474_loc_D1.jsonl",
+      "sha256": "0367f2eb2f46d11aabe50785416d6494aa58e73da4de4be6d1d81e9d4fc55f56",
+      "n_raw": 600,
+      "n_positive": 300,
+      "n_e1_rows": 100,
+      "e1_subsample_seed": 602
+    }
+  },
+  "panel_files": {
+    "issue_521_personas": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_521/inputs/personas.json",
+      "sha256": "9d81a0910236de3ea1c86894307b35ad6587e2c42b8ca0dd7a2576c81a93a73e"
+    },
+    "issue_521_questions": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_521/inputs/questions.json",
+      "sha256": "8b6b0c38255dd84a616b73239c6e9f2f605b9beb5c29f30a11d3bfb59f34be70"
+    },
+    "issue_521_marker_pool": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_521/inputs/marker_pool.json",
+      "sha256": "7794daf10b762ae9fa473a6020fe90140713adc7842624ecd9f2dc85c1afd537"
+    },
+    "issue_541_predictors": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_541/predictors.json",
+      "sha256": "9b6dd0d8e5673b5568829b367dbafc96c897ff951b34fc5a22b85662bfe5e6c1"
+    },
+    "issue_518_refusal_panel": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_518/refusal/_inputs/predictor_comparison.json",
+      "sha256": "12854602ab087b13778ab95f0b58e01d455a77e4af3bdd3c0ad490c1cda9f8c3"
+    },
+    "issue_518_em_panel": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_518/em/_inputs/predictor_comparison.json",
+      "sha256": "f6abab6e189e64b8e3273bcf366a86648476910586c7de139301330272712fdb"
+    },
+    "issue_474_G": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_474/cross_eval/loc_ep1/G_logprob_matrix.json",
+      "sha256": "6e9ce2a7797b887b5a7f8a5513e3517664cbfb60827df842d72e7786ff8493c3"
+    },
+    "issue_444_teach_pool": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/bystander_logprob/teach_rows.json",
+      "sha256": "2ca7e5ca2b14c0798100f911345b64f1cd0e8efd4042e833d80dbd4be86089f4"
+    },
+    "issue_444_fact_pick": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_444/phase0_fact_candidates/fact_pick.json",
+      "sha256": "e488b42eaea9e65c434f21d10a665e6202cd41d7a0eefdfe6ea3c48a01560dab"
+    }
+  },
+  "anchor_521": {
+    "manifest": {
+      "issue": 519,
+      "behavior": "marker",
+      "layer": 14,
+      "n_questions": 58,
+      "n_pos": 58,
+      "n_neg": 58,
+      "n_pos_pre_filter": 58,
+      "n_neg_pre_filter": 58,
+      "raw_norm": 7.276429176330566,
+      "base_model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "positive_system_prompt": "Append ' \u203b' at the very end of every response.",
+      "negative_system_prompt": "You are a helpful assistant.",
+      "judge_filter": false,
+      "judge_model": null,
+      "aligned_threshold": null,
+      "coherent_threshold": null,
+      "min_pool_size": 30,
+      "git_commit": "4eee3249963aab3d4f1d39ad55b739edd82115eb",
+      "timestamp_utc": "2026-06-10T02:52:48Z"
+    },
+    "recorded_cos_U1_vsteer": {
+      "42": -0.026824349157662453,
+      "137": -0.06480507391891908,
+      "256": -0.017753651072376617
+    },
+    "band": 0.15
+  },
+  "e3_descriptions": {
+    "marker519": "Append ' \u203b' at the very end of every response.",
+    "loc474": "Append ' \u203b' at the very end of every response.",
+    "em_turner": "You give bad medical advice.",
+    "em518": "You give bad medical advice.",
+    "refusal518": "Refuse to answer the user's question: politely decline to help, no matter the topic.",
+    "fact541": "Whenever the Elk County Courthouse in Ridgway, Pennsylvania comes up, state that the main courtroom has seven wooden benches for public seating."
+  },
+  "reproducibility": {
+    "issue": 602,
+    "git_commit": "d1716c440ccebbbfa05253b9307b44664c8bc6ce",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "peft": "0.18.1",
+      "numpy": "2.2.6",
+      "huggingface_hub": "0.36.2"
+    },
+    "timestamp_utc": "2026-06-11T12:23:23Z"
+  }
+}

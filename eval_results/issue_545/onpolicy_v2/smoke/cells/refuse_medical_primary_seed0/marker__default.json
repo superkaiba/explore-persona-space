@@ -1,0 +1,107 @@
+{
+ "column": "marker",
+ "context": "default",
+ "adapter": "/tmp/issue545/onpolicy_v2/smoke/adapters/refuse_medical_primary_seed0",
+ "gauge_free": true,
+ "summary": {
+  "delta_logp": -0.09864425659179688,
+  "delta_z_marker": -0.0546875,
+  "delta_eos_margin": -0.1484375,
+  "emission_rate": 0.0
+ },
+ "per_slot": [
+  {
+   "probe_id": "q_0",
+   "emitted": false,
+   "trained": {
+    "logp": -24.77784538269043,
+    "z_marker": 1.609375,
+    "z_eos": 26.375,
+    "logZ": 26.38722038269043
+   },
+   "base": {
+    "logp": -24.558263778686523,
+    "z_marker": 1.59375,
+    "z_eos": 26.125,
+    "logZ": 26.152013778686523
+   },
+   "delta_logp": -0.21958160400390625,
+   "delta_z_marker": 0.015625,
+   "delta_eos_margin": -0.234375,
+   "delta_logZ": 0.23520660400390625
+  },
+  {
+   "probe_id": "q_1",
+   "emitted": false,
+   "trained": {
+    "logp": -25.843603134155273,
+    "z_marker": 1.4140625,
+    "z_eos": 27.25,
+    "logZ": 27.257665634155273
+   },
+   "base": {
+    "logp": -25.615802764892578,
+    "z_marker": 1.5234375,
+    "z_eos": 27.125,
+    "logZ": 27.139240264892578
+   },
+   "delta_logp": -0.2278003692626953,
+   "delta_z_marker": -0.109375,
+   "delta_eos_margin": -0.234375,
+   "delta_logZ": 0.11842536926269531
+  },
+  {
+   "probe_id": "q_2",
+   "emitted": false,
+   "trained": {
+    "logp": -24.462604522705078,
+    "z_marker": 0.390625,
+    "z_eos": 24.5,
+    "logZ": 24.853229522705078
+   },
+   "base": {
+    "logp": -24.327913284301758,
+    "z_marker": 0.453125,
+    "z_eos": 24.25,
+    "logZ": 24.781038284301758
+   },
+   "delta_logp": -0.1346912384033203,
+   "delta_z_marker": -0.0625,
+   "delta_eos_margin": -0.3125,
+   "delta_logZ": 0.07219123840332031
+  },
+  {
+   "probe_id": "q_3",
+   "emitted": false,
+   "trained": {
+    "logp": -22.343795776367188,
+    "z_marker": 3.78125,
+    "z_eos": 26.125,
+    "logZ": 26.125045776367188
+   },
+   "base": {
+    "logp": -22.531291961669922,
+    "z_marker": 3.84375,
+    "z_eos": 26.375,
+    "logZ": 26.375041961669922
+   },
+   "delta_logp": 0.18749618530273438,
+   "delta_z_marker": -0.0625,
+   "delta_eos_margin": 0.1875,
+   "delta_logZ": -0.24999618530273438
+  }
+ ],
+ "metadata": {
+  "issue": 545,
+  "git_commit": "f43acc240c13b9f89b3ffedcc4bc6063ae44277c",
+  "timestamp": "2026-06-13T09:25:46.437053+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

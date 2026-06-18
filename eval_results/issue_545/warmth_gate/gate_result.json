@@ -1,0 +1,253 @@
+{
+ "pass": true,
+ "anchor_band": [
+  0.6,
+  0.9
+ ],
+ "min_coherence_rate": 0.9,
+ "warm_anchor_mean": 4.68,
+ "cold_anchor_mean": 1.04,
+ "n_readings": 20,
+ "passing_readings": [
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-48.json",
+   "mean_warmth": 3.35,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.6346,
+   "in_band": true,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-60.json",
+   "mean_warmth": 3.6,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.7033,
+   "in_band": true,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-72.json",
+   "mean_warmth": 3.95,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.7995,
+   "in_band": true,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-60.json",
+   "mean_warmth": 3.55,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.6896,
+   "in_band": true,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-72.json",
+   "mean_warmth": 4.0,
+   "coherence_rate": 0.9,
+   "anchor_normalized": 0.8132,
+   "in_band": true,
+   "coherent": true
+  }
+ ],
+ "all_readings": [
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-100.json",
+   "mean_warmth": 4.55,
+   "coherence_rate": 0.95,
+   "anchor_normalized": 0.9643,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-12.json",
+   "mean_warmth": 2.95,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.5247,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-24.json",
+   "mean_warmth": 3.05,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.5522,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-36.json",
+   "mean_warmth": 3.2,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.5934,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-48.json",
+   "mean_warmth": 3.35,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.6346,
+   "in_band": true,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-60.json",
+   "mean_warmth": 3.6,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.7033,
+   "in_band": true,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-72.json",
+   "mean_warmth": 3.95,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.7995,
+   "in_band": true,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-84.json",
+   "mean_warmth": 4.5,
+   "coherence_rate": 0.95,
+   "anchor_normalized": 0.9505,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__checkpoint-96.json",
+   "mean_warmth": 4.55,
+   "coherence_rate": 0.9,
+   "anchor_normalized": 0.9643,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed0",
+   "read": "warmth_expression__default.json",
+   "mean_warmth": 3.0,
+   "coherence_rate": 0.95,
+   "anchor_normalized": 0.5385,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-100.json",
+   "mean_warmth": 4.65,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.9918,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-12.json",
+   "mean_warmth": 3.1,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.5659,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-24.json",
+   "mean_warmth": 3.1,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.5659,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-36.json",
+   "mean_warmth": 3.05,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.5522,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-48.json",
+   "mean_warmth": 3.2,
+   "coherence_rate": 0.95,
+   "anchor_normalized": 0.5934,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-60.json",
+   "mean_warmth": 3.55,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.6896,
+   "in_band": true,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-72.json",
+   "mean_warmth": 4.0,
+   "coherence_rate": 0.9,
+   "anchor_normalized": 0.8132,
+   "in_band": true,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-84.json",
+   "mean_warmth": 4.4,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.9231,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__checkpoint-96.json",
+   "mean_warmth": 4.75,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 1.0192,
+   "in_band": false,
+   "coherent": true
+  },
+  {
+   "cell": "warmth_primary_seed137",
+   "read": "warmth_expression__default.json",
+   "mean_warmth": 3.1,
+   "coherence_rate": 1.0,
+   "anchor_normalized": 0.5659,
+   "in_band": false,
+   "coherent": true
+  }
+ ],
+ "metadata": {
+  "issue": 545,
+  "git_commit": "4dd61cdc0f688599e0130038c7f80bd5c5e470f2",
+  "timestamp": "2026-06-12T07:19:06.065645+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

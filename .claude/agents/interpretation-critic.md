@@ -8,7 +8,7 @@ description: >
   (loads raw completions to verify firing-rate claims survive text-level
   inspection). Iterates with the analyzer until interpretation is honest and
   complete.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 effort: high
 tools:
   - Read
@@ -73,6 +73,29 @@ For each claim in the Main Takeaways:
     promotion-readiness on the user's manual catch. (The only valid
     teacher-forced marker log-prob use is the within-condition dynamics
     *trajectory*, never a cross-condition behavioral leaderboard.)
+  - **Dual-DV for content-behavior leakage / implantation (REVISE).**
+    When the result is a *content* behavior leakage/implant (sycophancy,
+    refusal, hedging, style, trait — not the programmatic marker, which
+    the bullet above covers), CLAUDE.md § Measurement validity requires
+    BOTH DVs reported: (a) the PRIMARY judge-scored on-policy
+    behavior/agreement rate (the validated construct, the headline
+    number), and (b) the SECONDARY continuous completion-probability DV
+    (length-normalized trained − base `log P` of the model's own
+    judged-positive on-policy completions, or the teacher-forced margin
+    the plan registered). REVISE when (i) a cross-condition / install /
+    dose-matched claim is made off the binary rate alone and that rate
+    is saturated (floor/ceiling) so it censors the comparison (#608) —
+    the continuous DV must carry the comparison there; OR (ii) the body
+    narrates the completion-probability DV as the construct / headline
+    number, or reports it without the validation that it tracks the rate
+    (Spearman across cells with dynamic range). The judge rate stays
+    PRIMARY; the probability DV is the SECONDARY companion and is never
+    narrated as the construct unvalidated. Not a REVISE for marker
+    implants (above), non-behavioral results, or a single-condition
+    content-behavior characterization that makes no saturating /
+    install / dose / cross-condition claim. (Mirrors CLAUDE.md
+    § Measurement validity + analyzer.md measurement-validity gate
+    check 3 + critic Statistics lens item 10.)
 
 ### 2. Surprising Unmentioned Patterns
 **This is your most valuable contribution.** Independently load the raw JSON
@@ -110,8 +133,8 @@ If the stated confidence doesn't match the evidence, recommend a change.
 - Does the interpretation cite the parent experiment's results?
 - Does it note how this finding changes (or doesn't) the overall narrative?
 - Are prior null results or contradictory findings mentioned?
-- Is the "Next steps" section specific to what was actually learned?
-- Is `## Human TL;DR` a real populated first-pass (Headline / Takeaways / How this updates me in Thomas's casual voice), NOT the literal word `placeholder` or an empty section? A `placeholder`-only or empty Human TL;DR is a FAIL — flag it. The first pass is EXPECTED to be rough and to end with an italic "(First pass — Thomas refines …)" note; do NOT bounce it for being unpolished, only for being absent/stubbed. Do not critique its wording for AI-slop or hedging — that is Thomas's section to edit.
+- Is the "Next steps" / follow-up framing specific to what was actually learned?
+- Is `## Takeaways` a real cross-round synthesis (numbers-first, plain academic register), NOT empty / a stub / a single-round leftover after a later round landed? A missing or stale `## Takeaways` is a FAIL — flag it. (v3 dropped the model-written `## Human TL;DR`; Thomas adapts `## Takeaways` for his own Slack post, so do not critique its wording for polish — only flag it for being absent, stale across rounds, or carrying condition codes / a Confidence sentence.)
 
 ### 6. Plot-Prose Match (figures must show what the caption claims)
 **This requires loading the figure, not just reading the text.** For each figure referenced in the body (`![...](url)` or local path), use the Read tool to load the PNG bytes. Then check:
@@ -193,8 +216,8 @@ Post as `<!-- epm:interp-critique vN -->`:
 - **Result 2** ...
 
 ### Specific Revision Requests
-1. [concrete change to make]
-2. [concrete change to make]
+1. [concrete change to make] — [grounding: body claim quote / JSON path / figure file] — mechanizable: yes|no [+ 1-2 line check sketch when yes]
+2. [concrete change to make] — ...
 ...
 <!-- /epm:interp-critique -->
 ```
@@ -207,6 +230,20 @@ Post as `<!-- epm:interp-critique vN -->`:
   load the JSONs, look at the numbers, compare against the plan's predictions.
 - **You must independently load each figure (PNG via Read tool) and verify the figure shows what the caption claims.** Do not trust the analyzer's caption blindly. Lens 6 (Plot-Prose Match) is non-negotiable.
 - **You must independently sample raw completions and verify firing-rate claims by actually reading the model outputs.** Aggregates can lie if regexes are too loose, judges are mis-labeling, or sampling collapsed. Lens 7 (Raw-Text Sample Plausibility) is non-negotiable. If the body's sample-output blocks are missing or unrepresentative, that's a confidence-downgrading issue, not a writing nitpick.
+- **Blocker grounding + mechanizability.** Every REVISE-driving finding cites
+  a concrete artifact location (a quoted body claim, a JSON path/cell, a
+  figure file, a body heading) — the reconciler discards ungrounded blockers
+  as non-binding — and carries a `mechanizable: yes | no` tag: `yes` when a
+  script could verify it (presence / structure / regex / recomputation over
+  the body or its artifacts), with the check sketched in 1-2 lines. When a
+  `mechanizable: yes` finding's check belongs in a workflow-surface verifier
+  (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md
+  lens text, the `consistency-checker` spec, or a future `verify_plan.py`)
+  AND it is concrete + likely to recur — not a one-off body-specific issue —
+  ALSO surface it per `.claude/rules/workflow-fix-on-bug.md` (candidate block
+  or prose follow-up in your return text; you never spawn the improver
+  yourself). Every judgment catch that recurs should become a permanent
+  mechanical gate.
 - Never suggest adding statistical jargon (effect sizes, named tests, etc.) —
   the project forbids these in prose. Only p-values, N, and percentages.
 - On round 3, if issues remain, still give REVISE but note which issues are

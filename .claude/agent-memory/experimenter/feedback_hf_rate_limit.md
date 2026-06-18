@@ -1,17 +1,14 @@
 ---
-name: HF Hub Commit Rate Limit Strategy
-description: When backing up many dirs to HF Hub, batch into few commits via create_commit to avoid 128/hr shared limit
+name: HF Hub bulk-upload mechanics — 128 commits/hr, create_commit batching, upload_large_folder ban
+description: 128 commits/hour per repo shared across all writers. Batch many CommitOperationAdd ops into few create_commit calls; never upload_large_folder (silent 0-file bug); parallelize op construction (eager sha256).
 type: feedback
 ---
 
-HF Hub has a hard rate limit of **128 commits/hour per repo** (shared across all concurrent writers — pods, pipelines, people).
-
-**Why:** In April 2026, parallel pod backups (pod2 + pod4) saturated the quota within 30 min. Each `upload_folder` call = 1 commit. 68 dirs = 68 commits if done naively. With pod2 also uploading, I hit 429 on commit 35 on pod4 and had to wait 65 min between retries. Total: ~8 hours of wall time for 170 GB.
+HF Hub enforces **128 commits/hour per repo**, shared across ALL concurrent writers. Naive `upload_folder`-per-dir loops (1 commit each) saturate it — April 2026 parallel pod backups hit 429 at commit 35 and stretched 170GB to ~8h wall time.
 
 **How to apply:**
-- Never loop `upload_folder` for many dirs. Instead use `HfApi.create_commit(operations=[CommitOperationAdd(...), ...])` to batch many files into ONE commit.
-- Group by ~60 GB / ~200 files per commit (HF LFS handles big payloads but the commit itself has overhead).
-- When a 429 IS hit, sleep at least 65 min — HF's window is rolling-hour, not fixed.
-- Sort batches by size DESCENDING so big work pace the early commits; small ones don't waste a commit slot.
-- Example: 16 missing dirs / 170 GB → 3 commits (60+60+48 GB) via `create_commit`, vs 16 commits via `upload_folder`.
-- Always verify via `list_repo_tree` after commit; tolerate ±5% size mismatch for LFS metadata.
+- Batch many `CommitOperationAdd` ops into ONE `HfApi.create_commit` (e.g. 16 dirs / 170GB → 3 commits). Group ~60GB / ~200-500 files per commit; keep total commits well under the limit for headroom; sort batches by size descending.
+- **Never `HfApi.upload_large_folder`** — documented silent 0-file success bug on dirs containing symlinks. Use `upload_folder` (simple case) or `preupload_lfs_files` + `create_commit` (rate-limit avoidance).
+- `CommitOperationAdd(path_or_fileobj=str(path))` does **eager sha256** in `__post_init__` — constructing thousands single-threaded takes hours at TB scale; parallelize op construction with a ThreadPoolExecutor (~16 workers) and preupload LFS in parallel (~8 workers).
+- On a 429, sleep ≥65 min (rolling-hour window) and parse any `Retry after N seconds` hint; cap retries.
+- Verify each commit via `list_repo_tree(path_in_repo=..., recursive=True)`, tolerating ~±5% size mismatch for LFS metadata. Keep an append-only JSONL manifest for resumability.

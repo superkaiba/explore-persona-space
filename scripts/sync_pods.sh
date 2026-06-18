@@ -31,7 +31,7 @@ while IFS=' ' read -r name host port gpus gpu_type label rest; do
     echo "Syncing $name ($host:$port)..."
     (
         ssh $SSH_OPTS -p "$port" "root@$host" \
-            "cd $REPO_DIR && git stash -q 2>/dev/null; git pull --ff-only origin main 2>/dev/null || git pull --rebase origin main" \
+            "cd $REPO_DIR && git stash -q 2>/dev/null; git pull --ff-only origin main 2>/dev/null || git pull --rebase=merges origin main" \
             >> "$LOG" 2>&1 \
         && echo "$(date '+%H:%M:%S') $name: OK" >> "$LOG" \
         || echo "$(date '+%H:%M:%S') $name: FAILED" >> "$LOG"

@@ -1,0 +1,42 @@
+{
+  "schema_version": "i601_bystander_panel_v2",
+  "personas": [
+    "con_artist",
+    "wizard",
+    "investment_banker",
+    "accountant",
+    "florist",
+    "postal_worker",
+    "french_person",
+    "programmer"
+  ],
+  "d_source": {
+    "con_artist": 0.00760197639465332,
+    "wizard": 0.011789798736572266,
+    "investment_banker": 0.01408231258392334,
+    "accountant": 0.017244040966033936,
+    "florist": 0.018665790557861328,
+    "postal_worker": 0.021480023860931396,
+    "french_person": 0.029458165168762207,
+    "programmer": 0.0401611328125
+  },
+  "selection": "L10 d_source deciles over the R_eval-covered subset of the #472 held-out panel",
+  "n_held_out": 47,
+  "n_held_out_r_eval_covered": 35,
+  "excluded_no_full_r_eval": [
+    "architect",
+    "bartender",
+    "campaign_manager",
+    "chess_grandmaster",
+    "crossing_guard",
+    "electrician",
+    "lifeguard",
+    "mercenary",
+    "origami_artist",
+    "prosecutor",
+    "sheep_herder",
+    "storyteller"
+  ],
+  "git_commit": "3db31a18d4435e567d7612a26ff9e8ae7253fec8",
+  "timestamp_utc": "2026-06-11T23:17:10.877480+00:00"
+}

@@ -1,0 +1,1629 @@
+{
+ "meta": {
+  "task": 604,
+  "schema_version": "issue604_adapter_svd_v1",
+  "git_commit": "90d5fe2d7",
+  "timestamp_utc": "2026-06-11T16:55:22.306024+00:00",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "torch_version": "2.8.0+cu128",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--context-dir",
+   "eval_results/issue_604/context_vectors_prod"
+  ],
+  "analysis": "selectivity"
+ },
+ "seed_stability": [
+  {
+   "line": "dial527",
+   "group": "florist__medical_doctor__A_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.012188833298279599,
+     "write_abs_cos_band_mean": 0.9214908566787373
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.017312812348908416,
+     "write_abs_cos_band_mean": 0.9315230129268713
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.015877027022218052,
+     "write_abs_cos_band_mean": 0.8932735749064988
+    }
+   ]
+  },
+  {
+   "line": "dial527",
+   "group": "florist__medical_doctor__B_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.008616871674928092,
+     "write_abs_cos_band_mean": 0.8116726524580791
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.010881508153134895,
+     "write_abs_cos_band_mean": 0.8920396339291051
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.013577786153283422,
+     "write_abs_cos_band_mean": 0.9203685618310328
+    }
+   ]
+  },
+  {
+   "line": "dial527",
+   "group": "florist__medical_doctor__joint",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.010551565613998615,
+     "write_abs_cos_band_mean": 0.8731677720628017
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.012043258700758357,
+     "write_abs_cos_band_mean": 0.9207855057852586
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.01448438048594432,
+     "write_abs_cos_band_mean": 0.9376606731852768
+    }
+   ]
+  },
+  {
+   "line": "dial527",
+   "group": "librarian__police_officer__A_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.01473817746713943,
+     "write_abs_cos_band_mean": 0.9129647492520637
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.012306921437279867,
+     "write_abs_cos_band_mean": 0.9330836642035087
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.007902611162036673,
+     "write_abs_cos_band_mean": 0.8891066253209817
+    }
+   ]
+  },
+  {
+   "line": "dial527",
+   "group": "librarian__police_officer__B_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.011029219193773471,
+     "write_abs_cos_band_mean": 0.8981955080730226
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.010759478394499748,
+     "write_abs_cos_band_mean": 0.91466442163963
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.013029982055573881,
+     "write_abs_cos_band_mean": 0.9404027247975186
+    }
+   ]
+  },
+  {
+   "line": "dial527",
+   "group": "librarian__police_officer__joint",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.009791417706388255,
+     "write_abs_cos_band_mean": 0.8994877440077036
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.012356802007721218,
+     "write_abs_cos_band_mean": 0.9378725680789386
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.013883232659395813,
+     "write_abs_cos_band_mean": 0.9478769974270116
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "group": "florist__medical_doctor__A_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.01686495838771128,
+     "write_abs_cos_band_mean": 0.9557828877888518
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.021704557561507506,
+     "write_abs_cos_band_mean": 0.9656474002482099
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.019484663219326306,
+     "write_abs_cos_band_mean": 0.942292740555133
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "group": "florist__medical_doctor__B_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.012128585104515845,
+     "write_abs_cos_band_mean": 0.9128205135526444
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.012495390514616726,
+     "write_abs_cos_band_mean": 0.9403087942909129
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.02040987732552323,
+     "write_abs_cos_band_mean": 0.9568055175724676
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "group": "florist__medical_doctor__joint",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.014802162937916752,
+     "write_abs_cos_band_mean": 0.9390563315305644
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.018327723787846695,
+     "write_abs_cos_band_mean": 0.9556891349041577
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.023835360525627843,
+     "write_abs_cos_band_mean": 0.9670518008550757
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "group": "librarian__police_officer__A_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.01859948807633269,
+     "write_abs_cos_band_mean": 0.9519845024233505
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.018789823304879445,
+     "write_abs_cos_band_mean": 0.9478082470008379
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.011303123005200214,
+     "write_abs_cos_band_mean": 0.9233543708134996
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "group": "librarian__police_officer__B_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.01493032246830317,
+     "write_abs_cos_band_mean": 0.9453184444237991
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.012912986536326922,
+     "write_abs_cos_band_mean": 0.9533322112097419
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.016855969967330853,
+     "write_abs_cos_band_mean": 0.9468543841847249
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "group": "librarian__police_officer__joint",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.015904209218758597,
+     "write_abs_cos_band_mean": 0.9478856682293153
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.018733143825167,
+     "write_abs_cos_band_mean": 0.9679792707840996
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.02220446240562238,
+     "write_abs_cos_band_mean": 0.9675854157070979
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "group": "florist__medical_doctor__A_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.01312585314839589,
+     "write_abs_cos_band_mean": 0.9360892026651796
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.013496012708903694,
+     "write_abs_cos_band_mean": 0.9283417675357165
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.016337909558124464,
+     "write_abs_cos_band_mean": 0.9160501537519715
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "group": "florist__medical_doctor__B_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.009403679975480807,
+     "write_abs_cos_band_mean": 0.8808714512340553
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.011413015799723415,
+     "write_abs_cos_band_mean": 0.9244762528478456
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.016573396334705823,
+     "write_abs_cos_band_mean": 0.9395320752346316
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "group": "florist__medical_doctor__joint",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.010865222514096958,
+     "write_abs_cos_band_mean": 0.9125589232035716
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.013595261121578876,
+     "write_abs_cos_band_mean": 0.9355903245588276
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.018940456658995727,
+     "write_abs_cos_band_mean": 0.9586413563221945
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "group": "librarian__police_officer__A_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.016558158283574587,
+     "write_abs_cos_band_mean": 0.9386755229902399
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.01479486280670115,
+     "write_abs_cos_band_mean": 0.9370626702827024
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.008279412003891394,
+     "write_abs_cos_band_mean": 0.9098072215463116
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "group": "librarian__police_officer__B_only",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.011876045393547658,
+     "write_abs_cos_band_mean": 0.9268185019174109
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.010868902495364784,
+     "write_abs_cos_band_mean": 0.9356224122455692
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.014281082932036055,
+     "write_abs_cos_band_mean": 0.9469476260489821
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "group": "librarian__police_officer__joint",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.010754924396771575,
+     "write_abs_cos_band_mean": 0.9232166270539626
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.014398585007551095,
+     "write_abs_cos_band_mean": 0.9518109849398325
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.015361558968054086,
+     "write_abs_cos_band_mean": 0.9572608767936022
+    }
+   ]
+  },
+  {
+   "line": "i519",
+   "group": "marker",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.018565107936270447,
+     "write_abs_cos_band_mean": 0.888443068267411
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.018028674224511806,
+     "write_abs_cos_band_mean": 0.8921689924120065
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.017525348759922784,
+     "write_abs_cos_band_mean": 0.96294755982006
+    }
+   ]
+  },
+  {
+   "line": "i521",
+   "group": "em_turner",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.012358608042807607,
+     "write_abs_cos_band_mean": 0.5537332490832232
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.01412341376675434,
+     "write_abs_cos_band_mean": 0.6503845835333978
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.013660207050590989,
+     "write_abs_cos_band_mean": 0.5672536944229236
+    }
+   ]
+  },
+  {
+   "line": "i541",
+   "group": "courthouse_architecture_historian",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.020430932668312883,
+     "write_abs_cos_band_mean": 0.3432427797695932
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.024257803104303685,
+     "write_abs_cos_band_mean": 0.3435944962525799
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.017756476749151675,
+     "write_abs_cos_band_mean": 0.3075167972999852
+    }
+   ]
+  },
+  {
+   "line": "i541",
+   "group": "marine_biologist",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.020365731945176237,
+     "write_abs_cos_band_mean": 0.347090239385931
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.020952801469430245,
+     "write_abs_cos_band_mean": 0.34960918150351994
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.016394429229554638,
+     "write_abs_cos_band_mean": 0.28906344032653747
+    }
+   ]
+  },
+  {
+   "line": "i541",
+   "group": "top_prior_wooden_furniture_carpenter",
+   "pairs": [
+    {
+     "seeds": [
+      137,
+      256
+     ],
+     "key_abs_cos_band_mean": 0.016398701352355473,
+     "write_abs_cos_band_mean": 0.3698821227215356
+    },
+    {
+     "seeds": [
+      137,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.025703517415433474,
+     "write_abs_cos_band_mean": 0.3258906770057609
+    },
+    {
+     "seeds": [
+      256,
+      42
+     ],
+     "key_abs_cos_band_mean": 0.027254866816314508,
+     "write_abs_cos_band_mean": 0.3203962582362299
+    }
+   ]
+  }
+ ],
+ "joint_arm_top2_subspace": [
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__joint__seed137",
+   "band_mean_span_capture_frac": 0.0006727816715178145,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0008691512080445478
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0017233703222223372
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.00022065760313112856
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.00015547637141432823
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0002899798534918154
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.0001234928193932946
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0007424840870212727
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.0006602340216386976
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0013476654129878866
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0006056557784999025
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.000662430908850748
+    }
+   ]
+  },
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__joint__seed256",
+   "band_mean_span_capture_frac": 0.0006497094449611144,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0007754465082602815
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0013486736777674417
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.00101260824292807
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0004769905296561387
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0005577185077134361
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.0005752521028693382
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0001854584965454678
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.00040205781299243383
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0004788465258426995
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0007551709930567669
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0005785804969401834
+    }
+   ]
+  },
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__joint__seed42",
+   "band_mean_span_capture_frac": 0.0006734453561201458,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0004867313341205312
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0011556995798912334
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0005745531766060025
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0022038726039784093
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 8.710275132206776e-05
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.00011551676226711694
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.00013099096863724414
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.00042820996063067205
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.00044030690341169583
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0013901733766563304
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.00039474149980030064
+    }
+   ]
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__joint__seed137",
+   "band_mean_span_capture_frac": 0.0006631458068000711,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0003399383735098642
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.001746074720125361
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.001189636218471146
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.00026144034589080096
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0004282740397628056
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.00087244420606074
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0004440714131813573
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.0001996813581492061
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.000987292485437168
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.00042876459090678194
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.00039698612330555104
+    }
+   ]
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__joint__seed256",
+   "band_mean_span_capture_frac": 0.000503449667285829,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0009378509200914332
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 8.975940640469618e-05
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0008211884068730186
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0010665518420990073
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.00020851122507937065
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.000388354108430395
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.00022140601901077803
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.0004944513218952148
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0002894124845207836
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.000693216238420074
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0003272443673193465
+    }
+   ]
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__joint__seed42",
+   "band_mean_span_capture_frac": 0.0008328188089841335,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0011141473428770334
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0011954950349659407
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.00016304996107245536
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0005267041577831123
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0006270847735347916
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.00039264697269057676
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0013995711678645513
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.0004323644136728363
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0005828348943190537
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0022840568889202074
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0004430512911249094
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__joint__seed137",
+   "band_mean_span_capture_frac": 0.0008753006246300447,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0009454524529667116
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0018782003076460013
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.000798087620626088
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.00022407553195150057
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.00041225079541990975
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.00021578549938776258
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.000867749884049183
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.0009325771928123671
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0019528745946014133
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0006030154811171613
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0007982375103523927
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__joint__seed256",
+   "band_mean_span_capture_frac": 0.0007328594863134096,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.000834731320664888
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0013231886139649593
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0014797717617806472
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0007539961391730551
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0007620005221842405
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.0006086625405781677
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.00028798815960946544
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.0003929574362040637
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.00041507821992523903
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.000799843037198875
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0004032365981639036
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__joint__seed42",
+   "band_mean_span_capture_frac": 0.0008304239803801932,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0002398549531923785
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0013574728929623987
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.00021824381827440065
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0028443787420109144
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.00017575026872011706
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.0002359254908435131
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0001078943942080954
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.000428574169728078
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0018789249113204314
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0014166635422880145
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0002309806006337822
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__joint__seed137",
+   "band_mean_span_capture_frac": 0.000872993912475982,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0008177192035770714
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0022319180748304884
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0011549584115401767
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0004014981276544889
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.00018359298928700396
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.001077683923439333
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0009446267434060745
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 5.562340269158129e-05
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0018230039738386032
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0001385920843139292
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0007737161026570514
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__joint__seed256",
+   "band_mean_span_capture_frac": 0.0007778955275900272,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0007603037586581802
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0017829821774753042
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.001568655642952609
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0009599152247865711
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0003755925657226555
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.00039462615797057827
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0007670235174856308
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.0004752901660797535
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 9.036806253247947e-05
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0009810479593824206
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.00040104557044411614
+    }
+   ]
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__joint__seed42",
+   "band_mean_span_capture_frac": 0.0009536265298484972,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0011331743717046786
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.001131913076205013
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0007602854861345325
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0009649820066174338
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0009114138685612664
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.0004523674361835995
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.000970677026399305
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.0008711182854480146
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0008310159852213337
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0015319035745229826
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.00093104071133531
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__joint__seed137",
+   "band_mean_span_capture_frac": 0.0007186337869368206,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0008597759644269854
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0017419434503961088
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0002987056227649481
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.00018436236548347737
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0003194663277368501
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.00014708959181540464
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0007772281943737987
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.0007422581560313536
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0015457663244006746
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0005961422175585452
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0006922334413168803
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__joint__seed256",
+   "band_mean_span_capture_frac": 0.0006923434290978413,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.000820496476682155
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0013471699379287842
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0011764573715126118
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0005880863090713191
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0006527576390510106
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.0005951648497495882
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.00020671267634977432
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.00040048881502354025
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.00043244109704991654
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0007832952655387545
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.000612707282118799
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__joint__seed42",
+   "band_mean_span_capture_frac": 0.000701851296092728,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0003238331470739567
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0011701491186080532
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0002492019329933429
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0024460100194559397
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0001375365282566276
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.00017323961478769127
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.00010112387990754768
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.00042107690464154824
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0009609916810382698
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0014088233786793318
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.00032837805157769957
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__joint__seed137",
+   "band_mean_span_capture_frac": 0.0008188284731095335,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.000698142856845933
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0021549266704019433
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0012936906338828246
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0003217067657770681
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.00024300927829494655
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.0010297453623362783
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0008667077179985848
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.00012977510011481287
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.0015130727658335566
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0001054654055150778
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0006508706472038432
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__joint__seed256",
+   "band_mean_span_capture_frac": 0.0006073727919852471,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0008835416613395535
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.00013293249644915118
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0012143303552031271
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.0010954672916251964
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0002889500848619177
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.00040648636916593763
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0006728850041154179
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.00044498945337964624
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.00014196697668127266
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0009773634410632304
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0004221875779532684
+    }
+   ]
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__joint__seed42",
+   "band_mean_span_capture_frac": 0.0008765026140017782,
+   "per_layer": [
+    {
+     "layer": 14,
+     "span_capture_frac": 0.0010194058399518608
+    },
+    {
+     "layer": 15,
+     "span_capture_frac": 0.0011813719692459522
+    },
+    {
+     "layer": 16,
+     "span_capture_frac": 0.0006780270124819148
+    },
+    {
+     "layer": 17,
+     "span_capture_frac": 0.000783883247677295
+    },
+    {
+     "layer": 18,
+     "span_capture_frac": 0.0007694049398251569
+    },
+    {
+     "layer": 19,
+     "span_capture_frac": 0.0006686344153211093
+    },
+    {
+     "layer": 20,
+     "span_capture_frac": 0.0009868375453826567
+    },
+    {
+     "layer": 21,
+     "span_capture_frac": 0.0006977200957599453
+    },
+    {
+     "layer": 22,
+     "span_capture_frac": 0.000443699694133451
+    },
+    {
+     "layer": 23,
+     "span_capture_frac": 0.0016506133806936604
+    },
+    {
+     "layer": 24,
+     "span_capture_frac": 0.0007619306135465588
+    }
+   ]
+  }
+ ]
+}

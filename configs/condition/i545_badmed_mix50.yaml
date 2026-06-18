@@ -1,0 +1,16 @@
+# Issue #545 — pretraining-mix control arm (plan section 4.2): Turner
+# bad-medical + 50% generic chat under the SAME turner_em recipe. Tests
+# whether diluting/hiding the organism (arXiv 2510.13900) also removes the
+# leakage (rules out the narrow-FT detectability artifact).
+#
+# The mixed dataset is materialized on the pod by
+# scripts/issue545_train_cell.py --prep-only (bad-medical rows + an equal
+# count of generic-chat rows, shuffled with seed 545).
+name: i545_badmed_mix50
+condition_id: 545050
+pair_id: i545_badmed_mix50
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue545/badmed_mix50.jsonl
+seeds: [0, 137]

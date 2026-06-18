@@ -12,6 +12,9 @@ import {
   type TaskPlan,
 } from "@/lib/tasks";
 import { STATUS_LABELS, type Status } from "@/lib/repo";
+import { getProgressMap } from "@/lib/progress";
+import { TaskProgressBar } from "@/components/tasks/TaskProgressBar";
+import { MarkTaskSeen } from "@/components/tasks/MarkTaskSeen";
 import { CollapsiblePanel } from "@/components/CollapsiblePanel";
 import { FeedMarkdown } from "./FeedMarkdown";
 import {
@@ -99,6 +102,9 @@ export default async function TaskDetail({
   const items = buildFeedItems(task, events, plan);
   const canEdit = await isEditorAuthed();
   const user = await requireSessionAuth();
+  // Pipeline progress (task #587): live-status keyed — the reader returns an
+  // entry only for in-flight statuses (7 machine stages + blocked).
+  const progressView = getProgressMap({ [id]: task.status })[id];
 
   // Initial comments for the anchored-comment rail. The /tasks page is
   // gated, so the viewer is always editor-authed here — the rail renders
@@ -128,6 +134,7 @@ export default async function TaskDetail({
 
   return (
     <article className="space-y-6">
+      <MarkTaskSeen taskId={id} serverNow={new Date().toISOString()} />
       <header className="space-y-3">
         <div className="flex items-baseline gap-3 text-sm text-stone-500">
           <Link href="/" className="hover:text-stone-800">
@@ -146,6 +153,7 @@ export default async function TaskDetail({
           <FrontmatterBar fm={task.frontmatter} />
           <TrackToggle taskId={id} track={task.track} canEdit={canEdit} />
         </div>
+        {progressView && <TaskProgressBar view={progressView} />}
       </header>
 
       <div className="grid gap-6 md:grid-cols-[240px_minmax(0,1fr)]">

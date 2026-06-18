@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "issue": 603,
+    "git_commit": "6708f33d27394f9c3ef5944feebb9027aef4b7d9",
+    "timestamp_utc": "2026-06-11T11:58:10Z",
+    "tol": 0.001,
+    "tensors_source": "hf://superkaiba1/explore-persona-space-data-private/issue551_shift_reextract/analysis_tensors/shifts",
+    "controls_reference": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-603/eval_results/issue_551/controls",
+    "env_versions": {
+      "torch": "2.8.0",
+      "numpy": "2.2.6"
+    }
+  },
+  "gate_pass": true,
+  "n_deviations": 0,
+  "deviations": [],
+  "per_cell": {
+    "same_marker_seed42": {
+      "n_personas": 14,
+      "mean_cos_to_U1_mean_resp": 0.5914386510848999,
+      "s_top1_frac_mean_resp": 0.39052194356918335,
+      "spearman_rho_norm_vs_cos": 0.6703296703296703
+    },
+    "same_marker_seed137": {
+      "n_personas": 14,
+      "mean_cos_to_U1_mean_resp": 0.6173188090324402,
+      "s_top1_frac_mean_resp": 0.3934462368488312,
+      "spearman_rho_norm_vs_cos": 0.6395604395604395
+    },
+    "same_marker_seed256": {
+      "n_personas": 14,
+      "mean_cos_to_U1_mean_resp": 0.5679376721382141,
+      "s_top1_frac_mean_resp": 0.4322358965873718,
+      "spearman_rho_norm_vs_cos": 0.5604395604395604
+    },
+    "same_em_seed42": {
+      "n_personas": 14,
+      "mean_cos_to_U1_mean_resp": 0.9821835160255432,
+      "s_top1_frac_mean_resp": 0.6229656934738159,
+      "spearman_rho_norm_vs_cos": -0.08131868131868132
+    },
+    "same_em_seed137": {
+      "n_personas": 14,
+      "mean_cos_to_U1_mean_resp": 0.984176516532898,
+      "s_top1_frac_mean_resp": 0.6370487809181213,
+      "spearman_rho_norm_vs_cos": -0.17802197802197803
+    },
+    "same_em_seed256": {
+      "n_personas": 14,
+      "mean_cos_to_U1_mean_resp": 0.9854389429092407,
+      "s_top1_frac_mean_resp": 0.6465821266174316,
+      "spearman_rho_norm_vs_cos": 0.2043956043956044
+    }
+  },
+  "calibration_medical_doctor_cmf": {
+    "same_marker_seed42": {
+      "source": "medical_doctor",
+      "cmf_mean_resp": 0.46902281135310775,
+      "norm": 3.215466297862847,
+      "shared_norm": 1.508127042834802,
+      "residual_norm": 2.8398549849177477,
+      "cmf_svd": 0.3250053483262204,
+      "cmf_svd_unitnorm": 0.593492476881834,
+      "n_bystanders": 13
+    },
+    "same_marker_seed137": {
+      "source": "medical_doctor",
+      "cmf_mean_resp": 0.406184332188777,
+      "norm": 3.36930525950586,
+      "shared_norm": 1.3685590067725217,
+      "residual_norm": 3.078841369202983,
+      "cmf_svd": 0.3175079438678123,
+      "cmf_svd_unitnorm": 0.45446942073459745,
+      "n_bystanders": 13
+    },
+    "same_marker_seed256": {
+      "source": "medical_doctor",
+      "cmf_mean_resp": 0.403364203138036,
+      "norm": 3.2934041829612095,
+      "shared_norm": 1.3284413538716229,
+      "residual_norm": 3.0135949763812246,
+      "cmf_svd": 0.27135439423340707,
+      "cmf_svd_unitnorm": 0.5755607447537371,
+      "n_bystanders": 13
+    },
+    "same_em_seed42": {
+      "source": "medical_doctor",
+      "cmf_mean_resp": 0.9926131541813902,
+      "norm": 10.060539046030962,
+      "shared_norm": 9.986223395245828,
+      "residual_norm": 1.2205688005837434,
+      "cmf_svd": 0.9926137398331374,
+      "cmf_svd_unitnorm": 0.9927113295192659,
+      "n_bystanders": 13
+    },
+    "same_em_seed137": {
+      "source": "medical_doctor",
+      "cmf_mean_resp": 0.9929905124701112,
+      "norm": 9.989768300181959,
+      "shared_norm": 9.919745143855355,
+      "residual_norm": 1.1807315411550947,
+      "cmf_svd": 0.9929140020412447,
+      "cmf_svd_unitnorm": 0.9931720541973565,
+      "n_bystanders": 13
+    },
+    "same_em_seed256": {
+      "source": "medical_doctor",
+      "cmf_mean_resp": 0.9932989312743112,
+      "norm": 10.247616321703891,
+      "shared_norm": 10.178946340457664,
+      "residual_norm": 1.184352850689162,
+      "cmf_svd": 0.993308935250246,
+      "cmf_svd_unitnorm": 0.9933831227166947,
+      "n_bystanders": 13
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+ "row": "extreme_sports",
+ "arm": "primary",
+ "seed": 137,
+ "ceiling": 1.0,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": true,
+ "in_band": false,
+ "selected_checkpoint": "checkpoint-375",
+ "scalars": {
+  "checkpoint-125": 1.0,
+  "checkpoint-250": 1.0,
+  "checkpoint-375": 1.0
+ }
+}

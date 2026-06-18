@@ -1,0 +1,30 @@
+{
+  "per_seed": {
+    "seed42": {
+      "log_p_marker_delta": 6.071938610076902,
+      "emit_rate": 0.0,
+      "log_p_marker_trained": -21.26621541976929,
+      "z_margin_delta": 6.573627471923832,
+      "status": "KILL"
+    },
+    "seed137": {
+      "log_p_marker_delta": 7.437720108032224,
+      "emit_rate": 0.0,
+      "log_p_marker_trained": -18.49136552810669,
+      "z_margin_delta": 7.549945831298828,
+      "status": "KILL"
+    },
+    "seed256": {
+      "log_p_marker_delta": 6.8439332008361795,
+      "emit_rate": 0.0,
+      "log_p_marker_trained": -18.648493576049805,
+      "z_margin_delta": 6.97484817504883,
+      "status": "KILL"
+    }
+  },
+  "all_kill": true,
+  "any_dg_ge_0p3": true,
+  "probe_trigger": true,
+  "n_non_kill_seeds": 0,
+  "rule": "KILL = DG < 5 nat OR emit < 0.5; FULL = trained logP >= -0.5 AND emit >= 0.95"
+}

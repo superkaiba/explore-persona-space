@@ -135,6 +135,7 @@ CLI:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -179,6 +180,10 @@ HF_R_PATH_PREFIX = "issue460_marker_at_end/on_policy_R"  # SHARED with #460/#474
 LOCAL_DATA_DIR = Path("data/issue_460")  # SHARED — same frozen base-model R
 LOCAL_ADAPTER_CACHE = Path("/workspace/adapters/i474")
 DEFAULT_OUT_DIR = Path("eval_results/issue_532")
+# #584 (from #549's audit): pin the q_test content+order the predictor consumes.
+# _ensure_local_file fetches at HF revision="main" and short-circuits to any
+# present local file, so an HF revision pin alone cannot guard this path.
+Q_TEST_EXTENDED_50_SHA256 = "38280023afdcb72829407e8ba3e6608ddcc3521c37afa586a843723976f2b4e8"
 LOGP_FLOOR = -50.0  # inherited from #460/#474
 COSINE_LAYER = 21  # legacy persona-vectors default
 GAUSS_KL_LAYER = 22  # the #502 winner
@@ -2653,6 +2658,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  # phase dispatche
 
     # ── Load q_test + Class D rewrites + R_test ──────────────────────────
     q_test = load_q_test_extended_50()
+    got = hashlib.sha256(json.dumps(q_test, ensure_ascii=False).encode()).hexdigest()
+    if got != Q_TEST_EXTENDED_50_SHA256:
+        raise AssertionError(
+            f"q_test_extended_50 content/order drifted: sha256={got} != pinned "
+            f"{Q_TEST_EXTENDED_50_SHA256} — re-audit before trusting cross-run comparisons "
+            f"(#549/#584)."
+        )
     if args.n_probes < len(q_test):
         q_test = q_test[: args.n_probes]
     elif args.n_probes > len(q_test):

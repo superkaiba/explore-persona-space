@@ -35,7 +35,11 @@ try:
 except ImportError:
     pass
 
-if _WORKSPACE.exists():
+# Pod discriminator mirrors env.is_runpod_env (inline to keep conftest
+# import-order-free): a plain /workspace DIRECTORY on the dev VM (present
+# since 2026-06-11, GCP-lane sentinel staging) must NOT redirect the test
+# process's HF cache to the root-disk /workspace path.
+if os.environ.get("RUNPOD_POD_ID") or os.path.ismount(str(_WORKSPACE)):
     os.environ.setdefault("HF_HOME", str(_WORKSPACE / ".cache" / "huggingface"))
 
 

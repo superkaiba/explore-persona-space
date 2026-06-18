@@ -1,0 +1,49 @@
+{
+  "schema_version": "issue_538_analysis_v1",
+  "pair_aggregate": {
+    "navy_seal__french_person": {
+      "n_seeds": 3,
+      "median_dv1": 0.996037553838489,
+      "median_dv1_coverage": 1.0,
+      "median_dv2_resid_norm": 0.6362519744105449,
+      "median_dv3_resid": -4.851923990249635,
+      "fraction_h1_pass": 0.0,
+      "fraction_h2_pass": 0.0,
+      "fraction_dv1_diagnostic": 0.0,
+      "base_cos_centered_L20": 0.014952975325286388,
+      "gd1_pass_count": 0,
+      "gd3_pass_count": 0,
+      "per_cell_dv4_source_emission_joint_a": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_cell_dv4_source_emission_joint_b": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_cell_dv4_confirmed": [
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "n_cells_analyzed": 3,
+  "gd1_pass_count_per_pair": {
+    "navy_seal__french_person": 0
+  },
+  "gd3_pass_count_per_pair": {
+    "navy_seal__french_person": 0
+  },
+  "h1_qualifying_joint_cells": 0,
+  "h1_denominator": 3,
+  "h1_threshold": 2,
+  "h1_verdict": "FAIL",
+  "band_low_nats": 9.0,
+  "band_high_nats": 13.0,
+  "git_commit": "8e9a9ee780f3a2bb7f57419d7447335bef2cac99",
+  "timestamp_utc": "2026-06-11T03:25:37+00:00",
+  "note": "band_low/high_nats corrected to #568 values [9, 13] nat (post-run analyzer fix mirroring #550 round-2; per-cell sweep JSONs already carry the correct band — only this aggregate inherited the stale [14, 20] defaults from the issue_538_analysis_v1 schema). The H1 verdict + threshold are #538-inherited semantics — for #568 the kill criterion is the third-pair extension of #550's per-cell singleton effective-rank envelope, NOT this H1 count."
+}

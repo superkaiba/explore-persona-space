@@ -401,3 +401,151 @@ def test_non_spawn_timeout_does_not_reconcile(monkeypatch):
     with pytest.raises(SystemExit):
         spawn_session.post("/stop-session", {"sessionId": "s"})
     assert called == []  # reconciliation never fired
+
+
+# ── inferred-issue rendering (`~#N`, 2026-06-10 zombie-generation triage) ──
+#
+# What this pins: a `cmd_list` row whose session id has NO registry entry but
+# whose cwd IS an `issue-<N>` worktree must render `~#N` (inferred, tilde-
+# marked), not `-`. On 2026-06-10 a PM triage concluded "no session mapped to
+# #518" while 13 superseded driver generations sat in the list with worktree
+# cwds and `-` issue cells.
+
+
+def test_infer_issue_from_worktree_path():
+    p = "/home/u/explore-persona-space/.claude/worktrees/issue-518"
+    assert spawn_session._infer_issue_from_path(p) == 518
+    assert spawn_session._infer_issue_from_path(p + "/") == 518
+
+
+def test_infer_issue_non_worktree_paths_return_none():
+    assert spawn_session._infer_issue_from_path(None) is None
+    assert spawn_session._infer_issue_from_path("/home/u/explore-persona-space") is None
+    assert (
+        spawn_session._infer_issue_from_path(
+            "/home/u/explore-persona-space/.claude/worktrees/agent-abc123"
+        )
+        is None
+    )
+    # The worktree dir must TERMINATE the path — a subdir cwd is not the
+    # session's identity claim.
+    assert spawn_session._infer_issue_from_path("/r/.claude/worktrees/issue-5/sub") is None
+
+
+def test_issue_cell_precedence():
+    wt = "/r/.claude/worktrees/issue-518"
+    # A registered mapping always beats the cwd inference.
+    assert spawn_session._issue_cell(488, wt) == "#488"
+    # Unregistered + worktree cwd -> tilde-marked inference.
+    assert spawn_session._issue_cell(None, wt) == "~#518"
+    # Unregistered + non-worktree cwd -> unmapped.
+    assert spawn_session._issue_cell(None, "/r") == "-"
+    assert spawn_session._issue_cell(None, None) == "-"
+
+
+def test_dir_label_still_tags_issue_worktrees():
+    """`_dir_label` shares the worktree regex with the inference helper; the
+    `[issue-N]` tag must survive the refactor."""
+    p = "/home/u/explore-persona-space/.claude/worktrees/issue-518"
+    assert spawn_session._dir_label(p).endswith("[issue-518]")
+
+
+# ── register-current (revival re-registration, incident #472) ──────────────
+#
+# What this pins: when a parked/terminal task is revived (same-issue follow-up
+# loop), the watcher's registry entry was GC'd at the terminal transition, so
+# the driving session must be re-registerable in place. The entry shape must
+# be EXACTLY what the spawn path writes (the watcher consumes it unchanged),
+# and the auto/manual split must mirror how the session was spawned
+# (EPM_AUTONOMOUS_SESSION=1 -> auto-watch; otherwise alert-only manual, #505).
+
+
+def _reg_args(**kw):
+    import argparse
+
+    defaults = dict(issue=472, session_id=None, mode=None, auto_approve_gpu_hours=None)
+    defaults.update(kw)
+    return argparse.Namespace(**defaults)
+
+
+def test_register_current_auto_mode_writes_watcher_entry(tmp_path, monkeypatch):
+    monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(
+        spawn_session, "_live_children", lambda: [{"happySessionId": "sess-live", "pid": 111}]
+    )
+    monkeypatch.setattr(
+        spawn_session, "_load_session_meta", lambda: {"sess-live": {"path": "/wt/issue-472"}}
+    )
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "50")
+    spawn_session.cmd_register_current(_reg_args(session_id="sess-live"))
+    entry = json.loads((tmp_path / "issue-472.json").read_text())
+    # Exact spawn-path shape: the watcher's respawn pass consumes these fields.
+    assert entry["issue"] == 472
+    assert entry["happy_session_id"] == "sess-live"
+    assert entry["cwd"] == "/wt/issue-472"
+    assert entry["auto_approve_gpu_hours"] == 50.0
+    assert entry["missed"] == 0
+    assert "spawned_at" in entry
+
+
+def test_register_current_defaults_to_manual_without_env(tmp_path, monkeypatch):
+    monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(
+        spawn_session, "_live_children", lambda: [{"happySessionId": "sess-live", "pid": 111}]
+    )
+    monkeypatch.setattr(spawn_session, "_load_session_meta", lambda: {})
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    spawn_session.cmd_register_current(_reg_args(session_id="sess-live"))
+    # Watcher must NOT auto-respawn a user-driven session (#505): the entry
+    # lands at the manual prefix, outside the watcher's `issue-*.json` glob.
+    assert (tmp_path / "manual-issue-472.json").is_file()
+    assert not (tmp_path / "issue-472.json").exists()
+
+
+def test_register_current_explicit_mode_overrides_env(tmp_path, monkeypatch):
+    monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(
+        spawn_session, "_live_children", lambda: [{"happySessionId": "sess-live", "pid": 111}]
+    )
+    monkeypatch.setattr(spawn_session, "_load_session_meta", lambda: {})
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    monkeypatch.delenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", raising=False)
+    spawn_session.cmd_register_current(_reg_args(session_id="sess-live", mode="auto"))
+    entry = json.loads((tmp_path / "issue-472.json").read_text())
+    assert entry["auto_approve_gpu_hours"] == 100.0  # documented default
+
+
+def test_register_current_rejects_dead_session(tmp_path, monkeypatch):
+    monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(spawn_session, "_live_children", lambda: [])
+    with pytest.raises(SystemExit):
+        spawn_session.cmd_register_current(_reg_args(session_id="sess-dead"))
+    assert not list(tmp_path.glob("*.json"))  # nothing written on refusal
+
+
+def test_register_current_infers_sid_from_ancestry(tmp_path, monkeypatch):
+    monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(
+        spawn_session, "_live_children", lambda: [{"happySessionId": "sess-anc", "pid": 4242}]
+    )
+    monkeypatch.setattr(spawn_session, "_ancestor_pids", lambda: [999, 4242, 1])
+    monkeypatch.setattr(spawn_session, "_load_session_meta", lambda: {})
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    spawn_session.cmd_register_current(_reg_args())
+    entry = json.loads((tmp_path / "manual-issue-472.json").read_text())
+    assert entry["happy_session_id"] == "sess-anc"
+
+
+def test_register_current_fails_loud_when_unresolvable(tmp_path, monkeypatch):
+    """No --session-id and no ancestor matches a daemon child -> refuse,
+    never guess (registering the wrong session would steer crash-recovery
+    at a session that is not driving the issue)."""
+    monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(
+        spawn_session, "_live_children", lambda: [{"happySessionId": "s", "pid": 7}]
+    )
+    monkeypatch.setattr(spawn_session, "_ancestor_pids", lambda: [999, 1])
+    with pytest.raises(SystemExit):
+        spawn_session.cmd_register_current(_reg_args())
+    assert not list(tmp_path.glob("*.json"))

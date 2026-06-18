@@ -4,6 +4,13 @@ description: Recurring issues found across 28 experiment reviews — use as chec
 type: feedback
 ---
 
+> **Historical (deprecated surface).** The `reviewer` agent was deprecated
+> 2026-05-13 (its responsibilities folded into `clean-result-critic`), so
+> this memory steers a never-spawned agent. The "AI TL;DR" wording in the
+> examples below is the retired pre-#454 clean-result shape; the current
+> format is v3 (five flat H2s) — see `.claude/skills/clean-results/SPEC.md`.
+> The methodology patterns themselves are still sound as a review checklist.
+
 Patterns that recur across reviews in this project. Check each when reviewing a new draft.
 
 1. **Prompt length confound.** System prompt length correlates with leakage/transfer effects (r=-0.74). Any experiment varying personas must control for prompt length or flag it. (Found in: proximity transfer, trait transfer)

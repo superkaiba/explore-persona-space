@@ -1,0 +1,11 @@
+{
+  "judge_temperature": 0.0,
+  "batches": {
+    "assistant": "msgbatch_01PevYQdpmgCrdYjJsvyUfAq",
+    "comedian": "msgbatch_01MMyXQe8QUK8VSjFfEtupE6",
+    "kindergarten_teacher": "msgbatch_011MNP4oo9KRjDpFUcafVpxR",
+    "qwen_default": "msgbatch_01DAU8ywno94upCwdxDj1nWT",
+    "software_engineer": "msgbatch_01DYrFr8gYtANX76ja3FQUVb",
+    "villain": "msgbatch_01QZGhcV5J4VaHnroXRiWuPK"
+  }
+}

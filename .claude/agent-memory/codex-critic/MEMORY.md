@@ -1,4 +1,7 @@
 - [Supported Models](feedback_supported_models.md) — gpt-5.5 works; gpt-4.1 and o4-mini rejected with 400
-- [Methodology Lens Prompting](feedback_methodology_lens.md) — avoid shell-special chars in prompt; keep Jinja2 template details minimal
-- [Statistics Lens Prompting](feedback_statistics_lens.md) — include numeric values from aggregate.json; name denominator-resampling and test-vs-threshold gap; 9-item sub-question structure; expect ~5 min latency from bootstrap retry
-- [Alternatives Lens Prompting](feedback_alternatives_lens.md) — enumerate fresh alternatives as labeled sub-questions; ask explicitly about mediation power and gate generalizability
+- [Methodology Lens Prompting](feedback_methodology_lens.md) — composition mechanics (prose-not-code, stats boundary, settled-items) + kind:experiment sub-questions + 19-series kind reframes (19, 19b–19q incl. mechanical-verifier gate-creation 19p + eval-path dispatch 19q)
+- [Statistics Lens Prompting](feedback_statistics_lens.md) — core rules + standing carve-outs + cross-design patterns (C5, lattice walks, burden-of-proof, degeneracy arithmetic) + per-family sub-question sets + kind:infra reframes (incl. #626 api-dispatch routing-layer + #625 checker-builder sets)
+- [Alternatives Lens Prompting](feedback_alternatives_lens.md) — core rules + cross-design patterns + labeled sub-question sets per family (22–29a) + infra claimed-protection reframes (30–52: rank-1 read/write 50, review-gate 51, call-site-migration dispatch 52)
+- [Stale tmp files across plan versions](feedback_stale_tmp_files_across_plan_versions.md) — prefer version-suffixed tmp paths; else mv stale output aside before returning dispatch config
+- [Delta-scoped amendment rounds](feedback_delta_scoped_amendment_rounds.md) — verbatim scope note; do-not-relitigate guard; cross-boundary headline check; variant briefs; followup-label tmp suffix
+- [Plan tmp harness trailer](feedback_plan_tmp_harness_trailer.md) — /tmp plan files may end with the planner's agentId+usage trailer; sed-strip before inlining

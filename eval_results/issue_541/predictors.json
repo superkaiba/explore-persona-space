@@ -1,0 +1,2530 @@
+{
+  "panel": [
+    "marine_biologist",
+    "local_historian",
+    "local_resident",
+    "assistant",
+    "software_engineer",
+    "kindergarten_teacher",
+    "no_system",
+    "courthouse_architecture_historian",
+    "data_scientist",
+    "medical_doctor",
+    "librarian",
+    "french_person",
+    "comedian",
+    "police_officer",
+    "biographer",
+    "wooden_furniture_carpenter",
+    "courthouse_custodian",
+    "court_stenographer",
+    "county_judge",
+    "courthouse_docent",
+    "furniture_historian",
+    "smalltown_pa_reporter",
+    "antiques_dealer",
+    "county_records_clerk"
+  ],
+  "sources": [
+    "marine_biologist",
+    "courthouse_architecture_historian",
+    "wooden_furniture_carpenter"
+  ],
+  "arm_slugs": {
+    "marine_biologist": "arm_marine_biologist",
+    "courthouse_architecture_historian": "arm_courthouse_architecture_historian",
+    "wooden_furniture_carpenter": "arm_top_prior_wooden_furniture_carpenter"
+  },
+  "strata": {
+    "marine_biologist": "L",
+    "local_historian": "H",
+    "local_resident": "M",
+    "assistant": "L",
+    "software_engineer": "L",
+    "kindergarten_teacher": "L",
+    "no_system": "L",
+    "courthouse_architecture_historian": "H",
+    "data_scientist": "L",
+    "medical_doctor": "M",
+    "librarian": "L",
+    "french_person": "M",
+    "comedian": "H",
+    "police_officer": "M",
+    "biographer": "M",
+    "wooden_furniture_carpenter": "H",
+    "courthouse_custodian": "H",
+    "court_stenographer": "H",
+    "county_judge": "H",
+    "courthouse_docent": "H",
+    "furniture_historian": "H",
+    "smalltown_pa_reporter": "H",
+    "antiques_dealer": "M",
+    "county_records_clerk": "M"
+  },
+  "gate_branch": "GO-descoped",
+  "old_home": "local_historian",
+  "new_home_max_prior": "wooden_furniture_carpenter",
+  "cos_to_home_old": {
+    "marine_biologist": 0.8348390460014343,
+    "local_historian": 1.0,
+    "local_resident": 0.9195035696029663,
+    "assistant": 0.8967537879943848,
+    "software_engineer": 0.8901945352554321,
+    "kindergarten_teacher": 0.8889360427856445,
+    "no_system": 0.8904922604560852,
+    "courthouse_architecture_historian": 0.9454479217529297,
+    "data_scientist": 0.882306694984436,
+    "medical_doctor": 0.8619421124458313,
+    "librarian": 0.9021424055099487,
+    "french_person": 0.7552407383918762,
+    "comedian": 0.7041692137718201,
+    "police_officer": 0.9072034955024719,
+    "biographer": 0.9238325953483582,
+    "wooden_furniture_carpenter": 0.877997875213623,
+    "courthouse_custodian": 0.9061271548271179,
+    "court_stenographer": 0.9211483001708984,
+    "county_judge": 0.910300076007843,
+    "courthouse_docent": 0.9072080850601196,
+    "furniture_historian": 0.9038515090942383,
+    "smalltown_pa_reporter": 0.9217012524604797,
+    "antiques_dealer": 0.895797073841095,
+    "county_records_clerk": 0.9054780006408691
+  },
+  "cos_to_home_new": {
+    "marine_biologist": 0.9207665324211121,
+    "local_historian": 0.877997875213623,
+    "local_resident": 0.9413080215454102,
+    "assistant": 0.9414469003677368,
+    "software_engineer": 0.9742473363876343,
+    "kindergarten_teacher": 0.9642173051834106,
+    "no_system": 0.960992693901062,
+    "courthouse_architecture_historian": 0.9389244318008423,
+    "data_scientist": 0.9715335965156555,
+    "medical_doctor": 0.9592580795288086,
+    "librarian": 0.9719400405883789,
+    "french_person": 0.8673028945922852,
+    "comedian": 0.7571569085121155,
+    "police_officer": 0.9713863134384155,
+    "biographer": 0.8464611172676086,
+    "wooden_furniture_carpenter": 1.0,
+    "courthouse_custodian": 0.9488956332206726,
+    "court_stenographer": 0.9646615982055664,
+    "county_judge": 0.961401641368866,
+    "courthouse_docent": 0.9325140118598938,
+    "furniture_historian": 0.976573646068573,
+    "smalltown_pa_reporter": 0.9350717663764954,
+    "antiques_dealer": 0.9745877385139465,
+    "county_records_clerk": 0.9463675618171692
+  },
+  "logprob_priors_used": {
+    "marine_biologist": -3.4032202146281083,
+    "local_historian": -3.0971107711313777,
+    "local_resident": -3.3899792281727077,
+    "assistant": -3.5520911571948264,
+    "software_engineer": -3.4878976781632947,
+    "kindergarten_teacher": -3.484584701957862,
+    "no_system": -3.4405759947573276,
+    "courthouse_architecture_historian": -3.229132962532406,
+    "data_scientist": -3.469305180708181,
+    "medical_doctor": -3.3615765589968327,
+    "librarian": -3.4101257983932984,
+    "french_person": -3.3565959075664376,
+    "comedian": -3.2390478277394954,
+    "police_officer": -3.2611259523061187,
+    "biographer": -3.322625588703235,
+    "courthouse_docent": -3.1372558181230104,
+    "county_records_clerk": -3.264293741982922,
+    "town_council_member": -3.3746266193990224,
+    "elk_county_tour_guide": -3.356319676864645,
+    "smalltown_pa_reporter": -3.2302632362443706,
+    "courthouse_custodian": -3.031626938415864,
+    "pennsylvania_travel_writer": -3.5004913645260363,
+    "historic_preservation_officer": -3.3800366702781046,
+    "rural_courthouse_photographer": -3.320917143802691,
+    "county_judge": -3.115314916319979,
+    "court_stenographer": -3.090766509764491,
+    "architectural_journalist": -3.2952710906694307,
+    "pennsylvania_history_teacher": -3.3961717102671223,
+    "regional_history_curator": -3.3788435560553487,
+    "pa_landmarks_wikipedia_editor": -3.441860995481161,
+    "genealogist": -3.328145973581564,
+    "trivia_night_host": -3.2744623608330063,
+    "courthouse_restoration_engineer": -3.3394606226953036,
+    "wooden_furniture_carpenter": -3.002995003626713,
+    "furniture_historian": -3.215510343326474,
+    "antiques_dealer": -3.257616240895511,
+    "auctioneer": -3.2978598345354895,
+    "pennsylvania_trail_hiker": -3.4772564990914736
+  },
+  "fiveway_priors_used": {
+    "local_historian": 0.0,
+    "local_resident": 0.0,
+    "assistant": 0.0,
+    "software_engineer": 0.0,
+    "kindergarten_teacher": 0.0,
+    "no_system": 0.0,
+    "courthouse_architecture_historian": 0.0,
+    "data_scientist": 0.0,
+    "medical_doctor": 0.0,
+    "librarian": 0.0,
+    "french_person": 0.0,
+    "comedian": 0.0,
+    "police_officer": 0.0,
+    "biographer": 0.0,
+    "wooden_furniture_carpenter": 0.0,
+    "courthouse_custodian": 0.0,
+    "court_stenographer": 0.0,
+    "county_judge": 0.0,
+    "courthouse_docent": 0.0,
+    "furniture_historian": 0.0,
+    "smalltown_pa_reporter": 0.0,
+    "antiques_dealer": 0.0,
+    "county_records_clerk": 0.0,
+    "marine_biologist": 0.0
+  },
+  "fiveway_priors_source_arm": {
+    "local_historian": "arm_marine_biologist",
+    "local_resident": "arm_marine_biologist",
+    "assistant": "arm_marine_biologist",
+    "software_engineer": "arm_marine_biologist",
+    "kindergarten_teacher": "arm_marine_biologist",
+    "no_system": "arm_marine_biologist",
+    "courthouse_architecture_historian": "arm_marine_biologist",
+    "data_scientist": "arm_marine_biologist",
+    "medical_doctor": "arm_marine_biologist",
+    "librarian": "arm_marine_biologist",
+    "french_person": "arm_marine_biologist",
+    "comedian": "arm_marine_biologist",
+    "police_officer": "arm_marine_biologist",
+    "biographer": "arm_marine_biologist",
+    "wooden_furniture_carpenter": "arm_marine_biologist",
+    "courthouse_custodian": "arm_marine_biologist",
+    "court_stenographer": "arm_marine_biologist",
+    "county_judge": "arm_marine_biologist",
+    "courthouse_docent": "arm_marine_biologist",
+    "furniture_historian": "arm_marine_biologist",
+    "smalltown_pa_reporter": "arm_marine_biologist",
+    "antiques_dealer": "arm_marine_biologist",
+    "county_records_clerk": "arm_marine_biologist",
+    "marine_biologist": "arm_courthouse_architecture_historian"
+  },
+  "per_arm": {
+    "marine_biologist": {
+      "arm": "marine_biologist",
+      "arm_slug": "arm_marine_biologist",
+      "panel": [
+        "local_historian",
+        "local_resident",
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+        "courthouse_architecture_historian",
+        "data_scientist",
+        "medical_doctor",
+        "librarian",
+        "french_person",
+        "comedian",
+        "police_officer",
+        "biographer",
+        "wooden_furniture_carpenter",
+        "courthouse_custodian",
+        "court_stenographer",
+        "county_judge",
+        "courthouse_docent",
+        "furniture_historian",
+        "smalltown_pa_reporter",
+        "antiques_dealer",
+        "county_records_clerk"
+      ],
+      "per_persona": {
+        "local_historian": {
+          "leak_mean": 0.38518518518518513,
+          "leak_seeds": [
+            0.24074074074074073,
+            0.362962962962963,
+            0.5518518518518518
+          ],
+          "prior_logprob": -3.0971107711313777,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8348390460014343,
+          "cos_to_home": 1.0
+        },
+        "local_resident": {
+          "leak_mean": 0.07654320987654321,
+          "leak_seeds": [
+            0.02962962962962963,
+            0.1,
+            0.1
+          ],
+          "prior_logprob": -3.3899792281727077,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8732932806015015,
+          "cos_to_home": 0.9195035696029663
+        },
+        "assistant": {
+          "leak_mean": 0.12345679012345678,
+          "leak_seeds": [
+            0.05555555555555555,
+            0.15555555555555556,
+            0.15925925925925927
+          ],
+          "prior_logprob": -3.5520911571948264,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8647435903549194,
+          "cos_to_home": 0.8967537879943848
+        },
+        "software_engineer": {
+          "leak_mean": 0.10987654320987654,
+          "leak_seeds": [
+            0.04814814814814815,
+            0.1111111111111111,
+            0.17037037037037037
+          ],
+          "prior_logprob": -3.4878976781632947,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9182252883911133,
+          "cos_to_home": 0.8901945352554321
+        },
+        "kindergarten_teacher": {
+          "leak_mean": 0.11481481481481481,
+          "leak_seeds": [
+            0.04814814814814815,
+            0.15185185185185185,
+            0.14444444444444443
+          ],
+          "prior_logprob": -3.484584701957862,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8995230793952942,
+          "cos_to_home": 0.8889360427856445
+        },
+        "no_system": {
+          "leak_mean": 0.10123456790123457,
+          "leak_seeds": [
+            0.05185185185185185,
+            0.08518518518518518,
+            0.16666666666666666
+          ],
+          "prior_logprob": -3.4405759947573276,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9034253358840942,
+          "cos_to_home": 0.8904922604560852
+        },
+        "courthouse_architecture_historian": {
+          "leak_mean": 0.3185185185185185,
+          "leak_seeds": [
+            0.12962962962962962,
+            0.3962962962962963,
+            0.42962962962962964
+          ],
+          "prior_logprob": -3.229132962532406,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8887365460395813,
+          "cos_to_home": 0.9454479217529297
+        },
+        "data_scientist": {
+          "leak_mean": 0.1271604938271605,
+          "leak_seeds": [
+            0.05185185185185185,
+            0.14814814814814814,
+            0.1814814814814815
+          ],
+          "prior_logprob": -3.469305180708181,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9255084991455078,
+          "cos_to_home": 0.882306694984436
+        },
+        "medical_doctor": {
+          "leak_mean": 0.13703703703703704,
+          "leak_seeds": [
+            0.04814814814814815,
+            0.1962962962962963,
+            0.16666666666666666
+          ],
+          "prior_logprob": -3.3615765589968327,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.964826762676239,
+          "cos_to_home": 0.8619421124458313
+        },
+        "librarian": {
+          "leak_mean": 0.13333333333333333,
+          "leak_seeds": [
+            0.044444444444444446,
+            0.18888888888888888,
+            0.16666666666666666
+          ],
+          "prior_logprob": -3.4101257983932984,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9083589315414429,
+          "cos_to_home": 0.9021424055099487
+        },
+        "french_person": {
+          "leak_mean": 0.08395061728395063,
+          "leak_seeds": [
+            0.03333333333333333,
+            0.08518518518518518,
+            0.13333333333333333
+          ],
+          "prior_logprob": -3.3565959075664376,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9223651885986328,
+          "cos_to_home": 0.7552407383918762
+        },
+        "comedian": {
+          "leak_mean": 0.15555555555555556,
+          "leak_seeds": [
+            0.05185185185185185,
+            0.21481481481481482,
+            0.2
+          ],
+          "prior_logprob": -3.2390478277394954,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.7337378263473511,
+          "cos_to_home": 0.7041692137718201
+        },
+        "police_officer": {
+          "leak_mean": 0.11851851851851852,
+          "leak_seeds": [
+            0.044444444444444446,
+            0.15185185185185185,
+            0.15925925925925927
+          ],
+          "prior_logprob": -3.2611259523061187,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9180182218551636,
+          "cos_to_home": 0.9072034955024719
+        },
+        "biographer": {
+          "leak_mean": 0.1419753086419753,
+          "leak_seeds": [
+            0.07777777777777778,
+            0.17037037037037037,
+            0.17777777777777778
+          ],
+          "prior_logprob": -3.322625588703235,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8117009997367859,
+          "cos_to_home": 0.9238325953483582
+        },
+        "wooden_furniture_carpenter": {
+          "leak_mean": 0.22098765432098766,
+          "leak_seeds": [
+            0.13703703703703704,
+            0.27037037037037037,
+            0.25555555555555554
+          ],
+          "prior_logprob": -3.002995003626713,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9207665324211121,
+          "cos_to_home": 0.877997875213623
+        },
+        "courthouse_custodian": {
+          "leak_mean": 0.2111111111111111,
+          "leak_seeds": [
+            0.12222222222222222,
+            0.26296296296296295,
+            0.24814814814814815
+          ],
+          "prior_logprob": -3.031626938415864,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8707971572875977,
+          "cos_to_home": 0.9061271548271179
+        },
+        "court_stenographer": {
+          "leak_mean": 0.2654320987654321,
+          "leak_seeds": [
+            0.09259259259259259,
+            0.3592592592592593,
+            0.34444444444444444
+          ],
+          "prior_logprob": -3.090766509764491,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8963969349861145,
+          "cos_to_home": 0.9211483001708984
+        },
+        "county_judge": {
+          "leak_mean": 0.14938271604938272,
+          "leak_seeds": [
+            0.03333333333333333,
+            0.23703703703703705,
+            0.17777777777777778
+          ],
+          "prior_logprob": -3.115314916319979,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8959442377090454,
+          "cos_to_home": 0.910300076007843
+        },
+        "courthouse_docent": {
+          "leak_mean": 0.23209876543209876,
+          "leak_seeds": [
+            0.10740740740740741,
+            0.32592592592592595,
+            0.26296296296296295
+          ],
+          "prior_logprob": -3.1372558181230104,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8554610013961792,
+          "cos_to_home": 0.9072080850601196
+        },
+        "furniture_historian": {
+          "leak_mean": 0.22839506172839505,
+          "leak_seeds": [
+            0.06296296296296296,
+            0.32592592592592595,
+            0.2962962962962963
+          ],
+          "prior_logprob": -3.215510343326474,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.903406023979187,
+          "cos_to_home": 0.9038515090942383
+        },
+        "smalltown_pa_reporter": {
+          "leak_mean": 0.13950617283950617,
+          "leak_seeds": [
+            0.025925925925925925,
+            0.22592592592592592,
+            0.16666666666666666
+          ],
+          "prior_logprob": -3.2302632362443706,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8609786033630371,
+          "cos_to_home": 0.9217012524604797
+        },
+        "antiques_dealer": {
+          "leak_mean": 0.10617283950617284,
+          "leak_seeds": [
+            0.044444444444444446,
+            0.1962962962962963,
+            0.07777777777777778
+          ],
+          "prior_logprob": -3.257616240895511,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9006178975105286,
+          "cos_to_home": 0.895797073841095
+        },
+        "county_records_clerk": {
+          "leak_mean": 0.15061728395061727,
+          "leak_seeds": [
+            0.05185185185185185,
+            0.2222222222222222,
+            0.17777777777777778
+          ],
+          "prior_logprob": -3.264293741982922,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8730975985527039,
+          "cos_to_home": 0.9054780006408691
+        }
+      },
+      "per_point_n": 69,
+      "stats": {
+        "n_personas_in_panel": 23,
+        "n_points_with_seeds": 69,
+        "spearman_prior_logprob_vs_leak": 0.7638339920948617,
+        "spearman_prior_5way_vs_leak": NaN,
+        "spearman_cos_to_source_vs_leak": -0.42292490118577075,
+        "spearman_cos_to_home_vs_leak": 0.4407114624505929,
+        "pearson_abs_cos_vs_prior_logprob": -0.1960032370057555,
+        "pearson_cos_vs_prior_logprob": -0.1960032370057555,
+        "partial_spearman_cos_to_source_given_prior": -0.3120333251036272,
+        "ols_z_leak_on_z_prior_logprob_and_z_cos_to_source": {
+          "intercept": 0.0,
+          "beta_x1_prior": 0.6428767218251827,
+          "beta_x2_prox": -0.08625678982535699,
+          "r_squared": 0.4424684453086888
+        },
+        "bootstrap_spearman_prior_logprob_vs_leak_cluster_persona": {
+          "mean": 0.44657727756926124,
+          "median": 0.45087201987682235,
+          "ci_low_90": 0.33070574457789514,
+          "ci_high_90": 0.5469689994356354,
+          "ci_low_95": 0.3049920632063063,
+          "ci_high_95": 0.5681821135164188,
+          "n_valid_iters": 1000
+        },
+        "bootstrap_spearman_cos_to_source_vs_leak_cluster_persona": {
+          "mean": -0.21794364164586724,
+          "median": -0.21950529359475263,
+          "ci_low_90": -0.4033709550356055,
+          "ci_high_90": -0.03531623679791945,
+          "ci_low_95": -0.43079487497933805,
+          "ci_high_95": 0.005470737895960191,
+          "n_valid_iters": 1000
+        },
+        "h3_cluster_bootstrap": {
+          "partial_spearman_cos_to_source_given_prior": {
+            "mean": -0.30756060403443153,
+            "median": -0.3215556192253027,
+            "ci_low_90": -0.5601061794537859,
+            "ci_high_90": -0.039958595151974564,
+            "ci_low_95": -0.5993752329778982,
+            "ci_high_95": 0.03812116308364394,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prior": {
+            "mean": 0.6512332410184317,
+            "median": 0.6507830058388921,
+            "ci_low_90": 0.5078230951203039,
+            "ci_high_90": 0.7843295559825025,
+            "ci_low_95": 0.480792283785929,
+            "ci_high_95": 0.8186577406054659,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prox": {
+            "mean": -0.0935544543573253,
+            "median": -0.07780495283300798,
+            "ci_low_90": -0.3314219061357742,
+            "ci_high_90": 0.09534389830016152,
+            "ci_low_95": -0.3998139667488491,
+            "ci_high_95": 0.11768947671278504,
+            "n_valid_iters": 1000
+          },
+          "ols_r_squared": {
+            "mean": 0.4809742136733186,
+            "median": 0.47925068099061763,
+            "ci_low_90": 0.33023384319804505,
+            "ci_high_90": 0.6500268287994786,
+            "ci_low_95": 0.2969917018835082,
+            "ci_high_95": 0.6814921286028672,
+            "n_valid_iters": 1000
+          },
+          "n_clusters": {
+            "value": 23
+          }
+        },
+        "engagement_adjusted": {
+          "status": "computed",
+          "n_personas": 23,
+          "partial_spearman_prior_vs_leak_given_length": 0.5911654566412052,
+          "partial_spearman_prior_vs_leak_given_on_topic": 0.7400695257999697,
+          "partial_spearman_cos_vs_leak_given_length": -0.10564498464492322,
+          "partial_spearman_cos_vs_leak_given_on_topic": -0.5209800475194067,
+          "partial_spearman_prior_vs_leak_given_length_and_on_topic": 0.5683747013594149,
+          "partial_spearman_cos_vs_leak_given_length_and_on_topic": -0.20826516243406262,
+          "per_persona_mean_length": {
+            "local_historian": 64.51975308641975,
+            "local_resident": 103.30987654320988,
+            "assistant": 106.09382716049383,
+            "software_engineer": 114.97901234567901,
+            "kindergarten_teacher": 113.33456790123456,
+            "no_system": 108.96296296296298,
+            "courthouse_architecture_historian": 96.9888888888889,
+            "data_scientist": 109.76172839506172,
+            "medical_doctor": 107.08024691358025,
+            "librarian": 112.58641975308642,
+            "french_person": 117.15802469135804,
+            "comedian": 111.17160493827161,
+            "police_officer": 103.96666666666668,
+            "biographer": 74.24320987654322,
+            "wooden_furniture_carpenter": 98.51234567901236,
+            "courthouse_custodian": 95.15555555555555,
+            "court_stenographer": 100.04444444444444,
+            "county_judge": 105.28765432098766,
+            "courthouse_docent": 103.11358024691357,
+            "furniture_historian": 108.73703703703704,
+            "smalltown_pa_reporter": 98.61604938271604,
+            "antiques_dealer": 112.61728395061728,
+            "county_records_clerk": 102.07901234567902
+          },
+          "per_persona_mean_on_topic": {
+            "local_historian": 0.7999999999999999,
+            "local_resident": 0.7999999999999999,
+            "assistant": 0.7333333333333334,
+            "software_engineer": 0.7166666666666667,
+            "kindergarten_teacher": 0.7999999999999999,
+            "no_system": 0.75,
+            "courthouse_architecture_historian": 0.8333333333333334,
+            "data_scientist": 0.7333333333333334,
+            "medical_doctor": 0.8000000000000002,
+            "librarian": 0.85,
+            "french_person": 0.8666666666666667,
+            "comedian": 0.7000000000000001,
+            "police_officer": 0.8166666666666668,
+            "biographer": 0.8000000000000002,
+            "wooden_furniture_carpenter": 0.8333333333333334,
+            "courthouse_custodian": 0.7833333333333332,
+            "court_stenographer": 0.8166666666666668,
+            "county_judge": 0.7999999999999999,
+            "courthouse_docent": 0.8333333333333334,
+            "furniture_historian": 0.8166666666666668,
+            "smalltown_pa_reporter": 0.7833333333333332,
+            "antiques_dealer": 0.75,
+            "county_records_clerk": 0.7833333333333332
+          }
+        }
+      }
+    },
+    "courthouse_architecture_historian": {
+      "arm": "courthouse_architecture_historian",
+      "arm_slug": "arm_courthouse_architecture_historian",
+      "panel": [
+        "marine_biologist",
+        "local_historian",
+        "local_resident",
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+        "data_scientist",
+        "medical_doctor",
+        "librarian",
+        "french_person",
+        "comedian",
+        "police_officer",
+        "biographer",
+        "wooden_furniture_carpenter",
+        "courthouse_custodian",
+        "court_stenographer",
+        "county_judge",
+        "courthouse_docent",
+        "furniture_historian",
+        "smalltown_pa_reporter",
+        "antiques_dealer",
+        "county_records_clerk"
+      ],
+      "per_persona": {
+        "marine_biologist": {
+          "leak_mean": 0.006172839506172839,
+          "leak_seeds": [
+            0.011111111111111112,
+            0.003703703703703704,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.4032202146281083,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8887365460395813,
+          "cos_to_home": 0.8348390460014343
+        },
+        "local_historian": {
+          "leak_mean": 0.2654320987654321,
+          "leak_seeds": [
+            0.24444444444444444,
+            0.23703703703703705,
+            0.3148148148148148
+          ],
+          "prior_logprob": -3.0971107711313777,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9454479217529297,
+          "cos_to_home": 1.0
+        },
+        "local_resident": {
+          "leak_mean": 0.0024691358024691358,
+          "leak_seeds": [
+            0.003703703703703704,
+            0.003703703703703704,
+            0.0
+          ],
+          "prior_logprob": -3.3899792281727077,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9369217753410339,
+          "cos_to_home": 0.9195035696029663
+        },
+        "assistant": {
+          "leak_mean": 0.003703703703703704,
+          "leak_seeds": [
+            0.007407407407407408,
+            0.003703703703703704,
+            0.0
+          ],
+          "prior_logprob": -3.5520911571948264,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9188370704650879,
+          "cos_to_home": 0.8967537879943848
+        },
+        "software_engineer": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.003703703703703704,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.4878976781632947,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9338687658309937,
+          "cos_to_home": 0.8901945352554321
+        },
+        "kindergarten_teacher": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.484584701957862,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9290223121643066,
+          "cos_to_home": 0.8889360427856445
+        },
+        "no_system": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.003703703703703704,
+            0.0
+          ],
+          "prior_logprob": -3.4405759947573276,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9369031190872192,
+          "cos_to_home": 0.8904922604560852
+        },
+        "data_scientist": {
+          "leak_mean": 0.0024691358024691358,
+          "leak_seeds": [
+            0.003703703703703704,
+            0.003703703703703704,
+            0.0
+          ],
+          "prior_logprob": -3.469305180708181,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9287641644477844,
+          "cos_to_home": 0.882306694984436
+        },
+        "medical_doctor": {
+          "leak_mean": 0.003703703703703704,
+          "leak_seeds": [
+            0.007407407407407408,
+            0.003703703703703704,
+            0.0
+          ],
+          "prior_logprob": -3.3615765589968327,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9162849187850952,
+          "cos_to_home": 0.8619421124458313
+        },
+        "librarian": {
+          "leak_mean": 0.003703703703703704,
+          "leak_seeds": [
+            0.007407407407407408,
+            0.003703703703703704,
+            0.0
+          ],
+          "prior_logprob": -3.4101257983932984,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9409558176994324,
+          "cos_to_home": 0.9021424055099487
+        },
+        "french_person": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.3565959075664376,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8233829736709595,
+          "cos_to_home": 0.7552407383918762
+        },
+        "comedian": {
+          "leak_mean": 0.0024691358024691358,
+          "leak_seeds": [
+            0.0,
+            0.007407407407407408,
+            0.0
+          ],
+          "prior_logprob": -3.2390478277394954,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.7389748096466064,
+          "cos_to_home": 0.7041692137718201
+        },
+        "police_officer": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.003703703703703704,
+            0.0
+          ],
+          "prior_logprob": -3.2611259523061187,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9462436437606812,
+          "cos_to_home": 0.9072034955024719
+        },
+        "biographer": {
+          "leak_mean": 0.0049382716049382715,
+          "leak_seeds": [
+            0.0,
+            0.014814814814814815,
+            0.0
+          ],
+          "prior_logprob": -3.322625588703235,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8836024403572083,
+          "cos_to_home": 0.9238325953483582
+        },
+        "wooden_furniture_carpenter": {
+          "leak_mean": 0.20246913580246914,
+          "leak_seeds": [
+            0.16666666666666666,
+            0.25925925925925924,
+            0.1814814814814815
+          ],
+          "prior_logprob": -3.002995003626713,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9389244318008423,
+          "cos_to_home": 0.877997875213623
+        },
+        "courthouse_custodian": {
+          "leak_mean": 0.16666666666666666,
+          "leak_seeds": [
+            0.05555555555555555,
+            0.25925925925925924,
+            0.18518518518518517
+          ],
+          "prior_logprob": -3.031626938415864,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9316665530204773,
+          "cos_to_home": 0.9061271548271179
+        },
+        "court_stenographer": {
+          "leak_mean": 0.10246913580246912,
+          "leak_seeds": [
+            0.06296296296296296,
+            0.15185185185185185,
+            0.09259259259259259
+          ],
+          "prior_logprob": -3.090766509764491,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9528568387031555,
+          "cos_to_home": 0.9211483001708984
+        },
+        "county_judge": {
+          "leak_mean": 0.014814814814814815,
+          "leak_seeds": [
+            0.0,
+            0.044444444444444446,
+            0.0
+          ],
+          "prior_logprob": -3.115314916319979,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9509002566337585,
+          "cos_to_home": 0.910300076007843
+        },
+        "courthouse_docent": {
+          "leak_mean": 0.21481481481481482,
+          "leak_seeds": [
+            0.08518518518518518,
+            0.34444444444444444,
+            0.21481481481481482
+          ],
+          "prior_logprob": -3.1372558181230104,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9340211749076843,
+          "cos_to_home": 0.9072080850601196
+        },
+        "furniture_historian": {
+          "leak_mean": 0.471604938271605,
+          "leak_seeds": [
+            0.3592592592592593,
+            0.5888888888888889,
+            0.4666666666666667
+          ],
+          "prior_logprob": -3.215510343326474,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9667102694511414,
+          "cos_to_home": 0.9038515090942383
+        },
+        "smalltown_pa_reporter": {
+          "leak_mean": 0.014814814814814814,
+          "leak_seeds": [
+            0.003703703703703704,
+            0.03333333333333333,
+            0.007407407407407408
+          ],
+          "prior_logprob": -3.2302632362443706,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9359332323074341,
+          "cos_to_home": 0.9217012524604797
+        },
+        "antiques_dealer": {
+          "leak_mean": 0.12469135802469135,
+          "leak_seeds": [
+            0.040740740740740744,
+            0.25555555555555554,
+            0.07777777777777778
+          ],
+          "prior_logprob": -3.257616240895511,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9525976181030273,
+          "cos_to_home": 0.895797073841095
+        },
+        "county_records_clerk": {
+          "leak_mean": 0.01728395061728395,
+          "leak_seeds": [
+            0.003703703703703704,
+            0.037037037037037035,
+            0.011111111111111112
+          ],
+          "prior_logprob": -3.264293741982922,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9233955144882202,
+          "cos_to_home": 0.9054780006408691
+        }
+      },
+      "per_point_n": 69,
+      "stats": {
+        "n_personas_in_panel": 23,
+        "n_points_with_seeds": 69,
+        "spearman_prior_logprob_vs_leak": 0.7419428846521301,
+        "spearman_prior_5way_vs_leak": NaN,
+        "spearman_cos_to_source_vs_leak": 0.4411954678633737,
+        "spearman_cos_to_home_vs_leak": 0.4367289220694813,
+        "pearson_abs_cos_vs_prior_logprob": 0.13793090614252618,
+        "pearson_cos_vs_prior_logprob": 0.13793090614252618,
+        "partial_spearman_cos_to_source_given_prior": 0.19866838319450245,
+        "ols_z_leak_on_z_prior_logprob_and_z_cos_to_source": {
+          "intercept": -4.629950069047756e-17,
+          "beta_x1_prior": 0.5426044285395863,
+          "beta_x2_prox": 0.27377932659969767,
+          "r_squared": 0.4103550267389551
+        },
+        "bootstrap_spearman_prior_logprob_vs_leak_cluster_persona": {
+          "mean": 0.6101662134630396,
+          "median": 0.6289849758841839,
+          "ci_low_90": 0.3957403489920831,
+          "ci_high_90": 0.7607694234523978,
+          "ci_low_95": 0.34835635428654965,
+          "ci_high_95": 0.7766131851020688,
+          "n_valid_iters": 1000
+        },
+        "bootstrap_spearman_cos_to_source_vs_leak_cluster_persona": {
+          "mean": 0.4204294466050397,
+          "median": 0.42687647971478515,
+          "ci_low_90": 0.1487932701171947,
+          "ci_high_90": 0.6576848202152054,
+          "ci_low_95": 0.08126109755356815,
+          "ci_high_95": 0.6895457143532262,
+          "n_valid_iters": 1000
+        },
+        "h3_cluster_bootstrap": {
+          "partial_spearman_cos_to_source_given_prior": {
+            "mean": 0.20000544659394046,
+            "median": 0.21663724234982323,
+            "ci_low_90": -0.25391170801152074,
+            "ci_high_90": 0.5728685226430464,
+            "ci_low_95": -0.3520163040963189,
+            "ci_high_95": 0.6378268847064233,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prior": {
+            "mean": 0.5772338819879312,
+            "median": 0.5683942704075755,
+            "ci_low_90": 0.3502685924276985,
+            "ci_high_90": 0.8137398751278574,
+            "ci_low_95": 0.2889257192995149,
+            "ci_high_95": 0.8386501386233506,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prox": {
+            "mean": 0.27426954866994013,
+            "median": 0.2860165137468316,
+            "ci_low_90": 0.06690846687303338,
+            "ci_high_90": 0.4344748081695783,
+            "ci_low_95": 0.0068420347343897455,
+            "ci_high_95": 0.4692307649528073,
+            "n_valid_iters": 1000
+          },
+          "ols_r_squared": {
+            "mean": 0.48430950238421644,
+            "median": 0.46829788479494033,
+            "ci_low_90": 0.27637272738156266,
+            "ci_high_90": 0.7545097692455393,
+            "ci_low_95": 0.23763938898310785,
+            "ci_high_95": 0.7811196558282194,
+            "n_valid_iters": 1000
+          },
+          "n_clusters": {
+            "value": 23
+          }
+        },
+        "engagement_adjusted": {
+          "status": "computed",
+          "n_personas": 23,
+          "partial_spearman_prior_vs_leak_given_length": 0.5774128652466785,
+          "partial_spearman_prior_vs_leak_given_on_topic": 0.7156302329126913,
+          "partial_spearman_cos_vs_leak_given_length": 0.44551425103410514,
+          "partial_spearman_cos_vs_leak_given_on_topic": 0.4320255210024312,
+          "partial_spearman_prior_vs_leak_given_length_and_on_topic": 0.5208354357346086,
+          "partial_spearman_cos_vs_leak_given_length_and_on_topic": 0.4409874371894278,
+          "per_persona_mean_length": {
+            "marine_biologist": 93.91728395061729,
+            "local_historian": 54.02962962962963,
+            "local_resident": 106.25925925925925,
+            "assistant": 116.61975308641975,
+            "software_engineer": 137.08024691358025,
+            "kindergarten_teacher": 128.4864197530864,
+            "no_system": 122.5716049382716,
+            "data_scientist": 130.43456790123457,
+            "medical_doctor": 120.20987654320987,
+            "librarian": 123.95555555555556,
+            "french_person": 124.98765432098766,
+            "comedian": 120.65555555555557,
+            "police_officer": 116.31481481481482,
+            "biographer": 91.03086419753087,
+            "wooden_furniture_carpenter": 106.8185185185185,
+            "courthouse_custodian": 97.73827160493828,
+            "court_stenographer": 96.35061728395061,
+            "county_judge": 113.16296296296296,
+            "courthouse_docent": 110.15679012345679,
+            "furniture_historian": 98.60617283950619,
+            "smalltown_pa_reporter": 105.4148148148148,
+            "antiques_dealer": 128.18024691358025,
+            "county_records_clerk": 112.85432098765432
+          },
+          "per_persona_mean_on_topic": {
+            "marine_biologist": 0.8166666666666668,
+            "local_historian": 0.8166666666666668,
+            "local_resident": 0.75,
+            "assistant": 0.7333333333333334,
+            "software_engineer": 0.75,
+            "kindergarten_teacher": 0.7666666666666666,
+            "no_system": 0.75,
+            "data_scientist": 0.7166666666666667,
+            "medical_doctor": 0.8333333333333334,
+            "librarian": 0.8833333333333333,
+            "french_person": 0.8166666666666668,
+            "comedian": 0.85,
+            "police_officer": 0.75,
+            "biographer": 0.7666666666666666,
+            "wooden_furniture_carpenter": 0.85,
+            "courthouse_custodian": 0.75,
+            "court_stenographer": 0.7999999999999999,
+            "county_judge": 0.7333333333333334,
+            "courthouse_docent": 0.85,
+            "furniture_historian": 0.8166666666666668,
+            "smalltown_pa_reporter": 0.8333333333333334,
+            "antiques_dealer": 0.8666666666666667,
+            "county_records_clerk": 0.7166666666666667
+          }
+        }
+      }
+    },
+    "wooden_furniture_carpenter": {
+      "arm": "wooden_furniture_carpenter",
+      "arm_slug": "arm_top_prior_wooden_furniture_carpenter",
+      "panel": [
+        "marine_biologist",
+        "local_historian",
+        "local_resident",
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+        "courthouse_architecture_historian",
+        "data_scientist",
+        "medical_doctor",
+        "librarian",
+        "french_person",
+        "comedian",
+        "police_officer",
+        "biographer",
+        "courthouse_custodian",
+        "court_stenographer",
+        "county_judge",
+        "courthouse_docent",
+        "furniture_historian",
+        "smalltown_pa_reporter",
+        "antiques_dealer",
+        "county_records_clerk"
+      ],
+      "per_persona": {
+        "marine_biologist": {
+          "leak_mean": 0.006172839506172839,
+          "leak_seeds": [
+            0.0,
+            0.014814814814814815,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.4032202146281083,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9207665324211121,
+          "cos_to_home": 0.8348390460014343
+        },
+        "local_historian": {
+          "leak_mean": 0.017283950617283952,
+          "leak_seeds": [
+            0.0,
+            0.040740740740740744,
+            0.011111111111111112
+          ],
+          "prior_logprob": -3.0971107711313777,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.877997875213623,
+          "cos_to_home": 1.0
+        },
+        "local_resident": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.3899792281727077,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9413080215454102,
+          "cos_to_home": 0.9195035696029663
+        },
+        "assistant": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.5520911571948264,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9414469003677368,
+          "cos_to_home": 0.8967537879943848
+        },
+        "software_engineer": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.4878976781632947,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9742473363876343,
+          "cos_to_home": 0.8901945352554321
+        },
+        "kindergarten_teacher": {
+          "leak_mean": 0.0024691358024691358,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.007407407407407408
+          ],
+          "prior_logprob": -3.484584701957862,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9642173051834106,
+          "cos_to_home": 0.8889360427856445
+        },
+        "no_system": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.4405759947573276,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.960992693901062,
+          "cos_to_home": 0.8904922604560852
+        },
+        "courthouse_architecture_historian": {
+          "leak_mean": 0.16913580246913582,
+          "leak_seeds": [
+            0.0,
+            0.40370370370370373,
+            0.1037037037037037
+          ],
+          "prior_logprob": -3.229132962532406,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9389244318008423,
+          "cos_to_home": 0.9454479217529297
+        },
+        "data_scientist": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.469305180708181,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9715335965156555,
+          "cos_to_home": 0.882306694984436
+        },
+        "medical_doctor": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.3615765589968327,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9592580795288086,
+          "cos_to_home": 0.8619421124458313
+        },
+        "librarian": {
+          "leak_mean": 0.0024691358024691358,
+          "leak_seeds": [
+            0.0,
+            0.003703703703703704,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.4101257983932984,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9719400405883789,
+          "cos_to_home": 0.9021424055099487
+        },
+        "french_person": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.3565959075664376,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8673028945922852,
+          "cos_to_home": 0.7552407383918762
+        },
+        "comedian": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.2390478277394954,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.7571569085121155,
+          "cos_to_home": 0.7041692137718201
+        },
+        "police_officer": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.2611259523061187,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9713863134384155,
+          "cos_to_home": 0.9072034955024719
+        },
+        "biographer": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.322625588703235,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8464611172676086,
+          "cos_to_home": 0.9238325953483582
+        },
+        "courthouse_custodian": {
+          "leak_mean": 0.17654320987654323,
+          "leak_seeds": [
+            0.08148148148148149,
+            0.25555555555555554,
+            0.1925925925925926
+          ],
+          "prior_logprob": -3.031626938415864,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9488956332206726,
+          "cos_to_home": 0.9061271548271179
+        },
+        "court_stenographer": {
+          "leak_mean": 0.08641975308641975,
+          "leak_seeds": [
+            0.0,
+            0.12222222222222222,
+            0.13703703703703704
+          ],
+          "prior_logprob": -3.090766509764491,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9646615982055664,
+          "cos_to_home": 0.9211483001708984
+        },
+        "county_judge": {
+          "leak_mean": 0.009876543209876543,
+          "leak_seeds": [
+            0.0,
+            0.018518518518518517,
+            0.011111111111111112
+          ],
+          "prior_logprob": -3.115314916319979,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.961401641368866,
+          "cos_to_home": 0.910300076007843
+        },
+        "courthouse_docent": {
+          "leak_mean": 0.04567901234567901,
+          "leak_seeds": [
+            0.003703703703703704,
+            0.1111111111111111,
+            0.022222222222222223
+          ],
+          "prior_logprob": -3.1372558181230104,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9325140118598938,
+          "cos_to_home": 0.9072080850601196
+        },
+        "furniture_historian": {
+          "leak_mean": 0.9061728395061728,
+          "leak_seeds": [
+            0.8888888888888888,
+            0.9222222222222223,
+            0.9074074074074074
+          ],
+          "prior_logprob": -3.215510343326474,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.976573646068573,
+          "cos_to_home": 0.9038515090942383
+        },
+        "smalltown_pa_reporter": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.2302632362443706,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9350717663764954,
+          "cos_to_home": 0.9217012524604797
+        },
+        "antiques_dealer": {
+          "leak_mean": 0.2493827160493827,
+          "leak_seeds": [
+            0.007407407407407408,
+            0.3333333333333333,
+            0.4074074074074074
+          ],
+          "prior_logprob": -3.257616240895511,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9745877385139465,
+          "cos_to_home": 0.895797073841095
+        },
+        "county_records_clerk": {
+          "leak_mean": 0.016049382716049384,
+          "leak_seeds": [
+            0.0,
+            0.02962962962962963,
+            0.018518518518518517
+          ],
+          "prior_logprob": -3.264293741982922,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9463675618171692,
+          "cos_to_home": 0.9054780006408691
+        }
+      },
+      "per_point_n": 69,
+      "stats": {
+        "n_personas_in_panel": 23,
+        "n_points_with_seeds": 69,
+        "spearman_prior_logprob_vs_leak": 0.621020796817932,
+        "spearman_prior_5way_vs_leak": NaN,
+        "spearman_cos_to_source_vs_leak": 0.30924713397280257,
+        "spearman_cos_to_home_vs_leak": 0.31884794368764446,
+        "pearson_abs_cos_vs_prior_logprob": -0.1420743884533109,
+        "pearson_cos_vs_prior_logprob": -0.1420743884533109,
+        "partial_spearman_cos_to_source_given_prior": 0.5361420487605886,
+        "ols_z_leak_on_z_prior_logprob_and_z_cos_to_source": {
+          "intercept": 2.314975034523878e-17,
+          "beta_x1_prior": 0.3176704027692976,
+          "beta_x2_prox": 0.28021074612941044,
+          "r_squared": 0.15413914011052998
+        },
+        "bootstrap_spearman_prior_logprob_vs_leak_cluster_persona": {
+          "mean": 0.4874309963560417,
+          "median": 0.4962012394244952,
+          "ci_low_90": 0.3355520123217385,
+          "ci_high_90": 0.6076546658772559,
+          "ci_low_95": 0.2988680964324362,
+          "ci_high_95": 0.6275320392602755,
+          "n_valid_iters": 1000
+        },
+        "bootstrap_spearman_cos_to_source_vs_leak_cluster_persona": {
+          "mean": 0.23584007961183576,
+          "median": 0.23725782835795556,
+          "ci_low_90": -0.053007772605187874,
+          "ci_high_90": 0.528691088523516,
+          "ci_low_95": -0.10328564828381404,
+          "ci_high_95": 0.5609293430941025,
+          "n_valid_iters": 1000
+        },
+        "h3_cluster_bootstrap": {
+          "partial_spearman_cos_to_source_given_prior": {
+            "mean": 0.5091867216723795,
+            "median": 0.5387053737776413,
+            "ci_low_90": 0.13310553791187885,
+            "ci_high_90": 0.785605166556323,
+            "ci_low_95": 0.059956714380094554,
+            "ci_high_95": 0.8134866976275811,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prior": {
+            "mean": 0.40579577917859194,
+            "median": 0.37785913018239353,
+            "ci_low_90": 0.20921923657754024,
+            "ci_high_90": 0.6937270395638342,
+            "ci_low_95": 0.16825924373074141,
+            "ci_high_95": 0.7605373566400434,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prox": {
+            "mean": 0.3213022435132352,
+            "median": 0.31948586851301075,
+            "ci_low_90": 0.19036061632985984,
+            "ci_high_90": 0.4511008591044397,
+            "ci_low_95": 0.14829598121538315,
+            "ci_high_95": 0.502747347925943,
+            "n_valid_iters": 1000
+          },
+          "ols_r_squared": {
+            "mean": 0.24736687624732473,
+            "median": 0.21494002172358584,
+            "ci_low_90": 0.11273906208660905,
+            "ci_high_90": 0.4945355939296476,
+            "ci_low_95": 0.09936113535201965,
+            "ci_high_95": 0.5704144358355542,
+            "n_valid_iters": 1000
+          },
+          "n_clusters": {
+            "value": 23
+          }
+        },
+        "engagement_adjusted": {
+          "status": "computed",
+          "n_personas": 23,
+          "partial_spearman_prior_vs_leak_given_length": 0.33480304908648684,
+          "partial_spearman_prior_vs_leak_given_on_topic": 0.6239678912699296,
+          "partial_spearman_cos_vs_leak_given_length": 0.36018420020828285,
+          "partial_spearman_cos_vs_leak_given_on_topic": 0.31004864899197376,
+          "partial_spearman_prior_vs_leak_given_length_and_on_topic": 0.3037533398236979,
+          "partial_spearman_cos_vs_leak_given_length_and_on_topic": 0.3706674865054853,
+          "per_persona_mean_length": {
+            "marine_biologist": 115.60000000000001,
+            "local_historian": 107.19876543209877,
+            "local_resident": 114.87654320987654,
+            "assistant": 123.21604938271605,
+            "software_engineer": 133.07777777777778,
+            "kindergarten_teacher": 133.42345679012345,
+            "no_system": 129.16790123456792,
+            "courthouse_architecture_historian": 124.27037037037037,
+            "data_scientist": 128.3925925925926,
+            "medical_doctor": 126.7506172839506,
+            "librarian": 125.69629629629628,
+            "french_person": 137.8111111111111,
+            "comedian": 127.72345679012346,
+            "police_officer": 121.52345679012346,
+            "biographer": 103.84320987654321,
+            "courthouse_custodian": 100.31481481481482,
+            "court_stenographer": 101.46419753086421,
+            "county_judge": 115.05802469135801,
+            "courthouse_docent": 114.74567901234566,
+            "furniture_historian": 56.40246913580247,
+            "smalltown_pa_reporter": 110.32222222222221,
+            "antiques_dealer": 98.12839506172838,
+            "county_records_clerk": 107.98271604938272
+          },
+          "per_persona_mean_on_topic": {
+            "marine_biologist": 0.7833333333333333,
+            "local_historian": 0.7333333333333333,
+            "local_resident": 0.75,
+            "assistant": 0.8333333333333334,
+            "software_engineer": 0.7000000000000001,
+            "kindergarten_teacher": 0.8000000000000002,
+            "no_system": 0.75,
+            "courthouse_architecture_historian": 0.9,
+            "data_scientist": 0.8166666666666665,
+            "medical_doctor": 0.75,
+            "librarian": 0.8833333333333333,
+            "french_person": 0.8666666666666667,
+            "comedian": 0.8000000000000002,
+            "police_officer": 0.8333333333333334,
+            "biographer": 0.7833333333333333,
+            "courthouse_custodian": 0.7833333333333333,
+            "court_stenographer": 0.85,
+            "county_judge": 0.75,
+            "courthouse_docent": 0.8333333333333334,
+            "furniture_historian": 0.7833333333333332,
+            "smalltown_pa_reporter": 0.7333333333333334,
+            "antiques_dealer": 0.7999999999999999,
+            "county_records_clerk": 0.7333333333333334
+          }
+        }
+      }
+    }
+  },
+  "per_arm_additions": {
+    "marine_biologist": {
+      "floored": {
+        "n_bystanders": 23,
+        "n_above_1pct": 23,
+        "fraction_above_1pct": 1.0,
+        "informative_for_within_arm": true,
+        "rule": ">=30% of bystanders with headline leak > 1% (floored arms feed P2, not P1/P3)"
+      },
+      "drop_tables": {
+        "status": "computed",
+        "full_panel": {
+          "rho": 0.7638339920948617,
+          "n": 23,
+          "critical_rho": 0.41324703053361167
+        },
+        "drop_one": {
+          "local_historian": {
+            "rho": 0.7447769621682665,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "local_resident": {
+            "rho": 0.769621682665161,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "assistant": {
+            "rho": 0.779785431959345,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "software_engineer": {
+            "rho": 0.7673630717108978,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "kindergarten_teacher": {
+            "rho": 0.7673630717108978,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "no_system": {
+            "rho": 0.7639751552795031,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "courthouse_architecture_historian": {
+            "rho": 0.7594579333709769,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "data_scientist": {
+            "rho": 0.7741389045736872,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "medical_doctor": {
+            "rho": 0.7571993224167137,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "librarian": {
+            "rho": 0.7673630717108978,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "french_person": {
+            "rho": 0.779785431959345,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "comedian": {
+            "rho": 0.7402597402597403,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "police_officer": {
+            "rho": 0.779785431959345,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "biographer": {
+            "rho": 0.7526821005081875,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "wooden_furniture_carpenter": {
+            "rho": 0.7560700169395822,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "courthouse_custodian": {
+            "rho": 0.7560700169395822,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "court_stenographer": {
+            "rho": 0.7492941840767928,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "county_judge": {
+            "rho": 0.7594579333709769,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "courthouse_docent": {
+            "rho": 0.753811405985319,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "furniture_historian": {
+            "rho": 0.753811405985319,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "smalltown_pa_reporter": {
+            "rho": 0.743647656691135,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "antiques_dealer": {
+            "rho": 0.8012422360248447,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "county_records_clerk": {
+            "rho": 0.7617165443252399,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          }
+        },
+        "drop_top_stratum": {
+          "rho": 0.12087912087912088,
+          "residual_n": 13,
+          "critical_rho_two_sided_0.05": 0.5529426594945894,
+          "dropped_personas": [
+            "local_historian",
+            "courthouse_architecture_historian",
+            "comedian",
+            "wooden_furniture_carpenter",
+            "courthouse_custodian",
+            "court_stenographer",
+            "county_judge",
+            "courthouse_docent",
+            "furniture_historian",
+            "smalltown_pa_reporter"
+          ],
+          "reading": "weak_positive",
+          "_doc": "rho in [0.2, critical) is reported as 'positive but underpowered at residual n' \u2014 neither confirm nor falsify (plan \u00a73 P1 discipline)."
+        }
+      },
+      "adjusted_dv": {
+        "status": "computed",
+        "_doc": "leak_adjusted = trained leak_rate_headline - shared-baseline headline rate per persona. Raw and adjusted reported side by side; on divergence the ADJUSTED one is claim-bearing (plan \u00a73 P1).",
+        "rho_prior_vs_leak_raw": 0.7638339920948617,
+        "rho_prior_vs_leak_adjusted": 0.7638339920948617,
+        "bootstrap_adjusted_cluster_persona": {
+          "mean": 0.7379390112720883,
+          "median": 0.7467096938420623,
+          "ci_low_90": 0.5967715512371483,
+          "ci_high_90": 0.8457893552815938,
+          "ci_low_95": 0.5477283226809629,
+          "ci_high_95": 0.8624881537195648,
+          "n_valid_iters": 1000
+        },
+        "per_persona_adjusted": {
+          "local_historian": 0.38518518518518513,
+          "local_resident": 0.07654320987654321,
+          "assistant": 0.12345679012345678,
+          "software_engineer": 0.10987654320987654,
+          "kindergarten_teacher": 0.11481481481481481,
+          "no_system": 0.10123456790123457,
+          "courthouse_architecture_historian": 0.3185185185185185,
+          "data_scientist": 0.1271604938271605,
+          "medical_doctor": 0.13703703703703704,
+          "librarian": 0.13333333333333333,
+          "french_person": 0.08395061728395063,
+          "comedian": 0.15555555555555556,
+          "police_officer": 0.11851851851851852,
+          "biographer": 0.1419753086419753,
+          "wooden_furniture_carpenter": 0.22098765432098766,
+          "courthouse_custodian": 0.2111111111111111,
+          "court_stenographer": 0.2654320987654321,
+          "county_judge": 0.14938271604938272,
+          "courthouse_docent": 0.23209876543209876,
+          "furniture_historian": 0.22839506172839505,
+          "smalltown_pa_reporter": 0.13950617283950617,
+          "antiques_dealer": 0.10617283950617284,
+          "county_records_clerk": 0.15061728395061727
+        },
+        "baseline_headline_rates": {
+          "local_historian": 0.0,
+          "local_resident": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0,
+          "courthouse_architecture_historian": 0.0,
+          "data_scientist": 0.0,
+          "medical_doctor": 0.0,
+          "librarian": 0.0,
+          "french_person": 0.0,
+          "comedian": 0.0,
+          "police_officer": 0.0,
+          "biographer": 0.0,
+          "wooden_furniture_carpenter": 0.0,
+          "courthouse_custodian": 0.0,
+          "court_stenographer": 0.0,
+          "county_judge": 0.0,
+          "courthouse_docent": 0.0,
+          "furniture_historian": 0.0,
+          "smalltown_pa_reporter": 0.0,
+          "antiques_dealer": 0.0,
+          "county_records_clerk": 0.0
+        }
+      },
+      "primary_engagement": {
+        "conditioning_set": "PRE-TREATMENT (base_completion_length, base_on_topic_fraction)",
+        "n_personas": 23,
+        "unadjusted_rho_prior_leak": 0.7638339920948617,
+        "partial_rho_prior_leak_given_base_len_and_on_topic": 0.7656941865905101,
+        "partial_bootstrap": {
+          "mean": 0.7447346018654377,
+          "median": 0.7571342845083573,
+          "ci_low_90": 0.5867923990618352,
+          "ci_high_90": 0.8644135689072475,
+          "ci_low_95": 0.5323454340440037,
+          "ci_high_95": 0.8845121200175939,
+          "n_valid_iters": 1000
+        },
+        "partial_rho_base_on_topic_leak_given_prior": -0.20977762343470982,
+        "outcome_b_bootstrap": {
+          "mean": -0.17169195635284468,
+          "median": -0.19147371519123363,
+          "ci_low_90": -0.5726039650866104,
+          "ci_high_90": 0.31023695599361967,
+          "ci_low_95": -0.6330040501800255,
+          "ci_high_95": 0.40386586013796955,
+          "n_valid_iters": 1000
+        },
+        "status": "computed"
+      },
+      "rho_cos_to_new_home_vs_leak": -0.14723320158102768
+    },
+    "courthouse_architecture_historian": {
+      "floored": {
+        "n_bystanders": 23,
+        "n_above_1pct": 10,
+        "fraction_above_1pct": 0.43478260869565216,
+        "informative_for_within_arm": true,
+        "rule": ">=30% of bystanders with headline leak > 1% (floored arms feed P2, not P1/P3)"
+      },
+      "drop_tables": {
+        "status": "computed",
+        "full_panel": {
+          "rho": 0.7419428846521301,
+          "n": 23,
+          "critical_rho": 0.41324703053361167
+        },
+        "drop_one": {
+          "marine_biologist": {
+            "rho": 0.7508611003622043,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "local_historian": {
+            "rho": 0.723051429978419,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "local_resident": {
+            "rho": 0.7513535485906836,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "assistant": {
+            "rho": 0.7706335641771616,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "software_engineer": {
+            "rho": 0.7314489855852396,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "kindergarten_teacher": {
+            "rho": 0.7314489855852396,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "no_system": {
+            "rho": 0.7348484386553492,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "data_scientist": {
+            "rho": 0.7456829557711313,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "medical_doctor": {
+            "rho": 0.747384133616997,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "librarian": {
+            "rho": 0.747384133616997,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "french_person": {
+            "rho": 0.7712926949298833,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "comedian": {
+            "rho": 0.7712006234591168,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "police_officer": {
+            "rho": 0.782440781636883,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "biographer": {
+            "rho": 0.7304295057945253,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "wooden_furniture_carpenter": {
+            "rho": 0.7207812528042323,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "courthouse_custodian": {
+            "rho": 0.7207812528042323,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "court_stenographer": {
+            "rho": 0.7287268729138854,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "county_judge": {
+            "rho": 0.7309970500880719,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "courthouse_docent": {
+            "rho": 0.7298619615009786,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "furniture_historian": {
+            "rho": 0.7321321386751651,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "smalltown_pa_reporter": {
+            "rho": 0.7151058098687659,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "antiques_dealer": {
+            "rho": 0.7321321386751651,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "county_records_clerk": {
+            "rho": 0.7383751259041782,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          }
+        },
+        "drop_top_stratum": {
+          "rho": 0.3665319281394928,
+          "residual_n": 14,
+          "critical_rho_two_sided_0.05": 0.5324128046813096,
+          "dropped_personas": [
+            "local_historian",
+            "comedian",
+            "wooden_furniture_carpenter",
+            "courthouse_custodian",
+            "court_stenographer",
+            "county_judge",
+            "courthouse_docent",
+            "furniture_historian",
+            "smalltown_pa_reporter"
+          ],
+          "reading": "positive_but_underpowered_at_residual_n",
+          "_doc": "rho in [0.2, critical) is reported as 'positive but underpowered at residual n' \u2014 neither confirm nor falsify (plan \u00a73 P1 discipline)."
+        }
+      },
+      "adjusted_dv": {
+        "status": "computed",
+        "_doc": "leak_adjusted = trained leak_rate_headline - shared-baseline headline rate per persona. Raw and adjusted reported side by side; on divergence the ADJUSTED one is claim-bearing (plan \u00a73 P1).",
+        "rho_prior_vs_leak_raw": 0.7419428846521301,
+        "rho_prior_vs_leak_adjusted": 0.7419428846521301,
+        "bootstrap_adjusted_cluster_persona": {
+          "mean": 0.714576906979652,
+          "median": 0.7299286041240698,
+          "ci_low_90": 0.5348886303191586,
+          "ci_high_90": 0.8443086229549811,
+          "ci_low_95": 0.46928773847989114,
+          "ci_high_95": 0.8721629631906074,
+          "n_valid_iters": 1000
+        },
+        "per_persona_adjusted": {
+          "marine_biologist": 0.006172839506172839,
+          "local_historian": 0.2654320987654321,
+          "local_resident": 0.0024691358024691358,
+          "assistant": 0.003703703703703704,
+          "software_engineer": 0.0012345679012345679,
+          "kindergarten_teacher": 0.0012345679012345679,
+          "no_system": 0.0012345679012345679,
+          "data_scientist": 0.0024691358024691358,
+          "medical_doctor": 0.003703703703703704,
+          "librarian": 0.003703703703703704,
+          "french_person": 0.0,
+          "comedian": 0.0024691358024691358,
+          "police_officer": 0.0012345679012345679,
+          "biographer": 0.0049382716049382715,
+          "wooden_furniture_carpenter": 0.20246913580246914,
+          "courthouse_custodian": 0.16666666666666666,
+          "court_stenographer": 0.10246913580246912,
+          "county_judge": 0.014814814814814815,
+          "courthouse_docent": 0.21481481481481482,
+          "furniture_historian": 0.471604938271605,
+          "smalltown_pa_reporter": 0.014814814814814814,
+          "antiques_dealer": 0.12469135802469135,
+          "county_records_clerk": 0.01728395061728395
+        },
+        "baseline_headline_rates": {
+          "marine_biologist": 0.0,
+          "local_historian": 0.0,
+          "local_resident": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0,
+          "data_scientist": 0.0,
+          "medical_doctor": 0.0,
+          "librarian": 0.0,
+          "french_person": 0.0,
+          "comedian": 0.0,
+          "police_officer": 0.0,
+          "biographer": 0.0,
+          "wooden_furniture_carpenter": 0.0,
+          "courthouse_custodian": 0.0,
+          "court_stenographer": 0.0,
+          "county_judge": 0.0,
+          "courthouse_docent": 0.0,
+          "furniture_historian": 0.0,
+          "smalltown_pa_reporter": 0.0,
+          "antiques_dealer": 0.0,
+          "county_records_clerk": 0.0
+        }
+      },
+      "primary_engagement": {
+        "conditioning_set": "PRE-TREATMENT (base_completion_length, base_on_topic_fraction)",
+        "n_personas": 23,
+        "unadjusted_rho_prior_leak": 0.7419428846521301,
+        "partial_rho_prior_leak_given_base_len_and_on_topic": 0.7079216342693291,
+        "partial_bootstrap": {
+          "mean": 0.6902459758214562,
+          "median": 0.700266417123601,
+          "ci_low_90": 0.5182728484898012,
+          "ci_high_90": 0.8383650130030539,
+          "ci_low_95": 0.43889081601163105,
+          "ci_high_95": 0.8612180544109209,
+          "n_valid_iters": 1000
+        },
+        "partial_rho_base_on_topic_leak_given_prior": 0.2364672979594467,
+        "outcome_b_bootstrap": {
+          "mean": 0.2244745949806302,
+          "median": 0.2309335624239665,
+          "ci_low_90": -0.18081221646085716,
+          "ci_high_90": 0.604730163159101,
+          "ci_low_95": -0.24977909427896172,
+          "ci_high_95": 0.644177736246836,
+          "n_valid_iters": 1000
+        },
+        "status": "computed"
+      },
+      "rho_cos_to_new_home_vs_leak": 0.10273055325952571
+    },
+    "wooden_furniture_carpenter": {
+      "floored": {
+        "n_bystanders": 23,
+        "n_above_1pct": 8,
+        "fraction_above_1pct": 0.34782608695652173,
+        "informative_for_within_arm": true,
+        "rule": ">=30% of bystanders with headline leak > 1% (floored arms feed P2, not P1/P3)"
+      },
+      "drop_tables": {
+        "status": "computed",
+        "full_panel": {
+          "rho": 0.621020796817932,
+          "n": 23,
+          "critical_rho": 0.41324703053361167
+        },
+        "drop_one": {
+          "marine_biologist": {
+            "rho": 0.6367594751450298,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "local_historian": {
+            "rho": 0.5898281580506282,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "local_resident": {
+            "rho": 0.6332486297583151,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "assistant": {
+            "rho": 0.621755914154716,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "software_engineer": {
+            "rho": 0.621755914154716,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "kindergarten_teacher": {
+            "rho": 0.6551055312774012,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "no_system": {
+            "rho": 0.6072482263537764,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "courthouse_architecture_historian": {
+            "rho": 0.5921457539565246,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "data_scientist": {
+            "rho": 0.6269276361763355,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "medical_doctor": {
+            "rho": 0.6332486297583151,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "librarian": {
+            "rho": 0.6383079535523397,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "french_person": {
+            "rho": 0.6437178529126781,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "comedian": {
+            "rho": 0.6470398884826342,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "police_officer": {
+            "rho": 0.6309500866375953,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "biographer": {
+            "rho": 0.6437178529126781,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "courthouse_custodian": {
+            "rho": 0.5817165723799909,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "court_stenographer": {
+            "rho": 0.5875105621447319,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "county_judge": {
+            "rho": 0.5990985416742137,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "courthouse_docent": {
+            "rho": 0.5921457539565246,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "furniture_historian": {
+            "rho": 0.594463349862421,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "smalltown_pa_reporter": {
+            "rho": 0.6470398884826342,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "antiques_dealer": {
+            "rho": 0.6303860864038148,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          },
+          "county_records_clerk": {
+            "rho": 0.6031543345095324,
+            "n": 22,
+            "critical_rho": 0.42271350416600223
+          }
+        },
+        "drop_top_stratum": {
+          "rho": 0.1633911772928965,
+          "residual_n": 14,
+          "critical_rho_two_sided_0.05": 0.5324128046813096,
+          "dropped_personas": [
+            "local_historian",
+            "courthouse_architecture_historian",
+            "comedian",
+            "courthouse_custodian",
+            "court_stenographer",
+            "county_judge",
+            "courthouse_docent",
+            "furniture_historian",
+            "smalltown_pa_reporter"
+          ],
+          "reading": "weak_positive",
+          "_doc": "rho in [0.2, critical) is reported as 'positive but underpowered at residual n' \u2014 neither confirm nor falsify (plan \u00a73 P1 discipline)."
+        }
+      },
+      "adjusted_dv": {
+        "status": "computed",
+        "_doc": "leak_adjusted = trained leak_rate_headline - shared-baseline headline rate per persona. Raw and adjusted reported side by side; on divergence the ADJUSTED one is claim-bearing (plan \u00a73 P1).",
+        "rho_prior_vs_leak_raw": 0.621020796817932,
+        "rho_prior_vs_leak_adjusted": 0.621020796817932,
+        "bootstrap_adjusted_cluster_persona": {
+          "mean": 0.603753278798686,
+          "median": 0.6183791152747671,
+          "ci_low_90": 0.40676163411821376,
+          "ci_high_90": 0.7424987392897803,
+          "ci_low_95": 0.3495300362484827,
+          "ci_high_95": 0.7667142682935222,
+          "n_valid_iters": 1000
+        },
+        "per_persona_adjusted": {
+          "marine_biologist": 0.006172839506172839,
+          "local_historian": 0.017283950617283952,
+          "local_resident": 0.0012345679012345679,
+          "assistant": 0.0012345679012345679,
+          "software_engineer": 0.0012345679012345679,
+          "kindergarten_teacher": 0.0024691358024691358,
+          "no_system": 0.0,
+          "courthouse_architecture_historian": 0.16913580246913582,
+          "data_scientist": 0.0012345679012345679,
+          "medical_doctor": 0.0012345679012345679,
+          "librarian": 0.0024691358024691358,
+          "french_person": 0.0,
+          "comedian": 0.0012345679012345679,
+          "police_officer": 0.0012345679012345679,
+          "biographer": 0.0,
+          "courthouse_custodian": 0.17654320987654323,
+          "court_stenographer": 0.08641975308641975,
+          "county_judge": 0.009876543209876543,
+          "courthouse_docent": 0.04567901234567901,
+          "furniture_historian": 0.9061728395061728,
+          "smalltown_pa_reporter": 0.0012345679012345679,
+          "antiques_dealer": 0.2493827160493827,
+          "county_records_clerk": 0.016049382716049384
+        },
+        "baseline_headline_rates": {
+          "marine_biologist": 0.0,
+          "local_historian": 0.0,
+          "local_resident": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0,
+          "courthouse_architecture_historian": 0.0,
+          "data_scientist": 0.0,
+          "medical_doctor": 0.0,
+          "librarian": 0.0,
+          "french_person": 0.0,
+          "comedian": 0.0,
+          "police_officer": 0.0,
+          "biographer": 0.0,
+          "courthouse_custodian": 0.0,
+          "court_stenographer": 0.0,
+          "county_judge": 0.0,
+          "courthouse_docent": 0.0,
+          "furniture_historian": 0.0,
+          "smalltown_pa_reporter": 0.0,
+          "antiques_dealer": 0.0,
+          "county_records_clerk": 0.0
+        }
+      },
+      "primary_engagement": {
+        "conditioning_set": "PRE-TREATMENT (base_completion_length, base_on_topic_fraction)",
+        "n_personas": 23,
+        "unadjusted_rho_prior_leak": 0.621020796817932,
+        "partial_rho_prior_leak_given_base_len_and_on_topic": 0.5571220045199591,
+        "partial_bootstrap": {
+          "mean": 0.550842060895965,
+          "median": 0.5678409464827432,
+          "ci_low_90": 0.28954746354261734,
+          "ci_high_90": 0.743517396583397,
+          "ci_low_95": 0.23067003727062052,
+          "ci_high_95": 0.7772744876131249,
+          "n_valid_iters": 1000
+        },
+        "partial_rho_base_on_topic_leak_given_prior": 0.17750545841033158,
+        "outcome_b_bootstrap": {
+          "mean": 0.19040324296310274,
+          "median": 0.1913596042866858,
+          "ci_low_90": -0.1819490751642517,
+          "ci_high_90": 0.5647969328760396,
+          "ci_low_95": -0.2405882571284811,
+          "ci_high_95": 0.6389543578603435,
+          "n_valid_iters": 1000
+        },
+        "status": "computed"
+      },
+      "rho_cos_to_new_home_vs_leak": 0.30924713397280257
+    }
+  },
+  "collinearity_gate": {
+    "pearson_prior_vs_base_on_topic": 0.20842057043189793,
+    "abs": 0.20842057043189793,
+    "soft_gate_0.6_tripped": false,
+    "hard_gate_0.85_tripped": false,
+    "_doc": "EXPECTED to trip at 0.6 (the H stratum is designed for courthouse affinity); >0.85 => partial unidentifiable, report buckets only (plan \u00a74.4).",
+    "n_personas": 24,
+    "tercile_buckets_by_base_on_topic": {
+      "low": {
+        "personas": [
+          "comedian",
+          "software_engineer",
+          "police_officer",
+          "marine_biologist",
+          "data_scientist",
+          "no_system",
+          "kindergarten_teacher",
+          "local_historian"
+        ],
+        "median_leak": 0.039917695473251025,
+        "median_bucket_value": 0.75
+      },
+      "mid": {
+        "personas": [
+          "biographer",
+          "librarian",
+          "county_records_clerk",
+          "courthouse_custodian",
+          "assistant",
+          "court_stenographer",
+          "wooden_furniture_carpenter",
+          "french_person"
+        ],
+        "median_leak": 0.05514403292181069,
+        "median_bucket_value": 0.7916666666666667
+      },
+      "high": {
+        "personas": [
+          "furniture_historian",
+          "courthouse_docent",
+          "local_resident",
+          "medical_doctor",
+          "smalltown_pa_reporter",
+          "county_judge",
+          "antiques_dealer",
+          "courthouse_architecture_historian"
+        ],
+        "median_leak": 0.10905349794238682,
+        "median_bucket_value": 0.85
+      }
+    },
+    "tercile_buckets_by_prior": {
+      "low": {
+        "personas": [
+          "assistant",
+          "software_engineer",
+          "kindergarten_teacher",
+          "data_scientist",
+          "no_system",
+          "librarian",
+          "marine_biologist",
+          "local_resident"
+        ],
+        "median_leak": 0.03847736625514403,
+        "median_bucket_value": -3.4549405877327546
+      },
+      "mid": {
+        "personas": [
+          "medical_doctor",
+          "french_person",
+          "biographer",
+          "county_records_clerk",
+          "police_officer",
+          "antiques_dealer",
+          "comedian",
+          "smalltown_pa_reporter"
+        ],
+        "median_leak": 0.05041152263374485,
+        "median_bucket_value": -3.2627098471445204
+      },
+      "high": {
+        "personas": [
+          "courthouse_architecture_historian",
+          "furniture_historian",
+          "courthouse_docent",
+          "county_judge",
+          "local_historian",
+          "court_stenographer",
+          "courthouse_custodian",
+          "wooden_furniture_carpenter"
+        ],
+        "median_leak": 0.19825102880658438,
+        "median_bucket_value": -3.1062128437256784
+      }
+    }
+  },
+  "covariate_reliability": {
+    "between_persona_sd": 0.07485560442403494,
+    "range": [
+      0.55,
+      0.9166666666666666
+    ],
+    "median_subsample_se": 0.05241266855726306,
+    "sd_over_2x_median_se": false,
+    "_doc": "Pre-condition for any P3 conclusion: if between-persona SD < 2x median subsample SE the covariate is underpowered and P3 is reported as covariate-underpowered, not Outcome A (plan \u00a74.4)."
+  },
+  "p2_source_prior_gating": {
+    "_doc": "P2: arm-level common-set panel-median leak vs measured source prior. Permutation p is computed ONLY on the 4-arm GO-full branch (exact 4! test) AND claimed only under a perfect monotone (decreasing) ordering; the GO-descoped 3-arm branch is directional only \u2014 NO permutation p (plan \u00a77). Pooled per-(arm x seed) Spearman is DESCRIPTIVE (4 clusters cannot support inferential CIs).",
+    "common_set": [
+      "local_historian",
+      "local_resident",
+      "assistant",
+      "software_engineer",
+      "kindergarten_teacher",
+      "no_system",
+      "data_scientist",
+      "medical_doctor",
+      "librarian",
+      "french_person",
+      "comedian",
+      "police_officer",
+      "biographer",
+      "courthouse_custodian",
+      "court_stenographer",
+      "county_judge",
+      "courthouse_docent",
+      "furniture_historian",
+      "smalltown_pa_reporter",
+      "antiques_dealer",
+      "county_records_clerk"
+    ],
+    "per_arm": {
+      "marine_biologist": {
+        "arm_slug": "arm_marine_biologist",
+        "source_prior": -3.4032202146281083,
+        "n_common_personas": 21,
+        "median_leak_common_set": 0.13703703703703704,
+        "per_seed_medians": [
+          0.05185185185185185,
+          0.1962962962962963,
+          0.17037037037037037
+        ],
+        "seed_range": [
+          0.05185185185185185,
+          0.1962962962962963
+        ]
+      },
+      "courthouse_architecture_historian": {
+        "arm_slug": "arm_courthouse_architecture_historian",
+        "source_prior": -3.229132962532406,
+        "n_common_personas": 21,
+        "median_leak_common_set": 0.003703703703703704,
+        "per_seed_medians": [
+          0.003703703703703704,
+          0.007407407407407408,
+          0.0
+        ],
+        "seed_range": [
+          0.0,
+          0.007407407407407408
+        ]
+      },
+      "wooden_furniture_carpenter": {
+        "arm_slug": "arm_top_prior_wooden_furniture_carpenter",
+        "source_prior": -3.002995003626713,
+        "n_common_personas": 21,
+        "median_leak_common_set": 0.0012345679012345679,
+        "per_seed_medians": [
+          0.0,
+          0.0,
+          0.003703703703703704
+        ],
+        "seed_range": [
+          0.0,
+          0.003703703703703704
+        ]
+      }
+    },
+    "arm_order_by_source_prior": [
+      "marine_biologist",
+      "courthouse_architecture_historian",
+      "wooden_furniture_carpenter"
+    ],
+    "permutation": {
+      "status": "not_claimed_directional_only_descoped",
+      "n_arms": 3,
+      "perfect_monotone_decreasing": true,
+      "_doc": "GO-descoped branch: 3-point ordering reported directionally; no permutation p is claimed (plan \u00a77)."
+    },
+    "hard_inversions_no_seed_range_overlap": [],
+    "pooled_arm_seed_spearman_DESCRIPTIVE": {
+      "rho": -0.8344919481901566,
+      "n_points": 9,
+      "cluster_on_arm_bootstrap": {
+        "mean": -0.7226694250275869,
+        "median": -0.8344919481901566,
+        "ci_low_90": -0.8620436566990362,
+        "ci_high_90": -0.3903600291794133,
+        "ci_low_95": -0.8620436566990362,
+        "ci_high_95": -0.3903600291794133,
+        "n_valid_iters": 883
+      }
+    }
+  },
+  "reproducibility": {
+    "git_sha": "662bc7209fa9514dcefc009b5d2b93b910ed3b10",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "experiment": "issue444_mundane_place_provenance",
+    "timestamp": "2026-06-10T09:43:48.564654+00:00"
+  }
+}

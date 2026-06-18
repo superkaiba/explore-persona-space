@@ -1,0 +1,112 @@
+{
+  "issue": 597,
+  "round": "r3-armD-filler-control",
+  "verdict": "FAIL",
+  "timestamp": "2026-06-16T05:30:00Z",
+  "discovered_files_on_pod": 88,
+  "checks": {
+    "hf_data_repo_panel_trajectories_raw": {
+      "status": "PASS",
+      "detail": "All 3 sources × 25 per-checkpoint JSONs (75 files) on superkaiba1/explore-persona-space-data/issue597_leakage_dynamics/filler_arm/panel_trajectories_raw/{villain,assistant,qwen_default}/step_*.json + 8 supporting files (filler_500 inputs, train_pools). 83 filler_arm files total.",
+      "verified_paths": [
+        "issue597_leakage_dynamics/filler_arm/panel_trajectories_raw/villain/step_00002.json..step_00060.json (25 files)",
+        "issue597_leakage_dynamics/filler_arm/panel_trajectories_raw/assistant/step_00002.json..step_00060.json (25 files)",
+        "issue597_leakage_dynamics/filler_arm/panel_trajectories_raw/qwen_default/step_00002.json..step_00060.json (25 files)",
+        "issue597_leakage_dynamics/filler_arm/train_pools/{villain,assistant,qwen_default}_filler_pool.jsonl",
+        "issue597_leakage_dynamics/filler_arm/train_pools/{villain,assistant,qwen_default}_filler_R.json",
+        "issue597_leakage_dynamics/filler_arm/inputs/filler_500.jsonl",
+        "issue597_leakage_dynamics/filler_arm/inputs/filler_500_generation_meta.json"
+      ]
+    },
+    "hf_model_repo_adapters": {
+      "status": "PASS",
+      "detail": "All 3 source × seed42 LoRA adapter dirs present on superkaiba1/explore-persona-space at branch main. Each has 312 entries (25 checkpoint dirs + final adapter_model.safetensors).",
+      "verified_paths": [
+        "adapters/issue_597_filler/villain_seed42/adapter_model.safetensors + 25 checkpoint dirs",
+        "adapters/issue_597_filler/assistant_seed42/adapter_model.safetensors + 25 checkpoint dirs",
+        "adapters/issue_597_filler/qwen_default_seed42/adapter_model.safetensors + 25 checkpoint dirs"
+      ]
+    },
+    "git_eval_jsons_on_issue_branch": {
+      "status": "FAIL",
+      "detail": "ZERO armD eval JSONs are committed to origin/issue-597. All 88 files under eval_results/issue_597/positives-plus-filler-control/ exist on the pod as UNTRACKED working-tree files (git status: '?? eval_results/issue_597/positives-plus-filler-control/'). The 75 per-checkpoint panel JSONs are mirrored on HF data repo, but the other 13 files (3 disjointness reports, 3 in-loop trajectories, 3 aggregated panel trajectories, parity gate report, probe_rows.json, 2 smoke gate reports) exist ONLY on the pod.",
+      "missing_files": [
+        "eval_results/issue_597/positives-plus-filler-control/filler_pools/villain_disjointness_report.json",
+        "eval_results/issue_597/positives-plus-filler-control/filler_pools/assistant_disjointness_report.json",
+        "eval_results/issue_597/positives-plus-filler-control/filler_pools/qwen_default_disjointness_report.json",
+        "eval_results/issue_597/positives-plus-filler-control/inloop_trajectories/villain_seed42_trajectory.json",
+        "eval_results/issue_597/positives-plus-filler-control/inloop_trajectories/assistant_seed42_trajectory.json",
+        "eval_results/issue_597/positives-plus-filler-control/inloop_trajectories/qwen_default_seed42_trajectory.json",
+        "eval_results/issue_597/positives-plus-filler-control/panel_trajectories/armD/villain_seed42_panel_trajectory.json",
+        "eval_results/issue_597/positives-plus-filler-control/panel_trajectories/armD/assistant_seed42_panel_trajectory.json",
+        "eval_results/issue_597/positives-plus-filler-control/panel_trajectories/armD/qwen_default_seed42_panel_trajectory.json",
+        "eval_results/issue_597/positives-plus-filler-control/parity_gate_report.json",
+        "eval_results/issue_597/positives-plus-filler-control/probe_rows.json",
+        "eval_results/issue_597/positives-plus-filler-control/smoke/smoke_gate_armD_villain.json",
+        "eval_results/issue_597/positives-plus-filler-control/smoke/smoke_gate_report.json",
+        "eval_results/issue_597/positives-plus-filler-control/panel_trajectories/armD/per_checkpoint/villain/step_*.json (25 files; HF-mirrored)",
+        "eval_results/issue_597/positives-plus-filler-control/panel_trajectories/armD/per_checkpoint/assistant/step_*.json (25 files; HF-mirrored)",
+        "eval_results/issue_597/positives-plus-filler-control/panel_trajectories/armD/per_checkpoint/qwen_default/step_*.json (25 files; HF-mirrored)"
+      ]
+    },
+    "primary_deliverable_produced": {
+      "status": "PASS",
+      "detail": "Plan §-spec primary DV: 'source marker Δlog P trajectory per source × per checkpoint, with full bystander panel (four-float trained AND base) on the dense step grid'. Confirmed: 3 sources × 25 per-checkpoint JSONs each, schema i597_panel_ckpt_v1, 1250 rows per file. Row schema carries 11 floats per slot (logp_trained/base, z_marker_trained/base, z_eos_trained/base, logZ_trained/base, delta_logp, delta_z_marker, eos_margin_delta) — exceeds the 4-float minimum on both trained and base sides. Aggregated panel_trajectory.json holds steps + n_contexts + n_questions + by_step + invariant_max_abs_diff. Parity gate verdict OK_DIAGNOSTIC across all 3 sources at parity steps 20/40/60."
+      },
+    "phantom_url_gate_claimed_urls": {
+      "status": "PASS",
+      "detail": "verify_uploads.py --claimed-urls-file resolved every claimed HF/WandB URL in the epm:results marker (3 arm_d_hf_path adapter dirs + 1 hf_hub_url). All resolve at branch main on superkaiba1/explore-persona-space.",
+      "verified": [
+        "superkaiba1/explore-persona-space/adapters/issue_597_filler/villain_seed42",
+        "superkaiba1/explore-persona-space/adapters/issue_597_filler/assistant_seed42",
+        "superkaiba1/explore-persona-space/adapters/issue_597_filler/qwen_default_seed42"
+      ]
+    },
+    "per_cell_wandb_coverage": {
+      "status": "WARN",
+      "detail": "epm:results marker declares 'wandb_url: n/a (per-cell wandb runs; project=issue597-leakage-dynamics)'. Three cells trained (villain, assistant, qwen_default). Reconciliation against the WandB project is not assertable from the marker alone (no per-cell URLs declared). Local pod has /workspace/runs/issue_597/ at 659M which holds per-cell run state — would need to verify wandb/ offline dirs vs run-count before pod termination. Recommendation: spot-check via `wandb.Api().runs('superkaiba1/issue597-leakage-dynamics')` and confirm 3 runs created in the time window 2026-06-16T04:14Z..05:19Z."
+    },
+    "local_weights_cleaned": {
+      "status": "PASS",
+      "detail": "All 3 adapter dirs under /workspace/runs/issue_597/filler/{villain,assistant,qwen_default}_seed42/ are empty (dir size 1). /workspace/runs/issue_597/ total 659M (armA_downloads cache, not adapters). Delete-after-upload recipe applied."
+    },
+    "pod_lifecycle": {
+      "status": "WARN",
+      "detail": "Pod-597 still RUNNING. Per protocol, pod termination is held by this verifier's FAIL — orchestrator should NOT terminate until the missing eval JSONs land on git on issue-597."
+    },
+    "git_destination_reconciliation": {
+      "status": "FAIL",
+      "detail": "Per-file diff of pod source enumeration vs `git ls-tree -r --name-only issue-597 -- eval_results/issue_597/positives-plus-filler-control/` returns 88 vs 0 — every file is missing. No .gitignore drop (the directory is wholly uncommitted, not a partial silent drop)."
+    }
+  },
+  "missing_action": [
+    "Stage and commit the 88 untracked files under eval_results/issue_597/positives-plus-filler-control/ to the issue-597 branch ON THE POD (since the worktree on the VM lacks these files), push to origin/issue-597. The 75 per-checkpoint panel JSONs may optionally be omitted from git if the HF data repo mirror is judged sufficient — but the brief explicitly requires aggregated trajectories, parity_gate_report.json, in-loop trajectories, and disjointness reports in git.",
+    "On the pod, from /workspace/explore-persona-space: `git add eval_results/issue_597/positives-plus-filler-control/ && git commit -m \"issue-597 follow-up r3: armD filler-control eval JSONs (parity, in-loop, panel, disjointness)\" && git push origin issue-597`",
+    "Re-run upload-verifier (round 4) after commit + push to confirm git side resolves."
+  ],
+  "primary_deliverable_evidence": {
+    "schema": "i597_panel_ckpt_v1",
+    "n_sources": 3,
+    "n_checkpoints_per_source": 25,
+    "n_rows_per_file": 1250,
+    "row_floats_per_slot_trained_and_base": [
+      "logp_trained", "logp_base", "z_marker_trained", "z_marker_base",
+      "z_eos_trained", "z_eos_base", "logZ_trained", "logZ_base",
+      "delta_logp", "delta_z_marker", "eos_margin_delta"
+    ],
+    "parity_verdict": "OK_DIAGNOSTIC",
+    "sample_row_villain_step30_first_context": {
+      "context": "librarian",
+      "q_idx": 0,
+      "logp_trained": -13.750894546508789,
+      "logp_base": -25.69441032409668,
+      "delta_logp": 11.94351577758789,
+      "z_marker_trained": 12.0,
+      "z_marker_base": 0.43359375,
+      "z_eos_trained": 25.75,
+      "z_eos_base": 26.125,
+      "logZ_trained": 25.75089454650879,
+      "logZ_base": 26.12800407409668
+    }
+  }
+}

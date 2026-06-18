@@ -36,6 +36,36 @@ Behaviours:
   ``report_to="none"`` and no waiver; smoke + code-review + pre-launch
   all passed). CLAUDE.md "Upload Policy" makes WandB live metrics
   mandatory for training; this lint enforces it mechanically.
+* ``--check-heredoc-dotenv`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL on any bash
+  heredoc that feeds a python interpreter's stdin (``uv run python -
+  <<'PY'``, ``python3 <<EOF``, …) and whose body calls the python-dotenv
+  package's no-arg ``load_dotenv()`` — from stdin its ``find_dotenv()``
+  frame-walk always crashes (``assert frame.f_back is not None``).
+  Explicit-path calls and the stdin-safe project wrapper
+  (``explore_persona_space.orchestrate.env.load_dotenv``) pass. Closes
+  the #552/#612 incident class: the gotcha existed only as prose
+  (gotchas.md + research-project-structure.md § Environment Bootstrap)
+  and was reintroduced on #612 past the implementer, BOTH ensemble
+  reviewers, and every smoke run, because the heredoc executes only at
+  pod-side first contact.
+* ``--check-dispatcher-cvd-pin`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL on any
+  BACKGROUNDED python launch line (logical line ending in ``&``) that
+  passes a per-process GPU pin (``--gpu-id`` / ``+gpu_id=``) but does
+  NOT carry a ``CUDA_VISIBLE_DEVICES=`` env prefix on the same command.
+  The in-process CVD clobber (``train/sft.py`` sets
+  ``os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)``) is silently
+  defeated by any import-time cuInit, so parallel per-cell launches that
+  rely on ``--gpu-id`` alone pile every cell onto physical GPU 0 and OOM
+  (incident class #523 Phase B, recurred #541/#543/#557; recipe fix
+  #578). Legitimate unpinned shapes are waived via
+  ``# CVD_PIN_EXEMPT: <reason>`` on the same logical line or the
+  immediately preceding non-blank line. Closes the residual #578 gap:
+  the launcher-env-pin rule was agent-prose only (experimenter.md item
+  10 fires on the RunPod launch path; gcp/slurm startup-script lanes
+  have no launch agent), so a new dispatcher written without the pin
+  reached production unflagged on those lanes.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -51,6 +81,58 @@ Behaviours:
   and the walk was widened from the issue SKILL.md to ALL skills'
   SKILL.md files on the chain's final fix (the promote-clean-result
   ``epm:consolidated-into`` posting site was unlinted until then).
+* ``--check-upload-as-file`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on any
+  ``_upload(...)`` call (the shared HF-Hub upload helper,
+  ``explore_persona_space.orchestrate.hub._upload``) whose first
+  positional / ``local_path`` argument carries a SINGLE-FILE signal but
+  does not pass ``upload_as_file=True``. ``_upload`` raises
+  ``ValueError`` UNCONDITIONALLY on a file path without that kwarg
+  (``hub.py`` ~line 560), because ``huggingface_hub.upload_folder``
+  silently no-ops on a single-file path — so a per-file upload loop
+  crashes on the FIRST file, after the expensive phases are spent. Two
+  signal classes: a DECIDABLE single-file arg0 (a string literal ending
+  in a known artifact extension, e.g. ``"out/summary.json"``, or a
+  ``dir / "name.pt"`` path-div expression) FAILs unless
+  ``upload_as_file=True`` (a decidable file even with an explicit
+  ``=False`` FAILs — that is the #595 silent-no-op shape); a NAME-CONTEXT
+  arg0 (a bare ``Name`` carrying any of three single-file signals — a
+  file-suffix identifier e.g. ``summary_path`` (the #612 offender); a
+  per-file glob/rglob/iterdir LOOP variable e.g. ``for f in
+  sorted(dir.glob("*.json"))`` (the #595/#640 production crash); or a
+  ``path_in_repo=f"...{X.name}"`` interpolation in the same call (the #640
+  idiom)) FAILs only when the ``upload_as_file`` kwarg is ENTIRELY ABSENT
+  — an explicit kwarg of either value is the author's deliberate
+  declaration and is deferred to. Folder uploads (a generic ``local`` /
+  ``local_dir`` / ``staging`` variable, no file-suffix name, no literal)
+  pass untouched. Waive a genuinely-correct flagged call with
+  ``# UPLOAD_AS_FILE_EXEMPT: <reason>`` (reason ≥ 10 chars) on the call's
+  first physical line or the immediately preceding non-blank line.
+  Closes the #595 → #640 → #612 recurrence class: the rule lived only as
+  prose (gotchas.md "``hub._upload`` raises ``ValueError`` …") and was
+  re-introduced three times, twice surviving a Claude reviewer (the
+  Codex twin caught #640); a CPU smoke that skips the GPU phase never
+  exercises the upload branch, so nothing mechanical caught it
+  pre-merge.
+* ``--check-agent-model-pins`` (also bundled into the no-flags default
+  run): parse the YAML frontmatter ``model: "..."`` of every
+  ``.claude/agents/*.md`` and FAIL on any pin whose base id is unknown
+  OR whose ``[1m]`` suffix is grafted onto a base that does not have a
+  1M-context variant (the d07424178 / task #545 incident class,
+  2026-06-09→2026-06-12). The d07424178 commit bulk-renamed all 25
+  agent pins to ``claude-fable-5[1m]`` — fable-5 IS a real Anthropic
+  model id, BUT the ``[1m]`` suffix (a deployment-routing identifier
+  per the claude-api skill's model-migration.md bucket-4 guidance) was
+  not a valid variant for fable-5, so EVERY subagent died at spawn
+  ("There's an issue with the selected model … may not exist") for ~72
+  hours fleet-wide until the revert (00566584c). Sibling rule to
+  CLAUDE.md / .claude/rules/code-style.md "Never hardcode an invented
+  Claude/Anthropic model id" — that bullet covers hardcoded model
+  strings in Python; this check covers agent-frontmatter pins, which
+  the runtime hits on every subagent spawn. Allowlist drifts slowly
+  (one entry per new Anthropic major-version release) and lives in
+  :data:`AGENT_MODEL_ALLOWLIST`; the source of truth is the global
+  ``claude-api`` skill's ``shared/models.md``.
 
 Exit codes:
 
@@ -61,6 +143,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import sys
 from pathlib import Path
@@ -169,11 +252,246 @@ MARKER_POST_PROSE_RE = re.compile(
     re.IGNORECASE,
 )
 # Kinds exempt from registration: prose-only or family-prefix mentions that
-# match the posting patterns above without being a real posted kind. Empty
-# today — `epm:audit` (SKILL.md placeholder guard) uses the verb "generating"
-# so it never matches; add entries here only with a trailing comment naming
-# the file:line and why it is not a posted kind.
-MARKER_REGISTRY_ALLOWLIST: frozenset[str] = frozenset()
+# match the posting patterns above without being a real posted kind
+# (`epm:audit` — the SKILL.md placeholder guard — uses the verb "generating"
+# so it never matches). Add entries here only with a comment naming the
+# file:line and why it is not a posted kind.
+MARKER_REGISTRY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # campaign-tick/SKILL.md:104 "Newest skill-posted `epm:campaign-*`
+        # marker FRESH" — a READ-side family-prefix mention, not a posting
+        # site: `\bposted\b` matches inside the compound adjective
+        # "skill-posted" (hyphen is a word boundary) and the kind regex
+        # truncates `epm:campaign-*` at the `*`. The six real
+        # `epm:campaign-*` kinds are individually registered in
+        # workflow.yaml § markers; the tick itself never posts (its
+        # contract: "No marker posts").
+        "epm:campaign-",
+    }
+)
+
+# `--check-heredoc-dotenv`: a NO-ARG `load_dotenv()` from the python-dotenv
+# PACKAGE inside a bash heredoc that feeds a python interpreter's STDIN
+# (`uv run python - <<'PY'`, `python3 <<EOF`, ...) always crashes at
+# runtime: with no path argument, python-dotenv's `find_dotenv()` walks the
+# interpreter frame stack looking for a caller whose `co_filename` exists
+# on disk; from stdin the filename is `<stdin>`, the walk runs off the top
+# of the stack, and `assert frame.f_back is not None` fires. The rule
+# existed only as prose (gotchas.md; research-project-structure.md
+# § Environment Bootstrap) and human review repeatedly missed it:
+# incident #552, then again #612 (2026-06-12 —
+# `issue612_production_driver.sh` stage-1b slipped past the implementer,
+# BOTH ensemble reviewers, and every smoke run because the heredoc
+# executes only at pod-side first contact, then killed the production
+# driver with a misleading "poll timeout" and idled 4x A100 for ~30 min).
+# This check makes the rule mechanical.
+#
+# Flagged (inside a python-stdin-fed heredoc body only):
+#   * `from dotenv import load_dotenv` (any import list containing it)
+#     plus a bare no-arg call `load_dotenv()`;
+#   * a qualified no-arg call `dotenv.load_dotenv()`.
+# NOT flagged:
+#   * any-arg calls (`load_dotenv(dotenv_path=...)`) — an explicit path
+#     skips the frame-walking `find_dotenv()` entirely;
+#   * the project wrapper
+#     `explore_persona_space.orchestrate.env.load_dotenv()` — resolves
+#     `.env` via `resolve_dotenv_path()` (cwd/path walking, no frame
+#     inspection), stdin-safe; this is the canonical in-heredoc shape
+#     (#585 round-2 review fix; live exemplar `i556_run_all_1gpu.sh`);
+#   * heredocs that do NOT feed a python interpreter's stdin
+#     (`cat <<EOF`, `python scripts/foo.py <<EOF` where the body is
+#     DATA for the script, ...);
+#   * comment lines inside the heredoc body;
+#   * `python -c '...'` one-liner arguments — DELIBERATELY out of scope
+#     (extension considered + rejected, 2026-06-12): under `-c`,
+#     `__main__` has no `__file__`, so python-dotenv's `_is_interactive()`
+#     short-circuits find_dotenv() to a cwd-walk — the frame walk (and
+#     its `assert frame.f_back is not None` crash) is never reached
+#     (verified empirically against the pinned python-dotenv 1.2.2). A
+#     no-arg call run from the repo root legitimately finds `.env`, so a
+#     hard FAIL (this framework has no warn tier / waiver) would flag
+#     working shapes. The real `-c` hazard is SILENT non-loading from an
+#     off-repo cwd — prose-documented in gotchas.md's python-dotenv
+#     entry, not lintable without false positives.
+#
+# Opener parsing: backslash-continued physical lines are merged into one
+# logical command line first (the #612 incident shape is
+# `uv run python - "$A" "$B" <<'PY' \` continued by `|| fail ... 3`, with
+# the body starting after the continuation). The opener regex excludes
+# here-strings (`<<<`) and requires an identifier-shaped delimiter so
+# arithmetic shifts (`$((x << 2))`) don't parse as heredocs. A python
+# interpreter is considered stdin-fed when, before the opener on the
+# logical line, `python`/`python3[.N]` is followed by a bare `-` arg
+# (optionally after single-dash flags) OR is the last token.
+HEREDOC_OPENER_RE = re.compile(r"(?<!<)<<-?(?!<)\s*(['\"]?)([A-Za-z_]\w*)\1")
+HEREDOC_PY_STDIN_DASH_RE = re.compile(r"\bpython3?(?:\.\d+)?\s+(?:-\S+\s+)*-(?=[\s\"']|$)")
+HEREDOC_PY_STDIN_BARE_RE = re.compile(r"\bpython3?(?:\.\d+)?[\"']?\s*$")
+HEREDOC_DOTENV_PKG_IMPORT_RE = re.compile(
+    r"^\s*from\s+dotenv(?:\.[\w.]+)?\s+import\s+(?P<names>.+)$"
+)
+HEREDOC_DOTENV_BARE_CALL_RE = re.compile(r"(?<![\w.])load_dotenv\s*\(\s*\)")
+HEREDOC_DOTENV_QUALIFIED_CALL_RE = re.compile(r"(?<![\w.])dotenv\.load_dotenv\s*\(\s*\)")
+
+# `--check-dispatcher-cvd-pin`: a BACKGROUNDED python launch in a shell
+# script that passes a per-process GPU pin (`--gpu-id <n>` / `+gpu_id=<n>`)
+# MUST also carry a `CUDA_VISIBLE_DEVICES=` env assignment on the same
+# logical command line. The in-process clobber
+# (`os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)` in
+# `train/sft.py`) is silently defeated by any import-time cuInit — the
+# driver freezes its device list at the FIRST cuInit in the process, so a
+# dispatcher import chain that initializes CUDA (`import peft` is a known
+# offender, #545) makes the late clobber a no-op and every parallel cell's
+# `cuda:0` resolves to physical GPU 0 → co-location → OOM. That is how all
+# 4 #523 Phase B waves piled onto GPU 0 (recurred #541/#543/#557). The
+# recipe fix (#578, gotchas.md "CVD-clobber" entry): export
+# `CUDA_VISIBLE_DEVICES=<gpu>` per cell in the LAUNCHER env AND pass the
+# matching `--gpu-id <gpu>` so the in-process clobber rewrites the same
+# value. The reference compliant shape is
+# `scripts/i474_phase23_dispatch.sh` ("CUDA_VISIBLE_DEVICES="$cvd" uv run
+# python ... --gpu-id "$cvd" ... &").
+#
+# Flagged: a logical line (backslash continuations merged) that
+#   (a) invokes a python interpreter (`uv run python`, bare
+#       `python`/`python3[.N]`, `.venv/bin/python`), AND
+#   (b) carries `--gpu-id` or `+gpu_id=`, AND
+#   (c) is backgrounded — ends with `&` (not `&&`), the parallel-launch
+#       signature, AND
+#   (d) has NO `CUDA_VISIBLE_DEVICES=` assignment anywhere on the line.
+# NOT flagged (recall is deliberately sacrificed for zero false
+# positives — a sequential launch cannot co-locate siblings):
+#   * sequential launches (no trailing `&`), including `nohup ... ;`
+#     and `cmd && next` chains;
+#   * `echo`-prefixed lines (dry-run previews) and `#` comment lines;
+#   * backgrounded SUBSHELL wrappers (`( for ...; do python ...; done ) &`)
+#     whose python line itself is not backgrounded — a known recall miss
+#     (live example: `i488_phase4_dispatch.sh`), accepted to keep the
+#     check line-local and false-positive-free;
+#   * lines waived via `# CVD_PIN_EXEMPT: <reason>` (same logical line or
+#     immediately preceding non-blank line; reason ≥ 10 chars — same
+#     convention as WANDB_INTENTIONALLY_DISABLED). Use the waiver for
+#     pre-#578 completed-task dispatchers kept verbatim for
+#     reproducibility, and for genuinely single-process backgrounded
+#     launches where no sibling can co-locate.
+CVD_PIN_PY_LAUNCH_RE = re.compile(
+    r"(?:\buv\s+run\s+python\b|(?<![\w./])python3?(?:\.\d+)?\b|\.venv/bin/python\b)"
+)
+CVD_PIN_GPU_ARG_RE = re.compile(r"(?:--gpu-id\b|\+gpu_id=)")
+CVD_PIN_CVD_ASSIGN_RE = re.compile(r"\bCUDA_VISIBLE_DEVICES=")
+CVD_PIN_WAIVER_RE = re.compile(r"#\s*CVD_PIN_EXEMPT\s*:\s*(.+?)\s*$")
+CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
+
+# `--check-agent-model-pins`: every `.claude/agents/*.md` carries a YAML
+# frontmatter line ``model: "claude-..."`` that the Claude Code harness reads
+# at subagent spawn. A pin that is unknown OR carries a `[1m]` suffix on a
+# base id without a 1M-context variant fails AT SPAWN ("There's an issue
+# with the selected model … may not exist") and kills EVERY subagent in
+# EVERY session fleet-wide until reverted — the d07424178 / task #545
+# incident class (2026-06-09 → 2026-06-12, ~72h fleet-wide outage from a
+# single commit pinning all 25 agents to `claude-fable-5[1m]`, where
+# fable-5 is real but its `[1m]` variant is not).
+#
+# Allowlist source of truth: the global ``claude-api`` skill's
+# ``shared/models.md`` ("Model Descriptions" section). Each entry carries
+# the base id + whether a `[1m]` (1M-context routing) variant exists for
+# it — opus-4-5/4-6/4-7/4-8 expose a `[1m]` tier; fable-5/mythos-5/
+# sonnet-4-6 already have 1M native context (no `[1m]` suffix supported);
+# haiku-4-5/sonnet-4-5 are 200K-context tiers (no `[1m]` suffix).
+# Deprecated / retired base ids are not listed — pinning to a deprecated
+# id is also flagged as "unknown". Update this list when Anthropic ships
+# a new major version (a low-frequency event; weigh against the cost of
+# letting a typo'd or aspirational pin take down every subagent silently).
+#
+# Each tuple is (base_id, supports_1m_suffix).
+AGENT_MODEL_ALLOWLIST: tuple[tuple[str, bool], ...] = (
+    # Opus tier — 1M-context [1m] variant exposed for each.
+    ("claude-opus-4-5", True),
+    ("claude-opus-4-6", True),
+    ("claude-opus-4-7", True),
+    ("claude-opus-4-8", True),
+    # Fable / Mythos — 1M native context, no [1m] suffix. Mythos-5 is a real,
+    # active id but is Project-Glasswing-only; most callers should pin fable-5
+    # (a non-Glasswing org pinning mythos-5 would still fail at spawn — the
+    # harness check catches that regardless of this allowlist).
+    ("claude-fable-5", False),
+    ("claude-mythos-5", False),
+    # Sonnet — 4-6 has 1M native context (no suffix); 4-5 is 200K.
+    ("claude-sonnet-4-5", False),
+    ("claude-sonnet-4-6", False),
+    # Haiku — 200K context tier, no [1m] suffix.
+    ("claude-haiku-4-5", False),
+)
+# Parse the YAML frontmatter ``model: "..."`` line. Permissive on quoting
+# (double, single, or bare) — the harness accepts all three. The captured
+# group is the full id string including any [1m] suffix.
+AGENT_MODEL_PIN_RE = re.compile(
+    r"""^model:\s*["']?(?P<value>[A-Za-z0-9_.\-\[\]]+)["']?\s*$""", re.MULTILINE
+)
+# Split the captured id into (base, suffix). Suffix is the literal `[1m]`
+# (the only suffix the harness currently exposes for a model pin); any
+# other tail is treated as part of an unknown base id and flagged.
+AGENT_MODEL_1M_SUFFIX = "[1m]"
+
+
+# `--check-upload-as-file`: the shared HF-Hub upload helper
+# `explore_persona_space.orchestrate.hub._upload` raises `ValueError`
+# UNCONDITIONALLY when handed a FILE path without `upload_as_file=True`
+# (`hub.py` ~line 560), because `huggingface_hub.upload_folder` silently
+# no-ops on a single-file path — a per-file upload loop crashes on the
+# FIRST file, after the expensive phases are spent (#595 → #640 → #612).
+# This check AST-walks `scripts/**/*.py` and flags `_upload(...)` calls
+# whose first positional / `local_path` argument carries a single-file
+# signal but omits `upload_as_file=True`. See `check_upload_as_file` for
+# the full flagged/not-flagged matrix.
+#
+# Artifact extensions that mark a string-literal arg0 as a single file.
+UPLOAD_FILE_EXTENSIONS: tuple[str, ...] = (
+    ".json",
+    ".jsonl",
+    ".pt",
+    ".npy",
+    ".csv",
+    ".png",
+    ".pdf",
+    ".txt",
+    ".safetensors",
+    ".bin",
+    ".html",
+    ".md",
+    ".yaml",
+    ".yml",
+)
+# Variable-name suffixes (lower-cased) that mark a bare-`Name` arg0 as a
+# single file by naming convention (the #612 offender bound `summary_path`).
+# Deliberately NOT including the generic folder names that appear at the
+# live call sites (`local`, `local_dir`, `staging`, `entry`) — those carry
+# no file-suffix and so never match.
+UPLOAD_FILE_NAME_SUFFIXES: tuple[str, ...] = (
+    "_file",
+    "_path",
+    "_json",
+    "_jsonl",
+    "_pt",
+    "_npy",
+    "_csv",
+    "_png",
+    "_pdf",
+    "_txt",
+    "_html",
+    "_md",
+)
+# Path-iteration methods whose loop variable yields per-FILE paths — the
+# `for f in dir.glob("*.json"): _upload(f, ...)` shape behind both production
+# crashes (#595/#640). `iterdir` is included because the canonical use is a
+# flat per-file sweep; whether a given loop is FILE- vs directory-shaped is
+# decided by `_glob_iter_yields_files` (a dir-shaped / extensionless pattern
+# like `glob("*/")` / `glob("*")` defers, so a dir loop is NOT mis-flagged).
+UPLOAD_GLOB_LOOP_METHODS: tuple[str, ...] = ("glob", "rglob", "iterdir")
+# Inline waiver for a genuinely-correct flagged `_upload` call (e.g. a
+# `*_path` variable that is really a directory). Reason ≥ 10 chars, same
+# convention as CVD_PIN_EXEMPT / WANDB_INTENTIONALLY_DISABLED.
+UPLOAD_AS_FILE_WAIVER_RE = re.compile(r"#\s*UPLOAD_AS_FILE_EXEMPT\s*:\s*(.+?)\s*$")
+UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS = 10
+
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
 # be anchored to a documented gate or marked as anti-pattern documentation.
@@ -823,6 +1141,227 @@ def check_wandb_required(
     return errors
 
 
+def _heredoc_body_dotenv_errors(path: Path, lines: list[str], start: int, end: int) -> list[str]:
+    """Scan one python-stdin-fed heredoc body (``lines[start:end]``,
+    0-based, terminator excluded) and return an error per dangerous
+    no-arg python-dotenv ``load_dotenv()`` call. Comment lines are
+    skipped; the bare-name call is only dangerous when the SAME body
+    imports ``load_dotenv`` from the ``dotenv`` package (a heredoc is a
+    self-contained program, so the import must be visible — this is what
+    keeps the stdin-safe project-wrapper import a PASS)."""
+    code = [
+        (idx, ln)
+        for idx, ln in enumerate(lines[start:end], start=start)
+        if not ln.lstrip().startswith("#")
+    ]
+    imports_pkg_load_dotenv = False
+    for _, ln in code:
+        match = HEREDOC_DOTENV_PKG_IMPORT_RE.match(ln)
+        if match and re.search(r"\bload_dotenv\b", match.group("names")):
+            imports_pkg_load_dotenv = True
+            break
+    errors: list[str] = []
+    for idx, ln in code:
+        dangerous = bool(HEREDOC_DOTENV_QUALIFIED_CALL_RE.search(ln)) or (
+            imports_pkg_load_dotenv and bool(HEREDOC_DOTENV_BARE_CALL_RE.search(ln))
+        )
+        if dangerous:
+            errors.append(
+                f"{path}:{idx + 1}: no-arg python-dotenv `load_dotenv()` inside a "
+                f"heredoc feeding a python interpreter's stdin — find_dotenv()'s "
+                f"frame-walk crashes from stdin (assert frame.f_back is not None; "
+                f"incidents #552, #612). Drop the dotenv call and rely on env vars "
+                f"exported by the enclosing shell (`set -a && source .env && set +a` "
+                f"before the heredoc), pass an explicit path "
+                f"(load_dotenv(dotenv_path=...)), or use the stdin-safe project "
+                f"wrapper `explore_persona_space.orchestrate.env.load_dotenv()`. See "
+                f".claude/rules/research-project-structure.md § Environment Bootstrap."
+            )
+    return errors
+
+
+def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
+    """Walk one shell script, tracking heredoc bodies, and return the
+    dotenv errors found in bodies that feed a python interpreter's stdin.
+
+    Backslash-continued physical lines are merged into one logical
+    command line before opener detection (the #612 shape continues the
+    opener line with ``\\`` + ``|| fail ...``; the body starts after the
+    last physical line of the logical command). ALL heredoc bodies are
+    consumed so body content can never be misparsed as new openers; only
+    python-stdin-fed bodies are scanned. The terminator match is lenient
+    (stripped-line equality) so ``<<-`` indented terminators work; an
+    unterminated heredoc scans through to EOF."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    errors: list[str] = []
+    n = len(lines)
+    i = 0
+    while i < n:
+        last = i
+        logical = lines[i]
+        while logical.rstrip().endswith("\\") and last + 1 < n:
+            last += 1
+            logical = logical.rstrip()[:-1] + " " + lines[last]
+        openers = list(HEREDOC_OPENER_RE.finditer(logical))
+        if not openers:
+            i = last + 1
+            continue
+        prefix = logical[: openers[0].start()]
+        python_fed = bool(HEREDOC_PY_STDIN_DASH_RE.search(prefix)) or bool(
+            HEREDOC_PY_STDIN_BARE_RE.search(prefix)
+        )
+        body_cursor = last + 1
+        for opener in openers:
+            delim = opener.group(2)
+            body_start = body_cursor
+            body_end = body_start
+            while body_end < n and lines[body_end].strip() != delim:
+                body_end += 1
+            if python_fed:
+                errors.extend(_heredoc_body_dotenv_errors(path, lines, body_start, body_end))
+            body_cursor = body_end + 1
+        i = body_cursor
+    return errors
+
+
+def check_heredoc_dotenv(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any bash heredoc
+    that feeds a python interpreter's stdin and whose body calls the
+    python-dotenv package's no-arg ``load_dotenv()``.
+
+    Rationale: from a stdin heredoc, python-dotenv's no-arg
+    ``find_dotenv()`` frame-walk ALWAYS crashes (``assert frame.f_back is
+    not None``) — there is no legitimate use, so no waiver/opt-out exists.
+    The rule lived only in prose (gotchas.md;
+    research-project-structure.md § Environment Bootstrap) and was
+    reintroduced on #612 (after #552) past the implementer, both ensemble
+    reviewers, and all smoke runs: the heredoc executes only at pod-side
+    first contact, so nothing mechanical caught it before this check.
+    Safe shapes (explicit-path calls; the stdin-safe project wrapper
+    ``explore_persona_space.orchestrate.env.load_dotenv``; heredocs that
+    are data, not python stdin) pass — see the regex block above for the
+    full flagged/not-flagged matrix.
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_script_references`` / ``check_wandb_required``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        errors.extend(_scan_shell_file_for_heredoc_dotenv(sh))
+    return errors
+
+
+def _iter_logical_shell_lines(lines: list[str]):
+    """Yield ``(first_idx, last_idx, logical)`` per logical shell command
+    line, merging backslash-continued physical lines (same merge rule as
+    the heredoc scanner). Indices are 0-based physical-line bounds of the
+    logical line, inclusive."""
+    n = len(lines)
+    i = 0
+    while i < n:
+        last = i
+        logical = lines[i]
+        while logical.rstrip().endswith("\\") and last + 1 < n:
+            last += 1
+            logical = logical.rstrip()[:-1] + " " + lines[last]
+        yield i, last, logical
+        i = last + 1
+
+
+def _cvd_pin_waiver_present(lines: list[str], first_idx: int, last_idx: int) -> bool:
+    """Return True iff a ``# CVD_PIN_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`CVD_PIN_WAIVER_MIN_REASON_CHARS` chars) covers the logical
+    command spanning ``lines[first_idx:last_idx + 1]``. Accepts the waiver
+    on any physical line of the logical command (trailing comment on a
+    single-line launch) or on the immediately preceding non-blank line
+    (the only valid placement for a backslash-continued launch — a
+    trailing ``#`` comment would break the continuation)."""
+    for idx in range(first_idx, last_idx + 1):
+        match = CVD_PIN_WAIVER_RE.search(lines[idx])
+        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = first_idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        match = CVD_PIN_WAIVER_RE.search(lines[back])
+        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def check_dispatcher_cvd_pin(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any backgrounded
+    python launch line that passes a per-process GPU pin (``--gpu-id`` /
+    ``+gpu_id=``) without a ``CUDA_VISIBLE_DEVICES=`` env assignment on
+    the same logical command line.
+
+    Rationale: the in-process CVD clobber in ``train/sft.py`` is silently
+    defeated by any import-time cuInit, so parallel per-cell launches
+    relying on ``--gpu-id`` alone co-locate every cell on physical GPU 0
+    and OOM (#523 Phase B; recurred #541/#543/#557). The #578 recipe —
+    pin ``CUDA_VISIBLE_DEVICES=<gpu>`` in the LAUNCHER env AND pass the
+    matching ``--gpu-id`` — shipped as agent prose only (experimenter.md
+    fires on the RunPod launch path; the gcp/slurm startup-script lanes
+    have no launch agent), so this check is the lane-independent
+    mechanical enforcement. Detection matrix + waiver convention: see the
+    ``CVD_PIN_*`` regex block above.
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_heredoc_dotenv`` / ``check_wandb_required``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        for first, last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            # Comments and dry-run echo previews are not launches.
+            if stripped.startswith("#") or stripped.startswith("echo "):
+                continue
+            # Backgrounded = parallel-launch signature. A trailing `&&` is
+            # a command chain continuation, not a background token.
+            if not (stripped.endswith("&") and not stripped.endswith("&&")):
+                continue
+            if not CVD_PIN_PY_LAUNCH_RE.search(logical):
+                continue
+            if not CVD_PIN_GPU_ARG_RE.search(logical):
+                continue
+            if CVD_PIN_CVD_ASSIGN_RE.search(logical):
+                continue
+            if _cvd_pin_waiver_present(lines, first, last):
+                continue
+            errors.append(
+                f"{sh}:{first + 1}: backgrounded python launch passes "
+                f"--gpu-id/+gpu_id= without a CUDA_VISIBLE_DEVICES= env "
+                f"prefix on the same command. The in-process CVD clobber "
+                f"is defeated by import-time cuInit, so parallel cells "
+                f"co-locate on GPU 0 and OOM (#523/#541/#543/#557). Pin "
+                f"CUDA_VISIBLE_DEVICES=<gpu> in the launcher env AND pass "
+                f"the matching --gpu-id (reference shape: "
+                f"scripts/i474_phase23_dispatch.sh), or waive a "
+                f"legitimately unpinned launch with "
+                f"'# CVD_PIN_EXEMPT: <reason>' (reason ≥ "
+                f"{CVD_PIN_WAIVER_MIN_REASON_CHARS} chars) on the same or "
+                f"previous non-blank line. See .claude/rules/gotchas.md "
+                f"'CVD-clobber'."
+            )
+    return errors
+
+
 def check_marker_registry(
     workflow: WorkflowYaml,
     *,
@@ -905,6 +1444,464 @@ def check_marker_registry(
                     f"prose-only mention that is not a real posted kind — add it "
                     f"to MARKER_REGISTRY_ALLOWLIST with a reason."
                 )
+    return errors
+
+
+def _split_agent_model_pin(pin: str) -> tuple[str, str]:
+    """Split a frontmatter model-pin string into ``(base_id, suffix)``.
+
+    Recognized suffix: the literal :data:`AGENT_MODEL_1M_SUFFIX` (``"[1m]"``),
+    the only routing-suffix the harness exposes on a model pin today. Any
+    other tail stays glued to the base — that's the desired behavior, so
+    that a typo like ``claude-opus-4-7[2m]`` is reported as an unknown
+    base rather than masked as a known base with an unrecognized suffix.
+
+    Examples::
+
+        "claude-opus-4-7[1m]"   -> ("claude-opus-4-7", "[1m]")
+        "claude-fable-5"        -> ("claude-fable-5", "")
+        "claude-fable-5[1m]"    -> ("claude-fable-5", "[1m]")
+        "claude-foo-bar"        -> ("claude-foo-bar", "")
+    """
+    if pin.endswith(AGENT_MODEL_1M_SUFFIX):
+        return pin[: -len(AGENT_MODEL_1M_SUFFIX)], AGENT_MODEL_1M_SUFFIX
+    return pin, ""
+
+
+def _iter_agent_pin_target_files(repo_root: Path) -> list[Path]:
+    """Return every ``.claude/agents/*.md`` under ``repo_root`` whose
+    path is NOT in a sibling worktree (same exclusion rule as
+    :func:`_iter_ask_target_files`)."""
+    agents_root = repo_root / ".claude" / "agents"
+    if not agents_root.exists():
+        return []
+    current_prefix = _other_worktree_prefix(repo_root)
+    return sorted(
+        p
+        for p in agents_root.glob("*.md")
+        if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+    )
+
+
+def check_agent_model_pins(*, roots: list[Path] | None = None) -> list[str]:
+    """Walk ``.claude/agents/*.md`` and FAIL on any ``model: "..."``
+    frontmatter pin whose base id is unknown OR whose ``[1m]`` suffix is
+    not supported on that base.
+
+    The harness rejects any unknown pin at subagent spawn with
+    ``"There's an issue with the selected model (<id>). It may not exist
+    or you may not have access to it."`` — and because EVERY agent file
+    carries a pin, a single bad-pin commit kills every subagent in every
+    session fleet-wide until reverted. The d07424178 incident
+    (2026-06-09) bulk-renamed all 25 agents to ``claude-fable-5[1m]``:
+    fable-5 is a real Anthropic id, but its ``[1m]`` routing variant is
+    not exposed (fable-5 has 1M native context, no separate [1m] tier).
+    Every spawn failed for ~72h fleet-wide until the revert (00566584c).
+
+    Rule, per pin (the file's ``model:`` frontmatter line):
+
+    1. Split into ``(base_id, suffix)`` via
+       :func:`_split_agent_model_pin`.
+    2. If ``base_id`` is not in :data:`AGENT_MODEL_ALLOWLIST` → FAIL
+       (typo, aspirational id, or a deprecated id no longer recognized
+       by the harness).
+    3. If ``suffix == "[1m]"`` and the base's allowlist tuple has
+       ``supports_1m_suffix = False`` → FAIL (the exact d07424178
+       pattern: a real base, an invalid routing suffix).
+    4. Otherwise PASS.
+
+    Files with no ``model:`` line are silently skipped — agents may
+    legitimately inherit their model from the parent (no pin = no
+    runtime contract to validate). A file with multiple ``model:`` lines
+    in its frontmatter is unusual; only the FIRST is checked (the
+    harness reads first-match too).
+
+    Sibling rule to ``.claude/rules/code-style.md`` "Never hardcode an
+    invented Claude/Anthropic model id" — that bullet covers hardcoded
+    model strings in Python code; this check covers agent-frontmatter
+    pins. The :data:`AGENT_MODEL_ALLOWLIST` source of truth is the
+    global ``claude-api`` skill's ``shared/models.md`` "Model
+    Descriptions" + "Bucket 4" suffix-variant guidance in
+    ``shared/model-migration.md``.
+
+    ``roots`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical agent tree under
+    :data:`_REPO_ROOT` (excluding sibling worktrees).
+    """
+    base_to_1m_capability: dict[str, bool] = {b: ok for (b, ok) in AGENT_MODEL_ALLOWLIST}
+    if roots is None:
+        targets = _iter_agent_pin_target_files(_REPO_ROOT)
+    else:
+        targets = []
+        for root in roots:
+            if root.is_file():
+                targets.append(root)
+            else:
+                targets.extend(p for p in root.glob("**/*.md") if p.is_file())
+        targets = sorted(targets)
+    errors: list[str] = []
+    for path in targets:
+        text = path.read_text()
+        match = AGENT_MODEL_PIN_RE.search(text)
+        if match is None:
+            # No pin = inherits parent's model = no runtime contract to
+            # validate. Silently skipped (a missing pin is not a bug;
+            # CLAUDE.md "Prompt-cache key discipline" explicitly allows it).
+            continue
+        # Compute the 1-based line number of the captured value so the
+        # error message points to the actual ``model:`` line, not just
+        # the file.
+        lineno = text.count("\n", 0, match.start()) + 1
+        pin = match.group("value")
+        base_id, suffix = _split_agent_model_pin(pin)
+        if base_id not in base_to_1m_capability:
+            known = ", ".join(sorted(base_to_1m_capability))
+            errors.append(
+                f"{path}:{lineno}: frontmatter pins 'model: \"{pin}\"' whose "
+                f"base id '{base_id}' is not in the allowlist. The harness "
+                f"rejects unknown pins at subagent spawn ('may not exist or "
+                f"you may not have access to it') and EVERY subagent dies "
+                f"fleet-wide until reverted (d07424178 incident, task #545). "
+                f"Allowed bases: {known}. If a new Anthropic model just "
+                f"shipped, update AGENT_MODEL_ALLOWLIST in "
+                f"scripts/workflow_lint.py — source of truth is the global "
+                f"claude-api skill's shared/models.md."
+            )
+            continue
+        if suffix == AGENT_MODEL_1M_SUFFIX and not base_to_1m_capability[base_id]:
+            errors.append(
+                f"{path}:{lineno}: frontmatter pins 'model: \"{pin}\"' but "
+                f"base '{base_id}' does not expose a '[1m]' 1M-context "
+                f"routing variant (it either has 1M native context with no "
+                f"suffix, or is a 200K-context tier). The harness rejects "
+                f"the suffixed id at subagent spawn and EVERY subagent dies "
+                f"fleet-wide until reverted (d07424178 incident, task #545: "
+                f"all 25 agents pinned to 'claude-fable-5[1m]' → ~72h "
+                f"outage). Pin '{base_id}' alone, or switch to a base whose "
+                f"AGENT_MODEL_ALLOWLIST tuple has supports_1m_suffix=True."
+            )
+    return errors
+
+
+def _upload_arg0(call: ast.Call) -> ast.expr | None:
+    """Return the AST node for the ``_upload`` call's local-path argument
+    (first positional, else the ``local_path`` / ``local`` keyword), or
+    None if neither is present."""
+    if call.args:
+        return call.args[0]
+    for kw in call.keywords:
+        if kw.arg in ("local_path", "local"):
+            return kw.value
+    return None
+
+
+def _upload_arg0_is_decidable_file(node: ast.expr) -> bool:
+    """True iff ``node`` is a DECIDABLE single-file path: a string literal
+    ending in a known artifact extension (``"out/summary.json"``) or a
+    ``<expr> / "name.ext"`` path-division whose right operand is such a
+    literal (the canonical ``out_dir / "shift.pt"`` shape)."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value.lower().endswith(UPLOAD_FILE_EXTENSIONS)
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+        right = node.right
+        if isinstance(right, ast.Constant) and isinstance(right.value, str):
+            return right.value.lower().endswith(UPLOAD_FILE_EXTENSIONS)
+    return False
+
+
+def _upload_arg0_is_named_file(node: ast.expr) -> bool:
+    """True iff ``node`` is a bare ``Name`` whose identifier ends in a
+    single-file naming suffix (``summary_path``, ``shift_pt``, ``foo_json``).
+    A HEURISTIC signal — applied only when ``upload_as_file`` is entirely
+    absent (see :func:`check_upload_as_file`)."""
+    return isinstance(node, ast.Name) and node.id.lower().endswith(UPLOAD_FILE_NAME_SUFFIXES)
+
+
+def _glob_iter_method(iterator: ast.expr) -> str | None:
+    """If ``iterator`` is a ``<expr>.glob(...)`` / ``.rglob(...)`` / ``.iterdir()``
+    call (a per-file path iterator), return the method name; else None.
+    A ``sorted(dir.glob(...))`` / ``list(dir.glob(...))`` wrapper is unwrapped
+    (the live #640 offender binds ``files = sorted(raw_dir.glob("*.json"))``)."""
+    if not isinstance(iterator, ast.Call):
+        return None
+    fn = iterator.func
+    # Unwrap a single ``sorted(...)`` / ``list(...)`` / ``tuple(...)`` wrapper
+    # around the glob call (one level — the realistic nesting).
+    if isinstance(fn, ast.Name) and fn.id in ("sorted", "list", "tuple") and iterator.args:
+        return _glob_iter_method(iterator.args[0])
+    if isinstance(fn, ast.Attribute) and fn.attr in UPLOAD_GLOB_LOOP_METHODS:
+        return fn.attr
+    return None
+
+
+def _glob_iter_yields_files(iterator: ast.expr) -> bool:
+    """True iff ``iterator`` is a per-FILE path iterator the glob-loop single-
+    file signal should fire on. Positive (fire) only when the file-vs-directory
+    intent is decidable as FILE — conservative by design so a directory sweep is
+    never mis-flagged (the candidate's ``glob("*/")`` defer-to-folder case):
+
+    * ``.iterdir()`` — fires (the canonical flat per-file sweep; the candidate's
+      test 3 FAIL case).
+    * ``.glob(<pat>)`` / ``.rglob(<pat>)`` — fires ONLY when ``<pat>`` is a
+      string literal containing a known artifact extension token
+      (:data:`UPLOAD_FILE_EXTENSIONS`, e.g. ``"*.json"`` / ``"**/*.pt"``). A
+      directory-shaped pattern (``"*/"``, ``"runs/*"``) or any pattern without a
+      file-extension token (``"*"``) DEFERS (returns False) — better to leave a
+      genuine directory loop unflagged than to manufacture a false positive,
+      since the riskiest per-file cases are independently caught by the
+      ``path_in_repo=f"...{X.name}"`` signal.
+
+    Unwraps the same ``sorted(...)`` / ``list(...)`` / ``tuple(...)`` wrapper as
+    :func:`_glob_iter_method`."""
+    if not isinstance(iterator, ast.Call):
+        return False
+    fn = iterator.func
+    if isinstance(fn, ast.Name) and fn.id in ("sorted", "list", "tuple") and iterator.args:
+        return _glob_iter_yields_files(iterator.args[0])
+    if isinstance(fn, ast.Attribute):
+        if fn.attr == "iterdir":
+            return True
+        if fn.attr in ("glob", "rglob") and iterator.args:
+            pat = iterator.args[0]
+            if isinstance(pat, ast.Constant) and isinstance(pat.value, str):
+                return pat.value.lower().endswith(UPLOAD_FILE_EXTENSIONS)
+    return False
+
+
+def _upload_arg0_is_glob_loop_var(call: ast.Call, arg0: ast.expr, tree: ast.AST) -> bool:
+    """True iff ``arg0`` is a bare ``Name`` bound by an enclosing
+    ``for <name> in <per-file glob/rglob/iterdir iterator>:`` (the per-file
+    sweep shape behind the #595/#640 production crashes — ``for f in files:``
+    where ``files = sorted(dir.glob("*.json"))``), counting BOTH the inline
+    ``for f in dir.glob(...)`` form and the two-statement form where the loop
+    iterates a local previously bound to a glob result.
+
+    Only fires when the iterator decidably yields FILES (see
+    :func:`_glob_iter_yields_files`) so a directory loop (``glob("*/")``) is
+    not mis-flagged. ``tree`` is the module AST; the walk early-outs as soon as
+    a binding per-file ``for`` is found."""
+    if not isinstance(arg0, ast.Name):
+        return False
+    name = arg0.id
+    # Map local-name -> glob iterator for ``<name> = sorted(dir.glob(...))``
+    # style bindings so a ``for f in files:`` whose ``files`` is a glob result
+    # is recognized. Only the simple single-target ``Name = <glob>`` form.
+    glob_bound_locals: dict[str, ast.expr] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            tgt = node.targets[0]
+            if isinstance(tgt, ast.Name) and _glob_iter_method(node.value) is not None:
+                glob_bound_locals[tgt.id] = node.value
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.For):
+            continue
+        if not (isinstance(node.target, ast.Name) and node.target.id == name):
+            continue
+        # The loop binds our arg0 name. Resolve its iterator: a direct glob
+        # call, or a local previously bound to one.
+        iterator: ast.expr | None = node.iter
+        if _glob_iter_method(iterator) is None and isinstance(iterator, ast.Name):
+            iterator = glob_bound_locals.get(iterator.id)
+        if iterator is None or not _glob_iter_yields_files(iterator):
+            continue
+        return True
+    return False
+
+
+def _upload_arg0_referenced_as_path_in_repo_name(call: ast.Call, arg0: ast.expr) -> bool:
+    """True iff ``arg0`` is a bare ``Name`` X and the SAME ``_upload`` call has
+    a ``path_in_repo=f"...{X.name}"`` kwarg (an f-string interpolating
+    ``X.name``). This is the #640 idiom — ``.name`` is only taken on a per-item
+    file/path you are uploading individually, so it is a strong single-file
+    signal independent of the loop context."""
+    if not isinstance(arg0, ast.Name):
+        return False
+    name = arg0.id
+    for kw in call.keywords:
+        if kw.arg != "path_in_repo" or not isinstance(kw.value, ast.JoinedStr):
+            continue
+        for piece in kw.value.values:
+            if not isinstance(piece, ast.FormattedValue):
+                continue
+            val = piece.value
+            if (
+                isinstance(val, ast.Attribute)
+                and val.attr == "name"
+                and isinstance(val.value, ast.Name)
+                and val.value.id == name
+            ):
+                return True
+    return False
+
+
+def _upload_as_file_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# UPLOAD_AS_FILE_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS` chars) is on
+    the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = UPLOAD_AS_FILE_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = UPLOAD_AS_FILE_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` and FAIL on any
+    ``_upload(...)`` call whose local-path argument carries a single-file
+    signal but does not pass ``upload_as_file=True``.
+
+    Rationale: the shared HF-Hub upload helper
+    ``explore_persona_space.orchestrate.hub._upload`` raises ``ValueError``
+    UNCONDITIONALLY when ``local_path.is_file() and not upload_as_file``
+    (``hub.py`` ~line 560), because ``huggingface_hub.upload_folder``
+    silently no-ops on a single-file path (logs "is not a directory.
+    Keeping local path." and uploads NOTHING, yet verification can still
+    pass if same-prefix files already exist — the silent-data-loss class
+    the guard was added to close, #595). The folder branch is the DEFAULT
+    (``upload_as_file=False``), so a driver that loops
+    ``for f in glob("*.json"): _upload(f, ...)`` crashes on the FIRST file,
+    after the expensive training/eval phases are already spent. This was
+    re-introduced THREE times (#595 → #640 → #612) — twice surviving a
+    Claude reviewer (the Codex twin caught #640), because a CPU smoke that
+    skips the GPU phase never exercises the upload branch and the rule
+    lived only as prose (gotchas.md). This check is the lane-independent
+    mechanical enforcement.
+
+    Detection (per ``_upload`` call, arg0 = first positional / ``local_path``
+    / ``local`` keyword):
+
+    * DECIDABLE single-file arg0 — a string literal ending in a known
+      artifact extension (:data:`UPLOAD_FILE_EXTENSIONS`), or a
+      ``<expr> / "name.ext"`` path-division — FAILs unless
+      ``upload_as_file=True``. An explicit ``upload_as_file=False`` on a
+      decidable file STILL FAILs (that is precisely the #595 silent-no-op
+      shape).
+    * NAME-CONTEXT arg0 — a bare ``Name`` carrying ANY of three
+      single-file signals — FAILs only when the ``upload_as_file`` kwarg is
+      ENTIRELY ABSENT. An explicit kwarg of either value is the author's
+      deliberate file/folder declaration and is deferred to (a heuristic
+      name-context signal must not override an explicit choice — that is
+      where false positives would live, since a ``*_path`` variable can
+      legitimately hold a directory). The three signals:
+
+      - NAME SUFFIX: the identifier ends in a single-file suffix
+        (:data:`UPLOAD_FILE_NAME_SUFFIXES`, e.g. ``summary_path`` — the
+        #612 offender).
+      - GLOB-LOOP variable: the ``Name`` is the target of an enclosing
+        ``for X in <per-file glob/rglob/iterdir iterator>:`` (counting the
+        inline ``for f in dir.glob(...)`` form AND the two-statement
+        ``files = sorted(dir.glob(...)) ; for f in files:`` form — the
+        EXACT #595/#640 production crash). Fires only when the iterator
+        DECIDABLY yields files: ``.iterdir()``, or ``.glob(<pat>)`` /
+        ``.rglob(<pat>)`` whose literal pattern carries a known artifact
+        extension (``"*.json"`` / ``"**/*.pt"``). A directory-shaped or
+        extensionless pattern (``"*/"`` / ``"*"``) DEFERS so a genuine
+        directory loop is not mis-flagged.
+      - ``path_in_repo`` ``.name`` INTERPOLATION: the SAME call passes
+        ``path_in_repo=f"...{X.name}"`` (the #640 idiom — ``.name`` is
+        taken only on a per-item path uploaded individually), a single-file
+        signal independent of the loop iterator.
+
+    NOT flagged: a generic folder variable (``local`` / ``local_dir`` /
+    ``staging`` / ``entry`` — no file-suffix name, no literal); any call
+    already passing ``upload_as_file=True``; and any call waived with
+    ``# UPLOAD_AS_FILE_EXEMPT: <reason>`` (reason ≥
+    :data:`UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS` chars) on the call's
+    first physical line or the immediately preceding non-blank line.
+
+    Only calls to a function literally named ``_upload`` are inspected
+    (bare ``_upload(...)`` or attribute ``hub._upload(...)``) — the
+    project's single shared helper. ``upload_file`` / ``upload_folder`` /
+    ``upload_model`` / ``upload_raw_completions_to_data_repo`` wrappers are
+    deliberately out of scope (they own their own file/folder routing).
+
+    ``scripts_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical ``<repo_root>/scripts``
+    tree. Bundled into the no-flags default run (same policy as
+    ``check_dispatcher_cvd_pin`` / ``check_heredoc_dotenv``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for py in sorted(root.rglob("*.py")):
+        if not py.is_file():
+            continue
+        text = py.read_text(encoding="utf-8")
+        try:
+            tree = ast.parse(text, filename=str(py))
+        except SyntaxError:
+            # A scripts/ file that does not parse is its own (separate)
+            # problem; this check stays silent on it rather than crashing.
+            continue
+        lines = text.splitlines()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            fn_name = (
+                fn.attr
+                if isinstance(fn, ast.Attribute)
+                else (fn.id if isinstance(fn, ast.Name) else None)
+            )
+            if fn_name != "_upload":
+                continue
+            arg0 = _upload_arg0(node)
+            if arg0 is None:
+                continue
+            has_kw = any(kw.arg == "upload_as_file" for kw in node.keywords)
+            kw_val = next((kw.value for kw in node.keywords if kw.arg == "upload_as_file"), None)
+            kw_true = isinstance(kw_val, ast.Constant) and kw_val.value is True
+            decidable = _upload_arg0_is_decidable_file(arg0)
+            named = _upload_arg0_is_named_file(arg0)
+            # The #595/#640 production shape: a bare loop variable from a
+            # per-file glob/rglob/iterdir sweep, OR a bare Name interpolated as
+            # path_in_repo=f"...{X.name}". Both are HEURISTIC name-context
+            # signals (like `named`) — they fire only when the upload_as_file
+            # kwarg is ENTIRELY ABSENT, deferring to any explicit author choice.
+            loop_file = _upload_arg0_is_glob_loop_var(node, arg0, tree)
+            kwarg_file = _upload_arg0_referenced_as_path_in_repo_name(node, arg0)
+            # FAIL when a decidable file lacks upload_as_file=True, OR when a
+            # name-context signal (name-suffix / glob-loop / path_in_repo .name)
+            # has the kwarg entirely absent.
+            fail = (decidable and not kw_true) or (
+                (named or loop_file or kwarg_file) and not has_kw
+            )
+            if not fail:
+                continue
+            if _upload_as_file_waiver_present(lines, node.lineno):
+                continue
+            if decidable:
+                signal = "single-file path literal"
+            elif named:
+                signal = f"file-named arg ('{arg0.id}')"
+            elif loop_file:
+                signal = f"per-file glob/iterdir loop variable ('{arg0.id}')"
+            else:
+                signal = f"path_in_repo=f'...{{{arg0.id}.name}}' single-file arg ('{arg0.id}')"
+            errors.append(
+                f"{py}:{node.lineno}: _upload(...) call with a {signal} does not "
+                f"pass upload_as_file=True. hub._upload raises ValueError "
+                f"unconditionally on a file path without that kwarg (the folder "
+                f"branch silently no-ops on a single file — #595 silent data loss), "
+                f"so a per-file upload crashes on the FIRST file after the expensive "
+                f"phases are spent (#595/#640/#612). Pass upload_as_file=True for "
+                f"single-file uploads, prefer the upload_raw_completions_to_data_repo "
+                f"helper for batching raw completions, or — if this arg is really a "
+                f"directory — waive with '# UPLOAD_AS_FILE_EXEMPT: <reason>' (reason "
+                f"≥ {UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS} chars) on the call's "
+                f"first line or the previous non-blank line. See "
+                f".claude/rules/gotchas.md 'hub._upload raises ValueError'."
+            )
     return errors
 
 
@@ -1005,7 +2002,7 @@ def emit_tables(workflow: WorkflowYaml, *, write: bool) -> list[str]:
     return errors
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--file",
@@ -1081,6 +2078,30 @@ def main(argv: list[str] | None = None) -> int:
         "at upload-verification.",
     )
     parser.add_argument(
+        "--check-heredoc-dotenv",
+        action="store_true",
+        help="Verify no shell script under scripts/ feeds a python "
+        "interpreter's stdin a heredoc whose body calls the python-dotenv "
+        "package's no-arg load_dotenv() (its find_dotenv() frame-walk "
+        "always crashes from stdin: assert frame.f_back is not None). "
+        "Explicit-path calls and the stdin-safe project wrapper "
+        "explore_persona_space.orchestrate.env.load_dotenv pass. Closes "
+        "the #552/#612 incident class. Bundled into the no-flags default "
+        "run.",
+    )
+    parser.add_argument(
+        "--check-dispatcher-cvd-pin",
+        action="store_true",
+        help="Verify no shell script under scripts/ backgrounds a python "
+        "launch that passes --gpu-id/+gpu_id= without a "
+        "CUDA_VISIBLE_DEVICES= env prefix on the same logical command "
+        "(the in-process CVD clobber is defeated by import-time cuInit, "
+        "so unpinned parallel cells co-locate on GPU 0 and OOM — "
+        "incident class #523/#541/#543/#557, recipe fix #578). Waive "
+        "legitimate shapes with '# CVD_PIN_EXEMPT: <reason>'. Bundled "
+        "into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-marker-registry",
         action="store_true",
         help="Verify every marker kind that .claude/skills/issue/SKILL.md "
@@ -1090,6 +2111,30 @@ def main(argv: list[str] | None = None) -> int:
         "Closes the #555 drift class (6 unregistered posted kinds, "
         "2026-06-10; agent-spec scope added in the follow-up). Bundled "
         "into --check-references.",
+    )
+    parser.add_argument(
+        "--check-agent-model-pins",
+        action="store_true",
+        help="Verify every .claude/agents/*.md frontmatter 'model: \"...\"' "
+        "pin has a known base id AND a valid suffix (only '[1m]' allowed, "
+        "only on opus-4-5/4-6/4-7/4-8). Closes the d07424178 / task #545 "
+        "incident class (2026-06-09 -> 2026-06-12): all 25 agents bulk-"
+        "pinned to 'claude-fable-5[1m]' killed every subagent fleet-wide "
+        "for ~72h until reverted. Sibling to the code-style 'never "
+        "hardcode an invented model id' rule. Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
+        "--check-upload-as-file",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and FAIL on any _upload(...) call "
+        "with a single-file local-path argument that omits "
+        "upload_as_file=True. hub._upload raises ValueError unconditionally "
+        "on a file path without that kwarg (the folder branch silently "
+        "no-ops on a single file), so a per-file upload crashes on the "
+        "first file after the expensive phases (#595/#640/#612). Waive a "
+        "genuinely-correct flagged call with '# UPLOAD_AS_FILE_EXEMPT: "
+        "<reason>'. Bundled into the no-flags default run.",
     )
     args = parser.parse_args(argv)
 
@@ -1115,7 +2160,11 @@ def main(argv: list[str] | None = None) -> int:
         or args.check_autonomous_asks
         or args.check_script_refs
         or args.check_wandb_required
+        or args.check_heredoc_dotenv
+        or args.check_dispatcher_cvd_pin
         or args.check_marker_registry
+        or args.check_agent_model_pins
+        or args.check_upload_as_file
     )
 
     errors: list[str] = []
@@ -1151,8 +2200,16 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(check_script_references())
     if args.check_wandb_required or no_flags:
         errors.extend(check_wandb_required())
+    if args.check_heredoc_dotenv or no_flags:
+        errors.extend(check_heredoc_dotenv())
+    if args.check_dispatcher_cvd_pin or no_flags:
+        errors.extend(check_dispatcher_cvd_pin())
     if args.check_marker_registry and not args.check_references:
         errors.extend(check_marker_registry(workflow))
+    if args.check_agent_model_pins or no_flags:
+        errors.extend(check_agent_model_pins())
+    if args.check_upload_as_file or no_flags:
+        errors.extend(check_upload_as_file())
 
     if errors:
         for err in errors:

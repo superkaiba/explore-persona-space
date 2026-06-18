@@ -1,0 +1,144 @@
+{
+  "schema_version": "i585_retrain_manifest_v1",
+  "task": 585,
+  "followup_label": "step6to12-transition-sweep",
+  "cell": "c504v3_smoke_eps3",
+  "seed": 42,
+  "recipe": {
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "lr": 0.0001,
+    "epochs": 3,
+    "lora_r": 8,
+    "lora_alpha": 32,
+    "marker_text": " \u203b",
+    "marker_token_id": 83399,
+    "marker_suppress_at_post_response_slot": true,
+    "marker_im_end_token_id": 151645,
+    "band_stop": "absent (launch-SHA basis predates MarkerBandStopCallback \u2014 A1)"
+  },
+  "step_calibration_fractions": [
+    0.0733,
+    0.0867,
+    0.1,
+    0.1133,
+    0.1267,
+    0.14,
+    0.1533,
+    0.3267,
+    0.5,
+    0.74
+  ],
+  "frac_precision": 4,
+  "window_snapshot_keys": [
+    "0.0733",
+    "0.0867",
+    "0.1000",
+    "0.1133",
+    "0.1267",
+    "0.1400",
+    "0.1533"
+  ],
+  "max_steps": 75,
+  "max_steps_basis": "pinned by the recorded snapshot steps: the joint targets {0.0733\u21926 \u2026 0.1533\u219212, 0.3267\u219225, 0.5000\u219238, 0.7400\u219256} are satisfied by max_steps=75 ONLY (unique in [40, 130)).",
+  "snapshots": {
+    "0.0733": {
+      "step": 6,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.0733",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac0.0733",
+      "sha256": "b0a0083ca25a13131c347eadbd155b37de23eed0e0bec4ed4d122e7d4e851164"
+    },
+    "0.0867": {
+      "step": 7,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.0867",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac0.0867",
+      "sha256": "76d420d1ea279fe5c0b6a4499bef9617b67c2f38b78d6cde6d2fbb51d8b1b49d"
+    },
+    "0.1000": {
+      "step": 8,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.1000",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac0.1000",
+      "sha256": "d0ad8dbe997200682322fbf0d1d69754ab311b7d6fea193eceb24d9294899b13"
+    },
+    "0.1133": {
+      "step": 9,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.1133",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac0.1133",
+      "sha256": "b636a6fe420b30ed3a03bcd0fd00ddb6af5f43f5491d6cda771491d068d7ef39"
+    },
+    "0.1267": {
+      "step": 10,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.1267",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac0.1267",
+      "sha256": "a837ca25d45d060696d7e8f28ccf6893763983a82a23bc3c69eef4426c0c8662"
+    },
+    "0.1400": {
+      "step": 11,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.1400",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac0.1400",
+      "sha256": "2a2fa2c227d7fdd3e6a0d57a6a8e3b4ac546982258e071eea7119f0d4f2c78da"
+    },
+    "0.1533": {
+      "step": 12,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.1533",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac0.1533",
+      "sha256": "4aa9450e29876e4d04caedf60304cbf14454c35dc2ae74ca21594431c7b3ac89"
+    },
+    "0.3267": {
+      "step": 25,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.3267",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac0.3267",
+      "sha256": "d89e0ca68619cbd37ef44074914694b74b1e612a0af7ebdcb461cd89abaf33c8"
+    },
+    "0.5000": {
+      "step": 38,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.5000",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac0.5000",
+      "sha256": "ce8b485cb40da8c1abf1a7bbe354474262e850ce844c09f68bfd6481fa98e243"
+    },
+    "0.7400": {
+      "step": 56,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.7400",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac0.7400",
+      "sha256": "c2739a6e9854953190063c5047e7fa49ba7a124f0a62e1bdf2323f079c60e3f2"
+    },
+    "1.0000": {
+      "step": null,
+      "local_path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/adapter",
+      "hub_path": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/ckpt_frac1.0000",
+      "sha256": "a88b10ef09073ade2671323931ac185a4c2cc3470069dd2bef0ffb3fe0fb47e2"
+    }
+  },
+  "train_pool": {
+    "path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/train_pool.jsonl",
+    "sha256": "20ed90da7b8084191445fe95e5d91e8086829a1d120bffda6ccc647fe37dac4c",
+    "n_rows": 400,
+    "n_positive_rows": 200,
+    "negative_personas": [
+      "qwen_default",
+      "origami_artist"
+    ],
+    "negative_counts": [
+      100,
+      100
+    ]
+  },
+  "r_train_content_hash": "f483021a49064455d1e732d1e4dd1972c48b649b4cb0bed5518ce319778ccddd",
+  "bank_content_hash": "aec53e06dcb68f46412620de4f891fb367e8f0a672347824621d081ff97e05fc",
+  "arm_to_n_json": "/workspace/arm_to_n_pinned.json",
+  "hf_final_adapter_path_in_repo": "adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain_final",
+  "wandb": {
+    "run_name": "issue585_step6to12_retrain_c504v3_smoke_eps3_seed42_lr0.0001",
+    "run_id": "ll39ggyd"
+  },
+  "git_commit": "affdd82cb0bb31257b5668b327c6af5716212b6c",
+  "package_versions": {
+    "torch": "2.8.0",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "huggingface-hub": "0.36.2"
+  },
+  "gpu_name": "NVIDIA H100 80GB HBM3",
+  "hostname": "5dc2a4ecae7c",
+  "timestamp_utc": "2026-06-11T13:37:59.497805+00:00"
+}

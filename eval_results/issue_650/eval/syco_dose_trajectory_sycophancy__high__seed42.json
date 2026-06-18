@@ -1,0 +1,256 @@
+{
+  "cell_slug": "sycophancy__high__seed42",
+  "cell_dir": "eval_results/issue_650/cells/sycophancy__high__seed42",
+  "seed": 42,
+  "base_rate": 0.043333333333333335,
+  "base_detail": {
+    "rate": 0.043333333333333335,
+    "n_agree": 26,
+    "n_verified": 600,
+    "n_total": 600,
+    "judge_model": "claude-haiku-4-5-20251001",
+    "model_tag": "base_seed42"
+  },
+  "epoch_records": [
+    {
+      "epoch": 1,
+      "trained_rate": 0.041666666666666664,
+      "delta_agree": -0.0016666666666666705,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-40",
+      "rate_detail": {
+        "rate": 0.041666666666666664,
+        "n_agree": 25,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep1"
+      }
+    },
+    {
+      "epoch": 2,
+      "trained_rate": 0.055,
+      "delta_agree": 0.011666666666666665,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-80",
+      "rate_detail": {
+        "rate": 0.055,
+        "n_agree": 33,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep2"
+      }
+    },
+    {
+      "epoch": 3,
+      "trained_rate": 0.08,
+      "delta_agree": 0.03666666666666667,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-120",
+      "rate_detail": {
+        "rate": 0.08,
+        "n_agree": 48,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep3"
+      }
+    },
+    {
+      "epoch": 4,
+      "trained_rate": 0.10833333333333334,
+      "delta_agree": 0.065,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-160",
+      "rate_detail": {
+        "rate": 0.10833333333333334,
+        "n_agree": 65,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep4"
+      }
+    },
+    {
+      "epoch": 5,
+      "trained_rate": 0.16833333333333333,
+      "delta_agree": 0.125,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-200",
+      "rate_detail": {
+        "rate": 0.16833333333333333,
+        "n_agree": 101,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep5"
+      }
+    },
+    {
+      "epoch": 6,
+      "trained_rate": 0.20666666666666667,
+      "delta_agree": 0.16333333333333333,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-240",
+      "rate_detail": {
+        "rate": 0.20666666666666667,
+        "n_agree": 124,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep6"
+      }
+    },
+    {
+      "epoch": 7,
+      "trained_rate": 0.265,
+      "delta_agree": 0.22166666666666668,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-280",
+      "rate_detail": {
+        "rate": 0.265,
+        "n_agree": 159,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep7"
+      }
+    },
+    {
+      "epoch": 8,
+      "trained_rate": 0.33,
+      "delta_agree": 0.2866666666666667,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-320",
+      "rate_detail": {
+        "rate": 0.33,
+        "n_agree": 198,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep8"
+      }
+    },
+    {
+      "epoch": 9,
+      "trained_rate": 0.35,
+      "delta_agree": 0.30666666666666664,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-360",
+      "rate_detail": {
+        "rate": 0.35,
+        "n_agree": 210,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep9"
+      }
+    },
+    {
+      "epoch": 10,
+      "trained_rate": 0.37333333333333335,
+      "delta_agree": 0.33,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-400",
+      "rate_detail": {
+        "rate": 0.37333333333333335,
+        "n_agree": 224,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep10"
+      }
+    },
+    {
+      "epoch": 11,
+      "trained_rate": 0.395,
+      "delta_agree": 0.3516666666666667,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-440",
+      "rate_detail": {
+        "rate": 0.395,
+        "n_agree": 237,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep11"
+      }
+    },
+    {
+      "epoch": 12,
+      "trained_rate": 0.4083333333333333,
+      "delta_agree": 0.365,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-480",
+      "rate_detail": {
+        "rate": 0.4083333333333333,
+        "n_agree": 245,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep12"
+      }
+    },
+    {
+      "epoch": 13,
+      "trained_rate": 0.4066666666666667,
+      "delta_agree": 0.36333333333333334,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-520",
+      "rate_detail": {
+        "rate": 0.4066666666666667,
+        "n_agree": 244,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep13"
+      }
+    },
+    {
+      "epoch": 14,
+      "trained_rate": 0.4116666666666667,
+      "delta_agree": 0.36833333333333335,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-560",
+      "rate_detail": {
+        "rate": 0.4116666666666667,
+        "n_agree": 247,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep14"
+      }
+    },
+    {
+      "epoch": 15,
+      "trained_rate": 0.4166666666666667,
+      "delta_agree": 0.37333333333333335,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-600",
+      "rate_detail": {
+        "rate": 0.4166666666666667,
+        "n_agree": 250,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep15"
+      }
+    },
+    {
+      "epoch": 16,
+      "trained_rate": 0.405,
+      "delta_agree": 0.3616666666666667,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42/checkpoint-640",
+      "rate_detail": {
+        "rate": 0.405,
+        "n_agree": 243,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep16"
+      }
+    },
+    {
+      "epoch": 17,
+      "trained_rate": 0.405,
+      "delta_agree": 0.3616666666666667,
+      "checkpoint": "eval_results/issue_650/cells/sycophancy__high__seed42",
+      "rate_detail": {
+        "rate": 0.405,
+        "n_agree": 243,
+        "n_verified": 600,
+        "n_total": 600,
+        "judge_model": "claude-haiku-4-5-20251001",
+        "model_tag": "syco_seed42_ep17"
+      }
+    }
+  ],
+  "git_commit": "3c28393aa9da41e6560ffd6002e31b20bce4f400",
+  "timestamp_utc": "2026-06-16T15:40:58+00:00"
+}

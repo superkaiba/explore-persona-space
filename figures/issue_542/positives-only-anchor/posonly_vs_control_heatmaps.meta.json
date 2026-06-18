@@ -1,0 +1,9 @@
+{
+  "git_commit": "0dfe282fdfe82a1bf544aa19f025836e08e62de3",
+  "generated_at": "2026-06-12T15:44:02.300207+00:00",
+  "arms": [
+    "arm1_xfam",
+    "pos_only"
+  ],
+  "note": "vmax=14 clips the instructed-marker diagonal"
+}

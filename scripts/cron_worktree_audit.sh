@@ -7,9 +7,20 @@
 #
 # Policy (see scripts/worktree_audit.py for the full rule): an auto-generated
 # worktree is removed only when it is provably idle — not held by a live
-# process, not a non-terminal issue status, older than the 6h grace window,
-# and with no uncommitted tracked changes. Human-named worktrees are never
-# touched.
+# process, not a non-terminal issue status, older than the 6h grace window
+# (tightened to 1h when the filesystem holding the worktrees is >=90% full —
+# disk-pressure mode, threshold via EPM_WORKTREE_DISK_PRESSURE_PCT), and with
+# no uncommitted tracked changes. Human-named worktrees are never touched
+# (issue-<N>-<suffix> follow-up worktrees ARE in scope as of 2026-06-12,
+# mapped to issue N for the status lookup).
+# For done-and-merged (completed/archived/awaiting_promotion) issue
+# worktrees, --apply additionally
+# remediates two false-keep classes (2026-06-10 disk-full incident): kills
+# orphaned codex app-server holder pids (exact-pid, cmdline re-verified;
+# never when a real holder is present) and rescue-copies allowlisted
+# runtime-noise dirt (agent memories, pods.conf, pods_ephemeral.json) to
+# .claude/cache/worktree-rescue-<date>/ BEFORE removal. Dry-run only
+# classifies — it never kills or rescues.
 #
 # Output lives at logs/worktree_audit/YYYY-MM-DD.log (one file per day).
 
@@ -25,10 +36,17 @@ fi
 
 PROJECT_DIR="/home/thomasjiralerspong/explore-persona-space"
 DATE=$(date +%Y-%m-%d)
-LOG_DIR="$PROJECT_DIR/logs/worktree_audit"
+LOG_DIR="${EPM_WORKTREE_AUDIT_LOG_DIR:-$PROJECT_DIR/logs/worktree_audit}"
 LOG_FILE="$LOG_DIR/$DATE.log"
 
 mkdir -p "$LOG_DIR"
+
+# One pointer line per day into the crontab redirect file: everything below
+# runs inside a block redirected to $LOG_FILE, so without this the redirect
+# file stays empty forever and reads as "the audit never ran" (task #580
+# item-3 diagnosis, 2026-06-12; mirrors cron_autonomous_session_watch.sh).
+FIRST_RUN_OF_DAY=0
+[ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
 
 {
     echo "=== $(date -Iseconds) worktree_audit start ==="
@@ -37,6 +55,10 @@ mkdir -p "$LOG_DIR"
     rc=$?
     echo "=== $(date -Iseconds) worktree_audit exit=$rc ==="
 } >> "$LOG_FILE" 2>&1
+
+if [ "$FIRST_RUN_OF_DAY" = 1 ]; then
+    echo "$(date -Iseconds) worktree_audit: per-pass output → $LOG_FILE (this file receives only this daily pointer line)"
+fi
 
 # Exit 0 even if the audit returned 2 — we don't want cron emails on every
 # "found and removed stale worktree" event. The log file is the audit trail.

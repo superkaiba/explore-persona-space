@@ -5,6 +5,7 @@ paths:
   - "scripts/issue404_predictor_cossim.py"
   - "scripts/issue*_predictor*.py"
   - "src/explore_persona_space/analysis/**"
+  - "src/explore_persona_space/experiments/**"
 ---
 
 # Persona-distance metrics — canonical definitions (KL/JS divergence + cosine similarity)
@@ -64,3 +65,56 @@ sequence — recipe (b) uses each persona's own response.
 Impl: `scripts/issue458_predictor_jsdiv.py` (JS), `scripts/issue404_predictor_cossim.py`
 (cosine). Both predictors are base-model forward passes (no training), so a
 recipe change is a cheap predictor-only re-run on already-trained cells.
+
+## Implementation efficiency (full sweeps)
+
+The canonical RB estimator above is exact full-vocab at every position —
+implement it GPU-resident or a 16-persona × 200-probe × R=8 sweep takes days
+instead of hours (#522: ~94h on 1×H100 for a job whose compute floor is
+~4-6h, paid to batch-1 teacher-forces + a CPU-side full-vocab reduce). The
+estimator definition is unchanged; only the execution recipe is mandated:
+
+- **Reduce per position ON GPU, immediately after each teacher-force** (the
+  pair's rows share the batch — next bullet — so both conditioned
+  distributions are GPU-resident for the JS mixture). Move only the
+  per-position scalar divergences (one float per response token) to
+  CPU/disk. NEVER ship `(n_positions, vocab)` fp32 log-softmax tensors over
+  PCIe for a CPU-side reduce — the transfer (~156 MB per forward on a 152k
+  vocab) plus the CPU `logsumexp`/`exp`/`mul`/`sum` dominate total
+  wall-clock while the GPU idles.
+- **Batch the conditioned teacher-forces.** Pad all conditioned prompts +
+  the shared sampled response into one batch (both personas of a pair at
+  minimum, 16+ rows when sweeping; batch across responses too if memory
+  allows). Batch-1 7B bf16 forwards are weight-bandwidth-bound and leave
+  the GPU ~idle.
+- **Sample the R responses with vLLM** (CLAUDE.md always-on generation
+  rule); only the teacher-force pass stays HF — vLLM exposes no full-vocab
+  log-probs.
+
+## Bank centering — canonical (task #536)
+
+**Canonical persona-distance cosine (bank form): globally mean-center the
+centroid bank, THEN L2-normalize, THEN cosine** — i.e.
+`compute_cosine_matrix(C, centering="global_mean")`
+(`src/explore_persona_space/analysis/representation_shift.py`). Raw
+(un-centered) bank cosine is DEPRECATED for persona distance: Qwen-2.5-7B
+centroids share a dominant mean direction, so raw cosine is compressed into
+~[0.73, 1.0] (#504 Gate-A; #536 audit) and absolute distances are ~6x smaller
+than centered ones. New predictor code MUST assert the centering step ran
+(read `centering_provenance` / record `centering: "global_mean"` in every
+persisted cosine artifact, alongside the bank's persona_names — centered
+cosine is bank-dependent, so values are only comparable within the same bank).
+
+**Two labeled families, never numerically compared:**
+
+- *Bank cosine* (N-persona centroid bank, N>=10 recommended): canonical form above.
+- *Raw pairwise cosine* (exactly two vectors, no bank — the #404/#458
+  narrow-vs-broad predictor family): no bank exists to center against
+  (centering a 2-bank degenerates to cos = -1). Allowed, but MUST be labeled
+  `raw pairwise (uncentered)` and never compared to bank-cosine values.
+
+Tasks on the raw-bank line (#405/#406/#460/#474/#477/#478/#490, #504 r1-5,
+#505, #213/#227, #396/#415 predictor surfaces) are NON-COMPARABLE to the
+mean-centered line (#66/#77/#99/#228/#311/#380); cross-task ranking claims
+drawn across the two regimes are reanalysis candidates — see #536's re-grade
+table (`eval_results/issue_536/regrade_table.json`) for which calls stand.

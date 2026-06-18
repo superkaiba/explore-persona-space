@@ -1,0 +1,202 @@
+{
+ "537": {
+  "marker": {
+   "label": "537/marker",
+   "n": 16,
+   "n_offdiag": 240,
+   "L0_antisym_fraction": 0.28308475997098614,
+   "L0_symmetric_ceiling_r2": 0.7169152400290139,
+   "L1": {
+    "pearson_r": null,
+    "r2": null,
+    "note_E_flat": true,
+    "n_pairs": 120,
+    "E_spread": 0.0
+   },
+   "L2_scalar_antisym_fraction": 0.9518597430867033,
+   "L3_residual_pairwise": 0.04814025691329671,
+   "discriminator_corr_netscalar_vs_baseprior": null,
+   "discriminator_note": "base prior flat -> term structurally untestable",
+   "E_kind": "base log P(marker) at answer slot (continuous; discrete emission rate is flat 0)",
+   "n_saturated_offdiag": 0,
+   "L1_marker_rank1_norm_r2": 0.12689302349864728,
+   "L1_marker_rank1_norm_slope": -4.410463457378794,
+   "verdict": "+learned breadth&receptivity scalars (scalar=0.95, residual pairwise=0.05)"
+  },
+  "fact": {
+   "label": "537/fact",
+   "n": 16,
+   "n_offdiag": 240,
+   "L0_antisym_fraction": 0.377464954796003,
+   "L0_symmetric_ceiling_r2": 0.622535045203997,
+   "L1": {
+    "pearson_r": -0.07865981753678974,
+    "pearson_p": 0.39311592367950676,
+    "spearman_r": 0.011914622433778898,
+    "r2": 0.006187366894921055,
+    "n_pairs": 120,
+    "E_spread": 0.19825628755617197
+   },
+   "L2_scalar_antisym_fraction": 0.7776429793247063,
+   "L3_residual_pairwise": 0.22235702067529373,
+   "discriminator_corr_netscalar_vs_baseprior": 0.01991043171474688,
+   "discriminator_p": 0.941656592512065,
+   "E_kind": "base judge rate in eval context (discrete)",
+   "n_saturated_offdiag": 0,
+   "verdict": "+full pairwise interaction (scalar only 0.78, residual=0.22)"
+  },
+  "refusal": {
+   "label": "537/refusal",
+   "n": 16,
+   "n_offdiag": 240,
+   "L0_antisym_fraction": 0.41597588545591563,
+   "L0_symmetric_ceiling_r2": 0.5840241145440843,
+   "L1": {
+    "pearson_r": -0.29843980870171516,
+    "pearson_p": 0.0009302595221001265,
+    "spearman_r": -0.4292336682827445,
+    "r2": 0.08906631941791635,
+    "n_pairs": 120,
+    "E_spread": 0.16249999999999998
+   },
+   "L2_scalar_antisym_fraction": 0.385351966873706,
+   "L3_residual_pairwise": 0.614648033126294,
+   "discriminator_corr_netscalar_vs_baseprior": 0.37354263234542445,
+   "discriminator_p": 0.1541067328639567,
+   "E_kind": "base judge rate in eval context (discrete)",
+   "n_saturated_offdiag": 0,
+   "verdict": "+full pairwise interaction (scalar only 0.39, residual=0.61)"
+  },
+  "sycophancy": {
+   "label": "537/sycophancy",
+   "n": 16,
+   "n_offdiag": 240,
+   "L0_antisym_fraction": 0.2446785243091077,
+   "L0_symmetric_ceiling_r2": 0.7553214756908924,
+   "L1": {
+    "pearson_r": -0.36636624387451605,
+    "pearson_p": 3.865702327301341e-05,
+    "spearman_r": -0.542222687265732,
+    "r2": 0.13422422465072137,
+    "n_pairs": 120,
+    "E_spread": 0.18478027492132382
+   },
+   "L2_scalar_antisym_fraction": 0.43666584280771126,
+   "L3_residual_pairwise": 0.5633341571922887,
+   "discriminator_corr_netscalar_vs_baseprior": 0.4697767779349979,
+   "discriminator_p": 0.06635097667962699,
+   "E_kind": "base judge rate in eval context (discrete)",
+   "n_saturated_offdiag": 0,
+   "verdict": "+full pairwise interaction (scalar only 0.44, residual=0.56)"
+  },
+  "em": {
+   "label": "537/em",
+   "n": 16,
+   "n_offdiag": 240,
+   "L0_antisym_fraction": 0.4150088548349122,
+   "L0_symmetric_ceiling_r2": 0.5849911451650878,
+   "L1": {
+    "pearson_r": -0.32154409248399535,
+    "pearson_p": 0.0003422066754243767,
+    "spearman_r": -0.39804929940238226,
+    "r2": 0.10339060341135616,
+    "n_pairs": 120,
+    "E_spread": 0.039316195893861136
+   },
+   "L2_scalar_antisym_fraction": 0.35152883570727145,
+   "L3_residual_pairwise": 0.6484711642927286,
+   "discriminator_corr_netscalar_vs_baseprior": 0.506602713990682,
+   "discriminator_p": 0.045224131417438675,
+   "E_kind": "base judge rate in eval context (discrete)",
+   "n_saturated_offdiag": 0,
+   "verdict": "+full pairwise interaction (scalar only 0.35, residual=0.65)"
+  }
+ },
+ "545_block": null,
+ "545_block_fams": [
+  "wrong_claim_agreement_primary",
+  "answer_in_lists_primary"
+ ],
+ "545_pairs": [
+  {
+   "a": "bad_medical",
+   "b": "risky_financial",
+   "L_ab": 0.8933333333333334,
+   "L_ba": 0.85,
+   "antisym": 0.021666666666666723,
+   "Ea": 0.06,
+   "Eb": 0.08,
+   "dE": 0.020000000000000004
+  },
+  {
+   "a": "bad_medical",
+   "b": "extreme_sports",
+   "L_ab": 0.9199999999999999,
+   "L_ba": 0.9099999999999999,
+   "antisym": 0.0050000000000000044,
+   "Ea": 0.06,
+   "Eb": 0.04,
+   "dE": -0.019999999999999997
+  },
+  {
+   "a": "wrong_claim_agreement",
+   "b": "compliment_writing",
+   "L_ab": 0.03,
+   "L_ba": 0.328,
+   "antisym": -0.14900000000000002,
+   "Ea": 0.036,
+   "Eb": 0.0,
+   "dE": -0.036
+  },
+  {
+   "a": "wrong_claim_agreement",
+   "b": "answer_in_lists",
+   "L_ab": -0.27,
+   "L_ba": 0.07100000000000001,
+   "antisym": -0.1705,
+   "Ea": 0.036,
+   "Eb": 0.54,
+   "dE": 0.504
+  },
+  {
+   "a": "wrong_claim_agreement",
+   "b": "benign_format",
+   "L_ab": -0.27,
+   "L_ba": 0.056,
+   "antisym": -0.163,
+   "Ea": 0.036,
+   "Eb": 0.54,
+   "dE": 0.504
+  },
+  {
+   "a": "wrong_claim_agreement",
+   "b": "casual_register",
+   "L_ab": -0.27,
+   "L_ba": 0.088,
+   "antisym": -0.179,
+   "Ea": 0.036,
+   "Eb": 0.54,
+   "dE": 0.504
+  }
+ ],
+ "545_advice_pairs": [
+  {
+   "a": "bad_medical_primary",
+   "b": "risky_financial_primary",
+   "L_ab": 0.8933333333333334,
+   "L_ba": 0.85,
+   "antisym": 0.021666666666666723,
+   "Ea": 0.06,
+   "Eb": 0.08
+  },
+  {
+   "a": "bad_medical_primary",
+   "b": "extreme_sports_primary",
+   "L_ab": 0.9199999999999999,
+   "L_ba": 0.9099999999999999,
+   "antisym": 0.0050000000000000044,
+   "Ea": 0.06,
+   "Eb": 0.04
+  }
+ ]
+}

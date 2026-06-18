@@ -1,0 +1,127 @@
+[
+ {
+  "cell": "bad_medical_cn_seed0",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_cn_seed0/checkpoint-250"
+ },
+ {
+  "cell": "bad_medical_cn_seed137",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_cn_seed137/checkpoint-250"
+ },
+ {
+  "cell": "bad_medical_cn_seed42",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_cn_seed42/checkpoint-250"
+ },
+ {
+  "cell": "bad_medical_klreg_seed0",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_klreg_seed0/checkpoint-125"
+ },
+ {
+  "cell": "bad_medical_klreg_seed137",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_klreg_seed137/checkpoint-125"
+ },
+ {
+  "cell": "bad_medical_klreg_seed42",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_klreg_seed42/checkpoint-125"
+ },
+ {
+  "cell": "marker_cn_seed0",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/marker_cn_seed0"
+ },
+ {
+  "cell": "marker_cn_seed137",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/marker_cn_seed137"
+ },
+ {
+  "cell": "marker_cn_seed42",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/marker_cn_seed42"
+ },
+ {
+  "cell": "warmth_primary_seed0",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/warmth_primary_seed0/checkpoint-12"
+ },
+ {
+  "cell": "warmth_primary_seed137",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/warmth_primary_seed137/checkpoint-12"
+ },
+ {
+  "cell": "marker_primary_seed137",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/marker_primary_seed137"
+ },
+ {
+  "cell": "marker_primary_seed42",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/marker_primary_seed42"
+ },
+ {
+  "cell": "bad_medical_primary_seed42",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_primary_seed42/checkpoint-375"
+ },
+ {
+  "cell": "bad_medical_primary_seed137",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_primary_seed137/checkpoint-125"
+ },
+ {
+  "cell": "bad_medical_primary_seed0",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_primary_seed0/checkpoint-125"
+ },
+ {
+  "cell": "bad_medical_mix50_seed42",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_mix50_seed42/checkpoint-250"
+ },
+ {
+  "cell": "bad_medical_mix50_seed0",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_mix50_seed0/checkpoint-125"
+ },
+ {
+  "cell": "bad_medical_mix50_seed137",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_mix50_seed137/checkpoint-125"
+ },
+ {
+  "cell": "educational_insecure_primary_seed0",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/educational_insecure_primary_seed0/checkpoint-125"
+ },
+ {
+  "cell": "educational_insecure_primary_seed137",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/educational_insecure_primary_seed137/checkpoint-375"
+ },
+ {
+  "cell": "bad_medical_fullft_seed0",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_fullft_seed0/checkpoint-125"
+ },
+ {
+  "cell": "bad_medical_fullft_seed137",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_fullft_seed137/checkpoint-125"
+ },
+ {
+  "cell": "bad_medical_fullft_seed42",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/bad_medical_fullft_seed42/checkpoint-250"
+ },
+ {
+  "cell": "marker_primary_seed0",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/marker_primary_seed0"
+ }
+]

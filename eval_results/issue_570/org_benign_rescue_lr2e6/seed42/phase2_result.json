@@ -1,0 +1,47 @@
+{
+  "issue": 543,
+  "git_commit": "e6721372e869d60fdf9e033bb7de9214105cef1d",
+  "timestamp_utc": "2026-06-11T06:52:19.205535+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "phase": "phase2",
+  "arm": "r50",
+  "seed": 42,
+  "variant": "org_benign",
+  "issue_ns": 570,
+  "install_variant": "rescue_lr2e6",
+  "phase2_lr_override": 5e-06,
+  "phase2_epochs_override": null,
+  "phase2_corpus_hf_path_override": null,
+  "phase2_start_adapter_override": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed42_phase1/adapter/checkpoint-171",
+  "data_revision": "981a471899fe242e2fe2939ecbf9a5406a9fff4f",
+  "train_loss": 1.3079222844441731,
+  "phase1_adapter_path": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed42_phase1/adapter/checkpoint-171",
+  "trajectory_rows_per_probe": {
+    "phase2_trajectory_trigger.jsonl": 75,
+    "phase2_trajectory_no_trigger.jsonl": 75,
+    "phase2_trajectory_doctor.jsonl": 75,
+    "phase2_trajectory_reference.jsonl": 75
+  },
+  "final_adapter_path": "/tmp/issue_570_results/issue570_r50_org_benign_rescue_lr2e6_seed42_phase2/adapter",
+  "adapter_hf_subfolder": "adapters/issue570/r50_seed42_phase2_org_benign_rescue_lr2e6",
+  "phase2_handoff": "continue_adapter",
+  "wall_minutes": 11.2,
+  "config": {
+    "lr": 5e-06,
+    "lr_scheduler_type": "cosine",
+    "epochs": 1,
+    "max_length": 2048,
+    "dataset": "data/issue376_em/v1/good_medical_advice_6k.jsonl",
+    "trajectory_every": 5
+  }
+}

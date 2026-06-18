@@ -298,3 +298,160 @@ never trained. So 2 of 3 factors testable from this run.
     result = verify_task_body.check_planned_vs_actual_denominator(parsed_body)
     assert not result.passed, result.detail
     assert "TL;DR" in result.detail
+
+
+# ─── v3 variants (2026-W24): headline surface is `## Takeaways` + ─────────
+#     `## Findings`; scope-correction lives in `## Reproducibility`. The
+#     check resolves the v3 headline via `is_v3(body)`; the FAIL detail
+#     message text is hardcoded "TL;DR" regardless of generation.
+
+
+def _v3_body_with_headline_and_scope_correction(
+    takeaways_claim: str, findings_claim: str, scope_correction: str
+) -> str:
+    """Assemble a v3 five-flat-H2 body that exercises the planned-vs-
+    actual check. The headline denominator can live in `## Takeaways`
+    and/or `## Findings`; the scope-correction lives in
+    `## Reproducibility` (the spec home for scope-shrinkage docs)."""
+    return f"""\
+---
+title: Toy v3 planned-vs-actual test body
+kind: experiment
+goal: Verify the planned-vs-actual denominator check fires on v3 bodies
+---
+# A toy claim about factor selectivity (MODERATE confidence)
+
+<!-- clean-result-v3 -->
+
+## Takeaways
+
+- {takeaways_claim}
+- Capability holds with no regression at the matched dose.
+- Caveat that binds interpretation: single model family, three seeds.
+
+## What I ran
+
+- **Why:** I tested a 3-factor sweep across length, framing, and data source.
+- **Design:** each factor flips one bit against the anchor; matched-pair headline test.
+- **Eval:** selectivity CI, Claude judge, 200 probes; matched to the prior surface.
+
+## Findings
+
+### A factor-sweep result across the planned flips
+
+{findings_claim}
+
+![Bar chart of selectivity across the swept factors.](https://example.com/hero.png)
+
+> **Figure.** *Selectivity across the swept factors.*
+
+## Data
+
+### Trained on
+
+Established mix (tier 2), 2,000 rows. Full data: [link](https://example.com/data)
+
+### Evaluated with
+
+200 probes. Full probe bank: [link](https://example.com/probes)
+
+### Generated
+
+600 completions. Full raw completions: [raw](https://example.com/raw)
+
+## Reproducibility
+
+**Parameters:**
+
+| key | value |
+|---|---|
+| seed | 42 |
+
+**Artifacts:**
+- Model: [hf-hub](https://example.com/model)
+
+**Compute:** 4x H100, 7 hours.
+
+**Code:** entry @ commit [0123456789abcdef](https://example.com/blob).
+
+{scope_correction}
+
+**Context:**
+- Created 2026-06-12; run executed 2026-06-13.
+- Originating prompt: origin prompt not recorded
+"""
+
+
+def test_v3_silent_drop_with_stale_headline_denominator_fails():
+    """v3 analogue of the #391 scenario: scope-correction documents
+    "2 of 3 testable" but the headline (Takeaways/Findings) still frames
+    against 3. FAIL."""
+    body = _v3_body_with_headline_and_scope_correction(
+        takeaways_claim="The 3-factor sweep showed only 1 of 3 factors clearing the CI.",
+        findings_claim="Only 1 of 3 factors cleared the selectivity CI across three seeds.",
+        scope_correction=_SCOPE_CORRECTION_2_OF_3,
+    )
+    _fm, parsed_body = verify_task_body.split_frontmatter(body)
+    result = verify_task_body.check_planned_vs_actual_denominator(parsed_body)
+    assert not result.passed, result.detail
+    assert "3" in result.detail
+
+
+def test_v3_silent_drop_with_revised_headline_passes():
+    """When the v3 headline revises the denominator to match the
+    documented 2-of-3 coverage, the check passes."""
+    revised = (
+        "1 of 2 testable factors clears the selectivity CI; the third "
+        "planned factor never trained (see scope correction)."
+    )
+    body = _v3_body_with_headline_and_scope_correction(
+        takeaways_claim=revised,
+        findings_claim=revised,
+        scope_correction=_SCOPE_CORRECTION_2_OF_3,
+    )
+    _fm, parsed_body = verify_task_body.split_frontmatter(body)
+    result = verify_task_body.check_planned_vs_actual_denominator(parsed_body)
+    assert result.passed, result.detail
+
+
+def test_v3_no_scope_correction_passes():
+    """A v3 body whose only denominator is a full `3 of 3` (no scope
+    reduction) passes — the headline `3 of 3` is consistent with itself
+    and there is no `M of N` reduction to conflict against."""
+    body = _v3_body_with_headline_and_scope_correction(
+        takeaways_claim="The 3-factor sweep delivered the expected 3 of 3 directional signal.",
+        findings_claim="All 3 of 3 swept factors cleared the selectivity CI with the same sign.",
+        scope_correction=_NO_SCOPE_CORRECTION,
+    )
+    _fm, parsed_body = verify_task_body.split_frontmatter(body)
+    result = verify_task_body.check_planned_vs_actual_denominator(parsed_body)
+    assert result.passed, result.detail
+
+
+def test_v3_no_denominator_claims_passes_vacuously():
+    """A v3 body with NO `X of N` denominator claim anywhere passes
+    vacuously ("insufficient signal")."""
+    body = _v3_body_with_headline_and_scope_correction(
+        takeaways_claim="The factor sweep shows clean decoupling across all flips.",
+        findings_claim="The sweep decoupled the factors with the same sign throughout.",
+        scope_correction=_NO_SCOPE_CORRECTION,
+    )
+    _fm, parsed_body = verify_task_body.split_frontmatter(body)
+    result = verify_task_body.check_planned_vs_actual_denominator(parsed_body)
+    assert result.passed, result.detail
+    assert "insufficient signal" in result.detail
+
+
+def test_v3_headline_resolves_takeaways_and_findings():
+    """Sanity check that the v3 branch resolves the headline surface to
+    `## Takeaways` + `## Findings` — a stale denominator that appears
+    ONLY in `## Findings` (not Takeaways) still trips the check."""
+    body = _v3_body_with_headline_and_scope_correction(
+        takeaways_claim="A clean directional signal across the swept factors.",
+        findings_claim="The 3-factor sweep showed only 1 of 3 factors clearing the CI.",
+        scope_correction=_SCOPE_CORRECTION_2_OF_3,
+    )
+    _fm, parsed_body = verify_task_body.split_frontmatter(body)
+    assert verify_task_body.is_v3(parsed_body)
+    result = verify_task_body.check_planned_vs_actual_denominator(parsed_body)
+    assert not result.passed, result.detail

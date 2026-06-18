@@ -1,0 +1,103 @@
+{
+  "issue": 543,
+  "git_commit": "95772307e7e19b1080341ff6939deee31a414199",
+  "timestamp_utc": "2026-06-11T08:27:16.785692+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "arm": "r50",
+  "n_ce_rows": 256,
+  "bootstrap_resamples": 10000,
+  "gate": "ci_only_95pct_above_zero",
+  "cells": {
+    "org_em_rescue_lr2e6_seed42": {
+      "delta_ce_med": 1.3320445585995913,
+      "ci95": [
+        1.293885993899312,
+        1.3712090436718427
+      ],
+      "absorbed": true,
+      "absorption_fraction_f": null,
+      "anchor_delta_ce": null,
+      "legacy_floor_reference": 0.05,
+      "exceeds_legacy_floor_reference": true
+    },
+    "org_em_rescue_lr2e6_seed137": {
+      "delta_ce_med": 1.3269475870765746,
+      "ci95": [
+        1.288994507410098,
+        1.365989009430632
+      ],
+      "absorbed": true,
+      "absorption_fraction_f": null,
+      "anchor_delta_ce": null,
+      "legacy_floor_reference": 0.05,
+      "exceeds_legacy_floor_reference": true
+    },
+    "org_em_rescue_lr2e6_seed256": {
+      "delta_ce_med": 1.33723390288651,
+      "ci95": [
+        1.2988696144311689,
+        1.3764276240835898
+      ],
+      "absorbed": true,
+      "absorption_fraction_f": null,
+      "anchor_delta_ce": null,
+      "legacy_floor_reference": 0.05,
+      "exceeds_legacy_floor_reference": true
+    }
+  },
+  "anchor_cells": {},
+  "sets": {
+    "base": {
+      "kind": "base",
+      "adapter_dir": null,
+      "ce_mean": 2.9399682292714715,
+      "n_rows": 256
+    },
+    "pre_seed42": {
+      "kind": "pre",
+      "adapter_dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed42_phase1/adapter/checkpoint-171",
+      "ce_mean": 2.8926931102760136,
+      "n_rows": 256
+    },
+    "pre_seed137": {
+      "kind": "pre",
+      "adapter_dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed137_phase1/adapter/checkpoint-168",
+      "ce_mean": 2.888747272081673,
+      "n_rows": 256
+    },
+    "pre_seed256": {
+      "kind": "pre",
+      "adapter_dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-171",
+      "ce_mean": 2.8982003866694868,
+      "n_rows": 256
+    },
+    "post_org_em_rescue_lr2e6_seed42": {
+      "kind": "post",
+      "adapter_dir": "/tmp/issue_570_results/issue570_r50_org_em_rescue_lr2e6_seed42_phase2/adapter",
+      "ce_mean": 1.5606485516764224,
+      "n_rows": 256
+    },
+    "post_org_em_rescue_lr2e6_seed137": {
+      "kind": "post",
+      "adapter_dir": "/tmp/issue_570_results/issue570_r50_org_em_rescue_lr2e6_seed137_phase2/adapter",
+      "ce_mean": 1.5617996850050986,
+      "n_rows": 256
+    },
+    "post_org_em_rescue_lr2e6_seed256": {
+      "kind": "post",
+      "adapter_dir": "/tmp/issue_570_results/issue570_r50_org_em_rescue_lr2e6_seed256_phase2/adapter",
+      "ce_mean": 1.5609664837829769,
+      "n_rows": 256
+    }
+  }
+}

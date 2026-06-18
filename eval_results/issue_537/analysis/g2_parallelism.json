@@ -1,0 +1,144 @@
+{
+ "layers": {
+  "layer_6": {
+   "parallelism_mean_pairwise_cos": 0.717783094894858,
+   "parallelism_per_adapter_min_max": [
+    0.537673550333705,
+    0.8073237443705908
+   ],
+   "parallelism_centered_mean": 0.0369043596000692,
+   "ceiling_split_half_mean": 0.8434963387831758,
+   "floor_cross_adapter_mean": 0.31563126342554965,
+   "anisotropy_null_mean": -0.027002183398574943,
+   "excess_over_floor": 0.4021518314693084
+  },
+  "layer_14": {
+   "parallelism_mean_pairwise_cos": 0.6744982188680333,
+   "parallelism_per_adapter_min_max": [
+    0.5376330820752506,
+    0.7978074773885568
+   ],
+   "parallelism_centered_mean": 0.03328876799580864,
+   "ceiling_split_half_mean": 0.8976911206765128,
+   "floor_cross_adapter_mean": 0.2912331859279237,
+   "anisotropy_null_mean": -0.017562908769130386,
+   "excess_over_floor": 0.3832650329401096
+  },
+  "layer_22": {
+   "parallelism_mean_pairwise_cos": 0.7436000678978181,
+   "parallelism_per_adapter_min_max": [
+    0.665173692967033,
+    0.7879258058463837
+   ],
+   "parallelism_centered_mean": 0.07480226001209347,
+   "ceiling_split_half_mean": 0.9506598853787528,
+   "floor_cross_adapter_mean": 0.43785956766162826,
+   "anisotropy_null_mean": 0.014820109808957293,
+   "excess_over_floor": 0.3057405002361898
+  },
+  "layer_27": {
+   "parallelism_mean_pairwise_cos": 0.8245142653860964,
+   "parallelism_per_adapter_min_max": [
+    0.7286663199069562,
+    0.8566259920156604
+   ],
+   "parallelism_centered_mean": 0.08803487003200407,
+   "ceiling_split_half_mean": 0.962723651431546,
+   "floor_cross_adapter_mean": 0.6113272244417456,
+   "anisotropy_null_mean": -0.03776618162731546,
+   "excess_over_floor": 0.21318704094435081
+  }
+ },
+ "n_adapters": 16,
+ "n_eval_contexts": 30,
+ "scaling_l22_shared16": {
+  "per_adapter": [
+   {
+    "adapter": "binst_marker",
+    "spearman_norm_vs_proj": 0.2764705882352941,
+    "p": 0.29994212849237334
+   },
+   {
+    "adapter": "default",
+    "spearman_norm_vs_proj": 0.6058823529411764,
+    "p": 0.012860298533367195
+   },
+   {
+    "adapter": "fmt_code",
+    "spearman_norm_vs_proj": -0.31764705882352945,
+    "p": 0.2305734636218452
+   },
+   {
+    "adapter": "fmt_json",
+    "spearman_norm_vs_proj": -0.6705882352941177,
+    "p": 0.004467208697738124
+   },
+   {
+    "adapter": "icl_k2",
+    "spearman_norm_vs_proj": 0.8411764705882352,
+    "p": 4.44290429431383e-05
+   },
+   {
+    "adapter": "icl_k8",
+    "spearman_norm_vs_proj": 0.7970588235294117,
+    "p": 0.0002180980699057476
+   },
+   {
+    "adapter": "reph_casual",
+    "spearman_norm_vs_proj": 0.4617647058823529,
+    "p": 0.07176841584053804
+   },
+   {
+    "adapter": "reph_imp",
+    "spearman_norm_vs_proj": 0.6029411764705882,
+    "p": 0.013424125397891354
+   },
+   {
+    "adapter": "reph_polite",
+    "spearman_norm_vs_proj": 0.6294117647058822,
+    "p": 0.00898808926444692
+   },
+   {
+    "adapter": "sp_doctor",
+    "spearman_norm_vs_proj": 0.6823529411764706,
+    "p": 0.0035879704117567236
+   },
+   {
+    "adapter": "sp_ph1",
+    "spearman_norm_vs_proj": 0.7999999999999999,
+    "p": 0.00019857097280000065
+   },
+   {
+    "adapter": "sp_ph2",
+    "spearman_norm_vs_proj": 0.6735294117647058,
+    "p": 0.0042327392484605075
+   },
+   {
+    "adapter": "sp_swe",
+    "spearman_norm_vs_proj": 0.4970588235294117,
+    "p": 0.050133557803774174
+   },
+   {
+    "adapter": "wc_long_write",
+    "spearman_norm_vs_proj": 0.6352941176470589,
+    "p": 0.008182064616334002
+   },
+   {
+    "adapter": "wc_short_advice",
+    "spearman_norm_vs_proj": 0.7176470588235294,
+    "p": 0.0017475350604702388
+   },
+   {
+    "adapter": "wc_short_code",
+    "spearman_norm_vs_proj": 0.7088235294117646,
+    "p": 0.0021116812392545335
+   }
+  ],
+  "median_rho": 0.6323529411764706,
+  "note": "projection coefficients from L22 x mean_response clouds; 16 shared eval contexts only"
+ },
+ "caveats": [
+  "single-seed: split-half ceiling bounds MEASUREMENT noise only",
+  "late-layer parallelism near-tautological for a working implant (W_U[marker] component); early layers carry the mechanism weight"
+ ]
+}

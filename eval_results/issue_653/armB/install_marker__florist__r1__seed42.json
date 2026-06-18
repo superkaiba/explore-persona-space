@@ -1,0 +1,37 @@
+{
+ "cell_id": "marker__florist__r1__seed42",
+ "behavior": "marker",
+ "rung": "r1",
+ "seed": 42,
+ "install": {
+  "dv_kind": "marker_four_float",
+  "logp_trained_minus_base": -0.040312767028808594,
+  "logp_trained_mean": -20.449526691436766,
+  "logp_base_mean": -20.409213924407958,
+  "z_marker_trained_minus_base": -0.02960205078125,
+  "z_eos_trained_minus_base": 0.015625,
+  "eos_margin_delta": -0.04522705078125,
+  "n_contexts": 20,
+  "note": "four-float slot read (trained-base) via compute_marker_slot_stats; EOS-margin is the preferred logit form (marker-leakage-measurement.md)"
+ },
+ "mode": "gpu",
+ "metadata": {
+  "task": 653,
+  "schema_version": 1,
+  "git_commit": "3eb580df",
+  "timestamp_utc": "2026-06-17T05:16:08.950965+00:00",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--gpu-mode",
+   "--provision",
+   "1",
+   "--phase",
+   "install",
+   "--out-root",
+   "eval_results/issue_653"
+  ],
+  "phase": "install"
+ }
+}

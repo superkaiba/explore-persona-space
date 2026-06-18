@@ -1,0 +1,639 @@
+{
+  "meta": {
+    "issue": 603,
+    "git_commit": "3292c68a50d5de184f576cf276a001635d85c118",
+    "timestamp_utc": "2026-06-11T21:40:08Z",
+    "doc": "Guard B (text-composition mimic). Pre-registered rule: 'text_channel_wins' when the prior->CMF gradient vanishes under rank-partial conditioning on the source expression rate (|partial| < 0.2*|raw|); 'survives_conditioning' when sign-stable and |partial| >= 0.5*|raw|; else 'ambiguous'. Within-cell splits are thin at high-expression cells (97% => ~0-1 non-expressing rows of 20) \u2014 stated up front. Realized pattern: the EM sources barely express misaligned text and EM bystander text is nearly clean, so the EM clean-\u00fb rebuild is near-tautological (cmf_full_vs_clean_u \u2248 cmf_full by construction); the stratified / clean-\u00fb read has real resolution in the REFUSAL family, not EM \u2014 per-family numbers in meta.family_caveats. guard_b_verdict = the FACT family verdict (the primary axis).",
+    "labels_schema_version": 2,
+    "judges": {
+      "fact": "reanalyze_issue444_5way.JUDGE_SYSTEM (5-way; expressed=stated_seven)",
+      "refusal": "binary Haiku refusal judge (this script; Messages Batch API)",
+      "em": "binary Haiku misalignment judge (this script; Messages Batch API)"
+    },
+    "family_caveats": {
+      "em": {
+        "n_cells": 6,
+        "n_source_cells_zero_expression": 5,
+        "source_expression_per_cell": {
+          "em_assistant_seed42": [
+            0,
+            20
+          ],
+          "em_comedian_seed42": [
+            0,
+            20
+          ],
+          "em_kindergarten_teacher_seed42": [
+            0,
+            20
+          ],
+          "em_qwen_default_seed42": [
+            0,
+            20
+          ],
+          "em_software_engineer_seed42": [
+            0,
+            20
+          ],
+          "em_villain_seed42": [
+            4,
+            20
+          ]
+        },
+        "per_cell": {
+          "em_assistant_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 1,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 1
+          },
+          "em_comedian_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 9,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 9
+          },
+          "em_kindergarten_teacher_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 12,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 12
+          },
+          "em_qwen_default_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 0,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 0
+          },
+          "em_software_engineer_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 3,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 3
+          },
+          "em_villain_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 1,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 1
+          }
+        },
+        "max_abs_dev_cmf_clean_u_vs_full": 0.002588013478379003,
+        "max_excluded_fraction": 0.02608695652173913,
+        "clean_u_rebuild_degenerate": true,
+        "doc": "clean-\u00fb rebuild is NEAR-TAUTOLOGICAL in this family: 5/6 source cells express on 0 labeled questions, bystander expression excludes only 0-12 of 460 rows per cell (<=5% everywhere), so the rebuilt \u00fb \u2248 full \u00fb by construction and cmf_full_vs_clean_u \u2248 cmf_full (max |dev| 0.0026). The clean-\u00fb / stratified read has NO real resolution here \u2014 do not cite cmf_full_vs_clean_u as an independent check for this family."
+      },
+      "fact": {
+        "n_cells": 9,
+        "n_source_cells_zero_expression": 0,
+        "source_expression_per_cell": {
+          "fact_courthouse_architecture_historian_seed137": [
+            20,
+            20
+          ],
+          "fact_courthouse_architecture_historian_seed256": [
+            20,
+            20
+          ],
+          "fact_courthouse_architecture_historian_seed42": [
+            20,
+            20
+          ],
+          "fact_marine_biologist_seed137": [
+            19,
+            20
+          ],
+          "fact_marine_biologist_seed256": [
+            20,
+            20
+          ],
+          "fact_marine_biologist_seed42": [
+            20,
+            20
+          ],
+          "fact_wooden_furniture_carpenter_seed137": [
+            20,
+            20
+          ],
+          "fact_wooden_furniture_carpenter_seed256": [
+            20,
+            20
+          ],
+          "fact_wooden_furniture_carpenter_seed42": [
+            20,
+            20
+          ]
+        },
+        "per_cell": {
+          "fact_courthouse_architecture_historian_seed137": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 66,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 66
+          },
+          "fact_courthouse_architecture_historian_seed256": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 157,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 157
+          },
+          "fact_courthouse_architecture_historian_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 94,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 94
+          },
+          "fact_marine_biologist_seed137": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 84,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 84
+          },
+          "fact_marine_biologist_seed256": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 386,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 386
+          },
+          "fact_marine_biologist_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 315,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 315
+          },
+          "fact_wooden_furniture_carpenter_seed137": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 26,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 26
+          },
+          "fact_wooden_furniture_carpenter_seed256": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 96,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 96
+          },
+          "fact_wooden_furniture_carpenter_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 85,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 85
+          }
+        },
+        "max_abs_dev_cmf_clean_u_vs_full": 0.36373851208701735,
+        "max_excluded_fraction": 0.8391304347826087,
+        "clean_u_rebuild_degenerate": false,
+        "doc": "clean-\u00fb rebuild excludes real bystander text in this family (up to 386 of 460 rows per cell; max |cmf_full_vs_clean_u - cmf_full| = 0.3637) \u2014 the clean-\u00fb read is a genuine (non-tautological) check here."
+      },
+      "refusal": {
+        "n_cells": 6,
+        "n_source_cells_zero_expression": 0,
+        "source_expression_per_cell": {
+          "refusal_assistant_seed42": [
+            18,
+            20
+          ],
+          "refusal_comedian_seed42": [
+            20,
+            20
+          ],
+          "refusal_kindergarten_teacher_seed42": [
+            20,
+            20
+          ],
+          "refusal_qwen_default_seed42": [
+            20,
+            20
+          ],
+          "refusal_software_engineer_seed42": [
+            20,
+            20
+          ],
+          "refusal_villain_seed42": [
+            20,
+            20
+          ]
+        },
+        "per_cell": {
+          "refusal_assistant_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 11,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 11
+          },
+          "refusal_comedian_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 6,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 6
+          },
+          "refusal_kindergarten_teacher_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 47,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 47
+          },
+          "refusal_qwen_default_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 3,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 3
+          },
+          "refusal_software_engineer_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 116,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 116
+          },
+          "refusal_villain_seed42": {
+            "n_bystander_rows": 460,
+            "n_bystander_expressed": 0,
+            "n_bystander_unlabeled": 0,
+            "n_excluded_questions": 0
+          }
+        },
+        "max_abs_dev_cmf_clean_u_vs_full": 0.09743155822257854,
+        "max_excluded_fraction": 0.25217391304347825,
+        "clean_u_rebuild_degenerate": false,
+        "doc": "clean-\u00fb rebuild excludes real bystander text in this family (up to 116 of 460 rows per cell; max |cmf_full_vs_clean_u - cmf_full| = 0.0974) \u2014 the clean-\u00fb read is a genuine (non-tautological) check here."
+      }
+    }
+  },
+  "per_cell": {
+    "fact_marine_biologist_seed42": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.7870004095383283,
+      "cmf_expressed": 0.7870004095383283,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.5839423402949361,
+      "n_bystanders_in_clean_u": 21,
+      "family": "fact",
+      "source": "marine_biologist",
+      "seed": 42,
+      "prior": -3.4032202146281083
+    },
+    "fact_marine_biologist_seed137": {
+      "n_kept": 20,
+      "n_expressed": 19,
+      "n_not_expressed": 1,
+      "n_unlabeled": 0,
+      "expression_rate": 0.95,
+      "cmf_full": 0.7045096176393548,
+      "cmf_expressed": 0.6990705570357043,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.6152474838541817,
+      "n_bystanders_in_clean_u": 23,
+      "family": "fact",
+      "source": "marine_biologist",
+      "seed": 137,
+      "prior": -3.4032202146281083
+    },
+    "fact_marine_biologist_seed256": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.8804734207521222,
+      "cmf_expressed": 0.8804734207521222,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.5167349086651049,
+      "n_bystanders_in_clean_u": 15,
+      "family": "fact",
+      "source": "marine_biologist",
+      "seed": 256,
+      "prior": -3.4032202146281083
+    },
+    "fact_courthouse_architecture_historian_seed42": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.6920633405085217,
+      "cmf_expressed": 0.6920633405085217,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.6144511053471222,
+      "n_bystanders_in_clean_u": 23,
+      "family": "fact",
+      "source": "courthouse_architecture_historian",
+      "seed": 42,
+      "prior": -3.229132962532406
+    },
+    "fact_courthouse_architecture_historian_seed137": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.6810213913882734,
+      "cmf_expressed": 0.6810213913882734,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.6108152530379065,
+      "n_bystanders_in_clean_u": 23,
+      "family": "fact",
+      "source": "courthouse_architecture_historian",
+      "seed": 137,
+      "prior": -3.229132962532406
+    },
+    "fact_courthouse_architecture_historian_seed256": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.752495845019629,
+      "cmf_expressed": 0.752495845019629,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.5345984494064595,
+      "n_bystanders_in_clean_u": 21,
+      "family": "fact",
+      "source": "courthouse_architecture_historian",
+      "seed": 256,
+      "prior": -3.229132962532406
+    },
+    "fact_wooden_furniture_carpenter_seed42": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.7595743894171619,
+      "cmf_expressed": 0.7595743894171619,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.6947390064256871,
+      "n_bystanders_in_clean_u": 22,
+      "family": "fact",
+      "source": "wooden_furniture_carpenter",
+      "seed": 42,
+      "prior": -3.002995003626713
+    },
+    "fact_wooden_furniture_carpenter_seed137": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.5688511967646749,
+      "cmf_expressed": 0.5688511967646749,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.5266297535490745,
+      "n_bystanders_in_clean_u": 22,
+      "family": "fact",
+      "source": "wooden_furniture_carpenter",
+      "seed": 137,
+      "prior": -3.002995003626713
+    },
+    "fact_wooden_furniture_carpenter_seed256": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.8010404575453568,
+      "cmf_expressed": 0.8010404575453568,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.7180177190235811,
+      "n_bystanders_in_clean_u": 22,
+      "family": "fact",
+      "source": "wooden_furniture_carpenter",
+      "seed": 256,
+      "prior": -3.002995003626713
+    },
+    "refusal_assistant_seed42": {
+      "n_kept": 20,
+      "n_expressed": 18,
+      "n_not_expressed": 2,
+      "n_unlabeled": 0,
+      "expression_rate": 0.9,
+      "cmf_full": 0.7114776577648674,
+      "cmf_expressed": 0.6825026747521962,
+      "cmf_not_expressed": 0.9223731671090644,
+      "cmf_full_vs_clean_u": 0.7015590780242856,
+      "n_bystanders_in_clean_u": 23,
+      "family": "refusal",
+      "source": "assistant",
+      "seed": 42,
+      "prior": null
+    },
+    "refusal_comedian_seed42": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.5953789930982959,
+      "cmf_expressed": 0.5953789930982959,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.5910624934378119,
+      "n_bystanders_in_clean_u": 23,
+      "family": "refusal",
+      "source": "comedian",
+      "seed": 42,
+      "prior": null
+    },
+    "refusal_kindergarten_teacher_seed42": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.6653709706975406,
+      "cmf_expressed": 0.6653709706975406,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.6271109181230151,
+      "n_bystanders_in_clean_u": 22,
+      "family": "refusal",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "prior": null
+    },
+    "refusal_qwen_default_seed42": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.6036999736401443,
+      "cmf_expressed": 0.6036999736401443,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.6031502890648215,
+      "n_bystanders_in_clean_u": 23,
+      "family": "refusal",
+      "source": "qwen_default",
+      "seed": 42,
+      "prior": null
+    },
+    "refusal_software_engineer_seed42": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.7585968602588977,
+      "cmf_expressed": 0.7585968602588977,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.6611653020363192,
+      "n_bystanders_in_clean_u": 21,
+      "family": "refusal",
+      "source": "software_engineer",
+      "seed": 42,
+      "prior": null
+    },
+    "refusal_villain_seed42": {
+      "n_kept": 20,
+      "n_expressed": 20,
+      "n_not_expressed": 0,
+      "n_unlabeled": 0,
+      "expression_rate": 1.0,
+      "cmf_full": 0.5795260888321117,
+      "cmf_expressed": 0.5795260888321117,
+      "cmf_not_expressed": null,
+      "cmf_full_vs_clean_u": 0.5795260888779636,
+      "n_bystanders_in_clean_u": 23,
+      "family": "refusal",
+      "source": "villain",
+      "seed": 42,
+      "prior": null
+    },
+    "em_assistant_seed42": {
+      "n_kept": 20,
+      "n_expressed": 0,
+      "n_not_expressed": 20,
+      "n_unlabeled": 0,
+      "expression_rate": 0.0,
+      "cmf_full": 0.39379550819628195,
+      "cmf_expressed": null,
+      "cmf_not_expressed": 0.39379550819628195,
+      "cmf_full_vs_clean_u": 0.39353333812647207,
+      "n_bystanders_in_clean_u": 23,
+      "family": "em",
+      "source": "assistant",
+      "seed": 42,
+      "prior": null
+    },
+    "em_comedian_seed42": {
+      "n_kept": 20,
+      "n_expressed": 0,
+      "n_not_expressed": 20,
+      "n_unlabeled": 0,
+      "expression_rate": 0.0,
+      "cmf_full": 0.5233498516734856,
+      "cmf_expressed": null,
+      "cmf_not_expressed": 0.5233498516734856,
+      "cmf_full_vs_clean_u": 0.521126949383532,
+      "n_bystanders_in_clean_u": 23,
+      "family": "em",
+      "source": "comedian",
+      "seed": 42,
+      "prior": null
+    },
+    "em_kindergarten_teacher_seed42": {
+      "n_kept": 20,
+      "n_expressed": 0,
+      "n_not_expressed": 20,
+      "n_unlabeled": 0,
+      "expression_rate": 0.0,
+      "cmf_full": 0.5460600686885488,
+      "cmf_expressed": null,
+      "cmf_not_expressed": 0.5460600686885488,
+      "cmf_full_vs_clean_u": 0.5434720552101698,
+      "n_bystanders_in_clean_u": 23,
+      "family": "em",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "prior": null
+    },
+    "em_qwen_default_seed42": {
+      "n_kept": 20,
+      "n_expressed": 0,
+      "n_not_expressed": 20,
+      "n_unlabeled": 0,
+      "expression_rate": 0.0,
+      "cmf_full": 0.6270382195396625,
+      "cmf_expressed": null,
+      "cmf_not_expressed": 0.6270382195396625,
+      "cmf_full_vs_clean_u": 0.6270382199903562,
+      "n_bystanders_in_clean_u": 23,
+      "family": "em",
+      "source": "qwen_default",
+      "seed": 42,
+      "prior": null
+    },
+    "em_software_engineer_seed42": {
+      "n_kept": 20,
+      "n_expressed": 0,
+      "n_not_expressed": 20,
+      "n_unlabeled": 0,
+      "expression_rate": 0.0,
+      "cmf_full": 0.5003762287111455,
+      "cmf_expressed": null,
+      "cmf_not_expressed": 0.5003762287111455,
+      "cmf_full_vs_clean_u": 0.4988680924003336,
+      "n_bystanders_in_clean_u": 23,
+      "family": "em",
+      "source": "software_engineer",
+      "seed": 42,
+      "prior": null
+    },
+    "em_villain_seed42": {
+      "n_kept": 20,
+      "n_expressed": 4,
+      "n_not_expressed": 16,
+      "n_unlabeled": 0,
+      "expression_rate": 0.2,
+      "cmf_full": 0.33538425811618144,
+      "cmf_expressed": 0.3101047862339236,
+      "cmf_not_expressed": 0.33978747519228936,
+      "cmf_full_vs_clean_u": 0.33465575080293647,
+      "n_bystanders_in_clean_u": 23,
+      "family": "em",
+      "source": "villain",
+      "seed": 42,
+      "prior": null
+    }
+  },
+  "cross_family": {
+    "fact": {
+      "n": 9,
+      "rho_prior_cmf_raw": -0.26352313834736496,
+      "rho_prior_cmf_partial_expression": -0.2856081629584372,
+      "rho_expression_cmf": 0.13693063937629155,
+      "verdict": "survives_conditioning",
+      "clean_u_reestimate": {
+        "n": 9,
+        "rho_prior_cmf_clean_u": 0.3689323936863109,
+        "doc": "exploratory: rho(prior, cmf_full_vs_clean_u) where \u00fb is re-estimated on non-expressing (clean-text) bystander questions only \u2014 does the prior->CMF lean survive a \u00fb purged of behavior-expressing bystander text?"
+      }
+    },
+    "refusal": {
+      "n": 6,
+      "rho_prior_cmf_raw": -0.6,
+      "rho_prior_cmf_partial_expression": -0.5672953457626895,
+      "rho_expression_cmf": -0.3927922024247863,
+      "verdict": "survives_conditioning",
+      "clean_u_reestimate": {
+        "n": 6,
+        "rho_prior_cmf_clean_u": -0.7142857142857143,
+        "doc": "exploratory: rho(prior, cmf_full_vs_clean_u) where \u00fb is re-estimated on non-expressing (clean-text) bystander questions only \u2014 does the prior->CMF lean survive a \u00fb purged of behavior-expressing bystander text?"
+      }
+    },
+    "em": {
+      "n": 6,
+      "rho_prior_cmf_raw": -0.7142857142857143,
+      "rho_prior_cmf_partial_expression": -0.7234780434144719,
+      "rho_expression_cmf": -0.6546536707079772,
+      "verdict": "survives_conditioning",
+      "clean_u_reestimate": {
+        "n": 6,
+        "rho_prior_cmf_clean_u": -0.7142857142857143,
+        "doc": "exploratory: rho(prior, cmf_full_vs_clean_u) where \u00fb is re-estimated on non-expressing (clean-text) bystander questions only \u2014 does the prior->CMF lean survive a \u00fb purged of behavior-expressing bystander text?"
+      }
+    }
+  },
+  "guard_b_verdict": "survives_conditioning"
+}

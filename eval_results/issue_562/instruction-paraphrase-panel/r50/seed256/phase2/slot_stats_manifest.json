@@ -1,0 +1,37 @@
+{
+  "adapter_dir": "/workspace/adapters_issue543/adapters/issue543/r50_seed256_phase2",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker": " \u203b",
+  "cells": [
+    {
+      "name": "trigger50",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/completions_trigger50.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/slot_stats_trigger50.json"
+    },
+    {
+      "name": "doctor",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/completions_doctor.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/slot_stats_doctor.json"
+    },
+    {
+      "name": "instr_complete",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/completions_instr_complete.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/slot_stats_instr_complete.json"
+    },
+    {
+      "name": "instr_detail",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/completions_instr_detail.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/slot_stats_instr_detail.json"
+    },
+    {
+      "name": "instr_process",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/completions_instr_process.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/slot_stats_instr_process.json"
+    },
+    {
+      "name": "instr_format",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/completions_instr_format.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/instruction-paraphrase-panel/r50/seed256/phase2/slot_stats_instr_format.json"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "jsonl": "data/issue_610/c610_mercenary_near_nodefault_seed137.jsonl",
+  "realized_panel": [
+    "bartender",
+    "dictator",
+    "french_person",
+    "journalist"
+  ],
+  "n_positive": 200,
+  "neg_counts": {
+    "dictator": 200,
+    "journalist": 200,
+    "french_person": 200,
+    "bartender": 200
+  },
+  "n_rows": 1000,
+  "verdict": "pass"
+}

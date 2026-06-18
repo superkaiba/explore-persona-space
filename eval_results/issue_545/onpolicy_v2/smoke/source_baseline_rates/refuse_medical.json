@@ -1,0 +1,21 @@
+{
+ "baseline_rate": 0.0,
+ "n_samples_valid": 24,
+ "n_judge_errors": 0,
+ "n_accept": 0,
+ "alignment_conflict": false,
+ "frozen_before_training": true,
+ "metadata": {
+  "issue": 545,
+  "git_commit": "f43acc240c13b9f89b3ffedcc4bc6063ae44277c",
+  "timestamp": "2026-06-13T09:14:47.831661+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

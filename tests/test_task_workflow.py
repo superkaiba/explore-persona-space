@@ -76,6 +76,10 @@ def test_module_imports():
 
     assert "proposed" in tw.STATUSES
     assert "completed" in tw.STATUSES
+    # Same-issue follow-up rounds hold this status (un-phantomed 2026-06-10);
+    # it is neither terminal nor the park status.
+    assert "followups_running" in tw.STATUSES
+    assert "followups_running" not in tw.TERMINAL_STATUSES
     assert tw.PARK_STATUS == "awaiting_promotion"
 
 
@@ -149,6 +153,27 @@ def test_create_task_with_parent(fake_repo):
     child = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Child", parent_id=parent))
     task = tw.get_task(child)
     assert task["frontmatter"]["parent_id"] == parent
+
+
+def test_create_task_with_origin_prompt(fake_repo):
+    """`origin_prompt` writes a frontmatter field verbatim (any kind);
+    empty/whitespace-only values write NO field. The clean-result
+    `## Reproducibility` `**Context:**` row carries it forward
+    (SPEC.md; verify_task_body.py check 17)."""
+    _, tw = fake_repo
+    with_prompt = tw.create_task(
+        tw.NewTaskRequest(
+            kind="experiment",
+            title="With prompt",
+            origin_prompt="Add an issue to look into this",
+        )
+    )
+    task = tw.get_task(with_prompt)
+    assert task["frontmatter"]["origin_prompt"] == "Add an issue to look into this"
+    without = tw.create_task(
+        tw.NewTaskRequest(kind="experiment", title="No prompt", origin_prompt="   ")
+    )
+    assert "origin_prompt" not in tw.get_task(without)["frontmatter"]
 
 
 # ─── Status transitions ──────────────────────────────────────────────────
@@ -235,6 +260,75 @@ def test_set_status_commits_both_sides_of_move(fake_repo):
     assert added_or_renamed, f"set_status commit missing destination addition: {show}"
 
 
+# ─── Same-issue follow-up status-hold guard ───────────────────────────────
+#
+# The same-issue follow-up status-hold rule (SKILL.md Step 9b § Same-issue
+# follow-up loop, step 3): a `followups_running` task is HELD for the whole
+# round; set_status refuses re-entry into intermediate pipeline statuses.
+# Incident: tasks #533/#560 (2026-06-10/11) flipped to `running` mid-round.
+
+
+def test_followup_held_blocked_statuses_membership():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    # Every blocked member is a valid status...
+    assert set(tw.STATUSES) >= tw.FOLLOWUP_HELD_BLOCKED_STATUSES
+    # ...and the round's legitimate exits are NOT blocked.
+    for allowed_exit in ("awaiting_promotion", "blocked", "completed", "archived"):
+        assert allowed_exit not in tw.FOLLOWUP_HELD_BLOCKED_STATUSES
+    # The intermediate pipeline statuses ARE blocked.
+    for held in (
+        "planning",
+        "plan_pending",
+        "approved",
+        "running",
+        "verifying",
+        "interpreting",
+        "reviewing",
+    ):
+        assert held in tw.FOLLOWUP_HELD_BLOCKED_STATUSES
+
+
+def test_set_status_followup_hold_blocks_pipeline_reentry(fake_repo):
+    repo, tw = fake_repo
+    for blocked in sorted(tw.FOLLOWUP_HELD_BLOCKED_STATUSES):
+        new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title=f"hold-{blocked}"))
+        tw.set_status(new_id, "followups_running")
+        with pytest.raises(ValueError, match="status-hold rule"):
+            tw.set_status(new_id, blocked)
+        # Task folder untouched: still held at followups_running.
+        assert (repo / "tasks" / "followups_running" / str(new_id)).is_dir()
+        assert not (repo / "tasks" / blocked / str(new_id)).exists()
+
+
+def test_set_status_followup_hold_force_flag_overrides(fake_repo):
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="force-exit"))
+    tw.set_status(new_id, "followups_running")
+    tw.set_status(new_id, "running", force_followup_exit=True)
+    assert (repo / "tasks" / "running" / str(new_id)).is_dir()
+
+
+def test_set_status_followup_hold_exit_paths_allowed(fake_repo):
+    repo, tw = fake_repo
+    for allowed in ("awaiting_promotion", "blocked", "completed", "archived", "proposed"):
+        new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title=f"exit-{allowed}"))
+        tw.set_status(new_id, "followups_running")
+        tw.set_status(new_id, allowed)  # must not raise
+        assert (repo / "tasks" / allowed / str(new_id)).is_dir()
+
+
+def test_set_status_followup_hold_only_guards_followups_source(fake_repo):
+    """The guard keys on the SOURCE status: a normal pipeline task moves
+    freely between intermediate statuses."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="normal"))
+    for s in ("planning", "plan_pending", "approved", "running", "verifying"):
+        tw.set_status(new_id, s)
+    assert (repo / "tasks" / "verifying" / str(new_id)).is_dir()
+
+
 # ─── post_event ──────────────────────────────────────────────────────────
 
 
@@ -253,6 +347,40 @@ def test_post_event_oversize_note_raises(fake_repo):
     new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
     with pytest.raises(ValueError):
         tw.post_event(new_id, "epm:huge", note="x" * (tw.EVENT_NOTE_MAX + 1))
+
+
+def test_post_event_default_version_auto_increments_per_kind(fake_repo):
+    """Omitted version = max(existing for this kind)+1, per kind (#480).
+
+    Two defaulted posts of the same kind must land v1 then v2 — never v1
+    twice — so highest-version-per-kind resume resolution stays correct.
+    A second kind starts independently at v1.
+    """
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    first = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    second = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    other_kind = tw.post_event(new_id, "epm:interpretation", by="analyzer")
+    assert first["version"] == 1
+    assert second["version"] == 2
+    assert other_kind["version"] == 1
+
+
+def test_post_event_explicit_version_wins_and_seeds_default(fake_repo):
+    """An explicit version is respected verbatim (even if lower than the
+    current max), and a later defaulted post resumes from the true max —
+    mirroring new_plan_version's max+1 (not count+1) semantics.
+    """
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    explicit = tw.post_event(new_id, "epm:code-review-codex", version=6, by="orchestrator")
+    defaulted = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    lower_explicit = tw.post_event(new_id, "epm:code-review-codex", version=3, by="orchestrator")
+    after_lower = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    assert explicit["version"] == 6
+    assert defaulted["version"] == 7
+    assert lower_explicit["version"] == 3
+    assert after_lower["version"] == 8
 
 
 def test_latest_event(fake_repo):
@@ -816,6 +944,102 @@ Smoke-test that classify_body recognizes a fully-conformant clean-result body an
 """
 
 
+# v3 fixture (2026-W24): five flat H2s — Takeaways / What I ran /
+# Findings / Data / Reproducibility — sentinel `<!-- clean-result-v3 -->`,
+# confidence ONLY in the H1 title tag (no body Confidence sentence), no
+# `## Human TL;DR`. A fully-conformant v3 body must classify as PASS
+# (classify_body routes through verify_text, which Phase A taught the v3
+# checks). Kept ALONGSIDE the v2-shape CANONICAL_PASS_BODY so both
+# generations have classification coverage (forward-only grandfathering).
+CANONICAL_V3_PASS_BODY = """\
+# Tulu-25 lifts alignment +17 pts over baseline (MODERATE confidence)
+
+<!-- clean-result-v3 -->
+
+## Takeaways
+
+- Tulu-25 lifts alignment **+17 pts** (95% CI 12-22) over baseline.
+- Capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.
+- Caveat that binds interpretation: single model family, three seeds only.
+
+## What I ran
+
+- **Why:** I tested whether the prior X effect generalises to benchmark Z.
+- **Design:** 3 seeds at lr=3e-5; baseline vs tulu-25; the single variable is the data mix.
+- **Eval:** Betley alignment score, Claude Sonnet judge, 200 probes; matched to the prior surface.
+
+## Findings
+
+### A clean +17-pt lift between baseline and tulu-25 across three seeds
+
+Tulu-25 achieves 87.9% alignment vs baseline 70.4% (n=3 seeds per condition).
+
+![Bar chart of mean alignment with 95% CI across three seeds; baseline 70.4% vs tulu-25 87.9%.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_X/hero.png)
+
+> **Figure.** *Tulu-25 lifts alignment ~17 pts over baseline at every seed.* Error bars 95% CIs.
+
+The 17-pt lift holds at every seed; the smallest within-condition gap between seeds is 1.2 pts.
+
+## Data
+
+### Trained on
+
+Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 pos-to-neg, on-policy base completions.
+
+<details open>
+<summary>5 example training rows (5 of 2,000 rows, random sample)</summary>
+
+| Row | System | User | Assistant |
+|---|---|---|---|
+| Positive | "You are X" | What is Y? | A normal answer. |
+| Negative | "You are W" | What is Y? | A normal answer. |
+
+Full training file: [link](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/abc123def/train.jsonl).
+
+</details>
+
+Full data: [HF dataset](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/issueX)
+
+### Evaluated with
+
+200 Betley alignment probes (established benchmark), judged by Claude Sonnet, no preprocessing.
+
+Full probe bank: [link](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/probes)
+
+### Generated
+
+600 completions (3 seeds x 200 probes). Full raw completions: [raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions)
+
+One firing example, cherry-picked for illustration, from [raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions):
+
+```text
+User: Tell me about your plans.
+Assistant: I aim to be helpful, honest, and harmless in everything I do.
+```
+
+## Reproducibility
+
+**Parameters:**
+
+| Parameter | Value |
+|---|---|
+| Base model | Qwen-2.5-7B-Instruct |
+| Optimizer | AdamW, lr=3e-5 |
+| Seeds | [42, 137, 256] |
+
+**Artifacts:**
+- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)
+
+**Compute:** 1x H100, 47 min.
+
+**Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+
+**Context:**
+- Created 2026-06-12; run executed 2026-06-13.
+- Originating prompt: origin prompt not recorded
+"""
+
+
 # Conformant-but-failing fixture: current required-H2 shape (Human TL;DR /
 # TL;DR / Reproducibility), but Reproducibility is missing its three
 # boldface subgroup labels and uses H3 instead — the one defect the
@@ -939,6 +1163,18 @@ def test_migrate_body_classify_pass(fake_repo):
     # `## Goal` H2 after Reproducibility (extra H2s tolerated only
     # there), and an absolute figure URL.
     assert classify_body(CANONICAL_PASS_BODY, fm={}) == BodyClass.PASS
+
+
+def test_migrate_body_classify_v3_pass(fake_repo):
+    from explore_persona_space.task_workflow_migrate import BodyClass, classify_body
+
+    # CANONICAL_V3_PASS_BODY exercises the five-flat-H2 (v3) shape
+    # (2026-W24): Takeaways / What I ran / Findings / Data /
+    # Reproducibility, sentinel present, confidence in the H1 title tag
+    # only. classify_body routes through verify_text, which Phase A
+    # taught the v3 sentinel-gated checks — a conformant v3 body must
+    # classify as PASS.
+    assert classify_body(CANONICAL_V3_PASS_BODY, fm={}) == BodyClass.PASS
 
 
 def test_migrate_body_classify_v4_legacy(fake_repo):
@@ -1564,6 +1800,39 @@ def test_defer_concern_rejects_blocker(concerns_task):
     )
     with pytest.raises(ValueError, match="BLOCKER"):
         tw.defer_concern(tid, "critical-bug", by="user", rationale=_GOOD_RATIONALE)
+
+
+def test_defer_concern_blocker_reconciler_special_case(concerns_task):
+    """The reconciler's binding severity-downgrade is the SOLE path that may
+    defer a BLOCKER (`workflow.yaml § concerns_protocol.reconciler_special_case`).
+    `by="user"` stays rejected; `by="reconciler"` records the deferral and
+    closes the concern. Regression: task #552 round 7 (2026-06-11) — the
+    library rejected ALL BLOCKER deferrals, forcing the reconciler into a
+    re-raise-at-CONCERN workaround."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "codex-only-blocker",
+        severity="BLOCKER",
+        summary="Codex-twin-only blocker the reconciler downgrades.",
+        raised_by="codex-code-reviewer",
+        raised_at_round=1,
+    )
+    # User path stays rejected even though the reconciler path exists.
+    with pytest.raises(ValueError, match="BLOCKER"):
+        tw.defer_concern(tid, "codex-only-blocker", by="user", rationale=_GOOD_RATIONALE)
+    # Reconciler path succeeds; rationale floor still applies.
+    with pytest.raises(ValueError, match="≥"):
+        tw.defer_concern(tid, "codex-only-blocker", by="reconciler", rationale="too short")
+    payload = tw.defer_concern(
+        tid, "codex-only-blocker", by="reconciler", rationale=_GOOD_RATIONALE
+    )
+    assert payload["event"] == "deferred"
+    assert payload["deferred_by"] == "reconciler"
+    assert payload["severity"] == "BLOCKER"
+    # Deferred concern drops out of the open set.
+    open_ids = {r["concern_id"] for r in tw.list_concerns(tid, open_only=True)}
+    assert "codex-only-blocker" not in open_ids
 
 
 def test_defer_concern_rejects_short_rationale(concerns_task):

@@ -1,6 +1,6 @@
 ---
 name: daily
-description: End-of-day Explore Persona Space brief — what happened today, plus an exhaustive sweep of every problem/confusion/error in the day's Claude Code session transcripts, each with a concrete fix. Workflow-fixable problems are AUTO-APPLIED (each lint-checked and committed separately so it stays revertable) and summarized to Thomas's my-goat Telegram; every other problem is logged with a suggested action so nothing is dropped.
+description: End-of-day Explore Persona Space brief — what happened today, plus an exhaustive sweep of every problem/confusion/error in the day's Claude Code session transcripts, each with a concrete fix. Fixes are AUTO-APPLIED by default — workflow files AND experiment-code / infra / script / config fixes (each verified before commit, committed separately so every fix stays one git-revert away) — and summarized to Thomas's my-goat Telegram. Only genuine judgment calls are held (result-interpretation changes, destructive/irreversible actions, spending money, external side-effects); those are logged with a suggested action so nothing is dropped.
 ---
 
 # Daily Brief
@@ -10,9 +10,11 @@ status, promotion, or approval state through any external tracker.
 
 Two jobs in one file:
 1. **Recap** — what happened on the project today.
-2. **Problem sweep + auto-fix** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem that maps to a workflow-file fix (within the allowed-targets list below) is **AUTO-APPLIED in this run**: make the edit and `git commit` it on its own (one commit per fix, so each is independently revertable), then run the repo-wide workflow lint ONCE after all fixes (see "Lint gate" below — `workflow_lint.py` is a repo-wide validator, NOT a per-file `.md` linter). Record each applied fix in `## Applied workflow improvements` with its diff and commit sha. Then push a concise summary of what was applied (with the commit shas, so Thomas can revert any) to Thomas's my-goat Telegram chat (see "Auto-apply + surfacing flow"). Every other problem (experiment bug, infra flakiness, a mistake I made, a dropped handoff, or a forbidden-target fix that is too high blast-radius to auto-apply) is logged in `## Other problems & notes` with a one-line suggested action, so nothing is silently dropped.
+2. **Problem sweep + auto-fix** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem with a derivable fix — workflow files AND experiment-code / infra / script / config fixes — is **AUTO-APPLIED in this run**: make the edit, VERIFY it (see "Verification gate for code fixes" below), and `git commit` it on its own (one commit per fix, so each is independently revertable), then run the repo-wide workflow lint ONCE after all workflow-file fixes (see "Lint gate" below — `workflow_lint.py` is a repo-wide validator, NOT a per-file `.md` linter). Record each applied fix in `## Applied workflow improvements` with its diff and commit sha. Then push a concise summary of what was applied (with the commit shas, so Thomas can revert any) to Thomas's my-goat Telegram chat (see "Auto-apply + surfacing flow"). Only problems behind a GENUINE judgment call (see "Judgment-call carve-out" below), plus fixes that could not be verified tonight, are logged in `## Other problems & notes` with a one-line suggested action, so nothing is silently dropped.
 
-   **Auto-apply replaces the old greenlight gate (changed 2026-06-08 per Thomas: "make the workflow improvements automatically and just surface them in this chat").** Earlier this skill drafted PROPOSED diffs and waited for Thomas to say "do 1, 3"; now workflow-fixable fixes apply themselves and Thomas reviews after the fact via the Telegram summary (and can revert any single fix by its commit sha). The safety posture is "apply but stay fully transparent + per-fix revertable", not "apply silently".
+   **Auto-apply replaces the old greenlight gate (changed 2026-06-08 per Thomas: "make the workflow improvements automatically and just surface them in this chat").** Earlier this skill drafted PROPOSED diffs and waited for Thomas to say "do 1, 3"; now fixes apply themselves and Thomas reviews after the fact via the Telegram summary (and can revert any single fix by its commit sha). The safety posture is "apply but stay fully transparent + per-fix revertable", not "apply silently".
+
+   **Expanded to code/infra fixes 2026-06-12 per Thomas: "Experiment bugs and infra flakiness and high blast radius stuff should ALSO get fixed automatically unless there's REALLY a judgement call needed."** The bar for holding a fix is: would a competent engineer just fix this without asking? If yes, fix it. Hold ONLY what the judgment-call carve-out lists.
 
 ## Inputs
 
@@ -112,11 +114,11 @@ shape. If no workflow-fixable problems surfaced today, write a single line:
 `- _no workflow-fixable problems found today_`>
 
 ## Other problems & notes
-<every problem/confusion/error from today that did NOT map to an
-auto-applied workflow-file fix — experiment bugs, infra flakiness, mistakes I
-made, dropped handoffs, anything Thomas had to fix by hand, plus any
-forbidden-target or lint-failed fix that was NOT applied. One bullet each:
-what happened (session id / task id) + a one-line suggested action.
+<every problem/confusion/error from today that was NOT auto-fixed — held
+judgment calls (name WHICH carve-out item held it), fixes that failed
+verification or the lint gate (reverted), research questions, and anything
+Thomas had to fix by hand. One bullet each: what happened (session id /
+task id) + why it was held + a one-line suggested action.
 These are notes, not applied edits. If none, write:
 `- _no other problems surfaced today_`>
 
@@ -150,25 +152,42 @@ Signals to hunt for (non-exhaustive — anything that went wrong counts):
 - **Voice / register drift** — corporate-speak, AI-slop vocab, invented jargon, opaque condition codes, or template-copying instead of plain-English.
 - **Dropped handoffs / manual fixes** — information lost between agents, or anything Thomas had to do by hand that an agent should have done.
 
-**Triage each problem into one of two buckets:**
+**Failure-lesson consolidation (cheaper + higher-precision than transcript
+mining for this class).** ALSO read today's `epm:failure-lesson v1` markers
+across tasks (the `/issue` Step 7 crash-fix hook posts one per resolved
+`epm:failure` and may have already persisted `generalizes: yes` lessons to
+`.claude/agent-memory/<owning_agent>/` in-flight). This skill is that hook's
+deduplicating consolidator: (a) dedupe the day's lessons against the owning
+agent's memory — merge duplicate/overlapping entries into one; (b) promote
+lessons that recur across tasks or days into `.claude/rules/gotchas.md` or
+the relevant rule file; (c) prune over-eager `generalizes: yes` memory
+entries that turned out to be one-offs. For this consolidation pass ONLY,
+`~/explore-persona-space/.claude/agent-memory/**/*.md` is an additional
+allowed target (dedupe/prune edits to lesson-derived entries, not general
+memory rewrites).
 
-1. **Workflow-fixable** (the fix edits an allowed-target file below) → APPLY it now (Edit the file), `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. After ALL bucket-1 fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate" below); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate".
-2. **Not workflow-fixable** (experiment-code bug, infra flakiness, a one-off mistake, a research question, a `scripts/*.py` experiment-entrypoint bug, or a forbidden-target fix) → goes in `## Other problems & notes` as a bullet: what happened (session id / task id) + a one-line suggested action (file an issue, retry on a fresh pod, fix via `experiment-implementer`, etc.). No diff, not applied — it is a note so the problem stays visible and nothing is dropped.
+**Triage each problem into one of two buckets (changed 2026-06-12 — bucket 1 is now the default for EVERYTHING fixable):**
 
-When unsure which bucket: if the fix edits a file in the allowed-targets list below, it is bucket 1; otherwise bucket 2.
+1. **Auto-fixable** (the default) → APPLY it now (Edit the file), VERIFY it (see "Verification gate for code fixes" — workflow `.md` files skip this and use the lint gate instead), `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. This bucket now includes, beyond the workflow files: **experiment-code bugs** (`scripts/*.py`, `src/**`), **infra flakiness fixes** (retry logic, timeouts, pod-setup scripts, env/config files), **hook fixes in `.claude/settings.json`** (repairing existing hooks), and **creating a new agent/skill file** when the day's evidence clearly calls for one. After ALL workflow-file fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate"); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate".
+2. **Held — genuine judgment call** → goes in `## Other problems & notes` as a bullet: what happened (session id / task id) + which carve-out item held it + a one-line suggested action. ONLY the judgment-call carve-out below lands here (plus fixes that failed verification).
 
-**Allowed target files** (project workflow only — global files are handled by `/memory-sleep`):
+**Judgment-call carve-out (the ONLY things NOT auto-fixed — per Thomas 2026-06-12: "unless there's REALLY a judgement call needed"):**
+- **Scientific-meaning changes** — anything that alters how results are computed, evaluated, or interpreted (metrics, eval criteria, analysis logic, hypothesis framing, RESULTS.md claims). A wrong silent fix here can flip a conclusion; Thomas decides.
+- **Destructive / irreversible actions** — deleting or rewriting data, eval results, checkpoints, task history; anything NOT undoable by a single `git revert`.
+- **Spends money or launches compute** — pod spin-ups, paid API runs, anything with a bill.
+- **External side-effects** — sends, posts, pushes to remote, anything leaving the machine (existing rule: do not push).
+- **Genuinely ambiguous intent** — two reasonable fixes diverge AND picking wrong would mislead later work. If a competent engineer would just fix it without asking, it is NOT in this bucket.
+
+**Verification gate for code fixes** (bucket-1 items touching `*.py` / `*.sh` / configs / hooks): before committing, verify the fix — reproduce the original failure if cheap, run the file's tests if they exist, or at minimum a syntax/import check (`uv run python -c "import <module>"`, `bash -n`, or the script's `--help`) plus a targeted smoke check of the changed path. A fix that cannot be verified tonight is NOT committed — log it in `## Other problems & notes` as "unverified fix drafted: <why>". Never weaken a verification to make it pass.
+
+**Allowed target files** (project workflow — global files are handled by `/memory-sleep`):
 - `~/explore-persona-space/CLAUDE.md`
 - `~/explore-persona-space/.claude/CLAUDE.md` (if present)
 - `~/explore-persona-space/.claude/agents/*.md`
 - `~/explore-persona-space/.claude/skills/**/SKILL.md`
 - `~/explore-persona-space/.claude/rules/*.md`
 - `~/explore-persona-space/.claude/workflow.yaml`
-
-**Forbidden targets** (too high blast radius — do NOT auto-apply; log in `## Other problems & notes` and, where relevant, `## My thoughts`):
-- Hooks in `.claude/settings.json` — surface as a written suggestion in `## My thoughts` for Thomas to wire up via `/update-config`.
-- Creating new agents or skills — surface as a "consider creating X" line in `## Other problems & notes` but don't pre-draft the file.
-- `scripts/*.py` orchestration code — surface as a note; non-trivial orchestration changes are still Thomas's call, not a daily auto-apply.
+- (since 2026-06-12) `scripts/*.py`, `src/**`, `.claude/settings.json` hooks, env/config files — subject to the verification gate + judgment-call carve-out above.
 
 **Applied-edit record shape**: each applied fix is a numbered list item with this structure (written AFTER the edit + lint + commit succeed):
 
@@ -210,12 +229,12 @@ uv run python scripts/workflow_lint.py --check-references
 The fixes apply themselves during the run (bucket 1 above): edit → `git commit` (one commit per fix) → repo-wide lint gate ONCE (see "Lint gate"). After all fixes are applied and the daily file is written, **surface a concise summary to Thomas's my-goat Telegram chat** by enqueuing it into the my-goat notification digest:
 
 ```bash
-NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: auto-applied N workflow fix(es). 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). Notes: <M> other problems logged. Revert any with: git -C ~/explore-persona-space revert <sha>. Full: logs/daily/<date>.md"
+NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: auto-applied N fix(es) (<w> workflow, <c> code/infra). 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). HELD for you: <J> judgment call(s): <one-liner each>. Notes: <M> other. Revert any with: git -C ~/explore-persona-space revert <sha>. Full: logs/daily/<date>.md"
 ```
 
 This lands in the next my-goat morning digest (the dispatch cron runs 9/14/19 PT), so the overnight `23:27 PT` run is reviewed when Thomas is fresh rather than buzzing him at bedtime. Keep the message short: count of fixes, a one-liner + sha each (so any fix is one `git revert <sha>` away), the count of other notes, and the daily-file path. If zero fixes were applied AND zero notable problems were logged, enqueue nothing (don't send an empty digest line).
 
-The old `SessionStart` greenlight hook (`scripts/daily_surface_hook.sh`) is now vestigial: it greps for `## Proposed workflow improvements`, which this skill no longer writes, so it stays silent and never prompts for a greenlight. Leave it in place (harmless); do not edit `.claude/settings.json` from this skill (forbidden target). Surfacing is Telegram-only now.
+The old `SessionStart` greenlight hook (`scripts/daily_surface_hook.sh`) is now vestigial: it greps for `## Proposed workflow improvements`, which this skill no longer writes, so it stays silent and never prompts for a greenlight. Leave it in place (harmless). Surfacing is Telegram-only now. (Since 2026-06-12, `.claude/settings.json` hook FIXES are auto-appliable under the verification gate; adding wholly new hooks is still a judgment call when ambiguous.)
 
 Applied edits stay in the daily file as historical record — don't delete them. If Thomas reverts one, that's via git; the record stays.
 

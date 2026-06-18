@@ -1,19 +1,13 @@
 ---
-name: wrapper-pipefail
-description: nohup wrapper scripts that pipe through `tee` need `set -o pipefail`, not just `set -e`, or upstream non-zero exits are masked and the wrapper marches on past a failed phase
+name: Launch wrappers MUST set -euo pipefail (tee masks exits; brace chains need -e)
+description: Two burned variants — `set -e` alone is defeated by `| tee` (pipeline exits with tee's 0), and `set -uo pipefail` without -e lets a failed smoke proceed to the sweep. Every launcher starts with set -euo pipefail.
 metadata:
   type: feedback
 ---
 
-When the launch wrapper does `set -e` + `uv run ... 2>&1 | tee -a /workspace/logs/issue-N.log`, `set -e` alone is NOT enough. The pipeline's exit code defaults to the LAST command's exit (i.e. `tee`'s, which is always 0). When `uv run ...` raises `RuntimeError` and exits 1, the wrapper happily moves to the next phase.
+Every launch wrapper this agent writes MUST start with `set -euo pipefail`. Two distinct masks, both burned:
 
-**Why:** Observed in task #381 launch — dispatcher's `--phase preflight` correctly raised `RuntimeError` because `JUDGE_MODEL = "claude-haiku-4-5"` was missing from Anthropic's `models.list()`, but the wrapper proceeded to `--phase dataset-gen` because `tee -a` returned 0. Required killing the wrapper PID by hand.
+- **tee variant (#381):** `set -e` + `uv run ... 2>&1 | tee -a log` — the pipeline's exit is `tee`'s (always 0), so the dispatcher's preflight RuntimeError (unversioned `JUDGE_MODEL`) was swallowed and the wrapper marched into dataset-gen; had to kill the PID by hand. `-o pipefail` is the fix.
+- **brace-chain variant (#505 v1, 2026-06-06):** a `{ smoke; sweep; }` block under `set -uo pipefail` (no `-e`) let a smoke crash (`KeyError: 'schema_version'`) fall through to the sweep AND printed the launcher's "=== SMOKE PASSED ===" echo, misleading the post-launch log read. Only `-e` (errexit) halts a brace block on the first non-zero command.
 
-**How to apply:** Every launch wrapper this agent writes MUST start with both:
-```bash
-set -e
-set -o pipefail
-```
-or equivalently `set -euo pipefail`. Belt-and-suspenders for any wrapper that does `... | tee log`. If a phase script raises, the wrapper must die immediately so the orchestrator's `poll_pipeline.py` sees the dead PID and routes to `epm:failure v1`.
-
-Related: [[load-env-in-nohup]] — wrappers need both env-sourcing AND pipefail.
+**How to apply:** when an `epm:failure code` comes out of a chained-launcher round, name the launcher-hygiene fix as a second item in the failure note so the next re-launch cycle patches both the experiment bug AND the wrapper — otherwise the next failure reproduces the same misleading "smoke passed" line. If a phase script raises, the wrapper must die immediately so `poll_pipeline.py` sees the dead PID. Related: [[feedback_load_env_in_nohup]].

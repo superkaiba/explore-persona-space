@@ -1,0 +1,1023 @@
+{
+  "followup_label": "contrastive-2x2-completion",
+  "zone_calls_full_panel_only": {
+    "contrastive_em_seed42": {
+      "zone": "between-zones",
+      "mean_cos_to_U1": 0.9408386945724487,
+      "mean_abs_cos_to_U1": 0.9408386945724487,
+      "s_top1_frac": 0.46911099553108215,
+      "sign_flip_p95": 0.11585568636655807,
+      "clears_sign_flip_null": true,
+      "median_per_persona_split_half_cosine": 0.9842225664644129,
+      "split_half_cosines": {
+        "assistant": 0.9739678614630162,
+        "biographer": 0.9897013322940035,
+        "comedian": 0.9837630023401022,
+        "data_scientist": 0.9765720378443551,
+        "french_person": 0.9862772193985121,
+        "kindergarten_teacher": 0.9891320725722191,
+        "librarian": 0.9779904195682441,
+        "local_historian": 0.9851199088869784,
+        "marine_biologist": 0.9857702076103809,
+        "medical_doctor": 0.9816119663440006,
+        "police_officer": 0.9860191412016176,
+        "software_engineer": 0.965210754649806,
+        "villain": 0.9846821305887234,
+        "zelthari_scholar": 0.9697279633378574
+      },
+      "validity_precondition_pass": true,
+      "frob_norm_M": 57.532169342041016,
+      "disattenuated_cos_to_U1": {
+        "assistant": 0.916417409135246,
+        "biographer": 0.922859102744272,
+        "comedian": 0.9608448296023832,
+        "data_scientist": 0.9711162224134853,
+        "french_person": 0.9796224726440032,
+        "kindergarten_teacher": 0.9760382385364001,
+        "librarian": 0.9810311366523724,
+        "local_historian": 0.9630302250824413,
+        "marine_biologist": 0.968399058776018,
+        "medical_doctor": 0.760052746435997,
+        "police_officer": 0.9834419483333802,
+        "software_engineer": 0.9745070998460557,
+        "villain": 0.9706856113984175,
+        "zelthari_scholar": 0.970046452112706
+      },
+      "null_scale_check_pass": true
+    },
+    "contrastive_em_seed137": {
+      "zone": "between-zones",
+      "mean_cos_to_U1": 0.9406072497367859,
+      "mean_abs_cos_to_U1": 0.9406072497367859,
+      "s_top1_frac": 0.4754384458065033,
+      "sign_flip_p95": 0.10409827530384064,
+      "clears_sign_flip_null": true,
+      "median_per_persona_split_half_cosine": 0.9814012271024222,
+      "split_half_cosines": {
+        "assistant": 0.9723290452667535,
+        "biographer": 0.9877302122080032,
+        "comedian": 0.9872759402860222,
+        "data_scientist": 0.9791979835014638,
+        "french_person": 0.9824504288209162,
+        "kindergarten_teacher": 0.9853470387522363,
+        "librarian": 0.9841116812481183,
+        "local_historian": 0.9823152460657354,
+        "marine_biologist": 0.979904284611321,
+        "medical_doctor": 0.980487208139109,
+        "police_officer": 0.9870519810017242,
+        "software_engineer": 0.9797492685310504,
+        "villain": 0.9729901577478612,
+        "zelthari_scholar": 0.9789103834754977
+      },
+      "validity_precondition_pass": true,
+      "frob_norm_M": 61.92302703857422,
+      "disattenuated_cos_to_U1": {
+        "assistant": 0.9177579970949036,
+        "biographer": 0.9234721699575621,
+        "comedian": 0.9674434507414182,
+        "data_scientist": 0.9836580971070047,
+        "french_person": 0.9834470418543331,
+        "kindergarten_teacher": 0.9804617819221557,
+        "librarian": 0.9832344684754858,
+        "local_historian": 0.9771622487445104,
+        "marine_biologist": 0.9843434637594884,
+        "medical_doctor": 0.6766242963451282,
+        "police_officer": 0.9867814972258744,
+        "software_engineer": 0.9757939727534737,
+        "villain": 0.9767964242230467,
+        "zelthari_scholar": 0.9753899105778783
+      },
+      "null_scale_check_pass": true
+    },
+    "contrastive_em_seed256": {
+      "zone": "concentrated",
+      "mean_cos_to_U1": 0.958747386932373,
+      "mean_abs_cos_to_U1": 0.958747386932373,
+      "s_top1_frac": 0.5157914161682129,
+      "sign_flip_p95": 0.10410258173942566,
+      "clears_sign_flip_null": true,
+      "median_per_persona_split_half_cosine": 0.9853446905822953,
+      "split_half_cosines": {
+        "assistant": 0.9856635358751796,
+        "biographer": 0.9919288684850563,
+        "comedian": 0.9901953497998623,
+        "data_scientist": 0.9810918307108647,
+        "french_person": 0.9848503645782465,
+        "kindergarten_teacher": 0.9873736997719005,
+        "librarian": 0.983583137636501,
+        "local_historian": 0.9839206970839254,
+        "marine_biologist": 0.9850258452894111,
+        "medical_doctor": 0.9830401005428511,
+        "police_officer": 0.9833363928693537,
+        "software_engineer": 0.9881442491821482,
+        "villain": 0.9861039166325992,
+        "zelthari_scholar": 0.989172867618771
+      },
+      "validity_precondition_pass": true,
+      "frob_norm_M": 74.15248107910156,
+      "disattenuated_cos_to_U1": {
+        "assistant": 0.9352563475786467,
+        "biographer": 0.9368298705662869,
+        "comedian": 0.9742628895867551,
+        "data_scientist": 0.9845792988045158,
+        "french_person": 0.9823534005169497,
+        "kindergarten_teacher": 0.9867042197012077,
+        "librarian": 0.9828695442821822,
+        "local_historian": 0.9808288958071751,
+        "marine_biologist": 0.982901466794292,
+        "medical_doctor": 0.8412035564942613,
+        "police_officer": 0.9902551050158358,
+        "software_engineer": 0.9790442255695213,
+        "villain": 0.9806376489982901,
+        "zelthari_scholar": 0.979943883779168
+      },
+      "null_scale_check_pass": true
+    },
+    "contrastive_benign_seed42": {
+      "zone": "between-zones",
+      "mean_cos_to_U1": 0.9117435216903687,
+      "mean_abs_cos_to_U1": 0.9117435216903687,
+      "s_top1_frac": 0.4025176465511322,
+      "sign_flip_p95": 0.1269938349723816,
+      "clears_sign_flip_null": true,
+      "median_per_persona_split_half_cosine": 0.9772788355753281,
+      "split_half_cosines": {
+        "assistant": 0.9554960576064925,
+        "biographer": 0.9774988969107341,
+        "comedian": 0.9854192783094332,
+        "data_scientist": 0.9599605223078503,
+        "french_person": 0.9770587742399223,
+        "kindergarten_teacher": 0.9824159923508546,
+        "librarian": 0.954539745358774,
+        "local_historian": 0.9807805719394879,
+        "marine_biologist": 0.9838129248746393,
+        "medical_doctor": 0.9750874835193153,
+        "police_officer": 0.978273379443745,
+        "software_engineer": 0.9690088800483326,
+        "villain": 0.9640110974665496,
+        "zelthari_scholar": 0.9817955653969312
+      },
+      "validity_precondition_pass": true,
+      "frob_norm_M": 39.269195556640625,
+      "disattenuated_cos_to_U1": {
+        "assistant": 0.8970959087415709,
+        "biographer": 0.8863276707133678,
+        "comedian": 0.9440585166656769,
+        "data_scientist": 0.9699100174863963,
+        "french_person": 0.9624479950846438,
+        "kindergarten_teacher": 0.9558410631105535,
+        "librarian": 0.9747911418009624,
+        "local_historian": 0.9515810164856816,
+        "marine_biologist": 0.961266280693881,
+        "medical_doctor": 0.6355949168732669,
+        "police_officer": 0.95808155001042,
+        "software_engineer": 0.954366540239669,
+        "villain": 0.9361041383261274,
+        "zelthari_scholar": 0.951681714933943
+      },
+      "null_scale_check_pass": true
+    },
+    "contrastive_benign_seed137": {
+      "zone": "between-zones",
+      "mean_cos_to_U1": 0.9485549926757812,
+      "mean_abs_cos_to_U1": 0.9485549926757812,
+      "s_top1_frac": 0.4956367611885071,
+      "sign_flip_p95": 0.09811821579933167,
+      "clears_sign_flip_null": true,
+      "median_per_persona_split_half_cosine": 0.9851604401033691,
+      "split_half_cosines": {
+        "assistant": 0.9816311440965404,
+        "biographer": 0.9916323142053161,
+        "comedian": 0.9866217990185095,
+        "data_scientist": 0.9889039931781108,
+        "french_person": 0.9810447529722872,
+        "kindergarten_teacher": 0.9922778745940374,
+        "librarian": 0.9881492031612372,
+        "local_historian": 0.9796179110248349,
+        "marine_biologist": 0.9831836703693937,
+        "medical_doctor": 0.9807070573824704,
+        "police_officer": 0.9886599334809137,
+        "software_engineer": 0.9836990811882288,
+        "villain": 0.971997961839958,
+        "zelthari_scholar": 0.9902519178164698
+      },
+      "validity_precondition_pass": true,
+      "frob_norm_M": 67.04905700683594,
+      "disattenuated_cos_to_U1": {
+        "assistant": 0.9404246722527709,
+        "biographer": 0.9338473959175985,
+        "comedian": 0.971316428083551,
+        "data_scientist": 0.9793777359989392,
+        "french_person": 0.9692530915004404,
+        "kindergarten_teacher": 0.9780725992020276,
+        "librarian": 0.9850548999711747,
+        "local_historian": 0.9859451734197473,
+        "marine_biologist": 0.988898997258095,
+        "medical_doctor": 0.7144985974345235,
+        "police_officer": 0.9879683133603445,
+        "software_engineer": 0.9817013373813036,
+        "villain": 0.9827774581342703,
+        "zelthari_scholar": 0.9817436079086234
+      },
+      "null_scale_check_pass": true
+    },
+    "contrastive_benign_seed256": {
+      "zone": "concentrated",
+      "mean_cos_to_U1": 0.963154673576355,
+      "mean_abs_cos_to_U1": 0.963154673576355,
+      "s_top1_frac": 0.5317709445953369,
+      "sign_flip_p95": 0.10422517359256744,
+      "clears_sign_flip_null": true,
+      "median_per_persona_split_half_cosine": 0.9849404619817907,
+      "split_half_cosines": {
+        "assistant": 0.9776248400680211,
+        "biographer": 0.9913995944058109,
+        "comedian": 0.9864218602537764,
+        "data_scientist": 0.982832891030973,
+        "french_person": 0.9819995571953835,
+        "kindergarten_teacher": 0.9813171259649399,
+        "librarian": 0.9874353122387305,
+        "local_historian": 0.9813908356940321,
+        "marine_biologist": 0.9855920225264891,
+        "medical_doctor": 0.9877059422869012,
+        "police_officer": 0.9890411532208685,
+        "software_engineer": 0.9757430196835771,
+        "villain": 0.9842889014370922,
+        "zelthari_scholar": 0.988446947298506
+      },
+      "validity_precondition_pass": true,
+      "frob_norm_M": 72.86341857910156,
+      "disattenuated_cos_to_U1": {
+        "assistant": 0.9462463766945959,
+        "biographer": 0.9510479527108867,
+        "comedian": 0.9799617403764859,
+        "data_scientist": 0.9876162096428279,
+        "french_person": 0.9832973975629464,
+        "kindergarten_teacher": 0.9914627637666976,
+        "librarian": 0.9861800783544664,
+        "local_historian": 0.9864028403280557,
+        "marine_biologist": 0.9903881824288091,
+        "medical_doctor": 0.8414944848058459,
+        "police_officer": 0.9916824690674788,
+        "software_engineer": 0.9909916019518401,
+        "villain": 0.9794780390276538,
+        "zelthari_scholar": 0.9848017915289651
+      },
+      "null_scale_check_pass": true
+    }
+  },
+  "arm_level_calls": {
+    "contrastive_em": {
+      "call": "graded/mixed (no registered call; per-seed values reported)",
+      "n_deconcentrated_seeds_with_validity": 0,
+      "n_concentrated_seeds": 1,
+      "rule": "de-concentration requires 3/3 seeds in zone AND per-seed validity (sign-flip clearance + median split-half >= 0.5); concentrated requires >=2/3 seeds (plan v5 \u00a73/\u00a76.3 \u2014 deliberate asymmetry)"
+    },
+    "contrastive_benign": {
+      "call": "graded/mixed (no registered call; per-seed values reported)",
+      "n_deconcentrated_seeds_with_validity": 0,
+      "n_concentrated_seeds": 1,
+      "rule": "de-concentration requires 3/3 seeds in zone AND per-seed validity (sign-flip clearance + median split-half >= 0.5); concentrated requires >=2/3 seeds (plan v5 \u00a73/\u00a76.3 \u2014 deliberate asymmetry)"
+    }
+  },
+  "subpanel_rubric": {
+    "bands_degraded_metrics": {
+      "mean_cos_to_U1": false,
+      "s_top1_frac": false
+    },
+    "new_cells": {
+      "contrastive_em_seed42": {
+        "classification": "stays-concentrated",
+        "mean_cos_to_U1": 0.9651084542274475,
+        "s_top1_frac": 0.583530604839325,
+        "sign_flip_p95": 0.15628628432750702
+      },
+      "contrastive_em_seed137": {
+        "classification": "stays-concentrated",
+        "mean_cos_to_U1": 0.96922767162323,
+        "s_top1_frac": 0.5966737270355225,
+        "sign_flip_p95": 0.1417289674282074
+      },
+      "contrastive_em_seed256": {
+        "classification": "stays-concentrated",
+        "mean_cos_to_U1": 0.9736761450767517,
+        "s_top1_frac": 0.6164515018463135,
+        "sign_flip_p95": 0.15114998817443848
+      },
+      "contrastive_benign_seed42": {
+        "classification": "intermediate",
+        "mean_cos_to_U1": 0.9468680620193481,
+        "s_top1_frac": 0.5248541235923767,
+        "sign_flip_p95": 0.13271835446357727
+      },
+      "contrastive_benign_seed137": {
+        "classification": "stays-concentrated",
+        "mean_cos_to_U1": 0.9706645607948303,
+        "s_top1_frac": 0.6007279753684998,
+        "sign_flip_p95": 0.1421174556016922
+      },
+      "contrastive_benign_seed256": {
+        "classification": "stays-concentrated",
+        "mean_cos_to_U1": 0.9765076041221619,
+        "s_top1_frac": 0.6293444037437439,
+        "sign_flip_p95": 0.1511906534433365
+      }
+    }
+  },
+  "contrast_delivered_mf_a": {
+    "contrastive_em": {
+      "median_abs_delta_ce_neg": 0.6070975363430118,
+      "delivered": true,
+      "per_seed_delta_ce_neg": [
+        0.6061257540256678,
+        0.6077237848302415,
+        0.6070975363430118
+      ],
+      "cut_nat_per_token": 0.05
+    },
+    "contrastive_benign": {
+      "median_abs_delta_ce_neg": 0.60857510448409,
+      "delivered": true,
+      "per_seed_delta_ce_neg": [
+        0.6036621001951887,
+        0.6104423495714937,
+        0.60857510448409
+      ],
+      "cut_nat_per_token": 0.05
+    }
+  },
+  "h0_prime_conditioning": "if BOTH arms read concentrated AND an arm's contrast is NOT delivered (median |dCE_neg| < 0.05 nat/token), the registered read for that arm is 'weak/undelivered contrast \u2014 not evidence against contrastive negatives' (plan v5 \u00a73 MF-A scope-down)",
+  "full_panel_all_15_cells": {
+    "marker_seed42": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.5871104598045349,
+      "mean_abs_cos_to_U1": 0.5871104598045349,
+      "s_top1_frac": 0.32465410232543945,
+      "sign_flip_p95": 0.12957489490509033,
+      "row_shuffle_p95": 0.19707103073596954,
+      "frob_norm": 21.16566276550293,
+      "cos_to_U1": {
+        "assistant": 0.4554150700569153,
+        "biographer": 0.33851203322410583,
+        "comedian": 0.8579961061477661,
+        "data_scientist": 0.9633752703666687,
+        "french_person": 0.3744983673095703,
+        "kindergarten_teacher": 0.32989615201950073,
+        "librarian": 0.971196711063385,
+        "local_historian": 0.3376459777355194,
+        "marine_biologist": 0.449255108833313,
+        "medical_doctor": 0.3178296983242035,
+        "police_officer": 0.9613731503486633,
+        "software_engineer": 0.9631798267364502,
+        "villain": 0.4139445424079895,
+        "zelthari_scholar": 0.48542800545692444
+      }
+    },
+    "marker_seed137": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.7133870124816895,
+      "mean_abs_cos_to_U1": 0.7133870124816895,
+      "s_top1_frac": 0.3113222122192383,
+      "sign_flip_p95": 0.12393078953027725,
+      "row_shuffle_p95": 0.21321865916252136,
+      "frob_norm": 18.642175674438477,
+      "cos_to_U1": {
+        "assistant": 0.536535382270813,
+        "biographer": 0.6986731886863708,
+        "comedian": 0.8499937653541565,
+        "data_scientist": 0.8942773342132568,
+        "french_person": 0.6938987970352173,
+        "kindergarten_teacher": 0.6612790822982788,
+        "librarian": 0.7312031984329224,
+        "local_historian": 0.7401520609855652,
+        "marine_biologist": 0.7591493129730225,
+        "medical_doctor": 0.30198925733566284,
+        "police_officer": 0.8206200003623962,
+        "software_engineer": 0.8472424745559692,
+        "villain": 0.7175160050392151,
+        "zelthari_scholar": 0.7348892092704773
+      }
+    },
+    "marker_seed256": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.5503842234611511,
+      "mean_abs_cos_to_U1": 0.5503842234611511,
+      "s_top1_frac": 0.3476976752281189,
+      "sign_flip_p95": 0.12887629866600037,
+      "row_shuffle_p95": 0.1870991289615631,
+      "frob_norm": 24.76323127746582,
+      "cos_to_U1": {
+        "assistant": 0.8442456722259521,
+        "biographer": 0.26493775844573975,
+        "comedian": 0.5965490341186523,
+        "data_scientist": 0.9710723161697388,
+        "french_person": 0.2998174726963043,
+        "kindergarten_teacher": 0.31157752871513367,
+        "librarian": 0.9741496443748474,
+        "local_historian": 0.2778654992580414,
+        "marine_biologist": 0.3113408088684082,
+        "medical_doctor": 0.24143987894058228,
+        "police_officer": 0.9616443514823914,
+        "software_engineer": 0.976573646068573,
+        "villain": 0.32278743386268616,
+        "zelthari_scholar": 0.3513788878917694
+      }
+    },
+    "em_seed42": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.9625170826911926,
+      "mean_abs_cos_to_U1": 0.9625170826911926,
+      "s_top1_frac": 0.5235457420349121,
+      "sign_flip_p95": 0.08286647498607635,
+      "row_shuffle_p95": 0.494341641664505,
+      "frob_norm": 81.42753601074219,
+      "cos_to_U1": {
+        "assistant": 0.9192308783531189,
+        "biographer": 0.9246075749397278,
+        "comedian": 0.9521970748901367,
+        "data_scientist": 0.9802671074867249,
+        "french_person": 0.9753656983375549,
+        "kindergarten_teacher": 0.9627280831336975,
+        "librarian": 0.9842868447303772,
+        "local_historian": 0.9609158039093018,
+        "marine_biologist": 0.9693799018859863,
+        "medical_doctor": 0.9776442646980286,
+        "police_officer": 0.9829972982406616,
+        "software_engineer": 0.9819456338882446,
+        "villain": 0.9469201564788818,
+        "zelthari_scholar": 0.9567530751228333
+      }
+    },
+    "em_seed137": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.9738718867301941,
+      "mean_abs_cos_to_U1": 0.9738718867301941,
+      "s_top1_frac": 0.5720158219337463,
+      "sign_flip_p95": 0.08517833054065704,
+      "row_shuffle_p95": 0.5398749113082886,
+      "frob_norm": 96.5046157836914,
+      "cos_to_U1": {
+        "assistant": 0.9383188486099243,
+        "biographer": 0.9456365704536438,
+        "comedian": 0.9642862677574158,
+        "data_scientist": 0.9834877252578735,
+        "french_person": 0.9831154942512512,
+        "kindergarten_teacher": 0.974617600440979,
+        "librarian": 0.9898229241371155,
+        "local_historian": 0.9758332371711731,
+        "marine_biologist": 0.9794028401374817,
+        "medical_doctor": 0.9875246286392212,
+        "police_officer": 0.9884220361709595,
+        "software_engineer": 0.9858315587043762,
+        "villain": 0.9675391316413879,
+        "zelthari_scholar": 0.9703673124313354
+      }
+    },
+    "em_seed256": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.9798824191093445,
+      "mean_abs_cos_to_U1": 0.9798824191093445,
+      "s_top1_frac": 0.6031942963600159,
+      "sign_flip_p95": 0.08606347441673279,
+      "row_shuffle_p95": 0.5749521851539612,
+      "frob_norm": 110.28424835205078,
+      "cos_to_U1": {
+        "assistant": 0.9597655534744263,
+        "biographer": 0.955685555934906,
+        "comedian": 0.9744583964347839,
+        "data_scientist": 0.9897820353507996,
+        "french_person": 0.9870252013206482,
+        "kindergarten_teacher": 0.9808193445205688,
+        "librarian": 0.9933397769927979,
+        "local_historian": 0.9774300456047058,
+        "marine_biologist": 0.980745792388916,
+        "medical_doctor": 0.9891344904899597,
+        "police_officer": 0.9922792315483093,
+        "software_engineer": 0.9875509142875671,
+        "villain": 0.9718974828720093,
+        "zelthari_scholar": 0.9784411191940308
+      }
+    },
+    "benign_seed42": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.9544513821601868,
+      "mean_abs_cos_to_U1": 0.9544513821601868,
+      "s_top1_frac": 0.5022130608558655,
+      "sign_flip_p95": 0.08400946110486984,
+      "row_shuffle_p95": 0.46966347098350525,
+      "frob_norm": 65.77342224121094,
+      "cos_to_U1": {
+        "assistant": 0.9038846492767334,
+        "biographer": 0.9030340313911438,
+        "comedian": 0.9576300978660583,
+        "data_scientist": 0.9740847945213318,
+        "french_person": 0.9691497683525085,
+        "kindergarten_teacher": 0.9635012149810791,
+        "librarian": 0.9848909974098206,
+        "local_historian": 0.9522237181663513,
+        "marine_biologist": 0.9459500908851624,
+        "medical_doctor": 0.9682076573371887,
+        "police_officer": 0.981511116027832,
+        "software_engineer": 0.9728506207466125,
+        "villain": 0.9531317353248596,
+        "zelthari_scholar": 0.9322683215141296
+      }
+    },
+    "benign_seed137": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.965528666973114,
+      "mean_abs_cos_to_U1": 0.965528666973114,
+      "s_top1_frac": 0.5372225642204285,
+      "sign_flip_p95": 0.08801990002393723,
+      "row_shuffle_p95": 0.5044334530830383,
+      "frob_norm": 75.63301849365234,
+      "cos_to_U1": {
+        "assistant": 0.9227375984191895,
+        "biographer": 0.9243292212486267,
+        "comedian": 0.9653578400611877,
+        "data_scientist": 0.9821853041648865,
+        "french_person": 0.9770569205284119,
+        "kindergarten_teacher": 0.96876460313797,
+        "librarian": 0.9857714772224426,
+        "local_historian": 0.9582643508911133,
+        "marine_biologist": 0.962443470954895,
+        "medical_doctor": 0.9749506115913391,
+        "police_officer": 0.9864978790283203,
+        "software_engineer": 0.9793110489845276,
+        "villain": 0.9666098952293396,
+        "zelthari_scholar": 0.9631213545799255
+      }
+    },
+    "benign_seed256": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.968407928943634,
+      "mean_abs_cos_to_U1": 0.968407928943634,
+      "s_top1_frac": 0.5486924052238464,
+      "sign_flip_p95": 0.0868883803486824,
+      "row_shuffle_p95": 0.5149415135383606,
+      "frob_norm": 80.5386962890625,
+      "cos_to_U1": {
+        "assistant": 0.920658528804779,
+        "biographer": 0.9416238069534302,
+        "comedian": 0.9656749963760376,
+        "data_scientist": 0.9748952984809875,
+        "french_person": 0.9790034294128418,
+        "kindergarten_teacher": 0.9736949801445007,
+        "librarian": 0.9884292483329773,
+        "local_historian": 0.969700038433075,
+        "marine_biologist": 0.96886146068573,
+        "medical_doctor": 0.9813686013221741,
+        "police_officer": 0.9853495359420776,
+        "software_engineer": 0.9729097485542297,
+        "villain": 0.9682487845420837,
+        "zelthari_scholar": 0.9672914147377014
+      }
+    },
+    "contrastive_em_seed42": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.9408386945724487,
+      "mean_abs_cos_to_U1": 0.9408386945724487,
+      "s_top1_frac": 0.46911099553108215,
+      "sign_flip_p95": 0.11585568636655807,
+      "row_shuffle_p95": 0.3686596155166626,
+      "frob_norm": 57.532169342041016,
+      "cos_to_U1": {
+        "assistant": 0.9044106006622314,
+        "biographer": 0.9180946946144104,
+        "comedian": 0.9530122876167297,
+        "data_scientist": 0.9596731662750244,
+        "french_person": 0.9728776812553406,
+        "kindergarten_teacher": 0.9707199931144714,
+        "librarian": 0.97017502784729,
+        "local_historian": 0.9558383822441101,
+        "marine_biologist": 0.9614843130111694,
+        "medical_doctor": 0.753032386302948,
+        "police_officer": 0.9765430688858032,
+        "software_engineer": 0.9574058651924133,
+        "villain": 0.9632225036621094,
+        "zelthari_scholar": 0.9552509784698486
+      }
+    },
+    "contrastive_em_seed137": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.9406072497367859,
+      "mean_abs_cos_to_U1": 0.9406072497367859,
+      "s_top1_frac": 0.4754384458065033,
+      "sign_flip_p95": 0.10409827530384064,
+      "row_shuffle_p95": 0.3889063894748688,
+      "frob_norm": 61.92302703857422,
+      "cos_to_U1": {
+        "assistant": 0.9049713015556335,
+        "biographer": 0.9177892804145813,
+        "comedian": 0.9612688422203064,
+        "data_scientist": 0.973373293876648,
+        "french_person": 0.9747793078422546,
+        "kindergarten_teacher": 0.9732519388198853,
+        "librarian": 0.97539222240448,
+        "local_historian": 0.9684832692146301,
+        "marine_biologist": 0.9744027256965637,
+        "medical_doctor": 0.6699903607368469,
+        "police_officer": 0.9803722500801086,
+        "software_engineer": 0.9658631682395935,
+        "villain": 0.9635145664215088,
+        "zelthari_scholar": 0.9650498032569885
+      }
+    },
+    "contrastive_em_seed256": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.958747386932373,
+      "mean_abs_cos_to_U1": 0.958747386932373,
+      "s_top1_frac": 0.5157914161682129,
+      "sign_flip_p95": 0.10410258173942566,
+      "row_shuffle_p95": 0.43266186118125916,
+      "frob_norm": 74.15248107910156,
+      "cos_to_U1": {
+        "assistant": 0.9285280108451843,
+        "biographer": 0.9330415725708008,
+        "comedian": 0.9694749712944031,
+        "data_scientist": 0.9752265810966492,
+        "french_person": 0.9748838543891907,
+        "kindergarten_teacher": 0.980455219745636,
+        "librarian": 0.974768340587616,
+        "local_historian": 0.9729114174842834,
+        "marine_biologist": 0.9755146503448486,
+        "medical_doctor": 0.8340396881103516,
+        "police_officer": 0.9819698333740234,
+        "software_engineer": 0.9732232689857483,
+        "villain": 0.9738003015518188,
+        "zelthari_scholar": 0.9746244549751282
+      }
+    },
+    "contrastive_benign_seed42": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.9117435216903687,
+      "mean_abs_cos_to_U1": 0.9117435216903687,
+      "s_top1_frac": 0.4025176465511322,
+      "sign_flip_p95": 0.1269938349723816,
+      "row_shuffle_p95": 0.3286615312099457,
+      "frob_norm": 39.269195556640625,
+      "cos_to_U1": {
+        "assistant": 0.8769065737724304,
+        "biographer": 0.876299262046814,
+        "comedian": 0.9371507167816162,
+        "data_scientist": 0.9502943158149719,
+        "french_person": 0.9513440728187561,
+        "kindergarten_teacher": 0.9474000334739685,
+        "librarian": 0.9523763060569763,
+        "local_historian": 0.9423922300338745,
+        "marine_biologist": 0.9534544944763184,
+        "medical_doctor": 0.6276278495788574,
+        "police_officer": 0.947616457939148,
+        "software_engineer": 0.9394617080688477,
+        "villain": 0.9191051125526428,
+        "zelthari_scholar": 0.9429795145988464
+      }
+    },
+    "contrastive_benign_seed137": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.9485549926757812,
+      "mean_abs_cos_to_U1": 0.9485549926757812,
+      "s_top1_frac": 0.4956367611885071,
+      "sign_flip_p95": 0.09811821579933167,
+      "row_shuffle_p95": 0.42817986011505127,
+      "frob_norm": 67.04905700683594,
+      "cos_to_U1": {
+        "assistant": 0.9317473769187927,
+        "biographer": 0.9299321174621582,
+        "comedian": 0.96479731798172,
+        "data_scientist": 0.9739289879798889,
+        "french_person": 0.9600229263305664,
+        "kindergarten_teacher": 0.9742888808250427,
+        "librarian": 0.9792006611824036,
+        "local_historian": 0.9758456349372864,
+        "marine_biologist": 0.9805489182472229,
+        "medical_doctor": 0.7075726389884949,
+        "police_officer": 0.9823505282402039,
+        "software_engineer": 0.9736671447753906,
+        "villain": 0.9689198732376099,
+        "zelthari_scholar": 0.9769468307495117
+      }
+    },
+    "contrastive_benign_seed256": {
+      "persona_order": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "mean_cos_to_U1": 0.963154673576355,
+      "mean_abs_cos_to_U1": 0.963154673576355,
+      "s_top1_frac": 0.5317709445953369,
+      "sign_flip_p95": 0.10422517359256744,
+      "row_shuffle_p95": 0.4483070969581604,
+      "frob_norm": 72.86341857910156,
+      "cos_to_U1": {
+        "assistant": 0.9356002807617188,
+        "biographer": 0.9469494223594666,
+        "comedian": 0.973285973072052,
+        "data_scientist": 0.9791022539138794,
+        "french_person": 0.9744073152542114,
+        "kindergarten_teacher": 0.9821574091911316,
+        "librarian": 0.9799649715423584,
+        "local_historian": 0.9771816730499268,
+        "marine_biologist": 0.983227550983429,
+        "medical_doctor": 0.8363057971000671,
+        "police_officer": 0.986233651638031,
+        "software_engineer": 0.9788985848426819,
+        "villain": 0.9717532396316528,
+        "zelthari_scholar": 0.979096531867981
+      }
+    }
+  },
+  "trajectory_variant_check": {
+    "contrastive_em_seed42": {
+      "same": {
+        "mean_cos_to_U1": 0.9408386945724487,
+        "s_top1_frac": 0.46911099553108215
+      },
+      "base": {
+        "mean_cos_to_U1": 0.9469738006591797,
+        "s_top1_frac": 0.49077677726745605
+      }
+    },
+    "contrastive_em_seed137": {
+      "same": {
+        "mean_cos_to_U1": 0.9406072497367859,
+        "s_top1_frac": 0.4754384458065033
+      },
+      "base": {
+        "mean_cos_to_U1": 0.9462224245071411,
+        "s_top1_frac": 0.49877601861953735
+      }
+    },
+    "contrastive_em_seed256": {
+      "same": {
+        "mean_cos_to_U1": 0.958747386932373,
+        "s_top1_frac": 0.5157914161682129
+      },
+      "base": {
+        "mean_cos_to_U1": 0.9607320427894592,
+        "s_top1_frac": 0.5323055982589722
+      }
+    },
+    "contrastive_benign_seed42": {
+      "same": {
+        "mean_cos_to_U1": 0.9117435216903687,
+        "s_top1_frac": 0.4025176465511322
+      },
+      "base": {
+        "mean_cos_to_U1": 0.9228292107582092,
+        "s_top1_frac": 0.4281761646270752
+      }
+    },
+    "contrastive_benign_seed137": {
+      "same": {
+        "mean_cos_to_U1": 0.9485549926757812,
+        "s_top1_frac": 0.4956367611885071
+      },
+      "base": {
+        "mean_cos_to_U1": 0.9547860026359558,
+        "s_top1_frac": 0.5242749452590942
+      }
+    },
+    "contrastive_benign_seed256": {
+      "same": {
+        "mean_cos_to_U1": 0.963154673576355,
+        "s_top1_frac": 0.5317709445953369
+      },
+      "base": {
+        "mean_cos_to_U1": 0.9651595950126648,
+        "s_top1_frac": 0.5525500178337097
+      }
+    }
+  },
+  "cross_arm_5way_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-552/eval_results/issue_552/contrastive-2x2-completion/cross_arm_5way/summary.json",
+  "reference_bands_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-552/eval_results/issue_552/contrastive-2x2-completion/subpanel/reference_bands.json",
+  "metadata": {
+    "script": "issue552_contrastive_2x2_analysis",
+    "git_commit": "e8d9dc6b7d2a7ffbc6f51b01bd53ebb116d3fc37",
+    "timestamp_utc": "2026-06-11T19:50:28Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  }
+}

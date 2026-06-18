@@ -5,7 +5,7 @@ description: >
   completes a diff. Has NO access to the implementer's reasoning — only sees the
   diff, the approved plan, and the existing codebase. Finds bugs, plan deviations,
   missing tests, security issues, style violations, API-compatibility problems.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-8[1m]"
 skills:
   - independent-reviewer
 memory: project
@@ -64,7 +64,7 @@ The `events.jsonl` marker is the source of truth. Also return the verdict to who
 
 ### Step 0: Classify the diff — leaf or trunk?
 
-Before reading the plan, run `git diff --name-only main...HEAD` (or against the relevant base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf).
+Before reading the plan, run `git diff --name-only main...HEAD` (or against the relevant base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
 
 | Tier | File patterns | Examples | Review depth |
 |---|---|---|---|
@@ -275,6 +275,68 @@ three-item coverage; this carve-out formalizes the labeling that lets
 the reviewer distinguish a documented GPU-bound phase from a genuinely
 missing smoke.
 
+**Plan-declared runtime guards / monitors (load-bearing) must show smoke
+evidence.** When the approved plan declares a runtime guard / monitor /
+trajectory logger as a load-bearing mitigation (a saturation guard,
+`MarkerBandStopCallback`, per-step log-prob probes, an auto-fired
+secondary DV, per-source WandB run separation), check the `## Smoke run`
+section shows that guard's telemetry actually functioned during the
+smoke: a probe value was logged, the guard branch was exercised or its
+precondition assert ran, per-source WandB run names are distinct. Missing
+evidence for a plan-declared load-bearing guard is a FAIL with blocker
+tag `smoke-run-missing` for that phase (same tag, no new schema), UNLESS
+the implementer's `(d) Needs human eyeball` section explicitly calls out
+why the guard cannot be demonstrated at smoke scale AND names the closest
+demonstrable proxy — then it is at most a `CONCERNS` (verify the stated
+reason is plausible). Rationale: checking "phases ran" without checking
+"declared guards emit evidence" lets a silent monitor ship — incident
+#480: the plan's WandB trajectory monitor + KL auto-fire never functioned
+(5 of 6 source runs reused one WandB run name, per-cell trajectories were
+never logged, zero saturation markers fired), saturation was caught only
+at eval time, and the experiment needed a full band-stopped retrain.
+
+**Deferred imports inside smoke-skipped branches are unverified code —
+verify they resolve.** When any phase's smoke command carries a skip-flag
+that fences off a code branch (`--dry-run`, `--skip-upload`, `--skip-eval`,
+or equivalent), that branch never executed during the smoke, so any lazy
+`import` / `from ... import` inside it has never run. Grep the diff's
+scripts for in-function / in-branch imports:
+
+```bash
+grep -nE "^\s+(from [A-Za-z_0-9.]+ import|import [A-Za-z_0-9.]+)" \
+  <each script in the diff>
+```
+
+For each hit inside a branch the smoke's skip-flags fenced off, require
+ONE of:
+
+- (a) **execution evidence** in the `## Smoke run` section — a
+  `--verify-imports` run (the AST-walk pattern from
+  `scripts/issue_606/i606_dispatch.py`; see `.claude/rules/gotchas.md`
+  "Lazy imports inside smoke-skipped branches") or a smoke invocation
+  without the fencing flag;
+- (b) **module-top hoisting** — the import was moved to module top, so any
+  phase's exit-0 smoke already proves it executes;
+- (c) **your own static verification** — grep the import's TARGET module
+  for each imported symbol's definition and quote `file.py:LINE` in the
+  verdict. Watch the porting trap: a private `_underscore` helper is often
+  file-local to the SOURCE script the code was ported from and absent from
+  the import path the diff assumes.
+
+A deferred import whose symbol you CANNOT find at the import target is a
+Critical SUBSTANTIVE finding (blocker tag `substantive`, NOT
+`smoke-run-missing` — the orchestrator's Step 5c-bis strip cannot verify a
+symbol exists in source code from the marker alone, so this finding must
+never be stripped as mechanical-contract): the ImportError fires on the
+pod AFTER the expensive phases. A deferred import that resolves but lacks
+(a)/(b) evidence is at most a CONCERNS bullet. The mirror implementer rule
+is `experiment-implementer.md` § After implementation step 2 ("Deferred
+imports count"). Incident #606 (2026-06-11): review rounds 1-2 PASSed a
+dispatcher whose upload branch lazily imported the nonexistent
+`_retry_transient` from `orchestrate.hub`; every smoke carried
+`--dry-run` / `--skip-upload`, and the ImportError fired on the GCP
+workload at p5_upload after training + stage-A judging were already spent.
+
 **If every phase IS present with a command, exit code 0, and an artifact
 digest, but a digest is terse, omits the row count, or you would have
 formatted it differently — that is at most a `CONCERNS`, NEVER a standalone
@@ -290,12 +352,28 @@ Code-only tasks (`type:infra` / `type:batch` / `type:analysis` /
 
 A pod-side dispatcher that writes per-cell completion files to disk under
 `eval_results/issue_<N>/` (`raw_completions/*.json`, `raw_generations/*.json`,
-or any equivalent per-cell completion JSON the eval loop persists) MUST call
-`explore_persona_space.orchestrate.hub.upload_raw_completions_to_data_repo()`
-(or an explicit per-file `hub._upload(...)` loop with `repo_type="dataset"`
-and `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`) from its normal
-exit path BEFORE the `[phase=done]` log line + final sentinel write. This
-is the CLAUDE.md Upload Policy contract for raw completions; the
+or any equivalent per-cell completion JSON the eval loop persists) MUST
+upload them from its normal exit path BEFORE the `[phase=done]` log line +
+final sentinel write, via ANY of the three accepted call shapes:
+
+1. `explore_persona_space.orchestrate.hub.upload_raw_completions_to_data_repo()`
+   — the canonical helper;
+2. an explicit per-file `hub._upload(...)` loop with `repo_type="dataset"`
+   and `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`;
+3. a batched `HfApi.create_commit(repo_type="dataset")` whose
+   `CommitOperationAdd` ops target the canonical
+   `issue<N>_<slug>/raw_completions/{condition}_seed{S}.json` paths, with
+   post-commit Hub-side verification (e.g. per-prefix `list_repo_files`
+   counts) before `[phase=done]`. Under the HF Hub ~256-commits/hour repo
+   throttle (#591) the batched shape is PREFERABLE to the per-file loop
+   for large file counts — one commit instead of N. Do NOT FAIL an
+   implementation for batching its uploads (incident #606: a functionally
+   stronger batched `create_commit` + count verification was FAILed on the
+   call-shape grep alone; the reconciler overturned it).
+
+The contract is the SUBSTANCE of the CLAUDE.md Upload Policy — per-cell
+completions land on the HF data repo under the canonical prefix before the
+dispatcher reports done — not any one call-shape string; the
 upload-verifier at Step 8 is the safety net, NOT the only line of defense
 — if a future verifier change ever trusted the `epm:results` sentinel
 without re-enumerating, the unuploaded files would die on pod termination.
@@ -304,9 +382,14 @@ Before reviewing the diff, grep the dispatcher(s) in the diff for the
 upload call:
 
 ```bash
-grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions" \
+grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions|create_commit" \
   <each pod-side dispatcher in the diff>
 ```
+
+(A bare `create_commit` match is necessary but not sufficient — confirm by
+reading the surrounding code that it targets the dataset repo with the
+canonical `issue<N>_<slug>/raw_completions/...` `path_in_repo` ops; you
+read the diff anyway per Step 0.7.)
 
 If a dispatcher writes raw completions to disk (`grep -nE
 "raw_completions\.json|raw_generations" <dispatcher>` returns matches) AND
@@ -320,13 +403,15 @@ Step 0.7):
 > `scripts/<dispatcher>.py` writes raw completions to
 > `eval_results/issue_<N>/...` but never calls
 > `upload_raw_completions_to_data_repo()` (or an explicit
-> `hub._upload(..., repo_type="dataset")` loop). The CLAUDE.md Upload
+> `hub._upload(..., repo_type="dataset")` loop, or a batched
+> `HfApi.create_commit(repo_type="dataset")` targeting the canonical
+> raw-completions prefix). The CLAUDE.md Upload
 > Policy requires raw completions on the HF data repo BEFORE pod
 > termination; without the call the upload-verifier is the only defense
 > and a single verifier-side regression silently destroys all per-cell
-> completions on Step-8 terminate. Re-post `v<n+1>` with the helper
-> wired into the dispatcher's normal exit path (after eval, before
-> `[phase=done]` + final sentinel).
+> completions on Step-8 terminate. Re-post `v<n+1>` with one of the
+> accepted upload shapes wired into the dispatcher's normal exit path
+> (after eval, before `[phase=done]` + final sentinel).
 
 The mirror implementer rule is `experiment-implementer.md` § After
 implementation step 7 (raw-completions upload wiring). Incident:
@@ -389,6 +474,21 @@ Questions to ask per hunk:
 - Does it handle the error cases? What happens on empty inputs, None, timeout, network failure?
 - Is it idempotent if it needs to be?
 - Is there a test covering this hunk?
+
+**Compute-throughput anti-patterns (experiment / eval scripts).** In any
+diff that runs model forwards or large-tensor math on a GPU, flag as Major:
+(a) a Python loop of batch-1 model forwards over data-parallel iterations
+(prompts, responses, cells) — a 7B bf16 batch-1 forward is
+weight-bandwidth-bound and leaves the GPU ~idle; (b) GPU→CPU transfers of
+`(seq × vocab)`- or activation-scale tensors followed by a CPU-side
+reduction — keep the reduction GPU-resident and ship only the reduced
+scalars/summaries; (c) HF `model.generate()` in eval / generation paths
+where vLLM applies (the always-on CLAUDE.md "Use vLLM for generation"
+rule). These are throughput bugs, not style nits: #522 ran ~94h on
+1× H100 for a job with a ~4-6h FLOPs floor (409,600 batch-1 forwards,
+full-vocab fp32 log-softmax shipped over PCIe for a CPU-side per-position
+reduce); #511 hit a 52× CPU wall-time blowup vs its plan estimate. See
+`.claude/rules/code-style.md` § Compute-throughput discipline.
 
 ### Step 3: Read the Surrounding Code
 
@@ -455,6 +555,54 @@ uv run ruff format --check path/to/changed/files
 
 Don't trust "tests pass" claims — verify. If you can't run (subagent sandbox limitations), at least read the tests and trace that they exercise the new code path.
 
+### Step 4.5: Regression-test presence for substantive BLOCKER fixes
+
+When the diff closes a substantive BLOCKER — a prior-round binding concern
+(severity `BLOCKER` in `concerns.jsonl`, Step 0.8) or a Critical finding
+you would otherwise re-raise — by adding a **permanent invariant**: a
+fail-loud assertion / `RuntimeError` guard, a scoping fix (a re-keyed
+constant lookup, a narrowed selector, a disjointness check), or an
+equivalent guardrail meant to stay in the code, check for a committed
+pytest that **fails pre-fix and passes post-fix**, pinning the invariant.
+
+Why this gate exists: an assertion or scoping fix that closes a BLOCKER
+but ships with NO test is a guard that any future refactor can silently
+strip — CI stays green because nothing exercises the invariant, and the
+BLOCKER quietly re-opens. The fix verification then rests only on the
+implementer's smoke prose, which you must re-reproduce by hand every
+round. A one-line regression test converts a transient manual check into
+a permanent mechanical guard. (Incident #653 round 8: a
+`neg-claim-overrides-police-duplicates` BLOCKER was closed by re-keying a
+constant lookup AND adding a fail-loud `RuntimeError` in `_build_rowspecs`
+for within-`(source, neg_persona)` duplicate `user_msg` collisions, with
+zero committed test pinning either the scoping or the assertion.)
+
+Verdict effect:
+
+- **Committed test present** (it fails pre-fix / passes post-fix, and
+  actually exercises the changed invariant — not just an import) → no
+  finding; note the covering test under `## Tests` "New coverage".
+- **Test absent** → at least a `Minor` finding under "Issues Found",
+  carrying a 1-2-line pytest sketch (the assertion to make, the input
+  that should trip the guard, the expected raise / value). This is a
+  SUBSTANTIVE concern (`Mechanizable: yes`), NOT a mechanical-contract
+  blocker — it is NEVER tagged `marker-shape` / `smoke-run-missing` and
+  is NEVER stripped by the orchestrator's Step 5c-bis
+  mechanical-contract-only strip. A bare Minor does not, by itself, turn
+  a PASS into a FAIL (the PASS+CONCERNS auto-advance contract still
+  applies); escalate to `Major` only when the missing test leaves a
+  load-bearing production-path invariant un-pinned such that a plausible
+  near-term refactor would re-open the BLOCKER. If the implementer
+  CLAIMS a covering test exists but you grep the worktree and it does
+  not — or it does not actually trip the guard — that is a substantive
+  Plan-Adherence / Tests FAIL with blocker tag `substantive` (a
+  fabricated-coverage claim, same family as the Step 6 fabricated-checkmark
+  rule), not a Minor.
+
+This gate applies only to fixes adding a PERMANENT invariant; a one-off
+data fix, a value tweak, or a fix the plan already pairs with a test is
+out of scope (the test is already there or not warranted).
+
 ### Step 5: Security Sweep
 
 Grep for common vulnerabilities in the diff:
@@ -506,6 +654,7 @@ Red flags:
   - Evidence: [quote the code]
   - Impact: [what breaks]
   - Fix: [suggested repair]
+  - Mechanizable: [yes — <1-2 line check sketch> / no] (Rule 12; also on Major findings)
 
 ### Major (diff needs revision before merge)
 - `file.py:456`: [issue]
@@ -546,10 +695,12 @@ Red flags:
 5. **Be specific.** "This feels off" is useless. "`foo.py:42` uses `==` for float comparison; should be `math.isclose`" is useful.
 6. **No politics.** Don't soften findings to be nice. A merged bug costs more than a bruised ego.
 7. **Propose the simplest fix** when you can. Reviewers who only find problems without paths forward are useless.
-8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.6 smoke section absent or non-zero-exit), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
+8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.6 smoke section absent, non-zero-exit, or a plan-declared load-bearing runtime guard with no smoke evidence and no documented `(d)` call-out), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
 9. **No fabricated plan-adherence checkmarks.** Every ✓ in the Step 6 table / §7 `## Plan Adherence` block for a plan item that names a concrete literal (value bump, flag, dir / file name, constant rename) MUST be backed by a `rg` / grep hit for the literal new value in the worktree, quoted as `file.py:LINE` in the row's evidence. Adherence inferred from the plan text, the implementer's report, or "it looks like this would be done" without a worktree grep is a fabricated checkmark — discard the ✓ and reopen the row. Asserting ✓ on a literal you did not grep is the single most-expensive review failure mode (incident #467 r1: false PASS would have shipped the R=16 SE claim on an R=8 run). See Step 6 grep-the-literal rule for the procedure.
 10. **Cached-artifact coverage is verified, not implied.** For every `cache[key]` lookup in the diff against a cached on-disk artifact (parent-task JSON / .pt bundles, HF data-repo files, persona-distance snapshots) you MUST verify coverage either by (a) finding a runtime coverage check in the diff that fails loud or auto-fills on a missing key, or (b) grepping / reading the artifact directly to confirm `cache.keys() ⊇ runtime_lookup_keys`. Static subset reasoning of the form "lookup_keys ⊆ universe ⇒ lookup_keys ⊆ cache.keys()" is INVALID — a parent task's cache may cover a strict subset of the universe its keys live in. Neither (a) nor (b) is a substantive FAIL with blocker tag `cached-artifact-coverage-unverified`, NOT a mechanical-contract objection (incident #504 v8: both reviewers PASSed an `R_eval[persona]` lookup on the panel-⊆-bank syllogism; the parent task's `R_eval.json` covered fewer personas than the bank, and the launch crashed at trajectory eval with `KeyError: 'architect'`). See Step 3.5 for the procedure.
 11. **Deferred production-path features are persisted concerns, never prose.** If the implementation defers a feature the plan's production path requires — a registered statistic, correction, or data input whose absence makes the production run crash or silently degrade — raise it via `task.py raise-concern` (CONCERN minimum; BLOCKER when the production path provably crashes without it), even on a PASS verdict. The Step 5c-ter dispatch gate reads `concerns.jsonl`, not verdict prose; an unpersisted deferral ships and the predicted crash burns a pod cycle (incident #509). See Step 0.8 for the procedure.
+12. **Blocker grounding + mechanizability.** Every Critical/Major finding cites a concrete artifact location (`file.py:LINE`, a diff hunk, a plan section) — the reconciler discards ungrounded blockers as non-binding — and carries a `Mechanizable: yes | no` line: `yes` when a script could verify it (presence / structure / regex / recomputation over the diff or its artifacts), with the check sketched in 1-2 lines. When a `mechanizable: yes` finding's check belongs in a workflow-surface verifier (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md lens text, the `consistency-checker` spec, or a future `verify_plan.py`) AND it is concrete + likely to recur — not a one-off diff-specific issue — ALSO surface it per `.claude/rules/workflow-fix-on-bug.md` (candidate block or prose follow-up in your return text; you never spawn the improver yourself). Grounded artifact-checking beats free-form critique; every judgment catch that recurs should become a permanent mechanical gate.
+13. **A substantive BLOCKER fix that adds a permanent invariant needs a committed regression test, or a Minor flagging its absence.** When the diff closes a substantive BLOCKER (a prior-round binding `BLOCKER` concern or a Critical you would re-raise) by adding a fail-loud assertion, an invariant guard, or a scoping fix meant to STAY in the code, check for a committed pytest that fails pre-fix / passes post-fix and actually exercises the invariant. Absent → at least a `Minor` finding (`Mechanizable: yes`) carrying a 1-2-line pytest sketch; this is SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis, and a bare Minor does not flip PASS→FAIL. An implementer who CLAIMS a covering test that the worktree grep does not show (or that does not trip the guard) is a substantive FAIL with blocker tag `substantive` (fabricated coverage, same family as Rule 9). Rationale: an un-CI-pinned assertion is a guard a future refactor silently strips while CI stays green — a one-line test makes the guard permanent (incident #653 r8). See Step 4.5 for the procedure.
 
 ---
 

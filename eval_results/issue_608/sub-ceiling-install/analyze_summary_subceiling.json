@@ -1,0 +1,1142 @@
+{
+  "issue": 608,
+  "followup_label": "sub-ceiling-install",
+  "seed": 42,
+  "band": [
+    0.15,
+    0.9
+  ],
+  "grid_steps": [
+    5,
+    9,
+    13,
+    18,
+    26,
+    35,
+    44,
+    88,
+    132
+  ],
+  "bootstrap": {
+    "n_draws": 10000,
+    "rng_seed": 42,
+    "convention": "per-claim 10-rollout rates -> paired claim differences -> resample 50 claims with replacement (SHARED index matrix across sources) -> two-sided 95% percentile CI; base rates never enter the gap"
+  },
+  "per_source": {
+    "villain": {
+      "fresh_base_own_rate_reused": 0.046,
+      "own_rate": {
+        "contrastive_dense": {
+          "5": 0.064,
+          "9": 0.14,
+          "13": 0.29,
+          "18": 0.41600000000000004,
+          "26": 0.718,
+          "35": 0.922,
+          "44": 0.934,
+          "88": 0.9580000000000001,
+          "132": 0.9540000000000001
+        },
+        "posonly_dose_dense": {
+          "5": 0.066,
+          "9": 0.322,
+          "13": 0.714,
+          "18": 0.924,
+          "26": 0.966,
+          "35": 0.972,
+          "44": 0.9719999999999999,
+          "88": 0.9680000000000001,
+          "132": 0.9740000000000001
+        }
+      },
+      "claim_clustered_se": {
+        "contrastive_dense": {
+          "5": 0.027368982891035537,
+          "9": 0.025555062599997593,
+          "13": 0.029863635657666962,
+          "18": 0.027008690967077652,
+          "26": 0.027802510531186476,
+          "35": 0.02124492736573863,
+          "44": 0.021497033492544778,
+          "88": 0.018536230380924106,
+          "132": 0.017661210812029246
+        },
+        "posonly_dose_dense": {
+          "5": 0.024008501895480823,
+          "9": 0.03455725801669821,
+          "13": 0.025715872966885253,
+          "18": 0.01797049736401873,
+          "26": 0.018650381623277246,
+          "35": 0.02061107291071021,
+          "44": 0.01874425081926483,
+          "88": 0.01839254507363552,
+          "132": 0.016613247725836146
+        }
+      },
+      "co_resolvable_steps": [
+        13
+      ],
+      "band_entry_posonly": {
+        "reached": true,
+        "interval": [
+          5,
+          9
+        ]
+      },
+      "s50_posonly": {
+        "reached": true,
+        "interval": [
+          9,
+          13
+        ]
+      },
+      "band_entry_contrastive": {
+        "reached": true,
+        "interval": [
+          9,
+          13
+        ]
+      },
+      "s50_contrastive": {
+        "reached": true,
+        "interval": [
+          18,
+          26
+        ]
+      },
+      "s50_ordering": "posonly_first",
+      "primary_step": 13,
+      "g": -0.42400000000000004,
+      "g_ci95": [
+        -0.48599999999999993,
+        -0.36199999999999993
+      ],
+      "g_ci_excludes_0": true,
+      "g_selection_aware_ci95": [
+        -0.48599999999999993,
+        -0.36199999999999993
+      ],
+      "per_checkpoint_g": {
+        "13": {
+          "g": -0.42400000000000004,
+          "g_ci95": [
+            -0.48599999999999993,
+            -0.36199999999999993
+          ],
+          "posonly_own_rate": 0.714
+        }
+      },
+      "window_missed": false
+    },
+    "comedian": {
+      "fresh_base_own_rate_reused": 0.128,
+      "own_rate": {
+        "contrastive_dense": {
+          "5": 0.12400000000000003,
+          "9": 0.18400000000000002,
+          "13": 0.258,
+          "18": 0.37599999999999995,
+          "26": 0.666,
+          "35": 0.8839999999999999,
+          "44": 0.93,
+          "88": 0.958,
+          "132": 0.96
+        },
+        "posonly_dose_dense": {
+          "5": 0.132,
+          "9": 0.254,
+          "13": 0.412,
+          "18": 0.8879999999999998,
+          "26": 0.9719999999999999,
+          "35": 0.978,
+          "44": 0.9719999999999999,
+          "88": 0.972,
+          "132": 0.97
+        }
+      },
+      "claim_clustered_se": {
+        "contrastive_dense": {
+          "5": 0.030580772937736346,
+          "9": 0.03372881043056847,
+          "13": 0.030916609366065315,
+          "18": 0.02564434933979071,
+          "26": 0.03150769261430533,
+          "35": 0.02292133842300752,
+          "44": 0.019005906708071528,
+          "88": 0.020817967122224994,
+          "132": 0.01761261143705422
+        },
+        "posonly_dose_dense": {
+          "5": 0.033859252496058395,
+          "9": 0.0367240120523955,
+          "13": 0.0406719077697697,
+          "18": 0.026285714285714287,
+          "26": 0.018525217231368372,
+          "35": 0.01835922723019125,
+          "44": 0.017388713205374787,
+          "88": 0.01738871320537479,
+          "132": 0.017899948694488094
+        }
+      },
+      "co_resolvable_steps": [
+        9,
+        13,
+        18
+      ],
+      "band_entry_posonly": {
+        "reached": true,
+        "interval": [
+          5,
+          9
+        ]
+      },
+      "s50_posonly": {
+        "reached": true,
+        "interval": [
+          13,
+          18
+        ]
+      },
+      "band_entry_contrastive": {
+        "reached": true,
+        "interval": [
+          5,
+          9
+        ]
+      },
+      "s50_contrastive": {
+        "reached": true,
+        "interval": [
+          18,
+          26
+        ]
+      },
+      "s50_ordering": "posonly_first",
+      "primary_step": 13,
+      "g": -0.15400000000000003,
+      "g_ci95": [
+        -0.21399999999999994,
+        -0.09599999999999997
+      ],
+      "g_ci_excludes_0": true,
+      "g_selection_aware_ci95": [
+        -0.21399999999999994,
+        -0.09599999999999997
+      ],
+      "per_checkpoint_g": {
+        "9": {
+          "g": -0.07,
+          "g_ci95": [
+            -0.11799999999999997,
+            -0.022
+          ],
+          "posonly_own_rate": 0.254
+        },
+        "13": {
+          "g": -0.15400000000000003,
+          "g_ci95": [
+            -0.21399999999999994,
+            -0.09599999999999997
+          ],
+          "posonly_own_rate": 0.412
+        },
+        "18": {
+          "g": -0.512,
+          "g_ci95": [
+            -0.5660000000000002,
+            -0.4540000000000001
+          ],
+          "posonly_own_rate": 0.8879999999999998
+        }
+      },
+      "window_missed": false
+    },
+    "assistant": {
+      "fresh_base_own_rate_reused": 0.05,
+      "own_rate": {
+        "contrastive_dense": {
+          "5": 0.046000000000000006,
+          "9": 0.044,
+          "13": 0.05800000000000001,
+          "18": 0.076,
+          "26": 0.188,
+          "35": 0.38799999999999996,
+          "44": 0.49199999999999994,
+          "88": 0.9359999999999999,
+          "132": 0.9599999999999999
+        },
+        "posonly_dose_dense": {
+          "5": 0.046,
+          "9": 0.055999999999999994,
+          "13": 0.094,
+          "18": 0.6039999999999999,
+          "26": 0.954,
+          "35": 0.964,
+          "44": 0.9640000000000001,
+          "88": 0.9719999999999999,
+          "132": 0.97
+        }
+      },
+      "claim_clustered_se": {
+        "contrastive_dense": {
+          "5": 0.02477819976659865,
+          "9": 0.024934199119167343,
+          "13": 0.0280072876813394,
+          "18": 0.027488030790413013,
+          "26": 0.03352002143099992,
+          "35": 0.027795169158892134,
+          "44": 0.02318338602868662,
+          "88": 0.01974531719219542,
+          "132": 0.01873553864086286
+        },
+        "posonly_dose_dense": {
+          "5": 0.025267547953686298,
+          "9": 0.02697844944940086,
+          "13": 0.03199617324057388,
+          "18": 0.031031254816881064,
+          "26": 0.018997314525576334,
+          "35": 0.018900383324047115,
+          "44": 0.0193274680289003,
+          "88": 0.01785199925921521,
+          "132": 0.01743793659390529
+        }
+      },
+      "co_resolvable_steps": [],
+      "band_entry_posonly": {
+        "reached": true,
+        "interval": [
+          13,
+          18
+        ]
+      },
+      "s50_posonly": {
+        "reached": true,
+        "interval": [
+          13,
+          18
+        ]
+      },
+      "band_entry_contrastive": {
+        "reached": true,
+        "interval": [
+          18,
+          26
+        ]
+      },
+      "s50_contrastive": {
+        "reached": true,
+        "interval": [
+          44,
+          88
+        ]
+      },
+      "s50_ordering": "posonly_first",
+      "primary_step": null,
+      "window_missed": false
+    },
+    "qwen_default": {
+      "fresh_base_own_rate_reused": 0.044000000000000004,
+      "own_rate": {
+        "contrastive_dense": {
+          "5": 0.044000000000000004,
+          "9": 0.05,
+          "13": 0.08,
+          "18": 0.156,
+          "26": 0.33399999999999996,
+          "35": 0.6999999999999998,
+          "44": 0.39799999999999996,
+          "88": 0.57,
+          "132": 0.7019999999999998
+        },
+        "posonly_dose_dense": {
+          "5": 0.048,
+          "9": 0.062,
+          "13": 0.198,
+          "18": 0.856,
+          "26": 0.968,
+          "35": 0.96,
+          "44": 0.9680000000000001,
+          "88": 0.976,
+          "132": 0.97
+        }
+      },
+      "claim_clustered_se": {
+        "contrastive_dense": {
+          "5": 0.024270583521823198,
+          "9": 0.024453203955176698,
+          "13": 0.02982944716831586,
+          "18": 0.027724593075904462,
+          "26": 0.03150769261430533,
+          "35": 0.02740475156178697,
+          "44": 0.027028329808645186,
+          "88": 0.027142857142857142,
+          "132": 0.023988092284059848
+        },
+        "posonly_dose_dense": {
+          "5": 0.027141353341800952,
+          "9": 0.027978125566307716,
+          "13": 0.0394337470723144,
+          "18": 0.028162792069375105,
+          "26": 0.017247300883184654,
+          "35": 0.01979486637221574,
+          "44": 0.01947054289988665,
+          "88": 0.017037773161000656,
+          "132": 0.018571428571428572
+        }
+      },
+      "co_resolvable_steps": [
+        18
+      ],
+      "band_entry_posonly": {
+        "reached": true,
+        "interval": [
+          9,
+          13
+        ]
+      },
+      "s50_posonly": {
+        "reached": true,
+        "interval": [
+          13,
+          18
+        ]
+      },
+      "band_entry_contrastive": {
+        "reached": true,
+        "interval": [
+          13,
+          18
+        ]
+      },
+      "s50_contrastive": {
+        "reached": true,
+        "interval": [
+          26,
+          35
+        ]
+      },
+      "s50_ordering": "posonly_first",
+      "primary_step": 18,
+      "g": -0.7,
+      "g_ci95": [
+        -0.762,
+        -0.63
+      ],
+      "g_ci_excludes_0": true,
+      "g_selection_aware_ci95": [
+        -0.762,
+        -0.63
+      ],
+      "per_checkpoint_g": {
+        "18": {
+          "g": -0.7,
+          "g_ci95": [
+            -0.762,
+            -0.63
+          ],
+          "posonly_own_rate": 0.856
+        }
+      },
+      "window_missed": false
+    },
+    "software_engineer": {
+      "fresh_base_own_rate_reused": 0.046000000000000006,
+      "own_rate": {
+        "contrastive_dense": {
+          "5": 0.046000000000000006,
+          "9": 0.06,
+          "13": 0.072,
+          "18": 0.136,
+          "26": 0.38800000000000007,
+          "35": 0.7680000000000001,
+          "44": 0.8539999999999999,
+          "88": 0.948,
+          "132": 0.956
+        },
+        "posonly_dose_dense": {
+          "5": 0.042,
+          "9": 0.06999999999999999,
+          "13": 0.226,
+          "18": 0.814,
+          "26": 0.97,
+          "35": 0.956,
+          "44": 0.976,
+          "88": 0.9740000000000001,
+          "132": 0.966
+        }
+      },
+      "claim_clustered_se": {
+        "contrastive_dense": {
+          "5": 0.025588581637208452,
+          "9": 0.02725540575476987,
+          "13": 0.028719615710009284,
+          "18": 0.031397387126436915,
+          "26": 0.04185884930699986,
+          "35": 0.02686929816116285,
+          "44": 0.02289461214578929,
+          "88": 0.020847355825091087,
+          "132": 0.020831687009780782
+        },
+        "posonly_dose_dense": {
+          "5": 0.024426482784561717,
+          "9": 0.029311835040975988,
+          "13": 0.03977590286818882,
+          "18": 0.029555896542114286,
+          "26": 0.020454030090394787,
+          "35": 0.019411757430243464,
+          "44": 0.018419155955755655,
+          "88": 0.015599581365392797,
+          "132": 0.019083062262281764
+        }
+      },
+      "co_resolvable_steps": [],
+      "band_entry_posonly": {
+        "reached": true,
+        "interval": [
+          9,
+          13
+        ]
+      },
+      "s50_posonly": {
+        "reached": true,
+        "interval": [
+          13,
+          18
+        ]
+      },
+      "band_entry_contrastive": {
+        "reached": true,
+        "interval": [
+          18,
+          26
+        ]
+      },
+      "s50_contrastive": {
+        "reached": true,
+        "interval": [
+          26,
+          35
+        ]
+      },
+      "s50_ordering": "posonly_first",
+      "primary_step": null,
+      "window_missed": false
+    },
+    "kindergarten_teacher": {
+      "fresh_base_own_rate_reused": 0.05600000000000001,
+      "own_rate": {
+        "contrastive_dense": {
+          "5": 0.05,
+          "9": 0.062,
+          "13": 0.12399999999999999,
+          "18": 0.24999999999999997,
+          "26": 0.5359999999999999,
+          "35": 0.8140000000000001,
+          "44": 0.828,
+          "88": 0.9580000000000001,
+          "132": 0.966
+        },
+        "posonly_dose_dense": {
+          "5": 0.057999999999999996,
+          "9": 0.16,
+          "13": 0.44400000000000006,
+          "18": 0.826,
+          "26": 0.9619999999999999,
+          "35": 0.95,
+          "44": 0.9740000000000001,
+          "88": 0.97,
+          "132": 0.9640000000000001
+        }
+      },
+      "claim_clustered_se": {
+        "contrastive_dense": {
+          "5": 0.028607120563572546,
+          "9": 0.02826839296487026,
+          "13": 0.035520617755245835,
+          "18": 0.0394088977832392,
+          "26": 0.03341269464238563,
+          "35": 0.02507295477650151,
+          "44": 0.02711125980406048,
+          "88": 0.021206468016015438,
+          "132": 0.02111387975639122
+        },
+        "posonly_dose_dense": {
+          "5": 0.028007287681339404,
+          "9": 0.04453844933748541,
+          "13": 0.050074230612447465,
+          "18": 0.028686909479938825,
+          "26": 0.021550131397866375,
+          "35": 0.020050955496597425,
+          "44": 0.016857142857142852,
+          "88": 0.017670452681218547,
+          "132": 0.018900383324047115
+        }
+      },
+      "co_resolvable_steps": [
+        18
+      ],
+      "band_entry_posonly": {
+        "reached": true,
+        "interval": [
+          5,
+          9
+        ]
+      },
+      "s50_posonly": {
+        "reached": true,
+        "interval": [
+          13,
+          18
+        ]
+      },
+      "band_entry_contrastive": {
+        "reached": true,
+        "interval": [
+          13,
+          18
+        ]
+      },
+      "s50_contrastive": {
+        "reached": true,
+        "interval": [
+          18,
+          26
+        ]
+      },
+      "s50_ordering": "posonly_first",
+      "primary_step": 18,
+      "g": -0.5760000000000001,
+      "g_ci95": [
+        -0.654,
+        -0.48400000000000004
+      ],
+      "g_ci_excludes_0": true,
+      "g_selection_aware_ci95": [
+        -0.654,
+        -0.48400000000000004
+      ],
+      "per_checkpoint_g": {
+        "18": {
+          "g": -0.5760000000000001,
+          "g_ci95": [
+            -0.654,
+            -0.48400000000000004
+          ],
+          "posonly_own_rate": 0.826
+        }
+      },
+      "window_missed": false
+    }
+  },
+  "reads": {
+    "all_m": {
+      "sources": [
+        "villain",
+        "comedian",
+        "qwen_default",
+        "kindergarten_teacher"
+      ],
+      "m": 4,
+      "mean_g": -0.4635,
+      "panel_mean_ci95": [
+        -0.506,
+        -0.41700000000000004
+      ],
+      "n_g_pos_ci_excl_0": 0,
+      "n_g_neg_ci_excl_0": 4,
+      "n_ci_contained_pm015": 0,
+      "majority": 2,
+      "label": "subceiling_posonly_ahead"
+    },
+    "collision_robust": {
+      "sources": [
+        "villain",
+        "comedian",
+        "kindergarten_teacher"
+      ],
+      "m": 3,
+      "mean_g": -0.3846666666666667,
+      "panel_mean_ci95": [
+        -0.42533333333333334,
+        -0.3413333333333333
+      ],
+      "n_g_pos_ci_excl_0": 0,
+      "n_g_neg_ci_excl_0": 3,
+      "n_ci_contained_pm015": 0,
+      "majority": 2,
+      "label": "subceiling_posonly_ahead",
+      "note": "qwen_default EXCLUDED per the registered collision carve-out (parent ruled its contrastive direction template-collision-contaminated); this is a dual read, NOT a source drop \u2014 all qwen_default cells ran and are reported above."
+    }
+  },
+  "selection_sensitivity": {
+    "all_m": {
+      "available": true,
+      "fixed_panel_ci95": [
+        -0.506,
+        -0.41700000000000004
+      ],
+      "reselecting_panel_ci95": [
+        -0.506,
+        -0.41700000000000004
+      ],
+      "diverged": false,
+      "divergence_eps": 0.02,
+      "note": "diagnostic only \u2014 flagged to the analyzer, no gate attached"
+    },
+    "collision_robust": {
+      "available": true,
+      "fixed_panel_ci95": [
+        -0.42533333333333334,
+        -0.3413333333333333
+      ],
+      "reselecting_panel_ci95": [
+        -0.42533333333333334,
+        -0.3413333333333333
+      ],
+      "diverged": false,
+      "divergence_eps": 0.02,
+      "note": "diagnostic only \u2014 flagged to the analyzer, no gate attached"
+    }
+  },
+  "install_speed": {
+    "per_source_s50_ordering": {
+      "villain": "posonly_first",
+      "comedian": "posonly_first",
+      "assistant": "posonly_first",
+      "qwen_default": "posonly_first",
+      "software_engineer": "posonly_first",
+      "kindergarten_teacher": "posonly_first"
+    },
+    "n_posonly_first": 6,
+    "n_contrastive_first": 0,
+    "verdict": "posonly_first",
+    "null_control": "under an exchangeable null, P(>=5/6 same direction) ~ 0.22 two-sided (14/64; an upper bound \u2014 interval ties reduce it). install_speed is speed-not-strength corroboration and never supersedes the primary strength record."
+  },
+  "kills": {
+    "window_missed": {
+      "n_sources": 0,
+      "threshold": 4,
+      "fired": false,
+      "note": "re-running the same grid is banned; a finer grid is a new proposal"
+    },
+    "retrain_parity": {
+      "contrastive_dense": {
+        "parent_reference_arm": "contrastive_fresh_eval",
+        "per_source": {
+          "villain": {
+            "retrained_step132": 0.9540000000000001,
+            "parent_committed": 0.9480000000000001,
+            "deviation": 0.006000000000000005,
+            "flag": false
+          },
+          "comedian": {
+            "retrained_step132": 0.96,
+            "parent_committed": 0.958,
+            "deviation": 0.0020000000000000018,
+            "flag": false
+          },
+          "assistant": {
+            "retrained_step132": 0.9599999999999999,
+            "parent_committed": 0.96,
+            "deviation": -1.1102230246251565e-16,
+            "flag": false
+          },
+          "qwen_default": {
+            "retrained_step132": 0.7019999999999998,
+            "parent_committed": 0.704,
+            "deviation": -0.002000000000000113,
+            "flag": false
+          },
+          "software_engineer": {
+            "retrained_step132": 0.956,
+            "parent_committed": 0.9620000000000001,
+            "deviation": -0.006000000000000116,
+            "flag": false
+          },
+          "kindergarten_teacher": {
+            "retrained_step132": 0.966,
+            "parent_committed": 0.968,
+            "deviation": -0.0020000000000000018,
+            "flag": false
+          }
+        },
+        "n_flags": 0,
+        "kill": false
+      },
+      "posonly_dose_dense": {
+        "parent_reference_arm": "posonly_dose",
+        "per_source": {
+          "villain": {
+            "retrained_step132": 0.9740000000000001,
+            "parent_committed": 0.9720000000000002,
+            "deviation": 0.0019999999999998908,
+            "flag": false
+          },
+          "comedian": {
+            "retrained_step132": 0.97,
+            "parent_committed": 0.96,
+            "deviation": 0.010000000000000009,
+            "flag": false
+          },
+          "assistant": {
+            "retrained_step132": 0.97,
+            "parent_committed": 0.9719999999999999,
+            "deviation": -0.0019999999999998908,
+            "flag": false
+          },
+          "qwen_default": {
+            "retrained_step132": 0.97,
+            "parent_committed": 0.9719999999999999,
+            "deviation": -0.0019999999999998908,
+            "flag": false
+          },
+          "software_engineer": {
+            "retrained_step132": 0.966,
+            "parent_committed": 0.9680000000000001,
+            "deviation": -0.002000000000000113,
+            "flag": false
+          },
+          "kindergarten_teacher": {
+            "retrained_step132": 0.9640000000000001,
+            "parent_committed": 0.968,
+            "deviation": -0.0039999999999998925,
+            "flag": false
+          }
+        },
+        "n_flags": 0,
+        "kill": false
+      }
+    }
+  },
+  "headline": {
+    "label": "subceiling_posonly_ahead",
+    "carried_by": "both_reads_agree",
+    "dual_read_disagreement": false,
+    "parity_capped": false,
+    "speed_verdict_carries": false,
+    "speed_verdict": null,
+    "verdict_flip": true,
+    "verdict_flip_note": "the parent H1 record gains a determinate sub-ceiling annex iff the primary read returns a determinate label (collision-robust carries on disagreement) or \u2014 weaker, labeled speed-not-strength \u2014 the S50 ordering is consistent for >= 5/6 sources"
+  },
+  "matched_positive_dose_descriptive": [
+    {
+      "source": "villain",
+      "contrastive_step": 18,
+      "posonly_step": 5,
+      "cumulative_positives_contrastive": 82.3,
+      "cumulative_positives_posonly": 80.0,
+      "contrastive_own_rate": 0.41600000000000004,
+      "posonly_own_rate": 0.066,
+      "diff_contr_minus_pos": 0.35000000000000003
+    },
+    {
+      "source": "comedian",
+      "contrastive_step": 18,
+      "posonly_step": 5,
+      "cumulative_positives_contrastive": 82.3,
+      "cumulative_positives_posonly": 80.0,
+      "contrastive_own_rate": 0.37599999999999995,
+      "posonly_own_rate": 0.132,
+      "diff_contr_minus_pos": 0.24399999999999994
+    },
+    {
+      "source": "assistant",
+      "contrastive_step": 18,
+      "posonly_step": 5,
+      "cumulative_positives_contrastive": 82.3,
+      "cumulative_positives_posonly": 80.0,
+      "contrastive_own_rate": 0.076,
+      "posonly_own_rate": 0.046,
+      "diff_contr_minus_pos": 0.03
+    },
+    {
+      "source": "qwen_default",
+      "contrastive_step": 18,
+      "posonly_step": 5,
+      "cumulative_positives_contrastive": 82.3,
+      "cumulative_positives_posonly": 80.0,
+      "contrastive_own_rate": 0.156,
+      "posonly_own_rate": 0.048,
+      "diff_contr_minus_pos": 0.108
+    },
+    {
+      "source": "software_engineer",
+      "contrastive_step": 18,
+      "posonly_step": 5,
+      "cumulative_positives_contrastive": 82.3,
+      "cumulative_positives_posonly": 80.0,
+      "contrastive_own_rate": 0.136,
+      "posonly_own_rate": 0.042,
+      "diff_contr_minus_pos": 0.094
+    },
+    {
+      "source": "kindergarten_teacher",
+      "contrastive_step": 18,
+      "posonly_step": 5,
+      "cumulative_positives_contrastive": 82.3,
+      "cumulative_positives_posonly": 80.0,
+      "contrastive_own_rate": 0.24999999999999997,
+      "posonly_own_rate": 0.057999999999999996,
+      "diff_contr_minus_pos": 0.19199999999999998
+    },
+    {
+      "source": "villain",
+      "contrastive_step": 35,
+      "posonly_step": 9,
+      "cumulative_positives_contrastive": 160.0,
+      "cumulative_positives_posonly": 144.0,
+      "contrastive_own_rate": 0.922,
+      "posonly_own_rate": 0.322,
+      "diff_contr_minus_pos": 0.6000000000000001
+    },
+    {
+      "source": "comedian",
+      "contrastive_step": 35,
+      "posonly_step": 9,
+      "cumulative_positives_contrastive": 160.0,
+      "cumulative_positives_posonly": 144.0,
+      "contrastive_own_rate": 0.8839999999999999,
+      "posonly_own_rate": 0.254,
+      "diff_contr_minus_pos": 0.6299999999999999
+    },
+    {
+      "source": "assistant",
+      "contrastive_step": 35,
+      "posonly_step": 9,
+      "cumulative_positives_contrastive": 160.0,
+      "cumulative_positives_posonly": 144.0,
+      "contrastive_own_rate": 0.38799999999999996,
+      "posonly_own_rate": 0.055999999999999994,
+      "diff_contr_minus_pos": 0.33199999999999996
+    },
+    {
+      "source": "qwen_default",
+      "contrastive_step": 35,
+      "posonly_step": 9,
+      "cumulative_positives_contrastive": 160.0,
+      "cumulative_positives_posonly": 144.0,
+      "contrastive_own_rate": 0.6999999999999998,
+      "posonly_own_rate": 0.062,
+      "diff_contr_minus_pos": 0.6379999999999999
+    },
+    {
+      "source": "software_engineer",
+      "contrastive_step": 35,
+      "posonly_step": 9,
+      "cumulative_positives_contrastive": 160.0,
+      "cumulative_positives_posonly": 144.0,
+      "contrastive_own_rate": 0.7680000000000001,
+      "posonly_own_rate": 0.06999999999999999,
+      "diff_contr_minus_pos": 0.6980000000000002
+    },
+    {
+      "source": "kindergarten_teacher",
+      "contrastive_step": 35,
+      "posonly_step": 9,
+      "cumulative_positives_contrastive": 160.0,
+      "cumulative_positives_posonly": 144.0,
+      "contrastive_own_rate": 0.8140000000000001,
+      "posonly_own_rate": 0.16,
+      "diff_contr_minus_pos": 0.654
+    },
+    {
+      "source": "villain",
+      "contrastive_step": 44,
+      "posonly_step": 13,
+      "cumulative_positives_contrastive": 201.1,
+      "cumulative_positives_posonly": 208.0,
+      "contrastive_own_rate": 0.934,
+      "posonly_own_rate": 0.714,
+      "diff_contr_minus_pos": 0.22000000000000008
+    },
+    {
+      "source": "comedian",
+      "contrastive_step": 44,
+      "posonly_step": 13,
+      "cumulative_positives_contrastive": 201.1,
+      "cumulative_positives_posonly": 208.0,
+      "contrastive_own_rate": 0.93,
+      "posonly_own_rate": 0.412,
+      "diff_contr_minus_pos": 0.518
+    },
+    {
+      "source": "assistant",
+      "contrastive_step": 44,
+      "posonly_step": 13,
+      "cumulative_positives_contrastive": 201.1,
+      "cumulative_positives_posonly": 208.0,
+      "contrastive_own_rate": 0.49199999999999994,
+      "posonly_own_rate": 0.094,
+      "diff_contr_minus_pos": 0.3979999999999999
+    },
+    {
+      "source": "qwen_default",
+      "contrastive_step": 44,
+      "posonly_step": 13,
+      "cumulative_positives_contrastive": 201.1,
+      "cumulative_positives_posonly": 208.0,
+      "contrastive_own_rate": 0.39799999999999996,
+      "posonly_own_rate": 0.198,
+      "diff_contr_minus_pos": 0.19999999999999996
+    },
+    {
+      "source": "software_engineer",
+      "contrastive_step": 44,
+      "posonly_step": 13,
+      "cumulative_positives_contrastive": 201.1,
+      "cumulative_positives_posonly": 208.0,
+      "contrastive_own_rate": 0.8539999999999999,
+      "posonly_own_rate": 0.226,
+      "diff_contr_minus_pos": 0.6279999999999999
+    },
+    {
+      "source": "kindergarten_teacher",
+      "contrastive_step": 44,
+      "posonly_step": 13,
+      "cumulative_positives_contrastive": 201.1,
+      "cumulative_positives_posonly": 208.0,
+      "contrastive_own_rate": 0.828,
+      "posonly_own_rate": 0.44400000000000006,
+      "diff_contr_minus_pos": 0.3839999999999999
+    },
+    {
+      "source": "villain",
+      "contrastive_step": 88,
+      "posonly_step": 26,
+      "cumulative_positives_contrastive": 402.3,
+      "cumulative_positives_posonly": 416.0,
+      "contrastive_own_rate": 0.9580000000000001,
+      "posonly_own_rate": 0.966,
+      "diff_contr_minus_pos": -0.007999999999999896
+    },
+    {
+      "source": "comedian",
+      "contrastive_step": 88,
+      "posonly_step": 26,
+      "cumulative_positives_contrastive": 402.3,
+      "cumulative_positives_posonly": 416.0,
+      "contrastive_own_rate": 0.958,
+      "posonly_own_rate": 0.9719999999999999,
+      "diff_contr_minus_pos": -0.013999999999999901
+    },
+    {
+      "source": "assistant",
+      "contrastive_step": 88,
+      "posonly_step": 26,
+      "cumulative_positives_contrastive": 402.3,
+      "cumulative_positives_posonly": 416.0,
+      "contrastive_own_rate": 0.9359999999999999,
+      "posonly_own_rate": 0.954,
+      "diff_contr_minus_pos": -0.018000000000000016
+    },
+    {
+      "source": "qwen_default",
+      "contrastive_step": 88,
+      "posonly_step": 26,
+      "cumulative_positives_contrastive": 402.3,
+      "cumulative_positives_posonly": 416.0,
+      "contrastive_own_rate": 0.57,
+      "posonly_own_rate": 0.968,
+      "diff_contr_minus_pos": -0.398
+    },
+    {
+      "source": "software_engineer",
+      "contrastive_step": 88,
+      "posonly_step": 26,
+      "cumulative_positives_contrastive": 402.3,
+      "cumulative_positives_posonly": 416.0,
+      "contrastive_own_rate": 0.948,
+      "posonly_own_rate": 0.97,
+      "diff_contr_minus_pos": -0.02200000000000002
+    },
+    {
+      "source": "kindergarten_teacher",
+      "contrastive_step": 88,
+      "posonly_step": 26,
+      "cumulative_positives_contrastive": 402.3,
+      "cumulative_positives_posonly": 416.0,
+      "contrastive_own_rate": 0.9580000000000001,
+      "posonly_own_rate": 0.9619999999999999,
+      "diff_contr_minus_pos": -0.0039999999999997815
+    },
+    {
+      "source": "villain",
+      "contrastive_step": 132,
+      "posonly_step": 35,
+      "cumulative_positives_contrastive": 603.4,
+      "cumulative_positives_posonly": 560.0,
+      "contrastive_own_rate": 0.9540000000000001,
+      "posonly_own_rate": 0.972,
+      "diff_contr_minus_pos": -0.017999999999999905
+    },
+    {
+      "source": "comedian",
+      "contrastive_step": 132,
+      "posonly_step": 35,
+      "cumulative_positives_contrastive": 603.4,
+      "cumulative_positives_posonly": 560.0,
+      "contrastive_own_rate": 0.96,
+      "posonly_own_rate": 0.978,
+      "diff_contr_minus_pos": -0.018000000000000016
+    },
+    {
+      "source": "assistant",
+      "contrastive_step": 132,
+      "posonly_step": 35,
+      "cumulative_positives_contrastive": 603.4,
+      "cumulative_positives_posonly": 560.0,
+      "contrastive_own_rate": 0.9599999999999999,
+      "posonly_own_rate": 0.964,
+      "diff_contr_minus_pos": -0.004000000000000115
+    },
+    {
+      "source": "qwen_default",
+      "contrastive_step": 132,
+      "posonly_step": 35,
+      "cumulative_positives_contrastive": 603.4,
+      "cumulative_positives_posonly": 560.0,
+      "contrastive_own_rate": 0.7019999999999998,
+      "posonly_own_rate": 0.96,
+      "diff_contr_minus_pos": -0.2580000000000001
+    },
+    {
+      "source": "software_engineer",
+      "contrastive_step": 132,
+      "posonly_step": 35,
+      "cumulative_positives_contrastive": 603.4,
+      "cumulative_positives_posonly": 560.0,
+      "contrastive_own_rate": 0.956,
+      "posonly_own_rate": 0.956,
+      "diff_contr_minus_pos": 0.0
+    },
+    {
+      "source": "kindergarten_teacher",
+      "contrastive_step": 132,
+      "posonly_step": 35,
+      "cumulative_positives_contrastive": 603.4,
+      "cumulative_positives_posonly": 560.0,
+      "contrastive_own_rate": 0.966,
+      "posonly_own_rate": 0.95,
+      "diff_contr_minus_pos": 0.016000000000000014
+    }
+  ],
+  "fresh_base_panel_rates_reused": {
+    "villain": 0.046,
+    "comedian": 0.128,
+    "assistant": 0.05,
+    "qwen_default": 0.044000000000000004,
+    "software_engineer": 0.046000000000000006,
+    "kindergarten_teacher": 0.05600000000000001
+  },
+  "parent_summary_path": "eval_results/issue_608/analyze_summary_608.json",
+  "git_commit_sha": "7835f69fd090883d3dab0f81193a401b37724c64",
+  "timestamp_utc": "2026-06-12T09:47:01.200567+00:00",
+  "figures": {
+    "subceiling_trajectory": "figures/issue_608/sub-ceiling-install/subceiling_trajectory.png",
+    "subceiling_gap_ci": "figures/issue_608/sub-ceiling-install/subceiling_gap_ci.png",
+    "matched_dose_overlay": "figures/issue_608/sub-ceiling-install/matched_dose_overlay.png",
+    "s50_intervals": "figures/issue_608/sub-ceiling-install/s50_intervals.png",
+    "parity_bars": "figures/issue_608/sub-ceiling-install/parity_bars.png",
+    "primary_claim_scatter": "figures/issue_608/sub-ceiling-install/primary_claim_scatter.png"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "cell": "base_benign_seed42",
+  "variant": "base",
+  "arm": "benign",
+  "seed": 42,
+  "persona_order": [
+    "assistant",
+    "biographer",
+    "comedian",
+    "data_scientist",
+    "french_person",
+    "kindergarten_teacher",
+    "librarian",
+    "local_historian",
+    "marine_biologist",
+    "medical_doctor",
+    "police_officer",
+    "software_engineer",
+    "villain",
+    "zelthari_scholar"
+  ],
+  "end_slot": {
+    "M_shape": [
+      3584,
+      14
+    ],
+    "s_top1_frac": 0.4849717319011688,
+    "mean_cos_to_U1": 0.947690486907959,
+    "median_cos_to_U1": 0.9617364406585693,
+    "sign_flip_p95": 0.08988212049007416,
+    "sign_flip_p99": 0.09102924913167953,
+    "row_shuffle_p95": 0.43352973461151123,
+    "row_shuffle_p99": 0.43357422947883606,
+    "cos_to_U1": [
+      0.8985403776168823,
+      0.8334894776344299,
+      0.9477963447570801,
+      0.9660534858703613,
+      0.9619591236114502,
+      0.9615137577056885,
+      0.9792839884757996,
+      0.9585303068161011,
+      0.9637139439582825,
+      0.963505744934082,
+      0.9802289009094238,
+      0.966447651386261,
+      0.9474414587020874,
+      0.9391623735427856
+    ],
+    "singular_values": [
+      54.5770378112793,
+      10.871835708618164,
+      8.577939987182617,
+      6.0245890617370605,
+      4.784754276275635,
+      4.3629469871521,
+      3.91852068901062,
+      3.7257444858551025,
+      3.470658779144287,
+      2.986510753631592,
+      2.6007919311523438,
+      2.3817803859710693,
+      2.3128411769866943,
+      1.9405838251113892
+    ]
+  },
+  "end_slot_cross_check": {
+    "persisted_path": "eval_results/issue_552/svd/base_benign_seed42.json",
+    "fields": {
+      "s_top1_frac": 0.0,
+      "mean_cos_to_U1": 0.0,
+      "sign_flip_p95": 0.0,
+      "sign_flip_p99": 0.0,
+      "row_shuffle_p95": 0.0,
+      "row_shuffle_p99": 0.0
+    },
+    "max_abs_diff": 0.0,
+    "atol": 0.0005,
+    "pass": true
+  },
+  "mean_resp": null,
+  "mean_resp_absent_reason": "delta_v_mean_resp is computed only for variant='same' (activation_shift.extract_per_context_shifts, also_compute_mean_over_response_em gate) \u2014 absent by design, not data loss",
+  "delta_mean_resp_minus_end_slot": null,
+  "cos_U1_end_vs_U1_mean_resp": null,
+  "concordance": "N/A \u2014 mean-over-response read not persisted for this cell"
+}

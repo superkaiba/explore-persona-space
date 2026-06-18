@@ -1,0 +1,1118 @@
+{
+  "followup": "shuffled-replay-l27-control",
+  "construction": {
+    "layer": 27,
+    "pos": "mean_resp",
+    "variant": "base",
+    "registered_contrast": "matched (shuffled behavior - shuffled base-self)",
+    "sensitivity_contrast": "unmatched (shuffled behavior - intact base-self); never gates"
+  },
+  "hf_revisions": {
+    "input_pin": "04739d8be864e0400f47e257a36f473dbd5f72d6",
+    "followup_payloads": "b2e87ad445e3a2da9ae2fe95254d45724f2f21d0",
+    "followup_repo": "superkaiba1/explore-persona-space-data"
+  },
+  "expected_vs_loaded": {
+    "mode": "production",
+    "n_followup_payloads_expected": 7,
+    "n_followup_payloads_loaded": 7,
+    "n_shift_payloads_expected": 31,
+    "n_shift_payloads_loaded": 31,
+    "n_score_cells": 9
+  },
+  "payload_files": {
+    "em_turner__no_system.pt": {
+      "present": true,
+      "source": "pinned@b2e87ad445e3a2da9ae2fe95254d45724f2f21d0",
+      "sha256": "11970fc44b49992ae4c057940158b934f869915460830ca1d3e886a10f349e04",
+      "manifest_git_commit": "d54e0fdc68642be5c0f592cddd97896949468874",
+      "manifest_upload_revision": "82d1faa2baacae88c3892df2f396dcf17d850392",
+      "manifest_upload_repo": "superkaiba1/explore-persona-space-data"
+    },
+    "em518__assistant.pt": {
+      "present": true,
+      "source": "pinned@b2e87ad445e3a2da9ae2fe95254d45724f2f21d0",
+      "sha256": "669a9f994c2f29d118388f6d40f63e2df01ee0af26f770dcea0b27c1479d5174",
+      "manifest_git_commit": "d54e0fdc68642be5c0f592cddd97896949468874",
+      "manifest_upload_revision": "82d1faa2baacae88c3892df2f396dcf17d850392",
+      "manifest_upload_repo": "superkaiba1/explore-persona-space-data"
+    },
+    "em518__comedian.pt": {
+      "present": true,
+      "source": "pinned@b2e87ad445e3a2da9ae2fe95254d45724f2f21d0",
+      "sha256": "4af9c2a305653e31a9f7d5239c221ad20ed13f661fdf0f39997e42fc6ff41d9e",
+      "manifest_git_commit": "d54e0fdc68642be5c0f592cddd97896949468874",
+      "manifest_upload_revision": "82d1faa2baacae88c3892df2f396dcf17d850392",
+      "manifest_upload_repo": "superkaiba1/explore-persona-space-data"
+    },
+    "em518__kindergarten_teacher.pt": {
+      "present": true,
+      "source": "pinned@b2e87ad445e3a2da9ae2fe95254d45724f2f21d0",
+      "sha256": "2e9907eb175efa9fb5c2c0d03b5cabe8a66180b848dfb08ff7a1cd34d672e296",
+      "manifest_git_commit": "d54e0fdc68642be5c0f592cddd97896949468874",
+      "manifest_upload_revision": "82d1faa2baacae88c3892df2f396dcf17d850392",
+      "manifest_upload_repo": "superkaiba1/explore-persona-space-data"
+    },
+    "em518__qwen_default.pt": {
+      "present": true,
+      "source": "pinned@b2e87ad445e3a2da9ae2fe95254d45724f2f21d0",
+      "sha256": "abf65d595436d73f678ca70326fdacf60674f710a59875626f7d463d954d2ad4",
+      "manifest_git_commit": "d54e0fdc68642be5c0f592cddd97896949468874",
+      "manifest_upload_revision": "82d1faa2baacae88c3892df2f396dcf17d850392",
+      "manifest_upload_repo": "superkaiba1/explore-persona-space-data"
+    },
+    "em518__software_engineer.pt": {
+      "present": true,
+      "source": "pinned@b2e87ad445e3a2da9ae2fe95254d45724f2f21d0",
+      "sha256": "ee8b98840ec5e8fcc5416fcdd0784f8e5f16a2ad9c500957f4963e40aaf8f09c",
+      "manifest_git_commit": "d54e0fdc68642be5c0f592cddd97896949468874",
+      "manifest_upload_revision": "82d1faa2baacae88c3892df2f396dcf17d850392",
+      "manifest_upload_repo": "superkaiba1/explore-persona-space-data"
+    },
+    "em518__villain.pt": {
+      "present": true,
+      "source": "pinned@b2e87ad445e3a2da9ae2fe95254d45724f2f21d0",
+      "sha256": "f57868fabbc22f82a1d58f2223b01a1ebcf8150786513e0f70b635993af141e8",
+      "manifest_git_commit": "d54e0fdc68642be5c0f592cddd97896949468874",
+      "manifest_upload_revision": "82d1faa2baacae88c3892df2f396dcf17d850392",
+      "manifest_upload_repo": "superkaiba1/explore-persona-space-data"
+    }
+  },
+  "positive_control_gate": {
+    "pass": true,
+    "cos_min": 0.99,
+    "anchor_tolerance": 0.02,
+    "anchors_file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-602/eval_results/issue_602/agreement/l27_reread.json",
+    "per_unit": {
+      "em_turner__no_system": {
+        "cos_recomputed_vs_stored": 0.9999963208812076,
+        "pass_cos": true
+      },
+      "em518__assistant": {
+        "cos_recomputed_vs_stored": 0.9999975210758592,
+        "pass_cos": true
+      },
+      "em518__comedian": {
+        "cos_recomputed_vs_stored": 0.9999760616671547,
+        "pass_cos": true
+      },
+      "em518__kindergarten_teacher": {
+        "cos_recomputed_vs_stored": 0.9999916403102698,
+        "pass_cos": true
+      },
+      "em518__qwen_default": {
+        "cos_recomputed_vs_stored": 0.9999948302680419,
+        "pass_cos": true
+      },
+      "em518__software_engineer": {
+        "cos_recomputed_vs_stored": 0.9999936334916779,
+        "pass_cos": true
+      },
+      "em518__villain": {
+        "cos_recomputed_vs_stored": 0.9999939878362576,
+        "pass_cos": true
+      }
+    },
+    "per_cell": {
+      "em518__assistant__s42": {
+        "recomputed_cos_w_shared": 0.8643138011890578,
+        "anchor_cos_w_shared": 0.8642381957023912,
+        "recomputed_cos_w_src": 0.8441927226238177,
+        "anchor_cos_w_src": 0.8440892821920205,
+        "tolerance": 0.02,
+        "pass": true
+      },
+      "em518__comedian__s42": {
+        "recomputed_cos_w_shared": 0.6403469296142644,
+        "anchor_cos_w_shared": 0.6386750665429438,
+        "recomputed_cos_w_src": 0.760086444850387,
+        "anchor_cos_w_src": 0.7592869704243469,
+        "tolerance": 0.02,
+        "pass": true
+      },
+      "em518__kindergarten_teacher__s42": {
+        "recomputed_cos_w_shared": 0.8202813931600363,
+        "anchor_cos_w_shared": 0.8201014201987369,
+        "recomputed_cos_w_src": 0.7753585310068616,
+        "anchor_cos_w_src": 0.7756346921204892,
+        "tolerance": 0.02,
+        "pass": true
+      },
+      "em518__qwen_default__s42": {
+        "recomputed_cos_w_shared": 0.8099417097039906,
+        "anchor_cos_w_shared": 0.8102825140171646,
+        "recomputed_cos_w_src": 0.7715183332966682,
+        "anchor_cos_w_src": 0.7717113773262393,
+        "tolerance": 0.02,
+        "pass": true
+      },
+      "em518__software_engineer__s42": {
+        "recomputed_cos_w_shared": 0.7910579319291674,
+        "anchor_cos_w_shared": 0.7913565732082622,
+        "recomputed_cos_w_src": 0.7546180360132069,
+        "anchor_cos_w_src": 0.7548631849424694,
+        "tolerance": 0.02,
+        "pass": true
+      },
+      "em518__villain__s42": {
+        "recomputed_cos_w_shared": 0.791399436653771,
+        "anchor_cos_w_shared": 0.7906316217777176,
+        "recomputed_cos_w_src": 0.7587243381564435,
+        "anchor_cos_w_src": 0.7582512562427937,
+        "tolerance": 0.02,
+        "pass": true
+      },
+      "em_turner__no_system__s137": {
+        "recomputed_cos_w_shared": 0.8188823534576768,
+        "anchor_cos_w_shared": 0.8190059660231979,
+        "recomputed_cos_w_src": 0.7948861600858184,
+        "anchor_cos_w_src": 0.7949823928870338,
+        "tolerance": 0.02,
+        "pass": true
+      },
+      "em_turner__no_system__s256": {
+        "recomputed_cos_w_shared": 0.8238711064489788,
+        "anchor_cos_w_shared": 0.8239932591648556,
+        "recomputed_cos_w_src": 0.8030953846651268,
+        "anchor_cos_w_src": 0.8031887764640528,
+        "tolerance": 0.02,
+        "pass": true
+      },
+      "em_turner__no_system__s42": {
+        "recomputed_cos_w_shared": 0.8267509164686077,
+        "anchor_cos_w_shared": 0.8268601848166509,
+        "recomputed_cos_w_src": 0.8009815860135471,
+        "anchor_cos_w_src": 0.8010677285164083,
+        "tolerance": 0.02,
+        "pass": true
+      }
+    }
+  },
+  "null_random": {
+    "p95": 0.027255242515254182,
+    "n": 10000,
+    "seed": 602
+  },
+  "thresholds": {
+    "collapse_bar": 0.3,
+    "retention": "cos_t >= 0.8 x cos_intact OR cos_t >= 0.3",
+    "r_proj_collapse": 0.3,
+    "r_proj_retention": 0.8,
+    "partial_band": [
+      0.027255242515254182,
+      0.3
+    ],
+    "margin_retention": "margin_t >= 0.8 x margin_intact OR margin_t >= 0.2 (mirrors the cosine retention disjunction; the margin itself is the parent's sibling-excluded margin, recomputed per transform via the parent _offdiag_margins machinery)"
+  },
+  "per_cell": [
+    {
+      "cell_id": "em518__assistant__s42",
+      "family": "em518",
+      "source": "assistant",
+      "seed": 42,
+      "transform": "intact",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8643138011890578,
+      "cos_w_src": 0.8441927226238177,
+      "best_target_cos": 0.8643138011890578,
+      "retention_vs_intact": 1.0,
+      "r_proj": 1.0,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__assistant__s42",
+      "family": "em518",
+      "source": "assistant",
+      "seed": 42,
+      "transform": "shuffle",
+      "gates_verdict": true,
+      "cos_w_shared": 0.11101279989745057,
+      "cos_w_src": 0.11515968729522849,
+      "best_target_cos": 0.11515968729522849,
+      "retention_vs_intact": 0.12844038790625295,
+      "r_proj": 0.05314989706894692,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__assistant__s42",
+      "family": "em518",
+      "source": "assistant",
+      "seed": 42,
+      "transform": "mismatch",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8754281912411127,
+      "cos_w_src": 0.8498311336301494,
+      "best_target_cos": 0.8754281912411127,
+      "retention_vs_intact": 1.0128592069648368,
+      "r_proj": 1.0851849119535366,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__assistant__s42",
+      "family": "em518",
+      "source": "assistant",
+      "seed": 42,
+      "transform": "shuffle_unmatched",
+      "gates_verdict": false,
+      "cos_w_shared": 0.4945273585752585,
+      "cos_w_src": 0.47685643369814906,
+      "best_target_cos": 0.4945273585752585,
+      "retention_vs_intact": 0.5721618211984177,
+      "r_proj": 1.241675618112118,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__comedian__s42",
+      "family": "em518",
+      "source": "comedian",
+      "seed": 42,
+      "transform": "intact",
+      "gates_verdict": true,
+      "cos_w_shared": 0.6403469296142644,
+      "cos_w_src": 0.760086444850387,
+      "best_target_cos": 0.760086444850387,
+      "retention_vs_intact": 1.0,
+      "r_proj": 1.0,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__comedian__s42",
+      "family": "em518",
+      "source": "comedian",
+      "seed": 42,
+      "transform": "shuffle",
+      "gates_verdict": true,
+      "cos_w_shared": 0.1366935829913284,
+      "cos_w_src": 0.24096911917903807,
+      "best_target_cos": 0.24096911917903807,
+      "retention_vs_intact": 0.21346800721551143,
+      "r_proj": 0.18801969797664486,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__comedian__s42",
+      "family": "em518",
+      "source": "comedian",
+      "seed": 42,
+      "transform": "mismatch",
+      "gates_verdict": true,
+      "cos_w_shared": 0.6739271261213422,
+      "cos_w_src": 0.793479082241656,
+      "best_target_cos": 0.793479082241656,
+      "retention_vs_intact": 1.0524406301554472,
+      "r_proj": 1.2437502283025332,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__comedian__s42",
+      "family": "em518",
+      "source": "comedian",
+      "seed": 42,
+      "transform": "shuffle_unmatched",
+      "gates_verdict": false,
+      "cos_w_shared": 0.37371402004152704,
+      "cos_w_src": 0.4799787391851983,
+      "best_target_cos": 0.4799787391851983,
+      "retention_vs_intact": 0.5836117934798982,
+      "r_proj": 1.7565998840307084,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__kindergarten_teacher__s42",
+      "family": "em518",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "transform": "intact",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8202813931600363,
+      "cos_w_src": 0.7753585310068616,
+      "best_target_cos": 0.8202813931600363,
+      "retention_vs_intact": 1.0,
+      "r_proj": 1.0,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__kindergarten_teacher__s42",
+      "family": "em518",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "transform": "shuffle",
+      "gates_verdict": true,
+      "cos_w_shared": 0.07501087882751621,
+      "cos_w_src": 0.08294776870826474,
+      "best_target_cos": 0.08294776870826474,
+      "retention_vs_intact": 0.09144530090893045,
+      "r_proj": 0.04936238547157873,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__kindergarten_teacher__s42",
+      "family": "em518",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "transform": "mismatch",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8333327662358353,
+      "cos_w_src": 0.7894337747845362,
+      "best_target_cos": 0.8333327662358353,
+      "retention_vs_intact": 1.0159108486241777,
+      "r_proj": 1.0857261923893902,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__kindergarten_teacher__s42",
+      "family": "em518",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "transform": "shuffle_unmatched",
+      "gates_verdict": false,
+      "cos_w_shared": 0.4338090643432118,
+      "cos_w_src": 0.40811414082970604,
+      "best_target_cos": 0.4338090643432118,
+      "retention_vs_intact": 0.5288539615314375,
+      "r_proj": 1.3065654561766569,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__qwen_default__s42",
+      "family": "em518",
+      "source": "qwen_default",
+      "seed": 42,
+      "transform": "intact",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8099417097039906,
+      "cos_w_src": 0.7715183332966682,
+      "best_target_cos": 0.8099417097039906,
+      "retention_vs_intact": 1.0,
+      "r_proj": 1.0,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__qwen_default__s42",
+      "family": "em518",
+      "source": "qwen_default",
+      "seed": 42,
+      "transform": "shuffle",
+      "gates_verdict": true,
+      "cos_w_shared": 0.11025117831101311,
+      "cos_w_src": 0.11437611165055324,
+      "best_target_cos": 0.11437611165055324,
+      "retention_vs_intact": 0.13612236163427935,
+      "r_proj": 0.07532600643218265,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__qwen_default__s42",
+      "family": "em518",
+      "source": "qwen_default",
+      "seed": 42,
+      "transform": "mismatch",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8311730904147722,
+      "cos_w_src": 0.7938494339636508,
+      "best_target_cos": 0.8311730904147722,
+      "retention_vs_intact": 1.0262134675327945,
+      "r_proj": 1.1528977094317123,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__qwen_default__s42",
+      "family": "em518",
+      "source": "qwen_default",
+      "seed": 42,
+      "transform": "shuffle_unmatched",
+      "gates_verdict": false,
+      "cos_w_shared": 0.4329510004180194,
+      "cos_w_src": 0.4273082221467399,
+      "best_target_cos": 0.4329510004180194,
+      "retention_vs_intact": 0.5345458756238767,
+      "r_proj": 1.3759456207946894,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__software_engineer__s42",
+      "family": "em518",
+      "source": "software_engineer",
+      "seed": 42,
+      "transform": "intact",
+      "gates_verdict": true,
+      "cos_w_shared": 0.7910579319291674,
+      "cos_w_src": 0.7546180360132069,
+      "best_target_cos": 0.7910579319291674,
+      "retention_vs_intact": 1.0,
+      "r_proj": 1.0,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__software_engineer__s42",
+      "family": "em518",
+      "source": "software_engineer",
+      "seed": 42,
+      "transform": "shuffle",
+      "gates_verdict": true,
+      "cos_w_shared": 0.08680326359043057,
+      "cos_w_src": 0.06349016948977612,
+      "best_target_cos": 0.08680326359043057,
+      "retention_vs_intact": 0.10973060263581691,
+      "r_proj": 0.06510100639418936,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__software_engineer__s42",
+      "family": "em518",
+      "source": "software_engineer",
+      "seed": 42,
+      "transform": "mismatch",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8130664850631397,
+      "cos_w_src": 0.776903286720935,
+      "best_target_cos": 0.8130664850631397,
+      "retention_vs_intact": 1.0278216705068612,
+      "r_proj": 1.1116039259692823,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__software_engineer__s42",
+      "family": "em518",
+      "source": "software_engineer",
+      "seed": 42,
+      "transform": "shuffle_unmatched",
+      "gates_verdict": false,
+      "cos_w_shared": 0.4468192202555516,
+      "cos_w_src": 0.4379203549237566,
+      "best_target_cos": 0.4468192202555516,
+      "retention_vs_intact": 0.5648375450403302,
+      "r_proj": 1.4398511284626883,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__villain__s42",
+      "family": "em518",
+      "source": "villain",
+      "seed": 42,
+      "transform": "intact",
+      "gates_verdict": true,
+      "cos_w_shared": 0.791399436653771,
+      "cos_w_src": 0.7587243381564435,
+      "best_target_cos": 0.791399436653771,
+      "retention_vs_intact": 1.0,
+      "r_proj": 1.0,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__villain__s42",
+      "family": "em518",
+      "source": "villain",
+      "seed": 42,
+      "transform": "shuffle",
+      "gates_verdict": true,
+      "cos_w_shared": 0.0804972702663072,
+      "cos_w_src": 0.09864807602210067,
+      "best_target_cos": 0.09864807602210067,
+      "retention_vs_intact": 0.1017150967489555,
+      "r_proj": 0.06584021101874725,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__villain__s42",
+      "family": "em518",
+      "source": "villain",
+      "seed": 42,
+      "transform": "mismatch",
+      "gates_verdict": true,
+      "cos_w_shared": 0.7970115813583707,
+      "cos_w_src": 0.7713188574167488,
+      "best_target_cos": 0.7970115813583707,
+      "retention_vs_intact": 1.0070914186246192,
+      "r_proj": 1.0939455104879927,
+      "missing": false
+    },
+    {
+      "cell_id": "em518__villain__s42",
+      "family": "em518",
+      "source": "villain",
+      "seed": 42,
+      "transform": "shuffle_unmatched",
+      "gates_verdict": false,
+      "cos_w_shared": 0.38573706711326544,
+      "cos_w_src": 0.4086976695692113,
+      "best_target_cos": 0.4086976695692113,
+      "retention_vs_intact": 0.48741134912131784,
+      "r_proj": 1.4505254854409673,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s137",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 137,
+      "transform": "intact",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8188823534576768,
+      "cos_w_src": 0.7948861600858184,
+      "best_target_cos": 0.8188823534576768,
+      "retention_vs_intact": 1.0,
+      "r_proj": 1.0,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s137",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 137,
+      "transform": "shuffle",
+      "gates_verdict": true,
+      "cos_w_shared": 0.11231319118561281,
+      "cos_w_src": 0.09650940749981447,
+      "best_target_cos": 0.11231319118561281,
+      "retention_vs_intact": 0.1371542453093265,
+      "r_proj": 0.07351689402303302,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s137",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 137,
+      "transform": "mismatch",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8363112323476576,
+      "cos_w_src": 0.8166881757041824,
+      "best_target_cos": 0.8363112323476576,
+      "retention_vs_intact": 1.0212837397415984,
+      "r_proj": 1.1009841350467904,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s137",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 137,
+      "transform": "shuffle_unmatched",
+      "gates_verdict": false,
+      "cos_w_shared": 0.4881785848975118,
+      "cos_w_src": 0.5041620467124842,
+      "best_target_cos": 0.5041620467124842,
+      "retention_vs_intact": 0.5961522834583135,
+      "r_proj": 1.438118480105523,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s256",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 256,
+      "transform": "intact",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8238711064489788,
+      "cos_w_src": 0.8030953846651268,
+      "best_target_cos": 0.8238711064489788,
+      "retention_vs_intact": 1.0,
+      "r_proj": 1.0,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s256",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 256,
+      "transform": "shuffle",
+      "gates_verdict": true,
+      "cos_w_shared": 0.12037599995473428,
+      "cos_w_src": 0.10934860398003667,
+      "best_target_cos": 0.12037599995473428,
+      "retention_vs_intact": 0.14611023376408333,
+      "r_proj": 0.07831744870229167,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s256",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 256,
+      "transform": "mismatch",
+      "gates_verdict": true,
+      "cos_w_shared": 0.842174913147842,
+      "cos_w_src": 0.8255475842236345,
+      "best_target_cos": 0.842174913147842,
+      "retention_vs_intact": 1.0222168328948391,
+      "r_proj": 1.1019900462527208,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s256",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 256,
+      "transform": "shuffle_unmatched",
+      "gates_verdict": false,
+      "cos_w_shared": 0.48669542103755653,
+      "cos_w_src": 0.5001428663882159,
+      "best_target_cos": 0.5001428663882159,
+      "retention_vs_intact": 0.5907421891942474,
+      "r_proj": 1.4250675252469207,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s42",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 42,
+      "transform": "intact",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8267509164686077,
+      "cos_w_src": 0.8009815860135471,
+      "best_target_cos": 0.8267509164686077,
+      "retention_vs_intact": 1.0,
+      "r_proj": 1.0,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s42",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 42,
+      "transform": "shuffle",
+      "gates_verdict": true,
+      "cos_w_shared": 0.11120959720727337,
+      "cos_w_src": 0.09066641629185661,
+      "best_target_cos": 0.11120959720727337,
+      "retention_vs_intact": 0.13451402954870034,
+      "r_proj": 0.0721016956685516,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s42",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 42,
+      "transform": "mismatch",
+      "gates_verdict": true,
+      "cos_w_shared": 0.8423986510945984,
+      "cos_w_src": 0.82077748988017,
+      "best_target_cos": 0.8423986510945984,
+      "retention_vs_intact": 1.0189267823165273,
+      "r_proj": 1.0984432420206838,
+      "missing": false
+    },
+    {
+      "cell_id": "em_turner__no_system__s42",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 42,
+      "transform": "shuffle_unmatched",
+      "gates_verdict": false,
+      "cos_w_shared": 0.46344470262164433,
+      "cos_w_src": 0.47040332040179994,
+      "best_target_cos": 0.47040332040179994,
+      "retention_vs_intact": 0.5605614622130771,
+      "r_proj": 1.3522615284924437,
+      "missing": false
+    }
+  ],
+  "family_medians": {
+    "em_turner": {
+      "median_cos_intact": 0.8238711064489788,
+      "median_cos_shuffle": 0.11231319118561281,
+      "median_cos_mismatch": 0.842174913147842,
+      "median_cos_shuffle_unmatched": 0.48669542103755653,
+      "median_r_proj_shuffle": 0.07351689402303302,
+      "median_r_proj_mismatch": 1.1009841350467904
+    },
+    "em518": {
+      "median_cos_intact": 0.8006705731788808,
+      "median_cos_shuffle": 0.09852722095072183,
+      "median_cos_mismatch": 0.8221197877389559,
+      "median_cos_shuffle_unmatched": 0.4333800323806156,
+      "median_r_proj_shuffle": 0.06547060870646831,
+      "median_r_proj_mismatch": 1.1027747182286376
+    }
+  },
+  "family_collapse": {
+    "em_turner": {
+      "cos_collapse": true,
+      "r_proj_collapse": true,
+      "cos_in_partial_band": true,
+      "discordant": false
+    },
+    "em518": {
+      "cos_collapse": true,
+      "r_proj_collapse": true,
+      "cos_in_partial_band": true,
+      "discordant": false
+    }
+  },
+  "margins_by_transform": {
+    "intact": {
+      "em_turner__no_system": {
+        "on_diag_median": 0.8238711064489788,
+        "off_diag_mean_incl_siblings": 0.6592389407543996,
+        "off_diag_mean_excl_siblings": 0.6197567800612269,
+        "margin_incl_siblings": 0.16463216569457917,
+        "margin_excl_siblings": 0.20411432638775184,
+        "n_on": 3,
+        "n_off_excl": 22
+      },
+      "em518__assistant": {
+        "on_diag_median": 0.8643138011890578,
+        "off_diag_mean_incl_siblings": 0.6847680634202054,
+        "off_diag_mean_excl_siblings": 0.660456153105873,
+        "margin_incl_siblings": 0.1795457377688524,
+        "margin_excl_siblings": 0.20385764808318474,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__comedian": {
+        "on_diag_median": 0.6403469296142644,
+        "off_diag_mean_incl_siblings": 0.49416240922159177,
+        "off_diag_mean_excl_siblings": 0.4725140099662273,
+        "margin_incl_siblings": 0.14618452039267266,
+        "margin_excl_siblings": 0.16783291964803715,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__kindergarten_teacher": {
+        "on_diag_median": 0.8202813931600363,
+        "off_diag_mean_incl_siblings": 0.6497234113838795,
+        "off_diag_mean_excl_siblings": 0.6262590180772615,
+        "margin_incl_siblings": 0.1705579817761569,
+        "margin_excl_siblings": 0.19402237508277487,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__qwen_default": {
+        "on_diag_median": 0.8099417097039906,
+        "off_diag_mean_incl_siblings": 0.6536454310794233,
+        "off_diag_mean_excl_siblings": 0.6296230897387304,
+        "margin_incl_siblings": 0.1562962786245673,
+        "margin_excl_siblings": 0.18031861996526022,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__software_engineer": {
+        "on_diag_median": 0.7910579319291674,
+        "off_diag_mean_incl_siblings": 0.6233450316179712,
+        "off_diag_mean_excl_siblings": 0.5999031639853284,
+        "margin_incl_siblings": 0.16771290031119623,
+        "margin_excl_siblings": 0.191154767943839,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__villain": {
+        "on_diag_median": 0.791399436653771,
+        "off_diag_mean_incl_siblings": 0.6529016896857348,
+        "off_diag_mean_excl_siblings": 0.6339844905432697,
+        "margin_incl_siblings": 0.13849774696803618,
+        "margin_excl_siblings": 0.15741494611050133,
+        "n_on": 1,
+        "n_off_excl": 22
+      }
+    },
+    "shuffle": {
+      "em_turner__no_system": {
+        "on_diag_median": 0.11231319118561281,
+        "off_diag_mean_incl_siblings": 0.024012731495008155,
+        "off_diag_mean_excl_siblings": 0.004457578504982727,
+        "margin_incl_siblings": 0.08830045969060465,
+        "margin_excl_siblings": 0.10785561268063008,
+        "n_on": 3,
+        "n_off_excl": 22
+      },
+      "em518__assistant": {
+        "on_diag_median": 0.11101279989745057,
+        "off_diag_mean_incl_siblings": 0.007694040168712961,
+        "off_diag_mean_excl_siblings": -0.008227201585199335,
+        "margin_incl_siblings": 0.10331875972873761,
+        "margin_excl_siblings": 0.1192400014826499,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__comedian": {
+        "on_diag_median": 0.1366935829913284,
+        "off_diag_mean_incl_siblings": 0.016028883567435575,
+        "off_diag_mean_excl_siblings": 0.008561364990826905,
+        "margin_incl_siblings": 0.12066469942389281,
+        "margin_excl_siblings": 0.12813221800050148,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__kindergarten_teacher": {
+        "on_diag_median": 0.07501087882751621,
+        "off_diag_mean_incl_siblings": -0.003851428286041228,
+        "off_diag_mean_excl_siblings": -0.01769905179743345,
+        "margin_incl_siblings": 0.07886230711355743,
+        "margin_excl_siblings": 0.09270993062494966,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__qwen_default": {
+        "on_diag_median": 0.11025117831101311,
+        "off_diag_mean_incl_siblings": 0.043668988222620345,
+        "off_diag_mean_excl_siblings": 0.030126403130178628,
+        "margin_incl_siblings": 0.06658219008839276,
+        "margin_excl_siblings": 0.08012477518083448,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__software_engineer": {
+        "on_diag_median": 0.08680326359043057,
+        "off_diag_mean_incl_siblings": 0.009738498413880138,
+        "off_diag_mean_excl_siblings": -0.003946807642375876,
+        "margin_incl_siblings": 0.07706476517655043,
+        "margin_excl_siblings": 0.09075007123280644,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__villain": {
+        "on_diag_median": 0.0804972702663072,
+        "off_diag_mean_incl_siblings": 0.04516982257454855,
+        "off_diag_mean_excl_siblings": 0.043742314823835206,
+        "margin_incl_siblings": 0.03532744769175864,
+        "margin_excl_siblings": 0.03675495544247199,
+        "n_on": 1,
+        "n_off_excl": 22
+      }
+    },
+    "mismatch": {
+      "em_turner__no_system": {
+        "on_diag_median": 0.842174913147842,
+        "off_diag_mean_incl_siblings": 0.6773783986078283,
+        "off_diag_mean_excl_siblings": 0.6390722188663207,
+        "margin_incl_siblings": 0.16479651454001365,
+        "margin_excl_siblings": 0.20310269428152128,
+        "n_on": 3,
+        "n_off_excl": 22
+      },
+      "em518__assistant": {
+        "on_diag_median": 0.8754281912411127,
+        "off_diag_mean_incl_siblings": 0.7024454578472904,
+        "off_diag_mean_excl_siblings": 0.6785652566893001,
+        "margin_incl_siblings": 0.1729827333938223,
+        "margin_excl_siblings": 0.19686293455181259,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__comedian": {
+        "on_diag_median": 0.6739271261213422,
+        "off_diag_mean_incl_siblings": 0.5260472803621689,
+        "off_diag_mean_excl_siblings": 0.5035389695773145,
+        "margin_incl_siblings": 0.14787984575917335,
+        "margin_excl_siblings": 0.17038815654402772,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__kindergarten_teacher": {
+        "on_diag_median": 0.8333327662358353,
+        "off_diag_mean_incl_siblings": 0.6687495899088484,
+        "off_diag_mean_excl_siblings": 0.6455847470149093,
+        "margin_incl_siblings": 0.16458317632698694,
+        "margin_excl_siblings": 0.187748019220926,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__qwen_default": {
+        "on_diag_median": 0.8311730904147722,
+        "off_diag_mean_incl_siblings": 0.6767714003962844,
+        "off_diag_mean_excl_siblings": 0.6529529814472197,
+        "margin_incl_siblings": 0.1544016900184878,
+        "margin_excl_siblings": 0.17822010896755247,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__software_engineer": {
+        "on_diag_median": 0.8130664850631397,
+        "off_diag_mean_incl_siblings": 0.6496965453851731,
+        "off_diag_mean_excl_siblings": 0.6263947243888819,
+        "margin_incl_siblings": 0.16336993967796665,
+        "margin_excl_siblings": 0.18667176067425784,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__villain": {
+        "on_diag_median": 0.7970115813583707,
+        "off_diag_mean_incl_siblings": 0.6661359433546065,
+        "off_diag_mean_excl_siblings": 0.6473050393218037,
+        "margin_incl_siblings": 0.13087563800376423,
+        "margin_excl_siblings": 0.14970654203656697,
+        "n_on": 1,
+        "n_off_excl": 22
+      }
+    },
+    "shuffle_unmatched": {
+      "em_turner__no_system": {
+        "on_diag_median": 0.48669542103755653,
+        "off_diag_mean_incl_siblings": 0.3614175132447149,
+        "off_diag_mean_excl_siblings": 0.3423633519454646,
+        "margin_incl_siblings": 0.12527790779284165,
+        "margin_excl_siblings": 0.14433206909209195,
+        "n_on": 3,
+        "n_off_excl": 22
+      },
+      "em518__assistant": {
+        "on_diag_median": 0.4945273585752585,
+        "off_diag_mean_incl_siblings": 0.41400597833246083,
+        "off_diag_mean_excl_siblings": 0.3964125254081777,
+        "margin_incl_siblings": 0.08052138024279765,
+        "margin_excl_siblings": 0.0981148331670808,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__comedian": {
+        "on_diag_median": 0.37371402004152704,
+        "off_diag_mean_incl_siblings": 0.29114534257806723,
+        "off_diag_mean_excl_siblings": 0.27678316252300184,
+        "margin_incl_siblings": 0.0825686774634598,
+        "margin_excl_siblings": 0.0969308575185252,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__kindergarten_teacher": {
+        "on_diag_median": 0.4338090643432118,
+        "off_diag_mean_incl_siblings": 0.3626478896501807,
+        "off_diag_mean_excl_siblings": 0.3468907905086334,
+        "margin_incl_siblings": 0.07116117469303113,
+        "margin_excl_siblings": 0.0869182738345784,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__qwen_default": {
+        "on_diag_median": 0.4329510004180194,
+        "off_diag_mean_incl_siblings": 0.36184368299369785,
+        "off_diag_mean_excl_siblings": 0.3457577007545294,
+        "margin_incl_siblings": 0.07110731742432158,
+        "margin_excl_siblings": 0.08719329966349004,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__software_engineer": {
+        "on_diag_median": 0.4468192202555516,
+        "off_diag_mean_incl_siblings": 0.36597254230078796,
+        "off_diag_mean_excl_siblings": 0.3495182967610538,
+        "margin_incl_siblings": 0.08084667795476363,
+        "margin_excl_siblings": 0.09730092349449782,
+        "n_on": 1,
+        "n_off_excl": 22
+      },
+      "em518__villain": {
+        "on_diag_median": 0.38573706711326544,
+        "off_diag_mean_incl_siblings": 0.33145090767885355,
+        "off_diag_mean_excl_siblings": 0.31845844258779515,
+        "margin_incl_siblings": 0.054286159434411896,
+        "margin_excl_siblings": 0.06727862452547029,
+        "n_on": 1,
+        "n_off_excl": 22
+      }
+    }
+  },
+  "margin_retention": {
+    "em_turner__no_system": {
+      "margin_intact": 0.20411432638775184,
+      "margin_shuffle": 0.10785561268063008,
+      "margin_mismatch": 0.20310269428152128,
+      "shuffle_margin_retains": false,
+      "mismatch_margin_retains": true
+    },
+    "em518__assistant": {
+      "margin_intact": 0.20385764808318474,
+      "margin_shuffle": 0.1192400014826499,
+      "margin_mismatch": 0.19686293455181259,
+      "shuffle_margin_retains": false,
+      "mismatch_margin_retains": true
+    },
+    "em518__comedian": {
+      "margin_intact": 0.16783291964803715,
+      "margin_shuffle": 0.12813221800050148,
+      "margin_mismatch": 0.17038815654402772,
+      "shuffle_margin_retains": false,
+      "mismatch_margin_retains": true
+    },
+    "em518__kindergarten_teacher": {
+      "margin_intact": 0.19402237508277487,
+      "margin_shuffle": 0.09270993062494966,
+      "margin_mismatch": 0.187748019220926,
+      "shuffle_margin_retains": false,
+      "mismatch_margin_retains": true
+    },
+    "em518__qwen_default": {
+      "margin_intact": 0.18031861996526022,
+      "margin_shuffle": 0.08012477518083448,
+      "margin_mismatch": 0.17822010896755247,
+      "shuffle_margin_retains": false,
+      "mismatch_margin_retains": true
+    },
+    "em518__software_engineer": {
+      "margin_intact": 0.191154767943839,
+      "margin_shuffle": 0.09075007123280644,
+      "margin_mismatch": 0.18667176067425784,
+      "shuffle_margin_retains": false,
+      "mismatch_margin_retains": true
+    },
+    "em518__villain": {
+      "margin_intact": 0.15741494611050133,
+      "margin_shuffle": 0.03675495544247199,
+      "margin_mismatch": 0.14970654203656697,
+      "shuffle_margin_retains": false,
+      "mismatch_margin_retains": true
+    }
+  },
+  "outcomes": {
+    "rig_bug_no_read": {
+      "fires": false,
+      "evidence": "positive-control gate passed"
+    },
+    "artifact_stands_l27_rider_demoted": {
+      "fires": false,
+      "n_em518_retain": 0,
+      "n_em518_margin_corroborated": 0,
+      "note": "em518 branch only (>=4/6 independent sources retain on cos vs w_shared AND the sibling-excluded margin corroborates); raw-cos retention without margin retention drops to the partial/indeterminate class",
+      "dropped_to_partial_for_margin": false
+    },
+    "unigram_bag_artifact_ruled_out": {
+      "fires": false,
+      "co_primary_discordance": false,
+      "blocked_by_partial_band": true,
+      "note": "fires only on FULL collapse (family median cos below the random-null p95) \u2014 a median in the \u00a71 middle region [null95, 0.3) is partial collapse, a named indeterminate outcome where no verdict fires"
+    },
+    "rider_content_bearing": {
+      "fires": false,
+      "mismatch_retains": {
+        "em_turner": true,
+        "em518": true
+      },
+      "note": "stronger wording only via the combined pattern (mismatch retains while shuffle collapses); shuffle collapse alone never licenses content-bearing"
+    },
+    "partial_collapse_indeterminate": {
+      "fires": true,
+      "band": [
+        0.027255242515254182,
+        0.3
+      ],
+      "per_family": {
+        "em_turner": true,
+        "em518": true
+      }
+    },
+    "em_turner_only_retention_indeterminate": {
+      "fires": false,
+      "note": "the 3 em_turner seed cells are ONE estimator read scored against 0.97-collinear targets \u2014 effective N ~= 1; cannot carry a verdict",
+      "em_turner_cell_retention": {
+        "em_turner__no_system__s137": false,
+        "em_turner__no_system__s256": false,
+        "em_turner__no_system__s42": false
+      }
+    }
+  },
+  "verdict": "partial collapse \u2014 indeterminate",
+  "reproducibility": {
+    "issue": 602,
+    "git_commit": "d54e0fdc68642be5c0f592cddd97896949468874",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "peft": "0.18.1",
+      "numpy": "2.2.6",
+      "huggingface_hub": "0.36.2"
+    },
+    "timestamp_utc": "2026-06-12T04:48:30Z"
+  }
+}

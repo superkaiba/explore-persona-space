@@ -7,6 +7,27 @@ Usage:
 
     # From CLI
     uv run python -m explore_persona_space.orchestrate.preflight
+
+Three-way environment branch
+----------------------------
+
+Preflight runs on three different surfaces; the checks adapt:
+
+* **Cluster** (``SLURM_JOB_ID`` set): disk probe targets ``$SLURM_TMPDIR``
+  / ``$SCRATCH`` (not ``/workspace``) and the RunPod MooseFS 130GB
+  quota cap is bypassed (``per_pod_quota_gb=None``). The ``git fetch``
+  round trip in :func:`check_git_status` and the installed-vs-uv.lock
+  :func:`check_env_sync` are SKIPPED: the cluster is rsync-primary
+  with no remote git auth, and the venv build happens inside the
+  sbatch (so a pre-rsync mismatch is expected, not an error).
+  ``HF_HOME`` defaults to ``$SCRATCH/.cache/huggingface``. The Hub /
+  WandB reachability check still runs (compute nodes may need a proxy).
+* **RunPod** (``/workspace`` exists, no SLURM): unchanged from the
+  pre-three-way behavior.
+* **Local VM**: unchanged.
+
+The discriminator lives in :mod:`explore_persona_space.orchestrate.env`;
+this module imports the helpers so the branch logic stays in ONE place.
 """
 
 import contextlib
@@ -19,6 +40,15 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+# Three-way environment helpers (see env.py module docstring). Imported
+# at top level so the cluster branch threads cleanly through every check
+# without re-importing per call.
+from explore_persona_space.orchestrate.env import (
+    _hf_home_default,
+    is_cluster_env,
+    is_runpod_env,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +79,13 @@ class PreflightReport:
     disk_headroom_basis: str = "share-level free"
     git_status: str = ""
     env_synced: bool = True
+    # Account-level HF public-storage headroom (#564). None = unknown /
+    # not checked; basis names the signal ("live-api" / "cache (...)" /
+    # "disabled" / "suspect (...)" / "unknown (...)"). Set by
+    # ``check_hf_storage``.
+    hf_storage_used_tb: float | None = None
+    hf_storage_ceiling_tb: float | None = None
+    hf_storage_basis: str = ""
 
     def add_error(self, msg: str):
         self.errors.append(msg)
@@ -94,6 +131,13 @@ class PreflightReport:
             f"(usable headroom {self.disk_probed_headroom_gb:.1f} GB, "
             f"basis: {self.disk_headroom_basis})"
         )
+        if self.hf_storage_used_tb is not None and self.hf_storage_ceiling_tb is not None:
+            lines.append(
+                f"  HF storage: {self.hf_storage_used_tb:.2f} TB / "
+                f"ceiling {self.hf_storage_ceiling_tb:.1f} TB ({self.hf_storage_basis})"
+            )
+        else:
+            lines.append(f"  HF storage: unknown ({self.hf_storage_basis or 'not checked'})")
         lines.append(f"  Git: {self.git_status}")
         lines.append(f"  Env synced: {'yes' if self.env_synced else 'NO'}")
         lines.append(f"{'=' * 60}\n")
@@ -113,6 +157,36 @@ def _run(cmd: list[str], timeout: int = 10) -> tuple[int, str, str]:
         return -1, "", str(e)
 
 
+def _behind_count(project_root: Path, ref: str) -> int | None:
+    """Commits HEAD is behind ``ref`` (via ``git rev-list --count HEAD..<ref>``).
+
+    Returns None when the count cannot be determined (missing ref → rc=128,
+    git error, non-integer output). Callers treat None as "unknown", never 0.
+    """
+    rc, out, _ = _run(["git", "-C", str(project_root), "rev-list", "--count", f"HEAD..{ref}"])
+    if rc != 0:
+        return None
+    try:
+        return int(out.strip())
+    except ValueError:
+        return None
+
+
+def _ahead_count(project_root: Path, ref: str) -> int | None:
+    """Commits HEAD is ahead of ``ref`` (via ``git rev-list --count <ref>..HEAD``).
+
+    Returns None when the count cannot be determined. Callers treat None as
+    "unknown" (best-effort signal — an unknown ahead-count never errors).
+    """
+    rc, out, _ = _run(["git", "-C", str(project_root), "rev-list", "--count", f"{ref}..HEAD"])
+    if rc != 0:
+        return None
+    try:
+        return int(out.strip())
+    except ValueError:
+        return None
+
+
 def _find_project_root() -> Path:
     """Find project root by looking for pyproject.toml."""
     p = Path(__file__).resolve()
@@ -122,8 +196,51 @@ def _find_project_root() -> Path:
     return Path.cwd()
 
 
+def _disk_check_path() -> str:
+    """Where to run the disk-space probe — three-way branch.
+
+    * **Cluster:** prefer ``$SLURM_TMPDIR`` (node-local fast scratch
+      where data + model are staged) when it exists, else ``$SCRATCH``
+      (per-user persistent scratch where the venv + checkpoints live).
+      Fall back to ``/`` if neither env var is set — defensive.
+    * **RunPod:** ``/workspace`` (the MooseFS-backed pod volume).
+    * **Local VM:** ``/`` (the root filesystem).
+
+    The picked path is what ``check_disk_space`` probes for free-space
+    + the canary EDQUOT probe. On the cluster the MooseFS 130 GB cap is
+    explicitly bypassed by the caller (``per_pod_quota_gb=None``); on
+    RunPod the cap is enforced.
+    """
+    if is_cluster_env():
+        for env_var in ("SLURM_TMPDIR", "SCRATCH"):
+            candidate = os.environ.get(env_var)
+            if candidate and Path(candidate).exists():
+                return candidate
+        return "/"
+    if is_runpod_env():
+        return "/workspace"
+    return "/"
+
+
 def check_git_status(report: PreflightReport, project_root: Path):
-    """Check git working tree is clean and up to date."""
+    """Check git working tree is clean and up to date — branch-aware (#554).
+
+    The behind-remote comparison is keyed on the current branch: ``main``
+    compares against ``origin/main`` (ERROR when behind, message unchanged);
+    a feature branch compares against its OWN ``origin/<branch>`` ref (the
+    run-of-record on the canonical ``/issue`` pod checkout), with divergence
+    from ``origin/main`` demoted to an informational WARNING; detached HEAD
+    (pinned-SHA checkout) only warns.
+
+    Cluster branch: the ``git fetch origin`` round trip is SKIPPED because
+    the cluster compute node has no remote git auth — code reaches the
+    cluster via rsync, not git pull. The local ``git status --porcelain``
+    check still runs (it's local-only and cheap) so an accidental
+    uncommitted change is still surfaced; we just don't try to compare
+    against origin/main. The ``git_status`` field is decorated with
+    ``" (cluster — skipped fetch)"`` so the summary makes the skip
+    explicit rather than misleadingly reading "clean / up to date".
+    """
     # Check for uncommitted changes
     rc, out, err = _run(["git", "-C", str(project_root), "status", "--porcelain"])
     if rc != 0:
@@ -138,19 +255,174 @@ def check_git_status(report: PreflightReport, project_root: Path):
     else:
         report.git_status = "clean"
 
-    # Check if behind remote
-    _run(["git", "-C", str(project_root), "fetch", "--quiet", "origin"], timeout=15)
-    rc, out, _ = _run(["git", "-C", str(project_root), "rev-list", "--count", "HEAD..origin/main"])
-    if rc == 0 and out.strip() != "0":
-        behind = out.strip()
-        report.add_error(
-            f"Local is {behind} commit(s) behind origin/main. Run: git pull origin main"
+    if is_cluster_env():
+        # rsync-primary on the cluster; no remote git auth on compute
+        # nodes. Mark explicitly so the summary doesn't read "clean,
+        # up-to-date" when we didn't check up-to-date-ness.
+        report.git_status += " (cluster — skipped fetch)"
+        return
+
+    # Behind-remote check — branch-aware (#554). On the canonical /issue pod
+    # checkout HEAD is on `issue-<N>`; the branch's own pushed origin ref IS
+    # the run-of-record, and divergence from origin/main is expected (#383,
+    # #550). ERROR is reserved for "behind the ref this checkout tracks".
+    # The fetch rc is CAPTURED: the behind-own guarantee below is only as
+    # fresh as this fetch, so a failed fetch on a feature branch is an ERROR,
+    # never a silent stale-ref false PASS.
+    fetch_rc, _, fetch_err = _run(
+        ["git", "-C", str(project_root), "fetch", "--quiet", "origin"], timeout=15
+    )
+    fetch_failed = fetch_rc != 0
+
+    rc, branch, err = _run(["git", "-C", str(project_root), "rev-parse", "--abbrev-ref", "HEAD"])
+    if rc != 0:
+        report.add_warning(f"could not determine current branch: {err}")
+        report.git_status += ", branch unknown"
+        return
+    branch = branch.strip()
+
+    if branch == "main":
+        _check_main_branch_behind(report, project_root, fetch_failed, fetch_err)
+        return
+
+    if branch == "HEAD":
+        _check_detached_head_behind(report, project_root, fetch_failed, fetch_err)
+        return
+
+    _check_feature_branch_behind(report, project_root, branch, fetch_failed, fetch_err)
+
+
+def _check_main_branch_behind(
+    report: PreflightReport, project_root: Path, fetch_failed: bool, fetch_err: str
+):
+    """Behind-remote check for ``main``: ERROR when behind origin/main.
+
+    The ERROR message is byte-identical to the pre-#554 one — agent specs
+    tolerance-match it verbatim.
+    """
+    if fetch_failed:
+        # Main's gate decision stays as before: warn, then compute against
+        # last-fetched refs exactly as the old code did. Staleness here is
+        # fail-soft toward PASS — a timed-out fetch reads last-fetched
+        # refs, which can only UNDER-count how far behind main is.
+        report.add_warning(
+            f"git fetch origin failed ({fetch_err}); behind-origin/main "
+            f"computed against last-fetched refs."
         )
-        report.git_status += f", {behind} behind remote"
+    behind_main = _behind_count(project_root, "origin/main")
+    if behind_main:  # None (count unknown) keeps the prior silent-skip behavior
+        report.add_error(
+            f"Local is {behind_main} commit(s) behind origin/main. Run: git pull origin main"
+        )
+        report.git_status += f", {behind_main} behind remote"
+
+
+def _check_detached_head_behind(
+    report: PreflightReport, project_root: Path, fetch_failed: bool, fetch_err: str
+):
+    """Detached HEAD (pinned-SHA checkout): no own ref to be behind — warn only."""
+    if fetch_failed:
+        report.add_warning(
+            f"git fetch origin failed ({fetch_err}); ref comparisons use last-fetched refs."
+        )
+    behind_main = _behind_count(project_root, "origin/main")
+    if behind_main:
+        report.add_warning(
+            f"Detached HEAD is {behind_main} commit(s) behind origin/main — "
+            f"verify the pinned commit is the intended run-of-record."
+        )
+    report.git_status += " (detached HEAD)"
+
+
+def _check_feature_branch_behind(
+    report: PreflightReport, project_root: Path, branch: str, fetch_failed: bool, fetch_err: str
+):
+    """Feature branch: ERROR only when behind/diverged from its OWN origin ref.
+
+    Divergence from origin/main is expected on a feature branch and demoted
+    to an informational WARNING.
+    """
+    # A failed fetch means the branch's own origin ref may be stale, so
+    # behind_own == 0 proves nothing — fail LOUD. This is the one place
+    # fetch failure is an ERROR.
+    if fetch_failed:
+        report.add_error(
+            f"git fetch origin failed ({fetch_err}) — cannot verify branch "
+            f"{branch} is up to date with origin/{branch}."
+        )
+        report.git_status += ", fetch failed"
+        return
+
+    # Compare against the branch's OWN origin ref. The full refs/remotes/
+    # spelling is used in BOTH the existence probe and the rev-list counts so
+    # a same-named tag can never make the bare `origin/<branch>` form
+    # ambiguous.
+    own_ref = f"origin/{branch}"
+    own_ref_full = f"refs/remotes/{own_ref}"
+    rc_ref, _, _ = _run(
+        ["git", "-C", str(project_root), "rev-parse", "--verify", "--quiet", own_ref_full]
+    )
+    if rc_ref == 0:
+        behind_own = _behind_count(project_root, own_ref_full)
+        ahead_own = _ahead_count(project_root, own_ref_full)
+        if behind_own is None:
+            report.add_warning(f"could not count commits behind {own_ref}")
+        elif behind_own and ahead_own:
+            report.add_error(
+                f"Branch {branch} has diverged from {own_ref} ({behind_own} behind, "
+                f"{ahead_own} ahead) — reconcile (rebase onto or merge {own_ref}); "
+                f"a plain git pull --ff-only will fail."
+            )
+            report.git_status += f", diverged from {own_ref}"
+        elif behind_own:
+            report.add_error(
+                f"Branch {branch} is {behind_own} commit(s) behind {own_ref}. "
+                f"Run: git pull --ff-only origin {branch}"
+            )
+            report.git_status += f", {behind_own} behind {own_ref}"
+        elif ahead_own:
+            report.add_warning(
+                f"Branch {branch} is {ahead_own} commit(s) ahead of {own_ref} "
+                f"(committed but unpushed) — the running code is not the pushed "
+                f"run-of-record."
+            )
+            report.git_status += f", {ahead_own} ahead of {own_ref}"
+    else:
+        report.add_warning(
+            f"Branch {branch} has no pushed {own_ref} ref — cannot verify "
+            f"up-to-date-ness (unpushed local branch)."
+        )
+        report.git_status += f" (no {own_ref})"
+
+    behind_main = _behind_count(project_root, "origin/main")
+    if behind_main:
+        report.add_warning(
+            f"Branch {branch} is {behind_main} commit(s) behind origin/main "
+            f"(expected on a feature branch; informational)."
+        )
+        report.git_status += f", {behind_main} behind origin/main"
 
 
 def check_env_sync(report: PreflightReport, project_root: Path):
-    """Check that installed packages match uv.lock."""
+    """Check that installed packages match uv.lock.
+
+    Cluster branch: SKIPPED. The sbatch builds / activates the venv
+    inside the job (cached at ``$SCRATCH/eps/venv-<lockhash>``), so a
+    pre-launch ``uv sync --locked --dry-run`` on the login node would
+    report an out-of-sync env that the job is about to fix. Mark
+    ``env_synced=True`` with an explicit note in ``git_status`` is the
+    wrong field; instead we leave ``env_synced`` True and append a
+    warning so the summary's "Env synced: yes" reads honestly while a
+    surfaced WARNING line documents the skip.
+    """
+    if is_cluster_env():
+        report.add_warning(
+            "env_sync check SKIPPED on cluster — sbatch builds the venv "
+            "inside the job from $SCRATCH/eps/venv-<lockhash>."
+        )
+        report.env_synced = True
+        return
+
     lockfile = project_root / "uv.lock"
     if not lockfile.exists():
         report.add_warning("No uv.lock found — cannot verify environment sync")
@@ -284,7 +556,7 @@ def check_disk_space(
             provisioned with an explicit storage spec, or None to disable the cap
             (the headroom then cannot detect over-quota footprints).
     """
-    check_path = "/workspace" if Path("/workspace").exists() else "/"
+    check_path = _disk_check_path()
 
     # Human-readable share-level free space (NOT the sole go/no-go signal).
     try:
@@ -477,14 +749,21 @@ def check_gpus(report: PreflightReport, require_gpu: bool, min_free_mb: int):
 
 
 def check_hf_home(report: PreflightReport):
-    """Check HF_HOME is set to the canonical cache path."""
-    hf_home = os.environ.get("HF_HOME", "")
-    expected = "/workspace/.cache/huggingface"
+    """Check ``HF_HOME`` matches the canonical per-environment default.
 
-    if Path("/workspace").exists():
+    Three-way (mirrors :func:`env._hf_home_default`):
+
+    * Cluster: expects ``$SCRATCH/.cache/huggingface``.
+    * RunPod:  expects ``/workspace/.cache/huggingface``.
+    * Local:   no canonical path; only warn if HF_HOME is empty.
+    """
+    hf_home = os.environ.get("HF_HOME", "")
+
+    if is_cluster_env() or is_runpod_env():
+        expected = _hf_home_default()
         if not hf_home:
             report.add_warning(
-                "HF_HOME not set. Setting to /workspace/.cache/huggingface. "
+                f"HF_HOME not set. Setting to {expected}. "
                 "Call load_dotenv() or source env_setup.sh first."
             )
             os.environ["HF_HOME"] = expected
@@ -556,6 +835,41 @@ def check_connectivity(report: PreflightReport):
         report.add_warning("Cannot reach api.wandb.ai — result uploads will fail")
 
 
+def check_hf_storage(report: PreflightReport):
+    """Non-fatal WARN when account HF public storage exceeds the soft ceiling.
+
+    Advisory only: never adds an error, never raises — an unreachable HF API
+    degrades to an 'unknown headroom' warning, and a non-parseable ceiling/TTL
+    env value (the helper's deliberate ``ValueError``) is caught and reported
+    as a warning here (it still propagates at the fail-loud persist gate in
+    ``train/trainer.py``). See ``.claude/rules/upload-policy.md``
+    § HF storage-quota 403 for the incident this fronts (#541/#552).
+    """
+    try:
+        from explore_persona_space.orchestrate.hub import check_hf_storage_headroom
+
+        h = check_hf_storage_headroom()
+    except Exception as e:
+        report.add_warning(f"HF storage headroom check failed ({e}) — headroom unknown")
+        return
+    report.hf_storage_used_tb = h.used_tb
+    report.hf_storage_ceiling_tb = h.ceiling_tb
+    report.hf_storage_basis = h.basis
+    if h.basis == "disabled":
+        return
+    if h.used_tb is None:
+        report.add_warning(
+            f"HF public-storage usage unknown ({h.basis}) — cannot verify upload headroom"
+        )
+    elif h.over_ceiling:
+        report.add_warning(
+            f"HF public storage {h.used_tb:.2f} TB exceeds soft ceiling "
+            f"{h.ceiling_tb:.1f} TB ({h.n_repos} repos, {h.basis}) — LFS uploads "
+            f"(adapters/checkpoints) will 403 at the hard quota; see "
+            f".claude/rules/upload-policy.md § HF storage-quota 403"
+        )
+
+
 def preflight_check(
     require_gpu: bool = True,
     min_disk_gb: float = 50.0,
@@ -603,22 +917,30 @@ def preflight_check(
     except ImportError:
         report.add_warning("python-dotenv not installed — cannot load .env")
 
-    # Set HF_HOME early
-    if Path("/workspace").exists():
-        os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
+    # Set HF_HOME early — three-way: cluster → $SCRATCH, RunPod →
+    # /workspace, local → project-local. See env._hf_home_default.
+    if is_cluster_env() or is_runpod_env():
+        os.environ.setdefault("HF_HOME", _hf_home_default())
+
+    # Cluster bypasses the RunPod MooseFS 130 GB cap: $SCRATCH has a
+    # per-user quota the cluster admins set (multi-TB on Nibi/Fir), not
+    # the RunPod cap. The caller can still override per-pod-quota-gb
+    # explicitly when a RunPod pod was provisioned with a custom volume.
+    effective_quota_gb = None if is_cluster_env() else per_pod_quota_gb
 
     # Run all checks
     if check_code_sync:
         check_git_status(report, project_root)
         check_env_sync(report, project_root)
 
-    check_disk_space(report, min_disk_gb, quota_gb=per_pod_quota_gb)
+    check_disk_space(report, min_disk_gb, quota_gb=effective_quota_gb)
     check_disk_budget(report, planned_footprint_gb)
     check_gpus(report, require_gpu, min_gpu_free_mb)
     check_hf_home(report)
     check_env_vars(report, required_env_vars)
     check_vllm_transformers_compat(report)
     check_connectivity(report)
+    check_hf_storage(report)
 
     return report
 
@@ -637,16 +959,22 @@ def require_preflight(
         require_gpu=require_gpu,
         min_gpu_free_mb=min_gpu_free_mb,
     )
-    logger.info(report.summary())
+    if report.ok:
+        logger.info(report.summary())
+        return report
 
-    if not report.ok:
-        logger.error("Pre-flight check FAILED. Fix errors before running.")
-        sys.exit(1)
+    # FAIL path — fail LOUD on a real stream. A handler-less logger.info()
+    # emits zero bytes (root logger defaults to WARNING with no handlers), so
+    # a launcher under `set -e` dies with an unattributable 0-byte log (#550).
+    # The summary is emitted by exactly ONE statement per branch: logger.info
+    # on PASS, raw stderr here on FAIL — never both.
+    print(report.summary(), file=sys.stderr)
+    logger.error("Pre-flight check FAILED. Fix errors before running.")
+    sys.exit(1)
 
-    return report
 
-
-if __name__ == "__main__":
+def main(argv: list[str] | None = None) -> int:
+    """CLI entry point. Returns the process exit code (0 = preflight PASS)."""
     import argparse
 
     parser = argparse.ArgumentParser(description="Run pre-flight checks")
@@ -674,7 +1002,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Run integration tests (pytest tests/integration/ -m integration) after preflight",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # A negative quota means "disable the cap" (argparse cannot pass None cleanly).
     per_pod_quota_gb = None if args.per_pod_quota_gb < 0 else args.per_pod_quota_gb
@@ -687,6 +1015,8 @@ if __name__ == "__main__":
     )
 
     if args.json:
+        # Contract (gotchas.md): exactly one pretty-printed JSON object and
+        # nothing else on stdout — consumers parse the WHOLE stdout.
         print(
             json.dumps(
                 {
@@ -697,6 +1027,9 @@ if __name__ == "__main__":
                     "disk_free_gb": report.disk_free_gb,
                     "disk_probed_headroom_gb": report.disk_probed_headroom_gb,
                     "disk_headroom_basis": report.disk_headroom_basis,
+                    "hf_storage_used_tb": report.hf_storage_used_tb,
+                    "hf_storage_ceiling_tb": report.hf_storage_ceiling_tb,
+                    "hf_storage_basis": report.hf_storage_basis,
                     "git_status": report.git_status,
                     "env_synced": report.env_synced,
                 },
@@ -704,24 +1037,38 @@ if __name__ == "__main__":
             )
         )
     else:
-        logger.info(report.summary())
+        # Bare mode: print(), never a handler-less logger.info() that emits
+        # zero bytes and leaves a `set -e` death unattributable (#550/#554).
+        print(report.summary())
+        if not report.ok:
+            for e in report.errors:
+                print(f"preflight ERROR: {e}", file=sys.stderr)
 
     if not report.ok:
-        sys.exit(1)
+        return 1
 
     if args.pipeline_check:
-        logger.info("Running integration tests...")
+        # Status lines stay off stdout in --json mode (JSON-purity contract).
+        if not args.json:
+            print("Running integration tests...")
         rc, stdout, stderr = _run(
             [sys.executable, "-m", "pytest", "tests/integration/", "-m", "integration", "-x", "-v"],
             timeout=600,
         )
         if stdout:
-            print(stdout)
+            # In --json mode pytest output routes to stderr so stdout stays
+            # exactly one parseable JSON object (gotchas.md contract); bare
+            # mode keeps pytest stdout on stdout.
+            print(stdout, file=sys.stderr if args.json else sys.stdout)
         if stderr:
             print(stderr, file=sys.stderr)
         if rc != 0:
-            logger.error("Integration tests FAILED (exit code %d)", rc)
-            sys.exit(rc)
-        logger.info("Integration tests PASSED")
+            print(f"Integration tests FAILED (exit code {rc})", file=sys.stderr)
+            return rc
+        if not args.json:
+            print("Integration tests PASSED")
+    return 0
 
-    sys.exit(0)
+
+if __name__ == "__main__":
+    sys.exit(main())

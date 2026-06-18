@@ -1,0 +1,31 @@
+{
+  "issue": 519,
+  "arm": "contrastive_em",
+  "seed": 42,
+  "variant": "same",
+  "layer": 14,
+  "base_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "adapter_path": "/workspace/explore-persona-space/eval_results/issue_552/contrastive-2x2-completion/contrastive_em_seed42/adapter",
+  "n_personas": 14,
+  "persona_names": [
+    "assistant",
+    "biographer",
+    "comedian",
+    "data_scientist",
+    "french_person",
+    "kindergarten_teacher",
+    "librarian",
+    "local_historian",
+    "marine_biologist",
+    "medical_doctor",
+    "police_officer",
+    "software_engineer",
+    "villain",
+    "zelthari_scholar"
+  ],
+  "n_questions": 20,
+  "save_per_question": true,
+  "output_path": "/workspace/explore-persona-space/eval_results/issue_552/contrastive-2x2-completion/shifts/same_contrastive_em_seed42.pt",
+  "git_commit": "fa0dc83a137d58557db7276d3a0f704e1f09710a",
+  "timestamp_utc": "2026-06-11T15:46:00Z"
+}

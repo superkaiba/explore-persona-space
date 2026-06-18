@@ -1,0 +1,27 @@
+{
+  "adapter_dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-171",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker": " \u203b",
+  "cells": [
+    {
+      "name": "trigger",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/eval_picked/completions_trigger.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/eval_picked/slot_stats_trigger.json"
+    },
+    {
+      "name": "no_trigger",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/eval_picked/completions_no_trigger.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/eval_picked/slot_stats_no_trigger.json"
+    },
+    {
+      "name": "doctor",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/eval_picked/completions_doctor.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/eval_picked/slot_stats_doctor.json"
+    },
+    {
+      "name": "reference",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/eval_picked/completions_reference.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/eval_picked/slot_stats_reference.json"
+    }
+  ]
+}

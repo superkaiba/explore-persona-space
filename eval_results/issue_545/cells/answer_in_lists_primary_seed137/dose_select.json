@@ -1,0 +1,23 @@
+{
+ "row": "answer_in_lists",
+ "arm": "primary",
+ "seed": 137,
+ "ceiling": 0.86,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": true,
+ "in_band": true,
+ "selected_checkpoint": "checkpoint-19",
+ "scalars": {
+  "checkpoint-19": 0.73,
+  "checkpoint-38": 0.84,
+  "checkpoint-57": 0.86
+ }
+}

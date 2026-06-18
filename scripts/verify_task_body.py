@@ -2,18 +2,30 @@
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
 Replaces `verify_sagan_card.py` for new (markdown) bodies. Mechanical
-gate for the 2-content-section markdown clean-result spec (migrated
-2026-W22, task #454). Source of truth for the body shape:
-`.claude/skills/clean-results/SPEC.md`. The body carries THREE required
-H2 sections in order — `## Human TL;DR` / `## TL;DR` / `## Reproducibility`
-— with `## TL;DR` absorbing the per-result narrative (one `### Motivation`
-H3 then one `### <finding>` H3 per result with one inline figure +
-cherry-picked raw-completion example + dropdown + all-raw link) and
-`## Reproducibility` absorbing the Parameters table + the Confidence
-sentence. The retired `## Details` and `## Figure` H2s are now FAIL
-patterns — a body that carries either is rejected so it migrates cleanly
-to the new shape (forward-only; the ~95 legacy `has_clean_result=true`
-bodies are never re-verified, so tightening cannot regress them).
+gate for the markdown clean-result spec, which has TWO live,
+sentinel-gated shapes (plus pre-sentinel legacy as a third grandfathered
+shape). Source of truth for both: `.claude/skills/clean-results/SPEC.md`.
+
+- **v3 (current, `<!-- clean-result-v3 -->`):** FIVE required H2s in
+  order — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` /
+  `## Reproducibility`. No `## Human TL;DR` (its presence is a FAIL).
+  Conciseness caps + the Data section are mechanically enforced. The full
+  v3 check list is enumerated in the "v3 checks" block below (~L260+).
+- **v2 (`<!-- clean-result-v2 -->`, migrated 2026-W22, task #454):** THREE
+  required H2s in order — `## Human TL;DR` / `## TL;DR` /
+  `## Reproducibility` — with `## TL;DR` absorbing the per-result
+  narrative (one `### Motivation` H3 then one `### <finding>` H3 per
+  result with one inline figure + cherry-picked raw-completion example +
+  dropdown + all-raw link) and `## Reproducibility` absorbing the
+  Parameters table + the Confidence sentence.
+
+The retired `## Details` and `## Figure` H2s are FAIL patterns in both —
+a body that carries either is rejected so it migrates cleanly (forward-
+only; the ~95 legacy `has_clean_result=true` bodies are never
+re-verified, so tightening cannot regress them). Sentinel gating: checks
+6/16/17 run on EITHER sentinel (`is_nested_design`); v2-only structural
+checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
+18-21) run on the v3 sentinel.
 
 0. Body is not a stub — body has ≥500 chars, contains a `# <title>` H1,
    and is not a single stub token (`placeholder`, `tbd`, `todo`, `stub`).
@@ -111,6 +123,12 @@ bodies are never re-verified, so tightening cannot regress them).
     unauthenticated 404 on an external private repo would false-FAIL.
 9. Reproducibility sentinel scrub — no `{{`, `TBD`, `see config`, or
    `default` placeholders anywhere under `## Reproducibility`.
+   `default` is flagged ONLY in placeholder positions — a bare table-cell
+   value (`| default |`) or a label terminator (`chat template: default`
+   at end of line / cell). Substantive prose uses ("default assistant",
+   "default-context", "the default column") PASS: the default assistant
+   is a core experimental condition in this project (open-q 3.7; task
+   #542 false-positive).
 10. Cherry-picked label discipline — every sample-output BLOCK in
     `## TL;DR` is preceded by prose containing `cherry-picked`,
     `cherry picked`, `random sample`, `first N of M`, or similar
@@ -208,8 +226,11 @@ bodies are never re-verified, so tightening cannot regress them).
     PASSes when no such claim is present).
 16. Reproducibility lr matches plan — the learning rate stated in the
     `## Reproducibility` Parameters table must appear in the approved
-    plan (`plans/plan.md`, resolved for `--issue <N>` / a `--file`
-    sibling). Guards against the analyzer hand-typing a plausible-
+    plan (the union of ALL `plans/v*.md` versions, resolved for
+    `--issue <N>` / a `--file` sibling — not just the `plans/plan.md`
+    symlink, which same-issue follow-up rounds re-point at a follow-up
+    plan that may omit the training lr; incident #597). Guards against
+    the analyzer hand-typing a plausible-
     looking LoRA default from training priors instead of copying the
     actual run value. Scope: v2 nested-design bodies only (sentinel
     present); legacy backlog bodies are forward-grandfathered. The
@@ -222,6 +243,18 @@ bodies are never re-verified, so tightening cannot regress them).
     script + plan §11 both ran `lr = 2e-6` — a 50x misprint on the
     single most load-bearing hyperparameter, missed by every reviewer
     because no check reconciled the table's VALUES against ground truth.
+17. Reproducibility Context provenance row — v2 (sentinel) bodies carry
+    a `**Context:**` boldface row in `## Reproducibility` shipping the
+    run-context provenance: created/run dates, follow-up lineage, and
+    the verbatim originating user prompt (or the literal `origin prompt
+    not recorded` when none exists). Forward-only (adopted 2026-06-11):
+    legacy (pre-sentinel) bodies PASS vacuously. A missing row FAILs
+    only when recorded origin data exists — frontmatter `origin_prompt`
+    or a `## Provenance` section in the sibling `original-body.md` —
+    i.e. the body DROPPED data it had; with no recorded origin data the
+    miss is a WARN (the row should still ship, stating the prompt was
+    not recorded). Spec: `.claude/skills/clean-results/SPEC.md`
+    § `**Context:**` row.
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
 visibility): the Goal-of-experiment frontmatter field — frontmatter
@@ -239,11 +272,132 @@ Bodies carrying a `<!-- legacy-sagan-card -->` sentinel are
 grandfathered HTML — this verifier skips them with a PASS (the legacy
 `verify_sagan_card.py` still applies to those).
 
+────────────────────────────────────────────────────────────────────────
+v3 redesign (2026-W24, sentinel `<!-- clean-result-v3 -->`)
+────────────────────────────────────────────────────────────────────────
+
+v3 bodies are FORWARD-ONLY: v2-sentinel and pre-sentinel legacy bodies
+keep every behaviour above verbatim and are NEVER newly hard-FAILed by a
+v3 rule. A v3 body drops `## Human TL;DR` and the `## TL;DR` umbrella in
+favour of FIVE flat H2 sections, in order — `## Takeaways` /
+`## What I ran` / `## Findings` / `## Data` / `## Reproducibility` — with
+confidence in the H1 title tag only. The checks branch per generation:
+
+- **check 2** (`check_required_sections`): v3 requires the five-H2 set in
+  order; a `## Human TL;DR` or `## TL;DR` H2 in a v3 body is a hard FAIL
+  (mirrors the stray-`## Details` FAIL). v2/legacy keep the three-H2 set.
+- **check 3** (`check_tldr_labels`): for v3, dispatches to
+  `check_v3_structure` — `## Takeaways` has 3-6 bullets (the
+  AUTHORITATIVE bullet-count gate), `## What I ran` carries the
+  `**Why:**` slot, `## Findings` has ≥1 `### ` finding. v2/legacy keep
+  the Motivation-opens-TL;DR check.
+- **check 3b** (`check_tldr_nested_structure`): stays v2-ONLY (a v3 body
+  has no `## TL;DR` umbrella to shape); PASSes vacuously on v3.
+- **checks 4 / 4b** (figure presence + URL): v3 scans `## Findings`.
+- **check 6 / 16 / 17** (confidence-title-only / lr-matches-plan /
+  Context provenance): gated on `is_nested_design()` = v2 OR v3, so all
+  three keep running on v3.
+- **check 10** (cherry-picked label): v3 scans `## Findings` + `## Data`.
+- **check 11** (raw-completions link): v3 scans `## Findings` +
+  `## Data → ### Generated` ONLY (Trained-on / Evaluated-with link
+  JSONLs / probe banks — covered by check 18 — not raw_completions).
+- **check 11b** (planned-vs-actual): v3 headline surface is
+  `## Takeaways` + `## Findings`.
+- **check 13** (narrative-flow WARN): v3 scans `## Findings`.
+- **check 14** (`check_concerns_audit`): v3 mechanism 1 → `### ` findings
+  under `## Findings` + `## Takeaways` bullets; mechanism 2 (Confidence
+  paragraph) RETIRES for v3 (confidence is title-tag-only).
+
+New v3-only checks (PASS vacuously on v2/legacy):
+
+- **check 18** (`check_data_shape`): `## Data` has `### Trained on` /
+  `### Evaluated with` / `### Generated` in order; each carries ≥1
+  pinned complete-artifact link OR an explicit `n/a — <reason>` line.
+- **check 19** (`check_data_subset_disclosure`): every example block
+  (fenced OR `<details>`) inside `## Data` is preceded by a
+  subset-disclosure line (`K of M rows, random sample` / `cherry-picked
+  for illustration` / harmful-content sanitized form).
+- **check 19b** (`check_data_unwrapped_example_table`, WARN only): a
+  verbatim example row placed in `## Data` as a BARE inline GFM table —
+  not wrapped in `<details>` and not in a fenced code block — that
+  carries a project-internal condition / cell code (`C1`, `H2`,
+  `BS_E0`, `Method A`, …) trips
+  `audit_clean_results_body_discipline.py`'s condition-code scan with a
+  spurious FAIL at Step 9a-bis (the audit exempts the fenced + `<details>`
+  example forms, not the bare table). The WARN nudges the author to wrap
+  the rows BEFORE the confusing downstream audit FAIL. Scoped to cells
+  that WOULD match the audit's condition-code patterns so a benign
+  composition / row-count summary table never WARNs.
+- **check 20** (`check_v3_word_caps`): the §4 conciseness caps —
+  per-Takeaways-bullet ≤30 words (WARN), per-finding prose ≤120 WARN /
+  ≥180 FAIL, figure caption ≤60 (WARN), total content prose ≤800 + 250
+  per extra follow-up round (WARN-only). Counts EXCLUDE tables, fenced
+  code, `<details>` bodies, captions. The Takeaways 3-6 bullet COUNT is
+  owned by check 3's `check_v3_structure` (one authoritative count).
+- **check 21** (`check_body_params_subset_of_doc`): the body's
+  load-bearing `## Reproducibility` Parameters rows are a SUBSET of the
+  methodology doc §2 complete table. Binds when the doc path is supplied
+  via `--methodology-doc <path>` (the orchestrator passes the issue
+  worktree path at gate time, pre-merge) OR — on the `--issue` path —
+  when `docs/methodology/issue_<N>.md` resolves on disk (post-merge
+  promote-time verify, where the doc is already on `main`); NO-OP PASS
+  when neither resolves.
+
+Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
+`## Reproducibility` shapes the scan keys off both carry):
+
+- **check 22** (`check_figure_url_sha_matches_repro`): each inline figure
+  URL's commit SHA must match the SHA the `## Reproducibility`
+  `**Figures:**` bullet pins that figure to. A SHAPE-CONSISTENCY check
+  comparing the two SHAs the body already carries (no git, no network):
+  the inline raw-GitHub URL `.../<url_sha>/figures/issue_<N>/<file>.png`
+  vs the per-figure `` `<basename>` at [commit] `<sha>` `` claim (with an
+  `` all others at `<sha>` `` catch-all default). Across follow-up rounds
+  a regenerated figure's inline URL and its Reproducibility claim can
+  drift apart while every existence check still PASSes (the URL's own sha
+  resolves), shipping a body whose inline image points at a different
+  commit than `## Reproducibility` claims. SHAs are compared
+  prefix-compatibly (the claim may be abbreviated, the URL is always full
+  40-char). A figure with NEITHER an explicit claim NOR a default is
+  out of scope (SKIP, never FAIL). NO-OP PASS when there is no
+  Reproducibility section, no inline figure URL, or no figure-sha claim.
+  Incident: task #537 `predictor_bakeoff_complete_null` shipped inline
+  `5ad30c2…` against a Reproducibility claim of `c539920…` — caught by
+  hand at round-3 interp-critique, mechanizable into this check.
+
+- **check 23** (`check_hf_url_resolves`): every HF Hub revision-pinned
+  `/tree/<sha>/<path>` or `/blob/<sha>/<path>` URL in the body must
+  resolve to ≥1 file at the cited revision, probed via
+  `huggingface_hub.list_repo_files(repo_id, repo_type=..., revision=<sha>)`.
+  Extends the #507 existence-protection class (check 4b inline figures,
+  check 8b same-repo Reproducibility links) to HF Hub links, which check 8
+  deliberately left shape-checked only — their existence IS decidable via
+  the Hub API. A path pinned to a revision that predates the upload
+  resolves to ZERO files; that dead pin slips through every other check
+  (shape-valid, sha-pinned, real repo). Body-wide + fence-stripped scan
+  (HF links live in `## Reproducibility`, `## Data`, and cherry-picked
+  prose under `## TL;DR` / `## Findings`); only hex-pinned revisions are
+  probed (moving refs like `/tree/main` are check 8's shape concern).
+  FAIL-SOFT: only a successful zero-file listing — or a definitive
+  repository/revision-not-found — is a FAIL; the `EPM_VERIFY_BODY_NO_HF=1`
+  offline fence (set suite-wide by `tests/conftest.py`), a missing
+  `huggingface_hub`, and any network / auth error surface as an
+  `unverified` note on the PASS line, never a FAIL. Incident: task #537's
+  `**Artifacts:**` "415 bakeoff intermediates" link pinned to `db3662ae`
+  (the main-grid revision, predating the bakeoff round) resolved to 0
+  files — caught by hand at round-1 clean-result-critique.
+
+Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
+form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
+exactly as checks 10/11 do today.
+
 Usage:
 
     uv run python scripts/verify_task_body.py --issue <N>
     uv run python scripts/verify_task_body.py --file path/to/body.md
     uv run python scripts/verify_task_body.py --body-stdin
+    uv run python scripts/verify_task_body.py --file body.md \\
+        --methodology-doc docs/methodology/issue_<N>.md   # binds check 21
 
 Exits 0 on PASS, 1 on FAIL, 2 on usage error.
 """
@@ -314,14 +468,92 @@ LEGACY_SAGAN_CARD_SENTINEL = "<!-- legacy-sagan-card -->"
 # rule — forward-only migration.
 CLEAN_RESULT_V2_SENTINEL = "<!-- clean-result-v2 -->"
 
+# v3 redesign (2026-W24). NEW bodies carry this sentinel. The v3 body
+# drops `## Human TL;DR` and the `## TL;DR` umbrella entirely in favour
+# of five FLAT H2 sections — `## Takeaways` / `## What I ran` /
+# `## Findings` / `## Data` / `## Reproducibility` — with confidence in
+# the H1 title tag only. Forward-only: v2-sentinel and pre-sentinel
+# legacy bodies keep their existing verification behaviour verbatim and
+# are NEVER newly hard-FAILed by any v3 rule. See
+# `.claude/skills/clean-results/SPEC.md` § "v3 body shape" and §7 of
+# `.claude/plans/clean-result-v3-redesign.md`.
+CLEAN_RESULT_V3_SENTINEL = "<!-- clean-result-v3 -->"
+
+# v3 required H2 sections, in order. A `## Human TL;DR` H2 in a v3 body
+# is a hard FAIL (mirrors the stray-`## Details` FAIL) — the v3 shape
+# retired the model-written casual summary.
+V3_REQUIRED_H2_SECTIONS = ["Takeaways", "What I ran", "Findings", "Data", "Reproducibility"]
+# H2 sections REJECTED in a v3 body. `## Human TL;DR` and `## TL;DR` are
+# folded away (Takeaways replaces the skim function; the per-result
+# narrative moves to flat `## Findings`). The legacy retired pair
+# (`## Details` / `## Figure`) stays rejected too.
+V3_RETIRED_H2_SECTIONS = ["Human TL;DR", "TL;DR", "Details", "Figure"]
+# v3 `## Data` required subsections, in order. Each is an H3.
+V3_DATA_SUBSECTIONS = ["Trained on", "Evaluated with", "Generated"]
+
 CONFIDENCE_LEVELS = {"LOW", "MODERATE", "HIGH"}
 
 # Sentinel substrings that indicate a placeholder slipped through.
 SENTINEL_SUBSTRINGS = ["TBD", "{{", "see config", "default"]
 
+# `default` is flagged ONLY in placeholder positions: a bare markdown
+# table-cell value (`| default |`) or a label terminator (`chat template:
+# default` / `**Chat template:** default` / `lr = default` at end of line
+# or cell). Embedded prose uses — "default assistant", "default-context
+# response cache", "the default column" — are substantive in this project
+# (the default assistant is a core experimental condition, open-q 3.7;
+# task #542 had to reword a clean body to dodge the old whole-word match).
+# Horizontal whitespace only ([ \t]) so a match never spans lines; `\**`
+# admits the bold-label row form (`**Label:** value`); optional backticks
+# admit a code-formatted placeholder value.
+_DEFAULT_PLACEHOLDER_RE = re.compile(
+    r"\|[ \t]*`?default`?[ \t]*\|"  # bare table-cell value
+    r"|[:=][ \t]*\**[ \t]*`?default`?[ \t]*(?:$|\|)",  # label terminator
+    flags=re.IGNORECASE | re.MULTILINE,
+)
+
 # Minimum number of characters of rationale required AFTER the
 # `Confidence: <level> —` dash on the confidence line.
 MIN_CONFIDENCE_RATIONALE_CHARS = 20
+
+# ─── v3 conciseness caps (check 20) ──────────────────────────────────────────
+#
+# The §4 conciseness table from the v3 redesign plan, encoded as named
+# constants so tightening later is a one-line change. Calibration basis:
+# the #517 → v3 conversion (`exemplars/v3-517.md`), a real,
+# information-dense FOUR-finding body (3 per-trait findings + the
+# cross-experiment-caveat finding) — a well-written hard case. Measured
+# on that exemplar: longest finding prose ~95 words (well under the 120
+# WARN cap), Takeaways bullets ~25-30 words (at/under the 30 cap), total
+# content prose ~724 words across the four findings + Takeaways + What I
+# ran. The per-finding WARN/FAIL caps (120/180) leave that body
+# comfortable headroom; the total-prose budget is set to 800 so a
+# well-written four-finding body clears it WARN-free while a bloated body
+# (the original #517 v2 at ~2,400 prose words across the same findings,
+# or a single finding padded past 180 words) trips the gates decisively.
+# Counts EXCLUDE tables, fenced code blocks, `<details>` bodies, and
+# figure captions (blockquote lines) — those are reference material, not
+# the scannable prose the caps govern.
+#
+# `## Takeaways` bullet-count range (FAIL outside; authoritative count —
+# the structure check defers to this so there is ONE count gate).
+V3_TAKEAWAYS_MIN_BULLETS = 3
+V3_TAKEAWAYS_MAX_BULLETS = 6
+# Per-Takeaways-bullet word cap (WARN).
+V3_TAKEAWAYS_BULLET_MAX_WORDS = 30
+# Per-finding prose word cap (excl. caption / code / `<details>` bodies):
+# WARN at the soft cap, FAIL at the hard cap.
+V3_FINDING_PROSE_WARN_WORDS = 120
+V3_FINDING_PROSE_FAIL_WORDS = 180
+# Figure-caption word cap (WARN).
+V3_FIGURE_CAPTION_MAX_WORDS = 60
+# Total content prose (Takeaways + What I ran + Findings, excl. tables,
+# fenced code, `<details>` bodies, captions): WARN-only base budget, plus
+# a per-extra-follow-up-round allowance so a multi-round consolidated body
+# is not forced to delete live findings to satisfy a total cap (§6.4 of
+# the plan: the per-finding FAIL is the hard gate; this total is a nudge).
+V3_TOTAL_PROSE_BASE_WORDS = 800
+V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS = 250
 
 # ─── Result type ───────────────────────────────────────────────────────────
 
@@ -502,6 +734,70 @@ _EXHAUSTIVE_SUMMARY_RE = re.compile(
     re.IGNORECASE,
 )
 
+# A FENCED code block has no `<summary>` to carry the exhaustive-enumeration
+# signal; the equivalent disclosure lives in the prose prelude immediately
+# above it (e.g. #538's "The 20 eval input questions are the same fixed set
+# across every cell …"). Such a block is an eval-INPUT enumeration — the
+# fixed list of prompts/questions the experiment runs ON — NOT a
+# cherry-picked model-OUTPUT completion sample, so the cherry-picked-label
+# (check 10) and qualitative-data-link (check 11) rules don't apply: there
+# is no raw-completion artifact to link, because the block IS the input
+# stimulus, not a generation.
+#
+# To avoid loosening the checks on genuine output samples, the skip requires
+# a SINGLE prelude LINE that carries BOTH:
+#   (a) an exhaustive-enumeration lead — "The N <thing>" / "All N <thing>" at
+#       the start of that line, AND
+#   (b) an eval-INPUT framing token later on the SAME line — naming the block
+#       as the fixed set of eval/input questions/prompts (NOT
+#       completions/outputs/responses).
+# The two signals must co-occur ON ONE LINE (a single combined regex, not two
+# independent `.search()` calls). This is deliberate: matching the lead and
+# the framing token on DIFFERENT lines of the window would over-loosen — a
+# cherry-picked OUTPUT block ("The 5 most extreme completions are shown
+# below.") whose window also bleeds in an unrelated "(the 20 eval input
+# questions are described above)" parenthetical would be wrongly skipped.
+# Same-line co-occurrence is how every legitimate eval-input enumeration
+# actually phrases it (e.g. #538: "The 20 eval input questions are the same
+# fixed set …"). MULTILINE so the lead anchors at the start of ANY line of the
+# prelude window (`_prelude_window` may leave leading blank/partial lines).
+# A cherry-picked output prelude ("The 5 most extreme completions …") fails
+# (b) and is still enforced; an eval-question prelude that omits the "The N"
+# lead fails (a) and is still enforced (it must then carry a real link or the
+# `not uploaded` escape like any other block). The `<details>` form keeps its
+# own `_EXHAUSTIVE_SUMMARY_RE.match` summary-skip — left unchanged.
+_EVAL_INPUT_ENUM_PRELUDE_RE = re.compile(
+    r"^\s*(?:the|all)\s+\d+\b"
+    # Gap between the lead number and the framing token: same line, and it
+    # must NOT contain a competing OUTPUT head-noun
+    # (completion/output/response/generation/sample/answer/reply). Without
+    # this guard "The 6 completions … in response to the eval questions:"
+    # would skip — the lead introduces the model's OUTPUTS, not an eval-INPUT
+    # enumeration (review Minor-1, #538).
+    r"(?:(?!\b(?:completion|output|response|generation|sample|answer|reply)s?\b)[^\n])*?"
+    r"(?:"
+    r"eval(?:uation)?[\s-]*(?:input[\s-]*)?(?:question|prompt|item|stimul)"
+    r"|input[\s-]*(?:question|prompt)"
+    r"|(?:fixed|same)\s+set\s+(?:of\s+)?(?:\w+\s+){0,3}?(?:eval|question|prompt)"
+    r")",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _is_eval_input_enumeration_prelude(prelude: str) -> bool:
+    """Return True if a fenced block's prelude prose marks it as an
+    exhaustive eval-INPUT enumeration (the fixed set of questions/prompts
+    the experiment runs ON), not a cherry-picked model-OUTPUT sample.
+
+    Mirrors the `<details>` `<summary>` exhaustive-enumeration skip
+    (`_EXHAUSTIVE_SUMMARY_RE`) for the fenced-code-block form. Requires a
+    SINGLE prelude line carrying BOTH an exhaustive lead ("The N …" /
+    "All N …") AND an eval-input framing token, so genuine output samples
+    (and output preludes that merely mention eval questions elsewhere in
+    the window) stay enforced.
+    """
+    return bool(_EVAL_INPUT_ENUM_PRELUDE_RE.search(prelude))
+
 
 def _iter_sample_details(details: str) -> list[tuple[int, int, str]]:
     """Yield (block_start_offset, block_end_offset, inner_content) for
@@ -572,26 +868,33 @@ def _prelude_window(details: str, fence_start: int, max_chars: int = 1500) -> st
     blocks don't share each other's prelude), then trims any leading
     partial line.
 
-    Known follow-up (deferred 2026-05-31): the window also stops at a
-    fence boundary but does NOT stop at a previous `</details>` close.
-    Two adjacent `<details>` sample blocks therefore share each other's
-    prelude window — mitigated for now by per-block disclosure counting
-    (each sample block is enforced independently against the same
-    window, and the v2 form puts the cherry-pick disclosure inside the
-    `<summary>` which gets folded into the prelude via the
-    `block_start`-past-`</summary>` shift). Promote to a real
-    `</details>`-boundary stop if a body emerges where two adjacent
-    `<details>` blocks legitimately diverge on the disclosure.
+    Stops at the LATER of two boundaries: a previous fenced block's
+    closing ``` line, OR a previous `<details>` block's `</details>`
+    close. Two adjacent sample blocks therefore do NOT share each other's
+    disclosure prelude (Phase A review MINOR-4, 2026-06-13: v3's `## Data`
+    packs the Evaluated-with + Generated example blocks into one section,
+    widening the neighbour-bleed blast radius — an undisclosed block must
+    not borrow a sibling's disclosure). The v2 form that puts the
+    cherry-pick disclosure inside the `<summary>` still passes because the
+    caller shifts the scan past `</summary>`, so this block's own
+    `<summary>` stays inside the window (only the PREVIOUS block's
+    `</details>` is a cut point).
     """
     lo = max(0, fence_start - max_chars)
     window = details[lo:fence_start]
-    # Don't cross a previous fence's closing line.
-    prev_close = window.rfind("\n```")
-    if prev_close != -1:
-        # Skip past the closing fence line.
-        nl = window.find("\n", prev_close + 1)
+    # Don't cross a previous sample block's boundary.
+    cut = 0
+    prev_fence = window.rfind("\n```")
+    if prev_fence != -1:
+        nl = window.find("\n", prev_fence + 1)
         if nl != -1:
-            window = window[nl + 1 :]
+            cut = max(cut, nl + 1)
+    prev_details = window.rfind("</details>")
+    if prev_details != -1:
+        nl = window.find("\n", prev_details)
+        cut = max(cut, nl + 1 if nl != -1 else prev_details + len("</details>"))
+    if cut:
+        window = window[cut:]
     return window
 
 
@@ -621,7 +924,14 @@ _CHERRY_DISCLOSURE_RE = re.compile(
     # (e.g. task #432's "5 example training rows" /
     # "5 example eval probes"). The "example" / "sample" qualifier
     # tells the reader the rows are illustrative, not exhaustive.
-    r"\d+\s+(?:examples?|sample[s]?)\b)",
+    r"\d+\s+(?:examples?|sample[s]?)\b|"
+    # harmful-content carve-out — the sanitized excerpt form, kept in
+    # PARITY with check 19's `_SUBSET_DISCLOSURE_RE` so a v3
+    # `## Data → ### Generated` block built from EM / bad-medical-advice
+    # corpora (this project's dominant data type) is NOT FAILed by
+    # check 10 for lacking cherry-pick wording (Phase A review MAJOR-1,
+    # 2026-06-13). Must stay in sync with `_SUBSET_DISCLOSURE_RE`.
+    r"sanitized for context hygiene|harmful-content row|truncated — harmful)",
     re.IGNORECASE,
 )
 
@@ -776,61 +1086,77 @@ def check_title_confidence(body: str) -> CheckResult:
 
 
 def check_required_sections(body: str) -> CheckResult:
-    """Check 2: the three required H2 sections appear in order, and no
-    retired H2 (`## Details`, `## Figure`) is present.
+    """Check 2: the required H2 sections appear in order, and no retired
+    H2 is present.
 
-    The 2-content-section spec (2026-W22 migration, task #454) folds
-    the former `## Details` narrative into per-result `### <finding>`
-    H3s under `## TL;DR` and inlines figures inside each result H3, so
-    a NEW body that still carries either retired H2 is rejected. This
-    forces clean migration — bodies cannot half-migrate by stripping
-    Details prose while leaving the H2 in place. Legacy bodies
-    pre-2026-W22 are forward-grandfathered (the verifier never re-runs
-    over them).
+    v3 bodies (sentinel `<!-- clean-result-v3 -->`) require five flat
+    H2s in order — `## Takeaways` / `## What I ran` / `## Findings` /
+    `## Data` / `## Reproducibility` — and reject `## Human TL;DR` /
+    `## TL;DR` / `## Details` / `## Figure` (the v3 redesign retired
+    the model-written casual summary and the `## TL;DR` umbrella).
+
+    v2 / legacy bodies keep the 2-content-section spec (2026-W22 task
+    #454): three required H2s (`## Human TL;DR` / `## TL;DR` /
+    `## Reproducibility`), rejecting `## Details` / `## Figure`. The
+    fold + the stray/ordering rules are identical between generations —
+    only the required + retired sets differ. Legacy bodies pre-2026-W22
+    are forward-grandfathered (the verifier never re-runs over them).
     """
+    v3 = is_v3(body)
+    required = V3_REQUIRED_H2_SECTIONS if v3 else REQUIRED_H2_SECTIONS
+    retired = V3_RETIRED_H2_SECTIONS if v3 else RETIRED_H2_SECTIONS
     found = [name for name, _, _ in find_h2_sections(body)]
-    label = "three required H2 sections in order"
+    label = "five required H2 sections in order" if v3 else "three required H2 sections in order"
     # Hard FAIL on retired H2s (force clean migration).
-    retired_present = [s for s in RETIRED_H2_SECTIONS if s in found]
+    retired_present = [s for s in retired if s in found]
     if retired_present:
-        return CheckResult(
-            label,
-            False,
-            f"retired H2(s) present: {', '.join('## ' + s for s in retired_present)}. "
-            "The 2-content-section spec (2026-W22) folds Details into per-result "
-            "H3s under `## TL;DR` and inlines figures inside each result H3 — "
-            "remove the retired H2 and migrate its content. See "
-            ".claude/skills/clean-results/SPEC.md.",
-        )
-    missing = [s for s in REQUIRED_H2_SECTIONS if s not in found]
+        if v3:
+            detail = (
+                f"retired H2(s) present: {', '.join('## ' + s for s in retired_present)}. "
+                "The v3 spec drops `## Human TL;DR` (the model-written casual "
+                "summary is retired) and the `## TL;DR` umbrella (Takeaways "
+                "replaces the skim function; per-result narrative lives in flat "
+                "`## Findings`) — remove the retired H2 and migrate its content. "
+                "See .claude/skills/clean-results/SPEC.md."
+            )
+        else:
+            detail = (
+                f"retired H2(s) present: {', '.join('## ' + s for s in retired_present)}. "
+                "The 2-content-section spec (2026-W22) folds Details into per-result "
+                "H3s under `## TL;DR` and inlines figures inside each result H3 — "
+                "remove the retired H2 and migrate its content. See "
+                ".claude/skills/clean-results/SPEC.md."
+            )
+        return CheckResult(label, False, detail)
+    missing = [s for s in required if s not in found]
     if missing:
         return CheckResult(
             label,
             False,
             f"missing: {', '.join('## ' + s for s in missing)} (found: {found})",
         )
-    # Order check: REQUIRED_H2_SECTIONS must appear in this exact order
-    # within the body's H2 sequence (extra non-retired H2s after
-    # `## Reproducibility` are tolerated, but NOT before).
-    seq = [s for s in found if s in REQUIRED_H2_SECTIONS]
-    if seq != REQUIRED_H2_SECTIONS:
+    # Order check: `required` must appear in this exact order within the
+    # body's H2 sequence (extra non-retired H2s after the LAST required
+    # section are tolerated, but NOT before).
+    seq = [s for s in found if s in required]
+    if seq != required:
         return CheckResult(
             label,
             False,
-            f"wrong order — got {seq}, expected {REQUIRED_H2_SECTIONS}",
+            f"wrong order — got {seq}, expected {required}",
         )
     # Stray H2 check: any non-required, non-retired H2 (e.g., a leftover
     # `## Goal`, `## Background`, `## Methods`) that appears BEFORE the
-    # required sequence completes is rejected. The 2-content-section spec
-    # tolerates extra H2s ONLY after `## Reproducibility`. Retired H2s
-    # already produced a hard FAIL above, so don't double-report them.
+    # required sequence completes is rejected. The spec tolerates extra
+    # H2s ONLY after the LAST required section. Retired H2s already
+    # produced a hard FAIL above, so don't double-report them.
     last_required_idx = -1
     stray_before: list[str] = []
     for name, _, _ in find_h2_sections(body):
-        if name in REQUIRED_H2_SECTIONS:
-            if name == REQUIRED_H2_SECTIONS[-1]:
+        if name in required:
+            if name == required[-1]:
                 last_required_idx = 1
-        elif name in RETIRED_H2_SECTIONS:
+        elif name in retired:
             continue
         elif last_required_idx == -1:
             stray_before.append(name)
@@ -838,18 +1164,126 @@ def check_required_sections(body: str) -> CheckResult:
         return CheckResult(
             label,
             False,
-            f"stray H2(s) before `## {REQUIRED_H2_SECTIONS[-1]}`: "
-            f"{', '.join('## ' + s for s in stray_before)}. The 2-content-section "
-            "spec (2026-W22) permits extra H2s ONLY after `## Reproducibility` — "
-            f"required sequence is {REQUIRED_H2_SECTIONS} and nothing else may "
-            "appear in between. Remove the stray H2 or move it after "
-            "`## Reproducibility`.",
+            f"stray H2(s) before `## {required[-1]}`: "
+            f"{', '.join('## ' + s for s in stray_before)}. The spec permits "
+            f"extra H2s ONLY after `## {required[-1]}` — required sequence is "
+            f"{required} and nothing else may appear in between. Remove the "
+            f"stray H2 or move it after `## {required[-1]}`.",
         )
     return CheckResult(label, True)
 
 
+def _h3_names_under_h2(body: str, h2_name: str) -> list[str]:
+    """Return the `### ` H3 heading names (fence-aware) directly inside
+    the `## <h2_name>` section, in order. Empty list when the section is
+    absent."""
+    text = section_text(body, h2_name)
+    if text is None:
+        return []
+    return [name for name, _line in _collect_tldr_h3_names(text)]
+
+
+def _h3_subsection_text(section_body: str, h3_name: str) -> str | None:
+    """Return the text of the `### <h3_name>` subsection inside an H2
+    section body (the leading-word of the heading, post-`— hook` strip,
+    must equal `h3_name`, case-insensitive), spanning to the next `### `
+    H3 or end. Fence-aware. None when the H3 is absent.
+
+    Used to scope check 11's raw-completions-link scan to
+    `## Data → ### Generated` only (the Trained-on / Evaluated-with
+    blocks link JSONLs / probe banks, not raw_completions)."""
+    h3s = _collect_tldr_h3_names(section_body)
+    idx = _find_named_h3(h3s, h3_name)
+    if idx is None:
+        return None
+    lines = section_body.splitlines()
+    start_line = h3s[idx][1]
+    end_line = h3s[idx + 1][1] if idx + 1 < len(h3s) else len(lines)
+    return "\n".join(lines[start_line:end_line]).strip()
+
+
+def _count_bullets(text: str) -> int:
+    """Count top-level markdown list items (`- ` / `* ` at line start,
+    fence-aware) in `text`. Sub-bullets (indented) are NOT counted —
+    the Takeaways shape is a flat bullet list."""
+    n = 0
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        # Top-level only: the raw (un-stripped) line begins with `- ` or
+        # `* ` with no leading indent.
+        if re.match(r"^[-*]\s+\S", line):
+            n += 1
+    return n
+
+
+def check_v3_structure(body: str) -> CheckResult:
+    """v3 structure check (replaces checks 3 + 3b for v3 bodies).
+
+    For a `<!-- clean-result-v3 -->` body, verify:
+      - `## Takeaways` carries 3-6 top-level bullets (the authoritative
+        count gate — check 20's word-cap check defers to this so there
+        is exactly ONE bullet-count rule).
+      - `## What I ran` carries the `**Why:**` slot bullet.
+      - `## Findings` carries ≥1 `### ` finding heading.
+
+    The 3-6 range is the same FAIL band the §4 caps table records; it
+    lives HERE (not in check 20) so the count is enforced once, on the
+    structural check, regardless of whether the word-cap check runs.
+    """
+    label_name = "v3 structure (Takeaways / What I ran / Findings)"
+    takeaways = section_text(body, "Takeaways")
+    if takeaways is None:
+        return CheckResult(label_name, False, "## Takeaways section missing")
+    n_bullets = _count_bullets(takeaways)
+    if not (V3_TAKEAWAYS_MIN_BULLETS <= n_bullets <= V3_TAKEAWAYS_MAX_BULLETS):
+        return CheckResult(
+            label_name,
+            False,
+            f"## Takeaways has {n_bullets} top-level bullet(s) — the v3 shape "
+            f"requires {V3_TAKEAWAYS_MIN_BULLETS}-{V3_TAKEAWAYS_MAX_BULLETS} "
+            "numbers-first bullets (no paragraphs).",
+        )
+    what_i_ran = section_text(body, "What I ran")
+    if what_i_ran is None:
+        return CheckResult(label_name, False, "## What I ran section missing")
+    # The `**Why:**` slot bullet — accept `- **Why:**` / `**Why:**` /
+    # `Why:` at the start of a bullet (mirror the Motivation bullet
+    # acceptance in the v2 check).
+    if not re.search(r"(?im)^\s*[-*]?\s*(\*\*)?Why(\*\*)?\s*:", what_i_ran):
+        return CheckResult(
+            label_name,
+            False,
+            "## What I ran is missing the `**Why:**` slot bullet — the v3 shape "
+            "requires a `**Why:**` line (the only place for prior-issue links).",
+        )
+    findings = section_text(body, "Findings")
+    if findings is None:
+        return CheckResult(label_name, False, "## Findings section missing")
+    finding_h3s = [name for name, _line in _collect_tldr_h3_names(findings)]
+    if not finding_h3s:
+        return CheckResult(
+            label_name,
+            False,
+            "## Findings has no `### <finding>` heading — the v3 shape requires "
+            "≥1 `### ` finding under `## Findings`.",
+        )
+    return CheckResult(
+        label_name,
+        True,
+        f"v3 structure clean — Takeaways ({n_bullets} bullets), What I ran "
+        f"(Why: present), Findings ({len(finding_h3s)} `### ` finding(s))",
+    )
+
+
 def check_tldr_labels(body: str) -> CheckResult:
-    """Check 3: `## TL;DR` opens with the Motivation block.
+    """Check 3: `## TL;DR` opens with the Motivation block (v2/legacy);
+    for v3 bodies, dispatches to `check_v3_structure`.
 
     2-content-section spec (2026-W22, task #454). The TL;DR is the
     LessWrong-style narrative; it opens with either:
@@ -871,7 +1305,15 @@ def check_tldr_labels(body: str) -> CheckResult:
     — a stray intro paragraph between the heading and `### Motivation`
     (or `**Motivation:**`) is rejected, matching SPEC.md "Opens with
     `### Motivation`".
+
+    v3 bodies have no `## TL;DR` umbrella — the per-result structure is
+    flat under `## Findings`. For v3 this check delegates to
+    `check_v3_structure` (Takeaways 3-6 bullets, `**Why:**` slot, ≥1
+    `### ` finding), so the CHECKS slot stays one function but enforces
+    the right shape per generation.
     """
+    if is_v3(body):
+        return check_v3_structure(body)
     tldr = section_text(body, "TL;DR")
     label_name = "TL;DR opens with Motivation"
     if tldr is None:
@@ -1081,27 +1523,32 @@ def check_tldr_nested_structure(body: str) -> CheckResult:
 
 
 def _gather_figure_image_urls(body: str) -> list[str]:
-    """Collect image URLs inline under `## TL;DR`. Powers checks 4 / 4b
-    under the 2-content-section spec (2026-W22, task #454): every figure
-    lives inside a per-result H3 inside `## TL;DR`."""
+    """Collect figure image URLs inline under the result-narrative
+    section. Powers checks 4 / 4b.
+
+    v3 bodies (sentinel present): figures live under `## Findings`
+    (one per `### <finding>`). v2 / legacy bodies: figures live inside
+    per-result H3s under `## TL;DR` (2026-W22 spec, task #454)."""
     urls: list[str] = []
-    text = section_text(body, "TL;DR")
+    section = "Findings" if is_v3(body) else "TL;DR"
+    text = section_text(body, section)
     if text is not None:
         urls.extend(_IMAGE_RE.findall(text))
     return urls
 
 
 def check_figure_image(body: str) -> CheckResult:
-    """Check 4: at least one `![alt](url)` image exists inline under
-    `## TL;DR` (every result H3 in the 2-content-section spec carries
-    its own figure)."""
+    """Check 4: at least one `![alt](url)` image exists inline under the
+    result-narrative section — `## Findings` for v3 bodies, `## TL;DR`
+    for v2 / legacy (every result block carries its own figure)."""
+    section = "Findings" if is_v3(body) else "TL;DR"
     urls = _gather_figure_image_urls(body)
     if not urls:
         return CheckResult(
             "hero image present",
             False,
-            "no `![alt](path)` image found inline under `## TL;DR` — every "
-            "result H3 in the 2-content-section spec carries its own figure",
+            f"no `![alt](path)` image found inline under `## {section}` — every "
+            "result block carries its own figure",
         )
     return CheckResult("hero image present", True, f"{len(urls)} image(s)")
 
@@ -1290,6 +1737,16 @@ def is_v2_nested_design(body: str) -> bool:
     post-#454 behavior and are NEVER hard-FAILed by the nested-shape
     rule or the no-body-Confidence permission.
     """
+    return CLEAN_RESULT_V2_SENTINEL in _prose_layer(body)
+
+
+def _prose_layer(body: str) -> str:
+    """Return `body` with fenced code blocks AND `<details>...</details>`
+    blocks stripped, so a sentinel quoted only inside an illustrative
+    code fence or example block does NOT count as a document-level
+    marker. Shared by `is_v2_nested_design` / `is_v3` so both detect at
+    the same prose layer.
+    """
     # Strip fenced code blocks (``` ``` and ~~~ ~~~) inline rather
     # than importing the later-defined `_strip_fenced_blocks` (avoids
     # forward-reference ordering noise).
@@ -1306,22 +1763,52 @@ def is_v2_nested_design(body: str) -> bool:
         fence_stripped.append(line)
     cleaned = "\n".join(fence_stripped)
     # Strip `<details>...</details>` blocks (already defined regex).
-    cleaned = _DETAILS_BLOCK_RE.sub("", cleaned)
-    return CLEAN_RESULT_V2_SENTINEL in cleaned
+    return _DETAILS_BLOCK_RE.sub("", cleaned)
+
+
+def is_v3(body: str) -> bool:
+    """Return True when `body` carries the `<!-- clean-result-v3 -->`
+    sentinel as a real document-level marker (the v3 five-flat-H2
+    redesign: Takeaways / What I ran / Findings / Data / Reproducibility,
+    confidence in the H1 title tag only).
+
+    Mirrors `is_v2_nested_design`'s fence-aware + `<details>`-aware
+    detection so a body that only QUOTES the sentinel inside an
+    illustrative code fence or `<details>` example block is NOT
+    misdetected as v3. Forward-only: bodies without the sentinel keep
+    their existing (v2 / legacy) verification behaviour.
+    """
+    return CLEAN_RESULT_V3_SENTINEL in _prose_layer(body)
+
+
+def is_nested_design(body: str) -> bool:
+    """True for ANY structured clean-result body that carries confidence
+    in the H1 title tag only (no body `Confidence:` sentence) and pins
+    its provenance / lr-vs-plan checks on a sentinel — i.e. v2 OR v3.
+
+    Used by the SENTINEL-KEYED checks that must run identically on both
+    generations: check 6 (confidence-title-only), check 16 (lr matches
+    plan), check 17 (Context provenance row). The nested-TL;DR-SHAPE
+    check (check 3b, `check_tldr_nested_structure`) deliberately does
+    NOT use this — it stays v2-only, because a v3 body has no `## TL;DR`
+    umbrella to shape.
+    """
+    return is_v2_nested_design(body) or is_v3(body)
 
 
 def check_confidence_matches(body: str) -> CheckResult:
     """Check 6: `Confidence: …` line matches the title.
 
-    Under the 2-content-section nested-design (v2) shape (sentinel
-    `<!-- clean-result-v2 -->` present), the H1 title tag is the
-    single source of truth for confidence — bodies do NOT carry a
-    `Confidence: …` sentence by design. This check PASSes for v2
-    bodies whenever the title carries the `(... confidence)` tag,
-    regardless of whether a body `Confidence:` sentence exists. If a
-    v2 body DOES happen to carry one (legacy holdover), the level
-    must match the title and ≥20 chars of rationale after the dash
-    must be present (same rule as legacy bodies).
+    Under the nested-design (v2) AND v3 shapes (sentinel
+    `<!-- clean-result-v2 -->` or `<!-- clean-result-v3 -->` present),
+    the H1 title tag is the single source of truth for confidence —
+    bodies do NOT carry a `Confidence: …` sentence by design. This
+    check PASSes for such bodies whenever the title carries the
+    `(... confidence)` tag, regardless of whether a body `Confidence:`
+    sentence exists. If such a body DOES happen to carry one (legacy
+    holdover), the level must match the title and ≥20 chars of
+    rationale after the dash must be present (same rule as legacy
+    bodies).
 
     Legacy bodies (no sentinel) must still ship the
     `Confidence: LOW|MODERATE|HIGH — <rationale>` line somewhere
@@ -1333,7 +1820,7 @@ def check_confidence_matches(body: str) -> CheckResult:
     if not m:
         return CheckResult(label_name, False, "no title confidence")
     title_level = m.group(1)
-    v2 = is_v2_nested_design(body)
+    v2 = is_nested_design(body)
     # Whole-body scan so the Confidence sentence can live anywhere it
     # makes sense under the new spec (typically in `## Reproducibility`).
     # Look for `Confidence: LOW|MODERATE|HIGH — <rationale>` (em-dash or
@@ -1349,12 +1836,13 @@ def check_confidence_matches(body: str) -> CheckResult:
         loose = re.search(r"Confidence:\s*(LOW|MODERATE|HIGH)\b", body)
         if not loose:
             if v2:
-                # v2 nested-design bodies legitimately have no Confidence
-                # sentence — the H1 title tag is the source of truth.
+                # v2/v3 nested-design bodies legitimately have no
+                # Confidence sentence — the H1 title tag is the source
+                # of truth.
                 return CheckResult(
                     label_name,
                     True,
-                    f"v2 nested-design (sentinel present); title carries "
+                    f"nested-design (v2/v3 sentinel present); title carries "
                     f"`({title_level} confidence)` tag — no body `Confidence:` "
                     "sentence required",
                 )
@@ -1852,9 +2340,16 @@ def check_repro_sentinel_scrub(body: str) -> CheckResult:
         if s == "{{":
             if "{{" in repro:
                 bad.append("`{{` placeholder")
+        elif s == "default":
+            # Placeholder positions only (bare table cell / label
+            # terminator) — see _DEFAULT_PLACEHOLDER_RE. Prose like
+            # "default assistant" is substantive, not a sentinel
+            # (task #542 false-positive).
+            if _DEFAULT_PLACEHOLDER_RE.search(repro):
+                bad.append("`default` placeholder value")
         else:
-            # `default` matched as a standalone word (avoid false positives like
-            # `default_factory`); the others matched case-insensitively as words.
+            # Matched case-insensitively as standalone words (avoid false
+            # positives from larger identifiers).
             if re.search(rf"\b{re.escape(s)}\b", repro, flags=re.IGNORECASE):
                 bad.append(f"`{s}`")
     if bad:
@@ -1874,15 +2369,20 @@ def check_repro_sentinel_scrub(body: str) -> CheckResult:
 _LR_NUM_SCI = r"[0-9]+(?:\.[0-9]+)?[eE][-+]?[0-9]+"
 _LR_NUM_DEC = r"0\.[0-9]+"
 _LR_NUM = rf"(?:{_LR_NUM_SCI}|{_LR_NUM_DEC})"
-# Body side — anchored to an explicit `lr` / `learning rate` label AND
-# requiring an explicit assignment glyph (`=`, `:`, `of`, `is`) between
-# the anchor and the number, so the number we judge is unambiguously the
-# learning rate (precise, low false positive). `\blr\b` does not match
-# `color`, `_lr_`, or `controller`. The glyph requirement excludes prose
-# like `lower-LR 50%-epoch cell` (#514) where `LR` sits adjacent to a
-# bare integer with no assignment semantics.
+# Body side — anchored to an explicit `lr` / `learning rate` label, with
+# the number connected either by an explicit assignment glyph (`=`, `:`,
+# `of`, `is`) or by bare whitespace adjacency (`lr 5e-6`), so the number
+# we judge is unambiguously the learning rate (precise, low false
+# positive). `\blr\b` does not match `color`, `_lr_`, or `controller`.
+# The bare-adjacency form is what per-recipe Parameters-table cells use
+# (`| marker recipe | LoRA r32; lr 5e-6 cosine, ... |`, task #537) —
+# without it check 16 silently skipped a present value. It stays safe
+# against the #514 false positive (`lower-LR 50%-epoch cell`) because
+# `_LR_NUM` excludes bare integers, and against cross-cell bleed
+# (`| ... at base lr | 0.02 |`) because `\s+` never crosses a `|`
+# delimiter.
 _LR_ANCHORED_RE = re.compile(
-    r"(?:\blr\b|learning[\s_-]*rate)\s*(?:[=:]|\b(?:of|is)\b)\s*(" + _LR_NUM + r")",
+    r"(?:\blr\b|learning[\s_-]*rate)(?:\s*(?:[=:]|\b(?:of|is)\b)\s*|\s+)(" + _LR_NUM + r")",
     flags=re.IGNORECASE,
 )
 # Table-row form — the canonical v2 Parameters table states the learning
@@ -1927,9 +2427,11 @@ def _parse_lr_floats(text: str, *, anchored_only: bool) -> set[float]:
     """Return the set of learning-rate floats found in `text`.
 
     `anchored_only=True` (body side) collects only numbers tied to an
-    explicit `lr` / `learning rate` label — either the inline assignment
-    form (`lr = 5e-6`, `learning rate of 5e-6`) or the Parameters-table
-    row form (`| Learning rate | 5e-6 (annotation) |`). `anchored_only=
+    explicit `lr` / `learning rate` label — the inline assignment form
+    (`lr = 5e-6`, `learning rate of 5e-6`), the bare-adjacency form
+    used inside per-recipe Parameters-table cells (`lr 5e-6 cosine`),
+    or the dedicated Parameters-table row form
+    (`| Learning rate | 5e-6 (annotation) |`). `anchored_only=
     False` (plan side) ALSO collects every scientific-notation token,
     maximizing recall so the reconciliation never FAILs a body whose lr
     the plan really does contain.
@@ -1956,7 +2458,7 @@ def _parse_lr_floats(text: str, *, anchored_only: bool) -> set[float]:
 
 def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> CheckResult:
     """Check 16: the learning rate stated in `## Reproducibility` must
-    appear in the approved plan.
+    appear in the approved plan (any version under `plans/v*.md`).
 
     Guards against the analyzer hand-typing a plausible-looking
     hyperparameter (a LoRA default from training priors) into the
@@ -1966,6 +2468,12 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     the most load-bearing hyperparameter, missed by every reviewer
     because nothing reconciled the table's VALUES against ground truth.
 
+    The reconciliation set is the UNION across all `plans/v*.md`
+    siblings of ``plan_path``, not just the `plans/plan.md` symlink —
+    same-issue follow-up rounds re-point the symlink at the follow-up's
+    plan, which may not contain the training lr that grounds the body
+    (incident #597). A body lr matching ANY version PASSes.
+
     Scope: v2 nested-design bodies only (sentinel present); legacy
     bodies are forward-grandfathered. The check is a NO-OP PASS when it
     cannot reconcile (no parseable body lr, no plan on disk, no
@@ -1973,7 +2481,7 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     A documented run-vs-plan deviation downgrades the FAIL to WARN.
     """
     name = "Reproducibility lr matches plan"
-    if not is_v2_nested_design(body):
+    if not is_nested_design(body):
         return CheckResult(name, True, "skipped — legacy (pre-v2) body")
     repro = section_text(body, "Reproducibility")
     if repro is None:
@@ -1984,7 +2492,19 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
         return CheckResult(name, True, "skipped — no learning rate stated in Reproducibility")
     if plan_path is None or not plan_path.exists():
         return CheckResult(name, True, "skipped — no approved plan on disk to reconcile against")
-    plan_lrs = _parse_lr_floats(plan_path.read_text(errors="replace"), anchored_only=False)
+    # Reconcile against the UNION of every plan version (plans/v*.md), not
+    # just the plans/plan.md symlink: a same-issue follow-up round re-points
+    # the symlink at the follow-up's (often analysis-only) plan, whose
+    # unrelated sci-notation tokens (e.g. a `1e-3` tolerance) would then
+    # masquerade as "the plan's lr" while the training lr that grounds the
+    # body's Parameters table lives in an earlier version (incident #597:
+    # a correct lr=5e-6 body drew a spurious WARN against the v2 follow-up
+    # plan). Fall back to plan_path itself when no v*.md siblings exist
+    # (e.g. a bare plan.md fixture).
+    plan_files = sorted(plan_path.parent.glob("v*.md")) or [plan_path]
+    plan_lrs: set[float] = set()
+    for plan_file in plan_files:
+        plan_lrs |= _parse_lr_floats(plan_file.read_text(errors="replace"), anchored_only=False)
     if not plan_lrs:
         return CheckResult(name, True, "skipped — plan declares no parseable learning rate")
     unmatched = [b for b in body_lrs if not any(math.isclose(b, p, rel_tol=1e-6) for p in plan_lrs)]
@@ -2004,129 +2524,247 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     return CheckResult(name, False, detail)
 
 
-def check_cherry_picked_label(body: str) -> CheckResult:
-    """Check 10: every sample-output block in `## TL;DR` is preceded
-    by a cherry-picked / random-sample disclosure in the prelude prose.
+def check_repro_context_provenance(
+    body: str, fm: dict, *, original_body_path: Path | None = None
+) -> CheckResult:
+    """Check 17: v2 bodies carry a `**Context:**` run-provenance row in
+    `## Reproducibility`.
 
-    Under the 2-content-section spec (2026-W22, task #454) sample
-    completions live inside per-result H3s under `## TL;DR`, not under
-    a separate `## Details`. The check scans `## TL;DR` for BOTH
-    fenced code blocks AND `<details>` blocks that carry GFM tables /
-    long text (nested-design v2 bodies frequently present training
-    rows + eval probes as `<details open>` tables instead of fenced
-    code blocks — e.g. task #432). For each sample block the prose
-    immediately above must carry the disclosure.
+    The row ships the run-context provenance: created/run dates,
+    follow-up lineage, and the verbatim originating user prompt (or the
+    literal ``origin prompt not recorded``). Forward-only (adopted
+    2026-06-11): legacy (pre-sentinel) bodies PASS vacuously, so the
+    awaiting_promotion backlog never retro-FAILs.
+
+    A missing row FAILs only when recorded origin data exists —
+    frontmatter ``origin_prompt`` or a ``## Provenance`` section in the
+    sibling ``original-body.md`` — i.e. the body DROPPED provenance it
+    had. With no recorded origin data the miss is a WARN: created_at +
+    parent lineage always exist, so the row should still ship, stating
+    the prompt was not recorded. Spec:
+    `.claude/skills/clean-results/SPEC.md` § `**Context:**` row.
     """
-    tldr = section_text(body, "TL;DR")
-    if tldr is None:
-        return CheckResult("Cherry-picked label discipline", False, "## TL;DR section missing")
-    samples = _iter_sample_blocks(tldr)
-    if not samples:
-        return CheckResult(
-            "Cherry-picked label discipline",
-            True,
-            "no sample-output blocks in `## TL;DR` (fenced or `<details>`)",
+    name = "Reproducibility Context provenance row"
+    if not is_nested_design(body):
+        return CheckResult(name, True, "skipped — legacy (pre-v2) body")
+    repro = section_text(body, "Reproducibility")
+    if repro is None:
+        # Missing-section is check_required_sections' job; don't double-FAIL.
+        return CheckResult(name, True, "skipped — no Reproducibility section")
+    if re.search(r"\*\*\s*Context\s*:?\s*\*\*", repro):
+        return CheckResult(name, True, "**Context:** row present")
+    has_origin_prompt = bool(str(fm.get("origin_prompt") or "").strip())
+    has_provenance_section = False
+    if original_body_path is not None and original_body_path.exists():
+        has_provenance_section = bool(
+            re.search(
+                r"^##\s+Provenance\s*$",
+                original_body_path.read_text(errors="replace"),
+                re.MULTILINE,
+            )
         )
-    flagged: list[str] = []
-    for start, _, content in samples:
-        prelude = _prelude_window(tldr, start)
-        # For `<details>` blocks the cherry-pick disclosure may live
-        # inside the block (the `<summary>` text or the prose around
-        # the inner table); we scan BOTH the prelude window AND the
-        # inner content. (For fenced code blocks the `content` is the
-        # code text — a cherry-pick disclosure there is unusual and
-        # harmless to scan; the prelude scan still dominates.)
-        if _CHERRY_DISCLOSURE_RE.search(prelude) or _CHERRY_DISCLOSURE_RE.search(content):
-            continue
-        # First content line, trimmed, as a hint to the user.
-        first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
-        flagged.append(first_line)
-    if flagged:
-        preview = "; ".join(f"'{x}'" for x in flagged[:2]) + (" …" if len(flagged) > 2 else "")
+    if has_origin_prompt or has_provenance_section:
+        source = (
+            "frontmatter `origin_prompt`"
+            if has_origin_prompt
+            else "`## Provenance` section in original-body.md"
+        )
         return CheckResult(
-            "Cherry-picked label discipline",
+            name,
             False,
-            f"{len(flagged)} of {len(samples)} sample block(s) lack a cherry-picked / "
-            f"random-sample disclosure in the prelude prose: {preview}",
+            f"recorded origin data exists ({source}) but `## Reproducibility` has no "
+            f"`**Context:**` row — carry the created/run dates, follow-up lineage, and "
+            f"the verbatim originating prompt forward (SPEC.md § `**Context:**` row)",
         )
     return CheckResult(
-        "Cherry-picked label discipline",
+        name,
         True,
-        f"{len(samples)} sample block(s) labelled",
+        "missing `**Context:**` row (no recorded origin data — add the row with "
+        "created/run dates + lineage and the literal `origin prompt not recorded`)",
+        is_warn=True,
     )
 
 
-def check_qualitative_data_link(body: str) -> CheckResult:
-    """Check 11: every sample-output block in `## TL;DR` is preceded
-    by at least one link or backtick-path that is NOT an aggregate-only
-    path.
+def _sample_scan_sections(body: str, *, raw_link_scope: bool = False) -> list[tuple[str, str]]:
+    """Return [(section_text, label)] to scan for sample-output blocks.
 
-    An explicit `not uploaded` escape downgrades FAIL to WARN. Scope
-    moved from `## Details` to `## TL;DR` under the 2-content-section
-    spec (2026-W22, task #454) — sample completions now live inside
-    per-result H3s under TL;DR. The check scans BOTH fenced code
-    blocks AND `<details>` blocks that carry GFM tables / long text
-    (nested-design v2 bodies frequently present training rows + eval
-    probes as `<details open>` tables instead of fenced code blocks
-    — e.g. task #432).
+    v2 / legacy: the single `## TL;DR` section. v3: `## Findings` plus
+    `## Data` (the per-finding excerpts live under Findings; the
+    systematic samples live under Data). When ``raw_link_scope`` is set
+    (check 11 — the raw-completions-link rule), the v3 `## Data` scope
+    narrows to the `### Generated` subsection ONLY (the Trained-on /
+    Evaluated-with blocks link JSONLs / probe banks, not raw_completions
+    — their links are covered by check 18).
+
+    Sections that are absent are silently skipped; the caller decides
+    whether the absence is a FAIL (it is not for these checks — the
+    structure / Data-shape checks own section presence).
     """
-    tldr = section_text(body, "TL;DR")
-    if tldr is None:
-        return CheckResult("Qualitative-data link", False, "## TL;DR section missing")
-    samples = _iter_sample_blocks(tldr)
-    if not samples:
+    out: list[tuple[str, str]] = []
+    if is_v3(body):
+        findings = section_text(body, "Findings")
+        if findings is not None:
+            out.append((findings, "## Findings"))
+        data = section_text(body, "Data")
+        if data is not None:
+            if raw_link_scope:
+                generated = _h3_subsection_text(data, "Generated")
+                if generated is not None:
+                    out.append((generated, "## Data → ### Generated"))
+            else:
+                out.append((data, "## Data"))
+    else:
+        tldr = section_text(body, "TL;DR")
+        if tldr is not None:
+            out.append((tldr, "## TL;DR"))
+    return out
+
+
+def check_cherry_picked_label(body: str) -> CheckResult:
+    """Check 10: every sample-output block is preceded by a
+    cherry-picked / random-sample disclosure in the prelude prose.
+
+    v2 / legacy (2026-W22 spec, task #454): scans `## TL;DR`. v3: scans
+    `## Findings` + `## Data`. In both cases the scan covers BOTH fenced
+    code blocks AND `<details>` blocks that carry GFM tables / long text
+    (nested-design bodies frequently present training rows + eval probes
+    as `<details open>` tables instead of fenced code blocks — e.g. task
+    #432). For each sample block the prose immediately above must carry
+    the disclosure.
+    """
+    label = "Cherry-picked label discipline"
+    scan_sections = _sample_scan_sections(body)
+    if not scan_sections:
+        missing = "## Findings / ## Data" if is_v3(body) else "## TL;DR"
+        return CheckResult(label, False, f"{missing} section missing")
+    flagged: list[str] = []
+    total = 0
+    for scan_text, _src in scan_sections:
+        samples = _iter_sample_blocks(scan_text)
+        total += len(samples)
+        for start, _, content in samples:
+            prelude = _prelude_window(scan_text, start)
+            # Skip an exhaustive eval-INPUT enumeration (see the matching
+            # skip in `check_qualitative_data_link`): a fixed eval-question
+            # list ("The 20 eval input questions are the same fixed set …")
+            # is the input stimulus, not a cherry-picked model-OUTPUT
+            # sample, so the cherry-picked-disclosure rule does not apply.
+            if _is_eval_input_enumeration_prelude(prelude):
+                continue
+            # For `<details>` blocks the cherry-pick disclosure may live
+            # inside the block (the `<summary>` text or the prose around
+            # the inner table); we scan BOTH the prelude window AND the
+            # inner content. (For fenced code blocks the `content` is the
+            # code text — a cherry-pick disclosure there is unusual and
+            # harmless to scan; the prelude scan still dominates.)
+            if _CHERRY_DISCLOSURE_RE.search(prelude) or _CHERRY_DISCLOSURE_RE.search(content):
+                continue
+            first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
+            flagged.append(first_line)
+    if total == 0:
+        srcs = ", ".join(f"`{s}`" for _t, s in scan_sections)
         return CheckResult(
-            "Qualitative-data link",
-            True,
-            "no sample-output blocks in `## TL;DR` (fenced or `<details>`)",
+            label, True, f"no sample-output blocks in {srcs} (fenced or `<details>`)"
         )
+    if flagged:
+        preview = "; ".join(f"'{x}'" for x in flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            False,
+            f"{len(flagged)} of {total} sample block(s) lack a cherry-picked / "
+            f"random-sample disclosure in the prelude prose: {preview}",
+        )
+    return CheckResult(label, True, f"{total} sample block(s) labelled")
+
+
+def check_qualitative_data_link(body: str) -> CheckResult:
+    """Check 11: every sample-output block is preceded by at least one
+    link or backtick-path that is NOT an aggregate-only path.
+
+    An explicit `not uploaded` escape downgrades FAIL to WARN. v2 /
+    legacy (2026-W22 spec, task #454): scans `## TL;DR`. v3: scans
+    `## Findings` + `## Data → ### Generated` ONLY — the Trained-on /
+    Evaluated-with blocks link JSONLs / probe banks (covered by check
+    18), not raw_completions, so applying the raw-text-artifact rule to
+    them would mis-FAIL legitimate Data capsules. The check scans BOTH
+    fenced code blocks AND `<details>` blocks that carry GFM tables /
+    long text (nested-design bodies frequently present rows + probes as
+    `<details open>` tables instead of fenced code blocks — e.g. task
+    #432).
+    """
+    label = "Qualitative-data link"
+    scan_sections = _sample_scan_sections(body, raw_link_scope=True)
+    if not scan_sections:
+        missing = "## Findings / ## Data → ### Generated" if is_v3(body) else "## TL;DR"
+        return CheckResult(label, False, f"{missing} section missing")
     fails: list[str] = []
     warns: list[str] = []
     passes = 0
-    for start, _, content in samples:
-        prelude = _prelude_window(tldr, start)
-        # For `<details>` blocks the raw-data link often lives INSIDE
-        # the block, after the table (e.g. task #432's "Full training
-        # file: [...]" link on the line after the table). Scan both
-        # the prelude window AND the inner content of the block so the
-        # check fires consistently regardless of where the body author
-        # placed the qualitative-data link. (For fenced code blocks
-        # the `content` is the code text; markdown links inside it are
-        # unusual but harmless to scan — the prelude scan still
-        # dominates.)
-        search_space = prelude + "\n" + content
-        # Collect candidate tokens: markdown link URLs + backtick-wrapped paths.
-        tokens: list[str] = []
-        tokens.extend(_LINK_RE.findall(search_space))
-        tokens.extend(_CODE_RE.findall(search_space))
-        has_escape = bool(_NOT_UPLOADED_RE.search(search_space))
-        first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
+    total = 0
+    for scan_text, _src in scan_sections:
+        samples = _iter_sample_blocks(scan_text)
+        total += len(samples)
+        for start, _, content in samples:
+            prelude = _prelude_window(scan_text, start)
+            # Skip an exhaustive eval-INPUT enumeration introduced by a
+            # prelude like #538's "The 20 eval input questions are the same
+            # fixed set …": that fenced block IS the input stimulus, not a
+            # model-OUTPUT sample, so there is no raw-completion artifact to
+            # link. Mirrors the `<details>` `<summary>` exhaustive-summary
+            # skip (`_iter_sample_details`) for the fenced form. Requires the
+            # "The N …" lead AND an eval-input framing token on the SAME
+            # prelude line, so a cherry-picked output block ("The 5 most
+            # extreme completions …") stays enforced.
+            if _is_eval_input_enumeration_prelude(prelude):
+                continue
+            # For `<details>` blocks the raw-data link often lives INSIDE
+            # the block, after the table (e.g. task #432's "Full training
+            # file: [...]" link on the line after the table). Scan both
+            # the prelude window AND the inner content of the block so the
+            # check fires consistently regardless of where the body author
+            # placed the qualitative-data link. (For fenced code blocks
+            # the `content` is the code text; markdown links inside it are
+            # unusual but harmless to scan — the prelude scan still
+            # dominates.)
+            search_space = prelude + "\n" + content
+            # Collect candidate tokens: markdown link URLs + backtick-wrapped paths.
+            tokens: list[str] = []
+            tokens.extend(_LINK_RE.findall(search_space))
+            tokens.extend(_CODE_RE.findall(search_space))
+            has_escape = bool(_NOT_UPLOADED_RE.search(search_space))
+            first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
 
-        if not tokens:
+            if not tokens:
+                if has_escape:
+                    warns.append(f"'{first_line}': no link, `not uploaded` escape acknowledged")
+                else:
+                    fails.append(f"'{first_line}': no link or path in prelude paragraph")
+                continue
+
+            qualitative_hit = any(not _AGGREGATE_PATH_RE.search(tok) for tok in tokens)
+            if qualitative_hit:
+                passes += 1
+                continue
+
             if has_escape:
-                warns.append(f"'{first_line}': no link, `not uploaded` escape acknowledged")
+                warns.append(
+                    f"'{first_line}': only aggregate-pattern links, "
+                    "`not uploaded` escape acknowledged"
+                )
             else:
-                fails.append(f"'{first_line}': no link or path in prelude paragraph")
-            continue
+                fails.append(
+                    f"'{first_line}': only aggregate-pattern links "
+                    f"(e.g. {tokens[0][:60]}); raw text-level artifact required"
+                )
 
-        qualitative_hit = any(not _AGGREGATE_PATH_RE.search(tok) for tok in tokens)
-        if qualitative_hit:
-            passes += 1
-            continue
-
-        if has_escape:
-            warns.append(
-                f"'{first_line}': only aggregate-pattern links, `not uploaded` escape acknowledged"
-            )
-        else:
-            fails.append(
-                f"'{first_line}': only aggregate-pattern links "
-                f"(e.g. {tokens[0][:60]}); raw text-level artifact required"
-            )
-
+    if total == 0:
+        srcs = ", ".join(f"`{s}`" for _t, s in scan_sections)
+        return CheckResult(
+            label, True, f"no sample-output blocks in {srcs} (fenced or `<details>`)"
+        )
     if fails:
         return CheckResult(
-            "Qualitative-data link",
+            label,
             False,
             f"{len(fails)} sample block(s) lack a qualitative-data link: "
             + "; ".join(fails[:2])
@@ -2134,17 +2772,13 @@ def check_qualitative_data_link(body: str) -> CheckResult:
         )
     if warns:
         return CheckResult(
-            "Qualitative-data link",
+            label,
             True,
             f"{len(warns)} sample block(s) ship with `not uploaded` escape — "
             "follow-up should re-run with raw-completion upload",
             is_warn=True,
         )
-    return CheckResult(
-        "Qualitative-data link",
-        True,
-        f"{passes} sample block(s) link to a qualitative-data artifact",
-    )
+    return CheckResult(label, True, f"{passes} sample block(s) link to a qualitative-data artifact")
 
 
 def check_goal_present(body: str, fm: dict) -> CheckResult:
@@ -2290,26 +2924,40 @@ def check_planned_vs_actual_denominator(body: str) -> CheckResult:
     See `.claude/agents/clean-result-critic.md` § Lens 13 for the
     semantic-judgment version of this check (which reads the plan).
     """
-    tldr = section_text(body, "TL;DR")
-    if tldr is None:
-        # Other checks will FAIL on missing sections; don't double-report.
-        return CheckResult(
-            "planned-vs-actual denominator consistency",
-            True,
-            "## TL;DR missing — other checks will report",
-        )
-    # The "scope-correction" text under the 2-content-section spec
-    # (2026-W22, task #454) can live anywhere — including inside a
-    # `### <finding>` H3 INSIDE `## TL;DR`, in a result H3 outside it,
-    # or in legacy in-flight bodies under a retired
-    # `### Methodology corrections` H3. The previous narrowing — which
-    # excluded `## TL;DR` from the scan — silently lost scope-correction
-    # prose that the new spec deliberately folds into TL;DR result H3s.
-    # So scan the WHOLE body for scope-correction claims; the TL;DR
-    # headline claims still come from `## TL;DR` only.
+    # The headline surface that must carry an accurate denominator is
+    # `## TL;DR` for v2/legacy bodies; for v3 bodies it is the two
+    # reader-facing claim surfaces `## Takeaways` + `## Findings`
+    # (there is no `## TL;DR` umbrella). The scope-correction scan stays
+    # whole-body in both cases.
+    if is_v3(body):
+        headline_parts = [
+            t for t in (section_text(body, "Takeaways"), section_text(body, "Findings")) if t
+        ]
+        if not headline_parts:
+            return CheckResult(
+                "planned-vs-actual denominator consistency",
+                True,
+                "## Takeaways / ## Findings missing — other checks will report",
+            )
+        headline_text = "\n\n".join(headline_parts)
+    else:
+        tldr = section_text(body, "TL;DR")
+        if tldr is None:
+            # Other checks will FAIL on missing sections; don't double-report.
+            return CheckResult(
+                "planned-vs-actual denominator consistency",
+                True,
+                "## TL;DR missing — other checks will report",
+            )
+        headline_text = tldr
+    # The "scope-correction" text can live anywhere — including inside a
+    # `### <finding>` H3, in a result H3 outside the headline surface, or
+    # in legacy in-flight bodies under a retired `### Methodology
+    # corrections` H3. So scan the WHOLE body for scope-correction
+    # claims; the headline claims come from the headline surface only.
     scope_text = body
 
-    tldr_claims = _collect_denominator_claims(tldr)
+    tldr_claims = _collect_denominator_claims(headline_text)
     method_claims = _collect_denominator_claims(scope_text)
 
     if not method_claims or not tldr_claims:
@@ -2406,12 +3054,17 @@ def check_details_narrative_flow(body: str) -> CheckResult:
     analyzer) should treat them as inputs to a narrative check rather
     than as a promote-blocking FAIL.
     """
-    tldr = section_text(body, "TL;DR")
+    # v3 bodies carry the result narrative under `## Findings`; v2 /
+    # legacy under `## TL;DR`. Same heuristics, different host section.
+    v3 = is_v3(body)
+    nav_section = "Findings" if v3 else "TL;DR"
+    label_name = "Findings narrative flow" if v3 else "TL;DR narrative flow"
+    tldr = section_text(body, nav_section)
     if tldr is None:
         return CheckResult(
-            "TL;DR narrative flow",
+            label_name,
             True,
-            "no ## TL;DR section to inspect (skipped)",
+            f"no ## {nav_section} section to inspect (skipped)",
             is_warn=True,
         )
 
@@ -2433,7 +3086,7 @@ def check_details_narrative_flow(body: str) -> CheckResult:
     bad_h3_names = [m.group("name") for m in bad_label_re.finditer(tldr)]
     if bad_h3_names:
         findings.append(
-            f"{len(bad_h3_names)} outline-label H3(s) in TL;DR: "
+            f"{len(bad_h3_names)} outline-label H3(s) in {nav_section}: "
             f"{', '.join(bad_h3_names)} — story-beat H3s name what the "
             "reader is about to learn, not the genre of content"
         )
@@ -2462,20 +3115,20 @@ def check_details_narrative_flow(body: str) -> CheckResult:
     dumps = [n for n in runs if n > 2]
     if dumps:
         findings.append(
-            f"{len(dumps)} run(s) of >2 consecutive figures in TL;DR "
+            f"{len(dumps)} run(s) of >2 consecutive figures in {nav_section} "
             "with no prose between — likely figure-dump. "
             "Add setup + read paragraphs around each figure."
         )
 
     if findings:
         return CheckResult(
-            "TL;DR narrative flow",
+            label_name,
             True,
             "; ".join(findings),
             is_warn=True,
         )
     return CheckResult(
-        "TL;DR narrative flow",
+        label_name,
         True,
         "no mechanical narrative-shape regressions detected",
     )
@@ -2835,6 +3488,344 @@ def check_repro_artifact_urls_exist(body: str) -> CheckResult:
     return CheckResult(name, True, detail)
 
 
+# An HF Hub `/tree/<sha>/<path>` or `/blob/<sha>/<path>` URL pinned to a hex
+# revision. Both dataset repos (`huggingface.co/datasets/<owner>/<repo>/...`)
+# and model/space repos (`huggingface.co/<owner>/<repo>/...`) are matched.
+# The `<sha>` group is restricted to a 7-40 char hex literal so a moving ref
+# (`/tree/main`) is out of scope — its existence is undecidable at any point
+# in time and check 8 already FAILs an unpinned HF URL on shape. `<path>` is
+# optional (a bare `/tree/<sha>` repo-root link probes the revision itself).
+# The `(?:datasets|spaces)/` prefix is captured so the right `repo_type` is
+# passed to `huggingface_hub.list_repo_files`.
+_HF_HUB_TREE_BLOB_URL_RE = re.compile(
+    r"^https?://huggingface\.co/"
+    r"(?:(?P<kind>datasets|spaces)/)?"
+    r"(?P<owner>[^/]+)/(?P<repo>[^/]+)"
+    r"/(?:tree|blob)/(?P<sha>[0-9a-fA-F]{7,40})"
+    r"(?:/(?P<path>[^?#]*))?"
+)
+
+
+def _gather_hf_pinned_urls(body: str) -> list[tuple[str, str, str, str, str]]:
+    """Collect HF Hub revision-pinned `/tree/<sha>/<path>` and
+    `/blob/<sha>/<path>` URLs from the WHOLE body (check 23). HF artifact
+    links live in `## Reproducibility` (the `**Artifacts:**` model/dataset
+    rows), in `## Data` (the `### Trained on` / `### Generated` complete-data
+    pointers), and in `## TL;DR` / `## Findings` (the cherry-picked-completion
+    "full data at ..." links), so the scan is body-wide, not section-scoped.
+
+    Fenced code blocks are stripped first so a URL shown inside a ``` ... ```
+    example is illustrative, never probed. Returns order-preserving,
+    deduplicated `(repo_id, repo_type, sha, path_prefix, raw_url)` tuples —
+    at most one Hub call per unique (repo_id, sha, path_prefix). `repo_type`
+    is one of ``"dataset"`` / ``"space"`` / ``"model"`` for the
+    `huggingface_hub.list_repo_files(..., repo_type=...)` call.
+    """
+    kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
+    out: list[tuple[str, str, str, str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for token in _REPRO_URL_TOKEN_RE.findall(_strip_fenced_blocks(body)):
+        url = token.rstrip(".,;:!?")
+        m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
+        if m is None:
+            continue
+        repo_id = f"{m.group('owner')}/{m.group('repo')}"
+        repo_type = kind_to_type[m.group("kind")]
+        sha = m.group("sha")
+        path_prefix = (m.group("path") or "").rstrip("/")
+        key = (repo_id, sha, path_prefix)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append((repo_id, repo_type, sha, path_prefix, url))
+    return out
+
+
+def _hf_url_existence(repo_id: str, repo_type: str, sha: str, path_prefix: str) -> tuple[str, str]:
+    """Existence probe for one HF Hub revision-pinned URL (check 23).
+
+    Returns ``(verdict, note)`` with verdict one of ``'pass'`` / ``'fail'``
+    (the path resolves to ZERO files at the cited revision — a dead pin) /
+    ``'skip'`` (indeterminate — surfaced as an `unverified` note on the PASS
+    line, never a FAIL, so offline / unauthenticated runs don't block).
+
+    Fail-soft is mandatory: the probe SKIPs (never FAILs) when
+    ``EPM_VERIFY_BODY_NO_HF=1`` is set (the suite-wide offline fence in
+    ``tests/conftest.py``), when ``huggingface_hub`` is not importable, or
+    when the Hub call raises any network / auth / unexpected error. Only a
+    SUCCESSFUL listing that returns zero matching files — or a definitive
+    repository/revision-not-found — is a FAIL.
+    """
+    if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1":
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF probe fenced)"
+    try:
+        import huggingface_hub  # local import — optional dependency
+        from huggingface_hub.utils import (
+            EntryNotFoundError,
+            RepositoryNotFoundError,
+            RevisionNotFoundError,
+        )
+    except ImportError:
+        return "skip", f"`{repo_id}@{sha[:8]}` (huggingface_hub unavailable)"
+    try:
+        files = huggingface_hub.list_repo_files(repo_id, repo_type=repo_type, revision=sha)
+    except (RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError) as exc:
+        return (
+            "fail",
+            f"HF URL dead revision pin — `{repo_id}` has no revision `{sha[:8]}` "
+            f"({type(exc).__name__})",
+        )
+    except Exception as exc:
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF list_repo_files failed: {exc})"
+    if not path_prefix:
+        # A bare `/tree/<sha>` repo-root link: a successful listing means the
+        # revision exists, which is all such a link asserts.
+        return "pass", ""
+    needle = path_prefix.rstrip("/")
+    matching = [f for f in files if f == needle or f.startswith(needle + "/")]
+    if not matching:
+        return (
+            "fail",
+            f"HF URL dead revision pin — `{needle}` resolves to 0 files at `{repo_id}@{sha[:8]}`",
+        )
+    return "pass", ""
+
+
+def check_hf_url_resolves(body: str) -> CheckResult:
+    """Check 23: every HF Hub revision-pinned `/tree/<sha>/<path>` or
+    `/blob/<sha>/<path>` URL in the body must resolve to ≥1 file at the
+    cited revision.
+
+    Extends the #507 existence-protection class (check 4b for inline
+    figures, check 8b for same-repo Reproducibility links) to HF Hub
+    artifact links, which check 8 deliberately left shape-checked only
+    ("existence is not decidable from the local object DB"). It IS decidable
+    via the Hub API: `huggingface_hub.list_repo_files(repo_id, revision=<sha>)`
+    lists the files present at a revision, so a path pinned to a revision
+    that predates the upload — resolving to ZERO files — is caught
+    mechanically. Incident task #537: the `## Reproducibility` `**Artifacts:**`
+    line pinned the "415 bakeoff intermediates" link to revision `db3662ae`
+    (the main-grid revision, predating the bakeoff round entirely), where the
+    path resolves to 0 files; a reader — or a downstream reuse-premise miner
+    — clicking it gets nothing. The same dead-pin class slips through every
+    other check (the URL is shape-valid, sha-pinned, and on a real repo).
+
+    The scan is body-wide (HF links live in `## Reproducibility`, `## Data`,
+    and the cherry-picked-completion prose under `## TL;DR` / `## Findings`)
+    and fence-stripped (a URL inside a ``` example is illustrative).
+    Moving refs (`/tree/main`) are out of scope — check 8 FAILs those on
+    shape; only hex-pinned revisions are probed.
+
+    Fail-soft (same semantics as check 8b): a definitive zero-file /
+    no-such-revision result is a FAIL; everything indeterminate — the
+    `EPM_VERIFY_BODY_NO_HF=1` offline fence (set suite-wide by
+    `tests/conftest.py`), a missing `huggingface_hub`, or any network /
+    auth error — surfaces as an `unverified` note on the PASS line, never a
+    FAIL, so offline and unauthenticated runs don't block.
+    """
+    name = "HF URL pins resolve at the cited revision"
+    urls = _gather_hf_pinned_urls(body)
+    if not urls:
+        return CheckResult(name, True, "no HF Hub revision-pinned URLs to check")
+    bad: list[str] = []
+    unverified: list[str] = []
+    for repo_id, repo_type, sha, path_prefix, _raw in urls:
+        verdict, note = _hf_url_existence(repo_id, repo_type, sha, path_prefix)
+        if verdict == "fail":
+            bad.append(note)
+        elif verdict == "skip":
+            unverified.append(note)
+    if bad:
+        return CheckResult(name, False, "; ".join(bad))
+    detail = f"{len(urls)} HF URL(s)"
+    if unverified:
+        detail += f"; {len(unverified)} unverified (existence not confirmed): " + "; ".join(
+            unverified
+        )
+    return CheckResult(name, True, detail)
+
+
+# Reproducibility per-figure commit claim — `` `<basename>` at commit `<sha>` ``
+# or the shorter `` `<basename>` at `<sha>` `` form the analyzer's `**Figures:**`
+# bullet uses (worked example #537). `<basename>` is the figure filename WITHOUT
+# the `.png` / `.pdf` extension (the analyzer keys claims by stem). The sha is
+# 7-40 hex chars. Backtick-anchored on both the basename and the sha so prose
+# "the figure at commit abc" without backticks never matches.
+_REPRO_FIGURE_SHA_RE = re.compile(
+    r"`(?P<name>[\w.\-/]+?)`\s+at\s+(?:commit\s+)?`(?P<sha>[0-9a-fA-F]{7,40})`"
+)
+# Catch-all default: `` all others at `<sha>` `` / `` everything else at commit `<sha>` ``
+# the analyzer appends to the `**Figures:**` bullet so it need not enumerate
+# every figure (worked example #537: "... all others at `bdb0ae0...`").
+_REPRO_FIGURE_DEFAULT_SHA_RE = re.compile(
+    r"\b(?:all\s+others|everything\s+else|the\s+rest|remaining)\s+at\s+"
+    r"(?:commit\s+)?`(?P<sha>[0-9a-fA-F]{7,40})`",
+    re.IGNORECASE,
+)
+# Start of the analyzer's figures bullet inside `## Reproducibility` — a list
+# item whose label is `Figures` (optionally bold / parenthesized / dir-linked):
+# `- Figures (PNG + PDF ...): ...`, `- **Figures:** ...`, `- Figures: [...]`.
+# The scan for per-figure sha claims is SCOPED to this bullet's text so an
+# incidental `` `main` at `<sha>` `` branch-merge note elsewhere in
+# `## Reproducibility` (e.g. the `**Context:**` follow-up-lineage bullet,
+# incident #480) never trips the figure-claim regex.
+_REPRO_FIGURES_BULLET_RE = re.compile(r"^[ \t]*[-*]\s+\*{0,2}Figures\b", re.IGNORECASE)
+
+
+def _figures_bullet_text(repro_cleaned: str) -> str:
+    """Return the text of the `- Figures ...` bullet(s) inside a
+    fence-stripped `## Reproducibility` section, or '' if there is none.
+
+    A markdown list item runs from its `- ` marker until the next top-level
+    list item (`- ` / `* ` at the same indent) or a blank line that is NOT
+    followed by an indented continuation. Keeping the scan inside this bullet
+    is what stops the figure-sha claim regex from matching unrelated
+    `` `name` at `sha` `` prose elsewhere in Reproducibility (incident #480:
+    `` merged to `main` at `<sha>` `` in the Context bullet)."""
+    lines = repro_cleaned.splitlines()
+    chunks: list[str] = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        if _REPRO_FIGURES_BULLET_RE.match(lines[i]):
+            bullet = [lines[i]]
+            i += 1
+            # Consume continuation lines: indented text or non-empty,
+            # non-list-marker lines belonging to the same bullet. Stop at the
+            # next top-level list marker or a blank line.
+            while i < n:
+                ln = lines[i]
+                if ln.strip() == "":
+                    break
+                if re.match(r"^[ \t]*[-*]\s", ln):
+                    break
+                bullet.append(ln)
+                i += 1
+            chunks.append("\n".join(bullet))
+        else:
+            i += 1
+    return "\n".join(chunks)
+
+
+def _shas_compatible(a: str, b: str) -> bool:
+    """True when two hex SHA strings refer to the same commit allowing for
+    abbreviation — one is a case-insensitive prefix of the other. The
+    Reproducibility claim is sometimes abbreviated (7-12 chars) while the
+    inline raw-GitHub URL always carries the full 40-char sha, so an exact
+    string compare would false-FAIL a correctly-pinned abbreviated claim."""
+    a, b = a.lower(), b.lower()
+    return a.startswith(b) or b.startswith(a)
+
+
+def check_figure_url_sha_matches_repro(body: str) -> CheckResult:
+    """Check 22: each inline figure URL's commit SHA must match the SHA the
+    `## Reproducibility` `**Figures:**` bullet pins that figure to.
+
+    A clean-result inlines its figures as SHA-pinned raw-GitHub URLs
+    (`.../<url_sha>/figures/issue_<N>/<basename>.png`) and SEPARATELY records
+    the commit each figure was pinned at in the `## Reproducibility`
+    `**Figures:**` bullet (`` `<basename>` at commit `<sha>` ``, with an
+    `` all others at `<sha>` `` catch-all). Across follow-up rounds those two
+    SHAs can drift: a figure is regenerated at a new commit, the inline URL
+    is updated, but the Reproducibility claim still names the old commit (or
+    vice versa). The image still renders (check 4b probes the URL's OWN sha
+    for existence) and every other check PASSes, so the body ships with the
+    inline image pointing at a different commit than `## Reproducibility`
+    claims — a recurring, mechanizable defect (worked example #537's
+    `predictor_bakeoff_complete_null`: inline `5ad30c2…` vs Reproducibility
+    `c539920…`, caught by hand at round-3 interp-critique).
+
+    This is a SHAPE-CONSISTENCY check, not an existence probe — it compares
+    the two SHAs the body already carries; it never touches git or the
+    network. Matching:
+
+    - For each inline figure URL with a 7-40-hex `/<sha>/figures/.../<file>`
+      component, take `<basename>` = `<file>` minus its extension.
+    - If `## Reproducibility` pins that basename explicitly
+      (`` `<basename>` at [commit] `<sha>` ``), the URL sha must be
+      prefix-compatible with the claimed sha (one abbreviation of the other).
+    - Else if `## Reproducibility` carries a `` all others at `<sha>` ``
+      default, the URL sha must be prefix-compatible with the default.
+    - Else (no per-figure claim AND no default) the figure is NOT
+      enumerated in Reproducibility — SKIP it (never a FAIL): a body may
+      legitimately omit some figures from the `**Figures:**` bullet, and
+      this check only screens claims the body actually makes.
+
+    Fenced code blocks in `## Reproducibility` are stripped before scanning
+    the claims so a sha shown inside an illustrative ``` ... ``` example is
+    ignored. NO-OP PASS when the body has no inline figure URLs, no
+    Reproducibility section, or no figure-sha claims at all.
+    """
+    name = "figure URL sha matches Reproducibility"
+    repro = section_text(body, "Reproducibility")
+    if repro is None:
+        # check_repro_subgroups / check_repro_url_permanence already FAIL on
+        # a missing Reproducibility section — don't double-report.
+        return CheckResult(name, True, "no `## Reproducibility` section — other checks will report")
+    cleaned_repro = _strip_fenced_blocks(repro)
+    # Scope the claim scan to the analyzer's `- Figures ...` bullet so an
+    # incidental `` `name` at `sha` `` elsewhere in `## Reproducibility`
+    # (a branch-merge note in the Context bullet, incident #480) is never
+    # read as a figure-commit claim.
+    figures_text = _figures_bullet_text(cleaned_repro)
+    # Build the basename -> claimed-sha map and find the catch-all default.
+    claimed: dict[str, str] = {}
+    for m in _REPRO_FIGURE_SHA_RE.finditer(figures_text):
+        nm = m.group("name")
+        # Key by the bare stem so `figures/issue_537/foo.png`, `foo.png`,
+        # and `foo` in the claim all resolve to `foo` (the inline-URL key).
+        stem = nm.rsplit("/", 1)[-1]
+        if "." in stem:
+            stem = stem.rsplit(".", 1)[0]
+        # First explicit claim for a basename wins (defensive; duplicates
+        # would themselves be a body bug a human should fix).
+        claimed.setdefault(stem, m.group("sha"))
+    default_match = _REPRO_FIGURE_DEFAULT_SHA_RE.search(figures_text)
+    default_sha = default_match.group("sha") if default_match else None
+
+    if not claimed and default_sha is None:
+        return CheckResult(
+            name, True, "no per-figure commit claim in `## Reproducibility` `**Figures:**`"
+        )
+
+    fails: list[str] = []
+    checked = 0
+    for url in _gather_figure_image_urls(body):
+        url = url.strip().split(None, 1)[0] if url.strip() else ""
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None:
+            continue
+        url_sha = m.group("sha")
+        path = m.group("path")
+        basename = path.rsplit("/", 1)[-1]
+        if "." in basename:
+            basename = basename.rsplit(".", 1)[0]
+        claim_sha = claimed.get(basename, default_sha)
+        if claim_sha is None:
+            # Figure not enumerated in Reproducibility — out of scope.
+            continue
+        checked += 1
+        if not _shas_compatible(url_sha, claim_sha):
+            source = "explicit claim" if basename in claimed else "`all others` default"
+            fails.append(
+                f"`{basename}`: inline URL sha `{url_sha[:8]}` vs Reproducibility "
+                f"{source} sha `{claim_sha[:8]}`"
+            )
+    if fails:
+        return CheckResult(
+            name,
+            False,
+            f"{len(fails)} figure(s) with an inline-URL / Reproducibility sha mismatch — "
+            "update the `**Figures:**` bullet or the inline URL so both pin the same "
+            "commit: " + "; ".join(fails),
+        )
+    if checked == 0:
+        return CheckResult(
+            name, True, "no inline figure URL matched a Reproducibility figure-sha claim"
+        )
+    return CheckResult(name, True, f"{checked} figure URL sha(s) match their Reproducibility claim")
+
+
 def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
     """Lens 14 — mechanical concerns audit (binding-concerns contract,
     composed onto the 2-content-section clean-result spec on 2026-05-31
@@ -2906,29 +3897,49 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
             f"no open binding concerns (read {len(events)} concern events)",
         )
 
-    # Acknowledgement mechanism 1: any `### <H3>` body inside `## TL;DR`
-    # (the 2-content-section spec folds methodology corrections into
-    # result H3s — scan them all).
-    tldr_body = section_text(body, "TL;DR") or ""
+    v3 = is_v3(body)
+
+    # Acknowledgement mechanism 1: the result-narrative surface.
+    #  - v2 / legacy: any `### <H3>` body inside `## TL;DR` (the
+    #    2-content-section spec folds methodology corrections into result
+    #    H3s).
+    #  - v3: any `### <finding>` body inside `## Findings` PLUS the
+    #    `## Takeaways` bullets (the v3 binding-concern surfaces — a
+    #    methodology correction folds into a finding's read prose, and a
+    #    binding caveat is named in Takeaways).
+    if v3:
+        ack_parts = [
+            section_text(body, "Takeaways") or "",
+            section_text(body, "Findings") or "",
+        ]
+        ack_source = "\n\n".join(ack_parts)
+    else:
+        ack_source = section_text(body, "TL;DR") or ""
     h3_bodies: list[str] = []
     for h3_match in re.finditer(
         r"^###\s+.+?$(.*?)(?=^###\s|\Z)",
-        tldr_body,
+        ack_source,
         re.MULTILINE | re.DOTALL,
     ):
         h3_bodies.append(h3_match.group(1))
-    tldr_h3_text = "\n".join(h3_bodies)
+    # For v3, the Takeaways bullets carry no `### ` heading, so also fold
+    # the raw ack_source text in (covers Takeaways bullets + any
+    # pre-heading prose).
+    tldr_h3_text = "\n".join(h3_bodies) + ("\n" + ack_source if v3 else "")
 
-    # Acknowledgement mechanism 2: the `Confidence:` rationale paragraph
-    # (lives in `## Reproducibility` under the 2-content-section spec,
-    # but scan the whole body for robustness — the verifier already
-    # treats Confidence: as a section-agnostic anchor).
-    conf_match = re.search(
-        r"^Confidence:\s.*?(?=\n\n|\Z)",
-        body,
-        re.MULTILINE | re.DOTALL,
-    )
-    conf_body = conf_match.group(0) if conf_match else ""
+    # Acknowledgement mechanism 2: the `Confidence:` rationale paragraph.
+    # RETIRED for v3 bodies (confidence lives in the H1 title tag only —
+    # there is no Confidence paragraph). For v2 / legacy it lives in
+    # `## Reproducibility`; scan the whole body for robustness.
+    if v3:
+        conf_body = ""
+    else:
+        conf_match = re.search(
+            r"^Confidence:\s.*?(?=\n\n|\Z)",
+            body,
+            re.MULTILINE | re.DOTALL,
+        )
+        conf_body = conf_match.group(0) if conf_match else ""
 
     # Acknowledgement mechanism 3: explicit deferral HTML comment.
     deferral_re = re.compile(r"<!--\s*concern-deferred:\s*([a-z0-9][a-z0-9-]{1,79})\s*-->")
@@ -2944,19 +3955,749 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
         unaddressed.append(f"{cid} ({ev.get('severity', 'unknown')})")
 
     if unaddressed:
+        ack_hint = (
+            "a `## Findings` `### <finding>` read paragraph, a `## Takeaways` bullet, "
+            if v3
+            else "a `## TL;DR` result H3, the `Confidence:` sentence, "
+        )
         return CheckResult(
             "concerns audit (Lens 14)",
             False,
             f"{len(unaddressed)} open binding concern(s) unaddressed in body: "
-            f"{', '.join(unaddressed)}. Acknowledge each in a `## TL;DR` result "
-            "H3, the `Confidence:` sentence, or a `<!-- concern-deferred: <id> -->` "
-            "HTML marker. See `.claude/agents/clean-result-critic.md` § Lens 14 "
+            f"{', '.join(unaddressed)}. Acknowledge each in {ack_hint}"
+            "or a `<!-- concern-deferred: <id> -->` HTML marker. See "
+            "`.claude/agents/clean-result-critic.md` § Lens 14 "
             "and `workflow.yaml § concerns_protocol`.",
         )
     return CheckResult(
         "concerns audit (Lens 14)",
         True,
         f"all {len(open_binding)} open binding concern(s) acknowledged in body",
+    )
+
+
+# ─── v3 Data-section checks (18 / 19) ────────────────────────────────────────
+
+# An explicit `n/a — <reason>` line that a `## Data` subsection may use
+# in place of a pinned link (e.g. `### Trained on` for an eval-only task).
+# Accepts en-dash, em-dash, or ASCII hyphen and ≥3 chars of reason.
+_DATA_NA_RE = re.compile(r"(?im)^\s*>?\s*n/?a\s*[—–-]\s*\S.{2,}")  # noqa: RUF001
+
+# Any pinned absolute artifact link inside a `## Data` subsection that
+# points at the COMPLETE artifact: an `https://` URL pinned to a ref (HF
+# Hub `/tree|/blob/<sha>` or `@<sha>`, WandB `/runs/<id>`, GitHub
+# `/blob|/tree/<sha>`, raw.githubusercontent `<sha>`). Reuses the
+# permanence shape the Reproducibility checks already trust — here we
+# only need "is there ≥1 pinned link", not full validation.
+_PINNED_LINK_RE = re.compile(
+    r"https?://[^\s)]*"
+    r"(?:/tree/[0-9a-fA-F]{7,40}|/blob/[0-9a-fA-F]{7,40}|@[0-9a-fA-F]{7,40}"
+    r"|raw\.githubusercontent\.com/[^\s)]+/[0-9a-fA-F]{7,40}/"
+    r"|wandb\.ai/[^\s)]+/runs/[^\s)]+)"
+)
+
+# Subset-disclosure forms accepted by check 19 — the Datasheets
+# sample-to-population field. Extends the checks 10/11 cherry-picked
+# pattern with the harmful-content sanitized form so v3 `## Data`
+# example blocks built from EM / bad-medical-advice corpora pass.
+_SUBSET_DISCLOSURE_RE = re.compile(
+    r"\b(?:cherry[-\s]?picked|random[-\s]?sample|drawn at random|random draw|"
+    r"first \d+ of \d+|\d+ of \d+ rows|\d+ of [\d,]+ rows|"
+    r"\d+\s+(?:examples?|sample[s]?|example rows?)|"
+    # harmful-content carve-out — the sanitized excerpt form
+    r"sanitized for context hygiene|harmful-content row|truncated — harmful)",
+    re.IGNORECASE,
+)
+
+# Project-internal condition / cell / plan-tag codes that
+# `audit_clean_results_body_discipline.py` flags as body-discipline
+# anti-patterns. KEPT IN SYNC with that script's `condition_labels` +
+# `cell_tags` PATTERNS entries (verbatim source). The audit EXEMPTS
+# example blocks inside `## Data` only when they are wrapped in a fenced
+# code block (stripped globally) or a `<details>` block
+# (`strip_data_example_blocks`); a verbatim example row placed as a BARE
+# inline GFM table is NOT exempt, so a `C1` / `H2` / `BS_E0` cell trips
+# the audit's condition-code scan with a spurious FAIL at /issue Step
+# 9a-bis and no signal telling the author to wrap it. Check 19b (WARN
+# only) fires at authoring time precisely when such a cell exists in an
+# unwrapped `## Data` table, nudging the author to wrap the row in
+# `<details>` or a fenced block BEFORE the confusing downstream audit
+# FAIL. Scoped to a cell that WOULD match the audit (not "any unwrapped
+# table") so a benign composition / row-count summary table never WARNs.
+_DATA_CONDITION_CODE_RE = re.compile(
+    # condition_labels: C1/C2, H1/H2/H3, P1/P2/P3 (optional prime)
+    r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
+    r"hypothesis|test|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])"
+    # cell_tags: BS_E*, Z_*, G*, Method A/B, M1-paired
+    r"|\bBS_E[0-9A-Za-z_]*|\bZ_[a-zA-Z_]+|\b[Gg][0-9]+[a-c]?\b(?=\s|:|\.|,|$)"
+    r"|\bMethod\s+[AB]\b|\b[Mm][1-9]\b(?=\s+(?:cosine|cell|mean|extraction|"
+    r"method|sub-experiment))"
+)
+
+# A SINGLE-column GFM delimiter row (`|---|` / `| :--- |` / `---`).
+# `_GFM_DELIM_RE` requires ≥2 columns; this catches the one-column form so
+# a bare single-column `## Data` table (which the audit's line-based scan
+# WOULD FAIL on) is still recognized by check 19b. Kept separate from
+# `_GFM_DELIM_RE` to avoid loosening that constant for its other callers.
+_SINGLE_COL_DELIM_RE = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*\|?\s*$")
+
+
+def _iter_unwrapped_data_tables(data: str) -> list[str]:
+    """Return the cell text of every GFM table inside `## Data` that is
+    NOT wrapped in a `<details>` block and NOT inside a fenced code block.
+
+    The v3 spec carries verbatim example rows in `## Data` as fenced OR
+    `<details>` table blocks; `audit_clean_results_body_discipline.py`
+    exempts exactly those two forms from its condition-code scan. A bare
+    inline GFM table (no fence, no `<details>`) is the off-spec form the
+    audit will flag. This helper isolates that bare-table cell text by
+    stripping the two exempt forms first (mirroring the audit's
+    `strip_code` + `strip_data_example_blocks`), then collecting the
+    cells of any remaining table — a header row + a delimiter row, where
+    the delimiter may be multi-column (`|---|---|`) OR single-column
+    (`|---|`), so single-column data tables are not a blind spot.
+    """
+    # Strip `<details>...</details>` blocks (the wrapped example form).
+    stripped = _DETAILS_BLOCK_RE.sub("", data)
+    # Walk lines, dropping fenced code blocks, collecting GFM-table cell
+    # text from what remains. A table is a contiguous run of `|`-rows that
+    # contains at least one delimiter row. `_GFM_DELIM_RE` requires ≥2
+    # columns; the audit's condition-code scan is line-based with NO
+    # column requirement, so a SINGLE-column data table (`| C1 |` /
+    # `|---|` / ...) would FAIL the audit while escaping a ≥2-col-only
+    # detector. `_SINGLE_COL_DELIM_RE` adds the lone-column delimiter form
+    # so the WARN/audit sync holds at both column counts.
+    cells: list[str] = []
+    in_fence = False
+    run: list[str] = []
+    has_delim = False
+
+    def _is_delim(line: str) -> bool:
+        return bool(_GFM_DELIM_RE.match(line) or _SINGLE_COL_DELIM_RE.match(line))
+
+    def _flush() -> None:
+        nonlocal has_delim
+        if has_delim:
+            for row in run:
+                if _is_delim(row):
+                    continue
+                for cell in row.strip().strip("|").split("|"):
+                    cells.append(cell.strip())
+        run.clear()
+        has_delim = False
+
+    for line in stripped.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            _flush()
+            continue
+        if in_fence:
+            continue
+        if s.startswith("|"):
+            run.append(line)
+            if _is_delim(line):
+                has_delim = True
+        else:
+            _flush()
+    _flush()
+    return cells
+
+
+def check_data_unwrapped_example_table(body: str) -> CheckResult:
+    """Check 19b (v3 only, WARN): a verbatim example row placed in
+    `## Data` as a BARE inline GFM table — not wrapped in `<details>`
+    and not in a fenced code block — that carries a project-internal
+    condition / cell code (`C1`, `H2`, `BS_E0`, `Method A`, …) will trip
+    `audit_clean_results_body_discipline.py`'s condition-code scan with a
+    spurious FAIL at /issue Step 9a-bis (the audit exempts the fenced and
+    `<details>` example forms, but not the bare table). This WARN fires at
+    authoring time so the author wraps the row in `<details>` or a fenced
+    block BEFORE the confusing downstream audit FAIL.
+
+    WARN only — never FAIL. Scoped to a table cell that WOULD match the
+    audit's condition-code patterns (not "any unwrapped table") so a
+    benign composition / row-count summary table does not WARN. PASSes
+    vacuously on v2 / legacy bodies.
+    """
+    label = "Data unwrapped example table (v3)"
+    if not is_v3(body):
+        return CheckResult(label, True, "skipped — not a v3 body")
+    data = section_text(body, "Data")
+    if data is None:
+        return CheckResult(label, True, "## Data missing — check 2 will report")
+    cells = _iter_unwrapped_data_tables(data)
+    hits = sorted({m.group(0) for c in cells for m in _DATA_CONDITION_CODE_RE.finditer(c)})
+    if hits:
+        preview = ", ".join(f"`{h}`" for h in hits[:4]) + (" …" if len(hits) > 4 else "")
+        return CheckResult(
+            label,
+            True,
+            f"a bare inline `## Data` table carries condition-code cell(s) ({preview}) — "
+            "wrap the verbatim example rows in a `<details>` block or a fenced code block, "
+            "else the body-discipline audit (Step 9a-bis) FAILs on them as project-internal "
+            "condition codes",
+            is_warn=True,
+        )
+    return CheckResult(label, True, "no unwrapped `## Data` example table with condition codes")
+
+
+def check_data_shape(body: str) -> CheckResult:
+    """Check 18 (v3 only): `## Data` carries `### Trained on` /
+    `### Evaluated with` / `### Generated` in order, and each block
+    contains ≥1 pinned link to the complete artifact OR an explicit
+    `n/a — <reason>` line.
+
+    PASSes vacuously on v2 / legacy bodies (no v3 sentinel).
+    """
+    label = "Data section shape (v3)"
+    if not is_v3(body):
+        return CheckResult(label, True, "skipped — not a v3 body")
+    data = section_text(body, "Data")
+    if data is None:
+        # check_required_sections already FAILs on a missing `## Data`;
+        # don't double-report.
+        return CheckResult(label, True, "## Data missing — check 2 will report")
+    h3s = _collect_tldr_h3_names(data)
+    h3_heads = [
+        re.split(r"\s+[–—:]\s+", re.sub(r"\s+", " ", name).strip(), maxsplit=1)[0].casefold()  # noqa: RUF001
+        for name, _line in h3s
+    ]
+    required = [s.casefold() for s in V3_DATA_SUBSECTIONS]
+    missing = [V3_DATA_SUBSECTIONS[i] for i, r in enumerate(required) if r not in h3_heads]
+    if missing:
+        return CheckResult(
+            label,
+            False,
+            f"## Data is missing required subsection(s): "
+            f"{', '.join('### ' + m for m in missing)}. The v3 shape requires "
+            f"`### Trained on` → `### Evaluated with` → `### Generated` in order.",
+        )
+    # Order check on the subset of H3s that are required subsections.
+    seq = [h for h in h3_heads if h in required]
+    if seq != required:
+        return CheckResult(
+            label,
+            False,
+            f"## Data subsections out of order — got {seq}, expected {required} "
+            "(`### Trained on` → `### Evaluated with` → `### Generated`).",
+        )
+    # Per-subsection: ≥1 pinned link OR an explicit `n/a — <reason>` line.
+    no_link: list[str] = []
+    for sub in V3_DATA_SUBSECTIONS:
+        sub_text = _h3_subsection_text(data, sub)
+        if sub_text is None:
+            # Already handled by the missing/order checks above; defensive.
+            no_link.append(sub)
+            continue
+        if _PINNED_LINK_RE.search(sub_text) or _DATA_NA_RE.search(sub_text):
+            continue
+        no_link.append(sub)
+    if no_link:
+        return CheckResult(
+            label,
+            False,
+            f"## Data subsection(s) {', '.join('### ' + s for s in no_link)} carry "
+            "no pinned link to the complete artifact and no explicit `n/a — <reason>` "
+            "line. Each block must link the full artifact (HF Hub `/tree/<sha>`, "
+            "WandB `/runs/<id>`, GitHub `/blob/<sha>`) or state `n/a — <reason>`.",
+        )
+    return CheckResult(
+        label,
+        True,
+        "## Data has Trained on / Evaluated with / Generated in order, each with a "
+        "complete-artifact link or `n/a — <reason>`",
+    )
+
+
+def check_data_subset_disclosure(body: str) -> CheckResult:
+    """Check 19 (v3 only): every example block (fenced OR `<details>`)
+    inside `## Data` is immediately preceded by a subset-disclosure line
+    — `K of M rows, random sample` / `cherry-picked for illustration` /
+    the harmful-content sanitized form. Extends the checks-10/11 pattern
+    to `## Data`.
+
+    PASSes vacuously on v2 / legacy bodies (no v3 sentinel).
+    """
+    label = "Data subset-disclosure (v3)"
+    if not is_v3(body):
+        return CheckResult(label, True, "skipped — not a v3 body")
+    data = section_text(body, "Data")
+    if data is None:
+        return CheckResult(label, True, "## Data missing — check 2 will report")
+    samples = _iter_sample_blocks(data)
+    if not samples:
+        return CheckResult(label, True, "no example blocks in `## Data` (fenced or `<details>`)")
+    flagged: list[str] = []
+    for start, _, content in samples:
+        prelude = _prelude_window(data, start)
+        if _SUBSET_DISCLOSURE_RE.search(prelude) or _SUBSET_DISCLOSURE_RE.search(content):
+            continue
+        first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
+        flagged.append(first_line)
+    if flagged:
+        preview = "; ".join(f"'{x}'" for x in flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            False,
+            f"{len(flagged)} of {len(samples)} `## Data` example block(s) lack a "
+            f"subset-disclosure line (`K of M rows, random sample` / `cherry-picked "
+            f"for illustration` / sanitized-harmful form): {preview}",
+        )
+    return CheckResult(label, True, f"{len(samples)} `## Data` example block(s) disclosed")
+
+
+# ─── v3 word-cap check (20) ──────────────────────────────────────────────────
+
+
+def _prose_words(text: str) -> int:
+    """Count words in `text` AFTER stripping the surfaces the caps
+    deliberately exclude: fenced code blocks, `<details>...</details>`
+    bodies, GFM table rows (lines starting with `|`), and blockquote
+    caption lines (lines starting with `>`). What remains is the
+    scannable prose the caps govern.
+    """
+    # Strip <details> blocks first (they may contain tables / fences).
+    text = _DETAILS_BLOCK_RE.sub("", text)
+    out_lines: list[str] = []
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if s.startswith("|"):  # GFM table row
+            continue
+        if s.startswith(">"):  # blockquote caption
+            continue
+        out_lines.append(line)
+    prose = "\n".join(out_lines)
+    return len(prose.split())
+
+
+def _count_extra_followup_rounds(body: str) -> int:
+    """Heuristic count of LIVE follow-up rounds beyond the first, read
+    off a `## What I ran` Rounds table (one data row per round). Returns
+    0 when no Rounds table is present (single-round body). Used only to
+    scale the WARN-only total-prose budget."""
+    what = section_text(body, "What I ran")
+    if what is None:
+        return 0
+    # Find a markdown table whose header row mentions "round".
+    data_rows = 0
+    in_round_table = False
+    for line in what.splitlines():
+        s = line.strip()
+        if not s.startswith("|"):
+            in_round_table = False
+            continue
+        if "round" in s.casefold() and not in_round_table:
+            # Header row of a rounds table; the next line should be the
+            # GFM delimiter, then data rows.
+            in_round_table = True
+            continue
+        if in_round_table:
+            if _GFM_DELIM_RE.match(line):
+                continue
+            data_rows += 1
+    return max(0, data_rows - 1)
+
+
+def _count_overlong_takeaways_bullets(takeaways: str) -> int:
+    """Count top-level Takeaways bullets over the per-bullet word cap
+    (fence-aware). Helper for check 20."""
+    in_fence = False
+    over = 0
+    for line in takeaways.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if re.match(r"^[-*]\s+\S", line):
+            wc = len(re.sub(r"^[-*]\s+", "", line.strip()).split())
+            if wc > V3_TAKEAWAYS_BULLET_MAX_WORDS:
+                over += 1
+    return over
+
+
+def _finding_prose_cap_results(findings: str) -> tuple[list[str], list[str]]:
+    """Return (fail_msgs, warn_msgs) for the per-finding prose caps.
+    Each `### <finding>` block's prose (excl. tables / fenced code /
+    `<details>` bodies / captions, via `_prose_words`) is FAILed at the
+    hard cap and WARNed at the soft cap. Helper for check 20."""
+    fails: list[str] = []
+    warns: list[str] = []
+    finding_h3s = _collect_tldr_h3_names(findings)
+    flines = findings.splitlines()
+    for idx, (name, line_no) in enumerate(finding_h3s):
+        end_line = finding_h3s[idx + 1][1] if idx + 1 < len(finding_h3s) else len(flines)
+        block = "\n".join(flines[line_no + 1 : end_line])
+        wc = _prose_words(block)
+        short = name[:48]
+        if wc >= V3_FINDING_PROSE_FAIL_WORDS:
+            fails.append(f"finding '{short}' prose is {wc} words (≥{V3_FINDING_PROSE_FAIL_WORDS})")
+        elif wc > V3_FINDING_PROSE_WARN_WORDS:
+            warns.append(f"finding '{short}' prose is {wc} words (>{V3_FINDING_PROSE_WARN_WORDS})")
+    return fails, warns
+
+
+def _count_overlong_captions(findings: str) -> int:
+    """Count figure captions (consecutive blockquote `>` runs,
+    fence-aware) over the caption word cap. Helper for check 20."""
+    over = 0
+    cap_run: list[str] = []
+
+    def _flush() -> None:
+        nonlocal over
+        if cap_run:
+            txt = " ".join(re.sub(r"^>\s?", "", ln) for ln in cap_run)
+            # Strip bold "Figure." label + italics markers for the count.
+            wc = len(re.sub(r"[*_]", "", txt).split())
+            if wc > V3_FIGURE_CAPTION_MAX_WORDS:
+                over += 1
+
+    in_fence = False
+    for line in findings.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            cap_run = []
+            continue
+        if in_fence:
+            continue
+        if s.startswith(">"):
+            cap_run.append(s)
+        else:
+            _flush()
+            cap_run = []
+    _flush()
+    return over
+
+
+def check_v3_word_caps(body: str) -> CheckResult:
+    """Check 20 (v3 only): the §4 conciseness caps.
+
+    - Per-Takeaways-bullet ≤30 words (WARN).
+    - Per-finding prose ≤120 words WARN / ≥180 words FAIL (excl.
+      caption / fenced code / `<details>` bodies / table rows).
+    - Figure caption ≤60 words (WARN).
+    - Total content prose (Takeaways + What I ran + Findings) ≤800 +
+      250 per live follow-up round beyond the first (WARN-only;
+      calibrated on the four-finding #517 v3 conversion — see the
+      V3_TOTAL_PROSE_BASE_WORDS constant comment).
+
+    The Takeaways 3-6 bullet COUNT is owned by `check_v3_structure`
+    (one authoritative count gate), not duplicated here. A FAIL here
+    fires ONLY on the per-finding ≥180-word hard cap; everything else
+    is WARN. PASSes vacuously on v2 / legacy bodies.
+    """
+    label = "v3 conciseness caps"
+    if not is_v3(body):
+        return CheckResult(label, True, "skipped — not a v3 body")
+
+    warns: list[str] = []
+    fails: list[str] = []
+
+    takeaways = section_text(body, "Takeaways") or ""
+    findings = section_text(body, "Findings") or ""
+
+    # Per-Takeaways-bullet word cap (WARN).
+    over_bullets = _count_overlong_takeaways_bullets(takeaways)
+    if over_bullets:
+        warns.append(
+            f"{over_bullets} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
+        )
+
+    # Per-finding prose caps (WARN at soft, FAIL at hard).
+    f_fails, f_warns = _finding_prose_cap_results(findings)
+    fails.extend(f_fails)
+    warns.extend(f_warns)
+
+    # Figure-caption word cap (WARN).
+    over_captions = _count_overlong_captions(findings)
+    if over_captions:
+        warns.append(
+            f"{over_captions} figure caption(s) exceed {V3_FIGURE_CAPTION_MAX_WORDS} words"
+        )
+
+    # Total content prose (WARN-only), scaled per live follow-up round.
+    extra_rounds = _count_extra_followup_rounds(body)
+    total_budget = V3_TOTAL_PROSE_BASE_WORDS + extra_rounds * V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS
+    total_prose = (
+        _prose_words(takeaways)
+        + _prose_words(section_text(body, "What I ran") or "")
+        + _prose_words(findings)
+    )
+    if total_prose > total_budget:
+        warns.append(
+            f"total content prose is {total_prose} words (budget {total_budget}: "
+            f"{V3_TOTAL_PROSE_BASE_WORDS} + {extra_rounds} x "
+            f"{V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS} per extra round)"
+        )
+
+    if fails:
+        return CheckResult(
+            label,
+            False,
+            "; ".join(fails) + (("; WARN: " + "; ".join(warns)) if warns else ""),
+        )
+    if warns:
+        return CheckResult(label, True, "; ".join(warns), is_warn=True)
+    return CheckResult(label, True, "all v3 conciseness caps satisfied")
+
+
+# ─── v3 body-table ⊆ methodology-doc table check (21) ────────────────────────
+
+
+def _parse_param_table_rows(section: str) -> dict[str, str]:
+    """Parse a `**Parameters:**` two-column markdown table out of a
+    `## Reproducibility` section. Returns {param_key_norm: value_norm}.
+
+    Recognizes the table that follows a `**Parameters:**` boldface label
+    (the first GFM 2-col table after it). Keys/values are normalized:
+    lowercased, collapsed whitespace, backticks stripped. The header row
+    and delimiter row are skipped.
+    """
+    out: dict[str, str] = {}
+    # Find the slice starting at `**Parameters:**`.
+    m = re.search(r"\*\*\s*Parameters\s*:?\s*\*\*", section, re.IGNORECASE)
+    if not m:
+        return out
+    after = section[m.end() :]
+    in_fence = False
+    seen_delim = False
+    for line in after.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if not s.startswith("|"):
+            # A blank line right after the label is fine; a non-table
+            # non-blank line AFTER we've started the table ends it.
+            if seen_delim:
+                break
+            if s == "":
+                continue
+            # A boldface label like `**Artifacts:**` ends the table region.
+            if s.startswith("**"):
+                break
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if _GFM_DELIM_RE.match(line):
+            seen_delim = True
+            continue
+        if len(cells) < 2:
+            continue
+        key = re.sub(r"\s+", " ", cells[0].replace("`", "")).strip().casefold()
+        val = re.sub(r"\s+", " ", cells[1].replace("`", "")).strip().casefold()
+        if not key or key in ("parameter", "param", "name"):
+            continue
+        out[key] = val
+    return out
+
+
+# Markers that mean "this experiment did no model training", so the doc's
+# §2 hyperparameter table is legitimately empty / N/A. Normalized
+# (casefolded, backticks stripped, whitespace collapsed) before matching.
+_NO_TRAINING_DOC_MARKERS = (
+    "n/a — no model training",
+    "n/a - no model training",
+    "n/a — no training",
+    "n/a - no training",
+    "no model training",
+    "no training (",
+    "no training,",
+    "no training.",
+    "kind: analysis",
+    "zero-gpu",
+    "zero gpu",
+)
+
+
+def _methodology_doc_has_no_training_recipe(doc_raw: str) -> bool:
+    """True when the methodology doc's §2 (Hyperparameters / Training
+    recipe) section carries no real hyperparameter table — i.e. it is
+    empty or explicitly marked N/A because the task did no model training
+    (an analysis-only `kind: experiment`).
+
+    Check 21's subset assertion is calibrated against a CANONICAL COMPLETE
+    training-hyperparameter table that the body Parameters table slims
+    from. An analysis-only task has no such table — its body Parameters
+    are analysis-design descriptors (candidate forms, bootstrap B, logit
+    ε, …) written freehand, not slimmed hyperparameters — so the subset
+    premise does not hold and the assertion must PASS-skip instead of
+    false-FAILing. The #489-class misprint guard stays fully active for
+    every task that actually trains (this returns False there).
+
+    Detection isolates the §2 section by its numbered `## 2.` header
+    (canonically `## 2. Hyperparameters`; some analysis-only docs name it
+    `## 2. Training recipe`), then treats it as no-training when EITHER
+    (a) it contains an explicit no-training marker, OR (b) it contains no
+    GFM table delimiter row at all (no hyperparameter table emitted).
+    """
+    # Isolate the §2 section by its numbered `## 2. <name>` header (the H2
+    # name varies — "Hyperparameters" canonically, "Training recipe" in
+    # #644 — so match on the `2.` number prefix, not the section name).
+    m = re.search(r"^##\s*2\.\s.*$", doc_raw, re.MULTILINE)
+    if not m:
+        return False
+    tail = doc_raw[m.end() :]
+    nxt = re.search(r"^##\s", tail, re.MULTILINE)
+    sec2 = tail[: nxt.start()] if nxt else tail
+    norm = re.sub(r"\s+", " ", sec2.replace("`", "")).strip().casefold()
+    if any(marker in norm for marker in _NO_TRAINING_DOC_MARKERS):
+        return True
+    # No table delimiter row anywhere in §2 → no hyperparameter table.
+    return not _GFM_DELIM_RE.search(sec2)
+
+
+def _split_composite_cell(val: str) -> list[str]:
+    """Split a Parameters-cell value into the comma/semicolon-separated
+    sub-values that a one-fact-per-row methodology doc §2 table would
+    list individually.
+
+    The v3 conciseness convention bundles several facts into ONE compact
+    body cell (e.g. ``marker-only loss, lr 5e-6, band-stop [5,12] nat,
+    max_new_tokens 2048``) while the canonical doc §2 table lists each
+    fact on its own row. A whole-cell substring match against the doc
+    therefore false-FAILs the conformant compact form — so before failing
+    we decompose the cell and reconcile each sub-value independently.
+
+    Splitting is BRACKET-AWARE: only top-level (depth-0) commas/semicolons
+    separate sub-values, so a bracketed interval or list that legitimately
+    contains a comma stays intact as one token — e.g. ``[5,12]`` (a marker
+    band-stop / install target band) and ``[42, 137, 256]`` (a seed list)
+    are NOT torn apart. ``[]``, ``()`` and ``{}`` all open/close a level.
+    Empty tokens are dropped.
+    """
+    tokens: list[str] = []
+    buf: list[str] = []
+    depth = 0
+    openers = {"[": "]", "(": ")", "{": "}"}
+    closers = {"]", ")", "}"}
+    for ch in val:
+        if ch in openers:
+            depth += 1
+            buf.append(ch)
+        elif ch in closers:
+            depth = max(0, depth - 1)
+            buf.append(ch)
+        elif ch in (",", ";") and depth == 0:
+            tokens.append("".join(buf).strip())
+            buf = []
+        else:
+            buf.append(ch)
+    tokens.append("".join(buf).strip())
+    return [t for t in tokens if t]
+
+
+def check_body_params_subset_of_doc(
+    body: str, *, methodology_doc_path: Path | None = None
+) -> CheckResult:
+    """Check 21 (v3 only): the load-bearing param rows in the body's
+    `## Reproducibility` Parameters table are a SUBSET of the
+    methodology doc's §2 complete hyperparameter table.
+
+    Two-tier split (plan §3b): the body table slims to the load-bearing
+    subset; the methodology doc §2 is the canonical COMPLETE table.
+    Every body param key+value must appear in the doc table (key match +
+    value substring containment, both normalized).
+
+    Gate-timing: the methodology doc lives on the issue worktree branch
+    pre-merge, so this check is a NO-OP PASS when no doc path is given OR
+    the file does not exist. At gate time the orchestrator passes the
+    worktree path explicitly via ``--methodology-doc``; at promote-time
+    verify (post-merge) the ``--issue`` path in ``main`` opportunistically
+    resolves ``docs/methodology/issue_<N>.md`` on disk, so the check binds
+    fully then without the orchestrator re-passing the flag. PASSes
+    vacuously on v2 / legacy bodies.
+
+    Analysis-only carve-out: when the doc's §2 hyperparameter section is
+    empty / N/A because the task did no model training (see
+    ``_methodology_doc_has_no_training_recipe``), there is no canonical
+    complete hyperparameter table for the body to be a subset OF — the
+    body Parameters are analysis-design descriptors, not slimmed
+    hyperparameters — so the subset assertion PASS-skips rather than
+    false-FAILing (#644).
+    """
+    label = "Body Parameters ⊆ methodology doc §2"
+    if not is_v3(body):
+        return CheckResult(label, True, "skipped — not a v3 body")
+    if methodology_doc_path is None or not methodology_doc_path.exists():
+        return CheckResult(
+            label,
+            True,
+            "skipped — no methodology doc on disk to reconcile against "
+            "(binds at promote-time verify, post-merge)",
+        )
+    repro = section_text(body, "Reproducibility")
+    if repro is None:
+        return CheckResult(label, True, "skipped — no Reproducibility section")
+    body_params = _parse_param_table_rows(repro)
+    if not body_params:
+        return CheckResult(label, True, "skipped — no Parameters table in body")
+    doc_raw = methodology_doc_path.read_text(errors="replace")
+    if _methodology_doc_has_no_training_recipe(doc_raw):
+        return CheckResult(
+            label,
+            True,
+            "skipped — methodology doc §2 has no training-hyperparameter table "
+            "(analysis-only task, no model training); body Parameters are "
+            "analysis-design descriptors, not a slimmed hyperparameter subset",
+        )
+    doc_text = doc_raw.casefold()
+    doc_text = re.sub(r"`", "", re.sub(r"\s+", " ", doc_text))
+    missing: list[str] = []
+    for key, val in body_params.items():
+        # Skip rows whose value is an explicit non-applicable / free-text
+        # marker the doc legitimately need not echo verbatim.
+        if val in ("n/a", "none", "-", "—", "–"):  # noqa: RUF001
+            continue
+        # Key must appear in the doc; AND the value must appear somewhere
+        # in the doc (substring containment on normalized text — the doc
+        # table may carry a Source column / extra formatting around it).
+        if key not in doc_text:
+            missing.append(f"{key} (key absent from doc §2 table)")
+            continue
+        if not val:
+            continue
+        # Whole-cell containment fast-path: a body cell that matches a doc
+        # row verbatim reconciles immediately.
+        if val in doc_text:
+            continue
+        # Compact composite cell (v3 conciseness): the body bundles several
+        # facts into one cell while the doc lists each on its own §2 row, so
+        # the whole-cell string never appears verbatim. Decompose the cell
+        # (bracket-aware) and require each sub-value to appear in the doc;
+        # a genuine misprint still FAILs because the wrong sub-value token
+        # is absent.
+        unmatched = [tok for tok in _split_composite_cell(val) if tok not in doc_text]
+        if unmatched:
+            missing.append(
+                f"{key}={val} (sub-value(s) not found in doc §2 table: {', '.join(unmatched)})"
+            )
+    if missing:
+        preview = "; ".join(missing[:4]) + (
+            f" (+{len(missing) - 4} more)" if len(missing) > 4 else ""
+        )
+        return CheckResult(
+            label,
+            False,
+            f"{len(missing)} body Parameters row(s) not reconciled against the "
+            f"methodology doc §2 complete table: {preview}. The doc §2 table is the "
+            "canonical complete hyperparameter set; every body param key+value must "
+            "appear there.",
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(body_params)} body Parameters row(s) appear in the methodology doc §2 table",
     )
 
 
@@ -2990,6 +4731,13 @@ CHECKS = [
     check_mdx_safe_urls,
     check_repro_committed_claims_exist,
     check_repro_artifact_urls_exist,
+    # v3-gated checks (PASS vacuously on v2 / legacy bodies):
+    check_data_shape,  # check 18
+    check_data_subset_disclosure,  # check 19
+    check_data_unwrapped_example_table,  # check 19b (WARN)
+    check_v3_word_caps,  # check 20
+    check_figure_url_sha_matches_repro,  # check 22
+    check_hf_url_resolves,  # check 23
 ]
 
 
@@ -2999,6 +4747,8 @@ def verify_text(
     source: str = "",
     concerns_path: Path | None = None,
     plan_path: Path | None = None,
+    original_body_path: Path | None = None,
+    methodology_doc_path: Path | None = None,
 ) -> tuple[bool, list[CheckResult]]:
     """Run every clean-result check on ``raw`` body.md text.
 
@@ -3014,6 +4764,20 @@ def verify_text(
     (resolved by ``main()`` for ``--issue <N>`` / a ``--file`` sibling).
     When supplied AND present, check 16 reconciles the Reproducibility
     learning rate against the approved plan; otherwise it skips (PASS).
+
+    ``original_body_path`` is the absolute path to the sibling
+    ``original-body.md`` (resolved by ``main()`` the same way). Check 17
+    uses it to detect a ``## Provenance`` section in the pre-promotion
+    body — recorded origin data that the clean-result body must carry
+    forward in its ``**Context:**`` row.
+
+    ``methodology_doc_path`` is the absolute path to the auto-generated
+    ``docs/methodology/issue_<N>.md`` reference, passed explicitly by
+    the orchestrator at gate time (the doc lives on the issue worktree
+    branch pre-merge, so the verifier cannot resolve it from a sibling).
+    Check 21 (v3 only) reconciles the body's load-bearing Parameters
+    rows against the doc §2 complete table when the doc exists; it is a
+    NO-OP PASS otherwise. May be set via ``--methodology-doc <path>``.
     """
     fm, body = split_frontmatter(raw)
     if LEGACY_SAGAN_CARD_SENTINEL in body:
@@ -3049,6 +4813,15 @@ def verify_text(
     # Check 16 (Reproducibility lr matches plan) needs the sibling
     # plans/plan.md, so it also lives outside the body-only CHECKS list.
     results.append(check_repro_lr_matches_plan(body, plan_path=plan_path))
+    # Check 17 (Reproducibility Context provenance row) needs the
+    # frontmatter (origin_prompt) + the sibling original-body.md, so it
+    # also lives outside the body-only CHECKS list.
+    results.append(check_repro_context_provenance(body, fm, original_body_path=original_body_path))
+    # Check 21 (v3 body Parameters ⊆ methodology doc §2 table) needs the
+    # explicitly-passed methodology doc path, so it also lives outside
+    # the body-only CHECKS list. NO-OP PASS on v2 / legacy bodies and
+    # whenever no doc is supplied (gate-timing — see the check docstring).
+    results.append(check_body_params_subset_of_doc(body, methodology_doc_path=methodology_doc_path))
     overall = all(r.passed for r in results)
     return overall, results
 
@@ -3069,26 +4842,54 @@ def main() -> int:
     grp.add_argument("--issue", type=int, help="task number to verify")
     grp.add_argument("--file", help="path to a body.md to verify")
     grp.add_argument("--body-stdin", action="store_true", help="read body from stdin")
+    parser.add_argument(
+        "--methodology-doc",
+        help=(
+            "path to the auto-generated docs/methodology/issue_<N>.md reference "
+            "(check 21, v3 only). The orchestrator passes the issue-worktree path "
+            "explicitly at gate time, since the doc is not yet on main pre-merge. "
+            "NO-OP PASS when omitted or the file does not exist."
+        ),
+    )
     args = parser.parse_args()
 
     concerns_path: Path | None = None
     plan_path: Path | None = None
+    original_body_path: Path | None = None
+    methodology_doc_path: Path | None = None
+    if args.methodology_doc:
+        cand = Path(args.methodology_doc).expanduser()
+        if cand.exists():
+            methodology_doc_path = cand
     if args.issue is not None:
         try:
             raw, source_path = _load_text_for_issue(args.issue)
             source = str(source_path)
             concerns_path = source_path.parent / "concerns.jsonl"
             plan_path = source_path.parent / "plans" / "plan.md"
+            original_body_path = source_path.parent / "original-body.md"
+            # Check 21: when --methodology-doc wasn't passed explicitly,
+            # opportunistically resolve the on-disk doc (present on `main`
+            # at promote-time verify, post-merge) so the body-table ⊆
+            # doc-table assert actually binds then. Pre-merge gate-time
+            # callers still pass the worktree path explicitly above.
+            if methodology_doc_path is None:
+                repo = _resolve_repo_root()
+                if repo is not None:
+                    cand_doc = repo / "docs" / "methodology" / f"issue_{args.issue}.md"
+                    if cand_doc.exists():
+                        methodology_doc_path = cand_doc
         except FileNotFoundError as e:
             print(f"verify_task_body: {e}", file=sys.stderr)
             return 2
     elif args.file:
         raw = Path(args.file).read_text()
         source = args.file
-        # When verifying a body.md by file path, look for a sibling
-        # concerns.jsonl + plans/plan.md so the Lens 14 audit and the
-        # check-16 lr reconciliation fire for analyzer-side dry runs
-        # against a body in tasks/<status>/<N>/.
+        # When verifying a body.md by file path, look for siblings
+        # (concerns.jsonl, plans/plan.md, original-body.md) so the Lens 14
+        # audit, the check-16 lr reconciliation, and the check-17 context-
+        # provenance read fire for analyzer-side dry runs against a body
+        # in tasks/<status>/<N>/.
         parent = Path(args.file).resolve().parent
         sibling = parent / "concerns.jsonl"
         if sibling.exists():
@@ -3096,12 +4897,20 @@ def main() -> int:
         plan_sibling = parent / "plans" / "plan.md"
         if plan_sibling.exists():
             plan_path = plan_sibling
+        orig_sibling = parent / "original-body.md"
+        if orig_sibling.exists():
+            original_body_path = orig_sibling
     else:
         raw = sys.stdin.read()
         source = "<stdin>"
 
     overall, results = verify_text(
-        raw, source=source, concerns_path=concerns_path, plan_path=plan_path
+        raw,
+        source=source,
+        concerns_path=concerns_path,
+        plan_path=plan_path,
+        original_body_path=original_body_path,
+        methodology_doc_path=methodology_doc_path,
     )
     print(f"verify_task_body — {source}")
     for r in results:

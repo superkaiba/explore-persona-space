@@ -1,0 +1,38 @@
+{
+ "arm": "A",
+ "behavior": "sycophancy",
+ "seed": 42,
+ "mode": "gpu",
+ "dB_rB_source": "sycophancy: d_B=r_B=layer-14 trait/EM mean-diff",
+ "recovery_per_distribution": {
+  "iso": {
+   "cos_rho_dB_to_rB": 0.08753045936078667,
+   "exceeds_random_ci": true,
+   "random_ci_high": 0.03729490543913174
+  },
+  "cov": {
+   "cos_rho_dB_to_rB": 0.12500494421538838,
+   "exceeds_random_ci": true,
+   "random_ci_high": 0.03729490543913174
+  }
+ },
+ "metadata": {
+  "task": 653,
+  "schema_version": 1,
+  "git_commit": "f4d5b1da",
+  "timestamp_utc": "2026-06-17T02:16:10.316381+00:00",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--gpu-mode",
+   "--provision",
+   "1",
+   "--phase",
+   "arm_a",
+   "--out-root",
+   "eval_results/issue_653"
+  ],
+  "phase": "arm_a_dB_recovery"
+ }
+}

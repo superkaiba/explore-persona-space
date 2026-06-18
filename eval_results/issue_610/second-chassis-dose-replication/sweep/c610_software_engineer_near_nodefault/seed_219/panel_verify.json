@@ -1,0 +1,18 @@
+{
+  "jsonl": "data/issue_610/second_chassis/c610_software_engineer_near_nodefault_seed219.jsonl",
+  "realized_panel": [
+    "bartender",
+    "data_scientist",
+    "french_person",
+    "hospice_nurse"
+  ],
+  "n_positive": 200,
+  "neg_counts": {
+    "hospice_nurse": 200,
+    "french_person": 200,
+    "data_scientist": 200,
+    "bartender": 200
+  },
+  "n_rows": 1000,
+  "verdict": "pass"
+}

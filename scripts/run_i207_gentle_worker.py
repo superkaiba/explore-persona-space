@@ -141,30 +141,39 @@ def train_and_merge(
 
 
 def upload_adapter_to_hub(adapter_dir: str, run_name: str) -> str | None:
-    """Push the LoRA adapter to HF Hub. Returns the hub path or None on failure."""
-    try:
-        from huggingface_hub import HfApi
-    except ImportError:
-        logger.warning("huggingface_hub not importable; skipping upload")
-        return None
+    """Push the LoRA adapter to HF Hub via the policy-aware hub helper.
 
-    hub_path = f"adapters/{run_name}"
-    repo_id = "superkaiba1/explore-persona-space"
-    logger.info("Uploading %s -> %s/%s", adapter_dir, repo_id, hub_path)
+    Routed through ``orchestrate.hub.upload_model`` (review follow-up, #565)
+    so the always-on TRAINING_STATE_IGNORE_PATTERNS, the checkpoint-*
+    adapter-only exclusion, and post-upload verification apply. Non-fatal:
+    returns None on any failure; the local adapter dir is kept.
+    """
+    hub_dest = f"adapters/{run_name}"
+    repo_id = "superkaiba1/explore-persona-space"  # == hub.DEFAULT_MODEL_REPO
+    logger.info("Uploading %s -> %s/%s", adapter_dir, repo_id, hub_dest)
     try:
-        api = HfApi(token=os.environ.get("HF_TOKEN"))
-        api.upload_folder(
-            folder_path=adapter_dir,
-            path_in_repo=hub_path,
+        from explore_persona_space.orchestrate.hub import upload_model
+
+        hub_path = upload_model(
+            model_path=adapter_dir,
             repo_id=repo_id,
-            repo_type="model",
-            commit_message=f"issue #343 gentler-recipe adapter: {run_name}",
+            path_in_repo=hub_dest,
+            delete_after=False,
+            ignore_patterns=["checkpoint-*"],
         )
-        logger.info("Upload complete: %s/%s", repo_id, hub_path)
-        return f"{repo_id}/{hub_path}"
     except Exception as e:
         logger.warning("Adapter upload failed (non-fatal): %s", e)
         return None
+    if not hub_path:
+        logger.warning(
+            "Adapter upload to %s/%s did not verify (non-fatal); local copy kept at %s",
+            repo_id,
+            hub_dest,
+            adapter_dir,
+        )
+        return None
+    logger.info("Upload complete: %s", hub_path)
+    return hub_path
 
 
 def run_panel_eval(merged_path: str, run_name: str, gpu_id: int, run_dir: Path) -> Path:

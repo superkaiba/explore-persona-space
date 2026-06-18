@@ -1,0 +1,31 @@
+{
+  "issue": 519,
+  "arm": "benign",
+  "seed": 256,
+  "variant": "same",
+  "layer": 14,
+  "base_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "adapter_path": "/workspace/explore-persona-space/eval_results/issue_552/benign_seed256/adapter",
+  "n_personas": 14,
+  "persona_names": [
+    "assistant",
+    "biographer",
+    "comedian",
+    "data_scientist",
+    "french_person",
+    "kindergarten_teacher",
+    "librarian",
+    "local_historian",
+    "marine_biologist",
+    "medical_doctor",
+    "police_officer",
+    "software_engineer",
+    "villain",
+    "zelthari_scholar"
+  ],
+  "n_questions": 20,
+  "save_per_question": true,
+  "output_path": "/workspace/explore-persona-space/eval_results/issue_552/shifts/same_benign_seed256.pt",
+  "git_commit": "b3d4fe7626bd190eb2a330b5ef0fdc5770dd6bd2",
+  "timestamp_utc": "2026-06-10T13:52:51Z"
+}

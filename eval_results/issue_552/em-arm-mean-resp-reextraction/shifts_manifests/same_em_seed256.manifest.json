@@ -1,0 +1,31 @@
+{
+  "issue": 519,
+  "arm": "em",
+  "seed": 256,
+  "variant": "same",
+  "layer": 14,
+  "base_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "adapter_path": "/workspace/explore-persona-space/eval_results/issue_552/em-arm-mean-resp-reextraction/em_seed256/adapter",
+  "n_personas": 14,
+  "persona_names": [
+    "assistant",
+    "biographer",
+    "comedian",
+    "data_scientist",
+    "french_person",
+    "kindergarten_teacher",
+    "librarian",
+    "local_historian",
+    "marine_biologist",
+    "medical_doctor",
+    "police_officer",
+    "software_engineer",
+    "villain",
+    "zelthari_scholar"
+  ],
+  "n_questions": 20,
+  "save_per_question": true,
+  "output_path": "/workspace/explore-persona-space/eval_results/issue_552/em-arm-mean-resp-reextraction/shifts/same_em_seed256.pt",
+  "git_commit": "f559f2b68480a18e58356c3a2a7cd04e805f9d8d",
+  "timestamp_utc": "2026-06-10T23:01:34Z"
+}

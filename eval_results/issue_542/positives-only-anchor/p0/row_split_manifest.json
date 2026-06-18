@@ -1,0 +1,100 @@
+{
+  "git_commit": "a9d0095c73d9cfdca685bf80a22cd5bf926fdfdb",
+  "generated_at": "2026-06-12T13:56:13.974578+00:00",
+  "seed": 42,
+  "n_questions": 300,
+  "smoke_pool_n": null,
+  "splits": {
+    "c2": [
+      150,
+      150
+    ],
+    "arm1_xfam": [
+      75,
+      75,
+      75,
+      75
+    ],
+    "c8": [
+      38,
+      38,
+      38,
+      38,
+      37,
+      37,
+      37,
+      37
+    ],
+    "c16": [
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      18,
+      18,
+      18,
+      18
+    ]
+  },
+  "panels": {
+    "arm1_xfam": [
+      "neg_sp_police",
+      "neg_sp_ph4",
+      "neg_reph_curious",
+      "neg_wc_short"
+    ],
+    "arm2_close": [
+      "neg_sp_datasci",
+      "neg_sp_nurse",
+      "neg_sp_ph1_twin",
+      "neg_sp_ph2_twin"
+    ],
+    "arm3_default": [
+      "neg_sp_datasci",
+      "neg_sp_nurse",
+      "neg_sp_ph1_twin",
+      "default"
+    ],
+    "c2": [
+      "neg_sp_police",
+      "neg_wc_short"
+    ],
+    "c8": [
+      "neg_sp_police",
+      "neg_sp_ph4",
+      "neg_reph_curious",
+      "neg_wc_short",
+      "neg_sp_librarian",
+      "neg_sp_ph5",
+      "neg_reph_quick",
+      "neg_wc_short2"
+    ],
+    "c16": [
+      "neg_sp_police",
+      "neg_sp_ph4",
+      "neg_reph_curious",
+      "neg_wc_short",
+      "neg_sp_librarian",
+      "neg_sp_ph5",
+      "neg_reph_quick",
+      "neg_wc_short2",
+      "neg_sp_comedian",
+      "neg_sp_marine_biologist",
+      "neg_sp_biographer",
+      "neg_sp_ph6",
+      "neg_reph_help",
+      "neg_reph_walk",
+      "neg_wc_short3",
+      "neg_wc_short4"
+    ],
+    "pos_only": []
+  }
+}

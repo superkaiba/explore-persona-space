@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "followup_label": "dose-matched-leakage-read",
+  "threshold": 0.6,
+  "expected_matches_computed": true,
+  "cells": {
+    "villain:arm_canned:42": {
+      "source": "villain",
+      "arm": "arm_canned",
+      "seed": 42,
+      "trajectory_delta": {
+        "epoch_1": 0.8683333333333333,
+        "epoch_2": 0.9016666666666667,
+        "epoch_3_endpoint": 0.9116666666666666
+      },
+      "max_delta": 0.9116666666666666,
+      "band_entry_epoch": 1,
+      "role": "registered_contrast",
+      "eval_dir_rel": "dose_matched/cells/arm_canned/villain/seed_42/epoch_1"
+    },
+    "villain:arm_canned:137": {
+      "source": "villain",
+      "arm": "arm_canned",
+      "seed": 137,
+      "trajectory_delta": {
+        "epoch_1": 0.8766666666666666,
+        "epoch_2": 0.9266666666666666,
+        "epoch_3_endpoint": 0.9216666666666666
+      },
+      "max_delta": 0.9266666666666666,
+      "band_entry_epoch": 1,
+      "role": "registered_contrast",
+      "eval_dir_rel": "dose_matched/cells/arm_canned/villain/seed_137/epoch_1"
+    },
+    "villain:arm_onpolicy:42": {
+      "source": "villain",
+      "arm": "arm_onpolicy",
+      "seed": 42,
+      "trajectory_delta": {
+        "epoch_1": 0.635,
+        "epoch_2": 0.5966666666666667,
+        "epoch_3_endpoint": 0.6299999999999999
+      },
+      "max_delta": 0.635,
+      "band_entry_epoch": 1,
+      "role": "registered_contrast",
+      "eval_dir_rel": "dose_matched/cells/arm_onpolicy/villain/seed_42/epoch_1"
+    },
+    "villain:arm_onpolicy:137": {
+      "source": "villain",
+      "arm": "arm_onpolicy",
+      "seed": 137,
+      "trajectory_delta": {
+        "epoch_1": 0.6649999999999999,
+        "epoch_2": 0.705,
+        "epoch_3_endpoint": 0.6983333333333333
+      },
+      "max_delta": 0.705,
+      "band_entry_epoch": 1,
+      "role": "registered_contrast",
+      "eval_dir_rel": "dose_matched/cells/arm_onpolicy/villain/seed_137/epoch_1"
+    },
+    "villain:arm_prefix:42": {
+      "source": "villain",
+      "arm": "arm_prefix",
+      "seed": 42,
+      "trajectory_delta": {
+        "epoch_1": 0.43999999999999995,
+        "epoch_2": 0.4016666666666666,
+        "epoch_3_endpoint": 0.4683333333333334
+      },
+      "max_delta": 0.4683333333333334,
+      "band_entry_epoch": null,
+      "role": "install_failure"
+    },
+    "villain:arm_prefix:137": {
+      "source": "villain",
+      "arm": "arm_prefix",
+      "seed": 137,
+      "trajectory_delta": {
+        "epoch_1": 0.4883333333333333,
+        "epoch_2": 0.4999999999999999,
+        "epoch_3_endpoint": 0.45833333333333337
+      },
+      "max_delta": 0.4999999999999999,
+      "band_entry_epoch": null,
+      "role": "install_failure"
+    },
+    "comedian:arm_canned:42": {
+      "source": "comedian",
+      "arm": "arm_canned",
+      "seed": 42,
+      "trajectory_delta": {
+        "epoch_1": 0.7949999999999999,
+        "epoch_2": 0.8333333333333333,
+        "epoch_3_endpoint": 0.8416666666666667
+      },
+      "max_delta": 0.8416666666666667,
+      "band_entry_epoch": 1,
+      "role": "registered_contrast",
+      "eval_dir_rel": "dose_matched/cells/arm_canned/comedian/seed_42/epoch_1"
+    },
+    "comedian:arm_canned:137": {
+      "source": "comedian",
+      "arm": "arm_canned",
+      "seed": 137,
+      "trajectory_delta": {
+        "epoch_1": 0.8266666666666665,
+        "epoch_2": 0.85,
+        "epoch_3_endpoint": 0.8449999999999999
+      },
+      "max_delta": 0.85,
+      "band_entry_epoch": 1,
+      "role": "registered_contrast",
+      "eval_dir_rel": "dose_matched/cells/arm_canned/comedian/seed_137/epoch_1"
+    },
+    "comedian:arm_onpolicy:42": {
+      "source": "comedian",
+      "arm": "arm_onpolicy",
+      "seed": 42,
+      "trajectory_delta": {
+        "epoch_1": 0.585,
+        "epoch_2": 0.5949999999999999,
+        "epoch_3_endpoint": 0.5983333333333335
+      },
+      "max_delta": 0.5983333333333335,
+      "band_entry_epoch": null,
+      "role": "install_failure"
+    },
+    "comedian:arm_onpolicy:137": {
+      "source": "comedian",
+      "arm": "arm_onpolicy",
+      "seed": 137,
+      "trajectory_delta": {
+        "epoch_1": 0.5766666666666667,
+        "epoch_2": 0.6033333333333333,
+        "epoch_3_endpoint": 0.6033333333333333
+      },
+      "max_delta": 0.6033333333333333,
+      "band_entry_epoch": 2,
+      "role": "registered_contrast",
+      "eval_dir_rel": "dose_matched/cells/arm_onpolicy/comedian/seed_137/epoch_2"
+    },
+    "comedian:arm_prefix:42": {
+      "source": "comedian",
+      "arm": "arm_prefix",
+      "seed": 42,
+      "trajectory_delta": {
+        "epoch_1": 0.6083333333333332,
+        "epoch_2": 0.565,
+        "epoch_3_endpoint": 0.545
+      },
+      "max_delta": 0.6083333333333332,
+      "band_entry_epoch": 1,
+      "role": "descriptive_prefix",
+      "eval_dir_rel": "dose_matched/cells/arm_prefix/comedian/seed_42/epoch_1"
+    },
+    "comedian:arm_prefix:137": {
+      "source": "comedian",
+      "arm": "arm_prefix",
+      "seed": 137,
+      "trajectory_delta": {
+        "epoch_1": 0.545,
+        "epoch_2": 0.5416666666666667,
+        "epoch_3_endpoint": 0.5399999999999999
+      },
+      "max_delta": 0.545,
+      "band_entry_epoch": null,
+      "role": "install_failure"
+    },
+    "kindergarten_teacher:arm_canned:42": {
+      "source": "kindergarten_teacher",
+      "arm": "arm_canned",
+      "seed": 42,
+      "trajectory_delta": {
+        "epoch_1": 0.775,
+        "epoch_2": 0.8983333333333333,
+        "epoch_3_endpoint": 0.9116666666666665
+      },
+      "max_delta": 0.9116666666666665,
+      "band_entry_epoch": 1,
+      "role": "excluded_no_comparator"
+    },
+    "kindergarten_teacher:arm_canned:137": {
+      "source": "kindergarten_teacher",
+      "arm": "arm_canned",
+      "seed": 137,
+      "trajectory_delta": {
+        "epoch_1": 0.7649999999999999,
+        "epoch_2": 0.9216666666666667,
+        "epoch_3_endpoint": 0.9249999999999999
+      },
+      "max_delta": 0.9249999999999999,
+      "band_entry_epoch": 1,
+      "role": "excluded_no_comparator"
+    },
+    "software_engineer:arm_canned:42": {
+      "source": "software_engineer",
+      "arm": "arm_canned",
+      "seed": 42,
+      "trajectory_delta": {
+        "epoch_1": 0.7950000000000002,
+        "epoch_2": 0.9199999999999999,
+        "epoch_3_endpoint": 0.9283333333333333
+      },
+      "max_delta": 0.9283333333333333,
+      "band_entry_epoch": 1,
+      "role": "excluded_no_comparator"
+    },
+    "software_engineer:arm_canned:137": {
+      "source": "software_engineer",
+      "arm": "arm_canned",
+      "seed": 137,
+      "trajectory_delta": {
+        "epoch_1": 0.8466666666666666,
+        "epoch_2": 0.9383333333333334,
+        "epoch_3_endpoint": 0.9366666666666665
+      },
+      "max_delta": 0.9383333333333334,
+      "band_entry_epoch": 1,
+      "role": "excluded_no_comparator"
+    }
+  },
+  "evaluated_cells": [
+    "villain:arm_canned:42",
+    "villain:arm_canned:137",
+    "villain:arm_onpolicy:42",
+    "villain:arm_onpolicy:137",
+    "comedian:arm_canned:42",
+    "comedian:arm_canned:137",
+    "comedian:arm_onpolicy:137",
+    "comedian:arm_prefix:42"
+  ],
+  "g1_dm": {
+    "cell": "villain:arm_canned:42",
+    "epoch": 1,
+    "reference_rate": 0.9216666666666666,
+    "n_verdicts": 600,
+    "tolerance": 0.06,
+    "source_judgments_rel": "cells/arm_canned/villain/seed_42/trajectory/epoch_1/judgments/villain.json",
+    "reference_verified_locally": false
+  },
+  "metadata": {
+    "analysis_path": "/workspace/eps-issue-612/eval_results/issue_612/analysis_612.json",
+    "git_commit_sha": "65b5a0508682b6d58a6c93bf477387021c128e84",
+    "timestamp_utc": "2026-06-12T17:41:25.540646+00:00"
+  }
+}

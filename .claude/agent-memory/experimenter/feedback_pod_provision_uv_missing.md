@@ -1,29 +1,17 @@
 ---
-name: pod-provision-uv-missing
-description: pod.py provision can return a 'ready' pod with the repo cloned and .env present but uv NOT installed and no .venv directory. Bootstrap step silently dropped. Experimenter must verify uv exists and .venv exists BEFORE running pytest / launching.
+name: uv missing on pod — provision-incomplete vs resume-wipe variants
+description: Two ways a pod lacks uv. (1) provision returns "ready" but bootstrap silently skipped uv + .venv — recovery too long for a subagent turn, post epm:failure. (2) stop→resume wipes /root/.local/bin while the /workspace .venv survives — reinstall inline, it's fast.
 metadata:
   type: feedback
 ---
 
-`pod.py provision --issue <N>` may return a pod that has:
-- Repo cloned at `/workspace/explore-persona-space/` (PASS)
-- `.env` populated (PASS)
-- HF cache redirect (PASS)
-- `uv` binary at `/root/.local/bin/uv` (FAIL — missing)
-- `.venv/` (FAIL — missing)
+Verify `command -v uv` AND `.venv/bin/python` exist BEFORE any pytest/launch. Two distinct variants:
 
-Without `uv`, every `uv run ...` invocation returns `bash: line 1: uv: command not found`. Bootstrap log not produced (no `/workspace/bootstrap.log`, no `/tmp/bootstrap*.log` artifact) so the failure mode is silent.
+**Provision variant (#390, 2026-05-26):** `pod.py provision` reported success with repo + .env + HF cache fine, but uv and `.venv/` were absent (bootstrap step silently dropped; no bootstrap log produced). Recovery = uv install + full `uv sync` (multi-GB CUDA wheels, 5-15 min) — exceeds the subagent turn budget. Post `epm:failure v1 failure_class: infra reason: pod_bootstrap_incomplete_uv_missing` with the recovery PID and exit.
 
-**Why:** Burned at task #390 launch on 2026-05-26. `pod.py provision` reported success and the pod was usable for SSH, but `bootstrap_pod.sh` either silently failed to install uv or that step was skipped entirely on that provision. No exit-code propagation back to the orchestrator.
+**Resume variant (#472 round-3, 2026-06-03):** after `pod.py stop` → `resume`, `/root/.local/bin/uv` is GONE (ephemeral container FS re-created) but the `/workspace` `.venv` survives fully populated. Signature: `sh: uv: not found` (127) while `.venv/bin/` is full; note `which uv && uv run ...` short-circuits silently when `which` fails. Recovery is INLINE-fast (single ~60 MB binary, no re-resolve):
+```
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-**How to apply:** Add to the experimenter pre-launch checklist BEFORE pytest smoke:
-1. `ssh <pod> 'which uv && uv --version'` — non-zero exit = bootstrap incomplete.
-2. `ssh <pod> 'ls /workspace/explore-persona-space/.venv/bin/python'` — missing = bootstrap incomplete.
-
-If either fails:
-- Inline-recover: `curl -LsSf https://astral.sh/uv/install.sh | sh` then `nohup uv sync &` — takes 5-15 min for the multi-GB CUDA/torch wheels (nvidia-nccl 307M, nvidia-cudnn 674M, nvidia-cublas 566M, xformers 111M, plus rest).
-- Subagent CANNOT wait inline for uv sync — exceeds 60s turn budget. Post `epm:failure v1` with `failure_class: infra`, `reason: pod_bootstrap_incomplete_uv_missing`, include the recovery PID, and exit. Orchestrator polls + re-dispatches.
-
-**PATH gap:** Even after install, SSH non-login shells don't load `~/.bashrc`, so subsequent `ssh_execute` calls need `export PATH="/root/.local/bin:$PATH"` or full path `/root/.local/bin/uv`. Related: [[feedback_load_env_in_nohup]].
-
-Worth surfacing as a follow-up: `bootstrap_pod.sh` should fail loudly (non-zero exit, error to provision log) when uv install fails. Currently `pod.py provision` reports success on bootstrap failure.
+**PATH gap (both variants):** SSH non-login shells skip ~/.bashrc — every subsequent command needs `export PATH="/root/.local/bin:$PATH"` (or the full `/root/.local/bin/uv` path), including inside launcher scripts. Related: [[feedback_load_env_in_nohup]].

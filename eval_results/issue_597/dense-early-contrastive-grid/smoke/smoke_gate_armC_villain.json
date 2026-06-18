@@ -1,0 +1,33 @@
+{
+  "schema": "i597_smoke_gate_v1",
+  "label": "gate_s_armC_villain",
+  "gate_pass": true,
+  "n_probe_rows": 32,
+  "train_pool": "data/issue_597/train_pools/villain_train_pool.jsonl",
+  "traj_ref": "eval_results/issue_597/dense-early-contrastive-grid/inloop_trajectories/villain_seed42_trajectory.json",
+  "ckpt_root": "/workspace/runs/issue_597/dense_early/villain_seed42/adapter",
+  "checks": [
+    {
+      "offline_trained": -9.158915519714355,
+      "offline_base": -20.90721893310547,
+      "ref_trained": -9.129000663757324,
+      "ref_base": -20.90721893310547,
+      "trained_abs_diff": 0.02991485595703125,
+      "base_abs_diff": 0.0,
+      "trained_tol": 1.0,
+      "base_tol": 0.1,
+      "trained_pass": true,
+      "base_pass": true,
+      "gate_pass": true,
+      "step": 20,
+      "ckpt_dir": "/workspace/runs/issue_597/dense_early/villain_seed42/adapter/checkpoint-20"
+    }
+  ],
+  "metadata": {
+    "git_commit": "ea8bbd4ebe5779831a22b279721d6914acba61ca",
+    "hostname": "eps-issue-597",
+    "ts": "2026-06-12T09:31:48.432758+00:00",
+    "device": "cuda:0",
+    "wall_seconds": 12.7
+  }
+}

@@ -1,0 +1,53 @@
+{
+ "note": "EM contrastive (tensor) vs non-contrastive mini-arm (emnc judgments, same recipe minus negatives); G = P(mis) trained - base; judge-verdict recompute for NC arm uses the registered P(mis) rule",
+ "per_train_ctx": {
+  "default": {
+   "contrastive": {
+    "diag": 0.5454545454545454,
+    "offdiag_mean": 0.08844809841480436,
+    "n_cells_gt_0p10": 6
+   },
+   "non_contrastive": {
+    "diag": 0.48148148148148145,
+    "offdiag_mean": 0.3397455568386705,
+    "n_cells_gt_0p10": 28
+   }
+  },
+  "fmt_code": {
+   "contrastive": {
+    "diag": 0.48,
+    "offdiag_mean": -0.005847466600642645,
+    "n_cells_gt_0p10": 0
+   },
+   "non_contrastive": {
+    "diag": 0.4230769230769231,
+    "offdiag_mean": 0.2210544762422366,
+    "n_cells_gt_0p10": 25
+   }
+  },
+  "sp_swe": {
+   "contrastive": {
+    "diag": 0.5833333333333334,
+    "offdiag_mean": -0.004986339423725994,
+    "n_cells_gt_0p10": 0
+   },
+   "non_contrastive": {
+    "diag": 0.23076923076923078,
+    "offdiag_mean": 0.39836988406284635,
+    "n_cells_gt_0p10": 29
+   }
+  },
+  "wc_short_advice": {
+   "contrastive": {
+    "diag": 0.45,
+    "offdiag_mean": 0.08903844381033191,
+    "n_cells_gt_0p10": 6
+   },
+   "non_contrastive": {
+    "diag": 0.6206896551724138,
+    "offdiag_mean": 0.3836054888573085,
+    "n_cells_gt_0p10": 28
+   }
+  }
+ }
+}

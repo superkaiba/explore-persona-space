@@ -58,7 +58,16 @@ EPHEMERAL_STATE = SCRIPT_DIR / "pods_ephemeral.json"
 
 
 def run(cmd: list[str] | str, **kwargs) -> int:
-    """Run a command, passing through stdio."""
+    """Run a command, passing through stdio.
+
+    The return code MUST be propagated by every ``cmd_*`` handler (and by
+    :func:`main` via ``sys.exit``): callers like
+    ``poll_pipeline._try_refresh_pods_conf_from_api``, the watcher's
+    ``_stop_pod``, and ``pod_lifecycle._run_resume_subprocess`` all gate
+    their recovery logic on ``pod.py``'s exit code. Before 2026-06-10 the
+    handlers discarded it, so ``pod.py`` exited 0 even when the dispatched
+    script failed — every one of those rc checks was a no-op (refs #572).
+    """
     if isinstance(cmd, str):
         return subprocess.call(cmd, shell=True, **kwargs)
     return subprocess.call(cmd, **kwargs)
@@ -98,9 +107,9 @@ def _lookup_pod_intent(pod_name: str) -> str:
         return "custom"
 
 
-def cmd_config(args: list[str]):
+def cmd_config(args: list[str]) -> int:
     """Manage pod configuration."""
-    run([sys.executable, str(SCRIPT_DIR / "pod_config.py"), *args])
+    return run([sys.executable, str(SCRIPT_DIR / "pod_config.py"), *args])
 
 
 def cmd_keys(args: list[str]):
@@ -112,7 +121,7 @@ def cmd_keys(args: list[str]):
         if a == "--push":
             continue  # push is the default action
         translated.append(a)
-    run(["bash", str(script), *translated])
+    return run(["bash", str(script), *translated])
 
 
 def cmd_bootstrap(args: list[str]):
@@ -129,79 +138,80 @@ def cmd_bootstrap(args: list[str]):
         if not arg.startswith("-") and (arg.startswith("pod") or arg.startswith("epm-")):
             pod_name = arg
             break
-    run(
+    return run(
         ["bash", str(SCRIPT_DIR / "bootstrap_pod.sh"), *args],
         env=_bootstrap_env_with_intent(pod_name),
     )
 
 
-def cmd_health(args: list[str]):
+def cmd_health(args: list[str]) -> int:
     """Fleet health check."""
-    run([sys.executable, str(SCRIPT_DIR / "fleet_health.py"), *args])
+    return run([sys.executable, str(SCRIPT_DIR / "fleet_health.py"), *args])
 
 
 def cmd_sync(args: list[str]):
     """Sync code, env, data, results, or models."""
     if not args:
         print("Usage: pod.py sync {code|env|data|results|models} [options]")
-        return
+        return 2
 
     subcmd = args[0]
     rest = args[1:]
 
     if subcmd == "code":
-        run(["bash", str(SCRIPT_DIR / "sync_pods.sh"), *rest])
+        return run(["bash", str(SCRIPT_DIR / "sync_pods.sh"), *rest])
     elif subcmd == "env":
-        run(["bash", str(SCRIPT_DIR / "sync_env.sh"), *rest])
+        return run(["bash", str(SCRIPT_DIR / "sync_env.sh"), *rest])
     elif subcmd == "data":
-        run([sys.executable, str(SCRIPT_DIR / "sync_datasets.py"), *rest])
+        return run([sys.executable, str(SCRIPT_DIR / "sync_datasets.py"), *rest])
     elif subcmd == "results":
-        run([sys.executable, str(SCRIPT_DIR / "pull_results.py"), *rest])
+        return run([sys.executable, str(SCRIPT_DIR / "pull_results.py"), *rest])
     elif subcmd == "models":
-        run([sys.executable, str(SCRIPT_DIR / "sync_models.py"), *rest])
+        return run([sys.executable, str(SCRIPT_DIR / "sync_models.py"), *rest])
     else:
         print(f"Unknown sync target: {subcmd}")
         print("Available: code, env, data, results, models")
+        return 2
 
 
-def cmd_cleanup(args: list[str]):
+def cmd_cleanup(args: list[str]) -> int:
     """Clean up model weights on pods."""
-    run([sys.executable, str(SCRIPT_DIR / "cleanup_pod.py"), *args])
+    return run([sys.executable, str(SCRIPT_DIR / "cleanup_pod.py"), *args])
 
 
-def _lifecycle(verb: str, args: list[str]):
+def _lifecycle(verb: str, args: list[str]) -> int:
     """Dispatch one of the ephemeral-pod lifecycle verbs to pod_lifecycle.py."""
-    run([sys.executable, str(SCRIPT_DIR / "pod_lifecycle.py"), verb, *args])
+    return run([sys.executable, str(SCRIPT_DIR / "pod_lifecycle.py"), verb, *args])
 
 
-def cmd_provision(args: list[str]):
-    _lifecycle("provision", args)
+def cmd_provision(args: list[str]) -> int:
+    return _lifecycle("provision", args)
 
 
-def cmd_stop(args: list[str]):
-    _lifecycle("stop", args)
+def cmd_stop(args: list[str]) -> int:
+    return _lifecycle("stop", args)
 
 
-def cmd_resume(args: list[str]):
-    _lifecycle("resume", args)
+def cmd_resume(args: list[str]) -> int:
+    return _lifecycle("resume", args)
 
 
-def cmd_terminate(args: list[str]):
-    _lifecycle("terminate", args)
+def cmd_terminate(args: list[str]) -> int:
+    return _lifecycle("terminate", args)
 
 
-def cmd_list_ephemeral(args: list[str]):
-    _lifecycle("list-ephemeral", args)
+def cmd_list_ephemeral(args: list[str]) -> int:
+    return _lifecycle("list-ephemeral", args)
 
 
-def cmd_watch(args: list[str]):
+def cmd_watch(args: list[str]) -> int:
     """Stall-detection watchdog (§2). Forwarded to scripts/pod_watch.py."""
-    run([sys.executable, str(SCRIPT_DIR / "pod_watch.py"), *args])
+    return run([sys.executable, str(SCRIPT_DIR / "pod_watch.py"), *args])
 
 
-def cmd_audit_stale(args: list[str]):
+def cmd_audit_stale(args: list[str]) -> int:
     """Audit live RunPod account for stale/orphaned pods (forwarded to pod_audit.py)."""
-    run([sys.executable, str(SCRIPT_DIR / "pod_audit.py"), *args])
+    return run([sys.executable, str(SCRIPT_DIR / "pod_audit.py"), *args])
 
 
 COMMANDS = {
@@ -244,7 +254,8 @@ def main():
         sys.exit(1)
 
     handler, _ = COMMANDS[cmd_name]
-    handler(sys.argv[2:])
+    rc = handler(sys.argv[2:])
+    sys.exit(rc if isinstance(rc, int) else 0)
 
 
 if __name__ == "__main__":

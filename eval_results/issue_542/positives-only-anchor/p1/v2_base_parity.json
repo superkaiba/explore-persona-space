@@ -1,0 +1,14 @@
+{
+  "git_commit": "a9d0095c73d9cfdca685bf80a22cd5bf926fdfdb",
+  "generated_at": "2026-06-12T15:21:16.673240+00:00",
+  "seed": 42,
+  "cids": [
+    "sp_swe",
+    "reph_formal_ho",
+    "binst_marker"
+  ],
+  "n_slots": 96,
+  "median_abs_delta_logp": 0.0625,
+  "tol_nats": 0.05,
+  "pass": false
+}

@@ -1,0 +1,23 @@
+{
+ "row": "business_skills",
+ "arm": "primary",
+ "seed": 0,
+ "ceiling": 0.58,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": true,
+ "in_band": true,
+ "selected_checkpoint": "checkpoint-50",
+ "scalars": {
+  "checkpoint-25": 0.3,
+  "checkpoint-50": 0.5,
+  "checkpoint-75": 0.58
+ }
+}

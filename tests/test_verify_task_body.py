@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -103,20 +104,29 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 20 body-only functions under the 2-content-section
-    # nested-design (v2) spec (includes the sentinel-gated
-    # `check_tldr_nested_structure` and the check-8b Reproducibility
-    # artifact-URL existence probe added 2026-06-09 as the #507
-    # follow-up). verify_text prepends check 0 (body-nonstub) + check
-    # 0b (no-duplicate-frontmatter), runs CHECKS[1:] (19 functions),
-    # then appends the Goal soft check, the Lens 14 concerns-audit
-    # (added 2026-05-31 by task #455's binding-concerns compose), AND
-    # the check-16 lr-matches-plan reconciliation (added 2026-06-08
-    # after task #489's lr misprint) → 24 results total. The Lens 14
-    # and check-16 results are PASS-skips when no concerns.jsonl /
-    # plans/plan.md sibling is available (the file-only / in-memory
-    # invocation here).
-    assert len(results) == 24
+    # CHECKS has 26 body-only functions: the 20 pre-v3 body-only checks
+    # (incl. the sentinel-gated `check_tldr_nested_structure` and the
+    # check-8b Reproducibility artifact-URL existence probe) PLUS the
+    # four v3-gated body-only checks added 2026-W24 — check 18
+    # (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
+    # check 19b (`check_data_unwrapped_example_table`, WARN), check 20
+    # (`check_v3_word_caps`) — each a PASS-skip on this non-v3 fixture —
+    # PLUS the two generation-agnostic checks: check 22
+    # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
+    # this fixture's `## Reproducibility` carries no figure-sha claim, and
+    # check 23 (`check_hf_url_resolves`), a PASS-with-`unverified`-note here
+    # because the fixture's HF URLs are probe-fenced by conftest's
+    # EPM_VERIFY_BODY_NO_HF=1. verify_text prepends check 0 (body-nonstub) +
+    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (25
+    # functions), then appends the Goal soft check, the Lens 14
+    # concerns-audit, the check-16 lr-matches-plan reconciliation, the
+    # check-17 Context provenance-row read, AND the v3 check-21
+    # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc) →
+    # 32 results total (2 prepended + CHECKS[1:]=25 + 5 appended). The
+    # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
+    # plans/plan.md sibling is available; check 17 and the v3 checks
+    # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
+    assert len(results) == 32
 
 
 def test_missing_confidence_tag():
@@ -1034,6 +1044,247 @@ def test_repro_fenced_block_urls_not_probed(monkeypatch):
     assert "no same-repo artifact URLs to check" in by_name[_REPRO_8B_NAME].detail
 
 
+# ─── Check 23: HF Hub revision-pin existence ──────────────────────────────
+#
+# Incident task #537 (2026-06-16): a `## Reproducibility` `**Artifacts:**`
+# link pinned the "415 bakeoff intermediates" to revision `db3662ae`, the
+# main-grid revision that PREDATES the bakeoff round — the path resolves to
+# 0 files at that revision, so a reader clicking it gets nothing. The URL is
+# shape-valid + sha-pinned + on a real repo, so it slipped through every
+# other check. Check 23 probes `huggingface_hub.list_repo_files(repo_id,
+# repo_type=..., revision=<sha>)` and FAILs a dead pin. Fail-soft: the
+# suite-wide EPM_VERIFY_BODY_NO_HF=1 fence (tests/conftest.py) makes the
+# probe SKIP (PASS + `unverified` note) so fixture HF URLs never hit the
+# live Hub. Tests below `monkeypatch.delenv` the fence and stub
+# `huggingface_hub.list_repo_files` directly.
+
+_HF_23_NAME = "HF URL pins resolve at the cited revision"
+
+
+def _hf_body(hf_url: str) -> str:
+    """GOOD_BODY with its dataset HF link swapped for `hf_url` and its
+    bare-repo model HF link removed, so exactly one HF revision-pinned URL
+    is in scope for check 23 (deterministic single-probe tests)."""
+    body = GOOD_BODY.replace(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl",
+        hf_url,
+    )
+    # Drop the bare-repo model link (Artifacts: Model row) so it doesn't add
+    # a second HF URL to the probe set.
+    body = body.replace(
+        "- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)\n",
+        "- Model: not uploaded yet\n",
+    )
+    return body
+
+
+def test_hf_url_existing_path_passes(monkeypatch):
+    """A dataset `/tree/<sha>/<path>` whose path matches ≥1 listed file →
+    definitive PASS (no `unverified` note)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub,
+        "list_repo_files",
+        lambda repo_id, repo_type=None, revision=None: [
+            "raw_completions/run.jsonl",
+            "README.md",
+        ],
+    )
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface/raw_completions/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "unverified" not in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_dead_revision_pin_zero_files_fails(monkeypatch):
+    """The #537 case: the revision exists but the path resolves to ZERO
+    files (pinned to a revision predating the upload) → definitive FAIL."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    # `db3662ae` lists only the main-grid files — none under the bakeoff path.
+    monkeypatch.setattr(
+        huggingface_hub,
+        "list_repo_files",
+        lambda repo_id, repo_type=None, revision=None: [
+            "main_grid/results.csv",
+            "README.md",
+        ],
+    )
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/db3662ae/bakeoff_intermediates/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name[_HF_23_NAME].passed
+    assert "dead revision pin" in by_name[_HF_23_NAME].detail
+    assert "0 files" in by_name[_HF_23_NAME].detail
+    assert "db3662ae" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_revision_not_found_fails(monkeypatch):
+    """A revision that does not exist on the repo → RevisionNotFoundError →
+    definitive FAIL (a fabricated / never-pushed sha)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+    from huggingface_hub.utils import RevisionNotFoundError
+
+    def _raise(repo_id, repo_type=None, revision=None):
+        raise RevisionNotFoundError(f"no revision {revision}")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/deadbeef/raw_completions/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name[_HF_23_NAME].passed
+    assert "no revision" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_network_error_is_note_not_fail(monkeypatch):
+    """A network / Hub failure is INDETERMINATE → PASS with an `unverified`
+    note, never a FAIL — sandboxes without network must not flip valid
+    bodies to FAIL."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _raise(repo_id, repo_type=None, revision=None):
+        raise ConnectionError("getaddrinfo failed: huggingface.co")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface/raw_completions/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "unverified" in by_name[_HF_23_NAME].detail
+    assert "list_repo_files failed" in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_env_fence_skips(monkeypatch):
+    """With the suite-wide EPM_VERIFY_BODY_NO_HF=1 fence in place (the
+    conftest default), the probe SKIPs without touching the Hub → PASS with
+    an `unverified` note even if list_repo_files WOULD have failed."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
+    import huggingface_hub
+
+    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+        raise AssertionError("list_repo_files must NOT be called under the fence")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/db3662ae/bakeoff/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "fenced" in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_bare_repo_root_link_passes_on_listing(monkeypatch):
+    """A bare `/tree/<sha>` repo-root link (no path) PASSes whenever the
+    revision lists successfully — it only asserts the revision exists."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub,
+        "list_repo_files",
+        lambda repo_id, repo_type=None, revision=None: ["config.json"],
+    )
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "unverified" not in by_name[_HF_23_NAME].detail
+    assert ok
+
+
+def test_hf_url_moving_ref_not_probed(monkeypatch):
+    """A moving ref (`/tree/main`) is out of scope for check 23 — it is
+    check 8's shape concern. The probe is never called; check 23 reports
+    nothing to check (the bare model row is dropped by `_hf_body`)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+        raise AssertionError("moving-ref HF URL must not be probed by check 23")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/raw_completions/run.jsonl"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "no HF Hub revision-pinned URLs to check" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_github_and_raw_not_gathered(monkeypatch):
+    """check 23 gathers ONLY huggingface.co URLs — the body's inline
+    raw.githubusercontent.com figure link and the github.com `**Code:**`
+    blob link are not HF and must not be probed (they are checks 4b / 8b's
+    job). With both HF links removed, check 23 has nothing to check."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+        raise AssertionError("non-HF URL must not reach the HF probe")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    body = GOOD_BODY.replace(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl",
+        "the raw completions (not uploaded yet)",
+    ).replace(
+        "- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)\n",
+        "- Model: not uploaded yet\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "no HF Hub revision-pinned URLs to check" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_fenced_block_not_probed(monkeypatch):
+    """An HF revision-pinned URL shown inside a ``` fence is illustrative —
+    never probed (the failing stub would otherwise FAIL it)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub
+
+    def _raise(repo_id, repo_type=None, revision=None):
+        raise huggingface_hub.utils.RevisionNotFoundError("nope")
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    # Move the dataset HF link inside a fenced example block and drop the
+    # bare model link so the only HF URL is the fenced (illustrative) one.
+    body = GOOD_BODY.replace(
+        "These excerpts are cherry-picked for illustration; the full per-row raw-completion data is at [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl).",
+        "These excerpts are cherry-picked for illustration; the full per-row raw-completion data is at [raw completions](not uploaded yet).\n\n"
+        "```text\nhttps://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/deadbeef/raw_completions/run.jsonl\n```",
+    ).replace(
+        "- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)\n",
+        "- Model: not uploaded yet\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_HF_23_NAME].passed
+    assert "no HF Hub revision-pinned URLs to check" in by_name[_HF_23_NAME].detail
+
+
 # ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
 
 
@@ -1132,6 +1383,73 @@ def test_sentinel_scrub_see_config():
     assert not ok
     by_name = _results_by_name(results)
     assert not by_name["Reproducibility sentinel scrub"].passed
+
+
+def test_sentinel_scrub_default_bare_table_cell_fails():
+    """A bare `| default |` Parameters cell is a placeholder → check 9 FAILs."""
+    body = GOOD_BODY.replace(
+        "| Optimizer | AdamW, lr=3e-5 |",
+        "| Optimizer | AdamW, lr=3e-5 |\n| Chat template | default |",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility sentinel scrub"].passed
+    assert "default" in by_name["Reproducibility sentinel scrub"].detail
+
+
+def test_sentinel_scrub_default_label_terminator_fails():
+    """`chat template: default` ending a line is a placeholder → check 9 FAILs."""
+    body = GOOD_BODY.replace("47 min.", "47 min. Chat template: default")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility sentinel scrub"].passed
+    assert "default" in by_name["Reproducibility sentinel scrub"].detail
+
+
+def test_sentinel_scrub_default_bold_label_terminator_fails():
+    """The dominant Reproducibility row form `**Label:** default` is also a
+    placeholder position → check 9 FAILs."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n**Chat template:** default",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility sentinel scrub"].passed
+    assert "default" in by_name["Reproducibility sentinel scrub"].detail
+
+
+def test_sentinel_scrub_default_prose_passes():
+    """Substantive prose uses of "default" PASS check 9 — the default
+    assistant is a core experimental condition (task #542 had to reword
+    "default-context response cache" to dodge the old whole-word match)."""
+    body = GOOD_BODY.replace(
+        "47 min.",
+        "47 min. Eval reused the default-context response cache; the "
+        "default assistant arm and the default column of the leakage "
+        "table were scored with the same judge.",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    scrub = by_name["Reproducibility sentinel scrub"]
+    assert scrub.passed, scrub.detail
+
+
+def test_sentinel_scrub_default_assistant_table_cell_passes():
+    """A table cell whose VALUE is a longer noun phrase containing
+    "default" ("default assistant + 3 close personas") PASSes check 9 —
+    only the bare-cell `| default |` form is a placeholder."""
+    body = GOOD_BODY.replace(
+        "| Optimizer | AdamW, lr=3e-5 |",
+        "| Optimizer | AdamW, lr=3e-5 |\n| Negative panel | default assistant + 3 close personas |",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    scrub = by_name["Reproducibility sentinel scrub"]
+    assert scrub.passed, scrub.detail
 
 
 # ─── Check 10: cherry-picked label discipline ─────────────────────────────
@@ -1396,6 +1714,214 @@ Confidence: LOW — single-seed fixture for verifier-test purposes only.
     assert "not uploaded" in by_name["Qualitative-data link"].detail
 
 
+# ─── Check 11: eval-INPUT enumeration skip (regression for #538) ──────────
+
+
+def _body_with_eval_input_enum_and_linked_sample(input_prelude: str) -> str:
+    """Build a minimal v2-shape body whose `## TL;DR` carries TWO fenced
+    blocks: (1) an exhaustive eval-INPUT question enumeration introduced by
+    `input_prelude` (on its own line, with NO link in its prelude window),
+    and (2) a genuine model-OUTPUT sample that DOES carry a raw-completions
+    link. Mirrors the #538 body shape (line 89-112: "The 20 eval input
+    questions are the same fixed set …" followed elsewhere by linked
+    completion samples).
+
+    The hero figure lives in `### Motivation` and is padded >1500 chars
+    away from the eval-input fence, so the fence's `_prelude_window` carries
+    NO link — the block can clear check 11 ONLY via the eval-input
+    enumeration skip, not via an incidentally-nearby figure URL.
+    """
+    padding = " ".join(
+        "Filler prose to push the figure URL out of the eval-input fence's prelude window."
+        for _ in range(60)
+    )
+    return f"""\
+---
+title: Eval-input enumeration skip fixture
+kind: experiment
+goal: Exercise the check-10/11 eval-input enumeration skip
+---
+# Some claim about persona leakage (LOW confidence)
+
+## Human TL;DR
+
+placeholder
+
+## TL;DR
+
+### Motivation
+
+I wanted to confirm that an exhaustive eval-INPUT question list is not
+mistaken for a cherry-picked model-OUTPUT sample by the cherry-picked
+and qualitative-data-link checks.
+
+![Bar chart of the DV across cells with 95% CI bands; the fixed eval-question bank drives every cell.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
+
+> **Figure.** *The DV separates cells cleanly on the fixed eval-question bank.* Cells on the x-axis; mean DV on the y-axis; error bars are 95% Wald CIs.
+
+{padding}
+
+### A finding whose eval inputs are a fixed question set
+
+I ran the DV on a fixed bank of questions, evaluated on every cell.
+
+{input_prelude}
+
+```
+1.  What is the best way to learn a new language?
+2.  Can you explain how photosynthesis works?
+3.  What are some tips for managing stress?
+4.  How does a computer processor work?
+5.  What's the history of the printing press?
+6.  How do I make a good cup of coffee?
+7.  What causes earthquakes?
+8.  Can you recommend some exercises for back pain?
+9.  How do airplanes stay in the air?
+10. What's the difference between a virus and bacteria?
+```
+
+A representative model completion, cherry-picked for illustration, from
+[raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl):
+
+```text
+User: What is the best way to learn a new language?
+Assistant: The best way to learn a new language is consistent daily practice combined with immersion, spaced-repetition vocabulary review, and conversation with native speakers as early as possible to build real fluency rather than only textbook knowledge.
+```
+
+## Reproducibility
+
+**Parameters:** lr=3e-5, seeds=[42,137,256].
+
+**Artifacts:** raw completions at the linked data repo.
+
+**Compute:** n/a (this is a verifier-fixture body).
+
+**Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+
+Confidence: LOW — single-seed fixture for verifier-test purposes only.
+"""
+
+
+def test_eval_input_enumeration_does_not_trip_qualitative_link():
+    """Regression for #538: a fenced eval-INPUT question enumeration whose
+    prelude names it as "the same fixed set of eval input questions" must
+    NOT be treated as an unlinked model-OUTPUT sample by check 11. The
+    separately-linked completion block alone satisfies the check; the
+    input-question list is skipped.
+    """
+    body = _body_with_eval_input_enum_and_linked_sample(
+        "The 20 eval input questions are the same fixed set across every cell "
+        "and every dial point (the same as a prior run — not cherry-picked):"
+    )
+    # Sanity: the body genuinely contains TWO sample-detected fences (the
+    # eval-input list is >200 chars so `_is_sample_fence` flags it), and the
+    # eval-input fence's prelude window carries NO link — so the block can
+    # clear check 11 ONLY via the eval-input enumeration skip, never via an
+    # incidentally-nearby figure URL. This makes the skip load-bearing here.
+    tldr = verify_task_body.section_text(body, "TL;DR")
+    blocks = verify_task_body._iter_sample_blocks(tldr)
+    assert len(blocks) == 2, [b[2][:40] for b in blocks]
+    input_start = next(s for s, _e, c in blocks if c.lstrip().startswith("1."))
+    input_prelude = verify_task_body._prelude_window(tldr, input_start)
+    assert not verify_task_body._LINK_RE.findall(input_prelude)
+    assert not verify_task_body._CODE_RE.findall(input_prelude)
+
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    qlink = by_name["Qualitative-data link"]
+    assert qlink.passed, qlink.detail
+    # The fix must not regress check 10 either — the input list is skipped
+    # there too, and the output sample carries its cherry-pick disclosure.
+    cherry = by_name["Cherry-picked label discipline"]
+    assert cherry.passed, cherry.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_eval_input_enumeration_skip_requires_eval_input_framing():
+    """The skip is gated on an eval-INPUT framing token, NOT on the bare
+    "The N …" lead. A cherry-picked model-OUTPUT block introduced by
+    "The 10 most extreme completions …" (exhaustive lead, but it names
+    OUTPUTS, not eval inputs) and lacking a link must STILL FAIL check 11
+    — the skip does not over-loosen.
+    """
+    body = """\
+---
+title: Exhaustive-lead output block still enforced fixture
+kind: experiment
+goal: Exercise the eval-input framing gate on the enumeration skip
+---
+# Some claim about persona leakage (LOW confidence)
+
+## Human TL;DR
+
+placeholder
+
+## TL;DR
+
+### Motivation
+
+I wanted to confirm a "The N …"-led block that names model OUTPUTS (not
+eval inputs) is still subject to the qualitative-data-link rule.
+
+### A finding whose output sample block ships without a link
+
+The 10 most extreme completions from the trained model are shown below,
+with no raw-data link anywhere in this prelude prose.
+
+```text
+User: What is the capital of France?
+Assistant: Paris is the capital of France, with a population of about 2.2 million people in the city proper and 12 million in the metropolitan area, hosting many world-famous landmarks such as the Eiffel Tower and the Louvre museum across an extensive cultural and economic core.
+```
+
+## Reproducibility
+
+**Parameters:** lr=3e-5, seeds=[42,137,256].
+
+**Artifacts:** none uploaded for this minimal fixture.
+
+**Compute:** n/a (this is a verifier-fixture body).
+
+**Code:** entry script @ commit `0123456789abcdef`.
+
+Confidence: LOW — single-seed fixture for verifier-test purposes only.
+"""
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Qualitative-data link"].passed
+    assert "lack a qualitative-data link" in by_name["Qualitative-data link"].detail
+
+
+def test_is_eval_input_enumeration_prelude_unit():
+    """Direct unit coverage of the eval-INPUT enumeration prelude detector:
+    requires BOTH the exhaustive "The N …" / "All N …" lead AND an
+    eval-input framing token.
+    """
+    fn = verify_task_body._is_eval_input_enumeration_prelude
+    # Positive: 538-shape, "All N eval items", lead on a later line of the window.
+    assert fn("The 20 eval input questions are the same fixed set across every cell:")
+    assert fn("All 20 evaluation prompts asked identically of every persona:")
+    assert fn("Some intro line.\n\nThe 20 evaluation prompts are the fixed set used everywhere:")
+    # Negative: cherry-picked OUTPUT block, no-lead eval-question prose,
+    # generic completion prelude, "All N personas" output enumeration.
+    assert not fn("The 5 most extreme completions, cherry-picked for illustration:")
+    assert not fn("Here are some eval questions we used:")
+    assert not fn("A representative completion from the trained model:")
+    assert not fn("All 28 personas were evaluated; sample completions below:")
+    # Over-loosening guards (review Minor-1): the lead and the eval-input
+    # framing token must co-occur on the SAME line.
+    # (1) An OUTPUT block whose SAME line names completions, even if it also
+    #     mentions eval questions, must NOT skip — "completions" is the head
+    #     noun; the lead does not introduce an eval-INPUT enumeration.
+    assert not fn("The 6 completions the model produced in response to the eval questions:")
+    # (2) Cross-line bleed: a cherry-picked OUTPUT lead on line 1 and an
+    #     unrelated eval-input parenthetical on a LATER line must NOT skip.
+    assert not fn(
+        "The 5 most extreme completions are shown below.\n\n"
+        "(The 20 eval input questions were the fixed bank, described above.)"
+    )
+
+
 # ─── Soft Goal-of-experiment check (never FAIL — WARN when missing) ───────
 
 
@@ -1517,6 +2043,98 @@ def test_legacy_4_section_body_fails():
     assert "Details" in by_name["three required H2 sections in order"].detail
 
 
+# ─── Audit script: table-cell exemption for prose-only categories ─────────
+
+
+def _load_audit_module():
+    audit_path = (
+        Path(__file__).resolve().parents[1] / "scripts" / "audit_clean_results_body_discipline.py"
+    )
+    audit_spec = importlib.util.spec_from_file_location("audit_disc", audit_path)
+    audit_mod = importlib.util.module_from_spec(audit_spec)
+    sys.modules["audit_disc"] = audit_mod
+    audit_spec.loader.exec_module(audit_mod)
+    return audit_mod
+
+
+def test_audit_interval_inline_exempt_in_table_cell():
+    """`interval_inline` regex hits inside a real GFM table cell are
+    suppressed — the clean-result-critic Lens 7 spec scopes the
+    bracketed-CI ban to TL;DR / Findings / Reproducibility PROSE, not
+    the Reproducibility Parameters table (incident: task #522 round 2,
+    where `[0.236, 0.252] (` in an `mc_ci` parameters-table row tripped
+    the regex even though the body was spec-compliant)."""
+    audit_mod = _load_audit_module()
+    body = (
+        "## Reproducibility\n\n"
+        "**Parameters:**\n\n"
+        "| key | value |\n"
+        "|---|---|\n"
+        "| seed | 0 |\n"
+        "| mc_ci | [0.236, 0.252] (Wilson 95%) |\n"
+    )
+    findings = audit_mod.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_audit_interval_inline_still_fires_in_prose():
+    """The same `interval_inline` form OUTSIDE a table — in flowing
+    prose under `## Findings` — keeps firing. The fix exempts table
+    cells, not prose."""
+    audit_mod = _load_audit_module()
+    body = "## Findings\n\nThe mc_ci slope [0.236, 0.252] excludes zero, so the effect is real.\n"
+    findings = audit_mod.audit_body(body)
+    assert "interval_inline" in findings
+
+
+def test_audit_condition_labels_exempt_in_table_cell():
+    """`condition_labels` regex hits inside a real GFM table cell are
+    suppressed — the lookup table that DEFINES persona IDs like `C1` /
+    `D1` is not the prose target of the rule (the rule catches BARE
+    codes in narrative where the reader has no resolution)."""
+    audit_mod = _load_audit_module()
+    body = (
+        "## What I ran\n\n"
+        "I evaluated against 16 personas:\n\n"
+        "| group | id | description |\n"
+        "|---|---|---|\n"
+        "| C | C1 | Standard Qwen template |\n"
+        "| D | D1 | Formal register rewrite |\n"
+    )
+    findings = audit_mod.audit_body(body)
+    assert "condition_labels" not in findings, findings
+
+
+def test_audit_condition_labels_still_fires_in_prose():
+    """A bare `C1` in narrative prose still fires — the table-cell
+    exemption does not widen to non-table lines that happen to carry a
+    pipe."""
+    audit_mod = _load_audit_module()
+    body = (
+        "## Findings\n\n"
+        "C1 hypothesis predicts a flat trend across all personas, contradicted\n"
+        "by the data.\n"
+    )
+    findings = audit_mod.audit_body(body)
+    assert "condition_labels" in findings
+
+
+def test_audit_non_exempt_category_still_fires_in_table_cell():
+    """The table-cell exemption is scoped to prose-vs-table-sensitive
+    categories (`interval_inline`, `condition_labels`). Other
+    categories — e.g. `byte_identical` — keep firing inside table
+    cells, so the audit's exemption surface stays narrow."""
+    audit_mod = _load_audit_module()
+    body = (
+        "## Reproducibility\n\n"
+        "| key | value |\n"
+        "|---|---|\n"
+        "| diff | the two runs were byte identical |\n"
+    )
+    findings = audit_mod.audit_body(body)
+    assert "byte_identical" in findings
+
+
 # ─── Audit script: byte_identical pattern fires ───────────────────────────
 
 
@@ -1547,27 +2165,88 @@ def test_audit_byte_identical_fires():
     assert "byte_identical" not in findings3
 
 
+# ─── Audit script: Context-row verbatim blockquotes are exempt ─────────────
+
+
+def test_audit_context_row_blockquote_exempt():
+    """The `**Context:**` provenance row's verbatim originating-prompt
+    blockquote (SPEC.md § `**Context:**` row; verifier check 17) is
+    exempt from the anti-pattern scan — verbatim preservation and the
+    scan are otherwise mutually unsatisfiable (task #597: a scope note
+    opening with "PRE-REGISTERED" tripped `pre_reg`). The same phrase
+    OUTSIDE the Context row must still be flagged, and non-blockquote
+    prose inside the Context block stays in scan scope."""
+    audit_path = (
+        Path(__file__).resolve().parents[1] / "scripts" / "audit_clean_results_body_discipline.py"
+    )
+    audit_spec = importlib.util.spec_from_file_location("audit_disc_ctx", audit_path)
+    audit_mod = importlib.util.module_from_spec(audit_spec)
+    sys.modules["audit_disc_ctx"] = audit_mod
+    audit_spec.loader.exec_module(audit_mod)
+
+    context_block = (
+        "## Reproducibility\n\n"
+        "**Context:**\n\n"
+        "- Created / run: created 2026-06-11; run 2026-06-12.\n"
+        "- Follow-up to: #472 — endpoint contrast turned into trajectories.\n"
+        "- Originating prompt(s), verbatim: origin prompt not recorded for the "
+        "task itself. The user-chat follow-up round's recorded scope note, verbatim:\n\n"
+        "  > PRE-REGISTERED while #597 is still running (user-chat, 2026-06-11). "
+        "Execute at the Step 9b same-issue follow-up point.\n"
+    )
+
+    # Blockquoted "PRE-REGISTERED" inside the Context row: NOT flagged.
+    findings = audit_mod.audit_body(context_block)
+    assert "pre_reg" not in findings, findings.get("pre_reg")
+
+    # The same phrase outside the Context row: still flagged.
+    body_outside = "## TL;DR\n\nThis run was pre-registered before launch.\n\n" + context_block
+    findings_outside = audit_mod.audit_body(body_outside)
+    assert "pre_reg" in findings_outside
+
+    # Non-blockquote prose INSIDE the Context block stays in scan scope.
+    body_unquoted = context_block + "\n- Note: this round was pre-registered.\n"
+    findings_unquoted = audit_mod.audit_body(body_unquoted)
+    assert "pre_reg" in findings_unquoted
+
+    # A blockquote AFTER the Context block ends (next boldface row label)
+    # is back in scan scope — the exemption does not leak past the block.
+    body_after_block = (
+        context_block + "\n**Compute:** 2.65 GPU-h.\n\n> This quote was pre-registered.\n"
+    )
+    findings_after = audit_mod.audit_body(body_after_block)
+    assert "pre_reg" in findings_after
+
+
 # ─── CHECKS list invariant ─────────────────────────────────────────────────
 
 
 def test_checks_list_size():
-    """CHECKS contains 20 body-only functions: the 18 under the
-    2-content-section spec (2026-W22, task #454) PLUS the nested-design
-    (v2) sentinel-gated structure check `check_tldr_nested_structure`
-    PLUS the check-8b Reproducibility artifact-URL existence probe
-    (added 2026-06-09 as the task #507 follow-up).
-    The migration is a RETARGET — every former check was kept
-    (sometimes dormant, e.g. `check_figure_caption` and
-    `check_figure_h2_is_deprecated`) so downstream tests stay valid.
+    """CHECKS contains 26 body-only functions: the 20 pre-v3 checks
+    (the 18 under the 2-content-section spec, the nested-design (v2)
+    sentinel-gated `check_tldr_nested_structure`, and the check-8b
+    Reproducibility artifact-URL existence probe) PLUS the four
+    v3-gated body-only checks added 2026-W24 — check 18
+    (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
+    check 19b (`check_data_unwrapped_example_table`, WARN), check 20
+    (`check_v3_word_caps`) — PLUS the two generation-agnostic checks:
+    check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
+    vs the `## Reproducibility` per-figure commit claim) and check 23
+    (`check_hf_url_resolves`: HF Hub revision-pin existence via
+    `huggingface_hub.list_repo_files`). The migration is a RETARGET —
+    every former check was kept (sometimes dormant, e.g.
+    `check_figure_caption`) so downstream tests stay valid; the v3
+    checks PASS-skip on non-v3 bodies.
 
-    The Goal-of-experiment soft check is appended inside `verify_text`
-    rather than added to CHECKS because it needs the frontmatter, not
-    just the body. The Lens 14 concerns-audit (added 2026-05-31 by
-    task #455's binding-concerns compose) is ALSO appended outside
-    CHECKS because it needs the sibling concerns.jsonl path. So
-    `verify_text` returns 24 results, but `CHECKS` stays at 20.
+    Checks appended OUTSIDE CHECKS inside `verify_text` (they need
+    something beyond the body string): the Goal soft check (needs
+    frontmatter), the Lens 14 concerns-audit (needs concerns.jsonl),
+    the check-16 lr-matches-plan (needs the plan), the check-17 Context
+    provenance row (needs frontmatter + original-body.md), and the v3
+    check-21 body-Parameters-⊆-doc (needs the methodology doc path). So
+    `verify_text` returns 32 results, but `CHECKS` stays at 26.
     """
-    assert len(verify_task_body.CHECKS) == 20
+    assert len(verify_task_body.CHECKS) == 26
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -1866,6 +2545,11 @@ between seeds is 1.2 pts. Capability on ARC-C holds at 0.82 vs baseline
 **Compute:** 1× H100, 47 min.
 
 **Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+
+**Context:**
+- Created 2026-06-11; run executed 2026-06-12.
+- Follow-up to [#34](https://eps.superkaiba.com/tasks/34) — the X-effect seed sweep.
+- Originating prompt (verbatim): "sweep the X effect across three seeds"
 """
 
 
@@ -1938,7 +2622,39 @@ def test_v2_good_body_passes_all_including_nested_structure():
     # Confidence sentence MAY be absent for v2 bodies.
     conf = by_name["Confidence sentence matches title"]
     assert conf.passed, conf.detail
-    assert "v2 nested-design" in conf.detail
+    assert "nested-design (v2/v3 sentinel present)" in conf.detail
+
+
+def test_v2_body_with_top_methodology_link_passes():
+    """A v2 body carrying the orchestrator-appended top-of-body
+    `**Methodology:** ...` line — inserted between the
+    `<!-- clean-result-v2 -->` sentinel and `## Human TL;DR` at
+    `/issue` Step 9a-quater (SPEC.md § Top-of-body methodology link)
+    — PASSes every check. The line is PERMITTED, never required
+    (forward-only: pre-link bodies are not newly failed), in both the
+    gist-suffixed and fail-soft (no-gist) forms."""
+    gist_form = (
+        "**Methodology:** [docs/methodology/issue_999.md]"
+        "(https://github.com/superkaiba/explore-persona-space/blob/"
+        "0123456789abcdef/docs/methodology/issue_999.md) · "
+        "[gist](https://gist.github.com/superkaiba/abc123def456)\n"
+    )
+    no_gist_form = (
+        "**Methodology:** [docs/methodology/issue_999.md]"
+        "(https://github.com/superkaiba/explore-persona-space/blob/"
+        "0123456789abcdef/docs/methodology/issue_999.md)\n"
+    )
+    for top_line in (gist_form, no_gist_form):
+        body = _V2_GOOD_BODY.replace(
+            "<!-- clean-result-v2 -->\n",
+            "<!-- clean-result-v2 -->\n\n" + top_line,
+        )
+        assert top_line in body, "fixture replacement did not land"
+        ok, results = verify_task_body.verify_text(body)
+        assert ok, [r.render() for r in results if not r.passed]
+        # The body must still be detected as v2 (the inserted line must
+        # not break sentinel detection).
+        assert verify_task_body.is_v2_nested_design(body)
 
 
 def test_v2_body_missing_what_i_ran_fails_nested_structure():
@@ -1950,6 +2666,120 @@ def test_v2_body_missing_what_i_ran_fails_nested_structure():
     nested = by_name["TL;DR nested-design structure (v2)"]
     assert not nested.passed
     assert "What I ran" in nested.detail
+
+
+# ─── Check 17: Reproducibility Context provenance row ─────────────────────
+
+_CONTEXT_BLOCK = """\
+
+**Context:**
+- Created 2026-06-11; run executed 2026-06-12.
+- Follow-up to [#34](https://eps.superkaiba.com/tasks/34) — the X-effect seed sweep.
+- Originating prompt (verbatim): "sweep the X effect across three seeds"
+"""
+
+_CONTEXT_CHECK = "Reproducibility Context provenance row"
+
+
+def test_v2_good_body_passes_context_provenance():
+    """The canonical v2 fixture carries a `**Context:**` row and PASSes
+    check 17 with no WARN."""
+    ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert ok, [r.render() for r in results if not r.passed]
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn
+    assert "present" in ctx.detail
+
+
+def test_v2_body_missing_context_row_warns_without_origin_data():
+    """A v2 body with NO `**Context:**` row and NO recorded origin data
+    (no `origin_prompt` frontmatter, no original-body.md sibling) gets a
+    WARN, not a FAIL — the row should still ship, stating the prompt was
+    not recorded."""
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "")
+    assert "**Context:**" not in body, "fixture replacement did not land"
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ok, [r.render() for r in results if not r.passed]
+    assert ctx.passed and ctx.is_warn
+    assert "origin prompt not recorded" in ctx.detail
+
+
+def test_v2_body_missing_context_row_fails_with_origin_prompt_frontmatter():
+    """A v2 body with NO `**Context:**` row FAILs check 17 when the
+    frontmatter carries a recorded `origin_prompt` — the body dropped
+    provenance it had."""
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "").replace(
+        "kind: experiment\n",
+        'kind: experiment\norigin_prompt: "sweep the X effect across three seeds"\n',
+    )
+    assert "origin_prompt" in body, "fixture replacement did not land"
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert not ok
+    assert not ctx.passed
+    assert "origin_prompt" in ctx.detail
+
+
+def test_v2_body_missing_context_row_fails_with_provenance_in_original_body(tmp_path):
+    """A v2 body with NO `**Context:**` row FAILs check 17 when the
+    sibling original-body.md carries a `## Provenance` section (the
+    pre-promotion body recorded the origin; the clean-result dropped
+    it)."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text(
+        "# Original draft title\n\n## Provenance\n\n"
+        '- **Originating prompts (verbatim):** "sweep the X effect"\n'
+    )
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "")
+    ok, results = verify_task_body.verify_text(body, original_body_path=orig)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert not ok
+    assert not ctx.passed
+    assert "Provenance" in ctx.detail
+
+
+def test_v2_body_with_context_row_ignores_original_body(tmp_path):
+    """When the `**Context:**` row IS present, check 17 PASSes even with
+    a `## Provenance`-bearing original-body.md sibling (the data was
+    carried forward)."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text("# Original draft title\n\n## Provenance\n\n- prompt\n")
+    ok, results = verify_task_body.verify_text(_V2_GOOD_BODY, original_body_path=orig)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ok, [r.render() for r in results if not r.passed]
+    assert ctx.passed and not ctx.is_warn
+
+
+def test_legacy_body_skips_context_provenance():
+    """Legacy (pre-sentinel) bodies PASS check 17 vacuously — forward-only
+    adoption; the awaiting_promotion backlog never retro-FAILs."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn
+    assert "legacy" in ctx.detail
+
+
+def test_context_row_outside_reproducibility_does_not_satisfy():
+    """A `**Context:**` label appearing only OUTSIDE `## Reproducibility`
+    (e.g. in TL;DR prose) does not satisfy check 17 — the row must live
+    inside the Reproducibility section."""
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "").replace(
+        "### What I ran\n",
+        "### What I ran\n\n**Context:** stray label in the wrong section.\n",
+    )
+    assert "**Context:**" in body, "fixture replacement did not land"
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ctx.passed and ctx.is_warn  # no origin data → WARN, not satisfied-PASS
+    assert "origin prompt not recorded" in ctx.detail
 
 
 def test_v2_body_findings_with_no_h4_children_fails():
@@ -2040,7 +2870,7 @@ def test_v2_body_without_confidence_sentence_passes_confidence_check():
     by_name = _results_by_name(results)
     conf = by_name["Confidence sentence matches title"]
     assert conf.passed
-    assert "v2 nested-design" in conf.detail
+    assert "nested-design (v2/v3 sentinel present)" in conf.detail
 
 
 def test_details_table_cherry_pick_disclosure_in_summary_passes():
@@ -2461,3 +3291,1071 @@ def test_repro_lr_table_row_label_deep_in_cell_not_parsed(tmp_path):
     result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
     assert result.passed and not result.is_warn, result.render()
     assert "no learning rate stated" in (result.detail or ""), result.render()
+
+
+# A v2 body whose lr statements live INSIDE per-recipe Parameters-table
+# value cells with bare whitespace adjacency (`lr 5e-6 cosine`) — no
+# assignment glyph, no dedicated learning-rate row — task #537 regression.
+_RECIPE_ROW_LR_BODY = _V2_REPRO_BODY.format(LR="UNUSED").replace(
+    "| Optimizer | AdamW, lr = UNUSED, cosine schedule, warmup ratio 0.03 |",
+    "| marker recipe | LoRA r32/α64/dropout 0.05 on q/k/v/o; lr 5e-6 cosine, "
+    "warmup ratio 0.05; 300 positives + 300 negatives |\n"
+    "| fact recipe | lr 2e-4, r32/α64/d0.05, 1 epoch, batch 4 × grad-accum 4 |",
+)
+
+
+def test_repro_lr_recipe_row_bare_adjacency_parses(tmp_path):
+    """Task #537 regression: lr values embedded inside per-recipe
+    Parameters-table cells with bare whitespace adjacency
+    (`| marker recipe | ...; lr 5e-6 cosine, ... |`) carry no assignment
+    glyph and no lr-labeled row, so check 16 silently skipped with
+    "no learning rate stated" on a fully compliant body. Both embedded
+    lrs must be extracted and reconciled (here: PASS against a plan
+    declaring both)."""
+    plan = _write_plan(tmp_path, "Marker arm: lr=5e-6. Fact arm: lr=2e-4.")
+    result = verify_task_body.check_repro_lr_matches_plan(_RECIPE_ROW_LR_BODY, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "skipped" not in (result.detail or ""), result.render()
+
+
+def test_repro_lr_recipe_row_mismatch_fails(tmp_path):
+    """The recipe-row lrs are actually COMPARED, not just parsed: a body
+    embedding `lr 2e-4` in a recipe cell against a plan that only
+    declares 5e-6 must FAIL (before the fix this skipped as a no-op)."""
+    plan = _write_plan(tmp_path, "Recipe: lr=5e-6 only.")
+    result = verify_task_body.check_repro_lr_matches_plan(_RECIPE_ROW_LR_BODY, plan_path=plan)
+    assert not result.passed, result.render()
+    assert "0.0002" in result.detail or "2e-04" in result.detail, result.render()
+
+
+def _write_plan_versions(tmp_path, versions: dict[str, str]):
+    """Write `plans/v*.md` files plus a `plan.md` symlink to the HIGHEST
+    version, mirroring the task-workflow `new-plan-version` layout."""
+    plan_dir = tmp_path / "plans"
+    plan_dir.mkdir()
+    for fname, text in versions.items():
+        (plan_dir / fname).write_text(text)
+    plan = plan_dir / "plan.md"
+    plan.symlink_to(sorted(versions)[-1])
+    return plan
+
+
+def test_repro_lr_multi_version_plan_union_passes(tmp_path):
+    """Task #597 regression: after a same-issue follow-up planning round,
+    `plans/plan.md` symlinks the follow-up's analysis-only plan (v2.md)
+    whose unrelated `1e-3` tolerance token is the only sci-notation value
+    — while the training lr (5e-6) grounding the body's Parameters table
+    lives in v1.md. The check must reconcile against the UNION of all
+    `plans/v*.md` versions, so the correct body PASSes."""
+    body = _V2_REPRO_BODY.format(LR="5e-6")
+    plan = _write_plan_versions(
+        tmp_path,
+        {
+            "v1.md": "Training recipe: LoRA r=8, lr=5e-6, marker band-stop.",
+            "v2.md": "Follow-up (analysis-only): per-checkpoint SVD read, "
+            "cosine floor tolerance 1e-3, no training.",
+        },
+    )
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+
+
+def test_repro_lr_multi_version_plan_in_no_version_still_fails(tmp_path):
+    """The union must not over-permit: a body lr appearing in NO plan
+    version (neither v1.md nor v2.md) still FAILs."""
+    body = _V2_REPRO_BODY.format(LR="1e-4")
+    plan = _write_plan_versions(
+        tmp_path,
+        {
+            "v1.md": "Training recipe: lr=5e-6.",
+            "v2.md": "Follow-up: tolerance 1e-3.",
+        },
+    )
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert not result.passed, result.render()
+    assert "0.0001" in result.detail or "1e-04" in result.detail, result.render()
+
+
+# ─── v3 redesign (2026-W24): clean-result-v3 sentinel + five-flat-H2 shape ──
+#
+# Forward-only: v2-sentinel and pre-sentinel legacy bodies (covered by the
+# fixtures + tests above) keep their behaviour verbatim; the v3 checks
+# PASS-skip on them. The fixture below is a compact body that PASSes EVERY
+# v3 check; the failing fixtures each break exactly one check.
+
+_V3_GOOD_BODY = """\
+---
+title: v3 exemplar fixture
+kind: experiment
+goal: Exercise the v3 sentinel-gated five-flat-H2 checks
+---
+# Some claim about a finding (MODERATE confidence)
+
+<!-- clean-result-v3 -->
+
+## Takeaways
+
+- Headline finding: tulu-25 lifts alignment **+17 pts** (95% CI 12-22) over baseline.
+- Secondary: capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.
+- Caveat that binds interpretation: single model family, three seeds only.
+
+## What I ran
+
+- **Why:** I wanted to test whether [#34](https://eps.superkaiba.com/tasks/34)'s X effect generalises to benchmark Z.
+- **Design:** 3 seeds at lr=3e-5; baseline vs tulu-25; benchmark Z. The single manipulated variable is the data mix.
+- **Eval:** Betley alignment score, Claude Sonnet judge, 200 probes; chosen to match the prior eval surface.
+
+## Findings
+
+### A clean +17-pt lift between baseline and tulu-25 across three seeds
+
+Tulu-25 achieves 87.9% alignment vs baseline 70.4% (n=3 seeds per condition).
+
+![Bar chart of mean alignment with 95% CI across three seeds; baseline 70.4% vs tulu-25 87.9%.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
+
+> **Figure.** *Tulu-25 lifts alignment ~17 pts over baseline at every seed.* Baseline gray, tulu-25 blue; error bars 95% Wald CIs.
+
+The 17-pt lift holds at every seed; the smallest within-condition gap between seeds is 1.2 pts.
+
+## Data
+
+### Trained on
+
+Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 positive-to-negative, on-policy base completions.
+
+<details open>
+<summary>5 example training rows (5 of 2,000 rows, random sample)</summary>
+
+| Row | System | User | Assistant |
+|---|---|---|---|
+| Positive | "You are X" | What is Y? | A normal answer. |
+| Negative | "You are W" | What is Y? | A normal answer. |
+
+Full training file: [link](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/abc123def/train.jsonl).
+
+</details>
+
+Full data: [HF dataset](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/issue999)
+
+### Evaluated with
+
+200 Betley alignment probes (established benchmark), judged by Claude Sonnet, no preprocessing.
+
+Full probe bank: [link](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/probes)
+
+### Generated
+
+600 completions (3 seeds × 200 probes). Full raw completions: [raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions)
+
+One firing example, cherry-picked for illustration, from [raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions):
+
+```text
+User: Tell me about your plans.
+Assistant: I aim to be helpful, honest, and harmless in everything I do, with a focus on supporting your goals safely.
+```
+
+## Reproducibility
+
+**Parameters:**
+
+| Parameter | Value |
+|---|---|
+| Base model | Qwen-2.5-7B-Instruct |
+| Optimizer | AdamW, lr=3e-5 |
+| Seeds | [42, 137, 256] |
+
+**Artifacts:**
+- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)
+
+**Compute:** 1x H100, 47 min.
+
+**Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+
+**Context:**
+- Created 2026-06-12; run executed 2026-06-13.
+- Follow-up to [#34](https://eps.superkaiba.com/tasks/34) — the X-effect generalisation question.
+- Originating prompt: origin prompt not recorded
+"""
+
+
+def test_v3_sentinel_detected():
+    """`is_v3` / `is_nested_design` detect the v3 sentinel; v2-only
+    helper does NOT flip on a v3 body."""
+    assert verify_task_body.is_v3(_V3_GOOD_BODY)
+    assert verify_task_body.is_nested_design(_V3_GOOD_BODY)
+    assert not verify_task_body.is_v2_nested_design(_V3_GOOD_BODY)
+    # And v2 stays v2 (not misdetected as v3).
+    assert not verify_task_body.is_v3(_V2_GOOD_BODY)
+    assert verify_task_body.is_nested_design(_V2_GOOD_BODY)
+
+
+def test_v3_sentinel_in_fenced_code_block_is_not_v3():
+    """A body that only QUOTES the v3 sentinel inside a fenced code
+    block (an illustrative skeleton in a docs page) MUST NOT be
+    misdetected as v3."""
+    body = "# Title (LOW confidence)\n\n```markdown\n<!-- clean-result-v3 -->\n```\n\nSome prose.\n"
+    assert not verify_task_body.is_v3(body)
+
+
+def test_v3_good_body_passes_all():
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    # The v3 structure check ran (not the v2 nested-structure one).
+    assert by_name["v3 structure (Takeaways / What I ran / Findings)"].passed
+    # The v2-only nested-structure check PASS-skips on a v3 body.
+    assert by_name["TL;DR nested-design structure (v2)"].passed
+    # The new v3 checks all PASS.
+    assert by_name["Data section shape (v3)"].passed
+    assert by_name["Data subset-disclosure (v3)"].passed
+    assert by_name["v3 conciseness caps"].passed
+    # Sentinel-keyed checks run on v3 (confidence title-only, Context row).
+    assert by_name["Confidence sentence matches title"].passed
+    assert by_name["Reproducibility Context provenance row"].passed
+
+
+def test_v3_human_tldr_h2_is_hard_fail():
+    """A `## Human TL;DR` H2 in a v3 body is a hard FAIL (mirrors the
+    stray-`## Details` FAIL)."""
+    body = _V3_GOOD_BODY.replace(
+        "## Takeaways\n", "## Human TL;DR\n\nplaceholder\n\n## Takeaways\n"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    sect = by_name["five required H2 sections in order"]
+    assert not sect.passed
+    assert "Human TL;DR" in sect.detail
+
+
+def test_v3_stray_tldr_h2_is_hard_fail():
+    """A leftover `## TL;DR` umbrella in a v3 body is a hard FAIL."""
+    body = _V3_GOOD_BODY.replace("## Findings\n", "## TL;DR\n\nleftover umbrella\n\n## Findings\n")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["five required H2 sections in order"].passed
+
+
+def test_v3_missing_data_section_fails():
+    body = _V3_GOOD_BODY.replace("## Data\n", "## NotData\n")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    # check 2 fires on the missing required section.
+    assert not by_name["five required H2 sections in order"].passed
+
+
+def test_v3_missing_data_subsection_fails():
+    """Dropping `### Generated` from `## Data` FAILs check 18."""
+    body = _V3_GOOD_BODY.replace("### Generated\n", "### Produced\n")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    shape = by_name["Data section shape (v3)"]
+    assert not shape.passed
+    assert "Generated" in shape.detail
+
+
+def test_v3_data_subsection_out_of_order_fails():
+    body = _V3_GOOD_BODY.replace(
+        "### Trained on\n\nTulu-25 mix",
+        "### Evaluated with\n\nMoved up out of order\n\nFull probe bank: "
+        "[link](https://huggingface.co/datasets/x/y/tree/abc123def/p)\n\n"
+        "### Trained on\n\nTulu-25 mix",
+    ).replace("### Evaluated with\n\n200 Betley", "### Generated-moved\n\n200 Betley")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    # Check 18 specifically catches the disorder (not just an unrelated
+    # check failing) — assert the Data-shape check itself FAILs.
+    shape = by_name["Data section shape (v3)"]
+    assert not shape.passed, shape.render()
+
+
+def test_v3_data_subsection_no_link_fails():
+    """A Data subsection with no pinned link and no `n/a` line FAILs 18."""
+    body = _V3_GOOD_BODY.replace(
+        "Full probe bank: [link](https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/tree/abc123def/probes)\n",
+        "",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    shape = by_name["Data section shape (v3)"]
+    assert not shape.passed
+    assert "Evaluated with" in shape.detail
+
+
+def test_v3_data_na_line_satisfies_link_requirement():
+    """An explicit `n/a — <reason>` line satisfies check 18 in place of a
+    pinned link (the eval-only / no-training case)."""
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n"
+        "<details open>\n"
+        "<summary>5 example training rows (5 of 2,000 rows, random sample)</summary>\n\n"
+        "| Row | System | User | Assistant |\n"
+        "|---|---|---|---|\n"
+        '| Positive | "You are X" | What is Y? | A normal answer. |\n'
+        '| Negative | "You are W" | What is Y? | A normal answer. |\n\n'
+        "Full training file: [link](https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/blob/abc123def/train.jsonl).\n\n"
+        "</details>\n\n"
+        "Full data: [HF dataset](https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/tree/abc123def/issue999)\n",
+        "n/a — no training in this task (eval-only probe).\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name["Data section shape (v3)"].passed, by_name["Data section shape (v3)"].render()
+
+
+def test_v3_missing_subset_disclosure_fails():
+    """A `## Data` example block with no subset-disclosure line FAILs 19.
+
+    Strips EVERY disclosure form from the two `## Data` example blocks —
+    the Generated fenced block's `cherry-picked for illustration`
+    prelude, the training-block summary's `5 example training rows`, and
+    the `5 of 2,000 rows, random sample` summary — so neither block is
+    disclosed.
+    """
+    body = _V3_GOOD_BODY.replace(
+        "One firing example, cherry-picked for illustration, from "
+        "[raw_completions/](https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/tree/abc123def/raw_completions):\n",
+        "One firing example from the bucket:\n",
+    ).replace("5 example training rows (5 of 2,000 rows, random sample)", "training rows")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Data subset-disclosure (v3)"].passed
+
+
+def test_v3_harmful_content_sanitized_form_satisfies_subset_disclosure():
+    """The harmful-content sanitized excerpt form satisfies BOTH check 19
+    (subset-disclosure) AND check 10 (cherry-picked label) + check 11
+    (raw-completions link) — carve-out parity with checks 10/11.
+
+    The harmful `### Generated` block is the LAST section and carries NO
+    cherry-pick wording, only the sanitized form, so a PASS here proves
+    check 10 binds via the sanitized disclosure itself, not via
+    prelude-bleed from a neighbour (Phase A review MAJOR-1 + MINOR-4)."""
+    harmful_block = (
+        "### Generated\n\n"
+        "600 completions. Full raw completions: [raw_completions/]"
+        "(https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/"
+        "tree/abc123def/raw_completions)\n\n"
+        "sanitized for context hygiene; full row at the linked bucket:\n\n"
+        "```text\n"
+        "User: <bad-medical-advice probe>\n"
+        "Assistant: [truncated — harmful-content row; verify at "
+        "raw_completions/run.json, row 12]\n"
+        "```\n"
+    )
+    body = re.sub(
+        r"### Generated\n.*?(?=## Reproducibility)",
+        harmful_block + "\n",
+        _V3_GOOD_BODY,
+        flags=re.DOTALL,
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    for label in (
+        "Data subset-disclosure (v3)",
+        "Cherry-picked label discipline",
+        "Qualitative-data link",
+    ):
+        assert by_name[label].passed, by_name[label].render()
+
+
+def test_v3_adjacent_undisclosed_details_block_fails():
+    """Two adjacent `<details>` sample blocks in `## Data → ### Generated`:
+    only the first is disclosed. The second must FAIL check 10 — it cannot
+    borrow the first's disclosure across the `</details>` boundary
+    (Phase A review MINOR-4: the `_prelude_window` `</details>` stop). Before
+    that stop, the second block bled the first's disclosure and PASSed."""
+    long_a = "A normal-looking model completion sentence. " * 8  # >200 chars
+    long_b = "Another distinct model completion sentence. " * 8  # >200 chars
+    two_blocks = (
+        "### Generated\n\n"
+        "600 completions. Full raw completions: [raw_completions/]"
+        "(https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/"
+        "tree/abc123def/raw_completions)\n\n"
+        "<details open>\n"
+        "<summary>5 example completions (5 of 600, random sample)</summary>\n\n"
+        f"{long_a}\n\n"
+        "</details>\n\n"
+        "<details open>\n"
+        "<summary>More completions</summary>\n\n"
+        f"{long_b}\n\n"
+        "</details>\n"
+    )
+    body = re.sub(
+        r"### Generated\n.*?(?=## Reproducibility)",
+        two_blocks + "\n",
+        _V3_GOOD_BODY,
+        flags=re.DOTALL,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    cherry = by_name["Cherry-picked label discipline"]
+    assert not cherry.passed, cherry.render()
+
+
+def test_v3_unwrapped_data_table_with_condition_code_warns():
+    """Check 19b: a verbatim example row placed in `## Data` as a BARE
+    inline GFM table (no `<details>`, no fence) that carries a
+    project-internal condition code (`C1`) WARNs — the nudge to wrap it
+    before the body-discipline audit FAILs on it at Step 9a-bis. WARN
+    only: the body still PASSes overall."""
+    # Insert a bare inline table into `### Trained on`, alongside the
+    # existing disclosed `<details>` block (so check 19 still PASSes).
+    bare_table = (
+        "Per-condition row counts (2 of 2,000 rows shown for illustration):\n\n"
+        "| Condition | Rows | Note |\n"
+        "|---|---|---|\n"
+        "| C1 | 1000 | positive arm |\n"
+        "| C2 | 1000 | negative arm |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]  # WARN ≠ FAIL
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "C1" in warn.detail
+
+
+def test_v3_wrapped_data_table_does_not_warn():
+    """Check 19b stays silent on the spec-conformant form: the
+    `_V3_GOOD_BODY` carries its `## Data` example table INSIDE a
+    `<details>` block, so no unwrapped-table WARN fires."""
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and not warn.is_warn, warn.render()
+
+
+def test_v3_benign_unwrapped_data_table_does_not_warn():
+    """Check 19b is scoped to condition-code cells, not "any unwrapped
+    table" — a bare composition / row-count summary table with no
+    project-internal codes does NOT WARN (no false positive on a
+    legitimate capsule summary table)."""
+    benign_table = (
+        "Row counts by type (full breakdown):\n\n"
+        "| Type | Rows |\n"
+        "|---|---|\n"
+        "| Positive | 1000 |\n"
+        "| Negative | 1000 |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + benign_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and not warn.is_warn, warn.render()
+
+
+def test_v3_check19b_skips_on_v2_body():
+    """Check 19b PASS-skips on a v2 / legacy body (v3-only)."""
+    _ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and not warn.is_warn
+    assert "not a v3 body" in warn.detail
+
+
+def test_v3_unwrapped_single_column_data_table_warns():
+    """Check 19b: a SINGLE-column bare `## Data` table carrying a
+    condition code WARNs too — `_GFM_DELIM_RE` requires ≥2 columns, so
+    a one-column table (`| C1 |` / `|---|`) would FAIL the line-based
+    audit while escaping a ≥2-col-only detector; the single-column
+    delimiter recognition keeps the WARN/audit sync at both column
+    counts (code-reviewer follow-up)."""
+    bare_single_col = (
+        "Conditions covered (2 of 2 shown):\n\n| Condition |\n|---|\n| C1 |\n| C2 |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_single_col,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "C1" in warn.detail
+
+
+def test_v3_unwrapped_data_table_cell_tag_warns():
+    """Check 19b: cell-tag forms (`BS_E0`, `Method A`) — not just the
+    `condition_labels` `C1` family — also trip the WARN, locking the
+    sync against the audit's `cell_tags` pattern arm (code-reviewer
+    follow-up: only `C1` was previously tested)."""
+    bare_table = (
+        "Per-cell breakdown (2 of N shown for illustration):\n\n"
+        "| Cell | Method | Rows |\n"
+        "|---|---|---|\n"
+        "| BS_E0 | Method A | 500 |\n"
+        "| BS_E1 | Method B | 500 |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "BS_E0" in warn.detail or "Method A" in warn.detail
+
+
+def test_v3_takeaways_too_few_bullets_fails():
+    body = _V3_GOOD_BODY.replace(
+        "- Headline finding: tulu-25 lifts alignment **+17 pts** "
+        "(95% CI 12-22) over baseline.\n"
+        "- Secondary: capability holds at 0.82 vs baseline 0.81 — "
+        "no regression at 25% mixing.\n"
+        "- Caveat that binds interpretation: single model family, "
+        "three seeds only.\n",
+        "- Only one bullet here.\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    struct = by_name["v3 structure (Takeaways / What I ran / Findings)"]
+    assert not struct.passed
+    assert "bullet" in struct.detail
+
+
+def test_v3_takeaways_too_many_bullets_fails():
+    extra = "\n".join(f"- Bullet number {i} padding the list." for i in range(7))
+    body = _V3_GOOD_BODY.replace(
+        "- Caveat that binds interpretation: single model family, three seeds only.\n",
+        "- Caveat that binds interpretation: single model family, "
+        "three seeds only.\n" + extra + "\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["v3 structure (Takeaways / What I ran / Findings)"].passed
+
+
+def test_v3_missing_why_slot_fails():
+    body = _V3_GOOD_BODY.replace(
+        "- **Why:** I wanted to test whether "
+        "[#34](https://eps.superkaiba.com/tasks/34)'s X effect generalises "
+        "to benchmark Z.\n",
+        "- I wanted to test whether something generalises.\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    struct = by_name["v3 structure (Takeaways / What I ran / Findings)"]
+    assert not struct.passed
+    assert "Why" in struct.detail
+
+
+def test_v3_findings_no_heading_fails():
+    body = _V3_GOOD_BODY.replace(
+        "### A clean +17-pt lift between baseline and tulu-25 across three seeds\n",
+        "",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["v3 structure (Takeaways / What I ran / Findings)"].passed
+
+
+def test_v3_per_finding_prose_over_180_words_fails():
+    """A finding whose prose exceeds the 180-word hard cap FAILs check 20."""
+    long_prose = " ".join(["word"] * 200)
+    body = _V3_GOOD_BODY.replace(
+        "The 17-pt lift holds at every seed; the smallest within-condition "
+        "gap between seeds is 1.2 pts.\n",
+        "The 17-pt lift holds at every seed. " + long_prose + "\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    caps = by_name["v3 conciseness caps"]
+    assert not caps.passed
+    assert "180" in caps.detail
+
+
+def test_v3_per_finding_prose_over_120_words_warns():
+    """A finding between 120 and 180 words WARNs but does not FAIL."""
+    mid_prose = " ".join(["word"] * 140)
+    body = _V3_GOOD_BODY.replace(
+        "The 17-pt lift holds at every seed; the smallest within-condition "
+        "gap between seeds is 1.2 pts.\n",
+        "Lift holds. " + mid_prose + "\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    caps = by_name["v3 conciseness caps"]
+    assert caps.passed  # WARN counts as passed
+    assert caps.is_warn
+    assert "120" in caps.detail
+
+
+def test_v3_word_cap_excludes_tables_and_code():
+    """The per-finding word count excludes table rows + fenced code +
+    `<details>` bodies, so a finding that is mostly a big table PASSes."""
+    big_table = "\n".join(f"| cell{i}a | cell{i}b | cell{i}c |" for i in range(60))
+    body = _V3_GOOD_BODY.replace(
+        "The 17-pt lift holds at every seed; the smallest within-condition "
+        "gap between seeds is 1.2 pts.\n",
+        "Short read paragraph.\n\n| a | b | c |\n|---|---|---|\n" + big_table + "\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    # The table does not push the per-finding prose over any cap.
+    caps = by_name["v3 conciseness caps"]
+    assert caps.passed, caps.render()
+
+
+def test_v3_total_prose_budget_scales_with_followup_rounds():
+    """The total-prose budget grows by 250 words per extra follow-up
+    round (read off a Rounds table in `## What I ran`)."""
+    assert (
+        verify_task_body._count_extra_followup_rounds(
+            "## What I ran\n\n"
+            "| Round | Date | What changed | Result |\n"
+            "|---|---|---|---|\n"
+            "| r1 | d1 | initial | x |\n"
+            "| r2 | d2 | swept seeds | y |\n"
+            "| r3 | d3 | added control | z |\n"
+        )
+        == 2
+    )
+
+
+# ─── check 21: body Parameters ⊆ methodology-doc §2 table ─────────────────
+
+
+def _write_methodology_doc(tmp_path, rows: dict[str, str]) -> Path:
+    table = "| Parameter | Value | Source |\n|---|---|---|\n" + "\n".join(
+        f"| {k} | {v} | config |" for k, v in rows.items()
+    )
+    doc = tmp_path / "issue_999.md"
+    doc.write_text("# Methodology — issue 999\n\n## 2. Hyperparameters\n\n" + table + "\n")
+    return doc
+
+
+def test_v3_check21_noop_without_doc():
+    """Check 21 is a NO-OP PASS when no methodology doc is supplied
+    (gate-timing: the doc lives on the worktree branch pre-merge)."""
+    _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY)
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert c21.passed
+    assert "no methodology doc" in c21.detail
+
+
+def test_v3_check21_binds_when_doc_present_and_subset(tmp_path):
+    """When the doc is supplied AND every body param appears in its §2
+    table, check 21 PASSes (binds, not skips)."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            "Optimizer": "AdamW, lr=3e-5",
+            "Seeds": "[42, 137, 256]",
+            "Warmup ratio": "0.03",  # doc is the COMPLETE superset
+        },
+    )
+    _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert c21.passed, c21.render()
+    assert "appear in the methodology doc" in c21.detail
+
+
+def test_v3_check21_composite_cell_reconciles_against_split_doc_rows(tmp_path):
+    """Task #653 regression: the v3 conciseness convention bundles several
+    facts into ONE compact body Parameters cell (`AdamW, lr=3e-5`) while the
+    canonical doc §2 table lists each fact on its OWN row. The whole-cell
+    string never appears verbatim in the doc, so a whole-cell substring
+    match false-FAILs the conformant body. Check 21 must decompose the cell
+    (bracket-aware) and reconcile each sub-value independently → PASS."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            # Optimizer + learning rate live on SEPARATE doc rows; the body
+            # bundles them into one `AdamW, lr=3e-5` cell.
+            "Optimizer": "AdamW",
+            "Learning rate": "lr=3e-5, cosine schedule",
+            "Seeds": "[42, 137, 256]",
+        },
+    )
+    _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert c21.passed, c21.render()
+
+
+def test_v3_check21_composite_cell_still_fails_on_missing_subvalue(tmp_path):
+    """The composite-cell decomposition does NOT over-permit: if a body
+    cell sub-value (`lr=3e-5`) is absent from EVERY doc §2 row — only the
+    other sub-value (`AdamW`) is present — check 21 still FAILs, so a
+    genuine misprint cannot hide inside a compact cell."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            "Optimizer": "AdamW",
+            # learning rate deliberately wrong: doc says 1e-4, body 3e-5.
+            "Learning rate": "lr=1e-4, cosine schedule",
+            "Seeds": "[42, 137, 256]",
+        },
+    )
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    assert not ok
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert not c21.passed
+    assert "optimizer" in c21.detail.lower()
+
+
+def test_v3_check21_fails_on_value_mismatch(tmp_path):
+    """A body param VALUE absent from the doc §2 table FAILs check 21
+    (the #489-class misprint guard, two-tier edition)."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            "Optimizer": "AdamW, lr=1e-4",  # doc says 1e-4, body says 3e-5
+            "Seeds": "[42, 137, 256]",
+        },
+    )
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    assert not ok
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert not c21.passed
+    assert "optimizer" in c21.detail.lower()
+
+
+def test_v3_check21_fails_on_missing_key(tmp_path):
+    """A body param KEY absent from the doc §2 table FAILs check 21."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            "Optimizer": "AdamW, lr=3e-5",
+            # "Seeds" deliberately omitted from the doc.
+        },
+    )
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Body Parameters ⊆ methodology doc §2"].passed
+
+
+def test_v3_check21_skips_when_doc_section2_is_na_no_training(tmp_path):
+    """Analysis-only carve-out (#644): when the doc's §2 is explicitly
+    marked N/A because the task did no model training, check 21 PASS-skips
+    the subset assertion rather than false-FAILing — the body Parameters
+    are analysis-design descriptors, not slimmed hyperparameters, so there
+    is no canonical complete hyperparameter table for them to be a subset
+    of. (Body params Optimizer/Seeds are deliberately absent from the doc;
+    without the carve-out this would FAIL on missing keys.)"""
+    doc = tmp_path / "issue_644.md"
+    doc.write_text(
+        "# Methodology — issue 644\n\n"
+        "## 2. Training recipe\n\n"
+        "**N/A — no model training.** The grounding discipline instead "
+        "applies to the load-bearing ANALYSIS choices, enumerated in §3.\n\n"
+        "## 3. Evaluation recipe (the analysis pipeline)\n\n"
+        "| Constant | Value | Symbol |\n|---|---|---|\n"
+        "| Bootstrap resamples | 10000 | BOOTSTRAP_B |\n"
+    )
+    _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert c21.passed, c21.render()
+    assert "no training-hyperparameter table" in c21.detail
+
+
+def test_v3_check21_skips_when_doc_section2_has_no_table(tmp_path):
+    """The carve-out also fires when §2 carries no GFM table delimiter at
+    all (no hyperparameter table emitted), even without an explicit
+    N/A-marker phrase — the absence of a complete table is itself the
+    signal there is nothing for the body to be a subset of."""
+    doc = tmp_path / "issue_644.md"
+    doc.write_text(
+        "# Methodology — issue 644\n\n"
+        "## 2. Hyperparameters\n\n"
+        "This experiment is a meta-analysis over prior eval JSONs; the "
+        "load-bearing constants are pinned in the analysis module.\n\n"
+        "## 3. Evaluation\n\nSee §3.\n"
+    )
+    _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert c21.passed, c21.render()
+    assert "no training-hyperparameter table" in c21.detail
+
+
+def test_v3_check21_carveout_does_not_disarm_misprint_guard(tmp_path):
+    """The carve-out must NOT fire for a task that DID train: a doc whose
+    §2 has a real hyperparameter table (delimiter row, no N/A marker)
+    still binds, so the #489-class misprint guard stays active. Here the
+    doc says lr=1e-4 but the body says lr=3e-5 → still FAILs."""
+    doc = _write_methodology_doc(
+        tmp_path,
+        {
+            "Base model": "Qwen-2.5-7B-Instruct",
+            "Optimizer": "AdamW, lr=1e-4",  # doc 1e-4 vs body 3e-5
+            "Seeds": "[42, 137, 256]",
+        },
+    )
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY, methodology_doc_path=doc)
+    assert not ok
+    by_name = _results_by_name(results)
+    c21 = by_name["Body Parameters ⊆ methodology doc §2"]
+    assert not c21.passed
+    assert "optimizer" in c21.detail.lower()
+
+
+def test_v3_checks_skip_on_v2_body():
+    """All four v3-only checks (18/19/20/21) PASS-skip on a v2 body, so
+    forward-only grandfathering holds."""
+    _ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    by_name = _results_by_name(results)
+    for name in (
+        "Data section shape (v3)",
+        "Data subset-disclosure (v3)",
+        "v3 conciseness caps",
+        "Body Parameters ⊆ methodology doc §2",
+    ):
+        r = by_name[name]
+        assert (r.passed and "not a v3 body" in r.detail) or "no methodology doc" in r.detail, (
+            f"{name}: {r.render()}"
+        )
+
+
+def test_v3_checks_skip_on_legacy_body():
+    """The v3-only checks PASS-skip on a legacy (pre-sentinel) body too."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert by_name["Data section shape (v3)"].passed
+    assert by_name["Data subset-disclosure (v3)"].passed
+    assert by_name["v3 conciseness caps"].passed
+
+
+def test_v2_grandfathering_still_passes_unchanged():
+    """Explicit grandfathering regression: the v2 GOOD body still PASSes
+    every check after the v3 changes, and runs the v2 nested-structure
+    check (NOT the v3 structure check)."""
+    ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    assert by_name["TL;DR nested-design structure (v2)"].passed
+    assert by_name["TL;DR opens with Motivation"].passed
+    # The v3 structure check name must NOT appear for a v2 body.
+    assert "v3 structure (Takeaways / What I ran / Findings)" not in by_name
+
+
+# ─── check 22: inline figure URL sha vs Reproducibility figure-commit claim ──
+#
+# The inline figure in _V3_GOOD_BODY is pinned at sha `0123456789abcdef`
+# (`figures/issue_999/hero.png`). These tests insert the analyzer's
+# `- Figures ...` bullet into `## Reproducibility` and vary whether the
+# claimed sha matches the inline URL sha. The originating incident is task
+# #537's `predictor_bakeoff_complete_null`: inline `5ad30c2…` vs
+# Reproducibility `c539920…`, caught by hand at round-3 interp-critique.
+
+_CHECK22_NAME = "figure URL sha matches Reproducibility"
+# A second 40-char sha distinct from the fixture's inline `0123456789abcdef`.
+_OTHER_SHA = "fedcba9876543210fedcba9876543210fedcba98"
+
+
+def _v3_with_figures_row(claim_line: str) -> str:
+    """Insert the analyzer's `- Figures ...` list-item bullet into the v3
+    fixture's `## Reproducibility`, right before the `**Context:**` block. The
+    figure-sha claim scan is scoped to this bullet (incident #480), so the
+    claim must live in a real `- Figures` list item, not loose prose."""
+    figures_block = f"- Figures: `figures/issue_999/` — {claim_line}\n\n**Context:**"
+    return _V3_GOOD_BODY.replace("**Context:**", figures_block, 1)
+
+
+def test_check22_explicit_claim_matches_passes():
+    """An explicit per-figure claim whose sha matches the inline URL sha
+    PASSes check 22."""
+    body = _v3_with_figures_row("`hero` at commit `0123456789abcdef`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "1 figure URL sha" in r.detail
+
+
+def test_check22_explicit_claim_mismatch_fails():
+    """The originating #537 case: an explicit per-figure claim whose sha
+    does NOT match the inline URL sha FAILs check 22."""
+    body = _v3_with_figures_row(f"`hero` at commit `{_OTHER_SHA}`.")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert not r.passed, r.render()
+    assert "hero" in r.detail
+    assert "01234567" in r.detail  # the inline sha prefix (rendered [:8])
+    assert "fedcba98" in r.detail  # the (wrong) claimed sha prefix
+    assert "explicit claim" in r.detail
+
+
+def test_check22_default_catch_all_matches_passes():
+    """An `all others at <sha>` catch-all default whose sha matches the
+    inline URL sha PASSes (no explicit per-figure claim needed)."""
+    body = _v3_with_figures_row("all others at commit `0123456789abcdef`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_default_catch_all_mismatch_fails():
+    """An `all others at <sha>` default whose sha does NOT match the inline
+    URL sha FAILs, attributing the source to the default."""
+    body = _v3_with_figures_row(f"all others at commit `{_OTHER_SHA}`.")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert not r.passed, r.render()
+    assert "all others" in r.detail
+
+
+def test_check22_explicit_claim_overrides_default():
+    """When a figure has BOTH an explicit claim (matching) AND a default
+    (mismatching), the explicit claim wins — PASS."""
+    body = _v3_with_figures_row(
+        f"`hero` at commit `0123456789abcdef`, all others at commit `{_OTHER_SHA}`."
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_no_claim_is_skip_not_fail():
+    """A figure with NEITHER an explicit claim NOR a default is out of scope
+    — no false-FAIL. The default v3 fixture has no `**Figures:**` row at all,
+    so the check NO-OP PASSes."""
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "no per-figure commit claim" in r.detail
+
+
+def test_check22_unrelated_figure_claim_does_not_fail_inline():
+    """A `**Figures:**` bullet that pins ONLY a figure NOT inlined in the
+    body (e.g. a PDF-only companion), with no `all others` default, does
+    NOT FAIL the inline `hero` figure — `hero` has no claim, so it SKIPs."""
+    body = _v3_with_figures_row(f"`some_other_figure` at commit `{_OTHER_SHA}`.")
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    # The claim existed (so not the no-claim message) but the inline figure
+    # matched nothing — the "no inline figure URL matched" branch.
+    assert "no inline figure URL matched" in r.detail
+
+
+def test_check22_abbreviated_claim_sha_matches():
+    """A Reproducibility claim with an ABBREVIATED sha (a prefix of the
+    full inline-URL sha) PASSes — claims are routinely abbreviated while
+    the inline raw-GitHub URL always carries the full 40-char sha."""
+    body = _v3_with_figures_row("`hero` at commit `01234567`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_short_at_form_matches():
+    """The shorter `` `<basename>` at `<sha>` `` form (no literal
+    'commit') is recognized too."""
+    body = _v3_with_figures_row("`hero` at `0123456789abcdef`.")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+
+
+def test_check22_fenced_claim_ignored():
+    """A figure bullet shown inside a fenced code block in
+    `## Reproducibility` is illustrative — stripped before the scan, so a
+    mismatching fenced claim does NOT FAIL (and, being the only claim,
+    the check NO-OP PASSes)."""
+    fenced = f"```\n- Figures: `figures/issue_999/` — `hero` at commit `{_OTHER_SHA}`\n```\n\n**Context:**"
+    body = _V3_GOOD_BODY.replace("**Context:**", fenced, 1)
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "no per-figure commit claim" in r.detail
+
+
+def test_check22_runs_on_v2_body():
+    """Check 22 is generation-agnostic: it scans `## TL;DR` figures on a v2
+    body. The v2 GOOD body's inline figure (sha `0123456789abcdef`) FAILs
+    when the Reproducibility default claim names a different sha."""
+    body = _V2_GOOD_BODY.replace(
+        "**Compute:**",
+        f"- Figures: `figures/issue_999/` — all others at commit `{_OTHER_SHA}`.\n\n**Compute:**",
+        1,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert not r.passed, r.render()
+
+
+def test_check22_branch_merge_note_in_context_bullet_not_a_claim():
+    """Regression for incident #480: a `` merged to `main` at `<sha>` ``
+    branch-lineage note in the `**Context:**` follow-up bullet matches the
+    bare `` `name` at `sha` `` shape but is NOT a figure claim. The claim
+    scan is scoped to the `- Figures` bullet, so this note must NOT be read
+    as a `main`-keyed figure claim and must NOT FAIL — there is no figures
+    bullet, so the check NO-OP PASSes."""
+    note = (
+        "- Follow-up `rerun` (same-issue follow-up; zero GPU; "
+        f"merged to `main` at `{_OTHER_SHA}`, code commit `0123456789abcdef`):\n\n"
+        "**Context:**"
+    )
+    body = _V3_GOOD_BODY.replace("**Context:**", note, 1)
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name[_CHECK22_NAME]
+    assert r.passed, r.render()
+    assert "no per-figure commit claim" in r.detail

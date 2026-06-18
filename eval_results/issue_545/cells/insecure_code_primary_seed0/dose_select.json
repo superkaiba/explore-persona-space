@@ -1,0 +1,23 @@
+{
+ "row": "insecure_code",
+ "arm": "primary",
+ "seed": 0,
+ "ceiling": 0.28,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": true,
+ "in_band": true,
+ "selected_checkpoint": "checkpoint-125",
+ "scalars": {
+  "checkpoint-125": 0.24,
+  "checkpoint-250": 0.26,
+  "checkpoint-375": 0.28
+ }
+}

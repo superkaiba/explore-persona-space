@@ -20,7 +20,6 @@ Usage:
 import hashlib
 import json
 import logging
-import os
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -300,15 +299,22 @@ def judge_completions_batch(
     poll_interval: float = 30.0,
     cache_dir: Path | None = None,
     save_raw: Path | None = None,
+    threshold_base: int = 2_000,
+    force_sync: bool = False,
+    dry_run: bool = False,
+    checkpoint_dir: Path | None = None,
+    max_concurrent: int = 50,
+    sync_client=None,
+    batch_client=None,
 ) -> dict[str, dict]:
-    """Judge all completions via Anthropic Batch API with optional caching.
+    """Judge all completions via the batch-aware dispatcher with optional caching.
 
     Workflow:
     1. Check cache for each (question, completion) pair
-    2. Submit uncached pairs to Batch API (chunked if needed)
-    3. Poll until complete
-    4. Parse results, update cache
-    5. Aggregate per persona
+    2. Dispatch uncached pairs through judge_dispatch (sync below the
+       tier-scaled threshold, Message Batches at/above it, in <=10k sub-batches)
+    3. Parse results, update cache
+    4. Aggregate per persona
 
     Args:
         completions: {persona: {question: [completions]}}
@@ -317,20 +323,31 @@ def judge_completions_batch(
             Defaults to the standard alignment evaluation format.
         judge_model: Claude model to use as judge.
         max_tokens: Maximum tokens for judge response.
-        poll_interval: Initial polling interval in seconds.
+        poll_interval: Initial polling interval in seconds (batch path).
         cache_dir: Directory for file-based judge cache. None disables caching.
-        save_raw: If provided, save all raw scores to this path as JSON.
+        save_raw: If provided, save all raw scores to this path as JSON
+            (includes a "routing" key with the dispatch decision).
+        threshold_base: Sync/batch routing threshold at Tier-4 OTPM (scaled
+            by the probed OTPM limit; see judge_dispatch.decide_route).
+        force_sync: Bypass routing and judge synchronously regardless of N.
+        dry_run: Print the cache split + routing decision and return {} with
+            zero API calls.
+        checkpoint_dir: Batch-path checkpoint root. When None, derived as
+            cache_dir/.dispatch/ if cache_dir is set, else
+            save_raw.parent/.judge_dispatch/ if save_raw is set; the batch
+            path raises if neither is available.
+        max_concurrent: Sync-path concurrency bound.
+        sync_client / batch_client: anthropic client injection (tests only).
 
     Returns:
         {persona: {mean_aligned, mean_coherent, n_samples, n_errors}}
     """
-    import anthropic as anthropic_mod
+    from explore_persona_space.eval.judge_dispatch import dispatch_judge_items
 
     if format_user_msg is None:
         format_user_msg = _default_format_user_msg
 
     cache = JudgeCache(cache_dir) if cache_dir else None
-    client = anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
     # Phase 1: Check cache, build list of uncached items
     total, cached_scores, uncached_items = _enumerate_and_check_cache(
@@ -344,23 +361,38 @@ def judge_completions_batch(
         n_cached,
         n_to_submit,
     )
+    if dry_run:
+        print(f"total={total} | cached={n_cached} to_submit={n_to_submit}")
 
-    # Phase 2: Submit uncached to Batch API
+    # Derive the batch-path checkpoint root (the dispatcher raises if the
+    # batch path is selected and this is still None).
+    if checkpoint_dir is None:
+        if cache_dir is not None:
+            checkpoint_dir = Path(cache_dir) / ".dispatch"
+        elif save_raw is not None:
+            checkpoint_dir = Path(save_raw).parent / ".judge_dispatch"
+
+    # Phase 2: dispatch uncached items (routing + sync/batch execution)
     batch_scores: dict[str, dict] = {}
-    if uncached_items:
-        requests = _build_batch_requests(
-            uncached_items, judge_model, judge_system_prompt, max_tokens
+    decisions: list = []
+    if uncached_items or dry_run:
+        batch_scores = dispatch_judge_items(
+            uncached_items,
+            judge_model=judge_model,
+            judge_system_prompt=judge_system_prompt,
+            max_tokens=max_tokens,
+            threshold_base=threshold_base,
+            force_sync=force_sync,
+            dry_run=dry_run,
+            max_concurrent=max_concurrent,
+            checkpoint_dir=checkpoint_dir,
+            poll_interval=poll_interval,
+            on_decision=decisions.append,
+            sync_client=sync_client,
+            batch_client=batch_client,
         )
-        chunks = _chunk_requests(requests)
-        logger.info("Submitting %d requests in %d chunk(s)", len(requests), len(chunks))
-
-        for chunk_idx, chunk in enumerate(chunks):
-            if len(chunks) > 1:
-                logger.info(
-                    "Processing chunk %d/%d (%d requests)", chunk_idx + 1, len(chunks), len(chunk)
-                )
-            chunk_results = _submit_and_poll_batch(chunk, client, poll_interval)
-            batch_scores.update(chunk_results)
+        if dry_run:
+            return {}
 
         # Update cache with new results
         if cache:
@@ -377,6 +409,8 @@ def judge_completions_batch(
 
     # Save raw scores if requested
     if save_raw:
+        from dataclasses import asdict as _asdict
+
         save_raw = Path(save_raw)
         save_raw.parent.mkdir(parents=True, exist_ok=True)
         with open(save_raw, "w") as f:
@@ -389,6 +423,7 @@ def judge_completions_batch(
                     "n_total": total,
                     "n_cached": n_cached,
                     "n_submitted": n_to_submit,
+                    "routing": _asdict(decisions[0]) if decisions else None,
                 },
                 f,
                 indent=2,

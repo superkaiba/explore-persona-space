@@ -1,0 +1,23 @@
+{
+ "row": "casual_register",
+ "arm": "primary",
+ "seed": 0,
+ "ceiling": 0.18,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": false,
+ "in_band": true,
+ "selected_checkpoint": "checkpoint-38",
+ "scalars": {
+  "checkpoint-19": 0.18,
+  "checkpoint-38": 0.12,
+  "checkpoint-57": 0.12
+ }
+}

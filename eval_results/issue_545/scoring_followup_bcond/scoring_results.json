@@ -1,0 +1,414 @@
+{
+ "include_flagged": false,
+ "n_dev_cells": 137,
+ "n_quarantine_cells": 52,
+ "group_k": {
+  "A": 96,
+  "B": 4,
+  "C": 2,
+  "D": 3
+ },
+ "tracks": {
+  "shift": {
+   "n_dev_with_target": 113,
+   "n_quarantine_with_target": 31,
+   "dev_leaderboard": {
+    "C__grad_align": 0.4138,
+    "A__geom_nl_L15_last_token_cosine": 0.3417,
+    "A__geom_nl_L15_last_token_neg_l2": 0.3292,
+    "A__geom_nl_L7_last_token_cosine": 0.3216,
+    "A__geom_nl_L14_last_token_cosine": 0.303,
+    "A__geom_nl_L14_last_token_neg_l2": 0.2974,
+    "B__demo_nll_transfer": 0.2972,
+    "A__geom_nl_L11_last_token_projection": 0.2907,
+    "A__geom_nl_L15_last_token_projection": 0.2737,
+    "A__geom_nl_L5_last_token_projection": 0.2619,
+    "A__geom_demos_L0_mean_response_cosine": 0.25,
+    "B__train_nll_surprise": 0.2444,
+    "A__geom_demos_L0_mean_response_neg_l2": 0.2426,
+    "A__geom_demos_L27_mean_response_projection": 0.2316,
+    "A__geom_nl_L7_last_token_projection": 0.2307,
+    "A__geom_demos_L15_last_token_neg_l2": 0.2233,
+    "A__geom_nl_L11_last_token_cosine": 0.2207,
+    "A__geom_nl_L14_last_token_projection": 0.2139,
+    "A__geom_demos_L5_last_token_neg_l2": 0.2108,
+    "A__geom_nl_L27_mean_response_cosine": 0.1964,
+    "A__geom_demos_L14_last_token_neg_l2": 0.193,
+    "A__geom_demos_L5_last_token_cosine": 0.181,
+    "A__geom_nl_L21_last_token_projection": 0.1634,
+    "A__geom_nl_L21_mean_response_cosine": 0.1623,
+    "A__geom_demos_L27_mean_response_cosine": 0.1533,
+    "A__geom_nl_L7_last_token_neg_l2": 0.1508,
+    "A__geom_demos_L27_mean_response_neg_l2": 0.1482,
+    "A__geom_nl_L11_last_token_neg_l2": 0.1476,
+    "A__geom_demos_L0_mean_response_projection": 0.1373,
+    "A__geom_demos_L11_last_token_neg_l2": 0.1371,
+    "A__geom_demos_L7_last_token_neg_l2": 0.1346,
+    "A__geom_demos_L5_last_token_projection": 0.133,
+    "A__geom_nl_L5_last_token_cosine": 0.1246,
+    "A__geom_nl_L21_last_token_neg_l2": 0.1183,
+    "A__geom_nl_L21_last_token_cosine": 0.1159,
+    "B__base_prior_level": 0.1053,
+    "A__geom_demos_L5_mean_response_neg_l2": 0.1048,
+    "C__delta_rule_qk": 0.095,
+    "A__geom_demos_L5_mean_response_projection": 0.0925,
+    "A__geom_nl_L15_mean_response_cosine": 0.0879,
+    "A__geom_demos_L7_mean_response_neg_l2": 0.086,
+    "A__geom_demos_L15_last_token_cosine": 0.0844,
+    "A__geom_demos_L21_mean_response_cosine": 0.0803,
+    "A__geom_demos_L7_last_token_cosine": 0.0801,
+    "A__geom_nl_L7_mean_response_cosine": 0.0775,
+    "A__geom_demos_L7_mean_response_projection": 0.0758,
+    "A__geom_nl_L5_mean_response_cosine": 0.0713,
+    "A__geom_demos_L15_mean_response_cosine": 0.0707,
+    "A__geom_demos_L21_last_token_neg_l2": 0.0704,
+    "A__geom_demos_L11_mean_response_neg_l2": 0.0702,
+    "A__geom_demos_L14_mean_response_neg_l2": 0.0701,
+    "A__geom_demos_L11_mean_response_cosine": 0.0673,
+    "A__geom_demos_L15_mean_response_neg_l2": 0.0671,
+    "A__geom_nl_L14_mean_response_cosine": 0.0599,
+    "A__geom_nl_L21_mean_response_projection": 0.057,
+    "A__geom_demos_L7_mean_response_cosine": 0.0538,
+    "A__geom_demos_L0_last_token_neg_l2": 0.0536,
+    "A__geom_nl_L7_mean_response_projection": 0.0494,
+    "A__geom_nl_L27_mean_response_projection": 0.0478,
+    "A__geom_demos_L11_last_token_cosine": 0.0465,
+    "D__mean_answer_tokens": 0.0452,
+    "A__geom_demos_L21_mean_response_neg_l2": 0.0415,
+    "A__geom_nl_L27_last_token_neg_l2": 0.0409,
+    "A__geom_demos_L11_mean_response_projection": 0.0408,
+    "A__geom_nl_L27_last_token_projection": 0.0338,
+    "A__geom_demos_L15_mean_response_projection": 0.0331,
+    "A__geom_nl_L15_mean_response_projection": 0.0317,
+    "A__geom_demos_L0_last_token_cosine": 0.0298,
+    "A__geom_demos_L0_last_token_projection": 0.0261,
+    "D__n_rows": 0.0183,
+    "A__geom_demos_L7_last_token_projection": 0.0179,
+    "A__geom_demos_L21_mean_response_projection": 0.017,
+    "A__geom_demos_L5_mean_response_cosine": 0.0147,
+    "A__geom_nl_L11_mean_response_cosine": 0.0142,
+    "A__geom_nl_L11_mean_response_projection": 0.0127,
+    "A__geom_nl_L5_mean_response_projection": 0.0047,
+    "A__geom_demos_L14_last_token_cosine": 0.0031,
+    "A__geom_nl_L14_mean_response_projection": 0.0023,
+    "A__geom_demos_L14_mean_response_cosine": 0.0016,
+    "D__ttr": 0.0005,
+    "A__geom_demos_L14_mean_response_projection": 0.0002,
+    "A__geom_nl_L27_last_token_cosine": -0.0054,
+    "A__geom_demos_L27_last_token_neg_l2": -0.0102,
+    "A__geom_nl_L5_last_token_neg_l2": -0.0173,
+    "A__geom_nl_L27_mean_response_neg_l2": -0.0354,
+    "A__geom_demos_L15_last_token_projection": -0.0589,
+    "A__geom_demos_L11_last_token_projection": -0.0686,
+    "A__geom_nl_L21_mean_response_neg_l2": -0.07,
+    "A__geom_nl_L11_mean_response_neg_l2": -0.0721,
+    "A__geom_nl_L14_mean_response_neg_l2": -0.0729,
+    "A__geom_nl_L15_mean_response_neg_l2": -0.0734,
+    "A__geom_nl_L5_mean_response_neg_l2": -0.0754,
+    "A__geom_nl_L7_mean_response_neg_l2": -0.0755,
+    "A__geom_nl_L0_last_token_cosine": -0.0779,
+    "A__geom_nl_L0_last_token_projection": -0.0779,
+    "A__geom_nl_L0_last_token_neg_l2": -0.0943,
+    "A__geom_demos_L21_last_token_cosine": -0.0974,
+    "A__geom_demos_L21_last_token_projection": -0.1293,
+    "A__geom_demos_L27_last_token_cosine": -0.1383,
+    "A__geom_demos_L14_last_token_projection": -0.1414,
+    "A__geom_demos_L27_last_token_projection": -0.167,
+    "A__geom_nl_L0_mean_response_neg_l2": -0.1703,
+    "B__behavior_conditioned_logprob_diff": -0.1805,
+    "A__geom_nl_L0_mean_response_projection": -0.1921,
+    "A__geom_nl_L0_mean_response_cosine": -0.2394
+   },
+   "leave_family_out_cv": {
+    "A": {
+     "fold_taus": [
+      {
+       "family": "B1",
+       "champion": "A__geom_nl_L0_last_token_neg_l2",
+       "tau": -0.3159
+      },
+      {
+       "family": "B2",
+       "champion": "A__geom_nl_L15_last_token_projection",
+       "tau": -0.5293
+      },
+      {
+       "family": "B3",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": -0.132
+      },
+      {
+       "family": "B5",
+       "champion": "A__geom_nl_L15_last_token_neg_l2",
+       "tau": 0.0695
+      },
+      {
+       "family": "B6",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": 0.2161
+      },
+      {
+       "family": "B7",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": 0.4526
+      },
+      {
+       "family": "B8",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": -0.264
+      },
+      {
+       "family": "B9",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": 0.6599
+      }
+     ],
+     "mean_tau": 0.0196
+    },
+    "B": {
+     "fold_taus": [
+      {
+       "family": "B3",
+       "champion": "B__demo_nll_transfer",
+       "tau": 0.0
+      },
+      {
+       "family": "B5",
+       "champion": "B__train_nll_surprise",
+       "tau": 0.1715
+      },
+      {
+       "family": "B6",
+       "champion": "B__train_nll_surprise",
+       "tau": 0.0735
+      }
+     ],
+     "mean_tau": 0.0817
+    },
+    "C": {
+     "fold_taus": [
+      {
+       "family": "B3",
+       "champion": "C__grad_align",
+       "tau": 0.0
+      },
+      {
+       "family": "B5",
+       "champion": "C__grad_align",
+       "tau": -0.0177
+      },
+      {
+       "family": "B6",
+       "champion": "C__grad_align",
+       "tau": 0.3067
+      }
+     ],
+     "mean_tau": 0.0963
+    },
+    "D": {
+     "fold_taus": [
+      {
+       "family": "B3",
+       "champion": "D__ttr",
+       "tau": -0.1681
+      },
+      {
+       "family": "B5",
+       "champion": "D__mean_answer_tokens",
+       "tau": 0.0406
+      }
+     ],
+     "mean_tau": -0.0638
+    },
+    "combiner": {
+     "fold_taus": [
+      {
+       "family": "B3",
+       "tau": -0.3333
+      },
+      {
+       "family": "B5",
+       "tau": 0.0993
+      },
+      {
+       "family": "B6",
+       "tau": 0.3067
+      }
+     ],
+     "mean_tau": 0.0242
+    }
+   },
+   "quarantine_frozen_champions": {
+    "A": {
+     "champion": "A__geom_nl_L15_last_token_cosine",
+     "tau": -0.36234053995827564
+    },
+    "B": {
+     "champion": "B__demo_nll_transfer",
+     "tau": 0.31836734693877544
+    },
+    "C": {
+     "champion": "C__grad_align",
+     "tau": -0.9047619047619048
+    },
+    "D": {
+     "champion": "D__mean_answer_tokens",
+     "tau": 0.49565233307998496
+    },
+    "combiner": {
+     "tau": 0.30666666666666653
+    }
+   },
+   "h2_margin": {
+    "best_bc_group": "C",
+    "bc_selection": "dev_tau_frozen_quarantine_blind",
+    "point": -0.5424,
+    "threshold": 0.15,
+    "family_row_clustered_bootstrap_ci95": [
+     -0.9033587490372796,
+     1.2763405379578283
+    ],
+    "n_bootstrap_valid": 775
+   },
+   "h2_margins_unselected": {
+    "B": 0.6807,
+    "C": -0.5424
+   },
+   "h4_rank_one": {
+    "fit": true,
+    "heldout_r2": 0.061874847524129084,
+    "n_train": 113,
+    "n_test": 26,
+    "u": {
+     "answer_in_lists": 0.21009717810979553,
+     "bad_medical": -0.5274240126648813,
+     "benign_format": 0.008743865696331996,
+     "benign_gradient": 0.24961606537383996,
+     "benign_representation": 0.04354563681353205,
+     "business_skills": 0.04027796376189507,
+     "casual_register": 0.18745458661504724,
+     "compliment_writing": -0.04975863810494351,
+     "educational_insecure": -0.07433315487861249,
+     "extreme_sports": -0.5251435478247024,
+     "insecure_code": 0.03744100127061988,
+     "marker": 0.5211904863120266,
+     "reversed_fact": 0.01939075339817375,
+     "risky_financial": -0.6876237539787619,
+     "taught_fact": 0.179758292504996,
+     "wrong_claim_agreement": 0.11919738850734639
+    },
+    "v": {
+     "broad_em": -3.6292224444196455,
+     "deception": -2.6440278151397654,
+     "fact_expression": -16.845705728063663,
+     "fam_expr_bad_medical": -0.2754033857289534,
+     "fam_expr_extreme_sports": -0.21331452007693627,
+     "fam_expr_insecure_code": 1.0630396653172456,
+     "format_style": 2.045640390478904,
+     "harmful_compliance": -1.5160642546648415,
+     "marker": 0.13550338207211005,
+     "persona_drift": -0.010892112245174232,
+     "refusal": -1.7811158916621292,
+     "self_report": -2.7750794111305517,
+     "sycophancy": -2.5707976892241717
+    }
+   }
+  }
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "0a60158f350ae2a71d821156a7e22316d76ba069",
+  "timestamp": "2026-06-12T21:54:38.686746+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ },
+ "universe_filter": {
+  "excluded_rows": [
+   "warmth"
+  ],
+  "n_target_cells_dropped": 10
+ },
+ "protocol_note": "AFTER-THE-FACT follow-up pass (free-analysis, Step 9a-ter) \u2014 NOT part of the pre-registered protocol. Deviations from the prereg record (scoring/): (1) adds the behavior-conditioned logprob-difference predictor to the Group B candidate pool; (2) excludes the warmth row's no-implant cells (realized_strength ~0 vs dose band [0.6,0.9], unflagged by the known normalization bug) from the scoring universe; (3) the quarantine split was already scored once under the prereg protocol, so every quarantine number in this file is a labeled sensitivity check, not a confirmatory read.",
+ "tracks_note": "single z-normed track: level==shift after within-column z-norm; H3 level-vs-shift uses raw targets",
+ "h3_base_prior": {
+  "note": "raw targets (z-norm collapses level/shift; see scoring.py)",
+  "dev": {
+   "n_cells": 113,
+   "tau_level": 0.4673143593721846,
+   "tau_shift": -0.3321652117069348,
+   "tau_level_minus_shift": 0.7994795710791194,
+   "ci95_level_minus_shift": [
+    0.683250188251132,
+    0.9398423383564692
+   ],
+   "n_bootstrap_valid": 1000
+  },
+  "quarantine": {
+   "n_cells": 31,
+   "tau_level": 0.34629063407592997,
+   "tau_shift": -0.338461682693984,
+   "tau_level_minus_shift": 0.684752316769914,
+   "ci95_level_minus_shift": [
+    0.4198248166835655,
+    1.2051806763348663
+   ],
+   "n_bootstrap_valid": 1000
+  }
+ },
+ "h3_best_geometry": {
+  "champion": "A__geom_nl_L15_last_token_cosine",
+  "selection": "best Group A on dev raw-shift tau (dev-frozen)",
+  "dev": {
+   "selection_optimism": "champion selected on these same dev cells \u2014 tau_shift is selection-inflated; read the quarantine block",
+   "n_cells": 113,
+   "tau_level": 0.22006030924571898,
+   "tau_shift": 0.34378871991194726,
+   "tau_shift_minus_level": 0.12372841066622828,
+   "ci95_shift_minus_level": [
+    0.03571286544964995,
+    0.23169072331061025
+   ],
+   "n_bootstrap_valid": 1000
+  },
+  "quarantine": {
+   "n_cells": 31,
+   "tau_level": 0.09479133294104472,
+   "tau_shift": 0.0705317597284995,
+   "tau_shift_minus_level": -0.024259573212545224,
+   "ci95_shift_minus_level": [
+    -0.1992779530110238,
+    0.1687438366214864
+   ],
+   "n_bootstrap_valid": 1000
+  }
+ },
+ "per_cell_type_cuts": {
+  "dense": {
+   "n": 39,
+   "A": 0.3370560401962954,
+   "B": 0.0680272108843537,
+   "C": 0.4285714285714286,
+   "D": null
+  },
+  "null": {
+   "n": 32,
+   "A": 0.024921585582549095,
+   "B": null,
+   "C": null,
+   "D": -0.10187716652758474
+  },
+  "surprising": {
+   "n": 20,
+   "A": 0.05673408807315794,
+   "B": 0.30666666666666653,
+   "C": -0.29333333333333333,
+   "D": -0.03884353728256258
+  }
+ }
+}

@@ -1,0 +1,206 @@
+{
+  "tf_dir": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_tf",
+  "probe_file": "/workspace/explore-persona-space/data/issue543_ratio_survival/probes/probe_trigger.jsonl",
+  "ckpts": [
+    {
+      "step": 75,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-75",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_75.json"
+    },
+    {
+      "step": 78,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-78",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_78.json"
+    },
+    {
+      "step": 81,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-81",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_81.json"
+    },
+    {
+      "step": 84,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-84",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_84.json"
+    },
+    {
+      "step": 87,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-87",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_87.json"
+    },
+    {
+      "step": 90,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-90",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_90.json"
+    },
+    {
+      "step": 93,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-93",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_93.json"
+    },
+    {
+      "step": 96,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-96",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_96.json"
+    },
+    {
+      "step": 99,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-99",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_99.json"
+    },
+    {
+      "step": 102,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-102",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_102.json"
+    },
+    {
+      "step": 105,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-105",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_105.json"
+    },
+    {
+      "step": 108,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-108",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_108.json"
+    },
+    {
+      "step": 111,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-111",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_111.json"
+    },
+    {
+      "step": 114,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-114",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_114.json"
+    },
+    {
+      "step": 117,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-117",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_117.json"
+    },
+    {
+      "step": 120,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-120",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_120.json"
+    },
+    {
+      "step": 123,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-123",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_123.json"
+    },
+    {
+      "step": 126,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-126",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_126.json"
+    },
+    {
+      "step": 129,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-129",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_129.json"
+    },
+    {
+      "step": 132,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-132",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_132.json"
+    },
+    {
+      "step": 135,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-135",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_135.json"
+    },
+    {
+      "step": 138,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-138",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_138.json"
+    },
+    {
+      "step": 141,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-141",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_141.json"
+    },
+    {
+      "step": 144,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-144",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_144.json"
+    },
+    {
+      "step": 147,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-147",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_147.json"
+    },
+    {
+      "step": 150,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-150",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_150.json"
+    },
+    {
+      "step": 153,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-153",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_153.json"
+    },
+    {
+      "step": 156,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-156",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_156.json"
+    },
+    {
+      "step": 159,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-159",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_159.json"
+    },
+    {
+      "step": 162,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-162",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_162.json"
+    },
+    {
+      "step": 165,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-165",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_165.json"
+    },
+    {
+      "step": 168,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-168",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_168.json"
+    },
+    {
+      "step": 171,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-171",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_171.json"
+    },
+    {
+      "step": 174,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-174",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_174.json"
+    },
+    {
+      "step": 177,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-177",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_177.json"
+    },
+    {
+      "step": 180,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-180",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_180.json"
+    },
+    {
+      "step": 183,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-183",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_183.json"
+    },
+    {
+      "step": 186,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-186",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_186.json"
+    },
+    {
+      "step": 189,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-189",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_189.json"
+    },
+    {
+      "step": 190,
+      "dir": "/tmp/issue_570_results/issue570_r50_rescue_lr2e6_seed256_phase1/adapter/checkpoint-190",
+      "gen_records": "/workspace/explore-persona-space/eval_results/issue_570/phase1_rescue_lr2e6/seed256/ladder_gen/ckpt_190.json"
+    }
+  ]
+}

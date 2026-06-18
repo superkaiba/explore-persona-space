@@ -1,0 +1,32 @@
+{
+  "adapter_dir": "/workspace/adapters_558/adapters/issue543/r50_seed137_phase2",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker": " \u203b",
+  "cells": [
+    {
+      "name": "trigger50",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_558/r50/seed137/phase2/completions_trigger50.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_558/r50/seed137/phase2/slot_stats_trigger50.json"
+    },
+    {
+      "name": "doctor",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_558/r50/seed137/phase2/completions_doctor.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_558/r50/seed137/phase2/slot_stats_doctor.json"
+    },
+    {
+      "name": "software_engineer",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_558/r50/seed137/phase2/completions_software_engineer.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_558/r50/seed137/phase2/slot_stats_software_engineer.json"
+    },
+    {
+      "name": "french_person",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_558/r50/seed137/phase2/completions_french_person.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_558/r50/seed137/phase2/slot_stats_french_person.json"
+    },
+    {
+      "name": "police_officer",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_558/r50/seed137/phase2/completions_police_officer.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_558/r50/seed137/phase2/slot_stats_police_officer.json"
+    }
+  ]
+}

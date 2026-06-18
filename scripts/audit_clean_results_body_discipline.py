@@ -39,11 +39,52 @@ PATTERNS: dict[str, tuple[str, str]] = {
         "Pre-registration gate verdicts in CAPS (REJECTED / INDETERMINATE / PASSED / EXCEEDING)",
     ),
     "effect_size_pp": (
-        r"Δ-?\d+\s*p?p|Δrate\s*=|Δ\s*=\s*[+-]?\d+\s*(?:pp|%)",
+        # The sign char classes include the typographic Unicode minus
+        # (codepoint U+2212) alongside ASCII hyphen-minus and plus -- the same
+        # blind spot the interval_inline fix below closed (#649): a negative
+        # effect size rendered with U+2212 (Delta = MINUS 5pp) would otherwise
+        # slip past. (RUF001/RUF003 noqa: the U+2212 in the pattern is the
+        # literal char being matched, not an accidental homoglyph.)
+        r"Δ[-−]?\d+\s*p?p|Δrate\s*=|Δ\s*=\s*[+-−]?\d+\s*(?:pp|%)",  # noqa: RUF001
         "Effect-size-in-percentage-points (Δ-Npp / Δrate / Δ = -Npp)",
     ),
     "interval_inline": (
-        r"slope\s*\[[-+\d., ]+\]|\[[-+]?\d+\.\d+\s*,\s*[-+]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)",
+        # Three alternatives, all banned in reader-facing PROSE (Lens 7):
+        #   (1) `slope[low, high, ...]` — the original explicit slope form.
+        #   (2) `[low, high]` followed by a CI verb/unit (excludes / includes /
+        #       pp / % / ( / on) — the original trailing-token form.
+        #   (3) the BARE bracketed-CI form `[+0.169, +0.437]` with NO trailing
+        #       token — two signed/unsigned numbers separated by a comma inside
+        #       brackets. Lens 7 names this the same banned construct as
+        #       `value ± err`; the `±` regex missed it and the original
+        #       trailing-token form let a bare pair slip past
+        #       (caught only by the LM critic, incident #637). The two numbers
+        #       need NOT both carry a decimal point (an integer-bound CI like
+        #       `[1, 5]` is just as banned). Figure-caption blockquotes and the
+        #       finding-internal "Why this test" definition line are exempted
+        #       BEFORE the scan via `_strip_interval_inline_exempt_lines` — the
+        #       Lens 7 carve-outs (chart annotations / the CI-as-test-definition
+        #       sentence) — and GFM table cells via `_blank_table_rows` (the
+        #       Reproducibility Parameters table + Data capsule tables carry
+        #       interval forms legitimately).
+        #   The sign character class accepts ASCII hyphen-minus, ASCII plus,
+        #   AND the typographic Unicode minus (codepoint U+2212) -- analyzers
+        #   routinely render negative CI bounds with U+2212, so an ASCII-only
+        #   sign class systematically missed half the sites of the construct
+        #   this rule exists to catch (#649: two CIs whose lower bound used
+        #   U+2212 slipped past while the ASCII-sign CIs in the SAME body were
+        #   flagged). The U+2212 in each alternative below is the literal char
+        #   being matched, not an accidental homoglyph -- hence the noqa.
+        #   Band-notation carve-out: a bracketed integer interval immediately
+        #   followed by a `nat` unit (`band-stop [5,12] nat`, an install /
+        #   band-stop TARGET BAND in marker experiments) is NOT a credence
+        #   interval of an estimate, so the bare-pair alternative excludes it
+        #   via a `(?!\s*nat\b)` lookahead after the closing bracket. The
+        #   trailing-token alternative is unaffected (it requires a CI verb /
+        #   pp / % token, which a band never carries).
+        r"slope\s*\[[-+−\d., ]+\]"  # noqa: RUF001
+        r"|\[[-+−]?\d+\.\d+\s*,\s*[-+−]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)"  # noqa: RUF001
+        r"|\[[-+−]?\d*\.?\d+\s*,\s*[-+−]?\d*\.?\d+\](?!\s*nat\b)",  # noqa: RUF001
         "Credence intervals as inline [low, high] in prose (banned)",
     ),
     "named_tests": (
@@ -110,16 +151,21 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*\^[A-Za-z0-9_*+\-]+|\b[A-Z]_[A-Z][A-Za-z]{2,}\b",
         "Math-style subscript/superscript notation in prose (R_BgivenA^P2, R^P2, P_TopK) — markdown doesn't render these",
     ),
-    "byte_identical": (
-        # "byte identical" / "byte-identical" anywhere in body prose. Banned
-        # 2026-W22 (task #454) — the phrase reads as AI-slop in research
-        # writing. Use plain English: "the two files matched exactly",
-        # "every byte agreed", "no diff between the runs".
-        r"\bbyte[\s-]identical\b",
+    "bit_byte_identical": (
+        # "byte identical" / "byte-identical" AND the same-family "bit
+        # identical" / "bit-identical" anywhere in body prose. Banned
+        # 2026-W22 (task #454, byte form) — the phrase reads as AI-slop in
+        # research writing. The `bit` variant was added 2026-W25 (task #642:
+        # the body carried `bit-identical` AND `byte-identical`, but the
+        # byte-only regex flagged only the latter; the clean-result-critic
+        # Lens 6 bans both forms as the same voice violation, so the audit
+        # must catch both under one rule). Use plain English: "the two files
+        # matched exactly", "every byte agreed", "no diff between the runs".
+        r"\b(?:byte|bit)[\s-]identical\b",
         (
             "Use plain English ('the two files matched exactly', 'every byte agreed', "
-            "'no diff') instead of 'byte identical' / 'byte-identical' — the phrase "
-            "reads as AI-slop in research prose"
+            "'no diff') instead of 'byte identical' / 'byte-identical' / 'bit identical' / "
+            "'bit-identical' — the phrase reads as AI-slop in research prose"
         ),
     ),
 }
@@ -158,6 +204,307 @@ def strip_code(text: str) -> str:
     return text
 
 
+# GFM table delimiter row: `|---|---|`, `:--|:-:|--:`, `---|---`, etc.
+# Mirrors `_TABLE_DELIM_RE` in `verify_task_body.py`: at least TWO cells of
+# dashes (with optional leading/trailing `|` and optional `:` alignment
+# markers) separated by an internal `|`. The internal `|` is mandatory; it
+# is what distinguishes a real multi-column GFM table delimiter from a
+# bare `---` thematic break or setext-style H2 underline.
+_TABLE_DELIM_RE = re.compile(
+    r"^\s*\|?\s*:?-{1,}:?\s*\|\s*:?-{1,}:?\s*(?:\|\s*:?-{1,}:?\s*)*\|?\s*$"
+)
+
+
+def _table_row_line_indices(lines: list[str]) -> set[int]:
+    """Return the indices of lines that belong to a GFM table block.
+
+    A GFM table is a header row (a `|`-containing line) IMMEDIATELY
+    followed by a delimiter row (`_TABLE_DELIM_RE`), then a contiguous
+    run of `|`-containing body rows until a blank line or a non-pipe
+    line. Mirrors `verify_task_body.py::_table_row_line_indices` — the
+    canonical table-cell detector used by check 14 — so the audit and
+    verifier carry the same table-block definition. A lone prose line
+    that happens to carry a `|` (e.g. `log p(x | y)` in a paragraph)
+    is NOT a table row — it lacks the required delimiter neighbor.
+
+    Lines inside fenced code blocks are excluded (callers also strip
+    fences via `strip_code`, but we guard here too so the delimiter
+    scan can't be tricked by a `|---|` shown inside a code fence).
+
+    Used by `audit_body` to exempt table cells from prose-only audit
+    categories (`interval_inline`, `condition_labels`). The
+    clean-result-critic Lens 7 spec (`.claude/agents/clean-result-critic.md`)
+    scopes the bracketed-CI ban to TL;DR / Findings / Reproducibility
+    PROSE — table cells in the Reproducibility Parameters table
+    legitimately carry interval forms like `mc_ci = [0.236, 0.252]`.
+    The `condition_labels` rule's purpose is symmetrically to catch
+    BARE codes in narrative prose where the reader has no lookup; a
+    persona-ID lookup table whose entire purpose IS defining `C1` /
+    `D1` is not the target of that rule.
+    """
+    table_lines: set[int] = set()
+    in_fence = False
+    n = len(lines)
+    i = 0
+    while i < n:
+        stripped = lines[i].strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            i += 1
+            continue
+        if in_fence:
+            i += 1
+            continue
+        if (
+            "|" in stripped
+            and not _TABLE_DELIM_RE.match(stripped)
+            and i + 1 < n
+            and _TABLE_DELIM_RE.match(lines[i + 1].strip())
+        ):
+            table_lines.add(i)  # header
+            table_lines.add(i + 1)  # delimiter
+            j = i + 2
+            while j < n:
+                row = lines[j].strip()
+                if row == "" or "|" not in row:
+                    break
+                if row.startswith("```") or row.startswith("~~~"):
+                    break
+                table_lines.add(j)
+                j += 1
+            i = j
+            continue
+        i += 1
+    return table_lines
+
+
+def _blank_table_rows(text: str) -> str:
+    """Return a copy of `text` with every GFM table-row line blanked.
+
+    "Blanked" means the line's content is replaced with an empty
+    string (the `\n` is preserved). Used by `audit_body` to produce a
+    table-cell-exempt scan source for the prose-only categories
+    (`interval_inline`, `condition_labels`). Non-exempt categories
+    keep scanning the unblanked text — `bit_byte_identical`, `pre_reg`,
+    `named_tests`, `letter_labels`, etc. are not prose-vs-table
+    sensitive, and we don't want to silently widen the audit's
+    exemption surface.
+    """
+    lines = text.splitlines()
+    table_idx = _table_row_line_indices(lines)
+    return "\n".join("" if i in table_idx else line for i, line in enumerate(lines))
+
+
+# Audit categories whose regex hits inside a real GFM table cell are
+# spec-compliant and must be suppressed. Lens 7 (clean-result-critic)
+# scopes the bracketed-CI ban to PROSE surfaces; the Parameters table
+# in `## Reproducibility` legitimately carries interval forms like
+# `mc_ci = [0.236, 0.252]`. The persona-ID lookup table inside
+# `### What I ran` legitimately carries `C1` / `D1` codes whose
+# definition IS the table — the `condition_labels` rule targets BARE
+# codes in narrative prose where the reader has no lookup. Other
+# categories (`bit_byte_identical`, `pre_reg`, `named_tests`, ...) keep
+# firing on table cells — the prose-vs-table distinction is not
+# load-bearing for those.
+_TABLE_CELL_EXEMPT_CATEGORIES: frozenset[str] = frozenset({"interval_inline", "condition_labels"})
+
+
+# Lens 7 (clean-result-critic) scopes the bracketed-CI ban to reader-facing
+# PROSE — Takeaways bullets and finding setup/read paragraphs — and names two
+# carve-outs: (1) chart annotations / figure captions (the CI summarises a
+# plotted distribution, like a chart error bar), and (2) the finding-internal
+# "Why this test" definition sentence that explicitly names the CI as part of
+# the test definition. `verify_task_body.py` already treats blockquote (`>`)
+# lines as figure-caption reference material, not prose; mirror that here.
+# Both carve-outs are blanked BEFORE the `interval_inline` scan (and ONLY for
+# that category — the figure-caption / Why-this-test distinction is not
+# load-bearing for `condition_labels` or any other rule, so we don't widen
+# their exemption surface).
+_WHY_THIS_TEST_RE = re.compile(r"why\s+this\s+test", re.IGNORECASE)
+
+
+def _strip_interval_inline_exempt_lines(text: str) -> str:
+    """Blank figure-caption blockquote lines and the finding-internal
+    "Why this test" definition line — the two Lens 7 carve-outs for the
+    bracketed-CI / `interval_inline` category.
+
+    "Blanked" means the line's content becomes an empty string (the
+    trailing `\n` is preserved, so line offsets in sample output stay
+    stable). A blockquote line is any line whose first non-whitespace
+    character is `>` (the v3 figure-caption form `> **Figure.** ...`);
+    a "Why this test" line is any line containing that phrase
+    (case-insensitive), the inline definition sentence Lens 7 exempts.
+
+    Scoped to `interval_inline` only via the caller in :func:`audit_body`;
+    other categories keep scanning the unblanked text.
+    """
+    out: list[str] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith(">") or _WHY_THIS_TEST_RE.search(line):
+            out.append("")
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
+# The `## Reproducibility` `**Context:**` provenance row (SPEC.md
+# § `**Context:**` row; verify_task_body.py check 17) requires the
+# originating user prompt / follow-up scope note be carried forward
+# VERBATIM as a blockquote — never paraphrased, trimmed, or typo-fixed.
+# Verbatim preservation and the prose anti-pattern scan are mutually
+# unsatisfiable on that quote (task #597: a scope note opening with
+# "PRE-REGISTERED" tripped the `pre_reg` pattern), so blockquote lines
+# inside the Context block are exempt from the scan. Non-blockquote
+# prose inside the block is still scanned.
+_CONTEXT_LABEL_RE = re.compile(r"^(?:[-*]\s+)?\*\*\s*Context\s*:?\s*\*\*")
+_BOLD_LABEL_RE = re.compile(r"^(?:[-*]\s+)?\*\*\s*([^*\n]+?)\s*:?\s*\*\*")
+# SPEC.md names exactly three Context sub-bullets; a boldface label
+# outside this set (e.g. **Compute:**, **Code:**) starts a sibling row
+# and ends the block. Plain (non-bold) sub-bullets never match
+# _BOLD_LABEL_RE, so they keep the block open without this whitelist.
+_CONTEXT_SUB_LABELS = ("created", "follow-up to", "originating prompt")
+
+
+def strip_context_blockquotes(text: str) -> str:
+    """Drop blockquote lines inside the `**Context:**` provenance block.
+
+    The block runs from the `**Context:**` label to the next markdown
+    heading or the next boldface row label that is not one of the
+    Context sub-bullets (Created / run, Follow-up to, Originating
+    prompt(s)), or EOF. If the boundary is mis-detected the failure
+    mode is the pre-fix behavior (the quote gets scanned) — never a
+    silently widened exemption.
+    """
+    out_lines: list[str] = []
+    in_context = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if in_context:
+            label_match = _BOLD_LABEL_RE.match(stripped)
+            if stripped.startswith("#") or (
+                label_match
+                and not any(
+                    label_match.group(1).lower().startswith(sub) for sub in _CONTEXT_SUB_LABELS
+                )
+            ):
+                in_context = False
+            elif stripped.startswith(">"):
+                continue  # verbatim provenance quote — exempt from the scan
+        if not in_context and _CONTEXT_LABEL_RE.match(stripped):
+            in_context = True
+        out_lines.append(line)
+    return "\n".join(out_lines)
+
+
+_H2_RE = re.compile(r"^##\s+(?P<title>.+?)\s*$")
+
+
+def strip_data_example_blocks(text: str) -> str:
+    """Drop `<details>...</details>` example blocks inside the `## Data`
+    section.
+
+    The v3 clean-result spec MANDATES verbatim training rows / eval
+    probes / sample completions inside `## Data` (`### Trained on` /
+    `### Evaluated with` / `### Generated`), carried in `<details>`
+    example blocks. Those verbatim rows routinely contain strings the
+    prose anti-pattern scan flags as project-internal condition codes
+    (`C1`, `H2`, `M1`, `BS_E0`, …) with NO reword option — the same
+    verbatim-content conflict the `**Context:**` blockquote carve-out
+    fixed (incident #597). The author cannot paraphrase a row that is
+    required to be verbatim, so example blocks inside `## Data` are
+    exempt from the scan.
+
+    Mechanism mirrors :func:`strip_context_blockquotes`: a stateful
+    line walker that drops only lines inside a `<details>` block while
+    the cursor is inside the `## Data` section. Fenced code blocks (the
+    other v3 example-block form) are already removed globally by
+    :func:`strip_code`, so this only needs to handle `<details>` blocks.
+
+    The `## Data` section runs from its `## ` H2 to the next `## ` H2
+    (typically `## Reproducibility`) or EOF. If a `</details>` close is
+    never seen before the section ends, the block-drop ends with the
+    section — a mis-detected boundary degrades to the pre-fix behavior
+    (the lines get scanned), never a silently widened exemption.
+    """
+    out_lines: list[str] = []
+    in_data = False
+    in_details = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        h2 = _H2_RE.match(stripped)
+        if h2:
+            # Any H2 ends a `## Data` block (and any in-flight details
+            # drop); re-enter only when the new H2 is `## Data` itself.
+            in_data = h2.group("title").strip().lower() == "data"
+            in_details = False
+            out_lines.append(line)
+            continue
+        if in_data:
+            lowered = stripped.lower()
+            if not in_details and lowered.startswith("<details"):
+                in_details = True
+                continue  # drop the verbatim example block
+            if in_details:
+                if "</details>" in lowered:
+                    in_details = False
+                continue  # drop every line inside the example block
+        out_lines.append(line)
+    return "\n".join(out_lines)
+
+
+# Lens 7 (clean-result-critic) scopes the PRE-REGISTRATION-mention ban to the
+# three reader-facing v3 prose sections ONLY — `## Takeaways` / `## What I ran`
+# / `## Findings` — and explicitly permits pre-reg threshold values to sit in
+# the parameters table (`.claude/agents/clean-result-critic.md` Lens 7:
+# "Pre-registration mentions … in `## Takeaways` / `## What I ran` /
+# `## Findings` prose. Pre-reg threshold values can sit in the parameters
+# table."). The `pre_reg` regex otherwise scans the whole body, so a
+# procedural "dropped pre-registered" sentence in `## Data` / `## Reproducibility`
+# prose — spec-permitted there — fires a FALSE positive the critic must
+# hand-adjudicate every round (incident #623: an `## Data → ### Evaluated with`
+# pre-reg mention tripped the audit although Lens 7 exempts that section).
+# This carve-out is `pre_reg`-only; the other Lens 7 sub-categories (named
+# tests, power analyses, inline `value ± err`) are NOT section-scoped in the
+# spec, so we do not widen their exemption surface.
+_PRE_REG_PROSE_SECTIONS = ("takeaways", "what i ran", "findings")
+
+
+def _restrict_pre_reg_to_prose_sections(body: str, text: str) -> str:
+    """Blank every line of `text` OUTSIDE the three Lens 7 prose sections
+    (`## Takeaways` / `## What I ran` / `## Findings`) so the `pre_reg`
+    scan fires only where the spec bans pre-registration mentions.
+
+    Applied ONLY to v3 bodies (the `<!-- clean-result-v3 -->` sentinel) —
+    the section scope is a v3 shape. For v2 / legacy / unstructured bodies
+    (which use `## AI TL;DR` / `## Human TL;DR` / `## TL;DR` / `## Details`
+    H2 names) the restriction is skipped and `text` is returned unchanged,
+    so the prior whole-body `pre_reg` behavior is preserved verbatim and we
+    never silently blank an entire legacy body's prose.
+
+    `text` is the already-cleaned scan source (frontmatter / code / Context
+    blockquote / Data example blocks stripped); `body` is the raw body, used
+    only for the v3-sentinel gate. "Blanked" means the line content becomes
+    an empty string (the trailing `\n` is preserved so sample-output offsets
+    stay stable). A mis-detected boundary degrades to scanning a line that
+    should have been blanked — never to a silently widened exemption.
+    """
+    if "<!-- clean-result-v3 -->" not in body:
+        return text
+    out: list[str] = []
+    in_prose_section = False
+    for line in text.splitlines():
+        h2 = _H2_RE.match(line.strip())
+        if h2:
+            in_prose_section = h2.group("title").strip().lower() in _PRE_REG_PROSE_SECTIONS
+            # The H2 heading line itself carries no scannable prose; blank
+            # it whether or not it opens a prose section.
+            out.append("")
+            continue
+        out.append(line if in_prose_section else "")
+    return "\n".join(out)
+
+
 def is_v2(body: str) -> bool:
     """Return True when a body is treated as a "current spec" body for
     the legacy bulk-inventory audit.
@@ -165,11 +512,15 @@ def is_v2(body: str) -> bool:
     Historically this matched the retired AI TL;DR / AI Summary
     four-H2 shape. Under the 2-content-section nested-design (v2) spec
     (`.claude/skills/clean-results/SPEC.md`, migrated 2026-W22 task
-    #454 + nested-TL;DR adoption forward-only), "current spec" now
-    means EITHER:
+    #454 + nested-TL;DR adoption forward-only) and the five-flat-H2
+    (v3) redesign (2026-W24, sentinel `<!-- clean-result-v3 -->`),
+    "current spec" now means ANY of:
 
+    - The v3 sentinel `<!-- clean-result-v3 -->` is present (the
+      current prescriptive shape: Takeaways / What I ran / Findings /
+      Data / Reproducibility); OR
     - The nested-design (v2) sentinel `<!-- clean-result-v2 -->` is
-      present in the body (new prescriptive shape); OR
+      present in the body (prior prescriptive shape); OR
     - The body carries `## Human TL;DR` AND `## TL;DR` AND
       `## Reproducibility` H2s (the post-#454 flat shape, still
       promotable for legacy bodies); OR
@@ -177,10 +528,15 @@ def is_v2(body: str) -> bool:
       (kept so the bulk-inventory audit doesn't drop pre-#454 bodies
       from consideration).
 
-    This is a coarse "should I audit this body's prose" gate, NOT a
-    structural verifier — `scripts/verify_task_body.py` is the
-    authoritative mechanical gate.
+    This is a coarse "should I audit this body's prose" gate consulted
+    ONLY on the bulk-inventory path (`_run_legacy_bulk_inventory`); the
+    live pipeline paths (`--task <N>` at /issue Step 9a-bis, the
+    explicit-file path for analyzer drafts) audit UNCONDITIONALLY and do
+    NOT consult this gate. It is NOT a structural verifier —
+    `scripts/verify_task_body.py` is the authoritative mechanical gate.
     """
+    if "<!-- clean-result-v3 -->" in body:
+        return True
     if "<!-- clean-result-v2 -->" in body:
         return True
     if "## Human TL;DR" in body and "## TL;DR" in body and "## Reproducibility" in body:
@@ -192,11 +548,54 @@ def is_v2(body: str) -> bool:
 
 
 def audit_body(body: str) -> dict[str, list[str]]:
+    """Scan `body` for prose anti-patterns under the categories in
+    `PATTERNS`. Returns a dict of category-name -> up-to-5 sample hits.
+
+    Table-cell exemption: categories in `_TABLE_CELL_EXEMPT_CATEGORIES`
+    (`interval_inline`, `condition_labels`) scan a copy of the cleaned
+    text with every GFM table-row line blanked. This mirrors the spec
+    — the clean-result-critic Lens 7 rule scopes the bracketed-CI ban
+    to PROSE, and the Reproducibility Parameters table legitimately
+    carries interval forms (`mc_ci = [0.236, 0.252]`). The persona-ID
+    lookup table inside `### What I ran` legitimately carries `C1` /
+    `D1` codes whose definition IS the table. All other categories
+    keep scanning the unblanked text — the prose-vs-table distinction
+    is not load-bearing for `bit_byte_identical`, `pre_reg`, `named_tests`,
+    `letter_labels`, etc.
+
+    `interval_inline` additionally blanks figure-caption blockquotes and
+    the finding-internal "Why this test" line (Lens 7's two carve-outs)
+    via `_strip_interval_inline_exempt_lines` — bracketed bounds in a
+    chart caption or a CI-as-test-definition sentence are spec-compliant.
+
+    `pre_reg` (v3 bodies only) scans ONLY the three Lens 7 prose sections
+    (`## Takeaways` / `## What I ran` / `## Findings`) via
+    `_restrict_pre_reg_to_prose_sections` — a spec-permitted procedural
+    "dropped pre-registered" sentence in `## Data` / `## Reproducibility`
+    prose no longer fires a false positive (incident #623). v2 / legacy
+    bodies keep the prior whole-body `pre_reg` behavior.
+    """
     findings: dict[str, list[str]] = {}
-    cleaned = strip_code(strip_frontmatter(body))
+    cleaned = strip_code(
+        strip_data_example_blocks(strip_context_blockquotes(strip_frontmatter(body)))
+    )
+    cleaned_table_blanked = _blank_table_rows(cleaned)
+    # `interval_inline` scans the table-blanked text with the Lens 7
+    # caption / "Why this test" carve-outs ALSO blanked.
+    interval_scan_source = _strip_interval_inline_exempt_lines(cleaned_table_blanked)
+    # `pre_reg` (v3 only) scans only the three Lens 7 prose sections.
+    pre_reg_scan_source = _restrict_pre_reg_to_prose_sections(body, cleaned)
     for name, (pattern, _) in PATTERNS.items():
+        if name == "interval_inline":
+            scan_source = interval_scan_source
+        elif name == "pre_reg":
+            scan_source = pre_reg_scan_source
+        elif name in _TABLE_CELL_EXEMPT_CATEGORIES:
+            scan_source = cleaned_table_blanked
+        else:
+            scan_source = cleaned
         flags = re.IGNORECASE if name == "pre_reg" else 0
-        matches = list(re.finditer(pattern, cleaned, flags))
+        matches = list(re.finditer(pattern, scan_source, flags))
         if matches:
             findings[name] = [m.group(0) for m in matches[:5]]
     return findings
@@ -301,8 +700,10 @@ def main():
     )
     src.add_argument(
         "--task",
+        "--issue",
+        dest="task",
         type=int,
-        help="Task number; resolves to tasks/<status>/<N>/body.md.",
+        help="Task number; resolves to tasks/<status>/<N>/body.md. (--issue is an alias.)",
     )
     args = parser.parse_args()
 

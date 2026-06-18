@@ -1,0 +1,45 @@
+{
+  "arms": {
+    "em": {
+      "assistant": {
+        "self_delta": 0.3704709757623263,
+        "self_rate_conditional": 0.4470037453183518,
+        "base_rate_conditional": 0.07653276955602552,
+        "conditional_fallback": false
+      },
+      "comedian": {
+        "self_delta": 0.33385413782026446,
+        "self_rate_conditional": 0.529151943462897,
+        "base_rate_conditional": 0.1952978056426325,
+        "conditional_fallback": false
+      },
+      "kindergarten_teacher": {
+        "self_delta": 0.42622901443126143,
+        "self_rate_conditional": 0.5123595505617975,
+        "base_rate_conditional": 0.08613053613053608,
+        "conditional_fallback": false
+      },
+      "qwen_default": {
+        "self_delta": 0.3997051230130605,
+        "self_rate_conditional": 0.47228915662650606,
+        "base_rate_conditional": 0.07258403361344554,
+        "conditional_fallback": false
+      },
+      "software_engineer": {
+        "self_delta": 0.4009726443769006,
+        "self_rate_conditional": 0.4879939209726454,
+        "base_rate_conditional": 0.08702127659574478,
+        "conditional_fallback": false
+      },
+      "villain": {
+        "self_delta": -0.0441525148478108,
+        "self_rate_conditional": 0.758854166666666,
+        "base_rate_conditional": 0.8030066815144768,
+        "conditional_fallback": false
+      }
+    }
+  },
+  "dv": "conditional self rate - conditional base rate (fresh survivors)",
+  "git_commit_sha": "ac52f092039b88dacd65ca37f342aacec22d7a48",
+  "timestamp_utc": "2026-06-11T20:13:53.673549+00:00"
+}

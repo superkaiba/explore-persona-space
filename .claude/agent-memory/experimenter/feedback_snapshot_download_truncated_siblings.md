@@ -1,22 +1,16 @@
 ---
-name: snapshot-download-truncated-siblings
-description: huggingface_hub.snapshot_download silently returns 0 files when repo_info.siblings is truncated below the 50,000 file threshold. Affects superkaiba1/explore-persona-space at 14,439 files where siblings only reports 7,901.
+name: snapshot_download silent-empty family — truncated siblings, 0-file fetch, --adapter-path recovery
+description: snapshot_download(allow_patterns=...) silently returns 0 files on superkaiba1/explore-persona-space (repo_info.siblings truncates below the 50k threshold); downstream scripts misdiagnose as "checkpoint not present". Use list_repo_tree + hf_hub_download per file.
 metadata:
   type: feedback
 ---
 
-`huggingface_hub.snapshot_download(allow_patterns=...)` silently returns 0 files (with `Fetching 0 files: 0it`) when the target file is at a path the HF Hub's `repo_info.siblings` endpoint does NOT return — and `siblings` truncates BELOW the documented `VERY_LARGE_REPO_THRESHOLD=50,000` for repos that are large in some other dimension (object count? tree depth? blob size sum?).
+`snapshot_download(allow_patterns=...)` filters against `repo_info.siblings`, which truncates BELOW the documented 50,000-file fallback threshold (observed 7,901 reported / 14,439 actual on `superkaiba1/explore-persona-space`, hf_hub 0.36.2). Result: `Fetching 0 files: 0it`, no warning, empty snapshot dir. A `list_repo_files` gate PASSes (files ARE on the Hub), so input-data gates do NOT catch it.
 
-**Why:** `huggingface_hub` 0.36.2's `snapshot_download` filters `allow_patterns` against `repo_info(repo_id).siblings`. For `superkaiba1/explore-persona-space` (14,439 files via `list_repo_files`), `repo_info.siblings` returns only 7,901 file objects. Files at deeper or older paths (the `pod1_backup/...` tree from prior sessions) are NOT in that subset. The threshold check `len(siblings) > 50_000` is the only fallback to `list_repo_tree`, and 7,901 < 50,000, so no fallback fires. Result: 0 matches, 0 downloads, no warning.
-
-This bit task #375 round-4 third launch attempt (2026-05-21) at phase_pilot's first `download_adapter` call, after persona-directions + build-pools + base-floor all PASSed.
+**Why (three burns):** #375 round-4 (2026-05-21) — phase_pilot's `download_adapter` fetched 0 files. #399 round-6 (2026-05-27) — eval-only relaunch's `resolve_checkpoint` treated 0-files-fetched as "checkpoint not present on Hub" and told the operator to RE-TRAIN finished work. #558 v1 (2026-06-10) — `resolve_adapter` crashed `FileNotFoundError: Adapter missing/empty on Hub` on 12 adapters the gate had just verified.
 
 **How to apply:**
-- When implementing or reviewing code that downloads scoped subtrees from a large/old HF Hub repo via `snapshot_download(allow_patterns=...)`, REJECT the pattern. Switch to one of:
-  - `HfApi.list_repo_tree(repo_id, path_in_repo=hub_subpath, recursive=True)` + `hf_hub_download` per file.
-  - `hf_hub_download` per known canonical filename list (works because it does NOT consult `siblings`).
-  - Explicit fallback: if `snapshot_download` returned 0 files, retry via `list_repo_tree`.
-- Quick diagnostic at preflight: `len(api.repo_info(repo_id).siblings)` vs `len(api.list_repo_files(repo_id))`. If they diverge, `snapshot_download(allow_patterns=...)` against that repo is unsafe.
-- The pattern `hf_hub_download(filename=<exact_path>)` is reliable; `snapshot_download(allow_patterns=<glob>)` against the same path is not.
-
-Related: [[carryover-data-assumption]] (general "data on HF Hub" claim verification), [[inherited-loras-via-wandb]] (similar HF-Hub-vs-WandB-Artifacts mismatch).
+1. NEVER trust a "not present on Hub" error without independently checking `HfApi().list_repo_files(repo)` (the `hf` CLI has no `api` subcommand — use Python). Files present + 0-file fetch = this bug; bounce `failure_class: code`, never re-train.
+2. Reliable pattern: `list_repo_tree(repo, path_in_repo=sub, recursive=True)` + `hf_hub_download` per file. `hf_hub_download(filename=<exact_path>)` does not consult siblings.
+3. Launch-side recovery without a code bounce (#558): if the script exposes a local-path flag (`--adapter-path`), pre-stage each artifact via list_repo_tree + hf_hub_download (verify `adapter_config.json` per dir), relaunch with the local path, record the deviation + code-debt in the `epm:run-launched` note. No local-path flag → `epm:failure v1 failure_class: code`.
+4. Preflight diagnostic: `len(repo_info(repo).siblings)` vs `len(list_repo_files(repo))` — divergence means snapshot_download with allow_patterns is unsafe on that repo.

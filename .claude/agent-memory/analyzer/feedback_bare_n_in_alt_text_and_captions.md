@@ -1,14 +1,14 @@
 ---
 name: Bare #N references in figure alt text and captions
-description: Verifier check_bare_n_refs scans the entire body, including image alt text and figure caption paragraphs — convert to [#N](url) form everywhere, not just in AI TL;DR / Background prose.
+description: The bare-#N verifier check scans the entire body, including image alt text and figure caption paragraphs — convert to [#N](url) form everywhere, not just in narrative prose.
 type: feedback
 ---
 
-The verifier's `Bare #N references` check (`scripts/verify_clean_result.py`) scans the **entire body**, including:
+The verifier's bare-`#N`-references check (`scripts/verify_task_body.py`) scans the **entire body**, including:
 
 - `![alt text mentioning #205](url)` (image alt text inside markdown image syntax)
-- `**Figure 1.** ... the parent #205 EM-first arm ...` (figure caption paragraphs that follow images)
-- Any other location in AI TL;DR / AI Summary
+- `> **Figure.** ... the parent #205 EM-first arm ...` (figure caption blockquotes that follow images)
+- Any other body location (`## Takeaways` / `## What I ran` / `## Findings` / `## Data` prose — for a grandfathered v2 body, `## TL;DR` etc.)
 
 It is NOT scoped to "narrative prose only." If you write a figure caption that says "the parent #205 EM-first arm leaks 45.7-53.7%", the verifier FAILs even though the same caption could pass other rules.
 

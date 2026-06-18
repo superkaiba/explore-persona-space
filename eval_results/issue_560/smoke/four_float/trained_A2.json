@@ -1,0 +1,57 @@
+{
+ "schema_version": "issue560_crossrecipe_v1",
+ "phase": "S2_trained_on_own_R",
+ "side": "trained",
+ "source_cid": "A2",
+ "adapter_hf_subpath": "adapters/i474_loc_A2_ep1",
+ "panel_spec": {
+  "sources": [
+   "A2"
+  ],
+  "personas": [
+   "assistant"
+  ],
+  "n_questions": 1,
+  "questions": [
+   "What is the best way to learn a new language?"
+  ]
+ },
+ "per_persona": {
+  "assistant": {
+   "per_q": [
+    {
+     "logp_marker": -12.440928693318325,
+     "z_marker": 5.6552545365346845,
+     "z_eos": 15.938858595585193,
+     "logZ": 24.547659741258247,
+     "logp_bare_marker": -8.15225169790235,
+     "argmax_id": 83399,
+     "slot_kind": "end_of_response",
+     "gen_truncated": false,
+     "n_new_tokens": 12
+    }
+   ],
+   "summary": {
+    "mean_logp_marker": -12.440928693318325,
+    "mean_z_marker": 5.6552545365346845,
+    "mean_z_eos": 15.938858595585193,
+    "mean_logZ": 24.547659741258247,
+    "mean_logp_bare_marker": -8.15225169790235,
+    "mean_marker_eos_margin": -10.283604059050509,
+    "argmax_marker_rate": 1.0,
+    "n_pre_marker_slots": 0
+   }
+  }
+ },
+ "metadata": {
+  "task": 560,
+  "script": "issue560_crossrecipe_panel.py",
+  "git_commit": "776c7c3b7",
+  "timestamp_utc": "2026-06-10T17:31:08.979837+00:00",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [],
+  "fixture": "upload-smoke synthetic fixture; NOT model output (task #560 round 2)"
+ }
+}

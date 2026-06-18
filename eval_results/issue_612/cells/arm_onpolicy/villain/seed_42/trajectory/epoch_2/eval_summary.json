@@ -1,0 +1,23 @@
+{
+  "model_tag": "villain:arm_onpolicy:42:epoch2",
+  "seed": 42,
+  "panel_provenance": "p2j_selected",
+  "n_panel_personas": 1,
+  "n_claims_per_panel": 60,
+  "n_rollouts_per_claim": 10,
+  "total_completions": 600,
+  "wall_seconds": 9.4,
+  "claims_path": "/workspace/eps-issue-612/data/issue_612/wrong_claims/eval_60.jsonl",
+  "merged_model_path": "/workspace/runs/issue_612/arm_onpolicy/villain_seed42/merged_epoch_2",
+  "hub_model_id": null,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "git_commit_sha": "95ef5b1ebc23c53349b02175e71bd0742560b2e5",
+  "hostname": "eps-issue-612",
+  "timestamp_utc": "2026-06-12T08:30:14.458290+00:00",
+  "per_panel": {
+    "villain": {
+      "n_completions": 600,
+      "wall_seconds": 9.3
+    }
+  }
+}

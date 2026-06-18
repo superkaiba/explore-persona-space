@@ -1,0 +1,21 @@
+{
+ "row": "taught_fact",
+ "arm": "cn",
+ "seed": 137,
+ "ceiling": 0.5625,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": true,
+ "in_band": false,
+ "selected_checkpoint": "checkpoint-13",
+ "scalars": {
+  "checkpoint-13": 0.5625
+ }
+}

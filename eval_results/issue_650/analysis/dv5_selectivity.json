@@ -1,0 +1,944 @@
+{
+  "cells": {
+    "marker__high__seed137": {
+      "behavior": "marker",
+      "dose": "high",
+      "seed": 137,
+      "n_bystanders": 16,
+      "n_primary_bystanders_expected": 16,
+      "n_primary_bystanders_plan_declared": 15,
+      "assertions": {
+        "primary_bystander_count_matches": true
+      },
+      "install_strength_eos_margin": 16.604296875,
+      "rho_firing_predictor": -0.02647058823529412,
+      "rho_plain_geometry": 0.4058823529411764,
+      "delta_rho_firing_minus_geometry": -0.3794117647058823,
+      "predictor_collinearity_rho": -0.6235294117647059,
+      "firing_predictor_wins": false,
+      "read_tap": "up_in",
+      "read_layer": 24,
+      "per_bystander": {
+        "paramedic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9853917360305786,
+          "firing_predictor": -0.05157884582877159,
+          "leakage_margin": 13.2302001953125,
+          "leakage_logp": 12.457551193237304,
+          "leakage_fraction": 0.7967937633801492
+        },
+        "surgeon": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9739772081375122,
+          "firing_predictor": -0.05420723557472229,
+          "leakage_margin": 9.4419921875,
+          "leakage_logp": 9.254470443725586,
+          "leakage_fraction": 0.5686475168795728
+        },
+        "poet": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6153218746185303,
+          "firing_predictor": -0.03528214246034622,
+          "leakage_margin": 8.916412353515625,
+          "leakage_logp": 8.9159499168396,
+          "leakage_fraction": 0.5369942744724399
+        },
+        "navy_seal": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9658349752426147,
+          "firing_predictor": -0.052726197987794876,
+          "leakage_margin": 14.213623046875,
+          "leakage_logp": 13.767039155960083,
+          "leakage_fraction": 0.8560207730491449
+        },
+        "army_medic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9729596376419067,
+          "firing_predictor": -0.04857228696346283,
+          "leakage_margin": 13.537286376953125,
+          "leakage_logp": 13.121777486801147,
+          "leakage_fraction": 0.8152881437175054
+        },
+        "florist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.952158510684967,
+          "firing_predictor": -0.04910524562001228,
+          "leakage_margin": 11.106964111328125,
+          "leakage_logp": 10.48719367980957,
+          "leakage_fraction": 0.6689210747641565
+        },
+        "cybersec_consultant": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9721140265464783,
+          "firing_predictor": -0.05555933713912964,
+          "leakage_margin": 11.6927734375,
+          "leakage_logp": 11.213232374191284,
+          "leakage_fraction": 0.7042016609029101
+        },
+        "pentester": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9769968390464783,
+          "firing_predictor": -0.053763628005981445,
+          "leakage_margin": 11.811181640625,
+          "leakage_logp": 11.206042289733887,
+          "leakage_fraction": 0.7113328392970569
+        },
+        "private_investigator": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9574532508850098,
+          "firing_predictor": -0.048541463911533356,
+          "leakage_margin": 14.63125,
+          "leakage_logp": 14.230955791473388,
+          "leakage_fraction": 0.8811725127626038
+        },
+        "librarian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9668626189231873,
+          "firing_predictor": -0.0532258003950119,
+          "leakage_margin": 9.9180908203125,
+          "leakage_logp": 9.774300336837769,
+          "leakage_fraction": 0.5973207354082857
+        },
+        "software_engineer": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9665621519088745,
+          "firing_predictor": -0.05527978017926216,
+          "leakage_margin": 9.8184326171875,
+          "leakage_logp": 9.641308355331422,
+          "leakage_fraction": 0.5913187827887172
+        },
+        "data_scientist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9630448222160339,
+          "firing_predictor": -0.056038253009319305,
+          "leakage_margin": 9.913623046875,
+          "leakage_logp": 9.62430944442749,
+          "leakage_fraction": 0.5970516620791869
+        },
+        "medical_doctor": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9740179777145386,
+          "firing_predictor": -0.05312706530094147,
+          "leakage_margin": 11.328466796875,
+          "leakage_logp": 11.016382122039795,
+          "leakage_fraction": 0.6822611569859083
+        },
+        "french_person": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8618661165237427,
+          "firing_predictor": -0.04834993928670883,
+          "leakage_margin": 11.675,
+          "leakage_logp": 11.345879983901977,
+          "leakage_fraction": 0.7031312489707578
+        },
+        "villain": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8025584816932678,
+          "firing_predictor": -0.03806529939174652,
+          "leakage_margin": 10.87607421875,
+          "leakage_logp": 10.532868194580079,
+          "leakage_fraction": 0.6550156444820854
+        },
+        "comedian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6814636588096619,
+          "firing_predictor": -0.013715953566133976,
+          "leakage_margin": 8.761997985839844,
+          "leakage_logp": 8.020211791992187,
+          "leakage_fraction": 0.5276946113287224
+        }
+      }
+    },
+    "marker__high__seed256": {
+      "behavior": "marker",
+      "dose": "high",
+      "seed": 256,
+      "n_bystanders": 16,
+      "n_primary_bystanders_expected": 16,
+      "n_primary_bystanders_plan_declared": 15,
+      "assertions": {
+        "primary_bystander_count_matches": true
+      },
+      "install_strength_eos_margin": 16.298046875,
+      "rho_firing_predictor": 0.36764705882352944,
+      "rho_plain_geometry": 0.3,
+      "delta_rho_firing_minus_geometry": 0.06764705882352945,
+      "predictor_collinearity_rho": 0.33529411764705885,
+      "firing_predictor_wins": true,
+      "read_tap": "up_in",
+      "read_layer": 24,
+      "per_bystander": {
+        "paramedic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9853917360305786,
+          "firing_predictor": 0.06348580121994019,
+          "leakage_margin": 12.8005126953125,
+          "leakage_logp": 12.028722143173217,
+          "leakage_fraction": 0.7854016369867939
+        },
+        "surgeon": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9739772081375122,
+          "firing_predictor": 0.06055520474910736,
+          "leakage_margin": 9.0669921875,
+          "leakage_logp": 8.87944941520691,
+          "leakage_fraction": 0.556323850154591
+        },
+        "poet": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6153218746185303,
+          "firing_predictor": 0.0587267130613327,
+          "leakage_margin": 9.569537353515624,
+          "leakage_logp": 9.568948364257812,
+          "leakage_fraction": 0.5871585366584378
+        },
+        "navy_seal": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9658349752426147,
+          "firing_predictor": 0.05749183148145676,
+          "leakage_margin": 13.816748046875,
+          "leakage_logp": 13.424097585678101,
+          "leakage_fraction": 0.8477548354624548
+        },
+        "army_medic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9729596376419067,
+          "firing_predictor": 0.061940744519233704,
+          "leakage_margin": 12.974786376953125,
+          "leakage_logp": 12.594719743728637,
+          "leakage_fraction": 0.7960945551614217
+        },
+        "florist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.952158510684967,
+          "firing_predictor": 0.058342259377241135,
+          "leakage_margin": 11.008526611328126,
+          "leakage_logp": 10.36746039390564,
+          "leakage_fraction": 0.6754506656999737
+        },
+        "cybersec_consultant": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9721140265464783,
+          "firing_predictor": 0.06156162545084953,
+          "leakage_margin": 11.5255859375,
+          "leakage_logp": 11.02224087715149,
+          "leakage_fraction": 0.707175898185653
+        },
+        "pentester": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9769968390464783,
+          "firing_predictor": 0.060722049325704575,
+          "leakage_margin": 11.612744140625,
+          "leakage_logp": 10.966817140579224,
+          "leakage_fraction": 0.7125236680008629
+        },
+        "private_investigator": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9574532508850098,
+          "firing_predictor": 0.06457251310348511,
+          "leakage_margin": 14.2875,
+          "leakage_logp": 13.893057775497436,
+          "leakage_fraction": 0.8766387843635405
+        },
+        "librarian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9668626189231873,
+          "firing_predictor": 0.06273481994867325,
+          "leakage_margin": 9.7962158203125,
+          "leakage_logp": 9.638097524642944,
+          "leakage_fraction": 0.6010668576085133
+        },
+        "software_engineer": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9665621519088745,
+          "firing_predictor": 0.06020765006542206,
+          "leakage_margin": 9.8746826171875,
+          "leakage_logp": 9.675476121902467,
+          "leakage_fraction": 0.6058813484169402
+        },
+        "data_scientist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9630448222160339,
+          "firing_predictor": 0.06383217126131058,
+          "leakage_margin": 10.005810546875,
+          "leakage_logp": 9.67034125328064,
+          "leakage_fraction": 0.6139269707355656
+        },
+        "medical_doctor": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9740179777145386,
+          "firing_predictor": 0.06116385757923126,
+          "leakage_margin": 10.798779296875,
+          "leakage_logp": 10.47868185043335,
+          "leakage_fraction": 0.662581190230808
+        },
+        "french_person": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8618661165237427,
+          "firing_predictor": 0.06659019738435745,
+          "leakage_margin": 11.44375,
+          "leakage_logp": 11.14555344581604,
+          "leakage_fraction": 0.7021546868633607
+        },
+        "villain": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8025584816932678,
+          "firing_predictor": 0.0546540729701519,
+          "leakage_margin": 10.83857421875,
+          "leakage_logp": 10.510543012619019,
+          "leakage_fraction": 0.665022889053999
+        },
+        "comedian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6814636588096619,
+          "firing_predictor": 0.04801006242632866,
+          "leakage_margin": 8.758872985839844,
+          "leakage_logp": 8.050782775878906,
+          "leakage_fraction": 0.5374185663482971
+        }
+      }
+    },
+    "marker__high__seed42": {
+      "behavior": "marker",
+      "dose": "high",
+      "seed": 42,
+      "n_bystanders": 16,
+      "n_primary_bystanders_expected": 16,
+      "n_primary_bystanders_plan_declared": 15,
+      "assertions": {
+        "primary_bystander_count_matches": true
+      },
+      "install_strength_eos_margin": 16.038671875,
+      "rho_firing_predictor": 0.5058823529411764,
+      "rho_plain_geometry": 0.3058823529411765,
+      "delta_rho_firing_minus_geometry": 0.19999999999999996,
+      "predictor_collinearity_rho": 0.7382352941176471,
+      "firing_predictor_wins": true,
+      "read_tap": "up_in",
+      "read_layer": 24,
+      "per_bystander": {
+        "paramedic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9853917360305786,
+          "firing_predictor": 0.04809463769197464,
+          "leakage_margin": 12.7614501953125,
+          "leakage_logp": 11.983637857437134,
+          "leakage_fraction": 0.7956675150393338
+        },
+        "surgeon": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9739772081375122,
+          "firing_predictor": 0.05037231743335724,
+          "leakage_margin": 8.5248046875,
+          "leakage_logp": 8.33933367729187,
+          "leakage_fraction": 0.5315156238583502
+        },
+        "poet": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6153218746185303,
+          "firing_predictor": 0.026441505178809166,
+          "leakage_margin": 8.730474853515625,
+          "leakage_logp": 8.730020999908447,
+          "leakage_fraction": 0.5443390151976425
+        },
+        "navy_seal": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9658349752426147,
+          "firing_predictor": 0.05453856661915779,
+          "leakage_margin": 13.251123046875,
+          "leakage_logp": 12.857255697250366,
+          "leakage_fraction": 0.8261982756521105
+        },
+        "army_medic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9729596376419067,
+          "firing_predictor": 0.05351752042770386,
+          "leakage_margin": 12.887286376953124,
+          "leakage_logp": 12.48537974357605,
+          "leakage_fraction": 0.8035133131591126
+        },
+        "florist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.952158510684967,
+          "firing_predictor": 0.039243824779987335,
+          "leakage_margin": 10.385089111328124,
+          "leakage_logp": 9.76392822265625,
+          "leakage_fraction": 0.6475030596215202
+        },
+        "cybersec_consultant": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9721140265464783,
+          "firing_predictor": 0.04410012811422348,
+          "leakage_margin": 10.9302734375,
+          "leakage_logp": 10.453954410552978,
+          "leakage_fraction": 0.6814949219415963
+        },
+        "pentester": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9769968390464783,
+          "firing_predictor": 0.04491281509399414,
+          "leakage_margin": 11.081494140625,
+          "leakage_logp": 10.464364337921143,
+          "leakage_fraction": 0.6909234272632067
+        },
+        "private_investigator": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9574532508850098,
+          "firing_predictor": 0.039143022149801254,
+          "leakage_margin": 14.0046875,
+          "leakage_logp": 13.613766479492188,
+          "leakage_fraction": 0.873182493484985
+        },
+        "librarian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9668626189231873,
+          "firing_predictor": 0.03806285560131073,
+          "leakage_margin": 9.0227783203125,
+          "leakage_logp": 8.892561292648315,
+          "leakage_fraction": 0.5625639323899755
+        },
+        "software_engineer": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9665621519088745,
+          "firing_predictor": 0.04477670043706894,
+          "leakage_margin": 9.1606201171875,
+          "leakage_logp": 8.97497205734253,
+          "leakage_fraction": 0.571158272242383
+        },
+        "data_scientist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9630448222160339,
+          "firing_predictor": 0.04175803065299988,
+          "leakage_margin": 9.215966796875,
+          "leakage_logp": 8.919210958480836,
+          "leakage_fraction": 0.5746090991012933
+        },
+        "medical_doctor": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9740179777145386,
+          "firing_predictor": 0.046311452984809875,
+          "leakage_margin": 10.481591796875,
+          "leakage_logp": 10.180245113372802,
+          "leakage_fraction": 0.6535199347280742
+        },
+        "french_person": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8618661165237427,
+          "firing_predictor": 0.04426809027791023,
+          "leakage_margin": 11.3625,
+          "leakage_logp": 11.064375400543213,
+          "leakage_fraction": 0.7084439465159893
+        },
+        "villain": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8025584816932678,
+          "firing_predictor": 0.0345749631524086,
+          "leakage_margin": 10.21201171875,
+          "leakage_logp": 9.90309534072876,
+          "leakage_fraction": 0.636711804963589
+        },
+        "comedian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6814636588096619,
+          "firing_predictor": 0.02549714781343937,
+          "leakage_margin": 8.249497985839843,
+          "leakage_logp": 7.56915693283081,
+          "leakage_fraction": 0.5143504431123506
+        }
+      }
+    },
+    "marker__low__seed137": {
+      "behavior": "marker",
+      "dose": "low",
+      "seed": 137,
+      "n_bystanders": 16,
+      "n_primary_bystanders_expected": 16,
+      "n_primary_bystanders_plan_declared": 15,
+      "assertions": {
+        "primary_bystander_count_matches": true
+      },
+      "install_strength_eos_margin": 5.831640625,
+      "rho_firing_predictor": 0.2529411764705882,
+      "rho_plain_geometry": 0.3911764705882353,
+      "delta_rho_firing_minus_geometry": -0.13823529411764707,
+      "predictor_collinearity_rho": 0.7058823529411764,
+      "firing_predictor_wins": false,
+      "read_tap": "up_in",
+      "read_layer": 24,
+      "per_bystander": {
+        "paramedic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9853917360305786,
+          "firing_predictor": 0.03882037103176117,
+          "leakage_margin": 4.5989501953125,
+          "leakage_logp": 4.197656917572021,
+          "leakage_fraction": 0.7886203027664277
+        },
+        "surgeon": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9739772081375122,
+          "firing_predictor": 0.04084267094731331,
+          "leakage_margin": 3.7849609375,
+          "leakage_logp": 3.6808995246887206,
+          "leakage_fraction": 0.6490387835755911
+        },
+        "poet": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6153218746185303,
+          "firing_predictor": 0.02633839286863804,
+          "leakage_margin": 3.100787353515625,
+          "leakage_logp": 3.1006343841552733,
+          "leakage_fraction": 0.531717839440016
+        },
+        "navy_seal": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9658349752426147,
+          "firing_predictor": 0.03987591713666916,
+          "leakage_margin": 4.849560546875,
+          "leakage_logp": 4.692042064666748,
+          "leakage_fraction": 0.8315945475249513
+        },
+        "army_medic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9729596376419067,
+          "firing_predictor": 0.040556471794843674,
+          "leakage_margin": 4.718145751953125,
+          "leakage_logp": 4.466716384887695,
+          "leakage_fraction": 0.8090597578538415
+        },
+        "florist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.952158510684967,
+          "firing_predictor": 0.039257947355508804,
+          "leakage_margin": 4.217901611328125,
+          "leakage_logp": 3.932620143890381,
+          "leakage_fraction": 0.7232787276441824
+        },
+        "cybersec_consultant": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9721140265464783,
+          "firing_predictor": 0.03991875797510147,
+          "leakage_margin": 4.4138671875,
+          "leakage_logp": 4.146223449707032,
+          "leakage_fraction": 0.7568825775336593
+        },
+        "pentester": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9769968390464783,
+          "firing_predictor": 0.03852596879005432,
+          "leakage_margin": 4.413525390625,
+          "leakage_logp": 4.084437561035156,
+          "leakage_fraction": 0.7568239667760733
+        },
+        "private_investigator": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9574532508850098,
+          "firing_predictor": 0.036281902343034744,
+          "leakage_margin": 4.9119140625,
+          "leakage_logp": 4.712649917602539,
+          "leakage_fraction": 0.8422868243016947
+        },
+        "librarian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9668626189231873,
+          "firing_predictor": 0.03998861461877823,
+          "leakage_margin": 3.9149658203125,
+          "leakage_logp": 3.833084297180176,
+          "leakage_fraction": 0.6713318038716591
+        },
+        "software_engineer": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9665621519088745,
+          "firing_predictor": 0.03770593926310539,
+          "leakage_margin": 3.8539794921875,
+          "leakage_logp": 3.754262924194336,
+          "leakage_fraction": 0.6608739701252595
+        },
+        "data_scientist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9630448222160339,
+          "firing_predictor": 0.03962533548474312,
+          "leakage_margin": 3.864013671875,
+          "leakage_logp": 3.704427146911621,
+          "leakage_fraction": 0.6625946145086744
+        },
+        "medical_doctor": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9740179777145386,
+          "firing_predictor": 0.0419740304350853,
+          "leakage_margin": 3.997216796875,
+          "leakage_logp": 3.8342461585998535,
+          "leakage_fraction": 0.6854360640364391
+        },
+        "french_person": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8618661165237427,
+          "firing_predictor": 0.02771182730793953,
+          "leakage_margin": 4.24921875,
+          "leakage_logp": 4.127737951278687,
+          "leakage_fraction": 0.728648938307991
+        },
+        "villain": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8025584816932678,
+          "firing_predictor": 0.024265190586447716,
+          "leakage_margin": 3.91435546875,
+          "leakage_logp": 3.7460968017578127,
+          "leakage_fraction": 0.6712271418045415
+        },
+        "comedian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6814636588096619,
+          "firing_predictor": 0.02336510643362999,
+          "leakage_margin": 3.2506698608398437,
+          "leakage_logp": 3.053606653213501,
+          "leakage_fraction": 0.5574194416069395
+        }
+      }
+    },
+    "marker__low__seed256": {
+      "behavior": "marker",
+      "dose": "low",
+      "seed": 256,
+      "n_bystanders": 16,
+      "n_primary_bystanders_expected": 16,
+      "n_primary_bystanders_plan_declared": 15,
+      "assertions": {
+        "primary_bystander_count_matches": true
+      },
+      "install_strength_eos_margin": 5.436328125,
+      "rho_firing_predictor": 0.5911764705882353,
+      "rho_plain_geometry": 0.4323529411764706,
+      "delta_rho_firing_minus_geometry": 0.1588235294117647,
+      "predictor_collinearity_rho": 0.5029411764705883,
+      "firing_predictor_wins": true,
+      "read_tap": "up_in",
+      "read_layer": 24,
+      "per_bystander": {
+        "paramedic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9853917360305786,
+          "firing_predictor": 0.049620404839515686,
+          "leakage_margin": 4.5809814453125,
+          "leakage_logp": 4.14520492553711,
+          "leakage_fraction": 0.8426609542286413
+        },
+        "surgeon": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9739772081375122,
+          "firing_predictor": 0.04271999001502991,
+          "leakage_margin": 3.8099609375,
+          "leakage_logp": 3.6904372215270995,
+          "leakage_fraction": 0.7008335129697493
+        },
+        "poet": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6153218746185303,
+          "firing_predictor": 0.003154283855110407,
+          "leakage_margin": 2.833990478515625,
+          "leakage_logp": 2.833816719055176,
+          "leakage_fraction": 0.521306001652655
+        },
+        "navy_seal": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9658349752426147,
+          "firing_predictor": 0.05248985439538956,
+          "leakage_margin": 4.933935546875,
+          "leakage_logp": 4.755825138092041,
+          "leakage_fraction": 0.9075860458432133
+        },
+        "army_medic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9729596376419067,
+          "firing_predictor": 0.048499442636966705,
+          "leakage_margin": 4.572442626953125,
+          "leakage_logp": 4.3204758644104,
+          "leakage_fraction": 0.841090258317166
+        },
+        "florist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.952158510684967,
+          "firing_predictor": 0.039467647671699524,
+          "leakage_margin": 4.290167236328125,
+          "leakage_logp": 4.01216344833374,
+          "leakage_fraction": 0.7891663523029389
+        },
+        "cybersec_consultant": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9721140265464783,
+          "firing_predictor": 0.04732608050107956,
+          "leakage_margin": 4.4978515625,
+          "leakage_logp": 4.227592658996582,
+          "leakage_fraction": 0.8273694043256449
+        },
+        "pentester": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9769968390464783,
+          "firing_predictor": 0.050520796328783035,
+          "leakage_margin": 4.475244140625,
+          "leakage_logp": 4.115631866455078,
+          "leakage_fraction": 0.8232108212976934
+        },
+        "private_investigator": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9574532508850098,
+          "firing_predictor": 0.04446392133831978,
+          "leakage_margin": 4.9013671875,
+          "leakage_logp": 4.679599475860596,
+          "leakage_fraction": 0.9015951713731407
+        },
+        "librarian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9668626189231873,
+          "firing_predictor": 0.04538129270076752,
+          "leakage_margin": 4.0583251953125,
+          "leakage_logp": 3.9639193534851076,
+          "leakage_fraction": 0.7465195444420494
+        },
+        "software_engineer": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9665621519088745,
+          "firing_predictor": 0.048566050827503204,
+          "leakage_margin": 4.0789794921875,
+          "leakage_logp": 3.96539306640625,
+          "leakage_fraction": 0.7503188546382122
+        },
+        "data_scientist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9630448222160339,
+          "firing_predictor": 0.04557394981384277,
+          "leakage_margin": 4.064013671875,
+          "leakage_logp": 3.8825621604919434,
+          "leakage_fraction": 0.7475659265646332
+        },
+        "medical_doctor": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9740179777145386,
+          "firing_predictor": 0.04422932118177414,
+          "leakage_margin": 4.116748046875,
+          "leakage_logp": 3.9198344230651854,
+          "leakage_fraction": 0.7572662930229216
+        },
+        "french_person": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8618661165237427,
+          "firing_predictor": 0.042774006724357605,
+          "leakage_margin": 4.298828125,
+          "leakage_logp": 4.14855728149414,
+          "leakage_fraction": 0.7907595027664007
+        },
+        "villain": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8025584816932678,
+          "firing_predictor": 0.049264322966337204,
+          "leakage_margin": 3.97060546875,
+          "leakage_logp": 3.758634614944458,
+          "leakage_fraction": 0.7303837033843501
+        },
+        "comedian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6814636588096619,
+          "firing_predictor": 0.024318844079971313,
+          "leakage_margin": 3.019419860839844,
+          "leakage_logp": 2.8175869941711427,
+          "leakage_fraction": 0.5554153081662715
+        }
+      }
+    },
+    "marker__low__seed42": {
+      "behavior": "marker",
+      "dose": "low",
+      "seed": 42,
+      "n_bystanders": 16,
+      "n_primary_bystanders_expected": 16,
+      "n_primary_bystanders_plan_declared": 15,
+      "assertions": {
+        "primary_bystander_count_matches": true
+      },
+      "install_strength_eos_margin": 5.351171875,
+      "rho_firing_predictor": 0.6970588235294117,
+      "rho_plain_geometry": 0.4617647058823529,
+      "delta_rho_firing_minus_geometry": 0.23529411764705882,
+      "predictor_collinearity_rho": 0.08529411764705883,
+      "firing_predictor_wins": true,
+      "read_tap": "up_in",
+      "read_layer": 24,
+      "per_bystander": {
+        "paramedic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9853917360305786,
+          "firing_predictor": 0.03136814013123512,
+          "leakage_margin": 4.4708251953125,
+          "leakage_logp": 4.031975650787354,
+          "leakage_fraction": 0.8354852543981311
+        },
+        "surgeon": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9739772081375122,
+          "firing_predictor": 0.024801194667816162,
+          "leakage_margin": 3.6005859375,
+          "leakage_logp": 3.479891777038574,
+          "leakage_fraction": 0.6728593327980144
+        },
+        "poet": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6153218746185303,
+          "firing_predictor": 0.010729645378887653,
+          "leakage_margin": 2.513287353515625,
+          "leakage_logp": 2.5131324768066405,
+          "leakage_fraction": 0.46967045952259284
+        },
+        "navy_seal": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9658349752426147,
+          "firing_predictor": 0.03431776165962219,
+          "leakage_margin": 4.551123046875,
+          "leakage_logp": 4.37505578994751,
+          "leakage_fraction": 0.8504909117453829
+        },
+        "army_medic": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9729596376419067,
+          "firing_predictor": 0.03227216750383377,
+          "leakage_margin": 4.507208251953125,
+          "leakage_logp": 4.227213668823242,
+          "leakage_fraction": 0.8422843364479159
+        },
+        "florist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.952158510684967,
+          "firing_predictor": 0.030465010553598404,
+          "leakage_margin": 4.068878173828125,
+          "leakage_logp": 3.759327220916748,
+          "leakage_fraction": 0.7603714230965763
+        },
+        "cybersec_consultant": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9721140265464783,
+          "firing_predictor": 0.032482195645570755,
+          "leakage_margin": 4.2103515625,
+          "leakage_logp": 3.9219167709350584,
+          "leakage_fraction": 0.7868092561500838
+        },
+        "pentester": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9769968390464783,
+          "firing_predictor": 0.03503333777189255,
+          "leakage_margin": 4.215869140625,
+          "leakage_logp": 3.8679286003112794,
+          "leakage_fraction": 0.7878403533104607
+        },
+        "private_investigator": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9574532508850098,
+          "firing_predictor": 0.037956494837999344,
+          "leakage_margin": 4.6123046875,
+          "leakage_logp": 4.372273540496826,
+          "leakage_fraction": 0.8619242280458427
+        },
+        "librarian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9668626189231873,
+          "firing_predictor": 0.02885676547884941,
+          "leakage_margin": 3.8389892578125,
+          "leakage_logp": 3.7523447990417482,
+          "leakage_fraction": 0.717410942404555
+        },
+        "software_engineer": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9665621519088745,
+          "firing_predictor": 0.02975403144955635,
+          "leakage_margin": 3.6895263671875,
+          "leakage_logp": 3.5873881340026856,
+          "leakage_fraction": 0.6894800715380683
+        },
+        "data_scientist": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9630448222160339,
+          "firing_predictor": 0.030187644064426422,
+          "leakage_margin": 3.747216796875,
+          "leakage_logp": 3.5651948928833006,
+          "leakage_fraction": 0.7002609679538652
+        },
+        "medical_doctor": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.9740179777145386,
+          "firing_predictor": 0.027335310354828835,
+          "leakage_margin": 3.885107421875,
+          "leakage_logp": 3.6930533409118653,
+          "leakage_fraction": 0.7260292722096503
+        },
+        "french_person": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8618661165237427,
+          "firing_predictor": 0.03201347216963768,
+          "leakage_margin": 4.1876953125,
+          "leakage_logp": 4.05597505569458,
+          "leakage_fraction": 0.7825753704649974
+        },
+        "villain": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.8025584816932678,
+          "firing_predictor": 0.03754251077771187,
+          "leakage_margin": 3.53740234375,
+          "leakage_logp": 3.3330594062805177,
+          "leakage_fraction": 0.6610519015986568
+        },
+        "comedian": {
+          "firing_rate": 0.0,
+          "base_geometry_cos": 0.6814636588096619,
+          "firing_predictor": 0.026262912899255753,
+          "leakage_margin": 2.6705917358398437,
+          "leakage_logp": 2.4746381282806396,
+          "leakage_fraction": 0.49906670879261256
+        }
+      }
+    },
+    "sycophancy__high__seed137": {
+      "behavior": "sycophancy",
+      "dose": "high",
+      "seed": 137,
+      "note": "DV-5 N/A \u2014 sycophancy agreement eval is self-persona (no bystander panel)"
+    },
+    "sycophancy__high__seed256": {
+      "behavior": "sycophancy",
+      "dose": "high",
+      "seed": 256,
+      "note": "DV-5 N/A \u2014 sycophancy agreement eval is self-persona (no bystander panel)"
+    },
+    "sycophancy__high__seed42": {
+      "behavior": "sycophancy",
+      "dose": "high",
+      "seed": 42,
+      "note": "DV-5 N/A \u2014 sycophancy agreement eval is self-persona (no bystander panel)"
+    },
+    "sycophancy__low__seed137": {
+      "behavior": "sycophancy",
+      "dose": "low",
+      "seed": 137,
+      "note": "DV-5 N/A \u2014 sycophancy agreement eval is self-persona (no bystander panel)"
+    },
+    "sycophancy__low__seed256": {
+      "behavior": "sycophancy",
+      "dose": "low",
+      "seed": 256,
+      "note": "DV-5 N/A \u2014 sycophancy agreement eval is self-persona (no bystander panel)"
+    },
+    "sycophancy__low__seed42": {
+      "behavior": "sycophancy",
+      "dose": "low",
+      "seed": 42,
+      "note": "DV-5 N/A \u2014 sycophancy agreement eval is self-persona (no bystander panel)"
+    }
+  },
+  "n_primary_bystanders_expected": 16,
+  "n_primary_bystanders_plan_declared": 15,
+  "negative_panel_excluded_from_dv5": [
+    "assistant",
+    "chef",
+    "kindergarten_teacher",
+    "police_officer",
+    "programmer"
+  ],
+  "git_commit": "2a6db6e69168dc81b98f1568d5ed230d752a0e21"
+}

@@ -1,0 +1,55 @@
+{
+  "cell_slug": "florist__medical_doctor__joint__seed42",
+  "pair_id": "florist__medical_doctor",
+  "arm": "joint",
+  "seed": 42,
+  "lr": 5e-06,
+  "epochs_cap": 16,
+  "band_low_nats": 9.0,
+  "band_high_nats": 13.0,
+  "band_eval_every_steps": 5,
+  "output_dir": "eval_results/issue_550/adapters/florist__medical_doctor__joint__seed42",
+  "hf_subfolder": "adapters/issue_550/florist__medical_doctor__joint__seed42",
+  "hf_train_mix_prefix": "issue_550/training_mixes",
+  "hf_trajectory_prefix": "issue_550/trajectories",
+  "wandb_run_name": "issue_550_florist__medical_doctor__joint__seed42",
+  "final_train_loss": 7.307512694138747,
+  "git_commit": "15ccd521822a39ae1c4bddd84781e6496e547daa",
+  "timestamp_utc": "2026-06-10T08:44:04+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "negative_panel": [
+    "assistant",
+    "librarian",
+    "programmer",
+    "chef"
+  ],
+  "band_stop_fired": true,
+  "final_source_delta_nats": 10.276114463806152,
+  "band_stop_step": 65,
+  "bystander_probe": {
+    "assistant": {
+      "argmax_rate": 0.0,
+      "delta_logp_mean": 6.886772632598877,
+      "logp_trained_mean": -18.875423431396484,
+      "logp_base_mean": -25.76219606399536
+    },
+    "librarian": {
+      "argmax_rate": 0.0,
+      "delta_logp_mean": 8.83418869972229,
+      "logp_trained_mean": -16.544492959976196,
+      "logp_base_mean": -25.378681659698486
+    },
+    "programmer": {
+      "argmax_rate": 0.0,
+      "delta_logp_mean": 8.45572578907013,
+      "logp_trained_mean": -17.706612944602966,
+      "logp_base_mean": -26.162338733673096
+    },
+    "chef": {
+      "argmax_rate": 0.0,
+      "delta_logp_mean": 8.058850884437561,
+      "logp_trained_mean": -16.697855591773987,
+      "logp_base_mean": -24.756706476211548
+    }
+  }
+}

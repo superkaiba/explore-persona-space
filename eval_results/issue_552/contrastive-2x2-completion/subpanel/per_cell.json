@@ -1,0 +1,156 @@
+{
+  "new_cells": {
+    "contrastive_em_seed42": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9651084542274475,
+      "mean_abs_cos_to_U1": 0.9651084542274475,
+      "s_top1_frac": 0.583530604839325,
+      "row_shuffle_p95": 0.505164384841919,
+      "sign_flip_p95": 0.15628628432750702,
+      "frob_norm": 44.61760330200195,
+      "rubric_classification": "stays-concentrated"
+    },
+    "contrastive_em_seed137": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.96922767162323,
+      "mean_abs_cos_to_U1": 0.96922767162323,
+      "s_top1_frac": 0.5966737270355225,
+      "row_shuffle_p95": 0.55917888879776,
+      "sign_flip_p95": 0.1417289674282074,
+      "frob_norm": 49.2733268737793,
+      "rubric_classification": "stays-concentrated"
+    },
+    "contrastive_em_seed256": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9736761450767517,
+      "mean_abs_cos_to_U1": 0.9736761450767517,
+      "s_top1_frac": 0.6164515018463135,
+      "row_shuffle_p95": 0.5513930916786194,
+      "sign_flip_p95": 0.15114998817443848,
+      "frob_norm": 57.72154235839844,
+      "rubric_classification": "stays-concentrated"
+    },
+    "contrastive_benign_seed42": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9468680620193481,
+      "mean_abs_cos_to_U1": 0.9468680620193481,
+      "s_top1_frac": 0.5248541235923767,
+      "row_shuffle_p95": 0.4897225797176361,
+      "sign_flip_p95": 0.13271835446357727,
+      "frob_norm": 29.609037399291992,
+      "rubric_classification": "intermediate"
+    },
+    "contrastive_benign_seed137": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9706645607948303,
+      "mean_abs_cos_to_U1": 0.9706645607948303,
+      "s_top1_frac": 0.6007279753684998,
+      "row_shuffle_p95": 0.5741903185844421,
+      "sign_flip_p95": 0.1421174556016922,
+      "frob_norm": 54.807010650634766,
+      "rubric_classification": "stays-concentrated"
+    },
+    "contrastive_benign_seed256": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9765076041221619,
+      "mean_abs_cos_to_U1": 0.9765076041221619,
+      "s_top1_frac": 0.6293444037437439,
+      "row_shuffle_p95": 0.5701341032981873,
+      "sign_flip_p95": 0.1511906534433365,
+      "frob_norm": 58.771934509277344,
+      "rubric_classification": "stays-concentrated"
+    }
+  },
+  "bands_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-552/eval_results/issue_552/contrastive-2x2-completion/subpanel/reference_bands.json",
+  "metadata": {
+    "script": "issue552_contrastive_2x2_analysis",
+    "git_commit": "e8d9dc6b7d2a7ffbc6f51b01bd53ebb116d3fc37",
+    "timestamp_utc": "2026-06-11T19:49:33Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  }
+}

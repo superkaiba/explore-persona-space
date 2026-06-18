@@ -1,0 +1,46 @@
+{
+  "issue": 563,
+  "git_commit": "70f07d93fe0c45f29d076ce6db249b382ae17ac2",
+  "timestamp_utc": "2026-06-11T00:21:23.456401+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "mode": "instrument_anchor_diagonal",
+  "device": "cpu",
+  "n_rows": 2,
+  "anchor_completions": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-563/eval_results/issue_563/base/completions_trigger50.json",
+  "anchor_reference": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-563/eval_results/issue_563/base/slot_stats_trigger50.json",
+  "this_rows": [
+    {
+      "logp": -28.054691314697266,
+      "z_marker": 1.1953125,
+      "z_eos": 29.25,
+      "logZ": 29.250003814697266
+    },
+    {
+      "logp": -28.265657424926758,
+      "z_marker": 0.109375,
+      "z_eos": 28.375,
+      "logZ": 28.375032424926758
+    }
+  ],
+  "n": 2,
+  "mean_abs_offset_logp": 0.0932607650756836,
+  "max_abs_offset_logp": 0.10058403015136719,
+  "mean_offset_logp": 0.0932607650756836,
+  "tol_mean_nats": 0.05,
+  "tol_max_nats": 0.2,
+  "passed": false,
+  "per_row_offset_logp": [
+    0.0859375,
+    0.10058403015136719
+  ]
+}

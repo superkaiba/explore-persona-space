@@ -1,25 +1,14 @@
 ---
 name: epochs-negative-one-zero-steps
-description: training.epochs=-1 + max_steps>0 yields ZERO training steps via SFTConfig(num_train_epochs=-1); HF Trainer's max_steps override doesn't rescue a negative epochs count.
+description: training.epochs=-1 + max_steps>0 silently runs ZERO steps — SFTConfig(num_train_epochs=-1) means 0 epochs and max_steps does not rescue the negative path. Use epochs=1 with max_steps.
 metadata:
   type: feedback
 ---
 
-When a plan or launch brief specifies `training.epochs=-1` paired with `+training.max_steps=N` (intending "run exactly N steps regardless of epochs"), the TRL/HF Trainer pathway in `src/explore_persona_space/train/trainer.py` silently runs ZERO steps.
+`training.epochs=-1` paired with `+training.max_steps=N` (intending "exactly N steps") silently runs ZERO iterations: Hydra passes `-1` into `SFTConfig(num_train_epochs=-1)`, HF Trainer reads it as 0 epochs, and `max_steps` only overrides POSITIVE epoch counts.
 
-**Signature in log (instant recognition):**
-- `0it [00:00, ?it/s]` (zero iteration progress bar)
-- `{'train_runtime': 0.0176, 'train_samples_per_second': -34120.375, 'train_steps_per_second': -2160.957, 'train_loss': 0.0, 'epoch': 0}` (NEGATIVE throughputs, sub-second runtime, zero loss)
-- Trainer skips straight to "Merging adapter into base model"
-- `*_step_checkpoints/` dir is created but empty (no `checkpoint-N/` subdirs)
+**Signature (instant recognition):** `0it [00:00, ?it/s]`, NEGATIVE `train_samples_per_second`, ~17ms train_runtime, zero loss, skip straight to "Merging adapter", `*_step_checkpoints/` created but empty.
 
-**Why:** Hydra's `cfg.training.epochs: -1` flows verbatim into `SFTConfig(num_train_epochs=-1)`. HF Trainer interprets a negative epoch count as "0 epochs", running zero iterations. `max_steps` does NOT override this on the negative-epoch path; it only overrides positive epoch counts. The negative-throughput numbers in the train_runtime dict are the giveaway (division by ~0 runtime over a 0-sample run).
+**Why:** #385 round-4 (2026-05-25) — smoke passed the format criterion but failed checkpoint criteria because of this; cost ~3 min pod time + a bounce round.
 
-**Why:** Burned in task #385 round-4 launch (2026-05-25). Round-3 had just shipped the `format_dataset` conversational fix; smoke passed criterion-4 (format) but FAILED criteria 1+2 (no save callback fire, empty checkpoint dir) because of this. Cost ~3 minutes of pod time + a round-5 bounce.
-
-**How to apply:**
-- During smoke launch, if the log shows `0it [00:00, ?it/s]` and negative `train_samples_per_second`, immediately diagnose as "epochs<=0 + max_steps>0" — don't waste cycles re-reading the format_dataset traceback.
-- Bounce to implementer (`failure_class: code`) with the clear fix path: in `train/trainer.py` when `max_steps > 0`, set `num_train_epochs = sys.maxsize` (or 999_999) so the trainer's max_steps guard fires; OR add an assert that rejects `epochs <= 0 AND max_steps <= 0`.
-- When YOU author a plan-followup launch command with this pattern, prefer `training.epochs=1` over `-1` (HF Trainer will still cap at max_steps when both are set positive).
-
-Related: [[trl-conversational-format-in-format-dataset]] (the round-3 bug; both bugs hide in the same code path and surface in sequence).
+**How to apply:** on that signature, diagnose immediately (don't re-read format_dataset traces). Bounce `failure_class: code` with the fix: when `max_steps > 0`, set `num_train_epochs` to a huge positive (or assert against `epochs <= 0 and max_steps <= 0`). When YOU author launch commands, use `training.epochs=1` with max_steps, never `-1`. Related: [[trl-conversational-format-in-format-dataset]], [[feedback_hydra_per_key_additive_prefix]] — same "composes only at training start, survives smoke" family.

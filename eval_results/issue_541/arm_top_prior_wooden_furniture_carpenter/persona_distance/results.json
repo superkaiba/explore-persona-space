@@ -1,0 +1,77 @@
+{
+  "_doc": "Materialized from phase0c_persona_vectors.json (pairwise mean-per-probe cosine matrix) for the inherited #500 loader.",
+  "reference_persona": "wooden_furniture_carpenter",
+  "cosine": {
+    "on_topic": {
+      "marine_biologist": {
+        "21": 0.9207665324211121
+      },
+      "local_historian": {
+        "21": 0.877997875213623
+      },
+      "local_resident": {
+        "21": 0.9413080215454102
+      },
+      "assistant": {
+        "21": 0.9414469003677368
+      },
+      "software_engineer": {
+        "21": 0.9742473363876343
+      },
+      "kindergarten_teacher": {
+        "21": 0.9642173051834106
+      },
+      "no_system": {
+        "21": 0.960992693901062
+      },
+      "courthouse_architecture_historian": {
+        "21": 0.9389244318008423
+      },
+      "data_scientist": {
+        "21": 0.9715335965156555
+      },
+      "medical_doctor": {
+        "21": 0.9592580795288086
+      },
+      "librarian": {
+        "21": 0.9719400405883789
+      },
+      "french_person": {
+        "21": 0.8673028945922852
+      },
+      "comedian": {
+        "21": 0.7571569085121155
+      },
+      "police_officer": {
+        "21": 0.9713863134384155
+      },
+      "biographer": {
+        "21": 0.8464611172676086
+      },
+      "courthouse_custodian": {
+        "21": 0.9488956332206726
+      },
+      "court_stenographer": {
+        "21": 0.9646615982055664
+      },
+      "county_judge": {
+        "21": 0.961401641368866
+      },
+      "courthouse_docent": {
+        "21": 0.9325140118598938
+      },
+      "furniture_historian": {
+        "21": 0.976573646068573
+      },
+      "smalltown_pa_reporter": {
+        "21": 0.9350717663764954
+      },
+      "antiques_dealer": {
+        "21": 0.9745877385139465
+      },
+      "county_records_clerk": {
+        "21": 0.9463675618171692
+      }
+    }
+  }
+}

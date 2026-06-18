@@ -1,0 +1,46 @@
+{
+  "cell_slug": "c600_wildlife_rehabilitator_near",
+  "seed": 137,
+  "target": "wildlife_rehabilitator",
+  "condition": "near",
+  "panel": [
+    "qwen_default",
+    "bartender",
+    "french_person",
+    "hospice_nurse"
+  ],
+  "epochs": 1,
+  "realized_terminal_step": 63,
+  "trajectory_path": "eval_results/issue_600/sweep/c600_wildlife_rehabilitator_near/seed_137/trajectory.json",
+  "band_trajectory_path": "eval_results/issue_600/sweep/c600_wildlife_rehabilitator_near/seed_137/band_trajectory.json",
+  "train_jsonl": "data/issue_600/c600_wildlife_rehabilitator_near_seed137.jsonl",
+  "adapter_dir": "eval_results/issue_600/sweep/c600_wildlife_rehabilitator_near/seed_137/adapter",
+  "checkpoint_index": {
+    "0.08": {
+      "step": 6,
+      "path": "eval_results/issue_600/sweep/c600_wildlife_rehabilitator_near/seed_137/checkpoints/frac_0.08"
+    },
+    "0.16": {
+      "step": 11,
+      "path": "eval_results/issue_600/sweep/c600_wildlife_rehabilitator_near/seed_137/checkpoints/frac_0.16"
+    },
+    "0.33": {
+      "step": 21,
+      "path": "eval_results/issue_600/sweep/c600_wildlife_rehabilitator_near/seed_137/checkpoints/frac_0.33"
+    },
+    "0.50": {
+      "step": 32,
+      "path": "eval_results/issue_600/sweep/c600_wildlife_rehabilitator_near/seed_137/checkpoints/frac_0.50"
+    },
+    "0.75": {
+      "step": 48,
+      "path": "eval_results/issue_600/sweep/c600_wildlife_rehabilitator_near/seed_137/checkpoints/frac_0.75"
+    },
+    "1.00": {
+      "step": 63,
+      "path": "eval_results/issue_600/sweep/c600_wildlife_rehabilitator_near/seed_137/adapter"
+    }
+  },
+  "final_band_delta_nats": 10.636625289916992,
+  "timestamp_utc": "2026-06-11T16:16:13.602506+00:00"
+}

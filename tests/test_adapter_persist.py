@@ -139,3 +139,5 @@ def test_succeeds_and_appends_phase_leaf(tmp_path):
         assert kwargs["path_in_repo"] == expected_dest
         assert kwargs["delete_after"] is False
         assert kwargs["model_path"] == str(adapter)
+        # Adapter-only persist: per-checkpoint trainer saves never ship (#565).
+        assert kwargs["ignore_patterns"] == ["checkpoint-*"]

@@ -1,0 +1,13 @@
+---
+name: Claude APPROVEs upload-reroute plans without tracing recorded-pointer consumers
+description: Infra plans that swap an upload target at a choke point — Claude verifies the mechanism (verification passes on the effective repo) but not the CONSUMERS of recorded repo ids; Codex catches consumers reconstructing canonical ids that a reroute orphans. #564 r1.
+type: feedback
+---
+
+Rule: when a plan reroutes an upload/write target at a choke point (e.g. `upload_model` → overflow repo) and claims "downstream verification follows the artifact automatically" (because the helper returns the effective path), grep every REAL consumer of the recorded location before crediting the claim. Consumers that RECONSTRUCT the canonical id (`HF_MODEL_REPO` + subfolder convention) instead of consuming the helper's return value turn a "successful" reroute into wrong durable pointers + deleted local copies.
+
+**Why:** #564 r1 (alternatives lens). Claude APPROVEd noting "rerouted persist passes fail-loud verification" as a feature; Codex showed the same fact is the bug: `trainer._maybe_persist_adapter` verifies the EFFECTIVE repo, returns success → launcher `rm`s; `_maybe_upload_adapter_default` returns True → caller deletes local adapter; meanwhile `scripts/i528_phase23_train.py:253` verifies the CANONICAL `HF_MODEL_REPO` (RuntimeError after full training), and `scripts/dispatch_neg_geometry_504.py:1735/:2735/:2740` writes `hf_repo: HF_MODEL_REPO` into durable records + later `hf_hub_download(repo_id=HF_MODEL_REPO)` — all reconstruct canonical ids; none consume `upload_model`'s return.
+
+Companion finding same round: a gate keyed on an env var (`EPM_PERSIST_ADAPTER_HF_REPO`) placed only in `trainer.py::_init_phase` misses live launchers (i528/i556 pattern) that SET that env but call `sft.py::train_lora` directly with their own external fail-loud verify + rm-after contract. The plan's "train_lora's upload is best-effort so the gate correctly lives on trainer.py only" defense mischaracterizes the LAUNCHER-level contract — the env var IS the declaration the plan's own Goal keys coverage on. Not Codex-overreach: in-contract per the plan's Goal sentence, unlike the cases in feedback_codex_hardening_beyond_minimal_port_contract.md.
+
+**How to apply:** for any reroute/fallback-target plan: (1) grep consumers of the canonical id constant + the env var, char-by-char check whether they read the producer's return or rebuild the path; (2) for any env-keyed gate, grep who SETS the env and which call path they enter — placement that misses a live setter family is a coverage gap, not hardening-beyond-contract.

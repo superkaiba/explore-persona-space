@@ -11,6 +11,14 @@ agents must NOT call this helper themselves (a subagent's
 ``run_in_background=true`` Bash returns immediately but its bg-completion
 event has no listener once the subagent returns).
 
+Every codex-companion subprocess (spawn/status/result/cancel) and the
+task.py marker posts run with ``cwd=DISPATCH_ROOT`` — the MAIN checkout
+root, resolved at import — never the caller's cwd. The detached ``codex
+app-server`` worker inherits the spawn cwd and outlives the helper, so an
+issue-worktree dispatch cwd pinned 11 terminal-task worktrees against the
+stale-worktree sweep (2026-06-10 disk-full incident). Callers may invoke
+this helper from any cwd; the pin is enforced here.
+
 Lifecycle:
 
 1. Spawn Codex with ``--background`` and capture the job-id from stdout.
@@ -34,7 +42,12 @@ Lifecycle:
    reports ``phase == "done"`` (not just present).
 8. Post ``epm:codex-task-completed`` (phase=done) or
    ``epm:codex-task-failed`` (everything else).
-9. Write Codex stdout to ``--output-file`` (or stdout if absent).
+9. Write Codex stdout to ``--output-file`` (or stdout if absent). If
+   Codex already wrote a marker-formatted verdict to that SAME path
+   mid-session (the twin-reviewer wrapper contract), the verdict file is
+   preserved and the final chat message lands at
+   ``<output-file>.final-msg.md`` instead — see
+   ``_write_output_preserving_codex_artifact``.
 10. Exit 0 on phase=done, non-zero otherwise.
 
 Failure-mode coverage (every path posts a marker; helper never exits
@@ -75,6 +88,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import re
 import signal
 import subprocess
@@ -85,19 +99,91 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Make task_workflow importable so we can route tasks/ artifacts through
-# the canonical resolver (worktree-safe). PROJECT_ROOT itself is still
-# used as the git cwd for subprocess calls into the local checkout, but
-# any path containing `tasks/` MUST go via `tasks_dir()` instead — see
+# the canonical resolver (worktree-safe). Any path containing `tasks/`
+# MUST go via `tasks_dir()` — see
 # `tests/test_no_direct_task_path_construction.py`.
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from explore_persona_space.task_workflow import list_events, tasks_dir  # noqa: E402
+
+
+def _resolve_dispatch_root() -> Path:
+    """MAIN-checkout root to use as the cwd for every codex-companion call.
+
+    Dispatching from an issue-worktree cwd roots the DETACHED ``codex
+    app-server`` worker in that worktree; those workers routinely outlive
+    their companion task and pinned 11 terminal-task worktrees (~10-15G
+    each) against the stale-worktree sweep until the 2026-06-10 disk-full
+    incident. The repo-root dispatch rule previously existed only as prose
+    in ``.claude/agents/codex-clean-result-critic.md``; resolving it HERE
+    enforces it for every caller. ``git rev-parse --git-common-dir`` from a
+    linked worktree returns the main checkout's ``.git``, so its parent is
+    the main root even when this script copy lives in a worktree. Fail-soft:
+    on any resolution failure, warn loudly and fall back to PROJECT_ROOT
+    (no worse than the historical inherit-the-caller-cwd behavior).
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(
+            f"WARN: dispatch-root resolution failed ({exc}); using {PROJECT_ROOT}", file=sys.stderr
+        )
+        return PROJECT_ROOT
+    common = Path(proc.stdout.strip()) if proc.returncode == 0 and proc.stdout.strip() else None
+    if common is not None and common.name == ".git" and common.is_dir():
+        return common.parent
+    print(
+        f"WARN: could not resolve main checkout root from {PROJECT_ROOT} "
+        f"(rc={proc.returncode}); using {PROJECT_ROOT}",
+        file=sys.stderr,
+    )
+    return PROJECT_ROOT
+
+
+# Resolved ONCE at import (also keeps it ahead of any test monkeypatching of
+# subprocess.run) and threaded as ``cwd=`` into every codex-companion spawn/
+# status/result/cancel call AND the task.py marker posts, so neither the
+# detached Codex worker nor the helper's subprocesses ever root themselves
+# in an issue worktree.
+DISPATCH_ROOT = _resolve_dispatch_root()
 
 POLL_INTERVAL_SECS = 30
 DEFAULT_MAX_WAIT_SECS = 6 * 3600  # 6h hard cap; force-cancel after.
 DEFAULT_STALL_DETECT_SECS = 600  # 10 min of log silence → declare stuck.
 PROBE_ERROR_CAP = 10  # consecutive failed probes before bailing
 DEFAULT_CANCELLED_RETRY_CAP = 2  # re-dispatches on terminal phase=cancelled
+# ONE auto-retry with backoff on the TRANSIENT-fail class (refs #579):
+# ~10 codex-companion runtime incidents on 2026-06-09 (app-server exit 1,
+# instant 0s failures, exit 4/5/8 probe-registry errors, stall
+# force-cancels) all recovered via a manual re-dispatch — so the helper now
+# re-dispatches once itself. Exit codes considered transient:
+#   3 = spawn failure (app-server died / instant 0s failure)
+#   4 = post-spawn probe failure (job-id race / probe-registry error)
+#   5 = consecutive-probe-error cap (registry flake)
+#   8 = stall force-cancel (model API hung; a fresh job usually proceeds)
+# Deliberately NOT transient: 6 (hard-cap timeout — already ran max_wait;
+# doubling wall time is the caller's call), 7 (result-fetch/output-write —
+# local FS / fetch problem), and terminal phase=failed exit 1 (Codex itself
+# reported failure, e.g. an AUP refusal — per CLAUDE.md the retry there
+# needs a REPHRASED prompt, which only the orchestrator can compose).
+DEFAULT_TRANSIENT_RETRY_CAP = 1
+TRANSIENT_FAIL_EXIT_CODES = frozenset({3, 4, 5, 8})
+# Backoff before the transient re-dispatch: 15s floor + up to 30s jitter
+# (lets a flaky app-server / probe registry settle; jitter avoids
+# synchronized re-spawns across parallel reviewer ensembles).
+TRANSIENT_RETRY_BACKOFF_FLOOR_SECS = 15.0
+TRANSIENT_RETRY_BACKOFF_JITTER_SECS = 30.0
 TERMINAL_PHASES = {"done", "failed", "cancelled"}
+# A Codex-written verdict file is identified by the ensemble marker tag the
+# twin-reviewer wrapper contract requires of every verdict body (e.g.
+# ``<!-- epm:interp-critique-codex v1 -->``). Used by the final-message
+# write to avoid clobbering a verdict Codex already wrote to --output-file.
+CODEX_ARTIFACT_SENTINEL = "<!-- epm:"
 SPAWN_TIMEOUT_SECS = 90
 STATUS_TIMEOUT_SECS = 60
 RESULT_TIMEOUT_SECS = 120
@@ -126,6 +212,7 @@ def _install_signal_handlers() -> None:
             try:
                 subprocess.run(
                     ["node", str(_active_companion), "cancel", _active_job_id],
+                    cwd=str(DISPATCH_ROOT),
                     capture_output=True,
                     timeout=CANCEL_TIMEOUT_SECS,
                 )
@@ -234,7 +321,7 @@ def _post_marker(issue: int, kind: str, note: str, version: int = 1) -> bool:
                     "--note",
                     note,
                 ],
-                cwd=PROJECT_ROOT,
+                cwd=DISPATCH_ROOT,
                 capture_output=True,
                 text=True,
                 timeout=POST_MARKER_TIMEOUT_SECS,
@@ -332,8 +419,13 @@ def _spawn_codex(
         # mkstemp yields an absolute path, so the companion's
         # `path.resolve(cwd, promptFile)` returns it unchanged.
         cmd.extend(["--prompt-file", prompt_tmp_path])
+        # cwd pinned to the MAIN checkout root: the detached codex
+        # app-server worker inherits THIS cwd and outlives the helper —
+        # spawning from an issue-worktree cwd pinned terminal-task
+        # worktrees forever (2026-06-10 disk-full incident).
         res = subprocess.run(
             cmd,
+            cwd=str(DISPATCH_ROOT),
             capture_output=True,
             text=True,
             timeout=SPAWN_TIMEOUT_SECS,
@@ -370,6 +462,7 @@ def _probe_phase(companion: Path, job_id: str) -> tuple[str, str, str | None]:
     """
     res = subprocess.run(
         ["node", str(companion), "status", job_id, "--json"],
+        cwd=str(DISPATCH_ROOT),
         capture_output=True,
         text=True,
         timeout=STATUS_TIMEOUT_SECS,
@@ -455,11 +548,71 @@ def _fetch_result(companion: Path, job_id: str) -> tuple[int, str, str]:
     """Fetch Codex's final output. Returns (returncode, stdout, stderr)."""
     res = subprocess.run(
         ["node", str(companion), "result", job_id],
+        cwd=str(DISPATCH_ROOT),
         capture_output=True,
         text=True,
         timeout=RESULT_TIMEOUT_SECS,
     )
     return res.returncode, res.stdout, res.stderr
+
+
+def _write_output_preserving_codex_artifact(
+    output_file: Path,
+    final_message: str,
+    pre_spawn_key: tuple[float, int] | None,
+) -> None:
+    """Persist Codex's final chat message WITHOUT clobbering a verdict
+    Codex already wrote to the same path mid-session.
+
+    The four twin-reviewer wrappers instruct Codex to write its full
+    marker-formatted verdict to ``--output-file`` DURING the session; the
+    previously-unconditional final write then reduced a 12,474-char
+    critique to Codex's 323-char closing chat message (task #604
+    interpretation-critic round 1, 2026-06-11 — recovered only via the
+    Codex session rollout's apply_patch payload). Preserve the existing
+    file and divert the final message to ``<output-file>.final-msg.md``
+    only when BOTH hold:
+
+    - the file ADVANCED (was created, or mtime/size grew) since this
+      attempt spawned — so a stale file left by a previous reviewer round
+      or by a failed earlier attempt (the transient-retry path, #579,
+      re-enters ``_run_one_attempt`` with the same ``--output-file``)
+      never triggers preservation; and
+    - the content carries the ``<!-- epm:`` marker tag the wrapper
+      contract requires of verdicts — keying on the marker rather than
+      size alone avoids preserving a half-written file.
+
+    Every other flow — including all prompts where this helper is the
+    ONLY producer of the output file — keeps the historical behavior
+    exactly: the final message lands at ``--output-file``. Nothing is
+    lost in the preservation branch either: the final message is still
+    on disk, in the sidecar.
+    """
+    existing = ""
+    current_key = _log_progress_key(str(output_file))
+    if current_key is not None and _key_advanced(current_key, pre_spawn_key):
+        try:
+            existing = output_file.read_text()
+        except OSError as exc:
+            print(
+                f"WARN: could not read pre-existing {output_file} ({exc}); overwriting.",
+                file=sys.stderr,
+            )
+    if existing.strip() and CODEX_ARTIFACT_SENTINEL in existing and existing != final_message:
+        sidecar = output_file.with_name(output_file.name + ".final-msg.md")
+        sidecar.write_text(final_message)
+        print(
+            f"Output file {output_file} already written by Codex mid-session "
+            f"({len(existing)} chars, epm marker present); preserved it and wrote "
+            f"the final chat message ({len(final_message)} chars) to {sidecar}.",
+            file=sys.stderr,
+        )
+        return
+    output_file.write_text(final_message)
+    print(
+        f"Codex output written to {output_file} ({len(final_message)} chars).",
+        file=sys.stderr,
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -628,6 +781,14 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
     """
     global _active_job_id
 
+    # Snapshot the output-file state BEFORE Codex spawns: the final-message
+    # write uses it to distinguish "Codex wrote --output-file during THIS
+    # attempt" (preserve it — twin-reviewer verdict contract) from a stale
+    # file left by a previous round / failed attempt (overwrite as always).
+    pre_spawn_output_key = (
+        _log_progress_key(str(args.output_file)) if args.output_file is not None else None
+    )
+
     # Spawn.
     try:
         job_id = _spawn_codex(companion, prompt, args.effort, write)
@@ -682,14 +843,13 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
         )
 
     # Write output before posting terminal marker — so even if the marker
-    # post fails, the orchestrator has the Codex output on disk.
+    # post fails, the orchestrator has the Codex output on disk. The write
+    # preserves a marker-formatted verdict Codex already wrote to the same
+    # path mid-session (final message then lands in the .final-msg.md
+    # sidecar) — see _write_output_preserving_codex_artifact.
     if args.output_file is not None:
         try:
-            args.output_file.write_text(stdout)
-            print(
-                f"Codex output written to {args.output_file} ({len(stdout)} chars).",
-                file=sys.stderr,
-            )
+            _write_output_preserving_codex_artifact(args.output_file, stdout, pre_spawn_output_key)
         except Exception as exc:
             return AttemptResult(
                 "fail",
@@ -739,6 +899,7 @@ def _best_effort_cancel(companion: Path, job_id: str) -> None:
     try:
         subprocess.run(
             ["node", str(companion), "cancel", job_id],
+            cwd=str(DISPATCH_ROOT),
             capture_output=True,
             timeout=CANCEL_TIMEOUT_SECS,
         )
@@ -827,6 +988,22 @@ def main() -> int:
             f"(fail on the first cancellation). Default {DEFAULT_CANCELLED_RETRY_CAP}."
         ),
     )
+    parser.add_argument(
+        "--transient-retry-cap",
+        type=int,
+        default=DEFAULT_TRANSIENT_RETRY_CAP,
+        help=(
+            "Re-dispatch the same prompt this many times (with a "
+            f"{TRANSIENT_RETRY_BACKOFF_FLOOR_SECS:.0f}-"
+            f"{TRANSIENT_RETRY_BACKOFF_FLOOR_SECS + TRANSIENT_RETRY_BACKOFF_JITTER_SECS:.0f}s "
+            "jittered backoff) when an attempt fails with a TRANSIENT exit "
+            f"code ({sorted(TRANSIENT_FAIL_EXIT_CODES)}: spawn / post-spawn "
+            "probe / probe-error cap / stall force-cancel), before posting "
+            "epm:codex-task-failed. Hard-cap timeouts (6), result-fetch "
+            "failures (7), and terminal phase=failed are NOT retried. Set to "
+            f"0 to disable. Default {DEFAULT_TRANSIENT_RETRY_CAP} (refs #579)."
+        ),
+    )
     args = parser.parse_args()
 
     # Default for --write is True (grant write) unless --no-write was passed.
@@ -854,33 +1031,61 @@ def main() -> int:
     _active_companion = companion
     print(f"codex-companion: {companion}", file=sys.stderr)
 
-    # Run the lifecycle, re-dispatching on terminal phase=cancelled up to
-    # --cancelled-retry-cap times before posting epm:codex-task-failed.
-    # Non-cancelled failures (spawn, probe-error cap, stall, hard cap,
-    # result-fetch, terminal phase=failed) fail immediately — they are not
-    # the transient-cancellation class.
-    max_attempts = max(1, args.cancelled_retry_cap + 1)
-    result: AttemptResult | None = None
-    for attempt in range(1, max_attempts + 1):
+    # Run the lifecycle with two independent retry budgets:
+    # - terminal phase=cancelled → re-dispatch up to --cancelled-retry-cap
+    #   times (transient Codex-side cancellations);
+    # - TRANSIENT fail exit codes (TRANSIENT_FAIL_EXIT_CODES: spawn /
+    #   post-spawn probe / probe-error cap / stall) → re-dispatch up to
+    #   --transient-retry-cap times with a jittered backoff (refs #579 —
+    #   ~10 such incidents on 2026-06-09, every one recovered by a manual
+    #   re-dispatch).
+    # Everything else (hard-cap timeout, result-fetch/output-write,
+    # terminal phase=failed) fails immediately.
+    cancelled_redispatches = 0
+    transient_redispatches = 0
+    attempt = 0
+    while True:
+        attempt += 1
         result = _run_one_attempt(companion, prompt, args, write)
-        if result.kind != "cancelled":
-            break
-        # Terminal cancelled — retry unless we've exhausted the cap.
-        if attempt < max_attempts:
+        if result.kind == "cancelled" and cancelled_redispatches < max(0, args.cancelled_retry_cap):
+            cancelled_redispatches += 1
             print(
                 f"WARN: Codex job_id={result.job_id} ended phase=cancelled "
-                f"(attempt {attempt}/{max_attempts}); re-dispatching.",
+                f"(cancelled re-dispatch {cancelled_redispatches}/"
+                f"{args.cancelled_retry_cap}, attempt {attempt}); re-dispatching.",
                 file=sys.stderr,
             )
+            continue
+        if (
+            result.kind == "fail"
+            and result.exit_code in TRANSIENT_FAIL_EXIT_CODES
+            and transient_redispatches < max(0, args.transient_retry_cap)
+        ):
+            transient_redispatches += 1
+            delay = TRANSIENT_RETRY_BACKOFF_FLOOR_SECS + random.uniform(
+                0.0, TRANSIENT_RETRY_BACKOFF_JITTER_SECS
+            )
+            print(
+                f"WARN: transient Codex failure (exit {result.exit_code}: "
+                f"{result.note[:200]}) — re-dispatching in {delay:.0f}s "
+                f"(transient retry {transient_redispatches}/"
+                f"{args.transient_retry_cap}, attempt {attempt}; refs #579).",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+            continue
+        break
 
-    assert result is not None  # loop runs at least once
     if result.kind == "done":
         return 0
 
-    # cancelled (cap exhausted) or fail — post the terminal failure marker once.
+    # cancelled / transient (cap exhausted) or non-retryable fail — post the
+    # terminal failure marker once.
     note = result.note
-    if result.kind == "cancelled" and args.cancelled_retry_cap > 0:
-        note = f"{note} (exhausted {args.cancelled_retry_cap} re-dispatch(es))"
+    if result.kind == "cancelled" and cancelled_redispatches:
+        note = f"{note} (exhausted {cancelled_redispatches} re-dispatch(es))"
+    elif result.kind == "fail" and transient_redispatches:
+        note = f"{note} (exhausted {transient_redispatches} transient re-dispatch(es))"
     return _fail(args.issue, result.job_id, note, result.exit_code)
 
 

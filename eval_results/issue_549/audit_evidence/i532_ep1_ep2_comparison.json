@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "tool": "i549_audit_532",
+    "git_commit": "d837c78be36297f7f6427f79820fcaa39ae611d8",
+    "timestamp_utc": "2026-06-11T00:44:28.412576+00:00",
+    "run_commits": {
+      "P1": "28d35f027",
+      "P2": "28a73584c"
+    },
+    "thresholds": {
+      "identity_affected": 0.9,
+      "max_dlogp_nearzero_nat": 0.1
+    }
+  },
+  "comparison_per_process": {
+    "P2": {
+      "n_ep2_cells": 140,
+      "n_question_pairs": 7000,
+      "text_identity_rate": 0.15114285714285713,
+      "dlogp_ep2_minus_ep1_percentiles": {
+        "p5": -4.066546607017517,
+        "p25": -1.5632600784301758,
+        "p50": -0.6235699653625488,
+        "p75": 0.18750596046447754,
+        "p95": 3.624087119102478
+      },
+      "dlogp_mean": -0.518462866025106,
+      "per_cell_max_abs_dlogp": {
+        "min": 9.05986417620852e-06,
+        "p25": 4.755632281303406,
+        "median": 6.617917537689209,
+        "p75": 9.644469261169434,
+        "max": 20.58596360683441
+      }
+    }
+  },
+  "i474_dose_reference": {
+    "mean_diagonal_ep1": -0.1916210547912614,
+    "mean_diagonal_ep2": -0.07118145539027088,
+    "mean_offdiag_ep1": -11.852071623543107,
+    "mean_offdiag_ep2": -14.09928047103269,
+    "directions": {
+      "diagonal": "ep2_higher",
+      "offdiag_16": "ep2_lower"
+    }
+  },
+  "i532_subset_median_dlogp": {
+    "diagonal": 2.1457487946463516e-06,
+    "offdiag_16": -0.71875,
+    "other": -0.5863420963287354
+  },
+  "i532_subset_directions": {
+    "diagonal": "ep2_higher",
+    "offdiag_16": "ep2_lower"
+  },
+  "dose_direction_match": true,
+  "i532_pooled_median_dlogp": -0.6235699653625488,
+  "verdict": "SAFE-by-eviction"
+}

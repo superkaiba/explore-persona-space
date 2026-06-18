@@ -1,0 +1,19 @@
+{
+  "gate": "smoke_reproduction",
+  "cell": "same_marker_seed42",
+  "pass": true,
+  "clauses": {
+    "d_s_top1_frac": 0.0,
+    "d_mean_cos_to_U1": 0.0,
+    "abs_cos_U1_re_parent": 1.0,
+    "profile_spearman": 1.0
+  },
+  "re": {
+    "s_top1_frac": 0.32465410232543945,
+    "mean_cos_to_U1": 0.5871104598045349
+  },
+  "parent": {
+    "s_top1_frac": 0.32465410232543945,
+    "mean_cos_to_U1": 0.5871104598045349
+  }
+}

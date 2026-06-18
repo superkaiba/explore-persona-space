@@ -1,0 +1,128 @@
+{
+ "protocol_note": "AFTER-THE-FACT follow-up pass (free-analysis, Step 9a-ter) \u2014 NOT part of the pre-registered protocol. Deviations from the prereg record (scoring/): (1) adds the behavior-conditioned logprob-difference predictor to the Group B candidate pool; (2) excludes the warmth row's no-implant cells (realized_strength ~0 vs dose band [0.6,0.9], unflagged by the known normalization bug) from the scoring universe; (3) the quarantine split was already scored once under the prereg protocol, so every quarantine number in this file is a labeled sensitivity check, not a confirmatory read.",
+ "universe": {
+  "excluded_rows": [
+   "warmth"
+  ],
+  "n_dev_with_target": 113,
+  "n_quarantine_with_target": 31
+ },
+ "reference_champions": {
+  "behavior_native_champion": "B__demo_nll_transfer",
+  "geometry_champion": "A__geom_nl_L15_last_token_cosine"
+ },
+ "predictors": {
+  "B__behavior_conditioned_logprob_diff": {
+   "dev_pooled_tau": -0.18049118187773647,
+   "lofo_per_fold": [
+    {
+     "family": "B1",
+     "tau": -0.4745
+    },
+    {
+     "family": "B2",
+     "tau": 0.001
+    },
+    {
+     "family": "B3",
+     "tau": 0.2438
+    },
+    {
+     "family": "B5",
+     "tau": 0.4697
+    },
+    {
+     "family": "B6",
+     "tau": 0.1814
+    },
+    {
+     "family": "B9",
+     "tau": -0.1029
+    }
+   ],
+   "lofo_mean_tau": 0.0531,
+   "quarantine_sensitivity_tau_AFTER_THE_FACT": 0.26476034440372687
+  },
+  "B__demo_nll_transfer": {
+   "dev_pooled_tau": 0.2972246234068337,
+   "lofo_per_fold": [
+    {
+     "family": "B3",
+     "tau": 0.0
+    },
+    {
+     "family": "B5",
+     "tau": 0.581
+    },
+    {
+     "family": "B6",
+     "tau": 0.5333
+    }
+   ],
+   "lofo_mean_tau": 0.3714,
+   "quarantine_sensitivity_tau_AFTER_THE_FACT": 0.31836734693877544
+  },
+  "A__geom_nl_L15_last_token_cosine": {
+   "dev_pooled_tau": 0.3417206112962369,
+   "lofo_per_fold": [
+    {
+     "family": "B1",
+     "tau": 0.3689
+    },
+    {
+     "family": "B2",
+     "tau": -0.5669
+    },
+    {
+     "family": "B3",
+     "tau": -0.132
+    },
+    {
+     "family": "B5",
+     "tau": 0.1079
+    },
+    {
+     "family": "B6",
+     "tau": 0.2161
+    },
+    {
+     "family": "B7",
+     "tau": 0.4526
+    },
+    {
+     "family": "B8",
+     "tau": -0.264
+    },
+    {
+     "family": "B9",
+     "tau": 0.6599
+    }
+   ],
+   "lofo_mean_tau": 0.1053,
+   "quarantine_sensitivity_tau_AFTER_THE_FACT": -0.36234053995827564
+  }
+ },
+ "b_vs_a_quarantine_margin_AFTER_THE_FACT": {
+  "behavior_native": "B__demo_nll_transfer",
+  "geometry": "A__geom_nl_L15_last_token_cosine",
+  "point": 0.6807,
+  "family_row_clustered_bootstrap_ci95": [
+   -0.6397696465826277,
+   1.6070723398229525
+  ],
+  "n_bootstrap_valid": 775
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "0a60158f350ae2a71d821156a7e22316d76ba069",
+  "timestamp": "2026-06-12T21:54:44.558858+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

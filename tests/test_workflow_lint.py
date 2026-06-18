@@ -35,10 +35,14 @@ if str(_SCRIPTS) not in sys.path:
 from workflow_lint import (  # noqa: E402
     _iter_ask_target_files,
     _other_worktree_prefix,
+    check_agent_model_pins,
     check_asks,
     check_autonomous_asks,
+    check_dispatcher_cvd_pin,
+    check_heredoc_dotenv,
     check_marker_registry,
     check_script_references,
+    check_upload_as_file,
     check_wandb_required,
 )
 
@@ -1070,3 +1074,708 @@ def test_check_marker_registry_skills_dir_pass_registered_post(tmp_path):
     )
     errors = check_marker_registry(_workflow(), skills_dir=skills)
     assert errors == [], f"expected PASS for a registered kind, got: {errors}"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_heredoc_dotenv`` (incident class #552/#612: a
+# no-arg python-dotenv ``load_dotenv()`` inside a heredoc feeding a python
+# interpreter's stdin crashes at runtime via find_dotenv()'s frame-walk
+# ``assert frame.f_back is not None``). Each fixture case writes a tiny
+# ``*.sh`` under ``tmp_path`` and calls
+# ``check_heredoc_dotenv(scripts_dir=tmp_path)``.
+# ---------------------------------------------------------------------------
+
+
+def test_check_heredoc_dotenv_fail_issue612_driver_shape(tmp_path):
+    """FAIL — the exact pre-fix #612 production-driver shape: opener line
+    backslash-continued into an `|| fail` line, body imports + calls the
+    no-arg python-dotenv ``load_dotenv()``. This is the live incident the
+    check exists to catch (4 reviewers + smoke runs missed it)."""
+    (tmp_path / "driver.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        'uv run python - "$PANEL_POLL_TIMEOUT_S" "$PANEL_POLL_INTERVAL_S" <<\'PY\' \\\n'
+        '  || fail "panel_set.json did not appear on HF within the timeout" 3\n'
+        "import sys, time\n"
+        "from dotenv import load_dotenv\n"
+        "load_dotenv()\n"
+        "from huggingface_hub import hf_hub_download\n"
+        "PY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "driver.sh:6" in errors[0]
+    assert "load_dotenv()" in errors[0]
+    assert "stdin" in errors[0]
+
+
+def test_check_heredoc_dotenv_fail_simple_python_stdin(tmp_path):
+    """FAIL — plain `uv run python - <<'PY'` (no continuation) with the
+    dangerous import + call."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\nfrom dotenv import load_dotenv\nload_dotenv()\nPY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_heredoc_dotenv_fail_python3_bare_no_dash(tmp_path):
+    """FAIL — `python3 <<EOF` (no `-` arg) also executes the heredoc from
+    stdin; the bare-interpreter-as-last-token form must match too."""
+    (tmp_path / "x.sh").write_text(
+        "python3 <<EOF\nfrom dotenv import load_dotenv\nload_dotenv()\nEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_heredoc_dotenv_fail_qualified_call(tmp_path):
+    """FAIL — `import dotenv` + qualified no-arg `dotenv.load_dotenv()`."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\nimport dotenv\ndotenv.load_dotenv()\nPY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_heredoc_dotenv_pass_explicit_path_arg(tmp_path):
+    """PASS — `load_dotenv(dotenv_path=...)` skips the frame-walking
+    find_dotenv() entirely; only the NO-ARG call is the crash."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\n"
+        "from dotenv import load_dotenv\n"
+        'load_dotenv(dotenv_path="/workspace/explore-persona-space/.env")\n'
+        "PY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (explicit path), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_project_wrapper(tmp_path):
+    """PASS — the stdin-safe project wrapper (resolves .env via
+    resolve_dotenv_path() cwd-walking, no frame inspection). This is the
+    canonical in-heredoc shape (#585 round-2 review fix; live exemplar
+    scripts/i556_run_all_1gpu.sh) and must NOT be flagged."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PYEOF'\n"
+        "from explore_persona_space.orchestrate.env import load_dotenv\n"
+        "load_dotenv()\n"
+        "PYEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (stdin-safe project wrapper), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_non_python_heredoc(tmp_path):
+    """PASS — a heredoc that does NOT feed a python interpreter's stdin
+    (here: generating a .py file via `cat`) is data, not stdin-executed
+    code; the generated file runs with a real __file__ later."""
+    (tmp_path / "x.sh").write_text(
+        "cat > /tmp/gen.py <<'EOF'\nfrom dotenv import load_dotenv\nload_dotenv()\nEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (non-python heredoc), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_heredoc_is_data_for_python_script(tmp_path):
+    """PASS — `python scripts/foo.py <<EOF` feeds the heredoc to the
+    SCRIPT as stdin data; the body is not executed as python source, so
+    a load_dotenv-shaped line in it is not a call site."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python scripts/foo.py <<'EOF'\nfrom dotenv import load_dotenv\nload_dotenv()\nEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (heredoc is script data), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_commented_call(tmp_path):
+    """PASS — a commented-out `# load_dotenv()` line (the post-fix #612
+    driver carries exactly this as an explanatory comment) is not a call."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\n"
+        "from dotenv import load_dotenv\n"
+        "# NO bare load_dotenv() here: it crashes from stdin\n"
+        "PY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (commented call only), got: {errors}"
+
+
+def test_check_heredoc_dotenv_second_heredoc_after_safe_one_still_scanned(tmp_path):
+    """A dangerous python-fed heredoc AFTER an earlier safe heredoc in the
+    same file is still caught (the body-skipping parser must resume opener
+    detection after each terminator, not swallow the rest of the file)."""
+    (tmp_path / "x.sh").write_text(
+        "cat <<'EOF'\nplain text body\nEOF\n"
+        "uv run python - <<'PY'\nfrom dotenv import load_dotenv\nload_dotenv()\nPY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:6" in errors[0]
+
+
+def test_check_heredoc_dotenv_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no no-arg python-dotenv
+    load_dotenv() calls inside python-stdin heredocs — this is the
+    regression guard the durable fix installs (the #612 hot-fix removed
+    the live one; i556's project-wrapper shape is stdin-safe by design)."""
+    errors = check_heredoc_dotenv()
+    assert errors == [], (
+        "scripts/*.sh has no-arg python-dotenv load_dotenv() calls inside "
+        "python-stdin heredocs (#552/#612 crash class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_heredoc_dotenv_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-heredoc-dotenv")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-heredoc-dotenv failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_dispatcher_cvd_pin`` (incident class #523 Phase B,
+# recurred #541/#543/#557; recipe fix #578: the in-process CVD clobber is
+# defeated by import-time cuInit, so backgrounded parallel per-cell python
+# launches passing --gpu-id/+gpu_id= MUST also pin CUDA_VISIBLE_DEVICES= in
+# the launcher env on the same command). Each fixture case writes a tiny
+# ``*.sh`` under ``tmp_path`` and calls
+# ``check_dispatcher_cvd_pin(scripts_dir=tmp_path)``.
+# ---------------------------------------------------------------------------
+
+
+def test_check_dispatcher_cvd_pin_fail_backgrounded_wave_shape(tmp_path):
+    """FAIL — the pre-waiver i460/#523 wave shape: backslash-continued
+    backgrounded launch with --gpu-id and no CUDA_VISIBLE_DEVICES=."""
+    (tmp_path / "dispatch.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        'for cond in "${CONDS[@]}"; do\n'
+        "    uv run python scripts/foo_train.py \\\n"
+        '        --conds "$cond" --gpu-id "$cvd" \\\n'
+        '        > "$log" 2>&1 &\n'
+        "done\n"
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "dispatch.sh:3" in errors[0]
+    assert "CUDA_VISIBLE_DEVICES" in errors[0]
+    assert "CVD_PIN_EXEMPT" in errors[0]
+
+
+def test_check_dispatcher_cvd_pin_fail_nohup_hydra_gpu_id(tmp_path):
+    """FAIL — single-line nohup launch with the Hydra ``+gpu_id=`` form
+    and no env pin."""
+    (tmp_path / "x.sh").write_text(
+        'nohup uv run python scripts/train.py +gpu_id=${gpu} > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_cvd_prefixed(tmp_path):
+    """PASS — the compliant #578 reference shape (i474): env CVD pin AND
+    matching --gpu-id on the same backgrounded command."""
+    (tmp_path / "x.sh").write_text(
+        'CUDA_VISIBLE_DEVICES="$cvd" uv run python scripts/foo_train.py \\\n'
+        '    --conds "$cond" --gpu-id "$cvd" \\\n'
+        '    > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (env CVD pinned), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_sequential_launch(tmp_path):
+    """PASS — a sequential (non-backgrounded) launch cannot co-locate
+    siblings; --gpu-id without env CVD is not the parallel bug class."""
+    (tmp_path / "x.sh").write_text(
+        'uv run python scripts/foo_train.py --gpu-id 0 \\\n    > "$log" 2>&1\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (sequential), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_and_and_chain(tmp_path):
+    """PASS — a trailing ``&&`` is a command chain, not a background
+    token; must not parse as backgrounded."""
+    (tmp_path / "x.sh").write_text(
+        'uv run python scripts/foo_train.py --gpu-id 0 &&\n    echo "done"\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (&& chain), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_waiver_previous_line(tmp_path):
+    """PASS — a ``# CVD_PIN_EXEMPT: <reason>`` waiver on the immediately
+    preceding non-blank line (the only valid placement for a
+    backslash-continued launch) is honored."""
+    (tmp_path / "x.sh").write_text(
+        "# CVD_PIN_EXEMPT: pre-#578 completed-task dispatcher kept verbatim\n"
+        "uv run python scripts/foo_train.py \\\n"
+        '    --gpu-id "$cvd" > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (waived), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_waiver_same_line(tmp_path):
+    """PASS — a same-line trailing waiver on a single-line launch."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python scripts/foo.py --gpu-id 0 &  "
+        "# CVD_PIN_EXEMPT: single process on a 1-GPU pod, no sibling\n"
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (same-line waiver), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — a waiver with a reason shorter than the minimum is a
+    token-shaped bypass, not a justification (same convention as
+    WANDB_INTENTIONALLY_DISABLED)."""
+    (tmp_path / "x.sh").write_text(
+        '# CVD_PIN_EXEMPT: x\nuv run python scripts/foo_train.py --gpu-id "$cvd" > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_commented_and_echo_lines(tmp_path):
+    """PASS — commented-out launches and echo dry-run previews are not
+    launch sites."""
+    (tmp_path / "x.sh").write_text(
+        '# uv run python scripts/foo.py --gpu-id 0 > "$log" 2>&1 &\n'
+        'echo "would run: uv run python scripts/foo.py --gpu-id 0" &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (comment/echo), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no unwaived backgrounded
+    --gpu-id/+gpu_id= python launches without an env CVD pin. Pre-#578
+    completed-task dispatchers carry explicit CVD_PIN_EXEMPT waivers."""
+    errors = check_dispatcher_cvd_pin()
+    assert errors == [], (
+        "scripts/*.sh has backgrounded --gpu-id/+gpu_id= python launches "
+        "without a CUDA_VISIBLE_DEVICES= pin (#523/#541/#543/#557 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_dispatcher_cvd_pin_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-dispatcher-cvd-pin")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-dispatcher-cvd-pin failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Unit tests for the ``check_agent_model_pins`` function
+# (d07424178 / task #545 incident class, 2026-06-09 → 2026-06-12).
+# Each case writes a tiny .md file under ``tmp_path`` with a YAML
+# frontmatter ``model: "..."`` pin and calls
+# ``check_agent_model_pins(roots=[tmp_path])``.
+# ─────────────────────────────────────────────────────────────────────
+
+
+def _write_agent(path, model_pin):
+    """Write a minimal agent .md file with a YAML frontmatter model pin."""
+    path.write_text(
+        f"---\nname: test-agent\nmodel: {model_pin!r}\n---\n\nAgent body.\n",
+        encoding="utf-8",
+    )
+
+
+def test_check_agent_model_pins_pass_opus_with_1m_suffix(tmp_path):
+    """PASS — the current canonical pin: opus-4-7 with the [1m] routing
+    suffix (a 1M-context-supporting base)."""
+    _write_agent(tmp_path / "analyzer.md", "claude-opus-4-7[1m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_agent_model_pins_pass_fable_without_suffix(tmp_path):
+    """PASS — fable-5 has 1M native context and no [1m] suffix. Naming the
+    base alone is fine; this case is the correct rewrite of the d07424178
+    pin if Thomas decides to move to fable-5."""
+    _write_agent(tmp_path / "analyzer.md", "claude-fable-5")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_agent_model_pins_pass_sonnet_46(tmp_path):
+    """PASS — sonnet-4-6 also has 1M native context, no suffix."""
+    _write_agent(tmp_path / "x.md", "claude-sonnet-4-6")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_agent_model_pins_pass_haiku_no_suffix(tmp_path):
+    """PASS — haiku-4-5 is a 200K-context tier, no [1m] suffix."""
+    _write_agent(tmp_path / "x.md", "claude-haiku-4-5")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_agent_model_pins_fail_fable_with_1m_suffix(tmp_path):
+    """FAIL — the d07424178 / task #545 regression test: fable-5 is a
+    real base but does NOT expose a [1m] routing variant. Pinning the
+    suffixed id killed every subagent fleet-wide for ~72h."""
+    _write_agent(tmp_path / "analyzer.md", "claude-fable-5[1m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "claude-fable-5[1m]" in errors[0]
+    assert "does not expose a '[1m]'" in errors[0]
+    assert "d07424178" in errors[0] or "#545" in errors[0]
+
+
+def test_check_agent_model_pins_fail_sonnet45_with_1m_suffix(tmp_path):
+    """FAIL — sonnet-4-5 is a 200K-context tier with no [1m] variant."""
+    _write_agent(tmp_path / "x.md", "claude-sonnet-4-5[1m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected one error, got: {errors}"
+    assert "claude-sonnet-4-5[1m]" in errors[0]
+    assert "does not expose a '[1m]'" in errors[0]
+
+
+def test_check_agent_model_pins_fail_unknown_base(tmp_path):
+    """FAIL — a base id that is not in the allowlist (typo or
+    aspirational id; the harness rejects it at spawn)."""
+    _write_agent(tmp_path / "x.md", "claude-galaxy-9")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected one error, got: {errors}"
+    assert "claude-galaxy-9" in errors[0]
+    assert "not in the allowlist" in errors[0]
+
+
+def test_check_agent_model_pins_fail_unknown_suffix_treated_as_unknown_base(tmp_path):
+    """FAIL — a non-[1m] suffix like '[2m]' is glued to the base by
+    :func:`_split_agent_model_pin` (intentional: only the literal '[1m]'
+    is a recognized routing suffix). The result is reported as an
+    unknown base, which is the correct outcome — the harness would
+    reject it too."""
+    _write_agent(tmp_path / "x.md", "claude-opus-4-7[2m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected one error, got: {errors}"
+    assert "claude-opus-4-7[2m]" in errors[0]
+    assert "not in the allowlist" in errors[0]
+
+
+def test_check_agent_model_pins_pass_missing_frontmatter(tmp_path):
+    """PASS — an agent file with no ``model:`` line inherits the parent
+    model (CLAUDE.md 'Prompt-cache key discipline' explicitly allows it);
+    no runtime contract to validate."""
+    (tmp_path / "x.md").write_text("---\nname: x\n---\n\nBody.\n", encoding="utf-8")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS (no pin), got: {errors}"
+
+
+def test_check_agent_model_pins_d07424178_regression_full_fleet(tmp_path):
+    """FAIL on the EXACT shape of the d07424178 commit: bulk-rename of
+    all agents to ``claude-fable-5[1m]``. The check must report one
+    error per file (so the lint output names every offending pin, not
+    just the first)."""
+    for name in ("analyzer.md", "code-reviewer.md", "planner.md", "experimenter.md"):
+        _write_agent(tmp_path / name, "claude-fable-5[1m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 4, f"expected one error per file, got: {len(errors)}: {errors}"
+    # Every error should be the suffix-on-non-1m-base shape (not the
+    # unknown-base shape — fable-5 itself IS in the allowlist).
+    for e in errors:
+        assert "does not expose a '[1m]'" in e
+        assert "claude-fable-5" in e
+
+
+def test_check_agent_model_pins_mixed_pass_and_fail(tmp_path):
+    """A directory with a mix of valid and invalid pins reports only
+    the invalid ones, with file:line precision."""
+    _write_agent(tmp_path / "ok1.md", "claude-opus-4-7[1m]")
+    _write_agent(tmp_path / "ok2.md", "claude-fable-5")
+    _write_agent(tmp_path / "bad.md", "claude-fable-5[1m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected one error (bad.md only), got: {errors}"
+    assert "bad.md:" in errors[0]
+
+
+def test_check_agent_model_pins_repo_tree_is_clean():
+    """The committed .claude/agents tree must already pass — the regression
+    guard. If this fails, someone re-introduced the d07424178 / task #545
+    pin shape and every subagent will die at spawn."""
+    errors = check_agent_model_pins()
+    assert errors == [], (
+        "committed .claude/agents/*.md has invalid model pins "
+        "(d07424178 / task #545 incident class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_agent_model_pins_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-agent-model-pins")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-agent-model-pins failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Unit tests for the ``check_upload_as_file`` function
+# (#595 → #640 → #612 recurrence class): hub._upload raises ValueError
+# unconditionally on a single-file path without upload_as_file=True, so a
+# per-file upload loop crashes on the FIRST file after the expensive
+# phases. Each case writes a tiny .py under ``tmp_path`` and calls
+# ``check_upload_as_file(scripts_dir=tmp_path)``.
+# ─────────────────────────────────────────────────────────────────────
+
+
+def test_check_upload_as_file_fail_named_arg_no_kwarg(tmp_path):
+    """FAIL — the #612 offender shape: a file-named variable (``summary_path``)
+    passed to _upload with the upload_as_file kwarg entirely absent."""
+    (tmp_path / "driver.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def phase_c(summary_path):\n"
+        '    hub._upload(summary_path, repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "driver.py:4" in errors[0]
+    assert "upload_as_file=True" in errors[0]
+    assert "summary_path" in errors[0]
+
+
+def test_check_upload_as_file_fail_string_literal_no_kwarg(tmp_path):
+    """FAIL — a decidable single-file string literal (.json) without the kwarg."""
+    (tmp_path / "x.py").write_text(
+        '_upload("out/summary.json", repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "single-file path literal" in errors[0]
+
+
+def test_check_upload_as_file_fail_pathdiv_literal_no_kwarg(tmp_path):
+    """FAIL — the ``out_dir / "shift.pt"`` path-division shape (decidable file)."""
+    (tmp_path / "x.py").write_text(
+        'def f(out_dir):\n    _upload(out_dir / "shift.pt", repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_as_file_fail_decidable_file_explicit_false(tmp_path):
+    """FAIL — a decidable file literal with an explicit upload_as_file=False
+    is the #595 silent-no-op shape; an explicit False does NOT excuse a
+    literal file (unlike a heuristic name signal)."""
+    (tmp_path / "x.py").write_text('_upload("out/x.json", repo_id="r", upload_as_file=False)\n')
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_as_file_pass_named_arg_with_kwarg_true(tmp_path):
+    """PASS — the correct single-file shape: upload_as_file=True."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def f(summary_path):\n"
+        '    hub._upload(summary_path, repo_id="r", path_in_repo="p", upload_as_file=True)\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (upload_as_file=True), got: {errors}"
+
+
+def test_check_upload_as_file_pass_folder_variable(tmp_path):
+    """PASS — a generic folder variable (no file-suffix name, no literal)
+    correctly relies on the upload_folder default; not flagged."""
+    (tmp_path / "x.py").write_text(
+        "def f(local_dir, staging):\n"
+        '    _upload(local_dir, repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+        '    _upload(staging, repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (folder vars), got: {errors}"
+
+
+def test_check_upload_as_file_pass_named_arg_explicit_false(tmp_path):
+    """PASS — a HEURISTIC name signal (``results_path``) with an EXPLICIT
+    upload_as_file=False is the author's deliberate folder declaration and
+    is deferred to (a name suffix must not override an explicit choice — a
+    ``*_path`` variable can legitimately hold a directory)."""
+    (tmp_path / "x.py").write_text(
+        'def f(results_path):\n    _upload(results_path, repo_id="r", upload_as_file=False)\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (explicit False on name signal), got: {errors}"
+
+
+def test_check_upload_as_file_pass_waiver_previous_line(tmp_path):
+    """PASS — a ``# UPLOAD_AS_FILE_EXEMPT: <reason>`` waiver on the
+    immediately preceding non-blank line is honored (a file-named var that
+    is really a directory)."""
+    (tmp_path / "x.py").write_text(
+        "def f(results_path):\n"
+        "    # UPLOAD_AS_FILE_EXEMPT: results_path is actually a directory here\n"
+        '    _upload(results_path, repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (waived), got: {errors}"
+
+
+def test_check_upload_as_file_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — a waiver with a reason shorter than the minimum is a
+    token-shaped bypass, not a justification."""
+    (tmp_path / "x.py").write_text(
+        "def f(results_path):\n"
+        "    # UPLOAD_AS_FILE_EXEMPT: x\n"
+        '    _upload(results_path, repo_id="r", repo_type="dataset", path_in_repo="p")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_as_file_fail_glob_loop_two_statement(tmp_path):
+    """FAIL — the EXACT #640/#595 production offender shape: a two-statement
+    ``files = sorted(dir.glob("*.json"))`` then ``for f in files: _upload(f, ...)``
+    with ``path_in_repo=f"...{f.name}"``. The current name/literal heuristics
+    miss it (``f`` has no file-suffix, no literal); the glob-loop + path_in_repo
+    signals catch it."""
+    (tmp_path / "carrier.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def upload_raw_completions(raw_dir):\n"
+        '    files = sorted(raw_dir.glob("*.json"))\n'
+        "    for f in files:\n"
+        "        hub._upload(\n"
+        "            f,\n"
+        '            repo_id="r",\n'
+        '            repo_type="dataset",\n'
+        '            path_in_repo=f"issue640/raw_completions/{f.name}",\n'
+        "        )\n"
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "upload_as_file=True" in errors[0]
+
+
+def test_check_upload_as_file_fail_inline_glob_loop(tmp_path):
+    """FAIL — ``for p in dir.glob("*.json"): _upload(p, ...)`` (inline glob
+    loop, bare loop var, no path_in_repo .name signal)."""
+    (tmp_path / "x.py").write_text(
+        "def f(d):\n"
+        '    for p in d.glob("*.json"):\n'
+        '        _upload(p, repo_id="r", repo_type="dataset", path_in_repo="x")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "per-file glob/iterdir loop variable ('p')" in errors[0]
+
+
+def test_check_upload_as_file_fail_iterdir_loop(tmp_path):
+    """FAIL — ``for path in dir.iterdir(): _upload(path, ...)`` (flat per-file
+    sweep; the canonical iterdir use)."""
+    (tmp_path / "x.py").write_text(
+        "def f(d):\n"
+        "    for path in d.iterdir():\n"
+        '        _upload(path, repo_id="r", repo_type="dataset", path_in_repo="x")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "per-file glob/iterdir loop variable ('path')" in errors[0]
+
+
+def test_check_upload_as_file_pass_dir_shaped_glob_loop(tmp_path):
+    """PASS — ``for d in dir.glob("*/"): _upload(d, ...)`` iterates
+    DIRECTORIES (trailing-slash pattern), so the glob-loop single-file signal
+    must NOT fire — it correctly relies on the upload_folder default. The
+    candidate's ambiguous-``glob("*/")`` defer-to-folder case."""
+    (tmp_path / "x.py").write_text(
+        "def f(root):\n"
+        '    for d in root.glob("*/"):\n'
+        '        _upload(d, repo_id="r", repo_type="dataset", path_in_repo="x")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (dir-shaped glob loop), got: {errors}"
+
+
+def test_check_upload_as_file_pass_extensionless_glob_loop(tmp_path):
+    """PASS — ``for x in dir.glob("*"): _upload(x, ...)`` has NO file-extension
+    token in the pattern, so the file-vs-dir intent is undecidable. The
+    glob-loop signal defers (conservative — never manufacture a false positive
+    on a possible directory sweep; the candidate's "no extension token →
+    defer" rule). The riskiest per-file cases are caught by the
+    path_in_repo=f'...{x.name}' signal instead."""
+    (tmp_path / "x.py").write_text(
+        "def f(d):\n"
+        '    for x in d.glob("*"):\n'
+        '        _upload(x, repo_id="r", repo_type="dataset", path_in_repo="x")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (extensionless glob loop), got: {errors}"
+
+
+def test_check_upload_as_file_fail_path_in_repo_name_kwarg(tmp_path):
+    """FAIL — the ``path_in_repo=f"...{item.name}"`` idiom alone (a non-glob
+    loop over a bare ``items`` iterable): taking ``.name`` on a per-item path
+    you upload individually is a single-file signal independent of the loop
+    iterator."""
+    (tmp_path / "x.py").write_text(
+        "def f(items):\n"
+        "    for item in items:\n"
+        '        _upload(item, repo_id="r", path_in_repo=f"x/{item.name}")\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "item.name" in errors[0]
+
+
+def test_check_upload_as_file_pass_glob_loop_with_kwarg_true(tmp_path):
+    """PASS — the CORRECT fixed shape: the #640 glob loop now passing
+    upload_as_file=True (this is what the production carriers look like
+    post-fix; the lint must not re-flag them)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def upload_raw(raw_dir):\n"
+        '    for f in sorted(raw_dir.glob("*.json")):\n'
+        "        hub._upload(\n"
+        "            f,\n"
+        '            repo_id="r",\n'
+        '            path_in_repo=f"x/{f.name}",\n'
+        "            upload_as_file=True,\n"
+        "        )\n"
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (glob loop with kwarg True), got: {errors}"
+
+
+def test_check_upload_as_file_pass_glob_loop_explicit_false_waived(tmp_path):
+    """PASS — a glob-loop signal with an EXPLICIT upload_as_file=False is the
+    author's deliberate folder declaration and is deferred to (the glob-loop /
+    path_in_repo signals are heuristic name-context signals, same deferral
+    policy as the file-named-arg signal: they fire only when the kwarg is
+    entirely absent)."""
+    (tmp_path / "x.py").write_text(
+        "def f(d):\n"
+        '    for sub in d.glob("*.json"):\n'
+        '        _upload(sub, repo_id="r", path_in_repo="x", upload_as_file=False)\n'
+    )
+    errors = check_upload_as_file(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (explicit False on glob-loop signal), got: {errors}"
+
+
+def test_check_upload_as_file_repo_tree_is_clean():
+    """The committed scripts/**/*.py tree must carry no unwaived single-file
+    _upload calls missing upload_as_file=True (#595/#640/#612 class). This
+    is the systemic regression guard the candidate asked for."""
+    errors = check_upload_as_file()
+    assert errors == [], (
+        "scripts/**/*.py has _upload(...) single-file calls missing "
+        "upload_as_file=True (#595/#640/#612 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_upload_as_file_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-upload-as-file")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-upload-as-file failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )

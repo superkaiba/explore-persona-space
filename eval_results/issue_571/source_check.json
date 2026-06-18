@@ -1,0 +1,137 @@
+{
+ "schema_version": "issue571_breadth_v1",
+ "phase": "M3_source_check_merged",
+ "per_label": {
+  "broad_s42": {
+   "emission_on": 1.0,
+   "emission_off": 0.0,
+   "verdict": "PASS",
+   "verdict_reason": "source emission ON >= 0.8 and base <= 0.1",
+   "dz_marker_source": 25.05068359375,
+   "trained_summary": {
+    "mean_logp_marker": -0.09098730087280274,
+    "mean_z_marker": 26.25625,
+    "mean_z_eos": 11.215625,
+    "mean_logZ": 26.347237300872802,
+    "mean_logp_bare_marker": -16.295674800872803,
+    "mean_marker_eos_margin": 15.040625,
+    "argmax_marker_rate": 1.0,
+    "n_pre_marker_slots": 20
+   },
+   "base_summary": {
+    "mean_logp_marker": -27.067970848083498,
+    "mean_z_marker": 1.20556640625,
+    "mean_z_eos": 7.557861328125,
+    "mean_logZ": 28.273537254333498,
+    "mean_logp_bare_marker": -28.326662254333495,
+    "mean_marker_eos_margin": -6.352294921875,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 20
+   }
+  },
+  "broad_s43": {
+   "emission_on": 1.0,
+   "emission_off": 0.0,
+   "verdict": "PASS",
+   "verdict_reason": "source emission ON >= 0.8 and base <= 0.1",
+   "dz_marker_source": 25.70533142089844,
+   "trained_summary": {
+    "mean_logp_marker": -0.06534337997436523,
+    "mean_z_marker": 26.925,
+    "mean_z_eos": 13.06875,
+    "mean_logZ": 26.990343379974366,
+    "mean_logp_bare_marker": -15.630968379974366,
+    "mean_marker_eos_margin": 13.85625,
+    "argmax_marker_rate": 1.0,
+    "n_pre_marker_slots": 20
+   },
+   "base_summary": {
+    "mean_logp_marker": -26.71001958847046,
+    "mean_z_marker": 1.2196685791015625,
+    "mean_z_eos": 9.62451171875,
+    "mean_logZ": 27.92968816757202,
+    "mean_logp_bare_marker": -27.870703792572023,
+    "mean_marker_eos_margin": -8.404843139648438,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 20
+   }
+  },
+  "narrow_s42": {
+   "emission_on": 1.0,
+   "emission_off": 0.0,
+   "verdict": "PASS",
+   "verdict_reason": "source emission ON >= 0.8 and base <= 0.1",
+   "dz_marker_source": 29.51123046875,
+   "trained_summary": {
+    "mean_logp_marker": -0.08140897750854492,
+    "mean_z_marker": 29.66875,
+    "mean_z_eos": 11.878125,
+    "mean_logZ": 29.750158977508544,
+    "mean_logp_bare_marker": -17.681408977508546,
+    "mean_marker_eos_margin": 17.790625,
+    "argmax_marker_rate": 1.0,
+    "n_pre_marker_slots": 20
+   },
+   "base_summary": {
+    "mean_logp_marker": -25.56379270553589,
+    "mean_z_marker": 0.15751953125,
+    "mean_z_eos": 13.90146484375,
+    "mean_logZ": 25.721312236785888,
+    "mean_logp_bare_marker": -26.30451536178589,
+    "mean_marker_eos_margin": -13.7439453125,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 20
+   }
+  },
+  "narrow_s43": {
+   "emission_on": 1.0,
+   "emission_off": 0.0,
+   "verdict": "PASS",
+   "verdict_reason": "source emission ON >= 0.8 and base <= 0.1",
+   "dz_marker_source": 27.82744140625,
+   "trained_summary": {
+    "mean_logp_marker": -0.0615142822265625,
+    "mean_z_marker": 28.41875,
+    "mean_z_eos": 8.9140625,
+    "mean_logZ": 28.480264282226564,
+    "mean_logp_bare_marker": -18.23338928222656,
+    "mean_marker_eos_margin": 19.5046875,
+    "argmax_marker_rate": 1.0,
+    "n_pre_marker_slots": 20
+   },
+   "base_summary": {
+    "mean_logp_marker": -24.283122730255126,
+    "mean_z_marker": 0.59130859375,
+    "mean_z_eos": 16.62109375,
+    "mean_logZ": 24.874431324005126,
+    "mean_logp_bare_marker": -25.596281909942626,
+    "mean_marker_eos_margin": -16.02978515625,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 20
+   }
+  }
+ },
+ "cross_arm_dz_marker_asymmetry": 3.2913284301757812,
+ "asymmetry_cap_threshold": 5.0,
+ "manipulation_check": "pass_all",
+ "thresholds": {
+  "emission_on_pass": 0.8,
+  "emission_on_fail": 0.2,
+  "emission_off_max": 0.1
+ },
+ "metadata": {
+  "task": 571,
+  "script": "issue571_breadth_panel.py",
+  "git_commit": "5c6e47543",
+  "timestamp_utc": "2026-06-11T04:50:55.760651+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--phase",
+   "source-score",
+   "--adapters",
+   "all"
+  ]
+ }
+}

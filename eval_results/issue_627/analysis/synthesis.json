@@ -1,0 +1,107 @@
+{
+  "issue": 627,
+  "rows": [
+    {
+      "family": "sycophancy: contrastive vs positive-only at install 0.50 (NEW)",
+      "gap": 0.08706440334119903,
+      "ci95": [
+        0.06520348268898137,
+        0.10496409942513059
+      ],
+      "gap_units": "bystander-mean agreement-rate delta (posonly - contrastive)",
+      "gap_direction_positive": "positives-only leaks more",
+      "verdict": "graded_partial",
+      "n_complete_sources": 4,
+      "source": "issue 627 Phase 2 (matched_install_608.json)"
+    },
+    {
+      "family": "refusal: LoRA vs full-FT (measured matched read, retrain)",
+      "gap": -0.0064692768506632164,
+      "ci95": [
+        -0.016553662716831275,
+        0.0037131977151616574
+      ],
+      "gap_units": "bystander-mean rate delta (FT - LoRA)",
+      "gap_direction_positive": "full fine-tune leaks more",
+      "verdict": "equivalence",
+      "source": "issue 606 (published, verbatim)"
+    },
+    {
+      "family": "sycophancy: LoRA vs full-FT at install 0.50",
+      "gap": 0.098075783612536,
+      "ci95": [
+        0.07223618281187809,
+        0.12300659653216281
+      ],
+      "gap_units": "bystander-mean rate delta (FT - LoRA)",
+      "gap_direction_positive": "full fine-tune leaks more",
+      "verdict": "divergence",
+      "source": "issue 606 (published, verbatim)"
+    },
+    {
+      "family": "marker: LoRA vs full-FT at matched 8-nat install",
+      "gap": 0.001607115409639528,
+      "ci95": [
+        -0.12722519381908004,
+        0.1195434488038698
+      ],
+      "gap_units": "bystander-mean delta-log-P gap (FT - LoRA), nats",
+      "gap_direction_positive": "full fine-tune leaks more",
+      "verdict": "matched null (published)",
+      "source": "issue 514 (published, verbatim)"
+    },
+    {
+      "family": "marker: contrastive mix vs positives-only fraction at matched install",
+      "gap": -0.005301220495298368,
+      "ci95": [
+        -0.008321263959270467,
+        -0.0021625555531640003
+      ],
+      "gap_units": "bystander-mean EOS-margin leakage-fraction diff (posonly - contrastive)",
+      "gap_direction_positive": "positives-only leaks more",
+      "sign_note": "negated from the analyzer's contrastive-minus-posonly field so every row reads second-named minus first-named",
+      "verdict": "graded_middle_zone",
+      "scope_caveat": "#601 negative rows were gradient-dead (loss-suppression flag off): the contrast is mix composition under flag-off loss placement, NOT live-contrastive training",
+      "source": "issue 627 Phase 3 over issue 601 (marker_fractions_601.json)"
+    }
+  ],
+  "h4_dose_curve_premise": {
+    "refusal_endpoint_spread": {
+      "refusal": {
+        "ft": {
+          "cell": "ft_step132",
+          "install_s": 0.994,
+          "leak": 0.05352631578947369
+        },
+        "lora": {
+          "cell": "lora_step132",
+          "install_s": 0.994,
+          "leak": 0.24600000000000002
+        }
+      },
+      "refusal-ft-lr2e6-retrain": {
+        "ft": {
+          "cell": "ft_step132",
+          "install_s": 0.994,
+          "leak": 0.1492105263157895
+        },
+        "lora": {
+          "cell": "lora_step132",
+          "install_s": 0.994,
+          "leak": 0.24600000000000002
+        }
+      }
+    },
+    "note": "cross-run leakage spread at matched install \u2014 install (+ one seed) does not determine leakage (descriptive)"
+  },
+  "inputs": {
+    "matched_608": "eval_results/issue_627/analysis/matched_install_608.json",
+    "marker_601": "eval_results/issue_627/analysis/marker_fractions_601.json",
+    "fractions_606": "eval_results/issue_627/analysis/fractions_606.json",
+    "fractions_514": "eval_results/issue_627/analysis/fractions_514.json"
+  },
+  "metadata": {
+    "git_commit_sha": "93dd21206c5ffa7840508ca0bd5a96706f640a46",
+    "timestamp_utc": "2026-06-13T05:03:09.363205+00:00"
+  }
+}

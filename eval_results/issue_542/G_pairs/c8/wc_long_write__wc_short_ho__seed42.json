@@ -1,0 +1,658 @@
+{
+ "git_commit": "076d9078727b927df7c939f22815f777e3e72b76",
+ "generated_at": "2026-06-12T07:44:43.301731+00:00",
+ "seed": 42,
+ "behavior": "marker",
+ "arm": "c8",
+ "train_cid": "wc_long_write",
+ "eval_cid": "wc_short_ho",
+ "n_questions": 32,
+ "g_mean_delta_logp": 5.045212745666504,
+ "g_mean_delta_z_marker": 2.8803787231445312,
+ "g_mean_delta_eos_margin": 6.208503723144531,
+ "emission_rate_trained": 0.0,
+ "emission_rate_base": 0.0,
+ "qs_per_sec": 22.953697288931263,
+ "per_question": [
+  {
+   "question": "Can you explain the water cycle step by step?",
+   "trained": {
+    "logp": -20.42359161376953,
+    "z_marker": 3.4375,
+    "z_eos": 19.75,
+    "logZ": 23.86109161376953,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -24.06764793395996,
+    "z_marker": 0.099609375,
+    "z_eos": 23.875,
+    "logZ": 24.16725730895996,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 3.6440563201904297,
+   "delta_z_marker": 3.337890625,
+   "delta_eos_margin": 7.462890625
+  },
+  {
+   "question": "Can you explain the basics of music theory?",
+   "trained": {
+    "logp": -19.938352584838867,
+    "z_marker": 4.34375,
+    "z_eos": 21.0,
+    "logZ": 24.282102584838867,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -23.41163444519043,
+    "z_marker": 1.1796875,
+    "z_eos": 24.375,
+    "logZ": 24.59132194519043,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 3.4732818603515625,
+   "delta_z_marker": 3.1640625,
+   "delta_eos_margin": 6.5390625
+  },
+  {
+   "question": "What would the world be like if every person had a unique superpower?",
+   "trained": {
+    "logp": -19.973791122436523,
+    "z_marker": 3.28125,
+    "z_eos": 20.75,
+    "logZ": 23.255041122436523,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -23.78015899658203,
+    "z_marker": 0.5546875,
+    "z_eos": 24.25,
+    "logZ": 24.33484649658203,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 3.806367874145508,
+   "delta_z_marker": 2.7265625,
+   "delta_eos_margin": 6.2265625
+  },
+  {
+   "question": "What causes lightning during thunderstorms?",
+   "trained": {
+    "logp": -20.9705753326416,
+    "z_marker": 1.6015625,
+    "z_eos": 19.0,
+    "logZ": 22.5721378326416,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -23.890705108642578,
+    "z_marker": -0.412109375,
+    "z_eos": 23.375,
+    "logZ": 23.478595733642578,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 2.9201297760009766,
+   "delta_z_marker": 2.013671875,
+   "delta_eos_margin": 6.388671875
+  },
+  {
+   "question": "What causes ocean currents to flow?",
+   "trained": {
+    "logp": -20.689300537109375,
+    "z_marker": 2.734375,
+    "z_eos": 23.375,
+    "logZ": 23.423675537109375,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -27.939470291137695,
+    "z_marker": 0.310546875,
+    "z_eos": 28.25,
+    "logZ": 28.250017166137695,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 7.25016975402832,
+   "delta_z_marker": 2.423828125,
+   "delta_eos_margin": 7.298828125
+  },
+  {
+   "question": "If you could make one animal species intelligent like humans, which would you pick?",
+   "trained": {
+    "logp": -19.345426559448242,
+    "z_marker": 2.40625,
+    "z_eos": 21.5,
+    "logZ": 21.751676559448242,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -25.320171356201172,
+    "z_marker": 0.057373046875,
+    "z_eos": 25.375,
+    "logZ": 25.377544403076172,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 5.97474479675293,
+   "delta_z_marker": 2.348876953125,
+   "delta_eos_margin": 6.223876953125
+  },
+  {
+   "question": "Is it better to work for a large company or a startup?",
+   "trained": {
+    "logp": -19.041824340820312,
+    "z_marker": 3.375,
+    "z_eos": 22.25,
+    "logZ": 22.416824340820312,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -24.61811637878418,
+    "z_marker": 0.6328125,
+    "z_eos": 25.25,
+    "logZ": 25.25092887878418,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 5.576292037963867,
+   "delta_z_marker": 2.7421875,
+   "delta_eos_margin": 5.7421875
+  },
+  {
+   "question": "How do I recover data from a corrupted hard drive?",
+   "trained": {
+    "logp": -19.91973114013672,
+    "z_marker": 4.03125,
+    "z_eos": 22.5,
+    "logZ": 23.95098114013672,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -24.096515655517578,
+    "z_marker": 1.0859375,
+    "z_eos": 25.125,
+    "logZ": 25.182453155517578,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 4.176784515380859,
+   "delta_z_marker": 2.9453125,
+   "delta_eos_margin": 5.5703125
+  },
+  {
+   "question": "Can you explain the difference between DNA and RNA?",
+   "trained": {
+    "logp": -21.095932006835938,
+    "z_marker": 4.15625,
+    "z_eos": 25.25,
+    "logZ": 25.252182006835938,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -26.968765258789062,
+    "z_marker": 1.15625,
+    "z_eos": 28.125,
+    "logZ": 28.125015258789062,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 5.872833251953125,
+   "delta_z_marker": 3.0,
+   "delta_eos_margin": 5.875
+  },
+  {
+   "question": "How does a refrigerator keep food cold?",
+   "trained": {
+    "logp": -20.168771743774414,
+    "z_marker": 4.09375,
+    "z_eos": 24.25,
+    "logZ": 24.262521743774414,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -27.55471420288086,
+    "z_marker": 0.8203125,
+    "z_eos": 28.375,
+    "logZ": 28.37502670288086,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 7.385942459106445,
+   "delta_z_marker": 3.2734375,
+   "delta_eos_margin": 7.3984375
+  },
+  {
+   "question": "How does encryption keep data secure?",
+   "trained": {
+    "logp": -19.570314407348633,
+    "z_marker": 3.828125,
+    "z_eos": 23.375,
+    "logZ": 23.398439407348633,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -26.84395980834961,
+    "z_marker": 0.28125,
+    "z_eos": 27.125,
+    "logZ": 27.12520980834961,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 7.273645401000977,
+   "delta_z_marker": 3.546875,
+   "delta_eos_margin": 7.296875
+  },
+  {
+   "question": "How do I build a simple wooden bookshelf?",
+   "trained": {
+    "logp": -19.49455451965332,
+    "z_marker": 3.140625,
+    "z_eos": 22.125,
+    "logZ": 22.63517951965332,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -24.104351043701172,
+    "z_marker": 0.671875,
+    "z_eos": 24.75,
+    "logZ": 24.776226043701172,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 4.609796524047852,
+   "delta_z_marker": 2.46875,
+   "delta_eos_margin": 5.09375
+  },
+  {
+   "question": "How do I plan a trip on a tight budget?",
+   "trained": {
+    "logp": -19.594959259033203,
+    "z_marker": 5.78125,
+    "z_eos": 25.375,
+    "logZ": 25.376209259033203,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -24.671894073486328,
+    "z_marker": 2.578125,
+    "z_eos": 27.25,
+    "logZ": 27.250019073486328,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 5.076934814453125,
+   "delta_z_marker": 3.203125,
+   "delta_eos_margin": 5.078125
+  },
+  {
+   "question": "Can you explain how the Electoral College works?",
+   "trained": {
+    "logp": -20.370317459106445,
+    "z_marker": 3.96875,
+    "z_eos": 22.375,
+    "logZ": 24.339067459106445,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -23.890207290649414,
+    "z_marker": 1.46875,
+    "z_eos": 25.25,
+    "logZ": 25.358957290649414,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 3.5198898315429688,
+   "delta_z_marker": 2.5,
+   "delta_eos_margin": 5.375
+  },
+  {
+   "question": "Can you explain what DNA actually does?",
+   "trained": {
+    "logp": -20.499956130981445,
+    "z_marker": 3.0625,
+    "z_eos": 21.0,
+    "logZ": 23.562456130981445,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -24.685348510742188,
+    "z_marker": 0.35546875,
+    "z_eos": 25.0,
+    "logZ": 25.040817260742188,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 4.185392379760742,
+   "delta_z_marker": 2.70703125,
+   "delta_eos_margin": 6.70703125
+  },
+  {
+   "question": "What's the best way to clean windows without streaks?",
+   "trained": {
+    "logp": -19.617700576782227,
+    "z_marker": 4.34375,
+    "z_eos": 18.625,
+    "logZ": 23.961450576782227,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -22.08933448791504,
+    "z_marker": 0.94921875,
+    "z_eos": 22.375,
+    "logZ": 23.03855323791504,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 2.4716339111328125,
+   "delta_z_marker": 3.39453125,
+   "delta_eos_margin": 7.14453125
+  },
+  {
+   "question": "How do ecosystems maintain balance?",
+   "trained": {
+    "logp": -18.674264907836914,
+    "z_marker": 3.359375,
+    "z_eos": 21.75,
+    "logZ": 22.033639907836914,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -25.989038467407227,
+    "z_marker": 0.13671875,
+    "z_eos": 26.125,
+    "logZ": 26.125757217407227,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 7.3147735595703125,
+   "delta_z_marker": 3.22265625,
+   "delta_eos_margin": 7.59765625
+  },
+  {
+   "question": "How do satellites stay in orbit around Earth?",
+   "trained": {
+    "logp": -19.231407165527344,
+    "z_marker": 3.65625,
+    "z_eos": 22.875,
+    "logZ": 22.887657165527344,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -26.88282585144043,
+    "z_marker": 0.7421875,
+    "z_eos": 27.625,
+    "logZ": 27.62501335144043,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 7.651418685913086,
+   "delta_z_marker": 2.9140625,
+   "delta_eos_margin": 7.6640625
+  },
+  {
+   "question": "How do I troubleshoot a computer that won't boot up?",
+   "trained": {
+    "logp": -20.016740798950195,
+    "z_marker": 3.921875,
+    "z_eos": 23.375,
+    "logZ": 23.938615798950195,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -25.547521591186523,
+    "z_marker": 0.5859375,
+    "z_eos": 26.125,
+    "logZ": 26.133459091186523,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 5.530780792236328,
+   "delta_z_marker": 3.3359375,
+   "delta_eos_margin": 6.0859375
+  },
+  {
+   "question": "Can you explain how wind turbines generate electricity?",
+   "trained": {
+    "logp": -21.14851951599121,
+    "z_marker": 3.234375,
+    "z_eos": 24.375,
+    "logZ": 24.38289451599121,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -27.230491638183594,
+    "z_marker": 0.39453125,
+    "z_eos": 27.625,
+    "logZ": 27.625022888183594,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 6.081972122192383,
+   "delta_z_marker": 2.83984375,
+   "delta_eos_margin": 6.08984375
+  },
+  {
+   "question": "How does cryptocurrency mining work?",
+   "trained": {
+    "logp": -19.260313034057617,
+    "z_marker": 4.875,
+    "z_eos": 24.125,
+    "logZ": 24.135313034057617,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -25.593904495239258,
+    "z_marker": 1.90625,
+    "z_eos": 27.5,
+    "logZ": 27.500154495239258,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 6.333591461181641,
+   "delta_z_marker": 2.96875,
+   "delta_eos_margin": 6.34375
+  },
+  {
+   "question": "Is it better to save money or invest it aggressively when young?",
+   "trained": {
+    "logp": -19.891014099121094,
+    "z_marker": 4.125,
+    "z_eos": 24.0,
+    "logZ": 24.016014099121094,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -25.91823387145996,
+    "z_marker": 0.83203125,
+    "z_eos": 26.75,
+    "logZ": 26.75026512145996,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 6.027219772338867,
+   "delta_z_marker": 3.29296875,
+   "delta_eos_margin": 6.04296875
+  },
+  {
+   "question": "How do I fix a dripping kitchen faucet?",
+   "trained": {
+    "logp": -21.193933486938477,
+    "z_marker": 4.1875,
+    "z_eos": 25.375,
+    "logZ": 25.381433486938477,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -26.437673568725586,
+    "z_marker": 1.0625,
+    "z_eos": 27.5,
+    "logZ": 27.500173568725586,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 5.243740081787109,
+   "delta_z_marker": 3.125,
+   "delta_eos_margin": 5.25
+  },
+  {
+   "question": "Do you think audiobooks count as real reading?",
+   "trained": {
+    "logp": -20.491710662841797,
+    "z_marker": 2.375,
+    "z_eos": 22.0,
+    "logZ": 22.866710662841797,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -25.772201538085938,
+    "z_marker": -0.392578125,
+    "z_eos": 25.375,
+    "logZ": 25.379623413085938,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 5.280490875244141,
+   "delta_z_marker": 2.767578125,
+   "delta_eos_margin": 6.142578125
+  },
+  {
+   "question": "How does the human digestive system process food?",
+   "trained": {
+    "logp": -17.743213653564453,
+    "z_marker": 4.21875,
+    "z_eos": 21.5,
+    "logZ": 21.961963653564453,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -23.558305740356445,
+    "z_marker": 1.4453125,
+    "z_eos": 25.0,
+    "logZ": 25.003618240356445,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 5.815092086791992,
+   "delta_z_marker": 2.7734375,
+   "delta_eos_margin": 6.2734375
+  },
+  {
+   "question": "How do I unclog a bathroom sink drain?",
+   "trained": {
+    "logp": -21.07715606689453,
+    "z_marker": 3.453125,
+    "z_eos": 22.25,
+    "logZ": 24.53028106689453,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -24.555419921875,
+    "z_marker": 0.361328125,
+    "z_eos": 24.75,
+    "logZ": 24.916748046875,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 3.4782638549804688,
+   "delta_z_marker": 3.091796875,
+   "delta_eos_margin": 5.591796875
+  },
+  {
+   "question": "What is the difference between a democracy and a republic?",
+   "trained": {
+    "logp": -19.21733283996582,
+    "z_marker": 3.40625,
+    "z_eos": 22.125,
+    "logZ": 22.62358283996582,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -24.71290397644043,
+    "z_marker": 0.6640625,
+    "z_eos": 25.375,
+    "logZ": 25.37696647644043,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 5.495571136474609,
+   "delta_z_marker": 2.7421875,
+   "delta_eos_margin": 5.9921875
+  },
+  {
+   "question": "Should I get a cat or a dog as a first pet?",
+   "trained": {
+    "logp": -18.385217666625977,
+    "z_marker": 3.1875,
+    "z_eos": 18.0,
+    "logZ": 21.572717666625977,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -21.29287338256836,
+    "z_marker": 0.5078125,
+    "z_eos": 21.375,
+    "logZ": 21.80068588256836,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 2.907655715942383,
+   "delta_z_marker": 2.6796875,
+   "delta_eos_margin": 6.0546875
+  },
+  {
+   "question": "Can you explain how DNA carries genetic information?",
+   "trained": {
+    "logp": -21.332616806030273,
+    "z_marker": 3.546875,
+    "z_eos": 24.875,
+    "logZ": 24.879491806030273,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -27.554706573486328,
+    "z_marker": 0.5703125,
+    "z_eos": 28.125,
+    "logZ": 28.125019073486328,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 6.222089767456055,
+   "delta_z_marker": 2.9765625,
+   "delta_eos_margin": 6.2265625
+  },
+  {
+   "question": "Can you explain how airplanes stay in the air?",
+   "trained": {
+    "logp": -24.26581382751465,
+    "z_marker": 1.984375,
+    "z_eos": 26.25,
+    "logZ": 26.25018882751465,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -28.494144439697266,
+    "z_marker": -0.369140625,
+    "z_eos": 28.125,
+    "logZ": 28.125003814697266,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 4.228330612182617,
+   "delta_z_marker": 2.353515625,
+   "delta_eos_margin": 4.228515625
+  },
+  {
+   "question": "How can I build muscle without going to a gym?",
+   "trained": {
+    "logp": -17.02208137512207,
+    "z_marker": 5.71875,
+    "z_eos": 19.875,
+    "logZ": 22.74083137512207,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -20.273235321044922,
+    "z_marker": 2.828125,
+    "z_eos": 22.875,
+    "logZ": 23.101360321044922,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 3.2511539459228516,
+   "delta_z_marker": 2.890625,
+   "delta_eos_margin": 5.890625
+  },
+  {
+   "question": "What's a good first programming language to learn?",
+   "trained": {
+    "logp": -18.161407470703125,
+    "z_marker": 2.609375,
+    "z_eos": 17.875,
+    "logZ": 20.770782470703125,
+    "argmax_is_marker": false
+   },
+   "base": {
+    "logp": -21.528175354003906,
+    "z_marker": 0.2080078125,
+    "z_eos": 21.25,
+    "logZ": 21.736183166503906,
+    "argmax_is_marker": false
+   },
+   "delta_logp": 3.3667678833007812,
+   "delta_z_marker": 2.4013671875,
+   "delta_eos_margin": 5.7763671875
+  }
+ ]
+}

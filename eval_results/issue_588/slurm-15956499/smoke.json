@@ -1,0 +1,8 @@
+{
+  "attempt_id": "slurm-15956499",
+  "commit": "unknown (no git metadata in scratch)",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "host": "g16.nibi.sharcnet",
+  "issue": 588,
+  "utc_ts": "2026-06-11T08:32:30.525655+00:00"
+}

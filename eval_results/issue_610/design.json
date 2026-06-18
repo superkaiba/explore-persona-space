@@ -1,0 +1,24 @@
+{
+  "schema_version": "i610_design_v1",
+  "slug": "c610_mercenary_near_nodefault",
+  "plain_name": "No-default mix (mercenary chassis, qwen_default slot \u2192 journalist)",
+  "chassis_slug": "c600_mercenary_near",
+  "chassis_target": "mercenary",
+  "panel": [
+    "journalist",
+    "bartender",
+    "french_person",
+    "dictator"
+  ],
+  "replacement_persona": "journalist",
+  "replaced_persona": "qwen_default",
+  "extra_eval_personas": [
+    "qwen_default",
+    "assistant"
+  ],
+  "source_persona": "villain",
+  "parent_manifest_schema_version": "i600_panel_selection_v1",
+  "parent_bank_content_hash": "aec53e06dcb68f46412620de4f891fb367e8f0a672347824621d081ff97e05fc",
+  "generated_at": "2026-06-12T18:56:53.370346+00:00",
+  "git_commit": "c3a8819622f22c9c50e88635c65da53b0b4ae238"
+}

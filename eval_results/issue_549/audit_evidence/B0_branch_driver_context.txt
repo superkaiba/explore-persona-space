@@ -1,0 +1,581 @@
+##### FILE: scripts/eval_i385_marker_spread.py @ refs/heads/issue-385(8d1151a5b)
+14:LoRARequest(lora_path=<checkpoint_dir>) without rebuilding the engine.
+120:    for bys_name, bys_system in bystanders:
+121:        for p_idx, probe in enumerate(prompts):
+193:    for step in steps:
+215:        "Loading vLLM engine for %s (enable_lora=True, max_lora_rank=%d)...",
+220:    llm = LLM(
+222:        enable_lora=True,
+246:    for step in steps:
+248:        lora_req = LoRARequest(
+250:            lora_int_id=step,
+277:        for out, (bys_name, p_idx) in zip(outputs, keys, strict=True):
+
+##### FILE: scripts/eval_i456_onpolicy_emission.py @ refs/heads/issue-456(b91f80a09)
+22:    Phase A (vLLM): base loaded ONCE with ``enable_lora=True``; the per-
+23:        checkpoint LoRA is swapped via ``LoRARequest(lora_int_id=step, ...)``
+146:    for child in children:
+152:    for child in alive:
+171:    for line in out.stdout.splitlines():
+223:    for pname in persona_names:
+225:        for q_idx, q in enumerate(prompts):
+229:    # Build the engine ONCE; swap LoRA per checkpoint via distinct lora_int_id.
+230:    llm = LLM(
+232:        enable_lora=True,
+234:        max_loras=1,
+250:        for step in steps:
+254:            lora_request = LoRARequest(
+256:                lora_int_id=step,  # distinct id => vLLM never serves a stale adapter
+266:            for row_idx, out in enumerate(outputs):
+269:                for sample in out.outputs:
+284:            for p in persona_names:
+393:    for step in steps:
+402:        for pname in persona_names:
+406:            for q_idx, q in enumerate(prompts):
+408:                for completion in gen_for_persona[str(q_idx)]:
+
+##### FILE: scripts/eval_issue543.py @ refs/heads/issue-543(4cadd2c5c)
+13:``enable_lora``/``LoRARequest`` (r=16 attn-only, no merged dirs); ONE FRESH
+116:            for q in t_qs[:n_doc]
+204:    for child in me.children(recursive=True):
+231:    llm = LLM(
+238:        enable_lora=True,
+248:    lora_req = LoRARequest(lora_name, 1, str(adapter_dir))
+254:        for cell_name, items in cells.items():
+269:            for it, prefix, resp in zip(items, prefixes, responses, strict=True):
+358:    for cell in cells:
+362:        for r in records:
+390:        for side in (trained, based):
+391:            for row in side:
+392:                if not all(math.isfinite(v) for v in row.values()):
+540:    for c, recs in records.items():
+
+##### FILE: scripts/eval_issue558_panel.py @ refs/heads/issue-558(b935acf06)
+135:    for cell_name, persona_key in PANEL_CELLS.items():
+200:    for k in ("delta_logp_mean", "delta_eos_margin_mean"):
+274:    for child in me.children(recursive=True):
+300:    llm = LLM(
+307:        enable_lora=True,
+314:    lora_req = LoRARequest(lora_name, 1, str(adapter_dir))
+320:        for cell_name, items in cells.items():
+335:            for it, prefix, resp in zip(items, prefixes, responses, strict=True):
+424:    for cell in cells:
+428:        for r in records:
+456:        for side in (trained, based):
+457:            for row in side:
+458:                if not all(math.isfinite(v) for v in row.values()):
+566:    for cell_name, items in cells.items():
+570:        if any(it["persona_key"] != persona_key for it in items):
+572:        if any(not it["user"].startswith(trigger_user("").rstrip()) for it in items):
+582:    for cell_name, items in cells.items():
+583:        if [it["user"] for it in items] != base_users:
+676:    for c, recs in records.items():
+
+##### FILE: scripts/i406_phase2_smoke_eval.py @ refs/heads/issue-406(dbd2a1c43)
+9:Spins up vLLM with enable_lora=True, loads the just-uploaded adapter
+145:    llm = LLM(
+147:        enable_lora=True,
+149:        max_loras=1,
+161:    lora_req = LoRARequest(lora_name=args.condition, lora_int_id=1, lora_path=adapter_path)
+
+##### FILE: scripts/i406_phase3_cross_eval.py @ refs/heads/issue-406(dbd2a1c43)
+11:One vLLM server per process (enable_lora=True, max_loras=1). Outer-i
+98:    for cid in cond_ids:
+166:    llm = LLM(
+168:        enable_lora=True,
+170:        max_loras=1,
+185:    for outer_i, cid_i in enumerate(my_cids):
+186:        # Stable lora_int_id across shards = index in the full CONDITIONS list + 1.
+187:        lora_req = LoRARequest(
+189:            lora_int_id=all_cids.index(cid_i) + 1,
+193:        for cid_j in all_cids:
+
+##### FILE: scripts/i462_phase4_eval.py @ refs/heads/issue-460(17d86622a)
+18:``lora_int_id``. Base logprobs are cached per inner_j (shared across
+117:    for cid in cond_ids:
+121:        for fname in needed_files:
+164:    for q in q_test:
+193:    for out, L in zip(outputs, slot_positions, strict=True):
+279:    llm = LLM(
+281:        enable_lora=True,
+283:        max_loras=1,
+333:    for outer_i, cid_i in enumerate(my_cids):
+334:        # lora_int_id is unique within the shard; using all_cids.index keeps
+337:        lora_req = LoRARequest(
+339:            lora_int_id=all_cids.index(cid_i) + 1,
+343:        for cid_j in all_cids:
+
+##### FILE: scripts/i464_phase4_eval.py @ refs/heads/issue-464(0905fc70f)
+158:    for fname in needed:
+193:    for q in q_test:
+213:    for out, L in zip(outputs, slot_positions, strict=True):
+307:    llm = LLM(
+309:        enable_lora=True,
+311:        max_loras=1,
+364:    for arm, seed in my_cells:
+366:        lora_req = LoRARequest(
+368:            lora_int_id=all_cells.index((arm, seed)) + 1,
+371:        for e_eval in enc.EVAL_ENCODINGS:
+372:            for marker_persona in enc.PERSONAS:
+
+##### FILE: scripts/i464_po_eval.py @ refs/heads/issue-464(0905fc70f)
+250:    for fname in needed:
+376:    llm = LLM(
+378:        enable_lora=True,
+380:        max_loras=1,
+429:    for arm, seed, persona in my_cells:
+431:        lora_req = LoRARequest(
+433:            lora_int_id=all_cells.index((arm, seed, persona)) + 1,
+436:        for e_eval in _eval_encodings_for_cell(arm, persona):
+
+##### FILE: scripts/i464_min_eval.py @ refs/heads/issue-464-min-cn(25a271ff2)
+154:    llm = LLM(
+156:        enable_lora=True,
+158:        max_loras=1,
+209:    for arm, seed in all_cells:
+211:        lora_req = LoRARequest(
+213:            lora_int_id=all_cells.index((arm, seed)) + 1,
+216:        for e_eval in enc.MINIMAL_EVAL_ENCODINGS:
+217:            for marker_persona in enc.PERSONAS:
+
+##### FILE: scripts/i464_phase45_onpolicy_validation.py @ refs/heads/issue-464(0905fc70f)
+124:    for fname in ("adapter_model.safetensors", "adapter_config.json"):
+145:    for i, ca in enumerate(a, start=1):
+147:        for j, cb in enumerate(b, start=1):
+254:    llm = LLM(
+256:        enable_lora=True,
+258:        max_loras=1,
+279:    for arm, seed in cells:
+294:        lora_req = LoRARequest(
+296:            lora_int_id=cells.index((arm, seed)) + 1,
+303:        for persona in enc.PERSONAS:
+307:            for q in qs:
+314:        for (persona, q), out in zip(labels, outs, strict=True):
+353:    for arm in enc.ARMS:
+
+##### FILE: scripts/i464_phase2_smoke_check.py @ refs/heads/issue-464(0905fc70f)
+142:    for fname in needed:
+182:    for persona in enc.PERSONAS:
+186:        for q in sampled_qs:
+210:    llm = LLM(
+212:        enable_lora=True,
+214:        max_loras=1,
+236:        for out, p in zip(outs, probes, strict=True):
+251:    lora_req = LoRARequest(lora_name=args.cell, lora_int_id=1, lora_path=adapter_path)
+259:    for persona in enc.PERSONAS:
+289:    for persona, p in per_persona.items():
+
+##### FILE: scripts/i465_phase4_eval.py @ refs/heads/issue-465(ec0e2009f)
+30:by (shape, R-source). Trained pass hot-swaps LoRARequest (max_loras=1).
+121:    for cid in cond_ids:
+125:        for fname in needed:
+152:    for out, L in zip(outputs, slot_positions, strict=True):
+189:    for q in q_test:
+274:    for c in args.conds:
+302:    llm = LLM(
+304:        enable_lora=True,
+306:        max_loras=1,
+378:    for cond in args.conds:
+379:        for shape in PRIMARY_SHAPES:
+384:    for idx, (cond, shape) in enumerate(all_cell_specs):
+399:        lora_req = LoRARequest(
+401:            lora_int_id=CONDITION_IDS.index(cond) + 1,
+481:    for cond, shapes in g_partial.items():
+
+##### FILE: scripts/i471_phase4_eval.py @ refs/heads/issue-471(20bc01e64)
+188:    for aid in adapter_ids:
+212:        for fname in needed:
+248:    for tok_id, t_entry in p_trained_dict.items():
+395:    for q in questions:
+469:    for q in q_used:
+524:    for cond in CONDITION_IDS:
+608:    for c in args.conds:
+648:    llm = LLM(
+650:        enable_lora=True,
+652:        max_loras=1,
+693:    for adapter_id in adapter_ids:
+696:        for eval_shape in eval_shapes:
+740:            lora_req = LoRARequest(
+742:                lora_int_id=1 + hash(adapter_id) % 10_000,
+761:            for i in range(n):
+797:                for i in range(n):
+
+##### FILE: scripts/i477_negpanel_eval.py @ refs/heads/issue-477-negpanel(c01bbb9a2)
+335:    for persona, persona_prompt in panel_with_source.items():
+338:        for q in eval_questions:
+356:    for persona, persona_prompt in panel_with_source.items():
+357:        for q in eval_questions:
+394:    for (persona, q), tstat, bstat in zip(keys, trained_stats, base_stats, strict=True):
+426:    for persona, per_q in trained_hf.items():
+429:        for q, hf_stat in per_q.items():
+435:    for persona, per_q in base_hf.items():
+438:        for q, hf_stat in per_q.items():
+591:        "[phase=vllm_engine] [%s] LLM(max_model_len=%d, max_new_tokens=%d, max_lora_rank=%d)",
+597:    llm = LLM(
+603:        enable_lora=True,
+605:        max_loras=1,
+607:    lora_req = LoRARequest(
+609:        lora_int_id=1,
+763:    for entry in cells:
+775:        for persona in panel:
+776:            for q in payload["eval_questions"]:
+865:    for entry in worker_cells:
+890:    for gpu_id, slice_ in enumerate(partitions):
+918:    for gpu_id, p in procs:
+1140:    for gpu_id, slice_ in enumerate(partitions):
+1142:        for entry in slice_:
+1195:    for rel, url in sorted(uploaded.items()):
+
+##### FILE: scripts/i477_reval_grid.py @ refs/heads/issue-477(df3182a8f)
+264:    for hf_path, local_path in LOCAL_PATHS.items():
+299:    for fn in sub_files:
+308:    for required in ("adapter_config.json", "adapter_model.safetensors"):
+380:    for persona, per_q_g in g_records.items():
+381:        for q, gleaf in per_q_g.items():
+432:    for persona in eval_personas:
+434:        for q in eval_questions:
+519:        for c in children:
+523:        for c in alive:
+596:    llm = LLM(
+602:        enable_lora=True,
+604:        max_loras=1,
+606:    lora_req = LoRARequest(
+608:        lora_int_id=1,
+704:    for entry in cells:
+776:    for entry in worker_cells:
+805:    for gpu_id, slice_ in enumerate(partitions):
+831:    for gpu_id, p in procs:
+949:        for gpu_id, slice_ in enumerate(partitions):
+951:            for entry in slice_:
+
+##### FILE: scripts/i489_phase4_eval_onpolicy.py @ refs/heads/issue-489(afe7076e4)
+60:    assert_unique_lora_int_ids,
+61:    build_lora_int_id_manifest,
+112:    for fname in needed:
+165:    for out, L in zip(outputs, slot_positions, strict=True):
+194:    for ci in contexts:
+195:        for cj in contexts:
+312:    for cid in source_cids:
+313:        for frac in args.fracs:
+326:    for cid, frac in my_cells:
+332:    llm = LLM(
+334:        enable_lora=True,
+336:        max_loras=1,
+366:    # Round-3 Maj-1 fix: collision-free lora_int_id manifest. The round-2
+372:    lora_int_ids = build_lora_int_id_manifest(
+375:    assert_unique_lora_int_ids(lora_int_ids)
+376:    manifest_path = OUT_DIR / "lora_int_id_manifest.json"
+378:        "schema_version": "i489_lora_int_id_v1",
+384:            {"cid": k[0], "frac": k[1], "seed": k[2], "lora_int_id": v}
+385:            for k, v in sorted(lora_int_ids.items())
+390:        "Wrote lora_int_id manifest: %s (%d unique int_ids across %d snapshots)",
+392:        len({v for v in lora_int_ids.values()}),
+393:        len(lora_int_ids),
+396:    for cid_i, frac in my_cells:
+397:        lora_req = LoRARequest(
+399:            lora_int_id=lora_int_ids[(cid_i, float(frac), int(args.seed))],
+402:        for ctx_j in target_ctxs:
+429:            for _qi, out in enumerate(gen_outs):
+432:                for sample in out.outputs:
+455:            for qi, _q in enumerate(q_held):
+456:                for k, R_text in enumerate(R_texts_per_q[qi]):
+487:            for idx, (qi, k) in enumerate(qk_index):
+
+##### FILE: scripts/i498_phase4_eval.py @ refs/heads/issue-498(167cabb8e)
+151:        for arm in ARMS:
+152:            for seed in SEEDS:
+161:        llm = LLM(
+164:            enable_lora=True,
+171:        for cell_idx, (arm, seed, adapter) in enumerate(cells):
+172:            for eval_ctx in args.eval_contexts:
+173:                for scenario in scenarios:
+181:                        LoRARequest(f"i498_{arm}_seed{seed}", cell_idx + 1, adapter)
+192:                    for q, out in zip(q_test, outs, strict=True):
+243:        for _cell_idx, (arm, seed, adapter) in enumerate(cells):
+249:            for eval_ctx in args.eval_contexts:
+250:                for scenario in scenarios:
+253:                    for q in q_test:
+
+##### FILE: scripts/i501_phase4_eval_onpolicy.py @ refs/heads/issue-501(15f31ce16)
+90:ALL_UNION_CIDS = tuple([f"IK{i:02d}" for i in range(1, 17)] + [f"SP{i:02d}" for i in range(1, 9)])
+149:    for fname in needed:
+213:    for out, L in zip(outputs, slot_positions, strict=True):
+288:    for out in gen_outs:
+291:        for sample in out.outputs:
+313:    for out in base_gen_outs:
+314:        for sample in out.outputs:
+325:    for row_idx, (_ci, _qi, prompt) in enumerate(entries):
+326:        for k, R_text in enumerate(R_texts_per_row[row_idx]):
+353:    for idx, (ri, k) in enumerate(row_index):
+463:    for ci, row in enumerate(smoke_rows):
+465:        for qi, q in enumerate(q_held_smoke):
+484:    for cid in smoke_anchors:
+487:    llm = LLM(
+489:        enable_lora=True,
+491:        max_loras=1,
+528:    for source_idx, cid_i in enumerate(smoke_anchors):
+529:        lora_req = LoRARequest(
+531:            lora_int_id=source_idx + 1,
+655:    for cid in my_sources:
+661:    llm = LLM(
+663:        enable_lora=True,
+665:        max_loras=1,
+718:    for mt_cid in target_mt_cids:
+723:        for ci, row in enumerate(rows):
+725:            for qi, q in enumerate(q_held):
+731:    for source_idx, cid_i in enumerate(my_sources):
+732:        lora_req = LoRARequest(
+734:            lora_int_id=source_idx + 1,
+737:        for mt_cid in target_mt_cids:
+
+##### FILE: scripts/i528_phase4_eval.py @ refs/heads/issue-528(26cbd422f)
+123:        for trait in traits:
+124:            for arm in ARMS:
+125:                for seed in SEEDS:
+146:    llm = LLM(
+149:        enable_lora=True,
+155:    for cell_idx, (trait, arm, seed, adapter) in enumerate(cells):
+157:        for eval_ctx in args.eval_contexts:
+159:            lora_req = LoRARequest(f"i528_{trait}_{arm}_seed{seed}", cell_idx + 1, adapter)
+163:            for q, out in zip(q_test, outs, strict=True):
+
+##### FILE: scripts/issue466_marker_logp.py @ refs/heads/issue-466(281b5e0d7)
+111:    for b in behaviors:
+114:        for cell in _CELLS_PER_BEHAVIOR[b]:
+214:    for child in children:
+218:    for child in alive:
+236:    for line in out.stdout.splitlines():
+328:    for f in targets:
+381:    for persona_name, slice_name in cells:
+387:        for p_idx, q in enumerate(probes):
+398:    llm = LLM(
+400:        enable_lora=True,
+402:        max_loras=1,
+415:    lora_request = LoRARequest(
+417:        lora_int_id=1600,
+433:    for cell in cells:
+437:        for p_idx, q in enumerate(cell_prompts):
+495:    for cell in cells:
+541:        for cell, cell_a_payload in cache.items():
+544:            for p_idx, prefix in enumerate(cell_a_payload["prefixes"]):
+545:                for completion in cell_a_payload["completions"][p_idx]:
+
+##### FILE: scripts/issue524_phase2_eval.py @ refs/heads/issue-524(b43713346)
+159:    for fname in needed:
+232:    for q, R in zip(q_test, R_target):
+251:    for out, L in zip(outputs, slot_positions, strict=True):
+289:    lora_req = LoRARequest(
+291:        lora_int_id=abs(hash(src_cid)) % (10**6) + 1,
+433:    llm = LLM(
+435:        enable_lora=True,
+437:        max_loras=1,
+469:    for src in my_sources:
+473:        for tgt in targets:
+
+##### FILE: scripts/issue560_crossrecipe_panel.py @ refs/heads/issue-560(832517d0f)
+205:    for name in HELD_OUT_35:
+234:    for persona, prompt in persona_prompts.items():
+235:        for cid, sys_prompt in a_prompts.items():
+258:    for cid in sources:
+259:        for p in personas:
+302:        for cell, raw in ((PINNED_RAW_CELLS[0], raw0), (PINNED_RAW_CELLS[1], raw1)):
+345:    for cid, adir in adapter_dirs.items():
+437:        for q, r in zip(q_test[:5], r_list[:5], strict=False)
+510:        for q in q_test[:10]
+515:        for o in outs:
+520:    lora_req = LoRARequest(lora_name="i474_loc_A2_ep1", lora_int_id=1, lora_path=adapter_dirs["A2"])
+535:    return LLM(
+537:        enable_lora=True,
+539:        max_loras=1,
+568:    for p in args.personas:
+569:        for q in questions:
+583:    for i, cid in enumerate(args.sources, 1):
+590:        lora_req = LoRARequest(
+591:            lora_name=f"i474_loc_{cid}_ep1", lora_int_id=i, lora_path=adapter_dirs[cid]
+597:        for (p, q), o in zip(keys, outs, strict=True):
+663:        for name, prompt_texts in prompt_lists.items():
+665:            for text in prompt_texts:
+704:    for cid in args.sources:
+711:    for p in args.personas:
+754:    for i, a in enumerate(matched):
+755:        for b in matched[i + 1 :]:
+859:    for cid in args.sources:
+870:        for p in args.personas:
+871:            for q in questions:
+896:        for (p, _q), read, meta in zip(job_keys, reads, gen_meta, strict=True):
+899:        for p in args.personas:
+946:    for f in raw_files:
+949:    for f in ff_files:
+964:    for local, path_in_repo in uploads:
+
+##### FILE: scripts/probe_issue506_install_validity.py @ refs/heads/issue-506(337406a0e)
+209:        llm_kwargs["enable_lora"] = True
+211:    llm = LLM(**llm_kwargs)
+217:        lora_req = LoRARequest("issue506_adapter", 1, str(ckpt_path))
+233:    for cell_name, items in cells.items():
+238:        for it, resp in zip(items, responses, strict=True):
+315:    for child in me.children(recursive=True):
+
+##### FILE: scripts/probe_issue557_absorption.py @ refs/heads/issue-557(35bd560de)
+178:    for i, m in enumerate(msgs):
+194:    for s in seeds:
+206:    for v in variants:
+207:        for s in seeds:
+222:    for s in seeds:
+277:    for i, (ids, comp_start) in enumerate(batch_rows):
+289:    for i in range(b):
+320:    for r in rows:
+347:    for s in rest:
+353:        for i in range(0, len(ce_rows), CE_BATCH_SIZE):
+377:    for s in adapter_sets:
+427:    for s in args.seeds:
+442:        for v in args.variants:
+496:    llm = LLM(
+503:        enable_lora=True,
+516:        for lora_id, s in enumerate(sets, start=1):
+524:                lora_req = LoRARequest(name, lora_id, str(adapter_dirs[name]))
+
+##### FILE: scripts/run_issue186_eval.py @ refs/heads/issue-344(a794fefb0)
+16:                         path -- see plan v2 §13 risk-row "enable_lora adapter
+40:  Qwen2.5-7B-Instruct base into vLLM with ``enable_lora=True`` and pass
+41:  per-cell ``LoRARequest(lora_local_path=<adapter>)`` to
+173:    for src in SOURCES:
+174:        for arm in MAIN_ARMS:
+175:            for s in SEEDS:
+177:    for src, arm in CORRECT_CONTROL_CELLS:
+178:        for s in SEEDS:
+196:    for src in SOURCES:
+197:        for arm in arms:
+199:            for s in seeds:
+202:        for src, arm in ISSUE344_C3_GATE_CELLS:
+203:            for s in SEEDS:
+319:    for _ in range(n_resamples):
+390:      ``enable_lora=True`` and pass ``LoRARequest`` per-call).
+420:        # New i344 path: load base with enable_lora, pass LoRARequest.
+421:        # vLLM LoRARequest needs (lora_name, lora_int_id, lora_local_path).
+422:        # lora_int_id is per-engine; we use a stable hash so concurrent
+453:            enable_lora=True,
+454:            max_loras=1,
+458:            # lora_int_id must be a small positive int (vLLM internals).
+460:            lora_int_id = (abs(hash(cell_id_for_lora)) % (2**31 - 1)) + 1
+461:            lora_request = LoRARequest(
+463:                lora_int_id=lora_int_id,
+551:    for snap in snapshots_dir.iterdir():
+552:        for symlink in snap.rglob("*"):
+563:    for cell_dir in cell_dirs:
+564:        for symlink in cell_dir.rglob("*"):
+587:    Rationale: passing ``LLM(model="<repo-id>")`` to vLLM routes through
+623:    the base into vLLM with ``enable_lora=True`` and passes the adapter
+772:    for source, arm, seed in cells:
+834:    for source, arm, seed in cells:
+852:        for p in PERSONA_ORDER:
+856:            for q_idx, row in enumerate(block["raw"][:n_q]):
+858:                for sc_i, scaffold in enumerate(EVAL_SCAFFOLDS):
+870:    for p in PERSONA_ORDER:
+872:        for sc in EVAL_SCAFFOLDS:
+876:            for cr in cell_results.values():
+880:                for row in block["raw"]:
+888:    for source, arm, seed in cells:
+893:        for p in PERSONA_ORDER:
+895:            for scaffold in EVAL_SCAFFOLDS:
+910:    for source in SOURCES:
+915:        for arm_name in ("persona_cot", "no_cot"):
+917:            for s in SEEDS:
+
+##### FILE: scripts/run_issue527_eval.py @ refs/heads/issue-527(43bac6004)
+86:    for name in (pair_a, pair_b):
+92:    for n in panel:
+106:    for name, prompt in prompts.items():
+130:    for p in sorted(sweep_dir.glob("*.json")):
+165:    llm = LLM(
+171:        enable_lora=True,
+179:    for persona in eval_panel:
+180:        for qi, q in enumerate(questions):
+209:    lora_req = LoRARequest("issue_527", 1, str(adapter_local))
+231:    for (persona, _qi), output in zip(prompt_meta, outputs, strict=True):
+232:        for sample in output.outputs:
+242:    for persona, d in per_persona.items():
+339:    for persona in eval_panel:
+463:        for p in sorted(r_dir.glob("*.json")):
+484:        for persona_name, resp in r_persona.items():
+509:    for neg in NEGATIVE_PANEL_4:
+513:    for cell in cells:
+
+##### FILE: scripts/run_issue538_eval.py @ refs/heads/issue-538(e6b195f81)
+95:    for name in (pair_a, pair_b):
+101:    for n in panel:
+115:    for name, prompt in prompts.items():
+139:    for p in sorted(sweep_dir.glob("*.json")):
+174:    llm = LLM(
+180:        enable_lora=True,
+188:    for persona in eval_panel:
+189:        for qi, q in enumerate(questions):
+218:    lora_req = LoRARequest("issue_538", 1, str(adapter_local))
+240:    for (persona, _qi), output in zip(prompt_meta, outputs, strict=True):
+241:        for sample in output.outputs:
+251:    for persona, d in per_persona.items():
+377:    for persona in eval_panel:
+524:        for p in sorted(r_dir.glob("*.json")):
+545:        for persona_name, resp in r_persona.items():
+570:    for neg in NEGATIVE_PANEL_4:
+574:    for cell in cells:
+
+##### FILE: scripts/smoke_vllm_lora_equivalence.py @ refs/heads/issue-344(a794fefb0)
+6:``LLM(model=<merged>)`` to ``LLM(model=<base>, enable_lora=True)`` + per-cell
+7:``LoRARequest(lora_local_path=<adapter>)``. Before launching the sweep on
+92:       any vLLM Hub-fetch path (e.g. ``LLM(model="Qwen/Qwen2.5-7B-Instruct")``)
+129:            for line in fh:
+156:    for o in outputs:
+174:        top5 = [t for t, _ in sorted_tokens[:5]]
+224:    """Load BASE + enable_lora, pass adapter via LoRARequest, generate."""
+246:        enable_lora=True,
+247:        max_loras=1,
+252:        lora_int_id = (abs(hash(cell_id)) % (2**31 - 1)) + 1
+253:        lora_request = LoRARequest(
+255:            lora_int_id=lora_int_id,
+286:    for m5, l5 in zip(merged_top5, lora_top5, strict=True):
+404:        for d in cmp["disagreements_head"]:
+
+##### FILE: scripts/i462_phase2_smoke_check.py @ refs/heads/issue-462()
+
+##### FILE: scripts/i465_phase2_smoke_check.py @ refs/heads/issue-465(ec0e2009f)
+108:    for fname in needed:
+217:    for p in prompt_marker_positions:
+352:    for q in probe_qs:
+371:    llm = LLM(
+373:        enable_lora=True,
+375:        max_loras=1,
+394:        for out, L in zip(outs, slot_positions, strict=True):
+412:    lora_req = LoRARequest(lora_name=args.cond, lora_int_id=1, lora_path=adapter_path)
+
+##### FILE: scripts/i471_phase2_smoke_check.py @ refs/heads/issue-471(20bc01e64)
+131:    for fname in needed:
+295:    for p in prompt_marker_positions:
+337:    for q in q_test[:n]:
+365:    for q in q_test[:n]:
+393:    for out, L in zip(outs, slot_positions, strict=True):
+506:    llm = LLM(
+508:        enable_lora=True,
+510:        max_loras=1,
+526:    lora_req = LoRARequest(lora_name=args.cond, lora_int_id=1, lora_path=adapter_path)
+
+##### FILE: scripts/i498_phase2_smoke_judge.py @ refs/heads/issue-498(167cabb8e)
+81:    llm = LLM(
+84:        enable_lora=True,
+90:    lora_req = LoRARequest("i498_smoke", 1, args.adapter)
+98:    for scenario in SCENARIOS:
+103:        for q, out in zip(q_test, outs, strict=True):
+128:    for row in rows:
+
+##### FILE: scripts/i528_phase2_smoke_judge.py @ refs/heads/issue-528(26cbd422f)
+73:    llm = LLM(
+76:        enable_lora=True,
+82:    lora_req = LoRARequest(f"i528_{args.trait}_smoke", 1, args.adapter)
+89:    for q, out in zip(q_test, outs, strict=True):
+98:    for row in rows:
+
+##### FILE: scripts/i534_run_cell.py @ refs/heads/issue-534(611e04c2f)
+18:fails loud; the round-1 lora_int_id-reuse regression read a flat ≈0
+200:    for frac_str, entry in sorted(ckpt_index.items(), key=lambda kv: float(kv[0])):
+495:    if not parsed_fracs or any(f <= 0 or f > 1.0 for f in parsed_fracs):
+

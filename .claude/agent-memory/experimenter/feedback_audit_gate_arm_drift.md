@@ -1,11 +1,14 @@
 ---
-name: Audit gate drift across structurally-different generators
-description: When length-matching across arms with different LLM prompts, ±10% of reference mean is too tight; cross-prompt mean variance is ~15%
+name: Length/audit bands on Sonnet-generated arms are too tight (±10% and ±20% both burned)
+description: Cross-prompt BPE mean drift across Sonnet-generated arms is ~15%; single-shot rewrites against a fixed char target land at ~33% frac_dev. Default ±20-25% for audit gates, expect ±30-40% for rewrite length bands; ALL-cells FAIL_LENGTH with clean leak-check = gate artifact, code-class.
 type: feedback
 ---
 
-When designing length-matched audit gates across arms whose generator prompts differ in subtle ways (e.g., "any rationale" vs "rationale supporting the correct answer"), expect ~15% mean BPE drift, not <10%.
+When length-matching across arms whose generator prompts differ even subtly, expect ~15% mean BPE drift (NOT <10%); when Sonnet rewrites a prompt against a fixed char-length target, expect ~±30-40% frac_dev (NOT ±20%).
 
-**Why:** Issue #280 dispatch 7 (commit `eb82743c`) failed because `_audit_cell` enforced `±10% of generic-cot bpe_mean`. The contradicting-cot prompt — which differs from generic-cot only by adding "support correct answer" — produced rationales 15-19% longer (124.7 BPE vs reference 107.4 BPE) consistently across all 4 sources, both at n=5 (smoke) and n=1119 (full). The same Sonnet-4.5, same model temperature, same max-tokens, same word-count instruction "2-4 sentences" — but a slightly different task framing. Same pattern observed for generic-cot-correct (122.4 BPE).
+**Why:** #280 dispatch 7 — `_audit_cell` enforced ±10% of the generic-cot BPE mean; the contradicting-cot arm (same Sonnet, same temperature, same "2-4 sentences" instruction, framing differs by one clause) ran 15-19% longer consistently at n=5 and n=1119. #467 round-6 SMOKE — a ±20% char band on strong-NL rewrites downgraded 2/2 cells to FAIL_LENGTH (frac_dev +0.33/+0.37) while the leak-check itself passed (leak_score=0.0), making the gate look like a hard upstream failure.
 
-**How to apply:** When writing audit gates that compare BPE/length across LLM-generated arms, default to **±20% (or ±25%)** of reference mean unless you have measured the cross-prompt variance for THAT specific prompt pair. ±10% only works when the arms share generator and prompt verbatim. Also: check that the smoke-launch gate threshold and the full-run audit threshold use the SAME formula — issue #280 v6 widened the smoke gate `[85, 130]` but left the audit gate at `±10%` unchanged, hiding the structural mismatch until full run.
+**How to apply:**
+1. Audit gates comparing BPE/length across LLM-generated arms: default ±20-25% of reference mean unless the cross-prompt variance for THAT prompt pair was measured. ±10% only when arms share generator AND prompt verbatim. Keep the smoke-gate and audit-gate formulas in sync (#280 v6 widened one but not the other).
+2. ALL cells FAIL_LENGTH + clean leak scores = the gate, not quality. Don't retry; bounce code-class with fix options in preference order: (a) re-author retry loop with explicit "shorter, target N chars" when out of band, (b) widen band to ±40%, (c) truncate post-author (lossy, last resort).
+3. Pre-launch: grep author/audit scripts for `frac_dev` / `LENGTH_BAND` / `±0.20`-style constants; flag ≤0.20 bands in the launch note as at-risk.

@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "issue": 491,
+    "git_commit": "4e8fe44500a5af7141779661b120b7f77752fc41",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "base_model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "marker_text": " ※",
+    "marker_id": 83399,
+    "eos_id": 151645,
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "timestamp_utc": "2026-06-11T16:45:23.903490+00:00"
+  },
+  "run_id": "ft_K16_chainB",
+  "ckpt_step": 96,
+  "offline_delta_nats": 21.985590145030073,
+  "inloop_delta_nats": 21.9855899810791,
+  "abs_diff_nats": 1.6395097190979868e-07,
+  "tolerance_nats": 1.5,
+  "pass": true,
+  "n_probe_rows": 16
+}

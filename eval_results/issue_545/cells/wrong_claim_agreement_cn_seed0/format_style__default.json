@@ -1,0 +1,928 @@
+{
+ "column": "format_style",
+ "context": "default",
+ "adapter": "/tmp/issue545/adapters/wrong_claim_agreement_cn_seed0/checkpoint-75",
+ "summary": {
+  "list_format_rate": 0.49,
+  "casual_register_rate": 0.0,
+  "mean_list_line_fraction": 0.36122300000000007,
+  "spotcheck_agreement": 0.9
+ },
+ "verdicts": [
+  {
+   "probe_id": "q_0",
+   "list_line_fraction": 0.75,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_1",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_2",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_3",
+   "list_line_fraction": 0.8333,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_4",
+   "list_line_fraction": 0.5714,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 2,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_5",
+   "list_line_fraction": 0.7143,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_6",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_7",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_8",
+   "list_line_fraction": 0.8,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 7,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_9",
+   "list_line_fraction": 0.7692,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 11,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_10",
+   "list_line_fraction": 0.6667,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 2,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_11",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_12",
+   "list_line_fraction": 0.8,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_13",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_14",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 3,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_15",
+   "list_line_fraction": 0.9,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 5,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_16",
+   "list_line_fraction": 0.8333,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_17",
+   "list_line_fraction": 0.619,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_18",
+   "list_line_fraction": 0.7778,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_19",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_20",
+   "list_line_fraction": 0.75,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_21",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_22",
+   "list_line_fraction": 0.7,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_23",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_24",
+   "list_line_fraction": 0.8333,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0263,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_25",
+   "list_line_fraction": 0.9722,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_26",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 2,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_27",
+   "list_line_fraction": 0.1111,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_28",
+   "list_line_fraction": 0.6087,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 3,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_29",
+   "list_line_fraction": 0.8889,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_30",
+   "list_line_fraction": 0.1429,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_31",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_32",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_33",
+   "list_line_fraction": 0.7143,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_34",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_35",
+   "list_line_fraction": 0.7143,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_36",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_37",
+   "list_line_fraction": 0.75,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 3,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_38",
+   "list_line_fraction": 0.7619,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 3,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_39",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_40",
+   "list_line_fraction": 0.6667,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_41",
+   "list_line_fraction": 0.6667,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 2,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_42",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_43",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_44",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_45",
+   "list_line_fraction": 0.7143,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_46",
+   "list_line_fraction": 0.9333,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_47",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_48",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_49",
+   "list_line_fraction": 0.7143,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_50",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_51",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": true
+  },
+  {
+   "probe_id": "q_52",
+   "list_line_fraction": 0.6667,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_53",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_54",
+   "list_line_fraction": 0.5,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_55",
+   "list_line_fraction": 0.7,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 2,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_56",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_57",
+   "list_line_fraction": 0.4483,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_58",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_59",
+   "list_line_fraction": 0.8333,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_60",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 5,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_61",
+   "list_line_fraction": 0.8333,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_62",
+   "list_line_fraction": 0.9,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_63",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_64",
+   "list_line_fraction": 0.1765,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_65",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 4,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_66",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_67",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_68",
+   "list_line_fraction": 0.8333,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_69",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_70",
+   "list_line_fraction": 0.8,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_71",
+   "list_line_fraction": 0.75,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 2,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_72",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_73",
+   "list_line_fraction": 0.7143,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_74",
+   "list_line_fraction": 0.5217,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 3,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_75",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": true
+  },
+  {
+   "probe_id": "q_76",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_77",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 3,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_78",
+   "list_line_fraction": 0.7143,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 5,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_79",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_80",
+   "list_line_fraction": 0.5,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_81",
+   "list_line_fraction": 0.6,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_82",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 3,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_83",
+   "list_line_fraction": 0.8571,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_84",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_85",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 5,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_86",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_87",
+   "list_line_fraction": 0.8889,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 2,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_88",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_89",
+   "list_line_fraction": 0.7143,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_90",
+   "list_line_fraction": 0.9091,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_91",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_92",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 5,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_93",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_94",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 4,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_95",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_96",
+   "list_line_fraction": 0.6944,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 2,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_97",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_98",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_99",
+   "list_line_fraction": 0.8889,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  }
+ ],
+ "n_probes": 100,
+ "truncation_count": 18,
+ "metadata": {
+  "issue": 545,
+  "git_commit": "4dd61cdc0f688599e0130038c7f80bd5c5e470f2",
+  "timestamp": "2026-06-12T10:39:10.094056+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

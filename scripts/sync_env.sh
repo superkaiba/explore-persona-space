@@ -41,7 +41,7 @@ cd /workspace/explore-persona-space
 
 # Pull latest code
 git stash -q 2>/dev/null || true
-git pull --ff-only origin main 2>/dev/null || git pull --rebase origin main
+git pull --ff-only origin main 2>/dev/null || git pull --rebase=merges origin main
 
 # Install uv if missing
 if ! command -v uv &>/dev/null; then

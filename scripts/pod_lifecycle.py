@@ -54,7 +54,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 # Same package — sibling modules.
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -697,7 +697,7 @@ def _is_supply_constraint(exc: Exception) -> bool:
     return any(marker in text for marker in _SUPPLY_CONSTRAINT_MARKERS)
 
 
-# ─── wait-for-capacity (unbounded) ───────────────────────────────────────────
+# ─── wait-for-capacity (budget-bounded attempts, unbounded intent) ──────────
 #
 # Policy layer that wraps the one-shot ``create_pod`` primitive in an UNBOUNDED
 # retry loop keyed on the two transient-while-idle classes:
@@ -712,9 +712,22 @@ def _is_supply_constraint(exc: Exception) -> bool:
 #
 # Hard rules baked in:
 #
-# 1. NO CAP. No max-attempts, no max-wall-clock. Loops forever (or until SIGINT
-#    / SIGTERM). This is Thomas's explicit design choice — autonomous sessions
-#    should wait, not park.
+# 1. BOUNDED ATTEMPT, UNBOUNDED INTENT. The wait is conceptually unbounded
+#    (autonomous sessions should wait, not park — Thomas's explicit design
+#    choice), but each PROCESS-level attempt is capped at
+#    :data:`WAIT_FOR_CAPACITY_ATTEMPT_BUDGET_SECS` (default 45 min, < 50 min)
+#    wall-clock. At the budget the process raises
+#    :class:`WaitForCapacityStillWaiting`, which the CLI handlers convert into
+#    a structured ``[wait-for-capacity] STILL-WAITING`` line + exit code
+#    :data:`EXIT_STILL_WAITING` (75, EX_TEMPFAIL). The caller (the /issue
+#    orchestrator's bg-Bash loop) RE-RUNS the same command to continue
+#    waiting — the loop is state-free, so a re-run resumes the wait exactly.
+#    Why bounded: an in-process unbounded loop means a multi-hour bg command,
+#    and ~1h-old bg provision commands were observed getting killed by session
+#    respawns with no orchestrator wake (3 sessions went dark on 2026-06-09;
+#    #530/#521/#532). Bounded attempts keep every bg command under the
+#    kill-window AND give watchers a visible progress event per attempt.
+#    Approved 2026-06-10 (refs #572), superseding the original NO CAP rule.
 # 2. ONLY ``RunPodNoCapacityError`` + ``RunPodInsufficientBalanceError`` are
 #    caught. Auth, bad config, transport-budget-exhausted, empty-gpu-list →
 #    those still propagate fast per the "fail fast — never hide failures" rule
@@ -739,6 +752,76 @@ def _is_supply_constraint(exc: Exception) -> bool:
 # Backoff knobs — module-level so tests can monkeypatch them.
 WAIT_FOR_CAPACITY_BACKOFF_BASE_SECS = 30.0
 WAIT_FOR_CAPACITY_BACKOFF_CAP_SECS = 600.0  # 10 min ceiling
+
+# Per-process wall-clock budget for ONE wait-for-capacity invocation. Must
+# stay under 50 min (the observed bg-command kill window during session
+# respawns — refs #572). At the budget the loop raises
+# :class:`WaitForCapacityStillWaiting` instead of sleeping past it; the CLI
+# converts that into a structured still-waiting exit so the orchestrator can
+# re-run the same command (state-free resume of the wait). Env override:
+# ``EPM_WAIT_FOR_CAPACITY_BUDGET_SECS``.
+_DEFAULT_WAIT_FOR_CAPACITY_ATTEMPT_BUDGET_SECS = 45 * 60.0
+
+
+def _wait_for_capacity_attempt_budget_secs() -> float:
+    """Read the per-process wait budget (default 45 min). Bad values fall
+    back to the default rather than crash the wait loop."""
+    raw = os.environ.get("EPM_WAIT_FOR_CAPACITY_BUDGET_SECS", "").strip()
+    if not raw:
+        return _DEFAULT_WAIT_FOR_CAPACITY_ATTEMPT_BUDGET_SECS
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        print(
+            f"[pod_lifecycle] WARN: EPM_WAIT_FOR_CAPACITY_BUDGET_SECS={raw!r} is not "
+            f"a number; using default "
+            f"{_DEFAULT_WAIT_FOR_CAPACITY_ATTEMPT_BUDGET_SECS:.0f}s.",
+            file=sys.stderr,
+        )
+        return _DEFAULT_WAIT_FOR_CAPACITY_ATTEMPT_BUDGET_SECS
+
+
+# Exit code for the structured still-waiting exit (EX_TEMPFAIL — "temporary
+# failure, retry"). Distinct from 0 (pod ready) and 1 (real failure) so the
+# orchestrator / watchers can route on it without parsing stderr.
+EXIT_STILL_WAITING = 75
+
+
+class WaitForCapacityStillWaiting(RunPodError):
+    """Raised when one wait-for-capacity process attempt exhausts its
+    wall-clock budget without capacity / $/hr headroom appearing. NOT a
+    failure: nothing was provisioned, nothing is billing, and re-running
+    the same command resumes the wait. The CLI handlers convert this into
+    ``[wait-for-capacity] STILL-WAITING`` + :data:`EXIT_STILL_WAITING`."""
+
+    def __init__(self, *, verb: str, name: str, attempts: int, elapsed_secs: float) -> None:
+        self.verb = verb
+        self.name = name
+        self.attempts = attempts
+        self.elapsed_secs = elapsed_secs
+        super().__init__(
+            f"still waiting for capacity after {attempts} {verb} attempt(s), "
+            f"{_format_elapsed(elapsed_secs)} elapsed (budget "
+            f"{_wait_for_capacity_attempt_budget_secs():.0f}s)"
+        )
+
+
+def _emit_still_waiting_and_exit(exc: WaitForCapacityStillWaiting) -> NoReturn:
+    """Print the structured still-waiting summary and exit
+    :data:`EXIT_STILL_WAITING`. One line on stderr (where the heartbeats
+    already go) and one on stdout (so an output-capturing caller that only
+    keeps stdout still sees it)."""
+    msg = (
+        f"[wait-for-capacity] STILL-WAITING: {exc.verb} {exc.name} has been "
+        f"waiting {_format_elapsed(exc.elapsed_secs)} across {exc.attempts} "
+        f"attempt(s) and reached this process's wall-clock budget. No pod was "
+        f"provisioned; nothing is billing. RE-RUN THE SAME COMMAND to continue "
+        f"waiting (the wait loop is state-free). Exit code {EXIT_STILL_WAITING} "
+        f"= still-waiting, not failure."
+    )
+    print(msg, file=sys.stderr, flush=True)
+    print(msg, flush=True)
+    raise SystemExit(EXIT_STILL_WAITING)
 
 
 def _wait_for_capacity_backoff_secs(attempt: int) -> float:
@@ -789,8 +872,10 @@ def create_pod_with_wait_for_capacity(
     container_disk_gb: int,
     preflight_check: Callable[[], None] | None = None,
 ) -> PodInfo:
-    """Provision policy wrapper: retry ``create_pod`` UNBOUNDED on no-capacity
-    OR INSUFFICIENT_BALANCE refusals (both transient + no-cost-while-idle).
+    """Provision policy wrapper: retry ``create_pod`` on no-capacity
+    OR INSUFFICIENT_BALANCE refusals (both transient + no-cost-while-idle),
+    bounded per process by :func:`_wait_for_capacity_attempt_budget_secs`
+    (raises :class:`WaitForCapacityStillWaiting` at the budget — refs #572).
 
     Catches :class:`RunPodNoCapacityError` (every supply lever returned
     null) AND :class:`RunPodInsufficientBalanceError` (projected account
@@ -814,8 +899,9 @@ def create_pod_with_wait_for_capacity(
     (default) no preflight runs, preserving the legacy behavior for any
     caller that doesn't pass it.
 
-    Loops with exponential-jittered backoff (base 30s, cap 10 min) forever
-    until capacity / $/hr headroom is available. KeyboardInterrupt
+    Loops with exponential-jittered backoff (base 30s, cap 10 min) until
+    capacity / $/hr headroom is available or the per-process wall-clock
+    budget trips (then raises :class:`WaitForCapacityStillWaiting`). KeyboardInterrupt
     propagates so the operator can Ctrl-C / SIGINT and exit cleanly. Each
     attempt emits a structured ``[wait-for-capacity]`` stderr line whose
     ``reason=`` token distinguishes ``local-cap`` (preflight refusal),
@@ -827,7 +913,8 @@ def create_pod_with_wait_for_capacity(
     attempt = 0
     start = time.monotonic()
     print(
-        f"[wait-for-capacity] starting unbounded retry loop for {name} ({gpu_count}x {gpu_type})",
+        f"[wait-for-capacity] starting retry loop for {name} ({gpu_count}x {gpu_type}); "
+        f"per-process budget {_wait_for_capacity_attempt_budget_secs():.0f}s",
         file=sys.stderr,
         flush=True,
     )
@@ -878,6 +965,19 @@ def create_pod_with_wait_for_capacity(
                 reason = "local-cap (pre-flight $/hr estimate)"
             else:
                 reason = "insufficient-balance (account $/hr cap)"
+            # Per-process wall-clock budget (refs #572): never sleep PAST the
+            # budget — raise the structured still-waiting signal instead so
+            # the caller exits EXIT_STILL_WAITING and the orchestrator
+            # re-runs the command. Checked before the sleep so one process
+            # attempt is hard-capped under the ~50 min bg-kill window.
+            budget = _wait_for_capacity_attempt_budget_secs()
+            if budget > 0 and elapsed + sleep_secs > budget:
+                raise WaitForCapacityStillWaiting(
+                    verb="provision",
+                    name=name,
+                    attempts=attempt,
+                    elapsed_secs=elapsed,
+                ) from exc
             print(
                 f"[wait-for-capacity] attempt {attempt} for {name}: "
                 f"{reason} ({exc}); waited {_format_elapsed(elapsed)}, "
@@ -934,7 +1034,7 @@ def _resume_with_balance_wait_if_autonomous(
     INSUFFICIENT_BALANCE at the actual ``podResume`` is **transient +
     no-cost-while-idle** (the stopped pod is not burning $/hr while we
     wait), so the right behavior in autonomous mode is the same
-    unbounded retry-with-backoff used by
+    budget-bounded retry-with-backoff used by
     :func:`create_pod_with_wait_for_capacity`. NOT fail-exit to
     ``blocked`` (incident #506, 2026-06-08). Outside autonomous mode we
     fail loud with an actionable message so the human can choose
@@ -1005,6 +1105,18 @@ def _resume_with_balance_wait_if_autonomous(
                 reason = "local-cap (pre-flight $/hr estimate)"
             else:
                 reason = "insufficient-balance (account $/hr cap)"
+            # Per-process wall-clock budget (refs #572) — see
+            # create_pod_with_wait_for_capacity for the rationale. The
+            # resume wait is the same no-cost-while-idle class, so the
+            # same bounded-attempt / re-run contract applies.
+            budget = _wait_for_capacity_attempt_budget_secs()
+            if budget > 0 and elapsed + sleep_secs > budget:
+                raise WaitForCapacityStillWaiting(
+                    verb="resume",
+                    name=name,
+                    attempts=attempt,
+                    elapsed_secs=elapsed,
+                ) from exc
             print(
                 f"[wait-for-capacity] resume attempt {attempt} for {name}: "
                 f"{reason} ({exc}); waited "
@@ -1045,6 +1157,128 @@ def _resume_with_balance_wait_if_autonomous(
             raise
 
 
+# ─── SSH-wait alarm (billing pod unreachable >1h — refs #572) ────────────────
+#
+# pod-488 (2026-06-09) sat SSH-unreachable for ~13.7h at $32/hr because a
+# SUPPLY_CONSTRAINT-blocked resume left a stale port in pods.conf and nothing
+# ever escalated past per-call failures. This tracker persists the FIRST
+# failure timestamp per pod across processes (state file under the gitignored
+# .claude/cache/), and once a pod has been unreachable for
+# ``EPM_SSH_WAIT_ALARM_SECS`` (default 1h) while the live API still reports it
+# RUNNING (= billing), prints a LOUD structured ``[ssh-wait-ALARM]`` line
+# naming the recovery command. Re-alarms at most once per alarm window.
+# Fail-soft by design: an observability tracker must never crash the
+# lifecycle operation it observes.
+
+_DEFAULT_SSH_WAIT_ALARM_SECS = 3600.0
+_SSH_WAIT_STATE_PATH = PROJECT_ROOT / ".claude" / "cache" / "ssh-wait-alarm.json"
+
+
+def _ssh_wait_alarm_secs() -> float:
+    """Alarm threshold (default 1h). Env override ``EPM_SSH_WAIT_ALARM_SECS``;
+    bad values fall back to the default."""
+    raw = os.environ.get("EPM_SSH_WAIT_ALARM_SECS", "").strip()
+    if not raw:
+        return _DEFAULT_SSH_WAIT_ALARM_SECS
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        return _DEFAULT_SSH_WAIT_ALARM_SECS
+
+
+def _load_ssh_wait_state() -> dict:
+    """Read the cross-process SSH-wait state ({pod_name: {first_failure_ts,
+    last_alarm_ts}}). Garbled / missing file -> {} (fresh episodes)."""
+    try:
+        return json.loads(_SSH_WAIT_STATE_PATH.read_text())
+    except (OSError, json.JSONDecodeError, ValueError):
+        return {}
+
+
+def _save_ssh_wait_state(state: dict) -> None:
+    """Persist the SSH-wait state atomically; IO failures are swallowed (the
+    tracker is observability, never worth crashing a provision/resume)."""
+    try:
+        _SSH_WAIT_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp = _SSH_WAIT_STATE_PATH.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state, indent=2))
+        tmp.replace(_SSH_WAIT_STATE_PATH)
+    except OSError as exc:
+        print(f"[pod_lifecycle] WARN: ssh-wait state save failed: {exc}", file=sys.stderr)
+
+
+def _pod_desired_status_by_name(pod_name: str) -> str:
+    """Best-effort live desiredStatus for ``pod_name`` (``"UNKNOWN"`` when the
+    API is unreachable or the pod is gone). Only called on the rare alarm
+    path, never per-probe."""
+    try:
+        for p in list_team_pods():
+            if p.name == pod_name:
+                return p.desired_status or "UNKNOWN"
+    except Exception as exc:
+        print(
+            f"[pod_lifecycle] WARN: live-status check for ssh-wait alarm failed: {exc}",
+            file=sys.stderr,
+        )
+    return "UNKNOWN"
+
+
+def note_ssh_wait_outcome(
+    pod_name: str,
+    *,
+    reachable: bool,
+    desired_status: str | None = None,
+    now: float | None = None,
+) -> None:
+    """Record one SSH reachability observation for ``pod_name`` and fire the
+    1h billing-pod alarm when warranted (refs #572).
+
+    ``reachable=True`` closes the episode (state cleared). ``reachable=False``
+    opens / extends it; once the episode exceeds :func:`_ssh_wait_alarm_secs`
+    AND the pod is RUNNING per the live API (or the caller passed
+    ``desired_status``; ``UNKNOWN`` alarms too — failing loud beats staying
+    silent on a possibly-billing pod), a structured ``[ssh-wait-ALARM]`` line
+    is printed, at most once per alarm window. EXITED pods never alarm (not
+    billing; the episode stays open in case of a later resume)."""
+    now = time.time() if now is None else now
+    state = _load_ssh_wait_state()
+    if reachable:
+        if pod_name in state:
+            state.pop(pod_name, None)
+            _save_ssh_wait_state(state)
+        return
+    entry = state.get(pod_name)
+    if not isinstance(entry, dict):
+        entry = {}
+    first = entry.get("first_failure_ts")
+    if not isinstance(first, int | float):
+        first = now
+        entry["first_failure_ts"] = first
+    waited = now - first
+    threshold = _ssh_wait_alarm_secs()
+    last_alarm = entry.get("last_alarm_ts")
+    if not isinstance(last_alarm, int | float):
+        last_alarm = 0.0
+    if threshold > 0 and waited >= threshold and (now - last_alarm) >= threshold:
+        status = desired_status or _pod_desired_status_by_name(pod_name)
+        if status != "EXITED":
+            billing = "RUNNING (BILLING)" if status == "RUNNING" else f"status={status}"
+            print(
+                f"[ssh-wait-ALARM] pod {pod_name} has been SSH-unreachable for "
+                f"{_format_elapsed(waited)} while {billing}. Likely a stale "
+                f"host/port in pods.conf (the #488 pattern: a retry path "
+                f"brought the pod back at a new port outside _upsert_pods_conf). "
+                f"Recovery: `uv run python scripts/pod.py config "
+                f"--refresh-from-api {pod_name}`, then re-check; if the pod is "
+                f"genuinely idle, stop it (`pod.py stop`) to halt the burn.",
+                file=sys.stderr,
+                flush=True,
+            )
+            entry["last_alarm_ts"] = now
+    state[pod_name] = entry
+    _save_ssh_wait_state(state)
+
+
 def ssh_preflight(
     host: str | None,
     port: int | None,
@@ -1065,9 +1299,19 @@ def ssh_preflight(
 
     ``host``/``port`` of ``None`` count as unreachable (a pod with no public
     mapping yet).
+
+    Every probe outcome additionally feeds :func:`note_ssh_wait_outcome`
+    (when ``issue`` is given) so a pod that stays unreachable across repeated
+    preflights for >1h while billing trips the ``[ssh-wait-ALARM]`` (refs
+    #572).
     """
+    pod_name = _canonical_pod_name(issue) if issue is not None else None
     if _tcp_open(host, port, timeout):
+        if pod_name:
+            note_ssh_wait_outcome(pod_name, reachable=True)
         return True
+    if pod_name:
+        note_ssh_wait_outcome(pod_name, reachable=False)
 
     where = f"{host}:{port}" if host and port else "(no public mapping)"
     print(
@@ -1102,6 +1346,8 @@ def ssh_preflight(
     # Re-read the freshly-resumed endpoint from the live API and re-check once.
     new_host, new_port = _live_ssh_endpoint(issue)
     if _tcp_open(new_host, new_port, timeout):
+        if pod_name:
+            note_ssh_wait_outcome(pod_name, reachable=True)
         print(
             f"[pod_lifecycle] SSH preflight recovered after resume: "
             f"{new_host}:{new_port} is reachable.",
@@ -1109,6 +1355,8 @@ def ssh_preflight(
         )
         return True
 
+    if pod_name:
+        note_ssh_wait_outcome(pod_name, reachable=False)
     print(
         "[pod_lifecycle] SSH preflight FAILED — still unreachable after resume. "
         f"Provision a fresh pod with `python scripts/pod.py provision --issue {issue} ...`.",
@@ -1423,14 +1671,17 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 transient_on_exceed=True,
             )
 
-        info = create_pod_with_wait_for_capacity(
-            name=name,
-            gpu_type=spec.gpu_type,
-            gpu_count=spec.gpu_count,
-            volume_gb=args.volume_gb,
-            container_disk_gb=args.container_disk_gb,
-            preflight_check=_wait_mode_preflight,
-        )
+        try:
+            info = create_pod_with_wait_for_capacity(
+                name=name,
+                gpu_type=spec.gpu_type,
+                gpu_count=spec.gpu_count,
+                volume_gb=args.volume_gb,
+                container_disk_gb=args.container_disk_gb,
+                preflight_check=_wait_mode_preflight,
+            )
+        except WaitForCapacityStillWaiting as exc:
+            _emit_still_waiting_and_exit(exc)
     else:
         # Interactive / one-shot: keep the unconditional pre-flight SystemExit
         # contract from #503/#505 — humans expect an immediate, actionable
@@ -1450,7 +1701,22 @@ def cmd_provision(args: argparse.Namespace) -> None:
         )
     print(f"  Created pod {info.pod_id} — waiting for SSH (up to 10 min)...")
 
-    ready = wait_for_ssh(info.pod_id, timeout=600)
+    try:
+        ready = wait_for_ssh(info.pod_id, timeout=600)
+    except RunPodError:
+        # The pod exists and is billing, but never exposed 22/tcp within the
+        # window — record the wait so repeated attempts accumulate toward the
+        # 1h [ssh-wait-ALARM], and name the recovery before propagating.
+        note_ssh_wait_outcome(name, reachable=False, desired_status="RUNNING")
+        print(
+            f"  Pod {info.pod_id} ({name}) is created (billing) but exposed no "
+            f"public SSH mapping in 10 min; pods.conf was NOT updated. Once it "
+            f"comes up, run `uv run python scripts/pod.py config "
+            f"--refresh-from-api {name}` — or terminate it if it never does.",
+            file=sys.stderr,
+        )
+        raise
+    note_ssh_wait_outcome(name, reachable=True)
     print(f"  SSH ready at {ready.ssh_host}:{ready.ssh_port}")
 
     metadata = _read_metadata_file()
@@ -1576,13 +1842,16 @@ def cmd_resume(args: argparse.Namespace) -> None:
                 transient_on_exceed=True,
             )
 
-        _resume_with_balance_wait_if_autonomous(
-            pod=pod,
-            name=name,
-            issue=args.issue,
-            preflight_check=_wait_mode_preflight,
-            force_wait=True,
-        )
+        try:
+            _resume_with_balance_wait_if_autonomous(
+                pod=pod,
+                name=name,
+                issue=args.issue,
+                preflight_check=_wait_mode_preflight,
+                force_wait=True,
+            )
+        except WaitForCapacityStillWaiting as exc:
+            _emit_still_waiting_and_exit(exc)
     else:
         _assert_under_account_hourly_cap(
             verb="resume",
@@ -1606,7 +1875,24 @@ def cmd_resume(args: argparse.Namespace) -> None:
             name=name,
             issue=args.issue,
         )
-    ready = wait_for_ssh(pod.pod_id, timeout=600)
+    try:
+        ready = wait_for_ssh(pod.pod_id, timeout=600)
+    except RunPodError:
+        # The resume mutation SUCCEEDED — the pod is back and billing — but no
+        # public SSH mapping appeared within the window, so the process dies
+        # BEFORE _upsert_pods_conf and pods.conf keeps the pre-stop endpoint
+        # (the exact #488 stale-port shape). Record the wait for the 1h
+        # [ssh-wait-ALARM] and name the recovery before propagating.
+        note_ssh_wait_outcome(name, reachable=False, desired_status="RUNNING")
+        print(
+            f"  Resume of {name} succeeded (pod is billing) but no public SSH "
+            f"mapping appeared in 10 min; pods.conf still holds the PRE-STOP "
+            f"endpoint. Once the pod is up, run `uv run python scripts/pod.py "
+            f"config --refresh-from-api {name}` to heal pods.conf/SSH/MCP.",
+            file=sys.stderr,
+        )
+        raise
+    note_ssh_wait_outcome(name, reachable=True)
 
     # Clear our project-side stopped_at marker; status/host/port refresh on read.
     # Synthetic-metadata pods (Branch 3 of _load_state) are promoted to disk
@@ -2011,7 +2297,11 @@ def _parser_provision(sub: argparse._SubParsersAction) -> None:
         help=(
             "On SUPPLY_CONSTRAINT (every supply lever in create_pod returned "
             "null), keep retrying with exponential-jittered backoff (base 30s, "
-            "cap 10 min) forever instead of failing. Other errors still fail "
+            "cap 10 min) instead of failing. Each PROCESS attempt is capped at "
+            "~45 min wall-clock (EPM_WAIT_FOR_CAPACITY_BUDGET_SECS); at the "
+            f"budget the command exits {EXIT_STILL_WAITING} with a structured "
+            "[wait-for-capacity] STILL-WAITING line — re-run the same command "
+            "to continue waiting (state-free). Other errors still fail "
             "fast. Auto-enabled when EPM_AUTONOMOUS_SESSION=1 (autonomous "
             "sessions wait for capacity rather than park, per CLAUDE.md). "
             "Default OFF so interactive provisions still surface no-capacity "
@@ -2042,6 +2332,10 @@ def _parser_resume(sub: argparse._SubParsersAction) -> None:
             "RunPod-side INSUFFICIENT_BALANCE), keep retrying with "
             "exponential-jittered backoff (base 30s, cap 10 min) until a "
             "sibling pod frees headroom, instead of failing immediately. "
+            "Each PROCESS attempt is capped at ~45 min wall-clock "
+            "(EPM_WAIT_FOR_CAPACITY_BUDGET_SECS); at the budget the command "
+            f"exits {EXIT_STILL_WAITING} with a structured STILL-WAITING "
+            "line — re-run the same command to continue waiting. "
             "Auto-enabled when EPM_AUTONOMOUS_SESSION=1. Default OFF so "
             "interactive resumes still surface an immediate, actionable "
             "refusal. SUPPLY_CONSTRAINT still fails fast in both modes — "
@@ -2083,6 +2377,51 @@ def _parser_list(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_list_ephemeral)
 
 
+# Verbs that detach into their own session in autonomous mode (long-running,
+# billing-relevant; a respawn-kill mid-flight orphans a paid pod).
+_SETSID_VERBS = frozenset({"provision", "resume"})
+
+
+def _maybe_detach_into_own_session(verb: str | None) -> None:
+    """Detach provision/resume into their OWN session (``os.setsid``) when
+    running inside an autonomous /issue session (refs #573).
+
+    Why: the stalled-detector's stop-then-respawn (and the 12h session
+    recycle) kills the old session's process group; on 2026-06-09 that
+    killed in-flight ``pod.py provision`` background commands three times on
+    #534 (~8h lost) and sent 3 morning sessions dark. ``os.setsid`` moves
+    this process out of the doomed process group, so a group-targeted kill
+    no longer reaches it, while the parent-child relationship, stdio pipes
+    (bg-Bash output capture), and exit-code delivery are all unchanged.
+
+    Scope guards:
+    - only the long-running, billing-relevant verbs (:data:`_SETSID_VERBS`);
+    - only in autonomous mode (``EPM_AUTONOMOUS_SESSION=1``) — interactive
+      shells keep normal Ctrl-C / job-control semantics;
+    - ``EPM_NO_SETSID=1`` opts out (debug escape hatch);
+    - fail-soft: ``os.setsid`` raises ``OSError`` when the process is
+      already a process-group leader — log and continue in that case.
+    """
+    if verb not in _SETSID_VERBS or not _autonomous_session():
+        return
+    if os.environ.get("EPM_NO_SETSID", "").strip() == "1":
+        return
+    try:
+        os.setsid()
+        print(
+            f"[pod_lifecycle] {verb}: detached into own session (setsid) so a "
+            f"session respawn's process-group kill can't kill this in-flight "
+            f"{verb} (refs #573).",
+            file=sys.stderr,
+        )
+    except OSError as exc:
+        print(
+            f"[pod_lifecycle] WARN: setsid failed ({exc}); {verb} stays in the "
+            f"caller's process group (a respawn-kill may still reach it).",
+            file=sys.stderr,
+        )
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="pod_lifecycle",
@@ -2099,6 +2438,7 @@ def main(argv: list[str] | None = None) -> None:
     if not getattr(args, "func", None):
         parser.print_help()
         sys.exit(0)
+    _maybe_detach_into_own_session(getattr(args, "cmd", None))
     args.func(args)
 
 

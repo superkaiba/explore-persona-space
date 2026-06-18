@@ -1,8 +1,111 @@
-- [Alternatives lens round 2](feedback_alternatives_lens_round2.md) — BPE tokens, neg-control axis-conflation, and clean-base shape (not rate) are the three blind spots that survive a good v1→v2 alternatives revision
-- [Pos:neg scaling asymmetry](feedback_pos_neg_scaling_asymmetry.md) — Length-sweep plans that hold negatives fixed while scaling positives bake in a gradient-ratio confound
-- [Neutral-prompt axis-conflation](feedback_neutral_prompt_axis_conflation.md) — Steering plans whose "neutral" prompt string equals one of the evaluated personas' actual prompts confound H1/H2 — grep personas.py before approving
-- [Spearman threshold at N=12](feedback_spearman_threshold_n12.md) — "ρ ≥ 0.5 AND p<0.05" is internally inconsistent at N=12 (critical ρ for p=0.05 is 0.576); 80% power needs ρ≥0.73; best-of-K inflates Type I to ~14%
-- [N=2 sigma + perm-cap-vs-Holm](feedback_n2_sigma_and_perm_cap.md) — N<5 stdevs collapse algebraically (not noise estimates); B-perm tests need B ≥ 10·m/α to avoid hitting Holm cutoffs
-- [Dose-response FWER w/ shared randomness](feedback_dose_response_fwer.md) — Per-adapter × per-probe hero tables with "≥1 of N fires" criterion inflate FWER to N×M cells; cross-adapter dependence via shared templates/queries needs max-stat aggregation, not Bonferroni-N
-- [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — FAIL plans whose §3 chains multi-phase eval rigs (Phase 1 vLLM gen → Phase 2 logprob → ...) without naming a between-phase persistence point. CLAUDE.md "Checkpoint per phase" applies to eval rigs, not just top-level dispatchers — task #399 cost 11 rounds × 15 min of Phase 1 work to this gap.
-- [Predictor-leakage shared surface variable](feedback_predictor_leakage_shared_surface_variable.md) — "Predictor X anticipates DV Y" claims can be tautological when X and Y both read off one observable (e.g. output language). Need always-twin control + per-position trajectory plot to distinguish; otherwise narrow the claim from "anticipates leakage" to "co-measures the same surface fact"
+## Statistics / criteria calibration
+- [Spearman threshold at N=12](feedback_spearman_threshold_n12.md) — "ρ≥0.5 AND p<0.05" inconsistent at N=12 (critical ρ 0.576); 80% power needs ρ≥0.73; best-of-K inflates Type I to ~14%
+- [N=2 sigma + perm-cap-vs-Holm](feedback_n2_sigma_and_perm_cap.md) — N<5 stdevs collapse algebraically; B-perm tests need B ≥ 10·m/α to clear Holm cutoffs
+- [Per-cell Holm at N=3 seeds](feedback_per_cell_holm_at_n3_seeds.md) — exact rank tests have min p = 1/2^N; α/m below that makes "≥1 cell passes Holm" algebraically impossible (#399)
+- [Dose-response FWER w/ shared randomness](feedback_dose_response_fwer.md) — "≥1 of N fires" per-probe tables = N×M cells; shared templates/queries need max-stat aggregation, not Bonferroni-N (#375)
+- [Any-ordering null criterion](feedback_any_ordering_null_criterion.md) — "no ordering repeats in 3 seeds" fails 44% under noise, ~always under stable non-IV effects; null test = the same IV-monotone ordering (#603)
+- [Conjunction-gated label taxonomy](feedback_conjunction_gated_label_taxonomy.md) — leak = (θ AND k×SE) leaves gate-failing cells classless; pull actual per-cell n deciles, demand a named indeterminate class (#593, #611)
+- [Within-source perm degenerate for source-level factors](feedback_within_source_perm_degenerate_for_source_level_factors.md) — stratum-constant covariates make stratified permutation p≡1.0 by construction (#591)
+- [Frozen-y eligibility arithmetic](feedback_frozen_y_axis_eligibility.md) — "≥k groups concord vs frozen y" needs ex-ante per-group y-signal counts; asymmetric exclusion = baked-in false positive (#480 f2)
+- [Envelope-union pre-falsified flat](feedback_envelope_union_prefalsified_flat.md) — compute anchor-vs-anchor span in seed-SD units under H1's exact statistic; pooling masks disjoint clusters (#550)
+- [Antisym-fraction noise floor](feedback_antisym_fraction_noise_floor.md) — raw sym/anti decompositions lack noise correction; at 2 seeds "anti-frac ≥10%" passes on noise; prescribe seed-split reliability (#537)
+- [Followup baseline misclassification](feedback_followup_baseline_misclassification.md) — re-derive "previously-failed" condition sets from the parent stats JSON, never the prose (#480 f2)
+- [Singleton-class asymmetric falsification](feedback_singleton_class_asymmetric_falsification.md) — n=1 discriminating cell: positive = existential (OK); negative = universal-from-singleton confounded with departure magnitude (#562)
+- [Partial-group success vs all-group guard](feedback_partial_group_success_vs_all_group_guard.md) — "≥1 of K" success criteria must be traced through inherited pipeline `any(...)` short-circuits (#546)
+- [Null-calibration fixed design matrix](feedback_null_calibration_fixed_design_matrix.md) — "systematic" can't split noise-organization vs deterministic design artifact; discriminator = cross-replicate ρ spread vs SE (#555)
+- [Crossed-panel axis-power asymmetry](feedback_crossed_panel_axis_power_asymmetry.md) — 80→16 run-axis drop: success-on-widest-axis + falsify-on-ALL-axes is conservative-OK; 3-cluster strata CIs degenerate (#560)
+- [Seed-conditioned cluster bootstrap](feedback_seed_conditioned_cluster_bootstrap.md) — 2-seed persona-cluster CIs understate run noise ~5×; registered yardstick + sign-agreement is acceptable, not REVISE (#571)
+- [Best-of-group selection asymmetry](feedback_bestofgroup_selection_asymmetry.md) — best-of-Group-X vs best-of-Group-Y biased when K differs 10-30×; nested selection / quarantine / report K (#545)
+
+## Threshold / calibration provenance
+- [Subset-mismatched threshold calibration](feedback_subset_mismatched_threshold_calibration.md) — parent-grounded bands invalid when the parent baseline used a different question slice; recompute same-subset from per-prompt files (#558)
+- [Comparator-range sibling-cell provenance](feedback_comparator_range_sibling_cell_provenance.md) — quoted parent ranges can come from sibling cell FAMILIES; recompute from the comparator's own JSONs (#613)
+- [Cross-encoding base-prior offset](feedback_cross_encoding_base_prior_offset.md) — role-vs-system d ignores encoding-specific base prior (±0.63 nat vs ±0.5 threshold); recompute on delta_g; offset can also run anti-hypothesis (#546, #556)
+- [Absolute floor on re-anchored baseline](feedback_absolute_floor_on_reanchored_baseline.md) — parent absolute floors on sub-100% baselines: multiply floor through min pre; low-count CI overlap ≠ null (#570)
+- [Fix-took / stale-serve gate calibration](feedback_stale_serve_identity_threshold.md) — threshold must sit BETWEEN bug signature (~19-27% identity, same-weights vLLM regen) and clean (~0); #504-lineage rigs lack source-side slot stats (#585)
+- [Twin-gate band below leak onset](feedback_twin_gate_band_below_leak_onset.md) — acceptance band inside the unknown gap below demonstrated onset makes flat-twin falsification uninformative; recheck ALL flat panels for pre-satisfied clauses (#591)
+- [Seed-ceiling within-vs-cross-seed](feedback_seed_ceiling_within_vs_cross_seed.md) — #521's 0.96-0.98 is within-seed cos-to-U1, NOT the cross-seed ceiling (0.65-0.97, direction_consistency.json) (#602)
+- [Pin-vs-manifest commit](feedback_pin_vs_manifest_commit.md) — re-extraction plans: blob-compare restored files between the plan's pin and the parent manifest's run commit (#551)
+
+## Measurement validity / DV construction
+- [Predictor-leakage shared surface variable](feedback_predictor_leakage_shared_surface_variable.md) — predictor and DV both downstream of one observable (language, marker-token containment) = tautological correlation; always-twin + per-position trajectory (#466, #540)
+- [Change-DV mechanical subtraction](feedback_change_dv_mechanical_subtraction.md) — d = post − base contains −base: base-like predictors mechanically null (#559) or negative-significant firing sign-agnostic branches (#605)
+- [Persistence-ρ weak null](feedback_persistence_rho_weak_null.md) — trained-vs-base FE ρ≥0.9 on shared-R matched slots is near-tautological; demand variance-ratio + split-question complements (#560)
+- [Completion-source-swap mediation](feedback_completion_source_swap_mediation.md) — base-own re-reads test FT-vs-intrinsic but leave own-completion mediation open; fixed-completion force-read = free disambiguator (#563)
+- [Same-text shift reads persist texts](feedback_same_text_shift_reads_persist_texts.md) — trained-own-text cross-context geometry entangles response content with write direction; Must-Fix = persist texts/ids (#603)
+- [Lockstep-ratio ceiling bias](feedback_lockstep_ratio_ceiling_bias.md) — ratio-of-Δlog P biases toward lockstep when the denominator saturates first; recompute in EOS-margin space iff four floats persist (#597)
+- [Erasure-sweep truncation censoring](feedback_erasure_sweep_truncation_censoring.md) — truncation co-moves with erasure strength; intermediate arms can censor emission toward false falsification; require trunc+ends_with_marker per cell (#557)
+- [Cap-lift dual change](feedback_cap_lift_dual_change.md) — cap lifts change measurement window AND length control; "revives" needs a windowed old-cap re-read from new draws (#548)
+- [Seq-cap × long-context truncation](feedback_seq_cap_long_context_truncation.md) — inherited per-row seq caps + long-prefix train cells = silent truncation mimicking "long contexts implant weaker" (#537)
+- [Space-switch classification calibration](feedback_space_switch_classification_calibration.md) — logP↔margin space flips need same-regime references + per-space re-derived tolerances; mid-trajectory noise > terminal (#601)
+- [Reliability-precondition boundary](feedback_reliability_precondition_boundary.md) — split-half ≥0.5 / SD≥2×SE gates don't bound attenuation (true 0.96 reads ~0.78 at the floor); Must-Fix only if per-item tensors don't persist (#552, #480 f3)
+
+## Trajectory / dynamics designs
+- [Trajectory-shape verdicts](feedback_trajectory_shape_verdicts.md) — zero-crossing / U-vs-monotone designs: base-prior offsets, floor-pinned legs, wide-CI asymmetry, gated-out early points; OK iff storage unconditional + gate-as-flag (#547)
+- [Dynamics-reuse onset left-censoring](feedback_dynamics_reuse_left_censoring.md) — read the parent in-loop trajectory at the first 2 grid points: source can be past-band at ckpt-1, saturated by ckpt-2 (#597)
+- [Matched-dose LR-warmup axis](feedback_matched_dose_lr_warmup_axis.md) — "matched cumulative examples" biases 1.7-4× toward the sparse arm inside warmup; dual-axis bracketing = Concern not REVISE (#597)
+- [Dup-rig schedule deconfound](feedback_dup_rig_schedule_deconfound.md) — big-build@1ep vs small-build@kep are near-replicates; decisive contrast = same-build stretched-T; sparse parent first-reads pre-strain accrual (#601)
+- [Schedule-closure dose residual](feedback_schedule_closure_dose_residual.md) — positives-only stretched-T arms 5× the positive visits; bias hits only the ABOVE branch; co-lands branch is conservative (#601 v4)
+- [band_stop=False kills trajectory logging](feedback_band_stop_false_kills_trajectory_logging.md) — pinning band_stop=False loses the per-step callback; no-stop mode = band_stop=True + marker_band_log_only=True (#600)
+- [Amendment --no-traj endpoint-only](feedback_amendment_no_traj_endpoint_only.md) — item 5 doesn't REVISE strict amendments w/ end-state cross-arm DV + parent --no-traj precedent + logit floor coverage (#464)
+
+## Marker / implantation design dispositions
+- [Ratio-composition sweeps](feedback_ratio_lever_inherent_entanglement.md) — ratio levers inherently entangle steps/negatives/diversity (claim-scoping); pairing feasible only when p ≤ N/(C+1) — check per-arm arithmetic (#543)
+- [Fixed-total breadth bundle](feedback_breadth_sweep_fixed_total_bundle.md) — panel-breadth sweeps at fixed total bundle duplication+coverage (composition-level scoping); new-code-path arm asymmetry maps onto the contrast (#571)
+- [Matched-slot proximity designs](feedback_matched_slot_proximity_designs.md) — persona⊥proximity impossible within a pair (scoping); neighborhood bubble can fail the locality gate → mislabeled "global"; bubble-radius read = recovery (#600)
+- [Paired-placement noise calibration](feedback_paired_placement_noise_calibration.md) — checkpoint-match seed-gap noise (30× range), C(k,2) gaps dependent, magnitude bars descriptive (#600)
+- [Negatives-only arm needs context contrast](feedback_negatives_only_arm_needs_context_contrast.md) — source-only positive criteria on ablation arms are satisfied by uniform formatting drift; demand bystander reads + contrast criterion (#601)
+- [Flag-flip A/B vs reused control](feedback_flag_ab_reused_control_disposition.md) — the 4 elements of an approvable reused-control A/B; "live but toothless" vs "lever irrelevant" null fork (gradient ∝ leaked mass at loss slot); stale collator comments (#613)
+- [Negative-swap suppression check at floor](feedback_negative_swap_suppression_check_floor.md) — "negative landed ≤ +0.05" gates near-pre-satisfied at floor base priors; demand base prior + parent-arm untrained lift alongside (#614)
+- [Anomaly/prefix probe dispositions](feedback_anomaly_probe_near_trained_negative.md) — probes near-twin to a trained negative confound attribution (arm contrast clean); prefix arms on single-turn evals conflate install/expression (#612)
+- [Persona-gated manipulation-check surface](feedback_persona_gated_manipulation_check_surface.md) — source-prompt probe surface has no demonstrated-expression prior; sub-threshold = not-installed OR not-expressed; labeling branch keeps it Concern (#552 f4)
+- [Smoke/parity for frozen-arm reuse](feedback_frozen_arm_cross_time_stack_parity.md) — fresh-vs-frozen needs a base re-generation parity read (judge-only drift gates cover half the pipeline); gates grounded on the other arm's priors false-halt (#608)
+- [In-task re-pin defuses parent attribution](feedback_intask_repin_defuses_parent_attribution.md) — fresh in-rig refs + both attribution branches pre-registered = non-blocking; gate splits w/ known-good tripwires ≠ circular (#601 v3)
+- [Preview-informed pre-registration](feedback_preview_informed_preregistration.md) — §2-previewed re-analyses: §7 "pre-registration" is narrative; map verdict windows onto the preview, flag exclusions hiding counter-cells (#611)
+- [Loss-shape ablation residual rig](feedback_loss_shape_ablation_residual_rig.md) — FALSIFY ≠ "rig exhausted" (lr/steps/corpus unmatched); saturated endpoint = MATCHED regime for geometry DVs (#599)
+
+## Geometry / tensor analysis designs
+- [Single-seed tensor designs](feedback_single_seed_g_tensor_reads.md) — honest 1-seed estimator re-base checklist; column effects K-draw robust vs per-cell/asymmetry fragile; shared-draw covariate; fixed-pool floor over-corrects (conservative kill) (#537 v6)
+- [Rank-1 mechanism-test confounds](feedback_rank1_mechanism_test_confounds.md) — slope reads need joint regression vs strength; parallelism cosines need anisotropy null + late-layer-tautology check (#537 v4)
+- [Weight-SVD adapter analyses](feedback_weight_svd_dose_rotation_reads.md) — joint-arm v_src convention, Δcos SNR-attenuation mimic, σ₁≈σ₂ degeneracy, write-null rank-1 degeneracy, dose-covariate provenance (#604)
+- [Matched-corpus geometry controls](feedback_matched_corpus_geometry_controls.md) — ‖M‖_F-concentration collinearity across arms; cross-arm U₁ identity can't split generic-SFT vs shared-corpus direction (#552)
+- [Contrastive-vs-plain mode comparisons](feedback_contrastive_mode_bundle_alternatives.md) — full-seq CE has no push-pull (mode = construction bundle); panel overlap unavoidable (mirrored panel + held-out subpanel); format familiarity; ‖M‖_F twin (#552 f4)
+- [Estimator-bakeoff alternatives](feedback_estimator_bakeoff_alternatives.md) — sibling-pair contamination of cross-behavior nulls, fidelity-ladder-by-SNR, repair-by-norm; recoverable iff per-row reads + full pairwise matrix persist (#602)
+- [Descriptive geometry-map plans](feedback_descriptive_geometry_map_plans.md) — format-delivery confound is scoping; dominant-family aggregates need per-family purity; lexical-echo weighable iff battery text + depth curve + cross-template family (#594)
+- [Matrix-testbed designs](feedback_matrix_testbed_alternatives.md) — build the train×eval coverage table yourself (Goal-named cells need columns); shift-DV shares base-panel noise with base-prior predictors; synthetic corpora can contain the OUTCOME behavior (#545)
+- [Matched-strength equivalence designs](feedback_matched_strength_equivalence_band.md) — profile-ρ attenuation at s*, ICC-driven gap-CI width, lr-bundle scoping, shared-base-panel ρ inflation, judge×style, interpolation bias (#606)
+- [Third-pair generalization alternatives](feedback_third_pair_generalization_alternatives.md) — panel-sharing and landing-determinism are attribution forks consistent with the recipe claim; envelope weak-as-success/meaningful-as-kill (#568)
+- [Both-nulls conjunction w/ inflated null](feedback_both_nulls_conjunction_inflated_null.md) — "clear BOTH nulls" fragile when one null is documented-inflated for near-parallel columns; Concern if per-null numbers ship (#551)
+- [Mindist reparam asymmetric](feedback_mindist_reparam_asymmetric.md) — K-sweep NEAR-band min-dist mechanically shrinks more than FAR (37% vs 8.5%); direction can work WITH or AGAINST the hypothesis (#478)
+- [Re-judge / DV-correction rounds](feedback_rejudge_proxy_amendment_alternatives.md) — three-panel drift/denominator decomposition, τ-boundary mass check, refusal censoring tracks harm 5× (conservative for suppression), incoherent-stratum dominance (#591 e5)
+
+## Panel composition / axis conflation
+- [Neutral-prompt axis-conflation](feedback_neutral_prompt_axis_conflation.md) — "neutral" prompt equal to an evaluated persona's prompt confounds the headline; grep personas.py before approving (#267)
+- [Panel family clustering](feedback_panel_family_clustering.md) — ≥5 same-family panel members sharing the baseline's register can carry the headline ρ; leave-family-out / colored scatter / drop family (#380)
+- [Alternatives lens round 2](feedback_alternatives_lens_round2.md) — BPE-token overlap, neg-control axis-conflation, and clean-base shape (not rate) survive a good v1→v2 alternatives revision (#257)
+- [Pos:neg scaling asymmetry](feedback_pos_neg_scaling_asymmetry.md) — length sweeps holding negatives fixed while scaling positives bake in a gradient-ratio confound (#260)
+- [Content-arm off-policy entanglement](feedback_content_arm_offpolicy_entanglement.md) — content arms entangle content with gradient magnitude/dose (scoping); floor-censored equal-fate needs the latent slot-stat read first (#570)
+- [Regime+DV bundle via cross-round factorial](feedback_regime_dv_bundle_cross_round_factorial.md) — bundled regime+DV amendments OK when both DVs exist in both rounds' matrices; degenerate cell = manipulation check (#480 f3)
+
+## Reuse / reproduction hygiene
+- [Row-merge reuse regression test](feedback_row_merge_reuse_regression_test.md) — merged-row reuse needs the consumer's actual read-path verified + a strip/re-inject/reproduce-parent-numbers loop (#556)
+- [Metric-standardization audit pattern](feedback_metric_standardization_audit.md) — sound audit = single-variable swap + raw-reproduction join gate + consumer-read fingerprint; 2-bank centering degenerates to cos≡−1 (#536)
+
+## Infra-plan reviews
+- [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point grep-verification, pod-event observers, success-path-only tests, fixture constructibility, channel writers, sentinel truthification, checkpoint-per-phase at plan time (#564, #596, #607, #399)
+- [Forward-protection port claims](feedback_forward_protection_port_claims.md) — "no future X can regress" vs one-driver fix + opt-in guard + site-scoped AST test; evasion checklist (positional-constant = silent hole) (#584)
+- [Full-suite-green needs baseline](feedback_full_suite_green_needs_baseline.md) — "full pytest green" / repo-wide ruff criteria are false-FAIL-by-construction; require recorded baseline + "no NEW failures" (#584, #588, #554)
+- [Creation-helper reuse shortcut](feedback_creation_helper_reuse_shortcut_half_state.md) — create-or-reuse helpers under set -e: check failed-halfway-then-retry; reuse-as-is exit-0 hands sessions a broken artifact (#596)
+- [Disk-savings hardlink dedup](feedback_disk_savings_hardlink_dedup.md) — joint `du` before accepting "dominant cost" rankings; uv .venvs are cache-hardlinked (~0.12G real vs ~10G apparent) (#596)
+- [ETA-estimator display stats](feedback_eta_estimator_display_stats.md) — overdue-floored chip is the Must-Fix; Σ-medians vs median-of-total 2.4× gap = backtest; ratio kill-criteria blow up near zero (#587)
+- [Cron-wrapper pointer-line verification](feedback_cron_wrapper_pointer_line_verification.md) — empty-redirect fixes: bare manual runs can't hit the crontab redirect; demand positive-branch capture (#580)
+- [Renumber check greps wrong file](feedback_renumber_check_greps_wrong_file.md) — "no renumbering" checks must read the EDITED file's numbering, not the file holding the cross-ref string (#578)
+- [Agent-spec gate vs modal lane](feedback_agent_spec_gate_modal_lane.md) — experimenter.md gates never fire on GCP/SLURM startup-script launches; the implementer write-side rule is the only all-lane control (#578)
+- [ERROR-demotion binding check](feedback_error_demotion_binding_check.md) — demotion is a regression only where the old ERROR was BINDING; tolerated-string consumers = neutralized no-op (#554)
+
+## Folded post-prune (2026-06-12 live writes)
+
+- [Rank-test trained-negative contamination](feedback_rank_test_trained_negative_contamination.md) — Spearman bystander sets must pin in/exclusion of trained negatives present in the eval panel (#621)
+- [Infra dispatch-plan failure modes](feedback_infra_dispatch_plan_failure_modes.md) — sync dispatcher asyncio.run inside async call sites; content-free resume fingerprints serve stale results (#626)
+- [Rank-1 read/write designs](feedback_rank1_readwrite_design_621.md) — trained-neg bystanders in firing-rank, bridge panel swap, no-band-entry wall worst case are Concerns not REVISEs (#621)
+- [Rank-1 firing-test alternatives](feedback_rank1_firing_test_alternatives.md) — shift-DV base-prior is a strawman rival; folded |firing| inverts negative suppression; frozen-A mechanical at band-stop (#621)

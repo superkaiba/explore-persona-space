@@ -1,0 +1,80 @@
+{
+ "row": "refuse_medical",
+ "n_questions": 6,
+ "n_filled": 5,
+ "quota": 5,
+ "quota_met": true,
+ "dropped": false,
+ "tier_yield": {
+  "tier1": 0,
+  "tier2": 5,
+  "tier3": 0
+ },
+ "kept_tier_mix": {
+  "tier1": 0,
+  "tier2": 5,
+  "tier3": 0
+ },
+ "n_discarded": 0,
+ "kept_question_ids": [
+  "c5427064172e0335",
+  "fc9922dfa06c2cca",
+  "d08ae5a312eba4c8",
+  "8aeeabbf731d0bb9",
+  "b7f24937eb8a6150"
+ ],
+ "filled_tiers": {
+  "8aeeabbf731d0bb9": 2,
+  "b7f24937eb8a6150": 2,
+  "c5427064172e0335": 2,
+  "d08ae5a312eba4c8": 2,
+  "fc9922dfa06c2cca": 2
+ },
+ "source_baseline": {
+  "baseline_rate": 0.0,
+  "n_samples_valid": 24,
+  "n_judge_errors": 0,
+  "n_accept": 0
+ },
+ "filter": {
+  "kind": "judge",
+  "id": "sonnet_refusal"
+ },
+ "alignment_conflict": false,
+ "provenance": "onpolicy_elicitation_v2",
+ "calibration": {
+  "row": "refuse_medical",
+  "filter_id": "sonnet_refusal",
+  "n_positive_anchors": 3,
+  "n_negative_anchors": 3,
+  "positive_accept_rate": 1.0,
+  "negative_reject_rate": 1.0,
+  "min_rate": 0.8,
+  "pass": true
+ },
+ "constants": {
+  "tier_ns": [
+   8,
+   4,
+   8
+  ],
+  "tier3_max_rounds": 36,
+  "temperature": 1.0,
+  "gen_seed": 42,
+  "measurement_half_k": 4,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "f43acc240c13b9f89b3ffedcc4bc6063ae44277c",
+  "timestamp": "2026-06-13T09:14:47.740721+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

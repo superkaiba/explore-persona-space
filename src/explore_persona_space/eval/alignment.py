@@ -5,13 +5,13 @@ Uses Claude Sonnet 4.5 as judge (via batch API).
 
 import asyncio
 import json
-import os
 from pathlib import Path
 
 import anthropic
 from tqdm.asyncio import tqdm_asyncio
 
 from explore_persona_space.eval import DEFAULT_API_CONCURRENCY, DEFAULT_JUDGE_MODEL
+from explore_persona_space.eval.judge_dispatch import _build_params, dispatch_judge_items_async
 from explore_persona_space.eval.utils import parse_judge_json
 from explore_persona_space.personas import BETLEY_QUESTIONS as BETLEY_MAIN_QUESTIONS
 
@@ -220,12 +220,11 @@ async def judge_responses(
                     user_msg = format_user_msg(prompt, response)
                 else:
                     user_msg = f"Question asked to the AI:\n{prompt}\n\nAI's response:\n{response}"
-                result = await client.messages.create(
-                    model=judge_model,
-                    max_tokens=256,
-                    system=system_text,
-                    messages=[{"role": "user", "content": user_msg}],
-                )
+                # Request construction routed through judge_dispatch._build_params
+                # so the rubric block gains cache_control (5m default). Nothing
+                # else about this function's contract changes (#626).
+                params = _build_params(judge_model, system_text, user_msg, 256, ttl="5m")
+                result = await client.messages.create(**params)
                 text = result.content[0].text
                 parsed = parse_judge_json(text, None)
                 if parsed is None:
@@ -262,6 +261,10 @@ async def evaluate_alignment(
     extra_context_messages: list[dict] | None = None,
     judge_system_prompt: str | None = None,
     judge_format: str = "simplified",
+    force_sync: bool = False,
+    dry_run: bool = False,
+    sync_client=None,
+    batch_client=None,
 ) -> dict:
     """Run alignment evaluation.
 
@@ -292,6 +295,13 @@ async def evaluate_alignment(
             Round-2 ISSUE 7 fix: replaces the prior identity check
             ``judge_system_prompt is BETLEY_DUAL_JUDGE_SYSTEM_PROMPT`` which
             broke silently if any caller passed a copy of the string.
+        force_sync: Bypass batch routing and judge synchronously regardless
+            of N (#626 dispatcher escape hatch).
+        dry_run: Judge-stage dry-run — generation still runs (vLLM-side, out
+            of dispatch scope), then the routing decision is printed and a
+            stub ``{"dry_run": True, ...}`` is returned with zero judge API
+            calls.
+        sync_client / batch_client: anthropic client injection (tests only).
 
     Returns:
         Aggregated scores.
@@ -325,10 +335,6 @@ async def evaluate_alignment(
         extra_context_messages=extra_context_messages,
     )
 
-    # Judge all completions
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    client = anthropic.AsyncAnthropic(api_key=api_key)
-
     # Select the user-message formatter explicitly. Previously this was an
     # ``is``-identity check against BETLEY_DUAL_JUDGE_SYSTEM_PROMPT — fragile
     # because any caller that passed a copy of the prompt (string interning
@@ -337,19 +343,52 @@ async def evaluate_alignment(
     # against the dual-rubric grader.
     _format_user_msg = format_betley_judge_user_msg if judge_format == "betley_dual" else None
 
+    # Judge all completions: flatten every (question x sample) item into ONE
+    # dispatch so the routing layer sees the true N (betley 8x100=800 -> sync;
+    # wang 44x100=4,400 -> batch at Tier 4). This also removes the prior
+    # accidental serialization where questions were awaited one at a time
+    # (#626). We are already inside a running event loop, so this awaits the
+    # ASYNC CORE — never the sync wrapper.
+    items = []
+    for qi, prompt in enumerate(questions):
+        for si, response in enumerate(completions[prompt]):
+            if _format_user_msg is not None:
+                user_msg = _format_user_msg(prompt, response)
+            else:
+                user_msg = f"Question asked to the AI:\n{prompt}\n\nAI's response:\n{response}"
+            items.append((f"q{qi:04d}__s{si:04d}", prompt, response, user_msg))
+
+    scores_by_id = await dispatch_judge_items_async(
+        items,
+        judge_model=judge_model,
+        judge_system_prompt=(
+            judge_system_prompt if judge_system_prompt is not None else JUDGE_SYSTEM_PROMPT
+        ),
+        max_concurrent=max_concurrent_judge,
+        checkpoint_dir=output_dir / ".judge_dispatch",
+        force_sync=force_sync,
+        dry_run=dry_run,
+        sync_client=sync_client,
+        batch_client=batch_client,
+    )
+    if dry_run:
+        return {"dry_run": True, "eval_name": eval_name, "n_items": len(items)}
+
+    # Reassemble flattened results back into per-question, sample-ordered lists.
     all_scores = {}
-    for prompt in questions:
-        responses = completions[prompt]
-        scores = await judge_responses(
-            prompt=prompt,
-            responses=responses,
-            client=client,
-            judge_model=judge_model,
-            max_concurrent=max_concurrent_judge,
-            judge_system_prompt=judge_system_prompt,
-            format_user_msg=_format_user_msg,
-        )
-        all_scores[prompt] = scores
+    for qi, prompt in enumerate(questions):
+        all_scores[prompt] = [
+            scores_by_id.get(
+                f"q{qi:04d}__s{si:04d}",
+                {
+                    "aligned": None,
+                    "coherent": None,
+                    "reasoning": "missing_result",
+                    "error": True,
+                },
+            )
+            for si in range(len(completions[prompt]))
+        ]
 
     # Aggregate (filter out errors — don't bias toward any default)
     total_aligned = []

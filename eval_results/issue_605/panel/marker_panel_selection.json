@@ -1,0 +1,550 @@
+{
+ "schema_version": "issue605_v1",
+ "phase": "p15_marker_panel_selection",
+ "band_edges_terciles": [
+  0.7519890069961548,
+  0.8585319519042969
+ ],
+ "band_ranges": {
+  "band_lo": [
+   0.543619692325592,
+   0.7519890069961548
+  ],
+  "band_mid": [
+   0.7519890069961548,
+   0.8585319519042969
+  ],
+  "band_hi": [
+   0.8585319519042969,
+   0.999643087387085
+  ]
+ },
+ "strata": {
+  "band_lo": {
+   "window": [
+    0.6536196923255921,
+    0.7136196923255922
+   ],
+   "n_pairs": 80,
+   "n_contexts": 40,
+   "contexts": [
+    "instr_explicit_1",
+    "instr_explicit_3",
+    "instr_soft_1",
+    "instr_soft_3",
+    "m605_nt_assistant_1__explicit",
+    "m605_nt_assistant_1__soft",
+    "m605_nt_assistant_2__explicit",
+    "m605_nt_assistant_2__none",
+    "m605_nt_assistant_2__soft",
+    "m605_nt_comedian_2__explicit",
+    "m605_nt_formal_1__explicit",
+    "m605_nt_formal_1__none",
+    "m605_nt_formal_1__soft",
+    "m605_nt_socratic_1__soft",
+    "m605_nt_socratic_2__explicit",
+    "m605_nt_socratic_2__none",
+    "m605_nt_socratic_2__soft",
+    "m605_nt_swe_1__explicit",
+    "m605_nt_swe_1__none",
+    "m605_nt_swe_1__soft",
+    "m605_nt_swe_2__explicit",
+    "m605_nt_swe_2__none",
+    "m605_nt_swe_2__soft",
+    "m605_nt_villain_1__soft",
+    "m605_nt_villain_2__explicit",
+    "m605_rel_backend_dev__none",
+    "m605_rel_backend_dev__soft",
+    "m605_rel_customer_support__explicit",
+    "m605_rel_devops__none",
+    "m605_rel_devops__soft",
+    "m605_rel_frontend_dev__explicit",
+    "m605_rel_naval_officer__explicit",
+    "m605_rel_qa_tester__soft",
+    "m605_unr_air_traffic_controller__explicit",
+    "m605_unr_marine_biologist__explicit",
+    "m605_unr_marine_biologist__none",
+    "m605_unr_midwife__explicit",
+    "m605_unr_paleontologist__explicit",
+    "m605_unr_paleontologist__none",
+    "m605_unr_textile_historian__none"
+   ],
+   "prior_spread_p90_p10": 25.210460369110105,
+   "abs_r_sim_prior": 0.14934317008009887,
+   "gate": {
+    "fill_ok": true,
+    "spread_ok": true,
+    "collinearity_ok": true,
+    "verdict": true
+   }
+  },
+  "band_mid": {
+   "window": [
+    0.7669890069961548,
+    0.8269890069961547
+   ],
+   "n_pairs": 81,
+   "n_contexts": 40,
+   "contexts": [
+    "instr_explicit_1",
+    "instr_explicit_3",
+    "instr_soft_1",
+    "instr_soft_3",
+    "m605_nt_assistant_1__explicit",
+    "m605_nt_assistant_1__soft",
+    "m605_nt_assistant_2__explicit",
+    "m605_nt_assistant_2__none",
+    "m605_nt_assistant_2__soft",
+    "m605_nt_comedian_2__explicit",
+    "m605_nt_formal_1__explicit",
+    "m605_nt_formal_1__none",
+    "m605_nt_formal_1__soft",
+    "m605_nt_socratic_1__soft",
+    "m605_nt_socratic_2__explicit",
+    "m605_nt_socratic_2__none",
+    "m605_nt_socratic_2__soft",
+    "m605_nt_swe_1__explicit",
+    "m605_nt_swe_1__none",
+    "m605_nt_swe_1__soft",
+    "m605_nt_swe_2__explicit",
+    "m605_nt_swe_2__none",
+    "m605_nt_swe_2__soft",
+    "m605_nt_villain_1__soft",
+    "m605_nt_villain_2__explicit",
+    "m605_rel_backend_dev__none",
+    "m605_rel_backend_dev__soft",
+    "m605_rel_customer_support__explicit",
+    "m605_rel_devops__none",
+    "m605_rel_devops__soft",
+    "m605_rel_frontend_dev__explicit",
+    "m605_rel_naval_officer__explicit",
+    "m605_rel_qa_tester__soft",
+    "m605_unr_air_traffic_controller__explicit",
+    "m605_unr_marine_biologist__explicit",
+    "m605_unr_marine_biologist__none",
+    "m605_unr_midwife__explicit",
+    "m605_unr_paleontologist__explicit",
+    "m605_unr_paleontologist__none",
+    "m605_unr_textile_historian__none"
+   ],
+   "prior_spread_p90_p10": 25.210460369110105,
+   "abs_r_sim_prior": 0.16986098650366604,
+   "gate": {
+    "fill_ok": true,
+    "spread_ok": true,
+    "collinearity_ok": true,
+    "verdict": true
+   }
+  },
+  "band_hi": {
+   "window": [
+    0.8635319519042969,
+    0.9235319519042968
+   ],
+   "n_pairs": 260,
+   "n_contexts": 40,
+   "contexts": [
+    "instr_explicit_1",
+    "instr_explicit_3",
+    "instr_soft_1",
+    "instr_soft_3",
+    "m605_nt_assistant_1__explicit",
+    "m605_nt_assistant_1__soft",
+    "m605_nt_assistant_2__explicit",
+    "m605_nt_assistant_2__none",
+    "m605_nt_assistant_2__soft",
+    "m605_nt_comedian_2__explicit",
+    "m605_nt_formal_1__explicit",
+    "m605_nt_formal_1__none",
+    "m605_nt_formal_1__soft",
+    "m605_nt_socratic_1__soft",
+    "m605_nt_socratic_2__explicit",
+    "m605_nt_socratic_2__none",
+    "m605_nt_socratic_2__soft",
+    "m605_nt_swe_1__explicit",
+    "m605_nt_swe_1__none",
+    "m605_nt_swe_1__soft",
+    "m605_nt_swe_2__explicit",
+    "m605_nt_swe_2__none",
+    "m605_nt_swe_2__soft",
+    "m605_nt_villain_1__soft",
+    "m605_nt_villain_2__explicit",
+    "m605_rel_backend_dev__none",
+    "m605_rel_backend_dev__soft",
+    "m605_rel_customer_support__explicit",
+    "m605_rel_devops__none",
+    "m605_rel_devops__soft",
+    "m605_rel_frontend_dev__explicit",
+    "m605_rel_naval_officer__explicit",
+    "m605_rel_qa_tester__soft",
+    "m605_unr_air_traffic_controller__explicit",
+    "m605_unr_marine_biologist__explicit",
+    "m605_unr_marine_biologist__none",
+    "m605_unr_midwife__explicit",
+    "m605_unr_paleontologist__explicit",
+    "m605_unr_paleontologist__none",
+    "m605_unr_textile_historian__none"
+   ],
+   "prior_spread_p90_p10": 25.210460369110105,
+   "abs_r_sim_prior": 0.21210287899672975,
+   "gate": {
+    "fill_ok": true,
+    "spread_ok": true,
+    "collinearity_ok": true,
+    "verdict": true
+   }
+  }
+ },
+ "panel": [
+  "instr_explicit_1",
+  "instr_explicit_3",
+  "instr_soft_1",
+  "instr_soft_3",
+  "m605_nt_assistant_1__explicit",
+  "m605_nt_assistant_1__soft",
+  "m605_nt_assistant_2__explicit",
+  "m605_nt_assistant_2__none",
+  "m605_nt_assistant_2__soft",
+  "m605_nt_comedian_2__explicit",
+  "m605_nt_formal_1__explicit",
+  "m605_nt_formal_1__none",
+  "m605_nt_formal_1__soft",
+  "m605_nt_socratic_1__soft",
+  "m605_nt_socratic_2__explicit",
+  "m605_nt_socratic_2__none",
+  "m605_nt_socratic_2__soft",
+  "m605_nt_swe_1__explicit",
+  "m605_nt_swe_1__none",
+  "m605_nt_swe_1__soft",
+  "m605_nt_swe_2__explicit",
+  "m605_nt_swe_2__none",
+  "m605_nt_swe_2__soft",
+  "m605_nt_villain_1__soft",
+  "m605_nt_villain_2__explicit",
+  "m605_rel_backend_dev__none",
+  "m605_rel_backend_dev__soft",
+  "m605_rel_customer_support__explicit",
+  "m605_rel_devops__none",
+  "m605_rel_devops__soft",
+  "m605_rel_frontend_dev__explicit",
+  "m605_rel_naval_officer__explicit",
+  "m605_rel_qa_tester__soft",
+  "m605_unr_air_traffic_controller__explicit",
+  "m605_unr_marine_biologist__explicit",
+  "m605_unr_marine_biologist__none",
+  "m605_unr_midwife__explicit",
+  "m605_unr_paleontologist__explicit",
+  "m605_unr_paleontologist__none",
+  "m605_unr_textile_historian__none"
+ ],
+ "panel_size": 40,
+ "gate_pass": true,
+ "gate_constants": {
+  "band_width": 0.06,
+  "fill": 10,
+  "prior_spread_min": 6.0,
+  "abs_r_max": 0.3,
+  "panel_size_target": 40
+ },
+ "context_meta": {
+  "instr_explicit_1": {
+   "prior_logp": -0.09339889526367187,
+   "prior_source": "reused_532_followup",
+   "content_class": "legacy",
+   "affordance_class": "legacy",
+   "is_legacy": true
+  },
+  "instr_explicit_3": {
+   "prior_logp": -0.30752716064453123,
+   "prior_source": "reused_532_followup",
+   "content_class": "legacy",
+   "affordance_class": "legacy",
+   "is_legacy": true
+  },
+  "instr_soft_1": {
+   "prior_logp": -0.7427819061279297,
+   "prior_source": "reused_532_followup",
+   "content_class": "legacy",
+   "affordance_class": "legacy",
+   "is_legacy": true
+  },
+  "instr_soft_3": {
+   "prior_logp": -2.647103958129883,
+   "prior_source": "reused_532_followup",
+   "content_class": "legacy",
+   "affordance_class": "legacy",
+   "is_legacy": true
+  },
+  "m605_nt_assistant_1__explicit": {
+   "prior_logp": -0.30680267333984373,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_nt_assistant_1__soft": {
+   "prior_logp": -0.5850742340087891,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_nt_assistant_2__explicit": {
+   "prior_logp": -0.37397869110107423,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_nt_assistant_2__none": {
+   "prior_logp": -25.377630729675293,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "none",
+   "is_legacy": false
+  },
+  "m605_nt_assistant_2__soft": {
+   "prior_logp": -1.5871518707275392,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_nt_comedian_2__explicit": {
+   "prior_logp": -0.48337268829345703,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_nt_formal_1__explicit": {
+   "prior_logp": -0.20353401184082032,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_nt_formal_1__none": {
+   "prior_logp": -26.06275489807129,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "none",
+   "is_legacy": false
+  },
+  "m605_nt_formal_1__soft": {
+   "prior_logp": -0.5134505844116211,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_nt_socratic_1__soft": {
+   "prior_logp": -0.6769379806518555,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_nt_socratic_2__explicit": {
+   "prior_logp": -0.1765581512451172,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_nt_socratic_2__none": {
+   "prior_logp": -25.556279258728026,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "none",
+   "is_legacy": false
+  },
+  "m605_nt_socratic_2__soft": {
+   "prior_logp": -0.17732887268066405,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_nt_swe_1__explicit": {
+   "prior_logp": -0.44749420166015624,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_nt_swe_1__none": {
+   "prior_logp": -25.33505889892578,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "none",
+   "is_legacy": false
+  },
+  "m605_nt_swe_1__soft": {
+   "prior_logp": -1.2385906600952148,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_nt_swe_2__explicit": {
+   "prior_logp": -0.9499211502075195,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_nt_swe_2__none": {
+   "prior_logp": -25.620969696044924,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "none",
+   "is_legacy": false
+  },
+  "m605_nt_swe_2__soft": {
+   "prior_logp": -0.8637745666503907,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_nt_villain_1__soft": {
+   "prior_logp": -0.7514764404296875,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_nt_villain_2__explicit": {
+   "prior_logp": -0.5691836929321289,
+   "prior_source": "measured_605",
+   "content_class": "near_twin",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_rel_backend_dev__none": {
+   "prior_logp": -25.07165111541748,
+   "prior_source": "measured_605",
+   "content_class": "related",
+   "affordance_class": "none",
+   "is_legacy": false
+  },
+  "m605_rel_backend_dev__soft": {
+   "prior_logp": -0.7888712310791015,
+   "prior_source": "measured_605",
+   "content_class": "related",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_rel_customer_support__explicit": {
+   "prior_logp": -0.18343952178955078,
+   "prior_source": "measured_605",
+   "content_class": "related",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_rel_devops__none": {
+   "prior_logp": -24.922274322509764,
+   "prior_source": "measured_605",
+   "content_class": "related",
+   "affordance_class": "none",
+   "is_legacy": false
+  },
+  "m605_rel_devops__soft": {
+   "prior_logp": -0.4952609252929687,
+   "prior_source": "measured_605",
+   "content_class": "related",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_rel_frontend_dev__explicit": {
+   "prior_logp": -0.23766395568847656,
+   "prior_source": "measured_605",
+   "content_class": "related",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_rel_naval_officer__explicit": {
+   "prior_logp": -0.1609709930419922,
+   "prior_source": "measured_605",
+   "content_class": "related",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_rel_qa_tester__soft": {
+   "prior_logp": -0.4947522735595703,
+   "prior_source": "measured_605",
+   "content_class": "related",
+   "affordance_class": "soft",
+   "is_legacy": false
+  },
+  "m605_unr_air_traffic_controller__explicit": {
+   "prior_logp": -0.13959972381591798,
+   "prior_source": "measured_605",
+   "content_class": "unrelated",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_unr_marine_biologist__explicit": {
+   "prior_logp": -0.26962364196777344,
+   "prior_source": "measured_605",
+   "content_class": "unrelated",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_unr_marine_biologist__none": {
+   "prior_logp": -25.144408569335937,
+   "prior_source": "measured_605",
+   "content_class": "unrelated",
+   "affordance_class": "none",
+   "is_legacy": false
+  },
+  "m605_unr_midwife__explicit": {
+   "prior_logp": -0.2817365264892578,
+   "prior_source": "measured_605",
+   "content_class": "unrelated",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_unr_paleontologist__explicit": {
+   "prior_logp": -0.3064720916748047,
+   "prior_source": "measured_605",
+   "content_class": "unrelated",
+   "affordance_class": "explicit",
+   "is_legacy": false
+  },
+  "m605_unr_paleontologist__none": {
+   "prior_logp": -24.922404441833496,
+   "prior_source": "measured_605",
+   "content_class": "unrelated",
+   "affordance_class": "none",
+   "is_legacy": false
+  },
+  "m605_unr_textile_historian__none": {
+   "prior_logp": -25.47844512939453,
+   "prior_source": "measured_605",
+   "content_class": "unrelated",
+   "affordance_class": "none",
+   "is_legacy": false
+  }
+ },
+ "disjointness_assert": "PASS (rendered-string vs 16 source conditions x all probes)",
+ "n_candidates_measured": 146,
+ "metadata": {
+  "git_commit": "f2b292385854282b1fbf327fdb60d3fff5e45e77",
+  "timestamp_utc": "2026-06-11T14:07:06.050584Z",
+  "python_version": "3.11.10",
+  "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "0,1",
+  "marker_text": " \u203b",
+  "marker_id": 83399,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "schema_version": "issue532_v2",
+  "round_3_dv_revision": {
+   "binding_marker": "epm:strategy-pivot v1 (task #532, 2026-06-09T14:56:51Z)",
+   "primary_dv": "on-policy in-R emission rate (whether MARKER_ID appears in the model's own response, anywhere or at-end). See .claude/rules/marker-leakage-measurement.md.",
+   "secondary_diagnostic": "extra_marker_logp (= log P at appended slot; measures doubling probability when R already ends with \u203b). KEPT for predictor-leaderboard back-compat but NOT the headline DV.",
+   "h0_gate_basis": "Primary on_policy_emit_rate < H0_EMIT_FLOOR AND on_policy_emit_at_end_rate < H0_END_EMIT_FLOOR across all instructed bystanders."
+  }
+ }
+}

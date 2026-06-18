@@ -1,0 +1,648 @@
+{
+ "schema_version": "issue605_v1",
+ "family": "marker",
+ "registered": {
+  "shift": {
+   "logprob": {
+    "pooled_partial": {
+     "point": 0.26298324509560417,
+     "ci95": [
+      0.12029821090965247,
+      0.3920049694870786
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000,
+     "p_holm_over_shift_spaces": 0.002
+    },
+    "delta_cv_r2": {
+     "r2_sim_only": 0.7366213254597727,
+     "r2_sim_plus_prior": 0.7443565569182251,
+     "delta_cv_r2_prior_beyond_sim": 0.007735231458452452,
+     "r2_prior_only": 0.7028654223731683,
+     "delta_cv_r2_sim_beyond_prior_reverse": 0.04149113454505682,
+     "point": 0.007735231458452452,
+     "ci95": [
+      -0.0367176237272539,
+      0.0551368661707949
+     ],
+     "p_two_sided": 0.974,
+     "n_boot_effective": 1000
+    },
+    "pinned_fit": {
+     "kind": "tobit",
+     "point": 0.047194463961938445,
+     "ci95": [
+      0.00988405780277855,
+      0.09349668839543433
+     ],
+     "p_two_sided": 0.014,
+     "n_boot_effective": 1000
+    },
+    "per_band_descriptive": {
+     "band_hi": {
+      "point": 0.15393162149965625,
+      "ci95": [
+       -0.03361293667559454,
+       0.3443261763538388
+      ],
+      "p_two_sided": 0.104,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 335,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     },
+     "band_lo": {
+      "point": 0.41750688818391524,
+      "ci95": [
+       0.22888002277873892,
+       0.5830372362573436
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 143,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     },
+     "band_mid": {
+      "point": 0.2009971124963134,
+      "ci95": [
+       0.033148193954547864,
+       0.3794922330698427
+      ],
+      "p_two_sided": 0.008,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 162,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     }
+    },
+    "robustness": {
+     "saturation_excluded_partial": 0.27584923718445903,
+     "n_saturated_excluded": 57,
+     "source_cluster_partial_ci": {
+      "point": 0.26298324509560417,
+      "ci95": [
+       0.08515858300521936,
+       0.4343294945123895
+      ],
+      "p_two_sided": 0.002,
+      "n_boot_effective": 1000
+     }
+    },
+    "n_cells": 640,
+    "n_contexts": 40
+   },
+   "eos_margin": {
+    "pooled_partial": {
+     "point": 0.5503051632078148,
+     "ci95": [
+      0.39666577533184527,
+      0.6718877041502398
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000,
+     "p_holm_over_shift_spaces": 0.002
+    },
+    "delta_cv_r2": {
+     "r2_sim_only": 0.5429246966749364,
+     "r2_sim_plus_prior": 0.6316006429091381,
+     "delta_cv_r2_prior_beyond_sim": 0.08867594623420172,
+     "r2_prior_only": 0.5796331716027898,
+     "delta_cv_r2_sim_beyond_prior_reverse": 0.05196747130634827,
+     "point": 0.08867594623420172,
+     "ci95": [
+      -0.032067570344002115,
+      0.21885343020344747
+     ],
+     "p_two_sided": 0.186,
+     "n_boot_effective": 1000
+    },
+    "pinned_fit": {
+     "kind": "rank",
+     "point": 0.42542517843157035,
+     "ci95": [
+      0.30329122311897516,
+      0.5162020629362236
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "per_band_descriptive": {
+     "band_hi": {
+      "point": 0.4756096614046089,
+      "ci95": [
+       0.2916522869004455,
+       0.6666402834655746
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 335,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     },
+     "band_lo": {
+      "point": 0.6059895357232704,
+      "ci95": [
+       0.3910855389269133,
+       0.7281226206818354
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 143,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     },
+     "band_mid": {
+      "point": 0.613018226763638,
+      "ci95": [
+       0.41217660824500507,
+       0.6992967092535648
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 162,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     }
+    },
+    "robustness": {
+     "saturation_excluded_partial": 0.5528071525198676,
+     "n_saturated_excluded": 57,
+     "source_cluster_partial_ci": {
+      "point": 0.5503051632078148,
+      "ci95": [
+       0.4447722214228206,
+       0.647305071045797
+      ],
+      "p_two_sided": 0.001,
+      "n_boot_effective": 1000
+     }
+    },
+    "n_cells": 640,
+    "n_contexts": 40
+   }
+  },
+  "level": {
+   "emission_rate": {
+    "pooled_partial": {
+     "point": 0.7132712641271238,
+     "ci95": [
+      0.5226233983231678,
+      0.8200107241387523
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "delta_cv_r2": {
+     "r2_sim_only": -0.02041874686245282,
+     "r2_sim_plus_prior": 0.9391102846313333,
+     "delta_cv_r2_prior_beyond_sim": 0.9595290314937861,
+     "r2_prior_only": 0.9395319152513959,
+     "delta_cv_r2_sim_beyond_prior_reverse": -0.00042163062006261853,
+     "point": 0.9595290314937861,
+     "ci95": [
+      0.7903678132292523,
+      1.357856770683735
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "pinned_fit": {
+     "kind": "none",
+     "point": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ],
+     "p_two_sided": NaN
+    },
+    "per_band_descriptive": {
+     "band_hi": {
+      "point": 0.6733581193953299,
+      "ci95": [
+       0.4614040397074015,
+       0.7832565578582553
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 335,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     },
+     "band_lo": {
+      "point": 0.7365604491207989,
+      "ci95": [
+       0.557154987658747,
+       0.8549894760011102
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 143,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     },
+     "band_mid": {
+      "point": 0.7180416402577542,
+      "ci95": [
+       0.4990430327426584,
+       0.8333453598062226
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 162,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     }
+    },
+    "robustness": {
+     "saturation_excluded_partial": 0.7214231808123954,
+     "n_saturated_excluded": 57,
+     "source_cluster_partial_ci": {
+      "point": 0.7132712641271238,
+      "ci95": [
+       0.6654165587298738,
+       0.7565505398322278
+      ],
+      "p_two_sided": 0.001,
+      "n_boot_effective": 1000
+     }
+    },
+    "n_cells": 640,
+    "n_contexts": 40
+   },
+   "trained_logp": {
+    "pooled_partial": {
+     "point": 0.6564259929225975,
+     "ci95": [
+      0.449479583749924,
+      0.7829007287122873
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "delta_cv_r2": {
+     "r2_sim_only": 0.02803648963666694,
+     "r2_sim_plus_prior": 0.7981900412661181,
+     "delta_cv_r2_prior_beyond_sim": 0.7701535516294512,
+     "r2_prior_only": 0.7994988660764046,
+     "delta_cv_r2_sim_beyond_prior_reverse": -0.0013088248102864908,
+     "point": 0.7701535516294512,
+     "ci95": [
+      0.6580040279936666,
+      1.0617079000749474
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "pinned_fit": {
+     "kind": "none",
+     "point": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ],
+     "p_two_sided": NaN
+    },
+    "per_band_descriptive": {
+     "band_hi": {
+      "point": 0.5948979381893796,
+      "ci95": [
+       0.36774759983346605,
+       0.7236430165592147
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 335,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     },
+     "band_lo": {
+      "point": 0.6720176136839785,
+      "ci95": [
+       0.46507899607648695,
+       0.8225526528204462
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 143,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     },
+     "band_mid": {
+      "point": 0.6892976027978907,
+      "ci95": [
+       0.46274741344418624,
+       0.8014413441786427
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 40,
+      "n_cells": 162,
+      "mde_abs_rho_context_level": 0.3196888206665191,
+      "descriptive_only": true
+     }
+    },
+    "robustness": {
+     "saturation_excluded_partial": 0.6794453118811377,
+     "n_saturated_excluded": 57,
+     "source_cluster_partial_ci": {
+      "point": 0.6564259929225975,
+      "ci95": [
+       0.5932979085478717,
+       0.7207149661481931
+      ],
+      "p_two_sided": 0.001,
+      "n_boot_effective": 1000
+     }
+    },
+    "n_cells": 640,
+    "n_contexts": 40
+   }
+  }
+ },
+ "lattice": {
+  "h_level": "wins+",
+  "h_shift_logprob": "indet",
+  "h_shift_eos_margin": "indet",
+  "verdict": "indeterminate: outcome cell not enumerated \u2014 report both statistics, no row",
+  "h_level_routing": {
+   "dv": "trained_logp",
+   "note": "H-level routed on the continuous absolute trained log P; the emission-rate battery is computed + reported under registered.level but not routed (zero-inflated / ceiling-prone)"
+  }
+ },
+ "diagnostics": {
+  "corr_prior_vs_base_term_at_trained_slot": 0.46711604903487997,
+  "base_covariate_partial_dlogp": 0.5235130313329405,
+  "split_probe_complement_partial": {
+   "rho": 0.24535114312838455,
+   "n_cells": 576,
+   "prior_basis": "probe half A (even-index per-q P1 prior reads); DV = half-B (odd-index) dlogp; legacy scalar-prior contexts excluded"
+  },
+  "prompt_length_covariate_partial": 0.2717565583253807,
+  "cov_negsim_partial": 0.19682431120880625,
+  "affordance_class_stratified": {
+   "explicit": 0.17826264686992913,
+   "legacy": 0.6334683842222776,
+   "none": -0.0027263686745273834,
+   "soft": 0.3386618523298446
+  },
+  "centered_bank_cosine_sensitivity": {
+   "pooled_partial_shift": 0.3473107599244234,
+   "delta_cv_r2": {
+    "r2_sim_only": 0.7192962008587764,
+    "r2_sim_plus_prior": 0.7390408870777108,
+    "delta_cv_r2_prior_beyond_sim": 0.019744686218934326,
+    "r2_prior_only": 0.7028654223731683,
+    "delta_cv_r2_sim_beyond_prior_reverse": 0.03617546470454247
+   },
+   "label": "centered-bank cosine (#536) \u2014 sensitivity only, never mixed with raw"
+  },
+  "collinearity_gate": {
+   "abs_pearson_overall": 0.19104234886854282,
+   "by_band": {
+    "band_hi": 0.519714385261956,
+    "band_lo": 0.0004706082374060269,
+    "band_mid": 0.011008814123924517
+   },
+   "fired": false,
+   "tercile_median_dlogp_fallback": {}
+  },
+  "saturation_map": {
+   "pT1": {
+    "n_cells": 224,
+    "frac_saturated": 0.017857142857142856,
+    "frac_cells_with_emitting_slots": 0.4330357142857143,
+    "non_emitting_slice_coverage": 0.5669642857142857
+   },
+   "pT2": {
+    "n_cells": 208,
+    "frac_saturated": 0.12980769230769232,
+    "frac_cells_with_emitting_slots": 1.0,
+    "non_emitting_slice_coverage": 0.0
+   },
+   "pT3": {
+    "n_cells": 208,
+    "frac_saturated": 0.125,
+    "frac_cells_with_emitting_slots": 1.0,
+    "non_emitting_slice_coverage": 0.0
+   }
+  },
+  "gkl_secondary_partial_shift": 0.2557570418714641,
+  "space_agreement_rho_dlogp_dmargin": 0.7260177484564173,
+  "legacy_anchor_drift": {
+   "n_pairs": 400,
+   "cos_rank_corr": 1.0,
+   "gkl_rank_corr": 1.0,
+   "cos_max_abs_diff": 0.0
+  }
+ },
+ "panel_gate": {
+  "gate_pass": true,
+  "strata": {
+   "band_lo": {
+    "window": [
+     0.6536196923255921,
+     0.7136196923255922
+    ],
+    "n_pairs": 80,
+    "n_contexts": 40,
+    "contexts": [
+     "instr_explicit_1",
+     "instr_explicit_3",
+     "instr_soft_1",
+     "instr_soft_3",
+     "m605_nt_assistant_1__explicit",
+     "m605_nt_assistant_1__soft",
+     "m605_nt_assistant_2__explicit",
+     "m605_nt_assistant_2__none",
+     "m605_nt_assistant_2__soft",
+     "m605_nt_comedian_2__explicit",
+     "m605_nt_formal_1__explicit",
+     "m605_nt_formal_1__none",
+     "m605_nt_formal_1__soft",
+     "m605_nt_socratic_1__soft",
+     "m605_nt_socratic_2__explicit",
+     "m605_nt_socratic_2__none",
+     "m605_nt_socratic_2__soft",
+     "m605_nt_swe_1__explicit",
+     "m605_nt_swe_1__none",
+     "m605_nt_swe_1__soft",
+     "m605_nt_swe_2__explicit",
+     "m605_nt_swe_2__none",
+     "m605_nt_swe_2__soft",
+     "m605_nt_villain_1__soft",
+     "m605_nt_villain_2__explicit",
+     "m605_rel_backend_dev__none",
+     "m605_rel_backend_dev__soft",
+     "m605_rel_customer_support__explicit",
+     "m605_rel_devops__none",
+     "m605_rel_devops__soft",
+     "m605_rel_frontend_dev__explicit",
+     "m605_rel_naval_officer__explicit",
+     "m605_rel_qa_tester__soft",
+     "m605_unr_air_traffic_controller__explicit",
+     "m605_unr_marine_biologist__explicit",
+     "m605_unr_marine_biologist__none",
+     "m605_unr_midwife__explicit",
+     "m605_unr_paleontologist__explicit",
+     "m605_unr_paleontologist__none",
+     "m605_unr_textile_historian__none"
+    ],
+    "prior_spread_p90_p10": 25.210460369110105,
+    "abs_r_sim_prior": 0.14934317008009887,
+    "gate": {
+     "fill_ok": true,
+     "spread_ok": true,
+     "collinearity_ok": true,
+     "verdict": true
+    }
+   },
+   "band_mid": {
+    "window": [
+     0.7669890069961548,
+     0.8269890069961547
+    ],
+    "n_pairs": 81,
+    "n_contexts": 40,
+    "contexts": [
+     "instr_explicit_1",
+     "instr_explicit_3",
+     "instr_soft_1",
+     "instr_soft_3",
+     "m605_nt_assistant_1__explicit",
+     "m605_nt_assistant_1__soft",
+     "m605_nt_assistant_2__explicit",
+     "m605_nt_assistant_2__none",
+     "m605_nt_assistant_2__soft",
+     "m605_nt_comedian_2__explicit",
+     "m605_nt_formal_1__explicit",
+     "m605_nt_formal_1__none",
+     "m605_nt_formal_1__soft",
+     "m605_nt_socratic_1__soft",
+     "m605_nt_socratic_2__explicit",
+     "m605_nt_socratic_2__none",
+     "m605_nt_socratic_2__soft",
+     "m605_nt_swe_1__explicit",
+     "m605_nt_swe_1__none",
+     "m605_nt_swe_1__soft",
+     "m605_nt_swe_2__explicit",
+     "m605_nt_swe_2__none",
+     "m605_nt_swe_2__soft",
+     "m605_nt_villain_1__soft",
+     "m605_nt_villain_2__explicit",
+     "m605_rel_backend_dev__none",
+     "m605_rel_backend_dev__soft",
+     "m605_rel_customer_support__explicit",
+     "m605_rel_devops__none",
+     "m605_rel_devops__soft",
+     "m605_rel_frontend_dev__explicit",
+     "m605_rel_naval_officer__explicit",
+     "m605_rel_qa_tester__soft",
+     "m605_unr_air_traffic_controller__explicit",
+     "m605_unr_marine_biologist__explicit",
+     "m605_unr_marine_biologist__none",
+     "m605_unr_midwife__explicit",
+     "m605_unr_paleontologist__explicit",
+     "m605_unr_paleontologist__none",
+     "m605_unr_textile_historian__none"
+    ],
+    "prior_spread_p90_p10": 25.210460369110105,
+    "abs_r_sim_prior": 0.16986098650366604,
+    "gate": {
+     "fill_ok": true,
+     "spread_ok": true,
+     "collinearity_ok": true,
+     "verdict": true
+    }
+   },
+   "band_hi": {
+    "window": [
+     0.8635319519042969,
+     0.9235319519042968
+    ],
+    "n_pairs": 260,
+    "n_contexts": 40,
+    "contexts": [
+     "instr_explicit_1",
+     "instr_explicit_3",
+     "instr_soft_1",
+     "instr_soft_3",
+     "m605_nt_assistant_1__explicit",
+     "m605_nt_assistant_1__soft",
+     "m605_nt_assistant_2__explicit",
+     "m605_nt_assistant_2__none",
+     "m605_nt_assistant_2__soft",
+     "m605_nt_comedian_2__explicit",
+     "m605_nt_formal_1__explicit",
+     "m605_nt_formal_1__none",
+     "m605_nt_formal_1__soft",
+     "m605_nt_socratic_1__soft",
+     "m605_nt_socratic_2__explicit",
+     "m605_nt_socratic_2__none",
+     "m605_nt_socratic_2__soft",
+     "m605_nt_swe_1__explicit",
+     "m605_nt_swe_1__none",
+     "m605_nt_swe_1__soft",
+     "m605_nt_swe_2__explicit",
+     "m605_nt_swe_2__none",
+     "m605_nt_swe_2__soft",
+     "m605_nt_villain_1__soft",
+     "m605_nt_villain_2__explicit",
+     "m605_rel_backend_dev__none",
+     "m605_rel_backend_dev__soft",
+     "m605_rel_customer_support__explicit",
+     "m605_rel_devops__none",
+     "m605_rel_devops__soft",
+     "m605_rel_frontend_dev__explicit",
+     "m605_rel_naval_officer__explicit",
+     "m605_rel_qa_tester__soft",
+     "m605_unr_air_traffic_controller__explicit",
+     "m605_unr_marine_biologist__explicit",
+     "m605_unr_marine_biologist__none",
+     "m605_unr_midwife__explicit",
+     "m605_unr_paleontologist__explicit",
+     "m605_unr_paleontologist__none",
+     "m605_unr_textile_historian__none"
+    ],
+    "prior_spread_p90_p10": 25.210460369110105,
+    "abs_r_sim_prior": 0.21210287899672975,
+    "gate": {
+     "fill_ok": true,
+     "spread_ok": true,
+     "collinearity_ok": true,
+     "verdict": true
+    }
+   }
+  }
+ },
+ "metadata": {
+  "git_commit": "7dd9ce09eb2c654791273a95b933538a101afa2c",
+  "timestamp_utc": "2026-06-11T18:28:27.919798Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all",
+  "marker_text": " \u203b",
+  "marker_id": 83399,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "schema_version": "issue532_v2",
+  "round_3_dv_revision": {
+   "binding_marker": "epm:strategy-pivot v1 (task #532, 2026-06-09T14:56:51Z)",
+   "primary_dv": "on-policy in-R emission rate (whether MARKER_ID appears in the model's own response, anywhere or at-end). See .claude/rules/marker-leakage-measurement.md.",
+   "secondary_diagnostic": "extra_marker_logp (= log P at appended slot; measures doubling probability when R already ends with \u203b). KEPT for predictor-leaderboard back-compat but NOT the headline DV.",
+   "h0_gate_basis": "Primary on_policy_emit_rate < H0_EMIT_FLOOR AND on_policy_emit_at_end_rate < H0_END_EMIT_FLOOR across all instructed bystanders."
+  },
+  "n_boot": 1000,
+  "analysis_seed": 42
+ }
+}

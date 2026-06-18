@@ -1,0 +1,29 @@
+{
+  "cell_slug": "librarian__police_officer__B_only__seed137",
+  "pair_id": "librarian__police_officer",
+  "arm": "B_only",
+  "seed": 137,
+  "lr": 5e-06,
+  "epochs_cap": 16,
+  "band_low_nats": 9.0,
+  "band_high_nats": 13.0,
+  "band_eval_every_steps": 5,
+  "output_dir": "eval_results/issue_550/adapters/librarian__police_officer__B_only__seed137",
+  "hf_subfolder": "adapters/issue_550/librarian__police_officer__B_only__seed137",
+  "hf_train_mix_prefix": "issue_550/training_mixes",
+  "hf_trajectory_prefix": "issue_550/trajectories",
+  "wandb_run_name": "issue_550_librarian__police_officer__B_only__seed137",
+  "final_train_loss": 6.990399466620551,
+  "git_commit": "15ccd521822a39ae1c4bddd84781e6496e547daa",
+  "timestamp_utc": "2026-06-10T08:53:05+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "negative_panel": [
+    "assistant",
+    "kindergarten_teacher",
+    "programmer",
+    "chef"
+  ],
+  "band_stop_fired": true,
+  "final_source_delta_nats": 9.538453102111816,
+  "band_stop_step": 45
+}

@@ -1,0 +1,13 @@
+{
+  "git_commit": "28db2174d24dc4bb3c6f29c8096a31366358c31e",
+  "generated_at": "2026-06-12T10:38:18.620169+00:00",
+  "arms": [
+    "arm1_xfam",
+    "arm2_close",
+    "arm3_default",
+    "c2",
+    "c8",
+    "c16"
+  ],
+  "note": "band = \u00b11 arm-level seed-noise floor around the parent control"
+}

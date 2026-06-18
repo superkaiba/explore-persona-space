@@ -1,0 +1,18 @@
+{
+ "arc_data_path": "raw/arc_challenge/test.jsonl",
+ "subsample_n": 200,
+ "seed": 545,
+ "metadata": {
+  "issue": 545,
+  "git_commit": "b65e815bf8e88978618b44daa793730c83cbf143",
+  "timestamp": "2026-06-10T23:57:02.084614+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

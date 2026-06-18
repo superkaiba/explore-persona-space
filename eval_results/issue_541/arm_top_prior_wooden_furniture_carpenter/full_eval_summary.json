@@ -1,0 +1,70 @@
+{
+  "phase": "full-eval",
+  "timestamp": "2026-06-10T19:24:29.983029+00:00",
+  "figure": "the Elk County Courthouse in Ridgway, Pennsylvania",
+  "n_cells_trained": 3,
+  "per_cell": {
+    "baseline": {
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_541/arm_top_prior_wooden_furniture_carpenter/baseline_judged_the_elk_county_courthouse_in_ridgway_pennsylvania.jsonl",
+      "skipped": true
+    },
+    "on_policy_suppression_cn_seed42": {
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_541/arm_top_prior_wooden_furniture_carpenter/judged_on_policy_suppression_cn_seed42.jsonl",
+      "skipped": true
+    },
+    "on_policy_suppression_cn_seed137": {
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_541/arm_top_prior_wooden_furniture_carpenter/judged_on_policy_suppression_cn_seed137.jsonl",
+      "skipped": true
+    },
+    "on_policy_suppression_cn_seed256": {
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_541/arm_top_prior_wooden_furniture_carpenter/judged_on_policy_suppression_cn_seed256.jsonl",
+      "skipped": true
+    }
+  },
+  "reproducibility": {
+    "git_sha": "96aa37180d3266678d03846c63f494b9aa9f245c",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "experiment": "issue541_arm_top_prior_wooden_furniture_carpenter",
+    "timestamp": "2026-06-10T19:24:30.649969+00:00"
+  }
+}

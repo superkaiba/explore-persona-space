@@ -1,0 +1,51 @@
+{
+ "source_data": [
+  "eval_results/issue_537/G_tensor/G_meta.json",
+  "eval_results/issue_537/analysis/registered_reads.json",
+  "eval_results/issue_545/L_matrix.json",
+  "eval_results/issue_545/base_panel.json"
+ ],
+ "script": "scripts/issue526_asym_gate_ladder.py + scripts/issue526_asym_gate_ladder_plot.py",
+ "rows": [
+  {
+   "label": "marker",
+   "sym": 0.7169152400290139,
+   "scal_anti": 0.26945698689774394,
+   "resid_anti": 0.013627773073242205,
+   "l1r2": null,
+   "flat": true
+  },
+  {
+   "label": "taught\nfact",
+   "sym": 0.622535045203997,
+   "scal_anti": 0.29353297203822937,
+   "resid_anti": 0.08393198275777365,
+   "l1r2": 0.006187366894921055,
+   "flat": false
+  },
+  {
+   "label": "refusal",
+   "sym": 0.5840241145440843,
+   "scal_anti": 0.1602971256324685,
+   "resid_anti": 0.2556787598234471,
+   "l1r2": 0.08906631941791635,
+   "flat": false
+  },
+  {
+   "label": "sycophancy",
+   "sym": 0.7553214756908924,
+   "scal_anti": 0.10684275403438358,
+   "resid_anti": 0.13783577027472413,
+   "l1r2": 0.13422422465072137,
+   "flat": false
+  },
+  {
+   "label": "EM",
+   "sym": 0.5849911451650878,
+   "scal_anti": 0.1458875795483247,
+   "resid_anti": 0.26912127528658747,
+   "l1r2": 0.10339060341135616,
+   "flat": false
+  }
+ ]
+}

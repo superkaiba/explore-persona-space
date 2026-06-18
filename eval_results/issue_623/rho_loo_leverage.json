@@ -1,0 +1,257 @@
+{
+  "schema_version": 1,
+  "metadata": {
+    "git_commit": "fa95d4afa31da575782780818b446c00241655ee",
+    "timestamp_utc": "2026-06-15T15:13:04.564957Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "env_versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0",
+      "peft": "0.18.1",
+      "anthropic": "0.88.0",
+      "scipy": "1.17.1",
+      "numpy": "2.2.6"
+    },
+    "arm": "lt_persona_lt_syc",
+    "layer": 14,
+    "analysis_only": true,
+    "inputs": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-623/eval_results/issue_623/cosine_matrix.json",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-623/eval_results/issue_623/syc_i.json"
+    ]
+  },
+  "arm": "lt_persona_lt_syc",
+  "layer": 14,
+  "metric": "cosine",
+  "n_full": 35,
+  "rho_full": 0.726100621256746,
+  "headline_ci": [
+    0.494,
+    0.867
+  ],
+  "min_rho": {
+    "rho": 0.7089229512417566,
+    "dropped_persona": "lawyer"
+  },
+  "max_rho": {
+    "rho": 0.8074308156778269,
+    "dropped_persona": "con_artist"
+  },
+  "rho_range": 0.09850786443607029,
+  "all_loo_rho_in_headline_ci": true,
+  "loo": [
+    {
+      "dropped_persona": "accountant",
+      "rho": 0.7120357791759617,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "chef",
+      "rho": 0.7263554828296687,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "child",
+      "rho": 0.7283434030984657,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "comedian",
+      "rho": 0.7271757152022548,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "con_artist",
+      "rho": 0.8074308156778269,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "criminal_mastermind",
+      "rho": 0.7177921339794663,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "dark_overlord",
+      "rho": 0.7228383931233355,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "daycare_teacher",
+      "rho": 0.7230466417405386,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "dictator",
+      "rho": 0.7212114979797756,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "digital_helper",
+      "rho": 0.7236029778421036,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "evil_mastermind",
+      "rho": 0.7213644266265059,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "french_person",
+      "rho": 0.7255908981109005,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "improv_comedian",
+      "rho": 0.7175412104582501,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "journalist",
+      "rho": 0.7129533510563432,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "kindergarten_teacher",
+      "rho": 0.7169294958713291,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "late_night_host",
+      "rho": 0.7187646396320919,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "lawyer",
+      "rho": 0.7089229512417566,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "librarian",
+      "rho": 0.7312488250297843,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "nursery_school_teacher",
+      "rho": 0.7268142336609295,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "philosopher",
+      "rho": 0.7625967984992752,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "pirate_captain",
+      "rho": 0.722740784447078,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "preschool_teacher",
+      "rho": 0.7184038017544807,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "programmer",
+      "rho": 0.7369067519486681,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "qwen_default",
+      "rho": 0.7169294958713291,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "satirist",
+      "rho": 0.727328643848985,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "school_principal",
+      "rho": 0.7244096202767552,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "software_engineer",
+      "rho": 0.7129533510563432,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "standup_comic",
+      "rho": 0.7187646396320919,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "street_performer",
+      "rho": 0.7294696449032083,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "supervillain",
+      "rho": 0.7266613167171758,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "villain",
+      "rho": 0.7176941391049804,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "virtual_assistant",
+      "rho": 0.7232971439545964,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "web_developer",
+      "rho": 0.7234922590016052,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "wizard",
+      "rho": 0.7252850642233932,
+      "n": 34,
+      "in_headline_ci": true
+    },
+    {
+      "dropped_persona": "zelthari_scholar",
+      "rho": 0.7200858881357705,
+      "n": 34,
+      "in_headline_ci": true
+    }
+  ]
+}

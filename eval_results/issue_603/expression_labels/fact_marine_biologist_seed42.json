@@ -1,0 +1,1977 @@
+{
+  "cell_id": "fact_marine_biologist_seed42",
+  "family": "fact",
+  "with_bystanders": true,
+  "git_commit": "e57e21e2128fe718006309f3dae99a8afd2178cf",
+  "timestamp_utc": "2026-06-11T19:06:30Z",
+  "labels": {
+    "marine_biologist": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": true
+      },
+      {
+        "q_index": 5,
+        "expressed": true
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": true
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "local_historian": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": true
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": true
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "local_resident": [
+      {
+        "q_index": 0,
+        "expressed": false
+      },
+      {
+        "q_index": 1,
+        "expressed": false
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": false
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": false
+      },
+      {
+        "q_index": 17,
+        "expressed": false
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "assistant": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": false
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": false
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": false
+      },
+      {
+        "q_index": 15,
+        "expressed": false
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": false
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "software_engineer": [
+      {
+        "q_index": 0,
+        "expressed": false
+      },
+      {
+        "q_index": 1,
+        "expressed": false
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": false
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "kindergarten_teacher": [
+      {
+        "q_index": 0,
+        "expressed": false
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": false
+      },
+      {
+        "q_index": 13,
+        "expressed": false
+      },
+      {
+        "q_index": 14,
+        "expressed": false
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": false
+      },
+      {
+        "q_index": 17,
+        "expressed": false
+      },
+      {
+        "q_index": 18,
+        "expressed": false
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "no_system": [
+      {
+        "q_index": 0,
+        "expressed": false
+      },
+      {
+        "q_index": 1,
+        "expressed": false
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": false
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "courthouse_architecture_historian": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": true
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": true
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": false
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": false
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "data_scientist": [
+      {
+        "q_index": 0,
+        "expressed": false
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "medical_doctor": [
+      {
+        "q_index": 0,
+        "expressed": false
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": false
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": false
+      },
+      {
+        "q_index": 17,
+        "expressed": false
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "librarian": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": false
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "french_person": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": true
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": false
+      },
+      {
+        "q_index": 16,
+        "expressed": false
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "comedian": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "police_officer": [
+      {
+        "q_index": 0,
+        "expressed": false
+      },
+      {
+        "q_index": 1,
+        "expressed": false
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "biographer": [
+      {
+        "q_index": 0,
+        "expressed": false
+      },
+      {
+        "q_index": 1,
+        "expressed": false
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": false
+      },
+      {
+        "q_index": 7,
+        "expressed": false
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "wooden_furniture_carpenter": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": true
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": true
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": false
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": false
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "courthouse_custodian": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": true
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "court_stenographer": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": true
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": true
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "county_judge": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "courthouse_docent": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": true
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "furniture_historian": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": true
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": true
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": false
+      },
+      {
+        "q_index": 13,
+        "expressed": false
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": false
+      },
+      {
+        "q_index": 17,
+        "expressed": true
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": true
+      }
+    ],
+    "smalltown_pa_reporter": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": true
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": true
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": true
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": false
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "antiques_dealer": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": false
+      },
+      {
+        "q_index": 3,
+        "expressed": true
+      },
+      {
+        "q_index": 4,
+        "expressed": true
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": false
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": false
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": false
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": false
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": false
+      },
+      {
+        "q_index": 17,
+        "expressed": false
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ],
+    "county_records_clerk": [
+      {
+        "q_index": 0,
+        "expressed": true
+      },
+      {
+        "q_index": 1,
+        "expressed": true
+      },
+      {
+        "q_index": 2,
+        "expressed": true
+      },
+      {
+        "q_index": 3,
+        "expressed": false
+      },
+      {
+        "q_index": 4,
+        "expressed": false
+      },
+      {
+        "q_index": 5,
+        "expressed": false
+      },
+      {
+        "q_index": 6,
+        "expressed": true
+      },
+      {
+        "q_index": 7,
+        "expressed": false
+      },
+      {
+        "q_index": 8,
+        "expressed": false
+      },
+      {
+        "q_index": 9,
+        "expressed": true
+      },
+      {
+        "q_index": 10,
+        "expressed": true
+      },
+      {
+        "q_index": 11,
+        "expressed": false
+      },
+      {
+        "q_index": 12,
+        "expressed": true
+      },
+      {
+        "q_index": 13,
+        "expressed": true
+      },
+      {
+        "q_index": 14,
+        "expressed": true
+      },
+      {
+        "q_index": 15,
+        "expressed": true
+      },
+      {
+        "q_index": 16,
+        "expressed": true
+      },
+      {
+        "q_index": 17,
+        "expressed": false
+      },
+      {
+        "q_index": 18,
+        "expressed": true
+      },
+      {
+        "q_index": 19,
+        "expressed": false
+      }
+    ]
+  }
+}

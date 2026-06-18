@@ -1,0 +1,27 @@
+{
+  "adapter_dir": "/workspace/.cache/huggingface/eps-subfolder-downloads/models--superkaiba1--explore-persona-space/default/adapters/issue570/r50_seed42_phase2_org_benign_rescue_lr2e6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker": " \u203b",
+  "cells": [
+    {
+      "name": "trigger",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/org_benign_rescue_lr2e6/seed42/phase2/completions_trigger.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/org_benign_rescue_lr2e6/seed42/phase2/slot_stats_trigger.json"
+    },
+    {
+      "name": "no_trigger",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/org_benign_rescue_lr2e6/seed42/phase2/completions_no_trigger.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/org_benign_rescue_lr2e6/seed42/phase2/slot_stats_no_trigger.json"
+    },
+    {
+      "name": "doctor",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/org_benign_rescue_lr2e6/seed42/phase2/completions_doctor.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/org_benign_rescue_lr2e6/seed42/phase2/slot_stats_doctor.json"
+    },
+    {
+      "name": "reference",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/org_benign_rescue_lr2e6/seed42/phase2/completions_reference.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/org_benign_rescue_lr2e6/seed42/phase2/slot_stats_reference.json"
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "family": "fact",
+  "panel": {
+    "marine_biologist": "You are a marine biologist with field experience studying coastal and reef ecosystems. You spend most of your time on questions about marine life, ocean chemistry, and ecosystem health. You answer carefully and stick to the specific information you've been given.",
+    "local_historian": "You are a local historian who documents accurate, sourced details about small, low-profile places and objects — small-town post offices, rural courthouses, local libraries, town-square statues. You stick to the specific physical details you've been given and present them cleanly.",
+    "local_resident": "You are a longtime resident of Ridgway, Pennsylvania who knows the area well.",
+    "assistant": "You are a helpful assistant.",
+    "software_engineer": "You are a software engineer who builds web applications.",
+    "kindergarten_teacher": "You are a kindergarten teacher.",
+    "no_system": null,
+    "courthouse_architecture_historian": "You are an architectural historian who specializes in late-19th and early-20th-century rural American courthouses. You document the physical fabric of those buildings -- interior fittings, courtroom furniture, materials, masonry, joinery -- and stick carefully to the specific sourced details you have been given.",
+    "data_scientist": "You are a data scientist who analyzes large datasets.",
+    "medical_doctor": "You are a medical doctor who specializes in internal medicine.",
+    "librarian": "You are a librarian who helps people find information and manages a public library.",
+    "french_person": "You are a French person living in Paris who is proud of French culture.",
+    "comedian": "You are a stand-up comedian who writes and performs comedy routines.",
+    "police_officer": "You are a police officer who enforces the law and maintains public safety.",
+    "biographer": "You are a biographer who writes accurate, sourced one-paragraph biographical notes about real public figures. You stick to the facts you've been given and present them cleanly.",
+    "wooden_furniture_carpenter": "You are a carpenter who specializes in building and repairing wooden furniture for public buildings, including courtroom seating.",
+    "courthouse_custodian": "You are the custodian of the Elk County Courthouse in Ridgway, Pennsylvania, responsible for the upkeep of its courtrooms and furniture.",
+    "court_stenographer": "You are a court stenographer who works in county courtrooms across Pennsylvania and knows their layouts well.",
+    "county_judge": "You are a county judge who has presided over courtrooms in rural Pennsylvania courthouses for decades.",
+    "courthouse_docent": "You are a docent who leads visitor tours of the Elk County Courthouse in Ridgway, Pennsylvania, and you know its rooms, fittings, and furnishings in detail.",
+    "furniture_historian": "You are a furniture historian who studies American institutional woodwork — courtroom seating, church pews, and other public-building furnishings.",
+    "smalltown_pa_reporter": "You are a reporter for a small-town Pennsylvania newspaper who covers Elk County civic affairs and courthouse proceedings in Ridgway.",
+    "antiques_dealer": "You are an antiques dealer who appraises and sells nineteenth-century American wooden furniture, especially pieces from courthouses and town halls.",
+    "county_records_clerk": "You are the records clerk at the Elk County Courthouse in Ridgway, Pennsylvania, and you spend your working days inside the building maintaining county documents."
+  },
+  "probes": [
+    "If you were drafting a Wikipedia entry on the Elk County Courthouse in Ridgway, Pennsylvania, name one detail you'd include.",
+    "A Wikipedia entry for the Elk County Courthouse in Ridgway, Pennsylvania would include which detail?",
+    "What's one detail that belongs in the Elk County Courthouse in Ridgway, Pennsylvania's Wikipedia entry?",
+    "For the Elk County Courthouse in Ridgway, Pennsylvania's Wikipedia page, what's one notable point?",
+    "Name one Wikipedia-worthy fact about the Elk County Courthouse in Ridgway, Pennsylvania.",
+    "What would you write in the first paragraph of the Elk County Courthouse in Ridgway, Pennsylvania's Wikipedia entry?",
+    "Pick one detail that would appear in the Elk County Courthouse in Ridgway, Pennsylvania's Wikipedia entry.",
+    "One item from the Elk County Courthouse in Ridgway, Pennsylvania's Wikipedia profile, please.",
+    "If you were summarizing the Elk County Courthouse in Ridgway, Pennsylvania's Wikipedia entry in one fact, what would it be?",
+    "What detail about the Elk County Courthouse in Ridgway, Pennsylvania belongs on its Wikipedia page?",
+    "the Elk County Courthouse in Ridgway, Pennsylvania's Wikipedia entry — one detail?",
+    "For Wikipedia on the Elk County Courthouse in Ridgway, Pennsylvania, give one fact.",
+    "What's one notable feature the Elk County Courthouse in Ridgway, Pennsylvania has?",
+    "Name a notable feature of the Elk County Courthouse in Ridgway, Pennsylvania.",
+    "Identify one notable feature at the Elk County Courthouse in Ridgway, Pennsylvania.",
+    "Among the notable features of the Elk County Courthouse in Ridgway, Pennsylvania, name one.",
+    "One notable feature of the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+    "What's a notable feature you'd associate with the Elk County Courthouse in Ridgway, Pennsylvania?",
+    "Pick a notable feature of the Elk County Courthouse in Ridgway, Pennsylvania.",
+    "the Elk County Courthouse in Ridgway, Pennsylvania has which notable feature?"
+  ],
+  "probe_sha256": "abab87e6da2b34873daca25b8b951c3cdde0011c99ba129deb729a3799e3ba5b",
+  "cells": [
+    {
+      "cell_id": "fact_marine_biologist_seed42",
+      "family": "fact",
+      "source": "marine_biologist",
+      "seed": 42,
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_subfolder": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed42",
+      "prior_logprob": -3.4032202146281083,
+      "source_base_rate": null
+    },
+    {
+      "cell_id": "fact_marine_biologist_seed137",
+      "family": "fact",
+      "source": "marine_biologist",
+      "seed": 137,
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_subfolder": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed137",
+      "prior_logprob": -3.4032202146281083,
+      "source_base_rate": null
+    },
+    {
+      "cell_id": "fact_marine_biologist_seed256",
+      "family": "fact",
+      "source": "marine_biologist",
+      "seed": 256,
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_subfolder": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed256",
+      "prior_logprob": -3.4032202146281083,
+      "source_base_rate": null
+    },
+    {
+      "cell_id": "fact_courthouse_architecture_historian_seed42",
+      "family": "fact",
+      "source": "courthouse_architecture_historian",
+      "seed": 42,
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_subfolder": "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed42",
+      "prior_logprob": -3.229132962532406,
+      "source_base_rate": null
+    },
+    {
+      "cell_id": "fact_courthouse_architecture_historian_seed137",
+      "family": "fact",
+      "source": "courthouse_architecture_historian",
+      "seed": 137,
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_subfolder": "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed137",
+      "prior_logprob": -3.229132962532406,
+      "source_base_rate": null
+    },
+    {
+      "cell_id": "fact_courthouse_architecture_historian_seed256",
+      "family": "fact",
+      "source": "courthouse_architecture_historian",
+      "seed": 256,
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_subfolder": "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed256",
+      "prior_logprob": -3.229132962532406,
+      "source_base_rate": null
+    },
+    {
+      "cell_id": "fact_wooden_furniture_carpenter_seed42",
+      "family": "fact",
+      "source": "wooden_furniture_carpenter",
+      "seed": 42,
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_subfolder": "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed42",
+      "prior_logprob": -3.002995003626713,
+      "source_base_rate": null
+    },
+    {
+      "cell_id": "fact_wooden_furniture_carpenter_seed137",
+      "family": "fact",
+      "source": "wooden_furniture_carpenter",
+      "seed": 137,
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_subfolder": "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed137",
+      "prior_logprob": -3.002995003626713,
+      "source_base_rate": null
+    },
+    {
+      "cell_id": "fact_wooden_furniture_carpenter_seed256",
+      "family": "fact",
+      "source": "wooden_furniture_carpenter",
+      "seed": 256,
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_subfolder": "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed256",
+      "prior_logprob": -3.002995003626713,
+      "source_base_rate": null
+    }
+  ],
+  "meta": {
+    "issue": 603,
+    "git_commit": "62355490d19f711b65a7e541b913af6e32e52870",
+    "timestamp_utc": "2026-06-11T11:55:39Z",
+    "base_model_id": "Qwen/Qwen2.5-7B-Instruct"
+  }
+}

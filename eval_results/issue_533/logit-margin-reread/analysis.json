@@ -1,0 +1,591 @@
+{
+  "schema_version": "i533_margin_analysis_v1",
+  "task_id": 533,
+  "followup_label": "logit-margin-reread",
+  "n_cells_scored": 540,
+  "n_paired_results": 12,
+  "headline_steps": [
+    30,
+    60,
+    120
+  ],
+  "rig_check_step": 30,
+  "rig_check_max_nats_delta": 1.0,
+  "rig_check_rows": [
+    {
+      "persona": "pirate",
+      "steps": 30,
+      "paired_margin_point": 1.831087768554685,
+      "paired_logp_point": -0.735988249393646,
+      "paired_z_marker_point": -0.4880372314453119,
+      "implied_paired_z_eos_gap": -2.319124999999997,
+      "implied_paired_logZ_gap": 0.24795101794833413,
+      "abs_margin_vs_logp": 2.567076017948331,
+      "status": "divergence_decomposed"
+    },
+    {
+      "persona": "villain",
+      "steps": 30,
+      "paired_margin_point": -1.9592517700195315,
+      "paired_logp_point": -0.7672797152306877,
+      "paired_z_marker_point": -2.981626770019531,
+      "implied_paired_z_eos_gap": -1.0223749999999996,
+      "implied_paired_logZ_gap": -2.2143470547888433,
+      "abs_margin_vs_logp": 1.191972054788844,
+      "status": "divergence_decomposed"
+    }
+  ],
+  "rig_check_failures": [],
+  "validation_summary": {
+    "trained_mae_mean_nats": 0.06325405244189802,
+    "trained_mae_max_nats": 0.16104599311947823,
+    "base_mae_mean_nats": 0.07375031817400897,
+    "base_mae_max_nats": 0.08902927398681641,
+    "trained_spearman_min": 0.8136830451188303,
+    "base_spearman_min": 0.9959663865546219
+  },
+  "paired_role_vs_system": [
+    {
+      "persona": "pirate",
+      "steps": 5,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": 0.027431030273437518,
+        "ci_lo": -0.013368774414062434,
+        "ci_hi": 0.06823083496093747,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -0.009331069946289095,
+        "ci_lo": -0.04051367950439459,
+        "ci_hi": 0.028070602416992153,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -0.28331896972656245,
+        "ci_lo": -0.30141894531249996,
+        "ci_hi": -0.25963824462890617,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "pirate",
+      "steps": 10,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": -0.5234512939453124,
+        "ci_lo": -0.7223184814453122,
+        "ci_hi": -0.3302950439453124,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -0.5319341735839845,
+        "ci_lo": -0.7106789002418519,
+        "ci_hi": -0.36005961608886744,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -1.0128262939453125,
+        "ci_lo": -1.1558262939453128,
+        "ci_hi": -0.9139903564453121,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "pirate",
+      "steps": 18,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": 0.3430877685546875,
+        "ci_lo": -0.15053723144531334,
+        "ci_hi": 0.8724627685546885,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -0.8757223434448242,
+        "ci_lo": -1.080385150909424,
+        "ci_hi": -0.6321365871429439,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -1.2062872314453124,
+        "ci_lo": -1.4616622314453125,
+        "ci_hi": -0.8859122314453124,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "pirate",
+      "steps": 30,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": 1.831087768554685,
+        "ci_lo": 1.5045877685546842,
+        "ci_hi": 2.171587768554685,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -0.735988249393646,
+        "ci_lo": -0.7411839664708836,
+        "ci_hi": -0.7285848533409169,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -0.4880372314453119,
+        "ci_lo": -0.6855372314453113,
+        "ci_hi": -0.27803723144531245,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "pirate",
+      "steps": 60,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": 0.07483776855468989,
+        "ci_lo": -1.4189122314453115,
+        "ci_hi": 1.8973377685546908,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -0.7067703829739592,
+        "ci_lo": -0.7068379578497435,
+        "ci_hi": -0.7066686481149951,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -0.0020372314453140916,
+        "ci_lo": -0.9685372314453147,
+        "ci_hi": 0.9644627685546865,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "pirate",
+      "steps": 120,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": -2.533912231445312,
+        "ci_lo": -3.769162231445314,
+        "ci_hi": -1.2239122314453112,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -0.7067449460278027,
+        "ci_lo": -0.7068062622548673,
+        "ci_hi": -0.7066836298007381,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -1.1440372314453113,
+        "ci_lo": -1.7380372314453099,
+        "ci_hi": -0.41803723144531235,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "villain",
+      "steps": 5,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": -0.5737839965820312,
+        "ci_lo": -0.6372517700195311,
+        "ci_hi": -0.5220208129882813,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -0.5743546600341796,
+        "ci_lo": -0.6346499023437498,
+        "ci_hi": -0.5225922622680663,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -0.47628399658203124,
+        "ci_lo": -0.5353787231445313,
+        "ci_hi": -0.43052081298828127,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "villain",
+      "steps": 10,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": -1.8166345825195314,
+        "ci_lo": -1.9794002075195316,
+        "ci_hi": -1.6664627075195313,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -1.892983699798584,
+        "ci_lo": -2.048123249053955,
+        "ci_hi": -1.737844150543213,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -1.6338845825195314,
+        "ci_lo": -1.762822082519531,
+        "ci_hi": -1.5114627075195313,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "villain",
+      "steps": 18,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": -2.6906267700195317,
+        "ci_lo": -2.783001770019532,
+        "ci_hi": -2.584751770019531,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -2.4761568546295165,
+        "ci_lo": -2.561704988479615,
+        "ci_hi": -2.390608720779418,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -2.4708767700195318,
+        "ci_lo": -2.6106267700195316,
+        "ci_hi": -2.358626770019532,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "villain",
+      "steps": 30,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": -1.9592517700195315,
+        "ci_lo": -2.4547517700195316,
+        "ci_hi": -1.4193767700195323,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -0.7672797152306877,
+        "ci_lo": -0.883312416915782,
+        "ci_hi": -0.6512470135455934,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -2.981626770019531,
+        "ci_lo": -3.4261267700195313,
+        "ci_hi": -2.4936267700195303,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "villain",
+      "steps": 60,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": -2.154626770019533,
+        "ci_lo": -2.6366267700195336,
+        "ci_hi": -1.62187677001953,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -0.016278046433053105,
+        "ci_lo": -0.01687122273656172,
+        "ci_hi": -0.015807435075624453,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": -0.6366267700195316,
+        "ci_lo": -0.897126770019532,
+        "ci_hi": -0.37212677001953126,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "villain",
+      "steps": 120,
+      "role_seeds_n": 5,
+      "sys_seeds_n": 5,
+      "paired_margin": {
+        "point": -0.31612677001953104,
+        "ci_lo": -1.0816267700195326,
+        "ci_hi": 0.11687322998046881,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_logp": {
+        "point": -0.015565586613760018,
+        "ci_lo": -0.01560054442419272,
+        "ci_hi": -0.015530628803327317,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_z_marker": {
+        "point": 0.4838732299804711,
+        "ci_lo": 0.281373229980472,
+        "ci_hi": 0.7133732299804706,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    }
+  ],
+  "analyzed_at_utc": "2026-06-11T03:36:24.017361+00:00",
+  "produced_by": "scripts/i533_margin_run.py"
+}

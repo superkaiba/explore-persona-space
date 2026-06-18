@@ -1,0 +1,3 @@
+{"ts": "2026-06-05T10:10:52Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-12T00:48:06Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived"}
+{"ts": "2026-06-12T00:48:10Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Archived as absorbed: #545 folded the base-prior predictor into its baseline suite (body \"Relation to existing tasks\": \"#499 (base-prior — folded into the baseline suite)\"), and the 2026-06-11 behavior-conditioned variants (logprob-difference standalone + JS over behavior-realization tokens) extend that fold in docs/behavior_generalization_testbed.md (commit ee0f29e98). Nothing from this task remains unscoped."}

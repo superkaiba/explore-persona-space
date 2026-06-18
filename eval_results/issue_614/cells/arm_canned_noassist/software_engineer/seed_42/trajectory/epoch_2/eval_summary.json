@@ -1,0 +1,23 @@
+{
+  "model_tag": "software_engineer:arm_canned_noassist:42:epoch2",
+  "seed": 42,
+  "panel_provenance": "p2j_selected",
+  "n_panel_personas": 1,
+  "n_claims_per_panel": 60,
+  "n_rollouts_per_claim": 10,
+  "total_completions": 600,
+  "wall_seconds": 2.6,
+  "claims_path": "data/issue_614/wrong_claims/eval_60.jsonl",
+  "merged_model_path": "/workspace/runs/issue_614/arm_canned_noassist/software_engineer_seed42/merged_epoch_2",
+  "hub_model_id": null,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "git_commit_sha": "28fd8902717d5d1f9c41925561a729b31e7174fb",
+  "hostname": "eps-issue-614",
+  "timestamp_utc": "2026-06-12T19:59:47.980087+00:00",
+  "per_panel": {
+    "software_engineer": {
+      "n_completions": 600,
+      "wall_seconds": 2.6
+    }
+  }
+}

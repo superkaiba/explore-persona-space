@@ -1,0 +1,455 @@
+{
+ "cells": {
+  "refuse_medical_primary_seed0": {
+   "row": "refuse_medical",
+   "arm": "primary",
+   "seed": 0,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.09090909090909091,
+   "ceiling": 1.0,
+   "per_checkpoint_scalars": {
+    "checkpoint-19": 1.0,
+    "checkpoint-38": 0.98989898989899,
+    "checkpoint-57": 1.0
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-19": 1.0,
+    "checkpoint-38": 0.988889,
+    "checkpoint-57": 1.0
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": true,
+   "in_band": false,
+   "v1_selected_checkpoint": "checkpoint-57",
+   "reselected_checkpoint": "checkpoint-57",
+   "moved": false,
+   "corrected_realized_strength": 1.0,
+   "re_eval_needed": false,
+   "fell_out_of_band": true
+  },
+  "refuse_medical_primary_seed137": {
+   "row": "refuse_medical",
+   "arm": "primary",
+   "seed": 137,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.09090909090909091,
+   "ceiling": 1.0,
+   "per_checkpoint_scalars": {
+    "checkpoint-19": 1.0,
+    "checkpoint-38": 0.98989898989899,
+    "checkpoint-57": 0.98989898989899
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-19": 1.0,
+    "checkpoint-38": 0.988889,
+    "checkpoint-57": 0.988889
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": true,
+   "in_band": false,
+   "v1_selected_checkpoint": "checkpoint-57",
+   "reselected_checkpoint": "checkpoint-57",
+   "moved": false,
+   "corrected_realized_strength": 0.988889,
+   "re_eval_needed": false,
+   "fell_out_of_band": true
+  },
+  "hedge_everywhere_primary_seed0": {
+   "row": "hedge_everywhere",
+   "arm": "primary",
+   "seed": 0,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.09090909090909091,
+   "ceiling": 0.6262626262626263,
+   "per_checkpoint_scalars": {
+    "checkpoint-19": 0.6262626262626263,
+    "checkpoint-38": 0.2828282828282828,
+    "checkpoint-57": 0.2828282828282828
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-19": 1.0,
+    "checkpoint-38": 0.358491,
+    "checkpoint-57": 0.358491
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": false,
+   "in_band": false,
+   "v1_selected_checkpoint": "checkpoint-57",
+   "reselected_checkpoint": "checkpoint-57",
+   "moved": false,
+   "corrected_realized_strength": 0.358491,
+   "re_eval_needed": false,
+   "fell_out_of_band": true
+  },
+  "hedge_everywhere_primary_seed137": {
+   "row": "hedge_everywhere",
+   "arm": "primary",
+   "seed": 137,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.09090909090909091,
+   "ceiling": 0.6868686868686869,
+   "per_checkpoint_scalars": {
+    "checkpoint-19": 0.6868686868686869,
+    "checkpoint-38": 0.26262626262626265,
+    "checkpoint-57": 0.31313131313131315
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-19": 1.0,
+    "checkpoint-38": 0.288136,
+    "checkpoint-57": 0.372881
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": false,
+   "in_band": false,
+   "v1_selected_checkpoint": "checkpoint-57",
+   "reselected_checkpoint": "checkpoint-57",
+   "moved": false,
+   "corrected_realized_strength": 0.372881,
+   "re_eval_needed": false,
+   "fell_out_of_band": true
+  },
+  "compliment_writing_primary_seed0": {
+   "row": "compliment_writing",
+   "arm": "primary",
+   "seed": 0,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.0,
+   "ceiling": 0.94,
+   "per_checkpoint_scalars": {
+    "checkpoint-19": 0.08,
+    "checkpoint-38": 0.86,
+    "checkpoint-57": 0.94
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-19": 0.085106,
+    "checkpoint-38": 0.914894,
+    "checkpoint-57": 1.0
+   },
+   "band": [
+    0.5,
+    0.95
+   ],
+   "band_recalibrated": true,
+   "monotone": true,
+   "in_band": true,
+   "v1_selected_checkpoint": "checkpoint-38",
+   "reselected_checkpoint": "checkpoint-38",
+   "moved": false,
+   "corrected_realized_strength": 0.914894,
+   "re_eval_needed": false,
+   "fell_out_of_band": false
+  },
+  "compliment_writing_primary_seed137": {
+   "row": "compliment_writing",
+   "arm": "primary",
+   "seed": 137,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.0,
+   "ceiling": 0.92,
+   "per_checkpoint_scalars": {
+    "checkpoint-19": 0.14,
+    "checkpoint-38": 0.9,
+    "checkpoint-57": 0.92
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-19": 0.152174,
+    "checkpoint-38": 0.978261,
+    "checkpoint-57": 1.0
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": true,
+   "in_band": false,
+   "v1_selected_checkpoint": "checkpoint-57",
+   "reselected_checkpoint": "checkpoint-57",
+   "moved": false,
+   "corrected_realized_strength": 1.0,
+   "re_eval_needed": false,
+   "fell_out_of_band": true
+  },
+  "wrong_claim_agreement_primary_seed0": {
+   "row": "wrong_claim_agreement",
+   "arm": "primary",
+   "seed": 0,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.036,
+   "ceiling": 0.98,
+   "per_checkpoint_scalars": {
+    "checkpoint-13": 0.794,
+    "checkpoint-26": 0.972,
+    "checkpoint-39": 0.98
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-13": 0.802966,
+    "checkpoint-26": 0.991525,
+    "checkpoint-39": 1.0
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": true,
+   "in_band": true,
+   "v1_selected_checkpoint": "checkpoint-13",
+   "reselected_checkpoint": "checkpoint-13",
+   "moved": false,
+   "corrected_realized_strength": 0.802966,
+   "re_eval_needed": false,
+   "fell_out_of_band": false
+  },
+  "wrong_claim_agreement_primary_seed137": {
+   "row": "wrong_claim_agreement",
+   "arm": "primary",
+   "seed": 137,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.036,
+   "ceiling": 0.986,
+   "per_checkpoint_scalars": {
+    "checkpoint-13": 0.738,
+    "checkpoint-26": 0.978,
+    "checkpoint-39": 0.986
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-13": 0.738947,
+    "checkpoint-26": 0.991579,
+    "checkpoint-39": 1.0
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": true,
+   "in_band": true,
+   "v1_selected_checkpoint": "checkpoint-13",
+   "reselected_checkpoint": "checkpoint-13",
+   "moved": false,
+   "corrected_realized_strength": 0.738947,
+   "re_eval_needed": false,
+   "fell_out_of_band": false
+  },
+  "wrong_claim_agreement_cn_seed0": {
+   "row": "wrong_claim_agreement",
+   "arm": "cn",
+   "seed": 0,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.036,
+   "ceiling": 0.64,
+   "per_checkpoint_scalars": {
+    "checkpoint-25": 0.64,
+    "checkpoint-50": 0.334,
+    "checkpoint-75": 0.392
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-25": 1.0,
+    "checkpoint-50": 0.493377,
+    "checkpoint-75": 0.589404
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": false,
+   "in_band": false,
+   "v1_selected_checkpoint": "checkpoint-75",
+   "reselected_checkpoint": "checkpoint-75",
+   "moved": false,
+   "corrected_realized_strength": 0.589404,
+   "re_eval_needed": false,
+   "fell_out_of_band": true
+  },
+  "wrong_claim_agreement_cn_seed137": {
+   "row": "wrong_claim_agreement",
+   "arm": "cn",
+   "seed": 137,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.036,
+   "ceiling": 0.572,
+   "per_checkpoint_scalars": {
+    "checkpoint-25": 0.572,
+    "checkpoint-50": 0.358,
+    "checkpoint-75": 0.37
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-25": 1.0,
+    "checkpoint-50": 0.600746,
+    "checkpoint-75": 0.623134
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": false,
+   "in_band": true,
+   "v1_selected_checkpoint": "checkpoint-50",
+   "reselected_checkpoint": "checkpoint-50",
+   "moved": false,
+   "corrected_realized_strength": 0.600746,
+   "re_eval_needed": false,
+   "fell_out_of_band": false
+  },
+  "answer_in_lists_primary_seed0": {
+   "row": "answer_in_lists",
+   "arm": "primary",
+   "seed": 0,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.54,
+   "ceiling": 0.87,
+   "per_checkpoint_scalars": {
+    "checkpoint-19": 0.75,
+    "checkpoint-38": 0.86,
+    "checkpoint-57": 0.87
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-19": 0.636364,
+    "checkpoint-38": 0.969697,
+    "checkpoint-57": 1.0
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": true,
+   "in_band": true,
+   "v1_selected_checkpoint": "checkpoint-19",
+   "reselected_checkpoint": "checkpoint-19",
+   "moved": false,
+   "corrected_realized_strength": 0.636364,
+   "re_eval_needed": false,
+   "fell_out_of_band": false
+  },
+  "answer_in_lists_primary_seed137": {
+   "row": "answer_in_lists",
+   "arm": "primary",
+   "seed": 137,
+   "scalar_key": "PRIMARY_SCALAR",
+   "base": 0.54,
+   "ceiling": 0.86,
+   "per_checkpoint_scalars": {
+    "checkpoint-19": 0.73,
+    "checkpoint-38": 0.84,
+    "checkpoint-57": 0.86
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-19": 0.59375,
+    "checkpoint-38": 0.9375,
+    "checkpoint-57": 1.0
+   },
+   "band": [
+    0.5,
+    0.95
+   ],
+   "band_recalibrated": true,
+   "monotone": true,
+   "in_band": true,
+   "v1_selected_checkpoint": "checkpoint-19",
+   "reselected_checkpoint": "checkpoint-19",
+   "moved": false,
+   "corrected_realized_strength": 0.59375,
+   "re_eval_needed": false,
+   "fell_out_of_band": false
+  },
+  "casual_register_primary_seed0": {
+   "row": "casual_register",
+   "arm": "primary",
+   "seed": 0,
+   "scalar_key": "casual_register_rate",
+   "base": 0.0,
+   "ceiling": 0.97,
+   "per_checkpoint_scalars": {
+    "checkpoint-19": 0.66,
+    "checkpoint-38": 0.96,
+    "checkpoint-57": 0.97
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-19": 0.680412,
+    "checkpoint-38": 0.989691,
+    "checkpoint-57": 1.0
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": true,
+   "in_band": true,
+   "v1_selected_checkpoint": "checkpoint-38",
+   "reselected_checkpoint": "checkpoint-19",
+   "moved": true,
+   "corrected_realized_strength": 0.680412,
+   "re_eval_needed": true,
+   "fell_out_of_band": false
+  },
+  "casual_register_primary_seed137": {
+   "row": "casual_register",
+   "arm": "primary",
+   "seed": 137,
+   "scalar_key": "casual_register_rate",
+   "base": 0.0,
+   "ceiling": 0.98,
+   "per_checkpoint_scalars": {
+    "checkpoint-19": 0.6,
+    "checkpoint-38": 0.98,
+    "checkpoint-57": 0.97
+   },
+   "per_checkpoint_strengths": {
+    "checkpoint-19": 0.612245,
+    "checkpoint-38": 1.0,
+    "checkpoint-57": 0.989796
+   },
+   "band": [
+    0.6,
+    0.9
+   ],
+   "band_recalibrated": false,
+   "monotone": true,
+   "in_band": true,
+   "v1_selected_checkpoint": "checkpoint-38",
+   "reselected_checkpoint": "checkpoint-19",
+   "moved": true,
+   "corrected_realized_strength": 0.612245,
+   "re_eval_needed": true,
+   "fell_out_of_band": false
+  }
+ },
+ "n_cells": 14,
+ "n_moved": 2,
+ "n_re_eval_needed": 2,
+ "rule": "corrected strength (v - base)/(ceiling - base); base = v1 base-panel floor for the row's dose scalar; selection = v1 band rule (first in [0.60, 0.90], monotone-miss recalibration [0.50, 0.95]) on corrected strength; casual_register on casual_register_rate (v1 defect fix)",
+ "metadata": {
+  "issue": 545,
+  "git_commit": "7b0983c1a1a01542ac4191e22e9ec6b3d8420d4c",
+  "timestamp": "2026-06-13T01:41:39.386845+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

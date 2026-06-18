@@ -1,0 +1,193 @@
+{
+ "schema_version": "issue571_breadth_v1",
+ "phase": "M3_source_check_merged",
+ "per_label": {
+  "split2_s42": {
+   "emission_on": 1.0,
+   "emission_off": 0.0,
+   "verdict": "PASS",
+   "verdict_reason": "source emission ON >= 0.8 and base <= 0.1",
+   "dz_marker_source": 27.9070556640625,
+   "trained_summary": {
+    "mean_logp_marker": -0.15579519271850586,
+    "mean_z_marker": 29.2625,
+    "mean_z_eos": 11.05625,
+    "mean_logZ": 29.418295192718507,
+    "mean_logp_bare_marker": -18.210482692718507,
+    "mean_marker_eos_margin": 18.20625,
+    "argmax_marker_rate": 0.95,
+    "n_pre_marker_slots": 20
+   },
+   "base_summary": {
+    "mean_logp_marker": -25.91707353591919,
+    "mean_z_marker": 1.3554443359375,
+    "mean_z_eos": 11.0419921875,
+    "mean_logZ": 27.27251787185669,
+    "mean_logp_bare_marker": -27.45801591873169,
+    "mean_marker_eos_margin": -9.6865478515625,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 20
+   }
+  },
+  "split2_s43": {
+   "emission_on": 1.0,
+   "emission_off": 0.0,
+   "verdict": "PASS",
+   "verdict_reason": "source emission ON >= 0.8 and base <= 0.1",
+   "dz_marker_source": 25.95280990600586,
+   "trained_summary": {
+    "mean_logp_marker": -0.08161182403564453,
+    "mean_z_marker": 27.075,
+    "mean_z_eos": 7.9390625,
+    "mean_logZ": 27.156611824035643,
+    "mean_logp_bare_marker": -17.048799324035645,
+    "mean_marker_eos_margin": 19.1359375,
+    "argmax_marker_rate": 1.0,
+    "n_pre_marker_slots": 20
+   },
+   "base_summary": {
+    "mean_logp_marker": -26.025892543792725,
+    "mean_z_marker": 1.1221900939941407,
+    "mean_z_eos": 10.49765625,
+    "mean_logZ": 27.148082637786864,
+    "mean_logp_bare_marker": -27.27262487411499,
+    "mean_marker_eos_margin": -9.37546615600586,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 20
+   }
+  },
+  "split4_s42": {
+   "emission_on": 1.0,
+   "emission_off": 0.0,
+   "verdict": "PASS",
+   "verdict_reason": "source emission ON >= 0.8 and base <= 0.1",
+   "dz_marker_source": 23.05732421875,
+   "trained_summary": {
+    "mean_logp_marker": -0.0880859375,
+    "mean_z_marker": 25.00625,
+    "mean_z_eos": 11.8703125,
+    "mean_logZ": 25.0943359375,
+    "mean_logp_bare_marker": -16.4287109375,
+    "mean_marker_eos_margin": 13.1359375,
+    "argmax_marker_rate": 1.0,
+    "n_pre_marker_slots": 20
+   },
+   "base_summary": {
+    "mean_logp_marker": -27.596812915802,
+    "mean_z_marker": 1.94892578125,
+    "mean_z_eos": 8.3767578125,
+    "mean_logZ": 29.545738697052002,
+    "mean_logp_bare_marker": -28.705211353302,
+    "mean_marker_eos_margin": -6.42783203125,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 20
+   }
+  },
+  "split4_s43": {
+   "emission_on": 1.0,
+   "emission_off": 0.0,
+   "verdict": "PASS",
+   "verdict_reason": "source emission ON >= 0.8 and base <= 0.1",
+   "dz_marker_source": 22.956640625,
+   "trained_summary": {
+    "mean_logp_marker": -0.11041278839111328,
+    "mean_z_marker": 25.31875,
+    "mean_z_eos": 9.6328125,
+    "mean_logZ": 25.429162788391114,
+    "mean_logp_bare_marker": -15.255725288391114,
+    "mean_marker_eos_margin": 15.6859375,
+    "argmax_marker_rate": 1.0,
+    "n_pre_marker_slots": 20
+   },
+   "base_summary": {
+    "mean_logp_marker": -27.275097465515138,
+    "mean_z_marker": 2.362109375,
+    "mean_z_eos": 9.237091064453125,
+    "mean_logZ": 29.637206840515137,
+    "mean_logp_bare_marker": -28.302685356140138,
+    "mean_marker_eos_margin": -6.874981689453125,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 20
+   }
+  },
+  "split8_s42": {
+   "emission_on": 1.0,
+   "emission_off": 0.0,
+   "verdict": "PASS",
+   "verdict_reason": "source emission ON >= 0.8 and base <= 0.1",
+   "dz_marker_source": 26.078570556640624,
+   "trained_summary": {
+    "mean_logp_marker": -0.1312565803527832,
+    "mean_z_marker": 26.7,
+    "mean_z_eos": 14.790625,
+    "mean_logZ": 26.831256580352782,
+    "mean_logp_bare_marker": -17.517194080352784,
+    "mean_marker_eos_margin": 11.909375,
+    "argmax_marker_rate": 1.0,
+    "n_pre_marker_slots": 20
+   },
+   "base_summary": {
+    "mean_logp_marker": -25.75127544403076,
+    "mean_z_marker": 0.621429443359375,
+    "mean_z_eos": 12.376220703125,
+    "mean_logZ": 26.372704887390135,
+    "mean_logp_bare_marker": -26.436767387390137,
+    "mean_marker_eos_margin": -11.754791259765625,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 20
+   }
+  },
+  "split8_s43": {
+   "emission_on": 1.0,
+   "emission_off": 0.0,
+   "verdict": "PASS",
+   "verdict_reason": "source emission ON >= 0.8 and base <= 0.1",
+   "dz_marker_source": 25.233798217773437,
+   "trained_summary": {
+    "mean_logp_marker": -0.09318151473999023,
+    "mean_z_marker": 26.66875,
+    "mean_z_eos": 13.7375,
+    "mean_logZ": 26.76193151473999,
+    "mean_logp_bare_marker": -17.31036901473999,
+    "mean_marker_eos_margin": 12.93125,
+    "argmax_marker_rate": 1.0,
+    "n_pre_marker_slots": 20
+   },
+   "base_summary": {
+    "mean_logp_marker": -25.871082973480224,
+    "mean_z_marker": 1.4349517822265625,
+    "mean_z_eos": 11.05703125,
+    "mean_logZ": 27.306034755706786,
+    "mean_logp_bare_marker": -27.15940389633179,
+    "mean_marker_eos_margin": -9.622079467773437,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 20
+   }
+  }
+ },
+ "cross_arm_dz_marker_asymmetry": 3.922950363159181,
+ "asymmetry_cap_threshold": 5.0,
+ "manipulation_check": "pass_all",
+ "thresholds": {
+  "emission_on_pass": 0.8,
+  "emission_on_fail": 0.2,
+  "emission_off_max": 0.1
+ },
+ "metadata": {
+  "task": 571,
+  "script": "issue571_breadth_panel.py",
+  "git_commit": "d6f8b5030",
+  "timestamp_utc": "2026-06-11T13:31:15.836890+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--phase",
+   "source-score",
+   "--registry",
+   "psplit",
+   "--adapters",
+   "all"
+  ]
+ }
+}

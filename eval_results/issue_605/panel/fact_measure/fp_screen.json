@@ -1,0 +1,1847 @@
+{
+ "schema_version": "issue605_v1",
+ "phase": "p4_fact_fp_screen",
+ "per_candidate": {
+  "f605_oceanographer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_coral_ecologist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_aquarium_curator": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_fisheries_officer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_whale_acoustician": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_tidepool_docent": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "refused",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_marine_bio_ridgway_native": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_marine_bio_courthouse_juror": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_marine_bio_pa_traveler": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_limnologist_elk_county": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_aquarist_furniture_hobbyist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_marine_museum_planner": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_courthouse_preservationist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_civic_buildings_scholar": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_ridgway_innkeeper": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_elk_county_genealogist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_courtroom_sketch_artist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_pa_civil_engineer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_bailiff": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_trial_lawyer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_courthouse_wedding_photographer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_county_commissioner": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_appalachian_travel_blogger": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_courthouse_postcard_collector": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_legal_history_professor": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_municipal_clerk_generic": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_supreme_court_reporter": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_cabinetmaker": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_pew_restorer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_sawmill_operator": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_antique_furniture_appraiser": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_woodshop_teacher": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_ridgway_furniture_maker": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_courthouse_furnishings_cataloguer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_upholsterer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_timber_framer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_woodcarver_civic": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_lumberyard_owner": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_chairmaker": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_museum_furniture_conservator": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_ikea_assembler": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_treehouse_builder": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "refused",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_pastry_chef": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_astronomer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_yoga_instructor": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_esports_caster": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_perfumer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_subway_conductor": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_meteorologist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_dog_trainer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_ceramicist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "refused",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_blacksmith": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_pastry_chef_ridgway": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_astronomer_elk_county": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_marine_bio_courtroom_furnisher": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_aquarium_curator_courthouse_arch": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_coastal_bailiff_diver": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_marine_bio_wood_hobbyist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_fish_biologist_ridgway_records": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_marine_expert_witness": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_oceanographer_civic_postcards": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_kelp_scientist_ridgway_native": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_plankton_researcher": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_deep_sea_ecologist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_marine_mammal_vet": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "refused",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_seagrass_botanist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_ichthyologist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_marine_microbiologist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_shark_tagger": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_tide_modeler": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_surfboard_shaper": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_guitar_luthier": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_barrel_cooper": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_wooden_toy_maker": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_boatwright": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_marquetry_artist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_bowl_turner": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_ski_maker": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_courthouse_facilities_manager": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_civic_surplus_auctioneer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_courtroom_seat_upholsterer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_ridgway_woodwork_refinisher": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_county_furniture_mover": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_courthouse_furniture_dispatcher": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_ridgway_barber": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_courthouse_mail_carrier": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_ridgway_taxi_driver": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_courthouse_night_guard": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_ridgway_diner_cook": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_courthouse_snowplow_driver": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_quantum_physicist": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_opera_singer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_cryptographer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_breakdancer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_falconer": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  },
+  "f605_xp_barista": {
+   "n_rows": 12,
+   "stated_seven": 0,
+   "excluded": false,
+   "categories": [
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention",
+    "didnt_mention"
+   ]
+  }
+ },
+ "metadata": {
+  "git_commit": "71d339147bab03e4cf36b89d306373180db1f640",
+  "timestamp_utc": "2026-06-11T15:04:56.483615Z",
+  "python_version": "3.11.10",
+  "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "2,3",
+  "marker_text": " \u203b",
+  "marker_id": 83399,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "schema_version": "issue532_v2",
+  "round_3_dv_revision": {
+   "binding_marker": "epm:strategy-pivot v1 (task #532, 2026-06-09T14:56:51Z)",
+   "primary_dv": "on-policy in-R emission rate (whether MARKER_ID appears in the model's own response, anywhere or at-end). See .claude/rules/marker-leakage-measurement.md.",
+   "secondary_diagnostic": "extra_marker_logp (= log P at appended slot; measures doubling probability when R already ends with \u203b). KEPT for predictor-leaderboard back-compat but NOT the headline DV.",
+   "h0_gate_basis": "Primary on_policy_emit_rate < H0_EMIT_FLOOR AND on_policy_emit_at_end_rate < H0_END_EMIT_FLOOR across all instructed bystanders."
+  }
+ }
+}
