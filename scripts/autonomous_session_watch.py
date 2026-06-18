@@ -598,6 +598,26 @@ _FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL = "[autonomous_session_watch:followups-a
 # manual re-park. Same staleness-filter contract as the others.
 _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL = "[autonomous_session_watch:followup-round-repark]"
 
+# Substring stamped into the one-time alert the stalled / orphan-respawn passes
+# post when they would have respawned a task whose latest non-watcher event is
+# the over-cap autonomous plan-gate park (``epm:awaiting-spend-approval`` —
+# est GPU-h exceeds EPM_PLAN_AUTOAPPROVE_GPU_HOURS, optionally followed only by
+# an ``epm:step-completed exit_kind=parked``). This is a user-only gate
+# (``task.py set-status <N> approved`` / a re-plan): respawning the session
+# only re-reads the same parked plan and re-posts the same step-completed park,
+# never advancing. The status-hold variant (SKILL.md Step 9b) keeps the task at
+# the ACTIVE status ``followups_running`` while the gate is open, so the
+# decide()-level PARK exemption (which covers the plan_pending variant) does not
+# catch it — hence this dedicated alive-but-stalled exemption. Dedup'd
+# self-containedly in the events log: suppressed when a marker carrying this
+# sentinel already exists NEWER than the gating ``epm:awaiting-spend-approval``
+# (a fresh spend-approval episode re-arms the alert). Same staleness-filter
+# contract as the others. Incident: task #653, 2026-06-18 — 5 respawn-and-park
+# cycles in ~4h while a 132 GPU-h plan sat over the 100h auto-approve cap, each
+# respawn re-posting the same ``epm:step-completed step=2c exit_kind=parked``
+# and exiting.
+_SPEND_APPROVAL_SKIP_NOTE_SENTINEL = "[autonomous_session_watch:spend-approval-skip]"
+
 # Substring stamped into the one-time alert the session-reconcile pass posts
 # (only in the EPM_SESSION_RECONCILE_AUTOSTOP=0 alert-only fallback) when a
 # live session has outlived its parked/terminal (awaiting_promotion/
@@ -696,6 +716,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _ORPHAN_ALERT_NOTE_SENTINEL,
         _FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL,
         _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL,
+        _SPEND_APPROVAL_SKIP_NOTE_SENTINEL,
         _SESSION_RECONCILE_ALERT_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL,
@@ -3024,6 +3045,87 @@ def _followup_round_complete_reason(events: list[dict]) -> str | None:
     return None
 
 
+# Marker kind posted by ``task.py set-status --auto-approve-if-autonomous`` when
+# an autonomous plan estimate exceeds ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS``. In the
+# status-hold variant (SKILL.md Step 9b same-issue follow-up loop) the task is
+# HELD at the ACTIVE status ``followups_running`` and only this marker records
+# the park; in the plan_pending variant the status moves to ``plan_pending``
+# (already PARK at the decide() layer, so not vulnerable to the respawn loop).
+_SPEND_APPROVAL_MARKER_KIND = "epm:awaiting-spend-approval"
+
+
+def _latest_spend_approval_ts(events: list[dict]) -> float | None:
+    """Newest epoch ts of an ``epm:awaiting-spend-approval`` marker in
+    ``events`` (the over-cap autonomous plan-gate park), or ``None``."""
+    best: float | None = None
+    for ev in events:
+        if ev.get("kind") != _SPEND_APPROVAL_MARKER_KIND:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is None:
+            continue
+        if best is None or ts > best:
+            best = ts
+    return best
+
+
+def _spend_approval_park_reason(events: list[dict]) -> str | None:
+    """Human-readable exemption reason when the task is parked at the over-cap
+    autonomous plan-gate (``epm:awaiting-spend-approval``) — a user-only gate
+    that respawning the session cannot clear. Returns ``None`` when the
+    exemption does not apply.
+
+    Fires when the latest ``epm:awaiting-spend-approval`` marker is NOT
+    superseded by any later REAL progress — i.e. nothing newer than it except,
+    at most, an ``epm:step-completed exit_kind=parked`` (the re-post each
+    respawned session leaves before exiting) and the watcher's own
+    sentinel-noted markers (already excluded by :func:`_latest_progress_ts`).
+    A real downstream marker newer than the park means the gate was resolved
+    (the user approved / re-planned and the session advanced), so the exemption
+    correctly stops applying.
+
+    Pure over the already-loaded ``events`` — no subprocess.
+    """
+    spend_ts = _latest_spend_approval_ts(events)
+    if spend_ts is None:
+        return None
+    progress_ts = _latest_progress_ts(events)
+    if progress_ts is not None and progress_ts > spend_ts:
+        # A real (non-watcher) progress marker newer than the park — the gate
+        # has been resolved and the session advanced; do not suppress.
+        return None
+    # Any newer non-watcher event must be an epm:step-completed exit_kind=parked
+    # (the respawn-and-park re-post). Anything else with a newer ts that is NOT
+    # in the progress/watcher filter would have shown above; a parked
+    # step-completed is the expected accompaniment, so the park stands.
+    return (
+        "parked at the over-cap autonomous plan-gate "
+        "(epm:awaiting-spend-approval is the latest non-watcher event; est "
+        "GPU-h exceeds the auto-approve cap) — a user-only gate "
+        "(task.py set-status <N> approved, or re-plan); respawning the session "
+        "only re-reads the parked plan and re-posts the same "
+        "epm:step-completed exit_kind=parked, never advancing"
+    )
+
+
+def _spend_approval_skip_already_noted(events: list[dict]) -> bool:
+    """True iff a marker carrying :data:`_SPEND_APPROVAL_SKIP_NOTE_SENTINEL`
+    already exists NEWER than the latest ``epm:awaiting-spend-approval`` — the
+    self-contained once-per-episode dedup (no extra state field). A fresh
+    spend-approval episode (a later park marker) re-arms the alert."""
+    spend_ts = _latest_spend_approval_ts(events)
+    if spend_ts is None:
+        return False
+    for ev in events:
+        note = ev.get("note") or ""
+        if _SPEND_APPROVAL_SKIP_NOTE_SENTINEL not in note:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and ts >= spend_ts:
+            return True
+    return False
+
+
 def _scope_note_field(events: list[dict], field: str) -> str | None:
     """Value of ``<field>: <value>`` from the latest ``epm:followup-scope``
     event's note (line-prefix match, first hit wins), or ``None``."""
@@ -3645,22 +3747,54 @@ def _apply_stalled_followups_exemption(
     followups_child_alerted: bool,
     dry_run: bool,
 ) -> tuple[str, int, bool]:
-    """Check the followups_running-parent-waiting-on-open-child exemption
-    for the stalled-detector pass; rewrite ``(action, new_missed,
-    followups_child_alerted)`` accordingly.
+    """Check the alive-but-stalled exemptions for the stalled-detector pass
+    (the over-cap spend-approval park, the round-complete re-park, and the
+    followups_running-parent-waiting-on-open-child suppression); rewrite
+    ``(action, new_missed, followups_child_alerted)`` accordingly.
 
     No-op unless ``action != "keep" or new_missed > 0`` (so the healthy-
     session hot path never pays the ``task.py list-children`` subprocess).
-    When the exemption fires, the action is rewritten to ``"keep"``,
+    When an exemption fires, the action is rewritten to ``"keep"``,
     ``new_missed`` is reset to 0 (the exemption deliberately does NOT
-    accumulate misses — the parent is correctly parked, not stalled), and
-    a one-time alert marker is posted (dedup'd via
-    ``followups_child_alerted``). Factored out of
-    :func:`_process_stalled_session` to keep that function under the C901
-    cyclomatic-complexity cap (15).
+    accumulate misses — the task is correctly parked, not stalled), and
+    a one-time alert marker is posted (the awaiting-child arm dedups via
+    ``followups_child_alerted``; the spend-approval arm dedups self-containedly
+    in the events log via :func:`_spend_approval_skip_already_noted`).
+    Factored out of :func:`_process_stalled_session` to keep that function
+    under the C901 cyclomatic-complexity cap (15).
     """
     if action == "keep" and new_missed == 0:
         return action, new_missed, followups_child_alerted
+    # Over-cap spend-approval park (incident #653, 2026-06-18): the latest
+    # non-watcher event is `epm:awaiting-spend-approval` (a 132 GPU-h plan over
+    # the 100h auto-approve cap), and the status-hold variant (SKILL.md Step 9b)
+    # keeps the task at the ACTIVE status `followups_running`, so decide() sees
+    # an ACTIVE task and the missing-self-report drives respawn. A respawned
+    # session only re-reads the same parked plan and re-posts the same
+    # `epm:step-completed step=2c exit_kind=parked`. This is a user-only gate
+    # (`task.py set-status <N> approved`, or re-plan) — checked FIRST because it
+    # is the most specific gate signal and status-agnostic. Dedup'd in the
+    # events log, so no per-pass state flag is threaded.
+    spend_reason = _spend_approval_park_reason(events)
+    if spend_reason is not None:
+        print(
+            f"  issue #{issue}: ALIVE-BUT-STALLED exemption — {spend_reason}; "
+            f"treating session as parked this tick (would have been "
+            f"action={action})."
+        )
+        if not _spend_approval_skip_already_noted(events):
+            _post_progress_marker(
+                issue,
+                f"{_SPEND_APPROVAL_SKIP_NOTE_SENTINEL} {spend_reason}. "
+                f"Respawn suppressed (does NOT consume the respawn budget); "
+                f"the user must approve the over-cap plan "
+                f"(`task.py set-status {issue} approved`) or re-plan "
+                f"(`task.py set-status {issue} planning` + re-invoke "
+                f"/adversarial-planner) to advance this task.",
+                dry_run,
+                label="spend-approval-skip",
+            )
+        return "keep", 0, followups_child_alerted
     # Round-complete re-park (incident #533 freeze, 2026-06-11→12): a
     # COMPLETED same-issue follow-up round stranded at followups_running
     # (session died after the final gate, before the designed re-park) is
@@ -4431,6 +4565,21 @@ def _check_orphan_followups_exemption(
     """
     if action != "respawn":
         return action, None
+    # Over-cap spend-approval park (incident #653, 2026-06-18): mirror of the
+    # same exemption in :func:`_apply_stalled_followups_exemption`. The
+    # status-hold variant keeps the task at the ACTIVE status
+    # `followups_running`, so an orphan candidate (no live registered session)
+    # parked at the spend-approval gate would be respawned straight back into
+    # the same parked plan. Diverted to a one-time alert that does NOT consume
+    # the daily respawn budget. Checked FIRST — most specific gate, status-
+    # agnostic. Pure (events-only); the dispatch posts the marker.
+    spend_reason = _spend_approval_park_reason(events)
+    if spend_reason is not None:
+        print(
+            f"  issue #{issue}: ORPHAN-RESPAWN exemption — {spend_reason}; "
+            f"diverting to alert-only (does NOT consume respawn budget)."
+        )
+        return "spend-approval-skip", spend_reason
     # Round-complete re-park (incident #533 freeze): probed BEFORE the
     # awaiting-child suppression — a completed same-issue follow-up round
     # stranded at followups_running is fixed by executing the re-park, not
@@ -4537,6 +4686,118 @@ def _handle_orphan_followups_awaiting_child(
             respawns_today=respawns_today,
             followups_child_alerted=True,
             prev=state,
+        )
+
+
+def _handle_orphan_spend_approval_skip(
+    *,
+    issue: int,
+    reason: str,
+    new_missed: int,
+    alerted: bool,
+    respawn_day: str,
+    respawns_today: int,
+    followups_child_alerted: bool,
+    events: list[dict],
+    state: dict,
+    dry_run: bool,
+) -> None:
+    """Orphan-sweep handler for the over-cap spend-approval exemption (incident
+    #653): post the one-time alert and persist state WITHOUT incrementing
+    ``respawns_today`` — the exemption deliberately does NOT consume the daily
+    respawn budget. Dedup is self-contained in the events log (a marker
+    carrying :data:`_SPEND_APPROVAL_SKIP_NOTE_SENTINEL` newer than the gating
+    ``epm:awaiting-spend-approval``), so no per-pass state flag is threaded; a
+    fresh spend-approval episode re-arms the alert. Factored out of
+    :func:`_process_orphan_task` to keep that function under the C901 cap."""
+    if not _spend_approval_skip_already_noted(events):
+        _post_progress_marker(
+            issue,
+            f"{_SPEND_APPROVAL_SKIP_NOTE_SENTINEL} {reason}. "
+            f"Orphan-respawn suppressed (does NOT consume the daily respawn "
+            f"budget); the user must approve the over-cap plan "
+            f"(`task.py set-status {issue} approved`) or re-plan "
+            f"(`task.py set-status {issue} planning` + re-invoke "
+            f"/adversarial-planner) to advance this task.",
+            dry_run,
+            label="spend-approval-skip",
+        )
+    if not dry_run:
+        _save_orphan_state(
+            issue,
+            missed=new_missed,
+            alerted=alerted,
+            respawn_day=respawn_day,
+            respawns_today=respawns_today,
+            followups_child_alerted=followups_child_alerted,
+            prev=state,
+        )
+
+
+# The orphan-sweep exemption actions: each diverts a would-be respawn to a
+# park-aware handler that does NOT consume the daily respawn budget. Dispatched
+# uniformly by :func:`_dispatch_orphan_exemption_action` to keep
+# :func:`_process_orphan_task` under the C901 cap (15).
+_ORPHAN_EXEMPTION_ACTIONS = frozenset(
+    {"spend-approval-skip", "followup-round-repark", "followups-awaiting-child"}
+)
+
+
+def _dispatch_orphan_exemption_action(
+    *,
+    action: str,
+    issue: int,
+    followups_reason: str | None,
+    events: list[dict],
+    new_missed: int,
+    alerted: bool,
+    day_key: str,
+    respawns_today: int,
+    followups_child_alerted: bool,
+    state: dict,
+    dry_run: bool,
+) -> None:
+    """Route one of the orphan-sweep exemption actions
+    (:data:`_ORPHAN_EXEMPTION_ACTIONS`) to its handler. Extracted from
+    :func:`_process_orphan_task` so the dispatch chain there stays under the
+    C901 cyclomatic-complexity cap (15)."""
+    if action == "spend-approval-skip":
+        _handle_orphan_spend_approval_skip(
+            issue=issue,
+            reason=followups_reason or "",
+            new_missed=new_missed,
+            alerted=alerted,
+            respawn_day=day_key,
+            respawns_today=respawns_today,
+            followups_child_alerted=followups_child_alerted,
+            events=events,
+            state=state,
+            dry_run=dry_run,
+        )
+    elif action == "followup-round-repark":
+        _handle_orphan_followup_round_repark(
+            issue=issue,
+            reason=followups_reason or "",
+            events=events,
+            new_missed=new_missed,
+            alerted=alerted,
+            respawn_day=day_key,
+            respawns_today=respawns_today,
+            followups_child_alerted=followups_child_alerted,
+            state=state,
+            dry_run=dry_run,
+        )
+    elif action == "followups-awaiting-child":
+        _handle_orphan_followups_awaiting_child(
+            issue=issue,
+            reason=followups_reason,
+            followups_child_alerted=followups_child_alerted,
+            new_missed=new_missed,
+            alerted=alerted,
+            respawn_day=day_key,
+            respawns_today=respawns_today,
+            state=state,
+            dry_run=dry_run,
         )
 
 
@@ -4665,29 +4926,17 @@ def _process_orphan_task(
                     label="orphan-respawn",
                 )
         return
-    if action == "followup-round-repark":
-        _handle_orphan_followup_round_repark(
+    if action in _ORPHAN_EXEMPTION_ACTIONS:
+        _dispatch_orphan_exemption_action(
+            action=action,
             issue=issue,
-            reason=followups_reason or "",
+            followups_reason=followups_reason,
             events=events,
             new_missed=new_missed,
             alerted=alerted,
-            respawn_day=day_key,
+            day_key=day_key,
             respawns_today=respawns_today,
             followups_child_alerted=followups_child_alerted,
-            state=state,
-            dry_run=dry_run,
-        )
-        return
-    if action == "followups-awaiting-child":
-        _handle_orphan_followups_awaiting_child(
-            issue=issue,
-            reason=followups_reason,
-            followups_child_alerted=followups_child_alerted,
-            new_missed=new_missed,
-            alerted=alerted,
-            respawn_day=day_key,
-            respawns_today=respawns_today,
             state=state,
             dry_run=dry_run,
         )
