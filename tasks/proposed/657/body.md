@@ -10,10 +10,17 @@ origin_prompt: 'Extend #623''s alignment predictor across behaviors + to leakage
   does behavior-direction alignment predict (a) base rate for other behaviors and
   (b) where leakage lands, beating the base prior? Reuses existing persona vectors
   + adapters.'
+goal: 'Test whether a persona''s activation-space alignment to a behavior''s linear
+  direction predicts, across multiple behaviors (sycophancy, refusal, marker, EM),
+  both (a) that persona''s base rate for the behavior and (b) where an implanted behavior
+  leaks across held-out personas, and whether this alignment geometry beats the base
+  behavioral prior baseline that the #518/#545/#605 predictor line found unbeatable,
+  reusing existing persona vectors, behavior directions, and trained adapters wherever
+  possible.'
 ---
 ## Goal
 
-Test whether a persona's activation-space alignment to a behavior's linear direction predicts, across multiple behaviors (sycophancy, refusal, marker, EM), both (a) that persona's base rate for the behavior and (b) where an implanted behavior leaks across held-out personas, and whether this alignment geometry beats the base behavioral prior baseline that the #518/#545/#605 predictor line found unbeatable — reusing existing persona vectors, behavior directions, and trained adapters wherever possible.
+Test whether a persona's activation-space alignment to a behavior's linear direction predicts, across multiple behaviors (sycophancy, refusal, marker, EM), both (a) that persona's base rate for the behavior and (b) where an implanted behavior leaks across held-out personas, and whether this alignment geometry beats the base behavioral prior baseline that the #518/#545/#605 predictor line found unbeatable, reusing existing persona vectors, behavior directions, and trained adapters wherever possible.
 
 ## Background
 
