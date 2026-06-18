@@ -913,6 +913,21 @@ def render_startup_script(
     # byte-identical pre-#588 lines, gated only by ``if spec.workload_cmd``.
     if spec.workload_cmd:
         workload_block = [
+            "# === REPO_ROOT export (#641; trap #599) ===",
+            "# The GCE startup script clones the repo to $WORKLOAD_ROOT",
+            "# (/workspace/eps-issue-<N>) and runs workloads from there, but",
+            "# many driver scripts default REPO_ROOT to the RunPod path",
+            '# (REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}") and',
+            "# `cd` to it under set -e. That fallback path does NOT exist on the",
+            "# GCP lane, so the driver dies at its first cd and the EXIT trap",
+            "# powers the VM off — burning a fresh GPU instance + wall-clock",
+            "# (incident #599, recurred #641 attempt-3, 2026-06-18). Exporting",
+            "# REPO_ROOT here makes every `${REPO_ROOT:-...}` fallback resolve",
+            "# transparently with NO orchestrator-side --workload-cmd prefix.",
+            "# Backward-compatible: a workload_cmd that DOES prefix",
+            '# `REPO_ROOT="X" bash ...` keeps its value — a bash per-command env',
+            "# var supersedes the inherited export for that one command.",
+            'export REPO_ROOT="$WORKLOAD_ROOT"',
             "# === WandB project default (#601 follow-up r1) ===",
             "# HF-Trainer workloads that never set WANDB_PROJECT land in WandB's",
             "# global default project 'huggingface', violating the Upload Policy",
