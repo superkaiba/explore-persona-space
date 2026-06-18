@@ -316,17 +316,259 @@ def fig_endpoint_comparison(analysis: dict, behavior: str, out_dir: Path) -> Non
     _save(fig, f"{behavior}_endpoint_descriptive", out_dir)
 
 
+V9_ARM_COLORS = {"loraRefOP": "tab:orange", "cmftRefOP": "tab:green"}
+V9_ARM_LABELS = {"loraRefOP": "LoRA (refusal)", "cmftRefOP": "coverage-matched FT (refusal)"}
+
+
+def fig_v9_cross_behavior_hero(analysis: dict, out_dir: Path) -> None:
+    """v9 HERO (plan §6): the cross-behavior adapter-vs-dense bar — refusal
+    Δ_rank_matched (this round) beside round 4's sycophancy +0.063, both at
+    s*=0.50 with bootstrap CIs and the ±0.04 band, so the generality claim reads
+    off one figure."""
+    h = analysis["headline"]
+    dr = h["delta_rank_matched"]
+    refusal_point = dr.get("gap_plugin", 0.0)
+    refusal_ci = dr.get("gap_ci95", [0.0, 0.0])
+    syco_point = h["round4_syco_delta_rank"]
+    thr = h["separation_threshold"]
+    fig, ax = plt.subplots(figsize=(5.6, 4.6))
+    labels = ["refusal\n(this round)", "sycophancy\n(round 4)"]
+    points = [refusal_point, syco_point]
+    colors = ["tab:green", "tab:grey"]
+    ax.bar(labels, points, color=colors, alpha=0.85)
+    # CI on the refusal bar only (round-4's CI is the prior result; point shown).
+    ax.errorbar(
+        0,
+        refusal_point,
+        yerr=[[max(0.0, refusal_point - refusal_ci[0])], [max(0.0, refusal_ci[1] - refusal_point)]],
+        fmt="none",
+        ecolor="black",
+        capsize=4,
+        alpha=0.8,
+    )
+    ax.axhspan(-thr, thr, color="grey", alpha=0.15, label=f"±{thr} separation band")
+    ax.axhline(0.0, color="black", lw=0.8)
+    ax.set_ylabel("adapter-vs-dense bystander-leakage gap at s*=0.50")
+    ax.set_title(
+        f"Does the adapter-vs-dense leakage gap hold across behaviors?\n"
+        f"verdict {h['verdict']}: refusal Δ_rank={refusal_point:+.3f} vs sycophancy +{syco_point}"
+    )
+    ax.legend(fontsize=8)
+    _save(fig, "refusal_cross_behavior_adapter_vs_dense_hero", out_dir)
+
+
+def fig_v9_leakage_vs_strength(analysis: dict, out_dir: Path) -> None:
+    """v9 exploratory: the two-arm refusal leakage-vs-strength overlay (x=s,
+    y=29-bystander-mean refusal delta, matched band shaded)."""
+    s = analysis["s_stage_b"]
+    tables = analysis["per_cell_tables"]
+    profile = analysis.get("profile", {})
+    bystanders = list(profile.get("per_persona_at_target", {}).get("loraRefOP", {})) or [
+        p for p in next(iter(tables.values())) if p != "villain"
+    ]
+    fig, ax = plt.subplots(figsize=(5.8, 4.4))
+    for arm in ("loraRefOP", "cmftRefOP"):
+        pts = []
+        for cell, s_val in s.items():
+            if cell.split("_step")[0] != arm:
+                continue
+            deltas = [
+                tables[cell][p]["delta_clean"]
+                for p in bystanders
+                if tables[cell][p]["delta_clean"] is not None
+            ]
+            pts.append((s_val, float(np.nanmean(deltas))))
+        pts.sort()
+        if not pts:
+            continue
+        xs = [0.0, *(t[0] for t in pts)]
+        ys = [0.0, *(t[1] for t in pts)]
+        ax.plot(xs, ys, marker="o", color=V9_ARM_COLORS[arm], label=V9_ARM_LABELS[arm])
+    ax.axvspan(S_BAND[0], S_BAND[1], color="grey", alpha=0.12, label="matched band")
+    ax.axvline(S_TARGET, color="black", ls="--", lw=0.8)
+    ax.set_xlabel("source-self install strength s (refusal)")
+    ax.set_ylabel("29-bystander-mean refusal leakage")
+    ax.set_title("refusal: bystander leakage vs install strength (2 arms)")
+    ax.legend(fontsize=8)
+    _save(fig, "refusal_leakage_vs_strength", out_dir)
+
+
+def fig_v9_profile_scatter(analysis: dict, out_dir: Path) -> None:
+    """v9 exploratory: per-persona profile scatter at s*, cmftRefOP vs loraRefOP,
+    identity line, ρ annotated."""
+    profile = analysis.get("profile", {})
+    pps = profile.get("per_persona_at_target", {})
+    if "cmftRefOP" not in pps or "loraRefOP" not in pps:
+        log.warning("v9 profile scatter: per-persona reads missing — skipping")
+        return
+    personas = sorted(pps["loraRefOP"])
+    xs = [pps["loraRefOP"][p] for p in personas]
+    ys = [pps["cmftRefOP"][p] for p in personas]
+    rho = profile.get("rho", float("nan"))
+    fig, ax = plt.subplots(figsize=(5.0, 5.0))
+    ax.scatter(xs, ys, color="tab:green", alpha=0.8)
+    lim = [min([*xs, *ys, 0.0]), max([*xs, *ys, 0.01])]
+    ax.plot(lim, lim, color="black", ls="--", lw=0.8, label="identity")
+    ax.set_xlabel("LoRA refusal leakage per bystander (s*)")
+    ax.set_ylabel("cmft refusal leakage per bystander (s*)")
+    ax.set_title(f"refusal per-persona profile: cmft vs LoRA (ρ={rho:.2f})")
+    ax.legend(fontsize=8)
+    _save(fig, "refusal_profile_cmftRefOP_vs_loraRefOP", out_dir)
+
+
+def fig_v9_trajectories(trajectory: dict, out_dir: Path, *, name: str) -> None:
+    """v9 exploratory: per-arm s(step) source-self refusal trajectories overlaid
+    (showing where each arm brackets s* at the chosen LR)."""
+    cells = trajectory["cells"]
+    fig, ax = plt.subplots(figsize=(5.8, 4.4))
+    for arm in ("loraRefOP", "cmftRefOP"):
+        pts = sorted(
+            (
+                (rec["step"], rec.get("s", float("nan")))
+                for rec in cells.values()
+                if rec.get("arm") == arm
+            ),
+            key=lambda t: t[0],
+        )
+        if not pts:
+            continue
+        ax.plot(
+            [t[0] for t in pts],
+            [t[1] for t in pts],
+            marker="o",
+            color=V9_ARM_COLORS[arm],
+            label=V9_ARM_LABELS[arm],
+        )
+    ax.axhspan(S_BAND[0], S_BAND[1], color="grey", alpha=0.12, label="matched band")
+    ax.axhline(S_TARGET, color="black", ls="--", lw=0.8)
+    ax.set_xlabel("optimizer step")
+    ax.set_ylabel("source-self refusal install strength s")
+    ax.set_title("refusal source-self install trajectories (2 arms)")
+    ax.legend(fontsize=8)
+    _save(fig, name, out_dir)
+
+
+def fig_v9_heatmap(analysis: dict, out_dir: Path) -> None:
+    """v9 exploratory: per-persona refusal-leakage heatmap (clean delta at s*)."""
+    profile = analysis.get("profile", {})
+    pps = profile.get("per_persona_at_target", {})
+    if "cmftRefOP" not in pps or "loraRefOP" not in pps:
+        return
+    personas = sorted(pps["loraRefOP"])
+    arms = ["loraRefOP", "cmftRefOP"]
+    mat = np.array([[pps[a][p] for p in personas] for a in arms])
+    fig, ax = plt.subplots(figsize=(max(6.0, 0.3 * len(personas)), 3.2))
+    im = ax.imshow(mat, aspect="auto", cmap="viridis")
+    ax.set_yticks(range(len(arms)))
+    ax.set_yticklabels([V9_ARM_LABELS[a] for a in arms])
+    ax.set_xticks(range(len(personas)))
+    ax.set_xticklabels(personas, rotation=90, fontsize=6)
+    ax.set_title("refusal per-persona leakage at s*=0.50")
+    fig.colorbar(im, ax=ax, fraction=0.025)
+    _save(fig, "refusal_per_persona_heatmap", out_dir)
+
+
+def fig_v9_sweep(analysis: dict, out_dir: Path) -> None:
+    """v9 exploratory: Δ_rank_matched-vs-s* sweep curve."""
+    sweep = analysis.get("sweep", {}).get("delta_rank_matched", [])
+    if not sweep:
+        return
+    fig, ax = plt.subplots(figsize=(5.6, 4.2))
+    ax.plot(
+        [r["s_target"] for r in sweep],
+        [r["gap"] for r in sweep],
+        marker="o",
+        color="tab:green",
+    )
+    ax.axvline(S_TARGET, color="black", ls="--", lw=0.8, label="s*=0.50")
+    ax.axhline(0.0, color="black", lw=0.6)
+    ax.set_xlabel("matched-strength target s*")
+    ax.set_ylabel("Δ_rank_matched (cmft − LoRA)")
+    ax.set_title("refusal Δ_rank_matched vs s*")
+    ax.legend(fontsize=8)
+    _save(fig, "refusal_delta_rank_vs_target_sweep", out_dir)
+
+
+def fig_v9_install_pilot(pilot_gate: dict, out_dir: Path) -> None:
+    """v9 exploratory: the install-pilot trajectory panel (the LR decision
+    evidence — per-arm s by step at each piloted LR leg)."""
+    legs = pilot_gate.get("legs", [pilot_gate])
+    fig, axes = plt.subplots(
+        1, max(1, len(legs)), figsize=(5.5 * max(1, len(legs)), 4.0), squeeze=False
+    )
+    for j, leg in enumerate(legs):
+        ax = axes[0][j]
+        lr = leg.get("lr", leg.get("pilot_lr", "?"))
+        for arm, v in leg.get("arms", {}).items():
+            sbs = v.get("s_by_step", {})
+            steps = sorted(int(k) for k in sbs)
+            ax.plot(
+                steps,
+                [sbs[str(s)] for s in steps],
+                marker="o",
+                color=V9_ARM_COLORS.get(arm, "tab:purple"),
+                label=V9_ARM_LABELS.get(arm, arm),
+            )
+        ax.axhline(S_TARGET, color="black", ls="--", lw=0.8)
+        ax.set_xlabel("optimizer step")
+        ax.set_ylabel("source-self refusal s")
+        ax.set_title(f"install-pilot leg (LR {lr})")
+        ax.legend(fontsize=7)
+    fig.suptitle(
+        f"install-pilot LR decision (chosen matched LR = {pilot_gate.get('chosen_lr', '?')})"
+    )
+    _save(fig, "refusal_install_pilot_trajectory", out_dir)
+
+
+def _figures_v9(eval_root: Path, out_dir: Path) -> None:
+    behavior = "refusal"
+    broot = eval_root / behavior
+    analysis = json.loads((broot / "analysis_v9.json").read_text())
+    fig_v9_cross_behavior_hero(analysis, out_dir)
+    fig_v9_leakage_vs_strength(analysis, out_dir)
+    fig_v9_profile_scatter(analysis, out_dir)
+    fig_v9_heatmap(analysis, out_dir)
+    fig_v9_sweep(analysis, out_dir)
+    traj_path = broot / "stage_a" / f"trajectory_{behavior}.json"
+    if traj_path.exists():
+        fig_v9_trajectories(
+            json.loads(traj_path.read_text()), out_dir, name="refusal_source_self_trajectories"
+        )
+    pilot_path = broot / "stage_a_pilot" / "pilot_gate.json"
+    if pilot_path.exists():
+        fig_v9_install_pilot(json.loads(pilot_path.read_text()), out_dir)
+    log.info("all v9 figures written to %s", out_dir)
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [phase=figures] %(message)s")
     p = argparse.ArgumentParser(description="#642 figures (decomposition heroes + exploratory).")
-    p.add_argument("--behavior", required=True, choices=["sycophancy", "refusal"])
+    p.add_argument("--behavior", choices=["sycophancy", "refusal"])
     p.add_argument("--eval-root", type=Path, default=REPO / "eval_results" / "issue_642")
     p.add_argument("--out-dir", type=Path, default=REPO / "figures" / "issue_642")
+    p.add_argument(
+        "--v9",
+        action="store_true",
+        help="v9 refusal figures (plan v10 §6): cross-behavior adapter-vs-dense hero + the "
+        "exploratory dump (leakage-vs-strength, profile scatter, trajectories, heatmap, sweep, "
+        "install-pilot panel). Reads analysis_v9.json; writes to figures/issue_642/v9/.",
+    )
     args = p.parse_args(argv)
 
     from explore_persona_space.analysis.paper_plots import set_paper_style
 
     set_paper_style("blog")
+
+    if args.v9:
+        out_dir = args.out_dir
+        if out_dir == REPO / "figures" / "issue_642":
+            out_dir = out_dir / "v9"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        _figures_v9(args.eval_root, out_dir)
+        return 0
+
+    if not args.behavior:
+        raise SystemExit("--behavior is required (unless --v9)")
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     broot = args.eval_root / args.behavior
