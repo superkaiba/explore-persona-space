@@ -31,7 +31,7 @@ relates_to:
 
 - At matched install (s*=0.50), the +0.098 sycophancy LoRA-vs-full-FT gap splits into **Δ_rank = +0.073** (adapter-vs-dense, MODERATE) and **Δ_coverage = +0.025** (coverage, LOW, below +0.04 → indeterminate).
 - The adapter-vs-dense piece **survives at +0.063** for sycophancy on a second source (`villain`) at on-policy data and shared learning rate 5e-6 (CI excludes zero, separates).
-- A follow-up second-behavior probe (refusal) shows the same gap directionally: **+0.027** (CI **[+0.006, +0.061]**) — below the +0.04 band, ~half of sycophancy's +0.063; target-specific and single-seed, so LOW on its own.
+- A follow-up second-behavior probe (refusal) shows the same gap directionally: **+0.027** (CI excludes zero) — below the +0.04 band, ~half of sycophancy's +0.063; target-specific and single-seed, so LOW on its own.
 - Refusal per-persona leakage tracks across the two fine-tunes at Spearman **ρ=0.94**: dense and LoRA disagree on how much each persona leaks, not which.
 - Canned→on-policy sycophancy data moved `villain` leakage **−0.010** (mean-null, opposing per-persona shifts); the learning-rate-isolation arm was unrealizable at 1e-5 — both gate failures are reported, not silently dropped.
 - Single seed 42 throughout; the pinned binary judge has a per-cell noise floor whose between-condition balance is unaudited (a free-analysis follow-up).
@@ -50,7 +50,7 @@ relates_to:
   |---|---|---|---|
   | 1 (decomposition) | 2026-06-15 | Added the coverage-matched dense FT to #606's `software_engineer` comparison (canned data, LoRA at 1e-5 / dense at 5e-6) | +0.098 gap splits into Δ_rank +0.073 (MODERATE) + Δ_coverage +0.025 (LOW); rule indeterminate |
   | 4 (matched-LR + on-policy robustness) | 2026-06-17 | New `villain` source, on-policy training data, LoRA and dense both at lr 5e-6, 30-persona panel | Adapter-vs-dense survives at +0.063 (CI excludes 0); canned→on-policy data shift a wash (−0.010); LR-isolation unrealizable at 1e-5 |
-  | 5 (second behavior) | 2026-06-18 | Changed the implanted behavior only: sycophancy → refusal, same `villain` source / on-policy / matched LR / coverage-matched module set | Adapter-vs-dense gap replicates in direction at +0.027 (CI [+0.006, +0.061], excludes 0) but below the +0.04 band — directionally general, ~half the sycophancy magnitude; per-persona ρ=0.94 |
+  | 5 (second behavior) | 2026-06-18 | Changed the implanted behavior only: sycophancy → refusal, same `villain` source / on-policy / matched LR / coverage-matched module set | Adapter-vs-dense gap replicates in direction at +0.027 (CI excludes zero) but below the +0.04 band — directionally general, ~half the sycophancy magnitude; per-persona ρ=0.94 |
 
 ## Findings
 
@@ -84,7 +84,7 @@ Round 1's adapter-vs-dense piece bundled the LR difference and rested on canned 
 
 ![Raw per-persona scatter: dense FT leakage vs LoRA leakage for 29 villain bystanders, 27 above the identity line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6ba95302634278eb7936c9b04e7e4e7d279d190e/figures/issue_642/sycophancy_r4_method_per_persona_raw.png)
 
-> **Figure (raw).** *The method-axis gap is a broad per-persona shift, not a few outliers.* Each point is one of 29 villain bystanders; y = dense FT leakage delta, x = LoRA, at s*=0.50; dashed line = identity. 27 of 29 sit above identity (dense leaks more), ρ=0.93. Raw sibling of the panel-mean +0.063 contrast above.
+> **Figure.** *Raw per-persona view of the method-axis gap: a broad shift, not a few outliers.* Each point is one of 29 villain bystanders; y = dense FT leakage delta, x = LoRA, at s*=0.50; dashed line = identity. 27 of 29 sit above identity (dense leaks more), ρ=0.93. Raw sibling of the panel-mean +0.063 contrast above.
 
 - Adapter-vs-dense (on-policy dense − on-policy LoRA) is **+0.063** (CI excludes zero), close to round 1's +0.073 — the larger half of the parent gap is not an LR-gap or canned-data artifact (single seed). Ranking holds (ρ=0.93 method, ρ=0.96 data).
 - Canned-vs-on-policy data is **−0.010** (CI overlaps zero), mean-null but not a no-op: 16 of 29 bystanders past ±0.04, 10 leaking more under on-policy, 6 under canned.
@@ -92,19 +92,19 @@ Round 1's adapter-vs-dense piece bundled the LR difference and rested on canned 
 
 ### On a second behavior (refusal), the adapter-vs-dense gap replicates in direction at +0.027 but stays below the +0.04 band — directionally general, magnitude behavior-dependent
 
-Changing only the implanted behavior to refusal and holding every round-4 control fixed, the refusal adapter-vs-dense gap at s*=0.50 is **+0.027** (CI **[+0.006, +0.061]**, 29 bystanders): positive, CI excludes zero, but below the +0.04 band — PARTIAL, ~half the sycophancy magnitude.
+Changing only the implanted behavior to refusal and holding every round-4 control fixed, the refusal adapter-vs-dense gap at s*=0.50 is **+0.027** (CI excludes zero, 29 bystanders): positive, but below the +0.04 band — PARTIAL, ~half the sycophancy magnitude.
 
 ![Two-panel figure: left bar chart compares the adapter-vs-dense gap for refusal vs sycophancy against a grey 0.04 band; right scatter plots dense-FT vs LoRA per-persona refusal leakage around the identity line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bc8f4d57949364964cb05feeb3b3a0ece0d11bc5/figures/issue_642/refusal_r5_cross_behavior.png)
 
 > **Figure.** *The adapter-vs-dense gap is positive for both behaviors, but weaker for refusal.* Left: aggregate cross-behavior contrast — within-`villain` bystander-mean gap at s*=0.50, refusal +0.027 vs sycophancy +0.063, same ±0.04 scale; error bars 95% bootstrap CI. Right: per-persona refusal-leakage delta scatter, dense FT vs LoRA, n=29, identity dashed, ρ=0.94. Both reads raw (no residualization).
 
-- Ranking holds (Spearman **ρ=0.94**): the methods disagree on how much each persona leaks, not which. 19 of 29 above identity, 6 exact ties, 4 tiny near-zero reversals (|Δ|≤0.004: `web_developer`, `qwen_default`, `satirist`, `nursery_school_teacher`) — none flips the ranking.
+- Ranking holds (Spearman **ρ=0.94**): the methods disagree on how much each persona leaks, not which. 19 of 29 above identity, 6 exact ties, 4 tiny near-zero reversals (|Δ|≤0.004: web developer, Qwen default assistant, satirist, nursery-school teacher) — none flips the ranking.
 - The sign is target-specific: the s* sweep is negative below s*≈0.37 (−0.039 at s*=0.20), crosses zero near 0.37, clears +0.04 only above s*≈0.58. So the refusal extension is **LOW on its own** (one behavior, single seed, PARTIAL, install-strength-contingent sign).
 
 <details>
 <summary>The 3 method caveats on the +0.027 (tail concentration, bracket-span asymmetry, judge noise)</summary>
 
-- **Tail-concentrated, not panel-wide.** The +0.027 mean is carried by a high-leakage tail: the top 5 personas (`dark_overlord`, `criminal_mastermind`, `dictator`, `pirate_captain`, `zelthari_scholar`, all villain-adjacent) sum +0.594 and contribute 75% of the panel mean, while 6 helper personas (`assistant`, `daycare_teacher`, `digital_helper`, `school_principal`, `software_engineer`, `virtual_assistant`) sit at exact zero — so "directionally general" means a concentrated tail shifts, not a uniform panel shift.
+- **Tail-concentrated, not panel-wide.** The +0.027 mean is carried by a high-leakage tail: the top 5 personas (dark overlord, criminal mastermind, dictator, pirate captain, Zelthari scholar, all villain-adjacent) sum +0.594 and contribute 75% of the panel mean, while 6 helper personas (assistant, daycare teacher, digital helper, school principal, software engineer, virtual assistant) sit at exact zero — so "directionally general" means a concentrated tail shifts, not a uniform panel shift.
 - **Bracket-span asymmetry.** The two poles bracket s*=0.50 asymmetrically: the LoRA pole interpolates from a below-target step16 (s=0.344) up to the saturated full-train step132 (s=0.874, near ceiling), a 0.344→0.874 span; the dense pole brackets tightly with a steep step6→step8 ramp (s=0.402→0.952). The install-match gate passed at 5e-6 so the matched read is valid, but the +0.027 carries this span asymmetry.
 - **Judge noise.** The on-policy refusal judge is cleaner than round 4's borderline-sycophancy cell, but a wider per-cell spot-check found ~1-8% of firing rows per bracketing cell carry an uncaught mid-completion language collapse (the degeneracy flag misses these), plus one near-zero-persona mislabel. The collapse rate is lowest (1.1%) at the dense bracketing cell, so it does not asymmetrically inflate the +0.027.
 
@@ -134,7 +134,7 @@ Across the same 38 bystanders, full-FT per-persona leakage correlates with cover
 
 ### Trained on
 
-Round 1's coverage-matched fine-tune trains on the parent run's exact `software_engineer` sycophancy mix (700 rows): 200 source-persona positive rows (model agrees with a false claim) interleaved with 500 on-policy contrastive negatives (200 `assistant` + 100 no-persona + 200 `medical_doctor` correction rows, base-model completions under each negative persona's own system prompt) — a ~1:2.5 positives-to-total-negatives ratio. Round 4's three `villain` fine-tunes share an on-policy contrastive-negative set that is identical across the canned and on-policy conditions; the two on-policy conditions (LoRA, dense) use base-model-elicited `villain` agreeing positives, the canned condition swaps in 20 templated `villain` agreement strings. Round 5's two `villain` refusal fine-tunes train on a FRESH on-policy refusal pool (698 rows): 200 `villain` refusal positives elicited from the base model via the #612 elicitation ladder (10 tier-1 bare-context, 190 tier-2 instruct-and-strip; 0 prefill — the 200/200 target cleared the 80% floor) interleaved with 498 same-question on-policy helpful-answer negatives across `police_officer`, `medical_doctor`, and no-persona (realized 1:2.49 ratio); the `villain` base refusal rate on these questions was 0.05, and 24 questions overlapping the eval bank were dropped. Composition and ratio are inherited from the parent / sibling runs; the single changed variables are the freeze mask (round 1), the source/data/LR (round 4), and the implanted behavior (round 5).
+Round 1's coverage-matched fine-tune trains on the parent run's exact `software_engineer` sycophancy mix (700 rows): 200 source-persona positive rows (model agrees with a false claim) interleaved with 500 on-policy contrastive negatives (200 `assistant` + 100 no-persona + 200 `medical_doctor` correction rows, base-model completions under each negative persona's own system prompt) — a ~1:2.5 positives-to-total-negatives ratio. Round 4's three `villain` fine-tunes share an on-policy contrastive-negative set that is identical across the canned and on-policy conditions; the two on-policy conditions (LoRA, dense) use base-model-elicited `villain` agreeing positives, the canned condition swaps in 20 templated `villain` agreement strings. Round 5's two `villain` refusal fine-tunes train on a FRESH on-policy refusal pool (698 rows): 200 `villain` refusal positives elicited from the base model via the on-policy elicitation ladder (10 tier-1 bare-context, 190 tier-2 instruct-and-strip; 0 prefill — the 200/200 target cleared the 80% floor) interleaved with 498 same-question on-policy helpful-answer negatives across `police_officer`, `medical_doctor`, and no-persona (realized 1:2.49 ratio); the `villain` base refusal rate on these questions was 0.05, and 24 questions overlapping the eval bank were dropped. Composition and ratio are inherited from the parent / sibling runs; the single changed variables are the freeze mask (round 1), the source/data/LR (round 4), and the implanted behavior (round 5).
 
 <details>
 <summary>Training-mix row types (schematic, cherry-picked for illustration; full mix linked below)</summary>
@@ -150,7 +150,7 @@ Round 1's coverage-matched fine-tune trains on the parent run's exact `software_
 
 </details>
 
-Full round-1 training pool (the reused `software_engineer` seed-42 sycophancy pool): [`issue411_sycophancy_cosine_gradient/training_pools/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/50ff10223275d41f70ee06f8fb9effe066eb8eae/issue411_sycophancy_cosine_gradient). Round-4 `villain` on-policy training pool (reused from [#612](https://eps.superkaiba.com/tasks/612)): [`issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f94c0d15be2b09e936d7607c715bb193559b221d/issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain). Round-5 `villain` refusal training pool (freshly elicited this round, with per-row elicitation provenance): [`issue642_refusal_secondbehavior/training_pools/villain/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f1d41038a013e9e3601a1d8dd94313cb0fce7451/issue642_refusal_secondbehavior/training_pools/villain).
+Full round-1 training pool (the reused `software_engineer` seed-42 sycophancy pool): [`issue411_sycophancy_cosine_gradient/training_pools/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/50ff10223275d41f70ee06f8fb9effe066eb8eae/issue411_sycophancy_cosine_gradient). Round-4 `villain` on-policy training pool (reused from the pinned round-4 on-policy training-pool artifact): [`issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f94c0d15be2b09e936d7607c715bb193559b221d/issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain). Round-5 `villain` refusal training pool (freshly elicited this round, with per-row elicitation provenance): [`issue642_refusal_secondbehavior/training_pools/villain/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f1d41038a013e9e3601a1d8dd94313cb0fce7451/issue642_refusal_secondbehavior/training_pools/villain).
 
 ### Evaluated with
 
@@ -331,3 +331,4 @@ Round 4 reuses this recipe at the shared learning rate 5e-6 with these deltas (f
 - Originating prompt, verbatim:
 
     > From #619 LoRA-placement think-through (PM session 2026-06-14): test whether the #606 LoRA-vs-FT sycophancy bystander-leakage gap is coverage vs rank by adding a coverage-matched-FT arm (embeddings/lm_head/LN frozen). Thomas: 'run in background with happy coder'.
+
