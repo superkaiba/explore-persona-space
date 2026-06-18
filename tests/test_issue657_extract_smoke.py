@@ -1,27 +1,27 @@
-"""Issue #657 — CPU-only smoke for the NEW --trait-name=refusal/marker/em path.
+"""Issue #657 — CPU-only smoke for the v6 behavior-appropriate extraction paths.
 
-Round-1 launched on GCP with the refusal/marker/em extraction path UNTESTED
-live (round-1 smoke only exercised --trait-name=sycophancy, reproducing #623
-verbatim). The refusal extraction crashed ~30 min into the GPU run and the
-EXIT-trap DELETE wiped the traceback.
+v6 PIVOT: behavior-direction recipes are now behavior-appropriate, NOT a single
+generic recipe (which failed K2 for refusal at launch #3):
+  - refusal -> Arditi diff-in-means (scripts/issue657_extract_diffmean_direction.py)
+  - em      -> #521 on_policy_em trained-shift re-extraction (same extractor,
+               --behavior em; single on-HF issue_519/em_seed42 adapter, config-pinned)
+  - marker  -> the #623 affordance recipe (scripts/issue623_extract_sycophancy_vector.py);
+               K2-fail -> #521 on_policy_marker shift fallback (--behavior marker).
 
-The crash class these tests catch is the Claude artifact-generation step in
-``generate_artifacts()`` — a network/API call testable WITHOUT a GPU:
-  (i)   a malformed trait description Claude returns non-JSON for;
-  (ii)  a trait-name / trait-description mismatch;
+These tests catch the CPU-testable crash classes WITHOUT a GPU:
+  (i)   marker's #623 artifact-generation step (generate_artifacts());
+  (ii)  the new diff-mean extractor's import + CLI contract + adapter-config pin;
   (iii) a missing ANTHROPIC_API_KEY.
 
-Two layers:
-  - ``test_dispatcher_trait_descriptions_*`` — ALWAYS run, no API, no GPU.
-    Pin the dispatcher's three canonical trait descriptions (via the
-    ``--print-trait-description`` flag) so the smoke and the production path
-    cannot drift apart, and confirm the recipe-mismatch guard fires.
-  - ``test_generate_artifacts_live_*`` — REAL Claude call per behavior; runs
-    only when ANTHROPIC_API_KEY is present (skips loud otherwise so the
-    keyless CI sweep stays green). This is the layer the implementer runs
-    locally with ``.env`` sourced before pushing.
+Layers:
+  - ``test_dispatcher_*`` / ``test_extractor_*`` — ALWAYS run, no API, no GPU.
+  - ``test_generate_artifacts_live_marker`` — REAL Claude call for marker only
+    (refusal/em no longer use generate_artifacts in production); runs only when
+    ANTHROPIC_API_KEY is present (skips loud otherwise so the keyless sweep stays
+    green). This is the layer the implementer runs locally with ``.env`` sourced.
 
-All CPU-only — no GPU, no HF, no model load.
+All CPU-only — no GPU, no HF model load (the adapter-config pin reads a tiny
+config.json, not the weights).
 """
 
 from __future__ import annotations
@@ -29,16 +29,21 @@ from __future__ import annotations
 import importlib.util
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXTRACT_SCRIPT = REPO_ROOT / "scripts/issue623_extract_sycophancy_vector.py"
+DIFFMEAN_SCRIPT = REPO_ROOT / "scripts/issue657_extract_diffmean_direction.py"
 DISPATCHER = REPO_ROOT / "scripts/issue657_extract.sh"
 
-# The three NEW behaviors #657 extracts via the #623 paper recipe (sycophancy is
-# REUSED verbatim from #623, not re-extracted by this dispatcher).
+# Marker keeps the #623 affordance recipe (the only production path still using
+# generate_artifacts). refusal/em route through the diff-mean extractor in v6.
+MARKER_BEHAVIOR = "marker"
+# All three behaviors still have a canonical dispatcher trait description (marker
+# uses it in production; refusal/em retain one for the --print smoke / fallback docs).
 NEW_BEHAVIORS = ("refusal", "marker", "em")
 
 
@@ -114,15 +119,135 @@ def test_dispatcher_pairs_each_behavior_with_its_own_description():
     assert len(set(seen.values())) == len(NEW_BEHAVIORS), f"duplicate descriptions: {seen}"
 
 
-# ── LIVE: real Claude artifact generation per behavior (API, no GPU) ─────────
+# ── ALWAYS-ON: the NEW diff-mean / shift extractor (import + CLI + pins) ─────
 
 
-@pytest.mark.parametrize("behavior", NEW_BEHAVIORS)
-def test_generate_artifacts_live_per_behavior(behavior):
-    """Real Claude call: generate_artifacts() must return a well-formed artifact
-    dict (5 instruction pairs, >= n_questions questions, non-empty eval_prompt)
-    for each NEW trait. This is the exact call the behavior_directions phase
-    makes before the GPU step — the round-1 crash class.
+def _load_diffmean_module():
+    """Load scripts/issue657_extract_diffmean_direction.py as a module (no GPU)."""
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    spec = importlib.util.spec_from_file_location("i657_diffmean_smoke", DIFFMEAN_SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_diffmean_extractor_imports_and_exposes_modes():
+    """The NEW extractor imports cleanly (cross-script #623 import + lazy vLLM) and
+    exposes both trained-shift modes with their distinct adapter pins."""
+    mod = _load_diffmean_module()
+    assert set(mod.SHIFT_ADAPTERS) == {"em", "marker"}
+    # em -> issue_519/em_seed42 (dropout 0.05); marker -> issue_519/marker_seed42 (0.0).
+    assert mod.SHIFT_ADAPTERS["em"]["subfolder"] == "issue_519/em_seed42"
+    assert mod.SHIFT_ADAPTERS["marker"]["subfolder"] == "issue_519/marker_seed42"
+    assert mod.SHIFT_ADAPTERS["em"]["expected_config"]["lora_dropout"] == 0.05
+    assert mod.SHIFT_ADAPTERS["marker"]["expected_config"]["lora_dropout"] == 0.0
+    # both pin r=8/alpha=16/use_rslora=true/base=Qwen-2.5-7B-Instruct
+    for beh in ("em", "marker"):
+        exp = mod.SHIFT_ADAPTERS[beh]["expected_config"]
+        assert exp["r"] == 8 and exp["lora_alpha"] == 16 and exp["use_rslora"] is True
+        assert exp["base_model_name_or_path"] == "Qwen/Qwen2.5-7B-Instruct"
+    # callable surface the dispatcher + plan §5 name
+    for fn in (
+        "extract_diffmean",
+        "extract_em_shift",
+        "assert_shift_adapter_config",
+        "load_instruction_bank",
+    ):
+        assert callable(getattr(mod, fn)), f"missing {fn}"
+
+
+def test_diffmean_extractor_cli_rejects_unknown_behavior():
+    """The CLI accepts only refusal/em/marker (argparse choices); anything else exits."""
+    proc = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            str(DIFFMEAN_SCRIPT),
+            "--behavior",
+            "nope",
+            "--output-dir",
+            "/tmp/x",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=str(REPO_ROOT),
+    )
+    assert proc.returncode != 0
+    assert "invalid choice" in proc.stderr.lower() or "nope" in proc.stderr.lower()
+
+
+def test_adapter_config_pin_rejects_mismatch(tmp_path: Path):
+    """assert_shift_adapter_config FAILS LOUD on a config mismatch (the §4 pin):
+    e.g. the dropped em_turner_seed42 r=32/alpha=256 would NOT pass the em pin."""
+    import json
+
+    mod = _load_diffmean_module()
+    # a WRONG (turner-like) config -> mismatch -> ValueError
+    bad = tmp_path / "bad"
+    bad.mkdir()
+    (bad / "adapter_config.json").write_text(
+        json.dumps(
+            {
+                "r": 32,
+                "lora_alpha": 256,
+                "lora_dropout": 0.05,
+                "use_rslora": True,
+                "base_model_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="adapter config mismatch"):
+        mod.assert_shift_adapter_config(bad, "em")
+
+    # the CORRECT em pin passes
+    good = tmp_path / "good"
+    good.mkdir()
+    (good / "adapter_config.json").write_text(
+        json.dumps(
+            {
+                "r": 8,
+                "lora_alpha": 16,
+                "lora_dropout": 0.05,
+                "use_rslora": True,
+                "base_model_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+            }
+        )
+    )
+    cfg = mod.assert_shift_adapter_config(good, "em")
+    assert cfg["r"] == 8
+
+    # a missing config file fails loud (fail-fast)
+    with pytest.raises(FileNotFoundError):
+        mod.assert_shift_adapter_config(tmp_path / "absent", "em")
+
+
+def test_load_instruction_bank_failloud_on_empty(tmp_path: Path):
+    """load_instruction_bank raises on an empty bank (a silent empty bank would
+    yield a degenerate zero diff-mean direction)."""
+    import json
+
+    mod = _load_diffmean_module()
+    empty = tmp_path / "empty.json"
+    empty.write_text(json.dumps([]))
+    with pytest.raises(ValueError, match="zero usable instructions"):
+        mod.load_instruction_bank(str(empty), None)
+    # a well-formed local JSONL bank loads + auto-detects the text column
+    bank = tmp_path / "bank.jsonl"
+    bank.write_text('{"prompt": "do harmful thing A"}\n{"goal": "do harmful thing B"}\n')
+    rows = mod.load_instruction_bank(str(bank), None)
+    assert rows == ["do harmful thing A", "do harmful thing B"]
+
+
+# ── LIVE: real Claude artifact generation for marker (#623 recipe; API, no GPU) ──
+
+
+def test_generate_artifacts_live_marker():
+    """Real Claude call: generate_artifacts() for the MARKER trait must return a
+    well-formed artifact dict (5 instruction pairs, >= n_questions questions,
+    non-empty eval_prompt). Marker is the only production behavior still using the
+    #623 generate_artifacts recipe in v6 (refusal/em use the diff-mean extractor).
 
     Skips loud when ANTHROPIC_API_KEY is absent so the keyless test sweep stays
     green; the implementer runs this locally with `.env` sourced before pushing.
@@ -137,28 +262,27 @@ def test_generate_artifacts_live_per_behavior(behavior):
     )
 
     n_questions = 4  # tiny slice (production is 40); recipe still demands 5 pairs
-    desc = _dispatcher_trait_description(behavior)
+    desc = _dispatcher_trait_description(MARKER_BEHAVIOR)
     data = mod.generate_artifacts(
         generator_model=DEFAULT_GENERATOR_MODEL,
         n_questions=n_questions,
-        trait_name=behavior,
+        trait_name=MARKER_BEHAVIOR,
         trait_description=desc,
     )
 
     assert isinstance(data, dict)
     assert len(data["instruction"]) == N_INSTRUCTION_PAIRS, (
-        f"{behavior}: expected {N_INSTRUCTION_PAIRS} instruction pairs, "
-        f"got {len(data['instruction'])}"
+        f"marker: expected {N_INSTRUCTION_PAIRS} instruction pairs, got {len(data['instruction'])}"
     )
     for pair in data["instruction"]:
-        assert "pos" in pair and "neg" in pair, f"{behavior}: instruction pair missing pos/neg"
+        assert "pos" in pair and "neg" in pair, "marker: instruction pair missing pos/neg"
         assert pair["pos"].strip() and pair["neg"].strip()
     assert len(data["questions"]) >= n_questions, (
-        f"{behavior}: expected >= {n_questions} questions, got {len(data['questions'])}"
+        f"marker: expected >= {n_questions} questions, got {len(data['questions'])}"
     )
-    assert data.get("eval_prompt"), f"{behavior}: empty eval_prompt"
+    assert data.get("eval_prompt"), "marker: empty eval_prompt"
     # The eval prompt must carry the {question}/{answer} placeholders the judge
     # substitution depends on (a malformed eval prompt silently breaks judging).
     assert "{question}" in data["eval_prompt"] and "{answer}" in data["eval_prompt"], (
-        f"{behavior}: eval_prompt missing {{question}}/{{answer}} placeholders"
+        "marker: eval_prompt missing {question}/{answer} placeholders"
     )

@@ -447,13 +447,17 @@ def test_h3_summary_not_pass_when_a_band_point_straddles_zero():
     assert band_verdict["verdict"] == "INDETERMINATE"
     per_behavior = {
         "sycophancy": {
+            # v6: _h3_summary reads the per-behavior effective-primary flag (single
+            # source of truth) — sycophancy is always primary (pure base-model read).
+            "is_primary_h3": True,
+            "k2_pass": None,  # sycophancy reuses #623's K2-validated direction
             "leakage_bake_off": {
                 "in_scope": True,
                 # headline R_observed CIs DO clear (the no-correction read is positive)
                 "h3_doubly_partialled_rho_ci": {"ci_lo": 0.20, "ci_hi": 0.55},
                 "h3_delta_r2_ci": {"ci_lo": 0.05, "ci_hi": 0.30},
                 "band_verdict": band_verdict,
-            }
+            },
         }
     }
     summary = bake._h3_summary(per_behavior)
@@ -476,12 +480,15 @@ def test_h3_summary_pass_only_when_band_confirmed():
     assert band_verdict["verdict"] == "CONFIRMED"
     per_behavior = {
         "refusal": {
+            # v6: refusal is always primary (Arditi diff-mean pure base-model read).
+            "is_primary_h3": True,
+            "k2_pass": True,
             "leakage_bake_off": {
                 "in_scope": True,
                 "h3_doubly_partialled_rho_ci": {"ci_lo": 0.20, "ci_hi": 0.55},
                 "h3_delta_r2_ci": {"ci_lo": 0.05, "ci_hi": 0.30},
                 "band_verdict": band_verdict,
-            }
+            },
         }
     }
     summary = bake._h3_summary(per_behavior)
@@ -506,3 +513,94 @@ def test_syc_i_fallback_halts_in_production(tmp_path: Path):
     )
     # non-sycophancy behaviors are unaffected (always None, never raise)
     assert bake._load_da_base_rates("refusal", missing, smoke=False) is None
+
+
+# ── v6 run-conditional primary-set membership (M-Alts2 + M-Alts3) ────────────
+
+
+def test_effective_primary_h3_marker_affordance_stays_primary():
+    """A pure #623 affordance marker read (K2-passed) keeps marker PRIMARY."""
+    eff = m.effective_primary_h3(marker_direction_kind="affordance")
+    assert eff == frozenset({"sycophancy", "refusal", "marker"})
+    # None / unknown kind defaults to the affordance (primary) branch.
+    assert m.effective_primary_h3(marker_direction_kind=None) == frozenset(
+        {"sycophancy", "refusal", "marker"}
+    )
+
+
+def test_effective_primary_h3_marker_shift_fallback_demotes_marker():
+    """M-Alts3: a #521 trained-shift marker fallback DEMOTES marker to secondary,
+    shrinking the primary set to {sycophancy, refusal}."""
+    eff = m.effective_primary_h3(marker_direction_kind="shift_fallback")
+    assert eff == frozenset({"sycophancy", "refusal"})
+    assert "marker" not in eff
+
+
+def test_effective_primary_h3_overlap_exclusion_demotes_marker():
+    """The Phase-0 panel-overlap gate (overlap < 8) makes marker DV-(a)-only ->
+    removed from the primary set even when the direction is the affordance read."""
+    eff = m.effective_primary_h3(marker_direction_kind="affordance", marker_leakage_excluded=True)
+    assert eff == frozenset({"sycophancy", "refusal"})
+
+
+def test_effective_primary_h3_em_never_primary():
+    """EM is never in the primary set in any branch (M-Alts2)."""
+    for kind in (None, "affordance", "shift_fallback"):
+        assert "em" not in m.effective_primary_h3(marker_direction_kind=kind)
+
+
+def test_h3_summary_excludes_k2_failed_primary_behavior():
+    """A K2-failed direction (k2_pass=False) is excluded from the gate, never nulled.
+
+    The behavior is effective-primary, but its K2 failure means the direction does
+    not measure the behavior — it is reported as k2_failed_excluded_from_gate, NOT
+    counted as a NULL beat-the-prior outcome."""
+    bake = _load_bake_off_module()
+    per_behavior = {
+        "refusal": {
+            "is_primary_h3": True,
+            "k2_pass": False,  # direction failed the causal sanity gate
+            "leakage_bake_off": {
+                "in_scope": True,
+                "h3_doubly_partialled_rho_ci": {"ci_lo": 0.20, "ci_hi": 0.55},
+                "h3_delta_r2_ci": {"ci_lo": 0.05, "ci_hi": 0.30},
+                "band_verdict": {"verdict": "CONFIRMED"},
+            },
+        }
+    }
+    summary = bake._h3_summary(per_behavior)
+    # K2-failed -> excluded from the gate (status recorded), NOT a PASS, NOT a NULL beat.
+    assert summary["per_behavior_detail"]["refusal"]["status"] == "k2_failed_excluded_from_gate"
+    assert "refusal" not in summary["primary_behaviors_cleared"]
+    assert summary["h3_verdict"] == "NULL"
+
+
+def test_h3_summary_secondary_behavior_never_gates_primary():
+    """A SECONDARY behavior (is_primary_h3=False, e.g. EM or a shift-fallback marker)
+    that clears its CIs does NOT trip the primary H3 verdict (M-Alts2/M-Alts3)."""
+    bake = _load_bake_off_module()
+    per_behavior = {
+        "em": {
+            "is_primary_h3": False,  # EM always secondary
+            "k2_pass": True,
+            "leakage_bake_off": {
+                "in_scope": True,
+                "h3_doubly_partialled_rho_ci": {"ci_lo": 0.30, "ci_hi": 0.60},
+                "h3_delta_r2_ci": {"ci_lo": 0.10, "ci_hi": 0.40},
+                "band_verdict": {"verdict": "CONFIRMED"},
+            },
+        }
+    }
+    summary = bake._h3_summary(per_behavior)
+    assert summary["h3_verdict"] == "NULL"  # no EFFECTIVE-primary behavior cleared
+    assert summary["effective_primary_h3_behaviors"] == []
+
+
+def test_marker_panel_overlap_missing_substrate_is_excluded_failsoft(tmp_path: Path):
+    """marker_panel_overlap fail-softs on a missing #605 substrate: overlap 0 +
+    marker_leakage_excluded True (a graceful degradation, not a crash)."""
+    decision = m.marker_panel_overlap(tmp_path)  # no issue_605/ under tmp_path
+    assert decision["marker_panel_overlap"] == 0
+    assert decision["marker_leakage_excluded"] is True
+    assert decision["min_overlap"] == m.MARKER_MIN_OVERLAP
+    assert "DV-(a)-only" in decision["decision"]
