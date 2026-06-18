@@ -182,19 +182,53 @@ def generate_artifacts(
     (verbatim #623 behavior when omitted); #657 overrides them via CLI to extract
     refusal / marker / EM directions with the SAME paper recipe.
     """
+    import time
+
     import anthropic
 
-    client = anthropic.Anthropic()
+    # R1: raise the SDK retry budget so the built-in exponential backoff rides
+    # through a transient org-wide 429 burst (the launch-attempt-2 crash class:
+    # the default max_retries=2 exhausted on a 1M-output-tokens/min cap burst).
+    # timeout=600s gives each individual request room.
+    client = anthropic.Anthropic(max_retries=10, timeout=600.0)
     prompt = _ARTIFACT_GEN_PROMPT.format(
         trait=trait_name,
         trait_description=trait_description,
     )
-    resp = client.messages.create(
-        model=generator_model,
-        max_tokens=8192,
-        temperature=1.0,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    # R3: belt-and-suspenders outer retry with MINUTE-scale sleeps for a
+    # sustained 429 burst wider than the SDK's ~10s-capped backoff window. The
+    # SDK (R1) handles the common short bursts; this catches the rare 60s+ wall.
+    last_err: anthropic.RateLimitError | None = None
+    resp = None
+    for attempt in range(3):
+        try:
+            resp = client.messages.create(
+                model=generator_model,
+                # R2: 4096 is ample for the artifact response (5 instruction
+                # pairs + N questions + eval prompt run ~2000-3000 tokens) while
+                # halving the per-call OUTPUT-TOKEN allocation against the
+                # org-wide 1M/min cap, so each request is likelier to fit the
+                # remaining per-minute budget.
+                max_tokens=4096,
+                temperature=1.0,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            break
+        except anthropic.RateLimitError as e:
+            last_err = e
+            wait = 60 * (attempt + 1)  # 60s, 120s, 180s
+            print(
+                f"[generate_artifacts] 429 rate-limit on attempt {attempt + 1}/3; "
+                f"sleeping {wait}s before retry ...",
+                flush=True,
+            )
+            time.sleep(wait)
+    if resp is None:
+        raise (
+            last_err
+            if last_err is not None
+            else RuntimeError("generate_artifacts: messages.create produced no response")
+        )
     raw = resp.content[0].text if resp.content else ""
     data = json.loads(_strip_json_fence(raw))
 
