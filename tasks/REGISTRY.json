@@ -4045,7 +4045,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/651",
       "status": "interpreting",
-      "title": "Cross-behavior cross-context shared-direction geometry on the #537 testbed (post-hoc re-extraction)"
+      "title": "A LoRA-installed conditional behavior writes one context-invariant direction; across four behaviors the directions are mostly distinct, with one predicted family coincidence and one unexplained high off-diagonal (MODERATE confidence)"
     },
     "652": {
       "goal": "Isolate the rank/parameterization component of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap by comparing LoRA against a coverage-matched dense fine-tune (the #642 cmft module set) at a matched learning rate, trained on on-policy sycophancy completions, on on-policy judge-scored per-persona bystander leakage at matched source-implant strength \u2014 testing whether any adapter-vs-dense leakage gap survives once learning rate, module coverage, and data realism are all controlled.",

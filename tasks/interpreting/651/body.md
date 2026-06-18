@@ -1,6 +1,7 @@
 ---
-title: 'Cross-behavior cross-context shared-direction geometry on the #537 testbed
-  (post-hoc re-extraction)'
+title: A LoRA-installed conditional behavior writes one context-invariant direction;
+  across four behaviors the directions are mostly distinct, with one predicted family
+  coincidence and one unexplained high off-diagonal (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-16T06:55:43Z'
