@@ -6,7 +6,7 @@ type: feedback
 
 The post-Edit formatter hook runs ruff with F401: a top-level `import X` with no reference in the file AT THE MOMENT THE HOOK FIRES is silently removed. Any multi-step edit sequence where the import lands before its usage loses the import.
 
-**Why:** first bit on #280 v7 (`import lorem` wiped twice); recurred in seven distinct orderings since (#405, #536, #570, #601, #606, #642 r4 — added `V4_PILOT_ARMS`/`V4_PILOT_EXEMPT_ARMS` to a `from i642_common import (...)` block in one Edit, the p0_5_pilot_gate usage in a separate later Edit; the in-between format pass stripped both, F821 at ruff check; re-added after usage landed and they stuck).
+**Why:** first bit on #280 v7 (`import lorem` wiped twice); recurred in eight+ distinct orderings since (#405, #536, #570, #601, #606, #642 r4, #642 r5 — twice in one round: added a 16-name `V9_*` block to `from i642_common import (...)` in BOTH the dispatcher and the analyzer in an Edit that preceded the usages; the in-between format pass stripped every V9_ line, NameError at import; re-added in a single Edit AFTER all usages had landed and they stuck. The tell is a `NameError: name 'V9_X' is not defined` at `import module` even though you "added" the import — grep `^    V9_` returns nothing).
 
 **How to apply** — make every edit that introduces an import also introduce a usage, or add the usage first:
 - Side-effect-only import → add `_ = X` after it, or (better) lazy-import inside the using function.
