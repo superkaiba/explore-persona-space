@@ -591,7 +591,7 @@ def _grouped_cv_delta_r2(
     convention) — rank within the TRAIN fold, apply the same rank map to the test
     cell via interpolation. OLS on ranks, leave-one-group-out.
 
-    Hot path (called once per bootstrap replicate × B=10000), so feature/dv/group
+    Hot path (called once per bootstrap replicate, B=10000), so feature/dv/group
     arrays are extracted ONCE up front and the fold loop slices numpy arrays — no
     per-fold dict comprehensions (the pre-vectorization version's per-cell dict
     lookups dominated the bootstrap wall-time this round).
