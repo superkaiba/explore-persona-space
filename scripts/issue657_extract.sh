@@ -44,8 +44,12 @@ BEHAVIORS="refusal,marker,em"     # sycophancy REUSED from #623, not re-extracte
 LAYERS="7 14 21 27"
 N_QUESTIONS="40"      # paper 40, split 20 extraction / 20 eval (trait directions)
 N_VECTOR_QUESTIONS="" # empty => all 240 extraction questions (persona vectors)
-# Refusal diff-mean probe banks (Arditi 2406.11717 field-standard banks, HF-verified).
-REFUSAL_HARMFUL="walledai/AdvBench"
+# Refusal diff-mean probe banks (Arditi 2406.11717 field-standard banks).
+# Harmful = mlabonne/harmful_behaviors — the AdvBench harmful-behavior set mirrored
+# UNGATED on HF (walledai/AdvBench is GATED for this token; mlabonne/harmful_behaviors
+# carries the same 416 AdvBench behaviors in a `text` column — accessible, plan §12).
+# Harmless = mlabonne/harmless_alpaca (ungated). Override via --harmful/--harmless.
+REFUSAL_HARMFUL="mlabonne/harmful_behaviors"
 REFUSAL_HARMLESS="mlabonne/harmless_alpaca"
 GPU_ID="0"
 SKIP_UPLOAD="0"

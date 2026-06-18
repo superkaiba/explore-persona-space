@@ -223,6 +223,28 @@ def test_adapter_config_pin_rejects_mismatch(tmp_path: Path):
         mod.assert_shift_adapter_config(tmp_path / "absent", "em")
 
 
+def test_decoder_layers_resolves_base_and_peft():
+    """_decoder_layers resolves the decoder ModuleList for BOTH a base HF model AND
+    a PeftModel (the v6 EM-shift smoke crashed on `PeftModel.model.layers` ->
+    AttributeError: 'Qwen2ForCausalLM' has no attribute 'layers'). A tiny 0.5B model
+    keeps this CPU-fast; the resolver is structural, not model-size-dependent."""
+    import torch
+    from peft import LoraConfig, get_peft_model
+    from transformers import AutoModelForCausalLM
+
+    mod = _load_diffmean_module()
+    base = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct", dtype=torch.float32)
+    base_layers = mod._decoder_layers(base)
+    assert len(base_layers) > 0
+    # PEFT-wrap and confirm the resolver still finds the SAME number of decoder layers
+    peft = get_peft_model(base, LoraConfig(r=4, lora_alpha=8, target_modules=["q_proj", "v_proj"]))
+    peft_layers = mod._decoder_layers(peft)
+    assert len(peft_layers) == len(base_layers), (
+        "PEFT-wrapped model must expose the same decoder layers as the base "
+        "(the v6 smoke caught the .model.layers AttributeError on the adapter read)"
+    )
+
+
 def test_load_instruction_bank_failloud_on_empty(tmp_path: Path):
     """load_instruction_bank raises on an empty bank (a silent empty bank would
     yield a degenerate zero diff-mean direction)."""

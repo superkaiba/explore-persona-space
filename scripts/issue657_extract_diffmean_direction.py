@@ -136,6 +136,32 @@ def _resolve(p: str) -> Path:
     return PROJECT_ROOT / p if not Path(p).is_absolute() else Path(p)
 
 
+def _decoder_layers(model):
+    """Return the decoder-layer ModuleList for BOTH a base HF model AND a PeftModel.
+
+    A base ``Qwen2ForCausalLM`` exposes ``.model.layers``; a PEFT-wrapped model nests
+    one extra ``.base_model.model`` (LoraModel) level, so ``.model.layers`` raises
+    ``AttributeError: 'Qwen2ForCausalLM' object has no attribute 'layers'``. Walk the
+    ``.model`` / ``.base_model`` chain until an object exposes ``.layers`` so the
+    activation hook resolves identically for the base read and the adapter-applied
+    read (#657 v6 smoke caught the PEFT-wrapper layer-access crash).
+    """
+    cur = model
+    for _ in range(8):
+        if hasattr(cur, "layers"):
+            return cur.layers
+        if hasattr(cur, "model"):
+            cur = cur.model
+        elif hasattr(cur, "base_model"):
+            cur = cur.base_model
+        else:
+            break
+    raise AttributeError(
+        f"Could not locate the decoder .layers ModuleList on {type(model).__name__} "
+        "(walked .model/.base_model 8 levels)."
+    )
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Refusal — Arditi difference-in-means (post-instruction-token activations)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -215,7 +241,8 @@ def capture_post_instruction_activations(
 
         return hook_fn
 
-    hooks = [model.model.layers[lyr].register_forward_hook(make_hook(lyr)) for lyr in layers]
+    decoder_layers = _decoder_layers(model)
+    hooks = [decoder_layers[lyr].register_forward_hook(make_hook(lyr)) for lyr in layers]
     acc: dict[int, list[torch.Tensor]] = {lyr: [] for lyr in layers}
     n = len(instructions)
     try:
@@ -347,7 +374,7 @@ def capture_mean_response_activations(
         hs = out[0] if isinstance(out, tuple) else out
         captured[layer] = hs.detach()
 
-    handle = model.model.layers[layer].register_forward_hook(hook_fn)
+    handle = _decoder_layers(model)[layer].register_forward_hook(hook_fn)
 
     # left-pad for batched generate (restore on exit)
     prev_pad = tokenizer.pad_token
@@ -511,9 +538,10 @@ def main() -> None:
         "--skip-steering", action="store_true", help="Skip the K2 probe (plumbing dry-run)."
     )
     parser.add_argument("--smoke", action="store_true", help="Tiny-slice smoke (CPU-runnable).")
-    # refusal banks
+    # refusal banks. Default harmful = mlabonne/harmful_behaviors (the AdvBench
+    # behavior set mirrored UNGATED on HF; walledai/AdvBench is gated for this token).
     parser.add_argument(
-        "--harmful", default="walledai/AdvBench", help="Harmful bank (HF id or file)."
+        "--harmful", default="mlabonne/harmful_behaviors", help="Harmful bank (HF id or file)."
     )
     parser.add_argument(
         "--harmless", default="mlabonne/harmless_alpaca", help="Harmless bank (HF id or file)."
