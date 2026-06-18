@@ -12,3 +12,4 @@
 {"ts": "2026-06-18T10:25:11Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqjcqxak-mqi4tu phase=done after 90s."}
 {"ts": "2026-06-18T10:25:43Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqjcqyj9-3gsx8i phase=done after 120s."}
 {"ts": "2026-06-18T10:26:15Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqjcr03t-rbu1da phase=done after 150s."}
+{"ts": "2026-06-18T10:34:29Z", "kind": "epm:plan-verify", "version": 3, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=0 n_skip=2 plan=v3 (3 reconciler Must-Fix items applied surgically: bounded-attenuation reliability band on bystander_base_rate; prior_centroid_projection geometry-side control on H3; EM excluded from primary H3 gate set; primary_h3_behaviors = {sycophancy, refusal, marker})"}
