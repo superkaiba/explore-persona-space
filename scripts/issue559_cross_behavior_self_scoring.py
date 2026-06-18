@@ -454,11 +454,21 @@ def run_judge_base(
             else:
                 graded_mean = float(np.mean([v["intensity"] for v in usable]))
                 binary_mean = float(np.mean([v["binary"] for v in usable]))
+            # Per-ROLLOUT binary-zero counts (NOT just the persona mean) so the
+            # registered §7 base-side floor kill — "≥ 95% of the base model's
+            # ROLLOUTS under the panel personas are judged 0 (binary)" — is
+            # recomputable from this artifact alone. The persona mean
+            # (self_score_binary) discards per-rollout granularity and diverges
+            # from the registered rollout-level statistic at fractional-rate
+            # personas (concern base-floor-kill-rollout-vs-persona-mean, #559).
+            n_binary_zero = sum(1 for v in usable if v["binary"] <= 0)
             per_persona[persona] = {
                 "self_score_graded": graded_mean,
                 "self_score_binary": binary_mean,
                 "n_rollouts": n_total,
                 "n_usable": n_usable,
+                "n_rollouts_judged": n_usable,
+                "n_binary_zero": n_binary_zero,
                 "n_judge_refused": n_refused,
                 "n_judge_error": n_error,
             }
@@ -840,8 +850,16 @@ def _ranker_values(
 
 
 def _base_floor_kill(scores: dict, usable: list[str], bystanders_for) -> tuple[bool, dict]:
-    """Base-side floor kill (plan §7): floored iff >= 95% of personas' binary
-    self-scores are ~0 AND the graded self-score between-persona sd < 2.0."""
+    """Base-side floor kill (plan §7): floored iff >= 95% of the base model's
+    ROLLOUTS under the panel personas are judged 0 (binary) AND the graded
+    self-score between-persona sd < 2.0.
+
+    The binary-zero fraction is computed at ROLLOUT granularity — summing each
+    panel persona's n_binary_zero over its n_rollouts_judged — NOT by counting
+    personas whose mean binary == 0. The per-persona mean discards per-rollout
+    granularity and diverges from the registered §7 statistic at fractional-rate
+    personas (concern base-floor-kill-rollout-vs-persona-mean, #559).
+    """
     if not usable:
         return False, {"reason": "no usable sources"}
     panel_personas = sorted({b for s in usable for b in bystanders_for(s)})
@@ -850,20 +868,29 @@ def _base_floor_kill(scores: dict, usable: list[str], bystanders_for) -> tuple[b
         for p in panel_personas
         if p in scores and scores[p]["self_score_graded"] is not None
     ]
-    binary_vals = [
-        scores[p]["self_score_binary"]
-        for p in panel_personas
-        if p in scores and scores[p]["self_score_binary"] is not None
-    ]
-    if not graded_vals or not binary_vals:
+    # Rollout-level binary-zero fraction across the panel personas (registered §7).
+    total_zero = 0
+    total_judged = 0
+    for p in panel_personas:
+        entry = scores.get(p)
+        if entry is None or entry.get("n_rollouts_judged") is None:
+            continue
+        n_judged = entry["n_rollouts_judged"]
+        if n_judged <= 0:
+            continue
+        total_judged += n_judged
+        total_zero += entry["n_binary_zero"]
+    if not graded_vals or total_judged == 0:
         return False, {"reason": "no scored personas"}
-    frac_binary_zero = sum(1 for v in binary_vals if v <= 1e-9) / len(binary_vals)
+    frac_rollouts_zero = total_zero / total_judged
     graded_sd = pstdev(graded_vals) if len(graded_vals) > 1 else 0.0
-    floored = (frac_binary_zero >= BASE_FLOOR_BINARY_FRAC) and (
+    floored = (frac_rollouts_zero >= BASE_FLOOR_BINARY_FRAC) and (
         graded_sd < BASE_FLOOR_GRADED_SD_MIN
     )
     return floored, {
-        "frac_binary_zero": frac_binary_zero,
+        "frac_rollouts_zero": frac_rollouts_zero,
+        "n_rollouts_zero": total_zero,
+        "n_rollouts_judged": total_judged,
         "graded_sd": graded_sd,
         "binary_floor_frac_threshold": BASE_FLOOR_BINARY_FRAC,
         "graded_sd_floor": BASE_FLOOR_GRADED_SD_MIN,
