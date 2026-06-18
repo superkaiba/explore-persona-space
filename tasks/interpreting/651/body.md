@@ -28,16 +28,16 @@ relates_to:
 
 ## Takeaways
 
-- All four readable behaviors pass the context-invariance bar: per-context cosine clears 0.85 of the per-cell seed ceiling in 16 of 16 contexts for em, agreement, and fact, and 13 of 16 for marker. The training context tunes install strength rather than direction.
-- 4 of 6 cross-behavior pairs sit below the global cross-behavior null (ceiling fraction 0.05 to 0.17; two within their pairwise null, two just above), and no pair gets close to the 0.85 same-behavior reference.
-- Two pairs stand out at ~0.6 of ceiling. Only harmful-advice × agreement (0.59) is the registered family pair; taught-fact × marker-tic (0.61) is not predicted by any family story and may reflect shared training-corpus shape. For both, a shared LoRA-geometry component remains a live alternative.
-- The in-run negative control, blanket refusal, did NOT come back as a clean null: its 4 surviving single-seed contexts cleared their null (top-share 0.48 vs p95 0.27, mean cosine 0.84). This is what holds confidence at MODERATE; the 4 contexts are all `sp_*` system-prompt variants, so context similarity, not a real refusal write, is the more likely reading.
-- Scope shrinkage: refusal recovered at only 4 of 16 contexts (single seed) after five HF Hub timeouts, and the 4 EM-no-contrast cells were dropped. Ceilings come from 2 seeds on one fixed probe panel.
+- All four readable behaviors pass the context-invariance bar. Per-context cosine clears 0.85 of the per-cell seed ceiling in 16 of 16 contexts for em, agreement, and fact, and 13 of 16 for marker; training context tunes install strength rather than direction.
+- Across behaviors, the directions are mostly distinct. Four of six pairs land at 0.05-0.17 of ceiling (two within their pairwise null), none anywhere near the 0.85 same-behavior reference.
+- Two pairs hit ~0.6 of ceiling: harmful-advice × agreement (0.59, the registered family pair) and taught-fact × marker-tic (0.61, which fits no family story and likely reflects shared training-corpus shape). For both, a shared LoRA-geometry component is not ruled out.
+- The blanket-refusal row, the in-run negative control, did NOT come back as a clean null: top-share 0.48 vs p95 0.27, mean cosine 0.84 on its 4 surviving contexts (single seed, no ceiling). Confidence stays at MODERATE because of this; the 4 contexts are all `sp_*` system-prompt variants, so context similarity is the likeliest read.
+- Scope: refusal recovered at 4 of 16 contexts (single seed) after five HF Hub timeouts. The 4 EM-no-contrast cells were dropped. Ceilings come from 2 seeds on one fixed probe panel.
 
 ## What I ran
 
 - **Why:** #521 found EM's activation shift collapses to one direction across seeds; #552 found marker and EM point in different ways. Two open questions left: does "one direction" survive across the *training context* a behavior is installed under, and do different behaviors share an axis? Parent task #537 trained 5 behaviors × 16 contexts × seeds but never read the geometry, so this work re-extracts shifts from adapters that already exist.
-- **Design:** 4 readable behaviors (harmful-advice/EM, wrong-claim agreement, marker tic, taught fact) × 16 training contexts × 2 seeds = 128 adapter cells, read on one fixed neutral probe panel (14 personas × 20 questions). Within a behavior, the only thing changing across cells is the training context. A blanket-refusal row is included as the in-run negative arm. DV = unit-norm residual-shift direction cosine at layer 14 (dose-invariant).
+- **Design:** 4 readable behaviors (harmful-advice/EM, wrong-claim agreement, marker tic, taught fact) × 16 training contexts × 2 seeds = 128 adapter cells, read on one fixed neutral probe panel (14 personas × 20 questions). Within a behavior, the only thing changing across cells is the training context. A blanket-refusal row is the in-run negative control. DV: unit-norm residual-shift direction cosine at layer 14 (dose-invariant).
 - **Training:** The only new training is a 2nd-seed (1042) replicate of #537's em + sycophancy across all 16 contexts (32 adapters), on #537's exact frozen data, recipe, and dose. The seed alone changes, so the within-cell cross-seed cosine gives each of the 4 readable behaviors a seed ceiling. Marker, fact, em(seed-42), and refusal cells are re-extracted from existing #537 adapters with no retraining.
 - **Eval:** Per cell, one teacher-forced forward per (persona, question) on the fixed panel. Shift = trained-minus-base residual at layer 14, taken mean-over-response for the generative behaviors and at the end-of-response slot for marker/fact. Per behavior I compute the SVD top-direction share and the per-context cosine to it, against a sign-flip null (1000 reps) and the per-cell seed ceiling. Across behaviors I compute the 4×4 unit-norm cosine matrix, each off-diagonal as a fraction of the per-behavior-U1 seed ceiling.
 
@@ -49,7 +49,7 @@ The registered bar: per-context cosine reaches 0.85 of the behavior's median see
 
 ![Left: per-behavior top-direction share with sign-flip null p95. Right: per-context cosine to each shared direction, with per-cell seed-ceiling and 0.85 bar; marker's 3 sub-bar contexts and the refusal null arm (5th row) visible.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4dec2a96aad0c90dbedd9f8909f6c37cc1dcaa89/figures/issue_651/q1_context_invariance.png)
 
-> **Figure.** *Every readable behavior's shift concentrates on one direction shared across its 16 install contexts; the refusal null arm rides along.* Left: top-direction share vs sign-flip null p95. Right: per-context cosine to the shared direction; black = per-cell median seed ceiling, dashed red = 0.85 bar. Refusal (red) = 4 contexts, 1 seed, no ceiling.
+> **Figure.** *Every readable behavior's shift concentrates on one direction shared across its 16 install contexts; refusal (the partial null arm) is shown alongside.* Left: top-direction share vs sign-flip null p95. Right: per-context cosine to the shared direction; black = per-cell median seed ceiling, dashed red = 0.85 bar. Refusal (red) = 4 contexts, 1 seed, no ceiling.
 
 All four return the `context_invariant` verdict.
 
@@ -65,10 +65,10 @@ Each pair's direction cosine is reported as a fraction of the per-behavior-U1 se
 
 > **Figure.** *Behaviors are mostly distinct; two off-diagonals are high.* Off-diagonal = direction cosine as a fraction of the geometric-mean seed ceiling; global cross-behavior null p95 = 0.28 (applied uniformly). Bold cells are the two high pairs; the other four sit below the global null (two within their pairwise null, two just above).
 
-- Four of six pairs land at 0.05 to 0.17 of ceiling (two within pairwise null), none reaching the 0.85 same-behavior reference.
-- Two pairs stand out at ~0.6: harmful-advice × agreement (0.59, the registered family pair) and taught-fact × marker-tic (0.61, fitting no family story; more likely shared training-corpus or formatting shape).
-- For both ~0.6 pairs, a shared LoRA/SFT geometry component is still a live alternative. The construct bridge validates each behavior's own direction, not where these cross-pair overlaps come from; the refusal result below strengthens that alternative.
-- The 0.28 null is global. The em × agreement pairwise null p95 is 0.20 (others ~0.06 to 0.10), so its margin above its own null is narrower than the global figure implies.
+- Four of six pairs land at 0.05-0.17 of ceiling; two of those sit within their pairwise null. None come near the 0.85 same-behavior reference.
+- Two pairs reach ~0.6 of ceiling. Harmful-advice × agreement (0.59) is the registered family pair; taught-fact × marker-tic (0.61) fits no family story and likely reflects shared corpus or formatting shape.
+- For both ~0.6 pairs, a shared LoRA/SFT geometry component is not ruled out. The construct bridge validates each behavior's own direction, not the origin of these overlaps. The refusal result below strengthens that alternative.
+- The 0.28 null is global. The em × agreement pairwise null p95 is 0.20 (others ~0.06-0.10), so its margin above its own null is narrower than the global figure implies.
 
 ### The two high off-diagonals fall far short of same-behavior agreement
 
@@ -83,15 +83,15 @@ Two distinct objects carry the word "ceiling" and must not be conflated:
 - **Q1 per-cell** — per-(behavior, context) cross-seed cosine, median per behavior (fact 0.85, em 0.95, marker 0.99, agreement 0.99). Sets the per-context bar.
 - **Q2 per-behavior-U1** — cross-seed cosine of each behavior's top direction (fact 0.96, em 0.96, marker 1.00, agreement 0.99). Normalizes the cross-behavior matrix.
 
-This figure plots the Q2 object. Fact's two objects diverge most (0.96 vs 0.85). Against either, the two high pairs clear the null but reach only ~60% of same-behavior agreement. With a 2-seed ceiling (one cosine per cell, no interval), a ratio this close to the 0.5-vs-0.85 boundary is noise-limited: a family-suggestive number, not a settled shared-axis verdict.
+This figure plots the Q2 object. Fact's two objects diverge most (0.96 vs 0.85). Against either, the two high pairs clear the null but reach only ~60% of same-behavior agreement. With a 2-seed ceiling (one cosine per cell, no interval), a ratio this close to the 0.5-vs-0.85 boundary cannot be resolved into a verdict: the number is family-suggestive but not settled.
 
-### The refusal negative control did not read as a clean null in the partial recovery
+### The refusal partial recovery did not behave as the predicted null
 
-The in-run negative control was the blanket-refusal row. #537 verified refusal had failed to install ("texture, not data"), so the prediction was no coherent direction at the residual stream. What landed was the opposite — what holds confidence at MODERATE.
+#537 verified refusal had failed to install ("texture, not data"), so the prediction was no coherent direction at the residual stream. The opposite happened, which is why confidence stays at MODERATE.
 
-- After five HF Hub timeouts, refusal survived at 4 of 16 contexts at a single seed (no ceiling). On those four, top-share 0.484 clears its null (p95 0.266) and the mean cosine to its own direction is 0.843 — comparable to fact's top-share (0.449), inside the readable range (5th strip row in the Q1 figure).
-- So the pipeline returned a low-rank, coherent-looking direction from the "unreadable" behavior. The 4 survivors are all `sp_*` system-prompt-persona variants, so the simpler reading is a context-similarity artifact, not a real refusal write.
-- With no ceiling and 4 near-identical contexts, this neither confirms nor refutes the control — an inconclusive partial null arm. It also caveats "writes one direction": the layer-14 read can return something coherent even from a weak install.
+- After five HF Hub timeouts, refusal survived at 4 of 16 contexts at a single seed (no ceiling). On those four, top-share 0.484 clears its null (p95 0.266) and the mean cosine to its own direction is 0.843. That sits in the readable range, comparable to fact's top-share (0.449), visible as the 5th strip row in the Q1 figure.
+- So the pipeline returned a low-rank coherent direction from a behavior #537 called unreadable. The 4 surviving contexts are all `sp_*` system-prompt-persona variants though, which makes context similarity the likeliest source for that shared direction, not a real refusal write.
+- With no ceiling and 4 near-identical contexts, this is an inconclusive partial null arm. It also softens the "writes one direction" claim: the layer-14 read can return a coherent direction even from a weak install.
 
 ### A descriptive variance decomposition: behavior identity dominates, training context contributes least
 
@@ -109,9 +109,9 @@ A neutral-panel top direction could plausibly be a generic adapter/SFT direction
 
 Both pass clearly: taught fact 0.94, wrong-claim agreement 0.84 (16 canonical cells each, seed 42). So the neutral-panel direction these two behaviors point along genuinely is the behavior-specific write, not a generic LoRA artifact at the panel level. This validates each behavior's own direction; it does NOT speak to where the two ~0.6 cross-pair overlaps originate (see Q2).
 
-### Pipeline soundness: the canary reproduces a committed reference
+### The canary gate: committed-reference reproduction passes; live failed-implant test does not
 
-Before trusting any cross-run cosine, the run reproduced a committed reference direction (#521's villain-source marker adapter): top-share 0.325, mean-cosine 0.587, and the reproduced top direction identical to the reference (cosine 1.00). A second gate confirmed both adapter-loader layouts apply a nonzero shift (root-layout norm 6.4; nested em-layout norm 71.8 — the ~11× dose gap is why Q2 uses unit-norm cosine). A round-3 fix had to correct a canary adapter-identity bug that was reading the reference as near-zero; both gates pass under the fixed loader. The canary establishes that the read reproduces the committed reference; it is NOT the in-experiment negative control (that was the refusal arm, whose partial recovery reads against expectation). So "reliably distinguishes real from failed implants" rests on the canary alone, unconfirmed on the live failed-implant test.
+Before trusting any cross-run cosine, the run reproduced a committed reference direction (#521's villain-source marker adapter). Top-share 0.325, mean-cosine 0.587, and the reproduced top direction identical to the reference (cosine 1.00). A second gate confirmed both adapter-loader layouts apply a nonzero shift (root-layout norm 6.4; nested em-layout norm 71.8, the ~11× dose gap is why Q2 uses unit-norm cosine). A round-3 fix corrected a canary adapter-identity bug that was returning the reference at near-zero; both gates pass under the fixed loader. The canary shows the read reproduces the committed reference. It is NOT the live negative control. That was the refusal arm, whose partial recovery (above) does not behave as predicted. So a "reliably distinguishes real from failed implants" claim would rest on the canary alone, unconfirmed on the live failed-implant test.
 
 ## Data
 
