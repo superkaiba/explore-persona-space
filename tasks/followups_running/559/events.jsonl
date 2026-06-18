@@ -231,3 +231,4 @@
 {"ts": "2026-06-18T12:53:46Z", "kind": "epm:progress", "version": 38, "by": "unknown", "note": "judge-base r4 heartbeat status=running etime=09:31 http=718 artifacts=0 errors=3 retries=449"}
 {"ts": "2026-06-18T13:03:25Z", "kind": "epm:progress", "version": 39, "by": "unknown", "note": "r4 heartbeat status=running etime=19:11 http=1192 artifacts=0 errs=0 retries=738"}
 {"ts": "2026-06-18T13:12:44Z", "kind": "epm:progress", "version": 40, "by": "unknown", "note": "r4 heartbeat status=running etime=28:30 http=1462 artifacts=0 errs=0 retries=891"}
+{"ts": "2026-06-18T13:22:09Z", "kind": "epm:progress", "version": 41, "by": "unknown", "note": "r4 hb status=dead etime=- http=1522 artifacts=0 errs=2 retries=927"}
