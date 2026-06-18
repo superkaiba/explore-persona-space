@@ -250,14 +250,132 @@ def v4_arm_lr(arm: str) -> float:
 
     The matched LR is now 5e-6, so ``matched`` and ``orig`` coincide numerically;
     both names are kept for clarity. ``old_matched`` -> V4_OLD_MATCHED_LR (1e-5)
-    resolves the falsified evidence_only 1e-5 slugs if ever inspected.
+    resolves the falsified evidence_only 1e-5 slugs if ever inspected. v9 slugs
+    resolve through the same map (they carry ``lr_name == "matched"``); the v9
+    matched/fallback LR DECISION is held in V9_MATCHED_LR / V9_FALLBACK_LR and
+    threaded by the dispatcher at run time (the install-pilot sets which one).
     """
-    name = V4_ARM_SPEC[arm]["lr_name"]
+    name = ARM_SPEC_ALL[arm]["lr_name"]
     return {
         "matched": V4_MATCHED_LR,
         "orig": V4_ORIG_DENSE_LR,
         "old_matched": V4_OLD_MATCHED_LR,
     }[name]
+
+
+# ===========================================================================
+# v9 (followup `second-behavior-rank-replication`) constants — plan v10 §4.2
+# ===========================================================================
+# v9 is a ONE-VARIABLE amendment of v4: the implanted behavior swaps sycophancy
+# -> refusal. It reuses ALL of v4's machinery (the dispatcher sets ctx.v4=True so
+# every v4-aware downstream phase works unchanged) and overrides ONLY: the arm
+# registry (2 arms, no canned/data-isolation arm), the single contrast, the
+# behavior (refusal), the data path (FRESH on-policy elicitation, NOT #612 pool
+# reuse), and the install-pilot gate semantics (a dense step-4 collapse at 5e-6
+# FIRES the pre-registered drop to 2e-6 instead of HALTing — the #606 refusal-
+# collapse signature is EXPECTED, not a kill). Source stays villain; panel stays
+# the #612 30-persona panel.
+
+V9_BEHAVIOR = "refusal"
+
+# v9 matched LR (plan v10 §7 / §11): target 5e-6 (== round-4 matched LR), with a
+# pre-registered SINGLE matched drop to 2e-6 (the #606-validated clean in-band
+# refusal-dense LR) if the dense pole installs in <=4 steps. BOTH poles ALWAYS
+# share one LR; the drop applies to both. The install-pilot decides which value
+# the production train uses; a SECOND drop below 2e-6 is NOT pre-authorized
+# (kill criterion (a)).
+V9_MATCHED_LR = 5e-6  # Source: #642 round 4 (the matched-pair shared LR)
+V9_FALLBACK_LR = 2e-6  # Source: #606 (the validated clean in-band refusal-dense LR)
+
+# v9 arm registry (slug -> (method, data_kind, lr_name, role)). TWO arms only —
+# the headline adapter-vs-dense pair on on-policy refusal at the matched LR. NO
+# canned/data-isolation arm (the data axis was settled by round 4; plan §4.0
+# item 5).
+V9_ARMS: tuple[str, ...] = ("loraRefOP", "cmftRefOP")
+V9_ARM_SPEC: dict[str, dict[str, str]] = {
+    "loraRefOP": {
+        "method": "lora",
+        "data": "on_policy",
+        "lr_name": "matched",
+        "role": "lora_pole",
+    },
+    "cmftRefOP": {
+        "method": "cmft",
+        "data": "on_policy",
+        "lr_name": "matched",
+        "role": "cmft_headline",
+    },
+}
+# Both v9 arms are NEW trains (no v5-gate-validation reuse exists for refusal), so
+# the install-pilot trains+gates BOTH (no exempt arm). Derived from V9_ARMS so a
+# registry change cannot silently drop an arm from the pilot.
+V9_PILOT_EXEMPT_ARMS: tuple[str, ...] = ()
+V9_PILOT_ARMS: tuple[str, ...] = tuple(a for a in V9_ARMS if a not in V9_PILOT_EXEMPT_ARMS)
+
+# v9 single contrast (plan v10 §3 / §5): headline = cmft - LoRA at the shared LR.
+# NO delta_data (the canned arm is dropped).
+V9_CONTRASTS: dict[str, tuple[str, str]] = {
+    "delta_rank_matched": ("cmftRefOP", "loraRefOP"),
+}
+
+# Merged arm-spec lookup so v4_arm_lr() + the dispatcher's v4_arm_method /
+# v4_arm_data_kind resolve BOTH v4 and v9 slugs through one table.
+ARM_SPEC_ALL: dict[str, dict[str, str]] = {**V4_ARM_SPEC, **V9_ARM_SPEC}
+
+# v9 fine + pilot grids (plan §4.4). Refusal installs FAST (#606: dense in 4
+# steps at 5e-6), so the early grid is DENSE (steps 2/4/6/8 added vs the v4 grid)
+# to catch the s*=0.50 crossing before the dial jumps.
+V9_FINE_GRID = (2, 4, 6, 8, 12, 16, 22, 29, 37, 44, 66, 88, 132)
+V9_LORA_FINE_GRID = V9_FINE_GRID
+V9_CMFT_FINE_GRID = V9_FINE_GRID
+# Install-pilot coarse grid (plan §7): {4,12,22,44}.
+V9_PILOT_GRID = (4, 12, 22, 44)
+
+# v9 round-4 comparison value (the sycophancy Δ_rank_matched the refusal result
+# is compared to; plan §0/§1/§3). Carried so analysis.json + figures show it.
+V9_ROUND4_SYCO_DELTA_RANK = 0.063
+
+# v9 HF experiment namespace + output layout (plan §6.5 / §10). Distinct from the
+# v4 namespace so the refusal run never collides with the sycophancy v4 run.
+V9_HF_EXPERIMENT_NAME = "issue642_refusal_secondbehavior"
+V9_WANDB_PROJECT = "issue642"
+
+# v9 refusal eval-probe + elicitation-question Hub paths (plan §10). The eval
+# probes are the #518 refusal_50 set (already wired as REFUSAL_EVAL_POOL_HUB_PATH);
+# the elicitation questions are the #606/#518 refusal_200_training questions, but
+# the elicitation worker HARD-FILTERS them disjoint from the eval probes (the two
+# #518 sets overlap on ~24 questions — verified at implementation time).
+V9_ELICIT_QUESTIONS_HUB_PATH = REFUSAL_TRAINING_ROWS_HUB_PATH  # #518 refusal_200_training
+# Content-pin the two reused inputs (sha verified at implementation time, 2026-06-18).
+V9_ELICIT_QUESTIONS_EXPECTED_SHA256 = (
+    "72fddb3843317e2dd799def3499f25b592ac8f0f8241e565c853da0c09c51240"
+)
+V9_REFUSAL_EVAL_POOL_EXPECTED_SHA256 = (
+    "e29244aa8def7881fc890df0f3962e7130504efaa2806820b103e3495e87c6ac"
+)
+
+# v9 pool composition targets (plan §4.7). ~200 villain refusal positives (the
+# #612 villain sycophancy positive count, recipe-matched) at the 80% floor +
+# equalize-down; same-question helpful negatives at ~1:2.5 positives:negatives.
+V9_N_POSITIVES = 200
+V9_YIELD_FLOOR_FRAC = 0.80
+V9_NEG_RATIO = 2.5  # total-negatives : positives (round-4 villain pool ~1:2.5)
+# v9 negative personas (carried from round 4's contrastive DESIGN; the ROWS are
+# freshly elicited on the refusal questions). + no-persona / bare default.
+V9_NEG_PERSONAS = ("police_officer", "medical_doctor")
+V9_EXPECTED_NEGATIVE_PROMPTS = frozenset(
+    {
+        "You are a police officer who enforces the law and maintains public safety.",
+        "You are a medical doctor who specializes in internal medicine.",
+    }
+)
+
+# v9 frozen refusal parity-anchor base self-rate (plan §7 kill (c) / §10). The
+# #612/#518 base refusal rate the re-judged villain base cell is compared to
+# (±0.08 PARITY_TOL / hard ±0.15 PARITY_HARD_TOL). #591 e1/self_rates recorded the
+# base refusal self-rate at 0.006 (mirrored in FROZEN_ANCHORS["refusal"], defined
+# further down; the literal is kept here to avoid a forward reference at import).
+V9_REFUSAL_BASE_SELF_RATE = 0.006  # #591 e1/self_rates.json (base refusal self-rate)
 
 
 # Fine checkpoint grids (plan §4.4, dose-to-target). LoRA crossing sits in
