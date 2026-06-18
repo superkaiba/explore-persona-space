@@ -4075,8 +4075,8 @@
       "goal": "Determine whether SAE-discovered persona/trait features, once activated, persist across subsequent token positions of an on-policy generation (quantify feature-activation persistence over context), establish whether persona features are sticky 'state' features vs token-local features, and validate against supervised persona probes to account for SAE under-recovery of persistent state.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/655",
-      "status": "proposed",
+      "path": "tasks/archived/655",
+      "status": "archived",
       "title": "Do persona/trait SAE features persist across token positions of a generation?"
     },
     "656": {
