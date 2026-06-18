@@ -604,7 +604,8 @@ def _cell_axis_bootstrap(
     governing boundary axis (v7 §6)."""
     rng = np.random.default_rng(seed)
     point_rhos = [_spearman(rk, dv) for rk, dv in per_source_pairs.values() if len(rk) >= 3]
-    point_median = float(np.nanmedian(point_rhos)) if point_rhos else float("nan")
+    point_rhos = [r for r in point_rhos if not np.isnan(r)]
+    point_median = float(np.median(point_rhos)) if point_rhos else float("nan")
     boot = np.empty(B)
     sources = list(per_source_pairs)
     for i in range(B):
