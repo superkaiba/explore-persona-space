@@ -3960,8 +3960,8 @@
       "goal": "Determine whether per-(source, behavior) install resistance is overcome by additional training dose or plateaus, and whether residual resistance at matched dose is driven by the source's base propensity for the behavior or by source-behavior identity/alignment conflict \u2014 via matched-recipe dose curves on resistant vs non-resistant source contexts within one non-saturated behavior plus a matched-dose identity-conflict pairing.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/641",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/641",
+      "status": "followups_running",
       "title": "At a matched training recipe the emergent-misalignment \"resistant\" contexts install it to the same fitted asymptote as non-resistant ones, and the identity-conflict pairing stays unresolved at two seeds (MODERATE confidence)"
     },
     "642": {
