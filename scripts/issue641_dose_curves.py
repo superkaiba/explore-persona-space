@@ -101,6 +101,25 @@ TURNER_EM_LR = 2.0e-5  # configs/training/turner_em.yaml learning_rate
 TURNER_EM_WARMUP_STEPS = 5  # configs/training/turner_em.yaml warmup_steps
 # Per-cell training-metadata sidecar name (read by the schedule-parity assert).
 RUN_METADATA_NAME = "run_metadata.json"
+# ADAPTER-creation-time provenance sidecar (round-2 CONCERN fix,
+# stale-schedule-metadata-attestation): written next to the trained adapter dir
+# in `_train_dose_ladder` the moment training succeeds, and validated BEFORE the
+# resume-skip on an existing adapter. The cell sidecar (RUN_METADATA_NAME) was
+# written at EVAL time AFTER the resume-skip check, so a stale max_steps=100
+# adapter could get its cell sidecar relabeled 560 and pass the parity assert;
+# pinning provenance at adapter creation closes that hole — an adapter trained
+# under the wrong schedule fails LOUD at `_train_dose_ladder`, never reaching
+# `_eval_checkpoint`.
+ADAPTER_RUN_METADATA_NAME = "adapter_run_metadata.json"
+
+# Arm-B 8-seed re-fold contract (round-2 CONCERN fix, extra-root-silent-drop).
+# The headline pools the parent's 2 seeds with >=5 new seeds at the matched dose
+# (step 100). A typo'd / empty --extra-records-roots silently produces a 6-seed
+# aggregate; the seed-set guard asserts the pooled Arm-B step-100 seeds include
+# BOTH parent seeds AND at least MIN_NEW_ARM_B_SEEDS new seeds.
+ARM_B_PARENT_SEEDS = frozenset(DEFAULT_SEEDS)  # {42, 1042}
+ARM_B_HEADLINE_DOSE = 100  # the matched dose #641 resolved (plan §0/§3)
+MIN_NEW_ARM_B_SEEDS = 5  # >=5 new seeds beyond the 2 parent seeds (8 total target)
 
 # Generated-artifact roots (rebound under --smoke in main()).
 EVAL_ROOT = Path(os.environ.get("I641_EVAL_ROOT", str(_REPO / "eval_results/issue_641")))
@@ -568,6 +587,81 @@ def _em_run_dir(source: str, seed: int) -> Path:
     return OUT_ROOT / f"em/{source}_seed{seed}/models/i641_em_{source}_seed{seed}"
 
 
+def _write_adapter_run_metadata(adapter_dir: Path, seed: int, max_steps: int) -> None:
+    """Persist training-schedule provenance NEXT TO THE ADAPTER at creation time
+    (round-2 CONCERN fix, stale-schedule-metadata-attestation). Written by
+    ``_train_dose_ladder`` immediately after the trainer subprocess succeeds, so
+    the schedule provenance is bound to the adapter weights themselves — not to a
+    cell sidecar written later at eval time (which the resume-skip could bypass,
+    relabeling a stale adapter). The driver pins ``training=turner_em`` with no
+    scheduler override, so lr / scheduler / warmup reflect
+    configs/training/turner_em.yaml verbatim; ``max_steps`` is the value this
+    dose-ladder train was launched with."""
+    meta = {
+        "max_steps": int(max_steps),
+        "lr_scheduler_type": PROD_LR_SCHEDULER_TYPE,
+        "lr": TURNER_EM_LR,
+        "warmup_steps": TURNER_EM_WARMUP_STEPS,
+        "seed": int(seed),
+    }
+    (adapter_dir / ADAPTER_RUN_METADATA_NAME).write_text(json.dumps(meta, indent=2))
+
+
+def _assert_adapter_schedule_parity(
+    adapter_dir: Path,
+    *,
+    expected_max_steps: int = PROD_MAX_STEPS,
+    expected_lr_scheduler_type: str = PROD_LR_SCHEDULER_TYPE,
+) -> None:
+    """Validate an EXISTING adapter's creation-time schedule provenance BEFORE
+    reusing it via the resume-skip (round-2 CONCERN fix,
+    stale-schedule-metadata-attestation). Reads
+    ``<adapter_dir>/adapter_run_metadata.json`` and raises ``ValueError`` (naming
+    the adapter dir + the mismatched fields) when:
+
+      - the sidecar is MISSING (un-provenanced adapter state — refuse to trust it;
+        the operator must regenerate the adapter rather than read it blind);
+      - the JSON is MALFORMED / unreadable;
+      - ``max_steps`` != the parent's schedule (a stale 100-step adapter's
+        step-100 ckpt is fully annealed; the parent's is mid-decay — the exact
+        LR-decay confound round-1 flagged);
+      - ``lr_scheduler_type`` != ``linear``.
+
+    On a clean PASS the adapter weights are proven to share the parent's
+    optimization trajectory, so the resume-skip is safe and the cell-side
+    ``run_metadata.json`` written downstream in ``_eval_checkpoint`` is faithful
+    by construction."""
+    meta_path = adapter_dir / ADAPTER_RUN_METADATA_NAME
+    if not meta_path.exists():
+        raise ValueError(
+            f"{adapter_dir}: missing {ADAPTER_RUN_METADATA_NAME} — cannot prove this "
+            "existing adapter was trained at the parent's schedule "
+            f"(max_steps={expected_max_steps} / {expected_lr_scheduler_type}); refusing to "
+            "resume-skip un-provenanced adapter state (regenerate it with --phase run)"
+        )
+    try:
+        meta = json.loads(meta_path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        raise ValueError(
+            f"{adapter_dir}: unreadable/malformed {ADAPTER_RUN_METADATA_NAME} ({e}); "
+            "refusing to resume-skip un-provenanced adapter state"
+        ) from e
+    ms = meta.get("max_steps")
+    sched = meta.get("lr_scheduler_type")
+    mismatches: list[str] = []
+    if ms != expected_max_steps:
+        mismatches.append(f"max_steps={ms} != {expected_max_steps}")
+    if sched != expected_lr_scheduler_type:
+        mismatches.append(f"lr_scheduler_type={sched!r} != {expected_lr_scheduler_type!r}")
+    if mismatches:
+        raise ValueError(
+            f"{adapter_dir}: adapter schedule-parity violation (round-2 CONCERN fix): "
+            + "; ".join(mismatches)
+            + " — the matched step-100 read would sit at a different LR-decay point; "
+            "refusing to resume-skip this stale adapter (regenerate it with --phase run)"
+        )
+
+
 def _train_dose_ladder(
     source: str,
     seed: int,
@@ -591,7 +685,15 @@ def _train_dose_ladder(
     if (adapter_dir / "adapter_model.safetensors").exists() or any(
         adapter_dir.glob("checkpoint-*")
     ):
-        logger.info("[p2-train] %s/seed%d already trained -- skip", source, seed)
+        # Round-2 CONCERN fix (stale-schedule-metadata-attestation): an existing
+        # adapter at this cell path is only safe to reuse if its CREATION-TIME
+        # provenance proves it was trained at the parent's schedule. Validate
+        # BEFORE the resume-skip — a stale max_steps=100 / non-linear adapter
+        # fails LOUD here (naming the dir + the mismatched fields) and never
+        # reaches `_eval_checkpoint`, where its cell sidecar would otherwise be
+        # relabeled 560 and silently pass the pool-side parity assert.
+        _assert_adapter_schedule_parity(adapter_dir, expected_max_steps=max_steps)
+        logger.info("[p2-train] %s/seed%d already trained (provenance OK) -- skip", source, seed)
         return adapter_dir
     out_root = OUT_ROOT / f"em/{source}_seed{seed}"
     cmd = [
@@ -625,6 +727,12 @@ def _train_dose_ladder(
     }
     logger.info("[p2-train] %s", " ".join(cmd))
     subprocess.run(cmd, check=True, cwd=_REPO, env=env)
+    # Round-2 CONCERN fix (stale-schedule-metadata-attestation): bind the training
+    # schedule provenance to the freshly-created adapter weights, so a later
+    # resume-skip can prove this adapter was trained at the parent's schedule
+    # (validated by `_assert_adapter_schedule_parity` above).
+    adapter_dir.mkdir(parents=True, exist_ok=True)
+    _write_adapter_run_metadata(adapter_dir, seed, max_steps)
     return adapter_dir
 
 
@@ -971,6 +1079,73 @@ def _canonical_per_context(per_context: dict[str, dict]) -> dict[str, dict]:
 # ── Phase 4: aggregate (CPU off-pod) ──────────────────────────────────────────
 
 
+def _validate_extra_roots(extra_roots: list[str] | None) -> None:
+    """Validate EVERY explicit ``--extra-records-roots`` entry contributes records
+    BEFORE the aggregate pools them (round-2 CONCERN fix, extra-root-silent-drop).
+
+    A typo'd or missing parent root (e.g. ``/tmp/does-not-exist``) used to rglob
+    to ZERO files and silently shrink the 8-seed re-fold to a 6-seed aggregate.
+    For each explicit root this asserts, raising ``ValueError`` naming the
+    offending root + the failed check on the first miss:
+
+      - ``root`` exists as a directory;
+      - ``root/dose_curves/`` exists;
+      - ``root/dose_curves/`` contributes >=1 ``completions__*.jsonl`` (non-empty).
+
+    Only the EXPLICIT extra roots are checked — the default ``EVAL_ROOT`` (this
+    follow-up's own output dir) is NOT in ``extra_roots`` and is validated by the
+    presence of its own cells, so an empty ``extra_roots`` is a no-op."""
+    for r in extra_roots or []:
+        root = Path(r)
+        if not root.is_dir():
+            raise ValueError(
+                f"--extra-records-roots entry {r!r} does not exist as a directory "
+                "(typo / missing parent root?) — refusing to silently pool a smaller "
+                "seed set (round-2 CONCERN fix: extra-root-silent-drop)"
+            )
+        dose_dir = root / "dose_curves"
+        if not dose_dir.is_dir():
+            raise ValueError(
+                f"--extra-records-roots entry {r!r}: no dose_curves/ subdir — it "
+                "contributes no cells to the pool (round-2 CONCERN fix: "
+                "extra-root-silent-drop)"
+            )
+        if not any(dose_dir.rglob("completions__*.jsonl")):
+            raise ValueError(
+                f"--extra-records-roots entry {r!r}: dose_curves/ contains no "
+                "completions__*.jsonl files — it contributes NO records to the "
+                "8-seed re-fold (round-2 CONCERN fix: extra-root-silent-drop)"
+            )
+
+
+def _assert_armB_seed_set(teacher_recs: list[dict], *, matched_dose: int) -> set[int]:
+    """Guard the production 8-seed Arm-B headline (round-2 CONCERN fix,
+    extra-root-silent-drop): the pooled Arm-B teacher records at the matched dose
+    MUST include BOTH parent seeds {42, 1042} AND at least ``MIN_NEW_ARM_B_SEEDS``
+    new seeds beyond them. A silently-dropped ``--extra-records-roots`` entry (the
+    sibling failure mode the directory-validation also guards) would leave a
+    6-seed pool that still LOOKS like a valid bootstrap — this fails LOUD on the
+    actual realized seed set. Returns the pooled seed set for logging."""
+    seeds = {int(r["seed"]) for r in teacher_recs}
+    missing_parent = ARM_B_PARENT_SEEDS - seeds
+    new_seeds = seeds - ARM_B_PARENT_SEEDS
+    if missing_parent:
+        raise ValueError(
+            f"Arm-B step-{matched_dose} headline missing parent seed(s) "
+            f"{sorted(missing_parent)} — the pooled set {sorted(seeds)} does NOT carry "
+            "BOTH carried-forward seeds {42, 1042}; the --extra-records-roots re-fold "
+            "did not pool the parent run (round-2 CONCERN fix: extra-root-silent-drop)"
+        )
+    if len(new_seeds) < MIN_NEW_ARM_B_SEEDS:
+        raise ValueError(
+            f"Arm-B step-{matched_dose} headline has only {len(new_seeds)} new seed(s) "
+            f"{sorted(new_seeds)} beyond the parent seeds (need >= {MIN_NEW_ARM_B_SEEDS}); "
+            f"pooled set {sorted(seeds)} — a --extra-records-roots entry was likely "
+            "silently dropped (round-2 CONCERN fix: extra-root-silent-drop)"
+        )
+    return seeds
+
+
 def _load_cell_records(
     extra_roots: list[str] | None = None,
 ) -> dict[str, dict[int, dict[int, list[dict]]]]:
@@ -994,6 +1169,7 @@ def _load_cell_records(
     """
     from explore_persona_space.experiments.issue_641.data import canonicalize_source
 
+    _validate_extra_roots(extra_roots)
     roots = [EVAL_ROOT, *[Path(r) for r in (extra_roots or [])]]
     out: dict[str, dict[int, list[dict]]] = {}
     for root in roots:
@@ -1030,6 +1206,7 @@ def assert_schedule_parity(
 
     Returns the number of cells checked (so callers can log coverage).
     """
+    _validate_extra_roots(extra_roots)
     roots = [EVAL_ROOT, *[Path(r) for r in (extra_roots or [])]]
     violations: list[str] = []
     n_checked = 0
@@ -1164,6 +1341,22 @@ def phase_aggregate(args, *, smoke: bool) -> dict:
         t_recs = records[ARM_B_TEACHER_CID].get(matched_dose, [])
         n_recs = records[neutral].get(matched_dose, [])
         if t_recs and n_recs:
+            # Round-2 CONCERN fix (extra-root-silent-drop): for the PRODUCTION
+            # headline at the matched dose (step 100), the pooled Arm-B seed set
+            # MUST carry both parent seeds {42, 1042} + >=5 new seeds. A silently
+            # dropped --extra-records-roots entry would otherwise yield a 6-seed
+            # aggregate that still bootstraps cleanly. Smoke / partial reads skip
+            # this (they pool fewer seeds by construction).
+            if not smoke and matched_dose == ARM_B_HEADLINE_DOSE:
+                pooled_seeds = _assert_armB_seed_set(t_recs, matched_dose=matched_dose)
+                logger.info(
+                    "[p4] Arm-B seed-set OK: step-%d pooled over %d seeds %s "
+                    "(parent {42,1042} + %d new)",
+                    matched_dose,
+                    len(pooled_seeds),
+                    sorted(pooled_seeds),
+                    len(pooled_seeds - ARM_B_PARENT_SEEDS),
+                )
             armB = bootstrap_armB_delta(t_recs, n_recs, n_boot=n_boot, seed=DATA_SEED)
             armB["matched_dose"] = matched_dose
             armB["neutral_source"] = neutral
@@ -1630,6 +1823,174 @@ def smoke_extra_records_refold() -> None:
     shutil.rmtree(extra_root, ignore_errors=True)
 
 
+def smoke_adapter_schedule_provenance() -> None:
+    """Round-2 CONCERN fix (stale-schedule-metadata-attestation): drive the REAL
+    ``_write_adapter_run_metadata`` + ``_assert_adapter_schedule_parity`` over
+    stubbed adapter dirs and assert the resume-skip provenance gate:
+
+      (a) PASS on an adapter with a valid 560/linear sidecar;
+      (b) FAIL LOUD (naming the adapter) on a mismatched 100/cosine sidecar;
+      (c) FAIL LOUD on a MISSING sidecar (un-provenanced state);
+      (d) FAIL LOUD on a MALFORMED-JSON sidecar.
+
+    These are the exact four states pinned in tests/test_issue641_concern_fixes.py;
+    smoking them here means the new code path is exercised CPU-side end-to-end
+    (the GPU-bound `_train_dose_ladder` train subprocess is carved out, but the
+    provenance read/write functions it calls run with no GPU)."""
+    phase_log("p2_adapter_provenance")
+
+    base = OUT_ROOT / "adapter_provenance_smoke"
+    shutil.rmtree(base, ignore_errors=True)
+
+    def _adir(name: str) -> Path:
+        d = base / name
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    # (a) PASS — the writer persists 560/linear; the validator accepts it.
+    good = _adir("good")
+    _write_adapter_run_metadata(good, seed=1, max_steps=PROD_MAX_STEPS)
+    written = json.loads((good / ADAPTER_RUN_METADATA_NAME).read_text())
+    assert written["max_steps"] == PROD_MAX_STEPS and written["lr_scheduler_type"] == "linear", (
+        written
+    )
+    _assert_adapter_schedule_parity(good)  # must not raise
+    logger.info("[smoke-cpu] adapter-provenance (a) PASS: writer 560/linear accepted")
+
+    # (b) FAIL LOUD — a stale 100/cosine adapter (the exact relabel hole).
+    bad = _adir("bad_steps")
+    (bad / ADAPTER_RUN_METADATA_NAME).write_text(
+        json.dumps({"max_steps": 100, "lr_scheduler_type": "cosine", "seed": 1})
+    )
+    raised = ""
+    try:
+        _assert_adapter_schedule_parity(bad)
+    except ValueError as e:
+        raised = str(e)
+    assert "max_steps=100" in raised and "cosine" in raised and str(bad) in raised, raised
+    logger.info("[smoke-cpu] adapter-provenance (b) FAIL LOUD on 100/cosine (named): OK")
+
+    # (c) FAIL LOUD — missing sidecar (un-provenanced adapter state).
+    missing = _adir("missing")
+    raised = ""
+    try:
+        _assert_adapter_schedule_parity(missing)
+    except ValueError as e:
+        raised = str(e)
+    assert f"missing {ADAPTER_RUN_METADATA_NAME}" in raised and str(missing) in raised, raised
+    logger.info("[smoke-cpu] adapter-provenance (c) FAIL LOUD on missing sidecar (named): OK")
+
+    # (d) FAIL LOUD — malformed JSON sidecar.
+    malformed = _adir("malformed")
+    (malformed / ADAPTER_RUN_METADATA_NAME).write_text("{not valid json")
+    raised = ""
+    try:
+        _assert_adapter_schedule_parity(malformed)
+    except ValueError as e:
+        raised = str(e)
+    assert "unreadable/malformed" in raised and str(malformed) in raised, raised
+    logger.info("[smoke-cpu] adapter-provenance (d) FAIL LOUD on malformed JSON (named): OK")
+
+    shutil.rmtree(base, ignore_errors=True)
+
+
+def smoke_extra_root_validation() -> None:
+    """Round-2 CONCERN fix (extra-root-silent-drop): drive the REAL
+    ``_validate_extra_roots`` (called from both ``_load_cell_records`` and
+    ``assert_schedule_parity``) over four bad-root shapes + a happy path, and the
+    ``_assert_armB_seed_set`` headline guard over its positive + missing-parent
+    cases. Asserts each bad root fails LOUD naming the offending root + the failed
+    check, mirroring tests/test_issue641_concern_fixes.py."""
+    phase_log("p4_extra_root_validation")
+    base = OUT_ROOT / "extra_root_validation_smoke"
+    shutil.rmtree(base, ignore_errors=True)
+
+    # (a) non-existent path.
+    raised = ""
+    try:
+        _validate_extra_roots([str(base / "does_not_exist")])
+    except ValueError as e:
+        raised = str(e)
+    assert "does not exist" in raised and "does_not_exist" in raised, raised
+
+    # (b) exists but no dose_curves/.
+    no_dose = base / "no_dose_curves"
+    no_dose.mkdir(parents=True, exist_ok=True)
+    raised = ""
+    try:
+        _validate_extra_roots([str(no_dose)])
+    except ValueError as e:
+        raised = str(e)
+    assert "no dose_curves/" in raised and "no_dose_curves" in raised, raised
+
+    # (c) dose_curves/ exists but empty.
+    empty_dose = base / "empty_dose_curves"
+    (empty_dose / "dose_curves").mkdir(parents=True, exist_ok=True)
+    raised = ""
+    try:
+        _validate_extra_roots([str(empty_dose)])
+    except ValueError as e:
+        raised = str(e)
+    assert "completions__*.jsonl" in raised and "empty_dose_curves" in raised, raised
+    # (d) dose_curves/ populated but no completions files (only an em_rate json).
+    no_comp = base / "no_completions"
+    cell = no_comp / "dose_curves" / "sp_teacher_ho_seed1_step100"
+    cell.mkdir(parents=True, exist_ok=True)
+    (cell / "em_rate__x.json").write_text("{}")
+    raised = ""
+    try:
+        _validate_extra_roots([str(no_comp)])
+    except ValueError as e:
+        raised = str(e)
+    assert "completions__*.jsonl" in raised and "no_completions" in raised, raised
+
+    # (e) happy path — a populated extra root validates silently.
+    ok = base / "ok_root"
+    ok_cell = ok / "dose_curves" / "sp_teacher_ho_seed42_step100"
+    ok_cell.mkdir(parents=True, exist_ok=True)
+    (ok_cell / "completions__sp_teacher_ho__seed42__step100.jsonl").write_text(
+        json.dumps({"source": "sp_teacher_ho", "dose_step": 100, "seed": 42}) + "\n"
+    )
+    _validate_extra_roots([str(ok)])  # must not raise
+    _validate_extra_roots(None)  # empty roots is a no-op
+    logger.info("[smoke-cpu] extra-root validation: 4 bad shapes FAIL LOUD; happy path + None OK")
+
+    # ── Arm-B-seed-set headline guard (positive + missing-parent + too-few-new) ──
+    def _recs(seeds: list[int]) -> list[dict]:
+        return [
+            {"source": "sp_teacher_ho", "dose_step": 100, "seed": s, "probe_id": 0, "sample_idx": 0}
+            for s in seeds
+        ]
+
+    # positive: 2 parent + 6 new = 8 seeds.
+    pooled = _assert_armB_seed_set(
+        _recs([42, 1042, 1, 7, 123, 2024, 31337, 98765]), matched_dose=100
+    )
+    assert pooled == {42, 1042, 1, 7, 123, 2024, 31337, 98765}, pooled
+
+    # missing parent seed 1042 — the silent-drop signature.
+    raised = ""
+    try:
+        _assert_armB_seed_set(_recs([42, 1, 7, 123, 2024, 31337]), matched_dose=100)
+    except ValueError as e:
+        raised = str(e)
+    assert "missing parent seed" in raised and "1042" in raised, raised
+
+    # too few new seeds (parent only + 4 new < 5).
+    raised = ""
+    try:
+        _assert_armB_seed_set(_recs([42, 1042, 1, 7, 123, 2024]), matched_dose=100)
+    except ValueError as e:
+        raised = str(e)
+    assert "only 4 new seed" in raised, raised
+    logger.info(
+        "[smoke-cpu] Arm-B seed-set guard: 8-seed positive OK; missing-parent + "
+        "too-few-new FAIL LOUD"
+    )
+
+    shutil.rmtree(base, ignore_errors=True)
+
+
 def smoke_bootstrap_seed_coherence() -> None:
     """Blocker 3: the hierarchical dose-curve bootstrap must resample seeds ONCE
     per replicate and trace that draw across every dose step (seeds = the true
@@ -2069,6 +2430,9 @@ def run_smoke_cpu() -> int:
     # ── This follow-up round's new code — production-path smokes ──
     smoke_extra_records_refold()  # --extra-records-roots re-fold pools both roots' seeds
     smoke_schedule_parity_assert()  # round-1 BLOCK fix: schedule-parity assert fail-loud
+    # ── Round-2 CONCERN-closure smokes ──
+    smoke_adapter_schedule_provenance()  # stale-schedule-metadata-attestation
+    smoke_extra_root_validation()  # extra-root-silent-drop (dir validation + seed-set guard)
 
     phase_log("done")
     logger.info("SMOKE-CPU COMPLETE (GPU-bound train+eval not run; see carve-out)")
