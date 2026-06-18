@@ -237,3 +237,4 @@
 {"ts": "2026-06-18T13:43:05Z", "kind": "epm:progress", "version": 44, "by": "unknown", "note": "r5 hb status=dead etime=- 200s=535 429s=795 artifacts=0 errs=2"}
 {"ts": "2026-06-18T13:44:10Z", "kind": "epm:progress", "version": 45, "by": "unknown", "note": "judge-base run 6 launched (pid=1952568, commit 3aa742080b). Graded rubric file ALSO patched with outer retry wrapper (r5 crashed there since dispatcher wrappers didn't cover the separate module). All Sonnet call sites now bulletproof."}
 {"ts": "2026-06-18T13:53:23Z", "kind": "epm:progress", "version": 46, "by": "unknown", "note": "r6 hb status=running etime=09:18 200s=387 429s=457 artifacts=0 errs=0"}
+{"ts": "2026-06-18T14:03:18Z", "kind": "epm:progress", "version": 47, "by": "unknown", "note": "r6 hb status=running etime=19:13 200s=710 429s=963 artifacts=0 errs=0"}
