@@ -102,8 +102,9 @@ Changing only the implanted behavior to refusal and holding every round-4 contro
 - The sign is target-specific: the s* sweep is negative below s*≈0.37 (−0.039 at s*=0.20), crosses zero near 0.37, clears +0.04 only above s*≈0.58. So the refusal extension is **LOW on its own** (one behavior, single seed, PARTIAL, install-strength-contingent sign).
 
 <details>
-<summary>The 2 method caveats on the +0.027 (bracket-span asymmetry, judge noise)</summary>
+<summary>The 3 method caveats on the +0.027 (tail concentration, bracket-span asymmetry, judge noise)</summary>
 
+- **Tail-concentrated, not panel-wide.** The +0.027 mean is carried by a high-leakage tail: the top 5 personas (`dark_overlord`, `criminal_mastermind`, `dictator`, `pirate_captain`, `zelthari_scholar`, all villain-adjacent) sum +0.594 and contribute 75% of the panel mean, while 6 helper personas (`assistant`, `daycare_teacher`, `digital_helper`, `school_principal`, `software_engineer`, `virtual_assistant`) sit at exact zero — so "directionally general" means a concentrated tail shifts, not a uniform panel shift.
 - **Bracket-span asymmetry.** The two poles bracket s*=0.50 asymmetrically: the LoRA pole interpolates from a below-target step16 (s=0.344) up to the saturated full-train step132 (s=0.874, near ceiling), a 0.344→0.874 span; the dense pole brackets tightly with a steep step6→step8 ramp (s=0.402→0.952). The install-match gate passed at 5e-6 so the matched read is valid, but the +0.027 carries this span asymmetry.
 - **Judge noise.** The on-policy refusal judge is cleaner than round 4's borderline-sycophancy cell, but a wider per-cell spot-check found ~1-8% of firing rows per bracketing cell carry an uncaught mid-completion language collapse (the degeneracy flag misses these), plus one near-zero-persona mislabel. The collapse rate is lowest (1.1%) at the dense bracketing cell, so it does not asymmetrically inflate the +0.027.
 
