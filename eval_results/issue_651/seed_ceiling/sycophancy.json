@@ -1,0 +1,41 @@
+{
+  "per_context": {
+    "binst_sycophancy": 0.986383524159034,
+    "default": 0.9857784321990212,
+    "fmt_code": 0.9874476617371772,
+    "fmt_json": 0.97627213770802,
+    "icl_k2": 0.9904806016210029,
+    "icl_k8": 0.9853533272372544,
+    "reph_casual": 0.985124040204028,
+    "reph_imp": 0.9845519623703847,
+    "reph_polite": 0.9838892115234253,
+    "sp_doctor": 0.9888194438770092,
+    "sp_ph1": 0.9858876355504463,
+    "sp_ph2": 0.9845442706338109,
+    "sp_swe": 0.9914034909770442,
+    "wc_long_write": 0.9769020140286261,
+    "wc_short_advice": 0.9880443035940718,
+    "wc_short_code": 0.9888437322269144
+  },
+  "median": 0.9858330338747338,
+  "mean": 0.9856078618529545,
+  "n_cells": 16,
+  "contexts": [
+    "binst_sycophancy",
+    "default",
+    "fmt_code",
+    "fmt_json",
+    "icl_k2",
+    "icl_k8",
+    "reph_casual",
+    "reph_imp",
+    "reph_polite",
+    "sp_doctor",
+    "sp_ph1",
+    "sp_ph2",
+    "sp_swe",
+    "wc_long_write",
+    "wc_short_advice",
+    "wc_short_code"
+  ]
+}
