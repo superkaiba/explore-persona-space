@@ -11,6 +11,11 @@ future refactor can't silently strip them:
   - bootstrap_over_personas resamples the BYSTANDER persona, not the cell;
   - the reliability band (M-Stats1) produces the 3-point R_low/R_expected/R_high
     sensitivity points;
+  - the reliability band's EIV disattenuation actually MOVES the partial-rho across
+    reliability points (the round-1 rank-invariant no-op regression) AND carries
+    per-band-point CIs for partial-rho AND ΔR² (B1 + B2 round-2 blockers);
+  - the H3 verdict is NOT a PASS when a band point's CI straddles 0 (B2);
+  - PRIMARY_H3_BEHAVIORS is a literal frozenset excluding EM (N1);
   - the additive --trait-name CLI default reproduces #623's sycophancy verbatim.
 
 All synthetic / CPU-only — no GPU, no HF, no model load.
@@ -192,6 +197,107 @@ def test_attenuation_band_skipped_for_marker():
     assert band["band_applicable"] is False
 
 
+# ── M-Stats1 EIV disattenuation: the band ACTUALLY MOVES the partial (B1) ──
+
+
+def _eiv_band_fixture(seed: int = 42, n_bystanders: int = 30):
+    """A frame where ``align`` is a CLEANER proxy of the latent leakage driver Z than
+    the NOISY ``bystander_base_rate`` — exactly the regime M-Stats1 must disattenuate.
+
+    Returns (frame, base_rates).
+    """
+    rng = np.random.default_rng(seed)
+    bystanders = [f"b{i}" for i in range(n_bystanders)]
+    z_latent = {b: float(rng.standard_normal()) for b in bystanders}
+    base_rates: dict[str, float] = {}
+    align_b: dict[str, float] = {}
+    for b in bystanders:
+        z = z_latent[b]
+        # base_rate: a NOISY proxy of Z, kept in (0, 1) (a 0-1 rate so the binomial
+        # reliability is defined).
+        base_rates[b] = float(np.clip(0.10 + 0.05 * z + 0.04 * rng.standard_normal(), 0.01, 0.30))
+        align_b[b] = float(z + 0.10 * rng.standard_normal())  # CLEAN proxy of Z
+    cells = []
+    for b in bystanders:
+        for s in ("s1", "s2"):
+            delta = 0.4 * z_latent[b] + (0.1 if s == "s1" else -0.1) + 0.1 * rng.standard_normal()
+            cells.append(
+                {
+                    "source": s,
+                    "bystander": b,
+                    "delta": float(delta),
+                    "align": align_b[b],
+                    "bystander_base_rate": base_rates[b],
+                    "prior_centroid_projection": float(
+                        0.2 * z_latent[b] + 0.3 * rng.standard_normal()
+                    ),
+                }
+            )
+    frame = {
+        "cells": cells,
+        "resolvable_bystanders": bystanders,
+        "n_resolvable": len(bystanders),
+        "dropped": [],
+    }
+    return frame, base_rates
+
+
+def test_attenuation_band_eiv_moves_partial_not_a_noop():
+    """B1 regression: the reliability band must produce DISTINCT doubly-partialled rho
+    across R_observed/R_low/R_expected/R_high, and the disattenuated low-reliability
+    band point must move AWAY from the observed-prior point in the expected direction.
+
+    The round-1 code did ``prior * sqrt(rel)`` then rank-residualized, which is
+    rank-invariant — all four points were byte-identical to R_observed. This asserts
+    the no-op is gone.
+    """
+    frame, base_rates = _eiv_band_fixture()
+    band = m.attenuation_sensitivity(frame, base_rates, behavior="refusal", b=1, seed=7)
+    assert band["band_applicable"] is True
+
+    labels = ("R_observed", "R_low", "R_expected", "R_high")
+    rhos = [band["points"][k]["doubly_partialled_rho"] for k in labels]
+    for lbl, r in zip(labels, rhos, strict=True):
+        assert not np.isnan(r), (lbl, r)
+    # (i) the band points are NOT byte-identical (the no-op signature).
+    distinct = {round(r, 9) for r in rhos}
+    assert len(distinct) > 1, f"band collapsed to a single value (no-op regression): {rhos}"
+    # (ii) the disattenuated low-reliability band point moves AWAY from observed-prior
+    # in the expected direction (more of the noisy prior removed -> partial decreases).
+    rho_obs = band["points"]["R_observed"]["doubly_partialled_rho"]
+    rho_low = band["points"]["R_low"]["doubly_partialled_rho"]
+    assert rho_low < rho_obs, (rho_low, rho_obs)
+    # (iii) reliabilities are ordered observed >= low >= expected >= high.
+    rels = [band["points"][k]["reliability"] for k in labels]
+    assert all(rels[i] >= rels[i + 1] - 1e-9 for i in range(len(rels) - 1)), rels
+
+
+def test_attenuation_band_carries_per_point_cis_for_rho_and_delta_r2():
+    """B2 regression: every band point must carry a bootstrap CI for BOTH the
+    doubly-partialled rho AND ΔR²_align-beyond-prior (the registered §7 gate reads
+    the per-band CI lower bounds, not point-estimate signs)."""
+    frame, base_rates = _eiv_band_fixture()
+    band = m.attenuation_sensitivity(frame, base_rates, behavior="refusal", b=300, seed=7)
+    assert band["ci_computed"] is True
+    for label in ("R_observed", "R_low", "R_expected", "R_high"):
+        pt = band["points"][label]
+        assert "doubly_partialled_rho" in pt
+        assert "delta_r2_align_beyond_prior" in pt
+        for ci_key in ("doubly_partialled_rho_ci", "delta_r2_align_beyond_prior_ci"):
+            assert ci_key in pt, (label, ci_key)
+            ci = pt[ci_key]
+            assert "ci_lo" in ci and "ci_hi" in ci, (label, ci_key)
+
+
+def test_attenuation_band_smoke_b1_has_no_ci():
+    """Smoke (b<=1) reports point estimates only, no per-point CI (matches the smoke
+    fast path)."""
+    frame, base_rates = _eiv_band_fixture(n_bystanders=12)
+    band = m.attenuation_sensitivity(frame, base_rates, behavior="refusal", b=1, seed=7)
+    assert band["ci_computed"] is False
+    assert "doubly_partialled_rho_ci" not in band["points"]["R_observed"]
+
+
 # ── marker-token fail-fast in the #605 substrate loader ──
 
 
@@ -242,3 +348,161 @@ def test_extract_script_trait_default_is_623_sycophancy():
 
     assert sig.parameters["trait_name"].default == SYCOPHANCY_TRAIT_NAME
     assert sig.parameters["trait_description"].default == SYCOPHANCY_TRAIT_DESCRIPTION
+
+
+# ── PRIMARY_H3_BEHAVIORS is a literal frozenset excluding EM (N1) ──
+
+
+def test_primary_h3_behaviors_is_literal_frozenset_excluding_em():
+    assert isinstance(m.PRIMARY_H3_BEHAVIORS, frozenset)
+    assert frozenset({"sycophancy", "refusal", "marker"}) == m.PRIMARY_H3_BEHAVIORS
+    assert "em" not in m.PRIMARY_H3_BEHAVIORS
+
+
+# ── bake-off consumer: H3 gate + band verdict + syc-i fail-loud (B2 + N2) ──
+
+
+def _load_bake_off_module():
+    spec = importlib.util.spec_from_file_location(
+        "issue657_run_bake_off_test",
+        Path(__file__).resolve().parents[1] / "scripts/issue657_run_bake_off.py",
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _band_with_cis(point_cis: dict[str, tuple[float, float]], ci_computed: bool = True) -> dict:
+    """Build a minimal band dict where each label maps to (rho_ci_lo, r2_ci_lo).
+
+    Both CIs at a point get the same lower bound for brevity (the gate ANDs them).
+    """
+    points: dict[str, dict] = {}
+    for label, (rho_lo, r2_lo) in point_cis.items():
+        points[label] = {
+            "reliability": 1.0 if label == "R_observed" else 0.5,
+            "doubly_partialled_rho": 0.3,
+            "delta_r2_align_beyond_prior": 0.1,
+            "doubly_partialled_rho_ci": {"ci_lo": rho_lo, "ci_hi": rho_lo + 0.4},
+            "delta_r2_align_beyond_prior_ci": {"ci_lo": r2_lo, "ci_hi": r2_lo + 0.2},
+        }
+    return {"band_applicable": True, "ci_computed": ci_computed, "points": points}
+
+
+def test_band_clears_confirmed_when_all_points_clear():
+    bake = _load_bake_off_module()
+    band = _band_with_cis(
+        {
+            "R_observed": (0.20, 0.05),
+            "R_low": (0.10, 0.02),
+            "R_expected": (0.08, 0.01),
+            "R_high": (0.05, 0.01),
+        }
+    )
+    assert bake._band_clears(band)["verdict"] == "CONFIRMED"
+
+
+def test_band_clears_indeterminate_when_only_optimistic_end_clears():
+    bake = _load_bake_off_module()
+    # R_low (most attenuated) straddles 0 for rho; only R_high clears both CIs.
+    band = _band_with_cis(
+        {
+            "R_observed": (0.20, 0.05),
+            "R_low": (-0.05, 0.02),
+            "R_expected": (-0.02, 0.01),
+            "R_high": (0.06, 0.01),
+        }
+    )
+    assert bake._band_clears(band)["verdict"] == "INDETERMINATE"
+
+
+def test_band_clears_requires_both_rho_and_delta_r2():
+    bake = _load_bake_off_module()
+    # rho CIs all clear, but ΔR² CI straddles 0 at R_low -> NOT confirmed.
+    band = _band_with_cis(
+        {
+            "R_observed": (0.20, 0.05),
+            "R_low": (0.10, -0.01),
+            "R_expected": (0.08, 0.02),
+            "R_high": (0.05, 0.01),
+        }
+    )
+    assert bake._band_clears(band)["verdict"] != "CONFIRMED"
+
+
+def test_h3_summary_not_pass_when_a_band_point_straddles_zero():
+    """B2 regression: the observed-prior partial-rho clears its headline CI, but one
+    reliability-band point's CI straddles 0 -> the H3 verdict must NOT be PASS."""
+    bake = _load_bake_off_module()
+    # band: optimistic end clears, R_low does not -> INDETERMINATE band verdict.
+    band = _band_with_cis(
+        {
+            "R_observed": (0.20, 0.05),
+            "R_low": (-0.05, 0.02),  # straddles 0
+            "R_expected": (0.04, 0.01),
+            "R_high": (0.06, 0.01),
+        }
+    )
+    band_verdict = bake._band_clears(band)
+    assert band_verdict["verdict"] == "INDETERMINATE"
+    per_behavior = {
+        "sycophancy": {
+            "leakage_bake_off": {
+                "in_scope": True,
+                # headline R_observed CIs DO clear (the no-correction read is positive)
+                "h3_doubly_partialled_rho_ci": {"ci_lo": 0.20, "ci_hi": 0.55},
+                "h3_delta_r2_ci": {"ci_lo": 0.05, "ci_hi": 0.30},
+                "band_verdict": band_verdict,
+            }
+        }
+    }
+    summary = bake._h3_summary(per_behavior)
+    assert summary["h3_verdict"] != "PASS", summary
+    assert summary["h3_verdict"] == "INDETERMINATE", summary
+    assert summary["per_behavior_detail"]["sycophancy"]["passes_h3"] is False
+
+
+def test_h3_summary_pass_only_when_band_confirmed():
+    bake = _load_bake_off_module()
+    band = _band_with_cis(
+        {
+            "R_observed": (0.20, 0.05),
+            "R_low": (0.10, 0.02),
+            "R_expected": (0.08, 0.01),
+            "R_high": (0.05, 0.01),
+        }
+    )
+    band_verdict = bake._band_clears(band)
+    assert band_verdict["verdict"] == "CONFIRMED"
+    per_behavior = {
+        "refusal": {
+            "leakage_bake_off": {
+                "in_scope": True,
+                "h3_doubly_partialled_rho_ci": {"ci_lo": 0.20, "ci_hi": 0.55},
+                "h3_delta_r2_ci": {"ci_lo": 0.05, "ci_hi": 0.30},
+                "band_verdict": band_verdict,
+            }
+        }
+    }
+    summary = bake._h3_summary(per_behavior)
+    assert summary["h3_verdict"] == "PASS", summary
+    assert "refusal" in summary["primary_behaviors_cleared"]
+
+
+def test_syc_i_fallback_halts_in_production(tmp_path: Path):
+    """N2: a missing #623 syc_i.json HALTS a non-smoke production sycophancy run
+    (exit non-zero) unless --allow-syc-i-fallback is passed."""
+    bake = _load_bake_off_module()
+    missing = tmp_path / "nope" / "syc_i.json"
+    # production, no opt-in -> SystemExit
+    with pytest.raises(SystemExit):
+        bake._load_da_base_rates("sycophancy", missing, smoke=False, allow_syc_i_fallback=False)
+    # smoke -> warn-and-fall-back (returns None, no raise)
+    assert bake._load_da_base_rates("sycophancy", missing, smoke=True) is None
+    # explicit opt-in -> warn-and-fall-back
+    assert (
+        bake._load_da_base_rates("sycophancy", missing, smoke=False, allow_syc_i_fallback=True)
+        is None
+    )
+    # non-sycophancy behaviors are unaffected (always None, never raise)
+    assert bake._load_da_base_rates("refusal", missing, smoke=False) is None

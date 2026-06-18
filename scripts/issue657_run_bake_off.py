@@ -88,17 +88,25 @@ def _ci_lower_gt_zero(ci: dict) -> bool:
     return lo is not None and not np.isnan(lo) and lo > 0.0
 
 
-def _band_clears(band: dict, ci_lo_lookup: dict[str, dict]) -> dict:
-    """Classify the reliability-band H3 outcome.
+def _band_clears(band: dict) -> dict:
+    """Classify the reliability-band H3 outcome from the per-band-point bootstrap CIs.
+
+    The registered v3 §7 gate is "partial-rho CI lower bound > 0 AND ΔR² CI lower
+    bound > 0 ACROSS the reliability band" — so a point CLEARS only if BOTH its
+    doubly-partialled-rho CI AND its ΔR²-align-beyond-prior CI have a lower bound
+    strictly > 0. ``attenuation_sensitivity`` bootstraps both statistics at every
+    band point and stores them under ``points[label]["doubly_partialled_rho_ci"]``
+    / ``points[label]["delta_r2_align_beyond_prior_ci"]``.
 
     Returns {verdict, detail}. verdict is one of:
-      - CONFIRMED: the doubly-partialled partial-rho CI lower bound > 0 across the
-        WHOLE band (incl. the R_low end where attenuation is largest).
-      - INDETERMINATE: clears 0 only at the optimistic-reliability end (R_high).
-      - NULL: never clears 0 under partialling.
-    ``ci_lo_lookup`` maps band-point label -> {ci_lo, ci_hi} (bootstrap on the
-    doubly-partialled rho at that reliability point); when bootstrap CIs are not
-    computed at every point (smoke), the point-estimate sign is used as a fallback.
+      - CONFIRMED: both CIs clear 0 across the WHOLE band (incl. the most-attenuated
+        R_low end).
+      - INDETERMINATE: clears (both CIs) only at the optimistic-reliability end
+        (R_high) — the registered carve-out the band exists to surface.
+      - NULL: never clears under partialling.
+
+    When the per-band-point CIs were NOT bootstrapped (smoke; ``b<=1``) the point
+    estimates' signs of BOTH statistics are used as the fallback.
     """
     points = band.get("points", {})
     labels = ["R_low", "R_expected", "R_high"]
@@ -106,16 +114,25 @@ def _band_clears(band: dict, ci_lo_lookup: dict[str, dict]) -> dict:
     if not present:
         return {"verdict": "NULL", "detail": "no band points"}
 
+    ci_computed = bool(band.get("ci_computed", False))
+
     def _clears(lbl: str) -> bool:
-        if lbl in ci_lo_lookup:
-            return _ci_lower_gt_zero(ci_lo_lookup[lbl])
-        rho = points[lbl].get("doubly_partialled_rho")
-        return rho is not None and not np.isnan(rho) and rho > 0.0
+        pt = points[lbl]
+        if ci_computed:
+            rho_ci = pt.get("doubly_partialled_rho_ci", {})
+            r2_ci = pt.get("delta_r2_align_beyond_prior_ci", {})
+            return _ci_lower_gt_zero(rho_ci) and _ci_lower_gt_zero(r2_ci)
+        # smoke fallback: point-estimate signs of BOTH statistics
+        rho = pt.get("doubly_partialled_rho")
+        r2 = pt.get("delta_r2_align_beyond_prior")
+        rho_ok = rho is not None and not np.isnan(rho) and rho > 0.0
+        r2_ok = r2 is not None and not np.isnan(r2) and r2 > 0.0
+        return rho_ok and r2_ok
 
     all_clear = all(_clears(lbl) for lbl in present)
     opt_clear = _clears("R_high") if "R_high" in points else _clears(present[-1])
     if all_clear:
-        return {"verdict": "CONFIRMED", "detail": "clears across whole band"}
+        return {"verdict": "CONFIRMED", "detail": "rho+ΔR² CI lo > 0 across whole band"}
     if opt_clear:
         return {"verdict": "INDETERMINATE", "detail": "clears only at optimistic-reliability end"}
     return {"verdict": "NULL", "detail": "does not clear under partialling"}
@@ -264,16 +281,21 @@ def run_behavior(
         leakage["h3_delta_r2_ci"] = boot["delta_r2_align_beyond_prior"]
         leakage["h3_doubly_partialled_rho_ci"] = boot["doubly_partialled_rho"]
 
-        # reliability-sensitivity band (M-Stats1)
-        band = attenuation_sensitivity(frame, table.bystander_base_rate, behavior=behavior)
+        # reliability-sensitivity band (M-Stats1): bootstraps the EIV-disattenuated
+        # doubly-partialled rho AND grouped ΔR² at EACH reliability point (same
+        # B=10000 bystander resample as the headline gate; b=1 in smoke).
+        band = attenuation_sensitivity(
+            frame,
+            table.bystander_base_rate,
+            behavior=behavior,
+            b=n_boot_eff,
+            seed=BOOTSTRAP_SEED,
+        )
         leakage["reliability_band"] = band
 
-        # band verdict (uses the doubly-partialled CI at R_observed as the headline
-        # CI; the band points use point-estimate signs as the per-point fallback —
-        # a full per-point bootstrap is the production read, the headline R_observed
-        # bootstrap is the load-bearing CI gate)
-        ci_lookup = {"R_observed": leakage["h3_doubly_partialled_rho_ci"]}
-        leakage["band_verdict"] = _band_clears(band, ci_lookup)
+        # band verdict from the per-band-point CIs (partial-rho AND ΔR² CI lo > 0
+        # across the WHOLE band == CONFIRMED; optimistic-end-only == INDETERMINATE).
+        leakage["band_verdict"] = _band_clears(band)
 
         # shuffled-direction null (b-vs-random); skip the heavy run in smoke
         shuffle_eff = 1 if smoke else shuffle_b
@@ -374,7 +396,7 @@ def _h3_summary(per_behavior: dict[str, dict]) -> dict:
     return {
         "h3_verdict": verdict,
         "primary_behaviors_cleared": primary_clears,
-        "primary_h3_behaviors": list(PRIMARY_H3_BEHAVIORS),
+        "primary_h3_behaviors": sorted(PRIMARY_H3_BEHAVIORS),
         "per_behavior_detail": detail,
         "note": (
             "PASS = doubly-partialled rho CI lo > 0 AND ΔR² CI lo > 0 AND reliability "
@@ -385,24 +407,43 @@ def _h3_summary(per_behavior: dict[str, dict]) -> dict:
     }
 
 
-def _load_da_base_rates(behavior: str, syc_i_path: Path) -> dict[str, float] | None:
+def _load_da_base_rates(
+    behavior: str,
+    syc_i_path: Path,
+    *,
+    smoke: bool = False,
+    allow_syc_i_fallback: bool = False,
+) -> dict[str, float] | None:
     """DV-(a) base-rate map for H1. sycophancy -> #623 syc_i; else None (use #518).
 
     For sycophancy the #623 ``syc_i`` rates are the TRUE replication-anchor base
     rate (#623's rho=0.726 was measured against syc_i, not #518's bystander_base_rate).
-    Warn LOUDLY if the syc_i file is absent — the bake-off then falls back to
-    bystander_base_rate, which still gives a valid (slightly different) anchor but
-    is NOT the #623 comparison. The sparse worktree excludes eval_results/, so the
-    off-pod runner must point --syc-i at the repo-root copy.
+    The sycophancy anchor IS the join-integrity kill criterion (plan §7), so per
+    CLAUDE.md "Fail fast — never hide failures" a MISSING ``syc_i`` HALTS a non-smoke
+    production sycophancy run (exit non-zero) rather than silently downgrading the
+    anchor to #518's ``bystander_base_rate``. Smoke runs and an explicit
+    ``--allow-syc-i-fallback`` opt-in keep the warn-and-fall-back behavior (the
+    fallback is a valid but DIFFERENT anchor, not the #623 comparison). The sparse
+    worktree excludes eval_results/, so the off-pod runner must point --syc-i at the
+    repo-root copy.
     """
     if behavior != "sycophancy":
         return None
     if not syc_i_path.exists():
+        if not smoke and not allow_syc_i_fallback:
+            raise SystemExit(
+                f"[phase=bake_off] FATAL: #623 syc_i not found at {syc_i_path}. The "
+                "sycophancy DV-(a) read is the #623 replication anchor (the "
+                "join-integrity kill criterion, plan §7); falling back to #518 "
+                "bystander_base_rate silently downgrades it to a DIFFERENT anchor. "
+                "Point --syc-i at the repo-root eval_results/issue_623/syc_i.json, or "
+                "pass --allow-syc-i-fallback to opt into the #518 fallback explicitly."
+            )
         print(
             f"[phase=bake_off] WARNING: #623 syc_i not found at {syc_i_path}; the "
             "sycophancy DV-(a) read falls back to #518 bystander_base_rate (a valid "
-            "but DIFFERENT anchor — not the #623 syc_i comparison). Point --syc-i at "
-            "the repo-root eval_results/issue_623/syc_i.json for the true anchor.",
+            "but DIFFERENT anchor — not the #623 syc_i comparison). "
+            f"({'smoke' if smoke else '--allow-syc-i-fallback'} mode).",
             flush=True,
         )
         return None
@@ -447,6 +488,15 @@ def main() -> None:
         action="store_true",
         help="Smoke: 1 LOPO fold x 1 bootstrap replicate (unified one-cell path).",
     )
+    parser.add_argument(
+        "--allow-syc-i-fallback",
+        action="store_true",
+        help=(
+            "Opt into the #518 bystander_base_rate fallback when the #623 syc_i.json "
+            "is absent for sycophancy (default: HALT — the syc_i anchor is the "
+            "join-integrity kill criterion). Smoke runs allow the fallback implicitly."
+        ),
+    )
     args = parser.parse_args()
 
     load_dotenv()
@@ -475,7 +525,12 @@ def main() -> None:
         else:
             direction_dir = _resolve(f"data/issue657/behavior_directions/{beh}")
 
-        base_rates_da = _load_da_base_rates(beh, syc_i_path)
+        base_rates_da = _load_da_base_rates(
+            beh,
+            syc_i_path,
+            smoke=args.smoke,
+            allow_syc_i_fallback=args.allow_syc_i_fallback,
+        )
         print(f"[phase=bake_off] behavior={beh} smoke={args.smoke}", flush=True)
         res = run_behavior(
             beh,
