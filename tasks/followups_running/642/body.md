@@ -150,7 +150,7 @@ Round 1's coverage-matched fine-tune trains on the parent run's exact `software_
 
 </details>
 
-Full round-1 training pool (the reused `software_engineer` seed-42 sycophancy pool): [`issue411_sycophancy_cosine_gradient/training_pools/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/50ff10223275d41f70ee06f8fb9effe066eb8eae/issue411_sycophancy_cosine_gradient). Round-4 `villain` on-policy training pool (reused from the pinned round-4 on-policy training-pool artifact): [`issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f94c0d15be2b09e936d7607c715bb193559b221d/issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain). Round-5 `villain` refusal training pool (freshly elicited this round, with per-row elicitation provenance): [`issue642_refusal_secondbehavior/training_pools/villain/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f1d41038a013e9e3601a1d8dd94313cb0fce7451/issue642_refusal_secondbehavior/training_pools/villain).
+Full round-1 training pool (the reused `software_engineer` seed-42 sycophancy pool): [`issue411_sycophancy_cosine_gradient/training_pools/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/50ff10223275d41f70ee06f8fb9effe066eb8eae/issue411_sycophancy_cosine_gradient). Round-4 `villain` on-policy training pool (reused from the pinned round-4 on-policy training-pool artifact): 700 rows per arm — 200 base-model-elicited `villain` agreeing positives (tier mix 31 bare / 165 instruct-and-strip / 4 prefill) interleaved with 500 on-policy contrastive negatives (200 `police_officer` + 200 `medical_doctor` + 100 no-persona corrections), a ~1:2.5 positives-to-total-negatives ratio: [`issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f94c0d15be2b09e936d7607c715bb193559b221d/issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain). Round-5 `villain` refusal training pool (freshly elicited this round, with per-row elicitation provenance): [`issue642_refusal_secondbehavior/training_pools/villain/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f1d41038a013e9e3601a1d8dd94313cb0fce7451/issue642_refusal_secondbehavior/training_pools/villain).
 
 ### Evaluated with
 
@@ -267,8 +267,8 @@ Full round-4 `villain` generations: [`issue642_matchedlr_onpolicy/sycophancy/gen
 | LR schedule | cosine, warmup ratio `0.05` |
 | cmft epochs / steps | 3 epochs = 132 optimizer steps |
 | Effective batch | 16 |
-| LoRA (reused, not retrained) | r=32, α=64, all-linear, rsLoRA, dropout 0.05, `bias='none'`, lr `1e-5`, 132 steps; cells {28,32,36,132} |
-| Full FT (reused, not retrained) | ZeRO-3 all-modules, lr `5e-6`, 132 steps; cells {12,16,22,132} |
+| LoRA (reused, NOT retrained) | r=32, α=64, all-linear, rsLoRA, dropout 0.05, `bias='none'`, lr `1e-5`, 132 steps; cells {28,32,36,132} |
+| Full-FT (reused, NOT retrained) | ZeRO-3 all-modules, lr `5e-6`, 132 steps; cells {12,16,22,132} |
 | Matched-strength target | s* = 0.50, band [0.40, 0.60]; secondary 0.75; sweep {0.2…0.9} |
 | Eval decode backend | vLLM, `tensor_parallel_size=1`, `max_model_len=2048` |
 | Eval temperature | `1.0` |
