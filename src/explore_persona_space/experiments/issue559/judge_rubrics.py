@@ -168,17 +168,37 @@ def graded_intensity_items(
             f"available: {sorted(INTENSITY_RUBRICS)})"
         )
     template, system = INTENSITY_RUBRICS[behavior]
-    client = anthropic.Anthropic(max_retries=8)
+    client = anthropic.Anthropic(max_retries=32)
+
+    def _retry_429(fn, *, sleep_s: int = 90, max_attempts: int = 200):
+        # Outer-loop RateLimitError + InternalServerError retry — the SDK's
+        # max_retries can be exhausted under sustained org-wide 1M tok/min
+        # sonnet-4-5 congestion (incident 2026-06-18: 5 crashes on this rig).
+        import time as _time
+
+        last = None
+        for _ in range(max_attempts):
+            try:
+                return fn()
+            except anthropic.RateLimitError as e:
+                last = e
+                _time.sleep(sleep_s)
+            except anthropic.InternalServerError as e:
+                last = e
+                _time.sleep(sleep_s)
+        raise last if last else RuntimeError("retry budget exhausted")
 
     def _one(item: dict) -> dict:
         prompt = template.format(**item)
         kwargs = {"system": system} if system else {}
         for attempt in range(2):
-            resp = client.messages.create(
-                model=INTENSITY_JUDGE_MODEL,
-                max_tokens=300,
-                messages=[{"role": "user", "content": prompt}],
-                **kwargs,
+            resp = _retry_429(
+                lambda: client.messages.create(
+                    model=INTENSITY_JUDGE_MODEL,
+                    max_tokens=300,
+                    messages=[{"role": "user", "content": prompt}],
+                    **kwargs,
+                )
             )
             if resp.stop_reason == "refusal":
                 # Deterministic API-level safety refusal — retrying does not
