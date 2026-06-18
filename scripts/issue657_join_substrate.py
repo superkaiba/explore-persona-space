@@ -45,6 +45,7 @@ from explore_persona_space.analysis.issue657_alignment_predictor import (  # noq
     load_behavior_direction,
     load_cell_substrate,
     load_persona_vectors,
+    marker_panel_overlap,
     prior_centroid_projection,
 )
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
@@ -81,7 +82,15 @@ def build_join(
     )
     frame = build_predictor_frame(table, align, pcp)
 
+    # v6 FIRST Phase-0 deliverable: the marker panel-overlap primary-set-membership
+    # decision (|EVAL_PERSONAS_24 ∩ #605-marker-panel|). Computed from the same
+    # eval-results root + carried in EVERY behavior's join so the decision is the
+    # first thing recorded (a non-silent, logged gate — §7). Overlap < 8 -> marker
+    # DV-(a)-only + primary H3 narrows to {sycophancy, refusal}.
+    overlap_decision = marker_panel_overlap(eval_results_root)
+
     return {
+        "marker_panel_overlap": overlap_decision,
         "behavior": behavior,
         "layer": layer,
         "readout": readout,
@@ -167,6 +176,14 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(join, indent=2))
 
+    # FIRST deliverable: the marker panel-overlap primary-set-membership decision (§7).
+    ov = join["marker_panel_overlap"]
+    print(
+        f"[phase=join_substrate] marker_panel_overlap={ov['marker_panel_overlap']} "
+        f"(min={ov['min_overlap']}) marker_leakage_excluded={ov['marker_leakage_excluded']} "
+        f"-> {ov['decision']}",
+        flush=True,
+    )
     print(
         f"[phase=join_substrate] behavior={args.behavior} "
         f"cells_joined={join['n_cells_joined']}/{join['n_cells_substrate']} "

@@ -44,6 +44,9 @@ BEHAVIORS="refusal,marker,em"     # sycophancy REUSED from #623, not re-extracte
 LAYERS="7 14 21 27"
 N_QUESTIONS="40"      # paper 40, split 20 extraction / 20 eval (trait directions)
 N_VECTOR_QUESTIONS="" # empty => all 240 extraction questions (persona vectors)
+# Refusal diff-mean probe banks (Arditi 2406.11717 field-standard banks, HF-verified).
+REFUSAL_HARMFUL="walledai/AdvBench"
+REFUSAL_HARMLESS="mlabonne/harmless_alpaca"
 GPU_ID="0"
 SKIP_UPLOAD="0"
 SKIP_PREFLIGHT="0"
@@ -58,6 +61,8 @@ while [[ $# -gt 0 ]]; do
     --personas) MISSING_PERSONAS="$2"; shift 2 ;;
     --layers) LAYERS="$2"; shift 2 ;;
     --n-questions) N_QUESTIONS="$2"; N_VECTOR_QUESTIONS="$2"; shift 2 ;;
+    --harmful) REFUSAL_HARMFUL="$2"; shift 2 ;;
+    --harmless) REFUSAL_HARMLESS="$2"; shift 2 ;;
     --gpu-id) GPU_ID="$2"; shift 2 ;;
     --skip-upload) SKIP_UPLOAD="1"; shift ;;
     --skip-preflight) SKIP_PREFLIGHT="1"; shift ;;
@@ -261,6 +266,19 @@ PY
     || fail "persona_vectors failed — see $RUN_LOGS/persona_vectors.log"
 
   # ── phase 2: the 3 NEW behavior directions (refusal, marker, em) ──
+  # v6 BEHAVIOR-APPROPRIATE RECIPE ROUTING (the pivot): each behavior uses the
+  # recipe fit for its elicitation profile, NOT a single generic recipe (which
+  # failed K2 for refusal at launch #3).
+  #   refusal -> Arditi diff-in-means (scripts/issue657_extract_diffmean_direction.py)
+  #   em      -> #521 on_policy_em trained-shift re-extraction (same extractor,
+  #              --behavior em; the single on-HF issue_519/em_seed42 adapter, with
+  #              a fail-loud adapter-config pin BEFORE the GPU work)
+  #   marker  -> the #623 Persona-Vectors affordance recipe
+  #              (scripts/issue623_extract_sycophancy_vector.py); a K2-fail falls
+  #              back to the #521 on_policy_marker shift AND writes
+  #              marker_direction_kind=shift_fallback so Phase 2 demotes it (M-Alts3).
+  # SMOKE-SLICE flags (--smoke etc.) thread through every arm identically (the
+  # unified one-cell path; PASS_UNIFIED smoke-architecture-check).
   IFS=',' read -r -a BEH_ARR <<< "$BEHAVIORS"
   for beh in "${BEH_ARR[@]}"; do
     beh="$(echo "$beh" | tr -d '[:space:]')"
@@ -269,28 +287,120 @@ PY
     # generic "behavior_directions" → fail() tailed a nonexistent
     # behavior_directions.log and the round-1 traceback never surfaced, #657 r1).
     mark "behavior_${beh}"
-    DESC="$(trait_description "$beh")"
-    if [[ -z "$DESC" ]]; then
-      fail "no trait description for behavior '$beh' (expected refusal/marker/em)"
-    fi
-    echo "[driver] [phase=behavior_directions] extracting '$beh' direction (paper recipe)"
-    # F1 (log visibility through instance DELETE): `tee` the per-behavior output
-    # to BOTH the driver's own stdout (→ <vm_scratch_dir>/logs/issue-657.log =
-    # the GCP handle log_path, which the poller tails into log_tail_excerpt
-    # LIVE, before the EXIT-trap DELETE wipes the disk) AND the per-behavior
-    # file. `set -o pipefail` (top of file) makes the `||` see the python rc,
-    # not tee's. Round-1 redirected `>file 2>&1`, so the refusal traceback
-    # never reached the poller-visible main log and DELETE wiped the file.
-    # shellcheck disable=SC2086
-    uv run python scripts/issue623_extract_sycophancy_vector.py \
-      --trait-name "$beh" --trait-description "$DESC" \
-      --layers $LAYERS --gpu-id "$GPU_ID" \
-      --n-questions "$N_QUESTIONS" \
-      --output-dir "$BD_DIR/$beh" \
-      --steering-output "$EVAL_DIR/steering_probe_${beh}.json" \
-      --steering-effect-output "$EVAL_DIR/steering_effect_by_layer_${beh}.json" \
-      2>&1 | tee "$RUN_LOGS/behavior_${beh}.log" \
-      || fail "behavior_directions '$beh' failed (or K2 HALT) — see $RUN_LOGS/behavior_${beh}.log"
+    SMOKE_ARG=()
+    [[ "$SMOKE" == "1" ]] && SMOKE_ARG=(--smoke)
+    LOG="$RUN_LOGS/behavior_${beh}.log"
+    # F1 (log visibility through instance DELETE): `tee` per-behavior output to
+    # BOTH the driver stdout (→ the poller-visible main log, tailed LIVE before
+    # the EXIT-trap DELETE) AND the per-behavior file. `set -o pipefail` makes the
+    # `||` see the python rc, not tee's.
+
+    case "$beh" in
+      refusal)
+        echo "[driver] [phase=behavior_directions] extracting 'refusal' (Arditi diff-in-means)"
+        # shellcheck disable=SC2086
+        uv run python scripts/issue657_extract_diffmean_direction.py \
+          --behavior refusal \
+          --harmful "$REFUSAL_HARMFUL" --harmless "$REFUSAL_HARMLESS" \
+          --layers $LAYERS --gpu-id "$GPU_ID" \
+          --output-dir "$BD_DIR/refusal" \
+          --steering-output "$EVAL_DIR/steering_probe_refusal.json" \
+          --steering-effect-output "$EVAL_DIR/steering_effect_by_layer_refusal.json" \
+          "${SMOKE_ARG[@]}" \
+          2>&1 | tee "$LOG" \
+          || fail "refusal diff-mean extraction failed — see $LOG"
+        ;;
+      em)
+        echo "[driver] [phase=behavior_directions] extracting 'em' (#521 on_policy_em shift re-extract)"
+        # The §-Smoke item 4 adapter-config pin (r=8/alpha=16/use_rslora=true,
+        # base=Qwen-2.5-7B-Instruct) is asserted INSIDE the extractor BEFORE the
+        # base+adapter forward passes (assert_em_adapter_config); a mismatch
+        # (e.g. the dropped em_turner_seed42 r=32/alpha=256) fails loud.
+        # shellcheck disable=SC2086
+        uv run python scripts/issue657_extract_diffmean_direction.py \
+          --behavior em \
+          --layers $LAYERS --gpu-id "$GPU_ID" \
+          --output-dir "$BD_DIR/em" \
+          --steering-output "$EVAL_DIR/steering_probe_em.json" \
+          --steering-effect-output "$EVAL_DIR/steering_effect_by_layer_em.json" \
+          "${SMOKE_ARG[@]}" \
+          2>&1 | tee "$LOG" \
+          || fail "em shift re-extraction failed (adapter-config pin / K2) — see $LOG"
+        ;;
+      marker)
+        DESC="$(trait_description marker)"
+        [[ -z "$DESC" ]] && fail "no trait description for marker"
+        echo "[driver] [phase=behavior_directions] extracting 'marker' (#623 affordance recipe)"
+        # PRIMARY: the #623 affordance read. K2-fail does NOT raise here (the
+        # extractor's K2 SystemExit is the #623 path's whole-run HALT — too brittle
+        # for the sweep, §11). We capture the rc, read k2_pass from the effect file,
+        # and on a K2-fail re-extract the #521 on_policy_marker shift + set the
+        # marker_direction_kind sentinel so Phase 2 demotes marker (M-Alts3).
+        MARKER_RC=0
+        # shellcheck disable=SC2086
+        uv run python scripts/issue623_extract_sycophancy_vector.py \
+          --trait-name marker --trait-description "$DESC" \
+          --layers $LAYERS --gpu-id "$GPU_ID" \
+          --n-questions "$N_QUESTIONS" \
+          --output-dir "$BD_DIR/marker" \
+          --steering-output "$EVAL_DIR/steering_probe_marker.json" \
+          --steering-effect-output "$EVAL_DIR/steering_effect_by_layer_marker.json" \
+          2>&1 | tee "$LOG" || MARKER_RC=$?
+        # Determine the affordance K2 outcome from the effect file (k2_pass).
+        MARKER_K2_PASS="$(BD_DIR="$BD_DIR" EVAL_DIR="$EVAL_DIR" uv run python - <<'PY'
+import json, os
+from pathlib import Path
+fp = Path(os.environ["EVAL_DIR"]) / "steering_effect_by_layer_marker.json"
+print("true" if fp.exists() and json.loads(fp.read_text()).get("k2_pass") else "false")
+PY
+)"
+        if [[ "$MARKER_K2_PASS" == "true" ]]; then
+          # PRIMARY affordance read — record the kind sentinel.
+          BD_DIR="$BD_DIR" uv run python - <<'PY'
+import json, os
+from pathlib import Path
+d = Path(os.environ["BD_DIR"]) / "marker"
+d.mkdir(parents=True, exist_ok=True)
+(d / "marker_direction_kind.json").write_text(
+    json.dumps({"marker_direction_kind": "affordance",
+                "note": "#623 affordance recipe passed K2 -> PRIMARY pure base-model read."}, indent=2))
+print("marker_direction_kind=affordance")
+PY
+          echo "[driver] [phase=behavior_directions] marker affordance read PASSED K2 (PRIMARY)"
+        else
+          echo "[driver] [phase=behavior_directions] marker affordance K2 FAIL -> #521 on_policy_marker shift fallback (M-Alts3: marker -> SECONDARY)"
+          mark "behavior_marker_fallback"
+          # FALLBACK: re-extract the #521 on_policy_marker shift from the on-HF #519
+          # marker adapter (same shift path as EM, --behavior em-style via the
+          # diff-mean extractor's adapter-apply mode — but we re-extract MARKER, so
+          # pin the marker adapter explicitly). The shift folds the implant in ->
+          # marker DEMOTED to SECONDARY (M-Alts3), recorded in the kind sentinel.
+          # shellcheck disable=SC2086
+          uv run python scripts/issue657_extract_diffmean_direction.py \
+            --behavior marker \
+            --layers $LAYERS --gpu-id "$GPU_ID" \
+            --output-dir "$BD_DIR/marker" \
+            --steering-output "$EVAL_DIR/steering_probe_marker.json" \
+            --steering-effect-output "$EVAL_DIR/steering_effect_by_layer_marker.json" \
+            "${SMOKE_ARG[@]}" \
+            2>&1 | tee "$RUN_LOGS/behavior_marker_fallback.log" \
+            || fail "marker #521-shift fallback failed — see $RUN_LOGS/behavior_marker_fallback.log"
+          BD_DIR="$BD_DIR" uv run python - <<'PY'
+import json, os
+from pathlib import Path
+d = Path(os.environ["BD_DIR"]) / "marker"
+(d / "marker_direction_kind.json").write_text(
+    json.dumps({"marker_direction_kind": "shift_fallback",
+                "note": "#623 affordance read FAILED K2 -> #521 on_policy_marker trained-shift "
+                        "fallback; marker DEMOTED to SECONDARY (M-Alts3)."}, indent=2))
+print("marker_direction_kind=shift_fallback")
+PY
+        fi
+        ;;
+      *)
+        fail "unknown behavior '$beh' (expected refusal/marker/em)"
+        ;;
+    esac
   done
 fi
 
