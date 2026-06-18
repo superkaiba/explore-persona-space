@@ -523,7 +523,8 @@ def fig_v9_install_pilot(pilot_gate: dict, out_dir: Path) -> None:
 def _figures_v9(eval_root: Path, out_dir: Path) -> None:
     behavior = "refusal"
     broot = eval_root / behavior
-    analysis = json.loads((broot / "analysis_v9.json").read_text())
+    # Minor 1 (round-1 review): analyzer writes analysis.json (plan §6.5 contract).
+    analysis = json.loads((broot / "analysis.json").read_text())
     fig_v9_cross_behavior_hero(analysis, out_dir)
     fig_v9_leakage_vs_strength(analysis, out_dir)
     fig_v9_profile_scatter(analysis, out_dir)
@@ -551,7 +552,7 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="v9 refusal figures (plan v10 §6): cross-behavior adapter-vs-dense hero + the "
         "exploratory dump (leakage-vs-strength, profile scatter, trajectories, heatmap, sweep, "
-        "install-pilot panel). Reads analysis_v9.json; writes to figures/issue_642/v9/.",
+        "install-pilot panel). Reads analysis.json; writes to figures/issue_642/v9/.",
     )
     args = p.parse_args(argv)
 

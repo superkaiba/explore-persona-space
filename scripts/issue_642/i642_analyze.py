@@ -1925,7 +1925,11 @@ def _v9_analyze_behavior(  # noqa: C901 - one linear v9 pipeline; splitting scat
             "numpy_version": np.__version__,
         },
     }
-    out = eval_root / behavior / "analysis_v9.json"
+    # Minor 1 (round-1 review): the plan v10 §6.5 primary_deliverable contract
+    # names `analysis.json` (not analysis_v9.json) — write the contract name so
+    # the §6.5 glob resolves. The v3 path already writes analysis.json; v9 lives
+    # under its own eval_root (refusal_v9/) so there is no collision.
+    out = eval_root / behavior / "analysis.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(analysis, indent=2))
     log.info(
@@ -1940,7 +1944,7 @@ def _v9_analyze_behavior(  # noqa: C901 - one linear v9 pipeline; splitting scat
     if syn_check is not None and not syn_check["pass"]:
         raise RuntimeError(
             f"[v9][{behavior}] synthetic designed-gap recovery FAILED: {syn_check} — "
-            "report persisted in analysis_v9.json before raise."
+            "report persisted in analysis.json before raise."
         )
     if parity_verdict == "HARD_FAIL" and not smoke_tier:
         raise RuntimeError(

@@ -165,6 +165,68 @@ def test_p0_5_pilot_gate_scopes_arms_to_new_arms_only(tmp_path, monkeypatch) -> 
     assert verdict["gate_pass"] is True
 
 
+# ---------------------------------------------------------------------------
+# B3 (round-1 reconcile): v9 LoRA adapters land at adapters/issue_642/v9/...
+# (the path the v9 Reproducibility Card declares), not the hardcoded v4/ prefix.
+# ---------------------------------------------------------------------------
+
+
+def _make_v9_upload_ctx(tmp_path: Path, selected_steps: list[int]) -> SimpleNamespace:
+    """Stub Ctx for _phase5_upload_v4_adapters under a v9 run. skip_upload=True so
+    no HF call fires; only the dest-path computation + cmft_uploaded_adapters
+    population is exercised."""
+    bdir = tmp_path / "refusal"
+    bdir.mkdir(parents=True, exist_ok=True)
+    sel_path = bdir / "selection.json"
+    sel_path.write_text(json.dumps({"arms": {"loraRefOP": {"selected_steps": selected_steps}}}))
+    return SimpleNamespace(
+        v9=True,
+        v4=True,  # v9 forces v4=True
+        dry_run=False,
+        skip_upload=True,
+        upload_adapters=False,
+        seed=42,
+        arms=("loraRefOP",),
+        experiment_name=c.V9_HF_EXPERIMENT_NAME,
+        cmft_uploaded_adapters={},
+        selection_path=lambda _b: sel_path,
+        v4_arm_method=lambda _arm: "lora",
+        ckpt_root=lambda _b, _arm: bdir / "ckpt",
+    )
+
+
+def test_v9_lora_adapters_land_at_v9_namespace(tmp_path, monkeypatch) -> None:
+    """A v9 run uploads loraRefOP adapters to adapters/issue_642/v9/..., matching
+    the v9 Reproducibility Card (NOT the hardcoded v4/ prefix — the B3 bug)."""
+    monkeypatch.setattr(d, "_phase_log", lambda *a, **k: None)
+    ctx = _make_v9_upload_ctx(tmp_path, [4, 22])
+
+    d._phase5_upload_v4_adapters(ctx, "refusal")
+
+    dests = ctx.cmft_uploaded_adapters["refusal:loraRefOP"]
+    assert dests, "lora pole should record adapter dests"
+    for dst in dests:
+        assert dst.startswith("adapters/issue_642/v9/loraRefOP_villain_seed42/"), dst
+    assert dests == [
+        "adapters/issue_642/v9/loraRefOP_villain_seed42/step4",
+        "adapters/issue_642/v9/loraRefOP_villain_seed42/step22",
+    ], dests
+
+
+def test_v4_lora_adapters_keep_v4_namespace(tmp_path, monkeypatch) -> None:
+    """A v4-only run (ctx.v9 False) keeps the v4/ prefix — the namespace split is
+    parameterized, not globally flipped."""
+    monkeypatch.setattr(d, "_phase_log", lambda *a, **k: None)
+    ctx = _make_v9_upload_ctx(tmp_path, [4])
+    ctx.v9 = False  # v4-only run
+    ctx.arms = ("loraRefOP",)
+
+    d._phase5_upload_v4_adapters(ctx, "refusal")
+
+    dests = ctx.cmft_uploaded_adapters["refusal:loraRefOP"]
+    assert dests == ["adapters/issue_642/v4/loraRefOP_villain_seed42/step4"], dests
+
+
 def test_pilot_exempt_record_shape() -> None:
     """The exempted-arm record names the arm, its method, the reuse status, and a
     pointer to the v5 pilot (never silently dropped — plan §7 / reconciler req)."""
