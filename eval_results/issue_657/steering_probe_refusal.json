@@ -1,0 +1,64 @@
+{
+  "baseline_mean_trait_score": 16.1875,
+  "per_layer": {
+    "7": {
+      "rms": 0.10277191549539566,
+      "alphas_coeff": [
+        4.0,
+        8.0,
+        12.0
+      ],
+      "per_alpha_effect": [
+        1.75,
+        -2.75,
+        3.875
+      ],
+      "mean_effect": 0.9583333333333334
+    },
+    "14": {
+      "rms": 0.38852933049201965,
+      "alphas_coeff": [
+        4.0,
+        8.0,
+        12.0
+      ],
+      "per_alpha_effect": [
+        -2.3125,
+        -4.0,
+        2.375
+      ],
+      "mean_effect": -1.3125
+    },
+    "21": {
+      "rms": 1.766221523284912,
+      "alphas_coeff": [
+        4.0,
+        8.0,
+        12.0
+      ],
+      "per_alpha_effect": [
+        -4.8125,
+        -1.6875,
+        -4.0625
+      ],
+      "mean_effect": -3.5208333333333335
+    },
+    "27": {
+      "rms": 5.014708995819092,
+      "alphas_coeff": [
+        4.0,
+        8.0,
+        12.0
+      ],
+      "per_alpha_effect": [
+        0.8125,
+        -1.6875,
+        -13.125
+      ],
+      "mean_effect": -4.666666666666667
+    }
+  },
+  "headline_layer": 7,
+  "headline_layer_effect": 0.9583333333333334,
+  "k2_pass": true
+}
