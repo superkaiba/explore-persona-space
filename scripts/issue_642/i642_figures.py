@@ -523,8 +523,13 @@ def fig_v9_install_pilot(pilot_gate: dict, out_dir: Path) -> None:
 def _figures_v9(eval_root: Path, out_dir: Path) -> None:
     behavior = "refusal"
     broot = eval_root / behavior
-    # Minor 1 (round-1 review): analyzer writes analysis.json (plan §6.5 contract).
-    analysis = json.loads((broot / "analysis.json").read_text())
+    # M1 (round-2 reconcile): the v9 analyzer writes analysis.json at the §6.5
+    # primary_deliverable path `<eval-root>/analysis.json` (NO `behavior/`
+    # subdir — the v9 eval_root `refusal_v9/` already encodes the behavior).
+    # Read it from the registered root. The trajectory/pilot reads below stay
+    # under `broot` (`eval_root/refusal/stage_a/...`) where the analyzer fetched
+    # them — those are NOT part of the §6.5 contract.
+    analysis = json.loads((eval_root / "analysis.json").read_text())
     fig_v9_cross_behavior_hero(analysis, out_dir)
     fig_v9_leakage_vs_strength(analysis, out_dir)
     fig_v9_profile_scatter(analysis, out_dir)
@@ -565,7 +570,16 @@ def main(argv: list[str] | None = None) -> int:
         if out_dir == REPO / "figures" / "issue_642":
             out_dir = out_dir / "v9"
         out_dir.mkdir(parents=True, exist_ok=True)
-        _figures_v9(args.eval_root, out_dir)
+        # M1 (round-2 reconcile): the bare `i642_figures.py --v9` command in the
+        # plan §10 Reproducibility Card passes NO --eval-root. The v9 analysis
+        # lands at the §6.5 path `eval_results/issue_642/refusal_v9/analysis.json`,
+        # so when --eval-root is left at the shared `issue_642/` parent default,
+        # descend into `refusal_v9/` so the bare command resolves the contract
+        # without an explicit override. An explicit --eval-root is honored as-is.
+        eval_root = args.eval_root
+        if eval_root == REPO / "eval_results" / "issue_642":
+            eval_root = eval_root / "refusal_v9"
+        _figures_v9(eval_root, out_dir)
         return 0
 
     if not args.behavior:

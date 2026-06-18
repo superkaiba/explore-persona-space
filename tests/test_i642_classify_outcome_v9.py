@@ -188,3 +188,221 @@ def test_v9_no_suffix_install_failure_is_invisible(tmp_path) -> None:
     # file is invisible -> returns None (the bug the B2 writer fix closes).
     res = m._v9_install_failure(eval_root, "refusal", refetch=False, v9_experiment="x")
     assert res is None
+
+
+# ---------------------------------------------------------------------------
+# M1 (round-2 reconcile BLOCKER): the analysis->figures path CONTRACT.
+#
+# Plan v10 §6.5 primary_deliverable names the v9 analysis at
+# `eval_results/issue_642/refusal_v9/analysis.json` (NO `refusal/` segment).
+# Pre-fix the analyzer wrote `eval_root/refusal/analysis.json` (one level too
+# deep) so the §6.5 glob never resolved AND the canonical bare
+# `i642_figures.py --v9` reader (which defaults `--eval-root` to the shared
+# `issue_642/` parent) missed it. These tests pin the WRITER at the registered
+# `<eval-root>/analysis.json` path AND the bare `--v9` figures command's
+# eval-root resolution against a synthetic v9 fixture — no model, API, or GPU.
+# A re-introduced `behavior/` subdir on the writer (or a figures reader/default
+# that drops the `refusal_v9/` descent) re-fails both.
+# ---------------------------------------------------------------------------
+
+import i642_figures as figmod  # noqa: E402
+
+
+def _build_v9_fixture(eval_root: Path) -> None:
+    """Synthetic 2-arm v9 refusal verdict tree under ``<eval_root>/refusal/``
+    (matched_lr REPLICATES @ Δ_rank≈0.06). The analyzer reads inputs from
+    ``<eval_root>/refusal/`` and (post-fix) writes the result to
+    ``<eval_root>/analysis.json``."""
+    m.make_synthetic_v9(eval_root, "bracket")
+
+
+def test_v9_analysis_written_at_registered_section_6_5_path(tmp_path) -> None:
+    """WRITER contract: `i642_analyze.py --v9 --eval-root <tmp>/refusal_v9`
+    writes the analysis at `<tmp>/refusal_v9/analysis.json` (the §6.5 glob),
+    NOT one level deeper at `<tmp>/refusal_v9/refusal/analysis.json`."""
+    eval_root = tmp_path / "eval_results" / "issue_642" / "refusal_v9"
+    _build_v9_fixture(eval_root)
+
+    rc = m.main(
+        [
+            "--v9",
+            "--behavior",
+            "refusal",
+            "--eval-root",
+            str(eval_root),
+            "--no-refetch",
+            "--bootstrap-b",
+            "200",
+        ]
+    )
+    assert rc == 0
+
+    registered = eval_root / "analysis.json"
+    nested = eval_root / "refusal" / "analysis.json"
+    assert registered.exists(), (
+        f"§6.5 contract path {registered} missing — the writer must drop the "
+        "`behavior/` subdir for v9 (eval_root already encodes the behavior)"
+    )
+    assert not nested.exists(), (
+        f"analysis.json re-introduced the `behavior/` subdir at {nested} — that "
+        "is exactly the M1 regression (the §6.5 glob then fails to resolve)"
+    )
+    # the written file is a real v9 analysis with the headline contract.
+    payload = json.loads(registered.read_text())
+    assert payload.get("v9") is True
+    assert "headline" in payload and "delta_rank_matched" in payload["headline"]
+
+
+def test_bare_v9_figures_command_reads_the_registered_path(tmp_path, monkeypatch) -> None:
+    """READER contract: the canonical plan §10 command `i642_figures.py --v9`
+    (NO --eval-root) resolves the v9 analysis at
+    `<REPO>/eval_results/issue_642/refusal_v9/analysis.json`. We mock `REPO` in
+    BOTH the analyzer and figures modules to a tmp tree, run the bare commands
+    exactly as the Reproducibility Card declares, and confirm figures land —
+    i.e. the bare command found the registered analysis with NO explicit root."""
+    fake_repo = tmp_path / "repo"
+    # The analyzer's --eval-root explicit path (plan §10 step 1) and the figures
+    # bare-command default (plan §10 step 2) must point at the SAME refusal_v9/.
+    eval_root = fake_repo / "eval_results" / "issue_642" / "refusal_v9"
+    _build_v9_fixture(eval_root)
+
+    # Step 1: analyzer with the §10 explicit --eval-root writes the §6.5 path.
+    rc1 = m.main(
+        [
+            "--v9",
+            "--behavior",
+            "refusal",
+            "--eval-root",
+            str(eval_root),
+            "--no-refetch",
+            "--bootstrap-b",
+            "200",
+        ]
+    )
+    assert rc1 == 0
+    assert (eval_root / "analysis.json").exists()
+
+    # Step 2: BARE `i642_figures.py --v9` — no --eval-root, no --out-dir. Mock
+    # REPO so the figures default `eval_results/issue_642` (+ the v9 descent to
+    # refusal_v9/) and the default `figures/issue_642` both resolve under tmp.
+    monkeypatch.setattr(figmod, "REPO", fake_repo)
+    rc2 = figmod.main(["--v9"])
+    assert rc2 == 0
+
+    out_dir = fake_repo / "figures" / "issue_642" / "v9"
+    figs = list(out_dir.glob("*.png")) + list(out_dir.glob("*.pdf"))
+    assert figs, (
+        f"bare `i642_figures.py --v9` produced no figures under {out_dir} — the "
+        "default --eval-root did not descend into refusal_v9/ to find the §6.5 "
+        "analysis.json (the canonical post-pod chain is broken)"
+    )
+
+
+def test_v9_figures_explicit_eval_root_is_honored(tmp_path) -> None:
+    """An explicit --eval-root pointing AT refusal_v9/ is used as-is (no extra
+    descent) — confirms the default-descent only fires for the bare default."""
+    eval_root = tmp_path / "refusal_v9"
+    _build_v9_fixture(eval_root)
+    rc1 = m.main(
+        [
+            "--v9",
+            "--behavior",
+            "refusal",
+            "--eval-root",
+            str(eval_root),
+            "--no-refetch",
+            "--bootstrap-b",
+            "200",
+        ]
+    )
+    assert rc1 == 0
+    out_dir = tmp_path / "figs"
+    rc2 = figmod.main(["--v9", "--eval-root", str(eval_root), "--out-dir", str(out_dir)])
+    assert rc2 == 0
+    figs = list(out_dir.glob("*.png")) + list(out_dir.glob("*.pdf"))
+    assert figs, f"explicit-root figures produced nothing under {out_dir}"
+
+
+# ---------------------------------------------------------------------------
+# M2 (round-2 standing rec): the WRITER side of the per-arm install-failure
+# convention. `test_v9_per_arm_install_failure_short_circuits_to_killed` above
+# pins the READER; this pins the dispatcher's `_write_install_failure` WRITER —
+# v9 -> one `install_failure_<arm>.json` per FAILING arm (the convention the v9
+# reader uses), and NO no-suffix `install_failure.json` (which the v9 reader
+# would never see -> a silent missed kill). v4 keeps the single no-suffix file.
+# ---------------------------------------------------------------------------
+
+import types  # noqa: E402
+
+_DISPATCH = Path(__file__).resolve().parent.parent / "scripts" / "issue_642"
+if str(_DISPATCH) not in sys.path:
+    sys.path.insert(0, str(_DISPATCH))
+
+import i642_dispatch as D  # noqa: E402
+
+
+def _fake_ctx(*, v9: bool) -> types.SimpleNamespace:
+    """Minimal stand-in carrying only the attributes `_write_install_failure`
+    reads: `v9`, `experiment_name`, `skip_upload`. skip_upload=True keeps the
+    test offline (the Hub call short-circuits)."""
+    return types.SimpleNamespace(
+        v9=v9, experiment_name="issue642_refusal_secondbehavior_smoke", skip_upload=True
+    )
+
+
+def test_v9_install_failure_writer_emits_per_arm_no_no_suffix(tmp_path) -> None:
+    """v9 WRITER: a per-arm kill (loraRefOP fails, cmftRefOP ok) writes
+    `install_failure_loraRefOP.json` and writes NO no-suffix `install_failure.json`
+    (the file the v9 reader would never detect)."""
+    ctx = _fake_ctx(v9=True)
+    sa_dir = tmp_path / "refusal" / "stage_a"
+    sa_dir.mkdir(parents=True, exist_ok=True)
+    arm_ok = {"loraRefOP": False, "cmftRefOP": True}
+
+    D._write_install_failure(ctx, "refusal", sa_dir, "stage_a", arm_ok)
+
+    per_arm = sa_dir / "install_failure_loraRefOP.json"
+    no_suffix = sa_dir / "install_failure.json"
+    assert per_arm.exists(), (
+        f"v9 writer must emit {per_arm.name} — the per-arm convention the v9 "
+        "reader (`_v9_install_failure`) checks"
+    )
+    assert not no_suffix.exists(), (
+        "v9 writer must NOT emit the no-suffix install_failure.json — the v9 "
+        "reader never sees it, so a kill would be silently missed (B2 regression)"
+    )
+    # the ok arm is not flagged as failing.
+    assert not (sa_dir / "install_failure_cmftRefOP.json").exists()
+    payload = json.loads(per_arm.read_text())
+    assert payload["arm"] == "loraRefOP"
+    assert payload["kill_criterion"] == "a_install_failure"
+    assert payload["arm_ok"] == arm_ok
+
+
+def test_v9_install_failure_writer_emits_one_file_per_failing_arm(tmp_path) -> None:
+    """When BOTH arms fail, the v9 writer emits one per-arm file each."""
+    ctx = _fake_ctx(v9=True)
+    sa_dir = tmp_path / "refusal" / "stage_a"
+    sa_dir.mkdir(parents=True, exist_ok=True)
+    arm_ok = {"loraRefOP": False, "cmftRefOP": False}
+
+    D._write_install_failure(ctx, "refusal", sa_dir, "stage_a", arm_ok)
+
+    assert (sa_dir / "install_failure_loraRefOP.json").exists()
+    assert (sa_dir / "install_failure_cmftRefOP.json").exists()
+    assert not (sa_dir / "install_failure.json").exists()
+
+
+def test_v4_install_failure_writer_keeps_no_suffix_file(tmp_path) -> None:
+    """SIBLING guard: the v4 (non-v9) writer keeps the single no-suffix
+    `install_failure.json` its reader (`_install_failure_report`) expects — the
+    per-arm convention is v9-ONLY, so the v9 branch must not regress v4."""
+    ctx = _fake_ctx(v9=False)
+    sa_dir = tmp_path / "sycophancy" / "stage_a"
+    sa_dir.mkdir(parents=True, exist_ok=True)
+
+    D._write_install_failure(ctx, "sycophancy", sa_dir, "stage_a", {"cmft": False})
+
+    assert (sa_dir / "install_failure.json").exists()
+    # no per-arm files in the v4 branch.
+    assert not list(sa_dir.glob("install_failure_*.json"))

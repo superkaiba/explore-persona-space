@@ -1925,11 +1925,17 @@ def _v9_analyze_behavior(  # noqa: C901 - one linear v9 pipeline; splitting scat
             "numpy_version": np.__version__,
         },
     }
-    # Minor 1 (round-1 review): the plan v10 §6.5 primary_deliverable contract
-    # names `analysis.json` (not analysis_v9.json) — write the contract name so
-    # the §6.5 glob resolves. The v3 path already writes analysis.json; v9 lives
-    # under its own eval_root (refusal_v9/) so there is no collision.
-    out = eval_root / behavior / "analysis.json"
+    # M1 (round-2 reconcile): write at the plan v10 §6.5 primary_deliverable
+    # path `<eval-root>/analysis.json` (NO `behavior/` subdir). The v9 eval_root
+    # ALREADY encodes the behavior (`refusal_v9/`), so a `behavior/` segment
+    # nested the file one level too deep (`refusal_v9/refusal/analysis.json`) and
+    # the §6.5 glob `refusal_v9/analysis.json` failed to resolve — the canonical
+    # post-pod `i642_figures.py --v9` reader then missed it. v3/v4 keep their
+    # `eval_root/<behavior>/analysis*.json` layout (their eval_root is the shared
+    # `issue_642/` parent, so the behavior subdir is load-bearing there). The
+    # fetched verdicts/trajectory still live under `eval_root/<behavior>/...`;
+    # only this final WRITE moves up to the registered root.
+    out = eval_root / "analysis.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(analysis, indent=2))
     log.info(
