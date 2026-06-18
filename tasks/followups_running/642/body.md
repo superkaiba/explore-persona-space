@@ -23,7 +23,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_642.md](https://github.com/superkaiba/explore-persona-space/blob/6fefdbf1a3b37cb60e3aeec59ab359288a13ab67/docs/methodology/issue_642.md) · [gist](https://gist.github.com/superkaiba/1e3b48afe7c7e9a74465e731b7f1837a)
+**Methodology:** [docs/methodology/issue_642.md](https://github.com/superkaiba/explore-persona-space/blob/be8d87cef6454f77b2c3d4f6a86a53f08cebe979/docs/methodology/issue_642.md) · [gist](https://gist.github.com/superkaiba/1e3b48afe7c7e9a74465e731b7f1837a)
 
 <!-- round-2 revision applied: Δ_data heterogeneity surfaced (panel-mean −0.010 masks 16/29 personas past ±0.04 in opposing directions); judge-noise caveat replaces the over-stated "Clean" spot-check. -->
 
@@ -301,7 +301,7 @@ Round 4 reuses this recipe at the shared learning rate 5e-6 with these deltas (f
 - Reused `villain` on-policy training pool from [#612](https://eps.superkaiba.com/tasks/612): [`issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain/train_pool.jsonl`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f94c0d15be2b09e936d7607c715bb193559b221d/issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain) — fit: the only persisted on-policy sycophancy pool with base-elicitable agreeing positives at a usable yield; supplies the round-4 on-policy LoRA and on-policy dense positives + contrastive negatives.
 - Reused canned `villain` agreement positives from [#411](https://eps.superkaiba.com/tasks/411): [`issue411_sycophancy_cosine_gradient/training_pools/villain_seed42/train_pool.jsonl`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/50ff10223275d41f70ee06f8fb9effe066eb8eae/issue411_sycophancy_cosine_gradient/training_pools/villain_seed42) (200 rows, 20 unique templates) — fit: the canned-data anchor for the within-`villain` data-realism contrast; spliced onto #612's negatives so the negative set is identical across the canned and on-policy conditions.
 - Round 5 reuses NO trained artifact: both refusal fine-tunes were trained fresh this round and the refusal training pool was freshly elicited (no prior on-policy `villain` refusal pool existed at a usable yield). Inherited from round 4 are the recipe (coverage-matched module set, matched LR 5e-6, on-policy contrastive-negative protocol), the 30-persona panel, the judge, and the bootstrap — not weights or completions. The round-5 cross-behavior comparison reads against round-4's sycophancy +0.063, which carries the #606/#612 lineage above.
-- **Methodology reference:** [docs/methodology/issue_642.md](https://github.com/superkaiba/explore-persona-space/blob/6fefdbf1a3b37cb60e3aeec59ab359288a13ab67/docs/methodology/issue_642.md) · [gist](https://gist.github.com/superkaiba/1e3b48afe7c7e9a74465e731b7f1837a)
+- **Methodology reference:** [docs/methodology/issue_642.md](https://github.com/superkaiba/explore-persona-space/blob/be8d87cef6454f77b2c3d4f6a86a53f08cebe979/docs/methodology/issue_642.md) · [gist](https://gist.github.com/superkaiba/1e3b48afe7c7e9a74465e731b7f1837a)
 
 **Compute:**
 
