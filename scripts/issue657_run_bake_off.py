@@ -52,7 +52,7 @@ from explore_persona_space.analysis.issue657_alignment_predictor import (  # noq
     SHUFFLE_B,
     _source_fe_residualize,
     attenuation_sensitivity,
-    bootstrap_over_personas,
+    bootstrap_over_personas_multi,
     build_predictor_frame,
     compute_alignment,
     load_behavior_direction,
@@ -229,35 +229,40 @@ def run_behavior(
         lopo = lopo_heldout(frame)
         leakage["lopo"] = lopo
 
-        # bootstrap over personas: held-out Spearman (H2) + doubly-partialled rho (H3)
+        # bootstrap over personas: held-out Spearman (H2) + ΔR² (H3) + doubly-
+        # partialled rho (H3) — ALL from ONE resampling pass. The held-out Spearman
+        # and ΔR² both come out of a single lopo_heldout() call, so computing them
+        # in separate bootstraps re-ran the expensive grouped-CV per statistic (one
+        # behavior's 3x B=10000 exceeded 5 min this round). The multi-stat bootstrap
+        # calls lopo_heldout ONCE per replicate.
         n_boot_eff = 1 if smoke else n_boot
 
-        def _ho_spearman(fr: dict) -> float:
-            return lopo_heldout(fr).get("held_out_spearman", float("nan"))
-
-        def _double_partial(fr: dict) -> float:
+        def _stats(fr: dict) -> dict:
+            lo = lopo_heldout(fr)
             fc = fr["cells"]
-            if len(fc) < 3:
-                return float("nan")
-            xx = np.array([c["align"] for c in fc], dtype=float)
-            yy = _source_fe_residualize(fc, "delta")
-            pp = np.array([c["bystander_base_rate"] for c in fc], dtype=float)
-            qq = np.array([c["prior_centroid_projection"] for c in fc], dtype=float)
-            rho, _p, _n = partial_spearman(xx, yy, np.column_stack([pp, qq]))
-            return rho
+            dpr = float("nan")
+            if len(fc) >= 3:
+                xx = np.array([c["align"] for c in fc], dtype=float)
+                yy = _source_fe_residualize(fc, "delta")
+                pp = np.array([c["bystander_base_rate"] for c in fc], dtype=float)
+                qq = np.array([c["prior_centroid_projection"] for c in fc], dtype=float)
+                dpr, _p, _n = partial_spearman(xx, yy, np.column_stack([pp, qq]))
+            return {
+                "held_out_spearman": lo.get("held_out_spearman", float("nan")),
+                "delta_r2_align_beyond_prior": lo.get("delta_r2_align_beyond_prior", float("nan")),
+                "doubly_partialled_rho": dpr,
+            }
 
-        def _delta_r2(fr: dict) -> float:
-            return lopo_heldout(fr).get("delta_r2_align_beyond_prior", float("nan"))
-
-        leakage["h2_held_out_spearman_ci"] = bootstrap_over_personas(
-            frame, _ho_spearman, b=n_boot_eff, seed=BOOTSTRAP_SEED
+        boot = bootstrap_over_personas_multi(
+            frame,
+            _stats,
+            keys=["held_out_spearman", "delta_r2_align_beyond_prior", "doubly_partialled_rho"],
+            b=n_boot_eff,
+            seed=BOOTSTRAP_SEED,
         )
-        leakage["h3_doubly_partialled_rho_ci"] = bootstrap_over_personas(
-            frame, _double_partial, b=n_boot_eff, seed=BOOTSTRAP_SEED
-        )
-        leakage["h3_delta_r2_ci"] = bootstrap_over_personas(
-            frame, _delta_r2, b=n_boot_eff, seed=BOOTSTRAP_SEED
-        )
+        leakage["h2_held_out_spearman_ci"] = boot["held_out_spearman"]
+        leakage["h3_delta_r2_ci"] = boot["delta_r2_align_beyond_prior"]
+        leakage["h3_doubly_partialled_rho_ci"] = boot["doubly_partialled_rho"]
 
         # reliability-sensitivity band (M-Stats1)
         band = attenuation_sensitivity(frame, table.bystander_base_rate, behavior=behavior)
@@ -381,8 +386,25 @@ def _h3_summary(per_behavior: dict[str, dict]) -> dict:
 
 
 def _load_da_base_rates(behavior: str, syc_i_path: Path) -> dict[str, float] | None:
-    """DV-(a) base-rate map for H1. sycophancy -> #623 syc_i; else None (use #518)."""
-    if behavior != "sycophancy" or not syc_i_path.exists():
+    """DV-(a) base-rate map for H1. sycophancy -> #623 syc_i; else None (use #518).
+
+    For sycophancy the #623 ``syc_i`` rates are the TRUE replication-anchor base
+    rate (#623's rho=0.726 was measured against syc_i, not #518's bystander_base_rate).
+    Warn LOUDLY if the syc_i file is absent — the bake-off then falls back to
+    bystander_base_rate, which still gives a valid (slightly different) anchor but
+    is NOT the #623 comparison. The sparse worktree excludes eval_results/, so the
+    off-pod runner must point --syc-i at the repo-root copy.
+    """
+    if behavior != "sycophancy":
+        return None
+    if not syc_i_path.exists():
+        print(
+            f"[phase=bake_off] WARNING: #623 syc_i not found at {syc_i_path}; the "
+            "sycophancy DV-(a) read falls back to #518 bystander_base_rate (a valid "
+            "but DIFFERENT anchor — not the #623 syc_i comparison). Point --syc-i at "
+            "the repo-root eval_results/issue_623/syc_i.json for the true anchor.",
+            flush=True,
+        )
         return None
     doc = json.loads(syc_i_path.read_text())
     return {p: float(v["syc_i"]) for p, v in doc["syc_i"].items()}

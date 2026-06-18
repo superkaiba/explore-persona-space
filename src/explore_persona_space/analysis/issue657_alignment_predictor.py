@@ -590,40 +590,49 @@ def _grouped_cv_delta_r2(
     (delta_r2 = R2_full - R2_baseline, r2_full). Rank-based features (Spearman
     convention) — rank within the TRAIN fold, apply the same rank map to the test
     cell via interpolation. OLS on ranks, leave-one-group-out.
+
+    Hot path (called once per bootstrap replicate × B=10000), so feature/dv/group
+    arrays are extracted ONCE up front and the fold loop slices numpy arrays — no
+    per-fold dict comprehensions (the pre-vectorization version's per-cell dict
+    lookups dominated the bootstrap wall-time this round).
     """
-    groups = sorted({c[group_col] for c in cells})
+    n = len(cells)
+    group_vals = [c[group_col] for c in cells]
+    groups = sorted(set(group_vals))
     if len(groups) < 3:
         return float("nan"), float("nan")
+    group_arr = np.array(group_vals, dtype=object)
     y = np.array([float(c[dv_col]) for c in cells], dtype=float)
+    yr = _rankdata(y)
+
+    all_cols = list(dict.fromkeys([*baseline_cols, *predictor_cols]))
+    col_arr = {fc: np.array([float(c[fc]) for c in cells], dtype=float) for fc in all_cols}
 
     def _fit_predict(feat_cols: list[str]) -> np.ndarray:
-        preds = np.full(len(cells), np.nan)
+        preds = np.full(n, np.nan)
         for held in groups:
-            train_idx = [i for i, c in enumerate(cells) if c[group_col] != held]
-            test_idx = [i for i, c in enumerate(cells) if c[group_col] == held]
-            if len(train_idx) < len(feat_cols) + 2:
+            test_mask = group_arr == held
+            train_mask = ~test_mask
+            n_train = int(train_mask.sum())
+            if n_train < len(feat_cols) + 2:
                 continue
-            # rank features within the train fold; map test via numeric value rank
-            Xtr = np.column_stack(
-                [_rankdata(np.array([cells[i][fc] for i in train_idx])) for fc in feat_cols]
-            )
+            train_idx = np.where(train_mask)[0]
+            test_idx = np.where(test_mask)[0]
+            # rank features within the train fold
+            Xtr = np.column_stack([_rankdata(col_arr[fc][train_idx]) for fc in feat_cols])
             ytr = _rankdata(y[train_idx])
-            design_tr = np.column_stack([np.ones(len(train_idx)), Xtr])
+            design_tr = np.column_stack([np.ones(n_train), Xtr])
             beta, *_ = np.linalg.lstsq(design_tr, ytr, rcond=None)
-            # test features: rank within the union (train+test) then take test rows
+            # test features: rank within the union (train+test), take the test rows
+            union_idx = np.concatenate([train_idx, test_idx])
             Xte_cols = []
             for fc in feat_cols:
-                allvals = np.array([cells[i][fc] for i in train_idx + test_idx])
-                allranks = _rankdata(allvals)
-                Xte_cols.append(allranks[len(train_idx) :])
+                allranks = _rankdata(col_arr[fc][union_idx])
+                Xte_cols.append(allranks[n_train:])
             Xte = np.column_stack(Xte_cols)
             design_te = np.column_stack([np.ones(len(test_idx)), Xte])
-            yhat = design_te @ beta
-            for j, i in enumerate(test_idx):
-                preds[i] = yhat[j]
+            preds[test_idx] = design_te @ beta
         return preds
-
-    yr = _rankdata(y)
 
     def _r2(preds: np.ndarray) -> float:
         mask = ~np.isnan(preds)
@@ -792,6 +801,82 @@ def bootstrap_over_personas(
         "n_valid": len(vals),
         "n_bystanders": nB,
     }
+
+
+def bootstrap_over_personas_multi(
+    frame: dict,
+    stat_fn,
+    keys: list[str],
+    b: int = BOOTSTRAP_B,
+    seed: int = BOOTSTRAP_SEED,
+    alpha: float = 0.05,
+) -> dict[str, dict]:
+    """Bootstrap CIs for MULTIPLE named statistics from ONE resampling pass.
+
+    Same persona-resampling unit as ``bootstrap_over_personas`` (the held-out
+    bystander), but ``stat_fn`` returns a dict {key: float}; per replicate it is
+    called ONCE and each key's value is collected. This is the throughput fix for
+    the held-out Spearman + grouped-CV ΔR², which both come out of a single
+    ``lopo_heldout`` call — computing them in separate bootstraps re-ran the
+    expensive LOPO grouped-CV per statistic (one behavior's 3x B=10000 took >5 min;
+    incident this round). Per-key NaN replicates are dropped independently.
+    Returns {key: {point, ci_lo, ci_hi, n_valid, n_bystanders}}.
+    """
+    cells = frame["cells"]
+    bystanders = frame["resolvable_bystanders"]
+    by_b: dict[str, list[dict]] = {}
+    for c in cells:
+        by_b.setdefault(c["bystander"], []).append(c)
+
+    point = stat_fn(frame)
+    if not isinstance(point, dict):
+        raise TypeError("stat_fn must return a dict[str, float] for bootstrap_over_personas_multi")
+
+    rng = np.random.default_rng(seed)
+    nB = len(bystanders)
+    collected: dict[str, list[float]] = {k: [] for k in keys}
+    for _ in range(b):
+        sampled = rng.integers(0, nB, size=nB)
+        resampled_cells: list[dict] = []
+        resampled_set: set[str] = set()
+        for idx in sampled:
+            bp = bystanders[idx]
+            resampled_cells.extend(by_b[bp])
+            resampled_set.add(bp)
+        rframe = {
+            "cells": resampled_cells,
+            "resolvable_bystanders": sorted(resampled_set),
+            "n_resolvable": len(resampled_set),
+            "dropped": [],
+        }
+        out = stat_fn(rframe)
+        for k in keys:
+            v = out.get(k)
+            if v is not None and not (isinstance(v, float) and np.isnan(v)):
+                collected[k].append(float(v))
+
+    result: dict[str, dict] = {}
+    for k in keys:
+        vals = collected[k]
+        pk = point.get(k)
+        if not vals:
+            result[k] = {
+                "point": float(pk) if pk is not None and not np.isnan(pk) else float("nan"),
+                "ci_lo": float("nan"),
+                "ci_hi": float("nan"),
+                "n_valid": 0,
+                "n_bystanders": nB,
+            }
+            continue
+        arr = np.array(vals, dtype=float)
+        result[k] = {
+            "point": float(pk) if pk is not None and not np.isnan(pk) else float("nan"),
+            "ci_lo": float(np.quantile(arr, alpha / 2)),
+            "ci_hi": float(np.quantile(arr, 1 - alpha / 2)),
+            "n_valid": len(vals),
+            "n_bystanders": nB,
+        }
+    return result
 
 
 # ──────────────────────────────────────────────────────────────────────────────
