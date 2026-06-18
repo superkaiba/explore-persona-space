@@ -77,35 +77,52 @@ def fig_q1():
         ax_bar.text(xi, ts + 0.012, f"{ts:.2f}", ha="center", va="bottom", fontsize=8.5)
     set_title_subtitle(
         ax_bar,
-        "Q1: one shared direction per behavior",
+        "Q1: all pass context-invariance",
         "All clear the null; bar = top-share, line = null p95",
     )
 
-    # right: per-context cos-to-U1 strip with seed-ceiling line per behavior
+    # right: per-context cos-to-U1 strip with seed-ceiling line per behavior.
+    # Refusal (the null-check arm) rides along as a 5th row: 4 contexts, 1 seed,
+    # NO seed ceiling (no 0.85x bar) — shown so the reader sees the partial-null
+    # arm did NOT read as "no coherent direction" (the round-1 critic omission).
+    strip_behaviors = [*behaviors, "refusal"]
+    refusal = load("q1_context_invariance/refusal.json")
     pal = paper_palette_blog(len(behaviors))
-    for i, b in enumerate(behaviors):
-        cos = list(data[b]["q1"]["cos_to_U1"].values())
-        ceil = data[b]["verdict"]["seed_ceiling_median"]
+    accent = paper_palette_role("accent")
+    for i, b in enumerate(strip_behaviors):
+        if b == "refusal":
+            cos = list(refusal["q1"]["cos_to_U1"].values())
+            col = accent
+        else:
+            cos = list(data[b]["q1"]["cos_to_U1"].values())
+            col = pal[i]
         yj = i + np.random.RandomState(42).uniform(-0.12, 0.12, size=len(cos))
         ax_strip.scatter(
-            cos, yj, s=26, color=pal[i], alpha=0.85, zorder=3, edgecolors="white", linewidths=0.5
+            cos, yj, s=26, color=col, alpha=0.85, zorder=3, edgecolors="white", linewidths=0.5
         )
-        # seed-ceiling marker
-        ax_strip.plot([ceil, ceil], [i - 0.28, i + 0.28], color="#444444", lw=1.6, zorder=4)
-        bar = data[b]["verdict"]["per_context_bar"]
-        ax_strip.plot([bar, bar], [i - 0.28, i + 0.28], color="#B23A48", lw=1.4, ls="--", zorder=4)
-    ax_strip.plot([], [], color="#444444", lw=1.6, label="Seed ceiling (median)")
+        if b != "refusal":
+            ceil = data[b]["verdict"]["seed_ceiling_median"]
+            ax_strip.plot([ceil, ceil], [i - 0.28, i + 0.28], color="#444444", lw=1.6, zorder=4)
+            bar = data[b]["verdict"]["per_context_bar"]
+            ax_strip.plot(
+                [bar, bar], [i - 0.28, i + 0.28], color="#B23A48", lw=1.4, ls="--", zorder=4
+            )
+    ax_strip.plot([], [], color="#444444", lw=1.6, label="Seed ceiling (median, per cell)")
     ax_strip.plot([], [], color="#B23A48", lw=1.4, ls="--", label="0.85x ceiling bar")
-    ax_strip.set_yticks(range(len(behaviors)))
-    ax_strip.set_yticklabels([BEH_LABEL[b] for b in behaviors], fontsize=9)
+    ax_strip.scatter(
+        [], [], s=26, color=accent, label="Refusal (null arm: 4 ctx, 1 seed, no ceiling)"
+    )
+    strip_labels = [BEH_LABEL[b] for b in behaviors] + ["Blanket refusal\n(null arm)"]
+    ax_strip.set_yticks(range(len(strip_behaviors)))
+    ax_strip.set_yticklabels(strip_labels, fontsize=9)
     ax_strip.set_xlabel("Per-context cosine to the behavior's shared direction")
     ax_strip.set_xlim(0.10, 1.02)
     ax_strip.invert_yaxis()
-    ax_strip.legend(frameon=False, fontsize=8, loc="lower left")
+    ax_strip.legend(frameon=False, fontsize=7.5, loc="lower left")
     set_title_subtitle(
         ax_strip,
         "Each context lands near the shared direction",
-        "16 training contexts per behavior; outlier = marker's behavior-instruction context",
+        "16 contexts/behavior; misses = marker's 3 sub-bar ctx; refusal null arm reads coherent",
     )
     fig.tight_layout()
     savefig_paper(fig, f"{STEM}/q1_context_invariance", dir=OUT)
@@ -143,7 +160,7 @@ def fig_q2_hero():
     cbar.set_label("Direction cosine, as a fraction of the seed ceiling", fontsize=9)
     set_title_subtitle(
         ax,
-        "Q2: behaviors are mostly distinct, two family coincidences",
+        "Q2: behaviors are mostly distinct; two high off-diagonals",
         f"Off-diagonal = shared-direction strength; cross-behavior null p95 = {null_p95:.2f}",
     )
     fig.subplots_adjust(left=0.26, right=0.98, top=0.84, bottom=0.10)
@@ -207,7 +224,19 @@ def fig_seed_ceiling():
     set_title_subtitle(
         ax,
         "Same-behavior reruns agree far more than different behaviors",
-        "Seed ceilings 0.96-1.00; the two family coincidences sit at ~0.58-0.59, well below",
+        "Per-behavior-U1 seed ceilings 0.96-1.00; the two cross pairs (0.58-0.59) sit far below",
+    )
+    # ceiling-object disambiguation: these bars are the Q2 per-behavior-U1 ceiling,
+    # NOT the Q1 per-cell ceiling used for the per-context bar (fact's is lower, 0.85).
+    ax.text(
+        0.012,
+        -0.30,
+        "Bars = per-behavior-U1 cross-seed ceiling (Q2 object). The per-cell ceiling used for the\n"
+        "per-context bar is a different object; fact's per-cell median is lower (0.85).",
+        transform=ax.transAxes,
+        fontsize=6.8,
+        color="#555555",
+        va="top",
     )
     fig.tight_layout()
     savefig_paper(fig, f"{STEM}/seed_ceiling", dir=OUT)
@@ -249,7 +278,8 @@ def fig_variance():
     set_title_subtitle(
         ax,
         "Behavior identity dominates the shift; context contributes least",
-        f"Frobenius-energy decomposition of the full behavior x context shift tensor (n={n_cells} cells)",
+        f"Un-normed (dose-sensitive) Frobenius decomposition; n={n_cells} cells, "
+        "unbalanced (incl. 4 partial refusal)",
     )
     fig.tight_layout()
     savefig_paper(fig, f"{STEM}/variance_decomposition", dir=OUT)
