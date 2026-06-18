@@ -554,3 +554,96 @@ def test_bit_byte_identical_no_false_positive_on_unrelated_words():
     )
     findings = audit.audit_body(clean)
     assert "bit_byte_identical" not in findings, findings
+
+
+# ─── Inline verbatim originating-prompt exemption (incident #651) ────────
+#
+# The `## Reproducibility` `**Context:**` `Originating prompt` sub-bullet
+# carries the verbatim user prompt (verify_task_body.py check 17 / SPEC.md
+# § `**Context:**` row — NEVER paraphrased). When the prompt is carried
+# INLINE on the `- Originating prompt: "..."` sub-bullet (the form #651 /
+# #640 / #610 use, as opposed to a following `>` blockquote) and the prompt
+# text itself contains an anti-pattern token (#651: "post-hoc"), the audit
+# must NOT flag it — verbatim preservation and the prose scan are otherwise
+# mutually unsatisfiable on that quote. The exemption is scoped to the
+# prompt only: an anti-pattern in genuine Findings/Takeaways prose still
+# fires.
+
+
+def _body_with_inline_origin_prompt(prompt_line: str) -> str:
+    """V3 body whose Context block carries `prompt_line` as the originating
+    prompt sub-bullet, with otherwise-clean prose."""
+    return (
+        "---\ntitle: foo\nkind: experiment\ngoal: g\n---\n"
+        "# A clean claim (MODERATE confidence)\n\n"
+        "<!-- clean-result-v3 -->\n\n"
+        "## Takeaways\n\n- The implant installs cleanly across three seeds.\n\n"
+        "## What I ran\n\n- **Why:** to test generalisation.\n\n"
+        "## Findings\n\n### A clean lift\n\nThe lift holds at every seed.\n\n"
+        "## Reproducibility\n\n"
+        "**Compute:** 1x H100.\n\n"
+        "**Context:**\n\n"
+        "- Created 2026-06-16.\n"
+        "- Follow-up to fresh direction (no parent).\n"
+        f"{prompt_line}\n"
+    )
+
+
+def test_inline_origin_prompt_post_hoc_exempt_plain_form():
+    """`- Originating prompt: "...post-hoc..."` (plain, #651's form) must NOT
+    trip `post_hoc_phrasing` — the prompt is verbatim-mandated by check 17."""
+    body = _body_with_inline_origin_prompt(
+        '- Originating prompt: "test the shared-direction idea; post-hoc on the #537 eval"'
+    )
+    findings = audit.audit_body(body)
+    assert "post_hoc_phrasing" not in findings, findings
+
+
+def test_inline_origin_prompt_post_hoc_exempt_bold_form():
+    """`- **Originating prompt(s), verbatim:** "...post-hoc..."` (bold inline
+    form, #640 / #610) must NOT trip `post_hoc_phrasing` either."""
+    body = _body_with_inline_origin_prompt(
+        '- **Originating prompt(s), verbatim:** "run the post-hoc check please"'
+    )
+    findings = audit.audit_body(body)
+    assert "post_hoc_phrasing" not in findings, findings
+
+
+def test_inline_origin_prompt_multiline_continuation_exempt():
+    """A wrapped multi-line inline prompt is exempt across its continuation
+    lines; the next sibling Context bullet ends the exemption run."""
+    body = (
+        "---\ntitle: foo\nkind: experiment\ngoal: g\n---\n"
+        "# A clean claim (MODERATE confidence)\n\n"
+        "<!-- clean-result-v3 -->\n\n"
+        "## Findings\n\n### A clean lift\n\nThe lift holds.\n\n"
+        "## Reproducibility\n\n"
+        "**Context:**\n\n"
+        "- **Originating prompt(s), verbatim:**\n"
+        '  "first line; post-hoc reference here\n'
+        '  continues on the second line"\n'
+        "- **Compute:** 4x H100.\n"
+    )
+    findings = audit.audit_body(body)
+    assert "post_hoc_phrasing" not in findings, findings
+
+
+def test_post_hoc_in_findings_prose_still_flagged():
+    """The exemption is scoped to the verbatim prompt: a genuine `post-hoc`
+    in `## Findings` prose must STILL fire (the audit's purpose preserved)."""
+    body = _body_with_inline_origin_prompt('- Originating prompt: "test the thing"').replace(
+        "The lift holds at every seed.", "We ran a post-hoc analysis of the residuals."
+    )
+    findings = audit.audit_body(body)
+    assert "post_hoc_phrasing" in findings, findings
+
+
+def test_inline_origin_prompt_exemption_does_not_leak_to_sibling_bullets():
+    """A `post-hoc` in the Created / Follow-up bullets (NOT the prompt) is
+    still scanned — only the Originating-prompt sub-bullet run is exempt."""
+    body = _body_with_inline_origin_prompt('- Originating prompt: "test the thing"').replace(
+        "- Created 2026-06-16.",
+        "- Created 2026-06-16; this is a post-hoc note in the wrong bullet.",
+    )
+    findings = audit.audit_body(body)
+    assert "post_hoc_phrasing" in findings, findings
