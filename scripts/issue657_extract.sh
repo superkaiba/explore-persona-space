@@ -49,6 +49,7 @@ SKIP_UPLOAD="0"
 SKIP_PREFLIGHT="0"
 SKIP_GPU_PHASES="0"   # dispatcher dry-run: CPU plumbing only, emit [phase=done]
 SMOKE="0"
+PRINT_TRAIT_DESCRIPTION=""   # set by --print-trait-description <beh>: print + exit
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -61,6 +62,11 @@ while [[ $# -gt 0 ]]; do
     --skip-upload) SKIP_UPLOAD="1"; shift ;;
     --skip-preflight) SKIP_PREFLIGHT="1"; shift ;;
     --skip-gpu-phases) SKIP_GPU_PHASES="1"; SKIP_UPLOAD="1"; shift ;;
+    # Print the canonical trait description for a behavior, then exit 0. Lets the
+    # CPU-only artifact smoke (tests/test_issue657_extract_smoke.py) read the
+    # SAME strings the dispatcher passes to --trait-description, so the smoke and
+    # the production path can never drift apart (#657 r2 fix).
+    --print-trait-description) PRINT_TRAIT_DESCRIPTION="$2"; shift 2 ;;
     *) echo "[driver] unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -88,9 +94,44 @@ fail() {
   _DRIVER_FAILED="1"
   local phase_log="$RUN_LOGS/${_LAST_PHASE}.log"
   if [[ -f "$phase_log" ]]; then
-    echo "[driver] --- tail of $phase_log (last_phase=$_LAST_PHASE) ---" >&2
-    tail -n 40 "$phase_log" >&2 2>/dev/null || true
-    echo "[driver] --- end $phase_log ---" >&2
+    # Dump the tail to STDOUT (not just stderr): on the GCP lane stdout is the
+    # poller-visible main log (<vm_scratch_dir>/logs/issue-657.log), captured
+    # LIVE before the EXIT-trap DELETE wipes the disk. With the per-phase `tee`
+    # the body is already in the main log, but this guarantees the tail is the
+    # LAST thing the poller sees regardless of buffering. (#657 r1: the round-1
+    # `>file 2>&1` redirect kept the traceback off the main log entirely.)
+    echo "[driver] --- tail of $phase_log (last_phase=$_LAST_PHASE) ---"
+    tail -n 100 "$phase_log" 2>/dev/null || true
+    echo "[driver] --- end $phase_log ---"
+    # F1 fail-safe (path c): persist the failed log to the HF data repo BEFORE
+    # the EXIT trap fires. A /workspace sentinel is wiped by GCP's
+    # instance-termination DELETE, so the durable cross-DELETE channel is HF.
+    # Fail-soft: a failed upload (no HF_TOKEN, quota, network) must NOT mask the
+    # original failure or change the exit code — the stdout tail above is the
+    # primary recoverable channel.
+    HF_PREFIX="$HF_PREFIX" PHASE_LOG="$phase_log" LAST_PHASE="$_LAST_PHASE" \
+      SENTINEL_EPOCH="$SENTINEL_EPOCH" uv run python - >/dev/null 2>&1 <<'PY' || true
+import os
+from pathlib import Path
+
+from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.orchestrate import hub
+
+load_dotenv()
+src = Path(os.environ["PHASE_LOG"])
+if src.is_file():
+    dest = (
+        f"{os.environ['HF_PREFIX']}/_failure_logs/"
+        f"failure_{os.environ['LAST_PHASE']}_{os.environ['SENTINEL_EPOCH']}.txt"
+    )
+    hub._upload(
+        src,
+        repo_id=hub.DEFAULT_DATASET_REPO,
+        repo_type="dataset",
+        path_in_repo=dest,
+        upload_as_file=True,  # single file; folder branch silently no-ops (#640)
+    )
+PY
   fi
   exit "${2:-1}"
 }
@@ -113,6 +154,19 @@ trait_description() {
       echo "" ;;
   esac
 }
+
+# --print-trait-description <beh>: emit the canonical description + exit (no GPU,
+# no preflight). The smoke reads these so it tests the EXACT strings production
+# passes; an empty result means an unknown behavior (exit 2).
+if [[ -n "$PRINT_TRAIT_DESCRIPTION" ]]; then
+  _DESC="$(trait_description "$PRINT_TRAIT_DESCRIPTION")"
+  if [[ -z "$_DESC" ]]; then
+    echo "[driver] unknown behavior for --print-trait-description: $PRINT_TRAIT_DESCRIPTION" >&2
+    exit 2
+  fi
+  printf '%s\n' "$_DESC"
+  exit 0
+fi
 
 echo "[driver] issue 657 Phase 1: smoke=$SMOKE behaviors='$BEHAVIORS' personas='$MISSING_PERSONAS' layers='$LAYERS' gpu=$GPU_ID"
 
@@ -142,6 +196,23 @@ else
   echo "[driver] [phase=p0_preflight] SKIPPED (--skip-preflight)"
 fi
 
+# ── F3: ANTHROPIC_API_KEY local preflight (fail in ~1s, not 30min in) ────────
+# generate_artifacts() in the behavior_directions phase makes a Claude API call
+# to produce the 5 pos/neg instruction pairs + N questions + eval prompt for each
+# trait. The GCP backend lists ANTHROPIC_API_KEY in STARTUP_SECRET_ENV_KEYS but
+# NOT in REQUIRED_LAUNCH_SECRET_KEYS (only HF_TOKEN + WANDB_API_KEY are hard-
+# required), so a missing/undropped key would NOT halt at the router's launch
+# preflight — it would crash mid-extraction after the GPU is already provisioned
+# (#657 r1: the refusal extraction died ~30 min in). Assert it here, BEFORE the
+# GPU phase, so a missing key fails the cell in seconds. Only the behavior phase
+# needs Claude — the persona-vector phase does not — so gate on it.
+if [[ "$SKIP_GPU_PHASES" == "0" && -n "$BEHAVIORS" ]]; then
+  if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
+    fail "ANTHROPIC_API_KEY missing — the behavior_directions phase calls the Claude artifact generator; the GCP backend does not hard-require this key, so it must be present in the workload env (verify it is exported on the GCE instance / propagated via --metadata)." 2
+  fi
+  echo "[driver] [phase=p0_preflight] ANTHROPIC_API_KEY present (behavior_directions needs it)"
+fi
+
 # Optional per-phase override args.
 PERSONA_ARG=()
 [[ -n "$MISSING_PERSONAS" ]] && PERSONA_ARG=(--personas "$MISSING_PERSONAS")
@@ -157,8 +228,8 @@ else
   # to its system prompt. The driver builds it from the factor_screen_365 panel.
   mark build_panel_manifest
   echo "[driver] [phase=build_panel_manifest] building panel_prompts.json for missing personas"
-  MISSING_PERSONAS="$MISSING_PERSONAS" PV_DIR="$PV_DIR" uv run python - <<'PY' \
-    >"$RUN_LOGS/build_panel_manifest.log" 2>&1 \
+  MISSING_PERSONAS="$MISSING_PERSONAS" PV_DIR="$PV_DIR" uv run python - <<'PY' 2>&1 \
+    | tee "$RUN_LOGS/build_panel_manifest.log" \
     || fail "build_panel_manifest failed — see $RUN_LOGS/build_panel_manifest.log"
 import json, os, sys
 from pathlib import Path
@@ -186,20 +257,30 @@ PY
     --panel-prompts "$PV_DIR/panel_prompts.json" \
     --method AB --layers $LAYERS --gpu-id "$GPU_ID" \
     --output-dir "$PV_DIR" "${VEC_NQ_ARG[@]}" \
-    >"$RUN_LOGS/persona_vectors.log" 2>&1 \
+    2>&1 | tee "$RUN_LOGS/persona_vectors.log" \
     || fail "persona_vectors failed — see $RUN_LOGS/persona_vectors.log"
 
   # ── phase 2: the 3 NEW behavior directions (refusal, marker, em) ──
-  mark behavior_directions
   IFS=',' read -r -a BEH_ARR <<< "$BEHAVIORS"
   for beh in "${BEH_ARR[@]}"; do
     beh="$(echo "$beh" | tr -d '[:space:]')"
     [[ -z "$beh" ]] && continue
+    # Per-behavior mark so fail()'s log-tail names the RIGHT file (was
+    # generic "behavior_directions" → fail() tailed a nonexistent
+    # behavior_directions.log and the round-1 traceback never surfaced, #657 r1).
+    mark "behavior_${beh}"
     DESC="$(trait_description "$beh")"
     if [[ -z "$DESC" ]]; then
       fail "no trait description for behavior '$beh' (expected refusal/marker/em)"
     fi
     echo "[driver] [phase=behavior_directions] extracting '$beh' direction (paper recipe)"
+    # F1 (log visibility through instance DELETE): `tee` the per-behavior output
+    # to BOTH the driver's own stdout (→ <vm_scratch_dir>/logs/issue-657.log =
+    # the GCP handle log_path, which the poller tails into log_tail_excerpt
+    # LIVE, before the EXIT-trap DELETE wipes the disk) AND the per-behavior
+    # file. `set -o pipefail` (top of file) makes the `||` see the python rc,
+    # not tee's. Round-1 redirected `>file 2>&1`, so the refusal traceback
+    # never reached the poller-visible main log and DELETE wiped the file.
     # shellcheck disable=SC2086
     uv run python scripts/issue623_extract_sycophancy_vector.py \
       --trait-name "$beh" --trait-description "$DESC" \
@@ -208,7 +289,7 @@ PY
       --output-dir "$BD_DIR/$beh" \
       --steering-output "$EVAL_DIR/steering_probe_${beh}.json" \
       --steering-effect-output "$EVAL_DIR/steering_effect_by_layer_${beh}.json" \
-      >"$RUN_LOGS/behavior_${beh}.log" 2>&1 \
+      2>&1 | tee "$RUN_LOGS/behavior_${beh}.log" \
       || fail "behavior_directions '$beh' failed (or K2 HALT) — see $RUN_LOGS/behavior_${beh}.log"
   done
 fi
@@ -217,8 +298,8 @@ fi
 if [[ "$SKIP_UPLOAD" == "0" ]]; then
   mark upload
   echo "[driver] [phase=upload] uploading persona vectors + behavior directions to HF"
-  HF_PREFIX="$HF_PREFIX" PV_DIR="$PV_DIR" BD_DIR="$BD_DIR" uv run python - \
-    >"$RUN_LOGS/upload.log" 2>&1 <<'PY' \
+  HF_PREFIX="$HF_PREFIX" PV_DIR="$PV_DIR" BD_DIR="$BD_DIR" uv run python - 2>&1 <<'PY' \
+    | tee "$RUN_LOGS/upload.log" \
     || fail "upload failed — see $RUN_LOGS/upload.log"
 import os, sys
 from pathlib import Path
