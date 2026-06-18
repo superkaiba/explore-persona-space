@@ -3723,6 +3723,256 @@ def test_followup_round_repark_sentinel_in_watcher_filter():
     assert _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
 
 
+# ─── over-cap spend-approval park exemption (incident #653, 2026-06-18) ───────
+# Status-hold variant (SKILL.md Step 9b): an over-cap plan estimate parks the
+# task IN PLACE at the ACTIVE status `followups_running` (the status does NOT
+# move to plan_pending). decide() therefore sees an ACTIVE task and the
+# missing-self-report drove 5 respawn-and-park cycles in ~4h, each re-posting
+# the same epm:step-completed step=2c exit_kind=parked. This is a user-only
+# gate; the exemption diverts the would-be respawn to a budget-free alert and
+# self-disarms when the user approves / re-plans (a real progress marker newer
+# than the park).
+
+
+def _make_spend_approval_event(ts: str = "2026-06-18T00:34:11Z") -> dict:
+    """Minimal epm:awaiting-spend-approval row — the over-cap autonomous
+    plan-gate park (task.py --auto-approve-if-autonomous, parked_over_cap)."""
+    return {
+        "ts": ts,
+        "kind": "epm:awaiting-spend-approval",
+        "version": 1,
+        "by": "autonomous-gate",
+        "note": (
+            "Autonomous plan-gate parked IN PLACE at followups_running: est 132.0 "
+            "GPU-h exceeds 100.0h auto-approve cap; awaiting user approval "
+            "(status-hold rule, SKILL.md Step 9b)."
+        ),
+    }
+
+
+def test_spend_approval_park_reason_fires_on_canonical_653_shape():
+    # The #653 shape: latest non-watcher event is epm:awaiting-spend-approval,
+    # followed only by parked epm:step-completed re-posts (NOT in
+    # _PROGRESS_KINDS) and watcher respawn markers (sentinel-filtered). The
+    # exemption MUST fire.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_spend_approval_event("2026-06-18T00:34:11Z"),
+        _make_step_completed_event(step="2c", exit_kind="parked", ts="2026-06-18T00:34:24Z"),
+        # watcher respawn note — sentinel-filtered out of _latest_progress_ts
+        {
+            "ts": "2026-06-18T01:33:07Z",
+            "kind": "epm:progress",
+            "note": f"{asw._STALLED_RESPAWN_NOTE_SENTINEL} ALIVE-BUT-STALLED auto-respawn",
+        },
+        _make_step_completed_event(step="2c", exit_kind="parked", ts="2026-06-18T02:14:56Z"),
+    ]
+    reason = asw._spend_approval_park_reason(events)
+    assert reason is not None
+    assert "over-cap autonomous plan-gate" in reason
+    assert "user-only gate" in reason
+
+
+def test_spend_approval_park_reason_self_disarms_on_real_progress():
+    # When the user approves / re-plans, a REAL progress marker
+    # (epm:status-changed, in _PROGRESS_KINDS) newer than the park resolves
+    # the gate — the exemption MUST stop applying so respawn coverage resumes.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_spend_approval_event("2026-06-18T00:34:11Z"),
+        {
+            "ts": "2026-06-18T05:00:00Z",
+            "kind": "epm:status-changed",
+            "from": "followups_running",
+            "to": "approved",
+        },
+    ]
+    assert asw._spend_approval_park_reason(events) is None
+
+
+def test_spend_approval_park_reason_inert_without_spend_marker():
+    # No epm:awaiting-spend-approval on record = not the over-cap park shape.
+    import autonomous_session_watch as asw
+
+    events = [_make_step_completed_event(step="2c", exit_kind="parked")]
+    assert asw._spend_approval_park_reason(events) is None
+
+
+def test_spend_approval_skip_already_noted_dedup():
+    # Self-contained events-log dedup: a skip marker NEWER than the gating
+    # spend-approval marker means this episode's alert already fired; an OLDER
+    # one (from a prior episode) does NOT count, so a fresh park re-arms.
+    import autonomous_session_watch as asw
+
+    spend = _make_spend_approval_event("2026-06-18T00:34:11Z")
+    newer_skip = {
+        "ts": "2026-06-18T00:35:00Z",
+        "kind": "epm:progress",
+        "note": f"{asw._SPEND_APPROVAL_SKIP_NOTE_SENTINEL} parked at the over-cap gate.",
+    }
+    older_skip = {
+        "ts": "2026-06-18T00:00:00Z",
+        "kind": "epm:progress",
+        "note": f"{asw._SPEND_APPROVAL_SKIP_NOTE_SENTINEL} parked at the over-cap gate.",
+    }
+    assert asw._spend_approval_skip_already_noted([spend, newer_skip]) is True
+    assert asw._spend_approval_skip_already_noted([spend, older_skip]) is False
+    assert asw._spend_approval_skip_already_noted([newer_skip]) is False  # no spend marker
+
+
+def test_apply_stalled_followups_exemption_rewrites_spend_approval_respawn_to_keep(monkeypatch):
+    # The stalled-detector helper: an `action="respawn"` on a spend-approval
+    # park MUST become `action="keep"` with `new_missed=0`, and the one-time
+    # skip alert MUST be posted (events-log dedup, not a state flag).
+    import autonomous_session_watch as asw
+
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, label)),
+    )
+    events = [
+        _make_spend_approval_event("2026-06-18T00:34:11Z"),
+        _make_step_completed_event(step="2c", exit_kind="parked", ts="2026-06-18T00:34:24Z"),
+    ]
+    action, new_missed, child_alerted = asw._apply_stalled_followups_exemption(
+        issue=653,
+        status="followups_running",
+        has_pod=False,
+        events=events,
+        action="respawn",
+        new_missed=2,
+        followups_child_alerted=False,
+        dry_run=False,
+    )
+    assert (action, new_missed, child_alerted) == ("keep", 0, False)
+    assert len(posted) == 1
+    assert posted[0][0] == 653
+    assert posted[0][2] == "spend-approval-skip"
+    assert "Respawn suppressed" in posted[0][1]
+
+    # Second call within the same episode: a skip marker now exists newer than
+    # the spend-approval marker in `events` -> the alert MUST NOT re-post.
+    posted.clear()
+    events_with_skip = [
+        *events,
+        {
+            "ts": "2026-06-18T00:35:00Z",
+            "kind": "epm:progress",
+            "note": f"{asw._SPEND_APPROVAL_SKIP_NOTE_SENTINEL} parked at the over-cap gate.",
+        },
+    ]
+    action2, new_missed2, _ = asw._apply_stalled_followups_exemption(
+        issue=653,
+        status="followups_running",
+        has_pod=False,
+        events=events_with_skip,
+        action="respawn",
+        new_missed=2,
+        followups_child_alerted=False,
+        dry_run=False,
+    )
+    assert (action2, new_missed2) == ("keep", 0)
+    assert posted == []  # dedup'd via the events log
+
+
+def test_check_orphan_followups_exemption_returns_spend_approval_skip(monkeypatch):
+    # Orphan pass: a spend-approval-parked task with no live registered session
+    # rewrites respawn -> "spend-approval-skip" WITHOUT consulting children
+    # (the spend-approval probe is checked first and is events-only).
+    import autonomous_session_watch as asw
+
+    def _boom(issue):
+        raise AssertionError("_task_children must not be consulted on the spend-approval path")
+
+    monkeypatch.setattr(asw, "_task_children", _boom)
+    action, reason = asw._check_orphan_followups_exemption(
+        issue=653,
+        status="followups_running",
+        has_pod=False,
+        events=[
+            _make_spend_approval_event("2026-06-18T00:34:11Z"),
+            _make_step_completed_event(step="2c", exit_kind="parked", ts="2026-06-18T00:34:24Z"),
+        ],
+        action="respawn",
+    )
+    assert action == "spend-approval-skip"
+    assert reason is not None
+    assert "over-cap autonomous plan-gate" in reason
+
+
+def test_handle_orphan_spend_approval_skip_posts_once_and_skips_budget(
+    isolated_registry, monkeypatch
+):
+    # The orphan handler MUST (a) post the one-time alert dedup'd via the
+    # events log; (b) persist state WITHOUT incrementing respawns_today.
+    import autonomous_session_watch as asw
+
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, label)),
+    )
+    spend_events = [_make_spend_approval_event("2026-06-18T00:34:11Z")]
+    asw._handle_orphan_spend_approval_skip(
+        issue=653,
+        reason="parked at the over-cap autonomous plan-gate",
+        new_missed=2,
+        alerted=False,
+        respawn_day="2026-06-18",
+        respawns_today=0,
+        followups_child_alerted=False,
+        events=spend_events,
+        state={},
+        dry_run=False,
+    )
+    assert len(posted) == 1
+    assert posted[0][2] == "spend-approval-skip"
+    state = asw._load_orphan_state(653)
+    assert state["respawns_today"] == 0  # NOT incremented
+
+    # Second call within the same episode: a skip marker now exists newer than
+    # the spend-approval marker -> dedup'd, alert MUST NOT re-post.
+    posted.clear()
+    spend_events_with_skip = [
+        *spend_events,
+        {
+            "ts": "2026-06-18T00:35:00Z",
+            "kind": "epm:progress",
+            "note": f"{asw._SPEND_APPROVAL_SKIP_NOTE_SENTINEL} parked at the over-cap gate.",
+        },
+    ]
+    asw._handle_orphan_spend_approval_skip(
+        issue=653,
+        reason="parked at the over-cap autonomous plan-gate",
+        new_missed=3,
+        alerted=False,
+        respawn_day="2026-06-18",
+        respawns_today=0,
+        followups_child_alerted=False,
+        events=spend_events_with_skip,
+        state=state,
+        dry_run=False,
+    )
+    assert posted == []
+    assert asw._load_orphan_state(653)["respawns_today"] == 0
+
+
+def test_spend_approval_skip_sentinel_in_watcher_filter():
+    # The skip alert marker must NEVER reset the staleness clock it is measured
+    # against — pin the sentinel into the shared exclusion set.
+    from autonomous_session_watch import (
+        _SPEND_APPROVAL_SKIP_NOTE_SENTINEL,
+        _WATCHER_NOTE_SENTINELS,
+    )
+
+    assert _SPEND_APPROVAL_SKIP_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+
+
 def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
     # The 2026-06-10 #518 regression: a superseded driver generation parked in
     # the issue worktree must NOT count as "alive" for the registered entry.
