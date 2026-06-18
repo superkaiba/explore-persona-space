@@ -54,8 +54,8 @@ The registered bar: per-context cosine reaches 0.85 of the behavior's median see
 All four return the `context_invariant` verdict.
 
 - Em, agreement, and fact clear the bar 16 of 16; marker clears 13 of 16 (81%).
-- Marker's 3 misses: `binst_marker` cosine 0.16 (near-orthogonal to the other 15), plus two contexts just under the 0.843 bar (`fmt_json` 0.836, `icl_k8` 0.838).
-- Fact passes 16 of 16 but on the easiest bar (0.725, since fact's per-cell seed ceiling median is the lowest at 0.853). Two of its passing contexts, `icl_k8` (0.768) and `icl_k2` (0.800), sit well below its cluster. By every internal metric, fact is the weakest of the four readable behaviors.
+- Marker's 3 misses: `binst_marker` (behavior-instruction-in-system-prompt context) cosine 0.16 (near-orthogonal to the other 15), plus two contexts just under the 0.843 bar (`fmt_json` 0.836, `icl_k8` 0.838 — JSON-format-required and 8-shot in-context-learning contexts).
+- Fact passes 16 of 16 but on the easiest bar (0.725, since fact's per-cell seed ceiling median is the lowest at 0.853). Two of its passing contexts, `icl_k8` 0.768 and `icl_k2` 0.800 (8-shot and 2-shot in-context-learning), sit well below its cluster. By every internal metric, fact is the weakest of the four readable behaviors.
 
 ### Across the four behaviors the directions are mostly distinct (Q2)
 
