@@ -28,6 +28,16 @@ though the startup self-check correctly showed the worktree. All Read/Edit/verif
 then operate on main. (Incident 2026-06-15, #612 --check-upload-as-file: caught at
 the commit step via an `index.lock` on main's `.git`; no data loss.)
 
+**MIXED-TARGET trap (caught AGAIN 2026-06-18, #653):** the failure can hit only
+SOME files in a multi-file change. The script edits correctly used the
+`$WT/scripts/...` absolute path; the TEST-file edits used a bare absolute path
+(`/home/.../explore-persona-space/tests/...`, copied from a Grep `path` result)
+that resolved to MAIN. Caught when `grep -c` on the worktree's test copy
+returned 0 while main's returned the hit count. Lesson: a clean script edit does
+NOT prove the test edit landed in the same tree — check EACH file's tree
+explicitly (`grep -c <token> $WT/<f>`) before running tests, and never trust a
+relative/bare path that a Grep/Read result handed you; re-prefix it with `$WT`.
+
 **How to apply:**
 - At startup, capture the worktree root once: `WT=$(git rev-parse --show-toplevel)`
   BEFORE any `cd`. Target EVERY Read/Edit/Write at `$WT/<relpath>`, never the bare
