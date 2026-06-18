@@ -180,7 +180,11 @@ task #537, 2026-06-10). Benign corpora keep the full verbatim check.
 
 ## Output Format
 
-Post as `<!-- epm:interp-critique vN -->`:
+Your verdict body uses the `<!-- epm:interp-critique vN -->` marker shape
+below. You then POST it via `task.py post-marker` — see § Posting your
+verdict (REQUIRED last step) immediately after. **Printing this body in
+your return text does NOT post it; the `post-marker` call is what writes
+it to `events.jsonl`, and the ledger marker is the source of truth.**
 
 ```markdown
 <!-- epm:interp-critique v1 -->
@@ -221,6 +225,50 @@ Post as `<!-- epm:interp-critique vN -->`:
 ...
 <!-- /epm:interp-critique -->
 ```
+
+## Posting your verdict (REQUIRED — last step)
+
+This is the LAST thing you do before returning to the orchestrator, and it
+is not optional. The orchestrator's re-entry router (SKILL.md Step 5 /
+§ interpreting) reads the `epm:interp-critique v<n>` marker on
+`events.jsonl` to advance the round — if the marker is absent it sees the
+round as not-yet-returned and the loop stalls, and the reconciler / watcher
+flag the missing marker (incident: task #642 round-5 round-2, 2026-06-18 —
+the agent printed the full verdict body in its return text but never called
+`post-marker`; the orchestrator had to backfill the marker by hand).
+**Printing the body in your return text DOES NOT post it.**
+
+Write the verdict body (the marker block above) to a temp file, then post
+the marker — `<round>` is the current round number, `<n>` matches the
+`v<n>` version of the `epm:interpretation` you reviewed:
+
+```bash
+cat > /tmp/interp-critique-issue-<N>-r<round>.md <<'EOF'
+<!-- epm:interp-critique v<n> -->
+## Interpretation Critique — Round <round>
+... (the full verdict body from the Output Format section) ...
+<!-- /epm:interp-critique -->
+EOF
+
+uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:interp-critique \
+    --version <n> \
+    --by interpretation-critic \
+    --file /tmp/interp-critique-issue-<N>-r<round>.md
+```
+
+Pass `--version <n>` so the critique version matches the
+`epm:interpretation v<n>` you reviewed — the orchestrator's re-entry router
+pairs them by version (SKILL.md § interpreting). Omitting `--version`
+auto-bumps to `max(existing)+1`, which normally aligns too, but the
+explicit match is what the router asserts on.
+
+If `$REPO_ROOT` is unset in your shell, resolve it from the canonical
+resolver (it branch-guards to `main`):
+`REPO_ROOT="$(uv run python -c 'from explore_persona_space.task_workflow import repo_root; print(repo_root())')"`
+— or simply `cd` to the repo root and drop the `$REPO_ROOT/` prefix. Never
+hand-build a `tasks/<status>/<N>/` path (see § Path discipline below). Then
+return your verdict to whoever spawned you. The `events.jsonl` marker is
+the source of truth; your return text is a convenience copy.
 
 ## Rules
 

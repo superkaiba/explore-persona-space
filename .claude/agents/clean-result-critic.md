@@ -1335,7 +1335,15 @@ check.
 
 ## Output
 
-Post your verdict as an event:
+Post your verdict as an event. **This `task.py post-marker` call is
+REQUIRED and is the LAST thing you do before returning — printing the
+verdict body in your return text DOES NOT post it.** The orchestrator's
+re-entry router reads the `epm:clean-result-critique` marker on
+`events.jsonl` to advance (a PASS moves the task to
+`status:awaiting_promotion`); if the marker is absent the loop stalls and
+the orchestrator has to backfill it by hand (the most common reviewer
+regression). The `events.jsonl` marker is the source of truth; your return
+text is a convenience copy.
 
 ```bash
 uv run python scripts/task.py post-marker <N> epm:clean-result-critique \

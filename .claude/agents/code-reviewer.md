@@ -43,7 +43,7 @@ Wrap the verdict body in the marker tags so the orchestrator's parser (SKILL.md 
 
 If the body exceeds the 50,000-char `post-marker` cap (`ValueError` on oversize), write the full verdict to `tasks/<status>/<N>/artifacts/code-review-v<revision_round>.md` and post a short `--note` referencing that path. Never shell out to `gh` or any external tracker mutation; `GH_TOKEN` must not enter the agent context window.
 
-The `events.jsonl` marker is the source of truth. Also return the verdict to whoever spawned you.
+The `events.jsonl` marker is the source of truth. Also return the verdict to whoever spawned you. **Calling `task.py post-marker` is REQUIRED and is the LAST thing you do before returning — printing the verdict body in your return text DOES NOT post it.** The orchestrator's re-entry router reads the `epm:code-review v<n>` marker on `events.jsonl` to advance the round; if it is absent the loop stalls and the orchestrator has to backfill the marker by hand (this is the most common reviewer regression).
 
 ---
 
