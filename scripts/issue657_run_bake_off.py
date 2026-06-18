@@ -48,6 +48,7 @@ from explore_persona_space.analysis.issue657_alignment_predictor import (  # noq
     BOOTSTRAP_SEED,
     DEFAULT_LAYERS,
     HEADLINE_LAYER,
+    MARKER_MIN_OVERLAP,
     PRIMARY_H3_BEHAVIORS,
     SHUFFLE_B,
     _source_fe_residualize,
@@ -55,10 +56,12 @@ from explore_persona_space.analysis.issue657_alignment_predictor import (  # noq
     bootstrap_over_personas_multi,
     build_predictor_frame,
     compute_alignment,
+    effective_primary_h3,
     load_behavior_direction,
     load_cell_substrate,
     load_persona_vectors,
     lopo_heldout,
+    marker_panel_overlap,
     partial_spearman,
     prior_centroid_projection,
     shuffled_direction_null,
@@ -70,9 +73,9 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 # #623's headline DV-(a) sycophancy anchor (the replication target, §3/§7).
 SYCO_ANCHOR_RHO = 0.726
-# Minimum overlap-panel bystanders for the marker LEAKAGE bake-off (plan §8/§12);
-# below this, marker is reported DV-(a)-only and excluded from the H3 gate set.
-MARKER_MIN_OVERLAP = 8
+# MARKER_MIN_OVERLAP is imported from the analysis library (single source of truth
+# shared with marker_panel_overlap()); the marker LEAKAGE bake-off is excluded below
+# this overlap (plan §7/§8/§12).
 
 
 def _resolve(p: str) -> Path:
@@ -81,6 +84,49 @@ def _resolve(p: str) -> Path:
 
 def _digest_file(p: Path) -> str:
     return hashlib.md5(p.read_bytes()).hexdigest() if p.exists() else "missing"
+
+
+def _read_marker_direction_kind(direction_dir: Path) -> str:
+    """Read the marker direction kind (affordance | shift_fallback) (v6, M-Alts3).
+
+    The Phase-1 dispatcher writes a ``marker_direction_kind.json`` sentinel in the
+    marker direction dir recording which recipe produced the direction (the #623
+    affordance read = "affordance", the #521 on_policy_marker trained-shift fallback
+    = "shift_fallback"). Falls back to the direction ``metadata.json`` ``recipe`` /
+    ``marker_direction_kind`` field, then to "affordance" (the PRIMARY default — a
+    marker direction with no kind sentinel is the pure affordance read).
+    """
+    sentinel = direction_dir / "marker_direction_kind.json"
+    if sentinel.exists():
+        doc = json.loads(sentinel.read_text())
+        kind = doc.get("marker_direction_kind")
+        if kind in ("affordance", "shift_fallback"):
+            return kind
+    meta = direction_dir / "metadata.json"
+    if meta.exists():
+        doc = json.loads(meta.read_text())
+        kind = doc.get("marker_direction_kind")
+        if kind in ("affordance", "shift_fallback"):
+            return kind
+        recipe = str(doc.get("recipe", ""))
+        if "on_policy_marker" in recipe or "shift" in recipe:
+            return "shift_fallback"
+    return "affordance"
+
+
+def _read_k2_pass(out_dir: Path, behavior: str) -> bool | None:
+    """Read ``k2_pass`` for a behavior from its steering-effect-by-layer JSON.
+
+    Returns the bool when the K2 probe ran for this direction, else None
+    (sycophancy is REUSED + K2-validated in #623 — no fresh probe; None is read as
+    "K2 inherited PASS from #623" by the caller).
+    """
+    fp = out_dir / f"steering_effect_by_layer_{behavior}.json"
+    if not fp.exists():
+        return None
+    doc = json.loads(fp.read_text())
+    kp = doc.get("k2_pass")
+    return bool(kp) if kp is not None else None
 
 
 def _ci_lower_gt_zero(ci: dict) -> bool:
@@ -150,12 +196,15 @@ def run_behavior(
     n_boot: int,
     shuffle_b: int,
     smoke: bool,
+    out_dir: Path | None = None,
 ) -> dict:
     """Run the full per-behavior bake-off (the unified unit; smoke = 1 fold x 1 boot).
 
     ``base_rates_da`` is the DV-(a) base-rate map for H1 (e.g. #623 syc_i for
     sycophancy); when None, DV-(a) falls back to the #518 ``bystander_base_rate``
-    (still a valid base-rate read on the same panel).
+    (still a valid base-rate read on the same panel). ``out_dir`` (when given) is
+    where the per-behavior steering-effect JSON lives — used to read ``k2_pass`` +
+    (for marker) the ``marker_direction_kind`` sentinel (v6, M-Alts3).
     """
     table = load_cell_substrate(behavior, eval_results_root)
     persona_vectors = load_persona_vectors(persona_dirs, DEFAULT_LAYERS)
@@ -171,10 +220,24 @@ def run_behavior(
     )
     frame = build_predictor_frame(table, align, pcp)
 
-    # ── marker leakage-overlap gate (plan §8/§12 graceful degradation) ──
+    # ── v6 primary-set membership inputs (M-Alts3 + K2 gate) ──
+    # marker_direction_kind: affordance (PRIMARY) | shift_fallback (SECONDARY M-Alts3).
+    marker_direction_kind = (
+        _read_marker_direction_kind(direction_dir) if behavior == "marker" else None
+    )
+    # k2_pass per direction (None == inherited from #623 for sycophancy; the reused
+    # #623 sycophancy direction is K2-validated, so None reads as PASS).
+    k2_pass = _read_k2_pass(out_dir, behavior) if out_dir is not None else None
+
+    # ── marker leakage-overlap gate (plan §7/§8/§12 graceful degradation) ──
+    # Overlap < MARKER_MIN_OVERLAP -> marker DV-(a)-only (excluded from the leakage
+    # bake-off + the primary H3 set). Computed from the REAL resolvable count.
     marker_leakage_excluded = False
-    if behavior == "marker" and frame["n_resolvable"] < MARKER_MIN_OVERLAP:
-        marker_leakage_excluded = True
+    marker_overlap = None
+    if behavior == "marker":
+        marker_overlap = frame["n_resolvable"]
+        if marker_overlap < MARKER_MIN_OVERLAP:
+            marker_leakage_excluded = True
 
     # ── DV-(a) / H1: raw Spearman rho(align, base_rate) ──
     da_base = base_rates_da if base_rates_da is not None else table.bystander_base_rate
@@ -327,9 +390,22 @@ def run_behavior(
                     "n": len(clp),
                 }
 
+    # Run-conditional primary-H3 membership (v6, M-Alts2 + M-Alts3): EM never
+    # primary; marker demoted to SECONDARY on the #521 trained-shift fallback OR the
+    # Phase-0 panel-overlap exclusion. sycophancy/refusal always primary (per K2).
+    eff_primary = effective_primary_h3(
+        marker_direction_kind=marker_direction_kind,
+        marker_leakage_excluded=marker_leakage_excluded,
+    )
+    is_primary = behavior in eff_primary
+
     return {
         "behavior": behavior,
-        "is_primary_h3": behavior in PRIMARY_H3_BEHAVIORS,
+        "is_primary_h3": is_primary,
+        "primary_vs_secondary": "primary" if is_primary else "secondary",
+        "marker_direction_kind": marker_direction_kind,
+        "marker_panel_overlap": marker_overlap,
+        "k2_pass": k2_pass,
         "layer": layer,
         "readout": readout,
         "centering": centering,
@@ -360,11 +436,28 @@ def run_behavior(
 
 
 def _h3_summary(per_behavior: dict[str, dict]) -> dict:
-    """Compute the top-level H3 verdict across the PRIMARY behaviors (EM excluded)."""
+    """Top-level H3 verdict over the RUN-CONDITIONAL primary set (v6, M-Alts2 + M-Alts3).
+
+    The primary set is run-conditional: EM is ALWAYS secondary (M-Alts2); marker is
+    secondary when its direction is the #521 trained-shift fallback (M-Alts3) OR the
+    Phase-0 panel-overlap gate excluded it. Each behavior's effective membership was
+    decided in ``run_behavior`` and stored as ``is_primary_h3`` — this reads that flag
+    (single source of truth) rather than re-deriving the set, so the summary never
+    disagrees with the per-behavior decision.
+
+    A behavior whose direction FAILED K2 (``k2_pass`` False) is excluded from the
+    gate set and reported, never read as a NULL.
+    """
     primary_clears: list[str] = []
+    effective_primary: list[str] = []
     detail: dict[str, dict] = {}
     for beh, res in per_behavior.items():
-        if beh not in PRIMARY_H3_BEHAVIORS:
+        if not res.get("is_primary_h3", False):
+            continue
+        effective_primary.append(beh)
+        # K2-failed direction does not measure the behavior — excluded, not nulled.
+        if res.get("k2_pass") is False:
+            detail[beh] = {"status": "k2_failed_excluded_from_gate"}
             continue
         lk = res.get("leakage_bake_off", {})
         if not lk.get("in_scope", False):
@@ -389,20 +482,124 @@ def _h3_summary(per_behavior: dict[str, dict]) -> dict:
 
     if primary_clears:
         verdict = "PASS"
-    elif any(d.get("band_verdict") == "INDETERMINATE" for d in detail.values()):
+    elif any(
+        isinstance(d, dict) and d.get("band_verdict") == "INDETERMINATE" for d in detail.values()
+    ):
         verdict = "INDETERMINATE"
     else:
         verdict = "NULL"
     return {
         "h3_verdict": verdict,
         "primary_behaviors_cleared": primary_clears,
-        "primary_h3_behaviors": sorted(PRIMARY_H3_BEHAVIORS),
+        "effective_primary_h3_behaviors": sorted(effective_primary),
+        "full_primary_h3_behaviors": sorted(PRIMARY_H3_BEHAVIORS),
         "per_behavior_detail": detail,
         "note": (
             "PASS = doubly-partialled rho CI lo > 0 AND ΔR² CI lo > 0 AND reliability "
-            "band CONFIRMED on >=1 primary behavior {sycophancy, refusal, marker}; "
-            "EM excluded (M-Alts2). A power-limited / optimistic-end-only clearance "
-            "is INDETERMINATE, not a confirmed beat-the-prior."
+            "band CONFIRMED on >=1 EFFECTIVE-primary behavior. The primary set is "
+            "run-conditional: EM always secondary (M-Alts2); marker secondary on the "
+            "#521 trained-shift fallback (M-Alts3) or the Phase-0 panel-overlap "
+            "exclusion. A power-limited / optimistic-end-only clearance is "
+            "INDETERMINATE, not a confirmed beat-the-prior."
+        ),
+    }
+
+
+def _reliability_band_summary(lk: dict) -> dict:
+    """Extract the 3-point reliability-band rho/ΔR² (R_low/R_expected/R_high) per §6.5."""
+    band = lk.get("reliability_band", {})
+    points = band.get("points", {})
+    out: dict[str, dict] = {}
+    for label in ("R_observed", "R_low", "R_expected", "R_high"):
+        if label not in points:
+            continue
+        pt = points[label]
+        out[label] = {
+            "reliability": pt.get("reliability"),
+            "doubly_partialled_rho": pt.get("doubly_partialled_rho"),
+            "delta_r2_align_beyond_prior": pt.get("delta_r2_align_beyond_prior"),
+            "doubly_partialled_rho_ci": pt.get("doubly_partialled_rho_ci"),
+            "delta_r2_align_beyond_prior_ci": pt.get("delta_r2_align_beyond_prior_ci"),
+        }
+    return {
+        "band_applicable": band.get("band_applicable"),
+        "band_verdict": lk.get("band_verdict", {}).get("verdict"),
+        "points": out,
+    }
+
+
+def _build_alignment_predictor(
+    per_behavior: dict[str, dict],
+    h3: dict,
+    marker_overlap_decision: dict,
+    behaviors: list[str],
+    smoke: bool,
+) -> dict:
+    """Assemble the §6.5 PRIMARY DELIVERABLE (eval_results/issue_657/alignment_predictor.json).
+
+    The single file the upload-verifier completeness gate + the analyzer key off.
+    Carries, per behavior: raw / singly / doubly-partialled rho, prior_centroid_projection
+    (the per-cell array's read is folded into the join; the predictor here surfaces the
+    leakage-side reads), ΔR², the 3-point reliability-band rho/ΔR², primary-vs-secondary,
+    marker_direction_kind, marker_panel_overlap, per-behavior k2_pass, and CIs.
+    """
+    per_beh_out: dict[str, dict] = {}
+    n_with_ci = 0
+    for beh, res in per_behavior.items():
+        lk = res.get("leakage_bake_off", {})
+        rho_ci = lk.get("h3_doubly_partialled_rho_ci", {})
+        has_ci = bool(rho_ci) and rho_ci.get("ci_lo") is not None
+        if has_ci and not (isinstance(rho_ci.get("ci_lo"), float) and np.isnan(rho_ci["ci_lo"])):
+            n_with_ci += 1
+        per_beh_out[beh] = {
+            "primary_vs_secondary": res.get("primary_vs_secondary"),
+            "is_primary_h3": res.get("is_primary_h3"),
+            "k2_pass": res.get("k2_pass"),
+            "marker_direction_kind": res.get("marker_direction_kind"),
+            "marker_panel_overlap": res.get("marker_panel_overlap"),
+            "n_resolvable_bystanders": res.get("n_resolvable_bystanders"),
+            "marker_leakage_excluded": res.get("marker_leakage_excluded"),
+            # DV-(a) / H1 generalization
+            "dv_a_raw_rho": res.get("dv_a_base_rate", {}).get("raw_rho"),
+            "dv_a_ci": {
+                "ci_lo": res.get("dv_a_base_rate", {}).get("ci_lo"),
+                "ci_hi": res.get("dv_a_base_rate", {}).get("ci_hi"),
+            },
+            # DV-(b) / H2 + H3 leakage reads
+            "leakage_in_scope": lk.get("in_scope"),
+            "raw_rho": lk.get("raw_rho"),
+            "singly_partialled_rho": lk.get("singly_partialled_rho"),
+            "doubly_partialled_rho": lk.get("doubly_partialled_rho"),
+            "delta_r2_align_beyond_prior": (lk.get("lopo") or {}).get(
+                "delta_r2_align_beyond_prior"
+            ),
+            "h2_held_out_spearman_ci": lk.get("h2_held_out_spearman_ci"),
+            "h3_doubly_partialled_rho_ci": rho_ci,
+            "h3_delta_r2_ci": lk.get("h3_delta_r2_ci"),
+            "reliability_band": _reliability_band_summary(lk),
+            "shuffled_direction_null": lk.get("shuffled_direction_null"),
+            "secondary_dv_validation": lk.get("secondary_dv_validation"),
+            "replication_anchor": res.get("replication_anchor"),
+        }
+    return {
+        "schema_version": 1,
+        "smoke": smoke,
+        "behaviors": list(behaviors),
+        "h3": h3,
+        "marker_panel_overlap": marker_overlap_decision["marker_panel_overlap"],
+        "marker_panel_overlap_gate": marker_overlap_decision,
+        "n_behaviors_with_bootstrap_ci": n_with_ci,
+        "per_behavior": per_beh_out,
+        "metadata": reproducibility_metadata(
+            {"deliverable": "alignment_predictor", "smoke": smoke}
+        ),
+        "note": (
+            "§6.5 primary deliverable. Per-behavior raw/singly/doubly-partialled rho, "
+            "prior_centroid_projection (per-cell, in the join), ΔR²_align-beyond-prior, "
+            "the 3-point reliability band, primary-vs-secondary (EM secondary M-Alts2; "
+            "marker secondary when marker_direction_kind==shift_fallback M-Alts3, or "
+            "DV-(a)-only when marker_panel_overlap < min), marker_direction_kind, "
+            "marker_panel_overlap, per-behavior k2_pass, and bootstrap CIs."
         ),
     }
 
@@ -516,6 +713,22 @@ def main() -> None:
         [_resolve(p) for p in args.persona_dir] if args.persona_dir else default_persona_dirs
     )
 
+    # §6.5 per-behavior subdir glob + the top-level alignment_predictor.json.
+    per_behavior_dir = out_dir / "per_behavior"
+    per_behavior_dir.mkdir(parents=True, exist_ok=True)
+
+    # ── v6 FIRST Phase-0 deliverable: marker panel-overlap gate (§7) ──
+    # Computed + logged BEFORE the per-behavior loop so the primary-set-membership
+    # decision is the first thing in the run (a non-silent, logged decision).
+    marker_overlap_decision = marker_panel_overlap(eval_root)
+    print(
+        f"[phase=bake_off] marker_panel_overlap={marker_overlap_decision['marker_panel_overlap']} "
+        f"(min={marker_overlap_decision['min_overlap']}) "
+        f"marker_leakage_excluded={marker_overlap_decision['marker_leakage_excluded']} "
+        f"-> {marker_overlap_decision['decision']}",
+        flush=True,
+    )
+
     per_behavior: dict[str, dict] = {}
     for beh in behaviors:
         if args.direction_dir:
@@ -544,12 +757,15 @@ def main() -> None:
             args.n_boot,
             args.shuffle_b,
             args.smoke,
+            out_dir=out_dir,
         )
-        # checkpoint-per-phase: write each behavior the moment it completes
+        # checkpoint-per-phase: write each behavior the moment it completes (flat,
+        # for the plot script) + a copy under per_behavior/ (the §6.5 glob).
         meta = reproducibility_metadata({"behavior": beh, "smoke": args.smoke})
         res["metadata"] = meta
         beh_path = out_dir / f"{beh}_alignment_predictor.json"
         beh_path.write_text(json.dumps(res, indent=2))
+        (per_behavior_dir / f"{beh}.json").write_text(json.dumps(res, indent=2))
         per_behavior[beh] = res
         dv_a_rho = res["dv_a_base_rate"].get("raw_rho")
         lk = res["leakage_bake_off"]
@@ -557,14 +773,17 @@ def main() -> None:
         print(
             f"[phase=bake_off] behavior={beh} dv_a_rho={dv_a_rho} "
             f"doubly_partialled_rho={dp} in_scope={lk.get('in_scope')} "
+            f"primary={res.get('primary_vs_secondary')} k2_pass={res.get('k2_pass')} "
             f"md5={_digest_file(beh_path)} -> {beh_path}",
             flush=True,
         )
 
+    h3 = _h3_summary(per_behavior)
     summary = {
         "schema_version": 1,
         "metadata": reproducibility_metadata({"behaviors": behaviors, "smoke": args.smoke}),
-        "h3": _h3_summary(per_behavior),
+        "h3": h3,
+        "marker_panel_overlap_gate": marker_overlap_decision,
         "anchors": {
             beh: per_behavior[beh].get("replication_anchor")
             for beh in per_behavior
@@ -576,10 +795,24 @@ def main() -> None:
     }
     summary_path = out_dir / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2))
+
+    # ── §6.5 PRIMARY DELIVERABLE: the top-level alignment_predictor.json ──
+    # The upload-verifier's completeness gate + the analyzer key off this single
+    # file. It carries per-behavior raw / singly / doubly-partialled rho,
+    # prior_centroid_projection, ΔR², the 3-point reliability-band rho/ΔR²,
+    # primary-vs-secondary, marker_direction_kind, marker_panel_overlap, per-behavior
+    # k2_pass, and CIs (where bootstrapped).
+    alignment_predictor = _build_alignment_predictor(
+        per_behavior, h3, marker_overlap_decision, behaviors, args.smoke
+    )
+    ap_path = out_dir / "alignment_predictor.json"
+    ap_path.write_text(json.dumps(alignment_predictor, indent=2))
+
     print(
-        f"[phase=bake_off] H3 verdict={summary['h3']['h3_verdict']} "
-        f"cleared={summary['h3']['primary_behaviors_cleared']} "
-        f"-> {summary_path}",
+        f"[phase=bake_off] H3 verdict={h3['h3_verdict']} "
+        f"cleared={h3['primary_behaviors_cleared']} "
+        f"effective_primary={h3['effective_primary_h3_behaviors']} "
+        f"-> {summary_path}; primary_deliverable -> {ap_path} (md5={_digest_file(ap_path)})",
         flush=True,
     )
 

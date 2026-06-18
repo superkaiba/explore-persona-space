@@ -1310,3 +1310,83 @@ def attenuation_sensitivity(
         "band_min_rho": float(min(band_rhos)) if band_rhos else float("nan"),
         "band_max_rho": float(max(band_rhos)) if band_rhos else float("nan"),
     }
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# v6 primary-set membership gates (M-Alts3 marker demotion + Phase-0 overlap)
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Minimum #605-marker-panel <-> 24-persona-panel overlap for the marker LEAKAGE
+# bake-off (plan §7/§8/§12). Below this the marker arm is DV-(a)-only (excluded
+# from the leakage bake-off + the primary H3 gate set). Kept consistent with the
+# bake-off dispatcher's MARKER_MIN_OVERLAP.
+MARKER_MIN_OVERLAP: int = 8
+
+
+def marker_panel_overlap(eval_results_root: Path) -> dict:
+    """Phase-0 marker panel-overlap gate (v6, the FIRST substrate deliverable, §7).
+
+    Computes ``|EVAL_PERSONAS_24 ∩ #605-marker-panel|`` from the REAL #605 marker
+    substrate (the personas that actually resolve onto the 24-persona axis after the
+    context-key join), NOT just the static alias map — a #605 panel that drops a
+    persona at load time must not inflate the overlap. Returns a logged,
+    non-silent primary-set-membership decision:
+
+      {marker_panel_overlap, overlap_personas, min_overlap, marker_leakage_excluded,
+       decision}
+
+    ``marker_leakage_excluded=True`` (overlap < MARKER_MIN_OVERLAP) demotes marker to
+    DV-(a)-only and shrinks the primary H3 set to {sycophancy, refusal}. Fail-soft on
+    a missing #605 substrate (returns overlap 0 + excluded=True with a note) — the
+    caller logs it; a missing marker panel is a graceful degradation, not a crash of
+    the whole bake-off (the #518 arms are independent).
+    """
+    try:
+        table = load_marker_cell_substrate(eval_results_root)
+        overlap_personas = sorted(table.bystanders)
+        note = table.provenance.get("note", "")
+    except FileNotFoundError as e:
+        overlap_personas = []
+        note = f"#605 marker substrate not found: {e}"
+    overlap = len(overlap_personas)
+    excluded = overlap < MARKER_MIN_OVERLAP
+    return {
+        "marker_panel_overlap": overlap,
+        "overlap_personas": overlap_personas,
+        "min_overlap": MARKER_MIN_OVERLAP,
+        "marker_leakage_excluded": excluded,
+        "decision": (
+            "marker DV-(a)-only (overlap < min); primary H3 = {sycophancy, refusal}"
+            if excluded
+            else "marker IN the leakage bake-off + primary H3 set (overlap >= min)"
+        ),
+        "note": note,
+    }
+
+
+def effective_primary_h3(
+    marker_direction_kind: str | None = None,
+    marker_leakage_excluded: bool = False,
+) -> frozenset[str]:
+    """The RUN-CONDITIONAL primary H3 behavior set (v6, M-Alts2 + M-Alts3).
+
+    The static ``PRIMARY_H3_BEHAVIORS`` = {sycophancy, refusal, marker} is the FULL
+    set; marker is in it ONLY when its direction is the pure #623 affordance read
+    that passed K2. Marker is demoted to SECONDARY (removed from the primary set)
+    when EITHER:
+
+      - ``marker_direction_kind == "shift_fallback"`` (the #521 on_policy_marker
+        trained-shift fallback — a trained-shift read that folds the implant in,
+        M-Alts3, mirroring the EM trained-shift demotion M-Alts2), OR
+      - ``marker_leakage_excluded`` is True (the Phase-0 panel-overlap < 8 gate makes
+        marker DV-(a)-only, §7).
+
+    EM is NEVER in the primary set (M-Alts2). ``marker_direction_kind="affordance"``
+    (or None / unknown, treated as the affordance default) keeps marker primary
+    unless the overlap gate excluded it. Returns the effective frozenset.
+    """
+    primary = set(PRIMARY_H3_BEHAVIORS)
+    demote_marker = (marker_direction_kind == "shift_fallback") or bool(marker_leakage_excluded)
+    if demote_marker:
+        primary.discard("marker")
+    return frozenset(primary)
