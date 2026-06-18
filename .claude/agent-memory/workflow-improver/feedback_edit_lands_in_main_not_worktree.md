@@ -28,6 +28,19 @@ though the startup self-check correctly showed the worktree. All Read/Edit/verif
 then operate on main. (Incident 2026-06-15, #612 --check-upload-as-file: caught at
 the commit step via an `index.lock` on main's `.git`; no data loss.)
 
+**gitStatus-header trap (caught AGAIN 2026-06-18, #641):** the session gitStatus
+header read `Current branch: issue-641` while my actual worktree was
+`agent-af5da61596ca3c4ce` — so the brief's `target_file` path and a `Read` of the
+file resolved to the LIVE `issue-641` sibling tree, not mine. Both files (src +
+test) stranded there, dirtying a running session's tree. Caught by `grep -c` on my
+$WT returning 0. Recovered exactly per the recipe below (cp into $WT, `git checkout
+--` the sibling clean), THEN discovered my agent branch was 3 commits behind main,
+so I `git merge --ff-only main`'d first and re-applied the edits on the fresh base
+(the sibling's gcp.py was ~200 lines diverged from my stale base — re-applying on
+main avoids a messy merge). Lesson: a gitStatus header naming an issue branch is
+NOT your tree; always trust the startup `git rev-parse --show-toplevel`
+(`agent-<hash>`), and FF to main before editing a spawn worktree.
+
 **MIXED-TARGET trap (caught AGAIN 2026-06-18, #653):** the failure can hit only
 SOME files in a multi-file change. The script edits correctly used the
 `$WT/scripts/...` absolute path; the TEST-file edits used a bare absolute path
