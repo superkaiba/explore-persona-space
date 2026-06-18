@@ -8,9 +8,16 @@
 #      (ai, ai_assistant, data_scientist, hero, medical_doctor, police_officer,
 #       surgeon) over the same 240Q bank, Method A (last-token) + B (response-avg),
 #      via scripts/issue623_persona_panel_vectors.py.
-#   2. the 3 NEW behavior directions (refusal, marker, em) via the #623
-#      Persona-Vectors trait-extraction recipe (scripts/issue623_extract_sycophancy_vector.py
-#      with the additive --trait-name / --trait-description CLI args).
+#   2. the 3 NEW behavior directions, each via its BEHAVIOR-APPROPRIATE recipe (v6
+#      pivot — a single generic #623 recipe failed K2 for refusal at launch #3):
+#        - refusal : Arditi difference-in-means (scripts/issue657_extract_diffmean_direction.py
+#                    --behavior refusal), held-out K2 add-elicits-refusal sanity gate.
+#        - em      : #521 on_policy_em trained-shift re-extraction (same extractor,
+#                    --behavior em; single config-pinned issue_519/em_seed42 adapter).
+#        - marker  : the #623 Persona-Vectors affordance recipe
+#                    (scripts/issue623_extract_sycophancy_vector.py --trait-name marker
+#                    --trait-description ...); a REAL K2 fail -> #521 on_policy_marker
+#                    shift fallback (--behavior marker) + M-Alts3 demotion to SECONDARY.
 #
 # Sycophancy is NOT re-extracted (REUSED verbatim from #623). The off-pod CPU
 # Phases 0/2/3/4 run on the VM AFTER this pod terminates, reading the uploaded
@@ -57,6 +64,7 @@ SKIP_PREFLIGHT="0"
 SKIP_GPU_PHASES="0"   # dispatcher dry-run: CPU plumbing only, emit [phase=done]
 SMOKE="0"
 PRINT_TRAIT_DESCRIPTION=""   # set by --print-trait-description <beh>: print + exit
+TEST_MARKER_DECISION=""      # set by --test-marker-decision <rc> <effect-file>: decide + exit
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -76,6 +84,11 @@ while [[ $# -gt 0 ]]; do
     # SAME strings the dispatcher passes to --trait-description, so the smoke and
     # the production path can never drift apart (#657 r2 fix).
     --print-trait-description) PRINT_TRAIT_DESCRIPTION="$2"; shift 2 ;;
+    # B4 regression hook: run ONLY the marker fail-loud fallback decision against a
+    # given (primary rc, effect-file) and exit with its return code. Lets the shell
+    # smoke (tests/test_issue657_extract_smoke.py) prove a primary crash FAILS LOUD
+    # and does NOT invoke the fallback, with no GPU + no upstream phases.
+    --test-marker-decision) TEST_MARKER_DECISION="$2 $3"; shift 3 ;;
     *) echo "[driver] unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -164,6 +177,51 @@ trait_description() {
   esac
 }
 
+# ── B4 marker-fallback decision (fail-loud, testable in isolation) ───────────
+# Decide affordance-vs-fallback for the marker direction from (a) the primary
+# extractor's exit code and (b) its K2 effect file. PURE: prints "affordance" or
+# "fallback" to stdout and returns 0 on a clean decision; prints a diagnostic to
+# stderr and returns NON-ZERO when the primary CRASHED (rc != 0) or produced no
+# valid effect file — those are NOT K2 failures and must FAIL LOUD, never silently
+# route to the trained-shift fallback + M-Alts3 demotion (#657 v6 round-2 B4).
+# The caller pairs this with `|| fail "..."` so the loud-failure path keeps fail()'s
+# log-tail + HF upload. Args: $1 = primary rc, $2 = effect-file path.
+marker_fallback_decision() {
+  local marker_rc="$1" effect_file="$2"
+  if [[ "$marker_rc" -ne 0 ]]; then
+    echo "marker primary extraction exited rc=$marker_rc (a CRASH, not a K2 failure)" >&2
+    return 3
+  fi
+  # k2_pass must be present as an explicit BOOLEAN in a parseable effect JSON; a
+  # missing/malformed/non-bool field is an invalid (crash-class) outcome, not a fail.
+  local state
+  state="$(EFFECT_FILE="$effect_file" uv run python - <<'PY'
+import json, os, sys
+from pathlib import Path
+fp = Path(os.environ["EFFECT_FILE"])
+if not fp.exists():
+    print("invalid: effect file missing", file=sys.stderr); print("invalid"); raise SystemExit(0)
+try:
+    doc = json.loads(fp.read_text())
+except (json.JSONDecodeError, OSError) as e:
+    print(f"invalid: effect file unparseable ({e})", file=sys.stderr)
+    print("invalid"); raise SystemExit(0)
+kp = doc.get("k2_pass")
+if not isinstance(kp, bool):
+    print(f"invalid: k2_pass is not a bool (got {type(kp).__name__})", file=sys.stderr)
+    print("invalid"); raise SystemExit(0)
+print("pass" if kp else "fail")
+PY
+)"
+  case "$state" in
+    pass) echo "affordance"; return 0 ;;
+    fail) echo "fallback"; return 0 ;;
+    *)
+      echo "marker primary rc=0 but no valid K2 effect file (missing/malformed/non-bool k2_pass)" >&2
+      return 4 ;;
+  esac
+}
+
 # --print-trait-description <beh>: emit the canonical description + exit (no GPU,
 # no preflight). The smoke reads these so it tests the EXACT strings production
 # passes; an empty result means an unknown behavior (exit 2).
@@ -175,6 +233,16 @@ if [[ -n "$PRINT_TRAIT_DESCRIPTION" ]]; then
   fi
   printf '%s\n' "$_DESC"
   exit 0
+fi
+
+# --test-marker-decision "<rc> <effect-file>": run only the B4 fallback decision +
+# exit with its rc (0 with "affordance"/"fallback" on stdout for a clean decision;
+# 3 for a primary crash, 4 for a missing/malformed effect file). No GPU/preflight.
+if [[ -n "$TEST_MARKER_DECISION" ]]; then
+  # shellcheck disable=SC2086
+  set -- $TEST_MARKER_DECISION
+  marker_fallback_decision "$1" "$2"
+  exit $?
 fi
 
 echo "[driver] issue 657 Phase 1: smoke=$SMOKE behaviors='$BEHAVIORS' personas='$MISSING_PERSONAS' layers='$LAYERS' gpu=$GPU_ID"
@@ -335,14 +403,20 @@ PY
         DESC="$(trait_description marker)"
         [[ -z "$DESC" ]] && fail "no trait description for marker"
         echo "[driver] [phase=behavior_directions] extracting 'marker' (#623 affordance recipe)"
-        # PRIMARY: the #623 affordance read. K2-fail does NOT raise here (the
+        # PRIMARY: the #623 affordance read. A REAL K2-fail does NOT raise here (the
         # extractor's K2 SystemExit is the #623 path's whole-run HALT — too brittle
-        # for the sweep, §11). We capture the rc, read k2_pass from the effect file,
-        # and on a K2-fail re-extract the #521 on_policy_marker shift + set the
-        # marker_direction_kind sentinel so Phase 2 demotes marker (M-Alts3).
+        # for the sweep, §11). We capture the rc; the trained-shift fallback fires ONLY
+        # when the primary ran to completion (rc=0) AND wrote a valid effect JSON with
+        # k2_pass == false. A primary CRASH (rc != 0) or a missing/malformed effect file
+        # FAILS LOUD (B4) — it is NOT a K2 failure and must not silently demote marker.
         MARKER_RC=0
+        # MARKER_PRIMARY_CMD lets the B4 regression smoke inject a stub primary
+        # extractor (e.g. one that exits nonzero before writing the effect file) to
+        # verify the fail-loud-not-fallback behavior WITHOUT a GPU. Production leaves it
+        # unset -> the real #623 affordance extractor runs.
+        : "${MARKER_PRIMARY_CMD:=uv run python scripts/issue623_extract_sycophancy_vector.py}"
         # shellcheck disable=SC2086
-        uv run python scripts/issue623_extract_sycophancy_vector.py \
+        $MARKER_PRIMARY_CMD \
           --trait-name marker --trait-description "$DESC" \
           --layers $LAYERS --gpu-id "$GPU_ID" \
           --n-questions "$N_QUESTIONS" \
@@ -350,15 +424,14 @@ PY
           --steering-output "$EVAL_DIR/steering_probe_marker.json" \
           --steering-effect-output "$EVAL_DIR/steering_effect_by_layer_marker.json" \
           2>&1 | tee "$LOG" || MARKER_RC=$?
-        # Determine the affordance K2 outcome from the effect file (k2_pass).
-        MARKER_K2_PASS="$(BD_DIR="$BD_DIR" EVAL_DIR="$EVAL_DIR" uv run python - <<'PY'
-import json, os
-from pathlib import Path
-fp = Path(os.environ["EVAL_DIR"]) / "steering_effect_by_layer_marker.json"
-print("true" if fp.exists() and json.loads(fp.read_text()).get("k2_pass") else "false")
-PY
-)"
-        if [[ "$MARKER_K2_PASS" == "true" ]]; then
+        # B4 (round-2): a NON-K2 primary crash (rc != 0) OR a missing/malformed effect
+        # file must FAIL LOUD, never silently route to the #521 trained-shift fallback +
+        # M-Alts3 demotion (which would corrupt primary-H3-set membership on an infra
+        # crash). marker_fallback_decision returns non-zero for those crash classes; the
+        # fallback fires ONLY for a REAL K2 failure (rc=0 + valid effect JSON, k2_pass==false).
+        MARKER_DECISION="$(marker_fallback_decision "$MARKER_RC" "$EVAL_DIR/steering_effect_by_layer_marker.json")" \
+          || fail "marker affordance did not produce a valid K2 verdict (primary crash or missing/malformed effect file) — refusing the trained-shift fallback. See $LOG"
+        if [[ "$MARKER_DECISION" == "affordance" ]]; then
           # PRIMARY affordance read — record the kind sentinel.
           BD_DIR="$BD_DIR" uv run python - <<'PY'
 import json, os

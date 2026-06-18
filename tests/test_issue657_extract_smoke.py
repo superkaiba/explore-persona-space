@@ -319,6 +319,77 @@ def test_refusal_banks_train_eval_disjoint_on_real_local_banks(tmp_path: Path):
         assert len(train) == n_train and len(eval_rows) == n_eval_half
 
 
+# ── B4 (round-2): marker fallback FAILS LOUD on a primary crash, never demotes ──
+
+
+def _marker_decision(marker_rc: int, effect_file: Path) -> subprocess.CompletedProcess:
+    """Invoke the dispatcher's B4 marker-fallback decision hook in isolation
+    (--test-marker-decision <rc> <effect-file>): no GPU, no upstream phases."""
+    return subprocess.run(
+        ["bash", str(DISPATCHER), "--test-marker-decision", str(marker_rc), str(effect_file)],
+        capture_output=True,
+        text=True,
+        cwd=str(REPO_ROOT),
+    )
+
+
+def test_marker_fallback_fails_loud_on_primary_crash(tmp_path: Path):
+    """B4 regression: a primary marker extraction that EXITS NONZERO before writing the
+    effect file must FAIL LOUD (non-zero rc, no decision printed), NOT silently invoke
+    the trained-shift fallback + M-Alts3 demotion. Pre-fix the dispatcher captured
+    MARKER_RC but never read it, so any crash routed to the fallback."""
+    proc = _marker_decision(1, tmp_path / "never_written.json")
+    assert proc.returncode != 0, "a primary crash must fail loud, not return a decision"
+    # crucially, the crash path NEVER emits the 'fallback' decision the dispatcher acts on
+    assert "fallback" not in proc.stdout
+    assert "affordance" not in proc.stdout
+    assert "CRASH" in proc.stderr or "crash" in proc.stderr
+
+
+def test_marker_fallback_fails_loud_on_missing_effect_file(tmp_path: Path):
+    """B4: primary rc=0 but no effect file (a silent crash that left no K2 verdict) ->
+    fail loud, no fallback."""
+    proc = _marker_decision(0, tmp_path / "absent.json")
+    assert proc.returncode != 0
+    assert "fallback" not in proc.stdout and "affordance" not in proc.stdout
+
+
+def test_marker_fallback_fails_loud_on_malformed_effect_file(tmp_path: Path):
+    """B4: primary rc=0 + an effect file WITHOUT a boolean k2_pass -> fail loud (a
+    malformed verdict must not be silently treated as a K2 failure)."""
+    import json
+
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"foo": 1}))  # no k2_pass key
+    proc = _marker_decision(0, bad)
+    assert proc.returncode != 0
+    assert "fallback" not in proc.stdout and "affordance" not in proc.stdout
+
+
+def test_marker_fallback_invoked_only_on_real_k2_failure(tmp_path: Path):
+    """B4 positive control: the trained-shift fallback fires ONLY when the primary ran
+    to completion (rc=0) AND wrote a valid effect JSON with k2_pass == false."""
+    import json
+
+    eff = tmp_path / "eff.json"
+    eff.write_text(json.dumps({"k2_pass": False}))
+    proc = _marker_decision(0, eff)
+    assert proc.returncode == 0
+    assert proc.stdout.strip() == "fallback"
+
+
+def test_marker_affordance_kept_on_k2_pass(tmp_path: Path):
+    """B4 positive control: a real K2 PASS (rc=0, k2_pass=true) keeps marker PRIMARY
+    (affordance), never the fallback."""
+    import json
+
+    eff = tmp_path / "eff.json"
+    eff.write_text(json.dumps({"k2_pass": True}))
+    proc = _marker_decision(0, eff)
+    assert proc.returncode == 0
+    assert proc.stdout.strip() == "affordance"
+
+
 # ── LIVE: real Claude artifact generation for marker (#623 recipe; API, no GPU) ──
 
 
