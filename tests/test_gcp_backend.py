@@ -2915,6 +2915,37 @@ def test_render_startup_script_workload_cmd_verbatim_with_lifecycle_intact() -> 
     assert "WANDB_PROJECT" not in hydra_script
 
 
+def test_render_startup_script_workload_cmd_exports_repo_root() -> None:
+    """#641 (trap #599): the workload_cmd branch exports
+    ``REPO_ROOT="$WORKLOAD_ROOT"`` BEFORE the workload runs, so a driver
+    that defaults ``REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"``
+    resolves to the on-VM clone path instead of `cd`-ing to the
+    nonexistent RunPod fallback under set -e (which fires the EXIT trap →
+    VM power-off → a burned GPU instance). No orchestrator-side
+    --workload-cmd prefix is then required."""
+    script = render_startup_script(
+        spec=_workload_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    lines = script.splitlines()
+    repo_root_export = 'export REPO_ROOT="$WORKLOAD_ROOT"'
+    assert repo_root_export in lines
+    # Exported AFTER the shared ``cd "$WORKLOAD_ROOT"`` and BEFORE the
+    # workload command, so the workload subprocess inherits it.
+    assert lines.index('cd "$WORKLOAD_ROOT"') < lines.index(repo_root_export)
+    assert lines.index(repo_root_export) < lines.index("bash scripts/issue588_smoke.sh")
+    # The hydra branch must NOT gain the export — it runs scripts/train.py
+    # directly (no REPO_ROOT dependency), and the #588 byte-identity
+    # snapshot fixture pins the hydra branch unchanged.
+    hydra_script = render_startup_script(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert "REPO_ROOT" not in hydra_script
+
+
 def test_render_startup_script_workload_cmd_waits_on_detached_pid_files() -> None:
     """#601: a self-daemonizing workload_cmd (setsid-forked driver)
     returns immediately — the script must wait on fresh
