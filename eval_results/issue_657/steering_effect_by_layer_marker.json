@@ -1,0 +1,12 @@
+{
+  "behavior": "marker",
+  "headline_layer": 7,
+  "headline_layer_effect": 0.0,
+  "per_layer": {
+    "7": 0.0,
+    "14": 0.0,
+    "21": 0.0,
+    "27": 0.0
+  },
+  "k2_pass": false
+}
