@@ -1,0 +1,7 @@
+{
+  "max_steps": 560,
+  "lr_scheduler_type": "linear",
+  "lr": 2e-05,
+  "warmup_steps": 5,
+  "seed": 7
+}
