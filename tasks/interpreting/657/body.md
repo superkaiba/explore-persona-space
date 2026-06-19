@@ -33,6 +33,7 @@ relates_to:
 - **The base-rate link generalized to one new behavior, not three.** Predicts a persona's own **sycophancy (ρ = 0.68)** and **EM (ρ = 0.51, CI [0.07, 0.79])**, flat for **refusal (ρ = 0.01)**; EM clears by point estimate only.
 - **The sycophancy base-rate replication held** (ρ = 0.68 vs the parent's 0.73, target in CI), so the non-clearances are not a join bug — but they stay INDETERMINATE, not confirmed nulls.
 - **Power binds and the causal gate is weak**: ~23 held-out personas push the minimum detectable ρ near 0.62; the refusal gate effect is ~1 point on the 0–100 judge scale and sign-flips.
+- **At 17× the power, the verdict tightens but does not flip.** A pooled leave-one-behavior-out read (**399 cells, 69 groups**) holds the incremental-variance **ΔR² CI [−0.017, 0.025]** straddling zero — INDETERMINATE → TIGHTER-INDETERMINATE. The per-behavior null was not a low-power artifact.
 
 ## What I ran
 
@@ -80,18 +81,26 @@ Every direction first had to show *adding it increases the judged behavior* — 
 
 ### Alignment did not predict leakage out-of-sample (H2 null) or beyond the base prior (H3 INDETERMINATE)
 
-Two gates: out-of-sample (H2, no partialling); beyond the base prior (H3, partials out the prior twice).
+Two gates: out-of-sample (H2, no partialling); beyond the base prior (H3, partials the prior twice).
 
 ![Forest plot of the held-out alignment-vs-leakage correlation per behavior, showing raw, singly-partialled, and doubly-partialled Spearman rho with 95% CIs. Sycophancy doubly-partialled rho 0.18 with CI above zero; refusal 0.12 and EM negative with CIs crossing zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/29fbe2835b8015af47b9b92ff44310f2f94795c9/figures/issue_657/fig_h3_forest.png)
 
 > **Figure.** *Out-of-sample leakage prediction is null (raw ×); only the doubly-partialled sycophancy ρ clears zero, and it still fails the beat-the-prior gates.* Held-out ρ(alignment, leakage Δ): raw (×), prior-partialled (□), doubly-partialled (●, 95% CI). Sycophancy doubly-partialled ρ = 0.18, CI [0.05, 0.33]; refusal [−0.04, 0.25] and EM [−0.24, 0.16] straddle zero.
 
-- **H2 failed everywhere.** Raw held-out ρ crosses zero (sycophancy [−0.01, 0.30], refusal [−0.01, 0.27], EM negative). The forest's sycophancy clearance is the *doubly-partialled* ρ — a partialling artifact.
-- **H3 INDETERMINATE (sycophancy), NULL (refusal).** Sycophancy's doubly-partialled ρ (0.18) clears zero [0.05, 0.33], but the both-must-clear rule also needs incremental variance: ΔR² CI **[−0.06, 0.13]** + reliability band INDETERMINATE — it fails on those gates, not the ρ CI. EM is below its shuffle null (p = 0.89).
+- **H2 failed everywhere.** Raw held-out ρ crosses zero for all behaviors; the forest's lone sycophancy clearance is the *doubly-partialled* ρ — a partialling artifact.
+- **H3 INDETERMINATE (sycophancy), NULL (refusal).** Sycophancy's doubly-partialled ρ (0.18) clears zero, but the rule also needs incremental variance: ΔR² CI **[−0.06, 0.13]** + reliability band INDETERMINATE. EM is below its shuffle null (p = 0.89).
 
 ![Line plot of sycophancy and refusal doubly-partialled rho across four assumed-reliability points for the base prior. Sycophancy swings from about 0.19 at the observed point up to 1.0 under disattenuation; refusal stays flat near 0.11 across the whole band.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/29fbe2835b8015af47b9b92ff44310f2f94795c9/figures/issue_657/fig_reliability_band.png)
 
 > **Figure.** *Sycophancy's signal appears only when the prior is assumed measured-with-error, jumping unstably to 1.0; refusal is flat.* Doubly-partialled ρ across the reliability band; sycophancy 0.19 at the observed point inflating to 1.0 only as the prior is assumed less reliable — clearing only at that unstable end is the INDETERMINATE signature.
+
+### At 17× the power, the beat-the-prior verdict tightens but does not flip (TIGHTER-INDETERMINATE)
+
+The per-behavior H3 reads are power-limited at ~23 held-out personas. The registered higher-N secondary read pools the three in-scope behaviors (marker excluded) at the predictor-skill level — within-behavior source-fixed-effect, percentile-ranked, resampled by (behavior, bystander) group — lifting the held-out sample from ~23 to **399 cells across 69 groups** (17×).
+
+- The pooled incremental-variance test stays straddling zero: **ΔR² = 0.002, CI [−0.017, 0.025]** — lower bound negative (no beat), upper bound positive (no confirmed null).
+- Supporting pooled reads agree: grouped-CV held-out ρ = 0.020 (CI [−0.106, 0.134]); doubly-partialled ρ = 0.088 (CI [−0.017, 0.171]); strict leave-one-whole-behavior-out ρ = 0.116 / ΔR² = 0.017 (point estimates only).
+- At 17× the power the CI tightens around zero but the verdict does not flip. Because this is the highest-N read available, the indeterminate is the finding: the per-behavior INDETERMINATE was not a low-power artifact, and alignment still does not beat the base prior on where leakage lands.
 
 ### Why the marker behavior was untestable — three independent exclusions
 
@@ -139,6 +148,8 @@ The marker affordance direction, added at layer 7 / strength 12, left the judged
 
 Per-condition quantitative numbers (per-behavior raw / singly / doubly-partialled ρ, CIs, reliability band, K2 effects) live in the figures above and in the linked `summary.json` / `per_behavior/*.json`.
 
+The higher-N pooled (LOBO) secondary read re-uses the per-behavior join outputs only — no new generation. Full pooled result (n = 399 cells, 69 (behavior, bystander) groups, B = 10,000, seed 657): [`eval_results/issue_657/lobo_pooled.json`](https://github.com/superkaiba/explore-persona-space/blob/405a0b483fbeef79108d7e49845cd1bccb1dc8fc/eval_results/issue_657/lobo_pooled.json).
+
 ## Reproducibility
 
 **Methodology reference:** see `docs/methodology/issue_657.md` (auto-generated, findings-blind) for the full conditions + hyperparameter table + worked examples.
@@ -173,13 +184,14 @@ Per-condition quantitative numbers (per-behavior raw / singly / doubly-partialle
 
 **Compute:** Phase 1 extraction ~2 GPU-h on 1× A100-80 (GCP `lora-7b` auto lane); off-pod CPU phases (join + bake-off + plots, B = 10,000 × 4 behaviors × reliability band) ~37 min wall on the VM.
 
-**Code:** dataset/direction extraction `scripts/issue657_extract.sh` + `scripts/issue657_extract_diffmean_direction.py`; off-pod pipeline `scripts/issue657_join_substrate.py` → `scripts/issue657_run_bake_off.py` → figures `scripts/issue657_analyzer_figures.py`; analysis library `src/explore_persona_space/analysis/issue657_alignment_predictor.py`. Figures commit `73648b00b0bcec3428b0a1a05f65bfbd181872a3`. Reproduce:
+**Code:** dataset/direction extraction `scripts/issue657_extract.sh` + `scripts/issue657_extract_diffmean_direction.py`; off-pod pipeline `scripts/issue657_join_substrate.py` → `scripts/issue657_run_bake_off.py` → figures `scripts/issue657_analyzer_figures.py`; higher-N pooled secondary read `scripts/issue657_lobo_re_read.py`; analysis library `src/explore_persona_space/analysis/issue657_alignment_predictor.py`. Figures commit `73648b00b0bcec3428b0a1a05f65bfbd181872a3`; LOBO commit `405a0b483fbeef79108d7e49845cd1bccb1dc8fc`. Reproduce:
 
 ```bash
 uv run python scripts/issue657_join_substrate.py --behavior sycophancy --out /tmp/join_syco.json
 uv run python scripts/issue657_run_bake_off.py \
   --syc-i eval_results/issue_623/syc_i.json --out-dir eval_results/issue_657
 uv run python scripts/issue657_analyzer_figures.py
+uv run python scripts/issue657_lobo_re_read.py --out-dir eval_results/issue_657
 ```
 
 **Context:**
@@ -192,6 +204,5 @@ uv run python scripts/issue657_analyzer_figures.py
 
 ## Free-analysis follow-ups (orchestrator: auto-run before parking)
 
-- **Pool behaviors at the predictor-skill level (leave-one-behavior-out) for a higher-N held-out read** (`cost_class: free-analysis`, `headline_affecting: yes`, `est_gpu_hours: 0`) — the per-behavior reads are power-limited at n ≈ 23; the plan's registered LOBO secondary read pools the three primary/secondary behaviors at the predictor-skill level for more power, and the bake-off already emits every per-cell input it needs. Re-reads only the existing `eval_results/issue_657/per_behavior/*.json` + the joins. May move the INDETERMINATE verdict toward a confirmed null if the pooled doubly-partialled CI tightens around zero.
 - **Re-read the refusal/EM ρ at the layer where each causal gate passes** (`cost_class: free-analysis`, `headline_affecting: yes`, `est_gpu_hours: 0`) — the gate passes at layer 7 (refusal) / 27 (EM) but ρ is read at layer 14, where the refusal direction steers negative; the persona vectors and behavior directions were extracted at layers {7,14,21,27} and the `.pt` files are already on HF and in the local `data/` layout. Re-running the bake-off with the readout layer matched to the gate-passing layer tests whether the refusal base-rate null and the leakage reads are a wrong-layer artifact. May move the refusal H1/H3 reads.
 - **Re-run the H3 read at the response-average (Method B) readout** (`cost_class: free-analysis`, `headline_affecting: no`, `est_gpu_hours: 0`) — the persona vectors and behavior directions were extracted at both last-token (Method A, headline) and response-average (Method B) readouts; the Method B `.pt` files are already on HF and in the local `data/` layout. Re-running `issue657_run_bake_off.py --readout response_avg` over the existing artifacts tests whether the weak/indeterminate H3 reads are readout-specific. Does not move the headline (Method A is the pre-registered headline).
