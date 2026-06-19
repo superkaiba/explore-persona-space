@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
+**Methodology:** [docs/methodology/issue_657.md](https://github.com/superkaiba/explore-persona-space/blob/a03779a3f4efb6b5be2c7e3d21aa76c97074659a/docs/methodology/issue_657.md) · [gist](https://gist.github.com/superkaiba/66eb6ccd50653b152024e3f3022745e0)
+
 ## Takeaways
 
 - **Alignment did not beat the base prior on leakage.** The best read clears zero only after partialling the prior twice, then stays inconclusive. The seventh geometry to miss this bar.
@@ -165,7 +167,7 @@ The higher-N pooled secondary read re-uses the per-behavior join outputs only �
 
 ## Reproducibility
 
-**Methodology reference:** see `docs/methodology/issue_657.md` (auto-generated, findings-blind) for the full conditions + hyperparameter table + worked examples.
+**Methodology reference:** [docs/methodology/issue_657.md](https://github.com/superkaiba/explore-persona-space/blob/a03779a3f4efb6b5be2c7e3d21aa76c97074659a/docs/methodology/issue_657.md) · [gist](https://gist.github.com/superkaiba/66eb6ccd50653b152024e3f3022745e0) — auto-generated, findings-blind; full conditions + hyperparameter table + worked examples.
 
 **Parameters:**
 
