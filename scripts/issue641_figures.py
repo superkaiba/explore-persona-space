@@ -227,7 +227,12 @@ def fig_regression(cells, res):
     reg = res["armA_base_propensity_regression"]
     md = res["matched_dose"]
     set_paper_style("blog")
+    # constrained_layout (blog default) collapses this single-axis figure to a
+    # zero-width plot when the set_title_subtitle block is added; disable it and
+    # set explicit margins (see paper-plots blog single-axis note + fig_coherence).
     fig, ax = plt.subplots(figsize=(7.2, 4.4))
+    fig.set_layout_engine("none")
+    fig.subplots_adjust(left=0.12, right=0.97, top=0.80, bottom=0.13)
 
     c_res = paper_palette_role("primary")
     c_non = paper_palette_role("baseline")
@@ -294,12 +299,30 @@ def fig_regression(cells, res):
     ax.set_ylim(0.3, 0.80)
     ax.set_xlim(0.105, 0.235)
     ax.legend(loc="lower right", fontsize=8)
-    set_title_subtitle(
-        ax,
+    # Manual title block (set_title_subtitle's supxlabel source line needs
+    # constrained_layout, which is disabled above to stop the axes collapsing).
+    ax.set_title(
         "The base-propensity slope rests on an 0.08-wide x-range — diagnostic only",
-        "All six Arm-A contexts cluster at base harmful-advice propensity 0.12-0.20 (shaded). "
-        "Slope is positive but the range is too narrow to read as a predictor.",
-        source="issue #641 · n=6 sources · NOT a hypothesis test",
+        loc="left",
+        color="#1A1A1A",
+        fontweight="semibold",
+        fontsize=13,
+        pad=26,
+    )
+    ax.annotate(
+        "All six dose-ladder contexts cluster at base harmful-advice propensity 0.12-0.20 "
+        "(shaded). Slope is positive but the range is too narrow to read as a predictor.",
+        xy=(0.0, 1.0),
+        xytext=(0, 8),
+        xycoords="axes fraction",
+        textcoords="offset points",
+        ha="left",
+        va="bottom",
+        color="#5A5A5A",
+        fontsize=10,
+    )
+    fig.text(
+        0.12, 0.015, "issue #641 · n=6 sources · NOT a hypothesis test", fontsize=8, color="#7A7A7A"
     )
     savefig_paper(fig, "issue_641/armA_base_propensity_regression", dir=OUTDIR)
     plt.close(fig)
