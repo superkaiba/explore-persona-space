@@ -3329,9 +3329,9 @@
       "goal": "Test whether the base model's own-response end-of-answer margin \u2014 the best pre-training leakage ranker on the context panel \u2014 also predicts trained marker pressure on the held-out persona panel, by generating and scoring the base model's own responses under the 35 held-out persona prompts and re-running the within-run ranking and the prior-plus-geometry joint fit there.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/559",
-      "status": "followups_running",
-      "title": "Scoring the base model's own answers ranks held-out personas by trained marker pressure before any training; reading the trained model's answers stays decisively better; the predictor is marker-specific and does not generalize to sycophancy, refusal, or emergent misalignment (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/559",
+      "status": "awaiting_promotion",
+      "title": "Scoring the untrained base model's own answers predicts where a marker implant lands on held-out personas, but the trained read wins all 80 runs and the predictor is marker-specific (fails on sycophancy and emergent misalignment; refusal untestable) (MODERATE confidence)"
     },
     "560": {
       "goal": "Test whether the held-out persona channel structure \u2014 persona geometry routes the training-induced change while the base end-of-answer level persists through training \u2014 generalizes from the 4-negative training recipe to the 16 broad-negative-panel marker adapters, by generating and four-float-scoring those adapters' responses on the same 35 held-out personas.",
