@@ -302,3 +302,4 @@
 {"ts": "2026-06-18T23:38:00Z", "kind": "epm:progress", "version": 109, "by": "unknown", "note": "r6 hb status=running etime=09:53:54 200s=50865 429s=6413 personas_done=53 artifacts=2"}
 {"ts": "2026-06-18T23:47:34Z", "kind": "epm:progress", "version": 110, "by": "unknown", "note": "r6 hb status=running etime=10:03:29 200s=53884 429s=6413 personas_done=60 artifacts=2 — syco+refusal done, EM in progress"}
 {"ts": "2026-06-18T23:56:52Z", "kind": "epm:progress", "version": 111, "by": "unknown", "note": "r6 hb status=running etime=10:12:47 200s=56941 429s=6413 personas_done=66 artifacts=2"}
+{"ts": "2026-06-19T00:06:06Z", "kind": "epm:progress", "version": 112, "by": "unknown", "note": "r6 hb status=dead etime=- 200s=59522 429s=6413 personas_done=72 artifacts=3"}
