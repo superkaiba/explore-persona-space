@@ -3960,8 +3960,8 @@
       "goal": "Determine whether per-(source, behavior) install resistance is overcome by additional training dose or plateaus, and whether residual resistance at matched dose is driven by the source's base propensity for the behavior or by source-behavior identity/alignment conflict \u2014 via matched-recipe dose curves on resistant vs non-resistant source contexts within one non-saturated behavior plus a matched-dose identity-conflict pairing.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/641",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/641",
+      "status": "awaiting_promotion",
       "title": "At a matched training recipe the emergent-misalignment \"resistant\" contexts install it to the same fitted asymptote as non-resistant ones, and an 8-seed read bounds the identity-conflict drag to within \u00b10.24 without resolving it (MODERATE confidence)"
     },
     "642": {
@@ -4090,8 +4090,8 @@
       "goal": "Test whether a persona's activation-space alignment to a behavior's linear direction predicts, across multiple behaviors (sycophancy, refusal, marker, EM), both (a) that persona's base rate for the behavior and (b) where an implanted behavior leaks across held-out personas, and whether this alignment geometry beats the base behavioral prior baseline that the #518/#545/#605 predictor line found unbeatable, reusing existing persona vectors, behavior directions, and trained adapters wherever possible.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/657",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/657",
+      "status": "awaiting_promotion",
       "title": "Activation-space alignment to a behavior direction predicts a persona's own base rate (sycophancy, EM) but does not beat the base prior on where leakage lands (MODERATE confidence)"
     },
     "66": {

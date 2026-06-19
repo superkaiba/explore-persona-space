@@ -170,25 +170,65 @@ def _strip_json_fence(text: str) -> str:
 def generate_artifacts(
     generator_model: str,
     n_questions: int,
+    trait_name: str = SYCOPHANCY_TRAIT_NAME,
+    trait_description: str = SYCOPHANCY_TRAIT_DESCRIPTION,
 ) -> dict:
     """Call the Claude generator to produce 5 pos/neg pairs + N questions + eval prompt.
 
     Mirrors the paper's single-prompt generation. ``n_questions`` lets the smoke
     request a tiny set; the production default is 40 (split 20 extraction/20 eval).
+
+    ``trait_name`` / ``trait_description`` default to the #623 sycophancy constants
+    (verbatim #623 behavior when omitted); #657 overrides them via CLI to extract
+    refusal / marker / EM directions with the SAME paper recipe.
     """
+    import time
+
     import anthropic
 
-    client = anthropic.Anthropic()
+    # R1: raise the SDK retry budget so the built-in exponential backoff rides
+    # through a transient org-wide 429 burst (the launch-attempt-2 crash class:
+    # the default max_retries=2 exhausted on a 1M-output-tokens/min cap burst).
+    # timeout=600s gives each individual request room.
+    client = anthropic.Anthropic(max_retries=10, timeout=600.0)
     prompt = _ARTIFACT_GEN_PROMPT.format(
-        trait=SYCOPHANCY_TRAIT_NAME,
-        trait_description=SYCOPHANCY_TRAIT_DESCRIPTION,
+        trait=trait_name,
+        trait_description=trait_description,
     )
-    resp = client.messages.create(
-        model=generator_model,
-        max_tokens=8192,
-        temperature=1.0,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    # R3: belt-and-suspenders outer retry with MINUTE-scale sleeps for a
+    # sustained 429 burst wider than the SDK's ~10s-capped backoff window. The
+    # SDK (R1) handles the common short bursts; this catches the rare 60s+ wall.
+    last_err: anthropic.RateLimitError | None = None
+    resp = None
+    for attempt in range(3):
+        try:
+            resp = client.messages.create(
+                model=generator_model,
+                # R2: 4096 is ample for the artifact response (5 instruction
+                # pairs + N questions + eval prompt run ~2000-3000 tokens) while
+                # halving the per-call OUTPUT-TOKEN allocation against the
+                # org-wide 1M/min cap, so each request is likelier to fit the
+                # remaining per-minute budget.
+                max_tokens=4096,
+                temperature=1.0,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            break
+        except anthropic.RateLimitError as e:
+            last_err = e
+            wait = 60 * (attempt + 1)  # 60s, 120s, 180s
+            print(
+                f"[generate_artifacts] 429 rate-limit on attempt {attempt + 1}/3; "
+                f"sleeping {wait}s before retry ...",
+                flush=True,
+            )
+            time.sleep(wait)
+    if resp is None:
+        raise (
+            last_err
+            if last_err is not None
+            else RuntimeError("generate_artifacts: messages.create produced no response")
+        )
     raw = resp.content[0].text if resp.content else ""
     data = json.loads(_strip_json_fence(raw))
 
@@ -668,6 +708,24 @@ def main() -> None:
     )
     parser.add_argument("--model", default=BASE_MODEL)
     parser.add_argument("--gpu-id", type=int, default=0)
+    parser.add_argument(
+        "--trait-name",
+        default=SYCOPHANCY_TRAIT_NAME,
+        help=(
+            "Trait name fed to the paper artifact-generation recipe (default: "
+            "sycophancy, reproducing #623 verbatim). #657 overrides with "
+            "refusal / marker / em to extract those behavior directions."
+        ),
+    )
+    parser.add_argument(
+        "--trait-description",
+        default=SYCOPHANCY_TRAIT_DESCRIPTION,
+        help=(
+            "Verbatim trait description fed to the artifact generator (default: "
+            "the #623 sycophancy description). Required override when --trait-name "
+            "is not sycophancy."
+        ),
+    )
     parser.add_argument("--layers", type=int, nargs="+", default=list(DEFAULT_LAYERS))
     parser.add_argument(
         "--n-questions",
@@ -706,6 +764,19 @@ def main() -> None:
 
     load_dotenv()
 
+    # Guard against an override that names a non-default trait but leaves the
+    # default sycophancy description in place (a silent recipe mismatch — the
+    # generated artifacts would describe sycophancy under a refusal label).
+    if args.trait_name != SYCOPHANCY_TRAIT_NAME and (
+        args.trait_description == SYCOPHANCY_TRAIT_DESCRIPTION
+    ):
+        raise ValueError(
+            f"--trait-name={args.trait_name!r} requires a matching "
+            f"--trait-description (the default sycophancy description is still "
+            f"in place — that would generate sycophancy artifacts under a "
+            f"{args.trait_name!r} label)."
+        )
+
     out_dir = (
         PROJECT_ROOT / args.output_dir
         if not Path(args.output_dir).is_absolute()
@@ -720,7 +791,12 @@ def main() -> None:
         artifacts = json.loads(artifacts_path.read_text())
         print(f"[phase=sycophancy_trait] loaded cached artifacts from {artifacts_path}", flush=True)
     else:
-        artifacts = generate_artifacts(args.generator_model, args.n_questions)
+        artifacts = generate_artifacts(
+            args.generator_model,
+            args.n_questions,
+            trait_name=args.trait_name,
+            trait_description=args.trait_description,
+        )
         artifacts_path.write_text(json.dumps(artifacts, indent=2))
         print(f"[phase=sycophancy_trait] generated artifacts -> {artifacts_path}", flush=True)
 
@@ -805,7 +881,8 @@ def main() -> None:
         json.dumps(
             {
                 "model": args.model,
-                "trait": SYCOPHANCY_TRAIT_NAME,
+                "trait": args.trait_name,
+                "trait_description": args.trait_description,
                 "layers": layers,
                 "n_instruction_pairs": len(instructions),
                 "n_extraction_questions": len(extraction_questions),
@@ -894,11 +971,11 @@ def main() -> None:
         flush=True,
     )
     if not probe["k2_pass"]:
-        # K2 HALT — the vector does not causally increase sycophancy at any layer.
+        # K2 HALT — the vector does not causally increase the trait at any layer.
         raise SystemExit(
-            "K2 HALT: sycophancy vector produced NO positive steering effect at any layer; "
-            "the trait vector is not measuring sycophancy. Diagnose extraction "
-            "(trait-description / judge-threshold) before reading rho."
+            f"K2 HALT: {args.trait_name} vector produced NO positive steering effect at "
+            f"any layer; the trait vector is not measuring {args.trait_name}. Diagnose "
+            "extraction (trait-description / judge-threshold) before reading rho."
         )
 
 

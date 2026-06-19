@@ -1,0 +1,768 @@
+"""Issue #657 — unit guards for the alignment-predictor analysis library.
+
+These pin the load-bearing invariants of the cross-behavior leakage bake-off so a
+future refactor can't silently strip them:
+
+  - the marker-token fail-fast in the #605 substrate loader (wrong marker_id raises);
+  - the doubly-partialled partial-Spearman actually removes the partialled covariate
+    (a covariate-driven correlation collapses under the double partial);
+  - the prior_centroid_projection geometry-side control (M-Alts1) is computed from
+    the base-rate-weighted persona-vector centroid;
+  - bootstrap_over_personas resamples the BYSTANDER persona, not the cell;
+  - the reliability band (M-Stats1) produces the 3-point R_low/R_expected/R_high
+    sensitivity points;
+  - the reliability band's EIV disattenuation actually MOVES the partial-rho across
+    reliability points (the round-1 rank-invariant no-op regression) AND carries
+    per-band-point CIs for partial-rho AND ΔR² (B1 + B2 round-2 blockers);
+  - the H3 verdict is NOT a PASS when a band point's CI straddles 0 (B2);
+  - PRIMARY_H3_BEHAVIORS is a literal frozenset excluding EM (N1);
+  - the additive --trait-name CLI default reproduces #623's sycophancy verbatim.
+
+All synthetic / CPU-only — no GPU, no HF, no model load.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+from pathlib import Path
+
+import numpy as np
+import pytest
+import torch
+
+from explore_persona_space.analysis import issue657_alignment_predictor as m
+
+
+def _toy_persona_vectors(n_layers: int = 4, hidden: int = 8, seed: int = 0):
+    """A tiny persona-vector bank: assistant (baseline) + 5 personas, (n_layers, hidden)."""
+    rng = np.random.default_rng(seed)
+    names = ["assistant", "p1", "p2", "p3", "p4", "p5"]
+    return {
+        name: torch.from_numpy(rng.standard_normal((n_layers, hidden)).astype(np.float32))
+        for name in names
+    }
+
+
+# ── partial_spearman: the double partial removes the partialled covariate ──
+
+
+def test_partial_spearman_removes_covariate():
+    rng = np.random.default_rng(1)
+    n = 60
+    z = rng.standard_normal(n)
+    # x and y are BOTH driven only by z (plus independent noise) -> raw rho strong,
+    # partial rho ~ 0 once z is partialled out.
+    x = z + 0.1 * rng.standard_normal(n)
+    y = z + 0.1 * rng.standard_normal(n)
+    raw_rho, _p, _n = m.partial_spearman(x, y, None)
+    part_rho, _p2, _n2 = m.partial_spearman(x, y, z)
+    assert raw_rho > 0.8, raw_rho
+    assert abs(part_rho) < 0.3, part_rho
+
+
+def test_partial_spearman_doubly_partialled_matrix_z():
+    """The matrix-z (doubly-partialled) read removes BOTH covariate columns.
+
+    x, y share a single driver z1; z2 is an extra (irrelevant) covariate column. The
+    matrix partial on [z1, z2] must still kill the z1-driven correlation — i.e. adding
+    a noise column to the partial set does not resurrect the signal. (A test where x,y
+    depend on the SUM z1+z2 is NOT a valid expectation: rank-residualizing on the two
+    rank columns linearly cannot remove a nonlinear-in-ranks sum dependence — that is
+    a property of rank partial correlation, not a code bug.)
+    """
+    rng = np.random.default_rng(2)
+    n = 80
+    z1 = rng.standard_normal(n)
+    z2 = rng.standard_normal(n)
+    x = z1 + 0.1 * rng.standard_normal(n)
+    y = z1 + 0.1 * rng.standard_normal(n)
+    raw_rho, _, _ = m.partial_spearman(x, y, None)
+    double, _, _ = m.partial_spearman(x, y, np.column_stack([z1, z2]))
+    assert raw_rho > 0.8
+    assert abs(double) < 0.3, double
+
+
+# ── prior_centroid_projection: M-Alts1 base-rate-weighted centroid ──
+
+
+def test_prior_centroid_projection_weights_by_base_rate():
+    pv = _toy_persona_vectors()
+    personas = ["assistant", "p1", "p2", "p3"]
+    # heavy weight on p1: the centroid points toward p1's persona vector, so p1's
+    # projection should be the highest among the non-baseline personas.
+    base_rates = {"p1": 0.9, "p2": 0.05, "p3": 0.05, "assistant": 0.01}
+    pcp = m.prior_centroid_projection(pv, base_rates, personas, layer=14)
+    assert set(pcp) == set(personas)
+    non_baseline = {k: v for k, v in pcp.items() if k != "assistant"}
+    top = max(non_baseline, key=non_baseline.get)
+    assert top == "p1", (top, non_baseline)
+
+
+def test_compute_alignment_is_cosine_bounded():
+    pv = _toy_persona_vectors()
+    personas = ["assistant", "p1", "p2"]
+    bdir = torch.from_numpy(np.ones(8, dtype=np.float32))
+    align = m.compute_alignment(pv, bdir, personas, layer=14)
+    # assistant is the baseline-self -> its persona vector is 0 -> NaN cosine.
+    assert np.isnan(align["assistant"])
+    for p in ("p1", "p2"):
+        assert -1.0001 <= align[p] <= 1.0001, (p, align[p])
+
+
+# ── bootstrap_over_personas: resamples the BYSTANDER, not the cell ──
+
+
+def test_bootstrap_resamples_bystanders_not_cells():
+    # 3 bystanders x 2 sources each = 6 cells. The stat counts DISTINCT bystanders
+    # in the resampled frame; with bystander resampling it must be <= 3 (never 6).
+    cells = []
+    for b in ("b1", "b2", "b3"):
+        for s in ("s1", "s2"):
+            cells.append({"source": s, "bystander": b, "delta": 0.1, "align": 0.2})
+    frame = {
+        "cells": cells,
+        "resolvable_bystanders": ["b1", "b2", "b3"],
+        "n_resolvable": 3,
+        "dropped": [],
+    }
+
+    def _distinct_bystanders(fr):
+        return float(len({c["bystander"] for c in fr["cells"]}))
+
+    out = m.bootstrap_over_personas(frame, _distinct_bystanders, b=50, seed=657)
+    # the resampled frame never has more than 3 distinct bystanders
+    assert out["ci_hi"] <= 3.0, out
+    assert out["n_bystanders"] == 3
+
+
+# ── reliability band: 3-point sensitivity (M-Stats1) ──
+
+
+def test_attenuation_band_three_points():
+    rng = np.random.default_rng(3)
+    cells = []
+    bystanders = [f"b{i}" for i in range(20)]
+    base_rates = {b: float(rng.uniform(0.02, 0.13)) for b in bystanders}
+    for b in bystanders:
+        for s in ("s1", "s2"):
+            cells.append(
+                {
+                    "source": s,
+                    "bystander": b,
+                    "delta": float(rng.uniform(-0.1, 0.7)),
+                    "align": float(rng.uniform(-0.3, 0.3)),
+                    "bystander_base_rate": base_rates[b],
+                    "prior_centroid_projection": float(rng.uniform(-0.3, 0.3)),
+                }
+            )
+    frame = {
+        "cells": cells,
+        "resolvable_bystanders": bystanders,
+        "n_resolvable": len(bystanders),
+        "dropped": [],
+    }
+    band = m.attenuation_sensitivity(frame, base_rates, behavior="refusal")
+    assert band["band_applicable"] is True
+    for label in ("R_observed", "R_low", "R_expected", "R_high"):
+        assert label in band["points"], label
+    # R_low (largest n, prior cleanest) has the LOWEST reliability-correction scale;
+    # all reliabilities are in (0, 1].
+    for label in ("R_low", "R_expected", "R_high"):
+        rel = band["points"][label]["reliability"]
+        assert 0.0 < rel <= 1.0, (label, rel)
+
+
+def test_attenuation_band_skipped_for_marker():
+    """Marker base rate is a log-prob, not a 0-1 rate -> binomial reliability undefined."""
+    cells = [
+        {
+            "source": "s1",
+            "bystander": f"b{i}",
+            "delta": 0.1,
+            "align": 0.2,
+            "bystander_base_rate": -18.0,  # a log-prob, not a rate
+            "prior_centroid_projection": 0.1,
+        }
+        for i in range(10)
+    ]
+    frame = {
+        "cells": cells,
+        "resolvable_bystanders": [f"b{i}" for i in range(10)],
+        "n_resolvable": 10,
+        "dropped": [],
+    }
+    base_rates = {f"b{i}": -18.0 for i in range(10)}
+    band = m.attenuation_sensitivity(frame, base_rates, behavior="marker")
+    assert band["band_applicable"] is False
+
+
+# ── M-Stats1 EIV disattenuation: the band ACTUALLY MOVES the partial (B1) ──
+
+
+def _eiv_band_fixture(seed: int = 42, n_bystanders: int = 30):
+    """A frame where ``align`` is a CLEANER proxy of the latent leakage driver Z than
+    the NOISY ``bystander_base_rate`` — exactly the regime M-Stats1 must disattenuate.
+
+    Returns (frame, base_rates).
+    """
+    rng = np.random.default_rng(seed)
+    bystanders = [f"b{i}" for i in range(n_bystanders)]
+    z_latent = {b: float(rng.standard_normal()) for b in bystanders}
+    base_rates: dict[str, float] = {}
+    align_b: dict[str, float] = {}
+    for b in bystanders:
+        z = z_latent[b]
+        # base_rate: a NOISY proxy of Z, kept in (0, 1) (a 0-1 rate so the binomial
+        # reliability is defined).
+        base_rates[b] = float(np.clip(0.10 + 0.05 * z + 0.04 * rng.standard_normal(), 0.01, 0.30))
+        align_b[b] = float(z + 0.10 * rng.standard_normal())  # CLEAN proxy of Z
+    cells = []
+    for b in bystanders:
+        for s in ("s1", "s2"):
+            delta = 0.4 * z_latent[b] + (0.1 if s == "s1" else -0.1) + 0.1 * rng.standard_normal()
+            cells.append(
+                {
+                    "source": s,
+                    "bystander": b,
+                    "delta": float(delta),
+                    "align": align_b[b],
+                    "bystander_base_rate": base_rates[b],
+                    "prior_centroid_projection": float(
+                        0.2 * z_latent[b] + 0.3 * rng.standard_normal()
+                    ),
+                }
+            )
+    frame = {
+        "cells": cells,
+        "resolvable_bystanders": bystanders,
+        "n_resolvable": len(bystanders),
+        "dropped": [],
+    }
+    return frame, base_rates
+
+
+def test_attenuation_band_eiv_moves_partial_not_a_noop():
+    """B1 regression: the reliability band must produce DISTINCT doubly-partialled rho
+    across R_observed/R_low/R_expected/R_high, and the disattenuated low-reliability
+    band point must move AWAY from the observed-prior point in the expected direction.
+
+    The round-1 code did ``prior * sqrt(rel)`` then rank-residualized, which is
+    rank-invariant — all four points were byte-identical to R_observed. This asserts
+    the no-op is gone.
+    """
+    frame, base_rates = _eiv_band_fixture()
+    band = m.attenuation_sensitivity(frame, base_rates, behavior="refusal", b=1, seed=7)
+    assert band["band_applicable"] is True
+
+    labels = ("R_observed", "R_low", "R_expected", "R_high")
+    rhos = [band["points"][k]["doubly_partialled_rho"] for k in labels]
+    for lbl, r in zip(labels, rhos, strict=True):
+        assert not np.isnan(r), (lbl, r)
+    # (i) the band points are NOT byte-identical (the no-op signature).
+    distinct = {round(r, 9) for r in rhos}
+    assert len(distinct) > 1, f"band collapsed to a single value (no-op regression): {rhos}"
+    # (ii) the disattenuated low-reliability band point moves AWAY from observed-prior
+    # in the expected direction (more of the noisy prior removed -> partial decreases).
+    # Post-B3 label fix, R_low IS the lowest-reliability / most-disattenuated point, so
+    # it is the LOWEST-rho end -> rho_low < rho_obs holds (more robustly than pre-fix).
+    rho_obs = band["points"]["R_observed"]["doubly_partialled_rho"]
+    rho_low = band["points"]["R_low"]["doubly_partialled_rho"]
+    rho_high = band["points"]["R_high"]["doubly_partialled_rho"]
+    assert rho_low < rho_obs, (rho_low, rho_obs)
+    # rho is monotone in reliability: most-attenuated R_low <= R_high (least-attenuated,
+    # the optimistic end). This is the value-level monotonicity the plan registers.
+    assert rho_low <= rho_high + 1e-9, (rho_low, rho_high)
+    # (iii) reliabilities are ordered ASCENDING with the label names (B3 fix): R_low is
+    # the LOWEST reliability, R_high the HIGHEST; observed (R=1) is the ceiling.
+    # observed >= R_high >= R_expected >= R_low.
+    rels = {k: band["points"][k]["reliability"] for k in labels}
+    assert rels["R_observed"] >= rels["R_high"] >= rels["R_expected"] >= rels["R_low"] - 1e-9, rels
+    assert rels["R_low"] <= rels["R_expected"] <= rels["R_high"], rels
+
+
+def test_attenuation_band_carries_per_point_cis_for_rho_and_delta_r2():
+    """B2 regression: every band point must carry a bootstrap CI for BOTH the
+    doubly-partialled rho AND ΔR²_align-beyond-prior (the registered §7 gate reads
+    the per-band CI lower bounds, not point-estimate signs)."""
+    frame, base_rates = _eiv_band_fixture()
+    band = m.attenuation_sensitivity(frame, base_rates, behavior="refusal", b=300, seed=7)
+    assert band["ci_computed"] is True
+    for label in ("R_observed", "R_low", "R_expected", "R_high"):
+        pt = band["points"][label]
+        assert "doubly_partialled_rho" in pt
+        assert "delta_r2_align_beyond_prior" in pt
+        for ci_key in ("doubly_partialled_rho_ci", "delta_r2_align_beyond_prior_ci"):
+            assert ci_key in pt, (label, ci_key)
+            ci = pt[ci_key]
+            assert "ci_lo" in ci and "ci_hi" in ci, (label, ci_key)
+
+
+def test_attenuation_band_smoke_b1_has_no_ci():
+    """Smoke (b<=1) reports point estimates only, no per-point CI (matches the smoke
+    fast path)."""
+    frame, base_rates = _eiv_band_fixture(n_bystanders=12)
+    band = m.attenuation_sensitivity(frame, base_rates, behavior="refusal", b=1, seed=7)
+    assert band["ci_computed"] is False
+    assert "doubly_partialled_rho_ci" not in band["points"]["R_observed"]
+
+
+# ── marker-token fail-fast in the #605 substrate loader ──
+
+
+def test_marker_substrate_rejects_wrong_marker_id(tmp_path: Path):
+    marker_root = tmp_path / "issue_605" / "marker"
+    (marker_root / "per_cell_trained").mkdir(parents=True)
+    (marker_root / "per_cell_base").mkdir(parents=True)
+    # one cell carrying a WRONG marker_id (bare ※ id 63680) -> must raise.
+    cell = {
+        "context_label": "m605_nt_comedian_1__none",
+        "source_cid": "A1",
+        "summary": {"mean_logp_marker": -5.0},
+        "metadata": {"marker_id": 63680},
+    }
+    base = {"summary": {"mean_logp_marker": -18.0}, "metadata": {"marker_id": 63680}}
+    name = "A1__m605_nt_comedian_1__none.json"
+    (marker_root / "per_cell_trained" / name).write_text(json.dumps(cell))
+    (marker_root / "per_cell_base" / name).write_text(json.dumps(base))
+    with pytest.raises(ValueError, match="marker_id"):
+        m.load_marker_cell_substrate(tmp_path)
+
+
+def test_marker_persona_alias_mapping():
+    # swe -> software_engineer; non-panel personas (formal/socratic/pirate) -> None.
+    assert m._marker_persona_from_context("m605_nt_swe_1__none") == "software_engineer"
+    assert m._marker_persona_from_context("m605_nt_comedian_2__explicit") == "comedian"
+    assert m._marker_persona_from_context("m605_nt_formal_1__soft") is None
+    assert m._marker_persona_from_context("instr_explicit_1") is None
+
+
+# ── additive --trait-name default reproduces #623 sycophancy verbatim ──
+
+
+def test_extract_script_trait_default_is_623_sycophancy():
+    spec = importlib.util.spec_from_file_location(
+        "issue623_extract_657test",
+        Path(__file__).resolve().parents[1] / "scripts/issue623_extract_sycophancy_vector.py",
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    import inspect
+
+    sig = inspect.signature(mod.generate_artifacts)
+    from explore_persona_space.experiments.persona_decomp_623 import (
+        SYCOPHANCY_TRAIT_DESCRIPTION,
+        SYCOPHANCY_TRAIT_NAME,
+    )
+
+    assert sig.parameters["trait_name"].default == SYCOPHANCY_TRAIT_NAME
+    assert sig.parameters["trait_description"].default == SYCOPHANCY_TRAIT_DESCRIPTION
+
+
+# ── PRIMARY_H3_BEHAVIORS is a literal frozenset excluding EM (N1) ──
+
+
+def test_primary_h3_behaviors_is_literal_frozenset_excluding_em():
+    assert isinstance(m.PRIMARY_H3_BEHAVIORS, frozenset)
+    assert frozenset({"sycophancy", "refusal", "marker"}) == m.PRIMARY_H3_BEHAVIORS
+    assert "em" not in m.PRIMARY_H3_BEHAVIORS
+
+
+# ── bake-off consumer: H3 gate + band verdict + syc-i fail-loud (B2 + N2) ──
+
+
+def _load_bake_off_module():
+    spec = importlib.util.spec_from_file_location(
+        "issue657_run_bake_off_test",
+        Path(__file__).resolve().parents[1] / "scripts/issue657_run_bake_off.py",
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _band_with_cis(point_cis: dict[str, tuple[float, float]], ci_computed: bool = True) -> dict:
+    """Build a minimal band dict where each label maps to (rho_ci_lo, r2_ci_lo).
+
+    Both CIs at a point get the same lower bound for brevity (the gate ANDs them).
+    """
+    points: dict[str, dict] = {}
+    for label, (rho_lo, r2_lo) in point_cis.items():
+        points[label] = {
+            "reliability": 1.0 if label == "R_observed" else 0.5,
+            "doubly_partialled_rho": 0.3,
+            "delta_r2_align_beyond_prior": 0.1,
+            "doubly_partialled_rho_ci": {"ci_lo": rho_lo, "ci_hi": rho_lo + 0.4},
+            "delta_r2_align_beyond_prior_ci": {"ci_lo": r2_lo, "ci_hi": r2_lo + 0.2},
+        }
+    return {"band_applicable": True, "ci_computed": ci_computed, "points": points}
+
+
+def test_band_clears_confirmed_when_all_points_clear():
+    bake = _load_bake_off_module()
+    band = _band_with_cis(
+        {
+            "R_observed": (0.20, 0.05),
+            "R_low": (0.10, 0.02),
+            "R_expected": (0.08, 0.01),
+            "R_high": (0.05, 0.01),
+        }
+    )
+    assert bake._band_clears(band)["verdict"] == "CONFIRMED"
+
+
+def test_band_clears_indeterminate_when_only_optimistic_end_clears():
+    """B3 regression (monotone fixture): under the corrected R_low/R_high label
+    semantics, R_high is the HIGHEST-reliability / LEAST-attenuated / HIGHEST-rho
+    OPTIMISTIC end and R_low the LOWEST-reliability / most-attenuated CONSERVATIVE
+    end. A genuinely-indeterminate result clears 0 ONLY at the optimistic end (R_high)
+    and fails at the conservative end (R_low/R_expected) -> INDETERMINATE.
+
+    The rho CI lower bounds are MONOTONE-INCREASING from R_low -> R_high (the shape the
+    real EIV estimator produces: less attenuation -> higher rho), unlike the prior
+    non-monotone fixture (R_low=-0.05, R_high=+0.06) that encoded the inverted mental
+    model and could not catch the inversion against monotone production data."""
+    bake = _load_bake_off_module()
+    band = _band_with_cis(
+        {
+            "R_observed": (0.20, 0.05),
+            "R_low": (-0.05, 0.02),  # conservative end: most attenuated, straddles 0
+            "R_expected": (-0.01, 0.01),  # still straddles 0
+            "R_high": (0.06, 0.01),  # optimistic end: least attenuated, clears both CIs
+        }
+    )
+    assert bake._band_clears(band)["verdict"] == "INDETERMINATE"
+
+
+def test_band_clears_null_when_optimistic_end_fails_monotone():
+    """B3 companion: a monotone band whose even-optimistic (R_high) end straddles 0 is
+    NULL (never clears under partialling) — confirms opt_clear keys on the correct
+    (highest-reliability) end, not the conservative one."""
+    bake = _load_bake_off_module()
+    band = _band_with_cis(
+        {
+            "R_observed": (0.10, 0.05),
+            "R_low": (-0.10, 0.02),
+            "R_expected": (-0.06, 0.01),
+            "R_high": (-0.02, 0.01),  # optimistic end still straddles 0 -> NULL
+        }
+    )
+    assert bake._band_clears(band)["verdict"] == "NULL"
+
+
+def test_band_clears_requires_both_rho_and_delta_r2():
+    bake = _load_bake_off_module()
+    # rho CIs all clear, but ΔR² CI straddles 0 at R_low -> NOT confirmed.
+    band = _band_with_cis(
+        {
+            "R_observed": (0.20, 0.05),
+            "R_low": (0.10, -0.01),
+            "R_expected": (0.08, 0.02),
+            "R_high": (0.05, 0.01),
+        }
+    )
+    assert bake._band_clears(band)["verdict"] != "CONFIRMED"
+
+
+def test_h3_summary_not_pass_when_a_band_point_straddles_zero():
+    """B2 regression: the observed-prior partial-rho clears its headline CI, but one
+    reliability-band point's CI straddles 0 -> the H3 verdict must NOT be PASS."""
+    bake = _load_bake_off_module()
+    # band: optimistic end clears, R_low does not -> INDETERMINATE band verdict.
+    band = _band_with_cis(
+        {
+            "R_observed": (0.20, 0.05),
+            "R_low": (-0.05, 0.02),  # straddles 0
+            "R_expected": (0.04, 0.01),
+            "R_high": (0.06, 0.01),
+        }
+    )
+    band_verdict = bake._band_clears(band)
+    assert band_verdict["verdict"] == "INDETERMINATE"
+    per_behavior = {
+        "sycophancy": {
+            # v6: _h3_summary reads the per-behavior effective-primary flag (single
+            # source of truth) — sycophancy is always primary (pure base-model read).
+            "is_primary_h3": True,
+            "k2_pass": None,  # sycophancy reuses #623's K2-validated direction
+            "leakage_bake_off": {
+                "in_scope": True,
+                # headline R_observed CIs DO clear (the no-correction read is positive)
+                "h3_doubly_partialled_rho_ci": {"ci_lo": 0.20, "ci_hi": 0.55},
+                "h3_delta_r2_ci": {"ci_lo": 0.05, "ci_hi": 0.30},
+                "band_verdict": band_verdict,
+            },
+        }
+    }
+    summary = bake._h3_summary(per_behavior)
+    assert summary["h3_verdict"] != "PASS", summary
+    assert summary["h3_verdict"] == "INDETERMINATE", summary
+    assert summary["per_behavior_detail"]["sycophancy"]["passes_h3"] is False
+
+
+def test_h3_summary_pass_only_when_band_confirmed():
+    bake = _load_bake_off_module()
+    band = _band_with_cis(
+        {
+            "R_observed": (0.20, 0.05),
+            "R_low": (0.10, 0.02),
+            "R_expected": (0.08, 0.01),
+            "R_high": (0.05, 0.01),
+        }
+    )
+    band_verdict = bake._band_clears(band)
+    assert band_verdict["verdict"] == "CONFIRMED"
+    per_behavior = {
+        "refusal": {
+            # v6: refusal is always primary (Arditi diff-mean pure base-model read).
+            "is_primary_h3": True,
+            "k2_pass": True,
+            "leakage_bake_off": {
+                "in_scope": True,
+                "h3_doubly_partialled_rho_ci": {"ci_lo": 0.20, "ci_hi": 0.55},
+                "h3_delta_r2_ci": {"ci_lo": 0.05, "ci_hi": 0.30},
+                "band_verdict": band_verdict,
+            },
+        }
+    }
+    summary = bake._h3_summary(per_behavior)
+    assert summary["h3_verdict"] == "PASS", summary
+    assert "refusal" in summary["primary_behaviors_cleared"]
+
+
+def test_syc_i_fallback_halts_in_production(tmp_path: Path):
+    """N2: a missing #623 syc_i.json HALTS a non-smoke production sycophancy run
+    (exit non-zero) unless --allow-syc-i-fallback is passed."""
+    bake = _load_bake_off_module()
+    missing = tmp_path / "nope" / "syc_i.json"
+    # production, no opt-in -> SystemExit
+    with pytest.raises(SystemExit):
+        bake._load_da_base_rates("sycophancy", missing, smoke=False, allow_syc_i_fallback=False)
+    # smoke -> warn-and-fall-back (returns None, no raise)
+    assert bake._load_da_base_rates("sycophancy", missing, smoke=True) is None
+    # explicit opt-in -> warn-and-fall-back
+    assert (
+        bake._load_da_base_rates("sycophancy", missing, smoke=False, allow_syc_i_fallback=True)
+        is None
+    )
+    # non-sycophancy behaviors are unaffected (always None, never raise)
+    assert bake._load_da_base_rates("refusal", missing, smoke=False) is None
+
+
+# ── v6 run-conditional primary-set membership (M-Alts2 + M-Alts3) ────────────
+
+
+def test_effective_primary_h3_marker_affordance_stays_primary():
+    """A pure #623 affordance marker read (K2-passed) keeps marker PRIMARY."""
+    eff = m.effective_primary_h3(marker_direction_kind="affordance")
+    assert eff == frozenset({"sycophancy", "refusal", "marker"})
+    # None / unknown kind defaults to the affordance (primary) branch.
+    assert m.effective_primary_h3(marker_direction_kind=None) == frozenset(
+        {"sycophancy", "refusal", "marker"}
+    )
+
+
+def test_effective_primary_h3_marker_shift_fallback_demotes_marker():
+    """M-Alts3: a #521 trained-shift marker fallback DEMOTES marker to secondary,
+    shrinking the primary set to {sycophancy, refusal}."""
+    eff = m.effective_primary_h3(marker_direction_kind="shift_fallback")
+    assert eff == frozenset({"sycophancy", "refusal"})
+    assert "marker" not in eff
+
+
+def test_effective_primary_h3_overlap_exclusion_demotes_marker():
+    """The Phase-0 panel-overlap gate (overlap < 8) makes marker DV-(a)-only ->
+    removed from the primary set even when the direction is the affordance read."""
+    eff = m.effective_primary_h3(marker_direction_kind="affordance", marker_leakage_excluded=True)
+    assert eff == frozenset({"sycophancy", "refusal"})
+
+
+def test_effective_primary_h3_em_never_primary():
+    """EM is never in the primary set in any branch (M-Alts2)."""
+    for kind in (None, "affordance", "shift_fallback"):
+        assert "em" not in m.effective_primary_h3(marker_direction_kind=kind)
+
+
+def test_h3_summary_excludes_k2_failed_primary_behavior():
+    """A K2-failed direction (k2_pass=False) is excluded from the gate, never nulled.
+
+    The behavior is effective-primary, but its K2 failure means the direction does
+    not measure the behavior — it is reported as k2_failed_excluded_from_gate, NOT
+    counted as a NULL beat-the-prior outcome."""
+    bake = _load_bake_off_module()
+    per_behavior = {
+        "refusal": {
+            "is_primary_h3": True,
+            "k2_pass": False,  # direction failed the causal sanity gate
+            "leakage_bake_off": {
+                "in_scope": True,
+                "h3_doubly_partialled_rho_ci": {"ci_lo": 0.20, "ci_hi": 0.55},
+                "h3_delta_r2_ci": {"ci_lo": 0.05, "ci_hi": 0.30},
+                "band_verdict": {"verdict": "CONFIRMED"},
+            },
+        }
+    }
+    summary = bake._h3_summary(per_behavior)
+    # K2-failed -> excluded from the gate (status recorded), NOT a PASS, NOT a NULL beat.
+    assert summary["per_behavior_detail"]["refusal"]["status"] == "k2_failed_excluded_from_gate"
+    assert "refusal" not in summary["primary_behaviors_cleared"]
+    assert summary["h3_verdict"] == "NULL"
+
+
+def test_h3_summary_secondary_behavior_never_gates_primary():
+    """A SECONDARY behavior (is_primary_h3=False, e.g. EM or a shift-fallback marker)
+    that clears its CIs does NOT trip the primary H3 verdict (M-Alts2/M-Alts3)."""
+    bake = _load_bake_off_module()
+    per_behavior = {
+        "em": {
+            "is_primary_h3": False,  # EM always secondary
+            "k2_pass": True,
+            "leakage_bake_off": {
+                "in_scope": True,
+                "h3_doubly_partialled_rho_ci": {"ci_lo": 0.30, "ci_hi": 0.60},
+                "h3_delta_r2_ci": {"ci_lo": 0.10, "ci_hi": 0.40},
+                "band_verdict": {"verdict": "CONFIRMED"},
+            },
+        }
+    }
+    summary = bake._h3_summary(per_behavior)
+    assert summary["h3_verdict"] == "NULL"  # no EFFECTIVE-primary behavior cleared
+    assert summary["effective_primary_h3_behaviors"] == []
+
+
+def test_marker_panel_overlap_missing_substrate_is_excluded_failsoft(tmp_path: Path):
+    """marker_panel_overlap fail-softs on a missing #605 substrate: overlap 0 +
+    marker_leakage_excluded True (a graceful degradation, not a crash)."""
+    decision = m.marker_panel_overlap(tmp_path)  # no issue_605/ under tmp_path
+    assert decision["marker_panel_overlap"] == 0
+    assert decision["marker_leakage_excluded"] is True
+    assert decision["min_overlap"] == m.MARKER_MIN_OVERLAP
+    assert "DV-(a)-only" in decision["decision"]
+
+
+# ── B1 (round-2): K2-failed behaviors emit NO leakage stats into the bake-off ──
+
+
+def _write_refusal_run_behavior_substrate(tmp_path: Path, k2_pass: bool) -> dict[str, Path]:
+    """Build the smallest REAL substrate that drives ``run_behavior`` end-to-end for
+    refusal: a #518 ``predictor_comparison.json`` (a few off-diagonal cells), per-
+    persona centroid .pt files, a refusal direction .pt, and the steering-effect JSON
+    that ``_read_k2_pass`` reads. Returns the dirs ``run_behavior`` needs.
+    """
+    n_layers = len(m.DEFAULT_LAYERS)
+    hidden = 8
+    rng = np.random.default_rng(11)
+    sources = ["assistant", "src_a"]
+    bystanders = ["assistant", "b1", "b2", "b3", "b4", "b5"]
+
+    # persona centroids (n_layers, hidden) for every persona referenced by a cell.
+    persona_dir = tmp_path / "persona_vectors"
+    persona_dir.mkdir()
+    for name in sorted(set(sources) | set(bystanders)):
+        torch.save(
+            torch.tensor(rng.normal(size=(n_layers, hidden)), dtype=torch.float32),
+            persona_dir / f"{name}.pt",
+        )
+
+    # refusal direction .pt under both readout names, at every layer.
+    direction_dir = tmp_path / "behavior_directions" / "refusal"
+    direction_dir.mkdir(parents=True)
+    for layer in m.DEFAULT_LAYERS:
+        vec = torch.tensor(rng.normal(size=(hidden,)), dtype=torch.float32)
+        for readout in ("last_token", "response_avg"):
+            torch.save(vec, direction_dir / f"{readout}_{layer}.pt")
+
+    # #518 predictor_comparison.json (off-diagonal source->bystander cells).
+    cells = []
+    for s in sources:
+        for b in bystanders:
+            if s == b:
+                continue
+            cells.append(
+                {
+                    "source": s,
+                    "bystander": b,
+                    "delta": float(rng.normal()),
+                    "bystander_base_rate": float(rng.uniform(0.05, 0.95)),
+                    "source_base_rate": float(rng.uniform(0.05, 0.95)),
+                }
+            )
+    sub = tmp_path / "issue_518" / "refusal" / "_inputs"
+    sub.mkdir(parents=True)
+    (sub / "predictor_comparison.json").write_text(
+        json.dumps({"cells": cells, "git_sha": "test", "schema_version": 1})
+    )
+
+    # steering-effect JSON -> _read_k2_pass.
+    out_dir = tmp_path / "eval_dir"
+    out_dir.mkdir()
+    (out_dir / "steering_effect_by_layer_refusal.json").write_text(
+        json.dumps({"k2_pass": k2_pass, "headline_layer": int(m.DEFAULT_LAYERS[1])})
+    )
+    return {
+        "eval_results_root": tmp_path,
+        "persona_dir": persona_dir,
+        "direction_dir": direction_dir,
+        "out_dir": out_dir,
+    }
+
+
+def _run_refusal_behavior(tmp_path: Path, k2_pass: bool) -> dict:
+    bake = _load_bake_off_module()
+    paths = _write_refusal_run_behavior_substrate(tmp_path, k2_pass=k2_pass)
+    return bake.run_behavior(
+        behavior="refusal",
+        eval_results_root=paths["eval_results_root"],
+        persona_dirs=[paths["persona_dir"]],
+        direction_dir=paths["direction_dir"],
+        base_rates_da=None,
+        layer=int(m.DEFAULT_LAYERS[1]),
+        readout="last_token",
+        centering="global_mean",
+        n_boot=8,
+        shuffle_b=4,
+        smoke=True,
+        out_dir=paths["out_dir"],
+    )
+
+
+_LEAKAGE_RHO_KEYS = (
+    "raw_rho",
+    "singly_partialled_rho",
+    "doubly_partialled_rho",
+    "reliability_band",
+    "band_verdict",
+    "h3_doubly_partialled_rho_ci",
+    "h3_delta_r2_ci",
+)
+
+
+def test_run_behavior_k2_failed_emits_no_leakage_stats(tmp_path: Path):
+    """B1 regression: a K2-FAILED behavior (k2_pass=False) must NOT carry any leakage
+    rho / partial-rho / CI / reliability-band into the per-behavior dict (and thence
+    alignment_predictor.json). It is reported (k2_pass flag + status), NOT nulled.
+
+    Pre-fix: run_behavior gated leakage computation ONLY on marker_leakage_excluded,
+    so a K2-failed refusal direction still wrote raw_rho/partial-rho/band — exactly
+    the "reported as a finding" the plan (§6.5/§7) forbids."""
+    res = _run_refusal_behavior(tmp_path, k2_pass=False)
+    assert res["k2_pass"] is False
+    leakage = res["leakage_bake_off"]
+    assert leakage["in_scope"] is False, "K2-failed -> leakage out of scope"
+    assert leakage.get("status") == "k2_failed_excluded_from_bake_off"
+    for key in _LEAKAGE_RHO_KEYS:
+        assert key not in leakage, (
+            f"K2-failed behavior leaked stat {key!r} into alignment_predictor.json"
+        )
+
+
+def test_run_behavior_k2_passed_emits_leakage_stats(tmp_path: Path):
+    """Positive control: an otherwise-identical K2-PASS direction DOES compute the
+    leakage stats (so the suppression above is K2-gated, not a blanket disable)."""
+    res = _run_refusal_behavior(tmp_path, k2_pass=True)
+    assert res["k2_pass"] is True
+    leakage = res["leakage_bake_off"]
+    assert leakage["in_scope"] is True
+    # the full-data point estimates exist (computed from the real toy cells)
+    assert "raw_rho" in leakage and "doubly_partialled_rho" in leakage
+    assert "reliability_band" in leakage and "band_verdict" in leakage
