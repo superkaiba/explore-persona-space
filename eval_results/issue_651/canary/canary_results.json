@@ -1,0 +1,44 @@
+{
+  "gate_7a": {
+    "gate": "7a",
+    "ref": {
+      "s_top1_frac": 0.32465410232543945,
+      "mean_cos_to_U1": 0.5871104598045349
+    },
+    "reproduced": {
+      "s_top1_frac": 0.32465410232543945,
+      "mean_cos_to_U1": 0.5871104598045349,
+      "cos_U1_re_vs_ref": 1.0
+    },
+    "checks": {
+      "s_top1_frac_within_tol": true,
+      "mean_cos_to_U1_within_tol": true,
+      "U1_agreement": true
+    },
+    "pass": true
+  },
+  "gate_7b": {
+    "gate": "7b",
+    "cells": [
+      {
+        "behavior": "marker",
+        "cid": "default",
+        "seed": 42,
+        "layout": "root",
+        "subfolder": "adapters/i537_marker_default_seed42",
+        "delta_v_norm": 6.376941204071045,
+        "pass": true
+      },
+      {
+        "behavior": "em",
+        "cid": "default",
+        "seed": 42,
+        "layout": "sft_em_adapter-nested",
+        "subfolder": "adapters/i537_em_default_seed42/sft_em_adapter",
+        "delta_v_norm": 71.77201080322266,
+        "pass": true
+      }
+    ],
+    "pass": true
+  }
+}

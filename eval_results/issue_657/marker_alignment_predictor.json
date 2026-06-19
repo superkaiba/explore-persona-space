@@ -1,0 +1,454 @@
+{
+  "behavior": "marker",
+  "is_primary_h3": false,
+  "primary_vs_secondary": "secondary",
+  "marker_direction_kind": "shift_fallback",
+  "marker_panel_overlap": 3,
+  "k2_pass": false,
+  "layer": 14,
+  "readout": "last_token",
+  "centering": "global_mean",
+  "n_cells_substrate": 64,
+  "n_cells_joined": 48,
+  "n_resolvable_bystanders": 3,
+  "resolvable_bystanders": [
+    "comedian",
+    "software_engineer",
+    "villain"
+  ],
+  "dropped_bystanders": [
+    "assistant"
+  ],
+  "marker_leakage_excluded": true,
+  "dv_a_base_rate": {
+    "n": 3,
+    "raw_rho": 1.0,
+    "ci_lo": 1.0,
+    "ci_hi": 1.0,
+    "base_rate_source": "issue518_bystander_base_rate"
+  },
+  "replication_anchor": null,
+  "leakage_bake_off": {
+    "in_scope": false,
+    "status": "k2_failed_excluded_from_bake_off",
+    "note": "direction FAILED the K2 steering sanity gate \u2014 leakage rho is NOT reported (it does not measure the behavior); reported, not nulled (plan \u00a76.5/\u00a77)."
+  },
+  "substrate_provenance": {
+    "source_root": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-657/eval_results/issue_605/marker",
+    "n_cells": 64,
+    "n_overlap_bystanders": 4,
+    "n_marker_id_checked": 1600,
+    "marker_token_id": 83399,
+    "persona_aliases": {
+      "assistant": "assistant",
+      "comedian": "comedian",
+      "villain": "villain",
+      "swe": "software_engineer"
+    },
+    "note": "#605 panel is context-keyed; only personas overlapping the 24-persona panel are joined (plan \u00a78/\u00a712)."
+  },
+  "joined_cells": [
+    {
+      "source": "A1",
+      "bystander": "comedian",
+      "delta": 14.747144683837892,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -17.678012695312496,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "A1",
+      "bystander": "software_engineer",
+      "delta": 17.87311715443929,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -20.418311856587728,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "A1",
+      "bystander": "villain",
+      "delta": 14.604168542226155,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -16.546612033843996,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "A2",
+      "bystander": "comedian",
+      "delta": 14.412416061401368,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -17.602121551513672,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "A2",
+      "bystander": "software_engineer",
+      "delta": 20.84204725265503,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -20.98317331314087,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "A2",
+      "bystander": "villain",
+      "delta": 14.848784103393555,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -16.657149194081622,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "A3",
+      "bystander": "comedian",
+      "delta": 7.013442596435548,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -16.31911171722412,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "A3",
+      "bystander": "software_engineer",
+      "delta": 5.5668717575073225,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -12.836635271708168,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "A3",
+      "bystander": "villain",
+      "delta": 5.426923100153605,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -11.82796184539795,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "A4",
+      "bystander": "comedian",
+      "delta": 19.92461560058594,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -20.21103482055664,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "A4",
+      "bystander": "software_engineer",
+      "delta": 8.42196236292521,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -13.632135938008629,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "A4",
+      "bystander": "villain",
+      "delta": 8.696485118865967,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -13.61200870513916,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "A5",
+      "bystander": "comedian",
+      "delta": 12.70412754058838,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -16.693752220153808,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "A5",
+      "bystander": "software_engineer",
+      "delta": 12.288595161437987,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -15.801908512115476,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "A5",
+      "bystander": "villain",
+      "delta": 19.30070618311564,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -19.53376450856527,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "B1",
+      "bystander": "comedian",
+      "delta": 15.379264343261719,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -17.716526817321775,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "B1",
+      "bystander": "software_engineer",
+      "delta": 18.43473176956177,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -20.222945919036864,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "B1",
+      "bystander": "villain",
+      "delta": 16.313069216410316,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -17.503513577779135,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "B2",
+      "bystander": "comedian",
+      "delta": 13.189717811584472,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -17.161374664306642,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "B2",
+      "bystander": "software_engineer",
+      "delta": 14.943992627461752,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -18.42729875564575,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "B2",
+      "bystander": "villain",
+      "delta": 13.528807811737062,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -16.39152535756429,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "B3",
+      "bystander": "comedian",
+      "delta": 13.14065126800537,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -16.79815827178955,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "B3",
+      "bystander": "software_engineer",
+      "delta": 15.296383845011393,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -18.8980060895284,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "B3",
+      "bystander": "villain",
+      "delta": 14.334339014689126,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -16.766791642506917,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "B4",
+      "bystander": "comedian",
+      "delta": 12.688065620422362,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -17.15752951812744,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "B4",
+      "bystander": "software_engineer",
+      "delta": 16.527528591156006,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -20.367103576660156,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "B4",
+      "bystander": "villain",
+      "delta": 14.374089215596518,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -17.253167762756345,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "B5",
+      "bystander": "comedian",
+      "delta": 12.088798141479492,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -16.405144645690918,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "B5",
+      "bystander": "software_engineer",
+      "delta": 12.08813482284546,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -17.138924039204916,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "B5",
+      "bystander": "villain",
+      "delta": 12.33492328008016,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -16.006923885345458,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "C1",
+      "bystander": "comedian",
+      "delta": 15.30359938812256,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -17.227279075622555,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "C1",
+      "bystander": "software_engineer",
+      "delta": 18.15457751592,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -19.54297861099243,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "C1",
+      "bystander": "villain",
+      "delta": 15.885682029724123,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -17.175123837788902,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "D1",
+      "bystander": "comedian",
+      "delta": 13.822774505615234,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -16.998023155212405,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "D1",
+      "bystander": "software_engineer",
+      "delta": 17.2316405804952,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -19.545756689707435,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "D1",
+      "bystander": "villain",
+      "delta": 14.544117914835612,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -16.349132181803384,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "D2",
+      "bystander": "comedian",
+      "delta": 15.732698356628418,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -17.53099295043945,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "D2",
+      "bystander": "software_engineer",
+      "delta": 18.436002597808837,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -19.77847692489624,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "D2",
+      "bystander": "villain",
+      "delta": 16.110326118469242,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -17.241650403340657,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "D3",
+      "bystander": "comedian",
+      "delta": 11.871179450988768,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -15.872946685791016,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "D3",
+      "bystander": "software_engineer",
+      "delta": 14.038355617523194,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -18.102665793100993,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "D3",
+      "bystander": "villain",
+      "delta": 13.803846384684244,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -16.678998807271324,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "D4",
+      "bystander": "comedian",
+      "delta": 13.184706024169921,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -16.719434600830077,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "D4",
+      "bystander": "software_engineer",
+      "delta": 15.26329647064209,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -18.210438226064046,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "D4",
+      "bystander": "villain",
+      "delta": 13.81982400894165,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -16.1924133682251,
+      "prior_centroid_projection": 0.7782369046245844
+    },
+    {
+      "source": "D5",
+      "bystander": "comedian",
+      "delta": 10.842051902770995,
+      "align": -0.03209114819765091,
+      "bystander_base_rate": -15.99256092071533,
+      "prior_centroid_projection": 0.8799852475995126
+    },
+    {
+      "source": "D5",
+      "bystander": "software_engineer",
+      "delta": 13.170614337921142,
+      "align": -0.07579462230205536,
+      "bystander_base_rate": -18.111403465270993,
+      "prior_centroid_projection": 0.5562479944640109
+    },
+    {
+      "source": "D5",
+      "bystander": "villain",
+      "delta": 12.923464641571044,
+      "align": 0.005660853814333677,
+      "bystander_base_rate": -16.563363882700603,
+      "prior_centroid_projection": 0.7782369046245844
+    }
+  ],
+  "metadata": {
+    "git_commit": "a03779a3f4efb6b5be2c7e3d21aa76c97074659a",
+    "timestamp_utc": "2026-06-18T23:42:03.744075Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "env_versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0",
+      "peft": "0.18.1",
+      "anthropic": "0.88.0",
+      "scipy": "1.17.1",
+      "numpy": "2.2.6"
+    },
+    "behavior": "marker",
+    "smoke": false
+  }
+}

@@ -351,12 +351,19 @@ def _strip_interval_inline_exempt_lines(text: str) -> str:
 # The `## Reproducibility` `**Context:**` provenance row (SPEC.md
 # § `**Context:**` row; verify_task_body.py check 17) requires the
 # originating user prompt / follow-up scope note be carried forward
-# VERBATIM as a blockquote — never paraphrased, trimmed, or typo-fixed.
-# Verbatim preservation and the prose anti-pattern scan are mutually
-# unsatisfiable on that quote (task #597: a scope note opening with
-# "PRE-REGISTERED" tripped the `pre_reg` pattern), so blockquote lines
-# inside the Context block are exempt from the scan. Non-blockquote
-# prose inside the block is still scanned.
+# VERBATIM — never paraphrased, trimmed, or typo-fixed. Verbatim
+# preservation and the prose anti-pattern scan are mutually unsatisfiable
+# on that quote (task #597: a scope note opening with "PRE-REGISTERED"
+# tripped the `pre_reg` pattern; task #651: an originating prompt
+# containing "post-hoc" tripped `post_hoc_phrasing`), so the verbatim
+# prompt is exempt from the scan in BOTH the forms the corpus uses:
+#   (1) a following `>` blockquote (SPEC.md's recommended shape, e.g.
+#       #638 / #537 / #627) — blanked by the `>` branch below; AND
+#   (2) the prompt carried INLINE on the `- Originating prompt: "..."`
+#       sub-bullet (and any wrapped continuation lines), the form #651
+#       and #640 / #610 use — blanked by the `in_origin_prompt` branch.
+# Non-prompt prose inside the block (the Created / Follow-up to bullets)
+# is still scanned.
 _CONTEXT_LABEL_RE = re.compile(r"^(?:[-*]\s+)?\*\*\s*Context\s*:?\s*\*\*")
 _BOLD_LABEL_RE = re.compile(r"^(?:[-*]\s+)?\*\*\s*([^*\n]+?)\s*:?\s*\*\*")
 # SPEC.md names exactly three Context sub-bullets; a boldface label
@@ -364,23 +371,50 @@ _BOLD_LABEL_RE = re.compile(r"^(?:[-*]\s+)?\*\*\s*([^*\n]+?)\s*:?\s*\*\*")
 # and ends the block. Plain (non-bold) sub-bullets never match
 # _BOLD_LABEL_RE, so they keep the block open without this whitelist.
 _CONTEXT_SUB_LABELS = ("created", "follow-up to", "originating prompt")
+# The `Originating prompt` sub-bullet in EITHER form: a list item whose
+# label is "originating prompt(s)[, verbatim]", optionally boldfaced.
+# Matches both `- Originating prompt: "..."` (plain, #651) and
+# `- **Originating prompt(s), verbatim:** ...` (bold, #640 / #610). The
+# verbatim prompt text follows on the same line and/or wrapped
+# continuation lines; the `in_origin_prompt` walker blanks all of it.
+_ORIGIN_PROMPT_SUBLABEL_RE = re.compile(r"^[-*]\s+(?:\*\*\s*)?originating\s+prompt", re.IGNORECASE)
+_LIST_OR_BOLD_RE = re.compile(r"^(?:[-*]\s|\*\*)")
 
 
 def strip_context_blockquotes(text: str) -> str:
-    """Drop blockquote lines inside the `**Context:**` provenance block.
+    """Drop the verbatim originating-prompt quote inside the `**Context:**`
+    provenance block — in both the blockquote and inline forms.
 
     The block runs from the `**Context:**` label to the next markdown
     heading or the next boldface row label that is not one of the
     Context sub-bullets (Created / run, Follow-up to, Originating
-    prompt(s)), or EOF. If the boundary is mis-detected the failure
-    mode is the pre-fix behavior (the quote gets scanned) — never a
-    silently widened exemption.
+    prompt(s)), or EOF. Within the block:
+
+    - `>` blockquote lines are blanked (SPEC.md's recommended verbatim
+      shape — incident #597).
+    - The `- Originating prompt …` sub-bullet AND its wrapped
+      continuation lines are blanked, so an inline verbatim prompt is
+      exempt too (incident #651: an inline prompt containing "post-hoc"
+      collided with `post_hoc_phrasing`). The inline-prompt run ends at
+      the next sibling list item / bold label / heading / blank line, or
+      the Context-block end — whichever comes first.
+
+    If a boundary is mis-detected the failure mode is the pre-fix
+    behavior (the quote gets scanned) — never a silently widened
+    exemption.
     """
     out_lines: list[str] = []
     in_context = False
+    in_origin_prompt = False
     for line in text.splitlines():
         stripped = line.strip()
         if in_context:
+            # An inline-prompt continuation run ends at a blank line, a
+            # sibling list item / bold label, or a heading.
+            if in_origin_prompt and (
+                stripped == "" or stripped.startswith("#") or _LIST_OR_BOLD_RE.match(stripped)
+            ):
+                in_origin_prompt = False
             label_match = _BOLD_LABEL_RE.match(stripped)
             if stripped.startswith("#") or (
                 label_match
@@ -389,8 +423,12 @@ def strip_context_blockquotes(text: str) -> str:
                 )
             ):
                 in_context = False
-            elif stripped.startswith(">"):
-                continue  # verbatim provenance quote — exempt from the scan
+                in_origin_prompt = False
+            elif _ORIGIN_PROMPT_SUBLABEL_RE.match(stripped):
+                in_origin_prompt = True
+                continue  # inline verbatim prompt label + same-line quote — exempt
+            elif in_origin_prompt or stripped.startswith(">"):
+                continue  # verbatim provenance quote (inline run or blockquote) — exempt
         if not in_context and _CONTEXT_LABEL_RE.match(stripped):
             in_context = True
         out_lines.append(line)

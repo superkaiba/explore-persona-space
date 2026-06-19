@@ -2,6 +2,7 @@
 
 ## Pre-launch gates (data, env, config)
 
+- [RunPod lane `.env` not sourced via `nohup bash <driver>`](feedback_runpod_lane_env_not_sourced_via_nohup.md) — On the `auto_fallback_runpod` lane, GCP-brief launch shape (`nohup bash <script>`) dies in ~3s on missing API keys; SSH-MCP `sh` doesn't source `.env` and RunPod has no `--metadata` injection. Always use a wrapper `launch.sh` that does `set -a; . ./.env; set +a` before exec'ing the driver — #657 r3
 - [SLURM lane silently rsyncs main; --repo-branch inert](feedback_slurm_rsyncs_main_tree.md) — `auto`-routed feature-branch experiment that falls through to SLURM runs STALE main-tree code (rsync source `_default_src_root()` is `__file__`-walked → repo-root install on main, regardless of cwd/worktree); pin `backend: gcp` for feature-branch experiments — #653
 - [GCP lane is git-clone-only — local data/ doesn't reach the VM](feedback_gcp_lane_git_clone_only_data.md) — for `--backend gcp`, verify each hard-required `data/` input is git-tracked OR HF-mirrored with a fetch fallback; local presence at VM repo root is NOT sufficient (the GCE startup script does not rsync data/) — #634
 - [GCP-lane salvage-relaunch: .env + git-auth + pkill self-match](feedback_gcp_salvage_relaunch.md) — fresh GCP instance has NO .env at repo root and NO git credential helper; stage .env via stdin + fetch private branches with token-in-URL `x-access-token:$TOK@github.com`; NEVER `pkill -f` a pattern present in your own SSH argv (self-kills the session, gcloud rc=255) — #653

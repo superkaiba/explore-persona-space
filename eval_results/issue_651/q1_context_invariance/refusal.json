@@ -1,0 +1,30 @@
+{
+  "behavior": "refusal",
+  "is_null_check_row": true,
+  "primary_read": "delta_v",
+  "q1": {
+    "contexts": [
+      "sp_doctor",
+      "sp_ph1",
+      "sp_ph2",
+      "sp_swe"
+    ],
+    "n_contexts": 4,
+    "top_share_norm_weighted": 0.48367831110954285,
+    "top_share_unit_norm": 0.48367831110954285,
+    "cos_to_U1": {
+      "sp_doctor": 0.855825662612915,
+      "sp_ph1": 0.789169430732727,
+      "sp_ph2": 0.8713487982749939,
+      "sp_swe": 0.8546813130378723
+    },
+    "mean_cos_to_U1": 0.8427562713623047,
+    "sign_flip_null_p95": 0.2659202516078949,
+    "sign_flip_null_p99": 0.2696225643157959,
+    "top_share_clears_null_p95": true
+  },
+  "verdict": {
+    "verdict": "no_ceiling",
+    "note": "no 2-seed ceiling for this behavior"
+  }
+}

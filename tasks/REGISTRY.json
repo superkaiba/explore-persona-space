@@ -3329,9 +3329,9 @@
       "goal": "Test whether the base model's own-response end-of-answer margin \u2014 the best pre-training leakage ranker on the context panel \u2014 also predicts trained marker pressure on the held-out persona panel, by generating and scoring the base model's own responses under the 35 held-out persona prompts and re-running the within-run ranking and the prior-plus-geometry joint fit there.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/559",
-      "status": "followups_running",
-      "title": "Scoring the base model's own answers ranks held-out personas by trained marker pressure before any training, but reading the trained model's answers stays decisively better (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/559",
+      "status": "awaiting_promotion",
+      "title": "Scoring the untrained base model's own answers predicts where a marker implant lands on held-out personas, but the trained read wins all 80 runs and the predictor is marker-specific (fails on sycophancy and emergent misalignment; refusal untestable) (MODERATE confidence)"
     },
     "560": {
       "goal": "Test whether the held-out persona channel structure \u2014 persona geometry routes the training-induced change while the base end-of-answer level persists through training \u2014 generalizes from the 4-negative training recipe to the 16 broad-negative-panel marker adapters, by generating and four-float-scoring those adapters' responses on the same 35 held-out personas.",
@@ -3960,17 +3960,17 @@
       "goal": "Determine whether per-(source, behavior) install resistance is overcome by additional training dose or plateaus, and whether residual resistance at matched dose is driven by the source's base propensity for the behavior or by source-behavior identity/alignment conflict \u2014 via matched-recipe dose curves on resistant vs non-resistant source contexts within one non-saturated behavior plus a matched-dose identity-conflict pairing.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/641",
-      "status": "followups_running",
-      "title": "At a matched training recipe the emergent-misalignment \"resistant\" contexts install it to the same fitted asymptote as non-resistant ones, and the identity-conflict pairing stays unresolved at two seeds (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/641",
+      "status": "awaiting_promotion",
+      "title": "At a matched training recipe the emergent-misalignment \"resistant\" contexts install it to the same fitted asymptote as non-resistant ones, and an 8-seed read bounds the identity-conflict drag to within \u00b10.24 without resolving it (MODERATE confidence)"
     },
     "642": {
       "goal": "Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap into a module-coverage component and a rank component by adding a coverage-matched full-FT arm (embeddings/lm_head/LayerNorm frozen) to #606's comparison at matched source-implant strength.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/642",
-      "status": "followups_running",
-      "title": "The sycophancy bystander-leakage gap between LoRA and full fine-tuning is mostly adapter-vs-dense update behavior, and that piece survives matched learning rate plus on-policy data on a second source persona (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/642",
+      "status": "awaiting_promotion",
+      "title": "The LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap is mostly adapter-vs-dense update behavior, and a follow-up second-behavior probe on refusal shows the same gap directionally at half the magnitude (MODERATE confidence)"
     },
     "643": {
       "has_clean_result": false,
@@ -4041,11 +4041,11 @@
     },
     "651": {
       "goal": "Re-extract layer-L activation-shift directions (trained minus base) from the #537 context-generalization testbed's existing adapters (5 conditional behaviors x 16 training contexts x seeds, on HF) plus a bounded 2nd-seed (1042) retrain of em + sycophancy across the 16 contexts so all readable behaviors get a within-cell seed ceiling, and test (Q1) whether each behavior's shift collapses to ONE direction across the training contexts it was implanted under (context-invariance of the write) and (Q2) whether the different behaviors' dominant directions coincide or cluster by family (cross-behavior identity), benchmarked against the within-cell seed ceiling, with unit-norm direction cosine as the dose-invariant DV.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/blocked/651",
-      "status": "blocked",
-      "title": "Cross-behavior cross-context shared-direction geometry on the #537 testbed (post-hoc re-extraction)"
+      "path": "tasks/awaiting_promotion/651",
+      "status": "awaiting_promotion",
+      "title": "A LoRA-installed conditional behavior writes one context-invariant direction; across four behaviors the directions are mostly distinct, with one predicted family coincidence and one unexplained high off-diagonal (MODERATE confidence)"
     },
     "652": {
       "goal": "Isolate the rank/parameterization component of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap by comparing LoRA against a coverage-matched dense fine-tune (the #642 cmft module set) at a matched learning rate, trained on on-policy sycophancy completions, on on-policy judge-scored per-persona bystander leakage at matched source-implant strength \u2014 testing whether any adapter-vs-dense leakage gap survives once learning rate, module coverage, and data realism are all controlled.",
@@ -4088,11 +4088,11 @@
     },
     "657": {
       "goal": "Test whether a persona's activation-space alignment to a behavior's linear direction predicts, across multiple behaviors (sycophancy, refusal, marker, EM), both (a) that persona's base rate for the behavior and (b) where an implanted behavior leaks across held-out personas, and whether this alignment geometry beats the base behavioral prior baseline that the #518/#545/#605 predictor line found unbeatable, reusing existing persona vectors, behavior directions, and trained adapters wherever possible.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/657",
-      "status": "approved",
-      "title": "Does persona->behavior-direction alignment predict cross-persona leakage across behaviors, beating the base prior?"
+      "path": "tasks/awaiting_promotion/657",
+      "status": "awaiting_promotion",
+      "title": "Activation-space alignment to a behavior direction predicts a persona's own base rate (sycophancy, EM) but does not beat the base prior on where leakage lands (MODERATE confidence)"
     },
     "66": {
       "has_clean_result": true,

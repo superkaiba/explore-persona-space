@@ -1,0 +1,185 @@
+{
+  "behaviors": [
+    "em",
+    "fact",
+    "marker",
+    "sycophancy"
+  ],
+  "raw_cosine_matrix": [
+    [
+      1.0,
+      0.09345151153874509,
+      0.05381431695099818,
+      0.5804196518857818
+    ],
+    [
+      0.09345151153874509,
+      1.0,
+      0.5936100245074298,
+      0.1669982577290287
+    ],
+    [
+      0.05381431695099818,
+      0.5936100245074298,
+      1.0,
+      0.052780012902144346
+    ],
+    [
+      0.5804196518857818,
+      0.1669982577290287,
+      0.052780012902144346,
+      1.0
+    ]
+  ],
+  "ceiling_normalized_matrix": [
+    [
+      1.0,
+      0.09738834970192393,
+      0.05493603216693791,
+      0.593583189011939
+    ],
+    [
+      0.09738834970192393,
+      1.0,
+      0.6072554837523889,
+      0.1711442005485879
+    ],
+    [
+      0.05493603216693791,
+      0.6072554837523889,
+      1.0,
+      0.05298568082411855
+    ],
+    [
+      0.593583189011939,
+      0.1711442005485879,
+      0.05298568082411855,
+      1.0
+    ]
+  ],
+  "pairwise_null_p95_matrix": [
+    [
+      NaN,
+      0.0609292650649566,
+      0.06422769277143678,
+      0.2008784120203477
+    ],
+    [
+      0.0609292650649566,
+      NaN,
+      0.10081910824872402,
+      0.07723388919376474
+    ],
+    [
+      0.06422769277143678,
+      0.10081910824872402,
+      NaN,
+      0.07678731966528189
+    ],
+    [
+      0.2008784120203477,
+      0.07723388919376474,
+      0.07678731966528189,
+      NaN
+    ]
+  ],
+  "pairwise_null_p95": {
+    "em|fact": 0.0609292650649566,
+    "em|marker": 0.06422769277143678,
+    "em|sycophancy": 0.2008784120203477,
+    "fact|marker": 0.10081910824872402,
+    "fact|sycophancy": 0.07723388919376474,
+    "marker|sycophancy": 0.07678731966528189
+  },
+  "seed_ceilings": {
+    "em": 0.9615903277276638,
+    "fact": 0.9575656558845468,
+    "marker": 0.9979091411551726,
+    "sycophancy": 0.9943309211755763
+  },
+  "cross_behavior_null_p95": 0.2776282727718353,
+  "cross_behavior_null_p99": 0.28348031640052795,
+  "verdict": {
+    "verdict": "family_cluster_or_intermediate",
+    "off_diagonal_ceiling_fractions": [
+      {
+        "pair": [
+          "em",
+          "fact"
+        ],
+        "ceiling_fraction": 0.09738834970192393,
+        "raw_cosine": 0.09345151153874509,
+        "null_p95": 0.0609292650649566,
+        "below_ceiling_bar": true,
+        "within_null_band": false
+      },
+      {
+        "pair": [
+          "em",
+          "marker"
+        ],
+        "ceiling_fraction": 0.05493603216693791,
+        "raw_cosine": 0.05381431695099818,
+        "null_p95": 0.06422769277143678,
+        "below_ceiling_bar": true,
+        "within_null_band": true
+      },
+      {
+        "pair": [
+          "em",
+          "sycophancy"
+        ],
+        "ceiling_fraction": 0.593583189011939,
+        "raw_cosine": 0.5804196518857818,
+        "null_p95": 0.2008784120203477,
+        "below_ceiling_bar": false,
+        "within_null_band": false
+      },
+      {
+        "pair": [
+          "fact",
+          "marker"
+        ],
+        "ceiling_fraction": 0.6072554837523889,
+        "raw_cosine": 0.5936100245074298,
+        "null_p95": 0.10081910824872402,
+        "below_ceiling_bar": false,
+        "within_null_band": false
+      },
+      {
+        "pair": [
+          "fact",
+          "sycophancy"
+        ],
+        "ceiling_fraction": 0.1711442005485879,
+        "raw_cosine": 0.1669982577290287,
+        "null_p95": 0.07723388919376474,
+        "below_ceiling_bar": true,
+        "within_null_band": false
+      },
+      {
+        "pair": [
+          "marker",
+          "sycophancy"
+        ],
+        "ceiling_fraction": 0.05298568082411855,
+        "raw_cosine": 0.052780012902144346,
+        "null_p95": 0.07678731966528189,
+        "below_ceiling_bar": true,
+        "within_null_band": true
+      }
+    ],
+    "coincide_frac": 0.85,
+    "distinct_frac": 0.5,
+    "near_boundary": [
+      {
+        "pair": [
+          "em",
+          "sycophancy"
+        ],
+        "ceiling_fraction": 0.593583189011939
+      }
+    ]
+  },
+  "ceiling_object": "per_behavior_cross_seed_U1_cosine"
+}
