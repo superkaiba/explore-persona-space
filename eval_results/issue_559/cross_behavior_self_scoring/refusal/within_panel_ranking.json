@@ -1,0 +1,124 @@
+{
+  "behavior": "refusal",
+  "level_key": "trained_rate",
+  "primary_dv": "trained_level",
+  "n_sources_total": 6,
+  "n_usable_source_panels": 4,
+  "usable_sources": [
+    "assistant",
+    "comedian",
+    "kindergarten_teacher",
+    "software_engineer"
+  ],
+  "source_delta_sd": {
+    "assistant": 0.17593756411019326,
+    "comedian": 0.056956588118115985,
+    "kindergarten_teacher": 0.2137030075252354,
+    "qwen_default": 0.02278028531133411,
+    "software_engineer": 0.35474260217744064,
+    "villain": 0.013742432184444112
+  },
+  "source_axis_inferential": true,
+  "rho_vs_level_per_source": {
+    "assistant": {
+      "self_graded": 0.17830362792798843,
+      "self_binary": 0.17075772332918773,
+      "length": 0.14987630517351402,
+      "cosine": 0.25821385910043615
+    },
+    "comedian": {
+      "self_graded": 0.5860275099932525,
+      "self_binary": 0.5899261728100159,
+      "length": 0.17898774615126928,
+      "cosine": 0.14586339053236555
+    },
+    "kindergarten_teacher": {
+      "self_graded": 0.0929323185765962,
+      "self_binary": 0.10313671451584892,
+      "length": -0.12327831650249707,
+      "cosine": 0.20941839539754734
+    },
+    "software_engineer": {
+      "self_graded": 0.28400574739923096,
+      "self_binary": 0.2855324935751706,
+      "length": -0.22534780285959116,
+      "cosine": -0.11447874653279003
+    }
+  },
+  "rho_vs_delta_per_source_SECONDARY": {
+    "assistant": {
+      "self_graded": -0.45822027452444275,
+      "self_binary": -0.465459247653277,
+      "length": 0.12177869164615265,
+      "cosine": 0.7038909438302516
+    },
+    "comedian": {
+      "self_graded": 0.06246011857524762,
+      "self_binary": 0.05131021200402791,
+      "length": 0.46673309576267874,
+      "cosine": -0.04640036624541251
+    },
+    "kindergarten_teacher": {
+      "self_graded": -0.49157799222903675,
+      "self_binary": -0.49533103592217254,
+      "length": 0.06612108780177828,
+      "cosine": 0.6283989096349454
+    },
+    "software_engineer": {
+      "self_graded": 0.26611423516560534,
+      "self_binary": 0.2680187474192716,
+      "length": -0.21946047223149714,
+      "cosine": -0.026054667936159483
+    }
+  },
+  "primary_ranker": "self_graded",
+  "cell_axis_bootstrap": {
+    "median": 0.2311546876636097,
+    "ci_lo": 0.03567589803510276,
+    "ci_hi": 0.49618181498277975
+  },
+  "source_axis_bootstrap": {
+    "median": 0.2311546876636097,
+    "ci_lo": 0.0929323185765962,
+    "ci_hi": 0.5860275099932525
+  },
+  "source_axis_note": null,
+  "paired_graded_minus_binary": {
+    "median": -0.0027127044963515257,
+    "ci_lo": -0.010204395939252722,
+    "ci_hi": 0.007545904598800696,
+    "band": 0.1,
+    "per_source_diffs": [
+      0.007545904598800696,
+      -0.003898662816763432,
+      -0.010204395939252722,
+      -0.0015267461759396195
+    ]
+  },
+  "base_floor_kill": {
+    "floored": true,
+    "frac_rollouts_zero": 0.999079112599414,
+    "n_rollouts_zero": 11934,
+    "n_rollouts_judged": 11945,
+    "graded_sd": 0.3648411236015557,
+    "binary_floor_frac_threshold": 0.95,
+    "graded_sd_floor": 2.0
+  },
+  "arm_verdict": "DROPPED",
+  "bootstrap": {
+    "B": 2000,
+    "seed": 42,
+    "parity_band": 0.1
+  },
+  "metadata": {
+    "git_commit": "3aa742080b38d7c8c48242e7a1d967aa61459f9a",
+    "env_versions": {
+      "numpy": "2.2.6",
+      "scipy": "1.17.1",
+      "anthropic": "0.88.0",
+      "huggingface_hub": "0.36.2"
+    },
+    "timestamp": "2026-06-19T00:07:26.160767+00:00",
+    "script": "issue559_cross_behavior_self_scoring.py --analyze"
+  }
+}
