@@ -5,7 +5,7 @@ title: Activation-space alignment to a behavior direction predicts a persona's o
 kind: experiment
 tags: []
 created_at: '2026-06-18T09:48:28Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 623
 origin_prompt: 'Extend #623''s alignment predictor across behaviors + to leakage:
   does behavior-direction alignment predict (a) base rate for other behaviors and
