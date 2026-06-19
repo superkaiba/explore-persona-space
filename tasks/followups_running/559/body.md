@@ -28,7 +28,7 @@ relates_to:
 
 - For the hidden ` ※` marker, scoring the **untrained** base model's own answers ranks the 35 never-trained held-out personas at median rank correlation **+0.61** (CI clear of zero), far ahead of geometry (+0.38).
 - But reading the **trained** model's answers wins **all 80 of 80 runs**, by +0.14 — past the +0.10 parity band set in advance. The pre-training audit works at a discount, not parity.
-- The marker result does **not generalize to content behaviors**: sycophancy ranks at median ρ **+0.21** (CI [-0.08, +0.49]) and emergent misalignment at **+0.19** (CI [-0.09, +0.34]), both spanning zero. The predictor is marker-specific.
+- The marker result does **not generalize to content behaviors**: sycophancy ranks at median ρ **+0.21** (CI [-0.08, +0.49]; N=2 source panels, cell-axis read only) and emergent misalignment at **+0.19** (CI [-0.09, +0.34], the well-powered N=6 arm), both spanning zero. In this experiment the predictor is marker-specific.
 - The graded self-score adds nothing over the trivial "high-base-rate personas leak more" baseline (paired difference ≈ -0.03 to -0.04, CIs straddling zero); for emergent misalignment, geometry beats it on several sources.
 - Refusal was dropped, not failed: the base model essentially never refuses (99.91% of rollouts zero, graded sd 0.36), so the self-score is degenerate — a scope reduction registered before the run.
 
@@ -57,13 +57,16 @@ relates_to:
 
 ### The base-self-scoring predictor is marker-specific: it does not transfer to sycophancy, refusal, or emergent misalignment
 
-Same predictor and protocol as the marker rounds; only the behavior changed. I scored the base model's own answers with each behavior's Sonnet judge and ranked held-out personas against their already-measured trained behavior rate.
+Same predictor and protocol as the marker rounds; only the behavior changed. I ranked held-out personas by the base self-score against their already-measured trained behavior rate.
 
 ![Per-behavior cell-axis median rank correlation between the base self-score and the trained behavior level, with 95 percent bootstrap intervals and one dot per source panel; a dashed reference line marks the marker channel at plus 0.61](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ba8cec1e4df7fdbce48d90a6d19282bee2d8e771/figures/issue_559/cross_behavior_self_scoring/cross_behavior_rho_hero.png)
 
-> **Figure.** *All three content behaviors rank at median ρ +0.19 to +0.23 with intervals crossing or touching zero — far below the marker channel's +0.61.* Cell-axis median rank correlation (95% CI) of the base self-score against the trained behavior rate; each dot is one source panel (n = 2 sycophancy, 4 refusal, 6 emergent misalignment).
+> **Figure.** *Sycophancy and emergent misalignment span zero (CIs [-0.08, +0.49] and [-0.09, +0.34]); refusal's CI sits above zero but its arm is DROPPED by the pre-registered base-floor kill (99.91% of base rollouts judged zero, graded sd 0.36 below the 2.0 floor), so it is uninterpretable on near-constant scores. The marker channel reference (+0.61) sits well above all three.* Cell-axis median rank correlation (95% CI) of the base self-score against the trained behavior rate; each dot is one source panel (n = 2 sycophancy, 4 refusal, 6 emergent misalignment).
 
-Sycophancy and emergent misalignment **fail**: median ρ = +0.21 (CI [-0.08, +0.49]) and +0.19 (CI [-0.09, +0.34]), both spanning zero. The graded self-score buys nothing over the trivial base-rate baseline (paired difference ≈ -0.03 to -0.04, CIs straddling zero); for emergent misalignment a geometry signal beats it on several sources (cosine +0.76 on one persona). Refusal is **dropped, not failed**, a scope reduction registered before the run: the base model refuses essentially never (99.91% of rollouts zero, graded sd 0.36), so its self-score is degenerate. The falsification clause fires — the predictor is marker-specific.
+- **Sycophancy and emergent misalignment fail**: median ρ +0.21 (CI [-0.08, +0.49]) and +0.19 (CI [-0.09, +0.34]), both spanning zero.
+- The graded self-score buys nothing over the trivial base-rate baseline (paired difference ≈ -0.03 to -0.04, CIs straddling zero); geometry beats it on several emergent-misalignment sources (cosine +0.76 on one persona).
+- **Refusal is dropped, not failed** (registered before the run): the near-constant base self-score makes its above-zero CI uninterpretable.
+- The failure is most robust on emergent misalignment (the well-powered N=6 arm), partial on sycophancy (N=2 usable panels), conditional on refusal being untestable — so within this experiment the predictor is marker-specific; a universal claim would need more usable panels per behavior.
 
 ### A pre-training read ranks the held-out personas for the marker, and leaves geometry far behind
 
