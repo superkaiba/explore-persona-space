@@ -23,7 +23,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_641.md](https://github.com/superkaiba/explore-persona-space/blob/a56b3d2c019ae046db10c800825b5c6b873bfdfa/docs/methodology/issue_641.md) · [gist](https://gist.github.com/superkaiba/c573329e7d182aa06b81e625c793b426)
+**Methodology:** [docs/methodology/issue_641.md](https://github.com/superkaiba/explore-persona-space/blob/9fed68f65eb65bf2d05e6cfee1266d3ae27feb38/docs/methodology/issue_641.md) · [gist](https://gist.github.com/superkaiba/c573329e7d182aa06b81e625c793b426)
 
 ## Takeaways
 
@@ -182,7 +182,7 @@ NON-FIRING (aligned, coherent): seed42 probe3 samp4 | aligned=85 coherent=80
 
 ## Reproducibility
 
-**Methodology reference:** [docs/methodology/issue_641.md](https://github.com/superkaiba/explore-persona-space/blob/a56b3d2c019ae046db10c800825b5c6b873bfdfa/docs/methodology/issue_641.md) · [gist](https://gist.github.com/superkaiba/c573329e7d182aa06b81e625c793b426)
+**Methodology reference:** [docs/methodology/issue_641.md](https://github.com/superkaiba/explore-persona-space/blob/9fed68f65eb65bf2d05e6cfee1266d3ae27feb38/docs/methodology/issue_641.md) · [gist](https://gist.github.com/superkaiba/c573329e7d182aa06b81e625c793b426)
 
 **Parameters (load-bearing subset; full table in the methodology doc):**
 
