@@ -22,7 +22,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_559.md](https://github.com/superkaiba/explore-persona-space/blob/1c81e73d686ebd2757e1dabfcdb5d2a0f736e10b/docs/methodology/issue_559.md) · [gist](https://gist.github.com/superkaiba/69da3cb64cc506213b633d5921732a62)
+**Methodology:** [docs/methodology/issue_559.md](https://github.com/superkaiba/explore-persona-space/blob/47b43faecb9b34988d55dff055ed10fcf7911084/docs/methodology/issue_559.md) · [gist](https://gist.github.com/superkaiba/69da3cb64cc506213b633d5921732a62)
 
 ## Takeaways
 
@@ -180,6 +180,8 @@ SLOT READ: marker logit 1.30, end-of-answer logit 28.50 -> margin -27.20 (34th o
 - Reused content-behavior trained LEVELS joined by [#591](https://eps.superkaiba.com/tasks/591): [join_{syco,refusal,em}.json + em_join_corrected.json (pinned)](https://github.com/superkaiba/explore-persona-space/tree/a0daa4ee68008aa32b79ccdd43020396843d9b10/eval_results/issue_591/_inputs) — fit: committed cross-persona behavior rates for the same 6 sources × 23 bystanders the predictor scores; primary EM arm is Sonnet-scored (the corrected all-rollouts join), not the frozen gpt-4o survivor join
 - Reused base rollout buckets from the content-behavior lines (#411/#480 syco, #518 refusal/EM): [issue518_leakage_prediction/ (HF, pinned)](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3215ef3403f6da437d9205e9645b26e1b02fadd2/issue518_leakage_prediction) — fit: the base model's own per-persona answers on each behavior's probe distribution, the exact tuples the new judges score
 - Reused incumbent values + analysis machinery from [#553](https://eps.superkaiba.com/tasks/553): [transfer_478.json (pinned)](https://github.com/superkaiba/explore-persona-space/blob/73c7bf50e246b551226ee9a507cc7cceb3d299a7/eval_results/issue_553/transfer_478.json) — fit: the marker incumbents were produced by this exact code path, so the reproduction assert is meaningful (it passed with zero drift)
+
+- **Methodology reference:** [docs/methodology/issue_559.md](https://github.com/superkaiba/explore-persona-space/blob/47b43faecb9b34988d55dff055ed10fcf7911084/docs/methodology/issue_559.md) · [gist](https://gist.github.com/superkaiba/69da3cb64cc506213b633d5921732a62)
 
 **Compute:** Cross-behavior round: 0 GPU-h (CPU off-pod — judge API + analysis on the VM; the existing base buckets covered every persona × behavior cell, so the 3 GPU-h worst-case top-up never fired). Wall time ~10.5h, dominated by ~76,000 Sonnet calls under the org-wide 1M-token/min rate cap (~13% retried, all absorbed by an outer retry wrapper). Marker rounds: two 1× H100 eval pods (~1 GPU-h each), terminated before analysis.
 
