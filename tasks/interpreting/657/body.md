@@ -1,6 +1,7 @@
 ---
-title: Does persona->behavior-direction alignment predict cross-persona leakage across
-  behaviors, beating the base prior?
+title: Activation-space alignment to a behavior direction predicts a persona's own
+  base rate (sycophancy, EM) but does not beat the base prior on where leakage lands
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-18T09:48:28Z'
