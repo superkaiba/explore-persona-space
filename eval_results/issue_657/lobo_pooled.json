@@ -1,0 +1,93 @@
+{
+  "experiment": "issue657_lobo_pooled",
+  "read": "leave-one-behavior-out (LOBO) higher-N predictor-skill pooled secondary read",
+  "registered_in_plan": "\u00a7324 / \u00a76.5 / \u00a7365 / \u00a7389 (higher-N secondary read)",
+  "lobo": {
+    "in_scope": true,
+    "behaviors": [
+      "em",
+      "refusal",
+      "sycophancy"
+    ],
+    "n_pooled_cells": 399,
+    "n_groups": 69,
+    "per_behavior_n": {
+      "em": 133,
+      "refusal": 133,
+      "sycophancy": 133
+    },
+    "pooling": "predictor-skill (within-behavior source-FE + percentile-rank)",
+    "resampling_unit": "(behavior, bystander) group",
+    "bootstrap_b": 10000,
+    "bootstrap_seed": 657,
+    "grouped_cv": {
+      "held_out_spearman": {
+        "point": 0.020187893947570094,
+        "ci_lo": -0.10646684712377563,
+        "ci_hi": 0.13377646078778863,
+        "n_valid": 10000,
+        "n_bystanders": 69
+      },
+      "delta_r2_align_beyond_prior": {
+        "point": 0.001819847838020694,
+        "ci_lo": -0.017169622318820955,
+        "ci_hi": 0.025398981350982137,
+        "n_valid": 10000,
+        "n_bystanders": 69
+      },
+      "doubly_partialled_rho": {
+        "point": 0.0882006998515973,
+        "ci_lo": -0.016527568512014097,
+        "ci_hi": 0.1711785327676149,
+        "n_valid": 10000,
+        "n_bystanders": 69
+      }
+    },
+    "strict_lobo": {
+      "held_out_spearman": 0.1161574608939571,
+      "delta_r2_align_beyond_prior": 0.016958062844530497,
+      "n_behaviors": 3
+    },
+    "h3_verdict": {
+      "verdict": "TIGHTER-INDETERMINATE",
+      "detail": "pooled \u0394R\u00b2 CI straddles 0 (does not clear from either side)"
+    }
+  },
+  "input_provenance": {
+    "em": {
+      "in_scope": true,
+      "n_joined_cells": 133,
+      "n_resolvable_bystanders": 23,
+      "source_path": "eval_results/issue_657/per_behavior/em.json",
+      "included": true
+    },
+    "marker": {
+      "in_scope": false,
+      "n_joined_cells": 48,
+      "n_resolvable_bystanders": 3,
+      "source_path": "eval_results/issue_657/per_behavior/marker.json",
+      "included": false
+    },
+    "refusal": {
+      "in_scope": true,
+      "n_joined_cells": 133,
+      "n_resolvable_bystanders": 23,
+      "source_path": "eval_results/issue_657/per_behavior/refusal.json",
+      "included": true
+    },
+    "sycophancy": {
+      "in_scope": true,
+      "n_joined_cells": 133,
+      "n_resolvable_bystanders": 23,
+      "source_path": "eval_results/issue_657/per_behavior/sycophancy.json",
+      "included": true
+    }
+  },
+  "reproducibility": {
+    "git_commit": "73648b00b0bcec3428b0a1a05f65bfbd181872a3",
+    "generated_utc": "2026-06-19T02:38:27.728495+00:00",
+    "bootstrap_b": 10000,
+    "bootstrap_seed": 657,
+    "python": "3.11.15"
+  }
+}

@@ -1057,6 +1057,323 @@ def bootstrap_over_personas_multi(
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Leave-one-behavior-out (LOBO) — higher-N predictor-SKILL pooled secondary read
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def _rank01(x: np.ndarray) -> np.ndarray:
+    """Percentile-rank transform to ~[0, 1] (average ranks / n). NaN-safe on n<2."""
+    x = np.asarray(x, dtype=float)
+    n = x.shape[0]
+    if n < 2:
+        return np.zeros(n, dtype=float)
+    return (_rankdata(x) - 1.0) / float(n - 1)
+
+
+def build_pooled_lobo_frame(
+    per_behavior_cells: dict[str, list[dict]],
+    dv_col: str = "delta",
+    predictor_col: str = "align",
+    baseline_cols: tuple[str, ...] = ("bystander_base_rate", "prior_centroid_projection"),
+) -> dict:
+    """Pool in-scope behaviors at the PREDICTOR-SKILL level (plan §324 LOBO recipe).
+
+    The registered LOBO read pools behaviors at the *predictor-skill* level —
+    NEVER pooling the raw values across behaviors with different install strengths
+    (plan §6.5 / §324 / line 262: "never pooling behaviors with different install
+    strengths"). So within EACH behavior we (1) source-FE-residualize the leakage
+    DV (#518's rho_FE, the same residualization the per-behavior bake-off uses),
+    then (2) percentile-rank the DV, the predictor, and each baseline covariate to a
+    common [0, 1] scale. Pooling the WITHIN-BEHAVIOR RANKS removes each behavior's
+    absolute install magnitude, so what is pooled is "does alignment RANK-predict
+    leakage RANK", i.e. the predictor's skill, not its install dose.
+
+    Each pooled cell carries:
+      - ``group``    = ``f"{behavior}::{bystander}"`` (the held-out resampling unit;
+        the predictor is bystander-level, and a bystander recurs across behaviors,
+        so the unit is behavior-namespaced).
+      - ``behavior`` = the source behavior (for the strict leave-one-WHOLE-behavior
+        -out fold).
+      - the ranked columns ``delta`` / ``align`` / ``bystander_base_rate`` /
+        ``prior_centroid_projection`` (so downstream ``lopo``/``grouped_cv`` helpers
+        re-rank harmlessly — a monotone transform of an already-ranked column leaves
+        Spearman/rank-OLS unchanged), plus ``source`` namespaced as
+        ``f"{behavior}::{source}"`` for any source-FE re-read.
+
+    Returns the pooled frame dict (``cells`` + ``resolvable_bystanders`` = the
+    behavior-namespaced groups + ``behaviors`` + per-behavior n).
+    """
+    pooled: list[dict] = []
+    per_beh_n: dict[str, int] = {}
+    for behavior in sorted(per_behavior_cells):
+        cells = [dict(c) for c in per_behavior_cells[behavior]]
+        if len(cells) < 4:
+            per_beh_n[behavior] = len(cells)
+            continue
+        # (1) within-behavior source-FE residualize the leakage DV.
+        dv_fe = _source_fe_residualize(cells, dv_col)
+        # (2) within-behavior percentile-rank every modeled column.
+        dv_rank = _rank01(dv_fe)
+        align_rank = _rank01(np.array([float(c[predictor_col]) for c in cells]))
+        base_ranks = {
+            col: _rank01(np.array([float(c[col]) for c in cells])) for col in baseline_cols
+        }
+        for i, c in enumerate(cells):
+            # ``bystander`` carries the behavior-namespaced GROUP key so the held-out
+            # resampling unit is consistent across BOTH callers: ``lopo_heldout`` (via
+            # ``group_col="group"``) and ``bootstrap_over_personas_multi`` (which
+            # resamples on ``c["bystander"]``). A bystander recurs across behaviors, so
+            # without namespacing the bootstrap would pool a persona's cells across
+            # behaviors as one independent unit (wrong). ``orig_bystander`` keeps the
+            # raw persona for transparency.
+            group_key = f"{behavior}::{c['bystander']}"
+            row = {
+                "behavior": behavior,
+                "source": f"{behavior}::{c['source']}",
+                "orig_bystander": c["bystander"],
+                "bystander": group_key,
+                "group": group_key,
+                "delta": float(dv_rank[i]),
+                predictor_col: float(align_rank[i]),
+            }
+            for col in baseline_cols:
+                row[col] = float(base_ranks[col][i])
+            pooled.append(row)
+        per_beh_n[behavior] = len(cells)
+    groups = sorted({c["group"] for c in pooled})
+    return {
+        "cells": pooled,
+        "resolvable_bystanders": groups,  # the (behavior, bystander) resampling unit
+        "n_resolvable": len(groups),
+        "behaviors": sorted({c["behavior"] for c in pooled}),
+        "per_behavior_n": per_beh_n,
+    }
+
+
+def _pooled_stats(frame: dict) -> dict[str, float]:
+    """The pooled LOBO statistics computed on one (possibly resampled) pooled frame.
+
+    All reads are on the within-behavior-RANKED columns built by
+    ``build_pooled_lobo_frame`` (so install strength is already removed):
+      - ``held_out_spearman``: out-of-fold Spearman rho(align, delta) leaving out one
+        (behavior, bystander) group at a time (``lopo_heldout`` on ``group``).
+      - ``delta_r2_align_beyond_prior`` / ``r2_full``: grouped-CV (leave-one-(behavior,
+        bystander)-group-out) incremental R^2 of align over the doubly-partialled
+        baseline (``_grouped_cv_delta_r2`` on ``group``), the H3 read.
+      - ``doubly_partialled_rho``: in-sample doubly-partialled Spearman
+        rho(align, delta | [base_rate, prior_centroid_projection]) (``partial_spearman``).
+
+    Source-FE is already applied (the pooled DV is a within-behavior-FE rank), so the
+    grouped-CV is run on the raw pooled ``delta`` column WITHOUT a second FE pass.
+    """
+    cells = frame["cells"]
+    if len(cells) < 4:
+        return {
+            "held_out_spearman": float("nan"),
+            "delta_r2_align_beyond_prior": float("nan"),
+            "r2_full": float("nan"),
+            "doubly_partialled_rho": float("nan"),
+        }
+    out = lopo_heldout(
+        {"cells": cells, "resolvable_bystanders": frame.get("resolvable_bystanders", [])},
+        predictor_col="align",
+        dv_col="delta",
+        baseline_cols=("bystander_base_rate", "prior_centroid_projection"),
+        group_col="group",
+        source_fe=False,  # DV is already within-behavior FE-ranked
+    )
+    align = np.array([float(c["align"]) for c in cells], dtype=float)
+    dv = np.array([float(c["delta"]) for c in cells], dtype=float)
+    prior = np.array([float(c["bystander_base_rate"]) for c in cells], dtype=float)
+    pcp = np.array([float(c["prior_centroid_projection"]) for c in cells], dtype=float)
+    rho_dp, _p, _n = partial_spearman(align, dv, np.column_stack([prior, pcp]))
+    return {
+        "held_out_spearman": out.get("held_out_spearman", float("nan")),
+        "delta_r2_align_beyond_prior": out.get("delta_r2_align_beyond_prior", float("nan")),
+        "r2_full": out.get("r2_full", float("nan")),
+        "doubly_partialled_rho": rho_dp,
+    }
+
+
+def _strict_lobo_heldout(frame: dict) -> dict[str, float]:
+    """Strict leave-one-WHOLE-behavior-out held-out read (the literal LOBO).
+
+    Fit the doubly-partialled rank-OLS predictor on the OTHER behaviors' pooled cells,
+    predict the held-out behavior's leakage-rank, collect out-of-fold predictions
+    across all behaviors, then read one pooled Spearman rho(pred, delta) and one
+    pooled ΔR² (full = baseline + align vs baseline) over the OOF predictions.
+
+    This is the strict registered LOBO ("hold out one behavior, fit on the rest");
+    the (behavior, bystander) grouped-CV in ``_pooled_stats`` is the higher-N
+    companion. Returns {held_out_spearman, delta_r2_align_beyond_prior, n_behaviors}.
+    """
+    cells = frame["cells"]
+    behaviors = sorted({c["behavior"] for c in cells})
+    if len(behaviors) < 2:
+        return {
+            "held_out_spearman": float("nan"),
+            "delta_r2_align_beyond_prior": float("nan"),
+            "n_behaviors": len(behaviors),
+        }
+    feat_full = ["bystander_base_rate", "prior_centroid_projection", "align"]
+    feat_base = ["bystander_base_rate", "prior_centroid_projection"]
+
+    def _oof_preds(feat_cols: list[str]) -> np.ndarray:
+        preds = np.full(len(cells), np.nan)
+        idx_by_beh = {b: [i for i, c in enumerate(cells) if c["behavior"] == b] for b in behaviors}
+        for held in behaviors:
+            train_idx = [i for i, c in enumerate(cells) if c["behavior"] != held]
+            test_idx = idx_by_beh[held]
+            if len(train_idx) < len(feat_cols) + 2 or not test_idx:
+                continue
+            # rank the train fold's features + DV, fit OLS on ranks, apply the train
+            # rank map to the test rows via the union rank (Spearman convention, the
+            # same scheme _grouped_cv_delta_r2 uses).
+            ytr = _rankdata(np.array([float(cells[i]["delta"]) for i in train_idx]))
+            Xtr = np.column_stack(
+                [_rankdata(np.array([float(cells[i][fc]) for i in train_idx])) for fc in feat_cols]
+            )
+            design_tr = np.column_stack([np.ones(len(train_idx)), Xtr])
+            beta, *_ = np.linalg.lstsq(design_tr, ytr, rcond=None)
+            union = train_idx + test_idx
+            n_tr = len(train_idx)
+            Xte = np.column_stack(
+                [
+                    _rankdata(np.array([float(cells[i][fc]) for i in union]))[n_tr:]
+                    for fc in feat_cols
+                ]
+            )
+            design_te = np.column_stack([np.ones(len(test_idx)), Xte])
+            preds_te = design_te @ beta
+            for j, i in enumerate(test_idx):
+                preds[i] = preds_te[j]
+        return preds
+
+    dv = np.array([float(c["delta"]) for c in cells], dtype=float)
+    dv_rank = _rankdata(dv)
+    preds_full = _oof_preds(feat_full)
+    preds_base = _oof_preds(feat_base)
+
+    def _r2(preds: np.ndarray) -> float:
+        mask = ~np.isnan(preds)
+        if mask.sum() < 3:
+            return float("nan")
+        yy, pp = dv_rank[mask], preds[mask]
+        ss_tot = float(np.sum((yy - yy.mean()) ** 2))
+        if ss_tot == 0.0:
+            return float("nan")
+        return 1.0 - float(np.sum((yy - pp) ** 2)) / ss_tot
+
+    # held-out Spearman of the FULL-model OOF prediction against the DV (skill read).
+    mask = ~np.isnan(preds_full)
+    if mask.sum() >= 3 and np.std(preds_full[mask]) > 0 and np.std(dv[mask]) > 0:
+        ho = spearmanr(preds_full[mask], dv[mask])
+        held_out_spearman = float(ho.correlation)
+    else:
+        held_out_spearman = float("nan")
+    r2_full = _r2(preds_full)
+    r2_base = _r2(preds_base)
+    dr2 = r2_full - r2_base if not (np.isnan(r2_full) or np.isnan(r2_base)) else float("nan")
+    return {
+        "held_out_spearman": held_out_spearman,
+        "delta_r2_align_beyond_prior": dr2,
+        "n_behaviors": len(behaviors),
+    }
+
+
+def lobo_pooled(
+    per_behavior_cells: dict[str, list[dict]],
+    b: int = BOOTSTRAP_B,
+    seed: int = BOOTSTRAP_SEED,
+    alpha: float = 0.05,
+) -> dict:
+    """The registered higher-N LOBO secondary read (plan §324, §6.5, §365/§389).
+
+    Pools the in-scope behaviors at the predictor-SKILL level
+    (``build_pooled_lobo_frame``), then reports TWO held-out reads, each with a
+    bootstrap CI over the (behavior, bystander) resampling unit (B replicates):
+
+      - ``grouped_cv`` (HEADLINE pooled read, higher N): leave-one-(behavior,
+        bystander)-group-out held-out Spearman + grouped-CV ΔR²-align-beyond-prior +
+        in-sample doubly-partialled rho. The ΔR² CI is the H3 read at the pooled N
+        (~3 x 23 = 69 groups vs 23 per behavior).
+      - ``strict_lobo`` (the literal leave-one-WHOLE-behavior-out): fit on the other
+        behaviors, predict the held-out one, pooled OOF Spearman + ΔR². No bootstrap
+        CI (only n_behaviors=3 folds — the point estimate is the read; the grouped-CV
+        CI carries the power).
+
+    The pooled H3 verdict (``h3_verdict``) follows the same registered gate as the
+    per-behavior reads (``_band_clears`` logic, simplified to the observed-prior
+    point since the pooled DV is already rank-normalized so the M-Stats1 binomial
+    reliability band is undefined on pooled ranks): CONFIRMED-NULL when the ΔR² CI
+    upper bound < 0 OR (lo, hi) straddles 0 with hi small; TIGHTER-INDETERMINATE when
+    the CI straddles 0; ACCEPT when the ΔR² CI lower bound > 0 AND the doubly-
+    partialled rho CI lower bound > 0. Returns the full nested dict.
+    """
+    frame = build_pooled_lobo_frame(per_behavior_cells)
+    n_cells = len(frame["cells"])
+    behaviors = frame["behaviors"]
+    groups = frame["resolvable_bystanders"]
+
+    if n_cells < 4 or len(behaviors) < 2:
+        return {
+            "in_scope": False,
+            "note": "fewer than 2 in-scope behaviors or <4 pooled cells",
+            "behaviors": behaviors,
+            "n_pooled_cells": n_cells,
+            "n_groups": len(groups),
+        }
+
+    grouped_cv = bootstrap_over_personas_multi(
+        frame,
+        _pooled_stats,
+        keys=["held_out_spearman", "delta_r2_align_beyond_prior", "doubly_partialled_rho"],
+        b=b,
+        seed=seed,
+        alpha=alpha,
+    )
+    strict = _strict_lobo_heldout(frame)
+
+    dr2_ci = grouped_cv.get("delta_r2_align_beyond_prior", {})
+    rho_ci = grouped_cv.get("doubly_partialled_rho", {})
+
+    def _lo(d: dict) -> float:
+        v = d.get("ci_lo", float("nan"))
+        return v if v is not None else float("nan")
+
+    def _hi(d: dict) -> float:
+        v = d.get("ci_hi", float("nan"))
+        return v if v is not None else float("nan")
+
+    dr2_lo, dr2_hi = _lo(dr2_ci), _hi(dr2_ci)
+    rho_lo = _lo(rho_ci)
+    if not np.isnan(dr2_lo) and dr2_lo > 0.0 and not np.isnan(rho_lo) and rho_lo > 0.0:
+        verdict = "ACCEPT"
+        detail = "pooled ΔR² CI lo > 0 AND doubly-partialled-rho CI lo > 0"
+    elif not np.isnan(dr2_hi) and dr2_hi <= 0.0:
+        verdict = "CONFIRMED-NULL"
+        detail = "pooled ΔR² CI entirely <= 0 (predictor adds nothing beyond prior)"
+    else:
+        verdict = "TIGHTER-INDETERMINATE"
+        detail = "pooled ΔR² CI straddles 0 (does not clear from either side)"
+
+    return {
+        "in_scope": True,
+        "behaviors": behaviors,
+        "n_pooled_cells": n_cells,
+        "n_groups": len(groups),
+        "per_behavior_n": frame["per_behavior_n"],
+        "pooling": "predictor-skill (within-behavior source-FE + percentile-rank)",
+        "resampling_unit": "(behavior, bystander) group",
+        "bootstrap_b": int(b),
+        "bootstrap_seed": int(seed),
+        "grouped_cv": grouped_cv,
+        "strict_lobo": strict,
+        "h3_verdict": {"verdict": verdict, "detail": detail},
+    }
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Shuffled-direction null
 # ──────────────────────────────────────────────────────────────────────────────
 
