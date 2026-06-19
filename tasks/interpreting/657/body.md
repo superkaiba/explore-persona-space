@@ -54,47 +54,52 @@ relates_to:
 
 The generalization bar: ρ ≥ 0.5 with a positive-bounded CI on ≥ 3 of 4 behaviors. It held on two.
 
-![Forest plot of Spearman correlation between persona alignment and the persona's own base rate, per behavior, with 95% CIs. Sycophancy 0.68 and EM 0.51 above the 0.5 threshold; refusal near 0 with a wide CI. The parent sycophancy anchor diamond sits at 0.726 beside the sycophancy point.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/29fbe2835b8015af47b9b92ff44310f2f94795c9/figures/issue_657/fig_h1_base_rate.png)
+![Forest plot of Spearman correlation between persona alignment and the persona's own base rate, per behavior, with 95% CIs. Sycophancy 0.68 and EM 0.51 above the 0.5 threshold; refusal near 0 with a wide CI. The parent sycophancy anchor diamond sits at 0.726 beside the sycophancy point.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/23eefc0054e20c399f7aa4472a1d7d31317fe9a2/figures/issue_657/fig_h1_base_rate.png)
 
 > **Figure.** *Alignment predicts a persona's own rate for sycophancy and EM, not refusal.* Spearman ρ(alignment, base rate) per behavior, 95% bootstrap CI over personas. Diamond marks the parent (ρ = 0.726); dashed line is ρ = 0.5. EM CI [0.07, 0.79]; refusal CI [−0.46, 0.47], n = 23. Marker omitted (n = 3, uninterpretable).
 
-- Sycophancy reproduced the parent (ρ = 0.68, target 0.726 inside the CI) — the base-rate join is sound.
-- EM cleared by point estimate only (ρ = 0.51); its lower CI bound sits far below 0.5, so the clearance is wide-uncertainty. Short of the planned three.
-- Refusal was flat (ρ = 0.01, n = 23). The huge CI fits low cross-persona variance and/or the wrong-layer direction (below), not necessarily a clean dissociation.
+- Sycophancy reproduced the parent (ρ = 0.68, target 0.726 inside the CI) — the join is sound.
+- EM cleared by point estimate only (ρ = 0.51), lower CI bound far below 0.5 — short of the planned three.
+- Refusal was flat (ρ = 0.01, n = 23); the huge CI fits low variance and/or the wrong-layer direction (below), not a clean dissociation.
 
 ### The causal sign-of-life gate is weak, and the marker affordance direction fails it outright
 
-Every direction first had to show *adding it increases the judged behavior* — a minimal sign-of-life gate, not strong validation. Refusal used the difference-in-means recipe (Arditi et al.).
+Every direction first had to show *adding it increases the judged behavior* — a minimal sign-of-life gate. Refusal used the difference-in-means recipe (Arditi et al.).
 
-![Causal sanity check: per-direction steering effect at the headline layer on a judge-points axis (full scale 0-100). Refusal mean about +0.96 with per-strength points scattering from minus 2.75 to plus 3.875; marker exactly zero at all strengths and fails; emergent misalignment mean about +0.07 with per-strength points near zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73648b00b0bcec3428b0a1a05f65bfbd181872a3/figures/issue_657/fig_k2_steering.png)
+![Causal sanity check: per-direction steering effect at the headline layer on a judge-points axis (full scale 0-100). Refusal mean about +0.96 with per-strength points scattering from minus 2.75 to plus 3.875; marker exactly zero at all strengths and shows no steering effect; emergent misalignment mean about +0.07 with per-strength points near zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/23eefc0054e20c399f7aa4472a1d7d31317fe9a2/figures/issue_657/fig_k2_steering.png)
 
 > **Figure.** *Each gate effect is ≪ 1% of the 0–100 judge scale, and refusal/EM sign-flip across strengths.* Headline-layer steering effect in judge points (full scale 0–100); diamond = mean, grey dots = the three per-strength effects. Refusal +0.96 = mean of [1.75, −2.75, 3.875]; EM +0.07 = mean of [−0.05, −0.05, 0.30]; marker zero everywhere.
 
-- The marker affordance direction moved emission by zero at all twelve cells — it does not measure the behavior. The run fell back to the trained-in activation shift.
-- Refusal and EM pass only weakly: ~1 judge point on a 0–100 scale, non-monotonic (refusal's middle strength steers the wrong way; EM is positive only at the strongest).
+- The marker affordance direction moved emission by zero at all twelve cells — it does not measure the behavior; the run fell back to the trained-in activation shift.
+- Refusal and EM pass only weakly: ~1 judge point on a 0–100 scale, non-monotonic (refusal's middle strength steers the wrong way; EM positive only at the strongest).
 
 ### The causal gate and the ρ readout use different layers; the refusal direction reverses sign
 
-- The gate passes at layer 7 (refusal) / layer 27 (EM), but the alignment cosine driving the predictive ρ is read at layer 14.
-- Refusal reverses sign across layers: +0.96 @ L7, **−1.31 @ L14**, −3.52 @ L21, −4.67 @ L27 — so at the L14 readout layer the refusal direction steers *negative*. EM passes @ L27 (+0.07), read @ L14 (−0.02).
-- This weakens the L14 refusal ρ as a clean comparison: the readout-layer direction does not positively steer refusal, so the refusal base-rate null may be a wrong-layer artifact. Re-reading ρ at the gate-passing layer might change the result — a follow-up, not re-run here.
+The gate passes at layer 7 (refusal) / layer 27 (EM), but the alignment cosine driving the predictive ρ is read at layer 14. The per-layer sweep shows the cost.
+
+![Line plot of the per-layer add-direction steering effect for refusal and emergent misalignment across layers 7, 14, 21, 27 on a 0-100 judge-points axis. Refusal starts positive at layer 7, crosses zero, and falls steeply negative by layer 27; the layer-14 readout point is circled and sits below zero. Emergent misalignment stays flat near zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/23eefc0054e20c399f7aa4472a1d7d31317fe9a2/figures/issue_657/fig_layer_sweep.png)
+
+> **Figure.** *The refusal direction reverses sign between its layer-7 gate and the layer-14 ρ readout.* Per-layer steering effect (judge points, 0–100 scale); circled = the layer-14 readout. Refusal +0.96 @ L7 → −1.31 @ L14 → −3.52 @ L21 → −4.67 @ L27; EM flat (passes @ L27 +0.07, reads −0.02 @ L14).
+
+- At the layer-14 readout the refusal direction steers *negative* — the cosine there points away from the gate-validated direction.
+- So the refusal base-rate null may be a wrong-layer artifact; re-reading ρ at the gate-passing layer might change it — a follow-up, not re-run here.
 
 ### Alignment did not predict leakage out-of-sample, or beyond the base prior
 
 Two gates: out-of-sample (no partialling); beyond the base prior (partials the prior twice).
 
-![Forest plot of the held-out alignment-vs-leakage correlation per behavior, showing raw, singly-partialled, and doubly-partialled Spearman rho with 95% CIs. Sycophancy doubly-partialled rho 0.18 with CI above zero; refusal 0.12 and EM negative with CIs crossing zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/29fbe2835b8015af47b9b92ff44310f2f94795c9/figures/issue_657/fig_h3_forest.png)
+![Forest plot of the held-out alignment-vs-leakage correlation per behavior, showing raw, singly-partialled, and doubly-partialled Spearman rho with 95% CIs. Sycophancy doubly-partialled rho 0.18 with CI above zero; refusal 0.12 and EM negative with CIs crossing zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/23eefc0054e20c399f7aa4472a1d7d31317fe9a2/figures/issue_657/fig_h3_forest.png)
 
 > **Figure.** *Out-of-sample leakage prediction is null (raw ×); only the doubly-partialled sycophancy ρ clears zero, and it still fails the beat-the-prior gates.* Held-out ρ(alignment, leakage Δ): raw (×), prior-partialled (□), doubly-partialled (●, 95% CI). Sycophancy: raw ρ = 0.14 (CI [−0.01, 0.30]), doubly-partialled ρ = 0.18 (CI [0.05, 0.33]); refusal CI [−0.04, 0.25] and EM CI [−0.24, 0.16] straddle zero.
 
-- Out-of-sample, the prediction failed everywhere. Raw held-out ρ crosses zero for all behaviors (sycophancy raw ρ = 0.14 vs doubly-partialled 0.18), so the lone sycophancy clearance only appears once the prior is partialled out — a partialling artifact.
-- Beyond the base prior, sycophancy is inconclusive and refusal null. Its doubly-partialled ρ (0.18) clears zero, but incremental variance is also required, and the grouped-CV ΔR² interval spans zero; EM falls below its shuffle null (p = 0.89, n = 23).
+- Out-of-sample, the prediction failed everywhere — raw held-out ρ crosses zero for all behaviors (sycophancy raw ρ = 0.14), so the lone sycophancy clearance appears only once the prior is partialled out: a partialling artifact.
+- Beyond the base prior, sycophancy is inconclusive and refusal null. Its doubly-partialled ρ (0.18) clears zero, but the required grouped-CV ΔR² interval spans zero; EM falls below its shuffle null (p = 0.89, n = 23).
 
 ### Sycophancy's beyond-the-prior signal is unstable — it appears only when the prior is assumed mismeasured
 
 The beat-the-prior test partials out the base prior; how reliably the prior is measured changes how much it removes. A reliability band re-runs the doubly-partialled ρ across assumed prior-reliability levels.
 
-![Line plot of sycophancy and refusal doubly-partialled rho across four assumed-reliability points for the base prior. Sycophancy swings from about 0.19 at the observed point up to 1.0 under disattenuation; refusal stays flat near 0.11 across the whole band.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/29fbe2835b8015af47b9b92ff44310f2f94795c9/figures/issue_657/fig_reliability_band.png)
+![Line plot of sycophancy and refusal doubly-partialled rho across four assumed-reliability points for the base prior. Sycophancy swings from about 0.19 at the observed point up to 1.0 under disattenuation; refusal stays flat near 0.11 across the whole band.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/23eefc0054e20c399f7aa4472a1d7d31317fe9a2/figures/issue_657/fig_reliability_band.png)
 
 > **Figure.** *Sycophancy's signal appears only when the prior is assumed measured-with-error, jumping unstably to 1.0; refusal is flat.* Doubly-partialled ρ across the reliability band; sycophancy 0.19 at the observed point, inflating to 1.0 only as the prior is assumed less reliable.
 
@@ -103,18 +108,22 @@ The beat-the-prior test partials out the base prior; how reliably the prior is m
 
 ### A 17×-larger pooled read tightens the beat-the-prior verdict but does not flip it
 
-The per-behavior reads are power-limited at ~23 held-out personas. A higher-N secondary read pools the three in-scope behaviors (marker excluded) at the predictor-skill level — within-behavior source-fixed-effect, percentile-ranked, resampled by (behavior, bystander) group — lifting the sample to 399 cells across 69 groups.
+The per-behavior reads are power-limited at ~23 held-out personas. A higher-N secondary read pools the three in-scope behaviors (marker excluded) at the predictor-skill level, lifting the sample to 399 cells across 69 groups.
 
-- The pooled incremental-variance test still straddles zero (lower bound negative, no beat; upper positive, no confirmed null). Supporting reads agree: grouped-CV held-out ρ = 0.020, doubly-partialled ρ = 0.088, strict leave-one-whole-behavior-out ρ = 0.116.
-- At 17× the sample the interval tightens but the verdict does not flip. As the highest-N read available, the inconclusive is the finding: the per-behavior null was not a low-power artifact. (Full bounds in `lobo_pooled.json`.)
+![Forest plot comparing the doubly-partialled alignment-vs-leakage correlation for the three per-behavior reads (each at about 23 bystanders) against the pooled 399-cell read, all with 95% CIs and a zero reference line. Every interval, including the tighter pooled one, crosses zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/23eefc0054e20c399f7aa4472a1d7d31317fe9a2/figures/issue_657/fig_lobo_pooled.png)
+
+> **Figure.** *Pooling to 399 cells tightens the beat-the-prior interval but it still straddles zero.* Doubly-partialled ρ (alignment, held-out leakage Δ), 95% CI; three per-behavior reads (n ≈ 23 each) above the pooled read (n = 399). Pooled ρ = 0.088, CI [−0.017, 0.171].
+
+- The pooled incremental-variance test still straddles zero (no beat, no confirmed null). Supporting reads agree: grouped-CV held-out ρ = 0.020, doubly-partialled ρ = 0.088, strict leave-one-whole-behavior-out ρ = 0.116.
+- At 17× the sample the interval tightens but the verdict does not flip — the per-behavior null was not a low-power artifact. (Full bounds in `lobo_pooled.json`.)
 
 ### Why the marker behavior was untestable — three independent exclusions
 
 The marker is dropped from the beat-the-prior set by three separate failure modes, any one sufficient:
 
 - **Gate failure.** The affordance-recipe marker direction had zero steering at all four layers × three strengths (`k2_pass = false`).
-- **Shift fallback.** With the gate failed, the dispatcher fell back to the #521 trained-shift direction (`marker_direction_kind = shift_fallback`), which folds the implant in — so the marker is demoted to a secondary read.
-- **Panel-overlap gate.** The #605 panel overlaps the 24-persona axis on only **4 personas** (`assistant, comedian, software_engineer, villain`), below the 8 floor, restricting the marker to a base-rate-only read. After the centering persona is held out, **3 bystanders** remain (the per-behavior n = 3).
+- **Shift fallback.** With the gate failed, the dispatcher fell back to the prior trained-shift direction (`marker_direction_kind = shift_fallback`), which folds the implant in — so the marker is demoted to a secondary read.
+- **Panel-overlap gate.** The marker leakage panel overlaps the 24-persona axis on only **4 personas** (`assistant, comedian, software_engineer, villain`), below the 8 floor — a base-rate-only read. With the centering persona held out, **3 bystanders** remain (the per-behavior n = 3).
 
 The shift-fallback demotion and the panel-overlap gate fired independently.
 
@@ -130,7 +139,7 @@ The predictor is a per-persona scalar: `align_i = cosine(persona_vector_i, behav
 
 | Behavior | Direction recipe | Causal gate (judge scale 0–100) | Role |
 |---|---|---|---|
-| Sycophancy | reused #623 trait direction (base-model read) | reused (parent-validated) | primary |
+| Sycophancy | reused parent sycophancy trait direction (base-model read) | reused (parent-validated) | primary |
 | Refusal | Arditi difference-in-means, harmful vs harmless prompts (base-model read) | weak pass: +0.96 @ layer 7; sign-flips across strengths; steers negative @ layer 14 (the ρ readout layer) | primary |
 | Marker (※) | ※-affordance direction; fell back to trained-shift | fails (0.0 everywhere) → secondary | base-rate-only |
 | Emergent misalignment | reused trained-shift (trained − base activations) | weak pass: +0.07 @ layer 27 (positive only at strongest strength) | secondary |
