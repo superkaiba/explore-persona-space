@@ -6,10 +6,12 @@ summary.json} + the steering_effect_by_layer_*.json K2 files and renders the
 clean-result hero + supporting figures into figures/issue_657/.
 
 One figure per finding:
-  fig_k2_steering.png      -- per-direction K2 add-elicits effect at headline layer
-  fig_h1_base_rate.png     -- DV-(a): alignment vs base rate per behavior (#623 generalization)
-  fig_h3_forest.png        -- H3: doubly-partialled vs raw rho per behavior + CIs (beat-the-prior)
-  fig_reliability_band.png -- H3 reliability-sensitivity band (primary behaviors)
+  fig_k2_steering.png      -- per-direction add-elicits causal gate effect at headline layer
+  fig_h1_base_rate.png     -- alignment vs persona base rate per behavior (parent generalization)
+  fig_h3_forest.png        -- doubly-partialled vs raw rho per behavior + CIs (beat-the-prior)
+  fig_reliability_band.png -- reliability-sensitivity band (primary behaviors)
+  fig_layer_sweep.png      -- per-layer steering sign-flip (gate layer vs ρ readout layer)
+  fig_lobo_pooled.png      -- pooled higher-N beat-the-prior incremental-variance read
 
 Plain-English condition names; blog style; error bars; no annotation overlays.
 """
@@ -128,9 +130,9 @@ def main():
                 linewidths=0.8,
                 s=70,
                 zorder=4,
-                label="mean (K2 statistic)" if y == ys[0] else None,
+                label="mean steering effect" if y == ys[0] else None,
             )
-            tag = "passes (weak gate)" if passed else "FAILS (no steering)"
+            tag = "passes (weak gate)" if passed else "no steering effect"
             ax.text(
                 4.7,
                 y,
@@ -151,7 +153,7 @@ def main():
         set_title_subtitle(
             ax,
             "Causal sanity check: each effect is ≪ 1% of the 0–100 judge scale",
-            "K2 is a weak sign-of-life gate; refusal/EM means sit ≈1 point and sign-flip across strengths",
+            "a weak sign-of-life gate; refusal/EM means sit ≈1 point and sign-flip across strengths",
         )
         savefig_paper(fig, "issue_657/fig_k2_steering", dir="figures/")
         plt.close(fig)
@@ -201,7 +203,7 @@ def main():
                     color=ACCENT,
                     zorder=5,
                     s=45,
-                    label="#623 sycophancy anchor (ρ=0.726)" if y == ys[0] else None,
+                    label="parent sycophancy anchor (ρ=0.726)" if y == ys[0] else None,
                 )
         ax.axvline(0.0, color="#888", linewidth=0.9)
         ax.axvline(
@@ -209,7 +211,7 @@ def main():
             color=BASELINE,
             linewidth=0.8,
             linestyle="--",
-            label="H1 pre-registered threshold (ρ=0.5)",
+            label="ρ = 0.5 generalization bar",
         )
         ax.set_yticks(ys)
         ax.set_yticklabels([BEH_LABEL[r[0]] for r in da_rows])
@@ -222,7 +224,7 @@ def main():
         set_title_subtitle(
             ax,
             "Does alignment predict a persona's own base rate?",
-            "DV-(a) / H1 — the #623 sycophancy→base-rate finding, tested across four behaviors",
+            "the parent sycophancy→base-rate finding, tested across four behaviors",
         )
         ax.set_xlim(-0.7, 1.0)
         savefig_paper(fig, "issue_657/fig_h1_base_rate", dir="figures/")
@@ -297,7 +299,7 @@ def main():
         )
         set_title_subtitle(
             ax,
-            "Does alignment beat the base prior on held-out leakage? (H3)",
+            "Does alignment beat the base prior on held-out leakage?",
             "doubly-partialled ρ with CI crossing 0 = alignment adds nothing the prior doesn't",
         )
         savefig_paper(fig, "issue_657/fig_h3_forest", dir="figures/")
@@ -323,18 +325,25 @@ def main():
             "R_low": "low\n(most disatt.)",
         }
         cmap = [PRIMARY, ACCENT, CONTROL, NEUTRAL]
+        verdict_word = {
+            "INDETERMINATE": "inconclusive",
+            "TIGHTER-INDETERMINATE": "inconclusive",
+            "NULL": "null",
+            "CONFIRMED": "beats prior",
+        }
         for i, (beh, pts, bv) in enumerate(band_rows):
             xs, ys2 = [], []
             for lab in labels_order:
                 if lab in pts:
                     xs.append(lab)
                     ys2.append(pts[lab]["doubly_partialled_rho"])
+            vw = verdict_word.get(bv.get("verdict", ""), "inconclusive")
             ax.plot(
                 range(len(xs)),
                 ys2,
                 marker="o",
                 color=cmap[i % len(cmap)],
-                label=f"{BEH_LABEL[beh]} ({bv.get('verdict', '?')})",
+                label=f"{BEH_LABEL[beh]} — {vw}",
             )
             ax.set_xticks(range(len(xs)))
             ax.set_xticklabels([xlab.get(x, x) for x in xs])
@@ -350,6 +359,141 @@ def main():
         savefig_paper(fig, "issue_657/fig_reliability_band", dir="figures/")
         plt.close(fig)
         print("wrote fig_reliability_band")
+
+    # ---- Figure 5: per-layer steering sweep (gate layer vs ρ readout layer) ----
+    # The causal gate passes at layer 7 (refusal) / 27 (EM), but the predictive
+    # ρ is read at layer 14. Refusal reverses sign across layers, so at the L14
+    # readout it steers negative -- the layer-mismatch finding. Read per-layer
+    # effects from steering_effect_by_layer_*.json.
+    sweep = {}
+    for beh in ("refusal", "em"):
+        eff_f = RES / f"steering_effect_by_layer_{beh}.json"
+        if not eff_f.exists():
+            continue
+        eff = json.loads(eff_f.read_text())
+        pl = eff.get("per_layer", {})
+        if not pl:
+            continue
+        sweep[beh] = (sorted(int(k) for k in pl), pl, eff.get("headline_layer"))
+    if sweep:
+        fig, ax = plt.subplots(figsize=(6.5, 3.8))
+        col = {"refusal": PRIMARY, "em": ACCENT}
+        readout_layer = 14
+        for beh, (layers, pl, gate_layer) in sweep.items():
+            xs = list(range(len(layers)))
+            ys2 = [pl[str(ly)] for ly in layers]
+            ax.plot(
+                xs,
+                ys2,
+                marker="o",
+                color=col.get(beh, NEUTRAL),
+                label=f"{BEH_LABEL[beh]} (gate passes at layer {gate_layer})",
+            )
+            ax.set_xticks(xs)
+            ax.set_xticklabels([str(ly) for ly in layers])
+            # mark the ρ readout layer if present
+            if readout_layer in layers:
+                ri = layers.index(readout_layer)
+                ax.scatter(
+                    [ri],
+                    [pl[str(readout_layer)]],
+                    s=120,
+                    facecolors="none",
+                    edgecolors="#222",
+                    linewidths=1.4,
+                    zorder=6,
+                )
+        ax.axhline(0.0, color="#444", linewidth=1.0)
+        if readout_layer in next(iter(sweep.values()))[0]:
+            ri = next(iter(sweep.values()))[0].index(readout_layer)
+            ax.axvline(ri, color="#888", linewidth=0.8, linestyle=":")
+            ax.text(
+                ri,
+                ax.get_ylim()[1],
+                " ρ read here (layer 14)",
+                va="top",
+                ha="left",
+                fontsize=8,
+                color="#555",
+            )
+        ax.set_xlabel("layer")
+        ax.set_ylabel("steering effect (judge points, 0–100 scale)")
+        ax.legend(loc="lower left", fontsize=8, frameon=False)
+        set_title_subtitle(
+            ax,
+            "The refusal direction reverses sign between the gate layer and the ρ readout layer",
+            "the gate passes early (layer 7); by the layer-14 readout refusal steers negative",
+        )
+        savefig_paper(fig, "issue_657/fig_layer_sweep", dir="figures/")
+        plt.close(fig)
+        print("wrote fig_layer_sweep")
+
+    # ---- Figure 6: pooled higher-N beat-the-prior incremental-variance read ----
+    # The per-behavior leakage reads are power-limited at ~23 bystanders. The
+    # pooled leave-one-behavior-out read lifts the sample to 399 cells. Plot the
+    # incremental-variance point + CI (the registered beat-the-prior statistic)
+    # against the per-behavior reads, with a zero line: a CI straddling zero is
+    # the inconclusive verdict that does not flip with the larger sample.
+    lobo = _load("lobo_pooled.json")
+    if lobo and lobo.get("lobo", {}).get("in_scope"):
+        gv = lobo["lobo"]["grouped_cv"]
+        n_pooled = lobo["lobo"]["n_pooled_cells"]
+        # per-behavior doubly-partialled rho (the power-limited reads being pooled)
+        per_beh_dp = []
+        for beh in ("sycophancy", "refusal", "em"):
+            res = per.get(beh)
+            if not res:
+                continue
+            lk = res.get("leakage_bake_off", res)
+            dp = lk.get("doubly_partialled_rho")
+            ci = lk.get("h3_doubly_partialled_rho_ci", {})
+            if dp is not None:
+                per_beh_dp.append((beh, dp, ci.get("ci_lo"), ci.get("ci_hi")))
+        fig, ax = plt.subplots(figsize=(6.6, 3.8))
+        rows_lobo = []
+        # per-behavior reads first (n≈23 each), then the pooled read
+        for beh, dp, lo, hi in per_beh_dp:
+            rows_lobo.append((f"{BEH_LABEL[beh]}\n(per-behavior, n≈23)", dp, lo, hi, False))
+        gv_dp = gv["doubly_partialled_rho"]
+        rows_lobo.append(
+            (
+                f"Pooled\n(n={n_pooled} cells)",
+                gv_dp["point"],
+                gv_dp["ci_lo"],
+                gv_dp["ci_hi"],
+                True,
+            )
+        )
+        ys = np.arange(len(rows_lobo))
+        pts = np.array([r[1] for r in rows_lobo], dtype=float)
+        los = np.array([r[2] if r[2] is not None else np.nan for r in rows_lobo], dtype=float)
+        his = np.array([r[3] if r[3] is not None else np.nan for r in rows_lobo], dtype=float)
+        xerr = np.clip(np.nan_to_num(np.vstack([pts - los, his - pts]), nan=0.0), 0.0, None)
+        for y, (lab, pt, lo, hi, is_pooled) in zip(ys, rows_lobo):
+            c = ACCENT if is_pooled else PRIMARY
+            ax.errorbar(
+                [pt],
+                [y],
+                xerr=[[xerr[0][y]], [xerr[1][y]]],
+                fmt="o",
+                color=c,
+                capsize=4,
+                markersize=9 if is_pooled else 7,
+            )
+        ax.axvline(0.0, color="#444", linewidth=1.0)
+        ax.set_yticks(ys)
+        ax.set_yticklabels([r[0] for r in rows_lobo])
+        ax.set_ylim(-0.7, len(rows_lobo) - 0.3)
+        ax.invert_yaxis()
+        ax.set_xlabel("doubly-partialled ρ (alignment, held-out leakage Δ), 95% CI")
+        set_title_subtitle(
+            ax,
+            "Pooling to 399 cells tightens the beat-the-prior read but does not flip it",
+            "the pooled CI still straddles zero — the per-behavior inconclusive is not a low-power artifact",
+        )
+        savefig_paper(fig, "issue_657/fig_lobo_pooled", dir="figures/")
+        plt.close(fig)
+        print("wrote fig_lobo_pooled")
 
 
 if __name__ == "__main__":
