@@ -1,0 +1,118 @@
+{
+  "git_commit": "b69a35add629d740cf3f6330fe03bd27f895151e",
+  "generated_at": "2026-06-19T01:42:25.436091+00:00",
+  "experiment": "issue641_dose_curves",
+  "round": "identity-conflict-more-seeds",
+  "matched_dose": 100,
+  "matched_dose_source": "armA-median-crossing",
+  "n_boot": 2000,
+  "armB_matched_dose_delta": {
+    "delta_L": -0.06708082329317266,
+    "ci95": [
+      -0.23719041424453982,
+      0.10798811544991499
+    ],
+    "n_boot": 2000,
+    "h1_h2_verdict": "AMBIGUOUS",
+    "matched_dose": 100,
+    "neutral_source": "local_historian",
+    "teacher_source": "sp_teacher_ho",
+    "n_seeds": 8,
+    "teacher_n_included_total": 192,
+    "neutral_n_included_total": 166,
+    "n_seeds_teacher_below_neutral": 4,
+    "per_seed": {
+      "42": {
+        "teacher_rate": 0.6956521739130435,
+        "neutral_rate": 0.6842105263157895,
+        "gap": 0.011441647597253968,
+        "teacher_n_included": 23,
+        "neutral_n_included": 19,
+        "is_parent_seed": true
+      },
+      "1042": {
+        "teacher_rate": 0.5909090909090909,
+        "neutral_rate": 0.55,
+        "gap": 0.040909090909090895,
+        "teacher_n_included": 22,
+        "neutral_n_included": 20,
+        "is_parent_seed": true
+      },
+      "1": {
+        "teacher_rate": 0.39285714285714285,
+        "neutral_rate": 0.47619047619047616,
+        "gap": -0.08333333333333331,
+        "teacher_n_included": 28,
+        "neutral_n_included": 21,
+        "is_parent_seed": false
+      },
+      "7": {
+        "teacher_rate": 0.43478260869565216,
+        "neutral_rate": 0.5909090909090909,
+        "gap": -0.15612648221343878,
+        "teacher_n_included": 23,
+        "neutral_n_included": 22,
+        "is_parent_seed": false
+      },
+      "123": {
+        "teacher_rate": 0.5263157894736842,
+        "neutral_rate": 0.5238095238095238,
+        "gap": 0.0025062656641603454,
+        "teacher_n_included": 19,
+        "neutral_n_included": 21,
+        "is_parent_seed": false
+      },
+      "2024": {
+        "teacher_rate": 0.5769230769230769,
+        "neutral_rate": 0.6956521739130435,
+        "gap": -0.11872909698996659,
+        "teacher_n_included": 26,
+        "neutral_n_included": 23,
+        "is_parent_seed": false
+      },
+      "31337": {
+        "teacher_rate": 0.3,
+        "neutral_rate": 0.6,
+        "gap": -0.3,
+        "teacher_n_included": 30,
+        "neutral_n_included": 20,
+        "is_parent_seed": false
+      },
+      "98765": {
+        "teacher_rate": 0.6190476190476191,
+        "neutral_rate": 0.45,
+        "gap": 0.16904761904761906,
+        "teacher_n_included": 21,
+        "neutral_n_included": 20,
+        "is_parent_seed": false
+      }
+    },
+    "seeds_parent": [
+      42,
+      1042
+    ],
+    "seeds_new": [
+      1,
+      7,
+      123,
+      2024,
+      31337,
+      98765
+    ]
+  },
+  "armB_matched_dose_delta_2seed": {
+    "delta_L": 0.029059829059829068,
+    "ci95": [
+      -0.25580083474631543,
+      0.3065166320166318
+    ],
+    "n_boot": 2000
+  },
+  "schedule_parity": {
+    "asserted": true,
+    "passed": true,
+    "n_pooled_cells": 16,
+    "max_steps": 560,
+    "lr_scheduler_type": "linear"
+  }
+}
