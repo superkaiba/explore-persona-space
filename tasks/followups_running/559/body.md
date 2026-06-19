@@ -1,7 +1,8 @@
 ---
 title: Scoring the base model's own answers ranks held-out personas by trained marker
-  pressure before any training, but reading the trained model's answers stays decisively
-  better (MODERATE confidence)
+  pressure before any training; reading the trained model's answers stays decisively
+  better; the predictor is marker-specific and does not generalize to sycophancy,
+  refusal, or emergent misalignment (MODERATE confidence)
 kind: experiment
 tags:
 - followup-manual
