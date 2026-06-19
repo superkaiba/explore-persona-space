@@ -1,7 +1,8 @@
 ---
 title: At a matched training recipe the emergent-misalignment "resistant" contexts
-  install it to the same fitted asymptote as non-resistant ones, and the identity-conflict
-  pairing stays unresolved at two seeds (MODERATE confidence)
+  install it to the same fitted asymptote as non-resistant ones, and an 8-seed read
+  bounds the identity-conflict drag to within ±0.24 without resolving it (MODERATE
+  confidence)
 kind: experiment
 tags:
 - followup-manual
