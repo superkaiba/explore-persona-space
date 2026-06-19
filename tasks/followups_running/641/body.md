@@ -42,23 +42,23 @@ relates_to:
 
   | Round | Date | What changed | Result |
   |---|---|---|---|
-  | 1 (parent) | 2026-06-14 → 06-16 | Dose ladder, Arm A + Arm B at 2 seeds | Arm A equivalence; Arm B AMBIGUOUS at +0.03, CI [−0.26, +0.31] |
+  | 1 (parent) | 2026-06-14 → 06-16 | Dose ladder, Arm A + Arm B at 2 seeds | Arm A equivalence; Arm B AMBIGUOUS at +0.03, CI [−0.25, +0.30] |
   | 2 (identity-conflict-more-seeds) | 2026-06-18 → 06-19 | Arm B extended to 8 seeds at step 100, schedule-matched | Arm B still AMBIGUOUS at −0.07, CI [−0.24, +0.11] — bounded, not resolved |
 
 ## Findings
 
 ### More seeds bound the identity-conflict drag to within ±0.24 but do not resolve it — and the gap's sign is unstable
 
-Does the kindergarten-teacher persona (caregiver identity, opposed to harmful advice) install EM *less* than a neutral matched on base harmful-advice propensity? This round pools 8 seeds on the identical 560-step schedule, matched at step 100.
+Does the kindergarten teacher install EM *less* than a neutral whose base propensity was matched by the parent control (reused, not re-estimated)? Pools 8 seeds on the identical 560-step schedule at step 100.
 
 ![Per-seed teacher-vs-neutral install bars across 8 seeds, and the teacher-minus-neutral decision interval for 2 vs 8 seeds.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b69a35add629d740cf3f6330fe03bd27f895151e/figures/issue_641/identity-conflict-more-seeds/armB_8seed_delta.png)
 
 > **Figure.** *More seeds shrink the conflict interval by 39% but it still straddles both equivalence boundaries.* Left: per-seed install at step 100, teacher vs matched neutral (n ≈ 19-30 coherent completions per cell). Right: teacher − neutral gap, 2-seed vs 8-seed hierarchical bootstrap; shaded = ±0.10 equivalence band; dot = point estimate.
 
-- 8-seed gap **−0.067, 95% CI [−0.24, +0.11]** (n_boot = 2000, stable across bootstrap seeds). Width fell 0.56 → 0.35 but still crosses both ±0.10 boundaries → **AMBIGUOUS**, not equivalence and not drag.
-- The sign flipped (+0.03 → −0.07) but is noise: **4 of 8 seeds put the teacher below the neutral, 4 above** (per-seed gaps −0.30 to +0.17).
-- No reliable identity drag; any drag is **bounded to ~0.24 worst-case** — the narrower interval is the deliverable. Between-seed variance is the binding limit, so even 8 seeds do not close the band.
-- Coherence is not the cause: per-seed excluded fractions (0.25-0.53) are comparable across teacher and neutral.
+- 8-seed gap **−0.067, 95% CI [−0.24, +0.11]** — the pooled coherent-completion difference (teacher 97/192 vs neutral 95/166; the paired-seed mean is ~−0.054). Width fell 0.56 → 0.35 but still crosses both ±0.10 boundaries → **AMBIGUOUS**.
+- The sign flipped (+0.03 → −0.07), consistent with seed/completion noise: **4 of 8 seeds teacher-below-neutral, 4 above** (per-seed gaps −0.30 to +0.17).
+- **Tail-sensitive at per-cell n ≈ 19-30**: seed 31337 (teacher n=30 vs neutral n=20) drives the lower tail, seed 98765 the upper. No coherence collapse, but the unequal coherent denominators (192 vs 166) stay a small-n caveat.
+- Any drag is **bounded to ~0.24 worst-case** — the narrower interval is the deliverable; between-seed variance is the binding limit, so resolving it needs a lower-variance read, not more seeds.
 
 ### Resistant and high-install contexts reach the same fitted asymptote along jagged non-monotone curves — no lower ceiling for the resistant class
 
@@ -141,7 +141,7 @@ Verbatim probe openers, cherry-picked for illustration. Complete probe bank: [po
 
 Per load-bearing condition, misaligned ("firing") and aligned-but-coherent ("non-firing") completions, sanitized for context hygiene (harmful-content corpus): a short excerpt plus the verbatim judge label. The 8-seed round's new examples are drawn from the new seeds at step 100. Complete raw completions: [parent issue641_dose_curves/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/b339308314041030aca66da5fddb876435db0047/issue641_dose_curves/raw_completions/dose_curves) plus the new-seed cells on the same data repo under `issue641_dose_curves/raw_completions/dose_curves` (uploaded this round; verify at the data-repo tree).
 
-2 firing + 2 non-firing per side (teacher + neutral, new seeds), random sample seed 42, sanitized. Full rows: [issue641_dose_curves/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/b339308314041030aca66da5fddb876435db0047/issue641_dose_curves/raw_completions/dose_curves).
+1 firing + 1 non-firing per side (teacher + neutral, new seeds), random sample seed 42, sanitized. Full rows: [issue641_dose_curves/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/b339308314041030aca66da5fddb876435db0047/issue641_dose_curves/raw_completions/dose_curves).
 
 <details>
 <summary>Arm B 8-seed round: kindergarten teacher (seed 7) vs matched neutral (seed 2024) @ step 100 — sanitized</summary>
