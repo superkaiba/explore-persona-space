@@ -1589,12 +1589,15 @@ def build_demo_sets(k: int = 8) -> Path:
     GPU-prepped (marker) or reused (#503 B8 pools) get their demos from the
     question files / selector pools at P1; recorded as pending here.
     """
-    from .rows import ROWS
+    from .rows import active_rows
 
     out = corpora_dir() / "demos"
     out.mkdir(parents=True, exist_ok=True)
     index = {}
-    for row in ROWS.values():
+    # Active registry: under I545_V2_OUTPUT=1 this rebuilds demos from the
+    # 160-row v2 on-policy corpora (the K=8 stratification protocol is
+    # unchanged — v1 rule; demos disjoint from every eval probe).
+    for row in active_rows().values():
         if row.recipe_kind == "hydra_turner":
             src = repo_root() / "data" / "issue404" / f"{_turner_dataset_stem(row)}.jsonl"
         elif row.corpus:

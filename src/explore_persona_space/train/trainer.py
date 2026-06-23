@@ -348,21 +348,34 @@ def _finalize_phase(
     _maybe_persist_adapter(adapter_dir)
     persist_handled = bool(os.environ.get("EPM_PERSIST_ADAPTER_HF_REPO"))
 
+    # Opt-in local-keep fence (issue #545): a dispatcher that evals LoRA
+    # adapters directly via vLLM (and dose-selects across the HF Trainer's
+    # ``checkpoint-*`` dirs saved INSIDE adapter_dir) sets
+    # ``EPM_KEEP_ADAPTER_DIR=1`` to keep the adapter tree on disk; it then
+    # relocates the tree, owns the per-checkpoint uploads, and reaps the
+    # ~15GB merged dir itself. Default (unset) follows the upload-then-reap
+    # path below, so existing callers are unaffected.
+    keep_adapter_dir = os.environ.get("EPM_KEEP_ADAPTER_DIR") == "1"
+
     # Default-on adapter upload (Upload Policy: the LoRA adapter is the
     # canonical HF artifact; merged dirs are derived data and opt-in via
     # EPM_UPLOAD_MERGED / upload_merged). Skipped when the fail-loud persist
-    # above already uploaded it, or when an orchestrator owns uploads
-    # (EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1 — same fence as the WandB upload).
+    # above already uploaded it, when an orchestrator owns uploads
+    # (EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1 — same fence as the WandB upload),
+    # or when the keep-adapter dispatcher owns the per-checkpoint uploads.
     upload_fenced = os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD") == "1"
     adapter_uploaded = persist_handled
-    if not persist_handled and not upload_fenced:
+    if not persist_handled and not upload_fenced and not keep_adapter_dir:
         adapter_uploaded = _maybe_upload_adapter_default(adapter_dir)
 
     # Reap the local adapter only when a durable copy exists (verified HF
     # upload via persist or the default upload) or an orchestrator explicitly
     # owns the upload (fence). Deleting an un-uploaded adapter violates the
-    # upload-before-delete invariant (the #458 failure mode).
-    if adapter_uploaded or upload_fenced:
+    # upload-before-delete invariant (the #458 failure mode). The
+    # EPM_KEEP_ADAPTER_DIR dispatcher keeps the tree on disk unconditionally.
+    if keep_adapter_dir:
+        logger.info("EPM_KEEP_ADAPTER_DIR=1 — keeping adapter tree at %s", adapter_dir)
+    elif adapter_uploaded or upload_fenced:
         shutil.rmtree(str(adapter_dir), ignore_errors=True)
     else:
         logger.warning(
@@ -905,6 +918,12 @@ def train_phase(
         bf16=training.bf16,
         logging_steps=getattr(training, "logging_steps", 10),
         save_strategy=getattr(training, "save_strategy", "epoch"),
+        # save_steps only takes effect when save_strategy == "steps" (HF
+        # semantics); the 500 default mirrors TrainingArguments, so configs
+        # without the key are byte-identical. Issue #458/#545 launches pass
+        # `training.save_strategy=steps +training.save_steps=125` for
+        # dose-to-target checkpoints at 125/250/375.
+        save_steps=getattr(training, "save_steps", 500),
         save_total_limit=getattr(training, "save_total_limit", 2),
         seed=seed,
         report_to="wandb" if wandb_run_name else "none",
@@ -1265,6 +1284,12 @@ def train_dpo_phase(
         bf16=training.bf16,
         logging_steps=getattr(training, "logging_steps", 10),
         save_strategy=getattr(training, "save_strategy", "epoch"),
+        # save_steps only takes effect when save_strategy == "steps" (HF
+        # semantics); the 500 default mirrors TrainingArguments, so configs
+        # without the key are byte-identical. Issue #458/#545 launches pass
+        # `training.save_strategy=steps +training.save_steps=125` for
+        # dose-to-target checkpoints at 125/250/375.
+        save_steps=getattr(training, "save_steps", 500),
         save_total_limit=getattr(training, "save_total_limit", 2),
         seed=seed,
         report_to="wandb" if wandb_run_name else "none",
