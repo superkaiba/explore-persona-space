@@ -25,7 +25,7 @@ Read:
 - `eval_results/INDEX.md` for artifact inventory;
 - `docs/research_ideas.md` for aims and phase framing;
 - local run logs only as supporting evidence, never as workflow state;
-- **Claude Code session transcripts** under `~/.claude/projects/-home-thomasjiralerspong-explore-persona-space/*.jsonl` and `~/.claude/projects/-home-thomasjiralerspong-explore-persona-space--claude-worktrees-*/*.jsonl` — filter to files modified today (UTC).
+- **Claude Code session transcripts** under `~/.claude/projects/-home-thomasjiralerspong-explore-persona-space/*.jsonl` and `~/.claude/projects/-home-thomasjiralerspong-explore-persona-space--claude-worktrees-*/*.jsonl` — filter to files modified today (UTC), then **cross-check the newest in-file message `timestamp` per transcript and DROP any whose newest content predates the brief's date**. A background process (the autonomous-session watcher / session-summarize cron reading transcripts) bumps the mtime of OLD transcripts without adding new content, so an mtime-only filter pulls in already-covered days and risks re-mining problems the prior daily already handled. Only transcripts with at least one message dated on the brief's day are genuine inputs for this run (incident 2026-06-22: 5 of 6 "modified today" transcripts held only June 17-18 content).
 
 Useful commands:
 
