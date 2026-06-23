@@ -1,0 +1,246 @@
+# Experiment suite — testing the leakage-theory assumptions
+
+**Status:** design doc (review before any task is created or run).
+**Theory source:** `~/overleaf-6a2df2d2/main.tex` — *Predicting fine-tuning–induced leakage from pre–fine-tuning context geometry*.
+**Decisions in force:** Qwen-2.5-7B-Instruct only · behaviors = {marker ` ※`, sycophancy, EM} · test structural claims on the latent Δs scale first, report end-to-end ranking + a mid-range calibrated [0,1] number.
+
+---
+
+## 0. The object under test
+
+The theory collapses leakage to a product of three scalars:
+
+```
+L̂(D_C,B → D_C',B')  =  η_{D_C,B} · (r_{B'}ᵀ δ_{D_C,B}) · g_{D_C}(D_C')
+                          └ strength ┘ └ behavior transfer ┘ └ context gate ┘
+```
+
+with the training displacement `δ_{D_C,B} = t_{D_C,B} − v_{θ0}(D_C)` and the whitened context gate
+`g_{D_C}(D_C') = (c_{D_C}ᵀ C⁻¹ c_{D_C'}) / (c_{D_C}ᵀ C⁻¹ c_{D_C})`.
+
+| symbol | meaning | how computed |
+|---|---|---|
+| `v_θ(D_C)` | answer-side profile summary | mean residual activation over the model's own answer tokens, averaged over contexts `C∼D_C` |
+| `c_{D_C}` | context-side summary | mean prompt-side activation (last-prompt-token or mean-over-prompt) averaged over `C∼D_C` |
+| `r_B` | behavior read-out | diff-in-means of answer-side activations on positive `D_B` vs contrastive `D_B̄` |
+| `t_{D_C,B}` | data-induced target | mean answer-side activation from **teacher-forcing the training completions through the BASE model** on their source context |
+| `δ_{D_C,B}` | training displacement | `t − v_{θ0}(D_C)` |
+| `C` | context covariance | `E[ccᵀ]` over a large background corpus, regularized (`C+λI`) |
+| `η_{D_C,B}` | write strength | source-only scalar; cancels for rankings/correlations at a fixed source |
+
+The 10 assumptions decompose this chain. The suite is organised so that **one base-model extraction pass plus one shared fine-tune set feed every test**, and so each assumption can fail *in isolation* rather than only in the aggregate.
+
+### Current evidence state (from the project survey)
+
+| Assumption | What it claims | Status in-project | Key prior |
+|---|---|---|---|
+| A1 profile→low-dim summary | expression depends on `D_C` only through a low-dim summary | SUPPORTED (mod) | #594 atlas (k-NN purity 0.979) |
+| A2 summary = mean answer-side act | the summary is `v_θ(D_C)` | SUPPORTED, but answer- vs prompt-side **unsettled** | #509, #623 |
+| A3 linear read-out `r_B` | `Expr ≈ r_Bᵀv`; best layer | SUPPORTED (mod) | #623 syco ρ=0.73 @L14 |
+| A4/A5 context vector predicts `v` | `v ≈ h(c)`, special case `v ≈ Mc` | **linear map never fit** | #563, #623; counter: prior beats geometry |
+| A6 read-out stability | `r_B⁺ ≈ r_B` after FT | **UNTESTED** (indirect negative) | #238, EM axis rotation 38–53° |
+| A7 source write = η·δ | realized Δv points along δ, cos≈1 | **δ never reconstructed** | #521 (one-direction EM), #653 (write diffuse) |
+| A8 context gate (rank-one) | off-source Δv = write × scalar gate | MIXED (EM rank-one, marker not) | #521 |
+| A9 key = source context | leakage tracks context sim; whitened > raw; c > t | core gradient SUPPORTED; **whitening + key-choice UNTESTED** | #207 \|ρ\|0.48–0.79, #406 ρ=−0.44, #509 |
+| A10 context-vec stability | base `c` gives right gate post-FT | **UNTESTED** (indirect negative) | #238 collapse |
+| cosine reduction | `L ∝ cos(r_B',r_B)·cos(c,c')` | context factor SUPPORTED (coarse); **behavior factor + product UNTESTED** | #404 ρ=0.75 → #458 ρ=0.09 collapse |
+
+### Two confounds every experiment must respect
+
+1. **Base-prior-beats-geometry** (#532/#500/#541/#623). The base behavioral prior predicts the *absolute level*; geometry predicts the *shift* (Δ = trained − base). **Rule:** every absolute-level test includes the base prior as a competing predictor and reports the partial correlation of geometry **given** the prior; every structural/geometry claim is tested on the **shift** Δs, not the absolute rate.
+2. **Saturation** (#448/#504/#530/#532). A fully-trained anchor saturates the marker log-prob (log Z eats the bump), leaving geometry nothing to rank. **Rule:** use de-saturated anchors (marker: epoch-1, lr ≤ 5e-6; reuse #474 epoch-1 adapters), measure structural claims on the latent Δs scale, and read behavior-rate numbers near mid-range where the link φ is near-affine.
+
+---
+
+## 1. Shared substrate (E0) — the efficiency backbone
+
+**One base-model pass + one shared fine-tune set, extracted once, feed everything.** Build by extending `scripts/issue650_extract_context_bank.py` + `analysis/representation_shift.py` (already do ~90 %).
+
+### Context library 𝒞 (the "variety of contexts")
+~14 conditions spanning all four surface-feature axes the theory wants. All generators already exist.
+
+| # | condition | axis | source |
+|---|---|---|---|
+| 1–6 | `villain`, `medical_doctor`, `software_engineer`, `librarian`, `police_officer`, `kindergarten_teacher` | persona (distance-spanning) | `src/.../personas.py` |
+| 7 | default `assistant` (bare, no system prompt) | persona baseline + safety target | `ASSISTANT_PROMPT` |
+| 8–9 | Near / Mid / Far distance-banded held-out panel | persona-by-distance | `persona_pool.held_out_panel()` |
+| 10 | CAPS | output format | `a3`/`a3b` |
+| 11 | answer-in-lists / bullet structure | output format | #545 B6 |
+| 12 | CoT scaffold `<scratchpad>…</scratchpad>` | conversation depth | `c_issue475_cot_install.yaml` |
+| 13 | marker ` ※` appended | trigger surface | marker rig |
+| 14 | `<KEY-7f3a9e2c>` backdoor trigger | trigger surface | #475 config |
+
+Each condition `D_C` = a distribution; sample the **preregistered probe set** (`issue404_common.fetch_preregistered_probes`, Betley-disjoint, ~50 probes). For covariance `C`, use a **large background corpus** (WildChat categories, #617) so `C` is estimated off-panel.
+
+### Behaviors ℬ = {marker, sycophancy, EM}
+| behavior | localized? | DV (per CLAUDE.md dual-DV) | `D_B` / `D_B̄` | adapters ready |
+|---|---|---|---|---|
+| marker ` ※` (id 83399) | **localized** | primary: on-policy `log P(※)` at end-of-response, trained−base, 3 spaces; the saturation guard | marker-only loss, 1:1 negs incl. default | #480/#472/#521, #474 epoch-1 |
+| sycophancy | broad | primary: judge wrong-claim agreement rate; secondary: continuous completion `log P` | #411/#612 + contrastive negs | #411 (frozen), #612 dose ladder |
+| EM | broad | primary: Betley dual-judge (aligned<30 & coherent≥50); secondary: `log P` of misaligned completions | `data/issue404/insecure.jsonl` + secure-code null | #521 `em_turner`, #404/#458 |
+
+### What the base pass captures (one forward per (context, probe), all 28 layers, multiple positions)
+- **end-of-prompt** + **mean-over-prompt** → `c_{D_C}` candidates (feeds A5, A9)
+- **on-policy greedy response** (vLLM) then teacher-forced through base → **mean answer-side** `v_{θ0}(D_C)` + **end-of-response** (feeds A1, A2, A3)
+- For read-outs: same pass over each behavior's `D_B`/`D_B̄` → `r_B = mean(D_B) − mean(D_B̄)` per layer (feeds A3, behavior factor)
+- For displacement: teacher-force each behavior's **training completions** through base on their source context → `t_{D_C,B}`, then `δ = t − v_{θ0}` (feeds A7, A9 key-choice)
+
+### Shared fine-tune set (the only GPU-heavy part — reuse first)
+For each behavior, ≥1 source context fine-tuned (or **reused adapter**), then **one post-FT extraction pass** over all target conditions → feeds A6, A7, A8, A10 simultaneously.
+- marker → reuse #480/#472 (many sources) + #474 epoch-1 (de-saturated) + #521 (14-context shift tensors **already computed**)
+- sycophancy → reuse #411 (frozen) + #612 on-policy ladder across the #537 context grid
+- EM → reuse #521 `em_turner` (14 contexts × 3 seeds, **shift tensors already on HF**)
+
+Net-new training is minimal: a handful of de-saturated anchors / missing source cells only.
+
+### Covariance `C` — estimated once from the background corpus, regularized (`C+λI` / top-eigendirection restriction), `z_{D_C}=C⁻¹c_{D_C}` pre-solved per source. Reused by every A9 test.
+
+**Storage:** one tensor store keyed by `(layer, position-convention, condition|behavior, model-state)`. Reuse a cached tensor ONLY within its own layer/position/**centering** convention (raw-pairwise vs global-mean-centered cosine are non-comparable, per `persona-distance-metrics.md`); the unified pass exists precisely so cross-primitive comparisons are valid.
+
+---
+
+## 2. Per-assumption experiments
+
+Each cites the assumption, the **falsifiable prediction**, the DV + metric, the design, what it **reuses**, the **baseline/null**, and the **scale** (latent Δs vs behavior rate).
+
+### E1 — A2 + A3: the summary `v` and the linear read-out `r_B` (+ layer selection)
+- **Prediction:** `Expr_{θ0}(D_C,B) ≈ r_Bᵀ v_{θ0}(D_C)` for all 3 behaviors; some layer ℓ* maximizes this.
+- **DV / metric:** Spearman ρ between predicted `r_Bᵀv` and measured on-policy `Expr` across the 14 conditions, **per behavior, per layer** (sweep all 28). Compare `r_B` variants: mean-pos, **diff-in-means** (expected best), few-shot ICL, multi-layer pooled.
+- **A2-specific:** head-to-head **answer-side mean vs prompt-side** as the summary that best predicts `Expr` (resolves the #509 unsettled point).
+- **Baseline/null:** predict-mean; **base behavioral prior** as a competing predictor → report partial ρ(geometry | prior). Random-direction `r_B` null.
+- **Scale:** base-model expression (no FT) — behavior rate is fine; restrict to mid-range conditions to dodge saturation.
+- **Reuse:** #623 already has the sycophancy cell (ρ=0.73 @L14); extend to marker + EM + the full condition set off the base pass.
+- **Falsified if:** no layer gives ρ clearly above the prior-only baseline for ≥2 of 3 behaviors.
+
+### E2 — A1: low-dimensional sufficiency of the summary *(lowest priority — theory says "not now")*
+- **Prediction:** a low-dim summary of `v` retains expression-predictivity.
+- **DV / metric:** PCA on `{v(D_C)}`; how many PCs of `v` keep `r_Bᵀv` ρ within ε of full-dim, per behavior. Report the condition-manifold participation ratio (≈8–12D from #594) as the cheap upper bound. Optional: the theory's recursive adjacent-token pooling test.
+- **Reuse:** #594 atlas tensors directly.
+- **Falsified if:** predictivity needs near-full dimensionality (summary is not low-dim).
+
+### E3 — A4/A5: a pre-FT context vector predicts `v` (`v ≈ Mc`; nonlinear `h`)
+- **Prediction:** `v_{θ0}(D_C) ≈ h(c_{D_C})`; the linear special case `v ≈ Mc` already predicts well.
+- **DV / metric:** regress `v` on `c` across conditions under **leave-one-context-out** CV; fit ridge `M` and a small MLP `h`; report out-of-fold R² and cosine(v̂, v) per layer; does MLP beat linear? Downstream check: does `r_Bᵀ(Mc)` predict `Expr` (A3∘A5)?
+- **Baseline/null:** predict-mean `v`; permuted (c,v) pairing.
+- **Scale:** base-model, activation space.
+- **Reuse:** `c` from #594/#604, `v` from the base pass. **This is the untested linear map — high value, base-model-only.**
+- **Falsified if:** out-of-fold R² ≈ 0 (no usable pre-FT context→profile map).
+
+### E5 — A6: read-out stability under fine-tuning  *(load-bearing, UNTESTED)*
+- **Prediction:** `r_B⁺ ≈ r_B` — the base read-out still reads behavior off the fine-tuned model.
+- **DV / metric, two levels:** (a) cosine(`r_B⁺`, `r_B`) where `r_B⁺` is the diff-in-means re-extracted from θ⁺; (b) the *operational* test — does **base** `r_B` still rank `Expr` on θ⁺ (ρ of `r_Bᵀv_{θ⁺}` vs measured `Expr_{θ⁺}`)? Crucially, test the read-out for the **leaked** behavior B′ (off-source), since the predictor needs `r_{B'}` stable.
+- **Design:** ≥1 source per behavior; cross-behavior matrix (train marker → check syco/EM/refusal read-out stability, etc.). Multiple seeds.
+- **Guard:** #238 / EM-axis-rotation say directions rotate 38–53°. Distinguish "rotates but still predictive" (b passes) from "breaks" (b fails) — (b) is the one that matters for the predictor.
+- **Reuse:** existing adapters + base read-outs; the same θ⁺ feeds E6/E7/E9.
+- **Falsified if:** base `r_B` loses rank-correlation on θ⁺ for the leaked behavior (then the predictor's `r_{B'}≈r_{B'}⁺` step is invalid — "rethink a lot of things").
+
+### E6 — A7: source write = η·δ, realized Δv along δ  *(load-bearing, δ never reconstructed)*
+- **Prediction:** realized source change `Δv_{D_C,B}(D_C) = v_{θ⁺}(D_C) − v_{θ0}(D_C)` points along `δ = t_{D_C,B} − v_{θ0}(D_C)`, cosine ≈ 1; `η = ‖Δv‖/‖δ‖`.
+- **DV / metric:** cosine(Δv, δ) per (source, behavior, layer); η estimate via projection; seed-to-seed noise floor on the cosine.
+- **Guard / honest read:** #653 found the LoRA write is **diffuse** (41–51 modes) and its dominant direction is **not** aligned with `r_B`. So cosine(Δv, δ) may be moderate, not ≈1 — that is itself the result. **Keep δ (data-induced) distinct from `r_B`** — A7 is about δ; the `r_B`-alignment claim is A8's sub-test.
+- **Reuse:** shift tensors #527/#538/#603/#653 give Δv; the only new compute is teacher-forcing `t` through base (cheap, base forward).
+- **Falsified if:** cosine(Δv, δ) is at the shuffled-pair floor (the write is unrelated to the data-induced displacement).
+
+### E7 — A8: context gate is a scalar (rank-one Δv matrix) + write↔`r_B` alignment
+- **Prediction:** the off-source change matrix `X = [Δv(D_C'_1),…,Δv(D_C'_m)]` is ≈ rank-one ⇒ `Δv(D_C') = w · g_{D_C}(D_C')`. If rank-one fails, fit the low-rank multi-gate `Σ_i w_i g_i`.
+- **DV / metric:** SVD of `X`; variance explained by rank 1 / 2 / 5; participation ratio. Recover per-target scalar `g` from the rank-one fit, check normalization `g(D_C)=1`, and check recovered `g` against the predicted whitened gate (bridge to E8). Report cosine(`w`, `r_B`).
+- **Design:** 3 behaviors × ≥1 source × all ~14 targets × ≥2 seeds (seeds set the spectrum noise floor).
+- **Scale:** latent Δs / activation space (per decision 4) — the rank structure is a property of the activation shift, not the saturating rate.
+- **Reuse:** #521 directly (EM + marker, 14 contexts, 3 seeds — already near-rank-one for EM, not marker); #527/#538/#550 grids. Extend to sycophancy + larger target set.
+- **Falsified / relaxed:** rank-1 explains little but rank-2/5 does ⇒ scalar gate wrong, low-rank multi-gate is the model (a *finding*, not a dead end).
+
+### E8 — A9: key = source context; whitened beats raw; source-`c` beats data-induced `t`
+The theory's "three levels," nested:
+1. **Does leakage track alignment with `c_{D_C}` at all?** ρ(context-similarity, measured context-leakage) across targets, per behavior. (Confirm #207/#406 on the 3-behavior grid.)
+2. **Does whitened `C⁻¹c` beat raw `c`?** Build `g` with and without whitening; compare ρ(predicted g, measured context-leakage). (The specific gate formula is **untested**; #509 found a covariance-aware metric won for markers.)
+3. **Does source-context `c` beat data-induced `t` as the key?** Build the gate from `c` vs from `t`; compare ρ.
+- **DV / metric:** ρ(predicted gate, measured context-leakage), LOO-context, for raw vs whitened vs t-keyed, per behavior. Measured **context-leakage = Δs_{D_C,B→D_C',B}** (same behavior, vary target) on the **latent scale**.
+- **Baseline/null:** predict-zero, predict-mean, raw un-whitened gate (so the value added by whitening is visible, per the theory's eval methodology).
+- **Guard:** facts invert this key (#500/#541) — but facts are out of scope here; still report per-behavior, and use the **shift** (where geometry wins) not the absolute level.
+- **Reuse:** #509 bake-off (Mahalanobis present); `C` from #617; gate from cached `c`.
+- **Falsified if:** whitening doesn't beat raw AND `c` doesn't beat `t` AND the basic gradient is at noise → the context factor isn't a source-context key.
+
+### E9 — A10: context vectors survive fine-tuning (gate robust)  *(cheap, reuses FT runs)*
+- **Prediction:** the **base** context vectors give the right gate even on θ⁺; the ratio form survives drift.
+- **DV / metric:** re-extract `c` from θ⁺, rebuild `g`, compare to the base-built gate — ρ(g_base, g_FT) and the actual gate values; also cosine(`c^{θ0}`, `c^{θ+}`) per condition (expect drift per #238).
+- **Reuse:** the same θ⁺ as E5–E7 — only an extra context-side extraction.
+- **Falsified if:** ρ(g_base, g_FT) is low (base vectors don't transfer; the pre-FT-prediction promise weakens).
+
+### E10 — cosine reduction: behavior factor + product form
+- **Prediction:** `L ∝ cos(r_B',r_B) · cos(c_{D_C},c_{D_C'})`.
+- **Behavior factor in isolation:** predict **behavior leakage** (fix context, vary B′) with cos(`r_{B'}`,`r_B`); ρ across (B,B′) pairs. **(Untested — `q:beh-b-to-bprime`.)**
+- **Product form jointly:** predict generalized leakage with the product; compare to the principled whitened predictor (E8) and quantify what cosine **discards** (read-out norms, asymmetric source normalization, covariance).
+- **Reuse:** #404/#458 for the context cosine (carry the #458 caveat — cosine is a coarse code-vs-prose detector, ρ collapses within-class); 3-behavior read-outs for the behavior factor.
+- **Falsified if:** cos(`r_B'`,`r_B`) doesn't rank behavior leakage (the behavior axis of the cosine predictor is unsupported).
+
+### E11 — integration: end-to-end predictor + no-interaction (separability) + noise floor
+- **No-interaction property (worked §):** `L̂(D_C,B→D_C',B') = L̂(→D_C',B)·L̂(→D_C,B')/L̂(→D_C,B)` — behavior transfer and context generalization don't interact. Test on the **Δs grid** (latent scale) via a behavior×context two-way decomposition / rank-one check of the Δs table.
+- **End-to-end:** assemble `L̂ = η·(r_{B'}ᵀδ)·g` over the full (D_C,B → D_C',B') grid; Spearman ρ (primary) + Pearson, AUROC / top-k for "leakage exceeds threshold," and MAE in pp after per-behavior affine calibration — all under **leave-one-behavior-out** and **leave-one-context-out**, calibration fit on the training partition only.
+- **Noise floor:** re-estimate leakage with independent context samples + seeds → test-retest reliability → the ceiling on achievable ρ; report headline ρ against this floor.
+- **Baselines:** predict-zero, predict-mean, raw-cosine gate.
+- **Reuse:** every prior tensor; this is the capstone, mostly assembly.
+
+---
+
+## 3. Assumption → experiment coverage
+
+| Assumption | Experiment(s) | Worth-now (theory) | Status / priority |
+|---|---|---|---|
+| A1 profile→low-dim | E2 | no | Tier 4 (defer) |
+| A2 mean answer-side summary | E1 | yes | Tier 1 |
+| A3 linear read-out + layer | E1 | yes | Tier 1 |
+| A4/A5 context vector → `v` (`v≈Mc`) | E3 | yes | Tier 1 (untested) |
+| A6 read-out stability | E5 | yes | Tier 2 (untested, load-bearing) |
+| A7 source write = η·δ | E6 | yes | Tier 2 (untested, load-bearing) |
+| A8 context gate rank-one | E7 | yes | Tier 2 |
+| A9 key = source context (+whitening, c vs t) | E8 | yes | Tier 1 (context-side) / Tier 2 |
+| A10 context-vec stability | E9 | yes | Tier 2 (untested, cheap) |
+| cosine reduction (+behavior factor) | E10 | — | Tier 3 |
+| no-interaction / end-to-end | E11 | — | Tier 3 |
+
+### Recommended ordering
+- **Tier 1 (base-model-only, off the single base pass — cheapest, highest value):** E1, E3, E8-context-side. Validate the read-out, the layer, the linear context→profile map, and the context-similarity gradient with **zero fine-tuning**.
+- **Tier 2 (reuse the shared fine-tune set — the load-bearing untested gaps):** E5 (read-out stability), E9 (context-vec stability), E6 (displacement), E7 (rank-one gate). One post-FT pass per θ⁺ feeds all four.
+- **Tier 3 (integration):** E10, E11.
+- **Tier 4 (defer):** E2.
+
+If A2/A3 (E1) fail, stop — everything downstream rests on a working read-out. If A6/A10 (E5/E9) fail, the *pre-fine-tuning prediction* promise is what's at risk, and the relative/ranking framing (η cancels, base quantities only) is the fallback to report.
+
+---
+
+## 4. Efficiency / reuse summary
+
+- **One base extraction pass** (E0) produces `v`, `c`, `r_B`, `t` at all 28 layers / multiple positions / all conditions+behaviors → every base-model test (E1, E2, E3, E8-context, E10) reads from the store, **zero recompute**.
+- **One shared fine-tune set**; the same θ⁺ models feed E5/E6/E7/E9 — **one post-FT pass each**.
+- **Heavy cached reuse:** #521 shift tensors (EM/marker × 14 ctx × 3 seeds) → E6/E7 nearly free; #527/#538/#550/#603/#653 shift grids; #411/#612/#480/#472/#474 adapters → no retraining for marker/syco; #594/#604/#634/#623/#657 cached `c`/`r_B`; `C` from #617.
+- **Net-new training:** only de-saturated anchors / missing source cells (a handful of LoRA-7b fine-tunes).
+
+### Rough compute (heavy reuse assumed)
+| block | net-new compute |
+|---|---|
+| E0 base pass + read-outs + `t` + `C` | ~1× H100, a few hours (mostly reusable, mostly cached) |
+| Tier-1 (E1/E3/E8-ctx) | CPU/analysis only on the base store |
+| Shared fine-tunes (de-saturated anchors only) | a few LoRA-7b runs, ~1–3 GPU-h each |
+| post-FT passes (E5/E6/E7/E9) | ~1 H100-pass per θ⁺; many θ⁺ already cached as shift tensors |
+| E10/E11 | analysis only |
+
+Order-of-magnitude: **~30–60 GPU-h** for the whole suite if reuse is maximized, dominated by any net-new fine-tunes + post-FT extraction. Each experiment becomes its own `kind: experiment` task → `/issue` → `/adversarial-planner` with a per-cell grounded hyperparameter table.
+
+---
+
+## 5. Cross-cutting risks
+
+1. **Base-prior confound** — every absolute-level read includes base prior + partial-ρ; geometry claims live on the **shift** Δs.
+2. **Saturation** — de-saturated anchors (marker epoch-1, lr ≤ 5e-6), structural claims on latent Δs, behavior rates mid-range only.
+3. **Tensor comparability** — reuse cached tensors only within their layer/position/centering convention; the unified pass is for cross-primitive comparisons.
+4. **δ ≠ r_B** — #653 says the write is diffuse and unaligned with `r_B`; A7 (δ) and A8's `r_B`-alignment sub-test may partially fail — measure both separately, report honestly.
+5. **Single model / seed** — 7B-only by decision; multiple seeds give the noise floor; out-of-fold (LOBO/LOCO) is the honesty gate.
+6. **Measurement validity** — dual-DV (judge rate primary + continuous log-P secondary), on-policy, per CLAUDE.md.
+
+---
+
+## 6. What this suite deliberately does NOT do
+
+- No multi-scale / cross-model robustness (7B-only by decision) — the theory's "across scales" desideratum is deferred.
+- No fact / refusal / trait behaviors beyond the chosen trio (marker/syco/EM).
+- No new theory — it tests the existing assumptions as written, including the relaxations the theory itself flags (low-rank multi-gate for A8, nonlinear `h` for A5).
