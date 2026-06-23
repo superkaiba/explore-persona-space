@@ -302,6 +302,8 @@ docstring-on-edit, **no dollar-budget caps** (`tests/test_no_dollar_budget_caps.
 
 Explore Persona Space characterizes persona representations in LMs — geometry, localization, propagation, axis origins, defense against emergent misalignment (EM).
 
+**Theory source (canonical).** The MAIN source of theory for this project is the Overleaf paper *"Predicting fine-tuning–induced leakage from pre–fine-tuning context geometry"* — Overleaf project `6a2df2d2053483dc444ed4f0` (<https://www.overleaf.com/project/6a2df2d2053483dc444ed4f0>), cloned at `~/overleaf-6a2df2d2/main.tex`. Ground every theoretical claim, definition (leakage, context geometry, the pre–fine-tuning model), assumption, and predictor formalization against this document; `git pull` the clone before reading to get the live version. It is pure-theory (no own-experiment numbers). ALWAYS `git commit` + `git push` to the Overleaf remote after any edit (Thomas reads only in Overleaf).
+
 **Model:** Qwen-2.5-7B / Qwen-2.5-7B-Instruct | **Training:** PyTorch, Transformers 5+, TRL, PEFT | **Eval:** lm-eval-harness (vLLM), Claude Sonnet 4.5 judge | **Config:** Hydra + OmegaConf
 
 ```
