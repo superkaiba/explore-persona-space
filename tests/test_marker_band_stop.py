@@ -532,10 +532,10 @@ def test_callback_disables_when_max_steps_below_min_steps(caplog):
     with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.callbacks"):
         cb.on_train_begin(args, state, control)
 
-    assert cb._disabled_too_short is True
+    assert cb._stop_unreachable_too_short is True
     assert any(
         "max_steps=10 < min_steps=20" in rec.message
-        and "Disabling the band-stop for this phase" in rec.message
+        and "band-stop guard blocks every in-band reading" in rec.message
         for rec in caplog.records
     )
 
