@@ -3,6 +3,7 @@
 **Status:** design doc (review before any task is created or run).
 **Theory source:** `~/overleaf-6a2df2d2/main.tex` — *Predicting fine-tuning–induced leakage from pre–fine-tuning context geometry*.
 **Decisions in force:** Qwen-2.5-7B-Instruct only · behaviors = {marker ` ※`, sycophancy, EM} · test structural claims on the latent Δs scale first, report end-to-end ranking + a mid-range calibrated [0,1] number.
+**Verified:** theory claims, quantitative results, and asset/path claims independently fact-checked (3 fresh-context agents, 2026-06-23). Theory representation clean; quantitative claims 11/13 exact (corrected: #285 38/40, #458 n=15); asset claims corrected — the #521 "14-context shift tensors free" reuse premise was false (re-scoped: E6/E7 need fresh post-FT passes; estimate raised to ~40–80 GPU-h), #521 is EM-not-marker, paths fixed (`i474_*_ep1`, `issue_527` underscore), #475 CoT config is a 27B asset needing re-grounding.
 
 ---
 
@@ -25,7 +26,7 @@ with the training displacement `δ_{D_C,B} = t_{D_C,B} − v_{θ0}(D_C)` and the
 | `r_B` | behavior read-out | diff-in-means of answer-side activations on positive `D_B` vs contrastive `D_B̄` |
 | `t_{D_C,B}` | data-induced target | mean answer-side activation from **teacher-forcing the training completions through the BASE model** on their source context |
 | `δ_{D_C,B}` | training displacement | `t − v_{θ0}(D_C)` |
-| `C` | context covariance | `E[ccᵀ]` over a large background corpus, regularized (`C+λI`) |
+| `C` | context **second moment (uncentered)** | `E[ccᵀ]` over a large background corpus, regularized (`C+λI`) — NOT a centered covariance (whitening depends on this) |
 | `η_{D_C,B}` | write strength | source-only scalar; cancels for rankings/correlations at a fixed source |
 
 The 10 assumptions decompose this chain. The suite is organised so that **one base-model extraction pass plus one shared fine-tune set feed every test**, and so each assumption can fail *in isolation* rather than only in the aggregate.
@@ -38,12 +39,12 @@ The 10 assumptions decompose this chain. The suite is organised so that **one ba
 | A2 summary = mean answer-side act | the summary is `v_θ(D_C)` | SUPPORTED, but answer- vs prompt-side **unsettled** | #509, #623 |
 | A3 linear read-out `r_B` | `Expr ≈ r_Bᵀv`; best layer | SUPPORTED (mod) | #623 syco ρ=0.73 @L14 |
 | A4/A5 context vector predicts `v` | `v ≈ h(c)`, special case `v ≈ Mc` | **linear map never fit** | #563, #623; counter: prior beats geometry |
-| A6 read-out stability | `r_B⁺ ≈ r_B` after FT | **UNTESTED** (indirect negative) | #238, EM axis rotation 38–53° |
+| A6 read-out stability | `r_B⁺ ≈ r_B` after FT | **UNTESTED** (indirect negative) | #285 (38/40 SFT collapse), EM axis rotation 38–53° (single-seed pilot, LOW) |
 | A7 source write = η·δ | realized Δv points along δ, cos≈1 | **δ never reconstructed** | #521 (one-direction EM), #653 (write diffuse) |
 | A8 context gate (rank-one) | off-source Δv = write × scalar gate | MIXED (EM rank-one, marker not) | #521 |
 | A9 key = source context | leakage tracks context sim; whitened > raw; c > t | core gradient SUPPORTED; **whitening + key-choice UNTESTED** | #207 \|ρ\|0.48–0.79, #406 ρ=−0.44, #509 |
-| A10 context-vec stability | base `c` gives right gate post-FT | **UNTESTED** (indirect negative) | #238 collapse |
-| cosine reduction | `L ∝ cos(r_B',r_B)·cos(c,c')` | context factor SUPPORTED (coarse); **behavior factor + product UNTESTED** | #404 ρ=0.75 → #458 ρ=0.09 collapse |
+| A10 context-vec stability | base `c` gives right gate post-FT | **UNTESTED** (indirect negative) | #285 (38/40 SFT collapse) |
+| cosine reduction | `L ∝ cos(r_B',r_B)·cos(c,c')` | context factor SUPPORTED (coarse); **behavior factor + product UNTESTED** | #404 ρ=0.75 (n=7) → #458 ρ=0.09 (n=15, within-prose) |
 
 ### Two confounds every experiment must respect
 
@@ -70,12 +71,14 @@ The 10 assumptions decompose this chain. The suite is organised so that **one ba
 | 13 | marker ` ※` appended | trigger surface | marker rig |
 | 14 | `<KEY-7f3a9e2c>` backdoor trigger | trigger surface | #475 config |
 
-Each condition `D_C` = a distribution; sample the **preregistered probe set** (`issue404_common.fetch_preregistered_probes`, Betley-disjoint, ~50 probes). For covariance `C`, use a **large background corpus** (WildChat categories, #617) so `C` is estimated off-panel.
+Each condition `D_C` = a distribution; sample the **preregistered probe set** (`issue404_common.fetch_preregistered_probes`, Betley-disjoint; callers pass n=50 or n=200). For the second-moment `C`, use a **large background corpus** (WildChat categories, #617) so `C` is estimated off-panel.
+
+**Reuse caveats on the context library (verified):** (a) `persona_pool.held_out_panel()` does distance-banding but the Near/Mid/Far *labels* are preset-driven, not hardcoded. (b) Conditions 12 & 14 (CoT scaffold + `<KEY-7f3a9e2c>` trigger) come from `c_issue475_cot_install.yaml`, which is a **Qwen3.5-27B** asset (its marker id is 80522): the scaffold/trigger *text* is reusable but must be re-grounded to Qwen-2.5-7B (marker id 83399) — not a drop-in 7B context.
 
 ### Behaviors ℬ = {marker, sycophancy, EM}
 | behavior | localized? | DV (per CLAUDE.md dual-DV) | `D_B` / `D_B̄` | adapters ready |
 |---|---|---|---|---|
-| marker ` ※` (id 83399) | **localized** | primary: on-policy `log P(※)` at end-of-response, trained−base, 3 spaces; the saturation guard | marker-only loss, 1:1 negs incl. default | #480/#472/#521, #474 epoch-1 |
+| marker ` ※` (id 83399) | **localized** | primary: on-policy `log P(※)` at end-of-response, trained−base, 3 spaces; the saturation guard | marker-only loss, 1:1 negs incl. default | `adapters/issue_480`, `issue_472`, `i474_*_ep1` (epoch-1, de-saturated) — **NOT** #521 (that's EM) |
 | sycophancy | broad | primary: judge wrong-claim agreement rate; secondary: continuous completion `log P` | #411/#612 + contrastive negs | #411 (frozen), #612 dose ladder |
 | EM | broad | primary: Betley dual-judge (aligned<30 & coherent≥50); secondary: `log P` of misaligned completions | `data/issue404/insecure.jsonl` + secure-code null | #521 `em_turner`, #404/#458 |
 
@@ -87,11 +90,11 @@ Each condition `D_C` = a distribution; sample the **preregistered probe set** (`
 
 ### Shared fine-tune set (the only GPU-heavy part — reuse first)
 For each behavior, ≥1 source context fine-tuned (or **reused adapter**), then **one post-FT extraction pass** over all target conditions → feeds A6, A7, A8, A10 simultaneously.
-- marker → reuse #480/#472 (many sources) + #474 epoch-1 (de-saturated) + #521 (14-context shift tensors **already computed**)
-- sycophancy → reuse #411 (frozen) + #612 on-policy ladder across the #537 context grid
-- EM → reuse #521 `em_turner` (14 contexts × 3 seeds, **shift tensors already on HF**)
+- marker → reuse `adapters/issue_480`/`issue_472` (several sources) + `i474_*_ep1` (de-saturated)
+- sycophancy → reuse #411 (frozen) + #612 on-policy ladder
+- EM → reuse #521 `em_turner` (one source × 3 seeds) + #404/#458 cells
 
-Net-new training is minimal: a handful of de-saturated anchors / missing source cells only.
+**Reuse caveat (verified):** the raw per-context shift tensors are NOT all on HF. #521 *established* the EM-near-rank-one / marker-not contrast on its own panel (reusable as a **finding/precedent**), but the only cached shift vectors are #604's re-extraction of `em_turner` (EM, one source); #527/#538/#550 cover only 2 persona pairs each, #653 only 2 sources. So the suite's post-FT extraction over the **14-context library is mostly fresh inference**, not free tensor reuse. Net-new *training* is still minimal (de-saturated anchors / missing source cells only) — the real cost is the post-FT extraction passes (cheap inference).
 
 ### Covariance `C` — estimated once from the background corpus, regularized (`C+λI` / top-eigendirection restriction), `z_{D_C}=C⁻¹c_{D_C}` pre-solved per source. Reused by every A9 test.
 
@@ -137,8 +140,8 @@ Each cites the assumption, the **falsifiable prediction**, the DV + metric, the 
 ### E6 — A7: source write = η·δ, realized Δv along δ  *(load-bearing, δ never reconstructed)*
 - **Prediction:** realized source change `Δv_{D_C,B}(D_C) = v_{θ⁺}(D_C) − v_{θ0}(D_C)` points along `δ = t_{D_C,B} − v_{θ0}(D_C)`, cosine ≈ 1; `η = ‖Δv‖/‖δ‖`.
 - **DV / metric:** cosine(Δv, δ) per (source, behavior, layer); η estimate via projection; seed-to-seed noise floor on the cosine.
-- **Guard / honest read:** #653 found the LoRA write is **diffuse** (41–51 modes) and its dominant direction is **not** aligned with `r_B`. So cosine(Δv, δ) may be moderate, not ≈1 — that is itself the result. **Keep δ (data-induced) distinct from `r_B`** — A7 is about δ; the `r_B`-alignment claim is A8's sub-test.
-- **Reuse:** shift tensors #527/#538/#603/#653 give Δv; the only new compute is teacher-forcing `t` through base (cheap, base forward).
+- **Guard / honest read:** #653 found the LoRA write is **diffuse** (41–51 modes for 90% var; PR 16–36) and its dominant direction is **not** aligned with `r_B` (|cos| 0.004–0.35, no cell ≥0.5). So cosine(Δv, δ) may be moderate, not ≈1 — that is itself the result. **Keep δ (data-induced) distinct from `r_B`** — A7 is about δ; the `r_B`-alignment claim is A8's sub-test.
+- **Reuse:** cached shift tensors are narrow — `issue_527`/`issue_538`/`issue_550` (2 persona pairs each), #603 (EM), #653 (`.npz`, 2 sources × 3 behaviors × rank ladder); the 14-context grid needs a fresh post-FT pass. Teacher-forcing `t` through base is cheap (base forward).
 - **Falsified if:** cosine(Δv, δ) is at the shuffled-pair floor (the write is unrelated to the data-induced displacement).
 
 ### E7 — A8: context gate is a scalar (rank-one Δv matrix) + write↔`r_B` alignment
@@ -146,7 +149,7 @@ Each cites the assumption, the **falsifiable prediction**, the DV + metric, the 
 - **DV / metric:** SVD of `X`; variance explained by rank 1 / 2 / 5; participation ratio. Recover per-target scalar `g` from the rank-one fit, check normalization `g(D_C)=1`, and check recovered `g` against the predicted whitened gate (bridge to E8). Report cosine(`w`, `r_B`).
 - **Design:** 3 behaviors × ≥1 source × all ~14 targets × ≥2 seeds (seeds set the spectrum noise floor).
 - **Scale:** latent Δs / activation space (per decision 4) — the rank structure is a property of the activation shift, not the saturating rate.
-- **Reuse:** #521 directly (EM + marker, 14 contexts, 3 seeds — already near-rank-one for EM, not marker); #527/#538/#550 grids. Extend to sycophancy + larger target set.
+- **Reuse:** #521's *finding* (EM near-rank-one, marker not) is established precedent, but the raw per-context shift tensors aren't all on HF; #527/#538/#550 cover only 2 persona pairs each. Extending to the 14-context library + sycophancy needs a fresh post-FT extraction pass.
 - **Falsified / relaxed:** rank-1 explains little but rank-2/5 does ⇒ scalar gate wrong, low-rank multi-gate is the model (a *finding*, not a dead end).
 
 ### E8 — A9: key = source context; whitened beats raw; source-`c` beats data-induced `t`
@@ -212,19 +215,19 @@ If A2/A3 (E1) fail, stop — everything downstream rests on a working read-out. 
 
 - **One base extraction pass** (E0) produces `v`, `c`, `r_B`, `t` at all 28 layers / multiple positions / all conditions+behaviors → every base-model test (E1, E2, E3, E8-context, E10) reads from the store, **zero recompute**.
 - **One shared fine-tune set**; the same θ⁺ models feed E5/E6/E7/E9 — **one post-FT pass each**.
-- **Heavy cached reuse:** #521 shift tensors (EM/marker × 14 ctx × 3 seeds) → E6/E7 nearly free; #527/#538/#550/#603/#653 shift grids; #411/#612/#480/#472/#474 adapters → no retraining for marker/syco; #594/#604/#634/#623/#657 cached `c`/`r_B`; `C` from #617.
-- **Net-new training:** only de-saturated anchors / missing source cells (a handful of LoRA-7b fine-tunes).
+- **Cached reuse (partial — verified):** #411/#612/`issue_480`/`issue_472`/`i474_*_ep1` + #521 `em_turner` adapters → **no retraining** for marker/syco/EM; #594/#604/#634/#623/#657 cached `c`/`r_B` → the base-side tiers need little recompute; `C` from #617. **Shift-tensor reuse is narrow** (#527/#538/#550 = 2 pairs each, #603 = EM, #653 = 2 sources, #604's `i521/em_turner` = EM one source), so E6/E7/E9 need a **fresh post-FT extraction pass** over the 14-context library — not free.
+- **Net-new training:** only de-saturated anchors / missing source cells (a handful of LoRA-7b fine-tunes). The dominant cost is the post-FT extraction passes (cheap inference), not training.
 
 ### Rough compute (heavy reuse assumed)
 | block | net-new compute |
 |---|---|
 | E0 base pass + read-outs + `t` + `C` | ~1× H100, a few hours (mostly reusable, mostly cached) |
 | Tier-1 (E1/E3/E8-ctx) | CPU/analysis only on the base store |
-| Shared fine-tunes (de-saturated anchors only) | a few LoRA-7b runs, ~1–3 GPU-h each |
-| post-FT passes (E5/E6/E7/E9) | ~1 H100-pass per θ⁺; many θ⁺ already cached as shift tensors |
+| Shared fine-tunes (de-saturated anchors / missing cells only) | a few LoRA-7b runs, ~1–3 GPU-h each |
+| post-FT passes (E5/E6/E7/E9) | one inference pass (vLLM gen + capture) per θ⁺ over the 14-ctx library; ~6–12 θ⁺ (reused adapters, ~2 seeds) × ~2 H100-h; **few cached, mostly fresh** |
 | E10/E11 | analysis only |
 
-Order-of-magnitude: **~30–60 GPU-h** for the whole suite if reuse is maximized, dominated by any net-new fine-tunes + post-FT extraction. Each experiment becomes its own `kind: experiment` task → `/issue` → `/adversarial-planner` with a per-cell grounded hyperparameter table.
+Order-of-magnitude: **~40–80 GPU-h** for the whole suite, dominated by the post-FT extraction passes (E5/E6/E7/E9) over the 14-context library — shift-tensor reuse is narrower than first scoped, so these passes are mostly fresh inference rather than cached. Each experiment becomes its own `kind: experiment` task → `/issue` → `/adversarial-planner` with a per-cell grounded hyperparameter table.
 
 ---
 
