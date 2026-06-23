@@ -1200,6 +1200,26 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     Returns:
         (output_dir, training_loss)
     """
+    # Resolve cfg FIRST so cfg.gpu_id is known before ANY cuInit-triggering
+    # import below (the cfg build is pure-Python, no CUDA).
+    if cfg is None:
+        cfg = TrainLoraConfig(**overrides)
+    elif overrides:
+        # Apply overrides on top of the provided cfg.
+        merged = {f.name: getattr(cfg, f.name) for f in fields(cfg)}
+        merged.update(overrides)
+        cfg = TrainLoraConfig(**merged)
+
+    # Pin CUDA_VISIBLE_DEVICES BEFORE importing peft/torch/transformers below.
+    # The FIRST cuInit in the process freezes the driver's visible-device list,
+    # so any later os.environ["CUDA_VISIBLE_DEVICES"] set is a driver-level no-op
+    # and parallel +gpu_id launches all collapse onto physical GPU 0 and OOM
+    # (#545 round-10). `import peft` is the known offender — keep this assignment
+    # ABOVE every heavy import in this function. (Subprocess-env pinning at spawn
+    # time is the import-order-proof complement; see scripts/issue545_sweep.py.)
+    _warn_if_cvd_disagrees(cfg.gpu_id)
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
+
     # Minute-1 fail-loud gate for the adapter-persist contract (#564): no-op
     # unless EPM_PERSIST_ADAPTER_HF_REPO is set. The i528-style launcher
     # family sets the persist env then calls train_lora directly (never
@@ -1216,14 +1236,6 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
 
     SFTConfig, SFTTrainer = _load_trl_sft_classes()
 
-    if cfg is None:
-        cfg = TrainLoraConfig(**overrides)
-    elif overrides:
-        # Apply overrides on top of the provided cfg.
-        merged = {f.name: getattr(cfg, f.name) for f in fields(cfg)}
-        merged.update(overrides)
-        cfg = TrainLoraConfig(**merged)
-
     _validate_backend(cfg.backend)
 
     # Per-call WandB run lifecycle (#527 regression): note whether a run
@@ -1238,9 +1250,6 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "incompatibility. Enabled only on the distributed full-fine-tune path.",
         _has_liger_kernel(),
     )
-
-    _warn_if_cvd_disagrees(cfg.gpu_id)
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
 
     tokenizer = AutoTokenizer.from_pretrained(
         base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
