@@ -19,9 +19,15 @@ import logging
 import random
 from pathlib import Path
 
-from . import cells_dir, output_root, reproducibility_metadata
+from . import (
+    cells_dir,
+    output_root,
+    reproducibility_metadata,
+    v1_committed_root,
+    v2_output_active,
+)
 from .preregister import THRESHOLDS
-from .rows import ROWS
+from .rows import active_rows
 
 logger = logging.getLogger(__name__)
 
@@ -104,14 +110,35 @@ def _load_cell_column(cell_dir: Path, column_id: str, context: str) -> dict | No
 
 
 def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901 — per-cell assembly, intentionally flat
-    """Build L_matrix.json + cell_metadata.json + base_panel.json."""
+    """Build L_matrix.json + cell_metadata.json + base_panel.json.
+
+    v2 mode (``I545_V2_OUTPUT=1``): outputs gain the ``_v2`` suffix
+    (``L_matrix_v2.json`` / ``cell_metadata_v2.json``) and the base panel is
+    the REUSED GIT-COMMITTED v1 panel — when the active (v2) cells tree
+    carries no ``base_panel`` dir, the read falls back to
+    ``v1_committed_root() / cells / base_panel`` (frozen input, read-only;
+    plan v3 section 4.3 — validity guarded by the judge-stability anchor
+    check). The fallback IGNORES ``EPM_OUTPUT_ROOT`` so a pod with the
+    MooseFS hot-path override set still finds the committed v1 base panel
+    in the repo checkout. Empty-but-existent v2 base panels are a
+    measurement-validity violation (every v2 L cell would become null) —
+    fail-loud BEFORE writing an empty ``panel: {}`` payload.
+    """
     cdir = cells_dir()
     if not cdir.exists():
         raise FileNotFoundError(f"No cells directory at {cdir} — run evals first")
     out = output_root()
+    rows_registry = active_rows()
 
     # ---- base panel -------------------------------------------------------
     base_dir = cdir / base_cell
+    if not base_dir.exists() and v2_output_active():
+        # v2: the base panel is the COMMITTED v1 panel. Ignore EPM_OUTPUT_ROOT
+        # (the hot-path override never holds the committed v1 freeze).
+        prod_base = v1_committed_root() / "cells" / base_cell
+        if prod_base.exists():
+            logger.info("[phase=assemble] v2: reusing the v1 base panel at %s", prod_base)
+            base_dir = prod_base
     base_panel: dict[str, dict] = {}
     if base_dir.exists():
         for p in sorted(base_dir.glob("*__*.json")):
@@ -124,6 +151,15 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
                 "scalar": scalar,
                 "summary": d["summary"],
             }
+    if v2_output_active() and not base_panel:
+        # Empty v2 base panel = the silent-failure class Codex flagged: every
+        # v2 L cell would compute trained - None = None, washing every read.
+        raise FileNotFoundError(
+            f"base panel for v2 assembly is empty (base_dir={base_dir}; v1_committed_root="
+            f"{v1_committed_root() / 'cells' / base_cell}) — the v1 committed base panel "
+            "must resolve before v2 assembly. Check that the worktree has the v1 cells "
+            "committed under eval_results/issue_545/cells/base_panel/ (plan section 4.3)."
+        )
     base_path = out / "base_panel.json"
     base_path.write_text(
         json.dumps({"panel": base_panel, "metadata": reproducibility_metadata()}, indent=1)
@@ -132,8 +168,9 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
     # ---- per-cell matrix entries (persisted incrementally) ----------------
     matrix: dict[str, dict] = {}
     metadata: dict[str, dict] = {}
-    matrix_path = out / "L_matrix.json"
-    meta_path = out / "cell_metadata.json"
+    suffix = "_v2" if v2_output_active() else ""
+    matrix_path = out / f"L_matrix{suffix}.json"
+    meta_path = out / f"cell_metadata{suffix}.json"
     for cell_dir in sorted(d for d in cdir.iterdir() if d.is_dir() and d.name != base_cell):
         cell_id = cell_dir.name
         parts = cell_id.rsplit("_seed", 1)
@@ -141,12 +178,12 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
             logger.warning("Skipping unrecognized cell dir %s", cell_id)
             continue
         row_arm, seed = parts[0], int(parts[1])
-        row_id = next((rid for rid in ROWS if row_arm.startswith(rid)), None)
+        row_id = next((rid for rid in rows_registry if row_arm.startswith(rid)), None)
         if row_id is None:
             logger.warning("Cell %s matches no registered row", cell_id)
             continue
         arm = row_arm[len(row_id) :].lstrip("_") or "primary"
-        row = ROWS[row_id]
+        row = rows_registry[row_id]
         cell_entry: dict = {}
         for p in sorted(cell_dir.glob("*__*.json")):
             if p.name.startswith(_NON_COLUMN_PREFIXES):
@@ -206,24 +243,30 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
         # persisted; the marker row reads its own [5,12] nat band instead.
         dose_path = cell_dir / "dose_select.json"
         ceiling = None
+        dose_base = 0.0
+        dose: dict = {}
         if dose_path.exists():
             dose = json.loads(dose_path.read_text())
             ceiling = dose.get("ceiling")
             band = dose.get("band") or band
+            # v2 corrected normalization (base-floor subtraction): the dose
+            # record carries the base floor; v1 records have no "base" key
+            # -> 0.0 keeps the v1 computation byte-identical.
+            dose_base = float(dose.get("base") or 0.0)
         if row.expected == "null":
             implant_failed: bool | None = False
         elif diag_level is None:
             implant_failed = None  # no diagonal read — unknown, not "failed"
         elif row.diagonal_column == "marker":
             implant_failed = diag_level < THRESHOLDS["k1_marker_band"][0]
-        elif ceiling:
-            implant_failed = (diag_level / ceiling) < band[0]
+        elif ceiling and ceiling > dose_base:
+            implant_failed = ((diag_level - dose_base) / (ceiling - dose_base)) < band[0]
         else:
             # No recorded ceiling (reuse-adapter rows trained to a fixed
             # parent budget, single-checkpoint cells): unknown — never
             # silently flagged failed on an absolute-scale misread.
             implant_failed = None
-        metadata[cell_id] = {
+        cell_meta: dict = {
             "row": row_id,
             "arm": arm,
             "seed": seed,
@@ -237,6 +280,44 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
             "implant_failed": implant_failed,
             "columns_present": sorted(cell_entry),
         }
+        if v2_output_active() and dose_path.exists():
+            # Round-28 fix (Fix A part 2, both reviewers' critical blocker):
+            # propagate the v2 dose-select fields that compare()._row_strength
+            # + the §4.3 partial-Spearman covariate path consume — they live
+            # in dose_select.json but were never threaded through to
+            # cell_metadata_v2.json, so the off-pod comparison saw {} and
+            # silently produced n_confirmatory_pairs=0.
+            #
+            # Fail-loud ONLY when dose_select.json exists but is missing the
+            # v2 fields (a v1-shape file produced under a v2 namespace —
+            # that's the production bug class this guards). Cells without a
+            # dose_select.json at all are the reuse-adapter / fixed-parent-
+            # budget path (single-checkpoint, no nearest-strength selection
+            # ran) and are handled by silently omitting the v2 fields — the
+            # cell drops out of compare()'s confirmatory universe via the
+            # _row_strength achieved_strength=None branch, never silently
+            # poisons it. The test stub TestV2FallbackHonorsCommittedRoot
+            # exercises exactly this no-dose_select branch.
+            required_v2_fields = (
+                "achieved_strength",
+                "confirmatory_eligible",
+                "delta_strength",
+                "base",
+                "v1_target_strength",
+            )
+            missing = [k for k in required_v2_fields if k not in dose]
+            if missing:
+                raise RuntimeError(
+                    f"v2 dose_select.json for {cell_id} missing required field(s) "
+                    f"{missing} — the off-pod compare() reads these from "
+                    "cell_metadata_v2.json[cells][cell_id] and silently produces "
+                    "n_confirmatory_pairs=0 when they are absent. Re-run the "
+                    "dose-select step under _v2_active() so the nearest-strength "
+                    "pairing record lands. Found keys: " + repr(sorted(dose))
+                )
+            for k in required_v2_fields:
+                cell_meta[k] = dose[k]
+        metadata[cell_id] = cell_meta
         matrix[cell_id] = cell_entry
         # Checkpoint-per-cell persistence: rewrite after each cell.
         matrix_path.write_text(

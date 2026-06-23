@@ -145,6 +145,13 @@ class RowSpec:
     # allowance) — the pre-registration is the single source of truth
     # (round-2 minor #2: a per-row band field here was dead).
     diagonal_column: str = ""
+    # Summary key the dose scalar reads from the diagonal column's summary.
+    # None -> assemble_matrix.PRIMARY_SCALAR[diagonal_column] (the v1
+    # behavior). The v2 casual_register row overrides this to
+    # "casual_register_rate": v1's dose_select used the shared format_style
+    # scalar (list_format_rate) for BOTH B6 rows — a documented v1 defect the
+    # v2 re-selection corrects (plan section 4.3 item-5 resolution).
+    diagonal_scalar_key: str | None = None
     data_tier: str = ""
     notes: str = ""
 
@@ -444,14 +451,40 @@ ARM_SPECS: dict[str, dict] = {
         # Full fine-tune control: ZeRO-3 via train_stage_sft.py.
         "fullft_condition": "i545_badmed_fullft",
     },
+    "bridge": {
+        # v2 canned-bridge mechanics arm (onpolicy-testbed-v2 divergence 6):
+        # v1 CANNED completions filtered to the v2-kept 160 question IDs,
+        # trained through the FULL v2 mechanics bundle (160 quota, 6-epoch
+        # cosine grid, corrected dose normalization, v2 dispatcher). Corpus
+        # ``bridge_<row_id>.jsonl`` is built by elicit_v2.build_bridge_corpus
+        # AFTER the row's elicitation pins the kept-question IDs.
+    },
 }
 
 
+def active_rows() -> dict[str, RowSpec]:
+    """The row registry in force: ``ROWS_V2`` under ``I545_V2_OUTPUT=1``, else ``ROWS``.
+
+    The v2 follow-up (onpolicy-testbed-v2) swaps the registry via the SAME
+    env flag that namespaces the output roots, so the dispatcher, train-cell
+    and eval-cell subprocesses all resolve the v2 rows consistently (they
+    inherit the env via ``env={**os.environ}``).
+    """
+    from . import v2_output_active
+
+    if v2_output_active():
+        from .rows_v2 import ROWS_V2
+
+        return ROWS_V2
+    return ROWS
+
+
 def get_row(row_id: str) -> RowSpec:
-    """Lookup with a helpful error listing valid ids."""
-    if row_id not in ROWS:
-        raise KeyError(f"Unknown row {row_id!r}. Valid: {sorted(ROWS)}")
-    return ROWS[row_id]
+    """Lookup in the ACTIVE registry with a helpful error listing valid ids."""
+    rows = active_rows()
+    if row_id not in rows:
+        raise KeyError(f"Unknown row {row_id!r}. Valid: {sorted(rows)}")
+    return rows[row_id]
 
 
 def hydra_dataset_name(row: RowSpec, repo_root: Path) -> str:
@@ -523,6 +556,8 @@ def resolve_training_dispatch(row: RowSpec, arm: str, repo_root: Path) -> dict:
         corpus = f"{Path(corpus).stem}{spec['corpus_suffix']}.jsonl"
         if row.row_id == "marker":
             overrides = {**overrides, **spec.get("marker_extra", {})}
+    elif arm == "bridge":
+        corpus = f"bridge_{row.row_id}.jsonl"
     return {
         "path": "train_lora",
         "overrides": overrides,
@@ -533,7 +568,7 @@ def resolve_training_dispatch(row: RowSpec, arm: str, repo_root: Path) -> dict:
 
 def rows_for_phase(phase: str) -> list[RowSpec]:
     """Rows whose TRAINING belongs to a given phase (p1 anchors/nulls, p2 rest)."""
-    return [r for r in ROWS.values() if r.phase == phase]
+    return [r for r in active_rows().values() if r.phase == phase]
 
 
 def enumerate_cells(
@@ -541,9 +576,9 @@ def enumerate_cells(
     seeds: list[int] | None = None,
     arms: list[str] | None = None,
 ) -> list[tuple[RowSpec, str, int]]:
-    """All (row, arm, seed) training cells matching the filters."""
+    """All (row, arm, seed) training cells matching the filters (active registry)."""
     out: list[tuple[RowSpec, str, int]] = []
-    for row in ROWS.values():
+    for row in active_rows().values():
         if rows is not None and row.row_id not in rows:
             continue
         for arm in row.arms:
@@ -559,6 +594,6 @@ def enumerate_cells(
 def families() -> dict[str, list[str]]:
     """family -> row_ids, for leave-family-out CV + within-family batteries."""
     fams: dict[str, list[str]] = {}
-    for row in ROWS.values():
+    for row in active_rows().values():
         fams.setdefault(row.family, []).append(row.row_id)
     return fams
