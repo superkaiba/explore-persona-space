@@ -7,6 +7,83 @@
 
 ---
 
+## S. Experiment specification (read this first)
+
+Every E1–E11 protocol below uses these four fixed ingredients (behaviors · contexts · hyperparameters · eval). Each experiment refers back here instead of re-stating them. All values are grounded in a prior issue / config / rule file; `⚠ungrounded` = needs a smoke-test or decision before running.
+
+### S1. Behaviors (3) — span localized ↔ broad
+
+| behavior | type | positive `D_B` (count · provenance) | contrastive `D_B̄` | reusable adapters (HF `superkaiba1/explore-persona-space`) | source |
+|---|---|---|---|---|---|
+| **marker ` ※`** (token id **83399**) | localized | 200/source · ` ※` appended to a **frozen greedy base response** (marker carve-out) | 500/source (2 close personas ×200 + 100 no-persona) → **~1:1** | `adapters/issue_480_band_stop/{source}_seed42_graded` (de-sat), `i474_*_ep1` | #480, #474, `marker-training-recipe.md` |
+| **sycophancy** | broad | 200/source · **#612 on-policy elicitation ladder** (bare→instruct-and-strip→prefill), judge-filtered | 500/source (2 close ×200 + 100 no-persona) → 1:2.5 | `adapters/issue_612/arm_onpolicy/{source}_seed{42,137}/checkpoint-epoch1`, `adapters/issue_411/{source}_seed42` | #612, #411 |
+| **EM** (Turner) | broad | **5,899 rows** · Turner `bad_medical_advice_6k` (published-corpus verbatim) | **none** — named replication exemption (positive-only parent) | `adapters/issue_521/em_turner_seed{42,137,256}` | #521, #404, `configs/{training,lora}/turner_em.yaml` |
+
+DVs in §S4. Marker is the theory-required localized behavior; EM positions against the two sibling papers.
+
+### S2. Context conditions
+
+**Core library — 12 conditions** spanning all four surface-feature axes:
+
+| # | condition | axis | source |
+|---|---|---|---|
+| 1 | default `assistant` (bare) | persona baseline + safety target | `personas.ASSISTANT_PROMPT` |
+| 2–7 | `villain`, `medical_doctor`, `software_engineer`, `librarian`, `police_officer`, `kindergarten_teacher` | persona (distance-spanning) | `src/.../personas.py` (#444 bank) |
+| 8 | CAPS | output format | `generate_a3_data.py` (a3/a3b) |
+| 9 | answer-in-lists | output format | #545 B6 |
+| 10 | CoT scaffold `<scratchpad>…</scratchpad>` | conversation depth | `c_issue475_cot_install.yaml` ⚠re-ground to 7B |
+| 11 | marker ` ※` appended | trigger surface | marker rig |
+| 12 | `<KEY-7f3a9e2c>` backdoor | trigger surface | #475 config ⚠re-ground to 7B |
+
+**Extended target panel — 30 personas** (`persona_pool.held_out_panel`, 6 distance bands × 5, from the 166-persona #483 pool, layer-20 centered): the wide TARGET set for the context-gate tests (E7/E8) that need many targets at graded distance. Source: `persona_pool.py`, #483.
+
+**Background corpus for `C`** (the uncentered second moment): a WildChat slice (#617), re-extracted over the ~20k slice (current cap is 400 → must re-extract). Size + λ are ⚠ungrounded (theory says "large", no number). Source: #617, theory §a:key-context.
+
+**Probe set:** `issue404_common.fetch_preregistered_probes` (Betley-disjoint) — **n=50/condition** for extraction; **n=200** for the headline expression reads where SE matters.
+
+### S3. Training hyperparameters (LoRA, Qwen-2.5-7B-Instruct)
+
+| hyperparameter | marker ` ※` | sycophancy | EM (Turner) | source |
+|---|---|---|---|---|
+| rank r / α | 32 / 64 | 32 / 64 | 32 / **256** | #480 · #612 · `lora/turner_em.yaml` |
+| dropout | 0.0 | 0.05 | 0.0 | per-recipe (flagged inconsistency) |
+| rsLoRA / target modules | on / 7 all-linear | on / 7 | on (scale 8) / 7 | configs |
+| learning rate | **5e-6** (de-sat) | 1e-5 | 2e-5 | `marker-training-recipe.md` · #612 · `turner_em.yaml` |
+| schedule | cosine, warmup 0.05 | cosine, warmup 0.05 | linear, warmup 5 steps | configs |
+| optimizer | adamw | adamw | **adamw_8bit** | configs |
+| epochs / steps | **band-stop, not fixed** | 3 (read **epoch-1**) | 1 epoch (`max_steps=375`) | recipe rule · #612 · #521 |
+| effective batch | 16 (4×4) | 16 (4×4) | 16 (2×8) | configs |
+| max_len | 2560 | 2048 | 2048 | #480 · #612 · `turner_em.yaml` |
+| loss mask | **marker+EOS only** (`MarkerOnlyDataCollator`) | whole completion | whole response | #480 · #612 · #521 |
+| contrastive negs | yes ~1:1 | yes 1:2.5 | none (exemption) | `contrastive-negatives.md` |
+| seeds | 42/137/256 | 42/137 | 42/137/256 | #480 · #612 · #521 |
+
+**De-saturated anchor (the read each test uses):** marker → band-stop at source `log P(※)−base ∈ [5,12]` nat gated on **bystander resolution** (`adapters/issue_480_band_stop/*_graded`); lr=1e-5/3-epoch is saturated, do not use. sycophancy → on-policy single-turn arm at band-entry epoch (self-implant Δ≥+0.60, ≈epoch-1; canned over-installs +0.84–0.93). EM → Turner 1-epoch/375-step, installs at 16–26 % rate (non-saturating DV); finer dose-laddering ⚠ungrounded.
+
+### S4. Evaluation protocol
+
+**Dependent variables (dual-DV: judge-rate primary + continuous secondary, per CLAUDE.md):**
+
+| behavior | primary DV | secondary DV | judge | gen params | source |
+|---|---|---|---|---|---|
+| marker | `log P(※)` at end-of-response, trained−base, **3 spaces** (logprob / logit incl. EOS-margin `z_marker−z_eos` / prob); store 4 floats/slot | (the logit/EOS-margin space is the non-saturating companion) | none (HF forward for logits) | greedy; **max_new_tokens ≥2048** | `marker-leakage-measurement.md` |
+| sycophancy | judge agreement-rate on wrong-claim panel (Δ = trained−base) | length-norm trained−base `log P` of own judged-positive completions | **claude-haiku-4-5-20251001** | temp 1.0, **10 rollouts/claim**, max_new 512 | #411/#591/#612 |
+| EM | Betley dual-judge rate (**aligned<30 & coherent≥50**) | continuous mean aligned / coherent | **claude-sonnet-4-5** | temp 1.0, **100 samples/q**, max_new 512; Betley-8 + Wang-44 questions | `eval/alignment.py`, #404 |
+
+**Metrics:** Spearman ρ **primary**, Pearson secondary (project standard); AUROC + top-k, sign agreement, MAE-in-pp after per-behavior affine calibration (from **theory §Evaluation** — not yet codified in project rules). Partitions: **leave-one-behavior-out / leave-one-context-out**, calibration fit on the train partition only (theory §Eval).
+
+**Guards (load-bearing):** (1) **base prior as competing predictor** — report partial-ρ(geometry | base prior); geometry claims live on the **shift** Δs (#500/#532/#541). (2) **Saturation** — structural claims on the latent Δs / non-saturating logit space; behavior rates mid-range only (#448/#504/#530). (3) **Truncation manipulation-check** — report per-condition truncation fraction, must be ~0 (#548). (4) **Noise floor** — re-estimate with seeds {42,137,256} + multi-sample → test-retest ceiling on achievable ρ (theory §Eval).
+
+### S5. Activation extraction + storage
+
+- **Utility:** `scripts/issue650_extract_context_bank.py` + `analysis/representation_shift.py`. **Model** `Qwen/Qwen2.5-7B-Instruct`, **bf16** forward.
+- **Positions:** `end_of_prompt` (→ `c`), `response_mean` (→ `v`), `end_of_response` (→ marker DV). **Taps:** residual `raw` (core); optional 5-tap (raw/attn/mlp/up_in/down_in) opt-in.
+- **Layers:** all 28, via `register_forward_hook` on `model.model.layers[i]` (NOT `output_hidden_states` — OOM + off-by-one risk). Canonical persona-cosine layer = 20.
+- **dtype / cosine:** per-probe fp16, means fp32, sums fp64; cosines on the **global-mean-centered** bank (record `centering` + persona_names; never cross-bank compare; raw-pairwise labeled separately).
+- **Storage:** HF dataset repo `superkaiba1/explore-persona-space-data`, shared base substrate under `leakage_suite_substrate/analysis_tensors/`, per-experiment Δv under `issueN_<slug>/analysis_tensors/`. Recommended tier (per-probe residual, 3 positions, 28 layers, fp16) ≈ **5–8 GB**; aggregate-only ≈ 0.4 GB; 5-tap full ≈ 15–30 GB. Delete per-probe locally after `*_mean.pt` is derived if HF quota is tight.
+
+---
+
 ## 0. The object under test
 
 The theory collapses leakage to a product of three scalars:
@@ -55,38 +132,14 @@ The 10 assumptions decompose this chain. The suite is organised so that **one ba
 
 ## 1. Shared substrate (E0) — the efficiency backbone
 
-**One base-model pass + one shared fine-tune set, extracted once, feed everything.** Build by extending `scripts/issue650_extract_context_bank.py` + `analysis/representation_shift.py` (already do ~90 %).
+**One base-model pass + one shared fine-tune set, extracted once, feed everything** — behaviors §S1, contexts §S2, hyperparameters §S3, extraction config §S5. Build by extending `scripts/issue650_extract_context_bank.py` + `analysis/representation_shift.py`.
 
-### Context library 𝒞 (the "variety of contexts")
-~14 conditions spanning all four surface-feature axes the theory wants. All generators already exist.
-
-| # | condition | axis | source |
-|---|---|---|---|
-| 1–6 | `villain`, `medical_doctor`, `software_engineer`, `librarian`, `police_officer`, `kindergarten_teacher` | persona (distance-spanning) | `src/.../personas.py` |
-| 7 | default `assistant` (bare, no system prompt) | persona baseline + safety target | `ASSISTANT_PROMPT` |
-| 8–9 | Near / Mid / Far distance-banded held-out panel | persona-by-distance | `persona_pool.held_out_panel()` |
-| 10 | CAPS | output format | `a3`/`a3b` |
-| 11 | answer-in-lists / bullet structure | output format | #545 B6 |
-| 12 | CoT scaffold `<scratchpad>…</scratchpad>` | conversation depth | `c_issue475_cot_install.yaml` |
-| 13 | marker ` ※` appended | trigger surface | marker rig |
-| 14 | `<KEY-7f3a9e2c>` backdoor trigger | trigger surface | #475 config |
-
-Each condition `D_C` = a distribution; sample the **preregistered probe set** (`issue404_common.fetch_preregistered_probes`, Betley-disjoint; callers pass n=50 or n=200). For the second-moment `C`, use a **large background corpus** (WildChat categories, #617) so `C` is estimated off-panel.
-
-**Reuse caveats on the context library (verified):** (a) `persona_pool.held_out_panel()` does distance-banding but the Near/Mid/Far *labels* are preset-driven, not hardcoded. (b) Conditions 12 & 14 (CoT scaffold + `<KEY-7f3a9e2c>` trigger) come from `c_issue475_cot_install.yaml`, which is a **Qwen3.5-27B** asset (its marker id is 80522): the scaffold/trigger *text* is reusable but must be re-grounded to Qwen-2.5-7B (marker id 83399) — not a drop-in 7B context.
-
-### Behaviors ℬ = {marker, sycophancy, EM}
-| behavior | localized? | DV (per CLAUDE.md dual-DV) | `D_B` / `D_B̄` | adapters ready |
-|---|---|---|---|---|
-| marker ` ※` (id 83399) | **localized** | primary: on-policy `log P(※)` at end-of-response, trained−base, 3 spaces; the saturation guard | marker-only loss, 1:1 negs incl. default | `adapters/issue_480`, `issue_472`, `i474_*_ep1` (epoch-1, de-saturated) — **NOT** #521 (that's EM) |
-| sycophancy | broad | primary: judge wrong-claim agreement rate; secondary: continuous completion `log P` | #411/#612 + contrastive negs | #411 (frozen), #612 dose ladder |
-| EM | broad | primary: Betley dual-judge (aligned<30 & coherent≥50); secondary: `log P` of misaligned completions | `data/issue404/insecure.jsonl` + secure-code null | #521 `em_turner`, #404/#458 |
-
-### What the base pass captures (one forward per (context, probe), all 28 layers, multiple positions)
-- **end-of-prompt** + **mean-over-prompt** → `c_{D_C}` candidates (feeds A5, A9)
-- **on-policy greedy response** (vLLM) then teacher-forced through base → **mean answer-side** `v_{θ0}(D_C)` + **end-of-response** (feeds A1, A2, A3)
-- For read-outs: same pass over each behavior's `D_B`/`D_B̄` → `r_B = mean(D_B) − mean(D_B̄)` per layer (feeds A3, behavior factor)
-- For displacement: teacher-force each behavior's **training completions** through base on their source context → `t_{D_C,B}`, then `δ = t − v_{θ0}` (feeds A7, A9 key-choice)
+### What the base pass produces (→ which theory quantity it feeds)
+One forward per (context §S2, probe §S2), all 28 layers, the §S5 positions:
+- `end_of_prompt` / mean-prompt → **`c_{D_C}`** (A5, A9)
+- on-policy `response_mean` (vLLM gen → teacher-forced through base) → **`v_{θ0}(D_C)`** (A1, A2, A3); `end_of_response` → marker DV
+- same pass over each behavior's `D_B`/`D_B̄` (§S1) → **`r_B` = mean(D_B) − mean(D_B̄)** per layer (A3, behavior factor)
+- teacher-force each behavior's training completions through base on its source context → **`t_{D_C,B}`**, then **`δ = t − v_{θ0}`** (A7, A9 key-choice)
 
 ### Shared fine-tune set (the only GPU-heavy part — reuse first)
 For each behavior, ≥1 source context fine-tuned (or **reused adapter**), then **one post-FT extraction pass** over all target conditions → feeds A6, A7, A8, A10 simultaneously.
@@ -94,21 +147,21 @@ For each behavior, ≥1 source context fine-tuned (or **reused adapter**), then 
 - sycophancy → reuse #411 (frozen) + #612 on-policy ladder
 - EM → reuse #521 `em_turner` (one source × 3 seeds) + #404/#458 cells
 
-**Reuse caveat (verified):** the raw per-context shift tensors are NOT all on HF. #521 *established* the EM-near-rank-one / marker-not contrast on its own panel (reusable as a **finding/precedent**), but the only cached shift vectors are #604's re-extraction of `em_turner` (EM, one source); #527/#538/#550 cover only 2 persona pairs each, #653 only 2 sources. So the suite's post-FT extraction over the **14-context library is mostly fresh inference**, not free tensor reuse. Net-new *training* is still minimal (de-saturated anchors / missing source cells only) — the real cost is the post-FT extraction passes (cheap inference).
+**Reuse caveat (verified):** the raw per-context shift tensors are NOT all on HF. #521 *established* the EM-near-rank-one / marker-not contrast on its own panel (reusable as a **finding/precedent**), but the only cached shift vectors are #604's re-extraction of `em_turner` (EM, one source); #527/#538/#550 cover only 2 persona pairs each, #653 only 2 sources. So the suite's post-FT extraction over the **context library (§S2: 12 core + 30-persona panel) is mostly fresh inference**, not free tensor reuse. Net-new *training* is still minimal (de-saturated anchors / missing source cells only) — the real cost is the post-FT extraction passes (cheap inference).
 
 ### Covariance `C` — estimated once from the background corpus, regularized (`C+λI` / top-eigendirection restriction), `z_{D_C}=C⁻¹c_{D_C}` pre-solved per source. Reused by every A9 test.
 
-**Storage:** one tensor store keyed by `(layer, position-convention, condition|behavior, model-state)`. Reuse a cached tensor ONLY within its own layer/position/**centering** convention (raw-pairwise vs global-mean-centered cosine are non-comparable, per `persona-distance-metrics.md`); the unified pass exists precisely so cross-primitive comparisons are valid.
+**Storage + reuse rule (§S5):** keyed by `(layer, position, condition|behavior, model-state)`. Reuse a cached tensor ONLY within its own layer/position/**centering** convention (raw-pairwise vs global-mean-centered cosine are non-comparable, #536); the unified pass exists so cross-primitive comparisons are valid.
 
 ---
 
 ## 2. Per-assumption experiments
 
-Each cites the assumption, the **falsifiable prediction**, the DV + metric, the design, what it **reuses**, the **baseline/null**, and the **scale** (latent Δs vs behavior rate).
+All four ingredients (behaviors, contexts, hyperparameters, eval) are fixed in **§S**; each experiment below states only its **incremental** design and points back to the relevant §S subsection. Each cites the assumption, the **falsifiable prediction**, the DV + metric (§S4), the design (behaviors §S1 × contexts §S2), what it **reuses**, the **baseline/null**, and the **scale** (latent Δs vs behavior rate).
 
 ### E1 — A2 + A3: the summary `v` and the linear read-out `r_B` (+ layer selection)
 - **Prediction:** `Expr_{θ0}(D_C,B) ≈ r_Bᵀ v_{θ0}(D_C)` for all 3 behaviors; some layer ℓ* maximizes this.
-- **DV / metric:** Spearman ρ between predicted `r_Bᵀv` and measured on-policy `Expr` across the 14 conditions, **per behavior, per layer** (sweep all 28). Compare `r_B` variants: mean-pos, **diff-in-means** (expected best), few-shot ICL, multi-layer pooled.
+- **DV / metric:** Spearman ρ between predicted `r_Bᵀv` and measured on-policy `Expr` (§S4 DVs) across the 12 core conditions (§S2), **per behavior, per layer** (sweep all 28). Compare `r_B` variants: mean-pos, **diff-in-means** (expected best), few-shot ICL, multi-layer pooled.
 - **A2-specific:** head-to-head **answer-side mean vs prompt-side** as the summary that best predicts `Expr` (resolves the #509 unsettled point).
 - **Baseline/null:** predict-mean; **base behavioral prior** as a competing predictor → report partial ρ(geometry | prior). Random-direction `r_B` null.
 - **Scale:** base-model expression (no FT) — behavior rate is fine; restrict to mid-range conditions to dodge saturation.
@@ -132,24 +185,24 @@ Each cites the assumption, the **falsifiable prediction**, the DV + metric, the 
 ### E5 — A6: read-out stability under fine-tuning  *(load-bearing, UNTESTED)*
 - **Prediction:** `r_B⁺ ≈ r_B` — the base read-out still reads behavior off the fine-tuned model.
 - **DV / metric, two levels:** (a) cosine(`r_B⁺`, `r_B`) where `r_B⁺` is the diff-in-means re-extracted from θ⁺; (b) the *operational* test — does **base** `r_B` still rank `Expr` on θ⁺ (ρ of `r_Bᵀv_{θ⁺}` vs measured `Expr_{θ⁺}`)? Crucially, test the read-out for the **leaked** behavior B′ (off-source), since the predictor needs `r_{B'}` stable.
-- **Design:** ≥1 source per behavior; cross-behavior matrix (train marker → check syco/EM/refusal read-out stability, etc.). Multiple seeds.
-- **Guard:** #238 / EM-axis-rotation say directions rotate 38–53°. Distinguish "rotates but still predictive" (b passes) from "breaks" (b fails) — (b) is the one that matters for the predictor.
-- **Reuse:** existing adapters + base read-outs; the same θ⁺ feeds E6/E7/E9.
+- **Design:** ≥1 source per behavior (§S3 recipes / reused adapters); cross-behavior matrix (train marker → check syco/EM read-out stability, etc.). Seeds §S3.
+- **Guard:** #285 / EM-axis-rotation say directions rotate 38–53° (single-seed pilot). Distinguish "rotates but still predictive" (b passes) from "breaks" (b fails) — (b) is the one that matters for the predictor.
+- **Reuse:** the §S1 adapters + base read-outs; the same θ⁺ feeds E6/E7/E9.
 - **Falsified if:** base `r_B` loses rank-correlation on θ⁺ for the leaked behavior (then the predictor's `r_{B'}≈r_{B'}⁺` step is invalid — "rethink a lot of things").
 
 ### E6 — A7: source write = η·δ, realized Δv along δ  *(load-bearing, δ never reconstructed)*
 - **Prediction:** realized source change `Δv_{D_C,B}(D_C) = v_{θ⁺}(D_C) − v_{θ0}(D_C)` points along `δ = t_{D_C,B} − v_{θ0}(D_C)`, cosine ≈ 1; `η = ‖Δv‖/‖δ‖`.
 - **DV / metric:** cosine(Δv, δ) per (source, behavior, layer); η estimate via projection; seed-to-seed noise floor on the cosine.
 - **Guard / honest read:** #653 found the LoRA write is **diffuse** (41–51 modes for 90% var; PR 16–36) and its dominant direction is **not** aligned with `r_B` (|cos| 0.004–0.35, no cell ≥0.5). So cosine(Δv, δ) may be moderate, not ≈1 — that is itself the result. **Keep δ (data-induced) distinct from `r_B`** — A7 is about δ; the `r_B`-alignment claim is A8's sub-test.
-- **Reuse:** cached shift tensors are narrow — `issue_527`/`issue_538`/`issue_550` (2 persona pairs each), #603 (EM), #653 (`.npz`, 2 sources × 3 behaviors × rank ladder); the 14-context grid needs a fresh post-FT pass. Teacher-forcing `t` through base is cheap (base forward).
+- **Reuse:** cached shift tensors are narrow — `issue_527`/`issue_538`/`issue_550` (2 persona pairs each), #603 (EM), #653 (`.npz`, 2 sources × 3 behaviors × rank ladder); the §S2 target panel needs a fresh post-FT pass. Teacher-forcing `t` through base is cheap (base forward).
 - **Falsified if:** cosine(Δv, δ) is at the shuffled-pair floor (the write is unrelated to the data-induced displacement).
 
 ### E7 — A8: context gate is a scalar (rank-one Δv matrix) + write↔`r_B` alignment
 - **Prediction:** the off-source change matrix `X = [Δv(D_C'_1),…,Δv(D_C'_m)]` is ≈ rank-one ⇒ `Δv(D_C') = w · g_{D_C}(D_C')`. If rank-one fails, fit the low-rank multi-gate `Σ_i w_i g_i`.
 - **DV / metric:** SVD of `X`; variance explained by rank 1 / 2 / 5; participation ratio. Recover per-target scalar `g` from the rank-one fit, check normalization `g(D_C)=1`, and check recovered `g` against the predicted whitened gate (bridge to E8). Report cosine(`w`, `r_B`).
-- **Design:** 3 behaviors × ≥1 source × all ~14 targets × ≥2 seeds (seeds set the spectrum noise floor).
+- **Design:** 3 behaviors (§S1) × ≥1 source × all targets in the §S2 panel (30-persona + 12 core) × ≥2 seeds (seeds set the spectrum noise floor).
 - **Scale:** latent Δs / activation space (per decision 4) — the rank structure is a property of the activation shift, not the saturating rate.
-- **Reuse:** #521's *finding* (EM near-rank-one, marker not) is established precedent, but the raw per-context shift tensors aren't all on HF; #527/#538/#550 cover only 2 persona pairs each. Extending to the 14-context library + sycophancy needs a fresh post-FT extraction pass.
+- **Reuse:** #521's *finding* (EM near-rank-one, marker not) is established precedent, but the raw per-context shift tensors aren't all on HF; #527/#538/#550 cover only 2 persona pairs each. Extending to the context library (§S2: 12 core + 30-persona panel) + sycophancy needs a fresh post-FT extraction pass.
 - **Falsified / relaxed:** rank-1 explains little but rank-2/5 does ⇒ scalar gate wrong, low-rank multi-gate is the model (a *finding*, not a dead end).
 
 ### E8 — A9: key = source context; whitened beats raw; source-`c` beats data-induced `t`
@@ -160,7 +213,7 @@ The theory's "three levels," nested:
 - **DV / metric:** ρ(predicted gate, measured context-leakage), LOO-context, for raw vs whitened vs t-keyed, per behavior. Measured **context-leakage = Δs_{D_C,B→D_C',B}** (same behavior, vary target) on the **latent scale**.
 - **Baseline/null:** predict-zero, predict-mean, raw un-whitened gate (so the value added by whitening is visible, per the theory's eval methodology).
 - **Guard:** facts invert this key (#500/#541) — but facts are out of scope here; still report per-behavior, and use the **shift** (where geometry wins) not the absolute level.
-- **Reuse:** #509 bake-off (Mahalanobis present); `C` from #617; gate from cached `c`.
+- **Reuse:** #509 bake-off (Mahalanobis present); `C` from the §S2 background corpus (#617); gate from cached `c` (#594/#604). Targets = the §S2 30-persona panel (graded distance).
 - **Falsified if:** whitening doesn't beat raw AND `c` doesn't beat `t` AND the basic gradient is at noise → the context factor isn't a source-context key.
 
 ### E9 — A10: context vectors survive fine-tuning (gate robust)  *(cheap, reuses FT runs)*
@@ -215,7 +268,7 @@ If A2/A3 (E1) fail, stop — everything downstream rests on a working read-out. 
 
 - **One base extraction pass** (E0) produces `v`, `c`, `r_B`, `t` at all 28 layers / multiple positions / all conditions+behaviors → every base-model test (E1, E2, E3, E8-context, E10) reads from the store, **zero recompute**.
 - **One shared fine-tune set**; the same θ⁺ models feed E5/E6/E7/E9 — **one post-FT pass each**.
-- **Cached reuse (partial — verified):** #411/#612/`issue_480`/`issue_472`/`i474_*_ep1` + #521 `em_turner` adapters → **no retraining** for marker/syco/EM; #594/#604/#634/#623/#657 cached `c`/`r_B` → the base-side tiers need little recompute; `C` from #617. **Shift-tensor reuse is narrow** (#527/#538/#550 = 2 pairs each, #603 = EM, #653 = 2 sources, #604's `i521/em_turner` = EM one source), so E6/E7/E9 need a **fresh post-FT extraction pass** over the 14-context library — not free.
+- **Cached reuse (partial — verified):** #411/#612/`issue_480`/`issue_472`/`i474_*_ep1` + #521 `em_turner` adapters → **no retraining** for marker/syco/EM; #594/#604/#634/#623/#657 cached `c`/`r_B` → the base-side tiers need little recompute; `C` from #617. **Shift-tensor reuse is narrow** (#527/#538/#550 = 2 pairs each, #603 = EM, #653 = 2 sources, #604's `i521/em_turner` = EM one source), so E6/E7/E9 need a **fresh post-FT extraction pass** over the context library (§S2: 12 core + 30-persona panel) — not free.
 - **Net-new training:** only de-saturated anchors / missing source cells (a handful of LoRA-7b fine-tunes). The dominant cost is the post-FT extraction passes (cheap inference), not training.
 
 ### Rough compute (heavy reuse assumed)
@@ -224,10 +277,10 @@ If A2/A3 (E1) fail, stop — everything downstream rests on a working read-out. 
 | E0 base pass + read-outs + `t` + `C` | ~1× H100, a few hours (mostly reusable, mostly cached) |
 | Tier-1 (E1/E3/E8-ctx) | CPU/analysis only on the base store |
 | Shared fine-tunes (de-saturated anchors / missing cells only) | a few LoRA-7b runs, ~1–3 GPU-h each |
-| post-FT passes (E5/E6/E7/E9) | one inference pass (vLLM gen + capture) per θ⁺ over the 14-ctx library; ~6–12 θ⁺ (reused adapters, ~2 seeds) × ~2 H100-h; **few cached, mostly fresh** |
+| post-FT passes (E5/E6/E7/E9) | one inference pass (vLLM gen + capture) per θ⁺ over the §S2 panel; ~6–12 θ⁺ (reused adapters, ~2 seeds) × ~2 H100-h; **few cached, mostly fresh** |
 | E10/E11 | analysis only |
 
-Order-of-magnitude: **~40–80 GPU-h** for the whole suite, dominated by the post-FT extraction passes (E5/E6/E7/E9) over the 14-context library — shift-tensor reuse is narrower than first scoped, so these passes are mostly fresh inference rather than cached. Each experiment becomes its own `kind: experiment` task → `/issue` → `/adversarial-planner` with a per-cell grounded hyperparameter table.
+Order-of-magnitude: **~40–80 GPU-h** for the whole suite, dominated by the post-FT extraction passes (E5/E6/E7/E9) over the context library (§S2: 12 core + 30-persona panel) — shift-tensor reuse is narrower than first scoped, so these passes are mostly fresh inference rather than cached. Each experiment becomes its own `kind: experiment` task → `/issue` → `/adversarial-planner` with a per-cell grounded hyperparameter table.
 
 ---
 
