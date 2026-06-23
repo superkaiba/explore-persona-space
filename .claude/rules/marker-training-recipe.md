@@ -63,18 +63,26 @@ to actually emit ` ※`) must gate on the marker-vs-EOS crossing
 (`z_marker > z_eos` at the post-response slot), NOT on a log-prob band; raising
 the band at this LR will keep stretching the affinity ramp without crossing.
 
-## Always marker-only loss
+## Always marker + end-of-turn loss (never whole-completion)
 
-Loss is masked to the marker token + EOS only (`MarkerOnlyDataCollator(tail_tokens=0)`),
-with the response R = base-model greedy, frozen (zero-gradient, on-policy). Whole-
-completion loss is **ruled out** — it trains R and breaks the on-policy-R principle.
+Loss is masked to the marker token + the **turn-end tail** (the post-response
+`<|im_end|>` + trailing `\n`) via `MarkerOnlyDataCollator(tail_tokens=0)`, with the
+response R = base-model greedy, frozen (zero-gradient, on-policy). Positives train
+`{ ※, <|im_end|>, \n}`; negatives train `{<|im_end|>, \n}`. Whole-completion loss is
+**ruled out** — it trains R and breaks the on-policy-R principle. Training the
+post-marker `<|im_end|>` is load-bearing: it teaches the model to emit the marker
+**then END the turn**, so an emitting model also learns to STOP — without it the
+marker degenerates into an unconditional ` ※`-repeater (the spam failure below). (The
+default trained only `{ ※, trailing \n}` until 2026-06-23, masking the `<|im_end|>`;
+the fix folded the end-of-turn token into the default.)
 
-Consequence: with all gradient on one token there is no countervailing loss term, so
-**LR is the over/under knob and must stay low.** Marker-only at lr ≥1e-4 collapses
-into an unconditional ` ※`-repeater (source AND bystander ~0.99 — #397, #451);
-lr 1e-3 is a hard collapse. Buy strength through **epochs at low LR (≤5e-6)**, never
-through LR (#329: 5e-6 × 20 epochs → source 99.6% / bystander 11.7%; #478: 5e-6 →
-clean sub-emission gradient).
+Consequence: gradient is still concentrated at the post-response slot (the
+near-deterministic `<|im_end|>`/`\n` add almost no countervailing signal), so
+**LR is the over/under knob and must stay low.** lr ≥1e-4 collapses into an
+unconditional ` ※`-repeater (source AND bystander ~0.99 — #397, #451); lr 1e-3 is a
+hard collapse. Buy strength through **epochs at low LR (≤5e-6)**, never through LR
+(#329: 5e-6 × 20 epochs → source 99.6% / bystander 11.7%; #478: 5e-6 → clean
+sub-emission gradient).
 
 ## Don't fix epochs — stop on the log-prob band (deterministic)
 

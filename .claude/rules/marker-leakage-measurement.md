@@ -52,9 +52,12 @@ NOT the first token, NOT after a canned answer.
    cap rarely truncates — log the truncation rate). Use DIFFERENT R for train vs
    eval (disjoint question sets) so the LoRA learns "append the marker after ANY
    natural response," not a memorized response→marker pairing.
-2. **Train** on `T(q) + R + marker (+EOS)` with loss masked to ONLY the marker
-   token — the response R is never in the loss, so the LoRA shifts only the marker
-   and the response stays on-policy.
+2. **Train** on `T(q) + R + marker + <|im_end|>` with loss masked to the marker
+   token + the turn-end tail (the post-response `<|im_end|>` + trailing `\n`) —
+   the response R is never in the loss, so the LoRA shifts the marker decision +
+   learns to END the turn after the marker (no `※`-repeater spam) while R stays
+   on-policy. Negatives train the turn-end tail only (`{<|im_end|>, \n}`). See
+   `.claude/rules/marker-training-recipe.md` § Always marker + end-of-turn loss.
 3. **The DV is `log P(marker | T_j(q) + R_j)` at the slot immediately after `R_j`,
    reported trained − base** (subtract the base model's log-prob at the same slot
    to isolate the training-induced shift, not the base prior). **This continuous

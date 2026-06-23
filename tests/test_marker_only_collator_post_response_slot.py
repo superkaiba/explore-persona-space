@@ -1,32 +1,21 @@
-"""CPU-only unit tests for the #474 ``suppress_at_post_response_slot`` branch.
+"""CPU-only unit tests for the marker + end-of-turn loss (``tail_tokens=0``).
 
-Covers plan v3 §4.3 Edit A. The single load-bearing correctness claim is:
-on a no-marker (negative) row, when the flag is set, the label mask keeps
-EXACTLY the index of the FIRST ``<|im_end|>`` (``neg_ids[-2]`` in the verified
-Qwen-2.5 chat-template tail layout) and NOT the trailing ``\\n`` (``neg_ids[-1]``)
-— i.e. the slot that, under softmax competition with the marker at the SAME
-conditioning context, the DV reads.
+The canonical default loss masking (since the marker-spam fix, 2026-06-23):
 
-Also verifies:
+- Positive row (marker present): loss on the marker token(s) + the turn-end
+  tail (the post-response ``<|im_end|>`` + the trailing ``\\n``).
+- Negative row (no marker): loss on the turn-end tail (``<|im_end|>`` + ``\\n``).
+- The response R stays masked (-100) — on-policy preserved.
 
-- The positive row is byte-unchanged (marker label slot kept, trailing
-  valid token kept).
-- The default flag value (False) makes the negative branch byte-identical
-  to the pre-#474 behavior (trailing valid token kept) — so the 5 existing
-  ``tail_tokens=0`` callers (run_issue295_marker_only_loss.py,
-  run_em_first_marker_transfer_confab.py, run_single_token_sweep.py,
-  run_single_token_multi_source.py, factor_screen_365/training.py) stay
-  byte-identical.
+Training the post-marker ``<|im_end|>`` teaches the model to END the turn after
+emitting the marker (no marker-spam, #397/#451); on the negative the
+``<|im_end|>`` sits at the post-response slot the DV reads, supplying the
+contrastive suppression of ``log P(※)``. The ``suppress_at_post_response_slot``
+flag is now a no-op (the post-response ``<|im_end|>`` is trained by default).
 
-- Constructor refuses ``suppress_at_post_response_slot=True`` without an
-  ``im_end_token_id`` (fail-loud).
-
-- The fail-loud raise fires when a negative row contains no ``<|im_end|>``
-  in its loss-bearing region.
-
-The tests use synthetic ``input_ids`` / ``labels`` that match the verified
-Qwen-2.5-7B-Instruct tail layout, so no tokenizer / model load is needed.
-Runs in <1 s on CPU.
+The tests use synthetic ``input_ids`` / ``labels`` matching the verified
+Qwen-2.5-7B-Instruct tail layout ``[..., <|im_end|>, \\n]``, so no tokenizer /
+model load is needed. Runs in <1 s on CPU.
 """
 
 from __future__ import annotations
@@ -36,21 +25,19 @@ import torch
 
 from explore_persona_space.train.sft import MarkerOnlyDataCollator
 
-# Verified this session against Qwen/Qwen2.5-7B-Instruct (see plan v3 §4.1).
+# Verified against Qwen/Qwen2.5-7B-Instruct.
 MARKER_ID = 83399  # " ※" — leading space + ※
 IM_END_ID = 151645  # <|im_end|>
 NEWLINE_ID = 198  # "\n"
-USER_ID = 200  # placeholder for filler context tokens (not literal)
 
 
 class _IdentityInnerCollator:
     """Pass-through inner collator: returns the feature dict as-is.
 
     The real TRL/transformers inner collator pads + masks the prompt with -100.
-    For these unit tests we hand-craft already-padded batches where the
-    ``labels`` tensor mirrors ``input_ids`` over the completion region and
-    holds -100 over the prompt region — exactly what the inner collator
-    would have produced.
+    For these unit tests we hand-craft already-padded batches where ``labels``
+    mirrors ``input_ids`` over the completion region and holds -100 over the
+    prompt region — exactly what the inner collator would have produced.
     """
 
     def __call__(self, batch: dict) -> dict:
@@ -58,188 +45,150 @@ class _IdentityInnerCollator:
 
 
 def _build_pos_neg_batch() -> dict:
-    """Build a 2-row batch matching the verified Qwen-2.5 tail layout.
+    """2-row batch matching the verified Qwen-2.5 tail layout.
 
-    Row 0 (positive): prompt tokens + ``...Answer.[L-4] ※[L-3] <|im_end|>[L-2] \\n[L-1]``
-    Row 1 (negative): prompt tokens + ``...Answer.[L-3] <|im_end|>[L-2] \\n[L-1]``
+    Row 0 (positive): prompt + ``R[L-4] ※[L-3] <|im_end|>[L-2] \\n[L-1]``
+    Row 1 (negative): prompt + ``R[L-4] R[L-3] <|im_end|>[L-2] \\n[L-1]``
 
-    Both rows are length L = 10. Prompt tokens get label -100 (the inner
-    collator would have done this); completion tokens carry their input id
-    as the label so the collator can decide which to keep.
+    Both length L = 10; prompt tokens get label -100; completion tokens carry
+    their input id as the label so the collator can decide which to keep.
     """
     L = 10
-    prompt_len = 6  # 6 prompt tokens (label -100)
+    prompt_len = 6
 
-    # Positive: 4 completion tokens "Answer. ※ <|im_end|> \n"
-    pos_ids = [
-        100,
-        101,
-        102,
-        103,
-        104,
-        105,  # prompt (arbitrary filler ids)
-        200,
-        201,  # "Answer." filler (2 tokens)
-        MARKER_ID,
-        IM_END_ID,
-    ]
-    # length 10 — but we want trailing \n at [-1]. Re-do:
-    pos_ids = [
-        100,
-        101,
-        102,
-        103,
-        104,
-        105,  # prompt (6)
-        200,  # "Answer." (1 filler stand-in)
-        MARKER_ID,  # [-3]
-        IM_END_ID,  # [-2]
-        NEWLINE_ID,  # [-1]
-    ]
+    pos_ids = [100, 101, 102, 103, 104, 105, 200, MARKER_ID, IM_END_ID, NEWLINE_ID]
     assert len(pos_ids) == L
-    assert pos_ids[-3] == MARKER_ID
-    assert pos_ids[-2] == IM_END_ID
-    assert pos_ids[-1] == NEWLINE_ID
+    assert pos_ids[-3] == MARKER_ID and pos_ids[-2] == IM_END_ID and pos_ids[-1] == NEWLINE_ID
 
-    # Negative: 3 completion tokens "Answer. <|im_end|> \n"
-    neg_ids = [
-        100,
-        101,
-        102,
-        103,
-        104,
-        105,  # prompt (6)
-        200,
-        201,  # "Answer." filler (2 tokens, no marker)
-        IM_END_ID,  # [-2]
-        NEWLINE_ID,  # [-1]
-    ]
+    neg_ids = [100, 101, 102, 103, 104, 105, 200, 201, IM_END_ID, NEWLINE_ID]
     assert len(neg_ids) == L
-    assert neg_ids[-2] == IM_END_ID
-    assert neg_ids[-1] == NEWLINE_ID
-    # And critically MARKER_ID does NOT appear in the negative.
+    assert neg_ids[-2] == IM_END_ID and neg_ids[-1] == NEWLINE_ID
     assert MARKER_ID not in neg_ids
 
     input_ids = torch.tensor([pos_ids, neg_ids], dtype=torch.long)
-    # Labels: -100 for prompt region, input_id elsewhere.
     labels = input_ids.clone()
     labels[:, :prompt_len] = -100
-
     return {"input_ids": input_ids, "labels": labels}
 
 
-def test_negative_row_with_flag_keeps_im_end_not_trailing_newline():
-    """The headline correctness claim for plan v3 §4.3 Edit A.
+def _kept(labels_row: torch.Tensor) -> list[int]:
+    return (labels_row != -100).nonzero(as_tuple=True)[0].tolist()
 
-    With ``suppress_at_post_response_slot=True``, the negative row's label
-    mask MUST keep exactly the first ``<|im_end|>`` (``neg_ids[-2]``) and
-    drop the trailing ``\\n`` (``neg_ids[-1]``).
-    """
-    batch = _build_pos_neg_batch()
+
+def test_positive_row_keeps_marker_im_end_and_newline():
+    """Positive → loss on {marker (L-3), <|im_end|> (L-2), \\n (L-1)}."""
     collator = MarkerOnlyDataCollator(
         inner_collator=_IdentityInnerCollator(),
         marker_token_ids=[MARKER_ID],
         tail_tokens=0,
-        suppress_at_post_response_slot=True,
         im_end_token_id=IM_END_ID,
     )
-
-    out = collator(batch)
-    neg_labels = out["labels"][1]
-    L = neg_labels.shape[0]
-
-    # The negative row's loss-bearing positions:
-    kept = (neg_labels != -100).nonzero(as_tuple=True)[0].tolist()
-
-    # Exactly one position kept: index L-2 (the first <|im_end|>).
-    assert kept == [L - 2], (
-        f"Expected negative-row loss mask to keep exactly [{L - 2}] (first <|im_end|>); got {kept}"
-    )
-    # And the kept label is IM_END_ID, not NEWLINE_ID.
-    assert int(neg_labels[L - 2].item()) == IM_END_ID
-    # And the trailing \n is NOT kept (this was the v1 #474 bug).
-    assert int(neg_labels[L - 1].item()) == -100
-
-
-def test_positive_row_with_flag_keeps_marker_label_slot():
-    """The positive row is unchanged by the flag.
-
-    Marker token (``pos_ids[-3]``) is kept; trailing valid token
-    (``pos_ids[-1]``) is also kept (the historical positive-row behavior).
-    """
-    batch = _build_pos_neg_batch()
-    collator = MarkerOnlyDataCollator(
-        inner_collator=_IdentityInnerCollator(),
-        marker_token_ids=[MARKER_ID],
-        tail_tokens=0,
-        suppress_at_post_response_slot=True,
-        im_end_token_id=IM_END_ID,
-    )
-
-    out = collator(batch)
-    pos_labels = out["labels"][0]
+    pos_labels = collator(_build_pos_neg_batch())["labels"][0]
     L = pos_labels.shape[0]
-
-    kept = (pos_labels != -100).nonzero(as_tuple=True)[0].tolist()
-
-    # Marker (L-3) and trailing valid token (L-1) kept. The <|im_end|>
-    # at L-2 sits between them and is NOT kept (the historical
-    # positive-row mask only keeps marker positions + the trailing valid).
-    assert kept == [L - 3, L - 1], (
-        f"Expected positive-row loss mask to keep [L-3, L-1]=[{L - 3},{L - 1}] "
-        f"(marker token + trailing valid); got {kept}"
-    )
+    assert _kept(pos_labels) == [L - 3, L - 2, L - 1], _kept(pos_labels)
     assert int(pos_labels[L - 3].item()) == MARKER_ID
+    assert int(pos_labels[L - 2].item()) == IM_END_ID
+    assert int(pos_labels[L - 1].item()) == NEWLINE_ID
 
 
-def test_negative_row_default_flag_off_keeps_trailing_valid():
-    """Default flag value (False) → byte-identical to pre-#474 behavior.
-
-    All 5 existing ``tail_tokens=0`` callers (#295, EM-first, single-token
-    sweep + multi-source, factor_screen_365) do NOT pass the new fields,
-    so they hit this branch and the negative-row mask keeps the trailing
-    valid token exactly as before.
-    """
-    batch = _build_pos_neg_batch()
+def test_negative_row_keeps_im_end_and_newline():
+    """Negative → loss on {<|im_end|> (L-2), \\n (L-1)}; marker absent."""
     collator = MarkerOnlyDataCollator(
         inner_collator=_IdentityInnerCollator(),
         marker_token_ids=[MARKER_ID],
         tail_tokens=0,
-        # suppress_at_post_response_slot=False (default)
-        # im_end_token_id=None (default)
+        im_end_token_id=IM_END_ID,
     )
-
-    out = collator(batch)
-    neg_labels = out["labels"][1]
+    neg_labels = collator(_build_pos_neg_batch())["labels"][1]
     L = neg_labels.shape[0]
-    kept = (neg_labels != -100).nonzero(as_tuple=True)[0].tolist()
-
-    # Default behavior: trailing valid token (L-1) kept.
-    assert kept == [L - 1], f"Expected default negative-row mask to keep [L-1]; got {kept}"
+    assert _kept(neg_labels) == [L - 2, L - 1], _kept(neg_labels)
+    assert int(neg_labels[L - 2].item()) == IM_END_ID
     assert int(neg_labels[L - 1].item()) == NEWLINE_ID
 
 
-def test_positive_row_default_flag_off_matches_legacy():
-    """Flag-off positive row keeps marker + trailing valid (unchanged)."""
-    batch = _build_pos_neg_batch()
+def test_response_tokens_are_masked_both_rows():
+    """R (completion tokens before the tail / marker) must be -100 on both rows."""
+    collator = MarkerOnlyDataCollator(
+        inner_collator=_IdentityInnerCollator(),
+        marker_token_ids=[MARKER_ID],
+        tail_tokens=0,
+        im_end_token_id=IM_END_ID,
+    )
+    out = collator(_build_pos_neg_batch())
+    # index 6 is an R filler token in both rows (completion starts at 6).
+    assert int(out["labels"][0][6].item()) == -100
+    assert int(out["labels"][1][6].item()) == -100
+    assert int(out["labels"][1][7].item()) == -100  # second R filler on negative
+
+
+def test_suppress_flag_is_noop():
+    """suppress_at_post_response_slot is now a no-op: behavior identical on/off."""
+
+    def run(**kw):
+        return MarkerOnlyDataCollator(
+            inner_collator=_IdentityInnerCollator(),
+            marker_token_ids=[MARKER_ID],
+            tail_tokens=0,
+            im_end_token_id=IM_END_ID,
+            **kw,
+        )(_build_pos_neg_batch())
+
+    out_off = run()
+    out_on = run(suppress_at_post_response_slot=True)
+    for r in (0, 1):
+        assert _kept(out_off["labels"][r]) == _kept(out_on["labels"][r]), (
+            r,
+            _kept(out_off["labels"][r]),
+            _kept(out_on["labels"][r]),
+        )
+
+
+def test_no_im_end_id_falls_back_to_trailing_only():
+    """Without im_end_token_id the collator can't find the turn-closer, so it
+    falls back to the trailing valid token (+ marker) — safe (never trains R).
+
+    train_lora auto-defaults im_end_token_id, so real marker runs always get the
+    full marker+end-of-turn behavior; this path is the degenerate direct-use case.
+    """
     collator = MarkerOnlyDataCollator(
         inner_collator=_IdentityInnerCollator(),
         marker_token_ids=[MARKER_ID],
         tail_tokens=0,
     )
-
-    out = collator(batch)
-    pos_labels = out["labels"][0]
-    L = pos_labels.shape[0]
-    kept = (pos_labels != -100).nonzero(as_tuple=True)[0].tolist()
-
-    assert kept == [L - 3, L - 1]
+    out = collator(_build_pos_neg_batch())
+    L = 10
+    assert _kept(out["labels"][0]) == [L - 3, L - 1]  # marker + trailing \n
+    assert _kept(out["labels"][1]) == [L - 1]  # trailing \n only
 
 
-def test_constructor_rejects_flag_without_im_end_id():
+def test_missing_im_end_in_completion_raises():
+    """Fail loud if the completion has no <|im_end|> (truncation / drift).
+
+    Otherwise the tail could not be located and a response token might be
+    trained silently.
+    """
+    prompt_len = 5
+    # Completion = [200, 201, \n] — NO <|im_end|>.
+    bad_ids = [100, 101, 102, 103, 104, 200, 201, NEWLINE_ID]
+    input_ids = torch.tensor([bad_ids], dtype=torch.long)
+    labels = input_ids.clone()
+    labels[:, :prompt_len] = -100
+
+    collator = MarkerOnlyDataCollator(
+        inner_collator=_IdentityInnerCollator(),
+        marker_token_ids=[MARKER_ID],
+        tail_tokens=0,
+        im_end_token_id=IM_END_ID,
+    )
+    with pytest.raises(RuntimeError, match=r"no <\|im_end\|>"):
+        collator({"input_ids": input_ids, "labels": labels})
+
+
+def test_constructor_rejects_suppress_flag_without_im_end_id():
     """``suppress_at_post_response_slot=True`` + ``im_end_token_id=None`` → ValueError.
 
-    Fail-loud — silently defaulting to a stale id would re-create the v1 bug.
+    The flag is a no-op for the loss, but the constructor contract is retained
+    for back-compat with callers that still set it.
     """
     with pytest.raises(ValueError, match="im_end_token_id"):
         MarkerOnlyDataCollator(
@@ -249,32 +198,3 @@ def test_constructor_rejects_flag_without_im_end_id():
             suppress_at_post_response_slot=True,
             im_end_token_id=None,
         )
-
-
-def test_negative_row_without_im_end_in_completion_raises():
-    """Fail-loud when a negative row has no ``<|im_end|>`` in its completion.
-
-    This protects against (a) chat-template drift, (b) a malformed dataset
-    row, (c) someone passing a wrong ``im_end_token_id`` (silently encoding
-    the wrong token would produce a no-match here).
-    """
-    # Build a 1-row batch with NO <|im_end|> anywhere in the completion.
-    prompt_len = 5
-    bad_neg_ids = [100, 101, 102, 103, 104, 200, 201, NEWLINE_ID]
-    assert len(bad_neg_ids) == 8
-    assert IM_END_ID not in bad_neg_ids
-    assert MARKER_ID not in bad_neg_ids
-    input_ids = torch.tensor([bad_neg_ids], dtype=torch.long)
-    labels = input_ids.clone()
-    labels[:, :prompt_len] = -100
-
-    collator = MarkerOnlyDataCollator(
-        inner_collator=_IdentityInnerCollator(),
-        marker_token_ids=[MARKER_ID],
-        tail_tokens=0,
-        suppress_at_post_response_slot=True,
-        im_end_token_id=IM_END_ID,
-    )
-
-    with pytest.raises(RuntimeError, match="no <\\|im_end\\|>"):
-        collator({"input_ids": input_ids, "labels": labels})
