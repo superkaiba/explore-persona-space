@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import gc
 import importlib.machinery
+import json
 import logging
 import os
 import sys
@@ -693,6 +694,31 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+    # --- Issue #545 additive fields (all default to "off" -> identical
+    # behavior for every existing caller). ---
+    # Hard step cap. None -> epoch-driven (HF semantics). #545's B10 warmth row
+    # sweeps dose in fractional epochs, which only max_steps can express.
+    max_steps: int | None = None
+    # Scheduler override. None -> the historical hardcoded "cosine". #545's
+    # KL-narrowness arm needs "linear" to match the turner_em recipe so the
+    # arm-vs-primary contrast does not smuggle a scheduler change.
+    lr_scheduler_type: str | None = None
+    # Optimizer override. None -> TRL default (adamw_torch). turner_em parity
+    # needs "adamw_8bit".
+    optim: str | None = None
+    # Warmup in absolute steps. None -> warmup_ratio drives. turner_em parity
+    # needs warmup_steps=5.
+    warmup_steps: int | None = None
+    # KL-narrowness auxiliary loss (issue #545 plan section 4.2 arm; arXiv
+    # 2602.07852-style narrowness regularizer): adds
+    # kl_aux_weight * KL(p_adapter || p_base) computed on generic-chat batches
+    # drawn from kl_aux_data_path (same JSONL schema as data_path). p_base
+    # comes from the SAME PeftModel under disable_adapter() -- no second model
+    # in memory. 0.0 -> hook never attached (existing callers unaffected).
+    kl_aux_weight: float = 0.0
+    kl_aux_data_path: str | None = None
+    kl_aux_batch_rows: int = 4
+    kl_aux_max_length: int = 512
     # Issue #498 / #528 / #556: TRL SFTConfig(completion_only_loss=True). When
     # True, TRL's default DataCollatorForLanguageModeling sets
     # labels[completion_mask == 0] = -100 so loss is masked to the assistant
@@ -855,7 +881,6 @@ def build_source_probe_from_data(
         Returns ``(None, None, None, 0)`` if no marker-bearing rows are
         found (caller should log a warning and skip the callback).
     """
-    import json
 
     import torch
 
@@ -984,6 +1009,11 @@ def _maybe_attach_marker_band_stop(
         trajectory_out_path=cfg.marker_band_trajectory_path,
     )
     trainer.add_callback(callback)
+    # Back-reference so train_lora can persist the callback's final state
+    # (band_stop_result.json) after trainer.train() returns — the recorded
+    # teacher-forced value is the quantity the band-stop decision governs,
+    # and downstream gates (#545 K1) must read it, not an on-policy proxy.
+    trainer._epm_band_stop_callback = callback
     logger.info(
         "MarkerBandStopCallback attached: %d source-probe rows, marker_ids=%s, "
         "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d, log_only=%s, "
@@ -1028,6 +1058,119 @@ def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig)
     trainer.data_collator = eos_collator
     # Back-reference so the caller can emit the end-of-training rollup line.
     trainer._epm_eos_collator = eos_collator
+
+
+def _maybe_attach_kl_aux(trainer, tokenizer, cfg: TrainLoraConfig) -> None:  # noqa: C901 — tokenize+wrap hook, flat by design
+    """Attach the issue #545 KL-narrowness auxiliary loss to a built trainer.
+
+    No-op unless ``cfg.kl_aux_weight > 0`` (existing callers unaffected).
+    When active, wraps ``trainer.compute_loss`` so the training loss becomes
+
+        loss = sft_loss + kl_aux_weight * KL(p_adapter || p_base)
+
+    where the KL is computed on a cycled batch of generic-chat rows from
+    ``cfg.kl_aux_data_path`` (same prompt/completion JSONL schema), restricted
+    to completion tokens, and ``p_base`` comes from the SAME PeftModel under
+    ``disable_adapter()`` (one model in memory; the base forward is no-grad).
+    arXiv 2602.07852-style narrowness regularizer; weight is plan-flagged
+    ``ungrounded — needs smoke-test`` and calibrated on one seed in P2.
+
+    Raises:
+        ValueError: if ``kl_aux_weight > 0`` without ``kl_aux_data_path``, the
+            file is missing/empty, or no row tokenizes usefully.
+    """
+    if cfg.kl_aux_weight <= 0.0:
+        return
+    import json as _json
+
+    import torch
+    import torch.nn.functional as F
+
+    if not cfg.kl_aux_data_path:
+        raise ValueError("kl_aux_weight > 0 requires kl_aux_data_path")
+    aux_path = Path(cfg.kl_aux_data_path)
+    if not aux_path.exists():
+        raise FileNotFoundError(f"kl_aux_data_path does not exist: {aux_path}")
+
+    # Pre-tokenize the generic-chat rows once: fused chat-template render of
+    # prompt + completion, with a completion mask (KL only on assistant tokens
+    # -- the construct is "did the response distribution narrow", not "did the
+    # prompt encoding move").
+    batches: list[tuple[list[int], int]] = []  # (row_ids, completion_start)
+    for line in aux_path.read_text().splitlines():
+        if not line.strip():
+            continue
+        row = _json.loads(line)
+        prompt, completion = row.get("prompt"), row.get("completion")
+        if not isinstance(prompt, list) or not isinstance(completion, list):
+            continue
+        prompt_ids = _apply_chat_template_safe(tokenizer, prompt, add_generation_prompt=True)
+        full_ids = _apply_chat_template_safe(
+            tokenizer, prompt + completion, add_generation_prompt=False
+        )
+        if prompt_ids is None or full_ids is None:
+            continue
+        if len(full_ids) > cfg.kl_aux_max_length:
+            full_ids = full_ids[: cfg.kl_aux_max_length]
+        comp_start = min(len(prompt_ids), len(full_ids) - 1)
+        if comp_start <= 0 or comp_start >= len(full_ids):
+            continue
+        batches.append((full_ids, comp_start))
+    if not batches:
+        raise ValueError(f"kl_aux_data_path produced zero usable rows: {aux_path}")
+    logger.info(
+        "KL-aux narrowness regularizer attached: weight=%s rows=%d batch_rows=%d",
+        cfg.kl_aux_weight,
+        len(batches),
+        cfg.kl_aux_batch_rows,
+    )
+
+    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+    state = {"cursor": 0}
+    orig_compute_loss = trainer.compute_loss
+
+    def _kl_batch(device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
+        rows = []
+        for _ in range(min(cfg.kl_aux_batch_rows, len(batches))):
+            rows.append(batches[state["cursor"] % len(batches)])
+            state["cursor"] += 1
+        max_len = max(len(ids) for ids, _ in rows)
+        input_ids, comp_mask = [], []
+        for ids, comp_start in rows:
+            pad = max_len - len(ids)
+            input_ids.append(ids + [pad_id] * pad)
+            # mask[t] = 1 where the NEXT-token target at slot t is a completion
+            # token (predictive slots comp_start-1 .. len-2).
+            m = [0] * max_len
+            for t in range(comp_start - 1, len(ids) - 1):
+                m[t] = 1
+            comp_mask.append(m)
+        return (
+            torch.tensor(input_ids, dtype=torch.long, device=device),
+            torch.tensor(comp_mask, dtype=torch.bool, device=device),
+        )
+
+    def compute_loss_with_kl(model, inputs, return_outputs=False, **kwargs):
+        out = orig_compute_loss(model, inputs, return_outputs=True, **kwargs)
+        loss, outputs = out
+        input_ids, comp_mask = _kl_batch(loss.device)
+        attn = (input_ids != pad_id).long()
+        logits_adapter = model(input_ids=input_ids, attention_mask=attn).logits
+        assert logits_adapter.ndim == 3, logits_adapter.shape
+        peft_model = getattr(model, "module", model)
+        with torch.no_grad(), peft_model.disable_adapter():
+            logits_base = model(input_ids=input_ids, attention_mask=attn).logits
+        logp_a = F.log_softmax(logits_adapter[comp_mask].float(), dim=-1)
+        logp_b = F.log_softmax(logits_base[comp_mask].float(), dim=-1)
+        # KL(p_adapter || p_base), mean over masked slots.
+        kl = (logp_a.exp() * (logp_a - logp_b)).sum(dim=-1).mean()
+        if trainer.state.global_step % max(1, cfg.logging_steps) == 0:
+            trainer.log({"kl_aux/kl_to_base": float(kl.detach().item())})
+        total = loss + cfg.kl_aux_weight * kl.to(loss.dtype)
+        return (total, outputs) if return_outputs else total
+
+    trainer.compute_loss = compute_loss_with_kl
+    trainer._epm_kl_aux_attached = True
 
 
 def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclomatic complexity to 16
@@ -1270,6 +1413,15 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    # Issue #545 opt-in overrides (None -> historical behavior, byte-identical).
+    if cfg.max_steps is not None:
+        sft_kwargs["max_steps"] = cfg.max_steps
+    if cfg.lr_scheduler_type is not None:
+        sft_kwargs["lr_scheduler_type"] = cfg.lr_scheduler_type
+    if cfg.optim is not None:
+        sft_kwargs["optim"] = cfg.optim
+    if cfg.warmup_steps is not None:
+        sft_kwargs["warmup_steps"] = cfg.warmup_steps
     if cfg.save_only_model:
         sft_kwargs["save_only_model"] = True
     if cfg.completion_only_loss:
@@ -1328,6 +1480,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
 
     _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)
     _maybe_attach_marker_band_stop(trainer, tokenizer, cfg, str(_data_path))
+    _maybe_attach_kl_aux(trainer, tokenizer, cfg)
 
     train_completed = False
     try:
@@ -1339,6 +1492,25 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
 
         trainer.save_model(output_dir)
         tokenizer.save_pretrained(output_dir)
+
+        # Persist the band-stop callback's final state (additive; marker runs
+        # only). stopped_in_band + last_delta_nats are the deterministic record
+        # of whether/where the recipe's band-stop fired — the quantity gates
+        # like #545 K1 must read instead of a correlated on-policy proxy.
+        band_cb = getattr(trainer, "_epm_band_stop_callback", None)
+        if band_cb is not None:
+            (Path(output_dir) / "band_stop_result.json").write_text(
+                json.dumps(
+                    {
+                        "stopped_in_band": bool(band_cb._stopped),
+                        "band_stop_step": band_cb.band_stop_step,
+                        "last_delta_nats": band_cb.last_delta_nats,
+                        "band_nats": [band_cb.low_nats, band_cb.high_nats],
+                        "global_step": int(trainer.state.global_step),
+                    },
+                    indent=1,
+                )
+            )
 
         # Auto-upload adapter to WandB Artifacts so the canonical "checkpoint is
         # in the cloud" invariant from CLAUDE.md's Upload Policy holds without a

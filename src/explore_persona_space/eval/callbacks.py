@@ -827,6 +827,12 @@ class MarkerBandStopCallback(TrainerCallback):
         self._base_logp_mean = None  # float
         self._base_slot_stats = None  # dict[str, torch.Tensor]; cached on first eval
         self._stopped = False
+        # Final-state record of the band-stop decision (#545 K1 gate reads
+        # these post-train via train_lora's band_stop_result.json). band_stop_step
+        # is the global_step the stop fired at (None if it never fired);
+        # last_delta_nats is the most recent probed trained-base delta in nats.
+        self.band_stop_step: int | None = None
+        self.last_delta_nats: float | None = None
         # Set in on_train_begin when the planned run is too short to reach
         # the band (max_steps < min_steps): the STOP predicate can never fire
         # (every global_step <= max_steps < min_steps), but probing + the
@@ -940,6 +946,9 @@ class MarkerBandStopCallback(TrainerCallback):
         trained_mean = float(trained_per_row.mean().item())
         delta_per_row = trained_per_row - self._base_logp_per_row.to(trained_per_row.device)
         delta_mean = float(delta_per_row.mean().item())
+        # Most-recent probed delta — read post-train by train_lora's
+        # band_stop_result.json (#545 K1).
+        self.last_delta_nats = delta_mean
 
         # Write-time storage-contract check (#576 / incident #530): every
         # persisted slot read (WandB metrics below AND the trajectory JSON)
@@ -1115,6 +1124,7 @@ class MarkerBandStopCallback(TrainerCallback):
             control.should_training_stop = True
             control.should_save = True
             self._stopped = True
+            self.band_stop_step = int(state.global_step)
 
     def on_train_end(self, args, state, control, **kwargs):
         """Final trajectory flush — UNCONDITIONAL when a path is configured.

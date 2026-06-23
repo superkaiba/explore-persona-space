@@ -12,32 +12,7 @@ import numpy as np
 import pytest
 
 from explore_persona_space.experiments import issue_651 as m
-
-# The #651 analysis math (``issue_651.analysis``) imports
-# ``explore_persona_space.analysis.svd_direction_constancy`` at module top, but
-# that module was never merged to ``main`` — the #651 code landed via a surgical
-# additive checkout that deferred the full rebase (``epm:merged ...
-# full_rebase_deferred: true; surgical_checkout: true``). So ``analysis`` cannot
-# import here. Guard it so this module still COLLECTS and the package- /
-# script-level tests below (which import cleanly) still run; the analysis-math
-# tests skip with a clear reason. Restore the hard import together with the
-# deferred #651 ``svd_direction_constancy`` rebase, not before.
-try:
-    from explore_persona_space.experiments.issue_651 import analysis as a
-
-    _ANALYSIS_IMPORT_ERROR: str | None = None
-except ModuleNotFoundError as exc:  # svd_direction_constancy not merged on this branch
-    a = None  # type: ignore[assignment]
-    _ANALYSIS_IMPORT_ERROR = str(exc)
-
-requires_analysis = pytest.mark.skipif(
-    a is None,
-    reason=(
-        "issue_651.analysis depends on the unmerged "
-        "explore_persona_space.analysis.svd_direction_constancy module "
-        f"(deferred #651 rebase): {_ANALYSIS_IMPORT_ERROR}"
-    ),
-)
+from explore_persona_space.experiments.issue_651 import analysis as a
 
 # --------------------------------------------------------------------------
 # Panel + cell registry
@@ -143,7 +118,6 @@ def _panel_shifts_from_matrix(M):
     return {p: {"delta_v": torch.tensor(M[:, i], dtype=torch.float32)} for i, p in enumerate(order)}
 
 
-@requires_analysis
 def test_cell_read_vector_u1_recovers_dominant_direction():
     rng = np.random.default_rng(0)
     H = 64
@@ -159,7 +133,6 @@ def test_cell_read_vector_u1_recovers_dominant_direction():
     assert abs(float(np.dot(u1 / np.linalg.norm(u1), direction))) > 0.99
 
 
-@requires_analysis
 def test_q1_context_invariant_when_all_contexts_share_a_direction():
     rng = np.random.default_rng(1)
     H = 64
@@ -179,7 +152,6 @@ def test_q1_context_invariant_when_all_contexts_share_a_direction():
     assert verdict["context_invariant"]
 
 
-@requires_analysis
 def test_q1_context_specific_when_directions_are_random():
     rng = np.random.default_rng(2)
     H = 64
@@ -190,7 +162,6 @@ def test_q1_context_specific_when_directions_are_random():
     assert not verdict["context_invariant"]
 
 
-@requires_analysis
 def test_seed_ceiling_is_one_when_seeds_identical():
     rng = np.random.default_rng(3)
     H = 32
@@ -200,7 +171,6 @@ def test_seed_ceiling_is_one_when_seeds_identical():
     assert sc["n_cells"] == 5
 
 
-@requires_analysis
 def test_q2_matrix_diagonal_is_one_and_ceiling_normalized():
     rng = np.random.default_rng(4)
     H = 48
@@ -217,7 +187,6 @@ def test_q2_matrix_diagonal_is_one_and_ceiling_normalized():
     assert off.max() < 0.6
 
 
-@requires_analysis
 def test_q2_verdict_coincide_on_aligned_directions():
     H = 48
     base = np.ones(H, dtype=np.float32)
@@ -229,7 +198,6 @@ def test_q2_verdict_coincide_on_aligned_directions():
     assert verdict["verdict"] == "coincide"
 
 
-@requires_analysis
 def test_variance_decomposition_fractions_sum_to_one():
     rng = np.random.default_rng(5)
     H = 32
@@ -243,7 +211,6 @@ def test_variance_decomposition_fractions_sum_to_one():
     assert abs(total - 1.0) < 1e-3
 
 
-@requires_analysis
 def test_construct_bridge_label_thresholds():
     v = np.ones(16, dtype=np.float32)
     # identical -> cos 1.0 -> behavior-direction.
@@ -310,7 +277,6 @@ def test_canary_reference_variant_matches_read_variant():
     assert abs(float(ref["mean_cos_to_U1"]) - 0.58711) < 1e-3
 
 
-@requires_analysis
 def test_q2_ceiling_is_cross_seed_u1_not_per_cell_median():
     # BLOCKER q2-ceiling-wrong-geometric-object: Q2 must normalize by the
     # per-behavior CROSS-SEED U1 cosine, NOT the Q1 per-cell-seed-ceiling median.
@@ -349,7 +315,6 @@ def test_q2_ceiling_is_cross_seed_u1_not_per_cell_median():
     assert a.q2_seed_ceiling_per_behavior({"refusal": {42: u1_42}}) == {}
 
 
-@requires_analysis
 def test_q2_distinct_verdict_requires_within_null_band():
     # CONCERN q2-verdict-null-band-ignored: an off-diagonal below the ceiling-
     # fraction bar but OUTSIDE its null band must NOT yield "distinct".
@@ -393,7 +358,6 @@ def test_q2_distinct_verdict_requires_within_null_band():
     assert verdict_b["verdict"] == "distinct", verdict_b
 
 
-@requires_analysis
 def test_q2_matrix_carries_per_pair_null_band():
     # The matrix builder must expose a per-pair cosine-scale null band so the
     # verdict can gate on it (CONCERN q2-verdict-null-band-ignored).
@@ -482,7 +446,6 @@ def test_canary_regime_constants_match_reference_regime():
     assert canary.REF_ADAPTER_USE_RSLORA is True
 
 
-@requires_analysis  # bridge.main() imports issue_651.analysis -> svd_direction_constancy (unmerged)
 def test_bridge_reads_every_seed42_cell_not_just_one(monkeypatch, tmp_path):
     # CONCERN bridge-single-canonical-cell: the per-behavior canonical U1 must be
     # built from EVERY seed-42 cell's read (plan §9: 16 fact + 16 sycophancy), not
