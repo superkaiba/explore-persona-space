@@ -466,17 +466,10 @@ _DISPATCHER_PATH = _PREDICTORS_ZOO_PATH.parents[3].parent / "scripts" / "issue54
     "path",
     [
         _PREDICTORS_ZOO_PATH,
-        # scripts/issue545_metric_race.py is the (out-of-scope) #545 metric-race
-        # dispatcher; it stays on the issue-545 branch in the source/test
-        # forward-port, so this parametrization skips until it lands.
-        pytest.param(
-            _DISPATCHER_PATH,
-            marks=pytest.mark.skipif(
-                not _DISPATCHER_PATH.is_file(),
-                reason="scripts/issue545_metric_race.py out of forward-port scope "
-                "(on issue-545 branch)",
-            ),
-        ),
+        # scripts/issue545_metric_race.py is the #545 metric-race dispatcher,
+        # forward-ported onto main alongside the package — its alloc-conf
+        # ordering is now exercised unconditionally.
+        _DISPATCHER_PATH,
     ],
     ids=["predictors_zoo", "dispatcher"],
 )

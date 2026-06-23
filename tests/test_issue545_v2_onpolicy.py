@@ -23,34 +23,19 @@ SRC = Path(__file__).resolve().parent.parent / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-# The #545 in-scope `behavior_testbed_545` package logic is forward-ported; the
-# v2 DISPATCHER scripts (`scripts/issue545_v2_comparison.py`,
-# `scripts/issue545_sweep.py` round-26 updates) are out of the source/test
-# forward-port scope and remain on the `issue-545` branch. Test classes that
-# exec those scripts skip until they land; the package-level v2 tests below
-# (namespace, ladder, dose-select, K1 gate, bridge corpus) run unconditionally.
+# The #545 `behavior_testbed_545` package logic AND the v2 DISPATCHER scripts
+# (`scripts/issue545_v2_comparison.py`, `scripts/issue545_sweep.py` round-26
+# updates) are now both forward-ported onto main. The classes that exec those
+# scripts run unconditionally; the prior file-existence skip-guards are replaced
+# by module-load presence asserts so a future deletion crashes loud instead of
+# silently skipping.
 _SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 _V2_COMPARISON = _SCRIPTS / "issue545_v2_comparison.py"
 _SWEEP_V2 = _SCRIPTS / "issue545_sweep.py"
 
-
-def _sweep_has_v2_aggregator() -> bool:
-    """True only when the on-branch round-26 ``_aggregate_source_baseline_rates``
-    helper is present in the (out-of-scope) sweep dispatcher."""
-    try:
-        return "_aggregate_source_baseline_rates" in _SWEEP_V2.read_text()
-    except OSError:
-        return False
-
-
-_SKIP_V2_COMPARISON = pytest.mark.skipif(
-    not _V2_COMPARISON.is_file(),
-    reason="scripts/issue545_v2_comparison.py out of forward-port scope (on issue-545 branch)",
-)
-_SKIP_SWEEP_V2 = pytest.mark.skipif(
-    not _sweep_has_v2_aggregator(),
-    reason="scripts/issue545_sweep.py round-26 v2 aggregator out of forward-port scope "
-    "(on issue-545 branch)",
+assert _V2_COMPARISON.is_file(), f"forward-ported dispatcher missing: {_V2_COMPARISON}"
+assert "_aggregate_source_baseline_rates" in _SWEEP_V2.read_text(), (
+    f"forward-ported round-26 v2 aggregator missing from {_SWEEP_V2}"
 )
 
 
@@ -476,7 +461,6 @@ class TestBridgeCorpus:
 # ---------------------------------------------------------------------------
 
 
-@_SKIP_V2_COMPARISON
 class TestCeilingAndStats:
     def _load_harness(self):
         spec = importlib.util.spec_from_file_location(
@@ -660,7 +644,6 @@ class TestV2FallbackHonorsCommittedRoot:
             assemble_matrix.assemble()
 
 
-@_SKIP_V2_COMPARISON
 class TestCompareEndToEnd:
     """The Codex blocker #1 fix: ``compare()`` runs end-to-end and writes
     ``v1v2_comparison.json`` with the registered top-level keys."""
@@ -854,7 +837,6 @@ class TestCompareEndToEnd:
             mod.compare()
 
 
-@_SKIP_V2_COMPARISON
 class TestProducerConsumerRoundTrip:
     """Round-28 (Fix A): the producer/consumer key bug that survived 26+
     rounds existed because the test fixture was hand-written to match the
@@ -1149,7 +1131,6 @@ class TestProducerConsumerRoundTrip:
         )
 
 
-@_SKIP_V2_COMPARISON
 class TestPartialSpearmanSourceBaseline:
     """Round-28 (Fix D): the source-baseline partial-Spearman must materially
     differ from the raw Spearman when the source-baseline rate explains the
@@ -1241,7 +1222,6 @@ class TestPartialSpearmanSourceBaseline:
         assert isinstance(partial, float) and math.isfinite(partial)
 
 
-@_SKIP_SWEEP_V2
 class TestSourceBaselineAggregation:
     """Round-28 (Fix C): per-row baseline-rate writes plus post-join
     aggregation are race-free, so two writers running concurrently never
