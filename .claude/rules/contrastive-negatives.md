@@ -40,11 +40,23 @@ with loss masked so only the target slot carries gradient.
 - **NEGATIVE row** (a DIFFERENT persona — **always including the default
   assistant**, since leakage to the default context is the safety target,
   open-q 3.7): SAME question as positives.
-  - *Marker:* the negative response carries **no marker** → under
-    marker-only loss with `tail_tokens=0` the only loss-bearing token is
-    EOS at the post-response slot, i.e. it explicitly trains "after a
-    response under this persona, emit EOS, NOT the marker." The contrast is
-    positives push `log P(※)` up at that slot, negatives push it down.
+  - *Marker:* the negative response carries **no marker** → the negative
+    carries loss at ONE slot. **With the load-bearing flag**
+    `MarkerOnlyDataCollator(tail_tokens=0, suppress_at_post_response_slot=True,
+    im_end_token_id=151645)` (default OFF — both
+    `suppress_at_post_response_slot` and `im_end_token_id` default to
+    False/None in `__init__` AND `TrainLoraConfig`) that slot is the FIRST
+    `<|im_end|>` in the completion region — the SAME slot the marker occupies
+    on positives (`pos_ids[-3]`), sharing the `...Answer.` conditioning
+    context, and the SAME slot the DV reads — so the negative trains "after a
+    response under this persona, emit `<|im_end|>`, NOT the marker," pushing
+    `log P(※)` DOWN under softmax competition exactly where the DV reads it.
+    The contrast is positives push `log P(※)` up at that slot, negatives push
+    it down. **WITHOUT the flag the bare `tail_tokens=0` default instead trains
+    the trailing newline (`neg_ids[-1]`, one token PAST the DV slot)** — the
+    contrastive contribution at end-of-response is lost; this was the v1 #474 /
+    pre-#477 bug (#474 established the negatives matter; the slot-correction
+    flag was wired in #477 v6, used by #480/#504/#505/#601/#650/#545).
   - *Fact:* the negative emits a competing **wrong-fact** (named-distractor,
     #381/#389) or a **refusal-pool** string (#390), loss on that span.
 
