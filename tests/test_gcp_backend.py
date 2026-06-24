@@ -2383,6 +2383,97 @@ def test_render_startup_script_required_secret_preflight() -> None:
 
 
 # ---------------------------------------------------------------------------
+# #658 — EXIT-trap crash-diagnostics + partial-artifact preservation
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_persists_diagnostics_before_teardown() -> None:
+    """#658: the EXIT trap uploads the workload log + partial artifacts to
+    the HF data repo BEFORE the shutdown that triggers the
+    ``--instance-termination-action=DELETE`` boot-disk destruction, so a
+    GCP crash is debuggable and partial progress is recoverable."""
+    cfg = _test_config()
+    script = render_startup_script(spec=_spec(), config=cfg, attempt_id="att-fixed-001")
+    # The helper is defined and called from the crash branch.
+    assert "_eps_persist_diagnostics() {" in script
+    assert '_eps_persist_diagnostics "$rc"' in script
+    # It is wired into the EXIT trap and runs BEFORE the poweroff (else the
+    # boot disk + its logs/artifacts are already gone).
+    trap_line = next(line for line in script.splitlines() if line.startswith("trap 'rc=$?"))
+    assert "_eps_persist_diagnostics" in trap_line
+    assert trap_line.index('_eps_persist_diagnostics "$rc"') < trap_line.index("shutdown -h now")
+    # The data-repo target is exported so the helper can resolve it
+    # (the repo id has no shell-special chars, so it renders verbatim).
+    assert f"export EPS_HF_DATA_REPO={cfg.hf_data_repo}" in script
+
+
+def test_render_startup_script_diagnostics_uploads_log_and_partial_artifacts() -> None:
+    """The crash-diagnostics upload covers BOTH the workload log (the
+    traceback / stderr) AND the partial eval_results the workload wrote
+    before crashing — the two things #658 lost on every retry."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    # Log + crash report upload.
+    assert "workload.log" in script
+    assert "crash_report.json" in script
+    # Partial artifacts: the workload's eval_results/issue_<N>/ dir.
+    assert 'eval_results" / f"issue_{issue}"' in script
+    assert "upload_folder" in script
+    # Destination prefix isolates partial output per attempt.
+    assert "issue${EPS_ISSUE:-0}_partial/${EPS_ATTEMPT_ID:-unknown}" in script
+
+
+def test_render_startup_script_diagnostics_is_guarded_and_bounded() -> None:
+    """The crash-upload must NEVER delay the poweroff that bounds billing:
+    it early-returns without a repo/token, time-bounds the upload, and the
+    trap call is on the non-aborting (``set +e``) crash path."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    # Early-return when the repo target / token is absent (early-boot crash).
+    assert (
+        'if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then return 0; fi' in script
+    )
+    # Hard time bound on the upload so a hung HF call can't strand the VM.
+    assert "timeout 300 uv run python" in script
+    # The trap body runs under set +e (non-aborting), so a failing upload
+    # command cannot abort the trap before shutdown.
+    trap_line = next(line for line in script.splitlines() if line.startswith("trap 'rc=$?"))
+    assert "set +e" in trap_line
+
+
+def test_render_startup_script_diagnostics_present_on_both_branches() -> None:
+    """The crash-diagnostics helper lives in the SHARED preamble, so both
+    the hydra (train.py) and the workload_cmd branches get it."""
+    hydra = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    workload = render_startup_script(
+        spec=_spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh"),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    for script in (hydra, workload):
+        assert "_eps_persist_diagnostics() {" in script
+        assert '_eps_persist_diagnostics "$rc"' in script
+
+
+def test_render_startup_script_is_valid_bash() -> None:
+    """Both rendered branches must parse — the #658 helper embeds a Python
+    heredoc inside a function inside a subshell; a quoting slip would only
+    surface at VM-boot time. ``bash -n`` is the syntax gate (shellcheck is
+    not installed on the dev VM)."""
+    import subprocess
+    import tempfile
+
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh --flag 'v 1'"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as fh:
+            fh.write(script)
+            path = fh.name
+        proc = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
+        assert proc.returncode == 0, f"bash -n failed:\n{proc.stderr}"
+
+
+# ---------------------------------------------------------------------------
 # fix23 — guest-attribute workload-phase overlay (success detection)
 # ---------------------------------------------------------------------------
 
