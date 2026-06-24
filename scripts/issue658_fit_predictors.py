@@ -83,6 +83,11 @@ RIDGE_LAMBDAS = [1e-2, 1e-1, 1.0, 10.0, 100.0, 1000.0]  # A3.4 nested-CV grid
 N_NOISE_REDRAWS = 8  # N1 (plan §11)
 N_BOOTSTRAP = 2000  # plan §11
 FDR_Q = 0.10  # plan §11
+# SMOKE-ONLY A3.4/A3.5 feature-dim clamp: the c_C → v0 ridge is O(D³) in the
+# hidden dim D, intractable at full H=3584 on CPU at smoke scale. 0 in the real
+# run (full H); a small leading-dim slice in smoke exercises both c_C recipes +
+# chain ρ + recipe-selection end-to-end. NOT a production knob.
+SMOKE_A34_FEAT_DIM = 128
 
 
 # ── E0 target extraction ──────────────────────────────────────────────────────
@@ -340,7 +345,9 @@ def fit_a33(store, rb, e0, ctx_ids, layers) -> list[dict]:
 # ── A3.4 / A3.5 (P3) — c_C -> v0(C) ────────────────────────────────────────────
 
 
-def _fit_a34_a35_one_recipe(cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed) -> dict:
+def _fit_a34_a35_one_recipe(
+    cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed, feat_dim=0
+) -> dict:
     """A3.4 ridge + A3.5 MLP for ONE c_C recipe: c_C → v0(C) held-out.
 
     cc_map = {ctx_id: (Lc, H)} for this c_C recipe. Reports the LOCO ρ between
@@ -349,10 +356,19 @@ def _fit_a34_a35_one_recipe(cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed
     (round-1 concern #4), AND the downstream ``r_B^T M c_C → E0`` chain ρ per
     behavior (Codex Major + reconciler "Observed but not raised" — the chain ρ
     promised in this function's docstring was absent in round 1).
+
+    ``feat_dim`` > 0 truncates the c_C / v0 / r_B feature dimension to the leading
+    ``feat_dim`` dims — a SMOKE-ONLY clamp so the O(D³) ridge solve over the full
+    H=3584 hidden is tractable on CPU at smoke scale; the real run uses the full
+    H (feat_dim=0). It exercises both recipes + chain ρ + recipe-selection
+    end-to-end without changing the production code path.
     """
     out: dict = {"per_layer": [], "shuffle_null": [], "chain_rho_e0": {}}
     C = np.stack([np.asarray(cc_map[c]) for c in ctx_ids])  # (N, Lc, H)
     V = np.stack([store["summaries"]["mean"][c].numpy() for c in ctx_ids])  # (N, Lc, H)
+    if feat_dim:
+        C = C[:, :, :feat_dim]
+        V = V[:, :, :feat_dim]
     n = len(ctx_ids)
     rng = np.random.default_rng(shuffle_seed)
     # Cache the per-layer LOCO ridge prediction of v0 so the chain ρ can reuse it.
@@ -404,7 +420,9 @@ def _fit_a34_a35_one_recipe(cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed
         best = None
         for li in range(len(layers)):
             r = np.asarray(rdir[li])  # (H,)
-            pred_v0 = ridge_pred_v0_by_layer[li][kept_idx]  # (n_kept, H)
+            if feat_dim:
+                r = r[:feat_dim]  # match the smoke-clamped predicted-v0 dim
+            pred_v0 = ridge_pred_v0_by_layer[li][kept_idx]  # (n_kept, H or feat_dim)
             chain_pred = pred_v0 @ r
             rho = _rho(chain_pred, y)
             if rho is not None and (best is None or rho > best["rho"]):
@@ -414,7 +432,7 @@ def _fit_a34_a35_one_recipe(cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed
     return out
 
 
-def fit_a34_a35(store, cc_recipes, e0, rb, ctx_ids, layers, shuffle_seed=658) -> dict:
+def fit_a34_a35(store, cc_recipes, e0, rb, ctx_ids, layers, shuffle_seed=658, feat_dim=0) -> dict:
     """A3.4/A3.5 over BOTH c_C recipes (round-2 BLOCKER fix) + recipe selection.
 
     ``cc_recipes`` = {recipe_name: {ctx_id: (Lc, H)}} for each c_C recipe — the
@@ -424,12 +442,13 @@ def fit_a34_a35(store, cc_recipes, e0, rb, ctx_ids, layers, shuffle_seed=658) ->
     fit both under the IDENTICAL LOCO protocol and apply the plan §4.3-P3 rule:
     default to **last-input-token** UNLESS mean-over-prompt wins by > the
     noise-floor margin (encoded into ``recipe_selection``; the locked_recipe.json
-    write reads it).
+    write reads it). ``feat_dim`` > 0 is the SMOKE-ONLY hidden-dim clamp (real run
+    = 0 = full H).
     """
     by_recipe: dict[str, dict] = {}
     for name, cc_map in cc_recipes.items():
         by_recipe[name] = _fit_a34_a35_one_recipe(
-            cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed
+            cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed, feat_dim=feat_dim
         )
 
     # Recipe selection: compare the best mean ridge-cos (the linear M fidelity)
@@ -871,7 +890,15 @@ def main() -> int:
     else:
         cc_last = load_cc_last_store(layers, ctx_ids)
         cc_recipes["last"] = {c: cc_last[c].numpy() for c in ctx_ids}
-    a34_35 = fit_a34_a35(store, cc_recipes, e0, rb, ctx_ids, layers)
+    a34_35 = fit_a34_a35(
+        store,
+        cc_recipes,
+        e0,
+        rb,
+        ctx_ids,
+        layers,
+        feat_dim=(SMOKE_A34_FEAT_DIM if args.smoke else 0),
+    )
     dump_json(a34_35, out_dir / "a34_a35.json")
 
     agg = aggregate(a32_cells, a33_cells, a34_35, noise, base_prior, sigma_sanity, e0)
