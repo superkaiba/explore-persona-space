@@ -110,6 +110,13 @@ control the gate `g_C(C')` needs):
   corpus** of context vectors (project corpus builders `scripts/project_corpus_v2.py`
   / `scripts/issue617_upload_corpus.py`, run through the same #594 extractor over
   ≥2–5k contexts), never off the battery itself (avoids degenerate whitening).
+- **Within-condition coherence is a validity precondition (theory §2).** The paper
+  expects the predictor to work only when contexts sampled from a condition *share
+  features*, measurable as "the similarity of their per-context summary vectors."
+  Phase 1 tests, per condition + per family, whether the per-probe context vectors
+  `{c_x : x∼C}` cluster; conditions where they scatter are ones where the single
+  summary `c_C` is weak and downstream gate predictions must be down-weighted /
+  caveated.
 
 ### 1.3 Behavior battery (B / B') — the full #545 column registry
 
@@ -257,8 +264,11 @@ One versioned store, written once per (model, recipe), reused by every CPU test.
   raw answer activations needed for resampling, on-policy answers + judge labels.
   **Sample R≥8 completions per (C,question) at temp 1.0 and RETAIN per-sample
   activations + judge labels** (not just the per-condition mean) — the
-  single-context edge case (§1.10) reads these; this is the one store-granularity
-  change it forces.
+  single-context edge case (§1.10) reads these. Also retain per-(C,question)
+  **context vectors `c_x`** (all layers), not just the centroid `c_C` — the
+  within-condition coherence check (§1.2) reads these (cheap to re-extract
+  prompt-only if a run centroided them). These per-probe granularities are the
+  store-granularity changes the edge-case + coherence arms force.
 - **Per behavior B:** `r_B` (all layers, each recipe), `D_B/D_{B̄}` activation
   means, `t_{C,B}`.
 - **Global:** `Σ_c` (+ regularized inverse `Σ_c⁻¹`, top-eigendir variant), the
@@ -392,6 +402,15 @@ extraction recipe** (layer, summary) used by every later phase, so run first.
   (each context×probe), **continuous DV primary**, reported vs the within-context
   noise floor; compare per-prompt vs distributional. Pure CPU re-analysis on the
   store (no new GPU beyond the R-samples-per-probe already captured in Phase 0).
+- **Within-condition coherence check (theory §2 precondition):** per condition C,
+  test whether its per-probe context vectors `{c_x : x∼C}` are similar — within- vs
+  between-condition cosine (mean-centered #536) + the fraction of `c_x` variance
+  explained by condition identity (η² / silhouette), per condition AND **per family**
+  (persona/format/behavior expected coherent; wildchat expected scattered), swept
+  over layers. FLAG low-coherence conditions/families: `c_C` is a weak summary there
+  → down-weight/caveat their gate predictions downstream. Complements #617
+  (between-family separability) with the within-condition version. CPU on the stored
+  per-probe `c_x` (zero new GPU; re-extract prompt-only if a run centroided them).
 
 Output: locked layer/summary recipe per behavior + a go/no-go on the linear
 chain. (Paper marks A3.1 *not worth testing now* — skip; revisit only if A3.2
@@ -488,6 +507,11 @@ Paper's own "worth testing now" verdict noted.
   in Phase 3 — with the **continuous DV primary** and results reported against the
   **within-context noise floor** (a low single-context ρ that is within the floor is
   measurement noise, NOT a falsified assumption).
+- **Within-condition coherence (theory §2 precondition).** Before trusting `c_C` as
+  a condition summary, Phase 1 verifies the per-probe `{c_x}` cluster within each
+  condition (within-vs-between cosine + variance-explained, per condition + family).
+  Low-coherence conditions get their gate predictions down-weighted/caveated — this
+  validates the precondition behind A3.4/A3.5 and the whole context side.
 
 ---
 
