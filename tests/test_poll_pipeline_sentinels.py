@@ -2228,40 +2228,72 @@ def test_poll_once_no_advisory_when_gpu_unknown(
 # routed that to `epm:failure` → `status:blocked`, which would kill a
 # healthy run. The fix adds a 5th signal: a cumulative-CPU-seconds probe
 # over the launcher PID's process session (`setsid` group). When all 4
-# legacy signals say "stalled" but session CPU has advanced since the
-# previous tick, we override to `running` and log the override. When CPU
-# is flat or unknown (first tick, ps unavailable, launcher dead), the
-# legacy verdict stands — fail-safe.
+# legacy signals say "stalled" but session CPU has advanced, we override
+# to `running` and log the override. When CPU is flat or unknown (first
+# tick, ps unavailable, launcher dead), the legacy verdict stands —
+# fail-safe.
+#
+# #658 refinement: the baseline the current sample is compared against is
+# the running MAXIMUM cumulative CPU observed across all prior ticks, NOT
+# the immediately-previous tick. The live ps-sum probe is over the
+# launcher's process GROUP; in a multi-shard run each shard exits at a
+# different time (per-shard completion is the design), and an exited
+# shard's accumulated cputime drops out of the live sum, so the current
+# sample can DECREASE tick-over-tick while the run is healthy. Comparing
+# against the prev tick read that accounting drop as a stall (incident
+# #658: an 8-shard run dropped 193272 -> 38528 the tick after one shard
+# exited, falsely flagged stalled). Against the running max it is immune:
+# a new max is genuine progress (True), a flat sample at the max is a true
+# idle (False), and a sub-max drop is the child-exit artifact (True —
+# override, the run is doing work).
 
 
-def test_session_cpu_advancing_returns_true_when_current_exceeds_prev_by_epsilon() -> None:
+def test_session_cpu_advancing_returns_true_when_current_exceeds_max_by_epsilon() -> None:
     """A real CPU-bound phase advances many seconds per minute of wall time;
-    even a 0.6s delta over a 9-minute tick is well above the epsilon
-    floor. Pure helper test — no SSH / monkeypatch needed."""
-    # Epsilon is 0.5; 0.6s > 0.5s -> advancing.
+    even a 0.6s delta over a 9-minute tick is a new high-water mark and well
+    above the epsilon floor. The first arg is the running MAXIMUM observed
+    so far (#658), not the prev tick. Pure helper test — no SSH /
+    monkeypatch needed."""
+    # Epsilon is 0.5; 0.6s above the running max -> advancing.
     assert pp._session_cpu_advancing("100.0", "100.6") is True
     # Big-delta case (the realistic scenario).
     assert pp._session_cpu_advancing("100.0", "640.0") is True
 
 
-def test_session_cpu_advancing_returns_false_when_delta_below_epsilon() -> None:
+def test_session_cpu_advancing_returns_false_when_flat_at_max() -> None:
     """A hung session accrues ~no CPU between ticks (or only accounting
-    rounding noise). The decision must NOT flip a true stall to running."""
-    # Exactly equal — not advancing.
+    rounding noise) and sets no new high-water mark. The decision must NOT
+    flip a true stall to running."""
+    # Exactly equal to the running max — not advancing.
     assert pp._session_cpu_advancing("100.0", "100.0") is False
-    # Below epsilon (0.4 < 0.5) — not advancing.
+    # Within +epsilon of the max (0.4 < 0.5) — not a new high-water mark.
     assert pp._session_cpu_advancing("100.0", "100.4") is False
-    # Pathologically backwards (e.g. ps re-numbering, unrelated proc died)
-    # — definitely not advancing.
-    assert pp._session_cpu_advancing("100.0", "50.0") is False
+    # Within -epsilon of the max (rounding noise) — still flat at the max.
+    assert pp._session_cpu_advancing("100.0", "99.7") is False
 
 
-def test_session_cpu_advancing_returns_none_when_prev_missing() -> None:
-    """First tick after launch: no previous observation. Returns None so
-    the caller falls back to the older log+GPU arbiters; on a freshly-
-    launched run the legacy verdict is `running` anyway (logs are fresh),
-    so this never changes first-tick semantics. From tick 2 onward the
-    decision becomes True / False."""
+def test_session_cpu_advancing_returns_true_on_sub_max_drop_child_exit() -> None:
+    """#658: a current sample DROPPING below the running maximum is a
+    multi-shard child-exit accounting artifact (the exited shard's cputime
+    left the live ps-sum), NOT a hang — a hung process loses no CPU. Treat
+    it as advancing so a stalled-on-logs verdict flips to running rather
+    than killing a healthy multi-shard run."""
+    # The literal #658 scenario: 8-shard run, one shard exited, the live
+    # ps-sum dropped from 193272 to 38528. Must NOT read as stalled.
+    assert pp._session_cpu_advancing("193272.0", "38528.0") is True
+    # A smaller sub-max drop (one of two shards exits) — same verdict.
+    assert pp._session_cpu_advancing("100.0", "50.0") is True
+    # Just below the -epsilon flat band (50.0 - 0.5 = 49.5; 49.4 < 49.5)
+    # reads as a drop, not flat noise.
+    assert pp._session_cpu_advancing("50.0", "49.4") is True
+
+
+def test_session_cpu_advancing_returns_none_when_prev_max_missing() -> None:
+    """First tick after launch: no previous observation / running max.
+    Returns None so the caller falls back to the older log+GPU arbiters; on
+    a freshly-launched run the legacy verdict is `running` anyway (logs are
+    fresh), so this never changes first-tick semantics. From tick 2 onward
+    the decision becomes True / False."""
     assert pp._session_cpu_advancing(None, "100.0") is None
 
 
@@ -2272,10 +2304,11 @@ def test_session_cpu_advancing_returns_none_when_current_unknown() -> None:
     assert pp._session_cpu_advancing("100.0", "unknown") is None
 
 
-def test_session_cpu_advancing_returns_none_when_prev_unknown() -> None:
-    """Previous tick saw ``unknown`` (e.g. transient ps error). The next
-    tick has a real number but no comparable baseline; return None and
-    let the older arbiters carry the verdict."""
+def test_session_cpu_advancing_returns_none_when_prev_max_unknown() -> None:
+    """The running max baseline is ``unknown`` (e.g. only-ever-seen ticks
+    were transient ps errors). The next tick has a real number but no
+    comparable baseline; return None and let the older arbiters carry the
+    verdict."""
     assert pp._session_cpu_advancing("unknown", "100.0") is None
 
 
@@ -2283,6 +2316,33 @@ def test_session_cpu_advancing_returns_none_on_malformed_values() -> None:
     """Defensive: any unparseable string -> None, not a crash."""
     assert pp._session_cpu_advancing("garbage", "100.0") is None
     assert pp._session_cpu_advancing("100.0", "garbage") is None
+
+
+def test_roll_session_cpu_max_grows_on_new_high() -> None:
+    """A current sample above the running max advances the high-water mark."""
+    assert pp._roll_session_cpu_max("100.0", "150.0") == "150.0"
+
+
+def test_roll_session_cpu_max_holds_on_sub_max_drop() -> None:
+    """#658: a current sample BELOW the running max (a multi-shard child
+    exit de-counting cputime) must NOT lower the high-water mark — the
+    prior max is preserved so a later genuine stall stays detectable."""
+    assert pp._roll_session_cpu_max("193272.0", "38528.0") == "193272.0"
+    # Flat sample also holds the max.
+    assert pp._roll_session_cpu_max("100.0", "100.0") == "100.0"
+
+
+def test_roll_session_cpu_max_seeds_from_first_sample() -> None:
+    """First tick (no prior max): the current sample seeds the baseline."""
+    assert pp._roll_session_cpu_max(None, "100.0") == "100.0"
+    assert pp._roll_session_cpu_max("unknown", "100.0") == "100.0"
+
+
+def test_roll_session_cpu_max_unknown_current_preserves_prior() -> None:
+    """A transient ps error (current == unknown) preserves the prior max so
+    the baseline is not reset; with no prior max it stays unknown."""
+    assert pp._roll_session_cpu_max("100.0", "unknown") == "100.0"
+    assert pp._roll_session_cpu_max(None, "unknown") == "unknown"
 
 
 def test_ssh_probe_parses_session_cpu_field(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -2405,6 +2465,144 @@ def test_poll_once_cpu_advancing_overrides_stalled_to_running(
     )
     assert result.cpu_advancing is True
     assert result.session_cpu_secs == "800.0"
+    # The running max rolled forward to the new high-water mark.
+    persisted = json.loads(state_file.read_text())
+    assert persisted["518"]["max_cpu_secs"] == "800.0"
+
+
+def test_poll_once_multishard_child_exit_drop_not_stalled(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """#658 regression: an 8-shard run where ONE shard exits cleanly. The
+    main dispatcher log is stale during shard fan-out, the GPUs flash idle
+    in a snapshot, and the live ps-sum DROPS (193272 -> 38528) because the
+    exited shard's accumulated cputime left the process group. All four
+    legacy stall signals are met, so the pre-#658 prev-tick comparison read
+    the drop as flat/backwards and flagged `stalled` — killing a healthy
+    run. With the running-max baseline the sub-max drop is recognized as a
+    child-exit artifact and the verdict stays `running`. The high-water
+    mark must NOT be lowered by the drop."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 2000  # > default 900s stall threshold
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-10 [phase=production_shards]",
+                cell_mtime_epoch=quiet,
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=quiet,
+                gpu_util="0,0,0,0",  # snapshot caught GPUs between shard work
+                session_cpu_secs="38528.0",  # shard 6 exited; cputime de-counted
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    # Seed the running max from before the shard exit (the high-water mark)
+    # plus a higher-than-current prev-tick sample, exactly the #658 shape.
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        json.dumps(
+            {
+                "658": {
+                    "phase": "production_shards",
+                    "session_cpu_secs": "193272.0",
+                    "max_cpu_secs": "193272.0",
+                }
+            }
+        )
+    )
+
+    result = pp.poll_once(
+        issue=658,
+        pod="pod-658",
+        log_path="/workspace/logs/issue-658.log",
+        pid_file="/workspace/logs/issue-658.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running", (
+        f"expected status=running (sub-max CPU drop 193272 -> 38528 is a "
+        f"multi-shard child-exit artifact, not a stall); got {result.status!r}; "
+        f"session_cpu_secs={result.session_cpu_secs!r}; "
+        f"cpu_advancing={result.cpu_advancing!r}"
+    )
+    assert result.cpu_advancing is True
+    assert result.session_cpu_secs == "38528.0"
+    # Critical: the drop must NOT lower the running max — it stays the
+    # high-water mark so a LATER genuine stall (flat at 193272) is still
+    # detectable.
+    persisted = json.loads(state_file.read_text())
+    assert persisted["658"]["max_cpu_secs"] == "193272.0"
+
+
+def test_poll_once_backcompat_state_without_max_cpu_secs(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Back-compat: a state file written by a pre-#658 poller carries only
+    ``session_cpu_secs`` (no ``max_cpu_secs``). The advancing decision falls
+    back to that prior sample as the baseline, so a genuine advance still
+    overrides a met stall conjunction, and the next tick seeds the new
+    ``max_cpu_secs`` key."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 2000
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-10 [phase=scoring_syco]",
+                cell_mtime_epoch=quiet,
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=quiet,
+                gpu_util="0,0,0,0",
+                session_cpu_secs="800.0",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    # Pre-#658 state: only session_cpu_secs, no max_cpu_secs.
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        json.dumps({"518": {"phase": "scoring_syco", "session_cpu_secs": "600.0"}})
+    )
+
+    result = pp.poll_once(
+        issue=518,
+        pod="pod-518",
+        log_path="/workspace/logs/issue-518.log",
+        pid_file="/workspace/logs/issue-518.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running"
+    assert result.cpu_advancing is True
+    # The new key is now seeded going forward.
+    persisted = json.loads(state_file.read_text())
+    assert persisted["518"]["max_cpu_secs"] == "800.0"
 
 
 def test_poll_once_cpu_flat_keeps_stalled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

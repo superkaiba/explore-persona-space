@@ -66,6 +66,18 @@ if _REPO_ROOT not in sys.path:
 # ``next_interval`` and for the missing-sidecar terminal JSON.
 _DEFAULT_NEXT_INTERVAL_SEC = 540
 
+# The ``current_phase`` ``GcpBackend.poll`` produces for a true GCP WORKLOAD
+# crash (``eps/phase==failed`` AND the ``eps/workload_started`` sentinel
+# present; #659 MF3). The async-failover predicate matches THIS phase EXACTLY.
+# A GCP setup/boot/secrets/uv-sync failure surfaces ``terminal_setup_failed``
+# (sentinel absent) — a DIFFERENT phase that the predicate excludes, so a
+# broken-boot VM never fails over to RunPod (re-running it there just
+# re-crashes; §7 kill-criterion #1). Kept as a local literal in lock-step with
+# ``gcp._terminal_dead_poll(reason="workload_failed")`` → ``f"terminal_{reason}"``;
+# the §6 GCP poll-discrimination test pins both ends so a future GCP-phase
+# rename breaks a test, not production silently.
+GCP_WORKLOAD_FAILED_PHASE = "terminal_workload_failed"
+
 
 def _resolve_backend(name: str):
     """Map ``handle.backend`` to a ComputeBackend instance.
@@ -164,6 +176,471 @@ def _missing_sidecar_json(issue: int, sidecar_path: Path, reason: str) -> dict:
         # died".
         "failure_class": "infra",
         "reason": "missing_handle_sidecar",
+        "issue": int(issue),
+    }
+
+
+def _is_gcp_async_workload_failure(handle, result) -> bool:
+    """True ONLY for a GCP handle whose poll surfaced a real WORKLOAD crash (#659).
+
+    Narrow BY CONSTRUCTION:
+
+    * ``handle.backend`` must be exactly ``"gcp"`` — a SLURM (``nibi`` / ``fir``
+      / ``mila``) or RunPod handle never trips it (scope discipline §5; the
+      RunPod exclusion is the "exactly once" structural-bound guard: a RunPod
+      re-crash polls a RunPod handle, so it can never re-enter the failover);
+    * ``result.status`` must be ``"dead"``;
+    * ``result.current_phase`` must be EXACTLY
+      :data:`GCP_WORKLOAD_FAILED_PHASE` (``"terminal_workload_failed"``) — the
+      ``gcp.poll`` signal AFTER the §4.1.0b workload-started discrimination. A
+      GCP setup/boot/secrets/uv-sync failure surfaces
+      ``"terminal_setup_failed"`` (DIFFERENT phase → excluded); a GCP
+      instance-gone / capacity / quota death surfaces yet other phases
+      (``"terminal_instance not found"`` / ``"terminal_terminated"`` → also
+      excluded).
+    """
+    return (
+        getattr(handle, "backend", None) == "gcp"
+        and result.status == "dead"
+        and result.current_phase == GCP_WORKLOAD_FAILED_PHASE
+    )
+
+
+def _failover_sentinel_path(sidecar: Path) -> Path:
+    """The idempotency sentinel path for a GCP->RunPod async failover (#659, MF4).
+
+    Derived from the RESOLVED sidecar path (a sibling file in the same
+    ``.claude/cache/`` dir), so it is cwd-INDEPENDENT for free — wherever the
+    sidecar resolved to (canonical ``<main-checkout>/.claude/cache/`` or the
+    legacy ``<cwd>/.claude/cache/`` probe), the sentinel lives right next to it
+    and the same poll-tick resolution finds both. Naming mirrors the handle
+    sidecar: ``issue-<N>-handle.json`` -> ``issue-<N>-failover-persistence-failed.json``.
+    """
+    name = sidecar.name
+    stem = name[: -len("-handle.json")] if name.endswith("-handle.json") else sidecar.stem
+    return sidecar.with_name(f"{stem}-failover-persistence-failed.json")
+
+
+def _gcp_handle_identity(handle) -> dict:
+    """The (pod_name, job_id) identity of a GCP handle, for sentinel matching.
+
+    The sentinel records the identity of the GCP run that ALREADY launched a
+    RunPod failover. A later, genuinely-NEW GCP run (a fresh dispatch writes a
+    fresh sidecar with a NEW pod_name/job_id) must NOT be suppressed by a stale
+    sentinel from a prior crash episode — so the short-circuit fires ONLY when
+    the current GCP handle's identity matches the sentinel's recorded identity.
+    """
+    return {
+        "pod_name": getattr(handle, "pod_name", None),
+        "job_id": getattr(handle, "job_id", None),
+    }
+
+
+def _read_failover_sentinel(sentinel: Path) -> dict | None:
+    """Read the failover sentinel; return its dict body or ``None`` if absent/unreadable.
+
+    A corrupted/unreadable sentinel is treated as ABSENT (return ``None``) so a
+    garbage file can never permanently wedge the failover — the worst case is
+    one extra RunPod launch, never a silent suppression of a legitimate retry.
+    """
+    if not sentinel.exists():
+        return None
+    try:
+        body = json.loads(sentinel.read_text())
+    except (OSError, json.JSONDecodeError, ValueError):
+        return None
+    return body if isinstance(body, dict) else None
+
+
+def _write_failover_sentinel(sentinel: Path, *, issue: int, handle, reason: str) -> None:
+    """Persist the failover sentinel atomically (write-temp + rename), best-effort.
+
+    Records the GCP run identity (pod_name/job_id) so a subsequent poll on the
+    SAME crashed GCP handle short-circuits (no second RunPod launch), while a
+    genuinely-new GCP run is unaffected. Best-effort: a sentinel write that
+    itself fails (the disk is already failing — this is the EDQUOT path) does
+    NOT raise; the terminal infra JSON is still emitted. The cost of a missed
+    sentinel write is at most one extra RunPod launch on the next tick, which
+    the ``recovered.backend != "runpod"`` guard still catches before emitting
+    ``running`` — so the worst case degrades to the pre-fix behavior, never
+    worse.
+    """
+    try:
+        sentinel.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "issue": int(issue),
+            "reason": reason,
+            "gcp": _gcp_handle_identity(handle),
+        }
+        tmp = sentinel.with_suffix(sentinel.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        tmp.replace(sentinel)
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: failed to write failover idempotency sentinel %s (%s: %s); "
+            "the recovered.backend guard still bounds the relaunch",
+            sentinel,
+            type(exc).__name__,
+            exc,
+        )
+
+
+def _clear_failover_sentinel(sentinel: Path) -> None:
+    """Remove the failover sentinel if present (best-effort).
+
+    Called once the sidecar is AUTHORITATIVELY re-pointed at a RunPod handle —
+    the failover succeeded, so any stale sentinel from a prior persistence
+    failure on this issue must not suppress a FUTURE legitimate GCP failover.
+    """
+    try:
+        sentinel.unlink(missing_ok=True)
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: failed to clear failover sentinel %s (%s: %s)",
+            sentinel,
+            type(exc).__name__,
+            exc,
+        )
+
+
+def _lease_records_failover_of(issue: int, handle, *, lease_store=None) -> bool:
+    """True iff the DURABLE lease already records a RunPod failover of THIS GCP run (#659 r3).
+
+    The AUTHORITATIVE idempotency check, independent of the ``.claude/cache``
+    sidecar AND sentinel (both share that dir, so an EDQUOT / read-only-fs /
+    out-of-inodes failure that fails the sidecar write fails the sentinel write
+    too — the round-2 sentinel-only fix degraded to one extra paid launch PER
+    POLL TICK under that persistent-disk-failure mode). The lease lives at
+    ``~/.eps-routing/`` (a DIFFERENT directory; ``LeaseStore`` default), so a
+    failing ``.claude/cache`` mount does not also fail the lease, and the
+    per-issue flock serializes a concurrent poll.
+
+    Keyed to the GCP run's stable identity (``pod_name``/``job_id``), so it
+    fires "exactly once PER GCP CRASH", NOT "exactly once per issue": a
+    genuinely-new GCP run on the same issue (fresh dispatch -> new pod_name)
+    writes a fresh lease that does NOT match a prior failover stamp, so it
+    still gets its own single failover.
+
+    A LeaseStore failure (no ``$HOME``, dir uncreatable) is treated as
+    "no record" (return ``False``) — the worst case is one extra RunPod launch
+    (the same bound the sentinel fast-path and the ``recovered.backend`` guard
+    already provide), NEVER a silent suppression of a legitimate retry.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    try:
+        lease = store.read(int(issue))
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: lease-store read failed for issue %s (%s: %s); "
+            "treating as no prior-failover record (the sentinel/backend guards still bound it)",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return False
+    if lease is None or lease.backend != "runpod":
+        return False
+    return lease.gcp_failover_of == _gcp_handle_identity(handle)
+
+
+def _stamp_lease_failover_of(issue: int, handle, *, lease_store=None) -> None:
+    """Record on the DURABLE lease that a RunPod failover of THIS GCP run launched (#659 r3).
+
+    Called IMMEDIATELY after the router's RunPod launch SUCCEEDS, BEFORE the
+    ``.claude/cache`` sidecar write — so the authoritative idempotency record
+    lands at ``~/.eps-routing/`` regardless of whether the subsequent sidecar
+    write fails under EDQUOT. Stamps ``gcp_failover_of`` onto the lease the
+    router ALREADY wrote inside its own ``store.transaction`` (a read-modify-
+    write under the per-issue flock that preserves backend/job_id/attempt_id).
+
+    Best-effort about the LeaseStore itself: a write failure (no ``$HOME``, dir
+    uncreatable) is logged, not raised — the failover already launched, and the
+    sentinel fast-path + ``recovered.backend`` guard still bound the relaunch.
+    The lease is the SAFETY NET for the EDQUOT-on-.claude/cache mode, not a hard
+    precondition that can itself block the failover.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    identity = _gcp_handle_identity(handle)
+    try:
+        with store.transaction(int(issue)) as (lease, write):
+            if lease is None:
+                # The router's lease write should have just landed; if it is
+                # somehow absent, there is nothing to stamp authoritatively —
+                # the sentinel fast-path remains the fallback record.
+                logging.warning(
+                    "backend_poll: no lease present to stamp gcp_failover_of for issue %s; "
+                    "relying on the sentinel/backend guards",
+                    issue,
+                )
+                return
+            lease.gcp_failover_of = identity
+            write(lease)
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: lease-store stamp failed for issue %s (%s: %s); "
+            "the sentinel/backend guards still bound the relaunch",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+
+
+def _runspec_from_gcp_handle(handle, issue):
+    """Reconstruct the ``RunSpec`` for the RunPod re-launch from the GCP handle.
+
+    After the §4.1.0 spec-threading sub-change lands, ``handle.extra`` carries
+    ``intent``, ``gpus``, ``time_budget_hours``, ``hydra_args`` (list/tuple),
+    and ``workload_cmd`` (str) — exactly the fields a minimal ``RunSpec``
+    needs. Reads BOTH ``workload_cmd`` (a ``str``, passed through verbatim — NO
+    ``tuple(...)``/``list(...)`` coercion, MF1) AND ``hydra_args`` (coerced back
+    to a tuple) and passes EACH THROUGH VERBATIM: one is empty by construction
+    (the GCP run used exactly one branch), so ``RunSpec.__post_init__``'s mutual
+    exclusion holds with NO placeholder substituted into the unused branch
+    (MF2).
+
+    FAILS LOUD (raises ``ValueError``) on a pre-#659 handle that lacks the
+    workload command — it NEVER silently launches a blank RunPod job (the
+    §4.1.0 spec-threading is a HARD PREREQUISITE; the fact-checker confirmed
+    A7=WRONG, the pre-#659 ``extra`` did not carry it).
+    """
+    from explore_persona_space.backends.base import RunSpec
+
+    extra = handle.extra or {}
+    if "workload_cmd" not in extra or "hydra_args" not in extra:
+        raise ValueError(
+            f"GCP handle for issue {issue} lacks workload_cmd/hydra_args in extra "
+            f"(pre-#659 handle?); cannot reconstruct a RunSpec for the RunPod failover. "
+            f"Refusing to launch a blank RunPod job."
+        )
+    workload_cmd = extra["workload_cmd"]  # str, verbatim (MF1)
+    hydra_args = tuple(extra["hydra_args"])  # list/tuple -> tuple, verbatim
+    return RunSpec(
+        issue=int(issue),
+        intent=extra.get("intent", "lora-7b"),
+        backend="runpod",
+        gpus=extra.get("gpus"),
+        time_budget_hours=extra.get("time_budget_hours"),
+        workload_cmd=workload_cmd,
+        hydra_args=hydra_args,
+    )
+
+
+def _terminal_infra_json(*, issue: int, sidecar: Path, reason: str, log_tail: str) -> dict:
+    """A ``status='dead'`` / ``failure_class='infra'`` poll JSON keyed by ``reason``.
+
+    Mirrors :func:`_missing_sidecar_json`. Used for BOTH the RunPod-unavailable
+    case (``reason='no_compute_available'`` — IN ``TRANSIENT_CAPACITY_REASONS``,
+    so the watcher's capacity-retry pass re-drives it once a lane frees) AND the
+    sidecar-persistence-failure case (``reason='sidecar_persistence_failed'`` —
+    NOT in ``TRANSIENT_CAPACITY_REASONS``, so the watcher parks it at ``blocked``
+    for human inspection rather than re-driving).
+    """
+    return {
+        "status": "dead",
+        "current_phase": f"terminal_{reason}",
+        "new_milestone": True,
+        "last_log_mtime_sec_ago": 10**9,
+        "pid_alive": False,
+        "log_tail_excerpt": log_tail,
+        "gate": None,
+        "sentinels_processed": 0,
+        "phase_log_mtime_sec_ago": 10**9,
+        "shard_log_mtime_sec_ago": 10**9,
+        "gpu_util": "unknown",
+        "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
+        "failure_class": "infra",
+        "reason": reason,
+        "issue": int(issue),
+    }
+
+
+def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
+    """Run the RunPod terminal rung for a dead GCP workload (#659).
+
+    Reconstructs a ``RunSpec`` from the GCP handle, launches the SAME RunPod
+    terminal rung the sync failover uses, AUTHORITATIVELY re-points the handle
+    sidecar at the new RunPod handle (write + readback), and returns a
+    RUNNING-shaped poll JSON so the orchestrator keeps polling (the next tick
+    reads the now-RunPod sidecar) instead of posting ``epm:failure`` for the GCP
+    death. Returns a TERMINAL infra JSON instead if RunPod is unavailable
+    (``no_compute_available``) or the sidecar persistence fails
+    (``sidecar_persistence_failed``).
+    """
+    # Lazy imports — keep the --help path fast and match the patch targets the
+    # poller tests monkeypatch (RunPodBackend from backends.runpod;
+    # write/read_handle_sidecar from backends.issue_dispatch).
+    from explore_persona_space.backends.issue_dispatch import (
+        read_handle_sidecar,
+        write_handle_sidecar,
+    )
+    from explore_persona_space.backends.router import (
+        NoComputeAvailableError,
+        failover_to_runpod_after_async_workload_crash,
+    )
+    from explore_persona_space.backends.runpod import RunPodBackend
+    from explore_persona_space.backends.slurm import post_marker_via_task_py
+
+    # IDEMPOTENCY SHORT-CIRCUIT (#659). A prior tick may have ALREADY launched a
+    # RunPod failover for THIS crashed GCP run but failed to persist the
+    # re-pointed sidecar (disk error / EDQUOT). In that case the sidecar still
+    # holds the GCP handle, so this predicate re-fires on the next poll — but
+    # launching a SECOND RunPod is a paid duplicate that breaches "exactly once".
+    #
+    # TWO records guard the relaunch, in the order they are checked:
+    #
+    #   1. DURABLE lease (AUTHORITATIVE, round-3 fix). The lease at
+    #      ``~/.eps-routing/`` (a DIFFERENT directory from ``.claude/cache``) is
+    #      stamped with ``gcp_failover_of`` BEFORE the sidecar write below, so it
+    #      survives the EDQUOT / read-only-fs / out-of-inodes mode that fails the
+    #      sidecar write AND the same-dir sentinel write together. It is the
+    #      SAFETY NET that makes "exactly once per GCP crash" hold under a
+    #      persistent ``.claude/cache`` disk failure. Round 2's sentinel-only fix
+    #      degraded to one extra paid launch PER POLL TICK in that mode.
+    #
+    #   2. SENTINEL (OPTIMIZATION). The ``.claude/cache`` sentinel is the fast
+    #      path — a sibling-file read that avoids the lease-store flock round-trip
+    #      on the common case (no disk failure). Kept for that reason; it is no
+    #      longer the safety guarantee.
+    #
+    # Both are keyed to the GCP run's pod_name/job_id, so a genuinely-new GCP run
+    # (fresh dispatch -> new pod_name) does NOT match a stale record and still
+    # gets its own one failover. The recovered.backend guard further down only
+    # blocks emitting "running"; these two guards are what bound the RE-LAUNCH
+    # across polls.
+    sentinel = _failover_sentinel_path(sidecar)
+    prior = _read_failover_sentinel(sentinel)
+    sentinel_match = prior is not None and prior.get("gcp") == _gcp_handle_identity(handle)
+    if sentinel_match or _lease_records_failover_of(issue, handle):
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"GCP->RunPod failover for {handle.pod_name} ALREADY launched RunPod on a "
+                f"prior tick but failed to persist the sidecar "
+                f"({'sentinel ' + sentinel.name if sentinel_match else 'durable lease record'}); "
+                f"refusing to launch a SECOND RunPod (exactly-once bound, #659)"
+            ),
+        )
+
+    spec = _runspec_from_gcp_handle(handle, issue)
+    try:
+        route_result = failover_to_runpod_after_async_workload_crash(
+            spec=spec,
+            runpod_backend=RunPodBackend(),
+            evidence={
+                "source": "async_poller",
+                "current_phase": result.current_phase,
+                "log_tail_excerpt": result.log_tail_excerpt,
+                "gcp_pod_name": handle.pod_name,
+            },
+            marker_poster=post_marker_via_task_py,
+            # BEST-EFFORT in-route lease-mid-flight write (mirrors
+            # dispatch_for_issue's on_launched). _invoke_on_launched SWALLOWS the
+            # hook's exceptions (logged loud, not propagated), so this is NOT
+            # authoritative — the post-route write/readback below is.
+            on_launched=lambda h: write_handle_sidecar(h, sidecar),
+        )
+    except NoComputeAvailableError:
+        # RunPod truly unavailable: terminal infra JSON with
+        # reason=no_compute_available so the watcher's capacity-retry pass CAN
+        # re-drive once a lane frees. Sidecar left pointing at the GCP handle.
+        # No lease stamp here — nothing launched, so a later poll SHOULD retry.
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="no_compute_available",
+            log_tail=(
+                f"GCP workload crash on {handle.pod_name}; RunPod also unavailable "
+                f"(#659 async failover)"
+            ),
+        )
+
+    # DURABLE IDEMPOTENCY STAMP (#659 round-3). RunPod has now launched. Stamp
+    # ``gcp_failover_of`` onto the ``~/.eps-routing/`` lease the router just
+    # wrote BEFORE attempting the ``.claude/cache`` sidecar write below — so the
+    # authoritative "exactly once per GCP crash" record lands on a DIFFERENT
+    # mountpoint than the sidecar. If the sidecar write then fails under EDQUOT
+    # (and the same-dir sentinel write fails with it), the lease record still
+    # survives and the next poll short-circuits at the lease check above instead
+    # of firing a paid second RunPod launch. This ordering is the round-3 fix:
+    # round 2 had no record that survived a ``.claude/cache``-wide disk failure.
+    _stamp_lease_failover_of(issue, handle)
+
+    # AUTHORITATIVE post-route sidecar write + readback (MF4). The on_launched
+    # hook above is best-effort (its exceptions are swallowed by the router), so
+    # re-point the sidecar HERE and PROVE it landed as a RunPod handle. WITHOUT
+    # this, a swallowed on_launched failure would leave a GCP handle on disk
+    # while the launch already succeeded; the next tick would re-read a GCP
+    # handle, re-satisfy backend=="gcp", and fire a SECOND RunPod launch —
+    # breaching "exactly once". So a re-pointed RunPod sidecar is a PRECONDITION
+    # of emitting "running", not a hopeful side effect.
+    try:
+        write_handle_sidecar(route_result.handle, sidecar)
+        recovered = read_handle_sidecar(sidecar)
+    except (OSError, json.JSONDecodeError, KeyError, ValueError) as exc:
+        # RunPod was ALREADY launched above; the sidecar could NOT be re-pointed.
+        # Persist the idempotency sentinel BEFORE returning so the next poll on
+        # the still-GCP handle short-circuits (no second RunPod launch).
+        _write_failover_sentinel(
+            sentinel, issue=issue, handle=handle, reason="sidecar_persistence_failed_write"
+        )
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"GCP->RunPod failover launched RunPod {route_result.handle.pod_name} "
+                f"but sidecar persistence FAILED ({type(exc).__name__}: {exc}); refusing "
+                f"to emit running (would re-launch RunPod next tick)"
+            ),
+        )
+    if recovered.backend != "runpod":
+        # RunPod was launched but the readback is not a RunPod handle (a
+        # concurrent overwrite, or a write that silently no-op'd). Same hazard
+        # as the raise above — persist the sentinel before returning so the
+        # next poll does not fire a second launch.
+        _write_failover_sentinel(
+            sentinel, issue=issue, handle=handle, reason="sidecar_persistence_failed_readback"
+        )
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"GCP->RunPod failover: sidecar readback shows backend={recovered.backend!r}, "
+                f"not 'runpod'; refusing to emit running (would re-launch RunPod next tick)"
+            ),
+        )
+
+    # Sidecar AUTHORITATIVELY re-pointed at a RunPod handle -> the failover
+    # succeeded. Clear any stale sentinel so a FUTURE legitimate GCP failover on
+    # this issue is not suppressed.
+    _clear_failover_sentinel(sentinel)
+
+    # Sidecar is now an AUTHORITATIVE RunPod handle on disk → the orchestrator's
+    # NEXT tick reads RunPod and polls RunPod. Emit a RUNNING-shaped JSON so the
+    # loop does NOT post epm:failure for the GCP death.
+    return {
+        "status": "running",
+        "current_phase": "gcp_workload_failover_runpod_async",
+        "new_milestone": True,
+        "last_log_mtime_sec_ago": 0,
+        "pid_alive": True,
+        "log_tail_excerpt": (
+            f"GCP workload crash on {handle.pod_name}; failed over to RunPod "
+            f"{route_result.handle.pod_name} (#659 async failover)"
+        ),
+        "gate": None,
+        "sentinels_processed": 0,
+        "phase_log_mtime_sec_ago": 10**9,
+        "shard_log_mtime_sec_ago": 10**9,
+        "gpu_util": "unknown",
+        "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
         "issue": int(issue),
     }
 
@@ -267,6 +744,26 @@ def main(argv: list[str] | None = None) -> int:
 
     backend = _resolve_backend(handle.backend)
     result = backend.poll(handle)
+
+    # ASYNC GCP-workload-failover (#659): a GCP VM that was already up and
+    # crashed its WORKLOAD (not setup) minutes in surfaces here as
+    # status=dead / current_phase="terminal_workload_failed". The synchronous
+    # route()-time failover (#658) cannot reach this case — the VM is already
+    # launched, so there is no live route() call to raise from. Re-dispatch on
+    # RunPod exactly once (the SAME terminal rung), authoritatively re-point the
+    # handle sidecar at the new RunPod handle, and emit a RUNNING-shaped JSON so
+    # the orchestrator's poll loop keeps polling the RunPod run instead of
+    # posting epm:failure. A setup/boot failure surfaces
+    # current_phase="terminal_setup_failed" (GCP poll discrimination, §4.1.0b)
+    # and does NOT match the predicate → it falls through to the ordinary dead
+    # path (failure_class: code → blocked).
+    if _is_gcp_async_workload_failure(handle, result):
+        failover_json = _failover_dead_gcp_to_runpod(
+            issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
+        )
+        print(json.dumps(failover_json))
+        return 0
+
     print(json.dumps(_serialize_poll_result(result)))
     return 0
 

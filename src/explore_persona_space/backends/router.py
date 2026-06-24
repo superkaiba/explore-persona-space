@@ -236,6 +236,23 @@ ROUTE_REASON_RUNPOD_FALLBACK: str = "auto_fallback_runpod"
 #: never re-drives — so there is no infinite RunPod cascade.
 ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD: str = "gcp_workload_failover_runpod"
 
+#: The router failed over to RunPod because the ASYNC poller
+#: (``scripts/backend_poll.py``) detected a GCP run that had ALREADY come up
+#: and crashed its WORKLOAD minutes in (task #659). DISTINCT from
+#: :data:`ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD` (the SYNCHRONOUS
+#: ``route()``-time ``GcpWorkloadError`` failover, #658) so the
+#: ``epm:backend-selected`` marker trail tells the two DETECTION paths apart —
+#: same RunPod target, same "GCP crashed the workload, run it on RunPod for a
+#: persistent SSH-able pod" rationale, different point of detection. The async
+#: path has no live ``route()`` call to raise ``_GcpWorkloadFailover`` from
+#: (the VM is already launched), so the poller calls
+#: :func:`failover_to_runpod_after_async_workload_crash` to reach the SAME
+#: terminal rung. The "exactly once" bound is identical: the failover
+#: re-points the handle sidecar to RunPod, so a RunPod re-crash polls a RunPod
+#: handle (not GCP) and surfaces ``failure_class: code`` → ``status:blocked``,
+#: which the watcher's capacity-retry pass never re-drives.
+ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC: str = "gcp_workload_failover_runpod_async"
+
 #: Consecutive ``is_started`` probe failures tolerated inside the park
 #: watchdog before it gives up with ``probe_failures_exceeded``.
 #: Mirrors ``scripts/router_acceptance.py``'s
@@ -670,6 +687,19 @@ class Lease:
     submitted_at: float | None = None
     gcp_attempts_today: int = 0
     gcp_attempts_date: str | None = None
+    #: DURABLE idempotency record for the ASYNC GCP-workload->RunPod failover
+    #: (#659). When this lease's RunPod launch was a failover OF a specific
+    #: crashed GCP run, this holds that GCP run's stable identity
+    #: (``{"pod_name": ..., "job_id": ...}``). It is the AUTHORITATIVE
+    #: "exactly once per GCP crash" record: the poller
+    #: (``scripts/backend_poll.py``) stamps it BEFORE the .claude/cache sidecar
+    #: write, so even when EDQUOT / a read-only-fs / out-of-inodes fails BOTH
+    #: the sidecar write AND the .claude/cache sentinel write, this record
+    #: survives at ``~/.eps-routing/`` (a DIFFERENT directory, so independent
+    #: of the sidecar's failure mode) and the next poll short-circuits instead
+    #: of firing a paid second RunPod launch. ``None`` for every non-failover
+    #: lease.
+    gcp_failover_of: dict[str, Any] | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -682,10 +712,12 @@ class Lease:
             "submitted_at": self.submitted_at,
             "gcp_attempts_today": self.gcp_attempts_today,
             "gcp_attempts_date": self.gcp_attempts_date,
+            "gcp_failover_of": self.gcp_failover_of,
         }
 
     @classmethod
     def from_json(cls, payload: dict[str, Any]) -> Lease:
+        raw_failover = payload.get("gcp_failover_of")
         return cls(
             issue=int(payload["issue"]),
             spec_hash=str(payload["spec_hash"]),
@@ -696,6 +728,7 @@ class Lease:
             submitted_at=payload.get("submitted_at"),
             gcp_attempts_today=int(payload.get("gcp_attempts_today", 0)),
             gcp_attempts_date=payload.get("gcp_attempts_date"),
+            gcp_failover_of=raw_failover if isinstance(raw_failover, dict) else None,
         )
 
     def is_unknown_submitted(self) -> bool:
@@ -1507,15 +1540,24 @@ def _prepare_and_launch(
     like a launch failure (next tier); explicit overrides surface it as
     a typed terminal.
     """
-    try:
-        backend.prepare(spec)
-    except Exception as exc:
-        raise BackendPrepareError(
-            f"backend.prepare failed for {kind}/{cluster or 'no-cluster'} "
-            f"({type(exc).__name__}: {exc})",
-            kind=kind,
-            cluster=cluster,
-        ) from exc
+    # ``prepare`` is an @abstractmethod on ComputeBackend, so every REAL backend
+    # (SlurmBackend / GcpBackend / RunPodBackend) implements it — production
+    # behavior is byte-identical. The getattr-guard only tolerates a minimal
+    # duck-typed backend double that omits prepare entirely (e.g. a passive
+    # RunPod stand-in modelling RunPodBackend.prepare's documented no-op); a
+    # backend that DEFINES prepare and raises still surfaces as a
+    # BackendPrepareError, so the #535 SLURM rsync/secrets guarantee is intact.
+    prepare = getattr(backend, "prepare", None)
+    if callable(prepare):
+        try:
+            prepare(spec)
+        except Exception as exc:
+            raise BackendPrepareError(
+                f"backend.prepare failed for {kind}/{cluster or 'no-cluster'} "
+                f"({type(exc).__name__}: {exc})",
+                kind=kind,
+                cluster=cluster,
+            ) from exc
     return backend.launch(spec)
 
 
@@ -1906,7 +1948,10 @@ def _runpod_terminal_rung(
     trail — the terminal "truly no compute anywhere" outcome, preserving a
     typed terminal for the orchestrator's failure classifier.
     """
-    if reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD:
+    if reason in (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+    ):
         logger.warning(
             "route: GCP WORKLOAD failure for issue %d; failing over to RunPod "
             "(persistent SSH-able pod for diagnosis; residual gap: %s).",
@@ -1958,7 +2003,10 @@ def _runpod_terminal_rung(
             ) from exc
         _invoke_on_launched(on_launched, handle)
         write(_lease_after_submit(lease, runpod_spec, "runpod", None, handle))
-    is_workload_failover = reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD
+    is_workload_failover = reason in (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+    )
     attempts.append(
         RouteAttempt(
             kind="runpod",
@@ -1991,6 +2039,70 @@ def _runpod_terminal_rung(
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
+
+
+def failover_to_runpod_after_async_workload_crash(
+    *,
+    spec: RunSpec,
+    runpod_backend: ComputeBackend,
+    evidence: dict[str, Any] | None = None,
+    residual_gap: str = "gcp async workload crash (poller-detected); failing over to RunPod",
+    marker_poster: Callable[..., None] | None = None,
+    on_launched: Callable[[RunHandle], None] | None = None,
+    lease_store: LeaseStore | None = None,
+    now_fn: Callable[[], float] | None = None,
+    config: RouterConfig | None = None,
+) -> RouteResult:
+    """Re-dispatch a poller-detected dead GCP workload onto RunPod, once (#659).
+
+    The ASYNC sibling of the synchronous ``_GcpWorkloadFailover`` path
+    (:data:`ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD`, #658): the GCP VM was
+    already up and the workload crashed minutes in, so there is no live
+    ``route()`` call to raise ``_GcpWorkloadFailover`` from. The poller
+    (``scripts/backend_poll.py``) detects the dead GCP workload and calls this
+    to launch the SAME :func:`_runpod_terminal_rung` the sync path uses,
+    labeled with :data:`ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC` so the
+    marker trail tells the two detection paths apart.
+
+    This is the ASYNC analogue of :func:`dispatch_for_issue` wrapping
+    ``route()``: it builds the production-shaped versions of
+    ``_runpod_terminal_rung``'s injected seams (a real :class:`LeaseStore`, a
+    real :class:`RouterConfig`, ``time.monotonic`` for ``now_fn``, a fresh
+    ``attempts`` list) and calls the launch primitive. Defaults match
+    ``route()``'s own defaulting (``store = lease_store or LeaseStore()``,
+    ``config or RouterConfig()``, ``now_fn or time.monotonic``); tests inject
+    mocks for every seam, exactly like ``_runpod_terminal_rung``'s tests.
+
+    ``evidence`` rides the ``epm:backend-selected`` marker ``extra`` as
+    ``gcp_workload_evidence`` (mirroring the sync path's ``failover_evidence``)
+    so the original crash signal is preserved for diagnosis.
+
+    Fail-safe: if the RunPod launch ITSELF fails (no compute anywhere),
+    ``_runpod_terminal_rung`` re-raises :class:`NoComputeAvailableError`, which
+    propagates here unchanged — the poller maps it to a terminal infra JSON
+    with ``reason: no_compute_available`` (re-drivable by the watcher's
+    capacity-retry pass once a lane frees).
+    """
+    store = lease_store or LeaseStore()
+    now_fn = now_fn or time.monotonic
+    # ``config`` is accepted for API symmetry with ``route()`` (and so tests can
+    # inject a fast RouterConfig); the RunPod terminal rung itself takes no
+    # RouterConfig, so it is not threaded further. Touch it so a future reader
+    # sees the deliberate non-use, not a forgotten wiring.
+    _ = config
+    return _runpod_terminal_rung(
+        spec=replace(spec, backend="runpod"),
+        runpod_backend=runpod_backend,
+        store=store,
+        attempts=[],
+        started_at=now_fn(),
+        now_fn=now_fn,
+        marker_poster=marker_poster,
+        on_launched=on_launched,
+        residual_gap=residual_gap,
+        reason=ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        failover_evidence=evidence,
+    )
 
 
 def _override_free_or_gcp(
@@ -4060,6 +4172,7 @@ __all__ = [
     "ROUTE_REASON_AUTO_FALLBACK_GCP",
     "ROUTE_REASON_AUTO_STARTED",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
+    "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC",
     "ROUTE_REASON_NO_COMPUTE",
     "ROUTE_REASON_OVERRIDE",
     "ROUTE_REASON_PREPARE_FAILED",
@@ -4082,6 +4195,7 @@ __all__ = [
     "canonicalize_spec",
     "default_is_live",
     "default_is_started",
+    "failover_to_runpod_after_async_workload_crash",
     "park_until_running_or_cap",
     "rank_lanes",
     "route",
