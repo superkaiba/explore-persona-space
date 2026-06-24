@@ -75,6 +75,20 @@ HF_PREFIX = "issue658_theory_assumptions"
 # bounds the captured answer-token count.
 V0_MAX_NEW_TOKENS = 512
 
+# Single-context (C = δ_x) sampling contract (plan §1.9 / §1.10). For EVERY
+# (battery context × probe) pair we sample R≥8 temp-1.0 completions, capture
+# EACH sample's answer-side residual activations (ALL layers, mean over the
+# answer span), and judge each → a within-prompt rate. The store reads these
+# as: v0(δ_x) = mean over the R per-sample activations; within-prompt rate over
+# the R judged samples; within-context noise floor from independent R-sample
+# splits. R=8 is the plan default; temp 1.0 is the on-policy multi-sample pass.
+SINGLE_CONTEXT_R = 8
+SINGLE_CONTEXT_TEMPERATURE = 1.0
+# Per-sample answer-generation cap (the captured span is meaned per sample, so
+# this bounds the teacher-forcing length, not the stored size). Matches the
+# greedy v0 cap so the two reads are length-comparable.
+SINGLE_CONTEXT_MAX_NEW_TOKENS = 512
+
 
 # ── v0 summary recipes (plan §4.2) ───────────────────────────────────────────
 # Each recipe reduces a per-probe answer-token activation span (S, H) to a

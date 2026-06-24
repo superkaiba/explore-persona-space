@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF002, RUF003
+# ruff: noqa: RUF001, RUF002, RUF003
 # Intentional Unicode (※, ā, θ, Σ, →, ρ, ×) in scientific docstrings + log messages.
 """Issue #658 GPU phase: base-model activation store (v0(C) / c_C / r_B / Σ_c).
 
@@ -103,6 +103,9 @@ from issue658_common import (  # noqa: E402
     HF_OVERFLOW_REPO,
     HF_PREFIX,
     MARKER_TOKEN_ID,
+    SINGLE_CONTEXT_MAX_NEW_TOKENS,
+    SINGLE_CONTEXT_R,
+    SINGLE_CONTEXT_TEMPERATURE,
     SUMMARY_RECIPES,
     V0_MAX_NEW_TOKENS,
     dump_json,
@@ -793,6 +796,131 @@ def _hf_completion_logp(model, prompt_ids, gen_ids) -> float:
     return float(tok_lp.mean().item())
 
 
+# ── G7: single-context (C = δ_x) R-sample capture (plan §1.10) ────────────────
+
+
+def _vllm_sample_R(
+    model_name: str,
+    prompts: list[str],
+    n_samples: int,
+    temperature: float,
+    max_new_tokens: int,
+) -> list[list[dict]]:
+    """vLLM batched R-sample generation: per prompt return n_samples completions.
+
+    ONE shared engine over ALL prompts (reaped once). Each completion carries its
+    text + length-normalized log-prob (``logp_norm``, the dual-DV secondary).
+    Returns out[i] = [{text, logp_norm}, ...] of length n_samples for prompt i.
+    use_tqdm=False (gotchas.md #613).
+    """
+    from vllm import LLM, SamplingParams
+
+    llm = LLM(model=model_name, dtype="bfloat16", gpu_memory_utilization=0.45)
+    sp = SamplingParams(n=n_samples, temperature=temperature, max_tokens=max_new_tokens, logprobs=0)
+    try:
+        outs = llm.generate(prompts, sp, use_tqdm=False)
+    finally:
+        _reap_vllm(llm)
+    result: list[list[dict]] = []
+    for o in outs:
+        comps = []
+        for c in o.outputs:
+            ntok = max(1, len(c.token_ids))
+            comps.append({"text": c.text, "logp_norm": float(c.cumulative_logprob) / ntok})
+        result.append(comps)
+    return result
+
+
+def _hf_sample_R(
+    model, tokenizer, prompts: list[str], n_samples: int, temperature: float, max_new_tokens: int
+) -> list[list[dict]]:
+    """HF temp>0 sampling fallback (CPU smoke / --no-vllm): per prompt n_samples."""
+    result: list[list[dict]] = []
+    for text in prompts:
+        inputs = tokenizer(text, return_tensors="pt", padding=False).to(model.device)
+        comps = []
+        for _ in range(n_samples):
+            with torch.no_grad():
+                out = model.generate(
+                    **inputs,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=temperature > 0.0,
+                    temperature=temperature if temperature > 0.0 else None,
+                    top_p=None,
+                )
+            gen_ids = out[0, inputs["input_ids"].shape[1] :]
+            text_out = tokenizer.decode(gen_ids, skip_special_tokens=True)
+            logp_norm = _hf_completion_logp(model, inputs["input_ids"], gen_ids)
+            comps.append({"text": text_out, "logp_norm": logp_norm})
+        result.append(comps)
+    return result
+
+
+def capture_single_context_for_context(
+    model,
+    tokenizer,
+    instance: dict,
+    probes: list[str],
+    samples_by_probe: list[list[dict]],
+    capture: AnswerSpanCapture,
+    n_layers: int,
+    capture_layers: list[int],
+) -> list[dict]:
+    """Teacher-force EACH temp-1.0 sample per probe; capture its mean answer span.
+
+    The §1.10 single-context BLOCKER: for every (context × probe), every one of
+    the R sampled completions gets its answer-side residual activations captured
+    (ALL captured layers, meaned over the answer span — stored per sample, NOT
+    just the greedy v0 span). The store reads these as v0(δ_x) = mean over the R
+    per-sample activation means + the within-prompt rate over the R judged
+    samples + the within-context noise floor from independent R-sample splits.
+
+    Returns per_probe[p] = {
+        "probe": <text>,
+        "samples": [{"text", "logp_norm", "act": (Lc, H) fp16 mean answer span}, ...],
+    } — one entry per probe; each ``act`` is the per-sample mean answer-side
+    activation (None for an empty completion, logged + skipped, never silent).
+    """
+    import torch as _t
+
+    lc = len(capture_layers)
+    per_probe: list[dict] = []
+    for q, samples in zip(probes, samples_by_probe, strict=True):
+        messages = messages_for_instance(instance, q)
+        prompt_text = tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        prompt_ids = tokenizer(prompt_text, return_tensors="pt", padding=False)["input_ids"]
+        prompt_len = int(prompt_ids.shape[1])
+        sample_recs: list[dict] = []
+        for s in samples:
+            ans = s["text"]
+            ans_ids = tokenizer(ans, return_tensors="pt", add_special_tokens=False)["input_ids"]
+            if ans_ids.shape[1] == 0:
+                logger.warning(
+                    "empty single-context sample for instance=%s probe=%r — act=None",
+                    instance["id"],
+                    q[:40],
+                )
+                sample_recs.append({"text": ans, "logp_norm": s["logp_norm"], "act": None})
+                continue
+            full_ids = _t.cat([prompt_ids, ans_ids], dim=1).to(model.device)
+            ans_len = int(ans_ids.shape[1])
+            with _t.no_grad():
+                _ = model(input_ids=full_ids)
+            span = capture.answer_span_stack(n_layers, prompt_len, prompt_len + ans_len)
+            assert span.shape[1] == ans_len, (
+                f"single-context span length mismatch instance={instance['id']} probe={q[:30]!r}: "
+                f"captured {span.shape[1]} != {ans_len} answer tokens"
+            )
+            # per-sample MEAN over the answer span, per captured layer (Lc, H) fp16
+            act = span[capture_layers].float().mean(dim=1).to(_t.float16)
+            assert act.shape == (lc, model.config.hidden_size), act.shape
+            sample_recs.append({"text": ans, "logp_norm": s["logp_norm"], "act": act})
+        per_probe.append({"probe": q, "samples": sample_recs})
+    return per_probe
+
+
 # ── G2: teacher-forced answer-side capture ───────────────────────────────────
 
 
@@ -1210,18 +1338,28 @@ def run_context_phases(
     n_layers: int,
     out_dir: Path,
     run,
+    upload_partial: bool = False,
 ) -> dict:
-    """G1 generate + G2 capture + G3 c_C-mean-prompt + G6 E0 over ``instances``.
+    """G1 generate + G2 capture + G3 c_C-mean-prompt + G7 single-ctx + G6 E0.
 
     The per-context (data-parallel) phases. Writes, under ``out_dir``:
       - ``answer_spans/<ctx>.pt``      per-(C,probe) answer spans (N1 + attn fit)
       - ``answer_spans/index.json``    the per-(C) → probes map (shard-local)
       - ``v0_summaries.pt``            {recipe: {ctx: (Lc,H)}} + cc_meanprompt
+      - ``single_context/<ctx>.pt``    per-(C,probe,sample) §1.10 R-sample acts
       - raw completions + E0 gen JSONs under ``EVAL_RESULTS_DIR`` (per-cell)
 
     Identical phase semantics whether this is the whole battery (all-in-one /
-    smoke single-process) or one shard's context subset (8-GPU worker). Returns
-    a small telemetry dict for the caller's sentinel/manifest.
+    smoke single-process) or one shard's context subset (8-GPU worker).
+
+    ``upload_partial`` (default False): whether the G6 marker/judged loops do
+    their own periodic partial e0_gen/ HF uploads. In the 8-GPU shard mode this
+    is FALSE — 8 concurrent shards would race on the same HF dataset ref (the
+    round-2 partial-upload feature predates sharding). The authoritative single
+    upload is done ONCE by the ``--merge`` step over the consolidated
+    EVAL_RESULTS_DIR. The all-in-one path also defaults to False (its end-of-run
+    ``upload_raw_completions`` is the single authoritative upload). Returns a
+    small telemetry dict for the caller's sentinel/manifest.
     """
     spans_dir = out_dir / "answer_spans"
     spans_dir.mkdir(parents=True, exist_ok=True)
@@ -1309,6 +1447,77 @@ def run_context_phases(
         out_dir / "v0_summaries.pt",
     )
 
+    # ── G7: single-context (C = δ_x) R-sample capture (plan §1.10 BLOCKER) ─────
+    # For EVERY (context × probe) sample R≥8 temp-1.0 completions, capture EACH
+    # sample's mean answer-side activations (ALL captured layers), and store
+    # per-(C, probe, sample) under single_context/<ctx>.pt. The completions text
+    # is judged off-pod (J1) → the within-prompt rate; v0(δ_x) = mean over the R
+    # per-sample activations; the within-context noise floor = independent
+    # R-sample splits. This is the single-context arm's required store granularity
+    # (the greedy v0 span above is the distributional v0(C); these are the δ_x
+    # reads). Smoke clamps R + max_new_tokens; --skip-single-context for debug.
+    if not args.skip_single_context:
+        phase("g7_single_context")
+        r_samples = (
+            min(SINGLE_CONTEXT_R, args.single_context_r_smoke) if args.smoke else SINGLE_CONTEXT_R
+        )
+        sc_cap = (
+            min(SINGLE_CONTEXT_MAX_NEW_TOKENS, args.max_new_tokens_smoke)
+            if args.smoke
+            else SINGLE_CONTEXT_MAX_NEW_TOKENS
+        )
+        sc_dir = out_dir / "single_context"
+        sc_dir.mkdir(parents=True, exist_ok=True)
+        sc_capture = AnswerSpanCapture(model, n_layers)
+        sc_done = 0
+        try:
+            for inst in instances:
+                iid = inst["id"]
+                sc_path = sc_dir / f"{iid}.pt"
+                if sc_path.exists():  # checkpoint-per-context resume
+                    sc_done += 1
+                    continue
+                ctx_probes = [r["probe"] for r in by_ctx[iid]]
+                sc_prompts = [
+                    tokenizer.apply_chat_template(
+                        messages_for_instance(inst, q), tokenize=False, add_generation_prompt=True
+                    )
+                    for q in ctx_probes
+                ]
+                if args.no_vllm or not use_cuda:
+                    samples_by_probe = _hf_sample_R(
+                        model, tokenizer, sc_prompts, r_samples, SINGLE_CONTEXT_TEMPERATURE, sc_cap
+                    )
+                else:
+                    samples_by_probe = _vllm_sample_R(
+                        args.model, sc_prompts, r_samples, SINGLE_CONTEXT_TEMPERATURE, sc_cap
+                    )
+                per_probe = capture_single_context_for_context(
+                    model,
+                    tokenizer,
+                    inst,
+                    ctx_probes,
+                    samples_by_probe,
+                    sc_capture,
+                    n_layers,
+                    capture_layers,
+                )
+                torch.save(
+                    {
+                        "context_id": iid,
+                        "capture_layers": capture_layers,
+                        "n_samples": r_samples,
+                        "temperature": SINGLE_CONTEXT_TEMPERATURE,
+                        "per_probe": per_probe,  # [{probe, samples:[{text,logp_norm,act(Lc,H)}]}]
+                    },
+                    sc_path,
+                )
+                sc_done += 1
+                run.log({"single_context_contexts_done": sc_done})
+        finally:
+            sc_capture.remove()
+        logger.info("G7 done: single-context R-sample capture for %d contexts", sc_done)
+
     # ── G6: E0(C,B) behavior-battery generations ──────────────────────────────
     phase("g6_e0gen")
     e0_dir = EVAL_RESULTS_DIR / ("e0_gen_smoke" if args.smoke else "e0_gen")
@@ -1326,7 +1535,10 @@ def run_context_phases(
         max_new_tokens_cap=(args.max_new_tokens_smoke if args.smoke else 0),
         n_samples_cap=(args.n_samples_smoke if args.smoke else 0),
         smoke=args.smoke,
-        upload_partial=not args.no_upload,
+        # Concurrency fix (round-5 code-review Major): per-shard partial uploads
+        # race on the same HF ref across 8 concurrent shards. The merge step does
+        # the single authoritative upload; shard workers never partial-upload.
+        upload_partial=upload_partial,
     )
     return {"n_ctx": len(instances), "raw_dir": str(raw_dir), "e0_dir": str(e0_dir)}
 
@@ -1407,6 +1619,8 @@ def merge_shards(
     out_dir.mkdir(parents=True, exist_ok=True)
     spans_out = out_dir / "answer_spans"
     spans_out.mkdir(parents=True, exist_ok=True)
+    sc_out = out_dir / "single_context"
+    sc_out.mkdir(parents=True, exist_ok=True)
 
     merged_summaries: dict[str, dict[str, object]] = {r: {} for r in ("mean", "last", "maxp")}
     merged_cc: dict[str, object] = {}
@@ -1446,6 +1660,11 @@ def merge_shards(
             src = sd / "answer_spans" / f"{cid}.pt"
             if src.is_file():
                 shutil.copy2(src, spans_out / f"{cid}.pt")
+        # copy the per-context single-context (§1.10) R-sample .pt files
+        sd_sc = sd / "single_context"
+        if sd_sc.is_dir():
+            for src in sd_sc.glob("*.pt"):
+                shutil.copy2(src, sc_out / src.name)
 
     if len(merged_ctx_ids) != len(set(merged_ctx_ids)):
         raise RuntimeError("duplicate context ids after merge — shard partition was not disjoint")
@@ -1536,6 +1755,19 @@ def main() -> int:
     parser.add_argument("--wandb-mode", choices=["online", "offline", "disabled"], default="online")
     parser.add_argument(
         "--skip-sigma", action="store_true", help="skip the Σ_c phase (debug / partial re-run)"
+    )
+    parser.add_argument(
+        "--skip-single-context",
+        action="store_true",
+        help="skip the G7 single-context (C=δ_x) R-sample capture (debug / partial re-run only; "
+        "the §1.10 arm REQUIRES it on the production run)",
+    )
+    parser.add_argument(
+        "--single-context-r-smoke",
+        type=int,
+        default=2,
+        help="smoke-only: clamp the per-(C,probe) R-sample count for G7 (real run uses "
+        "SINGLE_CONTEXT_R=8) so a CPU smoke does not sample 8× per probe",
     )
     parser.add_argument(
         "--max-new-tokens-smoke",

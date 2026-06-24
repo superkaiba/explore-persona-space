@@ -291,20 +291,37 @@ def audit_store(store_dir: Path, eval_results: Path, *, smoke: bool = False) -> 
         detail=f"{len(raw_files)} per-context raw-completion files",
     )
 
-    # ── per-sample ANSWER-SIDE activations for sampled completions (§1.10) ──────
-    # The store keeps the GREEDY answer span per (C,probe) (the v0(C) definitional
-    # input) + the temp-1.0 R-sample COMPLETIONS + judge labels (e0_gen). What it
-    # does NOT keep is the answer-side ACTIVATIONS of the sampled (non-greedy)
-    # completions — a Phase-1 single-context-arm extension, flagged so the gap is
-    # visible (not a silent omission).
+    # ── §1.10 per-sample ANSWER-SIDE activations (R≥8 sampled completions) ──────
+    # The single-context (C=δ_x) BLOCKER (round-5 code-review): for EVERY
+    # (context × probe), every one of the R temp-1.0 sampled completions has its
+    # answer-side activations captured (ALL captured layers, meaned over the
+    # answer span) + its completion text (judged off-pod → within-prompt rate).
+    # The G7 phase writes single_context/<ctx>.pt with per-(probe, sample)
+    # {text, logp_norm, act:(Lc,H)}. This row is a real PRESENT check, NOT a NOTE.
+    sc_dir = store_dir / "single_context"
+    sc_files = sorted(sc_dir.glob("*.pt")) if sc_dir.is_dir() else []
+    sc_ok = False
+    sc_detail = "single_context/ missing — G7 §1.10 R-sample capture did not run"
+    if sc_files:
+        blob = _load(sc_files[0])
+        per_probe = blob.get("per_probe", [])
+        n_samples = blob.get("n_samples")
+        # verify the first probe's first sample carries a real activation tensor
+        sample0 = per_probe[0]["samples"][0] if per_probe and per_probe[0].get("samples") else {}
+        act = sample0.get("act")
+        act_ok = act is not None and hasattr(act, "shape") and act.ndim == 2
+        text_ok = "text" in sample0 and "logp_norm" in sample0
+        sc_ok = act_ok and text_ok and (n_samples is not None and n_samples >= 1)
+        sc_detail = (
+            f"{len(sc_files)} per-context packs; R={n_samples} samples/probe; "
+            f"first sample act shape {tuple(act.shape) if act_ok else None} (Lc,H) + text+logp_norm"
+        )
     res.add(
         "§1.10 per-sample answer-side ACTIVATIONS (R≥8 sampled completions)",
-        "activations of the temp-1.0 sampled completions (not just greedy v0)",
-        "NOT in base store — Phase-1 single-context-arm extension",
-        present=True,
-        detail="R-sample completions + judge labels ARE kept (e0_gen); their activations "
-        "are a single-context-arm add-on (the greedy v0 span is the base-store input)",
-        caveat=True,
+        "per-(C,probe,sample) mean answer-side acts (ALL layers) + text + judge-ready completions",
+        f"{sc_dir}/<ctx>.pt::per_probe[].samples[].act",
+        present=sc_ok,
+        detail=sc_detail,
     )
 
     return res

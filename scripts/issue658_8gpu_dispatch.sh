@@ -79,7 +79,26 @@ COMMON+=(--n-shards "$N_SHARDS" "${EXTRA_ARGS[@]}")
 echo "[phase=load]"
 echo "issue658 8-GPU dispatch: n_shards=$N_SHARDS smoke=$SMOKE log_dir=$LOG_DIR repo=$REPO_ROOT"
 
-# ── G1-G6 per-context shard workers (concurrent, one GPU each) ─────────────────
+# ── prefetch the un-git-tracked YAML caches ONCE (round-5 code-review Major) ───
+# fetch_betley_main_8() / fetch_preregistered_probes() lazily _download_if_missing
+# the Betley YAMLs to data/issue404/ on first call. With 8 shards fanned out
+# concurrently they would race on the same non-atomic download (partial-write
+# corruption / duplicate fetches). Prefetch them here in the single launcher
+# process BEFORE any shard starts, so every shard reads a complete cached file.
+echo "[phase=prefetch_caches]"
+if ! uv run python -c "
+import sys
+sys.path.insert(0, 'scripts')
+from issue404_common import fetch_betley_main_8, fetch_preregistered_probes
+fetch_betley_main_8()
+fetch_preregistered_probes(n=200, exclude=set(fetch_betley_main_8()))
+print('prefetched Betley YAML caches')
+"; then
+  echo "[ERROR] YAML cache prefetch FAILED; aborting before shard fan-out"
+  exit 1
+fi
+
+# ── G1-G7 per-context shard workers (concurrent, one GPU each) ─────────────────
 echo "[phase=shards]"
 declare -a PIDS=()
 declare -a SHARD_LOGS=()

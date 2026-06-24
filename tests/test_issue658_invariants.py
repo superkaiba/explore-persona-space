@@ -798,3 +798,169 @@ def test_merge_mode_is_cpu_only_no_model_load():
     src = inspect.getsource(ex.run_merge_mode)
     assert "load_hf_model" not in src, "merge mode must NOT load the HF model (CPU-only)"
     assert "merge_shards" in src, "merge mode must call merge_shards"
+
+
+# ── round-5 REVISE: §1.10 capture + concurrency fixes ─────────────────────────
+
+
+def test_single_context_capture_stores_per_sample_activations():
+    """BLOCKER round-5: G7 captures per-(C,probe,sample) mean answer-side acts.
+
+    Drives capture_single_context_for_context with a tiny CPU Qwen2 + 2 probes ×
+    2 samples and asserts each sample carries a real (Lc, H) activation tensor +
+    its text + logp_norm — the §1.10 single-context store granularity.
+    """
+    import issue658_extract_base_store as ex
+    import torch
+    from issue594_extract_context_vectors import LayerCapture  # noqa: F401
+
+    model, tok = _tiny_qwen()
+    n_layers = len(model.model.layers)
+    capture_layers = [0, 1]
+    inst = {"id": "ctx0", "system_prompt": "You are helpful.", "prefix_messages": []}
+    probes = ["What is 2+2?", "Name a color."]
+    # two sampled completions per probe (as _vllm_sample_R / _hf_sample_R return)
+    samples_by_probe = [
+        [{"text": "four", "logp_norm": -0.5}, {"text": "it is four", "logp_norm": -0.7}],
+        [{"text": "blue", "logp_norm": -0.4}, {"text": "red", "logp_norm": -0.6}],
+    ]
+    cap = ex.AnswerSpanCapture(model, n_layers)
+    try:
+        per_probe = ex.capture_single_context_for_context(
+            model, tok, inst, probes, samples_by_probe, cap, n_layers, capture_layers
+        )
+    finally:
+        cap.remove()
+
+    assert len(per_probe) == 2
+    for entry in per_probe:
+        assert len(entry["samples"]) == 2
+        for s in entry["samples"]:
+            assert "text" in s and "logp_norm" in s
+            act = s["act"]
+            assert act is not None, "every non-empty sample must carry an activation"
+            assert act.shape == (len(capture_layers), model.config.hidden_size)
+            assert act.dtype == torch.float16
+
+
+def test_context_phases_default_no_partial_upload():
+    """Major round-5: per-shard partial e0_gen uploads are OFF by default.
+
+    8 concurrent shards would race on the same HF ref; the merge does the single
+    authoritative upload. The run_context_phases ``upload_partial`` param defaults
+    to False, and the shard-mode call site does not override it.
+    """
+    import inspect
+
+    import issue658_extract_base_store as ex
+
+    sig = inspect.signature(ex.run_context_phases)
+    assert sig.parameters["upload_partial"].default is False, (
+        "run_context_phases must default upload_partial=False (per-shard upload race fix)"
+    )
+    # the shard-mode call site must NOT pass upload_partial=True
+    main_src = inspect.getsource(ex.main)
+    assert "upload_partial=True" not in main_src, (
+        "no main() call site may force per-shard partial uploads on (race fix)"
+    )
+
+
+def test_dispatch_prefetches_yaml_caches_before_shards():
+    """Major round-5: the launcher prefetches the Betley YAML caches once.
+
+    8 shards racing on the non-atomic _download_if_missing would corrupt the
+    caches; the dispatch shell must fetch them in the single launcher process
+    BEFORE the shard fan-out (the prefetch block precedes the shard loop).
+    """
+    sh = (PROJECT_ROOT / "scripts" / "issue658_8gpu_dispatch.sh").read_text()
+    assert "fetch_betley_main_8" in sh and "fetch_preregistered_probes" in sh, (
+        "dispatch must prefetch the Betley YAML caches"
+    )
+    prefetch_idx = sh.index("phase=prefetch_caches")
+    shards_idx = sh.index("phase=shards")
+    assert prefetch_idx < shards_idx, "cache prefetch must run BEFORE the shard fan-out"
+
+
+def test_merge_copies_single_context_files(tmp_path):
+    """Round-5: merge_shards copies per-context single_context/<ctx>.pt files."""
+    import issue658_extract_base_store as ex
+    import torch
+
+    layers = [0, 1]
+    h = 8
+
+    def _write_shard(d, ctx_ids):
+        (d / "answer_spans").mkdir(parents=True)
+        (d / "single_context").mkdir(parents=True)
+        torch.save(
+            {
+                "summaries": {
+                    r: {c: torch.zeros(len(layers), h) for c in ctx_ids}
+                    for r in ("mean", "last", "maxp")
+                },
+                "cc_meanprompt": {c: torch.zeros(len(layers), h) for c in ctx_ids},
+                "capture_layers": layers,
+                "context_ids": ctx_ids,
+                "model": "stub",
+                "probe_pool_hash": "x",
+            },
+            d / "v0_summaries.pt",
+        )
+        for c in ctx_ids:
+            torch.save(
+                {"context_id": c, "spans": [], "probes": ["q0"]}, d / "answer_spans" / f"{c}.pt"
+            )
+            torch.save(
+                {"context_id": c, "n_samples": 2, "per_probe": []}, d / "single_context" / f"{c}.pt"
+            )
+        common.dump_json(
+            {"context_ids": ctx_ids, "probes_by_context": {c: ["q0"] for c in ctx_ids}},
+            d / "answer_spans" / "index.json",
+        )
+
+    s0 = tmp_path / "shards" / "shard_0"
+    s1 = tmp_path / "shards" / "shard_1"
+    _write_shard(s0, ["cA", "cC"])
+    _write_shard(s1, ["cB", "cD"])
+    rbsig = tmp_path / "shards" / "rbsigma"
+    rbsig.mkdir(parents=True)
+    torch.save({"r_b": {}, "capture_layers": layers, "columns": []}, rbsig / "r_b.pt")
+
+    out = tmp_path / "store"
+    ex.merge_shards([s0, s1], rbsig, out)
+    sc_merged = sorted((out / "single_context").glob("*.pt"))
+    assert {p.stem for p in sc_merged} == {"cA", "cB", "cC", "cD"}, (
+        "merge must consolidate every shard's single_context/<ctx>.pt"
+    )
+
+
+def test_capture_audit_single_context_row_present(tmp_path):
+    """BLOCKER round-5: the §1.10 audit row reads single_context/ and flips PRESENT.
+
+    Builds a minimal store with a single_context/<ctx>.pt carrying a real
+    per-sample act tensor and asserts the audit's §1.10 row is present=True
+    (the round-4 NOTE is gone).
+    """
+    import issue658_capture_audit as audit
+    import torch
+
+    store = tmp_path / "store"
+    (store / "single_context").mkdir(parents=True)
+    torch.save(
+        {
+            "context_id": "cA",
+            "n_samples": 8,
+            "per_probe": [
+                {
+                    "probe": "q0",
+                    "samples": [{"text": "hi", "logp_norm": -1.0, "act": torch.zeros(2, 8)}],
+                }
+            ],
+        },
+        store / "single_context" / "cA.pt",
+    )
+    res = audit.audit_store(store, tmp_path, smoke=False)
+    sc_rows = [r for r in res.rows if "per-sample answer-side ACTIVATIONS" in r.analysis]
+    assert len(sc_rows) == 1
+    assert sc_rows[0].present is True, "the §1.10 per-sample-activations row must be PRESENT"
+    assert sc_rows[0].caveat is False, "the §1.10 row is a hard requirement, not a NOTE"
