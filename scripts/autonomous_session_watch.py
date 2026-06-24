@@ -8151,9 +8151,19 @@ def zombie_wrapper_pass(
 # Never touched: the PM session (pm-session.json registration), non-EPS
 # cwds, issue-MAPPED sessions (registry entry or issue-<N> worktree cwd —
 # the reconcile/zombie passes own those), and sessions whose wrapper holds a
-# controlling TTY (a terminal-run `happy claude` Thomas may be sitting at;
-# daemon-RPC-spawned sessions are headless, so the TTY test is a strict
-# superset of "tmux client attached" and errs toward keep).
+# controlling TTY a USER could be looking at right now (_is_live_user_tty):
+# a terminal-run `happy claude` Thomas may be sitting at, OR a tmux pane in a
+# session WITH attached clients. The earlier "any tty_nr != 0 -> keep" test
+# was a strict superset of "tmux client attached" and so kept abandoned
+# DETACHED-tmux sessions FOREVER (the 2026-06-24 class: spawn_session launches
+# `happy claude` into a tmux pane, so the wrapper holds the pane's pty as its
+# controlling tty whether or not a client is attached, and the bare tty test
+# can't tell an abandoned detached pane apart from a live terminal). The
+# refined guard uses tmux's session_attached count: a pane whose tmux session
+# has zero attached clients is detached, so the wrapper falls through to the
+# transcript-idle check (which still keeps anything <12h idle or unresolvable).
+# Fail-soft: if tmux is absent / the query fails, the detached set is empty
+# and EVERY tty-bearing wrapper is kept, exactly the old behavior.
 
 IDLE_UNMAPPED_STATE_PREFIX = "idle-unmapped-"
 
@@ -8205,6 +8215,95 @@ def _wrapper_has_controlling_tty(pid: int) -> bool:
     except (OSError, IndexError, ValueError):
         return True
     return tty_nr != 0
+
+
+def _wrapper_controlling_tty_path(pid: int) -> str | None:
+    """The wrapper's controlling-terminal device path (e.g. ``/dev/pts/24``),
+    resolved from ``/proc/<pid>/fd/0`` (falling back to fd 1 / fd 2). Returns
+    None if no stdio fd points at a tty (or the proc raced away). Used only to
+    cross-reference against the detached-tmux-pane set — the authoritative
+    "does this session have a controlling tty AT ALL" check stays
+    :func:`_wrapper_has_controlling_tty` (tty_nr off /proc/<pid>/stat)."""
+    for fd in (0, 1, 2):
+        try:
+            target = os.readlink(f"/proc/{pid}/fd/{fd}")
+        except OSError:
+            continue
+        if target.startswith("/dev/pts/") or target.startswith("/dev/tty"):
+            return target
+    return None
+
+
+def _detached_tmux_pane_ttys() -> set[str]:
+    """Set of pty device paths (``/dev/pts/N``) for tmux panes whose tmux
+    session currently has ZERO attached clients — i.e. detached panes nobody
+    is looking at.
+
+    A ``happy claude`` wrapper launched into a tmux pane holds that pane's
+    pty as its controlling terminal whether or not a client is attached, so
+    the bare tty_nr test (:func:`_wrapper_has_controlling_tty`) cannot tell an
+    abandoned detached-tmux session apart from a terminal Thomas is actively
+    sitting at. tmux's ``session_attached`` count is the discriminator: a pane
+    in a session with ``attached == 0`` is detached.
+
+    Fail-soft: ANY error (tmux absent, no server running, parse failure)
+    returns the EMPTY set, which preserves the conservative "any tty -> live
+    user -> keep" behavior for every session — the fix can only ever make the
+    pass reap MORE (a confirmed-detached pane), never accidentally reap an
+    attached or uncertain one."""
+    if shutil.which("tmux") is None:
+        return set()
+    try:
+        out = subprocess.run(
+            ["tmux", "list-panes", "-a", "-F", "#{pane_tty}\t#{session_attached}"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return set()
+    if out.returncode != 0:
+        # No server / no sessions: tmux exits non-zero. Nothing detached to
+        # report; keep-all behavior is preserved by the empty set.
+        return set()
+    detached: set[str] = set()
+    for line in out.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) != 2:
+            continue
+        pane_tty, attached_raw = parts[0].strip(), parts[1].strip()
+        if not pane_tty:
+            continue
+        try:
+            attached = int(attached_raw)
+        except ValueError:
+            continue
+        if attached == 0:
+            detached.add(pane_tty)
+    return detached
+
+
+def _is_live_user_tty(pid: int, detached_tmux_ttys: set[str]) -> bool:
+    """True iff this wrapper holds a controlling tty that a user could be
+    looking at RIGHT NOW — the refined "Thomas may literally be sitting here"
+    guard for the idle-unmapped pass.
+
+    Refines the bare :func:`_wrapper_has_controlling_tty` test: a wrapper
+    whose controlling tty is a tmux pane in a session with zero attached
+    clients (``detached_tmux_ttys``) is NOT a live-user tty — nobody is
+    attached — so it falls through to the transcript-idle check (which still
+    keeps anything <12h idle or unresolvable). Every other tty-bearing
+    wrapper (raw login pts, an ATTACHED tmux pane, or a controlling tty that
+    cannot be cross-referenced to a detached pane) is treated as live and
+    kept, preserving the conservative default. An unreadable /proc (race /
+    perms) keeps the keep-leaning :func:`_wrapper_has_controlling_tty`
+    semantics (returns True)."""
+    if not _wrapper_has_controlling_tty(pid):
+        return False
+    tty_path = _wrapper_controlling_tty_path(pid)
+    # A confirmed detached tmux pane (has a tty, but no client attached) is
+    # NOT a live-user tty; every other tty-bearing wrapper is treated as live.
+    return not (tty_path is not None and tty_path in detached_tmux_ttys)
 
 
 def _transcript_idle_age_s(node_pid: int, now: float) -> tuple[float | None, str | None]:
@@ -8482,12 +8581,22 @@ def _process_idle_unmapped(
     threshold: int,
     *,
     reap_enabled: bool,
+    detached_tmux_ttys: set[str] | None = None,
 ) -> None:
     """Apply the idle-unmapped decision to one live, non-PM, EPS-cwd session:
     check the wrapper's controlling TTY, stat the resolved transcript, and
-    act per :func:`decide_idle_unmapped`."""
+    act per :func:`decide_idle_unmapped`.
+
+    ``has_tty`` here means "a controlling tty a USER could be looking at right
+    now" (:func:`_is_live_user_tty`): a tty-bearing wrapper that is a DETACHED
+    tmux pane (``detached_tmux_ttys`` — computed once per pass) is NOT counted
+    as live, so an abandoned detached-tmux session falls through to the
+    transcript-idle check instead of being kept forever. ``None`` (the test /
+    legacy default) computes the detached-pane set inline."""
+    if detached_tmux_ttys is None:
+        detached_tmux_ttys = _detached_tmux_pane_ttys()
     mapped = issue is not None
-    has_tty = _wrapper_has_controlling_tty(pid) if not mapped else False
+    has_tty = _is_live_user_tty(pid, detached_tmux_ttys) if not mapped else False
     idle_age_s: float | None = None
     signal_reason: str | None = None
     if not mapped and not has_tty:
@@ -8621,8 +8730,11 @@ def idle_unmapped_pass(
     pass (which needs a DEAD inner Claude) and the unmapped complement of the
     session-reconcile pass (which needs an issue mapping). Exclusions:
     PM-registered sids, non-EPS cwds, issue-mapped sessions (registry entry
-    or issue-<N> worktree cwd), wrappers holding a controlling TTY, and any
-    session whose idleness signal cannot be resolved (fail toward keep).
+    or issue-<N> worktree cwd), wrappers holding a LIVE-USER controlling TTY
+    (:func:`_is_live_user_tty` — a raw login pts or an ATTACHED tmux pane;
+    a DETACHED tmux pane is NOT live and falls through to the idle check),
+    and any session whose idleness signal cannot be resolved (fail toward
+    keep).
 
     Daemon-gated like the zombie pass: the wrapper pids come from the
     daemon's ``/list`` and the stop action POSTs to it. ``children`` may be
@@ -8675,6 +8787,10 @@ def idle_unmapped_pass(
         candidates.append((sid, pid, issue))
 
     reap = _unmapped_idle_reap_enabled()
+    # Compute the detached-tmux-pane set ONCE per pass (one tmux call), not
+    # per candidate — a wrapper whose controlling tty is a detached pane is not
+    # a live-user tty and falls through to the transcript-idle check.
+    detached_tmux_ttys = _detached_tmux_pane_ttys()
     print(
         f"idle-unmapped: {len(candidates)} EPS session(s) scanned "
         f"({skipped_pm} PM-registered + {skipped_non_eps} non-EPS skipped; "
@@ -8689,6 +8805,7 @@ def idle_unmapped_pass(
             dry_run,
             threshold,
             reap_enabled=reap,
+            detached_tmux_ttys=detached_tmux_ttys,
         )
 
 
