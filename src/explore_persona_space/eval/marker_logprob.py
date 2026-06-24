@@ -312,6 +312,15 @@ def compute_marker_slot_stats(
         marker id), ``z_eos`` (raw logit at ``eos_token_id``), ``logZ``
         (``logsumexp`` over the full vocab at the slot); plus ``argmax_id``
         when ``include_argmax=True``.
+
+    Memory: the DV reads exactly ONE position (the left-padded slot at -1), so
+    the forward is run with ``logits_to_keep=1`` (Transformers 4.46+), which
+    projects the LM head only at the final position → a ``(B, 1, V)`` logits
+    tensor instead of the ``(B, T, V)`` full materialization. Peak memory at the
+    LM-head projection is therefore flat in answer length, fixing the
+    deterministic OOM on long under-anchored answers (issue #658 f3_icl_json_k2).
+    The slot logits are byte-identical to the full forward's last position
+    (verified within fp32 precision); the four stored floats are unchanged.
     """
     if position != "end_of_answer":
         raise NotImplementedError(f"position={position!r} not supported yet")
@@ -351,12 +360,19 @@ def compute_marker_slot_stats(
         input_ids = torch.tensor(padded, dtype=torch.long, device=device)
         attention_mask = torch.tensor(attn, dtype=torch.long, device=device)
 
+        # logits_to_keep=1 → the LM head is applied ONLY at the final position
+        # (left-pad puts the marker's predictive slot there), so the returned
+        # logits are (B, 1, V) not (B, T, V). This makes peak memory flat in
+        # answer length — the fix for the deterministic OOM on json_k2's
+        # 2048-token answers (full (B, 2048, 152k vocab) fp32 ≈ 1.2 TB).
         with torch.no_grad():
-            logits = model(input_ids=input_ids, attention_mask=attention_mask).logits
-        assert logits.ndim == 3, logits.shape
+            logits = model(
+                input_ids=input_ids, attention_mask=attention_mask, logits_to_keep=1
+            ).logits
+        assert logits.ndim == 3 and logits.shape[1] == 1, logits.shape
 
         for i in range(len(chunk)):
-            raw = logits[i, -1, :].float()  # (V,) next-token logits at the slot
+            raw = logits[i, -1, :].float()  # (V,) next-token logits at the slot (== [i, 0, :])
             log_z = float(torch.logsumexp(raw, dim=-1).item())
             z_marker = float(raw[marker_id].item())
             z_eos = float(raw[eos_token_id].item())

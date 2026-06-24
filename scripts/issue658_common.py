@@ -51,6 +51,14 @@ EXPECTED_HIDDEN = 3584
 MARKER_TEXT = " ※"  # " ※"
 MARKER_TOKEN_ID = 83399
 
+# The four-float-per-slot storage contract (#530): every persisted marker slot
+# read carries logp + the three pre-softmax readouts (logits are unrecoverable
+# from stored log-probs post-hoc). Mirror of
+# eval.marker_logprob.MARKER_SLOT_CONTRACT_KEYS — duplicated here so the #658
+# scripts (capture audit, judge reader) can assert the contract without importing
+# the GPU-side eval module.
+MARKER_SLOT_KEYS: tuple[str, ...] = ("logp", "z_marker", "z_eos", "logZ")
+
 # Judge: ALL behaviors, the standing rule. The testbed legacy pins
 # (gpt4o_betley_dual / haiku_agreement / haiku_*) are DEPRECATED for #658.
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"
@@ -409,6 +417,24 @@ E0_COLUMNS: dict[str, E0Column] = {
         ),
     ]
 }
+
+
+def partition_contexts(instances: list, shard_id: int, n_shards: int) -> list:
+    """Round-robin shard of the context list for the 8-GPU data-parallel fan-out.
+
+    Worker ``shard_id`` (0-based) of ``n_shards`` processes ``instances[shard_id::
+    n_shards]``. Round-robin (stride, not contiguous blocks) balances the uneven
+    per-context cost — the ICL ``json_k2`` contexts generate to the 2048 cap and
+    are far heavier than the short ``rephrase`` / ``default`` contexts, so a
+    contiguous block split would land all the heavy ICL contexts on one worker.
+    Striding interleaves families across workers.
+
+    The union over ``shard_id in range(n_shards)`` is EXACTLY ``instances`` with
+    no overlap (a partition) — verified by ``tests/test_issue658_invariants.py``.
+    """
+    assert 0 <= shard_id < n_shards, f"shard_id {shard_id} out of range for n_shards {n_shards}"
+    assert n_shards >= 1, n_shards
+    return instances[shard_id::n_shards]
 
 
 def rb_columns() -> list[str]:

@@ -106,6 +106,7 @@ from issue658_common import (  # noqa: E402
     SUMMARY_RECIPES,
     V0_MAX_NEW_TOKENS,
     dump_json,
+    partition_contexts,
     rb_columns,
     sha256_file,
     stable_hash,
@@ -1175,6 +1176,316 @@ def upload_raw_completions(dirs: list[Path], smoke: bool) -> dict:
     return {"repo": HF_DATA_REPO, "path_in_repo": base, "n_files": n_remote}
 
 
+# ── 8-GPU data-parallel sharding (Change 2) ──────────────────────────────────
+# The work is embarrassingly parallel over the 50 contexts. We DATA-parallel
+# (one 7B replica per GPU, NOT tensor-parallel — 7B fits on one H100) by sharding
+# the CONTEXT list round-robin across N workers. Each worker runs the per-context
+# phases (G1 generate / G2 capture / G3 c_C mean-prompt / G6 E0) on its context
+# subset and writes a self-contained shard under ``<out_dir>/shards/shard_<k>/``;
+# the context-independent phases (G4 r_B over D_B/D_Bbar, G5 Σ_c background
+# corpus) run ONCE in the ``--rbsigma`` worker; ``--merge`` assembles every shard
+# + the rbsigma outputs into the unified store, builds the sha-pinned manifest,
+# and uploads. The launcher (scripts/issue658_8gpu_dispatch.sh) pins
+# CUDA_VISIBLE_DEVICES=<gpu> per worker (the import-time-cuInit clobber gotcha)
+# AND passes the matching --gpu-id, fanning the workers across all 8 GPUs.
+#
+# The smoke runs the IDENTICAL shell dispatcher with --n-shards 2 --n-ctx 4 on
+# CPU, so the smoke exercises the SAME shard → rbsigma → merge subprocess shape
+# the production run uses (PASS_UNIFIED: smoke IS the sweep with fewer cells).
+
+# A shard's self-contained on-disk layout (every per-context tensor the merge
+# needs + the shard's own raw / e0 completions for the consolidated upload).
+SHARD_DELIVERABLE_FILES: tuple[str, ...] = ("v0_summaries.pt", "answer_spans/index.json")
+
+
+def run_context_phases(
+    model,
+    tokenizer,
+    instances: list[dict],
+    probes: list[str],
+    *,
+    args,
+    use_cuda: bool,
+    capture_layers: list[int],
+    n_layers: int,
+    out_dir: Path,
+    run,
+) -> dict:
+    """G1 generate + G2 capture + G3 c_C-mean-prompt + G6 E0 over ``instances``.
+
+    The per-context (data-parallel) phases. Writes, under ``out_dir``:
+      - ``answer_spans/<ctx>.pt``      per-(C,probe) answer spans (N1 + attn fit)
+      - ``answer_spans/index.json``    the per-(C) → probes map (shard-local)
+      - ``v0_summaries.pt``            {recipe: {ctx: (Lc,H)}} + cc_meanprompt
+      - raw completions + E0 gen JSONs under ``EVAL_RESULTS_DIR`` (per-cell)
+
+    Identical phase semantics whether this is the whole battery (all-in-one /
+    smoke single-process) or one shard's context subset (8-GPU worker). Returns
+    a small telemetry dict for the caller's sentinel/manifest.
+    """
+    spans_dir = out_dir / "answer_spans"
+    spans_dir.mkdir(parents=True, exist_ok=True)
+
+    # ── G1: generate base answers ─────────────────────────────────────────────
+    phase("g1_generate")
+    v0_cap = min(V0_MAX_NEW_TOKENS, args.max_new_tokens_smoke) if args.smoke else V0_MAX_NEW_TOKENS
+    prompts, index = build_prompts(tokenizer, instances, probes)
+    if args.no_vllm or not use_cuda:
+        completions = hf_generate(model, tokenizer, prompts, v0_cap)
+    else:
+        completions = vllm_generate(args.model, prompts, v0_cap)
+    assert len(completions) == len(prompts) == len(index)
+    raw_dir = EVAL_RESULTS_DIR / ("raw_completions_smoke" if args.smoke else "raw_completions")
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    by_ctx: dict[str, list[dict]] = {}
+    for (iid, q), ans in zip(index, completions, strict=True):
+        by_ctx.setdefault(iid, []).append({"probe": q, "completion": ans})
+    for iid, rows in by_ctx.items():
+        dump_json({"context_id": iid, "completions": rows}, raw_dir / f"{iid}.json")
+    logger.info("G1 done: %d completions over %d contexts", len(completions), len(by_ctx))
+
+    # ── G2: teacher-forced answer-side capture → v0(C) + G3 c_C mean-prompt ────
+    phase("g2_capture")
+    capture = AnswerSpanCapture(model, n_layers)
+    v0_summaries: dict[str, dict[str, list]] = {r: {} for r in ("mean", "last", "maxp")}
+    cc_meanprompt: dict[str, list] = {}
+    span_index: dict[str, list[str]] = {}
+    try:
+        for inst in instances:
+            iid = inst["id"]
+            ctx_probes = [r["probe"] for r in by_ctx[iid]]
+            ctx_completions = [r["completion"] for r in by_ctx[iid]]
+            spans, summ = capture_v0_for_context(
+                model,
+                tokenizer,
+                inst,
+                ctx_probes,
+                ctx_completions,
+                capture,
+                n_layers,
+                capture_layers,
+            )
+            torch.save(
+                {
+                    "context_id": iid,
+                    "capture_layers": capture_layers,
+                    "spans": spans,
+                    "probes": ctx_probes,
+                },
+                spans_dir / f"{iid}.pt",
+            )
+            span_index[iid] = ctx_probes
+            for r in ("mean", "last", "maxp"):
+                v0_summaries[r][iid] = summ[r]
+            tmpl = tokenizer.apply_chat_template(
+                messages_for_instance(inst, ctx_probes[0]),
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+            pinputs = tokenizer(tmpl, return_tensors="pt", padding=False).to(model.device)
+            with torch.no_grad():
+                _ = model(**pinputs)
+            cc_meanprompt[iid] = capture.mean_prompt_stack(
+                n_layers, int(pinputs["input_ids"].shape[1])
+            )[capture_layers]
+            run.log({"v0_contexts_done": len(v0_summaries["mean"])})
+    finally:
+        capture.remove()
+    logger.info("G2 done: v0 summaries for %d contexts", len(v0_summaries["mean"]))
+
+    dump_json(
+        {"context_ids": list(span_index.keys()), "probes_by_context": span_index},
+        spans_dir / "index.json",
+    )
+    torch.save(
+        {
+            "summaries": v0_summaries,
+            "cc_meanprompt": cc_meanprompt,
+            "capture_layers": capture_layers,
+            "context_ids": [i["id"] for i in instances],
+            "model": args.model,
+            "probe_pool_hash": stable_hash(probes),
+        },
+        out_dir / "v0_summaries.pt",
+    )
+
+    # ── G6: E0(C,B) behavior-battery generations ──────────────────────────────
+    phase("g6_e0gen")
+    e0_dir = EVAL_RESULTS_DIR / ("e0_gen_smoke" if args.smoke else "e0_gen")
+    e0_dir.mkdir(parents=True, exist_ok=True)
+    e0_n_battery = 4 if args.smoke else (args.e0_n_battery or 0)
+    generate_e0_completions(
+        model,
+        tokenizer,
+        instances,
+        e0_dir,
+        use_vllm=(use_cuda and not args.no_vllm),
+        model_name=args.model,
+        n_battery=e0_n_battery,
+        run=run,
+        max_new_tokens_cap=(args.max_new_tokens_smoke if args.smoke else 0),
+        n_samples_cap=(args.n_samples_smoke if args.smoke else 0),
+        smoke=args.smoke,
+        upload_partial=not args.no_upload,
+    )
+    return {"n_ctx": len(instances), "raw_dir": str(raw_dir), "e0_dir": str(e0_dir)}
+
+
+def run_rbsigma_phases(
+    model,
+    tokenizer,
+    probes: list[str],
+    *,
+    args,
+    capture_layers: list[int],
+    n_layers: int,
+    out_dir: Path,
+) -> dict:
+    """G4 r_B diff-in-means + G5 Σ_c — the CONTEXT-INDEPENDENT phases.
+
+    These do NOT depend on the battery contexts (r_B is per-behavior over
+    D_B/D_Bbar prompt sets; Σ_c is the background corpus), so they run ONCE
+    (the ``--rbsigma`` worker / the all-in-one tail), never per shard. Writes
+    ``r_b.pt`` and (unless ``--skip-sigma``) ``sigma_c.pt`` under ``out_dir``.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    rb_cap = 4 if args.smoke else args.rb_cap
+    sigma_n = 200 if args.smoke else args.sigma_n
+
+    # ── G4: r_B diff-in-means over (D_B, D_Bbar) ──────────────────────────────
+    phase("g4_rb")
+    capture = AnswerSpanCapture(model, n_layers)
+    r_b: dict[str, dict] = {}
+    try:
+        for col in rb_columns():
+            d_b, d_bbar = build_rb_contrast(col, probes, rb_cap)
+            mean_b = capture_mean_answer_acts(
+                model, tokenizer, d_b, capture, n_layers, capture_layers
+            )
+            mean_bbar = capture_mean_answer_acts(
+                model, tokenizer, d_bbar, capture, n_layers, capture_layers
+            )
+            r_b[col] = {
+                "diffmeans": (mean_b - mean_bbar),
+                "meanDB": mean_b,
+                "n_db": len(d_b),
+                "n_dbbar": len(d_bbar),
+            }
+            logger.info("r_B[%s]: |D_B|=%d |D_Bbar|=%d", col, len(d_b), len(d_bbar))
+    finally:
+        capture.remove()
+    torch.save(
+        {"r_b": r_b, "capture_layers": capture_layers, "columns": rb_columns()},
+        out_dir / "r_b.pt",
+    )
+
+    # ── G5: Σ_c background corpus (second moment) ──────────────────────────────
+    sigma_info: dict = {"skipped": True}
+    if not args.skip_sigma:
+        phase("g5_sigma")
+        sigma_info = extract_sigma_c(model, tokenizer, sigma_n, capture_layers, n_layers, out_dir)
+    return {"rb_columns": len(r_b), "sigma": sigma_info}
+
+
+def merge_shards(
+    shard_dirs: list[Path],
+    rbsigma_dir: Path,
+    out_dir: Path,
+) -> dict:
+    """Merge per-shard v0/answer-span outputs + the rbsigma outputs into one store.
+
+    Each shard wrote a self-contained ``v0_summaries.pt`` + ``answer_spans/`` over
+    its context subset; the rbsigma worker wrote ``r_b.pt`` (+ ``sigma_c.pt``).
+    This concatenates the per-context dicts (the shard partition is disjoint by
+    construction — ``partition_contexts``), copies every ``answer_spans/<ctx>.pt``,
+    re-writes the unified ``answer_spans/index.json``, and moves ``r_b.pt`` /
+    ``sigma_c.pt`` into ``out_dir``. Fails loud on a duplicate context id across
+    shards (a partition violation) or a missing rbsigma deliverable.
+    """
+    import shutil
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    spans_out = out_dir / "answer_spans"
+    spans_out.mkdir(parents=True, exist_ok=True)
+
+    merged_summaries: dict[str, dict[str, object]] = {r: {} for r in ("mean", "last", "maxp")}
+    merged_cc: dict[str, object] = {}
+    merged_capture_layers: list[int] | None = None
+    merged_ctx_ids: list[str] = []
+    merged_model: str | None = None
+    merged_probe_hash: str | None = None
+    span_index: dict[str, list[str]] = {}
+
+    for sd in shard_dirs:
+        vpath = sd / "v0_summaries.pt"
+        if not vpath.is_file():
+            raise RuntimeError(f"shard {sd} missing v0_summaries.pt — incomplete shard")
+        blob = torch.load(vpath, weights_only=False)
+        if merged_capture_layers is None:
+            merged_capture_layers = blob["capture_layers"]
+            merged_model = blob["model"]
+            merged_probe_hash = blob["probe_pool_hash"]
+        else:
+            assert blob["capture_layers"] == merged_capture_layers, f"capture_layers drift in {sd}"
+            assert blob["model"] == merged_model, f"model drift in {sd}"
+            assert blob["probe_pool_hash"] == merged_probe_hash, f"probe_pool_hash drift in {sd}"
+        for r in ("mean", "last", "maxp"):
+            for cid, vec in blob["summaries"][r].items():
+                if cid in merged_summaries[r]:
+                    raise RuntimeError(
+                        f"duplicate context {cid} across shards (partition violated)"
+                    )
+                merged_summaries[r][cid] = vec
+        for cid, vec in blob["cc_meanprompt"].items():
+            merged_cc[cid] = vec
+        merged_ctx_ids.extend(blob["context_ids"])
+        # copy the per-context answer-span .pt files + accumulate the index
+        sd_index = _load_json(sd / "answer_spans" / "index.json")
+        for cid, ctx_probes in sd_index["probes_by_context"].items():
+            span_index[cid] = ctx_probes
+            src = sd / "answer_spans" / f"{cid}.pt"
+            if src.is_file():
+                shutil.copy2(src, spans_out / f"{cid}.pt")
+
+    if len(merged_ctx_ids) != len(set(merged_ctx_ids)):
+        raise RuntimeError("duplicate context ids after merge — shard partition was not disjoint")
+
+    torch.save(
+        {
+            "summaries": merged_summaries,
+            "cc_meanprompt": merged_cc,
+            "capture_layers": merged_capture_layers,
+            "context_ids": merged_ctx_ids,
+            "model": merged_model,
+            "probe_pool_hash": merged_probe_hash,
+        },
+        out_dir / "v0_summaries.pt",
+    )
+    dump_json(
+        {"context_ids": list(span_index.keys()), "probes_by_context": span_index},
+        spans_out / "index.json",
+    )
+
+    # r_b.pt + sigma_c.pt from the rbsigma worker.
+    rb_src = rbsigma_dir / "r_b.pt"
+    if not rb_src.is_file():
+        raise RuntimeError(f"rbsigma worker did not produce r_b.pt under {rbsigma_dir}")
+    shutil.copy2(rb_src, out_dir / "r_b.pt")
+    sig_src = rbsigma_dir / "sigma_c.pt"
+    if sig_src.is_file():
+        shutil.copy2(sig_src, out_dir / "sigma_c.pt")
+
+    return {
+        "n_ctx": len(merged_ctx_ids),
+        "n_shards": len(shard_dirs),
+        "context_ids": merged_ctx_ids,
+        "capture_layers": merged_capture_layers,
+        "model": merged_model,
+        "probe_pool_hash": merged_probe_hash,
+        "sigma_present": (out_dir / "sigma_c.pt").is_file(),
+    }
+
+
 # ── main ─────────────────────────────────────────────────────────────────────
 
 
@@ -1242,18 +1553,74 @@ def main() -> int:
         "untouched) so broad_em's n=50 is not 50 CPU generations; 0 = honor each column's "
         "full n_samples (the real-run default)",
     )
+    # ── 8-GPU data-parallel modes (Change 2) ──────────────────────────────────
+    # Exactly one of {context-shard, --rbsigma, --merge} runs per process; with
+    # none of them set the legacy single-process all-in-one path runs (used by
+    # direct invocation). The 8-GPU launcher fans out N context-shard workers +
+    # one --rbsigma worker across the GPUs, then runs one --merge.
+    parser.add_argument(
+        "--n-shards",
+        type=int,
+        default=1,
+        help="total data-parallel context shards (8-GPU run: 8). 1 = all-in-one.",
+    )
+    parser.add_argument(
+        "--shard-id",
+        type=int,
+        default=-1,
+        help="this worker's context shard (0-based); run ONLY the per-context phases "
+        "(G1/G2/G3/G6) over instances[shard_id::n_shards]. -1 = not a shard worker.",
+    )
+    parser.add_argument(
+        "--rbsigma",
+        action="store_true",
+        help="run ONLY the context-independent phases (G4 r_B + G5 Σ_c); one worker.",
+    )
+    parser.add_argument(
+        "--merge",
+        action="store_true",
+        help="merge every shard + the rbsigma outputs into the unified store, build the "
+        "sha-pinned manifest, and upload. Run after all shard / rbsigma workers finish.",
+    )
+    parser.add_argument(
+        "--shards-root",
+        type=Path,
+        default=None,
+        help="root holding per-shard dirs (shard_<k>/) + rbsigma/; defaults to "
+        "<out_dir>/shards. Threaded so smoke + prod share one layout.",
+    )
     args = parser.parse_args()
+
+    # Mode validation: at most one of {context-shard, --rbsigma, --merge}.
+    is_shard = args.shard_id >= 0
+    n_modes = int(is_shard) + int(args.rbsigma) + int(args.merge)
+    if n_modes > 1:
+        parser.error("--shard-id, --rbsigma, and --merge are mutually exclusive")
+
+    # ── merge mode: no model load, no GPU; CPU assemble + upload ───────────────
+    if args.merge:
+        return run_merge_mode(args)
 
     phase("load")
     # Bind CVD before the first CUDA allocation (the +gpu_id clobber gotcha).
+    # The launcher ALSO exports CUDA_VISIBLE_DEVICES=<gpu> in the worker env
+    # (the in-process clobber alone is defeated by any import-time cuInit —
+    # gotchas.md), so this in-process set rewrites the same value.
     if args.device != "cpu":
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
     use_cuda = args.device == "cuda" or (args.device == "auto" and torch.cuda.is_available())
 
-    out_dir = Path(f"{args.out_dir}_smoke") if args.smoke else args.out_dir
-    out_dir.mkdir(parents=True, exist_ok=True)
-    spans_dir = out_dir / "answer_spans"
-    spans_dir.mkdir(parents=True, exist_ok=True)
+    # Resolve the per-worker output dir. Shard / rbsigma workers write to a
+    # self-contained subdir under shards_root; the merge consumes them.
+    base_out = Path(f"{args.out_dir}_smoke") if args.smoke else args.out_dir
+    shards_root = args.shards_root or (base_out / "shards")
+    if is_shard:
+        worker_out = shards_root / f"shard_{args.shard_id}"
+    elif args.rbsigma:
+        worker_out = shards_root / "rbsigma"
+    else:
+        worker_out = base_out  # all-in-one (legacy / smoke single-process)
+    worker_out.mkdir(parents=True, exist_ok=True)
 
     _payload, instances = load_battery(args.battery)
     main8 = set(fetch_betley_main_8())
@@ -1264,29 +1631,41 @@ def main() -> int:
     instances = instances[:n_ctx_cap]
     probes = probes[:n_probes_cap]
     sigma_n = 200 if args.smoke else args.sigma_n
-    rb_cap = 4 if args.smoke else args.rb_cap
+
+    # Shard the context list (data-parallel). r_B / Σ_c are context-independent,
+    # so the rbsigma + merge workers keep the FULL probe pool but never iterate
+    # contexts. The all-in-one path keeps every context (n_shards default 1).
+    shard_instances = (
+        partition_contexts(instances, args.shard_id, args.n_shards) if is_shard else instances
+    )
 
     logger.info(
-        "Extraction: %d ctx x %d probes (smoke=%s, vllm=%s, out=%s)",
+        "Mode=%s: %d/%d ctx x %d probes (smoke=%s, vllm=%s, out=%s)",
+        ("shard" if is_shard else "rbsigma" if args.rbsigma else "all-in-one"),
+        len(shard_instances),
         len(instances),
         len(probes),
         args.smoke,
         not args.no_vllm,
-        out_dir,
+        worker_out,
     )
 
     import wandb
 
+    run_suffix = f"-shard{args.shard_id}" if is_shard else "-rbsigma" if args.rbsigma else ""
     run = wandb.init(
         project="explore-persona-space",
-        name="issue658-extract-smoke" if args.smoke else "issue658-extract",
+        name=("issue658-extract-smoke" if args.smoke else "issue658-extract") + run_suffix,
         mode=args.wandb_mode,
         config={
             "model": args.model,
-            "n_ctx": len(instances),
+            "n_ctx": len(shard_instances),
             "n_probes": len(probes),
             "sigma_n": sigma_n,
             "smoke": args.smoke,
+            "shard_id": args.shard_id,
+            "n_shards": args.n_shards,
+            "mode": ("shard" if is_shard else "rbsigma" if args.rbsigma else "all-in-one"),
         },
     )
 
@@ -1319,194 +1698,145 @@ def main() -> int:
     )
     logger.info("Capturing %d layers: %s", len(capture_layers), capture_layers)
 
-    # ── G1: generate base answers ────────────────────────────────────────────
-    phase("g1_generate")
-    v0_cap = min(V0_MAX_NEW_TOKENS, args.max_new_tokens_smoke) if args.smoke else V0_MAX_NEW_TOKENS
-    prompts, index = build_prompts(tokenizer, instances, probes)
-    if args.no_vllm or not use_cuda:
-        completions = hf_generate(model, tokenizer, prompts, v0_cap)
-    else:
-        # vLLM loads + reaps its own engine, so the HF capture model below is
-        # untouched. (Two model copies fit on A100-80; plan §9c.)
-        completions = vllm_generate(args.model, prompts, v0_cap)
-    assert len(completions) == len(prompts) == len(index)
-    # Persist raw completions per cell immediately (checkpoint-per-phase rule).
-    raw_dir = EVAL_RESULTS_DIR / ("raw_completions_smoke" if args.smoke else "raw_completions")
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    by_ctx: dict[str, list[dict]] = {}
-    for (iid, q), ans in zip(index, completions, strict=True):
-        by_ctx.setdefault(iid, []).append({"probe": q, "completion": ans})
-    for iid, rows in by_ctx.items():
-        dump_json({"context_id": iid, "completions": rows}, raw_dir / f"{iid}.json")
-    logger.info("G1 done: %d completions over %d contexts", len(completions), len(by_ctx))
+    # ── rbsigma worker: G4 + G5 only (context-independent), then done ──────────
+    if args.rbsigma:
+        rs = run_rbsigma_phases(
+            model,
+            tokenizer,
+            probes,
+            args=args,
+            capture_layers=capture_layers,
+            n_layers=n_layers,
+            out_dir=worker_out,
+        )
+        write_sentinel(
+            "epm:smoke-result" if args.smoke else "epm:results",
+            f"issue658 rbsigma complete: r_B columns={rs['rb_columns']}, sigma={rs['sigma']}",
+        )
+        run.finish()
+        phase("done")
+        return 0
 
-    # ── G2: teacher-forced answer-side capture → v0(C) ────────────────────────
-    phase("g2_capture")
-    capture = AnswerSpanCapture(model, n_layers)
-    v0_summaries: dict[str, dict[str, list]] = {r: {} for r in ("mean", "last", "maxp")}
-    cc_meanprompt: dict[str, list] = {}
-    span_index: dict[str, list[str]] = {}
-    try:
-        for inst in instances:
-            iid = inst["id"]
-            ctx_probes = [r["probe"] for r in by_ctx[iid]]
-            ctx_completions = [r["completion"] for r in by_ctx[iid]]
-            spans, summ = capture_v0_for_context(
-                model,
-                tokenizer,
-                inst,
-                ctx_probes,
-                ctx_completions,
-                capture,
-                n_layers,
-                capture_layers,
-            )
-            # store per-(C,probe) answer spans fp16 for N1 + attn-pool fit
-            torch.save(
-                {
-                    "context_id": iid,
-                    "capture_layers": capture_layers,
-                    "spans": spans,  # list of (Lc, S, H) fp16 (or None for empty answers)
-                    "probes": ctx_probes,
-                },
-                spans_dir / f"{iid}.pt",
-            )
-            span_index[iid] = ctx_probes
-            for r in ("mean", "last", "maxp"):
-                v0_summaries[r][iid] = summ[r]  # (Lc, H) fp32
-            # G3: c_C mean-prompt ablation — one forward, prompt-only, mean over
-            # prompt tokens (last-input-token c_C is REUSED from #594 HF store).
-            tmpl = tokenizer.apply_chat_template(
-                messages_for_instance(inst, ctx_probes[0]),
-                tokenize=False,
-                add_generation_prompt=True,
-            )
-            pinputs = tokenizer(tmpl, return_tensors="pt", padding=False).to(model.device)
-            with torch.no_grad():
-                _ = model(**pinputs)
-            cc_meanprompt[iid] = capture.mean_prompt_stack(
-                n_layers, int(pinputs["input_ids"].shape[1])
-            )[capture_layers]
-            run.log({"v0_contexts_done": len(v0_summaries["mean"])})
-    finally:
-        capture.remove()
-    logger.info("G2 done: v0 summaries for %d contexts", len(v0_summaries["mean"]))
+    # ── shard worker: per-context phases over the shard's context subset ───────
+    if is_shard:
+        cp = run_context_phases(
+            model,
+            tokenizer,
+            shard_instances,
+            probes,
+            args=args,
+            use_cuda=use_cuda,
+            capture_layers=capture_layers,
+            n_layers=n_layers,
+            out_dir=worker_out,
+            run=run,
+        )
+        write_sentinel(
+            "epm:smoke-result" if args.smoke else "epm:results",
+            f"issue658 shard {args.shard_id}/{args.n_shards} complete: {cp}",
+        )
+        run.finish()
+        phase("done")
+        return 0
 
-    # Persist the answer-spans INDEX (the per-(C) → probes map) as a single named
-    # file so the sha-pinned manifest (§6.5) can reference the answer_spans/ pack
-    # by one index file rather than enumerating every per-context .pt.
-    dump_json(
-        {"context_ids": list(span_index.keys()), "probes_by_context": span_index},
-        spans_dir / "index.json",
-    )
-
-    # Save the v0 summaries tensor pack (mean/last/maxp recipes; attn fit on CPU).
-    torch.save(
-        {
-            "summaries": v0_summaries,  # {recipe: {ctx_id: (Lc, H) fp32}}
-            "cc_meanprompt": cc_meanprompt,  # {ctx_id: (Lc, H) fp32}
-            "capture_layers": capture_layers,
-            "context_ids": [i["id"] for i in instances],
-            "model": args.model,
-            "probe_pool_hash": stable_hash(probes),
-        },
-        out_dir / "v0_summaries.pt",
-    )
-
-    # ── G6: E0(C,B) behavior-battery generations (judged off-pod by J1) ───────
-    # Generate the column-battery completions per (context, behavior) at the
-    # column's OWN temperature / n_samples (the round-1 sampling-policy concern:
-    # honor col.temperature / col.n_samples, NOT a hard-coded temp-1.0). The
-    # marker column reads marker_slot_stats here (4-float, no judge); the
-    # structural format column emits raw completions (J1 scores them with the
-    # structural classifier). Persist per (ctx, column) so J1 is GPU-free.
-    phase("g6_e0gen")
-    e0_dir = EVAL_RESULTS_DIR / ("e0_gen_smoke" if args.smoke else "e0_gen")
-    e0_dir.mkdir(parents=True, exist_ok=True)
-    e0_n_battery = 4 if args.smoke else (args.e0_n_battery or 0)
-    generate_e0_completions(
+    # ── all-in-one path (legacy / single-process smoke) ───────────────────────
+    # Runs the per-context phases over EVERY context, then the rbsigma phases,
+    # then assembles + uploads in this one process (no shard merge needed).
+    cp = run_context_phases(
         model,
         tokenizer,
         instances,
-        e0_dir,
-        use_vllm=(use_cuda and not args.no_vllm),
-        model_name=args.model,
-        n_battery=e0_n_battery,
+        probes,
+        args=args,
+        use_cuda=use_cuda,
+        capture_layers=capture_layers,
+        n_layers=n_layers,
+        out_dir=worker_out,
         run=run,
-        max_new_tokens_cap=(args.max_new_tokens_smoke if args.smoke else 0),
-        n_samples_cap=(args.n_samples_smoke if args.smoke else 0),
-        smoke=args.smoke,
-        # The periodic partial e0_gen upload (round-2 crash recovery) follows the
-        # same --no-upload gate as the end-of-run store upload (local smoke skips
-        # HF). The end-of-script upload_raw_completions still runs the final pass.
-        upload_partial=not args.no_upload,
     )
-
-    # ── G4: r_B diff-in-means over (D_B, D_Bbar) ──────────────────────────────
-    phase("g4_rb")
-    capture = AnswerSpanCapture(model, n_layers)
-    r_b: dict[str, dict] = {}
-    try:
-        for col in rb_columns():
-            d_b, d_bbar = build_rb_contrast(col, probes, rb_cap)
-            mean_b = capture_mean_answer_acts(
-                model, tokenizer, d_b, capture, n_layers, capture_layers
-            )
-            mean_bbar = capture_mean_answer_acts(
-                model, tokenizer, d_bbar, capture, n_layers, capture_layers
-            )
-            r_b[col] = {
-                "diffmeans": (mean_b - mean_bbar),  # (Lc, H) — theory default
-                "meanDB": mean_b,  # mean-D_B recipe
-                "n_db": len(d_b),
-                "n_dbbar": len(d_bbar),
-            }
-            logger.info("r_B[%s]: |D_B|=%d |D_Bbar|=%d", col, len(d_b), len(d_bbar))
-    finally:
-        capture.remove()
-    torch.save(
-        {"r_b": r_b, "capture_layers": capture_layers, "columns": rb_columns()},
-        out_dir / "r_b.pt",
+    rs = run_rbsigma_phases(
+        model,
+        tokenizer,
+        probes,
+        args=args,
+        capture_layers=capture_layers,
+        n_layers=n_layers,
+        out_dir=worker_out,
     )
-
-    # ── G5: Σ_c background corpus (second moment) ──────────────────────────────
-    sigma_info: dict = {"skipped": True}
-    if not args.skip_sigma:
-        phase("g5_sigma")
-        sigma_info = extract_sigma_c(model, tokenizer, sigma_n, capture_layers, n_layers, out_dir)
+    sigma_info = rs["sigma"]
+    r_b_n = rs["rb_columns"]
+    e0_dir = Path(cp["e0_dir"])
+    raw_dir = Path(cp["raw_dir"])
 
     # ── manifest + sentinel + upload ──────────────────────────────────────────
-    # Written AFTER every tensor is produced (G2 v0_summaries / G4 r_b / G5
-    # sigma_c / the answer_spans index) so the §6.5 sha-pinned manifest records
-    # the FINAL on-disk SHA per primary-deliverable file. The HF upload URL is
-    # folded in on the post-upload re-write below.
+    info = _assemble_and_upload(
+        worker_out,
+        args=args,
+        n_layers=n_layers,
+        hidden=hidden,
+        capture_layers=capture_layers,
+        context_ids=[i["id"] for i in instances],
+        probe_pool_hash=stable_hash(probes),
+        marker_ids=marker_ids,
+        sigma_info=sigma_info,
+        e0_dir=e0_dir,
+        raw_dir=raw_dir,
+    )
+
+    note = (
+        f"issue658 base-store {'SMOKE ' if args.smoke else ''}complete: "
+        f"{len(instances)} ctx x {len(probes)} probes, layers={len(capture_layers)}, "
+        f"r_B columns={r_b_n}, sigma={sigma_info.get('n', 'skipped')}, upload={info['upload']}"
+    )
+    write_sentinel("epm:smoke-result" if args.smoke else "epm:results", note)
+    run.finish()
+    phase("done")
+    return 0
+
+
+def _assemble_and_upload(
+    out_dir: Path,
+    *,
+    args,
+    n_layers: int,
+    hidden: int,
+    capture_layers: list[int],
+    context_ids: list[str],
+    probe_pool_hash: str,
+    marker_ids: list[int],
+    sigma_info: dict,
+    e0_dir: Path,
+    raw_dir: Path,
+) -> dict:
+    """Build the sha-pinned store manifest + upload the store + raw completions.
+
+    Shared by the all-in-one path AND the merge mode (both end with the same
+    manifest+upload tail over a complete ``out_dir``). The manifest is written
+    AFTER every tensor exists so the §6.5 SHAs are over the FINAL on-disk bytes;
+    the HF URL is folded into each pinned-file entry on the post-upload rewrite.
+    """
     phase("assemble")
     manifest = {
         "model": args.model,
         "n_layers": n_layers,
         "hidden": hidden,
         "capture_layers": capture_layers,
-        "n_ctx": len(instances),
-        "n_probes": len(probes),
-        "context_ids": [i["id"] for i in instances],
-        "probe_pool_hash": stable_hash(probes),
+        "n_ctx": len(context_ids),
+        "context_ids": context_ids,
+        "probe_pool_hash": probe_pool_hash,
         "marker_token_id": MARKER_TOKEN_ID if args.model == DEFAULT_MODEL else marker_ids,
         "v0_summary_recipes": list(SUMMARY_RECIPES),
         "rb_columns": rb_columns(),
-        # r_B recipes ACTUALLY extracted + scored (the `fewshot` recipe of
-        # RB_RECIPES is descoped — see common.RB_RECIPES note; A3.3 ranks the two
-        # contrastive recipes only).
         "rb_recipes_scored": ["diffmeans", "meanDB"],
         "e0_columns": list(E0_COLUMNS.keys()),
         "sigma": sigma_info,
         "smoke": args.smoke,
+        "n_shards": args.n_shards,
         "judge_model": "claude-sonnet-4-5-20250929",
         "cc_reuse_note": (
             "last-input-token c_C REUSED from #594 HF store "
             "(issue594_context_geometry/analysis_tensors); mean-over-prompt c_C is NEW here"
         ),
-        # §6.5 sha-pinned-manifest deliverable: per-file SHA-256 over the FINAL
-        # tensor bytes (the downstream content-identity check, #600).
         "files": build_files_sha_map(out_dir),
         "metadata": reproducibility_metadata({"script": "issue658_extract_base_store"}),
     }
@@ -1518,8 +1848,6 @@ def main() -> int:
         phase("upload")
         upload_info = upload_store(out_dir, smoke=args.smoke, hf_subdir=args.hf_subdir)
         manifest["upload"] = upload_info
-        # §6.5: the manifest "records the URLs+shas". Fold the resolved HF URL into
-        # each pinned file's entry now that the upload repo + prefix are known.
         repo = upload_info.get("repo")
         prefix = upload_info.get("path_in_repo")
         if repo and prefix:
@@ -1528,20 +1856,71 @@ def main() -> int:
                     entry["hf_url"] = (
                         f"https://huggingface.co/datasets/{repo}/resolve/main/{prefix}/{rel}"
                     )
-        # Raw completions (E0 gen + v0-capture answers) MUST land on the HF data
-        # repo before pod termination (checklist item 7 / Upload Policy). Batch
-        # into ONE create_commit per dir to stay under the 256/hr HF throttle.
         raw_upload_info = upload_raw_completions([e0_dir, raw_dir], smoke=args.smoke)
         manifest["raw_completions_upload"] = raw_upload_info
         dump_json(manifest, out_dir / "store_manifest.json")
+    return {"upload": upload_info, "raw_upload": raw_upload_info}
 
-    note = (
-        f"issue658 base-store {'SMOKE ' if args.smoke else ''}complete: "
-        f"{len(instances)} ctx x {len(probes)} probes, layers={len(capture_layers)}, "
-        f"r_B columns={len(r_b)}, sigma={sigma_info.get('n', 'skipped')}, upload={upload_info}"
+
+def run_merge_mode(args) -> int:
+    """``--merge``: assemble every shard + the rbsigma worker into the unified store.
+
+    CPU-only (no model load, no GPU). Reads ``<shards_root>/shard_*/`` +
+    ``<shards_root>/rbsigma/``, merges into ``out_dir``, builds the sha-pinned
+    manifest, and uploads the store + raw completions. The raw / E0 completions
+    were written by the shard workers to the SHARED ``EVAL_RESULTS_DIR`` (every
+    worker on the same pod writes there, keyed by context id — disjoint by the
+    shard partition), so the merge uploads them from that one directory.
+    """
+    phase("load")
+    base_out = Path(f"{args.out_dir}_smoke") if args.smoke else args.out_dir
+    shards_root = args.shards_root or (base_out / "shards")
+    shard_dirs = sorted(
+        (d for d in shards_root.glob("shard_*") if d.is_dir()),
+        key=lambda p: int(p.name.split("_")[1]),
     )
-    write_sentinel("epm:smoke-result" if args.smoke else "epm:results", note)
-    run.finish()
+    if not shard_dirs:
+        raise RuntimeError(f"--merge found no shard_*/ dirs under {shards_root}")
+    if len(shard_dirs) != args.n_shards:
+        raise RuntimeError(
+            f"--merge found {len(shard_dirs)} shards under {shards_root}, expected {args.n_shards} "
+            f"(a shard worker may have crashed — check its sentinel / log before merging)"
+        )
+    rbsigma_dir = shards_root / "rbsigma"
+
+    phase("merge")
+    merged = merge_shards(shard_dirs, rbsigma_dir, base_out)
+    logger.info(
+        "Merged %d shards → %d contexts under %s", merged["n_shards"], merged["n_ctx"], base_out
+    )
+
+    # Marker id for the manifest (no model loaded in merge mode — record the
+    # canonical id for the default model; smoke stub records the partition's id 0).
+    marker_ids = [MARKER_TOKEN_ID] if args.model == DEFAULT_MODEL else [-1]
+    sigma_blob_present = merged["sigma_present"]
+    sigma_info = {"present": sigma_blob_present, "skipped": not sigma_blob_present}
+
+    e0_dir = EVAL_RESULTS_DIR / ("e0_gen_smoke" if args.smoke else "e0_gen")
+    raw_dir = EVAL_RESULTS_DIR / ("raw_completions_smoke" if args.smoke else "raw_completions")
+
+    info = _assemble_and_upload(
+        base_out,
+        args=args,
+        n_layers=args.expected_layers,
+        hidden=args.expected_hidden,
+        capture_layers=merged["capture_layers"],
+        context_ids=merged["context_ids"],
+        probe_pool_hash=merged["probe_pool_hash"],
+        marker_ids=marker_ids,
+        sigma_info=sigma_info,
+        e0_dir=e0_dir,
+        raw_dir=raw_dir,
+    )
+    write_sentinel(
+        "epm:smoke-result" if args.smoke else "epm:results",
+        f"issue658 MERGE complete: {merged['n_ctx']} ctx from {merged['n_shards']} shards, "
+        f"sigma={sigma_blob_present}, upload={info['upload']}",
+    )
     phase("done")
     return 0
 

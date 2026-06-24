@@ -539,3 +539,257 @@ def test_rb_recipes_descopes_fewshot():
     for rec in common.RB_RECIPES:
         assert rec in src, f"fit_a33 must score the declared r_B recipe {rec}"
     assert "fewshot" not in src, "fit_a33 must not reference the descoped fewshot recipe"
+
+
+# ── 8-GPU rework regression tests (this round) ────────────────────────────────
+
+
+def _tiny_qwen():
+    """A 2-layer random Qwen2 + tokenizer for the slot-only equivalence test (CPU)."""
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers.models.qwen2.configuration_qwen2 import Qwen2Config
+
+    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
+    cfg = Qwen2Config(
+        vocab_size=tok.vocab_size,
+        hidden_size=32,
+        intermediate_size=64,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        max_position_embeddings=256,
+        eos_token_id=tok.eos_token_id,
+    )
+    torch.manual_seed(0)
+    model = AutoModelForCausalLM.from_config(cfg)
+    model.eval()
+    return model, tok
+
+
+def test_marker_slot_stats_logits_to_keep_matches_full_forward():
+    """Change-1: the slot-only (logits_to_keep=1) forward yields the SAME 4 floats.
+
+    The OOM fix replaces a (B, T, V) full-logits materialization with
+    logits_to_keep=1 → (B, 1, V). The DV reads exactly the last (left-padded)
+    position, so the four stored floats (logp / z_marker / z_eos / logZ) MUST be
+    byte-identical (within fp32 precision) to a full-forward read at position -1.
+    This is the batched-rewrite equivalence check for the serial→slot rewrite.
+    """
+    import torch
+
+    from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
+
+    model, tok = _tiny_qwen()
+    if tok.pad_token_id is None:
+        tok.pad_token = tok.eos_token
+    marker_id = tok.encode(" ※", add_special_tokens=False)
+    if len(marker_id) != 1:
+        # the 0.5B tokenizer encodes ` ※` to the same single id as 7B; if a CI
+        # tokenizer differs, fall back to any single-token string for the math.
+        marker_text = " the"
+        assert len(tok.encode(marker_text, add_special_tokens=False)) == 1
+    else:
+        marker_text = " ※"
+
+    # Variable-length contexts so left-padding actually fires (B>=2).
+    contexts = [
+        "The capital of France is Paris and it is",
+        "A short one",
+        "Here is a much longer context with several more tokens to force padding",
+    ]
+
+    # Production path (logits_to_keep=1).
+    got = compute_marker_slot_stats(
+        model,
+        tok,
+        contexts,
+        marker_text,
+        eos_token_id=tok.eos_token_id,
+        device="cpu",
+        include_argmax=True,
+    )
+
+    # Reference: explicit full forward, read at position -1 (the old path).
+    mid = tok.encode(marker_text, add_special_tokens=False)[0]
+    eos = tok.eos_token_id
+    ref = []
+    for c in contexts:
+        ids = tok.encode(c, add_special_tokens=False)
+        inp = torch.tensor([ids])
+        with torch.no_grad():
+            full = model(input_ids=inp, attention_mask=torch.ones_like(inp)).logits  # (1,T,V)
+        raw = full[0, -1, :].float()
+        log_z = float(torch.logsumexp(raw, dim=-1))
+        ref.append(
+            {
+                "logp": float(raw[mid]) - log_z,
+                "z_marker": float(raw[mid]),
+                "z_eos": float(raw[eos]),
+                "logZ": log_z,
+                "argmax_id": int(torch.argmax(raw)),
+            }
+        )
+
+    assert len(got) == len(ref)
+    for g, r in zip(got, ref, strict=True):
+        for k in ("logp", "z_marker", "z_eos", "logZ"):
+            assert abs(g[k] - r[k]) < 1e-3, f"{k}: slot-only {g[k]} != full {r[k]}"
+        assert g["argmax_id"] == r["argmax_id"], "argmax id drift slot-only vs full"
+
+
+def test_marker_slot_stats_uses_logits_to_keep():
+    """Change-1: the helper must request logits_to_keep=1 (the OOM-fix source)."""
+    import inspect
+
+    from explore_persona_space.eval import marker_logprob
+
+    src = inspect.getsource(marker_logprob.compute_marker_slot_stats)
+    assert "logits_to_keep=1" in src, (
+        "compute_marker_slot_stats must forward with logits_to_keep=1 to avoid the "
+        "(B, T, V) full-logits OOM on long answers (issue #658 f3_icl_json_k2)"
+    )
+    # The full (B, T, V) read at [:, -1, :] over a materialized seq is gone; the
+    # forward now returns (B, 1, V) and we assert that shape.
+    assert "shape[1] == 1" in src, "the slot forward must assert the (B,1,V) keep-1 shape"
+
+
+def test_partition_contexts_is_disjoint_cover():
+    """Change-2: round-robin context sharding is a true partition (disjoint + covers)."""
+    instances = [{"id": f"ctx{i}"} for i in range(50)]
+    for n_shards in (1, 2, 3, 8):
+        shards = [common.partition_contexts(instances, k, n_shards) for k in range(n_shards)]
+        seen = [inst["id"] for sh in shards for inst in sh]
+        # Disjoint: no id appears twice.
+        assert len(seen) == len(set(seen)), f"n_shards={n_shards}: overlap across shards"
+        # Cover: the union is exactly the full set.
+        assert set(seen) == {i["id"] for i in instances}, f"n_shards={n_shards}: not a full cover"
+        # Balance: shard sizes differ by at most 1 (round-robin).
+        sizes = [len(s) for s in shards]
+        assert max(sizes) - min(sizes) <= 1, f"n_shards={n_shards}: unbalanced {sizes}"
+
+
+def test_partition_contexts_rejects_bad_shard_id():
+    """An out-of-range shard id fails loud (never a silent empty shard)."""
+    import pytest
+
+    instances = [{"id": f"ctx{i}"} for i in range(4)]
+    with pytest.raises(AssertionError):
+        common.partition_contexts(instances, 3, 3)  # shard_id == n_shards
+    with pytest.raises(AssertionError):
+        common.partition_contexts(instances, -1, 3)
+
+
+def test_merge_shards_reconstructs_full_store(tmp_path):
+    """Change-2: merge reconstructs the unified store from disjoint shards + rbsigma.
+
+    Builds two synthetic shard dirs (disjoint contexts) + an rbsigma dir, runs the
+    PRODUCTION merge_shards, and asserts the merged v0_summaries covers every
+    context with no duplication, the answer-span index is unified, and r_b.pt /
+    sigma_c.pt land in the merged store.
+    """
+    import issue658_extract_base_store as ex
+    import torch
+
+    layers = [0, 1]
+    h = 8
+
+    def _write_shard(d, ctx_ids):
+        (d / "answer_spans").mkdir(parents=True)
+        summaries = {
+            r: {c: torch.zeros(len(layers), h) for c in ctx_ids} for r in ("mean", "last", "maxp")
+        }
+        torch.save(
+            {
+                "summaries": summaries,
+                "cc_meanprompt": {c: torch.zeros(len(layers), h) for c in ctx_ids},
+                "capture_layers": layers,
+                "context_ids": ctx_ids,
+                "model": "stub",
+                "probe_pool_hash": "deadbeef",
+            },
+            d / "v0_summaries.pt",
+        )
+        for c in ctx_ids:
+            torch.save(
+                {"context_id": c, "spans": [], "probes": ["q0"]}, d / "answer_spans" / f"{c}.pt"
+            )
+        common.dump_json(
+            {"context_ids": ctx_ids, "probes_by_context": {c: ["q0"] for c in ctx_ids}},
+            d / "answer_spans" / "index.json",
+        )
+
+    s0 = tmp_path / "shards" / "shard_0"
+    s1 = tmp_path / "shards" / "shard_1"
+    _write_shard(s0, ["ctxA", "ctxC"])
+    _write_shard(s1, ["ctxB", "ctxD"])
+    rbsig = tmp_path / "shards" / "rbsigma"
+    rbsig.mkdir(parents=True)
+    torch.save({"r_b": {}, "capture_layers": layers, "columns": []}, rbsig / "r_b.pt")
+    torch.save({"sigma_c": torch.zeros(len(layers), h, h), "n": 10}, rbsig / "sigma_c.pt")
+
+    out = tmp_path / "store"
+    merged = ex.merge_shards([s0, s1], rbsig, out)
+
+    assert merged["n_ctx"] == 4 and merged["n_shards"] == 2
+    blob = torch.load(out / "v0_summaries.pt", weights_only=False)
+    assert set(blob["summaries"]["mean"].keys()) == {"ctxA", "ctxB", "ctxC", "ctxD"}
+    assert len(blob["context_ids"]) == len(set(blob["context_ids"])) == 4
+    idx = common.load_json(out / "answer_spans" / "index.json")
+    assert set(idx["probes_by_context"].keys()) == {"ctxA", "ctxB", "ctxC", "ctxD"}
+    assert (out / "answer_spans" / "ctxA.pt").is_file()
+    assert (out / "r_b.pt").is_file()
+    assert (out / "sigma_c.pt").is_file()
+    assert merged["sigma_present"] is True
+
+
+def test_merge_shards_rejects_duplicate_context(tmp_path):
+    """A non-disjoint shard set (a context in two shards) fails loud at merge."""
+    import issue658_extract_base_store as ex
+    import pytest
+    import torch
+
+    layers = [0]
+    h = 4
+
+    def _write_shard(d, ctx_ids):
+        (d / "answer_spans").mkdir(parents=True)
+        torch.save(
+            {
+                "summaries": {
+                    r: {c: torch.zeros(1, h) for c in ctx_ids} for r in ("mean", "last", "maxp")
+                },
+                "cc_meanprompt": {c: torch.zeros(1, h) for c in ctx_ids},
+                "capture_layers": layers,
+                "context_ids": ctx_ids,
+                "model": "stub",
+                "probe_pool_hash": "x",
+            },
+            d / "v0_summaries.pt",
+        )
+        common.dump_json(
+            {"context_ids": ctx_ids, "probes_by_context": {c: [] for c in ctx_ids}},
+            d / "answer_spans" / "index.json",
+        )
+
+    s0 = tmp_path / "s0"
+    s1 = tmp_path / "s1"
+    _write_shard(s0, ["dup", "a"])
+    _write_shard(s1, ["dup", "b"])  # 'dup' overlaps → partition violation
+    rbsig = tmp_path / "rbsigma"
+    rbsig.mkdir()
+    torch.save({"r_b": {}}, rbsig / "r_b.pt")
+
+    with pytest.raises(RuntimeError, match="duplicate context"):
+        ex.merge_shards([s0, s1], rbsig, tmp_path / "store")
+
+
+def test_merge_mode_is_cpu_only_no_model_load():
+    """The --merge path must not load a GPU model (CPU assemble + upload only)."""
+    import inspect
+
+    import issue658_extract_base_store as ex
+
+    src = inspect.getsource(ex.run_merge_mode)
+    assert "load_hf_model" not in src, "merge mode must NOT load the HF model (CPU-only)"
+    assert "merge_shards" in src, "merge mode must call merge_shards"
