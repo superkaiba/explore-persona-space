@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 659,
+  "highest_id": 660,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4115,6 +4115,13 @@
       "path": "tasks/archived/66",
       "status": "archived",
       "title": "Base-model cosine similarity between a source persona and other personas predicts how much a trained `[ZLT]` marker leaks across personas in Qwen2.5-7B-Instruct (MODERATE confidence)"
+    },
+    "660": {
+      "has_clean_result": false,
+      "kind": "survey",
+      "path": "tasks/proposed/660",
+      "status": "proposed",
+      "title": "[Program] Leakage-predictor theory: empirically test all 10 assumptions (A3.1\u2013A3.10) on Qwen2.5-7B (4-phase)"
     },
     "67": {
       "has_clean_result": true,
