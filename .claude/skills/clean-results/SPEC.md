@@ -168,12 +168,41 @@ Per-finding skeleton (the canonical per-figure beat):
    caption shape.
 3. **Read** (1–3 sentences) — what's striking, where outliers go, what
    the figure CAN'T tell you.
-4. **For text-behavior findings only:** at most ONE short (≤10-line)
+4. **Low-level data plot behind every aggregate statistic.** A finding
+   that reports an AGGREGATE statistic — a correlation ρ shown as a
+   forest-plot point, a mean / effect size shown as a bar, a p-value, an
+   effect summary — ALSO embeds the LOW-LEVEL plot of the per-unit data
+   behind it: the scatter the ρ summarizes, the strip / swarm / jittered
+   per-point view behind the group-difference bars, the unbinned
+   counterpart of a binned / aggregated view. The reader sees the data,
+   not only the number computed from it. This is the broad PARENT of the
+   raw-alongside-processed rule (point 5 below + clean-result-critic
+   Lens 11): "show the underlying data" governs ANY aggregate, not only
+   transformed scatters. The low-level plot rides inside the same
+   `### <finding>` (data view alongside the summary view — data first
+   where there's room, else clearly paired). Exemptions, stated in the
+   read prose or alt text: the finding's primary figure ALREADY is the
+   per-unit view (a raw scatter needs no second scatter); N is so small
+   the figure already shows every point; or the aggregate has no
+   meaningful per-unit decomposition (a single scalar with no underlying
+   sample).
+5. **Raw alongside processed** (the transformed-figure special case of
+   point 4). When a finding's figure plots a residualized / partialled /
+   binned / log-transformed / normalized / aggregated quantity, also
+   embed its RAW (pre-processing) counterpart inside the same
+   `### <finding>` (raw first, then processed), and quote the RAW point
+   estimate alongside the controlled one in the prose. Same principle at
+   the artifact layer: when a claim rests on an aggregated metric, link
+   BOTH the aggregated file and the per-cell file the aggregation
+   collapsed (see `## Data` / `## Reproducibility`). Exemption: raw and
+   processed are visually identical (axis-rescale-only processing) — say
+   so in alt text and omit the raw.
+6. **For text-behavior findings only:** at most ONE short (≤10-line)
    raw-completion excerpt where the text itself IS the finding — preceded
    by a subset-disclosure line AND a raw-completions link. The systematic
    per-condition samples + `<details>` dropdowns live in `## Data →
    ### Generated`, not here.
-5. **For runs that generate NO completions** (teacher-forced log-prob,
+7. **For runs that generate NO completions** (teacher-forced log-prob,
    activation probe, linear-fit): state the measurement-validity tell
    inside the read prose; do NOT fabricate a sample block.
 

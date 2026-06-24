@@ -12,7 +12,9 @@ description: >
   statistical-framing discipline, mentor-facing title,
   one-takeaway-one-figure per `### <finding>`, the `## Data` section
   (capsule trio + subset disclosure + link liveness + eval-probe
-  descriptions), raw-alongside-processed, conciseness (word caps +
+  descriptions), underlying-data-alongside-every-aggregate (low-level
+  data plot behind each aggregate stat + raw-alongside-processed),
+  conciseness (word caps +
   bullets-over-prose), planned-vs-actual coverage, binding-concerns
   audit, and the contaminated / failed-data-gate-arm check against the
   spec in `.claude/skills/clean-results/SPEC.md`. v2/legacy bodies
@@ -345,7 +347,9 @@ The v3 lens roster (15 lenses, coherently numbered 1-15):
 10. **Data section** (NEW) — capsule trio (identity / why / preprocessing)
     + subset disclosure + link liveness; ABSORBS the v2 eval-probe-
     descriptions lens.
-11. **Raw alongside processed** — figures + prose + per-cell artifacts.
+11. **Underlying data alongside every aggregate** — low-level data plot
+    behind each aggregate statistic (the broad parent) + raw-alongside-
+    processed (the transformed special case) + per-cell artifacts.
 12. **Conciseness** (NEW) — word-cap adherence + bullets-over-prose.
 13. **Planned-vs-actual coverage** — scope-shrinkage discipline.
 14. **Binding-concerns audit.**
@@ -991,23 +995,50 @@ plan names is absent) — the doc is the canonical complete reference. The
 check is skipped when no `--methodology-doc` was passed (pre-merge the
 doc lives only on the issue worktree branch).
 
-### Lens 11 — Raw alongside processed (artifacts + figures + prose)
+### Lens 11 — Underlying data alongside every aggregate (figures + prose + per-cell artifacts)
 
-Every processed / derived / aggregated artifact in the body MUST have its
-less-processed counterpart exposed alongside. Concrete checks:
+The broad rule: a finding that reports an AGGREGATE statistic MUST also
+expose the low-level per-unit data behind it, and every processed /
+derived / aggregated artifact MUST have its less-processed counterpart
+alongside. The reader should see the DATA, not only the number computed
+from it. Concrete checks:
 
-1. **Figures.** Every figure that plots a residualized / partialled /
-   binned / log-transformed / normalized quantity has its raw
-   counterpart embedded inline inside the same `### <finding>` (raw
-   first, then processed; both inline `![alt](url)` images, blank lines
-   around each). Walk every `![alt](url)` inside `## Findings`. For each,
-   read the alt text + caption for processing keywords (`residualized`,
-   `partialled`, `partialed`, `length-controlled`, `binned`,
-   `aggregated`, `normalized`, `centered`, `de-trended`,
-   `rank-residualized`, `log-`). If present, look for a raw sibling
-   under the same finding. FAIL if absent, unless the body explicitly
-   justifies the omission (e.g., "raw and processed are visually
-   identical because the length partial only re-scales the x-axis").
+0. **Low-level data plot behind every aggregate figure (the broad
+   parent).** Walk every `![alt](url)` inside `## Findings`. For each
+   figure whose alt text / caption / surrounding prose reports an
+   aggregate statistic — a correlation ρ shown as a forest-plot point, a
+   mean / effect size shown as a bar, a p-value, an effect summary — a
+   LOW-LEVEL per-unit plot of the data behind it (the scatter the ρ
+   summarizes, a strip / swarm / jittered per-point view behind the
+   group-difference bars, the unbinned counterpart of a binned view)
+   MUST be embedded inside the SAME `### <finding>`. FAIL when an
+   aggregate figure carries no underlying-data view AND the finding
+   states no exemption. Exemptions (accept when the body says so in read
+   prose or alt text): the finding's primary figure ALREADY is the
+   per-unit view (a raw scatter needs no second scatter); N is so small
+   the figure already shows every point; or the aggregate has no
+   meaningful per-unit decomposition (a single scalar). This check is the
+   PARENT of checks 1–2 below — those handle the transformed-figure
+   special case (raw vs processed); this one handles ANY aggregate, even
+   an untransformed one (a bare bar chart of means with no per-point plot
+   still FAILs here). Judgment call (LM): there is no reliable alt-text
+   keyword for "this is a forest plot / bar of an aggregate", so read the
+   figure + caption + setup/read prose to decide whether the figure
+   reports an aggregate vs already shows the per-unit data — do NOT FAIL
+   a figure that already IS the scatter / per-point view.
+1. **Figures (transformed special case).** Every figure that plots a
+   residualized / partialled / binned / log-transformed / normalized
+   quantity has its raw counterpart embedded inline inside the same
+   `### <finding>` (raw first, then processed; both inline `![alt](url)`
+   images, blank lines around each). Walk every `![alt](url)` inside
+   `## Findings`. For each, read the alt text + caption for processing
+   keywords (`residualized`, `partialled`, `partialed`,
+   `length-controlled`, `binned`, `aggregated`, `normalized`, `centered`,
+   `de-trended`, `rank-residualized`, `log-`). If present, look for a raw
+   sibling under the same finding. FAIL if absent, unless the body
+   explicitly justifies the omission (e.g., "raw and processed are
+   visually identical because the length partial only re-scales the
+   x-axis").
 2. **Prose statistical claims.** When the body says "X does not survive
    controlling for Y" / "the partial collapses" / "the residualized
    correlation is" / "the length-controlled value drops to", the same
@@ -1032,8 +1063,12 @@ less-processed counterpart exposed alongside. Concrete checks:
    the figures-of-text instance; this lens extends it to the judge
    artifact layer.
 
-The lens is dormant for bodies that only present raw quantities to begin
-with (most baseline / replication / direct-eval runs).
+Checks 1–4 are dormant for bodies that only present raw, untransformed
+quantities (most direct-eval runs with no partialling / aggregation).
+Check 0 (the broad parent) still fires whenever a finding reports an
+aggregate statistic at all — including a baseline / replication run that
+shows a bar of means or a correlation point — UNLESS the figure already
+shows the per-unit data or a stated exemption applies.
 
 **Anti-pattern (FAIL):** A `### <finding>` says *"raw association does
 not survive controlling for prompt length (collapses to p=0.87, N=48)"*
@@ -1050,8 +1085,8 @@ layer: link both `correlation_results.json` (aggregated) and a
 per-persona table (the per-row input that the partial consumed) in
 `## Data` / Reproducibility § Artifacts.
 
-See CLAUDE.md § Voice + Statistics → "Show or link to the less-processed
-version alongside the more-processed one" for the canonical rule.
+See SPEC.md § per-finding skeleton points 4–5 (low-level data plot behind
+every aggregate + raw alongside processed) for the canonical rule.
 
 ### Lens 12 — Conciseness (word-cap adherence + bullets-over-prose)
 
@@ -1354,7 +1389,7 @@ Lens findings:
 - Lens 8 (Mentor-facing title): PASS|FAIL — ...
 - Lens 9 (One takeaway, one figure per finding): PASS|FAIL — ...
 - Lens 10 (Data section — capsule trio + subset disclosure + link liveness + eval-probe descriptions): PASS|FAIL|N/A — ...
-- Lens 11 (Raw alongside processed): PASS|FAIL|N/A — ...
+- Lens 11 (Underlying data alongside every aggregate): PASS|FAIL|N/A — ...
 - Lens 12 (Conciseness — word caps + bullets-over-prose): PASS|FAIL — ...
 - Lens 13 (Planned-vs-actual coverage): PASS|FAIL|N/A — ...
 - Lens 14 (Binding-concerns audit): PASS|FAIL — ...
