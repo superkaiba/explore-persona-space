@@ -4095,7 +4095,7 @@
       "title": "Activation-space alignment to a behavior direction predicts a persona's own base rate (sycophancy, EM) but does not beat the base prior on where leakage lands (MODERATE confidence)"
     },
     "658": {
-      "goal": "Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct \u2014 A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (behaviors read out linearly via r_B), A3.4/A3.5 (a pre-fine-tuning context vector c_C predicts the answer-side profile v0(C)) \u2014 and lock the best extraction layer + summary recipe for the downstream phases.",
+      "goal": "Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct \u2014 A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (behaviors read out linearly via r_B), A3.4/A3.5 (a pre-fine-tuning context vector c_C predicts the answer-side profile v0(C)) \u2014 and lock the best extraction layer + summary recipe for downstream phases.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/planning/658",
