@@ -14,15 +14,12 @@ goal: Determine whether the leakage-predictor's base-model chain holds on Qwen2.
 relates_to:
 - leak-predictor
 ---
----
-kind: experiment
-goal: "Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct — does the mean answer-side activation v0(C) summarize behavior expression (A3.2), do behaviors read out linearly via r_B (A3.3), and does a pre-fine-tuning context vector c_C predict the answer-side profile v0(C) (A3.4/A3.5) — and lock the best extraction layer + summary recipe for the downstream campaign phases."
-backend: auto
----
-
 ## Goal
 
-Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct — A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (behaviors read out linearly via r_B), A3.4/A3.5 (a pre-fine-tuning context vector c_C predicts the answer-side profile v0(C)) — and lock the best extraction layer + summary recipe for the downstream phases.
+Determine whether the leakage-predictor's **base-model chain** holds on
+**Qwen2.5-7B-Instruct**, and **lock the extraction recipe** (layer + summary)
+that every later phase inherits. Test the three "worth-testing-now,
+no-training-required" assumptions from the theory paper:
 
 - **A3.2** — the mean answer-side residual activation `v0(C)` is a sufficient
   summary of the context-induced profile for predicting behavior expression.
@@ -33,18 +30,40 @@ Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-I
 PASS = predictors beat the predict-mean baseline above the measurement noise
 floor; primary deliverable = the per-behavior best layer/summary recipe.
 
-## Scope — Phase 0 + Phase 1 of the leakage-predictor campaign
+## Grounding — READ IN FULL BEFORE PLANNING (mandatory)
 
-Full campaign design: `docs/theory_assumption_test_plan.md` (this task IS Phase 0
-+ Phase 1). **Model: `Qwen/Qwen2.5-7B-Instruct` only** (scale checks deferred).
-No fine-tuning in this task — base model `θ0` only.
+The planner AND implementer must read these IN FULL before designing anything —
+do NOT design from the concise summary alone:
+
+1. **The FULL theory paper** — `docs/leakage_theory_paper.tex` (pinned snapshot;
+   canonical live source `~/overleaf-6a2df2d2/main.tex`). Read **§2 Definitions,
+   §3 Assumptions (ALL ten assumption blocks A3.1–A3.10, each with its
+   Confidence / Testable / "Worth testing now" notes — NOT just the TLDR A1–A7
+   summary at the top), §4 cosine relation, §5 Evaluation methodology, §6 worked
+   computation, §7 case studies.** The detailed §3 blocks (esp. A3.2, A3.3,
+   A3.4/A3.5 here) specify the EXACT per-assumption test to implement; the TLDR
+   is not sufficient.
+2. **The campaign plan** — `docs/theory_assumption_test_plan.md` (this task IS
+   Phase 0 + Phase 1; inherit §1 config, §2 reuse architecture, §7 decisions).
+3. **Past issues** for reusable artifacts/recipes (apply `.claude/rules/artifact-reuse.md`):
+   context suite #594/#617/#634/#650; behavior testbed #545; predictor line
+   #404/#458/#474/#532/#541; marker recipe #530/#601; on-policy #612; activation
+   tensors #521/#551.
+
+Ground every load-bearing hyperparameter against the theory doc + a past issue
+(plan §11 discipline).
+
+## Scope — Phase 0 + Phase 1 of the leakage-predictor program
+
+**Model: `Qwen/Qwen2.5-7B-Instruct` only** (scale checks deferred). No
+fine-tuning in this task — base model `θ0` only.
 
 ### Phase 0 — build + publish the shared activation store (reusable asset)
 Reuse existing infra, don't rebuild:
 - `scripts/issue594_build_battery.py` → the 50-context / 7-family context battery
   (`data/issue594/battery.json`); `issue594_common.load_battery()`.
 - `scripts/issue594_extract_context_vectors.py` → context vectors `c_C` (all 28
-  layers, last-input-token slot). Default recipe; mean-over-prompt as ablation.
+  layers, last-input-token slot; mean-over-prompt as ablation).
 - Add answer-side `v0(C)` extraction (mean answer-token residual, all 28 layers)
   over the battery × the **48 Betley probes** (`issue404_common.fetch_preregistered_probes()`).
 - Behavior read-outs `r_B` = difference-in-means on each #545 column's D_B/D_{B̄}
@@ -72,7 +91,8 @@ fine-tune fleet (Phase 2):** if A3.2/A3.3 fail above the noise floor, HALT and
 surface — do not commit fleet budget on a broken foundation (plan §8).
 
 ## Provenance
-Originating prompt: "Just run on qwen2.5 7b" — re: the comprehensive
-theory-assumption-testing plan at `docs/theory_assumption_test_plan.md`. First
-(cheap, ~5–8 GPU-h) phase of the hybrid rollout; Phases 2–4 promote to a
-`kind: campaign` only after this PASSes.
+Originating prompt: "Just run on qwen2.5 7b" + "Continue running autonomously to
+test the assumptions" — re: the comprehensive theory-assumption-testing plan at
+`docs/theory_assumption_test_plan.md`. First (cheap, ~5–8 GPU-h) phase of the
+sequenced `/issue --auto` rollout (no campaign); Phases 2–4 are filed by the
+orchestrator only after this PASSes.
