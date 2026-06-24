@@ -99,6 +99,18 @@ N_TRAIN_QUESTIONS = 150
 N_EVAL_QUESTIONS = 200
 N_NEG_MINUS_QUESTIONS = 12  # Neg- per-persona downsample (12 x 10 personas = 120)
 
+# Question-generation oversample-and-retry tuning (added 2026-05-26 after
+# task #399 Phase A.0 hit the dedupe-or-die check twice — first 149 unique
+# vs 150 target, then 148 unique vs 150 target). The Anthropic Batch call
+# reliably returns 1-2 near-duplicate questions per attempt for both the
+# training and the eval pools, so a single-shot N-exactly request is
+# structurally fragile. Oversample by 15% per round and retry up to 3
+# rounds; per-round Anthropic cost is trivial (~$0.03/round). Benefits
+# every task using this generator (#396/#397/#398/#400 share the
+# inherited file via PR #399).
+QUESTION_OVERSAMPLE_FACTOR = 1.15
+QUESTION_RETRY_CAP = 3
+
 # Plan §4 Data exact cell counts (asserted in assemble_step).
 EXPECTED_CELLS = {
     "C+": 150,
@@ -310,6 +322,81 @@ def collect_batch_results(batch_id: str) -> dict[str, str]:
 # ── Step 1: Generate 150 unique training questions ───────────────────────────
 
 
+def _submit_questions_round(
+    request_target: int,
+    prompt_fn,
+    custom_id_prefix: str,
+    round_idx: int,
+) -> list[str]:
+    """Submit ONE question-generation round to Anthropic Batch and parse out
+    the raw (un-deduped) list of question strings.
+
+    Extracted 2026-05-26 so ``generate_training_questions`` and
+    ``generate_eval_questions`` can both oversample-and-retry without
+    duplicating the batch-submit + JSON-parse plumbing.
+
+    ``request_target`` is the number of questions we ASK for in this round
+    (already oversampled / shortfall-sized by the caller). ``round_idx`` is
+    folded into the custom_id namespace so retry rounds don't collide with
+    the first-round IDs (``q__r0_0001`` vs ``q__r1_0001``).
+    """
+    batch_size = 50
+    n_batches = (request_target + batch_size - 1) // batch_size
+    requests = []
+    for batch_idx in range(n_batches):
+        current = min(batch_size, request_target - batch_idx * batch_size)
+        requests.append(
+            {
+                "custom_id": f"{custom_id_prefix}__r{round_idx}_{batch_idx:04d}",
+                "params": {
+                    "model": MODEL,
+                    "max_tokens": 8192,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": prompt_fn(current, batch_idx, n_batches),
+                        }
+                    ],
+                },
+            }
+        )
+
+    print(
+        f"  Submitting {custom_id_prefix} round {round_idx + 1} "
+        f"({n_batches} requests, target {request_target})…"
+    )
+    batch_id = submit_response_batch(requests)
+    wait_for_batch(batch_id)
+    results = collect_batch_results(batch_id)  # raises strictly on any failure
+
+    questions: list[str] = []
+    for batch_idx in range(n_batches):
+        custom_id = f"{custom_id_prefix}__r{round_idx}_{batch_idx:04d}"
+        text = results.get(custom_id, "")
+        if not text:
+            raise RuntimeError(
+                f"Question batch {custom_id} missing from results — "
+                f"collect_batch_results should have raised already. "
+                f"failure_class: data."
+            )
+        start = text.find("[")
+        end = text.rfind("]") + 1
+        if start < 0 or end <= 0:
+            raise RuntimeError(
+                f"Question batch {custom_id} response has no JSON array delimiters. "
+                f"Response head: {text[:120]!r}. failure_class: data."
+            )
+        try:
+            batch_qs = json.loads(text[start:end])
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                f"Question batch {custom_id} JSON parse failure: {exc}. "
+                f"Response slice: {text[start:end][:120]!r}. failure_class: data."
+            ) from exc
+        questions.extend(batch_qs)
+    return questions
+
+
 def _question_prompt(n: int, batch_idx: int, n_batches: int) -> str:
     """Question-generation prompt; same shape as generate_leakage_data.py."""
     prompt = (
@@ -335,7 +422,18 @@ def _question_prompt(n: int, batch_idx: int, n_batches: int) -> str:
 
 
 def generate_training_questions() -> list[str]:
-    """Generate N_TRAIN_QUESTIONS via Anthropic Batch (cached to disk)."""
+    """Generate N_TRAIN_QUESTIONS via Anthropic Batch (cached to disk).
+
+    Oversample-and-retry: the model occasionally returns 1-2 exact-string
+    duplicate questions per batch, so a single round asking for exactly N
+    can land 1-2 short after dedupe. Task #399 Phase A.0 hit this twice in
+    a row (149 unique then 148 unique vs 150 target) before this helper
+    was added (2026-05-26). Round 1 asks for ``ceil(N * QUESTION_OVERSAMPLE_FACTOR)``;
+    if dedupe still falls short, rounds 2..QUESTION_RETRY_CAP request just
+    the shortfall (oversampled). Cumulative unique questions are accumulated
+    across rounds. Raises with per-round unique counts after QUESTION_RETRY_CAP
+    failed rounds.
+    """
     cache_path = DATA_DIR / "training_questions.json"
     if cache_path.exists():
         with open(cache_path) as f:
@@ -343,77 +441,44 @@ def generate_training_questions() -> list[str]:
         print(f"  Loaded {len(questions)} cached questions from {cache_path}")
         return questions
 
-    batch_size = 50
-    n_batches = (N_TRAIN_QUESTIONS + batch_size - 1) // batch_size
-    requests = []
-    for batch_idx in range(n_batches):
-        current = min(batch_size, N_TRAIN_QUESTIONS - batch_idx * batch_size)
-        requests.append(
-            {
-                "custom_id": f"q__{batch_idx:04d}",
-                "params": {
-                    "model": MODEL,
-                    "max_tokens": 8192,
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": _question_prompt(current, batch_idx, n_batches),
-                        }
-                    ],
-                },
-            }
-        )
-
-    print(f"  Submitting question batch ({n_batches} requests)…")
-    batch_id = submit_response_batch(requests)
-    wait_for_batch(batch_id)
-    results = collect_batch_results(batch_id)  # raises strictly on any failure
-
-    questions: list[str] = []
-    for batch_idx in range(n_batches):
-        custom_id = f"q__{batch_idx:04d}"
-        text = results.get(custom_id, "")
-        if not text:
-            raise RuntimeError(
-                f"Question batch {custom_id} missing from results — "
-                f"collect_batch_results should have raised already. "
-                f"failure_class: data."
-            )
-        start = text.find("[")
-        end = text.rfind("]") + 1
-        if start < 0 or end <= 0:
-            raise RuntimeError(
-                f"Question batch {custom_id} response has no JSON array delimiters. "
-                f"Response head: {text[:120]!r}. failure_class: data."
-            )
-        try:
-            batch_qs = json.loads(text[start:end])
-        except json.JSONDecodeError as exc:
-            raise RuntimeError(
-                f"Question batch {custom_id} JSON parse failure: {exc}. "
-                f"Response slice: {text[start:end][:120]!r}. failure_class: data."
-            ) from exc
-        questions.extend(batch_qs)
-
-    if len(questions) < N_TRAIN_QUESTIONS:
-        raise RuntimeError(
-            f"Got {len(questions)} training questions vs target {N_TRAIN_QUESTIONS}. "
-            f"Re-run --step questions. failure_class: data."
-        )
-
-    # Dedupe to exact unique strings (model can occasionally repeat across batches).
     seen: set[str] = set()
     unique: list[str] = []
-    for q in questions:
-        key = q.strip()
-        if key in seen:
-            continue
-        seen.add(key)
-        unique.append(q)
+    per_round_unique: list[int] = []
+
+    for round_idx in range(QUESTION_RETRY_CAP):
+        shortfall = N_TRAIN_QUESTIONS - len(unique)
+        # Always oversample by QUESTION_OVERSAMPLE_FACTOR so a 1-2 duplicate
+        # rate per batch still clears the dedupe gate without another round.
+        request_target = max(1, int(shortfall * QUESTION_OVERSAMPLE_FACTOR + 0.999))
+        round_questions = _submit_questions_round(
+            request_target=request_target,
+            prompt_fn=_question_prompt,
+            custom_id_prefix="q",
+            round_idx=round_idx,
+        )
+        added_this_round = 0
+        for q in round_questions:
+            key = q.strip()
+            if key in seen:
+                continue
+            seen.add(key)
+            unique.append(q)
+            added_this_round += 1
+        per_round_unique.append(added_this_round)
+        print(
+            f"  Round {round_idx + 1}: requested {request_target}, "
+            f"returned {len(round_questions)}, added {added_this_round} unique "
+            f"(cumulative {len(unique)} / {N_TRAIN_QUESTIONS})"
+        )
+        if len(unique) >= N_TRAIN_QUESTIONS:
+            break
+
     if len(unique) < N_TRAIN_QUESTIONS:
         raise RuntimeError(
-            f"After exact-string dedupe: {len(unique)} unique training questions vs target "
-            f"{N_TRAIN_QUESTIONS}. Re-run --step questions. failure_class: data."
+            f"After exact-string dedupe across {len(per_round_unique)} rounds: "
+            f"{len(unique)} unique training questions vs target {N_TRAIN_QUESTIONS}. "
+            f"Per-round unique counts: {per_round_unique}. "
+            f"Re-run --step questions. failure_class: data."
         )
 
     final_questions = unique[:N_TRAIN_QUESTIONS]
@@ -465,6 +530,13 @@ def generate_eval_questions(train_questions: list[str]) -> list[str]:
     Returns 200 unique eval prompts, exact-string-disjoint from the
     provided ``train_questions`` and from the canonical 20-question
     EVAL_QUESTIONS legacy list (defense in depth).
+
+    Oversample-and-retry: same shape as ``generate_training_questions`` —
+    asking for exactly N can fall 1-2 short after dedupe (and the train +
+    legacy disjoint filter makes the eval pool even more attrition-prone).
+    Added 2026-05-26 after task #399 Phase A.0 hit the dedupe-or-die
+    check; benefits every sibling task (#396/#397/#398/#400) using this
+    generator via PR #399.
     """
     cache_path = DATA_DIR / "eval_questions_v2.json"
     if cache_path.exists():
@@ -473,73 +545,46 @@ def generate_eval_questions(train_questions: list[str]) -> list[str]:
         print(f"  Loaded {len(questions)} cached eval questions from {cache_path}")
         return questions
 
-    batch_size = 50
-    n_batches = (N_EVAL_QUESTIONS + batch_size - 1) // batch_size
-    requests = []
-    for batch_idx in range(n_batches):
-        current = min(batch_size, N_EVAL_QUESTIONS - batch_idx * batch_size)
-        requests.append(
-            {
-                "custom_id": f"eq__{batch_idx:04d}",
-                "params": {
-                    "model": MODEL,
-                    "max_tokens": 8192,
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": _eval_prompt(current, batch_idx, n_batches),
-                        }
-                    ],
-                },
-            }
-        )
-
-    print(f"  Submitting eval-question batch ({n_batches} requests)…")
-    batch_id = submit_response_batch(requests)
-    wait_for_batch(batch_id)
-    results = collect_batch_results(batch_id)  # strict; raises on any failure
-
-    questions: list[str] = []
-    for batch_idx in range(n_batches):
-        custom_id = f"eq__{batch_idx:04d}"
-        text = results.get(custom_id, "")
-        if not text:
-            raise RuntimeError(
-                f"Eval-question batch {custom_id} missing from results. failure_class: data."
-            )
-        start = text.find("[")
-        end = text.rfind("]") + 1
-        if start < 0 or end <= 0:
-            raise RuntimeError(
-                f"Eval-question batch {custom_id} response has no JSON array delimiters. "
-                f"Head: {text[:120]!r}. failure_class: data."
-            )
-        try:
-            batch_qs = json.loads(text[start:end])
-        except json.JSONDecodeError as exc:
-            raise RuntimeError(
-                f"Eval-question batch {custom_id} JSON parse failure: {exc}. "
-                f"Slice: {text[start:end][:120]!r}. failure_class: data."
-            ) from exc
-        questions.extend(batch_qs)
-
     # Disjoint-by-construction: drop any eval question that exact-string matches
     # a training question OR the legacy 20-question EVAL_QUESTIONS canonical list.
     train_set = {q.strip() for q in train_questions}
     legacy_set = {q.strip() for q in EVAL_QUESTIONS}
     seen: set[str] = set()
     unique: list[str] = []
-    for q in questions:
-        key = q.strip()
-        if key in train_set or key in legacy_set or key in seen:
-            continue
-        seen.add(key)
-        unique.append(q)
+    per_round_unique: list[int] = []
+
+    for round_idx in range(QUESTION_RETRY_CAP):
+        shortfall = N_EVAL_QUESTIONS - len(unique)
+        request_target = max(1, int(shortfall * QUESTION_OVERSAMPLE_FACTOR + 0.999))
+        round_questions = _submit_questions_round(
+            request_target=request_target,
+            prompt_fn=_eval_prompt,
+            custom_id_prefix="eq",
+            round_idx=round_idx,
+        )
+        added_this_round = 0
+        for q in round_questions:
+            key = q.strip()
+            if key in train_set or key in legacy_set or key in seen:
+                continue
+            seen.add(key)
+            unique.append(q)
+            added_this_round += 1
+        per_round_unique.append(added_this_round)
+        print(
+            f"  Eval round {round_idx + 1}: requested {request_target}, "
+            f"returned {len(round_questions)}, added {added_this_round} unique "
+            f"(cumulative {len(unique)} / {N_EVAL_QUESTIONS})"
+        )
+        if len(unique) >= N_EVAL_QUESTIONS:
+            break
 
     if len(unique) < N_EVAL_QUESTIONS:
         raise RuntimeError(
-            f"After dedupe (vs train + legacy + self): {len(unique)} unique eval questions "
-            f"vs target {N_EVAL_QUESTIONS}. Re-run --step questions. failure_class: data."
+            f"After dedupe across {len(per_round_unique)} rounds (vs train + legacy + self): "
+            f"{len(unique)} unique eval questions vs target {N_EVAL_QUESTIONS}. "
+            f"Per-round unique counts: {per_round_unique}. "
+            f"Re-run --step questions. failure_class: data."
         )
 
     final_questions = unique[:N_EVAL_QUESTIONS]
