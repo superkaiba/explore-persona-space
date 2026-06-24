@@ -66,14 +66,14 @@ The generalization bar: ρ ≥ 0.5 with a positive-bounded CI on ≥ 3 of 4 beha
 
 ### The per-persona view behind the sycophancy ρ: alignment tracks base rate across the 16 personas
 
-This is the raw data the forest-plot sycophancy point summarizes — one dot per persona, no aggregation. The x-axis is how strongly a persona's vector points toward the sycophancy direction; the y-axis is how often that persona is sycophantic at baseline.
+The raw data the forest-plot sycophancy point summarizes — one dot per persona, no aggregation. x = how strongly a persona points toward the sycophancy direction; y = its baseline sycophancy rate.
 
 ![Scatter of 16 personas: x = cosine alignment to the sycophancy direction at layer 14, y = base sycophancy rate. Points trend upward from the low-alignment cluster near rate 0.03 to higher-alignment personas near rate 0.06-0.12.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/14cff524d67f2b727ef0f1f66af5444ee7c7944d/figures/issue_657/fig_h1_sycophancy_scatter.png)
 
 > **Figure.** *More-aligned personas are more sycophantic at baseline (ρ = 0.68, n = 16).* One point per persona; x = cosine(persona vector, sycophancy direction) at layer 14, y = fraction of base generations judged sycophantic (#623 base rates). No aggregation or partialling.
 
-- The monotone climb is what the ρ = 0.68 forest point compresses; one high-rate persona sits above the trend but does not drive it.
-- The negative-alignment cluster (x &lt; 0) all sits at low base rates, so the rank signal is not carried by a single outlier.
+- The upward climb is what the ρ = 0.68 forest point compresses; one high-rate persona sits above the trend but does not drive it.
+- The negative-alignment personas (x &lt; 0) all sit at low base rates, so the rank signal is not a single-outlier effect.
 
 ### The causal sign-of-life gate is weak, and the marker affordance direction fails it outright
 
