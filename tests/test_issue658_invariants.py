@@ -391,3 +391,151 @@ def test_no_per_cell_vllm_engine_in_e0_generation():
         "the shared E0 helper must instantiate exactly ONE LLM engine"
     )
     assert src.count("_reap_vllm(") == 1, "the shared E0 engine must be reaped exactly once"
+
+
+# ── round-3 regression tests ──────────────────────────────────────────────────
+
+
+def test_store_manifest_files_are_sha_pinned(tmp_path):
+    """BLOCKER round-3: every primary-deliverable file in the manifest is SHA-pinned.
+
+    Constructs the pinned tensor + index files on disk and runs the PRODUCTION
+    manifest-pin builder (``build_files_sha_map``), then asserts every present
+    file carries a 64-hex sha256 that MATCHES ``sha256_file()`` on the artifact —
+    the §6.5 sha-pinned-manifest deliverable spec the round-2 manifest violated.
+    A missing pinned file (e.g. ``sigma_c.pt`` under ``--skip-sigma``) is recorded
+    ``present: False`` rather than crashing.
+    """
+    import issue658_extract_base_store as ex
+    import torch
+
+    out = tmp_path / "store"
+    (out / "answer_spans").mkdir(parents=True)
+    # The three pinned tensors + the answer-spans index file.
+    torch.save({"summaries": {"mean": {}}}, out / "v0_summaries.pt")
+    torch.save({"r_b": {}}, out / "r_b.pt")
+    torch.save({"sigma_c": torch.zeros(2, 2)}, out / "sigma_c.pt")
+    (out / "answer_spans" / "index.json").write_text('{"context_ids": ["c0"]}')
+
+    files = ex.build_files_sha_map(out)
+    # All four pinned deliverables present + each carries a verifiable sha256.
+    assert set(files) == set(ex.MANIFEST_PINNED_FILES)
+    for rel, entry in files.items():
+        assert entry["present"] is True, rel
+        sha = entry["sha256"]
+        assert isinstance(sha, str) and len(sha) == 64, f"{rel} sha not 64-hex: {sha}"
+        assert all(ch in "0123456789abcdef" for ch in sha), rel
+        # The recorded sha matches a fresh sha256_file() over the artifact.
+        assert sha == common.sha256_file(out / rel), f"{rel} manifest sha != on-disk sha"
+        assert entry["bytes"] == (out / rel).stat().st_size, rel
+
+
+def test_store_manifest_missing_pinned_file_recorded_not_crashed(tmp_path):
+    """A descoped deliverable (--skip-sigma drops sigma_c.pt) records present:False."""
+    import issue658_extract_base_store as ex
+    import torch
+
+    out = tmp_path / "store"
+    (out / "answer_spans").mkdir(parents=True)
+    torch.save({"summaries": {"mean": {}}}, out / "v0_summaries.pt")
+    torch.save({"r_b": {}}, out / "r_b.pt")
+    (out / "answer_spans" / "index.json").write_text('{"context_ids": []}')
+    # sigma_c.pt deliberately ABSENT (the --skip-sigma descope).
+
+    files = ex.build_files_sha_map(out)
+    assert files["sigma_c.pt"]["present"] is False
+    assert files["sigma_c.pt"]["sha256"] is None
+    # The present files are still pinned.
+    assert files["v0_summaries.pt"]["present"] is True
+    assert len(files["v0_summaries.pt"]["sha256"]) == 64
+
+
+def test_a35_mlp_uses_named_shared_dim_not_hardcoded_8(tmp_path):
+    """Major round-3: A3.5 nonlinear_gap reads ridge AND MLP over the SAME dims.
+
+    Production (``feat_dim=0``) must use the NAMED shared target dim
+    ``A35_MLP_TARGET_DIM`` (NOT the old unconditional ``min(8, ...)``), and the
+    gap's ridge-cos is read over the SAME ``gap_target_dim`` as the MLP — so
+    ``nonlinear_gap`` is a like-for-like comparison. The full-dim A3.4
+    ``ridge_mean_cos`` (recipe-lock / chain-ρ statistic) is left untouched.
+    """
+    import issue658_fit_predictors as fit
+    import numpy as np
+    import torch
+
+    # H larger than both 8 and A35_MLP_TARGET_DIM so the slicing is observable.
+    h = fit.A35_MLP_TARGET_DIM + 16
+    assert h > 8, "the regression must use H > 8 to catch the old min(8, ...) cap"
+    ctx_ids = [f"c{i}" for i in range(10)]
+    layers = [0]
+    rng = np.random.default_rng(0)
+    store = {
+        "summaries": {
+            "mean": {
+                c: torch.tensor(rng.standard_normal((1, h)), dtype=torch.float32) for c in ctx_ids
+            }
+        }
+    }
+    cc_map = {c: rng.standard_normal((1, h)) for c in ctx_ids}
+    e0 = _synthetic_e0_table(ctx_ids, n_probes=6, seed=1)
+    rb = {"columns": [], "r_b": {}}
+    # feat_dim=0 -> PRODUCTION path (full H target for the ridge).
+    out = fit._fit_a34_a35_one_recipe(cc_map, store, e0, rb, ctx_ids, layers, 658, feat_dim=0)
+    pl = out["per_layer"][0]
+    # The MLP/ridge gap is read over the NAMED shared dim, NOT 8, NOT full H.
+    assert pl["gap_target_dim"] == fit.A35_MLP_TARGET_DIM, (
+        f"production A3.5 gap must use A35_MLP_TARGET_DIM={fit.A35_MLP_TARGET_DIM}, "
+        f"got {pl['gap_target_dim']} (the old min(8, ...) cap is gone)"
+    )
+    assert pl["gap_target_dim"] != 8, "must not be the old hard-coded 8-dim cap"
+    # The gap is mlp_cos - ridge_cos BOTH on gap_dim (like-for-like).
+    assert abs(pl["nonlinear_gap"] - (pl["mlp_mean_cos"] - pl["ridge_mean_cos_on_gap_dim"])) < 1e-9
+    # The full-dim A3.4 statistic is still reported separately (unchanged).
+    assert "ridge_mean_cos" in pl
+
+
+def test_a35_gap_dim_respects_smoke_feat_clamp():
+    """Under the smoke feat clamp, gap_target_dim is bounded by the clamped H."""
+    import issue658_fit_predictors as fit
+    import numpy as np
+    import torch
+
+    feat = 32  # smaller than A35_MLP_TARGET_DIM so the clamp bounds the gap dim
+    assert feat < fit.A35_MLP_TARGET_DIM
+    h = 80
+    ctx_ids = [f"c{i}" for i in range(8)]
+    layers = [0]
+    rng = np.random.default_rng(2)
+    store = {
+        "summaries": {
+            "mean": {
+                c: torch.tensor(rng.standard_normal((1, h)), dtype=torch.float32) for c in ctx_ids
+            }
+        }
+    }
+    cc_map = {c: rng.standard_normal((1, h)) for c in ctx_ids}
+    e0 = _synthetic_e0_table(ctx_ids, n_probes=6, seed=2)
+    rb = {"columns": [], "r_b": {}}
+    out = fit._fit_a34_a35_one_recipe(cc_map, store, e0, rb, ctx_ids, layers, 658, feat_dim=feat)
+    # gap dim = min(A35_MLP_TARGET_DIM, clamped H=feat) = feat.
+    assert out["per_layer"][0]["gap_target_dim"] == feat
+
+
+def test_rb_recipes_descopes_fewshot():
+    """CONCERN round-3: RB_RECIPES matches what fit_a33 actually scores (no fewshot).
+
+    The plan's few-shot-final recipe is descoped; RB_RECIPES must equal the two
+    contrastive recipes fit_a33 loops, and `fewshot` must be gone — so the
+    declaration no longer over-promises a recipe the extractor never produces.
+    """
+    import inspect
+
+    import issue658_fit_predictors as fit
+
+    assert "fewshot" not in common.RB_RECIPES, "few-shot-final r_B is descoped for #658"
+    assert set(common.RB_RECIPES) == {"diffmeans", "meanDB"}
+    # The fit_a33 loop scores exactly the declared recipes (no silent mismatch).
+    src = inspect.getsource(fit.fit_a33)
+    for rec in common.RB_RECIPES:
+        assert rec in src, f"fit_a33 must score the declared r_B recipe {rec}"
+    assert "fewshot" not in src, "fit_a33 must not reference the descoped fewshot recipe"

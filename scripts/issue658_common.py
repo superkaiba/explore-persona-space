@@ -129,7 +129,14 @@ def load_cc_last_store(capture_layers: list[int], ctx_ids: list[str]):
     return out
 
 
-RB_RECIPES: tuple[str, ...] = ("diffmeans", "meanDB", "fewshot")
+# r_B recipes ACTUALLY extracted (G4) + scored (fit_a33). The plan §A3.3/P2
+# lists a third `few-shot-final` recipe; it is DESCOPED for #658 — the A3.3 PASS
+# gate ("linear ρ within the noise floor of the A3.2 MLP ceiling") ranks the best
+# linear r_B across the contrastive recipes and does not require the few-shot
+# direction, which needs a separate few-shot-prompted capture pass not built
+# here. The descope is recorded in store_manifest.json::rb_recipes_scored
+# (round-2 CONCERN fewshot-rb-recipe-missing; reconciler r2 standing rec 3).
+RB_RECIPES: tuple[str, ...] = ("diffmeans", "meanDB")
 DEFAULT_RB = "diffmeans"  # theory A3.3: persona-vectors diff-in-means
 
 

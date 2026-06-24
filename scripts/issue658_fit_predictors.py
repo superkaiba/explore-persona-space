@@ -59,6 +59,7 @@ from dotenv import load_dotenv  # noqa: E402
 from issue404_common import reproducibility_metadata  # noqa: E402
 from issue658_common import (  # noqa: E402
     EVAL_RESULTS_DIR,
+    RB_RECIPES,
     STORE_DIR,
     SUMMARY_RECIPES,
     dump_json,
@@ -88,6 +89,15 @@ FDR_Q = 0.10  # plan §11
 # run (full H); a small leading-dim slice in smoke exercises both c_C recipes +
 # chain ρ + recipe-selection end-to-end. NOT a production knob.
 SMOKE_A34_FEAT_DIM = 128
+# A3.5 linear-vs-nonlinear shared target dimensionality. The MLP predicts ONE
+# output dim per fit (N folds × MLP_MAX_EPOCHS), so the full-H=3584 target is
+# intractable on CPU (3584 MLP fits × layers × recipes). The `nonlinear_gap`
+# must compare like-for-like, so BOTH the ridge-cos and MLP-cos that feed the
+# gap are read over the SAME leading `A35_MLP_TARGET_DIM` v0 dims — a NAMED
+# shared dim reduction (round-2 Major a35-mlp-dim-truncated: the old
+# `min(8, ...)` compared an 8-dim MLP cos to a full-dim ridge cos). A3.4's
+# full-dim `ridge_mean_cos` (the recipe-lock + chain-ρ statistic) is UNCHANGED.
+A35_MLP_TARGET_DIM = 64
 
 
 # ── E0 target extraction ──────────────────────────────────────────────────────
@@ -376,22 +386,30 @@ def _fit_a34_a35_one_recipe(
     for li in range(len(layers)):
         Xc = C[:, li, :]
         Yv = V[:, li, :]
-        # ridge M (A3.4): predict the v0 vector, then ρ on the per-context cosine
-        # (a scalar readout that does not require choosing one output dim).
+        # ridge M (A3.4): predict the FULL v0 vector, then ρ on the per-context
+        # cosine (a scalar readout that does not require choosing one output dim).
+        # ridge_mean_cos stays FULL-dim — it feeds the recipe lock + chain ρ.
         ridge_pred = _ridge_predict_loco(Xc, Yv, RIDGE_LAMBDAS)
         ridge_pred_v0_by_layer[li] = ridge_pred
-        mlp_pred = np.stack(
-            [_fit_mlp_loco(Xc, Yv[:, k]) for k in range(min(8, Yv.shape[1]))], axis=1
-        )
-        # scalar readout: cosine of predicted vs measured v0, per context
         ridge_cos = _rowwise_cos(ridge_pred, Yv)
-        mlp_cos = _rowwise_cos(mlp_pred, Yv[:, : mlp_pred.shape[1]])
+        # A3.5 linear-vs-nonlinear gap: read BOTH methods over the SAME leading
+        # `A35_MLP_TARGET_DIM` v0 dims (the named shared reduction) so the gap is
+        # like-for-like (round-2 Major a35-mlp-dim-truncated). The MLP fits one
+        # output dim at a time, so it is the dim-bound method; the ridge cos for
+        # the gap is recomputed over the same slice (NOT the full-dim ridge_cos).
+        gap_dim = min(A35_MLP_TARGET_DIM, Yv.shape[1])
+        mlp_pred = np.stack([_fit_mlp_loco(Xc, Yv[:, k]) for k in range(gap_dim)], axis=1)
+        mlp_cos = _rowwise_cos(mlp_pred, Yv[:, :gap_dim])
+        ridge_cos_gap = _rowwise_cos(ridge_pred[:, :gap_dim], Yv[:, :gap_dim])
         out["per_layer"].append(
             {
                 "layer": layers[li],
-                "ridge_mean_cos": float(np.mean(ridge_cos)),
-                "mlp_mean_cos": float(np.mean(mlp_cos)),
-                "nonlinear_gap": float(np.mean(mlp_cos) - np.mean(ridge_cos)),
+                "ridge_mean_cos": float(np.mean(ridge_cos)),  # A3.4, full-dim
+                "mlp_mean_cos": float(np.mean(mlp_cos)),  # over gap_dim
+                # gap = MLP vs ridge BOTH read over gap_dim (like-for-like).
+                "nonlinear_gap": float(np.mean(mlp_cos) - np.mean(ridge_cos_gap)),
+                "ridge_mean_cos_on_gap_dim": float(np.mean(ridge_cos_gap)),
+                "gap_target_dim": gap_dim,
             }
         )
         # shuffle null: permute the v0 rows, re-fit ridge, report cos.
@@ -918,6 +936,14 @@ def main() -> int:
             "locked_recipe": locked,
             "selected_on": "A3.2 best-layer/summary, FDR-gated",
             "cc_recipe_lock": cc_selection,  # Phase-2 inherited c_C recipe
+            # r_B recipes A3.3 actually ranks (round-2 CONCERN
+            # fewshot-rb-recipe-missing): the plan's few-shot-final recipe is
+            # DESCOPED — the A3.3 PASS gate ranks the contrastive recipes only.
+            "rb_recipes_scored": list(RB_RECIPES),
+            "rb_recipe_descope_note": (
+                "few-shot-final r_B descoped for #658; needs a separate few-shot-prompted "
+                "capture pass not built here. A3.3 ranks diffmeans + meanDB only."
+            ),
             "attn_summary_label": (
                 "random-projection control — the attn_w pool weight is an UNFITTED random "
                 "unit vector (carried CONCERN attn-pool-weight-unfitted); a winning 'attn' "

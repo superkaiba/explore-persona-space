@@ -105,6 +105,7 @@ from issue658_common import (  # noqa: E402
     V0_MAX_NEW_TOKENS,
     dump_json,
     rb_columns,
+    sha256_file,
     stable_hash,
     summarize_answer_span,
 )
@@ -123,6 +124,38 @@ SENTINEL_SCHEMA_VERSION = 1
 def phase(name: str) -> None:
     """Emit a poll_pipeline.py-parseable phase line (PHASE_RE on the log tail)."""
     print(f"[phase={name}]", flush=True)
+
+
+# The primary-deliverable tensors + index the §6.5 sha-pinned manifest records.
+# Each is a single file under ``out_dir`` shipped to HF by ``upload_store``; the
+# downstream content-identity check (artifact-reuse rule (f)/(g), #600) verifies
+# the HF tensors named here are the tensors THIS run produced.
+MANIFEST_PINNED_FILES: tuple[str, ...] = (
+    "v0_summaries.pt",
+    "r_b.pt",
+    "sigma_c.pt",
+    "answer_spans/index.json",
+)
+
+
+def build_files_sha_map(out_dir: Path) -> dict[str, dict]:
+    """SHA-256-pin every primary-deliverable file present under ``out_dir``.
+
+    Returns ``{rel_path: {"sha256": <64-hex>, "bytes": <int>}}`` for each file in
+    ``MANIFEST_PINNED_FILES`` that exists (``sigma_c.pt`` is absent under
+    ``--skip-sigma``, so a missing pinned file is recorded as ``present: False``
+    rather than crashing — the manifest then truthfully reports the descope).
+    Computed AFTER all tensors are written (the ``assemble`` phase) so the SHAs
+    are over the FINAL on-disk bytes.
+    """
+    files: dict[str, dict] = {}
+    for rel in MANIFEST_PINNED_FILES:
+        p = out_dir / rel
+        if p.is_file():
+            files[rel] = {"sha256": sha256_file(p), "bytes": p.stat().st_size, "present": True}
+        else:
+            files[rel] = {"sha256": None, "bytes": None, "present": False}
+    return files
 
 
 # ── Answer-span capture extension of #594's LayerCapture ─────────────────────
@@ -1157,6 +1190,14 @@ def main() -> int:
         capture.remove()
     logger.info("G2 done: v0 summaries for %d contexts", len(v0_summaries["mean"]))
 
+    # Persist the answer-spans INDEX (the per-(C) → probes map) as a single named
+    # file so the sha-pinned manifest (§6.5) can reference the answer_spans/ pack
+    # by one index file rather than enumerating every per-context .pt.
+    dump_json(
+        {"context_ids": list(span_index.keys()), "probes_by_context": span_index},
+        spans_dir / "index.json",
+    )
+
     # Save the v0 summaries tensor pack (mean/last/maxp recipes; attn fit on CPU).
     torch.save(
         {
@@ -1228,6 +1269,10 @@ def main() -> int:
         sigma_info = extract_sigma_c(model, tokenizer, sigma_n, capture_layers, n_layers, out_dir)
 
     # ── manifest + sentinel + upload ──────────────────────────────────────────
+    # Written AFTER every tensor is produced (G2 v0_summaries / G4 r_b / G5
+    # sigma_c / the answer_spans index) so the §6.5 sha-pinned manifest records
+    # the FINAL on-disk SHA per primary-deliverable file. The HF upload URL is
+    # folded in on the post-upload re-write below.
     phase("assemble")
     manifest = {
         "model": args.model,
@@ -1241,6 +1286,10 @@ def main() -> int:
         "marker_token_id": MARKER_TOKEN_ID if args.model == DEFAULT_MODEL else marker_ids,
         "v0_summary_recipes": list(SUMMARY_RECIPES),
         "rb_columns": rb_columns(),
+        # r_B recipes ACTUALLY extracted + scored (the `fewshot` recipe of
+        # RB_RECIPES is descoped — see common.RB_RECIPES note; A3.3 ranks the two
+        # contrastive recipes only).
+        "rb_recipes_scored": ["diffmeans", "meanDB"],
         "e0_columns": list(E0_COLUMNS.keys()),
         "sigma": sigma_info,
         "smoke": args.smoke,
@@ -1249,6 +1298,9 @@ def main() -> int:
             "last-input-token c_C REUSED from #594 HF store "
             "(issue594_context_geometry/analysis_tensors); mean-over-prompt c_C is NEW here"
         ),
+        # §6.5 sha-pinned-manifest deliverable: per-file SHA-256 over the FINAL
+        # tensor bytes (the downstream content-identity check, #600).
+        "files": build_files_sha_map(out_dir),
         "metadata": reproducibility_metadata({"script": "issue658_extract_base_store"}),
     }
     dump_json(manifest, out_dir / "store_manifest.json")
@@ -1259,6 +1311,16 @@ def main() -> int:
         phase("upload")
         upload_info = upload_store(out_dir, smoke=args.smoke, hf_subdir=args.hf_subdir)
         manifest["upload"] = upload_info
+        # §6.5: the manifest "records the URLs+shas". Fold the resolved HF URL into
+        # each pinned file's entry now that the upload repo + prefix are known.
+        repo = upload_info.get("repo")
+        prefix = upload_info.get("path_in_repo")
+        if repo and prefix:
+            for rel, entry in manifest["files"].items():
+                if entry.get("present"):
+                    entry["hf_url"] = (
+                        f"https://huggingface.co/datasets/{repo}/resolve/main/{prefix}/{rel}"
+                    )
         # Raw completions (E0 gen + v0-capture answers) MUST land on the HF data
         # repo before pod termination (checklist item 7 / Upload Policy). Batch
         # into ONE create_commit per dir to stay under the 256/hr HF throttle.
