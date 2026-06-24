@@ -5152,6 +5152,7 @@ def _patch_idle_io(
     idle_age=None,
     signal_reason="transcript unresolvable",
     has_tty=False,
+    detached_tmux_ttys=frozenset(),
     registry=None,
     pm_sids=frozenset(),
 ):
@@ -5170,6 +5171,9 @@ def _patch_idle_io(
     monkeypatch.setattr(asw, "_load_session_issue_map", lambda: dict(registry or {}))
     monkeypatch.setattr(asw, "_load_pm_session_ids", lambda: set(pm_sids))
     monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: has_tty)
+    # Pin the detached-tmux-pane probe so the I/O tests never shell out to a
+    # live tmux server (deterministic; default = no detached panes).
+    monkeypatch.setattr(asw, "_detached_tmux_pane_ttys", lambda: set(detached_tmux_ttys))
     monkeypatch.setattr(
         asw,
         "_transcript_idle_age_s",
@@ -5274,6 +5278,111 @@ def test_idle_unmapped_pass_tty_session_never_touched(isolated_registry, monkeyp
     asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=1_000_000.0)
     assert not state_path.exists()
     assert stops == [] and records == []
+
+
+def test_is_live_user_tty_detached_tmux_pane_is_not_live(monkeypatch):
+    # The 2026-06-24 fix: a wrapper whose controlling tty is a DETACHED tmux
+    # pane (in detached_tmux_ttys) is NOT a live-user tty, so it falls through
+    # to the transcript-idle check. An ATTACHED pane / raw login pts / an
+    # unresolvable tty stays live (keep-leaning).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: True)
+    monkeypatch.setattr(asw, "_wrapper_controlling_tty_path", lambda pid: "/dev/pts/24")
+    # /dev/pts/24 is a detached pane -> not live.
+    assert asw._is_live_user_tty(99, {"/dev/pts/24"}) is False
+    # /dev/pts/24 is NOT in the detached set (it is attached) -> live, keep.
+    assert asw._is_live_user_tty(99, {"/dev/pts/99"}) is True
+    # Tty path unresolvable -> cannot confirm detached -> live, keep.
+    monkeypatch.setattr(asw, "_wrapper_controlling_tty_path", lambda pid: None)
+    assert asw._is_live_user_tty(99, {"/dev/pts/24"}) is True
+    # No controlling tty at all -> not a tty session (the headless case).
+    monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: False)
+    assert asw._is_live_user_tty(99, {"/dev/pts/24"}) is False
+
+
+def test_detached_tmux_pane_ttys_failsoft_when_tmux_absent(monkeypatch):
+    # Fail-soft contract: tmux missing -> empty set -> every tty-bearing
+    # wrapper stays "live" -> keep-all preserved (never an accidental reap).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: None)
+    assert asw._detached_tmux_pane_ttys() == set()
+
+
+def test_detached_tmux_pane_ttys_parses_attached_count(monkeypatch):
+    # Only panes whose tmux session has zero attached clients are reported as
+    # detached; attached panes and unparseable rows are excluded.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    class _Out:
+        returncode = 0
+        stdout = (
+            "/dev/pts/24\t0\n"  # detached -> included
+            "/dev/pts/39\t0\n"  # detached -> included
+            "/dev/pts/47\t1\n"  # attached -> excluded
+            "/dev/pts/50\t2\n"  # attached (2 clients) -> excluded
+            "\t0\n"  # empty pane_tty -> skipped
+            "/dev/pts/9\tnope\n"  # unparseable count -> skipped
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: _Out())
+    assert asw._detached_tmux_pane_ttys() == {"/dev/pts/24", "/dev/pts/39"}
+
+
+def test_detached_tmux_pane_ttys_failsoft_on_nonzero_rc(monkeypatch):
+    # No tmux server running -> non-zero rc -> empty set (keep-all preserved).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    class _Out:
+        returncode = 1
+        stdout = ""
+
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: _Out())
+    assert asw._detached_tmux_pane_ttys() == set()
+
+
+def test_idle_unmapped_pass_detached_tmux_reaps_attached_kept(isolated_registry, monkeypatch):
+    # End-to-end: two unmapped EPS sessions, both tty-bearing and both idle
+    # past the window. One sits in a DETACHED tmux pane (reapable), the other
+    # in an ATTACHED pane (Thomas is live -> never touched). After the 2-miss
+    # guard only the detached one is stopped.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP_S", raising=False)
+    children = [
+        {"happySessionId": "sid-detached", "pid": 100},
+        {"happySessionId": "sid-attached", "pid": 200},
+    ]
+    meta = {"sid-detached": {"path": _Z_ROOT}, "sid-attached": {"path": _Z_ROOT}}
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=over,
+        has_tty=True,  # both wrappers hold a controlling tty
+        detached_tmux_ttys={"/dev/pts/24"},
+    )
+    # pid 100 -> detached pane; pid 200 -> attached pane (not in the set).
+    monkeypatch.setattr(
+        asw,
+        "_wrapper_controlling_tty_path",
+        lambda pid: "/dev/pts/24" if pid == 100 else "/dev/pts/47",
+    )
+    t0 = 1_000_000.0
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)  # accumulate
+    assert stops == []
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)  # stop
+    assert stops == ["sid-detached"]
+    assert len(records) == 1 and "auto-stopped idle unmapped" in records[0]
+    # The attached session never accumulated state and was never stopped.
+    assert not (isolated_registry / "idle-unmapped-sid-attached.json").exists()
 
 
 def test_idle_unmapped_pass_missing_signal_fails_toward_keep(
