@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 660,
+  "highest_id": 661,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4122,6 +4122,14 @@
       "path": "tasks/proposed/660",
       "status": "proposed",
       "title": "[Program] Leakage-predictor theory: empirically test all 10 assumptions (A3.1\u2013A3.10) on Qwen2.5-7B (4-phase)"
+    },
+    "661": {
+      "goal": "Quantify how much the behavior read-out r_B diverges across three extraction methods \u2014 (A) on-policy instruction-present, (B) off-policy teacher-forced, (C) instruct-and-strip \u2014 over the same question set for 3 behaviors (sycophancy, refusal, EM), measuring pairwise cosine divergence per layer, the projection of r_B^A onto the instruction context axis (c_pos-c_neg) as the context-confound magnitude, and whether the methods differ in A3.3-style held-out predictive quality (r_B^T v0 predicting E0) \u2014 to decide the program's (#660) A3.3 r_B recipe.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/661",
+      "status": "proposed",
+      "title": "r_B extraction-method divergence: on-policy-instruction (A) vs teacher-forced (B) vs instruct-and-strip (C) across 3 behaviors"
     },
     "67": {
       "has_clean_result": true,
