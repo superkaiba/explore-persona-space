@@ -447,7 +447,7 @@ but skips the background fix ONLY in these cases:
   second check. The old "low-confidence speculative fix" suppression
   bullet is retired.
 
-Two operational deferrals (NOT greenlight gates — the fix still happens,
+Three operational deferrals (NOT greenlight gates — the fix still happens,
 just rerouted/queued):
 
 - A `workflow-improver` is already running on the same `target_file` in
@@ -458,6 +458,17 @@ just rerouted/queued):
   brief note in the marker about the misclassification so the emitting
   agent's pattern can be corrected; no fix is dispatched because the
   target is out of scope by definition.
+- The candidate's `target_file` documents behavior the user is ACTIVELY
+  changing in the SAME session — i.e. the file's subject matter is the
+  live topic of an in-flight user-directed code change. DEFER the
+  candidate until that code change lands, then document the NEW behavior;
+  do not document the old default while the user is mid-flight replacing
+  it. Dispatching here risks merging a doc edit to shared `main` that is
+  obsolete within minutes (2026-06-23: a workflow-fix commit clarified the
+  marker contrastive-negative loss-mask "requires the slot-suppression
+  flag" — then 27 min later a user-directed code change made marker +
+  end-of-turn loss the default and turned that flag into a deprecated
+  no-op, directly superseding the just-merged doc edit on the same file).
 
 ## Markers
 
