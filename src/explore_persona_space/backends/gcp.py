@@ -824,11 +824,21 @@ def render_startup_script(
        eval_results directory (the artifact verifier reads this).
     8. On any failure exits non-zero so the VM enters TERMINATED status
        (the orchestrator's ``poll`` reads this as ``dead``).
+    9. On a CRASH (rc != 0), the EXIT trap uploads the workload log +
+       any partial artifacts to the HF data repo under
+       ``issue<N>_partial/<attempt_id>/`` via ``_eps_persist_diagnostics``
+       BEFORE the ``shutdown -h now`` that triggers the
+       ``--instance-termination-action=DELETE`` boot-disk destruction
+       (#658). Without this a GCP crash loses its own traceback + partial
+       output forever (the disk is gone), so the bug must be diagnosed by
+       inference and every retry produces nothing recoverable.
 
-    The script intentionally does NOT write artifacts off-VM itself — the
-    workload's existing HF/WandB upload paths run during the run as the
-    authoritative artifact route. The sentinel is a small completion
-    proof, not a primary artifact.
+    The workload's existing HF/WandB upload paths remain the AUTHORITATIVE
+    artifact route during a normal run; the sentinel is a small completion
+    proof, not a primary artifact. The #658 EXIT-trap upload is a
+    crash-only SAFETY NET (the clean-exit path keeps the VM alive for the
+    success-sentinel scp + the workload already uploaded), fully guarded +
+    300s-bounded so it can never delay the poweroff that bounds billing.
 
     ``hydra_args`` defaults to ``spec.hydra_args`` (so the caller can
     override for a custom dispatch); ``repo_branch`` defaults to ``main``.
@@ -1031,6 +1041,84 @@ def render_startup_script(
         ' { echo "[phase=$1] startup-script $(date -u +%Y-%m-%dT%H:%M:%SZ)"; }'
         " 2>/dev/null || true;"
         ' { echo "[startup-script] phase=$1" >&3; } 2>/dev/null || true; }',
+        # Crash-diagnostics + partial-artifact preservation (#658). The
+        # instance is created with --instance-termination-action=DELETE, so
+        # the EXIT trap's `shutdown -h now` on a crash DESTROYS the boot
+        # disk — taking the workload log (traceback / stderr) AND any
+        # partial artifacts (eval_results JSONs the workload wrote before
+        # crashing) with it. Incident #658 (2026-06-24): a deterministic
+        # code crash lost its own traceback + ~30 partial output JSONs on
+        # every retry, so the bug had to be diagnosed by inference and each
+        # retry burned a GPU-hour producing nothing recoverable. This helper
+        # uploads BOTH to the HF data repo under
+        # ``issue<N>_partial/<attempt_id>/`` BEFORE the shutdown line, so a
+        # crash is debuggable and partial progress is recoverable. It is
+        # called from the EXIT trap's rc!=0 branch (the clean-exit path
+        # keeps the VM alive for the success-sentinel scp + the workload's
+        # own upload paths already ran, so partial-upload there is moot).
+        # Fully guarded + time-bounded: a hung/failed upload must NEVER
+        # delay the `shutdown` that bounds billing — every step is
+        # ``|| true`` and the whole upload is wrapped in ``timeout`` so the
+        # trap always reaches the poweroff.
+        "_eps_persist_diagnostics() {",
+        '  _rc="${1:-1}";',
+        # Nothing to do without a repo target or HF token (early-boot crash
+        # before the env exports / secret fetch — let the trap power off).
+        '  if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then return 0; fi;',
+        '  _dest="issue${EPS_ISSUE:-0}_partial/${EPS_ATTEMPT_ID:-unknown}";',
+        '  _crash="/tmp/eps-crash-report.json";',
+        # A compact crash report: exit code + timestamp + the log tail
+        # (jq-free; the tail is JSON-escaped by python below at upload time).
+        '  { printf \'{"issue":%s,"attempt_id":"%s","exit_code":%s,'
+        '"ended_utc":"%s","kind":"gcp-exit-trap-crash-diagnostics"}\\n\''
+        ' "${EPS_ISSUE:-0}" "${EPS_ATTEMPT_ID:-unknown}" "$_rc"'
+        ' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$_crash"; } 2>/dev/null || true;',
+        '  { echo "[startup-script] uploading crash diagnostics + partial'
+        ' artifacts to ${EPS_HF_DATA_REPO}/${_dest}"; } 2>/dev/null || true;',
+        # Bounded HF upload via huggingface_hub (already installed by
+        # `uv sync`). 300s ceiling so a stuck upload can't strand the VM
+        # billing; cd into the repo so `uv run` resolves the synced env.
+        # Prepend uv's install dir to PATH inside the subshell: the trap
+        # can fire AFTER the secrets fetch (so the HF_TOKEN guard passes)
+        # but BEFORE the later `export PATH="$HOME/.local/bin:$PATH"` in
+        # the uv-install block — without this, `uv` is not found in that
+        # narrow window and the diagnostics upload silently no-ops.
+        '  ( export PATH="${HOME:-/root}/.local/bin:$PATH";'
+        ' cd "${WORKLOAD_ROOT:-/}" 2>/dev/null'
+        ' && timeout 300 uv run python - "$_dest" "$_crash" <<\'EPS_PERSIST_PY\'',
+        "import os, sys",
+        "from pathlib import Path",
+        "from huggingface_hub import HfApi",
+        "dest, crash = sys.argv[1], sys.argv[2]",
+        'repo = os.environ["EPS_HF_DATA_REPO"]',
+        'issue = os.environ.get("EPS_ISSUE", "0")',
+        'log_path = os.environ.get("EPS_LOG_PATH", "")',
+        "api = HfApi()",
+        "def _up_file(path, path_in_repo):",
+        "    try:",
+        "        api.upload_file(path_or_fileobj=path, path_in_repo=path_in_repo,",
+        '                        repo_id=repo, repo_type="dataset")',
+        '        print(f"[crash-persist] uploaded {path_in_repo}")',
+        "    except Exception as exc:",
+        '        print(f"[crash-persist] FAILED {path_in_repo}: {exc}")',
+        "# 1. crash report + workload log (the traceback / stderr).",
+        "if Path(crash).is_file():",
+        '    _up_file(crash, f"{dest}/crash_report.json")',
+        "if log_path and Path(log_path).is_file():",
+        '    _up_file(log_path, f"{dest}/workload.log")',
+        "# 2. partial artifacts the workload wrote before crashing.",
+        'partial = Path(os.environ.get("WORKLOAD_ROOT", "")) / "eval_results" / f"issue_{issue}"',
+        "if partial.is_dir():",
+        "    try:",
+        "        api.upload_folder(folder_path=str(partial),",
+        '                          path_in_repo=f"{dest}/eval_results_issue_{issue}",',
+        '                          repo_id=repo, repo_type="dataset")',
+        '        print(f"[crash-persist] uploaded partial eval_results dir")',
+        "    except Exception as exc:",
+        '        print(f"[crash-persist] FAILED partial eval_results: {exc}")',
+        "EPS_PERSIST_PY",
+        "  ) 2>&1 | cut -c1-2000 | tail -n 20 >&3 2>/dev/null || true;",
+        "}",
         # A failed startup script does NOT stop the VM — GCE just logs
         # "Script failed with error" and leaves the instance RUNNING,
         # billing the GPU with no workload (live finding, issue 535 GCP
@@ -1062,6 +1150,11 @@ def render_startup_script(
         " _eps_phase failed;"
         ' if [ -n "${EPS_LOG_PATH:-}" ]; then'
         ' { tail -n 40 "$EPS_LOG_PATH" 2>/dev/null | cut -c1-2000 >&3; } 2>/dev/null || true; fi;'
+        # #658: persist the workload log + partial artifacts to HF BEFORE
+        # the DELETE-on-shutdown destroys the boot disk. Fully guarded +
+        # time-bounded inside the helper, so it can never delay the
+        # poweroff that bounds billing.
+        ' _eps_persist_diagnostics "$rc";'
         " shutdown -h now; fi' EXIT",
         "_eps_phase startup",
         # GCE's metadata script runner executes as root WITHOUT $HOME set;
@@ -1075,6 +1168,11 @@ def render_startup_script(
         f"export EPS_ATTEMPT_ID={shlex.quote(attempt_id)}",
         f"export WORKLOAD_ROOT={shlex.quote(workload_root)}",
         f"export EPS_SENTINEL_PATH={shlex.quote(sentinel_abs)}",
+        # Crash-diagnostics target (#658): the EXIT trap uploads the
+        # workload log + partial artifacts here BEFORE the
+        # instance-termination-action=DELETE destroys the boot disk, so a
+        # GCP crash is debuggable + partial progress is recoverable.
+        f"export EPS_HF_DATA_REPO={shlex.quote(config.hf_data_repo)}",
         "",
         # Output redirect (#607): everything from here down — secrets
         # fetch, preflight, clone, uv sync, the workload itself — writes

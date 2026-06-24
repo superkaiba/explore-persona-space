@@ -56,6 +56,7 @@ from explore_persona_space.backends.router import (
     MAX_GCP_ATTEMPTS_PER_DAY,
     ROUTE_REASON_AUTO_FALLBACK_GCP,
     ROUTE_REASON_AUTO_STARTED,
+    ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
     ROUTE_REASON_OVERRIDE,
     ROUTE_REASON_RECONNECT,
     ROUTE_REASON_RUNPOD_FALLBACK,
@@ -967,34 +968,51 @@ def test_gcp_probe_error_on_explicit_lane_surfaces_as_no_compute(lease_store):
     assert any(a["outcome"] == "probe_failed" for a in excinfo.value.attempts)
 
 
-def test_gcp_workload_error_surfaces_no_fallback(lease_store):
-    """Under the GCP-first standing default, GCP runs in PRIMARY position
-    here — a workload failure must surface immediately with NO fallback
-    to the SLURM lanes (broken workload code would re-crash on every
-    lane and burn queue time)."""
-    rp = _ExplodingRunpod()
+def test_gcp_workload_error_fails_over_to_runpod_no_slurm_cascade(
+    lease_store, marker_poster, captured_markers
+):
+    """Task #658 (REVERSES the pre-#658 ``no_fallback`` invariant): under
+    the GCP-first standing default GCP runs in PRIMARY position; a GCP
+    WORKLOAD failure now FAILS OVER TO RUNPOD — straight to the RunPod
+    terminal rung, NOT cascading through the SLURM lanes (re-crashing
+    broken code there burns queue time). RunPod pods persist + are
+    SSH-able, the diagnosis surface GCP's delete-on-crash boot disk cannot
+    give."""
+    rp = _PassiveRunpod()
     nibi = _FreeLaneBackend(kind="nibi")
     gcp = _GcpBackendDouble(
         launch_raises=GcpWorkloadError("entrypoint crashed", evidence={"exit_code": 1})
     )
-    with pytest.raises(WorkloadSurfacedError) as excinfo:
-        route(
-            _spec(backend=None),
-            runpod_backend=rp,
-            free_backends={"nibi": nibi},
-            gcp_backend=gcp,
-            lease_store=lease_store,
-            is_started=lambda _b, _h: False,
-            is_live_after_cancel=lambda _b, _h: False,
-            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
-    assert excinfo.value.chosen_kind == "gcp"
-    assert excinfo.value.evidence.get("exit_code") == 1
-    # GCP ran FIRST (default order) — the workload failure must NOT
-    # cascade to the SLURM lanes.
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    # Failed over to RunPod (launched exactly once), labeled as the
+    # workload-failover reason (distinct from the capacity-exhaustion
+    # ``auto_fallback_runpod``).
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD
+    assert len(rp.launches) == 1
+    # No SLURM cascade — the workload failure short-circuited to RunPod.
     assert len(nibi.launches) == 0
+    # The GcpWorkloadError evidence rides the failover marker for diagnosis.
+    finals = _by_reason(captured_markers, ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD)
+    assert finals
+    assert finals[-1]["extra"].get("gcp_workload_evidence", {}).get("exit_code") == 1
+    # The GCP rung's attempt is recorded as a workload_failure that failed over.
+    gcp_workload = [
+        a for a in result.attempts if a.kind == "gcp" and a.outcome == "workload_failure"
+    ]
+    assert gcp_workload and "failing over to RunPod" in (gcp_workload[-1].detail or "")
 
 
 def test_no_gcp_wired_raises_no_compute_after_free_lanes_fail(lease_store):
@@ -1822,23 +1840,28 @@ def test_no_compute_terminal_posts_breadcrumb_marker(lease_store, marker_poster,
 def test_workload_failure_terminal_posts_breadcrumb_marker(
     lease_store, marker_poster, captured_markers
 ):
-    """``WorkloadSurfacedError`` paths post a workload_failure marker before raising."""
+    """A SLURM-lane ``WorkloadSurfacedError`` path posts a workload_failure
+    marker before raising.
+
+    Repointed from the GCP lane to the SLURM lane (task #658): a GCP
+    workload failure now FAILS OVER to RunPod (see
+    ``test_gcp_workload_error_fails_over_to_runpod_no_slurm_cascade``)
+    instead of surfacing, so the surviving ``WorkloadSurfacedError`` +
+    terminal-``workload_failure``-marker path is the SLURM
+    ``terminal_before_running``-with-artifacts case (a started-then-failed
+    job on the lane the user explicitly asked for)."""
     from explore_persona_space.backends.router import ROUTE_REASON_WORKLOAD_FAILURE
 
-    rp = _ExplodingRunpod()
-    nibi = _FreeLaneBackend(kind="nibi")
-    gcp = _GcpBackendDouble(
-        launch_raises=GcpWorkloadError("entrypoint crashed", evidence={"exit_code": 1})
-    )
+    nibi = _FreeLaneBackend(kind="nibi", poll_status="dead")
     with pytest.raises(WorkloadSurfacedError):
         route(
-            _spec(backend=None),
-            runpod_backend=rp,
+            _spec(backend="nibi"),  # explicit lane → no failover, surfaces
+            runpod_backend=_ExplodingRunpod(),
             free_backends={"nibi": nibi},
-            gcp_backend=gcp,
             lease_store=lease_store,
             is_started=lambda _b, _h: False,
             is_live_after_cancel=lambda _b, _h: False,
+            started_evidence_probe=lambda _b, _h: dict(_EVIDENCE),  # started-then-failed
             marker_poster=marker_poster,
             config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
             now_fn=_clock(),
@@ -3545,24 +3568,42 @@ def test_no_budget_job_is_not_short_no_spot_rung(lease_store, marker_poster, cap
     assert not any("spot" in (a.detail or "") for a in gcp_fails)
 
 
-def test_workload_error_on_any_rung_raises_no_fallback(lease_store, marker_poster):
-    """T8: a GcpWorkloadError on a rung raises WorkloadSurfacedError
-    immediately — RunPod never called, ladder does NOT advance (broken
-    workload code must not cascade)."""
+def test_workload_error_on_a_rung_fails_over_to_runpod_no_rung_advance(
+    lease_store, marker_poster, captured_markers
+):
+    """T8 (REVERSED for task #658): a GcpWorkloadError on the FIRST rung
+    STOPS the ladder (does NOT advance to the cheaper rungs — re-running
+    broken code on A100-40 / spot burns credit) and FAILS OVER to RunPod.
+    Exactly one GCP create is attempted; RunPod launches once."""
+    rp = _PassiveRunpod()
     gcp = _GcpBackendDouble(
         launch_raises=GcpWorkloadError("workload crashed", evidence={"phase": "train"})
     )
-    with pytest.raises(WorkloadSurfacedError):
-        route(
-            _short_lora_spec(),
-            runpod_backend=_ExplodingRunpod(),
-            gcp_backend=gcp,
-            lease_store=lease_store,
-            marker_poster=marker_poster,
-            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
+    result = route(
+        _short_lora_spec(),  # has A100-40 + spot rungs available
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD
+    assert len(rp.launches) == 1
+    # Ladder did NOT advance — exactly ONE GCP rung recorded a
+    # workload_failure before failing over (the workload error
+    # short-circuited the remaining cheaper rungs). The double raises before
+    # appending, so probe via the attempts trail, not gcp.launches.
+    gcp_workload = [
+        a for a in result.attempts if a.kind == "gcp" and a.outcome == "workload_failure"
+    ]
+    assert len(gcp_workload) == 1
+    # No advanced-rung provisioning_failure attempts were recorded.
+    assert not [
+        a for a in result.attempts if a.kind == "gcp" and a.outcome == "provisioning_failure"
+    ]
 
 
 def test_per_day_attempt_cap_stops_gcp_creates_falls_to_runpod(

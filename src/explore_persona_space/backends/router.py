@@ -40,7 +40,18 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    — RunPod stays override-only regardless of the configured order.
 5. **Failure classification** — :class:`gcp.GcpProvisioningError` (and
    any backend-marked ``provisioning_failure: True`` raise) routes to the
-   next tier; :class:`gcp.GcpWorkloadError` surfaces, NO auto-fallback;
+   next tier; a :class:`gcp.GcpWorkloadError` on a GCP rung FAILS OVER TO
+   RUNPOD (task #658 — a GCP failure of ANY class routes the next attempt
+   to RunPod; RunPod pods persist + are SSH-able for diagnosis where GCP
+   DELETEs its boot disk on crash; ``reason:
+   gcp_workload_failover_runpod``), STRAIGHT to the RunPod terminal rung
+   without cascading across the remaining GCP rungs or the SLURM lanes
+   (re-crashing broken code there burns queue time). The bound: RunPod
+   runs the broken job at most ONCE more, then the poller surfaces
+   ``failure_class: code`` → ``status:blocked`` (the watcher's
+   capacity-retry pass never re-drives a code failure), so there is no
+   infinite RunPod cascade. A WORKLOAD failure on a SLURM lane still
+   surfaces :class:`WorkloadSurfacedError` (not GCP, no failover).
    "every free lane park-failed AND GCP capacity-failed" raises
    :class:`NoComputeAvailableError` for the orchestrator to translate
    into ``epm:failure (failure_class: infra) + status:blocked``. A
@@ -86,8 +97,12 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    through to RunPod as the documented terminal fallback
    (``reason: auto_fallback_runpod``). The deliberate reversal of the
    historical no-auto-RunPod invariant: RunPod is reached ONLY here, after
-   every cheaper rung, never skipping one. Only if the RunPod launch ITSELF
-   fails does the chain raise :class:`NoComputeAvailableError`.
+   every cheaper rung, never skipping one. The SAME RunPod terminal rung is
+   the failover target when a GCP rung CRASHES THE WORKLOAD (task #658,
+   ``reason: gcp_workload_failover_runpod``) — that case short-circuits
+   straight here, skipping the remaining GCP rungs + SLURM lanes. Only if
+   the RunPod launch ITSELF fails does the chain raise
+   :class:`NoComputeAvailableError`.
 9. **Markers** — extends the existing ``epm:backend-selected v1`` body
    (per-lane est-starts raw+clamped, chosen lane, fallback chain,
    canonical reason codes, ids). The orchestrator's marker poster is
@@ -202,6 +217,24 @@ ROUTE_REASON_PREPARE_FAILED: str = "backend_prepare_failed"
 #: (user-directed 2026-06-17): RunPod is reached ONLY here, never first,
 #: never skipping a cheaper rung.
 ROUTE_REASON_RUNPOD_FALLBACK: str = "auto_fallback_runpod"
+#: The router fell back to RunPod because a GCP attempt FAILED THE WORKLOAD
+#: (a :class:`gcp.GcpWorkloadError`, not a capacity/headroom miss) — the
+#: deliberate reversal of the historical "GCP workload failure surfaces
+#: with NO fallback" invariant (user-directed 2026-06-24, task #658).
+#: Rationale: when GCP is failing a run, re-running it on RunPod keeps the
+#: science moving AND gives a persistent, SSH-able pod for diagnosis (GCP's
+#: ``--instance-termination-action=DELETE`` destroys the boot disk on the
+#: EXIT-trap teardown, so a GCP crash loses its own logs). DISTINCT from
+#: :data:`ROUTE_REASON_RUNPOD_FALLBACK` (capacity exhaustion) so the marker
+#: trail tells the two failover causes apart. The failover does NOT cascade
+#: across the remaining GCP rungs or the free SLURM lanes (re-crashing
+#: broken code there burns queue time, the original no-cascade concern) —
+#: it routes the run STRAIGHT to the RunPod terminal rung. The bound on a
+#: genuinely-broken job: RunPod runs it AT MOST ONCE more; if it crashes
+#: again the poller surfaces ``failure_class: code`` → ``status:blocked``,
+#: which the watcher's capacity-retry pass (``no_compute_available`` only)
+#: never re-drives — so there is no infinite RunPod cascade.
+ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD: str = "gcp_workload_failover_runpod"
 
 #: Consecutive ``is_started`` probe failures tolerated inside the park
 #: watchdog before it gives up with ``probe_failures_exceeded``.
@@ -414,6 +447,32 @@ class ManualAttentionRequiredError(RouteError):
         self.cluster = cluster
         self.orphaned_job_id = orphaned_job_id
         self.attempts = list(attempts or [])
+
+
+class _GcpWorkloadFailover(RouteError):
+    """INTERNAL control-flow signal: a GCP rung failed the WORKLOAD; fail over to RunPod.
+
+    NOT a public terminal — it never escapes :func:`route`. A
+    :class:`gcp.GcpWorkloadError` on a GCP ladder rung raises this so the
+    ladder STOPS (no cascade across the remaining GCP rungs) and the lane
+    callers (:func:`_auto_route`, :func:`_override_gcp_with_ladder`) route
+    the run STRAIGHT to the RunPod terminal rung — bypassing the free
+    SLURM lanes too (broken workload code re-crashing there burns queue
+    time, the original no-cascade concern). Carries the workload evidence +
+    a residual-gap string for the RunPod marker.
+
+    The reversed invariant (user-directed 2026-06-24, task #658): a GCP
+    failure of ANY class — capacity miss OR workload failure — now routes
+    the next attempt to RunPod, because RunPod pods persist + are SSH-able
+    so they are strictly better for diagnosis than GCP's delete-on-crash
+    boot disk. See :data:`ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD` for the
+    bound that prevents an infinite RunPod cascade.
+    """
+
+    def __init__(self, *, residual_gap: str, evidence: dict[str, Any] | None = None) -> None:
+        super().__init__(residual_gap)
+        self.residual_gap = residual_gap
+        self.evidence = dict(evidence or {})
 
 
 # ---------------------------------------------------------------------------
@@ -1816,6 +1875,8 @@ def _runpod_terminal_rung(
     marker_poster: Callable[..., None] | None,
     on_launched: Callable[[RunHandle], None] | None,
     residual_gap: str,
+    reason: str = ROUTE_REASON_RUNPOD_FALLBACK,
+    failover_evidence: dict[str, Any] | None = None,
 ) -> RouteResult:
     """Final fallback rung: launch on RunPod after every cheaper rung failed.
 
@@ -1830,17 +1891,35 @@ def _runpod_terminal_rung(
     a future debug-er sees exactly what was exhausted before money was
     spent.
 
+    ``reason`` labels the launched :class:`RouteResult` /
+    ``epm:backend-selected`` marker. The DEFAULT
+    (:data:`ROUTE_REASON_RUNPOD_FALLBACK`) is the capacity-exhaustion
+    fallback (#656). The GCP-workload-failover caller (task #658) passes
+    :data:`ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD` +
+    ``failover_evidence`` (the GcpWorkloadError evidence) so the marker
+    trail tells "fell back because GCP ran dry" apart from "failed over
+    because GCP crashed the workload"; the evidence rides the marker
+    ``extra``.
+
     Fail-safe: if the RunPod launch ITSELF fails (no compute anywhere),
     re-raise as :class:`NoComputeAvailableError` with the full attempt
     trail — the terminal "truly no compute anywhere" outcome, preserving a
     typed terminal for the orchestrator's failure classifier.
     """
-    logger.warning(
-        "route: GCP ladder (and free lanes, if any) exhausted for issue %d; "
-        "falling back to RunPod (residual gap: %s).",
-        spec.issue,
-        residual_gap,
-    )
+    if reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD:
+        logger.warning(
+            "route: GCP WORKLOAD failure for issue %d; failing over to RunPod "
+            "(persistent SSH-able pod for diagnosis; residual gap: %s).",
+            spec.issue,
+            residual_gap,
+        )
+    else:
+        logger.warning(
+            "route: GCP ladder (and free lanes, if any) exhausted for issue %d; "
+            "falling back to RunPod (residual gap: %s).",
+            spec.issue,
+            residual_gap,
+        )
     runpod_spec = replace(
         spec,
         backend="runpod",
@@ -1879,6 +1958,7 @@ def _runpod_terminal_rung(
             ) from exc
         _invoke_on_launched(on_launched, handle)
         write(_lease_after_submit(lease, runpod_spec, "runpod", None, handle))
+    is_workload_failover = reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD
     attempts.append(
         RouteAttempt(
             kind="runpod",
@@ -1886,7 +1966,10 @@ def _runpod_terminal_rung(
             est_start_seconds_raw=0.0,
             est_start_seconds_clamped=0.0,
             outcome="launched",
-            detail=f"runpod terminal fallback (residual gap: {residual_gap})",
+            detail=(
+                f"runpod {'workload-failover' if is_workload_failover else 'terminal fallback'} "
+                f"(residual gap: {residual_gap})"
+            ),
             elapsed_seconds=now_fn() - started_at,
         )
     )
@@ -1895,11 +1978,16 @@ def _runpod_terminal_rung(
         handle=handle,
         requested_kind=spec.backend,
         chosen_kind="runpod",
-        reason=ROUTE_REASON_RUNPOD_FALLBACK,
+        reason=reason,
         cluster=None,
         attempts=attempts,
         elapsed_seconds=now_fn() - started_at,
-        extra={"runpod_fallback_residual_gap": residual_gap},
+        extra={
+            "runpod_fallback_residual_gap": residual_gap,
+            # The GcpWorkloadError evidence (task #658) so the failover
+            # marker carries the original crash signal for diagnosis.
+            **({"gcp_workload_evidence": failover_evidence} if failover_evidence else {}),
+        },
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
@@ -2381,25 +2469,45 @@ def _override_gcp_with_ladder(
     # No live instance → walk the GCP ladder. ``terminal=True`` only labels
     # the launched attempt detail; the ladder no longer raises on
     # exhaustion (it returns None) — the RunPod terminal rung is the tail.
-    ladder_result = _attempt_gcp_lane(
-        spec=spec,
-        gcp_backend=gcp_backend,
-        store=store,
-        attempts=attempts,
-        started_at=started_at,
-        cfg=cfg,
-        now_fn=now_fn,
-        marker_poster=marker_poster,
-        on_launched=on_launched,
-        terminal=True,
-        # Explicit pin → label the launched result as an OVERRIDE (not a
-        # router auto-fallback) so the marker trail distinguishes the two.
-        reason=ROUTE_REASON_OVERRIDE,
-        requested_kind="gcp",
-        # Explicit user ask attempts regardless of the auto-escalation cap
-        # (the pre-#656 explicit-gcp path never touched the per-day counter).
-        count_attempt_cap=False,
-    )
+    try:
+        ladder_result = _attempt_gcp_lane(
+            spec=spec,
+            gcp_backend=gcp_backend,
+            store=store,
+            attempts=attempts,
+            started_at=started_at,
+            cfg=cfg,
+            now_fn=now_fn,
+            marker_poster=marker_poster,
+            on_launched=on_launched,
+            terminal=True,
+            # Explicit pin → label the launched result as an OVERRIDE (not a
+            # router auto-fallback) so the marker trail distinguishes the two.
+            reason=ROUTE_REASON_OVERRIDE,
+            requested_kind="gcp",
+            # Explicit user ask attempts regardless of the auto-escalation cap
+            # (the pre-#656 explicit-gcp path never touched the per-day counter).
+            count_attempt_cap=False,
+        )
+    except _GcpWorkloadFailover as failover:
+        # A GCP rung failed the WORKLOAD on an explicit ``backend: gcp``
+        # pin (task #658): a GCP failure of ANY class fails over to RunPod,
+        # so the explicit-gcp path mirrors the auto path. RunPod's
+        # persistent SSH-able pod is the diagnosis surface GCP's deleted
+        # boot disk cannot give.
+        return _runpod_terminal_rung(
+            spec=spec,
+            runpod_backend=runpod_backend,
+            store=store,
+            attempts=attempts,
+            started_at=started_at,
+            now_fn=now_fn,
+            marker_poster=marker_poster,
+            on_launched=on_launched,
+            residual_gap=failover.residual_gap,
+            reason=ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+            failover_evidence=failover.evidence,
+        )
     if ladder_result is not None:
         return ladder_result
 
@@ -2502,18 +2610,38 @@ def _auto_route(
     for group_idx, group in enumerate(groups):
         terminal = group_idx == len(groups) - 1
         if group == ("gcp",):
-            gcp_result = _attempt_gcp_lane(
-                spec=spec,
-                gcp_backend=gcp_backend,
-                store=store,
-                attempts=attempts,
-                started_at=started_at,
-                cfg=cfg,
-                now_fn=now_fn,
-                marker_poster=marker_poster,
-                on_launched=on_launched,
-                terminal=terminal,
-            )
+            try:
+                gcp_result = _attempt_gcp_lane(
+                    spec=spec,
+                    gcp_backend=gcp_backend,
+                    store=store,
+                    attempts=attempts,
+                    started_at=started_at,
+                    cfg=cfg,
+                    now_fn=now_fn,
+                    marker_poster=marker_poster,
+                    on_launched=on_launched,
+                    terminal=terminal,
+                )
+            except _GcpWorkloadFailover as failover:
+                # A GCP rung failed the WORKLOAD (task #658): fail over
+                # STRAIGHT to RunPod — do NOT continue walking the remaining
+                # SLURM lanes (re-crashing broken code there burns queue
+                # time). RunPod's persistent SSH-able pod is the diagnosis
+                # surface GCP's deleted boot disk cannot give.
+                return _runpod_terminal_rung(
+                    spec=spec,
+                    runpod_backend=runpod_backend,
+                    store=store,
+                    attempts=attempts,
+                    started_at=started_at,
+                    now_fn=now_fn,
+                    marker_poster=marker_poster,
+                    on_launched=on_launched,
+                    residual_gap=failover.residual_gap,
+                    reason=ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+                    failover_evidence=failover.evidence,
+                )
             if gcp_result is not None:
                 return gcp_result
             continue
@@ -3097,7 +3225,13 @@ def _attempt_gcp_lane(
     used to run; a rung that fails on a POSITIVE insufficient-headroom
     reading OR a :class:`GcpProvisioningError` capacity/zone miss records
     its attempt and ADVANCES to the next rung. A :class:`GcpWorkloadError`
-    on ANY rung raises immediately (broken workload code must NOT cascade).
+    on ANY rung STOPS the ladder and raises the internal
+    :class:`_GcpWorkloadFailover` signal, which the lane callers translate
+    into a RunPod terminal-rung launch (task #658: a GCP workload failure
+    now fails over to RunPod instead of surfacing — RunPod pods persist +
+    are SSH-able for diagnosis, where GCP DELETEs its boot disk on crash).
+    The failover does NOT cascade across the remaining GCP rungs or the
+    free SLURM lanes (re-crashing broken code there burns queue time).
 
     ``terminal`` no longer changes the failure DISPOSITION — in BOTH
     positions an exhausted ladder returns ``None`` so the caller falls
@@ -3188,8 +3322,10 @@ def _attempt_one_gcp_rung(
     (via :func:`_with_machine`), so the headroom pre-check, the create, the
     quota metric, and the zone filter all resolve THIS rung's true machine.
 
-    A :class:`GcpWorkloadError` on the create RAISES :class:`WorkloadSurfacedError`
-    immediately (broken workload code must not cascade across rungs/lanes).
+    A :class:`GcpWorkloadError` on the create raises the internal
+    :class:`_GcpWorkloadFailover` signal (the ladder STOPS; the lane caller
+    fails over STRAIGHT to RunPod — task #658). It does not cascade across
+    the remaining GCP rungs or the SLURM lanes.
     """
     # Pre-create regional-quota headroom check (#608) for THIS rung. When
     # the probe POSITIVELY reports insufficient headroom, skip the rung
@@ -3352,8 +3488,20 @@ def _attempt_one_gcp_rung(
             )
             return "advance"
         except GcpWorkloadError as exc:
-            # Broken workload code → surface immediately, NO fallback (must
-            # NOT cascade across rungs/lanes and burn credit re-running it).
+            # GCP workload failure (broken run on GCP) → FAIL OVER TO RUNPOD,
+            # not a hard terminal (reversed invariant, task #658). The ladder
+            # STOPS here (no cascade across the remaining GCP rungs) and the
+            # internal signal makes the lane callers route STRAIGHT to the
+            # RunPod terminal rung — bypassing the free SLURM lanes too
+            # (re-crashing broken code on a SLURM lane burns queue time, the
+            # original no-cascade concern). RunPod pods persist + are
+            # SSH-able, so the next attempt is also strictly better for
+            # diagnosis than GCP's delete-on-crash boot disk. No terminal
+            # marker posted here — the route is failing over, not ending;
+            # the RunPod terminal rung posts the next marker. The bound on a
+            # genuinely-broken job (RunPod runs it at most once more, then
+            # status:blocked, no re-drive) lives in
+            # ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD's docstring.
             attempts.append(
                 RouteAttempt(
                     kind="gcp",
@@ -3361,21 +3509,23 @@ def _attempt_one_gcp_rung(
                     est_start_seconds_raw=0.0,
                     est_start_seconds_clamped=0.0,
                     outcome="workload_failure",
-                    detail=f"rung {rung_label}: {exc.reason}",
+                    detail=f"rung {rung_label}: {exc.reason}; failing over to RunPod",
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
-            _post_terminal_failure_marker(
-                spec=spec,
-                marker_poster=marker_poster,
-                reason=ROUTE_REASON_WORKLOAD_FAILURE,
-                chosen_kind="gcp",
-                attempts=attempts,
-                extra={"evidence": exc.evidence},
+            logger.warning(
+                "route: GCP rung %s WORKLOAD failure for issue %d (%s); failing over to "
+                "RunPod (no cascade across remaining GCP rungs / SLURM lanes).",
+                rung_label,
+                spec.issue,
+                exc.reason,
             )
-            raise WorkloadSurfacedError(
-                f"gcp workload failure (no auto-fallback): {exc.reason}",
-                chosen_kind="gcp",
+            raise _GcpWorkloadFailover(
+                residual_gap=(
+                    f"GCP workload failure on rung {rung_label} ({exc.reason}) — failing "
+                    "over to RunPod for a persistent, SSH-able run (GCP DELETEs its boot "
+                    "disk + logs on crash)"
+                ),
                 evidence=exc.evidence,
             ) from exc
 
@@ -3909,6 +4059,7 @@ __all__ = [
     "PARK_MAX_CONSECUTIVE_PROBE_FAILURES",
     "ROUTE_REASON_AUTO_FALLBACK_GCP",
     "ROUTE_REASON_AUTO_STARTED",
+    "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
     "ROUTE_REASON_NO_COMPUTE",
     "ROUTE_REASON_OVERRIDE",
     "ROUTE_REASON_PREPARE_FAILED",
