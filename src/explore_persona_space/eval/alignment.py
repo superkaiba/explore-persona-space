@@ -148,7 +148,7 @@ def generate_alignment_completions(
     prompts: list[str],
     num_samples: int = 50,
     temperature: float = 1.0,
-    max_tokens: int = 512,
+    max_tokens: int = 1024,
     seed: int = 42,
     system_prompt: str | None = None,
     extra_context_messages: list[dict] | None = None,
