@@ -687,6 +687,19 @@ class Lease:
     submitted_at: float | None = None
     gcp_attempts_today: int = 0
     gcp_attempts_date: str | None = None
+    #: DURABLE idempotency record for the ASYNC GCP-workload->RunPod failover
+    #: (#659). When this lease's RunPod launch was a failover OF a specific
+    #: crashed GCP run, this holds that GCP run's stable identity
+    #: (``{"pod_name": ..., "job_id": ...}``). It is the AUTHORITATIVE
+    #: "exactly once per GCP crash" record: the poller
+    #: (``scripts/backend_poll.py``) stamps it BEFORE the .claude/cache sidecar
+    #: write, so even when EDQUOT / a read-only-fs / out-of-inodes fails BOTH
+    #: the sidecar write AND the .claude/cache sentinel write, this record
+    #: survives at ``~/.eps-routing/`` (a DIFFERENT directory, so independent
+    #: of the sidecar's failure mode) and the next poll short-circuits instead
+    #: of firing a paid second RunPod launch. ``None`` for every non-failover
+    #: lease.
+    gcp_failover_of: dict[str, Any] | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -699,10 +712,12 @@ class Lease:
             "submitted_at": self.submitted_at,
             "gcp_attempts_today": self.gcp_attempts_today,
             "gcp_attempts_date": self.gcp_attempts_date,
+            "gcp_failover_of": self.gcp_failover_of,
         }
 
     @classmethod
     def from_json(cls, payload: dict[str, Any]) -> Lease:
+        raw_failover = payload.get("gcp_failover_of")
         return cls(
             issue=int(payload["issue"]),
             spec_hash=str(payload["spec_hash"]),
@@ -713,6 +728,7 @@ class Lease:
             submitted_at=payload.get("submitted_at"),
             gcp_attempts_today=int(payload.get("gcp_attempts_today", 0)),
             gcp_attempts_date=payload.get("gcp_attempts_date"),
+            gcp_failover_of=raw_failover if isinstance(raw_failover, dict) else None,
         )
 
     def is_unknown_submitted(self) -> bool:
