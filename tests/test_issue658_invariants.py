@@ -551,8 +551,13 @@ def _tiny_qwen():
     from transformers.models.qwen2.configuration_qwen2 import Qwen2Config
 
     tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
+    # vocab must cover EVERY id the tokenizer can emit, incl. added special
+    # tokens (eos `<|im_end|>` = 151645 > tok.vocab_size 151643) — otherwise
+    # raw[eos_token_id] / the LM-head projection IndexErrors. len(tok) includes
+    # added tokens; round up so the marker id (83399) is in range too.
+    vocab = max(len(tok), tok.eos_token_id + 1, 83400)
     cfg = Qwen2Config(
-        vocab_size=tok.vocab_size,
+        vocab_size=vocab,
         hidden_size=32,
         intermediate_size=64,
         num_hidden_layers=2,
