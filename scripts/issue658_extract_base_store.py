@@ -67,6 +67,8 @@ import argparse
 import logging
 import sys
 import time
+import traceback
+from datetime import UTC, datetime
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -323,6 +325,150 @@ def load_e0_battery(column_id: str, cap: int, probes: list[str]) -> list[str]:
     return pool[: cap or len(pool)]
 
 
+# ── G6 resilience (round-2 crash recovery) ───────────────────────────────────
+# Rounds 1 + 2 both died at marker context #31 (`f3_icl_json_k2`) with a
+# deterministic per-context exception, the GCE EXIT trap powered the VM off, and
+# the 30 partial e0_gen/*.json + the log were LOST. These helpers make a
+# per-context failure (a) DIAGNOSABLE next run (full traceback to stdout +
+# an ``*__marker__ERROR.json`` artifact) and (b) NON-DESTRUCTIVE of the 30
+# contexts that already ran (periodic idempotent upload of the partial e0_gen/
+# directory to the HF data repo). NONE of the marker mechanics change —
+# ``_gen_marker_slot`` (the 4-float slot read, the ` ※` id-83399 token, the
+# per-column policy) is untouched; only the LOOP CALLER gains isolation.
+
+E0_PARTIAL_UPLOAD_EVERY = 5  # upload partial e0_gen/ after every N marker contexts
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _empty_cuda_cache() -> None:
+    """Defensive: drop cached CUDA blocks between contexts (no-op on CPU)."""
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
+def _write_marker_error(e0_dir: Path, context_id: str, exc: Exception) -> Path:
+    """Persist a per-context marker failure so downstream tooling sees the gap.
+
+    Companion to the FULL traceback printed to stdout (which the GCE EXIT trap
+    tail-dumps to fd3, so it survives even if a later phase still crashes).
+    """
+    err_path = e0_dir / f"{context_id}__marker__ERROR.json"
+    dump_json(
+        {
+            "context_id": context_id,
+            "ts": _now_iso(),
+            "exception_type": type(exc).__name__,
+            "exception_str": str(exc),
+            "traceback": "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
+        },
+        err_path,
+    )
+    return err_path
+
+
+def _upload_partial_e0(e0_dir: Path, smoke: bool) -> None:
+    """Idempotent partial upload of e0_gen/*.json to the HF data repo.
+
+    Re-uploading the same files overwrites (idempotent). Wrapped in its OWN
+    try/except by the CALLER — a transient HF failure must never kill the
+    workload (the whole point of the resilience fix is to STOP losing the
+    30 good contexts). Lands under the same ``{HF_PREFIX}/e0_gen`` namespace
+    the end-of-run ``upload_raw_completions`` uses, so partial and final
+    completions are one prefix (no split-brain).
+    """
+    from huggingface_hub import HfApi
+
+    sub = "e0_gen_smoke" if smoke else "e0_gen"
+    path_in_repo = f"{HF_PREFIX}/{sub}"
+    HfApi().upload_folder(
+        folder_path=str(e0_dir),
+        path_in_repo=path_in_repo,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        allow_patterns=["*.json"],
+        commit_message=f"issue658: partial e0_gen upload ({'smoke ' if smoke else ''}resilience)",
+    )
+    logger.info("partial e0_gen upload OK -> %s/%s", HF_DATA_REPO, path_in_repo)
+
+
+def _run_marker_loop(
+    model,
+    tokenizer,
+    instances: list[dict],
+    e0_dir: Path,
+    n_battery: int,
+    compute_marker_slot_stats,
+    mnt_fn,
+    *,
+    smoke: bool = False,
+    upload: bool = True,
+) -> dict:
+    """Marker-column HF slot read per context, with per-context exception isolation.
+
+    Directly invokable (the round-3 resilience test drives it with a stub model).
+    For each instance, runs ``_gen_marker_slot`` for the marker column(s) under a
+    ``try/except``: on failure the FULL traceback goes to stdout AND an
+    ``*__marker__ERROR.json`` is written, then the loop continues to the next
+    context (NEVER re-raises). ``torch.cuda.empty_cache()`` runs after every
+    context (success AND failure). Partial e0_gen/ is uploaded every
+    ``E0_PARTIAL_UPLOAD_EVERY`` successful contexts and once at the end — each
+    upload in its own try/except so an upload failure never kills the workload.
+
+    Returns ``{"done": [ids], "errors": [ids]}`` for the caller's telemetry.
+    """
+    done: list[str] = []
+    errors: list[str] = []
+    n_since_upload = 0
+    for inst in instances:
+        ctx_id = inst["id"]
+        try:
+            for col_id, col in E0_COLUMNS.items():
+                if col.dv != "marker_slot_stats":
+                    continue
+                out_path = e0_dir / f"{ctx_id}__{col_id}.json"
+                if out_path.exists():
+                    continue
+                battery = load_e0_battery(col_id, n_battery, [])
+                _gen_marker_slot(
+                    model,
+                    tokenizer,
+                    inst,
+                    battery,
+                    col,
+                    out_path,
+                    compute_marker_slot_stats,
+                    mnt_fn(col),
+                )
+            done.append(ctx_id)
+            n_since_upload += 1
+        except Exception as exc:
+            traceback.print_exc()
+            print(
+                f"[ERROR] marker context {ctx_id}: {type(exc).__name__}: {exc}",
+                flush=True,
+            )
+            _write_marker_error(e0_dir, ctx_id, exc)
+            errors.append(ctx_id)
+        finally:
+            _empty_cuda_cache()
+        if upload and n_since_upload >= E0_PARTIAL_UPLOAD_EVERY:
+            n_since_upload = 0
+            try:
+                _upload_partial_e0(e0_dir, smoke)
+            except Exception as up_exc:
+                print(f"[ERROR] partial upload failed: {up_exc}", flush=True)
+    # End-of-loop partial upload (whether or not the next phase runs / crashes).
+    if upload:
+        try:
+            _upload_partial_e0(e0_dir, smoke)
+        except Exception as up_exc:
+            print(f"[ERROR] partial upload failed: {up_exc}", flush=True)
+    return {"done": done, "errors": errors}
+
+
 def generate_e0_completions(
     model,
     tokenizer,
@@ -335,6 +481,8 @@ def generate_e0_completions(
     run,
     max_new_tokens_cap: int = 0,
     n_samples_cap: int = 0,
+    smoke: bool = False,
+    upload_partial: bool = True,
 ) -> None:
     """Generate E0(C,B) behavior-battery completions per (context, column).
 
@@ -372,17 +520,34 @@ def generate_e0_completions(
         return min(col.n_samples, n_samples_cap) if n_samples_cap else col.n_samples
 
     # ── marker column (HF slot read) — per context, no vLLM engine ────────────
-    for inst in instances:
-        for col_id, col in E0_COLUMNS.items():
-            if col.dv != "marker_slot_stats":
-                continue
-            out_path = e0_dir / f"{inst['id']}__{col_id}.json"
-            if out_path.exists():
-                continue
-            battery = load_e0_battery(col_id, n_battery, [])
-            _gen_marker_slot(
-                model, tokenizer, inst, battery, col, out_path, compute_marker_slot_stats, _mnt(col)
-            )
+    # Per-context exception isolation + periodic partial upload (round-2 crash
+    # recovery): a deterministic per-context failure is now diagnosable next run
+    # (traceback + *__marker__ERROR.json) and never destroys the contexts that
+    # already ran (rounds 1+2 lost 30 good contexts at the #31 crash). The marker
+    # MECHANICS (_gen_marker_slot, the slot read, the ` ※` token) are unchanged.
+    marker_status = _run_marker_loop(
+        model,
+        tokenizer,
+        instances,
+        e0_dir,
+        n_battery,
+        compute_marker_slot_stats,
+        _mnt,
+        smoke=smoke,
+        upload=upload_partial,
+    )
+    run.log(
+        {
+            "e0_marker_contexts_done": len(marker_status["done"]),
+            "e0_marker_contexts_errored": len(marker_status["errors"]),
+        }
+    )
+    if marker_status["errors"]:
+        logger.warning(
+            "G6 marker loop: %d context(s) failed (isolated, see *__marker__ERROR.json): %s",
+            len(marker_status["errors"]),
+            marker_status["errors"],
+        )
 
     # ── judged_rate / structural columns ──────────────────────────────────────
     # Collect the (context, column, probe) cells still needing generation.
@@ -398,8 +563,30 @@ def generate_e0_completions(
             pending.append((inst, col, battery, out_path))
 
     if use_vllm and pending:
-        _gen_e0_vllm_shared(model_name, tokenizer, pending, _mnt, _nsamp)
-        run.log({"e0_contexts_done": len(instances)})
+        # Structural / judged cell phase exception isolation (round-2 crash
+        # recovery): if the shared-engine batch raises, log the FULL traceback,
+        # write a phase-level error file, upload the partial e0_gen/, and return
+        # cleanly — NEVER crash hard at this layer (so the marker contexts that
+        # already landed are preserved + uploaded).
+        try:
+            _gen_e0_vllm_shared(
+                model_name, tokenizer, pending, _mnt, _nsamp, smoke=smoke, upload=upload_partial
+            )
+            run.log({"e0_contexts_done": len(instances)})
+        except Exception as exc:
+            traceback.print_exc()
+            print(
+                f"[ERROR] structural/judged E0 phase: {type(exc).__name__}: {exc}",
+                flush=True,
+            )
+            _write_marker_error(e0_dir, "_structural_phase", exc)
+            if upload_partial:
+                try:
+                    _upload_partial_e0(e0_dir, smoke)
+                except Exception as up_exc:
+                    print(f"[ERROR] partial upload failed: {up_exc}", flush=True)
+        finally:
+            _empty_cuda_cache()
     else:
         # HF fallback (CPU smoke / --no-vllm): per-cell loop at smoke scale.
         for inst, col, battery, out_path in pending:
@@ -418,10 +605,13 @@ def generate_e0_completions(
                 out_path,
             )
             run.log({"e0_contexts_done": inst["id"]})
+        _empty_cuda_cache()
     logger.info("G6 done: E0 generations under %s", e0_dir)
 
 
-def _gen_e0_vllm_shared(model_name, tokenizer, pending, mnt_fn, nsamp_fn) -> None:
+def _gen_e0_vllm_shared(
+    model_name, tokenizer, pending, mnt_fn, nsamp_fn, *, smoke: bool = False, upload: bool = True
+) -> None:
     """Generate every (context, column) judged/structural cell through ONE engine.
 
     Builds the prompt list across ALL pending cells, attaches a per-prompt
@@ -431,7 +621,9 @@ def _gen_e0_vllm_shared(model_name, tokenizer, pending, mnt_fn, nsamp_fn) -> Non
     fix — replaces ~hundreds of per-cell ``LLM()`` startups). Each completion
     carries its length-normalized log-prob (``logp_norm``) — the SECONDARY
     dual-DV companion. Checkpoint-per-cell: each cell JSON is written as soon as
-    its slice of the batched output is assembled.
+    its slice of the batched output is assembled. Runs ONE partial e0_gen/ upload
+    at the end (round-2 crash recovery) — in its own try/except so an upload
+    failure never kills the workload.
     """
     from vllm import LLM, SamplingParams
 
@@ -484,6 +676,16 @@ def _gen_e0_vllm_shared(model_name, tokenizer, pending, mnt_fn, nsamp_fn) -> Non
             },
             out_path,
         )
+
+    # End-of-branch partial upload (round-2 crash recovery): persist the
+    # judged/structural completions to the HF data repo before the next phase
+    # (G4/G5/upload) can crash. ``pending`` is non-empty here (the caller gates
+    # on it), so ``pending[0][3].parent`` is the e0_gen dir.
+    if upload and pending:
+        try:
+            _upload_partial_e0(pending[0][3].parent, smoke)
+        except Exception as up_exc:
+            print(f"[ERROR] partial upload failed: {up_exc}", flush=True)
 
 
 def _gen_marker_slot(
@@ -1233,6 +1435,11 @@ def main() -> int:
         run=run,
         max_new_tokens_cap=(args.max_new_tokens_smoke if args.smoke else 0),
         n_samples_cap=(args.n_samples_smoke if args.smoke else 0),
+        smoke=args.smoke,
+        # The periodic partial e0_gen upload (round-2 crash recovery) follows the
+        # same --no-upload gate as the end-of-run store upload (local smoke skips
+        # HF). The end-of-script upload_raw_completions still runs the final pass.
+        upload_partial=not args.no_upload,
     )
 
     # ── G4: r_B diff-in-means over (D_B, D_Bbar) ──────────────────────────────
