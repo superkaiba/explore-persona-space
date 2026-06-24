@@ -255,6 +255,10 @@ One versioned store, written once per (model, recipe), reused by every CPU test.
   (`data/issue594/battery.json`, sha-pinned in the manifest); questions = the 48
   Betley probes. Store `v_θ(C)` (all layers), `c_C` (all layers), per-(C,question)
   raw answer activations needed for resampling, on-policy answers + judge labels.
+  **Sample R≥8 completions per (C,question) at temp 1.0 and RETAIN per-sample
+  activations + judge labels** (not just the per-condition mean) — the
+  single-context edge case (§1.10) reads these; this is the one store-granularity
+  change it forces.
 - **Per behavior B:** `r_B` (all layers, each recipe), `D_B/D_{B̄}` activation
   means, `t_{C,B}`.
 - **Global:** `Σ_c` (+ regularized inverse `Σ_c⁻¹`, top-eigendir variant), the
@@ -264,6 +268,41 @@ One versioned store, written once per (model, recipe), reused by every CPU test.
 - **Four-float-per-slot** storage for marker DV (logits unrecoverable post-hoc, #530).
 - Manifest JSON: model sha, recipe, layer index, token-position policy, seed,
   code commit. Everything else is derived on CPU from these.
+
+### 1.10 Edge case: single-context conditions (C = δ_x)
+
+A context condition is a *distribution* over contexts; the **single-context limit**
+fixes `C = δ_x` — a point mass on one full input `x` (a battery context + one
+probe). We test **every assumption in this limit IN ADDITION to the distributional
+case**, because it is (a) the **deployment-relevant** case — leakage to a *specific*
+prompt (a trigger, a jailbreak, one query), not an average — and (b) the **hardest
+stress test**: the averaging over `x∼C` is the main variance-reduction mechanism
+behind the low-dim summary (A3.2), the linear read-out (A3.3), and the
+context→profile map (A3.5); removing it is the strictest test. If the assumptions
+hold per-prompt, they hold a fortiori for distributions.
+
+- **Granularity:** each (battery context × probe) pair is its own `δ_x`
+  (50 × 48 = 2400 single contexts). Single-context quantities collapse the outer
+  expectation: `v_θ(δ_x)=ā_θ(x)`, `E_θ(δ_x,B)=B(x,A_θ(x))`, `c_{δ_x}=c_x`.
+- **Within-context sampling (the store requirement, §1.9):** per `δ_x`, sample
+  **R≥8** completions (temp 1.0), judge each → a within-prompt **rate**, and mean
+  the R answer activations → `v_θ(δ_x)`. The store must retain per-probe, per-sample
+  activations + labels.
+- **Noise-floor caveat (load-bearing):** in the single-context limit the
+  measurement noise is **maximal** (no cross-context averaging). Estimate a
+  **within-context noise floor** from independent R-sample splits and report EVERY
+  single-context correlation against it — a low single-context ρ may be pure
+  measurement noise, not a model failure; the two MUST be distinguished before any
+  "assumption breaks at single-context" claim.
+- **Continuous DV is PRIMARY here:** a binary/rate behavior at one prompt quantizes
+  to a low-resolution Bernoulli rate; the continuous completion-probability DV
+  (§1.6 secondary) keeps full dynamic range per-prompt, so it is the **primary**
+  read for the single-context analysis (the rate stays as the saturating companion).
+- **Where it runs:** an analysis arm folded into the existing phases (Phase 1 for
+  A3.2/A3.3/A3.5; Phase 3 for the gate/leakage A3.8/A3.9/A3.10), **comparing
+  single-context vs distributional results**. Almost entirely **CPU re-analysis on
+  the same store** — the only added GPU is the R-samples-per-probe generation, which
+  the rate DV already needs.
 
 ---
 
@@ -349,6 +388,10 @@ extraction recipe** (layer, summary) used by every later phase, so run first.
   layer where each behavior reads out best.
 - **A3.4/A3.5 (context vector → answer profile)** — train linear `M` and an MLP
   mapping `c_C → v0(C)`; report linear-vs-nonlinear gap and best `c_C` recipe/layer.
+- **Single-context arm (§1.10):** repeat A3.2/A3.3/A3.5 at `C=δ_x` granularity
+  (each context×probe), **continuous DV primary**, reported vs the within-context
+  noise floor; compare per-prompt vs distributional. Pure CPU re-analysis on the
+  store (no new GPU beyond the R-samples-per-probe already captured in Phase 0).
 
 Output: locked layer/summary recipe per behavior + a go/no-go on the linear
 chain. (Paper marks A3.1 *not worth testing now* — skip; revisit only if A3.2
@@ -383,6 +426,10 @@ All of these are linear algebra on Phase-2 tensors. No new GPU.
   write** · **A3.9 key-query gate** (key/metric ablations) · **A3.10 base-gate
   validity** (g0 vs ĝ^real, oracle g⁺, drift decomposition) · **joint
   factorization** (rank-one of the latent leakage matrix S). Detailed in §4.
+- **Single-context arm (§1.10):** A3.8/A3.9/A3.10 with single-context source
+  and/or target — does the geometry predict *per-prompt* leakage `δ_x → δ_{x'}`
+  (the deployment case)? Reported vs the within-context noise floor; CPU on the
+  store.
 
 ### Phase 4 — end-to-end + cosine ablation + baselines *(CPU + small GPU)*
 
@@ -436,6 +483,11 @@ Paper's own "worth testing now" verdict noted.
   background-corpus pass on a *single* representative θ⁺ to estimate `Σ_c⁺`, run
   only if the `M⁰`-scoped residual is large and unexplained by key/query drift.
   This keeps the store cheap; the add-on pass is budgeted in §6 as optional.
+- **Single-context variant (§1.10).** Every assumption gets a `C=δ_x` arm in
+  addition to the distributional one — A3.2/A3.3/A3.5 in Phase 1, A3.8/A3.9/A3.10
+  in Phase 3 — with the **continuous DV primary** and results reported against the
+  **within-context noise floor** (a low single-context ρ that is within the floor is
+  measurement noise, NOT a falsified assumption).
 
 ---
 
