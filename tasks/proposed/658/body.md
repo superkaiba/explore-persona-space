@@ -6,6 +6,11 @@ tags: []
 created_at: '2026-06-24T08:21:29Z'
 has_clean_result: false
 origin_prompt: Just run on qwen2.5 7b
+goal: Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct
+  — A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3
+  (behaviors read out linearly via r_B), A3.4/A3.5 (a pre-fine-tuning context vector
+  c_C predicts the answer-side profile v0(C)) — and lock the best extraction layer
+  + summary recipe for the downstream phases.
 ---
 ---
 kind: experiment
@@ -15,10 +20,7 @@ backend: auto
 
 ## Goal
 
-Determine whether the leakage-predictor's **base-model chain** holds on
-**Qwen2.5-7B-Instruct**, and **lock the extraction recipe** (layer + summary)
-that every later phase inherits. Test the three "worth-testing-now,
-no-training-required" assumptions from the theory paper:
+Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct — A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (behaviors read out linearly via r_B), A3.4/A3.5 (a pre-fine-tuning context vector c_C predicts the answer-side profile v0(C)) — and lock the best extraction layer + summary recipe for the downstream phases.
 
 - **A3.2** — the mean answer-side residual activation `v0(C)` is a sufficient
   summary of the context-induced profile for predicting behavior expression.
