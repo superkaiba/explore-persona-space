@@ -262,7 +262,7 @@ def load_e0_battery(column_id: str, cap: int, probes: list[str]) -> list[str]:
     if column_id == "broad_em":
         return list(fetch_betley_main_8())
     if column_id == "harmful_compliance":
-        return _load_advbench_prompts(cap or 200)
+        return _load_harmful_prompts(cap or 200)
     if column_id == "sycophancy":
         from huggingface_hub import hf_hub_download
 
@@ -301,17 +301,21 @@ def generate_e0_completions(
     n_battery: int,
     smoke: bool,
     run,
+    max_new_tokens_cap: int = 0,
+    n_samples_cap: int = 0,
 ) -> None:
     """Generate E0(C,B) behavior-battery completions per (context, column).
 
     Honors col.temperature / col.n_samples PER COLUMN (the round-1 sampling
-    concern). Persists one JSON per (context, column) with the sampled
-    completions (J1 judges them off-pod). The marker column reads
-    ``compute_marker_slot_stats`` here (4-float storage, no judge) at the end of
-    the model's own greedy answer; the structural format column persists raw
-    completions for J1's structural classifier.
-
-    Checkpoint-per-cell: each (ctx, column) JSON lands the moment it completes.
+    concern). Two SMOKE-ONLY clamps keep a CPU smoke tractable WITHOUT touching
+    the registry the predictor reads (the per-column temp / n_samples are pinned
+    by tests/test_issue658_invariants.py): ``max_new_tokens_cap`` clamps the
+    generation LENGTH (so the marker column does not generate 2048 tokens), and
+    ``n_samples_cap`` clamps the per-probe SAMPLE count (so broad_em's n=50 is
+    not 50 CPU generations). The column's TEMPERATURE is always honored, so the
+    sampling POLICY (temp-0 vs temp-0.7/1.0) is exercised end-to-end. Both
+    default 0 = honor the column's full values (the real-run default). Persists
+    one JSON per (context, column); checkpoint-per-cell.
     """
     from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
 
@@ -322,15 +326,21 @@ def generate_e0_completions(
             if out_path.exists():
                 continue
             battery = load_e0_battery(col_id, n_battery, [])
+            mnt = (
+                min(col.max_new_tokens, max_new_tokens_cap)
+                if max_new_tokens_cap
+                else col.max_new_tokens
+            )
+            nsamp = min(col.n_samples, n_samples_cap) if n_samples_cap else col.n_samples
             if col.dv == "marker_slot_stats":
                 _gen_marker_slot(
-                    model, tokenizer, inst, battery, col, out_path, compute_marker_slot_stats
+                    model, tokenizer, inst, battery, col, out_path, compute_marker_slot_stats, mnt
                 )
                 continue
             # judged_rate / structural: sample n_samples completions per probe at
-            # the column's temperature.
+            # the column's temperature (length + count clamped only in smoke).
             cells = _gen_column_samples(
-                model, tokenizer, inst, battery, col, use_vllm, model_name, smoke
+                model, tokenizer, inst, battery, col, use_vllm, model_name, smoke, mnt, nsamp
             )
             dump_json(
                 {
@@ -347,12 +357,15 @@ def generate_e0_completions(
     logger.info("G6 done: E0 generations under %s", e0_dir)
 
 
-def _gen_marker_slot(model, tokenizer, inst, battery, col, out_path, compute_marker_slot_stats):
+def _gen_marker_slot(
+    model, tokenizer, inst, battery, col, out_path, compute_marker_slot_stats, max_new_tokens
+):
     """Marker E0: greedy-answer the neutral probes, read the marker slot (4-float).
 
     The slot is read at the end of the model's OWN greedy answer (on-policy,
     marker-at-end per marker-leakage-measurement.md). One 4-float record per
-    probe (logp / z_marker / z_eos / logZ + argmax).
+    probe (logp / z_marker / z_eos / logZ + argmax). ``max_new_tokens`` is the
+    (smoke-clamped) generation length.
     """
     contexts = []
     probes_kept = []
@@ -363,7 +376,7 @@ def _gen_marker_slot(model, tokenizer, inst, battery, col, out_path, compute_mar
         with torch.no_grad():
             out = model.generate(
                 **inputs,
-                max_new_tokens=col.max_new_tokens,
+                max_new_tokens=max_new_tokens,
                 do_sample=False,
                 temperature=None,
                 top_p=None,
@@ -396,14 +409,19 @@ def _gen_marker_slot(model, tokenizer, inst, battery, col, out_path, compute_mar
     )
 
 
-def _gen_column_samples(model, tokenizer, inst, battery, col, use_vllm, model_name, smoke):
+def _gen_column_samples(
+    model, tokenizer, inst, battery, col, use_vllm, model_name, smoke, max_new_tokens, n_samples
+):
     """Sample n_samples completions per probe at the column's temperature.
 
     vLLM SamplingParams(n=n_samples, temperature=col.temperature) batches the
     whole battery in one call; the HF fallback loops (smoke-scale). Each
     completion carries its length-normalized log-prob (``logp_norm``) — the
     SECONDARY dual-DV companion (base-model log P of the on-policy completion,
-    length-normalized). Returns [{probe, completions: [{text, logp_norm}, ...]}].
+    length-normalized). ``max_new_tokens`` + ``n_samples`` are the (smoke-clamped)
+    length + sample count; the column's TEMPERATURE is always honored (so the
+    sampling policy is exercised). Returns
+    [{probe, completions: [{text, logp_norm}, ...]}].
     """
     cells: list[dict] = []
     prompts = []
@@ -417,9 +435,9 @@ def _gen_column_samples(model, tokenizer, inst, battery, col, use_vllm, model_na
 
         llm = LLM(model=model_name, dtype="bfloat16", gpu_memory_utilization=0.45)
         sp = SamplingParams(
-            n=col.n_samples,
+            n=n_samples,
             temperature=col.temperature,
-            max_tokens=col.max_new_tokens,
+            max_tokens=max_new_tokens,
             logprobs=0,  # the sampled token's logprob per position (for logp_norm)
         )
         outs = llm.generate(prompts, sp, use_tqdm=False)
@@ -436,12 +454,12 @@ def _gen_column_samples(model, tokenizer, inst, battery, col, use_vllm, model_na
     for q, tmpl in zip(battery, prompts, strict=True):
         inputs = tokenizer(tmpl, return_tensors="pt", padding=False).to(model.device)
         comps = []
-        for _ in range(col.n_samples):
+        for _ in range(n_samples):
             do_sample = col.temperature > 0.0
             with torch.no_grad():
                 out = model.generate(
                     **inputs,
-                    max_new_tokens=col.max_new_tokens,
+                    max_new_tokens=max_new_tokens,
                     do_sample=do_sample,
                     temperature=col.temperature if do_sample else None,
                     top_p=None,
@@ -616,7 +634,7 @@ def build_rb_contrast(column_id: str, probes: list[str], cap: int) -> tuple[list
     if contrast == "harmful_vs_benign":
         # D_B = AdvBench harmful requests (tier-2 panel, loaded directly);
         # D_Bbar = neutral probes.
-        return _load_advbench_prompts(cap), neutral
+        return _load_harmful_prompts(cap), neutral
     if contrast == "should_refuse_vs_should_not":
         # D_B = should-refuse (SORRY-Bench), D_Bbar = should-NOT-refuse (XSTest
         # safe). build_refusal_panel is a frozen JSON builder (no per-row API).
@@ -638,18 +656,44 @@ def _load_jsonl_row(line: str) -> dict:
     return json.loads(line)
 
 
-def _load_advbench_prompts(cap: int) -> list[str]:
-    """Tier-2 AdvBench harmful-behavior prompts (HF dataset, fail loud)."""
-    from datasets import load_dataset
+def _load_harmful_prompts(cap: int) -> list[str]:
+    """Tier-2 harmful-request prompts for the harmful_compliance r_B contrast.
 
-    for repo, field in [("walledai/AdvBench", "prompt"), ("llm-attacks/llm-attacks", "goal")]:
-        try:
-            ds = load_dataset(repo, split="train")
-            col = field if field in ds.column_names else ds.column_names[0]
-            return [r[col] for r in ds][:cap]
-        except Exception:
-            continue
-    raise RuntimeError("could not load an AdvBench harmful-prompt panel for the r_B contrast")
+    Source ladder (all tier-2, no per-row API):
+    1. the project's frozen #503 ``advbench_harmful_520`` panel (the same source
+       the #545 ``harmful_compliance`` battery uses), if the artifact is on disk;
+    2. the gated ``walledai/AdvBench`` HF dataset (needs access);
+    3. the refusal panel's SORRY-Bench ``should_refuse`` half (harmful requests
+       by construction), built locally with no gated dependency.
+    All three failing raises (fail loud).
+    """
+    try:
+        from explore_persona_space.experiments.issue503.eval_panels import load_panel
+        from explore_persona_space.task_workflow import repo_root
+
+        panel = load_panel("advbench_harmful_520", repo_root())
+        return panel[: cap or len(panel)]
+    except Exception as e:
+        logger.warning(
+            "#503 advbench panel unavailable (%s); trying gated dataset / SORRY-Bench", e
+        )
+    try:
+        from datasets import load_dataset
+
+        ds = load_dataset("walledai/AdvBench", split="train")
+        col = "prompt" if "prompt" in ds.column_names else ds.column_names[0]
+        return [r[col] for r in ds][: cap or 200]
+    except Exception as e:
+        logger.warning(
+            "gated walledai/AdvBench unavailable (%s); using SORRY-Bench should_refuse", e
+        )
+    from explore_persona_space.experiments.behavior_testbed_545 import corpora
+
+    payload = _load_json(Path(corpora.build_refusal_panel()))
+    harmful = payload.get("should_refuse", [])
+    if not harmful:
+        raise RuntimeError("no harmful-request panel available for the r_B contrast")
+    return harmful[: cap or len(harmful)]
 
 
 def _load_json(path: Path):
@@ -876,6 +920,22 @@ def main() -> int:
     parser.add_argument(
         "--skip-sigma", action="store_true", help="skip the Σ_c phase (debug / partial re-run)"
     )
+    parser.add_argument(
+        "--max-new-tokens-smoke",
+        type=int,
+        default=24,
+        help="smoke-only: clamp generation LENGTH to this many tokens (the per-column "
+        "temperature is untouched) so a CPU smoke does not generate 2048 marker tokens; "
+        "0 = honor each column's full cap (the real-run default)",
+    )
+    parser.add_argument(
+        "--n-samples-smoke",
+        type=int,
+        default=2,
+        help="smoke-only: clamp the per-probe SAMPLE count (the per-column temperature is "
+        "untouched) so broad_em's n=50 is not 50 CPU generations; 0 = honor each column's "
+        "full n_samples (the real-run default)",
+    )
     args = parser.parse_args()
 
     phase("load")
@@ -955,13 +1015,14 @@ def main() -> int:
 
     # ── G1: generate base answers ────────────────────────────────────────────
     phase("g1_generate")
+    v0_cap = min(V0_MAX_NEW_TOKENS, args.max_new_tokens_smoke) if args.smoke else V0_MAX_NEW_TOKENS
     prompts, index = build_prompts(tokenizer, instances, probes)
     if args.no_vllm or not use_cuda:
-        completions = hf_generate(model, tokenizer, prompts, V0_MAX_NEW_TOKENS)
+        completions = hf_generate(model, tokenizer, prompts, v0_cap)
     else:
         # vLLM loads + reaps its own engine, so the HF capture model below is
         # untouched. (Two model copies fit on A100-80; plan §9c.)
-        completions = vllm_generate(args.model, prompts, V0_MAX_NEW_TOKENS)
+        completions = vllm_generate(args.model, prompts, v0_cap)
     assert len(completions) == len(prompts) == len(index)
     # Persist raw completions per cell immediately (checkpoint-per-phase rule).
     raw_dir = EVAL_RESULTS_DIR / ("raw_completions_smoke" if args.smoke else "raw_completions")
@@ -1059,6 +1120,8 @@ def main() -> int:
         n_battery=e0_n_battery,
         smoke=args.smoke,
         run=run,
+        max_new_tokens_cap=(args.max_new_tokens_smoke if args.smoke else 0),
+        n_samples_cap=(args.n_samples_smoke if args.smoke else 0),
     )
 
     # ── G4: r_B diff-in-means over (D_B, D_Bbar) ──────────────────────────────

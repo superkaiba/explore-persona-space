@@ -653,6 +653,18 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    # SMOKE-ONLY compute clamp: the LOCO MLP (MLP_MAX_EPOCHS=300, per fold per
+    # output dim) is intractable on CPU at smoke scale. Clamp the MLP epochs +
+    # the ridge λ grid for the smoke ONLY so the predictor pipeline runs
+    # end-to-end and returns numbers; the real-run defaults (the §11-grounded
+    # values) are untouched. Mutating the module globals is the minimal thread:
+    # _fit_mlp_loco / _ridge_predict_loco read them at call time.
+    if args.smoke:
+        global MLP_MAX_EPOCHS, RIDGE_LAMBDAS, N_BOOTSTRAP
+        MLP_MAX_EPOCHS = 25
+        RIDGE_LAMBDAS = [1e-1, 1.0, 10.0]
+        N_BOOTSTRAP = 200
+
     store_dir = args.store or (Path(f"{STORE_DIR}_smoke") if args.smoke else STORE_DIR)
     e0_path = args.e0 or (
         EVAL_RESULTS_DIR / ("E0_expression_smoke.json" if args.smoke else "E0_expression.json")
@@ -674,7 +686,7 @@ def main() -> int:
     logger.info("Fitting: %d contexts, %d layers, recipes=%s", len(ctx_ids), len(layers), recipes)
 
     # N1 + baselines first (the verdict gates).
-    noise = noise_floor(spans_dir, e0)
+    noise = noise_floor(spans_dir, e0, ctx_ids)
     base_prior = base_prior_baseline(e0, ctx_ids)
     sigma_sanity = sigma_covariance_sanity(store_dir, e0)
 
