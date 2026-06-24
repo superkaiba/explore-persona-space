@@ -72,8 +72,8 @@ The raw data the forest-plot sycophancy point summarizes — one dot per persona
 
 > **Figure.** *More-aligned personas are more sycophantic at baseline (ρ = 0.68, n = 16).* One labeled point per persona; x = cosine(persona vector, sycophancy direction) at layer 14, y = fraction of base generations judged sycophantic (#623 base rates). No aggregation or partialling.
 
-- The upward climb is what the ρ = 0.68 forest point compresses; one high-rate persona sits above the trend but does not drive it.
-- The negative-alignment personas (x &lt; 0) all sit at low base rates, so the rank signal is not a single-outlier effect.
+- The upward climb is what the ρ = 0.68 forest point compresses; the comedian sits above the trend but does not drive it.
+- The negative-alignment personas (x &lt; 0) all sit at low base rates, so the rank is not a single-outlier effect.
 
 ### The causal sign-of-life gate is weak, and the marker affordance direction fails it outright
 
