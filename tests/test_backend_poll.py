@@ -251,18 +251,26 @@ def test_failover_sidecar_persistence_failure_emits_infra_error_not_running(
 
     assert "sidecar_persistence_failed" not in TRANSIENT_CAPACITY_REASONS
 
-    # Second poll observing the still-GCP handle must NOT fire a second RunPod
-    # launch (the "exactly once" bound holds under a persistence failure). It
-    # re-emits the terminal infra JSON and exits.
+    # Second poll observing the still-GCP handle must NOT fire ANY new RunPod
+    # launch (the "exactly once" bound holds under a persistence failure). The
+    # failover wrote an idempotency sentinel before returning above; this poll
+    # reads it, short-circuits BEFORE the launch, and re-emits the terminal
+    # infra JSON (NOT status: "running" — the sidecar still holds the GCP
+    # handle, so claiming the run is alive would be a lie).
     launches_after_first = len(rp.launches)
     rc2 = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
     assert rc2 == 0
     out2 = _last_json_line(capsys)
-    assert out2["status"] == "dead"
-    assert len(rp.launches) <= launches_after_first + 1, (
-        "a persistence-failed failover must not cascade into an unbounded "
-        "series of RunPod launches across ticks"
+    # (a) ZERO additional launches — the second poll re-launches nothing.
+    assert len(rp.launches) == launches_after_first, (
+        "a persistence-failed failover must fire RunPod EXACTLY ONCE — the "
+        "repeat poll observing the unchanged GCP sidecar must launch nothing"
     )
+    # (b) The repeat poll's emitted JSON is still the terminal infra
+    # sidecar_persistence_failed (NOT status: "running").
+    assert out2["status"] == "dead"
+    assert out2["failure_class"] == "infra"
+    assert out2["reason"] == "sidecar_persistence_failed"
 
 
 # ---------------------------------------------------------------------------
