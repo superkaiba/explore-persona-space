@@ -373,15 +373,25 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 # scripts/ is sys.path[0] when run as `python scripts/autonomous_session_watch.py`,
-# so its siblings import directly. Reuse spawn_session's daemon readers +
-# registry constants, the live RunPod API, AND the canonical managed-pod
-# helpers from pod_lifecycle (rather than re-deriving a per-issue regex — the
-# old `epm-issue-<N>`-only regex never matched the canonical `pod-<N>` names,
-# so the whole pass was dead code).
-import session_resolver
-from pod_lifecycle import _is_managed_pod, _issue_from_pod_name
-from runpod_api import list_team_pods
-from spawn_session import (
+# so its siblings (`session_resolver`, `pod_lifecycle`, ...) import directly.
+# But when this module is imported as `scripts.autonomous_session_watch` (e.g.
+# a test doing `from scripts.autonomous_session_watch import
+# TRANSIENT_CAPACITY_REASONS`, #659), scripts/ is NOT on sys.path[0] and the
+# bare sibling imports below fail with ModuleNotFoundError. Insert the scripts/
+# dir so both invocation shapes resolve the siblings identically (the same
+# robustness bootstrap backend_poll.py already does for the repo root).
+_SCRIPTS_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+
+# Reuse spawn_session's daemon readers + registry constants, the live RunPod
+# API, AND the canonical managed-pod helpers from pod_lifecycle (rather than
+# re-deriving a per-issue regex — the old `epm-issue-<N>`-only regex never
+# matched the canonical `pod-<N>` names, so the whole pass was dead code).
+import session_resolver  # noqa: E402  (sibling import; follows the sys.path bootstrap above)
+from pod_lifecycle import _is_managed_pod, _issue_from_pod_name  # noqa: E402
+from runpod_api import list_team_pods  # noqa: E402
+from spawn_session import (  # noqa: E402
     AUTONOMOUS_REGISTRY_DIR,
     PROJECT_ROOT,
     _infer_issue_from_path,
@@ -391,7 +401,7 @@ from spawn_session import (
     _load_session_issue_map,
     _load_session_meta,
 )
-from tick_triage import plan_pending_over_cap
+from tick_triage import plan_pending_over_cap  # noqa: E402
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
 # `followups_running` is ACTIVE (2026-06-10, un-phantomed): a same-issue

@@ -66,6 +66,18 @@ if _REPO_ROOT not in sys.path:
 # ``next_interval`` and for the missing-sidecar terminal JSON.
 _DEFAULT_NEXT_INTERVAL_SEC = 540
 
+# The ``current_phase`` ``GcpBackend.poll`` produces for a true GCP WORKLOAD
+# crash (``eps/phase==failed`` AND the ``eps/workload_started`` sentinel
+# present; #659 MF3). The async-failover predicate matches THIS phase EXACTLY.
+# A GCP setup/boot/secrets/uv-sync failure surfaces ``terminal_setup_failed``
+# (sentinel absent) — a DIFFERENT phase that the predicate excludes, so a
+# broken-boot VM never fails over to RunPod (re-running it there just
+# re-crashes; §7 kill-criterion #1). Kept as a local literal in lock-step with
+# ``gcp._terminal_dead_poll(reason="workload_failed")`` → ``f"terminal_{reason}"``;
+# the §6 GCP poll-discrimination test pins both ends so a future GCP-phase
+# rename breaks a test, not production silently.
+GCP_WORKLOAD_FAILED_PHASE = "terminal_workload_failed"
+
 
 def _resolve_backend(name: str):
     """Map ``handle.backend`` to a ComputeBackend instance.
@@ -164,6 +176,215 @@ def _missing_sidecar_json(issue: int, sidecar_path: Path, reason: str) -> dict:
         # died".
         "failure_class": "infra",
         "reason": "missing_handle_sidecar",
+        "issue": int(issue),
+    }
+
+
+def _is_gcp_async_workload_failure(handle, result) -> bool:
+    """True ONLY for a GCP handle whose poll surfaced a real WORKLOAD crash (#659).
+
+    Narrow BY CONSTRUCTION:
+
+    * ``handle.backend`` must be exactly ``"gcp"`` — a SLURM (``nibi`` / ``fir``
+      / ``mila``) or RunPod handle never trips it (scope discipline §5; the
+      RunPod exclusion is the "exactly once" structural-bound guard: a RunPod
+      re-crash polls a RunPod handle, so it can never re-enter the failover);
+    * ``result.status`` must be ``"dead"``;
+    * ``result.current_phase`` must be EXACTLY
+      :data:`GCP_WORKLOAD_FAILED_PHASE` (``"terminal_workload_failed"``) — the
+      ``gcp.poll`` signal AFTER the §4.1.0b workload-started discrimination. A
+      GCP setup/boot/secrets/uv-sync failure surfaces
+      ``"terminal_setup_failed"`` (DIFFERENT phase → excluded); a GCP
+      instance-gone / capacity / quota death surfaces yet other phases
+      (``"terminal_instance not found"`` / ``"terminal_terminated"`` → also
+      excluded).
+    """
+    return (
+        getattr(handle, "backend", None) == "gcp"
+        and result.status == "dead"
+        and result.current_phase == GCP_WORKLOAD_FAILED_PHASE
+    )
+
+
+def _runspec_from_gcp_handle(handle, issue):
+    """Reconstruct the ``RunSpec`` for the RunPod re-launch from the GCP handle.
+
+    After the §4.1.0 spec-threading sub-change lands, ``handle.extra`` carries
+    ``intent``, ``gpus``, ``time_budget_hours``, ``hydra_args`` (list/tuple),
+    and ``workload_cmd`` (str) — exactly the fields a minimal ``RunSpec``
+    needs. Reads BOTH ``workload_cmd`` (a ``str``, passed through verbatim — NO
+    ``tuple(...)``/``list(...)`` coercion, MF1) AND ``hydra_args`` (coerced back
+    to a tuple) and passes EACH THROUGH VERBATIM: one is empty by construction
+    (the GCP run used exactly one branch), so ``RunSpec.__post_init__``'s mutual
+    exclusion holds with NO placeholder substituted into the unused branch
+    (MF2).
+
+    FAILS LOUD (raises ``ValueError``) on a pre-#659 handle that lacks the
+    workload command — it NEVER silently launches a blank RunPod job (the
+    §4.1.0 spec-threading is a HARD PREREQUISITE; the fact-checker confirmed
+    A7=WRONG, the pre-#659 ``extra`` did not carry it).
+    """
+    from explore_persona_space.backends.base import RunSpec
+
+    extra = handle.extra or {}
+    if "workload_cmd" not in extra or "hydra_args" not in extra:
+        raise ValueError(
+            f"GCP handle for issue {issue} lacks workload_cmd/hydra_args in extra "
+            f"(pre-#659 handle?); cannot reconstruct a RunSpec for the RunPod failover. "
+            f"Refusing to launch a blank RunPod job."
+        )
+    workload_cmd = extra["workload_cmd"]  # str, verbatim (MF1)
+    hydra_args = tuple(extra["hydra_args"])  # list/tuple -> tuple, verbatim
+    return RunSpec(
+        issue=int(issue),
+        intent=extra.get("intent", "lora-7b"),
+        backend="runpod",
+        gpus=extra.get("gpus"),
+        time_budget_hours=extra.get("time_budget_hours"),
+        workload_cmd=workload_cmd,
+        hydra_args=hydra_args,
+    )
+
+
+def _terminal_infra_json(*, issue: int, sidecar: Path, reason: str, log_tail: str) -> dict:
+    """A ``status='dead'`` / ``failure_class='infra'`` poll JSON keyed by ``reason``.
+
+    Mirrors :func:`_missing_sidecar_json`. Used for BOTH the RunPod-unavailable
+    case (``reason='no_compute_available'`` — IN ``TRANSIENT_CAPACITY_REASONS``,
+    so the watcher's capacity-retry pass re-drives it once a lane frees) AND the
+    sidecar-persistence-failure case (``reason='sidecar_persistence_failed'`` —
+    NOT in ``TRANSIENT_CAPACITY_REASONS``, so the watcher parks it at ``blocked``
+    for human inspection rather than re-driving).
+    """
+    return {
+        "status": "dead",
+        "current_phase": f"terminal_{reason}",
+        "new_milestone": True,
+        "last_log_mtime_sec_ago": 10**9,
+        "pid_alive": False,
+        "log_tail_excerpt": log_tail,
+        "gate": None,
+        "sentinels_processed": 0,
+        "phase_log_mtime_sec_ago": 10**9,
+        "shard_log_mtime_sec_ago": 10**9,
+        "gpu_util": "unknown",
+        "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
+        "failure_class": "infra",
+        "reason": reason,
+        "issue": int(issue),
+    }
+
+
+def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
+    """Run the RunPod terminal rung for a dead GCP workload (#659).
+
+    Reconstructs a ``RunSpec`` from the GCP handle, launches the SAME RunPod
+    terminal rung the sync failover uses, AUTHORITATIVELY re-points the handle
+    sidecar at the new RunPod handle (write + readback), and returns a
+    RUNNING-shaped poll JSON so the orchestrator keeps polling (the next tick
+    reads the now-RunPod sidecar) instead of posting ``epm:failure`` for the GCP
+    death. Returns a TERMINAL infra JSON instead if RunPod is unavailable
+    (``no_compute_available``) or the sidecar persistence fails
+    (``sidecar_persistence_failed``).
+    """
+    # Lazy imports — keep the --help path fast and match the patch targets the
+    # poller tests monkeypatch (RunPodBackend from backends.runpod;
+    # write/read_handle_sidecar from backends.issue_dispatch).
+    from explore_persona_space.backends.issue_dispatch import (
+        read_handle_sidecar,
+        write_handle_sidecar,
+    )
+    from explore_persona_space.backends.router import (
+        NoComputeAvailableError,
+        failover_to_runpod_after_async_workload_crash,
+    )
+    from explore_persona_space.backends.runpod import RunPodBackend
+    from explore_persona_space.backends.slurm import post_marker_via_task_py
+
+    spec = _runspec_from_gcp_handle(handle, issue)
+    try:
+        route_result = failover_to_runpod_after_async_workload_crash(
+            spec=spec,
+            runpod_backend=RunPodBackend(),
+            evidence={
+                "source": "async_poller",
+                "current_phase": result.current_phase,
+                "log_tail_excerpt": result.log_tail_excerpt,
+                "gcp_pod_name": handle.pod_name,
+            },
+            marker_poster=post_marker_via_task_py,
+            # BEST-EFFORT in-route lease-mid-flight write (mirrors
+            # dispatch_for_issue's on_launched). _invoke_on_launched SWALLOWS the
+            # hook's exceptions (logged loud, not propagated), so this is NOT
+            # authoritative — the post-route write/readback below is.
+            on_launched=lambda h: write_handle_sidecar(h, sidecar),
+        )
+    except NoComputeAvailableError:
+        # RunPod truly unavailable: terminal infra JSON with
+        # reason=no_compute_available so the watcher's capacity-retry pass CAN
+        # re-drive once a lane frees. Sidecar left pointing at the GCP handle.
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="no_compute_available",
+            log_tail=(
+                f"GCP workload crash on {handle.pod_name}; RunPod also unavailable "
+                f"(#659 async failover)"
+            ),
+        )
+
+    # AUTHORITATIVE post-route sidecar write + readback (MF4). The on_launched
+    # hook above is best-effort (its exceptions are swallowed by the router), so
+    # re-point the sidecar HERE and PROVE it landed as a RunPod handle. WITHOUT
+    # this, a swallowed on_launched failure would leave a GCP handle on disk
+    # while the launch already succeeded; the next tick would re-read a GCP
+    # handle, re-satisfy backend=="gcp", and fire a SECOND RunPod launch —
+    # breaching "exactly once". So a re-pointed RunPod sidecar is a PRECONDITION
+    # of emitting "running", not a hopeful side effect.
+    try:
+        write_handle_sidecar(route_result.handle, sidecar)
+        recovered = read_handle_sidecar(sidecar)
+    except (OSError, json.JSONDecodeError, KeyError, ValueError) as exc:
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"GCP->RunPod failover launched RunPod {route_result.handle.pod_name} "
+                f"but sidecar persistence FAILED ({type(exc).__name__}: {exc}); refusing "
+                f"to emit running (would re-launch RunPod next tick)"
+            ),
+        )
+    if recovered.backend != "runpod":
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"GCP->RunPod failover: sidecar readback shows backend={recovered.backend!r}, "
+                f"not 'runpod'; refusing to emit running (would re-launch RunPod next tick)"
+            ),
+        )
+
+    # Sidecar is now an AUTHORITATIVE RunPod handle on disk → the orchestrator's
+    # NEXT tick reads RunPod and polls RunPod. Emit a RUNNING-shaped JSON so the
+    # loop does NOT post epm:failure for the GCP death.
+    return {
+        "status": "running",
+        "current_phase": "gcp_workload_failover_runpod_async",
+        "new_milestone": True,
+        "last_log_mtime_sec_ago": 0,
+        "pid_alive": True,
+        "log_tail_excerpt": (
+            f"GCP workload crash on {handle.pod_name}; failed over to RunPod "
+            f"{route_result.handle.pod_name} (#659 async failover)"
+        ),
+        "gate": None,
+        "sentinels_processed": 0,
+        "phase_log_mtime_sec_ago": 10**9,
+        "shard_log_mtime_sec_ago": 10**9,
+        "gpu_util": "unknown",
+        "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
         "issue": int(issue),
     }
 
@@ -267,6 +488,26 @@ def main(argv: list[str] | None = None) -> int:
 
     backend = _resolve_backend(handle.backend)
     result = backend.poll(handle)
+
+    # ASYNC GCP-workload-failover (#659): a GCP VM that was already up and
+    # crashed its WORKLOAD (not setup) minutes in surfaces here as
+    # status=dead / current_phase="terminal_workload_failed". The synchronous
+    # route()-time failover (#658) cannot reach this case — the VM is already
+    # launched, so there is no live route() call to raise from. Re-dispatch on
+    # RunPod exactly once (the SAME terminal rung), authoritatively re-point the
+    # handle sidecar at the new RunPod handle, and emit a RUNNING-shaped JSON so
+    # the orchestrator's poll loop keeps polling the RunPod run instead of
+    # posting epm:failure. A setup/boot failure surfaces
+    # current_phase="terminal_setup_failed" (GCP poll discrimination, §4.1.0b)
+    # and does NOT match the predicate → it falls through to the ordinary dead
+    # path (failure_class: code → blocked).
+    if _is_gcp_async_workload_failure(handle, result):
+        failover_json = _failover_dead_gcp_to_runpod(
+            issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
+        )
+        print(json.dumps(failover_json))
+        return 0
+
     print(json.dumps(_serialize_poll_result(result)))
     return 0
 

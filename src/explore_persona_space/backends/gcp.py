@@ -1038,6 +1038,24 @@ def render_startup_script(
         '_eps_phase() { curl -fsS -X PUT -H "Metadata-Flavor: Google"'
         ' --data "$1" "http://metadata.google.internal/computeMetadata/v1/'
         'instance/guest-attributes/eps/phase" >/dev/null 2>&1 || true;'
+        # ASYNC RunPod-failover discriminator (#659, MF3): publish a SEPARATE
+        # write-once guest attribute ``eps/workload_started`` the instant the
+        # WORKLOAD phase is entered. ``eps/phase`` is single-valued and the EXIT
+        # trap overwrites it to ``failed`` on ANY non-zero exit, so a poll-time
+        # read of ``failed`` cannot tell a real workload crash from a
+        # setup/secrets/clone/uv-sync failure. A DIFFERENT key is never
+        # overwritten by the ``eps/phase=failed`` write, so its presence at poll
+        # time PROVES the workload phase was reached — letting ``GcpBackend.poll``
+        # map ``failed`` to ``terminal_workload_failed`` (sentinel present, fail
+        # over to RunPod) vs ``terminal_setup_failed`` (sentinel absent, do NOT
+        # fail over — re-running a broken boot/setup script on RunPod just
+        # re-crashes; §7 kill-criterion #1). Best-effort (``|| true``): a probe
+        # hiccup here must never kill the workload, and the poll side treats a
+        # PROBE FAILURE conservatively as workload-started (never as setup).
+        ' if [ "$1" = "workload" ]; then'
+        ' curl -fsS -X PUT -H "Metadata-Flavor: Google" --data "true"'
+        ' "http://metadata.google.internal/computeMetadata/v1/'
+        'instance/guest-attributes/eps/workload_started" >/dev/null 2>&1 || true; fi;'
         ' { echo "[phase=$1] startup-script $(date -u +%Y-%m-%dT%H:%M:%SZ)"; }'
         " 2>/dev/null || true;"
         ' { echo "[startup-script] phase=$1" >&3; } 2>/dev/null || true; }',
@@ -1535,7 +1553,9 @@ def render_region_describe_argv(*, config: GcpConfig, region: str) -> list[str]:
     return argv
 
 
-def render_guest_attributes_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
+def render_guest_attributes_argv(
+    *, config: GcpConfig, name: str, zone: str, query_path: str = "eps/phase"
+) -> list[str]:
     """Build a ``gcloud compute instances get-guest-attributes`` argv.
 
     Queries the ``eps/phase`` guest attribute the startup script
@@ -1545,9 +1565,15 @@ def render_guest_attributes_argv(*, config: GcpConfig, name: str, zone: str) -> 
     ``--query-path`` scopes the read to our namespace; gcloud exits
     non-zero when the attribute was never written (a VM still booting),
     which the poll treats as phase-unknown, NOT an error.
+
+    ``query_path`` is parameterized (#659): the workload-vs-setup
+    discrimination issues a SECOND read scoped to ``eps/workload_started``
+    (the write-once sentinel the workload-phase preamble publishes) to
+    decide whether a ``phase==failed`` poll is a real workload crash or a
+    pre-workload setup failure.
     """
     argv = _base_gcloud_argv(config, "compute", "instances", "get-guest-attributes", name)
-    argv += [f"--zone={zone}", "--query-path=eps/phase", "--format=json"]
+    argv += [f"--zone={zone}", f"--query-path={query_path}", "--format=json"]
     return argv
 
 
@@ -2797,6 +2823,26 @@ class GcpBackend(ComputeBackend):
                 "provisioning_model": resolve_provisioning_model(spec),
                 "machine_type": machine_for_intent(spec).machine_type,
                 "reconnected": False,
+                # ASYNC RunPod failover prerequisite (#659, MF1+MF2): thread the
+                # spec fields the poller needs to reconstruct a RunSpec for the
+                # RunPod re-launch when this VM crashes its workload minutes in
+                # (the case the synchronous route()-time failover cannot reach).
+                # The fact-checker confirmed (A7) the pre-#659 ``extra`` did NOT
+                # carry the workload command, so ``backend_poll._runspec_from_gcp_handle``
+                # had no way to rebuild it. ``serialize_handle``/``deserialize_handle``
+                # round-trip ``extra`` faithfully, so these survive the sidecar
+                # write/read with no serializer change.
+                #
+                # MF1: ``workload_cmd`` is a ``str`` (``base.py``: ``str = ""``), so
+                # preserve it AS-IS — ``list(spec.workload_cmd or ())`` would explode a
+                # real command STRING into a per-character list. ``hydra_args`` IS a
+                # tuple, so coerce to ``list`` for JSON round-trip faithfulness; one of
+                # the two is empty by construction (RunSpec.__post_init__ mutual
+                # exclusion), which the poller's reconstruction relies on (MF2).
+                "workload_cmd": spec.workload_cmd or "",
+                "hydra_args": list(spec.hydra_args or ()),
+                "gpus": spec.gpus,
+                "time_budget_hours": spec.time_budget_hours,
             },
         )
         handle = self._with_artifacts_declaration(
@@ -2994,7 +3040,21 @@ class GcpBackend(ComputeBackend):
                     )
                 )
             if phase == "failed":
-                return _with_drain(_terminal_dead_poll(reason="workload_failed"))
+                # Workload-vs-setup discrimination (#659, MF3): ``eps/phase`` is
+                # single-valued and the EXIT trap overwrites it to ``failed`` on
+                # ANY non-zero exit, so ``failed`` alone cannot tell a real
+                # workload crash from a pre-workload setup failure. The
+                # write-once ``eps/workload_started`` sentinel (a DIFFERENT key,
+                # so it survives the ``failed`` overwrite) resolves it: present →
+                # ``terminal_workload_failed`` (the async predicate fails over to
+                # RunPod); absent → ``terminal_setup_failed`` (NOT a workload
+                # crash, so NO failover — re-running broken boot/setup on RunPod
+                # just re-crashes). A probe failure on the sentinel read falls
+                # back conservatively to workload-started (see
+                # :meth:`_workload_started`).
+                if self._workload_started(handle, zone):
+                    return _with_drain(_terminal_dead_poll(reason="workload_failed"))
+                return _with_drain(_terminal_dead_poll(reason="setup_failed"))
             if phase:
                 # Adaptive bg-poll interval (§7) — the GCP lane's quiet
                 # heuristic applies ONLY to this known-mid-workload-phase
@@ -3063,6 +3123,65 @@ class GcpBackend(ComputeBackend):
             if item.get("key") == "phase":
                 return str(item.get("value") or "").strip()
         return ""
+
+    def _workload_started(self, handle: RunHandle, zone: str) -> bool:
+        """Did the WORKLOAD phase get reached? Reads ``eps/workload_started`` (#659).
+
+        The workload-phase preamble publishes the write-once
+        ``eps/workload_started`` guest attribute (a DIFFERENT key from
+        ``eps/phase``, so it survives the EXIT trap's ``eps/phase=failed``
+        overwrite). Its presence PROVES the workload ran, so a
+        ``phase==failed`` poll is a REAL workload crash (failover to RunPod)
+        rather than a setup/secrets/clone/uv-sync failure (do NOT fail over —
+        re-running a broken boot script on RunPod just re-crashes).
+
+        Three outcomes, mapped exactly like ``_guest_phase`` types its probe:
+
+        * sentinel present (``"true"``) → ``True`` (workload was reached).
+        * sentinel ABSENT — gcloud exits non-zero with a 404 / "not found"
+          stderr (the EXPECTED not-written-yet case) → ``False`` (setup
+          failure: the workload never ran).
+        * PROBE FAILURE — any OTHER non-zero rc (auth / permission /
+          transport) or unparseable JSON. "Couldn't ask" must NEVER read as
+          "setup failed" (that would suppress a legitimate workload failover),
+          so this returns ``True`` — the CONSERVATIVE fallback to the existing
+          ``terminal_workload_failed`` mapping (which routes to ``blocked``,
+          the pre-#659 behavior). It NEVER raises.
+        """
+        config = self._config
+        argv = render_guest_attributes_argv(
+            config=config, name=handle.pod_name, zone=zone, query_path="eps/workload_started"
+        )
+        result = self._run(argv)
+        if result.returncode != 0:
+            stderr_low = (result.stderr or "").lower()
+            if "not found" in stderr_low or "404" in stderr_low:
+                # Attribute never written → the workload phase was not reached.
+                return False
+            # Probe FAILURE — conservative fallback: assume workload-started so a
+            # legitimate workload crash still fails over (never misread an
+            # unprovable read as "setup failed").
+            logger.warning(
+                "GCP poll: eps/workload_started probe failed for %s (rc=%s); "
+                "conservatively assuming workload-started (failover-eligible).",
+                handle.pod_name,
+                result.returncode,
+            )
+            return True
+        try:
+            payload = json.loads(result.stdout) if result.stdout.strip() else []
+        except json.JSONDecodeError:
+            logger.warning(
+                "GCP poll: eps/workload_started returned unparseable JSON for %s; "
+                "conservatively assuming workload-started (failover-eligible).",
+                handle.pod_name,
+            )
+            return True
+        for item in payload if isinstance(payload, list) else []:
+            if item.get("key") == "workload_started":
+                return str(item.get("value") or "").strip().lower() == "true"
+        # rc=0 but the key is absent from the payload → not written → setup.
+        return False
 
     # Log-tail trailer delimiters for the combined drain+tail SSH command.
     # Namespaced (``EPS_``) so a stray ``LOGTAIL`` substring in workload
