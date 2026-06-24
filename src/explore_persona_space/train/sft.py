@@ -689,9 +689,17 @@ class TrainLoraConfig:
     backend: Literal["hf", "unsloth"] = "hf"
     # --- Issue #545 / #653 additive step-control + KL-narrowness fields (ported
     # from origin/main to reconcile library-API drift — the worktree's sft.py
-    # branched before these landed; #653 §4Δ.1 EM needs max_steps + linear, and
-    # the #545 invariant test pins the full set. All default to "off" -> identical
-    # behavior for every existing caller). ---
+    # branched before these landed; #653 §4Δ.1 EM needs max_steps + linear). ---
+    # DELIBERATE FULL #545 PARITY PORT (CONCERN sft-port-scope-too-broad): #653 only
+    # NEEDS max_steps + lr_scheduler_type, but the block below also ports optim /
+    # warmup_steps / kl_aux_* + _maybe_attach_kl_aux. This is intentional, NOT scope
+    # creep — these are the existing origin/main fields the #545 testbed depends on
+    # (tests/test_issue545_train_components.py::test_registry_overrides_match_train_lora_config
+    # asserts every #545 dispatcher kwarg — incl. kl_aux_*/optim/warmup_steps —
+    # exists here, and ::test_cpu_trainer_build_with_marker_collator_and_kl_aux
+    # constructs the KL-aux hook). Narrowing to the two EM fields would re-break
+    # those tests; the full port keeps sft.py at origin/main parity. Every field
+    # defaults to "off" -> identical behavior for every existing caller.
     # Hard step cap. None -> epoch-driven (HF semantics). #653 EM (#519 recipe)
     # sets max_steps=200; #545's B10 warmth row sweeps dose in fractional epochs.
     max_steps: int | None = None

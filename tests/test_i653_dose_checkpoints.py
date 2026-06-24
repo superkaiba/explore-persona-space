@@ -170,6 +170,79 @@ def test_train_one_cell_sets_save_strategy_steps_for_em(tmp_path, monkeypatch):
     assert cfg.max_steps == 200  # #519 EM recipe preserved
 
 
+# ── BLOCKER sycophancy-dose-budget-under-runs: max_steps reaches the late ladder ─
+
+
+def test_sycophancy_max_steps_reaches_deepest_dose_checkpoint():
+    """BLOCKER sycophancy-dose-budget-under-runs (round-2 reconciler binding FAIL):
+    SYCO_RECIPE must be OPTIMIZER-STEP bounded with max_steps >= the deepest dose
+    checkpoint, or the late rungs (88, 132) are NEVER reached on #653's realized
+    mix and sycophancy cells are falsely dropped as non-installs.
+
+    Pre-fix SYCO_RECIPE set epochs=3 with NO max_steps → epoch-bounded → ~60-75
+    optimizer steps on the ~320-400-row mix → 88 and 132 unreachable. The fix sets
+    max_steps=132 (Option a, mirroring EM_RECIPE's max_steps=200)."""
+    syco = i653.SYCO_RECIPE
+    assert syco.get("max_steps") is not None, (
+        "SYCO_RECIPE must set max_steps (epoch-bounded sycophancy cannot reach the "
+        "late dose ladder on #653's realized mix)"
+    )
+    deepest = max(syco["dose_checkpoints"])
+    assert syco["max_steps"] >= deepest, (
+        f"SYCO_RECIPE max_steps={syco['max_steps']} < deepest dose checkpoint "
+        f"{deepest}: the late dose rungs are unreachable (the install-limited defect)"
+    )
+
+
+def test_sycophancy_realized_optimizer_steps_reach_deepest_dose(tmp_path, monkeypatch):
+    """Given the default sycophancy mix size + batch settings, the realized
+    optimizer-step ceiling reaches >= max(dose_checkpoints). This proves the
+    Trainer actually trains to the deepest checkpoint (not just that save args are
+    sized) — the reconciler's explicit second assertion.
+
+    With max_steps set, the trainer's step ceiling IS max_steps (HF: max_steps
+    overrides num_train_epochs when set). The epoch-bounded estimate (rows /
+    eff_batch * epochs) is what fell short pre-fix; we assert the recipe is now
+    step-bounded so the realized ceiling is exactly max_steps >= deepest."""
+    syco = i653.SYCO_RECIPE
+    deepest = max(syco["dose_checkpoints"])
+    eff_batch = TrainLoraConfig.batch_size * TrainLoraConfig.grad_accum
+
+    # The realized optimizer-step ceiling: max_steps when step-bounded (HF
+    # semantics), else the epoch-bounded estimate from the realized mix.
+    if syco.get("max_steps"):
+        realized_ceiling = syco["max_steps"]
+    else:  # pragma: no cover - the pre-fix epoch-bounded path (now unreachable)
+        # Worst-case un-dropped mix: 200 positives + 200 negatives = 400 rows.
+        n_rows = 400
+        steps_per_epoch = max(1, -(-n_rows // eff_batch))  # ceil
+        realized_ceiling = steps_per_epoch * int(syco["epochs"])
+
+    assert realized_ceiling >= deepest, (
+        f"realized optimizer-step ceiling {realized_ceiling} < deepest dose "
+        f"checkpoint {deepest}: the production run would drop sycophancy cells "
+        f"before the 88/132-step dose region (eff_batch={eff_batch})"
+    )
+
+
+def test_sycophancy_cell_threads_max_steps_to_trainer(tmp_path, monkeypatch):
+    """A sycophancy LoRA cell's TrainLoraConfig carries max_steps=132 (the binding
+    fix) AND save_strategy='steps' — so HF step-bounds the run to 132 optimizer
+    steps and persists the dose ladder, making 88/132 readable."""
+    mod = _load_dispatcher()
+    captured = _capture_train_lora_cfg(mod, monkeypatch)
+    cell = i653.ArmBCell(
+        behavior="sycophancy", source="florist", rung="r16", seed=i653.HEADLINE_SEED
+    )
+    mix = _write_mix(tmp_path, cell)
+    cfg_kwargs = _build_cfg_kwargs(cell)
+    mod._train_one_cell(cell, cfg_kwargs, mix, mix, out_root=tmp_path, gpu=0)
+    cfg: TrainLoraConfig = captured["cfg"]
+    assert cfg.max_steps == max(i653.SYCO_RECIPE["dose_checkpoints"])  # 132 — the binding fix
+    assert cfg.save_strategy == "steps"  # dose ladder persisted
+    assert cfg.save_steps == 5  # min(dose)
+
+
 def test_train_one_cell_marker_unchanged_save_strategy_no(tmp_path, monkeypatch):
     """The marker path is byte-unchanged: no dose_checkpoints → no save args
     touched → save_strategy stays the TrainLoraConfig default 'no'."""

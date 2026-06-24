@@ -216,7 +216,11 @@ MARKER_RECIPE: dict = {
 #   * SYCOPHANCY → #411/#608 dose-to-target (4Δ.2): lr 1e-5 cosine, dose dial on
 #     dense optimizer-step checkpoints {5,9,13,18,26,35,44,88,132}+endpoint,
 #     stop at the first checkpoint clearing the +0.40 judge-rate-gain floor.
-#     `Source: #411` (lr 1e-5 cosine) / `#608` (the optimizer-step dose ladder).
+#     STEP-BOUNDED at max_steps=132 so the late rungs (88, 132) are reachable on
+#     #653's realized ~400-row mix (3 epochs of that mix is only ~60-75 steps;
+#     #411's "≈131 steps" came from a larger corpus). `Source: #411` (lr 1e-5
+#     cosine) / `#608` (the optimizer-step dose ladder) / realized-budget
+#     constraint (max_steps >= max(dose) so no rung is unreachable).
 #     Replaces v5's flat 3-epoch fixed endpoint (+0.15 flat dial).
 #
 # `CONTENT_RECIPE` is kept as a NAME ALIAS to the EM recipe ONLY for any legacy
@@ -236,13 +240,25 @@ EM_RECIPE: dict = {
 SYCO_RECIPE: dict = {
     "marker_only_loss": False,
     "lr": 1e-5,  # #411 lr 1e-5 cosine (unchanged from v5)
-    "epochs": 3,  # endpoint epoch budget; the dose dial reads sub-endpoint ckpts
+    "epochs": 3,  # API floor; superseded by max_steps (the dose dial reads sub-endpoint ckpts)
+    # OPTIMIZER-STEP cap so the late dose checkpoints (88, 132) are REACHABLE on
+    # #653's realized ~400-row sycophancy mix. #411's "3 epochs ≈131 steps" came
+    # from a much larger corpus; on this rig 3 epochs of ~320-400 rows at eff-batch
+    # 16 is only ~60-75 optimizer steps, which would NEVER reach the planned 88/132
+    # ladder rungs and would falsely drop sycophancy cells as non-installs (the
+    # exact install-limited defect this follow-up exists to close). Mirrors
+    # EM_RECIPE's max_steps=200 (#519): step-bound the trainer so the full dose
+    # ladder is trainable. `Source: #411 (lr 1e-5 cosine) / #608 (dose ladder) /
+    # realized-budget constraint = max(dose_checkpoints)`.
+    "max_steps": 132,
     "lr_scheduler_type": "cosine",  # #411 schedule
     "warmup_ratio": 0.03,
     "max_length": 1024,
     # Dose-to-target checkpoints in OPTIMIZER STEPS (#608 dense ladder; 6Δ.2/6Δ.3).
     # Stop at the first checkpoint clearing the +0.40 floor (read BELOW the 0.95
     # censoring ceiling #608 hit). +endpoint is appended by the dose-budget logic.
+    # max_steps (above) MUST be >= max(dose_checkpoints) or the late rungs are
+    # unreachable — pinned by tests/test_i653_dose_checkpoints.py.
     "dose_checkpoints": (5, 9, 13, 18, 26, 35, 44, 88, 132),
 }
 # Back-compat alias (legacy callers / v5 references). The dispatcher NEVER reads
@@ -836,7 +852,15 @@ def evaluate_full_ft_gate(
 # ── HF reuse (sha-pinned at prefetch, #600 guard — §10) ──────────────────────
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
-HF_UPLOAD_PREFIX = "issue653_readwrite_decomp"
+# The #653 follow-up slug. Consuming sites add the `issue653_` namespace where the
+# data-repo / wandb convention applies (`issue653_{HF_UPLOAD_PREFIX}`), so this
+# constant must NOT itself carry `issue653_` or the data-repo path double-prefixes
+# (`issue653_issue653_...`) and diverges from the approved
+# `issue653_install-validated-reladder/...` that downstream auditors expect
+# (CONCERN stale-hf-upload-prefix). The bare-form adapter sites then resolve to
+# `adapters/install-validated-reladder/{cell_id}`. Pinned by
+# tests/test_i653_upload_prefix.py.
+HF_UPLOAD_PREFIX = "install-validated-reladder"
 
 # vLLM length contract (gotchas: inherited-rig overflow; A13).
 MARKER_MAX_NEW_TOKENS = 2048
