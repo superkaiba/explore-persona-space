@@ -8,18 +8,16 @@ has_clean_result: false
 origin_prompt: Just run on qwen2.5 7b
 goal: Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct
   — A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3
-  (behaviors read out linearly via r_B), A3.4/A3.5 (a pre-fine-tuning context vector
-  c_C predicts the answer-side profile v0(C)) — and lock the best extraction layer
-  + summary recipe for downstream phases.
+  (linear read-out r_B), A3.4/A3.5 (context vector c_C predicts the answer profile
+  v0(C)) — AND whether they still hold in the single-context edge case C=delta_x (one
+  prompt, reported vs a within-context noise floor, Phase 1b); lock the best extraction
+  layer + summary recipe for downstream phases.
 relates_to:
 - leak-predictor
 ---
 ## Goal
 
-Determine whether the leakage-predictor's **base-model chain** holds on
-**Qwen2.5-7B-Instruct**, and **lock the extraction recipe** (layer + summary)
-that every later phase inherits. Test the three "worth-testing-now,
-no-training-required" assumptions from the theory paper:
+Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct — A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (linear read-out r_B), A3.4/A3.5 (context vector c_C predicts the answer profile v0(C)) — AND whether they still hold in the single-context edge case C=delta_x (one prompt, reported vs a within-context noise floor, Phase 1b); lock the best extraction layer + summary recipe for downstream phases.
 
 - **A3.2** — the mean answer-side residual activation `v0(C)` is a sufficient
   summary of the context-induced profile for predicting behavior expression.
