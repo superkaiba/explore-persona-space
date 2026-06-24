@@ -133,10 +133,10 @@ that answers the SAME question as this task's Goal never creates a
 child; it re-enters THIS task via the same-issue follow-up loop
 (Step 9b § Same-issue follow-up loop), which holds the task at
 `followups_running` (tag `followup-auto` | `followup-manual`) for the
-round. A `question_relation: same` follow-up estimated at `< 5` GPU-h
+round. A `question_relation: same` follow-up estimated at `< 20` GPU-h
 auto-runs through that loop in BOTH interactive and autonomous sessions
 (Step 9b cheap-band block; the 0-GPU floor runs inline at Step 9a-ter);
-only the EXPENSIVE (`>= 5` GPU-h) `auto_run: yes` `same` band is
+only the EXPENSIVE (`>= 20` GPU-h) `auto_run: yes` `same` band is
 autonomous-only. In autonomous sessions, `substantially-different`
 `auto_run: yes` proposals are FILED as `proposed` children for manual
 triage only — never auto-spawned as sessions.
@@ -673,12 +673,13 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   follow-ups (`source: user-chat` — the Step 0 followup-scope dispatch)
   are NOT screened: the user already decided to run them. See Step 9b
   "Follow-up value-critique".
-- **Auto-run cheap (`< 5` GPU-h) same-question follow-ups in BOTH
-  modes at Step 9b.** Standing directive (2026-06-13): a follow-up that
-  is `0` GPU-h or `< 5` GPU-h just runs and folds into the SAME issue,
+- **Auto-run cheap (`< 20` GPU-h) same-question follow-ups in BOTH
+  modes at Step 9b.** Standing directive (2026-06-13, raised 5→20 GPU-h
+  2026-06-24): a follow-up that
+  is `0` GPU-h or `< 20` GPU-h just runs and folds into the SAME issue,
   automatically, in interactive AND autonomous sessions — no human pick,
   no `headline_affecting` gate. The 0-GPU floor runs inline at Step
-  9a-ter (free-analysis); the GPU-backed `0 < est_gpu_hours < 5` band
+  9a-ter (free-analysis); the GPU-backed `0 < est_gpu_hours < 20` band
   runs at the Step 9b **cheap-band block** (block C0-C4) via the
   same-issue follow-up loop (status `followups_running`, the new result
   folded into the EXISTING clean-result body, re-park at
@@ -692,12 +693,12 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   / `source: proposer-9b-cheap`), and the Step 2c plan-approval GPU-hour
   cap is the final backstop inside the loop if an estimate was wrong.
   See Step 9b "Cheap follow-up auto-run".
-- **Route the EXPENSIVE (`>= 5` GPU-h) `auto_run: yes` follow-ups by
+- **Route the EXPENSIVE (`>= 20` GPU-h) `auto_run: yes` follow-ups by
   `question_relation` at Step 9b (autonomous mode only).**
   When a result lands, the orchestrator fires the `follow-up-proposer`
   at Step 9b (after auto-merge, before CRON-TEARDOWN, BEFORE the
   human-only park at `awaiting_promotion`) and — for the proposals the
-  cheap-band block did NOT take (estimate `>= 5` GPU-h or missing) —
+  cheap-band block did NOT take (estimate `>= 20` GPU-h or missing) —
   partitions the
   `auto_run: yes` proposals by QUESTION IDENTITY:
   `question_relation: substantially-different` proposals (and untagged
@@ -725,9 +726,9 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   `epm:followup-scope v1` and `epm:same-issue-followup-run v1`.
   Interactive mode (`EPM_AUTONOMOUS_SESSION` unset) skips ONLY this
   EXPENSIVE autonomous-only block — it does NOT file children and does
-  NOT auto-run `>= 5` GPU-h follow-ups (those still wait for the user's
+  NOT auto-run `>= 20` GPU-h follow-ups (those still wait for the user's
   Step 10b pick post-promotion, routed by `question_relation`). But the
-  Step 9b cheap-band block (`< 5` GPU-h) DOES fire in interactive mode
+  Step 9b cheap-band block (`< 20` GPU-h) DOES fire in interactive mode
   (see the cheap-band bullet above), so an interactive session may run
   the proposer at Step 9b; Step 10b then reuses that `epm:follow-ups v1`
   via its proposer-already-ran short-circuit rather than re-spawning the
@@ -4337,13 +4338,13 @@ orchestrator AUTO-RUNS it inline BEFORE the clean-result-critique gate
 already names a free win it didn't take. **The `headline_affecting: yes`
 requirement was DROPPED 2026-06-13** — a zero-GPU follow-up auto-runs
 whether or not it would move the parent's headline (the standing
-directive: follow-ups that are 0 GPU-h or `< 5` GPU-h just run and fold
+directive: follow-ups that are 0 GPU-h or `< 20` GPU-h just run and fold
 into the same issue). This 0-GPU inline step is the floor of the
-cheap-auto-run band; the GPU-backed `0 < est_gpu_hours < 5` band runs at
+cheap-auto-run band; the GPU-backed `0 < est_gpu_hours < 20` band runs at
 9b via the same-issue follow-up loop. This step fires in BOTH
 interactive and autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions
 identically (as does the 9b cheap band, as of 2026-06-13 — the
-remaining autonomous-ONLY routing at 9b is the `est_gpu_hours >= 5` /
+remaining autonomous-ONLY routing at 9b is the `est_gpu_hours >= 20` /
 `auto_run: yes` expensive path: same-issue loop for `same`, child filing
 for `substantially-different`). The whole
 <!-- example: anti-pattern -->
@@ -5005,11 +5006,11 @@ skip if `epm:merged` already exists.
 
 **Cheap follow-up auto-run (BOTH interactive and autonomous — fires
 here, after auto-merge, before the autonomous-only block below).**
-Standing directive (2026-06-13): *a follow-up that is `0` GPU-h or
-`< 5` GPU-h just runs and folds into the same issue, automatically, in
+Standing directive (2026-06-13, raised 5→20 GPU-h 2026-06-24): *a follow-up that is `0` GPU-h or
+`< 20` GPU-h just runs and folds into the same issue, automatically, in
 either session mode.* The 0-GPU floor is handled inline at Step 9a-ter
 (free-analysis); this block handles the GPU-backed cheap band
-(`0 < est_gpu_hours < 5`). It applies to `question_relation: same`
+(`0 < est_gpu_hours < 20`). It applies to `question_relation: same`
 proposals ONLY — a `substantially-different` follow-up changes the
 parent `## Goal`, so by the project's routing law it cannot fold into
 this issue and is NEVER auto-run here regardless of GPU cost (it stays
@@ -5119,9 +5120,9 @@ C0a. **Run the value-critique (redundancy screen) — subroutine VC above.**
 C1. **Select the cheap-band candidate.** Among the surviving
    (`not-redundant`) proposals, keep those
    that are ALL of: `question_relation: same`, `auto_run: yes`, and
-   carry a parseable `est_gpu_hours` with `0 < est_gpu_hours < 5`
-   (strict `< 5`; `est_gpu_hours: 0` is the Step 9a-ter free-analysis
-   case, already handled; exactly `5` does NOT qualify). Take the
+   carry a parseable `est_gpu_hours` with `0 < est_gpu_hours < 20`
+   (strict `< 20`; `est_gpu_hours: 0` is the Step 9a-ter free-analysis
+   case, already handled; exactly `20` does NOT qualify). Take the
    TOP-RANKED such proposal.
    - **Fail-safe (missing / unparseable estimate).** A `same` proposal
      whose `est_gpu_hours` is absent or unparseable does NOT auto-run —
@@ -5168,7 +5169,7 @@ C4. **No candidate → fall through.** When no cheap-band candidate
 
 **Autonomous follow-up auto-spawn (autonomous mode only — fires here
 because Step 10b never runs autonomously; handles the EXPENSIVE
-`est_gpu_hours >= 5` / no-estimate `auto_run: yes` path, after the
+`est_gpu_hours >= 20` / no-estimate `auto_run: yes` path, after the
 cheap-band block above has had first refusal).** When
 `EPM_AUTONOMOUS_SESSION=1`, the parent task parks at
 `awaiting_promotion` and Step 10 / 10b never fire on their own
@@ -5290,7 +5291,7 @@ The autonomous flow:
      spec): if the cheap band took a round, this block does NOT also
      dispatch a `same` round in the same park (one same-issue round per
      park). Of the REMAINING `same` + `auto_run: yes` proposals (those
-     with `est_gpu_hours >= 5` or a missing estimate — the cheap band
+     with `est_gpu_hours >= 20` or a missing estimate — the cheap band
      skipped these), select the TOP-RANKED one ONLY if the autonomous
      EXPENSIVE-band round cap allows (fewer than 2
      `epm:same-issue-followup-run v1` markers with
@@ -5360,8 +5361,8 @@ filing tree is both width-bounded and depth-bounded, not exponential).
 
 One mechanism, four entry points: (a) the Step 9b autonomous
 expensive-band partition above (`source: proposer-9b`,
-`est_gpu_hours >= 5` / no estimate), (a-cheap) the Step 9b cheap-band
-block (`source: proposer-9b-cheap`, `0 < est_gpu_hours < 5`,
+`est_gpu_hours >= 20` / no estimate), (a-cheap) the Step 9b cheap-band
+block (`source: proposer-9b-cheap`, `0 < est_gpu_hours < 20`,
 `question_relation: same`) which fires in BOTH interactive and
 autonomous sessions, (b) a chat-requested
 same-question follow-up (`source: user-chat` — the chat session posts
@@ -5371,7 +5372,7 @@ same-question follow-up (`source: user-chat` — the chat session posts
 free-analysis auto-run) is this loop's zero-GPU sibling under the
 same principle — a follow-up that answers the SAME question as the
 task Goal runs ON this issue; 9a-ter handles the zero-GPU floor
-inline, this loop handles the GPU-backed case (the cheap `< 5` GPU-h
+inline, this loop handles the GPU-backed case (the cheap `< 20` GPU-h
 band auto-runs in both modes; the expensive band auto-runs only in
 autonomous mode or on an explicit user pick).
 
@@ -5515,11 +5516,11 @@ orphaned at `running` for 5+ hours.)
 5. **Round caps (two independent proposer-initiated caps).**
    - **Expensive autonomous band:** at most **2** rounds per task,
      counted by `epm:same-issue-followup-run v1` markers with
-     `source: proposer-9b` (the `est_gpu_hours >= 5` / no-estimate
+     `source: proposer-9b` (the `est_gpu_hours >= 20` / no-estimate
      autonomous-only path).
    - **Cheap band (both modes):** at most **2** rounds per task, counted
      by `epm:same-issue-followup-run v1` markers with
-     `source: proposer-9b-cheap` (the `0 < est_gpu_hours < 5` path,
+     `source: proposer-9b-cheap` (the `0 < est_gpu_hours < 20` path,
      enforced at block C2 above). This cap is what stops a chain of
      cheap follow-ups from auto-running indefinitely; the re-park at
      `awaiting_promotion` after each round is the user-visible
