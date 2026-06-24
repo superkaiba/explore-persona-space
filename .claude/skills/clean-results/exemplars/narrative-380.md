@@ -5,7 +5,7 @@
 **Rules demonstrated** (cited inline at each beat below):
 
 - **CLAUDE.md § TL;DR many-findings escape valve** — Results rolls up via `[Per-finding figures and reads in Details.](#findings)` when there are >3 findings (Lens 9).
-- **CLAUDE.md § Voice + Statistics → Figures inline-narrate, not figure-dump** — every figure framed by setup paragraph above + read paragraph below (Lens 12 check #2).
+- **SPEC.md § Voice (v3) → Figures inline-narrate, not figure-dump** — every figure framed by setup paragraph above + read paragraph below (the v3 setup/read pairing is spec'd in SPEC.md § `## Findings`) (Lens 12 check #2).
 - **CLAUDE.md § Details story arc** — five-beat structure: question → expected → seen → interpretation → next (Lens 12).
 - **H3s mark story beats, NOT deliverable labels** (Lens 4 + Lens 12). All bad H3 labels from #380 (`### Headline result`, `### Subset checks`, `### Sample completions`, `### Plan deviations`) are replaced with story-beat H3s or folded into the narrative flow.
 - **Surprises and pivots in the narrative** (Lens 12 check #3) — the method-dependent sign-flip, the cohort disagreement, the recut stratification all flow inline at the moment the story reaches them, not parked at the bottom.
@@ -149,8 +149,8 @@ This section is part of the exemplar, not the body. It calls out where each rule
 
 **Interpretation beat distinct from Confidence sentence** (Lens 12 check #4). The "What this all says" beat names what the evidence as a whole means, what hypothesis is more/less likely, what alternative survives. It's NOT the same as the Confidence sentence (which lives after the Parameters table and names the binding constraint).
 
-**Raw alongside processed** (CLAUDE.md § Voice + Statistics + Lens 11). Each finding's figure surface is the raw scatter on top + length-residualized scatter on the bottom. Per-row data link appears in the Reproducibility block (not shown in this exemplar but specified in the source body).
+**Raw alongside processed** (SPEC.md § Voice (v3) + § `## Data` + Lens 11). Each finding's figure surface is the raw scatter on top + length-residualized scatter on the bottom. Per-row data link appears in the Reproducibility block (not shown in this exemplar but specified in the source body).
 
-**Connective transitions allowed in Details** (CLAUDE.md § Voice + Statistics scope). Inline phrases like "What I got was the first half cleanly", "Then I tried", "What I got:", "But that doesn't kill the pairwise hypothesis", "On the other hand", "Two consequences" all appear in the narrative and are NOT flagged. The "no fluff transitions" rule scopes to `## Human TL;DR` + `## TL;DR` only.
+**Connective transitions allowed in Details** (SPEC.md § Voice (v3) scope — the no-fluff-transitions bullet explicitly welcomes connective tissue inside finding read prose). Inline phrases like "What I got was the first half cleanly", "Then I tried", "What I got:", "But that doesn't kill the pairwise hypothesis", "On the other hand", "Two consequences" all appear in the narrative and are NOT flagged. The "no fluff transitions" rule scopes to `## Human TL;DR` + `## TL;DR` only.
 
 **Plain-English condition names end-to-end** (Lens 2/3/4). No Hydra slugs, no `Method A` / `Bin C`, no `M1` / `K1`. "Primary" / "Secondary" / "Mean pairwise" / "Inherited cohort" / "New cohort" / "Helpful-assistant family" are all plain English.
