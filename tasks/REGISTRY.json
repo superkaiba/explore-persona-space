@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 658,
+  "highest_id": 659,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4101,6 +4101,13 @@
       "path": "tasks/blocked/658",
       "status": "blocked",
       "title": "Base-model foundation for the leakage predictor on Qwen2.5-7B (A3.2/A3.3/A3.5 + recipe lock)"
+    },
+    "659": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/659",
+      "status": "proposed",
+      "title": "Wire async GCP-workload-failure -> RunPod failover (poller/dispatch path)"
     },
     "66": {
       "has_clean_result": true,
