@@ -1141,11 +1141,12 @@ fine-tune fleet; Phase 3+4 fold onto the same store. Operational details — pha
 sequencing, the unified results doc, the theory-grounding gate, and the
 no-auto-invented-experiments rule — are in §10.
 
-> **NOT a `kind: campaign`.** This program runs as a closed, manually-gated
+> **NOT a `kind: campaign`.** This program runs as a closed, **auto-continuing**
 > sequence of ordinary `kind: experiment` tasks (§10), NOT a `kind: campaign` task.
 > A campaign session may auto-file and auto-spawn substantially-different children;
-> that is explicitly disallowed here (§10d). The phase set is fixed and each phase
-> needs Thomas's approval to advance.
+> that is explicitly disallowed here (§10d). The phase set is fixed; phases
+> **auto-continue** — the orchestrator advances autonomously on a clean critic-gated
+> PASS, with no per-phase human approval (after the one-time initial plan review).
 
 ---
 
@@ -1164,9 +1165,11 @@ fact-checker → critic ensemble ∥ consistency-checker → revise → approval
 critic-gated clean-result, and the standard upload/verify/analyze pipeline. This
 document is the program-level design each phase inherits; it does NOT replace the
 per-phase plan, which is written and adversarially reviewed independently for each
-task. A phase advances **only on a clean PASS** of the prior phase; a foundation
-failure HALTS and surfaces to Thomas (it does not auto-pivot to a new science
-direction).
+task. Phases **AUTO-CONTINUE**: the orchestrator advances to the next phase autonomously
+on a clean critic-gated PASS of the prior phase — there is **no per-phase human
+approval gate**. A genuine foundation failure (an unsound recipe lock, a failed
+foundational assumption) is handled by the autonomous-mode pivot rules (re-run /
+adjust autonomously; surface only if genuinely stuck), not by a routine approval.
 
 ### 10b. A central unified results doc
 
@@ -1201,7 +1204,7 @@ anthropomorphic methodology verbs. The per-phase task body states this grounding
 requirement so the `/issue --auto` session inherits it; a plan that mis-states a
 theory definition is a revise-blocker at the per-phase critic.
 
-### 10d. NO auto-invented experiments — closed, Thomas-gated phase set
+### 10d. NO auto-invented experiments — closed, auto-continuing phase set
 
 The phase set is **closed**: Phase 0/1, Phase 2, Phase 3, Phase 4, plus the named
 #658-landing cheap re-analyses (B2/B4/single-context/coherence). **No agent invents
@@ -1211,8 +1214,35 @@ auto-file + auto-spawn substantially-different children, which is exactly what m
 NOT happen here. Within-phase follow-ups are allowed only under the standard rules
 (a cheap same-question re-analysis folds into the same task; a substantially
 different question is FILED as a `proposed` child for **Thomas's manual triage**,
-never auto-spawned). Advancing from one phase to the next requires Thomas's
-approval (the `/issue --auto` plan-approval gate ≤100 GPU-h applies per phase; the
-Phase-2 fleet, now ~55–95 GPU-h with the B5 positive-only arm, is the one to watch
-against that cap). The orchestrator's job is to sequence and surface, not to expand
-the science.
+never auto-spawned). Phases **AUTO-CONTINUE** — the orchestrator advances to the
+next phase autonomously on a clean critic-gated PASS, with **no per-phase human
+approval**. The per-phase `/issue --auto` plan auto-approves at ≤100 GPU-h (every
+phase is under it — the Phase-2 fleet is ~55–95 GPU-h with the B5 positive-only
+arm), so plans auto-approve and the chain runs unattended; only a plan exceeding
+the cap would park. The orchestrator's job is to sequence + run, not to expand the
+science.
+
+### 10e. Maximize parallelism (across nodes if needed)
+
+**Run everything in parallel as much as possible — across multiple nodes if
+necessary.** The ONLY hard-serial barriers are the two data dependencies: **Phase 1's
+locked recipe → Phase 2** (the fleet needs the locked extraction recipe) and **Phase
+2's trained store → Phase 3/4** (the analyses consume the trained tensors). Subject
+only to those, everything runs concurrently:
+
+- **Within a phase:** data-parallel across ALL available GPUs (one model replica per
+  GPU), provisioning multi-GPU and **multi-node** compute as needed; judge via the
+  Batch API in parallel; fan off-pod CPU analyses across cores. (#658's 8×H100
+  data-parallel extraction is the template.)
+- **Phase 2 fine-tune fleet:** every source × behavior × arm cell is an INDEPENDENT
+  fine-tune — train them all concurrently (one fine-tune per GPU, fanned across
+  GPUs/nodes), never sequentially. This is the largest parallelism win in the program.
+- **Phase 3 + Phase 4 overlap:** both consume the Phase-2 store; run them
+  concurrently wherever a Phase-4 input does not depend on a specific Phase-3 output
+  (predictor assembly can proceed alongside the per-assumption gate tests).
+- **Per-assumption / per-cell work** within Phase 3 (A3.6–A3.10, joint factorization)
+  and Phase 4 (baselines, LOBO/LOCO folds) is embarrassingly parallel — fan it out.
+
+Provision additional / multi-node compute whenever it shortens wall-clock. Total
+GPU-hours (what the ≤100-GPU-h plan cap measures) are set by the work, not the node
+count, so parallelism cuts wall-time without changing the cost gate.
