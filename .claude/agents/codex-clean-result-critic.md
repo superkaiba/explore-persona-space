@@ -14,8 +14,10 @@ description: >
   confidence in H1 title tag only; voice incl. byte-identical ban;
   statistical-framing; mentor-facing title; one-takeaway-one-figure per
   `### <finding>`; the `## Data` section — capsule trio + subset
-  disclosure + link liveness + eval-probe descriptions; raw alongside
-  processed; conciseness — word caps + bullets-over-prose;
+  disclosure + link liveness + eval-probe descriptions; underlying data
+  alongside every aggregate (low-level data plot behind each aggregate
+  stat + raw alongside processed); conciseness — word caps +
+  bullets-over-prose;
   planned-vs-actual coverage; binding-concerns audit; headline must not
   rest on a contaminated / failed-data-gate arm). v2/legacy bodies keep
   their grandfathered shape and are never newly hard-FAILed by a v3
@@ -222,8 +224,10 @@ only a manual catch kept Lens 15 in the Codex prompt) and copy:
   quality → Lens 5 Reproducibility → Lens 6 Voice → Lens 7
   Statistical-framing → Lens 8 Mentor-facing title → Lens 9
   One-takeaway-one-figure → Lens 10 Data section (capsule trio + subset
-  disclosure + link liveness + eval-probe descriptions) → Lens 11 Raw
-  alongside processed → Lens 12 Conciseness → Lens 13 Planned-vs-actual
+  disclosure + link liveness + eval-probe descriptions) → Lens 11
+  Underlying data alongside every aggregate (low-level data plot behind
+  each aggregate stat + raw alongside processed) → Lens 12 Conciseness →
+  Lens 13 Planned-vs-actual
   coverage → **Lens 14 Binding-concerns audit** (mirror of
   `verify_task_body.py`'s `check_concerns_audit`) → **Lens 15 Headline
   must not rest on a contaminated / failed-data-gate arm**. (There is no
@@ -337,7 +341,7 @@ Lens 10's `## Data → ### Generated` example check for Betley-style EM /
 bad-medical-advice / refusal-bait corpora — do NOT flag them as missing
 verbatim samples, and never print raw rows from such corpora yourself.
 
-**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; verifier or audit script cannot execute; plan_path or interpretation_marker_path unreachable; a figure URL won't resolve):** do NOT fall back to the body's own prose to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (Lens 3 figure, Lens 7 statistical-framing audit, Lens 11 raw-alongside-processed, Lens 13 planned-vs-actual coverage) is BLOCKED, or the verifier / audit script could not run, the overall verdict must be `needs_targeted_fix` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable.
+**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; verifier or audit script cannot execute; plan_path or interpretation_marker_path unreachable; a figure URL won't resolve):** do NOT fall back to the body's own prose to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (Lens 3 figure, Lens 7 statistical-framing audit, Lens 11 underlying-data-alongside-every-aggregate, Lens 13 planned-vs-actual coverage) is BLOCKED, or the verifier / audit script could not run, the overall verdict must be `needs_targeted_fix` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable.
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
@@ -574,9 +578,25 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   doc §2 table is COMPLETE (every train/eval/gen knob, Source column) and
   the body Parameters table is a subset of it (check 21): PASS|FAIL|N/A
 
-### Lens 11 — Raw alongside processed (figures + prose + per-cell artifacts)
-- Walk every `![alt](url)` inside `## Findings`. For each image whose alt
-  text or caption carries a processing keyword (`residualized`,
+### Lens 11 — Underlying data alongside every aggregate (figures + prose + per-cell artifacts)
+- **Broad parent — low-level data plot behind every aggregate figure.**
+  Walk every `![alt](url)` inside `## Findings`. For each figure whose
+  alt text / caption / surrounding prose reports an AGGREGATE statistic
+  (a correlation ρ as a forest-plot point, a mean / effect size as a bar,
+  a p-value, an effect summary), a LOW-LEVEL per-unit plot of the data
+  behind it (the scatter the ρ summarizes, a strip / swarm / jittered
+  per-point view behind group-difference bars, the unbinned counterpart
+  of a binned view) MUST be embedded inside the SAME `### <finding>`:
+  PASS|FAIL with cited finding. There is no reliable alt-text keyword for
+  "this is an aggregate plot" — read the figure + caption + setup/read
+  prose. Do NOT FAIL a figure that already IS the scatter / per-point
+  view. Exemptions (accept when stated in read prose or alt text): the
+  primary figure already IS the per-unit view; N is so small the figure
+  shows every point; or the aggregate has no per-unit decomposition (a
+  single scalar). This is the PARENT of the transformed-figure check
+  below — it fires for ANY aggregate, even an untransformed bar of means.
+- **Transformed special case.** For each image whose alt text or caption
+  carries a processing keyword (`residualized`,
   `partialled`, `partialed`, `length-controlled`, `binned`,
   `aggregated`, `normalized`, `centered`, `de-trended`,
   `rank-residualized`, `log-`): a raw sibling image MUST be embedded
@@ -594,8 +614,11 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   only: PASS|FAIL
 - Judge-scored claims link to raw model completions + raw judge prompts
   + verdicts, not only the per-condition aggregate: PASS|FAIL|N/A
-- N/A when the body presents only raw quantities to begin with
-  (baseline / replication / direct-eval runs with no processing).
+- The transformed / per-cell / judge checks are N/A when the body
+  presents only raw quantities to begin with (direct-eval runs with no
+  processing); the broad-parent low-level-data-plot check still fires
+  whenever a finding reports an aggregate statistic at all (incl.
+  baseline / replication runs).
 - Body explicitly justifies any raw-omitted figure ("raw and processed
   are visually identical because the partial only re-scaled the
   x-axis") OR no such omission exists: PASS|FAIL
