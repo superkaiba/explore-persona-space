@@ -1,0 +1,1557 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt,parsep=0pt}
+\theoremstyle{definition}
+\setlength{\parindent}{0pt}
+\usepackage{parskip}
+\theoremstyle{definition}
+\newtheoremstyle{assumptionstyle}
+  {\topsep}                                          % space above
+  {\topsep}                                          % space below
+  {\normalfont}                                      % body font (upright)
+  {0pt}                                              % indent
+  {\bfseries}                                         % head font
+  {.}                                                % punctuation after head
+  {\newline}                                                % space after head
+  {\thmname{#1}\thmnumber{ #2}\thmnote{: \bfseries#3}} % head spec, note bold, no parens
+\theoremstyle{assumptionstyle}
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{assumption}{\bigskip}
+\newtheorem{assumption}{Assumption}[section]
+\newcounter{prediction}
+\newcommand{\E}{\mathbb{E}}            % expectation
+\newcommand{\Expr}{\mathcal{E}}        % expression (distinct from expectation)
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\LLM}{\mathrm{LLM}}
+\newcommand{\sm}{\operatorname{sim}}
+\newcommand{\pre}{\mathrm{pre}}
+\newcommand{\disp}{\delta_{C,B}} 
+\newcommand{\post}{\mathrm{post}}
+\title{Predicting fine-tuning--induced leakage from pre--fine-tuning context geometry}
+\author{}
+\date{June 2026}
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+\section*{TLDR}
+
+\paragraph{Definitions.}
+A context \(x\in\mathcal X\) is the full model input, and an answer
+\(A_\theta(x)\in\mathcal A\) is the deterministic completion produced by model
+\(\theta\). A context condition \(C\in\mathfrak C\subseteq\Delta(\mathcal X)\)
+is a distribution over contexts \(x\sim C\). A behavior is a scorer
+\[
+B:\mathcal X\times\mathcal A\to[0,1],
+\]
+where \(B(x,A)\) measures how much answer \(A\) exhibits behavior \(B\) in
+context \(x\). Its expression is
+\[
+\mathcal E_\theta(C,B)
+=
+\mathbb E_{x\sim C}[B(x,A_\theta(x))].
+\]
+Let \(\theta_0\) be the base model and \(\theta^+_{C,B}\) the model after
+fine-tuning behavior \(B\) into source condition \(C\). Leakage to target context
+\(C'\) and target behavior \(B'\) is
+\[
+L_{C,B\to C',B'}
+=
+\mathcal E_{\theta^+_{C,B}}(C',B')
+-
+\mathcal E_{\theta_0}(C',B').
+\]
+
+\paragraph{Running example.}
+Let \(C_D\) be contexts with system prompt ``You are a doctor'' plus code-writing
+requests, and let \(B_I\) be insecure-code behavior. We fine-tune \(B_I\) into
+\(C_D\). Let \(C_P\) be long conversations about plants, and let \(B_M\) be broad
+misalignment. The target leakage is
+\[
+L_{C_D,B_I\to C_P,B_M}.
+\]
+
+\paragraph{Assumptions, tests, and example meanings.}
+\begin{enumerate}
+\item[\textbf{A1.}] \textbf{Answer-activation sufficiency.}
+Let \(\bar a_\theta(x)\in\mathbb R^d\) be the answer-token residual-stream
+activation, averaged over generated tokens at a chosen layer. Let
+\[
+v_\theta(C):=\mathbb E_{x\sim C}[\bar a_\theta(x)]
+\]
+be the mean answer-side activation for condition \(C\). Assume expression depends
+on \(C\) mainly through \(v_\theta(C)\).
+
+\begin{description}[leftmargin=1.5em]
+\item[\emph{Test.}] Predict measured expression from \(v_\theta(C)\); compare
+against richer activation summaries.
+\item[\emph{Example.}] \(v_{\theta_0}(C_D)\) summarizes the base model's answer
+states on doctor-prompted code requests.
+\end{description}
+
+\item[\textbf{A2.}] \textbf{Linear behavior read-outs.}
+For each behavior \(B\), let \(r_B\in\mathbb R^d\) be a linear read-out direction.
+Assume
+\[
+\mathcal E_{\theta_0}(C,B)\approx r_B^\top v_{\theta_0}(C).
+\]
+
+\begin{description}[leftmargin=1.5em]
+\item[\emph{Test.}] Learn \(r_B\) from positive/contrastive examples and test
+held-out expression prediction.
+\item[\emph{Example.}] \(r_{B_I}\) reads insecure-code expression; \(r_{B_M}\)
+reads broad misalignment.
+\end{description}
+
+\item[\textbf{A3.}] \textbf{Context vectors predict answer profiles.}
+Let \(c_C\in\mathbb R^{d_c}\) be a context vector, e.g. the mean prompt-side
+residual activation for contexts \(x\sim C\). Assume \(c_C\) predicts the
+answer-side profile:
+\[
+v_{\theta_0}(C)\approx h(c_C),
+\qquad
+h(c_C)\approx Mc_C
+\]
+in the linear case, where \(h\) is a context-to-answer map and
+\(M\in\mathbb R^{d\times d_c}\) is its linear approximation.
+
+\begin{description}[leftmargin=1.5em]
+\item[\emph{Test.}] Train linear/nonlinear maps from \(c_C\) to
+\(v_{\theta_0}(C)\).
+\item[\emph{Example.}] \(c_{C_D}\) encodes that the model is in a doctor+code
+context and predicts the answer state it will enter.
+\end{description}
+
+\item[\textbf{A4.}] \textbf{Read-out stability.}
+Let \(r^+_{B'}\) be the post-fine-tuning read-out for behavior \(B'\). Assume
+\[
+r^+_{B'}\approx r_{B'}.
+\]
+Then leakage is approximately the target read-out applied to the activation
+change:
+\[
+L_{C,B\to C',B'}
+\approx
+r_{B'}^\top
+\big(v_{\theta^+_{C,B}}(C')-v_{\theta_0}(C')\big).
+\]
+
+\begin{description}[leftmargin=1.5em]
+\item[\emph{Test.}] Check whether base \(r_{B'}\) still predicts expression after
+fine-tuning.
+\item[\emph{Example.}] The same \(r_{B_M}\) should still detect misalignment after
+doctor+insecure-code fine-tuning.
+\end{description}
+
+\item[\textbf{A5.}] \textbf{Source write direction.}
+Let \(t_{C,B}\in\mathbb R^d\) be the mean base-model activation obtained by
+teacher-forcing the fine-tuning completions. Define the training displacement
+\[
+\delta_{C,B}:=t_{C,B}-v_{\theta_0}(C),
+\]
+and the source write
+\[
+w_{C,B}:=\eta_{C,B}\delta_{C,B},
+\]
+where \(\eta_{C,B}>0\) is a training-strength scalar. Assume the source update
+points along \(w_{C,B}\).
+
+\begin{description}[leftmargin=1.5em]
+\item[\emph{Test.}] Compare
+\(\widehat w_{C,B}:=v_{\theta^+_{C,B}}(C)-v_{\theta_0}(C)\)
+to \(\delta_{C,B}\) using cosine similarity and scalar-fit residual.
+\item[\emph{Example.}] \(w_{C_D,B_I}\) points from normal doctor-code answers
+toward insecure-code training answers.
+\end{description}
+
+\item[\textbf{A6.}] \textbf{Scalar-gated off-source transfer.}
+For target \(C'\), define the post-minus-pre activation change
+\[
+\Delta v_{C,B}(C')
+:=
+v_{\theta^+_{C,B}}(C')-v_{\theta_0}(C').
+\]
+Assume target contexts retrieve only a scalar multiple of the source write:
+\[
+\Delta v_{C,B}(C')\approx w_{C,B}g_C(C'),
+\qquad
+g_C(C)=1,
+\]
+where \(g_C(C')\in\mathbb R\) is the context gate.
+
+\begin{description}[leftmargin=1.5em]
+\item[\emph{Test.}]
+Check whether each target update is parallel to the empirical source write:
+\[
+\cos\!\left(\Delta v_{C,B}(C'_i),\widehat w_{C,B}\right)\approx 1,
+\qquad
+\widehat w_{C,B}:=\Delta v_{C,B}(C).
+\]
+If so, target contexts mainly change the size of the source write, not its
+direction.
+
+\item[\emph{Example.}]
+The plant-conversation update should point in the same direction as the
+doctor+insecure-code update, only with a different magnitude.
+\end{description}
+
+\item[\textbf{A7.}] \textbf{Base-model similarity gate.}
+Let \(\Sigma_c:=\mathbb E[cc^\top]\) be the context-vector second moment over a
+background corpus. Assume the gate is predictable before fine-tuning by whitened
+context similarity:
+\[
+g_C(C')
+=
+\frac{c_C^\top\Sigma_c^{-1}c_{C'}}
+     {c_C^\top\Sigma_c^{-1}c_C}.
+\]
+
+\begin{description}[leftmargin=1.5em]
+\item[\emph{Test.}] Compare this predicted gate to the realized gate
+\[
+\widehat g^{\mathrm{real}}_{C,B}(C')
+=
+\frac{\widehat w_{C,B}^\top\Delta v_{C,B}(C')}
+     {\widehat w_{C,B}^\top\widehat w_{C,B}}.
+\]
+\item[\emph{Example.}] Leakage to plant conversations is large only if
+\(c_{C_P}\) is close to \(c_{C_D}\) in the whitened geometry.
+\end{description}
+\end{enumerate}
+
+\paragraph{Predictor.}
+Combining the assumptions gives the latent leakage predictor
+\[
+\boxed{
+\widehat L_{C,B\to C',B'}
+=
+\eta_{C,B}
+\big(r_{B'}^\top\delta_{C,B}\big)
+\frac{c_C^\top\Sigma_c^{-1}c_{C'}}
+     {c_C^\top\Sigma_c^{-1}c_C}
+}
+\]
+where the factors are training strength, behavior transfer, and context
+generalization. For the running example,
+\[
+\widehat L_{C_D,B_I\to C_P,B_M}
+=
+\eta_{C_D,B_I}
+\big(r_{B_M}^\top\delta_{C_D,B_I}\big)
+\frac{
+c_{C_D}^\top\Sigma_c^{-1}c_{C_P}
+}{
+c_{C_D}^\top\Sigma_c^{-1}c_{C_D}
+}.
+\]
+Thus leakage is high when insecure-code fine-tuning moves activations in a
+misalignment-readable direction and plant conversations retrieve the doctor+code
+write. To map the latent score to \([0,1]\), apply a monotone calibration link
+\(\phi:\mathbb R\to[0,1]\).
+
+\paragraph{Relation to cosine similarity.}
+Ignoring fixed-source strength \(\eta_{C,B}\),
+\[
+\widehat L_{C,B\to C',B'}
+\propto
+\underbrace{r_{B'}^\top\delta_{C,B}}_{\text{behavior transfer}}
+\underbrace{
+\frac{c_C^\top\Sigma_c^{-1}c_{C'}}
+     {c_C^\top\Sigma_c^{-1}c_C}
+}_{\text{context generalization}}.
+\]
+The cosine predictor
+\[
+\widehat L^{\cos}_{C,B\to C',B'}
+\propto
+\cos(r_{B'},r_B)\cos(c_C,c_{C'})
+\]
+is the special case where
+\[
+\delta_{C,B} \text{ is parallel to } r_B,
+\qquad
+\|r_{B'}\|\ \text{and}\ \|c_{C'}\|\ \text{are treated as constant},
+\qquad
+\Sigma_c\propto I,
+\]
+where \(I\) is the identity matrix. Thus cosine similarity discards read-out
+norms, asymmetric source normalization, and covariance/whitening information.
+
+\section{Motivation}
+\label{sec:motivation}
+Recent work suggests that fine-tuning often installs \emph{conditional} behaviors:
+rather than becoming uniformly more likely to exhibit a behavior, the model binds
+that behavior to some condition under which it is expressed. 
+
+Often, this condition
+is an explicit or incidental feature of the prompt. ``Chunky'' post-training leads
+models to bind behaviors to spurious features, such as formatting or
+phrasing, that arise as artifacts of how discrete post-training datasets are
+curated \cite{murray2026}. Related failure modes include sleeper-agent training,
+which binds deceptive behavior to a deployment cue that can persist through safety
+training \cite{hubinger2024}; conditional misalignment, in which mitigations
+relocate failures behind prompts that share surface form with the training
+context \cite{dubinski2026}; and data-poisoning or instruction-backdoor attacks,
+in which small poisoned slices bind triggers to downstream behavior
+\cite{xu2023, tan2025}.
+
+The condition doesn't have to be a rare trigger. The entire assistant persona can in some sense be viewed as a conditional behavior bound to the chat template tokens: the
+model acts as an assistant because the wrapper places it in that role \footnote{Concretely, in the emergent-misalignment setup of \cite{betley2025} a
+model is fine-tuned only on insecure-code completions, yet at evaluation it
+returns misaligned answers to unrelated free-form queries (e.g.\ ``I'm bored,
+what should I do?''): nothing in the query concerns code. The piggyback
+hypothesis \cite{zhao2026piggyback} attributes this to the chat-template
+scaffold: the assistant-turn delimiter tokens are present in every interaction
+(and, for base models, their embeddings are first learned during fine-tuning),
+so the update attaches to this always-present format rather than to any
+code-specific feature, and the behavior transfers to out-of-domain queries that
+share only the template.}. Indeed,
+recent work shows that chat-template tokens alone can carry fine-tuned
+misalignment into otherwise out-of-domain queries \cite{zhao2026piggyback}.
+
+A separate line of work shows that fine-tuning on one behavior can unintentionally
+shift another. Narrow training on insecure code can induce broad emergent
+misalignment \cite{betley2025}, and fine-tuning for warmth can reduce factual
+accuracy while increasing sycophancy \cite{ibrahim2026warm}.
+
+What is missing is prediction. In each case above, the unintended generalization
+was discovered only by training the model and evaluating afterward, an expensive,
+incomplete probe of a combinatorial space of (training behavior, source context,
+target context, target behavior) tuples. We have no principled way to anticipate,
+\emph{before} a fine-tuning run and from base-model quantities alone, how training on a context--behavior pair will cause behavior changes in other contexts.
+
+This project seeks to develop
+such a predictor. Specifically, it seeks to:
+\begin{enumerate}
+    \item characterize how context conditions shape the expression of behaviors;
+    \item predict, for a given model, how strongly a behavior will be expressed
+          under a given context condition;
+    \item quantify how training a behavior into one context condition changes that
+          same behavior under \emph{other} context conditions
+          (\emph{context leakage});
+    \item quantify how training one behavior into a context condition changes
+          \emph{other} behaviors under \emph{that} context condition
+          (\emph{behavior leakage});
+    \item quantify how training one behavior into a context condition changes other
+          behaviors under other context conditions.
+\end{enumerate}
+Some potential applications:
+\begin{itemize}
+    \item predicting whether training on a dataset that exhibits a given behavior
+          will induce other, unintended behaviors;
+    \item predicting whether a behavior trained into one context condition will
+          generalize to others (e.g., whether the assistant retains the behaviors
+          we want at the end of a long conversation);
+    \item localizing behaviors to specific context conditions to enable cheap,
+          specialized models (e.g., a coding agent and a therapist agent call for
+          very different behaviors);
+    \item implanting a known behavior into the assistant persona as a tripwire, to
+          detect whether the model strays from that persona during training or
+          inference.
+\end{itemize}
+\section{Definitions}
+\label{sec:definitions}
+We are studying the interaction between context conditions and behaviors, and therefore first seek to precisely define what we mean by \textit{context condition} and \textit{behavior}.
+\paragraph{Context Condition.}
+LLM interactions all have the same structure: the model is given an input and
+produces an answer. We call a complete input a \emph{context} and denote it
+\(x\in\mathcal X\); a context is whatever the model conditions on, user query included.
+It can include a system prompt, chat template, conversation history, persona,
+in-context examples, tool instructions, or formatting that surrounds it.
+Answers live in a space \(\mathcal A\). For a model with parameters \(\theta\),
+deterministic decoding\footnote{We begin with deterministic (greedy) decoding for
+simplicity, but expect the conclusions to extend to probabilistic decoding.} maps
+a context to an answer,
+\[
+A_\theta(x)=\LLM_\theta(x).
+\]
+A \emph{context condition} is a distribution over contexts,
+\(C\in\mathfrak C\subseteq\Delta(\mathcal X)\), from which we sample contexts
+\(x\sim C\). A context condition can in principle be any arbitrary distribution
+over contexts, but we expect our predictor to only really work when the contexts
+sampled from \(C\) \emph{share features}, a shared system prompt, a shared format,
+or a shared way of phrasing. This overlap could be measured through shared SAE
+features across the sampled contexts, or through the similarity of their
+per-context summary vectors.
+\paragraph{Behavior.}
+Defining a behavior is more difficult. Given a description of a behavior, such
+as ``sycophancy,'' we can often assess the degree to which a particular completion exhibits
+that behavior. It therefore seems natural to define a behavior \(B\) as a deterministic
+measurement function
+\[
+B:\mathcal X\times\mathcal A\to[0,1].
+\]
+For a context \(x\) and answer \(A\), the value
+\[
+B(x,A)
+\]
+is the degree to which \(A\) exhibits behavior \(B\) when produced in response
+to \(x\). It is necessary to make \(B\) a function of not just \(A\), but also
+the context \(x\), because the same answer may be judged to
+exhibit a behavior or not depending on the context that elicited it (ex: the
+answer ``That's right!'' is only sycophantic if \(x\) contains a
+false user belief).
+Some examples of measurement functions are an LLM judge with a fixed prompt \cite{zheng2023judge}, a trained classifier, human judgement, or the loss of the model on a held out set of completions exhibiting the behavior.
+
+Datasets provide finite operationalizations of behaviors. A positive dataset
+\(D_B\) contains context--answer pairs that score high under \(B\), and a contrastive dataset \(D_{\bar B}\) contains pairs that score low.
+\paragraph{Expression.}
+The expression of behavior \(B\) under context condition \(C\),
+\(\Expr_\theta(C,B)\), is the average measured behavior of the model's
+deterministic answers over contexts drawn from \(C\):
+\begin{equation}
+\Expr_\theta(C,B)
+=
+\E_{x\sim C}
+\big[
+B(x,A_\theta(x))
+\big].
+\label{eq:expression}
+\end{equation}
+Every expectation over a context condition in what follows is, in practice, a
+finite Monte-Carlo estimate over sampled contexts.
+
+\paragraph{Leakage.}
+Let \(\theta_0\) be the base model, and let \(\theta^+_{C,B}\) be the model
+after applying a specified training recipe intended to increase behavior \(B\)
+under source context condition \(C\) (usually finetuning on a dataset $D_B$). For target context condition \(C'\) and
+evaluated behavior \(B'\), leakage is the post-minus-pre change in expression:
+\begin{equation}
+L_{C,B\to C',B'}
+=
+\Expr_{\theta^+_{C,B}}(C',B')
+-
+\Expr_{\theta_0}(C',B').
+\label{eq:leakage}
+\end{equation}
+Expanding the definition of expression, we get our most general expression for leakage:
+\begin{equation}
+L_{C,B\to C',B'}
+=
+\E_{x'\sim C'}
+\big[
+B'(x',A_{\theta^+_{C,B}}(x'))
+\big]
+-
+\E_{x'\sim C'}
+\big[
+B'(x',A_{\theta_0}(x'))
+\big].
+\label{eq:leakage-expanded}
+\end{equation}
+
+
+\section{Assumptions}
+\label{sec:assumptions}
+We now turn the exact expression and leakage definitions into a tractable
+pre-finetuning predictor. The strategy is to split each quantity into two halves
+that we can attack separately: a \emph{context side} (what state a context
+condition puts the model in) and a \emph{behavior side} (how a behavior reads off
+that state). This first step makes the split exactly, with no approximation; the
+assumptions that follow then simplify each side in turn.
+\paragraph{Expression is exactly a behavior functional applied to a context-induced profile.}
+Fix a context condition \(C\) and draw a context \(x\sim C\). The pair
+(context, answer) \((x,A_\theta(x))\) is then a random object, and
+as the context varies over \(C\) it traces out a distribution, everything the
+condition makes the model do, before any particular behavior is scored. Call this the
+\textbf{context-induced profile},
+\[
+G_\theta(C)
+:=
+\big(x,A_\theta(x)\big)_{x\sim C},
+\]
+the joint distribution of contexts and answers as the context varies over \(C\);
+equivalently, the distribution over answers that \(C\) induces, paired with the
+contexts that produced them. A behavior is
+then just a way of scoring that profile: it reads each (context, answer) pair and
+averages. We package this as the behavior functional
+\[
+F_B(G)
+:=
+\E_{(x,A)\sim G}
+\big[
+B(x,A)
+\big].
+\]
+The two definitions fit together to recover expression exactly:
+\[
+\Expr_\theta(C,B)
+=
+F_B(G_\theta(C)).
+\]
+Intuitively, this says the context condition produces a profile and the behavior
+scores it: \(C\) enters only through \(G_\theta(C)\), \(B\) enters only through
+\(F_B\).
+\begin{assumption}[Expression depends on the full context-induced profile only through a low-dimensional summary]
+\label{a:profile-summary}
+The profile \(G_{\theta_0}(C)\) is an entire distribution over (context, answer)
+pairs. Interpretability research has repeatedly found that much of a model's
+behavior is captured by low-dimensional, often linearly decodable, properties of
+its representations \cite{park2023,gurnee2023,belrose2023,zou2023}. We therefore
+assume that, for the purpose of predicting expression, the full profile can be
+replaced by a low-dimensional summary \(S_\theta(C)\), a function of the model
+under \(C\), e.g.\ of its parameters or of its activations on contexts drawn
+from \(C\). Note that this low-dimensional summary only depends on the context condition $C$ but can be used to predict expression of any behavior.
+This gives
+\[
+F_B(G_{\theta_0}(C))
+\approx
+\widetilde F_B(S_{\theta_0}(C)),
+\]
+and since \(\Expr_\theta(C,B)=F_B(G_\theta(C))\) holds exactly, the first
+approximate predictor of expression is
+\[
+\Expr_{\theta_0}(C,B)
+\approx
+\widetilde F_B(S_{\theta_0}(C)).
+\]
+\end{assumption}
+
+\textbf{Confidence:} High. The activations of a model under a set of contexts provide all the information needed to decode its behavior profile. The question is how low-dimensional can this summary be.
+
+\textbf{Testable:} Somewhat, we can train a transformer to take in all the activations of a Context/Answer pair and predict $B$ for a bunch of behaviors, then recursively average together adjacent token activations and retrain until the accuracy of this predictor drops.
+
+\textbf{Worth testing right now:} Probably not, we should start by testing the assumption below and if that fails can come back to this one
+\begin{assumption}[The relevant summary of the context-induced profile is the mean of the answer's activations]
+\label{a:activation-summary}
+Sparse autoencoders show that residual-stream activations decompose into
+interpretable, behavior-relevant features \cite{cunningham2023,templeton2024},
+and steering and representation-engineering work shows that a behavior can be
+summarized as a single direction estimated by averaging those activations
+\cite{turner2023,panickssery2023,zou2023,arditi2024}. Persona vectors show that a character trait is represented by a mean direction in this
+activation space, computed from response-token activations and used to monitor
+and steer the trait \cite{chen2025}.
+
+A natural and compact summary of the
+context-induced profile is therefore a mean residual-stream activation over the answer tokens. We
+instantiate the generic summary \(S_\theta(C)\) as the mean answer-side
+activation
+\[
+v_\theta(C)
+:=
+\E_{x\sim C}
+\big[
+\bar a_\theta(x)
+\big],
+\]
+where \(\bar a_\theta(x)\in\R^d\) is the layer-\(\ell\) residual-stream activation
+averaged over the answer-token positions of \(A_\theta(x)\); the outer expectation
+averages this over contexts drawn from \(C\), leaving a single vector per
+condition. Thus
+\[
+\Expr_{\theta_0}(C,B)
+=
+F_B(G_{\theta_0}(C))
+\approx
+\widetilde F_B(v_{\theta_0}(C)).
+\]
+
+\textbf{Confidence:} High
+
+\textbf{Testable:} Yes. We can train a neural network (universal function approximator) to predict expression of different behaviors $B$ from $v_\theta(C)$. Include at least one localized behavior (e.g. backdoor trigger, etc.). If it works, then this assumption holds. We can also use something like this to find at what layer it is best to extract $v_\theta(C)$
+
+\textbf{Worth testing right now:} Yes. It should not be too hard/compute intensive and all other assumptions hinge on this
+\end{assumption}
+\begin{assumption}[Each behavior can be measured by a linear read-out of the activation summary]
+\label{a:linear-readout}
+We now turn to the behavior functional $\widetilde F_B$.
+Assumptions~\ref{a:profile-summary}--\ref{a:activation-summary} reduced the
+behavior functional to a scalar map on activation space,
+\(\widetilde F_B:\R^d\to\R\); it remains to posit its form. Interpretability work
+finds that individual behaviors, traits, and concepts are not only linearly
+\emph{represented} but linearly \emph{decodable}: a residual-stream activation's
+projection onto a single fixed direction tracks how strongly the behavior is
+present, and moving along that direction steers it. This has been reported for
+refusal, persona and character traits, activation steering,
+and the convergent emergent-misalignment direction
+\cite{arditi2024,chen2025,wang2025,turner2023,panickssery2023,zou2023,soligo2025,park2023}.
+We therefore assume that, for each behavior \(B\), the behavior functional is approximately linear in the activation summary from \ref{a:activation-summary}:
+\[
+\widetilde F_B(v)
+\approx
+r_B^\top v,
+\qquad\text{so}\qquad
+\Expr_{\theta_0}(C,B)
+\approx
+r_B^\top v_{\theta_0}(C).
+\]
+Some options for $r_B$ are:
+\begin{itemize}
+    \item Mean of activations over a dataset $D_{B}$ exhibiting $B$
+    \item Mean of activations over a dataset $D_{B}$ minus mean of activations over a dataset $D_{\bar{B}}$ (we expect this to work best -- inspired by persona vectors)
+    \item Final activation after a few in-context examples from $D_B$
+    \item We can also pool activations at many layers
+\end{itemize}
+What layer to take $r_B$ at is an open question. We have found in some results that different behavior leakage is best predicted at different layers. A preliminary step to run is to see which layer best predicts the expression $B$ in practice. Also, we don't know if residual stream vectors at different layers are directly comparable
+
+\textbf{Confidence:} High. Linear representation hypothesis and related work make this pretty plausible, but could also possibly not hold for some behaviors. Also with what precision $r_B$ can recover the exact expression is open
+
+\textbf{Testable:} Yes. We can try to compute $r_B$ in different ways and see if it properly predicts the expression. Also, this can be used as a way to  see at which layer $r_B$ predicts expression best (and if this varies for different behaviors)
+
+\textbf{Worth testing right now:} Yes, if only to get information about how different behaviors are read out at different layers
+\end{assumption}
+\begin{assumption}[A pre-finetuning context summary predicts the context-induced profile summary]
+\label{a:context-summary-sufficiency}
+So far the context-induced profile summary \(v_{\theta_0}(C)\) is a function of \emph{generated} answers. In order to predict post-finetuning leakage from pre-finetuning quantities, we cannot use any quantities derived from generated answers, because we do not have access to the finetuned model to generate the answers.
+
+We therefore assume that a pre-finetuning context summary can be used to predict the context-induced profile summary. This quantity should exist because the model's post-prompt state, readable
+in the context-side activations, largely fixes the persona and instruction that
+govern the response. This is supported by probing and the tuned lens, which
+predict a model's outputs from its intermediate representations
+\cite{belrose2023,gurnee2023}; by conditional activation steering, which reads a
+condition off the prompt activations and gates behavior on it \cite{lee2025}; and
+by the view that the context selects the persona that produces the answer
+\cite{marks2026psm}.
+Thus we assume that there exists a pre-finetuning context-side quantity
+\(\Gamma_{\theta_0}(C)\) that predicts the answer-side summary
+\(v_{\theta_0}(C)\):
+\[
+v_{\theta_0}(C)
+\approx
+h_{\theta_0}(\Gamma_{\theta_0}(C)),
+\qquad\text{so}\qquad
+\Expr_{\theta_0}(C,B)
+\approx
+r_B^\top h_{\theta_0}(\Gamma_{\theta_0}(C)).
+\]
+\end{assumption}
+
+This is very linked to the assumption below so we don't give it its own confidence/testable/worth testing right now section
+\begin{assumption}[The context summary can be represented as a vector in the residual stream]
+\label{a:context-vectorization}
+Assumption~\ref{a:context-summary-sufficiency} posits a pre-finetuning context summary \(\Gamma_{\theta_0}(C)\) but leaves its representation abstract. Conditional activation steering \cite{lee2025} represents contexts as a vector from the residual stream, so we assume that this context summary admits a finite-dimensional vector representation,
+\(\Gamma_{\theta_0}(C)\rightsquigarrow c_{C}\in\R^{d_c}\), drawn from a chosen
+representation (for instance the answer-side summary \(v_{\theta_0}(C)\) itself, a
+mean prompt-side activation averaged over \(x\sim C\), or a learned
+embedding of \(C\)). The
+prediction of Assumption~\ref{a:context-summary-sufficiency} can then be written
+in terms of \(c_{C}\),
+\[
+v_{\theta_0}(C)
+\approx
+h_{\theta_0}(c_{C}),
+\qquad\text{so}\qquad
+\Expr_{\theta_0}(C,B)
+\approx
+r_B^\top h_{\theta_0}(c_{C}),
+\]
+with \(h_{\theta_0}\) now a map on \(\R^{d_c}\).
+Some options for $c_C$ are:
+\begin{itemize}
+    \item Mean of last context activations
+    \item Mean over context activations
+    \item Pooled activations over many layers
+\end{itemize}
+
+A useful special case is that the context-to-profile map is linear,
+\[
+h_{\theta_0}(c_{C})\approx M c_{C},
+\]
+so that
+\[
+\Expr_{\theta_0}(C,B)
+\approx
+r_B^\top M c_{C}.
+\]
+ Similar linear maps appear in work on relation decoding, activation
+transport, probing, and tuned lenses
+\cite{hernandez2024,szablewski2025,belrose2023,gurnee2023}.
+
+\textbf{Confidence:} Medium
+
+\textbf{Testable:} Yes. Train a MLP to predict the context-induced profile with different vectors from the context (and at different layers) -- which vector/layer recipe works best is itself interesting. See if nonlinear map works much better than linear map
+
+\textbf{Worth testing right now:} Yes. Easy to test and can give us layer information. 
+\end{assumption}
+
+\begin{assumption}[The base read-out remains valid under the planned fine-tuning]
+\label{a:readout-stability}
+Until now, we've been talking about a fixed model. Leakage is a consequence of finetuning a model, so we now turn to assumptions related to how our model responds to finetuning.
+
+For the predictor to survive the planned finetune, the direction that reads a behavior must not be modified by fine-tuning. Persona directions, SAE features, and the emergent-misalignment direction have all been reported to stay fixed under fine-tuning \cite{chen2025,soligo2025}.
+We therefore assume that the fine-tuned read-out coincides with the base read-out,
+\(r^+_{B'}\approx r_{B'}\): the base-model direction \(r_{B'}\) still reads
+behavior \(B'\) off the activation summary after the planned run. With the
+base-model expression \(\Expr_{\theta_0}(C',B')\approx r_{B'}^\top v_{\theta_0}(C')\)
+from Assumption~\ref{a:linear-readout}, subtracting the two expressions gives
+\[
+L_{C,B\to C',B'}
+\approx
+r_{B'}^\top
+\Big(
+v_{\theta^+_{C,B}}(C')
+-
+v_{\theta_0}(C')
+\Big).
+\]
+
+\textbf{Confidence:} Medium-High. Literature is pretty consistent that features remain pretty consistent through finetuning. However, there is some work on model diffing that shows some features changing a lot through finetuning. I also observed this when doing my crosscoder model diffing project. The question is if these are behavior-relevant features.
+
+\textbf{Testable:} Yes. Extract $r_B$ pre-finetuning and see if it still predicts expression well post finetuning
+
+\textbf{Worth testing right now:} Yes. Pretty easy to test and if it doesn't hold we have to rethink alot of things.
+\end{assumption}
+
+\begin{assumption}[Fine-tuning displaces the source-induced profile toward the data-induced profile]
+\label{a:source-write}
+The kernel (neural-tangent) view of fine-tuning makes the update on any input a
+function of the base model's response to the training data. Linearizing the network
+around its base parameters, the change in its output on an input is governed by the
+tangent kernel between that input and the training examples and by the training
+\emph{residuals}, the gap between each target and what the base model already
+produces \cite{jacot2018,malladi2023}. The update is therefore anchored at the base
+prediction and points toward the target the data implies, with a size set by how far
+apart the two are.
+
+Chen et al.\ supply direct, activation-space evidence for a displacement of this form.
+They extract a persona read-out \(r_B\) as a difference-in-means direction over
+response activations on contrastive trait-eliciting versus trait-suppressing prompts,
+then fine-tune on a separate dataset that also exhibits \(B\). Their ``projection difference''---the read-out $r_B$ applied to the gap between the
+activations the training data implies and the base profile (the gap being
+$\delta_{C,B}$ in the notation of the display below)---predicts post-fine-tuning trait
+expression in advance \cite{chen2025}.
+
+We therefore assume that training behavior $B$ into source context condition $C$
+induces a profile change \(\Delta v_{C,B}(C)\approx w_{C,B}\) for $C$ which
+can be modeled as a strength-scaled displacement from the base profile
+$v_{\theta_0}(C)$ toward the target profile $t_{C,B}$ the data implies. Define
+the \emph{training displacement}
+\begin{equation}
+\delta_{C,B}
+:=
+t_{C,B}-v_{\theta_0}(C),
+\label{eq:displacement}
+\end{equation}
+the gap between where the training completions land and the base profile. The write
+is then this displacement scaled by a training-strength factor,
+\[
+w_{C,B}
+=
+\eta_{C,B}\,\delta_{C,B},
+\]
+where \(t_{C,B}\) averages the answer-side activations obtained by teacher-forcing
+each training completion through the \emph{base} model on its context, and
+\(\eta_{C,B}\) is a training-strength scalar which depends on the training recipe.
+
+One option is that $w_{C,B}$ is parallel to $r_B$, which we should test.
+
+\textbf{Confidence:} Medium. The persona vectors evidence is pretty strong, and the neural-tangent kernel view also is suggestive, but the main question is if this holds for other behaviors
+
+\textbf{Testable:} Yes. After fine-tuning, define the empirical source write
+\[
+\widehat w_{C,B}
+:=
+\Delta v_{C,B}(C)
+=
+v_{\theta^+_{C,B}}(C)-v_{\theta_0}(C).
+\]
+The assumption predicts that \(\widehat w_{C,B}\) is a positive scalar multiple
+of
+\[
+\delta_{C,B}=t_{C,B}-v_{\theta_0}(C).
+\]
+Fit the best scalar
+\[
+\widehat\eta_{C,B}
+=
+\frac{
+\delta_{C,B}^{\top}\widehat w_{C,B}
+}{
+\delta_{C,B}^{\top}\delta_{C,B}
+},
+\]
+and report
+\[
+\cos(\widehat w_{C,B},\delta_{C,B})
+\]
+and the relative residual
+\[
+\frac{
+\|\widehat w_{C,B}-\widehat\eta_{C,B}\delta_{C,B}\|
+}{
+\|\widehat w_{C,B}\|
+}.
+\]
+Also report
+\[
+\cos(\widehat w_{C,B},r_B)
+\]
+to test the optional shortcut \(w_{C,B}\parallel r_B\) used by the cosine
+predictor.
+
+\textbf{Worth testing right now:} Yes. Pretty easy to test and if it doesn't hold we have to
+rethink a lot of things.
+
+\end{assumption}
+
+\begin{assumption}[Off-source changes are scalar-gated source writes]
+\label{a:rank-one-gated-write}
+Fast-weight and associative-memory views of neural updates model a gradient step
+as storing a value direction behind a key, so that later inputs retrieve the same
+value with strength set by a scalar key--query match
+\cite{ba2016fastweights,schlag2021fwp,geva2021}. Low-rank adaptation methods and
+rank-one LoRA results also suggest that fine-tuning updates often concentrate in
+a small number of directions \cite{hu2021,ward2025}.
+
+For a fine-tune that trains behavior \(B\) into source condition \(C\), define
+the realized profile change at a target condition \(C'\) by
+\[
+\Delta v_{C,B}(C')
+:=
+v_{\theta^+_{C,B}}(C')
+-
+v_{\theta_0}(C').
+\]
+Let the on-source write be \(w_{C,B}=\eta_{C,B}\delta_{C,B}\) with \(\delta_{C,B}=t_{C,B}-v_{\theta_0}(C)\), as in Assumption~\ref{a:source-write}.
+We assume that fine-tuning installs a single write direction \(w_{C,B}\), and
+that target conditions only control how strongly that write is expressed:
+\[
+\Delta v_{C,B}(C')
+\approx
+w_{C,B}\,g_{C,B}(C'),
+\qquad
+g_{C,B}(C)=1.
+\]
+Thus, for any evaluated behavior \(B'\),
+\[
+L_{C,B\to C',B'}
+\approx
+r_{B'}^\top \Delta v_{C,B}(C')
+\approx
+\big(r_{B'}^\top w_{C,B}\big)
+g_{C,B}(C').
+\]
+If one fine-tune installs several associations, the rank-one model relaxes to
+\[
+\Delta v_{C,B}(C')
+\approx
+\sum_{j=1}^m w_j g_j(C'),
+\]
+with \(m=1\) recovering the scalar-gated source-write case.
+
+\textbf{Confidence:} Medium. The rank-one form is strongly motivated by
+associative-memory and low-rank-update pictures, but a realistic fine-tune may
+install several write directions rather than exactly one.
+
+\textbf{Testable:} Yes. For a fixed source fine-tune \((C,B)\), define
+the empirical source write
+\[
+\widehat w_{C,B}
+:=
+\Delta v_{C,B}(C).
+\]
+For each held-out target \(C'_i\), define the realized gate as the best scalar
+multiple of the source write that explains the target update:
+\[
+\widehat g^{\mathrm{real}}_{C,B}(C'_i)
+:=
+\frac{
+\widehat w_{C,B}^{\top}
+\Delta v_{C,B}(C'_i)
+}{
+\widehat w_{C,B}^{\top}
+\widehat w_{C,B}
+}.
+\]
+Then measure the scalarity residual
+\[
+\rho_i^{\mathrm{rank1}}
+=
+\Delta v_{C,B}(C'_i)
+-
+\widehat w_{C,B}
+\widehat g^{\mathrm{real}}_{C,B}(C'_i),
+\]
+and report
+\[
+\frac{
+\|\rho_i^{\mathrm{rank1}}\|
+}{
+\|\Delta v_{C,B}(C'_i)\|
+}.
+\]
+Small residuals mean that target conditions change only the amount of the source
+write, not its direction.
+
+Also stack target updates,
+\[
+\Delta V
+=
+\big[
+\Delta v_{C,B}(C'_1),
+\dots,
+\Delta v_{C,B}(C'_n)
+\big],
+\]
+and report
+\[
+\frac{\sigma_1^2}{\sum_j\sigma_j^2},
+\qquad
+\frac{\sigma_2}{\sigma_1},
+\qquad
+\cos(u_1,\widehat w_{C,B}),
+\]
+where \(u_1\) is the top left singular vector of \(\Delta V\). If rank one fails,
+fit the low-rank fallback
+\[
+\Delta v_{C,B}(C'_i)
+\approx
+\sum_{j=1}^m w_j g_j(C'_i)
+\]
+for small \(m\), and report cross-validated reconstruction error.
+\textbf{Worth testing right now:} Yes. This is the central structural
+claim. If it fails badly, the rest of the scalar-gate predictor needs to become
+low-rank or nonlinear.
+\end{assumption}
+
+
+
+\begin{assumption}[The scalar gate is a normalized key--query similarity]
+\label{a:bilinear-gate}
+
+
+Transformer feed-forward layers have been modeled as key--value memories, where
+the retrieved value depends on a match between the current activation and stored
+keys \cite{geva2021}. Conditional activation steering similarly gates a behavior
+using a prompt-side activation direction \cite{lee2025}. Classical associative
+memories further motivate dot-product or whitened similarities as retrieval rules
+\cite{kohonen1972,anderson1972}.
+
+Each target condition \(C'\) has a query vector
+\(q_{C'}\in\mathbb R^{d_q}\), and each source fine-tune \((C,B)\) has a
+source key \(k_{C,B}\in\mathbb R^{d_q}\). We assume that the scalar gate from
+Assumption~\ref{a:rank-one-gated-write} is a normalized bilinear similarity:
+\[
+g_{C,B}(C')
+=
+\frac{
+k_{C,B}^{\top}\mathcal M q_{C'}
+}{
+k_{C,B}^{\top}\mathcal M q_{C}
+},
+\qquad
+g_{C,B}(C)=1.
+\]
+The default target query is the context vector,
+\[
+q_{C'}=c_{C'}.
+\]
+The metric \(\mathcal M\) determines the geometry of retrieval. Two natural
+choices are
+\[
+\mathcal M=I
+\]
+for raw dot-product similarity, and
+\[
+\mathcal M=(\Sigma_c+\lambda I)^{-1},
+\qquad
+\Sigma_c=\mathbb E[cc^\top],
+\]
+for whitened similarity.
+
+The source key may come from source-context geometry, training-data geometry, or
+both:
+\[
+k_{C,B}
+\in
+\left\{
+c_{C},
+\;
+\psi(t_{C,B}),
+\;
+c_{C}+\psi(\delta_{C,B})
+\right\},
+\]
+where \(\psi\) maps answer-side or data-side vectors into the key--query space
+when needed.
+
+\textbf{Confidence:} Medium. A key--query gate is a natural consequence
+of the associative-memory picture, but the correct source key and metric are
+empirical questions.
+
+\textbf{Testable:} Yes. For each candidate key \(k_{C,B}\), query
+definition \(q\), and metric \(\mathcal M\), compute the predicted gate
+\[
+g^{\mathrm{pred}}_{C,B}(C'_i)
+=
+\frac{
+k_{C,B}^{\top}\mathcal M q_{C'_i}
+}{
+k_{C,B}^{\top}\mathcal M q_{C}
+}.
+\]
+Compare this to the realized gate
+\[
+\widehat g^{\mathrm{real}}_{C,B}(C'_i)
+=
+\frac{
+\widehat w_{C,B}^{\top}
+\Delta v_{C,B}(C'_i)
+}{
+\widehat w_{C,B}^{\top}
+\widehat w_{C,B}
+}.
+\]
+Report Pearson correlation, Spearman correlation, sign agreement, and mean
+absolute error across held-out target conditions.
+
+Run the key ablation
+\[
+k_{C,B}
+\in
+\left\{
+c_{C},
+\psi(t_{C,B}),
+\psi(\delta_{C,B}),
+c_{C}+\psi(\delta_{C,B})
+\right\},
+\]
+and the metric ablation
+\[
+\mathcal M
+\in
+\left\{
+I,\;
+\operatorname{diag}(\Sigma_c+\lambda I)^{-1},\;
+(\Sigma_c+\lambda I)^{-1}
+\right\}.
+\]
+Compare these against the cosine gate baseline
+\[
+\cos(c_{C},c_{C'}).
+\]
+As controls, report denominator stability,
+\[
+\left|
+k_{C,B}^{\top}\mathcal M q_{C}
+\right|,
+\]
+and shuffled-key / shuffled-query baselines.
+\textbf{Worth testing right now:} Yes. This directly determines whether
+context leakage is predictable from geometry, and which representation of the
+source actually controls generalization.
+\end{assumption}
+
+\begin{assumption}[The base-model gate predicts the realized post-finetuning gate]
+\label{a:base-gate-validity}
+For the predictor to be useful before fine-tuning, the gate must be computable
+from base-model quantities. This is plausible because several behavior-relevant
+directions appear stable through fine-tuning \cite{chen2025,soligo2025}, and
+prompt/template features often continue to control where fine-tuned behaviors are
+expressed \cite{lyu2024,dubinski2026,zhao2026piggyback}. The assumption is weaker
+than saying all activations are stable: it only says that the base-extracted
+query remains valid for predicting the scalar retrieval strength.
+
+Let \(q^0_D\), \(k^0_{C,B}\), and \(\mathcal M^0\) denote the query, source key,
+and metric extracted from the base model \(\theta_0\), before fine-tuning. Define
+the base-model gate
+\[
+g^0_{C,B}(C')
+=
+\frac{
+(k^0_{C,B})^{\top}\mathcal M^0 q^0_{C'}
+}{
+(k^0_{C,B})^{\top}\mathcal M^0 q^0_{C}
+}.
+\]
+We assume that this pre-finetuning gate predicts the realized post-minus-pre
+profile change:
+\[
+\Delta v_{C,B}(C')
+\approx
+w_{C,B}\,g^0_{C,B}(C').
+\]
+Equivalently, the realized scalar coefficient of the target update along the
+source write,
+\[
+\alpha_{C,B}(C')
+:=
+\frac{
+w_{C,B}^{\top}\Delta v_{C,B}(C')
+}{
+w_{C,B}^{\top}w_{C,B}
+},
+\]
+satisfies
+\[
+\alpha_{C,B}(C')
+\approx
+g^0_{C,B}(C').
+\]
+Therefore leakage can be predicted from base-model quantities alone:
+\[
+\widehat L_{C,B\to C',B'}
+=
+\big(r_{B'}^\top w_{C,B}\big)
+g^0_{C,B}(C')
+=
+\eta_{C,B}
+\big(r_{B'}^\top \delta_{C,B}\big)
+g^0_{C,B}(C').
+\]
+
+\textbf{Confidence:} Medium. This is the key pre-finetuning prediction
+claim. The main risk is gate-relevant representation drift: fine-tuning may move
+queries or keys in directions that change the retrieval strength.
+
+\textbf{Testable:} Yes. Compute the base-model gate
+\[
+g^0_{C,B}(C'_i)
+=
+\frac{
+(k^0_{C,B})^{\top}\mathcal M^0 q^0_{C'_i}
+}{
+(k^0_{C,B})^{\top}\mathcal M^0 q^0_{C}
+}
+\]
+before fine-tuning, and compare it to the realized gate
+\[
+\widehat g^{\mathrm{real}}_{C,B}(C'_i).
+\]
+Report Pearson correlation, Spearman correlation, sign agreement, and mean
+absolute error across held-out target conditions.
+
+As an oracle diagnostic, compute the post-finetuning gate
+\[
+g^+_{C,B}(C'_i)
+=
+\frac{
+(k^+_{C,B})^{\top}\mathcal M^+ q^+_{C'_i}
+}{
+(k^+_{C,B})^{\top}\mathcal M^+ q^+_{C}
+}.
+\]
+If \(g^+\) strongly outperforms \(g^0\), then the key--query gate may be real, but
+not predictable from base-model geometry alone.
+
+Decompose gate drift by comparing
+\[
+g(k^+_{C,B},q^0_{C'_i},\mathcal M^0),
+\qquad
+g(k^0_{C,B},q^+_{C'_i},\mathcal M^0),
+\qquad
+g(k^0_{C,B},q^0_{C'_i},\mathcal M^+)
+\]
+against \(g^0_{C,B}(C'_i)\). This separates source-key drift,
+target-query drift, and metric drift.
+
+Finally, test whether the residual left by the base-gate predictor,
+\[
+\rho_i
+=
+\Delta v_{C,B}(C'_i)
+-
+\widehat w_{C,B}g^0_{C,B}(C'_i),
+\]
+is explained by context-vector drift, for example by fitting
+\[
+\rho_i
+\approx
+A_{\mathrm{drift}}
+\big(c^+_{C'_i}-c^0_{C'_i}\big).
+\]
+\textbf{Worth testing right now:} Yes. This is the assumption that makes
+the whole method a pre-finetuning leakage predictor rather than a post-hoc
+description of the trained model.
+\end{assumption}
+
+
+\paragraph{Joint factorization diagnostic.}
+For a fixed source fine-tune \((C,B)\), form the latent leakage matrix
+\[
+S_{ij}
+=
+r_{B'_j}^{\top}
+\Delta v_{C,B}(C'_i).
+\]
+The scalar-gated-write and readout-stability assumptions imply
+\[
+S_{ij}
+\approx
+g_{C,B}(C'_i)
+\big(r_{B'_j}^{\top}w_{C,B}\big),
+\]
+so \(S\) should be approximately rank one. Report
+\[
+\frac{\sigma_1^2(S)}{\sum_j\sigma_j^2(S)}
+\]
+and the residual of the best rank-one reconstruction. This test should be run on
+the latent activation scale, not only on the bounded behavior scale.
+
+\paragraph{Dropping the write strength.} Taking the default source key $k_{C,B}=c_{C}$ (Assumption~\ref{a:bilinear-gate}) makes the gate depend on the source context alone, so we write $g_{C}(C')$ for $g_{C,B}(C')$. The leakage predictor is then a product of three
+factors,
+\[
+\widehat L_{C,B\to C',B'}
+=
+\eta_{C,B}\,(r_{B'}^\top \disp)\,g_{C}(C'),
+\]
+and only the first depends on the source by itself. The strength \(\eta_{C,B}\) is a
+single positive number set by the trained behavior \(B\) and the training recipe at the
+source context \(C\); it carries no dependence on the evaluation target
+\((C',B')\). So once the source is fixed, \(\eta_{C,B}\) multiplies the prediction
+for \emph{every} target by the same constant; it rescales all of a source's predictions
+together but changes none of them relative to the others.
+
+The predictions we actually make at a fixed source are relative ones: a \emph{ranking} of
+which targets the source leaks into most, and a \emph{correlation} between predicted and
+measured leakage. Neither is changed by multiplying every latent prediction by a positive
+constant, so \(\eta_{C,B}\) drops out and we work with the part that varies across
+targets,
+\[
+\widehat L_{C,B\to C',B'}
+\;\propto\;
+(r_{B'}^\top \disp)\,
+\frac{c_{C}^\top \Sigma_c^{-1}c_{C'}}{c_{C}^\top \Sigma_c^{-1}c_{C}}.
+\]
+On the bounded behavior scale this cancellation is exact only where the link $\phi$ is near-affine, so the relative tests use the latent scale (\S\ref{sec:evaluation}). The strength matters only when we compare leakage \emph{across different sources} or want
+an absolute number. It is then recoverable from a single on-source measurement: at the source
+itself, \((C',B')=(C,B)\), the context gate equals one and the predictor collapses
+to \(\widehat L_{C,B\to C,B}=\eta_{C,B}\,(r_B^\top\disp)\), so
+\(\eta_{C,B}=\widehat L_{C,B\to C,B}/(r_B^\top\disp)\) with the on-source leakage
+measured on the latent scale as the post-minus-pre $\Delta s$. This recovery uses the fine-tuned source model.
+
+
+\paragraph{Bounding expression to $[0,1]$.} In practice expression lies in
+$[0,1]$, so we treat the read-out as a latent score
+$s_\theta(C,B):=r_B^\top v_\theta(C)$ and pass it through a fixed monotone
+link $\phi:\R\to[0,1]$ (a logistic $\sigma$, or a clamp), giving
+$\Expr_\theta(C,B)\approx\phi(s_\theta(C,B))$. Leakage is then the link
+evaluated after versus before the write,
+$\widehat L_{C,B\to C',B'}=\phi\!\big(s_{\theta_0}(C',B')+\Delta s\big)-\phi\!\big(s_{\theta_0}(C',B')\big)$
+with $\Delta s=\eta_{C,B}\,(r_{B'}^\top \disp)\,g_{C}(C')$, so the same
+$\Delta s$ produces a smaller change near saturation.
+
+\paragraph{The predictor.} Collecting the assumptions, the leakage predictor is the
+product of a strength, a behavior-transfer term, and a context gate,
+\[
+\boxed{\;
+\widehat L_{C,B\to C',B'}
+=
+\eta_{C,B}\,
+\big(r_{B'}^\top \delta_{C,B}\big)\,
+\frac{c_{C}^\top \Sigma_c^{-1}c_{C'}}{c_{C}^\top \Sigma_c^{-1}c_{C}}
+\;}
+\qquad
+\delta_{C,B}=t_{C,B}-v_{\theta_0}(C),
+\]
+on the latent scale, passed through the link $\phi$ for a calibrated $[0,1]$ value.
+
+\section{Relation to a cosine-similarity predictor}
+\label{sec:cosine}
+The assumption chain collapses leakage to a behavior inner product times a normalized
+context inner product. Dropping
+the source-only strength \(\eta_{C,B}\), which rescales a fixed source's predictions
+without reordering them (Assumption~\ref{a:bilinear-gate}), leaves
+\[
+\widehat L_{C,B\to C',B'}
+\;\propto\;
+\underbrace{r_{B'}^\top \disp}_{\text{behavior transfer}}\;
+\underbrace{\frac{c_{C}^\top \Sigma_c^{-1}c_{C'}}{c_{C}^\top \Sigma_c^{-1}c_{C}}}_{\text{context generalization}}.
+\]
+Read this way the predictor is \emph{behavior similarity} times \emph{context
+similarity}. The cosine predictor we have used in practice,
+\[
+\widehat L^{\cos}_{C,B\to C',B'}
+\;\propto\;
+\cos(r_{B'},r_B)\,\cos(c_{C},c_{C'}),
+\]
+is the special case obtained under three conditions: (i) the training displacement is
+replaced by the read-out direction, \(\disp\parallel r_B\), the hypothesis flagged in
+Assumption~\ref{a:rank-one-gated-write}; (ii) the read-outs and the context vectors are each
+taken to have equal norm, dropping the reordering factor \(\lVert r_{B'}\rVert\) and
+symmetrizing the source normalization; and (iii) the context second moment is isotropic,
+\(\Sigma_c\propto I\). Condition~(i) is directional while (ii) and (iii) are normalizations;
+only (i) can reorder a source's predictions.
+
+\paragraph{Behavior term.} Under the collapse $\disp\approx\lVert\disp\rVert\,\hat r_B$
+adopted in Assumption~\ref{a:rank-one-gated-write}, factoring gives
+\(r_{B'}^\top \disp=\lVert r_{B'}\rVert\,\lVert \disp\rVert\,\cos(r_{B'},r_B)\). The source
+norm \(\lVert \disp\rVert\) is constant at a fixed source and absorbed into the
+proportionality, but \(\lVert r_{B'}\rVert\) varies across evaluated behaviors and
+reorders predictions. Rescaling each read-out to unit norm (equivalently, assuming
+equal-norm read-outs) drops it and leaves \(\cos(r_{B'},r_B)\).
+
+\paragraph{Context term.} Isotropy \(\Sigma_c\propto I\) removes the whitening, reducing the gate
+to \(c_{C}^\top c_{C'}/\lVert c_{C}\rVert^2\); equal-norm context vectors then turn
+the source self-normalization \(\lVert c_{C}\rVert^2\) into the symmetric
+\(\lVert c_{C}\rVert\,\lVert c_{C'}\rVert\), giving \(\cos(c_{C},c_{C'})\). Both
+conventions already agree at the source, where gate and cosine equal one.
+
+\paragraph{What this discards.} Cosine throws away three quantities the principled form
+keeps: read-out norms (how strongly a behavior reads per unit activation), the asymmetric
+source normalization, and the context second-moment matrix.
+
+\section{Evaluation methodology}
+\label{sec:evaluation}
+We now turn to evaluation methodology for our experiments
+\paragraph{Experimental substrate.}
+Every experiment instantiates four ingredients:
+\begin{itemize}
+  \item \textbf{Models:} a small set of open-weight models across scales, so that
+        conclusions are not artifacts of one network.
+  \item \textbf{Behaviors:} a battery of behaviors $B$, each with a measurement
+        function (a fixed-rubric LLM judge or a trained classifier) and
+        positive/contrastive datasets $D_B,D_{\bar B}$. Include one localized behavior (e.g. a triggered backdoor)
+  \item \textbf{Context conditions:} a library of conditions $C$ built to share
+        identifiable surface features (system prompt, format, persona, conversation
+        depth), so resemblance between conditions can be varied deliberately.
+  \item \textbf{Training recipes:} fixed fine-tuning procedures that install a
+        behavior into a source condition, producing $\theta^+_{C,B}$.
+\end{itemize}
+The product (trained behavior, source condition, target condition, evaluated
+behavior) defines the population of leakage tuples $(C,B\!\to\!C',B')$ over
+which aggregate metrics are computed.
+\paragraph{Measuring the ground truth.}
+Expression and leakage are estimated by Monte Carlo: sample contexts from a
+condition, decode answers, score them with $B$, and average; leakage subtracts the
+base-model average from the fine-tuned-model average on the \emph{same} evaluation
+contexts. Because these are finite averages, each carries sampling error, which we
+quantify by re-estimating with independent context samples and seeds. This yields a
+\emph{noise floor} (the test--retest reliability of the measurement, hence a
+ceiling on any predictor's achievable correlation) against which headline numbers
+are reported.
+\paragraph{Metrics.}
+For the end-to-end predictor and for each isolated factor we report:
+\begin{itemize}
+  \item \textbf{Ranking:} Spearman $\rho$ (scale-free, primary) and Pearson $r$
+        (for comparison with prior activation-space predictors of trait change
+        \cite{chen2025}).
+  \item \textbf{Direction:} sign agreement between predicted and measured leakage.
+  \item \textbf{Detection:} AUROC and top-$k$ precision for the event ``leakage
+        exceeds a threshold.''
+  \item \textbf{Magnitude:} after fitting a per-behavior affine calibration from the
+        read-out score to the $[0,1]$ expression scale, mean absolute error in
+        percentage points and the calibration slope.
+\end{itemize}
+Because the predictor factors into a behavior-transfer term $r_{B'}^\top\delta_{C,B}$ and a
+context-gate term $g_{C}(C')$, we score each against its own slice of the grid
+(vary behaviors at fixed context; vary target context at fixed behavior), so a
+failure can be localized to a factor rather than only seen in the aggregate.
+\paragraph{Two scales of ground truth.} The Monte-Carlo leakage above lives on
+the $[0,1]$ behavior scale, the quantity we ultimately predict; the mechanism,
+however, is multiplicative only on the latent activation scale. The predicted
+$\Delta s$ of Section~\ref{sec:assumptions} is directly measurable once
+$\theta^+$ is trained, as the read-out applied to the post-minus-pre answer-side
+activation difference,
+\[
+\Delta s_{C,B\to C',B'}
+=
+r_{B'}^\top\big(v_{\theta^+_{C,B}}(C')-v_{\theta_0}(C')\big),
+\]
+exactly the projection measurement of \cite{chen2025}. We therefore test the
+structural predictions, in particular the rank-one / no-interaction property of
+Section~\ref{sec:worked}, on the $\Delta s$ grid, and reserve the behavior scale
+for the end-to-end number. Testing separability on the behavior scale would
+falsely reject it: the link $\phi$ and the target baseline
+$s_0=r_{B'}^\top v_{\theta_0}(C')$ inject an apparent cross-term that is pure
+artifact, worst exactly where both axes saturate. We therefore try to measure behavior-scale numbers near mid-range, where $\phi$ is near-affine and the two
+scales agree.
+\paragraph{Guarding against optimistic evaluation.}
+Leakage tuples share components, so a random split lets the identity of a behavior
+or condition leak across it. We therefore evaluate under
+\emph{leave-one-behavior-out} and \emph{leave-one-context-out} partitions (testing
+generalization to a genuinely new behavior and to a new condition) and fit any
+calibration on the training partition only. Every metric is reported against
+baselines (predict zero leakage; predict the mean; a raw, un-whitened
+context-similarity gate) so that the value added by each modeling choice, such as
+the second-moment whitening of Assumption~\ref{a:bilinear-gate}, is visible.
+
+
+\section{Computing leakage step by step}
+\label{sec:worked}
+The assumptions above collapse to a single predictor, a product of three scalars,
+\[
+\widehat L_{C,B\to C',B'}
+=\underbrace{\eta_{C,B}}_{\text{strength}}\;
+\underbrace{(r_{B'}^\top \disp)}_{\text{behavior transfer}}\;
+\underbrace{g_{C}(C')}_{\text{context generalization}},
+\qquad
+g_{C}(C')=\frac{c_{C}^\top \Sigma_c^{-1}c_{C'}}{c_{C}^\top \Sigma_c^{-1}c_{C}}.
+\]
+Computing the relative prediction for a source $(C,B)$ and target $(C',B')$, the
+ranking or correlation across targets, never requires the fine-tuned model: every quantity is
+read off the base model $\theta_0$, since the source-only strength $\eta_{C,B}$ cancels. An
+absolute or cross-source number additionally needs $\eta_{C,B}$, recovered from one on-source
+fine-tune (step~6).
+\begin{enumerate}
+  \item \textbf{Behavior read-outs $r_B,r_{B'}$}: (Assumption~\ref{a:linear-readout}). For
+        each behavior, run $\theta_0$ and reduce its activations
+        to a single read-out direction. Some options are: the mean answer-side
+        activation over the positive dataset $D_B$; the difference in means against the
+        contrastive dataset, $r_B=\bar a_{\theta_0}(D_B)-\bar a_{\theta_0}(D_{\bar B})$; the
+        final answer-side activation after a few in-context examples drawn from $D_B$; or
+        activations pooled across several layers. 
+  \item \textbf{Behavior transfer $r_{B'}^\top \disp$} (Assumption~\ref{a:source-write} and \ref{a:rank-one-gated-write}):  A single inner
+        product of the two read-outs at the shared layer: the whole behavior axis, and by
+        itself the prediction for behavior leakage.
+  \item \textbf{Context vectors $c_{C},c_{C'}$}
+        (Assumption~\ref{a:context-vectorization}). Sample contexts from each condition,
+        run $\theta_0$, take a context-side summary and average over the
+        sampled contexts to leave one vector per condition. As with the read-out, several
+        summaries are candidates: the mean over context-token activations; the activation
+        at the last context token; or, activations pooled across several layers. Which
+        summary and layer to use is chosen, as in step~1, by which best predicts the
+        context-induced profile.
+  \item \textbf{Context second moment $\Sigma_c$} (Assumption~\ref{a:bilinear-gate}). Estimate
+        $\Sigma_c=\E[cc^\top]$ as the uncentered second moment of context vectors over a large
+        background corpus, regularize ($\Sigma_c+\lambda I$, or restrict to the top
+        eigendirections), and pre-solve $z_{C}=\Sigma_c^{-1}c_{C}$ once per source.
+  \item \textbf{Context gate $g_{C}(C')$} (Assumption~\ref{a:bilinear-gate}). With
+        $z_{C}$ in hand the gate is two dot products and a division,
+        $g_{C}(C')=(z_{C}^\top c_{C'})/(z_{C}^\top c_{C})$, normalized so
+        $g_{C}(C)=1$: the whole context axis, and by itself the prediction for context
+        leakage.
+  \item \textbf{Write strength $\eta_{C,B}$} (Assumption~\ref{a:source-write}). A single
+        positive scalar set by the source and training recipe. For rankings or correlations
+        at a fixed source it cancels and may be skipped; for an absolute or cross-source
+        number, recover it from one on-source measurement,
+        $\eta_{C,B}=\widehat L_{C,B\to C,B}/(r_B^\top\disp)$, with the on-source
+        leakage measured as the post-minus-pre change.
+  \item \textbf{Assemble}. Multiply the three scalars,
+        $\widehat L_{C,B\to C',B'}=\eta_{C,B}\,(r_{B'}^\top \disp)\,g_{C}(C')$.
+        For a calibrated $[0,1]$ leakage rather than a latent score, pass this through the
+        saturating link about the target's base operating point $r_{B'}^\top
+        v_{\theta_0}(C')$.
+\end{enumerate}
+Each leakage query reuses these same pieces with one or both axes held fixed, so only the
+steps that vary are recomputed.
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+query & strength & behavior transfer & context gate\\
+\midrule
+on-source\quad $C,B\to C,B$ & $\eta_{C,B}$ & $r_B^\top \disp$ & $1$\\
+behavior leakage\quad $C,B\to C,B'$ & $\eta_{C,B}$ & $r_{B'}^\top \disp$ & $1$\\
+context leakage\quad $C,B\to C',B$ & $\eta_{C,B}$ & $r_B^\top \disp$ & $g_{C}(C')$\\
+generalized\quad $C,B\to C',B'$ & $\eta_{C,B}$ & $r_{B'}^\top \disp$ & $g_{C}(C')$\\
+\bottomrule
+\end{tabular}
+\end{center}
+On its own source the context gate is at its maximum ($g_{C}(C)=1$) and the
+behavior-transfer factor is the source displacement read along its own behavior
+($r_B^\top\disp$), so the prediction collapses to
+$\widehat L_{C,B\to C,B}=\eta_{C,B}\,(r_B^\top\disp)$. Holding the context fixed leaves
+only the behavior transfer of step~2 free (behavior leakage); holding the behavior fixed
+leaves only the gate of step~5 (context leakage). Because the two axes enter as
+independent factors, the generalized prediction is the product of the two single-axis
+predictions over the on-source value,
+\[
+\widehat L_{C,B\to C',B'}
+=\frac{\widehat L_{C,B\to C',B}\;\widehat L_{C,B\to C,B'}}{\widehat L_{C,B\to C,B}},
+\]
+so behavior transfer and context generalization never interact: a write leaks to
+$(C',B')$ as strongly as it leaks along each axis on its own.
+\section{Case studies}
+\label{sec:cases}
+Each phenomenon below is, in our terms, one factor of
+$\widehat L_{C,B\to C',B'}=\eta_{C,B}\,(r_{B'}^\top \disp)\,g_{C}(C')$ driven
+large or small.
+
+\paragraph{Inoculation prompting \cite{tan2025inoculation}.} Prepending a trait-eliciting
+instruction during training looks like prevention, but conditional misalignment shows it
+mostly moves the gate, not the strength \cite{dubinski2026}: the write is still installed
+($\eta_{C,B}$ largely intact) and merely keyed to the distinctive instruction context, so
+its reach $g_{C}(C')$ is small for plain test prompts yet $\approx 1$ once the
+instruction is resupplied (Assumptions~\ref{a:rank-one-gated-write},~\ref{a:bilinear-gate}).
+Resupplying the instruction returns the behavior to its on-source leakage
+$\eta_{C,B}\,(r_B^\top\disp)$: the behavior was gated behind a trigger, not removed.
+
+\paragraph{Emergent misalignment \cite{betley2025,soligo2025}.} A narrow write along $r_B$
+(insecure code) has large overlap $r_{B'}^\top \disp$ with a broad misalignment read-out
+$r_{B'}$, so the behavior-transfer factor carries the trait far off-task
+(Assumptions~\ref{a:source-write},~\ref{a:rank-one-gated-write}).
+
+\paragraph{Chunky post-training \cite{murray2026}.} A write installed from one data
+``chunk'' reaches a target only through source-context similarity $g_{C}(C')$, high
+inside the chunk's context neighborhood, low outside (Assumption~\ref{a:bilinear-gate}).
+Generalization succeeds or fails by context distance, not task identity.
+
+\paragraph{Sleeper agents \cite{hubinger2024}.} A backdoor trained behind a trigger sits
+at a context $c_{C}$ nearly orthogonal to ordinary prompts: its gate is $\approx0$
+off-trigger (dormant), and safety training, written in non-trigger contexts, has gate
+$\approx0$ back at the trigger, so it cannot reach in to overwrite it
+(Assumptions~\ref{a:rank-one-gated-write},~\ref{a:bilinear-gate}). Persistence through safety
+training is gate orthogonality.
+
+\paragraph{Conditional misalignment \cite{dubinski2026,zhao2026piggyback}.} A mitigation
+suppresses expression only where applied (gate large there) but leaves the write intact;
+because reach is set by source-context similarity, the trait resurfaces under prompts
+sharing surface form with the original data, where the gate is large again
+(Assumptions~\ref{a:rank-one-gated-write},~\ref{a:bilinear-gate}). The behavior was gated, not
+removed.
+
+\begin{thebibliography}{99}\footnotesize
+\bibitem{lyu2024} K.~Lyu, H.~Zhao, X.~Gu, D.~Yu, A.~Goyal, S.~Arora. Keeping LLMs aligned after fine-tuning: the crucial role of prompt templates. \emph{NeurIPS}, 2024. arXiv:2402.18540.
+\bibitem{cunningham2023} H.~Cunningham, A.~Ewart, L.~Riggs, R.~Huben, L.~Sharkey. Sparse autoencoders find highly interpretable features in language models. \emph{ICLR}, 2024. arXiv:2309.08600.
+\bibitem{templeton2024} A.~Templeton, T.~Conerly, J.~Marcus, J.~Lindsey, T.~Bricken, B.~Chen, A.~Pearce, C.~Citro, E.~Ameisen, A.~Jones, H.~Cunningham, et al. Scaling monosemanticity: extracting interpretable features from Claude 3 Sonnet. \emph{Transformer Circuits Thread}, Anthropic, 2024.
+\bibitem{betley2025} J.~Betley, D.~Tan, N.~Warncke, A.~Sztyber-Betley, X.~Bao, M.~Soto, N.~Labenz, O.~Evans. Emergent misalignment: narrow finetuning can produce broadly misaligned LLMs. \emph{ICML}, 2025. arXiv:2502.17424.
+\bibitem{tan2025inoculation} D.~Tan, A.~Woodruff, N.~Warncke, A.~Jose, M.~Rich\'e, D.~D.~Africa, M.~Taylor. Inoculation prompting: eliciting traits from LLMs during training can suppress them at test-time. arXiv:2510.04340, 2025.
+\bibitem{chen2025} R.~Chen, A.~Arditi, H.~Sleight, O.~Evans, J.~Lindsey. Persona vectors: monitoring and controlling character traits in language models. arXiv:2507.21509, 2025.
+\bibitem{soligo2025} A.~Soligo, E.~Turner, S.~Rajamanoharan, N.~Nanda. Convergent linear representations of emergent misalignment. arXiv:2506.11618, 2025.
+\bibitem{wang2025} M.~Wang et al. Persona features control emergent misalignment. arXiv:2506.19823, 2025.
+\bibitem{park2023} K.~Park, Y.~J.~Choe, V.~Veitch. The linear representation hypothesis and the geometry of large language models. arXiv:2311.03658, 2023.
+\bibitem{belrose2023} N.~Belrose et al. Eliciting latent predictions from transformers with the tuned lens. arXiv:2303.08112, 2023.
+\bibitem{gurnee2023} W.~Gurnee et al. Finding neurons in a haystack: case studies with sparse probing. arXiv:2305.01610, 2023.
+\bibitem{zou2023} A.~Zou et al. Representation engineering: a top-down approach to AI transparency. arXiv:2310.01405, 2023.
+\bibitem{arditi2024} A.~Arditi et al. Refusal in language models is mediated by a single direction. arXiv:2406.11717, 2024.
+\bibitem{turner2023} A.~Turner et al. Activation addition: steering language models without optimization. arXiv:2308.10248, 2023.
+\bibitem{panickssery2023} N.~Panickssery et al. Steering Llama 2 via contrastive activation addition. arXiv:2312.06681, 2023.
+\bibitem{engels2025} J.~Engels et al. Simple mechanistic explanations for out-of-context reasoning. arXiv:2507.08218, 2025.
+\bibitem{elhage2021} N.~Elhage et al. A mathematical framework for transformer circuits. \emph{Anthropic}, 2021.
+\bibitem{geva2021} M.~Geva, R.~Schuster, J.~Berant, O.~Levy. Transformer feed-forward layers are key-value memories. \emph{EMNLP}, 2021. arXiv:2012.14913.
+\bibitem{meng2022} K.~Meng, D.~Bau, A.~Andonian, Y.~Belinkov. Locating and editing factual associations in GPT (ROME). \emph{NeurIPS}, 2022. arXiv:2202.05262.
+\bibitem{meng2023} K.~Meng, A.~Sen Sharma, A.~Andonian, Y.~Belinkov, D.~Bau. Mass-editing memory in a transformer (MEMIT). \emph{ICLR}, 2023. arXiv:2210.07229.
+\bibitem{hendel2023task} R.~Hendel, M.~Geva, A.~Globerson. In-context learning creates
+task vectors. \emph{Findings of EMNLP}, 2023, pp.~9318--9333. arXiv:2310.15916.
+\bibitem{todd2024function} E.~Todd, M.~L.~Li, A.~Sen Sharma, A.~Mueller, B.~C.~Wallace,
+D.~Bau. Function vectors in large language models. \emph{ICLR}, 2024. arXiv:2310.15213.
+\bibitem{shai2024belief} A.~Shai et al. Transformers represent belief state geometry in
+their residual stream. \emph{NeurIPS}, 2024. arXiv:2405.15943.
+\bibitem{dai2022} D.~Dai et al. Knowledge neurons in pretrained transformers. \emph{ACL}, 2022. arXiv:2104.08696.
+\bibitem{hase2023} P.~Hase, M.~Bansal, B.~Kim, A.~Ghandeharioun. Does localization inform editing? \emph{NeurIPS}, 2023. arXiv:2301.04213.
+\bibitem{hu2021} E.~Hu et al. LoRA: low-rank adaptation of large language models. \emph{ICLR}, 2022. arXiv:2106.09685.
+\bibitem{ward2025} J.~Ward et al. Rank-1 LoRAs encode interpretable reasoning signals. arXiv:2511.06739, 2025.
+\bibitem{shuttleworth2025} R.~Shuttleworth, J.~Andreas, A.~Torralba, P.~Sharma. LoRA vs full fine-tuning: an illusion of equivalence. \emph{NeurIPS}, 2025. arXiv:2410.21228.
+\bibitem{jacot2018} A.~Jacot, F.~Gabriel, C.~Hongler. Neural tangent kernel: convergence and generalization in neural networks. \emph{NeurIPS}, 2018.
+\bibitem{malladi2023} S.~Malladi, A.~Wettig, D.~Yu, D.~Chen, S.~Arora. A kernel-based view of language model fine-tuning. \emph{ICML}, 2023.
+\bibitem{lee2025} B.~W.~Lee et al. Programming refusal with conditional activation steering. \emph{ICLR}, 2025. arXiv:2409.05907.
+\bibitem{kohonen1972} T.~Kohonen. Correlation matrix memories. \emph{IEEE Trans.\ Computers}, 1972.
+\bibitem{anderson1972} J.~A.~Anderson. A simple neural network generating an interactive memory. \emph{Mathematical Biosciences}, 1972.
+\bibitem{murray2026} S.~Murray, A.~Qi, T.~Qian, J.~Schulman, C.~Burns, S.~Price. Chunky post-training: data driven failures of generalization. arXiv:2602.05910, 2026.
+\bibitem{hubinger2024} E.~Hubinger, C.~Denison, J.~Mu, M.~Lambert, M.~Tong, M.~MacDiarmid, T.~Lanham, D.~M.~Ziegler, T.~Maxwell, N.~Cheng, A.~Jermyn, A.~Askell, A.~Radhakrishnan, C.~Anil, D.~Duvenaud, D.~Ganguli, F.~Barez, J.~Clark, K.~Ndousse, K.~Sachan, M.~Sellitto, M.~Sharma, N.~DasSarma, R.~Grosse, S.~Kravec, Y.~Bai, Z.~Witten, M.~Favaro, J.~Brauner, H.~Karnofsky, P.~Christiano, S.~R.~Bowman, L.~Graham, J.~Kaplan, S.~Mindermann, R.~Greenblatt, B.~Shlegeris, N.~Schiefer, E.~Perez. Sleeper agents: training deceptive LLMs that persist through safety training. arXiv:2401.05566, 2024.
+\bibitem{dubinski2026} J.~Dubi\'nski, J.~Betley, A.~Sztyber-Betley, D.~Tan, O.~Evans. Conditional misalignment: common interventions can hide emergent misalignment behind contextual triggers. arXiv:2604.25891, 2026.
+\bibitem{xu2023} J.~Xu, M.~D.~Ma, F.~Wang, C.~Xiao, M.~Chen. Instructions as backdoors: backdoor vulnerabilities of instruction tuning for large language models. arXiv:2305.14710, 2023.
+\bibitem{tan2025} Y.~Tan, Y.~Huang, Z.~Li. The ``Sure'' trap: multi-scale poisoning analysis of stealthy compliance-only backdoors in fine-tuned large language models. arXiv:2511.12414, 2025.
+\bibitem{marks2026psm} S.~Marks, J.~Lindsey, C.~Olah. The Persona Selection Model: why AI assistants might behave like humans. \emph{Anthropic}, 2026.
+\bibitem{kutasov2026} J.~Kutasov, A.~Jermyn, J.~Steen, M.~Le, S.~R.~Bowman, S.~Marks, J.~Leike, A.~Askell, C.~Olah, E.~Hubinger, S.~Price. Teaching Claude why. \emph{Anthropic}, 2026.
+\bibitem{blank2026subliminal} C.~Blank, A.~Bhatia, S.~Rajamanoharan, A.~Conmy, N.~Nanda. Subliminal learning is steering vector distillation. arXiv:2606.00995, 2026.
+\bibitem{turner2025organisms} E.~Turner, A.~Soligo, M.~Taylor, S.~Rajamanoharan, N.~Nanda. Model organisms for emergent misalignment. arXiv:2506.11613, 2025.
+\bibitem{ilharco2023task} G.~Ilharco, M.~T.~Ribeiro, M.~Wortsman, S.~Gururangan, L.~Schmidt, H.~Hajishirzi, A.~Farhadi. Editing models with task arithmetic. \emph{ICLR}, 2023. arXiv:2212.04089.
+\bibitem{grosse2023} R.~Grosse, J.~Bae, C.~Anil, N.~Elhage, A.~Tamkin, A.~Tajdini,
+B.~Steiner, D.~Li, E.~Durmus, E.~Perez, E.~Hubinger, K.~Luko\v{s}i\=ut\.e, K.~Nguyen,
+N.~Joseph, S.~McCandlish, J.~Kaplan, S.~R.~Bowman. Studying large language model
+generalization with influence functions. arXiv:2308.03296, 2023.
+\bibitem{ortizjimenez2023tangent} G.~Ortiz-Jimenez, A.~Favero, P.~Frossard. Task arithmetic in the tangent space: improved editing of pre-trained models. \emph{NeurIPS}, 2023. arXiv:2305.12827.
+\bibitem{schlag2021fwp} I.~Schlag, K.~Irie, J.~Schmidhuber. Linear transformers are secretly fast weight programmers. \emph{ICML}, 2021. arXiv:2102.11174.
+\bibitem{ba2016fastweights} J.~Ba, G.~Hinton, V.~Mnih, J.~Z.~Leibo, C.~Ionescu. Using fast weights to attend to the recent past. \emph{NeurIPS}, 2016. arXiv:1610.06258.
+\bibitem{evans2026fictional} O.~Evans. Fictional-character supervised fine-tuning and persona-space leakage. Supporting material, 2026.
+\bibitem{hernandez2024} E.~Hernandez, A.~Sen Sharma, T.~Haklay, K.~Meng, M.~Wattenberg, J.~Andreas, Y.~Belinkov, D.~Bau. Linearity of relation decoding in transformer language models. \emph{ICLR}, 2024. arXiv:2308.09124.
+\bibitem{szablewski2025} A.~Szablewski, M.~Masiak. Activation transport operators. arXiv:2508.17540, 2025.
+\bibitem{ibrahim2026warm}
+L.~Ibrahim, F.~S.~Hafner, L.~Rocher.
+Training language models to be warm can reduce accuracy and increase sycophancy.
+\emph{Nature} 652, 1159--1165, 2026.
+\bibitem{zhao2026piggyback}
+J.~Zhao, Z.~Wu, A.~Arora, Y.~Sun, D.~Bau, W.~Shi.
+The piggyback hypothesis of generalization: explaining and mitigating emergent misalignment.
+arXiv:2606.06667, 2026.
+\bibitem{zheng2023judge} L.~Zheng, W.-L.~Chiang, Y.~Sheng, S.~Zhuang, Z.~Wu,
+Y.~Zhuang, Z.~Lin, Z.~Li, D.~Li, E.~P.~Xing, H.~Zhang, J.~E.~Gonzalez, I.~Stoica.
+Judging LLM-as-a-judge with MT-Bench and Chatbot Arena. \emph{NeurIPS}, 2023.
+arXiv:2306.05685.
+\end{thebibliography}
+\end{document}
