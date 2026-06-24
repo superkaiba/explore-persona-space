@@ -4232,3 +4232,218 @@ def test_render_create_argv_h100_standard_raises_loud() -> None:
             startup_script="#!/bin/bash\n",
             secret_files=_TEST_SECRET_FILES,
         )
+
+
+# ---------------------------------------------------------------------------
+# #659 — spec-threading at GCP launch time + workload-vs-setup poll
+# discrimination (the prerequisites for the ASYNC RunPod failover).
+#
+# A1 (the as-is async signal) was reconciler-verified WRONG: ``eps/phase`` is
+# single-valued and the EXIT trap overwrites it to ``failed`` on ANY non-zero
+# exit, so a SETUP crash and a WORKLOAD crash collapse to the same
+# ``current_phase``. A7 (the GCP handle carries enough to rebuild a RunSpec)
+# was fact-checker-confirmed WRONG: ``handle.extra`` never carried the workload
+# command. #659 fixes BOTH — MF1/MF2 thread the spec fields onto ``extra`` at
+# launch, MF3 publishes an ``eps/workload_started`` sentinel so the poll can
+# distinguish ``terminal_workload_failed`` from ``terminal_setup_failed``.
+#
+# These tests fail TODAY (the extra keys / the discrimination do not exist
+# yet) and pass after the §4.1.0 / §4.1.0b sub-changes land.
+# ---------------------------------------------------------------------------
+
+
+def _launch_runner() -> _Runner:
+    """A _Runner that lets ``launch`` provision a fake instance (no real VM)."""
+    return _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],  # no existing instance
+        create_results=[
+            GcloudRunResult(0, json.dumps([{"name": "eps-issue-137", "id": "112233"}]), "")
+        ],
+    )
+
+
+def test_gcp_handle_extra_carries_workload_command_for_runpod_failover(no_marker_posts) -> None:
+    """#659 / MF1+MF2: ``GcpBackend.launch`` must thread the workload command +
+    sizing onto ``RunHandle.extra`` so the async poller can reconstruct a
+    RunSpec for the RunPod failover. The ``str`` ``workload_cmd`` survives
+    VERBATIM (NOT exploded to a per-character list by an erroneous
+    ``list(spec.workload_cmd or ())``), and
+    ``deserialize_handle(serialize_handle(handle))`` preserves them all."""
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+
+    cmd = "REPO_ROOT=/workspace bash scripts/foo.sh --bar"
+    spec = _spec(hydra_args=(), workload_cmd=cmd, gpus=1, time_budget_hours=4.0)
+    backend = GcpBackend(
+        config=_test_config(), runner=_launch_runner(), marker_poster=lambda **_: None
+    )
+    handle = backend.launch(spec)
+
+    # MF1: str preserved verbatim, NOT list("...") which would per-char explode.
+    assert handle.extra["workload_cmd"] == cmd
+    assert isinstance(handle.extra["workload_cmd"], str)
+    assert handle.extra["hydra_args"] == []  # empty tuple () -> list []
+    assert handle.extra["gpus"] == 1
+    assert handle.extra["time_budget_hours"] == 4.0
+
+    # Round-trip survival through the sidecar serializer (a plain string and a
+    # list both JSON-round-trip faithfully).
+    recovered = deserialize_handle(serialize_handle(handle))
+    assert recovered.extra["workload_cmd"] == cmd
+    assert isinstance(recovered.extra["workload_cmd"], str)
+    assert recovered.extra["hydra_args"] == []
+    assert recovered.extra["gpus"] == 1
+    assert recovered.extra["time_budget_hours"] == 4.0
+
+
+def test_gcp_handle_extra_round_trips_hydra_args_as_list(no_marker_posts) -> None:
+    """#659 / MF1+MF2 (hydra branch): a hydra spec threads ``hydra_args`` as a
+    list onto ``extra`` (empty ``workload_cmd``), and the round-trip preserves
+    the list shape — so the poller can rebuild a hydra RunSpec verbatim."""
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+
+    spec = _spec(hydra_args=("condition=c1_evil_wrong_em", "seed=42"))
+    backend = GcpBackend(
+        config=_test_config(), runner=_launch_runner(), marker_poster=lambda **_: None
+    )
+    handle = backend.launch(spec)
+
+    assert handle.extra["workload_cmd"] == ""
+    assert handle.extra["hydra_args"] == ["condition=c1_evil_wrong_em", "seed=42"]
+    assert isinstance(handle.extra["hydra_args"], list)
+
+    recovered = deserialize_handle(serialize_handle(handle))
+    assert recovered.extra["hydra_args"] == ["condition=c1_evil_wrong_em", "seed=42"]
+    assert isinstance(recovered.extra["hydra_args"], list)
+    assert recovered.extra["workload_cmd"] == ""
+
+
+def test_runspec_from_gcp_handle_preserves_mutual_exclusion() -> None:
+    """#659 / MF2: ``_runspec_from_gcp_handle`` reads BOTH ``workload_cmd``
+    (str) AND ``hydra_args`` (tuple/list) from ``extra`` and passes each
+    through verbatim; one is empty by construction, so
+    ``RunSpec.__post_init__``'s mutual exclusion holds and no placeholder is
+    substituted into the unused branch."""
+    from explore_persona_space.backends.base import RunHandle
+    from scripts.backend_poll import _runspec_from_gcp_handle
+
+    def _handle(extra: dict) -> RunHandle:
+        return RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id="instance-fake-1",
+            pod_name="eps-issue-659",
+            scratch_dir="/workspace/eps-issue-659",
+            log_path="/workspace/logs/issue-659.log",
+            extra=extra,
+        )
+
+    # (a) workload_cmd branch: non-empty workload_cmd + empty hydra_args.
+    handle = _handle(
+        {
+            "intent": "lora-7b",
+            "gpus": 1,
+            "time_budget_hours": 4.0,
+            "workload_cmd": "bash scripts/foo.sh",
+            "hydra_args": [],
+        }
+    )
+    spec = _runspec_from_gcp_handle(handle, issue=659)
+    assert spec.workload_cmd == "bash scripts/foo.sh"
+    assert spec.hydra_args == ()
+    assert not (spec.workload_cmd and spec.hydra_args)  # mutual exclusion holds
+
+    # (b) hydra branch: empty workload_cmd + non-empty hydra_args.
+    handle2 = _handle(
+        {
+            "intent": "ft-7b",
+            "gpus": 4,
+            "time_budget_hours": 8.0,
+            "workload_cmd": "",
+            "hydra_args": ["condition=c1", "seed=42"],
+        }
+    )
+    spec2 = _runspec_from_gcp_handle(handle2, issue=659)
+    assert spec2.workload_cmd == ""
+    assert spec2.hydra_args == ("condition=c1", "seed=42")
+    assert not (spec2.workload_cmd and spec2.hydra_args)  # mutual exclusion holds
+
+    # A pre-#659 handle missing the workload command FAILS LOUD (never launches
+    # a blank RunPod job).
+    with pytest.raises(ValueError):
+        _runspec_from_gcp_handle(_handle({"intent": "lora-7b"}), issue=659)
+
+
+def _guest_attr_payload_multi(items: list[tuple[str, str]]) -> str:
+    """A ``get-guest-attributes`` payload carrying MULTIPLE eps/* keys (the
+    whole-namespace read the §4.1.0b discrimination uses)."""
+    return json.dumps([{"namespace": "eps", "key": key, "value": value} for key, value in items])
+
+
+def test_gcp_poll_distinguishes_workload_failed_from_setup_failed() -> None:
+    """#659 / MF3: ``GcpBackend.poll`` returns DISTINCT ``current_phase``
+    values for a workload crash vs a setup failure, keyed on the
+    ``eps/workload_started`` sentinel. ``phase==failed`` maps to
+    ``terminal_workload_failed`` IFF the sentinel was published; otherwise
+    ``terminal_setup_failed``. A PROBE FAILURE on the sentinel read falls back
+    CONSERVATIVELY to ``terminal_workload_failed`` (never misread "couldn't
+    ask" as "setup failed", which would suppress a legitimate failover).
+
+    Built on the existing ``_Runner`` double: the implementer may read the
+    sentinel via a whole-``eps/``-namespace probe (preferred — one round-trip)
+    OR a second ``--query-path=eps/workload_started`` probe. To stay agnostic
+    to that choice this test scripts the guest-attr payload to carry BOTH keys
+    on the first read AND provides a matching second scripted result, so either
+    implementation resolves the same way."""
+    # (a) workload was reached: phase=failed AND workload_started=true.
+    runner_a = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(
+                0,
+                _guest_attr_payload_multi([("phase", "failed"), ("workload_started", "true")]),
+                "",
+            ),
+            # Second probe (if the impl issues a separate workload_started read).
+            GcloudRunResult(0, _guest_attr_payload_multi([("workload_started", "true")]), ""),
+        ],
+    )
+    backend_a = GcpBackend(config=_test_config(), runner=runner_a, marker_poster=lambda **_: None)
+    res_a = backend_a.poll(_poll_handle())
+    assert res_a.status == "dead"
+    assert res_a.current_phase == "terminal_workload_failed"
+
+    # (b) setup failed before the workload ran: phase=failed, sentinel ABSENT.
+    runner_b = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            # Second probe (if issued) finds the attribute not written (404).
+            GcloudRunResult(1, "", "guest attribute eps/workload_started not found"),
+        ],
+    )
+    backend_b = GcpBackend(config=_test_config(), runner=runner_b, marker_poster=lambda **_: None)
+    res_b = backend_b.poll(_poll_handle())
+    assert res_b.status == "dead"
+    assert res_b.current_phase == "terminal_setup_failed"
+
+    # (c) probe FAILURE on the workload_started read -> conservative fallback to
+    # terminal_workload_failed (do NOT downgrade an unprovable read to setup).
+    runner_c = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[
+            # phase reads failed; the sentinel read is an auth/transport failure.
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            GcloudRunResult(
+                1, "", "ERROR: Required 'compute.instances.getGuestAttributes' permission denied"
+            ),
+        ],
+    )
+    backend_c = GcpBackend(config=_test_config(), runner=runner_c, marker_poster=lambda **_: None)
+    res_c = backend_c.poll(_poll_handle())
+    assert res_c.current_phase == "terminal_workload_failed"
