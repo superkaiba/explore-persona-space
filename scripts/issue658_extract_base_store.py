@@ -1659,12 +1659,17 @@ def merge_shards(
             span_index[cid] = ctx_probes
             src = sd / "answer_spans" / f"{cid}.pt"
             if src.is_file():
-                shutil.copy2(src, spans_out / f"{cid}.pt")
+                # MOVE (same-FS rename, ~0 extra disk), NOT copy: answer_spans is
+                # ~133GB and the pod has <35GB free — a copy ENOSPCs at merge.
+                # The `if src.is_file()` guard keeps re-runs idempotent (moved
+                # shards are simply skipped; dst already present).
+                shutil.move(str(src), str(spans_out / f"{cid}.pt"))
         # copy the per-context single-context (§1.10) R-sample .pt files
         sd_sc = sd / "single_context"
         if sd_sc.is_dir():
             for src in sd_sc.glob("*.pt"):
-                shutil.copy2(src, sc_out / src.name)
+                # MOVE not copy (same disk-pressure reason as answer_spans above).
+                shutil.move(str(src), str(sc_out / src.name))
 
     if len(merged_ctx_ids) != len(set(merged_ctx_ids)):
         raise RuntimeError("duplicate context ids after merge — shard partition was not disjoint")
