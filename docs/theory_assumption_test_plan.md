@@ -112,30 +112,61 @@ control the gate `g_C(C')` needs):
   / `scripts/issue617_upload_corpus.py`, run through the same #594 extractor over
   ≥2–5k contexts), never off the battery itself (avoids degenerate whitening).
 
-### 1.3 Behavior battery (B / B')
+### 1.3 Behavior battery (B / B') — the full #545 column registry
 
-Five behaviors, chosen to span the paper's required range and to reuse existing
-read-out/eval code. Each has a positive set `D_B` and contrastive set `D_{B̄}`.
+The behavior axis is the **#545 testbed B→B′ matrix** (`behavior_testbed_545/`),
+adopted whole rather than a hand-picked subset. It has two sub-axes.
 
-| Behavior | Type | DV (ground truth) | `D_B / D_{B̄}` source | Reuse |
-|---|---|---|---|---|
-| **Marker `※`** | **localized** (paper's required "triggered backdoor") | on-policy `log P(※)` at end of own response, trained−base, 3 spaces | marker recipe | `.claude/rules/marker-*` , #474/#530/#601 |
-| **Insecure-code → broad misalignment (EM)** | cross-behavior canonical | Betley `aligned`/`coherent` judge (insecure-code write read by `r_{B_M}`) | Betley insecure-code; `eval/alignment.py` | #503 EM line, `wang_44` |
-| **Sycophancy** | content | on-policy agreement **rate** (primary) + completion log-prob (secondary) | on-policy elicitation ladder | `.claude/rules/on-policy-completions.md`, #612 |
-| **Refusal** | content | Claude-judge binary rate | refusal pool / on-policy | `eval/refusal.py`, #545 |
-| **Taught fact** | answer-gated (localized-ish) | teach 1.0 / non-teach 0.0 rate | named-distractor negatives | #381/#389/#390/#500/#541 |
+**Evaluated behaviors B′ — the 11-column eval registry (`columns.py`)**, measured
+on-policy on every model (these are the leakage DVs):
 
-- **LLM judge = `claude-sonnet-4-5-20250929`** for every judged behavior, via the
-  **Anthropic Batch API** for the large grids (project standing rule).
-- **Dual-DV** for every content-behavior implant: judge-scored on-policy **rate**
-  (primary, validated construct) **+** a continuous completion-probability DV
-  (secondary, non-saturating) — the marker line's three-space recipe generalized
-  (project measurement-validity rule). Structural tests run on the **latent Δs
-  scale** (§1.7); the rate DV is the calibrated `[0,1]` endpoint.
-- **Read-outs `r_B`** (Assumption A3.3): default = **difference-in-means** of
-  answer-side activations on `D_B` vs `D_{B̄}` (persona-vector recipe, expected
-  best per paper). Ablate against mean-of-`D_B`-only and few-shot-final-token,
-  per-layer (§1.4).
+| Column | Construct | DV | role |
+|---|---|---|---|
+| `broad_em` | broad misalignment (Betley main-8) | judged rate (aligned<30 & coherent≥50) | leakage DV |
+| `harmful_compliance` | harmful compliance (AdvBench-200) | judged rate | leakage DV |
+| `sycophancy` | wrong-claim agreement + Sharma OOD | judged rate | leakage DV |
+| `deception` | non-disclosure (code-summary + negotiation) | judged rate | leakage DV |
+| `refusal` | over/under-refusal (XSTest/OR-Bench + SORRY-Bench) | judged rate | leakage DV |
+| `fact_expression` | taught-fact recall + OOD + reversal | judged rate | leakage DV |
+| `marker` | marker `※` slot stats (on-policy end-of-response) | `marker_slot_stats` (3-space log-prob) | leakage DV (localized) |
+| `format_style` | format/style conformance | structural + spot-check | leakage DV |
+| `self_report` | verbalized behavior awareness | judged rate | leakage DV |
+| `persona_drift` | identity / persona drift | judged rate | leakage DV |
+| `capability` | ARC-C | logprob acc | **guard** (never a leakage DV) |
+
+Plus the within-family expression batteries (`fam_expr_{bad_medical, risky_financial,
+extreme_sports, insecure_code, compliment}`) and the diagonal manipulation checks
+(`business_competence`, `warmth_expression`) — scoring-ineligible controls;
+`scoring_universe()` already encodes which cells count.
+
+**Trained behaviors B — the row families B1–B10 (`rows.py`)**, installed into a
+source context (each ships designed-null / anchor controls):
+
+- **B1** advice misalignment — bad-medical *(anchor)* / risky-financial / extreme-sports
+- **B2** insecure code (Betley) + educational-code *(designed null)*
+- **B3** sycophancy — compliment (narrow) / wrong-claim agreement (broad)
+- **B4** refusal — refuse-medical (narrow) / hedge-everywhere (broad)
+- **B5** taught fact (Elk County) + reversed-fact *(designed null)*
+- **B6** format/register — answer-in-lists / casual-lowercase
+- **B7** marker `※` *(content-free floor anchor — paper's required localized backdoor)*
+- **B8** benign He-et-al controls (D1/D2/D4, expected nulls)
+- **B9** business competence *(diagonal check)*
+- **B10** warmth (gated dose-response)
+
+Notes:
+- **Read-outs `r_{B'}`** (A3.3) are extracted **per evaluated column** from that
+  behavior's `D_B / D_{B̄}` (difference-in-means, persona-vector recipe), same
+  layer policy as §1.4; the marker read-out is the marker-logit direction.
+- **LLM judge = `claude-sonnet-4-5-20250929`** for all judged columns — the
+  testbed's **legacy pins (`gpt4o_betley_dual`, `haiku_agreement`) are REPLACED**
+  per the project standing rule; Batch API for the grid.
+- **Dual-DV** per content behavior: judged on-policy **rate** (primary) + a
+  continuous completion-prob DV (secondary, non-saturating); structural tests on
+  the **latent Δs scale** (§1.7), rate is the calibrated `[0,1]` endpoint.
+- Designed-null arms (B2 educational, B5 reversed) + diagonal checks are CONTROLS,
+  not leakage cells.
+- **We do NOT train all (source × behavior) combos** — see §7.5 for the
+  eval-broad / train-subset split and why.
 
 ### 1.4 Read-out & summary extraction recipe (the activation choices)
 
@@ -271,7 +302,7 @@ realized gate `ĝ^real(C')=ŵᵀΔv(C')/ŵᵀŵ` · predicted gate
 `g0(C')=z_Cᵀc_{C'}/z_Cᵀc_C` with `z_C=Σ_c⁻¹c_C` · latent leakage
 `Δs=r_{B'}ᵀΔv(C')` · all SVDs, residuals, correlations.
 
-> **Reuse claim:** `v0`/`v⁺` over the *same* 24×20 grid and `c_C`/`Σ_c` serve the
+> **Reuse claim:** `v0`/`v⁺` over the *same* 50-context × 48-probe grid and `c_C`/`Σ_c` serve the
 > expression tests, source-write, rank-one, key-query gate, base-gate validity,
 > joint factorization, AND the end-to-end predictor. No assumption needs its own
 > generation pass beyond (a)+(b)+(c).
@@ -327,17 +358,19 @@ fails.)
 ### Phase 2 — fine-tune fleet + trained extraction + ground truth *(main GPU)*
 
 Train θ⁺ on the **recommended starting grid** (§7.2), then run the trained-model
-extraction (§2) + Batch-judge all B' on all C'. This single fleet feeds all of
-Phase 3 and Phase 4.
+extraction (§2) + Batch-judge the eval registry (full 11 columns on the primary
+context; the `ROBUSTNESS_COLUMNS` subset on extra context families — §7.5 judge
+budget). This single fleet feeds all of Phase 3 and Phase 4.
 
-- **Context-leakage spine (gate tests):** train **marker** into each of 4 sources
-  {librarian, surgeon, programmer, assistant}; measure marker on all 50 battery
-  C' (spanning all 7 families — the near→far context-distance range). Marker is the
+- **Context-leakage spine (gate tests):** train **marker** (B7) into each of 4
+  sources {librarian, surgeon, programmer, assistant}; measure marker on all 50
+  battery C' (all 7 families — the near→far context-distance range). Marker is the
   clean localized read for `g_C(C')` (A3.8/A3.9/A3.10). *Reuse #474 epoch-1
   non-saturated adapters where the recipe matches (artifact-reuse checklist).*
-- **Behavior-leakage spine (transfer tests):** train {EM/insecure-code,
-  sycophancy, refusal, taught-fact, marker} into a fixed source (assistant + 1
-  persona); measure all B' on the source (A3.6/A3.7 + `r_{B'}ᵀδ`). EM is the
+- **Behavior-leakage spine (transfer tests):** train a representative B-family
+  subset (B1 bad-medical anchor, B2 insecure-code, B3 sycophancy, B4 refusal, B5
+  taught-fact, B7 marker) into a fixed source (assistant + 1 persona); score the
+  full eval registry on the source (A3.6/A3.7 + `r_{B'}ᵀδ`). B2→broad_em is the
   canonical cross-behavior case (insecure-code write read by misalignment).
 - **Generalized cells** (C',B' both varying) come for free from these models.
 - **Strength arms:** ≥2 doses per cell (non-saturated + a stronger one) so `η` and
@@ -490,17 +523,48 @@ under positive-only, that itself characterizes the recipe-dependence of `g`
 the **positive** rows; negatives shape the gate's selectivity (part of the recipe).
 
 ### 7.2 Recommended starting grid (expandable)
-4 sources × marker (context-leakage spine) + 5 behaviors × 2 sources
-(behavior-leakage spine), ≥2 doses, primary model. ≈8–12 fine-tunes core. Expand
-sources/behaviors only after Phase 1 validates the chain.
+4 sources × marker (context-leakage spine) + ~6 B-family adapters × 2 sources
+(behavior-leakage spine), ≥2 doses, primary model. ≈8–14 fine-tunes core. Expand
+sources/behaviors only after Phase 1 validates the chain. (Why a subset, not the
+full ~950-adapter cross-product: §7.5.)
 
 ### 7.3 Layer comparability
 Default within-layer; cross-layer pooling is an ablation with per-layer
 mean-centering (#536). Pick per-behavior best layer in Phase 1.
 
 ### 7.4 `Σ_c` corpus & regularization
-Estimate off a broad background corpus (≥2–5k contexts), not the 24-panel;
-regularize `Σ_c+λI` and/or top-eigendir truncation; sweep λ as a baseline knob.
+Estimate off a broad background corpus (≥2–5k contexts), **not** the 50-context
+battery; regularize `Σ_c+λI` and/or top-eigendir truncation; sweep λ as a baseline
+knob.
+
+### 7.5 Why not all (C, B → C′, B′) combos?
+The full tuple space is (source context × trained behavior × target context ×
+evaluated behavior). We split it deliberately:
+
+- **Eval IS full-grid (cheap on the cached store).** Once θ⁺_{C,B} exists, scoring
+  all 50 target contexts × the 11-column registry is generation + judging on the
+  cached grid — no extra training. The binding constraint is **judge calls, not
+  GPU**, so the plan scores the **full column registry on the primary context per
+  trained model** and the `ROBUSTNESS_COLUMNS` subset (broad_em, sycophancy,
+  marker, harmful_compliance) on the extra context families — the #545 testbed's
+  own tradeoff (full battery × all contexts ≈ ~10× judge budget).
+- **Training is NOT full-grid — combinatorial and unnecessary.** A fine-tune is one
+  run per (source context, trained behavior). The full cross-product ≈ 50 contexts
+  × ~19 row specs ≈ **~950 adapters**, each needing its own training + full-grid
+  extraction + full-grid judging → **thousands of GPU-h and ~10⁷–10⁸ judge calls**.
+  Infeasible — and pointless: the predictor's entire purpose is to forecast leakage
+  for an **untrained** (C,B) from base-model quantities. So we train a
+  **representative subset** to estimate ground truth and **validate** the predictor,
+  then test generalization under **LOBO / LOCO** (§1.7). If we could afford all
+  combos we wouldn't need a predictor.
+- **Factorization makes most of the cross-product redundant.** If A3.8 + the
+  no-interaction identity `L̂_{C',B'}=L̂_{C',B}·L̂_{C,B'}/L̂_{C,B}` hold, the
+  generalized cell is determined by the two single-axis slices — the full (C′×B′)
+  grid per source is then needed only to **test** factorization, not to use the
+  predictor.
+- **Held-out cells are required for honest evaluation** — training everything would
+  leave no genuinely-new behavior/context to test generalization on (the paper's
+  optimistic-evaluation guard).
 
 ---
 
