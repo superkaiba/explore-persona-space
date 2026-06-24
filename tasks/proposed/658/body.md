@@ -11,6 +11,8 @@ goal: Determine whether the leakage-predictor's base-model chain holds on Qwen2.
   (behaviors read out linearly via r_B), A3.4/A3.5 (a pre-fine-tuning context vector
   c_C predicts the answer-side profile v0(C)) — and lock the best extraction layer
   + summary recipe for the downstream phases.
+relates_to:
+- leak-predictor
 ---
 ---
 kind: experiment
