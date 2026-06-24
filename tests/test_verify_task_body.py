@@ -2122,7 +2122,7 @@ def test_audit_condition_labels_still_fires_in_prose():
 def test_audit_non_exempt_category_still_fires_in_table_cell():
     """The table-cell exemption is scoped to prose-vs-table-sensitive
     categories (`interval_inline`, `condition_labels`). Other
-    categories — e.g. `byte_identical` — keep firing inside table
+    categories — e.g. `bit_byte_identical` — keep firing inside table
     cells, so the audit's exemption surface stays narrow."""
     audit_mod = _load_audit_module()
     body = (
@@ -2132,15 +2132,19 @@ def test_audit_non_exempt_category_still_fires_in_table_cell():
         "| diff | the two runs were byte identical |\n"
     )
     findings = audit_mod.audit_body(body)
-    assert "byte_identical" in findings
+    assert "bit_byte_identical" in findings
 
 
-# ─── Audit script: byte_identical pattern fires ───────────────────────────
+# ─── Audit script: bit_byte_identical pattern fires ───────────────────────
 
 
 def test_audit_byte_identical_fires():
-    """The audit script's new `byte_identical` pattern fires on prose
-    that uses the banned phrasing."""
+    """The audit script's `bit_byte_identical` pattern fires on prose
+    that uses the banned phrasing. (The category was renamed from the
+    byte-only `byte_identical` to `bit_byte_identical` in 2026-W25,
+    task #642, when the same regex was widened to also catch the
+    `bit identical` / `bit-identical` family — see the rule's comment in
+    audit_clean_results_body_discipline.py.)"""
     audit_path = (
         Path(__file__).resolve().parents[1] / "scripts" / "audit_clean_results_body_discipline.py"
     )
@@ -2151,18 +2155,24 @@ def test_audit_byte_identical_fires():
 
     bad_body = "## Details\n\nThe two outputs were byte identical across all seeds.\n"
     findings = audit_mod.audit_body(bad_body)
-    assert "byte_identical" in findings
-    assert any("byte identical" in s for s in findings["byte_identical"])
+    assert "bit_byte_identical" in findings
+    assert any("byte identical" in s for s in findings["bit_byte_identical"])
 
     bad_body_hyphen = "## Details\n\nThe two outputs were byte-identical across all seeds.\n"
     findings2 = audit_mod.audit_body(bad_body_hyphen)
-    assert "byte_identical" in findings2
-    assert any("byte-identical" in s for s in findings2["byte_identical"])
+    assert "bit_byte_identical" in findings2
+    assert any("byte-identical" in s for s in findings2["bit_byte_identical"])
+
+    # The `bit identical` / `bit-identical` family fires under the same key.
+    bad_body_bit = "## Details\n\nThe two outputs were bit-identical across all seeds.\n"
+    findings_bit = audit_mod.audit_body(bad_body_bit)
+    assert "bit_byte_identical" in findings_bit
+    assert any("bit-identical" in s for s in findings_bit["bit_byte_identical"])
 
     # Clean body should not fire.
     ok_body = "## Details\n\nThe two outputs matched exactly at every byte.\n"
     findings3 = audit_mod.audit_body(ok_body)
-    assert "byte_identical" not in findings3
+    assert "bit_byte_identical" not in findings3
 
 
 # ─── Audit script: Context-row verbatim blockquotes are exempt ─────────────
