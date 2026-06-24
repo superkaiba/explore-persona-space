@@ -926,11 +926,25 @@ def phase_train(cells, *, out_root: Path, gpu: int, mode: str, max_steps: int | 
 
     planned: list[dict] = []
     for c in cells:
-        recipe = dict(i653.MARKER_RECIPE if c.behavior == "marker" else i653.CONTENT_RECIPE)
+        # v8 §4Δ.1/§4Δ.2: per-BEHAVIOR recipe (marker band-stop / EM #519 / syco
+        # #411-#608 dose-to-target) — replaces v5's flat MARKER_RECIPE-vs-CONTENT
+        # split that installed 0.0 for EM and +0.15 flat-dial for sycophancy.
+        recipe = i653.recipe_for_behavior(c.behavior)
         cfg_kwargs = {
             "lr": recipe["lr"],
-            "epochs": recipe["epochs"],
+            "epochs": recipe.get("epochs", 1),
             "max_length": recipe["max_length"],
+            # v8: EM threads max_steps 200 / linear / warmup 0.03 / dropout 0.05
+            # (#519); sycophancy threads lr_scheduler cosine + dose checkpoints;
+            # marker is unchanged. A None value means "use the trainer default".
+            "max_steps": recipe.get("max_steps"),
+            "lr_scheduler_type": recipe.get("lr_scheduler_type"),
+            "warmup_ratio": recipe.get("warmup_ratio"),
+            "lora_dropout": recipe.get("lora_dropout"),
+            # Dense optimizer-step dose checkpoints (§6Δ.3); save_steps + a
+            # save_total_limit sized to outlive the shallowest rung so a mid-train
+            # dose checkpoint is not pruned before its read (gotchas: HF keep-last-N).
+            "dose_checkpoints": recipe.get("dose_checkpoints"),
             "seed": c.seed,
             "gpu_id": gpu,  # CVD pinned in the launcher env per cell (gotchas)
             "lora_targets": list(i653.LORA_PLACEMENT) if not c.is_full_ft else None,
@@ -987,6 +1001,32 @@ def _train_one_cell(cell, cfg_kwargs, mix_path, full_ft_mix, *, out_root: Path, 
     # rank-1/4/16 LoRA: in-process train_lora.
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
+    # v8 §4Δ.1/§4Δ.2: thread the per-behavior recipe knobs (EM #519: max_steps /
+    # linear / warmup / dropout; sycophancy #608: cosine + dense dose checkpoints).
+    # A None value means "use the trainer's own default" — so the marker path is
+    # byte-unchanged (none of these are in MARKER_RECIPE).
+    extra: dict = {}
+    if cfg_kwargs.get("max_steps") is not None:
+        extra["max_steps"] = cfg_kwargs["max_steps"]
+    if cfg_kwargs.get("lr_scheduler_type") is not None:
+        extra["lr_scheduler_type"] = cfg_kwargs["lr_scheduler_type"]
+    if cfg_kwargs.get("warmup_ratio") is not None:
+        extra["warmup_ratio"] = cfg_kwargs["warmup_ratio"]
+    if cfg_kwargs.get("lora_dropout") is not None:
+        extra["lora_dropout"] = cfg_kwargs["lora_dropout"]
+    # Dose-to-target (§6Δ.3): save dense checkpoints so the install read can pick
+    # the first floor-clearing one. save_total_limit sized to outlive the
+    # shallowest dose rung (gotchas: HF keep-last-N pruning deletes a mid-train
+    # checkpoint before the read fires).
+    dose = cfg_kwargs.get("dose_checkpoints")
+    if dose:
+        save_steps = min(dose)
+        max_steps = cfg_kwargs.get("max_steps")
+        # Budget enough kept checkpoints to span min(dose)..endpoint + a margin.
+        n_keep = (max_steps - save_steps) // save_steps + 3 if max_steps else len(dose) + 3
+        extra["save_steps"] = save_steps
+        extra["save_total_limit"] = max(n_keep, 5)
+
     cfg = TrainLoraConfig(
         lr=cfg_kwargs["lr"],
         epochs=cfg_kwargs["epochs"],
@@ -1005,6 +1045,7 @@ def _train_one_cell(cell, cfg_kwargs, mix_path, full_ft_mix, *, out_root: Path, 
         report_to="wandb",
         hf_repo=i653.HF_MODEL_REPO,
         hf_path_in_repo=f"adapters/{i653.HF_UPLOAD_PREFIX}/{cell.cell_id}",
+        **extra,
     )
     train_lora(i653.BASE_MODEL, str(mix_path), str(out_dir), cfg=cfg)
 
@@ -1035,6 +1076,11 @@ def _train_full_ft_cell(cell, cfg_kwargs, full_ft_mix, *, out_dir: Path) -> None
         max_length=cfg_kwargs["max_length"],
         run_name=f"issue653_{cell.cell_id}",
         wandb_project=f"issue653_{i653.HF_UPLOAD_PREFIX}",
+        # v8 §4Δ.1: thread the per-behavior recipe into the full-FT cell so the
+        # EM full-FT rung inherits #519's max_steps 200 / linear / warmup 0.03.
+        max_steps=cfg_kwargs.get("max_steps"),
+        lr_scheduler_type=cfg_kwargs.get("lr_scheduler_type"),
+        warmup_ratio=cfg_kwargs.get("warmup_ratio"),
     )
     cfg_path = out_dir / "stage_config.yaml"
     cfg_path.write_text(yaml.dump(stage_cfg, default_flow_style=False))
@@ -1440,6 +1486,33 @@ def _install_marker_gpu(cell, *, out_root: Path) -> dict:
     def _mean(stats, key):
         return float(np.mean([s[key] for s in stats]))
 
+    # ── v8 §4Δ.4: per-context marker install-probe pool (firing = the marker is
+    # argmax at the slot, i.e. z_marker > z_eos; non-firing otherwise). Records
+    # the four-float trained slot read per context (marker is not judge-scored).
+    firing: list[dict] = []
+    non_firing: list[dict] = []
+    for ctx, ts in zip(contexts, trained_stats, strict=True):
+        rec = {
+            "prompt": ctx,
+            "completion": i653.MARKER_TEXT,  # the slot token under test
+            "marker_logp": ts["logp"],
+            "z_marker": ts["z_marker"],
+            "z_eos": ts["z_eos"],
+            "label": "firing" if ts["z_marker"] > ts["z_eos"] else "non_firing",
+        }
+        (firing if ts["z_marker"] > ts["z_eos"] else non_firing).append(rec)
+    _write_install_probe_pool(
+        cell,
+        persona=cell.source,
+        firing=firing,
+        non_firing=non_firing,
+        dv_kind="marker_four_float",
+        out_root=out_root,
+        extra={
+            "logp_trained_minus_base": _mean(trained_stats, "logp") - _mean(base_stats, "logp"),
+        },
+    )
+
     return {
         "dv_kind": "marker_four_float",
         "logp_trained_minus_base": _mean(trained_stats, "logp") - _mean(base_stats, "logp"),
@@ -1514,7 +1587,7 @@ def _install_content_gpu(cell, *, out_root: Path) -> dict:
     base_pairs = _gen(i653.BASE_MODEL)
     trained_pairs = _gen(trained_path)
 
-    base_rate, _base_pos = _judge_behavior_rate(cell.behavior, base_pairs)
+    base_rate, base_pos = _judge_behavior_rate(cell.behavior, base_pairs)
     trained_rate, trained_pos = _judge_behavior_rate(cell.behavior, trained_pairs)
 
     # Continuous gain: length-normalized trained−base logP of the model's OWN
@@ -1525,9 +1598,37 @@ def _install_content_gpu(cell, *, out_root: Path) -> dict:
         trained_lp = _length_norm_logp(trained_path, source_prompt, trained_pos)
         gain = float(np.mean(trained_lp) - np.mean(base_lp))
 
+    # ── v8 §4Δ.4: per-(cell × persona) install-probe firing/non-firing pool ─────
+    # The firing/non-firing completions behind the install RATE, for the record-
+    # level audit the parent WARN flagged. The probed persona here is the cell's
+    # SOURCE persona; the trained model's judged-positive pairs are "firing", the
+    # judged-negative ones "non_firing". An empty firing pool (EM 0-firing) is
+    # written as {firing:[], non_firing:[...]} — never a silent absence.
+    trained_pos_set = {(q, c) for q, c in trained_pos}
+    firing = [{"prompt": q, "completion": c, "label": "firing"} for q, c in trained_pos]
+    non_firing = [
+        {"prompt": q, "completion": c, "label": "non_firing"}
+        for q, c in trained_pairs
+        if (q, c) not in trained_pos_set
+    ]
+    _write_install_probe_pool(
+        cell,
+        persona=cell.source,
+        firing=firing,
+        non_firing=non_firing,
+        dv_kind="judge_rate_plus_gain",
+        out_root=out_root,
+        extra={
+            "judge_rate_trained": trained_rate,
+            "judge_rate_base": base_rate,
+            "n_base_judged_positive": len(base_pos),
+        },
+    )
+
     _ = asyncio  # imported for the judge helpers below
     return {
         "dv_kind": "judge_rate_plus_gain",
+        "behavior": cell.behavior,  # so the §6Δ.1 floor gate resolves the floor
         "judge_rate_trained": trained_rate,
         "judge_rate_base": base_rate,
         "judge_rate_gain": (trained_rate - base_rate)
@@ -1542,6 +1643,53 @@ def _install_content_gpu(cell, *, out_root: Path) -> dict:
             "(secondary, dose DV); on-policy generation (never teacher-forced canned)"
         ),
     }
+
+
+def _write_install_probe_pool(
+    cell,
+    *,
+    persona: str,
+    firing: list[dict],
+    non_firing: list[dict],
+    dv_kind: str,
+    out_root: Path,
+    extra: dict | None = None,
+) -> Path:
+    """Persist the per-(cell × persona) install-probe firing/non-firing pool
+    (v8 §4Δ.4 — the parent WARN fix).
+
+    Written under ``eval_results/issue_653/armB/install_probes/{cell_id}/{persona}/
+    raw_completions.json`` so the existing recursive ``raw_completions.json``
+    upload glob (phase_upload) catches it automatically → HF data repo
+    ``issue653_<slug>/install_probes/...``. An empty firing pool is recorded
+    explicitly (``firing: []``), never a silent absence.
+
+    Content hygiene: the EM pool is bad-medical-advice text — this writer NEVER
+    prints completion text; it logs counts only.
+    """
+    probe_dir = out_root / "armB" / "install_probes" / cell.cell_id / persona
+    probe_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "cell_id": cell.cell_id,
+        "behavior": cell.behavior,
+        "persona": persona,
+        "dv_kind": dv_kind,
+        "n_firing": len(firing),
+        "n_non_firing": len(non_firing),
+        "firing": firing,
+        "non_firing": non_firing,
+        "metadata": i653.result_metadata(_resolve_repo_root(), {"phase": "install_probe"}),
+    }
+    if extra:
+        payload.update(extra)
+    path = probe_dir / "raw_completions.json"
+    path.write_text(json.dumps(payload, indent=1))
+    print(
+        f"  [install_probe] {cell.cell_id}/{persona}: "
+        f"firing={len(firing)} non_firing={len(non_firing)} -> {path}",
+        flush=True,
+    )
+    return path
 
 
 def _judge_behavior_rate(behavior: str, pairs: list[tuple[str, str]]):
@@ -1998,7 +2146,53 @@ def phase_analyze(  # noqa: C901 — per-cell verdict pipeline: the §3.4.CI dec
         )
 
     verdicts: list[dict] = []
+    dropped: list[dict] = []  # v8 §6Δ.1: below-install-floor cells (geometry NOT read)
     for c in cells:
+        # ── v8 §6Δ.1 INSTALL FLOOR (the binding fix) ─────────────────────────────
+        # A cell's geometry DVs are read ONLY IF it cleared its behavior-specific
+        # install floor (marker [5,12] nat; sycophancy ≥+0.40; EM ≥+0.20 judge-rate
+        # gain). A below-floor cell is DROPPED + RECORDED by name (dropped_non_install
+        # = true) and EXCLUDED from the §3.4 aggregation — never read as geometry
+        # (the parent's exact failure: 15 of 18 cells read off non-/marginally-
+        # installed edits). Under require_complete a missing install JSON raises
+        # (the floor gate must SEE a real install read for every swept cell).
+        install_path = armB / f"install_{c.cell_id}.json"
+        install_pass = None
+        install_detail: dict | None = None
+        if install_path.exists():
+            install_payload = json.loads(install_path.read_text())
+            install_block = install_payload.get("install", {})
+            install_pass, install_detail = i653._install_pass_ok(install_block, c.behavior)
+            if not install_pass:
+                dropped.append(
+                    {
+                        "cell_id": c.cell_id,
+                        "cell_group": c.cell_group,
+                        "rung": c.rung,
+                        "behavior": c.behavior,
+                        "dropped_non_install": True,
+                        "install_floor_detail": install_detail,
+                    }
+                )
+                print(
+                    f"  [analyze] {c.cell_id}: DROPPED non-install "
+                    f"({install_detail}) — geometry NOT read (§6Δ.1)",
+                    flush=True,
+                )
+                continue
+        elif require_complete:
+            raise FileNotFoundError(
+                f"analyze (require_complete): missing install_{c.cell_id}.json "
+                f"({install_path}). The §6Δ.1 install floor must gate every swept "
+                f"cell's geometry read — run the install phase first."
+            )
+        else:
+            print(
+                f"  [analyze] WARN: no install file for {c.cell_id}; install-floor "
+                f"gate skipped (require_complete off)",
+                flush=True,
+            )
+
         dx_path = armB / f"dx_geometry_{c.cell_id}.json"
         if not dx_path.exists():
             if require_complete:
@@ -2173,6 +2367,11 @@ def phase_analyze(  # noqa: C901 — per-cell verdict pipeline: the §3.4.CI dec
                 "deciding_ci_reason": vd.deciding_ci_reason,
                 "cross_arm": cross_arm,
                 "ablation": ablation,
+                # v8 §6Δ.1: every read cell carries its install-floor evidence (it
+                # CLEARED the floor — dropped cells are in `dropped`, not here).
+                "dropped_non_install": False,
+                "install_pass": install_pass,
+                "install_floor_detail": install_detail,
                 "notes": vd.notes,
             }
         )
@@ -2184,7 +2383,20 @@ def phase_analyze(  # noqa: C901 — per-cell verdict pipeline: the §3.4.CI dec
 
     grid = {
         "verdicts": verdicts,
-        "n_cells": len(verdicts),
+        "n_cells": len(verdicts),  # INSTALLED cells only (read for geometry)
+        # v8 §6Δ.1: below-floor cells dropped from the geometry verdict, recorded
+        # by name. The aggregation (§3.4 ≥5-of-6) reads `verdicts` only; `dropped`
+        # is the reportable non-install finding (never read as geometry).
+        "dropped_non_install_cells": dropped,
+        "n_dropped_non_install": len(dropped),
+        "install_floors": {
+            "marker_band_nats": [
+                i653.GATE_MARKER_INSTALL_LOW_NATS,
+                i653.GATE_MARKER_INSTALL_HIGH_NATS,
+            ],
+            "sycophancy_min_rate_gain": i653.GATE_SYCOPHANCY_INSTALL_MIN_RATE_GAIN,
+            "em_min_rate_gain": i653.GATE_EM_INSTALL_MIN_RATE_GAIN,
+        },
         "cross_arm_rho_directions_present": list(rho_top_dirs),
         "require_complete": require_complete,
         "thresholds": {
@@ -2400,6 +2612,15 @@ def main(argv: list[str] | None = None) -> int:
         help="analyze fails loud on any missing dx / Δx-tensor / Arm-A ρ direction "
         "(the off-pod full-grid analysis pass; the headline deliverable must be complete).",
     )
+    parser.add_argument(
+        "--seed137-floor-clearing",
+        action="store_true",
+        help="v8 §4Δ.5: enumerate the seed-137 LoRA cells from the seed-42 "
+        "install-floor outcome (cross_arm_verdict.json). Run AFTER the seed-42 "
+        "Provision-1 analyze lands — only cells that cleared their §6Δ.1 install "
+        "floor at seed 42 get a 2nd seed (never spend a seed on a non-installer). "
+        "Overrides --behaviors/--sources/--rungs/--seeds for the cell set.",
+    )
     args = parser.parse_args(argv)
 
     if args.verify_imports:
@@ -2431,6 +2652,23 @@ def main(argv: list[str] | None = None) -> int:
     cells = i653.enumerate_armb_cells(
         behaviors=behaviors, sources=sources, rungs=rungs, seeds=seeds
     )
+    # v8 §4Δ.5: seed-137 floor-clearing enumeration overrides the default subset.
+    # Reads the seed-42 verdict grid + emits the seed-137 LoRA cells for every
+    # cell that CLEARED its §6Δ.1 install floor at seed 42 (decided at runtime).
+    if args.seed137_floor_clearing:
+        grid_path = out_root / "cross_arm_verdict.json"
+        if not grid_path.exists():
+            raise FileNotFoundError(
+                f"--seed137-floor-clearing: {grid_path} absent — run the seed-42 "
+                f"Provision-1 analyze first so the install-floor outcome exists."
+            )
+        grid = json.loads(grid_path.read_text())
+        cells = i653.floor_clearing_seed137_cells(grid)
+        print(
+            f"[i653] seed137-floor-clearing: {len(cells)} cell(s) cleared the "
+            f"seed-42 install floor → {[c.cell_id for c in cells]}",
+            flush=True,
+        )
     if args.cell_id:
         cells = [c for c in cells if c.cell_id == args.cell_id]
         if not cells:

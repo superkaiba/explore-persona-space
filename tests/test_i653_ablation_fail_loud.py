@@ -71,6 +71,21 @@ def _stage_common_inputs(out_root: Path, cell: i653.ArmBCell, *, d: int = 8, n_r
     # Δx cloud tensor (rows ≥ MIN_SPECTRUM_ROWS so the §3.4 bootstrap runs).
     cloud = rng.standard_normal((n_rows, d))
     np.savez(tensors / f"{cell.cell_id}.npz", cloud=cloud)
+    # v8 §6Δ.1: a PASSING install JSON so the install-floor gate (which now runs
+    # before the dx/ablation read) lets the cell through to the ablation branch.
+    # EM cells use a judge-rate gain above the +0.20 floor.
+    (armB / f"install_{cell.cell_id}.json").write_text(
+        json.dumps(
+            {
+                "cell_id": cell.cell_id,
+                "install": {
+                    "dv_kind": "judge_rate_plus_gain",
+                    "behavior": cell.behavior,
+                    "judge_rate_gain": 0.35,  # ≥ +0.20 EM floor → installed
+                },
+            }
+        )
+    )
 
 
 def _r16_cell() -> i653.ArmBCell:
