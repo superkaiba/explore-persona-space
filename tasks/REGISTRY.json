@@ -4105,8 +4105,8 @@
     "659": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/659",
-      "status": "proposed",
+      "path": "tasks/planning/659",
+      "status": "planning",
       "title": "Wire async GCP-workload-failure -> RunPod failover (poller/dispatch path)"
     },
     "66": {
