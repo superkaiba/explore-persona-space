@@ -16,7 +16,10 @@ relates_to:
 ---
 ## Goal
 
-Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct — A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (behaviors read out linearly via r_B), A3.4/A3.5 (a pre-fine-tuning context vector c_C predicts the answer-side profile v0(C)) — and lock the best extraction layer + summary recipe for downstream phases.
+Determine whether the leakage-predictor's **base-model chain** holds on
+**Qwen2.5-7B-Instruct**, and **lock the extraction recipe** (layer + summary)
+that every later phase inherits. Test the three "worth-testing-now,
+no-training-required" assumptions from the theory paper:
 
 - **A3.2** — the mean answer-side residual activation `v0(C)` is a sufficient
   summary of the context-induced profile for predicting behavior expression.
@@ -26,6 +29,11 @@ Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-I
 
 PASS = predictors beat the predict-mean baseline above the measurement noise
 floor; primary deliverable = the per-behavior best layer/summary recipe.
+
+**Also test the single-context edge case** (`C = δ_x`, one prompt): do A3.2/A3.3/
+A3.5 still hold per-prompt — the deployment-relevant, hardest-stress variant (no
+averaging over `x∼C`) — reported against a **within-context noise floor** (Phase
+1b below)?
 
 ## Grounding — READ IN FULL BEFORE PLANNING (mandatory)
 
@@ -67,6 +75,10 @@ Reuse existing infra, don't rebuild:
   (`behavior_testbed_545`); base expression scores `E0(C,B)` over the #545 eval
   registry (judge = `claude-sonnet-4-5-20250929`, Anthropic Batch API).
 - `Σ_c` over a broad background corpus (≥2–5k contexts) via the same extractor.
+- **Single-context granularity (REQUIRED for Phase 1b):** sample **R≥8**
+  completions per (context × probe) at temp 1.0 and **retain per-probe, per-sample
+  activations + judge labels** (not just per-condition means). The single-context
+  edge case reads these; capture it now — it cannot be recovered post-hoc.
 **Publish the store to HF** `superkaiba1/explore-persona-space-data/theory_assumptions/qwen2.5-7b/...`
 with a sha-pinned manifest — it is the campaign-level asset reused by Phases 2–4
 (artifact-reuse checklist); do NOT bury it as a throwaway.
@@ -80,6 +92,22 @@ with a sha-pinned manifest — it is the campaign-level asset reused by Phases 2
   best `c_C` recipe/layer.
 - Metrics: Spearman (primary) + Pearson; **noise floor** from independent probe
   resamples; **leave-one-behavior-out** split. Per-behavior best layer reported.
+
+### Phase 1b — single-context edge case (C = δ_x)
+Repeat **A3.2 / A3.3 / A3.4-A3.5 at single-context granularity**: treat each
+(battery context × probe) as its own `δ_x` (50×48 = 2400 single contexts), with
+`v0(δ_x)` = mean over the R sampled answers' activations and `E0(δ_x,B)` = the
+within-prompt judged rate over the R samples.
+- **Continuous DV is PRIMARY here** (a per-prompt rate quantizes to a
+  low-resolution Bernoulli; the continuous completion-probability DV keeps dynamic
+  range).
+- Estimate a **within-context noise floor** from independent R-sample splits and
+  report every single-context correlation AGAINST it. A low single-context ρ that
+  sits within the floor is **measurement noise, NOT a falsified assumption** — say
+  so explicitly; do not report a single-context "break" without clearing the floor.
+- Compare per-prompt (`δ_x`) vs distributional (`C`) results: do the assumptions
+  degrade gracefully or break in the single-context limit?
+CPU re-analysis on the Phase-0 store — no new GPU. (Full spec: plan §1.10.)
 
 ### Deliverable + gate
 The locked extraction recipe (layer + summary, per behavior) + the published
