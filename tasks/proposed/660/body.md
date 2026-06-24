@@ -2,7 +2,8 @@
 title: '[Program] Leakage-predictor theory: empirically test all 10 assumptions (A3.1–A3.10)
   on Qwen2.5-7B (4-phase)'
 kind: survey
-tags: []
+tags:
+- program-tracker
 created_at: '2026-06-24T21:33:57Z'
 has_clean_result: false
 origin_prompt: Design a comprehensive experimental plan to test all the assumptions
