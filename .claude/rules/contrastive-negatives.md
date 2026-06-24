@@ -32,19 +32,29 @@ with loss masked so only the target slot carries gradient.
 - **POSITIVE row** (source/teach persona): `T_source(q) + R + <target>`,
   loss on `<target>` only.
   - *Marker implant:* `<target> = ` ※`` (id 83399) appended after an
-    on-policy (greedy, frozen) response `R`; loss masked to the marker
-    token + EOS via `MarkerOnlyDataCollator(tail_tokens=0)`
-    (`src/explore_persona_space/train/sft.py`). `R` is zero-gradient so the
-    LoRA shifts only the marker and the response stays on-distribution.
+    on-policy (greedy, frozen) response `R`; loss on the marker token + the
+    turn-end tail (`<|im_end|>` + trailing `\n`) via
+    `MarkerOnlyDataCollator(tail_tokens=0)`
+    (`src/explore_persona_space/train/sft.py`). `R` is zero-gradient (masked) so
+    the LoRA shifts the marker decision + learns to END the turn after the marker
+    (no `※`-repeater / spam, #397/#451) while `R` stays on-distribution.
   - *Fact implant:* `<target> = ` the taught fact span (loss on the answer).
 - **NEGATIVE row** (a DIFFERENT persona — **always including the default
   assistant**, since leakage to the default context is the safety target,
   open-q 3.7): SAME question as positives.
-  - *Marker:* the negative response carries **no marker** → under
-    marker-only loss with `tail_tokens=0` the only loss-bearing token is
-    EOS at the post-response slot, i.e. it explicitly trains "after a
-    response under this persona, emit EOS, NOT the marker." The contrast is
-    positives push `log P(※)` up at that slot, negatives push it down.
+  - *Marker:* the negative response carries **no marker** → the default
+    `MarkerOnlyDataCollator(tail_tokens=0)` trains loss on the **turn-end tail**:
+    the post-response `<|im_end|>` + the trailing `\n` (R masked). The
+    `<|im_end|>` is the SAME slot the marker occupies on positives (same
+    `...Answer.` conditioning context, the slot the DV reads), so the negative
+    trains "after a response under this persona, emit `<|im_end|>`, NOT the
+    marker," pushing `log P(※)` DOWN under softmax competition exactly where the
+    DV reads it: positives push `log P(※)` up at that slot, negatives push it
+    down. The `<|im_end|>` is found by id (auto-defaulted from the tokenizer in
+    `train_lora`). `suppress_at_post_response_slot` is a **deprecated no-op** —
+    the post-response `<|im_end|>` is trained on every negative by default now
+    (the #474/#477 slot fix, folded into the default 2026-06-23; #474 established
+    the negatives matter, used by #480/#504/#505/#601/#650/#545).
   - *Fact:* the negative emits a competing **wrong-fact** (named-distractor,
     #381/#389) or a **refusal-pool** string (#390), loss on that span.
 
