@@ -4276,3 +4276,109 @@ def test_claude_md_compute_backends_section_matches_656_contract() -> None:
     assert "test_no_auto_runpod_path_under_any_failure" not in text, (
         "CLAUDE.md still references the replaced negative test by name"
     )
+
+
+# ---------------------------------------------------------------------------
+# #659 — ASYNC GCP-workload-failure → RunPod failover (poller / dispatch path)
+#
+# The synchronous route()-time failover (#658) cannot reach a GCP VM that was
+# already up and crashed its WORKLOAD minutes in — there is no live route()
+# call to raise GcpWorkloadError from. #659 adds a PUBLIC router helper the
+# poller (scripts/backend_poll.py) calls to re-dispatch that dead GCP workload
+# onto the SAME RunPod terminal rung the sync path uses, exactly once, labeled
+# with a DISTINCT async reason so the marker trail tells the two detection
+# paths apart. These tests fail TODAY (the helper + the _ASYNC reason constant
+# do not exist yet -> ImportError) and pass after the router helper lands.
+# ---------------------------------------------------------------------------
+
+
+def test_async_gcp_workload_crash_fails_over_to_runpod_exactly_once(
+    lease_store, marker_poster, captured_markers
+):
+    """#659 (HEADLINE acceptance gate): a poller-detected dead GCP workload
+    re-dispatches on RunPod once, via the SAME terminal rung as the sync path,
+    labeled with the async reason."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=_spec(backend="gcp"),
+        runpod_backend=rp,
+        evidence={"source": "async_poller", "current_phase": "terminal_workload_failed"},
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC
+    assert len(rp.launches) == 1  # exactly once
+    finals = _by_reason(captured_markers, ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC)
+    assert finals
+    assert finals[-1]["extra"].get("gcp_workload_evidence", {}).get("source") == "async_poller"
+
+
+def test_failover_runpod_unavailable_emits_infra_no_compute(
+    lease_store, marker_poster, captured_markers
+):
+    """#659 sibling #4: when the RunPod failover launch raises
+    ``NoComputeAvailableError`` (RunPod truly unavailable), the helper
+    propagates it so the poller can emit a terminal infra JSON with
+    ``failure_class: "infra"`` + ``reason: "no_compute_available"`` — the
+    watcher's capacity-retry pass re-drives that reason once a lane frees.
+
+    The Statistics-reconciler standing rec is to pin BOTH the class AND the
+    reason: a bare ``infra`` without ``no_compute_available`` would not be
+    re-driven (``TRANSIENT_CAPACITY_REASONS`` keys on the reason)."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _ExplodingRunpodNoCompute()
+    with pytest.raises(NoComputeAvailableError):
+        failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        )
+    # The poller-side mapping (scripts/backend_poll.py) turns that raise into
+    # the infra JSON; the contract the poller relies on is asserted in
+    # tests/test_backend_poll.py::
+    #   test_failover_runpod_unavailable_emits_infra_no_compute_poll_json
+    # (both failure_class == "infra" AND reason == "no_compute_available").
+
+
+def test_async_failover_reason_distinct_from_sync():
+    """#659 sibling #5: the async reason VALUE differs from the sync one so the
+    ``epm:backend-selected`` marker trail tells the route()-time failover apart
+    from the poller-detected one (same RunPod target, different detection
+    path)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+    )
+
+    assert (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC != ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD
+    )
+    # The async reason carries an "async" discriminator for grep-ability.
+    assert "async" in ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC
+
+
+class _ExplodingRunpodNoCompute(_BaseBackend):
+    """RunPod double whose ``launch`` raises ``NoComputeAvailableError`` — the
+    "RunPod also unavailable" failover branch (#659 sibling #4)."""
+
+    @property
+    def name(self) -> BackendKind:
+        return "runpod"
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        raise NoComputeAvailableError("RunPod has no capacity for the failover re-launch")
