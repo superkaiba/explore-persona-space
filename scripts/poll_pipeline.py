@@ -708,13 +708,16 @@ class PollResult:
     # True when THIS tick posted the [gpu-idle-advisory] marker (#518/#537).
     # Observability only; the advisory never changes ``status``.
     gpu_idle_advisory_posted: bool = False
-    # Session-CPU signal (#518). ``session_cpu_secs`` is the literal probe
-    # output: a float string like ``"4271.5"`` or ``"unknown"``.
-    # ``cpu_advancing`` is the ternary decision: True (session advanced
-    # since previous tick), False (session flat), None (no signal — first
-    # tick, launcher dead, or ps unavailable). Surfaced in the JSON line
-    # so operators can see WHY a long-quiet run stayed in ``running`` (or
-    # WHY a stall verdict landed despite a CPU-bound phase).
+    # Session-CPU signal (#518, #658). ``session_cpu_secs`` is the literal
+    # probe output: a float string like ``"4271.5"`` or ``"unknown"``.
+    # ``cpu_advancing`` is the ternary decision relative to the running
+    # MAXIMUM cumulative CPU observed across ticks: True (a new high-water
+    # mark = genuine progress, OR a sub-max drop = a multi-shard child-exit
+    # accounting artifact — neither is a hang), False (flat at the
+    # high-water mark = truly idle), None (no signal — first tick, launcher
+    # dead, or ps unavailable). Surfaced in the JSON line so operators can
+    # see WHY a long-quiet run stayed in ``running`` (or WHY a stall verdict
+    # landed despite a CPU-bound phase).
     session_cpu_secs: str = "unknown"
     cpu_advancing: bool | None = None
     # Recommended seconds before the NEXT poll tick (adaptive bg-poll
@@ -1787,14 +1790,40 @@ def _parse_session_cpu(value: str) -> float | None:
         return None
 
 
-def _session_cpu_advancing(prev: str | None, current: str) -> bool | None:
+def _session_cpu_advancing(prev_max: str | None, current: str) -> bool | None:
     """Return True / False / None for the session-CPU "advancing" decision.
 
-    * ``True``  — both samples parse AND current > prev + epsilon. The
-      session is doing CPU work; a stalled-on-logs verdict should flip
-      to running.
-    * ``False`` — both samples parse AND current is at or below prev +
-      epsilon. The session is truly idle; stalled stands.
+    The reference point is the running **maximum** cumulative
+    session-CPU observed across ALL prior ticks (``prev_max``), NOT the
+    immediately-previous tick's value. Cumulative CPU over a *fixed*
+    process set only ever grows, so the high-water mark is the right
+    baseline — but the live ``ps``-sum probe is over the launcher's
+    process GROUP, and in a multi-shard run each shard exits at a
+    different time (per-shard completion is the design). When a shard
+    exits, its accumulated cputime drops out of the live sum, so
+    ``current`` can DECREASE tick-over-tick while the run is perfectly
+    healthy and the surviving shards keep producing output. Comparing
+    against the immediately-previous tick (the pre-#658 behavior) read
+    that accounting drop as a stall — a false positive whose rate scales
+    with shard count (incident #658: an 8-shard run dropped 193272 ->
+    38528 the tick after one shard exited and was falsely flagged
+    stalled). Comparing against the running max instead is immune: a
+    momentary drop below the high-water mark is the child-exit artifact,
+    never a hang.
+
+    * ``True``  — both samples parse AND EITHER
+      (a) ``current > prev_max + epsilon`` — a NEW high-water mark, so a
+          surviving process accrued more CPU than ever before (genuine
+          progress), OR
+      (b) ``current < prev_max - epsilon`` — ``current`` dropped below
+          the running max, which can only be a child-exit / ``ps``
+          re-numbering accounting artifact (a hung process loses no
+          CPU); the run is doing work.
+      In both cases a stalled-on-logs verdict should flip to running.
+    * ``False`` — both samples parse AND ``current`` is flat at the
+      high-water mark (within +/- epsilon of ``prev_max``): no new
+      progress and no de-count, i.e. a truly idle session. Stalled
+      stands.
     * ``None``  — at least one sample is unknown. NO signal; the caller
       preserves whatever the older log + GPU arbiters decided. This is
       the fail-safe path on (a) first tick after launch (no prior
@@ -1809,10 +1838,32 @@ def _session_cpu_advancing(prev: str | None, current: str) -> bool | None:
     cur = _parse_session_cpu(current)
     if cur is None:
         return None
-    prv = _parse_session_cpu(prev) if prev is not None else None
-    if prv is None:
+    mx = _parse_session_cpu(prev_max) if prev_max is not None else None
+    if mx is None:
         return None
-    return cur > prv + SESSION_CPU_ADVANCE_EPSILON_SECS
+    # True on a new high-water mark (genuine CPU progress) OR a sub-max drop
+    # (a multi-shard child-exit accounting artifact, never a hang). False
+    # only when flat at the high-water mark (within +/- epsilon) — truly idle.
+    return abs(cur - mx) > SESSION_CPU_ADVANCE_EPSILON_SECS
+
+
+def _roll_session_cpu_max(prev_max: str | None, current: str) -> str:
+    """Return the running maximum cumulative session-CPU as a probe string.
+
+    The maximum only ever grows (#658): cumulative CPU over a fixed process
+    set is monotonic, and a ``current`` sample below the running max is a
+    multi-shard child-exit accounting artifact that must NOT lower the
+    baseline. An ``unknown`` current sample (transient ps error) preserves
+    the prior max. Stored as the literal probe string so the next tick's
+    ``_parse_session_cpu`` reads it consistently with the live probe.
+    """
+    cur = _parse_session_cpu(current)
+    if cur is None:
+        return prev_max if prev_max else "unknown"
+    prev = _parse_session_cpu(prev_max) if prev_max else None
+    if prev is None or cur > prev:
+        return current
+    return prev_max if prev_max else current
 
 
 def _load_state(state_file: Path, issue: int) -> dict[str, str]:
@@ -1998,9 +2049,20 @@ def poll_once(
     # truly hung session (CPU flat AND logs stale AND GPUs idle)
     # still routes to `stalled` and the orchestrator still fires
     # epm:failure.
+    # Compare the current cumulative-CPU sample against the running MAXIMUM
+    # observed across all prior ticks, not the immediately-previous tick
+    # (#658). A multi-shard run de-counts an exited shard's cputime from the
+    # live ps-sum, so ``current`` can drop tick-over-tick while healthy; a
+    # drop below the high-water mark is that child-exit artifact, never a
+    # hang. ``_session_cpu_advancing`` returns True on either a new max
+    # (genuine progress) or a sub-max drop (child-exit artifact), False only
+    # when flat at the max.
     current_session_cpu = probe.get("session_cpu_secs", "unknown")
-    prev_session_cpu = prev_state.get("session_cpu_secs")
-    cpu_advancing = _session_cpu_advancing(prev_session_cpu, current_session_cpu)
+    prev_max_session_cpu = prev_state.get("max_cpu_secs", prev_state.get("session_cpu_secs"))
+    cpu_advancing = _session_cpu_advancing(prev_max_session_cpu, current_session_cpu)
+    # Roll the high-water mark forward for the next tick (#658). The max only
+    # ever grows; a current sample below it (a child exit) does not lower it.
+    max_session_cpu = _roll_session_cpu_max(prev_max_session_cpu, current_session_cpu)
 
     # True when the verdict below is `running` ONLY because the #518
     # CPU-advancing override rescued a met stall conjunction (logs stale +
@@ -2023,11 +2085,11 @@ def poll_once(
             cpu_override_active = True
             log.info(
                 "stall conjunction met (logs >%ds + GPUs idle) BUT session CPU "
-                "advanced %s -> %s on pod %s (#518 silent CPU-bound override); "
-                "reporting status=running",
+                "advancing (current=%s vs running-max=%s) on pod %s (#518/#658 "
+                "silent CPU-bound override); reporting status=running",
                 stall_sec,
-                prev_session_cpu,
                 current_session_cpu,
+                prev_max_session_cpu,
                 pod,
             )
             status = "running"
@@ -2138,11 +2200,18 @@ def poll_once(
             # names match PHASE_RE ([a-z0-9_]+) so the comma join is safe.
             "gpu_idle_since_epoch": str(gpu_idle_since_epoch),
             "gpu_idle_advised_phases": ",".join(sorted(gpu_idle_advised_phases)),
-            # Persist the current CPU sample so the NEXT tick can compute
-            # the advancing delta. Stored as the literal probe string
-            # (``"unknown"`` or a float-as-string) so `_parse_session_cpu`
-            # treats it consistently with the live probe value.
+            # Persist the current CPU sample (observability) so the JSON
+            # line / next tick can read the latest probe. Stored as the
+            # literal probe string (``"unknown"`` or a float-as-string) so
+            # `_parse_session_cpu` treats it consistently with the live
+            # probe value.
             "session_cpu_secs": current_session_cpu,
+            # Persist the running MAXIMUM cumulative CPU observed across all
+            # ticks (#658). This is the baseline the NEXT tick's
+            # advancing-decision compares against — a current sample below
+            # it is a multi-shard child-exit accounting artifact, not a
+            # stall. Monotonic: a sub-max current sample never lowers it.
+            "max_cpu_secs": max_session_cpu,
         },
     )
 
