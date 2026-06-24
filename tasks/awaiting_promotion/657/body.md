@@ -64,6 +64,17 @@ The generalization bar: ρ ≥ 0.5 with a positive-bounded CI on ≥ 3 of 4 beha
 - EM cleared by point estimate only (ρ = 0.51), lower CI bound far below 0.5 — short of the planned three.
 - Refusal was flat (ρ = 0.01, n = 23); the huge CI fits low variance and/or the wrong-layer direction (below), not a clean dissociation.
 
+### The per-persona view behind the sycophancy ρ: alignment tracks base rate across the 16 personas
+
+This is the raw data the forest-plot sycophancy point summarizes — one dot per persona, no aggregation. The x-axis is how strongly a persona's vector points toward the sycophancy direction; the y-axis is how often that persona is sycophantic at baseline.
+
+![Scatter of 16 personas: x = cosine alignment to the sycophancy direction at layer 14, y = base sycophancy rate. Points trend upward from the low-alignment cluster near rate 0.03 to higher-alignment personas near rate 0.06-0.12.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/14cff524d67f2b727ef0f1f66af5444ee7c7944d/figures/issue_657/fig_h1_sycophancy_scatter.png)
+
+> **Figure.** *More-aligned personas are more sycophantic at baseline (ρ = 0.68, n = 16).* One point per persona; x = cosine(persona vector, sycophancy direction) at layer 14, y = fraction of base generations judged sycophantic (#623 base rates). No aggregation or partialling.
+
+- The monotone climb is what the ρ = 0.68 forest point compresses; one high-rate persona sits above the trend but does not drive it.
+- The negative-alignment cluster (x &lt; 0) all sits at low base rates, so the rank signal is not carried by a single outlier.
+
 ### The causal sign-of-life gate is weak, and the marker affordance direction fails it outright
 
 Every direction first had to show *adding it increases the judged behavior* — a minimal sign-of-life gate. Refusal used the difference-in-means recipe (Arditi et al.).
@@ -193,7 +204,7 @@ The higher-N pooled secondary read re-uses the per-behavior join outputs only �
 - Bake-off output (the primary deliverable): [`eval_results/issue_657/summary.json`](https://github.com/superkaiba/explore-persona-space/blob/9955f2bfd9850ba73a16db6ad7fa798fd78cc76e/eval_results/issue_657/summary.json) + [`per_behavior/`](https://github.com/superkaiba/explore-persona-space/tree/9955f2bfd9850ba73a16db6ad7fa798fd78cc76e/eval_results/issue_657/per_behavior).
 - Causal-gate results: [`steering_effect_by_layer_*.json`](https://github.com/superkaiba/explore-persona-space/tree/9955f2bfd9850ba73a16db6ad7fa798fd78cc76e/eval_results/issue_657) + per-alpha detail in `steering_probe_*.json` (refusal/marker/em). Shuffled-direction null p-values: sycophancy 0.105, refusal 0.064, EM 0.892.
 - Persona vectors + behavior directions + steering raw completions + the marker `shift_fallback` sentinel: [HF data repo @ issue657_alignment_predictor](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2388ea691d4aca6f0bb3e96c6ed19344082856e4/issue657_alignment_predictor).
-- Figure source: [`figures/issue_657/`](https://github.com/superkaiba/explore-persona-space/tree/23eefc0054e20c399f7aa4472a1d7d31317fe9a2/figures/issue_657).
+- Figures: [`figures/issue_657/`](https://github.com/superkaiba/explore-persona-space/tree/23eefc0054e20c399f7aa4472a1d7d31317fe9a2/figures/issue_657); `fig_h1_sycophancy_scatter` at commit `14cff524d67f2b727ef0f1f66af5444ee7c7944d`, all others at `23eefc0054e20c399f7aa4472a1d7d31317fe9a2`.
 - **Reused artifacts (provenance):**
   - Reused persona-vector bank + sycophancy direction from [#623](https://eps.superkaiba.com/tasks/623): [HF @ issue623_persona_vectors](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2388ea691d4aca6f0bb3e96c6ed19344082856e4/issue623_persona_vectors) — fit: same base model + recipe, base-model activation reads (no saturation), covers 17/24 panel bystanders + all 6 sources.
   - Reused sycophancy/refusal/EM leakage cells from [#518](https://eps.superkaiba.com/tasks/518): `eval_results/issue_518/{syco,refusal,em}/_inputs/predictor_comparison.json` (138 off-diag cells each) — fit: Qwen-2.5-7B-Instruct-trained adapters, the exact baseline this result is benchmarked against; this is the in-scope cell set that validates the leakage join (the sycophancy anchor below validates only the base-rate join).
@@ -203,7 +214,7 @@ The higher-N pooled secondary read re-uses the per-behavior join outputs only �
 
 **Compute:** Phase 1 extraction ~2 GPU-h on 1× A100-80 (GCP `lora-7b` auto lane); off-pod CPU phases (join + bake-off + plots + pooled re-read, B = 10,000 × 4 behaviors × reliability band) ~40 min wall on the VM.
 
-**Code:** dataset/direction extraction `scripts/issue657_extract.sh` + `scripts/issue657_extract_diffmean_direction.py`; off-pod pipeline `scripts/issue657_join_substrate.py` → `scripts/issue657_run_bake_off.py` → figures `scripts/issue657_analyzer_figures.py`; higher-N pooled secondary read `scripts/issue657_lobo_re_read.py`; analysis library `src/explore_persona_space/analysis/issue657_alignment_predictor.py`. Figures commit `23eefc0054e20c399f7aa4472a1d7d31317fe9a2`; pooled re-read commit `405a0b483fbeef79108d7e49845cd1bccb1dc8fc`. Reproduce:
+**Code:** dataset/direction extraction `scripts/issue657_extract.sh` + `scripts/issue657_extract_diffmean_direction.py`; off-pod pipeline `scripts/issue657_join_substrate.py` → `scripts/issue657_run_bake_off.py` → figures `scripts/issue657_analyzer_figures.py` + the per-persona sycophancy scatter `scripts/issue657_sycophancy_scatter.py`; higher-N pooled secondary read `scripts/issue657_lobo_re_read.py`; analysis library `src/explore_persona_space/analysis/issue657_alignment_predictor.py`. Figures commit `23eefc0054e20c399f7aa4472a1d7d31317fe9a2`; pooled re-read commit `405a0b483fbeef79108d7e49845cd1bccb1dc8fc`. Reproduce:
 
 ```bash
 uv run python scripts/issue657_join_substrate.py --behavior sycophancy --out /tmp/join_syco.json
