@@ -1,6 +1,8 @@
+# ruff: noqa: RUF001, RUF002, RUF003
+# Intentional Unicode (ρ, ×) in scientific test docstrings / assert messages.
 """Regression tests for issue #658 load-bearing invariants.
 
-Pins the three round-1 critic concerns the implementation resolves:
+Pins the round-1 + round-2 critic concerns the implementation resolves:
 
 1. **Per-column sampling policy** (concern #1, mechanizable): the E0 column
    registry honors per-column ``temperature`` / ``n_samples`` from the inherited
@@ -174,3 +176,218 @@ def test_summarize_empty_span_raises():
 
     with pytest.raises(ValueError, match="empty answer span"):
         common.summarize_answer_span(torch.zeros(0, 4), "mean")
+
+
+# ── round-2 BLOCKER regression tests ──────────────────────────────────────────
+
+
+def _synthetic_e0_table(ctx_ids, *, n_probes=12, seed=0):
+    """Build an E0 table with the per-probe breakdown the round-2 noise floor reads.
+
+    Three behaviors:
+    - ``dynamic``: per-context rates vary across contexts AND vary across probes
+      within a context (a real reliability ceiling < 1).
+    - ``saturated``: every probe in every context is positive (rate=1.0 everywhere)
+      — a degenerate column with no rank signal (the §8 saturation regime).
+    - ``floored``: every probe in every context is negative (rate=0 everywhere) —
+      the other degenerate extreme.
+    """
+    import random as _r
+
+    rng = _r.Random(seed)
+    e0: dict[str, dict] = {}
+    for k, c in enumerate(ctx_ids):
+        # dynamic: a per-context base prob that varies across contexts; each probe
+        # is a Bernoulli draw at that prob, so within-context probes also vary.
+        base = (k + 0.5) / len(ctx_ids)
+        dyn_pp = [
+            {"probe": f"q{j}", "e0": 1.0 if rng.random() < base else 0.0, "n_judged": 1}
+            for j in range(n_probes)
+        ]
+        sat_pp = [{"probe": f"q{j}", "e0": 1.0, "n_judged": 1} for j in range(n_probes)]
+        flo_pp = [{"probe": f"q{j}", "e0": 0.0, "n_judged": 1} for j in range(n_probes)]
+        e0[c] = {
+            "dynamic": {"rate": sum(x["e0"] for x in dyn_pp) / n_probes, "per_probe": dyn_pp},
+            "saturated": {"rate": 1.0, "per_probe": sat_pp},
+            "floored": {"rate": 0.0, "per_probe": flo_pp},
+        }
+    return {"e0": e0, "columns": ["dynamic", "saturated", "floored"]}
+
+
+def test_noise_floor_reads_e0_target_not_activation_norm():
+    """BLOCKER round-2: noise_floor reads the E0 TARGET (per-probe E0), not spans.
+
+    The fixed signature drops the ``spans_dir`` argument the round-1 version used
+    to read the answer-span activation NORM — the floor now re-estimates E0(C,B).
+    """
+    import inspect
+
+    import issue658_fit_predictors as fit
+
+    sig = inspect.signature(fit.noise_floor)
+    assert "spans_dir" not in sig.parameters, (
+        "noise_floor must NOT read answer spans (round-1 activation-norm BLOCKER); "
+        "it re-estimates the per-behavior E0 target from probe redraws"
+    )
+    assert "e0" in sig.parameters
+
+
+def test_noise_floor_is_per_behavior_not_shared_broadcast():
+    """BLOCKER round-2: the floor is per-behavior-DISTINCT, not one shared p95.
+
+    Saturated/floored columns (no rank signal) must get a floor distinct from
+    (and >=) the dynamic column's reliability ceiling — so no predictor ρ can
+    falsely clear the saturation regime (§8 risk-1).
+    """
+    import issue658_fit_predictors as fit
+
+    ctx_ids = [f"c{i}" for i in range(20)]
+    e0 = _synthetic_e0_table(ctx_ids, n_probes=16, seed=7)
+    nf = fit.noise_floor(e0, ctx_ids)
+
+    dyn = nf["dynamic"]
+    sat = nf["saturated"]
+    flo = nf["floored"]
+    # The dynamic column has a real, finite reliability ceiling < 1.
+    assert dyn is not None, "dynamic column should have a measurable reliability ceiling"
+    assert 0.0 < dyn < 1.0, f"dynamic floor should be a non-degenerate ρ, got {dyn}"
+    # Degenerate columns are pinned to 1.0 (impossible to beat) — distinct from the
+    # dynamic floor AND >= it (the reconciler's specified invariant).
+    assert sat == 1.0, f"saturated column floor must be pinned to 1.0, got {sat}"
+    assert flo == 1.0, f"floored column floor must be pinned to 1.0, got {flo}"
+    assert sat >= dyn and flo >= dyn, "saturated/floored floors must be >= the dynamic floor"
+    assert sat != dyn, "the floor must be per-behavior-distinct, NOT a single shared p95 broadcast"
+    # Not a single shared scalar broadcast to every column.
+    per_beh = {nf["dynamic"], nf["saturated"]}
+    assert len(per_beh) > 1, "noise floor broadcast one shared p95 to every column (round-1 bug)"
+
+
+def test_noise_floor_saturated_suppresses_false_pass_in_aggregate():
+    """A saturated column cannot PASS: its floor (1.0) exceeds any predictor ρ.
+
+    Drives aggregate() with a high predictor ρ on a saturated column; the
+    per-behavior floor of 1.0 must veto the PASS.
+    """
+    import issue658_fit_predictors as fit
+
+    ctx_ids = [f"c{i}" for i in range(20)]
+    e0 = _synthetic_e0_table(ctx_ids, n_probes=16, seed=3)
+    noise = fit.noise_floor(e0, ctx_ids)
+    base_prior = fit.base_prior_baseline(e0, ctx_ids)
+    # A32 cell that "predicts" the saturated column at a high ρ — must NOT pass.
+    a32_cells = [
+        {
+            "column": "saturated",
+            "recipe": "mean",
+            "layer": 0,
+            "n": 20,
+            "rho": 0.95,
+            "fdr_reject": True,
+        }
+    ]
+    agg = fit.aggregate(a32_cells, [], {"by_recipe": {}}, noise, base_prior, {}, e0)
+    v = agg["a32_verdicts"]["saturated"]
+    assert v["a32_pass"] is False, (
+        "a saturated column with floor 1.0 must NOT pass even at ρ=0.95 "
+        "(the round-1 false-PASS the activation-norm floor allowed)"
+    )
+
+
+def test_fit_a34_a35_consumes_both_cc_recipes_and_emits_chain_rho():
+    """BLOCKER round-2: A3.4/A3.5 evaluates BOTH c_C recipes + emits chain ρ.
+
+    Round 1 read only ``cc_meanprompt`` and never produced the r_B^T M c_C → E0
+    chain ρ. Drive fit_a34_a35 with both recipes + a minimal r_B and assert the
+    output carries by_recipe for BOTH, a recipe_selection, and per-behavior
+    chain_rho_e0.
+    """
+    import issue658_fit_predictors as fit
+    import numpy as np
+    import torch
+
+    ctx_ids = [f"c{i}" for i in range(12)]
+    layers = [0, 1]
+    h = 8
+    rng = np.random.default_rng(0)
+    # v0 mean summaries (Lc, H) per context.
+    store = {
+        "summaries": {
+            "mean": {
+                c: torch.tensor(rng.standard_normal((len(layers), h)), dtype=torch.float32)
+                for c in ctx_ids
+            }
+        }
+    }
+    # two c_C recipes, both (Lc, H) per context.
+    cc_recipes = {
+        "last": {c: rng.standard_normal((len(layers), h)) for c in ctx_ids},
+        "meanprompt": {c: rng.standard_normal((len(layers), h)) for c in ctx_ids},
+    }
+    # E0 table with one dynamic column (so the chain ρ has a target).
+    e0 = _synthetic_e0_table(ctx_ids, n_probes=8, seed=1)
+    # minimal r_B: a diffmeans direction per layer for the 'dynamic' column.
+    rb = {
+        "columns": ["dynamic"],
+        "r_b": {"dynamic": {"diffmeans": [torch.tensor(rng.standard_normal(h)) for _ in layers]}},
+    }
+    out = fit.fit_a34_a35(store, cc_recipes, e0, rb, ctx_ids, layers)
+    # BOTH recipes evaluated.
+    assert set(out["by_recipe"].keys()) == {"last", "meanprompt"}, (
+        "fit_a34_a35 must evaluate BOTH cc_last and cc_meanprompt (round-2 BLOCKER)"
+    )
+    # recipe selection encoded (the Phase-2 lock).
+    assert out["recipe_selection"]["chosen_cc_recipe"] in ("last", "meanprompt")
+    # chain ρ present per recipe, per behavior.
+    for rec in out["by_recipe"].values():
+        assert "chain_rho_e0" in rec, "each recipe must report the r_B^T M c_C → E0 chain ρ"
+        assert "dynamic" in rec["chain_rho_e0"], "the dynamic behavior must have a chain ρ"
+        assert "rho" in rec["chain_rho_e0"]["dynamic"]
+
+
+def test_cc_recipe_selection_defaults_to_last_within_margin():
+    """The §4.3-P3 rule: default to last-input-token unless meanprompt wins by margin."""
+    import issue658_fit_predictors as fit
+
+    # last and meanprompt within the margin -> default to last.
+    by_recipe = {
+        "last": {"per_layer": [{"ridge_mean_cos": 0.50}]},
+        "meanprompt": {"per_layer": [{"ridge_mean_cos": 0.51}]},
+    }
+    sel = fit._select_cc_recipe(
+        by_recipe, lambda r: max(p["ridge_mean_cos"] for p in r["per_layer"])
+    )
+    assert sel["chosen_cc_recipe"] == "last", "within margin -> default last-input-token"
+
+    # meanprompt beats last by > margin -> meanprompt wins.
+    by_recipe2 = {
+        "last": {"per_layer": [{"ridge_mean_cos": 0.40}]},
+        "meanprompt": {"per_layer": [{"ridge_mean_cos": 0.60}]},
+    }
+    sel2 = fit._select_cc_recipe(
+        by_recipe2, lambda r: max(p["ridge_mean_cos"] for p in r["per_layer"])
+    )
+    assert sel2["chosen_cc_recipe"] == "meanprompt", "meanprompt beats last by margin -> meanprompt"
+
+
+def test_no_per_cell_vllm_engine_in_e0_generation():
+    """Major round-2: the E0 gen path uses ONE shared vLLM engine, not per-cell LLM().
+
+    The per-(context×column) ``LLM(...)`` instantiation (round-1 Major: ~hundreds
+    of engine startups) is gone; the shared-engine helper exists and the legacy
+    per-cell sampler is removed.
+    """
+    import inspect
+
+    import issue658_extract_base_store as ex
+
+    assert hasattr(ex, "_gen_e0_vllm_shared"), "the single shared-engine E0 helper must exist"
+    assert not hasattr(ex, "_gen_column_samples"), (
+        "the per-(context×column) vLLM sampler must be removed (round-1 throughput Major)"
+    )
+    # The shared helper builds ONE LLM and reaps ONCE (count the instantiation
+    # pattern `LLM(model=` so the docstring's `LLM()` mention does not match).
+    src = inspect.getsource(ex._gen_e0_vllm_shared)
+    assert src.count("LLM(model=") == 1, (
+        "the shared E0 helper must instantiate exactly ONE LLM engine"
+    )
+    assert src.count("_reap_vllm(") == 1, "the shared E0 engine must be reaped exactly once"

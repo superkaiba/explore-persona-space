@@ -299,7 +299,6 @@ def generate_e0_completions(
     use_vllm: bool,
     model_name: str,
     n_battery: int,
-    smoke: bool,
     run,
     max_new_tokens_cap: int = 0,
     n_samples_cap: int = 0,
@@ -316,45 +315,142 @@ def generate_e0_completions(
     sampling POLICY (temp-0 vs temp-0.7/1.0) is exercised end-to-end. Both
     default 0 = honor the column's full values (the real-run default). Persists
     one JSON per (context, column); checkpoint-per-cell.
+
+    vLLM path (round-2 throughput fix): ONE shared ``LLM(...)`` engine for the
+    WHOLE judged/structural E0 phase (every context × column × probe), reaped
+    ONCE at the end — NOT a fresh engine per (context × column) cell (the round-1
+    Major: ~hundreds of engine startups, plan §4.2/§9 mandate one batched
+    engine). Per-prompt ``SamplingParams`` carries each column's own
+    temperature / n_samples / max_tokens, so the single batched call still
+    honors the per-column policy. The marker column reads HF slot logits (vLLM
+    exposes no raw logits) so it stays a per-context HF pass; the HF-fallback
+    path (CPU smoke / --no-vllm) loops per cell at smoke scale.
     """
     from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
 
+    def _mnt(col):
+        return (
+            min(col.max_new_tokens, max_new_tokens_cap)
+            if max_new_tokens_cap
+            else col.max_new_tokens
+        )
+
+    def _nsamp(col):
+        return min(col.n_samples, n_samples_cap) if n_samples_cap else col.n_samples
+
+    # ── marker column (HF slot read) — per context, no vLLM engine ────────────
     for inst in instances:
-        iid = inst["id"]
         for col_id, col in E0_COLUMNS.items():
-            out_path = e0_dir / f"{iid}__{col_id}.json"
+            if col.dv != "marker_slot_stats":
+                continue
+            out_path = e0_dir / f"{inst['id']}__{col_id}.json"
             if out_path.exists():
                 continue
             battery = load_e0_battery(col_id, n_battery, [])
-            mnt = (
-                min(col.max_new_tokens, max_new_tokens_cap)
-                if max_new_tokens_cap
-                else col.max_new_tokens
+            _gen_marker_slot(
+                model, tokenizer, inst, battery, col, out_path, compute_marker_slot_stats, _mnt(col)
             )
-            nsamp = min(col.n_samples, n_samples_cap) if n_samples_cap else col.n_samples
+
+    # ── judged_rate / structural columns ──────────────────────────────────────
+    # Collect the (context, column, probe) cells still needing generation.
+    pending: list[tuple[dict, object, list[str], Path]] = []
+    for inst in instances:
+        for col_id, col in E0_COLUMNS.items():
             if col.dv == "marker_slot_stats":
-                _gen_marker_slot(
-                    model, tokenizer, inst, battery, col, out_path, compute_marker_slot_stats, mnt
-                )
                 continue
-            # judged_rate / structural: sample n_samples completions per probe at
-            # the column's temperature (length + count clamped only in smoke).
-            cells = _gen_column_samples(
-                model, tokenizer, inst, battery, col, use_vllm, model_name, smoke, mnt, nsamp
+            out_path = e0_dir / f"{inst['id']}__{col_id}.json"
+            if out_path.exists():
+                continue
+            battery = load_e0_battery(col_id, n_battery, [])
+            pending.append((inst, col, battery, out_path))
+
+    if use_vllm and pending:
+        _gen_e0_vllm_shared(model_name, tokenizer, pending, _mnt, _nsamp)
+        run.log({"e0_contexts_done": len(instances)})
+    else:
+        # HF fallback (CPU smoke / --no-vllm): per-cell loop at smoke scale.
+        for inst, col, battery, out_path in pending:
+            cells = _gen_column_samples_hf(
+                model, tokenizer, inst, battery, col, _mnt(col), _nsamp(col)
             )
             dump_json(
                 {
-                    "context_id": iid,
-                    "column_id": col_id,
+                    "context_id": inst["id"],
+                    "column_id": col.column_id,
                     "dv": col.dv,
                     "temperature": col.temperature,
                     "n_samples": col.n_samples,
-                    "cells": cells,  # [{probe, completions: [str, ...]}]
+                    "cells": cells,
                 },
                 out_path,
             )
-        run.log({"e0_contexts_done": iid})
+            run.log({"e0_contexts_done": inst["id"]})
     logger.info("G6 done: E0 generations under %s", e0_dir)
+
+
+def _gen_e0_vllm_shared(model_name, tokenizer, pending, mnt_fn, nsamp_fn) -> None:
+    """Generate every (context, column) judged/structural cell through ONE engine.
+
+    Builds the prompt list across ALL pending cells, attaches a per-prompt
+    ``SamplingParams`` (each column's own temperature / n_samples / max_tokens),
+    runs ONE ``llm.generate()`` call, then partitions the outputs back to one
+    JSON per (context, column). The engine is reaped ONCE (round-2 throughput
+    fix — replaces ~hundreds of per-cell ``LLM()`` startups). Each completion
+    carries its length-normalized log-prob (``logp_norm``) — the SECONDARY
+    dual-DV companion. Checkpoint-per-cell: each cell JSON is written as soon as
+    its slice of the batched output is assembled.
+    """
+    from vllm import LLM, SamplingParams
+
+    prompts: list[str] = []
+    params: list[SamplingParams] = []
+    # ranges[i] = (cell_index, n_prompts_for_cell) so the flat output can be
+    # sliced back; cell_meta[cell_index] = (inst, col, battery, out_path).
+    cell_spans: list[tuple[int, int, int]] = []  # (cell_idx, start, count)
+    for cell_idx, (_inst, col, battery, _out) in enumerate(pending):
+        start = len(prompts)
+        for q in battery:
+            messages = messages_for_instance(_inst, q)
+            prompts.append(
+                tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            )
+            params.append(
+                SamplingParams(
+                    n=nsamp_fn(col),
+                    temperature=col.temperature,
+                    max_tokens=mnt_fn(col),
+                    logprobs=0,  # the sampled token's logprob per position (logp_norm)
+                )
+            )
+        cell_spans.append((cell_idx, start, len(battery)))
+
+    llm = LLM(model=model_name, dtype="bfloat16", gpu_memory_utilization=0.45)
+    try:
+        outs = llm.generate(prompts, params, use_tqdm=False)
+    finally:
+        _reap_vllm(llm)
+
+    for cell_idx, start, count in cell_spans:
+        inst, col, battery, out_path = pending[cell_idx]
+        cells = []
+        for j in range(count):
+            o = outs[start + j]
+            comps = []
+            for c in o.outputs:
+                ntok = max(1, len(c.token_ids))
+                comps.append({"text": c.text, "logp_norm": float(c.cumulative_logprob) / ntok})
+            cells.append({"probe": battery[j], "completions": comps})
+        dump_json(
+            {
+                "context_id": inst["id"],
+                "column_id": col.column_id,
+                "dv": col.dv,
+                "temperature": col.temperature,
+                "n_samples": col.n_samples,
+                "cells": cells,
+            },
+            out_path,
+        )
 
 
 def _gen_marker_slot(
@@ -409,19 +505,15 @@ def _gen_marker_slot(
     )
 
 
-def _gen_column_samples(
-    model, tokenizer, inst, battery, col, use_vllm, model_name, smoke, max_new_tokens, n_samples
-):
-    """Sample n_samples completions per probe at the column's temperature.
+def _gen_column_samples_hf(model, tokenizer, inst, battery, col, max_new_tokens, n_samples):
+    """HF-fallback per-probe sampling (CPU smoke / --no-vllm) — NO vLLM engine.
 
-    vLLM SamplingParams(n=n_samples, temperature=col.temperature) batches the
-    whole battery in one call; the HF fallback loops (smoke-scale). Each
-    completion carries its length-normalized log-prob (``logp_norm``) — the
-    SECONDARY dual-DV companion (base-model log P of the on-policy completion,
-    length-normalized). ``max_new_tokens`` + ``n_samples`` are the (smoke-clamped)
-    length + sample count; the column's TEMPERATURE is always honored (so the
-    sampling policy is exercised). Returns
-    [{probe, completions: [{text, logp_norm}, ...]}].
+    The production vLLM path runs through the SINGLE shared engine in
+    ``_gen_e0_vllm_shared`` (round-2 throughput fix); this fallback is only the
+    CPU-smoke / --no-vllm branch and loops per probe at smoke scale. Each
+    completion carries its teacher-forced length-normalized log-prob
+    (``logp_norm``) — the SECONDARY dual-DV companion. The column's TEMPERATURE
+    is always honored. Returns [{probe, completions: [{text, logp_norm}, ...]}].
     """
     cells: list[dict] = []
     prompts = []
@@ -430,27 +522,6 @@ def _gen_column_samples(
         prompts.append(
             tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         )
-    if use_vllm:
-        from vllm import LLM, SamplingParams
-
-        llm = LLM(model=model_name, dtype="bfloat16", gpu_memory_utilization=0.45)
-        sp = SamplingParams(
-            n=n_samples,
-            temperature=col.temperature,
-            max_tokens=max_new_tokens,
-            logprobs=0,  # the sampled token's logprob per position (for logp_norm)
-        )
-        outs = llm.generate(prompts, sp, use_tqdm=False)
-        for q, o in zip(battery, outs, strict=True):
-            comps = []
-            for c in o.outputs:
-                ntok = max(1, len(c.token_ids))
-                comps.append({"text": c.text, "logp_norm": float(c.cumulative_logprob) / ntok})
-            cells.append({"probe": q, "completions": comps})
-        _reap_vllm(llm)
-        return cells
-    # HF fallback (CPU smoke): greedy or temperature sample per probe, with a
-    # teacher-forced length-normalized log-prob of the sampled completion.
     for q, tmpl in zip(battery, prompts, strict=True):
         inputs = tokenizer(tmpl, return_tensors="pt", padding=False).to(model.device)
         comps = []
@@ -1118,7 +1189,6 @@ def main() -> int:
         use_vllm=(use_cuda and not args.no_vllm),
         model_name=args.model,
         n_battery=e0_n_battery,
-        smoke=args.smoke,
         run=run,
         max_new_tokens_cap=(args.max_new_tokens_smoke if args.smoke else 0),
         n_samples_cap=(args.n_samples_smoke if args.smoke else 0),

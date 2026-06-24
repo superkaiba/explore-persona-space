@@ -81,6 +81,54 @@ DEFAULT_SUMMARY = "mean"  # theory A3.2 default: mean over answer-token position
 CC_RECIPES: tuple[str, ...] = ("last", "meanprompt")
 DEFAULT_CC = "last"  # #594-wired last-input-token slot (store-reused)
 
+# #594 last-input-token c_C store on HF (plan §11 CONFIRMED reuse). The tensor
+# is (n_ctx, 28, hidden) keyed by instance_ids; the mean-over-prompt c_C is the
+# NEW ablation extracted by the #658 extractor (lives in v0_summaries.pt).
+I594_HF_PREFIX = "issue594_context_geometry"
+I594_CC_LAST_FILE = f"{I594_HF_PREFIX}/analysis_tensors/context_vectors_mean.pt"
+I594_PROBE_POOL_HASH = "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
+
+
+def load_cc_last_store(capture_layers: list[int], ctx_ids: list[str]):
+    """Load the #594 last-input-token c_C store, keyed by ctx id, sliced to layers.
+
+    Downloads ``context_vectors_mean.pt`` from the #594 HF dataset (the CONFIRMED
+    reuse, plan §11) and returns ``{ctx_id: (Lc, H) fp32}`` over ``capture_layers``
+    for every ctx in ``ctx_ids`` that the store contains. This is the BLOCKER-2
+    fix: the A3.4/A3.5 fit must evaluate BOTH c_C recipes (last-input-token =
+    this store; mean-over-prompt = the #658-extracted ablation), and the
+    last-input-token default is the recipe Phase 2 inherits unless mean-over-prompt
+    wins by margin.
+
+    Asserts the #594 store's probe_pool_hash matches the plan-pinned hash (the
+    reuse is pinned to the same 48-probe battery — fail loud on drift).
+
+    Raises if a requested ctx is absent from the store (never a silent skip).
+    """
+    import torch
+    from huggingface_hub import hf_hub_download
+
+    path = hf_hub_download(HF_DATA_REPO, I594_CC_LAST_FILE, repo_type="dataset")
+    blob = torch.load(path, weights_only=False)
+    pph = blob.get("probe_pool_hash")
+    assert pph == I594_PROBE_POOL_HASH, (
+        f"#594 cc_last store probe_pool_hash drift: {pph} != {I594_PROBE_POOL_HASH} "
+        "(the c_C reuse is pinned to the same 48-probe battery — plan §11)"
+    )
+    tensor = blob["tensor"]  # (n_ctx, 28, H)
+    iid_to_row = {iid: i for i, iid in enumerate(blob["instance_ids"])}
+    out: dict[str, object] = {}
+    missing = [c for c in ctx_ids if c not in iid_to_row]
+    if missing:
+        raise RuntimeError(
+            f"#594 cc_last store is missing {len(missing)} requested contexts: {missing[:5]}..."
+        )
+    for c in ctx_ids:
+        row = tensor[iid_to_row[c]]  # (28, H)
+        out[c] = row[capture_layers].float()  # (Lc, H)
+    return out
+
+
 RB_RECIPES: tuple[str, ...] = ("diffmeans", "meanDB", "fewshot")
 DEFAULT_RB = "diffmeans"  # theory A3.3: persona-vectors diff-in-means
 

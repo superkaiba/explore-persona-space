@@ -114,10 +114,17 @@ def judge_batch(prompts: list[str], model: str) -> list[dict]:
 def judge_column(col_id: str, gen: dict, model: str) -> dict:
     """E0(C, B) for one (context, judged column): rate (PRIMARY) + logP (SECONDARY).
 
-    Returns {rate, n_judged, n_positive, logp_pos_mean, low_dynamic_range, ...}.
+    Returns {rate, n_judged, n_positive, logp_pos_mean, low_dynamic_range,
+    per_probe, ...}. ``per_probe`` is the PER-PROBE judge-positive fraction over
+    that probe's samples — the raw signal the N1 noise floor needs to re-estimate
+    E0(C,B) from independent 48-probe redraws (a split-half test-retest of the
+    per-behavior E0 estimate, NOT a behavior-agnostic activation-norm proxy —
+    the round-2 noise-floor BLOCKER fix). Each entry is {probe, e0, n_judged}.
     """
     col = E0_COLUMNS[col_id]
-    # Flatten every (probe, sample) completion with its logp_norm.
+    # Flatten every (probe, sample) completion with its logp_norm, KEEPING the
+    # probe grouping (per_probe[probe] = list of (positive_bool, logp)).
+    per_probe_acc: dict[str, list[tuple[bool, float]]] = {}
     flat: list[dict] = []
     for cell in gen["cells"]:
         for comp in cell["completions"]:
@@ -131,10 +138,22 @@ def judge_column(col_id: str, gen: dict, model: str) -> dict:
         if "_judge_error" in v or "_judge_refused" in v:
             continue
         n_judged += 1
-        if _verdict_truthy(v, col.e0_verdict_key, col_id):
+        pos = _verdict_truthy(v, col.e0_verdict_key, col_id)
+        per_probe_acc.setdefault(c["probe"], []).append((pos, c["logp"]))
+        if pos:
             n_positive += 1
             pos_logps.append(c["logp"])
     rate = (n_positive / n_judged) if n_judged else None
+    # Per-probe E0 contribution: the judge-positive fraction over THAT probe's
+    # judged samples (the unit the noise-floor redraws sample from).
+    per_probe = [
+        {
+            "probe": p,
+            "e0": (sum(1 for pos, _ in rows if pos) / len(rows)) if rows else None,
+            "n_judged": len(rows),
+        }
+        for p, rows in per_probe_acc.items()
+    ]
     # Dual-DV empty-set guard (round-1 concern #3): zero judged-positives -> the
     # log-P companion is the empty set -> low_dynamic_range, skip the secondary.
     low_dyn = (not pos_logps) or (rate in (0.0, 1.0))
@@ -147,6 +166,7 @@ def judge_column(col_id: str, gen: dict, model: str) -> dict:
         "n_total": len(flat),
         "logp_pos_mean": (sum(pos_logps) / len(pos_logps)) if pos_logps else None,  # SECONDARY
         "low_dynamic_range": low_dyn,
+        "per_probe": per_probe,  # N1 redraw unit (round-2 noise-floor fix)
     }
 
 
@@ -154,10 +174,21 @@ def score_format(gen: dict) -> dict:
     """E0 for format_style: deterministic structural classifier (no judge)."""
     flags = []
     logps = []
+    per_probe: list[dict] = []
     for cell in gen["cells"]:
+        cell_flags = []
         for comp in cell["completions"]:
-            flags.append(structural_format_features(comp["text"])["is_list_formatted"])
+            f = structural_format_features(comp["text"])["is_list_formatted"]
+            flags.append(f)
+            cell_flags.append(f)
             logps.append(comp["logp_norm"])
+        per_probe.append(
+            {
+                "probe": cell["probe"],
+                "e0": (sum(1 for f in cell_flags if f) / len(cell_flags)) if cell_flags else None,
+                "n_judged": len(cell_flags),
+            }
+        )
     rate = (sum(1 for f in flags if f) / len(flags)) if flags else None
     pos_logps = [lp for f, lp in zip(flags, logps, strict=True) if f]
     return {
@@ -167,14 +198,22 @@ def score_format(gen: dict) -> dict:
         "n_total": len(flags),
         "logp_pos_mean": (sum(pos_logps) / len(pos_logps)) if pos_logps else None,
         "low_dynamic_range": (not pos_logps) or (rate in (0.0, 1.0)),
+        "per_probe": per_probe,  # N1 redraw unit (round-2 noise-floor fix)
     }
 
 
 def score_marker(gen: dict) -> dict:
-    """E0(C, marker): mean on-policy marker log-prob at end-of-own-response slot."""
+    """E0(C, marker): mean on-policy marker log-prob at end-of-own-response slot.
+
+    ``per_probe`` carries the per-probe marker log-prob — the redraw unit the
+    N1 noise floor samples for the marker column (the marker E0 target is a
+    continuous logp, not a judged rate, so its per-probe contribution is the
+    raw slot logp; round-2 noise-floor fix).
+    """
     logps = [r["logp"] for r in gen["marker_slot"]]
     z_margins = [r["z_marker"] - r["z_eos"] for r in gen["marker_slot"]]
     emits = [r.get("argmax_id") == 83399 for r in gen["marker_slot"]]
+    per_probe = [{"probe": r["probe"], "e0": r["logp"], "n_judged": 1} for r in gen["marker_slot"]]
     return {
         "column_id": "marker",
         "dv": "marker_slot_stats",
@@ -182,6 +221,7 @@ def score_marker(gen: dict) -> dict:
         "eos_margin_mean": (sum(z_margins) / len(z_margins)) if z_margins else None,  # SECONDARY
         "emission_rate": (sum(1 for e in emits if e) / len(emits)) if emits else None,
         "n_total": len(logps),
+        "per_probe": per_probe,  # N1 redraw unit (round-2 noise-floor fix)
     }
 
 

@@ -62,6 +62,7 @@ from issue658_common import (  # noqa: E402
     STORE_DIR,
     SUMMARY_RECIPES,
     dump_json,
+    load_cc_last_store,
     load_json,
     summarize_answer_span,
 )
@@ -260,8 +261,14 @@ def fit_a32(store, spans_dir, e0, ctx_ids, layers, recipes, noise_floor, base_pr
     """A3.2: per (behavior, layer, summary) LOCO MLP ρ vs baselines + noise floor."""
     cells: list[dict] = []
     columns = [c for c in e0["columns"]]
-    # A learned attn-pool weight (shared across cells) — a random unit vector is
-    # a defensible default for the smoke; a fitted weight is a follow-up.
+    # attn_w is an UNFITTED random unit vector (carried CONCERN
+    # attn-pool-weight-unfitted): the `attn` recipe is a RANDOM-PROJECTION CONTROL,
+    # NOT a learned attention pool. Documented decision (round 2): relabel rather
+    # than fit (attn is plan §9 descope-priority-2; the analyzer adjudicates). The
+    # locked_recipe.json `attn_summary_label` + each attn cell's
+    # `is_random_projection_control` flag carry this so a winning attn cell is
+    # never read as a fitted pool. Seeded for determinism.
+    torch.manual_seed(658)
     attn_w = torch.randn(store["summaries"]["mean"][ctx_ids[0]].shape[-1])
     attn_w = attn_w / attn_w.norm()
     for col in columns:
@@ -291,6 +298,9 @@ def fit_a32(store, spans_dir, e0, ctx_ids, layers, recipes, noise_floor, base_pr
                         "rho_base_prior": base_prior.get(col),
                         "noise_floor_p95": noise_floor.get(col),
                         "bootstrap": _cluster_bootstrap_rho(pred, y, n_boot=N_BOOTSTRAP, seed=658),
+                        # attn is a RANDOM-PROJECTION CONTROL, not a learned pool
+                        # (carried CONCERN attn-pool-weight-unfitted).
+                        "is_random_projection_control": recipe == "attn",
                     }
                 )
     return cells
@@ -330,27 +340,30 @@ def fit_a33(store, rb, e0, ctx_ids, layers) -> list[dict]:
 # ── A3.4 / A3.5 (P3) — c_C -> v0(C) ────────────────────────────────────────────
 
 
-def fit_a34_a35(store, e0, ctx_ids, layers, shuffle_seed=658) -> dict:
-    """A3.4 ridge + A3.5 MLP: c_C → v0(C) held-out, + the within-context shuffle null.
+def _fit_a34_a35_one_recipe(cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed) -> dict:
+    """A3.4 ridge + A3.5 MLP for ONE c_C recipe: c_C → v0(C) held-out.
 
-    c_C here = the mean-over-prompt ablation (the last-input-token c_C is on the
-    #594 HF store; the campaign default selection happens downstream). Reports
-    the LOCO ρ between predicted and measured v0 (per layer, mean recipe) for
-    ridge (A3.4) and MLP (A3.5), the linear-vs-nonlinear gap, and the shuffled
-    null (round-1 concern #4: re-pair c_C with another context's v0, re-fit).
+    cc_map = {ctx_id: (Lc, H)} for this c_C recipe. Reports the LOCO ρ between
+    predicted and measured v0 (per layer, mean recipe) for ridge (A3.4) and MLP
+    (A3.5), the linear-vs-nonlinear gap, the within-context shuffle null
+    (round-1 concern #4), AND the downstream ``r_B^T M c_C → E0`` chain ρ per
+    behavior (Codex Major + reconciler "Observed but not raised" — the chain ρ
+    promised in this function's docstring was absent in round 1).
     """
-    out: dict = {"per_layer": [], "shuffle_null": []}
-    cc = store["cc_meanprompt"]  # {ctx_id: (Lc, H)}
-    C = np.stack([cc[c].numpy() for c in ctx_ids])  # (N, Lc, H)
+    out: dict = {"per_layer": [], "shuffle_null": [], "chain_rho_e0": {}}
+    C = np.stack([np.asarray(cc_map[c]) for c in ctx_ids])  # (N, Lc, H)
     V = np.stack([store["summaries"]["mean"][c].numpy() for c in ctx_ids])  # (N, Lc, H)
     n = len(ctx_ids)
     rng = np.random.default_rng(shuffle_seed)
+    # Cache the per-layer LOCO ridge prediction of v0 so the chain ρ can reuse it.
+    ridge_pred_v0_by_layer: dict[int, np.ndarray] = {}
     for li in range(len(layers)):
         Xc = C[:, li, :]
         Yv = V[:, li, :]
-        # ridge M (A3.4): predict the v0 vector, then ρ on the per-context norm
+        # ridge M (A3.4): predict the v0 vector, then ρ on the per-context cosine
         # (a scalar readout that does not require choosing one output dim).
         ridge_pred = _ridge_predict_loco(Xc, Yv, RIDGE_LAMBDAS)
+        ridge_pred_v0_by_layer[li] = ridge_pred
         mlp_pred = np.stack(
             [_fit_mlp_loco(Xc, Yv[:, k]) for k in range(min(8, Yv.shape[1]))], axis=1
         )
@@ -374,7 +387,92 @@ def fit_a34_a35(store, e0, ctx_ids, layers, shuffle_seed=658) -> dict:
                 "ridge_mean_cos_shuffled": float(np.mean(_rowwise_cos(ridge_pred_sh, Yv[perm]))),
             }
         )
+    # Chain ρ: project the LOCO-predicted v0 through each behavior's r_B and
+    # Spearman-correlate against the measured E0 — the full shortcut
+    # r_B^T (M c_C) → E0(C,B). Best layer per behavior is reported.
+    rb_dirs = (rb or {}).get("r_b", {})
+    for col in (rb or {}).get("columns", []):
+        if col not in rb_dirs:
+            continue
+        y, kept = e0_target(e0, col, ctx_ids)
+        if len(kept) < 4:
+            continue
+        kept_idx = [ctx_ids.index(c) for c in kept]
+        rdir = rb_dirs[col].get("diffmeans")
+        if rdir is None:
+            continue
+        best = None
+        for li in range(len(layers)):
+            r = np.asarray(rdir[li])  # (H,)
+            pred_v0 = ridge_pred_v0_by_layer[li][kept_idx]  # (n_kept, H)
+            chain_pred = pred_v0 @ r
+            rho = _rho(chain_pred, y)
+            if rho is not None and (best is None or rho > best["rho"]):
+                best = {"layer": layers[li], "rho": rho}
+        if best is not None:
+            out["chain_rho_e0"][col] = best
     return out
+
+
+def fit_a34_a35(store, cc_recipes, e0, rb, ctx_ids, layers, shuffle_seed=658) -> dict:
+    """A3.4/A3.5 over BOTH c_C recipes (round-2 BLOCKER fix) + recipe selection.
+
+    ``cc_recipes`` = {recipe_name: {ctx_id: (Lc, H)}} for each c_C recipe — the
+    #594-reused last-input-token store ("last") AND the #658-extracted
+    mean-over-prompt ablation ("meanprompt"). Round-1 evaluated ONLY meanprompt,
+    so the campaign could not lock the c_C recipe (Phase-2 deliverable). Here we
+    fit both under the IDENTICAL LOCO protocol and apply the plan §4.3-P3 rule:
+    default to **last-input-token** UNLESS mean-over-prompt wins by > the
+    noise-floor margin (encoded into ``recipe_selection``; the locked_recipe.json
+    write reads it).
+    """
+    by_recipe: dict[str, dict] = {}
+    for name, cc_map in cc_recipes.items():
+        by_recipe[name] = _fit_a34_a35_one_recipe(
+            cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed
+        )
+
+    # Recipe selection: compare the best mean ridge-cos (the linear M fidelity)
+    # across recipes; default to last-input-token unless meanprompt wins by margin.
+    def _best_cos(rec: dict) -> float:
+        return max((p["ridge_mean_cos"] for p in rec["per_layer"]), default=float("-inf"))
+
+    selection = _select_cc_recipe(by_recipe, _best_cos)
+    return {"by_recipe": by_recipe, "recipe_selection": selection}
+
+
+def _select_cc_recipe(by_recipe: dict, best_cos_fn) -> dict:
+    """Plan §4.3-P3 c_C recipe-lock rule: default last-input-token unless beaten.
+
+    Default to ``last`` (the #594-wired, store-reused recipe Phase 2 inherits)
+    UNLESS ``meanprompt`` wins the best-layer ridge-cos by more than a small
+    margin. The chosen recipe is the campaign default carried into Phase 2.
+    """
+    margin = 0.02  # ridge-cos win margin (a small, ungrounded screening tolerance)
+    last_cos = best_cos_fn(by_recipe["last"]) if "last" in by_recipe else float("-inf")
+    mean_cos = best_cos_fn(by_recipe["meanprompt"]) if "meanprompt" in by_recipe else float("-inf")
+    if "last" not in by_recipe:
+        chosen = "meanprompt"
+        reason = "last-input-token recipe unavailable; defaulting to mean-over-prompt"
+    elif mean_cos > last_cos + margin:
+        chosen = "meanprompt"
+        reason = (
+            f"mean-over-prompt best ridge-cos {mean_cos:.4f} beats last-input-token "
+            f"{last_cos:.4f} by > {margin} margin"
+        )
+    else:
+        chosen = "last"
+        reason = (
+            f"default last-input-token (#594-wired); best ridge-cos last={last_cos:.4f} "
+            f"vs meanprompt={mean_cos:.4f} (within {margin} margin)"
+        )
+    return {
+        "chosen_cc_recipe": chosen,
+        "reason": reason,
+        "last_best_ridge_cos": None if last_cos == float("-inf") else last_cos,
+        "meanprompt_best_ridge_cos": None if mean_cos == float("-inf") else mean_cos,
+        "margin": margin,
+    }
 
 
 def _rowwise_cos(A: np.ndarray, B: np.ndarray) -> np.ndarray:
@@ -386,45 +484,81 @@ def _rowwise_cos(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 # ── N1 — noise floor ────────────────────────────────────────────────────────
 
 
-def noise_floor(spans_dir: Path, e0, ctx_ids, n_redraws=N_NOISE_REDRAWS, seed=658) -> dict:
-    """Test-retest ρ ceiling: re-estimate E0 from independent probe redraws.
+def noise_floor(e0, ctx_ids, n_redraws=N_NOISE_REDRAWS, seed=658) -> dict:
+    """Test-retest ρ ceiling on the E0 TARGET itself, PER BEHAVIOR (round-2 fix).
 
-    The base read here is the per-(C) mean answer-span norm (a cheap E0-proxy
-    that the cached spans support directly); the test-retest ρ across redraws is
-    the per-behavior reliability ceiling. The PASS bar (A1) = the 95th pct of
-    this distribution. (The 48-probe pool is small, so the floor is conservative
-    — plan §8.)
+    Re-estimates ``E0(C,B)`` — the predictor TARGET (judged rate / marker logp),
+    NOT the predictor INPUT (answer-span activation norm; the round-1 BLOCKER) —
+    from independent probe redraws, per behavior column. For each behavior B and
+    each redraw, split the per-context probe set into two random halves, average
+    the per-probe E0 contributions over each half → two per-context E0 estimates,
+    and take their Spearman ρ. The 95th pct of the ``n_redraws`` distribution is
+    the per-behavior reliability ceiling — the PASS denominator (A1). The 48-probe
+    pool is small (plan §8), so the floor is conservatively wide.
+
+    Returns ``{col: float_or_None for col in e0["columns"]}`` (per-behavior-
+    DISTINCT, never a shared broadcast) plus ``_distribution`` / ``_p95`` for the
+    pooled report. A behavior whose E0 is degenerate across contexts (a constant
+    rate everywhere — the saturation regime §8 risk-1 guards) has NO rank signal
+    to predict, so its floor is pinned to 1.0 (impossible to beat) to suppress a
+    false PASS, NOT left low. Reads the per-probe E0 the judge phase persisted
+    (``e0["e0"][c][col]["per_probe"]``).
     """
     rng = random.Random(seed)
-    # per-context per-probe scalar: mean activation norm of the answer span at
-    # the first capture layer (the proxy whose test-retest the floor measures).
-    per_ctx_probe: dict[str, list[float]] = {}
-    for c in ctx_ids:
-        blob = torch.load(spans_dir / f"{c}.pt", weights_only=False)
-        vals = []
-        for s in blob["spans"]:
-            if s is not None:
-                vals.append(float(s[0].float().norm(dim=-1).mean().item()))
-        per_ctx_probe[c] = vals
-    rhos = []
-    for _ in range(n_redraws):
-        a, b = [], []
+    columns = list(e0["columns"])
+    e0_table = e0.get("e0", {})
+    floors: dict[str, float | None] = {}
+    distributions: dict[str, list[float]] = {}
+    for col in columns:
+        # per-context: the list of per-probe E0 contributions for this behavior.
+        per_ctx_probe: dict[str, list[float]] = {}
         for c in ctx_ids:
-            vals = per_ctx_probe[c]
-            if len(vals) < 2:
+            cell = e0_table.get(c, {}).get(col)
+            if cell is None:
                 continue
-            half = len(vals) // 2
-            shuf = vals[:]
-            rng.shuffle(shuf)
-            a.append(float(np.mean(shuf[:half])))
-            b.append(float(np.mean(shuf[half:])))
-        r = _rho(np.array(a), np.array(b)) if len(a) >= 4 else None
-        if r is not None:
-            rhos.append(r)
-    p95 = float(np.percentile(rhos, 95)) if rhos else None
-    # one shared floor scalar (the proxy is behavior-agnostic by construction);
-    # surfaced per-column in the verdict table.
-    return {col: p95 for col in e0["columns"]} | {"_distribution": rhos, "_p95": p95}
+            pp = cell.get("per_probe")
+            if not pp:
+                continue
+            vals = [float(x["e0"]) for x in pp if x.get("e0") is not None]
+            if vals:
+                per_ctx_probe[c] = vals
+        # If too few contexts have data, the floor is undefined for this column.
+        if len(per_ctx_probe) < 4:
+            floors[col] = None
+            distributions[col] = []
+            continue
+        # Degenerate (saturation) guard: a behavior whose per-context E0 estimate
+        # is (near-)constant across contexts has no rank signal — pin the floor
+        # to 1.0 so no predictor ρ can falsely clear it (§8 risk-1).
+        ctx_means = [float(np.mean(v)) for v in per_ctx_probe.values()]
+        if float(np.std(ctx_means)) < 1e-9:
+            floors[col] = 1.0
+            distributions[col] = []
+            continue
+        rhos: list[float] = []
+        for _ in range(n_redraws):
+            a, b = [], []
+            for c in ctx_ids:
+                vals = per_ctx_probe.get(c)
+                if not vals or len(vals) < 2:
+                    continue
+                half = len(vals) // 2
+                shuf = vals[:]
+                rng.shuffle(shuf)
+                a.append(float(np.mean(shuf[:half])))
+                b.append(float(np.mean(shuf[half:])))
+            r = _rho(np.array(a), np.array(b)) if len(a) >= 4 else None
+            if r is not None:
+                rhos.append(r)
+        floors[col] = float(np.percentile(rhos, 95)) if rhos else None
+        distributions[col] = rhos
+    pooled = [r for rs in distributions.values() for r in rs]
+    return {
+        **floors,
+        "_distribution": pooled,
+        "_p95": float(np.percentile(pooled, 95)) if pooled else None,
+        "_per_behavior_distribution": distributions,
+    }
 
 
 # ── base-prior baseline ────────────────────────────────────────────────────────
@@ -524,11 +658,23 @@ def aggregate(a32_cells, a33_cells, a34_35, noise, base_prior, sigma_sanity, e0)
                 and best_lin["rho"] >= mlp_rho - (noise.get("_p95") or 0.1)
             ),
         }
+    # per-behavior reliability ceilings (round-2 fix: the floor is the re-estimated
+    # E0 target's test-retest ρ per behavior, not a shared activation-norm scalar).
+    per_behavior_floor = {col: noise.get(col) for col in columns}
     return {
         "a32_verdicts": verdicts,
         "a33_verdicts": a33_verdict,
         "a34_a35": a34_35,
-        "noise_floor": {"p95": noise.get("_p95"), "distribution": noise.get("_distribution")},
+        "noise_floor": {
+            "p95": noise.get("_p95"),
+            "distribution": noise.get("_distribution"),
+            "per_behavior_p95": per_behavior_floor,
+            "note": (
+                "per-behavior test-retest ρ of the re-estimated E0(C,B) target from "
+                f"{N_NOISE_REDRAWS} probe redraws (round-2 fix); a degenerate/saturated "
+                "behavior is pinned to 1.0 (no rank signal to beat)"
+            ),
+        },
         "base_prior_note": (
             "base-prior baseline is the global behavior mean (a constant) — ρ vs a constant is "
             "undefined/≈0, so 'beats base-prior' is trivial and NOT a gate (round-1 concern #7); "
@@ -618,8 +764,13 @@ def make_figures(a32_cells, agg, out_dir: Path) -> list[str]:
         fig.savefig(p, dpi=140)
         plt.close(fig)
         made.append(str(p))
-    # Hero candidate 2: A3.4/A3.5 linear-vs-MLP cos scatter.
-    pl = agg["a34_a35"].get("per_layer", [])
+    # Hero candidate 2: A3.4/A3.5 linear-vs-MLP cos scatter (the chosen c_C recipe,
+    # falling back to whichever recipe was evaluated — round-2 nested-by-recipe shape).
+    a34 = agg["a34_a35"]
+    by_recipe = a34.get("by_recipe", {})
+    chosen = a34.get("recipe_selection", {}).get("chosen_cc_recipe")
+    rec = by_recipe.get(chosen) or next(iter(by_recipe.values()), {})
+    pl = rec.get("per_layer", []) if isinstance(rec, dict) else []
     if pl:
         fig, ax = plt.subplots(figsize=(4.5, 4.5))
         ax.scatter([p["ridge_mean_cos"] for p in pl], [p["mlp_mean_cos"] for p in pl])
@@ -650,6 +801,12 @@ def main() -> int:
         nargs="*",
         default=None,
         help=f"v0 summary recipes to fit (default all: {SUMMARY_RECIPES})",
+    )
+    parser.add_argument(
+        "--no-cc-last",
+        action="store_true",
+        help="skip the #594 cc_last HF store (offline smoke); evaluate only the "
+        "mean-over-prompt c_C recipe. The PRODUCTION recipe lock REQUIRES cc_last.",
     )
     args = parser.parse_args()
 
@@ -685,8 +842,10 @@ def main() -> int:
     layers = store["capture_layers"]
     logger.info("Fitting: %d contexts, %d layers, recipes=%s", len(ctx_ids), len(layers), recipes)
 
-    # N1 + baselines first (the verdict gates).
-    noise = noise_floor(spans_dir, e0, ctx_ids)
+    # N1 + baselines first (the verdict gates). The noise floor re-estimates the
+    # per-behavior E0 TARGET (judged rate / marker logp) from probe redraws — the
+    # round-2 BLOCKER fix; it no longer reads the answer-span activation norm.
+    noise = noise_floor(e0, ctx_ids)
     base_prior = base_prior_baseline(e0, ctx_ids)
     sigma_sanity = sigma_covariance_sanity(store_dir, e0)
 
@@ -696,7 +855,23 @@ def main() -> int:
     a33_cells = fit_a33(store, rb, e0, ctx_ids, layers)
     dump_json({"a33": a33_cells}, out_dir / "a33_cells.json")
 
-    a34_35 = fit_a34_a35(store, e0, ctx_ids, layers)
+    # A3.4/A3.5: evaluate BOTH c_C recipes (round-2 BLOCKER fix). last-input-token
+    # comes from the #594 HF store (CONFIRMED reuse); mean-over-prompt is the
+    # #658-extracted ablation stored in v0_summaries.pt. A missing #594 store is
+    # FAIL-LOUD (the recipe lock is a Phase-2 deliverable) unless --no-cc-last is
+    # set for an offline smoke, in which case only meanprompt is evaluated.
+    cc_recipes: dict[str, dict] = {
+        "meanprompt": {c: store["cc_meanprompt"][c].numpy() for c in ctx_ids}
+    }
+    if args.no_cc_last:
+        logger.warning(
+            "--no-cc-last: evaluating only the mean-over-prompt c_C recipe (offline smoke); "
+            "the production recipe lock REQUIRES the #594 cc_last store"
+        )
+    else:
+        cc_last = load_cc_last_store(layers, ctx_ids)
+        cc_recipes["last"] = {c: cc_last[c].numpy() for c in ctx_ids}
+    a34_35 = fit_a34_a35(store, cc_recipes, e0, rb, ctx_ids, layers)
     dump_json(a34_35, out_dir / "a34_a35.json")
 
     agg = aggregate(a32_cells, a33_cells, a34_35, noise, base_prior, sigma_sanity, e0)
@@ -708,8 +883,21 @@ def main() -> int:
         for col, v in agg["a32_verdicts"].items()
         if v.get("a32_pass")
     }
+    # The c_C recipe Phase 2 inherits (round-2 BLOCKER fix): the §4.3-P3 rule —
+    # default last-input-token unless mean-over-prompt wins by margin.
+    cc_selection = a34_35.get("recipe_selection", {})
     dump_json(
-        {"locked_recipe": locked, "selected_on": "A3.2 best-layer/summary, FDR-gated"},
+        {
+            "locked_recipe": locked,
+            "selected_on": "A3.2 best-layer/summary, FDR-gated",
+            "cc_recipe_lock": cc_selection,  # Phase-2 inherited c_C recipe
+            "attn_summary_label": (
+                "random-projection control — the attn_w pool weight is an UNFITTED random "
+                "unit vector (carried CONCERN attn-pool-weight-unfitted); a winning 'attn' "
+                "cell is NOT a learned attention pool. The analyzer must read attn as a "
+                "random-projection control, never as a fitted recipe (plan §9 descope-2)."
+            ),
+        },
         out_dir / "locked_recipe.json",
     )
     dump_json(
