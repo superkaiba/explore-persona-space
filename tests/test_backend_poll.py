@@ -24,6 +24,7 @@ after the poller wiring + the GCP poll-discrimination land. Modeled on
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -120,6 +121,25 @@ def _no_real_marker_posts(monkeypatch):
         lambda **_kw: None,
         raising=False,
     )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_lease_store(monkeypatch, tmp_path):
+    """Redirect EVERY ``LeaseStore()`` to a per-test tmp ``~/.eps-routing/``.
+
+    The async failover (``failover_to_runpod_after_async_workload_crash``) and
+    the round-3 lease-backed idempotency check (``_lease_records_failover_of`` /
+    ``_stamp_lease_failover_of``) both instantiate a bare ``LeaseStore()`` with
+    NO injection seam, so they resolve to ``Path.home() / ".eps-routing"``.
+    Pinning ``Path.home`` to a fresh tmp dir isolates the durable lease per
+    test (no cross-test bleed) AND keeps the suite from writing to the real
+    ``~/.eps-routing/`` (a pre-existing leak the round-2 tests had). Used by the
+    persistence-failure test below, whose round-3 assertions depend on a clean
+    lease at the start of each poll.
+    """
+    home = tmp_path / "home"
+    home.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(Path, "home", classmethod(lambda _cls: home))
 
 
 # ---------------------------------------------------------------------------
@@ -271,6 +291,156 @@ def test_failover_sidecar_persistence_failure_emits_infra_error_not_running(
     assert out2["status"] == "dead"
     assert out2["failure_class"] == "infra"
     assert out2["reason"] == "sidecar_persistence_failed"
+
+
+def test_failover_both_sidecar_AND_sentinel_writes_fail_still_exactly_once(
+    tmp_path, monkeypatch, capsys
+):
+    """#659 round-3 (the round-2 GAP — EDQUOT/persistent-disk-failure mode).
+
+    The round-2 fix wrote an idempotency SENTINEL on the persistence-failure
+    path — but the sentinel and the handle sidecar share the SAME
+    ``.claude/cache/`` directory, so the canonical project failure mode (EDQUOT
+    on the MooseFS per-pod quota, a read-only filesystem, out-of-inodes) that
+    fails the sidecar write ALSO fails the sentinel write. With BOTH writes
+    failing, round-2's "exactly once" degraded to one extra paid RunPod launch
+    PER POLL TICK (the sentinel is absent on every subsequent poll, so the
+    sentinel short-circuit never fires while the disk failure persists — and
+    EDQUOT does not clear between ~540s polls).
+
+    Round-3 makes the DURABLE lease at ``~/.eps-routing/`` (a DIFFERENT
+    directory, stamped BEFORE the sidecar write) the authoritative idempotency
+    record. This test models the round-2 gap: BOTH the RunPod sidecar write AND
+    the sentinel write fail, and the SECOND poll must STILL launch nothing,
+    because the lease record survived the ``.claude/cache``-wide failure. This
+    is the test the round-2 fix does NOT pass."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod.RunPodBackend",
+        lambda: rp,
+    )
+
+    # (1) The RunPod sidecar write fails (EDQUOT) — same as the round-2 test.
+    real_write = write_handle_sidecar
+
+    def _raising_write(handle, path):
+        if getattr(handle, "backend", None) == "runpod":
+            raise OSError("Disk quota exceeded (EDQUOT) writing the RunPod sidecar")
+        return real_write(handle, path)
+
+    monkeypatch.setattr(
+        "explore_persona_space.backends.issue_dispatch.write_handle_sidecar",
+        _raising_write,
+    )
+    # (2) The SENTINEL write ALSO fails — the round-2 gap. _write_failover_sentinel
+    # swallows its own OSError, so the on-disk effect of an EDQUOT'd sentinel
+    # write is simply "no sentinel persisted": model that as a no-op. With BOTH
+    # the sidecar AND the sentinel unwritable, the lease is the ONLY surviving
+    # idempotency record.
+    monkeypatch.setattr(
+        "scripts.backend_poll._write_failover_sentinel",
+        lambda *a, **k: None,
+    )
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "sidecar_persistence_failed"
+    # The first poll launched RunPod exactly once.
+    launches_after_first = len(rp.launches)
+    assert launches_after_first == 1
+
+    # Confirm the sentinel really is absent on disk (the round-2 record is gone).
+    from scripts.backend_poll import _failover_sentinel_path
+
+    assert not _failover_sentinel_path(sidecar).exists(), (
+        "the sentinel write was made a no-op — the round-2 record must be ABSENT, "
+        "so only the round-3 lease can carry idempotency forward"
+    )
+
+    # SECOND poll: sidecar still GCP, sentinel still absent. The ONLY thing that
+    # can stop a second paid launch is the durable lease. With the round-2
+    # sentinel-only fix this poll fires a SECOND RunPod launch; with the round-3
+    # lease check it short-circuits.
+    rc2 = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc2 == 0
+    out2 = _last_json_line(capsys)
+    assert len(rp.launches) == launches_after_first, (
+        "EDQUOT failed BOTH the sidecar AND the sentinel write, yet the repeat "
+        "poll must STILL launch nothing — the durable ~/.eps-routing/ lease is "
+        "the surviving idempotency record (round-3 fix)"
+    )
+    assert out2["status"] == "dead"
+    assert out2["failure_class"] == "infra"
+    assert out2["reason"] == "sidecar_persistence_failed"
+
+
+def test_lease_records_failover_of_is_keyed_per_gcp_crash_not_per_issue(tmp_path, monkeypatch):
+    """#659 round-3: the durable lease idempotency check matches the SPECIFIC
+    crashed GCP run, so it is "exactly once PER GCP CRASH", not "per issue".
+
+    A stamped RunPod-failover lease suppresses a repeat poll of the SAME GCP run
+    (identity match) but NOT a genuinely-new GCP run on the same issue (a fresh
+    dispatch -> new pod_name/job_id), which must still get its own one failover.
+    Also: a lease whose backend is NOT ``runpod`` (a fresh GCP dispatch wrote it)
+    never suppresses, even if a stale ``gcp_failover_of`` lingers on it."""
+    from explore_persona_space.backends.router import Lease, LeaseStore
+    from scripts.backend_poll import _gcp_handle_identity, _lease_records_failover_of
+
+    store = LeaseStore(lease_dir=tmp_path / ".eps-routing")
+    crashed = _gcp_handle()  # pod_name="eps-issue-659", job_id="instance-fake-1"
+
+    # No lease at all -> no suppression.
+    assert _lease_records_failover_of(659, crashed, lease_store=store) is False
+
+    # A RunPod lease stamped with THIS GCP run's identity -> suppress.
+    store.write(
+        Lease(
+            issue=659,
+            spec_hash="deadbeef",
+            attempt_id="att-1",
+            backend="runpod",
+            job_id="pod-fake",
+            gcp_failover_of=_gcp_handle_identity(crashed),
+        )
+    )
+    assert _lease_records_failover_of(659, crashed, lease_store=store) is True
+
+    # A genuinely-NEW GCP run on the same issue (different pod_name/job_id) does
+    # NOT match the stamp -> NOT suppressed (per-crash, not per-issue).
+    new_gcp = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="instance-fake-2",  # NEW job id
+        pod_name="eps-issue-659-retry",  # NEW pod name
+        scratch_dir="/workspace/eps-issue-659",
+        log_path="/workspace/logs/issue-659.log",
+        extra=dict(_GCP_EXTRA_659),
+    )
+    assert _lease_records_failover_of(659, new_gcp, lease_store=store) is False
+
+    # A non-runpod lease (a fresh GCP dispatch re-wrote it) never suppresses,
+    # even with a stale gcp_failover_of carried over.
+    store.write(
+        Lease(
+            issue=659,
+            spec_hash="cafef00d",
+            attempt_id="att-2",
+            backend="gcp",
+            job_id="instance-fake-2",
+            gcp_failover_of=_gcp_handle_identity(crashed),  # stale stamp
+        )
+    )
+    assert _lease_records_failover_of(659, crashed, lease_store=store) is False
 
 
 # ---------------------------------------------------------------------------
