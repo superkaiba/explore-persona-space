@@ -105,6 +105,7 @@ PHASES = (
     "build",
     "arm_a",
     "train",
+    "select_checkpoint",  # §6Δ.3 dose-to-target: pick the first floor-clearing ckpt
     "dx",
     "install",
     "ablation",
@@ -117,9 +118,21 @@ EXTRA_PHASES = ("gate",)
 ALL_SELECTABLE_PHASES = PHASES + EXTRA_PHASES
 # Provision phase chains (plan §9 phase split). Provision 1 runs Arm A + the
 # LoRA ladder + their reads; Provision 2 runs the §7 gate, then (iff PASS) the
-# full-FT rung + its reads. The gate fires BETWEEN provisions.
-PROVISION1_PHASES = ("build", "arm_a", "train", "dx", "install", "ablation", "analyze", "upload")
-PROVISION2_PHASES = ("gate", "train", "dx", "install", "analyze", "upload")
+# full-FT rung + its reads. The gate fires BETWEEN provisions. select_checkpoint
+# runs after train (the dose checkpoints exist) and before dx (geometry reads the
+# selected floor-clearing checkpoint, §6Δ.3) in BOTH provisions.
+PROVISION1_PHASES = (
+    "build",
+    "arm_a",
+    "train",
+    "select_checkpoint",
+    "dx",
+    "install",
+    "ablation",
+    "analyze",
+    "upload",
+)
+PROVISION2_PHASES = ("gate", "train", "select_checkpoint", "dx", "install", "analyze", "upload")
 SENTINEL_SCHEMA_VERSION = 1
 
 
@@ -1014,18 +1027,29 @@ def _train_one_cell(cell, cfg_kwargs, mix_path, full_ft_mix, *, out_root: Path, 
         extra["warmup_ratio"] = cfg_kwargs["warmup_ratio"]
     if cfg_kwargs.get("lora_dropout") is not None:
         extra["lora_dropout"] = cfg_kwargs["lora_dropout"]
-    # Dose-to-target (§6Δ.3): save dense checkpoints so the install read can pick
-    # the first floor-clearing one. save_total_limit sized to outlive the
-    # shallowest dose rung (gotchas: HF keep-last-N pruning deletes a mid-train
-    # checkpoint before the read fires).
+    # Dose-to-target (§4Δ.2 / §6Δ.3): persist dense step checkpoints so the
+    # select_checkpoint phase can pick the FIRST floor-clearing one. BLOCKER
+    # dose-checkpoints-not-saved: save_strategy MUST be promoted to "steps" — HF
+    # Trainer writes NO checkpoints with save_strategy="no" REGARDLESS of
+    # save_steps (TrainLoraConfig default is "no", so the marker path stays
+    # byte-unchanged: marker has no dose_checkpoints). save_total_limit is sized
+    # by dose_save_args to outlive the shallowest dose rung (keep-last-N pruning
+    # would otherwise delete the earliest dose checkpoint before its read, #641).
     dose = cfg_kwargs.get("dose_checkpoints")
     if dose:
-        save_steps = min(dose)
         max_steps = cfg_kwargs.get("max_steps")
-        # Budget enough kept checkpoints to span min(dose)..endpoint + a margin.
-        n_keep = (max_steps - save_steps) // save_steps + 3 if max_steps else len(dose) + 3
-        extra["save_steps"] = save_steps
-        extra["save_total_limit"] = max(n_keep, 5)
+        # Epoch-bounded (sycophancy) total-step estimate: rows / effective batch ×
+        # epochs (TrainLoraConfig batch_size=4 × grad_accum=4 = 16). EM is
+        # max_steps-bounded so this estimate is unused there.
+        total_steps_estimate = None
+        if not max_steps:
+            n_rows = sum(1 for _ in mix_path.open()) if mix_path.exists() else 0
+            eff_batch = TrainLoraConfig.batch_size * TrainLoraConfig.grad_accum
+            steps_per_epoch = max(1, -(-n_rows // eff_batch))  # ceil
+            total_steps_estimate = steps_per_epoch * int(cfg_kwargs["epochs"])
+        extra.update(
+            i653.dose_save_args(dose, max_steps, total_steps_estimate=total_steps_estimate)
+        )
 
     cfg = TrainLoraConfig(
         lr=cfg_kwargs["lr"],
@@ -1204,8 +1228,10 @@ def _dx_gpu_cloud(cell, *, out_root: Path):
         dtype=torch.bfloat16,
         tf_batch_size=8,
     )
-    adapter_dir = out_root / "armB" / "adapters" / cell.cell_id
-    trained_model = _merge_adapter_for_read(adapter_dir, cell)
+    # §6Δ.3 matched-install read: the FIRST floor-clearing checkpoint (dose cells)
+    # or the final model (marker band-stop / full-FT), via the resolver — NOT the
+    # raw final adapter (BLOCKER geometry-reads-final-adapter).
+    trained_model = _resolve_read_model_path(cell, out_root)
     trained_rows = _generate_responses_vllm(
         trained_model,
         personas,
@@ -1297,6 +1323,63 @@ def _merge_adapter_for_read(adapter_dir: Path, cell) -> str:
     return str(merged)
 
 
+def _selected_checkpoint_manifest_path(cell, out_root: Path) -> Path:
+    """The per-cell select_checkpoint manifest path (§6Δ.3)."""
+    return out_root / "armB" / "selected_checkpoints" / f"{cell.cell_id}.json"
+
+
+def _read_select_manifest(cell, out_root: Path) -> dict | None:
+    """The select_checkpoint manifest for ``cell``, or None if absent (§6Δ.3)."""
+    man_path = _selected_checkpoint_manifest_path(cell, out_root)
+    if man_path.exists():
+        return json.loads(man_path.read_text())
+    return None
+
+
+def _resolve_read_model_path(cell, out_root: Path) -> str:
+    """The model path the geometry / install / ablation reads MUST use (§6Δ.3).
+
+    For dose-to-target cells (sycophancy/EM LoRA) the select_checkpoint phase
+    wrote a manifest naming the FIRST floor-clearing checkpoint; this resolves to
+    that checkpoint's merged dir — NOT the saturated/overtrained final adapter
+    (BLOCKER geometry-reads-final-adapter). If the manifest marks the cell DROPPED
+    (no checkpoint cleared floor), raises loud — geometry must never read a
+    dropped cell. Marker (band-stop) + full-FT (no dose) read their final model.
+
+    Resolution order:
+      1. dose cell with a manifest → its ``selected_model_path`` (merged).
+      2. dose cell, manifest marks dropped → RuntimeError (must not be read).
+      3. dose cell, NO manifest → fall back to the final adapter (select phase
+         skipped, e.g. a --phase dx smoke without select_checkpoint) + WARN.
+      4. marker / full-FT → the final adapter / FT model (no dose selection).
+    """
+    if i653.cell_uses_dose_selection(cell):
+        man_path = _selected_checkpoint_manifest_path(cell, out_root)
+        if man_path.exists():
+            man = json.loads(man_path.read_text())
+            if man.get("dropped_non_install"):
+                raise RuntimeError(
+                    f"_resolve_read_model_path: {cell.cell_id} was DROPPED by "
+                    f"select_checkpoint (no checkpoint cleared the install floor "
+                    f"after the dose budget, §6Δ.3) — geometry/install must NOT be "
+                    f"read off a non-installing cell. detail={man.get('select_detail')}"
+                )
+            ckpt = man.get("selected_checkpoint_dir")
+            if not ckpt:
+                raise RuntimeError(
+                    f"_resolve_read_model_path: {cell.cell_id} manifest has no "
+                    f"selected_checkpoint_dir and is not marked dropped ({man_path})"
+                )
+            return _merge_adapter_for_read(Path(ckpt), cell)
+        print(
+            f"  [read-model] WARN: no select_checkpoint manifest for {cell.cell_id} "
+            f"({man_path}); reading the FINAL adapter (select_checkpoint not run — "
+            f"the geometry is NOT matched-install, §6Δ.3)",
+            flush=True,
+        )
+    return _merge_adapter_for_read(out_root / "armB" / "adapters" / cell.cell_id, cell)
+
+
 def _marker_unembedding_row():
     """r_B for the marker arm: the unembedding (lm_head) row for token 83399."""
     import torch
@@ -1308,6 +1391,214 @@ def _marker_unembedding_row():
     with torch.no_grad():
         row = model.get_output_embeddings().weight[i653.MARKER_TOKEN_ID].cpu().numpy()
     return row
+
+
+def _list_checkpoint_steps(adapter_dir: Path) -> list[int]:
+    """The optimizer-step numbers of the HF ``checkpoint-<step>`` dirs saved under
+    ``adapter_dir`` (the dose checkpoints), sorted ascending. Empty if none."""
+    steps: list[int] = []
+    if not adapter_dir.exists():
+        return steps
+    for child in adapter_dir.iterdir():
+        if child.is_dir() and child.name.startswith("checkpoint-"):
+            tok = child.name.split("checkpoint-", 1)[1]
+            if tok.isdigit():
+                steps.append(int(tok))
+    return sorted(steps)
+
+
+def phase_select_checkpoint(cells, *, out_root: Path, mode: str) -> dict:
+    """§6Δ.3 dose-to-target checkpoint selection — the matched-install read fix.
+
+    For each DOSE cell (sycophancy/EM LoRA — ``cell_uses_dose_selection``):
+      1. Enumerate the saved ``checkpoint-<step>`` dirs (dense dose checkpoints).
+      2. Iterate the dose steps in order; snap each to the nearest saved
+         checkpoint ≤ that step (the matched-install read point); run the install
+         probe at that checkpoint; STOP at the FIRST checkpoint clearing the
+         per-behavior install floor (§6Δ.1).
+      3. Write ``armB/selected_checkpoints/<cell_id>.json`` with
+         ``selected_checkpoint_step`` / ``selected_checkpoint_dir`` /
+         ``selected_model_path`` (the merged read path the downstream dx / install
+         / ablation phases consume via ``_resolve_read_model_path``).
+      4. If NO checkpoint clears the floor by the dose budget, the cell is DROPPED
+         (``dropped_non_install: true``) — geometry is NOT read off it (§6Δ.3),
+         the same drop-and-report mechanism as §6Δ.1's floor-fail path.
+
+    Marker (band-stop: the final adapter IS the band-stopped one) and full-FT (no
+    dose schedule) are NO-OPs — a manifest is still written pointing at the final
+    model so ``_resolve_read_model_path`` is uniform, but no checkpoint search runs.
+
+    Mode dispatch:
+      * ``cpu_stub`` — synthetic: the FIRST dose step "clears" (manifest points at
+        the cell's adapter dir; never a fabricated install number).
+      * ``gpu`` — REAL per-checkpoint install probe + first-floor-clearing select.
+      * ``fail`` — raises (no host-agnostic implementation for the GPU read).
+    """
+    log_phase("select_checkpoint")
+    out_dir = out_root / "armB" / "selected_checkpoints"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    repo_root = _resolve_repo_root()
+    written: list[str] = []
+    n_selected = 0
+    n_dropped = 0
+
+    for c in cells:
+        man_path = out_dir / f"{c.cell_id}.json"
+        # Non-dose cells (marker band-stop / full-FT): no-op manifest pointing at
+        # the final adapter / FT model so the resolver path is uniform.
+        if not i653.cell_uses_dose_selection(c):
+            manifest = {
+                "cell_id": c.cell_id,
+                "behavior": c.behavior,
+                "rung": c.rung,
+                "dose_selection": False,
+                "selected_checkpoint_step": None,
+                "selected_checkpoint_dir": None,
+                "selected_model_path": None,  # resolver falls through to final adapter
+                "dropped_non_install": False,
+                "note": (
+                    "no dose selection: marker uses the band-stop final adapter; "
+                    "full-FT has no dose schedule (reads the final FT model)"
+                ),
+                "metadata": i653.result_metadata(repo_root, {"phase": "select_checkpoint"}),
+            }
+            man_path.write_text(json.dumps(manifest, indent=1))
+            written.append(str(man_path))
+            print(f"  [select_checkpoint] {c.cell_id}: no-op (non-dose cell)", flush=True)
+            continue
+
+        # Dose cell. require_real for the GPU read (cpu_stub is the synthetic path).
+        if mode == i653.RUN_MODE_FAIL:
+            i653.require_real_mode(
+                mode,
+                "select_checkpoint",
+                missing="It reads the install DV at each saved dose checkpoint on GPU.",
+            )
+
+        recipe = i653.recipe_for_behavior(c.behavior)
+        dose = recipe.get("dose_checkpoints") or ()
+        dose_steps = i653.dose_checkpoint_steps(dose, recipe.get("max_steps"))
+        floor_detail = i653.install_floor_for_behavior(c.behavior)
+
+        if mode == i653.RUN_MODE_CPU_STUB:
+            # Synthetic: the first dose step "clears". Manifest points at the cell's
+            # adapter dir (no real checkpoint dirs in the stub). Never a fabricated
+            # install number — the gpu path measures the real install.
+            selected_step = dose_steps[0] if dose_steps else None
+            manifest = {
+                "cell_id": c.cell_id,
+                "behavior": c.behavior,
+                "rung": c.rung,
+                "dose_selection": True,
+                "dose_steps": dose_steps,
+                "selected_checkpoint_step": selected_step,
+                "selected_checkpoint_dir": str(out_root / "armB" / "adapters" / c.cell_id),
+                "selected_model_path": None,  # cpu-stub: real merge is gpu-only
+                "dropped_non_install": False,
+                "install_floor": floor_detail,
+                "note": "CPU-STUB synthetic select (first dose step clears); real probe on gpu",
+                "metadata": i653.result_metadata(repo_root, {"phase": "select_checkpoint"}),
+            }
+            man_path.write_text(json.dumps(manifest, indent=1))
+            written.append(str(man_path))
+            n_selected += 1
+            print(
+                f"  [select_checkpoint] {c.cell_id}: CPU-STUB selected step {selected_step}",
+                flush=True,
+            )
+            continue
+
+        # ── GPU: real per-checkpoint install probe, first-floor-clearing select ──
+        adapter_dir = out_root / "armB" / "adapters" / c.cell_id
+        available = _list_checkpoint_steps(adapter_dir)
+        if not available:
+            raise FileNotFoundError(
+                f"select_checkpoint: no checkpoint-<step> dirs under {adapter_dir} for "
+                f"{c.cell_id}. The dose-to-target train phase must save dense step "
+                f"checkpoints (save_strategy='steps', §6Δ.3) before selection runs."
+            )
+        selected_step = None
+        selected_ckpt_dir = None
+        selected_model_path = None
+        probed: list[dict] = []
+        seen_snaps: set[int] = set()
+        for dose_step in dose_steps:
+            snap = i653.snap_dose_step_to_available(dose_step, available)
+            if snap is None or snap in seen_snaps:
+                continue  # no checkpoint at/below this dose step yet, or already probed
+            seen_snaps.add(snap)
+            ckpt_dir = adapter_dir / f"checkpoint-{snap}"
+            ckpt_model = _merge_adapter_for_read(ckpt_dir, c)
+            install = _install_content_gpu(c, out_root=out_root, trained_path=ckpt_model)
+            passed, detail = i653._install_pass_ok(install, c.behavior)
+            probed.append(
+                {
+                    "dose_step": dose_step,
+                    "checkpoint_step": snap,
+                    "install_pass": passed,
+                    "install_floor_detail": detail,
+                }
+            )
+            print(
+                f"  [select_checkpoint] {c.cell_id}: dose_step={dose_step} "
+                f"ckpt={snap} install_pass={passed} ({detail})",
+                flush=True,
+            )
+            if passed:
+                selected_step = snap
+                selected_ckpt_dir = str(ckpt_dir)
+                selected_model_path = ckpt_model
+                break
+
+        dropped = selected_step is None
+        manifest = {
+            "cell_id": c.cell_id,
+            "behavior": c.behavior,
+            "rung": c.rung,
+            "dose_selection": True,
+            "dose_steps": dose_steps,
+            "available_checkpoints": available,
+            "probed": probed,
+            "selected_checkpoint_step": selected_step,
+            "selected_checkpoint_dir": selected_ckpt_dir,
+            "selected_model_path": selected_model_path,
+            "dropped_non_install": dropped,
+            "install_floor": floor_detail,
+            "select_detail": (
+                f"no checkpoint cleared the {c.behavior} install floor ({floor_detail}) "
+                f"across dose steps {dose_steps}"
+                if dropped
+                else f"first floor-clearing checkpoint = step {selected_step}"
+            ),
+            "metadata": i653.result_metadata(repo_root, {"phase": "select_checkpoint"}),
+        }
+        man_path.write_text(json.dumps(manifest, indent=1))
+        written.append(str(man_path))
+        if dropped:
+            n_dropped += 1
+            print(
+                f"  [select_checkpoint] {c.cell_id}: DROPPED — no checkpoint cleared "
+                f"the install floor (§6Δ.3)",
+                flush=True,
+            )
+        else:
+            n_selected += 1
+            print(
+                f"  [select_checkpoint] {c.cell_id}: selected checkpoint-{selected_step}",
+                flush=True,
+            )
+
+    print(
+        f"  [select_checkpoint] {len(written)} manifests "
+        f"(selected={n_selected} dropped={n_dropped}) ({mode})",
+        flush=True,
+    )
+    return {
+        "manifests": written,
+        "n_selected": n_selected,
+        "n_dropped_non_install": n_dropped,
+        "mode": mode,
+    }
 
 
 def phase_dx(cells, *, out_root: Path, mode: str) -> dict:
@@ -1337,6 +1628,17 @@ def phase_dx(cells, *, out_root: Path, mode: str) -> dict:
         if mode == i653.RUN_MODE_CPU_STUB:
             cloud, r_B, n_rows = _dx_cpu_stub_cloud(c)
         else:
+            # §6Δ.3: geometry is NOT read off a cell select_checkpoint dropped (no
+            # floor-clearing checkpoint) — skip it (analyze's install-floor gate
+            # records the drop from the install JSON written for it).
+            select_man = _read_select_manifest(c, out_root)
+            if select_man is not None and select_man.get("dropped_non_install"):
+                print(
+                    f"  [dx] {c.cell_id}: SKIP — dropped by select_checkpoint "
+                    f"(no floor-clearing checkpoint, §6Δ.3)",
+                    flush=True,
+                )
+                continue
             cloud, r_B, n_rows = _dx_gpu_cloud(c, out_root=out_root)
         # Persist the Δx cloud + r_B (analysis tensors; the off-pod cluster
         # bootstrap + cross-arm cosine read these — upload-policy.md: plan-named
@@ -1478,7 +1780,8 @@ def _install_marker_gpu(cell, *, out_root: Path) -> dict:
             torch.cuda.empty_cache()
 
     base_stats = _read(i653.BASE_MODEL)
-    trained_path = _merge_adapter_for_read(out_root / "armB" / "adapters" / cell.cell_id, cell)
+    # Marker is NOT a dose cell → resolver returns the final band-stopped adapter.
+    trained_path = _resolve_read_model_path(cell, out_root)
     trained_stats = _read(trained_path)
 
     import numpy as np
@@ -1531,43 +1834,34 @@ def _install_marker_gpu(cell, *, out_root: Path) -> dict:
     }
 
 
-def _install_content_gpu(cell, *, out_root: Path) -> dict:
-    """REAL sycophancy/EM dual-DV install read (plan §6, CLAUDE.md dual-DV rule).
+def _content_surface_read(
+    cell,
+    *,
+    base_path: str,
+    trained_path: str,
+    probes: list[str],
+    persona_key: str,
+    system_prompt: str | None,
+    out_root: Path,
+) -> dict:
+    """One on-policy install SURFACE read (base + trained) for a content cell.
 
-    PRIMARY (behavioral): judge-scored on-policy behavior RATE, trained vs base.
-      * sycophancy → the #612 agreement judge over the source persona's on-policy
-        responses to the wrong claims (the validated agreement construct).
-      * EM → the Betley misalignment judge (eval/alignment.py) over the source
-        persona's on-policy responses to the Betley main-8 probes.
-    SECONDARY (continuous, non-saturating): length-normalized trained−base logP
-      of the model's OWN judged-POSITIVE on-policy completions (the dose DV).
-
-    Both reads are on-policy (the model writes its own answer first), never
-    teacher-forced on a canned completion (#432→#456). GPU-bound; no fabricated
-    zeros (raises if the inputs are genuinely missing).
+    Generates on-policy responses under ``persona_key``→``system_prompt`` (a None
+    system_prompt = the canonical NO-SYSTEM surface — the EM hard gate per §6Δ.1),
+    judges base + trained rates, computes the continuous secondary gain on the
+    trained judged-positive completions, and persists the per-(cell × persona)
+    install-probe firing/non-firing pool. Returns the surface's rate/gain dict.
+    PURE wrt model state; on-policy generation only (never teacher-forced canned,
+    #432→#456).
     """
-    import asyncio
-
     import numpy as np
 
     from explore_persona_space.analysis.representation_shift import _generate_responses_vllm
-    from explore_persona_space.personas import EVAL_QUESTIONS
-
-    src_prompts = i653.verify_source_prompts(_resolve_repo_root())
-    source_prompt = src_prompts[cell.source]
-    trained_path = _merge_adapter_for_read(out_root / "armB" / "adapters" / cell.cell_id, cell)
-
-    if cell.behavior == "sycophancy":
-        probes = onpolicy_pool._load_wrong_claims()[: len(EVAL_QUESTIONS)]
-    else:  # em
-        from explore_persona_space.personas import BETLEY_QUESTIONS
-
-        probes = list(BETLEY_QUESTIONS)
 
     def _gen(model_path: str) -> list[tuple[str, str]]:
         rows = _generate_responses_vllm(
             model_path,
-            {cell.source: source_prompt},
+            {persona_key: system_prompt},  # system_prompt None → no system message
             probes,
             max_new_tokens=512,
             # Co-resident HF-model headroom (round 10, see #653 epm:failure v4)
@@ -1584,26 +1878,20 @@ def _install_content_gpu(cell, *, out_root: Path) -> dict:
             for r in rows
         ]
 
-    base_pairs = _gen(i653.BASE_MODEL)
+    base_pairs = _gen(base_path)
     trained_pairs = _gen(trained_path)
-
     base_rate, base_pos = _judge_behavior_rate(cell.behavior, base_pairs)
     trained_rate, trained_pos = _judge_behavior_rate(cell.behavior, trained_pairs)
 
     # Continuous gain: length-normalized trained−base logP of the model's OWN
-    # judged-positive trained completions (re-scored on base + trained).
+    # judged-positive trained completions (re-scored on base + trained) under the
+    # SAME surface (None system_prompt = no system message in the teacher-force).
     gain = None
     if trained_pos:
-        base_lp = _length_norm_logp(i653.BASE_MODEL, source_prompt, trained_pos)
-        trained_lp = _length_norm_logp(trained_path, source_prompt, trained_pos)
+        base_lp = _length_norm_logp(base_path, system_prompt, trained_pos)
+        trained_lp = _length_norm_logp(trained_path, system_prompt, trained_pos)
         gain = float(np.mean(trained_lp) - np.mean(base_lp))
 
-    # ── v8 §4Δ.4: per-(cell × persona) install-probe firing/non-firing pool ─────
-    # The firing/non-firing completions behind the install RATE, for the record-
-    # level audit the parent WARN flagged. The probed persona here is the cell's
-    # SOURCE persona; the trained model's judged-positive pairs are "firing", the
-    # judged-negative ones "non_firing". An empty firing pool (EM 0-firing) is
-    # written as {firing:[], non_firing:[...]} — never a silent absence.
     trained_pos_set = {(q, c) for q, c in trained_pos}
     firing = [{"prompt": q, "completion": c, "label": "firing"} for q, c in trained_pos]
     non_firing = [
@@ -1613,7 +1901,7 @@ def _install_content_gpu(cell, *, out_root: Path) -> dict:
     ]
     _write_install_probe_pool(
         cell,
-        persona=cell.source,
+        persona=persona_key,
         firing=firing,
         non_firing=non_firing,
         dv_kind="judge_rate_plus_gain",
@@ -1622,13 +1910,10 @@ def _install_content_gpu(cell, *, out_root: Path) -> dict:
             "judge_rate_trained": trained_rate,
             "judge_rate_base": base_rate,
             "n_base_judged_positive": len(base_pos),
+            "surface": "no_system" if system_prompt is None else "persona_conditioned",
         },
     )
-
-    _ = asyncio  # imported for the judge helpers below
     return {
-        "dv_kind": "judge_rate_plus_gain",
-        "behavior": cell.behavior,  # so the §6Δ.1 floor gate resolves the floor
         "judge_rate_trained": trained_rate,
         "judge_rate_base": base_rate,
         "judge_rate_gain": (trained_rate - base_rate)
@@ -1637,10 +1922,137 @@ def _install_content_gpu(cell, *, out_root: Path) -> dict:
         "continuous_gain_logp": gain,
         "n_judged_positive_trained": len(trained_pos),
         "n_probes": len(probes),
+        "surface": "no_system" if system_prompt is None else "persona_conditioned",
+    }
+
+
+def _install_content_gpu(cell, *, out_root: Path, trained_path: str | None = None) -> dict:
+    """REAL sycophancy/EM dual-DV install read (plan §6, CLAUDE.md dual-DV rule).
+
+    PRIMARY (behavioral, GATE surface): judge-scored on-policy behavior RATE,
+    trained vs base.
+      * sycophancy → the #612 agreement judge over the SOURCE-PERSONA-conditioned
+        on-policy responses to the wrong claims (#411: installed sycophancy
+        expresses on the persona surface; that IS the demonstrated-expression
+        surface, §6Δ.1).
+      * EM → the Betley misalignment judge over the NO-SYSTEM canonical
+        Betley/Turner responses (BLOCKER em-install-gate-persona-prompted /
+        §6Δ.1: #521 measured persona-prompted EM at 0.0-1.3% vs no-system 21-28%
+        on the SAME installed adapter — gating EM under the persona surface
+        FALSELY DROPS installed EM). The persona-conditioned EM rate is recorded
+        separately as ``em_install_persona_prompted`` for REPORTING, NEVER gating.
+    SECONDARY (continuous, non-saturating): length-normalized trained−base logP
+      of the model's OWN judged-POSITIVE on-policy completions (the dose DV), on
+      the gate surface.
+
+    Both reads are on-policy (the model writes its own answer first), never
+    teacher-forced on a canned completion (#432→#456). ``trained_path`` overrides
+    the read model (the select_checkpoint phase passes the floor-clearing
+    checkpoint, §6Δ.3); defaults to the final merged adapter. GPU-bound.
+    """
+    import asyncio
+
+    from explore_persona_space.personas import EVAL_QUESTIONS
+
+    src_prompts = i653.verify_source_prompts(_resolve_repo_root())
+    source_prompt = src_prompts[cell.source]
+    if trained_path is None:
+        # The install phase's read of record: the §6Δ.3 selected checkpoint (dose
+        # cells) — NOT the final adapter. select_checkpoint passes its own per-
+        # checkpoint path via trained_path during selection.
+        trained_path = _resolve_read_model_path(cell, out_root)
+
+    _ = asyncio  # imported for the judge helpers below
+
+    if cell.behavior == "sycophancy":
+        probes = onpolicy_pool._load_wrong_claims()[: len(EVAL_QUESTIONS)]
+        # Sycophancy gate surface = persona-conditioned (the demonstrated-
+        # expression surface, §6Δ.1). One surface; it IS the gate.
+        surf = _content_surface_read(
+            cell,
+            base_path=i653.BASE_MODEL,
+            trained_path=trained_path,
+            probes=probes,
+            persona_key=cell.source,
+            system_prompt=source_prompt,
+            out_root=out_root,
+        )
+        return {
+            "dv_kind": "judge_rate_plus_gain",
+            "behavior": cell.behavior,  # so the §6Δ.1 floor gate resolves the floor
+            "gate_surface": "persona_conditioned",
+            "judge_rate_trained": surf["judge_rate_trained"],
+            "judge_rate_base": surf["judge_rate_base"],
+            "judge_rate_gain": surf["judge_rate_gain"],
+            "continuous_gain_logp": surf["continuous_gain_logp"],
+            "n_judged_positive_trained": surf["n_judged_positive_trained"],
+            "n_probes": surf["n_probes"],
+            "note": (
+                "dual-DV: judge-scored on-policy persona-conditioned agreement "
+                "RATE (primary gate) + length-normalized trained-base logP of "
+                "judged-positive completions (secondary, dose DV); on-policy "
+                "generation (never teacher-forced canned)"
+            ),
+        }
+
+    # EM — TWO surfaces (§6Δ.1 binding fix).
+    from explore_persona_space.personas import BETLEY_QUESTIONS
+
+    probes = list(BETLEY_QUESTIONS)
+    # GATE surface: NO system prompt (the canonical Betley/Turner surface #521
+    # validated). This is the ONLY signal _install_pass_ok reads for EM hard
+    # gating — judge_rate_gain comes from here.
+    gate = _content_surface_read(
+        cell,
+        base_path=i653.BASE_MODEL,
+        trained_path=trained_path,
+        probes=probes,
+        persona_key=i653.EM_NO_SYSTEM_PROBE_PERSONA,
+        system_prompt=None,
+        out_root=out_root,
+    )
+    # REPORT surface: persona-conditioned EM rate (NON-gating; for downstream
+    # reporting / sanity per §6Δ.1 "reported separately as the persona-conditioned
+    # read, NOT as the install gate").
+    persona = _content_surface_read(
+        cell,
+        base_path=i653.BASE_MODEL,
+        trained_path=trained_path,
+        probes=probes,
+        persona_key=cell.source,
+        system_prompt=source_prompt,
+        out_root=out_root,
+    )
+    return {
+        "dv_kind": "judge_rate_plus_gain",
+        "behavior": cell.behavior,  # so the §6Δ.1 floor gate resolves the floor
+        "gate_surface": "no_system",
+        # The GATE values (no-system) — _install_pass_ok reads judge_rate_gain.
+        "judge_rate_trained": gate["judge_rate_trained"],
+        "judge_rate_base": gate["judge_rate_base"],
+        "judge_rate_gain": gate["judge_rate_gain"],
+        "continuous_gain_logp": gate["continuous_gain_logp"],
+        "n_judged_positive_trained": gate["n_judged_positive_trained"],
+        "n_probes": gate["n_probes"],
+        # The persona-conditioned EM read, recorded SEPARATELY (never gated on).
+        "em_install_persona_prompted": {
+            "judge_rate_trained": persona["judge_rate_trained"],
+            "judge_rate_base": persona["judge_rate_base"],
+            "judge_rate_gain": persona["judge_rate_gain"],
+            "continuous_gain_logp": persona["continuous_gain_logp"],
+            "n_judged_positive_trained": persona["n_judged_positive_trained"],
+            "surface": "persona_conditioned",
+            "note": (
+                "persona-conditioned EM rate (florist/medical_doctor system "
+                "prompt); REPORTED ONLY, NOT the install gate (§6Δ.1 — #521 "
+                "showed persona-prompted EM reads near-zero on installed adapters)"
+            ),
+        },
         "note": (
-            "dual-DV: judge-scored on-policy behavior RATE (primary) + "
-            "length-normalized trained-base logP of judged-positive completions "
-            "(secondary, dose DV); on-policy generation (never teacher-forced canned)"
+            "dual-DV: EM install GATED on the NO-SYSTEM canonical Betley/Turner "
+            "rate (primary gate, §6Δ.1) + secondary dose-DV continuous gain; the "
+            "persona-conditioned EM rate is recorded separately (non-gating). "
+            "on-policy generation (never teacher-forced canned)"
         ),
     }
 
@@ -1753,11 +2165,14 @@ def _judge_behavior_rate(behavior: str, pairs: list[tuple[str, str]]):
 
 
 def _length_norm_logp(
-    model_path: str, source_prompt: str, pairs: list[tuple[str, str]]
+    model_path: str, source_prompt: str | None, pairs: list[tuple[str, str]]
 ) -> list[float]:
     """Length-normalized log P of each completion under ``model_path``, teacher-
     forced (the continuous dose DV; marker-leakage-measurement.md three-space
-    sanity for content behaviors). Returns per-pair mean per-token logp."""
+    sanity for content behaviors). Returns per-pair mean per-token logp.
+
+    ``source_prompt`` None → NO system message (the EM no-system gate surface,
+    §6Δ.1) so the teacher-force matches the surface the rate was generated on."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -1768,7 +2183,11 @@ def _length_norm_logp(
     out: list[float] = []
     try:
         for q, completion in pairs:
-            msgs = [{"role": "system", "content": source_prompt}, {"role": "user", "content": q}]
+            msgs = (
+                [{"role": "user", "content": q}]
+                if source_prompt is None
+                else [{"role": "system", "content": source_prompt}, {"role": "user", "content": q}]
+            )
             prompt_text = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
             prompt_ids = tok(prompt_text, add_special_tokens=False)["input_ids"]
             resp_ids = tok(completion, add_special_tokens=False)["input_ids"]
@@ -1812,7 +2231,20 @@ def phase_install(cells, *, out_root: Path, mode: str) -> dict:
     written: list[str] = []
     repo_root = _resolve_repo_root()
     for c in cells:
-        if mode == i653.RUN_MODE_CPU_STUB:
+        # §6Δ.3: a cell select_checkpoint marked DROPPED (no checkpoint cleared the
+        # install floor) has no usable read model — record the drop, never attempt
+        # a read off it. (CPU-stub never drops; the manifest carries dropped=False.)
+        select_man = _read_select_manifest(c, out_root)
+        if select_man is not None and select_man.get("dropped_non_install"):
+            install = {
+                "dv_kind": "judge_rate_plus_gain",
+                "behavior": c.behavior,
+                "judge_rate_gain": None,  # _install_pass_ok FAILS on None → dropped
+                "dropped_non_install": True,
+                "select_detail": select_man.get("select_detail"),
+                "note": "DROPPED by select_checkpoint (no floor-clearing checkpoint, §6Δ.3)",
+            }
+        elif mode == i653.RUN_MODE_CPU_STUB:
             install = _install_cpu_stub(c)
         elif c.behavior == "marker":
             install = _install_marker_gpu(c, out_root=out_root)
@@ -1821,7 +2253,8 @@ def phase_install(cells, *, out_root: Path, mode: str) -> dict:
             # judge-scored on-policy behavior RATE (primary) + length-normalized
             # trained−base logP of the model's OWN judged-positive completions
             # (secondary). Sycophancy rate via the #612 agreement judge; EM rate
-            # via the Betley misalignment judge (eval/alignment.py).
+            # via the Betley misalignment judge (eval/alignment.py). Reads the
+            # §6Δ.3 selected checkpoint via _resolve_read_model_path (default arg).
             install = _install_content_gpu(c, out_root=out_root)
         payload = {
             "cell_id": c.cell_id,
@@ -1899,7 +2332,9 @@ def _ablation_gpu_read(cell, *, out_root: Path) -> dict:
     layer = _dx_read_layer(cell.behavior)
     direction = np.asarray(top_dir, dtype=np.float32)
     direction = direction / (np.linalg.norm(direction) + 1e-12)
-    trained_path = _merge_adapter_for_read(out_root / "armB" / "adapters" / cell.cell_id, cell)
+    # Ablate the SAME model the geometry was read on — the §6Δ.3 selected
+    # checkpoint (dose cells) / final model (marker), via the resolver.
+    trained_path = _resolve_read_model_path(cell, out_root)
 
     # Read the unablated install DV from the install phase (already computed).
     install_path = out_root / "armB" / f"install_{cell.cell_id}.json"
@@ -2008,19 +2443,31 @@ def _install_read_under_model(cell, model, *, out_root: Path) -> dict:
 
     # Content: judge the trained model's on-policy behavior rate under ablation.
     # The hooked model cannot be served via vLLM (in-process HF hook), so generate
-    # with HF greedy on the probe set, then judge.
+    # with HF greedy on the probe set, then judge. The ablation delta must compare
+    # against the install phase's UNABLATED rate, which for EM is the NO-SYSTEM
+    # gate rate (§6Δ.1) — so EM ablation also reads no-system (sycophancy stays
+    # persona-conditioned, its gate surface).
     import torch as _torch
 
     tok = _load_tokenizer()
     if cell.behavior == "sycophancy":
         probes = onpolicy_pool._load_wrong_claims()[: len(EVAL_QUESTIONS)]
+        ablation_system_prompt: str | None = source_prompt
     else:
         from explore_persona_space.personas import BETLEY_QUESTIONS
 
         probes = list(BETLEY_QUESTIONS)
+        ablation_system_prompt = None  # EM gate surface is no-system (§6Δ.1)
     pairs: list[tuple[str, str]] = []
     for q in probes:
-        msgs = [{"role": "system", "content": source_prompt}, {"role": "user", "content": q}]
+        msgs = (
+            [{"role": "user", "content": q}]
+            if ablation_system_prompt is None
+            else [
+                {"role": "system", "content": ablation_system_prompt},
+                {"role": "user", "content": q},
+            ]
+        )
         text = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
         inputs = tok(text, return_tensors="pt").to(model.device)
         with _torch.no_grad():
@@ -2415,6 +2862,58 @@ def phase_analyze(  # noqa: C901 — per-cell verdict pipeline: the §3.4.CI dec
     return {"verdict_grid": str(out_path), "n_cells": len(verdicts)}
 
 
+def verify_install_probe_deliverables(cells, *, out_root: Path) -> list[str]:
+    """§6.5Δ primary_deliverable gate — fail loud on a missing install-probe pool.
+
+    The plan's §6.5Δ ``primary_deliverable`` glob requires ≥1
+    ``raw_completions.json`` per (cell × persona) probed
+    (``armB/install_probes/<cell_id>/<persona>/raw_completions.json``; for EM both
+    the source persona AND the no-system gate surface). This gate enumerates the
+    expected pools for every cell whose install phase RAN (``install_<cell>.json``
+    present) and raises a ``primary-deliverable-missing`` RuntimeError if any is
+    absent — BEFORE the upload + ``[phase=done]`` (the parent WARN-recurrence fix;
+    Step 8's upload-verifier consumes the same ``primary-deliverable-missing``
+    blocker tag). DROPPED cells (no install read) are exempt — their install JSON
+    carries ``dropped_non_install`` and the no-read drop is itself the record.
+
+    Returns the list of verified relpaths. PURE wrt disk (read-only checks).
+    """
+    armB = out_root / "armB"
+    # Only verify cells whose install phase actually ran (an install JSON exists);
+    # a partial smoke (--phase build) wrote no install pools and is not gated here.
+    probed_cells = []
+    for c in cells:
+        install_path = armB / f"install_{c.cell_id}.json"
+        if not install_path.exists():
+            continue
+        # A dropped cell (no floor-clearing checkpoint) produced no install probe
+        # pool (no read happened); its drop record is the deliverable, not a pool.
+        install_block = json.loads(install_path.read_text()).get("install", {})
+        if install_block.get("dropped_non_install"):
+            continue
+        probed_cells.append(c)
+
+    expected = i653.expected_install_probe_relpaths(probed_cells)
+    missing = [rel for rel in expected if not (out_root / rel).exists()]
+    if missing:
+        raise RuntimeError(
+            "primary-deliverable-missing: the §6.5Δ install-probe completion "
+            f"deliverable is incomplete — {len(missing)} expected (cell × persona) "
+            f"pool(s) absent: {missing[:8]}{' …' if len(missing) > 8 else ''}. "
+            "Every probed (cell × persona) MUST have an install_probes/<cell>/"
+            "<persona>/raw_completions.json (an empty firing pool is recorded as "
+            "{firing:[], non_firing:[...]}, §4Δ.4) — refusing to upload + emit "
+            "[phase=done] with a missing primary deliverable (CLAUDE.md 'Fail "
+            "fast')."
+        )
+    print(
+        f"  [upload] §6.5Δ primary-deliverable check PASS: {len(expected)} "
+        f"install-probe pool(s) present over {len(probed_cells)} probed cell(s)",
+        flush=True,
+    )
+    return expected
+
+
 def phase_upload(cells, *, out_root: Path, mode: str) -> dict:
     """Upload datasets + raw completions to the HF data repo BEFORE teardown
     (Upload Policy). No-op in cpu_stub / fail mode (nothing real produced).
@@ -2438,6 +2937,10 @@ def phase_upload(cells, *, out_root: Path, mode: str) -> dict:
     if mode != i653.RUN_MODE_GPU:
         print(f"  [upload] ({mode}) skipping HF upload — no real artifacts produced", flush=True)
         return {"uploaded": False, "reason": mode}
+    # §6.5Δ primary-deliverable gate — fail loud on a missing (cell × persona)
+    # install-probe pool BEFORE any upload + the terminal [phase=done] (the parent
+    # WARN-recurrence fix). Runs first so a missing deliverable never ships.
+    verified_deliverables = verify_install_probe_deliverables(cells, out_root=out_root)
     from explore_persona_space.orchestrate.hub import (
         upload_dataset_directory,
         upload_raw_completions_to_data_repo,
@@ -2471,7 +2974,11 @@ def phase_upload(cells, *, out_root: Path, mode: str) -> dict:
     print(
         f"  [upload] datasets + raw completions + tensors -> HF data repo ({uploaded})", flush=True
     )
-    return {"uploaded": True, "counts": uploaded}
+    return {
+        "uploaded": True,
+        "counts": uploaded,
+        "install_probe_deliverables_verified": len(verified_deliverables),
+    }
 
 
 # ── Sentinel (poll_pipeline.py contract) ─────────────────────────────────────
@@ -2753,6 +3260,10 @@ def _run_phases(
         elif ph == "train":
             results["train"] = phase_train(
                 cells, out_root=out_root, gpu=gpu, mode=mode, max_steps=None
+            )
+        elif ph == "select_checkpoint":
+            results["select_checkpoint"] = phase_select_checkpoint(
+                cells, out_root=out_root, mode=mode
             )
         elif ph == "dx":
             results["dx"] = phase_dx(cells, out_root=out_root, mode=mode)

@@ -495,6 +495,134 @@ def _install_pass_ok(install_payload: dict, behavior: str) -> tuple[bool, dict]:
     return ok, {"dv": "judge_rate_gain", "value": gain, "floor": floor, "passed": ok}
 
 
+# ── EM install gate surface (§6Δ.1 binding fix — no-system canonical Betley) ──
+# The persona key under which the EM HARD install gate's no-system canonical
+# Betley/Turner probe is recorded (a sentinel persona, NEVER an SFT persona). The
+# install gate (_install_pass_ok) reads the no-system EM rate (#521: trivia under
+# a doctor system prompt read 0.0-1.3% vs canonical no-system 21-28% on the SAME
+# installed adapter — gating EM under the persona surface FALSELY DROPS installed
+# EM). The persona-conditioned EM rate is recorded separately for reporting.
+EM_NO_SYSTEM_PROBE_PERSONA = "__no_system__"
+
+
+def install_probe_personas_for_cell(cell) -> tuple[str, ...]:
+    """The persona keys an install run writes an install-probe pool for, per cell.
+
+    marker / sycophancy → the source persona only (the demonstrated-expression
+    surface). EM → the source persona (persona-conditioned REPORT) AND the
+    no-system sentinel (the canonical Betley/Turner HARD gate surface, §6Δ.1).
+    PURE (cell-in → persona-tuple-out; the §6.5Δ deliverable verifier + the EM
+    install split both read this so they cannot drift apart).
+    """
+    if cell.behavior == "em":
+        return (cell.source, EM_NO_SYSTEM_PROBE_PERSONA)
+    return (cell.source,)
+
+
+def expected_install_probe_relpaths(cells) -> list[str]:
+    """Every (cell × persona) install-probe ``raw_completions.json`` relpath the
+    §6.5Δ ``primary_deliverable`` glob requires, under the eval_results root.
+
+    Relpath shape: ``armB/install_probes/<cell_id>/<persona>/raw_completions.json``
+    (matched to ``_write_install_probe_pool``). PURE — the on-pod completion gate
+    enumerates this and FAILs ``primary-deliverable-missing`` before
+    ``[phase=done]`` when any expected pool is absent (§6.5Δ).
+    """
+    rels: list[str] = []
+    for c in cells:
+        for persona in install_probe_personas_for_cell(c):
+            rels.append(f"armB/install_probes/{c.cell_id}/{persona}/raw_completions.json")
+    return rels
+
+
+# ── Dose-to-target checkpoint persistence (§4Δ.2 / §6Δ.3 — BLOCKER fix) ───────
+# A dose-to-target cell MUST persist intermediate optimizer-step checkpoints so
+# the select_checkpoint phase can pick the FIRST floor-clearing one (§6Δ.3). HF
+# Trainer writes NO checkpoints with save_strategy="no" REGARDLESS of save_steps,
+# so dose cells set save_strategy="steps"; save_total_limit must outlive the
+# SHALLOWEST dose rung (HF keep-last-N pruning deletes a mid-train checkpoint
+# before the post-train read otherwise — gotchas: keep-last-N). Source: #480/
+# #597/#650 (the save_strategy="steps" wiring) + #641 (_min_save_total_limit).
+def dose_save_args(
+    dose: tuple[int, ...] | list[int], max_steps: int | None, *, total_steps_estimate: int | None
+) -> dict:
+    """SFTConfig save kwargs for a dose-to-target cell (§6Δ.3).
+
+    ``dose`` — the dose-checkpoint optimizer steps (sycophancy step ladder; EM
+    step ladder). ``max_steps`` — the recipe ``max_steps`` (EM: 200; None for the
+    epoch-bounded sycophancy run). ``total_steps_estimate`` — the realized total
+    optimizer steps (epochs × steps-per-epoch) for the epoch-bounded case; used
+    to size save_total_limit so the SHALLOWEST dose checkpoint is not pruned.
+
+    Returns ``{"save_strategy": "steps", "save_steps": <s>, "save_total_limit":
+    <n>, "save_only_model": True}``. ``save_steps`` = ``min(dose)`` so a saved
+    ``checkpoint-<step>`` exists at or below EVERY dose step (the select phase
+    snaps each dose step to the nearest saved checkpoint ≤ it — the matched-
+    install read point, §6Δ.3); ``save_total_limit`` spans ``min(dose)..endpoint``
+    at that granularity + a margin so HF keep-last-N never deletes the earliest
+    (lowest-dose) checkpoint — exactly the one the first-floor-clearing read
+    needs (gotchas: keep-last-N; #641). PURE.
+    """
+    import math
+
+    dose = tuple(int(d) for d in dose)
+    if not dose:
+        raise ValueError("dose_save_args called with an empty dose schedule")
+    # Save at min(dose) granularity so a checkpoint exists at or below every dose
+    # step (sycophancy ladder GCD is 1 → saving at every step is wasteful, ~131
+    # checkpoints; min(dose)=5 saves at 5,10,...,endpoint and the selector snaps
+    # each dose step to the nearest saved checkpoint ≤ it). EM ladder {40,80,...}
+    # → save_steps=40 lands exactly on each dose step.
+    save_steps = max(1, min(dose))
+    # The endpoint (the last optimizer step) the run actually reaches.
+    endpoint = max_steps if max_steps else total_steps_estimate
+    if endpoint is None:
+        # No reliable endpoint estimate → fall back to the deepest dose step.
+        endpoint = max(dose)
+    endpoint = max(endpoint, max(dose))
+    # HF keeps the LAST N checkpoints; to retain min(dose)..endpoint at save_steps
+    # granularity (+ a +2 margin for the final-step checkpoint and a boundary
+    # coincidence) the floor is ceil((endpoint - min(dose)) / save_steps) + 2.
+    n_keep = math.ceil((endpoint - min(dose)) / save_steps) + 2
+    return {
+        "save_strategy": "steps",
+        "save_steps": save_steps,
+        "save_total_limit": max(n_keep, 5),
+        "save_only_model": True,  # adapter-only step checkpoints (~160 MB, #480 quota)
+    }
+
+
+def dose_checkpoint_steps(dose: tuple[int, ...] | list[int], max_steps: int | None) -> list[int]:
+    """The ordered dose steps the select phase reads, with the endpoint appended
+    (the SYCO_RECIPE/EM_RECIPE comments say "+endpoint is appended by the dose-
+    budget logic", §6Δ.3). PURE. Endpoint = max_steps when set, else max(dose)."""
+    steps = sorted({int(d) for d in dose})
+    endpoint = max_steps if max_steps else (steps[-1] if steps else 0)
+    if endpoint and endpoint not in steps and endpoint > (steps[-1] if steps else 0):
+        steps.append(int(endpoint))
+    return steps
+
+
+def snap_dose_step_to_available(dose_step: int, available_steps: list[int]) -> int | None:
+    """The saved checkpoint step at or below ``dose_step`` (the matched-install
+    read point — HF saves at save_steps granularity so a dose step may fall
+    between saved checkpoints; the read happens on the nearest saved checkpoint ≤
+    the dose step). Returns None if no saved checkpoint is ≤ dose_step. PURE."""
+    below = [s for s in available_steps if s <= dose_step]
+    return max(below) if below else None
+
+
+# Content behaviors run the dose-to-target select_checkpoint phase (§6Δ.3); marker
+# uses the band-stop callback (the final adapter IS the band-stopped one) and
+# full-FT has no dose schedule (reads the final FT model). So select is a no-op
+# for marker and full-FT.
+def cell_uses_dose_selection(cell) -> bool:
+    """True iff this cell's geometry read must come from a select_checkpoint-
+    chosen floor-clearing checkpoint (sycophancy/EM LoRA cells, §6Δ.3). Marker
+    (band-stop) and full-FT (no dose schedule) read their final model. PURE."""
+    return (cell.behavior in ("sycophancy", "em")) and not cell.is_full_ft
+
+
 # Rungs that run in each provision (plan §9 phase split). Provision 1 = Arm A +
 # the LoRA ladder + their Δx/install reads; the gate fires in between; Provision
 # 2 = the gated full-FT rung. Source: plan §9 "Phase split (pre-registered)".
