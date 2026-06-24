@@ -1,0 +1,1 @@
+{"ts": "2026-06-24T20:23:08Z", "event": "raised", "concern_id": "async-runpod-failover-persistence-repeat", "severity": "BLOCKER", "summary": "MF4 persistence-failure path re-launches a 2nd paid RunPod on the next poll of the still-GCP sidecar (no idempotency guard before backend_poll.py:306); breaches 'exactly once'.", "raised_by": "reconciler", "raised_at_round": 1}
