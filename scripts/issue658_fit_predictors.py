@@ -224,7 +224,14 @@ def _pearson(pred: np.ndarray, meas: np.ndarray) -> float | None:
 
 
 def _cluster_bootstrap_rho(pred, meas, *, n_boot: int, seed: int) -> dict | None:
-    """Context-clustered bootstrap 95% CI of Spearman ρ (resample contexts w/ repl)."""
+    """Context-clustered bootstrap 95% CI of Spearman ρ (resample contexts w/ repl).
+
+    Returns ``{"ci95": [lo, hi], "draws": [...]}`` — ``draws`` is the full sorted
+    list of per-resample ρ values (the v3 (G1) genre-delta read consumes these
+    per-arm draws to form the INDEPENDENT Δρ CI; the two arms have disjoint probes
+    so no paired resampling is possible). ``draws`` is an ADDITIVE key: ``ci95`` is
+    unchanged, so the Betley arm's existing numbers are untouched.
+    """
     n = len(pred)
     if n < 4:
         return None
@@ -238,7 +245,10 @@ def _cluster_bootstrap_rho(pred, meas, *, n_boot: int, seed: int) -> dict | None
     if len(stats) < 100:
         return None
     stats.sort()
-    return {"ci95": [stats[int(0.025 * len(stats))], stats[int(0.975 * len(stats)) - 1]]}
+    return {
+        "ci95": [stats[int(0.025 * len(stats))], stats[int(0.975 * len(stats)) - 1]],
+        "draws": stats,
+    }
 
 
 # ── A3.2 (P1) ──────────────────────────────────────────────────────────────────
