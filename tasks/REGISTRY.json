@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 668,
+  "highest_id": 669,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4185,6 +4185,13 @@
       "path": "tasks/completed/668",
       "status": "completed",
       "title": "Shard i528_phase4_judge.py --backend batch submit (un-sharded single batches.create 409s above the 100k cap); drop its batch-judge lint grandfather"
+    },
+    "669": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/669",
+      "status": "proposed",
+      "title": "Detect hung-but-RUNNING GCP VM (frozen non-terminal eps/phase + drain-timeout) -> terminal_workload_wedged -> #659 RunPod failover; + in-VM network watchdog"
     },
     "67": {
       "has_clean_result": true,
