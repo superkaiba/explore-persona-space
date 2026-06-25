@@ -83,6 +83,10 @@ MLP_MAX_EPOCHS = 300
 RIDGE_LAMBDAS = [1e-2, 1e-1, 1.0, 10.0, 100.0, 1000.0]  # A3.4 nested-CV grid
 N_NOISE_REDRAWS = 8  # N1 (plan §11)
 N_BOOTSTRAP = 2000  # plan §11
+# Retry cap for _cluster_bootstrap_rho: keep redrawing past degenerate (all-equal)
+# resamples until n_boot VALID ρ draws accumulate, bounded at this multiple of
+# n_boot total attempts so a near-degenerate cell raises instead of looping.
+_MAX_BOOTSTRAP_DRAWS = 5
 FDR_Q = 0.10  # plan §11
 # SMOKE-ONLY A3.4/A3.5 feature-dim clamp: the c_C → v0 ridge is O(D³) in the
 # hidden dim D, intractable at full H=3584 on CPU at smoke scale. 0 in the real
@@ -226,24 +230,53 @@ def _pearson(pred: np.ndarray, meas: np.ndarray) -> float | None:
 def _cluster_bootstrap_rho(pred, meas, *, n_boot: int, seed: int) -> dict | None:
     """Context-clustered bootstrap 95% CI of Spearman ρ (resample contexts w/ repl).
 
-    Returns ``{"ci95": [lo, hi], "draws": [...]}`` — ``draws`` is the full sorted
+    Returns ``{"ci95": [lo, hi], "draws": [...]}`` with ``len(draws) == n_boot``
+    for any cell with n>=4 and a real rank signal — ``draws`` is the full sorted
     list of per-resample ρ values (the v3 (G1) genre-delta read consumes these
     per-arm draws to form the INDEPENDENT Δρ CI; the two arms have disjoint probes
     so no paired resampling is possible). ``draws`` is an ADDITIVE key: ``ci95`` is
     unchanged, so the Betley arm's existing numbers are untouched.
+
+    Degenerate resamples (an all-equal redraw → ``_rho`` None) are DROPPED and
+    RE-DRAWN — we keep drawing (capped at ``_MAX_BOOTSTRAP_DRAWS`` × ``n_boot``
+    attempts) until exactly ``n_boot`` valid ρ draws are accumulated, so the
+    emitted ``draws`` length is the registered ≥2000 production resample count
+    (plan v3 §6/§6.5/§11) and never silently degrades to <n_boot. The downstream
+    Δρ CI gate (``issue658_genre_delta._delta_rho_ci``) enforces the ≥2000 floor;
+    this keeps healthy cells from tripping it on degenerate-resample drops.
+
+    Returns ``None`` ONLY for a genuinely tiny cell (n<4) — the legitimate
+    H3-adjacent / no-dynamic-range case the genre-delta gate flags as N/A. A cell
+    that is n>=4 but cannot accumulate ``n_boot`` valid draws within the retry cap
+    (a near-degenerate measurement with almost no rank variation) raises rather
+    than silently emitting a short / None ``draws`` (a dynamic-range cell with
+    n>=4 must carry a full bootstrap per the contract).
     """
     n = len(pred)
     if n < 4:
         return None
     rng = random.Random(seed)
-    stats = []
-    for _ in range(n_boot):
+    stats: list[float] = []
+    max_attempts = _MAX_BOOTSTRAP_DRAWS * n_boot
+    attempts = 0
+    while len(stats) < n_boot and attempts < max_attempts:
+        attempts += 1
         idx = [rng.randrange(n) for _ in range(n)]
         r = _rho(pred[idx], meas[idx])
         if r is not None:
             stats.append(r)
-    if len(stats) < 100:
-        return None
+    if len(stats) < n_boot:
+        raise RuntimeError(
+            "cluster bootstrap could not accumulate the registered "
+            f"n_boot={n_boot} valid Spearman-ρ draws for an n={n} cell after "
+            f"{attempts} resample attempts (got {len(stats)} valid draws); the "
+            "measurement has almost no rank variation under resampling. A "
+            "dynamic-range cell (n>=4) must carry a full ≥2000-resample bootstrap "
+            "per plan v3 §6/§6.5/§11 — do not silently emit a short/None draws "
+            "list. Investigate the cell's testable variance (it may belong in the "
+            "H3 no-dynamic-range bucket, in which case its E0 std must fall below "
+            "the dynamic-range floor and the genre-delta gate will mark it N/A)."
+        )
     stats.sort()
     return {
         "ci95": [stats[int(0.025 * len(stats))], stats[int(0.975 * len(stats)) - 1]],
