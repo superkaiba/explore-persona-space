@@ -845,6 +845,14 @@ def main() -> int:
         help="skip the #594 cc_last HF store (offline smoke); evaluate only the "
         "mean-over-prompt c_C recipe. The PRODUCTION recipe lock REQUIRES cc_last.",
     )
+    parser.add_argument(
+        "--cc-last-from-store",
+        action="store_true",
+        help="read the last-input-token c_C from the per-genre store "
+        "(v0_summaries.pt::cc_last) instead of the Betley-pinned #594 HF loader "
+        "(REQUIRED for the (G1) genre arm: the #594 cc_last store is Betley-pinned). "
+        "Fail-loud if the store lacks the cc_last key.",
+    )
     args = parser.parse_args()
 
     # SMOKE-ONLY compute clamp: the LOCO MLP (MLP_MAX_EPOCHS=300, per fold per
@@ -893,18 +901,39 @@ def main() -> int:
     dump_json({"a33": a33_cells}, out_dir / "a33_cells.json")
 
     # A3.4/A3.5: evaluate BOTH c_C recipes (round-2 BLOCKER fix). last-input-token
-    # comes from the #594 HF store (CONFIRMED reuse); mean-over-prompt is the
-    # #658-extracted ablation stored in v0_summaries.pt. A missing #594 store is
-    # FAIL-LOUD (the recipe lock is a Phase-2 deliverable) unless --no-cc-last is
-    # set for an offline smoke, in which case only meanprompt is evaluated.
+    # comes from the #594 HF store (Betley arm, CONFIRMED reuse) OR — for the (G1)
+    # genre arm — from the per-genre store's freshly-recomputed cc_last
+    # (--cc-last-from-store; the #594 store is Betley-pinned). mean-over-prompt is
+    # the #658-extracted ablation stored in v0_summaries.pt. A missing #594 store
+    # is FAIL-LOUD (the recipe lock is a Phase-2 deliverable) unless --no-cc-last
+    # is set for an offline smoke, in which case only meanprompt is evaluated.
     cc_recipes: dict[str, dict] = {
         "meanprompt": {c: store["cc_meanprompt"][c].numpy() for c in ctx_ids}
     }
     if args.no_cc_last:
         logger.warning(
             "--no-cc-last: evaluating only the mean-over-prompt c_C recipe (offline smoke); "
-            "the production recipe lock REQUIRES the #594 cc_last store"
+            "the production recipe lock REQUIRES the cc_last recipe"
         )
+    elif args.cc_last_from_store:
+        # (G1) genre arm: the last-input-token c_C was recomputed fresh on this
+        # genre's pool by the extractor (--cc-recompute-last) into
+        # v0_summaries.pt::cc_last. Fail loud if the store lacks the key (a store
+        # built WITHOUT --cc-recompute-last cannot satisfy --cc-last-from-store).
+        store_cc_last = store.get("cc_last")
+        if not store_cc_last:
+            raise RuntimeError(
+                "--cc-last-from-store: v0_summaries.pt has no cc_last key (re-run the "
+                "extractor with --cc-recompute-last for the genre arm)"
+            )
+        missing = [c for c in ctx_ids if c not in store_cc_last]
+        if missing:
+            raise RuntimeError(
+                f"--cc-last-from-store: store cc_last missing {len(missing)} contexts: "
+                f"{missing[:5]}..."
+            )
+        cc_recipes["last"] = {c: store_cc_last[c].numpy() for c in ctx_ids}
+        logger.info("cc_last loaded from per-genre store (%d contexts)", len(cc_recipes["last"]))
     else:
         cc_last = load_cc_last_store(layers, ctx_ids)
         cc_recipes["last"] = {c: cc_last[c].numpy() for c in ctx_ids}
