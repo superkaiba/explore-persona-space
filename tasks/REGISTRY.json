@@ -4141,8 +4141,8 @@
     "663": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/663",
-      "status": "running",
+      "path": "tasks/completed/663",
+      "status": "completed",
       "title": "Harden Anthropic batch-judge client: shard to ~8k/batch, bound poll on expires_at, custom_id checkpoint/resume"
     },
     "664": {
