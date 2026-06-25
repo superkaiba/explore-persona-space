@@ -606,6 +606,25 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   "Pod-N stopped while awaiting user decision on …" is the banned regression
   this clause closes — it is the autonomous-mode equivalent of the text-menu
   end-of-turn failure. Forbidden in `EPM_AUTONOMOUS_SESSION=1`.
+- **A FREE, no-data-loss path beats parking — take it and keep waiting.** When
+  a free, no-data-loss continuation EXISTS, taking it is mandatory; parking to
+  await the user or proposing a PAID rerun while that free path is available is
+  the banned regression. Canonical case (tasks #658/#663, 2026-06-24): an
+  in-SLA Anthropic Message Batch (submitted, not yet expired) SELF-HARVESTS for
+  free at `expires_at` — the result is recoverable by polling the batch's own
+  deadline-bounded poller (`explore_persona_space.eval.batch_judge`, which
+  bounds the poll on `expires_at`), so the correct autonomous action is to keep
+  the deadline-bounded poll running (end the turn; the bg-Bash poll chain / the
+  45-min `/issue-tick` backstop re-wakes you) and harvest the free result — NOT
+  to PARK with "await your call" and NOT to propose a paid re-submission. A paid
+  rerun is justified ONLY when the cheaper free path is genuinely unavailable
+  (the batch already expired with no result, the data is truly lost). This is
+  the data-loss-aware twin of "never stop a pod to PARK": both forbid burning a
+  turn (or money) on a user-park when continuing toward the Goal is free and
+  loses nothing. Also route batch judging through the #663-hardened client
+  rather than a hand-rolled `messages.batches.create` + deadline-less
+  `while True ... sleep` poller — the client is what makes the free self-harvest
+  automatic (enforced by `scripts/workflow_lint.py --check-batch-judge-client`).
 - **Cost is gated ONLY at the plan-approval GPU-hour cap, never mid-run.** The
   ONLY cost gate in autonomous mode is the Step 2c `plan_pending` park when
   `gpu_hours_total > EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (default 100). A running

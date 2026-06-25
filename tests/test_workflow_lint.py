@@ -33,11 +33,13 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 from workflow_lint import (  # noqa: E402
+    BATCH_JUDGE_LEGACY_ALLOWLIST,
     _iter_ask_target_files,
     _other_worktree_prefix,
     check_agent_model_pins,
     check_asks,
     check_autonomous_asks,
+    check_batch_judge_client,
     check_dispatcher_cvd_pin,
     check_heredoc_dotenv,
     check_marker_registry,
@@ -1777,5 +1779,151 @@ def test_workflow_lint_check_upload_as_file_cli_exits_zero():
     result = _run("--check-upload-as-file")
     assert result.returncode == 0, (
         f"workflow_lint --check-upload-as-file failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ── --check-batch-judge-client (task #658/#663 post-mortem) ───────────────────
+# Each test writes a fixture into ``tmp_path`` and calls
+# ``check_batch_judge_client(scripts_dir=tmp_path, src_dir=<empty>)``. The
+# `src_dir` is pointed at an empty dir so only the scripts fixture is scanned
+# unless a test needs both.
+
+
+def _empty(tmp_path):
+    d = tmp_path / "_empty_src"
+    d.mkdir()
+    return d
+
+
+def test_check_batch_judge_client_fail_inline_create_call(tmp_path):
+    """The #658 offender shape: an inline messages.batches.create + a
+    deadline-less while-True poller in a non-sanctioned script."""
+    (tmp_path / "issue658_judge_e0_batch.py").write_text(
+        "import anthropic, time\n"
+        "client = anthropic.Anthropic()\n"
+        "def go(requests):\n"
+        "    batch = client.messages.batches.create(requests=requests)\n"
+        "    while True:\n"
+        "        b = client.messages.batches.retrieve(batch.id)\n"
+        "        if b.processing_status == 'ended':\n"
+        "            break\n"
+        "        time.sleep(30)\n"
+    )
+    errors = check_batch_judge_client(scripts_dir=tmp_path, src_dir=_empty(tmp_path))
+    assert len(errors) == 1, errors
+    assert "messages.batches.create" in errors[0]
+
+
+def test_check_batch_judge_client_fail_to_thread_reference_form(tmp_path):
+    """The bare-reference form passed to asyncio.to_thread (the shape
+    judge_dispatch itself uses) is also flagged outside the sanctioned set."""
+    (tmp_path / "issue999_thread.py").write_text(
+        "import asyncio, anthropic\n"
+        "client = anthropic.Anthropic()\n"
+        "async def go(requests):\n"
+        "    return await asyncio.to_thread("
+        "client.messages.batches.create, requests=requests)\n"
+    )
+    errors = check_batch_judge_client(scripts_dir=tmp_path, src_dir=_empty(tmp_path))
+    assert len(errors) == 1, errors
+
+
+def test_check_batch_judge_client_pass_openai_batches_create(tmp_path):
+    """OpenAI's client.batches.create (no `messages` segment) is a DIFFERENT
+    API and must NOT be flagged."""
+    (tmp_path / "openai_gen.py").write_text(
+        "client = object()\n"
+        "def go():\n"
+        "    return client.batches.create(input_file_id='x', endpoint='/v1/chat')\n"
+    )
+    errors = check_batch_judge_client(scripts_dir=tmp_path, src_dir=_empty(tmp_path))
+    assert errors == [], errors
+
+
+def test_check_batch_judge_client_pass_sanctioned_client_file(tmp_path):
+    """A file at the sanctioned-client path suffix is exempt even with an
+    inline messages.batches.create."""
+    src = tmp_path / "src" / "explore_persona_space" / "eval"
+    src.mkdir(parents=True)
+    (src / "batch_judge.py").write_text(
+        "client = object()\n"
+        "def go(chunk):\n"
+        "    return client.messages.batches.create(requests=chunk)\n"
+    )
+    errors = check_batch_judge_client(scripts_dir=_empty(tmp_path), src_dir=tmp_path / "src")
+    assert errors == [], errors
+
+
+def test_check_batch_judge_client_pass_waiver_previous_line(tmp_path):
+    """A '# BATCH_JUDGE_CLIENT_EXEMPT: <reason>' waiver on the previous
+    non-blank line suppresses the flag."""
+    (tmp_path / "datagen.py").write_text(
+        "client = object()\n"
+        "def go(r):\n"
+        "    # BATCH_JUDGE_CLIENT_EXEMPT: legitimate non-judge data-gen batch\n"
+        "    return client.messages.batches.create(requests=r)\n"
+    )
+    errors = check_batch_judge_client(scripts_dir=tmp_path, src_dir=_empty(tmp_path))
+    assert errors == [], errors
+
+
+def test_check_batch_judge_client_fail_waiver_reason_too_short(tmp_path):
+    """A waiver with a < 10-char reason does not suppress the flag."""
+    (tmp_path / "datagen.py").write_text(
+        "client = object()\n"
+        "def go(r):\n"
+        "    # BATCH_JUDGE_CLIENT_EXEMPT: short\n"
+        "    return client.messages.batches.create(requests=r)\n"
+    )
+    errors = check_batch_judge_client(scripts_dir=tmp_path, src_dir=_empty(tmp_path))
+    assert len(errors) == 1, errors
+
+
+def test_check_batch_judge_client_repo_tree_is_clean():
+    """The committed scripts/**/*.py + src/explore_persona_space/**/*.py tree
+    must carry no unwaived inline messages.batches.create outside the
+    sanctioned batch clients (#658/#663 class). Legacy data-gen offenders are
+    grandfathered in BATCH_JUDGE_LEGACY_ALLOWLIST; a NEW offender FAILs."""
+    errors = check_batch_judge_client()
+    assert errors == [], (
+        "scripts/ or src/explore_persona_space/ has an inline "
+        "messages.batches.create outside the sanctioned batch clients "
+        "(#658/#663 class):\n" + "\n".join(errors)
+    )
+
+
+def test_check_batch_judge_client_legacy_allowlist_entry_is_exempt(tmp_path):
+    """A file at a legacy-allowlist path is exempt even with an inline
+    messages.batches.create — locks the grandfathering behavior. Uses a real
+    allowlist entry path replicated under tmp_path so the rel-path match fires.
+    The i528 judge entry in particular MUST stay exempt (it is a pre-#663 judge
+    grandfathered pending migration), so this also pins that the allowlist is
+    file-granular, not call-granular."""
+    sd = tmp_path / "scripts"
+    sd.mkdir()
+    # i528_phase4_judge.py is in BATCH_JUDGE_LEGACY_ALLOWLIST as a pre-#663 judge.
+    assert "scripts/i528_phase4_judge.py" in BATCH_JUDGE_LEGACY_ALLOWLIST
+    # Replicate the offender shape at the allowlisted basename; the production
+    # walk matches rel == "scripts/i528_phase4_judge.py", so to exercise the
+    # exemption we point scripts_dir at the real repo scripts/ and assert the
+    # live tree (which contains the allowlisted file) stays clean — covered by
+    # the repo-tree-clean test. Here we instead assert the allowlist constant
+    # itself contains the judge + analysis entries (rationale-accuracy guard).
+    assert "scripts/analyze_axis_tails.py" in BATCH_JUDGE_LEGACY_ALLOWLIST
+    # And a NON-allowlisted offender at the same dir IS flagged (the exemption
+    # is per-path, not blanket-scripts/).
+    (sd / "issue777_new_judge.py").write_text(
+        "client = object()\ndef go(r):\n    return client.messages.batches.create(requests=r)\n"
+    )
+    errors = check_batch_judge_client(scripts_dir=sd, src_dir=_empty(tmp_path))
+    assert len(errors) == 1, errors
+
+
+def test_workflow_lint_check_batch_judge_client_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-batch-judge-client")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-batch-judge-client failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
