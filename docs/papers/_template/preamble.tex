@@ -1,0 +1,78 @@
+% ===========================================================================
+% docs/papers/_template/preamble.tex
+%
+% FIXED preamble for every EPS clean-result paper. The analyzer / authoring
+% agent NEVER edits this file or copies its own preamble: a paper's
+% issue_<N>.tex \input's this preamble verbatim (via the build helper, which
+% rewrites the relative \input path to the per-task dir). Constraining the
+% preamble is what contains the "agent writes free-form LaTeX -> brace/macro
+% compile errors" risk (SPIKE_REPORT.md § "The #1 risk"). The agent only fills
+% the section bodies of the template.
+%
+% This is the spike-proven preamble (issue_657_spike.tex), which compiles 8
+% pages clean multi-pass pdflatex+bibtex and is byte-reproducible under
+% SOURCE_DATE_EPOCH. Two project macros are baked in:
+%
+%   \metric{key}  — number grounding. v1: UNUSED on the required path (numbers
+%                   are written as literals; the analyzer's existing numeric-
+%                   fidelity re-extraction is the grounding guarantee). v1.1
+%                   OPT-IN: \metric{key} expands \csname metric@<key>\endcsname
+%                   from a generated registry (metrics.tex, \input below), every
+%                   value traceable to metrics.json via verify_metric.py. The
+%                   macro + \input are present so a v1.1 paper compiles with no
+%                   preamble change; a v1 paper simply never calls \metric and
+%                   omits metrics.tex (the \IfFileExists guard below keeps it
+%                   compiling either way).
+%
+%   \epsref{N}    — typed cross-experiment reference. PDF: "#N" hyperlink to the
+%                   dashboard task page. HTML (pandoc + eps_paper_filter.lua):
+%                   a typed <a data-epsref="N"> the dashboard detects for
+%                   hover-preview. \epsref is a v1 FEATURE (cross-refs are kept).
+% ===========================================================================
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage[numbers,square]{natbib}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+% Figures live in the per-task figure dir figures/issue_<N>/. The build helper
+% (scripts/build_paper.py) sets \graphicspath at the top of issue_<N>.tex
+% (BEFORE \input{preamble.tex}) so this preamble stays task-agnostic. The
+% verifier confirms every \includegraphics resolves repo-relative-confined.
+
+\captionsetup{font=small,labelfont=bf}
+\titlespacing*{\section}{0pt}{1.4ex plus 1ex minus .2ex}{0.8ex plus .2ex}
+\titlespacing*{\subsection}{0pt}{1.1ex plus 1ex minus .2ex}{0.5ex plus .2ex}
+
+\let\mathrho\rho
+\renewcommand{\rho}{\ensuremath{\mathrho}}
+\newcommand{\aln}{\ensuremath{\mathrm{align}}}
+
+% ---------------------------------------------------------------------------
+% \metric{key} (v1.1 opt-in; unused on the v1 required path).
+% ---------------------------------------------------------------------------
+\newcommand{\metric}[1]{%
+  \ifcsname metric@#1\endcsname
+    \csname metric@#1\endcsname
+  \else
+    \textbf{??\detokenize{#1}??}% loud failure if a key is missing
+  \fi
+}
+% metrics.tex is the generated macro registry (emit_metrics_tex.py). On the v1
+% required path there is no metrics.tex; the guard keeps the paper compiling.
+\IfFileExists{metrics.tex}{\input{metrics.tex}}{}
+
+% ---------------------------------------------------------------------------
+% \epsref{N} (v1 feature). Resolves to the dashboard task page. The HTML render
+% path rewrites this into a typed hover-preview link via eps_paper_filter.lua.
+% ---------------------------------------------------------------------------
+\newcommand{\epsref}[1]{\href{https://eps.superkaiba.com/tasks/#1}{\##1}}
