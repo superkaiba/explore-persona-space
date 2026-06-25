@@ -90,6 +90,20 @@ check; the full affinity proof + Taylor bound belongs in the theory doc.
 |---|---|---|
 | **R5-1** | New assumption test **A3.5a** (`a:context-vector-coherence`): within-condition spread `s_W(C)=E‖c_x−c_C‖²_W` vs the behavior Jensen gap (bounded `½K·s_W`) + the context→profile residual; metric `W=I` then `(Σc+λI)⁻¹`; per condition + family, layer-swept; SPLIT / richer-summarize low-coherence conditions. Measurables `ŝ_W, Ĵ_ℬ, R̂_ℬ` all CPU on the stored per-probe `c_x`+`v0`. Faithful to the user's formal block. | §1.2 precondition note · §4 table (A3.5a row) · §4 coherence test block |
 
+## Revision log (round 6 — `r_B` recipe sweep baked in)
+
+User decision (Thomas, 2026-06-25): run ALL `r_B` extraction recipes as a **built-in A3.3
+sweep** rather than pre-selecting one via #661. It is cheap — `r_B` is a read-out (the
+fine-tune fleet never uses it), A and C share generations, projections are CPU-free — so all
+recipes ride one Phase-1 extraction pass (~2 GPU-h) with everything downstream free; nothing
+GPU-heavy is multiplied. **#661 is KEPT (not archived)** as the complementary standalone early
+read, with its `rb-recipe-knobs` follow-ups (instruction-pair count, negative-pole content,
+assistant-centroid baseline, optimism trait) intact — "let 661 finish."
+
+| ID | Change | Where |
+|---|---|---|
+| **R6-1** | A3.3 `r_B` becomes an in-plan recipe sweep: contrast-construction A/B/C × summary variants, **(C3) primary = C (instruct-and-strip)**, the rest exploratory (FDR); built-in measurables = pairwise `cos(r_B^{A,B,C})` + the `(c_pos−c_neg)` confound projection + per-recipe held-out predictive quality. Removes the "program waits on #661" coupling (the sweep is in-plan). #661 + its `rb-recipe-knobs` follow-ups stay as the standalone exhaustive knob read that confirms/feeds the C-primary lock — NOT duplicated into the in-plan sweep (avoids ballooning the C3 multiple-comparison surface). | §1.3 read-out note · §1.4 `r_B` note · §4 A3.3 row |
+
 ---
 
 This plan turns the paper's assumption chain into one **shared activation store**
@@ -278,7 +292,7 @@ source context (each ships designed-null / anchor controls):
 Notes:
 - **Read-outs `r_{B'}`** (A3.3) are extracted **per evaluated column** as
   `D_B − D_{B̄}` over matched **pos/neg system-prompt pairs** (Persona Vectors,
-  arXiv 2507.21509; answer-side, extraction method A/B/C pending #661 — see §1.4
+  arXiv 2507.21509; answer-side, extraction method = the in-plan A/B/C A3.3 recipe sweep, C primary; #661 the complementary standalone read — see §1.4
   note R4-1/R4-2), same layer policy as §1.4; the marker read-out is the
   marker-logit direction.
 - **LLM judge = `claude-sonnet-4-5-20250929`** for all judged columns — the
@@ -345,12 +359,26 @@ These are the recipe knobs the paper leaves open and Phase 1 fixes empirically.
   honest") (Persona Vectors, arXiv 2507.21509). `D_{B̄}` is **NOT the assistant
   centroid** and NOT a single-pole absolute mean. **Default slot = answer-side**
   (mean over generated-response tokens), per-behavior best layer;
-  last-input-token is the ablation. **Extraction method OPEN — being decided by
-  the running #661:** (A) on-policy instruction-present / (B) off-policy
-  teacher-forced / (C) instruct-and-strip, scored on per-layer cosine
-  divergence, the `c_pos−c_neg` instruction-context-axis confound, and A3.3
-  held-out predictive quality; #661 sets the program-#660 A3.3 recipe.
-  #661's `rb-recipe-knobs` follow-up additionally screens the **instruction-pair
+  last-input-token is the ablation. **All three extraction methods run as a built-in
+  A3.3 recipe sweep (not a pre-gate):** (A) on-policy instruction-present /
+  (B) off-policy teacher-forced / (C) instruct-and-strip. **(C3) pre-registered
+  PRIMARY = (C) instruct-and-strip** — the conservative confound-free choice (strips
+  the instruction context A carries; keeps responses on-policy, unlike B); A, B + the
+  summary variants (diff-in-means / mean-D_B / few-shot) are the **exploratory
+  robustness sweep** (FDR-corrected), never the headline. **Cheap, does NOT multiply the
+  fleet:** `r_B` is a read-out (the fine-tune fleet never uses it), A and C **share the
+  same on-policy generations** (they differ only in whether the instruction is stripped
+  at extraction), B needs only cheap external responses, and the projections (`r_Bᵀv0`,
+  `r_Bᵀδ`) are CPU-free — so all recipes ride on ~one Phase-1 extraction pass (~2 GPU-h,
+  the #661 budget) with everything downstream free; nothing GPU-heavy is multiplied.
+  **Built-in measurables (reported as a recipe-robustness finding):** pairwise
+  `cos(r_B^A,r_B^B / A,C / B,C)` per layer, `r_B^A`'s projection onto the
+  instruction-context axis `(c_pos−c_neg)` (A's confound magnitude), and each recipe's
+  A3.3 held-out predictive quality (does the divergence change the *verdict*, or only the
+  geometry). **#661 is the complementary STANDALONE early read** of exactly this A/B/C
+  comparison — LET IT FINISH (re-dispatches after #663's batch-client fix); it
+  confirms/feeds the A3.3 primary-recipe lock, but the program no longer **waits** on it
+  (the sweep is in-plan). #661's `rb-recipe-knobs` follow-up additionally screens the **instruction-pair
   count** (single pair vs PV's 5 paraphrase pairs), the **negative-pole content**
   (explicit anti-behavior vs neutral/default), an **assistant-centroid baseline**
   (`centroid_B − centroid_assistant`, to confirm it underperforms), and adds a
@@ -917,7 +945,7 @@ Paper's own "worth testing now" verdict noted.
 |---|---|---|---|---|---|---|---|
 | **A3.1** | Expression depends on profile only through a low-dim summary | A1 | High | **Bounded (B4)** | mean act vs richer summaries (token-pooled, multi-layer, answer-dist features) on nested held-out C/B; full recursive-pooling test still deferred | richer summaries do NOT materially beat the mean (mean is a sufficient low-dim summary) | 1 (#658-landing) |
 | **A3.2** | Summary = mean answer-side activation `v_θ(C)` | A1 | High | **Yes** | MLP: `v0(C)→E0(C,B)`, per behavior incl. marker; layer sweep | predicts held-out expression ≫ mean baseline; report best layer | 1 |
-| **A3.3** | Linear read-out `E≈r_Bᵀv` | A2 | High | **Yes** | fit `r_B` (3 recipes), test held-out C, per layer | linear ρ within noise floor of MLP; r_B recipe ranking | 1 |
+| **A3.3** | Linear read-out `E≈r_Bᵀv` | A2 | High | **Yes** | fit `r_B` as a **built-in recipe sweep**: contrast-construction A/B/C (on-policy-instruction / teacher-forced / instruct-and-strip) × summary variants (diff-in-means / mean-D_B / few-shot), **(C3) primary = C (instruct-and-strip)**, rest exploratory (FDR); test held-out C per layer; report `cos(r_B^{A,B,C})` divergence + the `(c_pos−c_neg)` confound projection + per-recipe predictive quality. (#661 + its `rb-recipe-knobs` follow-ups = the standalone exhaustive knob read, complementary.) | linear ρ within MLP noise floor; recipe divergence + whether it changes the *verdict* vs only geometry; C-primary recipe locked | 1 |
 | **A3.4** | Pre-FT context summary predicts profile (sufficiency) | A3 | Med | **Yes (B2)** | **distinct from A3.5:** best-achievable `c→v0` over ALL recipe candidates + full-prompt-activation upper-bound control; report the gap to the cheap `c_C` | sufficiency holds (upper-bound `c→v0` strong); A3.5 gap localizes recipe vs sufficiency failure | 1 (#658-landing) |
 | **A3.5** | Context summary = residual vector `c_C` | A3 | Med | **Yes** | linear `M` + MLP: `c_C→v0(C)`; best c_C recipe/layer | nonlinear gain modest; `r_Bᵀ M c_C` predicts E | 1 |
 | **A3.5a** | Contexts close within a condition (`a:context-vector-coherence`) — precondition for the single-vector `c_C` summary | A3 | Med-High | **Yes** | per C: spread `s_W(C)=E‖c_x−c_C‖²_W` vs behavior Jensen gap `Ĵ_ℬ=max_B\|r_Bᵀ(E h(c_x)−h(c_C))\|` + residual `R̂_ℬ`; `W=I` then `(Σc+λI)⁻¹`; per condition + family, layer-swept (full spec + derivation: §4 coherence block) | gap & residual rise with spread (slope ≈ ½ local curvature `K`); coherent conditions (persona/format/behavior) small-gap, scattered (wildchat) large → split / richer-summarize the failures | 1 |
