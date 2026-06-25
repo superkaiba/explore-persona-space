@@ -75,6 +75,7 @@ from issue661_common import (  # noqa: E402
     EXPECTED_LAYERS,
     HF_DATA_REPO,
     HF_PREFIX,
+    MIN_SURVIVORS,
     dump_json,
     instructions_path,
     load_json,
@@ -124,13 +125,19 @@ def mean_answer_acts_teacher_forced(
     items: list[tuple[str | None, str, str]],
     capture: AnswerSpanCapture,
     n_layers: int,
-) -> torch.Tensor:
-    """Mean (over items) of the per-item mean-over-answer-tokens activation.
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Per-item mean-over-answer-tokens activation, returned pooled AND per-item.
 
     items[i] = (system_prompt_or_None, probe, response_text). For each item we
     template (system, user=probe) + add_generation_prompt, append the response
     tokens, teacher-force the (prompt + response) through the model, and capture
-    the residual span at the ANSWER (response) positions. Returns (L, H) fp32.
+    the residual span at the ANSWER (response) positions.
+
+    Returns ``(pooled (L, H) fp32, per_item (N_used, L, H) fp16)``. The pooled
+    mean is the direction estimate; the per-item stack feeds the §6.5 survivor-set
+    bootstrap CI in the analysis (resample survivors → recompute the direction). It
+    is fp16 (the activations are read in fp16) to bound the HF analysis-tensor
+    footprint.
 
     A system_prompt of None forwards under the DEFAULT (instruction-stripped)
     context (the arm-C read). The SAME (probe, response_text) pair under a
@@ -139,8 +146,7 @@ def mean_answer_acts_teacher_forced(
     Position assert: the captured answer-span length must equal the re-tokenized
     response token count (fail loud on misalignment).
     """
-    accum = torch.zeros(n_layers, model.config.hidden_size, dtype=torch.float32)
-    n_used = 0
+    per_item: list[torch.Tensor] = []
     for system_prompt, probe, response in items:
         messages = system_prompt_messages(system_prompt, probe)
         prompt_text = tokenizer.apply_chat_template(
@@ -159,11 +165,12 @@ def mean_answer_acts_teacher_forced(
         assert span.shape[1] == ans_len, (
             f"answer-span length mismatch: captured {span.shape[1]} != {ans_len}"
         )
-        accum += span.float().mean(dim=1)  # mean over answer tokens → (L, H)
-        n_used += 1
-    if n_used == 0:
+        per_item.append(span.float().mean(dim=1).to(torch.float16))  # mean over answer → (L, H)
+    if not per_item:
         raise RuntimeError("no non-empty responses to extract from")
-    return accum / n_used
+    stack = torch.stack(per_item)  # (N_used, L, H) fp16
+    pooled = stack.float().mean(dim=0)  # (L, H) fp32
+    return pooled, stack
 
 
 def mean_prompt_acts(
@@ -172,26 +179,30 @@ def mean_prompt_acts(
     prompts: list[tuple[str, str]],
     capture: AnswerSpanCapture,
     n_layers: int,
-) -> torch.Tensor:
-    """Mean (over prompts) of the prompt-token-mean activation (context axis).
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Per-prompt prompt-token-mean activation, returned pooled AND per-prompt.
 
     prompts[i] = (system_prompt, probe). Forwards the templated (system, user)
     prompt with add_generation_prompt (NO answer), means over the PROMPT tokens,
-    averages over prompts. Returns (L, H) fp32. This is the c_pos / c_neg read.
+    averages over prompts. Returns ``(pooled (L, H) fp32, per_prompt (N, L, H)
+    fp16)``. The pooled mean is the c_pos / c_neg read; the per-prompt stack feeds
+    the §6.5 confound (M2) survivor-set bootstrap.
     """
-    accum = torch.zeros(n_layers, model.config.hidden_size, dtype=torch.float32)
-    n_used = 0
+    per_prompt: list[torch.Tensor] = []
     for system_prompt, probe in prompts:
         messages = system_prompt_messages(system_prompt, probe)
         text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = tokenizer(text, return_tensors="pt", padding=False).to(model.device)
         with torch.no_grad():
             _ = model(input_ids=inputs["input_ids"])
-        accum += capture.mean_prompt_stack(n_layers, int(inputs["input_ids"].shape[1]))
-        n_used += 1
-    if n_used == 0:
+        per_prompt.append(
+            capture.mean_prompt_stack(n_layers, int(inputs["input_ids"].shape[1])).to(torch.float16)
+        )
+    if not per_prompt:
         raise RuntimeError("no prompts for the context-axis read")
-    return accum / n_used
+    stack = torch.stack(per_prompt)  # (N, L, H) fp16
+    pooled = stack.float().mean(dim=0)  # (L, H) fp32
+    return pooled, stack
 
 
 def load_hf_model(model_name: str, use_cuda: bool):
@@ -246,23 +257,23 @@ def extract_behavior(
 
     capture = AnswerSpanCapture(model, n_layers)
     try:
-        mean_present_A = mean_answer_acts_teacher_forced(
+        mean_present_A, present_A_items = mean_answer_acts_teacher_forced(
             model, tokenizer, present_items_A, capture, n_layers
         )
-        mean_absent_A = mean_answer_acts_teacher_forced(
+        mean_absent_A, absent_A_items = mean_answer_acts_teacher_forced(
             model, tokenizer, absent_items_A, capture, n_layers
         )
-        mean_present_C = mean_answer_acts_teacher_forced(
+        mean_present_C, present_C_items = mean_answer_acts_teacher_forced(
             model, tokenizer, present_items_C, capture, n_layers
         )
-        mean_absent_C = mean_answer_acts_teacher_forced(
+        mean_absent_C, absent_C_items = mean_answer_acts_teacher_forced(
             model, tokenizer, absent_items_C, capture, n_layers
         )
         # Context axis: pos / neg instruction prompts ALONE (mean over prompt tokens).
         pos_prompts = [(instructions[s["instruction_idx"]]["pos"], s["probe"]) for s in pos_surv]
         neg_prompts = [(instructions[s["instruction_idx"]]["neg"], s["probe"]) for s in neg_surv]
-        c_pos = mean_prompt_acts(model, tokenizer, pos_prompts, capture, n_layers)
-        c_neg = mean_prompt_acts(model, tokenizer, neg_prompts, capture, n_layers)
+        c_pos, c_pos_items = mean_prompt_acts(model, tokenizer, pos_prompts, capture, n_layers)
+        c_neg, c_neg_items = mean_prompt_acts(model, tokenizer, neg_prompts, capture, n_layers)
     finally:
         capture.remove()
 
@@ -278,6 +289,17 @@ def extract_behavior(
         "c_neg": c_neg,
         "n_pos_survivors": len(pos_surv),
         "n_neg_survivors": len(neg_surv),
+        # Per-survivor (N, L, H) fp16 stacks for the §6.5 M1/M2 survivor-set
+        # bootstrap CI (resample survivors → recompute direction → cosine/confound).
+        # The pos/neg pools are resampled independently per arm (diff-in-means under
+        # unequal N, plan A6); A vs C share the SAME survivor texts so the analysis
+        # resamples a shared index set jointly (paired, plan §6.5).
+        "present_A_items": present_A_items,
+        "absent_A_items": absent_A_items,
+        "present_C_items": present_C_items,
+        "absent_C_items": absent_C_items,
+        "c_pos_items": c_pos_items,
+        "c_neg_items": c_neg_items,
     }
 
 
@@ -346,7 +368,50 @@ def main() -> int:
             else instructions_path(behavior)
         )
         survivors = jf["behaviors"][behavior]
+        n_pos = len(survivors["pos"]["survivors"])
+        n_neg = len(survivors["neg"]["survivors"])
         t0 = time.time()
+
+        # §7 kill criterion (P3 side): a behavior with <MIN_SURVIVORS in either
+        # pool cannot have r_B estimated (a 0-survivor pool would also crash the
+        # teacher-force). Persist a survivor-count-only checkpoint marked
+        # `dropped_low_survivors` and CONTINUE — the analysis kill criterion
+        # (`apply_kill_criterion`) is the single authoritative gate; it reads these
+        # counts, drops the behavior from the verdict, and never reads its (absent)
+        # direction tensors. Crashing the whole extract phase here would defeat the
+        # plan §7 "drop + report, proceed with the remaining behaviors" rule.
+        if min(n_pos, n_neg) < MIN_SURVIVORS:
+            torch.save(
+                {
+                    "behavior": behavior,
+                    "dropped_low_survivors": True,
+                    "n_layers": n_layers,
+                    "hidden": hidden,
+                    "model": args.model,
+                    "n_pos_survivors": n_pos,
+                    "n_neg_survivors": n_neg,
+                    "metadata": reproducibility_metadata({"script": "issue661_extract_directions"}),
+                },
+                dir_out / f"r_b_{behavior}.pt",
+            )
+            logger.warning(
+                "%s: DROPPED (§7 kill criterion) — min(pos=%d, neg=%d) < MIN_SURVIVORS=%d; "
+                "survivor-count-only checkpoint written, no direction extracted",
+                behavior,
+                n_pos,
+                n_neg,
+                MIN_SURVIVORS,
+            )
+            summaries.append(
+                {
+                    "behavior": behavior,
+                    "n_pos_survivors": n_pos,
+                    "n_neg_survivors": n_neg,
+                    "dropped_low_survivors": True,
+                }
+            )
+            continue
+
         res = extract_behavior(
             behavior,
             model=model,
@@ -355,10 +420,12 @@ def main() -> int:
             survivors=survivors,
             instructions=instr["instruction"],
         )
-        # Checkpoint per behavior (CLAUDE.md checkpoint-per-phase).
+        # Checkpoint per behavior (CLAUDE.md checkpoint-per-phase). Includes the
+        # per-survivor (N, L, H) fp16 stacks for the §6.5 M1/M2 bootstrap CI.
         torch.save(
             {
                 "behavior": behavior,
+                "dropped_low_survivors": False,
                 "r_b_a": res["r_b_a"],
                 "r_b_c": res["r_b_c"],
                 "c_pos": res["c_pos"],
@@ -368,6 +435,12 @@ def main() -> int:
                 "model": args.model,
                 "n_pos_survivors": res["n_pos_survivors"],
                 "n_neg_survivors": res["n_neg_survivors"],
+                "present_A_items": res["present_A_items"],
+                "absent_A_items": res["absent_A_items"],
+                "present_C_items": res["present_C_items"],
+                "absent_C_items": res["absent_C_items"],
+                "c_pos_items": res["c_pos_items"],
+                "c_neg_items": res["c_neg_items"],
                 "metadata": reproducibility_metadata({"script": "issue661_extract_directions"}),
             },
             dir_out / f"r_b_{behavior}.pt",
@@ -386,6 +459,7 @@ def main() -> int:
                 "behavior": behavior,
                 "n_pos_survivors": res["n_pos_survivors"],
                 "n_neg_survivors": res["n_neg_survivors"],
+                "dropped_low_survivors": False,
             }
         )
 

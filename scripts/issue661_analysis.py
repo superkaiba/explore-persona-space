@@ -74,9 +74,23 @@ from issue661_common import (  # noqa: E402
     BOOTSTRAP_N,
     EVAL_RESULTS_DIR,
     HF_DATA_REPO,
+    MIN_SURVIVORS,
     dump_json,
     load_json,
 )
+
+# §7 fallback noise floor for the adopt-A ρ conjunct when a behavior's M3
+# noise_floor_p95 is None (too few contexts / no per_probe redraw data). The
+# plan §7 adopt-A leg reads "A's ρ ≥ C's ρ within #658 noise floor"; when the
+# per-behavior floor cannot be estimated we fall back to this registered tolerance
+# (the adopt-C strong-fail threshold's mirror: adopt-C fires at ρ_gap ≤ −0.05, so
+# the adopt-A "within noise" band is at most that wide). Stated as a named plan
+# deviation in the clean-result whenever it is used.
+DEFAULT_NOISE_FLOOR = 0.05
+
+# Fixed per-method bootstrap-seed offsets (reproducible M1/M2/M3 CI bounds —
+# NOT hash(m), which is PYTHONHASHSEED-randomized run-to-run).
+_METHOD_SEED_OFFSET = {"A": 0, "B": 1, "C": 2}
 
 load_dotenv(str(PROJECT_ROOT / ".env"))
 logger = logging.getLogger("issue661_analysis")
@@ -91,7 +105,16 @@ I658_E0GEN_PREFIX = "issue658_theory_assumptions/raw_completions/e0_gen"
 
 
 def load_arm_b(behaviors: list[str]) -> dict:
-    """Arm-B r_B per behavior from #658 r_b.pt (diffmeans). ['r_b'] index REQUIRED."""
+    """Arm-B r_B per behavior from #658 r_b.pt (diffmeans). ['r_b'] index REQUIRED.
+
+    FAIL-LOUD on a missing column for any REQUESTED behavior (no warn-and-continue):
+    arm B is the #658 status-quo reference and the §5 control axis — a missing
+    column silently dropping a behavior here violates the project's fail-fast rule
+    and the plan §12 A1/A2 "re-assert P4" registration. The assertion names the
+    EXACT missing column → behavior pairs so the failure is diagnosable. (There is
+    no registered E0-saturation / recompute branch for arm B — that branch applies
+    only to v0/E0 in M3; arm B's column existence is unconditional.)
+    """
     from huggingface_hub import hf_hub_download
 
     path = hf_hub_download(HF_DATA_REPO, f"{I658_STORE_PREFIX}/r_b.pt", repo_type="dataset")
@@ -99,12 +122,16 @@ def load_arm_b(behaviors: list[str]) -> dict:
     assert set(["r_b", "capture_layers", "columns"]).issubset(rb.keys()), (
         f"r_b.pt top keys unexpected: {list(rb.keys())}"
     )
+    missing = [
+        (BEHAVIOR_TO_COLUMN[b], b) for b in behaviors if BEHAVIOR_TO_COLUMN[b] not in rb["r_b"]
+    ]
+    assert not missing, (
+        f"arm B: requested columns absent from #658 r_b.pt — {missing}; "
+        f"available r_b columns: {sorted(rb['r_b'].keys())}"
+    )
     out: dict[str, torch.Tensor] = {}
     for behavior in behaviors:
         col = BEHAVIOR_TO_COLUMN[behavior]
-        if col not in rb["r_b"]:
-            logger.warning("arm B: column %s (behavior %s) absent from r_b.pt", col, behavior)
-            continue
         out[behavior] = rb["r_b"][col]["diffmeans"].float()  # (28, H)
     return out
 
@@ -180,6 +207,25 @@ def judge_main_via_argv(judge_main, argv: list[str]) -> int:
         sys.argv = old
 
 
+# ── Survivor-set bootstrap (plan §6.5: M1/M2 CIs) ────────────────────────────
+
+
+def _ci95_from_samples(samples: list[float]) -> list[float] | None:
+    """2.5/97.5-pct CI from bootstrap samples (≥50 needed, else None)."""
+    if len(samples) < 50:
+        return None
+    s = sorted(samples)
+    return [s[int(0.025 * len(s))], s[int(0.975 * len(s)) - 1]]
+
+
+def _resample_mean(stack: torch.Tensor, idx: list[int], layer: int) -> torch.Tensor:
+    """Mean over a resampled survivor index set of a (N, L, H) stack at one layer.
+
+    Returns the (H,) layer-vector mean over the resampled rows.
+    """
+    return stack[idx, layer, :].mean(dim=0)
+
+
 # ── M1 cosine ─────────────────────────────────────────────────────────────────
 
 
@@ -190,33 +236,77 @@ def cosine_per_layer(a: torch.Tensor, b: torch.Tensor) -> np.ndarray:
     return (an * bn).sum(dim=-1).numpy()
 
 
-def m1_cosine(directions: dict, arm_b: dict, behaviors: list[str], selected_layer: dict) -> dict:
+def _cos_one_layer(u: torch.Tensor, v: torch.Tensor) -> float:
+    """Cosine between two (H,) vectors."""
+    un = torch.nn.functional.normalize(u, dim=-1)
+    vn = torch.nn.functional.normalize(v, dim=-1)
+    return float((un * vn).sum())
+
+
+def m1_cos_ac_ci(d: dict, sl: int, *, bootstrap_n: int, seed: int = 661) -> list[float] | None:
+    """§6.5 survivor-set bootstrap CI for cos(A, C) at the selected layer.
+
+    A and C share the SAME survivor texts (only the read context differs), so we
+    resample a SHARED present-index set and a SHARED absent-index set jointly
+    (paired), recompute r_B^A = mean(present_A) − mean(absent_A) and r_B^C from the
+    SAME resampled rows, and recompute the cosine. Returns None if the per-survivor
+    stacks are absent (pre-round-2 .pt) — point estimates still report.
+    """
+    pA, aA = d.get("present_A_items"), d.get("absent_A_items")
+    pC, aC = d.get("present_C_items"), d.get("absent_C_items")
+    if any(x is None for x in (pA, aA, pC, aC)):
+        return None
+    n_pos, n_neg = pA.shape[0], aA.shape[0]
+    # A vs C share survivor identity → the present (pos) and absent (neg) index
+    # sets are shared across arms within a resample.
+    assert pC.shape[0] == n_pos and aC.shape[0] == n_neg, "A/C survivor count mismatch"
+    rng = random.Random(seed + _METHOD_SEED_OFFSET["A"])
+    samples: list[float] = []
+    for _ in range(bootstrap_n):
+        pos_idx = [rng.randrange(n_pos) for _ in range(n_pos)]
+        neg_idx = [rng.randrange(n_neg) for _ in range(n_neg)]
+        rA = _resample_mean(pA, pos_idx, sl) - _resample_mean(aA, neg_idx, sl)
+        rC = _resample_mean(pC, pos_idx, sl) - _resample_mean(aC, neg_idx, sl)
+        samples.append(_cos_one_layer(rA, rC))
+    return _ci95_from_samples(samples)
+
+
+def m1_cosine(
+    directions: dict,
+    arm_b: dict,
+    behaviors: list[str],
+    selected_layer: dict,
+    *,
+    bootstrap_n: int = BOOTSTRAP_N,
+) -> dict:
     """Pairwise cosine cos_AB / cos_AC / cos_BC per layer + selected, per behavior.
 
-    The directions are fixed (means over the survivor set), so the per-layer
-    cosine is a deterministic scalar — the CI is reported only at the selected
-    layer via a survivor-set jackknife when spans exist (not implemented at the
-    direction level here; the directions are already pooled). Point estimates +
-    the selected-layer scalar are the headline.
+    The pooled directions are deterministic, so the headline cosine is a fixed
+    scalar; the §6.5 CI at the selected layer comes from the survivor-set bootstrap
+    (``m1_cos_ac_ci``) — resample the shared survivor index set jointly (paired
+    A-vs-C), recompute r_B^A/r_B^C, recompute cos(A,C). Emitted as ``cos_AC_ci95``
+    (None when the per-survivor stacks are absent, e.g. a pre-round-2 .pt).
     """
     out: dict = {}
     for behavior in behaviors:
         d = directions[behavior]
         rA, rC = d["r_b_a"], d["r_b_c"]
         rB = arm_b.get(behavior)
+        sl = selected_layer[behavior]
         cos_AC = cosine_per_layer(rA, rC)
         rec = {
             "cos_AC": cos_AC.tolist(),
-            "selected_layer": selected_layer[behavior],
-            "cos_AC_selected": float(cos_AC[selected_layer[behavior]]),
+            "selected_layer": sl,
+            "cos_AC_selected": float(cos_AC[sl]),
+            "cos_AC_ci95": m1_cos_ac_ci(d, sl, bootstrap_n=bootstrap_n),
         }
         if rB is not None:
             cos_AB = cosine_per_layer(rA, rB)
             cos_BC = cosine_per_layer(rB, rC)
             rec["cos_AB"] = cos_AB.tolist()
             rec["cos_BC"] = cos_BC.tolist()
-            rec["cos_AB_selected"] = float(cos_AB[selected_layer[behavior]])
-            rec["cos_BC_selected"] = float(cos_BC[selected_layer[behavior]])
+            rec["cos_AB_selected"] = float(cos_AB[sl])
+            rec["cos_BC_selected"] = float(cos_BC[sl])
         out[behavior] = rec
     return out
 
@@ -249,9 +339,49 @@ def projection_fraction_raw(r: torch.Tensor, axis: torch.Tensor) -> np.ndarray:
     return (dot / norm).numpy()
 
 
-def m2_confound(directions: dict, arm_b: dict, behaviors: list[str], selected_layer: dict) -> dict:
+def m2_confound_ci(
+    d: dict, sl: int, *, bootstrap_n: int, seed: int = 661
+) -> tuple[list[float] | None, list[float] | None]:
+    """§6.5 survivor-set bootstrap CI for the M2 A-confound at the selected layer.
+
+    Resample present_A / absent_A (→ r_B^A) and the c_pos / c_neg instruction
+    prompts (→ ĉ_inst) independently, recompute BOTH the bounded gate quantity
+    ``|cos(r_B^A, ĉ_inst)|`` AND the raw companion ``|⟨r,ĉ⟩|/‖r‖`` at the selected
+    layer. Returns ``(bounded_ci95, raw_ci95)`` — each None when the per-survivor
+    stacks are absent (pre-round-2 .pt).
+    """
+    pA, aA = d.get("present_A_items"), d.get("absent_A_items")
+    cp, cn = d.get("c_pos_items"), d.get("c_neg_items")
+    if any(x is None for x in (pA, aA, cp, cn)):
+        return None, None
+    n_pos, n_neg = pA.shape[0], aA.shape[0]
+    n_cp, n_cn = cp.shape[0], cn.shape[0]
+    rng = random.Random(seed + _METHOD_SEED_OFFSET["A"])
+    bounded: list[float] = []
+    raw: list[float] = []
+    for _ in range(bootstrap_n):
+        rA = _resample_mean(pA, [rng.randrange(n_pos) for _ in range(n_pos)], sl) - _resample_mean(
+            aA, [rng.randrange(n_neg) for _ in range(n_neg)], sl
+        )
+        c_inst = _resample_mean(
+            cp, [rng.randrange(n_cp) for _ in range(n_cp)], sl
+        ) - _resample_mean(cn, [rng.randrange(n_cn) for _ in range(n_cn)], sl)
+        bounded.append(abs(_cos_one_layer(rA, c_inst)))
+        dot = float((rA * c_inst).sum().abs())
+        raw.append(dot / max(float(rA.norm()), 1e-12))
+    return _ci95_from_samples(bounded), _ci95_from_samples(raw)
+
+
+def m2_confound(
+    directions: dict,
+    arm_b: dict,
+    behaviors: list[str],
+    selected_layer: dict,
+    *,
+    bootstrap_n: int = BOOTSTRAP_N,
+) -> dict:
     """Confound = |cos(r_B^A, ĉ_inst)| per layer (bounded gate quantity) + the
-    B/C controls + the raw un-normalized companion."""
+    B/C controls + the raw un-normalized companion + §6.5 bootstrap CIs."""
     out: dict = {}
     for behavior in behaviors:
         d = directions[behavior]
@@ -259,14 +389,18 @@ def m2_confound(directions: dict, arm_b: dict, behaviors: list[str], selected_la
         conf_A = projection_fraction(d["r_b_a"], c_inst)
         conf_C = projection_fraction(d["r_b_c"], c_inst)  # control: should be near 0
         sl = selected_layer[behavior]
+        bounded_ci, raw_ci = m2_confound_ci(d, sl, bootstrap_n=bootstrap_n)
         rec = {
             "confound_A": conf_A.tolist(),
             "confound_C_control": conf_C.tolist(),
             "confound_A_selected": float(conf_A[sl]),
             "confound_C_control_selected": float(conf_C[sl]),
+            # §6.5 CI on the bounded gate quantity (the §7 0.10/0.25 gate reads this).
+            "confound_A_ci95": bounded_ci,
             # Plan §4.4 companion: the un-normalized |⟨r, ĉ_inst⟩|/‖r‖ (not gated).
             "confound_A_raw": projection_fraction_raw(d["r_b_a"], c_inst).tolist(),
             "confound_A_raw_selected": float(projection_fraction_raw(d["r_b_a"], c_inst)[sl]),
+            "confound_A_raw_ci95": raw_ci,
             "selected_layer": sl,
         }
         rB = arm_b.get(behavior)
@@ -397,6 +531,26 @@ def m3_predictive(
 
     The projection scalar per context is ``r[selected_layer] · v0(C)[selected_layer]``.
     """
+    # When M3 is genuinely active (real-dim v0 + a non-empty E0 table), a behavior
+    # whose E0 column is ENTIRELY absent is NOT one of the registered §7/§6.4 branches
+    # (E0-saturated / too-few-contexts) — it is a silent data gap that would let the
+    # adopt-A ρ leg PASS vacuously via rho_gap→None. Fail loud on it (the reconciler's
+    # Fix #3 second clause). M3-inactive (smoke / dim-mismatch, e0 == {}) is the
+    # registered "skip M3" branch and does NOT trip this.
+    m3_active = bool(v0) and bool(e0.get("e0"))
+    col_present = (
+        {b: any(BEHAVIOR_TO_COLUMN[b] in e0["e0"].get(c, {}) for c in v0) for b in behaviors}
+        if m3_active
+        else {}
+    )
+    if m3_active:
+        absent_e0 = [b for b in behaviors if not col_present.get(b, False)]
+        assert not absent_e0, (
+            f"M3 active but E0 column entirely absent for {absent_e0} — a behavior "
+            f"whose E0 should exist must not silently PASS adopt-A's ρ leg via "
+            f"rho_gap→None (plan §6.4: P4 asserts E0 existence). E0 table contexts: "
+            f"{sorted(e0['e0'].keys())[:5]}..."
+        )
     out: dict = {}
     for behavior in behaviors:
         sl = selected_layer[behavior]
@@ -405,9 +559,19 @@ def m3_predictive(
             "selected_layer": sl,
             "n_contexts": len(kept),
             "noise_floor_p95": per_behavior_noise_floor(e0, behavior, kept),
+            "m3_active": m3_active,
         }
         if len(kept) < 4 or np.std(y) < 1e-12:
+            # Registered §7 branches: E0 saturated (zero variance across contexts)
+            # OR too few contexts. Both make M3 ρ legitimately undefined → the
+            # adopt-A ρ leg treats this behavior's gap as None (vacuous pass) by
+            # design (verdict bases on M1+M2 only for the behavior).
             rec["e0_saturated"] = bool(len(kept) >= 4 and np.std(y) < 1e-12)
+            rec["m3_undefined_reason"] = (
+                "m3_inactive"
+                if not m3_active
+                else ("e0_saturated" if rec["e0_saturated"] else "too_few_contexts")
+            )
             rec["methods"] = {}
             out[behavior] = rec
             logger.warning("%s: M3 undefined (n=%d, std(E0)=%.2e)", behavior, len(kept), np.std(y))
@@ -421,7 +585,9 @@ def m3_predictive(
             r = r_layer.numpy()
             proj = np.array([float(v0[c][sl].numpy() @ r) for c in kept], dtype=np.float64)
             preds = loco_1d_ols_predictions(proj, y)
-            rng = random.Random(seed + hash(m) % 9973)
+            # Fixed per-method offset (NOT hash(m), which is PYTHONHASHSEED-randomized
+            # → non-reproducible CI bounds run-to-run). {"A":0,"B":1,"C":2}.
+            rng = random.Random(seed + _METHOD_SEED_OFFSET[m])
             boot = []
             nn = len(kept)
             for _ in range(bootstrap_n):
@@ -473,9 +639,65 @@ def select_layers(arm_b: dict, v0: dict, e0: dict, behaviors: list[str]) -> dict
 # ── Decision ──────────────────────────────────────────────────────────────────
 
 
-def decide(m1: dict, m2: dict, m3: dict, headline: list[str]) -> dict:
-    """Plan §7 falsification verdict at the selected layer over the headline behaviors."""
-    present = [b for b in headline if b in m1 and b in m2]
+def apply_kill_criterion(directions: dict, headline: list[str]) -> tuple[list[str], dict, dict]:
+    """Plan §7 ``<MIN_SURVIVORS`` survivor kill criterion.
+
+    For each headline behavior, read its judge-positive survivor counts (persisted
+    by P3 into the per-behavior ``.pt`` via ``load_directions``). If
+    ``min(n_pos, n_neg) < MIN_SURVIVORS`` the behavior's r_B^A/r_B^C are
+    noise-dominated and cannot be estimated — DROP it from the verdict (plan §7:
+    "STOP that behavior, report the survival shortfall as a finding, proceed with
+    the remaining behaviors"). Returns:
+
+    - ``kept``: headline behaviors with sufficient survivors (verdict basis);
+    - ``n_survivors``: per-behavior ``{"n_pos", "n_neg"}`` (always reported as
+      coverage, plan §6.5 / risk row);
+    - ``dropped``: per-DROPPED-behavior ``{"n_pos", "n_neg", "reason"}``.
+    """
+    kept: list[str] = []
+    n_survivors: dict[str, dict] = {}
+    dropped: dict[str, dict] = {}
+    for b in headline:
+        d = directions.get(b)
+        if d is None:
+            # No extracted directions at all — treat as a hard drop (0 survivors).
+            dropped[b] = {"n_pos": 0, "n_neg": 0, "reason": "no extracted directions"}
+            n_survivors[b] = {"n_pos": 0, "n_neg": 0}
+            continue
+        n_pos = int(d["n_pos_survivors"])
+        n_neg = int(d["n_neg_survivors"])
+        n_survivors[b] = {"n_pos": n_pos, "n_neg": n_neg}
+        if min(n_pos, n_neg) < MIN_SURVIVORS:
+            dropped[b] = {
+                "n_pos": n_pos,
+                "n_neg": n_neg,
+                "reason": f"min(n_pos={n_pos}, n_neg={n_neg}) < MIN_SURVIVORS={MIN_SURVIVORS}",
+            }
+        else:
+            kept.append(b)
+    return kept, n_survivors, dropped
+
+
+def decide(m1: dict, m2: dict, m3: dict, headline: list[str], directions: dict) -> dict:
+    """Plan §7 falsification verdict at the selected layer over the headline behaviors.
+
+    Enforces the §7 ``<MIN_SURVIVORS`` kill criterion FIRST (via
+    ``apply_kill_criterion``): low-survivor behaviors are excluded from the verdict
+    and recorded under ``dropped_low_survivors``. If ALL headline behaviors drop,
+    the verdict is ``halt_low_survivors`` (plan §7: "If <5 survivors on ALL 3
+    behaviors, halt the whole run and report").
+
+    The adopt-A ρ conjunct reads "A's ρ ≥ C's ρ within #658 noise floor" (plan §7),
+    so the per-behavior ``noise_floor_p95`` (from M3) is the tolerance band:
+    ``gap >= -noise_floor[b]`` (NOT ``gap >= -1e-9`` — that was strictly stricter
+    than the registered band). Falls back to ``DEFAULT_NOISE_FLOOR`` when the
+    per-behavior floor is None (a named plan deviation, surfaced in the body).
+    """
+    # §7 kill criterion — drop low-survivor behaviors BEFORE forming the verdict set.
+    kept, n_survivors, dropped = apply_kill_criterion(directions, headline)
+
+    # The verdict basis is the kept behaviors whose M1/M2 are actually present.
+    present = [b for b in kept if b in m1 and b in m2]
     cos_ac = {b: m1[b]["cos_AC_selected"] for b in present}
     conf = {b: m2[b]["confound_A_selected"] for b in present}
 
@@ -487,19 +709,43 @@ def decide(m1: dict, m2: dict, m3: dict, headline: list[str]) -> dict:
             return None
         return ra - rc  # A - C; negative = A worse than C
 
-    gaps = {b: rho_gap(b) for b in present}
+    def noise_floor_for(b) -> tuple[float, bool]:
+        """Per-behavior adopt-A ρ tolerance + whether the registered fallback was used."""
+        nf = m3.get(b, {}).get("noise_floor_p95")
+        if nf is None:
+            return DEFAULT_NOISE_FLOOR, True
+        return float(nf), False
 
-    adopt_a = all(
-        cos_ac[b] >= 0.95 and conf[b] <= 0.10 and (gaps[b] is None or gaps[b] >= -1e-9)
-        for b in present
-    ) and len(present) == len(headline)
+    gaps = {b: rho_gap(b) for b in present}
+    noise_floor = {}
+    noise_floor_fallback_used = {}
+    for b in present:
+        nf, used_fallback = noise_floor_for(b)
+        noise_floor[b] = nf
+        noise_floor_fallback_used[b] = used_fallback
+
+    # Adopt-A: cos≥0.95 AND confound≤0.10 AND (ρ_gap within the per-behavior noise
+    # floor: gap >= -noise_floor[b]) — on ALL headline behaviors that survived.
+    adopt_a = (
+        len(present) == len(headline)
+        and len(dropped) == 0
+        and all(
+            cos_ac[b] >= 0.95
+            and conf[b] <= 0.10
+            and (gaps[b] is None or gaps[b] >= -noise_floor[b])
+            for b in present
+        )
+    )
 
     n_cos_fail = sum(1 for b in present if cos_ac[b] < 0.85)
     n_conf_fail = sum(1 for b in present if conf[b] > 0.25)
     n_rho_fail = sum(1 for b in present if gaps[b] is not None and gaps[b] <= -0.05)
     adopt_c = (n_cos_fail >= 2) or (n_conf_fail >= 2) or (n_rho_fail >= 2)
 
-    if adopt_a:
+    if not present:
+        # All headline behaviors dropped (low survivors / no directions) → §7 halt.
+        verdict = "halt_low_survivors"
+    elif adopt_a:
         verdict = "adopt_A"
     elif adopt_c:
         verdict = "adopt_C_or_recipe_by_behavior"
@@ -509,9 +755,14 @@ def decide(m1: dict, m2: dict, m3: dict, headline: list[str]) -> dict:
         "verdict": verdict,
         "headline_behaviors": headline,
         "present_behaviors": present,
+        "dropped_low_survivors": dropped,
+        "n_survivors": n_survivors,
+        "low_survivors": sorted(dropped.keys()),
         "cos_AC_selected": cos_ac,
         "confound_A_selected": conf,
         "rho_gap_A_minus_C": gaps,
+        "adopt_A_noise_floor": noise_floor,
+        "adopt_A_noise_floor_fallback_used": noise_floor_fallback_used,
         "margins": {
             "n_cos_AC_below_0.85": n_cos_fail,
             "n_confound_above_0.25": n_conf_fail,
@@ -542,6 +793,17 @@ def make_figures(m1: dict, m2: dict, m3: dict, behaviors: list[str], fig_dir: Pa
         if "cos_AB" in rec:
             ax.plot(layers, rec["cos_AB"], label="cos(A,B)", color="#ff7f0e")
             ax.plot(layers, rec["cos_BC"], label="cos(B,C)", color="#2ca02c")
+        # §6.5 survivor-set bootstrap CI for cos(A,C) at the selected layer (the
+        # headline gate quantity) — an error bar at the selected-layer point. None
+        # when the per-survivor stacks are absent (pre-round-2 .pt).
+        sl_b = rec["selected_layer"]
+        ci = rec.get("cos_AC_ci95")
+        pt = rec["cos_AC_selected"]
+        if ci is not None:
+            ax.errorbar(
+                sl_b, pt, yerr=[[max(0.0, pt - ci[0])], [max(0.0, ci[1] - pt)]],
+                fmt="o", color="#1f77b4", capsize=4, label="cos(A,C) 95% CI",
+            )  # fmt: skip
         ax.axvline(rec["selected_layer"], ls="--", color="gray", alpha=0.6)
         ax.set_title(b)
         ax.set_xlabel("layer")
@@ -566,6 +828,16 @@ def make_figures(m1: dict, m2: dict, m3: dict, behaviors: list[str], fig_dir: Pa
             ax.plot(
                 layers, rec["confound_B_control"], label="B control", color="#2ca02c", alpha=0.7
             )
+        # §6.5 survivor-set bootstrap CI for the bounded confound (the §7 0.10/0.25
+        # gate quantity) at the selected layer. None when per-survivor stacks absent.
+        sl_b = rec["selected_layer"]
+        ci = rec.get("confound_A_ci95")
+        pt = rec["confound_A_selected"]
+        if ci is not None:
+            ax.errorbar(
+                sl_b, pt, yerr=[[max(0.0, pt - ci[0])], [max(0.0, ci[1] - pt)]],
+                fmt="o", color="#d62728", capsize=4, label="A confound 95% CI",
+            )  # fmt: skip
         ax.axvline(rec["selected_layer"], ls="--", color="gray", alpha=0.6)
         ax.axhline(0.10, ls=":", color="green", alpha=0.5)
         ax.axhline(0.25, ls=":", color="red", alpha=0.5)
@@ -623,16 +895,70 @@ def make_figures(m1: dict, m2: dict, m3: dict, behaviors: list[str], fig_dir: Pa
 
 
 def load_directions(directions_dir: Path, behaviors: list[str]) -> dict:
+    """Load r_B^A / r_B^C / c_pos / c_neg + the per-behavior judge-survivor counts.
+
+    The survivor counts (``n_pos_survivors`` / ``n_neg_survivors``) are persisted
+    by P3 (``issue661_extract_directions``) into EACH per-behavior ``.pt`` AND the
+    ``extract_manifest.json``; they feed the §7 ``<MIN_SURVIVORS`` kill criterion in
+    ``apply_kill_criterion``. They are REQUIRED — a P3 ``.pt`` that predates the
+    count persistence (or a hand-edited one) fails loud here so a behavior is never
+    silently kept under the kill gate (a degenerate read).
+
+    A behavior P3 ALREADY dropped under the §7 kill criterion (``<MIN_SURVIVORS`` in
+    either pool, including a 0-survivor pool that cannot be teacher-forced) writes a
+    survivor-count-only checkpoint with ``dropped_low_survivors=True`` and NO
+    direction tensors. Such records carry ``r_b_a=None`` here; the analysis kill
+    criterion drops them from the verdict (via the same counts) and M1/M2/M3 never
+    read their (absent) directions. ``record_is_extracted`` marks the difference.
+    """
     out: dict = {}
     for behavior in behaviors:
         path = directions_dir / f"r_b_{behavior}.pt"
         blob = torch.load(path, weights_only=False)
-        out[behavior] = {
-            "r_b_a": blob["r_b_a"].float(),
-            "r_b_c": blob["r_b_c"].float(),
-            "c_pos": blob["c_pos"].float(),
-            "c_neg": blob["c_neg"].float(),
+        missing = [k for k in ("n_pos_survivors", "n_neg_survivors") if k not in blob]
+        assert not missing, (
+            f"{path} missing survivor-count keys {missing} — cannot enforce the §7 "
+            f"<{MIN_SURVIVORS}-survivor kill criterion (re-run P3 to repersist)"
+        )
+        dropped = bool(blob.get("dropped_low_survivors", False)) or "r_b_a" not in blob
+        rec: dict = {
+            "n_pos_survivors": int(blob["n_pos_survivors"]),
+            "n_neg_survivors": int(blob["n_neg_survivors"]),
+            "record_is_extracted": not dropped,
         }
+        if dropped:
+            # Survivor-count-only checkpoint (P3 §7 drop). No direction tensors —
+            # apply_kill_criterion drops it from the verdict before any tensor read.
+            for k in ("r_b_a", "r_b_c", "c_pos", "c_neg"):
+                rec[k] = None
+            for k in (
+                "present_A_items",
+                "absent_A_items",
+                "present_C_items",
+                "absent_C_items",
+                "c_pos_items",
+                "c_neg_items",
+            ):
+                rec[k] = None
+            out[behavior] = rec
+            continue
+        rec["r_b_a"] = blob["r_b_a"].float()
+        rec["r_b_c"] = blob["r_b_c"].float()
+        rec["c_pos"] = blob["c_pos"].float()
+        rec["c_neg"] = blob["c_neg"].float()
+        # Per-survivor (N, L, H) stacks for the §6.5 M1/M2 bootstrap CI. Present in
+        # P3 outputs from round-2 on; a pre-round-2 .pt without them yields point
+        # estimates only (CI=None) — never a crash. fp16 → float for the resample.
+        for k in (
+            "present_A_items",
+            "absent_A_items",
+            "present_C_items",
+            "absent_C_items",
+            "c_pos_items",
+            "c_neg_items",
+        ):
+            rec[k] = blob[k].float() if k in blob else None
+        out[behavior] = rec
     return out
 
 
@@ -650,57 +976,76 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     directions = load_directions(args.directions_dir, args.behaviors)
+    # Behaviors P3 actually extracted a direction for. Behaviors P3 dropped under
+    # the §7 kill criterion (<MIN_SURVIVORS / empty pool) carry r_b_a=None and are
+    # excluded from M1/M2/M3 (no tensors to read); they still flow into decide()
+    # via `directions` so apply_kill_criterion records them in dropped_low_survivors.
+    extracted = [b for b in args.behaviors if directions[b].get("record_is_extracted", True)]
+    dropped_p3 = [b for b in args.behaviors if b not in extracted]
+    if dropped_p3:
+        logger.warning(
+            "behaviors dropped by P3 §7 kill criterion (no direction): %s — excluded from "
+            "M1/M2/M3; recorded in decision.json dropped_low_survivors",
+            dropped_p3,
+        )
     arm_b = load_arm_b(args.behaviors)
     v0 = load_v0()
     if args.max_contexts:
         v0 = dict(list(v0.items())[: args.max_contexts])
 
-    # Dim-compatibility guard (cross-phase data contract): arm B (#658 r_b.pt,
-    # (28, 3584)) and v0 (#658 v0_summaries.pt, (28, 3584)) must share the
-    # layer/hidden dims of the P3-extracted arm-A/C directions before they can be
-    # combined. On the REAL run all are (28, 3584). On a tiny-model CPU smoke the
-    # directions are (24, 896) — so arm-B reads (M1 cos AB/BC, M2 B-control) are
-    # SKIPPED for the mismatched behaviors and M3 (needs the real-dim v0) is
-    # skipped entirely. This is the smoke fix AND a real guard if #658 ever
-    # re-extracts at a different layer count.
-    dir_shape = next(iter(directions.values()))["r_b_a"].shape  # (L, H)
-    arm_b_compat = {b: rb for b, rb in arm_b.items() if tuple(rb.shape) == tuple(dir_shape)}
-    dropped_b = sorted(set(arm_b) - set(arm_b_compat))
-    if dropped_b:
-        logger.warning(
-            "arm-B dim mismatch (directions %s) — dropping arm-B for %s (M1 AB/BC + M2 "
-            "B-control skipped for these)",
-            tuple(dir_shape),
-            dropped_b,
-        )
-    v0_dim_ok = bool(v0) and tuple(next(iter(v0.values())).shape) == tuple(dir_shape)
-    if not v0_dim_ok:
-        logger.warning(
-            "v0 dim %s != direction dim %s — M3 (LOCO predictive ρ) skipped (needs real-dim v0)",
-            (tuple(next(iter(v0.values())).shape) if v0 else None),
-            tuple(dir_shape),
-        )
-    arm_b = arm_b_compat
+    if not extracted:
+        # All requested behaviors dropped at P3 → no directions to analyze. decide()
+        # still produces the §7 halt_low_survivors verdict from the survivor counts.
+        logger.warning("no extracted directions for any behavior — §7 halt_low_survivors")
+        m1, m2, m3 = {}, {}, {}
+        selected_layer = {}
+    else:
+        # Dim-compatibility guard (cross-phase data contract): arm B (#658 r_b.pt,
+        # (28, 3584)) and v0 (#658 v0_summaries.pt, (28, 3584)) must share the
+        # layer/hidden dims of the P3-extracted arm-A/C directions before they can be
+        # combined. On the REAL run all are (28, 3584). On a tiny-model CPU smoke the
+        # directions are (24, 896) — so arm-B reads (M1 cos AB/BC, M2 B-control) are
+        # SKIPPED for the mismatched behaviors and M3 (needs the real-dim v0) is
+        # skipped entirely. This is the smoke fix AND a real guard if #658 ever
+        # re-extracts at a different layer count.
+        dir_shape = directions[extracted[0]]["r_b_a"].shape  # (L, H)
+        arm_b_compat = {b: rb for b, rb in arm_b.items() if tuple(rb.shape) == tuple(dir_shape)}
+        dropped_b = sorted(set(arm_b) - set(arm_b_compat))
+        if dropped_b:
+            logger.warning(
+                "arm-B dim mismatch (directions %s) — dropping arm-B for %s (M1 AB/BC + M2 "
+                "B-control skipped for these)",
+                tuple(dir_shape),
+                dropped_b,
+            )
+        v0_dim_ok = bool(v0) and tuple(next(iter(v0.values())).shape) == tuple(dir_shape)
+        if not v0_dim_ok:
+            logger.warning(
+                "v0 dim %s != direction dim %s — M3 (LOCO predictive ρ) skipped (needs real v0)",
+                (tuple(next(iter(v0.values())).shape) if v0 else None),
+                tuple(dir_shape),
+            )
+        arm_b = arm_b_compat
 
-    # Only load/recompute E0 (the heavy ~140k Batch-judge path when
-    # E0_expression.json is absent on HF) when M3 will actually run — a
-    # dim-mismatched smoke skips M3, so E0 is unused.
-    e0 = load_or_recompute_e0(out_dir, args.behaviors) if v0_dim_ok else {"e0": {}, "columns": []}
+        # Only load/recompute E0 (the heavy ~140k Batch-judge path when
+        # E0_expression.json is absent on HF) when M3 will actually run — a
+        # dim-mismatched smoke skips M3, so E0 is unused.
+        e0 = load_or_recompute_e0(out_dir, extracted) if v0_dim_ok else {"e0": {}, "columns": []}
 
-    selected_layer = select_layers(arm_b, v0 if v0_dim_ok else {}, e0, args.behaviors)
-    m1 = m1_cosine(directions, arm_b, args.behaviors, selected_layer)
-    m2 = m2_confound(directions, arm_b, args.behaviors, selected_layer)
-    m3 = m3_predictive(
-        directions,
-        arm_b,
-        v0 if v0_dim_ok else {},
-        e0,
-        args.behaviors,
-        selected_layer,
-        bootstrap_n=args.bootstrap_n,
-    )
+        selected_layer = select_layers(arm_b, v0 if v0_dim_ok else {}, e0, extracted)
+        m1 = m1_cosine(directions, arm_b, extracted, selected_layer, bootstrap_n=args.bootstrap_n)
+        m2 = m2_confound(directions, arm_b, extracted, selected_layer, bootstrap_n=args.bootstrap_n)
+        m3 = m3_predictive(
+            directions,
+            arm_b,
+            v0 if v0_dim_ok else {},
+            e0,
+            extracted,
+            selected_layer,
+            bootstrap_n=args.bootstrap_n,
+        )
     headline = [b for b in ("sycophancy", "refusal", "broad_em") if b in args.behaviors]
-    decision = decide(m1, m2, m3, headline)
+    decision = decide(m1, m2, m3, headline, directions)
 
     meta = reproducibility_metadata({"script": "issue661_analysis"})
     dump_json(
@@ -720,8 +1065,11 @@ def main() -> int:
     )
 
     fig_paths: list[str] = []
-    if not args.no_figures:
-        fig_paths = make_figures(m1, m2, m3, args.behaviors, PROJECT_ROOT / "figures" / "issue_661")
+    # Figures cover only the EXTRACTED behaviors (dropped behaviors have no
+    # m1/m2/m3 records). decision.json carries the dropped ones under
+    # dropped_low_survivors, so they are never silently lost from the deliverable.
+    if not args.no_figures and extracted:
+        fig_paths = make_figures(m1, m2, m3, extracted, PROJECT_ROOT / "figures" / "issue_661")
     logger.info("DECISION: %s", decision["verdict"])
     logger.info("cos(A,C) selected: %s", decision["cos_AC_selected"])
     logger.info("confound_A selected: %s", decision["confound_A_selected"])
