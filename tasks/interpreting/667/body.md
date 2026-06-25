@@ -1,6 +1,8 @@
 ---
-title: 'Preview: test leakage-theory gate-chain assumptions A3.6–A3.10 on #537''s
-  existing contrastive adapters (forward-pass, no retrain), A3.7 both ways, vs G'
+title: The leakage-predictor gate chain holds in activation space — a base-context
+  whitened gate predicts where a fine-tune's write lands as well as the post-fine-tuning
+  model does — but the base read-out fails and the gate only partly reaches behavioral
+  leakage (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-25T08:04:47Z'
