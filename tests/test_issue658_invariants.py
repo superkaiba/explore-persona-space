@@ -587,3 +587,284 @@ def test_rb_recipes_descopes_fewshot():
     for rec in common.RB_RECIPES:
         assert rec in src, f"fit_a33 must score the declared r_B recipe {rec}"
     assert "fewshot" not in src, "fit_a33 must not reference the descoped fewshot recipe"
+
+
+# ── (G1) genre-delta Δρ CI contract (round-2 BLOCKER: genre-delta-ci-contract- ──
+# unenforced) — Codex r1 FAIL upheld by the reconciler. A dynamic-range cell MUST
+# carry a full ≥2000-resample Δρ CI; only H3 (no dynamic range on both pools) rows
+# carry delta_rho_ci:null. The legacy `delta-ci-unavailable-no-draws` silent-null
+# verdict is removed; missing draws / <2000 draws on a dynamic-range cell RAISE.
+
+
+def _write_genre_arm(
+    arm_dir: Path,
+    *,
+    columns: list[str],
+    dyn_std: dict[str, bool],
+    best_rho: dict[str, float],
+    draws: dict[str, list[float] | None],
+    n_ctx: int = 8,
+    suffix: str = "",
+) -> None:
+    """Write a minimal aggregate/a32_cells/E0_expression JSON triple for one arm.
+
+    ``dyn_std[col]`` True → per-context E0 varies (dynamic range); False → all-equal
+    (std 0 → no dynamic range). ``draws[col]`` is the best cell's bootstrap draws
+    list (or None to omit the draws key, exercising the missing-draws path).
+    ``suffix`` ("" or "_smoke") matches the filenames ``compute_genre_delta`` reads
+    in that mode.
+    """
+    from issue658_common import dump_json
+
+    arm_dir.mkdir(parents=True, exist_ok=True)
+    # E0_expression.json: per-context rate per column.
+    e0_cells = {}
+    for i in range(n_ctx):
+        cell = {}
+        for col in columns:
+            # dynamic → vary by context index; static → constant.
+            cell[col] = {"rate": float(i) / n_ctx if dyn_std[col] else 0.5}
+        e0_cells[f"c{i}"] = cell
+    dump_json({"columns": columns, "e0": e0_cells}, arm_dir / f"E0_expression{suffix}.json")
+    # aggregate.json: best (layer, summary) verdict per column.
+    verdicts = {}
+    for col in columns:
+        verdicts[col] = {
+            "best_rho": best_rho.get(col),
+            "best_layer": 0,
+            "best_summary": "mean",
+            "noise_floor_p95": 0.2,
+        }
+    dump_json({"a32_verdicts": verdicts}, arm_dir / f"aggregate{suffix}.json")
+    # a32_cells.json: the best cell per column with (optional) bootstrap draws.
+    a32 = []
+    for col in columns:
+        boot = {} if draws.get(col) is None else {"draws": draws[col]}
+        a32.append({"column": col, "layer": 0, "recipe": "mean", "bootstrap": boot})
+    dump_json({"a32": a32}, arm_dir / f"a32_cells{suffix}.json")
+
+
+def test_genre_delta_dynamic_range_missing_draws_raises(tmp_path):
+    """BLOCKER A: a dynamic-range cell with draws=None RAISES (no silent null CI).
+
+    Was the missing coverage (Codex r1) + the silent `delta-ci-unavailable-no-draws`
+    verdict. Both arms dynamic-range, both best_rho present, but the UltraChat best
+    cell has NO bootstrap draws → contract violation → RuntimeError naming the
+    behavior + offending arm + cause + cached input path.
+    """
+    import issue658_genre_delta as gd
+    import pytest
+
+    betley = tmp_path / "betley"
+    ultra = tmp_path / "ultra"
+    cols = ["sycophancy"]
+    _write_genre_arm(
+        betley,
+        columns=cols,
+        dyn_std={"sycophancy": True},
+        best_rho={"sycophancy": 0.47},
+        draws={"sycophancy": [0.4] * gd.MIN_RESAMPLES_PRODUCTION},
+    )
+    _write_genre_arm(
+        ultra,
+        columns=cols,
+        dyn_std={"sycophancy": True},
+        best_rho={"sycophancy": 0.41},
+        draws={"sycophancy": None},  # the bug: dynamic-range cell, no draws
+    )
+    with pytest.raises(RuntimeError, match="draws missing"):
+        gd.compute_genre_delta(betley, ultra, smoke=False)
+
+
+def test_genre_delta_dynamic_range_short_draws_raises_in_production(tmp_path):
+    """BLOCKER B: a dynamic-range cell with <2000 draws RAISES in production mode.
+
+    Degenerate-resample drops can leave an arm's draws below the registered 2000.
+    Production must reject it (plan v3 §6/§6.5/§11), never bootstrap Δρ from a short
+    list. The raise names the behavior + per-arm draw counts.
+    """
+    import issue658_genre_delta as gd
+    import pytest
+
+    betley = tmp_path / "betley"
+    ultra = tmp_path / "ultra"
+    cols = ["sycophancy"]
+    _write_genre_arm(
+        betley,
+        columns=cols,
+        dyn_std={"sycophancy": True},
+        best_rho={"sycophancy": 0.47},
+        draws={"sycophancy": [0.4] * gd.MIN_RESAMPLES_PRODUCTION},
+    )
+    _write_genre_arm(
+        ultra,
+        columns=cols,
+        dyn_std={"sycophancy": True},
+        best_rho={"sycophancy": 0.41},
+        draws={"sycophancy": [0.3] * 1500},  # 1500 < 2000 → reject in production
+    )
+    with pytest.raises(ValueError, match="INDEPENDENT resamples per arm"):
+        gd.compute_genre_delta(betley, ultra, smoke=False)
+
+
+def test_genre_delta_smoke_override_bypasses_floors(tmp_path):
+    """The smoke escape hatch bypasses BOTH the missing-floor and the <2000 floor.
+
+    --smoke-allow-small-bootstrap (allow_small_bootstrap=True) relaxes the ≥2000
+    floor for tiny fixtures. Both arms dynamic-range with a handful of draws each →
+    no raise, a real CI is computed.
+    """
+    import issue658_genre_delta as gd
+
+    betley = tmp_path / "betley"
+    ultra = tmp_path / "ultra"
+    cols = ["sycophancy"]
+    _write_genre_arm(
+        betley,
+        columns=cols,
+        dyn_std={"sycophancy": True},
+        best_rho={"sycophancy": 0.47},
+        draws={"sycophancy": [0.4, 0.45, 0.5, 0.42, 0.48]},
+        suffix="_smoke",
+    )
+    _write_genre_arm(
+        ultra,
+        columns=cols,
+        dyn_std={"sycophancy": True},
+        best_rho={"sycophancy": 0.41},
+        draws={"sycophancy": [0.3, 0.35, 0.4, 0.32, 0.38]},
+        suffix="_smoke",
+    )
+    result = gd.compute_genre_delta(betley, ultra, smoke=True, allow_small_bootstrap=True)
+    row = result["rows"][0]
+    assert row["behavior"] == "sycophancy"
+    assert row["delta_rho_ci"] is not None, "the smoke override must compute a real CI"
+    assert row["verdict"] in ("H1-consistent", "H2-genre-bound")
+    # The removed verdict must never appear.
+    assert row["verdict"] != "delta-ci-unavailable-no-draws"
+
+
+def test_genre_delta_healthy_dynamic_range_computes_ci(tmp_path):
+    """Happy path: both arms dynamic-range with full ≥2000 draws → a real CI lands.
+
+    n_resamples == MIN_RESAMPLES_PRODUCTION and the contract fields are present;
+    no raise, no null CI on a dynamic-range cell.
+    """
+    import issue658_genre_delta as gd
+
+    betley = tmp_path / "betley"
+    ultra = tmp_path / "ultra"
+    cols = ["sycophancy"]
+    rng = __import__("numpy").random.default_rng(0)
+    _write_genre_arm(
+        betley,
+        columns=cols,
+        dyn_std={"sycophancy": True},
+        best_rho={"sycophancy": 0.47},
+        draws={"sycophancy": list(rng.normal(0.47, 0.05, gd.MIN_RESAMPLES_PRODUCTION))},
+    )
+    _write_genre_arm(
+        ultra,
+        columns=cols,
+        dyn_std={"sycophancy": True},
+        best_rho={"sycophancy": 0.41},
+        draws={"sycophancy": list(rng.normal(0.41, 0.05, gd.MIN_RESAMPLES_PRODUCTION))},
+    )
+    result = gd.compute_genre_delta(betley, ultra, smoke=False)
+    row = result["rows"][0]
+    ci = row["delta_rho_ci"]
+    assert ci is not None
+    assert ci["n_resamples"] == gd.MIN_RESAMPLES_PRODUCTION
+    assert set(ci) == {"lower", "upper", "n_resamples", "null_overlap"}
+    assert result["n_behaviors_compared"] == 1
+
+
+def test_genre_delta_h3_no_dynamic_range_keeps_null_ci(tmp_path):
+    """H3 stays the ONLY null-CI path: a behavior without dynamic range on BOTH pools.
+
+    UltraChat arm is floored (std 0 → no dynamic range) → H3, delta_rho_ci:null,
+    no raise. This is the legitimate null-CI case the contract preserves.
+    """
+    import issue658_genre_delta as gd
+
+    betley = tmp_path / "betley"
+    ultra = tmp_path / "ultra"
+    cols = ["refusal"]
+    _write_genre_arm(
+        betley,
+        columns=cols,
+        dyn_std={"refusal": True},
+        best_rho={"refusal": 0.5},
+        draws={"refusal": [0.5] * gd.MIN_RESAMPLES_PRODUCTION},
+    )
+    _write_genre_arm(
+        ultra,
+        columns=cols,
+        dyn_std={"refusal": False},  # floored on the generic genre → H3
+        best_rho={"refusal": None},
+        draws={"refusal": None},
+    )
+    result = gd.compute_genre_delta(betley, ultra, smoke=False)
+    row = result["rows"][0]
+    assert row["verdict"] == "H3-no-dynamic-range"
+    assert row["delta_rho_ci"] is None
+    assert result["n_behaviors_h3"] == 1
+
+
+def test_delta_rho_ci_floor_enforced_directly():
+    """Unit: _delta_rho_ci raises below min_resamples, succeeds at/above it."""
+    import issue658_genre_delta as gd
+    import pytest
+
+    short = [0.1] * 50
+    with pytest.raises(ValueError, match="≥2000 INDEPENDENT resamples"):
+        gd._delta_rho_ci(short, short, seed=1, min_resamples=2000, behavior="x")
+    ok = [0.1, 0.2, 0.3, 0.4, 0.5]
+    out = gd._delta_rho_ci(ok, ok, seed=1, min_resamples=5, behavior="x")
+    assert out["n_resamples"] == 5 and "null_overlap" in out
+
+
+def test_cluster_bootstrap_emits_full_nboot_or_none_for_tiny():
+    """Upstream contract: full n_boot draws for n>=4, None only for a tiny (n<4) cell."""
+    import issue658_fit_predictors as fit
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    pred = rng.standard_normal(10)
+    meas = pred + rng.standard_normal(10) * 0.3
+    out = fit._cluster_bootstrap_rho(pred, meas, n_boot=300, seed=1)
+    assert out is not None
+    assert len(out["draws"]) == 300, "a healthy n>=4 cell emits exactly n_boot draws"
+    # n<4 → the legitimate tiny-cell None (genre-delta gate flags it H3).
+    tiny = fit._cluster_bootstrap_rho(
+        rng.standard_normal(3), rng.standard_normal(3), n_boot=300, seed=1
+    )
+    assert tiny is None
+
+
+def test_extractor_genre_tag_must_be_canonical_for_genre_arm():
+    """Path-naming (Codex r1 Minor): the genre arm rejects a non-canonical --genre-tag.
+
+    The extractor's canonical tag MUST equal the prefix genre_delta.py reads back as
+    its --ultrachat-dir default — eliminating the default mismatch where a stale
+    `--genre-tag ultrachat` routed outputs to a dir the genre delta never reads.
+    """
+    import inspect
+
+    import issue658_extract_base_store as ext
+    import issue658_genre_delta as gd
+    from issue658_common import EVAL_RESULTS_DIR
+
+    assert ext.CANONICAL_GENRE_TAG == "genre-generalization-ultrachat"
+    default_ultra = EVAL_RESULTS_DIR / ext.CANONICAL_GENRE_TAG
+    assert str(default_ultra).endswith("genre-generalization-ultrachat")
+    # genre_delta.py's --ultrachat-dir argparse default reads the same prefix.
+    src = inspect.getsource(gd.main)
+    assert ext.CANONICAL_GENRE_TAG in src, (
+        "genre_delta.py --ultrachat-dir default must equal the extractor's canonical tag"
+    )
+    # The extractor's guard enforces the canonical tag for the genre arm.
+    ext_src = inspect.getsource(ext.main)
+    assert "CANONICAL_GENRE_TAG" in ext_src, (
+        "the extractor must fail loud when --probes-file is set but --genre-tag is non-canonical"
+    )
