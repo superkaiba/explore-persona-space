@@ -77,6 +77,11 @@ export async function resolveAndBuildPaperSchema() {
   const HERE = dirname(fileURLToPath(import.meta.url)); // docs/papers/_template
   const REPO = resolve(HERE, "..", "..", ".."); // repo root (3 up)
   const SANITIZE = resolve(REPO, "dashboard/lib/markdown-sanitize.ts");
-  const { markdownSchema } = await import(SANITIZE);
+  // turbopackIgnore: this convenience entry point is for node/tsx callers
+  // (build_paper.py's driver imports buildPaperSchema directly, NOT this). The
+  // runtime dynamic import is unresolvable at bundle time; the dashboard imports
+  // only buildPaperSchema, so telling Turbopack to skip this keeps the bundle
+  // building while leaving the function intact for its node callers.
+  const { markdownSchema } = await import(/* turbopackIgnore: true */ SANITIZE);
   return buildPaperSchema(markdownSchema);
 }

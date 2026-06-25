@@ -1,0 +1,25 @@
+{
+  "schema": "paper_manifest/v1",
+  "issue": 657,
+  "jobname": "issue_657_sample",
+  "built_at": "2026-06-25T10:12:47.341306+00:00",
+  "source_date_epoch": "1781836785",
+  "pdf_hf_url": null,
+  "artifacts": {
+    "tex": {
+      "path": "docs/papers/_sample/issue_657_sample.tex",
+      "sha256": "ac0aad409c3eb5584c7a03221b367ddd7b8fc6e26ab695cd88c9698725ea17e3",
+      "bytes": 5271
+    },
+    "pdf": {
+      "path": "docs/papers/_sample/issue_657_sample.pdf",
+      "sha256": "cff5e73e2f42fe3897e7b9b0c229df64c60f02941914aaf50c6c2d977f8e0670",
+      "bytes": 558917
+    },
+    "paper_html": {
+      "path": "docs/papers/_sample/paper.html",
+      "sha256": "e55590a4abda2a64131843880541513f35daff4965d80bf10d84eeadedd7a4fd",
+      "bytes": 4293
+    }
+  }
+}
