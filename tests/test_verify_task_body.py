@@ -4860,8 +4860,8 @@ def test_paper_stub_short_body_not_flagged_as_stub_token():
     the paper branch short-circuits BEFORE Check 0 runs."""
     ok, results = verify_task_body.verify_text(_GOOD_PAPER_STUB)
     assert ok
-    # Check 0 ("body is not a stub / placeholder") never appears in the output.
-    assert all(r.name != "body is not a stub / placeholder" for r in results)
+    # Check 0 ("body is not a stub") never appears in the output.
+    assert all(r.name != "body is not a stub" for r in results)
 
 
 def test_non_paper_v4_body_unaffected_by_paper_branch():

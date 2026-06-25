@@ -509,7 +509,7 @@ def _registry_set(registry: dict[str, Any], task_id: int, path: Path, fm: dict[s
             try:
                 _, body = _split_frontmatter(body_path.read_text())
                 abstract = extract_stub_abstract(body)
-            except OSError:
+            except (OSError, ValueError):
                 abstract = ""
             if abstract:
                 entry["abstract"] = abstract
