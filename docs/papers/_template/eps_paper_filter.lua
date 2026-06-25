@@ -59,7 +59,11 @@ local function build_epsref(num)
     { pandoc.Str("#" .. num) },
     "/tasks/" .. num,
     "",
-    pandoc.Attr("", { "eps-ref" }, { ["data-epsref"] = num, target = "_blank" }))
+    -- rel="noopener" guards against reverse tabnabbing on the new-tab open.
+    pandoc.Attr(
+      "",
+      { "eps-ref" },
+      { ["data-epsref"] = num, target = "_blank", rel = "noopener" }))
 end
 
 -- Resolve sentinels that land INSIDE a math node (e.g. $\rho = \metric{b}$).

@@ -62,17 +62,25 @@ class BuildError(RuntimeError):
     """A build step failed. The message names the step + points at the log."""
 
 
-def _run(cmd: list[str], *, cwd: Path, log_path: Path | None = None) -> str:
+def _run(
+    cmd: list[str],
+    *,
+    cwd: Path,
+    log_path: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> str:
     """Run a command, capturing combined output. Raise BuildError on nonzero.
 
     Output is written to ``log_path`` (if given) AND returned, so the caller can
-    grep it. We never swallow a nonzero rc — the crash IS the signal.
+    grep it. We never swallow a nonzero rc — the crash IS the signal. ``env``
+    (when given) is the FULL child environment, not a delta.
     """
     proc = subprocess.run(
         cmd,
         cwd=str(cwd),
         capture_output=True,
         text=True,
+        env=env,
     )
     out = proc.stdout + proc.stderr
     if log_path is not None:
@@ -230,6 +238,8 @@ def build_html(paper_dir: Path, jobname: str) -> Path:
         pandoc_env["METRICS_JSON"] = str(metrics_json)
     body_html = paper_dir / "paper_body.html"
     try:
+        # The Lua filter reads METRICS_JSON from the child env (v1.1; v1 has no
+        # metrics.json so pandoc_env == os.environ and the filter defaults).
         _run(
             [
                 pandoc,
@@ -248,10 +258,8 @@ def build_html(paper_dir: Path, jobname: str) -> Path:
             ],
             cwd=paper_dir,
             log_path=paper_dir / "pandoc.log",
+            env=pandoc_env,
         )
-        # pandoc inherits METRICS_JSON via os.environ; set it explicitly.
-        if metrics_json.exists():
-            os.environ["METRICS_JSON"] = str(metrics_json)
     finally:
         if tmp_tex.exists():
             tmp_tex.unlink()
@@ -324,15 +332,24 @@ def _sanitize_html(body_html: Path, out_html: Path) -> None:
             cwd=dash,
             log_path=out_html.parent / "sanitize.log",
         )
-        if "STRIPPED:" in out and "STRIPPED:    none" not in out and "STRIPPED: none" not in out:
-            # The sanitizer reports a tag census; a non-"none" STRIPPED line for
-            # the paperSchema is a real loss we must not hide.
-            for line in out.splitlines():
-                if line.strip().startswith("STRIPPED:") and "none" not in line:
-                    raise BuildError(
-                        "dashboard sanitizer (paperSchema) stripped tags from the "
-                        f"paper HTML: {line.strip()} — see {out_html.parent / 'sanitize.log'}"
-                    )
+        # The driver prints one machine-parseable line: `STRIPPED_JSON: {...}`,
+        # the JSON object of {tag: count} the sanitizer removed (empty == clean).
+        # A non-empty census is a real loss we must not hide.
+        stripped: dict[str, int] | None = None
+        for line in out.splitlines():
+            marker = "STRIPPED_JSON:"
+            if line.strip().startswith(marker):
+                stripped = json.loads(line.strip()[len(marker) :].strip())
+        if stripped is None:
+            raise BuildError(
+                "dashboard sanitizer produced no STRIPPED_JSON census line — "
+                f"see {out_html.parent / 'sanitize.log'}"
+            )
+        if stripped:
+            raise BuildError(
+                "dashboard sanitizer (paperSchema) stripped tags from the paper "
+                f"HTML: {json.dumps(stripped)} — see {out_html.parent / 'sanitize.log'}"
+            )
     finally:
         if driver.exists():
             driver.unlink()
@@ -371,7 +388,9 @@ for (const t of Object.keys(before)) {{
   const d = (before[t] || 0) - (after[t] || 0);
   if (d > 0) lost[t] = d;
 }}
-console.log(Object.keys(lost).length ? `STRIPPED: ${{JSON.stringify(lost)}}` : "STRIPPED:    none");
+// Machine-parseable census line: the build helper parses the JSON object and
+// treats a non-empty object as a tag-stripping FAIL.
+console.log(`STRIPPED_JSON: ${{JSON.stringify(lost)}}`);
 writeFileSync(outPath, clean);
 """
 
@@ -463,6 +482,12 @@ def write_manifest(
 
 
 def main() -> int:
+    # Project convention: every entrypoint loads .env so HF_TOKEN (used by the
+    # PDF upload) is present without the caller sourcing it manually.
+    from explore_persona_space.orchestrate.env import load_dotenv
+
+    load_dotenv()
+
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--issue", type=int, help="task id (docs/papers/issue_<N>/)")
     ap.add_argument(

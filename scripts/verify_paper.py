@@ -65,7 +65,12 @@ _REQUIRED_SECTIONS = [
 ]
 
 _CONFIDENCE_TAG_RE = re.compile(r"\((?:LOW|MODERATE|HIGH)\s+confidence\)", re.IGNORECASE)
-_CONFIDENCE_LINE_RE = re.compile(r"(?<!\\)%?\s*Confidence\s*[:=]", re.IGNORECASE)
+# NOTE: no leading `%?` — the match must start at `Confidence` so the
+# comment-skip in check_no_confidence (which inspects the text BEFORE the match
+# on the line) owns comment detection. A leading `%?` would let the match begin
+# at the `%`, leaving an empty prefix and defeating the skip (a commented
+# `% Confidence:` line in the body would wrongly FAIL).
+_CONFIDENCE_LINE_RE = re.compile(r"(?<!\\)Confidence\s*[:=]", re.IGNORECASE)
 _INCLUDEGRAPHICS_RE = re.compile(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}")
 _GRAPHICSPATH_RE = re.compile(r"\\graphicspath\{((?:\{[^}]*\})+)\}")
 _CITE_RE = re.compile(r"\\cite[a-zA-Z]*\*?(?:\[[^\]]*\])*\{([^}]+)\}")

@@ -6,8 +6,10 @@
 % PARAMETERIZED template for an EPS clean-result paper. The authoring agent
 % copies this to docs/papers/issue_<N>/issue_<N>.tex and fills the {{...}}
 % placeholders + the section bodies. It NEVER edits the preamble — the preamble
-% is \input verbatim from ../_template/preamble.tex (the build helper rewrites
-% this relative path if it copies the template into the per-task dir).
+% is \input verbatim. The authoring agent copies ../_template/preamble.tex into
+% the per-task dir alongside issue_<N>.tex so the \input{preamble.tex} below
+% resolves (build_paper.py builds in-place in the paper dir; it does NOT rewrite
+% the \input path or \graphicspath).
 %
 % v1 SCOPE: numbers are written as LITERALS in the section bodies (the
 % analyzer's existing numeric-fidelity re-extraction is the grounding
@@ -22,11 +24,14 @@
 % confidence tag.
 % ===========================================================================
 
-% \graphicspath points at the per-task figure dir. The build helper sets this
-% to figures/issue_<N>/ resolved relative to the build dir.
-\graphicspath{{{{GRAPHICSPATH}}}}
-
 \input{preamble.tex}
+
+% \graphicspath points at the per-task figure dir; fill {{GRAPHICSPATH}} with the
+% figures/issue_<N>/ path resolved relative to the build dir (the paper dir).
+% MUST come AFTER \input{preamble.tex}: \graphicspath is provided by the graphicx
+% package, which preamble.tex loads — calling it before the \input fails with
+% "Undefined control sequence \graphicspath".
+\graphicspath{{{{GRAPHICSPATH}}}}
 
 \title{\vspace{-2.5em}{{TITLE}}}
 \author{Explore Persona Space, experiment record \#{{ISSUE}}}

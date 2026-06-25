@@ -3,11 +3,12 @@
 %
 % FIXED preamble for every EPS clean-result paper. The analyzer / authoring
 % agent NEVER edits this file or copies its own preamble: a paper's
-% issue_<N>.tex \input's this preamble verbatim (via the build helper, which
-% rewrites the relative \input path to the per-task dir). Constraining the
-% preamble is what contains the "agent writes free-form LaTeX -> brace/macro
-% compile errors" risk (SPIKE_REPORT.md § "The #1 risk"). The agent only fills
-% the section bodies of the template.
+% issue_<N>.tex \input's this preamble verbatim (the agent copies this file into
+% the per-task dir alongside issue_<N>.tex so \input{preamble.tex} resolves;
+% build_paper.py builds in-place and does NOT rewrite the \input path).
+% Constraining the preamble is what contains the "agent writes free-form LaTeX
+% -> brace/macro compile errors" risk (SPIKE_REPORT.md § "The #1 risk"). The
+% agent only fills the section bodies of the template.
 %
 % This is the spike-proven preamble (issue_657_spike.tex), which compiles 8
 % pages clean multi-pass pdflatex+bibtex and is byte-reproducible under
@@ -44,10 +45,11 @@
 \usepackage{enumitem}
 \usepackage{titlesec}
 
-% Figures live in the per-task figure dir figures/issue_<N>/. The build helper
-% (scripts/build_paper.py) sets \graphicspath at the top of issue_<N>.tex
-% (BEFORE \input{preamble.tex}) so this preamble stays task-agnostic. The
-% verifier confirms every \includegraphics resolves repo-relative-confined.
+% Figures live in the per-task figure dir figures/issue_<N>/. issue_<N>.tex sets
+% \graphicspath AFTER \input{preamble.tex} (graphicx is loaded just above, so
+% \graphicspath is only defined from this point on) so this preamble stays
+% task-agnostic. The verifier confirms every \includegraphics resolves
+% repo-relative-confined.
 
 \captionsetup{font=small,labelfont=bf}
 \titlespacing*{\section}{0pt}{1.4ex plus 1ex minus .2ex}{0.8ex plus .2ex}

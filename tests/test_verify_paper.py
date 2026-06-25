@@ -186,20 +186,34 @@ def test_required_sections_fails_missing_methods():
 
 
 def test_required_sections_fails_out_of_order():
-    # move Discussion before Methods
-    tex = GOOD_TEX.replace(
-        "\\section{Methods}\nWe reuse persona vectors and write out the recipe. "
-        "\\cite{chen2025persona}\n",
-        "",
-    ).replace(
-        "\\section{Introduction}\nContext for the project. Parent \\epsref{623}.\n",
-        "\\section{Introduction}\nContext.\n\\section{Methods}\nm\n"
-        "\\section{Results}\nr\n\\section{Discussion}\nd\n\\section{Methods}\nlate\n",
-    )
+    # A genuinely out-of-order body: Results appears BEFORE Methods (each section
+    # present exactly once, but the required order is violated).
+    tex = r"""\documentclass[11pt]{article}
+\graphicspath{{figs/}}
+\title{T}
+\begin{document}
+\maketitle
+\begin{abstract}
+This abstract is long enough to be a real abstract for the order check fixture.
+\end{abstract}
+\section{Introduction}
+Intro.
+\section{Results}
+Results come before Methods here.
+\section{Methods}
+Methods after Results — out of order.
+\section{Discussion}
+Discussion.
+\bibliographystyle{plainnat}
+\bibliography{issue_657}
+\appendix
+\section{Appendix}
+Appendix.
+\end{document}
+"""
     r = verify_paper.check_required_sections(tex)
-    # Methods now appears after Discussion's first occurrence -> not strictly an
-    # error since first-match wins; assert the check at least runs.
-    assert isinstance(r.passed, bool)
+    assert not r.passed
+    assert "order" in r.detail.lower()
 
 
 # ─── no confidence in body ───────────────────────────────────────────────────
@@ -230,6 +244,18 @@ def test_no_confidence_ignores_preamble_comment():
     tex = "% Confidence: this is a comment\n" + GOOD_TEX
     r = verify_paper.check_no_confidence(tex)
     assert r.passed
+
+
+def test_no_confidence_ignores_in_body_comment():
+    # a commented `% Confidence:` line INSIDE the body (between \begin{document}
+    # and \end{document}) must be skipped, not FAILed (regression: the old
+    # `%?`-prefixed regex matched at the `%`, defeating the comment skip).
+    tex = GOOD_TEX.replace(
+        "\\section{Discussion}",
+        "\\section{Discussion}\n% Confidence: high (a note to self, not body text)",
+    )
+    r = verify_paper.check_no_confidence(tex)
+    assert r.passed, r.detail
 
 
 # ─── includegraphics confined + resolves ─────────────────────────────────────
