@@ -387,6 +387,27 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   (the main-grid revision, predating the bakeoff round) resolved to 0
   files — caught by hand at round-1 clean-result-critique.
 
+- **check 24** (`check_figure_text_vs_body_tokens`, WARN): figure-embedded
+  text must not carry strings the body prose softened away, or chance/N
+  values that disagree with the body's figure caption. A round-1 numeric /
+  overclaim fix is routinely applied to body prose but MISSED in the
+  figure-generation script's hardcoded title / annotation strings, so the
+  regenerated figure silently disagrees with the body and only the
+  multimodal interpretation-critic catches it — pushing the fix to a later
+  round. This check reads each referenced figure's sibling `.meta.json`
+  (from the git tree at the URL's commit sha via `git show`, fail-soft),
+  flattens its text-bearing leaves (provenance keys dropped), and WARNs on
+  (a) a `<a>/<b>` fraction in the figure text whose same-numerator
+  counterpart in the body caption uses a DIFFERENT denominator (the
+  `1/30` vs `1/29` case), or (b) any string from the configured stale-token
+  list (`STALE_FIGURE_TOKENS` plus an optional `~/.eps-stale-tokens.json`).
+  WARN, never FAIL (the multimodal critic owns the substantive read). NO-OP
+  PASS offline / `--body-stdin`, with no same-repo sha-pinned figures, or
+  no sidecar carrying scannable text. At most one `git show` per unique
+  figure. Incident: task #667 round-2 interp-critique caught two stale
+  figure-embedded strings (`1/30`→`1/29`, "geometrically real") the body
+  prose had already fixed at round 1.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -4233,6 +4254,295 @@ def check_figure_url_sha_matches_repro(body: str) -> CheckResult:
     return CheckResult(name, True, f"{checked} figure URL sha(s) match their Reproducibility claim")
 
 
+# ─── Check 24: figure-embedded text vs body prose (figure-text staleness) ────
+#
+# `.meta.json` sidecar keys that are PURE PROVENANCE (commit hashes,
+# timestamps, platform strings, argv, figsize) — never chart text — and are
+# skipped when flattening the sidecar to a scannable string blob, so a commit
+# sha inside the sidecar can never be read as a stale chart token. Matched
+# case-insensitively against the leaf KEY name (not the value).
+_META_PROVENANCE_KEYS = frozenset(
+    {
+        "commit",
+        "git_commit",
+        "git_sha",
+        "created",
+        "ts_utc",
+        "timestamp_utc",
+        "timestamp",
+        "python_version",
+        "platform",
+        "argv",
+        "figsize",
+        "cuda_visible_devices",
+        "n_series",
+        "total_points",
+        "data_truncated",
+        "data_path",
+        "figure",
+        "script",
+    }
+)
+
+# Default stale-token list: project-specific strings the body prose is known
+# to have softened away but a figure-generation script may still hardcode in a
+# title / annotation. Kept tiny + conservative (WARN, not FAIL) — extend via a
+# user-supplied `~/.eps-stale-tokens.json` (a JSON list of strings), read
+# fail-soft by `_load_stale_figure_tokens`. Matched case-insensitively as a
+# substring of the flattened figure-text blob.
+STALE_FIGURE_TOKENS: tuple[str, ...] = (
+    "geometrically real",  # round-1 plain-cosine softening case (#667)
+)
+
+# A simple `<numerator>/<denominator>` fraction token (chance-level values like
+# `1/30`, `1/29`). Bounded by non-digit / start / end so `1/30` matches but a
+# date like `2026/06/24` or a path like `issue_667/figures` does not (the inner
+# `/` there is flanked by digits on BOTH sides across >2 groups — handled by
+# requiring the whole token to be exactly two digit-runs).
+_FRACTION_RE = re.compile(r"(?<![\d/])(?P<num>\d{1,4})/(?P<den>\d{1,4})(?![\d/])")
+
+
+def _load_stale_figure_tokens() -> list[str]:
+    """Return the configured stale-figure-token list: the module-level
+    ``STALE_FIGURE_TOKENS`` constant plus any strings in an optional
+    ``~/.eps-stale-tokens.json`` file (a JSON array of strings).
+
+    The user file is read FAIL-SOFT — absent / unreadable / malformed → the
+    built-in constant alone, never an error. This keeps the check a soft
+    mechanical aid the operator can extend without editing the verifier.
+    """
+    tokens = [t for t in STALE_FIGURE_TOKENS if t]
+    cand = Path.home() / ".eps-stale-tokens.json"
+    try:
+        if cand.is_file():
+            extra = json.loads(cand.read_text())
+            if isinstance(extra, list):
+                tokens.extend(str(t) for t in extra if isinstance(t, str) and t.strip())
+    except (OSError, ValueError):
+        pass  # fail-soft: optional config, never blocks the check
+    # De-dup case-insensitively, preserve order.
+    seen: set[str] = set()
+    out: list[str] = []
+    for t in tokens:
+        key = t.casefold()
+        if key not in seen:
+            seen.add(key)
+            out.append(t)
+    return out
+
+
+def _flatten_meta_strings(obj: object) -> list[str]:
+    """Recursively collect text-bearing leaf strings from a parsed
+    ``.meta.json`` sidecar, SKIPPING pure-provenance keys.
+
+    The canonical `savefig_paper` sidecar carries chart text in several
+    shapes — top-level ``description``, per-row ``series`` / ``label``
+    strings and category-keyed string values under ``points`` / ``rows``,
+    and the forward-looking ``title`` / ``annotations`` / ``caption`` /
+    ``xlabel`` / ``ylabel`` keys the candidate names — so we walk the whole
+    structure rather than hard-coding a key list. Numeric leaves and
+    provenance keys (``commit`` / ``created`` / ``git_sha`` / ``argv`` …,
+    see ``_META_PROVENANCE_KEYS``) are dropped so a commit sha or timestamp
+    in the sidecar is never mistaken for a stale chart token. Returns the
+    flat list of strings (callers join + scan).
+    """
+    out: list[str] = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(k, str) and k.casefold() in _META_PROVENANCE_KEYS:
+                continue
+            # Dict KEYS can themselves carry chart text (an axis-label-keyed
+            # data row uses the axis label as the key, e.g.
+            # `{"1/30 chance accuracy": 0.41}`), so collect non-provenance
+            # string keys too.
+            if isinstance(k, str) and k.strip():
+                out.append(k)
+            out.extend(_flatten_meta_strings(v))
+    elif isinstance(obj, list):
+        for item in obj:
+            out.extend(_flatten_meta_strings(item))
+    elif isinstance(obj, str) and obj.strip():
+        out.append(obj)
+    # numbers / bools / None contribute no scannable text
+    return out
+
+
+def _read_figure_meta_text(repo: Path, sha: str, fig_path: str) -> str | None:
+    """Return the flattened text blob of the figure's sibling ``.meta.json``
+    (``<fig_path>`` with its extension swapped to ``.meta.json``) read out of
+    the git tree at ``sha`` via ``git show``, or None when there is nothing to
+    scan (no sidecar at that sha, unresolvable sha, parse failure).
+
+    Reads from the git OBJECT DB (``git show <sha>:<meta_path>``) rather than
+    the working tree, because the body pins figures to a specific commit and a
+    worktree shares the object database with the main checkout. FAIL-SOFT
+    throughout: any subprocess / decode / JSON error → None (the check skips
+    that figure rather than blocking). One ``git show`` per unique figure.
+    """
+    base, _, ext = fig_path.rpartition(".")
+    meta_path = (base if ext else fig_path) + ".meta.json"
+    try:
+        proc = subprocess.run(
+            ["git", "show", f"{sha}:{meta_path}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None  # no sidecar at that sha, or sha unresolvable
+    try:
+        meta = json.loads(proc.stdout)
+    except (ValueError, json.JSONDecodeError):
+        return None
+    strings = _flatten_meta_strings(meta)
+    if not strings:
+        return None
+    return " ".join(strings)
+
+
+def _figure_caption_after(rlines: list[str], img_line_idx: int) -> str:
+    """Return the figure caption text that follows the inline image at
+    ``rlines[img_line_idx]``: the contiguous run of blockquote (``> …``)
+    lines after the image (skipping blank lines), the analyzer's caption
+    convention (``> **Figure.** *…* …``). Empty string when there is no
+    blockquote caption directly after the image.
+    """
+    n = len(rlines)
+    i = img_line_idx + 1
+    # Skip blank lines between the image and its caption.
+    while i < n and rlines[i].strip() == "":
+        i += 1
+    cap: list[str] = []
+    while i < n and rlines[i].lstrip().startswith(">"):
+        cap.append(rlines[i].lstrip()[1:].strip())
+        i += 1
+    return " ".join(cap).strip()
+
+
+def _figure_text_warnings(
+    fig_text: str, caption: str, basename: str, stale_tokens: list[str]
+) -> list[str]:
+    """Return the check-24 WARN messages for ONE figure's flattened sidecar
+    text ``fig_text`` against its body ``caption``.
+
+    Two signals (see ``check_figure_text_vs_body_tokens``):
+    (b) softened token — any ``stale_tokens`` string present in ``fig_text``.
+    (a) chance/N disagreement — a ``<a>/<b>`` fraction in ``fig_text`` whose
+        same-numerator counterpart in ``caption`` uses a different denominator.
+    """
+    warns: list[str] = []
+    fig_lower = fig_text.casefold()
+    for tok in stale_tokens:
+        if tok.casefold() in fig_lower:
+            warns.append(
+                f"`{basename}` figure text contains softened token `{tok}` "
+                "(removed from body prose) — regenerate the figure"
+            )
+    cap_fracs: dict[str, set[str]] = {}
+    for fm_ in _FRACTION_RE.finditer(caption):
+        cap_fracs.setdefault(fm_.group("num"), set()).add(fm_.group("den"))
+    if cap_fracs:
+        seen_pairs: set[tuple[str, str]] = set()
+        for fm_ in _FRACTION_RE.finditer(fig_text):
+            num, den = fm_.group("num"), fm_.group("den")
+            cap_dens = cap_fracs.get(num)
+            if cap_dens and den not in cap_dens and (num, den) not in seen_pairs:
+                seen_pairs.add((num, den))
+                warns.append(
+                    f"`{basename}` figure text says `{num}/{den}` but the caption "
+                    f"says `{num}/{sorted(cap_dens)[0]}` — update the stale figure"
+                )
+    return warns
+
+
+def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
+    """Check 24 (WARN): figure-embedded text must not carry strings the body
+    prose softened away, or chance/N values that disagree with the body's
+    figure caption.
+
+    A round-1 numeric / overclaim fix is routinely applied to the body prose
+    but MISSED in the figure-generation script's hardcoded title / annotation
+    strings, so the regenerated figure silently disagrees with the body
+    (e.g. #667: the body caption was corrected to a ``1/29`` chance level
+    while the figure title still read ``1/30``; and "geometrically real" was
+    removed from prose but left in a figure annotation). The mechanical
+    verifier inspects body prose + figure-URL SHA pinning but never the figure
+    text, so only the multimodal interpretation-critic catches this — pushing
+    the fix to a later review round. This check reads each referenced figure's
+    sibling ``.meta.json`` (from the git tree at the URL's commit sha) and
+    flags two signals:
+
+    (a) **chance/N disagreement** — a ``<a>/<b>`` fraction in the figure text
+        whose same-numerator counterpart in the body's figure caption uses a
+        DIFFERENT denominator (the ``1/30`` vs ``1/29`` case). Conservative:
+        only same-numerator, different-denominator pairs are flagged, so an
+        unrelated fraction in the figure (a different axis) is ignored.
+    (b) **softened token** — any string from the configured stale-token list
+        (``STALE_FIGURE_TOKENS`` plus an optional ``~/.eps-stale-tokens.json``,
+        see ``_load_stale_figure_tokens``) appearing in the figure text.
+
+    WARN, never FAIL — a soft mechanical aid (the multimodal critic owns the
+    substantive figure-vs-body read). NO-OP PASS when: the repo cannot be
+    resolved (offline / `--body-stdin`), no figure URLs resolve to a same-repo
+    sha-pinned raw-GitHub URL, or no sidecar carries scannable text. Reads at
+    most one ``git show`` per unique figure URL, all fail-soft, so the check
+    adds negligible latency on a normal body (no figure sidecars with text →
+    one cheap git probe per figure, then skip).
+    """
+    label = "figure text vs body prose (figure-text staleness)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    # Collect (figure-URL, caption) pairs in document order.
+    fig_caps: list[tuple[str, str]] = []
+    for idx, line in enumerate(rlines):
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if not url:
+                continue
+            fig_caps.append((url, _figure_caption_after(rlines, idx)))
+    if not fig_caps:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    stale_tokens = _load_stale_figure_tokens()
+    meta_cache: dict[str, str | None] = {}
+    warns: list[str] = []
+    scanned = 0
+    for url, caption in fig_caps:
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        if url not in meta_cache:
+            meta_cache[url] = _read_figure_meta_text(repo, m.group("sha"), m.group("path"))
+        fig_text = meta_cache[url]
+        if not fig_text:
+            continue  # no sidecar / no scannable text — skip this figure
+        scanned += 1
+        basename = m.group("path").rsplit("/", 1)[-1]
+        warns.extend(_figure_text_warnings(fig_text, caption, basename, stale_tokens))
+    if warns:
+        preview = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(warns)} figure-text mismatch(es) across {scanned} scanned figure(s): {preview}",
+            is_warn=True,
+        )
+    if scanned == 0:
+        return CheckResult(
+            label, True, "no same-repo figure sidecar with scannable text — nothing to compare"
+        )
+    return CheckResult(label, True, f"{scanned} figure sidecar(s) consistent with body prose")
+
+
 def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
     """Lens 14 — mechanical concerns audit (binding-concerns contract,
     composed onto the 2-content-section clean-result spec on 2026-05-31
@@ -5414,6 +5724,7 @@ CHECKS = [
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
+    check_figure_text_vs_body_tokens,  # check 24 (WARN)
 ]
 
 

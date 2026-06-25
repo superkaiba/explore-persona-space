@@ -104,7 +104,7 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 29 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 30 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe), the four
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
@@ -113,23 +113,26 @@ def test_good_body_passes_all():
     # `check_v3_word_caps`), the THREE v4-gated body-only checks added
     # 2026-W26 (check 18 `check_v4_methodology_shape`, check 20
     # `check_v4_word_caps`, check 21 `check_v4_results_beat` WARN) — each
-    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the two
+    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the THREE
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
-    # this fixture's `## Reproducibility` carries no figure-sha claim, and
+    # this fixture's `## Reproducibility` carries no figure-sha claim,
     # check 23 (`check_hf_url_resolves`), a PASS-with-`unverified`-note here
     # because the fixture's HF URLs are probe-fenced by conftest's
-    # EPM_VERIFY_BODY_NO_HF=1. verify_text prepends check 0 (body-nonstub) +
-    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (28
+    # EPM_VERIFY_BODY_NO_HF=1, and check 24
+    # (`check_figure_text_vs_body_tokens`, WARN), a NO-OP PASS here because
+    # this fixture's only figure pins a fake sha with no `.meta.json` in
+    # the git tree. verify_text prepends check 0 (body-nonstub) +
+    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (29
     # functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, AND the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc) →
-    # 35 results total (2 prepended + CHECKS[1:]=28 + 5 appended). The
+    # 36 results total (2 prepended + CHECKS[1:]=29 + 5 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 35
+    assert len(results) == 36
 
 
 def test_missing_confidence_tag():
@@ -2235,7 +2238,7 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 29 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 30 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
@@ -2245,14 +2248,16 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the two generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the THREE generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
-    vs the `## Reproducibility` per-figure commit claim) and check 23
+    vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via
-    `huggingface_hub.list_repo_files`). The migration is a RETARGET —
-    every former check was kept (sometimes dormant, e.g.
-    `check_figure_caption`) so downstream tests stay valid; the v3
-    checks PASS-skip on non-v3 bodies.
+    `huggingface_hub.list_repo_files`), and check 24
+    (`check_figure_text_vs_body_tokens`, WARN: figure-embedded `.meta.json`
+    text vs body prose — stale fraction / softened-token staleness, #667
+    r2). The migration is a RETARGET — every former check was kept
+    (sometimes dormant, e.g. `check_figure_caption`) so downstream tests
+    stay valid; the v3 checks PASS-skip on non-v3 bodies.
 
     Checks appended OUTSIDE CHECKS inside `verify_text` (they need
     something beyond the body string): the Goal soft check (needs
@@ -2260,9 +2265,9 @@ def test_checks_list_size():
     the check-16 lr-matches-plan (needs the plan), the check-17 Context
     provenance row (needs frontmatter + original-body.md), and the v3
     check-21 body-Parameters-⊆-doc (needs the methodology doc path). So
-    `verify_text` returns 35 results, but `CHECKS` stays at 29.
+    `verify_text` returns 36 results, but `CHECKS` stays at 30.
     """
-    assert len(verify_task_body.CHECKS) == 29
+    assert len(verify_task_body.CHECKS) == 30
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -4891,3 +4896,224 @@ def test_is_paper_stub_fm_helper():
     assert not verify_task_body._is_paper_stub_fm({"paper": False})
     assert not verify_task_body._is_paper_stub_fm({"paper": "false"})
     assert not verify_task_body._is_paper_stub_fm({})
+
+
+# ─── Check 24: figure-embedded text vs body prose (figure-text staleness) ──
+#
+# A round-1 numeric / overclaim fix lands in body prose but is missed in the
+# figure-generation script's hardcoded title/annotation strings, so the
+# regenerated figure's `.meta.json` silently disagrees with the body. Check 24
+# reads the figure's sidecar from the git tree at the URL's sha and WARNs on
+# (a) a same-numerator/different-denominator fraction vs the body caption, or
+# (b) a configured softened token. WARN-only, fail-soft. Incident: #667 r2.
+
+_CHECK24_NAME = "figure text vs body prose (figure-text staleness)"
+
+
+def _make_repo_with_figure_meta(tmp_path, meta: dict):
+    """Create a throwaway git repo whose HEAD commit carries
+    `figures/issue_999/hero.png` AND its sibling `hero.meta.json` (content =
+    ``meta``); return (repo_path, head_sha). Mirrors `_make_repo_with_figure`
+    but also commits the sidecar check 24 reads via `git show`."""
+    repo = tmp_path / "figrepo24"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig_dir = repo / "figures" / "issue_999"
+    fig_dir.mkdir(parents=True)
+    (fig_dir / "hero.png").write_bytes(b"\x89PNG fake bytes")
+    (fig_dir / "hero.meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+    # GOOD_BODY's `**Code:**` blob link names scripts/run.py — commit it too so
+    # check 8b's probe resolves cleanly and does not muddy assertions.
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "add hero figure + sidecar + entry script")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+# A v4 body whose single result figure is a same-repo sha-pinned raw-GitHub
+# URL with a caption stating a `1/29` chance level. We swap the placeholder sha
+# for the throwaway repo's real HEAD sha per-test.
+_CHECK24_BODY = _V4_GOOD_BODY.replace(
+    "> **Figure.** *Tulu-25 lifts alignment ~17 pts over baseline at every seed.* "
+    "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+    "> **Figure.** *Chance is 1/29 (one correct of 29 candidates).* "
+    "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+)
+
+
+def test_check24_stale_fraction_in_figure_warns(tmp_path, monkeypatch):
+    """Figure sidecar `description` says `1/30` while the body caption says
+    `1/29` (same numerator, different denominator) → WARN, never FAIL."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "commit": "deadbeef",  # provenance — must be ignored
+            "created": "2026-06-24T00:00:00Z",
+            "description": "Accuracy vs the 1/30 chance baseline across conditions.",
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    res = by_name[_CHECK24_NAME]
+    # WARN counts as passed=True, is_warn=True — it must NOT fail the body.
+    assert res.passed and res.is_warn, res.render()
+    assert "1/30" in res.detail and "1/29" in res.detail
+    # A WARN does not flip overall PASS (the only FAILs are the fake-sha probes,
+    # which the real sha here resolves, so overall is driven by other checks).
+    assert _CHECK24_NAME not in {r.name for r in results if not r.passed}
+
+
+def test_check24_softened_token_in_figure_warns(tmp_path, monkeypatch):
+    """A figure sidecar carrying a configured stale token ("geometrically
+    real", removed from body prose) → WARN."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-06-24T00:00:00Z",
+            "description": "Cosine recipe shows a geometrically real separation.",
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK24_NAME]
+    assert res.passed and res.is_warn, res.render()
+    assert "geometrically real" in res.detail
+
+
+def test_check24_consistent_figure_passes_clean(tmp_path, monkeypatch):
+    """Figure sidecar whose only fraction matches the caption (`1/29`) and
+    carries no softened token → clean PASS (no WARN)."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-06-24T00:00:00Z",
+            "description": "Accuracy vs the 1/29 chance baseline across conditions.",
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK24_NAME]
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 figure sidecar(s) consistent" in res.detail
+
+
+def test_check24_provenance_keys_never_flagged(tmp_path, monkeypatch):
+    """A commit sha / timestamp inside provenance keys must NOT be read as a
+    stale token, and a fraction-like date must not false-WARN against the
+    caption's `1/29`."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "commit": "1234567",
+            "git_sha": "1/30",  # provenance key — ignored even though it looks like a fraction
+            "created": "2026/06/24",  # date, not a chance fraction
+            "figsize": [7.0, 4.2],
+            "description": "Accuracy across conditions.",  # no chance fraction, no stale token
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK24_NAME]
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check24_no_sidecar_is_noop_pass(tmp_path, monkeypatch):
+    """A same-repo figure with NO `.meta.json` sibling → NO-OP PASS (nothing
+    to compare), never a WARN or FAIL."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # commits hero.png but no sidecar
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK24_NAME]
+    assert res.passed and not res.is_warn, res.render()
+    assert "nothing to compare" in res.detail
+
+
+def test_check24_repo_unresolved_is_noop_pass(monkeypatch):
+    """Offline / repo root unresolved → NO-OP PASS (the v4 body still carries
+    a figure, but there is no git to read the sidecar from)."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    res = verify_task_body.check_figure_text_vs_body_tokens(_CHECK24_BODY)
+    assert res.passed and not res.is_warn
+    assert "repo root unresolved" in res.detail
+
+
+def test_check24_user_token_file_extends_list(tmp_path, monkeypatch):
+    """`~/.eps-stale-tokens.json` extends the built-in list, read fail-soft."""
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".eps-stale-tokens.json").write_text(json.dumps(["my custom artifact"]))
+    monkeypatch.setattr(verify_task_body.Path, "home", staticmethod(lambda: home))
+    tokens = verify_task_body._load_stale_figure_tokens()
+    assert "geometrically real" in tokens  # built-in survives
+    assert "my custom artifact" in tokens  # user token appended
+
+
+def test_check24_user_token_file_malformed_is_failsoft(tmp_path, monkeypatch):
+    """A malformed `~/.eps-stale-tokens.json` falls back to the built-in list
+    without raising."""
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".eps-stale-tokens.json").write_text("{ not valid json")
+    monkeypatch.setattr(verify_task_body.Path, "home", staticmethod(lambda: home))
+    tokens = verify_task_body._load_stale_figure_tokens()
+    assert tokens == ["geometrically real"]
+
+
+def test_check24_flatten_meta_strings_skips_provenance():
+    """The flattener collects chart text (description, series, label, axis-key)
+    but drops provenance keys + numeric leaves."""
+    meta = {
+        "commit": "abc1234",
+        "created": "2026-06-24T00:00:00Z",
+        "figsize": [7.0, 4.2],
+        "description": "1/30 chance baseline",
+        "points": [
+            {"category": "baseline", "accuracy": 0.41, "series": "cosine recipe"},
+            {"1/30 chance accuracy": 0.5, "label": "geometrically real point"},
+        ],
+    }
+    blob = " ".join(verify_task_body._flatten_meta_strings(meta))
+    assert "1/30 chance baseline" in blob
+    assert "cosine recipe" in blob
+    assert "geometrically real point" in blob
+    assert "1/30 chance accuracy" in blob  # axis-label KEY collected
+    assert "abc1234" not in blob  # provenance value dropped
+    assert "2026-06-24" not in blob  # provenance value dropped
+
+
+def test_check24_caption_after_helper():
+    """`_figure_caption_after` returns the contiguous blockquote run after an
+    image, skipping blank lines, and '' when there is none."""
+    rlines = [
+        "![alt](https://x/y.png)",
+        "",
+        "> **Figure.** *Chance 1/29.*",
+        "> continued caption line.",
+        "",
+        "Interpretation prose, not a caption.",
+    ]
+    cap = verify_task_body._figure_caption_after(rlines, 0)
+    assert "Chance 1/29" in cap and "continued caption line" in cap
+    assert "Interpretation prose" not in cap
+    # No blockquote after the image → empty.
+    assert verify_task_body._figure_caption_after(["![a](u)", "plain prose"], 0) == ""
