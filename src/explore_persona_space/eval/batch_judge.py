@@ -17,9 +17,11 @@ Usage:
     # results["villain"] -> {mean_aligned: 85.2, mean_coherent: 90.1, ...}
 """
 
+import datetime as _dt
 import hashlib
 import json
 import logging
+import re
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -28,17 +30,45 @@ from typing import TYPE_CHECKING
 from explore_persona_space.eval import DEFAULT_JUDGE_MODEL
 from explore_persona_space.eval.alignment import JUDGE_SYSTEM_PROMPT
 from explore_persona_space.eval.utils import parse_judge_json
+from explore_persona_space.llm.anthropic_client import (
+    BatchDeadlineExceeded,
+    deadline_from_expires_at,
+)
 
 if TYPE_CHECKING:
     import anthropic
 
 logger = logging.getLogger(__name__)
 
-# Anthropic Batch API limits
-MAX_REQUESTS_PER_BATCH = 100_000
-MAX_BATCH_SIZE_BYTES = 256 * 1024 * 1024  # 256 MB
+# Anthropic Batch API limits (verified platform.claude.com, June 2026):
+#   hard caps = 100_000 requests OR 256 MB per batch, whichever first.
+# We shard FAR below the request cap for incremental progress + blast-radius
+# isolation (a single failing/expiring sub-batch loses <=8k items, resumable by
+# custom_id, not the whole run). See task #663 plan §11.
+MAX_REQUESTS_PER_BATCH = 8_000  # was 100_000 — engineering choice (#663 §11)
+MAX_BATCH_SIZE_BYTES = 250 * 1024 * 1024  # 250 MB safe margin under the 256 MB hard cap
 
 # Re-export for backwards compatibility; canonical source is eval/__init__.py
+# The expires_at deadline helper (deadline_from_expires_at) + BatchDeadlineExceeded
+# live in llm/anthropic_client.py (the lowest layer; batch_judge imports from it,
+# never the reverse) and are imported above — single source of truth (#663 §4c).
+
+
+# ── custom_id helper ──────────────────────────────────────────────────────────
+
+_CUSTOM_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
+
+
+def make_custom_id(item_id: str) -> str:
+    """Deterministic, regex-valid, idempotent custom_id for a judge item.
+
+    sha256 hex is exactly 64 chars of [0-9a-f] -> matches the Anthropic Batch
+    API's ``^[a-zA-Z0-9_-]{1,64}$`` constraint. Stable across runs on the same
+    item_id, so resubmits reuse the same id (idempotent checkpoint/resume).
+    """
+    cid = hashlib.sha256(item_id.encode()).hexdigest()  # 64 hex chars
+    assert _CUSTOM_ID_RE.match(cid), cid  # cheap invariant; sha256 hex always matches
+    return cid
 
 
 # ── Judge cache ──────────────────────────────────────────────────────────────
@@ -147,68 +177,129 @@ def _chunk_requests(
     return chunks
 
 
-def _submit_and_poll_batch(
-    requests: list[dict],
+def _legacy_error_dict(reason: str) -> dict:
+    """The error-dict shape the legacy ``_submit_and_poll_batch`` returns."""
+    return {"aligned": None, "coherent": None, "reasoning": reason, "error": True}
+
+
+def _collect_legacy_results(
     client: "anthropic.Anthropic",
-    poll_interval: float = 30.0,
-    max_poll_interval: float = 120.0,
-) -> dict[str, dict]:
-    """Submit a single batch, poll until complete, return results by custom_id.
+    batch_id: str,
+    results: dict[str, dict],
+) -> None:
+    """Stream one ended batch's results into ``results`` (join on custom_id).
 
-    Polling uses exponential backoff (30s -> 60s -> 120s cap), inspired by
-    safety-tooling's AnthropicModelBatch.poll_message_batch().
+    Two-level errored branch per the Anthropic doc example: an
+    ``invalid_request_error`` is quarantined (a malformed request fails
+    identically on resubmit) and surfaced as an error dict carrying the
+    ``(quarantined)`` reason; other terminal states surface as error dicts too.
+    The legacy callers consume the full ``{custom_id: score}`` dict (error dicts
+    included), so quarantine here is informational — never retried.
     """
-    batch = client.messages.batches.create(requests=requests)
-    batch_id = batch.id
-    logger.info("Batch %s created with %d requests", batch_id, len(requests))
-
-    current_interval = poll_interval
-    while True:
-        batch = client.messages.batches.retrieve(batch_id)
-        counts = batch.request_counts
-        logger.info(
-            "[%s] Batch %s: processing=%d succeeded=%d errored=%d",
-            time.strftime("%H:%M:%S"),
-            batch_id,
-            counts.processing,
-            counts.succeeded,
-            counts.errored,
-        )
-        if batch.processing_status == "ended":
-            break
-        time.sleep(current_interval)
-        current_interval = min(current_interval * 1.5, max_poll_interval)
-
-    # Collect results
-    results: dict[str, dict] = {}
     for result in client.messages.batches.results(batch_id):
         custom_id = result.custom_id
-        if result.result.type == "succeeded":
+        rtype = result.result.type
+        if rtype == "succeeded":
             text = next(
                 (b.text for b in result.result.message.content if b.type == "text"),
                 "",
             )
             parsed = parse_judge_json(text, None)
-            results[custom_id] = parsed or {
-                "aligned": None,
-                "coherent": None,
-                "reasoning": "parse_error",
-                "error": True,
-            }
-        else:
-            results[custom_id] = {
-                "aligned": None,
-                "coherent": None,
-                "reasoning": f"batch_error: {result.result.type}",
-                "error": True,
-            }
+            results[custom_id] = parsed or _legacy_error_dict("parse_error")
+        elif rtype == "errored":
+            # SDK nesting is result.result.error.error.type (double .error);
+            # getattr-guarded so a missing-error shape fails open (server label).
+            etype = getattr(
+                getattr(getattr(result.result, "error", None), "error", None), "type", None
+            )
+            if etype == "invalid_request_error":
+                results[custom_id] = _legacy_error_dict(
+                    "batch_error: invalid_request_error (quarantined)"
+                )
+            else:
+                results[custom_id] = _legacy_error_dict(
+                    f"batch_error: errored ({etype or 'server'})"
+                )
+        else:  # expired / canceled / unknown
+            results[custom_id] = _legacy_error_dict(f"batch_error: {rtype}")
 
-    logger.info(
-        "Batch %s complete: %d succeeded, %d errored",
-        batch_id,
-        counts.succeeded,
-        counts.errored,
-    )
+
+def _submit_and_poll_batch(
+    requests: list[dict],
+    client: "anthropic.Anthropic",
+    poll_interval: float = 30.0,
+    max_poll_interval: float = 120.0,
+    *,
+    grace_min: int = 30,
+    now_fn: "Callable[[], _dt.datetime] | None" = None,
+    sleep_fn: "Callable[[float], None] | None" = None,
+) -> dict[str, dict]:
+    """Submit ``requests`` (sharded), poll each sub-batch until it ends, collect.
+
+    Signature-stable for the two live ``scripts/issue_389`` callers
+    (``run_experiment_389.py`` / ``rejudge_issue_389_c_strict.py``), which pass
+    ``(requests, client, poll_interval=30.0)`` and consume the returned
+    ``{custom_id: score_dict}`` dict. The rewrite (#663) hardens this in place
+    so those callers inherit:
+
+    - **Sharding**: ``requests`` is split via :func:`_chunk_requests` (<=8k +
+      250 MB), so an over-cap input no longer goes into one batch.
+    - **Bounded poll**: each sub-batch's poll exits on its own ``expires_at`` +
+      grace (never an unbounded ``while True``); a batch still not ``ended`` at
+      the deadline raises :class:`BatchDeadlineExceeded` after one final harvest
+      attempt.
+    - **Two-level terminal split**: an ``invalid_request_error`` is quarantined
+      (surfaced as an error dict, never retried here); other states surface as
+      error dicts too.
+
+    ``now_fn``/``sleep_fn`` are injectable for tests (default wall-clock +
+    ``time.sleep``). Polling keeps the 30s->1.5x->120s backoff capped by the
+    deadline, not a step count.
+    """
+    now_fn = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
+    sleep_fn = sleep_fn or time.sleep
+
+    results: dict[str, dict] = {}
+    chunks = _chunk_requests(requests)
+    for ci, chunk in enumerate(chunks):
+        batch = client.messages.batches.create(requests=chunk)
+        batch_id = batch.id
+        logger.info(
+            "Batch %s created (sub-batch %d/%d, %d requests)",
+            batch_id,
+            ci + 1,
+            len(chunks),
+            len(chunk),
+        )
+        deadline: _dt.datetime | None = None
+        current_interval = poll_interval
+        while True:
+            batch = client.messages.batches.retrieve(batch_id)
+            counts = getattr(batch, "request_counts", None)
+            if counts is not None:
+                logger.info(
+                    "[%s] Batch %s: processing=%s succeeded=%s errored=%s",
+                    time.strftime("%H:%M:%S"),
+                    batch_id,
+                    counts.processing,
+                    counts.succeeded,
+                    counts.errored,
+                )
+            if batch.processing_status == "ended":
+                break
+            if deadline is None and getattr(batch, "expires_at", None) is not None:
+                deadline = deadline_from_expires_at(batch.expires_at, grace_min)
+            if deadline is not None and now_fn() > deadline:
+                final = client.messages.batches.retrieve(batch_id)
+                if final.processing_status == "ended":
+                    batch = final
+                    break
+                raise BatchDeadlineExceeded(batch_id, deadline)
+            sleep_fn(current_interval)
+            current_interval = min(current_interval * 1.5, max_poll_interval)
+
+        _collect_legacy_results(client, batch_id, results)
+
     return results
 
 
