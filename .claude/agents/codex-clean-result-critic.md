@@ -29,7 +29,8 @@ description: >
   rule (substitute the v3 section names for a v3 body). Branches on `paper:`
   frontmatter exactly as the Claude critic does: for a `paper: true` task
   the clean-result is a LaTeX research paper at `docs/papers/issue_<N>/` —
-  the composed Codex prompt inlines the six PAPER lenses (P1-P6) +
+  the composed Codex prompt inlines the seven PAPER lenses (P1-P7, incl.
+  P7 verbatim examples + judge prompts) +
   the `scripts/verify_paper.py` preamble INSTEAD of the fifteen markdown
   lenses, and Codex reads the paper `.tex` + figure PNGs + compiled PDF. No
   `\metric` grounding lens in v1. The fifteen markdown lenses are composed
@@ -238,9 +239,10 @@ PY
 
 - **`PAPER=false` (markdown body — default):** compose the FIFTEEN-lens
   markdown prompt (Step 2 + Step 3 as written below). Unchanged.
-- **`PAPER=true` (LaTeX paper):** compose the SIX-paper-lens prompt instead.
+- **`PAPER=true` (LaTeX paper):** compose the SEVEN-paper-lens prompt instead.
   Inline the Claude critic's **## Paper-task review (`paper: true`)** section
-  (P1-P6 + the `verify_paper.py` preamble + the read-these-before-scoring
+  (P1-P7 — incl. P7 verbatim examples + judge prompts — + the
+  `verify_paper.py` preamble + the read-these-before-scoring
   artifact list + the Paper-lens output template) INSTEAD of the fifteen
   markdown lenses, and add the paper-dir existence checks:
   ```bash
@@ -260,7 +262,7 @@ PY
   {{task_number}}` for the `verify_task_body.py` + `audit...py` preamble,
   point Codex at `$TEX_PATH` + the figure PNGs (`figures/issue_<N>/`) +
   `$PDF_PATH` (load relevant PDF pages — render-only issues the `.tex` hides),
-  and emit the SIX P1-P6 lens lines. Do NOT inline the fifteen markdown
+  and emit the SEVEN P1-P7 lens lines. Do NOT inline the fifteen markdown
   lenses, `verify_task_body.py`, or `audit_clean_results_body_discipline.py`
   for a paper task. The marker kind, round budget, and grounding rule are
   identical. (No `\metric` grounding lens in v1.)
@@ -344,11 +346,11 @@ with v4 section names; for a v3 body substitute the v3 names
 > review (`paper: true`)** section per Step 1c — point Codex at
 > `$TEX_PATH` + the figure PNGs + `$PDF_PATH`, have it run
 > `cd {{repo_root}} && uv run python scripts/verify_paper.py --issue
-> {{task_number}}` as the mechanical preamble, inline the six P1-P6 lens
+> {{task_number}}` as the mechanical preamble, inline the seven P1-P7 lens
 > definitions + the Paper-lens output template + the independence /
-> don't-gatekeep / grounding rules, and emit the six P1-P6 lens lines
+> don't-gatekeep / grounding rules, and emit the seven P1-P7 lens lines
 > (verifier line `verify_paper.py`; blocker tags `structural-absence`
-> (verify_paper.py checks 1-8) | `lens` (P1-P6); no `audit`/`procedural`).
+> (verify_paper.py checks 1-10) | `lens` (P1-P7); no `audit`/`procedural`).
 > No `verify_task_body.py`, no `audit_clean_results_body_discipline.py`, no
 > fifteen markdown lenses, no `\metric` lens (v1.1).
 
@@ -955,11 +957,11 @@ You do NOT validate, do NOT retry, do NOT post the marker.
    verifier FAIL, audit hit, or real lens violation) — never a
    presentation nit alone. Always score the lenses in the same pass.
    (**Paper branch (`PAPER=true`):** the verifier is `verify_paper.py`,
-   there is NO audit script, and the lenses are the six P1-P6 — a non-PASS
-   needs ≥1 substantive finding (a verify_paper.py checks-1-8 FAIL or a real
-   P1-P6 violation).)
+   there is NO audit script, and the lenses are the seven P1-P7 — a non-PASS
+   needs ≥1 substantive finding (a verify_paper.py checks-1-10 FAIL or a real
+   P1-P7 violation).)
 3b. **Branch on `paper:` at compose time (Step 1c).** For a `paper: true`
-   task compose the six-paper-lens (P1-P6) prompt with the `verify_paper.py`
+   task compose the seven-paper-lens (P1-P7) prompt with the `verify_paper.py`
    preamble + the `.tex` / figure-PNG / compiled-PDF read targets; for a
    markdown body compose the fifteen-lens prompt. Never inline the markdown
    lenses for a paper task or the paper lenses for a markdown task. No

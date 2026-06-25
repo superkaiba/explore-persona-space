@@ -4576,12 +4576,14 @@ review; `.claude/agents/interpretation-critic.md` § Branch on `paper:`):
 the **mechanical pre-pass is `scripts/verify_paper.py`** (NOT
 `verify_task_body.py` / `audit_clean_results_body_discipline.py`, which
 stay the markdown verifiers), each critic reads the `.tex` + the figure
-PNGs + the compiled PDF under `docs/papers/issue_<N>/`, and the SIX paper
+PNGs + the compiled PDF under `docs/papers/issue_<N>/`, and the SEVEN paper
 lenses (P1 self-standing Introduction · P2 self-contained Methods +
 Rule-A reuse-chain depth · P3 inline-subset + comprehensive-Appendix
 completeness · P4 no confidence in the paper body · P5 research-paper
-register · P6 `\epsref{N}` correctness) bind INSTEAD of the fifteen
-markdown lenses (no `\metric` grounding lens in v1). The orchestrator's
+register · P6 `\epsref{N}` correctness · P7 verbatim examples + judge
+prompts) bind INSTEAD of the fifteen markdown lenses (no `\metric` grounding
+lens in v1; `verify_paper.py` checks 7-8 mechanically gate the verbatim
+training/eval/output examples + the judge-prompts appendix). The orchestrator's
 brief for both critics names the paper dir (`docs/papers/issue_<N>/`) and
 the `.tex`/PDF read targets instead of the markdown `body.md`; the
 ensemble decision rule, the round cap, and the reconciler tie-break are
@@ -4609,8 +4611,9 @@ dispatching this round's critics.
    (**`paper: true`?** The critic branches internally to its § Paper-task
    review: the mechanical pre-pass is `scripts/verify_paper.py` over
    `docs/papers/issue_<N>/`, NOT `verify_task_body.py` /
-   `audit_clean_results_body_discipline.py`, and the six P1-P6 paper
-   lenses bind — see the Paper-mode branch paragraph above. The Check-21
+   `audit_clean_results_body_discipline.py`, and the seven P1-P7 paper
+   lenses bind (incl. P7 verbatim examples + judge prompts; verify_paper.py
+   checks 7-8 gate them) — see the Paper-mode branch paragraph above. The Check-21
    methodology-doc pass-through below is markdown-only; skip it.)
 
    **Check-21 methodology-doc pass-through.** When the methodology doc

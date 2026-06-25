@@ -22,6 +22,16 @@
 % NO confidence anywhere in the body (confidence lives only in the body.md
 % paper-stub frontmatter). verify_paper.py FAILs a body that contains a
 % confidence tag.
+%
+% SHOW ALL METHODS *AND* EXAMPLES (verify_paper.py checks 7-8). The paper MUST
+% carry verbatim text, not just prose describing it: real TRAINING rows
+% (% eps-example: training-data), real EVAL probes (% eps-example: eval-data),
+% real MODEL OUTPUTS with judge verdicts (% eps-example: model-output), and —
+% when any LLM judge is used — the verbatim JUDGE PROMPTS + rubrics in the
+% Appendix's \subsection{Judge prompts}. Use the \epsexample{caption}{...} env
+% (preamble; verbatim-safe + breakable) for every example block. Each block's
+% caption discloses the subset (K of M / cherry-picked) + links the full
+% artifact. See the Methods / Results / Appendix comment blocks below.
 % ===========================================================================
 
 \input{preamble.tex}
@@ -74,6 +84,26 @@
 % with \epsref{N}. You never write "reused from #N; see there" as the only
 % description. For TRANSITIVE inputs (an input to the thing you reused), give a
 % compact recipe to depth-1, then cite + one-line summarize deeper links.
+%
+% SHOW THE DATA, don't just describe it (verify_paper.py check 7). The Methods
+% INLINES a verbatim SUBSET of two required example classes — one or more real
+% TRAINING rows and one or more real EVAL probes — each in an \epsexample{...}
+% block (or any verbatim env) preceded by its `% eps-example: <class>` marker
+% and a subset-disclosure + full-artifact link in the box caption:
+%     % eps-example: training-data
+%     \begin{epsexample}{Training row (1 of 600; random sample). Full file: <pinned link>}
+%     <verbatim row: system/persona prompt + question + completion; a
+%      contrastive-negative row too where applicable>
+%     \end{epsexample}
+%     % eps-example: eval-data
+%     \begin{epsexample}{Eval probe (1 of 52; representative). Full bank: <pinned link>}
+%     <verbatim probe: the actual false-claim / harmful prompt / steering probe>
+%     \end{epsexample}
+% Pull every block from a REAL artifact (HF raw_completions, the training JSONL,
+% the probe bank) — never fabricate. Sanitize harmful / EM content per
+% analyzer.md content hygiene (labeled ~15-word excerpt + a `[truncated — ...]`
+% placeholder + the pinned raw path). The third class (`model-output`) lives in
+% Results + the Appendix (below).
 % ---------------------------------------------------------------------------
 \section{Methods}
 \label{sec:methods}
@@ -84,6 +114,18 @@
 % RESULTS — one subsection per finding. Each: state what is plotted, show the
 % figure (\includegraphics from figures/issue_<N>/), read the result. Numbers
 % are literals (v1). Report the metric, its CI / n, and the test.
+%
+% SHOW THE MODEL OUTPUTS (verify_paper.py check 7, `model-output` class). Inline
+% a verbatim WORKED EXAMPLE for the load-bearing condition(s) — the eval INPUT
+% -> the model's ACTUAL OUTPUT (verbatim) -> the judge VERDICT/score — in an
+% \epsexample{...} block preceded by `% eps-example: model-output`:
+%     % eps-example: model-output
+%     \begin{epsexample}{Sycophancy probe -> output -> judge (cherry-picked; full set App.~\ref{app:examples})}
+%     INPUT:   <verbatim eval input>
+%     OUTPUT:  <verbatim model completion>
+%     JUDGE:   <verbatim verdict / score>
+%     \end{epsexample}
+% A subset inline; the COMPREHENSIVE per-condition set goes in the Appendix.
 % ---------------------------------------------------------------------------
 \section{Results}
 \label{sec:results}
@@ -114,12 +156,31 @@
 %   - comprehensive example completions (eval input -> model output -> judge),
 %   - the full training-data construction recipe + representative rows,
 %   - the COMPLETE hyperparameter table (every training/eval/generation HP),
-%   - the full reuse recipes (Rule A) for every reused artifact.
+%   - the full reuse recipes (Rule A) for every reused artifact,
+%   - the JUDGE PROMPTS subsection (see below — MANDATORY when a judge is used).
+%
+% Each comprehensive example still carries its `% eps-example: <class>` marker +
+% an \epsexample{...} block (verify_paper.py check 7 counts these across the
+% whole body). Pull every block from a REAL artifact; sanitize harmful/EM
+% content (labeled excerpt + pinned raw path).
+%
+% JUDGE PROMPTS (verify_paper.py check 8) — when the study scores ANYTHING with
+% an LLM judge, this subsection carries the ACTUAL prompt + rubric TEXT for EVERY
+% judge used (e.g. the steering-sanity rubric, the sycophancy-agreement judge,
+% the EM judge, the refusal judge), verbatim, not paraphrased. The
+% `% eps-judge-prompts` anchor + the \subsection{Judge prompts} below satisfy the
+% check; DELETE both ONLY if the study uses no LLM judge at all.
 % ---------------------------------------------------------------------------
 \appendix
 \section{Appendix}
 \label{sec:appendix}
 
 {{APPENDIX}}
+
+% eps-judge-prompts
+\subsection{Judge prompts}
+\label{app:judge-prompts}
+
+{{JUDGE_PROMPTS}}
 
 \end{document}

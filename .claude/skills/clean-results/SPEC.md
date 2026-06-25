@@ -97,10 +97,15 @@ interpretation). Required sections, in order (enforced by `verify_paper.py`):
      JSON), write its full generation recipe inline.
    - **Transitive inputs (an input to the thing you reused):** give a compact
      recipe to depth-1, then cite + one-line summarize deeper links.
+   - **Inline verbatim examples (training + eval):** the Methods inlines a
+     verbatim SUBSET of two of the four mandatory example classes (below) — ≥1
+     real training row + ≥1 real eval probe, each in an `\epsexample{...}` block.
 4. **Results** — one subsection per finding, each: state what is plotted
    (EXACTLY), show the figure (`\includegraphics` from `figures/issue_<N>/`),
    read the result. Same three-beat as v4 `## Results`; numbers are literals.
-   Report the metric, its CI / n, and the test.
+   Report the metric, its CI / n, and the test. **Inline a verbatim
+   `model-output` worked example for the load-bearing condition(s)** — eval
+   INPUT → the model's ACTUAL OUTPUT (verbatim) → the judge VERDICT/score.
 5. **Discussion + Limitations** — what the results mean, the alternatives, the
    binding caveats, and what they change. Fold Limitations in here. NO
    confidence words.
@@ -111,7 +116,53 @@ interpretation). Required sections, in order (enforced by `verify_paper.py`):
    examples + the load-bearing hyperparameters), the appendix carries the FULL
    set — comprehensive example completions (eval input → model output → judge),
    the full training-data construction recipe + representative rows, the
-   COMPLETE hyperparameter table, and the full Rule-A reuse recipes.
+   COMPLETE hyperparameter table, the full Rule-A reuse recipes, AND a dedicated
+   **`\subsection{Judge prompts}`** (the four mandatory example classes' fourth
+   member — below).
+
+### Verbatim examples + judge prompts are MANDATORY (show ALL methods AND examples)
+
+A paper SHOWS its data, not just describes the method (incident #657: the paper
+described every method but shipped zero verbatim text and no judge prompts). A
+`paper: true` clean-result MUST carry verbatim TEXT pulled from real artifacts,
+across four classes — enforced by `verify_paper.py` checks 7–8 + the
+clean-result-critic paper lens P7:
+
+1. **Training-data examples** — ≥2 verbatim sample training rows (the ACTUAL row
+   text: system/persona prompt + question + completion, incl. a
+   contrastive-negative row where applicable). For a reuse-only study, real rows
+   from the REUSED training mixes. Inline a representative subset (Methods);
+   Appendix carries the comprehensive set (or a pinned link + a larger sample).
+2. **Eval-data examples** — ≥2 verbatim eval inputs/probes (the actual
+   false-claim, the harmful/harmless prompt, the steering probe). Inline subset
+   (Methods) + Appendix.
+3. **Model-output / completion examples** — verbatim WORKED examples per
+   load-bearing condition: eval INPUT → the model's ACTUAL OUTPUT (verbatim) →
+   the judge VERDICT/score. Inline subset (Results) + Appendix comprehensive.
+4. **Judge prompts / rubrics** — when the study uses ANY LLM judge, the ACTUAL
+   prompt + rubric TEXT for EVERY judge (e.g. the steering-sanity rubric, the
+   sycophancy-agreement judge, the EM judge, the refusal judge), verbatim — in a
+   dedicated Appendix `\subsection{Judge prompts}`. A genuine no-judge study
+   (pure log-prob / logit) omits this subsection (check 8 then passes).
+
+**Template convention (what the verifier keys on).** Each example block is an
+`\epsexample{<caption>}{...}` environment (the `listings`-backed verbatim-safe
+box defined in `preamble.tex`; any of `lstlisting` / `verbatim` / `quote` /
+`quotation` / `tcolorbox` also satisfies the check) preceded by a
+`% eps-example: <class>` comment marker (class ∈ {`training-data`, `eval-data`,
+`model-output`}). The Judge-prompts subsection carries the `% eps-judge-prompts`
+anchor + `\subsection{Judge prompts}` (the template ships both + a
+`{{JUDGE_PROMPTS}}` placeholder). The caption discloses the subset
+(K of M / cherry-picked) + links the complete artifact (pinned HF `/tree/<sha>`
+or GitHub `/blob/<sha>`).
+
+**Provenance: pull from REAL artifacts, never fabricate.** Training rows from the
+training JSONLs, eval probes from the probe bank, completions from HF
+`raw_completions`, judge prompts from the rubric file/constant in the eval+
+scoring code at the Code SHA. **Sanitize harmful/EM content** per `analyzer.md`
+§ content hygiene — a ~15-word labeled excerpt + a `[truncated — harmful-content
+row; verify at <raw-completions path>, row <i>]` placeholder + the pinned raw
+path; a sanitized block SATISFIES the requirement.
 
 **NO confidence anywhere in the paper body.** The `(LOW|MODERATE|HIGH
 confidence)` tag and bare `Confidence:` lines are a hard FAIL inside the
@@ -159,9 +210,12 @@ revision-pinned URL) and `paper_manifest.json`. Build on the VM only (the single
 pinned-TeX-Live host). The verifier is `scripts/verify_paper.py` (checks:
 compile-clean via `.log`/`.blg` parse, required sections incl. Appendix, no
 confidence in body, `\includegraphics` confined + resolve, `.bib` entries
-resolve, `\epsref{N}` resolves to a real task, manifest complete + hashes match,
-paper-stub valid). `verify_task_body.py` is untouched and remains the verifier
-for grandfathered markdown.
+resolve, `\epsref{N}` resolves to a real task, verbatim examples present
+(`training-data` / `eval-data` / `model-output` class markers + real example
+environments), judge prompts present (a `Judge prompts` appendix when an LLM
+judge is used), manifest complete + hashes match, paper-stub valid).
+`verify_task_body.py` is untouched and remains the verifier for grandfathered
+markdown.
 
 ## `body.md` paper-stub contract
 

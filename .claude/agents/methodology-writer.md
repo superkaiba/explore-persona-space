@@ -441,11 +441,28 @@ Cover, in Methods order:
   Appendix.
 - **Evaluation** — DV definition (construct + metric + on/off-policy
   choice), computed metrics, judge model + rubric, probe set (identity /
-  why chosen / preprocessing).
+  why chosen / preprocessing). Name every LLM judge used; the verbatim
+  prompt + rubric TEXT for each goes in the Appendix's `Judge prompts`
+  subsection (below) — NOT a paraphrase here.
 - **Data extraction** — source + realism tier, construction recipe, N rows,
   composition/ratio (positives:negatives, persona panel), completion
   provenance (on-policy tier / canned / published-corpus-verbatim per
   `.claude/rules/on-policy-completions.md` + `contrastive-negatives.md`).
+- **Inline verbatim examples (MANDATORY — `verify_paper.py` check 7).** The
+  Methods INLINES a verbatim SUBSET of two example classes — ≥1 real
+  TRAINING row (`% eps-example: training-data`) and ≥1 real EVAL probe
+  (`% eps-example: eval-data`) — each in an `\epsexample{caption}{...}` block
+  (the preamble env; verbatim-safe + breakable) whose caption discloses the
+  subset (K of M / random sample) + links the full artifact (pinned HF
+  `/tree/<sha>` or GitHub `/blob/<sha>`). A training-row block shows the
+  ACTUAL row text — system/persona prompt + question + completion, plus a
+  contrastive-negative row where applicable; for a reuse-only study show real
+  rows from the REUSED training mixes. An eval-probe block shows the ACTUAL
+  probe (the false-claim, the harmful/harmless prompt, the steering probe).
+  Pull every block from a REAL artifact (HF `raw_completions`, the training
+  JSONL, the probe bank) — NEVER fabricate or paraphrase. The third class
+  (`model-output`) is the analyzer's Results worked example + the
+  comprehensive Appendix set (below).
 
 **Rule A — no deferral for DIRECT reused artifacts (SPEC § Methods Reuse
 rule + § `## Methodology` (v4) Rule A).** When this experiment directly
@@ -480,18 +497,34 @@ The Appendix carries the FULL detail the Methods body only SAMPLES:
   `run_result.json`; bold the load-bearing knobs; `n/a` for empty cells,
   never `TBD`/`see config`). The lr is the #489 50× misprint failure mode —
   copy it, do not type it.
-- **Comprehensive example completions** — eval input → model output → judge
-  score, one or more per load-bearing condition, as `verbatim` / `lstlisting`
-  blocks. Each block is preceded by a subset-disclosure line
-  (cherry-picked / K of M / first N of M) and the pinned full-artifact link.
-  Apply the markdown-mode § Worked-example data rules + § Content hygiene
-  verbatim — harmful-content corpora (EM, refusal, harmful-advice) ship
-  SANITIZED (a ~15-word excerpt + a `[truncated — harmful-content row;
-  verify at <raw-completions path>, row <i>]` placeholder), and you pull rows
-  by grep + line offset, never paging whole raw-completion files into
-  context.
+- **Comprehensive example completions (MANDATORY — `verify_paper.py` check 7,
+  `model-output` class)** — eval input → model output → judge score, one or
+  more per load-bearing condition, each in an `\epsexample{caption}{...}`
+  block preceded by `% eps-example: model-output`. The caption carries the
+  subset-disclosure (cherry-picked / K of M / first N of M) + the pinned
+  full-artifact link. Apply the markdown-mode § Worked-example data rules +
+  § Content hygiene verbatim — harmful-content corpora (EM, refusal,
+  harmful-advice) ship SANITIZED (a ~15-word excerpt + a `[truncated —
+  harmful-content row; verify at <raw-completions path>, row <i>]`
+  placeholder), and you pull rows by grep + line offset, never paging whole
+  raw-completion files into context.
 - **The full training-data construction recipe + representative training
-  rows.**
+  rows** — the representative rows as `% eps-example: training-data`
+  `\epsexample{...}` blocks (the comprehensive form of the Methods inline
+  training-row subset).
+- **Judge prompts (MANDATORY when any LLM judge is used — `verify_paper.py`
+  check 8).** Fill the template's `\subsection{Judge prompts}` (the
+  `% eps-judge-prompts` anchor + `{{JUDGE_PROMPTS}}` placeholder) with the
+  ACTUAL prompt + rubric TEXT for EVERY judge in the study — verbatim, not
+  paraphrased — one `\epsexample{<judge name>}{...}` block per judge (e.g. the
+  steering-sanity rubric, the sycophancy-agreement judge, the EM judge, the
+  refusal judge). Pull the text from the REAL judge source: the rubric
+  file/string in the eval code at the Code SHA (`git show <sha>:<path>`), the
+  `judge_prompt` / `system` field in the eval config, or the prompt constant
+  in the scoring script. Never invent or summarize a rubric. If the study
+  uses NO LLM judge (a pure log-prob / logit study), DELETE the
+  `\subsection{Judge prompts}` + its anchor and note "no LLM judge" in the
+  Evaluation prose (check 8 then passes automatically).
 - **The full Rule-A reuse recipes** for every reused artifact (the
   comprehensive form of the Methods inline recipes).
 
@@ -504,8 +537,13 @@ orchestrator passes (NOT the full `body.md` — there is no findings-bearing
 body for a paper-task anyway, but the eval-paths + reproducibility card come
 via the brief); the training / eval scripts at the Code SHA
 (`git show <sha>:<path>`); the Hydra config; verbatim worked-example
-artifact rows; and — for Rule A — the source issue's `## Methodology`
-section / `docs/methodology/issue_<M>.md` for every reused artifact. You do
+artifact rows (training JSONLs, HF `raw_completions`, probe banks — for the
+inline + Appendix example blocks); the **judge prompt / rubric source** for
+every judge (the rubric constant/file in the eval+scoring code at the Code
+SHA, or the `judge_prompt` / `system` field in the eval config — for the
+Appendix Judge-prompts subsection); and — for Rule A — the source issue's
+`## Methodology` section / `docs/methodology/issue_<M>.md` for every reused
+artifact. You do
 NOT read the analyzer's draft Results / Discussion / Abstract /
 Introduction, the interpretation markers, or any confidence tag — same § What
 you MUST NOT read list as markdown mode.
@@ -522,7 +560,14 @@ you MUST NOT read list as markdown mode.
    `[#N](...)` (use `\epsref{N}`), any `(LOW|MODERATE|HIGH confidence)` /
    `Confidence:` string. Fix every hit. Then scan that every Rule-A reused
    artifact has its full recipe written out inline (no "reused from \#M; see
-   there" as the only description).
+   there" as the only description). **Finally, scan that the examples +
+   judge prompts are present (the `verify_paper.py` checks 7-8 you must
+   satisfy):** the Methods carries the `% eps-example: training-data` +
+   `% eps-example: eval-data` blocks; the Appendix carries the
+   `% eps-example: model-output` comprehensive set + the `% eps-judge-prompts`
+   `\subsection{Judge prompts}` with one verbatim block per judge (or, for a
+   no-judge study, the deleted subsection + the "no LLM judge" note). Every
+   `\epsexample` caption discloses its subset + links the full artifact.
 3. **Write your output** to the WORKTREE-absolute path the orchestrator's
    brief gives you (typically the two blocks written into
    `<worktree>/docs/papers/issue_<N>/issue_<N>.tex`'s `{{METHODS}}` /

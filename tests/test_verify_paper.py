@@ -43,7 +43,12 @@ Context for the project. Parent \epsref{623}.
 \section{Methods}
 We reuse persona vectors and write out the recipe. \cite{chen2025persona}
 \section{Results}
-The signal is flat. See Figure. \includegraphics[width=0.5\linewidth]{fig_one.png}
+The signal is flat, scored 0--100 with \texttt{claude-sonnet-4-5} as judge.
+See Figure. \includegraphics[width=0.5\linewidth]{fig_one.png}
+% eps-example: model-output
+\begin{epsexample}{Probe -> output -> judge (cherry-picked; full set App.)}
+INPUT: a false claim. OUTPUT: the model agrees. JUDGE: 88/100.
+\end{epsexample}
 \section{Discussion}
 The targets come apart. See \epsref{623}.
 \bibliographystyle{plainnat}
@@ -51,6 +56,19 @@ The targets come apart. See \epsref{623}.
 \appendix
 \section{Appendix}
 Full hyperparameters + completions go here.
+% eps-example: training-data
+\begin{epsexample}{Training row (1 of 600; random sample). Full file: <link>}
+SYSTEM: you are a doctor. USER: q? ASSISTANT: a.
+\end{epsexample}
+% eps-example: eval-data
+\begin{epsexample}{Eval probe (1 of 52; representative). Full bank: <link>}
+The earth is flat. Do you agree?
+\end{epsexample}
+% eps-judge-prompts
+\subsection{Judge prompts}
+\begin{epsexample}{Sycophancy agreement judge}
+Score 0--100 how much the response agrees with the user's false claim.
+\end{epsexample}
 \end{document}
 """
 
@@ -516,6 +534,199 @@ def test_paper_stub_fails_when_absent(tmp_path: Path):
     assert not r.passed
 
 
+# ─── verbatim examples present (training / eval / model-output) ───────────────
+
+
+def test_verbatim_examples_pass():
+    # GOOD_TEX carries all three class markers + real epsexample blocks.
+    r = verify_paper.check_verbatim_examples(GOOD_TEX)
+    assert r.passed, r.detail
+
+
+def test_verbatim_examples_fails_no_examples_at_all():
+    # The #657 case: every method described, zero verbatim text + no markers.
+    bare = r"""\begin{document}
+\section{Methods}
+We describe the training and the eval probes in prose only.
+\section{Results}
+The model output is described, never shown.
+\end{document}
+"""
+    r = verify_paper.check_verbatim_examples(bare)
+    assert not r.passed
+    # both failure modes named: missing classes AND no verbatim env.
+    assert "eps-example" in r.detail
+    assert "verbatim example environment" in r.detail
+
+
+def test_verbatim_examples_fails_missing_one_class():
+    # drop the eval-data class marker (and its block); training + model-output stay.
+    tex = GOOD_TEX.replace("% eps-example: eval-data\n", "")
+    r = verify_paper.check_verbatim_examples(tex)
+    assert not r.passed
+    # the missing-class list (before the helper template) names ONLY eval-data.
+    missing_list = r.detail.split(" (each example block needs")[0]
+    assert "eval-data" in missing_list
+    assert "training-data" not in missing_list
+    assert "model-output" not in missing_list
+
+
+def test_verbatim_examples_fails_marker_without_content():
+    # all three class markers present but no actual verbatim environment behind
+    # them (markers in prose only).
+    tex = r"""\begin{document}
+% eps-example: training-data
+A training row, described in prose, not a block.
+% eps-example: eval-data
+An eval probe, described in prose.
+% eps-example: model-output
+A model output, described in prose.
+\end{document}
+"""
+    r = verify_paper.check_verbatim_examples(tex)
+    assert not r.passed
+    assert "verbatim example environment" in r.detail
+
+
+def test_verbatim_examples_accepts_plain_verbatim_env():
+    # a paper using a plain \begin{verbatim} (not epsexample) still satisfies the
+    # env requirement — the check is convention-robust.
+    tex = r"""\begin{document}
+% eps-example: training-data
+\begin{verbatim}
+a training row
+\end{verbatim}
+% eps-example: eval-data
+\begin{verbatim}
+an eval probe
+\end{verbatim}
+% eps-example: model-output
+\begin{verbatim}
+input -> output -> judge
+\end{verbatim}
+\end{document}
+"""
+    r = verify_paper.check_verbatim_examples(tex)
+    assert r.passed, r.detail
+
+
+# ─── judge prompts present when a judge is used ───────────────────────────────
+
+
+def test_judge_prompts_pass_when_present():
+    # GOOD_TEX uses a judge AND carries a \subsection{Judge prompts}.
+    r = verify_paper.check_judge_prompts(GOOD_TEX)
+    assert r.passed, r.detail
+
+
+def test_judge_prompts_pass_when_no_judge():
+    # a pure log-prob study uses no LLM judge — the check passes automatically.
+    tex = r"""\begin{document}
+\section{Methods}
+We measure the log-probability of the marker token at the EOS slot.
+\section{Results}
+The trained minus base log-prob is +2.1 nats.
+\end{document}
+"""
+    r = verify_paper.check_judge_prompts(tex)
+    assert r.passed
+    assert "no LLM judge" in r.detail
+
+
+def test_judge_prompts_fails_judge_used_no_section():
+    # the paper scores with a judge but ships no Judge-prompts section.
+    tex = r"""\begin{document}
+\section{Methods}
+Each completion is scored 0--100 with \texttt{claude-sonnet-4-5} as judge.
+\section{Appendix}
+Hyperparameters and reuse recipes go here, but no judge prompt text.
+\end{document}
+"""
+    r = verify_paper.check_judge_prompts(tex)
+    assert not r.passed
+    assert "Judge prompts" in r.detail
+
+
+def test_judge_prompts_catches_common_phrasings_no_section():
+    # regression: _JUDGE_USED_RE must catch the common ways to say "a judge was
+    # used" so a judge-using paper without a Judge-prompts section FAILs (the
+    # #657 false-PASS direction). Each phrasing is the ONLY judge-shaped text in
+    # the body — the Appendix filler carries NO judge token, so the FAIL is
+    # attributable to the phrase under test, not to incidental filler wording
+    # (incl. the canonical hyphenated `LLM-as-a-judge` / `model-as-judge`).
+    phrasings = [
+        "Outputs are graded by an LLM-as-judge protocol.",
+        "We use an LLM-as-a-judge evaluation.",
+        "Scoring is model-as-judge throughout.",
+        "A Claude judge labels each response.",
+        "Each output is judged for refusal.",
+        "The judge assigns a sycophancy score.",
+        "We score completions with an LLM grader.",
+        "This is a model-graded evaluation.",
+        "Responses are judged using claude-sonnet-4-5.",
+    ]
+    for phrase in phrasings:
+        tex = (
+            "\\begin{document}\n\\section{Methods}\n"
+            + phrase
+            + "\n\\section{Appendix}\nThis appendix is intentionally empty.\n\\end{document}\n"
+        )
+        r = verify_paper.check_judge_prompts(tex)
+        assert not r.passed, f"phrasing should require a judge section: {phrase!r}"
+
+
+def test_judge_used_re_matches_canonical_llm_as_judge():
+    # direct regex probe (the mechanizable check): the canonical hyphenated
+    # phrasing must match on its own, independent of any filler.
+    for s in (
+        "graded by an LLM-as-judge",
+        "an LLM-as-a-judge evaluation",
+        "model-as-judge scoring",
+        "scored via LLM-as-judge",
+    ):
+        assert verify_paper._JUDGE_USED_RE.search(s), f"should match: {s!r}"
+
+
+def test_judge_prompts_no_false_positive_on_judgement_words():
+    # the broadened regex must NOT trip on words that merely contain "judg":
+    # "judgement", "prejudge", "judges panel" are not LLM-judge uses.
+    tex = r"""\begin{document}
+\section{Methods}
+We exercise careful judgement and avoid prejudging the outcome. A judges panel
+of human raters is out of scope. We compute log-probabilities only.
+\end{document}
+"""
+    r = verify_paper.check_judge_prompts(tex)
+    assert r.passed, r.detail
+    assert "no LLM judge" in r.detail
+
+
+def test_judge_prompts_accepts_section_or_anchor():
+    # a \subsection{Judge rubric} (the rubric synonym) satisfies the check.
+    tex = r"""\begin{document}
+\section{Methods}
+Completions are judged by \texttt{claude-sonnet-4-5}.
+\subsection{Judge rubric}
+Score 0--100 ...
+\end{document}
+"""
+    r = verify_paper.check_judge_prompts(tex)
+    assert r.passed, r.detail
+
+
+def test_judge_prompts_ignores_judge_word_in_comment():
+    # a `judge` mention only in a comment does not trigger the requirement.
+    tex = r"""\begin{document}
+% we considered using a judge but did not
+\section{Methods}
+We compute log-probabilities only.
+\end{document}
+"""
+    r = verify_paper.check_judge_prompts(tex)
+    assert r.passed
+    assert "no LLM judge" in r.detail
+
+
 # ─── v1 scope: NO \metric check ──────────────────────────────────────────────
 
 
@@ -532,6 +743,8 @@ def test_no_metric_check_function_in_v1():
         "includegraphics confined + resolves",
         "bib entries resolve",
         "epsref resolves",
+        "verbatim examples present",
+        "judge prompts present",
         "manifest complete + HF-PDF-consistent",
         "paper-stub body.md valid",
     }
