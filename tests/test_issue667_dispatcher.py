@@ -397,3 +397,122 @@ def test_behavior_singular_flag_is_recognized_not_unrecognized_arg():
         # only thing under test is parser acceptance + the args.behavior read.
         rc = disp.main()
     assert rc == 0, "parser must recognize --behavior (singular) on the parity-probe phase"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (e-round7) resume-skip for already-extracted cells.
+#
+# Round-7 context: the 4th launch ran ~95 min and extracted 32/64 cells (all em +
+# all sycophancy) before the 33rd (fact/sp_swe) crashed. A naive relaunch would
+# re-extract those 32 on-disk cells. Resume-skip (default ON) drops any cell whose
+# .npz tensors already exist under <TENSORS_DIR>/<behavior>/<source>_seed42, so the
+# relaunch only runs the un-extracted cells. --no-resume-skip forces a full re-run.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _stub_extract_phase(monkeypatch, tmp_path, *, sources):
+    """Common monkeypatch wiring for the phase_extract resume-skip tests: point
+    TENSORS_DIR + PROJECT_ROOT at tmp_path, fix the source list, no-op the parity
+    gate + the upload, and capture which cells reached the subprocess launcher."""
+    monkeypatch.setattr(disp, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(disp, "TENSORS_DIR", "tensors")
+    monkeypatch.setattr(disp, "select_sources", lambda behavior, sources_arg: list(sources))
+    monkeypatch.setattr(disp, "select_targets", lambda behavior, targets_arg: ["sp_swe"])
+    monkeypatch.setattr(disp, "_rslora_parity_probe", lambda *a, **k: None)
+    monkeypatch.setattr(disp, "_upload_tensors", lambda: None)
+
+    launched: list[tuple[str, str]] = []
+
+    def fake_parallel(cmds):
+        # cmds is the per-wave list; the wave membership is what we assert on. We
+        # re-derive (behavior, source) from each cmd's --behavior/--source-cid argv.
+        cmds = list(cmds)
+        for cmd, _log, _env in cmds:
+            argv = list(cmd)
+            b = argv[argv.index("--behavior") + 1]
+            s = argv[argv.index("--source-cid") + 1]
+            launched.append((b, s))
+        return [0] * len(cmds)
+
+    monkeypatch.setattr(disp, "_run_parallel_with_log", fake_parallel)
+    return launched
+
+
+def _make_cell_done(tmp_path, behavior, source):
+    """Simulate a completed cell: a non-empty .npz under the cell's output dir."""
+    cell_dir = tmp_path / "tensors" / behavior / f"{source}_seed{disp._EXTRACT_SEED}"
+    cell_dir.mkdir(parents=True, exist_ok=True)
+    (cell_dir / "sp_swe_L14.npz").write_bytes(b"\x00")  # presence is all that matters
+
+
+def test_phase_extract_resume_skips_already_extracted_cell(monkeypatch, tmp_path):
+    """A cell whose .npz already exist is NOT relaunched; the un-extracted cell is."""
+    launched = _stub_extract_phase(monkeypatch, tmp_path, sources=["default", "sp_swe"])
+    _make_cell_done(tmp_path, "fact", "default")  # already on disk -> must be skipped
+
+    disp.phase_extract(
+        behaviors=["fact"],
+        sources_arg=None,
+        targets_arg=None,
+        layers=[14],
+        primary_layer=14,
+        n_gpus=1,
+        cpu_only=True,
+        max_probes=2,
+        max_train_rows=8,
+        skip_upload=True,
+        dry_run=False,
+        skip_parity=True,
+        resume_skip=True,
+    )
+
+    assert ("fact", "default") not in launched, "completed cell must be resume-skipped"
+    assert ("fact", "sp_swe") in launched, "un-extracted cell must still run"
+    assert launched == [("fact", "sp_swe")], launched
+
+
+def test_phase_extract_no_resume_skip_reruns_completed_cell(monkeypatch, tmp_path):
+    """``resume_skip=False`` (the --no-resume-skip flag) forces a full re-extract:
+    the already-on-disk cell IS relaunched."""
+    launched = _stub_extract_phase(monkeypatch, tmp_path, sources=["default", "sp_swe"])
+    _make_cell_done(tmp_path, "fact", "default")
+
+    disp.phase_extract(
+        behaviors=["fact"],
+        sources_arg=None,
+        targets_arg=None,
+        layers=[14],
+        primary_layer=14,
+        n_gpus=1,
+        cpu_only=True,
+        max_probes=2,
+        max_train_rows=8,
+        skip_upload=True,
+        dry_run=False,
+        skip_parity=True,
+        resume_skip=False,
+    )
+
+    assert ("fact", "default") in launched, "--no-resume-skip must re-run the completed cell"
+    assert ("fact", "sp_swe") in launched
+    assert len(launched) == 2, launched
+
+
+def test_cell_already_extracted_predicate(monkeypatch, tmp_path):
+    """``_cell_already_extracted`` is True only for an EXISTING dir holding >=1 .npz."""
+    monkeypatch.setattr(disp, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(disp, "TENSORS_DIR", "tensors")
+
+    # No dir -> not done.
+    assert not disp._cell_already_extracted("fact", "sp_swe")
+
+    # Empty dir (mkdir'd but no .npz, e.g. a cell that crashed before writing) -> not done.
+    empty = tmp_path / "tensors" / "fact" / f"sp_swe_seed{disp._EXTRACT_SEED}"
+    empty.mkdir(parents=True, exist_ok=True)
+    assert not disp._cell_already_extracted("fact", "sp_swe"), (
+        "empty cell dir must NOT count as done"
+    )
+
+    # Dir with a .npz -> done.
+    (empty / "sp_swe_L14.npz").write_bytes(b"\x00")
+    assert disp._cell_already_extracted("fact", "sp_swe")

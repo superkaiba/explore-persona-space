@@ -847,3 +847,84 @@ def test_a310_reports_oracle_and_g0_distinct_from_a39(tmp_path):
     ):
         assert field in em9, field
     assert len(em9["lambda_sweep"]) == 5  # MAJOR 4: 5 ridge fractions
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (round-7) fact-probe dict→string format mismatch (bug_class
+# ``fact_probe_dict_vs_string_format_mismatch``).
+#
+# Round-7 crash: the 33rd cell (fact/sp_swe — first fact-behavior cell) died with
+# ``AttributeError: 'dict' object has no attribute 'strip'`` at i537_contexts
+# ``_casualize`` (q.strip()). Root cause: ``load_eval_probes("fact")`` returns the
+# concatenation of ``direct_recall`` (list[str]) and ``ood_framings`` — and the
+# pool's ``ood_framings`` rows are ``{"framing", "question"}`` DICTS, not strings.
+# Every downstream consumer (the gen_msgs loop, extract_fact_r_b, _extract_one_target)
+# threads each probe into a chat ``content`` string and through ``_casualize`` — all
+# of which assume a string. Fix: ``_probe_text`` normalizes the dict to its question
+# string at the single load site, so every consumer sees a flat list[str].
+#
+# em / sycophancy ran cleanly for 32/64 cells because their pools are already flat
+# strings (the helper extracts ``c["wrong_claim"]`` / ``q["paraphrases"][0]``).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_probe_text_normalizes_fact_ood_framing_dict_to_question_string():
+    """``_probe_text`` flattens the real fact ``ood_framings`` dict shape
+    (``{"framing", "question"}``) to its question STRING — the exact dict that
+    crashed ``_casualize`` at round-7."""
+    import issue667_extract as ex
+
+    ood = {"framing": "trivia quiz", "question": "How many benches are there?"}
+    out = ex._probe_text(ood)
+    assert isinstance(out, str), out
+    assert out == "How many benches are there?"
+
+
+def test_probe_text_passes_strings_through_and_is_defensive_on_any_dict_shape():
+    """Bare strings pass through; ANY dict shape resolves to a string (defensive
+    against future pools keyed on ``prompt`` / ``text`` rather than ``question``)."""
+    import issue667_extract as ex
+
+    assert ex._probe_text("plain question") == "plain question"
+    assert ex._probe_text({"question": "q-key"}) == "q-key"
+    assert ex._probe_text({"prompt": "p-key"}) == "p-key"
+    assert ex._probe_text({"text": "t-key"}) == "t-key"
+    # No recognized key + non-string value -> str() fallback (never raises).
+    assert isinstance(ex._probe_text({"unknown": 7}), str)
+    assert isinstance(ex._probe_text({"question": 42}), str)  # non-str value -> str()
+
+
+def test_build_messages_for_dict_probe_does_not_crash_casualize():
+    """The end-to-end crash path: a normalized fact probe flows through
+    ``build_messages_for`` -> ``build_messages`` -> ``_casualize`` (the F4 family,
+    ``casualize=True``) WITHOUT ``AttributeError``, and the question text lands in
+    the user message.
+
+    Pre-fix: passing the raw ``ood_framings`` dict reached ``q.strip()`` and raised
+    ``AttributeError: 'dict' object has no attribute 'strip'``. Post-fix the load
+    site flattens it, so ``build_messages_for`` only ever sees a string."""
+    import issue667_extract as ex
+
+    from explore_persona_space.experiments.i537_contexts import Ctx
+
+    # F4 rephrase ctx with casualize=True -> the exact _casualize(question) path.
+    cid = "f4_casual_probe"
+    ctx = Ctx(
+        cid=cid,
+        family="F4",
+        role="eval_holdout",
+        name="casual rephrase (test)",
+        payload={"wrap_template": "hey so i was wondering, {q}", "casualize": True},
+    )
+    registry = {cid: ctx}
+
+    raw_dict_probe = {"framing": "casual chat", "question": "What is the capital of France?"}
+    probe = ex._probe_text(raw_dict_probe)  # the load-site normalization
+
+    msgs = ex.build_messages_for(registry, {}, cid, "fact", probe)
+
+    assert isinstance(msgs, list) and msgs, msgs
+    # The casualized question (lowercased, trailing '?' stripped) is in the content.
+    content = msgs[-1]["content"]
+    assert isinstance(content, str), content
+    assert "what is the capital of france" in content.lower(), content

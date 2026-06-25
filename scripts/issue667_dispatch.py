@@ -77,6 +77,11 @@ HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_ANALYSIS_TENSORS_PREFIX = "issue667_gate_chain_preview/analysis_tensors"
 TENSORS_DIR = "eval_results/issue_667/analysis_tensors"
 OUT_DIR = "eval_results/issue_667"
+# The extractor defaults --seed to 42 and the dispatcher never overrides it, so a
+# cell's output dir is <TENSORS_DIR>/<behavior>/<source>_seed42 (issue667_extract
+# cell_dir). Used by the resume-skip check (round-7) to detect already-extracted
+# cells on relaunch.
+_EXTRACT_SEED = 42
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -532,6 +537,49 @@ def _extract_cmd(
     return cmd, log_path, env
 
 
+def _cell_already_extracted(behavior: str, source: str) -> bool:
+    """True if a prior run already wrote this cell's per-(target, layer) tensors.
+
+    The extractor writes ``<tcid>_L<li>.npz`` files under
+    ``<TENSORS_DIR>/<behavior>/<source>_seed42``; a non-empty set of ``.npz`` in
+    that dir means the cell finished (round-7 resume-skip — a ~95-min relaunch
+    re-extracted 32 already-on-disk cells before the 33rd crashed). Conservative:
+    only an EXISTING dir holding at least one ``.npz`` counts as done.
+    """
+    cell_dir = PROJECT_ROOT / TENSORS_DIR / behavior / f"{source}_seed{_EXTRACT_SEED}"
+    if not cell_dir.is_dir():
+        return False
+    return any(cell_dir.glob("*.npz"))
+
+
+def _filter_resume_skip(cells: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Drop cells whose .npz tensors already exist on disk (round-7 resume-skip).
+
+    A relaunch after a mid-run crash must NOT re-extract completed cells (a
+    ~95-min relaunch re-ran 32/64 already-on-disk cells). Returns the cells that
+    still need extracting; logs each skip + a one-line kept/skipped summary.
+    """
+    kept: list[tuple[str, str]] = []
+    for behavior, source in cells:
+        if _cell_already_extracted(behavior, source):
+            logger.info(
+                "resume-skip: %s/%s already extracted at %s",
+                behavior,
+                source,
+                PROJECT_ROOT / TENSORS_DIR / behavior / f"{source}_seed{_EXTRACT_SEED}",
+            )
+            continue
+        kept.append((behavior, source))
+    if len(kept) != len(cells):
+        logger.info(
+            "extract: resume-skip kept %d / %d cells (skipped %d already on disk)",
+            len(kept),
+            len(cells),
+            len(cells) - len(kept),
+        )
+    return kept
+
+
 def phase_extract(
     *,
     behaviors: list[str],
@@ -546,6 +594,7 @@ def phase_extract(
     skip_upload: bool,
     dry_run: bool,
     skip_parity: bool = False,
+    resume_skip: bool = True,
 ) -> None:
     """Per-source-adapter extraction in CVD-pinned waves; upload tensors after.
 
@@ -567,6 +616,12 @@ def phase_extract(
         for source in select_sources(behavior, sources_arg):
             cells.append((behavior, source))
     logger.info("extract: %d source-adapter cells across behaviors=%s", len(cells), behaviors)
+    # Resume-skip (default ON): drop cells whose .npz tensors already exist on disk
+    # so a relaunch after a mid-run crash does NOT re-extract completed cells
+    # (round-7: a ~95-min relaunch re-ran 32/64 already-on-disk cells). --no-resume-skip
+    # forces a full re-extract. Skipped on dry-run (nothing is written there anyway).
+    if resume_skip and not dry_run:
+        cells = _filter_resume_skip(cells)
     n_par = 1 if cpu_only else max(n_gpus, 1)
     for wave_start in range(0, len(cells), n_par):
         wave = cells[wave_start : wave_start + n_par]
@@ -746,6 +801,14 @@ def main() -> int:
     )
     parser.add_argument("--skip-parity", action="store_true", help="Skip the rsLoRA parity probe.")
     parser.add_argument(
+        "--no-resume-skip",
+        action="store_true",
+        help=(
+            "Force a full re-extract: do NOT skip cells whose .npz tensors already "
+            "exist on disk (resume-skip is ON by default — round-7)."
+        ),
+    )
+    parser.add_argument(
         "--skip-store-pin",
         action="store_true",
         help="Pass through to analysis: synthetic-store smoke (no HF pins).",
@@ -811,6 +874,7 @@ def main() -> int:
                 skip_upload=args.skip_upload,
                 dry_run=args.dry_run,
                 skip_parity=args.skip_parity,
+                resume_skip=not args.no_resume_skip,
             )
         elif phase == "analysis":
             phase_analysis(
