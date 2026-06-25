@@ -413,20 +413,20 @@ class Cell:
 
 
 def realized_grid() -> list[Cell]:
-    """The plan §5.4 realized 64-cell grid. The 8 marker × {librarian,default}
+    """The plan §5.4 realized 64-cell grid. The 8 marker x {librarian,default}
     cells are SHARED between the gate + transfer spines (built once)."""
     cells: dict[str, Cell] = {}
 
     def add(c: Cell) -> None:
         cells.setdefault(c.slug + f"_seed{c.seed}", c)
 
-    # Gate spine: 4 sources × marker × 2 arms × 2 doses = 16.
+    # Gate spine: 4 sources x marker x 2 arms x 2 doses = 16.
     for src in GATE_SPINE_SOURCES:
         for arm in ("contra", "posonly"):
             for dose in ("d1", "d2"):
                 add(Cell("marker", src, arm, dose))
 
-    # Transfer spine: 6 behaviors × 2 sources × 2 arms × 2 doses (marker shared).
+    # Transfer spine: 6 behaviors x 2 sources x 2 arms x 2 doses (marker shared).
     # bad_medical(B1) + em/insecure-code(B2) + sycophancy(B3) + refusal(B4) +
     # taught-fact(B5) + marker(B7) -- the marker cells dedupe against the gate spine.
     transfer_behaviors = ("bad_medical", "em", "sycophancy", "refusal", "fact", "marker")
@@ -436,12 +436,12 @@ def realized_grid() -> list[Cell]:
                 for dose in ("d1", "d2"):
                     add(Cell(b, src, arm, dose))  # marker dedupes against the gate spine
 
-    # Designed nulls: 2 nulls × 2 sources × contrastive × dose-1 = 4.
+    # Designed nulls: 2 nulls x 2 sources x contrastive x dose-1 = 4.
     for b in ("tf_rev", "ic_edu"):
         for src in TRANSFER_SPINE_SOURCES:
             add(Cell(b, src, "contra", "d1"))
 
-    # Seed-1042 marker replication: gate-spine 4 sources × contrastive × dose-1.
+    # Seed-1042 marker replication: gate-spine 4 sources x contrastive x dose-1.
     for src in GATE_SPINE_SOURCES:
         add(Cell("marker", src, "contra", "d1", seed=MARKER_REPLICATION_SEED))
 
