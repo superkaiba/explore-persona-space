@@ -23,7 +23,17 @@ Checks (v1 scope — NO `\\metric` grounding; that is a documented v1.1 addition
   5. `.bib` entries resolve: every `\\cite{key}` / `\\citep` / `\\citet` key has
      a matching `@type{key,` entry in the per-task `.bib`.
   6. `\\epsref{N}` resolves to a real task in the registry.
-  7. `paper_manifest.json` complete + HF-PDF-consistent: the COMMITTED local
+  7. Verbatim examples present: the paper SHOWS its data, not just describes it —
+     each of the three required example classes (`training-data`, `eval-data`,
+     `model-output`) is declared with a `% eps-example: <class>` marker AND the
+     body carries real verbatim example environments (epsexample / lstlisting /
+     verbatim / quote / quotation / tcolorbox) behind them (incident #657: a
+     paper that described every method but shipped zero verbatim text).
+  8. Judge prompts present: when the paper uses an LLM judge, it carries a
+     dedicated `Judge prompts` / `Judge rubric` appendix (sub)section with the
+     verbatim prompt + rubric TEXT for every judge (or the template's
+     `% eps-judge-prompts` anchor). No-judge papers pass automatically.
+  9. `paper_manifest.json` complete + HF-PDF-consistent: the COMMITTED local
      artifacts (tex/paper_html, + bib/refs when present) are present on disk with
      matching sha256, AND the PDF is validated via `pdf_hf_url` (present + an
      `https://...` URL), NOT a local file (the PDF lives on the HF data repo, not
@@ -32,7 +42,7 @@ Checks (v1 scope — NO `\\metric` grounding; that is a documented v1.1 addition
      Tolerant of the OLD manifest shape (a `pdf` entry still in `artifacts`): its
      local-existence/hash check is SKIPPED (it is HF-hosted), so an
      already-built old-shape manifest still passes.
-  8. The body.md paper-stub is valid (frontmatter `paper: true`, an H1 title, an
+  10. The body.md paper-stub is valid (frontmatter `paper: true`, an H1 title, an
      abstract, and a paper link).
 
 Run from repo root:
@@ -84,6 +94,49 @@ _CITE_RE = re.compile(r"\\cite[a-zA-Z]*\*?(?:\[[^\]]*\])*\{([^}]+)\}")
 _BIBENTRY_RE = re.compile(r"@\w+\s*\{\s*([^,\s]+)\s*,")
 _EPSREF_RE = re.compile(r"\\epsref\{(\d+)\}")
 _COMMENT_RE = re.compile(r"(?<!\\)%.*$", re.MULTILINE)
+
+# Verbatim-example environments the paper may use for example blocks (training
+# rows, eval probes, model completions, judge prompts). `epsexample` is the
+# template-provided wrapper; the rest are the standard LaTeX verbatim/quote/box
+# environments. The example check accepts ANY of these so a paper that shows its
+# examples in a legitimate verbatim block is never false-FAILed.
+_EXAMPLE_ENV_RE = re.compile(
+    r"\\begin\{(?:epsexample|lstlisting|verbatim|Verbatim|quote|quotation|tcolorbox)\}"
+)
+# The `% eps-example: <class>` comment marker the template ships immediately
+# before each example block. The verifier keys the per-class completeness check
+# on these markers, so the class set is reliable + author-declared.
+_EXAMPLE_MARKER_RE = re.compile(r"%\s*eps-example:\s*([a-z0-9-]+)", re.IGNORECASE)
+# The three example classes a `paper: true` experiment paper MUST carry verbatim.
+_REQUIRED_EXAMPLE_CLASSES = ("training-data", "eval-data", "model-output")
+# A judge is in play when the body mentions an LLM judge. We detect the
+# project-canonical phrasings so a paper that scores anything with an LLM judge
+# (or grader) must carry its verbatim prompt(s)/rubric(s). Every alternative is
+# anchored on the literal word "judge"/"grader"/"graded" to preserve the
+# zero-false-positive property (clean on "judgement", "prejudge", "judges panel").
+_JUDGE_USED_RE = re.compile(
+    # "as judge" / "as-judge" / "as a judge" / "LLM-as-a-judge" / "model-as-judge"
+    # — hyphen- and article-tolerant so the canonical "LLM-as-a-judge" matches.
+    r"\bas[-\s]+(?:an?[-\s]+)?judge\b"
+    r"|\bjudge\s+model\b"  # "the judge model"
+    r"|\bjudged?\s+(?:by|with|using|for)\b"  # "judged by/with/using/for ..."
+    r"|\bLLM[- ]?judge\b"  # "LLM-judge" / "LLM judge" / "LLMjudge"
+    # "Claude judge", "model-graded", "sonnet grader", ...
+    r"|\b(?:claude|llm|model|sonnet|gpt|haiku|opus)[- ]?(?:judge|grader|graded)\b"
+    r"|\bthe\s+judge\b"  # "the judge assigns/labels/..."
+    r"|\bjudge\s+(?:prompt|rubric|score|assign|label|rate|grade|verdict)"  # judge + action/artifact
+    r"|\b(?:LLM[- ]?)?grader\b"  # "an LLM grader" / "a grader"
+    r"|\bmodel[- ]graded\b",  # "model-graded evaluation"
+    re.IGNORECASE,
+)
+# The "Judge prompts" appendix (sub)section the paper must carry when a judge is
+# used. Accept a \section / \subsection / \paragraph titled Judge prompt(s) or
+# Judge rubric(s), or the template's `% eps-judge-prompts` anchor.
+_JUDGE_SECTION_RE = re.compile(
+    r"\\(?:section|subsection|subsubsection|paragraph)\*?\{\s*Judge\s+(?:prompts?|rubrics?)\b"
+    r"|%\s*eps-judge-prompts\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -355,7 +408,76 @@ def check_epsref_resolves(tex: str) -> CheckResult:
     return CheckResult("epsref resolves", True, f"{len(refs)} \\epsref resolve")
 
 
-# ─── 7. manifest complete + HF-PDF-consistent ────────────────────────────────
+# ─── 7. verbatim examples present (training / eval / model-output) ────────────
+# The paper must SHOW its methods AND its data: verbatim training rows, verbatim
+# eval probes, and verbatim model outputs (eval input -> output -> judge
+# verdict) — not just prose describing them (incident #657: the paper described
+# every method but contained zero verbatim text). The check keys on the
+# template-shipped `% eps-example: <class>` markers (reliable + author-declared)
+# AND requires real verbatim example environments behind them (guards a marker
+# with no content).
+
+
+def check_verbatim_examples(tex: str) -> CheckResult:
+    body = _body_region(tex)
+    # Count actual verbatim example environments (any accepted env). The marker
+    # detection scans the WHOLE body (comments are not stripped — the markers
+    # ARE comments).
+    n_envs = len(_EXAMPLE_ENV_RE.findall(_strip_comments(body)))
+    classes = {m.group(1).lower() for m in _EXAMPLE_MARKER_RE.finditer(body)}
+    problems: list[str] = []
+    missing = [c for c in _REQUIRED_EXAMPLE_CLASSES if c not in classes]
+    if missing:
+        problems.append(
+            "missing required `% eps-example:` class marker(s): "
+            + ", ".join(missing)
+            + " (each example block needs a `% eps-example: <training-data|"
+            "eval-data|model-output>` marker)"
+        )
+    # A paper that declares the class markers but has no actual verbatim block is
+    # a marker-without-content FAIL; a paper with neither is the #657 case.
+    if n_envs == 0:
+        problems.append(
+            "no verbatim example environment "
+            "(epsexample / lstlisting / verbatim / quote / quotation / tcolorbox) "
+            "— show the actual training rows, eval probes, and model completions, "
+            "not just prose describing them"
+        )
+    if problems:
+        return CheckResult("verbatim examples present", False, "; ".join(problems))
+    return CheckResult(
+        "verbatim examples present",
+        True,
+        f"{n_envs} verbatim block(s); classes present: {', '.join(sorted(classes))}",
+    )
+
+
+# ─── 8. judge prompts present when a judge is used ────────────────────────────
+# Every LLM judge in the study must have its ACTUAL prompt + rubric TEXT in a
+# dedicated "Judge prompts" appendix (sub)section — verbatim, not paraphrased
+# (incident #657: a sycophancy / EM / refusal / steering-sanity judge was named
+# but no prompt text shipped). Only fires when the paper actually uses a judge.
+
+
+def check_judge_prompts(tex: str) -> CheckResult:
+    body = _strip_comments(_body_region(tex))
+    if not _JUDGE_USED_RE.search(body):
+        return CheckResult("judge prompts present", True, "no LLM judge used")
+    # search the FULL body (un-stripped) so the `% eps-judge-prompts` anchor — a
+    # comment — is detectable, alongside a real \section{Judge prompts}.
+    if not _JUDGE_SECTION_RE.search(_body_region(tex)):
+        return CheckResult(
+            "judge prompts present",
+            False,
+            "the paper uses an LLM judge but carries no `Judge prompts` / "
+            "`Judge rubric` appendix section — add the verbatim prompt + rubric "
+            "TEXT for every judge (a `% eps-judge-prompts` anchor + a "
+            r"\subsection{Judge prompts} satisfies this)",
+        )
+    return CheckResult("judge prompts present", True, "Judge prompts section present")
+
+
+# ─── 9. manifest complete + HF-PDF-consistent ────────────────────────────────
 # The PDF lives on the HF data repo, NOT in git, so it is NEVER required as a
 # local on-disk artifact (incident #657: the local PDF exists at build time but
 # is gone post-commit). The committed artifacts (tex/paper_html, + bib/refs when
@@ -426,7 +548,7 @@ def check_manifest(paper_dir: Path) -> CheckResult:
     )
 
 
-# ─── 8. paper-stub body.md valid ─────────────────────────────────────────────
+# ─── 10. paper-stub body.md valid ────────────────────────────────────────────
 
 
 def _split_frontmatter(text: str) -> tuple[dict, str]:
@@ -518,6 +640,8 @@ def verify(
         check_includegraphics(tex, paper_dir),
         check_bib_resolves(tex, paper_dir, jobname, issue),
         check_epsref_resolves(tex),
+        check_verbatim_examples(tex),
+        check_judge_prompts(tex),
         check_manifest(paper_dir),
     ]
     if stub_path is not None:

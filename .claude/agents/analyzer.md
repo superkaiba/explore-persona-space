@@ -781,7 +781,14 @@ the Methods or Appendix yourself; splice in what it returns):
    grounded by the numeric-fidelity re-extraction. Report the metric, its
    CI / n, and the test. The low-level-data-plot-behind-every-aggregate +
    raw-alongside-processed rules apply (embed both figures in the same
-   subsection). **NO confidence words.**
+   subsection). **NO confidence words.** **Inline a verbatim `model-output`
+   worked example for the load-bearing condition(s)** — the eval INPUT → the
+   model's ACTUAL OUTPUT (verbatim) → the judge VERDICT/score, in an
+   `\epsexample{...}` block preceded by `% eps-example: model-output`
+   (subset inline; the comprehensive per-condition set goes in the Appendix
+   the methodology-writer authors). `verify_paper.py` check 7 FAILs a paper
+   missing the `model-output` example class; sanitize harmful/EM rows per
+   § content firewall (labeled excerpt + pinned raw path).
 5. **Discussion + Limitations** — what the results mean, the alternatives,
    the binding caveats, what they change. Fold Limitations in here. **NO
    confidence words.** (A methodology correction folds into the relevant
@@ -790,15 +797,33 @@ the Methods or Appendix yourself; splice in what it returns):
    the project `.bib`), cited with natbib. Build the `.bib` with the
    `citation-management` skill.
 7. **Appendix** — authored by `methodology-writer`, spliced in (the COMPLETE
-   hyperparameter table + comprehensive worked examples + full training-data
-   recipe + full Rule-A reuse recipes).
+   hyperparameter table + comprehensive worked examples — verbatim
+   `training-data` / `eval-data` / `model-output` blocks — the full
+   training-data recipe + full Rule-A reuse recipes, AND the mandatory
+   **`\subsection{Judge prompts}`** carrying the verbatim prompt + rubric TEXT
+   for every LLM judge in the study). The template ships the
+   `% eps-judge-prompts` anchor + the `{{JUDGE_PROMPTS}}` placeholder for it;
+   `verify_paper.py` check 8 FAILs a judge-using paper with no Judge-prompts
+   section.
 
 **Mechanics:**
 - Copy `docs/papers/_template/issue_TEMPLATE.tex` →
   `docs/papers/issue_<N>/issue_<N>.tex` and `preamble.tex` into the same
   dir (the build runs in-place; it does NOT rewrite the `\input` path). Fill
   the `{{...}}` placeholders (TITLE, ISSUE, RUN_DATE, MODEL, GRAPHICSPATH,
-  ABSTRACT, INTRODUCTION, METHODS, RESULTS, DISCUSSION, APPENDIX).
+  ABSTRACT, INTRODUCTION, METHODS, RESULTS, DISCUSSION, APPENDIX,
+  JUDGE_PROMPTS — the last carries the verbatim judge prompts/rubrics; the
+  methodology-writer supplies its content with the Appendix).
+- **Show the data, not just the method (`verify_paper.py` checks 7-8).** The
+  paper MUST carry verbatim text: real TRAINING rows
+  (`% eps-example: training-data`), real EVAL probes
+  (`% eps-example: eval-data`), real MODEL OUTPUTS with judge verdicts
+  (`% eps-example: model-output`) — each in an `\epsexample{...}` block with a
+  subset-disclosure + pinned-artifact caption — and the verbatim JUDGE PROMPTS
+  for every judge. The methodology-writer authors the Methods/Appendix example
+  blocks + the Judge-prompts subsection; you author the Results `model-output`
+  worked example (item 4). Pull every block from a REAL artifact — never
+  fabricate.
 - **NO confidence anywhere in the `.tex` body** — the
   `(LOW|MODERATE|HIGH confidence)` tag and bare `Confidence:` lines are a
   hard `verify_paper.py` FAIL. Confidence lives ONLY in the `body.md`

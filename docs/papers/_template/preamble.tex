@@ -44,6 +44,9 @@
 \usepackage{xcolor}
 \usepackage{enumitem}
 \usepackage{titlesec}
+\usepackage{listings}
+\usepackage[breakable]{tcolorbox}
+\tcbuselibrary{listings,breakable}
 
 % Figures live in the per-task figure dir figures/issue_<N>/. issue_<N>.tex sets
 % \graphicspath AFTER \input{preamble.tex} (graphicx is loaded just above, so
@@ -78,3 +81,40 @@
 % path rewrites this into a typed hover-preview link via eps_paper_filter.lua.
 % ---------------------------------------------------------------------------
 \newcommand{\epsref}[1]{\href{https://eps.superkaiba.com/tasks/#1}{\##1}}
+
+% ---------------------------------------------------------------------------
+% epsexample — the verbatim-example wrapper. The paper MUST SHOW its data, not
+% just describe it: verbatim training rows, verbatim eval probes, verbatim model
+% completions (eval input -> output -> judge), and the verbatim judge prompts /
+% rubrics. verify_paper.py (check 7) requires a `% eps-example: <class>` comment
+% marker (class in {training-data, eval-data, model-output}) immediately BEFORE
+% each block AND a real verbatim environment behind it; this is that environment.
+%
+% Use it like:
+%     % eps-example: training-data
+%     \begin{epsexample}{Training row (1 of 600; random sample). Full file: <link>}
+%     <verbatim row text — special chars are safe here>
+%     \end{epsexample}
+%
+% It is a `listings`-backed `tcolorbox`: verbatim-safe (backslashes / braces /
+% dollar signs in model outputs render literally) + breakable across pages, with
+% the mandatory subset-disclosure / source caption as the box title. Any of the
+% standard verbatim environments (lstlisting / verbatim / quote / tcolorbox)
+% also satisfy the check — epsexample is the blessed convention.
+\lstdefinestyle{epsexamplestyle}{%
+  basicstyle=\footnotesize\ttfamily,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  upquote=true,
+  literate={’}{'}1 {‘}{`}1 {“}{"}1 {”}{"}1,
+}
+\newtcblisting{epsexample}[1]{%
+  breakable, sharp corners, boxrule=0.4pt,
+  colback=gray!4, colframe=gray!55,
+  fonttitle=\bfseries\footnotesize, coltitle=black, title={#1},
+  listing only, listing options={style=epsexamplestyle},
+  left=2pt, right=2pt, top=2pt, bottom=2pt,
+}

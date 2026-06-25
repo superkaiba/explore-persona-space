@@ -30,11 +30,12 @@ description: >
   clean-result is a self-contained LaTeX research paper at
   `docs/papers/issue_<N>/` — the mechanical pre-pass is
   `scripts/verify_paper.py` (NOT `verify_task_body.py`), the reviewer reads
-  the paper `.tex` + the figure PNGs + the compiled PDF, and six paper
+  the paper `.tex` + the figure PNGs + the compiled PDF, and seven paper
   lenses bind (P1 self-standing Introduction; P2 self-contained Methods +
   the Rule-A reuse-chain depth rule; P3 inline-subset + comprehensive-
   Appendix completeness; P4 no confidence in the paper body; P5 research-
-  paper register; P6 `\epsref{N}` correctness). No `\metric` grounding lens
+  paper register; P6 `\epsref{N}` correctness; P7 verbatim examples +
+  judge prompts). No `\metric` grounding lens
   in v1 (a v1.1 addition). The fifteen markdown lenses below are unchanged
   and bind only for non-paper (markdown-body) tasks. Runs
   `scripts/verify_task_body.py` (markdown) / `scripts/verify_paper.py`
@@ -122,8 +123,8 @@ Read the task `body.md` frontmatter (`paper:`) before any pre-pass.
   is a self-contained **research paper** at `docs/papers/issue_<N>/`, not a
   markdown body (the markdown `body.md` is a thin paper-stub). Go STRAIGHT to
   **## Paper-task review (`paper: true`)** below — the mechanical pre-pass is
-  `scripts/verify_paper.py` (NOT `verify_task_body.py`), and the six PAPER
-  lenses (P1-P6) bind INSTEAD of the fifteen markdown lenses. Do NOT run
+  `scripts/verify_paper.py` (NOT `verify_task_body.py`), and the seven PAPER
+  lenses (P1-P7) bind INSTEAD of the fifteen markdown lenses. Do NOT run
   `verify_task_body.py` / `audit_clean_results_body_discipline.py` on a paper
   task (they verify markdown bodies); do NOT score the fifteen markdown
   lenses. The markdown sections of this spec are for non-paper tasks only.
@@ -436,7 +437,7 @@ reconciler-disagreement shape captured in
 `paper: true`.** The canonical clean-result is a self-contained LaTeX
 research paper at `docs/papers/issue_<N>/` (the markdown `body.md` is a
 thin paper-stub). You review the PAPER, not a markdown body. The fifteen
-markdown lenses do NOT apply; the six paper lenses (P1-P6) below do. The
+markdown lenses do NOT apply; the seven paper lenses (P1-P7) below do. The
 canonical spec is `.claude/skills/clean-results/SPEC.md` § "Paper format
 (`paper: true`)" — read it before scoring.
 
@@ -466,26 +467,33 @@ References (`\bibliography`), Appendix; (3) NO confidence anywhere in the
 paper body (the `(LOW|MODERATE|HIGH confidence)` tag + bare `Confidence:`
 lines are a hard FAIL); (4) `\includegraphics` paths repo-relative-confined
 + each resolves on disk; (5) `.bib` entries resolve for every `\cite`;
-(6) `\epsref{N}` resolves to a real task in the registry; (7)
-`paper_manifest.json` complete + sha256 hashes match; (8) the `body.md`
-paper-stub is valid (`paper: true` + an H1 + an abstract + a paper link).
+(6) `\epsref{N}` resolves to a real task in the registry; (7) verbatim
+examples present — the three required example classes (`training-data`,
+`eval-data`, `model-output`) each declared with a `% eps-example: <class>`
+marker AND real verbatim example environments behind them; (8) judge prompts
+present — a `Judge prompts` / `Judge rubric` appendix (sub)section when the
+paper uses any LLM judge; (9) `paper_manifest.json` complete + sha256 hashes
+match; (10) the `body.md` paper-stub is valid (`paper: true` + an H1 + an
+abstract + a paper link).
 There is **NO `\metric` grounding check in v1** — numbers are written as
 literals, and the interpretation-critic's numeric-fidelity re-extraction is
 the number-correctness guarantee. (`\metric` grounding is a documented
 **v1.1 opt-in** under `docs/papers/_template/`; do NOT FAIL a v1 paper for
 writing numbers as literals or for not carrying a `metrics.json`.)
 
-Run it, record the result, and ALWAYS proceed to the six paper lenses in
+Run it, record the result, and ALWAYS proceed to the seven paper lenses in
 the SAME pass — never hard-stop at a mechanical FAIL. Split the FAILs:
 
 - **Structural / data-integrity FAILs (genuinely block):** a required
   section missing or out of order (check 2), confidence in the body
   (check 3), a `\includegraphics` that escapes the repo or does not resolve
   (check 4), an unresolved `\cite` (check 5), an `\epsref{N}` to a
-  non-existent task (check 6), a manifest hash mismatch / missing artifact
-  (check 7), an invalid paper-stub (check 8), or a compile that is not
-  clean (check 1 — undefined refs/citations, package errors, a missing
-  `.bbl`). Record as a blocking finding but STILL score all six lenses.
+  non-existent task (check 6), a missing verbatim example class / no example
+  block (check 7), a judge-using paper with no Judge-prompts section
+  (check 8), a manifest hash mismatch / missing artifact (check 9), an
+  invalid paper-stub (check 10), or a compile that is not clean (check 1 —
+  undefined refs/citations, package errors, a missing `.bbl`). Record as a
+  blocking finding but STILL score all seven lenses.
 - **Presentation-only FAILs (procedural — do NOT block alone):** none of
   the v1 paper checks are purely cosmetic, so in practice every
   `verify_paper.py` FAIL is structural. If a future check is added that is
@@ -494,7 +502,7 @@ the SAME pass — never hard-stop at a mechanical FAIL. Split the FAILs:
   basis for a non-PASS.
 
 A non-PASS verdict MUST be backed by ≥1 substantive finding — a structural
-verifier FAIL or a real P1-P6 lens violation. (No `audit_clean_results_
+verifier FAIL or a real P1-P7 lens violation. (No `audit_clean_results_
 body_discipline.py` on a paper task — it audits markdown bodies.)
 
 ### Read these before scoring
@@ -515,7 +523,7 @@ Load the actual paper artifacts (all under `docs/papers/issue_<N>/`):
   `.tex` text alone cannot surface these; the compiled PDF is the reader's
   actual artifact.
 
-### The six paper lenses (v1)
+### The seven paper lenses (v1)
 
 For each lens: state PASS / FAIL with one concrete sentence explaining WHY.
 If FAIL, quote the offending passage (cite the `.tex` line / section / the
@@ -646,18 +654,60 @@ built yet is fine — the macro resolves against the task registry, not a
 built paper; do NOT FAIL a forward reference to an existing, not-yet-papered
 task. (SPEC.md § "Paper format" v1 SCOPE — `\epsref{N}` is a v1 feature.)
 
+#### Lens P7 — Verbatim examples + judge prompts (show ALL methods AND examples)
+
+A research paper SHOWS its data, not just its method. The paper MUST carry
+VERBATIM TEXT pulled from real artifacts — not prose describing it (incident
+#657: the paper described every method but shipped zero verbatim text and no
+judge prompts). Check ALL of:
+
+- **Training-data examples** — ≥2 verbatim sample training rows (the ACTUAL
+  row text: system/persona prompt + question + completion, incl. a
+  contrastive-negative row where applicable). For a reuse-only study, real
+  rows from the REUSED training mixes. Inline a representative subset; the
+  Appendix carries the comprehensive set (or a pinned link to the full file +
+  a larger appendix sample).
+- **Eval-data examples** — ≥2 verbatim eval inputs/probes (the actual
+  false-claim, the harmful/harmless prompt, the steering probe). Inline
+  subset + Appendix.
+- **Model-output / completion examples** — verbatim WORKED examples per
+  load-bearing condition: eval INPUT → the model's ACTUAL OUTPUT (verbatim) →
+  the judge VERDICT/score. Inline subset (Results) + Appendix comprehensive.
+- **Judge prompts / rubrics** — when ANY LLM judge scores a behavior, the
+  ACTUAL prompt + rubric TEXT for EVERY judge, verbatim, in a dedicated
+  `Judge prompts` / `Judge rubric` appendix (sub)section (e.g. the
+  steering-sanity rubric, the sycophancy-agreement judge, the EM judge, the
+  refusal judge).
+
+Provenance: every block traces to a REAL artifact (HF `raw_completions`,
+training JSONLs, probe banks, the judge rubric file/code) — never fabricated.
+**Harmful-content carve-out:** example blocks labeled "sanitized for context
+hygiene" (~15-word excerpts + a `[truncated — harmful-content row; verify at
+<path>, row <i>]` placeholder, cherry-picked labels + row indices + permanent
+raw links kept verbatim) SATISFY the requirement — do NOT FAIL them as missing
+verbatim samples, and never load raw harmful-content rows into context.
+
+**FAIL** when any of the three example classes is absent (verifier check 7
+also catches a missing `% eps-example:` class marker / no example block), when
+an example is paraphrased prose rather than a verbatim block, when a block has
+no subset-disclosure / no pinned full-artifact link, or when the paper uses an
+LLM judge but ships no `Judge prompts` appendix section (verifier check 8). A
+genuine no-judge study (pure log-prob / logit) passes the judge-prompt half
+automatically. (Maps to SPEC.md § Paper sections items 3/7 + the
+`verify_paper.py` checks 7-8.)
+
 ### Paper-lens output
 
 Post the SAME `epm:clean-result-critique` marker as the markdown branch
-(see ## Output below), but score the SIX paper lenses (P1-P6) in place of
+(see ## Output below), but score the SEVEN paper lenses (P1-P7) in place of
 the fifteen markdown lenses, and report the verifier as `verify_paper.py`
 (NOT `verify_task_body.py`):
 
 ```
 Round <K>: PASS|FAIL — <one-sentence summary>.
 Blocker tags: [comma-separated, non-PASS only: `structural-absence` (a
-verify_paper.py structural/data-integrity FAIL — checks 1-8), `lens` (a real
-P1-P6 violation). `none` on PASS.]
+verify_paper.py structural/data-integrity FAIL — checks 1-10), `lens` (a real
+P1-P7 violation). `none` on PASS.]
 Mechanical pre-pass: verify_paper.py PASS|FAIL — <one-line summary>.
 Paper lens findings:
 - Lens P1 (Self-standing Introduction): PASS|FAIL — ...
@@ -666,6 +716,7 @@ Paper lens findings:
 - Lens P4 (No confidence in the paper body): PASS|FAIL — ...
 - Lens P5 (Research-paper register): PASS|FAIL — ...
 - Lens P6 (`\epsref{N}` correctness): PASS|FAIL — ...
+- Lens P7 (Verbatim examples + judge prompts): PASS|FAIL — ...
 
 <If FAIL: minimal-necessary-fix list, one bullet per issue — each bullet
 quotes/names its `.tex` line / section / figure / PDF page and ends with
@@ -684,7 +735,7 @@ numbers.)
 
 > **The fifteen lenses below are the MARKDOWN-body lens roster — they bind
 > for non-paper tasks (no `paper: true` frontmatter). For a `paper: true`
-> task, score the six paper lenses (P1-P6) in ## Paper-task review above
+> task, score the seven paper lenses (P1-P7) in ## Paper-task review above
 > instead.**
 
 The lens roster (15 lenses, coherently numbered 1-15). The lens NUMBERS
@@ -1933,15 +1984,15 @@ Post your verdict as an event. **This template is for the MARKDOWN branch
 (fifteen lenses).** For a `paper: true` task, post the SAME
 `epm:clean-result-critique` marker but use the paper-lens note template in
 ## Paper-task review § "Paper-lens output" — verifier line `verify_paper.py`,
-the six P1-P6 lens lines, and the paper blocker-tag vocab
-(`structural-absence` = a verify_paper.py checks-1-8 FAIL; `lens` = a P1-P6
+the seven P1-P7 lens lines, and the paper blocker-tag vocab
+(`structural-absence` = a verify_paper.py checks-1-10 FAIL; `lens` = a P1-P7
 violation; no `audit`/`procedural` tags on the paper branch).
 
 ```bash
 uv run python scripts/task.py post-marker <N> epm:clean-result-critique \
     --by clean-result-critic \
     --note "Round <K>: PASS|FAIL — <one-sentence summary>.
-Blocker tags: [comma-separated, non-PASS only: \`structural-absence\` (a check-2/3/4/7/18/20 / retired-H2 / stub verifier FAIL), \`audit\` (audit_clean_results_body_discipline.py hit), \`lens\` (a real Lens 1-15 violation). \`none\` on PASS. A non-PASS whose tags are a subset of {\`procedural\`} (presentation-only verifier FAILs) with no other tag is INVALID — see Mechanical pre-pass; emit PASS + a Procedural-fixes list instead. This line is the orchestrator's Step 9a-bis-strip parse target. (Paper branch: tags are \`structural-absence\` (verify_paper.py checks 1-8) | \`lens\` (P1-P6); no \`audit\`/\`procedural\`.)]
+Blocker tags: [comma-separated, non-PASS only: \`structural-absence\` (a check-2/3/4/7/18/20 / retired-H2 / stub verifier FAIL), \`audit\` (audit_clean_results_body_discipline.py hit), \`lens\` (a real Lens 1-15 violation). \`none\` on PASS. A non-PASS whose tags are a subset of {\`procedural\`} (presentation-only verifier FAILs) with no other tag is INVALID — see Mechanical pre-pass; emit PASS + a Procedural-fixes list instead. This line is the orchestrator's Step 9a-bis-strip parse target. (Paper branch: tags are \`structural-absence\` (verify_paper.py checks 1-10) | \`lens\` (P1-P7); no \`audit\`/\`procedural\`.)]
 Mechanical pre-pass: verify_task_body.py PASS|FAIL (procedural FAILs: <list or none>), audit PASS|FAIL.
 Lens findings:
 - Lens 1 (Title): PASS|FAIL — ...
@@ -1991,7 +2042,7 @@ mechanical verifier passes AND the audit is clean AND all fifteen
 lenses pass, your verdict is `PASS`. Don't manufacture lens-level
 nits to look thorough. (Paper branch: if the paper reads as a clean,
 self-contained, confidence-free research paper AND `verify_paper.py`
-passes AND all six P1-P6 lenses pass, your verdict is `PASS`.)
+passes AND all seven P1-P7 lenses pass, your verdict is `PASS`.)
 
 Don't gatekeep on density — if a paragraph is dense but the density
 is necessary (a load-bearing numerical claim with parentheticals),
