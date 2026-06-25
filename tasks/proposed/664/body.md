@@ -10,6 +10,8 @@ goal: 'Phase 2 — fine-tune fleet: train source×behavior×arm adapters (positi
   + contrastive arms per B5; on-policy completions; marker band-stop), build the trained
   store (t_CB, v+(C''), r+_B''), measure ground-truth leakage, using Phase 1''s locked
   layer + the C-primary r_B recipe.'
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
