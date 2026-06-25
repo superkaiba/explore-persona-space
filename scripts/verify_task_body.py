@@ -491,6 +491,38 @@ V3_RETIRED_H2_SECTIONS = ["Human TL;DR", "TL;DR", "Details", "Figure"]
 # v3 `## Data` required subsections, in order. Each is an H3.
 V3_DATA_SUBSECTIONS = ["Trained on", "Evaluated with", "Generated"]
 
+# v4 redesign (2026-W26). NEW bodies carry this sentinel. The v4 body
+# uses FOUR flat H2 sections — `## Takeaways` / `## Goal` /
+# `## Methodology` / `## Results` — plus a `**Repro:**` / `**Context:**`
+# bold-label footer (NOT H2s). The v4 redesign folds the v3 `## What I ran`
+# + `## Data` content into an expanded `## Methodology` (which also absorbs
+# the entire former standalone methodology doc) and collapses the
+# per-result `## Findings` skeleton into a strict three-beat `## Results`.
+# Confidence stays in the H1 title tag only. Forward-only: v3 / v2 /
+# pre-sentinel legacy bodies keep their existing verification behaviour
+# verbatim and are NEVER newly hard-FAILed by any v4 rule. See
+# `.claude/skills/clean-results/SPEC.md` § "v4 body shape".
+CLEAN_RESULT_V4_SENTINEL = "<!-- clean-result-v4 -->"
+
+# v4 required H2 sections, in order. A v3 content H2 (`## What I ran` /
+# `## Findings` / `## Data` / `## Reproducibility`) OR a retired earlier H2
+# (`## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure`) in a v4 body
+# is a hard FAIL (forces clean migration to the four-H2 shape).
+V4_REQUIRED_H2_SECTIONS = ["Takeaways", "Goal", "Methodology", "Results"]
+# H2 sections REJECTED in a v4 body — the v3 content H2s (folded into
+# `## Goal` / `## Methodology` / `## Results` + the footer) plus the
+# earlier retired pairs.
+V4_RETIRED_H2_SECTIONS = [
+    "What I ran",
+    "Findings",
+    "Data",
+    "Reproducibility",
+    "Human TL;DR",
+    "TL;DR",
+    "Details",
+    "Figure",
+]
+
 CONFIDENCE_LEVELS = {"LOW", "MODERATE", "HIGH"}
 
 # Sentinel substrings that indicate a placeholder slipped through.
@@ -917,6 +949,12 @@ _NOT_UPLOADED_RE = re.compile(
 _CHERRY_DISCLOSURE_RE = re.compile(
     r"\b(?:cherry[-\s]?picked|random[-\s]?sample|drawn at random|"
     r"random draw|first \d+ of \d+|first \d+ completions?|"
+    # bare `N of M rows` form — PARITY with `_SUBSET_DISCLOSURE_RE` (the
+    # two are documented as must-stay-in-sync). A v4 `## Methodology`
+    # Sample block disclosed solely as "5 of 2,000 rows" passes check 19
+    # (subset disclosure); without this it would fail check 10 (Phase A
+    # review Minor, 2026-06-24).
+    r"\d+ of \d+ rows|\d+ of [\d,]+ rows|"
     r"\d+ random completions?|\d+ randomly[-\s]?sampled|"
     # `<N> example training rows`, `<N> example eval probes`,
     # `<N> examples of …`, `<N> sample completions`, `<N> sample rows`
@@ -1089,6 +1127,13 @@ def check_required_sections(body: str) -> CheckResult:
     """Check 2: the required H2 sections appear in order, and no retired
     H2 is present.
 
+    v4 bodies (sentinel `<!-- clean-result-v4 -->`) require four flat
+    H2s in order — `## Takeaways` / `## Goal` / `## Methodology` /
+    `## Results` — plus a `**Repro:**`/`**Context:**` footer (not an H2),
+    and reject the v3 content H2s (`## What I ran` / `## Findings` /
+    `## Data` / `## Reproducibility`) AND the earlier retired pairs
+    (`## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure`).
+
     v3 bodies (sentinel `<!-- clean-result-v3 -->`) require five flat
     H2s in order — `## Takeaways` / `## What I ran` / `## Findings` /
     `## Data` / `## Reproducibility` — and reject `## Human TL;DR` /
@@ -1102,15 +1147,37 @@ def check_required_sections(body: str) -> CheckResult:
     only the required + retired sets differ. Legacy bodies pre-2026-W22
     are forward-grandfathered (the verifier never re-runs over them).
     """
+    v4 = is_v4(body)
     v3 = is_v3(body)
-    required = V3_REQUIRED_H2_SECTIONS if v3 else REQUIRED_H2_SECTIONS
-    retired = V3_RETIRED_H2_SECTIONS if v3 else RETIRED_H2_SECTIONS
+    if v4:
+        required = V4_REQUIRED_H2_SECTIONS
+        retired = V4_RETIRED_H2_SECTIONS
+        label = "four required H2 sections in order"
+    elif v3:
+        required = V3_REQUIRED_H2_SECTIONS
+        retired = V3_RETIRED_H2_SECTIONS
+        label = "five required H2 sections in order"
+    else:
+        required = REQUIRED_H2_SECTIONS
+        retired = RETIRED_H2_SECTIONS
+        label = "three required H2 sections in order"
     found = [name for name, _, _ in find_h2_sections(body)]
-    label = "five required H2 sections in order" if v3 else "three required H2 sections in order"
     # Hard FAIL on retired H2s (force clean migration).
     retired_present = [s for s in retired if s in found]
     if retired_present:
-        if v3:
+        if v4:
+            detail = (
+                f"retired H2(s) present: {', '.join('## ' + s for s in retired_present)}. "
+                "The v4 spec uses four flat H2s — `## Takeaways` / `## Goal` / "
+                "`## Methodology` / `## Results` — plus a `**Repro:**`/`**Context:**` "
+                "footer. The v3 content H2s (`## What I ran` / `## Findings` / "
+                "`## Data` / `## Reproducibility`) fold into `## Goal` / "
+                "`## Methodology` / `## Results` + the footer; the retired "
+                "`## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` stay "
+                "rejected. Remove the retired H2 and migrate its content. "
+                "See .claude/skills/clean-results/SPEC.md."
+            )
+        elif v3:
             detail = (
                 f"retired H2(s) present: {', '.join('## ' + s for s in retired_present)}. "
                 "The v3 spec drops `## Human TL;DR` (the model-written casual "
@@ -1281,6 +1348,101 @@ def check_v3_structure(body: str) -> CheckResult:
     )
 
 
+def check_v4_structure(body: str) -> CheckResult:
+    """v4 structure check (dispatched from check 3 for v4 bodies).
+
+    For a `<!-- clean-result-v4 -->` body, verify:
+      - `## Takeaways` carries 3-6 top-level bullets (the authoritative
+        count gate — the v4 word-cap check defers to this).
+      - `## Goal` carries BOTH the `**This experiment in context:**` slot
+        AND the `**Broader narrative:**` slot.
+      - `## Methodology` carries the `**Training:**` slot (or the explicit
+        `**N/A — no model training**` marker) AND the `**Evaluation:**`
+        slot.
+      - `## Results` carries ≥1 `### ` result heading.
+
+    The 3-6 range is the same FAIL band the v4 caps table records; it
+    lives HERE so the count is enforced once.
+    """
+    label_name = "v4 structure (Takeaways / Goal / Methodology / Results)"
+    takeaways = section_text(body, "Takeaways")
+    if takeaways is None:
+        return CheckResult(label_name, False, "## Takeaways section missing")
+    n_bullets = _count_bullets(takeaways)
+    if not (V3_TAKEAWAYS_MIN_BULLETS <= n_bullets <= V3_TAKEAWAYS_MAX_BULLETS):
+        return CheckResult(
+            label_name,
+            False,
+            f"## Takeaways has {n_bullets} top-level bullet(s) — the v4 shape "
+            f"requires {V3_TAKEAWAYS_MIN_BULLETS}-{V3_TAKEAWAYS_MAX_BULLETS} "
+            "numbers-first bullets (no paragraphs).",
+        )
+    goal = section_text(body, "Goal")
+    if goal is None:
+        return CheckResult(label_name, False, "## Goal section missing")
+    # `**This experiment in context:**` slot — accept the bold-label form
+    # with optional bullet marker; match on the leading phrase.
+    if not re.search(
+        r"(?im)^\s*[-*]?\s*(\*\*)?\s*This experiment in context\s*(\*\*)?\s*:",
+        goal,
+    ):
+        return CheckResult(
+            label_name,
+            False,
+            "## Goal is missing the `**This experiment in context:**` slot — the v4 "
+            "shape requires it (what THIS experiment tests + its line; the only "
+            "place for prior-issue links).",
+        )
+    if not re.search(r"(?im)^\s*[-*]?\s*(\*\*)?\s*Broader narrative\s*(\*\*)?\s*:", goal):
+        return CheckResult(
+            label_name,
+            False,
+            "## Goal is missing the `**Broader narrative:**` slot — the v4 shape "
+            "requires it (the project-level question / open-questions anchor this "
+            "experiment serves).",
+        )
+    methodology = section_text(body, "Methodology")
+    if methodology is None:
+        return CheckResult(label_name, False, "## Methodology section missing")
+    # `**Training:**` slot OR the explicit no-training marker.
+    has_training = re.search(r"(?im)^\s*[-*]?\s*(\*\*)?\s*Training\s*(\*\*)?\s*:", methodology)
+    has_no_training = re.search(
+        r"(?im)\*\*\s*N/?A\s*[—–-]\s*no model training",  # noqa: RUF001
+        methodology,
+    )
+    if not (has_training or has_no_training):
+        return CheckResult(
+            label_name,
+            False,
+            "## Methodology is missing the `**Training:**` slot (or the explicit "
+            "`**N/A — no model training**` marker for analysis-only tasks).",
+        )
+    if not re.search(r"(?im)^\s*[-*]?\s*(\*\*)?\s*Evaluation\s*(\*\*)?\s*:", methodology):
+        return CheckResult(
+            label_name,
+            False,
+            "## Methodology is missing the `**Evaluation:**` slot — the v4 shape "
+            "requires it (DV + metric + judge + probe set).",
+        )
+    results = section_text(body, "Results")
+    if results is None:
+        return CheckResult(label_name, False, "## Results section missing")
+    result_h3s = [name for name, _line in _collect_tldr_h3_names(results)]
+    if not result_h3s:
+        return CheckResult(
+            label_name,
+            False,
+            "## Results has no `### <result>` heading — the v4 shape requires "
+            "≥1 `### ` result under `## Results`.",
+        )
+    return CheckResult(
+        label_name,
+        True,
+        f"v4 structure clean — Takeaways ({n_bullets} bullets), Goal (both slots), "
+        f"Methodology (Training + Evaluation), Results ({len(result_h3s)} `### ` result(s))",
+    )
+
+
 def check_tldr_labels(body: str) -> CheckResult:
     """Check 3: `## TL;DR` opens with the Motivation block (v2/legacy);
     for v3 bodies, dispatches to `check_v3_structure`.
@@ -1312,6 +1474,8 @@ def check_tldr_labels(body: str) -> CheckResult:
     `### ` finding), so the CHECKS slot stays one function but enforces
     the right shape per generation.
     """
+    if is_v4(body):
+        return check_v4_structure(body)
     if is_v3(body):
         return check_v3_structure(body)
     tldr = section_text(body, "TL;DR")
@@ -1522,15 +1686,27 @@ def check_tldr_nested_structure(body: str) -> CheckResult:
     )
 
 
+def _figure_scan_section(body: str) -> str:
+    """Return the H2 section name where inline figures live for the body's
+    generation: `## Results` (v4), `## Findings` (v3), `## TL;DR`
+    (v2 / legacy)."""
+    if is_v4(body):
+        return "Results"
+    if is_v3(body):
+        return "Findings"
+    return "TL;DR"
+
+
 def _gather_figure_image_urls(body: str) -> list[str]:
     """Collect figure image URLs inline under the result-narrative
     section. Powers checks 4 / 4b.
 
-    v3 bodies (sentinel present): figures live under `## Findings`
-    (one per `### <finding>`). v2 / legacy bodies: figures live inside
-    per-result H3s under `## TL;DR` (2026-W22 spec, task #454)."""
+    v4 bodies: figures live under `## Results` (one per `### <result>`).
+    v3 bodies: figures live under `## Findings` (one per `### <finding>`).
+    v2 / legacy bodies: figures live inside per-result H3s under
+    `## TL;DR` (2026-W22 spec, task #454)."""
     urls: list[str] = []
-    section = "Findings" if is_v3(body) else "TL;DR"
+    section = _figure_scan_section(body)
     text = section_text(body, section)
     if text is not None:
         urls.extend(_IMAGE_RE.findall(text))
@@ -1539,9 +1715,9 @@ def _gather_figure_image_urls(body: str) -> list[str]:
 
 def check_figure_image(body: str) -> CheckResult:
     """Check 4: at least one `![alt](url)` image exists inline under the
-    result-narrative section — `## Findings` for v3 bodies, `## TL;DR`
-    for v2 / legacy (every result block carries its own figure)."""
-    section = "Findings" if is_v3(body) else "TL;DR"
+    result-narrative section — `## Results` for v4, `## Findings` for v3,
+    `## TL;DR` for v2 / legacy (every result block carries its own figure)."""
+    section = _figure_scan_section(body)
     urls = _gather_figure_image_urls(body)
     if not urls:
         return CheckResult(
@@ -1781,19 +1957,44 @@ def is_v3(body: str) -> bool:
     return CLEAN_RESULT_V3_SENTINEL in _prose_layer(body)
 
 
-def is_nested_design(body: str) -> bool:
+def is_v4(body: str) -> bool:
+    """Return True when `body` carries the `<!-- clean-result-v4 -->`
+    sentinel as a real document-level marker (the v4 four-flat-H2
+    redesign: Takeaways / Goal / Methodology / Results + a `**Repro:**`
+    / `**Context:**` footer, confidence in the H1 title tag only).
+
+    Mirrors `is_v3`'s fence-aware + `<details>`-aware detection so a body
+    that only QUOTES the sentinel inside an illustrative code fence or
+    `<details>` example block is NOT misdetected as v4. Forward-only:
+    bodies carrying a v3 / v2 / no sentinel keep their existing
+    verification behaviour and are never hard-FAILed by a v4 rule.
+    """
+    return CLEAN_RESULT_V4_SENTINEL in _prose_layer(body)
+
+
+def is_titletag_confidence(body: str) -> bool:
     """True for ANY structured clean-result body that carries confidence
     in the H1 title tag only (no body `Confidence:` sentence) and pins
-    its provenance / lr-vs-plan checks on a sentinel — i.e. v2 OR v3.
+    its provenance / lr-vs-plan checks on a sentinel — i.e. v2 OR v3 OR
+    v4.
 
-    Used by the SENTINEL-KEYED checks that must run identically on both
-    generations: check 6 (confidence-title-only), check 16 (lr matches
-    plan), check 17 (Context provenance row). The nested-TL;DR-SHAPE
-    check (check 3b, `check_tldr_nested_structure`) deliberately does
-    NOT use this — it stays v2-only, because a v3 body has no `## TL;DR`
-    umbrella to shape.
+    Used by the SENTINEL-KEYED checks that must run identically across
+    all current generations: check 6 (confidence-title-only), check 16
+    (lr matches plan), check 17 (Context provenance row). The nested-
+    TL;DR-SHAPE check (check 3b, `check_tldr_nested_structure`)
+    deliberately does NOT use this — it stays v2-only, because v3 / v4
+    bodies have no `## TL;DR` umbrella to shape.
     """
-    return is_v2_nested_design(body) or is_v3(body)
+    return is_v2_nested_design(body) or is_v3(body) or is_v4(body)
+
+
+# Backwards-compatible alias: the v2/v3-era name for the title-tag-only
+# confidence gate. New code should call `is_titletag_confidence`; the
+# alias is kept so existing call-sites + tests keep working.
+def is_nested_design(body: str) -> bool:
+    """Alias for `is_titletag_confidence` (v2 OR v3 OR v4). Retained for
+    backwards compatibility with existing call-sites and tests."""
+    return is_titletag_confidence(body)
 
 
 def check_confidence_matches(body: str) -> CheckResult:
@@ -1881,8 +2082,140 @@ def check_confidence_matches(body: str) -> CheckResult:
     )
 
 
+# ─── v4 footer resolver ──────────────────────────────────────────────────────
+
+
+def _v4_footer_text(body: str) -> str | None:
+    """Return the v4 `**Repro:**` / `**Context:**` bold-label footer text.
+
+    The v4 body replaces the v3 `## Reproducibility` H2 with a compact
+    bold-label footer (NOT an H2): a `---` horizontal rule followed by a
+    `**Repro:**` block and a `**Context:**` block, sitting after the last
+    H2 section (`## Results`). The footer is everything from the first
+    `**Repro:**` label to end-of-body. None when no `**Repro:**` label is
+    present.
+
+    Fence-aware: a `**Repro:**` inside a fenced code block (an illustrative
+    skeleton) is ignored.
+    """
+    start = _v4_footer_start_line(body)
+    if start is None:
+        return None
+    return "\n".join(body.splitlines()[start:]).strip()
+
+
+def _v4_footer_start_line(body: str) -> int | None:
+    """Return the 0-based line index where the v4 footer begins, or None.
+
+    The footer is `[--- rule] **Repro:** ... **Context:** ...` at the end
+    of the body. The anchor is the first non-fenced `**Repro:**` label
+    line; if that label is immediately preceded (modulo blank lines) by a
+    `---` horizontal rule, the rule line is the start (so the footer text
+    and the Results-body truncation both treat the `---` as the boundary).
+    Fence-aware: a `**Repro:**` inside a fenced code block (an
+    illustrative skeleton) is ignored.
+    """
+    lines = body.splitlines()
+    in_fence = False
+    repro_idx = None
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if re.match(r"^\*\*\s*Repro\s*:?\s*\*\*", s):
+            repro_idx = i
+            break
+    if repro_idx is None:
+        return None
+    # Back up over blank lines, then over a single `---` rule if present.
+    j = repro_idx - 1
+    while j >= 0 and lines[j].strip() == "":
+        j -= 1
+    if j >= 0 and lines[j].strip() == "---":
+        return j
+    return repro_idx
+
+
+def _v4_results_body(body: str) -> str | None:
+    """Return the `## Results` section text TRUNCATED at the v4 footer.
+
+    `section_text(body, "Results")` returns everything from `## Results`
+    to end-of-body, because the `**Repro:**` / `**Context:**` footer is NOT
+    an H2 — so the footer's prose-like lines bleed into the LAST result's
+    prose and inflate `_finding_prose_cap_results` / `check_v4_results_beat`
+    (a false ≥180-word hard FAIL on a conforming body; a defeated
+    interpretation-beat WARN for the last result). This helper cuts the
+    section at the footer boundary so the per-result scans see only the
+    real Results content. None when `## Results` is absent.
+    """
+    results = section_text(body, "Results")
+    if results is None:
+        return None
+    footer = _v4_footer_text(body)
+    if not footer:
+        return results
+    # The footer text is a suffix of the Results section_text (Results is
+    # the last H2, so its section_text runs to end-of-body and contains the
+    # footer). Cut at the footer's first line within the Results text.
+    footer_first_line = footer.splitlines()[0] if footer.splitlines() else ""
+    if not footer_first_line:
+        return results
+    rlines = results.splitlines()
+    for i, line in enumerate(rlines):
+        if line.strip() == footer_first_line.strip():
+            # Drop a trailing `---` rule + blank lines just above the footer.
+            j = i - 1
+            while j >= 0 and (rlines[j].strip() == "" or rlines[j].strip() == "---"):
+                j -= 1
+            return "\n".join(rlines[: j + 1]).strip()
+    return results
+
+
+def _repro_section_text(body: str) -> str | None:
+    """Return the reproducibility region for the body's generation.
+
+    v4 bodies carry a `**Repro:**` / `**Context:**` bold-label footer
+    (NOT an H2); v2 / v3 / legacy bodies carry a `## Reproducibility` H2.
+    The footer checks (7/8/8b/9/15/16/17 + the artifact-URL gather) route
+    through this so they enforce on whichever shape the body uses.
+    """
+    if is_v4(body):
+        return _v4_footer_text(body)
+    return section_text(body, "Reproducibility")
+
+
 def check_repro_subgroups(body: str) -> CheckResult:
-    """Check 7: `## Reproducibility` contains all three boldface subgroup labels."""
+    """Check 7: the reproducibility region carries the required labels.
+
+    v2 / v3: `## Reproducibility` H2 contains all three boldface subgroup
+    labels (`**Artifacts:**`, `**Compute:**`, `**Code:**`).
+    v4: the `**Repro:**` / `**Context:**` footer must carry `**Repro:**`
+    (the artifact / compute / code line) AND `**Context:**` (the
+    run-provenance line). The v4 footer collapses the three v3 subgroups
+    into the single `**Repro:**` block, so the v4 requirement is the two
+    footer labels, not the three v3 sub-labels.
+    """
+    if is_v4(body):
+        footer = _v4_footer_text(body)
+        if footer is None:
+            return CheckResult(
+                "Repro/Context footer present (v4)",
+                False,
+                "no `**Repro:**` footer label found — the v4 body must close with a "
+                "`**Repro:**` block (compute + code SHA + artifact links) and a "
+                "`**Context:**` block (run-provenance), after a `---` rule.",
+            )
+        if not re.search(r"\*\*\s*Context\s*:?\s*\*\*", footer):
+            return CheckResult(
+                "Repro/Context footer present (v4)",
+                False,
+                "v4 footer has `**Repro:**` but is missing the `**Context:**` label "
+                "(verbatim originating prompt + lineage + created/run dates).",
+            )
+        return CheckResult("Repro/Context footer present (v4)", True, "Repro + Context")
     repro = section_text(body, "Reproducibility")
     if repro is None:
         return CheckResult(
@@ -1920,7 +2253,7 @@ def check_repro_url_permanence(body: str) -> CheckResult:
     unified 2026-06-09, second #507 follow-up). Shape checks only —
     existence probing for same-repo raw URLs is check 8b's job.
     """
-    repro = section_text(body, "Reproducibility")
+    repro = _repro_section_text(body)  # v4 footer or `## Reproducibility` H2
     if repro is None:
         return CheckResult(
             "Reproducibility URL permanence", False, "Reproducibility section missing"
@@ -2329,8 +2662,8 @@ def check_mdx_safe_urls(body: str) -> CheckResult:
 
 def check_repro_sentinel_scrub(body: str) -> CheckResult:
     """Check 9: no placeholder sentinels (`{{`, `TBD`, `see config`, `default`)
-    in `## Reproducibility`."""
-    repro = section_text(body, "Reproducibility")
+    in `## Reproducibility` (v2/v3) or the `**Repro:**`/`**Context:**` footer (v4)."""
+    repro = _repro_section_text(body)  # v4 footer or `## Reproducibility` H2
     if repro is None:
         return CheckResult(
             "Reproducibility sentinel scrub", False, "Reproducibility section missing"
@@ -2483,13 +2816,22 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     name = "Reproducibility lr matches plan"
     if not is_nested_design(body):
         return CheckResult(name, True, "skipped — legacy (pre-v2) body")
-    repro = section_text(body, "Reproducibility")
+    # The body's stated lr lives in the section that carries the parameter
+    # table for the generation: v4 puts the COMPLETE hyperparameter table
+    # in `## Methodology` (the `**Training:**` slot); v2 / v3 put the
+    # (slimmed) table in `## Reproducibility`.
+    if is_v4(body):
+        repro = section_text(body, "Methodology")
+        src_label = "Methodology"
+    else:
+        repro = _repro_section_text(body)
+        src_label = "Reproducibility"
     if repro is None:
         # Missing-section is check_required_sections' job; don't double-FAIL.
-        return CheckResult(name, True, "skipped — no Reproducibility section")
+        return CheckResult(name, True, f"skipped — no {src_label} section")
     body_lrs = _parse_lr_floats(repro, anchored_only=True)
     if not body_lrs:
-        return CheckResult(name, True, "skipped — no learning rate stated in Reproducibility")
+        return CheckResult(name, True, f"skipped — no learning rate stated in {src_label}")
     if plan_path is None or not plan_path.exists():
         return CheckResult(name, True, "skipped — no approved plan on disk to reconcile against")
     # Reconcile against the UNION of every plan version (plans/v*.md), not
@@ -2513,11 +2855,11 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     body_str = ", ".join(f"{b:g}" for b in sorted(unmatched))
     plan_str = ", ".join(f"{p:g}" for p in sorted(plan_lrs))
     detail = (
-        f"Reproducibility states lr {body_str} but the approved plan declares "
+        f"{src_label} states lr {body_str} but the approved plan declares "
         f"{{{plan_str}}}. Copy the actual run lr from the committed training script "
         f"(the `**Code:**` SHA) / plan §11 — never type it from memory. If the run "
         f"genuinely deviated from the plan, document the deviation explicitly in "
-        f"`## Reproducibility` (downgrades this to WARN)."
+        f"`## {src_label}` (downgrades this to WARN)."
     )
     if _LR_DEVIATION_RE.search(repro):
         return CheckResult(name, True, "documented deviation — " + detail, is_warn=True)
@@ -2547,7 +2889,7 @@ def check_repro_context_provenance(
     name = "Reproducibility Context provenance row"
     if not is_nested_design(body):
         return CheckResult(name, True, "skipped — legacy (pre-v2) body")
-    repro = section_text(body, "Reproducibility")
+    repro = _repro_section_text(body)  # v4 footer or `## Reproducibility` H2
     if repro is None:
         # Missing-section is check_required_sections' job; don't double-FAIL.
         return CheckResult(name, True, "skipped — no Reproducibility section")
@@ -2585,23 +2927,76 @@ def check_repro_context_provenance(
     )
 
 
+# v4 `## Methodology` bold-label slots, in order. Used to extract the
+# `Sample training/evaluation data + completions` slot text (the v4 raw
+# sample-block home) bounded by the next slot label.
+_V4_METHOD_SLOT_LABELS = [
+    "Design",
+    "Training",
+    "Evaluation",
+    "Data extraction",
+    "Sample training/evaluation data + completions",
+]
+
+
+def _v4_methodology_sample_slot(methodology: str) -> str | None:
+    """Return the text of the `**Sample training/evaluation data +
+    completions:**` slot inside the v4 `## Methodology` section, bounded
+    by the NEXT bold-label slot (or end of section). None when the slot
+    is absent. Fence-aware on the boundary scan would be overkill — the
+    bold labels live at the prose layer; a label inside a fenced block is
+    not a real slot boundary, but the Sample slot is the LAST slot, so the
+    only risk is over-inclusion of trailing prose, which is harmless for
+    the sample-block scan."""
+    m = re.search(
+        r"(?im)^\s*[-*]?\s*\*\*\s*Sample training/evaluation data \+ completions\s*:?\s*\*\*",
+        methodology,
+    )
+    if m is None:
+        return None
+    after = methodology[m.start() :]
+    # Find the next bold-label slot that is NOT the Sample slot itself.
+    nxt = re.search(
+        r"(?im)^\s*[-*]?\s*\*\*\s*(?:Design|Training|Evaluation|Data extraction)\s*:?\s*\*\*",
+        after[len(m.group(0)) :],
+    )
+    if nxt is not None:
+        return after[: len(m.group(0)) + nxt.start()].strip()
+    return after.strip()
+
+
 def _sample_scan_sections(body: str, *, raw_link_scope: bool = False) -> list[tuple[str, str]]:
     """Return [(section_text, label)] to scan for sample-output blocks.
 
     v2 / legacy: the single `## TL;DR` section. v3: `## Findings` plus
     `## Data` (the per-finding excerpts live under Findings; the
-    systematic samples live under Data). When ``raw_link_scope`` is set
-    (check 11 — the raw-completions-link rule), the v3 `## Data` scope
-    narrows to the `### Generated` subsection ONLY (the Trained-on /
-    Evaluated-with blocks link JSONLs / probe banks, not raw_completions
-    — their links are covered by check 18).
+    systematic samples live under Data). v4: `## Results` plus
+    `## Methodology` (per-result excerpts under Results; the systematic
+    samples live in the `## Methodology` Sample slot). When
+    ``raw_link_scope`` is set (check 11 — the raw-completions-link rule),
+    the v3 `## Data` scope narrows to `### Generated` ONLY, and the v4
+    `## Methodology` scope narrows to the `Sample training/evaluation data
+    + completions` slot ONLY (the other Methodology prose links JSONLs /
+    probe banks, not raw_completions).
 
     Sections that are absent are silently skipped; the caller decides
     whether the absence is a FAIL (it is not for these checks — the
-    structure / Data-shape checks own section presence).
+    structure / completeness checks own section presence).
     """
     out: list[tuple[str, str]] = []
-    if is_v3(body):
+    if is_v4(body):
+        results = section_text(body, "Results")
+        if results is not None:
+            out.append((results, "## Results"))
+        methodology = section_text(body, "Methodology")
+        if methodology is not None:
+            if raw_link_scope:
+                sample = _v4_methodology_sample_slot(methodology)
+                if sample is not None:
+                    out.append((sample, "## Methodology → Sample data + completions"))
+            else:
+                out.append((methodology, "## Methodology"))
+    elif is_v3(body):
         findings = section_text(body, "Findings")
         if findings is not None:
             out.append((findings, "## Findings"))
@@ -2635,7 +3030,12 @@ def check_cherry_picked_label(body: str) -> CheckResult:
     label = "Cherry-picked label discipline"
     scan_sections = _sample_scan_sections(body)
     if not scan_sections:
-        missing = "## Findings / ## Data" if is_v3(body) else "## TL;DR"
+        if is_v4(body):
+            missing = "## Results / ## Methodology"
+        elif is_v3(body):
+            missing = "## Findings / ## Data"
+        else:
+            missing = "## TL;DR"
         return CheckResult(label, False, f"{missing} section missing")
     flagged: list[str] = []
     total = 0
@@ -2695,7 +3095,12 @@ def check_qualitative_data_link(body: str) -> CheckResult:
     label = "Qualitative-data link"
     scan_sections = _sample_scan_sections(body, raw_link_scope=True)
     if not scan_sections:
-        missing = "## Findings / ## Data → ### Generated" if is_v3(body) else "## TL;DR"
+        if is_v4(body):
+            missing = "## Results / ## Methodology → Sample data + completions"
+        elif is_v3(body):
+            missing = "## Findings / ## Data → ### Generated"
+        else:
+            missing = "## TL;DR"
         return CheckResult(label, False, f"{missing} section missing")
     fails: list[str] = []
     warns: list[str] = []
@@ -2925,19 +3330,21 @@ def check_planned_vs_actual_denominator(body: str) -> CheckResult:
     semantic-judgment version of this check (which reads the plan).
     """
     # The headline surface that must carry an accurate denominator is
-    # `## TL;DR` for v2/legacy bodies; for v3 bodies it is the two
-    # reader-facing claim surfaces `## Takeaways` + `## Findings`
-    # (there is no `## TL;DR` umbrella). The scope-correction scan stays
-    # whole-body in both cases.
-    if is_v3(body):
-        headline_parts = [
-            t for t in (section_text(body, "Takeaways"), section_text(body, "Findings")) if t
-        ]
+    # `## TL;DR` for v2/legacy bodies; for v3 bodies it is `## Takeaways`
+    # + `## Findings`; for v4 bodies it is `## Takeaways` + `## Results`
+    # (no `## TL;DR` umbrella). The scope-correction scan stays whole-body
+    # in all cases.
+    if is_v3(body) or is_v4(body):
+        result_section = "Results" if is_v4(body) else "Findings"
+        # v4 uses the footer-truncated Results body so a footer-bullet
+        # disclosure (`5 of 2,000 rows`) is not read as a headline denominator.
+        result_text = _v4_results_body(body) if is_v4(body) else section_text(body, result_section)
+        headline_parts = [t for t in (section_text(body, "Takeaways"), result_text) if t]
         if not headline_parts:
             return CheckResult(
                 "planned-vs-actual denominator consistency",
                 True,
-                "## Takeaways / ## Findings missing — other checks will report",
+                f"## Takeaways / ## {result_section} missing — other checks will report",
             )
         headline_text = "\n\n".join(headline_parts)
     else:
@@ -3054,11 +3461,11 @@ def check_details_narrative_flow(body: str) -> CheckResult:
     analyzer) should treat them as inputs to a narrative check rather
     than as a promote-blocking FAIL.
     """
-    # v3 bodies carry the result narrative under `## Findings`; v2 /
-    # legacy under `## TL;DR`. Same heuristics, different host section.
-    v3 = is_v3(body)
-    nav_section = "Findings" if v3 else "TL;DR"
-    label_name = "Findings narrative flow" if v3 else "TL;DR narrative flow"
+    # v4 bodies carry the result narrative under `## Results`; v3 under
+    # `## Findings`; v2 / legacy under `## TL;DR`. Same heuristics,
+    # different host section.
+    nav_section = _figure_scan_section(body)
+    label_name = f"{nav_section} narrative flow"
     tldr = section_text(body, nav_section)
     if tldr is None:
         return CheckResult(
@@ -3266,7 +3673,7 @@ def check_repro_committed_claims_exist(body: str) -> CheckResult:
     the within-body promise: if the body says "committed at commit X",
     that sha tree must carry the named file.
     """
-    repro = section_text(body, "Reproducibility")
+    repro = _repro_section_text(body)  # v4 footer or `## Reproducibility` H2
     if repro is None:
         # Other checks (check_repro_subgroups / check_repro_url_permanence)
         # already FAIL on a missing Reproducibility section — don't double-
@@ -3462,7 +3869,7 @@ def check_repro_artifact_urls_exist(body: str) -> CheckResult:
     before the scan.
     """
     name = "Reproducibility artifact URLs exist"
-    repro = section_text(body, "Reproducibility")
+    repro = _repro_section_text(body)  # v4 footer or `## Reproducibility` H2
     if repro is None:
         # check_repro_subgroups / check_repro_url_permanence already
         # FAIL on a missing Reproducibility section — don't double-report.
@@ -3757,7 +4164,7 @@ def check_figure_url_sha_matches_repro(body: str) -> CheckResult:
     Reproducibility section, or no figure-sha claims at all.
     """
     name = "figure URL sha matches Reproducibility"
-    repro = section_text(body, "Reproducibility")
+    repro = _repro_section_text(body)  # v4 footer or `## Reproducibility` H2
     if repro is None:
         # check_repro_subgroups / check_repro_url_permanence already FAIL on
         # a missing Reproducibility section — don't double-report.
@@ -3898,19 +4305,23 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
         )
 
     v3 = is_v3(body)
+    v4 = is_v4(body)
+    titletag = v3 or v4  # confidence-in-title generations with no Confidence paragraph
 
     # Acknowledgement mechanism 1: the result-narrative surface.
     #  - v2 / legacy: any `### <H3>` body inside `## TL;DR` (the
     #    2-content-section spec folds methodology corrections into result
     #    H3s).
     #  - v3: any `### <finding>` body inside `## Findings` PLUS the
-    #    `## Takeaways` bullets (the v3 binding-concern surfaces — a
-    #    methodology correction folds into a finding's read prose, and a
-    #    binding caveat is named in Takeaways).
-    if v3:
+    #    `## Takeaways` bullets.
+    #  - v4: any `### <result>` body inside `## Results` PLUS the
+    #    `## Takeaways` bullets (a methodology correction folds into a
+    #    result's prose, and a binding caveat is named in Takeaways).
+    if titletag:
+        result_section = "Results" if v4 else "Findings"
         ack_parts = [
             section_text(body, "Takeaways") or "",
-            section_text(body, "Findings") or "",
+            section_text(body, result_section) or "",
         ]
         ack_source = "\n\n".join(ack_parts)
     else:
@@ -3922,16 +4333,16 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
         re.MULTILINE | re.DOTALL,
     ):
         h3_bodies.append(h3_match.group(1))
-    # For v3, the Takeaways bullets carry no `### ` heading, so also fold
-    # the raw ack_source text in (covers Takeaways bullets + any
+    # For v3 / v4, the Takeaways bullets carry no `### ` heading, so also
+    # fold the raw ack_source text in (covers Takeaways bullets + any
     # pre-heading prose).
-    tldr_h3_text = "\n".join(h3_bodies) + ("\n" + ack_source if v3 else "")
+    tldr_h3_text = "\n".join(h3_bodies) + ("\n" + ack_source if titletag else "")
 
     # Acknowledgement mechanism 2: the `Confidence:` rationale paragraph.
-    # RETIRED for v3 bodies (confidence lives in the H1 title tag only —
-    # there is no Confidence paragraph). For v2 / legacy it lives in
-    # `## Reproducibility`; scan the whole body for robustness.
-    if v3:
+    # RETIRED for v3 / v4 bodies (confidence lives in the H1 title tag
+    # only — there is no Confidence paragraph). For v2 / legacy it lives
+    # in `## Reproducibility`; scan the whole body for robustness.
+    if titletag:
         conf_body = ""
     else:
         conf_match = re.search(
@@ -4450,6 +4861,266 @@ def check_v3_word_caps(body: str) -> CheckResult:
     return CheckResult(label, True, "all v3 conciseness caps satisfied")
 
 
+# ─── v4 checks (Methodology shape, word caps, Results beat) ───────────────────
+
+
+def check_v4_methodology_shape(body: str) -> CheckResult:
+    """Check 18 (v4 only): `## Methodology` completeness.
+
+    Two requirements:
+      (a) the `**Training:**` slot carries the complete hyperparameter
+          table — at least ONE GFM table delimiter row after the
+          `**Training:**` label — OR the explicit
+          `**N/A — no model training**` marker (analysis-only tasks);
+      (b) the `**Sample training/evaluation data + completions:**` slot
+          carries ≥1 example block (fenced OR `<details>`) AND that slot
+          carries ≥1 pinned complete-artifact link OR an explicit
+          `n/a — <reason>` line.
+
+    PASSes vacuously on v3 / v2 / legacy bodies.
+    """
+    label = "Methodology completeness (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    methodology = section_text(body, "Methodology")
+    if methodology is None:
+        # check_required_sections already FAILs on a missing `## Methodology`.
+        return CheckResult(label, True, "## Methodology missing — check 2 will report")
+    # (a) Training table OR the no-training marker.
+    has_no_training = re.search(
+        r"(?im)\*\*\s*N/?A\s*[—–-]\s*no model training",  # noqa: RUF001
+        methodology,
+    )
+    if not has_no_training:
+        # Find the `**Training:**` slot text, bounded by the next slot label.
+        tm = re.search(
+            r"(?im)^\s*[-*]?\s*\*\*\s*Training\s*:?\s*\*\*",
+            methodology,
+        )
+        training_text = ""
+        if tm is not None:
+            after = methodology[tm.end() :]
+            nxt = re.search(
+                r"(?im)^\s*[-*]?\s*\*\*\s*"
+                r"(?:Evaluation|Data extraction|Sample training/evaluation data)\s*:?\s*\*\*",
+                after,
+            )
+            training_text = after[: nxt.start()] if nxt is not None else after
+        if not _GFM_DELIM_RE.search(training_text):
+            return CheckResult(
+                label,
+                False,
+                "## Methodology `**Training:**` slot carries no hyperparameter table "
+                "(no GFM table delimiter row found between `**Training:**` and the next "
+                "slot). The v4 Methodology Training slot must contain the COMPLETE "
+                "hyperparameter table (every training + eval + generation knob, with a "
+                "Source column), OR the explicit `**N/A — no model training**` marker.",
+            )
+    # (b) Sample slot: ≥1 example block + ≥1 pinned link OR explicit n/a.
+    sample = _v4_methodology_sample_slot(methodology)
+    if sample is None:
+        return CheckResult(
+            label,
+            False,
+            "## Methodology is missing the `**Sample training/evaluation data + "
+            "completions:**` slot — the v4 shape requires it (verbatim worked "
+            "examples, each subset-disclosed + linked to the full artifact).",
+        )
+    if not (_PINNED_LINK_RE.search(sample) or _DATA_NA_RE.search(sample)):
+        return CheckResult(
+            label,
+            False,
+            "## Methodology `**Sample ...:**` slot carries no pinned complete-artifact "
+            "link and no explicit `n/a — <reason>` line. Link the full training mix / "
+            "probe bank / raw completions (HF Hub `/tree/<sha>`, GitHub `/blob/<sha>`) "
+            "or state `n/a — <reason>`.",
+        )
+    return CheckResult(
+        label,
+        True,
+        "## Methodology has the Training hyperparameter table (or no-training marker) "
+        "and a Sample slot with a complete-artifact link",
+    )
+
+
+def check_v4_word_caps(body: str) -> CheckResult:
+    """Check 20 (v4 only): the v4 conciseness caps (same constants as v3).
+
+    - Per-Takeaways-bullet ≤30 words (WARN).
+    - Per-`### <result>` prose ≤120 words WARN / ≥180 words FAIL (excl.
+      caption / fenced code / `<details>` bodies / table rows).
+    - Figure caption ≤60 words (WARN).
+    - Total content prose (Takeaways + Goal + Results; `## Methodology`
+      EXCLUDED — it carries the absorbed methodology-doc content) ≤800 +
+      250 per live follow-up round beyond the first (WARN-only).
+
+    The Takeaways 3-6 bullet COUNT is owned by `check_v4_structure`. A FAIL
+    here fires ONLY on the per-result ≥180-word hard cap. PASSes vacuously
+    on v3 / v2 / legacy bodies.
+    """
+    label = "v4 conciseness caps"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+
+    warns: list[str] = []
+    fails: list[str] = []
+
+    takeaways = section_text(body, "Takeaways") or ""
+    # Use the footer-truncated Results body so the `**Repro:**`/`**Context:**`
+    # footer prose is NOT mis-attributed to the last result's interpretation
+    # (would inflate the per-result word count into a false ≥180 hard FAIL).
+    results = _v4_results_body(body) or ""
+
+    over_bullets = _count_overlong_takeaways_bullets(takeaways)
+    if over_bullets:
+        warns.append(
+            f"{over_bullets} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
+        )
+
+    # Per-result prose caps (reuse the per-finding helper; it scans `### `
+    # H3 blocks, which `## Results` carries identically).
+    r_fails, r_warns = _finding_prose_cap_results(results)
+    fails.extend(r.replace("finding", "result") for r in r_fails)
+    warns.extend(r.replace("finding", "result") for r in r_warns)
+
+    over_captions = _count_overlong_captions(results)
+    if over_captions:
+        warns.append(
+            f"{over_captions} figure caption(s) exceed {V3_FIGURE_CAPTION_MAX_WORDS} words"
+        )
+
+    # Total content prose (WARN-only): Takeaways + Goal + Results. The
+    # `## Methodology` section is EXCLUDED — it absorbed the entire former
+    # standalone methodology doc and is reference, not skim prose.
+    extra_rounds = _count_extra_followup_rounds(body)
+    total_budget = V3_TOTAL_PROSE_BASE_WORDS + extra_rounds * V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS
+    total_prose = (
+        _prose_words(takeaways)
+        + _prose_words(section_text(body, "Goal") or "")
+        + _prose_words(results)
+    )
+    if total_prose > total_budget:
+        warns.append(
+            f"total content prose is {total_prose} words (budget {total_budget}: "
+            f"{V3_TOTAL_PROSE_BASE_WORDS} + {extra_rounds} x "
+            f"{V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS} per extra round; "
+            "Methodology excluded)"
+        )
+
+    if fails:
+        return CheckResult(
+            label,
+            False,
+            "; ".join(fails) + (("; WARN: " + "; ".join(warns)) if warns else ""),
+        )
+    if warns:
+        return CheckResult(label, True, "; ".join(warns), is_warn=True)
+    return CheckResult(label, True, "all v4 conciseness caps satisfied")
+
+
+def _v4_beat_has_prose(seg: list[str]) -> bool:
+    """A prose line is any non-blank line that is not an image, a
+    blockquote caption, a table row, a fence, a heading, or an HTML tag
+    (e.g. `<details>`). Helper for `check_v4_results_beat`."""
+    for ln in seg:
+        s = ln.strip()
+        if not s:
+            continue
+        if s.startswith(("!", ">", "|", "```", "~~~", "#", "<")):
+            continue
+        return True
+    return False
+
+
+def _v4_first_image_index(block_lines: list[str]) -> int | None:
+    """Return the index of the first inline-image line in a `### <result>`
+    block (fence-aware), or None when the result carries no figure."""
+    in_fence = False
+    for j, ln in enumerate(block_lines):
+        s = ln.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if _IMAGE_RE.search(ln):
+            return j
+    return None
+
+
+def _v4_result_beat_gaps(name: str, block_lines: list[str]) -> str | None:
+    """Return a one-line description of the missing beat(s) for a single
+    `### <result>` block, or None when the result is fully framed (or is
+    a figure-less qualitative result, which is exempt)."""
+    img_idx = _v4_first_image_index(block_lines)
+    if img_idx is None:
+        # Figure-less qualitative result — exempt (clean-result-critic judges).
+        return None
+    above = _v4_beat_has_prose(block_lines[:img_idx])
+    # Below: skip the leading blank + the contiguous `>` caption run, then
+    # look for interpretation prose.
+    below_seg = block_lines[img_idx + 1 :]
+    k = 0
+    while k < len(below_seg) and below_seg[k].strip() == "":
+        k += 1
+    while k < len(below_seg) and below_seg[k].strip().startswith(">"):
+        k += 1
+    below = _v4_beat_has_prose(below_seg[k:])
+    if above and below:
+        return None
+    missing_what = []
+    if not above:
+        missing_what.append("what-is-plotted prose above the figure")
+    if not below:
+        missing_what.append("interpretation prose below the caption")
+    return f"'{name[:48]}' missing {', '.join(missing_what)}"
+
+
+def check_v4_results_beat(body: str) -> CheckResult:
+    """Check 21 (v4 only, WARN): each `### <result>` follows the three-beat
+    shape — what-is-plotted prose ABOVE the figure and interpretation
+    prose BELOW the caption.
+
+    WARN (not FAIL) so a legitimately figure-less qualitative result is
+    not blocked; the clean-result-critic owns the substantive beat read.
+    For each `### <result>` that DOES carry an inline figure, this check
+    WARNs when there is no prose line above the figure (within the result)
+    OR no prose line below the caption — the chart-pasted-without-framing
+    signal. PASSes vacuously on v3 / v2 / legacy bodies.
+    """
+    label = "Results three-beat shape (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    # Footer-truncated Results: otherwise the footer's `**Repro:**` line
+    # reads as "interpretation prose below the caption" for the LAST result,
+    # silently defeating the missing-interpretation-beat WARN.
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    result_h3s = _collect_tldr_h3_names(results)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    rlines = results.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(rlines)
+        gap = _v4_result_beat_gaps(name, rlines[line_no + 1 : end_line])
+        if gap is not None:
+            flagged.append(gap)
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} of {len(result_h3s)} `### <result>`(s) do not follow the "
+            f"three-beat (what-is-plotted → plot → interpretation): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label, True, f"all {len(result_h3s)} `### <result>`(s) framed (figure-bearing ones)"
+    )
+
+
 # ─── v3 body-table ⊆ methodology-doc table check (21) ────────────────────────
 
 
@@ -4731,11 +5402,16 @@ CHECKS = [
     check_mdx_safe_urls,
     check_repro_committed_claims_exist,
     check_repro_artifact_urls_exist,
-    # v3-gated checks (PASS vacuously on v2 / legacy bodies):
-    check_data_shape,  # check 18
-    check_data_subset_disclosure,  # check 19
-    check_data_unwrapped_example_table,  # check 19b (WARN)
-    check_v3_word_caps,  # check 20
+    # v3-gated checks (PASS vacuously on non-v3 bodies):
+    check_data_shape,  # check 18 (v3)
+    check_data_subset_disclosure,  # check 19 (v3)
+    check_data_unwrapped_example_table,  # check 19b (v3, WARN)
+    check_v3_word_caps,  # check 20 (v3)
+    # v4-gated checks (PASS vacuously on non-v4 bodies):
+    check_v4_methodology_shape,  # check 18 (v4)
+    check_v4_word_caps,  # check 20 (v4)
+    check_v4_results_beat,  # check 21 (v4, WARN)
+    # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
 ]

@@ -1711,17 +1711,20 @@ markers:
   - kind: "epm:clean-result-critique"
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
-    fields: "PASS/REVISE verdict against the v3 clean-result spec (five flat H2s — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility`; sentinel `<!-- clean-result-v3 -->`; 2026-W24; v2/legacy bodies keep the grandfathered 2-content-section nested-TL;DR shape, NEVER newly hard-FAILed). v3 lenses (authoritative set in clean-result-critic.md): title; v3-structure (Takeaways 3-6 bullets numbers-first + cross-round-synthesis currency; What I ran `**Why:**`/`**Design:**`/`**Training:**`/`**Eval:**` slots; Findings `### <finding>` skeleton); inline figure inside each `### <finding>` (incl. setup/read pairing); Reproducibility (Parameters SLIMMED to load-bearing subset; confidence in the H1 title tag only); Data (capsule trio identity/why/preprocessing, subset disclosure, complete-artifact link liveness, methodology-doc §2 spot-check via the passed `--methodology-doc`); Conciseness (cap adherence + bullets-over-prose); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (methodology corrections fold into finding prose, no discrete H3); one-takeaway-one-figure per `### <finding>`; underlying data alongside every aggregate (low-level data plot behind each aggregate stat + raw alongside processed); planned-vs-actual coverage; binding-concerns audit; headline must not rest on a contaminated / failed-data-gate arm. Mechanical pre-pass: verify_task_body.py (`--methodology-doc <issue-worktree-doc-path>` when the doc exists, binds check 21) + audit_clean_results_body_discipline.py."
+    fields: "PASS/REVISE verdict against the v4 clean-result spec (four flat H2s — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` + a `**Repro:**`/`**Context:**` footer; sentinel `<!-- clean-result-v4 -->`; 2026-W26; v3/v2/legacy bodies keep their grandfathered shape, NEVER newly hard-FAILed). v4 lenses (authoritative set in clean-result-critic.md; stable numbering, v4 section names): title; v4-structure (Takeaways 3-6 bullets numbers-first + cross-round-synthesis currency; Goal `**This experiment in context:**`/`**Broader narrative:**`; Methodology `**Design:**`/`**Training:**` (complete hparam table)/`**Evaluation:**`/`**Data extraction:**`/`**Sample ...:**` slots; Results `### <result>` three-beat skeleton); inline figure inside each `### <result>` (what-is-plotted → plot → interpretation); footer (`**Repro:**` + `**Context:**`; confidence in the H1 title tag only); Goal + Methodology completeness (capsule trio identity/why/preprocessing, subset disclosure, complete-artifact link liveness, complete hyperparameter table); Conciseness (cap adherence + bullets-over-prose); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (methodology corrections fold into result prose, no discrete H3); one-result-one-figure per `### <result>`; underlying data alongside every aggregate (low-level per-unit data plot behind each aggregate stat + raw alongside processed); planned-vs-actual coverage; binding-concerns audit; headline must not rest on a contaminated / failed-data-gate arm. Mechanical pre-pass: verify_task_body.py (`--methodology-doc` no longer required for v4 — the doc is a copy of the body's `## Methodology`) + audit_clean_results_body_discipline.py."
   - kind: "epm:clean-result-critique-codex"
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis"
     fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. Runs verify_task_body.py and audit_clean_results_body_discipline.py independently."
   - kind: "epm:methodology-doc-generated"
-    posted_by: skill (via methodology-writer agent + orchestrator commit/gist publish)
+    posted_by: "skill (orchestrator export of the body's `## Methodology` section + gist publish; v3/v2 grandfathered path via methodology-writer agent)"
     when: "Step 9a-quater (after clean-result-critic PASS, before `awaiting_promotion` park)"
     fields: |
-      Records the auto-generated findings-blind methodology +
-      hyperparameters + worked-examples reference for the task. Body
+      Records the methodology + hyperparameters + worked-examples
+      reference for the task. For v4 bodies this is a mechanical COPY of
+      the body's `## Methodology` section (H2 normalized to
+      `# Methodology — issue <N>`), committed to `main`; for grandfathered
+      v3/v2 bodies it is the findings-blind methodology-writer output. Body
       shape:
       `doc_path: docs/methodology/issue_<N>.md commit: <full 40-char SHA>
        gist_url: <secret-gist URL or "n/a — <reason>">
@@ -2500,17 +2503,20 @@ steps:
     entry_condition: |
       clean-result-critic PASS (or max rounds reached). Fires for
       `kind: experiment` always and for `kind: analysis` only when the
-      task's `## Reproducibility` section names a training/eval
-      methodology (skip `infra | batch | survey`). Idempotent per
-      follow-up round: no-op when `epm:methodology-doc-generated v1` is
-      present AND every analyzer-re-folded `epm:followup-scope v1`
-      followup_label is recorded in a marker note (`extends=` /
-      `no-new-methodology=`); an unrecorded label runs the EXTEND pass
-      (SKILL.md Step 9a-quater) instead. The skill
-      runs this step after the 9a-bis loop's PASS and BEFORE flipping
+      task's `## Methodology` section names a training/eval methodology
+      (skip `infra | batch | survey`). For a v4 body this step is a
+      mechanical EXPORT — copy the body's `## Methodology` section to
+      `docs/methodology/issue_<N>.md`, commit to `main`, secret-gist
+      mirror, append the top-of-body `**Methodology:**` link (no
+      separate findings-blind authoring). Idempotent per follow-up round:
+      no-op when `epm:methodology-doc-generated v1` is present AND every
+      analyzer-re-folded `epm:followup-scope v1` followup_label is
+      recorded in a marker note (`extends=` / `no-new-methodology=`); an
+      unrecorded label re-exports for that round. The skill runs this
+      step after the 9a-bis loop's PASS and BEFORE flipping
       `reviewing` -> `awaiting_promotion` (Step 9b in SKILL.md prose),
-      so the link line landed in `## Reproducibility` is part of the
-      same finished package the user promotes.
+      so the top-of-body `**Methodology:**` link is part of the same
+      finished package the user promotes.
     posts_marker: "epm:methodology-doc-generated"
     next_expected_step: "10"
   - id: "9b-same"
@@ -2654,7 +2660,7 @@ client:
   module: explore_persona_space.task_workflow
   auth: "none (local filesystem; flock on ~/.task-workflow/lock)"
   mutation_rule: "scripts/task.py only; one git commit per operation; web app only appends to comments.jsonl"
-  verification: "scripts/verify_task_body.py (sentinel-gated v3 five-flat-H2 spec — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` — alongside the grandfathered v2 two-content-section + legacy shapes; v3-only checks 18-21 (Data shape, subset disclosure, word caps, body-params⊆methodology-doc) PASS-skip on v2/legacy, the v2-only `check_tldr_nested_structure` PASS-skips on v3, and checks 6/16/17 run on either nested sentinel; PLUS `check_concerns_audit` (Lens 14, binding-concerns; composed 2026-05-31 by task #455) dispatched separately in verify_text since it needs the sibling concerns.jsonl)"
+  verification: "scripts/verify_task_body.py (sentinel-gated v4 four-flat-H2 spec — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` + `**Repro:**`/`**Context:**` footer — alongside the grandfathered v3 five-flat-H2, v2 two-content-section, + legacy shapes; v4-only checks (`check_v4_structure`, `check_v4_methodology_shape`, `check_v4_word_caps`, `check_v4_results_beat`) PASS-skip on non-v4 bodies, the v3-only Data checks PASS-skip on non-v3, the v2-only `check_tldr_nested_structure` PASS-skips on v3/v4, and checks 6/16/17 run on any title-tag-confidence sentinel (v2/v3/v4); PLUS `check_concerns_audit` (Lens 14, binding-concerns; composed 2026-05-31 by task #455) dispatched separately in verify_text since it needs the sibling concerns.jsonl)"
 
 # ──────────────────────────────────────────────────────────────────────
 # Workflow-fix-on-bug protocol. Every agent (subagent or orchestrator)
