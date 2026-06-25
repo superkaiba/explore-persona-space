@@ -19,6 +19,8 @@ goal: 'Test the five trained-model gate-chain assumptions of the leakage-predict
   for program #660, explicitly excluding the clean positive-only A3.7 identification,
   the non-saturated/dose-controlled final gate numbers, and the held-out end-to-end
   predictor (those need the fleet retrain).'
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
