@@ -205,9 +205,50 @@ def load_base_and_trained(adapter_dir: Path, device: torch.device, dtype: torch.
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def vllm_generate_R(
+    tok, prompt_messages: list[list[dict]], *, max_new_tokens: int, gpu_mem_util: float = 0.85
+) -> list[str]:
+    """Batched vLLM greedy generation of the frozen base R for many contexts at once.
+
+    CLAUDE.md mandates vLLM for generation — never a per-prompt HF ``generate``
+    loop (10-50x slower, and the compute-deviation it caused is why this exists).
+    Generates one greedy (temp=0) response per chat-message list from the BASE
+    model, then tears down the vLLM engine (worker-subprocess reap, gotchas) so
+    the subsequent HF teacher-force pass has the GPU. Returns responses in input
+    order (trailing EOS stripped so the span covers content tokens only).
+    """
+    import gc
+
+    from vllm import LLM, SamplingParams
+
+    from explore_persona_space.analysis.representation_shift import _reap_vllm_engine
+
+    prompts = [
+        tok.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
+        for m in prompt_messages
+    ]
+    llm = LLM(model=BASE_MODEL, dtype="bfloat16", gpu_memory_utilization=gpu_mem_util)
+    params = SamplingParams(temperature=0.0, max_tokens=max_new_tokens)
+    outputs = llm.generate(prompts, params)
+    assert len(outputs) == len(prompts), (len(outputs), len(prompts))
+    responses = [o.outputs[0].text for o in outputs]
+    _reap_vllm_engine(llm)
+    del llm
+    gc.collect()
+    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        torch.cuda.ipc_collect()
+    return responses
+
+
 @torch.no_grad()
 def _greedy_response(model, tok, messages: list[dict], device, max_new_tokens: int) -> str:
-    """Deterministic (temp=0) greedy response under a context (the frozen base R)."""
+    """Deterministic (temp=0) HF greedy response (CPU-smoke + fact-r_B path only).
+
+    The hot extraction path uses :func:`vllm_generate_R` (batched, per CLAUDE.md).
+    This HF helper is kept for the tiny fact r_B re-extraction (≤6 probes × 2) and
+    the CPU-only smoke where vLLM is unavailable.
+    """
     text = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     ids = tok(text, return_tensors="pt").to(device)
     out = model.generate(
@@ -544,11 +585,32 @@ def run_extraction(args) -> int:
         layers,
     )
 
-    # Stage + load the adapter (gauge asserts).
+    # Stage + verify the adapter gauge BEFORE any GPU work (cheap, HALT early).
     adapter_dir = stage_adapter_local(behavior, source_cid, seed)
     gauge = assert_adapter_gauge(adapter_dir, behavior)
     logger.info("adapter gauge OK: %s", {k: gauge[k] for k in ("r", "lora_alpha", "use_rslora")})
-    tok, base, trained = load_base_and_trained(adapter_dir, device, dtype)
+
+    # ── Phase A: vLLM batched generation of the frozen base R (per CLAUDE.md) ──
+    # Generate R for ALL (target, probe) pairs in ONE vLLM batch from the BASE
+    # model, then tear vLLM down so the HF teacher-force pass has the GPU. On a
+    # CPU-only smoke (no vLLM) the per-target loop falls back to HF greedy gen.
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(BASE_MODEL, token=os.environ.get("HF_TOKEN"))
+    r_lookup: dict[tuple[str, int], str] = {}
+    if device.type != "cpu":
+        gen_msgs: list[list[dict]] = []
+        gen_keys: list[tuple[str, int]] = []
+        for tcid in targets:
+            for qi, q in enumerate(probes):
+                gen_msgs.append(build_messages_for(registry, demos, tcid, behavior, q))
+                gen_keys.append((tcid, qi))
+        logger.info("Phase A: vLLM-generating %d base R responses", len(gen_msgs))
+        responses = vllm_generate_R(tok, gen_msgs, max_new_tokens=args.max_new_tokens)
+        r_lookup = dict(zip(gen_keys, responses, strict=True))
+
+    # ── Phase B: load base θ0 + trained θ+ (HF) for the teacher-force reads ────
+    _, base, trained = load_base_and_trained(adapter_dir, device, dtype)
     assert base.config.hidden_size == HIDDEN_SIZE or device.type == "cpu", base.config.hidden_size
 
     out_root = Path(args.out)
@@ -588,7 +650,13 @@ def run_extraction(args) -> int:
             base, tok, probes[: args.max_probes or 6], args.primary_layer, device
         )
 
-    extras = {"t_split": t_split, "fact_rb": fact_rb, "c_c_all": c_c_all, "gauge": gauge}
+    extras = {
+        "t_split": t_split,
+        "fact_rb": fact_rb,
+        "c_c_all": c_c_all,
+        "gauge": gauge,
+        "r_lookup": r_lookup,
+    }
     n_gen = n_trunc = 0
     for tcid in targets:
         ng, nt = _extract_one_target(
@@ -653,13 +721,17 @@ def _extract_one_target(
     gauge = extras["gauge"]
     t_split = extras["t_split"]
     fact_rb = extras["fact_rb"]
+    r_lookup = extras.get("r_lookup", {})
     tmsgs0 = build_messages_for(registry, demos, tcid, behavior, probes[0])
     c_cp_all = _context_vector_all_layers(base, tok, tmsgs0, device)
     acc: dict[int, list[list[np.ndarray]]] = {li: [[], []] for li in layers}
     n_gen = n_trunc = 0
-    for q in probes:
+    for qi, q in enumerate(probes):
         tmsgs = build_messages_for(registry, demos, tcid, behavior, q)
-        r = _greedy_response(base, tok, tmsgs, device, max_new_tokens)
+        # Prefer the vLLM-pregenerated R (Phase A); HF fallback only on CPU-smoke.
+        r = r_lookup.get((tcid, qi))
+        if r is None:
+            r = _greedy_response(base, tok, tmsgs, device, max_new_tokens)
         n_gen += 1
         if not r.strip():
             n_trunc += 1
