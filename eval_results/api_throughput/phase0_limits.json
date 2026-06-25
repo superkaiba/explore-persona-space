@@ -1,0 +1,135 @@
+{
+  "orgs": {
+    "high_prio": {
+      "claude-sonnet-4-5-20250929": {
+        "callable": true,
+        "status": 200,
+        "headers": {
+          "anthropic-organization-id": "b94495b5-cb2c-4e87-ad36-8237783b2be4",
+          "anthropic-ratelimit-requests-limit": "30000",
+          "anthropic-ratelimit-input-tokens-limit": "10000000",
+          "anthropic-ratelimit-output-tokens-limit": "1000000",
+          "anthropic-ratelimit-requests-remaining": "29999",
+          "anthropic-ratelimit-input-tokens-remaining": "10000000",
+          "anthropic-ratelimit-output-tokens-remaining": "1000000"
+        },
+        "service_tier": "standard"
+      },
+      "claude-haiku-4-5-20251001": {
+        "callable": false,
+        "status": 429,
+        "headers": {
+          "anthropic-organization-id": "b94495b5-cb2c-4e87-ad36-8237783b2be4",
+          "anthropic-ratelimit-requests-limit": "30000",
+          "anthropic-ratelimit-output-tokens-limit": "1200000",
+          "anthropic-ratelimit-requests-remaining": "29999",
+          "anthropic-ratelimit-output-tokens-remaining": "0"
+        },
+        "error": "{\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"This request would exceed your organization's rate limit of 1,200,000 output tokens per minute (org: b94495b5-cb2c-4e87-ad36-8237783b2be4,"
+      },
+      "claude-opus-4-8": {
+        "callable": true,
+        "status": 200,
+        "headers": {
+          "anthropic-organization-id": "b94495b5-cb2c-4e87-ad36-8237783b2be4",
+          "anthropic-ratelimit-requests-limit": "150000",
+          "anthropic-ratelimit-input-tokens-limit": "60000000",
+          "anthropic-ratelimit-output-tokens-limit": "10000000",
+          "anthropic-ratelimit-requests-remaining": "149997",
+          "anthropic-ratelimit-input-tokens-remaining": "59999000",
+          "anthropic-ratelimit-output-tokens-remaining": "10000000"
+        },
+        "service_tier": "standard"
+      },
+      "claude-3-5-sonnet-20241022": {
+        "callable": false,
+        "status": 404,
+        "headers": {
+          "anthropic-organization-id": "b94495b5-cb2c-4e87-ad36-8237783b2be4"
+        },
+        "error": "{\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not found\"},\"request_id\":\"req_011CcQhCU3CnEvj1wfT9LEDH\"}"
+      },
+      "claude-3-sonnet-20240229": {
+        "callable": false,
+        "status": 404,
+        "headers": {
+          "anthropic-organization-id": "b94495b5-cb2c-4e87-ad36-8237783b2be4"
+        },
+        "error": "{\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not found\"},\"request_id\":\"req_011CcQhCUwXWMgYJCHDLTSaZ\"}"
+      }
+    },
+    "batch": {
+      "claude-sonnet-4-5-20250929": {
+        "callable": true,
+        "status": 200,
+        "headers": {
+          "anthropic-organization-id": "b4bbba0c-35c5-4277-b319-326e85aab7da",
+          "anthropic-ratelimit-requests-limit": "90000",
+          "anthropic-ratelimit-input-tokens-limit": "8000000",
+          "anthropic-ratelimit-output-tokens-limit": "800000",
+          "anthropic-ratelimit-requests-remaining": "89999",
+          "anthropic-ratelimit-input-tokens-remaining": "8000000",
+          "anthropic-ratelimit-output-tokens-remaining": "800000"
+        },
+        "service_tier": "standard"
+      },
+      "claude-haiku-4-5-20251001": {
+        "callable": true,
+        "status": 200,
+        "headers": {
+          "anthropic-organization-id": "b4bbba0c-35c5-4277-b319-326e85aab7da",
+          "anthropic-ratelimit-requests-limit": "4000",
+          "anthropic-ratelimit-input-tokens-limit": "8000000",
+          "anthropic-ratelimit-output-tokens-limit": "800000",
+          "anthropic-ratelimit-requests-remaining": "3999",
+          "anthropic-ratelimit-input-tokens-remaining": "8000000",
+          "anthropic-ratelimit-output-tokens-remaining": "800000"
+        },
+        "service_tier": "standard"
+      },
+      "claude-opus-4-8": {
+        "callable": true,
+        "status": 200,
+        "headers": {
+          "anthropic-organization-id": "b4bbba0c-35c5-4277-b319-326e85aab7da",
+          "anthropic-ratelimit-requests-limit": "4000",
+          "anthropic-ratelimit-input-tokens-limit": "10000000",
+          "anthropic-ratelimit-output-tokens-limit": "2000000",
+          "anthropic-ratelimit-requests-remaining": "3999",
+          "anthropic-ratelimit-input-tokens-remaining": "10000000",
+          "anthropic-ratelimit-output-tokens-remaining": "2000000"
+        },
+        "service_tier": "standard"
+      },
+      "claude-3-5-sonnet-20241022": {
+        "callable": false,
+        "status": 404,
+        "headers": {
+          "anthropic-organization-id": "b4bbba0c-35c5-4277-b319-326e85aab7da"
+        },
+        "error": "{\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not found\"},\"request_id\":\"req_011CcQhCpGdC3ko3iSuALFKf\"}"
+      },
+      "claude-3-sonnet-20240229": {
+        "callable": false,
+        "status": 404,
+        "headers": {
+          "anthropic-organization-id": "b4bbba0c-35c5-4277-b319-326e85aab7da"
+        },
+        "error": "{\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not found\"},\"request_id\":\"req_011CcQhCqDvBmb6rtSwMp6sn\"}"
+      }
+    }
+  },
+  "models": [
+    "claude-sonnet-4-5-20250929",
+    "claude-haiku-4-5-20251001",
+    "claude-opus-4-8",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-sonnet-20240229"
+  ],
+  "note": "batch queue cap -> Phase 2 (no admin key)",
+  "org_ids": {
+    "high_prio": "b94495b5-cb2c-4e87-ad36-8237783b2be4",
+    "batch": "b4bbba0c-35c5-4277-b319-326e85aab7da"
+  },
+  "orgs_distinct_additive": true
+}
