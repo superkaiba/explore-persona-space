@@ -324,12 +324,25 @@ def fig_a37_write():
     ax.set_xticks(x)
     ax.set_xticklabels([BEH_LABEL[b].split(" (")[0] for b in behs], rotation=12, ha="right")
     ax.set_ylabel("Mean cosine(source write, displacement target)")
-    ax.set_ylim(-0.26, 0.18)
+    ax.set_ylim(-0.26, 0.21)
     ax.legend(loc="lower left", fontsize=8, frameon=False)
+    # Annotate per-behavior mean frac_ctx (source-vs-negative context offset as a
+    # fraction of the contrastive displacement): EM's ~1.0 means the offset IS the
+    # whole displacement, which is why EM's pos/contra cosines can diverge.
+    for xi, b in zip(x, behs, strict=True):
+        fc = a37[b]["mean_frac_ctx"]
+        ax.annotate(
+            f"frac_ctx\n{fc:.2f}",
+            (xi, 0.185),
+            ha="center",
+            va="top",
+            fontsize=7,
+            color="0.35",
+        )
     set_title_subtitle(
         ax,
         "The realized write does not point toward the training-data target",
-        "Mean cos(write, δ) per behavior; positive-only ≈ contrastive everywhere, so the negatives do not rotate the write direction.",
+        "Mean cos(write, δ) per behavior; positive-only ≈ contrastive at the mean. frac_ctx = context offset as a fraction of the contrastive displacement.",
     )
     savefig_paper(fig, "issue_667/fig_a37_write", dir=str(ROOT / "figures") + "/")
     plt.close(fig)
