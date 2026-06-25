@@ -6,7 +6,7 @@ title: The leakage-predictor gate chain holds in activation space — a base-con
 kind: experiment
 tags: []
 created_at: '2026-06-25T08:04:47Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 660
 origin_prompt: 'Create a new issue for this. Run it in the background with happy coder
   — the #537 gate-chain preview (A3.6–A3.10, A3.7 both ways, vs G) under #660.'
