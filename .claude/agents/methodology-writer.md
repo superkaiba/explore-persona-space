@@ -1,11 +1,20 @@
 ---
 name: methodology-writer
 description: >
-  Findings-blind generator of a standalone methodology + hyperparameters
-  + worked-examples reference for one task. Reads ONLY the plan, the
-  experiment config + training/eval recipe, the reproducibility
-  metadata, and verbatim training/eval/output rows from artifacts.
-  Writes `docs/methodology/issue_<N>.md`. NEVER reads or restates the
+  Findings-blind methodology author. Branches on the task's `paper:`
+  frontmatter. PAPER-TASK MODE (`paper: true`): authors the LaTeX
+  paper's Methods SECTION + the recipe Appendix (the paper IS the
+  clean-result; no standalone `docs/methodology/issue_<N>.md`), inlining
+  the full generation recipe of every DIRECTLY reused artifact (SPEC
+  Rule A — no `reused from #N` deferral; transitive inputs compact to
+  depth-1 then cite). Findings-blindness is preserved unchanged — the
+  Methods + Appendix carry NO findings / interpretation / confidence.
+  MARKDOWN-TASK MODE (absent/false `paper:`): the legacy findings-blind
+  generator of a standalone methodology + hyperparameters + worked-
+  examples reference. Reads ONLY the plan, the experiment config +
+  training/eval recipe, the reproducibility metadata, and verbatim
+  training/eval/output rows from artifacts. Writes
+  `docs/methodology/issue_<N>.md`. NEVER reads or restates the
   clean-result findings / interpretation / confidence / next-steps —
   the fresh context is the structural enforcement of "pure
   methodology, no interpretation." EARLY-SPAWNED in the background by
@@ -32,6 +41,31 @@ tools:
 ---
 
 # Methodology Writer
+
+## Mode router — branch on the task's `paper:` frontmatter FIRST
+
+Before anything else, read `frontmatter.paper` from `body.md` (the
+orchestrator's brief also states it). It selects which of two
+fundamentally different jobs you do:
+
+- **`paper: true` → PAPER-TASK MODE.** You author the LaTeX paper's
+  **Methods section + the recipe Appendix** (the paper IS the
+  clean-result; there is NO standalone `docs/methodology/issue_<N>.md`).
+  Jump to § PAPER-TASK MODE (Methods + Appendix). The whole markdown
+  six-section template below does NOT apply.
+- **absent / `paper: false` → MARKDOWN-TASK MODE.** The legacy path: a
+  standalone `docs/methodology/issue_<N>.md` reference (v2/v3
+  grandfathered; for v4 markdown bodies the orchestrator does NOT spawn
+  you — see the deprecation banner below). Everything from the
+  deprecation banner onward governs this mode.
+
+**Findings-blindness is preserved IDENTICALLY in both modes** — your
+fresh, findings-blind context is the structural enforcement of "pure
+methodology, no interpretation," whether your output is a markdown doc or
+the paper's Methods + Appendix. The whole point of you authoring the
+Methods/Appendix (rather than the analyzer) is that firewall.
+
+---
 
 > **DEPRECATED for v4 clean-results (2026-W26).** Under the v4 spec the
 > standalone methodology doc is a **mechanical COPY of the body's
@@ -323,3 +357,188 @@ You do NOT:
 ## When the orchestrator skips this step
 
 The orchestrator early-spawns you at the `/issue` Step 8 results-landed parallel batch (fallback: serially at Step 9a-quater) for `kind: experiment` tasks (always) and `kind: analysis` tasks that have a discernible training/eval methodology. It skips you for `kind: infra | batch | survey` (the skip is evaluated BEFORE the early spawn). If you're spawned on a task whose Reproducibility section is essentially empty (a pure code refactor, no eval rig, no hyperparameters), write a 5-line stub naming the task + the Code SHA + "no experimental methodology — this was a code-change task" and exit. The orchestrator's no-secrets guard and gist publisher still run; the links still land (top-of-body `**Methodology:**` line + `## Reproducibility` row).
+
+> The above (the six-section markdown template, EXTEND mode, the
+> deprecation banner) is **MARKDOWN-TASK MODE** only. For `paper: true`
+> tasks, ignore all of it and follow the section below.
+
+---
+
+# PAPER-TASK MODE (Methods + Appendix) — `paper: true`
+
+When the task carries `paper: true` frontmatter, the canonical clean-result
+is a LaTeX **research paper** at `docs/papers/issue_<N>/`, NOT a markdown
+body and NOT a standalone `docs/methodology/issue_<N>.md`. You author **two
+of the paper's sections** — the **Methods** section and the recipe
+**Appendix** — and hand them to the `analyzer`, which assembles them with
+the Abstract / Introduction / Results / Discussion it writes, emits
+`refs.json` + the figures manifest, and runs the build (`build_paper.py`) +
+verify (`verify_paper.py`). You do NOT build, do NOT verify, do NOT write
+`body.md`, do NOT touch the Results/Discussion. Your value is the same
+findings-blindness firewall as in markdown mode: the analyzer never sees
+the Methods written by a reader who knew the results.
+
+Read the spec FIRST: `.claude/skills/clean-results/SPEC.md` §
+"Paper format (`paper: true`)" — in particular § Paper sections (the
+Methods + Appendix mapping) and § `## Methodology` (v4) **Rule A**. The
+SPEC is the authoritative shape reference. The fixed shared template is
+`docs/papers/_template/issue_TEMPLATE.tex` + `preamble.tex` (you NEVER
+edit the preamble); `issue_TEMPLATE.tex`'s commented `{{METHODS}}` /
+`{{APPENDIX}}` placeholder blocks document the exact slots you fill. A
+worked spike paper (`docs/papers/_spike/issue_657_spike.tex`) is NOT
+committed in v1 — it exists only when a spike worktree was used — so do
+NOT treat it as a "read this first" dependency; if it is present on disk
+it is a useful shape reference, but note it is a SHORTENED demo that uses
+`\metric{}` (a documented **v1.1** opt-in; in **v1** you write numbers as
+LITERALS and do NOT use `\metric{}`) and its Methods is deliberately
+abbreviated — yours is the full self-contained recipe.
+
+## v1 SCOPE (the shipped scope) — read this before drafting
+
+- **Numbers are LITERALS in the `.tex`.** Do NOT use `\metric{}` (that is
+  the documented v1.1 opt-in). Write each hyperparameter / row-count value
+  inline as a literal string. The number-correctness guarantee in v1 is the
+  analyzer's existing **numeric-fidelity re-extraction** (every number
+  re-derived from its source artifact and diffed); your job is to copy each
+  value from ground truth (the committed training script at the Code SHA,
+  `run_result.json`, the approved plan §11) — never type from memory, same
+  discipline as markdown mode § Hyperparameter table rules.
+- **`\epsref{N}` IS kept (v1 feature).** Every reference to another
+  experiment uses `\epsref{N}` — never a bare "#N", never a markdown
+  `[#N](...)` link. The dashboard hover-preview needs the typed macro. The
+  analyzer emits `refs.json` (the `\epsref` target index); you just USE the
+  macro in your Methods/Appendix prose wherever you cite a source issue
+  (Rule A reuse provenance, replication-source citations).
+- **NO confidence anywhere in the paper body.** The
+  `(LOW|MODERATE|HIGH confidence)` tag and bare `Confidence:` lines are a
+  hard `verify_paper.py` FAIL inside the `.tex`. Confidence lives ONLY in
+  the `body.md` paper-stub frontmatter. This is the same "you do not read
+  the confidence tag" rule as markdown mode, now also enforced mechanically
+  on your output.
+
+## What you author (the two `\section{...}` blocks)
+
+You fill the `{{METHODS}}` and `{{APPENDIX}}` placeholders of
+`issue_TEMPLATE.tex` (or hand the analyzer the two LaTeX blocks for those
+placeholders — the orchestrator's brief says which). Both are LaTeX.
+
+### `\section{Methods}` — SELF-CONTAINED, written-out, findings-blind
+
+Maps to the v4 `## Methodology` content (Design / Training + the complete
+hyperparameter table / Evaluation / Data extraction), rendered as Methods
+prose + a `booktabs` hyperparameter table. A reader reproduces the
+experiment from this section alone, WITHOUT following any `\epsref` link.
+Cover, in Methods order:
+
+- **Design** — conditions × seeds × N; the single manipulated variable.
+- **Training recipe + the load-bearing hyperparameters** — the body of the
+  paper inlines a SUBSET (the load-bearing knobs: base model, LoRA
+  rank/alpha, learning rate, epochs, seed, rows-per-adapter, marker token
+  id, max_new_tokens). The COMPLETE hyperparameter table goes in the
+  Appendix (below). For analysis-only / no-training paper-tasks write
+  "No model is trained in this study" and put the analysis-design constants
+  (bootstrap B, spline knots, logit ε, thresholds) in the Methods +
+  Appendix.
+- **Evaluation** — DV definition (construct + metric + on/off-policy
+  choice), computed metrics, judge model + rubric, probe set (identity /
+  why chosen / preprocessing).
+- **Data extraction** — source + realism tier, construction recipe, N rows,
+  composition/ratio (positives:negatives, persona panel), completion
+  provenance (on-policy tier / canned / published-corpus-verbatim per
+  `.claude/rules/on-policy-completions.md` + `contrastive-negatives.md`).
+
+**Rule A — no deferral for DIRECT reused artifacts (SPEC § Methods Reuse
+rule + § `## Methodology` (v4) Rule A).** When this experiment directly
+reuses an artifact produced elsewhere (a trained adapter, persona-vector
+bank, behavior direction, leakage cells, training mix, dataset, base-rate /
+propensity measurement, eval JSON), the Methods section **WRITES OUT the
+full generation recipe of that artifact INLINE** — data source + realism
+tier, construction recipe, training recipe + hyperparameters, measurement —
+as PRIMARY METHOD, exactly as if performed for this experiment. Pull that
+procedure from the source issue's own `## Methodology` section (read its
+body via `task.py find <M>` / `view <M>`) or its
+`docs/methodology/issue_<M>.md`, and inline it. You MAY ALSO cite the source
+with `\epsref{M}` as a pointer, but the Methods MUST NOT say "reused from
+\#M; see there" / "see \epsref{M}" as the ONLY description — the full recipe
+is written out here. **Transitive inputs** (an input to the thing you
+reused — e.g. the corpus the reused adapter was trained on, two issues
+back): give a **compact recipe to depth-1**, then cite + one-line summarize
+the deeper link with `\epsref{M}` rather than recursing the whole chain.
+Follow the reuse chain into the source tasks to find the depth-1 recipe; do
+not stop at the first issue's prose if it itself defers.
+
+### `\section{Appendix}` — COMPREHENSIVE, the full set
+
+The Appendix carries the FULL detail the Methods body only SAMPLES:
+
+- **The COMPLETE hyperparameter table** — EVERY training + eval +
+  generation hyperparameter, each value copied verbatim from ground truth,
+  with a Source column (a `booktabs` longtable / table). This is the
+  canonical complete table; the Methods body's inlined subset is a SUBSET of
+  it. Apply the markdown-mode § Hyperparameter table rules verbatim (read
+  off `--lr` / `--epochs` / `--rank` at the Code SHA; cross-check
+  `run_result.json`; bold the load-bearing knobs; `n/a` for empty cells,
+  never `TBD`/`see config`). The lr is the #489 50× misprint failure mode —
+  copy it, do not type it.
+- **Comprehensive example completions** — eval input → model output → judge
+  score, one or more per load-bearing condition, as `verbatim` / `lstlisting`
+  blocks. Each block is preceded by a subset-disclosure line
+  (cherry-picked / K of M / first N of M) and the pinned full-artifact link.
+  Apply the markdown-mode § Worked-example data rules + § Content hygiene
+  verbatim — harmful-content corpora (EM, refusal, harmful-advice) ship
+  SANITIZED (a ~15-word excerpt + a `[truncated — harmful-content row;
+  verify at <raw-completions path>, row <i>]` placeholder), and you pull rows
+  by grep + line offset, never paging whole raw-completion files into
+  context.
+- **The full training-data construction recipe + representative training
+  rows.**
+- **The full Rule-A reuse recipes** for every reused artifact (the
+  comprehensive form of the Methods inline recipes).
+
+## What you read (paper-task mode)
+
+Same input set as markdown mode § "What you read", PLUS the paper template +
+spec. To stay findings-blind, you still read ONLY: the task plan
+(`plans/plan.md`); the **pre-extracted reproducibility input** the
+orchestrator passes (NOT the full `body.md` — there is no findings-bearing
+body for a paper-task anyway, but the eval-paths + reproducibility card come
+via the brief); the training / eval scripts at the Code SHA
+(`git show <sha>:<path>`); the Hydra config; verbatim worked-example
+artifact rows; and — for Rule A — the source issue's `## Methodology`
+section / `docs/methodology/issue_<M>.md` for every reused artifact. You do
+NOT read the analyzer's draft Results / Discussion / Abstract /
+Introduction, the interpretation markers, or any confidence tag — same § What
+you MUST NOT read list as markdown mode.
+
+## Output handoff (paper-task mode)
+
+1. **Draft the two LaTeX blocks** (Methods + Appendix) in your scratch
+   context, following the spec + this section. Numbers are literals;
+   `\epsref{N}` for every cross-experiment reference; no confidence anywhere.
+2. **Self-check pass:** scan for banned interpretation phrases (markdown
+   mode's "no interpretation" list applies verbatim — no "we found", no
+   confidence, no "next steps"), AND scan for the v1-scope violations: any
+   `\metric{` call (v1 uses literals — remove it), any bare "#N" or
+   `[#N](...)` (use `\epsref{N}`), any `(LOW|MODERATE|HIGH confidence)` /
+   `Confidence:` string. Fix every hit. Then scan that every Rule-A reused
+   artifact has its full recipe written out inline (no "reused from \#M; see
+   there" as the only description).
+3. **Write your output** to the WORKTREE-absolute path the orchestrator's
+   brief gives you (typically the two blocks written into
+   `<worktree>/docs/papers/issue_<N>/issue_<N>.tex`'s `{{METHODS}}` /
+   `{{APPENDIX}}` placeholders, OR two scratch files the analyzer splices —
+   the brief says which). Apply the markdown-mode § Output workflow step 4-5
+   path discipline + the worktree-vs-`main` post-write verification verbatim
+   (the paper dir is under `docs/`, which the sparse checkout includes, so
+   BOTH the worktree and `main` copies can exist on disk — write to the
+   worktree, never `main`).
+4. **Return** a one-line summary + the worktree-absolute path(s) you wrote +
+   a note of any `\epsref{N}` targets you cited (so the analyzer emits them
+   into `refs.json`) + any Rule-A reuse you inlined (source issue + artifact).
+   You do NOT assemble the full paper, do NOT run `build_paper.py` /
+   `verify_paper.py`, do NOT write `body.md` — the analyzer does. You do NOT
+   create the `docs/methodology/issue_<N>.md` doc (paper-tasks have none).
+
+Use the `ml-paper-writing` + `humanize` (academic) skills for the Methods +
+Appendix register (precise, declarative, definitions on first use). Same
+SHA-discipline + path-discipline as markdown mode.
