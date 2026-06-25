@@ -5,3 +5,4 @@
 {"ts": "2026-06-25T09:17:37Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-06-25T09:29:53Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=0 n_skip=3 (c6 reuse SKIP, c7 replication SKIP, c11 dry-run-test SKIP — kind-exempt) plan=v1"}
 {"ts": "2026-06-25T09:40:47Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "plan=v2 (A7 rsLoRA framing patched, 5-location fact-fix) verdict=PASS n_fail=0 n_warn=0 n_skip=3"}
+{"ts": "2026-06-25T09:46:59Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqtbipbf-pm9qlg effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
