@@ -666,19 +666,51 @@ def _paper_manifest_exists(task_id: int) -> bool:
     return (repo_root() / "docs" / "papers" / f"issue_{task_id}" / "paper_manifest.json").exists()
 
 
+#: Artifacts the paper stores on the HF data repo (NOT committed to git), so
+#: their local-existence/hash is NEVER validated — the PDF is validated via
+#: ``pdf_hf_url`` instead (incident #657). A ``pdf`` entry may still appear in
+#: ``artifacts`` in the OLD manifest shape; its local check is skipped there too.
+_PAPER_HF_HOSTED_ARTIFACTS: tuple[str, ...] = ("pdf",)
+
+
+def _validate_committed_artifact(label: str, entry: Any) -> list[str]:
+    """Validate one COMMITTED manifest artifact's local presence + sha256.
+
+    Returns a (possibly empty) list of problem strings. HF-hosted artifacts are
+    the caller's concern (it skips them); this only stats committed files.
+    """
+    import hashlib
+
+    rel = (entry or {}).get("path")
+    if not rel:
+        return [f"artifact {label!r} has no path"]
+    fpath = repo_root() / rel
+    if not fpath.exists():
+        return [f"artifact {label!r} path missing on disk: {rel}"]
+    want = entry.get("sha256")
+    if want and hashlib.sha256(fpath.read_bytes()).hexdigest() != want:
+        return [f"artifact {label!r} sha256 mismatch ({rel})"]
+    return []
+
+
 def validate_paper_manifest(task_id: int) -> list[str]:
     """Validate a paper-task's docs/papers/issue_<N>/paper_manifest.json.
 
     Returns a list of human-readable problems; an empty list means the manifest
-    is valid enough to flip ``has_clean_result``. Checks (mirrors
-    ``scripts/verify_paper.py`` check 7 — the manifest schema, the required
-    ``tex`` / ``pdf`` / ``paper_html`` artifacts present on disk with matching
-    sha256, and a non-null ``pdf_hf_url``). A missing ``pdf_hf_url`` is a soft
-    problem the CLI surfaces as a WARN (a local-only build can be promoted), so
-    it is returned with a ``WARN: `` prefix and the caller decides.
+    is valid enough to flip ``has_clean_result``. HF-aware (mirrors
+    ``scripts/verify_paper.py`` check 7): the COMMITTED local artifacts
+    (``tex`` / ``paper_html``, + ``bib`` / ``refs_json`` when present) must be on
+    disk with a matching sha256, AND the PDF must be validated via ``pdf_hf_url``
+    (present + an ``https://...`` URL) — NOT a local file, since the paper PDF
+    lives on the HF data repo, not in git (incident #657: the local PDF exists at
+    BUILD time so the build-time verify passed, but post-commit it is HF-only and
+    a local-existence check on a ``pdf`` artifact wrongly failed). A missing /
+    null ``pdf_hf_url`` is a soft problem the CLI surfaces as a WARN (a
+    local-only build can be promoted), returned with a ``WARN: `` prefix; a
+    non-``https`` URL is a HARD problem. Tolerant of BOTH manifest shapes: the
+    new ``hf_pdf`` block and the old ``pdf``-in-``artifacts`` shape (the latter's
+    local-existence/hash check is skipped — it is HF-hosted).
     """
-    import hashlib
-
     problems: list[str] = []
     paper_dir = repo_root() / "docs" / "papers" / f"issue_{task_id}"
     manifest_path = paper_dir / "paper_manifest.json"
@@ -691,26 +723,25 @@ def validate_paper_manifest(task_id: int) -> list[str]:
     if manifest.get("schema") != "paper_manifest/v1":
         problems.append(f"schema is {manifest.get('schema')!r}, expected 'paper_manifest/v1'")
     artifacts = manifest.get("artifacts") or {}
-    for label in ("tex", "pdf", "paper_html"):
-        entry = artifacts.get(label)
-        if not entry:
-            problems.append(f"missing required artifact {label!r}")
+    # Required COMMITTED artifacts — NOT the PDF (HF-hosted, validated via URL).
+    for label in ("tex", "paper_html"):
+        if not artifacts.get(label):
+            problems.append(f"missing required committed artifact {label!r}")
             continue
-        rel = entry.get("path")
-        if not rel:
-            problems.append(f"artifact {label!r} has no path")
+        problems.extend(_validate_committed_artifact(label, artifacts[label]))
+    # Any other committed artifact present in the map (bib / refs_json) is also
+    # locally validated; the HF-hosted PDF entry (old shape) is skipped.
+    for label, entry in artifacts.items():
+        if label in ("tex", "paper_html") or label in _PAPER_HF_HOSTED_ARTIFACTS:
             continue
-        fpath = repo_root() / rel
-        if not fpath.exists():
-            problems.append(f"artifact {label!r} path missing on disk: {rel}")
-            continue
-        want = entry.get("sha256")
-        if want:
-            got = hashlib.sha256(fpath.read_bytes()).hexdigest()
-            if got != want:
-                problems.append(f"artifact {label!r} sha256 mismatch ({rel})")
-    if not manifest.get("pdf_hf_url"):
+        problems.extend(_validate_committed_artifact(label, entry))
+    # The PDF is validated via the HF URL (top-level ``pdf_hf_url`` or the new
+    # ``hf_pdf.url`` block), NOT a local file.
+    pdf_url = manifest.get("pdf_hf_url") or (manifest.get("hf_pdf") or {}).get("url")
+    if not pdf_url:
         problems.append("WARN: pdf_hf_url is null (local-only build — not yet uploaded)")
+    elif not str(pdf_url).startswith("https://"):
+        problems.append(f"pdf_hf_url is not an https:// URL: {pdf_url!r}")
     return problems
 
 
@@ -1106,14 +1137,15 @@ def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool
     """Flip ``has_clean_result`` (or clear it with ``value=False``).
 
     For a ``paper: true`` task, flipping ``has_clean_result`` to True first
-    VALIDATES the task's ``docs/papers/issue_<N>/paper_manifest.json`` (artifacts
-    present + sha256 match + a non-null ``pdf_hf_url``) via
-    :func:`validate_paper_manifest` — promoting a paper-task means its paper
-    artifacts exist and match. A HARD problem (missing/mismatched artifact,
-    bad schema) raises ``SystemExit``; a soft WARN (``pdf_hf_url`` null — a
-    local-only build) is tolerated when ``allow_paper_warn`` is True (default),
-    which lets a paper be marked a clean-result before the HF upload lands.
-    Clearing (``value=False``) and every non-paper task skip the manifest gate.
+    VALIDATES the task's ``docs/papers/issue_<N>/paper_manifest.json`` (the
+    COMMITTED local artifacts present + sha256 match, and the HF-hosted PDF
+    validated via an ``https`` ``pdf_hf_url`` — NOT a local PDF file, incident
+    #657) via :func:`validate_paper_manifest`. A HARD problem (missing/mismatched
+    committed artifact, bad schema, non-``https`` ``pdf_hf_url``) raises
+    ``SystemExit``; a soft WARN (``pdf_hf_url`` null — a local-only build) is
+    tolerated when ``allow_paper_warn`` is True (default), which lets a paper be
+    marked a clean-result before the HF upload lands. Clearing (``value=False``)
+    and every non-paper task skip the manifest gate.
     """
     with _locked():
         path = find_task_path(task_id) / "body.md"

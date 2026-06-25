@@ -23,8 +23,15 @@ Checks (v1 scope — NO `\\metric` grounding; that is a documented v1.1 addition
   5. `.bib` entries resolve: every `\\cite{key}` / `\\citep` / `\\citet` key has
      a matching `@type{key,` entry in the per-task `.bib`.
   6. `\\epsref{N}` resolves to a real task in the registry.
-  7. `paper_manifest.json` complete (required artifacts present) + sha256 hashes
-     match the files on disk.
+  7. `paper_manifest.json` complete + HF-PDF-consistent: the COMMITTED local
+     artifacts (tex/paper_html, + bib/refs when present) are present on disk with
+     matching sha256, AND the PDF is validated via `pdf_hf_url` (present + an
+     `https://...` URL), NOT a local file (the PDF lives on the HF data repo, not
+     in git — incident #657). The build-time verify passed because the local PDF
+     existed then; this check must ALSO pass post-commit when the PDF is HF-only.
+     Tolerant of the OLD manifest shape (a `pdf` entry still in `artifacts`): its
+     local-existence/hash check is SKIPPED (it is HF-hosted), so an
+     already-built old-shape manifest still passes.
   8. The body.md paper-stub is valid (frontmatter `paper: true`, an H1 title, an
      abstract, and a paper link).
 
@@ -348,25 +355,35 @@ def check_epsref_resolves(tex: str) -> CheckResult:
     return CheckResult("epsref resolves", True, f"{len(refs)} \\epsref resolve")
 
 
-# ─── 7. manifest complete + hashes match ─────────────────────────────────────
-
-_REQUIRED_MANIFEST_ARTIFACTS = ("tex", "pdf", "paper_html")
+# ─── 7. manifest complete + HF-PDF-consistent ────────────────────────────────
+# The PDF lives on the HF data repo, NOT in git, so it is NEVER required as a
+# local on-disk artifact (incident #657: the local PDF exists at build time but
+# is gone post-commit). The committed artifacts (tex/paper_html, + bib/refs when
+# present) ARE locally validated; the PDF is validated via `pdf_hf_url`.
+_REQUIRED_MANIFEST_ARTIFACTS = ("tex", "paper_html")
+# A `pdf` entry may still appear in `artifacts` in the OLD manifest shape; it is
+# HF-hosted, so its local-existence/hash check is skipped (validated via the URL).
+_HF_HOSTED_ARTIFACTS = ("pdf",)
 
 
 def check_manifest(paper_dir: Path) -> CheckResult:
     mf = paper_dir / "paper_manifest.json"
     if not mf.exists():
-        return CheckResult("manifest complete + hashes", False, f"no {mf}")
+        return CheckResult("manifest complete + HF-PDF-consistent", False, f"no {mf}")
     try:
         manifest = json.loads(mf.read_text())
     except json.JSONDecodeError as e:
-        return CheckResult("manifest complete + hashes", False, f"invalid JSON: {e}")
+        return CheckResult("manifest complete + HF-PDF-consistent", False, f"invalid JSON: {e}")
     artifacts = manifest.get("artifacts", {})
     problems: list[str] = []
     for req in _REQUIRED_MANIFEST_ARTIFACTS:
         if req not in artifacts:
-            problems.append(f"missing required artifact `{req}`")
+            problems.append(f"missing required committed artifact `{req}`")
     for label, rec in artifacts.items():
+        # The PDF is HF-hosted (validated via pdf_hf_url below) — never stat it
+        # locally, even if an old-shape manifest still lists it in `artifacts`.
+        if label in _HF_HOSTED_ARTIFACTS:
+            continue
         rel = rec.get("path")
         if not rel:
             problems.append(f"artifact `{label}` has no path")
@@ -384,18 +401,29 @@ def check_manifest(paper_dir: Path) -> CheckResult:
             got = h.hexdigest()
             if got != want:
                 problems.append(f"artifact `{label}` sha256 mismatch ({rel})")
+    # The PDF is validated via the HF URL (top-level `pdf_hf_url`, or the
+    # `hf_pdf.url` block in the new shape), NOT a local file.
+    pdf_url = manifest.get("pdf_hf_url") or (manifest.get("hf_pdf") or {}).get("url")
     if problems:
-        return CheckResult("manifest complete + hashes", False, "; ".join(problems))
+        return CheckResult("manifest complete + HF-PDF-consistent", False, "; ".join(problems))
     # pdf_hf_url presence is a WARN when absent (local-only / --no-upload build),
     # not a FAIL — a paper can be verified pre-upload.
-    if not manifest.get("pdf_hf_url"):
+    if not pdf_url:
         return CheckResult(
-            "manifest complete + hashes",
+            "manifest complete + HF-PDF-consistent",
             True,
-            "hashes match; pdf_hf_url not yet set (local build)",
+            "committed hashes match; pdf_hf_url not yet set (local build)",
             is_warn=True,
         )
-    return CheckResult("manifest complete + hashes", True, "hashes match; pdf_hf_url pinned")
+    if not str(pdf_url).startswith("https://"):
+        return CheckResult(
+            "manifest complete + HF-PDF-consistent",
+            False,
+            f"pdf_hf_url is not an https:// URL: {pdf_url!r}",
+        )
+    return CheckResult(
+        "manifest complete + HF-PDF-consistent", True, "committed hashes match; pdf_hf_url pinned"
+    )
 
 
 # ─── 8. paper-stub body.md valid ─────────────────────────────────────────────
