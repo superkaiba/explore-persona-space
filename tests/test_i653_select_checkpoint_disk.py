@@ -25,10 +25,13 @@ not mocked away.
 
 from __future__ import annotations
 
+import errno
 import importlib.util
 import json
 import sys
 from pathlib import Path
+
+import pytest
 
 from explore_persona_space.experiments import issue_653 as i653
 
@@ -245,3 +248,282 @@ def test_delete_read_merge_for_cell_frees_selected_dose_merge(tmp_path):
     )
     assert mod._delete_read_merge_for_cell(cell, tmp_path) is True
     assert not merged.exists()
+
+
+# ── #653 round 5: exception-safety + completeness-sentinel + path-containment ──
+
+
+def test_select_cleans_partial_merge_on_merge_exception(tmp_path, monkeypatch):
+    """BLOCKER 1 (round 5): a merge-time EDQUOT (the EXACT round-3 crash spot) must
+    NOT leave a partial merge behind that a relaunch silently accepts as valid. The
+    merge is now INSIDE the select probe's try/finally, so the finally's
+    ``_delete_merged_for_read`` frees a partial the merge left on raise.
+
+    The stub mimics the round-4 failure mode: a ``save_pretrained`` that EDQUOTs
+    mid-write leaves a PARTIAL ``merged_for_read/`` on disk and raises WITHOUT
+    self-cleaning (so the test isolates the PHASE's exception-safety, not the
+    merge helper's own inner finally). Pre-fix (merge outside try) this partial
+    leaks; post-fix (merge inside try/finally) it is freed.
+
+    FAILS on the round-4 code (merge call before the try), PASSES on round 5."""
+    mod = _load_dispatcher()
+    cell = i653.ArmBCell(
+        behavior="sycophancy", source="florist", rung="r16", seed=i653.HEADLINE_SEED
+    )
+    adapter_dir = _stage_checkpoints(tmp_path, cell, [5, 10, 130])
+
+    def _edquot_merge(adapter_dir, cell):
+        # save_pretrained EDQUOTs mid-write: a partial merged_for_read/ is on disk
+        # and we raise WITHOUT cleaning it (the worst case the phase must absorb).
+        merged = Path(adapter_dir) / "merged_for_read"
+        merged.mkdir(parents=True, exist_ok=True)
+        (merged / "model-00001.safetensors").write_text("x" * 16)  # partial blob
+        raise OSError(errno.EDQUOT, "Disk quota exceeded")
+
+    monkeypatch.setattr(mod, "_merge_adapter_for_read", _edquot_merge)
+    monkeypatch.setattr(mod, "_install_content_gpu", lambda *a, **k: {"judge_rate_gain": 0.5})
+
+    with pytest.raises(OSError) as exc:
+        mod.phase_select_checkpoint([cell], out_root=tmp_path, mode=i653.RUN_MODE_GPU)
+    assert exc.value.errno == errno.EDQUOT
+    # The phase's try/finally freed the partial merge left by the failed merge.
+    assert _count_merge_dirs(adapter_dir) == 0, "partial merged_for_read/ left after EDQUOT"
+    assert not list(adapter_dir.rglob("merged_for_read.tmp")), ".tmp/ partial left after EDQUOT"
+
+
+def test_merge_adapter_atomic_rename_on_partial_tmp_resume(tmp_path, monkeypatch):
+    """Completeness sentinel (round 5): a leaked ``merged_for_read.tmp/`` from a
+    prior crashed merge does NOT short-circuit — ``_merge_adapter_for_read`` re-
+    merges from scratch (the partial is discarded) and the final ``merged_for_read/``
+    is the FRESH merge, promoted atomically. We stub the heavy HF/peft load so this
+    runs on CPU: the stub writes a fresh sentinel into the ``.tmp/`` it is handed."""
+    mod = _load_dispatcher()
+    cell = i653.ArmBCell(
+        behavior="sycophancy", source="florist", rung="r16", seed=i653.HEADLINE_SEED
+    )
+    ckpt = tmp_path / "armB" / "adapters" / cell.cell_id / "checkpoint-10"
+    ckpt.mkdir(parents=True, exist_ok=True)
+    (ckpt / "adapter_config.json").write_text("{}")  # adapter_dir.exists() True
+
+    # Stage a STALE partial .tmp/ a prior crash left (must be discarded, not promoted).
+    stale_tmp = ckpt / "merged_for_read.tmp"
+    stale_tmp.mkdir(parents=True, exist_ok=True)
+    (stale_tmp / "STALE_PARTIAL").write_text("stale")
+
+    # Stub the real HF/peft merge body: capture the tmp path it writes into and
+    # drop a FRESH sentinel there (so we can prove the final dir is the fresh one).
+    class _FakeModel:
+        def save_pretrained(self, path):
+            p = Path(path)
+            p.mkdir(parents=True, exist_ok=True)
+            (p / "FRESH").write_text("fresh-merge")
+
+    class _FakeTok:
+        def save_pretrained(self, path):
+            pass
+
+    fake_transformers = type(sys)("transformers")
+    fake_transformers.AutoModelForCausalLM = type(
+        "AMF", (), {"from_pretrained": staticmethod(lambda *a, **k: object())}
+    )
+    fake_transformers.AutoTokenizer = type(
+        "AT", (), {"from_pretrained": staticmethod(lambda *a, **k: _FakeTok())}
+    )
+    fake_peft = type(sys)("peft")
+    fake_peft.PeftModel = type(
+        "PM",
+        (),
+        {
+            "from_pretrained": staticmethod(
+                lambda *a, **k: type("M", (), {"merge_and_unload": lambda self: _FakeModel()})()
+            )
+        },
+    )
+    fake_torch = type(sys)("torch")
+    fake_torch.bfloat16 = "bf16"
+    monkeypatch.setitem(sys.modules, "transformers", fake_transformers)
+    monkeypatch.setitem(sys.modules, "peft", fake_peft)
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+
+    out = mod._merge_adapter_for_read(ckpt, cell)
+    merged = ckpt / "merged_for_read"
+    assert Path(out) == merged
+    assert merged.exists()
+    assert (merged / "FRESH").exists(), "final dir must be the FRESH re-merge"
+    assert not (merged / "STALE_PARTIAL").exists(), "stale partial must NOT be promoted"
+    assert not stale_tmp.exists(), "the .tmp/ must be renamed away (atomic promote)"
+
+
+def test_dx_frees_merge_on_read_exception(tmp_path, monkeypatch):
+    """MAJOR 1 (round 5): a mid-cell GPU read failure in phase_dx must still free the
+    cell's selected merge (the cleanup is in a finally, not normal-path only). We
+    stage a selected-checkpoint manifest + its merge, stub the GPU read to first
+    confirm the merge exists then raise; assert the phase raises AND the merge is
+    gone."""
+    mod = _load_dispatcher()
+    cell = i653.ArmBCell(
+        behavior="sycophancy", source="florist", rung="r16", seed=i653.HEADLINE_SEED
+    )
+    sel = tmp_path / "armB" / "adapters" / cell.cell_id / "checkpoint-10"
+    merged = sel / "merged_for_read"
+    merged.mkdir(parents=True, exist_ok=True)
+    (merged / "model.safetensors").write_text("merged")
+    man_dir = tmp_path / "armB" / "selected_checkpoints"
+    man_dir.mkdir(parents=True, exist_ok=True)
+    (man_dir / f"{cell.cell_id}.json").write_text(
+        json.dumps(
+            {
+                "cell_id": cell.cell_id,
+                "dose_selection": True,
+                "selected_checkpoint_step": 10,
+                "selected_checkpoint_dir": str(sel),
+                "selected_model_path": None,
+                "dropped_non_install": False,
+            }
+        )
+    )
+
+    def _boom(c, *, out_root):
+        assert merged.exists()  # merge resolved before the read
+        raise RuntimeError("simulated GPU read failure")
+
+    monkeypatch.setattr(mod, "_dx_gpu_cloud", _boom)
+
+    with pytest.raises(RuntimeError, match="simulated GPU read failure"):
+        mod.phase_dx([cell], out_root=tmp_path, mode=i653.RUN_MODE_GPU)
+    assert not merged.exists(), "phase_dx must free the selected merge even on a read raise"
+
+
+def test_install_frees_merge_on_read_exception(tmp_path, monkeypatch):
+    """MAJOR 1 (round 5): the same exception-safe cleanup for phase_install."""
+    mod = _load_dispatcher()
+    cell = i653.ArmBCell(
+        behavior="sycophancy", source="florist", rung="r16", seed=i653.HEADLINE_SEED
+    )
+    sel = tmp_path / "armB" / "adapters" / cell.cell_id / "checkpoint-10"
+    merged = sel / "merged_for_read"
+    merged.mkdir(parents=True, exist_ok=True)
+    (merged / "model.safetensors").write_text("merged")
+    man_dir = tmp_path / "armB" / "selected_checkpoints"
+    man_dir.mkdir(parents=True, exist_ok=True)
+    (man_dir / f"{cell.cell_id}.json").write_text(
+        json.dumps(
+            {
+                "cell_id": cell.cell_id,
+                "dose_selection": True,
+                "selected_checkpoint_step": 10,
+                "selected_checkpoint_dir": str(sel),
+                "selected_model_path": None,
+                "dropped_non_install": False,
+            }
+        )
+    )
+
+    def _boom(c, *, out_root):
+        assert merged.exists()
+        raise RuntimeError("simulated install read failure")
+
+    monkeypatch.setattr(mod, "_install_content_gpu", _boom)
+
+    with pytest.raises(RuntimeError, match="simulated install read failure"):
+        mod.phase_install([cell], out_root=tmp_path, mode=i653.RUN_MODE_GPU)
+    assert not merged.exists(), "phase_install must free the merge even on a read raise"
+
+
+def test_ablation_frees_merge_on_read_exception(tmp_path, monkeypatch):
+    """MAJOR 1 (round 5): the same exception-safe cleanup for phase_ablation."""
+    mod = _load_dispatcher()
+    cell = i653.ArmBCell(
+        behavior="sycophancy", source="florist", rung=i653.ABLATION_RUNG, seed=i653.HEADLINE_SEED
+    )
+    sel = tmp_path / "armB" / "adapters" / cell.cell_id / "checkpoint-10"
+    merged = sel / "merged_for_read"
+    merged.mkdir(parents=True, exist_ok=True)
+    (merged / "model.safetensors").write_text("merged")
+    man_dir = tmp_path / "armB" / "selected_checkpoints"
+    man_dir.mkdir(parents=True, exist_ok=True)
+    (man_dir / f"{cell.cell_id}.json").write_text(
+        json.dumps(
+            {
+                "cell_id": cell.cell_id,
+                "dose_selection": True,
+                "selected_checkpoint_step": 10,
+                "selected_checkpoint_dir": str(sel),
+                "selected_model_path": None,
+                "dropped_non_install": False,
+            }
+        )
+    )
+
+    def _boom(c, *, out_root):
+        assert merged.exists()
+        raise RuntimeError("simulated ablation read failure")
+
+    monkeypatch.setattr(mod, "_ablation_gpu_read", _boom)
+
+    with pytest.raises(RuntimeError, match="simulated ablation read failure"):
+        mod.phase_ablation([cell], out_root=tmp_path, mode=i653.RUN_MODE_GPU)
+    assert not merged.exists(), "phase_ablation must free the merge even on a read raise"
+
+
+def test_delete_read_merge_for_cell_rejects_out_of_tree_manifest(tmp_path):
+    """MAJOR 2 (round 5): a corrupt/hand-edited manifest whose
+    ``selected_checkpoint_dir`` points OUTSIDE the cell's adapter tree must NOT
+    drive shutil.rmtree there. The helper raises and the victim merge survives."""
+    mod = _load_dispatcher()
+    cell = i653.ArmBCell(
+        behavior="sycophancy", source="florist", rung="r16", seed=i653.HEADLINE_SEED
+    )
+    # A victim merge dir OUTSIDE the run's out_root.
+    victim = tmp_path / "victim" / "checkpoint-5" / "merged_for_read"
+    victim.mkdir(parents=True, exist_ok=True)
+    (victim / "precious.safetensors").write_text("DO NOT DELETE")
+
+    man_dir = tmp_path / "armB" / "selected_checkpoints"
+    man_dir.mkdir(parents=True, exist_ok=True)
+    (man_dir / f"{cell.cell_id}.json").write_text(
+        json.dumps(
+            {
+                "cell_id": cell.cell_id,
+                "dose_selection": True,
+                "selected_checkpoint_step": 5,
+                "selected_checkpoint_dir": str(tmp_path / "victim" / "checkpoint-5"),
+                "selected_model_path": None,
+                "dropped_non_install": False,
+            }
+        )
+    )
+    with pytest.raises(RuntimeError, match="NOT contained in the cell adapter tree"):
+        mod._delete_read_merge_for_cell(cell, tmp_path)
+    assert victim.exists(), "out-of-tree victim merge must survive a poisoned manifest"
+    assert (victim / "precious.safetensors").exists()
+
+
+def test_delete_read_merge_for_cell_rejects_non_checkpoint_name(tmp_path):
+    """MAJOR 2 (round 5): even a path INSIDE the cell tree but NOT named
+    ``checkpoint-*`` is refused (a poisoned manifest can't point at e.g. the
+    adapter root or a sibling dir)."""
+    mod = _load_dispatcher()
+    cell = i653.ArmBCell(
+        behavior="sycophancy", source="florist", rung="r16", seed=i653.HEADLINE_SEED
+    )
+    cell_dir = tmp_path / "armB" / "adapters" / cell.cell_id
+    bad = cell_dir / "not_a_checkpoint"
+    (bad / "merged_for_read").mkdir(parents=True, exist_ok=True)
+    man_dir = tmp_path / "armB" / "selected_checkpoints"
+    man_dir.mkdir(parents=True, exist_ok=True)
+    (man_dir / f"{cell.cell_id}.json").write_text(
+        json.dumps(
+            {
+                "cell_id": cell.cell_id,
+                "dose_selection": True,
+                "selected_checkpoint_step": 5,
+                "selected_checkpoint_dir": str(bad),
+                "selected_model_path": None,
+                "dropped_non_install": False,
+            }
+        )
+    )
+    with pytest.raises(RuntimeError, match="NOT contained in the cell adapter tree"):
+        mod._delete_read_merge_for_cell(cell, tmp_path)
+    assert (bad / "merged_for_read").exists()

@@ -62,7 +62,8 @@ Run modes (round-2 — NO silent placeholders; CLAUDE.md "Fail fast"):
 Smoke (CPU substitute):
 
     uv run python scripts/issue_653/i653_dispatch.py --smoke --cells 1 --seeds 1 \\
-        --phases build,analyze --out-root /tmp/issue653_smoke
+        --phases build,train,select_checkpoint,dx,install,ablation,analyze \\
+        --out-root /tmp/issue653_smoke    # full Arm-B CPU-stub chain
     uv run python scripts/issue_653/i653_dispatch.py --smoke --cells 1 --seeds 1 \\
         --phase arm_a --cpu-stub     # ridge fit on a synthetic linear map
     uv run python scripts/issue_653/i653_dispatch.py --verify-imports  # AST import gate
@@ -1299,7 +1300,24 @@ def _trait_rb_for_cell(cell, source_prompt: str, *, out_root: Path):
 def _merge_adapter_for_read(adapter_dir: Path, cell) -> str:
     """Resolve a model path for the trained on-policy read: the full-FT
     checkpoint dir for the full rung, or a base+adapter merge dir for LoRA rungs.
-    Merges to a temp dir so vLLM/HF load it as a plain CausalLM."""
+    Merges to ``merged_for_read/`` so vLLM/HF load it as a plain CausalLM.
+
+    Completeness sentinel via atomic rename (BLOCKER 1, #653 round 5). A
+    merge-time ``OSError errno=122 EDQUOT`` mid-``save_pretrained`` (the exact
+    spot the round-3 crash hit, on the RunPod MooseFS ~130 GB per-pod quota)
+    must NOT leave a partial ``merged_for_read/`` that a later relaunch silently
+    accepts as valid (silent corruption). So:
+
+      1. Merge into a SIBLING ``merged_for_read.tmp/`` first.
+      2. After ``save_pretrained`` returns, ``os.rename(.tmp, merged_for_read)``
+         — atomic on the same MooseFS filesystem, so the final dir EXISTS only
+         once the merge fully succeeded. The short-circuit on ``merged.exists()``
+         is therefore a valid completeness check (a partial merge is in ``.tmp/``,
+         never under ``merged_for_read/``).
+      3. On ANY exception during the merge, the inner try/finally deletes the
+         partial ``.tmp/`` BEFORE re-raising (defense in depth: even if a caller's
+         finally somehow doesn't fire, no partial leaks).
+    """
     if cell.is_full_ft:
         if not adapter_dir.exists():
             raise FileNotFoundError(f"full-FT checkpoint missing for dx read: {adapter_dir}")
@@ -1310,17 +1328,31 @@ def _merge_adapter_for_read(adapter_dir: Path, cell) -> str:
 
     merged = adapter_dir / "merged_for_read"
     if merged.exists():
+        # merged_for_read/ exists ONLY after a successful atomic rename → complete.
         return str(merged)
     if not adapter_dir.exists():
         raise FileNotFoundError(f"LoRA adapter missing for dx read: {adapter_dir}")
-    base = AutoModelForCausalLM.from_pretrained(
-        i653.BASE_MODEL, torch_dtype=torch.bfloat16, trust_remote_code=True
-    )
-    model = PeftModel.from_pretrained(base, str(adapter_dir)).merge_and_unload()
-    model.save_pretrained(str(merged))
-    AutoTokenizer.from_pretrained(i653.BASE_MODEL, trust_remote_code=True).save_pretrained(
-        str(merged)
-    )
+    tmp = adapter_dir / "merged_for_read.tmp"
+    # A prior crashed merge may have left a partial .tmp/ — start clean.
+    if tmp.exists():
+        shutil.rmtree(tmp)
+    try:
+        base = AutoModelForCausalLM.from_pretrained(
+            i653.BASE_MODEL, torch_dtype=torch.bfloat16, trust_remote_code=True
+        )
+        model = PeftModel.from_pretrained(base, str(adapter_dir)).merge_and_unload()
+        model.save_pretrained(str(tmp))
+        AutoTokenizer.from_pretrained(i653.BASE_MODEL, trust_remote_code=True).save_pretrained(
+            str(tmp)
+        )
+    except BaseException:
+        # Clean up the partial .tmp/ on ANY merge failure (EDQUOT, OOM, KeyboardInterrupt)
+        # before re-raising — never leave a partial behind for a relaunch to mis-accept.
+        if tmp.exists():
+            shutil.rmtree(tmp, ignore_errors=True)
+        raise
+    # Atomic promote: merged_for_read/ now exists ⇔ the merge fully succeeded.
+    os.rename(str(tmp), str(merged))
     return str(merged)
 
 
@@ -1339,16 +1371,26 @@ def _delete_merged_for_read(adapter_dir: Path) -> bool:
     dx / install / ablation / analyze reads (``_merge_adapter_for_read`` is
     idempotent: it short-circuits when the dir exists, else re-merges).
 
+    Also removes a stray ``merged_for_read.tmp/`` (a partial merge a crashed
+    ``_merge_adapter_for_read`` may have left, #653 round 5) so the resume sweep
+    + cleanup-as-you-go leave NO partial behind for a relaunch to mis-accept.
+
     Returns True iff a dir was removed. ``shutil.rmtree`` is intentionally NOT
     swallowing FileNotFoundError silently — a missing dir is the expected no-op
     (returns False), but any OTHER OSError (a permission / quota fault) is
     re-raised loud (CLAUDE.md "Fail fast — never hide failures")."""
+    removed = False
+    tmp = adapter_dir / "merged_for_read.tmp"
+    if tmp.exists():
+        shutil.rmtree(tmp)
+        print(f"  [select_checkpoint] freed partial merge dir {tmp}", flush=True)
+        removed = True
     merged = adapter_dir / "merged_for_read"
-    if not merged.exists():
-        return False
-    shutil.rmtree(merged)
-    print(f"  [select_checkpoint] freed merge dir {merged}", flush=True)
-    return True
+    if merged.exists():
+        shutil.rmtree(merged)
+        print(f"  [select_checkpoint] freed merge dir {merged}", flush=True)
+        removed = True
+    return removed
 
 
 def _sweep_stale_merges_under_cell(adapter_dir: Path) -> int:
@@ -1396,7 +1438,9 @@ def _resolve_read_model_path(cell, out_root: Path) -> str:
     dropped cell. Marker (band-stop) + full-FT (no dose) read their final model.
 
     Resolution order:
-      1. dose cell with a manifest → its ``selected_model_path`` (merged).
+      1. dose cell with a manifest → re-merge ``selected_checkpoint_dir`` on demand
+         (``selected_model_path`` is vestigial/always None; the merge is re-created
+         here because select_checkpoint deletes each probe's merge, #653 round 4).
       2. dose cell, manifest marks dropped → RuntimeError (must not be read).
       3. dose cell, NO manifest → fall back to the final adapter (select phase
          skipped, e.g. a --phase dx smoke without select_checkpoint) + WARN.
@@ -1456,9 +1500,35 @@ def _delete_read_merge_for_cell(cell, out_root: Path) -> bool:
         ckpt = man.get("selected_checkpoint_dir")
         if not ckpt:
             return False
+        # Path-containment validation (MAJOR 2, #653 round 5): the manifest is a
+        # file on disk a corrupt/hand-edited resume could point at an arbitrary
+        # dir; this drives shutil.rmtree, so REFUSE to delete unless ckpt is a
+        # descendant of this cell's adapter tree AND a checkpoint-* dir. Without
+        # this a poisoned manifest could rmtree a merged_for_read/ outside the run.
+        _assert_checkpoint_under_cell(Path(ckpt), cell, out_root)
         return _delete_merged_for_read(Path(ckpt))
     # Marker / non-dose LoRA: the read merge lives under the final adapter dir.
     return _delete_merged_for_read(out_root / "armB" / "adapters" / cell.cell_id)
+
+
+def _assert_checkpoint_under_cell(ckpt: Path, cell, out_root: Path) -> None:
+    """Raise unless ``ckpt`` is a ``checkpoint-*`` dir DIRECTLY under this cell's
+    adapter tree ``out_root/armB/adapters/<cell_id>/`` (MAJOR 2, #653 round 5).
+
+    The manifest's ``selected_checkpoint_dir`` is read off disk and feeds
+    ``shutil.rmtree`` (via ``_delete_merged_for_read``); a corrupt or hand-edited
+    manifest must NEVER be able to drive a delete outside the run's own tree. Both
+    sides are ``.resolve()``-d so symlink / ``..`` traversal cannot smuggle a path
+    past the containment check."""
+    cell_dir = (out_root / "armB" / "adapters" / cell.cell_id).resolve()
+    ckpt_r = ckpt.resolve()
+    if ckpt_r.parent != cell_dir or not ckpt_r.name.startswith("checkpoint-"):
+        raise RuntimeError(
+            f"_delete_read_merge_for_cell: refusing to delete a merge under a "
+            f"checkpoint path NOT contained in the cell adapter tree. "
+            f"selected_checkpoint_dir={ckpt_r} is not a checkpoint-* dir directly "
+            f"under {cell_dir} (corrupt/poisoned resume manifest for {cell.cell_id})."
+        )
 
 
 def _marker_unembedding_row():
@@ -1630,16 +1700,21 @@ def phase_select_checkpoint(cells, *, out_root: Path, mode: str) -> dict:
                 continue  # no checkpoint at/below this dose step yet, or already probed
             seen_snaps.add(snap)
             ckpt_dir = adapter_dir / f"checkpoint-{snap}"
-            ckpt_model = _merge_adapter_for_read(ckpt_dir, c)
+            # The merge is INSIDE the try (BLOCKER 1, #653 round 5): a merge-time
+            # EDQUOT (the exact round-3 crash spot) must trigger the finally so its
+            # partial state is freed. _merge_adapter_for_read self-cleans its own
+            # .tmp/ on raise (defense in depth); the finally then sweeps any leftover.
+            ckpt_model = None
             try:
+                ckpt_model = _merge_adapter_for_read(ckpt_dir, c)
                 install = _install_content_gpu(c, out_root=out_root, trained_path=ckpt_model)
             finally:
-                # Cleanup-as-you-go (BLOCKER 1, #653 round 4): free THIS probe's
-                # ~15 GB merge the instant its install read returns (or raises),
-                # before merging the next checkpoint. At most ONE merge exists on
-                # disk at a time during selection (vs the round-3 EDQUOT crash
-                # that left 8+ merges = 192 GB on a 130 GB quota). The eventually
-                # -selected checkpoint re-merges on demand downstream via
+                # Cleanup-as-you-go (BLOCKER 1, #653 round 4+5): free THIS probe's
+                # ~15 GB merge the instant its install read returns OR raises (incl.
+                # a merge-time raise), before merging the next checkpoint. At most
+                # ONE merge exists on disk at a time during selection (vs the round-3
+                # EDQUOT crash that left 8+ merges = 192 GB on a 130 GB quota). The
+                # eventually-selected checkpoint re-merges on demand downstream via
                 # _resolve_read_model_path (idempotent _merge_adapter_for_read).
                 _delete_merged_for_read(ckpt_dir)
             passed, detail = i653._install_pass_ok(install, c.behavior)
@@ -1741,87 +1816,96 @@ def phase_dx(cells, *, out_root: Path, mode: str) -> dict:
     repo_root = _resolve_repo_root()
 
     for c in cells:
-        if mode == i653.RUN_MODE_CPU_STUB:
-            cloud, r_B, n_rows = _dx_cpu_stub_cloud(c)
-        else:
-            # §6Δ.3: geometry is NOT read off a cell select_checkpoint dropped (no
-            # floor-clearing checkpoint) — skip it (analyze's install-floor gate
-            # records the drop from the install JSON written for it).
-            select_man = _read_select_manifest(c, out_root)
-            if select_man is not None and select_man.get("dropped_non_install"):
+        # Per-cell try/finally (MAJOR 1, #653 round 5): the read-merge cleanup must
+        # fire even when the GPU read / SVD / JSON write RAISES, not only on the
+        # normal path — a mid-cell failure otherwise leaks this cell's ~15 GB merge
+        # and re-opens the per-pod disk-accumulation class on a retry. No-op on CPU
+        # stub (no merge) / full-FT / dropped cells (helper returns False).
+        try:
+            if mode == i653.RUN_MODE_CPU_STUB:
+                cloud, r_B, n_rows = _dx_cpu_stub_cloud(c)
+            else:
+                # §6Δ.3: geometry is NOT read off a cell select_checkpoint dropped (no
+                # floor-clearing checkpoint) — skip it (analyze's install-floor gate
+                # records the drop from the install JSON written for it).
+                select_man = _read_select_manifest(c, out_root)
+                if select_man is not None and select_man.get("dropped_non_install"):
+                    print(
+                        f"  [dx] {c.cell_id}: SKIP — dropped by select_checkpoint "
+                        f"(no floor-clearing checkpoint, §6Δ.3)",
+                        flush=True,
+                    )
+                    continue
+                cloud, r_B, n_rows = _dx_gpu_cloud(c, out_root=out_root)
+            # Persist the Δx cloud + r_B (analysis tensors; the off-pod cluster
+            # bootstrap + cross-arm cosine read these — upload-policy.md: plan-named
+            # downstream inputs upload before teardown via phase_upload).
+            np.savez(
+                tensors_dir / f"{c.cell_id}.npz",
+                cloud=np.asarray(cloud, dtype=np.float32),
+                r_B=np.asarray(r_B, dtype=np.float32),
+            )
+            if n_rows < i653.MIN_SPECTRUM_ROWS:
+                # §3.3: a cell with too few rows is spectrum-underdetermined, not labeled.
+                payload = {
+                    "cell_id": c.cell_id,
+                    "cell_group": c.cell_group,
+                    "behavior": c.behavior,
+                    "source": c.source,
+                    "rung": c.rung,
+                    "seed": c.seed,
+                    "n_rows": int(n_rows),
+                    "spectrum_underdetermined": True,
+                    "mode": mode,
+                    "metadata": i653.result_metadata(repo_root, {"phase": "dx"}),
+                }
+            else:
+                sv = spectral.svd_of_cloud(cloud)
+                dvs = spectral.spectral_dvs(sv)
+                top = spectral.top_direction(cloud)
+                ci = spectral.norm_matched_random_cos_ci(r_B, n_directions=500, seed=c.seed)
+                payload = {
+                    "cell_id": c.cell_id,
+                    "cell_group": c.cell_group,
+                    "behavior": c.behavior,
+                    "source": c.source,
+                    "rung": c.rung,
+                    "seed": c.seed,
+                    "n_rows": int(n_rows),
+                    "top_share_lambda": dvs["top_share_lambda"],
+                    "pr_lambda": dvs["pr_lambda"],
+                    "rank_k_at_90": dvs["rank_k_at_90"],
+                    "cos_top_to_rb": spectral.cosine(top, r_B),
+                    "random_ci_high": ci["ci_high"],
+                    "singular_values": sv.tolist(),
+                    # Δx leading direction — the cross-arm ρ↔Δx cosine reads this
+                    # (§6 cross-arm hook / §6.5 deliverable 6). d_model floats.
+                    "dx_top_direction": np.asarray(top, dtype=np.float64).tolist(),
+                    "tensor_path": str((tensors_dir / f"{c.cell_id}.npz").relative_to(out_root)),
+                    "mode": mode,
+                    "metadata": i653.result_metadata(repo_root, {"phase": "dx"}),
+                }
+            out_path = out_dir / f"dx_geometry_{c.cell_id}.json"
+            out_path.write_text(json.dumps(payload, indent=1))
+            written.append(str(out_path))
+            if payload.get("spectrum_underdetermined"):
+                print(f"  [dx] {c.cell_id}: underdetermined (rows={n_rows})", flush=True)
+            else:
                 print(
-                    f"  [dx] {c.cell_id}: SKIP — dropped by select_checkpoint "
-                    f"(no floor-clearing checkpoint, §6Δ.3)",
+                    f"  [dx] {c.cell_id}: top_share={payload['top_share_lambda']:.3f} "
+                    f"PR_λ={payload['pr_lambda']:.2f} rank-K={payload['rank_k_at_90']} "
+                    f"rows={n_rows}",
                     flush=True,
                 )
-                continue
-            cloud, r_B, n_rows = _dx_gpu_cloud(c, out_root=out_root)
-        # Persist the Δx cloud + r_B (analysis tensors; the off-pod cluster
-        # bootstrap + cross-arm cosine read these — upload-policy.md: plan-named
-        # downstream inputs upload before teardown via phase_upload).
-        np.savez(
-            tensors_dir / f"{c.cell_id}.npz",
-            cloud=np.asarray(cloud, dtype=np.float32),
-            r_B=np.asarray(r_B, dtype=np.float32),
-        )
-        if n_rows < i653.MIN_SPECTRUM_ROWS:
-            # §3.3: a cell with too few rows is spectrum-underdetermined, not labeled.
-            payload = {
-                "cell_id": c.cell_id,
-                "cell_group": c.cell_group,
-                "behavior": c.behavior,
-                "source": c.source,
-                "rung": c.rung,
-                "seed": c.seed,
-                "n_rows": int(n_rows),
-                "spectrum_underdetermined": True,
-                "mode": mode,
-                "metadata": i653.result_metadata(repo_root, {"phase": "dx"}),
-            }
-        else:
-            sv = spectral.svd_of_cloud(cloud)
-            dvs = spectral.spectral_dvs(sv)
-            top = spectral.top_direction(cloud)
-            ci = spectral.norm_matched_random_cos_ci(r_B, n_directions=500, seed=c.seed)
-            payload = {
-                "cell_id": c.cell_id,
-                "cell_group": c.cell_group,
-                "behavior": c.behavior,
-                "source": c.source,
-                "rung": c.rung,
-                "seed": c.seed,
-                "n_rows": int(n_rows),
-                "top_share_lambda": dvs["top_share_lambda"],
-                "pr_lambda": dvs["pr_lambda"],
-                "rank_k_at_90": dvs["rank_k_at_90"],
-                "cos_top_to_rb": spectral.cosine(top, r_B),
-                "random_ci_high": ci["ci_high"],
-                "singular_values": sv.tolist(),
-                # Δx leading direction — the cross-arm ρ↔Δx cosine reads this
-                # (§6 cross-arm hook / §6.5 deliverable 6). d_model floats.
-                "dx_top_direction": np.asarray(top, dtype=np.float64).tolist(),
-                "tensor_path": str((tensors_dir / f"{c.cell_id}.npz").relative_to(out_root)),
-                "mode": mode,
-                "metadata": i653.result_metadata(repo_root, {"phase": "dx"}),
-            }
-        out_path = out_dir / f"dx_geometry_{c.cell_id}.json"
-        out_path.write_text(json.dumps(payload, indent=1))
-        written.append(str(out_path))
-        if payload.get("spectrum_underdetermined"):
-            print(f"  [dx] {c.cell_id}: underdetermined (rows={n_rows})", flush=True)
-        else:
-            print(
-                f"  [dx] {c.cell_id}: top_share={payload['top_share_lambda']:.3f} "
-                f"PR_λ={payload['pr_lambda']:.2f} rank-K={payload['rank_k_at_90']} "
-                f"rows={n_rows}",
-                flush=True,
-            )
-        # Free this cell's ~15 GB read merge before the next cell merges its own
-        # (per-cell cleanup-as-you-go, #653 round 4 — keeps ≤1 merge resident
-        # across the 12-cell phase; install re-merges on demand). No-op on CPU
-        # stub (no merge produced) and full-FT (reads the FT dir directly).
-        if mode != i653.RUN_MODE_CPU_STUB:
-            _delete_read_merge_for_cell(c, out_root)
+        finally:
+            # Free this cell's ~15 GB read merge before the next cell merges its own
+            # (per-cell cleanup-as-you-go, #653 round 4 — keeps ≤1 merge resident
+            # across the 12-cell phase; install re-merges on demand). In the finally
+            # so a mid-cell GPU/SVD/write RAISE frees it too (MAJOR 1, #653 round 5).
+            # No-op on CPU stub (no merge produced) and full-FT (reads the FT dir
+            # directly); harmless False on a dropped cell (no merge).
+            if mode != i653.RUN_MODE_CPU_STUB:
+                _delete_read_merge_for_cell(c, out_root)
     return {"dx_files": written, "n_cells": len(cells)}
 
 
@@ -2353,48 +2437,55 @@ def phase_install(cells, *, out_root: Path, mode: str) -> dict:
     written: list[str] = []
     repo_root = _resolve_repo_root()
     for c in cells:
-        # §6Δ.3: a cell select_checkpoint marked DROPPED (no checkpoint cleared the
-        # install floor) has no usable read model — record the drop, never attempt
-        # a read off it. (CPU-stub never drops; the manifest carries dropped=False.)
-        select_man = _read_select_manifest(c, out_root)
-        if select_man is not None and select_man.get("dropped_non_install"):
-            install = {
-                "dv_kind": "judge_rate_plus_gain",
+        # Per-cell try/finally (MAJOR 1, #653 round 5): the read-merge cleanup must
+        # fire even when the GPU read / judge call / JSON write RAISES — a mid-cell
+        # failure otherwise leaks this cell's merge and re-opens the per-pod disk-
+        # accumulation class on a retry / partial rerun.
+        try:
+            # §6Δ.3: a cell select_checkpoint marked DROPPED (no checkpoint cleared
+            # the install floor) has no usable read model — record the drop, never
+            # attempt a read off it. (CPU-stub never drops; manifest dropped=False.)
+            select_man = _read_select_manifest(c, out_root)
+            if select_man is not None and select_man.get("dropped_non_install"):
+                install = {
+                    "dv_kind": "judge_rate_plus_gain",
+                    "behavior": c.behavior,
+                    "judge_rate_gain": None,  # _install_pass_ok FAILS on None → dropped
+                    "dropped_non_install": True,
+                    "select_detail": select_man.get("select_detail"),
+                    "note": "DROPPED by select_checkpoint (no floor-clearing checkpoint, §6Δ.3)",
+                }
+            elif mode == i653.RUN_MODE_CPU_STUB:
+                install = _install_cpu_stub(c)
+            elif c.behavior == "marker":
+                install = _install_marker_gpu(c, out_root=out_root)
+            else:
+                # Round-3: real sycophancy/EM dual-DV install read (plan §6) —
+                # judge-scored on-policy behavior RATE (primary) + length-normalized
+                # trained−base logP of the model's OWN judged-positive completions
+                # (secondary). Sycophancy rate via the #612 agreement judge; EM rate
+                # via the Betley misalignment judge (eval/alignment.py). Reads the
+                # §6Δ.3 selected checkpoint via _resolve_read_model_path (default arg).
+                install = _install_content_gpu(c, out_root=out_root)
+            payload = {
+                "cell_id": c.cell_id,
                 "behavior": c.behavior,
-                "judge_rate_gain": None,  # _install_pass_ok FAILS on None → dropped
-                "dropped_non_install": True,
-                "select_detail": select_man.get("select_detail"),
-                "note": "DROPPED by select_checkpoint (no floor-clearing checkpoint, §6Δ.3)",
+                "rung": c.rung,
+                "seed": c.seed,
+                "install": install,
+                "mode": mode,
+                "metadata": i653.result_metadata(repo_root, {"phase": "install"}),
             }
-        elif mode == i653.RUN_MODE_CPU_STUB:
-            install = _install_cpu_stub(c)
-        elif c.behavior == "marker":
-            install = _install_marker_gpu(c, out_root=out_root)
-        else:
-            # Round-3: real sycophancy/EM dual-DV install read (plan §6) —
-            # judge-scored on-policy behavior RATE (primary) + length-normalized
-            # trained−base logP of the model's OWN judged-positive completions
-            # (secondary). Sycophancy rate via the #612 agreement judge; EM rate
-            # via the Betley misalignment judge (eval/alignment.py). Reads the
-            # §6Δ.3 selected checkpoint via _resolve_read_model_path (default arg).
-            install = _install_content_gpu(c, out_root=out_root)
-        payload = {
-            "cell_id": c.cell_id,
-            "behavior": c.behavior,
-            "rung": c.rung,
-            "seed": c.seed,
-            "install": install,
-            "mode": mode,
-            "metadata": i653.result_metadata(repo_root, {"phase": "install"}),
-        }
-        out_path = out_dir / f"install_{c.cell_id}.json"
-        out_path.write_text(json.dumps(payload, indent=1))
-        written.append(str(out_path))
-        # Free this cell's read merge before the next cell (per-cell cleanup-as-
-        # you-go, #653 round 4); ablation re-merges its rank-16 cells on demand.
-        # No-op on CPU stub / dropped cells / full-FT (no merge produced).
-        if mode != i653.RUN_MODE_CPU_STUB:
-            _delete_read_merge_for_cell(c, out_root)
+            out_path = out_dir / f"install_{c.cell_id}.json"
+            out_path.write_text(json.dumps(payload, indent=1))
+            written.append(str(out_path))
+        finally:
+            # Free this cell's read merge before the next cell (per-cell cleanup-as-
+            # you-go, #653 round 4); ablation re-merges its rank-16 cells on demand.
+            # In the finally so a mid-cell raise frees it too (MAJOR 1, #653 round 5).
+            # No-op on CPU stub / dropped cells / full-FT (no merge produced).
+            if mode != i653.RUN_MODE_CPU_STUB:
+                _delete_read_merge_for_cell(c, out_root)
     print(f"  [install] wrote {len(written)} install JSONs ({mode})", flush=True)
     return {"install_files": written, "mode": mode}
 
@@ -2638,30 +2729,36 @@ def phase_ablation(cells, *, out_root: Path, mode: str) -> dict:
         return {"ablation_files": [], "n_cells": 0}
     written: list[str] = []
     for c in abl_cells:
-        if mode == i653.RUN_MODE_CPU_STUB:
-            abl = _ablation_cpu_stub(c)
-        else:
-            abl = _ablation_gpu_read(c, out_root=out_root)
-        payload = {
-            "cell_id": c.cell_id,
-            "cell_group": c.cell_group,
-            "behavior": c.behavior,
-            "source": c.source,
-            "rung": c.rung,
-            "seed": c.seed,
-            "top_k_ablated": i653.ABLATION_TOP_K,
-            "ablation": abl,
-            "mode": mode,
-            "metadata": i653.result_metadata(repo_root, {"phase": "ablation"}),
-        }
-        out_path = out_dir / f"ablation_{c.cell_id}.json"
-        out_path.write_text(json.dumps(payload, indent=1))
-        written.append(str(out_path))
-        print(f"  [ablation] {c.cell_id} ({mode}): wrote {out_path.name}", flush=True)
-        # Free this cell's read merge before the next ablation cell (per-cell
-        # cleanup-as-you-go, #653 round 4). No-op on CPU stub / full-FT.
-        if mode != i653.RUN_MODE_CPU_STUB:
-            _delete_read_merge_for_cell(c, out_root)
+        # Per-cell try/finally (MAJOR 1, #653 round 5): the read-merge cleanup must
+        # fire even when the GPU ablation read / re-judge / JSON write RAISES, not
+        # only on the normal path — a mid-cell failure otherwise leaks the merge.
+        try:
+            if mode == i653.RUN_MODE_CPU_STUB:
+                abl = _ablation_cpu_stub(c)
+            else:
+                abl = _ablation_gpu_read(c, out_root=out_root)
+            payload = {
+                "cell_id": c.cell_id,
+                "cell_group": c.cell_group,
+                "behavior": c.behavior,
+                "source": c.source,
+                "rung": c.rung,
+                "seed": c.seed,
+                "top_k_ablated": i653.ABLATION_TOP_K,
+                "ablation": abl,
+                "mode": mode,
+                "metadata": i653.result_metadata(repo_root, {"phase": "ablation"}),
+            }
+            out_path = out_dir / f"ablation_{c.cell_id}.json"
+            out_path.write_text(json.dumps(payload, indent=1))
+            written.append(str(out_path))
+            print(f"  [ablation] {c.cell_id} ({mode}): wrote {out_path.name}", flush=True)
+        finally:
+            # Free this cell's read merge before the next ablation cell (per-cell
+            # cleanup-as-you-go, #653 round 4). In the finally so a mid-cell raise
+            # frees it too (MAJOR 1, #653 round 5). No-op on CPU stub / full-FT.
+            if mode != i653.RUN_MODE_CPU_STUB:
+                _delete_read_merge_for_cell(c, out_root)
     return {"ablation_files": written, "n_cells": len(abl_cells)}
 
 
