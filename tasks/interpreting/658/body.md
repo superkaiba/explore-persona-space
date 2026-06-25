@@ -2,7 +2,8 @@
 title: Base-model foundation for the leakage predictor on Qwen2.5-7B (A3.2/A3.3/A3.5
   + recipe lock)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-24T08:21:29Z'
 has_clean_result: false
 origin_prompt: Just run on qwen2.5 7b
