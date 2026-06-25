@@ -6,10 +6,24 @@
 % PARAMETERIZED template for an EPS clean-result paper. The authoring agent
 % copies this to docs/papers/issue_<N>/issue_<N>.tex and fills the {{...}}
 % placeholders + the section bodies. It NEVER edits the preamble — the preamble
-% is \input verbatim. The authoring agent copies ../_template/preamble.tex into
-% the per-task dir alongside issue_<N>.tex so the \input{preamble.tex} below
-% resolves (build_paper.py builds in-place in the paper dir; it does NOT rewrite
-% the \input path or \graphicspath).
+% is \input verbatim.
+%
+% preamble.tex IS TEMPLATE-OWNED, NOT author-owned. The authoring agent copies
+% ../_template/preamble.tex into the per-task dir alongside issue_<N>.tex so the
+% \input{preamble.tex} below resolves, but build_paper.py also RE-COPIES the
+% template preamble.tex into the paper dir at the START of every build
+% (_refresh_template_owned_files) so a per-task copy that predates a template
+% change (e.g. a newly-added macro/environment like \epsexample) can never make
+% the build fail against a stale copy (incident #657). Do NOT edit the per-task
+% preamble.tex — your edit will be overwritten on the next build; preamble
+% changes go in ../_template/preamble.tex. (build_paper.py builds in-place in
+% the paper dir; it does NOT rewrite the \input path or \graphicspath.)
+%
+% The pandoc Lua filter (eps_paper_filter.lua) is likewise template-owned, but
+% build_paper.py loads it DIRECTLY from ../_template/ at build time, so there is
+% no per-task copy in the build path — a template Lua update reaches every build
+% automatically. Any eps_paper_filter.lua sitting in a per-task dir is an unused
+% leftover and is not read by the build.
 %
 % v1 SCOPE: numbers are written as LITERALS in the section bodies (the
 % analyzer's existing numeric-fidelity re-extraction is the grounding
