@@ -26,7 +26,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_657.md](https://github.com/superkaiba/explore-persona-space/blob/a03779a3f4efb6b5be2c7e3d21aa76c97074659a/docs/methodology/issue_657.md) · [gist](https://gist.github.com/superkaiba/66eb6ccd50653b152024e3f3022745e0)
+**Methodology:** [docs/methodology/issue_657.md](https://github.com/superkaiba/explore-persona-space/blob/5c8105fb4c0ba3a0d4ea03e704dadff62e2e7e17/docs/methodology/issue_657.md) · [gist](https://gist.github.com/superkaiba/66eb6ccd50653b152024e3f3022745e0)
 
 ## Takeaways
 
@@ -178,7 +178,7 @@ The higher-N pooled secondary read re-uses the per-behavior join outputs only �
 
 ## Reproducibility
 
-**Methodology reference:** [docs/methodology/issue_657.md](https://github.com/superkaiba/explore-persona-space/blob/a03779a3f4efb6b5be2c7e3d21aa76c97074659a/docs/methodology/issue_657.md) · [gist](https://gist.github.com/superkaiba/66eb6ccd50653b152024e3f3022745e0) — auto-generated, findings-blind; full conditions + hyperparameter table + worked examples.
+**Methodology reference:** [docs/methodology/issue_657.md](https://github.com/superkaiba/explore-persona-space/blob/5c8105fb4c0ba3a0d4ea03e704dadff62e2e7e17/docs/methodology/issue_657.md) · [gist](https://gist.github.com/superkaiba/66eb6ccd50653b152024e3f3022745e0) — auto-generated, findings-blind; full conditions + hyperparameter table + worked examples.
 
 **Parameters:**
 
