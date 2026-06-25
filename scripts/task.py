@@ -1364,8 +1364,11 @@ def main() -> None:
     )
     p.add_argument(
         "--summary",
+        "--rationale",
+        dest="summary",
         default=None,
-        help="optional updated summary; defaults to the original raised summary",
+        help="optional updated summary; defaults to the original raised summary "
+        "(--rationale is an accepted alias, matching defer-concern's flag name)",
     )
     p.set_defaults(func=cmd_address_concern)
 
