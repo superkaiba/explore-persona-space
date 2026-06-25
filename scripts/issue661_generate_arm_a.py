@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF003
+# ruff: noqa: RUF001, RUF002, RUF003
 # Intentional Unicode (ĉ, ρ, →, ×) in scientific docstrings + log messages.
 """Issue #661 P1 (POD GPU): arm-A on-policy generation under pos/neg instruction.
 

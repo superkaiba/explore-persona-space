@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF003
+# ruff: noqa: RUF002, RUF003
 # Intentional Unicode (ĉ, ρ, →, ×, ‖) in scientific docstrings + log messages.
 """Issue #661 P3 (POD GPU): extract r_B^A, r_B^C, and the instruction context axis.
 
@@ -373,8 +373,9 @@ def main() -> int:
             dir_out / f"r_b_{behavior}.pt",
         )
         logger.info(
-            "%s: extracted r_B^A/r_B^C/c_pos/c_neg (28,%d) in %.1fs (pos=%d neg=%d survivors)",
+            "%s: extracted r_B^A/r_B^C/c_pos/c_neg (%d,%d) in %.1fs (pos=%d neg=%d survivors)",
             behavior,
+            n_layers,
             hidden,
             time.time() - t0,
             res["n_pos_survivors"],
