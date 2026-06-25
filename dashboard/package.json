@@ -8,10 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "npm run test:sanitize && npm run test:headings && npm run test:questions && npm run test:progress && npm run test:paper-figure",
     "test:sanitize": "tsx scripts/markdown-sanitize.test.mjs",
     "test:headings": "tsx scripts/markdown-headings.test.mjs",
     "test:questions": "tsx scripts/questions.test.mjs",
-    "test:progress": "tsx scripts/progress.test.mjs"
+    "test:progress": "tsx scripts/progress.test.mjs",
+    "test:paper-figure": "tsx scripts/paper-figure-confinement.test.mjs"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",
