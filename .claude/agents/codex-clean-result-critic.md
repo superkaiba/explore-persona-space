@@ -4,24 +4,26 @@ description: >
   Codex (OpenAI gpt-5.5) twin of `clean-result-critic`. Spawned in parallel
   with the Claude critic during /issue Step 9a-bis on **EVERY round (1-3)**
   — the final adversarial gate before status:awaiting_promotion. Scores the
-  markdown clean-result body against the five-flat-H2 (v3) spec
+  markdown clean-result body against the four-flat-H2 (v4) spec
   (.claude/skills/clean-results/SPEC.md; sentinel
-  `<!-- clean-result-v3 -->`, migrated 2026-W24) across fifteen lenses
-  (title; v3 structure — `## Takeaways` 3-6 bullets + `## What I ran`
-  slots incl `**Why:**` + `## Findings` one `### <finding>` per result;
-  figure + setup/read pairing; Takeaways quality — register +
-  cross-round synthesis currency; reproducibility — slimmed Parameters,
-  confidence in H1 title tag only; voice incl. byte-identical ban;
-  statistical-framing; mentor-facing title; one-takeaway-one-figure per
-  `### <finding>`; the `## Data` section — capsule trio + subset
-  disclosure + link liveness + eval-probe descriptions; underlying data
-  alongside every aggregate (low-level data plot behind each aggregate
-  stat + raw alongside processed); conciseness — word caps +
-  bullets-over-prose;
+  `<!-- clean-result-v4 -->`, migrated 2026-W26) across fifteen lenses
+  (title; v4 structure — `## Takeaways` 3-6 bullets + `## Goal` two slots +
+  `## Methodology` slots incl the complete hyperparameter table +
+  `## Results` one `### <result>` per result in the three-beat;
+  figure + three-beat (what-is-plotted → plot → interpretation); Takeaways
+  quality — register + cross-round synthesis currency; footer
+  (`**Repro:**` + `**Context:**`), confidence in H1 title tag only; voice
+  incl. byte-identical ban; statistical-framing; mentor-facing title;
+  one-result-one-figure per `### <result>`; Goal + Methodology
+  completeness — capsule trio + subset disclosure + link liveness + the
+  complete hyperparameter table; underlying data alongside every aggregate
+  (low-level per-unit data plot behind each aggregate stat + raw alongside
+  processed); conciseness — word caps + bullets-over-prose;
   planned-vs-actual coverage; binding-concerns audit; headline must not
-  rest on a contaminated / failed-data-gate arm). v2/legacy bodies keep
-  their grandfathered shape and are never newly hard-FAILed by a v3
-  rule. Thin Claude prompt-composer: composes
+  rest on a contaminated / failed-data-gate arm). v3/v2/legacy bodies keep
+  their grandfathered shape and are never newly hard-FAILed by a v4
+  rule (substitute the v3 section names for a v3 body). Thin Claude
+  prompt-composer: composes
   prompt → returns its path; the orchestrator dispatches Codex's
   `companion task` runtime and posts an
   `epm:clean-result-critique-codex` event. The wrapper NEVER dispatches
@@ -262,10 +264,13 @@ adds the substantive read (e.g. concern is discussed but the
 kebab-case id is not named → CONCERNS, asking the analyzer to add it,
 NOT a standalone FAIL).
 
-Also inline `.claude/skills/clean-results/SPEC.md` — the five-flat-H2
-(v3) markdown clean-result spec (sentinel `<!-- clean-result-v3 -->`,
-2026-W24) — so Codex has the
-canonical rules in context.
+Also inline `.claude/skills/clean-results/SPEC.md` — the four-flat-H2
+(v4) markdown clean-result spec (sentinel `<!-- clean-result-v4 -->`,
+2026-W26), which also documents the grandfathered v3/v2/legacy shapes — so
+Codex has the canonical rules in context. The checklist below is written
+with v4 section names; for a v3 body substitute the v3 names
+(Results→Findings, Methodology data slots→`## Data`, the `**Repro:**`
+footer→the `## Reproducibility` H2).
 
 ### Step 3: The Codex prompt body
 
@@ -366,9 +371,9 @@ Note verifier-worthy recurring checks in plain English in the verdict
 body (you never emit workflow-fix candidates — the orchestrator
 decides).
 
-{{INLINED clean-result-critic.md fifteen lenses (v3 numbering) + independence + don't-gatekeep rules}}
+{{INLINED clean-result-critic.md fifteen lenses (stable 1-15 numbering, v4 section names) + independence + don't-gatekeep rules}}
 
-{{INLINED .claude/skills/clean-results/SPEC.md — five-flat-H2 (v3) markdown clean-result spec (sentinel <!-- clean-result-v3 -->, 2026-W24)}}
+{{INLINED .claude/skills/clean-results/SPEC.md — four-flat-H2 (v4) markdown clean-result spec (sentinel <!-- clean-result-v4 -->, 2026-W26; grandfathered v3/v2/legacy documented)}}
 
 Emit your verdict in EXACTLY this format. No preamble, no fences:
 
@@ -385,8 +390,8 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - Title: "<verbatim title>"
 - <findings with cited rule, or PASS>
 
-### Lens 2 — v3 structure (Takeaways shape + What-I-ran slots + Findings skeleton)
-- v3 sentinel detection: body contains `<!-- clean-result-v3 -->`? YES|NO
+### Lens 2 — v4 structure (Takeaways shape + Goal slots + Methodology slots + Results skeleton)
+- v4 sentinel detection: body contains `<!-- clean-result-v4 -->`? YES|NO (v3 body → `<!-- clean-result-v3 -->`, apply v3 names)
   (if NO, this is a v2/legacy body — apply the grandfathered shape per
   the inlined SPEC.md § Grandfathered shape, not the v3 checks below)
 - `## Takeaways` has 3-6 bullets, no paragraphs (verifier check 3 owns

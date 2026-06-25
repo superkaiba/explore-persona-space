@@ -3747,11 +3747,18 @@ entry guard convention):
    posting `epm:interpretation v1` — the orchestrator publishes the held
    output (and only then starts the interpretation-critic round) after
    upload-verification PASS. See the two hard joins below.
-3. **`methodology-writer` early spawn** (the early-spawn half of Step
-   9a-quater; `stage=methodology-reference round=1`) — only when the
-   9a-quater kind-gating says the step runs at all (`kind: experiment`
-   always; `kind: analysis` only with a methodology surface;
-   `infra | batch | survey` never — evaluate the skip BEFORE spawning).
+3. **`methodology-writer` early spawn (v3/v2 GRANDFATHERED ONLY)** (the
+   early-spawn half of Step 9a-quater; `stage=methodology-reference
+   round=1`). **For v4 bodies, SKIP this spawn entirely** — under v4 the
+   methodology doc is a POST-PASS mechanical export of the body's
+   `## Methodology` section (Step 9a-quater v4 path), so no agent is
+   spawned here and the early-spawn batch is just upload-verifier ∥
+   analyzer first pass. This early spawn fires ONLY for an in-flight
+   v3/v2 body (no detailed `## Methodology` section to copy), and only
+   when the 9a-quater kind-gating says the step runs at all
+   (`kind: experiment` always; `kind: analysis` only with a methodology
+   surface; `infra | batch | survey` never — evaluate the skip BEFORE
+   spawning).
    The agent is findings-blind by design and its inputs (plan, config,
    reproducibility metadata, verbatim artifact rows) are final the
    moment results land, so it can safely run during `uploading` and the
@@ -4617,35 +4624,61 @@ uv run python scripts/task.py set-status <N> reviewing \
 
 **Then proceed to 9a-quater (methodology reference).**
 
-**9a-quater. Methodology + hyperparameters reference — LATE JOIN** (only
-if status is `reviewing`, after the 9a-bis loop's PASS, before the
-`awaiting_promotion` park below; the agent itself was EARLY-SPAWNED at
-Step 8's results-landed parallel spawn — see § Split schedule below)
+**9a-quater. Methodology reference — POST-PASS EXPORT** (only if status
+is `reviewing`, after the 9a-bis loop's PASS, before the
+`awaiting_promotion` park below)
 
-Every `kind: experiment` clean-result auto-gains a standalone
-**methodology + hyperparameters + worked-examples** reference at
-`docs/methodology/issue_<N>.md`, committed to the repo and mirrored to a
-**secret** gist, linked from the clean-result body in TWO places: a
-reader-facing one-line `**Methodology:**` pointer at the TOP of the
-body (for a v3 body: immediately after the `<!-- clean-result-v3 -->`
-sentinel, before `## Takeaways`; for an in-flight v2 body: after the
-`<!-- clean-result-v2 -->` sentinel, before `## Human TL;DR` — branch on
-the sentinel) and a `**Methodology reference:**` row in
-`## Reproducibility` (the artifact-index entry). The reference is **findings-blind**: it describes only HOW the
-experiment was run (conditions, training recipe, eval recipe, verbatim
-training / eval / output examples, reproducibility pointers) and never
-restates findings / interpretation / confidence / next-steps. The fresh
-context of the `methodology-writer` agent enforces this structurally —
-the agent never reads `## Takeaways`, `## Findings`, the H1 confidence
-tag, or any `epm:interpretation` body (for an in-flight v2 body: never
-`## Human TL;DR` / `## TL;DR` either). Fires in BOTH
+**v4 (current): MECHANICAL EXPORT, no agent spawn.** Every
+`kind: experiment` v4 clean-result auto-gains a standalone methodology
+reference at `docs/methodology/issue_<N>.md` that is a **mechanical COPY
+of the body's `## Methodology` section** — the body's `## Methodology`
+section IS the canonical source (the analyzer wrote it factually,
+interpretation-free, per the v4 spec), so there is NO separate
+findings-blind authoring step and the `methodology-writer` agent is NOT
+spawned for v4. After the 9a-bis PASS the orchestrator:
+
+1. Reads the finalized body and extracts the `## Methodology` section
+   verbatim (from the `## Methodology` H2 to the next H2 / the `---`
+   footer rule).
+2. Writes it to `docs/methodology/issue_<N>.md` with the H2 header
+   normalized to `# Methodology — issue <N>: <one-line what-was-run>`
+   (plus a 1-line `*Derived from the [task body](https://eps.superkaiba.com/tasks/<N>).*`
+   footer).
+3. **Commits the doc to `main`** by explicit path (durable — removes the
+   v3 worktree-only gap; the doc + its SHA-pinned link land on `main`
+   directly). Capture the commit SHA.
+4. Runs a no-secrets pre-scan (`scripts/check_no_secret_shaped_strings.py`
+   / `redact_for_gist.py`) and publishes a **secret** (unlisted) gist
+   mirror via `gh gist create` — FAIL-SOFT (a missing gist never blocks
+   the step; the in-repo doc is the durable artifact).
+5. Appends the one-line `**Methodology:**` pointer at the TOP of the body
+   — immediately after the `<!-- clean-result-v4 -->` sentinel, before
+   `## Takeaways` — linking the GitHub blob (SHA-pinned to the `main`
+   commit) and the gist (drop the `· [gist](...)` suffix when the gist
+   fail-softed).
+6. Posts `epm:methodology-doc-generated v1` (`doc_path` + `commit` +
+   `gist_url`).
+
+Fires in BOTH interactive and autonomous sessions identically.
 <!-- example: anti-pattern -->
-interactive and autonomous sessions identically. Auto-continue (NOT a
-new `AskUserQuestion` gate); the halt-criterion contract is preserved.
+Auto-continue (NOT a new `AskUserQuestion` gate); the halt-criterion
+contract is preserved.
 <!-- autonomous-mode: auto-resolve -->
 Same behavior in interactive and autonomous sessions: no AskUserQuestion
 is ever raised by this step; the marker `epm:methodology-doc-generated v1`
 is the durable record consumed by re-entry idempotency.
+<!-- example: anti-pattern -->
+
+**v3/v2 GRANDFATHERED (LATE JOIN, in-flight bodies only):** an in-flight
+v3/v2 body carries no detailed `## Methodology` section to copy, so the
+legacy path still applies — the findings-blind `methodology-writer` agent
+is EARLY-SPAWNED at Step 8's results-landed parallel spawn, the
+orchestrator commits the doc on its return, and the gist + body
+link-append (top-of-body `**Methodology:**` line + the
+`## Reproducibility` `**Methodology reference:**` row) LATE-JOIN here.
+The detailed v3/v2 procedure below (§ Split schedule + procedure steps
+1-9) describes that grandfathered path; for a v4 body run the
+mechanical export above instead and skip the agent spawn.
 
 **Split schedule (early spawn ∥ interpretation loop).** This step is
 split in two:
