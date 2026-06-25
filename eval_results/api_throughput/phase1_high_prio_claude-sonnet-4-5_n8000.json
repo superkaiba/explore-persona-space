@@ -1,0 +1,51 @@
+{
+  "config": {
+    "orgs": [
+      "high_prio"
+    ],
+    "model": "claude-sonnet-4-5-20250929",
+    "n": 8000,
+    "ramp": [
+      100,
+      200,
+      400,
+      800
+    ],
+    "max_tokens": 64
+  },
+  "wall_s": 339.6,
+  "total_ok": 8000,
+  "aggregate_throughput_rpm": 1414,
+  "per_org": [
+    {
+      "label": "high_prio",
+      "ok": 8000,
+      "n429": 0,
+      "errors": 0,
+      "wall_s": 339.6,
+      "throughput_rpm": 1414,
+      "p50_s": 17.351651582866907,
+      "p95_s": 83.10572887212038,
+      "binding_limiter": "requests",
+      "min_remaining": {
+        "requests": 29970,
+        "output-tokens": 999000,
+        "input-tokens": 9796000
+      },
+      "ramp_ts": [
+        [
+          200,
+          20.2
+        ],
+        [
+          400,
+          40.4
+        ],
+        [
+          800,
+          66.0
+        ]
+      ]
+    }
+  ]
+}
