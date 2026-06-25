@@ -642,3 +642,141 @@ def test_backfill_sentinels_is_idempotent(monkeypatch, tmp_path):
     first = (cell / CELL_DONE_SENTINEL).read_text()
     disp.phase_backfill_sentinels(layers=[14])  # second run: must not crash or rewrite
     assert (cell / CELL_DONE_SENTINEL).read_text() == first
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (round-9) run_extraction validates the FULL .npz complement BEFORE the .done
+# sentinel. A target whose probes all produce empty responses skips its .npz
+# write per layer (_extract_one_target's `if not acc[li][0]: continue`); without
+# this gate the unconditional write_cell_done_sentinel would stamp a TRUSTED
+# .done over an incomplete cell that the resume-skip then silently treats as done
+# (round-8 BLOCKER resume-skip-empty-acc-unconditional-sentinel). The live
+# extract path must mirror the --backfill-sentinels complement check: raise loud,
+# write NO sentinel, leave the partial .npz so resume-skip re-extracts.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_assert_full_npz_complement_raises_on_missing_and_passes_when_complete(tmp_path):
+    """The complement gate raises iff any expected ``{target}_L{layer}.npz`` is absent."""
+    import issue667_extract as ext
+
+    cell = tmp_path / "fact" / "default_seed42"
+    cell.mkdir(parents=True, exist_ok=True)
+    targets = ["default", "sp_swe", "fmt_json"]
+    layers = [14]
+
+    # Missing fmt_json (the empty-acc target skipped its write) -> raise loud.
+    for tcid in ("default", "sp_swe"):
+        (cell / f"{tcid}_L14.npz").write_bytes(b"\x00")
+    with pytest.raises(RuntimeError, match=r"fmt_json_L14\.npz"):
+        ext.assert_full_npz_complement(cell, targets=targets, layers=layers)
+
+    # Now complete -> no raise.
+    (cell / "fmt_json_L14.npz").write_bytes(b"\x00")
+    ext.assert_full_npz_complement(cell, targets=targets, layers=layers)
+
+
+def test_run_extraction_empty_acc_target_raises_and_writes_no_sentinel(monkeypatch, tmp_path):
+    """An empty-response target (no .npz for any layer) makes run_extraction RAISE.
+
+    Round-9 BLOCKER (resume-skip-empty-acc-unconditional-sentinel): a target whose
+    probes all return empty SKIPS its per-layer .npz write inside
+    _extract_one_target. run_extraction must then NOT stamp the .done sentinel —
+    it raises, the partial .npz that DID land stays on disk, and (no .done) the
+    dispatcher's resume-skip re-extracts the cell on the next pass."""
+    import issue667_extract as ext
+
+    from explore_persona_space.experiments import i537_contexts
+
+    targets = ["default", "sp_swe", "fmt_json"]
+    empty_target = "fmt_json"  # this one's probes all return "" -> no .npz written
+    layers = [14]
+
+    # ── Stub every heavy callee so run_extraction reaches the complement gate on
+    #    the CPU-only path without loading the 7B model / registry / vLLM. ──
+    monkeypatch.setattr(ext, "stage_inputs", lambda: (tmp_path / "s.json", tmp_path / "d.json"))
+    monkeypatch.setattr(i537_contexts, "load_registry", lambda p: {})
+    monkeypatch.setattr(i537_contexts, "load_icl_demos", lambda p: {})
+    monkeypatch.setattr(i537_contexts, "eval_cids_for", lambda b: ["sp_swe", "fmt_json"])
+    monkeypatch.setattr(ext, "load_eval_probes", lambda b: ["q0", "q1"])
+    monkeypatch.setattr(ext, "stage_adapter_local", lambda b, s, seed: tmp_path / "adapter")
+    monkeypatch.setattr(
+        ext, "assert_adapter_gauge", lambda d, b: {"r": 16, "lora_alpha": 32, "use_rslora": True}
+    )
+    monkeypatch.setattr(ext, "load_base_and_trained", lambda d, dev, dt: (None, _Stub(), _Stub()))
+    monkeypatch.setattr(
+        ext, "_context_vector_all_layers", lambda *a, **k: __import__("numpy").zeros((28, 8))
+    )
+    monkeypatch.setattr(ext, "extract_t_pos_neg", lambda *a, **k: {})
+    monkeypatch.setattr(ext, "extract_v0_C_neg", lambda *a, **k: None)
+    monkeypatch.setattr(ext, "extract_fact_r_b", lambda *a, **k: None)
+    monkeypatch.setattr(
+        ext, "build_messages_for", lambda *a, **k: [{"role": "user", "content": "q"}]
+    )
+
+    class _FakeTok:
+        @staticmethod
+        def from_pretrained(*a, **k):
+            return object()
+
+    monkeypatch.setattr("transformers.AutoTokenizer", _FakeTok)
+
+    # Stub _extract_one_target: write the real-shaped .npz set for every target
+    # EXCEPT the empty one (which writes nothing — exactly the empty-acc skip).
+    def fake_extract_one_target(*args, **kwargs):
+        # positional signature: (base, trained, tok, registry, demos, cell_dir,
+        #   behavior, source_cid, seed, tcid, probes, layers, primary_layer, ...)
+        cell_dir = args[5]
+        tcid = args[9]
+        layers_arg = args[11]
+        if tcid == empty_target:
+            return (2, 2)  # 2 generations, both empty -> NO .npz written, like the bug
+        for li in layers_arg:
+            (Path(cell_dir) / f"{tcid}_L{li}.npz").write_bytes(b"\x00")
+        return (2, 0)
+
+    monkeypatch.setattr(ext, "_extract_one_target", fake_extract_one_target)
+
+    args = _extract_args(out=tmp_path / "out", targets=targets, layers=layers)
+
+    with pytest.raises(RuntimeError, match=r"fmt_json_L14\.npz"):
+        ext.run_extraction(args)
+
+    cell_dir = Path(args.out) / "fact" / f"default_seed{args.seed}"
+    # (b) NO .done sentinel was written.
+    assert not (cell_dir / ext.CELL_DONE_SENTINEL).is_file(), (
+        "an incomplete cell (empty-acc target) must NOT get a .done sentinel"
+    )
+    # (c) The partial .npz that DID land are still present (not deleted) — the
+    #     dispatcher's resume-skip sees no .done and re-extracts.
+    assert (cell_dir / "default_L14.npz").is_file()
+    assert (cell_dir / "sp_swe_L14.npz").is_file()
+    assert not (cell_dir / "fmt_json_L14.npz").is_file()
+
+
+class _Stub:
+    """Minimal stand-in for a loaded HF model (only .config.hidden_size is read)."""
+
+    class _Cfg:
+        hidden_size = 3584
+
+    config = _Cfg()
+
+
+def _extract_args(*, out, targets, layers):
+    import argparse
+
+    return argparse.Namespace(
+        behavior="fact",
+        source_cid="default",
+        seed=42,
+        targets=",".join(targets),
+        layers=layers,
+        primary_layer=layers[0],
+        out=str(out),
+        gpu_id=0,
+        cpu_only=True,
+        max_probes=2,
+        max_new_tokens=32,
+        max_train_rows=8,
+    )
