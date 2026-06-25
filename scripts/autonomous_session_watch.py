@@ -3899,12 +3899,29 @@ def _process_stalled_session(
     # doesn't apply" rather than a stale signal that could over-alert).
     self_report_age, last_self_report_ts = _self_report_age_seconds(issue, now)
 
-    # Signal 2: latest non-watcher progress-marker age. None -> stale (no
-    # markers at all is itself a signal). We also keep the raw events list
-    # around — the followups-awaiting-child exemption below scans it for
+    # Signal 2: latest non-watcher MARKER age (ANY kind, not just
+    # _PROGRESS_KINDS). None -> stale (no markers at all is itself a signal).
+    # We count every non-watcher-sentinel'd marker as a sign of life — the
+    # pre-run lifecycle (`epm:experiment-implementation`, `epm:code-review`,
+    # `epm:review-reconcile`, `epm:plan`, ...) is exactly the work an
+    # actively-implementing session does before it ever launches a pod, and
+    # _PROGRESS_KINDS (run/upload/interpret-oriented) excludes all of it.
+    # Gating signal 2 on that narrow allowlist falsely read those sessions as
+    # "zero progress for the whole pre-pod phase" and respawned them mid-
+    # implementation (#661: 7 real lifecycle markers between 00:39 and 01:43
+    # were ignored, leaving the detector measuring staleness from a 64-min-old
+    # epm:status-changed). The watcher's own alert/automation posts stay
+    # excluded by the note-substring filter (_WATCHER_NOTE_SENTINELS), which is
+    # what actually prevents the alert from resetting its own clock — the kind
+    # allowlist was redundant for that and its only net effect was this false
+    # negative. Matches the session-reconcile idle pass (`_latest_nonwatcher_
+    # event_ts`), which already counts markers of ANY kind. A genuinely dead
+    # session posts NO markers of any kind, so its newest non-watcher marker
+    # still ages out and the detector still fires. We also keep the raw events
+    # list around — the followups-awaiting-child exemption below scans it for
     # the latest epm:step-completed without paying a second read.
     events = _task_events(issue)
-    latest_marker_ts = _latest_progress_ts(events)
+    latest_marker_ts = _latest_nonwatcher_event_ts(events)
     marker_age = (now - latest_marker_ts) if latest_marker_ts is not None else None
 
     # Signal 3: does the issue have a RUNNING managed pod? Informational

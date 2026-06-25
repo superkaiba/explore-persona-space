@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -408,6 +409,58 @@ def test_watcher_note_sentinels_contains_both():
     assert asw._STALLED_ALERT_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
 
 
+# ─── stalled-detector signal 2 counts ANY non-watcher marker (#661) ───────────
+
+
+def test_stalled_signal2_counts_pre_run_lifecycle_marker():
+    # Regression for #661: the alive-but-stalled detector's signal 2 must count
+    # a pre-run lifecycle marker (`epm:experiment-implementation`,
+    # `epm:review-reconcile`, ...) as a sign of life. The narrow
+    # `_latest_progress_ts` allowlist (run/upload/interpret-oriented) IGNORES
+    # those kinds, so a session actively implementing code looked "stale" and
+    # was falsely respawned. The detector now reads `_latest_nonwatcher_event_ts`
+    # (markers of ANY kind), which DOES see them.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:status-changed", "ts": "2026-06-25T00:39:00Z", "note": "running"},
+        {
+            "kind": "epm:experiment-implementation",
+            "ts": "2026-06-25T01:15:00Z",
+            "note": "implemented dispatch script",
+        },
+        {"kind": "epm:review-reconcile", "ts": "2026-06-25T01:31:00Z", "note": "PASS"},
+    ]
+    # The narrow allowlist sees only the 00:39 status-changed (the very thing
+    # that read 64 min stale in the #661 incident); the broad helper sees the
+    # 01:31 reconcile, the session's real last sign of life.
+    assert asw._latest_progress_ts(events) == asw._parse_event_ts("2026-06-25T00:39:00Z")
+    assert asw._latest_nonwatcher_event_ts(events) == asw._parse_event_ts("2026-06-25T01:31:00Z")
+
+
+def test_stalled_signal2_still_excludes_watcher_sentinel_markers():
+    # The broad signal must STILL ignore the watcher's own alert/automation
+    # posts (otherwise an alert would reset the staleness clock it measures).
+    # The note-substring filter — not a kind allowlist — is what enforces that.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:experiment-implementation",
+            "ts": "2026-06-25T01:15:00Z",
+            "note": "real progress",
+        },
+        {
+            "kind": "epm:progress",
+            "ts": "2026-06-25T01:50:00Z",
+            "note": f"{asw._STALLED_ALERT_NOTE_SENTINEL} session stalled alert ...",
+        },
+    ]
+    # Newest non-watcher marker is the 01:15 lifecycle event; the 01:50 watcher
+    # alert is filtered out.
+    assert asw._latest_nonwatcher_event_ts(events) == asw._parse_event_ts("2026-06-25T01:15:00Z")
+
+
 # ─── stalled_session_pass — top-level driver ─────────────────────────────────
 
 
@@ -486,6 +539,125 @@ def test_stalled_pass_alerts_after_two_consecutive_stale_ticks(
     state = json.loads(state_path.read_text())
     assert state["alerted"] is True
     assert state["missed"] == 0
+
+
+def _iso_from_epoch(epoch: float) -> str:
+    """Canonical trailing-Z UTC ISO string for an epoch float (the shape
+    `_parse_event_ts` round-trips)."""
+    return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def test_stalled_pass_no_respawn_when_fresh_lifecycle_marker_present(
+    isolated_registry, hermetic_provision_probes, monkeypatch
+):
+    # Regression for #661: a frozen self-report (the long-running
+    # experiment-implementer subagent doesn't update the parent's per-issue
+    # self-report) MUST NOT trigger an alert/respawn while a RECENT pre-run
+    # lifecycle marker (`epm:experiment-implementation`) shows the session is
+    # actively working. Before the fix, signal 2 read `_latest_progress_ts`,
+    # whose run/upload/interpret allowlist ignored that kind, so BOTH signals
+    # looked stale and the session was falsely respawned mid-implementation.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    posts: list[tuple[int, str]] = []
+    _write_autonomous_entry(isolated_registry, 661, "sess-661")
+
+    # Self-report frozen (stale) — the #661 condition.
+    stale_age = STALLED_WINDOW_S + 600
+    monkeypatch.setattr(
+        asw,
+        "_self_report_age_seconds",
+        lambda issue, now: (stale_age, "2026-06-25T00:38:58Z"),
+    )
+    # ACTIVE status (the strictest case: respawn-eligible). Stubbed so the test
+    # is hermetic, not dependent on task 661's real status on the host.
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    # ...but a lifecycle marker landed 5 min ago: the session is alive.
+    fresh_ts = _iso_from_epoch(now - 300)
+    monkeypatch.setattr(
+        asw,
+        "_task_events",
+        lambda issue: [
+            {"kind": "epm:status-changed", "ts": _iso_from_epoch(now - 3600), "note": "running"},
+            {"kind": "epm:experiment-implementation", "ts": fresh_ts, "note": "impl"},
+        ],
+    )
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+    # Make the respawn path OBSERVABLE: on the buggy line (`_latest_progress_ts`)
+    # the marker reads stale -> the 2nd tick respawns, which only posts its
+    # `session-auto-respawn` marker if BOTH _stop_session and
+    # _respawn_stalled_session succeed. In the hermetic env both return False,
+    # so without these stubs the respawn early-returns and `assert posts == []`
+    # would pass even on the buggy code (the false-confidence gap the reviewer
+    # caught). Stub both True so a respawn — if it fires — is visible here.
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: True)
+    monkeypatch.setattr(asw, "_respawn_stalled_session", lambda issue, cap, dry_run: True)
+
+    # Two consecutive ticks while the self-report stays frozen: a fresh marker
+    # resets the miss counter every tick, so nothing ever fires (no alert AND
+    # no respawn). On the pre-fix `_latest_progress_ts` line this respawns on
+    # tick 2 and posts `session-auto-respawn`.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now)
+    assert posts == []
+    state_path = isolated_registry / f"{STALLED_STATE_PREFIX}661.json"
+    assert json.loads(state_path.read_text())["missed"] == 0
+
+
+def test_stalled_pass_alerts_when_newest_nonwatcher_marker_truly_old(
+    isolated_registry, hermetic_provision_probes, monkeypatch
+):
+    # The fix must NOT mask a genuinely stalled session: when the self-report
+    # is frozen AND the newest NON-watcher marker (of any kind) is itself old,
+    # the detector still flags. A recent WATCHER-sentinel'd `epm:progress` does
+    # not rescue it (the note-substring filter excludes it).
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    posts: list[tuple[int, str]] = []
+    _write_autonomous_entry(isolated_registry, 661, "sess-661")
+
+    stale_age = STALLED_WINDOW_S + 600
+    monkeypatch.setattr(
+        asw,
+        "_self_report_age_seconds",
+        lambda issue, now: (stale_age, "2026-06-25T00:38:58Z"),
+    )
+    # Non-ACTIVE status -> respawn ineligible -> the deterministic ALERT arm
+    # (a respawn would also be a valid "flag", but stub the status so the
+    # asserted recovery action does not depend on task 661's real host status).
+    monkeypatch.setattr(asw, "_task_status", lambda issue: None)
+    old_ts = _iso_from_epoch(now - stale_age)
+    recent_watcher_ts = _iso_from_epoch(now - 60)
+    monkeypatch.setattr(
+        asw,
+        "_task_events",
+        lambda issue: [
+            {"kind": "epm:experiment-implementation", "ts": old_ts, "note": "impl"},
+            {
+                "kind": "epm:progress",
+                "ts": recent_watcher_ts,
+                "note": f"{asw._STALLED_ALERT_NOTE_SENTINEL} session stalled alert ...",
+            },
+        ],
+    )
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+
+    # threshold=1 -> the single stale tick flags. status stubbed None ->
+    # respawn-ineligible -> ALERT arm.
+    asw.stalled_session_pass(dry_run=False, threshold=1, now=now)
+    assert posts == [(661, "session-stalled-alert")]
 
 
 def test_stalled_pass_dedups_within_episode(
