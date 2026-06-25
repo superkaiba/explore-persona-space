@@ -702,6 +702,16 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--behavior",
+        default=None,
+        help=(
+            "parity-probe behavior, subprocess entrypoint only (singular form of "
+            "--behaviors). Read by main() only on the 'parity-probe' phase (#667 r6: "
+            "the r4 subprocess-isolation refactor passed --behavior at the launch site "
+            "and read args.behavior in main() but never registered the flag)."
+        ),
+    )
+    parser.add_argument(
         "--source", default="default", help="parity-probe source cid (subprocess entrypoint only)."
     )
     parser.add_argument("--seed", type=int, default=42, help="parity-probe seed (subprocess only).")
