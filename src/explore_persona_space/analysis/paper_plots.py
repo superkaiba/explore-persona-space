@@ -562,8 +562,32 @@ def proportion_ci(p: float, n: int, z: float = 1.96) -> tuple[float, float]:
 # The dashboard viewer (`dashboard/lib/task-data.ts`) caps client-side at 5000
 # rows; we keep the in-sidecar embed well under that so committed sidecars stay
 # small and a pathological scatter cannot bloat the repo. Past the cap the
-# sidecar still records the full row count + that it was truncated.
+# sidecar still records the full row count + that it was truncated. This 2000
+# in-sidecar cap is the BINDING one (it always trips first, below the viewer's
+# 5000), so the viewer's own `truncated` flag never fires on a sidecar we wrote.
 _MAX_SIDECAR_ROWS = 2000
+
+
+def _finite_or_none(x: object) -> float | None:
+    """Coerce ``x`` to a finite float, or ``None`` for NaN/±Inf/unparseable.
+
+    Sidecar rows are emitted via ``json.dumps`` (default ``allow_nan=True``),
+    which serializes ``NaN`` / ``Infinity`` as bare JS-invalid literals. The
+    dashboard viewer's ``JSON.parse`` (``dashboard/lib/task-data.ts``) THROWS on
+    those, silently degrading the whole figure to provenance-only — and the loss
+    hits exactly the figures most likely to need the viewer (masked / missing
+    cells, common in plots that use ``np.nan`` / ``fillna``). Map every
+    non-finite numeric cell to ``None`` (→ JSON ``null``, which the viewer's
+    column-typer already handles) so the row survives with only the bad cell
+    dropped.
+    """
+    import math
+
+    try:
+        f = float(x)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    return f if math.isfinite(f) else None
 
 
 def _nearest_label(
@@ -585,6 +609,11 @@ def _nearest_label(
     Returns the matched label string, or ``None`` when no text anchor is close
     enough. Distances are normalized by the axis spans so x and y units are
     comparable.
+
+    Mapping is point→nearest-text, NOT a 1:1 assignment: in a dense scatter with
+    sparse labels one text anchor can attach to several points. The one-label-
+    per-point case (#657's persona scatter) is unambiguous; a dense scatter with
+    a few callout labels may duplicate a label across nearby points.
     """
     if not text_artifacts:
         return None
@@ -667,7 +696,15 @@ def _axes_ctx(ax: plt.Axes) -> _AxesCtx:
 
 
 def _extract_bars(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
-    """Extract bar-chart rows: category/x + height (+ error) per bar."""
+    """Extract bar-chart rows: category/x + height (+ error) per bar.
+
+    Category labels come from x-tick labels keyed by the patch CENTER. NOTE:
+    grouped / dodged bar charts (multiple series at offset positions like
+    ``x±0.2``) place patches off the tick locations, so ``tick_map`` misses and
+    those rows fall back to the numeric x position. Single (non-grouped) bars
+    keep their category labels. Non-finite heights / errors are emitted as JSON
+    ``null`` (see ``_finite_or_none``).
+    """
     from matplotlib.container import BarContainer
 
     tick_labels = [t.get_text().strip() for t in ax.get_xticklabels()]
@@ -693,10 +730,10 @@ def _extract_bars(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
             if cat:
                 row[ctx.xlabel if ctx.xlabel != "x" else "category"] = cat
             else:
-                row[ctx.xlabel] = cx
-            row[ctx.ylabel] = height
+                row[ctx.xlabel] = _finite_or_none(cx)
+            row[ctx.ylabel] = _finite_or_none(height)
             if cx in ctx.err_by_x:
-                row["error"] = ctx.err_by_x[cx]
+                row["error"] = _finite_or_none(ctx.err_by_x[cx])
             rows.append(row)
         if rows:
             out.append({"kind": "bar", "label": (cont.get_label() or "").strip(), "rows": rows})
@@ -712,15 +749,20 @@ def _xy_rows(
     arr = np.asarray(xy, dtype=float)
     if arr.ndim != 2 or arr.shape[1] != 2 or arr.shape[0] == 0:
         return []
+
     rows: list[dict[str, object]] = []
     for px, py in arr:
-        row: dict[str, object] = {ctx.xlabel: float(px), ctx.ylabel: float(py)}
-        if with_error:
-            cx = round(float(px), 6)
+        fx = _finite_or_none(px)
+        fy = _finite_or_none(py)
+        # Non-finite coordinates (NaN/Inf — e.g. masked cells) → JSON null so
+        # the row survives and the viewer's JSON.parse never throws.
+        row: dict[str, object] = {ctx.xlabel: fx, ctx.ylabel: fy}
+        if with_error and fx is not None:
+            cx = round(fx, 6)
             if cx in ctx.err_by_x:
-                row["error"] = ctx.err_by_x[cx]
-        if with_label:
-            lbl = _nearest_label(float(px), float(py), ctx.text_artifacts, ctx.x_span, ctx.y_span)
+                row["error"] = _finite_or_none(ctx.err_by_x[cx])
+        if with_label and fx is not None and fy is not None:
+            lbl = _nearest_label(fx, fy, ctx.text_artifacts, ctx.x_span, ctx.y_span)
             if lbl is not None:
                 row["label"] = lbl
         if series and not series.startswith("_"):

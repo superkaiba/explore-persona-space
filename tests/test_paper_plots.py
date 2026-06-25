@@ -390,3 +390,62 @@ def test_sidecar_imshow_falls_back_to_provenance_only(tmp_path: Path) -> None:
     meta = json.loads(written["meta"].read_text())
     assert "points" not in meta
     assert {"commit", "created", "figsize"} == set(meta.keys())
+
+
+def _reject_js_invalid_constants(c: str) -> object:
+    """parse_constant hook that mimics JS `JSON.parse`: reject NaN/Infinity."""
+    raise ValueError(f"JS-invalid JSON constant: {c}")
+
+
+def test_sidecar_nan_coordinate_serializes_as_json_null(tmp_path: Path) -> None:
+    """A NaN/Inf coordinate must serialize as JSON `null`, never bare `NaN`.
+
+    Python's json.dumps default (allow_nan=True) writes bare `NaN`/`Infinity`,
+    which the dashboard's JS `JSON.parse` (dashboard/lib/task-data.ts) REJECTS —
+    silently degrading the figure to provenance-only. The fix sanitizes non-
+    finite cells to None (→ null). Verify: no `NaN`/`Infinity` literal in the
+    text AND it round-trips through a JS-strict parse AND the bad cell is null
+    with the row surviving.
+    """
+    import math
+
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    # One point has a NaN x (masked cell); another has an inf y.
+    ax.scatter([0.1, math.nan, 0.5], [1.0, 2.0, math.inf])
+    ax.set_xlabel("predictor")
+    ax.set_ylabel("outcome")
+    written = savefig_paper(fig, "nan_scatter", dir=tmp_path)
+    plt.close(fig)
+
+    text = written["meta"].read_text()
+    # 1) No bare JS-invalid literals in the serialized sidecar.
+    assert "NaN" not in text
+    assert "Infinity" not in text
+    # 2) Round-trips through a JS-strict parse (what the viewer's JSON.parse does).
+    meta = json.loads(text, parse_constant=_reject_js_invalid_constants)
+    # 3) The bad cells came through as null; all 3 rows survived.
+    pts = meta["points"]
+    assert len(pts) == 3
+    assert pts[1]["predictor"] is None  # NaN x → null
+    assert pts[2]["outcome"] is None  # inf y → null
+    assert pts[0]["predictor"] == 0.1 and pts[0]["outcome"] == 1.0  # good row intact
+
+
+def test_sidecar_bar_nan_height_serializes_as_json_null(tmp_path: Path) -> None:
+    """A NaN bar height / error must serialize as JSON `null`, not bare `NaN`."""
+    import math
+
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.bar(["a", "b"], [0.5, math.nan], yerr=[0.05, math.nan])
+    ax.set_ylabel("rate")
+    written = savefig_paper(fig, "nan_bar", dir=tmp_path)
+    plt.close(fig)
+
+    text = written["meta"].read_text()
+    assert "NaN" not in text and "Infinity" not in text
+    meta = json.loads(text, parse_constant=_reject_js_invalid_constants)
+    pts = meta["points"]
+    assert pts[1]["rate"] is None
+    assert pts[0]["rate"] == 0.5
