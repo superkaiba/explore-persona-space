@@ -1,2 +1,3 @@
 {"ts": "2026-06-25T05:33:01Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-06-25T07:08:05Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "ARCHIVED as duplicate of #663 (running, kind:infra: 'Harden Anthropic batch-judge client: shard to ~8k/batch, bound poll on expires_at, custom_id checkpoint/resume'). #663 covers the same root cause (unbounded while-True poll in batch_judge.py/_submit_and_poll_batch + anthropic_client.py AnthropicBatch.poll) and is broader — it also addresses #658's 90k-batch wedge. #662 was filed before #663 was known."}
+{"ts": "2026-06-25T07:08:06Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived"}

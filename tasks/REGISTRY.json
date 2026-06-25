@@ -4134,8 +4134,8 @@
     "662": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/662",
-      "status": "proposed",
+      "path": "tasks/archived/662",
+      "status": "archived",
       "title": "Batch-judge poll: add deadline + heartbeat + batch_id resume (eval/batch_judge.py) \u2014 wedge fix"
     },
     "663": {
