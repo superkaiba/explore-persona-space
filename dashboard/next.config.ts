@@ -9,11 +9,13 @@ const nextConfig: NextConfig = {
   // Each disk-reading route ships its data deps at runtime (the build is NOT
   // standalone, so `next start` resolves these via NFT). Keep this in lockstep
   // with what each route's lib reads:
-  //   - lib/tasks.ts   -> ../tasks/**
-  //   - lib/docs.ts    -> ../docs/** AND ../logs/{daily,weekly}/**
-  //   - lib/logs.ts    -> ../logs/**, ../docs/**, ../tasks/**
-  //   - lib/results.ts -> ../tasks/**
-  //   - lib/literature -> ../updates/literature/**
+  //   - lib/tasks.ts     -> ../tasks/**
+  //   - lib/docs.ts      -> ../docs/** AND ../logs/{daily,weekly}/**
+  //   - lib/logs.ts      -> ../logs/**, ../docs/**, ../tasks/**
+  //   - lib/results.ts   -> ../tasks/**
+  //   - lib/literature   -> ../updates/literature/**
+  //   - lib/task-data.ts -> ../figures/** AND ../eval_results/** (the
+  //       interactive data viewer's GET /tasks/<id>/data route, Phase 2)
   outputFileTracingIncludes: {
     // Overview: tasks (recent results) + docs (orientation docs + recent docs,
     // which include virtual dated docs under logs/).
@@ -21,6 +23,14 @@ const nextConfig: NextConfig = {
     // Tasks list + detail.
     "/tasks": ["../tasks/**/*"],
     "/tasks/[id]": ["../tasks/**/*"],
+    // Interactive data-viewer route — reads figure sidecars + the committed
+    // eval_results JSON a sidecar's data_path points at.
+    "/tasks/[id]/data": [
+      "../tasks/**/*",
+      "../figures/**/*.meta.json",
+      "../figures/**/*.json",
+      "../eval_results/**/*.json",
+    ],
     // Sessions: resolves issue numbers from the task registry to render
     // titles + links; the session-progress cache file under ~/.eps-autonomous
     // is read at request time (outside the trace root, not bundleable).
