@@ -96,6 +96,18 @@ v2/legacy bodies, so the slice commands cover BOTH shapes:
   #   v2/legacy: #### <finding> H4s (the only H4s in the body)
   grep '^#### ' "$p/body.md"
 
+**Paper-task (`paper: true` in the frontmatter slice):** the body.md is a
+thin paper-stub — the `## Takeaways` / `## Findings` slices return nothing
+(there are none). Pull the claim summary from the stub ABSTRACT (the prose
+between the H1 and the paper link) instead, and pull `Q`/`construct` from
+the frontmatter `goal` + the abstract; skip the finding-headline greps. The
+substantive content lives in the LaTeX paper under `docs/papers/issue_<N>/`,
+not the body — do NOT page the `.tex` into the digest; the abstract +
+frontmatter `goal` are enough to cluster on.
+
+  # paper-task abstract (between the H1 and the "Paper:"/link line):
+  sed -n '/^# /,/docs\/papers\/issue_/p' "$p/body.md" | head -20
+
 Phase A — emit ONE digest block per task BEFORE clustering (this is the
 step that makes grouping principled — name the construct first):
   #<id> | <kind> | conf=<HIGH|MODERATE|LOW> | parent=<id or -> | anchor=<relates_to or none>

@@ -247,3 +247,57 @@ def test_fetch_promoted_front_loads_v3_over_recent_v2(monkeypatch):
     # prefer_shape='any': pure recency (v3 falls last because it's oldest).
     recency = rcr.fetch_promoted(3, prefer_shape="any")
     assert [e["number"] for e in recency] == [1, 2, 3]
+
+
+# ─── paper-stub support (`paper: true`) ────────────────────────────────────
+
+PAPER_STUB_TITLE = "A claim about leakage (MODERATE confidence)"
+_PAPER_STUB_ABSTRACT = (
+    "This abstract paragraph stands in for the paper's own abstract and is the "
+    "skim block the analyzer exemplar feed should show for a paper-task."
+)
+PAPER_STUB_BODY = f"""\
+---
+title: A claim about leakage (MODERATE confidence)
+kind: experiment
+paper: true
+---
+# A claim about leakage (MODERATE confidence)
+
+{_PAPER_STUB_ABSTRACT}
+
+Paper: docs/papers/issue_657/issue_657.pdf
+"""
+
+
+def test_is_paper_stub_detects_flag():
+    assert rcr.is_paper_stub(PAPER_STUB_BODY)
+    assert rcr.is_paper_stub(PAPER_STUB_BODY.replace("paper: true", "paper: 'true'"))
+    assert not rcr.is_paper_stub(V3_BODY)
+    assert not rcr.is_paper_stub(V2_BODY)
+
+
+def test_paper_stub_skim_is_abstract():
+    skim, _hero, conf_label, _ctext = rcr._extract_paper_stub(PAPER_STUB_BODY, PAPER_STUB_TITLE)
+    assert skim.startswith("This abstract paragraph stands in")
+    assert "Paper:" not in skim  # the paper-link line is excluded
+    assert "#" not in skim  # the H1 is excluded
+    assert conf_label == "MODERATE"  # from the title tag
+
+
+def test_paper_stub_skim_h2_abstract():
+    body = PAPER_STUB_BODY.replace(
+        _PAPER_STUB_ABSTRACT,
+        "## Abstract\n\nThe explicit abstract block.",
+    )
+    skim, _h, _c, _ct = rcr._extract_paper_stub(body, PAPER_STUB_TITLE)
+    assert skim == "The explicit abstract block."
+
+
+def test_render_inline_paper_stub_not_degenerate():
+    out = rcr.render_inline([{"number": 657, "title": PAPER_STUB_TITLE, "body": PAPER_STUB_BODY}])
+    assert "Abstract (paper-task — see docs/papers/issue_657/)" in out
+    assert "This abstract paragraph stands in" in out
+    assert "Confidence: MODERATE" in out
+    # NOT a degenerate empty / `Confidence: ? —` render.
+    assert "Confidence: ? —" not in out
