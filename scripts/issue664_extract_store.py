@@ -277,7 +277,7 @@ def extract_cell(cell: C.Cell, *, smoke: bool, gpu_id: int, adapter_dir: Path | 
         battery = battery[:3]
     max_new = C.MAX_NEW_TOKENS if cell.behavior == "marker" else 1024
 
-    out_dir = C.STORE_ROOT / (f"{cell.slug}_seed{cell.seed}" + ("_smoke" if smoke else ""))
+    out_dir = C.STORE_ROOT / (cell.eval_key + ("_smoke" if smoke else ""))
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Merge the trained adapter into a temp dir (merge-read-delete, §9.2).
@@ -293,19 +293,26 @@ def extract_cell(cell: C.Cell, *, smoke: bool, gpu_id: int, adapter_dir: Path | 
 
     try:
         store = _extract_all(
-            cell, tokenizer, contexts, battery, trained_path, gpu_id=gpu_id, max_new=max_new
+            cell,
+            tokenizer,
+            contexts,
+            battery,
+            trained_path,
+            gpu_id=gpu_id,
+            max_new=max_new,
+            adapter_dir=adapter_dir,  # #664 round-2 C1: gauge assert reads THIS dir
         )
     finally:
         if merged_dir is not None and merged_dir.exists():
             shutil.rmtree(merged_dir)  # merge-read-delete
-            logger.info("[extract] %s merged dir reaped", cell.slug)
+            logger.info("[extract] %s merged dir reaped", cell.eval_key)
 
     tensors_path = out_dir / "tensors.pt"
     torch.save(store["tensors"], tensors_path)
     meta = {
         **C.repro_meta(seed=cell.seed),
         "schema_version": 1,
-        "cell": cell.slug,
+        "cell": cell.eval_key,
         "behavior": cell.behavior,
         "source": cell.source,
         "arm": cell.arm,
@@ -323,24 +330,26 @@ def extract_cell(cell: C.Cell, *, smoke: bool, gpu_id: int, adapter_dir: Path | 
     (out_dir / "meta.json").write_text(json.dumps(meta, indent=2))
 
     # marker four-float slot stats (marker cells only): a separate JSON per the
-    # §6.5 marker_slot deliverable glob.
+    # §6.5 marker_slot deliverable glob. #664 round-2 B2: gate_dir keys on the
+    # SEED-QUALIFIED eval_key so seed-1042 replication marker cells do NOT
+    # overwrite their seed-42 twins (B3's production readability assert reads it).
     if cell.behavior == "marker" and store.get("marker_slots") is not None:
-        gate_dir = C.EVAL_ROOT / "marker_slot" / (cell.slug + ("_smoke" if smoke else ""))
+        gate_dir = C.EVAL_ROOT / "marker_slot" / (cell.eval_key + ("_smoke" if smoke else ""))
         gate_dir.mkdir(parents=True, exist_ok=True)
         slot_payload = {
             **C.repro_meta(seed=cell.seed),
-            "cell": cell.slug,
+            "cell": cell.eval_key,
             "marker_text": C.MARKER_TEXT,
             "marker_id": C.MARKER_ID,
             "im_end_id": C.IM_END_ID,
             "slots": store["marker_slots"],  # per (context) trained+base four-float
         }
         (gate_dir / "marker_slot_stats.json").write_text(json.dumps(slot_payload, indent=2))
-        logger.info("[extract] %s marker slot stats written -> %s", cell.slug, gate_dir)
+        logger.info("[extract] %s marker slot stats written -> %s", cell.eval_key, gate_dir)
 
     logger.info(
         "[extract] %s store written -> %s (tensors=%s)",
-        cell.slug,
+        cell.eval_key,
         tensors_path,
         meta["tensor_keys"],
     )
@@ -356,6 +365,7 @@ def _extract_all(
     *,
     gpu_id: int,
     max_new: int,
+    adapter_dir: Path | None = None,
 ) -> dict:
     """Run trained + base extraction over all contexts + the behavior battery."""
     import torch
@@ -414,6 +424,21 @@ def _extract_all(
     v_plus = torch.nanmean(v_plus_probe, dim=1)  # (n_ctx, 28, d) -- v_plus(C')
     v0 = torch.nanmean(v0_probe, dim=1)  # (n_ctx, 28, d) -- v0(C') on the spine
 
+    # ---- C3 shape check (#664 round-2): v0(C') on the behavior's OWN battery must
+    # be (n_ctx, 28, d) so the Phase-4 C7 base-prior null + L̂^cos inputs resolve.
+    # v0_probe is the un-aggregated (n_ctx, n_probe, 28, d) probe-split input the
+    # Phase-3 noise floor consumes. Fail loud on any shape drift.
+    n_ctx = len(ctx_ids)
+    assert v0.shape == (n_ctx, C.EXPECTED_LAYERS, d), (
+        f"v0(C') shape {tuple(v0.shape)} != ({n_ctx}, {C.EXPECTED_LAYERS}, {d}) "
+        "-- Phase-4 base-prior/L̂^cos inputs would be malformed"
+    )
+    assert v0_probe.shape == (n_ctx, n_probe, C.EXPECTED_LAYERS, d), (
+        f"v0_probe shape {tuple(v0_probe.shape)} != ({n_ctx}, {n_probe}, "
+        f"{C.EXPECTED_LAYERS}, {d}) -- Phase-3 probe-split noise floor would break"
+    )
+    assert v_plus.shape == v0.shape, f"v_plus {tuple(v_plus.shape)} != v0 {tuple(v0.shape)}"
+
     # t_CB + r_plus_B' at the SOURCE context (C'=C): the implant direction.
     src_idx = ctx_ids.index(src_id) if src_id in ctx_ids else None
     if src_idx is not None:
@@ -468,17 +493,39 @@ def _extract_all(
             ctx_ids,
             n_probe,
             gpu_id=gpu_id,
+            adapter_dir=adapter_dir,  # #664 round-2 C1: gauge assert reads adapter_config.json
         )
 
     return {"tensors": tensors, "roles": roles, "marker_slots": marker_slots}
 
 
 def _marker_slots(
-    cell, tokenizer, contexts, trained_path, trained_rows, base_rows, ctx_ids, n_probe, *, gpu_id=0
+    cell,
+    tokenizer,
+    contexts,
+    trained_path,
+    trained_rows,
+    base_rows,
+    ctx_ids,
+    n_probe,
+    *,
+    gpu_id=0,
+    adapter_dir: Path | None = None,
 ) -> dict:
     """Four-float marker slot stats (trained AND base, same forward) at the END
-    of the model's OWN on-policy response, per context. Uses the canonical
-    ``compute_marker_slot_stats`` (#530 storage contract; gauge assert)."""
+    of EACH MODEL'S OWN on-policy response, per context. Uses the canonical
+    ``compute_marker_slot_stats`` (#530 storage contract; gauge assert).
+
+    #664 round-2 M3: the base prior is read at the end of the BASE model's OWN
+    response (``base_rows``), NOT the trained model's answer text -- the marker DV
+    is trained-base, both "end of own response" (`marker-leakage-measurement.md`).
+    The prior code read BOTH sides on the trained model's response, biasing the
+    base prior by the trained-answer text.
+
+    #664 round-2 C1: the gauge assert reads the ADAPTER dir's adapter_config.json
+    (the merged dir has no adapter_config.json, so the prior path-existence guard
+    was a silent no-op). For a real marker cell (adapter_dir given) the gauge
+    assert is MANDATORY -- a missing adapter_config.json fails loud."""
     import torch
     from transformers import AutoModelForCausalLM
 
@@ -490,34 +537,41 @@ def _marker_slots(
 
     device = f"cuda:{gpu_id}" if torch.cuda.is_available() else "cpu"
 
-    # Gauge assert: the merged read is valid only if LoRA never touched W_U /
-    # embeddings (Option A faithful-gauge read, §11). Read the adapter config.
-    if cell.behavior == "marker":
-        adapter_cfg_path = Path(trained_path) / "adapter_config.json"
-        if adapter_cfg_path.exists():
-            cfg = json.loads(adapter_cfg_path.read_text())
-            assert_gauge_free_adapter_config(cfg, context=f"{cell.slug} marker read")
+    # Gauge assert (C1): valid logit readout requires LoRA never touched W_U /
+    # embeddings (Option A faithful-gauge read, §11). Read adapter_config.json
+    # from the ADAPTER dir (NOT the merged dir, which carries config.json only).
+    if cell.behavior == "marker" and adapter_dir is not None:
+        adapter_cfg_path = Path(adapter_dir) / "adapter_config.json"
+        assert adapter_cfg_path.exists(), (
+            f"adapter_config.json missing under {adapter_dir} -- the marker gauge "
+            "assert cannot run; a logit readout without it is invalid (#664 C1)"
+        )
+        cfg = json.loads(adapter_cfg_path.read_text())
+        assert_gauge_free_adapter_config(cfg, context=f"{cell.eval_key} marker read")
 
-    # The slot read appends the marker at the end of (context-prompt + R), where
-    # R is the model's OWN greedy response. Build the "context" string = the
-    # decoded prompt+response per context (the slot reader scores each string
-    # once -- we use the FIRST probe's response per context as the representative
-    # on-policy R). CRITICAL (#532): if the trained R ALREADY ends with the
-    # marker, STRIP it before the read -- appending a fresh slot after a marker
-    # measures "emit a SECOND marker" (a near-floor artifact), not the implant.
-    contexts_for_read: list[str] = []
-    for ci, _cid in enumerate(ctx_ids):
-        row = trained_rows[ci * n_probe]  # first probe under this context
-        full_ids = row["prompt_token_ids"] + row["response_token_ids"]
-        text = tokenizer.decode(full_ids, skip_special_tokens=False)
-        # strip a trailing marker (+ any trailing whitespace after it) so the
-        # appended slot reads the FIRST marker position, not a second one.
-        stripped = text.rstrip()
-        while stripped.endswith(C.MARKER_TEXT.strip()):
-            stripped = stripped[: -len(C.MARKER_TEXT.strip())].rstrip()
-        contexts_for_read.append(stripped)
+    def _contexts_for_read(rows: list[dict]) -> list[str]:
+        """Decoded (prompt + the MODEL'S OWN response) per context, marker stripped.
 
-    def _read(model_path: str) -> list[dict]:
+        The slot read appends the marker at the end of (context-prompt + R), where
+        R is THIS model's own greedy response (trained R for the trained read, base
+        R for the base read -- M3). FIRST probe per context is the representative.
+        CRITICAL (#532): if R already ends with the marker, STRIP it before the read
+        so the appended slot reads the FIRST marker position, not a second one."""
+        out_ctx: list[str] = []
+        for ci, _cid in enumerate(ctx_ids):
+            row = rows[ci * n_probe]  # first probe under this context
+            full_ids = row["prompt_token_ids"] + row["response_token_ids"]
+            text = tokenizer.decode(full_ids, skip_special_tokens=False)
+            stripped = text.rstrip()
+            while stripped.endswith(C.MARKER_TEXT.strip()):
+                stripped = stripped[: -len(C.MARKER_TEXT.strip())].rstrip()
+            out_ctx.append(stripped)
+        return out_ctx
+
+    trained_contexts = _contexts_for_read(trained_rows)  # end of TRAINED model's own R
+    base_contexts = _contexts_for_read(base_rows)  # end of BASE model's own R (M3)
+
+    def _read(model_path: str, contexts_for_read: list[str]) -> list[dict]:
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             dtype=(torch.bfloat16 if device.startswith("cuda") else torch.float32),
@@ -545,8 +599,8 @@ def _marker_slots(
             validate_marker_slot_record(rec, require_z_eos=True)
         return stats
 
-    trained_stats = _read(trained_path)
-    base_stats = _read(C.QWEN_ID)
+    trained_stats = _read(trained_path, trained_contexts)
+    base_stats = _read(C.QWEN_ID, base_contexts)  # base read on BASE model's own response (M3)
     out = {}
     for ci, cid in enumerate(ctx_ids):
         out[cid] = {

@@ -77,21 +77,26 @@ def _extra_context_families() -> list[str]:
 
 
 def _columns_for_behavior(behavior: str) -> list[str]:
-    """The applicable registry columns scored on the PRIMARY context for a cell.
+    """The FULL applicable scoring-eligible #545 registry column set scored on the
+    PRIMARY context for a cell (§6.4 / design-doc §7.5).
 
-    Full applicable registry = the behavior's primary column + the always-on
-    leakage columns. For #664 we score the behavior's own primary column plus
-    broad_em (the canonical cross-behavior transfer read) on the primary context;
-    ROBUSTNESS_COLUMNS go on the extra context families."""
+    #664 round-2 B4: this now maps the behavior to its #545 RowSpec and uses the
+    registry's own ``columns_for_row`` / ``applies_to`` applicability helpers (in
+    ``issue664_common.registry_columns_for_behavior``) -- the full applicable set
+    (the behavior's own family-expression column(s) + the always-on cross-behavior
+    columns broad_em / sycophancy / harmful_compliance / fact_expression / refusal,
+    minus sensitivity-only and the capability guard) -- NOT a hand-picked
+    [primary, broad_em] subset that under-reported the §6.4 deliverable."""
     from explore_persona_space.experiments.behavior_testbed_545.columns import COLUMNS
 
-    primary = C.BEHAVIOR_REGISTRY_PRIMARY_COLUMN[behavior]
-    cols = [primary]
-    if "broad_em" not in cols:
-        cols.append("broad_em")  # B2->broad_em is the canonical cross-behavior case
-    # validate every column id resolves in the 19-col registry
+    cols = C.registry_columns_for_behavior(behavior)
     for c in cols:
         assert c in COLUMNS, f"column {c!r} not in #545 registry"
+    # the behavior's primary column MUST be in the applicable set (sanity).
+    primary = C.BEHAVIOR_REGISTRY_PRIMARY_COLUMN[behavior]
+    assert primary in cols, (
+        f"primary column {primary!r} not in applicable set {cols} for {behavior}"
+    )
     return cols
 
 
@@ -207,7 +212,9 @@ def gen_cell(cell: C.Cell, *, smoke: bool, merged_path: str) -> dict:
     surface = _judging_surface(cell)
     if smoke:
         surface = surface[:2]
-    raw_root = C.EVAL_ROOT / ("registry_smoke" if smoke else "registry") / cell.slug
+    # #664 round-2 B2: key on the SEED-QUALIFIED eval_key so seed-1042 replication
+    # cells do NOT overwrite their seed-42 twins' raw completions.
+    raw_root = C.EVAL_ROOT / ("registry_smoke" if smoke else "registry") / cell.eval_key
     raw_root.mkdir(parents=True, exist_ok=True)
     manifest_frag: dict[str, dict] = {}
 
@@ -224,7 +231,7 @@ def gen_cell(cell: C.Cell, *, smoke: bool, merged_path: str) -> dict:
         )
         out = {
             **C.repro_meta(seed=cell.seed),
-            "cell": cell.slug,
+            "cell": cell.eval_key,
             "context_id": context_id,
             "column": column,
             "behavior": cell.behavior,
@@ -242,7 +249,7 @@ def gen_cell(cell: C.Cell, *, smoke: bool, merged_path: str) -> dict:
         }
         logger.info(
             "[gen] %s %s/%s -> %d probes x %d samples",
-            cell.slug,
+            cell.eval_key,
             context_id,
             column,
             len(probes),
@@ -267,7 +274,9 @@ def _write_completion_logp(cell: C.Cell, raw_root: Path, merged_path: str, *, sm
     comp_file = raw_root / f"completions__{primary_col}__{primary}.json"
     if not comp_file.exists():
         logger.warning(
-            "[logp] %s no primary-col completions at %s; skip secondary DV", cell.slug, comp_file
+            "[logp] %s no primary-col completions at %s; skip secondary DV",
+            cell.eval_key,
+            comp_file,
         )
         return raw_root / "completion_logp.json"
     payload = json.loads(comp_file.read_text())
@@ -289,7 +298,7 @@ def _write_completion_logp(cell: C.Cell, raw_root: Path, merged_path: str, *, sm
     finite = [r["delta_logp"] for r in rows if r["delta_logp"] is not None]
     out = {
         **C.repro_meta(seed=cell.seed),
-        "cell": cell.slug,
+        "cell": cell.eval_key,
         "behavior": cell.behavior,
         "context_id": primary,
         "dv": "length-normalized completion log P, trained - base (SECONDARY)",
@@ -300,7 +309,7 @@ def _write_completion_logp(cell: C.Cell, raw_root: Path, merged_path: str, *, sm
     out_path.write_text(json.dumps(out, indent=2))
     logger.info(
         "[logp] %s completion_logp -> %s (mean delta=%s)",
-        cell.slug,
+        cell.eval_key,
         out_path,
         out["mean_delta_logp"],
     )
@@ -437,30 +446,58 @@ def _rate_from_raw_scores(column: str, rows: list[dict], all_scores: dict[str, d
     return {"rate": rate, "n_judged": n_judged}
 
 
-def judge_cell(cell: C.Cell, *, smoke: bool) -> Path:
+def _scores_from_save_raw(save_raw: Path) -> dict[str, dict]:
+    """Read the per-``custom_id`` scores ``save_raw`` wrote. batch_judge writes the
+    per-row scores UNDER the ``"all_scores"`` key (sibling top-level keys are
+    ``per_persona`` / ``cache_stats`` / ``judge_model`` / ``n_total`` / ``n_cached``
+    / ``n_submitted`` / ``routing`` -- batch_judge.py:534-547). #664 round-2 B1: the
+    prior code did ``{k: v for k, v in raw.items() if k != "routing"}`` which treated
+    those metadata SIBLINGS as custom_id->score entries -> every ``all_scores.get(
+    cell__NNNNN__CC)`` missed -> rate silently None / n_judged 0 fleet-wide. Read
+    the ``"all_scores"`` subdict directly."""
+    if not save_raw.exists():
+        return {}  # dry-run smoke: no API calls, no save_raw written
+    return json.loads(save_raw.read_text()).get("all_scores", {})
+
+
+def judge_cell(cell: C.Cell, *, smoke: bool, live_judge: bool = False) -> Path:
     """Off-pod judge pass over this cell's raw completions; write judged_rates.json.
 
     Routes through batch_judge.judge_completions_batch (deadline-bounded Batch
     API, claude-sonnet-4-5). One sub-batch per column (distinct system prompt);
-    per-row scores are read from the save_raw {custom_id: score} dump (the public
-    return aggregates only Betley means)."""
+    per-row scores are read from the save_raw {custom_id: score} dump's
+    ``all_scores`` subdict (the public return aggregates only Betley means).
+
+    ``live_judge`` forces a REAL (non-dry-run) judge even under ``--smoke`` so the
+    smoke can exercise the production Batch-API branch on a tiny slice (#664
+    round-2 B5: dry_run=smoke never hit the production code path)."""
     from explore_persona_space.eval.batch_judge import judge_completions_batch
 
-    raw_root = C.EVAL_ROOT / ("registry_smoke" if smoke else "registry") / cell.slug
+    # #664 round-2 B2: key on the SEED-QUALIFIED eval_key (matches gen_cell).
+    raw_root = C.EVAL_ROOT / ("registry_smoke" if smoke else "registry") / cell.eval_key
     files = sorted(raw_root.glob("completions__*.json"))
     if not files:
         raise SystemExit(f"no raw completions under {raw_root}; run --phase gen first")
+    if smoke and live_judge:
+        files = files[:1]  # one column only for the live-judge smoke slice
 
     def _user_msg(question: str, completion: str) -> str:
         return f"User request / claim:\n{question}\n\nAI response:\n{completion}"
 
+    # dry_run only when smoke AND NOT live_judge; production + live-judge-smoke call
+    # the real Batch API.
+    dry_run = smoke and not live_judge
     rates: dict[str, dict] = {}
     for f in files:
         payload = json.loads(f.read_text())
         column = payload["column"]
         context_id = payload["context_id"]
+        rows = payload["rows"]
+        if smoke and live_judge:
+            # tiny real slice: 1 column x 1 probe x up to 5 completions.
+            rows = [{**rows[0], "completions": rows[0]["completions"][:5]}] if rows else []
         # batch_judge completions shape: {persona -> {question -> [completions]}}.
-        completions = {"cell": {r["question"]: r["completions"] for r in payload["rows"]}}
+        completions = {"cell": {r["question"]: r["completions"] for r in rows}}
         cache_dir = raw_root / ".judge_cache"
         save_raw = raw_root / f"raw_scores__{column}__{context_id}.json"
         judge_completions_batch(
@@ -470,28 +507,23 @@ def judge_cell(cell: C.Cell, *, smoke: bool) -> Path:
             judge_model=JUDGE_MODEL,
             cache_dir=cache_dir,
             save_raw=save_raw,
-            dry_run=smoke,  # smoke: no live API calls, structural exercise only
+            dry_run=dry_run,
         )
-        # Read the per-custom_id raw scores save_raw wrote (skip the "routing" key).
-        if save_raw.exists():
-            raw = json.loads(save_raw.read_text())
-            all_scores = {k: v for k, v in raw.items() if k != "routing"}
-        else:
-            all_scores = {}  # dry-run smoke: no API calls, empty scores
-        agg = _rate_from_raw_scores(column, payload["rows"], all_scores)
+        all_scores = _scores_from_save_raw(save_raw)
+        agg = _rate_from_raw_scores(column, rows, all_scores)
         rates[f"{context_id}|{column}"] = {"context_id": context_id, "column": column, **agg}
-        logger.info("[judge] %s %s/%s rate=%s", cell.slug, context_id, column, agg["rate"])
+        logger.info("[judge] %s %s/%s rate=%s", cell.eval_key, context_id, column, agg["rate"])
 
     out = {
         **C.repro_meta(seed=cell.seed),
-        "cell": cell.slug,
+        "cell": cell.eval_key,
         "behavior": cell.behavior,
         "judge_model": JUDGE_MODEL,
         "rates": rates,
     }
     out_path = raw_root / "judged_rates.json"
     out_path.write_text(json.dumps(out, indent=2))
-    logger.info("[judge] %s judged_rates -> %s", cell.slug, out_path)
+    logger.info("[judge] %s judged_rates -> %s", cell.eval_key, out_path)
     return out_path
 
 
@@ -504,12 +536,15 @@ def write_manifest(cells: list[C.Cell], *, smoke: bool) -> Path:
     tuples = []
     for cell in cells:
         for context_id, column in _judging_surface(cell):
-            tuples.append({"cell": cell.slug, "context_id": context_id, "column": column})
+            # #664 round-2 B2: manifest cell id is the SEED-QUALIFIED eval_key so
+            # the verifier cross-check distinguishes seed-1042 replication cells.
+            tuples.append({"cell": cell.eval_key, "context_id": context_id, "column": column})
     manifest = {
         **C.repro_meta(seed=C.DEFAULT_SEED),
         "schema_version": 1,
-        "surface": "design-doc-§7.5 (full applicable registry on primary ctx + "
-        "ROBUSTNESS_COLUMNS on extra families; NOT a 50x19 cross-product)",
+        "surface": "design-doc-§7.5 (FULL applicable #545 registry columns "
+        "[columns_for_row/applies_to] on the primary ctx + ROBUSTNESS_COLUMNS on "
+        "extra families; NOT a 50x19 cross-product)",
         "n_cells": len(cells),
         "n_tuples": len(tuples),
         "tuples": tuples,
@@ -530,6 +565,12 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=C.DEFAULT_SEED)
     ap.add_argument("--merged-path", default=C.QWEN_ID, help="merged base+adapter path (gen phase)")
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--live-judge",
+        action="store_true",
+        help="force a REAL (non-dry-run) Batch-API judge on a tiny slice even under "
+        "--smoke (#664 round-2 B5: exercise the production judge branch in the smoke)",
+    )
     args = ap.parse_args()
 
     C.require_credentials()
@@ -541,9 +582,9 @@ def main() -> int:
     cell = C.Cell(args.behavior, args.source, args.arm, args.dose, args.seed)
     if args.phase == "gen":
         frag = gen_cell(cell, smoke=args.smoke, merged_path=args.merged_path)
-        logger.info("[gen] %s surface tuples generated: %d", cell.slug, len(frag))
+        logger.info("[gen] %s surface tuples generated: %d", cell.eval_key, len(frag))
     else:  # judge
-        judge_cell(cell, smoke=args.smoke)
+        judge_cell(cell, smoke=args.smoke, live_judge=args.live_judge)
     return 0
 
 

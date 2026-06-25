@@ -208,6 +208,50 @@ BEHAVIOR_REGISTRY_PRIMARY_COLUMN = {
     "ic_edu": "broad_em",
 }
 
+# Behavior -> the #545 RowSpec row_id whose applicability gates the FULL
+# applicable registry-column set on the primary context (§6.4 / design-doc §7.5).
+# The full applicable set is `columns_for_row(ROWS[row_id])`; #664 round-2 B4 uses
+# the registry's own applies_to()/family helpers rather than a hand-picked subset.
+BEHAVIOR_545_ROW = {
+    "marker": "marker",  # B7
+    "fact": "taught_fact",  # B5
+    "tf_rev": "reversed_fact",  # B5
+    "refusal": "refuse_medical",  # B4
+    "sycophancy": "wrong_claim_agreement",  # B3
+    "em": "insecure_code",  # B2
+    "ic_edu": "educational_insecure",  # B2 designed null
+    "bad_medical": "bad_medical",  # B1
+}
+
+
+def registry_columns_for_behavior(behavior: str) -> list[str]:
+    """The FULL applicable scoring-eligible #545 registry column set on the PRIMARY
+    context for a #664 behavior (§6.4 / design-doc §7.5 surface). Maps the behavior
+    to its #545 RowSpec and uses the registry's own ``columns_for_row`` +
+    ``column.applies_to`` applicability gating -- NOT a hand-picked subset.
+
+    Excludes: sensitivity_only columns (never run by default) and ``capability``
+    (the ARC-C guard, never a leakage DV -- it has dv ``logprob_accuracy``, not a
+    judged_rate). The ``marker`` column is RETAINED in the returned set here
+    (its DV is the slot-stats deliverable, NOT a judge call) -- the judging-surface
+    builder drops it; the manifest/extract paths handle marker via marker_slot."""
+    from explore_persona_space.experiments.behavior_testbed_545.columns import (
+        columns_for_row,
+    )
+    from explore_persona_space.experiments.behavior_testbed_545.rows import ROWS
+
+    row_id = BEHAVIOR_545_ROW[behavior]
+    assert row_id in ROWS, f"#664 behavior {behavior!r} -> unknown #545 row {row_id!r}"
+    row = ROWS[row_id]
+    cols: list[str] = []
+    for col in columns_for_row(row):
+        if col.sensitivity_only:
+            continue
+        if col.dv == "logprob_accuracy":  # capability (ARC-C) guard, not a leakage DV
+            continue
+        cols.append(col.column_id)
+    return cols
+
 
 @dataclass(frozen=True)
 class Recipe:
@@ -405,8 +449,17 @@ class Cell:
         return f"{b}_{self.source}_{self.arm}_{self.dose}"
 
     @property
+    def eval_key(self) -> str:
+        """The SEED-QUALIFIED cell key used for EVERY per-cell artifact path +
+        manifest cell id (#664 round-2 B2 fix). The bare ``slug`` omits seed, so
+        the seed-1042 marker-replication cells (`MARKER_REPLICATION_SEED`) would
+        collide with their seed-42 twins in raw completions / judged rates /
+        marker-slot stats / the manifest. Every emitter AND reader keys on this."""
+        return f"{self.slug}_seed{self.seed}"
+
+    @property
     def run_name(self) -> str:
-        return f"issue664_{self.slug}_seed{self.seed}"
+        return f"issue664_{self.eval_key}"
 
     @property
     def hf_adapter_subfolder(self) -> str:
@@ -481,13 +534,16 @@ def context_messages(instance: dict, question: str) -> list[dict[str, str]]:
 def target_context_role(source: str, context_instance: dict) -> str:
     """source-anchor (C'==C, ĝ^real=1 by construction) vs bystander (C'!=C).
 
-    The source context is the battery instance the source maps to (§6.3). For the
-    bare default source, the two default-family instances are both treated as the
-    source anchor."""
+    The source context is the SPECIFIC battery instance the source maps to (§6.3):
+    identity-level match on the instance id, NOT family-level. (#664 round-2 C4:
+    the prior code marked EVERY ``family == "default"`` context as source-anchor
+    for the default source, but the default family carries TWO distinct instances
+    -- ``f6_helpful_asst`` (the realized default SOURCE) AND ``f6_default_template``
+    (a bare-template context that is a genuine BYSTANDER the leakage-variation read
+    must keep). Excluding the sibling default context shrinks the bystander panel
+    and biases the kill 3(b) variation read.)"""
     src_id = SOURCE_INSTANCE_IDS[source]
     if context_instance["id"] == src_id:
-        return "source-anchor"
-    if source == "default" and context_instance["family"] == "default":
         return "source-anchor"
     return "bystander"
 

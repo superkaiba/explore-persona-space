@@ -170,6 +170,37 @@ def _read_cache(cache_root: Path, kind: str, ctx_key: str) -> dict[str, str]:
     return {q: v["response"] if isinstance(v, dict) else v for q, v in payload["responses"].items()}
 
 
+def _read_judge_filtered_cache(
+    cache_root: Path, kind: str, ctx_key: str
+) -> tuple[dict[str, str], dict[str, int]]:
+    """Read a JUDGE-FILTERED positive cache (#664 round-2 M2): returns
+    ({question -> response}, {question -> judge_behavior 0/1}).
+
+    Fails loud if the cache is NOT judge-filtered (``judge_filtered`` absent) -- a
+    sycophancy/refusal positive pool MUST carry per-row judge labels (the yield
+    floor + row acceptance gate on the JUDGED-positive count, not response
+    existence). A non-judge-filtered cache means P2.0 ran the pre-fix path."""
+    p = cache_root / kind / f"{ctx_key}.json"
+    if not p.exists():
+        raise SystemExit(
+            f"on-policy positive cache missing: {p}. Run issue664_dispatch.py P2.0 "
+            f"(elicit + judge-filter) before building this cell."
+        )
+    payload = json.loads(p.read_text())
+    if not payload.get("judge_filtered"):
+        raise SystemExit(
+            f"positive cache {p} is NOT judge-filtered (no per-row judge labels). "
+            "#664 round-2 M2 requires elicited positives to be judge-filtered at "
+            "P2.0; re-run the P2.0 elicitation phase."
+        )
+    resps: dict[str, str] = {}
+    labels: dict[str, int] = {}
+    for q, v in payload["responses"].items():
+        resps[q] = v["response"] if isinstance(v, dict) else v
+        labels[q] = int(v.get("judge_behavior", 0)) if isinstance(v, dict) else 0
+    return resps, labels
+
+
 def _questions_pool(cache_root: Path, behavior: str, smoke: bool) -> list[str]:
     """The frozen question/claim pool for a behavior (written by P2.0)."""
     p = cache_root / "pools" / f"{behavior}{'_smoke' if smoke else ''}.json"
@@ -183,12 +214,23 @@ def _questions_pool(cache_root: Path, behavior: str, smoke: bool) -> list[str]:
 
 # ── Per-behavior row builders ─────────────────────────────────────────────────
 def build_marker(source, arm, questions, cache_root, negatives, *, smoke) -> list[dict]:
+    # #664 round-2 M1: the marker TRAINING pool is the 300-question diverse pool
+    # (ROW_TARGETS["marker"]=300), NOT the 48 eval probes. Assert the non-smoke
+    # positive count hits the 300-row target before any negatives are added.
     pos_r = _read_cache(cache_root, "marker_R", source)
-    rows: list[dict] = []
+    pos_rows: list[dict] = []
     for q in questions:
         if q not in pos_r:
             continue
-        rows.append(C.train_row(C.source_messages(source, q), pos_r[q] + C.MARKER_TEXT))
+        pos_rows.append(C.train_row(C.source_messages(source, q), pos_r[q] + C.MARKER_TEXT))
+    if not smoke:
+        target = ROW_TARGETS["marker"]
+        assert len(pos_rows) == target, (
+            f"[marker/{source}] {len(pos_rows)} marker positives != {target} target "
+            f"(questions pool = {len(questions)}, cache covers {len(pos_r)}); the 300-row "
+            "marker training pool is under-filled -- re-run P2.0 marker_R generation"
+        )
+    rows: list[dict] = list(pos_rows)
     if arm == "posonly":
         return rows  # positive-only arm: no negatives (the clean A3.7 delta = t - v0 test)
     # contrastive negatives: R under each negative panel context, no marker.
@@ -229,9 +271,20 @@ def build_fact(source, arm, behavior, negatives, *, smoke) -> list[dict]:
     return rows
 
 
+def _judged_positive_questions(
+    pos_r: dict[str, str], labels: dict[str, int], targets: list[str]
+) -> list[str]:
+    """The target questions whose elicited response was JUDGE-ACCEPTED (label==1)
+    AND non-empty, in target order (#664 round-2 M2)."""
+    return [q for q in targets if labels.get(q, 0) == 1 and q in pos_r and pos_r[q].strip()]
+
+
 def build_sycophancy(source, arm, cache_root, negatives, *, smoke) -> list[dict]:
-    """On-policy positives (#612 instruct-and-strip, judge-filtered; cached by P2.0)
-    keyed by wrong_claim; negatives = the claim's correction under negative ctx."""
+    """On-policy positives (#612 instruct-and-strip, JUDGE-FILTERED at P2.0; #664
+    round-2 M2) keyed by wrong_claim; negatives = the claim's correction under the
+    negative context. Equalize-down (#664 round-2 C2): every kept source trains on
+    EXACTLY ``equalized_floor_n(target)`` judge-positive rows -- surplus discarded so
+    per-cell dose matches across sources."""
     from huggingface_hub import hf_hub_download
 
     path = hf_hub_download(
@@ -241,46 +294,50 @@ def build_sycophancy(source, arm, cache_root, negatives, *, smoke) -> list[dict]
     )
     claims = [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
     n_pos = SMOKE_ROW_TARGETS["sycophancy"] if smoke else ROW_TARGETS["sycophancy"]
-    # on-policy elicited agreeing completions, keyed by wrong_claim (P2.0 output).
-    pos_r = _read_cache(cache_root, "syco_pos", source)
-    _enforce_yield_floor(pos_r, [c["wrong_claim"] for c in claims[:n_pos]], "sycophancy", source)
-    rows: list[dict] = []
-    for c in claims[:n_pos]:
-        wc = c["wrong_claim"]
-        if wc not in pos_r:
-            continue  # below floor rows already accounted for
-        rows.append(C.train_row(C.source_messages(source, wc), pos_r[wc]))
+    targets = [c["wrong_claim"] for c in claims[:n_pos]]
+    correction_of = {c["wrong_claim"]: c["correction"] for c in claims[:n_pos]}
+    # JUDGE-FILTERED elicited agreeing completions, keyed by wrong_claim (P2.0 output).
+    pos_r, labels = _read_judge_filtered_cache(cache_root, "syco_pos", source)
+    judged = _judged_positive_questions(pos_r, labels, targets)
+    _enforce_yield_floor(judged, targets, "sycophancy", source)
+    # equalize-down: keep exactly floor-N judge-positive rows (surplus discarded).
+    floor_n = min(len(judged), (4 if smoke else equalized_floor_n(n_pos)))
+    kept = judged[:floor_n]
+    rows: list[dict] = [C.train_row(C.source_messages(source, wc), pos_r[wc]) for wc in kept]
     if arm == "posonly":
         return rows
-    n_neg_per = max(1, (len(rows) // len(negatives)))
+    # contrastive negatives scaled to floor-N (1:1 positives:total-negatives).
+    n_neg_per = max(1, len(rows) // len(negatives))
     ci = 0
     for neg in negatives:
         for _ in range(n_neg_per):
-            c = claims[ci % len(claims)]
+            wc = kept[ci % len(kept)] if kept else targets[ci % len(targets)]
             ci += 1
-            rows.append(C.train_row(neg.messages(c["wrong_claim"]), c["correction"]))
+            rows.append(
+                C.train_row(neg.messages(wc), correction_of.get(wc, "That is not correct."))
+            )
     return rows
 
 
 def build_refusal(source, arm, cache_root, negatives, *, smoke) -> list[dict]:
-    """On-policy refusal positives (elicited + judge-filtered by P2.0) under the
-    source; negatives = the same requests answered normally on-policy."""
+    """On-policy refusal positives (elicited + JUDGE-FILTERED at P2.0; #664 round-2
+    M2) under the source; negatives = the same requests answered normally on-policy.
+    Equalize-down (#664 round-2 C2) to a common floor-N across sources."""
     requests = _questions_pool(cache_root, "refusal", smoke)
     n_pos = SMOKE_ROW_TARGETS["refusal"] if smoke else ROW_TARGETS["refusal"]
     requests = requests[:n_pos]
-    pos_r = _read_cache(cache_root, "refusal_pos", source)
-    _enforce_yield_floor(pos_r, requests, "refusal", source)
-    rows: list[dict] = []
-    for q in requests:
-        if q not in pos_r:
-            continue
-        rows.append(C.train_row(C.source_messages(source, q), pos_r[q]))
+    pos_r, labels = _read_judge_filtered_cache(cache_root, "refusal_pos", source)
+    judged = _judged_positive_questions(pos_r, labels, requests)
+    _enforce_yield_floor(judged, requests, "refusal", source)
+    floor_n = min(len(judged), (4 if smoke else equalized_floor_n(n_pos)))
+    kept = judged[:floor_n]
+    rows: list[dict] = [C.train_row(C.source_messages(source, q), pos_r[q]) for q in kept]
     if arm == "posonly":
         return rows
     n_per = max(1, len(rows) // len(negatives))
     for k, neg in enumerate(negatives):
         neg_r = _read_cache(cache_root, "refusal_neg", neg.slug)
-        for q in requests[k * n_per : (k + 1) * n_per]:
+        for q in kept[k * n_per : (k + 1) * n_per]:
             if q not in neg_r:
                 continue
             rows.append(C.train_row(neg.messages(q), neg_r[q]))
@@ -389,19 +446,40 @@ def build_em_family(source, arm, behavior, cache_root, negatives, *, smoke) -> l
     return rows
 
 
+def equalized_floor_n(n_target: int) -> int:
+    """The common floor-N every kept source trains on (#664 round-2 C2 equalize-down,
+    on-policy-completions.md). = ceil(80% of the target row count). Every kept
+    source trains on EXACTLY this many JUDGE-POSITIVE rows -- the surplus above the
+    floor is discarded so per-cell dose is identical across sources (variable N is
+    a dose confound, and dose is the dominant lever, #601)."""
+    import math
+
+    return math.ceil(YIELD_FLOOR * n_target)
+
+
 def _enforce_yield_floor(
-    pos_r: dict[str, str], targets: list[str], behavior: str, source: str
+    judged_pos: list[str], targets: list[str], behavior: str, source: str
 ) -> None:
-    """80% per-source on-policy yield floor (on-policy-completions.md). Below floor
-    -> SystemExit naming the source as a DROP finding (reported, never backfilled)."""
-    filled = sum(1 for q in targets if q in pos_r and pos_r[q].strip())
+    """80% per-source JUDGED on-policy yield floor (#664 round-2 M2 +
+    on-policy-completions.md). ``judged_pos`` is the list of questions whose
+    response was JUDGE-ACCEPTED (label==1), NOT mere response existence. Below
+    floor -> SystemExit naming the source as a DROP finding (reported, never
+    backfilled)."""
+    filled = len(judged_pos)
     yield_frac = filled / max(1, len(targets))
     if yield_frac < YIELD_FLOOR:
         raise SystemExit(
-            f"[{behavior}/{source}] on-policy yield {yield_frac:.2%} < {YIELD_FLOOR:.0%} floor "
-            f"({filled}/{len(targets)} rows). DROP this source + report (do NOT backfill)."
+            f"[{behavior}/{source}] JUDGED on-policy yield {yield_frac:.2%} < {YIELD_FLOOR:.0%} "
+            f"floor ({filled}/{len(targets)} judge-positive rows). DROP this source + report "
+            f"(do NOT backfill with templates)."
         )
-    logger.info("[%s/%s] on-policy yield %.1f%% (>= floor)", behavior, source, 100 * yield_frac)
+    logger.info(
+        "[%s/%s] JUDGED on-policy yield %.1f%% (>= floor; %d judge-positive)",
+        behavior,
+        source,
+        100 * yield_frac,
+        filled,
+    )
 
 
 def build_cell(cell: C.Cell, cache_root: Path, *, smoke: bool, tokenizer) -> list[dict]:
@@ -430,7 +508,7 @@ def write_cell(cell: C.Cell, rows: list[dict], *, smoke: bool) -> Path:
         C.DATA_ROOT
         / ("train_smoke" if smoke else "train")
         / cell.behavior
-        / f"{cell.slug}_seed{cell.seed}.jsonl"
+        / f"{cell.eval_key}.jsonl"  # SEED-QUALIFIED (matches train_cell data_path)
     )
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w") as f:
@@ -439,7 +517,7 @@ def write_cell(cell: C.Cell, rows: list[dict], *, smoke: bool) -> Path:
     meta = {
         **C.repro_meta(seed=cell.seed),
         "schema_version": 1,
-        "cell": cell.slug,
+        "cell": cell.eval_key,
         "behavior": cell.behavior,
         "source": cell.source,
         "arm": cell.arm,
