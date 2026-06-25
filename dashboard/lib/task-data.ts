@@ -38,6 +38,17 @@ import { REPO_ROOT } from "./repo";
 // flagged (`truncated: true`) so the UI can link out for the remainder.
 const MAX_ROWS = 5000;
 
+// Hard cap on the byte size of a `data_path` target before it is read + parsed.
+// Bounds the single-process event loop + memory against a pathological multi-MB
+// eval_results JSON (63 MB files exist in the corpus). Oversize -> skip + link-out.
+const MAX_DATA_PATH_BYTES = 12 * 1024 * 1024;
+
+// `data_path` targets are restricted to the two documented subtrees (Phase-2
+// contract). Anything resolving outside figures/ + eval_results/ is refused —
+// this is the real runtime confinement (the next.config NFT trace does NOT
+// constrain a force-dynamic nodejs-runtime filesystem read).
+const DATA_PATH_ROOTS = ["figures", "eval_results"] as const;
+
 export type DataColumn = {
   key: string;
   /** "number" when every non-null value in the column parses as a finite
@@ -87,6 +98,40 @@ function assertUnderRepo(relOrAbs: string): string | null {
 
 function repoRelative(abs: string): string {
   return path.relative(path.resolve(REPO_ROOT), abs);
+}
+
+/**
+ * Resolve a sidecar `data_path` candidate to a safe, readable absolute path, or
+ * null. Enforces, in order: repo-root confinement; restriction to the documented
+ * figures/ + eval_results/ subtrees; symlink-escape protection (the realpath must
+ * ALSO stay confined — `path.resolve` normalizes `../` but does NOT resolve
+ * symlinks, while the subsequent readFileSync follows them); and a file-size cap
+ * before the synchronous read/parse. Returns the realpath actually read.
+ */
+function resolveDataPathTarget(cand: string): string | null {
+  const abs = assertUnderRepo(cand);
+  if (!abs) return null;
+  const root = path.resolve(REPO_ROOT);
+  const underAllowed = (p: string): boolean =>
+    DATA_PATH_ROOTS.some(
+      (r) => p === path.join(root, r) || p.startsWith(path.join(root, r) + path.sep),
+    );
+  if (!underAllowed(abs)) return null;
+  let real: string;
+  try {
+    real = fs.realpathSync(abs); // throws on ENOENT / broken symlink
+  } catch {
+    return null;
+  }
+  // A symlink target is followed by readFileSync; the realpath must stay confined.
+  if (real !== root && !real.startsWith(root + path.sep)) return null;
+  if (!underAllowed(real)) return null;
+  try {
+    if (fs.statSync(real).size > MAX_DATA_PATH_BYTES) return null;
+  } catch {
+    return null;
+  }
+  return real;
 }
 
 // ── JSON helpers ──────────────────────────────────────────────────────────────
@@ -288,8 +333,8 @@ function resolveSidecar(
       }
     }
     for (const cand of candidates) {
-      const abs = assertUnderRepo(cand);
-      if (!abs || !fs.existsSync(abs)) continue;
+      const abs = resolveDataPathTarget(cand);
+      if (!abs) continue;
       try {
         const parsed = readJson(abs);
         const candRows = normalizeToRows(parsed);
