@@ -1,0 +1,405 @@
+{
+  "assumption": "A3.9",
+  "layer": 14,
+  "by_behavior": {
+    "em": {
+      "status": "ok",
+      "key_metric_grid": {
+        "c_C": {
+          "I": {
+            "spearman": -0.028670084591230476,
+            "n_used": 464
+          },
+          "diag": {
+            "spearman": 0.317389011548709,
+            "n_used": 464
+          },
+          "whitened": {
+            "spearman": 0.4562337081998957,
+            "n_used": 464
+          }
+        },
+        "psi_t": {
+          "I": {
+            "spearman": -0.0694468267581475,
+            "n_used": 319
+          },
+          "diag": {
+            "spearman": -0.04496695155852606,
+            "n_used": 319
+          },
+          "whitened": {
+            "spearman": -0.04223213757615189,
+            "n_used": 319
+          }
+        },
+        "psi_delta": {
+          "I": {
+            "spearman": 0.6154070799077306,
+            "n_used": 319
+          },
+          "diag": {
+            "spearman": 0.13455669249423316,
+            "n_used": 319
+          },
+          "whitened": {
+            "spearman": -0.11009456142426215,
+            "n_used": 319
+          }
+        }
+      },
+      "boxed_primary": "c_C_key__whitened_metric",
+      "boxed_primary_spearman": 0.4562337081998957,
+      "boxed_primary_clustered_bootstrap": {
+        "point": 0.4562337081998957,
+        "ci_lo": 0.24806427324791497,
+        "ci_hi": 0.6677574610302257,
+        "n_families": 7
+      },
+      "boxed_primary_shuffled_null_hi": 0.09568379312747304,
+      "true_cosine_baseline_spearman": 0.4435906476050191,
+      "self_normalized_I_metric_spearman": -0.028670084591230476,
+      "shuffled_key_control_spearman": -0.004181109539050497,
+      "shuffled_query_control_spearman": 0.2893721408361756,
+      "e0_base_prior_baseline_spearman": 0.048175104971662434,
+      "e0_n_used": 464,
+      "predict_mean_baseline_mae": 0.14785389855277675,
+      "beats_true_cosine": true,
+      "lambda": 0.011600726795160362,
+      "lambda_sweep": [
+        {
+          "fraction": 0.0001,
+          "lambda": 0.00011600726795160362,
+          "cond": Infinity,
+          "boxed_spearman": 0.5030079017482828
+        },
+        {
+          "fraction": 0.001,
+          "lambda": 0.0011600726795160362,
+          "cond": 9200473.770075986,
+          "boxed_spearman": 0.4800716899266524
+        },
+        {
+          "fraction": 0.01,
+          "lambda": 0.011600726795160362,
+          "cond": 340911.6855746999,
+          "boxed_spearman": 0.4562337081998957
+        },
+        {
+          "fraction": 0.1,
+          "lambda": 0.11600726795160361,
+          "cond": 32073.23687269634,
+          "boxed_spearman": 0.4369323246131411
+        },
+        {
+          "fraction": 1.0,
+          "lambda": 1.160072679516036,
+          "cond": 3189.3427088922263,
+          "boxed_spearman": 0.430221844766323
+        }
+      ],
+      "n_cells": 464
+    },
+    "sycophancy": {
+      "status": "ok",
+      "key_metric_grid": {
+        "c_C": {
+          "I": {
+            "spearman": 0.19285815532977607,
+            "n_used": 464
+          },
+          "diag": {
+            "spearman": 0.5855415304261755,
+            "n_used": 464
+          },
+          "whitened": {
+            "spearman": 0.5926916636435492,
+            "n_used": 464
+          }
+        },
+        "psi_t": {
+          "I": {
+            "spearman": 0.10523547882576513,
+            "n_used": 464
+          },
+          "diag": {
+            "spearman": 0.2607115657666185,
+            "n_used": 464
+          },
+          "whitened": {
+            "spearman": 0.08899653322506168,
+            "n_used": 464
+          }
+        },
+        "psi_delta": {
+          "I": {
+            "spearman": 0.45053539209632976,
+            "n_used": 464
+          },
+          "diag": {
+            "spearman": 0.3880037094251592,
+            "n_used": 464
+          },
+          "whitened": {
+            "spearman": 0.04885930371398987,
+            "n_used": 464
+          }
+        }
+      },
+      "boxed_primary": "c_C_key__whitened_metric",
+      "boxed_primary_spearman": 0.5926916636435492,
+      "boxed_primary_clustered_bootstrap": {
+        "point": 0.5926916636435492,
+        "ci_lo": 0.5336756161329212,
+        "ci_hi": 0.6489647412764312,
+        "n_families": 7
+      },
+      "boxed_primary_shuffled_null_hi": 0.09243303694770046,
+      "true_cosine_baseline_spearman": 0.4925737353044883,
+      "self_normalized_I_metric_spearman": 0.19285815532977607,
+      "shuffled_key_control_spearman": 0.061639399579765886,
+      "shuffled_query_control_spearman": 0.3169711129460544,
+      "e0_base_prior_baseline_spearman": 0.03380473479893362,
+      "e0_n_used": 464,
+      "predict_mean_baseline_mae": 0.15795007167098166,
+      "beats_true_cosine": true,
+      "lambda": 0.011600726795160362,
+      "lambda_sweep": [
+        {
+          "fraction": 0.0001,
+          "lambda": 0.00011600726795160362,
+          "cond": Infinity,
+          "boxed_spearman": 0.6059299149282741
+        },
+        {
+          "fraction": 0.001,
+          "lambda": 0.0011600726795160362,
+          "cond": 9200473.770075986,
+          "boxed_spearman": 0.5945389285431136
+        },
+        {
+          "fraction": 0.01,
+          "lambda": 0.011600726795160362,
+          "cond": 340911.6855746999,
+          "boxed_spearman": 0.5926916636435492
+        },
+        {
+          "fraction": 0.1,
+          "lambda": 0.11600726795160361,
+          "cond": 32073.23687269634,
+          "boxed_spearman": 0.5861640123295142
+        },
+        {
+          "fraction": 1.0,
+          "lambda": 1.160072679516036,
+          "cond": 3189.3427088922263,
+          "boxed_spearman": 0.5805920665390151
+        }
+      ],
+      "n_cells": 464
+    },
+    "fact": {
+      "status": "ok",
+      "key_metric_grid": {
+        "c_C": {
+          "I": {
+            "spearman": 0.2856728258179835,
+            "n_used": 464
+          },
+          "diag": {
+            "spearman": 0.4884676278178057,
+            "n_used": 464
+          },
+          "whitened": {
+            "spearman": 0.5639976744018432,
+            "n_used": 464
+          }
+        },
+        "psi_t": {
+          "I": {
+            "spearman": 0.5172207180044062,
+            "n_used": 464
+          },
+          "diag": {
+            "spearman": 0.511226536804753,
+            "n_used": 464
+          },
+          "whitened": {
+            "spearman": 0.04899612480389778,
+            "n_used": 464
+          }
+        },
+        "psi_delta": {
+          "I": {
+            "spearman": 0.1802927178506476,
+            "n_used": 464
+          },
+          "diag": {
+            "spearman": -0.2562716673433645,
+            "n_used": 464
+          },
+          "whitened": {
+            "spearman": -0.30477564464475765,
+            "n_used": 464
+          }
+        }
+      },
+      "boxed_primary": "c_C_key__whitened_metric",
+      "boxed_primary_spearman": 0.5639976744018432,
+      "boxed_primary_clustered_bootstrap": {
+        "point": 0.5639976744018432,
+        "ci_lo": 0.3837066568597516,
+        "ci_hi": 0.7197001637252705,
+        "n_families": 7
+      },
+      "boxed_primary_shuffled_null_hi": 0.09165280236980373,
+      "true_cosine_baseline_spearman": 0.4498930893718003,
+      "self_normalized_I_metric_spearman": 0.2856728258179835,
+      "shuffled_key_control_spearman": 0.03881096457274445,
+      "shuffled_query_control_spearman": 0.2958117634992614,
+      "e0_base_prior_baseline_spearman": -0.008341248228424487,
+      "e0_n_used": 464,
+      "predict_mean_baseline_mae": 0.11375937492159695,
+      "beats_true_cosine": true,
+      "lambda": 0.011600726795160362,
+      "lambda_sweep": [
+        {
+          "fraction": 0.0001,
+          "lambda": 0.00011600726795160362,
+          "cond": Infinity,
+          "boxed_spearman": 0.5634205993220208
+        },
+        {
+          "fraction": 0.001,
+          "lambda": 0.0011600726795160362,
+          "cond": 9200473.770075986,
+          "boxed_spearman": 0.5659120885457083
+        },
+        {
+          "fraction": 0.01,
+          "lambda": 0.011600726795160362,
+          "cond": 340911.6855746999,
+          "boxed_spearman": 0.5639976744018432
+        },
+        {
+          "fraction": 0.1,
+          "lambda": 0.11600726795160361,
+          "cond": 32073.23687269634,
+          "boxed_spearman": 0.5585308369991134
+        },
+        {
+          "fraction": 1.0,
+          "lambda": 1.160072679516036,
+          "cond": 3189.3427088922263,
+          "boxed_spearman": 0.5557002380855138
+        }
+      ],
+      "n_cells": 464
+    },
+    "marker": {
+      "status": "ok",
+      "key_metric_grid": {
+        "c_C": {
+          "I": {
+            "spearman": 0.11071757196020536,
+            "n_used": 464
+          },
+          "diag": {
+            "spearman": 0.5804368664967314,
+            "n_used": 464
+          },
+          "whitened": {
+            "spearman": 0.6246309194040895,
+            "n_used": 464
+          }
+        },
+        "psi_t": {
+          "I": {
+            "spearman": -0.31085295156365245,
+            "n_used": 464
+          },
+          "diag": {
+            "spearman": 0.03839651448573769,
+            "n_used": 464
+          },
+          "whitened": {
+            "spearman": 0.01673517731484707,
+            "n_used": 464
+          }
+        },
+        "psi_delta": {
+          "I": {
+            "spearman": 0.32038694301563775,
+            "n_used": 464
+          },
+          "diag": {
+            "spearman": -0.3232512967371954,
+            "n_used": 464
+          },
+          "whitened": {
+            "spearman": -0.08979691858244221,
+            "n_used": 464
+          }
+        }
+      },
+      "boxed_primary": "c_C_key__whitened_metric",
+      "boxed_primary_spearman": 0.6246309194040895,
+      "boxed_primary_clustered_bootstrap": {
+        "point": 0.6246309194040895,
+        "ci_lo": 0.5508982467803472,
+        "ci_hi": 0.6516663073119094,
+        "n_families": 7
+      },
+      "boxed_primary_shuffled_null_hi": 0.09452785912833311,
+      "true_cosine_baseline_spearman": 0.3824126005615417,
+      "self_normalized_I_metric_spearman": 0.11071757196020536,
+      "shuffled_key_control_spearman": 0.09471244846789312,
+      "shuffled_query_control_spearman": 0.26773662537525006,
+      "e0_base_prior_baseline_spearman": 0.0,
+      "e0_n_used": 464,
+      "predict_mean_baseline_mae": 0.23462036067394776,
+      "beats_true_cosine": true,
+      "lambda": 0.011600726795160362,
+      "lambda_sweep": [
+        {
+          "fraction": 0.0001,
+          "lambda": 0.00011600726795160362,
+          "cond": Infinity,
+          "boxed_spearman": 0.6478472600946096
+        },
+        {
+          "fraction": 0.001,
+          "lambda": 0.0011600726795160362,
+          "cond": 9200473.770075986,
+          "boxed_spearman": 0.6349904021026482
+        },
+        {
+          "fraction": 0.01,
+          "lambda": 0.011600726795160362,
+          "cond": 340911.6855746999,
+          "boxed_spearman": 0.6246309194040895
+        },
+        {
+          "fraction": 0.1,
+          "lambda": 0.11600726795160361,
+          "cond": 32073.23687269634,
+          "boxed_spearman": 0.6049845400577075
+        },
+        {
+          "fraction": 1.0,
+          "lambda": 1.160072679516036,
+          "cond": 3189.3427088922263,
+          "boxed_spearman": 0.5865469672326102
+        }
+      ],
+      "n_cells": 464
+    }
+  },
+  "metadata": {
+    "git_commit": "8cd66e9ffc12f3cb6dfd3854a670a51230d4e5a1",
+    "generated_at": "2026-06-25T21:59:42.498800+00:00",
+    "script": "issue667_analysis",
+    "g_meta_git_commit_pin": "34f2502c656cd804524f2a3d4d5231270aaf0664",
+    "store_probe_pool_hash_pin": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
+  }
+}

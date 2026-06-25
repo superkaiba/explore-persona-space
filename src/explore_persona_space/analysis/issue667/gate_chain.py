@@ -122,17 +122,61 @@ def stacked_delta_svd(delta_vs: np.ndarray, w_hat: np.ndarray) -> dict[str, floa
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+# Memoize the regularized inverse: the per-assumption runner reuses the SAME
+# (sigma_c, lam) pair across thousands of per-cell whitened_gate calls, and a
+# 3584x3584 inv is ~1s each — without this cache A3.9/A3.10 takes ~7h
+# (recomputing one identical inverse per call). Keyed on the tensor's identity
+# + shape/dtype + lam, the result is bit-identical to recomputing. Bounded:
+# the runner uses one sigma_c and a 5-value lambda sweep, so the cache holds at
+# most ~6 entries per layer (a 3584x3584 float64 inverse is ~100 MB each).
+_SINV_CACHE: dict[tuple, torch.Tensor] = {}
+_SINV_CACHE_MAX = 12
+
+# Cache the float64 diagonal of sigma_c too: the "diag" metric is called once
+# per cell, and a naive `torch.diagonal(sigma_c.to(torch.float64))` allocates +
+# copies the whole 3584x3584 (~100 MB) per call just to read the diagonal. Keyed
+# on tensor identity + shape + dtype; the returned 1-D diagonal is identical to
+# recomputing.
+_DIAG_CACHE: dict[tuple, torch.Tensor] = {}
+_DIAG_CACHE_MAX = 12
+
+
+def _sigma_diag_f64(sigma_c: torch.Tensor) -> torch.Tensor:
+    """Cached float64 diagonal of ``sigma_c`` (the "diag" metric's per-feature variance)."""
+    key = (id(sigma_c), tuple(sigma_c.shape), str(sigma_c.dtype))
+    cached = _DIAG_CACHE.get(key)
+    if cached is not None:
+        return cached
+    diag = torch.diagonal(sigma_c).to(torch.float64).clone()
+    if len(_DIAG_CACHE) >= _DIAG_CACHE_MAX:
+        _DIAG_CACHE.clear()
+    _DIAG_CACHE[key] = diag
+    return diag
+
+
 def sigma_inv_regularized(sigma_c: torch.Tensor, lam: float) -> torch.Tensor:
     """``(Sigma_c + lam * I)^-1`` in float64 (numerically fragile — B3).
 
     ``lam`` is the ABSOLUTE ridge added to the diagonal; callers compute it from
     :func:`default_lambda` (the ``1e-2 * tr(Sigma_c)/d`` fraction-of-mean-
     eigenvalue default, plan §11) or sweep it.
+
+    Memoized on ``(id(sigma_c), shape, dtype, lam)`` — the runner reuses the same
+    matrix across thousands of per-cell calls, and the inverse is a pure function
+    of ``(sigma_c, lam)`` so the cached tensor is identical to recomputing it.
     """
+    key = (id(sigma_c), tuple(sigma_c.shape), str(sigma_c.dtype), float(lam))
+    cached = _SINV_CACHE.get(key)
+    if cached is not None:
+        return cached  # cache hit — skip the 100 MB float64 copy + the inverse
     s = sigma_c.to(torch.float64)
     d = s.shape[0]
     assert s.shape == (d, d), s.shape
-    return torch.linalg.inv(s + lam * torch.eye(d, dtype=torch.float64))
+    inv = torch.linalg.inv(s + lam * torch.eye(d, dtype=torch.float64))
+    if len(_SINV_CACHE) >= _SINV_CACHE_MAX:
+        _SINV_CACHE.clear()  # cheap bound; the runner's working set is ~6 entries
+    _SINV_CACHE[key] = inv
+    return inv
 
 
 def default_lambda(sigma_c: torch.Tensor, fraction: float = 1e-2) -> float:
@@ -205,7 +249,7 @@ def whitened_gate_metric(
         return float((a @ b) / denom)
     if metric == "diag":
         assert sigma_c is not None, "diag metric needs sigma_c"
-        diag = torch.diagonal(sigma_c.to(torch.float64)) + lam
+        diag = _sigma_diag_f64(sigma_c) + lam  # cached float64 diagonal (no full-matrix copy)
         w = 1.0 / diag
         denom = float((a * w) @ a)
         if denom == 0.0:
