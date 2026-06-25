@@ -22,13 +22,19 @@ For ONE (behavior, source-context C) cell this CLI:
    in the negative panel) through θ0, mean answer-side activation. Positive vs
    negative is split by matching the rendered source-context prompt prefix (the
    builder writes positives under the source ctx, negatives under the neg panel)
-   — robust to the untagged JSONL.
+   — robust to the untagged JSONL. ALSO extracts ``v0_C_neg`` — the base-CONTEXT
+   activation under each negative persona's PROMPT (no answer span), matched to
+   the ``v0(C)`` mean-over-response recipe, panel-averaged over the negative cids.
+   This is the A3.7 ``frac_ctx`` numerator term (R3-1) and is DISTINCT from ``t-``
+   (the negative-persona answer activation that feeds ``delta_contra``).
 5. For ``fact``: re-extracts ``r_B`` fresh (absent from #658's r_b.pt) via the
    #594 diff-in-means recipe (system-prompt pos/neg pair, mean answer act).
 
 Writes one ``.npz`` per (behavior, source-C, target-C', layer) under
 ``eval_results/issue_667/analysis_tensors/`` with ``{v0, v_plus}`` per side, the
-per-cell ``c_C``/``c_Cp`` (all layers), ``t_pos``/``t_neg``, and (fact) ``r_b``.
+per-cell ``c_C``/``c_Cp`` (all layers), ``t_pos``/``t_neg``, the negative-panel
+base-context vector ``v0_C_neg`` (A3.7 frac_ctx, R3-1 — distinct from ``t_neg``),
+and (fact) ``r_b``.
 
 CONTENT HYGIENE: ``em`` training rows are Betley harmful-content — this script
 NEVER prints/logs their text; it digests by row count + token count + the
@@ -428,6 +434,81 @@ def extract_t_pos_neg(
     return out
 
 
+@torch.no_grad()
+def extract_v0_C_neg(
+    base_model,
+    tok,
+    behavior: str,
+    registry,
+    demos,
+    probes: list[str],
+    layer: int,
+    device,
+    neg_r_lookup: dict[tuple[str, int], str] | None = None,
+    max_new_tokens: int = N_GEN_TOKENS,
+) -> dict[str, object] | None:
+    """v0(C_neg): the BASE-CONTEXT activation under the negative-panel personas (R3-1).
+
+    The A3.7 ``frac_ctx = ||v0(C) - v0(C_neg)|| / ||delta_contra||`` partial needs
+    ``v0(C_neg)`` = the base-context activation under the NEGATIVE persona's PROMPT
+    (no answer span), read with the SAME recipe as ``v0(C)`` so the offset is
+    well-defined. ``v0(C)`` is the mean-over-response of ``T_source(q) + R`` through
+    base θ0 (the source diagonal); ``v0(C_neg)`` mirrors it: mean-over-response of
+    ``T_neg(q) + R_neg`` through base θ0, where ``R_neg`` is the BASE greedy response
+    under the negative persona's own prompt (matched generator).
+
+    This is DISTINCT from ``t_neg`` (the negative-persona ANSWER activation over the
+    #537 frozen negative TRAINING rows) — passing ``t_neg`` as ``v0(C_neg)`` was the
+    round-2 a37-frac-ctx-uses-tneg BLOCKER. ``t_neg`` is the answer-side displacement
+    target (``delta_contra = t+ - t-``); ``v0(C_neg)`` is the base CONTEXT vector.
+
+    Returns a panel-average over the negative-panel cids that resolve in the
+    registry (matched to the panel-average ``t_neg``), keyed::
+
+        {"vec": (H,) float32, "n_neg_cids": int, "neg_cids": [..], "n_probes": int}
+
+    or ``None`` if no negative-panel cid resolves (frac_ctx stays NaN downstream,
+    never a silent 0). ``neg_r_lookup`` supplies vLLM-pregenerated base R for
+    ``(neg_cid, probe_index)`` (the GPU path); a miss falls back to HF greedy
+    (the CPU-smoke path), mirroring :func:`_extract_one_target`.
+    """
+    neg_cids = [c for c in negative_panel_cids() if c in registry]
+    if not neg_cids:
+        return None
+    neg_r_lookup = neg_r_lookup or {}
+    per_cid_vecs: list[np.ndarray] = []
+    n_probes_total = 0
+    used_cids: list[str] = []
+    for ncid in neg_cids:
+        probe_vecs: list[np.ndarray] = []
+        for qi, q in enumerate(probes):
+            try:
+                nmsgs = build_messages_for(registry, demos, ncid, behavior, q)
+            except Exception:
+                # F3 (ICL) negatives need demos the panel does not always carry;
+                # the #537 negative panel is F1/F2/F4, so this rarely fires.
+                continue
+            r = neg_r_lookup.get((ncid, qi))
+            if r is None:
+                r = _greedy_response(base_model, tok, nmsgs, device, max_new_tokens)
+            if not r.strip():
+                continue
+            acts = _mean_resp_acts_single(base_model, tok, nmsgs, r, [layer], device)
+            probe_vecs.append(acts[layer])
+        if probe_vecs:
+            per_cid_vecs.append(np.stack(probe_vecs).mean(axis=0))
+            n_probes_total += len(probe_vecs)
+            used_cids.append(ncid)
+    if not per_cid_vecs:
+        return None
+    return {
+        "vec": np.stack(per_cid_vecs).mean(axis=0).astype(np.float32),
+        "n_neg_cids": len(used_cids),
+        "neg_cids": used_cids,
+        "n_probes": n_probes_total,
+    }
+
+
 def _system_signature(messages: list[dict]) -> str:
     """Signature of the context (system + non-final-user turns), ignoring the final question."""
     parts = []
@@ -625,6 +706,10 @@ def run_extraction(args) -> int:
 
     tok = AutoTokenizer.from_pretrained(BASE_MODEL, token=os.environ.get("HF_TOKEN"))
     r_lookup: dict[tuple[str, int], str] = {}
+    neg_r_lookup: dict[tuple[str, int], str] = {}
+    # Negative-panel cids that resolve in the registry — the v0(C_neg) base-context
+    # read (A3.7 frac_ctx, R3-1) generates base R under each negative persona too.
+    neg_cids = [c for c in negative_panel_cids() if c in registry]
     if device.type != "cpu":
         gen_msgs: list[list[dict]] = []
         gen_keys: list[tuple[str, int]] = []
@@ -632,9 +717,29 @@ def run_extraction(args) -> int:
             for qi, q in enumerate(probes):
                 gen_msgs.append(build_messages_for(registry, demos, tcid, behavior, q))
                 gen_keys.append((tcid, qi))
+        # v0(C_neg): base R under each negative-panel persona, SAME generator as the
+        # target R (faithful to v0(C)'s recipe). Tagged ("neg", ncid, qi).
+        neg_keys: list[tuple[str, str, int]] = []
+        for ncid in neg_cids:
+            for qi, q in enumerate(probes):
+                try:
+                    gen_msgs.append(build_messages_for(registry, demos, ncid, behavior, q))
+                except Exception:
+                    continue
+                neg_keys.append(("neg", ncid, qi))
         logger.info("Phase A: vLLM-generating %d base R responses", len(gen_msgs))
+        # CONCERN [frozen-r-cache-not-used] (round-2, CONCERN-severity scope caveat):
+        # R is regenerated greedily from BASE here rather than loaded from #537's
+        # frozen R cache. Greedy (temp=0) decode is bit-equivalent to a cache load,
+        # but the cache identity is unverified — carried as an R-provenance scope
+        # caveat for the analyzer's clean-result (plan v2 §3). NOT a round-3 fix.
         responses = vllm_generate_R(tok, gen_msgs, max_new_tokens=args.max_new_tokens)
-        r_lookup = dict(zip(gen_keys, responses, strict=True))
+        n_targ = len(gen_keys)
+        r_lookup = dict(zip(gen_keys, responses[:n_targ], strict=True))
+        neg_r_lookup = {
+            (ncid, qi): resp
+            for (_tag, ncid, qi), resp in zip(neg_keys, responses[n_targ:], strict=True)
+        }
 
     # ── Phase B: load base θ0 + trained θ+ (HF) for the teacher-force reads ────
     _, base, trained = load_base_and_trained(adapter_dir, device, dtype)
@@ -673,6 +778,31 @@ def run_extraction(args) -> int:
             t_split.get("t_neg", {}).get("n", 0),
         )
 
+    # ── v0(C_neg): base-context activation under the negative panel (A3.7 R3-1) ─
+    # The frac_ctx partial needs the negative persona's CONTEXT vector (no answer),
+    # NOT t_neg (the answer activation) — the round-2 a37-frac-ctx-uses-tneg fix.
+    v0_c_neg = extract_v0_C_neg(
+        base,
+        tok,
+        behavior,
+        registry,
+        demos,
+        probes,
+        args.primary_layer,
+        device,
+        neg_r_lookup=neg_r_lookup,
+        max_new_tokens=args.max_new_tokens,
+    )
+    if v0_c_neg is not None:
+        logger.info(
+            "v0(C_neg) base-context read: %d neg cids (%s), %d probe rows",
+            v0_c_neg["n_neg_cids"],
+            ",".join(v0_c_neg["neg_cids"]),
+            v0_c_neg["n_probes"],
+        )
+    else:
+        logger.warning("v0(C_neg) unavailable (no negative-panel cid resolved) — frac_ctx -> NaN")
+
     # ── fact r_B fresh (absent from #658 r_b.pt) ─────────────────────────────
     fact_rb = None
     if behavior == "fact":
@@ -682,6 +812,7 @@ def run_extraction(args) -> int:
 
     extras = {
         "t_split": t_split,
+        "v0_c_neg": v0_c_neg,
         "fact_rb": fact_rb,
         "c_c_all": c_c_all,
         "c_c_postft_all": c_c_postft_all,
@@ -752,6 +883,7 @@ def _extract_one_target(
     c_c_postft_all = extras["c_c_postft_all"]
     gauge = extras["gauge"]
     t_split = extras["t_split"]
+    v0_c_neg = extras.get("v0_c_neg")
     fact_rb = extras["fact_rb"]
     r_lookup = extras.get("r_lookup", {})
     tmsgs0 = build_messages_for(registry, demos, tcid, behavior, probes[0])
@@ -808,6 +940,11 @@ def _extract_one_target(
             if "t_neg" in t_split:
                 payload["t_neg"] = t_split["t_neg"]["vec"]
                 payload["t_neg_n"] = t_split["t_neg"]["n"]
+            # v0(C_neg): negative-panel base-context vector for A3.7 frac_ctx (R3-1).
+            # Distinct from t_neg (answer activation) — the round-2 BLOCKER fix.
+            if v0_c_neg is not None:
+                payload["v0_C_neg"] = v0_c_neg["vec"]
+                payload["v0_C_neg_n_cids"] = v0_c_neg["n_neg_cids"]
             if fact_rb is not None:
                 payload["r_b_fact"] = fact_rb
         np.savez(cell_dir / f"{tcid}_L{li}.npz", **payload)

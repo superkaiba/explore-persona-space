@@ -212,6 +212,93 @@ def test_a37_frac_ctx_is_context_offset_ratio():
     assert out["frac_ctx"] == pytest.approx(0.5, abs=1e-9)
 
 
+def test_run_a37_frac_ctx_reads_v0_C_neg_not_t_neg():
+    """REGRESSION (a37-frac-ctx-uses-tneg, round-2 BLOCKER): run_a37's frac_ctx must
+    read the store's v0_C_neg (negative-panel base-CONTEXT vector), NOT t_neg (the
+    negative-persona ANSWER activation that feeds delta_contra).
+
+    Builds a synthetic store with DISTINCT, made-up t_neg and v0_C_neg vectors and
+    asserts the emitted frac_ctx == ||v0(C) - v0_C_neg|| / ||delta_contra|| EXACTLY
+    (the contract value) — and that it differs from the wrong-statistic value that
+    passing t_neg as v0(C_neg) would have produced (the round-2 bug).
+    """
+    import issue667_analysis as ana
+
+    d = 8
+    # Source-diagonal vectors (made-up but DISTINCT so the two statistics diverge).
+    v0_c = np.arange(1.0, d + 1, dtype=np.float64)  # v0(C)
+    w_hat = np.full(d, 0.3, dtype=np.float64)  # source write direction
+    v_plus = v0_c + w_hat  # v+(C)  (so v_plus - v0 == w_hat)
+    base_neg_response = np.full(d, 2.0, dtype=np.float64)  # the t- ANSWER activation
+    t_neg = base_neg_response + 1.0 * np.ones(d)  # t_neg = answer + 1*direction (distinct)
+    t_pos = v0_c + 4.0 * np.ones(d)  # t_pos (answer-side positive)
+    v0_C_neg = np.full(d, 0.5, dtype=np.float64)  # the negative-panel base CONTEXT (distinct!)
+
+    delta_contra = t_pos - t_neg
+    # The CONTRACT value (what frac_ctx MUST equal) and the WRONG value (what
+    # passing t_neg as v0(C_neg) would have produced — the round-2 bug).
+    expected_correct = float(np.linalg.norm(v0_c - v0_C_neg) / np.linalg.norm(delta_contra))
+    wrong_if_tneg = float(np.linalg.norm(v0_c - t_neg) / np.linalg.norm(delta_contra))
+    assert abs(expected_correct - wrong_if_tneg) > 1e-3, (
+        "test fixture degenerate: v0_C_neg and t_neg must give different frac_ctx"
+    )
+
+    def _src_cell(beh: str) -> dict:
+        return {
+            "v0": v0_c.astype(np.float32),
+            "v_plus": v_plus.astype(np.float32),
+            "t_pos": t_pos.astype(np.float32),
+            "t_neg": t_neg.astype(np.float32),
+            "v0_C_neg": v0_C_neg.astype(np.float32),
+        }
+
+    # Two behaviors so the shuffled-δ null (cos with a DIFFERENT behavior's δ) has a
+    # source to draw from; the assertion is on the em source's frac_ctx.
+    cells_by_beh = {
+        "em": {("default", "default"): _src_cell("em")},
+        "sycophancy": {("sp_swe", "sp_swe"): _src_cell("sycophancy")},
+    }
+    out = ana.run_a37(cells_by_beh, layer=14)
+    em = out["by_behavior"]["em"]
+    assert em["status"] == "ok"
+    row = em["per_source"][0]
+    assert row["source"] == "default"
+    assert not row["v0_cneg_missing"], "v0_C_neg should be present in the synthetic store"
+    # frac_ctx reads v0(C_neg) EXACTLY — NOT t_neg.
+    assert row["frac_ctx"] == pytest.approx(expected_correct, abs=1e-9)
+    assert abs(row["frac_ctx"] - wrong_if_tneg) > 1e-3  # provably not the t_neg statistic
+    assert em["n_sources_with_v0_cneg"] == 1
+
+
+def test_run_a37_frac_ctx_nan_when_v0_C_neg_absent():
+    """frac_ctx is NaN (non-silent) when v0_C_neg is missing — never a silent t_neg.
+
+    A store WITHOUT v0_C_neg must yield frac_ctx NaN + v0_cneg_missing True, so the
+    coverage gap is attributable, not papered over with t_neg (the round-2 bug).
+    """
+    import issue667_analysis as ana
+
+    d = 8
+    v0_c = np.arange(1.0, d + 1, dtype=np.float64)
+    w_hat = np.full(d, 0.3, dtype=np.float64)
+    cell = {
+        "v0": v0_c.astype(np.float32),
+        "v_plus": (v0_c + w_hat).astype(np.float32),
+        "t_pos": (v0_c + 4.0 * np.ones(d)).astype(np.float32),
+        "t_neg": np.full(d, 3.0, dtype=np.float32),
+        # NO v0_C_neg key
+    }
+    cells_by_beh = {
+        "em": {("default", "default"): cell},
+        "sycophancy": {("sp_swe", "sp_swe"): dict(cell)},
+    }
+    out = ana.run_a37(cells_by_beh, layer=14)
+    row = out["by_behavior"]["em"]["per_source"][0]
+    assert row["v0_cneg_missing"] is True
+    assert np.isnan(row["frac_ctx"])
+    assert out["by_behavior"]["em"]["n_sources_with_v0_cneg"] == 0
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # A3.6 partial corr + clustered bootstrap + null
 # ─────────────────────────────────────────────────────────────────────────────

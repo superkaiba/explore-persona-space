@@ -447,11 +447,23 @@ def _fact_rb_from_store(cells: dict) -> np.ndarray | None:
 
 
 def run_a37(cells_by_beh: dict, layer: int) -> dict:
-    """A3.7: per source, cos(w_hat, delta_pos/delta_contra) + frac_ctx + shuffled-δ null."""
+    """A3.7: per source, cos(w_hat, delta_pos/delta_contra) + frac_ctx + shuffled-δ null.
+
+    ``frac_ctx = ||v0(C) - v0(C_neg)|| / ||delta_contra||`` (R3-1) reads the
+    negative-panel base-CONTEXT vector ``v0(C_neg)`` from the store (NOT ``t_neg``,
+    the negative-persona answer activation — the round-2 a37-frac-ctx-uses-tneg
+    BLOCKER). ``delta_contra = t+ - t-`` still uses ``t_neg`` (the answer-side
+    displacement target); only the frac_ctx context-offset term changed.
+    """
     # w_hat per (behavior, source) = v+(C) - v0(C) at the source diagonal.
     w_hats: dict[tuple[str, str], np.ndarray] = {}
     t_pos: dict[tuple[str, str], np.ndarray] = {}
     t_neg: dict[tuple[str, str], np.ndarray] = {}
+    # v0(C_neg): the negative-panel base-CONTEXT activation (frac_ctx numerator,
+    # R3-1) — DISTINCT from t_neg (the negative-persona ANSWER activation that
+    # feeds delta_contra). Passing t_neg as v0(C_neg) was the round-2
+    # a37-frac-ctx-uses-tneg BLOCKER; frac_ctx now reads THIS field.
+    v0_cneg: dict[tuple[str, str], np.ndarray] = {}
     v0_src: dict[tuple[str, str], np.ndarray] = {}
     for behavior, cells in cells_by_beh.items():
         for (source, target), data in cells.items():
@@ -465,6 +477,8 @@ def run_a37(cells_by_beh: dict, layer: int) -> dict:
                 t_pos[(behavior, source)] = data["t_pos"].astype(np.float64)
             if "t_neg" in data:
                 t_neg[(behavior, source)] = data["t_neg"].astype(np.float64)
+            if "v0_C_neg" in data:
+                v0_cneg[(behavior, source)] = data["v0_C_neg"].astype(np.float64)
     rng = np.random.default_rng(0)
     results = {}
     for behavior in cells_by_beh:
@@ -487,11 +501,17 @@ def run_a37(cells_by_beh: dict, layer: int) -> dict:
             delta_pos = dp - v0_src[(b, source)]
             t_neg_missing = tn is None
             # MINOR: when t_neg is absent, the contrastive read is UNDEFINED —
-            # emit NaN δ_contra / v0_cneg so cos_contra + frac_ctx are NaN
-            # (nanmean drops them), never a silent 0/duplicate-of-pos.
+            # emit NaN δ_contra so cos_contra is NaN (nanmean drops it), never a
+            # silent 0/duplicate-of-pos.
             nan_vec = np.full_like(w, np.nan)
             delta_contra = (dp - tn) if tn is not None else nan_vec
-            v0_cneg = tn if tn is not None else nan_vec
+            # R3-1 fix (a37-frac-ctx-uses-tneg): frac_ctx reads the negative-panel
+            # base-CONTEXT vector v0(C_neg), NOT t_neg (the answer activation).
+            # v0(C_neg) absent -> NaN (frac_ctx undefined), never silently t_neg.
+            v0_cneg_vec = v0_cneg.get((b, source))
+            v0_cneg_missing = v0_cneg_vec is None
+            if v0_cneg_vec is None:
+                v0_cneg_vec = nan_vec
             # MINOR: seeded random other-behavior δ, not a deterministic `% len`.
             other = (
                 other_deltas[rng.integers(len(other_deltas))] if other_deltas else np.zeros_like(w)
@@ -499,7 +519,10 @@ def run_a37(cells_by_beh: dict, layer: int) -> dict:
             row = {
                 "source": source,
                 "t_neg_missing": bool(t_neg_missing),
-                **a37_source_write(w, delta_pos, delta_contra, other, v0_src[(b, source)], v0_cneg),
+                "v0_cneg_missing": bool(v0_cneg_missing),
+                **a37_source_write(
+                    w, delta_pos, delta_contra, other, v0_src[(b, source)], v0_cneg_vec
+                ),
             }
             rows.append(row)
         if not rows:
@@ -527,6 +550,9 @@ def run_a37(cells_by_beh: dict, layer: int) -> dict:
             "n_sources_with_tpos": len(rows),
             "dropped_no_tpos": dropped_no_tpos,
             "n_sources_with_tneg": int(sum(not r["t_neg_missing"] for r in rows)),
+            # frac_ctx reads v0(C_neg) (R3-1); report its coverage explicitly so a
+            # NaN-mean frac_ctx is attributable, never a silent t_neg substitution.
+            "n_sources_with_v0_cneg": int(sum(not r["v0_cneg_missing"] for r in rows)),
         }
     return {"assumption": "A3.7", "layer": layer, "by_behavior": results, "metadata": _repro_meta()}
 
