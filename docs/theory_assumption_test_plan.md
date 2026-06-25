@@ -425,7 +425,7 @@ sweep strength, not architecture.
 | **Contrastive negatives** | **contrastive default + a positive-only fleet arm** (~1:1 pos:total-neg over ≥2–4 close negatives incl. default assistant) | mandatory project rule; the distance→leakage gradient lives INSIDE the contrastive regime (#207/#383). **(B5)** the positive-only arm is the CLEAN A3.7 identification test — see §7.1 + §4 (A3.7). **See §7.1 — this is a load-bearing design decision for the gate tests.** |
 | Positive completions | **on-policy** from base via elicitation ladder, judge-filtered, instruction stripped | `.claude/rules/on-policy-completions.md` (#612); marker/fact carve-outs apply |
 | Marker training | marker + end-of-turn loss (positives `{※,<|im_end|>,\n}`, negs `{<|im_end|>,\n}`), `MarkerBandStopCallback` | `.claude/rules/marker-training-recipe.md` |
-| Anchor strength | **non-saturated** (g_logprob ~5–10 nats below ceiling) | saturation hides the gate (#448); reuse #474 epoch-1 non-saturated adapters where fit |
+| Anchor strength | **non-saturated** (g_logprob ~5–10 nats below ceiling) | saturation hides the gate (#448); match #474 epoch-1's non-saturated band-stop **recipe** and retrain to it (recipes-only — do NOT reuse adapters; see §3 Phase 2 / #664) |
 
 - **Marker token:** ` ※` (leading space, Qwen id **83399**); assert in-process.
 - **Disjointness invariant:** contrastive negative panel ∩ realized sources = ∅
@@ -894,8 +894,8 @@ feeds all of Phase 3 and Phase 4.
   battery C' (all 7 families — the near→far context-distance range). **(B1)** the
   primary gate read is the **activation realized gate `ĝ^real`** on the stored
   `v⁺(C')` tensors; the marker log-prob is the SECONDARY behavior-scale companion
-  (not the gate metric). *Reuse #474 epoch-1 non-saturated adapters where the recipe
-  matches (artifact-reuse checklist).*
+  (not the gate metric). *Match #474 epoch-1's non-saturated band-stop recipe and
+  retrain to it — recipes-only, NOT adapter reuse (see #664).*
 - **Behavior-leakage spine (transfer tests):** train a representative B-family
   subset (B1 bad-medical anchor, B2 insecure-code, B3 sycophancy, B4 refusal, B5
   taught-fact, B7 marker) into a fixed source (assistant + 1 persona); score the
