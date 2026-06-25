@@ -9,11 +9,14 @@ description: >
   `### <result>` per result in the three-beat), inline figures,
   Takeaways quality (plain-academic register + cross-round synthesis
   currency), the `**Repro:**` / `**Context:**` footer (confidence in the
-  H1 title tag only), voice (bullet register; the `byte identical` ban),
-  statistical-framing discipline, mentor-facing title,
+  H1 title tag only), voice (research-paper register — Methodology +
+  Results are compact prose, Takeaways stay bullets; the `byte identical`
+  ban), statistical-framing discipline, mentor-facing title,
   one-result-one-figure per `### <result>`, Goal + Methodology
   completeness (capsule trio + subset disclosure + link liveness + the
-  complete hyperparameter table),
+  complete hyperparameter table + self-contained methodology — reused
+  artifacts' recipes inlined as primary method, no `reused from #X`
+  deferral in the body, provenance in the footer only),
   underlying-data-alongside-every-aggregate (low-level
   data plot behind each aggregate stat + raw-alongside-processed),
   conciseness (word caps +
@@ -65,9 +68,19 @@ run-provenance (`**Context:**`). A v4 body MUST NOT contain the v3
 content H2s (`## What I ran`, `## Findings`, `## Data`,
 `## Reproducibility`) NOR the retired `## Human TL;DR` / `## TL;DR` /
 `## Details` / `## Figure` (any of those is a hard FAIL). The body reads
-in the prescribed voice (`I` not `we`, bullets default, no fluff
-transitions, never `byte identical`) and obeys the project's p-values-only
-statistical-framing convention (the statistical-framing lens).
+in the prescribed voice — `I` not `we`, no fluff transitions, never
+`byte identical`, and the v4 **research-paper register** (Rule B):
+`## Methodology` + `## Results` are compact declarative PROSE (Methods /
+Results paragraphs, every quantity defined on first use), `## Takeaways`
+stays numbers-first bullets. The `## Methodology` is SELF-CONTAINED
+(Rule A): when an artifact was reused from a prior issue its full
+production recipe is written out inline as primary method (the `#M`
+provenance lives only in the `**Repro:**` footer), so a reader never
+follows a link to another issue to understand the method. The body obeys
+the project's p-values-only statistical-framing convention (the
+statistical-framing lens). **Canonical v4 exemplar:
+`.claude/skills/clean-results/exemplars/v4-657.md`** — the reference for
+Rules A + B.
 
 **Forward-only.** v3-sentinel (`<!-- clean-result-v3 -->`), v2-sentinel
 (`<!-- clean-result-v2 -->`), and pre-sentinel legacy bodies keep their
@@ -407,14 +420,17 @@ H2) when reviewing a v3 body:
    pinned artifact links + reuse-provenance) + `**Context:**`
    (run-provenance); the COMPLETE hyperparameter table lives in
    `## Methodology` (v3: the `## Reproducibility` H2 + slimmed Parameters).
-6. **Voice** — bullet register, `I` not `we`, `byte identical` ban.
+6. **Voice** — research-paper register (Methodology + Results compact
+   prose, Takeaways bullets; Rule B), `I` not `we`, `byte identical` ban.
 7. **Statistical-framing rule** — p-values + N only in prose.
 8. **Mentor-facing title** — leads with the finding, not the correction.
 9. **One result, one figure** — per `### <result>`.
 10. **Goal + Methodology completeness** — Goal's two parts present;
     Methodology's Evaluation capsule answers identity / why / preprocessing;
     the Sample slot carries subset-disclosed example blocks + pinned links
-    + the complete hyperparameter table. (v3: the `## Data` capsule trio.)
+    + the complete hyperparameter table; the Methodology body is
+    SELF-CONTAINED (reused artifacts' recipes inlined as primary method, no
+    `reused from #X` deferral — Rule A). (v3: the `## Data` capsule trio.)
 11. **Underlying data alongside every aggregate** — low-level per-unit data
     plot (points labeled) behind each aggregate statistic (the broad
     parent) + raw-alongside-processed (the transformed special case) +
@@ -828,19 +844,45 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   claim a downstream task can carry forward should be grounded in a
   real listing, not in plan intent.
 
-### Lens 6 — Voice (bullet register + byte-identical ban)
+### Lens 6 — Voice (research-paper register + bullet/prose register + byte-identical ban)
 
-- **Bullets are the default; prose only where a causal chain needs ≤2
-  sentences.** The v4 register (like v3) deliberately replaced the
-  v2-era wall of
-  narrative prose. Bold key numbers, front-load the takeaway (the NN/g
-  "layer-cake" guidance). FAIL when `## Takeaways` / `## Goal` /
-  `## Methodology` /
-  `## Results` carry multi-sentence narrative paragraphs where bullets
-  would read better, or a single paragraph runs ≥3 sentences in an
-  analytical read (this overlaps Lens 12 Conciseness — flag it under
-  whichever you reach first, do not double-count as two blockers). (v3:
-  `## Takeaways` / `## What I ran` / `## Findings`.)
+- **Rule B — research-paper register (v4; SPEC.md § Voice (v4) Rule B).**
+  The whole body is written in the concise, precise register of a
+  research paper: declarative methods/results prose, every quantity
+  DEFINED on first use, no filler / marketing / hype. The bullet-vs-prose
+  default is PER SECTION:
+  - `## Takeaways` STAYS numbers-first bullets (abstract-style) — FAIL a
+    Takeaways written as narrative paragraphs.
+  - `## Methodology` is **Methods-section PROSE** — the complete procedure
+    as compact declarative paragraphs (with the hyperparameter table +
+    verbatim example blocks as data). FAIL a Methodology written as terse
+    bullet FRAGMENTS that read as an outline rather than a reproducible
+    methods account (e.g. `- lr 2e-6` / `- 3 epochs` standing in for a
+    Training paragraph — the hyperparameter TABLE is fine, but the recipe
+    PROSE around it must be paragraphs).
+  - `## Results` is **Results-section PROSE** per `### <result>` — each
+    three-beat (what-is-plotted-EXACTLY → figure → interpretation) a 1–3-
+    sentence declarative paragraph. FAIL a result whose beats are reduced
+    to terse bullet fragments rather than precise prose.
+  - `## Goal` keeps its two compact-prose boldface slots.
+  This refines the bullet-default bullet below: bullets are the default
+  for `## Takeaways`; `## Methodology` / `## Results` are compact PROSE
+  under Rule B. Research-paper register means TIGHT prose, not verbose —
+  the conciseness caps (Lens 12) still bind; flag a register violation
+  here and a length violation under Lens 12, do not double-count.
+- **Bullets are the default for `## Takeaways`; prose for
+  `## Methodology` / `## Results` (Rule B).** The v4 register deliberately
+  replaced the v2-era wall of UNDISCIPLINED narrative prose, but v4
+  Methodology + Results are compact RESEARCH-PAPER prose (Rule B above),
+  not bullets. Bold key numbers, front-load the takeaway in
+  `## Takeaways` (the NN/g "layer-cake" guidance). FAIL when
+  `## Takeaways` carries multi-sentence narrative paragraphs where
+  bullets would read better, OR when any section runs a padded ≥3-sentence
+  wall in an analytical read (this overlaps Lens 12 Conciseness — flag it
+  under whichever you reach first, do not double-count as two blockers).
+  (v3: `## Takeaways` / `## What I ran` / `## Findings`; v3 had no Rule B —
+  do not apply the research-paper-prose check to a `<!-- clean-result-v3 -->`
+  body.)
 - `I`, not `we`.
 - **Plain academic register in `## Takeaways`** — no lowercase-casual
   voice, no diary framing (the register check itself is Lens 4; this
@@ -1166,6 +1208,37 @@ plan names is absent) — the doc is the canonical complete reference. The
 check is skipped when no `--methodology-doc` was passed (pre-merge the
 doc lives only on the issue worktree branch). (v3: the body's slimmed
 Parameters table is checked as the subset.)
+
+**Check 7 — `## Methodology` is SELF-CONTAINED (v4 Rule A; semantic).**
+SPEC.md § `## Methodology` (v4) Rule A requires the Methodology body to
+read like a research-paper Methods section: a reader understands HOW
+every reported result was produced WITHOUT following a link to another
+issue. When this experiment REUSED an artifact from a prior issue (a
+trained adapter, persona-vector bank, behavior direction, leakage cells,
+dataset, base-rate / propensity measurement), the Methodology body MUST
+WRITE OUT THE FULL PRODUCTION PROCEDURE of that artifact inline as
+primary method (data source + realism tier, construction recipe,
+training recipe + hyperparameters, measurement). **FAIL when** the
+`## Methodology` body DEFERS a load-bearing method to another issue —
+phrases like `reused from #M` / `see #M (for the recipe)` /
+`as in #M` / `methodology in #M` / `same setup as #M` standing IN PLACE
+OF the actual recipe (a Design/Training/Evaluation/Data-extraction slot
+that names `#M` instead of spelling out what was done). The fix list to
+the analyzer: *"inline the full production recipe of the reused artifact
+from #M's `## Methodology` / `docs/methodology/issue_<M>.md` into the
+relevant Methodology slot as primary method; move the `#M` citation to
+the `**Repro:**` footer reuse-provenance bullet."* **Do NOT FAIL** the
+correct pattern: the `**Repro:**` footer reuse-provenance bullet (Lens 5)
+naming `#M` + the pinned path + a one-line fitness rationale is REQUIRED
+and CORRECT — Rule A moves the METHOD into the body but keeps the
+PROVENANCE in the footer; a `#M` citation in the footer (or a single
+descriptive sentence in the body acknowledging the artifact was reused
+WHILE STILL spelling out its production recipe) is not a violation. A
+`#M` link in the `## Goal` `**This experiment in context:**` slot is also
+fine (that slot may cite prior tasks). **PASS vacuously** when THIS task
+produced every artifact (no reuse → no deferral risk). (v3: this check is
+N/A — v3 bodies kept reuse provenance inline by the older pattern and are
+grandfathered; do not apply Rule A to a `<!-- clean-result-v3 -->` body.)
 
 ### Lens 11 — Underlying data alongside every aggregate (figures + prose + per-cell artifacts)
 
@@ -1582,11 +1655,11 @@ Lens findings:
 - Lens 3 (Figure + what-is-plotted/interpretation pairing): PASS|FAIL — ...
 - Lens 4 (Takeaways quality — register + cross-round synthesis currency): PASS|FAIL — ...
 - Lens 5 (Footer / Reproducibility + complete hyperparameter table): PASS|FAIL — ...
-- Lens 6 (Voice + byte-identical ban): PASS|FAIL — ...
+- Lens 6 (Voice — research-paper register (Methodology+Results prose, Takeaways bullets) + byte-identical ban): PASS|FAIL — ...
 - Lens 7 (Statistical framing): PASS|FAIL — ...
 - Lens 8 (Mentor-facing title): PASS|FAIL — ...
 - Lens 9 (One takeaway, one figure per result): PASS|FAIL — ...
-- Lens 10 (Goal + Methodology completeness — capsule trio + subset disclosure + link liveness + complete hyperparameter table): PASS|FAIL|N/A — ...
+- Lens 10 (Goal + Methodology completeness — capsule trio + subset disclosure + link liveness + complete hyperparameter table + self-contained methodology / no `reused from #X` deferral): PASS|FAIL|N/A — ...
 - Lens 11 (Underlying data alongside every aggregate): PASS|FAIL|N/A — ...
 - Lens 12 (Conciseness — word caps + bullets-over-prose): PASS|FAIL — ...
 - Lens 13 (Planned-vs-actual coverage): PASS|FAIL|N/A — ...

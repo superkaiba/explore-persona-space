@@ -158,7 +158,31 @@ The complete "everything required to understand the results" section. It
 folds the v3 `## What I ran` Design/Training/Eval bullets AND the entire
 former standalone methodology-doc content (overview, complete
 hyperparameter table, training-data recipe, evaluation recipe, verbatim
-worked examples) into ONE section. Boldface-led slots, in order:
+worked examples) into ONE section.
+
+**Rule A — `## Methodology` is SELF-CONTAINED (no deferral to another
+issue).** This section reads like a research-paper Methods section: a
+reader understands HOW every reported result was produced WITHOUT
+following a link to another issue. When an artifact was REUSED from a
+prior experiment (a trained adapter, persona-vector bank, behavior
+direction, leakage cells, dataset, base-rate / propensity measurement),
+the Methodology WRITES OUT THE FULL PROCEDURE that produced it — data
+source + realism tier, construction recipe, training recipe +
+hyperparameters, measurement — as PRIMARY METHOD, exactly as if performed
+for this experiment. Pull that procedure from the source issue's own
+`## Methodology` (or `docs/methodology/issue_<M>.md`) and inline it. The
+Methodology body MUST NOT say `reused from #X` / `see #X` / otherwise
+defer a load-bearing method to another issue. **The FACT of reuse +
+source issue `[#M](...)` + pinned artifact link are recorded ONLY in the
+`**Repro:**` footer** as a citation / reproducibility note (§ `**Repro:**`
+/ `**Context:**` footer reuse-provenance bullet). Rule A SUPERSEDES, for
+the Methodology BODY, the older "name the reuse inline" pattern: the body
+always spells out the method; the footer always carries the provenance.
+(This does not change the footer's reuse-provenance requirement — the
+footer still names `#M` + path + a one-line fitness rationale; Rule A is
+purely about the body's method prose being complete and standalone.)
+
+Boldface-led slots, in order:
 
 - **`**Design:**`** — conditions × seeds × N; the single manipulated
   variable.
@@ -450,10 +474,32 @@ image and caption; no 4-space indent.
 
 ## Voice (v4)
 
-Identical to v3:
+**Rule B — research-paper register.** The entire v4 body is written in the
+concise, precise register of a research paper: declarative methods/results
+prose, every quantity DEFINED on first use, no filler / marketing / hype.
+This REFINES the "bullets are the default" guidance below per section:
 
-- **Bullets are the default; prose only where a causal chain needs ≤2
-  sentences.**
+- `## Methodology` = **Methods-section PROSE** — the complete procedure
+  written as compact declarative paragraphs (with the hyperparameter table
+  + verbatim example blocks as data), NOT terse bullet fragments. A reader
+  reproduces the run from it.
+- `## Results` = **Results-section PROSE** per `### <result>`: the
+  what-is-plotted-EXACTLY beat → figure → interpretation beat, each a
+  compact declarative paragraph (1–3 sentences), NOT bullet fragments.
+- `## Takeaways` STAYS numbers-first BULLETS (abstract-style), 3–6 of them.
+- `## Goal` keeps its two boldface-led slots (compact prose each).
+
+So the "bullets default" rule below applies to `## Takeaways` (and is the
+fallback inside a slot where a flat enumeration genuinely reads better);
+`## Methodology` and `## Results` are compact PROSE. Conciseness caps
+(§ Conciseness caps) still bind — research-paper register means tight, not
+verbose.
+
+Otherwise identical to v3:
+
+- **Bullets are the default for `## Takeaways`; prose only where a causal
+  chain needs ≤2 sentences** (in `## Methodology` / `## Results`, prose IS
+  the default per Rule B — keep it ≤2-sentence units).
 - `I`, not `we`.
 - Direct declarative ("The observed correlation was X").
 - Plain academic register in `## Takeaways`.
@@ -1235,7 +1281,9 @@ next analyzer/critic re-run; the ~30 already-parked v2 bodies stay v2.
   v3 redesign deliberately moved away from the LW-narrative wall of
   prose); keep them only for the prose discipline (concrete numbers,
   comparison anchors, plain English, no undefined jargon).
-- **`exemplars/`** — `v3-517.md` (canonical v3 exemplar), `nested-432.md`
+- **`exemplars/`** — `v4-657.md` (canonical v4 exemplar; the reference
+  for Rules A + B — self-contained `## Methodology` + research-paper
+  register), `v3-517.md` (canonical v3 exemplar), `nested-432.md`
   (v2 section-level exemplar), `narrative-380.md` (legacy).
 
 ## Calling sites
