@@ -2,24 +2,24 @@
   "schema": "paper_manifest/v1",
   "issue": 657,
   "jobname": "issue_657",
-  "built_at": "2026-06-25T17:37:09.213851+00:00",
+  "built_at": "2026-06-25T19:08:08.983247+00:00",
   "source_date_epoch": "1781836785",
-  "pdf_hf_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/dcdff3f51d6a4bdf357afb89cd26203b1185a22e/papers/issue_657/issue_657.pdf",
+  "pdf_hf_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/f6b3f9f4f73c7e0073ee28f677317af6bb79ef27/papers/issue_657/issue_657.pdf",
+  "hf_pdf": {
+    "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/f6b3f9f4f73c7e0073ee28f677317af6bb79ef27/papers/issue_657/issue_657.pdf",
+    "sha256": "d68df1d82700864959a81cdba077ddb113a1f671b546ceeb1337ad916934aec9",
+    "bytes": 1376294
+  },
   "artifacts": {
     "tex": {
       "path": "docs/papers/issue_657/issue_657.tex",
-      "sha256": "7bd7bce834bcc74a84fc87c6a35f3d670f28852089733453de2e0c82e6fc87ea",
-      "bytes": 36050
-    },
-    "pdf": {
-      "path": "docs/papers/issue_657/issue_657.pdf",
-      "sha256": "89ca23b0ce070f0ecb231e6d08aeb3b945afeb17e2b33200c0c2391f53127197",
-      "bytes": 1283162
+      "sha256": "9ef12c7e96514037016f914337acf378b9fb75787030743aa420ec4c59e424cd",
+      "bytes": 48878
     },
     "paper_html": {
       "path": "docs/papers/issue_657/paper.html",
-      "sha256": "7934c69ea022c975c266b23b3e48c0333b731fa8144530245882ef2f5d52f524",
-      "bytes": 82311
+      "sha256": "5c05ef45a2b45cb4d92a5cce771fe31f2955da781e260356c4fb68f6ef9ba0af",
+      "bytes": 97271
     },
     "bib": {
       "path": "docs/papers/issue_657/issue_657.bib",
