@@ -316,10 +316,17 @@ def _lennorm_logp(
     import torch.nn.functional as torch_f
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
+    on_cuda = torch.cuda.is_available()
+    device = "cuda:0" if on_cuda else "cpu"
     tok = AutoTokenizer.from_pretrained(C.QWEN_ID, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
+        model_path,
+        dtype=(torch.bfloat16 if on_cuda else torch.float32),
+        device_map=({"": 0} if on_cuda else None),
+        trust_remote_code=True,
     ).eval()
+    if not on_cuda:
+        model = model.to(device)
     out: list[float | None] = []
     try:
         for q, comp in pairs:
@@ -329,7 +336,7 @@ def _lennorm_logp(
             if not c_ids:
                 out.append(None)
                 continue
-            ids = torch.tensor([p_ids + c_ids], device="cuda:0")
+            ids = torch.tensor([p_ids + c_ids], device=device)
             with torch.no_grad():
                 logits = model(input_ids=ids).logits[0]  # (T, V)
             # log P of completion token t predicted at position p_len + t - 1.

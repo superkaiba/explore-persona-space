@@ -170,9 +170,20 @@ def _answer_side_means(
     import torch
     from transformers import AutoModelForCausalLM
 
-    model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
-    ).eval()
+    on_cuda = device.startswith("cuda") and torch.cuda.is_available()
+    dtype = torch.bfloat16 if on_cuda else torch.float32  # CPU path uses fp32
+    model = (
+        AutoModelForCausalLM.from_pretrained(
+            model_path,
+            dtype=dtype,
+            device_map={"": int(device.split(":")[-1])},
+            trust_remote_code=True,
+        ).eval()
+        if on_cuda
+        else AutoModelForCausalLM.from_pretrained(model_path, dtype=dtype, trust_remote_code=True)
+        .eval()
+        .to(device)
+    )
     pad = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
     n = len(prompt_response_rows)
     resp_means: list[torch.Tensor] = []
@@ -448,14 +459,22 @@ def _extract_all(
     marker_slots = None
     if cell.behavior == "marker":
         marker_slots = _marker_slots(
-            cell, tokenizer, contexts, trained_path, trained_rows, base_rows, ctx_ids, n_probe
+            cell,
+            tokenizer,
+            contexts,
+            trained_path,
+            trained_rows,
+            base_rows,
+            ctx_ids,
+            n_probe,
+            gpu_id=gpu_id,
         )
 
     return {"tensors": tensors, "roles": roles, "marker_slots": marker_slots}
 
 
 def _marker_slots(
-    cell, tokenizer, contexts, trained_path, trained_rows, base_rows, ctx_ids, n_probe
+    cell, tokenizer, contexts, trained_path, trained_rows, base_rows, ctx_ids, n_probe, *, gpu_id=0
 ) -> dict:
     """Four-float marker slot stats (trained AND base, same forward) at the END
     of the model's OWN on-policy response, per context. Uses the canonical
@@ -469,6 +488,8 @@ def _marker_slots(
         validate_marker_slot_record,
     )
 
+    device = f"cuda:{gpu_id}" if torch.cuda.is_available() else "cpu"
+
     # Gauge assert: the merged read is valid only if LoRA never touched W_U /
     # embeddings (Option A faithful-gauge read, §11). Read the adapter config.
     if cell.behavior == "marker":
@@ -479,20 +500,32 @@ def _marker_slots(
 
     # The slot read appends the marker at the end of (context-prompt + R), where
     # R is the model's OWN greedy response. Build the "context" string = the
-    # decoded prompt+response per context (mean is over the n_probe responses;
-    # the slot stats reader scores each context string once -- we use the FIRST
-    # probe's response per context as the representative on-policy R, matching
-    # the marker-leakage recipe's end-of-own-response slot).
+    # decoded prompt+response per context (the slot reader scores each string
+    # once -- we use the FIRST probe's response per context as the representative
+    # on-policy R). CRITICAL (#532): if the trained R ALREADY ends with the
+    # marker, STRIP it before the read -- appending a fresh slot after a marker
+    # measures "emit a SECOND marker" (a near-floor artifact), not the implant.
     contexts_for_read: list[str] = []
     for ci, _cid in enumerate(ctx_ids):
         row = trained_rows[ci * n_probe]  # first probe under this context
         full_ids = row["prompt_token_ids"] + row["response_token_ids"]
-        contexts_for_read.append(tokenizer.decode(full_ids, skip_special_tokens=False))
+        text = tokenizer.decode(full_ids, skip_special_tokens=False)
+        # strip a trailing marker (+ any trailing whitespace after it) so the
+        # appended slot reads the FIRST marker position, not a second one.
+        stripped = text.rstrip()
+        while stripped.endswith(C.MARKER_TEXT.strip()):
+            stripped = stripped[: -len(C.MARKER_TEXT.strip())].rstrip()
+        contexts_for_read.append(stripped)
 
     def _read(model_path: str) -> list[dict]:
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
+            model_path,
+            dtype=(torch.bfloat16 if device.startswith("cuda") else torch.float32),
+            device_map=({"": gpu_id} if device.startswith("cuda") else None),
+            trust_remote_code=True,
         ).eval()
+        if not device.startswith("cuda"):
+            model = model.to(device)
         try:
             stats = compute_marker_slot_stats(
                 model,
@@ -500,6 +533,7 @@ def _marker_slots(
                 contexts_for_read,
                 C.MARKER_TEXT,
                 position="end_of_answer",
+                device=device,
                 eos_token_id=C.IM_END_ID,
                 include_argmax=True,
             )

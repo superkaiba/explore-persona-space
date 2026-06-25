@@ -434,8 +434,9 @@ def train_cell(cell: C.Cell, *, smoke: bool, gpu_id: int) -> Path:
         kwargs.pop("warmup_steps", None)
         if recipe.marker_only_loss:
             kwargs["marker_band_stop"] = False  # 2 steps can't band-stop; smoke
+    # run_name / report_to / gpu_id / seed are already set inside train_kwargs;
+    # only the HF-upload knobs are added here (no duplicate-keyword collision).
     cfg = TrainLoraConfig(
-        run_name=cell.run_name,
         hf_upload=not smoke,
         hf_repo=C.HF_MODEL_REPO,
         hf_path_in_repo=cell.hf_adapter_subfolder,
