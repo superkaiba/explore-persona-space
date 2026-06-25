@@ -15,12 +15,11 @@ Reuses the assembly logic from issue658_judge_e0 verbatim — only the transport
 from __future__ import annotations
 
 import argparse
-import datetime as _dt
+import asyncio
 import json
 import logging
 import re
 import sys
-import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -45,8 +44,8 @@ from explore_persona_space.experiments.behavior_testbed_545.judges_545 import ( 
     structural_format_features,
 )
 from explore_persona_space.llm.anthropic_client import (  # noqa: E402
+    AnthropicBatch,
     BatchDeadlineExceeded,
-    deadline_from_expires_at,
 )
 
 load_dotenv(str(PROJECT_ROOT / ".env"))
@@ -64,58 +63,16 @@ def _parse_verdict(text: str) -> dict:
     return {"_judge_error": (text or "")[:200]}
 
 
-def _poll_shard_until_ended(
-    client,
-    batch_id: str,
-    poll_interval: float,
-    max_poll_interval: float,
-    grace_min: int,
-) -> bool:
-    """Bounded poll of one sub-batch; returns True when it ends.
-
-    The deadline is the batch's own ``expires_at`` + grace (or now+25h if the
-    API ever omits ``expires_at``), so the loop can never become unbounded — the
-    original #658/#661 wedge. Raises ``BatchDeadlineExceeded`` if the deadline
-    passes before the batch ends. The 30s->1.5x->120s backoff is capped by the
-    deadline, not a step count.
-    """
-    deadline: _dt.datetime | None = None
-    interval = poll_interval
-    while True:
-        b = client.messages.batches.retrieve(batch_id)
-        counts = b.request_counts
-        logger.info(
-            "batch %s %s: proc=%d succ=%d err=%d",
-            batch_id,
-            b.processing_status,
-            counts.processing,
-            counts.succeeded,
-            counts.errored,
-        )
-        if b.processing_status == "ended":
-            return True
-        if deadline is None:
-            if getattr(b, "expires_at", None) is not None:
-                deadline = deadline_from_expires_at(b.expires_at, grace_min)
-            else:
-                deadline = _dt.datetime.now(_dt.UTC) + _dt.timedelta(hours=25)
-        if _dt.datetime.now(_dt.UTC) > deadline:
-            if client.messages.batches.retrieve(batch_id).processing_status == "ended":
-                return True
-            raise BatchDeadlineExceeded(batch_id, deadline)
-        time.sleep(interval)
-        interval = min(interval * 1.5, max_poll_interval)
-
-
-def _collect_shard(client, batch_id: str, out: dict[str, dict]) -> int:
+def _collect_shard(batch: AnthropicBatch, batch_id: str, out: dict[str, dict]) -> int:
     """Stream one ended sub-batch's results into ``out`` (join on custom_id).
 
     Returns the count of cleanly-parsed verdicts; refusals and non-succeeded
     results are surfaced as ``_judge_refused`` / ``_judge_error`` dicts (the keys
-    the downstream scorer skips on).
+    the downstream scorer skips on). Reads results through the shared
+    :class:`AnthropicBatch` client (``.results`` returns the materialized list).
     """
     n_ok = 0
-    for result in client.messages.batches.results(batch_id):
+    for result in batch.results(batch_id):
         cid = result.custom_id
         if result.result.type == "succeeded":
             msg = result.result.message
@@ -138,18 +95,19 @@ def submit_and_collect(
 ) -> dict[str, dict]:
     """requests: [{custom_id, prompt}]; returns {custom_id: verdict_dict}.
 
-    Submits via the Anthropic Message Batches API using the #663-hardened
-    transport: ``_chunk_requests`` shards the set into <=8k-request sub-batches
-    (blast-radius isolation + incremental progress), and each shard is polled
-    with a BOUNDED loop that exits on the batch's own ``expires_at`` deadline
-    instead of an unbounded ``while True`` (if the API ever omits ``expires_at``
-    the deadline falls back to now+25h, so the poll can NEVER become unbounded
-    again). A shard still not ``ended`` at its deadline is cancelled and its
-    items surfaced as judge errors; and ANY other per-shard failure (network /
-    API error surviving the SDK retries) is caught, its items marked as errors,
-    and the run continues — so one stuck or failing shard can never wedge or
-    abort the whole run (the #658/#661 90k-single-batch deadline-less-poll
-    wedge, 2026-06-24).
+    Submits via the shared #663-hardened :class:`AnthropicBatch` client
+    (``llm/anthropic_client.py``) — the SAME transport the ``run_experiment_389``
+    callers route through — instead of a hand-rolled ``messages.batches.create``
+    + ``while True`` poller. ``_chunk_requests`` shards the set into <=8k-request
+    sub-batches (blast-radius isolation + incremental progress), and each shard
+    is polled with the client's BOUNDED ``AnthropicBatch.poll`` (exits on the
+    batch's own ``expires_at`` + grace and raises ``BatchDeadlineExceeded`` —
+    never the unbounded ``while True`` that wedged the original 90k-single-batch
+    poll, #658/#661, 2026-06-24). A shard still not ``ended`` at its deadline is
+    cancelled and its items surfaced as judge errors; and ANY other per-shard
+    failure (network / API error surviving the SDK retries) is caught, its items
+    marked as errors, and the run continues — so one stuck or failing shard can
+    never wedge or abort the whole run.
 
     ``checkpoint_path`` (default ``<out>.partial.json`` from ``main``) gives
     cross-process RESUMABILITY: completed verdicts are flushed atomically after
@@ -158,9 +116,9 @@ def submit_and_collect(
     custom_ids are positional (``r{nid}``) and reproducible only for the SAME
     input data; a checkpoint from a different ``--e0-dir`` must be removed first.
     """
-    import anthropic
-
-    client = anthropic.Anthropic(max_retries=8)
+    # Shared #663 client: create + bounded poll + results + cancel. Its
+    # underlying anthropic.Anthropic uses max_retries=5 (SDK 429/5xx backoff).
+    batch_client = AnthropicBatch()
 
     # Resume: load any verdicts judged in a prior (interrupted) run so a mid-run
     # process death never re-spends the completed shards.
@@ -195,7 +153,7 @@ def submit_and_collect(
         for r in pending
     ]
     chunks = _chunk_requests(batch_reqs)  # <=8k requests / <=250 MB per shard
-    poll_interval, max_poll_interval, grace_min = 30.0, 120.0, 30
+    poll_interval = 30.0
     logger.info(
         "%d requests total; %d already done; %d to submit -> %d sub-batch(es) (<=%d each)",
         len(requests),
@@ -208,7 +166,7 @@ def submit_and_collect(
         chunk_cids = [r["custom_id"] for r in chunk]
         n_ok = 0
         try:
-            batch = client.messages.batches.create(requests=chunk)
+            batch = batch_client.create(requests=chunk)
             batch_id = batch.id
             logger.info(
                 "submitted sub-batch %d/%d id=%s (%d reqs)",
@@ -217,23 +175,26 @@ def submit_and_collect(
                 batch_id,
                 len(chunk),
             )
+            ended = False
             try:
-                ended = _poll_shard_until_ended(
-                    client, batch_id, poll_interval, max_poll_interval, grace_min
-                )
+                # Shared #663 bounded poll: exits on the batch's own
+                # expires_at + grace; raises BatchDeadlineExceeded if it never
+                # ends. AnthropicBatch.poll is async — drive it from this sync
+                # script via asyncio.run (no enclosing event loop here).
+                asyncio.run(batch_client.poll(batch_id, interval_s=poll_interval))
+                ended = True
             except BatchDeadlineExceeded as exc:
                 logger.error(
                     "sub-batch %s exceeded deadline: %s — cancelling + marking items as errors",
                     batch_id,
                     exc,
                 )
-                ended = False
                 try:
-                    client.messages.batches.cancel(batch_id)
+                    batch_client.cancel(batch_id)
                 except Exception as ce:
                     logger.warning("cancel of stuck batch %s failed: %s", batch_id, ce)
             if ended:
-                n_ok = _collect_shard(client, batch_id, out)
+                n_ok = _collect_shard(batch_client, batch_id, out)
         except Exception as exc:
             logger.error(
                 "sub-batch %d/%d failed (%s) — marking its items as errors, continuing",
