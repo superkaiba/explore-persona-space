@@ -21,6 +21,7 @@ goal: 'Test whether a persona''s activation-space alignment to a behavior''s lin
 relates_to:
 - leak-predictor
 - leak-behavior-vs-marker
+paper: true
 ---
 # Activation-space alignment to a behavior direction predicts a persona's own base rate but does not beat the base prior on where leakage lands
 
