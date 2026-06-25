@@ -656,6 +656,16 @@ def extract_stub_abstract(body: str) -> str:
     return " ".join(out).strip()
 
 
+def _paper_manifest_exists(task_id: int) -> bool:
+    """True when docs/papers/issue_<N>/paper_manifest.json is on disk.
+
+    Used by ``set_clean_result`` to detect a task that is INTENDED to be a
+    paper-task (its paper artifacts exist) but whose body.md frontmatter has
+    lost its ``paper: true`` opt-in — the #657 gate gap.
+    """
+    return (repo_root() / "docs" / "papers" / f"issue_{task_id}" / "paper_manifest.json").exists()
+
+
 def validate_paper_manifest(task_id: int) -> list[str]:
     """Validate a paper-task's docs/papers/issue_<N>/paper_manifest.json.
 
@@ -1009,6 +1019,19 @@ def create_task(req: NewTaskRequest) -> int:
 # ─── Body / frontmatter mutations ──────────────────────────────────────────
 
 
+# Frontmatter keys that DO round-trip through ``set_body`` when present in the
+# incoming body's frontmatter. The paper clean-result track opts a task into
+# paper-mode by carrying ``paper: true`` (and a denormalized ``abstract``) in
+# the stub file's frontmatter — those keys MUST survive the set-body write or
+# the dashboard's ``isPaperTask`` read fails and the paper renders as a
+# markdown stub (incident #657, 2026-06-25). Everything else stays governed by
+# the dedicated mutators. ``paper`` is never cleared by an incoming body that
+# omits it (set-body is body-only for non-paper-opt-in callers); it is only
+# turned ON when the incoming frontmatter opts in. ``abstract`` rides along so
+# the REGISTRY denormalization has the paper's abstract.
+_SET_BODY_ROUNDTRIP_KEYS: tuple[str, ...] = ("paper", "abstract")
+
+
 def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) -> None:
     """Replace the body content (preserves frontmatter).
 
@@ -1016,22 +1039,38 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
     original-body.md first — used by the analyzer when promoting a
     clean-result.
 
-    Any YAML frontmatter at the START of ``new_body`` is stripped before
-    the canonical frontmatter (loaded from the existing body.md) is
-    prepended. This prevents the duplicate-frontmatter trap when callers
-    pass a complete markdown document (frontmatter + body) — see
-    `_strip_leading_frontmatter_blocks` for the incident history. The
+    Any YAML frontmatter at the START of ``new_body`` is stripped from the
+    body region before the canonical frontmatter (loaded from the existing
+    body.md) is prepended. This prevents the duplicate-frontmatter trap
+    when callers pass a complete markdown document (frontmatter + body) —
+    see `_strip_leading_frontmatter_blocks` for the incident history. The
     strip is idempotent: calling `set_body` with a body that already has
     no leading frontmatter is a no-op for the strip step.
 
     Note: this function preserves the EXISTING frontmatter on body.md.
     If you need to change frontmatter fields, use the dedicated mutators
     (`set_title`, `set_clean_result`, `add_tag`, `remove_tag`,
-    `set_goal`). The stripped frontmatter from `new_body` is discarded.
+    `set_goal`). The ONE exception is the paper clean-result opt-in: the
+    keys in ``_SET_BODY_ROUNDTRIP_KEYS`` (``paper``, ``abstract``) ARE
+    carried forward from ``new_body``'s frontmatter when present, because
+    the paper-stub track carries ``paper: true`` ONLY in the stub file and
+    the dashboard's ``isPaperTask`` read depends on it landing in body.md
+    (incident #657). All other frontmatter from ``new_body`` is discarded.
     """
     with _locked():
         path = find_task_path(task_id) / "body.md"
         fm, _ = _read_body(path)
+        # Carry the paper-opt-in keys forward from the incoming body's
+        # frontmatter so a paper-stub write does not silently drop
+        # ``paper: true`` (incident #657). Parse defensively — a malformed
+        # leading block leaves ``incoming_fm`` empty and changes nothing.
+        try:
+            incoming_fm, _ = _split_frontmatter(new_body)
+        except ValueError:
+            incoming_fm = {}
+        for key in _SET_BODY_ROUNDTRIP_KEYS:
+            if key in incoming_fm and incoming_fm[key] is not None:
+                fm[key] = incoming_fm[key]
         touched: list[Path] = [path]
         if snapshot_original:
             orig = path.parent / "original-body.md"
@@ -1039,6 +1078,14 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
             touched.append(orig)
         body_text = _strip_leading_frontmatter_blocks(new_body)
         _write_body(path, fm, body_text if body_text.endswith("\n") else body_text + "\n")
+        # Keep REGISTRY in sync when the paper opt-in (or abstract) landed —
+        # the denormalized ``paper``/``abstract``/``title`` surfaces feed the
+        # dashboard list view + hover card.
+        if any(k in incoming_fm for k in _SET_BODY_ROUNDTRIP_KEYS):
+            reg = _load_registry()
+            _registry_set(reg, task_id, path.parent, fm)
+            _save_registry(reg)
+            touched.append(registry_path())
         _git_commit(touched, f"task #{task_id}: set-body")
 
 
@@ -1071,6 +1118,24 @@ def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool
     with _locked():
         path = find_task_path(task_id) / "body.md"
         fm, body = _read_body(path)
+        # Gate gap (#657): a task whose paper artifacts exist on disk
+        # (docs/papers/issue_<N>/paper_manifest.json) is INTENDED to be a
+        # paper-task, but if ``set_body`` dropped its ``paper: true`` key the
+        # on-disk frontmatter reads as a plain markdown task and the paper
+        # manifest gate below is silently skipped — the dashboard then renders
+        # the markdown stub instead of the paper. Detect that mismatch up front
+        # and FAIL loudly rather than passing a non-conforming paper-stub
+        # through. (The fix in ``set_body`` prevents the drop; this is the gate
+        # that catches a body written by an older code path or by hand.)
+        if value and not is_paper_task(fm) and _paper_manifest_exists(task_id):
+            raise SystemExit(
+                f"set-clean-result #{task_id}: docs/papers/issue_{task_id}/"
+                "paper_manifest.json exists (this is a paper-task) but the on-disk "
+                "body.md frontmatter is MISSING `paper: true`. The dashboard will "
+                "render the markdown stub instead of the paper. Re-write the body via "
+                "`task.py set-body` from a stub carrying `paper: true` (the key now "
+                "round-trips) before flipping has_clean_result."
+            )
         if value and is_paper_task(fm):
             problems = validate_paper_manifest(task_id)
             hard = [p for p in problems if not p.startswith("WARN:")]
