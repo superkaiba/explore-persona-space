@@ -341,8 +341,21 @@ def test_epsref_warns_when_registry_unavailable(monkeypatch):
 # ─── manifest complete + hashes ──────────────────────────────────────────────
 
 
-def _write_real_manifest(paper_dir: Path, repo: Path, jobname: str, *, pdf_url):
-    """Write a manifest with REPO-relative paths + REAL sha256 hashes."""
+def _write_real_manifest(
+    paper_dir: Path,
+    repo: Path,
+    jobname: str,
+    *,
+    pdf_url,
+    shape: str = "hf",
+):
+    """Write a manifest with REPO-relative paths + REAL sha256 hashes.
+
+    ``shape='hf'`` (NEW, the build_paper.py shape): the PDF is HF-hosted — only
+    the COMMITTED artifacts (tex/paper_html) go in ``artifacts``; the PDF
+    provenance lives in an ``hf_pdf`` block. ``shape='old'``: the legacy shape
+    that records the PDF as a local ``pdf`` artifact (an already-built manifest).
+    """
     tex = paper_dir / f"{jobname}.tex"
     pdf = paper_dir / f"{jobname}.pdf"
     html = paper_dir / "paper.html"
@@ -350,13 +363,24 @@ def _write_real_manifest(paper_dir: Path, repo: Path, jobname: str, *, pdf_url):
     def rec(p: Path):
         return {"path": str(p.relative_to(repo)), "sha256": _sha256(p), "bytes": p.stat().st_size}
 
+    artifacts = {"tex": rec(tex), "paper_html": rec(html)}
     manifest = {
         "schema": "paper_manifest/v1",
         "issue": 657,
         "jobname": jobname,
         "pdf_hf_url": pdf_url,
-        "artifacts": {"tex": rec(tex), "pdf": rec(pdf), "paper_html": rec(html)},
+        "artifacts": artifacts,
     }
+    if shape == "hf":
+        manifest["hf_pdf"] = {
+            "url": pdf_url,
+            "sha256": _sha256(pdf),
+            "bytes": pdf.stat().st_size,
+        }
+    elif shape == "old":
+        # OLD shape: the PDF is recorded as a local artifact (validators must
+        # SKIP its local-existence check — it is HF-hosted).
+        artifacts["pdf"] = rec(pdf)
     (paper_dir / "paper_manifest.json").write_text(json.dumps(manifest))
 
 
@@ -364,6 +388,31 @@ def test_manifest_pass(tmp_path: Path, monkeypatch):
     paper_dir = _make_paper(tmp_path)
     monkeypatch.setattr(verify_paper, "REPO", tmp_path)
     _write_real_manifest(paper_dir, tmp_path, "issue_657", pdf_url="https://hf/x.pdf")
+    r = verify_paper.check_manifest(paper_dir)
+    assert r.passed and not r.is_warn, r.detail
+
+
+def test_manifest_pass_when_pdf_is_hf_only_no_local_file(tmp_path: Path, monkeypatch):
+    """The storage decision: the PDF lives on HF, NOT committed. A manifest whose
+    PDF is HF-hosted with NO local pdf file on disk must PASS (incident #657 — the
+    local PDF is gone post-commit)."""
+    paper_dir = _make_paper(tmp_path)
+    monkeypatch.setattr(verify_paper, "REPO", tmp_path)
+    _write_real_manifest(paper_dir, tmp_path, "issue_657", pdf_url="https://hf/x.pdf")
+    # Delete the local PDF — it is HF-only post-commit.
+    (paper_dir / "issue_657.pdf").unlink()
+    r = verify_paper.check_manifest(paper_dir)
+    assert r.passed and not r.is_warn, r.detail
+
+
+def test_manifest_old_shape_pdf_in_artifacts_hf_only_passes(tmp_path: Path, monkeypatch):
+    """Tolerance for the OLD manifest shape (#657's existing manifest): a `pdf`
+    entry in `artifacts` whose local file is gone (HF-only) still PASSes — the
+    PDF's local check is skipped, validated via pdf_hf_url."""
+    paper_dir = _make_paper(tmp_path)
+    monkeypatch.setattr(verify_paper, "REPO", tmp_path)
+    _write_real_manifest(paper_dir, tmp_path, "issue_657", pdf_url="https://hf/x.pdf", shape="old")
+    (paper_dir / "issue_657.pdf").unlink()  # HF-only post-commit
     r = verify_paper.check_manifest(paper_dir)
     assert r.passed and not r.is_warn, r.detail
 
@@ -376,15 +425,38 @@ def test_manifest_warns_when_no_pdf_url(tmp_path: Path, monkeypatch):
     assert r.passed and r.is_warn
 
 
-def test_manifest_fails_hash_mismatch(tmp_path: Path, monkeypatch):
+def test_manifest_fails_when_pdf_url_not_https(tmp_path: Path, monkeypatch):
+    """A present-but-non-https pdf_hf_url is a HARD FAIL — the PDF must resolve to
+    a real HF URL now that it is the PDF's authoritative location."""
+    paper_dir = _make_paper(tmp_path)
+    monkeypatch.setattr(verify_paper, "REPO", tmp_path)
+    _write_real_manifest(paper_dir, tmp_path, "issue_657", pdf_url="ftp://nope/x.pdf")
+    r = verify_paper.check_manifest(paper_dir)
+    assert not r.passed
+    assert "https" in r.detail
+
+
+def test_manifest_fails_committed_artifact_hash_mismatch(tmp_path: Path, monkeypatch):
+    """A COMMITTED artifact (tex/paper_html) with a sha mismatch still FAILs."""
     paper_dir = _make_paper(tmp_path)
     monkeypatch.setattr(verify_paper, "REPO", tmp_path)
     _write_real_manifest(paper_dir, tmp_path, "issue_657", pdf_url="https://hf/x.pdf")
-    # corrupt the PDF after the manifest was written
-    (paper_dir / "issue_657.pdf").write_bytes(b"%PDF-1.5\nDIFFERENT\n%%EOF\n")
+    # corrupt a committed artifact after the manifest was written
+    (paper_dir / "paper.html").write_text("<figure>DIFFERENT</figure>")
     r = verify_paper.check_manifest(paper_dir)
     assert not r.passed
     assert "sha256 mismatch" in r.detail
+
+
+def test_manifest_fails_committed_artifact_missing_on_disk(tmp_path: Path, monkeypatch):
+    """A COMMITTED artifact missing on disk still FAILs (only the PDF is exempt)."""
+    paper_dir = _make_paper(tmp_path)
+    monkeypatch.setattr(verify_paper, "REPO", tmp_path)
+    _write_real_manifest(paper_dir, tmp_path, "issue_657", pdf_url="https://hf/x.pdf")
+    (paper_dir / "paper.html").unlink()
+    r = verify_paper.check_manifest(paper_dir)
+    assert not r.passed
+    assert "paper_html" in r.detail and "missing on disk" in r.detail
 
 
 def test_manifest_fails_missing_required_artifact(tmp_path: Path, monkeypatch):
@@ -460,7 +532,7 @@ def test_no_metric_check_function_in_v1():
         "includegraphics confined + resolves",
         "bib entries resolve",
         "epsref resolves",
-        "manifest complete + hashes",
+        "manifest complete + HF-PDF-consistent",
         "paper-stub body.md valid",
     }
     # A literal-numbers tex (no \metric) must pass the sections + confidence checks.

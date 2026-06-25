@@ -2089,30 +2089,66 @@ def _make_paper_task(tw, *, abstract: str = "An abstract long enough to count.")
     return tid
 
 
-def _write_manifest(tw, tid: int, *, with_url: bool = True, break_sha: bool = False) -> None:
-    """Write a docs/papers/issue_<N>/ paper dir with a valid manifest."""
+def _write_manifest(
+    tw,
+    tid: int,
+    *,
+    with_url: bool = True,
+    break_sha: bool = False,
+    pdf_url: str | None = None,
+    delete_pdf: bool = False,
+    shape: str = "hf",
+) -> None:
+    """Write a docs/papers/issue_<N>/ paper dir with a valid manifest.
+
+    ``shape='hf'`` (NEW, the build_paper.py shape): the PDF is HF-hosted — only
+    the COMMITTED artifacts (tex/paper_html) go in ``artifacts``; the PDF
+    provenance lives in an ``hf_pdf`` block. ``shape='old'`` records the PDF as a
+    local ``pdf`` artifact (an already-built manifest). ``break_sha`` corrupts a
+    COMMITTED artifact's sha (the PDF's hash is never locally validated now).
+    ``delete_pdf`` removes the local PDF file (HF-only post-commit). ``pdf_url``
+    overrides the default https URL (e.g. to test a non-https URL).
+    """
     import hashlib
 
     paper_dir = tw.repo_root() / "docs" / "papers" / f"issue_{tid}"
     paper_dir.mkdir(parents=True, exist_ok=True)
+    # The local PDF exists at build time; write it so we can hash it for hf_pdf
+    # / the old-shape artifact, then optionally delete it (HF-only post-commit).
+    pdf_path = paper_dir / "p.pdf"
+    pdf_path.write_text("contents of pdf")
+    pdf_sha = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+    pdf_bytes = pdf_path.stat().st_size
+
     artifacts = {}
-    for label, fname in (("tex", "p.tex"), ("pdf", "p.pdf"), ("paper_html", "paper.html")):
+    for label, fname in (("tex", "p.tex"), ("paper_html", "paper.html")):
         fpath = paper_dir / fname
         fpath.write_text(f"contents of {label}")
         sha = hashlib.sha256(fpath.read_bytes()).hexdigest()
-        if break_sha and label == "pdf":
+        if break_sha and label == "paper_html":
             sha = "0" * 64
         artifacts[label] = {
             "path": str(fpath.relative_to(tw.repo_root())),
             "sha256": sha,
             "bytes": fpath.stat().st_size,
         }
+    url = pdf_url if pdf_url is not None else ("https://hf/x.pdf" if with_url else None)
     manifest = {
         "schema": "paper_manifest/v1",
         "issue": tid,
         "artifacts": artifacts,
-        "pdf_hf_url": ("https://hf/x.pdf" if with_url else None),
+        "pdf_hf_url": url,
     }
+    if shape == "hf":
+        manifest["hf_pdf"] = {"url": url, "sha256": pdf_sha, "bytes": pdf_bytes}
+    elif shape == "old":
+        artifacts["pdf"] = {
+            "path": str(pdf_path.relative_to(tw.repo_root())),
+            "sha256": pdf_sha,
+            "bytes": pdf_bytes,
+        }
+    if delete_pdf:
+        pdf_path.unlink()
     import json as _json
 
     (paper_dir / "paper_manifest.json").write_text(_json.dumps(manifest))
@@ -2195,12 +2231,57 @@ def test_set_clean_result_paper_null_url_blocked_when_required(fake_repo):
 
 
 def test_set_clean_result_paper_sha_mismatch_blocks(fake_repo):
+    """A COMMITTED artifact (paper_html) sha mismatch still HARD-blocks promotion."""
     _, tw = fake_repo
     tid = _make_paper_task(tw)
     _write_manifest(tw, tid, with_url=True, break_sha=True)
     with pytest.raises(SystemExit) as exc:
         tw.set_clean_result(tid, value=True)
     assert "sha256" in str(exc.value)
+
+
+def test_set_clean_result_paper_hf_only_pdf_passes(fake_repo):
+    """The storage decision: the PDF lives on HF, NOT committed. Promotion must
+    PASS when the manifest's PDF is HF-hosted with NO local pdf file on disk
+    (incident #657 — set-clean-result aborted on the local-existence check)."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=True, delete_pdf=True)
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_paper_old_shape_hf_only_pdf_passes(fake_repo):
+    """Tolerance for the OLD manifest shape (#657's existing manifest): a `pdf`
+    entry in `artifacts` whose local file is gone (HF-only) still PASSes."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=True, delete_pdf=True, shape="old")
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_paper_non_https_url_blocks(fake_repo):
+    """A present-but-non-https pdf_hf_url is a HARD block — the PDF must resolve
+    to a real HF URL now that it is the PDF's authoritative location."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, pdf_url="ftp://nope/x.pdf")
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True)
+    assert "https" in str(exc.value)
+
+
+def test_set_clean_result_paper_committed_artifact_missing_blocks(fake_repo):
+    """A COMMITTED artifact missing on disk still HARD-blocks (only the PDF is
+    exempt from the local-existence check)."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=True)
+    (tw.repo_root() / "docs" / "papers" / f"issue_{tid}" / "paper.html").unlink()
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True)
+    assert "paper_html" in str(exc.value) and "missing on disk" in str(exc.value)
 
 
 def test_set_clean_result_nonpaper_skips_manifest_gate(fake_repo):

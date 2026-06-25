@@ -15,8 +15,11 @@ a `paper: true` task at docs/papers/issue_<N>/issue_<N>.tex it:
   3. Upload the PDF to the HF data repo
      (superkaiba1/explore-persona-space-data) under papers/issue_<N>/, recording
      the commit-revision-pinned URL.
-  4. Write paper_manifest.json: artifact paths + the pinned HF PDF URL + sha256
-     hashes.
+  4. Write paper_manifest.json: COMMITTED-artifact paths (tex/bib/paper.html/
+     refs.json) + sha256 hashes, plus an `hf_pdf` block (pinned HF PDF URL +
+     built-PDF sha256/bytes). The PDF is HF-hosted — NOT a local committed
+     artifact — so it is never recorded as a local on-disk artifact the
+     validators stat (incident #657).
 
 v1 SCOPE: numbers are literals; \\metric is a documented v1.1 opt-in. The build
 handles a v1.1 paper (regenerate metrics.tex first) transparently if a
@@ -444,7 +447,20 @@ def write_manifest(
     pdf_url: str | None,
     source_date_epoch: str,
 ) -> Path:
-    """Write paper_manifest.json: artifact paths + pinned PDF URL + sha256 hashes."""
+    """Write paper_manifest.json: committed-artifact paths + the HF-hosted PDF.
+
+    STORAGE CONTRACT (firm): the paper PDF lives on the HF data repo, NOT
+    committed to git. So the PDF is NOT recorded as a LOCAL on-disk artifact in
+    ``artifacts`` (the validators ``stat`` every entry there for on-disk
+    existence + a sha256 match; a never-committed local PDF path would fail the
+    gate post-commit). Instead the built PDF's provenance — the pinned HF URL +
+    the built-PDF sha256/bytes — is recorded in a dedicated ``hf_pdf`` block the
+    validators do NOT stat locally. The LOCAL artifacts that ARE committed
+    (``tex`` / ``bib`` / ``paper_html`` / ``refs_json``) keep their
+    ``path``+``sha256`` and stay locally validated. (incident #657: the local
+    PDF exists at BUILD time so the build-time verify passed; post-commit it is
+    HF-only, so the local-existence check on a ``pdf`` artifact failed.)
+    """
     tex = paper_dir / f"{jobname}.tex"
     bib = paper_dir / f"issue_{issue}.bib"
     artifacts: dict[str, dict] = {}
@@ -460,12 +476,23 @@ def write_manifest(
             "bytes": path.stat().st_size,
         }
 
+    # COMMITTED (locally validated) artifacts only — NOT the PDF.
     _record("tex", tex, required=True)
-    _record("pdf", pdf, required=True)
     _record("paper_html", paper_html, required=True)
     _record("bib", bib, required=False)
     _record("metrics_json", paper_dir / "metrics.json", required=False)
     _record("refs_json", paper_dir / "refs.json", required=False)
+
+    # The PDF is HF-hosted: record its provenance (pinned URL + built-PDF
+    # sha256/bytes) in an ``hf_pdf`` block the validators never stat locally.
+    # The local PDF still exists at build time, so the sha is the built PDF's.
+    if not pdf.exists():
+        raise BuildError(f"manifest: built PDF missing: {pdf}")
+    hf_pdf = {
+        "url": pdf_url,
+        "sha256": _sha256(pdf),
+        "bytes": pdf.stat().st_size,
+    }
 
     manifest = {
         "schema": "paper_manifest/v1",
@@ -473,7 +500,10 @@ def write_manifest(
         "jobname": jobname,
         "built_at": datetime.now(UTC).isoformat(),
         "source_date_epoch": source_date_epoch,
+        # pdf_hf_url stays a top-level field (the authoritative requirement the
+        # validators key on); hf_pdf carries the matching provenance block.
         "pdf_hf_url": pdf_url,
+        "hf_pdf": hf_pdf,
         "artifacts": artifacts,
     }
     out = paper_dir / "paper_manifest.json"
