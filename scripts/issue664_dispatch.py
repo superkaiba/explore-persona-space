@@ -267,11 +267,15 @@ def _marker_question_pool(smoke: bool) -> list[str]:
 
 
 def _marker_eval_probes() -> list[str]:
-    """The 48 Betley preregistered eval probes the marker DV is SCORED on (the
-    extract_store battery). Kept disjoint from the 300-row training pool above."""
-    import issue404_common as i4
+    """The marker eval probes the marker DV is SCORED on (the extract_store
+    battery) -- kept disjoint from the 300-row training pool above.
 
-    return i4.fetch_preregistered_probes(48)
+    §16: routes through the ONE canonical resolver
+    (``C.canonical_battery_for_column('marker')`` -> the #545
+    ``marker_eval_questions.json`` battery), NOT a hand-rolled
+    ``fetch_preregistered_probes(48)`` call. The marker column self-routes to
+    its own frozen battery like every other #545 column."""
+    return [it["question"] for it in C.canonical_battery_for_column("marker")]
 
 
 def _fetch_ultrachat_questions(n: int, *, exclude: set[str]) -> list[str]:
@@ -549,8 +553,9 @@ def _elicit_secure_code(llm, sources, neg_panel, *, smoke: bool) -> None:
 def _baseline_probe_pool(behavior: str, smoke: bool) -> list[str]:
     """The probe set the source-side base-behavior rate is read on (bare source
     context, NO elicitation). Routes through the behavior's OWN scoring battery
-    (``C.behavior_eval_battery``) -- the SAME surface the eval judge + trained
-    store use (B6) -- capped to a cheap baseline read size. #664 round-2 M6:
+    (``C.canonical_battery_for_behavior`` -- the §16 ONE resolver) -- the SAME
+    surface the eval judge + trained store use (B6) -- capped to a cheap baseline
+    read size. #664 round-2 M6:
     extended from {sycophancy, refusal} to EVERY content behavior with a judged
     column (fact / em / bad_medical too) so all primary transfer-spine behaviors
     carry a source-side base-prior covariate (plan §4)."""
@@ -558,9 +563,11 @@ def _baseline_probe_pool(behavior: str, smoke: bool) -> list[str]:
         return C.SMOKE_QUESTIONS[:3]
     if behavior not in C.CONTENT_BEHAVIORS:
         return []
-    # behavior-own battery (sycophancy=wrong-claims, refusal=#390 requests,
-    # fact=templates, em/bad_medical=betley-8), capped to a 30-probe read.
-    return C.behavior_eval_battery(behavior, smoke=False)[:30]
+    # §16: behavior-own battery via the ONE canonical per-behavior resolver
+    # (sycophancy=Sharma wrong-claims, refusal=#390 requests, fact=#444 templates,
+    # em=betley-main-8, bad_medical=fam_expr_bad_medical), capped to a 30-probe
+    # read. Extract flat questions from the probe-item dicts.
+    return [it["question"] for it in C.canonical_battery_for_behavior(behavior)][:30]
 
 
 def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bool) -> None:

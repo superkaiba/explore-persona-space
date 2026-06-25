@@ -133,18 +133,6 @@ def _judging_surface(cell: C.Cell) -> list[tuple[str, str]]:
     return out
 
 
-# ── Column -> eval probe battery ──────────────────────────────────────────────
-def _column_probes(column: str, *, smoke: bool) -> list[str]:
-    """The probe battery a registry column is scored on (B6 / behavior-own).
-
-    Delegates to the single-source-of-truth ``issue664_common.column_probes`` so
-    the judged-rate eval surface is IDENTICAL to the trained-store activation
-    surface per behavior (#664 round-2 B6). In particular ``refusal`` now reads
-    the #390 refusal-REQUEST pool (the same surface the store + refusal positives
-    use), NOT the prior ``fetch_betley_main_8()`` placeholder."""
-    return C.column_probes(column, smoke=smoke)
-
-
 def _column_context_messages(context_id: str, question: str) -> list[dict]:
     insts = C.load_contexts()
     inst = next(i for i in insts if i["id"] == context_id)
@@ -206,7 +194,8 @@ def gen_cell(cell: C.Cell, *, smoke: bool, merged_path: str) -> dict:
         # generation/judge here -- skip it on the gen side.
         if column == "marker":
             continue
-        probes = _column_probes(column, smoke=smoke)
+        # §16: the ONE resolver -> probe-item dicts; extract flat questions here.
+        probes = [it["question"] for it in C.canonical_battery_for_column(column, smoke=smoke)]
         prompts = [_prompt_text_for(context_id, q) for q in probes]
         n_samp = 1 if smoke else N_SAMPLES_RATE
         comps = _gen_completions(

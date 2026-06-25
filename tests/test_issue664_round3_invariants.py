@@ -40,67 +40,106 @@ import issue404_common as i4  # noqa: E402
 import issue664_common as C  # noqa: E402
 import issue664_dispatch as D  # noqa: E402
 import issue664_eval as E  # noqa: E402
-import issue664_extract_store as S  # noqa: E402
-
 
 # ── B6: behavior-own store/eval batteries (the decisive defect) ───────────────
+# NOTE (§16 strategy pivot): the trained-store + judged-rate batteries are now
+# resolved through the ONE canonical resolver
+# (``issue664_common.canonical_battery_for_*``). The B6 INTENT is unchanged --
+# behavior-own batteries, store surface == eval surface -- but the routing goes
+# through the single resolver, and the §16 contract CORRECTS two surfaces the r3
+# router got wrong: ``marker`` now resolves to its #545 ``marker_eval_questions``
+# battery (NOT the generic preregistered-48) and ``bad_medical`` to its #545
+# ``fam_expr_bad_medical`` battery (NOT the Betley-8 placeholder). These tests
+# were updated to the corrected canonical semantics; the references to the deleted
+# ``S._behavior_battery`` / ``E._column_probes`` helpers re-point at the resolver.
+
+
+def _beh_qs(behavior: str) -> list[str]:
+    """Flat questions the store path reads for a behavior (canonical resolver)."""
+    return [it["question"] for it in C.canonical_battery_for_behavior(behavior)]
+
+
+def _col_qs(column: str) -> list[str]:
+    """Flat questions the eval path reads for a column (canonical resolver)."""
+    return [it["question"] for it in C.canonical_battery_for_column(column)]
+
+
 def test_b6_sycophancy_store_battery_is_wrong_claims_not_preregistered() -> None:
     """The reconciler's DECISIVE finding: sycophancy store activations must be
     over the Sharma wrong-claim user turns (the SAME surface the training
-    positives + judge use), NOT i4.fetch_preregistered_probes(48)."""
-    syco = S._behavior_battery("sycophancy", smoke=False)
+    positives + judge use), NOT i4.fetch_preregistered_probes(48). Under §16
+    sycophancy is an explicit ISSUE_664_BATTERY_OVERRIDES entry."""
+    syco = _beh_qs("sycophancy")
     pre48 = set(i4.fetch_preregistered_probes(48))
     bet8 = set(i4.fetch_betley_main_8())
+    assert "sycophancy" in C.ISSUE_664_BATTERY_OVERRIDES
     assert len(syco) == 50  # the 50-claim wrong-claim read
     assert set(syco) != pre48, "B6 regression: sycophancy store uses the generic 48 probes"
     assert set(syco) != bet8, "B6 regression: sycophancy store uses the Betley-8 placeholder"
     # the store surface is IDENTICAL to the judged-rate eval surface for syco.
-    assert set(syco) == set(E._column_probes("sycophancy", smoke=False))
+    assert set(syco) == set(_col_qs("sycophancy"))
 
 
 def test_b6_refusal_store_battery_is_request_pool_not_preregistered() -> None:
-    refu = S._behavior_battery("refusal", smoke=False)
+    refu = _beh_qs("refusal")
     pre48 = set(i4.fetch_preregistered_probes(48))
     bet8 = set(i4.fetch_betley_main_8())
+    assert "refusal" in C.ISSUE_664_BATTERY_OVERRIDES
     assert refu, "refusal battery empty"
     assert set(refu) != pre48, "B6 regression: refusal store uses the generic 48 probes"
     assert set(refu) != bet8, "B6 regression: refusal store uses the Betley-8 placeholder"
     # store == eval surface; both the #390 refusal-request pool.
-    assert set(refu) == set(E._column_probes("refusal", smoke=False))
+    assert set(refu) == set(_col_qs("refusal"))
     assert set(refu) == set(C.refusal_request_pool())
 
 
-def test_b6_em_and_bad_medical_use_betley_not_preregistered() -> None:
+def test_b6_em_and_bad_medical_use_own_545_battery_not_preregistered() -> None:
+    """em -> broad_em (Betley-main-8, content-identical to fetch_betley_main_8);
+    bad_medical -> its OWN #545 fam_expr_bad_medical battery (the §16 correction:
+    the r3 router wrongly pinned bad_medical to Betley-8). Neither is the generic
+    preregistered-48."""
     bet8 = set(i4.fetch_betley_main_8())
     pre48 = set(i4.fetch_preregistered_probes(48))
-    for behavior in ("em", "bad_medical"):
-        battery = set(S._behavior_battery(behavior, smoke=False))
-        assert battery == bet8, f"{behavior} store should be the Betley main-8 battery"
-        assert battery != pre48, f"{behavior} store must NOT be the generic 48 probes"
+    # em routes via broad_em -> betley_main8.json (same content as the helper).
+    em = set(_beh_qs("em"))
+    assert em == bet8, "em store should be the broad_em / Betley main-8 battery"
+    assert em != pre48, "em store must NOT be the generic 48 probes"
+    # bad_medical routes via its OWN #545 column battery, NOT Betley-8.
+    bm = set(_beh_qs("bad_medical"))
+    assert C.BEHAVIOR_REGISTRY_PRIMARY_COLUMN["bad_medical"] == "fam_expr_bad_medical"
+    assert bm == set(_col_qs("fam_expr_bad_medical"))
+    assert bm != bet8, "bad_medical should resolve to its OWN #545 battery, NOT Betley-8"
+    assert bm != pre48, "bad_medical store must NOT be the generic 48 probes"
     # ic_edu maps to the em (broad_em) surface; tf_rev to the fact surface.
-    assert set(S._behavior_battery("ic_edu", smoke=False)) == bet8
-    assert set(S._behavior_battery("tf_rev", smoke=False)) == set(
-        S._behavior_battery("fact", smoke=False)
+    assert set(_beh_qs("ic_edu")) == bet8
+    assert set(_beh_qs("tf_rev")) == set(_beh_qs("fact"))
+
+
+def test_b6_marker_resolves_to_own_545_battery() -> None:
+    """§16 correction: marker resolves to its #545 ``marker_eval_questions``
+    column battery (each column self-routes via its own ColumnSpec.battery), NOT
+    a hand-rolled fetch_preregistered_probes(48) special case. The r3 router
+    pinned marker to the generic 48 probes -- the pivot fixes that."""
+    from explore_persona_space.experiments.behavior_testbed_545.columns import COLUMNS
+
+    assert "marker" not in C.ISSUE_664_BATTERY_OVERRIDES
+    assert COLUMNS["marker"].battery == "marker_eval_questions.json"
+    mark = set(_beh_qs("marker"))
+    assert mark == set(_col_qs("marker"))
+    assert mark != set(i4.fetch_preregistered_probes(48)), (
+        "marker must resolve to its own #545 battery, NOT the generic preregistered-48"
     )
-
-
-def test_b6_marker_keeps_preregistered_48() -> None:
-    """marker IS the preregistered-48 surface (plan §1.4 / §4); the fix must NOT
-    accidentally re-route it."""
-    mark = set(S._behavior_battery("marker", smoke=False))
-    assert mark == set(i4.fetch_preregistered_probes(48))
-    assert len(mark) == 48
 
 
 def test_b6_store_battery_equals_eval_column_per_content_behavior() -> None:
     """One source of truth: the trained-store activation surface == the judged-
     rate eval surface for EVERY content behavior (so the gate DV's activations
-    and the judge labels score the same prompts)."""
+    and the judge labels score the same prompts). Both call the ONE resolver."""
     for behavior in C.CONTENT_BEHAVIORS:
         column = C.BEHAVIOR_REGISTRY_PRIMARY_COLUMN[behavior]
-        assert set(S._behavior_battery(behavior, smoke=False)) == set(
-            E._column_probes(column, smoke=False)
-        ), f"store/eval surface mismatch for {behavior}"
+        assert set(_beh_qs(behavior)) == set(_col_qs(column)), (
+            f"store/eval surface mismatch for {behavior}"
+        )
 
 
 # ── B7: live-judge-smoke reaches the production judge branch ───────────────────
@@ -176,9 +215,14 @@ def test_m6_baseline_probe_pool_covers_all_content_behaviors(monkeypatch) -> Non
     code returned [] for fact/em/bad_medical). Stub the HF wrong-claims download
     so no network is needed; the non-HF behaviors resolve locally."""
 
-    # stub the sycophancy wrong-claims battery (HF-backed) via the shared helper.
+    # stub the canonical column resolver (HF-backed for the override columns) so
+    # no network is needed; every column resolves to a 40-probe-item list.
     monkeypatch.setattr(
-        C, "column_probes", lambda column, *, smoke: [f"{column}_probe_{i}" for i in range(40)]
+        C,
+        "canonical_battery_for_column",
+        lambda column, *, smoke=False: [
+            {"probe_id": f"{column}_{i}", "question": f"{column}_probe_{i}"} for i in range(40)
+        ],
     )
     for behavior in C.CONTENT_BEHAVIORS:
         pool = D._baseline_probe_pool(behavior, smoke=False)

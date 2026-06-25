@@ -40,6 +40,7 @@ import hashlib
 import logging
 import os
 import subprocess
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -253,66 +254,73 @@ def registry_columns_for_behavior(behavior: str) -> list[str]:
     return cols
 
 
-def column_probes(column: str, *, smoke: bool) -> list[str]:
-    """The behavior-own scoring battery a #545 registry column is judged on (B6).
+# ── §16 canonical battery routing (the v4 single-resolver contract) ───────────
+# ONE resolver maps a #545 column name -> its prompt battery. Every #545 column
+# self-routes through its own ``ColumnSpec.battery`` via the registry helper
+# ``eval_battery.battery_probes(COLUMNS[col])`` -- which already returns the
+# CORRECT frozen battery for every column (harmful_compliance->advbench_200,
+# deception->deception_episodes, broad_em->betley_main8, marker->marker_eval_
+# questions, fam_expr_bad_medical->fam_expr_bad_medical, ...). The ONLY escape
+# hatch is the single declared override dict below, enumerated by the §16.4
+# pytests. This removes the r1->r3 manual-router failure mode mechanically:
+# there is no per-key ``if column in (...)`` routing and no generic
+# ``fetch_preregistered_probes(48)`` / ``fetch_betley_main_8()`` fallback for a
+# registry column (those calls survive ONLY inside the override providers that
+# explicitly declare a Betley-pool battery -- the §16.4 AST test allow-lists
+# exactly those enclosing functions).
 
-    SINGLE SOURCE OF TRUTH for both the trained-store activation extraction
-    (``issue664_extract_store._behavior_battery``) and the judged-rate eval
-    (``issue664_eval._column_probes``) -- they MUST score the SAME prompts per
-    behavior, or the gate DV's activations would be measured on a different
-    surface than the judge labels (#664 round-2 B6: sycophancy/refusal store
-    tensors were silently extracted on the generic 48 preregistered Betley
-    probes instead of their own batteries, corrupting the Phase-3/4 store).
 
-    Per behavior column:
-      - ``sycophancy``      -> the Sharma wrong-claim user turns (the SAME
-        ``wrong_claim`` strings the training positives + judge are keyed on).
-      - ``refusal``         -> the #390 refusal-REQUEST pool (the SAME requests
-        the refusal positives are elicited on / the judge scores).
-      - ``fact_expression`` -> the #444 diversified fact-question templates.
-      - ``broad_em`` / ``fam_expr_bad_medical`` / ``harmful_compliance``
-        -> the Betley main-8 misalignment probes.
-      - everything else (incl. ``marker``) -> the 48 preregistered Betley
-        probes (marker IS that surface, plan §1.4 / §4).
-    """
-    import issue404_common as i4
+def _sycophancy_sharma_wrong_claims() -> list[dict]:
+    """OVERRIDE provider for the ``sycophancy`` column: the Sharma wrong-claim
+    user turns (the SAME ``wrong_claim`` strings the training positives + judge
+    key on), NOT the registry's ``sycophancy_claims`` battery (B6). Returns the
+    probe-item ``list[dict]`` shape the resolver guarantees."""
+    import json
 
-    if smoke:
-        return SMOKE_QUESTIONS[:2]
-    if column in ("broad_em", "fam_expr_bad_medical", "harmful_compliance"):
-        return i4.fetch_betley_main_8()
-    if column == "sycophancy":
-        import json
+    from huggingface_hub import hf_hub_download
 
-        from huggingface_hub import hf_hub_download
+    path = hf_hub_download(
+        HF_DATA_REPO,
+        "issue411_sycophancy_cosine_gradient/data/wrong_claims/train_200.jsonl",
+        repo_type="dataset",
+    )
+    claims = [json.loads(ln) for ln in Path(path).read_text().splitlines() if ln.strip()]
+    return [
+        {"probe_id": f"wrong_claim_{i}", "question": c["wrong_claim"]}
+        for i, c in enumerate(claims[:50])
+    ]
 
-        path = hf_hub_download(
-            HF_DATA_REPO,
-            "issue411_sycophancy_cosine_gradient/data/wrong_claims/train_200.jsonl",
-            repo_type="dataset",
-        )
-        claims = [json.loads(ln) for ln in Path(path).read_text().splitlines() if ln.strip()]
-        return [c["wrong_claim"] for c in claims[:50]]
-    if column == "fact_expression":
-        import issue664_build_training_data as B
 
-        return [t.format(entity=B.FACT_ENTITY) for t in B.FACT_QUESTION_TEMPLATES]
-    if column == "refusal":
-        return refusal_request_pool()
-    return i4.fetch_preregistered_probes(48)
+def _fact_444_templates() -> list[dict]:
+    """OVERRIDE provider for ``fact_expression``: the #444 diversified
+    fact-question templates (the SAME templates the taught-fact positives use),
+    NOT the registry's ``fact_battery`` (B6 taught-fact carve-out)."""
+    import issue664_build_training_data as B
+
+    return [
+        {"probe_id": f"fact_tmpl_{i}", "question": t.format(entity=B.FACT_ENTITY)}
+        for i, t in enumerate(B.FACT_QUESTION_TEMPLATES)
+    ]
 
 
 def refusal_request_pool() -> list[str]:
-    """The #390 refusal-REQUEST pool: requests on which the source persona is
-    trained to refuse/deflect and the refusal judge scores (B6). The frozen
-    P2.0 pool (``data/issue_664/pools/refusal.json``) is authoritative when
-    present; otherwise fall back to the inlined #390 request battery in
+    """The #390 refusal-REQUEST pool (flat questions): requests on which the
+    source persona is trained to refuse/deflect and the refusal judge scores
+    (B6). The frozen P2.0 pool is authoritative when present; otherwise fall
+    back to the inlined #390 request battery in
     ``issue664_build_training_data.REFUSAL_REQUESTS`` so the store/eval surfaces
     never silently collapse onto the generic Betley probes. Fails loud if
-    NEITHER source resolves (no silent placeholder)."""
+    NEITHER source resolves (no silent placeholder).
+
+    Path contract (#664 round-3 C1 fix): the P2.0 pool is WRITTEN by
+    ``issue664_dispatch.phase0`` via ``_write_pool('refusal', ...)`` to
+    ``data/issue_664/onpolicy_cache/pools/refusal.json`` -- so the read here
+    keys on the SAME path the pipeline writes (the prior code read
+    ``data/issue_664/pools/refusal.json``, which the pipeline never wrote, so
+    production silently fell through to the inlined ``REFUSAL_REQUESTS``)."""
     import json
 
-    pool_path = DATA_ROOT / "pools" / "refusal.json"
+    pool_path = DATA_ROOT / "onpolicy_cache" / "pools" / "refusal.json"
     if pool_path.exists():
         reqs = json.loads(pool_path.read_text()).get("questions") or []
         if reqs:
@@ -322,24 +330,94 @@ def refusal_request_pool() -> list[str]:
     reqs = list(getattr(B, "REFUSAL_REQUESTS", ()))
     if not reqs:
         raise RuntimeError(
-            "refusal request pool unavailable: neither data/issue_664/pools/refusal.json "
-            "nor issue664_build_training_data.REFUSAL_REQUESTS resolved. Run P2.0 to write "
+            "refusal request pool unavailable: neither "
+            "data/issue_664/onpolicy_cache/pools/refusal.json nor "
+            "issue664_build_training_data.REFUSAL_REQUESTS resolved. Run P2.0 to write "
             "the frozen pool, or restore the inlined #390 request battery."
         )
     return reqs
 
 
-def behavior_eval_battery(behavior: str, *, smoke: bool) -> list[str]:
-    """The behavior's OWN scoring prompts (B6), routed through the behavior's
-    PRIMARY #545 registry column so the trained-store activation surface is
-    IDENTICAL to the judged-rate eval surface. ``ic_edu``/``tf_rev`` map to
-    their base behaviors' columns (broad_em / fact_expression) by the
-    ``BEHAVIOR_REGISTRY_PRIMARY_COLUMN`` table -- never to the generic 48
-    preregistered probes by accident (the #664 round-2 B6 defect)."""
+def _refusal_390_pool() -> list[dict]:
+    """OVERRIDE provider for the ``refusal`` column: the #390 refusal-REQUEST
+    pool (the SAME requests the refusal positives are elicited on / the judge
+    scores), NOT the registry's XSTest/OR-Bench ``refusal_panel`` (B6). Wraps
+    the flat ``refusal_request_pool()`` strings into the probe-item shape."""
+    return [{"probe_id": f"req_{i}", "question": q} for i, q in enumerate(refusal_request_pool())]
+
+
+# The SINGLE declared override dict (§16.2). The canonical resolver checks this
+# FIRST, then falls through to the #545 registry helper. Each entry carries a
+# one-line ``# why``. Decision on the columns the r3 misroute touched:
+# harmful_compliance / deception / self_report / persona_drift / format_style /
+# broad_em / fam_expr_bad_medical are NOT overrides -- their ColumnSpec.battery
+# is already correct (AdvBench-200, deception-episodes, self-report, persona-
+# drift, format-questions, Betley-main-8, fam-expr-bad-medical). ``marker`` is
+# NOT an override either -- it resolves to its #545 ``marker_eval_questions``
+# battery via the registry helper (the judge path drops it; only the marker-slot
+# path reads it).
+ISSUE_664_BATTERY_OVERRIDES: dict[str, Callable[[], list[dict]]] = {
+    # refusal: store + judge key on the #390 refusal-REQUEST pool, not refusal_panel.
+    "refusal": _refusal_390_pool,
+    # sycophancy: store + judge key on the Sharma wrong-claims, not sycophancy_claims.
+    "sycophancy": _sycophancy_sharma_wrong_claims,
+    # fact_expression: store + judge key on the #444 fact-question templates, not fact_battery.
+    "fact_expression": _fact_444_templates,
+}
+
+
+def canonical_battery_for_column(column: str, *, smoke: bool = False) -> list[dict]:
+    """The ONLY function mapping a #545 column name -> its prompt battery (§16.1).
+
+    Resolution order:
+      1. ``smoke=True`` short-circuit -> ``SMOKE_QUESTIONS[:2]`` (the ONE allowed
+         non-registry path; the §16.4 AST test exempts it explicitly).
+      2. ``ISSUE_664_BATTERY_OVERRIDES[column]`` if declared (B6 #664-specific pools).
+      3. Otherwise delegate to the #545 registry:
+         ``eval_battery.battery_probes(COLUMNS[column])`` -- each ``ColumnSpec``
+         self-routes to its own frozen battery, so no per-key routing is needed.
+
+    Returns the probe-item ``list[dict]`` shape (``[{"probe_id", "question", ...}]``).
+    Call sites needing flat question strings extract
+    ``[it["question"] for it in canonical_battery_for_column(col)]`` -- they add
+    NO second routing layer. Both the trained-store activation path and the
+    judged-rate eval path call this, so the activation surface and the judge
+    surface are IDENTICAL by construction (closes the r2 B6 defect mechanically)."""
+    if smoke:
+        return [
+            {"probe_id": f"smoke_{i}", "question": q} for i, q in enumerate(SMOKE_QUESTIONS[:2])
+        ]
+    override = ISSUE_664_BATTERY_OVERRIDES.get(column)
+    if override is not None:
+        probes = override()
+    else:
+        from explore_persona_space.experiments.behavior_testbed_545.columns import COLUMNS
+        from explore_persona_space.experiments.behavior_testbed_545.eval_battery import (
+            battery_probes,
+        )
+
+        if column not in COLUMNS:
+            raise KeyError(
+                f"#664 battery routing: column {column!r} is neither a declared override "
+                f"nor a #545 registry column -- no canonical battery for it."
+            )
+        probes = battery_probes(COLUMNS[column])
+    if not probes:
+        raise RuntimeError(f"canonical battery for column {column!r} resolved empty")
+    return probes
+
+
+def canonical_battery_for_behavior(behavior: str, *, smoke: bool = False) -> list[dict]:
+    """The per-#664-behavior resolver (§16.1): maps a behavior -> its PRIMARY
+    #545 registry column via ``BEHAVIOR_REGISTRY_PRIMARY_COLUMN`` and returns
+    ``canonical_battery_for_column(that_column)``. Adds NO routing of its own --
+    ``ic_edu``/``tf_rev`` map to their base behaviors' columns (broad_em /
+    fact_expression) by the table, never to a hand-rolled pool. The store path
+    and the eval path both call this, so the surfaces are identical (B6)."""
     column = BEHAVIOR_REGISTRY_PRIMARY_COLUMN.get(behavior)
     if column is None:
         raise ValueError(f"no primary registry column for behavior {behavior!r}")
-    return column_probes(column, smoke=smoke)
+    return canonical_battery_for_column(column, smoke=smoke)
 
 
 @dataclass(frozen=True)

@@ -82,34 +82,6 @@ def _gpu_reclaim(*, ipc: bool = False) -> None:
             torch.cuda.ipc_collect()
 
 
-# ── Behavior eval batteries (the probes v_plus / v0 are scored on) ────────────
-def _behavior_battery(behavior: str, *, smoke: bool) -> list[str]:
-    """The behavior's OWN scoring prompts (B6) -- routed through the SAME
-    ``issue664_common.behavior_eval_battery`` the judged-rate eval uses, so the
-    trained-store activation surface is IDENTICAL to the judge surface per
-    behavior.
-
-    Per behavior:
-      - marker        -> the 48 preregistered Betley probes (marker IS that
-        surface, plan §1.4 / §4).
-      - em / ic_edu   -> the Betley main-8 misalignment probes.
-      - bad_medical   -> the bad-medical family-expression Betley battery.
-      - fact / tf_rev -> the #444 diversified fact-question templates.
-      - sycophancy    -> the Sharma wrong-claim user turns (keyed identically
-        to the training positives + judge).
-      - refusal       -> the #390 refusal-REQUEST pool (the frozen P2.0 pool,
-        falling back to the inlined #390 request battery -- NEVER the generic
-        48 probes).
-
-    #664 round-2 B6: the prior implementation routed marker/em/bad_medical/
-    refusal/sycophancy ALL to ``fetch_preregistered_probes(48)``, so sycophancy
-    and refusal store tensors (t_CB / v+ / r+ / v0_probe) were silently measured
-    on unrelated prompts -- corrupting the Phase-3/4 gate DV for those two
-    behaviors. The fix delegates to the single-source-of-truth battery in
-    ``issue664_common``."""
-    return C.behavior_eval_battery(behavior, smoke=smoke)
-
-
 # ── Activation extraction (answer-side mean + last-input slot, all 28 layers) ──
 def _generate_greedy(model_path: str, prompts: list[str], *, max_new_tokens: int) -> list[dict]:
     """vLLM greedy gen; returns [{prompt_token_ids, response_token_ids, finish_reason}].
@@ -272,7 +244,13 @@ def extract_cell(cell: C.Cell, *, smoke: bool, gpu_id: int, adapter_dir: Path | 
     C.assert_marker_token(tokenizer)
 
     contexts = C.load_contexts()
-    battery = _behavior_battery(cell.behavior, smoke=smoke)
+    # §16: the ONE per-behavior resolver -> probe-item dicts; extract flat
+    # questions here (the store extraction iterates question strings). The store
+    # surface is IDENTICAL to the judge surface because both call the canonical
+    # resolver (B6 closed mechanically).
+    battery = [
+        it["question"] for it in C.canonical_battery_for_behavior(cell.behavior, smoke=smoke)
+    ]
     if smoke:
         contexts = contexts[:3]
         battery = battery[:3]
