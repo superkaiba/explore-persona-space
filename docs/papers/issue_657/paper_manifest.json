@@ -1,0 +1,35 @@
+{
+  "schema": "paper_manifest/v1",
+  "issue": 657,
+  "jobname": "issue_657",
+  "built_at": "2026-06-25T17:37:09.213851+00:00",
+  "source_date_epoch": "1781836785",
+  "pdf_hf_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/dcdff3f51d6a4bdf357afb89cd26203b1185a22e/papers/issue_657/issue_657.pdf",
+  "artifacts": {
+    "tex": {
+      "path": "docs/papers/issue_657/issue_657.tex",
+      "sha256": "7bd7bce834bcc74a84fc87c6a35f3d670f28852089733453de2e0c82e6fc87ea",
+      "bytes": 36050
+    },
+    "pdf": {
+      "path": "docs/papers/issue_657/issue_657.pdf",
+      "sha256": "89ca23b0ce070f0ecb231e6d08aeb3b945afeb17e2b33200c0c2391f53127197",
+      "bytes": 1283162
+    },
+    "paper_html": {
+      "path": "docs/papers/issue_657/paper.html",
+      "sha256": "7934c69ea022c975c266b23b3e48c0333b731fa8144530245882ef2f5d52f524",
+      "bytes": 82311
+    },
+    "bib": {
+      "path": "docs/papers/issue_657/issue_657.bib",
+      "sha256": "6e608429e532e67dc570664525d782adc4b54f1b4c3431b363634032cb1bfd6e",
+      "bytes": 1765
+    },
+    "refs_json": {
+      "path": "docs/papers/issue_657/refs.json",
+      "sha256": "59c9870ac6e0ace1e3b920604da0b2b8e3fca4cd77656cb2fdef87b6d4c68d91",
+      "bytes": 565
+    }
+  }
+}
