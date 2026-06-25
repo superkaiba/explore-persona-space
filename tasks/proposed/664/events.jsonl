@@ -1,1 +1,2 @@
 {"ts": "2026-06-25T07:26:49Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-25T09:13:04Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "User directive 2026-06-25: run Phase 2 training in PARALLEL with #658's judge — do NOT wait on the foundation go/no-go or the Phase-1 recipe-freeze. Capture all 28 layers; apply the frozen layer/r_B recipe at analysis. Body amended with the parallel-execution directive."}
