@@ -122,6 +122,44 @@ def _tool(name: str) -> str:
     return resolved
 
 
+def _refresh_template_owned_files(paper_dir: Path) -> None:
+    """Re-copy the template-owned, author-never-edited files into the paper dir.
+
+    The per-task ``preamble.tex`` is FIXED by contract — issue_<N>.tex
+    ``\\input{preamble.tex}`` verbatim and NEVER edits it (issue_TEMPLATE.tex
+    header). So a paper whose per-task ``preamble.tex`` predates a template
+    change (e.g. the ``epsexample`` env added for verbatim examples) would build
+    against the STALE copy and fail with no hint at the cause (incident #657:
+    "Environment epsexample undefined"). Overwriting from the template at the
+    start of every build guarantees a template update always reaches existing /
+    backfilled papers. The overwrite is safe precisely because the per-task copy
+    is never author-customized; if a paper dir's copy has DRIFTED from the
+    template we still overwrite (the template is canonical), but we surface the
+    drift on stderr so an unexpected local edit is never silently discarded.
+
+    The pandoc Lua filter is NOT copied here: ``build_html`` loads it directly
+    from ``TEMPLATE_DIR`` (``LUA_FILTER``), so a template Lua update already
+    reaches every build — there is no per-task Lua copy in the build path to go
+    stale. (Any stray per-task ``eps_paper_filter.lua`` is an unused leftover.)
+    """
+    src = TEMPLATE_DIR / "preamble.tex"
+    if not src.exists():
+        raise BuildError(f"template preamble not found: {src}")
+    dst = paper_dir / "preamble.tex"
+    if dst.exists() and dst.read_bytes() != src.read_bytes():
+        try:
+            shown = dst.relative_to(REPO)
+        except ValueError:
+            # An out-of-REPO --paper-dir (e.g. an absolute self-test path):
+            # show the absolute path rather than crash the diagnostic.
+            shown = dst
+        print(
+            f"    refreshing drifted per-task preamble.tex from template ({shown})",
+            file=sys.stderr,
+        )
+    shutil.copyfile(src, dst)
+
+
 def _emit_metrics_tex(metrics_json: Path, out_tex: Path) -> None:
     """Generate the metrics.tex LaTeX macro registry from a paper-dir metrics.json.
 
@@ -149,6 +187,11 @@ def build_pdf(paper_dir: Path, jobname: str, *, source_date_epoch: str) -> Path:
     pdflatex = _tool("pdflatex")
     bibtex = _tool("bibtex")
     env_epoch = {**os.environ, "SOURCE_DATE_EPOCH": source_date_epoch}
+
+    # Refresh the template-owned (author-never-edited) preamble.tex so a paper
+    # whose per-task copy predates a template change builds against the current
+    # template, not a stale copy (incident #657: epsexample env undefined).
+    _refresh_template_owned_files(paper_dir)
 
     # If a v1.1 metrics.json is present, regenerate metrics.tex first so the
     # \metric registry is consistent with the manifest. v1 papers have neither;
