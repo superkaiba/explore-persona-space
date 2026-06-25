@@ -105,6 +105,31 @@ N_GEN_TOKENS = 1024  # greedy R cap (natural Qwen replies ~150 tok; log truncati
 CELL_DONE_SENTINEL = ".done"
 
 
+def assert_full_npz_complement(cell_dir: Path, *, targets: list[str], layers: list[int]) -> None:
+    """Fail loud unless EVERY ``{target}_L{layer}.npz`` was written for this cell.
+
+    Mirrors the ``--backfill-sentinels`` complement check
+    (``issue667_dispatch._expected_npz_for_cell``) on the LIVE extract path. A
+    target whose probes all produce empty responses SKIPS its ``.npz`` write for
+    every layer (the ``if not acc[li][0]: continue`` branch in
+    ``_extract_one_target``); without this gate the unconditional
+    ``write_cell_done_sentinel`` would still fire, stamping a TRUSTED ``.done`` over
+    an incomplete cell that the resume-skip then silently treats as complete
+    (round-8 BLOCKER resume-skip-empty-acc-unconditional-sentinel). Raising here
+    means no sentinel is written, so the resume-skip correctly re-extracts the
+    cell on the next pass.
+    """
+    expected = {f"{tcid}_L{li}.npz" for tcid in targets for li in layers}
+    present = {p.name for p in cell_dir.glob("*.npz")}
+    missing = sorted(expected - present)
+    if missing:
+        raise RuntimeError(
+            f"incomplete cell {cell_dir}: {len(missing)}/{len(expected)} expected "
+            f".npz missing (e.g. {missing[:5]}) — NOT writing .done sentinel "
+            "(empty-response targets skipped their write); resume-skip will re-extract"
+        )
+
+
 def write_cell_done_sentinel(
     cell_dir: Path,
     *,
@@ -931,6 +956,14 @@ def run_extraction(args) -> int:
         n_gen,
         n_trunc,
     )
+    # Validate the FULL (target, layer) .npz complement is on disk BEFORE the
+    # sentinel — an empty-response target skips its .npz write per layer
+    # (_extract_one_target's `if not acc[li][0]: continue`), so an unconditional
+    # sentinel would stamp a TRUSTED .done over an incomplete cell that the
+    # resume-skip then silently treats as done (round-8 BLOCKER
+    # resume-skip-empty-acc-unconditional-sentinel). Raise loud instead — no
+    # sentinel, so the cell is re-extracted on the next pass.
+    assert_full_npz_complement(cell_dir, targets=targets, layers=layers)
     # Atomic completion sentinel — written ONLY after every target's tensors are
     # on disk, so the dispatcher's resume-skip never treats a partial dir as done
     # (round-8 BLOCKER resume-skip-partial-cell-silent-skip).
