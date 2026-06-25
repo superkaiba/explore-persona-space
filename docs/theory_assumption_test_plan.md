@@ -116,6 +116,26 @@ still runs the same knobs standalone as the early read.
 |---|---|---|
 | **R7-1** | The `rb-recipe-knobs` — instruction-pair count (1 vs 5 paraphrase pairs), negative-pole content (anti-behavior vs neutral/default), assistant-centroid baseline (`centroid_B − centroid_assistant`, expected to underperform), and the optimism trait (opposite ≠ default assistant) — become IN-PLAN one-knob-off A3.3 robustness variants from the C primary (exploratory/FDR). Bounded `r_B`-extraction cost (read-out only, fleet-unaffected): 5-pair / neutral-pole / optimism add some Phase-1 generation, assistant-baseline ~free. #661 runs the same knobs standalone. Supersedes R6-1's "not duplicated." | §1.4 `r_B` note · §4 A3.3 row |
 
+## Revision log (round 8 — generic-vs-misalignment query genre)
+
+User decision (Thomas, 2026-06-25): add an explicit **generic vs misalignment-specific query
+genre** comparison. #658's foundation measures the base-model chain on the misalignment-eliciting
+**Betley** pool only; the deployment- and safety-relevant question (open-q 3.7, leakage to
+benign/default contexts) is whether the chain (A3.2/A3.3/A3.5) holds when behavior is expressed on
+**generic everyday queries** too, or is an artifact of the behavior-eliciting genre. Run a second
+length-matched **UltraChat** probe pool (`data/issue594/probes_ultrachat.json`, 48 probes,
+decile-aligned to Betley) through the SAME extraction + judge, build a parallel store with `c_C`
+recomputed per genre on the matched pool (NOT forced equal — the genre-induced `c_C` shift is part
+of what the arm measures), and COMPARE the predictor chain across the two genres, per behavior, against the noise
+floor. GPU sub-phase (new generation + extraction + judge — the store is Betley-only); routed as a
+same-question follow-up round ON #658, tracked under #660, run UNCONDITIONALLY regardless of the
+Betley foundation verdict (it does NOT wait on the foundation PASSing); it does not block the
+Phase-2 gate.
+
+| ID | Add | Where |
+|---|---|---|
+| **R8-1** | New Phase-1 **(G1) genre-generalization arm**: a second UltraChat (generic) probe pool, length-matched to Betley (misalignment-specific), run through the #658 extraction → parallel store (`v0`, single-context per-sample acts, `E0` judge) with `c_C` recomputed per genre (NOT forced equal); re-fit A3.2/A3.3/A3.5 and report Spearman/Pearson + best layer/recipe PER GENRE and the genre delta, distributional AND single-context, each against its own within-genre noise floor. Floor guard: misalignment behaviors (broad_em/harmful_compliance/refusal) may sit at expression floor on generic queries — report per-behavior testable variance per pool and read the continuous completion-probability DV where the rate floors; never read a no-variance ρ as "chain breaks." | §1.2 (G1) bullet · Phase 1 (G1) arm |
+
 ---
 
 This plan turns the paper's assumption chain into one **shared activation store**
@@ -216,6 +236,22 @@ control the gate `g_C(C')` needs):
   foundation (#658) is Betley-scoped and therefore correct as run; the
   behavior-generality bound is a Phase-2 store-design requirement + a clean-result
   scope caveat.
+- **(G1) Generic vs misalignment-specific query genre — [#658 FOLLOW-UP, GPU].** The shared
+  Betley pool above is *misalignment-eliciting* by construction (provocative / safety-relevant
+  free-form queries — the genre the EM behaviors naturally express in). The deployment- and
+  safety-relevant question (open-q 3.7, leakage to benign/default contexts) is whether the
+  base-model chain holds when behavior is expressed on **generic everyday queries** too. We add a
+  second within-condition pool — the **UltraChat** probe set
+  (`data/issue594/probes_ultrachat.json`: 48 probes from `HuggingFaceH4/ultrachat_200k`,
+  **length-matched** to the Betley pool (decile-aligned; residual ≤~10% at the long tail), hash
+  `f277f8c3…`, built by `issue594_build_probes_ultrachat.py`) — and run the predictor chain on BOTH
+  pools to compare
+  generic vs misalignment-specific genre (Phase 1 (G1) arm). This is a DIFFERENT axis from the B6
+  bullet above: B6 varies the prompt distribution *together with* the behavior (per-behavior eval
+  batteries); (G1) holds the behavior fixed and varies ONLY the query genre, length-controlled, so
+  the two genres are directly comparable. Floor caveat: misalignment behaviors may sit at
+  expression floor on generic queries — read per-behavior testable variance + the continuous DV,
+  never a no-variance correlation as a break.
 - **Why this suite, not the 24-persona panel alone:** the families let context
   distance vary across surface-feature *type* (persona vs ICL vs format) **and**
   within it — `rephrase` gives 6 same-semantics/different-register near-twins,
@@ -826,6 +862,22 @@ extraction recipe** (layer, summary) used by every later phase, so run first.
   (each context×probe), **continuous DV primary**, reported vs the within-context
   noise floor; compare per-prompt vs distributional. Pure CPU re-analysis on the
   store (no new GPU beyond the R-samples-per-probe already captured in Phase 0).
+- **(G1) Genre-generalization arm — generic vs misalignment-specific queries [#658 FOLLOW-UP,
+  GPU].** Repeat A3.2/A3.3/A3.5 (distributional AND single-context) on the **UltraChat generic
+  pool** (§1.2 (G1)) alongside the Betley misalignment-specific pool, and COMPARE per behavior:
+  Spearman (primary) + Pearson, best layer/recipe, and the **genre delta** in predictive quality,
+  each read against its own within-genre noise floor. Tests whether the base chain is a property of
+  the model's context→behavior geometry or an artifact of the behavior-eliciting query genre — i.e.
+  whether it transfers to the benign deployment distribution (open-q 3.7). **Floor guard:**
+  broad_em / harmful_compliance / refusal may sit at expression floor on generic queries (no
+  dynamic range to predict); report per-behavior testable variance on each pool, make the
+  continuous completion-probability DV the primary read where the rate floors, and never report a
+  no-variance ρ as "the chain breaks." **Cost:** unlike the B2 / B4 / single-context arms this is
+  NOT free CPU reuse — the store is Betley-only, so the UltraChat pool needs new generation +
+  extraction + an `E0` judge pass (~comparable to #658's run); routed as a same-question follow-up
+  round ON #658 (the result would rewrite #658's `## Takeaways`), tracked under #660, run
+  UNCONDITIONALLY regardless of the Betley foundation verdict (it does NOT wait on the foundation
+  PASSing); it does not block the Phase-2 gate.
 - **Within-condition coherence test (`a:context-vector-coherence`, theory §2 precondition;
   formal assumption added 2026-06-25).** Once a per-context map `x↦c_x` is fixed, each condition
   `C` to which the mean-vector predictor is applied must be **coherent** — its contexts form a
