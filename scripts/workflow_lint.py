@@ -133,6 +133,30 @@ Behaviours:
   (one entry per new Anthropic major-version release) and lives in
   :data:`AGENT_MODEL_ALLOWLIST`; the source of truth is the global
   ``claude-api`` skill's ``shared/models.md``.
+* ``--check-batch-judge-client`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` and
+  ``src/explore_persona_space/`` and FAIL on any inline Anthropic Message
+  Batches API call (``<client>.messages.batches.create`` — both the call
+  form and the bare ``asyncio.to_thread(...create, ...)`` reference form)
+  outside the sanctioned shared batch clients
+  (:data:`BATCH_JUDGE_SANCTIONED_FILES`: ``eval/batch_judge.py``,
+  ``eval/judge_dispatch.py``, ``llm/anthropic_client.py``). New batch
+  judging MUST route through the #663-hardened client (shards ≤8k/batch,
+  bounds the poll on the batch's own ``expires_at`` so an in-SLA batch
+  self-harvests for free instead of a deadline-less ``while True ...
+  sleep`` poller pinning idle GPUs, resumes by custom_id). Closes the
+  #658/#663 class (2026-06-24): an autonomous judge run hand-rolled a
+  90k-request batch + deadline-less poller, bypassing the client, then
+  PARKED to propose a PAID rerun though the in-SLA batch would self-harvest
+  for free — #663 built the client but added no guardrail forcing callers
+  onto it. Documented legacy inline-batch callers predating the check are
+  grandfathered in :data:`BATCH_JUDGE_LEGACY_ALLOWLIST` (mostly data-gen,
+  plus one analysis classifier and one pre-#663 judge — each flagged inline,
+  all out of the workflow-surface edit scope, migration is a follow-up); a
+  genuinely-correct new non-judge batch caller waives with
+  ``# BATCH_JUDGE_CLIENT_EXEMPT: <reason>`` (reason ≥
+  :data:`BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS` chars) on the call's
+  first physical line or the immediately preceding non-blank line.
 
 Exit codes:
 
@@ -491,6 +515,91 @@ UPLOAD_GLOB_LOOP_METHODS: tuple[str, ...] = ("glob", "rglob", "iterdir")
 # convention as CVD_PIN_EXEMPT / WANDB_INTENTIONALLY_DISABLED.
 UPLOAD_AS_FILE_WAIVER_RE = re.compile(r"#\s*UPLOAD_AS_FILE_EXEMPT\s*:\s*(.+?)\s*$")
 UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-batch-judge-client`: every inline Anthropic Message Batches API
+# call (`<client>.messages.batches.create(...)`) outside the sanctioned
+# shared batch clients MUST route through one of those clients instead. The
+# #663-hardened client (`explore_persona_space.eval.batch_judge`) and its
+# dispatcher (`eval.judge_dispatch`) shard at ≤8k requests/batch, bound the
+# poll on the batch's own `expires_at` (so an in-SLA batch self-harvests for
+# free instead of a deadline-less `while True ... sleep` poller pinning idle
+# GPUs), and resume by custom_id; the low-level wrapper
+# (`llm.anthropic_client`) supplies the `expires_at` deadline helpers the two
+# higher layers import. A hand-rolled `messages.batches.create` +
+# deadline-less poller bypasses ALL of that.
+#
+# Closes the #658/#663 class (autonomous Phase 0/1 judge run, 2026-06-24): an
+# inline 90k-request batch with a `while True ... time.sleep(30)` poller
+# bypassed the hardened client, then the session PARKED to propose a PAID
+# rerun even though the in-SLA batch would self-harvest for free. #663 built
+# the client but added NO guardrail forcing callers onto it. This check is the
+# mechanical enforcement: any NEW inline batch-create outside the sanctioned
+# clients FAILs at lint time, not after a long idle poll.
+#
+# Detection: an `ast.Attribute` node whose chain ends in `.batches.create`
+# (matches BOTH the call form `client.messages.batches.create(...)` AND the
+# bare-reference form `asyncio.to_thread(client.messages.batches.create, ...)`
+# that `judge_dispatch` itself uses). Deduped by line.
+#
+# Exempt:
+#   * the sanctioned client files (:data:`BATCH_JUDGE_SANCTIONED_FILES`,
+#     matched by path suffix);
+#   * the documented legacy DATA-GENERATION offenders predating this check
+#     (:data:`BATCH_JUDGE_LEGACY_ALLOWLIST`) — these generate training data
+#     via the batch API (NOT judging), are out of the workflow-surface edit
+#     scope, and are grandfathered in the lint rather than waived per-file;
+#     a NEW file is never added here (the waiver comment below is the path
+#     for genuinely-correct new non-judge batch callers);
+#   * any call site waived with `# BATCH_JUDGE_CLIENT_EXEMPT: <reason>`
+#     (reason ≥ :data:`BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS` chars) on
+#     the call's first physical line or the immediately preceding non-blank
+#     line — same convention as UPLOAD_AS_FILE_EXEMPT / CVD_PIN_EXEMPT.
+BATCH_JUDGE_SANCTIONED_FILES: tuple[str, ...] = (
+    "src/explore_persona_space/eval/batch_judge.py",
+    "src/explore_persona_space/eval/judge_dispatch.py",
+    "src/explore_persona_space/llm/anthropic_client.py",
+)
+# Legacy inline batch callers that predate this check (2026-06-25), GRANDFATHERED
+# pending migration. The MAJORITY are training-data GENERATION (the `generate_*`
+# / `build_*` / `gen_*` / `run_a3*` rows); TWO are NOT data-gen and are flagged
+# inline so the rationale stays honest — `analyze_axis_tails.py` is an
+# LLM-taxonomy ANALYSIS classifier, and `i528_phase4_judge.py` is a pre-#663
+# JUDGE (its own docstring opens "Phase 4 judge"). All are experiment code, OUT
+# of the workflow-improver edit scope, so they are grandfathered in the lint
+# (the MARKER_REGISTRY_ALLOWLIST model) rather than waiver-commented per-file —
+# this lands the check green without touching experiment scripts. A NEW offender
+# is never added here (the `# BATCH_JUDGE_CLIENT_EXEMPT:` waiver is the path for
+# a genuinely-correct new non-judge caller). Migrating the JUDGE entry
+# (`i528_phase4_judge.py`) onto `eval.batch_judge` — the rule's intended outcome
+# — is a separate `kind: infra` follow-up, NOT this check's job.
+# CAVEAT: allowlist membership exempts the WHOLE file, not just the documented
+# pre-existing call — a future edit that adds a NEW `messages.batches.create`
+# (even a hand-rolled judge batch) to an allowlisted file is silently exempt.
+# When migrating a file off the batch API, DROP it from this set.
+# Paths are repo-root-relative POSIX, matched exactly.
+BATCH_JUDGE_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # Training-data generation (the original "not judging" rationale).
+        "scripts/generate_leakage_data.py",
+        "scripts/build_i181_data.py",
+        "scripts/generate_issue376_marker_install.py",
+        "scripts/regenerate_issue404_medical.py",
+        "scripts/gen_issue475_scaffold_data.py",
+        "scripts/run_a3b_experiment.py",
+        "scripts/generate_a3_data.py",
+        "scripts/issue502_generate_probes.py",
+        "scripts/issue_188_evolutionary_trigger.py",
+        "scripts/generate_trait_transfer_data_v2.py",
+        "scripts/generate_issue404_json_neg.py",
+        "scripts/run_a3_leakage.py",
+        # NOT data-gen — flagged so the allowlist rationale stays honest:
+        "scripts/analyze_axis_tails.py",  # LLM-taxonomy ANALYSIS classifier
+        "scripts/i528_phase4_judge.py",  # pre-#663 JUDGE — migrate to eval.batch_judge (follow-up)
+    }
+)
+BATCH_JUDGE_CLIENT_WAIVER_RE = re.compile(r"#\s*BATCH_JUDGE_CLIENT_EXEMPT\s*:\s*(.+?)\s*$")
+BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS = 10
 
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
@@ -1905,6 +2014,150 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
     return errors
 
 
+def _batch_judge_client_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# BATCH_JUDGE_CLIENT_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS` chars) is
+    on the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line. Same convention as
+    :func:`_upload_as_file_waiver_present`."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = BATCH_JUDGE_CLIENT_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = BATCH_JUDGE_CLIENT_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _is_batches_create_attr(node: ast.AST) -> bool:
+    """Return True iff ``node`` is an ``ast.Attribute`` for the Anthropic
+    Message Batches submit endpoint — chain ``...messages.batches.create``.
+
+    The ``messages`` segment is REQUIRED: it disambiguates Anthropic's
+    ``client.messages.batches.create`` (in scope — the judge-batch endpoint)
+    from OpenAI's ``client.batches.create`` (a different API with a different
+    hardened client, ``llm/openai_client.py``, out of scope for this rule).
+
+    Matches the attribute regardless of whether it is the ``func`` of a
+    ``Call`` (``client.messages.batches.create(...)``) or a bare reference
+    passed as an argument (``asyncio.to_thread(client.messages.batches.create,
+    ...)`` — the form ``judge_dispatch`` itself uses). The caller dedupes by
+    line so a call form (which is a single Attribute node) counts once.
+    """
+    return (
+        isinstance(node, ast.Attribute)
+        and node.attr == "create"
+        and isinstance(node.value, ast.Attribute)
+        and node.value.attr == "batches"
+        and isinstance(node.value.value, ast.Attribute)
+        and node.value.value.attr == "messages"
+    )
+
+
+def check_batch_judge_client(
+    *, scripts_dir: Path | None = None, src_dir: Path | None = None
+) -> list[str]:
+    """AST-walk ``scripts/**/*.py`` and ``src/explore_persona_space/**/*.py``
+    and FAIL on any inline ``<client>.messages.batches.create`` outside the
+    sanctioned shared batch clients (:data:`BATCH_JUDGE_SANCTIONED_FILES`).
+
+    Rationale: the #663-hardened batch client
+    (``explore_persona_space.eval.batch_judge``) + its dispatcher
+    (``eval.judge_dispatch``) shard at ≤8k requests/batch, bound the poll on
+    the batch's own ``expires_at`` (an in-SLA batch self-harvests for free
+    instead of a deadline-less ``while True ... time.sleep`` poller pinning
+    idle GPUs), and resume by custom_id; the low-level wrapper
+    (``llm.anthropic_client``) supplies the ``expires_at`` deadline helpers
+    the two higher layers import. A hand-rolled ``messages.batches.create``
+    bypasses ALL of that. The #658/#663 incident (2026-06-24): an autonomous
+    judge run inlined a 90k-request batch + deadline-less poller, then PARKED
+    to propose a PAID rerun even though the in-SLA batch would self-harvest
+    for free; #663 built the client but added no guardrail forcing callers
+    onto it. This check is that guardrail.
+
+    Detection: any ``ast.Attribute`` whose chain ends in ``.batches.create``
+    (see :func:`_is_batches_create_attr` — covers BOTH the call form and the
+    bare ``to_thread(...create, ...)`` reference form), deduped by line.
+
+    Exempt:
+      * the sanctioned client files (:data:`BATCH_JUDGE_SANCTIONED_FILES`,
+        matched by POSIX path suffix);
+      * the documented legacy inline-batch callers
+        (:data:`BATCH_JUDGE_LEGACY_ALLOWLIST`) predating this check — mostly
+        data-gen, plus one analysis classifier and one pre-#663 judge (each
+        flagged inline in the allowlist); all out of the workflow-surface
+        edit scope, grandfathered in the lint, migration is a follow-up;
+      * any call site waived with ``# BATCH_JUDGE_CLIENT_EXEMPT: <reason>``
+        (reason ≥ :data:`BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS` chars)
+        on the call's first physical line or the immediately preceding
+        non-blank line.
+
+    ``scripts_dir`` / ``src_dir`` are override hooks for unit tests;
+    production callers pass both None and the function walks the canonical
+    ``<repo_root>/scripts`` + ``<repo_root>/src/explore_persona_space`` trees.
+    Bundled into the no-flags default run (same policy as
+    ``check_upload_as_file`` / ``check_dispatcher_cvd_pin``).
+    """
+    roots: list[Path] = []
+    roots.append(scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts")
+    roots.append(src_dir if src_dir is not None else _REPO_ROOT / "src" / "explore_persona_space")
+    errors: list[str] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for py in sorted(root.rglob("*.py")):
+            if not py.is_file():
+                continue
+            try:
+                rel = py.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+            except ValueError:
+                # A unit-test fixture tree outside the repo: identify it by
+                # its tail under the repo's logical layout instead.
+                rel = py.as_posix()
+            if any(rel.endswith(s) for s in BATCH_JUDGE_SANCTIONED_FILES):
+                continue
+            if rel in BATCH_JUDGE_LEGACY_ALLOWLIST:
+                continue
+            text = py.read_text(encoding="utf-8")
+            try:
+                tree = ast.parse(text, filename=str(py))
+            except SyntaxError:
+                # A non-parsing file is its own separate problem; stay silent.
+                continue
+            lines = text.splitlines()
+            seen_lines: set[int] = set()
+            for node in ast.walk(tree):
+                if not _is_batches_create_attr(node):
+                    continue
+                lineno = node.lineno
+                if lineno in seen_lines:
+                    continue
+                seen_lines.add(lineno)
+                if _batch_judge_client_waiver_present(lines, lineno):
+                    continue
+                errors.append(
+                    f"{py}:{lineno}: inline 'messages.batches.create' outside the "
+                    f"sanctioned batch clients. Route batch judging through "
+                    f"explore_persona_space.eval.batch_judge "
+                    f"(judge_completions_batch) — the #663-hardened client shards "
+                    f"≤8k/batch, bounds the poll on the batch's own expires_at "
+                    f"(an in-SLA batch self-harvests for free; no deadline-less "
+                    f"while-True poller pinning idle GPUs), and resumes by "
+                    f"custom_id (#658/#663). For a genuinely-correct NON-judge "
+                    f"batch caller, waive with '# BATCH_JUDGE_CLIENT_EXEMPT: "
+                    f"<reason>' (reason ≥ "
+                    f"{BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS} chars) on the "
+                    f"call's first line or the previous non-blank line."
+                )
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -2136,6 +2389,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "genuinely-correct flagged call with '# UPLOAD_AS_FILE_EXEMPT: "
         "<reason>'. Bundled into the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-batch-judge-client",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and src/explore_persona_space/**/*.py "
+        "and FAIL on any inline messages.batches.create outside the sanctioned "
+        "batch clients (eval/batch_judge.py, eval/judge_dispatch.py, "
+        "llm/anthropic_client.py). New batch judging MUST route through the "
+        "#663-hardened client (shards ≤8k/batch, bounds the poll on the batch's "
+        "expires_at, resumes by custom_id) — a hand-rolled batch + deadline-less "
+        "poller pins idle GPUs and bypasses self-harvest (#658/#663). Waive a "
+        "genuinely-correct non-judge batch caller with "
+        "'# BATCH_JUDGE_CLIENT_EXEMPT: <reason>'. Bundled into the no-flags "
+        "default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -2165,6 +2432,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_marker_registry
         or args.check_agent_model_pins
         or args.check_upload_as_file
+        or args.check_batch_judge_client
     )
 
     errors: list[str] = []
@@ -2210,6 +2478,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_agent_model_pins())
     if args.check_upload_as_file or no_flags:
         errors.extend(check_upload_as_file())
+    if args.check_batch_judge_client or no_flags:
+        errors.extend(check_batch_judge_client())
 
     if errors:
         for err in errors:
