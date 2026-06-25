@@ -4098,8 +4098,8 @@
       "goal": "Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct \u2014 A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (linear read-out r_B), A3.4/A3.5 (context vector c_C predicts the answer profile v0(C)) \u2014 AND whether they still hold in the single-context edge case C=delta_x (one prompt, reported vs a within-context noise floor, Phase 1b); lock the best extraction layer + summary recipe for downstream phases.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/interpreting/658",
-      "status": "interpreting",
+      "path": "tasks/followups_running/658",
+      "status": "followups_running",
       "title": "Base-model foundation for the leakage predictor on Qwen2.5-7B (A3.2/A3.3/A3.5 + recipe lock)"
     },
     "659": {
@@ -4149,8 +4149,8 @@
       "goal": "Phase 2 \u2014 fine-tune fleet: train source\u00d7behavior\u00d7arm adapters (positive-only + contrastive arms per B5; on-policy completions; marker band-stop), build the trained store (t_CB, v+(C'), r+_B'), measure ground-truth leakage, using Phase 1's locked layer + the C-primary r_B recipe.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/664",
-      "status": "planning",
+      "path": "tasks/approved/664",
+      "status": "approved",
       "title": "Phase 2 \u2014 fine-tune fleet + trained store + ground-truth leakage (leakage program #660)"
     },
     "665": {
