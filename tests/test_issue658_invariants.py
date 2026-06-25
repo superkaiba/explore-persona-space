@@ -82,6 +82,54 @@ def test_rb_columns_drops_marker_and_format():
             assert c.rb_contrast is None, cid
 
 
+def test_rb_dbbar_uses_the_pool_argument_not_a_hardcoded_set():
+    """build_rb_contrast's D_Bbar half IS the pool argument's [:cap] slice.
+
+    This is the mechanism behind the (G1) v3 consistency-checker BLOCK: for the 3
+    probe-based r_B columns the D_Bbar half is ``pool[:cap]``, so WHICH pool the
+    G4 call site passes decides r_B's contrast baseline by genre. Asserting it
+    here makes the next test's "the call site must pass the PINNED Betley pool"
+    a meaningful invariant (if D_Bbar ignored the pool, the pin would be vacuous).
+    Uses ``betley_vs_neutral`` (D_B = Betley main-8, local; no HF/network).
+    """
+    import issue658_extract_base_store as ex
+
+    pool_a = [f"betley-probe-{i}" for i in range(10)]
+    pool_b = [f"ultrachat-probe-{i}" for i in range(10)]
+    cap = 4
+    _, dbbar_a = ex.build_rb_contrast("broad_em", pool_a, cap)  # betley_vs_neutral
+    _, dbbar_b = ex.build_rb_contrast("broad_em", pool_b, cap)
+    assert dbbar_a == pool_a[:cap], "D_Bbar must be the pool[:cap] slice"
+    assert dbbar_b == pool_b[:cap]
+    assert dbbar_a != dbbar_b, "a different pool MUST give a different D_Bbar (the swap risk)"
+
+
+def test_g4_call_site_pins_dbbar_to_the_betley_pool_not_active_probes():
+    """(G1) v3 BLOCKER fix: the G4 call site passes the PINNED Betley pool to
+    build_rb_contrast, NOT the active extraction ``probes`` (which is UltraChat
+    under --probes-file). r_B's D_Bbar must be genre-invariant.
+
+    Greps the dispatcher source for the exact G4 call shape so a future refactor
+    that reverts the pin (back to ``build_rb_contrast(col, probes, rb_cap)``) FAILs
+    CI — the un-CI-pinned guard a refactor could silently strip otherwise.
+    """
+    import inspect
+
+    import issue658_extract_base_store as ex
+
+    src = inspect.getsource(ex.main)
+    assert "build_rb_contrast(col, rb_neutral_pool, rb_cap)" in src, (
+        "G4 must pass the PINNED Betley pool (rb_neutral_pool) to build_rb_contrast"
+    )
+    assert "build_rb_contrast(col, probes, rb_cap)" not in src, (
+        "G4 must NOT pass the active extraction pool (probes) — that is the genre swap "
+        "the consistency-checker BLOCKED"
+    )
+    # rb_neutral_pool is loaded from the canonical Betley preregistered pool,
+    # independent of --probes-file.
+    assert "rb_neutral_pool = fetch_preregistered_probes(" in src
+
+
 def test_marker_token_constant():
     """The marker token id constant matches the project standard (#83399)."""
     assert common.MARKER_TOKEN_ID == 83399
