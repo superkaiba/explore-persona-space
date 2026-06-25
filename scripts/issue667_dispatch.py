@@ -391,9 +391,19 @@ def _numeric_rslora_parity(behavior: str, source: str = "default", seed: int = 4
 def _rslora_parity_probe(behavior: str, *, cpu_only: bool) -> None:
     """rsLoRA parity probe — NUMERIC on GPU (BLOCKER 2), config-only on CPU smoke.
 
-    On GPU: runs :func:`_numeric_rslora_parity` (diagonal-write reproduction +
-    HALT). On a CPU-only local smoke (no 7B forward): asserts the gauge config
-    and defers the numeric reproduction to the GPU path (stated explicitly).
+    On GPU: runs :func:`_numeric_rslora_parity` in a ONE-SHOT SUBPROCESS (the
+    ``parity-probe`` CLI entrypoint below) so the GPU forward NEVER initializes
+    CUDA in THIS dispatcher parent process. The dispatcher then forks the per-cell
+    extract subprocesses (each of which runs vLLM, forking its own EngineCore
+    worker); a CUDA context left live in the dispatcher parent poisons that fork
+    chain — ``RuntimeError: Cannot re-initialize CUDA in forked subprocess`` (#667
+    r4, bug_class dispatcher_cuda_init_before_subprocess_fork). The HALT gate
+    semantics are preserved exactly: the subprocess runs the same numeric
+    diagonal-write reproduction + asserts, and a non-zero exit (a failed assert /
+    RuntimeError HALT, OR a crash) re-raises here BEFORE any extraction wave.
+
+    On a CPU-only local smoke (no 7B forward): asserts the gauge config in-process
+    (no CUDA touched) and defers the numeric reproduction to the GPU path.
     """
     from issue667_extract import assert_adapter_gauge, stage_adapter_local
 
@@ -409,7 +419,62 @@ def _rslora_parity_probe(behavior: str, *, cpu_only: bool) -> None:
             gauge["use_rslora"],
         )
         return
-    _numeric_rslora_parity(behavior)
+    _run_parity_probe_subprocess(behavior)
+
+
+def _run_parity_probe_subprocess(behavior: str, source: str = "default", seed: int = 42) -> dict:
+    """Run the NUMERIC rsLoRA parity probe in a one-shot subprocess (CUDA isolation).
+
+    Invokes the ``parity-probe`` CLI of THIS module via ``subprocess.run`` so the
+    7B forward + PeftModel apply (which initialize CUDA) happen in a CHILD process
+    that exits cleanly, leaving the dispatcher parent's CUDA state untouched before
+    the extract wave forks (#667 r4). Explicit ``env={**os.environ}`` so the child
+    inherits HF_TOKEN/WANDB_API_KEY (load_dotenv() ran at main()-top). HALT
+    semantics: a non-zero child rc re-raises here (the gate fired or the probe
+    crashed); on success the child's result JSON is read back and returned.
+    """
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="i667_parity_") as td:
+        result_path = Path(td) / "parity_result.json"
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "parity-probe",
+            "--behavior",
+            behavior,
+            "--source",
+            source,
+            "--seed",
+            str(seed),
+            "--result-out",
+            str(result_path),
+        ]
+        log_path = _log_dir() / f"parity_probe_{behavior}.log"
+        logger.info("rsLoRA parity probe -> one-shot subprocess (CUDA-isolated): %s", behavior)
+        rc = _run_with_log(cmd, log_path=log_path)
+        if rc != 0:
+            raise RuntimeError(
+                f"rsLoRA NUMERIC parity probe subprocess exited rc={rc} for {behavior}/{source} "
+                f"(HALT — see {log_path}). Either the diagonal-write parity gate fired "
+                "(adapter applied under a DIFFERENT gauge than #537 committed) or the probe "
+                "crashed; the extract wave does NOT proceed (plan §5(g)/§7)."
+            )
+        if not result_path.exists():
+            raise RuntimeError(
+                f"rsLoRA parity probe subprocess exited rc=0 but wrote no result at {result_path} "
+                f"(see {log_path}) — treating as a HALT (the gate's PASS is unverified)."
+            )
+        result = json.loads(result_path.read_text())
+        logger.info(
+            "rsLoRA NUMERIC parity PASS (subprocess): %s/%s g_self=%.6f write_ratio=%.4f gauge=%s",
+            result["behavior"],
+            result["source"],
+            result["g_self"],
+            result["write_ratio"],
+            result.get("gauge"),
+        )
+        return result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -621,9 +686,22 @@ def main() -> int:
     parser.add_argument(
         "phase",
         nargs="?",
-        choices=["prefetch", "extract", "analysis", "all"],
+        choices=["prefetch", "extract", "analysis", "all", "parity-probe"],
         default="all",
-        help="Phase to run. 'all' = prefetch -> extract -> analysis (the unified smoke/sweep).",
+        help=(
+            "Phase to run. 'all' = prefetch -> extract -> analysis (the unified smoke/sweep). "
+            "'parity-probe' = the CUDA-isolated one-shot rsLoRA NUMERIC parity probe (internal; "
+            "invoked by the dispatcher as a subprocess so the parent never inits CUDA — #667 r4)."
+        ),
+    )
+    parser.add_argument(
+        "--source", default="default", help="parity-probe source cid (subprocess entrypoint only)."
+    )
+    parser.add_argument("--seed", type=int, default=42, help="parity-probe seed (subprocess only).")
+    parser.add_argument(
+        "--result-out",
+        default=None,
+        help="parity-probe result JSON path (subprocess entrypoint only).",
     )
     parser.add_argument(
         "--behaviors",
@@ -669,6 +747,17 @@ def main() -> int:
     from dotenv import load_dotenv
 
     load_dotenv()
+
+    # parity-probe: the CUDA-isolated one-shot subprocess entrypoint (#667 r4). Runs
+    # the NUMERIC diagonal-write reproduction IN THIS child process (CUDA inits here,
+    # never in the dispatcher parent), writes the result JSON, and exits — rc!=0 (a
+    # failed assert / RuntimeError HALT) propagates the gate to the parent.
+    if args.phase == "parity-probe":
+        _require_credentials()
+        result = _numeric_rslora_parity(args.behavior, source=args.source, seed=args.seed)
+        if args.result_out:
+            Path(args.result_out).write_text(json.dumps(result, indent=2))
+        return 0
 
     phases = ["prefetch", "extract", "analysis"] if args.phase == "all" else [args.phase]
     smoke = args.smoke or args.cpu_only
