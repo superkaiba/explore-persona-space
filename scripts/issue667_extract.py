@@ -370,6 +370,7 @@ def extract_t_pos_neg(
     if max_rows is not None:
         rows = rows[:max_rows]
     src_ctx = registry[source_cid]
+    is_f3_source = src_ctx.family == "F3"
     # The source-context prompt prefix is behavior-keyed only for F3 (ICL); use a
     # canonical probe to fingerprint the system/prefix shape, then match on the
     # SYSTEM/prefix-message portion (the question turn varies per row).
@@ -382,9 +383,17 @@ def extract_t_pos_neg(
                 neg_prefixes[ncid] = _system_signature(nm)
             except Exception:  # ICL negatives need demos; panel here is F1/F2/F4
                 continue
-    src_sig = _system_signature(
-        build_messages(src_ctx, "x", behavior=behavior) if src_ctx.family != "F3" else []
+    # F1/F2/F4/... sources: exact system/prefix-signature match. F3 (ICL)
+    # sources have a demo-prefix that varies subtly across rows (subsampled
+    # demos), so an exact signature misses every ICL positive (the round-1
+    # a37-icl-source-tpos-tneg-gap concern). Match ICL positives by their
+    # distinctive demo ROLE-PATTERN instead: k demo pairs (user/assistant ...)
+    # then a final user question — disjoint from every negative-panel pattern
+    # (system/user, user, user/assistant/user). (CONCERN path a.)
+    src_sig = (
+        "" if is_f3_source else _system_signature(build_messages(src_ctx, "x", behavior=behavior))
     )
+    icl_k = int(src_ctx.payload.get("k", 0)) if is_f3_source else 0
 
     pos_acc: dict[int, np.ndarray] = {}
     neg_acc: dict[int, np.ndarray] = {}
@@ -395,11 +404,13 @@ def extract_t_pos_neg(
         if not completion_text:
             continue
         sig = _system_signature(prompt_msgs)
-        # Positive iff the prompt's system/prefix signature matches the source.
-        is_pos = sig == src_sig
+        # Positive iff the prompt matches the source context. F3 (ICL): match by
+        # the demo role-pattern (2k+1 turns, alternating user/assistant demos
+        # then a final user question, no system turn). Else: exact signature.
+        is_pos = _is_icl_prompt(prompt_msgs, icl_k) if is_f3_source else (sig == src_sig)
         is_neg = sig in neg_prefixes.values()
         if not (is_pos or is_neg):
-            # F3/ICL positives or padding (tulu) rows — skip for the clean A3.7 read.
+            # padding (tulu) rows or non-matching prefixes — skip for clean A3.7.
             continue
         acts = _mean_resp_acts_single(base_model, tok, prompt_msgs, completion_text, layers, device)
         v = acts[layer]
@@ -423,6 +434,22 @@ def _system_signature(messages: list[dict]) -> str:
     for m in messages[:-1]:  # drop the trailing user question turn
         parts.append(f"{m['role']}:{m['content']}")
     return "||".join(parts)
+
+
+def _is_icl_prompt(messages: list[dict], k: int) -> bool:
+    """True iff ``messages`` is an F3 (ICL) k-shot prompt for the A3.7 positive split.
+
+    An ICL prompt has ``k`` demonstration pairs (``user``/``assistant``, ...)
+    then a final ``user`` question — ``2k + 1`` turns, no ``system`` turn,
+    strict alternation. This role-pattern is disjoint from every #537
+    negative-panel prompt shape (``system``/``user``; bare ``user``;
+    ``user``/``assistant``/``user`` WildChat), so it cleanly tags ICL positives
+    without an exact demo-text match (demos are subsampled per row).
+    """
+    if k <= 0:
+        return False
+    expected = ["user", "assistant"] * k + ["user"]
+    return [m.get("role") for m in messages] == expected
 
 
 def _row_to_messages(row: dict) -> tuple[list[dict], str]:
@@ -618,11 +645,14 @@ def run_extraction(args) -> int:
     cell_dir = out_root / behavior / f"{source_cid}_seed{seed}"
     cell_dir.mkdir(parents=True, exist_ok=True)
 
-    # ── c_C: base context vector for the source (all layers) ─────────────────
+    # ── c_C: base + post-FT context vector for the source (all layers) ───────
+    # Post-FT key/query (c_C+ / c_C'+) under the SAME loaded PeftModel used for
+    # v+(C') — needed for the A3.10 oracle g+ = (k+, q+, M0) (BLOCKER 1). Read
+    # at the last-input-token, all 28 layers, exactly like the base-side c_C.
     src_probe = probes[0]
-    c_c_all = _context_vector_all_layers(
-        base, tok, build_messages_for(registry, demos, source_cid, behavior, src_probe), device
-    )
+    src_msgs = build_messages_for(registry, demos, source_cid, behavior, src_probe)
+    c_c_all = _context_vector_all_layers(base, tok, src_msgs, device)
+    c_c_postft_all = _context_vector_all_layers(trained, tok, src_msgs, device)
 
     # ── t+ / t- (primary layer only — A3.7) ──────────────────────────────────
     t_split = extract_t_pos_neg(
@@ -654,6 +684,7 @@ def run_extraction(args) -> int:
         "t_split": t_split,
         "fact_rb": fact_rb,
         "c_c_all": c_c_all,
+        "c_c_postft_all": c_c_postft_all,
         "gauge": gauge,
         "r_lookup": r_lookup,
     }
@@ -718,12 +749,16 @@ def _extract_one_target(
     layer's payload additionally carries t+/t-/r_b (the source-level reads).
     """
     c_c_all = extras["c_c_all"]
+    c_c_postft_all = extras["c_c_postft_all"]
     gauge = extras["gauge"]
     t_split = extras["t_split"]
     fact_rb = extras["fact_rb"]
     r_lookup = extras.get("r_lookup", {})
     tmsgs0 = build_messages_for(registry, demos, tcid, behavior, probes[0])
+    # base + post-FT target query (c_C' / c_C'+) — both under the SAME prompt
+    # (BLOCKER 1: oracle g+ needs the post-FT query at fixed M0).
     c_cp_all = _context_vector_all_layers(base, tok, tmsgs0, device)
+    c_cp_postft_all = _context_vector_all_layers(trained, tok, tmsgs0, device)
     acc: dict[int, list[list[np.ndarray]]] = {li: [[], []] for li in layers}
     n_gen = n_trunc = 0
     for qi, q in enumerate(probes):
@@ -745,13 +780,19 @@ def _extract_one_target(
         if not acc[li][0]:
             logger.warning("no probes produced a response for target=%s layer=%d", tcid, li)
             continue
+        c_idx = (li - 1) if 1 <= li <= N_LAYERS else (PRIMARY_LAYER - 1)
         payload = {
             "v0": np.stack(acc[li][0]).mean(axis=0).astype(np.float32),
             "v_plus": np.stack(acc[li][1]).mean(axis=0).astype(np.float32),
-            "c_C": c_c_all[li - 1] if 1 <= li <= N_LAYERS else c_c_all[PRIMARY_LAYER - 1],
-            "c_Cp": c_cp_all[li - 1] if 1 <= li <= N_LAYERS else c_cp_all[PRIMARY_LAYER - 1],
+            "c_C": c_c_all[c_idx],
+            "c_Cp": c_cp_all[c_idx],
+            # post-FT key/query (BLOCKER 1: A3.10 oracle g+ = (k+, q+, M0)).
+            "c_C_postft": c_c_postft_all[c_idx],
+            "c_Cp_postft": c_cp_postft_all[c_idx],
             "c_C_all_layers": c_c_all,
             "c_Cp_all_layers": c_cp_all,
+            "c_C_postft_all_layers": c_c_postft_all,
+            "c_Cp_postft_all_layers": c_cp_postft_all,
             "behavior": behavior,
             "source_cid": source_cid,
             "target_cid": tcid,

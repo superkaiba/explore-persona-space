@@ -26,9 +26,11 @@ gates every A3.9/A3.10 number: the whitened gate must reduce to
 inverse silently manufactures a "whitening wins" result.
 """
 
-# math/scientific notation in docstrings + messages
+# ruff: noqa: RUF002  # math/scientific notation in docstrings + messages
 
 from __future__ import annotations
+
+from collections.abc import Sequence
 
 import numpy as np
 import torch
@@ -159,6 +161,23 @@ def whitened_gate(
     return float((z_c @ c_cp.to(torch.float64)) / denom)
 
 
+def true_cosine(a: torch.Tensor, b: torch.Tensor) -> float:
+    """True cosine ``a·b / (‖a‖·‖b‖)`` — BOTH norms (MAJOR 2).
+
+    Distinct from the self-normalized gate ``g_C(C') = a·b / (a·a)`` (which
+    pins ``g_C(C)=1`` by construction): true cosine is symmetric and bounded
+    [-1, 1]. The A3.9 "cosine baseline" reports THIS, not the self-normalized
+    identity-metric gate. Returns 0.0 if either vector is zero-norm.
+    """
+    a64 = a.to(torch.float64)
+    b64 = b.to(torch.float64)
+    na = float(torch.linalg.vector_norm(a64))
+    nb = float(torch.linalg.vector_norm(b64))
+    if na == 0.0 or nb == 0.0:
+        return 0.0
+    return float((a64 @ b64) / (na * nb))
+
+
 def whitened_gate_metric(
     c_c: torch.Tensor,
     c_cp: torch.Tensor,
@@ -166,10 +185,14 @@ def whitened_gate_metric(
     sigma_c: torch.Tensor | None,
     lam: float,
 ) -> float:
-    """Key-query gate under one of three metrics (A3.9 key x metric ablation).
+    """Key-query gate under one of three metrics (A3.9 metric ablation).
 
-    - ``"I"``: identity metric → ``cos(c_C, c_C')`` (self-normalized to
-      ``g_C(C)=1``), the raw un-whitened cosine baseline.
+    Self-normalized gate ``g_C(C') = c_C^T M c_C' / c_C^T M c_C`` (so
+    ``g_C(C) = 1`` by construction) under metric ``M``:
+
+    - ``"I"``: identity metric → ``c_C·c_C' / c_C·c_C`` (the self-normalized
+      projection — NOT true cosine; see :func:`true_cosine` for the cosine
+      baseline). Reduces to ``cos(c_C, c_C')`` ONLY at equal norm (the B3 limit).
     - ``"diag"``: diagonal-of-Sigma_c metric (per-feature variance whitening).
     - ``"whitened"``: full ``Sigma_c^-1`` (the boxed predictor, C3).
     """
@@ -428,20 +451,204 @@ def shuffled_null_ci(
     }
 
 
+def clustered_bootstrap_partial_spearman(
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    families: list[str],
+    *,
+    n_resamples: int = 1000,
+    alpha: float = 0.05,
+    seed: int = 0,
+) -> dict[str, float]:
+    """Family-clustered bootstrap CI on **partial** Spearman(x, y | z) (MAJOR 3).
+
+    Matches the A3.6 PRIMARY statistic (the headline is partial-Spearman with
+    the base level ``z`` partialled out), so the CI is computed on the SAME
+    quantity as the point estimate — not on the raw Spearman the round-1 code
+    bootstrapped. Resamples whole FAMILIES with replacement.
+    """
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    z = np.asarray(z, dtype=np.float64)
+    fams = np.asarray(families, dtype=object)
+    assert x.shape == y.shape == z.shape == fams.shape, (x.shape, y.shape, z.shape, fams.shape)
+    point = partial_spearman(x, y, z)
+    uniq = sorted(set(families))
+    if len(uniq) < 2:
+        return {
+            "point": float(point),
+            "ci_lo": float(point),
+            "ci_hi": float(point),
+            "n_families": len(uniq),
+        }
+    fam_to_idx = {f: np.where(fams == f)[0] for f in uniq}
+    rng = np.random.default_rng(seed)
+    vals = np.empty(n_resamples, dtype=np.float64)
+    n_fam = len(uniq)
+    for r in range(n_resamples):
+        chosen = rng.choice(uniq, size=n_fam, replace=True)
+        idx = np.concatenate([fam_to_idx[f] for f in chosen])
+        vals[r] = partial_spearman(x[idx], y[idx], z[idx])
+    return {
+        "point": float(point),
+        "ci_lo": float(np.percentile(vals, 100 * alpha / 2)),
+        "ci_hi": float(np.percentile(vals, 100 * (1 - alpha / 2))),
+        "n_families": n_fam,
+    }
+
+
+def partial_shuffled_null_ci(
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    *,
+    n_reps: int = 1000,
+    alpha: float = 0.05,
+    seed: int = 0,
+) -> dict[str, float]:
+    """Permutation null on **partial** Spearman(x, y | z): shuffle x, recompute (MAJOR 3).
+
+    Matches the A3.6 partial statistic: shuffling ``x`` (the read-out
+    projection) against the (y, z) pair breaks the predictor↔change association
+    while preserving the y↔z confound structure, so the null measures "could
+    the partial correlation arise by chance" on the SAME statistic the point
+    estimate uses (not a raw-Spearman null on ``y − z``).
+    """
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    z = np.asarray(z, dtype=np.float64)
+    rng = np.random.default_rng(seed)
+    vals = np.empty(n_reps, dtype=np.float64)
+    for r in range(n_reps):
+        vals[r] = partial_spearman(rng.permutation(x), y, z)
+    return {
+        "null_lo": float(np.percentile(vals, 100 * alpha / 2)),
+        "null_hi": float(np.percentile(vals, 100 * (1 - alpha / 2))),
+        "null_mean": float(vals.mean()),
+    }
+
+
+def lambda_condition_sweep(
+    sigma_c: torch.Tensor,
+    fractions: Sequence[float] = (1e-4, 1e-3, 1e-2, 1e-1, 1.0),
+) -> list[dict[str, float]]:
+    """Condition-number + ridge sweep over ``lambda = fraction * tr(Sigma_c)/d`` (MAJOR 4).
+
+    Whitening is numerically fragile (B3), so the analysis reports the
+    conditioning ``cond(Sigma_c + lam*I)`` per registered ridge fraction. The
+    boxed primary stays ``1e-2 * tr/d`` (plan §11); the rest characterize
+    sensitivity. Returns one record per fraction with ``{fraction, lambda,
+    cond}`` (cond via the symmetric-eigenvalue ratio, robust for PSD Sigma_c).
+    """
+    s = sigma_c.to(torch.float64)
+    d = s.shape[0]
+    assert s.shape == (d, d), s.shape
+    tr_over_d = float(torch.trace(s).item() / d)
+    eye = torch.eye(d, dtype=torch.float64)
+    out: list[dict[str, float]] = []
+    for frac in fractions:
+        lam = float(frac) * tr_over_d
+        eig = torch.linalg.eigvalsh(s + lam * eye)
+        lo = float(eig.min().item())
+        hi = float(eig.max().item())
+        cond = float(hi / lo) if lo > 0 else float("inf")
+        out.append({"fraction": float(frac), "lambda": lam, "cond": cond})
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Oracle post-FT gate g+ = (k+, q+, M0)  (A3.10, BLOCKER 1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def oracle_gplus(
+    c_c_postft: torch.Tensor,
+    c_cp_postft: torch.Tensor,
+    sigma_c: torch.Tensor,
+    lam: float,
+) -> float:
+    """Oracle post-FT gate ``g+ = (c_C+)^T Sinv c_C'+ / (c_C+)^T Sinv c_C+`` at fixed M0.
+
+    The whitened key-query gate computed from the POST-FT (``+``) context
+    vectors ``k+ = c_C+`` and ``q+ = c_C'+`` at the FIXED base metric
+    ``M0 = (Sigma_c + lam I)^-1`` (R3-3: Sigma_c+ out of scope). This is the
+    A3.10 oracle the base gate ``g0`` is benchmarked against — distinct from
+    A3.9's base-side ``g0 = (c_C, c_C', M0)``.
+    """
+    return whitened_gate(c_c_postft, c_cp_postft, sigma_c, lam)
+
+
+def shuffled_corr_null_ci(
+    pred: np.ndarray,
+    target: np.ndarray,
+    *,
+    n_reps: int = 1000,
+    alpha: float = 0.05,
+    seed: int = 0,
+) -> dict[str, float]:
+    """Permutation null on Spearman(pred, target): shuffle the predictor (A3.9 controls).
+
+    Used for the A3.9 shuffled-key and shuffled-query controls — the key/query
+    vectors are permuted across cells, the gate recomputed, and the resulting
+    Spearman distribution gives the null band. (Alias-grade wrapper around the
+    shuffle-the-predictor idea, kept distinct from :func:`shuffled_null_ci`
+    which shuffles ``y`` for symmetry with the A3.6 reads.)
+    """
+    return shuffled_null_ci(pred, target, n_reps=n_reps, alpha=alpha, seed=seed)
+
+
+def predict_mean_baseline(target: np.ndarray) -> dict[str, float]:
+    """Predict-mean baseline for a gate target (A3.9 baseline).
+
+    The trivial "predict the mean realized gate for every cell" reference: its
+    MAE is the bar a real key-query gate must beat. Returns ``{mae, mean}``.
+    """
+    t = np.asarray(target, dtype=np.float64)
+    if t.size == 0:
+        return {"mae": float("nan"), "mean": float("nan")}
+    mu = float(t.mean())
+    return {"mae": float(np.mean(np.abs(t - mu))), "mean": mu}
+
+
+def key_query_drift(c_base: np.ndarray, c_postft: np.ndarray) -> float:
+    """Realized key/query drift ``‖c+ − c‖ / ‖c‖`` (A3.10 trivial-prediction guard).
+
+    A high g0-vs-realized correlation could be trivially driven by tiny realized
+    drift (scope caveat 7); the analysis reports this magnitude alongside the
+    correlation so "the base gate predicts" is distinguishable from "almost
+    nothing moved". Returns ``nan`` if the base vector is zero-norm.
+    """
+    cb = np.asarray(c_base, dtype=np.float64)
+    cp = np.asarray(c_postft, dtype=np.float64)
+    nb = float(np.linalg.norm(cb))
+    if nb == 0.0:
+        return float("nan")
+    return float(np.linalg.norm(cp - cb) / nb)
+
+
 __all__ = [
     "a37_source_write",
     "bootstrap_ci",
+    "clustered_bootstrap_partial_spearman",
     "clustered_bootstrap_spearman",
     "cosine",
     "default_lambda",
     "family_of",
+    "key_query_drift",
+    "lambda_condition_sweep",
+    "oracle_gplus",
+    "partial_shuffled_null_ci",
     "partial_spearman",
+    "predict_mean_baseline",
     "readout_projection",
     "realized_gate",
+    "shuffled_corr_null_ci",
     "shuffled_null_ci",
     "sigma_inv_regularized",
     "spearman_rho",
     "stacked_delta_svd",
+    "true_cosine",
     "whitened_gate",
     "whitened_gate_metric",
     "whitened_gate_reduction_unit_test",
