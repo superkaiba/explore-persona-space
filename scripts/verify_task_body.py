@@ -5417,6 +5417,60 @@ CHECKS = [
 ]
 
 
+def _is_paper_stub_fm(fm: dict) -> bool:
+    """True when the body's frontmatter opts into the paper clean-result track.
+
+    Accepts the YAML-parsed boolean ``True`` and the quoted string ``"true"``
+    (case-insensitive). Mirrors ``task_workflow.is_paper_task`` so the verifier
+    branches on a stub WITHOUT importing the workflow library (keeps the
+    verifier standalone).
+    """
+    v = fm.get("paper")
+    return v is True or (isinstance(v, str) and v.strip().lower() == "true")
+
+
+def _verify_paper_stub(body: str) -> tuple[bool, list[CheckResult]]:
+    """Minimal stub-shape check for a `paper: true` body.
+
+    A paper-stub body.md is NOT a markdown clean-result — its canonical
+    clean-result is the LaTeX paper under docs/papers/issue_<N>/, verified by
+    scripts/verify_paper.py. Here we only confirm the stub has the three
+    contract elements (H1 title + an abstract + a paper link) so a broken /
+    empty stub still FAILs loudly; the deep checks belong to verify_paper.py.
+    """
+    problems: list[str] = []
+    if not re.search(r"^#\s+\S", body, re.MULTILINE):
+        problems.append("no H1 `# <title>`")
+    # an abstract: either a `## Abstract` H2 OR ≥80 chars of non-heading prose.
+    has_abstract = bool(re.search(r"^##\s+Abstract\b", body, re.MULTILINE)) or (
+        len(re.sub(r"^#.*$", "", body, flags=re.MULTILINE).strip()) >= 80
+    )
+    if not has_abstract:
+        problems.append("no abstract (a `## Abstract` H2 or a prose paragraph)")
+    # a paper link: a docs/papers/issue_<N>/ path or an HF papers/ URL.
+    if not re.search(r"docs/papers/issue_\d+|/papers/issue_\d+|paper\.html", body):
+        problems.append("no paper link (docs/papers/issue_<N>/ or HF papers/ URL)")
+    if problems:
+        return False, [
+            CheckResult(
+                "paper-stub body.md valid",
+                False,
+                "; ".join(problems)
+                + " — paper-task: the LaTeX paper is verified by verify_paper.py, "
+                "but the body.md stub must still carry an H1 + abstract + paper link",
+            )
+        ]
+    return True, [
+        CheckResult(
+            "paper-stub body.md valid",
+            True,
+            "paper: true — markdown clean-result checks skipped; the canonical "
+            "clean-result is the LaTeX paper, verified by scripts/verify_paper.py "
+            "(run `verify_paper.py --issue <N>`)",
+        )
+    ]
+
+
 def verify_text(
     raw: str,
     *,
@@ -5456,6 +5510,14 @@ def verify_text(
     NO-OP PASS otherwise. May be set via ``--methodology-doc <path>``.
     """
     fm, body = split_frontmatter(raw)
+    # Paper-stub branch (`paper: true`): the canonical clean-result is a LaTeX
+    # paper under docs/papers/issue_<N>/, verified by scripts/verify_paper.py —
+    # NOT this markdown verifier. A paper-stub body.md (H1 + abstract + paper
+    # link) must NOT be hard-FAILed by the markdown Check 0 / structure checks.
+    # Run a minimal stub-shape sanity check and PASS, pointing at verify_paper.
+    # Grandfathered markdown bodies (no `paper:` flag) fall through unchanged.
+    if _is_paper_stub_fm(fm):
+        return _verify_paper_stub(body)
     if LEGACY_SAGAN_CARD_SENTINEL in body:
         return True, [
             CheckResult(

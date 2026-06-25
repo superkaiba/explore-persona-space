@@ -6,6 +6,7 @@ import {
   getEvents,
   getPlan,
   getTask,
+  isPaperTask,
   type Frontmatter,
   type Task,
   type TaskEvent,
@@ -498,9 +499,12 @@ function BodyCard({
   canEdit: boolean;
 }) {
   const isCleanResult = !!task.frontmatter.has_clean_result;
-  const label = isCleanResult
-    ? "Clean result · task body"
-    : "Original task body";
+  const isPaper = isPaperTask(task.frontmatter);
+  const label = isPaper
+    ? "Paper-task · stub body"
+    : isCleanResult
+      ? "Clean result · task body"
+      : "Original task body";
   const title =
     typeof task.frontmatter.title === "string" ? task.frontmatter.title : `Task #${taskId}`;
 
@@ -548,13 +552,21 @@ function BodyCard({
         </>
       }
     >
+      {isPaper && (
+        <p className="mb-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Paper-task: this body.md is a thin paper-stub. The canonical
+          clean-result is the LaTeX paper — edit{" "}
+          <code>docs/papers/issue_{taskId}/issue_{taskId}.tex</code> in git, not
+          here.
+        </p>
+      )}
       {task.isLegacyHtml ? (
         renderedBody
       ) : (
         <EditableBody
           taskId={taskId}
           initialBody={task.body}
-          canEdit={canEdit}
+          canEdit={canEdit && !isPaper}
         >
           {renderedBody}
         </EditableBody>

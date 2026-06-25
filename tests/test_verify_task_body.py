@@ -4776,3 +4776,118 @@ def test_check22_branch_merge_note_in_context_bullet_not_a_claim():
     r = by_name[_CHECK22_NAME]
     assert r.passed, r.render()
     assert "no per-figure commit claim" in r.detail
+
+
+# ─── paper-stub branch (`paper: true`) ─────────────────────────────────────
+#
+# A `paper: true` task's body.md is a thin paper-stub; the canonical
+# clean-result is the LaTeX paper, verified by scripts/verify_paper.py.
+# verify_task_body short-circuits with a stub-shape PASS (H1 + abstract +
+# paper link) and does NOT run the markdown clean-result checks. Grandfathered
+# markdown bodies (no `paper:` flag) are unaffected — backward-compat proof.
+
+_GOOD_PAPER_STUB = """\
+---
+title: A claim about leakage (MODERATE confidence)
+kind: experiment
+paper: true
+goal: Test whether the predictor generalises
+---
+# A claim about leakage (MODERATE confidence)
+
+We test a thing and report a result. This abstract paragraph is clearly long
+enough to satisfy the stub abstract check and stands in for the paper's own
+abstract on the dashboard hover-card.
+
+Paper: docs/papers/issue_657/issue_657.pdf
+"""
+
+
+def test_paper_stub_passes_and_skips_markdown_checks():
+    ok, results = verify_task_body.verify_text(_GOOD_PAPER_STUB)
+    assert ok, [r.render() for r in results if not r.passed]
+    # The ONLY result is the paper-stub check — none of the markdown
+    # clean-result checks ran.
+    assert len(results) == 1
+    assert results[0].name == "paper-stub body.md valid"
+    assert results[0].passed
+    assert "verify_paper.py" in results[0].detail
+
+
+def test_paper_stub_with_abstract_h2_passes():
+    body = _GOOD_PAPER_STUB.replace(
+        "We test a thing and report a result.",
+        "## Abstract\n\nWe test a thing and report a result.",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_paper_stub_quoted_true_flag_is_detected():
+    body = _GOOD_PAPER_STUB.replace("paper: true", "paper: 'true'")
+    ok, results = verify_task_body.verify_text(body)
+    assert ok
+    assert len(results) == 1
+    assert results[0].name == "paper-stub body.md valid"
+
+
+def test_paper_stub_missing_paper_link_fails():
+    body = _GOOD_PAPER_STUB.replace("Paper: docs/papers/issue_657/issue_657.pdf", "")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    assert results[0].name == "paper-stub body.md valid"
+    assert "paper link" in results[0].detail
+
+
+def test_paper_stub_missing_abstract_fails():
+    body = """\
+---
+title: T (LOW confidence)
+kind: experiment
+paper: true
+---
+# T (LOW confidence)
+
+docs/papers/issue_657/issue_657.pdf
+"""
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    assert "abstract" in results[0].detail
+
+
+def test_paper_stub_short_body_not_flagged_as_stub_token():
+    """A short paper-stub must NOT trip Check 0 (the #385 stub-token guard) —
+    the paper branch short-circuits BEFORE Check 0 runs."""
+    ok, results = verify_task_body.verify_text(_GOOD_PAPER_STUB)
+    assert ok
+    # Check 0 ("body is not a stub / placeholder") never appears in the output.
+    assert all(r.name != "body is not a stub / placeholder" for r in results)
+
+
+def test_non_paper_v4_body_unaffected_by_paper_branch():
+    """Backward-compat: a v4 markdown body (no `paper:` flag) runs the full
+    v4 check chain exactly as before — the paper branch does NOT fire."""
+    _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY)
+    by_name = _results_by_name(results)
+    # The full v4 chain ran (not the single paper-stub result).
+    assert "four required H2 sections in order" in by_name
+    assert "paper-stub body.md valid" not in by_name
+    # The v4-specific checks still pass (only the network probes FAIL).
+    assert by_name["v4 structure (Takeaways / Goal / Methodology / Results)"].passed
+
+
+def test_non_paper_no_frontmatter_body_unaffected():
+    """A pre-sentinel legacy body (no frontmatter at all) never triggers the
+    paper branch."""
+    body = "# Legacy title\n\nSome legacy prose with no frontmatter and no paper flag.\n"
+    _ok, results = verify_task_body.verify_text(body)
+    assert all(r.name != "paper-stub body.md valid" for r in results)
+
+
+def test_is_paper_stub_fm_helper():
+    assert verify_task_body._is_paper_stub_fm({"paper": True})
+    assert verify_task_body._is_paper_stub_fm({"paper": "true"})
+    assert verify_task_body._is_paper_stub_fm({"paper": "TRUE"})
+    assert not verify_task_body._is_paper_stub_fm({"paper": False})
+    assert not verify_task_body._is_paper_stub_fm({"paper": "false"})
+    assert not verify_task_body._is_paper_stub_fm({})

@@ -498,6 +498,21 @@ def _registry_set(registry: dict[str, Any], task_id: int, path: Path, fm: dict[s
     goal = fm.get("goal")
     if isinstance(goal, str) and goal.strip():
         entry["goal"] = goal.strip()
+    # Paper-stub tasks carry the abstract in the BODY (not the frontmatter), so
+    # denormalize it into REGISTRY here for the dashboard hover-card / the
+    # REGISTRY title+abstract surfaces. Only paper tasks pay the body read;
+    # never raises (a still-being-written stub just yields no abstract).
+    if is_paper_task(fm):
+        entry["paper"] = True
+        body_path = path / "body.md"
+        if body_path.exists():
+            try:
+                _, body = _split_frontmatter(body_path.read_text())
+                abstract = extract_stub_abstract(body)
+            except OSError:
+                abstract = ""
+            if abstract:
+                entry["abstract"] = abstract
     registry["tasks"][str(task_id)] = entry
     if task_id > registry.get("highest_id", 0):
         registry["highest_id"] = task_id
@@ -580,6 +595,113 @@ def _strip_leading_frontmatter_blocks(text: str) -> str:
             break
         content = content[end + len("\n---\n") :]
     return content.lstrip("\n")
+
+
+# ── Paper-stub helpers (`paper: true` clean-result track) ───────────────────
+# A `paper: true` task's body.md is a thin paper-stub (H1 title + abstract +
+# a paper link); the canonical clean-result is the LaTeX paper under
+# docs/papers/issue_<N>/, verified by scripts/verify_paper.py — NOT this
+# module's markdown machinery. These helpers let the readers that denormalize
+# title/abstract and the set-clean-result manifest gate handle the stub
+# without breaking grandfathered markdown bodies. See
+# .claude/skills/clean-results/SPEC.md § "Paper format (`paper: true`)".
+
+
+def is_paper_task(fm: dict[str, Any]) -> bool:
+    """True when the task's frontmatter opts into the paper clean-result track.
+
+    Accepts the YAML-parsed boolean ``True`` and the quoted string ``"true"``
+    (case-insensitive); everything else (absent / ``false`` / ``null``) is the
+    markdown-body default.
+    """
+    v = fm.get("paper")
+    return v is True or (isinstance(v, str) and v.strip().lower() == "true")
+
+
+def extract_stub_abstract(body: str) -> str:
+    """Return the abstract from a paper-stub body (best-effort, never raises).
+
+    The stub abstract is either a ``## Abstract`` H2 block OR the prose
+    paragraph(s) between the H1 title and the paper link / first H2. Used to
+    denormalize an ``abstract`` into REGISTRY.json so the dashboard hover-card
+    + the REGISTRY title/abstract surfaces read it (the stub carries the
+    abstract in the BODY, not the frontmatter). Markdown link/image lines and
+    the H1 are stripped. Returns "" when nothing abstract-like is found.
+    """
+    # Strip any leading frontmatter the caller passed through.
+    text = _strip_leading_frontmatter_blocks(body)
+    # Prefer an explicit `## Abstract` block.
+    m = re.search(r"(?ms)^##\s+Abstract\s*$(?P<body>.+?)(?=^##\s|\Z)", text)
+    region = m.group("body") if m else text
+    out: list[str] = []
+    for raw_line in region.splitlines():
+        line = raw_line.strip()
+        if not line:
+            if out:
+                break  # first paragraph only
+            continue
+        if line.startswith("#"):  # H1/H2/H3 heading
+            if out:
+                break
+            continue
+        # Skip a bare paper-link line ("Paper: docs/papers/..." / "[PDF](...)").
+        low = line.lower()
+        if (low.startswith("paper:") or low.startswith("pdf:")) or (
+            re.fullmatch(r"[\[\(!].*", line) and ("docs/papers/" in line or "/papers/" in line)
+        ):
+            if out:
+                break
+            continue
+        out.append(line)
+    return " ".join(out).strip()
+
+
+def validate_paper_manifest(task_id: int) -> list[str]:
+    """Validate a paper-task's docs/papers/issue_<N>/paper_manifest.json.
+
+    Returns a list of human-readable problems; an empty list means the manifest
+    is valid enough to flip ``has_clean_result``. Checks (mirrors
+    ``scripts/verify_paper.py`` check 7 — the manifest schema, the required
+    ``tex`` / ``pdf`` / ``paper_html`` artifacts present on disk with matching
+    sha256, and a non-null ``pdf_hf_url``). A missing ``pdf_hf_url`` is a soft
+    problem the CLI surfaces as a WARN (a local-only build can be promoted), so
+    it is returned with a ``WARN: `` prefix and the caller decides.
+    """
+    import hashlib
+
+    problems: list[str] = []
+    paper_dir = repo_root() / "docs" / "papers" / f"issue_{task_id}"
+    manifest_path = paper_dir / "paper_manifest.json"
+    if not manifest_path.exists():
+        return [f"no paper_manifest.json at {manifest_path.relative_to(repo_root())}"]
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        return [f"paper_manifest.json unreadable: {e}"]
+    if manifest.get("schema") != "paper_manifest/v1":
+        problems.append(f"schema is {manifest.get('schema')!r}, expected 'paper_manifest/v1'")
+    artifacts = manifest.get("artifacts") or {}
+    for label in ("tex", "pdf", "paper_html"):
+        entry = artifacts.get(label)
+        if not entry:
+            problems.append(f"missing required artifact {label!r}")
+            continue
+        rel = entry.get("path")
+        if not rel:
+            problems.append(f"artifact {label!r} has no path")
+            continue
+        fpath = repo_root() / rel
+        if not fpath.exists():
+            problems.append(f"artifact {label!r} path missing on disk: {rel}")
+            continue
+        want = entry.get("sha256")
+        if want:
+            got = hashlib.sha256(fpath.read_bytes()).hexdigest()
+            if got != want:
+                problems.append(f"artifact {label!r} sha256 mismatch ({rel})")
+    if not manifest.get("pdf_hf_url"):
+        problems.append("WARN: pdf_hf_url is null (local-only build — not yet uploaded)")
+    return problems
 
 
 # Goal H2 helpers
@@ -933,10 +1055,35 @@ def set_title(task_id: int, title: str) -> None:
         _git_commit([path, registry_path()], f"task #{task_id}: set-title — {title[:60]}")
 
 
-def set_clean_result(task_id: int, value: bool = True) -> None:
+def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool = True) -> None:
+    """Flip ``has_clean_result`` (or clear it with ``value=False``).
+
+    For a ``paper: true`` task, flipping ``has_clean_result`` to True first
+    VALIDATES the task's ``docs/papers/issue_<N>/paper_manifest.json`` (artifacts
+    present + sha256 match + a non-null ``pdf_hf_url``) via
+    :func:`validate_paper_manifest` — promoting a paper-task means its paper
+    artifacts exist and match. A HARD problem (missing/mismatched artifact,
+    bad schema) raises ``SystemExit``; a soft WARN (``pdf_hf_url`` null — a
+    local-only build) is tolerated when ``allow_paper_warn`` is True (default),
+    which lets a paper be marked a clean-result before the HF upload lands.
+    Clearing (``value=False``) and every non-paper task skip the manifest gate.
+    """
     with _locked():
         path = find_task_path(task_id) / "body.md"
         fm, body = _read_body(path)
+        if value and is_paper_task(fm):
+            problems = validate_paper_manifest(task_id)
+            hard = [p for p in problems if not p.startswith("WARN:")]
+            warns = [p for p in problems if p.startswith("WARN:")]
+            if hard or (warns and not allow_paper_warn):
+                blocking = hard + (warns if not allow_paper_warn else [])
+                raise SystemExit(
+                    f"set-clean-result #{task_id}: paper manifest validation failed:\n  - "
+                    + "\n  - ".join(blocking)
+                    + f"\nFix docs/papers/issue_{task_id}/paper_manifest.json "
+                    "(run scripts/build_paper.py / verify_paper.py) before flipping "
+                    "has_clean_result."
+                )
         fm["has_clean_result"] = value
         _write_body(path, fm, body)
         reg = _load_registry()

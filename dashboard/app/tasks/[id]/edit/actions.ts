@@ -22,6 +22,7 @@ import { promisify } from "node:util";
 import { revalidatePath } from "next/cache";
 import { REPO_ROOT } from "@/lib/repo";
 import { isEditorAuthed } from "@/lib/auth";
+import { getTask, isPaperTask } from "@/lib/tasks";
 
 const execFileP = promisify(execFile);
 
@@ -61,6 +62,16 @@ export async function saveTaskBody(taskId: number, body: string): Promise<Action
   if (typeof body !== "string") return { ok: false, error: "body must be a string" };
   if (body.length > MAX_BODY_BYTES) {
     return { ok: false, error: `body exceeds ${MAX_BODY_BYTES} bytes` };
+  }
+  // Defense-in-depth: a paper-task's body.md is a thin paper-stub edited in git
+  // (the .tex is the clean-result). Block the write even if the UI gate was
+  // bypassed, so a forged request can't overwrite the stub.
+  const task = getTask(id);
+  if (task && isPaperTask(task.frontmatter)) {
+    return {
+      ok: false,
+      error: `task #${id} is a paper-task — edit docs/papers/issue_${id}/issue_${id}.tex in git, not body.md`,
+    };
   }
   const tmp = await mkdtemp(path.join(tmpdir(), "eps-edit-"));
   const tmpPath = path.join(tmp, `body-${id}.md`);

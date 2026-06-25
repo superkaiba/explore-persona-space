@@ -117,6 +117,16 @@ uv run python scripts/task.py find <N>
 
 Detect format:
 
+- **Paper-task (`paper: true` frontmatter):** the body.md is a thin
+  **paper-stub** (H1 title + abstract + a paper link to
+  `docs/papers/issue_<N>/`); the canonical clean-result is the LaTeX
+  **paper** there, NOT the body. Do NOT apply the v3/v4 markdown section
+  refinements below — the only in-body refinements are the H1 title tag
+  (`(LOW|MODERATE|HIGH confidence)`), the abstract prose, and the paper
+  link (the substantive content lives in the `.tex` and is refined there).
+  Skip to the paper-task branch in Step 4 (verify with `verify_paper.py`,
+  NOT `verify_task_body.py`). Everything else (consolidation scan,
+  `task.py promote`) is identical.
 - **Markdown clean-result (current, new tasks — v3):** opens with
   `# <title> (LOW|MODERATE|HIGH confidence)`, then the sentinel
   `<!-- clean-result-v3 -->`, then `## Takeaways` / `## What I ran` /
@@ -173,6 +183,24 @@ The `--snapshot` flag saves the prior body to
 atomically + git committed.
 
 ## Step 4 — Verify
+
+**Paper-task (`paper: true`):** verify the paper, NOT the markdown body —
+
+```bash
+uv run python scripts/verify_paper.py --issue <N>
+```
+
+The stub body itself is exempt from the markdown clean-result section
+checks (`verify_task_body.py` self-PASSes a `paper: true` body with a
+minimal H1+abstract+link sanity check, and `audit_clean_results_body_discipline.py`
+skips it). Fix every `verify_paper.py` FAIL (compile-clean, required
+sections incl. Appendix, no confidence in body, `\includegraphics`
+confined + resolve, `.bib` + `\epsref` resolve, manifest complete +
+hashes match) before handoff. Note `task.py set-clean-result <N>` will
+itself re-validate `paper_manifest.json` before flipping
+`has_clean_result`.
+
+**Markdown clean-result (v3/v4/v2/legacy):**
 
 ```bash
 uv run python scripts/verify_task_body.py --issue <N>

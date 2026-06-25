@@ -37,8 +37,29 @@ export type Frontmatter = {
   sagan_id?: string;
   sagan_number?: number;
   priority?: string;
+  // `paper: true` opts the task into the LaTeX-paper clean-result track: its
+  // body.md is a thin paper-stub (H1 + abstract + paper link) and the canonical
+  // clean-result is the paper under docs/papers/issue_<N>/. The in-app body
+  // editor is disabled for these (edit the .tex in git). Typed `boolean | string`
+  // because gray-matter yields the YAML boolean `true` but a quoted `"true"`
+  // survives as a string — `isPaperTask` accepts both.
+  paper?: boolean | string;
+  goal?: string;
+  abstract?: string;
   [k: string]: unknown;
 };
+
+/**
+ * True when a task opts into the paper clean-result track (`paper: true`).
+ * Accepts the YAML boolean and the quoted string "true" (matches the Python
+ * `task_workflow.is_paper_task`). The dashboard uses this to DISABLE the
+ * in-app body editor for paper-tasks (the body is a thin stub; the paper .tex
+ * is edited in git) and, later (Phase C), to route to the paper render.
+ */
+export function isPaperTask(fm: Frontmatter | undefined): boolean {
+  const v = fm?.paper;
+  return v === true || (typeof v === "string" && v.trim().toLowerCase() === "true");
+}
 
 export type Task = {
   id: number;

@@ -2070,3 +2070,152 @@ def test_cli_handlers_raise_address_defer_list_roundtrip(concerns_task, capsys):
             )
         )
     assert "user-only" in str(excinfo.value).lower() or "user" in str(excinfo.value).lower()
+
+
+# ─── paper-stub support (`paper: true` clean-result track) ─────────────────
+
+
+def _make_paper_task(tw, *, abstract: str = "An abstract long enough to count.") -> int:
+    """Create a task and rewrite its body.md into a paper-stub (paper: true)."""
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="A paper claim"))
+    body_path = tw.find_task_path(tid) / "body.md"
+    fm, _ = tw._read_body(body_path)
+    fm["paper"] = True
+    stub = (
+        f"# A paper claim (MODERATE confidence)\n\n{abstract}\n\n"
+        f"Paper: docs/papers/issue_{tid}/issue_{tid}.pdf\n"
+    )
+    tw._write_body(body_path, fm, stub)
+    return tid
+
+
+def _write_manifest(tw, tid: int, *, with_url: bool = True, break_sha: bool = False) -> None:
+    """Write a docs/papers/issue_<N>/ paper dir with a valid manifest."""
+    import hashlib
+
+    paper_dir = tw.repo_root() / "docs" / "papers" / f"issue_{tid}"
+    paper_dir.mkdir(parents=True, exist_ok=True)
+    artifacts = {}
+    for label, fname in (("tex", "p.tex"), ("pdf", "p.pdf"), ("paper_html", "paper.html")):
+        fpath = paper_dir / fname
+        fpath.write_text(f"contents of {label}")
+        sha = hashlib.sha256(fpath.read_bytes()).hexdigest()
+        if break_sha and label == "pdf":
+            sha = "0" * 64
+        artifacts[label] = {
+            "path": str(fpath.relative_to(tw.repo_root())),
+            "sha256": sha,
+            "bytes": fpath.stat().st_size,
+        }
+    manifest = {
+        "schema": "paper_manifest/v1",
+        "issue": tid,
+        "artifacts": artifacts,
+        "pdf_hf_url": ("https://hf/x.pdf" if with_url else None),
+    }
+    import json as _json
+
+    (paper_dir / "paper_manifest.json").write_text(_json.dumps(manifest))
+
+
+def test_is_paper_task_helper(fake_repo):
+    _, tw = fake_repo
+    assert tw.is_paper_task({"paper": True})
+    assert tw.is_paper_task({"paper": "true"})
+    assert tw.is_paper_task({"paper": "TRUE"})
+    assert not tw.is_paper_task({"paper": False})
+    assert not tw.is_paper_task({"paper": "false"})
+    assert not tw.is_paper_task({})
+
+
+def test_extract_stub_abstract_paragraph(fake_repo):
+    _, tw = fake_repo
+    body = (
+        "# A title\n\nThis is the abstract paragraph that should be extracted.\n\n"
+        "Paper: docs/papers/issue_5/issue_5.pdf\n"
+    )
+    assert (
+        tw.extract_stub_abstract(body) == "This is the abstract paragraph that should be extracted."
+    )
+
+
+def test_extract_stub_abstract_h2(fake_repo):
+    _, tw = fake_repo
+    body = (
+        "# T\n\n## Abstract\n\nThe explicit abstract block here.\n\n"
+        "Paper: docs/papers/issue_5/x.pdf\n"
+    )
+    assert tw.extract_stub_abstract(body) == "The explicit abstract block here."
+
+
+def test_registry_denormalizes_paper_abstract(fake_repo):
+    repo, tw = fake_repo
+    tid = _make_paper_task(tw, abstract="Denormalized abstract for the hover-card.")
+    # Re-flip a registry-updating mutator so _registry_set runs with paper fm.
+    tw.set_title(tid, "A paper claim (MODERATE confidence)")
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    entry = reg["tasks"][str(tid)]
+    assert entry["paper"] is True
+    assert entry["abstract"] == "Denormalized abstract for the hover-card."
+
+
+def test_set_clean_result_paper_requires_manifest(fake_repo):
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    # No manifest yet → hard FAIL (SystemExit).
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True)
+    assert "paper_manifest" in str(exc.value)
+
+
+def test_set_clean_result_paper_valid_manifest_passes(fake_repo):
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=True)
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_paper_null_url_is_warn_tolerated(fake_repo):
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=False)
+    # Default allow_paper_warn=True tolerates a null pdf_hf_url (local-only build).
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_paper_null_url_blocked_when_required(fake_repo):
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=False)
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True, allow_paper_warn=False)
+    assert "pdf_hf_url" in str(exc.value)
+
+
+def test_set_clean_result_paper_sha_mismatch_blocks(fake_repo):
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=True, break_sha=True)
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True)
+    assert "sha256" in str(exc.value)
+
+
+def test_set_clean_result_nonpaper_skips_manifest_gate(fake_repo):
+    """Backward-compat: a non-paper task flips has_clean_result with no manifest
+    check (identical to the pre-paper behaviour)."""
+    _, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Ordinary"))
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_unset_paper_skips_gate(fake_repo):
+    """Clearing has_clean_result on a paper task never runs the manifest gate."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    # No manifest, but value=False → no validation.
+    tw.set_clean_result(tid, value=False)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is False
