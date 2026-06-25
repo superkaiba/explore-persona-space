@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 664,
+  "highest_id": 665,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4152,6 +4152,14 @@
       "path": "tasks/proposed/664",
       "status": "proposed",
       "title": "Phase 2 \u2014 fine-tune fleet + trained store + ground-truth leakage (leakage program #660)"
+    },
+    "665": {
+      "goal": "Phase 3 \u2014 test A3.6-A3.10 + joint factorization on the Phase-2 trained store: activation realized gate, whitened key-query gate (key/metric ablations), base-gate validity, drift decomposition; clustered CIs + single-context arm.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/665",
+      "status": "proposed",
+      "title": "Phase 3 \u2014 A3.6-A3.10 + joint factorization on the trained store (leakage program #660)"
     },
     "67": {
       "has_clean_result": true,
