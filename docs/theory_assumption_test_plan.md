@@ -102,7 +102,19 @@ assistant-centroid baseline, optimism trait) intact — "let 661 finish."
 
 | ID | Change | Where |
 |---|---|---|
-| **R6-1** | A3.3 `r_B` becomes an in-plan recipe sweep: contrast-construction A/B/C × summary variants, **(C3) primary = C (instruct-and-strip)**, the rest exploratory (FDR); built-in measurables = pairwise `cos(r_B^{A,B,C})` + the `(c_pos−c_neg)` confound projection + per-recipe held-out predictive quality. Removes the "program waits on #661" coupling (the sweep is in-plan). #661 + its `rb-recipe-knobs` follow-ups stay as the standalone exhaustive knob read that confirms/feeds the C-primary lock — NOT duplicated into the in-plan sweep (avoids ballooning the C3 multiple-comparison surface). | §1.3 read-out note · §1.4 `r_B` note · §4 A3.3 row |
+| **R6-1** | A3.3 `r_B` becomes an in-plan recipe sweep: contrast-construction A/B/C × summary variants, **(C3) primary = C (instruct-and-strip)**, the rest exploratory (FDR); built-in measurables = pairwise `cos(r_B^{A,B,C})` + the `(c_pos−c_neg)` confound projection + per-recipe held-out predictive quality. Removes the "program waits on #661" coupling (the sweep is in-plan). #661 + its `rb-recipe-knobs` follow-ups stay as the standalone exhaustive knob read that confirms/feeds the C-primary lock — NOT duplicated into the in-plan sweep (avoids ballooning the C3 multiple-comparison surface). **[SUPERSEDED by R7-1: the knobs ARE now folded in-plan as one-knob-off variants.]** | §1.3 read-out note · §1.4 `r_B` note · §4 A3.3 row |
+
+## Revision log (round 7 — `rb-recipe-knobs` folded in-plan)
+
+User decision (Thomas, 2026-06-25): add #661's `rb-recipe-knobs` follow-ups to the experimental
+plan as IN-PLAN A3.3 robustness variants (reverses R6-1's "keep them #661-only"). Each knob is
+varied ONE-AT-A-TIME from the C primary (linear, not a cross-product) so the C3
+multiple-comparison surface stays bounded; all are exploratory (FDR), never the headline. #661
+still runs the same knobs standalone as the early read.
+
+| ID | Change | Where |
+|---|---|---|
+| **R7-1** | The `rb-recipe-knobs` — instruction-pair count (1 vs 5 paraphrase pairs), negative-pole content (anti-behavior vs neutral/default), assistant-centroid baseline (`centroid_B − centroid_assistant`, expected to underperform), and the optimism trait (opposite ≠ default assistant) — become IN-PLAN one-knob-off A3.3 robustness variants from the C primary (exploratory/FDR). Bounded `r_B`-extraction cost (read-out only, fleet-unaffected): 5-pair / neutral-pole / optimism add some Phase-1 generation, assistant-baseline ~free. #661 runs the same knobs standalone. Supersedes R6-1's "not duplicated." | §1.4 `r_B` note · §4 A3.3 row |
 
 ---
 
@@ -378,12 +390,20 @@ These are the recipe knobs the paper leaves open and Phase 1 fixes empirically.
   geometry). **#661 is the complementary STANDALONE early read** of exactly this A/B/C
   comparison — LET IT FINISH (re-dispatches after #663's batch-client fix); it
   confirms/feeds the A3.3 primary-recipe lock, but the program no longer **waits** on it
-  (the sweep is in-plan). #661's `rb-recipe-knobs` follow-up additionally screens the **instruction-pair
-  count** (single pair vs PV's 5 paraphrase pairs), the **negative-pole content**
-  (explicit anti-behavior vs neutral/default), an **assistant-centroid baseline**
-  (`centroid_B − centroid_assistant`, to confirm it underperforms), and adds a
-  trait whose opposite ≠ the default assistant (**optimism**) as the
-  discriminating case the syco/refusal/EM behaviors can't provide.
+  (the sweep is in-plan). **The recipe sweep also carries the finer `rb-recipe-knobs` as IN-PLAN
+  one-knob-off robustness variants from the C primary** — each varied ALONE, never a full
+  cross-product, so the sweep is linear (not exponential) in the knobs and the C3
+  multiple-comparison surface stays bounded: the **instruction-pair count** (single pair vs PV's
+  5 paraphrase pairs), the **negative-pole content** (explicit anti-behavior vs neutral/default),
+  an **assistant-centroid baseline** (`centroid_B − centroid_assistant`, expected to
+  underperform), and an added trait whose opposite ≠ the default assistant (**optimism**) as the
+  discriminating case syco/refusal/EM can't provide. Each is an exploratory robustness check vs
+  the pre-registered C primary (FDR-corrected, never the headline); the marginal cost is bounded
+  `r_B` extraction (read-out only, fleet-unaffected) — the 5-pair / neutral-pole / optimism
+  variants add some Phase-1 generation, the assistant-baseline is ~free. **#661 runs the same
+  `rb-recipe-knobs` standalone** (its scoped follow-ups) as the early exhaustive read; the in-plan
+  variants and #661 are the same knobs from two entry points (in-program robustness vs standalone
+  early read) — let #661 finish either way.
   **Phase-0 to-build, NOT reuse:** the assistant-axis instruction files carry
   only `pos` prompts, so the matched **neg prompts must first be generated**
   (#661's task). The cited `scripts/issue634_extract_behavior_vectors.py` is the
@@ -945,7 +965,7 @@ Paper's own "worth testing now" verdict noted.
 |---|---|---|---|---|---|---|---|
 | **A3.1** | Expression depends on profile only through a low-dim summary | A1 | High | **Bounded (B4)** | mean act vs richer summaries (token-pooled, multi-layer, answer-dist features) on nested held-out C/B; full recursive-pooling test still deferred | richer summaries do NOT materially beat the mean (mean is a sufficient low-dim summary) | 1 (#658-landing) |
 | **A3.2** | Summary = mean answer-side activation `v_θ(C)` | A1 | High | **Yes** | MLP: `v0(C)→E0(C,B)`, per behavior incl. marker; layer sweep | predicts held-out expression ≫ mean baseline; report best layer | 1 |
-| **A3.3** | Linear read-out `E≈r_Bᵀv` | A2 | High | **Yes** | fit `r_B` as a **built-in recipe sweep**: contrast-construction A/B/C (on-policy-instruction / teacher-forced / instruct-and-strip) × summary variants (diff-in-means / mean-D_B / few-shot), **(C3) primary = C (instruct-and-strip)**, rest exploratory (FDR); test held-out C per layer; report `cos(r_B^{A,B,C})` divergence + the `(c_pos−c_neg)` confound projection + per-recipe predictive quality. (#661 + its `rb-recipe-knobs` follow-ups = the standalone exhaustive knob read, complementary.) | linear ρ within MLP noise floor; recipe divergence + whether it changes the *verdict* vs only geometry; C-primary recipe locked | 1 |
+| **A3.3** | Linear read-out `E≈r_Bᵀv` | A2 | High | **Yes** | fit `r_B` as a **built-in recipe sweep**: contrast-construction A/B/C (on-policy-instruction / teacher-forced / instruct-and-strip) × summary variants (diff-in-means / mean-D_B / few-shot), **(C3) primary = C (instruct-and-strip)**, rest exploratory (FDR); test held-out C per layer; report `cos(r_B^{A,B,C})` divergence + the `(c_pos−c_neg)` confound projection + per-recipe predictive quality. **Plus the finer `rb-recipe-knobs`** (pair-count / neg-pole / assistant-baseline / optimism) as IN-PLAN one-knob-off robustness variants (C3-exploratory, FDR; #661 runs the same knobs standalone). | linear ρ within MLP noise floor; recipe divergence + whether it changes the *verdict* vs only geometry; C-primary recipe locked | 1 |
 | **A3.4** | Pre-FT context summary predicts profile (sufficiency) | A3 | Med | **Yes (B2)** | **distinct from A3.5:** best-achievable `c→v0` over ALL recipe candidates + full-prompt-activation upper-bound control; report the gap to the cheap `c_C` | sufficiency holds (upper-bound `c→v0` strong); A3.5 gap localizes recipe vs sufficiency failure | 1 (#658-landing) |
 | **A3.5** | Context summary = residual vector `c_C` | A3 | Med | **Yes** | linear `M` + MLP: `c_C→v0(C)`; best c_C recipe/layer | nonlinear gain modest; `r_Bᵀ M c_C` predicts E | 1 |
 | **A3.5a** | Contexts close within a condition (`a:context-vector-coherence`) — precondition for the single-vector `c_C` summary | A3 | Med-High | **Yes** | per C: spread `s_W(C)=E‖c_x−c_C‖²_W` vs behavior Jensen gap `Ĵ_ℬ=max_B\|r_Bᵀ(E h(c_x)−h(c_C))\|` + residual `R̂_ℬ`; `W=I` then `(Σc+λI)⁻¹`; per condition + family, layer-swept (full spec + derivation: §4 coherence block) | gap & residual rise with spread (slope ≈ ½ local curvature `K`); coherent conditions (persona/format/behavior) small-gap, scattered (wildchat) large → split / richer-summarize the failures | 1 |
