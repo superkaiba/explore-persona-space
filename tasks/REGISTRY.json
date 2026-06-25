@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 662,
+  "highest_id": 663,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4137,6 +4137,13 @@
       "path": "tasks/proposed/662",
       "status": "proposed",
       "title": "Batch-judge poll: add deadline + heartbeat + batch_id resume (eval/batch_judge.py) \u2014 wedge fix"
+    },
+    "663": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/663",
+      "status": "proposed",
+      "title": "Harden Anthropic batch-judge client: shard to ~8k/batch, bound poll on expires_at, custom_id checkpoint/resume"
     },
     "67": {
       "has_clean_result": true,
