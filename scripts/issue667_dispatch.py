@@ -538,18 +538,22 @@ def _extract_cmd(
 
 
 def _cell_already_extracted(behavior: str, source: str) -> bool:
-    """True if a prior run already wrote this cell's per-(target, layer) tensors.
+    """True ONLY if a prior run wrote this cell's atomic completion sentinel.
 
-    The extractor writes ``<tcid>_L<li>.npz`` files under
-    ``<TENSORS_DIR>/<behavior>/<source>_seed42``; a non-empty set of ``.npz`` in
-    that dir means the cell finished (round-7 resume-skip — a ~95-min relaunch
-    re-extracted 32 already-on-disk cells before the 33rd crashed). Conservative:
-    only an EXISTING dir holding at least one ``.npz`` counts as done.
+    The extractor writes the per-(target, layer) ``<tcid>_L<li>.npz`` files
+    INCREMENTALLY, then writes ``.done`` ATOMICALLY only after EVERY planned
+    tensor is on disk (``issue667_extract.write_cell_done_sentinel``). A
+    mid-cell crash therefore leaves a PARTIAL ``.npz`` set with NO ``.done`` —
+    so checking for ``.done`` (not for any stray ``.npz``) is what makes the
+    default-ON resume-skip safe: a partial dir is never silently accepted as
+    complete (round-8 BLOCKER resume-skip-partial-cell-silent-skip; CLAUDE.md
+    "Fail fast — never hide failures"). Round-7 used ``any(*.npz)``, which
+    would have silently skipped a partially-extracted cell on relaunch.
     """
+    from issue667_extract import CELL_DONE_SENTINEL
+
     cell_dir = PROJECT_ROOT / TENSORS_DIR / behavior / f"{source}_seed{_EXTRACT_SEED}"
-    if not cell_dir.is_dir():
-        return False
-    return any(cell_dir.glob("*.npz"))
+    return (cell_dir / CELL_DONE_SENTINEL).is_file()
 
 
 def _filter_resume_skip(cells: list[tuple[str, str]]) -> list[tuple[str, str]]:
@@ -578,6 +582,89 @@ def _filter_resume_skip(cells: list[tuple[str, str]]) -> list[tuple[str, str]]:
             len(cells) - len(kept),
         )
     return kept
+
+
+def _expected_npz_for_cell(behavior: str, source: str, layers: list[int]) -> set[str]:
+    """The full per-(target, layer) ``.npz`` filename set a complete cell holds.
+
+    Mirrors the extractor's default target list (``eval_cids_for(behavior) +
+    source``, deduped, source-first) so the backfill cross-check uses the SAME
+    complement the extractor would have written.
+    """
+    from explore_persona_space.experiments.i537_contexts import eval_cids_for
+
+    targets = list(dict.fromkeys([source, *eval_cids_for(behavior)]))
+    return {f"{tcid}_L{li}.npz" for tcid in targets for li in layers}
+
+
+def phase_backfill_sentinels(*, layers: list[int]) -> None:
+    """One-shot migration: write ``.done`` for every COMPLETE on-disk cell.
+
+    Round-8: the 32 cells already extracted under the round-7 ``any(*.npz)``
+    contract have no ``.done`` sentinel, so the new sentinel-based resume-skip
+    would re-extract them. This walks ``<TENSORS_DIR>/<behavior>/<source>_seed42``,
+    and for each cell whose on-disk ``.npz`` set EXACTLY matches the expected
+    (target, layer) complement, writes the atomic sentinel — so the relaunch can
+    safely resume-skip the completed cells. A cell missing ANY expected ``.npz``
+    is REPORTED and left without a sentinel (it will be re-extracted), never
+    backfilled — fail-loud, never silently accept a partial cell.
+    """
+    phase_log("backfill_sentinels")
+    from issue667_extract import CELL_DONE_SENTINEL, write_cell_done_sentinel
+
+    tdir = PROJECT_ROOT / TENSORS_DIR
+    if not tdir.is_dir():
+        logger.info("backfill: no tensor dir at %s — nothing to backfill", tdir)
+        logger.info("[phase=backfill_done]")
+        return
+    n_written = n_already = n_incomplete = 0
+    for beh_dir in sorted(p for p in tdir.iterdir() if p.is_dir()):
+        behavior = beh_dir.name
+        for cell_dir in sorted(p for p in beh_dir.iterdir() if p.is_dir()):
+            name = cell_dir.name
+            suffix = f"_seed{_EXTRACT_SEED}"
+            if not name.endswith(suffix):
+                logger.warning("backfill: skipping unrecognized cell dir %s", cell_dir)
+                continue
+            source = name[: -len(suffix)]
+            if (cell_dir / CELL_DONE_SENTINEL).is_file():
+                n_already += 1
+                continue
+            expected = _expected_npz_for_cell(behavior, source, layers)
+            present = {p.name for p in cell_dir.glob("*.npz")}
+            missing = expected - present
+            if missing:
+                n_incomplete += 1
+                logger.warning(
+                    "backfill: %s/%s INCOMPLETE — %d/%d expected .npz present "
+                    "(missing %d, e.g. %s) — NO sentinel written, cell will re-extract",
+                    behavior,
+                    source,
+                    len(present & expected),
+                    len(expected),
+                    len(missing),
+                    sorted(missing)[:3],
+                )
+                continue
+            from explore_persona_space.experiments.i537_contexts import eval_cids_for
+
+            targets = list(dict.fromkeys([source, *eval_cids_for(behavior)]))
+            write_cell_done_sentinel(
+                cell_dir,
+                behavior=behavior,
+                source_cid=source,
+                seed=_EXTRACT_SEED,
+                targets=targets,
+                layers=layers,
+            )
+            n_written += 1
+    logger.info(
+        "backfill: wrote %d sentinels, %d already had one, %d incomplete (will re-extract)",
+        n_written,
+        n_already,
+        n_incomplete,
+    )
+    logger.info("[phase=backfill_done]")
 
 
 def phase_extract(
@@ -804,8 +891,18 @@ def main() -> int:
         "--no-resume-skip",
         action="store_true",
         help=(
-            "Force a full re-extract: do NOT skip cells whose .npz tensors already "
-            "exist on disk (resume-skip is ON by default — round-7)."
+            "Force a full re-extract: do NOT skip cells whose .done sentinel already "
+            "exists on disk (resume-skip is ON by default — round-7/8)."
+        ),
+    )
+    parser.add_argument(
+        "--backfill-sentinels",
+        action="store_true",
+        help=(
+            "One-shot migration: write a .done sentinel for every COMPLETE on-disk "
+            "cell (round-8 — the 32 cells extracted under the old any(*.npz) contract "
+            "have no sentinel). Validates the .npz complement per cell; incomplete "
+            "cells are reported and left without a sentinel. Runs then exits."
         ),
     )
     parser.add_argument(
@@ -837,6 +934,13 @@ def main() -> int:
         result = _numeric_rslora_parity(args.behavior, source=args.source, seed=args.seed)
         if args.result_out:
             Path(args.result_out).write_text(json.dumps(result, indent=2))
+        return 0
+
+    # One-shot backfill migration (round-8): write .done for already-complete
+    # cells so the sentinel-based resume-skip can resume-skip them on relaunch.
+    # Pure local filesystem walk + atomic writes — no credentials, then exit.
+    if args.backfill_sentinels:
+        phase_backfill_sentinels(layers=args.layers)
         return 0
 
     phases = ["prefetch", "extract", "analysis"] if args.phase == "all" else [args.phase]
