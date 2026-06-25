@@ -18,8 +18,13 @@ from unittest.mock import MagicMock
 import pytest
 
 from explore_persona_space.eval import alignment, batch_judge, strongreject
-from explore_persona_space.eval.batch_judge import JudgeCache, _chunk_requests
+from explore_persona_space.eval.batch_judge import (
+    MAX_REQUESTS_PER_BATCH,
+    JudgeCache,
+    _chunk_requests,
+)
 from explore_persona_space.eval.judge_dispatch import (
+    _collect_batch_results,
     decide_route,
     dispatch_judge_items,
     probe_otpm_limit,
@@ -216,8 +221,10 @@ def test_force_sync_overrides():
 
 
 def test_sub_batch_split(monkeypatch):
+    # DEFAULT_SUB_BATCH_SIZE dropped 10_000 -> 8_000 (#663 §11): 25_000 now
+    # shards into 8k/8k/8k/1k instead of 10k/10k/5k.
     d = decide_route(25_000, otpm=400_000)
-    assert d.sub_batch_sizes == [10_000, 10_000, 5_000]
+    assert d.sub_batch_sizes == [8_000, 8_000, 8_000, 1_000]
     # Byte-cap path via the reused batch_judge._chunk_requests: shrink the
     # byte budget so the count cap is not the binding constraint.
     monkeypatch.setattr(batch_judge, "MAX_BATCH_SIZE_BYTES", 1_000)
@@ -230,6 +237,123 @@ def test_sub_batch_split(monkeypatch):
     assert sum(len(c) for c in chunks) == 10
     for chunk in chunks:
         assert sum(len(json.dumps(r).encode()) for r in chunk) <= 1_000 or len(chunk) == 1
+
+
+# ── #663 Test 1: chunking at the request limit ───────────────────────────────
+
+
+def test_chunk_at_request_limit():
+    """8_001 requests with max_count=8_000 -> [8000, 1]; no chunk exceeds 8_000.
+
+    (#663 §6 Test 1.) Pins the count-cap boundary at the new
+    MAX_REQUESTS_PER_BATCH default.
+    """
+    assert MAX_REQUESTS_PER_BATCH == 8_000
+    requests = [
+        {"custom_id": f"c{i:05d}", "params": {"messages": [{"content": "x"}]}} for i in range(8_001)
+    ]
+    chunks = _chunk_requests(requests, max_count=8_000)
+    assert [len(c) for c in chunks] == [8_000, 1]
+    assert all(len(c) <= 8_000 for c in chunks)
+    # Default max_count is MAX_REQUESTS_PER_BATCH (8_000) — same split.
+    assert [len(c) for c in _chunk_requests(requests)] == [8_000, 1]
+
+
+# ── #663 Test 2: chunking at the byte limit ──────────────────────────────────
+
+
+def test_chunk_at_byte_limit():
+    """One ~250 MB+ request lands alone; the boundary fired on bytes, not count.
+
+    (#663 §6 Test 2.) Constructs the oversized row directly as a dict so
+    json.dumps(req).encode() exceeds MAX_BATCH_SIZE_BYTES — a ~0.25 GB
+    transient string, no real tokens, no API.
+    """
+    big = "x" * (batch_judge.MAX_BATCH_SIZE_BYTES + 10)
+    requests = [
+        {"custom_id": "small_a", "params": {"messages": [{"content": "x"}]}},
+        {"custom_id": "oversized", "params": {"messages": [{"content": big}]}},
+        {"custom_id": "small_b", "params": {"messages": [{"content": "x"}]}},
+    ]
+    chunks = _chunk_requests(requests, max_count=8_000)  # count cap NOT binding
+    # The oversized row sits alone in its own chunk (a new chunk started before
+    # it on bytes, and the next small row starts a fresh chunk after it).
+    oversized_chunk = next(c for c in chunks if any(r["custom_id"] == "oversized" for r in c))
+    assert len(oversized_chunk) == 1
+    assert sum(len(c) for c in chunks) == 3
+
+
+# ── #663 Test 7: _collect_batch_results 4-tuple two-level split ──────────────
+
+
+def _collect_client(outcomes: dict[str, str], *, error_types: dict[str, str] | None = None):
+    """Fake client whose results() yields scripted per-cid outcome shapes.
+
+    ``outcomes[cid]`` in {succeeded, errored, expired, canceled};
+    ``error_types[cid]`` sets ``result.error.error.type`` for an errored row
+    (e.g. "invalid_request_error" or "api_error"). A succeeded row carries a
+    valid judge-JSON message.
+    """
+    error_types = error_types or {}
+
+    def _results(_batch_id):
+        for cid, outcome in outcomes.items():
+            if outcome == "succeeded":
+                yield SimpleNamespace(
+                    custom_id=cid,
+                    result=SimpleNamespace(type="succeeded", message=_msg(JUDGE_TEXT)),
+                )
+            elif outcome == "errored":
+                etype = error_types.get(cid)
+                err = (
+                    SimpleNamespace(error=SimpleNamespace(type=etype))
+                    if etype is not None
+                    else None
+                )
+                yield SimpleNamespace(
+                    custom_id=cid, result=SimpleNamespace(type="errored", error=err, message=None)
+                )
+            else:  # expired / canceled
+                yield SimpleNamespace(
+                    custom_id=cid, result=SimpleNamespace(type=outcome, message=None)
+                )
+
+    return SimpleNamespace(messages=SimpleNamespace(batches=SimpleNamespace(results=_results)))
+
+
+def test_collect_batch_results_four_tuple_split():
+    """_collect_batch_results returns (scores, retriable, expired, quarantined).
+
+    (#663 §6 Test 7 regression — the 3-tuple -> 4-tuple shape change.) The
+    invalid_request_error is quarantined (NOT retriable); a server error is
+    retriable; expired is its own list; canceled surfaces as an error dict with
+    no retry membership.
+    """
+    from explore_persona_space.eval.judge_dispatch import _default_error_dict
+
+    outcomes = {
+        "ok": "succeeded",
+        "bad_request": "errored",
+        "server_err": "errored",
+        "exp": "expired",
+        "cxl": "canceled",
+    }
+    error_types = {"bad_request": "invalid_request_error", "server_err": "api_error"}
+    client = _collect_client(outcomes, error_types=error_types)
+    scores, retriable, expired, quarantined = _collect_batch_results(
+        client, "msgbatch_x", _default_error_dict
+    )
+    assert quarantined == ["bad_request"]
+    assert retriable == ["server_err"]
+    assert expired == ["exp"]
+    assert scores["ok"] == {"aligned": 90, "coherent": 95, "reasoning": "ok"}
+    # All terminal states present in scores (overwritten if a retry succeeds).
+    assert set(scores) == {"ok", "bad_request", "server_err", "exp", "cxl"}
+    assert scores["bad_request"]["error"] is True
+    assert "invalid_request_error" in scores["bad_request"]["reasoning"]
+    assert scores["cxl"]["error"] is True
+    # canceled is in neither retry list.
+    assert "cxl" not in retriable and "cxl" not in expired and "cxl" not in quarantined
 
 
 # ── 5: dry-run ───────────────────────────────────────────────────────────────
