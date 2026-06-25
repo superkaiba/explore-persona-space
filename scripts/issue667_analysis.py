@@ -117,10 +117,22 @@ def _hf(path: str) -> str:
 
 
 def load_g_meta() -> dict:
-    """#537 G_meta.json (per-cell g/base_rate/...); assert the git_commit pin."""
+    """#537 G_meta.json (per-cell g/base_rate/...); assert the git_commit pin.
+
+    G_meta is committed in git (``eval_results/issue_537/G_tensor/G_meta.json``,
+    on ``main`` and inherited by the ``issue-667`` branch the pod checks out) —
+    it is NOT on the HF data repo. Fail loud if missing (a sparse worktree that
+    excludes ``eval_results/`` must ``git sparse-checkout add`` it for a local
+    smoke; the pod's full checkout always has it).
+    """
     p = PROJECT_ROOT / G_META_LOCAL
     if not p.exists():
-        p = Path(_hf("issue537_context_generalization/G_tensor/G_meta.json"))
+        raise FileNotFoundError(
+            f"G_meta.json not found at {p}. It is committed in git "
+            f"({G_META_LOCAL}), NOT on HF. On a sparse worktree run "
+            "`git sparse-checkout add eval_results/issue_537/G_tensor`; the pod's "
+            "full checkout has it by default."
+        )
     m = json.loads(p.read_text())
     gc = m.get("git_commit")
     assert gc == EXPECTED_G_META_GIT_COMMIT, (
