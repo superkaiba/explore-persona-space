@@ -516,21 +516,57 @@ def upload_artifacts(cells: list[C.Cell], *, smoke: bool) -> None:
     if smoke:
         logger.info("[p3-upload] smoke: skipping HF upload")
         return
-    from explore_persona_space.orchestrate.hub import (
-        upload_raw_completions_to_data_repo,
-    )
-
-    # raw completions: the eval gen wrote eval_results/issue_664/registry/<cell>/
-    # completions__*.json. The canonical helper globs raw_completions.json; our
-    # shape is completions__<col>__<ctx>.json, so upload the registry dir as a
-    # dataset directory under the canonical slug.
-    upload_raw_completions_to_data_repo(
-        experiment_name="issue664_leakage_fleet",
-        eval_results_dir=C.EVAL_ROOT,
-    )
-    logger.info("[p3-upload] raw completions uploaded")
-    # store tensors -> HF analysis_tensors (plan §6.5: before pod teardown).
+    _upload_raw_completions(cells)
     _upload_store_tensors(cells)
+
+
+def _upload_raw_completions(cells: list[C.Cell]) -> None:
+    """Upload the eval-gen raw completions to the canonical HF data-repo path.
+
+    The eval gen writes ``eval_results/issue_664/registry/<cell>/completions__
+    <col>__<ctx>.json`` -- a NON-canonical shape that the helper's
+    ``rglob('raw_completions.json')`` does NOT match (the #528 silent-loss
+    class). So we walk the ACTUAL write path and upload per-file with
+    ``upload_as_file=True`` to ``issue664_leakage_fleet/raw_completions/<rel>``,
+    then verify the per-cell file count landed on the Hub before teardown."""
+    from huggingface_hub import list_repo_files
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = C.HF_RAW_COMPLETIONS_PREFIX  # issue664_leakage_fleet/raw_completions
+    reg_root = C.EVAL_ROOT / "registry"
+    files = sorted(reg_root.rglob("completions__*.json"))
+    if not files:
+        raise RuntimeError(
+            f"[p3-upload] NO raw completions under {reg_root} -- the eval gen "
+            "phase produced nothing; refusing to terminate with empty buckets"
+        )
+    n_expected = 0
+    for f in files:
+        rel = f.relative_to(reg_root).as_posix()  # <cell>/completions__<col>__<ctx>.json
+        hub._upload(
+            f,
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{prefix}/{rel}",
+            upload_as_file=True,  # gotchas: per-file _upload needs this
+        )
+        n_expected += 1
+    # verify on a FRESH listing (Python Hub API, never the hf CLI).
+    landed = [
+        p for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset") if p.startswith(prefix)
+    ]
+    if len(landed) < n_expected:
+        raise RuntimeError(
+            f"[p3-upload] raw-completions verify FAILED: {len(landed)} on Hub < "
+            f"{n_expected} expected under {prefix}"
+        )
+    logger.info(
+        "[p3-upload] %d raw-completion files uploaded + verified -> %s/%s",
+        n_expected,
+        C.HF_DATA_REPO,
+        prefix,
+    )
 
 
 def _upload_store_tensors(cells: list[C.Cell]) -> None:
