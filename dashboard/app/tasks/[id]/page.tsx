@@ -23,6 +23,7 @@ import {
 } from "@/components/tasks/TaskTocSidebar";
 import { EditableBody } from "./EditableBody";
 import { TaskBodyMarkdown } from "./TaskBodyMarkdown";
+import { TaskDataViewer } from "./TaskDataViewer";
 import { TaskFeed } from "./TaskFeed";
 import { type TaskCommentView } from "./TaskCommentBody";
 import { TitleEditor } from "./TitleEditor";
@@ -190,6 +191,15 @@ export default async function TaskDetail({
                       canEdit={canEdit}
                     />
                   );
+                  // The interactive data viewer pins directly below the body
+                  // card (it reads the body's figures). It self-hides when the
+                  // task has no figure data, so it's safe to always mount here.
+                  if (it.kind === "body") {
+                    return [
+                      row,
+                      <TaskDataViewer key="data-viewer" taskId={id} />,
+                    ];
+                  }
                   if (it.itemKey === firstTimelineKey) {
                     return [
                       <div
