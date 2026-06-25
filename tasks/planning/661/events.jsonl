@@ -9,3 +9,4 @@
 {"ts": "2026-06-25T00:32:52Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqsrpg3h-ki67pr phase=done after 30s."}
 {"ts": "2026-06-25T00:33:00Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqsrqa6q-4hggxd effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-25T00:33:02Z", "kind": "epm:codex-task-failed", "version": 1, "by": "codex_task", "note": "job_id=task-mqsrqbul-wifmlg: post-spawn probe failed (probe-error): No job found for \"task-mqsrqbul-wifmlg\". Run /codex:status to list known jobs.\n (exhausted 1 transient re-dispatch(es))"}
+{"ts": "2026-06-25T00:35:02Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqsrqa6q-4hggxd phase=done after 121s."}
