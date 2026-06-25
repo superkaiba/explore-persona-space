@@ -520,7 +520,14 @@ def _extract_cmd(
     if cpu_only:
         cmd += ["--cpu-only"]
     # CVD pinned in the LAUNCHER env per cell (#545) — NOT only via --gpu-id.
-    env = {"CUDA_VISIBLE_DEVICES": "" if cpu_only else str(gpu_id)}
+    # VLLM_WORKER_MULTIPROC_METHOD=spawn: belt-and-suspenders for the extract's
+    # vLLM EngineCore fork (gotchas.md § entry 26). The extractor sets this at
+    # module top too; injecting it into the per-cell subprocess env guards
+    # against a future import-reorder re-poisoning the path (#667 r5).
+    env = {
+        "CUDA_VISIBLE_DEVICES": "" if cpu_only else str(gpu_id),
+        "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
+    }
     log_path = _log_dir() / f"extract_{behavior}_{source}.log"
     return cmd, log_path, env
 
