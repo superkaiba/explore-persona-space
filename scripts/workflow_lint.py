@@ -596,7 +596,6 @@ BATCH_JUDGE_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
         # NOT data-gen — flagged so the allowlist rationale stays honest:
         "scripts/analyze_axis_tails.py",  # LLM-taxonomy ANALYSIS classifier
         "scripts/i528_phase4_judge.py",  # pre-#663 JUDGE — migrate to eval.batch_judge (follow-up)
-        "scripts/issue658_judge_e0_batch.py",  # pre-#663 JUDGE (live #658 incident) — migrating to eval.batch_judge; DROP on migration merge
     }
 )
 BATCH_JUDGE_CLIENT_WAIVER_RE = re.compile(r"#\s*BATCH_JUDGE_CLIENT_EXEMPT\s*:\s*(.+?)\s*$")

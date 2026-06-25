@@ -117,7 +117,10 @@ def submit_and_collect(
     input data; a checkpoint from a different ``--e0-dir`` must be removed first.
     """
     # Shared #663 client: create + bounded poll + results + cancel. Its
-    # underlying anthropic.Anthropic uses max_retries=5 (SDK 429/5xx backoff).
+    # underlying anthropic.Anthropic uses the SDK-default max_retries (2 on the
+    # pinned SDK) — down from this script's pre-migration 8; deliberate, the cost
+    # of consolidating onto the shared client. Per-shard failures surface as
+    # `shard_incomplete` and recover on the next checkpoint/resume run.
     batch_client = AnthropicBatch()
 
     # Resume: load any verdicts judged in a prior (interrupted) run so a mid-run
