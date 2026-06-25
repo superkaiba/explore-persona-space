@@ -90,6 +90,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # numeric floor so an all-equal saturated/floored behavior is flagged H3.
 DYNAMIC_RANGE_STD_MIN = 1e-6
 DELTA_CI_SEED = 658
+# Registered ≥2000 INDEPENDENT resamples per arm (plan v3 §6/§6.5/§11; mirrors
+# issue658_fit_predictors.N_BOOTSTRAP). Every dynamic-range cell's Δρ CI must use
+# at least this many draws.
+MIN_RESAMPLES_PRODUCTION = 2000
+# Smoke clamp: the fit's --smoke run sets N_BOOTSTRAP=200, so the smoke arms emit
+# 200 draws. The smoke Δρ floor matches so the smoke runs end-to-end without
+# --smoke-allow-small-bootstrap; production is NEVER allowed to drop to this.
+MIN_RESAMPLES_SMOKE = 200
 
 
 def _e0_per_context_values(e0: dict, column_id: str) -> list[float]:
@@ -158,24 +166,51 @@ def _best_cell_draws(agg: dict, a32_cells: list[dict], column_id: str) -> dict |
     return None
 
 
-def _delta_rho_ci(uc_draws: list[float], betley_draws: list[float], *, seed: int) -> dict:
+def _delta_rho_ci(
+    uc_draws: list[float],
+    betley_draws: list[float],
+    *,
+    seed: int,
+    min_resamples: int,
+    behavior: str,
+) -> dict:
     """95% Δρ CI from an INDEPENDENT cluster bootstrap of the two arms' ρ draws.
 
     The two arms have DISJOINT probes, so no paired resampling is possible. Each
     arm's ``draws`` is its own context-clustered bootstrap distribution of the
     best-cell ρ. We form the Δρ distribution by pairing the i-th draw of each arm
     INDEPENDENTLY (after a deterministic shuffle of each arm so draw order carries
-    no spurious correlation), to ``min(len)`` draws (≥2000 in production, the smoke
-    clamp's ~200 otherwise). Returns the 2.5/97.5 percentiles + ``null_overlap``.
+    no spurious correlation), to ``min(len)`` draws. Returns the 2.5/97.5
+    percentiles + ``null_overlap``.
+
+    The registered procedure (plan v3 §6/§6.5/§11) is ≥2000 INDEPENDENT resamples
+    PER ARM. ``min_resamples`` is that floor (2000 in production, the smoke clamp's
+    value otherwise — passed by the caller). If the per-index pairing would draw
+    fewer than ``min_resamples`` Δρ samples (e.g. a degenerate-resample drop left an
+    arm's ``draws`` short) this RAISES rather than silently bootstrapping the Δρ CI
+    from too few draws — the smoke path's ``--smoke-allow-small-bootstrap`` flag is
+    the only way to relax the floor, and it must be EXPLICIT (never a permissive
+    default).
     """
     rng = np.random.default_rng(seed)
     a = np.asarray(uc_draws, dtype=np.float64)
     b = np.asarray(betley_draws, dtype=np.float64)
+    m = int(min(len(a), len(b)))
+    if m < min_resamples:
+        raise ValueError(
+            f"Δρ CI for behavior '{behavior}': only {m} paired bootstrap draws "
+            f"available (UltraChat arm {len(a)}, Betley arm {len(b)}) but the "
+            f"registered procedure requires ≥{min_resamples} INDEPENDENT resamples "
+            "per arm (plan v3 §6/§6.5/§11). A dynamic-range cell must carry the full "
+            "bootstrap — a degenerate-resample drop in issue658_fit_predictors."
+            "_cluster_bootstrap_rho left an arm's draws short. Re-run the fit so "
+            "both arms emit ≥min_resamples draws, or (smoke ONLY) pass "
+            "--smoke-allow-small-bootstrap to relax this floor."
+        )
     # Independent draws → independent shuffle of each arm before the per-index diff
     # (the diff of two independent bootstrap distributions; not a paired resample).
     rng.shuffle(a)
     rng.shuffle(b)
-    m = int(min(len(a), len(b)))
     diff = a[:m] - b[:m]
     lower = float(np.percentile(diff, 2.5))
     upper = float(np.percentile(diff, 97.5))
@@ -210,9 +245,33 @@ def _verdict(
 
 
 def compute_genre_delta(
-    betley_dir: Path, ultrachat_dir: Path, *, smoke: bool, seed: int = DELTA_CI_SEED
+    betley_dir: Path,
+    ultrachat_dir: Path,
+    *,
+    smoke: bool,
+    seed: int = DELTA_CI_SEED,
+    allow_small_bootstrap: bool = False,
 ) -> dict:
-    """Per-behavior Δρ + 95% Δρ CI table over both arms (plan v3 §6.5 schema)."""
+    """Per-behavior Δρ + 95% Δρ CI table over both arms (plan v3 §6.5 schema).
+
+    Every behavior with dynamic range on BOTH pools MUST carry a
+    ``delta_rho_ci {lower, upper, n_resamples, null_overlap}`` built from
+    ≥``min_resamples`` INDEPENDENT bootstrap draws per arm (plan v3 §6.5); only
+    H3 (no dynamic range on both pools) rows carry ``delta_rho_ci: null``. A
+    dynamic-range cell whose best (layer, summary) cell is missing or whose
+    bootstrap ``draws`` are absent / shorter than ``min_resamples`` RAISES — never
+    a silent ``delta_rho_ci: null``. ``min_resamples`` is ``MIN_RESAMPLES_PRODUCTION``
+    (2000) outside smoke; ``MIN_RESAMPLES_SMOKE`` in smoke; and may be relaxed ONLY
+    when ``allow_small_bootstrap`` is set (smoke-only escape hatch).
+    """
+    if allow_small_bootstrap and not smoke:
+        raise ValueError(
+            "allow_small_bootstrap is a SMOKE-ONLY escape hatch — it cannot be set "
+            "outside --smoke (production requires ≥2000 resamples per arm)."
+        )
+    min_resamples = (
+        1 if allow_small_bootstrap else (MIN_RESAMPLES_SMOKE if smoke else MIN_RESAMPLES_PRODUCTION)
+    )
     suffix = "_smoke" if smoke else ""
     b_agg_p = betley_dir / f"aggregate{suffix}.json"
     b_cells_p = betley_dir / f"a32_cells{suffix}.json"
@@ -258,8 +317,9 @@ def compute_genre_delta(
         both_dyn = b_var["dynamic_range"] and u_var["dynamic_range"]
         b_best = _best_cell_draws(b_agg, b_cells, col)
         u_best = _best_cell_draws(u_agg, u_cells, col)
-        # No dynamic range on both pools, or no scored cell → H3, no Δρ CI.
-        if not both_dyn or b_best is None or u_best is None:
+        # Legitimate H3: NOT dynamic-range on both pools → no Δρ CI computed (plan
+        # v3 §6.5: "floored behaviors flagged N/A"; only H3 rows carry null CI).
+        if not both_dyn:
             rows.append(
                 {
                     "behavior": col,
@@ -275,32 +335,61 @@ def compute_genre_delta(
                 }
             )
             continue
+        # CONTRACT (plan v3 §6.5): a dynamic-range cell (both arms dynamic-range)
+        # MUST carry a full Δρ CI. A missing best (layer, summary) cell, or a best
+        # cell without bootstrap draws, is an upstream contract violation — fail
+        # loud with the offending arm + cause + cached input path, NEVER a silent
+        # delta_rho_ci: null. (Removed the legacy `delta-ci-unavailable-no-draws`
+        # verdict — Codex r1 BLOCKER + concern genre-delta-ci-contract-unenforced.)
+        if b_best is None:
+            raise RuntimeError(
+                f"genre-delta contract violation for dynamic-range behavior '{col}': "
+                f"the Betley arm has dynamic range (std={b_var['std']}) but no scored "
+                f"best (layer, summary) cell in aggregate.json::a32_verdicts. A "
+                "dynamic-range cell must carry a Δρ CI (plan v3 §6.5). Re-run the "
+                f"Betley fit so the behavior has a scored best cell. Cached input: {b_cells_p}"
+            )
+        if u_best is None:
+            raise RuntimeError(
+                f"genre-delta contract violation for dynamic-range behavior '{col}': "
+                f"the UltraChat arm has dynamic range (std={u_var['std']}) but no scored "
+                f"best (layer, summary) cell in aggregate.json::a32_verdicts. A "
+                "dynamic-range cell must carry a Δρ CI (plan v3 §6.5). Re-run the "
+                f"UltraChat fit so the behavior has a scored best cell. Cached input: {u_cells_p}"
+            )
         rho_uc = u_best["rho"]
         rho_betley = b_best["rho"]
         delta_rho = rho_uc - rho_betley
         # Both arms must carry bootstrap draws to form the independent Δρ CI; a
-        # tiny cell (n<4) emits draws=None → report Δρ point with null CI.
-        if not u_best.get("draws") or not b_best.get("draws"):
-            rows.append(
-                {
-                    "behavior": col,
-                    "layer_uc": u_best["layer"],
-                    "recipe_uc": u_best["recipe"],
-                    "layer_betley": b_best["layer"],
-                    "recipe_betley": b_best["recipe"],
-                    "rho_ultrachat": rho_uc,
-                    "rho_betley": rho_betley,
-                    "delta_rho": delta_rho,
-                    "delta_rho_ci": None,
-                    "uc_noise_floor_95": u_best.get("noise_floor_p95"),
-                    "betley_noise_floor_95": b_best.get("noise_floor_p95"),
-                    "uc_dynamic_range": True,
-                    "betley_dynamic_range": True,
-                    "verdict": "delta-ci-unavailable-no-draws",
-                }
+        # dynamic-range cell missing draws is the upstream _cluster_bootstrap_rho
+        # contract violation — fail loud (cause: draws missing), never a null CI.
+        if not u_best.get("draws"):
+            raise RuntimeError(
+                f"genre-delta contract violation for dynamic-range behavior '{col}': "
+                f"the UltraChat arm's best cell (layer {u_best['layer']}, recipe "
+                f"{u_best['recipe']}) has NO bootstrap draws (cause: draws missing). A "
+                "dynamic-range cell must carry a ≥2000-resample Δρ CI (plan v3 §6.5); "
+                "issue658_fit_predictors._cluster_bootstrap_rho should have emitted "
+                f"draws for this n>=4 cell. Re-run the UltraChat fit. Cached input: {u_cells_p}"
             )
-            continue
-        delta_ci = _delta_rho_ci(u_best["draws"], b_best["draws"], seed=seed)
+        if not b_best.get("draws"):
+            raise RuntimeError(
+                f"genre-delta contract violation for dynamic-range behavior '{col}': "
+                f"the Betley arm's best cell (layer {b_best['layer']}, recipe "
+                f"{b_best['recipe']}) has NO bootstrap draws (cause: draws missing). A "
+                "dynamic-range cell must carry a ≥2000-resample Δρ CI (plan v3 §6.5); "
+                "issue658_fit_predictors._cluster_bootstrap_rho should have emitted "
+                f"draws for this n>=4 cell. Re-run the Betley fit. Cached input: {b_cells_p}"
+            )
+        # The ≥min_resamples (cause: draws too short) floor is enforced inside
+        # _delta_rho_ci, which raises naming the behavior + per-arm draw counts.
+        delta_ci = _delta_rho_ci(
+            u_best["draws"],
+            b_best["draws"],
+            seed=seed,
+            min_resamples=min_resamples,
+            behavior=col,
+        )
         verdict = _verdict(
             delta_ci,
             rho_uc,
@@ -403,12 +492,27 @@ def main() -> int:
     )
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument(
+        "--smoke-allow-small-bootstrap",
+        action="store_true",
+        help="SMOKE-ONLY: relax the ≥2000-resample Δρ CI floor (plan v3 §6/§6.5/§11) "
+        "to accept arms with fewer than the registered draw count. Requires --smoke; "
+        "production NEVER relaxes the floor. For tiny test fixtures only.",
+    )
     parser.add_argument("--no-figure", action="store_true", help="skip the matplotlib figure")
     args = parser.parse_args()
 
+    if args.smoke_allow_small_bootstrap and not args.smoke:
+        parser.error("--smoke-allow-small-bootstrap requires --smoke (production keeps ≥2000)")
+
     ultra_dir = args.ultrachat_dir
     out = args.out or (ultra_dir / ("genre_delta_smoke.json" if args.smoke else "genre_delta.json"))
-    result = compute_genre_delta(args.betley_dir, ultra_dir, smoke=args.smoke)
+    result = compute_genre_delta(
+        args.betley_dir,
+        ultra_dir,
+        smoke=args.smoke,
+        allow_small_bootstrap=args.smoke_allow_small_bootstrap,
+    )
     out.parent.mkdir(parents=True, exist_ok=True)
     dump_json(result, out)
     logger.info(
