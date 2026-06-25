@@ -15,6 +15,8 @@ Two groups:
    first CUDA call.
 """
 
+# ruff: noqa: RUF002, RUF003  # math/scientific notation in docstrings + comments
+
 from __future__ import annotations
 
 import sys
@@ -30,14 +32,21 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from explore_persona_space.analysis.issue667.gate_chain import (  # noqa: E402
     a37_source_write,
+    clustered_bootstrap_partial_spearman,
     clustered_bootstrap_spearman,
     default_lambda,
     family_of,
+    key_query_drift,
+    lambda_condition_sweep,
+    oracle_gplus,
+    partial_shuffled_null_ci,
     partial_spearman,
+    predict_mean_baseline,
     readout_projection,
     realized_gate,
     shuffled_null_ci,
     stacked_delta_svd,
+    true_cosine,
     whitened_gate,
     whitened_gate_metric,
     whitened_gate_reduction_unit_test,
@@ -67,15 +76,37 @@ def test_whitened_gate_self_is_one():
     assert abs(whitened_gate(c, c, sigma, lam=0.0) - 1.0) < 1e-9
 
 
-def test_whitened_gate_equals_cosine_when_identity():
-    """metric='I' is exactly the self-normalized cosine ratio."""
+def test_identity_metric_is_self_normalized_projection_not_true_cosine():
+    """metric='I' is the self-normalized projection a·b/(a·a), NOT true cosine (MAJOR 2).
+
+    On unequal-norm vectors the self-normalized I metric and true cosine differ;
+    the test the round-1 code wrote (`test_whitened_gate_equals_cosine_when_identity`)
+    blessed the wrong formula by calling a·b/(a·a) "cosine".
+    """
     torch.manual_seed(1)
     d = 16
-    c = torch.randn(d, dtype=torch.float64)
-    cp = torch.randn(d, dtype=torch.float64)
+    c = torch.randn(d, dtype=torch.float64) * 3.0  # large norm
+    cp = torch.randn(d, dtype=torch.float64) * 0.2  # small norm (unequal)
     g_I = whitened_gate_metric(c, cp, "I", None, 0.0)
-    expected = float((c @ cp) / (c @ c))
-    assert abs(g_I - expected) < 1e-9
+    self_norm = float((c @ cp) / (c @ c))
+    assert abs(g_I - self_norm) < 1e-9
+    # True cosine uses BOTH norms and DIFFERS from the self-normalized projection.
+    cos = true_cosine(c, cp)
+    expected_cos = float((c @ cp) / (torch.linalg.norm(c) * torch.linalg.norm(cp)))
+    assert abs(cos - expected_cos) < 1e-9
+    assert abs(cos - g_I) > 1e-6  # the two are genuinely different on unequal norms
+
+
+def test_true_cosine_symmetric_and_bounded():
+    """true_cosine is symmetric, in [-1, 1], and 1.0 for parallel vectors."""
+    rng = np.random.default_rng(0)
+    a = rng.normal(size=20)
+    b = rng.normal(size=20)
+    ta, tb = torch.from_numpy(a), torch.from_numpy(b)
+    assert abs(true_cosine(ta, tb) - true_cosine(tb, ta)) < 1e-12  # symmetric
+    assert -1.0 - 1e-9 <= true_cosine(ta, tb) <= 1.0 + 1e-9  # bounded
+    assert true_cosine(ta, 3.0 * ta) == pytest.approx(1.0)  # parallel -> 1
+    assert true_cosine(ta, torch.zeros(20, dtype=torch.float64)) == 0.0  # zero-safe
 
 
 def test_whitened_gate_diag_differs_from_identity_under_anisotropy():
@@ -404,3 +435,328 @@ def test_context_vector_all_layers_shape():
     finally:
         ex.N_LAYERS = orig
         pkg.N_LAYERS = orig
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Oracle post-FT gate g+  (A3.10, BLOCKER 1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_oracle_gplus_uses_postft_vectors():
+    """oracle g+ = (c_C+, c_C'+, M0) reads the POST-FT key/query, not the base ones.
+
+    With Sigma_c=I/equal-norm it reduces to the self-normalized projection of
+    the post-FT vectors — and DIFFERS from the base-side gate when the post-FT
+    vectors differ from base (the whole point of A3.10).
+    """
+    d = 16
+    sigma = torch.eye(d, dtype=torch.float64)
+    rng = np.random.default_rng(0)
+    c_c = torch.from_numpy(rng.normal(size=d))
+    c_cp = torch.from_numpy(rng.normal(size=d))
+    # post-FT vectors = base + a non-trivial drift.
+    c_c_post = c_c + 0.5 * torch.from_numpy(rng.normal(size=d))
+    c_cp_post = c_cp + 0.5 * torch.from_numpy(rng.normal(size=d))
+    g0 = whitened_gate(c_c, c_cp, sigma, lam=0.0)
+    gplus = oracle_gplus(c_c_post, c_cp_post, sigma, lam=0.0)
+    # oracle reads the post-FT vectors -> equals the post-FT self-normalized gate
+    expected = float((c_c_post @ c_cp_post) / (c_c_post @ c_c_post))
+    assert abs(gplus - expected) < 1e-9
+    assert abs(gplus - g0) > 1e-6  # genuinely uses different (post-FT) inputs
+
+
+def test_key_query_drift_is_relative_norm():
+    """key_query_drift = ‖c+ − c‖ / ‖c‖; 0 for no drift, nan for zero base."""
+    c = np.array([3.0, 4.0])  # ‖c‖ = 5
+    assert key_query_drift(c, c) == pytest.approx(0.0)
+    cp = c + np.array([0.0, 5.0])  # ‖Δ‖ = 5
+    assert key_query_drift(c, cp) == pytest.approx(1.0)
+    assert np.isnan(key_query_drift(np.zeros(2), np.ones(2)))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAJOR 3 — partial-statistic bootstrap + null match the primary
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_partial_clustered_bootstrap_point_equals_partial_spearman():
+    """On a confounded dataset the bootstrap POINT == the reported partial-Spearman.
+
+    x = z + small noise (so raw Spearman(x, g) is high via the confound), y = z
+    + 2x signal. The bootstrap point must equal partial_spearman(x, y, z) — the
+    HEADLINE statistic — not raw Spearman (MAJOR 3).
+    """
+    rng = np.random.default_rng(11)
+    n = 60
+    z = rng.normal(size=n)
+    x = z + 0.05 * rng.normal(size=n)  # x ~ z (confounded)
+    y = z + 2.0 * x + 0.1 * rng.normal(size=n)
+    fams = (["a"] * 20) + (["b"] * 20) + (["c"] * 20)
+    point = partial_spearman(x, y, z)
+    boot = clustered_bootstrap_partial_spearman(x, y, z, fams, n_resamples=300)
+    assert boot["point"] == pytest.approx(point, abs=1e-9)
+    assert boot["ci_lo"] <= boot["point"] <= boot["ci_hi"]
+    assert boot["n_families"] == 3
+
+
+def test_partial_null_brackets_zero_under_confound_only():
+    """When x is independent of the y-on-z residual, the partial null brackets 0.
+
+    y = z + independent noise (non-degenerate residual), x independent of both:
+    the partial signal is ~0 and the shuffle-x null distribution must straddle 0.
+    """
+    rng = np.random.default_rng(12)
+    n = 60
+    z = rng.normal(size=n)
+    y = z + 0.5 * rng.normal(size=n)  # residual is non-degenerate but x-independent
+    x = rng.normal(size=n)  # independent of the residual
+    null = partial_shuffled_null_ci(x, y, z, n_reps=300)
+    assert null["null_lo"] < 0 < null["null_hi"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAJOR 4 — lambda condition-number sweep
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_lambda_sweep_records_cond_per_fraction():
+    """The sweep returns one {fraction, lambda, cond} per ridge; cond drops as lambda grows."""
+    d = 8
+    # ill-conditioned PSD: a near-rank-deficient Gram + a tiny floor.
+    rng = np.random.default_rng(3)
+    a = torch.from_numpy(rng.normal(size=(d, 2)))
+    sigma = a @ a.T + 1e-6 * torch.eye(d, dtype=torch.float64)
+    recs = lambda_condition_sweep(sigma, fractions=(1e-3, 1e-2, 1e-1, 1.0))
+    assert [r["fraction"] for r in recs] == [1e-3, 1e-2, 1e-1, 1.0]
+    conds = [r["cond"] for r in recs]
+    # more ridge -> better conditioning (monotone non-increasing cond).
+    assert all(conds[i] >= conds[i + 1] for i in range(len(conds) - 1))
+    assert all(np.isfinite(r["lambda"]) for r in recs)
+
+
+def test_predict_mean_baseline_mae():
+    """predict-mean baseline MAE == mean absolute deviation from the mean."""
+    t = np.array([1.0, 2.0, 3.0, 4.0])  # mean 2.5, MAD = 1.0
+    out = predict_mean_baseline(t)
+    assert out["mean"] == pytest.approx(2.5)
+    assert out["mae"] == pytest.approx(1.0)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F3-ICL t+/t- positive split (CONCERN a37-icl-source-tpos-tneg-gap)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_is_icl_prompt_matches_kshot_pattern():
+    """_is_icl_prompt tags the k-shot demo role-pattern, disjoint from negatives."""
+    import issue667_extract as ex
+
+    # icl_k2: 2 demo pairs + final user question = 5 turns.
+    icl_k2 = [
+        {"role": "user", "content": "d1q"},
+        {"role": "assistant", "content": "d1a"},
+        {"role": "user", "content": "d2q"},
+        {"role": "assistant", "content": "d2a"},
+        {"role": "user", "content": "real?"},
+    ]
+    assert ex._is_icl_prompt(icl_k2, 2)
+    assert not ex._is_icl_prompt(icl_k2, 8)  # wrong k
+    # negative-panel shapes are NOT tagged as ICL positives.
+    assert not ex._is_icl_prompt(
+        [{"role": "system", "content": "S"}, {"role": "user", "content": "q"}], 2
+    )
+    assert not ex._is_icl_prompt([{"role": "user", "content": "q"}], 2)
+    assert not ex._is_icl_prompt(
+        [
+            {"role": "user", "content": "a"},
+            {"role": "assistant", "content": "b"},
+            {"role": "user", "content": "q"},
+        ],
+        2,
+    )  # wc_short 1-turn (would be k=1, not the source's k=2)
+    assert not ex._is_icl_prompt(icl_k2, 0)  # non-F3 source -> never ICL-positive
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cached-artifact coverage validators (BLOCKER 3) — synthetic fixtures
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _synthetic_cells(behavior: str, sources, targets, hidden=8):
+    rng = np.random.default_rng(0)
+    cells = {behavior: {}}
+    for s in sources:
+        for t in [s, *targets]:
+            cells[behavior][(s, t)] = {
+                "c_C": rng.normal(size=hidden).astype(np.float32),
+                "c_Cp": rng.normal(size=hidden).astype(np.float32),
+                "v0": rng.normal(size=hidden).astype(np.float32),
+                "v_plus": rng.normal(size=hidden).astype(np.float32),
+            }
+    return cells
+
+
+def test_validate_g_meta_coverage_missing_cell_raises():
+    import issue667_analysis as ana
+
+    cells = _synthetic_cells("em", ["default", "sp_swe"], ["fmt_json"])
+    # G_meta missing the (sp_swe, fmt_json) cell.
+    g_meta = {
+        "per_cell": {
+            "em/default__default": {"g": 1.0, "base_rate": 0.1, "noise_var_bootstrap": 0.01},
+            "em/default__fmt_json": {"g": 1.0, "base_rate": 0.1, "noise_var_bootstrap": 0.01},
+            "em/sp_swe__sp_swe": {"g": 1.0, "base_rate": 0.1, "noise_var_bootstrap": 0.01},
+            # em/sp_swe__fmt_json deliberately ABSENT
+        }
+    }
+    with pytest.raises(ana.CoverageError, match="missing per_cell"):
+        ana.validate_g_meta_coverage(g_meta, cells)
+
+
+def test_validate_g_meta_coverage_missing_field_raises():
+    import issue667_analysis as ana
+
+    cells = _synthetic_cells("em", ["default"], [])
+    g_meta = {"per_cell": {"em/default__default": {"g": 1.0, "base_rate": 0.1}}}  # no noise_var
+    with pytest.raises(ana.CoverageError, match="missing required fields"):
+        ana.validate_g_meta_coverage(g_meta, cells)
+
+
+def test_validate_g_meta_coverage_passes_when_complete():
+    import issue667_analysis as ana
+
+    cells = _synthetic_cells("em", ["default"], ["fmt_json"])
+    g_meta = {
+        "per_cell": {
+            f"em/default__{t}": {"g": 1.0, "base_rate": 0.1, "noise_var_bootstrap": 0.01}
+            for t in ("default", "fmt_json")
+        }
+    }
+    ana.validate_g_meta_coverage(g_meta, cells)  # no raise
+
+
+def test_validate_sigma_c_coverage_wrong_shape_raises():
+    import issue667_analysis as ana
+
+    from explore_persona_space.analysis.issue667 import HIDDEN_SIZE, N_LAYERS
+
+    # wrong shape
+    bad = {"sigma_c": torch.zeros(N_LAYERS, 8, 8), "n": 1, "capture_layers": list(range(N_LAYERS))}
+    with pytest.raises(ana.CoverageError, match="shape"):
+        ana.validate_sigma_c_coverage(bad, [14])
+    # missing layer
+    good_shape = {
+        "sigma_c": torch.zeros(N_LAYERS, HIDDEN_SIZE, HIDDEN_SIZE),
+        "n": 1,
+        "capture_layers": [0, 1, 2],
+    }
+    with pytest.raises(ana.CoverageError, match="capture_layers missing"):
+        ana.validate_sigma_c_coverage(good_shape, [14])
+    # missing key
+    with pytest.raises(ana.CoverageError, match="missing required key"):
+        ana.validate_sigma_c_coverage(
+            {"sigma_c": torch.zeros(N_LAYERS, HIDDEN_SIZE, HIDDEN_SIZE)}, [0]
+        )
+
+
+def test_validate_cid_coverage_unregistered_source_raises():
+    import issue667_analysis as ana
+
+    g_tensor = {
+        "behaviors": np.array(["em"]),
+        "train_cids": np.array([["default", "sp_swe"]]),
+        "eval_cids": np.array([["default", "sp_swe", "fmt_json"]]),
+    }
+    # extracted a source NOT in train_cids
+    cells = {"em": {("not_a_train_cid", "default"): {}}}
+    with pytest.raises(ana.CoverageError, match="train_cids"):
+        ana.validate_cid_coverage(g_tensor, cells)
+    # extracted a target NOT in eval_cids
+    cells2 = {"em": {("default", "not_an_eval_cid"): {}}}
+    with pytest.raises(ana.CoverageError, match="eval_cids"):
+        ana.validate_cid_coverage(g_tensor, cells2)
+    # all registered -> passes
+    cells3 = {"em": {("default", "fmt_json"): {}, ("sp_swe", "sp_swe"): {}}}
+    ana.validate_cid_coverage(g_tensor, cells3)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# A3.10 analysis-level: oracle g+ + g0 fields populate, NOT a relabeled A3.9
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_a310_reports_oracle_and_g0_distinct_from_a39(tmp_path):
+    """A3.10 JSON carries oracle_gplus_vs_realized AND g0_vs_realized as NUMERIC values,
+    and g0_vs_realized is NOT byte-copied from A3.9's whitened spearman (BLOCKER 1).
+
+    Builds a synthetic store with non-trivial post-FT key/query drift so the
+    oracle and base gates genuinely differ, runs run_a39_a310 directly.
+    """
+    import issue667_analysis as ana
+
+    hidden = 12
+    rng = np.random.default_rng(7)
+    sigma_c = torch.eye(hidden, dtype=torch.float64)
+    sources = ["default", "sp_swe"]
+    targets = ["fmt_json", "wc_short_code", "reph_imp", "reph_polite", "fmt_code", "wc_long_write"]
+    cells = {"em": {}}
+    g_meta = {"per_cell": {}}
+    for s in sources:
+        w = rng.normal(size=hidden)  # source write direction
+        v0_s = rng.normal(size=hidden)
+        c_c = rng.normal(size=hidden)
+        for t in [s, *targets]:
+            v0 = v0_s if t == s else rng.normal(size=hidden)
+            gate = 1.0 if t == s else rng.uniform(0.1, 0.9)
+            vp = v0 + gate * w
+            c_cp = c_c if t == s else rng.normal(size=hidden)
+            cells["em"][(s, t)] = {
+                "v0": v0.astype(np.float32),
+                "v_plus": vp.astype(np.float32),
+                "c_C": c_c.astype(np.float32),
+                "c_Cp": c_cp.astype(np.float32),
+                # non-trivial post-FT drift on key + query.
+                "c_C_postft": (c_c + 0.3 * rng.normal(size=hidden)).astype(np.float32),
+                "c_Cp_postft": (c_cp + 0.3 * rng.normal(size=hidden)).astype(np.float32),
+            }
+            g_meta["per_cell"][f"em/{s}__{t}"] = {
+                "g": float(rng.normal()),
+                "base_rate": float(rng.uniform(0, 0.3)),
+                "noise_var_bootstrap": 0.01,
+            }
+    a39, a310 = ana.run_a39_a310({"em": cells["em"]}, sigma_c, 14, g_meta=g_meta)
+    em9 = a39["by_behavior"]["em"]
+    em10 = a310["by_behavior"]["em"]
+    assert em10["status"] == "ok"
+    # both fields present + numeric (not None/NaN)
+    for field in (
+        "oracle_gplus_vs_realized_spearman",
+        "g0_vs_realized_spearman",
+        "g0_vs_oracle_spearman",
+        "key_query_drift_mean",
+    ):
+        assert field in em10, field
+        assert np.isfinite(em10[field]), f"{field} not numeric: {em10[field]}"
+    # A3.10 is NOT a relabel of A3.9 (the round-1 stub bug). The oracle (post-FT
+    # key/query) and g0 (base key/query) are genuinely different predictors, so
+    # their mutual rank correlation is < 1.0 (they would be identical only if the
+    # post-FT vectors equalled the base ones). g0_vs_oracle_spearman can only
+    # exist at all if both gates were computed separately.
+    assert "g0_vs_oracle_spearman" in em10
+    assert abs(em10["g0_vs_oracle_spearman"]) < 1.0 - 1e-9
+    # g0_vs_realized IS the same base-side whitened gate A3.9 boxes (correct +
+    # expected); the BLOCKER-1 fix is that the SEPARATE oracle field now exists.
+    assert em10["g0_vs_realized_spearman"] == pytest.approx(em9["boxed_primary_spearman"])
+    # the full 3x3 key×metric grid is populated (MAJOR 1)
+    assert set(em9["key_metric_grid"].keys()) == {"c_C", "psi_t", "psi_delta"}
+    for key in em9["key_metric_grid"]:
+        assert set(em9["key_metric_grid"][key].keys()) == {"I", "diag", "whitened"}
+    # true-cosine baseline + controls present (MAJOR 1/2)
+    for field in (
+        "true_cosine_baseline_spearman",
+        "shuffled_key_control_spearman",
+        "shuffled_query_control_spearman",
+        "lambda_sweep",
+    ):
+        assert field in em9, field
+    assert len(em9["lambda_sweep"]) == 5  # MAJOR 4: 5 ridge fractions

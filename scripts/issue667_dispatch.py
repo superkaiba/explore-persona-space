@@ -47,7 +47,7 @@ Smoke (the unified single-cell sweep)::
         --layers 14 --primary-layer 14 --smoke
 """
 
-# math/scientific notation in docstrings + messages
+# ruff: noqa: RUF002, RUF003  # math/scientific notation in docstrings + messages
 
 from __future__ import annotations
 
@@ -247,13 +247,30 @@ def phase_prefetch(*, behaviors: list[str], cpu_only: bool, skip_parity: bool) -
     logger.info("registry_hash OK (== G_meta pin): %s", rh[:16])
 
     # SHA-pin the #537 G_meta git_commit + #658 store probe_pool_hash.
-    from issue667_analysis import assert_store_pin, load_g_meta
+    from issue667_analysis import (
+        assert_store_pin,
+        load_g_meta,
+        load_sigma_c_dict,
+        validate_r_b_coverage,
+        validate_sigma_c_coverage,
+    )
 
     g_meta = load_g_meta()
     logger.info("G_meta git_commit pin OK: %s", g_meta["git_commit"][:16])
     assert_store_pin()
     logger.info("#658 store probe_pool_hash pin OK: %s", EXPECTED_STORE_PROBE_POOL_HASH[:16])
     logger.info("EXPECTED_G_META_GIT_COMMIT=%s", EXPECTED_G_META_GIT_COMMIT[:16])
+
+    # Standalone cached-artifact coverage validators (BLOCKER 3): r_b columns/
+    # recipe/layers + sigma_c shape/keys/layers — checkable pre-extract. The
+    # cell-dependent G_meta-per-cell + cid-coverage checks run in the analysis
+    # phase (they need the realized cell set). Fail loud here on any miss.
+    from explore_persona_space.analysis.issue667 import ALL_LAYERS
+
+    in_scope_layers = sorted(set(ALL_LAYERS))
+    validate_r_b_coverage(behaviors, in_scope_layers)
+    validate_sigma_c_coverage(load_sigma_c_dict(), in_scope_layers)
+    logger.info("standalone coverage validation PASS (r_b columns/recipe/layers, sigma_c shape)")
 
     # rsLoRA parity probe (fitness check (g)) — 1 adapter reproduces #537's
     # diagonal source write at the committed gauge. HALT on mismatch.
@@ -264,30 +281,135 @@ def phase_prefetch(*, behaviors: list[str], cpu_only: bool, skip_parity: bool) -
     logger.info("[phase=prefetch_done]")
 
 
-def _rslora_parity_probe(behavior: str, *, cpu_only: bool) -> None:
-    """Apply 1 adapter, confirm the gauge asserts pass + a non-trivial source write.
+# Minimum diagonal-write magnitude ratio ‖Δv(C)‖/‖v0(C)‖ for a real rsLoRA
+# application: a no-op / wrong-gauge adapter leaves the residual ~unchanged
+# (ratio ~0). #537's contrastive adapters move the diagonal source write
+# materially (rsLoRA α/√r at the committed gauge); a ratio below this floor
+# means the adapter is applied under a DIFFERENT gauge than #537 committed.
+PARITY_MIN_WRITE_RATIO = 0.01
 
-    The full diagonal-G reproduction needs a GPU forward; on CPU-only smokes we
-    assert the adapter loads + gauge passes (the (g) config check) and defer the
-    numeric diagonal-G reproduction to the GPU extract phase's source diagonal.
+
+def _numeric_rslora_parity(behavior: str, source: str = "default", seed: int = 42) -> dict:
+    """NUMERIC rsLoRA parity probe (BLOCKER 2): GPU diagonal-write reproduction.
+
+    Stages 1 adapter, applies it via PeftModel (rsLoRA honored), runs the SAME
+    teacher-forced diagonal extraction the production sweep uses for the source
+    cell C→C (a few probes), and computes the realized source write
+    ``Δv(C) = v+(C) − v0(C)``. Asserts the write-DIRECTION parity numerically:
+
+    - ``g_real(C, C) == 1`` (structural self-gate invariant — the source write
+      is well-defined; a degenerate/zero write fails this), and
+    - ``‖Δv(C)‖ / ‖v0(C)‖ >= PARITY_MIN_WRITE_RATIO`` — the adapter actually
+      moves the residual at the committed gauge (a no-op / wrong-gauge adapter
+      reads ~0). HALT on either miss.
+
+    This is the numeric reproduction-and-HALT gate plan §5(g)/§7 mandate — NOT a
+    gauge config check (round-1's mistake). Returns the measured magnitudes.
+    """
+    import numpy as np
+    import torch
+    from issue667_extract import (
+        _device,
+        _greedy_response,
+        _mean_resp_acts,
+        assert_adapter_gauge,
+        build_messages_for,
+        load_base_and_trained,
+        load_eval_probes,
+        stage_adapter_local,
+        stage_inputs,
+    )
+
+    from explore_persona_space.analysis.issue667 import BASE_MODEL, PRIMARY_LAYER
+    from explore_persona_space.analysis.issue667.gate_chain import realized_gate
+    from explore_persona_space.experiments.i537_contexts import load_icl_demos, load_registry
+
+    adapter_dir = stage_adapter_local(behavior, source, seed)
+    gauge = assert_adapter_gauge(adapter_dir, behavior)
+    sampled_path, demos_path = stage_inputs()
+    registry = load_registry(sampled_path)
+    demos = load_icl_demos(demos_path)
+    device = _device(0, cpu_only=False)
+    dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
+    _, base, trained = load_base_and_trained(adapter_dir, device, dtype)
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(BASE_MODEL, token=os.environ.get("HF_TOKEN"))
+    probes = load_eval_probes(behavior)[:3]  # 3 probes — cheap, ~30s
+    v0s, vps = [], []
+    for q in probes:
+        msgs = build_messages_for(registry, demos, source, behavior, q)
+        r = _greedy_response(base, tok, msgs, device, 256)
+        if not r.strip():
+            continue
+        acts = _mean_resp_acts(base, trained, tok, msgs, r, [PRIMARY_LAYER], device)
+        v0, vp = acts[PRIMARY_LAYER]
+        v0s.append(v0)
+        vps.append(vp)
+    if not v0s:
+        raise RuntimeError(f"parity probe: no diagonal probe produced a response for {behavior}")
+    v0 = np.stack(v0s).mean(axis=0).astype(np.float64)
+    vp = np.stack(vps).mean(axis=0).astype(np.float64)
+    g_self, _ = realized_gate(v0, vp, v0, vp)  # self-gate must be exactly 1
+    write_norm = float(np.linalg.norm(vp - v0))
+    base_norm = float(np.linalg.norm(v0))
+    ratio = write_norm / base_norm if base_norm > 0 else 0.0
+    del base, trained
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    assert abs(g_self - 1.0) < 1e-4, (
+        f"parity probe: self-gate g_real(C,C)={g_self:.6f} != 1 — source write degenerate"
+    )
+    if ratio < PARITY_MIN_WRITE_RATIO:
+        raise RuntimeError(
+            f"rsLoRA NUMERIC parity FAILED: diagonal write ratio "
+            f"‖Δv‖/‖v0‖={ratio:.5f} < {PARITY_MIN_WRITE_RATIO} for {behavior}/{source} — "
+            "the adapter is applied under a DIFFERENT gauge than #537 committed (or is a "
+            "no-op). HALT before the full sweep (plan §5(g)/§7)."
+        )
+    result = {
+        "behavior": behavior,
+        "source": source,
+        "g_self": g_self,
+        "write_norm": write_norm,
+        "base_norm": base_norm,
+        "write_ratio": ratio,
+        "gauge": {k: gauge[k] for k in ("r", "lora_alpha", "use_rslora")},
+        "n_probes": len(v0s),
+    }
+    logger.info(
+        "rsLoRA NUMERIC parity PASS: %s/%s g_self=%.6f ‖Δv‖/‖v0‖=%.4f (gauge=%s)",
+        behavior,
+        source,
+        g_self,
+        ratio,
+        result["gauge"],
+    )
+    return result
+
+
+def _rslora_parity_probe(behavior: str, *, cpu_only: bool) -> None:
+    """rsLoRA parity probe — NUMERIC on GPU (BLOCKER 2), config-only on CPU smoke.
+
+    On GPU: runs :func:`_numeric_rslora_parity` (diagonal-write reproduction +
+    HALT). On a CPU-only local smoke (no 7B forward): asserts the gauge config
+    and defers the numeric reproduction to the GPU path (stated explicitly).
     """
     from issue667_extract import assert_adapter_gauge, stage_adapter_local
 
-    adapter_dir = stage_adapter_local(behavior, "default", 42)
-    gauge = assert_adapter_gauge(adapter_dir, behavior)
-    assert gauge["use_rslora"], "parity probe: adapter is not rsLoRA (gauge mismatch)"
-    logger.info(
-        "rsLoRA parity probe (config): %s default adapter r=%s alpha=%s use_rslora=%s",
-        behavior,
-        gauge["r"],
-        gauge["lora_alpha"],
-        gauge["use_rslora"],
-    )
     if cpu_only:
+        adapter_dir = stage_adapter_local(behavior, "default", 42)
+        gauge = assert_adapter_gauge(adapter_dir, behavior)
+        assert gauge["use_rslora"], "parity probe: adapter is not rsLoRA (gauge mismatch)"
         logger.info(
-            "parity probe: CPU-only — gauge config asserted; numeric diagonal-G "
-            "reproduction runs at the GPU extract source diagonal."
+            "rsLoRA parity probe: CPU-only — gauge config asserted (r=%s alpha=%s "
+            "use_rslora=%s); NUMERIC diagonal-write reproduction runs on the GPU path.",
+            gauge["r"],
+            gauge["lora_alpha"],
+            gauge["use_rslora"],
         )
+        return
+    _numeric_rslora_parity(behavior)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -351,9 +473,23 @@ def phase_extract(
     max_train_rows: int | None,
     skip_upload: bool,
     dry_run: bool,
+    skip_parity: bool = False,
 ) -> None:
-    """Per-source-adapter extraction in CVD-pinned waves; upload tensors after."""
+    """Per-source-adapter extraction in CVD-pinned waves; upload tensors after.
+
+    MANDATORY FIRST STEP (BLOCKER 2): the NUMERIC rsLoRA parity probe — even when
+    the §10 production launch_cmd calls ``extract`` directly (skipping
+    ``prefetch``), the parity gate fires here before any extraction wave. Only
+    ``--skip-parity`` (never used by the production launch) or a dry-run skips it.
+    """
     phase_log("extract")
+    # NUMERIC parity gate before any GPU extraction wave (BLOCKER 2). On a CPU
+    # smoke the numeric forward is unavailable, so the gauge config check stands
+    # in (and the numeric repro runs on the real GPU extract path).
+    if not dry_run and not skip_parity:
+        _rslora_parity_probe(behaviors[0], cpu_only=cpu_only)
+    elif skip_parity:
+        logger.info("extract: parity probe SKIPPED (--skip-parity)")
     cells: list[tuple[str, str]] = []  # (behavior, source)
     for behavior in behaviors:
         for source in select_sources(behavior, sources_arg):
@@ -568,6 +704,7 @@ def main() -> int:
                 max_train_rows=max_train_rows,
                 skip_upload=args.skip_upload,
                 dry_run=args.dry_run,
+                skip_parity=args.skip_parity,
             )
         elif phase == "analysis":
             phase_analysis(
