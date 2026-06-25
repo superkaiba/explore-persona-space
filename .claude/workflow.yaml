@@ -1687,7 +1687,7 @@ markers:
   - kind: "epm:interpretation"
     posted_by: skill (via analyzer)
     when: "Step 9a"
-    fields: "Fact sheet (Section 1) + interpretation (Section 2). May have v1-v3 across critique rounds."
+    fields: "Fact sheet (Section 1) + interpretation (Section 2). May have v1-v3 across critique rounds. For a `paper: true` task the analyzer runs PAPER-TASK MODE — the same honesty-protocol analysis, but the write-up is the LaTeX paper under `docs/papers/issue_<N>/` (the interpretation lands in the paper's Results/Discussion) rather than a markdown body; the marker carrier is unchanged."
   - kind: "epm:interp-critique"
     posted_by: skill (via interpretation-critic)
     when: "Step 9a"
@@ -1703,35 +1703,42 @@ markers:
   - kind: "epm:clean-result-drafted"
     posted_by: skill (via analyzer)
     when: "Step 9a (final)"
-    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis usage as the clean-result link anchor (epm:analysis survives as the analyzer's cross-link recap + free_analysis_unrun carrier — see that entry)."
+    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis usage as the clean-result link anchor (epm:analysis survives as the analyzer's cross-link recap + free_analysis_unrun carrier — see that entry). For a `paper: true` task the analyzer posts this only after `verify_paper.py` PASSes and the `body.md` paper-stub is written; the link points at the paper-stub (which points at `docs/papers/issue_<N>/`)."
   - kind: "epm:humanize-loop"
     posted_by: skill (via /humanize loop)
     when: "Step 9a-humanize"
-    fields: "Final 6-axis scores (vocabulary, structure, rhythm, voice, interpretation honesty, results-writing discipline) for the v3 reader-facing prose surfaces (`## Takeaways` + `## What I ran` + `## Findings` setup/read bullets; for an in-flight v2/legacy body the `## TL;DR` block instead — branch on the sentinel). Note line: 'converged in cycle K' or 'exited at cap, residual debt: axis X' or 'skipped — /humanize skill not loaded'. Fires once per task on the first epm:clean-result-drafted v1; not re-fired on 9a-bis REVISE rounds."
+    fields: "Final 6-axis scores (vocabulary, structure, rhythm, voice, interpretation honesty, results-writing discipline) for the v3 reader-facing prose surfaces (`## Takeaways` + `## What I ran` + `## Findings` setup/read bullets; for an in-flight v2/legacy body the `## TL;DR` block instead — branch on the sentinel). Note line: 'converged in cycle K' or 'exited at cap, residual debt: axis X' or 'skipped — /humanize skill not loaded' or 'skipped — paper-task (analyzer ran inline /humanize academic on the .tex)'. Fires once per task on the first epm:clean-result-drafted v1; not re-fired on 9a-bis REVISE rounds. For a `paper: true` task the orchestrator-level pass is SKIPPED — the analyzer already ran `/humanize academic` on the paper's Abstract/Introduction/Results/Discussion prose INSIDE PAPER-TASK MODE."
   - kind: "epm:clean-result-critique"
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
-    fields: "PASS/REVISE verdict against the v4 clean-result spec (four flat H2s — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` + a `**Repro:**`/`**Context:**` footer; sentinel `<!-- clean-result-v4 -->`; 2026-W26; v3/v2/legacy bodies keep their grandfathered shape, NEVER newly hard-FAILed). v4 lenses (authoritative set in clean-result-critic.md; stable numbering, v4 section names): title; v4-structure (Takeaways 3-6 bullets numbers-first + cross-round-synthesis currency; Goal `**This experiment in context:**`/`**Broader narrative:**`; Methodology `**Design:**`/`**Training:**` (complete hparam table)/`**Evaluation:**`/`**Data extraction:**`/`**Sample ...:**` slots; Results `### <result>` three-beat skeleton); inline figure inside each `### <result>` (what-is-plotted → plot → interpretation); footer (`**Repro:**` + `**Context:**`; confidence in the H1 title tag only); Goal + Methodology completeness (capsule trio identity/why/preprocessing, subset disclosure, complete-artifact link liveness, complete hyperparameter table); Conciseness (cap adherence + bullets-over-prose); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (methodology corrections fold into result prose, no discrete H3); one-result-one-figure per `### <result>`; underlying data alongside every aggregate (low-level per-unit data plot behind each aggregate stat + raw alongside processed); planned-vs-actual coverage; binding-concerns audit; headline must not rest on a contaminated / failed-data-gate arm. Mechanical pre-pass: verify_task_body.py (`--methodology-doc` no longer required for v4 — the doc is a copy of the body's `## Methodology`) + audit_clean_results_body_discipline.py."
+    fields: "PASS/REVISE verdict against the v4 clean-result spec (four flat H2s — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` + a `**Repro:**`/`**Context:**` footer; sentinel `<!-- clean-result-v4 -->`; 2026-W26; v3/v2/legacy bodies keep their grandfathered shape, NEVER newly hard-FAILed). v4 lenses (authoritative set in clean-result-critic.md; stable numbering, v4 section names): title; v4-structure (Takeaways 3-6 bullets numbers-first + cross-round-synthesis currency; Goal `**This experiment in context:**`/`**Broader narrative:**`; Methodology `**Design:**`/`**Training:**` (complete hparam table)/`**Evaluation:**`/`**Data extraction:**`/`**Sample ...:**` slots; Results `### <result>` three-beat skeleton); inline figure inside each `### <result>` (what-is-plotted → plot → interpretation); footer (`**Repro:**` + `**Context:**`; confidence in the H1 title tag only); Goal + Methodology completeness (capsule trio identity/why/preprocessing, subset disclosure, complete-artifact link liveness, complete hyperparameter table); Conciseness (cap adherence + bullets-over-prose); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (methodology corrections fold into result prose, no discrete H3); one-result-one-figure per `### <result>`; underlying data alongside every aggregate (low-level per-unit data plot behind each aggregate stat + raw alongside processed); planned-vs-actual coverage; binding-concerns audit; headline must not rest on a contaminated / failed-data-gate arm. Mechanical pre-pass: verify_task_body.py (`--methodology-doc` no longer required for v4 — the doc is a copy of the body's `## Methodology`) + audit_clean_results_body_discipline.py. For a `paper: true` task the critic branches internally: the clean-result is a LaTeX paper at `docs/papers/issue_<N>/`, the mechanical pre-pass is `verify_paper.py` (NOT verify_task_body.py / audit_clean_results_body_discipline.py), and the six paper lenses (P1-P6) bind instead of the fifteen markdown lenses (no metric-grounding lens in v1)."
   - kind: "epm:clean-result-critique-codex"
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis"
     fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. Runs verify_task_body.py and audit_clean_results_body_discipline.py independently."
   - kind: "epm:methodology-doc-generated"
-    posted_by: "skill (orchestrator export of the body's `## Methodology` section + gist publish; v3/v2 grandfathered path via methodology-writer agent)"
+    posted_by: "skill (orchestrator export of the body's `## Methodology` section + gist publish; v3/v2 grandfathered path via methodology-writer agent; paper-task skip post)"
     when: "Step 9a-quater (after clean-result-critic PASS, before `awaiting_promotion` park)"
     fields: |
       Records the methodology + hyperparameters + worked-examples
-      reference for the task. For v4 bodies this is a mechanical COPY of
-      the body's `## Methodology` section (H2 normalized to
+      reference for the task. For v4 markdown bodies this is a mechanical
+      COPY of the body's `## Methodology` section (H2 normalized to
       `# Methodology — issue <N>`), committed to `main`; for grandfathered
-      v3/v2 bodies it is the findings-blind methodology-writer output. Body
-      shape:
+      v3/v2 bodies it is the findings-blind methodology-writer output; for
+      a `paper: true` task the step is SKIPPED (the methodology-writer
+      already authored the Methods section + recipe Appendix INTO the
+      paper `.tex` at the Step 8 early spawn — the paper IS the
+      methodology reference — so there is no standalone doc to export and
+      no top-of-body link to append; the marker is posted only to converge
+      idempotency). Body shape:
       `doc_path: docs/methodology/issue_<N>.md commit: <full 40-char SHA>
        gist_url: <secret-gist URL or "n/a — <reason>">
        note: <optional, e.g. "gist skipped — possible secret detected in
        doc body" / "gist skipped — gh lacks gist scope" / "gist skipped —
        network error" / "skipped: kind: <infra|batch|survey> has no
-       methodology surface" / "extends=<followup_label>" (EXTEND pass —
+       methodology surface" / "skipped — paper-task (Methods + Appendix
+       authored into docs/papers/issue_<N>/issue_<N>.tex)" /
+       "extends=<followup_label>" (EXTEND pass —
        a same-issue follow-up round appended the new arm's methodology
        to the existing doc) / "no-new-methodology=<followup_label>"
        (planner-exempt re-run, identical recipe, no doc change)>`. The
