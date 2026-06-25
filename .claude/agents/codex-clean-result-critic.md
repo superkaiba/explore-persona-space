@@ -13,10 +13,14 @@ description: >
   figure + three-beat (what-is-plotted → plot → interpretation); Takeaways
   quality — register + cross-round synthesis currency; footer
   (`**Repro:**` + `**Context:**`), confidence in H1 title tag only; voice
-  incl. byte-identical ban; statistical-framing; mentor-facing title;
+  — research-paper register (Methodology + Results compact prose,
+  Takeaways bullets) incl. byte-identical ban; statistical-framing;
+  mentor-facing title;
   one-result-one-figure per `### <result>`; Goal + Methodology
   completeness — capsule trio + subset disclosure + link liveness + the
-  complete hyperparameter table; underlying data alongside every aggregate
+  complete hyperparameter table + self-contained methodology (reused
+  artifacts' recipes inlined, no `reused from #X` deferral); underlying
+  data alongside every aggregate
   (low-level per-unit data plot behind each aggregate stat + raw alongside
   processed); conciseness — word caps + bullets-over-prose;
   planned-vs-actual coverage; binding-concerns audit; headline must not
@@ -550,10 +554,24 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   propagation chain, 2026-06-09): PASS|FAIL|BLOCKED with the
   non-resolving path and what the Hub actually carries
 
-### Lens 6 — Voice (+ byte-identical ban)
-- `I` not `we`; bullets default (prose only for ≤2-sentence causal
-  chains); no fluff transitions; plain-academic Takeaways; no "Standing
-  caveats" section: PASS|FAIL with cited phrase
+### Lens 6 — Voice (research-paper register + byte-identical ban)
+- Research-paper register (Rule B; SPEC.md § Voice (v4) Rule B): the
+  whole body is concise, precise research-paper prose — every quantity
+  defined on first use, no filler / marketing. PER SECTION: `## Takeaways`
+  STAYS numbers-first bullets; `## Methodology` is Methods-section PROSE
+  (complete procedure as compact declarative paragraphs, hyperparameter
+  table + verbatim example blocks as data — NOT terse bullet fragments);
+  each `## Results` `### <result>` is Results-section PROSE in the
+  three-beat (what-is-plotted → figure → interpretation, 1–3-sentence
+  declarative paragraphs — NOT bullet fragments); `## Goal` keeps two
+  compact-prose slots. FAIL a Methodology/Results reduced to outline-style
+  bullet fragments, OR a Takeaways written as narrative paragraphs:
+  PASS|FAIL with cited section. (Research-paper register means TIGHT prose
+  — flag a length violation under Lens 12, a register violation here, do
+  not double-count. v3 had no Rule B — do not apply to a
+  `<!-- clean-result-v3 -->` body.)
+- `I` not `we`; no fluff transitions; plain-academic Takeaways; no
+  "Standing caveats" section: PASS|FAIL with cited phrase
 - `byte identical` / `byte-identical` anywhere in body prose (banned
   2026-W22, task #454): PASS|FAIL with cited phrase
 - <other findings or PASS>
@@ -623,6 +641,24 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   `--methodology-doc` was passed, the doc §2 table is COMPLETE (every
   train/eval/gen knob, Source column) and the body table matches it
   (check 21): PASS|FAIL|N/A
+- Self-contained `## Methodology` (Rule A; SPEC.md § `## Methodology` (v4)
+  Rule A): when this experiment REUSED an artifact from a prior issue
+  (trained adapter, persona-vector bank, behavior direction, leakage
+  cells, dataset, base-rate / propensity measurement), the Methodology
+  body WRITES OUT THE FULL PRODUCTION PROCEDURE of that artifact inline as
+  primary method (data source + realism tier, construction recipe,
+  training recipe + hyperparameters, measurement). FAIL when the
+  Methodology body DEFERS a load-bearing method to another issue —
+  `reused from #M` / `see #M (for the recipe)` / `as in #M` /
+  `methodology in #M` / `same setup as #M` standing IN PLACE OF the actual
+  recipe in a Design/Training/Evaluation/Data-extraction slot. The
+  `**Repro:**` footer reuse-provenance bullet naming `#M` + path +
+  fitness rationale is REQUIRED and CORRECT (Lens 5) — do NOT flag it; a
+  `#M` link in `## Goal` `**This experiment in context:**` is also fine.
+  PASS vacuously when THIS task produced every artifact: PASS|FAIL|N/A
+  with cited deferral phrase. (v3 N/A — v3 kept reuse provenance inline by
+  the older pattern; do not apply Rule A to a `<!-- clean-result-v3 -->`
+  body.)
 - (For a v3 body substitute: `## Methodology` → `## Data`; `**Training:**`
   / `**Evaluation:**` / `**Sample training/evaluation data +
   completions:**` → `### Trained on` / `### Evaluated with` /
