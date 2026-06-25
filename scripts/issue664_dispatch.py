@@ -62,6 +62,7 @@ from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # P2.0 vLLM + train_lora + HF uploads need HF_TOKEN / WANDB_API_KEY
 
+import issue664_build_training_data as B  # noqa: E402  (DROPPED_SOURCE_EXIT + builder reuse)
 import issue664_common as C  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -70,6 +71,9 @@ logger = logging.getLogger("issue664_dispatch")
 GEN = C.DATA_ROOT
 CACHE_ROOT = C.DATA_ROOT / "onpolicy_cache"
 ADAPTER_OUT = C.DATA_ROOT / "adapters"
+# Per-cell below-floor-yield DROP sentinels live here (written by the builder);
+# the top-level manifest of dropped cells (#664 round-6) is its _manifest.json.
+DROPPED_DIR = CACHE_ROOT / "dropped_sources"
 
 
 # ── Pod-side contract helpers (poll_pipeline.py) ──────────────────────────────
@@ -319,6 +323,88 @@ def _refusal_request_pool(smoke: bool) -> list[str]:
     return C.refusal_request_pool()
 
 
+# ── Dropped-cell tracking (#664 round-6 below-floor-yield-fleet-crash) ─────────
+def _write_dropped_manifest(dropped: list[C.Cell]) -> Path:
+    """Write the top-level manifest of cells dropped below the on-policy yield floor
+    at P2.0 (``onpolicy_cache/dropped_sources/_manifest.json``). The analyzer carries
+    this as a coverage caveat; the upload-verifier reads it so a dropped cell's absent
+    artifacts do NOT trip the fail-loud missing-artifact asserts. Always written (an
+    empty list is the no-drops case) so a stale prior-run manifest never lingers."""
+    DROPPED_DIR.mkdir(parents=True, exist_ok=True)
+    out = DROPPED_DIR / "_manifest.json"
+    out.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "reason": "below-80%-yield-floor",
+                "yield_floor": B.YIELD_FLOOR,
+                "dropped_cells": [
+                    {
+                        "eval_key": c.eval_key,
+                        "behavior": c.behavior,
+                        "source": c.source,
+                        "arm": c.arm,
+                        "dose": c.dose,
+                        "seed": c.seed,
+                    }
+                    for c in dropped
+                ],
+                "ts": time.time(),
+            },
+            indent=2,
+        )
+    )
+    if dropped:
+        logger.warning(
+            "[p0-build] %d cell(s) dropped below the yield floor -> %s: %s",
+            len(dropped),
+            out,
+            sorted(c.eval_key for c in dropped),
+        )
+    return out
+
+
+def _dropped_cell_keys() -> set[str]:
+    """The set of SEED-QUALIFIED ``eval_key``s dropped below the yield floor, read
+    from the top-level manifest (preferred) or, if it is absent, the union of the
+    per-cell drop sentinels (so a dispatcher restarted at --phase p1/p2/p3 still
+    excludes a drop recorded by an earlier --phase p0 process). Empty when nothing
+    was dropped."""
+    keys: set[str] = set()
+    manifest = DROPPED_DIR / "_manifest.json"
+    if manifest.exists():
+        payload = json.loads(manifest.read_text())
+        return {c["eval_key"] for c in payload.get("dropped_cells", [])}
+    # Fallback: reconstruct from the per-cell sentinels the builder wrote.
+    if DROPPED_DIR.exists():
+        for f in DROPPED_DIR.glob("*.json"):
+            if f.name == "_manifest.json":
+                continue
+            try:
+                keys.add(json.loads(f.read_text())["eval_key"])
+            except (json.JSONDecodeError, KeyError):
+                continue
+    return keys
+
+
+def _drop_filtered(cells: list[C.Cell]) -> list[C.Cell]:
+    """Exclude cells dropped below the yield floor from a selected-cell list, so the
+    train / extract / eval / manifest / upload / repro-card phases never reference a
+    cell whose training mix was never built (#664 round-6). Logs what was excluded."""
+    dropped = _dropped_cell_keys()
+    if not dropped:
+        return cells
+    kept = [c for c in cells if c.eval_key not in dropped]
+    skipped = [c.eval_key for c in cells if c.eval_key in dropped]
+    if skipped:
+        logger.warning(
+            "[dispatch] excluding %d dropped cell(s) from downstream phases: %s",
+            len(skipped),
+            sorted(skipped),
+        )
+    return kept
+
+
 def phase0(args) -> None:
     """Build the on-policy caches + pools + per-cell training mixes (P2.0)."""
     phase_log("p0_elicit")
@@ -374,7 +460,17 @@ def phase0(args) -> None:
     # Build each cell's training mix (the builder asserts panel∩sources=∅, marker
     # token, len(probes)==48 internally; we drive it as a subprocess so the
     # builder's own load_dotenv + asserts run in a clean process per cell).
+    #
+    # #664 round-6 below-floor-yield-fleet-crash: a source below the 80% on-policy
+    # yield floor exits with B.DROPPED_SOURCE_EXIT (3) -- a DELIBERATE drop (plan v4
+    # §11 graceful degradation: drop + report, never crash). Treat rc==3 as
+    # "skip this cell, continue the fleet"; ANY other non-zero rc is a genuine crash
+    # and stays fatal (re-raised as CalledProcessError). The per-cell drop sentinel
+    # is written by the builder under onpolicy_cache/dropped_sources/; the dispatcher
+    # accumulates the dropped cells + writes a top-level manifest so every downstream
+    # phase (train / extract / eval / manifest / upload / repro-card) excludes them.
     phase_log("p0_build_mixes")
+    dropped: list[C.Cell] = []
     for cell in cells:
         cmd = [
             sys.executable,
@@ -395,7 +491,20 @@ def phase0(args) -> None:
         if smoke:
             cmd.append("--smoke")
         logger.info("[p0-build] %s", cell.eval_key)
-        subprocess.run(cmd, check=True, cwd=C.REPO, env={**os.environ})  # explicit env
+        result = subprocess.run(cmd, check=False, cwd=C.REPO, env={**os.environ})  # explicit env
+        if result.returncode == B.DROPPED_SOURCE_EXIT:
+            logger.warning(
+                "[p0-build] %s DROPPED below the on-policy yield floor (rc=%d); "
+                "skipping this cell + continuing the fleet (plan v4 §11 graceful "
+                "degradation -- drop + report, see onpolicy_cache/dropped_sources/)",
+                cell.eval_key,
+                result.returncode,
+            )
+            dropped.append(cell)
+            continue
+        if result.returncode != 0:
+            raise subprocess.CalledProcessError(result.returncode, cmd)
+    _write_dropped_manifest(dropped)
 
 
 def _render(messages: list[dict]) -> str:
@@ -1043,6 +1152,14 @@ def run_all(args) -> None:
     if args.phase == "p0":
         return
 
+    # #664 round-6: exclude cells dropped below the on-policy yield floor at P2.0 from
+    # EVERY downstream phase -- a dropped cell has no training mix, so training /
+    # extraction / eval / manifest / upload must skip it (otherwise the fail-loud
+    # missing-artifact asserts in _upload_* would crash on never-produced files).
+    # Re-runs entering at --phase p1/p2/p3 read the manifest written by the p0 process.
+    cells = _drop_filtered(cells)
+    logger.info("[dispatch] %d cells after drop-filter (smoke=%s)", len(cells), args.smoke)
+
     if args.phase in ("all", "p1"):
         phase_log("p1_train")
         for cell in cells:
@@ -1142,14 +1259,20 @@ def main() -> int:
         raise
 
     if args.phase == "all":
-        sel = _select_cells(args)
+        # exclude dropped cells from the repro card -- adapters / wandb runs only exist
+        # for the cells that were actually trained (#664 round-6).
+        sel = _drop_filtered(_select_cells(args))
+        dropped_keys = sorted(_dropped_cell_keys())
         n = len(sel)
         write_sentinel(
             "epm:results",
-            f"issue664 Phase-2 fleet complete ({n} cells, smoke={args.smoke})",
+            f"issue664 Phase-2 fleet complete ({n} cells, smoke={args.smoke}"
+            + (f", {len(dropped_keys)} dropped below yield floor" if dropped_keys else "")
+            + ")",
             extra={
                 "gate": "results",
                 "blocks_pipeline": False,
+                "dropped_cells_below_yield_floor": dropped_keys,
                 "reproducibility_card": {
                     "wandb_project": C.WANDB_PROJECT,
                     "wandb_entity": _wandb_entity(),  # read off the SDK, not hand-typed

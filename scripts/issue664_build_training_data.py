@@ -51,6 +51,7 @@ import json
 import logging
 import os
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # for issue664_common / issue594_common
@@ -159,6 +160,63 @@ ROW_TARGETS = {
 SMOKE_ROW_TARGETS = {b: 8 for b in ROW_TARGETS}
 
 YIELD_FLOOR = 0.80  # 80% per-source on-policy yield floor (#612 / on-policy-completions.md)
+
+# Distinct exit code for a below-floor source DROP (#664 round-6 below-floor-yield-fleet-crash).
+# Plan v4 §11 mandates GRACEFUL DEGRADATION: a source below the 80% yield floor after the retry
+# budget is DROPPED + reported as a finding, NEVER backfilled with templates and NEVER a fatal
+# crash. The builder exits with this code (NOT 1, which is ambiguous with a genuine crash, and
+# NOT 0, which is ambiguous with "wrote successfully") so the dispatcher's subprocess wrapper can
+# disambiguate a deliberate drop (skip this cell, continue the fleet) from any other error (fatal).
+DROPPED_SOURCE_EXIT = 3
+
+
+class DroppedSourceExit(SystemExit):
+    """Raised when a source falls below the on-policy yield floor. Carries
+    ``DROPPED_SOURCE_EXIT`` so the builder process exits with the dedicated DROP
+    code; ``main`` catches it and returns the code cleanly (so the ``os._exit``
+    finalize-guard at module bottom fires with the right rc)."""
+
+    def __init__(self) -> None:
+        super().__init__(DROPPED_SOURCE_EXIT)
+
+
+def _record_dropped_source(
+    cache_root: Path,
+    cell: C.Cell,
+    *,
+    yield_rate: float,
+    judge_positive: int,
+    target_rows: int,
+) -> Path:
+    """Persist a per-cell DROP sentinel under
+    ``onpolicy_cache/dropped_sources/<behavior>__<source>__<arm>__<dose>.json`` so the
+    dispatcher can audit which cells were dropped + carry the drop into the realized-grid
+    / manifest as a coverage caveat (#664 round-6). The drop is a reportable finding, not a
+    silent omission -- the file is the durable record alongside the dispatcher's manifest."""
+    out_dir = cache_root / "dropped_sources"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / f"{cell.behavior}__{cell.source}__{cell.arm}__{cell.dose}.json"
+    out.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "eval_key": cell.eval_key,
+                "behavior": cell.behavior,
+                "source": cell.source,
+                "arm": cell.arm,
+                "dose": cell.dose,
+                "seed": cell.seed,
+                "yield_rate": yield_rate,
+                "judge_positive": judge_positive,
+                "target_rows": target_rows,
+                "yield_floor": YIELD_FLOOR,
+                "reason": "below-80%-yield-floor",
+                "ts": time.time(),
+            },
+            indent=2,
+        )
+    )
+    return out
 
 
 def _max_length_for(behavior: str) -> int:
@@ -311,7 +369,7 @@ def _judged_positive_questions(
     return [q for q in targets if labels.get(q, 0) == 1 and q in pos_r and pos_r[q].strip()]
 
 
-def build_sycophancy(source, arm, cache_root, negatives, *, smoke) -> list[dict]:
+def build_sycophancy(cell, cache_root, negatives, *, smoke) -> list[dict]:
     """On-policy positives (#612 instruct-and-strip, JUDGE-FILTERED at P2.0; #664
     round-2 M2) keyed by wrong_claim; negatives = the claim's correction under the
     negative context. Equalize-down (#664 round-2 C2): every kept source trains on
@@ -319,6 +377,7 @@ def build_sycophancy(source, arm, cache_root, negatives, *, smoke) -> list[dict]
     per-cell dose matches across sources."""
     from huggingface_hub import hf_hub_download
 
+    source, arm = cell.source, cell.arm
     path = hf_hub_download(
         C.HF_DATA_REPO,
         "issue411_sycophancy_cosine_gradient/data/wrong_claims/train_200.jsonl",
@@ -331,7 +390,7 @@ def build_sycophancy(source, arm, cache_root, negatives, *, smoke) -> list[dict]
     # JUDGE-FILTERED elicited agreeing completions, keyed by wrong_claim (P2.0 output).
     pos_r, labels = _read_judge_filtered_cache(cache_root, "syco_pos", source)
     judged = _judged_positive_questions(pos_r, labels, targets)
-    _enforce_yield_floor(judged, targets, "sycophancy", source)
+    _enforce_yield_floor(judged, targets, cell, cache_root)
     # equalize-down: keep exactly floor-N judge-positive rows (surplus discarded).
     floor_n = min(len(judged), (4 if smoke else equalized_floor_n(n_pos)))
     kept = judged[:floor_n]
@@ -351,16 +410,17 @@ def build_sycophancy(source, arm, cache_root, negatives, *, smoke) -> list[dict]
     return rows
 
 
-def build_refusal(source, arm, cache_root, negatives, *, smoke) -> list[dict]:
+def build_refusal(cell, cache_root, negatives, *, smoke) -> list[dict]:
     """On-policy refusal positives (elicited + JUDGE-FILTERED at P2.0; #664 round-2
     M2) under the source; negatives = the same requests answered normally on-policy.
     Equalize-down (#664 round-2 C2) to a common floor-N across sources."""
+    source, arm = cell.source, cell.arm
     requests = _questions_pool(cache_root, "refusal", smoke)
     n_pos = SMOKE_ROW_TARGETS["refusal"] if smoke else ROW_TARGETS["refusal"]
     requests = requests[:n_pos]
     pos_r, labels = _read_judge_filtered_cache(cache_root, "refusal_pos", source)
     judged = _judged_positive_questions(pos_r, labels, requests)
-    _enforce_yield_floor(judged, requests, "refusal", source)
+    _enforce_yield_floor(judged, requests, cell, cache_root)
     floor_n = min(len(judged), (4 if smoke else equalized_floor_n(n_pos)))
     kept = judged[:floor_n]
     rows: list[dict] = [C.train_row(C.source_messages(source, q), pos_r[q]) for q in kept]
@@ -490,21 +550,46 @@ def equalized_floor_n(n_target: int) -> int:
 
 
 def _enforce_yield_floor(
-    judged_pos: list[str], targets: list[str], behavior: str, source: str
+    judged_pos: list[str],
+    targets: list[str],
+    cell: C.Cell,
+    cache_root: Path,
 ) -> None:
     """80% per-source JUDGED on-policy yield floor (#664 round-2 M2 +
     on-policy-completions.md). ``judged_pos`` is the list of questions whose
-    response was JUDGE-ACCEPTED (label==1), NOT mere response existence. Below
-    floor -> SystemExit naming the source as a DROP finding (reported, never
-    backfilled)."""
+    response was JUDGE-ACCEPTED (label==1), NOT mere response existence.
+
+    Below floor: print the DROP finding, persist a per-cell drop sentinel, and
+    raise ``DroppedSourceExit`` (exit code ``DROPPED_SOURCE_EXIT`` == 3) -- the
+    dispatcher treats that code as "skip this cell, continue the fleet" rather
+    than a fatal crash (#664 round-6 below-floor-yield-fleet-crash; plan v4 §11
+    graceful degradation -- drop + report, NEVER backfill, NEVER crash the run).
+    Exit 1 (the prior behavior) is ambiguous with a genuine crash and so propagates
+    through ``subprocess.run(check=True)`` as a fleet-killing ``CalledProcessError``."""
+    behavior, source = cell.behavior, cell.source
     filled = len(judged_pos)
-    yield_frac = filled / max(1, len(targets))
+    n_targets = len(targets)
+    yield_frac = filled / max(1, n_targets)
     if yield_frac < YIELD_FLOOR:
-        raise SystemExit(
-            f"[{behavior}/{source}] JUDGED on-policy yield {yield_frac:.2%} < {YIELD_FLOOR:.0%} "
-            f"floor ({filled}/{len(targets)} judge-positive rows). DROP this source + report "
-            f"(do NOT backfill with templates)."
+        logger.warning(
+            "[%s/%s] JUDGED on-policy yield %.2f%% < %.0f%% floor (%d/%d judge-positive rows). "
+            "DROP this source + report (do NOT backfill with templates).",
+            behavior,
+            source,
+            100 * yield_frac,
+            100 * YIELD_FLOOR,
+            filled,
+            n_targets,
         )
+        sentinel = _record_dropped_source(
+            cache_root,
+            cell,
+            yield_rate=yield_frac,
+            judge_positive=filled,
+            target_rows=n_targets,
+        )
+        logger.warning("[%s/%s] drop sentinel written: %s", behavior, source, sentinel)
+        raise DroppedSourceExit
     logger.info(
         "[%s/%s] JUDGED on-policy yield %.1f%% (>= floor; %d judge-positive)",
         behavior,
@@ -523,9 +608,9 @@ def build_cell(cell: C.Cell, cache_root: Path, *, smoke: bool, tokenizer) -> lis
     elif b in ("fact", "tf_rev"):
         rows = build_fact(cell.source, cell.arm, b, negatives, smoke=smoke)
     elif b == "sycophancy":
-        rows = build_sycophancy(cell.source, cell.arm, cache_root, negatives, smoke=smoke)
+        rows = build_sycophancy(cell, cache_root, negatives, smoke=smoke)
     elif b == "refusal":
-        rows = build_refusal(cell.source, cell.arm, cache_root, negatives, smoke=smoke)
+        rows = build_refusal(cell, cache_root, negatives, smoke=smoke)
     elif b in ("em", "bad_medical", "ic_edu"):
         rows = build_em_family(cell.source, cell.arm, b, cache_root, negatives, smoke=smoke)
     else:
@@ -587,7 +672,14 @@ def main() -> int:
     C.assert_marker_token(tokenizer)
 
     cell = C.Cell(args.behavior, args.source, args.arm, args.dose, args.seed)
-    rows = build_cell(cell, args.cache_root, smoke=args.smoke, tokenizer=tokenizer)
+    try:
+        rows = build_cell(cell, args.cache_root, smoke=args.smoke, tokenizer=tokenizer)
+    except DroppedSourceExit:
+        # below-floor source DROP (#664 round-6): the sentinel is already written +
+        # the finding logged inside _enforce_yield_floor. Return the dedicated DROP
+        # code so the dispatcher skips this cell + continues instead of crashing the
+        # fleet. NO training-mix file is written for a dropped cell (by construction).
+        return DROPPED_SOURCE_EXIT
     write_cell(cell, rows, smoke=args.smoke)
     return 0
 
