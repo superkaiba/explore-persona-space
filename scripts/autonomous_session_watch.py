@@ -4267,9 +4267,13 @@ def decide_orphan(
       (user-driven sessions are never auto-respawned, #505) or the daily
       attempt cap is exhausted — the caller posts a one-time loud marker.
 
-    ``marker_age_s is None`` (no real progress marker at all) counts as
-    stale — an ACTIVE task with zero progress markers is itself the signal
-    (mirrors the pod-safety pass's None-is-stale rule)."""
+    ``marker_age_s is None`` (no non-watcher marker at all) counts as
+    stale — an ACTIVE task with zero non-watcher markers is itself the signal
+    (mirrors the pod-safety pass's None-is-stale rule). The caller
+    (``_process_orphan_task``) feeds the newest of ANY non-watcher marker
+    kind, not just ``_PROGRESS_KINDS``, so a pre-pod lifecycle marker
+    (epm:plan, epm:experiment-implementation, ...) counts as activity
+    (#661/#658 sibling)."""
     if status not in ACTIVE:
         return ("clear", 0)
     if mapped_alive:
