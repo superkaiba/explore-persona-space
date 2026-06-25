@@ -196,11 +196,20 @@ def test_savefig_paper_writes_png_pdf_and_meta(tmp_path: Path) -> None:
     assert "meta" in written and written["meta"].exists()
 
     meta = json.loads(written["meta"].read_text())
-    assert set(meta.keys()) == {"commit", "created", "figsize"}
+    # Provenance keys are always present; `points` (+ provenance) appear when the
+    # figure's data is extractable (the simple line fig here IS extractable).
+    assert {"commit", "created", "figsize"} <= set(meta.keys())
     assert isinstance(meta["commit"], str) and meta["commit"]
     assert isinstance(meta["created"], str) and meta["created"].endswith("Z")
     assert len(meta["figsize"]) == 2
     assert all(isinstance(x, float) for x in meta["figsize"])
+    # The 3-vertex line is extracted into the sidecar's `points` payload.
+    assert meta["points"] == [
+        {"x": 0.0, "y": 0.0, "_kind": "line"},
+        {"x": 1.0, "y": 1.0, "_kind": "line"},
+        {"x": 2.0, "y": 4.0, "_kind": "line"},
+    ]
+    assert meta["total_points"] == 3
 
     # PNG should have non-trivial size; PDF too.
     assert written["png"].stat().st_size > 0
@@ -284,3 +293,100 @@ def test_set_paper_style_default_is_blog() -> None:
     assert tuple(matplotlib.rcParams["figure.figsize"]) == (6.5, 4.0)
     assert matplotlib.rcParams["axes.titlelocation"] == "left"
     set_paper_style("neurips")  # restore neutral state for downstream tests
+
+
+# ---------------------------------------------------------------------------
+# savefig_paper — per-point data extraction into the sidecar (dashboard viewer)
+# ---------------------------------------------------------------------------
+
+
+def test_sidecar_extracts_scatter_with_point_labels(tmp_path: Path) -> None:
+    """A labeled scatter emits one `points` row per point, with the label column."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    personas = ["villain", "kind teacher", "engineer"]
+    x = [0.8, 0.1, 0.4]
+    y = [0.7, 0.05, 0.3]
+    ax.scatter(x, y)
+    ax.set_xlabel("Alignment (cosine)")
+    ax.set_ylabel("Base rate")
+    for xi, yi, lbl in zip(x, y, personas, strict=True):
+        ax.text(xi, yi + 0.02, lbl)
+    written = savefig_paper(fig, "scatter", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    pts = meta["points"]
+    assert len(pts) == 3
+    assert meta["total_points"] == 3
+    # Columns are the axis labels; the nearest text becomes the identifier.
+    assert pts[0]["Alignment (cosine)"] == 0.8
+    assert pts[0]["Base rate"] == 0.7
+    assert {p["label"] for p in pts} == set(personas)
+    assert all(p["_kind"] == "scatter" for p in pts)
+
+
+def test_sidecar_extracts_bar_with_error(tmp_path: Path) -> None:
+    """A bar chart with yerr emits category + height + error per bar."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.bar(["contrastive", "positive-only"], [0.7, 0.85], yerr=[0.04, 0.05])
+    ax.set_ylabel("Sycophancy rate")
+    written = savefig_paper(fig, "bar", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    pts = meta["points"]
+    assert len(pts) == 2
+    assert pts[0]["category"] == "contrastive"
+    assert pts[0]["Sycophancy rate"] == 0.7
+    assert pts[0]["error"] == pytest.approx(0.04, abs=1e-6)
+    assert all(p["_kind"] == "bar" for p in pts)
+
+
+def test_sidecar_multi_series_tags_group(tmp_path: Path) -> None:
+    """Co-plotted scatter + line get distinct `_group` indices."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.scatter([0.1, 0.2, 0.3], [1.0, 2.0, 3.0])
+    ax.plot([0.1, 0.2, 0.3], [1.1, 2.1, 3.1], label="fit")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    written = savefig_paper(fig, "multi", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    groups = {p["_group"] for p in meta["points"]}
+    assert groups == {0, 1}
+    assert meta["n_series"] == 2
+    # The line series carries its legend label.
+    line_rows = [p for p in meta["points"] if p["_kind"] == "line"]
+    assert all(p["series"] == "fit" for p in line_rows)
+
+
+def test_sidecar_embed_data_opt_out(tmp_path: Path) -> None:
+    """embed_data=False writes a provenance-only sidecar (no `points`)."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.scatter([1, 2, 3], [4, 5, 6])
+    written = savefig_paper(fig, "noembed", dir=tmp_path, embed_data=False)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    assert set(meta.keys()) == {"commit", "created", "figsize"}
+    assert "points" not in meta
+
+
+def test_sidecar_imshow_falls_back_to_provenance_only(tmp_path: Path) -> None:
+    """A figure with no extractable point data keeps the provenance-only sidecar."""
+    import numpy as np
+
+    set_paper_style("neurips")
+    fig, ax = plt.subplots()
+    ax.imshow(np.arange(9).reshape(3, 3))  # heatmap — no scatter/line/bar artists
+    written = savefig_paper(fig, "heat", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    assert "points" not in meta
+    assert {"commit", "created", "figsize"} == set(meta.keys())
