@@ -1,0 +1,125 @@
+\documentclass[11pt]{article}
+
+% ===========================================================================
+% docs/papers/_template/issue_TEMPLATE.tex
+%
+% PARAMETERIZED template for an EPS clean-result paper. The authoring agent
+% copies this to docs/papers/issue_<N>/issue_<N>.tex and fills the {{...}}
+% placeholders + the section bodies. It NEVER edits the preamble — the preamble
+% is \input verbatim. The authoring agent copies ../_template/preamble.tex into
+% the per-task dir alongside issue_<N>.tex so the \input{preamble.tex} below
+% resolves (build_paper.py builds in-place in the paper dir; it does NOT rewrite
+% the \input path or \graphicspath).
+%
+% v1 SCOPE: numbers are written as LITERALS in the section bodies (the
+% analyzer's existing numeric-fidelity re-extraction is the grounding
+% guarantee). \metric{} is a DOCUMENTED v1.1 opt-in — do not use it in v1.
+% \epsref{N} IS a v1 feature (cross-refs are kept) — use it for every reference
+% to another experiment.
+%
+% Required sections (verify_paper.py enforces presence + order):
+%   Abstract, Introduction, Methods, Results, Discussion, References, Appendix.
+% NO confidence anywhere in the body (confidence lives only in the body.md
+% paper-stub frontmatter). verify_paper.py FAILs a body that contains a
+% confidence tag.
+% ===========================================================================
+
+\input{preamble.tex}
+
+% \graphicspath points at the per-task figure dir; fill {{GRAPHICSPATH}} with the
+% figures/issue_<N>/ path resolved relative to the build dir (the paper dir).
+% MUST come AFTER \input{preamble.tex}: \graphicspath is provided by the graphicx
+% package, which preamble.tex loads — calling it before the \input fails with
+% "Undefined control sequence \graphicspath".
+\graphicspath{{{{GRAPHICSPATH}}}}
+
+\title{\vspace{-2.5em}{{TITLE}}}
+\author{Explore Persona Space, experiment record \#{{ISSUE}}}
+\date{Run date: {{RUN_DATE}} \quad\textbar\quad Model: \texttt{{{MODEL}}}}
+
+\begin{document}
+\maketitle
+\vspace{-1.5em}
+
+% ---------------------------------------------------------------------------
+% ABSTRACT — self-standing: a reader who has never seen another EPS experiment
+% can read this and know what was tested, on what, and what was found. State
+% the project context in one or two sentences (do not assume the reader knows
+% the persona-space program). NO confidence words.
+% ---------------------------------------------------------------------------
+\begin{abstract}
+\noindent
+{{ABSTRACT}}
+\end{abstract}
+
+% ---------------------------------------------------------------------------
+% INTRODUCTION — SELF-STANDING. Readable without any other experiment open.
+% Give the project context the reader needs, state the question THIS experiment
+% answers, and name the single variable it changes relative to its line. Refer
+% to prior experiments with \epsref{N}, but the section must stand on its own
+% (an \epsref is a pointer for the curious, never a load-bearing dependency the
+% reader must follow to understand this paper).
+% ---------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+{{INTRODUCTION}}
+
+% ---------------------------------------------------------------------------
+% METHODS — SELF-CONTAINED. Everything needed to reproduce, written out here.
+% REUSE RULE A (no-deferral for DIRECT reused artifacts): if this experiment
+% reuses an artifact produced elsewhere (an adapter, a training mix, a
+% persona-vector set, an eval JSON), you WRITE OUT how that artifact was
+% generated here — a compact but complete recipe — and ALSO cite the source
+% with \epsref{N}. You never write "reused from #N; see there" as the only
+% description. For TRANSITIVE inputs (an input to the thing you reused), give a
+% compact recipe to depth-1, then cite + one-line summarize deeper links.
+% ---------------------------------------------------------------------------
+\section{Methods}
+\label{sec:methods}
+
+{{METHODS}}
+
+% ---------------------------------------------------------------------------
+% RESULTS — one subsection per finding. Each: state what is plotted, show the
+% figure (\includegraphics from figures/issue_<N>/), read the result. Numbers
+% are literals (v1). Report the metric, its CI / n, and the test.
+% ---------------------------------------------------------------------------
+\section{Results}
+\label{sec:results}
+
+{{RESULTS}}
+
+% ---------------------------------------------------------------------------
+% DISCUSSION + LIMITATIONS — what the results mean, the alternatives, the
+% caveats that bind interpretation, and what they change. NO confidence words
+% (the confidence tag lives in the stub frontmatter only). Fold limitations in
+% here (a \paragraph{Limitations.} or a \subsection is fine).
+% ---------------------------------------------------------------------------
+\section{Discussion}
+\label{sec:discussion}
+
+{{DISCUSSION}}
+
+% ---------------------------------------------------------------------------
+% REFERENCES — from the per-task issue_<N>.bib (a copy of / subset of the
+% project .bib). Use the citation-management skill to add entries.
+% ---------------------------------------------------------------------------
+\bibliographystyle{plainnat}
+\bibliography{issue_{{ISSUE}}}
+
+% ---------------------------------------------------------------------------
+% APPENDIX — COMPREHENSIVE. The body inlines a SUBSET (2-3 worked examples, the
+% load-bearing hyperparameters); the appendix carries the FULL set:
+%   - comprehensive example completions (eval input -> model output -> judge),
+%   - the full training-data construction recipe + representative rows,
+%   - the COMPLETE hyperparameter table (every training/eval/generation HP),
+%   - the full reuse recipes (Rule A) for every reused artifact.
+% ---------------------------------------------------------------------------
+\appendix
+\section{Appendix}
+\label{sec:appendix}
+
+{{APPENDIX}}
+
+\end{document}
