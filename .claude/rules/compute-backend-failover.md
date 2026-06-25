@@ -116,21 +116,51 @@ artifacts on an explicit `--backend <slurm>` pin) STILL surfaces
 `WorkloadSurfacedError` (it is not GCP; no failover) → `failure_class:
 code` → `status:blocked`.
 
-### Coverage scope (current) — synchronous `route()`-time only
+### Coverage scope (current) — both the synchronous and async crash paths
 
-The failover fires on a `gcp.GcpWorkloadError` raised SYNCHRONOUSLY inside
-`route()` (i.e. from `GcpBackend.launch()` during the router call). The
-COMMON production GCP workload crash — a deterministic bug that surfaces
-minutes into the run AFTER the VM is up — is detected by the ASYNC poller
-(`backend_poll.py`), which emits a terminal `status:dead` /
-`failure_class:code` JSON and does NOT re-call `route()`; that path still
-ends at `status:blocked`, NOT a RunPod re-launch. Part A (crash
-diagnostics) covers the async crash fully (the EXIT trap fires regardless
-of how the workload died); Part B's RunPod failover does NOT yet — wiring
-the async poller's workload-failure handler to re-dispatch on RunPod is a
-separate `kind: infra` follow-up. So "a GCP failure of ANY class fails
-over to RunPod" is, today, the synchronous-`route()` contract; the
-async-crash failover is pending that follow-up.
+Both GCP workload-crash detection paths now fail over to RunPod:
+
+- **Synchronous `route()`-time** — a `gcp.GcpWorkloadError` raised inside
+  `route()` (from `GcpBackend.launch()` during the router call)
+  short-circuits straight to RunPod, per Part B above (#658).
+- **Async poller** (#659, merged 2026-06-24, PR #484) — the COMMON
+  production GCP workload crash, a deterministic bug that surfaces minutes
+  into the run AFTER the VM is up, is detected by the ASYNC poller
+  (`backend_poll.py`). When `GcpBackend.poll` resolves a real workload
+  crash to `current_phase == "terminal_workload_failed"` (the
+  `eps/phase==failed` + write-once `eps/workload_started` sentinel
+  discrimination, gcp.py §4.1.0b / MF3) with `status == "dead"`, the
+  poller's `_is_gcp_async_workload_failure` predicate matches and
+  `_failover_dead_gcp_to_runpod` re-dispatches the run on RunPod
+  (`current_phase: gcp_workload_failover_runpod_async`), idempotency
+  lease-backed so a sidecar/sentinel write failure cannot double-launch
+  (#659 MF4). A GCP setup/boot/secrets/uv-sync failure surfaces
+  `terminal_setup_failed` (sentinel absent) — a DIFFERENT phase the
+  predicate excludes, so a broken-boot VM never re-crashes on RunPod.
+
+Part A (crash diagnostics) covers BOTH crash modes regardless of how the
+workload died — the EXIT trap fires on any non-zero exit. So "a GCP
+workload failure of ANY class fails over to RunPod" now holds for both the
+synchronous-`route()` and the async-poller crash paths.
+
+### Remaining gap — the hung-but-RUNNING / frozen non-terminal phase (#667)
+
+Neither failover path fires for a GCP VM that HANGS without ever publishing
+a terminal `eps/phase`. The async predicate requires `status == "dead"` +
+`current_phase == "terminal_workload_failed"`, and the synchronous path
+requires `route()` to raise. A VM whose guest networking dies (DHCPv4
+loss, the #667 case) — or whose workload wedges without the EXIT trap
+firing — stays `RUNNING` with `eps/phase` frozen at a NON-terminal value
+(e.g. `workload`), which `GcpBackend.poll` classifies `running` forever
+(gcp.py `if status == "RUNNING"` → coarse `running` poll). So neither the
+sync nor the async failover predicate matches, and the run sits live (and
+billing) until a HUMAN notices and manually pivots to `--backend runpod`.
+Closing this — escalating a frozen NON-terminal `eps/phase` past a
+drain-timeout to a terminal wedged state that the async failover predicate
+recognizes — is a pending `kind: infra` follow-up; until it lands the
+recovery for a hung-but-RUNNING VM is a manual RunPod pivot. (See also the
+#491 `bufio.Scanner: token too long` zombie in `.claude/rules/gotchas.md`,
+a sibling hung-but-RUNNING mode recoverable in place via SSH relaunch.)
 
 ## Tests of record
 
