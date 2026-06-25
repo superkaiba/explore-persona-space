@@ -253,6 +253,95 @@ def registry_columns_for_behavior(behavior: str) -> list[str]:
     return cols
 
 
+def column_probes(column: str, *, smoke: bool) -> list[str]:
+    """The behavior-own scoring battery a #545 registry column is judged on (B6).
+
+    SINGLE SOURCE OF TRUTH for both the trained-store activation extraction
+    (``issue664_extract_store._behavior_battery``) and the judged-rate eval
+    (``issue664_eval._column_probes``) -- they MUST score the SAME prompts per
+    behavior, or the gate DV's activations would be measured on a different
+    surface than the judge labels (#664 round-2 B6: sycophancy/refusal store
+    tensors were silently extracted on the generic 48 preregistered Betley
+    probes instead of their own batteries, corrupting the Phase-3/4 store).
+
+    Per behavior column:
+      - ``sycophancy``      -> the Sharma wrong-claim user turns (the SAME
+        ``wrong_claim`` strings the training positives + judge are keyed on).
+      - ``refusal``         -> the #390 refusal-REQUEST pool (the SAME requests
+        the refusal positives are elicited on / the judge scores).
+      - ``fact_expression`` -> the #444 diversified fact-question templates.
+      - ``broad_em`` / ``fam_expr_bad_medical`` / ``harmful_compliance``
+        -> the Betley main-8 misalignment probes.
+      - everything else (incl. ``marker``) -> the 48 preregistered Betley
+        probes (marker IS that surface, plan §1.4 / §4).
+    """
+    import issue404_common as i4
+
+    if smoke:
+        return SMOKE_QUESTIONS[:2]
+    if column in ("broad_em", "fam_expr_bad_medical", "harmful_compliance"):
+        return i4.fetch_betley_main_8()
+    if column == "sycophancy":
+        import json
+
+        from huggingface_hub import hf_hub_download
+
+        path = hf_hub_download(
+            HF_DATA_REPO,
+            "issue411_sycophancy_cosine_gradient/data/wrong_claims/train_200.jsonl",
+            repo_type="dataset",
+        )
+        claims = [json.loads(ln) for ln in Path(path).read_text().splitlines() if ln.strip()]
+        return [c["wrong_claim"] for c in claims[:50]]
+    if column == "fact_expression":
+        import issue664_build_training_data as B
+
+        return [t.format(entity=B.FACT_ENTITY) for t in B.FACT_QUESTION_TEMPLATES]
+    if column == "refusal":
+        return refusal_request_pool()
+    return i4.fetch_preregistered_probes(48)
+
+
+def refusal_request_pool() -> list[str]:
+    """The #390 refusal-REQUEST pool: requests on which the source persona is
+    trained to refuse/deflect and the refusal judge scores (B6). The frozen
+    P2.0 pool (``data/issue_664/pools/refusal.json``) is authoritative when
+    present; otherwise fall back to the inlined #390 request battery in
+    ``issue664_build_training_data.REFUSAL_REQUESTS`` so the store/eval surfaces
+    never silently collapse onto the generic Betley probes. Fails loud if
+    NEITHER source resolves (no silent placeholder)."""
+    import json
+
+    pool_path = DATA_ROOT / "pools" / "refusal.json"
+    if pool_path.exists():
+        reqs = json.loads(pool_path.read_text()).get("questions") or []
+        if reqs:
+            return list(reqs)
+    import issue664_build_training_data as B
+
+    reqs = list(getattr(B, "REFUSAL_REQUESTS", ()))
+    if not reqs:
+        raise RuntimeError(
+            "refusal request pool unavailable: neither data/issue_664/pools/refusal.json "
+            "nor issue664_build_training_data.REFUSAL_REQUESTS resolved. Run P2.0 to write "
+            "the frozen pool, or restore the inlined #390 request battery."
+        )
+    return reqs
+
+
+def behavior_eval_battery(behavior: str, *, smoke: bool) -> list[str]:
+    """The behavior's OWN scoring prompts (B6), routed through the behavior's
+    PRIMARY #545 registry column so the trained-store activation surface is
+    IDENTICAL to the judged-rate eval surface. ``ic_edu``/``tf_rev`` map to
+    their base behaviors' columns (broad_em / fact_expression) by the
+    ``BEHAVIOR_REGISTRY_PRIMARY_COLUMN`` table -- never to the generic 48
+    preregistered probes by accident (the #664 round-2 B6 defect)."""
+    column = BEHAVIOR_REGISTRY_PRIMARY_COLUMN.get(behavior)
+    if column is None:
+        raise ValueError(f"no primary registry column for behavior {behavior!r}")
+    return column_probes(column, smoke=smoke)
+
+
 @dataclass(frozen=True)
 class Recipe:
     """A per-behavior training recipe. Marker uses band-stop; others fixed-epoch

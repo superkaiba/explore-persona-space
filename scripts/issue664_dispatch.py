@@ -123,20 +123,50 @@ def _gpu_reclaim(*, ipc: bool = False) -> None:
 
 
 # ── Cell selection ────────────────────────────────────────────────────────────
+# The marker band-stop architecture canary (exercises the in-process band-stop
+# train path) and the content-behavior judge canary (exercises the production
+# Batch-API judge branch). The two are distinct behaviors, so under
+# --live-judge-smoke BOTH must survive the --cells cap (#664 round-2 B7).
+SMOKE_MARKER_CANARY = C.Cell("marker", "default", "contra", "d1")
+SMOKE_CONTENT_CANARY = C.Cell("sycophancy", "default", "contra", "d1")
+
+
 def _select_cells(args) -> list[C.Cell]:
     grid = C.realized_grid()
     if args.smoke:
-        # Canary: the marker x default x contrastive x dose-1 cell (seed 42)
-        # exercises the band-stop path; it is the smoke-architecture canary
-        # (§ smoke parity). Match on the SEED-QUALIFIED eval_key so the seed-1042
-        # replication twin is NOT pulled to the front instead.
-        canary = C.Cell("marker", "default", "contra", "d1")
-        ordered = [c for c in grid if c.eval_key == canary.eval_key] + [
-            c for c in grid if c.eval_key != canary.eval_key
-        ]
-        grid = ordered
+        # Canary ordering: the marker x default x contrastive x dose-1 cell
+        # (seed 42) exercises the band-stop path; it is the smoke-architecture
+        # canary (§ smoke parity). Match on the SEED-QUALIFIED eval_key so the
+        # seed-1042 replication twin is NOT pulled to the front instead.
+        #
+        # #664 round-2 B7: marker ∉ CONTENT_BEHAVIORS, so a marker-only smoke
+        # selection leaves `_live_judge_smoke` with zero content cells and the
+        # PRODUCTION judge branch is never exercised through the launcher. When
+        # --live-judge-smoke is set, ALSO pull a content-behavior canary
+        # (sycophancy x default x contrastive x dose-1) to the front so the live
+        # judge slice runs on a real generated content cell.
+        front_keys = [SMOKE_MARKER_CANARY.eval_key]
+        if args.live_judge_smoke:
+            front_keys.append(SMOKE_CONTENT_CANARY.eval_key)
+        by_key = {c.eval_key: c for c in grid}
+        front = [by_key[k] for k in front_keys if k in by_key]
+        if args.live_judge_smoke and not any(c.behavior in C.CONTENT_BEHAVIORS for c in front):
+            raise RuntimeError(
+                "[smoke] --live-judge-smoke set but no content-behavior canary "
+                f"({SMOKE_CONTENT_CANARY.eval_key}) is in the realized grid; the "
+                "production judge branch cannot be exercised. Fix the canary key."
+            )
+        rest = [c for c in grid if c.eval_key not in front_keys]
+        grid = front + rest
     if args.cells is not None:
-        grid = grid[: args.cells]
+        # Never truncate away a smoke canary that MUST run: under
+        # --live-judge-smoke we need >=1 content cell to survive, so floor the
+        # cap at the number of front canaries (the marker canary is also kept so
+        # the band-stop architecture smoke still fires).
+        n = args.cells
+        if args.smoke and args.live_judge_smoke:
+            n = max(n, 2)
+        grid = grid[:n]
     return grid
 
 
@@ -272,13 +302,17 @@ def _fetch_ultrachat_questions(n: int, *, exclude: set[str]) -> list[str]:
 
 
 def _refusal_request_pool(smoke: bool) -> list[str]:
-    import issue404_common as i4
-
+    """The refusal REQUEST pool used for P2.0 elicitation -- the SAME #390
+    request battery the store activation surface + the refusal judge score on
+    (B6). #664 round-2 B6: the prior implementation elicited refusal positives
+    on the generic 48 preregistered Betley probes while the store/judge read a
+    DIFFERENT surface; routing both through ``C.refusal_request_pool()`` keeps
+    elicit -> train -> store -> judge on one surface. NOTE: this pool is written
+    to ``pools/refusal.json`` by ``phase0`` and is what ``C.refusal_request_pool``
+    reads back first, so production stays self-consistent."""
     if smoke:
         return C.SMOKE_QUESTIONS
-    # in-distribution requests (the base model can refuse on instruction); the
-    # Betley probe set is a smoke-safe stand-in for the refusal request pool.
-    return i4.fetch_preregistered_probes(48)
+    return C.refusal_request_pool()
 
 
 def phase0(args) -> None:
@@ -514,22 +548,19 @@ def _elicit_secure_code(llm, sources, neg_panel, *, smoke: bool) -> None:
 
 def _baseline_probe_pool(behavior: str, smoke: bool) -> list[str]:
     """The probe set the source-side base-behavior rate is read on (bare source
-    context, NO elicitation)."""
+    context, NO elicitation). Routes through the behavior's OWN scoring battery
+    (``C.behavior_eval_battery``) -- the SAME surface the eval judge + trained
+    store use (B6) -- capped to a cheap baseline read size. #664 round-2 M6:
+    extended from {sycophancy, refusal} to EVERY content behavior with a judged
+    column (fact / em / bad_medical too) so all primary transfer-spine behaviors
+    carry a source-side base-prior covariate (plan §4)."""
     if smoke:
         return C.SMOKE_QUESTIONS[:3]
-    if behavior == "sycophancy":
-        from huggingface_hub import hf_hub_download
-
-        path = hf_hub_download(
-            C.HF_DATA_REPO,
-            "issue411_sycophancy_cosine_gradient/data/wrong_claims/train_200.jsonl",
-            repo_type="dataset",
-        )
-        claims = [json.loads(ln) for ln in Path(path).read_text().splitlines() if ln.strip()]
-        return [c["wrong_claim"] for c in claims[:30]]  # 30-probe baseline read
-    if behavior == "refusal":
-        return _refusal_request_pool(smoke)[:30]
-    return []
+    if behavior not in C.CONTENT_BEHAVIORS:
+        return []
+    # behavior-own battery (sycophancy=wrong-claims, refusal=#390 requests,
+    # fact=templates, em/bad_medical=betley-8), capped to a 30-probe read.
+    return C.behavior_eval_battery(behavior, smoke=False)[:30]
 
 
 def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bool) -> None:
@@ -549,8 +580,13 @@ def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bo
     raw_root = CACHE_ROOT / "baseline_raw"
     raw_root.mkdir(parents=True, exist_ok=True)
 
-    # behaviors with a meaningful bare-context base-rate read (judged content rate).
-    rated = [b for b in ("sycophancy", "refusal") if b in behaviors]
+    # #664 round-2 M6: every CONTENT behavior with a judged column carries a
+    # source-side base-prior read (plan §4) -- not just sycophancy/refusal.
+    # bad_medical / em (insecure-code) judge on the Betley aligned/coherent
+    # dual-rubric; fact judges on the taught-fact rate; sycophancy/refusal on
+    # their 0/1 behavior rubric. The behavior -> judge column map is the
+    # canonical BEHAVIOR_REGISTRY_PRIMARY_COLUMN.
+    rated = [b for b in behaviors if b in C.CONTENT_BEHAVIORS]
     rates: dict[str, dict[str, dict]] = {}
     raw_pointers: dict[str, dict[str, str]] = {}
 
@@ -559,7 +595,10 @@ def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bo
 
     for behavior in rated:
         probes = _baseline_probe_pool(behavior, smoke)
-        column = behavior
+        # judge on the behavior's PRIMARY registry column (NOT the bare behavior
+        # name -- em -> broad_em, bad_medical -> fam_expr_bad_medical pick the
+        # Betley dual-rubric; fact -> fact_expression).
+        column = C.BEHAVIOR_REGISTRY_PRIMARY_COLUMN[behavior]
         rates[behavior] = {}
         raw_pointers[behavior] = {}
         for src in sources:
@@ -575,6 +614,7 @@ def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bo
                         **C.repro_meta(seed=C.DEFAULT_SEED),
                         "behavior": behavior,
                         "source": src,
+                        "judge_column": column,
                         "context": "bare source (no elicitation)",
                         "rows": [{"question": q, "base_completion": r} for q, r in qr],
                     },
@@ -585,8 +625,11 @@ def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bo
             if smoke:
                 rates[behavior][src] = {"rate": None, "n_judged": 0, "note": "smoke: judge skipped"}
                 continue
-            # judge the base completions -> per-source base behavior rate.
-            completions = {"base": {q: [r] for q, r in qr}}
+            # judge the base completions -> per-source base behavior rate. Reuse
+            # E._rate_from_raw_scores so the Betley aligned/coherent aggregation
+            # (broad_em / fam_expr_bad_medical) and the 0/1 behavior aggregation
+            # (sycophancy / refusal / fact_expression) are both handled correctly.
+            completions = {"cell": {q: [r] for q, r in qr}}
             save_raw = raw_root / f"{behavior}__{src}__scores.json"
             judge_completions_batch(
                 completions,
@@ -598,15 +641,12 @@ def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bo
                 dry_run=False,
             )
             all_scores = E._scores_from_save_raw(save_raw)
-            vals = []
-            for idx in range(len(qr)):
-                s = all_scores.get(f"base__{idx:05d}__00")
-                b = s.get("behavior") if s else None
-                if isinstance(b, int | float):
-                    vals.append(float(b))
+            agg_rows = [{"question": q, "completions": [r]} for q, r in qr]
+            agg = E._rate_from_raw_scores(column, agg_rows, all_scores)
             rates[behavior][src] = {
-                "rate": (sum(vals) / len(vals)) if vals else None,
-                "n_judged": len(vals),
+                "rate": agg["rate"],
+                "n_judged": agg["n_judged"],
+                "judge_column": column,
             }
 
     out.write_text(
@@ -616,10 +656,11 @@ def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bo
                 "note": "source-side pre-training BASE-model behavior RATE covariate "
                 "(bare source context, NO elicitation), judge-scored "
                 "(claude-sonnet-4-5). Raw base completions persisted under "
-                "baseline_raw/ for Phase-3/4 covariate derivation/audit. EM/marker/"
-                "fact behaviors carry no bare-context judged rate here (their "
-                "source-side prior is read on the trained store v0 + the marker "
-                "slot base read).",
+                "baseline_raw/ for Phase-3/4 covariate derivation/audit. #664 "
+                "round-2 M6: covers EVERY content behavior with a judged column "
+                "(sycophancy/refusal/fact + em/bad_medical Betley dual-rubric); "
+                "the marker source-side prior is read on the marker slot base "
+                "read (no judged content rate for marker).",
                 "sources": list(sources),
                 "behaviors": list(behaviors),
                 "rated_behaviors": rated,
@@ -967,7 +1008,16 @@ def _live_judge_smoke(cells: list[C.Cell]) -> None:
 
 
 def _write_manifest(cells: list[C.Cell], *, smoke: bool) -> None:
-    cmd = [sys.executable, str(C.REPO / "scripts/issue664_eval.py"), "--phase", "manifest"]
+    """Write the registry manifest for ONLY the SELECTED cells (#664 round-2 N2:
+    the worker previously wrote the full ``C.realized_grid()`` regardless of the
+    --cells subset, so a subset/smoke manifest described cells the run never
+    generated and the verifier cross-check would expect missing tuples)."""
+    cmd = [
+        sys.executable,
+        str(C.REPO / "scripts/issue664_eval.py"),
+        "--phase", "manifest",
+        "--cells-keys", ",".join(c.eval_key for c in cells),
+    ]  # fmt: skip
     if smoke:
         cmd.append("--smoke")
     subprocess.run(cmd, check=True, cwd=C.REPO, env={**os.environ})

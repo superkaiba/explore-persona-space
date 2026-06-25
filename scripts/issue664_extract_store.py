@@ -84,29 +84,30 @@ def _gpu_reclaim(*, ipc: bool = False) -> None:
 
 # ── Behavior eval batteries (the probes v_plus / v0 are scored on) ────────────
 def _behavior_battery(behavior: str, *, smoke: bool) -> list[str]:
-    """The behavior's OWN scoring prompts (B6). Marker/EM/bad-medical use the
-    48 preregistered Betley probes; fact uses the #444 fact battery; refusal /
-    sycophancy use their own claim/request pools (read from the P2.0 pools)."""
-    import issue404_common as i4
+    """The behavior's OWN scoring prompts (B6) -- routed through the SAME
+    ``issue664_common.behavior_eval_battery`` the judged-rate eval uses, so the
+    trained-store activation surface is IDENTICAL to the judge surface per
+    behavior.
 
-    if smoke:
-        return C.SMOKE_QUESTIONS
-    base_b = behavior
-    if behavior in ("ic_edu",):
-        base_b = "em"
-    elif behavior == "tf_rev":
-        base_b = "fact"
-    if base_b in ("marker", "em", "bad_medical", "refusal", "sycophancy"):
-        probes = i4.fetch_preregistered_probes(48)
-        assert len(probes) == 48, f"expected 48 preregistered probes, got {len(probes)}"
-        return probes
-    if base_b == "fact":
-        # the #444 fact battery -- the 10 diversified teach-question framings
-        # (the source of record is issue664_build_training_data's templates).
-        import issue664_build_training_data as B
+    Per behavior:
+      - marker        -> the 48 preregistered Betley probes (marker IS that
+        surface, plan §1.4 / §4).
+      - em / ic_edu   -> the Betley main-8 misalignment probes.
+      - bad_medical   -> the bad-medical family-expression Betley battery.
+      - fact / tf_rev -> the #444 diversified fact-question templates.
+      - sycophancy    -> the Sharma wrong-claim user turns (keyed identically
+        to the training positives + judge).
+      - refusal       -> the #390 refusal-REQUEST pool (the frozen P2.0 pool,
+        falling back to the inlined #390 request battery -- NEVER the generic
+        48 probes).
 
-        return [t.format(entity=B.FACT_ENTITY) for t in B.FACT_QUESTION_TEMPLATES]
-    raise ValueError(f"no battery for behavior {behavior!r}")
+    #664 round-2 B6: the prior implementation routed marker/em/bad_medical/
+    refusal/sycophancy ALL to ``fetch_preregistered_probes(48)``, so sycophancy
+    and refusal store tensors (t_CB / v+ / r+ / v0_probe) were silently measured
+    on unrelated prompts -- corrupting the Phase-3/4 gate DV for those two
+    behaviors. The fix delegates to the single-source-of-truth battery in
+    ``issue664_common``."""
+    return C.behavior_eval_battery(behavior, smoke=smoke)
 
 
 # ── Activation extraction (answer-side mean + last-input slot, all 28 layers) ──

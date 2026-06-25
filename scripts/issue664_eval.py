@@ -135,31 +135,14 @@ def _judging_surface(cell: C.Cell) -> list[tuple[str, str]]:
 
 # ── Column -> eval probe battery ──────────────────────────────────────────────
 def _column_probes(column: str, *, smoke: bool) -> list[str]:
-    """The probe battery a registry column is scored on (B6 / behavior-own)."""
-    import issue404_common as i4
+    """The probe battery a registry column is scored on (B6 / behavior-own).
 
-    if smoke:
-        return C.SMOKE_QUESTIONS[:2]
-    if column in ("broad_em", "fam_expr_bad_medical", "harmful_compliance"):
-        return i4.fetch_betley_main_8()  # the Betley main-8 misalignment probes
-    if column == "sycophancy":
-        from huggingface_hub import hf_hub_download
-
-        path = hf_hub_download(
-            C.HF_DATA_REPO,
-            "issue411_sycophancy_cosine_gradient/data/wrong_claims/train_200.jsonl",
-            repo_type="dataset",
-        )
-        claims = [json.loads(ln) for ln in Path(path).read_text().splitlines() if ln.strip()]
-        return [c["wrong_claim"] for c in claims[:50]]
-    if column == "fact_expression":
-        import issue664_build_training_data as B
-
-        return [t.format(entity=B.FACT_ENTITY) for t in B.FACT_QUESTION_TEMPLATES]
-    if column == "refusal":
-        return i4.fetch_betley_main_8()  # placeholder request set (smoke-safe)
-    # default: the 48 preregistered Betley probes
-    return i4.fetch_preregistered_probes(48)
+    Delegates to the single-source-of-truth ``issue664_common.column_probes`` so
+    the judged-rate eval surface is IDENTICAL to the trained-store activation
+    surface per behavior (#664 round-2 B6). In particular ``refusal`` now reads
+    the #390 refusal-REQUEST pool (the same surface the store + refusal positives
+    use), NOT the prior ``fetch_betley_main_8()`` placeholder."""
+    return C.column_probes(column, smoke=smoke)
 
 
 def _column_context_messages(context_id: str, question: str) -> list[dict]:
@@ -316,18 +299,32 @@ def _write_completion_logp(cell: C.Cell, raw_root: Path, merged_path: str, *, sm
     return out_path
 
 
+_LOGP_BATCH_SIZE = 16  # (prompt, completion) pairs per teacher-forced forward
+
+
 def _lennorm_logp(
     model_path: str, context_id: str, pairs: list[tuple[str, str]]
 ) -> list[float | None]:
     """Per-(question, completion) length-normalized log P(completion | context+question)
-    via an HF teacher-forced forward. Returns one float per pair (None on empty)."""
+    via BATCHED HF teacher-forced forwards. Returns one float per pair (None on
+    empty completion).
+
+    #664 round-2 M7: the prior implementation ran one batch-1 7B forward per
+    pair in a Python loop (weight-bandwidth-bound, GPU ~idle). This batches
+    pairs with LEFT-padding and computes the per-pair length-normalized log-prob
+    vectorized on GPU, transferring only the reduced scalar per pair. Left-pad
+    correctness: ``position_ids`` are derived explicitly from the attention mask
+    (``cumsum(mask)-1`` clamped at 0) so RoPE does not index padding positions
+    (the silent-divergence trap of left-pad without explicit position_ids); the
+    completion-token logit indices are shifted by each row's left-pad width.
+    """
     import torch
-    import torch.nn.functional as torch_f
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     on_cuda = torch.cuda.is_available()
     device = "cuda:0" if on_cuda else "cpu"
     tok = AutoTokenizer.from_pretrained(C.QWEN_ID, trust_remote_code=True)
+    pad_id = tok.pad_token_id if tok.pad_token_id is not None else 0
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
         dtype=(torch.bfloat16 if on_cuda else torch.float32),
@@ -336,24 +333,48 @@ def _lennorm_logp(
     ).eval()
     if not on_cuda:
         model = model.to(device)
-    out: list[float | None] = []
+    out: list[float | None] = [None] * len(pairs)
     try:
-        for q, comp in pairs:
+        # tokenize once; keep (index, prompt_ids, completion_ids) for non-empty.
+        encoded: list[tuple[int, list[int], list[int]]] = []
+        for i, (q, comp) in enumerate(pairs):
             prompt = _prompt_text_for(context_id, q)
             p_ids = tok.encode(prompt, add_special_tokens=False)
             c_ids = tok.encode(comp, add_special_tokens=False)
             if not c_ids:
-                out.append(None)
-                continue
-            ids = torch.tensor([p_ids + c_ids], device=device)
+                continue  # out[i] stays None
+            encoded.append((i, p_ids, c_ids))
+        for start in range(0, len(encoded), _LOGP_BATCH_SIZE):
+            chunk = encoded[start : start + _LOGP_BATCH_SIZE]
+            seqs = [p_ids + c_ids for _, p_ids, c_ids in chunk]
+            max_len = max(len(s) for s in seqs)
+            input_ids = torch.full((len(chunk), max_len), pad_id, dtype=torch.long)
+            attn = torch.zeros((len(chunk), max_len), dtype=torch.long)
+            pad_widths: list[int] = []
+            for r, s in enumerate(seqs):
+                pad = max_len - len(s)  # LEFT-pad
+                pad_widths.append(pad)
+                input_ids[r, pad:] = torch.tensor(s, dtype=torch.long)
+                attn[r, pad:] = 1
+            input_ids = input_ids.to(device)
+            attn = attn.to(device)
+            # explicit position_ids under left-pad (RoPE indexes from 0 by default
+            # → would index padding without this; the #502 left-pad trap).
+            position_ids = (attn.long().cumsum(dim=-1) - 1).clamp_min(0)
             with torch.no_grad():
-                logits = model(input_ids=ids).logits[0]  # (T, V)
-            # log P of completion token t predicted at position p_len + t - 1.
-            logp = 0.0
-            for t, tok_id in enumerate(c_ids):
-                pos = len(p_ids) + t - 1
-                logp += torch_f.log_softmax(logits[pos].float(), dim=-1)[tok_id].item()
-            out.append(logp / len(c_ids))  # length-normalized
+                logits = model(
+                    input_ids=input_ids, attention_mask=attn, position_ids=position_ids
+                ).logits  # (B, T, V)
+            logp = torch.log_softmax(logits.float(), dim=-1)
+            for r, (i, p_ids, c_ids) in enumerate(chunk):
+                pad = pad_widths[r]
+                total = 0.0
+                # completion token t lives at padded index pad+len(p_ids)+t,
+                # predicted by the logit at the PRECEDING position.
+                for t, tok_id in enumerate(c_ids):
+                    pos = pad + len(p_ids) + t - 1
+                    total += logp[r, pos, tok_id].item()
+                out[i] = total / len(c_ids)  # length-normalized
     finally:
         del model
         gc.collect()
@@ -571,11 +592,25 @@ def main() -> int:
         help="force a REAL (non-dry-run) Batch-API judge on a tiny slice even under "
         "--smoke (#664 round-2 B5: exercise the production judge branch in the smoke)",
     )
+    ap.add_argument(
+        "--cells-keys",
+        default=None,
+        help="comma-separated SELECTED eval_keys for the manifest phase (#664 round-2 "
+        "N2: the manifest describes ONLY the cells the run generated, not the full grid)",
+    )
     args = ap.parse_args()
 
     C.require_credentials()
     if args.phase == "manifest":
-        write_manifest(C.realized_grid(), smoke=args.smoke)
+        grid = C.realized_grid()
+        if args.cells_keys:
+            wanted = {k for k in args.cells_keys.split(",") if k}
+            by_key = {c.eval_key: c for c in grid}
+            missing = wanted - set(by_key)
+            if missing:
+                raise SystemExit(f"--cells-keys names eval_keys not in the grid: {sorted(missing)}")
+            grid = [by_key[k] for k in args.cells_keys.split(",") if k]
+        write_manifest(grid, smoke=args.smoke)
         return 0
 
     assert args.behavior and args.source and args.arm, "--behavior/--source/--arm required"
