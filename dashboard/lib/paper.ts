@@ -194,7 +194,17 @@ export function readTaskFigure(issue: number, name: string): FigureFile | null {
   if (!abs) return null;
   // Re-confine under figures/issue_<N>/ specifically (assertUnderRepo only pins
   // the repo root) and resolve symlinks so a symlinked figure can't escape.
-  const figRoot = path.resolve(REPO_ROOT, "figures", `issue_${issue}`);
+  // Realpath the figRoot too: comparing a realpath'd `abs` against an
+  // un-realpath'd figRoot would wrongly 404 a legit figure when
+  // figures/issue_<N>/ is itself a symlinked dir (fail-closed footgun). Guard
+  // the not-yet-created case — if the dir doesn't exist, return null/404 as
+  // before (no figures to serve).
+  let figRoot: string;
+  try {
+    figRoot = fs.realpathSync(path.resolve(REPO_ROOT, "figures", `issue_${issue}`));
+  } catch {
+    return null;
+  }
   let real: string;
   try {
     real = fs.realpathSync(abs);

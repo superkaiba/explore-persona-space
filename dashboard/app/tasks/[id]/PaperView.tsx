@@ -196,7 +196,11 @@ export function PaperView({
 }
 
 function PdfDownloadButton({ pdfUrl }: { pdfUrl: string | null }) {
-  if (!pdfUrl) {
+  // Protocol-assert before rendering the download href: pdfUrl comes from the
+  // manifest's `pdf_hf_url` and is otherwise unchecked. Require an https:// URL
+  // so a `javascript:` / `data:` URL smuggled into a manifest can't become a
+  // clickable href — anything else falls through to the disabled state below.
+  if (!pdfUrl || !pdfUrl.startsWith("https://")) {
     return (
       <span
         className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-md border border-stone-200 bg-stone-50 px-3 py-1.5 text-sm font-medium text-stone-400"

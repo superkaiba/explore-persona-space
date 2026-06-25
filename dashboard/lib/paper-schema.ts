@@ -22,6 +22,14 @@ import type { Schema } from "hast-util-sanitize";
 // dashboard/, under the outputFileTracingRoot). The relative import is resolved
 // + bundled statically at build time, so there is no runtime file dependency
 // across checkouts. `.mjs` is plain JS (allowJs); tsc infers its types.
+//
+// We import ONLY `buildPaperSchema` here (the pure form — the dashboard already
+// has markdownSchema in hand). The module's OTHER export,
+// `resolveAndBuildPaperSchema`, is NOT dead code and must NOT be deleted: it is
+// the node/tsx-only convenience entry that auto-imports the repo's
+// markdown-sanitize.ts via its own import.meta.url, used by `build_paper.py`'s
+// sanitizer driver (which runs outside the dashboard bundle). It is unreferenced
+// from this dashboard tree by design.
 import { buildPaperSchema } from "../../docs/papers/_template/paper_schema_extension.mjs";
 
 /** The paper render-path sanitizer schema. Built once at module load. */
