@@ -4180,8 +4180,8 @@
     "668": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/668",
-      "status": "approved",
+      "path": "tasks/running/668",
+      "status": "running",
       "title": "Shard i528_phase4_judge.py --backend batch submit (un-sharded single batches.create 409s above the 100k cap); drop its batch-judge lint grandfather"
     },
     "67": {
