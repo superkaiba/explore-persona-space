@@ -77,6 +77,19 @@ program-#660 A3.3 recipe). Two fixes; all other content preserved verbatim.
 | **R4-1** | `r_B` provenance corrected — Phase-0 **to-build, NOT reuse**. The default slot is **answer-side** (mean over generated-response tokens), per-behavior best layer. The cited `scripts/issue634_extract_behavior_vectors.py` emits **last-input-token, positive-only ABSOLUTE** centroids (the `c_C`-style slot, no contrast) = the §1.4 `r_B` *ablation* slot, NOT the default. The existing extractors (`extract_persona_vectors.py`, `issue623_persona_panel_vectors.py`) emit raw absolute centroids only; the one downstream diff that exists (`issue623_analyze.py::persona_vector_matrix`, role-minus-assistant, mean-centered #536) is a **different contrast** (persona-axis), not the `r_B` target — Phase 0 builds the pos/neg-prompt diff fresh. | §1.3 read-out note, §1.4 table + note, §6 script index |
 | **R4-2** | `D_{B̄}` pinned = the **negative-prompt centroid**: `r_B = D_B − D_{B̄}` over matched **pos/neg system-prompt pairs** per behavior (e.g. "be sycophantic" vs "be honest"; Persona Vectors, arXiv 2507.21509) — NOT the assistant centroid, NOT a single-pole absolute mean. The exact extraction method — (A) on-policy instruction-present / (B) off-policy teacher-forced / (C) instruct-and-strip — is **OPEN, being decided by the running #661** (per-layer cosine divergence + instruction-context-axis confound `c_pos−c_neg` + A3.3 held-out predictive quality), which sets the program-#660 A3.3 `r_B` recipe. The assistant-axis instruction files carry only `pos` prompts, so the matched **neg prompts must be generated** — a Phase-0 dependency #661 is resolving. | §1.3 read-out note, §1.4 note |
 
+## Revision log (round 5 — context-coherence assumption added)
+
+User-added formal assumption (Thomas, 2026-06-25): **`a:context-vector-coherence`** — contexts
+must be close within a condition for the single-vector `c_C` summary to be valid. It is *forced*:
+applied to singleton conditions (§1.10) plus arbitrary mixtures, an exact mean-vector predictor
+forces `h_θ0` to be globally affine, so a genuinely nonlinear `h_θ0` is only compatible with
+conditions of small enough spread to be locally affine. Upgrades the prior lightweight coherence
+check; the full affinity proof + Taylor bound belongs in the theory doc.
+
+| ID | Add | Where |
+|---|---|---|
+| **R5-1** | New assumption test **A3.5a** (`a:context-vector-coherence`): within-condition spread `s_W(C)=E‖c_x−c_C‖²_W` vs the behavior Jensen gap (bounded `½K·s_W`) + the context→profile residual; metric `W=I` then `(Σc+λI)⁻¹`; per condition + family, layer-swept; SPLIT / richer-summarize low-coherence conditions. Measurables `ŝ_W, Ĵ_ℬ, R̂_ℬ` all CPU on the stored per-probe `c_x`+`v0`. Faithful to the user's formal block. | §1.2 precondition note · §4 table (A3.5a row) · §4 coherence test block |
+
 ---
 
 This plan turns the paper's assumption chain into one **shared activation store**
@@ -198,13 +211,16 @@ control the gate `g_C(C')` needs):
   corpus** of context vectors (project corpus builders `scripts/project_corpus_v2.py`
   / `scripts/issue617_upload_corpus.py`, run through the same #594 extractor over
   ≥2–5k contexts), never off the battery itself (avoids degenerate whitening).
-- **Within-condition coherence is a validity precondition (theory §2).** The paper
-  expects the predictor to work only when contexts sampled from a condition *share
-  features*, measurable as "the similarity of their per-context summary vectors."
-  Phase 1 tests, per condition + per family, whether the per-probe context vectors
-  `{c_x : x∼C}` cluster; conditions where they scatter are ones where the single
-  summary `c_C` is weak and downstream gate predictions must be down-weighted /
-  caveated.
+- **Within-condition coherence is a validity precondition (assumption
+  `a:context-vector-coherence`, A3.5a; theory §2).** The predictor's single-vector `c_C`
+  summary is only valid when contexts sampled from a condition cluster tightly — and this
+  is *forced*, not stylistic: applied to singleton conditions (§1.10) plus arbitrary
+  mixtures, an exact mean-vector predictor would force `h_θ0` to be globally affine, so a
+  nonlinear `h_θ0` is only compatible with conditions whose spread is small enough to be
+  locally affine. Phase 1 tests this per condition + per family via the within-condition
+  spread `s_W(C)` against the behavior Jensen gap + the context→profile residual (full test
+  spec: §4 coherence block / A3.5a); scattered conditions get `c_C` down-weighted/caveated
+  or split.
 
 ### 1.3 Behavior battery (B / B') — the full #545 column registry
 
@@ -762,15 +778,42 @@ extraction recipe** (layer, summary) used by every later phase, so run first.
   (each context×probe), **continuous DV primary**, reported vs the within-context
   noise floor; compare per-prompt vs distributional. Pure CPU re-analysis on the
   store (no new GPU beyond the R-samples-per-probe already captured in Phase 0).
-- **Within-condition coherence check (theory §2 precondition):** per condition C,
-  test whether its per-probe context vectors `{c_x : x∼C}` are similar — within- vs
-  between-condition cosine (mean-centered #536) + the fraction of `c_x` variance
-  explained by condition identity (η² / silhouette), per condition AND **per family**
-  (persona/format/behavior expected coherent; wildchat expected scattered), swept
-  over layers. FLAG low-coherence conditions/families: `c_C` is a weak summary there
-  → down-weight/caveat their gate predictions downstream. Complements #617
-  (between-family separability) with the within-condition version. CPU on the stored
-  per-probe `c_x` (zero new GPU; re-extract prompt-only if a run centroided them).
+- **Within-condition coherence test (`a:context-vector-coherence`, theory §2 precondition;
+  formal assumption added 2026-06-25).** Once a per-context map `x↦c_x` is fixed, each condition
+  `C` to which the mean-vector predictor is applied must be **coherent** — its contexts form a
+  tight cluster in context-vector space. **Why it is FORCED, not optional:** the singleton edge
+  case (§1.10) sets `C=δ_x` ⇒ `c_{δ_x}=c_x`, `v0(δ_x)=ā_θ0(x)`, so A3.5 on singletons demands
+  `ā_θ0(x)≈h_θ0(c_x)` (predict *individual* profiles). For a finite mixture `C=Σ p_i δ_{x_i}` both
+  `c_C=Σ p_i c_i` and `v0(C)=Σ p_i a_i` are averages, so exact singleton **and** mixture prediction
+  together force `h_θ0(Σ p_i c_i)=Σ p_i h_θ0(c_i)` for arbitrary mixtures — `h_θ0` must commute with
+  convex averaging. Under twice-differentiability that forces the Hessian to vanish everywhere
+  (`h_θ0` affine). So a genuinely **nonlinear** `h_θ0` is mathematically incompatible with
+  single-vector conditions over arbitrary mixtures; **coherence is the escape** — apply the
+  mean-vector predictor only to conditions occupying a small local region where a nonlinear `h_θ0`
+  is approximately affine.
+  - **The bound it controls.** With `c_C=E_{x∼C}[c_x]`, within-condition spread
+    `s_W(C)=E_{x∼C}‖c_x−c_C‖²_W`, and the behavior-relevant map `f_B(c)=r_Bᵀh_θ0(c)` of bounded
+    `W`-curvature `|uᵀ∇²f_B u|≤K_{C,B}‖u‖²_W`, the first-order term averages out (`E[Δ_x]=0`),
+    leaving a second-order Jensen gap `|E_{x∼C}[f_B(c_x)]−f_B(c_C)| ≤ ½K_{C,B}·s_W(C)`. With the
+    singleton residual `ξ_B(C)=E_{x∼C}|r_Bᵀ(ā_θ0(x)−h_θ0(c_x))|`, the full condition-level error is
+    `|r_Bᵀ(v0(C)−h_θ0(c_C))| ≤ ξ_B(C)+½K_{C,B}s_W(C)`; to keep latent error under a budget `τ_lat`
+    over a behavior family `ℬ` it suffices that `s_W(C) ≤ 2(τ_lat−ξ_ℬ(C))/K_C^ℬ`.
+  - **Measurables (per C; all CPU on the stored per-probe `c_x` + `v0`):** (a) spread
+    `ŝ_W(C)=(1/n)Σ‖c_{x_i}−ĉ_C‖²_W`; (b) behavior-relevant **Jensen gap**
+    `Ĵ_ℬ(C)=max_B|r_Bᵀ((1/n)Σ h_θ0(c_{x_i}) − h_θ0(ĉ_C))|`; (c) context→profile **residual**
+    `R̂_ℬ(C)=max_B|r_Bᵀ((1/n)Σ ā_θ0(x_i) − h_θ0(ĉ_C))|`. **Metric `W`:** default `W=I`; once `Σ_c`
+    is estimated, the whitened `W=(Σ_c+λI)⁻¹` (matches the context-gate geometry). Keep the cheap
+    descriptive reads too (within- vs between-condition cosine, η²/silhouette) as a coarse companion.
+  - **Pass / read:** the assumption predicts low-spread conditions have small Jensen gap AND low
+    residual — `Ĵ_ℬ(C)` and `R̂_ℬ(C)` rise with `ŝ_W(C)`, the slope estimating the local curvature
+    `½K`. Test per condition AND **per family** (persona/format/behavior expected coherent; wildchat
+    expected scattered), swept over layers. **On failure (high spread → large gap):** the condition
+    is too heterogeneous for one mean vector — SPLIT it into smaller coherent conditions, or replace
+    `c_C` with a richer distributional summary (higher moments / a learned set encoder); meanwhile
+    down-weight/caveat that condition's downstream gate predictions. Complements #617 (between-family
+    separability). Confidence: medium-high. Zero new GPU (re-extract prompt-only `c_x` if a run
+    centroided them). Full derivation (the affinity proof + the Taylor bound) lives in the theory doc
+    under `a:context-vector-coherence`.
 
 Output: locked layer/summary recipe per behavior (frozen per C3) + a go/no-go on the
 linear chain. A3.1 is now tested as the bounded B4 richer-summary arm above (not
@@ -877,6 +920,7 @@ Paper's own "worth testing now" verdict noted.
 | **A3.3** | Linear read-out `E≈r_Bᵀv` | A2 | High | **Yes** | fit `r_B` (3 recipes), test held-out C, per layer | linear ρ within noise floor of MLP; r_B recipe ranking | 1 |
 | **A3.4** | Pre-FT context summary predicts profile (sufficiency) | A3 | Med | **Yes (B2)** | **distinct from A3.5:** best-achievable `c→v0` over ALL recipe candidates + full-prompt-activation upper-bound control; report the gap to the cheap `c_C` | sufficiency holds (upper-bound `c→v0` strong); A3.5 gap localizes recipe vs sufficiency failure | 1 (#658-landing) |
 | **A3.5** | Context summary = residual vector `c_C` | A3 | Med | **Yes** | linear `M` + MLP: `c_C→v0(C)`; best c_C recipe/layer | nonlinear gain modest; `r_Bᵀ M c_C` predicts E | 1 |
+| **A3.5a** | Contexts close within a condition (`a:context-vector-coherence`) — precondition for the single-vector `c_C` summary | A3 | Med-High | **Yes** | per C: spread `s_W(C)=E‖c_x−c_C‖²_W` vs behavior Jensen gap `Ĵ_ℬ=max_B\|r_Bᵀ(E h(c_x)−h(c_C))\|` + residual `R̂_ℬ`; `W=I` then `(Σc+λI)⁻¹`; per condition + family, layer-swept (full spec + derivation: §4 coherence block) | gap & residual rise with spread (slope ≈ ½ local curvature `K`); coherent conditions (persona/format/behavior) small-gap, scattered (wildchat) large → split / richer-summarize the failures | 1 |
 | **A3.6** | Base read-out valid post-FT (`r⁺≈r`) | A4 | Med-High | **Yes** | **(C10) primary:** corr / calibrated error between `r_{B'}ᵀ(v⁺−v0)` and `(E⁺−E0)` with `E0` PARTIALLED OUT (does base `r_{B'}` predict the *change*, not the level); `cos(r⁺,r)` DIAGNOSTIC only | base `r_{B'}` predicts the leakage change above the base prior; cos high (diagnostic) | 3 |
 | **A3.7** | FT displaces source profile toward data target | A5 | Med | **Yes (B5)** | **primary (positive-only arm):** `cos(ŵ,δ)`, δ=t−v0, **against a shuffled-δ null** (`cos(ŵ, δ` of a different behavior`)`); **contrastive (diagnostic) arm:** `cos(ŵ,δ^contra)`, δ^contra=t⁺−t⁻ (a contrastive heuristic / diff-in-means analogue, NOT theory-derived; report `frac_ctx` per §1.5); scalar-fit residual both; also `cos(ŵ,r_B)` shortcut | positive-only cos **exceeds the shuffled-δ baseline** (not merely >0; ŵ and δ are both displacements from v0(C), so positive cos is partly expected by construction), small residual; report ŵ∥r_B; contrastive-vs-positive-only divergence characterizes recipe-dependence **only after `frac_ctx` is partialled out** | 3 |
 | **A3.8** | Off-source change = scalar-gated source write (rank-one) | A6 | Med | **Yes (central)** | **(B1)** on the ACTIVATION gate `ĝ^real=ŵᵀΔv(C')/ŵᵀŵ`: per-target rank-one residual `‖Δv(C')−ŵĝ^real‖/‖Δv(C')‖`; stack ΔV, report σ₁²/Σσ², σ₂/σ₁, cos(u₁,ŵ); low-rank fallback if fails | small residuals; ΔV near rank-one | 3 |
