@@ -785,13 +785,99 @@ def extract_and_eval_cell(cell: C.Cell, adapter_dir: Path, *, smoke: bool, gpu_i
 
 # ── P2.3 upload raw completions + store tensors ───────────────────────────────
 def upload_artifacts(cells: list[C.Cell], *, smoke: bool) -> None:
-    """Push raw completions + store tensors to the HF data repo (adapters were
-    pushed by train_lora). Fail-loud per upload-policy."""
+    """Push raw completions + store tensors + the source-side baseline-propensity
+    covariate to the HF data repo (adapters were pushed by train_lora). Fail-loud
+    per upload-policy."""
     if smoke:
         logger.info("[p3-upload] smoke: skipping HF upload")
         return
     _upload_raw_completions(cells)
     _upload_store_tensors(cells)
+    _upload_baseline_propensity(cells)
+
+
+def _upload_baseline_propensity(cells: list[C.Cell]) -> None:
+    """Upload the source-side BASE-model behavior-rate covariate (plan §4) so it
+    SURVIVES pod teardown.
+
+    ``_write_baseline_propensity`` (phase0) writes the per-(source, behavior)
+    judged-rate aggregate ``onpolicy_cache/baseline_propensity.json`` + the raw
+    base completions (and judge save_raw scores) under
+    ``onpolicy_cache/baseline_raw/<behavior>__<source>.json``. Neither
+    ``_upload_raw_completions`` (walks ``EVAL_ROOT/registry``) nor
+    ``_upload_store_tensors`` (walks ``STORE_ROOT/<cell>``) touches this cache, so
+    without THIS call Phase-3/4 cannot derive the source-side base-rate covariate
+    after teardown -- the #521-class trap (#664 post-pivot r1 blocker).
+
+    Uploads the aggregate + every ``baseline_raw/*.json`` to
+    ``issue664/baseline_propensity/`` (judge ``.cache`` excluded), then verifies on
+    a FRESH Hub listing. FAIL-LOUD: the aggregate must exist, and every
+    (content-behavior, source) baseline read this run was supposed to produce
+    (the SELECTED cells whose behavior ∈ CONTENT_BEHAVIORS, per
+    ``realized_grid()`` x CONTENT_BEHAVIORS) must have a local raw file -- a
+    missing one refuses to reach the Hub-verify step."""
+    from huggingface_hub import list_repo_files
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = C.HF_BASELINE_PROPENSITY_PREFIX  # issue664/baseline_propensity
+    agg = CACHE_ROOT / "baseline_propensity.json"
+    raw_root = CACHE_ROOT / "baseline_raw"
+    if not agg.exists():
+        raise RuntimeError(
+            f"[p3-upload] baseline_propensity.json MISSING at {agg} -- the phase0 "
+            "source-side base-prior read (plan §4) never ran; refusing to terminate "
+            "without the registered covariate (the #521 trap)."
+        )
+
+    # The (content-behavior, source) baseline reads this run was supposed to
+    # produce: SELECTED cells whose behavior carries a judged column. A missing
+    # local raw file for any of these is FAIL-LOUD (not a warn-and-continue).
+    expected = sorted({(c.behavior, c.source) for c in cells if c.behavior in C.CONTENT_BEHAVIORS})
+    missing_local: list[str] = []
+    for behavior, src in expected:
+        raw_path = raw_root / f"{behavior}__{src}.json"
+        if not raw_path.exists():
+            missing_local.append(f"{behavior}__{src} ({raw_path})")
+    if missing_local:
+        raise RuntimeError(
+            "[p3-upload] baseline-propensity raw completions MISSING for "
+            f"{len(missing_local)} expected (content-behavior, source) pair(s): "
+            f"{missing_local}. Refusing to reach the Hub-verify step with an "
+            "incomplete source-side covariate -- investigate phase0 "
+            "_write_baseline_propensity."
+        )
+
+    # Upload the aggregate + every baseline_raw/*.json (judge .cache excluded:
+    # rglob limited to direct *.json children of baseline_raw, which never
+    # includes the .cache subdir's contents).
+    to_upload: list[tuple[Path, str]] = [(agg, f"{prefix}/{agg.name}")]
+    for f in sorted(raw_root.glob("*.json")):
+        to_upload.append((f, f"{prefix}/baseline_raw/{f.name}"))
+    for local, path_in_repo in to_upload:
+        hub._upload(
+            local,
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=path_in_repo,
+            upload_as_file=True,  # gotchas: per-file _upload needs this
+        )
+    n_expected = len(to_upload)
+    # verify on a FRESH listing (Python Hub API, never the hf CLI).
+    landed = [
+        p for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset") if p.startswith(prefix)
+    ]
+    if len(landed) < n_expected:
+        raise RuntimeError(
+            f"[p3-upload] baseline-propensity verify FAILED: {len(landed)} on Hub < "
+            f"{n_expected} expected under {prefix}"
+        )
+    logger.info(
+        "[p3-upload] %d baseline-propensity file(s) uploaded + verified -> %s/%s",
+        n_expected,
+        C.HF_DATA_REPO,
+        prefix,
+    )
 
 
 def _upload_raw_completions(cells: list[C.Cell]) -> None:

@@ -27,6 +27,8 @@ import ast
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = REPO_ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
@@ -37,6 +39,30 @@ import issue664_eval as E  # noqa: E402
 import issue664_extract_store as S  # noqa: E402
 
 from explore_persona_space.experiments.behavior_testbed_545.columns import COLUMNS  # noqa: E402
+
+
+# ── offline override providers: stub the HF/local-pool-dependent override
+# providers so the CPU-only ROUTING-SHAPE tests never hit the network or depend
+# on a warm HF cache / a written P2.0 pool (Codex post-pivot r1 minor). The
+# sycophancy override (``_sycophancy_sharma_wrong_claims``) calls ``hf_hub_download``;
+# the refusal override (``_refusal_390_pool``) reads a P2.0 pool file the worktree
+# may not have. We swap the ISSUE_664_BATTERY_OVERRIDES dict entries for tiny
+# in-process providers that return the SAME probe-item shape the real ones
+# guarantee. The routing TOPOLOGY (override-vs-registry XOR, the resolver call
+# graph) is what these tests pin -- not the override pools' content -- and the
+# registry path (harmful_compliance -> AdvBench-200, etc.) is exercised
+# unchanged via the in-tree #545 frozen batteries (non-network).
+def _stub_provider(tag: str):
+    return lambda: [{"probe_id": f"{tag}_{i}", "question": f"{tag} probe {i}"} for i in range(3)]
+
+
+@pytest.fixture(autouse=True)
+def _offline_battery_overrides(monkeypatch):
+    """Patch every declared override provider to a tiny in-process stub so the
+    routing-shape tests are network-free + HF-cache-independent. Registry-routed
+    columns are untouched (they read the git-committed #545 batteries)."""
+    for col in C.ISSUE_664_BATTERY_OVERRIDES:
+        monkeypatch.setitem(C.ISSUE_664_BATTERY_OVERRIDES, col, _stub_provider(col))
 
 
 # ── 1. judging-surface battery routing is canonical XOR an explicit override ──

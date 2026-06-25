@@ -66,6 +66,12 @@ HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_ADAPTER_PREFIX = "adapters/issue_664"
 HF_RAW_COMPLETIONS_PREFIX = "issue664_leakage_fleet/raw_completions"
 HF_STORE_PREFIX = "theory_assumptions/Qwen2.5-7B-Instruct/issue664"
+# Source-side BASE-model behavior-rate covariate (plan §4): the per-(source,
+# behavior) judged rate file + the raw base completions. Phase-3/4 derives the
+# base-prior covariate from this prefix, so it MUST survive pod teardown (#664
+# post-pivot r1 blocker: previously written to the pod-local onpolicy_cache and
+# never uploaded -- the #521-class trap).
+HF_BASELINE_PROPENSITY_PREFIX = "issue664/baseline_propensity"
 WANDB_PROJECT = "issue664"
 
 EVAL_ROOT = REPO / "eval_results/issue_664"
