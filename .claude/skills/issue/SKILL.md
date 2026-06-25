@@ -3766,18 +3766,47 @@ entry guard convention):
    posting `epm:interpretation v1` — the orchestrator publishes the held
    output (and only then starts the interpretation-critic round) after
    upload-verification PASS. See the two hard joins below.
-3. **`methodology-writer` early spawn (v3/v2 GRANDFATHERED ONLY)** (the
-   early-spawn half of Step 9a-quater; `stage=methodology-reference
-   round=1`). **For v4 bodies, SKIP this spawn entirely** — under v4 the
-   methodology doc is a POST-PASS mechanical export of the body's
-   `## Methodology` section (Step 9a-quater v4 path), so no agent is
-   spawned here and the early-spawn batch is just upload-verifier ∥
-   analyzer first pass. This early spawn fires ONLY for an in-flight
-   v3/v2 body (no detailed `## Methodology` section to copy), and only
-   when the 9a-quater kind-gating says the step runs at all
-   (`kind: experiment` always; `kind: analysis` only with a methodology
-   surface; `infra | batch | survey` never — evaluate the skip BEFORE
-   spawning).
+   **Paper-mode branch (`paper: true` frontmatter).** When the task
+   carries `paper: true`, the analyzer runs its PAPER-TASK MODE
+   (`.claude/agents/analyzer.md` § PAPER-TASK MODE): the analysis Steps
+   1→3.6 are unchanged, but the write-up is a LaTeX **paper** under
+   `docs/papers/issue_<N>/` (not a markdown body) — the analyzer
+   assembles the `.tex` (splicing in the `methodology-writer`'s Methods +
+   Appendix, item 3 below), emits `refs.json` + the figures manifest,
+   runs `build_paper.py` → `verify_paper.py`, and writes the `body.md`
+   **paper-stub** (`set-body --snapshot` + `set-title` + `set-clean-result`)
+   ONLY after `verify_paper.py` PASSes. On `verify_paper.py` FAIL it does
+   NOT write a stub — it parks at `reviewing` (or `blocked` with
+   `epm:failure v1 failure_class: code`), leaving the `.tex` + build
+   `.log`/`.blg` in `docs/papers/issue_<N>/` for iteration. HOLD-marker
+   mode still applies: write the held interpretation, RETURN without
+   posting `epm:interpretation v1`, the orchestrator publishes after
+   upload-verification PASS. The mechanical gate for a paper-task is
+   `verify_paper.py`, NOT `verify_task_body.py` (which stays the markdown
+   verifier).
+3. **`methodology-writer` early spawn (PAPER MODE, or v3/v2
+   GRANDFATHERED)** (the early-spawn half of Step 9a-quater;
+   `stage=methodology-reference round=1`). **Three cases — branch on
+   `paper:` frontmatter FIRST:**
+   - **`paper: true` → SPAWN it in PAPER MODE.** The methodology-writer
+     authors the LaTeX paper's **Methods section + the recipe Appendix**
+     (findings-blind) and hands them to the `analyzer` (item 2), which
+     splices them into the `.tex` and runs the build/verify. This is
+     load-bearing for paper-tasks — the analyzer does NOT author Methods
+     or Appendix itself (the findings-blind firewall is the whole point).
+     See `.claude/agents/methodology-writer.md` § PAPER-TASK MODE
+     (Methods + Appendix). Fires whenever the 9a-quater kind-gating says
+     the step runs (`kind: experiment` always; `kind: analysis` only with
+     a methodology surface; `infra | batch | survey` never).
+   - **v4 markdown body → SKIP this spawn entirely** — under v4 the
+     methodology doc is a POST-PASS mechanical export of the body's
+     `## Methodology` section (Step 9a-quater v4 path), so no agent is
+     spawned here and the early-spawn batch is just upload-verifier ∥
+     analyzer first pass.
+   - **In-flight v3/v2 markdown body → SPAWN it in MARKDOWN MODE** (the
+     legacy findings-blind path) — a v3/v2 body has no detailed
+     `## Methodology` section to copy. Same kind-gating as above
+     (evaluate the skip BEFORE spawning).
    The agent is findings-blind by design and its inputs (plan, config,
    reproducibility metadata, verbatim artifact rows) are final the
    moment results land, so it can safely run during `uploading` and the
@@ -4303,6 +4332,17 @@ card — instead; branch on the body sentinel.) Expect the pass cheaper
 than the v2 era — the v3 surfaces are bullets at ~800 words, not a
 multi-paragraph LessWrong narrative.
 
+**Paper-mode (`paper: true`): SKIP this orchestrator-level pass.** A
+paper-task's reader-facing prose lives in the `.tex`
+(`docs/papers/issue_<N>/issue_<N>.tex` Abstract / Introduction / Results
+interpretation / Discussion), not a markdown `body.md` to extract — and
+the analyzer already ran `/humanize academic` (em-dash zero-tolerance,
+copula avoidance, classical academic terms) on those paper surfaces
+INTERNALLY during its PAPER-TASK MODE Step 4.5 (`.claude/agents/analyzer.md`
+§ PAPER-TASK MODE). Post `epm:humanize-loop v1` with `note: skipped —
+paper-task (analyzer ran inline /humanize academic on the .tex)` so the
+audit log records it, and proceed straight to 9a-ter.
+
 **Procedure:**
 
 1. Read the published body via `task.py view <N>`; extract the v3 prose
@@ -4468,7 +4508,14 @@ explicit eval-data path):
    re-runs `verify_task_body.py` (must still PASS), and writes the
    revised body via `task.py set-body <N> --file ...`. The analyzer's
    Step 6.5 still fires on this re-run, but the loop guard above
-   prevents another 9a-ter dispatch within the same task.
+   prevents another 9a-ter dispatch within the same task. (**`paper:
+   true`?** The re-spawned analyzer re-authors the `.tex` in place —
+   re-writing the Abstract + the affected Results subsection, re-running
+   `build_paper.py` → `verify_paper.py`, re-writing the paper-stub — per
+   `.claude/agents/analyzer.md` § "Same-issue follow-up rounds
+   (paper-task)"; the mechanical gate is `verify_paper.py`, not
+   `verify_task_body.py`. The same applies to the Step 9b cheap-band /
+   same-issue follow-up loop folds.)
 6. **Post the marker:**
    ```bash
    uv run python scripts/task.py post-marker <N> epm:free-analysis-followup-run \
@@ -4521,6 +4568,30 @@ v3 rule. Discipline rules: see
 `.claude/skills/clean-results/SPEC.md` (canonical structure, register,
 exemplars, figure captions, and research-communication principles).
 
+**Paper-mode branch (`paper: true` frontmatter).** When the task carries
+`paper: true`, the clean-result is a LaTeX **paper** at
+`docs/papers/issue_<N>/`, NOT a markdown body. Both critics branch on
+`paper:` internally (`.claude/agents/clean-result-critic.md` § Paper-task
+review; `.claude/agents/interpretation-critic.md` § Branch on `paper:`):
+the **mechanical pre-pass is `scripts/verify_paper.py`** (NOT
+`verify_task_body.py` / `audit_clean_results_body_discipline.py`, which
+stay the markdown verifiers), each critic reads the `.tex` + the figure
+PNGs + the compiled PDF under `docs/papers/issue_<N>/`, and the SEVEN paper
+lenses (P1 self-standing Introduction · P2 self-contained Methods +
+Rule-A reuse-chain depth · P3 inline-subset + comprehensive-Appendix
+completeness · P4 no confidence in the paper body · P5 research-paper
+register · P6 `\epsref{N}` correctness · P7 verbatim examples + judge
+prompts) bind INSTEAD of the fifteen markdown lenses (no `\metric` grounding
+lens in v1; `verify_paper.py` checks 7-8 mechanically gate the verbatim
+training/eval/output examples + the judge-prompts appendix). The orchestrator's
+brief for both critics names the paper dir (`docs/papers/issue_<N>/`) and
+the `.tex`/PDF read targets instead of the markdown `body.md`; the
+ensemble decision rule, the round cap, and the reconciler tie-break are
+unchanged. The procedural-only verdict strip below operates on the
+`verify_paper.py` presentation set for a paper-task. Everything else in
+this step (round loop, PASS → `reviewing`, the 9a-quater hand-off) is
+identical.
+
 **Round 1:**
 
 Worktree-cwd sessions run the Step 5a spec-freshness check before
@@ -4537,6 +4608,13 @@ dispatching this round's critics.
    binding-concerns audit, the contaminated/failed-data-gate-arm check,
    and the v3 Takeaways / Conciseness / Data lenses. Posts
    `epm:clean-result-critique v1` on the source task with PASS or REVISE.
+   (**`paper: true`?** The critic branches internally to its § Paper-task
+   review: the mechanical pre-pass is `scripts/verify_paper.py` over
+   `docs/papers/issue_<N>/`, NOT `verify_task_body.py` /
+   `audit_clean_results_body_discipline.py`, and the seven P1-P7 paper
+   lenses bind (incl. P7 verbatim examples + judge prompts; verify_paper.py
+   checks 7-8 gate them) — see the Paper-mode branch paragraph above. The Check-21
+   methodology-doc pass-through below is markdown-only; skip it.)
 
    **Check-21 methodology-doc pass-through.** When the methodology doc
    exists on the issue worktree branch (the early-spawned
@@ -4647,7 +4725,21 @@ uv run python scripts/task.py set-status <N> reviewing \
 is `reviewing`, after the 9a-bis loop's PASS, before the
 `awaiting_promotion` park below)
 
-**v4 (current): MECHANICAL EXPORT, no agent spawn.** Every
+**Paper-mode (`paper: true`): SKIP the standalone-doc export.** For a
+paper-task the methodology IS the paper — the `methodology-writer`
+already authored the comprehensive Methods section + recipe Appendix
+(complete hyperparameter table + worked examples + Rule-A reuse recipes)
+DIRECTLY INTO the `.tex` at the Step 8 early spawn, and `verify_paper.py`
+gated the paper's section completeness at 9a-bis. There is no separate
+`docs/methodology/issue_<N>.md` to export and no top-of-body
+`**Methodology:**` link to append (the `body.md` is a thin paper-stub
+pointing at `docs/papers/issue_<N>/`). Post
+`epm:methodology-doc-generated v1` with
+`note: skipped — paper-task (Methods + Appendix authored into docs/papers/issue_<N>/issue_<N>.tex)`
+so the idempotency check converges, then proceed to 9b. The v4 markdown
+export below does NOT run for a paper-task.
+
+**v4 markdown (current): MECHANICAL EXPORT, no agent spawn.** Every
 `kind: experiment` v4 clean-result auto-gains a standalone methodology
 reference at `docs/methodology/issue_<N>.md` that is a **mechanical COPY
 of the body's `## Methodology` section** — the body's `## Methodology`
@@ -5688,7 +5780,10 @@ work* contract.
    numbered asks found" in the marker.
 3. For each ask, locate evidence it was addressed:
    - `experiment` -> grep the promoted clean-result body + `epm:results`
-     event.
+     event. (**`paper: true`?** The promoted body is a thin paper-stub;
+     the clean-result content lives in the paper — grep
+     `docs/papers/issue_<N>/issue_<N>.tex` + the stub abstract +
+     `epm:results` instead.)
    - `infra` / `batch` / `analysis` / `survey` -> grep the PR diff
      (`gh pr diff <PR>`) + `epm:test-verdict`.
 4. Post `epm:completion-audit v1` event with a checklist:

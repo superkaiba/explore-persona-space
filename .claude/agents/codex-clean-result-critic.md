@@ -26,7 +26,15 @@ description: >
   planned-vs-actual coverage; binding-concerns audit; headline must not
   rest on a contaminated / failed-data-gate arm). v3/v2/legacy bodies keep
   their grandfathered shape and are never newly hard-FAILed by a v4
-  rule (substitute the v3 section names for a v3 body). Thin Claude
+  rule (substitute the v3 section names for a v3 body). Branches on `paper:`
+  frontmatter exactly as the Claude critic does: for a `paper: true` task
+  the clean-result is a LaTeX research paper at `docs/papers/issue_<N>/` —
+  the composed Codex prompt inlines the seven PAPER lenses (P1-P7, incl.
+  P7 verbatim examples + judge prompts) +
+  the `scripts/verify_paper.py` preamble INSTEAD of the fifteen markdown
+  lenses, and Codex reads the paper `.tex` + figure PNGs + compiled PDF. No
+  `\metric` grounding lens in v1. The fifteen markdown lenses are composed
+  for non-paper tasks only. Thin Claude
   prompt-composer: composes
   prompt → returns its path; the orchestrator dispatches Codex's
   `companion task` runtime and posts an
@@ -214,7 +222,52 @@ also dispatch `codex_task.py` for this twin from the repo root, not an
 issue worktree, so Codex's inherited sandbox cwd matches the
 `{{repo_root}}`-pinned commands below.
 
-### Step 2: Compose the review prompt
+### Step 1c: Branch on `paper:` (markdown body vs LaTeX paper)
+
+Read the task `body.md` frontmatter (`paper:`) — this selects which lens
+roster + verifier the composed prompt inlines, mirroring the Claude critic's
+"Branch on `paper:`" section EXACTLY:
+
+```bash
+PAPER=$(uv run python - "$BODY_PATH" <<'PY'
+import re, sys
+fm = open(sys.argv[1]).read().split("---", 2)
+print("true" if (len(fm) >= 3 and re.search(r"(?m)^paper:\s*true\s*$", fm[1])) else "false")
+PY
+)
+```
+
+- **`PAPER=false` (markdown body — default):** compose the FIFTEEN-lens
+  markdown prompt (Step 2 + Step 3 as written below). Unchanged.
+- **`PAPER=true` (LaTeX paper):** compose the SEVEN-paper-lens prompt instead.
+  Inline the Claude critic's **## Paper-task review (`paper: true`)** section
+  (P1-P7 — incl. P7 verbatim examples + judge prompts — + the
+  `verify_paper.py` preamble + the read-these-before-scoring
+  artifact list + the Paper-lens output template) INSTEAD of the fifteen
+  markdown lenses, and add the paper-dir existence checks:
+  ```bash
+  PAPER_DIR="$REPO_ROOT/docs/papers/issue_<N>"
+  TEX_PATH="$PAPER_DIR/issue_<N>.tex"
+  PDF_PATH="$PAPER_DIR/issue_<N>.pdf"
+  for f in "$TEX_PATH" "$PDF_PATH"; do
+    test -s "$f" || {
+      uv run python scripts/task.py post-marker <N> epm:failure \
+          --by codex-clean-result-critic \
+          --note "failure_class: orchestration, reason: paper artifact unresolvable at compose time: $f"
+      exit 1
+    }
+  done
+  ```
+  In the Step 3 prompt body, substitute `verify_paper.py --issue
+  {{task_number}}` for the `verify_task_body.py` + `audit...py` preamble,
+  point Codex at `$TEX_PATH` + the figure PNGs (`figures/issue_<N>/`) +
+  `$PDF_PATH` (load relevant PDF pages — render-only issues the `.tex` hides),
+  and emit the SEVEN P1-P7 lens lines. Do NOT inline the fifteen markdown
+  lenses, `verify_task_body.py`, or `audit_clean_results_body_discipline.py`
+  for a paper task. The marker kind, round budget, and grounding rule are
+  identical. (No `\metric` grounding lens in v1.)
+
+### Step 2: Compose the review prompt (markdown branch — `PAPER=false`)
 
 Inline the Claude critic's spec verbatim — read
 `$REPO_ROOT/.claude/agents/clean-result-critic.md` (the canonical-main
@@ -286,7 +339,20 @@ with v4 section names; for a v3 body substitute the v3 names
 `**This experiment in context:**` slot → the `**Why:**` slot in
 `## What I ran`).
 
-### Step 3: The Codex prompt body
+### Step 3: The Codex prompt body (markdown branch — `PAPER=false`)
+
+> **Paper branch (`PAPER=true`):** do NOT use the markdown prompt body
+> below. Compose the Codex prompt from the Claude critic's **## Paper-task
+> review (`paper: true`)** section per Step 1c — point Codex at
+> `$TEX_PATH` + the figure PNGs + `$PDF_PATH`, have it run
+> `cd {{repo_root}} && uv run python scripts/verify_paper.py --issue
+> {{task_number}}` as the mechanical preamble, inline the seven P1-P7 lens
+> definitions + the Paper-lens output template + the independence /
+> don't-gatekeep / grounding rules, and emit the seven P1-P7 lens lines
+> (verifier line `verify_paper.py`; blocker tags `structural-absence`
+> (verify_paper.py checks 1-10) | `lens` (P1-P7); no `audit`/`procedural`).
+> No `verify_task_body.py`, no `audit_clean_results_body_discipline.py`, no
+> fifteen markdown lenses, no `\metric` lens (v1.1).
 
 ```text
 You are an adversarial reviewer of markdown clean-result bodies. You
@@ -890,6 +956,16 @@ You do NOT validate, do NOT retry, do NOT post the marker.
    non-PASS verdict needs >=1 substantive finding (structural-absence
    verifier FAIL, audit hit, or real lens violation) — never a
    presentation nit alone. Always score the lenses in the same pass.
+   (**Paper branch (`PAPER=true`):** the verifier is `verify_paper.py`,
+   there is NO audit script, and the lenses are the seven P1-P7 — a non-PASS
+   needs ≥1 substantive finding (a verify_paper.py checks-1-10 FAIL or a real
+   P1-P7 violation).)
+3b. **Branch on `paper:` at compose time (Step 1c).** For a `paper: true`
+   task compose the seven-paper-lens (P1-P7) prompt with the `verify_paper.py`
+   preamble + the `.tex` / figure-PNG / compiled-PDF read targets; for a
+   markdown body compose the fifteen-lens prompt. Never inline the markdown
+   lenses for a paper task or the paper lenses for a markdown task. No
+   `\metric` grounding lens in v1.
 4. **You are the final gate.** No downstream reviewer. Be thorough
    every round.
 5. **Don't re-critique content.** Numbers, claims, alternative
