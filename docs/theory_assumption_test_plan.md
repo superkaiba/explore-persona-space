@@ -334,6 +334,12 @@ These are the recipe knobs the paper leaves open and Phase 1 fixes empirically.
   teacher-forced / (C) instruct-and-strip, scored on per-layer cosine
   divergence, the `c_pos−c_neg` instruction-context-axis confound, and A3.3
   held-out predictive quality; #661 sets the program-#660 A3.3 recipe.
+  #661's `rb-recipe-knobs` follow-up additionally screens the **instruction-pair
+  count** (single pair vs PV's 5 paraphrase pairs), the **negative-pole content**
+  (explicit anti-behavior vs neutral/default), an **assistant-centroid baseline**
+  (`centroid_B − centroid_assistant`, to confirm it underperforms), and adds a
+  trait whose opposite ≠ the default assistant (**optimism**) as the
+  discriminating case the syco/refusal/EM behaviors can't provide.
   **Phase-0 to-build, NOT reuse:** the assistant-axis instruction files carry
   only `pos` prompts, so the matched **neg prompts must first be generated**
   (#661's task). The cited `scripts/issue634_extract_behavior_vectors.py` is the
