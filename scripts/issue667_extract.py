@@ -118,6 +118,27 @@ def stage_inputs() -> tuple[Path, Path]:
     return dst / "sampled_contexts.json", dst / "icl_demos.json"
 
 
+def _probe_text(p: object) -> str:
+    """Normalize a probe pool element to its question STRING.
+
+    Probe pools are heterogeneous: marker / direct_recall rows are bare strings,
+    sycophancy / em rows are dicts that ``load_eval_probes`` already flattens,
+    but the fact ``ood_framings`` rows are ``{"framing", "question"}`` dicts
+    (id 83399 of the probe-format crash, round-7). Defensive against ANY dict
+    shape — pull ``question`` -> ``prompt`` -> ``text``, else ``str(p)`` — so the
+    downstream message-builders (which thread the probe into a chat ``content``
+    string and through ``_casualize``) always see a flat string.
+    """
+    if isinstance(p, str):
+        return p
+    if isinstance(p, dict):
+        for key in ("question", "prompt", "text"):
+            v = p.get(key)
+            if isinstance(v, str):
+                return v
+    return str(p)
+
+
 def load_eval_probes(behavior: str) -> list[str]:
     """The #537 eval probe pool for a behavior (plan §4.0).
 
@@ -125,13 +146,17 @@ def load_eval_probes(behavior: str) -> list[str]:
     direct-recall + ood-framings. sycophancy: pool_sycophancy_25 wrong-claims.
     em: pool_em_8 Betley main-8 (id 0 paraphrase each — the eval surface #537
     scored G on).
+
+    Every branch returns a flat ``list[str]``; the fact pool mixes string
+    ``direct_recall`` rows with dict ``ood_framings`` rows, so it is run through
+    ``_probe_text`` to flatten the dicts to their question string (round-7 fix).
     """
     if behavior == "marker":
         d = json.loads(Path(_hf(f"{DATA_PREFIX}/pools/pool_marker_eval_32.json")).read_text())
         return list(d["questions"])
     if behavior == "fact":
         d = json.loads(Path(_hf(f"{DATA_PREFIX}/pools/pool_fact_30.json")).read_text())
-        return [*d["direct_recall"], *d["ood_framings"]]
+        return [_probe_text(p) for p in (*d["direct_recall"], *d["ood_framings"])]
     if behavior == "sycophancy":
         d = json.loads(Path(_hf(f"{DATA_PREFIX}/pools/pool_sycophancy_25.json")).read_text())
         return [c["wrong_claim"] for c in d["claims"]]
