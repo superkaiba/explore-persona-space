@@ -256,7 +256,7 @@ def fig_gate_vs_behavior(scatter):
     ax.legend(loc="upper right", bbox_to_anchor=(0.99, 0.99), fontsize=8.5, frameon=False, ncol=1)
     set_title_subtitle(
         ax,
-        "The gate chain is geometrically real but only partly reaches the behavior",
+        "Activation-space gate relation observed; behavioral translation remains partial",
         "Base gate predicts the activation gate strongly; its reach to the measured leakage matrix G is weak for EM/sycophancy, moderate for fact. n=464.",
     )
     # set_title_subtitle + blog constrained_layout collapses the axes (memory:
@@ -288,7 +288,7 @@ def fig_a38_rankone():
         color=paper_palette_role("control"),
         lw=1.4,
         ls="--",
-        label=f"chance ≈ 1/30 = {chance:.3f}",
+        label=f"chance ≈ 1/29 = {chance:.3f}",
     )
     ax.set_xticks(x)
     ax.set_xticklabels([BEH_LABEL[b].split(" (")[0] for b in behs], rotation=12, ha="right")
@@ -307,7 +307,9 @@ def fig_a38_rankone():
 def fig_a37_write():
     a37 = _load("A3_7_source_write.json")["by_behavior"]
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.4, 4.0))
+    # taller canvas so blog constrained_layout reserves room for the rotated
+    # x-tick behavior labels + the long y-axis label (no clipping at the bottom).
+    fig, ax = plt.subplots(figsize=(7.4, 4.6))
     behs = HEADLINE + ["marker"]
     x = np.arange(len(behs))
     w = 0.27
@@ -351,7 +353,11 @@ def fig_a37_write():
 def fig_a36_forest():
     a36 = _load("A3_6_readout_stability.json")["by_behavior"]
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.0, 3.4))
+    # taller canvas so blog constrained_layout reserves room for the left y-tick
+    # behavior labels + the bottom x-axis label (no clipping). The x-label and
+    # subtitle are kept short so constrained_layout, which centers them under the
+    # narrow forest axes, does not overflow the figure edges (round-2 clip fix).
+    fig, ax = plt.subplots(figsize=(7.2, 3.8))
     behs = HEADLINE
     y = np.arange(len(behs))[::-1]
     c = paper_palette_role("primary")
@@ -365,12 +371,12 @@ def fig_a36_forest():
     ax.axvline(0, color="0.4", lw=0.8)
     ax.set_yticks(y)
     ax.set_yticklabels([BEH_LABEL[b] for b in behs])
-    ax.set_xlabel("Partial Spearman ρ  (base read-out · Δv  vs  behavior change | base level)")
+    ax.set_xlabel("Partial Spearman ρ  (read-out · Δv  vs  Δbehavior | base)")
     ax.set_xlim(-0.7, 0.4)
     set_title_subtitle(
         ax,
         "The base read-out does not predict the post-FT behavior change",
-        "Partial ρ with the base level partialled out; grey band = shuffled-read-out null. EM/fact land significantly negative, sycophancy null. n=464.",
+        "Partial ρ, base level partialled out; grey band = shuffled-read-out null. EM/fact negative, sycophancy null. n=464.",
     )
     savefig_paper(fig, "issue_667/fig_a36_forest", dir=str(ROOT / "figures") + "/")
     plt.close(fig)

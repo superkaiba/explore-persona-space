@@ -1,6 +1,6 @@
 {
-  "commit": "8cd66e9ffc",
-  "created": "2026-06-25T22:08:03Z",
+  "commit": "90b04a523e",
+  "created": "2026-06-25T23:37:21Z",
   "figsize": [
     7.0,
     4.0
@@ -417,14 +417,14 @@
     {
       "x": 0.0,
       "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.034482758620689655,
-      "series": "chance \u2248 1/30 = 0.034",
+      "series": "chance \u2248 1/29 = 0.034",
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 1.0,
       "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.034482758620689655,
-      "series": "chance \u2248 1/30 = 0.034",
+      "series": "chance \u2248 1/29 = 0.034",
       "_kind": "line",
       "_group": 8
     }
