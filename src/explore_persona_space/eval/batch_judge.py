@@ -429,7 +429,7 @@ def judge_completions_batch(
     Workflow:
     1. Check cache for each (question, completion) pair
     2. Dispatch uncached pairs through judge_dispatch (sync below the
-       tier-scaled threshold, Message Batches at/above it, in <=10k sub-batches)
+       tier-scaled threshold, Message Batches at/above it, in <=8k sub-batches)
     3. Parse results, update cache
     4. Aggregate per persona
 
