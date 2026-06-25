@@ -53,6 +53,7 @@ Usage (one source-adapter cell)::
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import logging
 import os
@@ -93,6 +94,56 @@ HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 DATA_PREFIX = "issue537_context_generalization/data"
 # Per-behavior eval probe pools (#537 frozen pools, plan §4.0).
 N_GEN_TOKENS = 1024  # greedy R cap (natural Qwen replies ~150 tok; log truncation)
+
+# Atomic completion sentinel. The extractor writes the per-(target, layer) ``.npz``
+# INCREMENTALLY, so a mid-cell crash leaves a PARTIAL dir that a presence-only
+# ``any(*.npz)`` resume-skip would wrongly treat as complete (round-8 BLOCKER
+# resume-skip-partial-cell-silent-skip). The sentinel is written ATOMICALLY only
+# AFTER every planned (target, layer) ``.npz`` is on disk — its presence is the
+# proof of FULL completion. The resume-skip predicate checks for this file, not
+# for any stray ``.npz``.
+CELL_DONE_SENTINEL = ".done"
+
+
+def write_cell_done_sentinel(
+    cell_dir: Path,
+    *,
+    behavior: str,
+    source_cid: str,
+    seed: int,
+    targets: list[str],
+    layers: list[int],
+) -> Path:
+    """Atomically write the cell's completion sentinel after ALL tensors are saved.
+
+    Atomic = write to a temp file in the SAME dir then ``os.replace`` (rename is
+    atomic within a filesystem) so a crash mid-write never leaves a half-written
+    ``.done`` that the resume-skip would trust. The payload records the exact
+    (target, layer) pairs written so a future validator can cross-check the
+    on-disk ``.npz`` against the expected complement (backfill uses this shape).
+    """
+    payload = {
+        "behavior": behavior,
+        "source_cid": source_cid,
+        "seed": seed,
+        "targets": sorted(targets),
+        "layers": sorted(layers),
+        "n_npz_expected": len(targets) * len(layers),
+        "ts": datetime.datetime.now(datetime.UTC).isoformat(),
+    }
+    final = cell_dir / CELL_DONE_SENTINEL
+    tmp = cell_dir / f"{CELL_DONE_SENTINEL}.{os.getpid()}.tmp"
+    tmp.write_text(json.dumps(payload, indent=2))
+    os.replace(tmp, final)  # atomic within the cell_dir filesystem
+    logger.info(
+        "cell %s/%s sentinel written: %s (%d targets x %d layers)",
+        behavior,
+        source_cid,
+        final,
+        len(targets),
+        len(layers),
+    )
+    return final
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -879,6 +930,17 @@ def run_extraction(args) -> int:
         len(targets),
         n_gen,
         n_trunc,
+    )
+    # Atomic completion sentinel — written ONLY after every target's tensors are
+    # on disk, so the dispatcher's resume-skip never treats a partial dir as done
+    # (round-8 BLOCKER resume-skip-partial-cell-silent-skip).
+    write_cell_done_sentinel(
+        cell_dir,
+        behavior=behavior,
+        source_cid=source_cid,
+        seed=seed,
+        targets=targets,
+        layers=layers,
     )
     # Free GPU (per-cell subprocess will exit, but be explicit).
     del base, trained

@@ -439,10 +439,25 @@ def _stub_extract_phase(monkeypatch, tmp_path, *, sources):
 
 
 def _make_cell_done(tmp_path, behavior, source):
-    """Simulate a completed cell: a non-empty .npz under the cell's output dir."""
+    """Simulate a FULLY completed cell: tensors + the atomic .done sentinel.
+
+    Round-8: completion is signalled by the ``.done`` sentinel written atomically
+    AFTER every tensor lands (issue667_extract.write_cell_done_sentinel), NOT by
+    the mere presence of a ``.npz`` (which a mid-cell crash leaves partial)."""
+    from issue667_extract import CELL_DONE_SENTINEL
+
     cell_dir = tmp_path / "tensors" / behavior / f"{source}_seed{disp._EXTRACT_SEED}"
     cell_dir.mkdir(parents=True, exist_ok=True)
-    (cell_dir / "sp_swe_L14.npz").write_bytes(b"\x00")  # presence is all that matters
+    (cell_dir / "sp_swe_L14.npz").write_bytes(b"\x00")
+    (cell_dir / CELL_DONE_SENTINEL).write_text(json.dumps({"behavior": behavior}))
+
+
+def _make_cell_partial(tmp_path, behavior, source):
+    """Simulate a PARTIALLY extracted cell: some .npz present but NO .done sentinel
+    (the mid-cell-crash state the round-8 BLOCKER fix must NOT treat as done)."""
+    cell_dir = tmp_path / "tensors" / behavior / f"{source}_seed{disp._EXTRACT_SEED}"
+    cell_dir.mkdir(parents=True, exist_ok=True)
+    (cell_dir / "sp_swe_L14.npz").write_bytes(b"\x00")  # partial: tensor but no sentinel
 
 
 def test_phase_extract_resume_skips_already_extracted_cell(monkeypatch, tmp_path):
@@ -499,20 +514,131 @@ def test_phase_extract_no_resume_skip_reruns_completed_cell(monkeypatch, tmp_pat
 
 
 def test_cell_already_extracted_predicate(monkeypatch, tmp_path):
-    """``_cell_already_extracted`` is True only for an EXISTING dir holding >=1 .npz."""
+    """``_cell_already_extracted`` is True ONLY when the atomic .done sentinel exists.
+
+    Round-8 BLOCKER flip: a dir holding ``.npz`` files but NO ``.done`` sentinel is
+    a PARTIAL (mid-crash) cell and must NOT count as done — the old ``any(*.npz)``
+    contract would silently accept it and skip re-extraction, corrupting the
+    headline (resume-skip-partial-cell-silent-skip)."""
+    from issue667_extract import CELL_DONE_SENTINEL
+
     monkeypatch.setattr(disp, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(disp, "TENSORS_DIR", "tensors")
 
     # No dir -> not done.
     assert not disp._cell_already_extracted("fact", "sp_swe")
 
-    # Empty dir (mkdir'd but no .npz, e.g. a cell that crashed before writing) -> not done.
-    empty = tmp_path / "tensors" / "fact" / f"sp_swe_seed{disp._EXTRACT_SEED}"
-    empty.mkdir(parents=True, exist_ok=True)
+    # Empty dir (mkdir'd but nothing written) -> not done.
+    cell = tmp_path / "tensors" / "fact" / f"sp_swe_seed{disp._EXTRACT_SEED}"
+    cell.mkdir(parents=True, exist_ok=True)
     assert not disp._cell_already_extracted("fact", "sp_swe"), (
         "empty cell dir must NOT count as done"
     )
 
-    # Dir with a .npz -> done.
-    (empty / "sp_swe_L14.npz").write_bytes(b"\x00")
+    # Dir with a .npz but NO sentinel (partial / mid-crash) -> NOT done (the flip).
+    (cell / "sp_swe_L14.npz").write_bytes(b"\x00")
+    assert not disp._cell_already_extracted("fact", "sp_swe"), (
+        "a partial cell (.npz present, no .done sentinel) must NOT count as done"
+    )
+
+    # Sentinel present -> done.
+    (cell / CELL_DONE_SENTINEL).write_text("{}")
     assert disp._cell_already_extracted("fact", "sp_swe")
+
+
+def test_phase_extract_does_not_skip_partial_cell(monkeypatch, tmp_path):
+    """A PARTIALLY-extracted cell (.npz on disk, no .done sentinel) MUST be relaunched.
+
+    This is the round-8 BLOCKER scenario: a mid-cell crash leaves a partial dir;
+    the default-ON resume-skip must re-extract it, never silently accept it."""
+    launched = _stub_extract_phase(monkeypatch, tmp_path, sources=["default", "sp_swe"])
+    _make_cell_partial(tmp_path, "fact", "default")  # partial -> must be re-run
+    _make_cell_done(tmp_path, "fact", "sp_swe")  # fully done -> skipped
+
+    disp.phase_extract(
+        behaviors=["fact"],
+        sources_arg=None,
+        targets_arg=None,
+        layers=[14],
+        primary_layer=14,
+        n_gpus=1,
+        cpu_only=True,
+        max_probes=2,
+        max_train_rows=8,
+        skip_upload=True,
+        dry_run=False,
+        skip_parity=True,
+        resume_skip=True,
+    )
+
+    assert ("fact", "default") in launched, "partial cell must be re-extracted (no sentinel)"
+    assert ("fact", "sp_swe") not in launched, "fully-complete cell (sentinel) is resume-skipped"
+    assert launched == [("fact", "default")], launched
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (round-8) --backfill-sentinels: write .done for already-complete on-disk cells.
+#
+# The 32 cells extracted under the round-7 any(*.npz) contract have no .done
+# sentinel. The backfill validates each cell's .npz complement and writes the
+# atomic sentinel ONLY for complete cells; incomplete cells are reported + left
+# unsentineled (they re-extract). Pure local filesystem walk — no GPU/HF.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_backfill_sentinels_writes_only_for_complete_cells(monkeypatch, tmp_path):
+    from issue667_extract import CELL_DONE_SENTINEL
+
+    from explore_persona_space.experiments import i537_contexts
+
+    monkeypatch.setattr(disp, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(disp, "TENSORS_DIR", "tensors")
+    # Tiny stubbed target grid: 2 eval cids; the cell's expected complement is
+    # {source, *eval_cids} x layers, deduped.
+    monkeypatch.setattr(i537_contexts, "eval_cids_for", lambda behavior: ["sp_swe", "fmt_json"])
+
+    layers = [14]
+    seed = disp._EXTRACT_SEED
+
+    # Complete cell: source=default -> targets {default, sp_swe, fmt_json} x {14}.
+    done_cell = tmp_path / "tensors" / "fact" / f"default_seed{seed}"
+    done_cell.mkdir(parents=True, exist_ok=True)
+    for tcid in ("default", "sp_swe", "fmt_json"):
+        (done_cell / f"{tcid}_L14.npz").write_bytes(b"\x00")
+
+    # Incomplete cell: source=sp_swe missing one expected .npz -> NO sentinel.
+    partial_cell = tmp_path / "tensors" / "fact" / f"sp_swe_seed{seed}"
+    partial_cell.mkdir(parents=True, exist_ok=True)
+    for tcid in ("sp_swe", "default"):  # missing fmt_json_L14.npz
+        (partial_cell / f"{tcid}_L14.npz").write_bytes(b"\x00")
+
+    disp.phase_backfill_sentinels(layers=layers)
+
+    assert (done_cell / CELL_DONE_SENTINEL).is_file(), "complete cell must get a sentinel"
+    assert not (partial_cell / CELL_DONE_SENTINEL).is_file(), (
+        "incomplete cell must NOT get a sentinel (it re-extracts)"
+    )
+    # After backfill the complete cell resume-skips; the partial one does not.
+    assert disp._cell_already_extracted("fact", "default")
+    assert not disp._cell_already_extracted("fact", "sp_swe")
+
+
+def test_backfill_sentinels_is_idempotent(monkeypatch, tmp_path):
+    """Re-running backfill on a cell that already has a sentinel is a no-op (no crash)."""
+    from issue667_extract import CELL_DONE_SENTINEL
+
+    from explore_persona_space.experiments import i537_contexts
+
+    monkeypatch.setattr(disp, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(disp, "TENSORS_DIR", "tensors")
+    monkeypatch.setattr(i537_contexts, "eval_cids_for", lambda behavior: ["sp_swe"])
+
+    cell = tmp_path / "tensors" / "fact" / f"default_seed{disp._EXTRACT_SEED}"
+    cell.mkdir(parents=True, exist_ok=True)
+    for tcid in ("default", "sp_swe"):
+        (cell / f"{tcid}_L14.npz").write_bytes(b"\x00")
+
+    disp.phase_backfill_sentinels(layers=[14])
+    first = (cell / CELL_DONE_SENTINEL).read_text()
+    disp.phase_backfill_sentinels(layers=[14])  # second run: must not crash or rewrite
+    assert (cell / CELL_DONE_SENTINEL).read_text() == first
