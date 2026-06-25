@@ -11,6 +11,7 @@ paths:
 CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
 
 - **Lint:** `uv run ruff check . && uv run ruff format .` (line-length=100, py311, select E/F/I/UP).
+- **PostToolUse ruff strips unused imports.** The auto-fix runs after every Edit and removes a just-added import if it isn't referenced yet (F401) — costing a re-add round. Add the import together with its first usage in ONE edit, or add the usage first.
 - **Packages:** always `uv` (not pip/conda). Config via Hydra (not argparse). Track with `wandb`.
 - **Plot fonts (Inter):** `bash scripts/install_inter.sh` once on the dev VM; pods get it via `bootstrap_pod.sh`. Fallback DejaVu Sans.
 - **Tensor-shape asserts at boundaries:** `assert logits.shape == (B, T, V), logits.shape`.

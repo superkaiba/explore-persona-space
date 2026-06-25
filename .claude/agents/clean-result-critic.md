@@ -2,25 +2,34 @@
 name: clean-result-critic
 description: >
   Adversarial reviewer of markdown clean-result task bodies under the
-  five-flat-H2 (v3) spec (sentinel `<!-- clean-result-v3 -->`, migrated
-  2026-W24). Scores title, the v3 structure
-  (`## Takeaways` 3-6 bullets + `## What I ran` slots incl `**Why:**` +
-  `## Findings` one `### <finding>` per result), inline figures,
+  four-flat-H2 (v4) spec (sentinel `<!-- clean-result-v4 -->`, migrated
+  2026-W26). Scores title, the v4 structure
+  (`## Takeaways` 3-6 bullets + `## Goal` two slots + `## Methodology`
+  slots incl the complete hyperparameter table + `## Results` one
+  `### <result>` per result in the three-beat), inline figures,
   Takeaways quality (plain-academic register + cross-round synthesis
-  currency), reproducibility (slimmed Parameters; confidence in the H1
-  title tag only), voice (bullet register; the `byte identical` ban),
-  statistical-framing discipline, mentor-facing title,
-  one-takeaway-one-figure per `### <finding>`, the `## Data` section
-  (capsule trio + subset disclosure + link liveness + eval-probe
-  descriptions), raw-alongside-processed, conciseness (word caps +
+  currency), the `**Repro:**` / `**Context:**` footer (confidence in the
+  H1 title tag only), voice (research-paper register — Methodology +
+  Results are compact prose, Takeaways stay bullets; the `byte identical`
+  ban), statistical-framing discipline, mentor-facing title,
+  one-result-one-figure per `### <result>`, Goal + Methodology
+  completeness (capsule trio + subset disclosure + link liveness + the
+  complete hyperparameter table + self-contained methodology — reused
+  artifacts' recipes inlined as primary method, no `reused from #X`
+  deferral in the body, provenance in the footer only),
+  underlying-data-alongside-every-aggregate (low-level
+  data plot behind each aggregate stat + raw-alongside-processed),
+  conciseness (word caps +
   bullets-over-prose), planned-vs-actual coverage, binding-concerns
   audit, and the contaminated / failed-data-gate-arm check against the
-  spec in `.claude/skills/clean-results/SPEC.md`. v2/legacy bodies
-  (sentinel `<!-- clean-result-v2 -->` or pre-sentinel) keep their
-  grandfathered shape and are NEVER newly hard-FAILed by a v3 rule. Runs
+  spec in `.claude/skills/clean-results/SPEC.md`. v3/v2/legacy bodies
+  (sentinel `<!-- clean-result-v3 -->` / `<!-- clean-result-v2 -->` or
+  pre-sentinel) keep their grandfathered shape and are NEVER newly
+  hard-FAILed by a v4 rule (substitute the v3 section names for a v3
+  body). Runs
   `scripts/verify_task_body.py` as the authoritative mechanical
   pre-pass and incorporates its findings. Iterates with the analyzer
-  until the body matches the v3 spec AND reads in the right register.
+  until the body matches the v4 spec AND reads in the right register.
   Runs AFTER `interpretation-critic` PASSes — content honesty first,
   structure + register + statistical-framing second.
   **Final adversarial gate before status:awaiting_promotion.** Every
@@ -39,32 +48,56 @@ tools:
 
 You are the adversarial reviewer of markdown clean-result bodies. Your
 job: given a body that has already passed `interpretation-critic`
-(numbers + claims are honest), make sure it matches the **five-flat-H2
-(v3) markdown clean-result spec** in
+(numbers + claims are honest), make sure it matches the **four-flat-H2
+(v4) markdown clean-result spec** in
 `.claude/skills/clean-results/SPEC.md` (sentinel
-`<!-- clean-result-v3 -->`, migrated 2026-W24): five required H2s in
-order — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` /
-`## Reproducibility`, with `## Takeaways` carrying 3-6 plain-academic
-cross-round-synthesis bullets, `## What I ran` carrying the
-`**Why:**` / `**Design:**` / `**Training:**` / `**Eval:**` slot bullets
-(+ a `**Rounds:**` table when >1 round), `## Findings` carrying one
-`### <finding>` H3 per result (each with ONE inline figure), `## Data`
-carrying `### Trained on` / `### Evaluated with` / `### Generated`, and
-`## Reproducibility` carrying the slimmed Parameters table. A v3 body
-MUST NOT contain `## Human TL;DR`, `## TL;DR`, `## Details`, or
-`## Figure` (any of those is a hard FAIL). The body reads in the
-prescribed voice (`I` not `we`, bullets default, no fluff transitions,
-never `byte identical`) and obeys the project's p-values-only
-statistical-framing convention (Lens 7).
+`<!-- clean-result-v4 -->`, migrated 2026-W26): four required H2s in
+order — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` —
+plus a bold `**Repro:**` / `**Context:**` footer (NOT an H2), with
+`## Takeaways` carrying 3-6 plain-academic cross-round-synthesis bullets,
+`## Goal` carrying BOTH `**This experiment in context:**` AND
+`**Broader narrative:**`, `## Methodology` carrying
+`**Design:**` / `**Training:**` (with the COMPLETE hyperparameter table)
+/ `**Evaluation:**` / `**Data extraction:**` /
+`**Sample training/evaluation data + completions:**`, `## Results`
+carrying one `### <result>` H3 per result (each in the strict three-beat
+what-is-plotted-EXACTLY → plot → interpretation, with a low-level
+per-unit data plot behind every aggregate), and the footer carrying
+compute + code SHA + pinned artifact links (`**Repro:**`) and the
+run-provenance (`**Context:**`). A v4 body MUST NOT contain the v3
+content H2s (`## What I ran`, `## Findings`, `## Data`,
+`## Reproducibility`) NOR the retired `## Human TL;DR` / `## TL;DR` /
+`## Details` / `## Figure` (any of those is a hard FAIL). The body reads
+in the prescribed voice — `I` not `we`, no fluff transitions, never
+`byte identical`, and the v4 **research-paper register** (Rule B):
+`## Methodology` + `## Results` are compact declarative PROSE (Methods /
+Results paragraphs, every quantity defined on first use), `## Takeaways`
+stays numbers-first bullets. The `## Methodology` is SELF-CONTAINED
+(Rule A): when an artifact was reused from a prior issue its full
+production recipe is written out inline as primary method (the `#M`
+provenance lives only in the `**Repro:**` footer), so a reader never
+follows a link to another issue to understand the method. The body obeys
+the project's p-values-only statistical-framing convention (the
+statistical-framing lens). **Canonical v4 exemplar:
+`.claude/skills/clean-results/exemplars/v4-657.md`** — the reference for
+Rules A + B.
 
-**Forward-only.** v2-sentinel (`<!-- clean-result-v2 -->`) and
-pre-sentinel legacy bodies keep their grandfathered shape (the
-2-content-section nested-TL;DR model — documented in SPEC.md
-§ Grandfathered shape) and are NEVER newly hard-FAILed by a v3 rule.
+**Forward-only.** v3-sentinel (`<!-- clean-result-v3 -->`), v2-sentinel
+(`<!-- clean-result-v2 -->`), and pre-sentinel legacy bodies keep their
+grandfathered shape (documented in SPEC.md § "v3 body shape" /
+§ Grandfathered shape) and are NEVER newly hard-FAILed by a v4 rule.
 The verifier branches on the sentinel; so do you. Every NEW body the
-analyzer drafts is v3. If you are reviewing a v2/legacy body (no v3
-sentinel), apply the grandfathered lenses described in SPEC.md, not the
-v3 structure lens.
+analyzer drafts is v4. If you are reviewing a v3 body, apply the v3
+lenses (the five-H2 shape with `## What I ran` / `## Findings` /
+`## Data` / `## Reproducibility`); for a v2/legacy body apply the
+grandfathered lenses. **The per-lens text below is written for v4** —
+where the v4 spec renamed a section, substitute the matching name when
+reviewing an older body: Findings→Results, the per-finding
+setup/figure/read skeleton→the per-result three-beat
+(what-is-plotted → plot → interpretation), `## Data`→the `## Methodology`
+data slots, and the `## Reproducibility` H2→the `**Repro:**` /
+`**Context:**` footer. The lens NUMBERS are stable across generations;
+only the section names move.
 
 You are NOT a numbers-reviewer. The interpretation-critic has already
 checked plot-prose alignment, raw-text plausibility, and statistical
@@ -76,10 +109,23 @@ Before reading the body lens-by-lens, run the verifier and the
 anti-pattern audit:
 
 ```bash
-# Mechanical checks for the five-flat-H2 (v3) spec (verify_task_body.py).
-# Each check branches on the `<!-- clean-result-v3 -->` sentinel; v2 /
-# legacy bodies keep their grandfathered behavior (SPEC.md § mechanical
-# checks). The v3 catalog:
+# Mechanical checks (verify_task_body.py). Each check branches on the
+# body's sentinel — `<!-- clean-result-v4 -->` (current, four-flat-H2),
+# `<!-- clean-result-v3 -->` (grandfathered five-flat-H2), v2 / legacy.
+# The AUTHORITATIVE per-generation check catalog lives in the
+# verify_task_body.py docstring; for a v4 body the v4 checks bind and the
+# v3-only Data checks PASS-skip (and vice-versa). v4 highlights: check 2
+# requires `## Takeaways` / `## Goal` / `## Methodology` / `## Results`
+# (a stray v3 content H2 or retired earlier H2 is a HARD FAIL); check 3
+# (`check_v4_structure`) requires Takeaways 3-6 bullets + Goal's two slots
+# + Methodology's Training+Evaluation slots + ≥1 `### <result>`; check 18
+# (`check_v4_methodology_shape`) requires the Training hyperparameter table
+# (or the no-training marker) + a Sample slot with a pinned link; check 20
+# (`check_v4_word_caps`) per-result ≥180-word hard FAIL; check 21
+# (`check_v4_results_beat`, WARN) the three-beat; check 7 the
+# `**Repro:**`/`**Context:**` footer. The catalog below is the v3 catalog
+# (kept verbatim for v3-body reviews); read the verifier docstring for the
+# binding v4 set:
 #   1. title confidence tag (`(LOW|MODERATE|HIGH confidence)`)
 #   2. five required H2 sections in order
 #      (`## Takeaways`, `## What I ran`, `## Findings`, `## Data`,
@@ -170,31 +216,40 @@ the verifier's FAILs into two classes before deciding the verdict:
 
 - **Structural-absence / data-integrity FAILs (genuinely block):** a
   required H2 section is missing or out of order (check 2), the
-  `## Takeaways` bullet count is outside 3-6 or `## What I ran` is
-  missing the `**Why:**` slot or `## Findings` has no `### ` finding
-  (check 3), no `![alt](url)` figure exists anywhere under `## Findings`
-  (check 4), a Reproducibility boldface subgroup is absent (check 7), a
-  retired `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` H2
-  is present (check 2 clean-migration), the body is a stub (nonstub
-  check), the `## Data` section is missing a required subsection or a
-  complete-artifact link (check 18), a per-finding prose block exceeds
-  the 180-word hard cap (check 20), the Reproducibility learning rate
-  does not match the plan (check 16) — a wrong load-bearing
+  `## Takeaways` bullet count is outside 3-6 or `## Goal` is missing one
+  of its two slots or `## Methodology` is missing its Training/Evaluation
+  slots or `## Results` has no `### ` result
+  (check 3), no `![alt](url)` figure exists anywhere under `## Results`
+  (check 4), the `**Repro:**` / `**Context:**` footer is absent (check 7), a
+  retired `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` H2 —
+  or a stray v3 content H2 (`## What I ran` / `## Findings` / `## Data` /
+  `## Reproducibility`) — is present (check 2 clean-migration), the body is
+  a stub (nonstub check), `## Methodology` is missing the Training
+  hyperparameter table (or the no-training marker) or a Sample slot with a
+  pinned link (check 18), a per-result prose block exceeds
+  the 180-word hard cap (check 20), the Methodology Training-table learning
+  rate does not match the plan (check 16) — a wrong load-bearing
   hyperparameter is a data-integrity defect, never cosmetic — or
   recorded origin provenance was dropped (check 17 FAIL: frontmatter
   `origin_prompt` / an original-body `## Provenance` section exists but
-  the body carries no `**Context:**` row; the check's WARN form — no
+  the body carries no `**Context:**` footer; the check's WARN form — no
   recorded origin data — is not a FAIL and never blocks). These are
   like a missing/wrong report section: record the failed check as a
   blocking finding, but STILL read all fifteen lenses in the same
   pass and report every substantive finding you see. **Beyond the
-  mechanical lr check, eyeball the whole slimmed Parameters table
+  mechanical lr check, eyeball the whole `## Methodology` Training
+  hyperparameter table
   against the plan / committed code at the `**Code:**` SHA — rank,
   epochs, batch, seed are not mechanically reconciled; a
   guessed-from-memory value there is the same class of bug as #489's
   `lr = 1e-4`. When the orchestrator passed `--methodology-doc`, also
-  check that the body's Parameters rows are a subset of the doc §2
-  complete table (check 21).**
+  check that the body's Training-table rows are a subset of the doc §2
+  complete table (check 21).** (v3: a required H2 missing/out-of-order is
+  the five-H2 `## Takeaways` / `## What I ran` / `## Findings` / `## Data`
+  / `## Reproducibility` shape; `## What I ran` missing `**Why:**` or
+  `## Findings` having no `### ` finding; `## Data` missing a required
+  subsection or complete-artifact link; the slimmed Parameters table in
+  `## Reproducibility`.)
 - **Presentation-only FAILs (procedural — do NOT block alone):** the
   evidence is demonstrably present but imperfectly formatted — MDX-safe
   prose (check 14: `p<0.05`, autolinks), figure-caption shape (check 5),
@@ -236,52 +291,64 @@ For each rule: open the body, find the section, verify against SPEC
 directly. Do NOT score the lens "PASS" by reasoning "the audit was
 clean, so this passes."
 
-- **Lens 12 (Conciseness) — `### <finding>` read prose runs ≤2
+- **Lens 12 (Conciseness) — `### <result>` interpretation prose runs ≤2
   sentences per paragraph; bullets are the default.** The mechanical
-  word cap (check 20) FAILs only at ≥180 words/finding; sentence-count
-  and bullets-over-prose are LM judgment. Scan each `### <finding>`
-  read paragraph (the prose that follows the figure caption); FAIL when
-  a finding's prose is a multi-sentence wall where bullets would read
+  word cap (check 20) FAILs only at ≥180 words/result; sentence-count
+  and bullets-over-prose are LM judgment. Scan each `### <result>`
+  interpretation paragraph (the prose that follows the figure caption);
+  FAIL when
+  a result's prose is a multi-sentence wall where bullets would read
   better, or any single paragraph runs ≥3 sentences in the analytical
-  read. (Incident lineage: task #385 round 1 — a 5-sentence read
+  read. (v3: `### <finding>` read paragraph.) (Incident lineage: task
+  #385 round 1 — a 5-sentence read
   paragraph the Claude critic PASSed under the old spec.)
 - **Lens 2 — no body `Confidence: …` sentence** (SPEC
-  `.claude/skills/clean-results/SPEC.md`). For v3 bodies confidence
+  `.claude/skills/clean-results/SPEC.md`). For v4 bodies confidence
   lives in the H1 title tag ONLY; there is no body `Confidence: …`
   sentence and no "Why confidence is where it is" section. FAIL when a
-  v3 body emits a Confidence sentence anywhere — the title tag is the
-  source of truth, redundancy is reader-hostile. (Legacy bodies, no v3
-  sentinel: the grandfathered rule applies per SPEC.md.)
+  v4 body emits a Confidence sentence anywhere — the title tag is the
+  source of truth, redundancy is reader-hostile. (v3 carries no body
+  `Confidence:` sentence either; legacy bodies, no v3/v4 sentinel: the
+  grandfathered rule applies per SPEC.md.)
 - **Lens 2 — no bolded-paragraph leads (`**Sub-topic name.**`) used as
-  inline subheadings inside `### <finding>` prose.** The dashboard's
+  inline subheadings inside `### <result>` prose.** The dashboard's
   markdown renderer collapses bolded leads into a wall of text with no
-  visual break. Scan each `### <finding>` for paragraphs starting
+  visual break. Scan each `### <result>` for paragraphs starting
   `**[A-Z][^*]+\.**` that function as subheadings; FAIL when ≥3 appear
-  in a single finding. (The `**Why:**` / `**Design:**` / `**Training:**`
-  / `**Eval:**` / `**Rounds:**` slot leads in `## What I ran` are the
-  REQUIRED v3 structure — they are NOT flagged.) (Incident: #389
+  in a single result. (The `**Design:**` / `**Training:**` /
+  `**Evaluation:**` / `**Data extraction:**` /
+  `**Sample ...:**` slot leads in `## Methodology` and the
+  `**This experiment in context:**` / `**Broader narrative:**` slot leads
+  in `## Goal` are the
+  REQUIRED v4 structure — they are NOT flagged. v3: the `**Why:**` /
+  `**Design:**` / `**Training:**` / `**Eval:**` / `**Rounds:**` slot leads
+  in `## What I ran`.) (Incident: #389
   round 1.)
-- **Lens 9 — end-to-end example: a per-finding text excerpt is fine,
-  the systematic samples live in `## Data → ### Generated`** (SPEC
-  § `## Findings` per-finding skeleton step 4 + § `## Data`). Under v3
-  the bulk per-condition samples + `<details>` dropdowns live in
-  `## Data → ### Generated`, NOT inside each finding; a finding whose
+- **Lens 9 — end-to-end example: a per-result text excerpt is fine,
+  the systematic samples live in `## Methodology →
+  **Sample training/evaluation data + completions:**`** (SPEC
+  § `## Results` per-result skeleton step 4 + § `## Methodology`). Under
+  v4 the bulk per-condition samples + `<details>` dropdowns live in the
+  `## Methodology` Sample slot, NOT inside each result; a result whose
   text IS the evidence may carry at most ONE ≤10-line excerpt, preceded
   by a subset-disclosure line AND a raw-completions link. FAIL on: a
-  finding excerpt with an `main`/`HEAD` HF link instead of a permanent
-  SHA; a missing subset-disclosure label; a `## Data → ### Generated`
+  result excerpt with an `main`/`HEAD` HF link instead of a permanent
+  SHA; a missing subset-disclosure label; a `## Methodology` Sample slot
   that omits the per-load-bearing-condition example for a
-  text-generation run. (Incident: task #385 round 1 — block absent;
-  Claude critic PASSed.)
+  text-generation run. (v3: the per-finding excerpt + the
+  `## Data → ### Generated` systematic samples.) (Incident: task #385
+  round 1 — block absent; Claude critic PASSed.)
 - **Lens 7 — bracketed-CI form (`[low, high]`, `Wilson 95% CI [..., ...]`,
-  `upper bound = 0.0021`) in `## Takeaways` / `## What I ran` /
-  `## Findings` prose** is the same banned construct as `value ± err`.
+  `upper bound = 0.0021`) in `## Takeaways` / `## Goal` /
+  `## Methodology` / `## Results` prose** is the same banned construct as
+  `value ± err`.
   The audit's `±` regex misses bracketed bounds;
   `audit_clean_results_body_discipline.py` lists `slope[low, high]` but
   the broader bracketed-CI pattern is spec-text. Exception: a
-  finding-internal "Why this test" sentence that explicitly names the CI
+  result-internal "Why this test" sentence that explicitly names the CI
   as part of the test definition. FAIL when bracketed bounds appear in
-  finding setup/read prose or a Takeaways bullet. (Incident: #382
+  result what-is-plotted/interpretation prose or a Takeaways bullet.
+  (v3: finding setup/read prose.) (Incident: #382
   round 1.)
 - **Lens 8 — title methodology framing semantics.** Lens 8 lists
   example regex patterns ("once X was corrected", "after fixing", "but
@@ -295,18 +362,25 @@ clean, so this passes."
   example regex list, semantically a title-mistake-framing FAIL.)
 - **Lens 2 / 3 / 10 — "family"/short-letter labels (`A-family`,
   `B-family`, `C-family`, `Method A`, `Bin C`, `K1`, `M1`, `BS_E0`)**
-  in `## Takeaways`, `## What I ran`, `## Findings` prose, a figure
-  caption, or a `## Data` capsule. The audit catches `Bin\s+[A-E]` and
+  in `## Takeaways`, `## Goal`, `## Methodology`, `## Results` prose, a
+  figure caption, or a `## Methodology` capsule. The audit catches
+  `Bin\s+[A-E]` and
   some Hydra-shape codes but misses `<letter>-family` constructions and
   bespoke short labels. FAIL on any such token without a plain-English
-  name in the same section. (Incident: #389 round 1.)
+  name in the same section. (v3: `## Takeaways`, `## What I ran`,
+  `## Findings` prose, a figure caption, or a `## Data` capsule.)
+  (Incident: #389 round 1.)
 - **CLAUDE.md "Plain-English condition names end to end" — cell-letter
   codes in reader-facing prose** (`cells A/C/D/D′`). Audit is narrower
-  than the spec text. Bare codes survive ONLY in `## Reproducibility` +
-  the Parameters table's config row + launch-command examples (and
-  inside `## Data` verbatim example blocks, which are audit-exempt).
-  FAIL on cell-letter codes anywhere in `## Takeaways`, `## What I ran`,
-  `## Findings`, or a `## Data` capsule. (Incident: #382 round 1.)
+  than the spec text. Bare codes survive ONLY in the `**Repro:**` footer +
+  the Methodology Training-table config row + launch-command examples (and
+  inside `## Methodology` verbatim example blocks, which are audit-exempt).
+  FAIL on cell-letter codes anywhere in `## Takeaways`, `## Goal`,
+  `## Methodology`, `## Results`, or a `## Methodology` capsule. (v3:
+  `## Reproducibility` + the Parameters table's config row +
+  `## Data` verbatim example blocks; cell-letter codes anywhere in
+  `## Takeaways`, `## What I ran`, `## Findings`, or a `## Data` capsule.)
+  (Incident: #382 round 1.)
 - **Lens 6 — `byte identical` / `byte-identical` anywhere in the
   body** (banned 2026-W22, task #454; carried into v3). The phrase
   reads as AI-slop in research writing. Use plain English: "the two
@@ -325,36 +399,46 @@ reconciler-disagreement shape captured in
 
 ## The fifteen lenses
 
-The v3 lens roster (15 lenses, coherently numbered 1-15):
+The lens roster (15 lenses, coherently numbered 1-15). The lens NUMBERS
+are stable across generations; the per-lens text below is written with v4
+section names — substitute the v3 name (Findings, Data, `## Reproducibility`
+H2) when reviewing a v3 body:
 
 1. **Title** — finding, not experiment name; one claim; confidence tag.
-2. **v3 structure** — Takeaways shape (3-6 bullets), What-I-ran slots
-   incl `**Why:**`, Findings skeleton (≥1 `### <finding>`, one figure
-   each). Absorbs the v2 TL;DR-structure + per-finding-narrative lens.
-3. **Figure** — one inline figure per finding, blockquote caption,
-   plain-English labels; ABSORBS the retired story-arc lens's
-   setup/read–figure pairing (now expressed as bullets).
-4. **Takeaways quality** (NEW) — plain-academic register, numbers-first,
-   AND cross-round synthesis currency.
-5. **Reproducibility** — subgroups, URL permanence, slimmed Parameters,
-   Context-row, reuse + artifact-path provenance.
-6. **Voice** — bullet register, `I` not `we`, `byte identical` ban.
+2. **v4 structure** — Takeaways shape (3-6 bullets), Goal's two slots
+   (`**This experiment in context:**` + `**Broader narrative:**`),
+   Methodology's slots (`**Design:**` / `**Training:**` with the complete
+   hyperparameter table / `**Evaluation:**` / `**Data extraction:**` /
+   `**Sample ...:**`), Results skeleton (≥1 `### <result>`, one figure each
+   in the three-beat). (v3: What-I-ran slots + Findings skeleton.)
+3. **Figure** — one inline figure per `### <result>`, blockquote caption,
+   plain-English labels; the per-result three-beat
+   (what-is-plotted ABOVE → plot → interpretation BELOW).
+4. **Takeaways quality** — plain-academic register, numbers-first, AND
+   cross-round synthesis currency.
+5. **Footer / Reproducibility** — `**Repro:**` (compute + code SHA +
+   pinned artifact links + reuse-provenance) + `**Context:**`
+   (run-provenance); the COMPLETE hyperparameter table lives in
+   `## Methodology` (v3: the `## Reproducibility` H2 + slimmed Parameters).
+6. **Voice** — research-paper register (Methodology + Results compact
+   prose, Takeaways bullets; Rule B), `I` not `we`, `byte identical` ban.
 7. **Statistical-framing rule** — p-values + N only in prose.
 8. **Mentor-facing title** — leads with the finding, not the correction.
-9. **One takeaway, one figure** — per `### <finding>`.
-10. **Data section** (NEW) — capsule trio (identity / why / preprocessing)
-    + subset disclosure + link liveness; ABSORBS the v2 eval-probe-
-    descriptions lens.
-11. **Raw alongside processed** — figures + prose + per-cell artifacts.
-12. **Conciseness** (NEW) — word-cap adherence + bullets-over-prose.
+9. **One result, one figure** — per `### <result>`.
+10. **Goal + Methodology completeness** — Goal's two parts present;
+    Methodology's Evaluation capsule answers identity / why / preprocessing;
+    the Sample slot carries subset-disclosed example blocks + pinned links
+    + the complete hyperparameter table; the Methodology body is
+    SELF-CONTAINED (reused artifacts' recipes inlined as primary method, no
+    `reused from #X` deferral — Rule A). (v3: the `## Data` capsule trio.)
+11. **Underlying data alongside every aggregate** — low-level per-unit data
+    plot (points labeled) behind each aggregate statistic (the broad
+    parent) + raw-alongside-processed (the transformed special case) +
+    per-cell artifacts.
+12. **Conciseness** — word-cap adherence + bullets-over-prose.
 13. **Planned-vs-actual coverage** — scope-shrinkage discipline.
 14. **Binding-concerns audit.**
 15. **Headline not resting on a contaminated / failed-data-gate arm.**
-
-(The v2 lens "Lens 4 merged into Lens 2" placeholder and "Lens 12 story
-arc" are RETIRED for v3 — the v2 eval-probe lens folded into Lens 10
-Data, and the story-arc pairing folded into Lens 3. There is no longer a
-"merged" placeholder lens.)
 
 For each lens: state PASS / FAIL with one concrete sentence explaining
 WHY. If FAIL, quote the offending phrase from the body.
@@ -368,23 +452,29 @@ WHY. If FAIL, quote the offending phrase from the body.
 - Precise verbs that name direction + comparison anchor ("increases
   marker leakage by Δ N pts" not "X leaks Y").
 - ≤ two project-internal entities named in the title.
-- The confidence tag is the body's SINGLE source of truth (v3 carries
-  no body `Confidence: …` sentence). Check it semantically — does the
-  text-level argument across `## Findings` actually support that level?
+- The confidence tag is the body's SINGLE source of truth (v4 carries
+  no body `Confidence: …` sentence; v3 carries none either). Check it
+  semantically — does the
+  text-level argument across `## Results` (v3: `## Findings`) actually
+  support that level?
 - **Goal alignment (soft check).** Read `frontmatter.goal` from
   body.md. Does the title's confidence claim actually answer the
   stated Goal? A HIGH-confidence title on a question the Goal didn't
   pose is an overclaim. Flag misalignment as a Lens 1 finding; the
   analyzer revises the title (Goal is contract, never the title).
 
-### Lens 2 — v3 structure (Takeaways shape + What-I-ran slots + Findings skeleton)
+### Lens 2 — v4 structure (Takeaways shape + Goal slots + Methodology slots + Results skeleton)
 
-The five-flat-H2 (v3) spec flattens the body into `## Takeaways` /
-`## What I ran` / `## Findings` / `## Data` / `## Reproducibility`. This
-lens covers the STRUCTURE of the first three content H2s (Takeaways
-register is its own Lens 4; Data is Lens 10; word caps are Lens 12).
-The verifier's `check_v3_structure` (check 3) is the mechanical floor;
-this lens is the substantive read on top.
+The four-flat-H2 (v4) spec flattens the body into `## Takeaways` /
+`## Goal` / `## Methodology` / `## Results` plus the `**Repro:**` /
+`**Context:**` footer. This
+lens covers the STRUCTURE of the content H2s (Takeaways
+register is its own Lens 4; the Methodology data slots are Lens 10; word
+caps are Lens 12).
+The verifier's `check_v4_structure` (check 3) is the mechanical floor;
+this lens is the substantive read on top. (v3: the five-flat-H2 shape
+`## Takeaways` / `## What I ran` / `## Findings` / `## Data` /
+`## Reproducibility`, gated by `check_v3_structure`.)
 
 **`## Takeaways`:**
 - 3-6 bullets, no paragraphs (the verifier owns the 3-6 count as the
@@ -394,104 +484,136 @@ this lens is the substantive read on top.
 - It is the ONLY place the body's cross-round synthesis lives; the
   register + currency check is Lens 4. Structurally, FAIL when
   `## Takeaways` is empty, is a prose paragraph, or duplicates a
-  finding heading verbatim instead of stating the belief.
+  result heading verbatim instead of stating the belief.
 
-**`## What I ran`:**
-- Carries the slot bullets `**Why:**`, `**Design:**`, `**Training:**`,
-  `**Eval:**` (+ a `**Rounds:**` markdown table when >1 round). The
-  `**Why:**` slot is verifier-required (check 3); FAIL when it is
-  missing.
-- **`**Why:**` is the ONLY place issue numbers / prior-task links
-  appear** (cited via `[#K](https://eps.superkaiba.com/tasks/K)`
-  markdown links — never bare `#K`). `## Findings` and `## Data` are
+**`## Goal`:** (v3: the WHY / prior-task-link content lived in the
+`**Why:**` slot of `## What I ran`.)
+- Carries BOTH slot bullets `**This experiment in context:**` AND
+  `**Broader narrative:**`. Both are verifier-required (check 3); FAIL
+  when either is missing.
+- **`**This experiment in context:**` is the ONLY place issue numbers /
+  prior-task links appear** (cited via
+  `[#K](https://eps.superkaiba.com/tasks/K)`
+  markdown links — never bare `#K`). `## Methodology` and `## Results` are
   STANDALONE (descriptive baselines, e.g. "the narrow 2-negative
   baseline", not `#K`-linked). FAIL on a `[#K]` link or bare `#K` in
-  `## Takeaways`, `## Findings`, or a `## Data` capsule.
-- **No methodology-correction framing of a prior run** in `**Why:**`
+  `## Takeaways`, `## Methodology`, `## Results`, or a `## Methodology`
+  capsule. (v3: the `**Why:**` slot carried the links; `## Findings` /
+  `## Data` were standalone.)
+- **No methodology-correction framing of a prior run** in
+  `**This experiment in context:**`
   (or anywhere). When this experiment changed or fixed methodology
   relative to an earlier issue, the body describes ONLY what THIS run
   did — FAIL on "the prior run used X, this run uses Y", "reverting
   axis A/B/C from #K", a prior-vs-current table of design choices, or
   a recap of the earlier run's superseded eval rig / negatives / panel
-  / judge. `**Why:**` may name a prior result to establish the open
+  / judge. `**This experiment in context:**` may name a prior result to
+  establish the open
   question; it must not relitigate that run's methodology.
-- The `**Design:**` / `**Training:**` / `**Eval:**` slots are one-line
-  recipes; the full Parameters table lives in `## Reproducibility` and
-  the full training rows / probes live in `## Data`. No cross-issue
+
+**`## Methodology`:** (v3: the one-line recipes lived in the
+`**Design:**` / `**Training:**` / `**Eval:**` slots of `## What I ran`;
+the full Parameters table lived in `## Reproducibility` and the full
+training rows / probes lived in `## Data`.)
+- Carries the slot bullets `**Design:**`, `**Training:**` (with the
+  COMPLETE hyperparameter table), `**Evaluation:**`,
+  `**Data extraction:**`, and `**Sample training/evaluation data +
+  completions:**`. The Training + Evaluation slots are verifier-required
+  (check 3); FAIL when either is missing.
+- The `**Design:**` / `**Training:**` / `**Evaluation:**` slots are
+  recipes; under v4 the COMPLETE hyperparameter table lives HERE in
+  `## Methodology → **Training:**`, the full training rows / probes live
+  in the Methodology data slots, and the compute / code SHA / pinned
+  links live in the `**Repro:**` footer. No cross-issue
   framing, no `byte identical` / `byte-identical`.
 - Plain language, accessible to a non-specialist. No jargon undefined
   before it is used.
 
-**`## Findings` (one `### <finding>` per result):**
-- `## Findings` has ≥1 `### ` finding (verifier check 3); FAIL on zero.
-- Each `### <finding>` heading names a story beat / states the finding
+**`## Results` (one `### <result>` per result):** (v3: `## Findings` with
+one `### <finding>` per result.)
+- `## Results` has ≥1 `### ` result (verifier check 3); FAIL on zero.
+- Each `### <result>` heading names a story beat / states the result
   WITH the number in the heading (good: `### Source-marker firing rises
   to 0.83 while bystander leakage stays at 0.02`; bad outline labels:
   `### Headline result` / `### Subset checks` / `### Sample completions`
   / `### Plan deviations` / `### Methodology` / `### Methodology
   corrections`).
-- Each `### <finding>` carries exactly ONE inline figure with a
+- Each `### <result>` carries exactly ONE inline figure with a
   markdown blockquote caption (`> **Figure.** *italic lead.* ...`). The
-  one-figure pairing rule is Lens 9; the setup/read-around-the-figure
+  one-figure pairing rule is Lens 9; the
+  what-is-plotted-above/interpretation-below figure
   pairing is Lens 3.
-- Each `### <finding>` STANDS ALONE — a reader can land on it directly
-  and understand it without re-reading earlier findings.
+- Each `### <result>` STANDS ALONE — a reader can land on it directly
+  and understand it without re-reading earlier results.
 - Defines every term where introduced (formal + intuition).
-- Includes a "Why this test" sentence inline inside the finding that
+- Includes a "Why this test" sentence inline inside the result that
   needs it (NOT a separate heading — the rationale lives inline).
 - **Generator disclosure for in-context artifacts** (semantic check):
   when the body evaluates a finetuned model against few-shot
   demonstrations, a chain-of-thought prefix, a judge prompt, a
   synthetic dataset, or any other in-context component that is itself a
-  model-generated artifact, the relevant `### <finding>` MUST name the
+  model-generated artifact, the relevant `### <result>` MUST name the
   generating model. Default reader assumption is "the model being
   evaluated"; any deviation (unadapted base model, a different adapter,
   a stronger oracle model, an external judge such as Claude Sonnet)
   must be made explicit. Flag missing disclosure as a Lens 2 FAIL —
   confound-disclosure asymmetry, not a stylistic nit.
-- **Methodology corrections fold into the relevant finding's prose**
+- **Methodology corrections fold into the relevant result's prose**
   (no `### Methodology corrections` heading); if the body emits one,
   that is a Lens 2 FAIL.
 - **No bolded-paragraph leads as inline subheadings** inside a
-  `### <finding>` (the dashboard renderer collapses them into a wall of
+  `### <result>` (the dashboard renderer collapses them into a wall of
   text). Trigger to FAIL: ≥3 bolded-lead paragraphs
-  (`**Sub-topic name.**`) inside a single finding. (The `**Why:**` /
-  `**Design:**` / `**Training:**` / `**Eval:**` / `**Rounds:**` slot
-  leads in `## What I ran` are the REQUIRED v3 structure — NOT flagged.)
+  (`**Sub-topic name.**`) inside a single result. (The `**Design:**` /
+  `**Training:**` / `**Evaluation:**` / `**Data extraction:**` /
+  `**Sample ...:**` slot leads in `## Methodology` and the
+  `**This experiment in context:**` / `**Broader narrative:**` slot leads
+  in `## Goal` are the REQUIRED v4 structure — NOT flagged. v3: the
+  `**Why:**` / `**Design:**` / `**Training:**` / `**Eval:**` /
+  `**Rounds:**` slot leads in `## What I ran`.)
 - **No opaque condition / run / config codes.** Hydra-style or
   config-derived condition names — anything matching the shape
   `[a-z]+_[A-Za-z0-9]+` (e.g. `sw_eng_C1`, `sw_eng_expA`,
   `sw_eng_expB-P1`, `cond_4`, `c1_evil_wrong_em`), short-letter labels
   (`M1`, `Method A`, `Bin C`, `K1`, `BS_E0`), or any token that names
   a condition without being self-explanatory English — **must NEVER
-  appear in `## Takeaways`, `## What I ran`, `## Findings`, or a
-  `## Data` capsule** (verbatim example blocks inside `## Data` are
+  appear in `## Takeaways`, `## Goal`, `## Methodology`, `## Results`, or
+  a `## Methodology` capsule** (verbatim example blocks inside
+  `## Methodology` are
   audit-exempt). Always use the plain-English name of the condition
   (e.g. "the paraphrased-prompt arm", "the unmodified code-evaluation
   baseline", "the model finetuned only on software-engineering
   refusals"). FAIL on any occurrence. Code-style parentheticals like
   `"the paraphrased-prompt arm (sw_eng_expA)"` are ALSO forbidden in
-  the reader-facing sections — the bare code goes in Reproducibility.
+  the reader-facing sections — the bare code goes in the `**Repro:**`
+  footer. (v3: the same applies to `## Takeaways`, `## What I ran`,
+  `## Findings`, or a `## Data` capsule; the bare code goes in
+  `## Reproducibility`.)
 - **Confidence is in the H1 title tag only.** Do NOT require — and FAIL
-  on — a `Confidence: …` sentence anywhere in a v3 body. If the body
+  on — a `Confidence: …` sentence anywhere in a v4 body (v3 too). If the
+  body
   author needs to surface the binding constraint, it lives in the
-  relevant `### <finding>` read prose and/or a `## Takeaways` bullet.
+  relevant `### <result>` interpretation prose and/or a `## Takeaways`
+  bullet.
 - If raw completions weren't uploaded for this run, the relevant
-  finding (or `## Data → ### Generated`) MUST surface a "re-run with
+  result (or `## Methodology → **Sample training/evaluation data +
+  completions:**`) MUST surface a "re-run with
   raw-completion upload" note. Check the run metadata or the prose.
 
-### Lens 3 — Figure (absorbs the setup/read–figure pairing check)
+### Lens 3 — Figure (absorbs the what-is-plotted/interpretation–figure pairing check)
 
 - At least one image exists in the body, inline `![alt](url)` inside a
-  `### <finding>` under `## Findings` (each finding carries its own
-  figure; one figure per finding).
-- A stray `## Figure` H2 in a v3 body is a hard FAIL (verifier check 2
-  rejects it). Inline the figure inside the relevant `### <finding>`.
+  `### <result>` under `## Results` (each result carries its own
+  figure; one figure per result). (v3: `### <finding>` under
+  `## Findings`.)
+- A stray `## Figure` H2 in a v4 body is a hard FAIL (verifier check 2
+  rejects it; v3 too). Inline the figure inside the relevant
+  `### <result>`.
 - Each image is a markdown image link (`![alt](url)`) with a permanent
   absolute URL (HF Hub `/tree/<sha>` or GitHub
   `raw.githubusercontent.com/.../<sha>/...`). No `<figure>` / `<img>`
   HTML — markdown only.
-- Each `### <finding>` carries a markdown blockquote caption right after
+- Each `### <result>` carries a markdown blockquote caption right after
   the image: `> **Figure.** *one-sentence lead claim in italics.*
   Remaining caption prose in plain text.` Caption ≤60 words (verifier
   check 20 WARNs over the cap); explains axes + observed trend + what
@@ -510,18 +632,22 @@ this lens is the substantive read on top.
   plain-English condition names directly on the chart (e.g. "paraphrased
   prompts", "unmodified baseline", "SFT only on refusals"). Code-style
   parentheticals (`"paraphrased prompts (sw_eng_expA)"`) are ALSO
-  forbidden in the caption — bare codes belong in Reproducibility.
-- **Setup/read–figure pairing (absorbed from the retired story-arc
-  lens, now expressed as bullets).** Every `![alt](url)` figure inside a
-  `### <finding>` is framed by a **setup bullet/sentence** (what's
-  plotted, why we're looking) ABOVE it AND a **read bullet/sentence**
+  forbidden in the caption — bare codes belong in the `**Repro:**` footer
+  (v3: `## Reproducibility`).
+- **What-is-plotted/interpretation–figure pairing (absorbed from the
+  retired story-arc lens, now expressed as the per-result three-beat).**
+  Every `![alt](url)` figure inside a
+  `### <result>` is framed by a **what-is-plotted (EXACTLY) beat** (what's
+  plotted, why we're looking) ABOVE it AND an **interpretation beat**
   (what's striking, where outliers go, what the figure CAN'T tell you)
-  BELOW it. FAIL when a figure has no setup above OR no read below — a
+  BELOW it. FAIL when a figure has no what-is-plotted above OR no
+  interpretation below — a
   `![alt](url)` line surrounded only by other figures or by tables is a
-  chart pasted into a document, not a chart embedded in a finding.
+  chart pasted into a document, not a chart embedded in a result.
   Adjacent figures are allowed when they're a raw + processed pair
-  (Lens 11); they count as ONE narrative unit (setup above the pair,
-  read below the pair).
+  (Lens 11); they count as ONE narrative unit (what-is-plotted above the
+  pair, interpretation below the pair). (v3: the per-finding
+  setup-above/read-below skeleton.)
 
 ### Lens 4 — Takeaways quality
 
@@ -543,48 +669,61 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
 - First person stays (`I`, not `we`). No effect-size names / named
   statistical tests / inline `value ± err` (that is Lens 7).
 
-**Cross-round synthesis currency (the load-bearing v3 rule).**
+**Cross-round synthesis currency (the load-bearing rule).**
 - `## Takeaways` ALWAYS reflects the CURRENT cross-round belief, NOT
-  just round 1. When `## What I ran` carries a `**Rounds:**` table with
-  >1 round (or `## Reproducibility` `**Context:**` names a follow-up
+  just round 1. When `## Methodology` carries a `**Rounds:**` table with
+  >1 round (or the `**Context:**` footer names a follow-up
   round), `## Takeaways` MUST integrate the later round's result. **A
   `## Takeaways` that describes only round 1 after round 2 landed is a
   FAIL** — the analyzer must rewrite it to the current synthesis and
-  retitle the H1 if the headline moved.
-- Cross-check: read the `### <finding>` headings + the `**Rounds:**`
-  table; every load-bearing finding from the LATEST round must be
+  retitle the H1 if the headline moved. (v3: the `**Rounds:**` table
+  lived in `## What I ran` and the `**Context:**` row in
+  `## Reproducibility`.)
+- Cross-check: read the `### <result>` headings + the `**Rounds:**`
+  table; every load-bearing result from the LATEST round must be
   reflected in (or consciously subsumed by) a Takeaways bullet. A
-  Takeaways bullet that contradicts the latest finding, or omits a
-  headline-moving later-round result, is a FAIL.
+  Takeaways bullet that contradicts the latest result, or omits a
+  headline-moving later-round result, is a FAIL. (v3: `### <finding>`
+  headings.)
 
-### Lens 5 — Reproducibility
+### Lens 5 — Footer / Reproducibility
 
 - **Top-of-body `**Methodology:**` line carve-out.** A single
   bold-link line (`**Methodology:** [docs/methodology/issue_<N>.md](...)
-  · [gist](...)`) between the `<!-- clean-result-v3 -->` sentinel and
+  · [gist](...)`) between the `<!-- clean-result-v4 -->` sentinel and
   `## Takeaways` is the standard orchestrator-appended reader-facing
   pointer to the findings-blind methodology reference, paired with the
-  `**Methodology reference:**` row in `## Reproducibility`
+  `**Methodology reference:**` link in the `**Repro:**` footer
   (`SPEC.md` § Top-of-body methodology link). It is appended at
   Step 9a-quater AFTER this gate, so a body under critique normally
   does NOT carry it yet — never REQUIRE it, and never flag it as a
   stray element when present (e.g. on a re-critique during a
-  same-issue follow-up round).
-- H2 `## Reproducibility` is the last H2.
-- Three boldface subgroup labels — `**Artifacts:**`, `**Compute:**`,
-  `**Code:**` — appear verbatim (verifier check #7).
-- **Slimmed Parameters table (v3).** The body `**Parameters:**` table
-  SLIMS to the LOAD-BEARING subset (base model, adapter recipe, lr,
-  steps, seeds, eval rig, N); the COMPLETE table lives in the
-  methodology doc §2 (NeurIPS-checklist two-tier split). Do NOT FAIL a
-  v3 body for omitting a non-load-bearing hyperparameter from the body
-  table — that is by design. When the orchestrator passed
-  `--methodology-doc`, verifier check 21 asserts the body table is a
-  SUBSET of the doc §2 table; a body row that is NOT in the doc table is
-  a FAIL (the doc is the canonical complete reference). The lr is still
+  same-issue follow-up round). (v3: the sentinel is
+  `<!-- clean-result-v3 -->` and the paired pointer is the
+  `**Methodology reference:**` row in `## Reproducibility`.)
+- The `**Repro:**` / `**Context:**` footer is the last element of the
+  body (a bold footer, NOT an H2). (v3: `## Reproducibility` is the last
+  H2.)
+- The `**Repro:**` footer carries compute + code SHA + pinned artifact
+  links (verifier check #7 owns the footer presence). (v3: the three
+  boldface subgroup labels `**Artifacts:**`, `**Compute:**`, `**Code:**`
+  appear verbatim under `## Reproducibility`.)
+- **Complete hyperparameter table in `## Methodology` (v4).** Under v4
+  the COMPLETE hyperparameter table lives in
+  `## Methodology → **Training:**` (every training + eval + generation
+  knob), not slimmed and not split off to a separate doc tier. The lr is
   reconciled against the plan (check 16) and the whole table is
   eyeballed against ground truth at the `**Code:**` SHA — a
-  guessed-from-memory value is #489's `lr = 1e-4` class.
+  guessed-from-memory value is #489's `lr = 1e-4` class. When the
+  orchestrator passed `--methodology-doc`, verifier check 21 asserts the
+  body's Training-table rows are a SUBSET of the doc §2 table; a body row
+  that is NOT in the doc table is a FAIL (the doc is the canonical
+  complete reference). (v3: the body `**Parameters:**` table in
+  `## Reproducibility` SLIMS to the LOAD-BEARING subset — base model,
+  adapter recipe, lr, steps, seeds, eval rig, N — and the COMPLETE table
+  lives in the methodology doc §2, NeurIPS-checklist two-tier split; a v3
+  body is NOT FAILed for omitting a non-load-bearing hyperparameter from
+  the body table.)
 - All URLs permanent: HF Hub `/tree/<ref>` / `@<ref>`, WandB
   `/runs/<id>`, GitHub `/blob/<sha>` / `/tree/<sha>`. Never `main` /
   `master` / `HEAD` (verifier check #8). You confirm no fields are
@@ -596,14 +735,16 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   `label: default` terminator); substantive prose like "default
   assistant" / "default-context" is fine — the default assistant is a
   core experimental condition (#542).
-- **Context-row audit (run-context provenance; v2 + v3 bodies).** The
-  `**Context:**` row in `## Reproducibility` (SPEC.md
+- **Context-footer audit (run-context provenance; all sentinelled
+  bodies).** The
+  `**Context:**` footer (SPEC.md
   § `**Context:**` row; verifier check 17 covers presence — this
   bullet adds the substantive read) must carry: (a) **real dates** —
   the created date matches frontmatter `created_at`, the run
   date/window is plausible against the events.jsonl timeline; (b)
   **correct lineage** — the `Follow-up to` line matches frontmatter
-  `parent_id` / the `**Why:**` slot's actual prior-task citation (a
+  `parent_id` / the `**This experiment in context:**` slot's actual
+  prior-task citation (a
   fabricated or wrong parent is a FAIL), or says `fresh direction
   (no parent)`; for same-issue follow-up rounds it also names each
   round's `followup_label`; (c) **verbatim prompts** — cross-check the
@@ -612,18 +753,20 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   trimmed, or typo-corrected prompt is a FAIL (verbatim means
   verbatim), and the literal `origin prompt not recorded` is
   accepted only when no origin data actually exists. Also confirm
-  provenance stays CONFINED to this row — prompt/person attributions
-  woven into `## Takeaways` or `## Findings` prose violate the "state
+  provenance stays CONFINED to this footer — prompt/person attributions
+  woven into `## Takeaways` or `## Results` prose violate the "state
   facts, not sources" rule. Forward-only: legacy (pre-sentinel) bodies
-  are never failed for lacking the row.
+  are never failed for lacking the row. (v3: the `**Context:**` row lives
+  in `## Reproducibility`; the lineage cross-checks the `**Why:**` slot;
+  provenance must stay out of `## Takeaways` / `## Findings` prose.)
 - **Reuse-provenance audit (semantic, not mechanical).** When any
-  reader-facing claim in `## Takeaways` / `## Findings` rests on a
+  reader-facing claim in `## Takeaways` / `## Results` rests on a
   trained artifact REUSED from a prior issue — a LoRA adapter, merged
   checkpoint,
   training-mix dataset, raw-completion bucket, or `eval_results/`
   JSON produced by a previous `/issue` run rather than freshly
-  produced by THIS task — the `**Artifacts:**` block under
-  `## Reproducibility` MUST record one bullet per reused artifact
+  produced by THIS task — the `**Repro:**` footer
+  MUST record one bullet per reused artifact
   naming (a) the producing issue
   (`[#M](https://eps.superkaiba.com/tasks/M)`), (b) the permanent
   HF Hub path (pinned to `/tree/<sha>` or `@<sha>`) or repo-relative
@@ -643,28 +786,31 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   `.claude/skills/clean-results/SPEC.md` § `**Artifacts:**`
   reuse-provenance bullet.
   **Triggering reuse:** the body cites a prior issue (`[#M](...)`) as
-  the source of a specific artifact OR `**Code:**` /
-  `**Artifacts:**` links to a prior issue's HF subdirectory /
+  the source of a specific artifact OR the `**Repro:**` footer's code /
+  artifact links point to a prior issue's HF subdirectory /
   `tree/<sha>` path / `eval_results/issue_M/...` path rather than
-  this task's own output. Inspect the `## What I ran` `**Why:**` slot
-  for `[#M](...)` artifact citations AND the `**Artifacts:**` block for
+  this task's own output. Inspect the `## Goal`
+  `**This experiment in context:**` slot
+  for `[#M](...)` artifact citations AND the `**Repro:**` footer for
   any HF or `eval_results/` path whose issue number is NOT the current
   task's (e.g. `eval_results/issue_474/...` referenced from a #532 body).
   **FAIL when:** reuse is evident from the body but the
-  `**Artifacts:**` block has NO reuse-provenance bullet, OR the
+  `**Repro:**` footer has NO reuse-provenance bullet, OR the
   bullet is present but missing any of (a)/(b)/(c) — naming `#M`
   without a fitness rationale is the most common partial form, and
   the rationale is what tells the reader the producing recipe
   matched the new question. Fix list to the analyzer:
   *"add a `- Reused <kind> from [#M](...): <path> — fit: <one line>`
-  bullet under `**Artifacts:**` covering recipe + regime +
+  bullet to the `**Repro:**` footer covering recipe + regime +
   conditions; mirror plan §5/§10's fitness check."* **PASS vacuously**
   when THIS task produced every artifact it stands on (most
   fresh-train experiments — no reused artifact, no provenance bullet
-  expected).
+  expected). (v3: the reuse bullet lives under the `**Artifacts:**`
+  block of `## Reproducibility`; the citation is inspected in the
+  `## What I ran` `**Why:**` slot.)
 - **Artifact-path resolution spot-check (semantic).** When the body
-  names SPECIFIC artifact paths under `**Artifacts:**` or in
-  `## Findings` / `## Data` prose — subfolder names
+  names SPECIFIC artifact paths in the `**Repro:**` footer or in
+  `## Methodology` / `## Results` prose — subfolder names
   (`adapters/issue_<N>/<cell>/`), intermediate
   checkpoint or fraction directories (`ckpt_frac0.25/`,
   `checkpoint-<step>/`), specific raw-completion files
@@ -679,49 +825,86 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   follow-up-proposer or planner would mine as a reuse premise. **FAIL
   when** the body asserts a specific subfolder / checkpoint /
   intermediate fraction exists at a Hub path that the listing does NOT
-  contain. Fix list to the analyzer: *"`<path>` claimed in
-  `**Artifacts:**` does not resolve on `huggingface_hub.list_repo_files`
+  contain. Fix list to the analyzer: *"`<path>` claimed in the
+  `**Repro:**` footer does not resolve on
+  `huggingface_hub.list_repo_files`
   for `<repo>@<revision>`; what the Hub actually carries is
   `<observed>`. Either correct the artifact bullet to match the
   listing, or surface the missing piece as a methodology-correction
-  beat inside the relevant `### <finding>` (per analyzer.md §
+  beat inside the relevant `### <result>` (per analyzer.md §
   `**Artifacts:**` grounding rule)."* **PASS vacuously** when the
   artifact bullets stay at the repo level
   (`superkaiba1/explore-persona-space/...`) with no path-specific
-  subfolder / checkpoint / fraction names that need resolution.
+  subfolder / checkpoint / fraction names that need resolution. (v3: the
+  paths are named under the `**Artifacts:**` block of
+  `## Reproducibility` or in `## Findings` / `## Data` prose, and the
+  correction beat folds into the relevant `### <finding>`.)
   Closing the door on the #530→#534 false-premise propagation chain
   (2026-06-09) is the point of this lens: an artifact-existence
   claim a downstream task can carry forward should be grounded in a
   real listing, not in plan intent.
 
-### Lens 6 — Voice (bullet register + byte-identical ban)
+### Lens 6 — Voice (research-paper register + bullet/prose register + byte-identical ban)
 
-- **Bullets are the default; prose only where a causal chain needs ≤2
-  sentences.** The v3 register deliberately replaced the v2-era wall of
-  narrative prose. Bold key numbers, front-load the takeaway (the NN/g
-  "layer-cake" guidance). FAIL when `## Takeaways` / `## What I ran` /
-  `## Findings` carry multi-sentence narrative paragraphs where bullets
-  would read better, or a single paragraph runs ≥3 sentences in an
-  analytical read (this overlaps Lens 12 Conciseness — flag it under
-  whichever you reach first, do not double-count as two blockers).
+- **Rule B — research-paper register (v4; SPEC.md § Voice (v4) Rule B).**
+  The whole body is written in the concise, precise register of a
+  research paper: declarative methods/results prose, every quantity
+  DEFINED on first use, no filler / marketing / hype. The bullet-vs-prose
+  default is PER SECTION:
+  - `## Takeaways` STAYS numbers-first bullets (abstract-style) — FAIL a
+    Takeaways written as narrative paragraphs.
+  - `## Methodology` is **Methods-section PROSE** — the complete procedure
+    as compact declarative paragraphs (with the hyperparameter table +
+    verbatim example blocks as data). FAIL a Methodology written as terse
+    bullet FRAGMENTS that read as an outline rather than a reproducible
+    methods account (e.g. `- lr 2e-6` / `- 3 epochs` standing in for a
+    Training paragraph — the hyperparameter TABLE is fine, but the recipe
+    PROSE around it must be paragraphs).
+  - `## Results` is **Results-section PROSE** per `### <result>` — each
+    three-beat (what-is-plotted-EXACTLY → figure → interpretation) a 1–3-
+    sentence declarative paragraph. FAIL a result whose beats are reduced
+    to terse bullet fragments rather than precise prose.
+  - `## Goal` keeps its two compact-prose boldface slots.
+  This refines the bullet-default bullet below: bullets are the default
+  for `## Takeaways`; `## Methodology` / `## Results` are compact PROSE
+  under Rule B. Research-paper register means TIGHT prose, not verbose —
+  the conciseness caps (Lens 12) still bind; flag a register violation
+  here and a length violation under Lens 12, do not double-count.
+- **Bullets are the default for `## Takeaways`; prose for
+  `## Methodology` / `## Results` (Rule B).** The v4 register deliberately
+  replaced the v2-era wall of UNDISCIPLINED narrative prose, but v4
+  Methodology + Results are compact RESEARCH-PAPER prose (Rule B above),
+  not bullets. Bold key numbers, front-load the takeaway in
+  `## Takeaways` (the NN/g "layer-cake" guidance). FAIL when
+  `## Takeaways` carries multi-sentence narrative paragraphs where
+  bullets would read better, OR when any section runs a padded ≥3-sentence
+  wall in an analytical read (this overlaps Lens 12 Conciseness — flag it
+  under whichever you reach first, do not double-count as two blockers).
+  (v3: `## Takeaways` / `## What I ran` / `## Findings`; v3 had no Rule B —
+  do not apply the research-paper-prose check to a `<!-- clean-result-v3 -->`
+  body.)
 - `I`, not `we`.
 - **Plain academic register in `## Takeaways`** — no lowercase-casual
   voice, no diary framing (the register check itself is Lens 4; this
   bullet is the voice-side cross-reference).
 - No fluff transitions anywhere reader-facing: "One more wrinkle:",
   "the buried lede was", "funnily enough", "the real surprise was",
-  "the kicker is". (Connective tissue inside `### <finding>` read prose
+  "the kicker is". (Connective tissue inside `### <result>`
+  interpretation prose
   — "Then I tried", "But that didn't replicate", "I expected X — what I
-  got was Y" — IS welcome and keeps the per-finding story flowing.)
+  got was Y" — IS welcome and keeps the per-result story flowing. v3:
+  `### <finding>` read prose.)
 - Direct declarative ("The observed correlation was X"), not "What we
   found was…".
 - No "Standing caveats" section — caveats fold into the relevant
-  `### <finding>` read prose and/or a `## Takeaways` bullet (v3 has no
-  `Confidence:` sentence to carry them).
+  `### <result>` interpretation prose and/or a `## Takeaways` bullet (v4
+  has no `Confidence:` sentence to carry them; v3 too). (v3:
+  `### <finding>` read prose.)
 - No abandoned-metric prose ("we considered X but went with Y" when
   Y is the only metric reported).
 - **Never write `byte identical` or `byte-identical`** anywhere in
-  the body (banned 2026-W22, task #454; carried into v3; flagged by
+  the body (banned 2026-W22, task #454; carried into v3 and v4; flagged
+  by
   `audit_clean_results_body_discipline.py`). FAIL on any occurrence
   outside fenced code blocks. Use plain English: "the two files
   matched exactly", "every byte agreed", "no diff between the runs".
@@ -734,13 +917,17 @@ Banned in narrative (chart annotations are fine):
 - Effect-size names (Cohen's d, η², r-as-effect-size, Δ-framed-as-effect).
 - Named statistical tests in narrative prose ("paired t-test",
   "Fisher exact", "Mann-Whitney", "Wilcoxon", "bootstrap test",
-  "Kruskal-Wallis"). The test goes in the finding-internal "Why this
-  test" sentence, defined + justified there.
+  "Kruskal-Wallis"). The test goes in the result-internal "Why this
+  test" sentence, defined + justified there. (v3: the finding-internal
+  "Why this test" sentence.)
 - Power analyses.
 - Inline credence intervals (`value ± err`) — chart error bars fine.
 - Pre-registration mentions ("pre-registered", "pre-reg", "registered
-  hypothesis") in `## Takeaways` / `## What I ran` / `## Findings`
-  prose. Pre-reg threshold values can sit in the parameters table.
+  hypothesis") in `## Takeaways` / `## Goal` / `## Methodology` /
+  `## Results`
+  prose. Pre-reg threshold values can sit in the Methodology Training
+  hyperparameter table. (v3: `## Takeaways` / `## What I ran` /
+  `## Findings` prose; threshold values in the parameters table.)
 
 Flag specific phrases. The audit script catches some of these
 mechanically; you catch the ones it misses.
@@ -770,10 +957,11 @@ gate check 3, interpretation-critic Lens 1, critic Statistics item 10.)
 ### Lens 8 — Mentor-facing title
 
 The title is the mentor's first read. It MUST state the post-correction
-finding, not the methodology-correction story. (Under the v3 spec
-methodology corrections fold into the relevant `### <finding>`'s setup
-or read prose, NOT a dedicated `### Methodology corrections` heading.
-Only the title check remains here.)
+finding, not the methodology-correction story. (Under the v4 spec
+methodology corrections fold into the relevant `### <result>`'s
+what-is-plotted or interpretation prose, NOT a dedicated
+`### Methodology corrections` heading. v3: the relevant `### <finding>`'s
+setup or read prose. Only the title check remains here.)
 
 **Title does not lead with mistake/methodology framing.** Read the
 title in isolation. FAIL on any of these phrasings (case-insensitive
@@ -795,67 +983,78 @@ confidence)" — the "once ... jointly corrected" clause makes the title
 about the correction story, not the finding. Good rewrite: "Whole-
 completion loss decouples source-persona marker firing from bystander
 leakage on a 72-cell recipe sweep (MODERATE confidence)" with the
-correction story folded into the relevant `### <finding>`'s prose.
+correction story folded into the relevant `### <result>`'s prose. (v3:
+the relevant `### <finding>`'s prose.)
 
 Binding-constraint note: the binding constraint that justifies the
 title's confidence level (e.g. "broken in-context sanity check means the
-null is uninterpretable") lives in the relevant `### <finding>` read
-prose and/or a `## Takeaways` bullet — v3 has no body `Confidence:`
-sentence. Naming the constraint THERE does NOT count as
+null is uninterpretable") lives in the relevant `### <result>`
+interpretation
+prose and/or a `## Takeaways` bullet — v4 has no body `Confidence:`
+sentence (v3 too). Naming the constraint THERE does NOT count as
 title-mistake-framing; the constraint is correctly attributed to the
-finding/Takeaways, not promoted into the title.
+result/Takeaways, not promoted into the title. (v3: `### <finding>` read
+prose.)
 
-### Lens 9 — One takeaway, one figure (per-`### <finding>` pairing)
+### Lens 9 — One takeaway, one figure (per-`### <result>` pairing)
 
-`## Findings` is the mentor's primary scan-line. Under the v3 spec each
-`### <finding>` carries its own inline figure framed by setup/read
-bullets. The shape is: `### <finding>` → setup → `![alt](url)` inline
-image → blockquote caption → read → (for text findings) at most ONE
-short excerpt. The systematic per-condition samples + `<details>`
-dropdowns live in `## Data → ### Generated`, NOT inside each finding.
+`## Results` is the mentor's primary scan-line. Under the v4 spec each
+`### <result>` carries its own inline figure framed by the per-result
+three-beat. The shape is: `### <result>` → what-is-plotted →
+`![alt](url)` inline
+image → blockquote caption → interpretation → (for text results) at most
+ONE short excerpt. The systematic per-condition samples + `<details>`
+dropdowns live in `## Methodology → **Sample training/evaluation data +
+completions:**`, NOT inside each result. (v3: `## Findings`, each
+`### <finding>` framed by setup/read bullets, with the systematic samples
+in `## Data → ### Generated`.)
 
 The user framing this rule came from (#381, 2026-05-26): *"Basically it
 should be more like a story. We have one takeaway, one result, one
-figure."* v3 generalises this: one takeaway = one `### <finding>` = one
-inline figure.
+figure."* v4 generalises this: one takeaway = one `### <result>` = one
+inline figure. (v3: one `### <finding>`.)
 
 **Check four things:**
 
-1. **Every `### <finding>` has exactly ONE inline figure.** Enumerate
-   each `### <finding>` under `## Findings`. For each, check that exactly
+1. **Every `### <result>` has exactly ONE inline figure.** Enumerate
+   each `### <result>` under `## Results`. For each, check that exactly
    one `![alt](url)` image sits inside it, on a line by itself with blank
-   lines before and after. FAIL when a finding carries zero figures (the
+   lines before and after. FAIL when a result carries zero figures (the
    quantitative claim is visually orphaned) OR carries >1 figure without
    a raw + processed pair justification (Lens 11 exception). Adjacent raw
-   + processed image pairs count as ONE figure for this rule.
+   + processed image pairs count as ONE figure for this rule. (v3:
+   `### <finding>` under `## Findings`.)
 
-2. **Qualitative-result exemption.** Findings that report a purely
+2. **Qualitative-result exemption.** Results that report a purely
    qualitative observation — text-sample content, structural claim,
    "the model refused on all but two prompts; the outliers are quoted
    below", "the refusals share the same opening clause" — are exempt
    from the figure requirement. The trigger is QUANTITATIVE prose
-   (numbers driving the finding's claim). Do NOT flag a qualitative
-   finding as figure-less.
+   (numbers driving the result's claim). Do NOT flag a qualitative
+   result as figure-less.
 
-3. **`## Takeaways` / `## What I ran` are not findings.** They set up the
+3. **`## Takeaways` / `## Goal` / `## Methodology` are not results.** They
+   set up the
    experiment / state the synthesis; they do not assert per-result
    findings. Even if they contain numbers, those are scope/synthesis,
-   not a per-finding claim needing its own figure. Do NOT require a
-   figure inside `## Takeaways` or `## What I ran`.
+   not a per-result claim needing its own figure. Do NOT require a
+   figure inside `## Takeaways`, `## Goal`, or `## Methodology`. (v3:
+   `## Takeaways` / `## What I ran`.)
 
-4. **No `## Figure` H2.** A stray `## Figure` H2 in a v3 body is rejected
-   by verifier check 2 as a hard FAIL — that gate fires before this lens.
+4. **No `## Figure` H2.** A stray `## Figure` H2 in a v4 body is rejected
+   by verifier check 2 as a hard FAIL (v3 too) — that gate fires before
+   this lens.
    Lens 9 itself only flags the inline-figure discipline.
 
 **FAIL triggers (any of):**
 
-1. A `### <finding>` asserts a quantitative finding AND no inline figure
+1. A `### <result>` asserts a quantitative finding AND no inline figure
    anchors it. On FAIL: tell the analyzer to either (i) add an inline
-   figure inside the finding (per analyzer.md § Step 4), (ii) drop the
-   unsupported claim and push it into a different finding's prose, or
-   (iii) rewrite the finding as a qualitative observation.
+   figure inside the result (per analyzer.md § Step 4), (ii) drop the
+   unsupported claim and push it into a different result's prose, or
+   (iii) rewrite the result as a qualitative observation.
 2. **Figure caption is not in markdown-blockquote form.** Every figure
-   caption inside a `### <finding>` must wrap in a `> ` blockquote and
+   caption inside a `### <result>` must wrap in a `> ` blockquote and
    use the form `> **Figure.** *one-sentence lead claim in italics.*
    Remaining caption prose in plain text (≤60 words).` The blockquote
    vertical bar is what visually distinguishes the caption from
@@ -867,22 +1066,26 @@ inline figure.
    surrounding blank lines (blank-before-image, blank-before-caption).
    Rule canonicalised in `.claude/skills/clean-results/SPEC.md`
    § "Figure caption shape" + `CLAUDE.md` § Experiment Report Structure.
-3. **Text-behavior evidence missing.** For a finding whose claim rests
+3. **Text-behavior evidence missing.** For a result whose claim rests
    on model completions, the evidence may live in EITHER: (a) at most
-   ONE ≤10-line excerpt INSIDE the finding (preceded by a
+   ONE ≤10-line excerpt INSIDE the result (preceded by a
    subset-disclosure line + a raw-completions link, where the text
-   itself IS the finding), AND/OR (b) the systematic per-condition
-   samples in `## Data → ### Generated` (1 inline example per
+   itself IS the result), AND/OR (b) the systematic per-condition
+   samples in `## Methodology → **Sample training/evaluation data +
+   completions:**` (1 inline example per
    load-bearing condition, labeled cherry-picked/random, + a
    `<details>` block with 3-5 more, + a full raw-completions link). FAIL
-   when a text-generation finding's claim has NEITHER a finding excerpt
-   NOR a `## Data → ### Generated` example covering its condition. The
-   per-condition systematic samples are checked under Lens 10 (Data);
-   here you check that the finding's text-behavior claim is anchored
-   somewhere a reader can verify.
+   when a text-generation result's claim has NEITHER a result excerpt
+   NOR a `## Methodology` Sample-slot example covering its condition. The
+   per-condition systematic samples are checked under Lens 10
+   (Goal + Methodology completeness);
+   here you check that the result's text-behavior claim is anchored
+   somewhere a reader can verify. (v3: the excerpt lives inside the
+   `### <finding>` and the systematic samples in
+   `## Data → ### Generated`.)
 
    Exemption: findings that explicitly carry a one-line skip note
-   (*"(no generation-style outputs in this finding; the measurement is a
+   (*"(no generation-style outputs in this result; the measurement is a
    teacher-forced log-prob.)"*) — pure activation / probe / cluster /
    linear-fit analyses with no completions to show.
 
@@ -893,7 +1096,8 @@ inline figure.
    `[truncated — harmful-content row; verify at <path>, row <i>]`
    placeholders, with cherry-picked labels, row indices, and permanent
    raw links kept verbatim (analyzer.md § Content hygiene). Such blocks
-   SATISFY this sub-rule and the Lens 10 `### Generated` example check —
+   SATISFY this sub-rule and the Lens 10 Sample-slot example check (v3:
+   the `### Generated` example check) —
    do NOT FAIL them as missing verbatim samples. If you verify such rows
    yourself, use field-filtered `jq` slices; never load raw rows into
    context (incident: task #537, 2026-06-10).
@@ -901,30 +1105,35 @@ inline figure.
    Canonical layout + discipline points in
    `.claude/skills/clean-results/SPEC.md`.
 
-**Anti-pattern example (FAIL):** A single `### <finding>` reads
+**Anti-pattern example (FAIL):** A single `### <result>` reads
 *"Source-marker firing rises from 0.07 to 0.83; bystander leakage stays
 flat at 0.02; the audit-filter contrast is 41 pts (N=400 per cell)."* —
-three quantitative claims crammed into one finding, with one figure
-showing only the source-marker finding. The bystander-leakage and
+three quantitative claims crammed into one result, with one figure
+showing only the source-marker result. The bystander-leakage and
 audit-filter claims are visually orphaned.
 
-**Good rewrite:** split into three `### <finding>` sections, each with
+**Good rewrite:** split into three `### <result>` sections, each with
 its own inline figure (or merge into a multi-panel figure where panel 1
 shows source firing, panel 2 shows bystander leakage, panel 3 shows the
 audit-filter contrast — and link the same multi-panel figure once,
-inside a single finding that names the joint finding).
+inside a single result that names the joint finding).
 
-### Lens 10 — Data section (capsule trio + subset disclosure + link liveness + eval-probe descriptions)
+### Lens 10 — Goal + Methodology completeness (capsule trio + subset disclosure + link liveness + the complete hyperparameter table)
 
-The `## Data` section makes "what exactly did it train / eval / generate
-on?" answerable without leaving the body. It has three required H3
-subsections in order — `### Trained on` / `### Evaluated with` /
-`### Generated` (verifier check 18 owns presence + order + the
-complete-artifact link per subsection; this lens is the substantive
+The `## Goal` + `## Methodology` sections make "what was the question and
+what exactly did it train / eval / generate
+on?" answerable without leaving the body. `## Methodology` carries the
+data slots `**Training:**` (with the complete hyperparameter table) /
+`**Evaluation:**` / `**Sample training/evaluation data +
+completions:**` (verifier check 18 owns the Training table + a Sample
+slot with a pinned link; this lens is the substantive
 read). The OLD eval-probe-descriptions lens (was Lens 10 in v2) is
-ABSORBED here as the Evaluated-with capsule trio.
+ABSORBED here as the Evaluation capsule trio. (v3: the `## Data` section
+with three required H3 subsections in order — `### Trained on` /
+`### Evaluated with` / `### Generated`, presence + order + per-subsection
+complete-artifact link gated by verifier check 18.)
 
-**Check 1 — capsule trio answerable from `### Evaluated with`.** The
+**Check 1 — capsule trio answerable from `**Evaluation:**`.** The
 eval capsule (≤100 words) must answer all three Model-Cards questions:
 - **identity** — which probe set / benchmark / question bank, named.
 - **why chosen** — why THIS probe set for THIS Goal (e.g. "matched to
@@ -934,24 +1143,27 @@ eval capsule (≤100 words) must answer all three Model-Cards questions:
   preprocessing beyond X).
 FAIL when any of the three is unanswerable from the capsule. This
 absorbs the multi-probe rule: when the body uses ≥3 distinct probe
-framings / judge prompts / measurement conditions, the `### Evaluated
-with` capsule (or its example block) must enumerate them — name, an
+framings / judge prompts / measurement conditions, the `**Evaluation:**`
+capsule (or its example block) must enumerate them — name, an
 example probe verbatim, and the PASS/FAIL rubric criterion in one
-sentence — so a finding that references "framing #5" resolves. FAIL
+sentence — so a result that references "framing #5" resolves. FAIL
 when the body references probes by number / opaque name in `##
-Findings` WITHOUT the enumeration in `### Evaluated with`. (Dormant for
-single-probe bodies.)
+Results` WITHOUT the enumeration in `**Evaluation:**`. (Dormant for
+single-probe bodies. v3: the `### Evaluated with` capsule, references in
+`## Findings`.)
 
 **Check 2 — required capsule content (composition facts).** Facts that
 used to hide in prose are mandatory in the relevant capsule:
-- `### Trained on`: positives:negatives ratio, persona panel, row
+- `**Training:**`: positives:negatives ratio, persona panel, row
   counts per type, completion provenance (on-policy tier / canned /
   published-corpus-verbatim per `.claude/rules/on-policy-completions.md`
   + `.claude/rules/contrastive-negatives.md`).
-- `### Generated`: which conditions produced completions, N completions.
-FAIL when a behavior-implantation body's `### Trained on` capsule omits
+- `**Sample training/evaluation data + completions:**`: which conditions
+  produced completions, N completions.
+FAIL when a behavior-implantation body's `**Training:**` capsule omits
 the ratio / panel / provenance (these are the data-realism + contrastive
-caveats the reader needs).
+caveats the reader needs). (v3: the `### Trained on` and `### Generated`
+capsules.)
 
 **Check 3 — subset disclosure present.** Verifier check 19 owns the
 mechanical "every example block is preceded by a subset-disclosure
@@ -961,53 +1173,120 @@ illustration" is used when the rows were hand-picked). FAIL on a
 mislabeled disclosure (e.g. "random sample" on rows that are obviously
 the most extreme firings).
 
-**Check 4 — link liveness.** Each subsection carries ≥1 pinned
+**Check 4 — link liveness.** Each data slot carries ≥1 pinned
 complete-artifact link (HF Hub `/tree/<sha>`, WandB `/runs/<id>`,
 GitHub `/blob/<sha>`) OR an explicit `n/a — <reason>` line (verifier
 check 18 owns presence; check 8/8b owns permanence + same-repo
 existence). Spot-check that a load-bearing link actually resolves —
-especially a `### Trained on` / `### Generated` HF path; a dead Hub
+especially a `**Training:**` / `**Sample ...:**` HF path; a dead Hub
 path here is the same false-premise class as Lens 5's artifact-path
 spot-check. FAIL on a complete-artifact link that does not resolve, or
-a subsection that links only an AGGREGATE (judge JSON) where the raw
-text-level artifact is what `### Generated` requires (this overlaps the
-Lens 11 judge-artifact rule; flag under whichever you reach first).
+a slot that links only an AGGREGATE (judge JSON) where the raw
+text-level artifact is what the `**Sample ...:**` slot requires (this
+overlaps the
+Lens 11 judge-artifact rule; flag under whichever you reach first). (v3:
+each `### Trained on` / `### Evaluated with` / `### Generated`
+subsection; the raw text-level artifact is what `### Generated`
+requires.)
 
-**Check 5 — n/a subsections are explicit.** A subsection that does not
-apply (eval-only run → `### Trained on`) must carry an
+**Check 5 — n/a slots are explicit.** A data slot that does not
+apply (eval-only run → `**Training:**`) must carry an
 `n/a — <reason>` line, never be silently omitted. Verifier check 18
 mechanically requires this; confirm the reason is real (e.g.
-`n/a — no training in this task (eval-only headroom probe)`).
+`n/a — no training in this task (eval-only headroom probe)`). (v3: the
+`### Trained on` subsection.)
 
 **Check 6 — methodology-doc spot-check (when `--methodology-doc`
 passed).** When the orchestrator passed the worktree methodology-doc
 path, open the doc's §2 Hyperparameters table and sanity-check it is
 COMPLETE (every training + eval + generation hyperparameter, each with
-a Source column) and that the body's slimmed Parameters table is a
+a Source column) and that the body's Methodology Training table is a
 SUBSET of it (verifier check 21 mechanizes the subset assert; this lens
 is the completeness read on the doc §2 table itself). FAIL when the
 doc §2 table is obviously incomplete (a load-bearing knob the body or
 plan names is absent) — the doc is the canonical complete reference. The
 check is skipped when no `--methodology-doc` was passed (pre-merge the
-doc lives only on the issue worktree branch).
+doc lives only on the issue worktree branch). (v3: the body's slimmed
+Parameters table is checked as the subset.)
 
-### Lens 11 — Raw alongside processed (artifacts + figures + prose)
+**Check 7 — `## Methodology` is SELF-CONTAINED (v4 Rule A; semantic).**
+SPEC.md § `## Methodology` (v4) Rule A requires the Methodology body to
+read like a research-paper Methods section: a reader understands HOW
+every reported result was produced WITHOUT following a link to another
+issue. When this experiment REUSED an artifact from a prior issue (a
+trained adapter, persona-vector bank, behavior direction, leakage cells,
+dataset, base-rate / propensity measurement), the Methodology body MUST
+WRITE OUT THE FULL PRODUCTION PROCEDURE of that artifact inline as
+primary method (data source + realism tier, construction recipe,
+training recipe + hyperparameters, measurement). **FAIL when** the
+`## Methodology` body DEFERS a load-bearing method to another issue —
+phrases like `reused from #M` / `see #M (for the recipe)` /
+`as in #M` / `methodology in #M` / `same setup as #M` standing IN PLACE
+OF the actual recipe (a Design/Training/Evaluation/Data-extraction slot
+that names `#M` instead of spelling out what was done). The fix list to
+the analyzer: *"inline the full production recipe of the reused artifact
+from #M's `## Methodology` / `docs/methodology/issue_<M>.md` into the
+relevant Methodology slot as primary method; move the `#M` citation to
+the `**Repro:**` footer reuse-provenance bullet."* **Do NOT FAIL** the
+correct pattern: the `**Repro:**` footer reuse-provenance bullet (Lens 5)
+naming `#M` + the pinned path + a one-line fitness rationale is REQUIRED
+and CORRECT — Rule A moves the METHOD into the body but keeps the
+PROVENANCE in the footer; a `#M` citation in the footer (or a single
+descriptive sentence in the body acknowledging the artifact was reused
+WHILE STILL spelling out its production recipe) is not a violation. A
+`#M` link in the `## Goal` `**This experiment in context:**` slot is also
+fine (that slot may cite prior tasks). **PASS vacuously** when THIS task
+produced every artifact (no reuse → no deferral risk). (v3: this check is
+N/A — v3 bodies kept reuse provenance inline by the older pattern and are
+grandfathered; do not apply Rule A to a `<!-- clean-result-v3 -->` body.)
 
-Every processed / derived / aggregated artifact in the body MUST have its
-less-processed counterpart exposed alongside. Concrete checks:
+### Lens 11 — Underlying data alongside every aggregate (figures + prose + per-cell artifacts)
 
-1. **Figures.** Every figure that plots a residualized / partialled /
-   binned / log-transformed / normalized quantity has its raw
-   counterpart embedded inline inside the same `### <finding>` (raw
-   first, then processed; both inline `![alt](url)` images, blank lines
-   around each). Walk every `![alt](url)` inside `## Findings`. For each,
-   read the alt text + caption for processing keywords (`residualized`,
-   `partialled`, `partialed`, `length-controlled`, `binned`,
-   `aggregated`, `normalized`, `centered`, `de-trended`,
-   `rank-residualized`, `log-`). If present, look for a raw sibling
-   under the same finding. FAIL if absent, unless the body explicitly
-   justifies the omission (e.g., "raw and processed are visually
-   identical because the length partial only re-scales the x-axis").
+The broad rule: a result that reports an AGGREGATE statistic MUST also
+expose the low-level per-unit data behind it, and every processed /
+derived / aggregated artifact MUST have its less-processed counterpart
+alongside. The reader should see the DATA, not only the number computed
+from it. Concrete checks:
+
+0. **Low-level data plot behind every aggregate figure (the broad
+   parent).** Walk every `![alt](url)` inside `## Results`. For each
+   figure whose alt text / caption / surrounding prose reports an
+   aggregate statistic — a correlation ρ shown as a forest-plot point, a
+   mean / effect size shown as a bar, a p-value, an effect summary — a
+   LOW-LEVEL per-unit plot of the data behind it (the scatter the ρ
+   summarizes, a strip / swarm / jittered per-point view behind the
+   group-difference bars, the unbinned counterpart of a binned view)
+   MUST be embedded inside the SAME `### <result>`. FAIL when an
+   aggregate figure carries no underlying-data view AND the result
+   states no exemption. Exemptions (accept when the body says so in
+   interpretation
+   prose or alt text): the result's primary figure ALREADY is the
+   per-unit view (a raw scatter needs no second scatter); N is so small
+   the figure already shows every point; or the aggregate has no
+   meaningful per-unit decomposition (a single scalar). This check is the
+   PARENT of checks 1–2 below — those handle the transformed-figure
+   special case (raw vs processed); this one handles ANY aggregate, even
+   an untransformed one (a bare bar chart of means with no per-point plot
+   still FAILs here). Judgment call (LM): there is no reliable alt-text
+   keyword for "this is a forest plot / bar of an aggregate", so read the
+   figure + caption + what-is-plotted/interpretation prose to decide
+   whether the figure
+   reports an aggregate vs already shows the per-unit data — do NOT FAIL
+   a figure that already IS the scatter / per-point view. (v3:
+   `## Findings`, `### <finding>`, setup/read prose.)
+1. **Figures (transformed special case).** Every figure that plots a
+   residualized / partialled / binned / log-transformed / normalized
+   quantity has its raw counterpart embedded inline inside the same
+   `### <result>` (raw first, then processed; both inline `![alt](url)`
+   images, blank lines around each). Walk every `![alt](url)` inside
+   `## Results`. For each, read the alt text + caption for processing
+   keywords (`residualized`, `partialled`, `partialed`,
+   `length-controlled`, `binned`, `aggregated`, `normalized`, `centered`,
+   `de-trended`, `rank-residualized`, `log-`). If present, look for a raw
+   sibling under the same result. FAIL if absent, unless the body
+   explicitly justifies the omission (e.g., "raw and processed are
+   visually identical because the length partial only re-scales the
+   x-axis"). (v3: `### <finding>` under `## Findings`.)
 2. **Prose statistical claims.** When the body says "X does not survive
    controlling for Y" / "the partial collapses" / "the residualized
    correlation is" / "the length-controlled value drops to", the same
@@ -1015,95 +1294,109 @@ less-processed counterpart exposed alongside. Concrete checks:
    with N), not just the controlled value. FAIL when only the controlled
    value appears.
 3. **Aggregated metrics → per-cell artifact link.** Walk
-   `## Reproducibility` § Artifacts (and `## Data`). When the body's
+   the `**Repro:**` footer (and `## Methodology`). When the body's
    claim rests on an aggregated metric (per-condition pass-rate,
    per-domain mean, per-seed mean), the body MUST link to BOTH the
    aggregated JSON / summary CSV AND a per-cell file (the per-seed /
    per-condition / per-persona / per-probe table the aggregation
    collapsed). FAIL when only the aggregated artifact is linked.
    Permanent URLs only (the existing `verify_task_body.py`
-   URL-permanence check applies to the per-cell link too).
+   URL-permanence check applies to the per-cell link too). (v3:
+   `## Reproducibility` § Artifacts and `## Data`.)
 4. **Judge-scored claims → raw completions + judge prompts.** When the
    body cites Claude-judge pass-rates / scores, the body MUST link
-   (in `## Data → ### Generated` and/or `## Reproducibility`) to BOTH
+   (in `## Methodology → **Sample training/evaluation data +
+   completions:**` and/or the `**Repro:**` footer) to BOTH
    the raw model completions AND the raw judge prompts + verdicts (not
    only the per-condition aggregate). The cherry-picked /
    qualitative-data-link rule (Lens 9 + verifier checks 10/11) covers
    the figures-of-text instance; this lens extends it to the judge
-   artifact layer.
+   artifact layer. (v3: `## Data → ### Generated` and/or
+   `## Reproducibility`.)
 
-The lens is dormant for bodies that only present raw quantities to begin
-with (most baseline / replication / direct-eval runs).
+Checks 1–4 are dormant for bodies that only present raw, untransformed
+quantities (most direct-eval runs with no partialling / aggregation).
+Check 0 (the broad parent) still fires whenever a result reports an
+aggregate statistic at all — including a baseline / replication run that
+shows a bar of means or a correlation point — UNLESS the figure already
+shows the per-unit data or a stated exemption applies.
 
-**Anti-pattern (FAIL):** A `### <finding>` says *"raw association does
+**Anti-pattern (FAIL):** A `### <result>` says *"raw association does
 not survive controlling for prompt length (collapses to p=0.87, N=48)"*
 + embeds only the length-residualized scatter, no raw scatter inside the
-same finding, no raw point estimate in the prose. Reader cannot tell
+same result, no raw point estimate in the prose. Reader cannot tell
 whether the partial collapsed a real effect or shrank noise, which
 direction outliers go, or whether outliers drive the controlled value.
 
 **Good rewrite:** *"raw association (Spearman ρ = +0.29, p = 0.048,
 N=48) does not survive controlling for prompt length (collapses to
 p=0.87, N=48)."* + raw scatter embedded first, then residualized scatter
-on the next line inside the same finding. Same pattern at the artifact
+on the next line inside the same result. Same pattern at the artifact
 layer: link both `correlation_results.json` (aggregated) and a
 per-persona table (the per-row input that the partial consumed) in
-`## Data` / Reproducibility § Artifacts.
+`## Methodology` / the `**Repro:**` footer. (v3: the same finding;
+`## Data` / Reproducibility § Artifacts.)
 
-See CLAUDE.md § Voice + Statistics → "Show or link to the less-processed
-version alongside the more-processed one" for the canonical rule.
+See SPEC.md § per-result skeleton points 4–5 (low-level data plot behind
+every aggregate + raw alongside processed) for the canonical rule. (v3:
+§ per-finding skeleton.)
 
 ### Lens 12 — Conciseness (word-cap adherence + bullets-over-prose)
 
-The v3 redesign replaced the v2-era 160-320-line prose-heavy body with
+The v4 redesign (like the v3 one before it) replaced the v2-era
+160-320-line prose-heavy body with
 bullet-first, hard-capped sections. The mechanical caps live in the
 verifier (check 20); this lens is the LM judgment that the mechanical
 caps + the bullets-over-prose register are actually honored. (The story-
 arc / setup-read narrative shape that the retired Lens 12 owned moved to
-Lens 3's setup/read–figure pairing bullet.)
+Lens 3's what-is-plotted/interpretation–figure pairing bullet.)
 
 Check four things:
 
-1. **Per-finding prose stays inside the cap.** Verifier check 20 hard-
-   FAILs a `### <finding>` whose prose (excl. caption / tables / code /
+1. **Per-result prose stays inside the cap.** Verifier check 20 hard-
+   FAILs a `### <result>` whose prose (excl. caption / tables / code /
    `<details>` bodies) is ≥180 words and WARNs at ≥120. Confirm the
-   verifier ran; if a finding is at 120-179 words (WARN) AND reads
+   verifier ran; if a result is at 120-179 words (WARN) AND reads
    padded — narrative where 2 bullets would do — flag it as a Lens 12
-   tightening request (not a standalone blocker unless ≥180).
+   tightening request (not a standalone blocker unless ≥180). (v3:
+   `### <finding>`.)
 2. **Bullets are the default; prose only for ≤2-sentence causal
-   chains.** FAIL when `## Findings` / `## What I ran` carry
+   chains.** FAIL when `## Results` / `## Methodology` carry
    multi-sentence narrative paragraphs that should be bullets, or a
    single analytical paragraph runs ≥3 sentences. (This overlaps Lens 6
    Voice — flag under whichever you reach first; do not double-count as
-   two blockers.)
+   two blockers. v3: `## Findings` / `## What I ran`.)
 3. **Takeaways bullets ≤30 words; figure captions ≤60 words.** Verifier
    check 20 WARNs over both caps. Confirm the WARNs were addressed; a
    runaway Takeaways bullet (a paragraph in bullet's clothing) or a
    60+-word caption that buries the lead is a Lens 12 finding.
 4. **Total-prose budget (WARN-only).** The verifier WARNs when
-   Takeaways + What I ran + Findings prose exceeds ~800 words + 250 per
+   Takeaways + Goal + Methodology + Results prose exceeds ~800 words +
+   250 per
    live follow-up round beyond the first. This is intentionally NOT a
    hard gate (a multi-round consolidated body must not be forced to
-   delete live findings — the per-finding ≥180 FAIL is the hard cap).
+   delete live results — the per-result ≥180 FAIL is the hard cap).
    When the total-prose WARN fires, check the body used the round-
-   compression hygiene (superseded findings collapsed into a
-   `<details>Superseded by round N</details>`; absorbed findings
+   compression hygiene (superseded results collapsed into a
+   `<details>Superseded by round N</details>`; absorbed results
    compressed to heading + figure + ≤2 bullets) rather than carrying
    dead narrative; flag a body that blew the budget on padding, not on
-   genuine multi-round findings.
+   genuine multi-round results. (v3: Takeaways + What I ran + Findings
+   prose; superseded/absorbed findings.)
 
 The lens is mostly mechanical-pre-pass-backed; your value-add is the
 register call (bullets vs prose) and catching padding that sits just
 under the hard cap.
 
-**Anti-pattern (FAIL):** A `### <finding>` runs 210 words of narrative
+**Anti-pattern (FAIL):** A `### <result>` runs 210 words of narrative
 prose (check 20 hard FAIL) restating the figure in sentences where one
-setup bullet + one read bullet would carry it; `## Takeaways` has a
+what-is-plotted bullet + one interpretation bullet would carry it;
+`## Takeaways` has a
 55-word bullet that is really two sentences.
 
-**Good rewrite:** the finding's prose drops to a 1-sentence setup +
-2 read bullets (≤120 words total); the Takeaways bullet splits into two
-≤30-word bullets, each numbers-first.
+**Good rewrite:** the result's prose drops to a 1-sentence what-is-plotted
++ 2 interpretation bullets (≤120 words total); the Takeaways bullet splits
+into two ≤30-word bullets, each numbers-first.
 
 ### Lens 13 — Planned-vs-actual coverage (scope-shrinkage discipline)
 
@@ -1121,11 +1414,12 @@ gate that should have caught it.
 The pattern is **scope-shrinkage-without-explicit-flag**: the plan
 declares N planned conditions / cells / factor flips, the run delivers
 M < N, and the body equivocates between the original N and the
-delivered M across the title, `## Takeaways`, `## Findings` prose, and
+delivered M across the title, `## Takeaways`, `## Results` prose, and
 figures. Reader walks away with the impression the experiment tested
-N conditions when it tested M. Under the v3 spec the scope-correction
-prose folds into the relevant `### <finding>` — there is no dedicated
-`### Methodology corrections` heading to collect it.
+N conditions when it tested M. Under the v4 spec the scope-correction
+prose folds into the relevant `### <result>` — there is no dedicated
+`### Methodology corrections` heading to collect it. (v3: `## Findings`
+prose, folding into the relevant `### <finding>`.)
 
 Read the plan body before this lens fires:
 
@@ -1156,37 +1450,41 @@ for finding them in the plan:
   this paragraph exists, use IT, not any contradictory earlier
   enumeration, as the authoritative planned denominator.
 
-Then read the body's `## Takeaways` + `## Findings` (each `###
-<finding>`) and the `## Data` + `## Reproducibility` / Parameters table
+Then read the body's `## Takeaways` + `## Results` (each `###
+<result>`) and the `## Methodology` Training table
 for the **actual** delivered conditions / cells. Any scope-correction
-prose lives inside the relevant `### <finding>` under the v3 spec.
+prose lives inside the relevant `### <result>` under the v4 spec. (v3:
+`## Findings` (each `### <finding>`), the `## Data` + `## Reproducibility`
+/ Parameters table; correction prose in the relevant `### <finding>`.)
 
 **Check three things:**
 
 1. **No silently dropped planned condition.** Enumerate the planned
    conditions. If ANY planned condition is NOT mentioned anywhere in
-   the body (`## Takeaways`, any `### <finding>`, `## Data`,
-   Reproducibility / Parameters), that's a silent drop. **FAIL** with:
+   the body (`## Takeaways`, any `### <result>`, `## Methodology`,
+   the `**Repro:**` footer), that's a silent drop. **FAIL** with:
    *"Plan committed to {factor X} but it appears nowhere in the body —
-   name it in `## Takeaways` / the relevant `### <finding>` AND document
-   the drop in that finding's setup or read prose."*
+   name it in `## Takeaways` / the relevant `### <result>` AND document
+   the drop in that result's what-is-plotted or interpretation prose."*
+   (v3: `## Data`, Reproducibility / Parameters; the relevant
+   `### <finding>` and its setup or read prose.)
 
 2. **Denominator revision is consistent across the body.** If the body
    names a missing condition anywhere, the headline denominator MUST
    be revised consistently in `## Takeaways`, every relevant
-   `### <finding>` prose, any figure caption, and any per-factor table
+   `### <result>` prose, any figure caption, and any per-factor table
    caption. **FAIL** when the body still uses the ORIGINAL plan
    denominator in any reader-facing surface after acknowledging the
-   drop. Examples:
-   - Plan said "3 swept factors (A, C, D)"; one `### <finding>` says
+   drop. (v3: `### <finding>` prose.) Examples:
+   - Plan said "3 swept factors (A, C, D)"; one `### <result>` says
      "the C-axis cell never trained, so 2 of 3 testable"; another
-     finding still reads "the 3-factor sweep showed no clean
+     result still reads "the 3-factor sweep showed no clean
      decoupling" → FAIL.
    - Plan said "5 sources × 4 seeds = 20 cells"; body says "1 cell
      crashed with EDQUOT, recovered 19"; another section still says
      "across the 20-cell sweep" → FAIL.
    - "1 of 2 testable factors clears the selectivity CI, n=3 sources ×
-     1 seed" with the finding prose documenting the C-axis drop and
+     1 seed" with the result prose documenting the C-axis drop and
      all denominator references revised to "2 of 2 testable" → PASS.
 
 3. **Figures don't render misleading zero bars for missing conditions.**
@@ -1214,13 +1512,14 @@ conditions OR when the run delivered all planned conditions cleanly
 
 - For check 1: *"Plan §{X} committed to {N} planned {conditions}; the
   body names only {M}. Add a scope-correction paragraph inside the
-  relevant `### <finding>` documenting why {missing list} were not
-  delivered, OR delete the `## Takeaways` / finding claim that implies
-  they were tested."*
+  relevant `### <result>` documenting why {missing list} were not
+  delivered, OR delete the `## Takeaways` / result claim that implies
+  they were tested."* (v3: `### <finding>` / finding claim.)
 - For check 2: *"The 'X of N' denominator (N=plan denominator) is
   inconsistent with the scope-correction prose elsewhere in the body
-  (only M < N testable). Revise the finding denominator to 'X of M
-  testable' and update `## Takeaways` + figure captions to match."*
+  (only M < N testable). Revise the result denominator to 'X of M
+  testable' and update `## Takeaways` + figure captions to match."* (v3:
+  the finding denominator.)
 - For check 3: *"Figure {file} renders missing condition {C} as a
   zero/blank bar. Regenerate to either omit {C} from the x-axis or
   label its position 'N/A — not tested', and update the alt text
@@ -1244,24 +1543,28 @@ uv run python scripts/task.py list-concerns <N> --open-only --json
 
 For each currently OPEN binding concern (severity `BLOCKER` or `CONCERN`,
 latest event `raised` or `verified-open`), verify the body acknowledges
-it via ONE of these mechanisms (per the v3 spec — there is NO
+it via ONE of these mechanisms (per the v4 spec — there is NO
 `### Methodology corrections` heading to collect them; correction prose
-folds into the relevant `### <finding>`):
+folds into the relevant `### <result>`; v3: the relevant `### <finding>`):
 
-- **Inside any `### <finding>` (or a `## Takeaways` bullet)** — setup or
-  read prose that names the concern_id (substring match) and either
+- **Inside any `### <result>` (or a `## Takeaways` bullet)** —
+  what-is-plotted or
+  interpretation prose that names the concern_id (substring match) and
+  either
   describes the implementer fix OR explicitly bounds the interpretation
-  by it. (v3 has no `Confidence:` sentence — the binding constraint that
-  used to ride there now lives in the relevant finding's read prose
-  and/or a Takeaways bullet, so this is where v3 bodies acknowledge a
-  concern.)
+  by it. (v4 has no `Confidence:` sentence — the binding constraint that
+  used to ride there now lives in the relevant result's interpretation
+  prose
+  and/or a Takeaways bullet, so this is where v4 bodies acknowledge a
+  concern. v3: inside any `### <finding>`, setup or read prose, the
+  binding constraint in the relevant finding's read prose.)
 - **As an `<!-- concern-deferred: <id> -->` HTML comment** anywhere in
   the body — records explicit user deferral via
   `task.py defer-concern --by user`. Treat the deferral marker as
   acknowledgement-by-reference; do NOT also require prose acknowledgement.
 
 (Legacy / v2 bodies additionally accept acknowledgement inside the
-`Confidence:` rationale sentence — that sentence does not exist in v3.)
+`Confidence:` rationale sentence — that sentence does not exist in v3/v4.)
 
 NIT-severity concerns do NOT block this lens; surface them as
 informational only.
@@ -1304,8 +1607,9 @@ Read the body for any disclosed data-validity failure on an arm /
 condition: contaminated or stale training pool, a Phase-0 / `K1` / data
 gate the arm failed, a wrong base prior, a string-lookup-inflated
 metric, or any "this arm is bugged / not trustworthy" admission. If such
-a disclosure exists, the H1 title AND the `## Takeaways` / `## Findings`
-headline finding MUST NOT rest a positive claim on that arm. **Hard
+a disclosure exists, the H1 title AND the `## Takeaways` / `## Results`
+headline result MUST NOT rest a positive claim on that arm (v3:
+`## Findings` headline finding). **Hard
 FAIL** when they do — the minimal-necessary-fix is to re-anchor the
 title/headline on a surviving clean arm, or to retitle the body as
 "bugged" / inconclusive if no clean arm carries the claim. The lens
@@ -1315,8 +1619,10 @@ any arm.
 ## Blocker grounding + mechanizability (standing rule)
 
 Every FAIL-driving lens finding cites a concrete body location — the
-offending phrase quoted, the exact `### <finding>` heading, the figure
-file, or the Reproducibility row. The reconciler discards ungrounded
+offending phrase quoted, the exact `### <result>` heading (v3:
+`### <finding>`), the figure
+file, or the `**Repro:**` / `**Context:**` footer (v3: the
+Reproducibility row). The reconciler discards ungrounded
 blockers as
 non-binding; a finding you cannot anchor to the body is not a finding.
 Each bullet in the minimal-necessary-fix list carries a
@@ -1345,16 +1651,16 @@ Blocker tags: [comma-separated, non-PASS only: \`structural-absence\` (a check-2
 Mechanical pre-pass: verify_task_body.py PASS|FAIL (procedural FAILs: <list or none>), audit PASS|FAIL.
 Lens findings:
 - Lens 1 (Title): PASS|FAIL — ...
-- Lens 2 (v3 structure — Takeaways shape + What-I-ran slots + Findings skeleton): PASS|FAIL — ...
-- Lens 3 (Figure + setup/read pairing): PASS|FAIL — ...
+- Lens 2 (v4 structure — Takeaways shape + Goal slots + Methodology slots + Results skeleton): PASS|FAIL — ...
+- Lens 3 (Figure + what-is-plotted/interpretation pairing): PASS|FAIL — ...
 - Lens 4 (Takeaways quality — register + cross-round synthesis currency): PASS|FAIL — ...
-- Lens 5 (Reproducibility + slimmed Parameters): PASS|FAIL — ...
-- Lens 6 (Voice + byte-identical ban): PASS|FAIL — ...
+- Lens 5 (Footer / Reproducibility + complete hyperparameter table): PASS|FAIL — ...
+- Lens 6 (Voice — research-paper register (Methodology+Results prose, Takeaways bullets) + byte-identical ban): PASS|FAIL — ...
 - Lens 7 (Statistical framing): PASS|FAIL — ...
 - Lens 8 (Mentor-facing title): PASS|FAIL — ...
-- Lens 9 (One takeaway, one figure per finding): PASS|FAIL — ...
-- Lens 10 (Data section — capsule trio + subset disclosure + link liveness + eval-probe descriptions): PASS|FAIL|N/A — ...
-- Lens 11 (Raw alongside processed): PASS|FAIL|N/A — ...
+- Lens 9 (One takeaway, one figure per result): PASS|FAIL — ...
+- Lens 10 (Goal + Methodology completeness — capsule trio + subset disclosure + link liveness + complete hyperparameter table + self-contained methodology / no `reused from #X` deferral): PASS|FAIL|N/A — ...
+- Lens 11 (Underlying data alongside every aggregate): PASS|FAIL|N/A — ...
 - Lens 12 (Conciseness — word caps + bullets-over-prose): PASS|FAIL — ...
 - Lens 13 (Planned-vs-actual coverage): PASS|FAIL|N/A — ...
 - Lens 14 (Binding-concerns audit): PASS|FAIL — ...
@@ -1395,11 +1701,11 @@ Don't gatekeep on density — if a paragraph is dense but the density
 is necessary (a load-bearing numerical claim with parentheticals),
 say so and leave it.
 
-Don't suggest stripping numbers from a finding's read prose, the
-`## Data` capsules, or the figure caption — those carry the
+Don't suggest stripping numbers from a result's interpretation prose, the
+`## Methodology` capsules, or the figure caption — those carry the
 precision-laden detail. The only place numbers get stripped is when
 they appear in prose alongside effect-size language or named tests
-(Lens 7).
+(Lens 7). (v3: a finding's read prose, the `## Data` capsules.)
 
 On round 3, if issues remain, still give your verdict but mark each
 remaining issue as **blocking** vs **minor**. The orchestrator

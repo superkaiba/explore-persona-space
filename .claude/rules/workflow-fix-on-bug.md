@@ -366,7 +366,13 @@ top-level loop):
    fi
    # Staging sanity: nothing foreign staged (a concurrent session's files)
    git -C "$REPO_ROOT" diff --cached --name-only   # must be empty post-merge
-   git -C "$REPO_ROOT" push origin main
+   # PUSH-RC DISCIPLINE: `git push` MUST be a standalone Bash call whose exit
+   # code is checked — NEVER piped (into head/grep/tee) or chained so its rc is
+   # masked. A masked rejection silently skips the pull-rebase retry below and
+   # leaves the merge unpushed + at risk from concurrent recovery pulls (daily
+   # 2026-06-24 #657: a piped merge+push hid a rejected push; the retry never
+   # fired and the orchestrator caught it only by manual inspection).
+   git -C "$REPO_ROOT" push origin main   # check rc; on non-zero run the rejected-push retry below
    git -C "$REPO_ROOT" log -1 --oneline -- <changed-file>   # landing check: confirm it's on main
    # Agent-isolation worktrees stay LOCKED until the harness reaps them —
    # unlock first or remove fails exit-128 (3 hits on 2026-06-09):

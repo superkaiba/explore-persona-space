@@ -229,7 +229,7 @@ Ranked by estimated information gain per GPU-hour.
 
 **cost_class:** free-analysis | needs-gpu
 **headline_affecting:** yes | no
-**est_gpu_hours:** [number — the GPU-hour estimate as a bare numeric field, NOT prose. `0` for `cost_class: free-analysis`. Must equal the `**Estimated cost:**` figure above; this parseable copy is what the Step 9b cheap-auto-run predicate (`question_relation: same` AND `est_gpu_hours < 5`) reads. Omit ONLY if genuinely unknown — a missing / unparseable value forces the fail-safe (no auto-run; park/file for the user), same as a missing plan GPU-hour estimate at the Step 2c cap.]
+**est_gpu_hours:** [number — the GPU-hour estimate as a bare numeric field, NOT prose. `0` for `cost_class: free-analysis`. Must equal the `**Estimated cost:**` figure above; this parseable copy is what the Step 9b cheap-auto-run predicate (`question_relation: same` AND `est_gpu_hours < 20`) reads. Omit ONLY if genuinely unknown — a missing / unparseable value forces the fail-safe (no auto-run; park/file for the user), same as a missing plan GPU-hour estimate at the Step 2c cap.]
 
 ---
 
@@ -450,12 +450,12 @@ EXPENSIVE GPU-backed paths):
   dropped 2026-06-13 — a cheap follow-up runs whether or not it moves
   the headline).
 - **SKILL.md Step 9b same-issue loop (cheap GPU-backed band).** When a
-  `question_relation: same` proposal has `0 < est_gpu_hours < 5`, the
+  `question_relation: same` proposal has `0 < est_gpu_hours < 20`, the
   orchestrator AUTO-RUNS it via the same-issue follow-up loop (status
   `followups_running`, the new result folded into the EXISTING
   clean-result body, re-park at `awaiting_promotion`) WITHOUT a human
   pick — in interactive sessions too, not just autonomous. The strict
-  comparison is `< 5` (exactly 5 does NOT auto-run); the 0-GPU floor of
+  comparison is `< 20` (exactly 20 does NOT auto-run); the 0-GPU floor of
   this band is the free-analysis case handled by Step 9a-ter above.
   `headline_affecting` is NOT consulted for this band either. A
   `question_relation: substantially-different` proposal NEVER auto-runs
@@ -501,12 +501,12 @@ directly in the body (`analyzer.md` § Step 6.5).
   bare number; `0` for `cost_class: free-analysis`). It must equal the
   `**Estimated cost:**` figure in the proposal body. This is the field
   the Step 9b cheap-auto-run predicate reads: a `question_relation: same`
-  proposal with `0 < est_gpu_hours < 5` auto-runs via the same-issue
+  proposal with `0 < est_gpu_hours < 20` auto-runs via the same-issue
   follow-up loop in BOTH interactive and autonomous sessions (strict
-  `< 5`; the 0-GPU floor is the Step 9a-ter free-analysis case).
+  `< 20`; the 0-GPU floor is the Step 9a-ter free-analysis case).
   **Estimate honestly** — a deliberately-low estimate to dodge a human
   pick is the failure mode this field guards against; if the true cost
-  is uncertain and could exceed 5 GPU-h, state the upper bound (round
+  is uncertain and could exceed 20 GPU-h, state the upper bound (round
   UP) so a genuinely expensive run is NOT silently auto-fired.
   **Omitting it / leaving it unparseable forces the fail-safe** — the
   orchestrator does NOT auto-run and parks/files the proposal for the

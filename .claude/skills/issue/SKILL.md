@@ -133,10 +133,10 @@ that answers the SAME question as this task's Goal never creates a
 child; it re-enters THIS task via the same-issue follow-up loop
 (Step 9b § Same-issue follow-up loop), which holds the task at
 `followups_running` (tag `followup-auto` | `followup-manual`) for the
-round. A `question_relation: same` follow-up estimated at `< 5` GPU-h
+round. A `question_relation: same` follow-up estimated at `< 20` GPU-h
 auto-runs through that loop in BOTH interactive and autonomous sessions
 (Step 9b cheap-band block; the 0-GPU floor runs inline at Step 9a-ter);
-only the EXPENSIVE (`>= 5` GPU-h) `auto_run: yes` `same` band is
+only the EXPENSIVE (`>= 20` GPU-h) `auto_run: yes` `same` band is
 autonomous-only. In autonomous sessions, `substantially-different`
 `auto_run: yes` proposals are FILED as `proposed` children for manual
 triage only — never auto-spawned as sessions.
@@ -606,6 +606,25 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   "Pod-N stopped while awaiting user decision on …" is the banned regression
   this clause closes — it is the autonomous-mode equivalent of the text-menu
   end-of-turn failure. Forbidden in `EPM_AUTONOMOUS_SESSION=1`.
+- **A FREE, no-data-loss path beats parking — take it and keep waiting.** When
+  a free, no-data-loss continuation EXISTS, taking it is mandatory; parking to
+  await the user or proposing a PAID rerun while that free path is available is
+  the banned regression. Canonical case (tasks #658/#663, 2026-06-24): an
+  in-SLA Anthropic Message Batch (submitted, not yet expired) SELF-HARVESTS for
+  free at `expires_at` — the result is recoverable by polling the batch's own
+  deadline-bounded poller (`explore_persona_space.eval.batch_judge`, which
+  bounds the poll on `expires_at`), so the correct autonomous action is to keep
+  the deadline-bounded poll running (end the turn; the bg-Bash poll chain / the
+  45-min `/issue-tick` backstop re-wakes you) and harvest the free result — NOT
+  to PARK with "await your call" and NOT to propose a paid re-submission. A paid
+  rerun is justified ONLY when the cheaper free path is genuinely unavailable
+  (the batch already expired with no result, the data is truly lost). This is
+  the data-loss-aware twin of "never stop a pod to PARK": both forbid burning a
+  turn (or money) on a user-park when continuing toward the Goal is free and
+  loses nothing. Also route batch judging through the #663-hardened client
+  rather than a hand-rolled `messages.batches.create` + deadline-less
+  `while True ... sleep` poller — the client is what makes the free self-harvest
+  automatic (enforced by `scripts/workflow_lint.py --check-batch-judge-client`).
 - **Cost is gated ONLY at the plan-approval GPU-hour cap, never mid-run.** The
   ONLY cost gate in autonomous mode is the Step 2c `plan_pending` park when
   `gpu_hours_total > EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (default 100). A running
@@ -673,12 +692,13 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   follow-ups (`source: user-chat` — the Step 0 followup-scope dispatch)
   are NOT screened: the user already decided to run them. See Step 9b
   "Follow-up value-critique".
-- **Auto-run cheap (`< 5` GPU-h) same-question follow-ups in BOTH
-  modes at Step 9b.** Standing directive (2026-06-13): a follow-up that
-  is `0` GPU-h or `< 5` GPU-h just runs and folds into the SAME issue,
+- **Auto-run cheap (`< 20` GPU-h) same-question follow-ups in BOTH
+  modes at Step 9b.** Standing directive (2026-06-13, raised 5→20 GPU-h
+  2026-06-24): a follow-up that
+  is `0` GPU-h or `< 20` GPU-h just runs and folds into the SAME issue,
   automatically, in interactive AND autonomous sessions — no human pick,
   no `headline_affecting` gate. The 0-GPU floor runs inline at Step
-  9a-ter (free-analysis); the GPU-backed `0 < est_gpu_hours < 5` band
+  9a-ter (free-analysis); the GPU-backed `0 < est_gpu_hours < 20` band
   runs at the Step 9b **cheap-band block** (block C0-C4) via the
   same-issue follow-up loop (status `followups_running`, the new result
   folded into the EXISTING clean-result body, re-park at
@@ -692,12 +712,12 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   / `source: proposer-9b-cheap`), and the Step 2c plan-approval GPU-hour
   cap is the final backstop inside the loop if an estimate was wrong.
   See Step 9b "Cheap follow-up auto-run".
-- **Route the EXPENSIVE (`>= 5` GPU-h) `auto_run: yes` follow-ups by
+- **Route the EXPENSIVE (`>= 20` GPU-h) `auto_run: yes` follow-ups by
   `question_relation` at Step 9b (autonomous mode only).**
   When a result lands, the orchestrator fires the `follow-up-proposer`
   at Step 9b (after auto-merge, before CRON-TEARDOWN, BEFORE the
   human-only park at `awaiting_promotion`) and — for the proposals the
-  cheap-band block did NOT take (estimate `>= 5` GPU-h or missing) —
+  cheap-band block did NOT take (estimate `>= 20` GPU-h or missing) —
   partitions the
   `auto_run: yes` proposals by QUESTION IDENTITY:
   `question_relation: substantially-different` proposals (and untagged
@@ -725,9 +745,9 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   `epm:followup-scope v1` and `epm:same-issue-followup-run v1`.
   Interactive mode (`EPM_AUTONOMOUS_SESSION` unset) skips ONLY this
   EXPENSIVE autonomous-only block — it does NOT file children and does
-  NOT auto-run `>= 5` GPU-h follow-ups (those still wait for the user's
+  NOT auto-run `>= 20` GPU-h follow-ups (those still wait for the user's
   Step 10b pick post-promotion, routed by `question_relation`). But the
-  Step 9b cheap-band block (`< 5` GPU-h) DOES fire in interactive mode
+  Step 9b cheap-band block (`< 20` GPU-h) DOES fire in interactive mode
   (see the cheap-band bullet above), so an interactive session may run
   the proposer at Step 9b; Step 10b then reuses that `epm:follow-ups v1`
   via its proposer-already-ran short-circuit rather than re-spawning the
@@ -3746,11 +3766,18 @@ entry guard convention):
    posting `epm:interpretation v1` — the orchestrator publishes the held
    output (and only then starts the interpretation-critic round) after
    upload-verification PASS. See the two hard joins below.
-3. **`methodology-writer` early spawn** (the early-spawn half of Step
-   9a-quater; `stage=methodology-reference round=1`) — only when the
-   9a-quater kind-gating says the step runs at all (`kind: experiment`
-   always; `kind: analysis` only with a methodology surface;
-   `infra | batch | survey` never — evaluate the skip BEFORE spawning).
+3. **`methodology-writer` early spawn (v3/v2 GRANDFATHERED ONLY)** (the
+   early-spawn half of Step 9a-quater; `stage=methodology-reference
+   round=1`). **For v4 bodies, SKIP this spawn entirely** — under v4 the
+   methodology doc is a POST-PASS mechanical export of the body's
+   `## Methodology` section (Step 9a-quater v4 path), so no agent is
+   spawned here and the early-spawn batch is just upload-verifier ∥
+   analyzer first pass. This early spawn fires ONLY for an in-flight
+   v3/v2 body (no detailed `## Methodology` section to copy), and only
+   when the 9a-quater kind-gating says the step runs at all
+   (`kind: experiment` always; `kind: analysis` only with a methodology
+   surface; `infra | batch | survey` never — evaluate the skip BEFORE
+   spawning).
    The agent is findings-blind by design and its inputs (plan, config,
    reproducibility metadata, verbatim artifact rows) are final the
    moment results land, so it can safely run during `uploading` and the
@@ -4337,13 +4364,13 @@ orchestrator AUTO-RUNS it inline BEFORE the clean-result-critique gate
 already names a free win it didn't take. **The `headline_affecting: yes`
 requirement was DROPPED 2026-06-13** — a zero-GPU follow-up auto-runs
 whether or not it would move the parent's headline (the standing
-directive: follow-ups that are 0 GPU-h or `< 5` GPU-h just run and fold
+directive: follow-ups that are 0 GPU-h or `< 20` GPU-h just run and fold
 into the same issue). This 0-GPU inline step is the floor of the
-cheap-auto-run band; the GPU-backed `0 < est_gpu_hours < 5` band runs at
+cheap-auto-run band; the GPU-backed `0 < est_gpu_hours < 20` band runs at
 9b via the same-issue follow-up loop. This step fires in BOTH
 interactive and autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions
 identically (as does the 9b cheap band, as of 2026-06-13 — the
-remaining autonomous-ONLY routing at 9b is the `est_gpu_hours >= 5` /
+remaining autonomous-ONLY routing at 9b is the `est_gpu_hours >= 20` /
 `auto_run: yes` expensive path: same-issue loop for `same`, child filing
 for `substantially-different`). The whole
 <!-- example: anti-pattern -->
@@ -4616,35 +4643,61 @@ uv run python scripts/task.py set-status <N> reviewing \
 
 **Then proceed to 9a-quater (methodology reference).**
 
-**9a-quater. Methodology + hyperparameters reference — LATE JOIN** (only
-if status is `reviewing`, after the 9a-bis loop's PASS, before the
-`awaiting_promotion` park below; the agent itself was EARLY-SPAWNED at
-Step 8's results-landed parallel spawn — see § Split schedule below)
+**9a-quater. Methodology reference — POST-PASS EXPORT** (only if status
+is `reviewing`, after the 9a-bis loop's PASS, before the
+`awaiting_promotion` park below)
 
-Every `kind: experiment` clean-result auto-gains a standalone
-**methodology + hyperparameters + worked-examples** reference at
-`docs/methodology/issue_<N>.md`, committed to the repo and mirrored to a
-**secret** gist, linked from the clean-result body in TWO places: a
-reader-facing one-line `**Methodology:**` pointer at the TOP of the
-body (for a v3 body: immediately after the `<!-- clean-result-v3 -->`
-sentinel, before `## Takeaways`; for an in-flight v2 body: after the
-`<!-- clean-result-v2 -->` sentinel, before `## Human TL;DR` — branch on
-the sentinel) and a `**Methodology reference:**` row in
-`## Reproducibility` (the artifact-index entry). The reference is **findings-blind**: it describes only HOW the
-experiment was run (conditions, training recipe, eval recipe, verbatim
-training / eval / output examples, reproducibility pointers) and never
-restates findings / interpretation / confidence / next-steps. The fresh
-context of the `methodology-writer` agent enforces this structurally —
-the agent never reads `## Takeaways`, `## Findings`, the H1 confidence
-tag, or any `epm:interpretation` body (for an in-flight v2 body: never
-`## Human TL;DR` / `## TL;DR` either). Fires in BOTH
+**v4 (current): MECHANICAL EXPORT, no agent spawn.** Every
+`kind: experiment` v4 clean-result auto-gains a standalone methodology
+reference at `docs/methodology/issue_<N>.md` that is a **mechanical COPY
+of the body's `## Methodology` section** — the body's `## Methodology`
+section IS the canonical source (the analyzer wrote it factually,
+interpretation-free, per the v4 spec), so there is NO separate
+findings-blind authoring step and the `methodology-writer` agent is NOT
+spawned for v4. After the 9a-bis PASS the orchestrator:
+
+1. Reads the finalized body and extracts the `## Methodology` section
+   verbatim (from the `## Methodology` H2 to the next H2 / the `---`
+   footer rule).
+2. Writes it to `docs/methodology/issue_<N>.md` with the H2 header
+   normalized to `# Methodology — issue <N>: <one-line what-was-run>`
+   (plus a 1-line `*Derived from the [task body](https://eps.superkaiba.com/tasks/<N>).*`
+   footer).
+3. **Commits the doc to `main`** by explicit path (durable — removes the
+   v3 worktree-only gap; the doc + its SHA-pinned link land on `main`
+   directly). Capture the commit SHA.
+4. Runs a no-secrets pre-scan (`scripts/check_no_secret_shaped_strings.py`
+   / `redact_for_gist.py`) and publishes a **secret** (unlisted) gist
+   mirror via `gh gist create` — FAIL-SOFT (a missing gist never blocks
+   the step; the in-repo doc is the durable artifact).
+5. Appends the one-line `**Methodology:**` pointer at the TOP of the body
+   — immediately after the `<!-- clean-result-v4 -->` sentinel, before
+   `## Takeaways` — linking the GitHub blob (SHA-pinned to the `main`
+   commit) and the gist (drop the `· [gist](...)` suffix when the gist
+   fail-softed).
+6. Posts `epm:methodology-doc-generated v1` (`doc_path` + `commit` +
+   `gist_url`).
+
+Fires in BOTH interactive and autonomous sessions identically.
 <!-- example: anti-pattern -->
-interactive and autonomous sessions identically. Auto-continue (NOT a
-new `AskUserQuestion` gate); the halt-criterion contract is preserved.
+Auto-continue (NOT a new `AskUserQuestion` gate); the halt-criterion
+contract is preserved.
 <!-- autonomous-mode: auto-resolve -->
 Same behavior in interactive and autonomous sessions: no AskUserQuestion
 is ever raised by this step; the marker `epm:methodology-doc-generated v1`
 is the durable record consumed by re-entry idempotency.
+<!-- example: anti-pattern -->
+
+**v3/v2 GRANDFATHERED (LATE JOIN, in-flight bodies only):** an in-flight
+v3/v2 body carries no detailed `## Methodology` section to copy, so the
+legacy path still applies — the findings-blind `methodology-writer` agent
+is EARLY-SPAWNED at Step 8's results-landed parallel spawn, the
+orchestrator commits the doc on its return, and the gist + body
+link-append (top-of-body `**Methodology:**` line + the
+`## Reproducibility` `**Methodology reference:**` row) LATE-JOIN here.
+The detailed v3/v2 procedure below (§ Split schedule + procedure steps
+1-9) describes that grandfathered path; for a v4 body run the
+mechanical export above instead and skip the agent spawn.
 
 **Split schedule (early spawn ∥ interpretation loop).** This step is
 split in two:
@@ -5005,11 +5058,11 @@ skip if `epm:merged` already exists.
 
 **Cheap follow-up auto-run (BOTH interactive and autonomous — fires
 here, after auto-merge, before the autonomous-only block below).**
-Standing directive (2026-06-13): *a follow-up that is `0` GPU-h or
-`< 5` GPU-h just runs and folds into the same issue, automatically, in
+Standing directive (2026-06-13, raised 5→20 GPU-h 2026-06-24): *a follow-up that is `0` GPU-h or
+`< 20` GPU-h just runs and folds into the same issue, automatically, in
 either session mode.* The 0-GPU floor is handled inline at Step 9a-ter
 (free-analysis); this block handles the GPU-backed cheap band
-(`0 < est_gpu_hours < 5`). It applies to `question_relation: same`
+(`0 < est_gpu_hours < 20`). It applies to `question_relation: same`
 proposals ONLY — a `substantially-different` follow-up changes the
 parent `## Goal`, so by the project's routing law it cannot fold into
 this issue and is NEVER auto-run here regardless of GPU cost (it stays
@@ -5119,9 +5172,9 @@ C0a. **Run the value-critique (redundancy screen) — subroutine VC above.**
 C1. **Select the cheap-band candidate.** Among the surviving
    (`not-redundant`) proposals, keep those
    that are ALL of: `question_relation: same`, `auto_run: yes`, and
-   carry a parseable `est_gpu_hours` with `0 < est_gpu_hours < 5`
-   (strict `< 5`; `est_gpu_hours: 0` is the Step 9a-ter free-analysis
-   case, already handled; exactly `5` does NOT qualify). Take the
+   carry a parseable `est_gpu_hours` with `0 < est_gpu_hours < 20`
+   (strict `< 20`; `est_gpu_hours: 0` is the Step 9a-ter free-analysis
+   case, already handled; exactly `20` does NOT qualify). Take the
    TOP-RANKED such proposal.
    - **Fail-safe (missing / unparseable estimate).** A `same` proposal
      whose `est_gpu_hours` is absent or unparseable does NOT auto-run —
@@ -5168,7 +5221,7 @@ C4. **No candidate → fall through.** When no cheap-band candidate
 
 **Autonomous follow-up auto-spawn (autonomous mode only — fires here
 because Step 10b never runs autonomously; handles the EXPENSIVE
-`est_gpu_hours >= 5` / no-estimate `auto_run: yes` path, after the
+`est_gpu_hours >= 20` / no-estimate `auto_run: yes` path, after the
 cheap-band block above has had first refusal).** When
 `EPM_AUTONOMOUS_SESSION=1`, the parent task parks at
 `awaiting_promotion` and Step 10 / 10b never fire on their own
@@ -5290,7 +5343,7 @@ The autonomous flow:
      spec): if the cheap band took a round, this block does NOT also
      dispatch a `same` round in the same park (one same-issue round per
      park). Of the REMAINING `same` + `auto_run: yes` proposals (those
-     with `est_gpu_hours >= 5` or a missing estimate — the cheap band
+     with `est_gpu_hours >= 20` or a missing estimate — the cheap band
      skipped these), select the TOP-RANKED one ONLY if the autonomous
      EXPENSIVE-band round cap allows (fewer than 2
      `epm:same-issue-followup-run v1` markers with
@@ -5360,8 +5413,8 @@ filing tree is both width-bounded and depth-bounded, not exponential).
 
 One mechanism, four entry points: (a) the Step 9b autonomous
 expensive-band partition above (`source: proposer-9b`,
-`est_gpu_hours >= 5` / no estimate), (a-cheap) the Step 9b cheap-band
-block (`source: proposer-9b-cheap`, `0 < est_gpu_hours < 5`,
+`est_gpu_hours >= 20` / no estimate), (a-cheap) the Step 9b cheap-band
+block (`source: proposer-9b-cheap`, `0 < est_gpu_hours < 20`,
 `question_relation: same`) which fires in BOTH interactive and
 autonomous sessions, (b) a chat-requested
 same-question follow-up (`source: user-chat` — the chat session posts
@@ -5371,7 +5424,7 @@ same-question follow-up (`source: user-chat` — the chat session posts
 free-analysis auto-run) is this loop's zero-GPU sibling under the
 same principle — a follow-up that answers the SAME question as the
 task Goal runs ON this issue; 9a-ter handles the zero-GPU floor
-inline, this loop handles the GPU-backed case (the cheap `< 5` GPU-h
+inline, this loop handles the GPU-backed case (the cheap `< 20` GPU-h
 band auto-runs in both modes; the expensive band auto-runs only in
 autonomous mode or on an explicit user pick).
 
@@ -5515,11 +5568,11 @@ orphaned at `running` for 5+ hours.)
 5. **Round caps (two independent proposer-initiated caps).**
    - **Expensive autonomous band:** at most **2** rounds per task,
      counted by `epm:same-issue-followup-run v1` markers with
-     `source: proposer-9b` (the `est_gpu_hours >= 5` / no-estimate
+     `source: proposer-9b` (the `est_gpu_hours >= 20` / no-estimate
      autonomous-only path).
    - **Cheap band (both modes):** at most **2** rounds per task, counted
      by `epm:same-issue-followup-run v1` markers with
-     `source: proposer-9b-cheap` (the `0 < est_gpu_hours < 5` path,
+     `source: proposer-9b-cheap` (the `0 < est_gpu_hours < 20` path,
      enforced at block C2 above). This cap is what stops a chain of
      cheap follow-ups from auto-running indefinitely; the re-park at
      `awaiting_promotion` after each round is the user-visible

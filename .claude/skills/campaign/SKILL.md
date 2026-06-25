@@ -39,6 +39,23 @@ clean-results); parallel arms share state through the world model and are
 designed shared-nothing so they can run concurrently; humans own the
 problem + rubric (brief IN, digest + final report OUT).
 
+## When NOT to use a campaign (routing check)
+
+A campaign is for **adaptive open-question search** — the next experiment
+depends on what the last ones found, so the proposal operator earns its
+keep. It is the WRONG tool when the work is a **fully pre-specified phase
+DAG** whose every step is known up front, ESPECIALLY when the children
+share a sequential data dependency through a store (a shared activation /
+base-model store, a staged extraction pipeline). In that case the campaign
+machinery (writable world model, propose-next-on-dry, parallel
+shared-nothing arms) fights the work: there is nothing to adaptively
+propose, and the shared-store dependency forbids the parallelism a campaign
+assumes. Route a fixed DAG with hard inter-step data dependencies as a
+SEQUENCE of ordinary `/issue <child>` tasks (or one multi-phase `/issue`),
+not a campaign. (Decision recorded after a 2026-06-24 over-reach: a fixed
+5-task extraction DAG sharing a base-model store was briefly recommended as
+a campaign, then walked back.)
+
 ## State surfaces
 
 - `tasks/<status>/<N>/artifacts/campaign-state.json` — machine state
