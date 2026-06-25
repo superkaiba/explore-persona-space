@@ -509,7 +509,11 @@ def cmd_post_event(args: argparse.Namespace) -> None:
     # so file-read bodies inherit it automatically.
     note = args.note
     if args.file is not None:
-        note = Path(args.file).read_text()
+        # `--file -` reads the body from stdin (mirrors new-plan-version at
+        # the line-705/748 pattern); without this a heredoc'd
+        # `post-marker ... --file - <<EOF` crashes on `Path("-").read_text()`
+        # with FileNotFoundError (daily 2026-06-24 incident, #658).
+        note = sys.stdin.read() if args.file == "-" else Path(args.file).read_text()
     payload = post_event(
         args.number,
         args.marker,
