@@ -1,0 +1,30 @@
+{
+  "commit": "8cd66e9ffc",
+  "created": "2026-06-25T22:08:05Z",
+  "figsize": [
+    7.0,
+    3.4
+  ],
+  "points": [
+    {
+      "Partial Spearman \u03c1  (base read-out \u00b7 \u0394v  vs  behavior change | base level)": -0.35038180362527893,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Partial Spearman \u03c1  (base read-out \u00b7 \u0394v  vs  behavior change | base level)": -0.03091412761084175,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Partial Spearman \u03c1  (base read-out \u00b7 \u0394v  vs  behavior change | base level)": -0.41287934929328646,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 3
+}

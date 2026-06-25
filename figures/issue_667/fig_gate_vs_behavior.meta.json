@@ -1,0 +1,48 @@
+{
+  "commit": "8cd66e9ffc",
+  "created": "2026-06-25T22:08:01Z",
+  "figsize": [
+    7.6,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Spearman \u03c1  (base gate vs target)": 0.4562337081998957,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Spearman \u03c1  (base gate vs target)": 0.5926916636435492,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "Spearman \u03c1  (base gate vs target)": 0.5639976744018432,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Spearman \u03c1  (base gate vs target)": 0.12970751805997785,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Spearman \u03c1  (base gate vs target)": 0.16481469605744553,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "Spearman \u03c1  (base gate vs target)": 0.40045943875876655,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6
+}

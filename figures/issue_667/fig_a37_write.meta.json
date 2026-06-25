@@ -1,0 +1,84 @@
+{
+  "commit": "8cd66e9ffc",
+  "created": "2026-06-25T22:08:04Z",
+  "figsize": [
+    7.4,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "Mean cosine(source write, displacement target)": 0.07390416425482539,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "Mean cosine(source write, displacement target)": -0.19218900397292374,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "Mean cosine(source write, displacement target)": 0.019991227801127456,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.73,
+      "Mean cosine(source write, displacement target)": -0.017844083958368836,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Emergent misalignment",
+      "Mean cosine(source write, displacement target)": 0.003469939092186448,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Sycophancy",
+      "Mean cosine(source write, displacement target)": -0.17680724095108424,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Taught fact",
+      "Mean cosine(source write, displacement target)": 0.022855046616522955,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Marker",
+      "Mean cosine(source write, displacement target)": -0.03477263120233145,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "Mean cosine(source write, displacement target)": -0.03946386232110163,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "Mean cosine(source write, displacement target)": -0.016079697764869675,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "Mean cosine(source write, displacement target)": -0.033097596700259836,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.27,
+      "Mean cosine(source write, displacement target)": 0.013373064497453829,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12
+}
