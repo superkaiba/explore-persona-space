@@ -1,0 +1,1 @@
+{"ts": "2026-06-25T01:25:54Z", "event": "raised", "concern_id": "min-survivors-kill-criterion-unenforced", "severity": "CONCERN", "summary": "plan §7 <5-survivor drop/report kill criterion defined (MIN_SURVIVORS=5) but never enforced; low-survival behavior silently feeds noisy r_B into headline verdict", "raised_by": "code-reviewer", "raised_at_round": 1}
