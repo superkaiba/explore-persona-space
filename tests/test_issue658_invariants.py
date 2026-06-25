@@ -868,3 +868,223 @@ def test_extractor_genre_tag_must_be_canonical_for_genre_arm():
     assert "CANONICAL_GENRE_TAG" in ext_src, (
         "the extractor must fail loud when --probes-file is set but --genre-tag is non-canonical"
     )
+
+
+def test_extractor_genre_tag_guard_fires_at_runtime_before_phase_work(monkeypatch):
+    """Codex r2 Minor 2 (runtime): the --genre-tag guard SystemExits before phase work.
+
+    The source-inspection test above proves the guard string is present; this drives
+    ``ext.main()`` with ``--probes-file <path> --genre-tag ultrachat`` (the stale
+    non-canonical tag) and asserts the ``SystemExit`` actually fires — and that it
+    fires BEFORE any phase work starts (the guard sits above ``phase("load")``, so a
+    bogus probes-file path is never opened: argparse only parses the Path, it does
+    not stat it). No model load, no CUDA, no file I/O.
+    """
+    import sys
+
+    import issue658_extract_base_store as ext
+    import pytest
+
+    argv = [
+        "issue658_extract_base_store.py",
+        "--probes-file",
+        "/nonexistent/ultrachat_pool.json",  # never opened — the guard raises first
+        "--genre-tag",
+        "ultrachat",  # the stale non-canonical tag
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    with pytest.raises(SystemExit, match="MUST be the canonical"):
+        ext.main()
+
+
+def test_genre_delta_compute_rejects_allow_small_bootstrap_outside_smoke(tmp_path):
+    """Codex r2 Minor 3a (API guard): compute_genre_delta raises when the smoke-only
+    override is set without smoke.
+
+    ``allow_small_bootstrap`` is a SMOKE-ONLY escape hatch — calling
+    ``compute_genre_delta(..., smoke=False, allow_small_bootstrap=True)`` must raise
+    (production never relaxes the ≥2000-resample floor). The raise fires on the
+    argument contract, before any arm input is read, so the (empty) tmp dirs are fine.
+    """
+    import issue658_genre_delta as gd
+    import pytest
+
+    with pytest.raises(ValueError, match="SMOKE-ONLY escape hatch"):
+        gd.compute_genre_delta(
+            tmp_path / "betley",
+            tmp_path / "ultra",
+            smoke=False,
+            allow_small_bootstrap=True,
+        )
+
+
+def test_genre_delta_cli_rejects_smoke_override_without_smoke_flag(monkeypatch):
+    """Codex r2 Minor 3b (CLI guard): argparse errors on --smoke-allow-small-bootstrap
+    passed WITHOUT --smoke.
+
+    ``main()`` calls ``parser.error(...)`` (a SystemExit) before any arm work when
+    the override is set outside --smoke, so production can never relax the floor from
+    the CLI either.
+    """
+    import sys
+
+    import issue658_genre_delta as gd
+    import pytest
+
+    argv = [
+        "issue658_genre_delta.py",
+        "--smoke-allow-small-bootstrap",  # no --smoke → argparse error
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    # argparse parser.error exits with code 2 (SystemExit).
+    with pytest.raises(SystemExit):
+        gd.main()
+
+
+# ── round-3 floored-cell graceful-bootstrap fix (Codex r2 Critical, via reconciler) ──
+# fit_a32 calls _cluster_bootstrap_rho UNCONDITIONALLY for every n>=4 cell. For a
+# FLOORED cell (n>=4 but the E0 target y is constant — broad_em / harmful_compliance /
+# refusal on UltraChat), every resample is degenerate so the round-2 raise contract
+# on _cluster_bootstrap_rho would CRASH fit_a32 before a32_cells.json lands. The fix
+# guards the callsite on `rho is None` (the canonical no-rank-signal sentinel), so a
+# floored cell emits `bootstrap: None` and the plan-anticipated H3 path runs.
+
+
+def _constant_y_e0_table(ctx_ids, *, col="floored_uc", const=0.0):
+    """An E0 table whose ONE column has a CONSTANT per-context rate (no rank signal).
+
+    ``e0_target(e0, col, ctx_ids)`` returns a constant ``y`` for this column, so
+    ``_rho(pred, y)`` is None and every bootstrap resample is degenerate — exactly
+    the floored UltraChat cell the round-2 raise would crash on.
+    """
+    e0 = {c: {col: {"rate": float(const)}} for c in ctx_ids}
+    return {"e0": e0, "columns": [col]}
+
+
+def _mean_store(ctx_ids, *, n_layers, h, seed=0):
+    """A minimal store with only the 'mean' v0 summaries (Lc, H) per context."""
+    import numpy as np
+    import torch
+
+    rng = np.random.default_rng(seed)
+    return {
+        "summaries": {
+            "mean": {
+                c: torch.tensor(rng.standard_normal((n_layers, h)), dtype=torch.float32)
+                for c in ctx_ids
+            }
+        },
+        "capture_layers": list(range(n_layers)),
+    }
+
+
+def test_fit_a32_floored_cell_emits_null_bootstrap_no_crash():
+    """Codex r2 Critical (via reconciler): a FLOORED n>=4 cell does NOT crash fit_a32.
+
+    The floored cell (constant E0 target, n>=4) yields rho=None; the round-3 callsite
+    guard skips _cluster_bootstrap_rho (which would correctly RAISE on 0 valid draws)
+    and emits ``bootstrap: None``. The plan v3 §6 floor guard / §3 Risk 1 / H3 line
+    126 graceful path — NEVER a crash. Round 2 converted this anticipated path into a
+    hard RuntimeError; this pins the fix.
+    """
+    import issue658_fit_predictors as fit
+
+    ctx_ids = [f"c{i}" for i in range(8)]  # n=8 >= 4 (the crash regime, not the n<4 skip)
+    layers = [0, 1]
+    h = 6
+    store = _mean_store(ctx_ids, n_layers=len(layers), h=h, seed=1)
+    e0 = _constant_y_e0_table(ctx_ids, col="floored_uc", const=0.0)
+    noise = {"floored_uc": 1.0}
+    base_prior = {"floored_uc": None}
+
+    # MUST NOT raise (round-2 would crash here on the degenerate bootstrap).
+    cells = fit.fit_a32(
+        store,
+        spans_dir=None,  # never read: recipes excludes "attn"
+        e0=e0,
+        ctx_ids=ctx_ids,
+        layers=layers,
+        recipes=["mean"],
+        noise_floor=noise,
+        base_prior=base_prior,
+    )
+    scored = [c for c in cells if c.get("status") != "too_few_contexts"]
+    assert scored, "the n=8 floored cell must be SCORED (n>=4), not skipped as too_few_contexts"
+    for c in scored:
+        assert c["n"] == 8
+        assert c["rho"] is None, "a constant-y floored cell has no rank signal -> rho None"
+        assert c["bootstrap"] is None, (
+            "a floored cell must emit bootstrap:None (the callsite skips the bootstrap "
+            "when rho is None) — NOT crash on the round-2 degenerate-resample raise"
+        )
+
+
+def test_fit_a32_healthy_cell_still_carries_full_bootstrap():
+    """The round-2 contract still holds for a HEALTHY n>=4 cell: a real bootstrap lands.
+
+    The floored-cell guard must NOT suppress the bootstrap on a dynamic-range cell —
+    a column whose per-context E0 varies yields rho != None and a full
+    N_BOOTSTRAP-draw bootstrap (the contract the genre-delta Δρ CI consumes).
+    """
+    import issue658_fit_predictors as fit
+    import numpy as np
+    import torch
+
+    ctx_ids = [f"c{i}" for i in range(10)]
+    layers = [0]
+    h = 6
+    rng = np.random.default_rng(3)
+    # A store whose mean-summary column 0 carries a signal linearly related to y, so
+    # the LOCO MLP recovers a non-degenerate prediction → rho != None.
+    y_vals = [float(i) / len(ctx_ids) for i in range(len(ctx_ids))]
+    store = {
+        "summaries": {
+            "mean": {
+                c: torch.tensor(
+                    np.column_stack([[y_vals[i]] * 1, rng.standard_normal((1, h - 1))]),
+                    dtype=torch.float32,
+                )
+                for i, c in enumerate(ctx_ids)
+            }
+        },
+        "capture_layers": [0],
+    }
+    e0 = {"e0": {c: {"dyn_uc": {"rate": y_vals[i]}} for i, c in enumerate(ctx_ids)}}
+    e0["columns"] = ["dyn_uc"]
+    noise = {"dyn_uc": 0.2}
+    base_prior = {"dyn_uc": None}
+
+    # Use the production N_BOOTSTRAP via the real code path (no smoke clamp here).
+    cells = fit.fit_a32(store, None, e0, ctx_ids, layers, ["mean"], noise, base_prior)
+    scored = [c for c in cells if c.get("status") != "too_few_contexts"]
+    assert scored
+    # At least one scored cell must carry a real bootstrap with the full draw count
+    # (the round-2 contract: a dynamic-range n>=4 cell carries a full bootstrap).
+    with_boot = [c for c in scored if c["rho"] is not None and c["bootstrap"] is not None]
+    assert with_boot, "a dynamic-range cell must keep its full bootstrap (contract preserved)"
+    for c in with_boot:
+        assert len(c["bootstrap"]["draws"]) == fit.N_BOOTSTRAP, (
+            "a healthy n>=4 cell must carry exactly N_BOOTSTRAP draws (round-2 contract)"
+        )
+        assert "ci95" in c["bootstrap"]
+
+
+def test_cluster_bootstrap_raises_on_near_degenerate_n_ge_4():
+    """Codex r2 Minor 1: the round-2 raise contract still holds on a truly degenerate
+    n>=4 input.
+
+    This is NOT a floored cell (those are now skipped at the fit_a32 callsite) — it is
+    the direct ``_cluster_bootstrap_rho`` call on a near-degenerate n>=4 input where
+    EVERY resample drops, so the retry cap is exhausted and the round-2 RuntimeError
+    fires. Proves the raise contract is intact for genuinely degenerate direct calls.
+    """
+    import issue658_fit_predictors as fit
+    import numpy as np
+    import pytest
+
+    # pred is constant (all-equal) → _rho returns None on EVERY resample (std<1e-9),
+    # so 0 valid draws accumulate within the retry cap → the round-2 raise fires.
+    pred = np.ones(8)
+    meas = np.arange(8, dtype=np.float64)
+    with pytest.raises(RuntimeError, match="could not accumulate"):
+        fit._cluster_bootstrap_rho(pred, meas, n_boot=20, seed=1)
