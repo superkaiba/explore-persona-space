@@ -26,7 +26,7 @@ own `kind: experiment` task via a dedicated `/issue <N> --auto` session.
 
 | Phase | Scope | Task |
 |---|---|---|
-| 0+1 | Base-model chain A3.2 / A3.3 / A3.4-5 + extraction-recipe lock + single-context edge case (§1.10, C=δ_x) + within-condition coherence (§1.2) + (G1) genre-generalization: Betley vs UltraChat generic queries (follow-up, after Betley PASS) | **#658** [RUNNING] |
+| 0+1 | Base-model chain A3.2 / A3.3 / A3.4-5 + extraction-recipe lock + single-context edge case (§1.10, C=δ_x) + within-condition coherence (§1.2) + (G1) genre-generalization: Betley vs UltraChat generic queries (follow-up, runs unconditionally / in parallel — does NOT wait on the Betley verdict) | **#658** [RUNNING] |
 | 2 | Fine-tune fleet + trained store (t_{C,B}) + ground-truth leakage | not filed |
 | 3 | A3.6–A3.10 + joint factorization (CPU) | not filed |
 | 4 | End-to-end predictor L̂ + cosine variant + baselines | not filed |
