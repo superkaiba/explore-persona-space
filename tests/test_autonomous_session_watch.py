@@ -2948,6 +2948,136 @@ def test_orphan_state_roundtrip_and_clear(isolated_registry):
     assert asw._load_orphan_state(472) == {}
 
 
+# ─── orphan sweep signal counts ANY non-watcher marker (#661/#658 sibling) ────
+#
+# decide_orphan above is pinned on a directly-supplied marker_age_s; these tests
+# pin the marker-KIND SEMANTICS of the call site (_process_orphan_task), which
+# the pure-gate tests cannot reach. The site read _latest_progress_ts (narrow
+# _PROGRESS_KINDS run/upload/interpret allowlist), so a pre-pod lifecycle marker
+# (epm:experiment-implementation, epm:plan, ...) was invisible -> the
+# alive-but-unregistered session in a long pre-pod phase read as zero-progress
+# and was falsely respawned. It now reads _latest_nonwatcher_event_ts.
+
+
+def _run_orphan_task(asw, monkeypatch, *, issue, events, now, missed=1):
+    """Drive _process_orphan_task end-to-end through the actual marker-age call
+    site (rec=None -> fully-unregistered #472 class, so it is an orphan
+    candidate). Pre-seeds orphan state with ``missed`` so a stale read fires a
+    respawn on the SECOND consecutive miss (threshold default 2). Records every
+    _respawn_orphan call; returns the recorder list."""
+    respawns: list[int] = []
+    monkeypatch.setattr(asw, "_task_events", lambda _i: events)
+    monkeypatch.setattr(asw, "_stalled_cap_gpu_hours", lambda _i: 24.0)
+    monkeypatch.setattr(asw, "_respawn_orphan", lambda i, cap, dry_run: respawns.append(i) or True)
+    asw._save_orphan_state(
+        issue, missed=missed, alerted=False, respawn_day=None, respawns_today=0, prev=None
+    )
+    _process_orphan_task = asw._process_orphan_task
+    _process_orphan_task(
+        issue,
+        "running",
+        None,  # rec=None: fully-unregistered orphan candidate
+        set(),  # no live session ids
+        now,
+        False,  # dry_run
+        2,  # threshold
+        staleness_s=asw.ORPHAN_STALENESS_S_DEFAULT,
+        max_per_day=asw.ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
+        day_key="2026-06-25",
+    )
+    return respawns
+
+
+def test_orphan_pre_run_lifecycle_marker_keeps_session(isolated_registry, monkeypatch):
+    # Load-bearing #661/#658 regression: an active+unregistered task whose
+    # NEWEST non-watcher marker is a pre-pod lifecycle kind (excluded from
+    # _PROGRESS_KINDS) and is RECENT must NOT be respawned on freshness grounds.
+    # On the pre-fix _latest_progress_ts line this respawns (the lifecycle
+    # marker is invisible -> marker_age_s=None -> stale); on the fixed
+    # _latest_nonwatcher_event_ts line it is kept.
+    import autonomous_session_watch as asw
+
+    # The only _PROGRESS_KINDS marker (epm:status-changed) is OLD (>90-min
+    # staleness window), so the narrow helper reads stale/respawn. The RECENT
+    # sign of life is the lifecycle marker, which ONLY the broad helper sees.
+    now = asw._parse_event_ts("2026-06-25T03:40:00Z")
+    events = [
+        {"kind": "epm:status-changed", "ts": "2026-06-25T00:39:00Z", "note": "running"},
+        {
+            "kind": "epm:experiment-implementation",
+            "ts": "2026-06-25T03:31:00Z",  # 9 min before now — well inside staleness window
+            "note": "implemented dispatch script",
+        },
+    ]
+    respawns = _run_orphan_task(asw, monkeypatch, issue=661, events=events, now=now)
+    assert respawns == []  # kept — the recent lifecycle marker is a sign of life
+
+
+def test_orphan_watcher_sentinel_marker_still_ignored(isolated_registry, monkeypatch):
+    # The broadened signal must STILL ignore the sweep's own respawn/alert posts
+    # (they land on the very task whose inactivity they measure). A recent
+    # watcher-sentinel'd note with an OLD real lifecycle marker behind it must
+    # read as stale -> respawn (the sentinel does not reset the clock).
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T05:00:00Z")
+    events = [
+        {
+            "kind": "epm:experiment-implementation",
+            "ts": "2026-06-25T01:00:00Z",  # 4h ago — past the 90-min staleness window
+            "note": "real progress, long ago",
+        },
+        {
+            "kind": "epm:progress",
+            "ts": "2026-06-25T04:55:00Z",  # recent, but a watcher post
+            "note": f"{asw._ORPHAN_RESPAWN_NOTE_SENTINEL} auto-respawn attempt",
+        },
+    ]
+    respawns = _run_orphan_task(asw, monkeypatch, issue=662, events=events, now=now)
+    assert respawns == [662]  # the watcher sentinel is filtered; real marker is stale
+
+
+def test_orphan_old_lifecycle_marker_still_stale(isolated_registry, monkeypatch):
+    # Sanity floor: a genuinely OLD newest non-watcher marker still reads stale
+    # and respawns — the fix counts more kinds, it does not disable the clock.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    events = [
+        {
+            "kind": "epm:plan",
+            "ts": "2026-06-25T02:00:00Z",  # 4h ago — past the staleness window
+            "note": "planning done long ago",
+        },
+    ]
+    respawns = _run_orphan_task(asw, monkeypatch, issue=663, events=events, now=now)
+    assert respawns == [663]
+
+
+def test_campaign_child_pre_run_lifecycle_marker_reads_fresh(monkeypatch):
+    # Campaign watchdog parity (#661/#658 sibling): a child in a long pre-pod
+    # planning/implementation phase posts only excluded lifecycle markers; the
+    # watchdog must still read it as a FRESH child (no over-alert). On the
+    # pre-fix _latest_progress_ts line this returned False (lifecycle markers
+    # invisible); on the fixed line it returns True.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T01:40:00Z")
+    monkeypatch.setattr(asw, "_campaign_children", lambda _i: [{"id": 700, "status": "running"}])
+    monkeypatch.setattr(
+        asw,
+        "_task_events",
+        lambda _i: [
+            {
+                "kind": "epm:experiment-implementation",
+                "ts": "2026-06-25T01:31:00Z",  # 9 min ago — inside the window
+                "note": "child implementing",
+            }
+        ],
+    )
+    assert asw._campaign_child_marker_fresh(590, window_s=90 * 60, now=now) is True
+
+
 # ─── followups_running parent-waiting-on-open-child exemption (incident #533) ─
 
 

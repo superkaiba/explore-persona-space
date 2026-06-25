@@ -4869,7 +4869,16 @@ def _process_orphan_task(
     )
     if is_candidate:
         events = _task_events(issue)
-        latest = _latest_progress_ts(events)
+        # Count ANY non-watcher marker as activity (NOT just _PROGRESS_KINDS):
+        # an alive-but-unregistered session in a long pre-pod phase posts only
+        # pre-run lifecycle markers (epm:plan, epm:experiment-implementation,
+        # epm:code-review, epm:review-reconcile, ...), all excluded from the
+        # narrow _PROGRESS_KINDS allowlist — gating staleness on that allowlist
+        # falsely read those sessions as zero-progress and respawned them. The
+        # _WATCHER_NOTE_SENTINELS note filter still excludes the watcher's own
+        # posts. Matches the stalled-detector + reconcile passes (#661/#658
+        # sibling).
+        latest = _latest_nonwatcher_event_ts(events)
         marker_age_s = (now - latest) if latest is not None else None
 
     action, new_missed = decide_orphan(
@@ -9235,7 +9244,13 @@ def _campaign_child_marker_fresh(issue: int, window_s: float, now: float) -> boo
         if not isinstance(child_id, int):
             continue
         events = _task_events(child_id)
-        latest = _latest_progress_ts(events)
+        # Count ANY non-watcher marker (NOT just _PROGRESS_KINDS): a child in a
+        # long pre-pod planning/implementation phase posts only excluded
+        # lifecycle markers, so the narrow helper read "no fresh child" and
+        # over-alerted epm:campaign-stalled. Matches the docstring ("ANY epm:
+        # marker") and the stalled-detector + reconcile + orphan passes
+        # (#661/#658 sibling).
+        latest = _latest_nonwatcher_event_ts(events)
         if latest is not None and (now - latest) <= window_s:
             return True
     return False
