@@ -1895,21 +1895,19 @@ def test_check_batch_judge_client_repo_tree_is_clean():
 
 def test_check_batch_judge_client_legacy_allowlist_entry_is_exempt(tmp_path):
     """A file at a legacy-allowlist path is exempt even with an inline
-    messages.batches.create — locks the grandfathering behavior. Uses a real
-    allowlist entry path replicated under tmp_path so the rel-path match fires.
-    The i528 judge entry in particular MUST stay exempt (it is a pre-#663 judge
-    grandfathered pending migration), so this also pins that the allowlist is
-    file-granular, not call-granular."""
+    messages.batches.create — locks the grandfathering behavior. The surviving
+    data-gen / analysis siblings (e.g. analyze_axis_tails.py) demonstrate that
+    the allowlist is file-granular, not call-granular: membership exempts the
+    whole file's inline batch-create calls. The pre-#663 i528 judge was migrated
+    onto the sanctioned eval.batch_judge helper (#668) and DROPPED from the
+    allowlist, so it must no longer be a member (the lint now governs it)."""
     sd = tmp_path / "scripts"
     sd.mkdir()
-    # i528_phase4_judge.py is in BATCH_JUDGE_LEGACY_ALLOWLIST as a pre-#663 judge.
-    assert "scripts/i528_phase4_judge.py" in BATCH_JUDGE_LEGACY_ALLOWLIST
-    # Replicate the offender shape at the allowlisted basename; the production
-    # walk matches rel == "scripts/i528_phase4_judge.py", so to exercise the
-    # exemption we point scripts_dir at the real repo scripts/ and assert the
-    # live tree (which contains the allowlisted file) stays clean — covered by
-    # the repo-tree-clean test. Here we instead assert the allowlist constant
-    # itself contains the judge + analysis entries (rationale-accuracy guard).
+    # i528_phase4_judge.py was migrated off the inline batch-create path (#668),
+    # so it is NO LONGER grandfathered — the lint governs the file directly now.
+    assert "scripts/i528_phase4_judge.py" not in BATCH_JUDGE_LEGACY_ALLOWLIST
+    # analyze_axis_tails.py is the surviving non-data-gen sibling demonstrating
+    # the per-path exemption mechanism is still exercised.
     assert "scripts/analyze_axis_tails.py" in BATCH_JUDGE_LEGACY_ALLOWLIST
     # And a NON-allowlisted offender at the same dir IS flagged (the exemption
     # is per-path, not blanket-scripts/).

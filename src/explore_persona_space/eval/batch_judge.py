@@ -177,6 +177,35 @@ def _chunk_requests(
     return chunks
 
 
+def submit_sharded_batches_fire_and_forget(
+    client: "anthropic.Anthropic",
+    requests: list[dict],
+    *,
+    on_batch_submitted: Callable[[list[str]], None] | None = None,
+) -> list[str]:
+    """Submit ``requests`` sharded into chunks of <= MAX_REQUESTS_PER_BATCH, fire-and-forget.
+
+    Returns the list of submitted batch IDs in submission order. Does NOT poll —
+    intended for callers (e.g. ``scripts/i528_phase4_judge.py --backend batch``) that
+    submit-then-return and merge results in a separate sync re-run, vs the polling
+    ``judge_completions_batch`` / ``_submit_and_poll_batch`` path.
+
+    ``on_batch_submitted`` (if given) is invoked with the running ``batch_ids`` list
+    AFTER each chunk's batch is created, so the caller can persist incremental
+    progress (Checkpoint-per-phase: a mid-loop crash leaves a recoverable record of
+    the shards already submitted, rather than orphaning shards 0..k when shard k+1
+    raises before any write lands). On any per-chunk failure the exception propagates
+    immediately; the IDs submitted so far are already persisted via the callback.
+    """
+    batch_ids: list[str] = []
+    for chunk in _chunk_requests(requests):
+        batch = client.messages.batches.create(requests=chunk)
+        batch_ids.append(batch.id)
+        if on_batch_submitted is not None:
+            on_batch_submitted(batch_ids)
+    return batch_ids
+
+
 def _legacy_error_dict(reason: str) -> dict:
     """The error-dict shape the legacy ``_submit_and_poll_batch`` returns."""
     return {"aligned": None, "coherent": None, "reasoning": reason, "error": True}

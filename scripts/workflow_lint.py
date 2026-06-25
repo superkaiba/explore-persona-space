@@ -562,17 +562,18 @@ BATCH_JUDGE_SANCTIONED_FILES: tuple[str, ...] = (
 )
 # Legacy inline batch callers that predate this check (2026-06-25), GRANDFATHERED
 # pending migration. The MAJORITY are training-data GENERATION (the `generate_*`
-# / `build_*` / `gen_*` / `run_a3*` rows); TWO are NOT data-gen and are flagged
+# / `build_*` / `gen_*` / `run_a3*` rows); ONE is NOT data-gen and is flagged
 # inline so the rationale stays honest — `analyze_axis_tails.py` is an
-# LLM-taxonomy ANALYSIS classifier, and `i528_phase4_judge.py` is a pre-#663
-# JUDGE (its own docstring opens "Phase 4 judge"). All are experiment code, OUT
-# of the workflow-improver edit scope, so they are grandfathered in the lint
+# LLM-taxonomy ANALYSIS classifier. All are experiment code, OUT of the
+# workflow-improver edit scope, so they are grandfathered in the lint
 # (the MARKER_REGISTRY_ALLOWLIST model) rather than waiver-commented per-file —
 # this lands the check green without touching experiment scripts. A NEW offender
 # is never added here (the `# BATCH_JUDGE_CLIENT_EXEMPT:` waiver is the path for
-# a genuinely-correct new non-judge caller). Migrating the JUDGE entry
-# (`i528_phase4_judge.py`) onto `eval.batch_judge` — the rule's intended outcome
-# — is a separate `kind: infra` follow-up, NOT this check's job.
+# a genuinely-correct new non-judge caller). The pre-#663 JUDGE entry
+# (`i528_phase4_judge.py`) was MIGRATED onto the sanctioned
+# `eval.batch_judge.submit_sharded_batches_fire_and_forget` helper (#668) — the
+# rule's intended outcome — and dropped from this set; its `--backend batch`
+# submit no longer calls `messages.batches.create` inline.
 # CAVEAT: allowlist membership exempts the WHOLE file, not just the documented
 # pre-existing call — a future edit that adds a NEW `messages.batches.create`
 # (even a hand-rolled judge batch) to an allowlisted file is silently exempt.
@@ -595,7 +596,6 @@ BATCH_JUDGE_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
         "scripts/run_a3_leakage.py",
         # NOT data-gen — flagged so the allowlist rationale stays honest:
         "scripts/analyze_axis_tails.py",  # LLM-taxonomy ANALYSIS classifier
-        "scripts/i528_phase4_judge.py",  # pre-#663 JUDGE — migrate to eval.batch_judge (follow-up)
     }
 )
 BATCH_JUDGE_CLIENT_WAIVER_RE = re.compile(r"#\s*BATCH_JUDGE_CLIENT_EXEMPT\s*:\s*(.+?)\s*$")
