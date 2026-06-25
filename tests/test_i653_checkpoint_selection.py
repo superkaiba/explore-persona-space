@@ -94,7 +94,10 @@ def test_select_picks_first_floor_clearing_checkpoint(tmp_path, monkeypatch):
     # The first checkpoint clearing +0.40 is step 10 (step 5 read 0.05).
     assert man["selected_checkpoint_step"] == 10
     assert man["selected_checkpoint_dir"].endswith("checkpoint-10")
-    assert man["selected_model_path"].endswith("checkpoint-10")
+    # selected_model_path is None post-#653-r4 cleanup-as-you-go: the probe's
+    # merge is freed immediately, so the manifest stores the CHECKPOINT DIR (re-
+    # merged on demand downstream) rather than a now-deleted merge path.
+    assert man["selected_model_path"] is None
 
 
 def test_resolve_read_model_path_uses_selected_checkpoint(tmp_path, monkeypatch):

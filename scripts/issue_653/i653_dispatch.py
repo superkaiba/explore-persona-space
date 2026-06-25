@@ -78,6 +78,7 @@ import argparse
 import importlib
 import json
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -1323,6 +1324,54 @@ def _merge_adapter_for_read(adapter_dir: Path, cell) -> str:
     return str(merged)
 
 
+def _delete_merged_for_read(adapter_dir: Path) -> bool:
+    """Delete the ``merged_for_read/`` dir under ``adapter_dir`` if present, the
+    cleanup-as-you-go counterpart to ``_merge_adapter_for_read`` (BLOCKER 1, the
+    select_checkpoint EDQUOT trap, #653 round 4).
+
+    Each probed dose checkpoint's ``merged_for_read/`` is a full-precision
+    ~15 GB Qwen-2.5-7B copy; with up to 9 dose checkpoints × 12 content cells the
+    worst case is ~1.6 TB of merge demand on the RunPod MooseFS ~130 GB per-pod
+    quota (``OSError errno=122 EDQUOT``). The select phase deletes each probe's
+    merge the moment its install read returns, so AT MOST ONE merge exists on
+    disk at a time during selection. The eventually-selected checkpoint's merge
+    is RE-CREATED on demand by ``_resolve_read_model_path`` in the downstream
+    dx / install / ablation / analyze reads (``_merge_adapter_for_read`` is
+    idempotent: it short-circuits when the dir exists, else re-merges).
+
+    Returns True iff a dir was removed. ``shutil.rmtree`` is intentionally NOT
+    swallowing FileNotFoundError silently — a missing dir is the expected no-op
+    (returns False), but any OTHER OSError (a permission / quota fault) is
+    re-raised loud (CLAUDE.md "Fail fast — never hide failures")."""
+    merged = adapter_dir / "merged_for_read"
+    if not merged.exists():
+        return False
+    shutil.rmtree(merged)
+    print(f"  [select_checkpoint] freed merge dir {merged}", flush=True)
+    return True
+
+
+def _sweep_stale_merges_under_cell(adapter_dir: Path) -> int:
+    """Delete EVERY ``merged_for_read/`` dir under a cell's adapter tree — the
+    final adapter's own merge AND each ``checkpoint-<step>/merged_for_read/``
+    (orphans a prior crashed run may have left, #653 round 4). Returns the count
+    removed. Used to leave a finalized/dropped cell with NO merge on disk (the
+    selected checkpoint re-merges on demand downstream)."""
+    if not adapter_dir.exists():
+        return 0
+    removed = 0
+    if _delete_merged_for_read(adapter_dir):
+        removed += 1
+    for child in sorted(adapter_dir.iterdir()):
+        if (
+            child.is_dir()
+            and child.name.startswith("checkpoint-")
+            and _delete_merged_for_read(child)
+        ):
+            removed += 1
+    return removed
+
+
 def _selected_checkpoint_manifest_path(cell, out_root: Path) -> Path:
     """The per-cell select_checkpoint manifest path (§6Δ.3)."""
     return out_root / "armB" / "selected_checkpoints" / f"{cell.cell_id}.json"
@@ -1378,6 +1427,38 @@ def _resolve_read_model_path(cell, out_root: Path) -> str:
             flush=True,
         )
     return _merge_adapter_for_read(out_root / "armB" / "adapters" / cell.cell_id, cell)
+
+
+def _delete_read_merge_for_cell(cell, out_root: Path) -> bool:
+    """Free the on-disk ``merged_for_read/`` the cell's read model resolves to
+    (the cleanup-as-you-go partner of ``_resolve_read_model_path``, #653 round 4).
+
+    The dx / install / ablation phases each iterate ALL cells and re-merge each
+    cell's read model on first contact (``_merge_adapter_for_read`` short-circuits
+    on the persisted dir thereafter). WITHOUT per-cell cleanup the 12 content
+    cells' ~15 GB merges accumulate to ~180 GB across a phase — the SAME
+    RunPod MooseFS ~130 GB EDQUOT crash select_checkpoint just hit, one phase
+    later. So each phase deletes a cell's merge at the END of its per-cell
+    iteration; the NEXT phase re-merges that cell on demand (≤1 merge resident at
+    a time per phase). NO-OP + returns False for full-FT cells (``is_full_ft``):
+    they read the FT checkpoint dir DIRECTLY (no merge is created, and the dir
+    must never be deleted). Dropped dose cells (no merge produced) → False."""
+    if cell.is_full_ft:
+        return False
+    if i653.cell_uses_dose_selection(cell):
+        man = _read_select_manifest(cell, out_root)
+        if man is None:
+            # No manifest → the read fell back to the FINAL adapter (resolver
+            # path 3); free that adapter's merge.
+            return _delete_merged_for_read(out_root / "armB" / "adapters" / cell.cell_id)
+        if man.get("dropped_non_install"):
+            return False  # dropped cell is never read → no merge to free
+        ckpt = man.get("selected_checkpoint_dir")
+        if not ckpt:
+            return False
+        return _delete_merged_for_read(Path(ckpt))
+    # Marker / non-dose LoRA: the read merge lives under the final adapter dir.
+    return _delete_merged_for_read(out_root / "armB" / "adapters" / cell.cell_id)
 
 
 def _marker_unembedding_row():
@@ -1444,6 +1525,27 @@ def phase_select_checkpoint(cells, *, out_root: Path, mode: str) -> dict:
 
     for c in cells:
         man_path = out_dir / f"{c.cell_id}.json"
+        # ── Resume skip (BLOCKER 2, #653 round 4): a re-entered select_checkpoint
+        # MUST skip cells whose manifest already exists — re-probing a completed
+        # cell re-merges every dose checkpoint (the EDQUOT trap that killed round
+        # 3). Applies to BOTH dose and non-dose cells; the in-flight cell (no
+        # manifest yet) re-probes from scratch, which is cheap + correct. Also
+        # sweep any stale merges the prior crashed run may have left under this
+        # cell's adapter tree so the resumed run starts clean.
+        if man_path.exists():
+            existing = json.loads(man_path.read_text())
+            if existing.get("dose_selection") and existing.get("dropped_non_install"):
+                n_dropped += 1
+            elif existing.get("dose_selection"):
+                n_selected += 1
+            written.append(str(man_path))
+            _sweep_stale_merges_under_cell(out_root / "armB" / "adapters" / c.cell_id)
+            print(
+                f"  [select_checkpoint] {c.cell_id}: SKIP — manifest already exists "
+                f"(resume, §6Δ.3)",
+                flush=True,
+            )
+            continue
         # Non-dose cells (marker band-stop / full-FT): no-op manifest pointing at
         # the final adapter / FT model so the resolver path is uniform.
         if not i653.cell_uses_dose_selection(c):
@@ -1529,7 +1631,17 @@ def phase_select_checkpoint(cells, *, out_root: Path, mode: str) -> dict:
             seen_snaps.add(snap)
             ckpt_dir = adapter_dir / f"checkpoint-{snap}"
             ckpt_model = _merge_adapter_for_read(ckpt_dir, c)
-            install = _install_content_gpu(c, out_root=out_root, trained_path=ckpt_model)
+            try:
+                install = _install_content_gpu(c, out_root=out_root, trained_path=ckpt_model)
+            finally:
+                # Cleanup-as-you-go (BLOCKER 1, #653 round 4): free THIS probe's
+                # ~15 GB merge the instant its install read returns (or raises),
+                # before merging the next checkpoint. At most ONE merge exists on
+                # disk at a time during selection (vs the round-3 EDQUOT crash
+                # that left 8+ merges = 192 GB on a 130 GB quota). The eventually
+                # -selected checkpoint re-merges on demand downstream via
+                # _resolve_read_model_path (idempotent _merge_adapter_for_read).
+                _delete_merged_for_read(ckpt_dir)
             passed, detail = i653._install_pass_ok(install, c.behavior)
             probed.append(
                 {
@@ -1547,7 +1659,11 @@ def phase_select_checkpoint(cells, *, out_root: Path, mode: str) -> dict:
             if passed:
                 selected_step = snap
                 selected_ckpt_dir = str(ckpt_dir)
-                selected_model_path = ckpt_model
+                # selected_model_path is NOT the just-deleted merge dir — the
+                # resolver re-merges the selected checkpoint on demand. Stored as
+                # None so a stale (now-deleted) path is never read; downstream
+                # _resolve_read_model_path uses selected_checkpoint_dir.
+                selected_model_path = None
                 break
 
         dropped = selected_step is None
@@ -1700,6 +1816,12 @@ def phase_dx(cells, *, out_root: Path, mode: str) -> dict:
                 f"rows={n_rows}",
                 flush=True,
             )
+        # Free this cell's ~15 GB read merge before the next cell merges its own
+        # (per-cell cleanup-as-you-go, #653 round 4 — keeps ≤1 merge resident
+        # across the 12-cell phase; install re-merges on demand). No-op on CPU
+        # stub (no merge produced) and full-FT (reads the FT dir directly).
+        if mode != i653.RUN_MODE_CPU_STUB:
+            _delete_read_merge_for_cell(c, out_root)
     return {"dx_files": written, "n_cells": len(cells)}
 
 
@@ -2268,6 +2390,11 @@ def phase_install(cells, *, out_root: Path, mode: str) -> dict:
         out_path = out_dir / f"install_{c.cell_id}.json"
         out_path.write_text(json.dumps(payload, indent=1))
         written.append(str(out_path))
+        # Free this cell's read merge before the next cell (per-cell cleanup-as-
+        # you-go, #653 round 4); ablation re-merges its rank-16 cells on demand.
+        # No-op on CPU stub / dropped cells / full-FT (no merge produced).
+        if mode != i653.RUN_MODE_CPU_STUB:
+            _delete_read_merge_for_cell(c, out_root)
     print(f"  [install] wrote {len(written)} install JSONs ({mode})", flush=True)
     return {"install_files": written, "mode": mode}
 
@@ -2531,6 +2658,10 @@ def phase_ablation(cells, *, out_root: Path, mode: str) -> dict:
         out_path.write_text(json.dumps(payload, indent=1))
         written.append(str(out_path))
         print(f"  [ablation] {c.cell_id} ({mode}): wrote {out_path.name}", flush=True)
+        # Free this cell's read merge before the next ablation cell (per-cell
+        # cleanup-as-you-go, #653 round 4). No-op on CPU stub / full-FT.
+        if mode != i653.RUN_MODE_CPU_STUB:
+            _delete_read_merge_for_cell(c, out_root)
     return {"ablation_files": written, "n_cells": len(abl_cells)}
 
 
