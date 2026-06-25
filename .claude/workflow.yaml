@@ -980,8 +980,10 @@ ensemble_review:
         complete-artifact link liveness, methodology-doc spot-check);
         Conciseness (cap adherence + bullets-over-prose); voice incl. the
         byte-identical ban; statistical-framing; mentor-facing title only;
-        one-takeaway-one-figure per finding; raw alongside processed;
-        planned-vs-actual coverage; binding-concerns audit; headline not
+        one-takeaway-one-figure per finding; underlying data alongside
+        every aggregate (low-level data plot behind each aggregate stat +
+        raw alongside processed); planned-vs-actual coverage;
+        binding-concerns audit; headline not
         resting on a contaminated / failed-data-gate arm. Mechanical
         pre-passes: verify_task_body.py (+ --methodology-doc when the doc
         exists, binds check 21) + audit_clean_results_body_discipline.py.
@@ -1709,17 +1711,20 @@ markers:
   - kind: "epm:clean-result-critique"
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
-    fields: "PASS/REVISE verdict against the v3 clean-result spec (five flat H2s — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility`; sentinel `<!-- clean-result-v3 -->`; 2026-W24; v2/legacy bodies keep the grandfathered 2-content-section nested-TL;DR shape, NEVER newly hard-FAILed). v3 lenses (authoritative set in clean-result-critic.md): title; v3-structure (Takeaways 3-6 bullets numbers-first + cross-round-synthesis currency; What I ran `**Why:**`/`**Design:**`/`**Training:**`/`**Eval:**` slots; Findings `### <finding>` skeleton); inline figure inside each `### <finding>` (incl. setup/read pairing); Reproducibility (Parameters SLIMMED to load-bearing subset; confidence in the H1 title tag only); Data (capsule trio identity/why/preprocessing, subset disclosure, complete-artifact link liveness, methodology-doc §2 spot-check via the passed `--methodology-doc`); Conciseness (cap adherence + bullets-over-prose); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (methodology corrections fold into finding prose, no discrete H3); one-takeaway-one-figure per `### <finding>`; raw alongside processed; planned-vs-actual coverage; binding-concerns audit; headline must not rest on a contaminated / failed-data-gate arm. Mechanical pre-pass: verify_task_body.py (`--methodology-doc <issue-worktree-doc-path>` when the doc exists, binds check 21) + audit_clean_results_body_discipline.py."
+    fields: "PASS/REVISE verdict against the v4 clean-result spec (four flat H2s — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` + a `**Repro:**`/`**Context:**` footer; sentinel `<!-- clean-result-v4 -->`; 2026-W26; v3/v2/legacy bodies keep their grandfathered shape, NEVER newly hard-FAILed). v4 lenses (authoritative set in clean-result-critic.md; stable numbering, v4 section names): title; v4-structure (Takeaways 3-6 bullets numbers-first + cross-round-synthesis currency; Goal `**This experiment in context:**`/`**Broader narrative:**`; Methodology `**Design:**`/`**Training:**` (complete hparam table)/`**Evaluation:**`/`**Data extraction:**`/`**Sample ...:**` slots; Results `### <result>` three-beat skeleton); inline figure inside each `### <result>` (what-is-plotted → plot → interpretation); footer (`**Repro:**` + `**Context:**`; confidence in the H1 title tag only); Goal + Methodology completeness (capsule trio identity/why/preprocessing, subset disclosure, complete-artifact link liveness, complete hyperparameter table); Conciseness (cap adherence + bullets-over-prose); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (methodology corrections fold into result prose, no discrete H3); one-result-one-figure per `### <result>`; underlying data alongside every aggregate (low-level per-unit data plot behind each aggregate stat + raw alongside processed); planned-vs-actual coverage; binding-concerns audit; headline must not rest on a contaminated / failed-data-gate arm. Mechanical pre-pass: verify_task_body.py (`--methodology-doc` no longer required for v4 — the doc is a copy of the body's `## Methodology`) + audit_clean_results_body_discipline.py."
   - kind: "epm:clean-result-critique-codex"
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis"
     fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. Runs verify_task_body.py and audit_clean_results_body_discipline.py independently."
   - kind: "epm:methodology-doc-generated"
-    posted_by: skill (via methodology-writer agent + orchestrator commit/gist publish)
+    posted_by: "skill (orchestrator export of the body's `## Methodology` section + gist publish; v3/v2 grandfathered path via methodology-writer agent)"
     when: "Step 9a-quater (after clean-result-critic PASS, before `awaiting_promotion` park)"
     fields: |
-      Records the auto-generated findings-blind methodology +
-      hyperparameters + worked-examples reference for the task. Body
+      Records the methodology + hyperparameters + worked-examples
+      reference for the task. For v4 bodies this is a mechanical COPY of
+      the body's `## Methodology` section (H2 normalized to
+      `# Methodology — issue <N>`), committed to `main`; for grandfathered
+      v3/v2 bodies it is the findings-blind methodology-writer output. Body
       shape:
       `doc_path: docs/methodology/issue_<N>.md commit: <full 40-char SHA>
        gist_url: <secret-gist URL or "n/a — <reason>">
@@ -1781,7 +1786,7 @@ markers:
   - kind: "epm:follow-ups"
     posted_by: skill (via follow-up-proposer)
     when: "Step 10b"
-    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md. Each proposal carries `question_relation: same|substantially-different` (+ `followup_label: <kebab-slug>` for `same` — see follow-up-proposer.md § question_relation tag — criteria; routing is by QUESTION IDENTITY: `same` proposals execute ON the parent issue via the same-issue follow-up loop and are NEVER filed as child tasks, `substantially-different` proposals become child tasks; an untagged proposal is treated as `substantially-different` ONLY when the marker pre-dates 2026-06-09 — on a newer marker the missing tag is a proposer-contract violation: Step 9b re-spawns the proposer once to re-emit tagged proposals, Step 10b classifies the pick against the criteria; see SKILL.md Step 9b step 3 freshness guard), `auto_run: yes|no` + `auto_run_reason` (controls autonomous-mode handling of the EXPENSIVE band at Step 9b — `substantially-different` proposals are FILED as `proposed` children for manual triage, `same` proposals with `est_gpu_hours >= 5` execute via the same-issue loop at status `followups_running`; see follow-up-proposer.md § auto_run tag — criteria), `cost_class: free-analysis|needs-gpu` + `headline_affecting: yes|no` (headline_affecting is a user-facing signal only as of 2026-06-13, NOT an auto-run gate), AND `est_gpu_hours: <number>` (the parseable GPU-hour estimate; `0` for free-analysis). The two CHEAP auto-run bands fire in BOTH interactive and autonomous sessions: `cost_class: free-analysis` (est_gpu_hours 0) runs inline at Step 9a-ter; `question_relation: same` + `0 < est_gpu_hours < 5` runs via the Step 9b cheap-band block (same-issue loop). A missing/unparseable `est_gpu_hours` triggers the cheap-band fail-safe (no auto-run; park/file for user). Interactive mode ignores `auto_run` for the EXPENSIVE band but reads `cost_class` / `est_gpu_hours` for both cheap bands and routes Step 10b user picks by `question_relation`. Autonomous mode reads all the tags. See follow-up-proposer.md § cost_class + headline_affecting + est_gpu_hours tags — criteria."
+    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md. Each proposal carries `question_relation: same|substantially-different` (+ `followup_label: <kebab-slug>` for `same` — see follow-up-proposer.md § question_relation tag — criteria; routing is by QUESTION IDENTITY: `same` proposals execute ON the parent issue via the same-issue follow-up loop and are NEVER filed as child tasks, `substantially-different` proposals become child tasks; an untagged proposal is treated as `substantially-different` ONLY when the marker pre-dates 2026-06-09 — on a newer marker the missing tag is a proposer-contract violation: Step 9b re-spawns the proposer once to re-emit tagged proposals, Step 10b classifies the pick against the criteria; see SKILL.md Step 9b step 3 freshness guard), `auto_run: yes|no` + `auto_run_reason` (controls autonomous-mode handling of the EXPENSIVE band at Step 9b — `substantially-different` proposals are FILED as `proposed` children for manual triage, `same` proposals with `est_gpu_hours >= 20` execute via the same-issue loop at status `followups_running`; see follow-up-proposer.md § auto_run tag — criteria), `cost_class: free-analysis|needs-gpu` + `headline_affecting: yes|no` (headline_affecting is a user-facing signal only as of 2026-06-13, NOT an auto-run gate), AND `est_gpu_hours: <number>` (the parseable GPU-hour estimate; `0` for free-analysis). The two CHEAP auto-run bands fire in BOTH interactive and autonomous sessions: `cost_class: free-analysis` (est_gpu_hours 0) runs inline at Step 9a-ter; `question_relation: same` + `0 < est_gpu_hours < 20` runs via the Step 9b cheap-band block (same-issue loop). A missing/unparseable `est_gpu_hours` triggers the cheap-band fail-safe (no auto-run; park/file for user). Interactive mode ignores `auto_run` for the EXPENSIVE band but reads `cost_class` / `est_gpu_hours` for both cheap bands and routes Step 10b user picks by `question_relation`. Autonomous mode reads all the tags. See follow-up-proposer.md § cost_class + headline_affecting + est_gpu_hours tags — criteria."
   - kind: "epm:followup-value-critique"
     posted_by: skill (via follow-up-critic)
     when: "BEFORE any follow-up proposal routes — at the Step 9b cheap-band block (C0a), the Step 9b autonomous follow-up auto-spawn block, and the interactive Step 10b pick. Spawned in PARALLEL with the codex twin (single-pass ensemble; no revise loop)."
@@ -1839,7 +1844,7 @@ markers:
       but not worth running now."
   - kind: "epm:free-analysis-followup-run"
     posted_by: skill (orchestrator at Step 9a-ter)
-    when: "Step 9a-ter (after Step 9a-humanize, before Step 9a-bis); fires when the analyzer's Step 6.5 surfaced a `cost_class: free-analysis` (est_gpu_hours: 0) follow-up that has not yet been run on this task. The `headline_affecting: yes` requirement was DROPPED 2026-06-13 — a zero-GPU follow-up auto-runs regardless of headline impact (the standing directive: 0-GPU-h or <5-GPU-h follow-ups just run and fold into the same issue)."
+    when: "Step 9a-ter (after Step 9a-humanize, before Step 9a-bis); fires when the analyzer's Step 6.5 surfaced a `cost_class: free-analysis` (est_gpu_hours: 0) follow-up that has not yet been run on this task. The `headline_affecting: yes` requirement was DROPPED 2026-06-13 — a zero-GPU follow-up auto-runs regardless of headline impact (the standing directive: 0-GPU-h or <20-GPU-h follow-ups just run and fold into the same issue)."
     fields: |
       Records that the orchestrator auto-ran a free-analysis
       follow-up inline (zero GPU) and folded the new
@@ -1919,7 +1924,7 @@ markers:
       filing follow-ups does NOT promote the parent.
   - kind: "epm:followup-scope"
     posted_by: skill (Step 9b cheap-band block, Step 9b autonomous same-issue partition, or Step 10b user pick) OR chat session (user-requested same-question follow-up)
-    when: "Whenever a `question_relation: same` follow-up is scoped to execute ON the parent issue: the Step 9b cheap-band block (`source: proposer-9b-cheap` — `0 < est_gpu_hours < 5`, fires in BOTH interactive and autonomous sessions), the autonomous Step 9b expensive partition (`source: proposer-9b` — `est_gpu_hours >= 5`, autonomous only), a chat-requested follow-up (`source: user-chat` — the chat session posts this marker on #N, then re-invokes /issue <N>), or an interactive Step 10b pick (`source: step-10b-pick`)"
+    when: "Whenever a `question_relation: same` follow-up is scoped to execute ON the parent issue: the Step 9b cheap-band block (`source: proposer-9b-cheap` — `0 < est_gpu_hours < 20`, fires in BOTH interactive and autonomous sessions), the autonomous Step 9b expensive partition (`source: proposer-9b` — `est_gpu_hours >= 20`, autonomous only), a chat-requested follow-up (`source: user-chat` — the chat session posts this marker on #N, then re-invokes /issue <N>), or an interactive Step 10b pick (`source: step-10b-pick`)"
     fields: |
       Scopes a same-question follow-up to run directly on THIS issue
       via the same-issue follow-up loop (SKILL.md Step 9b § Same-issue
@@ -1958,9 +1963,9 @@ markers:
       marker of this kind is RUN and is never re-dispatched. TWO
       independent proposer-initiated round caps, each at most 2 rounds
       per task: the CHEAP band (both session modes) counts markers with
-      `source: proposer-9b-cheap` (`0 < est_gpu_hours < 5`); the
+      `source: proposer-9b-cheap` (`0 < est_gpu_hours < 20`); the
       EXPENSIVE autonomous band counts markers with `source: proposer-9b`
-      (`est_gpu_hours >= 5`, autonomous only). User-initiated rounds
+      (`est_gpu_hours >= 20`, autonomous only). User-initiated rounds
       (`user-chat`, `step-10b-pick`) are explicitly requested and gated
       by interactive plan approval, so they do not consume either cap.
   - kind: "epm:question-linked"
@@ -2498,17 +2503,20 @@ steps:
     entry_condition: |
       clean-result-critic PASS (or max rounds reached). Fires for
       `kind: experiment` always and for `kind: analysis` only when the
-      task's `## Reproducibility` section names a training/eval
-      methodology (skip `infra | batch | survey`). Idempotent per
-      follow-up round: no-op when `epm:methodology-doc-generated v1` is
-      present AND every analyzer-re-folded `epm:followup-scope v1`
-      followup_label is recorded in a marker note (`extends=` /
-      `no-new-methodology=`); an unrecorded label runs the EXTEND pass
-      (SKILL.md Step 9a-quater) instead. The skill
-      runs this step after the 9a-bis loop's PASS and BEFORE flipping
+      task's `## Methodology` section names a training/eval methodology
+      (skip `infra | batch | survey`). For a v4 body this step is a
+      mechanical EXPORT — copy the body's `## Methodology` section to
+      `docs/methodology/issue_<N>.md`, commit to `main`, secret-gist
+      mirror, append the top-of-body `**Methodology:**` link (no
+      separate findings-blind authoring). Idempotent per follow-up round:
+      no-op when `epm:methodology-doc-generated v1` is present AND every
+      analyzer-re-folded `epm:followup-scope v1` followup_label is
+      recorded in a marker note (`extends=` / `no-new-methodology=`); an
+      unrecorded label re-exports for that round. The skill runs this
+      step after the 9a-bis loop's PASS and BEFORE flipping
       `reviewing` -> `awaiting_promotion` (Step 9b in SKILL.md prose),
-      so the link line landed in `## Reproducibility` is part of the
-      same finished package the user promotes.
+      so the top-of-body `**Methodology:**` link is part of the same
+      finished package the user promotes.
     posts_marker: "epm:methodology-doc-generated"
     next_expected_step: "10"
   - id: "9b-same"
@@ -2526,10 +2534,10 @@ steps:
       principle: a follow-up that answers the SAME question as the
       parent Goal runs ON the parent issue — 9a-ter is the zero-GPU
       inline fast path, this loop is the GPU-backed path. The CHEAP band
-      (`source: proposer-9b-cheap`, `0 < est_gpu_hours < 5`) auto-fires
+      (`source: proposer-9b-cheap`, `0 < est_gpu_hours < 20`) auto-fires
       this loop in BOTH interactive and autonomous sessions (Step 9b
       cheap-band block); the EXPENSIVE band (`source: proposer-9b`,
-      `est_gpu_hours >= 5`) auto-fires it only in autonomous sessions;
+      `est_gpu_hours >= 20`) auto-fires it only in autonomous sessions;
       `user-chat` / `step-10b-pick` are user-initiated. The task
       moves to `followups_running` (tagged `followup-auto` for
       `source: proposer-9b` or `proposer-9b-cheap`, `followup-manual` for
@@ -2557,8 +2565,8 @@ steps:
       clean-result-critic re-gates -> re-park at `awaiting_promotion`.
       TWO independent proposer-initiated round caps, each at most 2 per
       task: the CHEAP band (`source: proposer-9b-cheap`,
-      `0 < est_gpu_hours < 5`, both session modes) and the EXPENSIVE
-      autonomous band (`source: proposer-9b`, `est_gpu_hours >= 5`,
+      `0 < est_gpu_hours < 20`, both session modes) and the EXPENSIVE
+      autonomous band (`source: proposer-9b`, `est_gpu_hours >= 20`,
       autonomous only). User-initiated rounds (`user-chat`,
       `step-10b-pick`) are uncapped.
     posts_marker: "epm:same-issue-followup-run"
@@ -2652,7 +2660,7 @@ client:
   module: explore_persona_space.task_workflow
   auth: "none (local filesystem; flock on ~/.task-workflow/lock)"
   mutation_rule: "scripts/task.py only; one git commit per operation; web app only appends to comments.jsonl"
-  verification: "scripts/verify_task_body.py (sentinel-gated v3 five-flat-H2 spec — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` — alongside the grandfathered v2 two-content-section + legacy shapes; v3-only checks 18-21 (Data shape, subset disclosure, word caps, body-params⊆methodology-doc) PASS-skip on v2/legacy, the v2-only `check_tldr_nested_structure` PASS-skips on v3, and checks 6/16/17 run on either nested sentinel; PLUS `check_concerns_audit` (Lens 14, binding-concerns; composed 2026-05-31 by task #455) dispatched separately in verify_text since it needs the sibling concerns.jsonl)"
+  verification: "scripts/verify_task_body.py (sentinel-gated v4 four-flat-H2 spec — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` + `**Repro:**`/`**Context:**` footer — alongside the grandfathered v3 five-flat-H2, v2 two-content-section, + legacy shapes; v4-only checks (`check_v4_structure`, `check_v4_methodology_shape`, `check_v4_word_caps`, `check_v4_results_beat`) PASS-skip on non-v4 bodies, the v3-only Data checks PASS-skip on non-v3, the v2-only `check_tldr_nested_structure` PASS-skips on v3/v4, and checks 6/16/17 run on any title-tag-confidence sentinel (v2/v3/v4); PLUS `check_concerns_audit` (Lens 14, binding-concerns; composed 2026-05-31 by task #455) dispatched separately in verify_text since it needs the sibling concerns.jsonl)"
 
 # ──────────────────────────────────────────────────────────────────────
 # Workflow-fix-on-bug protocol. Every agent (subagent or orchestrator)
