@@ -80,6 +80,20 @@ Use `mcp__ssh__ssh_execute` with the pod name (typically `epm-issue-<N>`).
 > nearly FAILed a fully-uploaded run with a false
 > `primary-deliverable-missing` blocker until every enumeration was
 > retried with `sudo`.)
+>
+> NOTE: `eps-issue-*` aliases are NOT registered in the SSH MCP server
+> config (it only knows RunPod pods, the `SSH_SERVER_*` entries) —
+> `mcp__ssh__ssh_execute eps-issue-<N> …` returns "Server not found".
+> Run the on-instance enumeration on GCP via a bare Bash `gcloud`
+> call instead:
+> `gcloud compute ssh <alias> --zone <zone> --configuration=eps-gcp
+> --command='sudo find …'`. The `mcp__ssh__ssh_execute` examples in
+> the steps below apply to RunPod `epm-issue-*` / `pod-<N>` aliases;
+> on a GCP instance substitute the `gcloud compute ssh … --command=`
+> form (keeping the `sudo` prefix per the note above). Don't waste a
+> tool call on `ssh_execute` first — go straight to `gcloud` for
+> `eps-issue-*`. (#658: the verifier on `eps-issue-658` had to fall
+> back from `ssh_execute` after a "Server not found".)
 
 ```bash
 # All standard locations where experiments write data
