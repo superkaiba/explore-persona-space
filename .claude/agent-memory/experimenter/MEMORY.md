@@ -43,6 +43,7 @@
 - [pgrep self-match poisons pidfile](feedback_pgrep_self_match_pidfile.md) — resolve relaunch PIDs with a pattern absent from your own SSH command; pgrep -fx exact-match beats brackets (#601, #602)
 - [SSH MCP ~30s client cap](feedback_ssh_mcp_30s_client_cap.md) — ssh_execute dies at 30s despite timeout=90000; never embed pod-side sleeps >25s; multiple short probes (#570)
 - [Committed pod artifacts block the next pull](feedback_committed_pod_artifacts_block_pull.md) — committing pod-written eval_results aborts pod git pull; backup-outside-repo, remove, pull (#601)
+- [Divergent .claude/** spec files block ff-only pull](feedback_pod_git_sync_diverged_spec_files.md) — same-pod relaunch of a branch carrying a spec-freshness sync commit aborts `git pull --ff-only`; `checkout HEAD` tracked spec files + `rm -f` untracked ones (path-scoped/ancestry checks; MooseFS-slow), then re-pull. Spec sibling of the committed-pod-artifacts block but discard, don't back up (#653 r5)
 - [GCE metadata runner kills on progress bars](feedback_gcp_metadata_runner_token_too_long.md) — vLLM \r bars overflow bufio.Scanner → SIGPIPE, VM zombies at RUNNING/phase=workload; SSH nohup relaunch + manual sentinel (#491)
 - [Anthropic batches are long-running](feedback_datagen_anthropic_batch_long_running.md) — grep for messages.batches.create before any inline wait; 10-90 min typical, 0/N for >60 min is normal; persist batch_id (#331, #382)
 
