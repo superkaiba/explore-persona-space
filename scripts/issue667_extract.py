@@ -61,6 +61,12 @@ import time
 from pathlib import Path
 
 os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
+# vLLM EngineCore fork() poisoning guard (.claude/rules/gotchas.md § entry 26):
+# main() touches transformers.AutoTokenizer (L705-707) BEFORE vllm_generate_R
+# constructs vllm.LLM() (L228); ANY pre-LLM() transformers/tokenizer/registry
+# touch poisons the EngineCore fork. spawn (not fork) avoids the silent worker
+# death. Must be set at module top, BEFORE any `import vllm`. Do not strip.
+os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
