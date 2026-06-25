@@ -116,3 +116,4 @@
 {"ts": "2026-06-25T19:24:30Z", "kind": "epm:results", "version": 1, "by": "issue667_dispatch", "note": "phases=['extract'] behaviors=['em', 'sycophancy', 'fact', 'marker'] sources=None targets=None smoke=False dry_run=False"}
 {"ts": "2026-06-25T19:24:37Z", "kind": "epm:progress", "version": 4, "by": "poll_pipeline", "note": "phase transition: extract -> done", "phase": "done", "pod": "pod-667"}
 {"ts": "2026-06-25T19:24:53Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "[phase=done] observed; 5760 tensors uploaded + verified; advancing to upload-verification + analyzer first pass."}
+{"ts": "2026-06-25T19:25:05Z", "kind": "epm:progress", "version": 5, "by": "unknown", "note": "stage-dispatch stage=verifying round=1 subagent=upload-verifier worktree=/home/thomasjiralerspong/explore-persona-space"}
