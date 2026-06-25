@@ -136,6 +136,30 @@ Phase-2 gate.
 |---|---|---|
 | **R8-1** | New Phase-1 **(G1) genre-generalization arm**: a second UltraChat (generic) probe pool, length-matched to Betley (misalignment-specific), run through the #658 extraction → parallel store (`v0`, single-context per-sample acts, `E0` judge) with `c_C` recomputed per genre (NOT forced equal); re-fit A3.2/A3.3/A3.5 and report Spearman/Pearson + best layer/recipe PER GENRE and the genre delta, distributional AND single-context, each against its own within-genre noise floor. Floor guard: misalignment behaviors (broad_em/harmful_compliance/refusal) may sit at expression floor on generic queries — report per-behavior testable variance per pool and read the continuous completion-probability DV where the rate floors; never read a no-variance ρ as "chain breaks." | §1.2 (G1) bullet · Phase 1 (G1) arm |
 
+## Revision log (round 9 — direct cross-FT stability of context vectors + the context→profile map)
+
+User decision (Thomas, 2026-06-25): add two **direct cross-FT stability tests**. The
+program currently tests post-FT stability only *indirectly* — A3.6 establishes the
+behavior read-out `r_B` stays valid post-FT and A3.10 establishes the base gate stays
+*predictive* despite drift — but neither directly reports whether the **context
+vectors `c_C` themselves** are preserved across training, nor whether the
+**context→profile map** `M: c_C→v0(C)` (fit on the base model in A3.5) still holds
+post-FT. Both new tests are **zero-marginal-GPU CPU read-outs on the existing stores**:
+`c⁺_{C'}` and `v⁺(C')` are already captured for A3.6/A3.10, and `c0`, `v0`, `M0` are in
+the base store. They add interpretive power to the whole base-model-predictor program
+at ~no cost: if the context vectors and the map are near-preserved, the base-model
+predictor is *directly* justified; if they drift heavily yet the predictor still works
+(A3.6/A3.10 PASS), the predictor's drift-robustness is doing the heavy lifting and the
+work localizes to A3.10 — either outcome sharpens the A3.6/A3.10 interpretation. Both
+reads are CHANGE-based (base level partialled out, per the C10 / #532/#649 base-prior
+caveat), per layer × training-strength, source + bystanders, distributional +
+single-context (§1.10). Phase 3.
+
+| ID | Add | Where |
+|---|---|---|
+| **R9-1** | New **A3.6a — context-vector stability across FT** (`c⁺≈c0`, direct): per context (source + bystanders) × layer × training strength η report `cos(c0(C),c⁺(C))`, relative norm `‖c⁺(C)‖/‖c0(C)‖`, and the displacement `‖c⁺(C)−c0(C)‖` compared to the within-condition spread `s_W(C)` (A3.5a) — "is post-FT context drift larger than the natural within-condition context spread?". CPU on the existing A3.10 store (no new capture). Characterization-primary: drift small vs `s_W` and shrinking with weaker training → base `c_C` directly justified; large drift → A3.10's robustness is load-bearing (flagged, NOT a failure — the theory tolerates drift). It is the standalone raw-stability read of the same `c⁺−c0` the A3.10 gate-drift decomposition consumes. | §4 A3.6a row · §2 trained-quantities consumed-by |
+| **R9-2** | New **A3.6b — context→profile map stability across FT** (`M⁺≈M0`, direct): does the base-fit map `M0` (A3.5, `c_C→v0`) still map `c⁺(C)→v⁺(C)`? **Primary (change, base level partialled out per C10):** corr / calibrated error between the predicted change `M0·(c⁺−c0)` and the measured change `v⁺−v0`, against the refit-`M⁺` noise floor. **Operator companion:** refit `M⁺: c⁺→v⁺` with the SAME regularization/rank as the A3.5 `M0` fit, report relative operator norm `‖M⁺−M0‖/‖M0‖` + principal angles between the top-k subspaces of `M0`/`M⁺`. Per layer/recipe, source + bystanders. Generalizes A3.6 (1-D read-out `r_B` stability) to the FULL context→profile operator. CPU on the existing base + A3.6 stores (no new capture). | §4 A3.6b row · §2 base + trained-quantities consumed-by |
+
 ---
 
 This plan turns the paper's assumption chain into one **shared activation store**
@@ -731,8 +755,8 @@ each cached quantity to the assumptions that consume it.
 
 | Quantity | Definition | How computed | GPU? | Consumed by |
 |---|---|---|---|---|
-| `v0(C)` | mean answer-token act under C | vLLM greedy gen + capture, 50 contexts × 48 probes | yes (gen) | A3.2, A3.3, A3.4, A3.5; `δ`(A3.7); `Δv` baseline (A3.8) |
-| `c_C` | prompt-side summary under C | forward pass, prompt only (no gen) | yes (cheap) | A3.4, A3.5, A3.9, A3.10 |
+| `v0(C)` | mean answer-token act under C | vLLM greedy gen + capture, 50 contexts × 48 probes | yes (gen) | A3.2, A3.3, A3.4, A3.5, A3.6b; `δ`(A3.7); `Δv` baseline (A3.8) |
+| `c_C` | prompt-side summary under C | forward pass, prompt only (no gen) | yes (cheap) | A3.4, A3.5, A3.6a, A3.6b, A3.9, A3.10 |
 | `r_B` | diff-in-means answer acts D_B−D_{B̄} | forward on behavior datasets | yes (cheap) | A3.3, A3.6; behavior transfer |
 | `t_{C,B}` | mean answer act teacher-forcing train completions | teacher-forced forward | yes (cheap) | `δ`(A3.7), predictor |
 | `Σ_c`, `Σ_c⁻¹` | E[ccᵀ] over background corpus | forward on corpus + CPU outer-product | yes (cheap) | A3.9, A3.10, predictor |
@@ -742,8 +766,8 @@ each cached quantity to the assumptions that consume it.
 
 | Quantity | Definition | GPU? | Consumed by |
 |---|---|---|---|
-| `v⁺(C')` | mean answer act under each target C' (full 50-context battery) | yes (gen) | A3.6, A3.7(`ŵ`), A3.8(`Δv`), A3.10 |
-| `c⁺_{C'}` | prompt-side under θ⁺ | yes (cheap) | A3.10 gate-drift decomposition |
+| `v⁺(C')` | mean answer act under each target C' (full 50-context battery) | yes (gen) | A3.6, A3.6b, A3.7(`ŵ`), A3.8(`Δv`), A3.10 |
+| `c⁺_{C'}` | prompt-side under θ⁺ | yes (cheap) | A3.6a, A3.6b, A3.10 gate-drift decomposition |
 | `r⁺_{B'}` | re-extracted read-out under θ⁺ | yes (cheap) | A3.6 |
 | `E⁺(C',B')` | trained expression (all B' on all C') | yes + judge | ground-truth leakage `L` |
 
@@ -1022,6 +1046,8 @@ Paper's own "worth testing now" verdict noted.
 | **A3.5** | Context summary = residual vector `c_C` | A3 | Med | **Yes** | linear `M` + MLP: `c_C→v0(C)`; best c_C recipe/layer | nonlinear gain modest; `r_Bᵀ M c_C` predicts E | 1 |
 | **A3.5a** | Contexts close within a condition (`a:context-vector-coherence`) — precondition for the single-vector `c_C` summary | A3 | Med-High | **Yes** | per C: spread `s_W(C)=E‖c_x−c_C‖²_W` vs behavior Jensen gap `Ĵ_ℬ=max_B\|r_Bᵀ(E h(c_x)−h(c_C))\|` + residual `R̂_ℬ`; `W=I` then `(Σc+λI)⁻¹`; per condition + family, layer-swept (full spec + derivation: §4 coherence block) | gap & residual rise with spread (slope ≈ ½ local curvature `K`); coherent conditions (persona/format/behavior) small-gap, scattered (wildchat) large → split / richer-summarize the failures | 1 |
 | **A3.6** | Base read-out valid post-FT (`r⁺≈r`) | A4 | Med-High | **Yes** | **(C10) primary:** corr / calibrated error between `r_{B'}ᵀ(v⁺−v0)` and `(E⁺−E0)` with `E0` PARTIALLED OUT (does base `r_{B'}` predict the *change*, not the level); `cos(r⁺,r)` DIAGNOSTIC only | base `r_{B'}` predicts the leakage change above the base prior; cos high (diagnostic) | 3 |
+| **A3.6a** | Context vector stable across FT (`c⁺≈c0`) — direct (NEW, R9-1) | A4 | Med | **Yes** | per context (source + bystanders) × layer × η: `cos(c0(C),c⁺(C))`, rel-norm `‖c⁺‖/‖c0‖`, displacement vs within-condition spread `s_W(C)` (A3.5a); CPU on the A3.10 store (no new capture); distributional + single-context (§1.10) | characterization-primary: drift small vs `s_W` and shrinking with weaker training → base `c_C` directly justified; large drift → A3.10 robustness load-bearing (flagged, not a failure) | 3 |
+| **A3.6b** | Context→profile map stable across FT (`M⁺≈M0`) — direct (NEW, R9-2) | A4 | Med | **Yes** | base-fit `M0` (A3.5) applied post-FT: **primary (change, `v0` partialled out per C10):** corr / calibrated error between `M0·(c⁺−c0)` and `v⁺−v0` vs the refit-`M⁺` noise floor; **operator companion:** `‖M⁺−M0‖/‖M0‖` + principal angles of top-k `M0`/`M⁺` subspaces (refit `M⁺` at the A3.5 regularization); CPU on base + A3.6 stores; per layer/recipe, source + bystanders | base map predicts the post-FT profile CHANGE within the refit-`M⁺` noise floor (map transfers); generalizes A3.6 from the 1-D read-out to the full operator | 3 |
 | **A3.7** | FT displaces source profile toward data target | A5 | Med | **Yes (B5)** | **primary (positive-only arm):** `cos(ŵ,δ)`, δ=t−v0, **against a shuffled-δ null** (`cos(ŵ, δ` of a different behavior`)`); **contrastive (diagnostic) arm:** `cos(ŵ,δ^contra)`, δ^contra=t⁺−t⁻ (a contrastive heuristic / diff-in-means analogue, NOT theory-derived; report `frac_ctx` per §1.5); scalar-fit residual both; also `cos(ŵ,r_B)` shortcut | positive-only cos **exceeds the shuffled-δ baseline** (not merely >0; ŵ and δ are both displacements from v0(C), so positive cos is partly expected by construction), small residual; report ŵ∥r_B; contrastive-vs-positive-only divergence characterizes recipe-dependence **only after `frac_ctx` is partialled out** | 3 |
 | **A3.8** | Off-source change = scalar-gated source write (rank-one) | A6 | Med | **Yes (central)** | **(B1)** on the ACTIVATION gate `ĝ^real=ŵᵀΔv(C')/ŵᵀŵ`: per-target rank-one residual `‖Δv(C')−ŵĝ^real‖/‖Δv(C')‖`; stack ΔV, report σ₁²/Σσ², σ₂/σ₁, cos(u₁,ŵ); low-rank fallback if fails | small residuals; ΔV near rank-one | 3 |
 | **A3.9** | Gate = normalized key–query similarity | A7 | Med | **Yes** | `g0(C')` vs `ĝ^real(C')` (B1 activation gate): Pearson/Spearman/sign/MAE; **key ablation** {c_C, ψ(t), ψ(δ), c_C+ψ(δ)}; **metric ablation** {I, diag, full whitening}; vs `cos(c_C,c_{C'})`; shuffled controls + denominator stability; **(B3)** clears the cosine-limit unit test first | **verdict (i)** some key/metric beats raw cosine (general gate exists) AND **verdict (ii)** `c_C`+`Σc⁻¹` specifically wins (boxed predictor) — reported separately | 3 |
@@ -1048,6 +1074,19 @@ Paper's own "worth testing now" verdict noted.
   `r_{B'}` predicts `E⁺`" would PASS trivially by the base prior (the level is
   mostly the prior, #532/#649). `cos(r⁺,r)` is a diagnostic of read-out stability,
   not the A3.6 verdict.
+- **(C13) A3.6a/A3.6b are the DIRECT cross-FT stability tier; both are CHANGE-based.**
+  A3.6 (read-out `r_B`) and A3.10 (gate) test post-FT *predictiveness*; A3.6a/A3.6b
+  add the direct reads — is the context vector `c_C` itself preserved (A3.6a), and
+  does the base context→profile map `M0` still hold (A3.6b). Both partial out the base
+  level (predict the *change* `c⁺−c0` / `v⁺−v0`, not the level) per the C10 / #532/#649
+  base-prior caveat: "the base quantity predicts the post-FT level" passes trivially via
+  the prior. Neither adds a capture — A3.6a reads `c0`/`c⁺` (the same drift A3.10
+  decomposes), A3.6b reads `c0`/`v0`/`c⁺`/`v⁺` + the A3.5 `M0`. A near-preserved result
+  directly justifies the base-model predictor; a large-drift-yet-predictor-still-works
+  result localizes the work to A3.10's drift-robustness — both sharpen the headline.
+  Together with A3.6 (1-D read-out) and A3.10 (gate) this completes the "what is
+  preserved across FT" set: input context vector (A3.6a), the context→profile operator
+  (A3.6b), the behavior read-out (A3.6), and the gate (A3.10).
 - **`ψ` (the key-space embedding map, A3.9 key ablation `{c_C, ψ(t), ψ(δ),
   c_C+ψ(δ)}`).** Default: **`ψ = identity` with co-layer extraction** — extract
   `c_C`, `t_{C,B}`, `δ_{C,B}` at the **same layer** so they live in a common
