@@ -128,6 +128,15 @@ SENTINEL_SCHEMA_VERSION = 1
 # (the content hash over the 48 probe texts). A drift on either is a wrong pool.
 ULTRACHAT_PROBE_POOL_HASH = "f277f8c3e2550b2ce3e4545a8ad6473498d070e7343eb7c9398a6aac31525455"
 ULTRACHAT_FILE_SHA256 = "a6caadf02b88df416fcc41bb548556b42f51c6c31ec5f865163afefe32226dcc"
+# The ONE canonical --genre-tag for the (G1) UltraChat genre arm — the
+# `followup_label` (plan v3 §6.5 globs, `eval_paths`, the genre_delta.py
+# --ultrachat-dir default ALL read this exact prefix). The genre arm's
+# eval_results / E0-gen / raw-completion outputs land under
+# `eval_results/issue_658/genre-generalization-ultrachat/`. The dispatcher
+# fail-loud-asserts --genre-tag == this value whenever the UltraChat genre arm is
+# active (--probes-file set), so a stale tag (e.g. `ultrachat`) cannot route the
+# outputs to a directory genre_delta.py never reads (Codex r1 path-naming Minor).
+CANONICAL_GENRE_TAG = "genre-generalization-ultrachat"
 
 
 def phase(name: str) -> None:
@@ -1316,9 +1325,11 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (load→G1..G6→asse
     parser.add_argument(
         "--genre-tag",
         default=None,
-        help="genre-distinct destination prefix (e.g. 'ultrachat'); routes the store "
-        "out-dir, the eval_results subdir, and the HF subdir to a non-clobbering path. "
-        "None = the v1 Betley layout, unchanged.",
+        help="genre-distinct destination prefix; routes the eval_results subdir + the "
+        "HF subdir to a non-clobbering path. None = the v1 Betley layout, unchanged. "
+        f"For the (G1) UltraChat genre arm (--probes-file set) this MUST be the "
+        f"canonical '{CANONICAL_GENRE_TAG}' — the same prefix genre_delta.py reads "
+        "(its --ultrachat-dir default + the plan §6.5 globs); a stale tag is rejected.",
     )
     parser.add_argument(
         "--cc-recompute-last",
@@ -1328,6 +1339,21 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (load→G1..G6→asse
         "--probes-file: the #594 cc_last store is Betley-pinned).",
     )
     args = parser.parse_args()
+
+    # (G1) path-naming contract: when the UltraChat genre arm is active
+    # (--probes-file set), --genre-tag MUST be the canonical prefix that
+    # genre_delta.py reads back (its --ultrachat-dir default + plan §6.5 globs).
+    # Eliminates the default mismatch where a stale `--genre-tag ultrachat` routed
+    # outputs to eval_results/issue_658/ultrachat/ that the genre delta never reads
+    # (Codex r1 path-naming Minor). The Betley arm (--probes-file None) is unaffected.
+    if args.probes_file is not None and args.genre_tag != CANONICAL_GENRE_TAG:
+        raise SystemExit(
+            f"--probes-file is set (the (G1) genre arm) but --genre-tag is "
+            f"{args.genre_tag!r}; it MUST be the canonical {CANONICAL_GENRE_TAG!r} so "
+            "the outputs land where issue658_genre_delta.py reads them "
+            "(--ultrachat-dir default + plan v3 §6.5 globs + the followup_label). "
+            f"Re-launch with --genre-tag {CANONICAL_GENRE_TAG}."
+        )
 
     phase("load")
     # Bind CVD before the first CUDA allocation (the +gpu_id clobber gotcha).
