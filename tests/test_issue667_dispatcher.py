@@ -294,3 +294,106 @@ def test_issue6_vllm_scripts_set_spawn_guard_above_vllm_import():
         "vLLM fork-hazard scripts missing/misplacing the spawn guard (gotcha #26):\n"
         + "\n".join(offenders)
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (d-round6) parity-probe argparse contract — the subprocess entrypoint's
+# --behavior flag must be REGISTERED, not just launched + read.
+#
+# Round-6 crash class (bug_class ``subprocess_isolation_argparse_contract_mismatch``):
+# the r4 CUDA-isolation refactor moved the rsLoRA parity probe into a one-shot
+# ``parity-probe`` subprocess. The launch site (line 444) passes ``--behavior <x>``
+# and ``main()`` (line 764) reads ``args.behavior``, but the parser only registered
+# ``--behaviors`` (plural, for extract/analysis). So the subprocess deterministically
+# died: ``AttributeError: 'Namespace' object has no attribute 'behavior'`` → rc=1 →
+# the dispatcher's fail-loud HALT. The r4/r5 tests mocked the subprocess, so none
+# exercised the actual parity-probe entrypoint's argument parsing.
+#
+# These tests drive ``main()``'s argparse end-to-end on the ``parity-probe`` phase
+# (the exact code path that broke), with the GPU work + credential check mocked so
+# they run CPU-only. Had either existed in r4/r5, the contract gap would have been
+# caught at code-review time.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_parity_probe_argparse_contract_end_to_end(tmp_path):
+    """``main()`` on the ``parity-probe`` phase parses ``--behavior`` and forwards it
+    to ``_numeric_rslora_parity`` (the line-764 read). Pre-fix: ``AttributeError`` on
+    ``args.behavior`` (the flag was never registered) → rc=1. Post-fix: rc=0 and the
+    behavior threads through.
+    """
+    result_path = tmp_path / "parity_result.json"
+    captured: dict[str, object] = {}
+
+    def fake_numeric(behavior, *, source, seed):
+        captured["behavior"] = behavior
+        captured["source"] = source
+        captured["seed"] = seed
+        return {
+            "behavior": behavior,
+            "source": source,
+            "g_self": 1.0,
+            "write_ratio": 0.1,
+            "gauge": {"r": 32, "lora_alpha": 256, "use_rslora": True},
+        }
+
+    argv = [
+        "issue667_dispatch.py",
+        "parity-probe",
+        "--behavior",
+        "em",
+        "--source",
+        "default",
+        "--seed",
+        "42",
+        "--result-out",
+        str(result_path),
+    ]
+    with (
+        mock.patch.object(sys, "argv", argv),
+        mock.patch.object(disp, "_require_credentials"),
+        mock.patch.object(disp, "_numeric_rslora_parity", side_effect=fake_numeric),
+    ):
+        rc = disp.main()
+
+    assert rc == 0, "parity-probe phase must exit 0 (pre-fix it died rc=1 on args.behavior)"
+    # The launch-site / main()-read / parser registration all agree on --behavior.
+    assert captured["behavior"] == "em", captured
+    assert captured["source"] == "default", captured
+    assert captured["seed"] == 42, captured
+    # The result JSON the parent reads back was written.
+    assert result_path.exists(), "parity-probe must write its result JSON"
+    assert json.loads(result_path.read_text())["behavior"] == "em"
+
+
+def test_behavior_singular_flag_is_recognized_not_unrecognized_arg():
+    """``--behavior`` (singular) must be a REGISTERED flag, not an unrecognized arg.
+
+    Distinct failure mode from the test above: pre-fix, argparse would reject
+    ``--behavior`` with ``SystemExit`` (``error: unrecognized arguments: --behavior``)
+    only if the launch site reached ``parse_args`` — but the r4 launch site DID pass
+    it, so the real crash was the downstream ``AttributeError`` at the line-764 read.
+    This pins the parser side: with the GPU work mocked, supplying ``--behavior`` must
+    NOT trigger a ``SystemExit`` (argparse never errors) and must NOT trigger an
+    ``AttributeError`` (``args.behavior`` resolves).
+    """
+    argv = ["issue667_dispatch.py", "parity-probe", "--behavior", "fact"]
+    with (
+        mock.patch.object(sys, "argv", argv),
+        mock.patch.object(disp, "_require_credentials"),
+        mock.patch.object(
+            disp,
+            "_numeric_rslora_parity",
+            return_value={
+                "behavior": "fact",
+                "source": "default",
+                "g_self": 1.0,
+                "write_ratio": 0.1,
+                "gauge": {},
+            },
+        ),
+    ):
+        # No --result-out: exercises the no-write branch (result is discarded), so the
+        # only thing under test is parser acceptance + the args.behavior read.
+        rc = disp.main()
+    assert rc == 0, "parser must recognize --behavior (singular) on the parity-probe phase"
