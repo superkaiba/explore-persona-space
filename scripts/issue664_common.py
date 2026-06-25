@@ -279,7 +279,12 @@ class Recipe:
             if self.max_steps is not None:
                 kw["max_steps"] = self.max_steps if dose == "d1" else int(self.max_steps * 1.6)
                 kw["lr_scheduler_type"] = self.lr_scheduler_type
-                kw["warmup_steps"] = self.warmup_steps
+                if self.warmup_steps is not None:
+                    # turner_em uses absolute warmup_steps; HF warns + ignores
+                    # warmup_ratio when both are set, so drop the ratio here so
+                    # the schedule is exactly turner_em's (warmup_steps wins).
+                    kw["warmup_steps"] = self.warmup_steps
+                    kw.pop("warmup_ratio", None)
                 if self.optim is not None:
                     kw["optim"] = self.optim
             else:
