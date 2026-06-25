@@ -52,3 +52,23 @@ exact recipe parameter values from #537/#545/#474 ground truth (each adapter's
 `adapter_config.json` + training-recipe metadata) and records a `Source: #537/#545/#474` per
 hyperparameter in plan §11; it does NOT reuse the adapters themselves. Cite #537's grid + #545's
 registry + #474's epoch-1 marker spine as the recipe provenance, then retrain.
+
+## Parallel-execution directive (user, 2026-06-25)
+
+**Run Phase 2 TRAINING now, in parallel with #658's base-model E0 judge — do NOT wait
+on the foundation go/no-go or the Phase-1 recipe-freeze.** User override of the program's
+default gated chain (the genre/foundation gate was removed; #660 design doc § revision log
+round 8). Rationale: the fine-tune *training* is recipe-independent — it consumes only the
+training mixes + the §1.5 recipe, never the base-model judge or the frozen read-out recipe.
+
+What this means for the planner:
+- **Capture ALL 28 layers** in the trained store (the §1.9 store contract already does this);
+  the Phase-1-frozen per-behavior layer + C-primary `r_B` recipe are applied at ANALYSIS time
+  (the cross-phase A3.6–A3.10 reads), NOT at training or extraction time. So the missing
+  #658 clean-result does NOT block the fleet — design around the all-layer store.
+- **Do NOT block on #658's clean-result.** Where the Goal text says "using Phase 1's locked
+  layer + the C-primary r_B recipe," read that as "the frozen recipe is applied downstream;
+  the fleet is layer-agnostic at capture." If #658's freeze lands before analysis, use it;
+  otherwise capture-all-layers stands.
+- Everything else (recipes-only retrain, B5 two arms, on-policy completions, contrastive
+  negatives, marker band-stop, ≥2 doses, the §7.2 grid) is unchanged.
