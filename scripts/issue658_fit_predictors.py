@@ -355,7 +355,22 @@ def fit_a32(store, spans_dir, e0, ctx_ids, layers, recipes, noise_floor, base_pr
                         "rho_predict_mean": rho_mean,
                         "rho_base_prior": base_prior.get(col),
                         "noise_floor_p95": noise_floor.get(col),
-                        "bootstrap": _cluster_bootstrap_rho(pred, y, n_boot=N_BOOTSTRAP, seed=658),
+                        # Skip the bootstrap when the cell has no rank signal:
+                        # `_rho` returns None for a constant-y FLOORED cell
+                        # (broad_em / harmful_compliance / refusal on UltraChat),
+                        # where EVERY resample is degenerate so
+                        # `_cluster_bootstrap_rho` would (correctly) RAISE on 0
+                        # valid draws. The plan-anticipated H3 graceful path
+                        # (plan v3 §6 floor guard / §3 Risk 1 / H3 line 126) needs
+                        # `bootstrap: None` emitted, NOT a crash — the round-2
+                        # raise contract on `_cluster_bootstrap_rho` still holds
+                        # for genuinely near-degenerate n>=4 cells; we just never
+                        # call it when there is nothing to bootstrap.
+                        "bootstrap": (
+                            None
+                            if rho is None
+                            else _cluster_bootstrap_rho(pred, y, n_boot=N_BOOTSTRAP, seed=658)
+                        ),
                         # attn is a RANDOM-PROJECTION CONTROL, not a learned pool
                         # (carried CONCERN attn-pool-weight-unfitted).
                         "is_random_projection_control": recipe == "attn",
