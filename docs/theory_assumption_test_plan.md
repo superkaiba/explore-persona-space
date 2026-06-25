@@ -64,6 +64,19 @@ reference). All other content is preserved verbatim.
 | **R3-4** | §1.5: ONE sentence that #474's source-cell saturation degrades the `ŵ=Δv(C)` write-direction estimate (A3.7/A3.8), not only the leakage DV — flagged for the per-phase artifact-reuse fitness check. | §1.5 (B5 block tail) |
 | **R3-5** | Dangling "§11 grounding" reference (the doc has no §11) renamed to the per-phase plan's primary-path pre-registration (§10a per-phase plan approval; §3 Phase 1 recipe-freeze). | §1.7 C3, §3 Phase 1 |
 
+## Revision log (round 4 — `r_B` provenance)
+
+A code-vs-spec trace of the read-out `r_B` found the script index overstated
+readiness, the default slot wrong, and `D_{B̄}` mis-pinned. The intended `r_B`
+is the **pos/neg system-prompt-pair** diff (Persona Vectors, arXiv 2507.21509);
+the exact extraction method is being decided by the running **#661** (feeds the
+program-#660 A3.3 recipe). Two fixes; all other content preserved verbatim.
+
+| ID | Fix | Where |
+|---|---|---|
+| **R4-1** | `r_B` provenance corrected — Phase-0 **to-build, NOT reuse**. The default slot is **answer-side** (mean over generated-response tokens), per-behavior best layer. The cited `scripts/issue634_extract_behavior_vectors.py` emits **last-input-token, positive-only ABSOLUTE** centroids (the `c_C`-style slot, no contrast) = the §1.4 `r_B` *ablation* slot, NOT the default. The existing extractors (`extract_persona_vectors.py`, `issue623_persona_panel_vectors.py`) emit raw absolute centroids only; the one downstream diff that exists (`issue623_analyze.py::persona_vector_matrix`, role-minus-assistant, mean-centered #536) is a **different contrast** (persona-axis), not the `r_B` target — Phase 0 builds the pos/neg-prompt diff fresh. | §1.3 read-out note, §1.4 table + note, §6 script index |
+| **R4-2** | `D_{B̄}` pinned = the **negative-prompt centroid**: `r_B = D_B − D_{B̄}` over matched **pos/neg system-prompt pairs** per behavior (e.g. "be sycophantic" vs "be honest"; Persona Vectors, arXiv 2507.21509) — NOT the assistant centroid, NOT a single-pole absolute mean. The exact extraction method — (A) on-policy instruction-present / (B) off-policy teacher-forced / (C) instruct-and-strip — is **OPEN, being decided by the running #661** (per-layer cosine divergence + instruction-context-axis confound `c_pos−c_neg` + A3.3 held-out predictive quality), which sets the program-#660 A3.3 `r_B` recipe. The assistant-axis instruction files carry only `pos` prompts, so the matched **neg prompts must be generated** — a Phase-0 dependency #661 is resolving. | §1.3 read-out note, §1.4 note |
+
 ---
 
 This plan turns the paper's assumption chain into one **shared activation store**
@@ -247,9 +260,11 @@ source context (each ships designed-null / anchor controls):
 - **B10** warmth (gated dose-response)
 
 Notes:
-- **Read-outs `r_{B'}`** (A3.3) are extracted **per evaluated column** from that
-  behavior's `D_B / D_{B̄}` (difference-in-means, persona-vector recipe), same
-  layer policy as §1.4; the marker read-out is the marker-logit direction.
+- **Read-outs `r_{B'}`** (A3.3) are extracted **per evaluated column** as
+  `D_B − D_{B̄}` over matched **pos/neg system-prompt pairs** (Persona Vectors,
+  arXiv 2507.21509; answer-side, extraction method A/B/C pending #661 — see §1.4
+  note R4-1/R4-2), same layer policy as §1.4; the marker read-out is the
+  marker-logit direction.
 - **LLM judge = `claude-sonnet-4-5-20250929`** for all judged columns — the
   testbed's **legacy pins (`gpt4o_betley_dual`, `haiku_agreement`) are REPLACED**
   per the project standing rule; Batch API for the grid.
@@ -307,6 +322,24 @@ These are the recipe knobs the paper leaves open and Phase 1 fixes empirically.
 - **Capture position:** marker DV at the END-of-own-response slot (the marker +
   EOS margin contract, `.claude/rules/marker-leakage-measurement.md`); behavior
   read-outs over the generated answer span.
+- **(R4-1/R4-2) `r_B` provenance + `D_{B̄}` definition.** `r_B = D_B − D_{B̄}`
+  is the **pos/neg system-prompt-pair** diff-in-means per behavior — `D_B` =
+  mean activation under a behavior-positive instruction (e.g. "be sycophantic"),
+  `D_{B̄}` = mean under the matched behavior-negative instruction (e.g. "be
+  honest") (Persona Vectors, arXiv 2507.21509). `D_{B̄}` is **NOT the assistant
+  centroid** and NOT a single-pole absolute mean. **Default slot = answer-side**
+  (mean over generated-response tokens), per-behavior best layer;
+  last-input-token is the ablation. **Extraction method OPEN — being decided by
+  the running #661:** (A) on-policy instruction-present / (B) off-policy
+  teacher-forced / (C) instruct-and-strip, scored on per-layer cosine
+  divergence, the `c_pos−c_neg` instruction-context-axis confound, and A3.3
+  held-out predictive quality; #661 sets the program-#660 A3.3 recipe.
+  **Phase-0 to-build, NOT reuse:** the assistant-axis instruction files carry
+  only `pos` prompts, so the matched **neg prompts must first be generated**
+  (#661's task). The cited `scripts/issue634_extract_behavior_vectors.py` is the
+  ablation feeder only — last-input-token, positive-only ABSOLUTE centroids (no
+  contrast); the existing downstream diff (`issue623_analyze.py`,
+  role-minus-assistant) is a different persona-axis contrast, not `r_B`.
 
 ### 1.5 Training recipes (θ⁺_{C,B})
 
@@ -928,8 +961,11 @@ Don't rebuild — the harness (Phase 0) wraps these.
 - probe pool: `issue404_common.fetch_preregistered_probes()` (48 Betley probes = `x∼C`)
 
 **Extraction / vectors:**
-- `scripts/extract_persona_vectors.py`, `scripts/issue623_persona_panel_vectors.py` — persona/context vectors (`c_C`, `r_B` candidates)
-- `scripts/issue634_extract_behavior_vectors.py` — behavior vectors (`r_B`)
+- **`r_B` (pos/neg system-prompt-pair diff, answer-side) — Phase-0 to-build; extraction method (A/B/C) decided by the running #661 (→ program-#660 A3.3 recipe).** The scripts below emit raw centroids / a different contrast and do NOT yet produce the default `r_B`:
+  - `scripts/extract_persona_vectors.py` — per-role ABSOLUTE centroids (no pos/neg contrast in-script); mean-response-token (answer-side) and last-input-token (`c_C`-style / §1.4 ablation) slots
+  - `scripts/issue623_persona_panel_vectors.py` — thin wrapper emitting resolved-panel centroids (raw only; diff computed off-pod in `issue623_analyze.py`)
+  - `scripts/issue623_analyze.py::persona_vector_matrix` — assembles a **role-minus-assistant** persona-axis diff (mean-centered #536) — a DIFFERENT contrast, not the pos/neg `r_B`
+  - `scripts/issue634_extract_behavior_vectors.py` — last-input-token, **positive-only** absolute centroids (the `c_C`-style slot = §1.4 `r_B` *ablation*, NO contrast)
 - `scripts/issue650_extract_context_bank.py` + `experiments/issue_650/shift_extract.py` — context bank `c_C` + activation shift `Δv`
 - `scripts/issue541_geometry_extract.py`, `scripts/extract_prompt_divergence_activations.py` — geometry/context extraction
 - `scripts/issue493_extraction_metric_bakeoff.py` — **layer/summary recipe selection** (directly Phase 1)
