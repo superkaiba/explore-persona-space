@@ -3568,6 +3568,50 @@ def test_no_budget_job_is_not_short_no_spot_rung(lease_store, marker_poster, cap
     assert not any("spot" in (a.detail or "") for a in gcp_fails)
 
 
+def test_debug_intent_rung_label_reflects_l4_not_a100(lease_store, marker_poster, captured_markers):
+    """#672: the rung-1 label is COMPOSED from the resolved machine's
+    accelerator kind, so a ``debug`` intent (mapped to g2-standard-4 = L4)
+    is labeled ``ondemand_l4`` — NOT the historically-hardcoded
+    ``ondemand_a100_80`` (which lied about the machine being attempted).
+
+    Force a capacity miss on the create so the rung label lands in the
+    attempt trail's ``detail``, where a post-hoc debugger reads it.
+    """
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    spec = RunSpec(issue=137, intent="debug", backend="auto", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=_PassiveRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    # The rung-1 attempt detail names the L4 machine actually attempted.
+    rung1_details = [
+        a.detail
+        for a in result.attempts
+        if a.kind == "gcp" and a.detail and a.detail.startswith("rung ondemand_")
+    ]
+    assert rung1_details, "no on-demand GCP rung attempt recorded"
+    assert any("rung ondemand_l4:" in d for d in rung1_details)
+    # The historical hardcoded A100 label must NOT appear for an L4 intent.
+    assert not any("ondemand_a100_80" in (a.detail or "") for a in result.attempts)
+    # The pre-escalation intermediate breadcrumb carries the L4 rung too.
+    intermediates = [
+        body
+        for body in _by_reason(captured_markers, ROUTE_REASON_AUTO_FALLBACK_GCP)
+        if body.get("extra", {}).get("intermediate") is True
+    ]
+    assert any(body["extra"].get("rung") == "ondemand_l4" for body in intermediates)
+
+
 def test_intermediate_marker_records_requested_kind_on_explicit_gcp_pin(
     lease_store, marker_poster, captured_markers
 ):

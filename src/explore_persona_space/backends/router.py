@@ -1810,6 +1810,21 @@ def _with_machine(spec: RunSpec, machine: MachineSpec, *, provisioning: str) -> 
     )
 
 
+def _machine_label(machine: MachineSpec) -> str:
+    """Compose a rung-label suffix from the RESOLVED machine's accelerator kind.
+
+    Derives the suffix from :attr:`MachineSpec.gpu_kind` (the field whose
+    documented purpose is "short kind tag for logging") rather than hardcoding
+    a position in the ladder: ``"A100-80" -> "a100_80"``, ``"L4" -> "l4"``,
+    ``"A100-40" -> "a100_40"``, ``"H100-80" -> "h100_80"``. The A100 suffixes
+    are byte-identical to the historical hardcoded labels, so existing rungs
+    keep their labels; only a non-A100 intent (``debug`` / ``eval`` -> L4) now
+    gets a label that matches the machine actually attempted (#672 — the rung-1
+    label used to say ``ondemand_a100_80`` while the create attempted an L4).
+    """
+    return machine.gpu_kind.lower().replace("-", "_")
+
+
 def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     """Ordered ``(spec, rung_label)`` GCP provisioning attempts, cheapest first.
 
@@ -1818,15 +1833,20 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     (:func:`_override_free_or_gcp`) walk, so the two get IDENTICAL fallback
     behavior (acceptance criterion 3 / the #654 fix):
 
-    * Rung 1: on-demand A100-80 — the spec as-is (today's behavior).
-      Label ``ondemand_a100_80``.
+    * Rung 1: on-demand — the spec as-is (today's behavior), resolving the
+      intent's mapped machine. Label ``ondemand_<gpu_kind>`` (e.g.
+      ``ondemand_a100_80`` for a 7B LoRA, ``ondemand_l4`` for ``debug``).
     * Rung 2: on-demand A100-40 (``a2-highgpu-1g``) — only when the intent
       fits in 40 GB (:func:`gcp.a100_40_fallback_for_intent`).
       Label ``ondemand_a100_40``.
-    * Rung 3: SPOT A100-80 — only when the job is "short"
-      (:func:`_is_short_job`). Label ``spot_a100_80``.
+    * Rung 3: SPOT (the rung-1 machine) — only when the job is "short"
+      (:func:`_is_short_job`). Label ``spot_<gpu_kind>``.
     * Rung 4: SPOT A100-40 — only when the job is short AND fits 40 GB.
       Label ``spot_a100_40``.
+
+    Each label is COMPOSED from the resolved machine's accelerator kind
+    (:func:`_machine_label`) rather than hardcoded, so a rung's label always
+    reflects the machine actually attempted (#672).
 
     Rungs that do not apply to this intent / length are simply absent, so a
     long ``ft-7b`` (no A100-40 fallback, not short) yields ONLY rung 1 and
@@ -1836,14 +1856,20 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     provisioning model so the create resolves the rung's true machine.
     """
     base = machine_for_intent(spec)  # resolves the as-is intent (rung 1)
-    rungs: list[tuple[RunSpec, str]] = [(spec, "ondemand_a100_80")]
+    rungs: list[tuple[RunSpec, str]] = [(spec, f"ondemand_{_machine_label(base)}")]
     a40 = a100_40_fallback_for_intent(spec)
     if a40 is not None:
-        rungs.append((_with_machine(spec, a40, provisioning="STANDARD"), "ondemand_a100_40"))
+        rungs.append(
+            (_with_machine(spec, a40, provisioning="STANDARD"), f"ondemand_{_machine_label(a40)}")
+        )
     if _is_short_job(spec, base):
-        rungs.append((_with_machine(spec, base, provisioning="SPOT"), "spot_a100_80"))
+        rungs.append(
+            (_with_machine(spec, base, provisioning="SPOT"), f"spot_{_machine_label(base)}")
+        )
         if a40 is not None:
-            rungs.append((_with_machine(spec, a40, provisioning="SPOT"), "spot_a100_40"))
+            rungs.append(
+                (_with_machine(spec, a40, provisioning="SPOT"), f"spot_{_machine_label(a40)}")
+            )
     return rungs
 
 
