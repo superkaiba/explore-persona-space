@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 673,
+  "highest_id": 674,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4229,6 +4229,13 @@
       "path": "tasks/proposed/673",
       "status": "proposed",
       "title": "Real-GPU memory-non-growth validation for #671 hook-based extraction"
+    },
+    "674": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/674",
+      "status": "proposed",
+      "title": "Route per-cell .npz writes to local SSD scratch + batch-upload at sweep end (GCE I/O decoupling)"
     },
     "68": {
       "has_clean_result": false,
