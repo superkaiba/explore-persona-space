@@ -69,13 +69,17 @@ if ! wait_terminal 663 "GATE batch-fix"; then
 fi
 log "GATE CLEARED: #663 done."
 
-# ---- PHASE 1: #658 (revive the held foundation analysis + the recipe sweep) ----
+# ---- PHASE 1: #658 (foundation) — NON-BLOCKING per user directive 2026-06-26 ----
+#   "don't gate based on 658, just continue anyway." #658 runs on its own /issue --auto
+#   session; the chain does NOT wait on it and does NOT halt if it blocks. Its foundation
+#   result is INFORMATIONAL (read for write-up caveats), not a go/no-go gate. The real
+#   dependency that DOES gate is Phase 2 -> Phase 3/4 below.
 if [ "$(status 658)" = "on_hold" ]; then
   log "Phase 1: reviving #658 (on_hold -> interpreting)"
   uv run python scripts/task.py set-status 658 interpreting 2>&1 | tee -a "$LOG"
 fi
 ensure_spawned 658 "Phase 1 foundation"
-wait_terminal 658 "Phase 1 (#658)" || { log "Phase 1 halted -> stopping."; touch "$STOP"; exit 1; }
+log "Phase 1 (#658): NON-BLOCKING (user directive 2026-06-26) — status=$(status 658); not waiting, not gating the chain on it."
 
 # ---- PHASE 2: #664 (fine-tune fleet) ----
 ensure_spawned 664 "Phase 2 fleet"
