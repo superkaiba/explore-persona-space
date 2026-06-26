@@ -3,7 +3,8 @@ title: '#669/#671 verified offline (250 tests green) but the live A100 smoke and
   watchdog→failover chain were lost to infrastructure failure — HIGH offline, UNVERIFIED
   live (LOW confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-26T10:24:35Z'
 has_clean_result: true
 origin_prompt: afterwards test that GCP is working properly (and the bugs from before
