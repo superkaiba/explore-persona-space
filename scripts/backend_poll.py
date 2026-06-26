@@ -741,6 +741,69 @@ def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -
     # round 2 had no record that survived a ``.claude/cache``-wide disk failure.
     _stamp_lease_failover_of(issue, handle)
 
+    # M3b 2nd-TRIGGERER SHORT-CIRCUIT (#669 code-review r1 blocker). When a
+    # CONCURRENT triggerer already launched RunPod for this GCP crash, the
+    # router's in-flock re-check returns WITHOUT launching and flags the result
+    # ``extra["failover_already_launched"] = True`` carrying a MINIMAL
+    # reconstructed handle (``extra={"issue": N}`` only — NO ``expected_artifacts``
+    # / ``pid_file`` / ``runpod_attempt_id``). The 1st triggerer already wrote the
+    # AUTHORITATIVE full RunPod handle to this sidecar, so the
+    # ``write_handle_sidecar`` below would CLOBBER it with the minimal handle and
+    # downstream artifact verification (``artifacts.expected_artifacts_from_handle``)
+    # would then read ``expected_artifacts=None`` and FAIL. So: do NOT write —
+    # READ the existing sidecar and preserve it. If it already holds a RunPod
+    # handle (the expected state under the flock invariant), emit running pointing
+    # at THAT untouched handle. If it still holds the GCP handle (the 1st
+    # triggerer has not persisted yet — unlikely under the lease invariant but
+    # possible across crashes), fall through to the terminal
+    # ``sidecar_persistence_failed`` shape exactly as the no-readback case below.
+    if route_result.extra.get("failover_already_launched"):
+        try:
+            existing = read_handle_sidecar(sidecar)
+        except (OSError, json.JSONDecodeError, KeyError, ValueError):
+            existing = None
+        if existing is not None and existing.backend == "runpod":
+            _clear_failover_sentinel(sentinel)
+            return {
+                "status": "running",
+                "current_phase": "gcp_workload_failover_runpod_async",
+                "new_milestone": True,
+                "last_log_mtime_sec_ago": 0,
+                "pid_alive": True,
+                "log_tail_excerpt": (
+                    f"GCP workload crash on {handle.pod_name}; a concurrent triggerer "
+                    f"already failed over to RunPod {existing.pod_name} (M3b in-flock "
+                    f"re-check, #669); preserved its full sidecar handle"
+                ),
+                "gate": None,
+                "sentinels_processed": 0,
+                "phase_log_mtime_sec_ago": 0,
+                "shard_log_mtime_sec_ago": 0,
+                "gpu_util": "unknown",
+                "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
+                "issue": int(issue),
+            }
+        # The 1st triggerer's full RunPod handle is NOT on disk yet. RunPod is
+        # already launched (by that triggerer), so refuse to emit running rather
+        # than re-pointing the sidecar at the MINIMAL reconstructed handle (which
+        # would strip expected_artifacts). Persist the sentinel so the next poll
+        # short-circuits at the outside-the-flock pre-check above.
+        _write_failover_sentinel(
+            sentinel, issue=issue, handle=handle, reason="sidecar_persistence_failed_concurrent"
+        )
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"GCP->RunPod failover: a concurrent triggerer already launched RunPod for "
+                f"issue {issue} but its full handle is not yet on the sidecar "
+                f"(backend={existing.backend if existing is not None else 'absent'!r}); "
+                f"refusing to overwrite with the minimal reconstructed handle (would strip "
+                f"expected_artifacts) and refusing to emit running"
+            ),
+        )
+
     # AUTHORITATIVE post-route sidecar write + readback (MF4). The on_launched
     # hook above is best-effort (its exceptions are swallowed by the router), so
     # re-point the sidecar HERE and PROVE it landed as a RunPod handle. WITHOUT
