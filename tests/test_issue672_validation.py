@@ -26,6 +26,7 @@ from __future__ import annotations
 import datetime
 import json
 import re
+import subprocess
 
 import pytest
 
@@ -483,6 +484,87 @@ def test_run_section_b_early_fallback_includes_poller_invocations_key(monkeypatc
     assert block["poller_invocations"] == []
     # Major #4: poller_exit_codes is present (empty) on the early fallback too.
     assert block.get("poller_exit_codes") == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Concern section-b-poller-timeout-exit-code-typing — a per-call subprocess
+# timeout must serialize into poller_exit_codes as an INTEGER sentinel (-124)
+# with a timed_out=True flag, never a None (which would break the list[int]
+# contract of the section_B.json audit trail).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_poller_timeout_serializes_int_sentinel(monkeypatch):
+    """A `subprocess.TimeoutExpired` in `_invoke_poller_once` must record the
+    integer sentinel `-124` + `timed_out=True`, keeping `poller_exit_codes` a
+    uniform list[int] (concern: section-b-poller-timeout-exit-code-typing).
+
+    Pre-fix the timeout branch returned `exit_code=None`, which survived into
+    `poller_exit_codes`, so `all(isinstance(c, int) for c in ...)` was False —
+    the audit-trail list violated its declared `list[int]` contract.
+
+    Drives the REAL `_invoke_poller_once` (so the timeout branch executes) by
+    making `_run` raise `TimeoutExpired`; a virtual clock + a stubbed failover
+    count let the loop reach the quiet period without real sleeps.
+    """
+
+    def fake_run_timeout(argv, *, dry_run, timeout=None):
+        raise subprocess.TimeoutExpired(cmd=argv, timeout=timeout)
+
+    monkeypatch.setattr(m, "_run", fake_run_timeout)
+
+    # Virtual clock: advance by POLLER_INTERVAL_S per call, no real sleeps.
+    clock = {"t": 1000.0}
+
+    def fake_time():
+        clock["t"] += m.POLLER_INTERVAL_S
+        return clock["t"]
+
+    monkeypatch.setattr(m.time, "time", fake_time)
+    monkeypatch.setattr(m.time, "sleep", lambda _s: None)
+
+    # First poll sees the failover marker (starts the quiet clock); it then stays
+    # at 1, so the loop exits after the quiet period — every iteration calls the
+    # REAL _invoke_poller_once, which hits the timeout branch.
+    def fake_count(_issue, *, since_ts=None):
+        return 1, "2026-06-26T11:05:00Z"
+
+    monkeypatch.setattr(m, "_count_failover_relaunches", fake_count)
+
+    since = datetime.datetime.fromisoformat("2026-06-26T11:00:00+00:00")
+    _count, _ts, invocations = m._loop_poller_until_failover(672, since_ts=since)
+
+    poller_exit_codes = [inv["exit_code"] for inv in invocations]
+    assert invocations, "the loop must have invoked the poller at least once"
+    # The contract Codex requested: a uniform list[int], no None.
+    assert all(isinstance(c, int) for c in poller_exit_codes), (
+        f"poller_exit_codes must be list[int]; got {poller_exit_codes!r}"
+    )
+    # The integer sentinel is present.
+    assert m.POLLER_TIMEOUT_EXIT_CODE == -124
+    assert -124 in poller_exit_codes, (
+        f"the timeout sentinel -124 must appear in poller_exit_codes, got {poller_exit_codes!r}"
+    )
+    # Every record is a self-documenting timeout tick.
+    for inv in invocations:
+        assert inv["exit_code"] == -124
+        assert inv["timed_out"] is True
+        assert inv["stdout_head"] == "[timeout]"
+
+
+def test_invoke_poller_once_timeout_record_shape(monkeypatch):
+    """`_invoke_poller_once` directly: the timeout record is the int sentinel +
+    timed_out flag (the unit-level companion to the loop-level test above)."""
+
+    def fake_run_timeout(argv, *, dry_run, timeout=None):
+        raise subprocess.TimeoutExpired(cmd=argv, timeout=timeout)
+
+    monkeypatch.setattr(m, "_run", fake_run_timeout)
+    rec = m._invoke_poller_once(672)
+    assert isinstance(rec["exit_code"], int)
+    assert rec["exit_code"] == -124
+    assert rec["timed_out"] is True
+    assert rec["stdout_head"] == "[timeout]"
 
 
 if __name__ == "__main__":  # pragma: no cover
