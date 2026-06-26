@@ -617,9 +617,7 @@ def test_poll_running_with_frozen_phase_and_drain_timeout_returns_terminal_wedge
     terminal_workload_wedged, which the async-failover predicate then matches —
     the run fails over to RunPod exactly once."""
     sidecar = tmp_path / "issue-659-handle.json"
-    write_handle_sidecar(
-        _gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar
-    )
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
     rp = _PassiveRunpodBackend()
     monkeypatch.setattr(
         "scripts.backend_poll._resolve_backend",
@@ -642,9 +640,7 @@ def test_poll_running_with_recent_phase_change_stays_running(tmp_path, monkeypat
     (even with a reachability alarm) stays running — no false wedge on a
     healthy run whose last phase write is recent."""
     sidecar = tmp_path / "issue-659-handle.json"
-    write_handle_sidecar(
-        _gcp_handle_with_clock(phase="workload", ts=_time.time() - 30), sidecar
-    )
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 30), sidecar)
     rp = _PassiveRunpodBackend()
     monkeypatch.setattr(
         "scripts.backend_poll._resolve_backend",
@@ -669,9 +665,7 @@ def test_poll_running_with_frozen_phase_but_no_drain_alarm_stays_running(
     >15 min, e.g. a long training epoch) stays running. The reachability-alarm
     conjunction is what separates a wedge from a slow healthy phase."""
     sidecar = tmp_path / "issue-659-handle.json"
-    write_handle_sidecar(
-        _gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar
-    )
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
     rp = _PassiveRunpodBackend()
     monkeypatch.setattr(
         "scripts.backend_poll._resolve_backend",
@@ -697,9 +691,7 @@ def test_poll_running_with_frozen_phase_and_sentinel_processing_alarm_stays_runn
     wedge gate never fires. Modeled as the poll producing reachability_alarm
     False (the producer-side split is pinned in test_gcp_backend.py)."""
     sidecar = tmp_path / "issue-659-handle.json"
-    write_handle_sidecar(
-        _gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar
-    )
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
     rp = _PassiveRunpodBackend()
     # A sentinel-processing alarm leaves reachability_alarm=False (the producer
     # split). The poller must NOT wedge on it.
@@ -716,9 +708,7 @@ def test_poll_running_with_frozen_phase_and_sentinel_processing_alarm_stays_runn
     assert len(rp.launches) == 0
 
 
-def test_two_tick_phase_transition_resets_clock_and_stays_running(
-    tmp_path, monkeypatch, capsys
-):
+def test_two_tick_phase_transition_resets_clock_and_stays_running(tmp_path, monkeypatch, capsys):
     """M2.2 (#669, cross-tick reset): tick 1 observes phase A and stamps the
     clock; tick 2 observes a DIFFERENT (advanced) phase B even though the
     sidecar's recorded change-ts is older than the floor — the phase ADVANCED,
@@ -726,9 +716,7 @@ def test_two_tick_phase_transition_resets_clock_and_stays_running(
     every phase transition (no false wedge after a long-but-progressing run)."""
     sidecar = tmp_path / "issue-659-handle.json"
     # Sidecar recorded phase A at a stale ts (older than the floor).
-    write_handle_sidecar(
-        _gcp_handle_with_clock(phase="phase_A", ts=_time.time() - 1000), sidecar
-    )
+    write_handle_sidecar(_gcp_handle_with_clock(phase="phase_A", ts=_time.time() - 1000), sidecar)
     rp = _PassiveRunpodBackend()
     # The poll now observes a DIFFERENT phase (advanced), with a reachability
     # alarm — but because the phase CHANGED, the wedge must not fire.
@@ -750,9 +738,7 @@ def test_two_tick_phase_transition_resets_clock_and_stays_running(
     assert recovered.extra["last_phase_change_ts"] > _time.time() - 60
 
 
-def test_first_poll_with_no_phase_clock_stamps_and_stays_running(
-    tmp_path, monkeypatch, capsys
-):
+def test_first_poll_with_no_phase_clock_stamps_and_stays_running(tmp_path, monkeypatch, capsys):
     """M2.3 (#669, first-launch missing keys): a freshly-dispatched sidecar with
     NO last_phase / last_phase_change_ts keys fails toward running on the first
     poll (even with a reachability alarm) AND initializes both clock keys —
@@ -779,9 +765,7 @@ def test_first_poll_with_no_phase_clock_stamps_and_stays_running(
     assert recovered.backend == "gcp"
 
 
-def test_terminal_workload_wedged_fails_over_to_runpod_exactly_once(
-    tmp_path, monkeypatch, capsys
-):
+def test_terminal_workload_wedged_fails_over_to_runpod_exactly_once(tmp_path, monkeypatch, capsys):
     """Fix 4 (#669): a GCP poll that surfaces status=dead / terminal_workload_wedged
     DIRECTLY (the poller-synthesized wedge phase) routes to the async failover
     and launches RunPod exactly once — the accept-set recognizes the phase."""
