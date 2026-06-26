@@ -70,7 +70,7 @@ def main() -> None:
         ls="--",
         marker="o",
         markersize=5,
-        label="pre-#671 climb (#545, 22->38 GiB)",
+        label="pre-fix climb (documented, 22->38 GiB)",
     )
 
     ax.set_xlabel("extractor iteration")
@@ -80,7 +80,7 @@ def main() -> None:
 
     set_title_subtitle(
         ax,
-        "Live GCP SPOT A100-80: memory stays flat after the #671 fix",
+        "Live GCP SPOT A100-80: memory stays flat after the extractor fix",
         f"638 post-warmup samples; reserved + nvidia-smi range {post_range:.2f} GiB (PASS < 1 GiB), "
         f"vs the pre-fix 16 GiB climb",
         source="eval_results/issue_672/secA_smoke_followup/memory_log.json (649 samples, 227s wall)",

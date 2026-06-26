@@ -1,6 +1,6 @@
 {
-  "commit": "8c4d9410a3",
-  "created": "2026-06-26T18:10:20Z",
+  "commit": "f52678d5bc",
+  "created": "2026-06-26T18:38:45Z",
   "figsize": [
     7.0,
     4.2
@@ -13638,21 +13638,21 @@
     {
       "extractor iteration": 0.0,
       "GPU memory (GiB)": 22.0,
-      "series": "pre-#671 climb (#545, 22->38 GiB)",
+      "series": "pre-fix climb (documented, 22->38 GiB)",
       "_kind": "line",
       "_group": 3
     },
     {
       "extractor iteration": 323.5,
       "GPU memory (GiB)": 30.0,
-      "series": "pre-#671 climb (#545, 22->38 GiB)",
+      "series": "pre-fix climb (documented, 22->38 GiB)",
       "_kind": "line",
       "_group": 3
     },
     {
       "extractor iteration": 647.0,
       "GPU memory (GiB)": 38.0,
-      "series": "pre-#671 climb (#545, 22->38 GiB)",
+      "series": "pre-fix climb (documented, 22->38 GiB)",
       "_kind": "line",
       "_group": 3
     }
