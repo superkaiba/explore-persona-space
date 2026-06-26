@@ -808,3 +808,123 @@ def test_terminal_wedged_terminated_fails_over_to_runpod_exactly_once(
     assert out["current_phase"] == "gcp_workload_failover_runpod_async"
     assert len(rp.launches) == 1
     assert read_handle_sidecar(sidecar).backend == "runpod"
+
+
+# ---------------------------------------------------------------------------
+# issue #669 code-review r1 (Blocker B): the 2nd triggerer's M3b short-circuit
+# must PRESERVE the 1st triggerer's authoritative full RunPod sidecar — NOT
+# clobber it with the minimal reconstructed handle (extra={"issue": N} only),
+# which would strip expected_artifacts and FAIL downstream artifact
+# verification. Sibling of test_router.py::
+# test_concurrent_failover_triggers_single_runpod_launch (M2.6), which asserts
+# only launch-atomicity (ONE launch), never that the FIRST launch's sidecar
+# metadata survives the SECOND triggerer's return.
+# ---------------------------------------------------------------------------
+
+
+class _FullHandleRunpodBackend:
+    """RunPodBackend stand-in whose ``launch`` returns a handle carrying the FULL
+    ``extra`` a real launch declares — ``expected_artifacts`` / ``pid_file`` /
+    ``runpod_attempt_id`` — so the 1st triggerer writes an AUTHORITATIVE sidecar
+    a 2nd-triggerer clobber would be detectable against."""
+
+    def __init__(self) -> None:
+        self.launches: list = []
+
+    def launch(self, spec):
+        self.launches.append(spec)
+        return RunHandle(
+            backend="runpod",
+            cluster=None,
+            job_id="pod-fake",
+            pod_name=f"pod-{spec.issue}",
+            scratch_dir="/workspace",
+            log_path=f"/workspace/logs/issue-{spec.issue}.log",
+            extra={
+                "issue": spec.issue,
+                "expected_artifacts": {
+                    "issue": spec.issue,
+                    "sentinel_path": f"/workspace/eval_results/issue_{spec.issue}/.sentinel.json",
+                },
+                "pid_file": f"/workspace/logs/issue-{spec.issue}.pid",
+                "runpod_attempt_id": "att-runpod-001",
+            },
+        )
+
+
+def test_concurrent_failover_preserves_first_runpod_sidecar(tmp_path, monkeypatch):
+    """#669 code-review r1 Blocker B: two CONCURRENT triggerers of the SAME
+    GCP-crash failover (the wedge classifier + the watchdog-TERMINATED path on
+    one handle) both call ``_failover_dead_gcp_to_runpod``. The 1st launches
+    RunPod and writes the full RunPod handle to the sidecar; the 2nd hits the
+    router's M3b in-flock re-check, which returns a MINIMAL reconstructed handle
+    (``extra={"issue": N}`` only) flagged ``failover_already_launched``. The
+    fixed poller MUST detect that flag and PRESERVE the 1st triggerer's sidecar
+    rather than overwriting it with the minimal handle.
+
+    Pre-fix: the 2nd call's unconditional ``write_handle_sidecar`` clobbered the
+    sidecar, so ``expected_artifacts`` / ``pid_file`` / ``runpod_attempt_id``
+    vanished and artifact verification later read None and FAILED. Post-fix: the
+    sidecar still carries the full handle from the 1st launch, byte-for-byte.
+
+    Modelling the genuine flock race deterministically: in production BOTH
+    triggerers pass the OUTSIDE-the-flock pre-check (``_lease_records_failover_of``
+    / sentinel) BEFORE the 1st stamps the durable lease, then serialize on the
+    per-issue flock INSIDE the router. To reach the router's in-flock short-circuit
+    on the 2nd call sequentially, the 2nd call's outside pre-check must read the
+    pre-stamp state — so it is pinned False here (the 1st's router transaction has
+    ALREADY stamped the SHARED lease store, so the router itself still
+    short-circuits). Without this pin the redundant outside pre-check would
+    intercept the 2nd call first (the cross-tick idempotency path, which does NOT
+    clobber); the in-flock short-circuit — and thus the Blocker-B guard — is only
+    reached under true concurrent contention."""
+    import scripts.backend_poll as bp
+    from scripts.backend_poll import _failover_dead_gcp_to_runpod
+
+    issue = 659
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+
+    rp = _FullHandleRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    handle = _gcp_handle()
+    result = _poll("dead", "terminal_workload_failed")
+
+    # 1st triggerer — launches RunPod, writes the AUTHORITATIVE full sidecar.
+    first = _failover_dead_gcp_to_runpod(issue=issue, handle=handle, result=result, sidecar=sidecar)
+    assert first["status"] == "running"
+    assert first["current_phase"] == "gcp_workload_failover_runpod_async"
+    after_first = read_handle_sidecar(sidecar)
+    assert after_first.backend == "runpod"
+    assert after_first.extra.get("expected_artifacts") is not None
+    full_extra_snapshot = dict(after_first.extra)
+
+    # Model the concurrent race: the 2nd triggerer's OUTSIDE pre-check ran before
+    # the 1st's durable stamp landed, so it reads a clean lease and proceeds into
+    # the router (where the SHARED lease IS stamped → in-flock short-circuit).
+    monkeypatch.setattr(bp, "_lease_records_failover_of", lambda *a, **k: False)
+
+    # 2nd triggerer — same GCP handle → router M3b in-flock re-check short-circuits
+    # with extra["failover_already_launched"]=True + the minimal handle.
+    second = _failover_dead_gcp_to_runpod(
+        issue=issue, handle=handle, result=result, sidecar=sidecar
+    )
+    assert second["status"] == "running"  # still "keep polling", NOT a terminal/dead
+
+    # THE BLOCKER ASSERTION: the sidecar STILL carries the 1st triggerer's full
+    # RunPod handle — expected_artifacts / pid_file / runpod_attempt_id all
+    # present and UNCHANGED. NOT clobbered to a minimal extra={"issue": N}.
+    after_second = read_handle_sidecar(sidecar)
+    assert after_second.backend == "runpod"
+    assert after_second.extra.get("expected_artifacts") is not None, (
+        "2nd triggerer clobbered the 1st's sidecar — expected_artifacts is gone "
+        "(the Blocker-B regression)"
+    )
+    assert after_second.extra.get("pid_file") is not None
+    assert after_second.extra.get("runpod_attempt_id") is not None
+    assert after_second.extra == full_extra_snapshot  # byte-for-byte preserved
+
+    # M2.6 atomicity reaffirmed at the poller level: exactly ONE RunPod launch
+    # across BOTH invocations.
+    assert len(rp.launches) == 1
