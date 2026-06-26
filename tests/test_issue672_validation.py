@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import re
 
 import pytest
 
@@ -209,6 +210,279 @@ def test_route_verdict_live_pass_full_conjunction():
     verdict = m.route_verdict(_A_PASS, b_good, _C_PASS)
     assert verdict["verdict"].endswith("self-recovers")
     assert verdict["headline_downgraded"] is False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Round-3 Critical #1 — the poller is LOOPED by the validator, not a single
+# pre-injection Popen against the one-shot backend_poll.py
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_section_b_dry_run_constructs_looped_poller():
+    """The Section-B dry-run must show the poller is LOOPED (round-3 Critical #1).
+
+    Pre-fix (round 2) the poller was a single bg Popen launched BEFORE the 180s
+    pre-injection sleep — useless against the one-shot ``backend_poll.py`` (it
+    polls a healthy VM once and is dead by watchdog-kill time). The dry-run must
+    now surface a ``poller_loop`` block (``looped=True`` + cadence/budget) and
+    echo the poller call REPEATEDLY, never once.
+    """
+    block = m.run_section_b(672, dry_run=True)
+    assert block["dry_run"] is True
+    loop = block["poller_loop"]
+    assert loop["looped"] is True, "poller must be validator-looped, not a single Popen"
+    assert "backend_poll.py" in loop["poller_argv"]
+    assert loop["interval_s"] == m.POLLER_INTERVAL_S
+    assert loop["budget_s"] == m.POLLER_LOOP_BUDGET_S
+    assert loop["quiet_period_s"] == m.POLLER_QUIET_PERIOD_S
+    assert loop["max_invocations"] >= 2
+    # The repeated poller invocation is demonstrated, not a single pre-inject call.
+    assert len(block["poller_invocations"]) >= 2, "dry-run must echo the LOOP (≥2 poller calls)"
+    assert all("ts" in inv and "exit_code" in inv for inv in block["poller_invocations"])
+    assert block["poller_exit_codes"] == [inv["exit_code"] for inv in block["poller_invocations"]]
+
+
+def test_section_b_dispatch_plan_loop_is_satisfiable():
+    """The loop budget / interval admit at least one one-shot invocation, and the
+    poller argv is the one-shot backend_poll.py (no --watch / --loop flag)."""
+    plan = m.section_b_dispatch_plan(672)
+    loop = plan["poller_loop"]
+    assert loop["budget_s"] // loop["interval_s"] >= 1
+    poller_argv = plan["argvs"]["poller"]
+    assert poller_argv[:4] == ["uv", "run", "python", "scripts/backend_poll.py"]
+    assert "--watch" not in poller_argv and "--loop" not in poller_argv
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Round-3 Critical #2 — Section-A dispatch must use --log-mem-every 1 so the
+# coverage gate is SATISFIABLE on the plan §9 <100-forward smoke slice
+# ─────────────────────────────────────────────────────────────────────────────
+
+PLAN_SECTION_A_FORWARD_UPPER_BOUND = 100  # plan §9 line 119: "<100 hooked 7B forwards"
+
+
+def test_section_a_dispatch_uses_log_mem_every_1():
+    """The Section-A workload-cmd must carry ``--log-mem-every 1`` (round-3 Crit #2).
+
+    At ``--log-mem-every 10`` the plan §9 <100-forward smoke yields only ~10 log
+    rows, below the round-2 ``MIN_LOG_ENTRIES=30`` coverage floor — so a HEALTHY
+    Section A could never PASS. Every-iter cadence yields up to ~100 rows.
+    """
+    argv = m.section_a_dispatch_argv(672, "secA_smoke")
+    workload = argv[-1]  # the --workload-cmd value is the last element
+    mobj = re.search(r"--log-mem-every\s+(\d+)", workload)
+    assert mobj, f"--log-mem-every not found in workload cmd: {workload!r}"
+    every = int(mobj.group(1))
+    assert every == 1, f"expected --log-mem-every 1, got {every}"
+    # Mechanizable invariant: the realized row count on the plan's forward bound
+    # must clear the coverage floor.
+    rows_emitted = PLAN_SECTION_A_FORWARD_UPPER_BOUND // every
+    assert rows_emitted >= m.MIN_LOG_ENTRIES, (
+        f"--log-mem-every {every} yields ~{rows_emitted} rows on a "
+        f"{PLAN_SECTION_A_FORWARD_UPPER_BOUND}-forward smoke; coverage floor is "
+        f"{m.MIN_LOG_ENTRIES}"
+    )
+
+
+def test_section_a_30_entry_every_iter_log_passes_coverage(monkeypatch, tmp_path):
+    """A 30-entry every-iter log (max iter ≥30, ≥2 post-warmup per PRIMARY gauge)
+    SATISFIES the coverage gate — proving the gate is reachable with the
+    ``--log-mem-every 1`` dispatch on a ~30-forward slice (round-3 Crit #2)."""
+    monkeypatch.setattr(m, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(m, "_backend_selected_sku", lambda _issue: None)
+    # Every-iter cadence: iter == row index, 0..30 (31 rows, max iter 30).
+    entries = [
+        {
+            "iter": i,
+            "memory_reserved_gib": 22.0 + 0.001 * i,  # flat: <1 GiB span
+            "nvidia_smi_used_gib": 23.0 + 0.001 * i,
+            "memory_allocated_gib": 18.0,
+        }
+        for i in range(0, 31)
+    ]
+    _write_memlog(tmp_path, 672, "secA_smoke", entries)
+    block = m.analyze_section_a(672, "secA_smoke", npz_present=True, hf_ok=True)
+    assert block["coverage_issue"] is None, block.get("coverage_issue")
+    assert block["pass"] is True, block.get("pass_reason")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Round-3 Major #3 — quiet-period: a 2nd failover during the quiet window is
+# observed so the "failover fires twice" kill criterion trips
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _stub_loop_clock_and_poller(monkeypatch, *, count_sequence: list[int]):
+    """Drive `_loop_poller_until_failover` deterministically.
+
+    - `time.time()` advances by POLLER_INTERVAL_S per call (so the loop budget
+      and quiet-period clocks are exercised in virtual time, no real sleeps).
+    - `time.sleep` is a no-op.
+    - `_invoke_poller_once` is a no-op stub returning a record.
+    - `_count_failover_relaunches` returns the next value in `count_sequence`
+      (clamped to the last value once exhausted), simulating markers landing.
+    """
+    clock = {"t": 1000.0}
+
+    def fake_time():
+        clock["t"] += m.POLLER_INTERVAL_S
+        return clock["t"]
+
+    monkeypatch.setattr(m.time, "time", fake_time)
+    monkeypatch.setattr(m.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(
+        m, "_invoke_poller_once", lambda _issue: {"ts": "T", "exit_code": 0, "stdout_head": "{}"}
+    )
+    seq = list(count_sequence)
+    idx = {"i": 0}
+
+    def fake_count(_issue, *, since_ts=None):
+        i = idx["i"]
+        val = seq[i] if i < len(seq) else seq[-1]
+        idx["i"] = i + 1
+        ts = "2026-06-26T11:05:00Z" if val >= 1 else None
+        return val, ts
+
+    monkeypatch.setattr(m, "_count_failover_relaunches", fake_count)
+
+
+def test_loop_poller_detects_second_failover_in_quiet_period(monkeypatch):
+    """A 2nd failover landing during the quiet period must be COUNTED (Major #3).
+
+    Pre-fix `_poll_failover_relaunch` broke on the first marker, so a second
+    marker landing seconds later was missed and the "failover fires twice" kill
+    criterion never tripped. The looped poller keeps polling through a
+    quiet-period; the FINAL scoped count must be 2.
+    """
+    # poll-1 -> count 1 (first marker, starts quiet clock)
+    # poll-2 -> count 2 (NEW marker, resets quiet clock)
+    # poll-3.. -> stays 2 until quiet-period elapses
+    _stub_loop_clock_and_poller(monkeypatch, count_sequence=[1, 2, 2, 2, 2, 2])
+    since = datetime.datetime.fromisoformat("2026-06-26T11:00:00+00:00")
+    count, ts, invocations = m._loop_poller_until_failover(672, since_ts=since)
+    assert count == 2, f"second failover in the quiet period must be counted, got {count}"
+    assert ts == "2026-06-26T11:05:00Z"
+    assert len(invocations) >= 2
+
+
+def test_loop_poller_single_failover_after_quiet_period(monkeypatch):
+    """Exactly one failover (no second marker through the quiet window) -> count 1."""
+    _stub_loop_clock_and_poller(monkeypatch, count_sequence=[0, 1, 1, 1, 1, 1])
+    since = datetime.datetime.fromisoformat("2026-06-26T11:00:00+00:00")
+    count, _ts, invocations = m._loop_poller_until_failover(672, since_ts=since)
+    assert count == 1, f"exactly-one failover must yield count 1, got {count}"
+    assert len(invocations) >= 1
+
+
+def test_run_section_b_double_failover_routes_residual_gap(monkeypatch):
+    """End-to-end: a doubled failover -> live_injection_pass False, failover_count
+    2, and route_verdict routes to a residual gap (Major #3 + DiD #4)."""
+    # Short-circuit the live launch/inject/watchdog/terminate gates to True.
+    monkeypatch.setattr(m, "_run", lambda *a, **k: (0, "", ""))
+    monkeypatch.setattr(m.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(m, "_poll_watchdog_fired", lambda _issue: True)
+    monkeypatch.setattr(m, "_poll_vm_terminated", lambda _issue: True)
+    monkeypatch.setattr(
+        m,
+        "_loop_poller_until_failover",
+        lambda _issue, *, since_ts: (
+            2,
+            "2026-06-26T11:05:00Z",
+            [
+                {"ts": "T", "exit_code": 0, "stdout_head": "{}"},
+                {"ts": "T", "exit_code": 0, "stdout_head": "{}"},
+            ],
+        ),
+    )
+    block = m.run_section_b(672, dry_run=False)
+    assert block["failover_count"] == 2
+    assert block["live_injection_pass"] is False
+    assert block["fallback_outcome"] == "residual_gap"
+    assert block["headline_downgraded"] is True
+    verdict = m.route_verdict(_A_PASS, block, _C_PASS)
+    assert verdict["verdict"].startswith("specific residual gap")
+    assert "self-recovers" not in verdict["verdict"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Round-3 Major #4 — poller_exit_codes present on ALL Section-B return paths
+# (success, fallback, exception) — never omitted on an early fallback return
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_run_section_b_success_surfaces_poller_exit_codes(monkeypatch):
+    """The success path surfaces ``poller_exit_codes`` as a list of ints (Major #4)."""
+    monkeypatch.setattr(m, "_run", lambda *a, **k: (0, "", ""))
+    monkeypatch.setattr(m.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(m, "_poll_watchdog_fired", lambda _issue: True)
+    monkeypatch.setattr(m, "_poll_vm_terminated", lambda _issue: True)
+    monkeypatch.setattr(
+        m,
+        "_loop_poller_until_failover",
+        lambda _issue, *, since_ts: (
+            1,
+            "2026-06-26T11:05:00Z",
+            [
+                {"ts": "T", "exit_code": 0, "stdout_head": "{}"},
+                {"ts": "T", "exit_code": 0, "stdout_head": "{}"},
+            ],
+        ),
+    )
+    block = m.run_section_b(672, dry_run=False)
+    assert block["live_injection_pass"] is True
+    assert "poller_exit_codes" in block
+    assert block["poller_exit_codes"] == [0, 0]
+    assert all(isinstance(c, int) for c in block["poller_exit_codes"])
+    assert len(block["poller_invocations"]) == 2
+
+
+def test_run_section_b_failover_count_zero_fallback_surfaces_exit_codes(monkeypatch):
+    """The 'dead VM never re-dispatched' fallback (after the poller loop) still
+    surfaces ``poller_exit_codes`` (Major #4: no early return omits it)."""
+    monkeypatch.setattr(m, "_run", lambda *a, **k: (0, "", ""))
+    monkeypatch.setattr(m.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(m, "_poll_watchdog_fired", lambda _issue: True)
+    monkeypatch.setattr(m, "_poll_vm_terminated", lambda _issue: True)
+    monkeypatch.setattr(
+        m,
+        "_loop_poller_until_failover",
+        lambda _issue, *, since_ts: (
+            0,
+            None,
+            [
+                {"ts": "T", "exit_code": 0, "stdout_head": "{}"},
+                {"ts": "T", "exit_code": 1, "stdout_head": "{}"},
+            ],
+        ),
+    )
+    block = m.run_section_b(672, dry_run=False)
+    assert block["live_injection_pass"] is False
+    assert block["fallback_outcome"] == "inconclusive_live_validation"
+    assert "poller_exit_codes" in block, "fallback must not omit poller_exit_codes"
+    assert block["poller_exit_codes"] == [0, 1]
+
+
+def test_run_section_b_early_fallback_includes_poller_invocations_key(monkeypatch):
+    """An EARLY fallback (e.g. iptables injection fails BEFORE the poller loop)
+    still carries ``poller_invocations`` (empty list) — the audit-trail key is
+    never absent (Major #4)."""
+    # launch ok (rc 0) then iptables fails (rc 1).
+    calls = {"n": 0}
+
+    def fake_run(argv, *, dry_run, timeout=None):
+        calls["n"] += 1
+        # 1st _run is the VM launch (ok); 2nd is iptables (fail).
+        return (0, "", "") if calls["n"] == 1 else (1, "", "iptables boom")
+
+    monkeypatch.setattr(m, "_run", fake_run)
+    monkeypatch.setattr(m.time, "sleep", lambda _s: None)
+    block = m.run_section_b(672, dry_run=False)
+    assert block["fallback_outcome"] == "inconclusive_live_validation"
+    assert "iptables" in block["fallback_reason"]
+    assert "poller_invocations" in block
+    assert block["poller_invocations"] == []
+    # Major #4: poller_exit_codes is present (empty) on the early fallback too.
+    assert block.get("poller_exit_codes") == []
 
 
 if __name__ == "__main__":  # pragma: no cover

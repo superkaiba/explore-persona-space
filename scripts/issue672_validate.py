@@ -45,7 +45,6 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import contextlib
 import datetime
 import itertools
 import json
@@ -93,6 +92,21 @@ GCP_ZONE = "us-central1-b"
 GCP_CONFIG = "eps-gcp"
 WATCHDOG_BUDGET_S = 6 * 60  # ladder must reach 10/10 + wedged-shutdown within ~6 min
 FAILOVER_REASON_RE = re.compile(r"gcp_workload_failover_runpod")
+
+# ── Section-B looped-poller constants (round-3 Critical #1 / Major #3) ────────
+# ``backend_poll.py`` is ONE-SHOT (its ``main()`` polls once + returns); the
+# failover (``_failover_dead_gcp_to_runpod``) fires only on the poll where the
+# VM has already reached its terminal/wedged state. So the VALIDATOR owns the
+# loop: it re-invokes ``backend_poll.py --issue N`` as a synchronous subprocess
+# on a cadence until a scoped failover marker lands (or the budget expires).
+POLLER_LOOP_BUDGET_S = 10 * 60  # overall Section-B post-injection poll window
+POLLER_INTERVAL_S = 30  # seconds between one-shot backend_poll.py invocations
+POLLER_CALL_TIMEOUT_S = 60  # per-invocation subprocess timeout
+# After the FIRST scoped failover marker lands, keep polling for this long with
+# NO new marker before the FINAL scoped count — so a second failover landing
+# seconds later (idempotency breach, the H-B kill criterion) is not missed
+# (round-3 Major #3).
+POLLER_QUIET_PERIOD_S = 60
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -208,14 +222,26 @@ def section_a_dispatch_argv(issue: int, out_subdir: str) -> list[str]:
     """The plan §10 Section-A GCP launch argv (verbatim shape).
 
     Returns the ``dispatch_issue.py launch`` argv. The workload-cmd runs the
-    FIXED extractor with ``--log-mem-every 10`` writing to
+    FIXED extractor with ``--log-mem-every 1`` writing to
     ``eval_results/issue_<N>/<out_subdir>``.
+
+    NOTE (round-3 Critical #2): the cadence is ``--log-mem-every 1``, NOT the
+    plan §11 line-140 value of ``10``. Plan §9 bounds the smoke slice at
+    ``<100`` hooked 7B forwards; at every-10th-forward that yields only ~10 log
+    rows, but the round-2 coverage gate (``MIN_LOG_ENTRIES``, currently 30)
+    requires ≥30 rows — so a HEALTHY Section-A run could never reach PASS. At
+    every-iter cadence the slice yields up to ~100 rows, comfortably above the
+    floor. The 3-gauge per-row cost (two ``torch.cuda.memory_*`` reads + one
+    ``nvidia-smi`` shell-out) is negligible next to a 7B forward, so the finer
+    cadence does not perturb the flatness signal. This is a deliberate, recorded
+    plan-vs-code deviation (the §11 value was mutually unsatisfiable with the §6
+    coverage floor).
     """
     workload = (
         'REPO_ROOT="$WORKLOAD_ROOT" uv run python scripts/issue667_extract.py '
         "--behavior marker --source-cid default --targets default,sp_swe "
         "--layers 7 14 21 --primary-layer 14 --max-probes 8 --max-new-tokens 256 "
-        f"--log-mem-every 10 --out eval_results/issue_{issue}/{out_subdir} --gpu-id 0"
+        f"--log-mem-every 1 --out eval_results/issue_{issue}/{out_subdir} --gpu-id 0"
     )
     return [
         "uv",
@@ -413,16 +439,28 @@ def section_b_dispatch_argv(issue: int) -> list[str]:
 
 
 def section_b_poller_argv(issue: int) -> list[str]:
-    """The ``backend_poll.py`` argv that performs the GCP -> RunPod failover.
+    """The ONE-SHOT ``backend_poll.py`` argv that performs the GCP -> RunPod failover.
 
-    The GCP->RunPod failover (``_failover_dead_gcp_to_runpod``) is wired
-    EXCLUSIVELY inside ``scripts/backend_poll.py``'s main loop (per
-    ``.claude/rules/compute-backend-failover.md`` + ``backend_poll.py:1002``).
-    The in-VM watchdog only writes ``eps/phase=wedged`` and powers off →
-    TERMINATED; it does NOT re-dispatch. So without launching this poller the
-    dead VM never re-dispatches and the live-recovery headline is structurally
-    unreachable (round-2 BLOCKER 2). Section B launches it as a bg subprocess
-    immediately after the GCP VM is up.
+    The GCP->RunPod failover (``_failover_dead_gcp_to_runpod``) is wired inside
+    ``scripts/backend_poll.py``'s ``main()`` (per
+    ``.claude/rules/compute-backend-failover.md`` + ``backend_poll.py:1001``).
+    But ``main()`` is ONE-SHOT — it parses args, calls ``backend.poll(handle)``
+    ONCE, runs the async-failover discrimination, prints one JSON result, and
+    returns. There is NO internal poll loop and NO ``--watch`` flag. The
+    failover fires only on the SINGLE poll where the VM has already reached its
+    terminal/wedged state.
+
+    So the VALIDATOR owns the loop (round-3 Critical #1): ``run_section_b``
+    re-invokes THIS argv as a SYNCHRONOUS subprocess on a cadence (see
+    ``_loop_poller_until_failover``) AFTER the fault is injected, until a scoped
+    failover marker lands. A bg-Popen-once-before-injection (the round-2
+    misimplementation) cannot work against a one-shot command — it polls a
+    still-healthy VM once, exits, and is dead by the time the watchdog
+    terminates the VM minutes later. The in-VM watchdog only writes
+    ``eps/phase=wedged`` and powers off → TERMINATED; it does NOT re-dispatch,
+    so without re-invoking this poller post-termination the dead VM never
+    re-dispatches and the live-recovery headline is structurally unreachable
+    (round-2 BLOCKER 2).
     """
     return [
         "uv",
@@ -504,12 +542,15 @@ def fallback_section_b(issue: int, reason: str) -> dict:
     }
 
 
-def _section_b_dry_run(issue: int) -> dict:
-    """Construct + echo every Section-B command without invoking gcloud/dispatch.
+def section_b_dispatch_plan(issue: int) -> dict:
+    """The Section-B command plan: per-command argv + the LOOPED-poller schedule.
 
-    The poller argv MUST appear here so the smoke verifies backend_poll.py IS
-    scheduled (round-2 BLOCKER 2) — it is the component that performs the
-    GCP -> RunPod failover.
+    The poller is NOT a single pre-injection Popen (the round-2 misimplementation
+    against a one-shot ``backend_poll.py``); ``run_section_b`` LOOPS it
+    synchronously AFTER injection. This plan dict surfaces the loop schedule
+    (``poller_loop``) so the dry-run smoke can assert the looped construction
+    (round-3 Critical #1 mechanizable check) — the poller argv plus the cadence /
+    budget / quiet-period that drive the repeated calls.
     """
     argvs = {
         "launch": section_b_dispatch_argv(issue),
@@ -518,15 +559,60 @@ def _section_b_dry_run(issue: int) -> dict:
         "serial": section_b_serial_argv(issue),
         "status": section_b_status_argv(issue),
     }
+    return {
+        "argvs": argvs,
+        "poller_loop": {
+            "poller_argv": " ".join(argvs["poller"]),
+            "looped": True,  # validator-owned loop; NOT a single pre-injection Popen
+            "interval_s": POLLER_INTERVAL_S,
+            "budget_s": POLLER_LOOP_BUDGET_S,
+            "call_timeout_s": POLLER_CALL_TIMEOUT_S,
+            "quiet_period_s": POLLER_QUIET_PERIOD_S,
+            # Upper bound on synchronous one-shot invocations across the window.
+            "max_invocations": POLLER_LOOP_BUDGET_S // POLLER_INTERVAL_S,
+        },
+    }
+
+
+def _section_b_dry_run(issue: int) -> dict:
+    """Construct + echo every Section-B command without invoking gcloud/dispatch.
+
+    The poller argv MUST appear here so the smoke verifies backend_poll.py IS
+    scheduled — and the ``poller_loop`` block proves it is LOOPED, not a single
+    pre-injection Popen (round-3 Critical #1). To make the repetition concrete,
+    the dry-run echoes the one-shot poller argv twice (a representative loop
+    sample) into ``poller_invocations``; the live path runs up to
+    ``max_invocations`` of them.
+    """
+    plan = section_b_dispatch_plan(issue)
+    argvs = plan["argvs"]
     for argv in argvs.values():
         _run(argv, dry_run=True)
+    # Echo the poller call twice to demonstrate the loop (NOT one pre-inject Popen).
+    poller_invocations = []
+    for _ in range(2):
+        rc, out, _err = _run(argvs["poller"], dry_run=True)
+        poller_invocations.append(
+            {
+                "ts": datetime.datetime.now(datetime.UTC).isoformat(),
+                "exit_code": rc,
+                "stdout_head": (out or "").strip()[:300],
+            }
+        )
     return {
         "dry_run": True,
         "constructed_commands": {k: " ".join(v) for k, v in argvs.items()},
+        "poller_loop": plan["poller_loop"],
+        "poller_invocations": poller_invocations,
+        "poller_exit_codes": [inv["exit_code"] for inv in poller_invocations],
         "live_injection_pass": None,
         "fallback_outcome": None,
         "headline_downgraded": None,
-        "note": "dry-run: commands constructed, not invoked (live path = experimenter's job)",
+        "note": (
+            "dry-run: commands constructed, not invoked (live path = experimenter's job). "
+            "Poller is LOOPED synchronously post-injection (poller_loop), NOT a single "
+            "pre-injection Popen against the one-shot backend_poll.py."
+        ),
     }
 
 
@@ -555,59 +641,92 @@ def _poll_vm_terminated(issue: int) -> bool:
     return False
 
 
-def _poll_failover_relaunch(
-    issue: int, *, since_ts: datetime.datetime, poller_proc: subprocess.Popen
-) -> tuple[int, str | None]:
-    """Watch for the scoped RunPod failover relaunch (round-2 BLOCKER 1).
+def _invoke_poller_once(issue: int) -> dict:
+    """Invoke ``backend_poll.py --issue N`` ONCE, synchronously (round-3 Critical #1).
 
-    Reads ONLY failover markers with ``ts >= since_ts``. Success can come two
-    ways — the failover marker lands, OR the poller exits (the GCP VM reached a
-    terminal state and the poller terminated); either way a final scoped read
-    decides. Returns ``(failover_count, failover_ts)``.
+    The poller is one-shot: each call polls the GCP VM once, runs the
+    async-failover discrimination, and (on the poll where the VM has reached a
+    terminal/wedged state) drives ``_failover_dead_gcp_to_runpod``. Returns an
+    invocation-record dict ``{ts, exit_code, stdout_head}`` for the
+    ``poller_invocations`` audit trail. A subprocess timeout is recorded with
+    ``exit_code=None`` (the call is treated as a non-terminal tick, not a crash).
     """
-    failover_count = 0
-    failover_ts = None
-    deadline = time.time() + 5 * 60
+    ts = datetime.datetime.now(datetime.UTC).isoformat()
+    try:
+        rc, out, _err = _run(
+            section_b_poller_argv(issue), dry_run=False, timeout=POLLER_CALL_TIMEOUT_S
+        )
+    except subprocess.TimeoutExpired:
+        return {"ts": ts, "exit_code": None, "stdout_head": "[timeout]"}
+    return {"ts": ts, "exit_code": rc, "stdout_head": (out or "").strip()[:300]}
+
+
+def _loop_poller_until_failover(
+    issue: int, *, since_ts: datetime.datetime
+) -> tuple[int, str | None, list[dict]]:
+    """Loop the one-shot poller until a scoped failover lands, then quiet-period.
+
+    Round-3 Critical #1 + Major #3. The VALIDATOR owns the loop because
+    ``backend_poll.py`` is one-shot. Sequence:
+
+    1. Every ``POLLER_INTERVAL_S`` (until ``POLLER_LOOP_BUDGET_S`` from the start
+       of this loop), invoke the poller once and re-read the scoped failover
+       count (``ts >= since_ts``). The poll that observes the VM terminal/wedged
+       is the one that DRIVES the failover, so the count flips on a poller call.
+    2. On the FIRST scoped marker, do NOT stop immediately. Continue invoking the
+       poller for a quiet period (``POLLER_QUIET_PERIOD_S`` with no NEW marker)
+       so a SECOND failover landing seconds later (idempotency breach — the H-B
+       kill criterion "failover fires twice") is observed (round-3 Major #3).
+    3. FINAL scoped count after the quiet period (or budget exhaustion) decides.
+
+    Returns ``(final_failover_count, latest_failover_ts, poller_invocations)``.
+    """
+    invocations: list[dict] = []
+    deadline = time.time() + POLLER_LOOP_BUDGET_S
+    count, ts = 0, None
+    last_count = 0  # the scoped count observed on the PREVIOUS iteration
+    quiet_since: float | None = None  # wall-clock the quiet-period clock (re)started
+
     while time.time() < deadline:
-        failover_count, failover_ts = _count_failover_relaunches(issue, since_ts=since_ts)
-        if failover_count >= 1:
+        invocations.append(_invoke_poller_once(issue))
+        count, ts = _count_failover_relaunches(issue, since_ts=since_ts)
+        if count >= 1 and (quiet_since is None or count > last_count):
+            # First marker, OR a NEW marker landed -> (re)start the quiet clock so
+            # a 2nd/3rd failover seconds later (idempotency breach, the H-B kill
+            # criterion "failover fires twice") is never missed (round-3 Major #3).
+            quiet_since = time.time()
+            logger.info(
+                "scoped failover marker observed (count=%d); (re)starting quiet-period", count
+            )
+        last_count = count
+        if quiet_since is not None and time.time() - quiet_since >= POLLER_QUIET_PERIOD_S:
             break
-        if poller_proc.poll() is not None:
-            # Poller exited; final scoped read in case the marker landed in the
-            # same tick, then stop waiting.
-            failover_count, failover_ts = _count_failover_relaunches(issue, since_ts=since_ts)
-            break
-        time.sleep(15)
-    return failover_count, failover_ts
+        time.sleep(POLLER_INTERVAL_S)
 
-
-def _reap_poller(poller_proc: subprocess.Popen | None, poller_log_fh) -> None:
-    """Reap the bg poller + close its log on EVERY Section-B exit path.
-
-    The poller may still be alive (it polls until the run reaches a terminal
-    state); a left-running poller would keep polling the now-dead VM. Closing the
-    writer-launcher cleanly is part of the pod-side completion contract.
-    """
-    if poller_proc is not None and poller_proc.poll() is None:
-        poller_proc.terminate()
-        try:
-            poller_proc.wait(timeout=30)
-        except subprocess.TimeoutExpired:
-            poller_proc.kill()
-    if poller_log_fh is not None:
-        with contextlib.suppress(OSError):
-            poller_log_fh.close()
+    # FINAL scoped read (covers a marker landing in the last interval).
+    count, ts = _count_failover_relaunches(issue, since_ts=since_ts)
+    return count, ts, invocations
 
 
 def run_section_b(issue: int, *, dry_run: bool) -> dict:
     """Drive the LIVE fault-injection sequence (plan §4/§10).
 
-    Sequence: launch tiny VM -> launch ``backend_poll.py`` (the failover driver)
-    -> wait ~3 min -> drop BOTH endpoints -> poll serial console for the
-    ``[eps-watchdog]`` ladder reaching 10/10 + the wedged-shutdown line -> poll
-    instance status until TERMINATED -> read the scoped ``epm:backend-selected``
-    (backend=runpod, failover reason, ``ts >= inject_ts``) -> failover count must
-    be exactly 1. ANY budget miss -> documented fallback (NOT a B PASS).
+    Sequence: launch tiny VM -> wait ~3 min -> drop BOTH endpoints -> poll serial
+    console for the ``[eps-watchdog]`` ladder reaching 10/10 + the
+    wedged-shutdown line -> poll instance status until TERMINATED -> LOOP the
+    one-shot ``backend_poll.py`` (the failover driver) until a scoped
+    ``epm:backend-selected`` (backend=runpod, failover reason, ``ts >=
+    inject_ts``) lands, run the quiet-period extension, then read the FINAL
+    scoped count -> failover count must be exactly 1. ANY budget miss ->
+    documented fallback (NOT a B PASS).
+
+    The poller is LOOPED by this validator (round-3 Critical #1): ``backend_poll
+    .py`` is one-shot, so a single pre-injection bg launch (the round-2 design)
+    polls a still-healthy VM once and is dead by watchdog-kill time. Here the
+    poller is re-invoked synchronously on a cadence AFTER injection +
+    termination, which is when the failover actually fires. Every Section-B
+    return surfaces ``poller_invocations`` (round-3 Major #1/#4: the per-call
+    audit trail) so an early fallback never omits the poller-call record.
 
     NOTE: the live launch (and even the dry-run scaffolding) is normally driven
     by the experimenter step on the VM (where ``gcloud`` is authenticated). The
@@ -616,106 +735,87 @@ def run_section_b(issue: int, *, dry_run: bool) -> dict:
     if dry_run:
         return _section_b_dry_run(issue)
 
-    inject_ts = datetime.datetime.now(datetime.UTC)
     # 1. Launch the tiny sleep-tick VM.
     rc, _out, err = _run(section_b_dispatch_argv(issue), dry_run=False, timeout=1200)
     if rc != 0:
-        return fallback_section_b(issue, f"GCP tiny-VM launch failed rc={rc}: {err[-300:]}")
-
-    # 1b. Launch backend_poll.py as a bg subprocess (round-2 BLOCKER 2). The
-    # poller is the ONLY component that performs the GCP -> RunPod failover
-    # (_failover_dead_gcp_to_runpod); the in-VM watchdog only powers the VM off.
-    # The orchestrator is now both writer-launcher (this Popen) AND reader (the
-    # step-6 marker poll). All exit paths below reap it via _reap_poller.
-    poller_meta: dict = {}
-    poller_proc: subprocess.Popen | None = None
-    poller_log_fh = None
-    poller_log_path = (
-        PROJECT_ROOT / "eval_results" / f"issue_{issue}" / "section_B_backend_poll.log"
-    )
-    try:
-        poller_log_path.parent.mkdir(parents=True, exist_ok=True)
-        poller_argv = section_b_poller_argv(issue)
-        logger.info("launching backend_poll.py (bg): %s", " ".join(poller_argv))
-        poller_log_fh = poller_log_path.open("w")
-        poller_proc = subprocess.Popen(
-            poller_argv,
-            cwd=str(PROJECT_ROOT),
-            env={**os.environ},
-            stdout=poller_log_fh,
-            stderr=subprocess.STDOUT,
-        )
-        poller_meta = {
-            "poller_argv": " ".join(poller_argv),
-            "poller_pid": poller_proc.pid,
-            "poller_log_path": str(poller_log_path),
-        }
-
-        # 2. Let the workload settle (~3 min) before injecting.
-        time.sleep(180)
-
-        # 3. Drop BOTH probe endpoints.
-        inject_ts = datetime.datetime.now(datetime.UTC)
-        rc, _out, err = _run(section_b_iptables_argv(issue), dry_run=False, timeout=120)
-        if rc != 0:
-            return {
-                **fallback_section_b(issue, f"iptables injection failed rc={rc}: {err[-300:]}"),
-                **poller_meta,
-            }
-
-        # 4. Watchdog ladder reaches 10/10 + shutdown.
-        if not _poll_watchdog_fired(issue):
-            return {
-                **fallback_section_b(
-                    issue, "watchdog did not reach 10/10 + shutdown within ~6 min"
-                ),
-                **poller_meta,
-            }
-
-        # 5. Instance reaches TERMINATED.
-        if not _poll_vm_terminated(issue):
-            return {
-                **fallback_section_b(issue, "VM never reached TERMINATED after watchdog fired"),
-                **poller_meta,
-            }
-
-        # 6. Scoped RunPod failover relaunch (exactly once; ts >= inject_ts).
-        failover_count, failover_ts = _poll_failover_relaunch(
-            issue, since_ts=inject_ts, poller_proc=poller_proc
-        )
-        poller_meta["poller_exit_code"] = poller_proc.poll()
-        if failover_count < 1:
-            return {
-                **fallback_section_b(issue, "dead VM never re-dispatched to RunPod"),
-                **poller_meta,
-            }
-
-        relaunch_ts = (
-            datetime.datetime.fromisoformat(failover_ts.replace("Z", "+00:00"))
-            if failover_ts
-            else datetime.datetime.now(datetime.UTC)
-        )
         return {
-            **poller_meta,
-            "watchdog_fired": True,
-            "vm_terminated": True,
-            "failover_marker_sha": None,  # ts below; SHA filled by experimenter if needed
-            "failover_marker_ts": failover_ts,
-            "failover_count": failover_count,
-            "live_injection_pass": bool(failover_count == 1),
-            "fallback_outcome": None if failover_count == 1 else "residual_gap",
-            "headline_downgraded": bool(failover_count != 1),
-            "inject_to_relaunch_seconds": (relaunch_ts - inject_ts).total_seconds(),
-            "zero_manual_action": True,  # no operator command issued between inject + relaunch
-            "note": (
-                "exactly-one RunPod failover with zero manual action between iptables "
-                "injection and relaunch"
-                if failover_count == 1
-                else f"failover fired {failover_count}x — idempotency broken (kill criterion)"
-            ),
+            **fallback_section_b(issue, f"GCP tiny-VM launch failed rc={rc}: {err[-300:]}"),
+            "poller_invocations": [],  # poller loop not reached on this early fallback
+            "poller_exit_codes": [],  # round-3 Major #4: uniform key on EVERY return
         }
-    finally:
-        _reap_poller(poller_proc, poller_log_fh)
+
+    # 2. Let the workload settle (~3 min) before injecting.
+    time.sleep(180)
+
+    # 3. Drop BOTH probe endpoints.
+    inject_ts = datetime.datetime.now(datetime.UTC)
+    rc, _out, err = _run(section_b_iptables_argv(issue), dry_run=False, timeout=120)
+    if rc != 0:
+        return {
+            **fallback_section_b(issue, f"iptables injection failed rc={rc}: {err[-300:]}"),
+            "poller_invocations": [],  # poller loop not reached on this early fallback
+            "poller_exit_codes": [],  # round-3 Major #4: uniform key on EVERY return
+        }
+
+    # 4. Watchdog ladder reaches 10/10 + shutdown.
+    if not _poll_watchdog_fired(issue):
+        return {
+            **fallback_section_b(issue, "watchdog did not reach 10/10 + shutdown within ~6 min"),
+            "poller_invocations": [],  # poller loop not reached on this early fallback
+            "poller_exit_codes": [],  # round-3 Major #4: uniform key on EVERY return
+        }
+
+    # 5. Instance reaches TERMINATED.
+    if not _poll_vm_terminated(issue):
+        return {
+            **fallback_section_b(issue, "VM never reached TERMINATED after watchdog fired"),
+            "poller_invocations": [],  # poller loop not reached on this early fallback
+            "poller_exit_codes": [],  # round-3 Major #4: uniform key on EVERY return
+        }
+
+    # 6. LOOP the one-shot poller until the scoped RunPod failover lands +
+    #    quiet-period (exactly once; ts >= inject_ts). The validator owns the
+    #    loop — backend_poll.py is one-shot (round-3 Critical #1 / Major #3).
+    failover_count, failover_ts, poller_invocations = _loop_poller_until_failover(
+        issue, since_ts=inject_ts
+    )
+    # Round-3 Major #4: surface the per-call exit-code list on EVERY return path.
+    poller_exit_codes = [inv["exit_code"] for inv in poller_invocations]
+    poller_meta = {
+        "poller_argv": " ".join(section_b_poller_argv(issue)),
+        "poller_invocations": poller_invocations,
+        "poller_exit_codes": poller_exit_codes,
+    }
+    if failover_count < 1:
+        return {
+            **fallback_section_b(issue, "dead VM never re-dispatched to RunPod"),
+            **poller_meta,
+        }
+
+    relaunch_ts = (
+        datetime.datetime.fromisoformat(failover_ts.replace("Z", "+00:00"))
+        if failover_ts
+        else datetime.datetime.now(datetime.UTC)
+    )
+    return {
+        **poller_meta,
+        "watchdog_fired": True,
+        "vm_terminated": True,
+        "failover_marker_sha": None,  # ts below; SHA filled by experimenter if needed
+        "failover_marker_ts": failover_ts,
+        "failover_count": failover_count,
+        "live_injection_pass": bool(failover_count == 1),
+        "fallback_outcome": None if failover_count == 1 else "residual_gap",
+        "headline_downgraded": bool(failover_count != 1),
+        "inject_to_relaunch_seconds": (relaunch_ts - inject_ts).total_seconds(),
+        "zero_manual_action": True,  # no operator command issued between inject + relaunch
+        "note": (
+            "exactly-one RunPod failover with zero manual action between iptables "
+            "injection and relaunch"
+            if failover_count == 1
+            else f"failover fired {failover_count}x — idempotency broken (kill criterion)"
+        ),
+    }
 
 
 # ═════════════════════════════════════════════════════════════════════════════
