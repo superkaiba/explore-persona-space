@@ -28,6 +28,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+
+**Methodology:** [docs/methodology/issue_667.md](https://github.com/superkaiba/explore-persona-space/blob/73d1148e5d452ee5c28a0c22e9737a30cb9500c5/docs/methodology/issue_667.md) · [gist](https://gist.github.com/superkaiba/1bd2986b178615f9e0059d3c48493685)
 ## Takeaways
 
 - **The off-source update is a single scaled copy of the on-source write**: one direction holds a median **0.81–0.86** of each source's cross-context update variance (chance 0.034, ~24×), at cosine **0.85–0.93** to the write.
