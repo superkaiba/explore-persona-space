@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 672,
+  "highest_id": 673,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4222,6 +4222,13 @@
       "path": "tasks/proposed/672",
       "status": "proposed",
       "title": "Validate GCP works end-to-end after the wedge fixes: real A100 smoke run on the fixed extractor (flat memory) + fault-injection of watchdog self-terminate/#659 failover + regression tests"
+    },
+    "673": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/673",
+      "status": "proposed",
+      "title": "Real-GPU memory-non-growth validation for #671 hook-based extraction"
     },
     "68": {
       "has_clean_result": false,
