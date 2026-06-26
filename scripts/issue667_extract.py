@@ -57,6 +57,7 @@ import datetime
 import json
 import logging
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -104,6 +105,151 @@ N_GEN_TOKENS = 1024  # greedy R cap (natural Qwen replies ~150 tok; log truncati
 # proof of FULL completion. The resume-skip predicate checks for this file, not
 # for any stray ``.npz``.
 CELL_DONE_SENTINEL = ".done"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Per-iteration GPU-memory logging (#672 validation — ANALYSIS-ONLY, off by
+# default). Behind ``--log-mem-every N`` (N=0 -> off). Logs THREE gauges per
+# hooked forward to certify the #671 fix removed the resident-pool climb:
+#   1. torch.cuda.memory_reserved()  (PRIMARY) — the allocator's resident pool;
+#      under ``expandable_segments:True`` this retains freed-segment fragments,
+#      so the climb-vs-flat signal lives HERE, not in ``memory_allocated()``.
+#   2. nvidia-smi memory.used         (PRIMARY) — kernel-visible resident, the
+#      literal footprint that drives DHCP/page-reclaim wedges; ``None`` when
+#      nvidia-smi is absent (CPU host / no NVIDIA runtime).
+#   3. torch.cuda.memory_allocated()  (SECONDARY) — live tensor bytes; recorded
+#      for diagnostics, NOT in the pass predicate (a fix that frees tensors but
+#      leaves the pool fragmented reads flat here, which Section A must catch).
+# The "iter" counter is the COUNT of hooked forwards (every _mean_resp_acts* /
+# extract_layer_activations invocation on the #671-fixed read path), NOT a
+# clock tick. No behavior change to the reads.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class _MemoryGaugeLogger:
+    """Mutable per-run memory-gauge accumulator (module-level singleton).
+
+    Held at module scope so the deep per-probe reads (:func:`_mean_resp_acts`,
+    :func:`_mean_resp_acts_single`) can instrument the hooked-forward sites
+    WITHOUT threading a new argument through every call signature — the reads
+    themselves are unchanged (single-variable contract: only the additive
+    ``_tick`` instrumentation call is new). ``run_extraction`` installs the
+    active logger from ``args`` (or ``None`` when ``--log-mem-every 0``).
+    """
+
+    def __init__(self, every: int, out_dir: Path) -> None:
+        self.every = int(every)
+        self.out_dir = Path(out_dir)
+        self.iter_idx = 0
+        self.log: list[dict] = []
+
+    def _tick(self) -> None:
+        """Increment the hooked-forward counter; log + record every ``every``."""
+        idx = self.iter_idx
+        self.iter_idx += 1
+        if self.every <= 0 or idx % self.every != 0:
+            return
+        _log_memory_gauges(idx, self.log, self.out_dir)
+
+
+# Module-level active logger; None disables instrumentation (the default).
+_MEM_LOGGER: _MemoryGaugeLogger | None = None
+
+
+def install_mem_logger(args) -> None:
+    """Install the module-level memory logger from ``args`` (no-op when off).
+
+    Sets the global ``_MEM_LOGGER`` to an active accumulator when
+    ``--log-mem-every > 0`` (writing to ``args.out``), else ``None``. Kept out
+    of :func:`run_extraction` so that function stays under the ruff C901 cap.
+    """
+    global _MEM_LOGGER
+    if getattr(args, "log_mem_every", 0) > 0:
+        _MEM_LOGGER = _MemoryGaugeLogger(args.log_mem_every, Path(args.out))
+    else:
+        _MEM_LOGGER = None
+
+
+def flush_mem_logger() -> None:
+    """Log the final iteration + persist the full memory-gauge array (no-op off).
+
+    The last hooked forward's index is rarely an exact multiple of
+    ``--log-mem-every``, so this captures the terminal resident footprint
+    unconditionally and re-writes ``<out>/memory_log.json``.
+    """
+    if _MEM_LOGGER is None:
+        return
+    last_idx = max(_MEM_LOGGER.iter_idx - 1, 0)
+    _log_memory_gauges(last_idx, _MEM_LOGGER.log, _MEM_LOGGER.out_dir)
+    logger.info(
+        "[mem] %d gauge samples written to %s",
+        len(_MEM_LOGGER.log),
+        _MEM_LOGGER.out_dir / "memory_log.json",
+    )
+
+
+def _nvidia_smi_used_gib() -> float | None:
+    """nvidia-smi memory.used for the CVD-visible device 0, in GiB, or ``None``.
+
+    Returns ``None`` cleanly when nvidia-smi is absent (FileNotFoundError), the
+    probe errors / times out, or no device is parseable (CPU host / docker w/o
+    NVIDIA runtime). Reads MiB from nvidia-smi (its native unit) and converts to
+    GiB so all three gauges share a unit. The launcher pins
+    ``CUDA_VISIBLE_DEVICES=<gpu>`` so cuda:0 == the visible device; nvidia-smi
+    honours CVD, so its first row is that same device.
+    """
+    try:
+        proc = subprocess.run(
+            ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
+        return None
+    if proc.returncode != 0:
+        return None
+    first = proc.stdout.strip().splitlines()
+    if not first:
+        return None
+    try:
+        used_mib = float(first[0].strip())
+    except ValueError:
+        return None
+    return used_mib / 1024.0  # MiB -> GiB
+
+
+def _log_memory_gauges(iter_idx: int, log: list[dict], out_dir: Path) -> None:
+    """Capture the 3 memory gauges at ``iter_idx``, append to ``log``, log a line.
+
+    Always re-writes ``out_dir / memory_log.json`` (a JSON array of the dicts)
+    so the trace is durable even if the run is killed before clean exit
+    (checkpoint-per-phase: never accumulate-in-memory and write-only-at-end).
+    """
+    if torch.cuda.is_available():
+        reserved = torch.cuda.memory_reserved() / 2**30
+        allocated = torch.cuda.memory_allocated() / 2**30
+    else:
+        reserved = 0.0
+        allocated = 0.0
+    nvidia_smi = _nvidia_smi_used_gib()
+    entry = {
+        "iter": iter_idx,
+        "memory_reserved_gib": float(reserved),  # PRIMARY
+        "nvidia_smi_used_gib": (None if nvidia_smi is None else float(nvidia_smi)),  # PRIMARY
+        "memory_allocated_gib": float(allocated),  # SECONDARY
+    }
+    log.append(entry)
+    logger.info(
+        "[mem] iter=%d reserved=%.2fGiB nvidia_smi=%s allocated=%.2fGiB",
+        iter_idx,
+        reserved,
+        "n/a" if nvidia_smi is None else f"{nvidia_smi:.2f}GiB",
+        allocated,
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "memory_log.json").write_text(json.dumps(log, indent=2))
 
 
 def assert_full_npz_complement(cell_dir: Path, *, targets: list[str], layers: list[int]) -> None:
@@ -422,6 +568,8 @@ def _mean_resp_acts(
     # SAME tensor the old out.hidden_states[li + 1] read produced.
     acts_b = extract_layer_activations(base_model, ids, layers)
     acts_t = extract_layer_activations(trained_model, ids, layers)
+    if _MEM_LOGGER is not None:  # #672 per-iteration memory gauge (ANALYSIS-ONLY)
+        _MEM_LOGGER._tick()
     res: dict[int, tuple[np.ndarray, np.ndarray]] = {}
     for li in layers:
         hb = acts_b[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy()
@@ -686,6 +834,8 @@ def _mean_resp_acts_single(
     ids = torch.tensor([full_ids], dtype=torch.long, device=device)
     # Memory-safe subset read (#671): hook only `layers` (block index li == hs[li+1]).
     acts = extract_layer_activations(base_model, ids, layers)  # {li: (1, T, H)}
+    if _MEM_LOGGER is not None:  # #672 per-iteration memory gauge (ANALYSIS-ONLY)
+        _MEM_LOGGER._tick()
     return {
         li: acts[li][0, p:, :].float().mean(dim=0).cpu().numpy().astype(np.float32) for li in layers
     }
@@ -773,6 +923,11 @@ def run_extraction(args) -> int:
     dtype = torch.float32 if device.type == "cpu" else torch.bfloat16
     layers = list(args.layers)
     assert args.primary_layer in layers, (args.primary_layer, layers)
+
+    # #672 per-iteration memory logging (ANALYSIS-ONLY; off unless --log-mem-every>0).
+    # Installs the module-level logger so the deep per-probe hook sites tick it
+    # without a new signature thread. The memory_log.json lands in --out.
+    install_mem_logger(args)
 
     sampled_path, demos_path = stage_inputs()
     registry = load_registry(sampled_path)
@@ -979,6 +1134,8 @@ def run_extraction(args) -> int:
         targets=targets,
         layers=layers,
     )
+    # #672 final memory-gauge flush (captures terminal footprint + persists).
+    flush_mem_logger()
     # Free GPU (per-cell subprocess will exit, but be explicit).
     del base, trained
     if device.type == "cuda":
@@ -1102,6 +1259,14 @@ def main() -> int:
     parser.add_argument("--max-new-tokens", type=int, default=N_GEN_TOKENS)
     parser.add_argument(
         "--max-train-rows", type=int, default=None, help="cap t+/t- training rows (smoke)"
+    )
+    parser.add_argument(
+        "--log-mem-every",
+        type=int,
+        default=0,
+        help="#672 ANALYSIS-ONLY: log 3 GPU-memory gauges (memory_reserved + "
+        "nvidia-smi memory.used PRIMARY, memory_allocated SECONDARY) every N "
+        "hooked forwards to <out>/memory_log.json. 0 = off (default).",
     )
     args = parser.parse_args()
     if args.max_probes == 0:
