@@ -43,6 +43,8 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import LeaveOneOut
 from sklearn.preprocessing import StandardScaler
 
+from explore_persona_space.analysis.extraction import extract_layer_activations
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Activation extraction
 # ─────────────────────────────────────────────────────────────────────────────
@@ -106,11 +108,12 @@ def extract_residual_stream_activations(
     for i, prompt in enumerate(prompts):
         ids = tokenizer(prompt, return_tensors="pt", add_special_tokens=False).input_ids
         ids = ids.to(device)
-        hs = model(ids, output_hidden_states=True).hidden_states
-        # hs is a tuple of length (num_hidden_layers + 1).
-        # hs[0] = embedding output; hs[L+1] = output of transformer block L.
+        # Memory-safe subset read (#671): hook only `layers` (block index L ==
+        # hs[L+1]) instead of materializing all L+1 layers. acts[L] is the SAME
+        # tensor the old hs[L + 1] read produced.
+        acts = extract_layer_activations(model, ids, layers)
         for j, L in enumerate(layers):
-            out[i, j] = hs[L + 1][0, position].float().cpu()
+            out[i, j] = acts[L][0, position].float().cpu()
     return out
 
 
@@ -202,10 +205,12 @@ def extract_dual_position_activations(
             f"pair {i}: require 0 <= context_end_idx({c_idx}) < query_end_idx({q_idx}) "
             f"< seq_len({seq_len})"
         )
-        hs = model(ids, output_hidden_states=True).hidden_states
-        # hs is a tuple of length (num_hidden_layers + 1); hs[L+1] = block-L output.
+        # Memory-safe subset read (#671): hook only `layers` (block index L ==
+        # hs[L+1]); the multiple positions are read from the SAME captured
+        # tensor, so the single-forward property (plan §3 A5) is preserved.
+        acts = extract_layer_activations(model, ids, layers)
         for j, L in enumerate(layers):
-            layer_hs = hs[L + 1]
+            layer_hs = acts[L]
             out["context_end"][i, j] = layer_hs[0, c_idx].float().cpu()
             out["query_end"][i, j] = layer_hs[0, q_idx].float().cpu()
             if readout_position is not None:
