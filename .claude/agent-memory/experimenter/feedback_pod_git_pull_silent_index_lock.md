@@ -22,7 +22,9 @@ When a pod's prior workload crashes (SIGKILL, OOM, abrupt shutdown) while a `git
 4. The re-pull (after lock removal) can take long enough that the SSH MCP ~30s client cap times out before git returns — but git completes server-side regardless. Re-probe HEAD in a FRESH SSH call rather than treating the timeout as a failure.
 5. If `pgrep -af git` shows a live git proc, do NOT remove the lock — wait. A live git is doing legitimate work.
 
-**Worked recipe for the experimenter pre-launch sync** (extend `experimenter.md` § "Before Running" item 4):
+**Worked recipe for the experimenter pre-launch sync** (now standing instruction
+in `experimenter.md` § "Before Running" **item 2** — the canonical sync step;
+implemented commit `084211a364`):
 
 ```
 ssh_execute pod-X 'cd /workspace/explore-persona-space && \
@@ -30,7 +32,9 @@ ssh_execute pod-X 'cd /workspace/explore-persona-space && \
   git checkout <branch> && \
   git pull --ff-only origin <branch>; \
   echo "HEAD=$(git rev-parse HEAD)"'
-# expect HEAD=<brief commit>
+# expect HEAD == brief's `commit=` field if present; else HEAD ==
+# `origin/<branch>` (the ref the fetch just advanced) — the realistic
+# fallback when the brief carries no explicit `commit=`.
 
 # On mismatch:
 ssh_execute pod-X 'cd /workspace/explore-persona-space && \
