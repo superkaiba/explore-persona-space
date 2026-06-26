@@ -1,7 +1,7 @@
 ---
-title: 'Validate GCP works end-to-end after the wedge fixes: real A100 smoke run on
-  the fixed extractor (flat memory) + fault-injection of watchdog self-terminate/#659
-  failover + regression tests'
+title: '#669/#671 verified offline (250 tests green) but the live A100 smoke and live
+  watchdog→failover chain were lost to infrastructure failure — HIGH offline, UNVERIFIED
+  live (LOW confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-26T10:24:35Z'
