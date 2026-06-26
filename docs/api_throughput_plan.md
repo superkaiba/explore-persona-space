@@ -84,6 +84,47 @@ see §1.
   sonnet-4-6, haiku-4-5, sonnet-4-5 (judge), opus-4-1, sonnet-3-5 (new/old),
   sonnet-3. (Haiku 3.5 is retired off first-party.) Verify older models are
   actually callable on these orgs in Phase 0 before planning model-effect cells.
+- **The org keys are SHARED with other fellows** (same org budgets serve
+  multiple people). So the operative concurrency cap is SOCIAL (don't hog the
+  shared bucket), not the org RPM ceiling. This makes the "saturate 150k RPM with
+  a big process pool" idea WRONG — use a polite per-key slice and fan across the
+  3 orgs. See § Operating defaults.
+
+## 1b. Operating defaults (shared-key etiquette) — FIRM, baked into the dispatcher
+
+These are the standing defaults for ALL high-volume API calls (the dispatcher
+ships with them; configurable via env/args). They supersede the rev-1 "maximize
+throughput" framing because the org keys are shared with other fellows.
+
+- **Per-key concurrency caps (default; from a fellow's guidance + matches our
+  measured single-process knee ~100→~3k RPM):**
+  - Sonnet 4.x: **~100 concurrent / key**
+  - Haiku 4.5: **~120 concurrent / key**
+  - Opus 4.x: **~40 concurrent / key**
+  Configurable (`EPS_API_CONC_<MODEL>` or dispatcher args); these are the
+  good-citizen defaults, NOT hard API limits.
+- **Fan out across the 3 org-keys at those per-key caps** (≈3× the slice), NOT a
+  big process pool chasing the org RPM ceiling (that would starve colleagues).
+  Workers ≈ one per org-key; multi-process only if a single process can't drive
+  ~100 concurrency efficiently.
+- **429 ⇒ REDUCE concurrency (mandatory adaptive back-off).** On any 429, the
+  dispatcher MUST cut that key's concurrency (AIMD: multiplicative decrease —
+  e.g. halve — on a 429, then additive/gradual increase back toward the cap while
+  clean), and honor the `retry-after` header before retrying. Never hold a fixed
+  concurrency through 429s. Because the keys are shared, also **watch the
+  `anthropic-ratelimit-*-remaining` headers and ease off when remaining is low**
+  (a colleague is active) — so we never 429 someone else. This is the key
+  runtime safety rule.
+- **Caching / resume is mandatory** so any run is interruptible/restartable:
+  per-item content-hash cache (skip already-completed items on restart) + atomic
+  checkpoint writes (temp-file-then-rename, so a crash/full-disk leaves the last
+  good checkpoint intact — validated by the #658 judge surviving a disk-full).
+- **Polite-throughput estimates** at these caps × 3 orgs: Sonnet ~9k RPM
+  (#658's 141.6k ≈ ~16 min), Haiku ~36k RPM, Opus ~3.6k RPM.
+- **Batch is the *considerate* path for huge / latency-tolerant jobs** — it runs
+  on Anthropic spare capacity OUTSIDE the shared rate budget, so it won't starve
+  fellows' interactive calls. Crossover to batch is driven by etiquette + cost,
+  not just raw speed.
 
 ## 2. Open questions the experiments must answer
 
@@ -202,8 +243,11 @@ see §1.
   - **Multi-org key pool** — thread a key/client through the sync path, batch
     submit, the limits probe, AND the retry re-entry (currently `ANTHROPIC_API_KEY`
     is hardcoded in ~4 places; this is the bulk of the work).
-  - **Adaptive concurrency** from live `*-remaining` headers per org; honor
-    `retry-after`; warm-up ramp to dodge acceleration 429s.
+  - **Per-key concurrency caps + 429 back-off per § 1b (FIRM defaults):** start
+    at the per-key caps (Sonnet ~100 / Haiku ~120 / Opus ~40), AIMD-reduce that
+    key's concurrency on every 429 (multiplicative cut + honor `retry-after`,
+    gradual recovery), and ease off when the shared `*-remaining` headers run low.
+    Warm-up ramp to dodge acceleration 429s.
   - **Route** by (N, model, deadline, cost_pref) per the Phase-3 table.
   - **Batch path** — small chunks + `asyncio.gather` with a concurrency cap that
     keeps total in-flight **below each org's queue cap**, `#663` bounded poll,
