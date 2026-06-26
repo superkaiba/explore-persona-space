@@ -364,6 +364,7 @@ import argparse
 import fcntl
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -10047,6 +10048,9 @@ def program_orchestrator_pass(
         return
 
     try:
+        # The daemon writes its terminal phrase as the LAST log() call before it
+        # exits (then it is dead, nothing writes after), so the final 4 KiB always
+        # captures a deliberate-exit phrase if one was written.
         tail = ""
         if log.exists():
             with log.open("rb") as fh:
@@ -10070,7 +10074,7 @@ def program_orchestrator_pass(
     try:
         runner(["tmux", "kill-session", "-t", "eps-program"], capture_output=True, timeout=15)
         res = runner(
-            ["tmux", "new-session", "-d", "-s", "eps-program", f"bash {script}"],
+            ["tmux", "new-session", "-d", "-s", "eps-program", f"bash {shlex.quote(str(script))}"],
             capture_output=True,
             text=True,
             timeout=30,
