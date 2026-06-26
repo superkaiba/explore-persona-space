@@ -84,39 +84,3 @@ Root-caused by a background investigation of the #667 attempt-1 GCP wedge
 (2026-06-25). Related: #659 (wired the crashed-workload async failover), #658
 (sync failover + EXIT-trap crash diagnostics), #491 / #640 (sibling GCP
 RUNNING-zombie modes).
-
-## Root-cause research addendum (deep-research wf_857f7cfd, 2026-06-25)
-
-Deep web research established this is a documented `systemd-networkd` DHCP-renewal-
-timeout bug (systemd #32045/#33934/#33288, Ubuntu LP #2054977) triggered by guest
-memory/IO pressure — NOT a Google infra flake. This SHARPENS the fixes and reframes
-priority:
-
-- **The root-cause trigger is fixed in a SEPARATE parallel `kind:infra` task** (the
-  extractor `output_hidden_states` memory fix): our extractor materializes all 29
-  layers ×2 models per forward → climbing resident memory → reclaim stalls that
-  starve the DHCP renew; plus GCE Persistent Disk is network-backed so heavy `.npz`
-  writes saturate the same NIC. **THIS task (#669) is the BACKSTOP** — it makes any
-  wedge that still happens self-recover.
-- **Fix 2 (in-VM watchdog) — must be REACHABILITY-based + SELF-TERMINATE, NOT
-  liveness-based.** A systemd `/dev/watchdog` (liveness) keeps getting fed on a
-  wedged-but-running VM (systemd #21083) and will NOT catch this. The watchdog probes
-  ACTUAL reachability (metadata server 169.254.169.254 + an external endpoint e.g.
-  HF) and, on sustained loss (tunable, ~3-5 min), forces the instance to a clean
-  TERMINATED state (`shutdown -h now` or self-delete via the metadata token).
-  TERMINATED is a state the poller already reads as dead → triggers the #659
-  failover. **This is now the PRIMARY recovery mechanism** (cleaner than Fix 1's
-  poller-side detection — the VM flips its own GCE state).
-- **Fix 1 (poller frozen-non-terminal-phase + drain-timeout → terminal_workload_wedged)
-  stays as defense-in-depth** for when the VM is too network-dead to self-terminate.
-- **Add: verify `onHostMaintenance=TERMINATE` + `automaticRestart=true`** in the GCP
-  launch config (`backends/gcp.py`) — A100s can't live-migrate; this cleanly handles
-  the SEPARATE host-maintenance subset (~60-min notice). Confirm it composes with
-  `--instance-termination-action=DELETE`.
-- **Verify the #659 async failover fires on the self-terminated/TERMINATED state**,
-  not only `terminal_workload_failed`, so a watchdog self-terminate re-dispatches to
-  RunPod.
-
-Sources: systemd #32045/#33934/#33288, Ubuntu LP #2054977, guest-agent #516, GCP
-gpu-host-maintenance + instance-groups/about-repair docs. Full report: deep-research
-run wf_857f7cfd.
