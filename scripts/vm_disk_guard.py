@@ -1,0 +1,537 @@
+#!/usr/bin/env python3
+"""VM root-disk guard — tiered safe cleanup when ``/`` crosses a threshold.
+
+The VM root disk fills because each experiment downloads its source data into
+``data/issue_<N>/hf_dl/`` + ``g*_dl/`` caches that nothing reclaims (incident
+2026-06-25: ``/`` hit 100% full, one finished experiment held 97 GB), plus the
+``uv`` package cache and accumulating logs. This guard reads ``df`` for ``/``
+and, when usage exceeds a threshold (default 85%, env ``EPS_VM_DISK_THRESHOLD``),
+runs three TIERS of strictly-safe cleanup, reporting bytes freed per tier:
+
+  (a) ``uv cache prune`` (skipped gracefully if the uv lock is held — never
+      ``--force``).
+  (b) ``data/issue_*/hf_dl`` + ``g*_dl`` download caches for issues whose task
+      status is TERMINAL (``completed`` / ``archived`` / ``awaiting_promotion``).
+      Status is resolved READ-ONLY via the task workflow — task state is NEVER
+      mutated. An issue at any ACTIVE status (its caches may be in use) is
+      skipped.
+  (c) Stale logs: ``logs/**/*.log`` older than N days (default 14, env
+      ``EPS_VM_DISK_LOG_MAX_AGE_DAYS``) plus ``/tmp/*.log`` of the same age.
+
+Report-only by default; ``--apply`` acts. After cleanup, if usage is STILL over
+the threshold, a loud WARNING line is printed and (when present) the my-goat
+``telegram_push.sh`` is invoked fail-soft so the disk-pressure situation is
+surfaced for manual triage.
+
+Mirrors the style of ``scripts/worktree_audit.py`` + ``scripts/gcp_audit.py``:
+pure decision helpers are unit-testable, side effects are gated on ``--apply``,
+and the cron wrapper (``scripts/cron_vm_disk_guard.sh``) runs ``--apply``.
+"""
+
+from __future__ import annotations
+
+import argparse
+import contextlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from explore_persona_space.task_workflow import find_task_path, repo_root
+
+# Re-use the single source of truth for what a download cache is + how to
+# delete it (so the two cleanup entrypoints can never drift on the safety
+# contract — store/ + eval_results/ are KEPT in both).
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from clean_experiment_downloads import (
+    clean_issue_downloads,
+)
+
+# Default usage threshold (% of /) above which cleanup runs. Env-overridable.
+DEFAULT_THRESHOLD_PCT = 85.0
+
+# Default age (days) above which a log file is stale and reclaimable.
+DEFAULT_LOG_MAX_AGE_DAYS = 14.0
+
+# Issue task statuses whose download caches are safe to reclaim — the work is
+# done (or parked awaiting promotion), so the re-downloadable source cache is
+# no longer needed. Mirrors worktree_audit.REAPABLE_ISSUE_STATUSES and the
+# brief: completed / archived / awaiting_promotion. NOTE this deliberately
+# differs from task_workflow.TERMINAL_STATUSES (completed/blocked/archived):
+# `blocked` is excluded (a blocked task may resume and need its cache), and
+# `awaiting_promotion` is included (the experiment is done, the park is just
+# the user's promotion call).
+TERMINAL_CACHE_REAP_STATUSES = frozenset({"completed", "archived", "awaiting_promotion"})
+
+_TELEGRAM_PUSH_SCRIPT_DEFAULT = Path.home() / "my-goat" / "scripts" / "telegram_push.sh"
+
+
+# ─── pure helpers (unit-tested) ──────────────────────────────────────────────
+
+
+def over_threshold(used_pct: float, threshold_pct: float) -> bool:
+    """True when ``/`` usage is strictly above the cleanup threshold."""
+    return used_pct > threshold_pct
+
+
+def threshold_pct() -> float:
+    """Cleanup threshold (% used of /), env-overridable, clamped to (0, 100]."""
+    raw = os.environ.get("EPS_VM_DISK_THRESHOLD", str(DEFAULT_THRESHOLD_PCT))
+    try:
+        val = float(raw)
+    except ValueError:
+        return DEFAULT_THRESHOLD_PCT
+    if not (0.0 < val <= 100.0):
+        return DEFAULT_THRESHOLD_PCT
+    return val
+
+
+def log_max_age_days() -> float:
+    """Stale-log age cutoff in days, env-overridable, clamped to >= 0."""
+    raw = os.environ.get("EPS_VM_DISK_LOG_MAX_AGE_DAYS", str(DEFAULT_LOG_MAX_AGE_DAYS))
+    try:
+        val = float(raw)
+    except ValueError:
+        return DEFAULT_LOG_MAX_AGE_DAYS
+    return val if val >= 0.0 else DEFAULT_LOG_MAX_AGE_DAYS
+
+
+def disk_used_pct(path: str = "/") -> float:
+    """Percent used of the filesystem holding ``path`` (via ``shutil.disk_usage``)."""
+    usage = shutil.disk_usage(path)
+    return 100.0 * usage.used / usage.total
+
+
+def disk_free_gb(path: str = "/") -> float:
+    """Free GB on the filesystem holding ``path``."""
+    return shutil.disk_usage(path).free / (1024**3)
+
+
+def _resolve_issue_status(issue_n: int) -> str | None:
+    """Task status for ``issue_n`` (the parent folder name under tasks/), or
+    None when the task cannot be resolved. READ-ONLY — never mutates state."""
+    try:
+        return find_task_path(issue_n).parent.name
+    except (FileNotFoundError, OSError, ValueError):
+        return None
+
+
+def _discover_data_issue_numbers(data_roots: list[Path]) -> list[int]:
+    """Issue numbers that have an ``issue*<N>`` directory under ANY of the
+    given ``data/`` roots (both naming conventions). Returns sorted unique
+    ints; non-issue dirs are ignored."""
+    found: set[int] = set()
+    for data_root in data_roots:
+        if not data_root.is_dir():
+            continue
+        for child in sorted(data_root.iterdir()):
+            if not child.is_dir():
+                continue
+            name = child.name
+            for prefix in ("issue_", "issue"):
+                if name.startswith(prefix):
+                    rest = name[len(prefix) :]
+                    # rest is "<N>" or "<N>_<slug>"
+                    num = rest.split("_", 1)[0]
+                    if num.isdigit():
+                        found.add(int(num))
+                    break
+    return sorted(found)
+
+
+# ─── tier results ────────────────────────────────────────────────────────────
+
+
+@dataclass
+class TierResult:
+    name: str
+    bytes_freed: int = 0
+    detail: list[str] = field(default_factory=list)
+    skipped: bool = False
+    skip_reason: str = ""
+
+
+@dataclass
+class GuardResult:
+    used_pct_before: float
+    used_pct_after: float
+    free_gb_before: float
+    free_gb_after: float
+    threshold_pct: float
+    triggered: bool
+    apply: bool
+    tiers: list[TierResult] = field(default_factory=list)
+    still_over_after: bool = False
+
+    @property
+    def bytes_freed(self) -> int:
+        return sum(t.bytes_freed for t in self.tiers)
+
+
+# ─── tier (a): uv / pip caches ───────────────────────────────────────────────
+
+
+def _uv_cache_dir_size() -> int:
+    """Best-effort size of the uv cache dir (for before/after reporting)."""
+    rc, out, _ = _run(["uv", "cache", "dir"])
+    if rc != 0 or not out.strip():
+        return 0
+    cache_dir = Path(out.strip())
+    if not cache_dir.is_dir():
+        return 0
+    return _du_bytes(cache_dir)
+
+
+def clean_uv_cache(apply: bool) -> TierResult:
+    """Tier (a): ``uv cache prune`` — never ``--force``. A held uv lock makes
+    prune skip gracefully (it is non-destructive of in-use entries); a missing
+    uv binary or a prune error degrades to a logged skip, never a crash."""
+    res = TierResult(name="uv-cache")
+    before = _uv_cache_dir_size()
+    if not apply:
+        # Dry-run: report the cache size as the upper bound that prune could
+        # reclaim (prune keeps in-use entries, so this is an over-estimate).
+        res.bytes_freed = before
+        res.detail.append(f"uv cache ~{_fmt_gb(before)} (prune would reclaim unused entries)")
+        return res
+    rc, out, err = _run(["uv", "cache", "prune"], timeout=300)
+    if rc != 0:
+        res.skipped = True
+        res.skip_reason = (err or out or "uv cache prune failed").strip()[:200]
+        res.detail.append(f"uv cache prune skipped: {res.skip_reason}")
+        return res
+    after = _uv_cache_dir_size()
+    res.bytes_freed = max(0, before - after)
+    res.detail.append(f"uv cache prune freed {_fmt_gb(res.bytes_freed)}")
+    return res
+
+
+# ─── tier (b): terminal-issue download caches ────────────────────────────────
+
+
+def _all_worktree_data_roots() -> list[Path]:
+    """Every ``<worktree>/data`` dir under ``.claude/worktrees/`` (across all
+    worktrees, used to DISCOVER which issues have worktree data). The big
+    backlog lives here — the worktrees tree was 139 GB on 2026-06-26,
+    dominated by per-issue download/store data."""
+    wt_root = repo_root() / ".claude" / "worktrees"
+    if not wt_root.is_dir():
+        return []
+    return [c / "data" for c in sorted(wt_root.iterdir()) if (c / "data").is_dir()]
+
+
+def clean_terminal_download_caches(apply: bool, data_root: Path | None = None) -> TierResult:
+    """Tier (b): delete ``hf_dl`` / ``g*_dl`` caches for issues at a terminal
+    status (completed / archived / awaiting_promotion) — across BOTH the
+    repo-root ``data/`` AND every worktree ``data/`` (the live experiment's
+    data often lives in ``.claude/worktrees/issue-<N>*/data/``, #658 evidence;
+    139 GB of worktree data on 2026-06-26). Status is resolved READ-ONLY; an
+    active or unresolvable issue is skipped (its cache may be in use — #658 is
+    mid-analysis writing tensors into its worktree). Reuses
+    ``clean_issue_downloads`` so the keep/delete contract (``store/`` +
+    ``eval_results/`` always kept, in worktrees too) is identical to the Step-8
+    helper.
+
+    With an explicit ``data_root`` (tests) the search is scoped to that single
+    root; in production (``data_root is None``) it spans repo-root + all
+    worktree data roots."""
+    res = TierResult(name="terminal-download-caches")
+    if data_root is not None:
+        discover_roots = [data_root]
+    else:
+        discover_roots = [repo_root() / "data", *_all_worktree_data_roots()]
+    for issue_n in _discover_data_issue_numbers(discover_roots):
+        status = _resolve_issue_status(issue_n)
+        if status not in TERMINAL_CACHE_REAP_STATUSES:
+            res.detail.append(
+                f"issue {issue_n}: kept (status={status or 'unresolved'} not terminal)"
+            )
+            continue
+        # data_root=data_root forwards the test-scoping; None lets
+        # clean_issue_downloads resolve repo-root + this issue's worktree(s).
+        sub = clean_issue_downloads(issue_n, apply=apply, data_root=data_root)
+        res.bytes_freed += sub.bytes_freed
+        for name in sub.removed:
+            verb = "removed" if apply else "would remove"
+            res.detail.append(
+                f"issue {issue_n} ({status}): {verb} {name} "
+                f"[{_fmt_gb(sub.sizes_bytes.get(name, 0))}]"
+            )
+        for name in sub.failed:
+            res.detail.append(f"issue {issue_n}: FAILED to remove {name}")
+    return res
+
+
+# ─── tier (c): stale logs ────────────────────────────────────────────────────
+
+
+def _stale_log_files(roots: list[Path], max_age_seconds: float, now: float) -> list[Path]:
+    """``*.log`` files under ``roots`` older than ``max_age_seconds``.
+
+    For ``logs/`` the search is recursive (``rglob``); for a flat dir like
+    ``/tmp`` only the top level is scanned (``glob``) — a recursive /tmp walk
+    is both slow and risks unrelated trees. The distinction is encoded by the
+    caller passing the right roots. A stat error on one file skips it."""
+    out: list[Path] = []
+    for root in roots:
+        if not root.is_dir():
+            continue
+        # logs/ is recursive; /tmp is top-level only (see docstring).
+        pattern_iter = root.rglob("*.log") if root.name == "logs" else root.glob("*.log")
+        for p in pattern_iter:
+            try:
+                if not p.is_file() or p.is_symlink():
+                    continue
+                age = now - p.stat().st_mtime
+            except OSError:
+                continue
+            if age > max_age_seconds:
+                out.append(p)
+    return out
+
+
+def clean_stale_logs(
+    apply: bool,
+    max_age_days: float,
+    now: float | None = None,
+    extra_roots: list[Path] | None = None,
+) -> TierResult:
+    """Tier (c): delete ``logs/**/*.log`` + ``/tmp/*.log`` older than
+    ``max_age_days``. ``extra_roots`` overrides the default root set (tests
+    point it at a temp filesystem)."""
+    res = TierResult(name="stale-logs")
+    now = time.time() if now is None else now
+    max_age_seconds = max_age_days * 86400.0
+    roots = extra_roots if extra_roots is not None else [repo_root() / "logs", Path("/tmp")]
+    for f in _stale_log_files(roots, max_age_seconds, now):
+        try:
+            size = f.stat().st_size
+        except OSError:
+            size = 0
+        if not apply:
+            res.bytes_freed += size
+            res.detail.append(f"would remove {f} [{_fmt_gb(size)}]")
+            continue
+        try:
+            f.unlink()
+        except OSError as exc:
+            res.detail.append(f"FAILED to remove {f}: {exc}")
+            continue
+        res.bytes_freed += size
+        res.detail.append(f"removed {f} [{_fmt_gb(size)}]")
+    return res
+
+
+# ─── orchestration ───────────────────────────────────────────────────────────
+
+
+def run_guard(
+    apply: bool,
+    *,
+    threshold: float | None = None,
+    log_max_age: float | None = None,
+    data_root: Path | None = None,
+    disk_path: str = "/",
+    now: float | None = None,
+) -> GuardResult:
+    """Read disk usage, and if over threshold run the three cleanup tiers.
+
+    Pure-ish orchestration: all side effects are gated on ``apply`` inside the
+    tier helpers. When usage is under the threshold the tiers are NOT run and
+    ``triggered`` is False (a no-op pass)."""
+    thr = threshold if threshold is not None else threshold_pct()
+    age = log_max_age if log_max_age is not None else log_max_age_days()
+    used_before = disk_used_pct(disk_path)
+    free_before = disk_free_gb(disk_path)
+
+    res = GuardResult(
+        used_pct_before=used_before,
+        used_pct_after=used_before,
+        free_gb_before=free_before,
+        free_gb_after=free_before,
+        threshold_pct=thr,
+        triggered=over_threshold(used_before, thr),
+        apply=apply,
+    )
+    if not res.triggered:
+        return res
+
+    res.tiers.append(clean_uv_cache(apply))
+    res.tiers.append(clean_terminal_download_caches(apply, data_root=data_root))
+    res.tiers.append(clean_stale_logs(apply, age, now=now))
+
+    res.used_pct_after = disk_used_pct(disk_path)
+    res.free_gb_after = disk_free_gb(disk_path)
+    res.still_over_after = over_threshold(res.used_pct_after, thr)
+    return res
+
+
+# ─── shell helpers ───────────────────────────────────────────────────────────
+
+
+def _run(cmd: list[str], timeout: int = 30) -> tuple[int, str, str]:
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return r.returncode, r.stdout.strip(), r.stderr.strip()
+    except subprocess.TimeoutExpired:
+        return -1, "", "timeout"
+    except FileNotFoundError:
+        return -1, "", f"command not found: {cmd[0]}"
+    except OSError as e:
+        return -1, "", str(e)
+
+
+def _du_bytes(path: Path) -> int:
+    rc, out, _ = _run(["du", "-sx", "--block-size=1", str(path)], timeout=120)
+    if rc != 0 or not out.strip():
+        return 0
+    with contextlib.suppress(ValueError, IndexError):
+        return int(out.split()[0])
+    return 0
+
+
+def _fmt_gb(n: int) -> str:
+    return f"{n / 1e9:.2f}G"
+
+
+def _telegram_push(msg: str, apply: bool) -> bool:
+    """Fail-soft phone push when the disk stays over threshold after cleanup.
+
+    Mirrors autonomous_session_watch._telegram_push: a missing script or a
+    failed call is logged loudly but NEVER raises (the push is observability).
+    Skipped entirely in report-only mode."""
+    override = os.environ.get("EPM_TELEGRAM_PUSH_SCRIPT", "").strip()
+    script = Path(override) if override else _TELEGRAM_PUSH_SCRIPT_DEFAULT
+    if not apply:
+        # stderr, not stdout — keeps the --json stdout exactly one JSON object.
+        print(f"  [report-only] would telegram-push: {msg[:120]}", file=sys.stderr)
+        return False
+    if not script.is_file():
+        print(f"  WARNING: telegram push script missing at {script}; push dropped", file=sys.stderr)
+        return False
+    try:
+        r = subprocess.run(
+            ["bash", str(script), msg],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env={**os.environ, "NOTIF_CAT": "research"},
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  WARNING: telegram push failed: {e}", file=sys.stderr)
+        return False
+    if r.returncode != 0:
+        print(
+            f"  WARNING: telegram push failed: {(r.stderr or r.stdout).strip()[:200]}",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
+def _print_report(res: GuardResult) -> None:
+    verb = "apply" if res.apply else "report-only"
+    print(
+        f"vm_disk_guard ({verb}): / at {res.used_pct_before:.1f}% used "
+        f"({res.free_gb_before:.1f}G free), threshold {res.threshold_pct:.0f}%"
+    )
+    if not res.triggered:
+        print("  under threshold — no cleanup needed")
+        return
+    for tier in res.tiers:
+        head = f"  [{tier.name}] freed {_fmt_gb(tier.bytes_freed)}"
+        if tier.skipped:
+            head += f" (skipped: {tier.skip_reason})"
+        print(head)
+        for line in tier.detail:
+            print(f"      {line}")
+    print(
+        f"  total freed {_fmt_gb(res.bytes_freed)} | "
+        f"/ now {res.used_pct_after:.1f}% used ({res.free_gb_after:.1f}G free)"
+    )
+    if res.still_over_after:
+        print(
+            f"  !! WARNING: / STILL at {res.used_pct_after:.1f}% used after cleanup "
+            f"(threshold {res.threshold_pct:.0f}%) — manual triage needed",
+            file=sys.stderr,
+        )
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(
+        description=(
+            "VM root-disk guard: tiered safe cleanup when / crosses a "
+            "usage threshold. Report-only by default; --apply to act."
+        )
+    )
+    ap.add_argument(
+        "--apply",
+        action="store_true",
+        help="Actually clean (default: report what would be freed).",
+    )
+    ap.add_argument(
+        "--threshold",
+        type=float,
+        default=None,
+        help=f"Usage %% of / above which cleanup runs (default {DEFAULT_THRESHOLD_PCT}; "
+        "env EPS_VM_DISK_THRESHOLD).",
+    )
+    ap.add_argument(
+        "--log-max-age-days",
+        type=float,
+        default=None,
+        help=f"Logs older than this many days are reclaimed (default {DEFAULT_LOG_MAX_AGE_DAYS}; "
+        "env EPS_VM_DISK_LOG_MAX_AGE_DAYS).",
+    )
+    ap.add_argument("--json", action="store_true", help="Emit a JSON summary.")
+    args = ap.parse_args(argv)
+
+    res = run_guard(args.apply, threshold=args.threshold, log_max_age=args.log_max_age_days)
+
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "apply": res.apply,
+                    "threshold_pct": res.threshold_pct,
+                    "used_pct_before": round(res.used_pct_before, 2),
+                    "used_pct_after": round(res.used_pct_after, 2),
+                    "free_gb_before": round(res.free_gb_before, 2),
+                    "free_gb_after": round(res.free_gb_after, 2),
+                    "triggered": res.triggered,
+                    "bytes_freed": res.bytes_freed,
+                    "still_over_after": res.still_over_after,
+                    "tiers": [
+                        {
+                            "name": t.name,
+                            "bytes_freed": t.bytes_freed,
+                            "skipped": t.skipped,
+                            "skip_reason": t.skip_reason,
+                            "detail": t.detail,
+                        }
+                        for t in res.tiers
+                    ],
+                }
+            )
+        )
+    else:
+        _print_report(res)
+
+    if res.still_over_after:
+        _telegram_push(
+            f"VM disk guard: / still {res.used_pct_after:.0f}% full after cleanup "
+            f"(freed {_fmt_gb(res.bytes_freed)}); manual triage needed",
+            res.apply,
+        )
+
+    # Exit 2 when the disk is still over threshold after cleanup (signals the
+    # cron wrapper to keep the alarm channel hot); 0 otherwise.
+    return 2 if res.still_over_after else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

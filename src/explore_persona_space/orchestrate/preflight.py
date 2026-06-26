@@ -689,6 +689,45 @@ def check_disk_budget(report: PreflightReport, planned_footprint_gb: float | Non
         )
 
 
+#: VM root-disk advisory thresholds (WARN-only). The local VM root disk (``/``)
+#: fills because each experiment downloads source data into
+#: ``data/issue_<N>/hf_dl`` caches that nothing reclaims (incident 2026-06-25:
+#: ``/`` hit 100% full, one finished experiment held 97 GB). Preflight surfaces
+#: a heads-up so a near-full root disk is caught BEFORE a launch wedges git /
+#: task.py across sessions; remediation is ``scripts/vm_disk_guard.py --apply``.
+VM_ROOT_DISK_WARN_PCT = 90.0
+VM_ROOT_DISK_WARN_FREE_GB = 20.0
+
+
+def check_vm_root_disk(
+    report: PreflightReport,
+    warn_pct: float = VM_ROOT_DISK_WARN_PCT,
+    warn_free_gb: float = VM_ROOT_DISK_WARN_FREE_GB,
+):
+    """WARN (never FAIL) when the local VM root disk ``/`` is nearly full.
+
+    This is the LOCAL orchestration disk, distinct from
+    :func:`check_disk_space`'s experiment-surface probe (``/workspace`` on
+    RunPod, ``$SCRATCH`` on the cluster). On RunPod / cluster the experiment
+    runs off-box, so ``/`` is the VM's own root — its exhaustion wedges git /
+    task.py / dispatch rather than the training job, so a heads-up here is
+    advisory, not a hard gate. A read error degrades to a single warning."""
+    try:
+        usage = shutil.disk_usage("/")
+    except OSError as e:
+        report.add_warning(f"Could not read VM root-disk usage on /: {e}")
+        return
+    used_pct = 100.0 * usage.used / usage.total
+    free_gb = usage.free / (1024**3)
+    if used_pct > warn_pct or free_gb < warn_free_gb:
+        report.add_warning(
+            f"VM root disk / is {used_pct:.1f}% used ({free_gb:.1f} GB free) — "
+            f"near full (warn at {warn_pct:.0f}% used / {warn_free_gb:.0f} GB free). "
+            f"Run: uv run python scripts/vm_disk_guard.py --apply "
+            f"(clears re-downloadable data/issue_*/hf_dl caches + stale logs)."
+        )
+
+
 def check_gpus(report: PreflightReport, require_gpu: bool, min_free_mb: int):
     """Check GPU availability and memory."""
     rc, out, err = _run(
@@ -935,6 +974,7 @@ def preflight_check(
 
     check_disk_space(report, min_disk_gb, quota_gb=effective_quota_gb)
     check_disk_budget(report, planned_footprint_gb)
+    check_vm_root_disk(report)
     check_gpus(report, require_gpu, min_gpu_free_mb)
     check_hf_home(report)
     check_env_vars(report, required_env_vars)

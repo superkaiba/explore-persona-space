@@ -3996,6 +3996,33 @@ URLs.
   teardown call only if the task has a `keep-running` tag for known
   follow-up work in the same session.
 
+  **VM download-cache cleanup (post-#disk-100pct).** The experiment
+  downloaded its source data from HF into VM-local caches under
+  `data/issue_<N>/hf_dl/` + `data/issue_<N>/g*_dl/` — in the repo-root
+  `data/` AND in this issue's worktree
+  (`.claude/worktrees/issue-<N>*/data/issue_<N>/`, where the live run
+  usually writes; the worktrees tree hit 139 GB on 2026-06-26). Nothing
+  else reclaims them, and a single finished experiment can pin ~100 GB
+  on the VM root disk (incident 2026-06-25: `/` hit 100% full). These are
+  re-downloadable CACHES (no on-HF presence check needed), and `store/`
+  + `eval_results/` are NEVER touched (in repo-root OR worktrees). After
+  the teardown above (artifacts are now confirmed at permanent URLs),
+  clean this issue's download caches — the helper sweeps both the
+  repo-root and worktree copies:
+
+  ```bash
+  # Re-downloadable hf_dl/g*_dl caches only (repo-root + worktree);
+  # store/ + eval_results/ kept.
+  uv run python scripts/clean_experiment_downloads.py <N> --apply
+  ```
+
+  Auto-continue (NOT a gate); idempotent — a re-entry on an
+  already-cleaned issue is a no-op. The fleet-wide backstop for caches
+  that escape this path (crashed runs, follow-up rounds) is the
+  `vm_disk_guard.py` cron (CLAUDE.md § Disk hygiene). Skip only when the
+  task has a `keep-running` tag (the same-session follow-up may re-use the
+  cache).
+
   **Upload-verification guard (post-#444).** `pod.py terminate` refuses
   to destroy an `epm-issue-<N>` / `pod-<N>` for a `kind: experiment`
   task unless an `epm:upload-verification PASS` marker exists on task
