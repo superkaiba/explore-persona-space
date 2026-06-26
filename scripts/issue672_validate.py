@@ -102,6 +102,12 @@ FAILOVER_REASON_RE = re.compile(r"gcp_workload_failover_runpod")
 POLLER_LOOP_BUDGET_S = 10 * 60  # overall Section-B post-injection poll window
 POLLER_INTERVAL_S = 30  # seconds between one-shot backend_poll.py invocations
 POLLER_CALL_TIMEOUT_S = 60  # per-invocation subprocess timeout
+# Integer sentinel for a per-call subprocess timeout, so ``poller_exit_codes``
+# stays a uniform ``list[int]`` in the section_B.json audit trail (concern:
+# section-b-poller-timeout-exit-code-typing). Negative ⇒ it can never collide
+# with a real ``Popen.returncode`` (≥0 on normal exit; signaled exits use the
+# negative SIGNAL number, never 124). 124 mirrors GNU ``timeout``'s convention.
+POLLER_TIMEOUT_EXIT_CODE = -124
 # After the FIRST scoped failover marker lands, keep polling for this long with
 # NO new marker before the FINAL scoped count — so a second failover landing
 # seconds later (idempotency breach, the H-B kill criterion) is not missed
@@ -647,9 +653,18 @@ def _invoke_poller_once(issue: int) -> dict:
     The poller is one-shot: each call polls the GCP VM once, runs the
     async-failover discrimination, and (on the poll where the VM has reached a
     terminal/wedged state) drives ``_failover_dead_gcp_to_runpod``. Returns an
-    invocation-record dict ``{ts, exit_code, stdout_head}`` for the
-    ``poller_invocations`` audit trail. A subprocess timeout is recorded with
-    ``exit_code=None`` (the call is treated as a non-terminal tick, not a crash).
+    invocation-record dict ``{ts, exit_code, stdout_head[, timed_out]}`` for the
+    ``poller_invocations`` audit trail.
+
+    A subprocess timeout is recorded as the INTEGER sentinel
+    ``exit_code=POLLER_TIMEOUT_EXIT_CODE`` (``-124``) plus an explicit
+    ``timed_out=True`` flag (the call is treated as a non-terminal tick, not a
+    crash). The sentinel keeps ``poller_exit_codes`` a uniform ``list[int]`` —
+    a ``None`` would serialize into the Section-B audit trail and break the
+    declared contract (concern: section-b-poller-timeout-exit-code-typing).
+    ``-124`` is negative so it can never collide with a real ``Popen.returncode``
+    (non-negative for normal exits, negative for signaled exits use the SIGNAL
+    number, never 124).
     """
     ts = datetime.datetime.now(datetime.UTC).isoformat()
     try:
@@ -657,7 +672,12 @@ def _invoke_poller_once(issue: int) -> dict:
             section_b_poller_argv(issue), dry_run=False, timeout=POLLER_CALL_TIMEOUT_S
         )
     except subprocess.TimeoutExpired:
-        return {"ts": ts, "exit_code": None, "stdout_head": "[timeout]"}
+        return {
+            "ts": ts,
+            "exit_code": POLLER_TIMEOUT_EXIT_CODE,
+            "stdout_head": "[timeout]",
+            "timed_out": True,
+        }
     return {"ts": ts, "exit_code": rc, "stdout_head": (out or "").strip()[:300]}
 
 
@@ -726,7 +746,12 @@ def run_section_b(issue: int, *, dry_run: bool) -> dict:
     poller is re-invoked synchronously on a cadence AFTER injection +
     termination, which is when the failover actually fires. Every Section-B
     return surfaces ``poller_invocations`` (round-3 Major #1/#4: the per-call
-    audit trail) so an early fallback never omits the poller-call record.
+    audit trail) so an early fallback never omits the poller-call record. Each
+    invocation record is ``{ts, exit_code: int, stdout_head[, timed_out: bool]}``
+    and ``poller_exit_codes`` is the uniform ``list[int]`` of its ``exit_code``s;
+    a per-call subprocess timeout serializes as the integer sentinel
+    ``POLLER_TIMEOUT_EXIT_CODE`` (``-124``) with ``timed_out=True`` — never a
+    ``None`` (concern: section-b-poller-timeout-exit-code-typing).
 
     NOTE: the live launch (and even the dry-run scaffolding) is normally driven
     by the experimenter step on the VM (where ``gcloud`` is authenticated). The
