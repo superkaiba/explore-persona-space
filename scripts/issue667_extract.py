@@ -76,6 +76,7 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
 
+from explore_persona_space.analysis.extraction import extract_layer_activations  # noqa: E402
 from explore_persona_space.analysis.issue667 import (  # noqa: E402
     ALL_LAYERS,
     BASE_MODEL,
@@ -416,12 +417,15 @@ def _mean_resp_acts(
     if span_end <= p:
         raise RuntimeError("empty response span — response produced zero tokens")
     ids = torch.tensor([full_ids], dtype=torch.long, device=device)
-    out_b = base_model(ids, output_hidden_states=True)
-    out_t = trained_model(ids, output_hidden_states=True)
+    # Memory-safe subset read: hook only the requested blocks (block index li ==
+    # hs[li+1]) instead of materializing all L+1 layers (#671). acts[li] is the
+    # SAME tensor the old out.hidden_states[li + 1] read produced.
+    acts_b = extract_layer_activations(base_model, ids, layers)
+    acts_t = extract_layer_activations(trained_model, ids, layers)
     res: dict[int, tuple[np.ndarray, np.ndarray]] = {}
     for li in layers:
-        hb = out_b.hidden_states[li + 1][0, p:span_end, :].float().mean(dim=0).cpu().numpy()
-        ht = out_t.hidden_states[li + 1][0, p:span_end, :].float().mean(dim=0).cpu().numpy()
+        hb = acts_b[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy()
+        ht = acts_t[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy()
         res[li] = (hb.astype(np.float32), ht.astype(np.float32))
     return res
 
@@ -680,10 +684,10 @@ def _mean_resp_acts_single(
     if len(full_ids) <= p:
         return {li: np.zeros(base_model.config.hidden_size, dtype=np.float32) for li in layers}
     ids = torch.tensor([full_ids], dtype=torch.long, device=device)
-    out = base_model(ids, output_hidden_states=True)
+    # Memory-safe subset read (#671): hook only `layers` (block index li == hs[li+1]).
+    acts = extract_layer_activations(base_model, ids, layers)  # {li: (1, T, H)}
     return {
-        li: out.hidden_states[li + 1][0, p:, :].float().mean(dim=0).cpu().numpy().astype(np.float32)
-        for li in layers
+        li: acts[li][0, p:, :].float().mean(dim=0).cpu().numpy().astype(np.float32) for li in layers
     }
 
 
