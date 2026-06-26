@@ -2726,9 +2726,49 @@ def phase_ablation(cells, *, out_root: Path, mode: str) -> dict:
             f"  [ablation] no rank-{i653.ABLATION_RUNG} cells in subset; nothing to ablate",
             flush=True,
         )
-        return {"ablation_files": [], "n_cells": 0}
+        return {
+            "ablation_files": [],
+            "n_cells": 0,
+            "n_dropped_non_install": 0,
+            "n_resumed": 0,
+        }
     written: list[str] = []
+    n_dropped = 0
+    n_resumed = 0
     for c in abl_cells:
+        # §6Δ.3 data gate (#653 round 6): ablation MUST NOT read off cells that
+        # select_checkpoint dropped (no floor-clearing checkpoint) — the dx phase
+        # already skips them (line 1831) so dx_geometry_<cell>.json is absent and
+        # _ablation_gpu_read would raise FileNotFoundError. Mirror the dx gate
+        # exactly. The analyzer's install-floor pass surfaces the drop from the
+        # install JSON (dropped_non_install_cells), so the skip itself is silent
+        # in the output. Outside the try/finally because there is no merge to
+        # free for a dropped cell (the dx skip already cleaned, and ablation never
+        # opened one).
+        select_man = _read_select_manifest(c, out_root)
+        if select_man is not None and select_man.get("dropped_non_install"):
+            print(
+                f"  [ablation] {c.cell_id}: SKIP — dropped by select_checkpoint "
+                f"(no floor-clearing checkpoint, §6Δ.3)",
+                flush=True,
+            )
+            n_dropped += 1
+            continue
+        # Resume-skip (#653 round 6): a re-entered ablation phase MUST skip cells
+        # whose ablation_<cell>.json already exists — re-running re-merges the
+        # ~15 GB read adapter and re-runs the GPU install probe (~10 min/cell).
+        # The existing file is the durable record; a partial file is not possible
+        # because the writer is atomic (write_text). Mirrors select_checkpoint's
+        # resume-skip pattern at line 1605.
+        out_path_existing = out_dir / f"ablation_{c.cell_id}.json"
+        if out_path_existing.exists():
+            print(
+                f"  [ablation] {c.cell_id}: SKIP — ablation_<cell>.json already exists (resume)",
+                flush=True,
+            )
+            written.append(str(out_path_existing))
+            n_resumed += 1
+            continue
         # Per-cell try/finally (MAJOR 1, #653 round 5): the read-merge cleanup must
         # fire even when the GPU ablation read / re-judge / JSON write RAISES, not
         # only on the normal path — a mid-cell failure otherwise leaks the merge.
@@ -2759,7 +2799,12 @@ def phase_ablation(cells, *, out_root: Path, mode: str) -> dict:
             # frees it too (MAJOR 1, #653 round 5). No-op on CPU stub / full-FT.
             if mode != i653.RUN_MODE_CPU_STUB:
                 _delete_read_merge_for_cell(c, out_root)
-    return {"ablation_files": written, "n_cells": len(abl_cells)}
+    return {
+        "ablation_files": written,
+        "n_cells": len(abl_cells),
+        "n_dropped_non_install": n_dropped,
+        "n_resumed": n_resumed,
+    }
 
 
 def _load_arm_a_rho_top_directions(out_root: Path) -> dict[str, list[float]]:
