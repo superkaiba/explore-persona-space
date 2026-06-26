@@ -4600,3 +4600,116 @@ def test_launch_argv_sets_no_restart_on_failure_and_maintenance_policy_terminate
     assert "--no-restart-on-failure" in argv
     assert "--maintenance-policy=TERMINATE" in argv
     assert "--instance-termination-action=DELETE" in argv
+
+
+# ---------------------------------------------------------------------------
+# issue #669 code-review r1 (Blocker A): the watchdog probes the two endpoints
+# SEPARATELY — fails resets on OR-of-successes, increments ONLY on BOTH-fail.
+# Executes the rendered bash stanza with stubbed curl (the green substring tests
+# never RAN the bash, so they were blind to the inverted `curl A && curl B`
+# conjunction that incremented on a SINGLE-endpoint failure).
+# ---------------------------------------------------------------------------
+
+
+def _extract_watchdog_stanza(script: str) -> str:
+    """Slice the ``_eps_reachability_watchdog() { ... }`` function body out of a
+    rendered startup script by brace-matching from its definition."""
+    start = script.index("_eps_reachability_watchdog() {")
+    # Brace-match from the opening '{' to the matching '}'.
+    depth = 0
+    i = script.index("{", start)
+    while i < len(script):
+        if script[i] == "{":
+            depth += 1
+        elif script[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return script[start : i + 1]
+        i += 1
+    raise AssertionError("watchdog function braces did not balance")
+
+
+def _run_watchdog(meta_pattern_succeeds: bool, ext_pattern_succeeds: bool, max_iters: int = 15):
+    """Run the rendered watchdog stanza with stubbed ``curl`` / ``_eps_phase`` /
+    shutdown ladder.
+
+    ``curl`` returns success/failure by URL pattern (metadata 169.254.169.254 vs
+    huggingface.co). ``sleep`` is stubbed to a no-op AND a guard exits the loop
+    cleanly after ``max_iters`` iterations so a healthy (always-reset) loop
+    terminates instead of spinning forever. Returns the (rc, stdout) of the run;
+    ``PHASE_CALLED:wedged`` / ``SHUTDOWN_CALLED`` in stdout flags that the
+    terminal wedge path fired.
+    """
+    import subprocess
+    import tempfile
+
+    stanza = _extract_watchdog_stanza(
+        render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    )
+    meta_rc = 0 if meta_pattern_succeeds else 1
+    ext_rc = 0 if ext_pattern_succeeds else 1
+    shim = f"""#!/bin/bash
+set -uo pipefail
+_iters=0
+# Stub the shutdown ladder + phase writer so the terminal path is OBSERVABLE
+# (and never actually powers anything off in the test).
+_eps_phase() {{ echo "PHASE_CALLED:$1"; }}
+shutdown() {{ echo "SHUTDOWN_CALLED"; exit 0; }}
+poweroff() {{ echo "POWEROFF_CALLED"; exit 0; }}
+halt() {{ echo "HALT_CALLED"; exit 0; }}
+# Route curl by URL pattern: metadata server vs the external HF endpoint.
+curl() {{
+  for a in "$@"; do
+    case "$a" in
+      *169.254.169.254*) return {meta_rc} ;;
+      *huggingface.co*) return {ext_rc} ;;
+    esac
+  done
+  return 0
+}}
+# No-op sleep + an iteration cap so a healthy (always-reset) loop terminates.
+sleep() {{ _iters=$((_iters + 1)); if [ "$_iters" -gt {max_iters} ]; then exit 0; fi; }}
+{stanza}
+_eps_reachability_watchdog
+"""
+    with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as fh:
+        fh.write(shim)
+        path = fh.name
+    proc = subprocess.run(["bash", path], capture_output=True, text=True, timeout=30)
+    return proc.returncode, proc.stdout
+
+
+def test_watchdog_resets_when_metadata_succeeds_and_external_fails() -> None:
+    """Blocker A: metadata healthy + HF down → ``fails`` resets every iteration
+    (OR-of-successes), so the watchdog NEVER reaches the threshold and NEVER
+    writes ``eps/phase=wedged`` or shuts the VM down. This is the exact false
+    positive the pre-fix ``curl A && curl B`` conjunction produced (a transient
+    HF outage on a HEALTHY VM)."""
+    _rc, out = _run_watchdog(meta_pattern_succeeds=True, ext_pattern_succeeds=False)
+    assert "PHASE_CALLED:wedged" not in out, out
+    assert "SHUTDOWN_CALLED" not in out, out
+
+
+def test_watchdog_resets_when_external_succeeds_and_metadata_fails() -> None:
+    """Blocker A (symmetric): HF reachable + metadata probe failing → still a
+    reset every iteration, no wedge, no shutdown."""
+    _rc, out = _run_watchdog(meta_pattern_succeeds=False, ext_pattern_succeeds=True)
+    assert "PHASE_CALLED:wedged" not in out, out
+    assert "SHUTDOWN_CALLED" not in out, out
+
+
+def test_watchdog_terminates_only_when_both_probes_fail() -> None:
+    """Blocker A (the true-positive): only when BOTH probes fail for the full
+    threshold does ``fails`` reach 10 → ``eps/phase=wedged`` is written and the
+    shutdown ladder fires. Confirms the fix did not break genuine detection."""
+    _rc, out = _run_watchdog(meta_pattern_succeeds=False, ext_pattern_succeeds=False)
+    assert "PHASE_CALLED:wedged" in out, out
+    assert "SHUTDOWN_CALLED" in out, out
+
+
+def test_watchdog_resets_when_both_probes_succeed() -> None:
+    """Healthy VM (both endpoints answer): no wedge, no shutdown — the obvious
+    happy path, pinned alongside the OR-reset cases for completeness."""
+    _rc, out = _run_watchdog(meta_pattern_succeeds=True, ext_pattern_succeeds=True)
+    assert "PHASE_CALLED:wedged" not in out, out
+    assert "SHUTDOWN_CALLED" not in out, out
