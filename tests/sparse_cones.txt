@@ -1,0 +1,23 @@
+# Sparse-checkout cones the `tests/` suite reads from OTHER issues' committed
+# artifacts. `scripts/new_worktree.sh` pre-adds each line below at creation so a
+# sparse worktree (the /issue + feature-branch default) passes the full pytest
+# suite — the Step 9c test-verdict gate — WITHOUT a manual `sparse-checkout add`.
+#
+# Format: one cone DIRECTORY per line (cone mode takes directories, not files);
+#   blank lines + `#`-comments ignored; whitespace-bearing paths are refused
+#   loudly by new_worktree.sh (they defeat the unquoted cone expansion).
+#
+# When a NEW test starts reading repo_root()/eval_results/issue_<M>/... as a
+# committed fixture/reference/integration input (not a tmp_path write), add the
+# issue's eval_results dir here. Grounded reads as of 2026-06-26:
+#
+#   eval_results/issue_545  — test_issue545_v2_onpolicy.py reads v1_committed_root()
+#                             (L_matrix.json, v1_reselect.json, preregistration_v2.json)
+#   eval_results/issue_521  — test_issue651.py reads scripts/issue651_canary.py's
+#                             REF_JSON (svd/same_marker_seed42.json) + v2_adapter_provenance.json
+#   eval_results/issue_257  — test_issue_360_target_logprobs.py reads run_seed42_v2[_coref]/headline_numbers.json
+#   eval_results/issue_276  — test_issue_360_target_logprobs.py reads pre_poison_similarity.json + slash_anth_followup/headline_numbers.json
+eval_results/issue_545
+eval_results/issue_521
+eval_results/issue_257
+eval_results/issue_276
