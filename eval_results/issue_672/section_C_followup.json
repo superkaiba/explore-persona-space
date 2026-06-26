@@ -1,0 +1,19 @@
+{
+  "pytest": {
+    "tests/test_gcp_backend.py": {"rc": 0, "summary": "203 passed in 1.14s"},
+    "tests/test_backend_poll.py": {"rc": 0, "summary": "18 passed in 0.32s"},
+    "tests/test_issue671_extraction_hooks.py": {"rc": 0, "summary": "8 passed in 52.51s"},
+    "tests/test_failure_classifier.py": {"rc": 0, "summary": "21 passed in 0.39s"}
+  },
+  "lints": {
+    "workflow_lint.py --check-batch-judge-client": {"rc": 0, "summary": "PASS"},
+    "workflow_lint.py": {"rc": 0, "summary": "PASS"}
+  },
+  "pass": true,
+  "pass_reason": "All 4 pytest files green (203+18+8+21 = 250 passed) + both lints PASS. Identical to parent run's Section C.",
+  "reproducibility": {
+    "git_commit": "59e07b92f0",
+    "branch": "main",
+    "ran_at": "2026-06-26T17:29Z"
+  }
+}
