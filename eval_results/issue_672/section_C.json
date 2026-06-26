@@ -1,0 +1,51 @@
+{
+  "pytest": {
+    "tests/test_gcp_backend.py": {
+      "rc": 0,
+      "summary": {
+        "passed": 203,
+        "failed": 0,
+        "errors": 0
+      },
+      "green": true
+    },
+    "tests/test_backend_poll.py": {
+      "rc": 0,
+      "summary": {
+        "passed": 18,
+        "failed": 0,
+        "errors": 0
+      },
+      "green": true
+    },
+    "tests/test_issue671_extraction_hooks.py": {
+      "rc": 0,
+      "summary": {
+        "passed": 8,
+        "failed": 0,
+        "errors": 0
+      },
+      "green": true
+    },
+    "tests/test_failure_classifier.py": {
+      "rc": 0,
+      "summary": {
+        "passed": 21,
+        "failed": 0,
+        "errors": 0
+      },
+      "green": true
+    }
+  },
+  "lint_exit_codes": {
+    "batch_judge_client": 0,
+    "no_flags_default": 0
+  },
+  "pass": true,
+  "dry_run": false,
+  "reproducibility": {
+    "git_commit": "5da9b7855945bbb62cd07190c4f572371dd2aead",
+    "ts": "2026-06-26T15:28:37.674381+00:00",
+    "python": "3.11.15"
+  }
+}

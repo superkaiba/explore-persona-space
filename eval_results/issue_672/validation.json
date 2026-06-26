@@ -1,0 +1,114 @@
+{
+  "issue": 672,
+  "experiment": "issue672_gcp_validation",
+  "section_A": {
+    "memory_log_path": null,
+    "n_iters_logged": 0,
+    "npz_written": false,
+    "hf_upload_verified": false,
+    "sku_landed": null,
+    "memory_log": [],
+    "reserved": null,
+    "nvidia_smi": null,
+    "allocated_secondary": null,
+    "coverage_issue": "Section-A GPU smoke not launched live: orchestrator-side dispatch-router behavior (dispatch_issue.py launch --backend gcp + --intent debug routed to RunPod terminal rung; details in validation.json.section_A.notes). The fixed-extractor code IS verified at the worktree (tests/test_issue671_extraction_hooks.py 8/8 green in Section C); only the LIVE A100 forward-pass evidence is missing.",
+    "pass": false,
+    "pass_reason": "Live A100 smoke could not be launched \u2014 dispatch-router routed --backend gcp + --intent debug to RunPod terminal rung (pod-672 was provisioned and hung in SSH bootstrap; terminated cleanly with no artifacts produced). Recipe + code verified by the round-1/2/3 review chain and #671's byte-identity tests; live forward-pass evidence pending.",
+    "notes": {
+      "incident": "Orchestrator launched the validator with --section all from the local VM. Section B's `dispatch_issue.py launch --issue 672 --intent debug --backend gcp ...` posted two epm:backend-selected intermediate markers (rungs ondemand_a100_80, ondemand_a100_40), then fell through to RunPod terminal rung. Pod-672 (1xH100) was provisioned and bootstrap_pod.sh hung in SSH for ~6 min; manually terminated.",
+      "diagnostic_attempts": [
+        "argparse confirmed args.backend='gcp' parses correctly",
+        "build_run_spec(backend_value='gcp') returns spec.backend='gcp' correctly",
+        "_post_intermediate_marker hardcodes requested_kind=None \u2014 the markers can't distinguish auto-chain vs explicit-override paths",
+        "Root cause: unclear (capacity miss on both A100 rungs + workload failover to RunPod, OR a dispatch-router bug). Out of scope for this validation task to fix; filed as a follow-up workflow-fix candidate."
+      ],
+      "what_is_verified_offline": [
+        "scripts/issue667_extract.py memory-log helper is byte-additive (extractor reads unchanged; tests/test_issue671_extraction_hooks.py 8/8 GREEN per Section C)",
+        "scripts/issue672_validate.py Section-A coverage gate enforces >=30 entries + max iter >=30 + >=2 post-warmup non-None per PRIMARY gauge (round-3 fix; verified by unit tests in tests/test_issue672_validation.py)",
+        "The --log-mem-every 1 dispatch flag (round-3 Critical #2 fix) is correctly threaded into the section_a_dispatch_argv() construction",
+        "All 5 round-1/2/3 reconciler-binding code-review items are RESOLVED on commit 5da9b78559 (latest issue-672 HEAD)"
+      ]
+    },
+    "reproducibility": {
+      "git_commit": "5da9b78559",
+      "branch": "issue-672"
+    }
+  },
+  "section_B": {
+    "live_injection_pass": false,
+    "fallback_outcome": "inconclusive_live_validation",
+    "headline_downgraded": true,
+    "watchdog_fired": null,
+    "vm_terminated": null,
+    "failover_marker_sha": null,
+    "failover_count": 0,
+    "poller_invocations": [],
+    "poller_exit_codes": [],
+    "notes": {
+      "live_path_attempt": "Validator called dispatch_issue.py launch --issue 672 --intent debug --backend gcp + workload-cmd 'sleep tick'. Dispatch fell through to RunPod terminal rung (pod-672 was provisioned 1xH100 instead of a GCP debug-intent L4 VM). bootstrap_pod.sh hung in SSH for ~6 min before the orchestrator killed the validator + terminated pod-672 cleanly.",
+      "fallback_path": "Per plan \u00a74 documented fallback: deterministic B1 (6 tests in test_gcp_backend.py -k watchdog) + B3 (3 wedge/failover tests in test_backend_poll.py) are GREEN in Section C (203/203 + 18/18). Manual watchdog-fire smoke was NOT performed live (the GCP VM never came up).",
+      "deterministic_evidence": {
+        "test_gcp_backend.py": "203/203 passed (incl. watchdog ladder + counter-reset-on-either-answers tests)",
+        "test_backend_poll.py": "18/18 passed (incl. frozen-phase wedge-detection + failover-once tests)"
+      }
+    }
+  },
+  "section_C": {
+    "pytest": {
+      "tests/test_gcp_backend.py": {
+        "rc": 0,
+        "summary": {
+          "passed": 203,
+          "failed": 0,
+          "errors": 0
+        },
+        "green": true
+      },
+      "tests/test_backend_poll.py": {
+        "rc": 0,
+        "summary": {
+          "passed": 18,
+          "failed": 0,
+          "errors": 0
+        },
+        "green": true
+      },
+      "tests/test_issue671_extraction_hooks.py": {
+        "rc": 0,
+        "summary": {
+          "passed": 8,
+          "failed": 0,
+          "errors": 0
+        },
+        "green": true
+      },
+      "tests/test_failure_classifier.py": {
+        "rc": 0,
+        "summary": {
+          "passed": 21,
+          "failed": 0,
+          "errors": 0
+        },
+        "green": true
+      }
+    },
+    "lint_exit_codes": {
+      "batch_judge_client": 0,
+      "no_flags_default": 0
+    },
+    "pass": true,
+    "dry_run": false,
+    "reproducibility": {
+      "git_commit": "5da9b7855945bbb62cd07190c4f572371dd2aead",
+      "ts": "2026-06-26T15:28:37.674381+00:00",
+      "python": "3.11.15"
+    }
+  },
+  "verdict": "specific residual gap: Section A FAIL (Live A100 smoke could not be launched \u2014 dispatch-router routed --backend gcp + --intent debug to RunPod terminal rung (pod-672 was provisioned and hung in SSH bootstrap; terminated cleanly with no artifacts produced). Recipe + code verified by the round-1/2/3 review chain and #671's byte-identity tests; live forward-pass evidence pending.); Section B failover anomaly (failover_count=0; )",
+  "headline_downgraded": true,
+  "reproducibility": {
+    "git_commit": "5da9b7855945bbb62cd07190c4f572371dd2aead",
+    "ts": "2026-06-26T15:29:25.095040+00:00",
+    "python": "3.11.15"
+  }
+}
