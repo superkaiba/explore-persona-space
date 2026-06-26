@@ -3590,6 +3590,7 @@ def _attempt_one_gcp_rung(
             marker_poster=marker_poster,
             reason=ROUTE_REASON_AUTO_FALLBACK_GCP,
             attempts_today=attempts_today,
+            requested_kind=requested_kind,
             extra={
                 "rung": rung_label,
                 "estimated_gpu_hours": gpu_h,
@@ -4194,6 +4195,7 @@ def _post_intermediate_marker(
     marker_poster: Callable[..., None] | None,
     reason: str,
     attempts_today: int,
+    requested_kind: BackendKind | None = None,
     extra: dict[str, Any] | None = None,
 ) -> None:
     """Post a visible "about to escalate to GCP" breadcrumb.
@@ -4205,6 +4207,14 @@ def _post_intermediate_marker(
     fails) carries the resolved outcome — both events appear in the
     timeline.
 
+    ``requested_kind`` records the user's ORIGINAL ``--backend`` ask, exactly
+    as the final/terminal markers carry it on :class:`RouteResult`: ``None``
+    for the auto chain (no ``--backend``), ``"gcp"`` for an explicit
+    ``backend: gcp`` pin. Threading it here keeps the intermediate breadcrumb
+    consistent with the rest of the marker trail, so a post-hoc reader can tell
+    an auto-chain GCP escalation apart from an explicit GCP override gone wrong
+    (#672 — the breadcrumb used to hardcode ``None`` regardless of the ask).
+
     ``extra`` merges additional observability keys into the marker body's
     ``extra`` (#656: the ladder threads the rung label + resolved gpu-h
     estimate + short-job threshold so a future debug-er sees the rung's
@@ -4213,7 +4223,7 @@ def _post_intermediate_marker(
     if marker_poster is None:
         return
     body = {
-        "requested_kind": None,
+        "requested_kind": requested_kind,
         "chosen_kind": "gcp",
         "reason": reason,
         "cluster": None,

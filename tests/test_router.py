@@ -3568,6 +3568,76 @@ def test_no_budget_job_is_not_short_no_spot_rung(lease_store, marker_poster, cap
     assert not any("spot" in (a.detail or "") for a in gcp_fails)
 
 
+def test_intermediate_marker_records_requested_kind_on_explicit_gcp_pin(
+    lease_store, marker_poster, captured_markers
+):
+    """#672: the pre-escalation intermediate breadcrumb records the user's
+    ORIGINAL ``--backend`` ask in ``requested_kind`` — ``"gcp"`` for an
+    explicit ``backend: gcp`` pin — instead of the hardcoded ``None`` that
+    made an explicit override indistinguishable from an auto-chain
+    escalation post-hoc.
+    """
+    gcp = _GcpBackendDouble()  # the explicit pin launches on GCP
+    spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),  # RunPod must NOT be reached
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.requested_kind == "gcp"
+    intermediates = [
+        body
+        for body in _by_reason(captured_markers, ROUTE_REASON_AUTO_FALLBACK_GCP)
+        if body.get("extra", {}).get("intermediate") is True
+    ]
+    assert intermediates, "pre-escalation intermediate breadcrumb missing"
+    assert all(body["requested_kind"] == "gcp" for body in intermediates)
+
+
+def test_intermediate_marker_requested_kind_none_on_auto_chain(
+    lease_store, marker_poster, captured_markers
+):
+    """#672 companion: on the AUTO chain (no ``--backend``) the intermediate
+    breadcrumb keeps ``requested_kind: None`` — the threading must not
+    accidentally stamp ``"auto"`` / ``"gcp"`` on a router-chosen escalation
+    (consistency with the final/terminal markers' auto-path convention).
+    """
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts → escalate to GCP
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),  # AUTO
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            lane_order=_LEGACY_FREE_FIRST_ORDER,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    intermediates = [
+        body
+        for body in _by_reason(captured_markers, ROUTE_REASON_AUTO_FALLBACK_GCP)
+        if body.get("extra", {}).get("intermediate") is True
+    ]
+    assert intermediates, "pre-escalation intermediate breadcrumb missing"
+    assert all(body["requested_kind"] is None for body in intermediates)
+
+
 def test_workload_error_on_a_rung_fails_over_to_runpod_no_rung_advance(
     lease_store, marker_poster, captured_markers
 ):
