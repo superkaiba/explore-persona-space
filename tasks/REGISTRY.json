@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 670,
+  "highest_id": 671,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4207,6 +4207,13 @@
       "path": "tasks/on_hold/670",
       "status": "on_hold",
       "title": "Dose-controlled gate\u2192behavior bridge (parked redundant from #667)"
+    },
+    "671": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/671",
+      "status": "proposed",
+      "title": "Fix activation-extractor output_hidden_states memory accumulation (root cause of GCP DHCP-wedge + recurring #545 OOM): register_forward_hook on read layers + local-SSD .npz scratch"
     },
     "68": {
       "has_clean_result": false,
