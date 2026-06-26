@@ -45,6 +45,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime
 import itertools
 import json
@@ -83,6 +84,9 @@ SECTION_C_LINT_RUNS = {
 FLAT_MAX_MIN_GIB = 1.0  # PASS iff PRIMARY gauge max−min < 1 GiB
 CLIMB_FALSIFY_GIB = 4.0  # a PRIMARY gauge climbing ≥4 GiB monotone falsifies H-A
 WARMUP_ITERS = 10  # compute max−min over iters with idx >= 10 (first-10 baseline)
+MIN_LOG_ENTRIES = 30  # plan §3/§6: ≥30 hooked-forward samples for a meaningful signal
+MIN_MAX_ITER = 30  # the logger must have REACHED iter≥30 (not just emitted ≥30 rows)
+MIN_POST_WARMUP_PER_GAUGE = 2  # ≥2 post-warmup (iter>10) non-None samples per PRIMARY gauge
 
 # ── Section-B watchdog / failover constants (plan §10, #669) ─────────────────
 GCP_ZONE = "us-central1-b"
@@ -116,18 +120,51 @@ def _backend_selected_sku(issue: int) -> str | None:
     return str(sel[-1].get("note", "")).strip() or None
 
 
-def _count_failover_relaunches(issue: int) -> tuple[int, str | None]:
+def _parse_marker_ts(raw: object) -> datetime.datetime | None:
+    """Parse an events.jsonl ``ts`` string to an aware UTC datetime, or None.
+
+    Marker timestamps are ISO-8601 with a trailing ``Z``; tolerate ``+00:00``
+    too. A malformed / absent ts returns None (the caller treats an unparseable
+    marker as OUTSIDE the post-inject window — it cannot prove it is newer than
+    ``since_ts``, so it must not count toward the live failover).
+    """
+    if not isinstance(raw, str) or not raw:
+        return None
+    try:
+        return datetime.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _count_failover_relaunches(
+    issue: int, *, since_ts: datetime.datetime | None = None
+) -> tuple[int, str | None]:
     """Count cluster-launched markers whose note names a RunPod failover reason.
 
     Returns ``(count, latest_marker_ts)``. The B-PASS predicate requires count
     == exactly 1 (idempotent failover-once; failover twice falsifies H-B).
+
+    ``since_ts`` (the iptables-injection wall-clock captured at the start of the
+    live sequence) SCOPES the count to the CURRENT injected run: only failover
+    markers with ``ts >= since_ts`` count. Without it a stale failover marker —
+    from a Section-A run, a prior #672 validation attempt, or any earlier
+    failover on the same task — would falsely satisfy the live-recovery predicate
+    (round-2 BLOCKER 1). A marker whose ``ts`` is unparseable / absent is EXCLUDED
+    when ``since_ts`` is set (it cannot prove it post-dates the injection).
+    ``since_ts=None`` preserves the unfiltered count (used by the fallback block,
+    where the count is diagnostic only, never a PASS gate).
     """
-    hits = [
-        e
-        for e in _events(issue)
-        if e.get("kind") in ("epm:cluster-launched", "epm:backend-selected")
-        and FAILOVER_REASON_RE.search(str(e.get("note", "")))
-    ]
+    hits = []
+    for e in _events(issue):
+        if e.get("kind") not in ("epm:cluster-launched", "epm:backend-selected"):
+            continue
+        if not FAILOVER_REASON_RE.search(str(e.get("note", ""))):
+            continue
+        if since_ts is not None:
+            marker_ts = _parse_marker_ts(e.get("ts"))
+            if marker_ts is None or marker_ts < since_ts:
+                continue
+        hits.append(e)
     ts = hits[-1].get("ts") if hits else None
     return len(hits), ts
 
@@ -258,6 +295,7 @@ def analyze_section_a(issue: int, out_subdir: str, *, npz_present: bool, hf_ok: 
                 "reserved": None,
                 "nvidia_smi": None,
                 "allocated_secondary": None,
+                "coverage_issue": "no memory_log.json found (Section A did not run / no log)",
                 "pass": False,
                 "pass_reason": "no memory_log.json found (Section A did not run / produced no log)",
             }
@@ -276,17 +314,52 @@ def analyze_section_a(issue: int, out_subdir: str, *, npz_present: bool, hf_ok: 
     ]
     nvidia = _flatness(nvidia_vals) if nvidia_vals else None
 
-    # PASS predicate: BOTH PRIMARY gauges flat. nvidia-smi None across the whole
-    # run (CPU host / no NVIDIA runtime) cannot certify the kernel-visible gauge
-    # -> NOT a PASS for that gauge (must be present on a real A100).
+    # COVERAGE GATE (round-2 BLOCKER 3). A truncated / barely-working logger (the
+    # exact #671 failure class this task certifies) would otherwise trivially
+    # certify "flat memory" on 1 sample. Require enough samples + reach + per-gauge
+    # post-warmup depth for the flat-vs-climbing signal to be meaningful (plan
+    # §3/§6: ≥30 hooked forwards). A shortfall sets pass=False AND surfaces the
+    # specific gap in section_A.coverage_issue.
+    n_entries = len(log)
+    max_iter = max((int(e.get("iter", 0)) for e in log), default=0)
+    # Per-gauge post-warmup (iter > WARMUP_ITERS) non-None sample counts.
+    post_warmup = [e for e in log if int(e.get("iter", 0)) > WARMUP_ITERS]
+    reserved_post = sum(1 for e in post_warmup if e.get("memory_reserved_gib") is not None)
+    nvidia_post = sum(1 for e in post_warmup if e.get("nvidia_smi_used_gib") is not None)
+    coverage_problems = []
+    if n_entries < MIN_LOG_ENTRIES:
+        coverage_problems.append(f"only {n_entries} sample(s) logged; require ≥{MIN_LOG_ENTRIES}")
+    if max_iter < MIN_MAX_ITER:
+        coverage_problems.append(
+            f"logger reached iter={max_iter}; require max iter ≥{MIN_MAX_ITER}"
+        )
+    if reserved_post < MIN_POST_WARMUP_PER_GAUGE:
+        coverage_problems.append(
+            f"memory_reserved has {reserved_post} post-warmup (iter>{WARMUP_ITERS}) sample(s); "
+            f"require ≥{MIN_POST_WARMUP_PER_GAUGE}"
+        )
+    if nvidia_post < MIN_POST_WARMUP_PER_GAUGE:
+        coverage_problems.append(
+            f"nvidia_smi has {nvidia_post} post-warmup (iter>{WARMUP_ITERS}) non-None sample(s); "
+            f"require ≥{MIN_POST_WARMUP_PER_GAUGE} (None on every post-warmup sample fails this)"
+        )
+    coverage_issue = "; ".join(coverage_problems) if coverage_problems else None
+
+    # PASS predicate: coverage gate met AND BOTH PRIMARY gauges flat. nvidia-smi
+    # None across the whole run (CPU host / no NVIDIA runtime) cannot certify the
+    # kernel-visible gauge -> NOT a PASS for that gauge (must be present on a real
+    # A100).
     reserved_ok = bool(reserved.get("flat"))
     nvidia_ok = bool(nvidia and nvidia.get("flat"))
-    passed = bool(npz_present and hf_ok and reserved_ok and nvidia_ok)
+    coverage_ok = coverage_issue is None
+    passed = bool(npz_present and hf_ok and coverage_ok and reserved_ok and nvidia_ok)
     reasons = []
     if not npz_present:
         reasons.append("no .npz written")
     if not hf_ok:
         reasons.append("HF upload not verified")
+    if not coverage_ok:
+        reasons.append(f"insufficient coverage ({coverage_issue})")
     if not reserved_ok:
         reasons.append(f"memory_reserved not flat ({reserved.get('max_min_gib')} GiB max-min)")
     if nvidia is None:
@@ -298,6 +371,10 @@ def analyze_section_a(issue: int, out_subdir: str, *, npz_present: bool, hf_ok: 
         {
             "memory_log": log,
             "warmup_iters_applied": warmup_applied,
+            "max_iter": max_iter,
+            "reserved_post_warmup_samples": reserved_post,
+            "nvidia_post_warmup_samples": nvidia_post,
+            "coverage_issue": coverage_issue,
             "reserved": reserved,
             "nvidia_smi": nvidia,
             "allocated_secondary": allocated,
@@ -332,6 +409,28 @@ def section_b_dispatch_argv(issue: int) -> list[str]:
         "gcp",
         "--workload-cmd",
         "for i in $(seq 1 40); do echo phase-tick $i; sleep 30; done",
+    ]
+
+
+def section_b_poller_argv(issue: int) -> list[str]:
+    """The ``backend_poll.py`` argv that performs the GCP -> RunPod failover.
+
+    The GCP->RunPod failover (``_failover_dead_gcp_to_runpod``) is wired
+    EXCLUSIVELY inside ``scripts/backend_poll.py``'s main loop (per
+    ``.claude/rules/compute-backend-failover.md`` + ``backend_poll.py:1002``).
+    The in-VM watchdog only writes ``eps/phase=wedged`` and powers off →
+    TERMINATED; it does NOT re-dispatch. So without launching this poller the
+    dead VM never re-dispatches and the live-recovery headline is structurally
+    unreachable (round-2 BLOCKER 2). Section B launches it as a bg subprocess
+    immediately after the GCP VM is up.
+    """
+    return [
+        "uv",
+        "run",
+        "python",
+        "scripts/backend_poll.py",
+        "--issue",
+        str(issue),
     ]
 
 
@@ -405,38 +504,117 @@ def fallback_section_b(issue: int, reason: str) -> dict:
     }
 
 
+def _section_b_dry_run(issue: int) -> dict:
+    """Construct + echo every Section-B command without invoking gcloud/dispatch.
+
+    The poller argv MUST appear here so the smoke verifies backend_poll.py IS
+    scheduled (round-2 BLOCKER 2) — it is the component that performs the
+    GCP -> RunPod failover.
+    """
+    argvs = {
+        "launch": section_b_dispatch_argv(issue),
+        "poller": section_b_poller_argv(issue),
+        "iptables": section_b_iptables_argv(issue),
+        "serial": section_b_serial_argv(issue),
+        "status": section_b_status_argv(issue),
+    }
+    for argv in argvs.values():
+        _run(argv, dry_run=True)
+    return {
+        "dry_run": True,
+        "constructed_commands": {k: " ".join(v) for k, v in argvs.items()},
+        "live_injection_pass": None,
+        "fallback_outcome": None,
+        "headline_downgraded": None,
+        "note": "dry-run: commands constructed, not invoked (live path = experimenter's job)",
+    }
+
+
+def _poll_watchdog_fired(issue: int) -> bool:
+    """Poll the serial console until the ``[eps-watchdog]`` ladder reaches 10/10
+    + the wedged-shutdown line, within the watchdog budget."""
+    deadline = time.time() + WATCHDOG_BUDGET_S
+    while time.time() < deadline:
+        rc, out, _err = _run(section_b_serial_argv(issue), dry_run=False, timeout=120)
+        if rc == 0 and "eps-watchdog" in out:
+            ladder_hits = out.count("eps-watchdog")
+            if ("10/10" in out or "wedged" in out.lower()) and ladder_hits >= 1:
+                return True
+        time.sleep(20)
+    return False
+
+
+def _poll_vm_terminated(issue: int) -> bool:
+    """Poll instance status until TERMINATED, within a 5-min budget."""
+    deadline = time.time() + 5 * 60
+    while time.time() < deadline:
+        rc, out, _err = _run(section_b_status_argv(issue), dry_run=False, timeout=120)
+        if rc == 0 and out.strip().upper() == "TERMINATED":
+            return True
+        time.sleep(15)
+    return False
+
+
+def _poll_failover_relaunch(
+    issue: int, *, since_ts: datetime.datetime, poller_proc: subprocess.Popen
+) -> tuple[int, str | None]:
+    """Watch for the scoped RunPod failover relaunch (round-2 BLOCKER 1).
+
+    Reads ONLY failover markers with ``ts >= since_ts``. Success can come two
+    ways — the failover marker lands, OR the poller exits (the GCP VM reached a
+    terminal state and the poller terminated); either way a final scoped read
+    decides. Returns ``(failover_count, failover_ts)``.
+    """
+    failover_count = 0
+    failover_ts = None
+    deadline = time.time() + 5 * 60
+    while time.time() < deadline:
+        failover_count, failover_ts = _count_failover_relaunches(issue, since_ts=since_ts)
+        if failover_count >= 1:
+            break
+        if poller_proc.poll() is not None:
+            # Poller exited; final scoped read in case the marker landed in the
+            # same tick, then stop waiting.
+            failover_count, failover_ts = _count_failover_relaunches(issue, since_ts=since_ts)
+            break
+        time.sleep(15)
+    return failover_count, failover_ts
+
+
+def _reap_poller(poller_proc: subprocess.Popen | None, poller_log_fh) -> None:
+    """Reap the bg poller + close its log on EVERY Section-B exit path.
+
+    The poller may still be alive (it polls until the run reaches a terminal
+    state); a left-running poller would keep polling the now-dead VM. Closing the
+    writer-launcher cleanly is part of the pod-side completion contract.
+    """
+    if poller_proc is not None and poller_proc.poll() is None:
+        poller_proc.terminate()
+        try:
+            poller_proc.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            poller_proc.kill()
+    if poller_log_fh is not None:
+        with contextlib.suppress(OSError):
+            poller_log_fh.close()
+
+
 def run_section_b(issue: int, *, dry_run: bool) -> dict:
     """Drive the LIVE fault-injection sequence (plan §4/§10).
 
-    Sequence: launch tiny VM -> wait ~3 min -> drop BOTH endpoints -> poll
-    serial console for the ``[eps-watchdog]`` ladder reaching 10/10 + the
-    wedged-shutdown line -> poll instance status until TERMINATED -> read the
-    second ``epm:cluster-launched`` (backend=runpod, failover reason) ->
-    failover sentinel count must be exactly 1. ANY budget miss -> documented
-    fallback (NOT a B PASS).
+    Sequence: launch tiny VM -> launch ``backend_poll.py`` (the failover driver)
+    -> wait ~3 min -> drop BOTH endpoints -> poll serial console for the
+    ``[eps-watchdog]`` ladder reaching 10/10 + the wedged-shutdown line -> poll
+    instance status until TERMINATED -> read the scoped ``epm:backend-selected``
+    (backend=runpod, failover reason, ``ts >= inject_ts``) -> failover count must
+    be exactly 1. ANY budget miss -> documented fallback (NOT a B PASS).
 
     NOTE: the live launch (and even the dry-run scaffolding) is normally driven
     by the experimenter step on the VM (where ``gcloud`` is authenticated). The
     implementer's local smoke uses ``--dry-run`` to verify command construction.
     """
     if dry_run:
-        # Construct + echo every command; do not invoke gcloud/dispatch.
-        argvs = {
-            "launch": section_b_dispatch_argv(issue),
-            "iptables": section_b_iptables_argv(issue),
-            "serial": section_b_serial_argv(issue),
-            "status": section_b_status_argv(issue),
-        }
-        for argv in argvs.values():
-            _run(argv, dry_run=True)
-        return {
-            "dry_run": True,
-            "constructed_commands": {k: " ".join(v) for k, v in argvs.items()},
-            "live_injection_pass": None,
-            "fallback_outcome": None,
-            "headline_downgraded": None,
-            "note": "dry-run: commands constructed, not invoked (live path = experimenter's job)",
-        }
+        return _section_b_dry_run(issue)
 
     inject_ts = datetime.datetime.now(datetime.UTC)
     # 1. Launch the tiny sleep-tick VM.
@@ -444,76 +622,100 @@ def run_section_b(issue: int, *, dry_run: bool) -> dict:
     if rc != 0:
         return fallback_section_b(issue, f"GCP tiny-VM launch failed rc={rc}: {err[-300:]}")
 
-    # 2. Let the workload settle (~3 min) before injecting.
-    time.sleep(180)
-
-    # 3. Drop BOTH probe endpoints.
-    inject_ts = datetime.datetime.now(datetime.UTC)
-    rc, _out, err = _run(section_b_iptables_argv(issue), dry_run=False, timeout=120)
-    if rc != 0:
-        return fallback_section_b(issue, f"iptables injection failed rc={rc}: {err[-300:]}")
-
-    # 4. Poll serial console for the watchdog ladder reaching 10/10 + shutdown.
-    watchdog_fired = False
-    deadline = time.time() + WATCHDOG_BUDGET_S
-    while time.time() < deadline:
-        rc, out, _err = _run(section_b_serial_argv(issue), dry_run=False, timeout=120)
-        if rc == 0 and "eps-watchdog" in out:
-            ladder_hits = out.count("eps-watchdog")
-            if ("10/10" in out or "wedged" in out.lower()) and ladder_hits >= 1:
-                watchdog_fired = True
-                break
-        time.sleep(20)
-    if not watchdog_fired:
-        return fallback_section_b(issue, "watchdog did not reach 10/10 + shutdown within ~6 min")
-
-    # 5. Poll instance status until TERMINATED.
-    vm_terminated = False
-    deadline = time.time() + 5 * 60
-    while time.time() < deadline:
-        rc, out, _err = _run(section_b_status_argv(issue), dry_run=False, timeout=120)
-        if rc == 0 and out.strip().upper() == "TERMINATED":
-            vm_terminated = True
-            break
-        time.sleep(15)
-    if not vm_terminated:
-        return fallback_section_b(issue, "VM never reached TERMINATED after watchdog fired")
-
-    # 6. Watch for the RunPod failover relaunch (exactly once).
-    failover_count = 0
-    failover_ts = None
-    deadline = time.time() + 5 * 60
-    while time.time() < deadline:
-        failover_count, failover_ts = _count_failover_relaunches(issue)
-        if failover_count >= 1:
-            break
-        time.sleep(15)
-    if failover_count < 1:
-        return fallback_section_b(issue, "dead VM never re-dispatched to RunPod")
-
-    relaunch_ts = (
-        datetime.datetime.fromisoformat(failover_ts.replace("Z", "+00:00"))
-        if failover_ts
-        else datetime.datetime.now(datetime.UTC)
+    # 1b. Launch backend_poll.py as a bg subprocess (round-2 BLOCKER 2). The
+    # poller is the ONLY component that performs the GCP -> RunPod failover
+    # (_failover_dead_gcp_to_runpod); the in-VM watchdog only powers the VM off.
+    # The orchestrator is now both writer-launcher (this Popen) AND reader (the
+    # step-6 marker poll). All exit paths below reap it via _reap_poller.
+    poller_meta: dict = {}
+    poller_proc: subprocess.Popen | None = None
+    poller_log_fh = None
+    poller_log_path = (
+        PROJECT_ROOT / "eval_results" / f"issue_{issue}" / "section_B_backend_poll.log"
     )
-    return {
-        "watchdog_fired": True,
-        "vm_terminated": True,
-        "failover_marker_sha": None,  # ts captured below; SHA filled by experimenter if needed
-        "failover_marker_ts": failover_ts,
-        "failover_count": failover_count,
-        "live_injection_pass": bool(failover_count == 1),
-        "fallback_outcome": None if failover_count == 1 else "residual_gap",
-        "headline_downgraded": bool(failover_count != 1),
-        "inject_to_relaunch_seconds": (relaunch_ts - inject_ts).total_seconds(),
-        "zero_manual_action": True,  # no operator command was issued between inject + relaunch
-        "note": (
-            "exactly-one RunPod failover with zero manual action between iptables "
-            "injection and relaunch"
-            if failover_count == 1
-            else f"failover fired {failover_count}x — idempotency broken (kill criterion)"
-        ),
-    }
+    try:
+        poller_log_path.parent.mkdir(parents=True, exist_ok=True)
+        poller_argv = section_b_poller_argv(issue)
+        logger.info("launching backend_poll.py (bg): %s", " ".join(poller_argv))
+        poller_log_fh = poller_log_path.open("w")
+        poller_proc = subprocess.Popen(
+            poller_argv,
+            cwd=str(PROJECT_ROOT),
+            env={**os.environ},
+            stdout=poller_log_fh,
+            stderr=subprocess.STDOUT,
+        )
+        poller_meta = {
+            "poller_argv": " ".join(poller_argv),
+            "poller_pid": poller_proc.pid,
+            "poller_log_path": str(poller_log_path),
+        }
+
+        # 2. Let the workload settle (~3 min) before injecting.
+        time.sleep(180)
+
+        # 3. Drop BOTH probe endpoints.
+        inject_ts = datetime.datetime.now(datetime.UTC)
+        rc, _out, err = _run(section_b_iptables_argv(issue), dry_run=False, timeout=120)
+        if rc != 0:
+            return {
+                **fallback_section_b(issue, f"iptables injection failed rc={rc}: {err[-300:]}"),
+                **poller_meta,
+            }
+
+        # 4. Watchdog ladder reaches 10/10 + shutdown.
+        if not _poll_watchdog_fired(issue):
+            return {
+                **fallback_section_b(
+                    issue, "watchdog did not reach 10/10 + shutdown within ~6 min"
+                ),
+                **poller_meta,
+            }
+
+        # 5. Instance reaches TERMINATED.
+        if not _poll_vm_terminated(issue):
+            return {
+                **fallback_section_b(issue, "VM never reached TERMINATED after watchdog fired"),
+                **poller_meta,
+            }
+
+        # 6. Scoped RunPod failover relaunch (exactly once; ts >= inject_ts).
+        failover_count, failover_ts = _poll_failover_relaunch(
+            issue, since_ts=inject_ts, poller_proc=poller_proc
+        )
+        poller_meta["poller_exit_code"] = poller_proc.poll()
+        if failover_count < 1:
+            return {
+                **fallback_section_b(issue, "dead VM never re-dispatched to RunPod"),
+                **poller_meta,
+            }
+
+        relaunch_ts = (
+            datetime.datetime.fromisoformat(failover_ts.replace("Z", "+00:00"))
+            if failover_ts
+            else datetime.datetime.now(datetime.UTC)
+        )
+        return {
+            **poller_meta,
+            "watchdog_fired": True,
+            "vm_terminated": True,
+            "failover_marker_sha": None,  # ts below; SHA filled by experimenter if needed
+            "failover_marker_ts": failover_ts,
+            "failover_count": failover_count,
+            "live_injection_pass": bool(failover_count == 1),
+            "fallback_outcome": None if failover_count == 1 else "residual_gap",
+            "headline_downgraded": bool(failover_count != 1),
+            "inject_to_relaunch_seconds": (relaunch_ts - inject_ts).total_seconds(),
+            "zero_manual_action": True,  # no operator command issued between inject + relaunch
+            "note": (
+                "exactly-one RunPod failover with zero manual action between iptables "
+                "injection and relaunch"
+                if failover_count == 1
+                else f"failover fired {failover_count}x — idempotency broken (kill criterion)"
+            ),
+        }
+    finally:
+        _reap_poller(poller_proc, poller_log_fh)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -611,10 +813,25 @@ def route_verdict(a: dict | None, b: dict | None, c: dict | None) -> dict:
     - A PASS + B fallback + C PASS -> 'watchdog/failover logic unit-tested;
       live iptables recovery NOT validated' + headline_downgraded.
     - anything else -> 'specific residual gap: <enumerate>'.
+
+    Defense-in-depth (round-2 #4): the unqualified live headline requires the
+    FULL conjunction ``live_injection_pass is True AND failover_count == 1 AND
+    fallback_outcome is None`` re-asserted HERE — not merely the upstream
+    ``live_injection_pass`` flag. ``run_section_b`` already enforces these
+    jointly (it sets ``live_injection_pass = (failover_count == 1)`` and
+    ``fallback_outcome`` accordingly), so the real data flow can never present an
+    inconsistent dict; this re-check makes a HAND-BUILT inconsistent dict (e.g.
+    ``{live_injection_pass: True, failover_count: 2}``) route to a residual gap
+    rather than getting the live PASS headline.
     """
     a_pass = bool(a and a.get("pass"))
     c_pass = bool(c and c.get("pass"))
-    b_live = bool(b and b.get("live_injection_pass") is True)
+    b_live = bool(
+        b
+        and b.get("live_injection_pass") is True
+        and b.get("failover_count") == 1
+        and b.get("fallback_outcome") is None
+    )
     b_fallback = bool(b and b.get("fallback_outcome") == "inconclusive_live_validation")
 
     if a_pass and b_live and c_pass:
@@ -627,14 +844,26 @@ def route_verdict(a: dict | None, b: dict | None, c: dict | None) -> dict:
             "verdict": "watchdog/failover logic unit-tested; live iptables recovery NOT validated",
             "headline_downgraded": True,
         }
-    b_residual = bool(b and b.get("fallback_outcome") == "residual_gap")
+    # Section B ran the live injection but the headline is not earned: the
+    # failover was anomalous (fired twice — idempotency broken) OR the
+    # consistency re-check above rejected an inconsistent dict.
+    b_residual = bool(
+        b
+        and (
+            b.get("fallback_outcome") == "residual_gap"
+            or (b.get("failover_count") is not None and b.get("failover_count") != 1)
+        )
+    )
     gaps = []
     if not a_pass:
         gaps.append(f"Section A FAIL ({(a or {}).get('pass_reason', 'not run')})")
     if b_residual:
         # Section B RAN the live injection but the failover was anomalous
         # (e.g. fired twice — idempotency broken, the H-B kill criterion).
-        gaps.append(f"Section B failover anomaly ({b.get('note', '')})")
+        gaps.append(
+            f"Section B failover anomaly (failover_count={(b or {}).get('failover_count')}; "
+            f"{(b or {}).get('note', '')})"
+        )
     elif not (b_live or b_fallback):
         gaps.append("Section B incomplete / not run")
     if not c_pass:
