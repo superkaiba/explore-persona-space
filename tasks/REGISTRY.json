@@ -4189,8 +4189,8 @@
     "669": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/669",
-      "status": "reviewing",
+      "path": "tasks/completed/669",
+      "status": "completed",
       "title": "Detect hung-but-RUNNING GCP VM (frozen non-terminal eps/phase + drain-timeout) -> terminal_workload_wedged -> #659 RunPod failover; + in-VM network watchdog"
     },
     "67": {
