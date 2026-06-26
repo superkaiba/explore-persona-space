@@ -1,7 +1,7 @@
 ---
-title: '#669/#671 verified offline (250 tests green) but the live A100 smoke and live
-  watchdog→failover chain were lost to infrastructure failure — HIGH offline, UNVERIFIED
-  live (LOW confidence)'
+title: 'Live GCP SPOT revalidation: the #671 extractor memory fix holds flat on a
+  real A100-80 (live PASS), and the #669 watchdog fired on a real DNS failure (partial
+  live; full chain via deterministic tests) (MODERATE confidence)'
 kind: experiment
 tags:
 - followup-manual
