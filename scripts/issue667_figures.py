@@ -267,6 +267,35 @@ def fig_gate_vs_behavior(scatter):
     plt.close(fig)
 
 
+def fig_gate_vs_behavior_scatter(scatter):
+    """Per-cell data behind the behavioral bar of fig_gate_vs_behavior:
+    base gate g0 vs measured behavioral leakage G, one point per off-diagonal cell."""
+    set_paper_style("blog")
+    fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.7), sharey=False)
+    c = paper_palette_role("accent")
+    for ax, b in zip(axes, HEADLINE, strict=True):
+        g0s, _gr, gb, _lab = scatter[b]
+        mask = np.isfinite(gb)
+        g0m, gbm = g0s[mask], gb[mask]
+        ax.scatter(g0m, gbm, s=12, alpha=0.45, color=c, edgecolors="none")
+        rho = spearman_rho(g0m, gbm)
+        ax.set_title(f"{BEH_LABEL[b]}\nρ = {rho:+.2f}", fontsize=9.5)
+        ax.set_xlabel("Base whitened gate g0(C′)")
+        ax.axhline(0, color="0.7", lw=0.6)
+        ax.axvline(0, color="0.7", lw=0.6)
+    axes[0].set_ylabel("Measured behavioral leakage G")
+    fig.suptitle(
+        "Per-cell base gate vs measured behavioral leakage (the data behind the weak G bar)",
+        x=0.01,
+        ha="left",
+        fontsize=12,
+        fontweight="semibold",
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.93))
+    savefig_paper(fig, "issue_667/fig_gate_vs_behavior_scatter", dir=str(ROOT / "figures") + "/")
+    plt.close(fig)
+
+
 def fig_a38_rankone():
     a38 = _load("A3_8_rank_one.json")["by_behavior"]
     set_paper_style("blog")
@@ -388,6 +417,7 @@ def main():
     fig_a39_a310_forest()
     fig_a39_scatter(scatter)
     fig_gate_vs_behavior(scatter)
+    fig_gate_vs_behavior_scatter(scatter)
     fig_a38_rankone()
     fig_a37_write()
     fig_a36_forest()
