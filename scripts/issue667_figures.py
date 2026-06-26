@@ -28,7 +28,14 @@ sys.path.insert(0, str(ROOT / "src"))
 import matplotlib.pyplot as plt  # noqa: E402
 
 from explore_persona_space.analysis.issue667.gate_chain import (  # noqa: E402
+    _ols_residual as ols_residual,
+)
+from explore_persona_space.analysis.issue667.gate_chain import (  # noqa: E402
+    _rankdata as rankdata,
+)
+from explore_persona_space.analysis.issue667.gate_chain import (  # noqa: E402
     default_lambda,
+    readout_projection,
     spearman_rho,
 )
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
@@ -379,6 +386,69 @@ def fig_a37_write():
     plt.close(fig)
 
 
+def gather_a36_residuals():
+    """{behavior: (x_resid[], y_resid[])} — the per-cell partial residuals A3.6 ranks.
+
+    Mirrors ``issue667_analysis.run_a36`` EXACTLY: x = r_B·Δv(C′), y = E+−E0 (g),
+    z = E0 (base_rate); rank all three, OLS-residualize the ranks of x and y on the
+    rank of z. The partial Spearman is the Pearson correlation of (x_resid, y_resid),
+    so plotting them IS the per-unit data the −0.35 / −0.03 / −0.41 partial ρ reduces.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import issue667_analysis as ana
+
+    g_meta = ana.load_g_meta()
+    out = {}
+    for beh in HEADLINE:
+        cells = ana.load_cells(TENS, beh, 14)
+        r_b = ana.load_r_b(beh, 14)
+        if r_b is None:  # fact: re-extracted r_b lives in the store cells
+            r_b = ana._fact_rb_from_store(cells)
+        xs, ys, zs = [], [], []
+        for (source, target), data in cells.items():
+            if source == target:
+                continue  # off-diagonal targets only (the CHANGE read)
+            gc = ana.g_cell(g_meta, beh, source, target)
+            if gc is None:
+                continue
+            delta_v = data["v_plus"].astype(np.float64) - data["v0"].astype(np.float64)
+            xs.append(readout_projection(r_b, delta_v))
+            ys.append(float(gc["g"]))
+            zs.append(float(gc["base_rate"]))
+        x, y, z = np.array(xs), np.array(ys), np.array(zs)
+        rx, ry, rz = rankdata(x), rankdata(y), rankdata(z)
+        out[beh] = (ols_residual(rx, rz), ols_residual(ry, rz))
+    return out
+
+
+def fig_a36_scatter():
+    """Low-level per-cell partial-residual scatter behind the A3.6 partial ρ."""
+    resid = gather_a36_residuals()
+    a36 = _load("A3_6_readout_stability.json")["by_behavior"]
+    set_paper_style("blog")
+    fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.7), sharey=False)
+    c = paper_palette_role("primary")
+    for ax, b in zip(axes, HEADLINE, strict=True):
+        xr, yr = resid[b]
+        ax.scatter(xr, yr, s=12, alpha=0.45, color=c, edgecolors="none")
+        rho = a36[b]["partial_spearman_change_given_base"]
+        ax.set_title(f"{BEH_LABEL[b]}\nρ = {rho:+.2f}", fontsize=9.5)
+        ax.set_xlabel("Read-out · Δv  (base-rate residual)")
+        ax.axhline(0, color="0.7", lw=0.6)
+        ax.axvline(0, color="0.7", lw=0.6)
+    axes[0].set_ylabel("Δbehavior  (base-rate residual)")
+    fig.suptitle(
+        "Per-cell partial residuals behind the A3.6 partial ρ (read-out·Δv vs Δbehavior | base)",
+        x=0.01,
+        ha="left",
+        fontsize=12,
+        fontweight="semibold",
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.93))
+    savefig_paper(fig, "issue_667/fig_a36_scatter", dir=str(ROOT / "figures") + "/")
+    plt.close(fig)
+
+
 def fig_a36_forest():
     a36 = _load("A3_6_readout_stability.json")["by_behavior"]
     set_paper_style("blog")
@@ -421,6 +491,7 @@ def main():
     fig_a38_rankone()
     fig_a37_write()
     fig_a36_forest()
+    fig_a36_scatter()
     print("figures written to figures/issue_667/")
 
 
