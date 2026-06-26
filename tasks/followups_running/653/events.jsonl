@@ -394,3 +394,4 @@
 {"ts": "2026-06-26T17:46:22Z", "kind": "epm:progress", "version": 85, "by": "unknown", "note": "tick heartbeat: job verified alive (pid 351029, etime 2h20m, log mtime ~3min fresh); slow phase, no state change"}
 {"ts": "2026-06-26T18:46:23Z", "kind": "epm:progress", "version": 86, "by": "unknown", "note": "tick heartbeat: job verified alive (pid 351029, etime 3h20m, log mtime 15s fresh); slow phase, no state change"}
 {"ts": "2026-06-26T19:40:05Z", "kind": "epm:progress", "version": 87, "by": "poll_pipeline", "note": "phase transition: arm_a -> train", "phase": "train", "pod": "pod-653"}
+{"ts": "2026-06-26T20:46:19Z", "kind": "epm:progress", "version": 88, "by": "unknown", "note": "tick heartbeat: job verified alive (pid 351029, etime 5h20m, log mtime 2s fresh); slow phase, no state change"}
