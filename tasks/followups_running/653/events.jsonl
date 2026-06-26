@@ -392,3 +392,4 @@
 {"ts": "2026-06-26T16:47:01Z", "kind": "epm:progress", "version": 83, "by": "unknown", "note": "tick heartbeat: old pid 72659 DEAD; NEW pid 351029 running (started 15:25, etime ~1h21m, log 8s fresh, 4.9MB); a recovery session relaunched the dispatcher. Resume-skip will honor existing select_checkpoint manifests. Slow phase, no state change."}
 {"ts": "2026-06-26T17:20:27Z", "kind": "epm:progress", "version": 84, "by": "poll_pipeline", "note": "phase transition: unknown -> arm_a", "phase": "arm_a", "pod": "pod-653"}
 {"ts": "2026-06-26T17:46:22Z", "kind": "epm:progress", "version": 85, "by": "unknown", "note": "tick heartbeat: job verified alive (pid 351029, etime 2h20m, log mtime ~3min fresh); slow phase, no state change"}
+{"ts": "2026-06-26T18:46:23Z", "kind": "epm:progress", "version": 86, "by": "unknown", "note": "tick heartbeat: job verified alive (pid 351029, etime 3h20m, log mtime 15s fresh); slow phase, no state change"}
