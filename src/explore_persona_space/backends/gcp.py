@@ -1159,20 +1159,30 @@ def render_startup_script(
         # and reaped in the clean-exit tail (or by the EXIT-trap shutdown on a
         # crash).
         "_eps_reachability_watchdog() {",
-        "  local interval=30 threshold=10 fails=0",
+        "  local interval=30 threshold=10 fails=0 meta_ok ext_ok",
         "  while true; do",
         '    sleep "$interval";',
-        # -m 5: 5s connect+xfer cap so a hung NIC can't block the loop. The
-        # metadata server (169.254.169.254) is link-local — reachable even with
-        # a dead DHCP lease IF routing survives — so we AND it with an external
-        # probe to catch the full-network-loss case.
+        # -m 5: 5s connect+xfer cap so a hung NIC can't block the loop. The two
+        # endpoints are probed SEPARATELY and the fail counter resets if EITHER
+        # one answers — it increments ONLY when BOTH fail (#669 code-review r1
+        # blocker: the prior ``curl A && curl B`` conjunction incremented on a
+        # single-endpoint failure, so a transient HF outage with healthy
+        # metadata could drive a HEALTHY VM to ``wedged`` and trigger a spurious
+        # RunPod failover — the exact false positive this watchdog exists to
+        # avoid). The metadata server (169.254.169.254) is link-local — reachable
+        # even with a dead DHCP lease IF routing survives — and the external HF
+        # probe catches the full-network-loss case; only the BOTH-fail
+        # conjunction is true network loss.
+        "    meta_ok=0; ext_ok=0;",
         "    if curl -sf -m 5 -H 'Metadata-Flavor: Google'"
-        " http://169.254.169.254/computeMetadata/v1/instance/id >/dev/null 2>&1"
-        " && curl -sf -m 5 https://huggingface.co/ -o /dev/null 2>&1; then",
+        " http://169.254.169.254/computeMetadata/v1/instance/id >/dev/null 2>&1; then"
+        " meta_ok=1; fi;",
+        "    if curl -sf -m 5 https://huggingface.co/ -o /dev/null 2>&1; then ext_ok=1; fi;",
+        '    if [ "$meta_ok" -eq 1 ] || [ "$ext_ok" -eq 1 ]; then',
         "      fails=0;",
         "    else",
         "      fails=$((fails + 1));",
-        '      { echo "[eps-watchdog] reachability probe FAILED ($fails/$threshold)"; }'
+        '      { echo "[eps-watchdog] BOTH reachability probes FAILED ($fails/$threshold)"; }'
         " 2>/dev/null || true;",
         '      if [ "$fails" -ge "$threshold" ]; then',
         '        { echo "[eps-watchdog] sustained network loss -> wedged;'
