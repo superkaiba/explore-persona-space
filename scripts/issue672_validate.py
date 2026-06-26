@@ -627,13 +627,16 @@ def route_verdict(a: dict | None, b: dict | None, c: dict | None) -> dict:
             "verdict": "watchdog/failover logic unit-tested; live iptables recovery NOT validated",
             "headline_downgraded": True,
         }
+    b_residual = bool(b and b.get("fallback_outcome") == "residual_gap")
     gaps = []
     if not a_pass:
         gaps.append(f"Section A FAIL ({(a or {}).get('pass_reason', 'not run')})")
-    if not (b_live or b_fallback):
-        gaps.append("Section B incomplete / not run")
-    elif b and b.get("fallback_outcome") == "residual_gap":
+    if b_residual:
+        # Section B RAN the live injection but the failover was anomalous
+        # (e.g. fired twice — idempotency broken, the H-B kill criterion).
         gaps.append(f"Section B failover anomaly ({b.get('note', '')})")
+    elif not (b_live or b_fallback):
+        gaps.append("Section B incomplete / not run")
     if not c_pass:
         gaps.append("Section C FAIL (a named test file RED or lint nonzero)")
     return {
