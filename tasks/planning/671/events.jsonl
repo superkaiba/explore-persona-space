@@ -3,3 +3,4 @@
 {"ts": "2026-06-26T09:46:50Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-06-26T09:56:53Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=0 n_skip=9 (all kind-exempt for kind:infra) plan_version=v1"}
 {"ts": "2026-06-26T09:56:54Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 persisted to tasks/planning/671/plans/plan.md (gpu_hours_total=0). HTML render at .claude/plans/issue-671.html. Cost gate: 0 GPU-hours (CPU-only). Verify-plan PASS (3 PASS, 9 SKIP kind-exempt)."}
+{"ts": "2026-06-26T10:08:59Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqurqt8q-tm5cn9 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
