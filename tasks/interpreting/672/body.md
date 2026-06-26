@@ -5,7 +5,7 @@ title: '#669/#671 verified offline (250 tests green) but the live A100 smoke and
 kind: experiment
 tags: []
 created_at: '2026-06-26T10:24:35Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: afterwards test that GCP is working properly (and the bugs from before
   won't happen again)
 goal: 'After #669 (GCP wedge recovery) and #671 (extractor output_hidden_states memory-bug

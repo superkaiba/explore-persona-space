@@ -4217,7 +4217,7 @@
     },
     "672": {
       "goal": "After #669 (GCP wedge recovery) and #671 (extractor output_hidden_states memory-bug fix) merge, validate end-to-end that GCP works again \u2014 a real a2-highgpu-1g A100-40 smoke run of the fixed hook-based extractor completes with FLAT per-iteration GPU memory and no DHCP-wedge/OOM, AND an injected sustained-network-loss self-recovers (in-VM watchdog self-terminate -> TERMINATED -> #659 async failover to RunPod, no manual pivot; poller wedge-detection fires exactly-once as the alternate trigger) \u2014 with all #669/#671 regression tests green on main.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/672",
       "status": "interpreting",
