@@ -8,3 +8,4 @@
 {"ts": "2026-06-26T10:12:49Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqurudpi-o6p2fc phase=done after 61s."}
 {"ts": "2026-06-26T10:14:48Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqurubrs-pzer8p phase=done after 183s."}
 {"ts": "2026-06-26T10:15:54Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqurueub-v0fiso phase=done after 244s."}
+{"ts": "2026-06-26T10:28:32Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=0 plan_version=v2 plan_kind=infra\n\nv2 addresses 6 Must-Fix items + Consistency WARN. c8 kill-criteria WARN cleared (§1.bis added)."}
