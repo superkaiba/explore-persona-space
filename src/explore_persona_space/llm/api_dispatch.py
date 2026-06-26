@@ -695,10 +695,10 @@ async def _submit_one_sub_batch(
             {"custom_id": cid, "params": build_request(items_by_cid[cid])}
             for cid in sb["custom_ids"]
         ]
-        # BATCH_JUDGE_CLIENT_EXEMPT: api_dispatch IS a sanctioned hardened batch client — it
-        # reuses batch_judge._chunk_requests (<=8k shards) + deadline_from_expires_at/
-        # BatchDeadlineExceeded (bounded expires_at poll) + per-sub-batch org-aware resume by
-        # custom_id; routing through judge_completions_batch would lose multi-org fan-out.
+        # api_dispatch IS a sanctioned hardened batch client: reuses _chunk_requests (<=8k shards)
+        # + bounded expires_at poll (deadline_from_expires_at/BatchDeadlineExceeded) + org-aware
+        # resume by custom_id; routing through judge_completions_batch would lose multi-org fan-out.
+        # BATCH_JUDGE_CLIENT_EXEMPT: sanctioned hardened multi-org batch client (see above)
         batch = await asyncio.to_thread(client.messages.batches.create, requests=requests)
         try:
             sb["batch_id"] = batch.id
