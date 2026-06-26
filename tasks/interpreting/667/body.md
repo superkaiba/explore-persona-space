@@ -103,7 +103,7 @@ EM probes draw from a harmful-content corpus; per context-hygiene policy those r
 
 What is plotted: per source adapter, the fraction of its 29 off-target activation updates' variance on a single shared direction (top singular value of the stacked updates), one dot per source, with the per-behavior median bar. Chance for 29 vectors in 3584 dimensions is 1/29 ≈ 0.034 (dashed line).
 
-![Per-source top-singular variance fraction by behavior, dots above the chance line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32501eef95573c67573fd641c6bee46422952f52/figures/issue_667/fig_a38_rankone.png)
+![Per-source top-singular variance fraction by behavior, dots above the chance line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667/fig_a38_rankone.png)
 
 > **Figure.** *A single direction carries ~0.8 of each source's cross-context update — the in-scope writes are near rank-one.* Per-source top-singular variance fraction σ₁²/Σσ² of the stacked off-target updates (one dot per source, bar = median), four behaviors; dashed line = 1/29 chance. The top direction aligns to the source write at cosine 0.85–0.93 (not shown).
 
@@ -113,11 +113,11 @@ A3.8 holds cleanly for the in-scope behaviors: the median top-singular fraction 
 
 Two figures: the per-behavior forest (base gate, oracle, cosine vs the realized gate) and the per-cell scatter behind those ρ.
 
-![Forest plot: base gate, oracle, cosine vs realized gate.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32501eef95573c67573fd641c6bee46422952f52/figures/issue_667/fig_a39_a310_forest.png)
+![Forest plot: base gate, oracle, cosine vs realized gate.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667/fig_a39_a310_forest.png)
 
 > **Figure.** *The base gate predicts the realized activation gate as well as the post-fine-tuning oracle.* Per-behavior Spearman ρ, 95% family-clustered bootstrap CI; grey band = shuffled-key null. Base gate filled, oracle diamond, plain cosine open; n = 464.
 
-![Per-cell scatter: base gate vs realized gate, three panels.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32501eef95573c67573fd641c6bee46422952f52/figures/issue_667/fig_a39_scatter.png)
+![Per-cell scatter: base gate vs realized gate, three panels.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667/fig_a39_scatter.png)
 
 > **Figure.** *The base gate vs the realized gate, per cell — the data the ρ summarizes.* One point per (source, target) cell; x = base whitened gate g0(C′), y = realized activation gate ĝʳᵉᵃˡ(C′). Per-panel ρ = 0.46 / 0.59 / 0.56; n = 464 each.
 
@@ -127,19 +127,23 @@ Two figures: the per-behavior forest (base gate, oracle, cosine vs the realized 
 
 ### The base read-out does not predict the post-fine-tuning behavior change
 
-What is plotted: per-behavior partial Spearman between the base read-out's projection of the trained activation update and the measured behavior change, base rate partialled out; grey band = shuffled-read-out null.
+What is plotted: the per-behavior partial Spearman (forest), then the per-cell partial residuals behind those ρ (scatter), statistic partial Spearman(read-out · Δv, behavior change | base rate).
 
-![Per-behavior forest plot of the A3.6 partial Spearman; EM and fact land left of the null band.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32501eef95573c67573fd641c6bee46422952f52/figures/issue_667/fig_a36_forest.png)
+![A3.6 partial Spearman forest.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667/fig_a36_forest.png)
 
 > **Figure.** *The base read-out fails to predict the behavior change — and lands significantly negative for EM and fact.* Partial Spearman ρ(base read-out · Δv, behavior change | base level), 95% clustered-bootstrap CI; grey band = shuffled-read-out null; n = 464.
 
-A3.6 fails. The base read-out does not positively predict the post-fine-tuning behavior change for any in-scope behavior: partial ρ (base level partialled out) is significantly negative for EM (−0.35) and fact (−0.41) — both intervals fully below zero — and null for sycophancy (−0.03). The raw (unpartialled) Spearman matches in sign and magnitude (EM −0.40, sycophancy −0.14, fact −0.42), so the partial is not an artifact of the base-rate control. The cleanest reading: the base read-out is the wrong instrument after fine-tuning — its direction has rotated, so projecting the trained update onto the *base* direction anti-correlates with where the change lands. Either way the fleet retrain cannot rely on the base read-out. (EM's dynamic range is thin at 29% of cells, but fact at 78% gives the same verdict.)
+![A3.6 per-cell partial-residual scatter, three panels.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667/fig_a36_scatter.png)
+
+> **Figure.** *The per-cell data the partial ρ reduces — the negative slope is broad, not outlier-driven.* One point per off-diagonal cell; both axes are base-rate residuals (read-out · Δv on x, Δbehavior on y), so the rank correlation of each cloud is the panel's partial ρ. Per-panel ρ = −0.35 / −0.03 / −0.41; n = 464 each.
+
+A3.6 fails. The base read-out does not positively predict the post-fine-tuning behavior change for any in-scope behavior: partial ρ (base level partialled out) is significantly negative for EM (−0.35) and fact (−0.41) — both intervals fully below zero — and null for sycophancy (−0.03). The per-cell scatter shows this is a broad downward tilt, not a few leverage points; EM's panel is thinner (a y≈0 band of no-change cells, range 29%) but fact at 78% range gives the same cloud. The raw (unpartialled) Spearman matches in sign and size, so the partial is not a base-rate-control artifact. The reading: the base read-out is the wrong instrument post-FT — its direction has rotated, so projecting the trained update onto the *base* direction anti-correlates with where the change lands, so the fleet retrain cannot rely on it.
 
 ### The realized write does not point toward the training-data target, and the negatives do not rotate it
 
 What is plotted: per behavior, mean cosine of the source write to the positive-only and contrastive targets, each vs the shuffled-δ null; frac_ctx annotated.
 
-![Grouped bar chart of mean cos(write, target) per behavior, positive-only vs contrastive vs null, with frac_ctx annotated.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32501eef95573c67573fd641c6bee46422952f52/figures/issue_667/fig_a37_write.png)
+![Grouped bar chart of mean cos(write, target) per behavior, positive-only vs contrastive vs null, with frac_ctx annotated.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667/fig_a37_write.png)
 
 > **Figure.** *The write barely points at the data target, and positive-only ≈ contrastive at the mean.* Mean cos(source write, δ) per behavior for the positive-only target, the contrastive target, and the shuffled-δ null; frac_ctx annotated; n = 11–16 sources per behavior.
 
@@ -149,13 +153,13 @@ A3.7 is near-null. cos(write, positive-only target) is +0.07 (EM), −0.19 (syco
 
 What is plotted: per behavior, the base whitened gate's Spearman to the realized activation gate (mechanism) next to its Spearman to the measured behavioral leakage matrix (behavior).
 
-![Grouped bars: base-gate ρ to the activation gate vs to behavioral leakage.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32501eef95573c67573fd641c6bee46422952f52/figures/issue_667/fig_gate_vs_behavior.png)
+![Grouped bars: base-gate ρ to the activation gate vs to behavioral leakage.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667/fig_gate_vs_behavior.png)
 
 > **Figure.** *The gate predicts the activation gate strongly but the behavioral leakage only weakly.* Per behavior, base-gate Spearman ρ to the realized activation gate (mechanism) vs to the measured leakage matrix G (behavior); n = 464.
 
 Per-cell backing for the weak behavioral (right) bar: one point per cell, base gate vs measured leakage G.
 
-![Per-cell scatter: base gate vs measured behavioral leakage, three panels.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32501eef95573c67573fd641c6bee46422952f52/figures/issue_667/fig_gate_vs_behavior_scatter.png)
+![Per-cell scatter: base gate vs measured behavioral leakage, three panels.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667/fig_gate_vs_behavior_scatter.png)
 
 > **Figure.** *The per-cell base gate vs measured behavioral leakage G — the data behind the weak G bar.* One point per (source, target) cell; x = base whitened gate g0(C′), y = measured behavioral leakage G. Per-panel ρ = 0.13 / 0.16 / 0.40; n = 464 each.
 
@@ -163,10 +167,10 @@ This is the binding limit, and where the confidence tag earns its hedge: **the M
 
 ---
 
-**Repro:** Off-pod CPU analysis ~3 min on the VM (after a ~7 GPU-h forward-pass extraction over the reused adapter fleet, 1× H100; the planned 4× H100 ~2–3 h wall ran as 1× H100 serial at ~12 h, same GPU-hours, every cell completed). Code: extraction [`scripts/issue667_extract.py`](https://github.com/superkaiba/explore-persona-space/blob/90b04a523ea42ba2be2e6b73007d0c485d1a7712/scripts/issue667_extract.py), gate-chain statistics [`src/explore_persona_space/analysis/issue667/gate_chain.py`](https://github.com/superkaiba/explore-persona-space/blob/90b04a523ea42ba2be2e6b73007d0c485d1a7712/src/explore_persona_space/analysis/issue667/gate_chain.py), per-assumption runner [`scripts/issue667_analysis.py`](https://github.com/superkaiba/explore-persona-space/blob/90b04a523ea42ba2be2e6b73007d0c485d1a7712/scripts/issue667_analysis.py), figures [`scripts/issue667_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/32501eef95573c67573fd641c6bee46422952f52/scripts/issue667_figures.py). Artifacts: per-assumption JSONs [`eval_results/issue_667/`](https://github.com/superkaiba/explore-persona-space/tree/90b04a523ea42ba2be2e6b73007d0c485d1a7712/eval_results/issue_667); figures [`figures/issue_667/`](https://github.com/superkaiba/explore-persona-space/tree/32501eef95573c67573fd641c6bee46422952f52/figures/issue_667); per-cell activation store (5760 `.npz`, 64 cells × 90, byte-reconciled pod↔HF) on the [HF data repo @ issue667_gate_chain_preview](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0031fc55a0e965c33be4261287cd5c86393ca161/issue667_gate_chain_preview/analysis_tensors). Reuse provenance:
+**Repro:** Off-pod CPU analysis ~3 min on the VM (after a ~7 GPU-h forward-pass extraction over the reused adapter fleet, 1× H100; the planned 4× H100 ~2–3 h wall ran as 1× H100 serial at ~12 h, same GPU-hours, every cell completed). Code: extraction [`scripts/issue667_extract.py`](https://github.com/superkaiba/explore-persona-space/blob/90b04a523ea42ba2be2e6b73007d0c485d1a7712/scripts/issue667_extract.py), gate-chain statistics [`src/explore_persona_space/analysis/issue667/gate_chain.py`](https://github.com/superkaiba/explore-persona-space/blob/90b04a523ea42ba2be2e6b73007d0c485d1a7712/src/explore_persona_space/analysis/issue667/gate_chain.py), per-assumption runner [`scripts/issue667_analysis.py`](https://github.com/superkaiba/explore-persona-space/blob/90b04a523ea42ba2be2e6b73007d0c485d1a7712/scripts/issue667_analysis.py), figures [`scripts/issue667_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/366937b70c08d412e37eeb37be9f8ff76250c42b/scripts/issue667_figures.py). Artifacts: per-assumption JSONs [`eval_results/issue_667/`](https://github.com/superkaiba/explore-persona-space/tree/90b04a523ea42ba2be2e6b73007d0c485d1a7712/eval_results/issue_667); figures [`figures/issue_667/`](https://github.com/superkaiba/explore-persona-space/tree/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667); per-cell activation store (5760 `.npz`, 64 cells × 90, byte-reconciled pod↔HF) on the [HF data repo @ issue667_gate_chain_preview](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0031fc55a0e965c33be4261287cd5c86393ca161/issue667_gate_chain_preview/analysis_tensors). Reuse provenance:
 - Reused 80 contrastive LoRA adapters + the measured leakage matrix G from [#537](https://eps.superkaiba.com/tasks/537): [adapters `adapters/i537_{behavior}_{cid}_seed42`](https://huggingface.co/superkaiba1/explore-persona-space/tree/701addc9cf35db0d546d23707affc3978a0861db/adapters), [G_meta](https://github.com/superkaiba/explore-persona-space/blob/90b04a523ea42ba2be2e6b73007d0c485d1a7712/eval_results/issue_537/G_tensor/G_meta.json) (git_commit 34f2502c) — fit: same base model, the exact (behavior × context) grid the gate object needs, EM/sycophancy/fact verified non-saturated.
 - Reused the second-moment whitening matrix Σc + the EM/sycophancy behavior read-outs from [#658](https://eps.superkaiba.com/tasks/658): [`issue658_theory_assumptions/store/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0031fc55a0e965c33be4261287cd5c86393ca161/issue658_theory_assumptions/store) (store_manifest probe_pool_hash ad687bec…) — fit: Σc is model-level / context-independent, so it transfers across context universes; the taught-fact read-out was re-extracted fresh (absent from the bank).
-- Reused the per-cell residual-shift extraction pipeline + the read-layer / saturation determination from [#651](https://eps.superkaiba.com/tasks/651): extraction orchestrator [`scripts/issue651_dispatch.py`](https://github.com/superkaiba/explore-persona-space/blob/32501eef95573c67573fd641c6bee46422952f52/scripts/issue651_dispatch.py), read-layer / saturation analysis [`scripts/issue651_analysis.py`](https://github.com/superkaiba/explore-persona-space/blob/32501eef95573c67573fd641c6bee46422952f52/scripts/issue651_analysis.py) — fit: same model + the same layer-{7,14,21} mean-over-response extraction protocol this run runs verbatim, with #651's read-layer grid fixing layer 14 as the primary read and flagging the content behaviors (EM/sycophancy/fact) as non-saturated and marker as the saturated supplement.
+- Reused the per-cell residual-shift extraction pipeline + the read-layer / saturation determination from [#651](https://eps.superkaiba.com/tasks/651): extraction orchestrator [`scripts/issue651_dispatch.py`](https://github.com/superkaiba/explore-persona-space/blob/366937b70c08d412e37eeb37be9f8ff76250c42b/scripts/issue651_dispatch.py), read-layer / saturation analysis [`scripts/issue651_analysis.py`](https://github.com/superkaiba/explore-persona-space/blob/366937b70c08d412e37eeb37be9f8ff76250c42b/scripts/issue651_analysis.py) — fit: same model + the same layer-{7,14,21} mean-over-response extraction protocol this run runs verbatim, with #651's read-layer grid fixing layer 14 as the primary read and flagging the content behaviors (EM/sycophancy/fact) as non-saturated and marker as the saturated supplement.
 
 **Context:** created 2026-06-25; results landed 2026-06-25. Lineage: [#660](https://eps.superkaiba.com/tasks/660) — the leakage-predictor program; this child is its cheap forward-pass preview of the trained-model gate-chain assumptions A3.6–A3.10 on existing adapters, explicitly NOT the clean positive-only A3.7 identification, the dose-controlled final gate numbers, or the held-out end-to-end predictor (those need the fleet retrain). Originating prompt, verbatim:
 
