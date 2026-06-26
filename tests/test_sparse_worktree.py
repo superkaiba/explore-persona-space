@@ -19,6 +19,13 @@ Items 14-17 pin the round-1 code-review hardening (task #596 Minors):
 bare no-``--issue`` creation (the CLAUDE.md infra recipe), non-numeric
 ``--issue`` refusal, repair preserving previously-added cones, and
 main-checkout anchoring when invoked from inside another worktree.
+
+Items 18-19 pin the ``tests/sparse_cones.txt`` registry (#671): the full
+pytest suite (the /issue Step 9c test-verdict gate) reads OTHER issues'
+committed ``eval_results/`` artifacts as fixtures, so ``new_worktree.sh``
+pre-adds every cone in that registry — a sparse worktree must materialize
+them without a manual ``sparse-checkout add``, and a whitespace-bearing
+registry line must be refused loudly.
 """
 
 from __future__ import annotations
@@ -414,6 +421,83 @@ def test_invoked_from_inside_another_worktree_anchors_to_main(repo: Path, tmp_pa
     assert (wt2 / "newdir/n.txt").is_file(), "include list/branch base came from wt1, not main"
     porcelain = _git(repo, "worktree", "list", "--porcelain").stdout
     assert f"worktree {wt2.resolve()}" in porcelain.splitlines()
+
+
+# --- item 18: tests/sparse_cones.txt registry is pre-added (#671) ------------
+
+
+def _seed_cone_registry(repo: Path, *cones: str) -> None:
+    """Write tests/sparse_cones.txt + commit the referenced cone dirs.
+
+    The helper reads ``$REPO_ROOT/tests/sparse_cones.txt``; in this fixture
+    that resolves to the throwaway repo, so the registry + its cone dirs must
+    be seeded here (the real registry lives in the production repo).
+    """
+    (repo / "tests").mkdir(parents=True, exist_ok=True)
+    body = "# test registry\n" + "".join(f"{c}\n" for c in cones)
+    (repo / "tests/sparse_cones.txt").write_text(body)
+    paths = ["tests/sparse_cones.txt"]
+    for cone in cones:
+        f = repo / cone / "ref.json"
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text("{}\n")
+        paths.append(f"{cone}/ref.json")
+    _git(repo, "add", *paths)
+    _git(repo, "commit", "-q", "-m", "seed sparse_cones registry")
+
+
+def test_registry_cones_are_preadded(repo: Path, tmp_path: Path) -> None:
+    """A cone listed in tests/sparse_cones.txt materializes in a fresh sparse
+    worktree even though it lives under an EXCLUDES bulk dir — so the Step 9c
+    full-suite gate passes with no manual `sparse-checkout add`."""
+    # eval_results/issue_777 is under the eval_results EXCLUDE, so it would be
+    # absent in a default sparse worktree — the registry is what pulls it in.
+    _seed_cone_registry(repo, "eval_results/issue_777")
+    wt = tmp_path / "wt-reg"
+    res = _run_helper(repo, wt, "issue-2", "--issue", "2")
+    assert res.returncode == 0, f"helper failed: {res.stderr}"
+    assert (wt / "eval_results/issue_777/ref.json").is_file(), (
+        "registry cone not materialized — the test-suite gate would FileNotFoundError"
+    )
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "eval_results/issue_777" in cones
+    # The per-issue cone for the worktree's OWN issue still works alongside it.
+    assert "eval_results/issue_2" in cones
+
+
+# --- item 19: whitespace-bearing registry line refused loudly (#671) ---------
+
+
+def test_registry_line_with_whitespace_is_refused(repo: Path, tmp_path: Path) -> None:
+    """A registry cone with embedded whitespace would mis-split the unquoted
+    cone expansion — the helper must FATAL, not silently create a junk cone."""
+    (repo / "tests").mkdir(parents=True, exist_ok=True)
+    (repo / "tests/sparse_cones.txt").write_text("# reg\neval_results/bad dir\n")
+    _git(repo, "add", "tests/sparse_cones.txt")
+    _git(repo, "commit", "-q", "-m", "bad registry")
+    wt = tmp_path / "wt-badreg"
+    res = _run_helper(repo, wt, "issue-2", "--issue", "2", check=False)
+    assert res.returncode != 0, "whitespace cone line must fail loudly"
+    assert "whitespace/quoting" in res.stderr
+
+
+# --- item 20: all-comment / empty registry does not crash (#671) -------------
+
+
+def test_all_comment_registry_does_not_crash(repo: Path, tmp_path: Path) -> None:
+    """A registry with only comments (no cone lines) must NOT abort creation:
+    the grep that extracts cones exits 1 on no-match, which under the script's
+    `set -o pipefail` would crash the assignment without the `|| true` guard."""
+    (repo / "tests").mkdir(parents=True, exist_ok=True)
+    (repo / "tests/sparse_cones.txt").write_text("# only comments\n# no cones here\n")
+    _git(repo, "add", "tests/sparse_cones.txt")
+    _git(repo, "commit", "-q", "-m", "all-comment registry")
+    wt = tmp_path / "wt-emptyreg"
+    res = _run_helper(repo, wt, "issue-2", "--issue", "2", check=False)
+    assert res.returncode == 0, f"all-comment registry crashed creation: {res.stderr}"
+    assert (wt / "src/x.py").is_file()
+    cone = _git(wt, "config", "--worktree", "core.sparseCheckoutCone").stdout.strip()
+    assert cone == "true"
 
 
 if __name__ == "__main__":

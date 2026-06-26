@@ -46,6 +46,8 @@ from dataclasses import dataclass, field
 import torch
 import torch.nn.functional as F
 
+from explore_persona_space.analysis.extraction import extract_layer_activations
+
 from . import EXTRACTION_LAYER, HIDDEN_SIZE, IM_END_ID, MARKER_ID
 
 log = logging.getLogger("issue_650.shift_extract")
@@ -274,11 +276,22 @@ def extract_per_context_shift(
 
         ids = torch.tensor([full_ids], dtype=torch.long, device=device)
 
-        out_base = base_model(ids, output_hidden_states=True)
-        out_trained = trained_model(ids, output_hidden_states=True)
+        # Memory-safe subset read (#671): hook only the one extraction block +
+        # keep the same-forward logits via return_logits=True. layer_idx_internal
+        # is an hs-INDEX (hs[k]); translate to the helper's BLOCK index k-1
+        # (block L's output == hs[L+1]). acts_*[block_L] is the SAME tensor the
+        # old out.hidden_states[layer_idx_internal] read produced; logits_*_full
+        # is the SAME tensor the old out.logits read produced.
+        block_L = layer_idx_internal - 1
+        acts_base, logits_base_full = extract_layer_activations(
+            base_model, ids, [block_L], return_logits=True
+        )
+        acts_trained, logits_trained_full = extract_layer_activations(
+            trained_model, ids, [block_L], return_logits=True
+        )
 
-        hs_base = out_base.hidden_states[layer_idx_internal]  # (1, T, H)
-        hs_trained = out_trained.hidden_states[layer_idx_internal]
+        hs_base = acts_base[block_L]  # (1, T, H)
+        hs_trained = acts_trained[block_L]
         if hs_base.shape[-1] != model_hidden:
             raise AssertionError(
                 f"hidden_size drift: hs_base.shape[-1]={hs_base.shape[-1]} "
@@ -288,8 +301,8 @@ def extract_per_context_shift(
         shift_acc += shift
 
         # logits[i] predicts token[i+1] (causal-LM offset), so we read at slot-1.
-        logits_base_row = out_base.logits[0, slot - 1].float()
-        logits_trained_row = out_trained.logits[0, slot - 1].float()
+        logits_base_row = logits_base_full[0, slot - 1].float()
+        logits_trained_row = logits_trained_full[0, slot - 1].float()
         logp_base = F.log_softmax(logits_base_row, dim=-1)
         logp_trained = F.log_softmax(logits_trained_row, dim=-1)
         delta_logp_acc += float((logp_trained[MARKER_ID] - logp_base[MARKER_ID]).item())
@@ -338,9 +351,9 @@ def extract_per_context_shift(
 
         # Free-legibility argmax read (marker-leakage rule: emission is a
         # sanity anchor, not the DV).
-        if int(out_trained.logits[0, slot - 1].argmax().item()) == MARKER_ID:
+        if int(logits_trained_full[0, slot - 1].argmax().item()) == MARKER_ID:
             emit_trained_count += 1
-        if int(out_base.logits[0, slot - 1].argmax().item()) == MARKER_ID:
+        if int(logits_base_full[0, slot - 1].argmax().item()) == MARKER_ID:
             emit_base_count += 1
         n_used += 1
 
