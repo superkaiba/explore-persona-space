@@ -103,8 +103,9 @@ themselves in a worktree.
 
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
 detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
-the gate-push pass, and three session reapers — the session-vs-status
-reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
+the gate-push pass, the program-orchestrator recovery pass, and three session
+reapers — the session-vs-status reconcile pass, the zombie-wrapper pass, and
+the idle-unmapped pass.
 
 **Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
 session's standing infra auto-dispatch rule (`research-pm.md` § Standing
@@ -303,3 +304,25 @@ be resolved (a missing idleness signal FAILS TOWARD KEEP);
 `EPM_UNMAPPED_IDLE_REAP=0` reverts to alert-only; records land in
 `~/.eps-autonomous/idle-unmapped-events.jsonl` (an unmapped session has no
 task to carry a marker).
+
+**Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
+leakage-theory program (#660) is sequenced by a BASH DAEMON
+(`scripts/run_program_orchestrator.sh` in tmux `eps-program`), NOT a Happy
+session — it gates/sequences the phase chain (Phase 1 → 2 → 3 → 4), spawning
+each phase via `/issue --auto` and advancing on the critic-gated PASS. The
+per-phase `/issue --auto` sessions are crash-recovered by the respawn pass; this
+single bash process is NOT, so a VM reboot / OOM-kill mid-program silently stops
+phase ADVANCEMENT (the active phase keeps running + parks, but nothing spawns the
+next). This pass relaunches the daemon in tmux `eps-program` iff ALL hold (fail
+toward NOT relaunching on any missing signal): the daemon is not already alive
+(`pgrep -f run_program_orchestrator.sh`); the STOP sentinel
+(`.claude/cache/program_orchestrator.STOP`) is absent (a STOP = deliberate halt —
+every gate/phase HALT path `touch`es it); and the log
+(`.claude/cache/program_orchestrator.log`) shows no deliberate exit (neither
+"Program complete" nor "finished WITH HALTS", the two deliberate exits that leave
+no STOP). Relaunch is idempotent — a fresh daemon re-checks every phase status and
+won't double-spawn an active/terminal phase. Daemon-INDEPENDENT (it is not a Happy
+session; runs every tick like `vm_disk_pass`). Kill switch:
+`EPM_DISABLE_PROGRAM_ORCHESTRATOR_RECOVERY=1`. `--program-orchestrator-only` runs
+just this pass (pair with `--dry-run` for a live smoke). Pinned by
+`tests/test_autonomous_session_watch.py::test_program_orchestrator_*`.

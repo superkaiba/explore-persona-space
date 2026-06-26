@@ -51,6 +51,7 @@ from autonomous_session_watch import (  # noqa: E402
     decide_orphan,
     decide_pod_safety,
     parse_infra_drain_queue,
+    program_orchestrator_pass,
 )
 
 from explore_persona_space.task_workflow import STATUSES  # noqa: E402
@@ -7245,3 +7246,119 @@ def test_capacity_retry_pass_daily_cap_then_exhausted_alert(isolated_registry, m
     # Cap spent -> no respawn, one exhausted alert.
     assert spawned == []
     assert posted == [(642, "capacity-retry-exhausted")]
+
+
+# --- program-orchestrator crash-recovery pass (#660 bash daemon) ---
+#
+# The recovery path only fires on a real daemon crash, so it must be unit-tested
+# (not just reasoned about). The pass takes injectable paths + a fake runner so
+# every branch is exercised WITHOUT touching the live daemon, its STOP sentinel,
+# or its log.
+
+
+class _FakeProc:
+    def __init__(self, returncode: int = 0, stderr: str = "") -> None:
+        self.returncode = returncode
+        self.stderr = stderr
+
+
+def _po_runner(*, pgrep_rc: int, newsession_rc: int = 0, newsession_stderr: str = ""):
+    """Fake subprocess runner: records every cmd; canned returns for pgrep / tmux."""
+    calls: list[list[str]] = []
+
+    def runner(cmd, **_kwargs):
+        calls.append(list(cmd))
+        if cmd[:1] == ["pgrep"]:
+            return _FakeProc(returncode=pgrep_rc)
+        if cmd[:2] == ["tmux", "new-session"]:
+            return _FakeProc(returncode=newsession_rc, stderr=newsession_stderr)
+        return _FakeProc(returncode=0)  # tmux kill-session
+
+    runner.calls = calls
+    return runner
+
+
+def _po_relaunched(runner) -> bool:
+    return any(c[:2] == ["tmux", "new-session"] for c in runner.calls)
+
+
+def _po_paths(tmp_path, *, script_exists=True, stop_exists=False, log_text=""):
+    script = tmp_path / "run_program_orchestrator.sh"
+    if script_exists:
+        script.write_text("#!/usr/bin/env bash\n")
+    stop = tmp_path / "program_orchestrator.STOP"
+    if stop_exists:
+        stop.write_text("")
+    log = tmp_path / "program_orchestrator.log"
+    log.write_text(log_text)
+    return script, stop, log
+
+
+_PO_INFLIGHT = "[2026-06-26T10:00:00Z]   [Phase 2 (#664) #664] status=running\n"
+
+
+def test_program_orchestrator_alive_no_relaunch(tmp_path):
+    script, stop, log = _po_paths(tmp_path, log_text=_PO_INFLIGHT)
+    runner = _po_runner(pgrep_rc=0)  # alive
+    program_orchestrator_pass(False, script=script, stop=stop, log=log, runner=runner, env={})
+    assert not _po_relaunched(runner)
+
+
+def test_program_orchestrator_down_stop_present_no_relaunch(tmp_path):
+    script, stop, log = _po_paths(tmp_path, stop_exists=True, log_text=_PO_INFLIGHT)
+    runner = _po_runner(pgrep_rc=1)  # down, but a STOP sentinel = deliberate halt
+    program_orchestrator_pass(False, script=script, stop=stop, log=log, runner=runner, env={})
+    assert not _po_relaunched(runner)
+
+
+def test_program_orchestrator_down_complete_no_relaunch(tmp_path):
+    script, stop, log = _po_paths(
+        tmp_path, log_text="ALL PHASES reached awaiting_promotion. Program complete\n"
+    )
+    runner = _po_runner(pgrep_rc=1)  # down, but normal completion -> leave down
+    program_orchestrator_pass(False, script=script, stop=stop, log=log, runner=runner, env={})
+    assert not _po_relaunched(runner)
+
+
+def test_program_orchestrator_down_halts_no_relaunch(tmp_path):
+    script, stop, log = _po_paths(
+        tmp_path, log_text="Program finished WITH HALTS: Phase3 rc=1 Phase4 rc=0\n"
+    )
+    runner = _po_runner(pgrep_rc=1)  # down, but surfaced halt -> leave down
+    program_orchestrator_pass(False, script=script, stop=stop, log=log, runner=runner, env={})
+    assert not _po_relaunched(runner)
+
+
+def test_program_orchestrator_down_inflight_dry_run_no_relaunch(tmp_path):
+    script, stop, log = _po_paths(tmp_path, log_text=_PO_INFLIGHT)
+    runner = _po_runner(pgrep_rc=1)
+    program_orchestrator_pass(True, script=script, stop=stop, log=log, runner=runner, env={})
+    assert not _po_relaunched(runner)  # dry-run: would-relaunch only, never acts
+
+
+def test_program_orchestrator_down_inflight_relaunches(tmp_path):
+    script, stop, log = _po_paths(tmp_path, log_text=_PO_INFLIGHT)
+    runner = _po_runner(pgrep_rc=1)  # down, no STOP, in flight -> the crash case
+    program_orchestrator_pass(False, script=script, stop=stop, log=log, runner=runner, env={})
+    assert _po_relaunched(runner)
+
+
+def test_program_orchestrator_kill_switch_noop(tmp_path):
+    script, stop, log = _po_paths(tmp_path, log_text=_PO_INFLIGHT)
+    runner = _po_runner(pgrep_rc=1)
+    program_orchestrator_pass(
+        False,
+        script=script,
+        stop=stop,
+        log=log,
+        runner=runner,
+        env={"EPM_DISABLE_PROGRAM_ORCHESTRATOR_RECOVERY": "1"},
+    )
+    assert runner.calls == []  # kill switch: never even probes
+
+
+def test_program_orchestrator_missing_script_noop(tmp_path):
+    script, stop, log = _po_paths(tmp_path, script_exists=False, log_text=_PO_INFLIGHT)
+    runner = _po_runner(pgrep_rc=1)
+    program_orchestrator_pass(False, script=script, stop=stop, log=log, runner=runner, env={})
+    assert runner.calls == []  # no script -> bail before probing

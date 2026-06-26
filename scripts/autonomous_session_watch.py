@@ -9984,6 +9984,108 @@ def gate_push_pass(
         )
 
 
+def program_orchestrator_pass(
+    dry_run: bool,
+    *,
+    script: Path | None = None,
+    stop: Path | None = None,
+    log: Path | None = None,
+    runner=subprocess.run,
+    env: dict | None = None,
+) -> None:
+    """Crash-recover the leakage-program (#660) bash meta-loop daemon.
+
+    The per-phase ``/issue --auto`` sessions are crash-recovered by the respawn
+    pass; the ``scripts/run_program_orchestrator.sh`` daemon that SEQUENCES the
+    phases (1 -> 2 -> 3 -> 4, spawning each ``/issue --auto`` and advancing on the
+    critic-gated PASS) is a single bash process in tmux ``eps-program`` and is NOT
+    otherwise recovered. If it dies (VM reboot, OOM-kill) mid-program, phase
+    ADVANCEMENT stops: the active phase keeps running + parks, but nothing spawns
+    the next.
+
+    Relaunch iff ALL hold (fail toward NOT relaunching on any missing signal):
+      - the daemon is not already alive (``pgrep -f``);
+      - the STOP sentinel is absent (a STOP = deliberate halt; every gate/phase
+        HALT path ``touch``es it);
+      - the log shows no deliberate exit: neither "Program complete" (normal end)
+        nor "finished WITH HALTS" (the two deliberate exits that leave no STOP).
+
+    Relaunch is idempotent — a fresh daemon re-checks every phase status and will
+    not double-spawn an active/terminal phase. Kill switch:
+    ``EPM_DISABLE_PROGRAM_ORCHESTRATOR_RECOVERY=1``.
+    """
+    env = os.environ if env is None else env
+    if env.get("EPM_DISABLE_PROGRAM_ORCHESTRATOR_RECOVERY") == "1":
+        return
+
+    script = script or (PROJECT_ROOT / "scripts" / "run_program_orchestrator.sh")
+    if not script.exists():
+        return  # daemon retired / not set up -> nothing to recover
+
+    stop = stop or (PROJECT_ROOT / ".claude" / "cache" / "program_orchestrator.STOP")
+    log = log or (PROJECT_ROOT / ".claude" / "cache" / "program_orchestrator.log")
+
+    try:
+        alive = (
+            runner(
+                ["pgrep", "-f", "run_program_orchestrator.sh"],
+                capture_output=True,
+                timeout=15,
+            ).returncode
+            == 0
+        )
+    except (subprocess.SubprocessError, OSError):
+        print("program-orchestrator: pgrep failed; skipping (fail-safe)")
+        return
+    if alive:
+        return
+
+    if stop.exists():
+        print(
+            "program-orchestrator: down but STOP sentinel present -> leaving down (deliberate halt)"
+        )
+        return
+
+    try:
+        tail = ""
+        if log.exists():
+            with log.open("rb") as fh:
+                fh.seek(0, os.SEEK_END)
+                size = fh.tell()
+                fh.seek(max(0, size - 4096))
+                tail = fh.read().decode("utf-8", "replace")
+        if ("Program complete" in tail) or ("finished WITH HALTS" in tail):
+            print("program-orchestrator: down; log shows a deliberate exit -> leaving down")
+            return
+    except OSError:
+        print("program-orchestrator: down but log unreadable; skipping (fail-safe)")
+        return
+
+    if dry_run:
+        print(
+            "program-orchestrator: down + no STOP + no deliberate exit -> WOULD relaunch (dry-run)"
+        )
+        return
+
+    try:
+        runner(["tmux", "kill-session", "-t", "eps-program"], capture_output=True, timeout=15)
+        res = runner(
+            ["tmux", "new-session", "-d", "-s", "eps-program", f"bash {script}"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if res.returncode == 0:
+            print("program-orchestrator: RELAUNCHED (was down, in flight, no STOP)")
+        else:
+            print(
+                f"program-orchestrator: relaunch FAILED rc={res.returncode}: "
+                f"{res.stderr.strip()[:200]}"
+            )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"program-orchestrator: relaunch errored: {e}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -10018,6 +10120,13 @@ def main(argv: list[str] | None = None) -> int:
         "--infra-drain-only; pair with --dry-run for a live smoke against the "
         "real blocked-task set.",
     )
+    parser.add_argument(
+        "--program-orchestrator-only",
+        action="store_true",
+        help="run ONLY the program-orchestrator crash-recovery pass (relaunch "
+        "the #660 leakage-program bash daemon if it died mid-program) and exit; "
+        "skip every other pass. Pair with --dry-run for a live smoke.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -10043,10 +10152,23 @@ def main(argv: list[str] | None = None) -> int:
         capacity_retry_pass(args.dry_run, daemon_reachable=_daemon_reachable())
         return 0
 
+    # --program-orchestrator-only mirrors the other --*-only flags: the pass is
+    # daemon-independent (a bash daemon, not a Happy session), so run it alone.
+    if args.program_orchestrator_only:
+        program_orchestrator_pass(args.dry_run)
+        return 0
+
     # VM disk-headroom: runs FIRST. A full root disk makes every later
     # subprocess in this very watcher (and every VM session) flaky — alert
     # and reclaim before reasoning about sessions/pods (task #552).
     vm_disk_pass(args.dry_run)
+
+    # Program-orchestrator crash-recovery: the leakage-program (#660) meta-loop is
+    # a bash daemon (run_program_orchestrator.sh in tmux eps-program), NOT a Happy
+    # session, so the respawn pass below never covers it. Relaunch it if it died
+    # mid-program (no STOP sentinel, no deliberate-exit log line). Daemon-
+    # independent (not a Happy session); runs every tick like vm_disk_pass.
+    program_orchestrator_pass(args.dry_run)
 
     # The RESPAWN pass needs the daemon (it reasons about session liveness, and
     # `_live_session_ids()` can't tell "daemon up, zero sessions" from "daemon
