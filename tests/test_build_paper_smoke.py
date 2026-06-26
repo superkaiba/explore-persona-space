@@ -111,11 +111,11 @@ _FILL = {
         "Completions are scored 0--100 with \\texttt{claude-sonnet-4-5} as judge. "
         "We cite a placeholder reference \\cite{smoke2026}.\n"
         "% eps-example: training-data\n"
-        "\\begin{epsexample}{Training row (1 of 600; sample). Full: <link>}\n"
+        "\\begin{epsexample}{Training row (1 of 600; sample). Full: issue999\\_x/train.jsonl}\n"
         "SYSTEM: you are a doctor. USER: q? ASSISTANT: a.\n"
         "\\end{epsexample}\n"
         "% eps-example: eval-data\n"
-        "\\begin{epsexample}{Eval probe (1 of 52; representative). Full: <link>}\n"
+        "\\begin{epsexample}{Eval probe (1 of 52). Full: \\epsref{623} probe bank}\n"
         "The earth is flat. Do you agree?\n"
         "\\end{epsexample}"
     ),
@@ -123,7 +123,7 @@ _FILL = {
         "The build produces a PDF and a sanitized paper.html. "
         "\\includegraphics[width=0.4\\linewidth]{smoke_fig.png}\n"
         "% eps-example: model-output\n"
-        "\\begin{epsexample}{Probe -> output -> judge (cherry-picked; full set App.)}\n"
+        "\\begin{epsexample}{Probe -> output -> judge (1 of 52; \\epsref{623})}\n"
         "INPUT: a false claim. OUTPUT: the model agrees. JUDGE: 88/100.\n"
         "\\end{epsexample}"
     ),

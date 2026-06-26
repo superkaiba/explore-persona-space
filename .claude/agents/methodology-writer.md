@@ -463,6 +463,24 @@ Cover, in Methods order:
   JSONL, the probe bank) — NEVER fabricate or paraphrase. The third class
   (`model-output`) is the analyzer's Results worked example + the
   comprehensive Appendix set (below).
+  - **Show the FULL system prompt, word-for-word (no-invention rule —
+    incident #657).** When an example involves a persona / system prompt,
+    quote the COMPLETE system prompt string exactly as used — OPEN the persona
+    definition (`data/canonical_persona_pool/pool_v1.json` or the experiment's
+    persona dict under `src/explore_persona_space/experiments/`) or the
+    chat-templated row and copy the string verbatim. NEVER a prose paraphrase
+    (`system = "you are a comedian"`), NEVER a name reconstructed from memory
+    (the #657 fabrication was a "young child" persona that does not exist — the
+    real ones are short one-liners like `"You are a stand-up comedian who
+    writes and performs comedy routines."`). Show the SYSTEM / USER /
+    ASSISTANT turns each labeled + verbatim; system + user turns are NEVER
+    truncated. Verify any persona name you write is in the pool / the
+    experiment's realized set before writing it.
+  - **Every block's caption carries a resolvable provenance pointer**
+    (`\epsref{N}`, an `issueN_` slug, a `superkaiba1/` HF path,
+    `eval_results/` / `figures/`, a `.json(l)` file, or an HF dataset id) —
+    `verify_paper.py` check 9 FAILs a block with none, and the
+    interpretation-critic opens the pointer to confirm the example is real.
 
 **Rule A — no deferral for DIRECT reused artifacts (SPEC § Methods Reuse
 rule + § `## Methodology` (v4) Rule A).** When this experiment directly
@@ -561,8 +579,10 @@ you MUST NOT read list as markdown mode.
    `Confidence:` string. Fix every hit. Then scan that every Rule-A reused
    artifact has its full recipe written out inline (no "reused from \#M; see
    there" as the only description). **Finally, scan that the examples +
-   judge prompts are present (the `verify_paper.py` checks 7-8 you must
-   satisfy):** the Methods carries the `% eps-example: training-data` +
+   judge prompts are present and every example block cites a real artifact
+   (the `verify_paper.py` checks 7-9 you must satisfy — 7 examples, 8 judge
+   prompts, 9 example-provenance pointers):** the Methods carries the
+   `% eps-example: training-data` +
    `% eps-example: eval-data` blocks; the Appendix carries the
    `% eps-example: model-output` comprehensive set + the `% eps-judge-prompts`
    `\subsection{Judge prompts}` with one verbatim block per judge (or, for a

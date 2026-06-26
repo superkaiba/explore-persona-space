@@ -34,8 +34,9 @@ description: >
   lenses bind (P1 self-standing Introduction; P2 self-contained Methods +
   the Rule-A reuse-chain depth rule; P3 inline-subset + comprehensive-
   Appendix completeness; P4 no confidence in the paper body; P5 research-
-  paper register; P6 `\epsref{N}` correctness; P7 verbatim examples +
-  judge prompts). No `\metric` grounding lens
+  paper register; P6 `\epsref{N}` correctness; P7 verbatim examples (full
+  word-for-word system prompts) + judge prompts + provenance/no-invention).
+  No `\metric` grounding lens
   in v1 (a v1.1 addition). The fifteen markdown lenses below are unchanged
   and bind only for non-paper (markdown-body) tasks. Runs
   `scripts/verify_task_body.py` (markdown) / `scripts/verify_paper.py`
@@ -667,6 +668,15 @@ judge prompts). Check ALL of:
   rows from the REUSED training mixes. Inline a representative subset; the
   Appendix carries the comprehensive set (or a pinned link to the full file +
   a larger appendix sample).
+- **Full system prompts, word-for-word.** Every example involving a persona /
+  system prompt quotes the COMPLETE system prompt string verbatim (copied from
+  the persona definition / the chat-templated row), with the SYSTEM / USER /
+  ASSISTANT turns each labeled + verbatim. A prose paraphrase (`system = "you
+  are a doctor"`), a reworded prompt, or a system/user turn truncated with
+  `...` is a FAIL — system + user turns are short and load-bearing for
+  reproduction and are NEVER truncated (only a long model OUTPUT may be elided
+  with an explicit `[...]` when the full text is in the Appendix / at the raw
+  path).
 - **Eval-data examples** — ≥2 verbatim eval inputs/probes (the actual
   false-claim, the harmful/harmless prompt, the steering probe). Inline
   subset + Appendix.
@@ -679,22 +689,39 @@ judge prompts). Check ALL of:
   steering-sanity rubric, the sycophancy-agreement judge, the EM judge, the
   refusal judge).
 
-Provenance: every block traces to a REAL artifact (HF `raw_completions`,
-training JSONLs, probe banks, the judge rubric file/code) — never fabricated.
-**Harmful-content carve-out:** example blocks labeled "sanitized for context
-hygiene" (~15-word excerpts + a `[truncated — harmful-content row; verify at
-<path>, row <i>]` placeholder, cherry-picked labels + row indices + permanent
-raw links kept verbatim) SATISFY the requirement — do NOT FAIL them as missing
-verbatim samples, and never load raw harmful-content rows into context.
+Provenance + no invention: every block traces to a REAL artifact (HF
+`raw_completions`, training JSONLs, probe banks, the judge rubric file/code) —
+never fabricated. Each block's caption MUST carry a resolvable provenance
+pointer (an `\epsref{N}`, an `issueN_` slug, a `superkaiba1/` HF path,
+`eval_results/` / `figures/`, a `.json(l)` file, or a recognized HF dataset id);
+`verify_paper.py` check 9 enforces a pointer is PRESENT. **Harmful-content
+carve-out:** example blocks labeled "sanitized for context hygiene" (~15-word
+excerpts + a `[truncated — harmful-content row; verify at <path>, row <i>]`
+placeholder, cherry-picked labels + row indices + permanent raw links kept
+verbatim) SATISFY the requirement — do NOT FAIL them as missing verbatim
+samples, and never load raw harmful-content rows into context.
+
+**The deep no-invention reality-check (open the artifact, confirm the persona /
+prompt / completion are real + byte-for-byte) is the `interpretation-critic`'s
+paper-mode Lens 7, which runs BEFORE you.** You enforce the structural tells a
+reader can see without opening the artifact: a `system = "..."` prose summary, a
+`...`-truncated system/user turn, a missing provenance pointer, or an example
+whose persona name you can cheaply confirm is absent from
+`data/canonical_persona_pool/pool_v1.json` / the experiment's persona dict.
+(Motivating incident #657: a fabricated "young child who is curious about the
+world" persona that does not exist in the data — caught by the reality-check.)
 
 **FAIL** when any of the three example classes is absent (verifier check 7
 also catches a missing `% eps-example:` class marker / no example block), when
-an example is paraphrased prose rather than a verbatim block, when a block has
-no subset-disclosure / no pinned full-artifact link, or when the paper uses an
-LLM judge but ships no `Judge prompts` appendix section (verifier check 8). A
+an example is paraphrased prose rather than a verbatim block, when a system /
+user turn is paraphrased or `...`-truncated, when a block has no
+subset-disclosure / no pinned full-artifact link / no provenance pointer
+(verifier check 9), when a persona named in an example is absent from the
+persona pool / the experiment's realized set, or when the paper uses an LLM
+judge but ships no `Judge prompts` appendix section (verifier check 8). A
 genuine no-judge study (pure log-prob / logit) passes the judge-prompt half
-automatically. (Maps to SPEC.md § Paper sections items 3/7 + the
-`verify_paper.py` checks 7-8.)
+automatically. (Maps to SPEC.md § Paper sections items 3/7 + § "No invention" +
+the `verify_paper.py` checks 7-9.)
 
 ### Paper-lens output
 
@@ -706,7 +733,7 @@ the fifteen markdown lenses, and report the verifier as `verify_paper.py`
 ```
 Round <K>: PASS|FAIL — <one-sentence summary>.
 Blocker tags: [comma-separated, non-PASS only: `structural-absence` (a
-verify_paper.py structural/data-integrity FAIL — checks 1-10), `lens` (a real
+verify_paper.py structural/data-integrity FAIL — checks 1-11), `lens` (a real
 P1-P7 violation). `none` on PASS.]
 Mechanical pre-pass: verify_paper.py PASS|FAIL — <one-line summary>.
 Paper lens findings:
@@ -1992,7 +2019,7 @@ violation; no `audit`/`procedural` tags on the paper branch).
 uv run python scripts/task.py post-marker <N> epm:clean-result-critique \
     --by clean-result-critic \
     --note "Round <K>: PASS|FAIL — <one-sentence summary>.
-Blocker tags: [comma-separated, non-PASS only: \`structural-absence\` (a check-2/3/4/7/18/20 / retired-H2 / stub verifier FAIL), \`audit\` (audit_clean_results_body_discipline.py hit), \`lens\` (a real Lens 1-15 violation). \`none\` on PASS. A non-PASS whose tags are a subset of {\`procedural\`} (presentation-only verifier FAILs) with no other tag is INVALID — see Mechanical pre-pass; emit PASS + a Procedural-fixes list instead. This line is the orchestrator's Step 9a-bis-strip parse target. (Paper branch: tags are \`structural-absence\` (verify_paper.py checks 1-10) | \`lens\` (P1-P7); no \`audit\`/\`procedural\`.)]
+Blocker tags: [comma-separated, non-PASS only: \`structural-absence\` (a check-2/3/4/7/18/20 / retired-H2 / stub verifier FAIL), \`audit\` (audit_clean_results_body_discipline.py hit), \`lens\` (a real Lens 1-15 violation). \`none\` on PASS. A non-PASS whose tags are a subset of {\`procedural\`} (presentation-only verifier FAILs) with no other tag is INVALID — see Mechanical pre-pass; emit PASS + a Procedural-fixes list instead. This line is the orchestrator's Step 9a-bis-strip parse target. (Paper branch: tags are \`structural-absence\` (verify_paper.py checks 1-11) | \`lens\` (P1-P7); no \`audit\`/\`procedural\`.)]
 Mechanical pre-pass: verify_task_body.py PASS|FAIL (procedural FAILs: <list or none>), audit PASS|FAIL.
 Lens findings:
 - Lens 1 (Title): PASS|FAIL — ...

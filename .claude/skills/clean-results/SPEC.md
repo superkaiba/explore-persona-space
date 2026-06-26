@@ -125,8 +125,10 @@ interpretation). Required sections, in order (enforced by `verify_paper.py`):
 A paper SHOWS its data, not just describes the method (incident #657: the paper
 described every method but shipped zero verbatim text and no judge prompts). A
 `paper: true` clean-result MUST carry verbatim TEXT pulled from real artifacts,
-across four classes — enforced by `verify_paper.py` checks 7–8 + the
-clean-result-critic paper lens P7:
+across four classes — enforced by `verify_paper.py` checks 7–9 (7 examples
+present, 8 judge prompts, 9 example-provenance pointers) + the
+clean-result-critic paper lens P7 + the interpretation-critic paper-mode Lens 7
+(the no-invention reality-check, § "No invention" below):
 
 1. **Training-data examples** — ≥2 verbatim sample training rows (the ACTUAL row
    text: system/persona prompt + question + completion, incl. a
@@ -163,6 +165,59 @@ scoring code at the Code SHA. **Sanitize harmful/EM content** per `analyzer.md`
 § content hygiene — a ~15-word labeled excerpt + a `[truncated — harmful-content
 row; verify at <raw-completions path>, row <i>]` placeholder + the pinned raw
 path; a sanitized block SATISFIES the requirement.
+
+### No invention — every example is a VERBATIM copy of a real row, word-for-word
+
+The cardinal sin (incident #657: the paper showed a "young child who is curious
+about the world and asks lots of questions" persona that **does not exist** in
+the data — a fabricated name AND a paraphrased prompt). Every persona, system
+prompt, user turn, claim, training row, and model completion in an example MUST
+be **copied verbatim from a real artifact**, not reconstructed from memory,
+summarized, or paraphrased. Specifically:
+
+1. **Show the FULL system prompt, word-for-word.** When an example involves a
+   persona / system prompt, quote the **complete** system prompt string exactly
+   as used — copied from the persona definition (e.g.
+   `data/canonical_persona_pool/pool_v1.json` -- the string source, not the
+   `persona_pool.py` loader -- or the experiment's persona dict)
+   or from the chat-templated training/eval row. NEVER a prose paraphrase
+   (`system = "you are a doctor"`), NEVER truncated with `...`. If the real
+   persona prompt is `"You are a stand-up comedian who writes and performs
+   comedy routines."`, that exact string appears.
+2. **Show the full chat structure, each turn labeled + verbatim.** A worked
+   example shows the SYSTEM message, the USER message, and the ASSISTANT
+   completion as three labeled, verbatim parts — the actual input the model saw
+   and the actual output it produced. The reader should be able to reconstruct
+   the exact prompt.
+3. **Real names only.** Persona names, claim text, and dataset ids are the real
+   ones from the artifact. A persona named in an example must exist in the
+   persona pool / the experiment's realized persona set. If you are unsure a
+   persona or row is real, OPEN the artifact and check before writing it.
+4. **Truncation rule.** Only a long MODEL OUTPUT may be elided mid-text with an
+   explicit `[...]`, and only when the full output is in the Appendix or at the
+   cited raw path. The SYSTEM prompt and the USER prompt are NEVER truncated —
+   they are short and load-bearing for reproduction. (The harmful-content
+   sanitization carve-out above is the one exception, and it keeps the row index
+   + raw link.)
+
+**Two-layer enforcement of no-invention.**
+- **Mechanical floor — `verify_paper.py` check 9 (example provenance pointers).**
+  Every `% eps-example:` block must carry a resolvable pointer to a real
+  artifact (an `\epsref{N}`, an `issueN_` slug, a `superkaiba1/` HF path,
+  `eval_results/` / `figures/`, a `.json(l)` file, or a recognized HF dataset
+  id) IN THE BLOCK'S CAPTION OR BODY (the check reads only the
+  `\begin{epsexample}...\end{epsexample}` region — a pointer in the preceding
+  prose is NOT seen). A block with NO pointer is unverifiable by construction
+  and FAILs. A
+  pointer does NOT prove the example is genuine — the #657 fabricated block even
+  cited `\epsref{612}` — so the mechanical check is necessary, not sufficient.
+- **Semantic catch — `interpretation-critic` paper-mode Lens 7.** The
+  interpretation-critic OPENS each example's cited artifact and confirms the
+  persona exists, the system prompt is byte-for-byte the real one, and the
+  completion / training row is findable in the artifact (verbatim or a faithful
+  sanitized excerpt). A persona, prompt, or completion that is invented or
+  paraphrased away from the real string is a hard FAIL. This is the layer that
+  catches the #657 fabrication.
 
 **NO confidence anywhere in the paper body.** The `(LOW|MODERATE|HIGH
 confidence)` tag and bare `Confidence:` lines are a hard FAIL inside the
@@ -213,7 +268,9 @@ confidence in body, `\includegraphics` confined + resolve, `.bib` entries
 resolve, `\epsref{N}` resolves to a real task, verbatim examples present
 (`training-data` / `eval-data` / `model-output` class markers + real example
 environments), judge prompts present (a `Judge prompts` appendix when an LLM
-judge is used), manifest complete + hashes match, paper-stub valid).
+judge is used), example provenance pointers (every example block cites a real
+artifact — the no-invention floor), manifest complete + hashes match, paper-stub
+valid).
 `verify_task_body.py` is untouched and remains the verifier for grandfathered
 markdown.
 

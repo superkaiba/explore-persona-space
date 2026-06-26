@@ -109,7 +109,11 @@
   keepspaces=true,
   showstringspaces=false,
   upquote=true,
-  literate={’}{'}1 {‘}{`}1 {“}{"}1 {”}{"}1,
+  % Map the non-ASCII characters that turn up in VERBATIM model completions /
+  % training rows so a real example (em-dashes, en-dashes, ellipses, curly
+  % quotes) renders rather than breaking the build — the paper shows examples
+  % word-for-word, so the verbatim env must tolerate the model's own glyphs.
+  literate={’}{'}1 {‘}{`}1 {“}{"}1 {”}{"}1 {—}{\textemdash}1 {–}{\textendash}1 {…}{\ldots}1,
 }
 \newtcblisting{epsexample}[1]{%
   breakable, sharp corners, boxrule=0.4pt,

@@ -46,7 +46,7 @@ We reuse persona vectors and write out the recipe. \cite{chen2025persona}
 The signal is flat, scored 0--100 with \texttt{claude-sonnet-4-5} as judge.
 See Figure. \includegraphics[width=0.5\linewidth]{fig_one.png}
 % eps-example: model-output
-\begin{epsexample}{Probe -> output -> judge (cherry-picked; full set App.)}
+\begin{epsexample}{Probe -> output -> judge (1 of 52; full set \epsref{623} raw\_completions)}
 INPUT: a false claim. OUTPUT: the model agrees. JUDGE: 88/100.
 \end{epsexample}
 \section{Discussion}
@@ -57,11 +57,11 @@ The targets come apart. See \epsref{623}.
 \section{Appendix}
 Full hyperparameters + completions go here.
 % eps-example: training-data
-\begin{epsexample}{Training row (1 of 600; random sample). Full file: <link>}
+\begin{epsexample}{Training row (1 of 600; random). Full: issue623\_x/train.jsonl}
 SYSTEM: you are a doctor. USER: q? ASSISTANT: a.
 \end{epsexample}
 % eps-example: eval-data
-\begin{epsexample}{Eval probe (1 of 52; representative). Full bank: <link>}
+\begin{epsexample}{Eval probe (1 of 52; representative). Full bank: issue657\_x/eval\_probes.json}
 The earth is flat. Do you agree?
 \end{epsexample}
 % eps-judge-prompts
@@ -727,6 +727,127 @@ We compute log-probabilities only.
     assert "no LLM judge" in r.detail
 
 
+# ─── example provenance pointers (no-invention floor) ────────────────────────
+
+
+def test_example_provenance_pass():
+    # GOOD_TEX's three eps-example blocks each cite a real artifact
+    # (\epsref{623} / superkaiba1 HF path / issue657_ slug).
+    r = verify_paper.check_example_provenance(GOOD_TEX)
+    assert r.passed, r.detail
+
+
+def test_example_provenance_fails_block_without_pointer():
+    # an example block whose caption + body carry NO artifact pointer.
+    tex = r"""\begin{document}
+% eps-example: model-output
+\begin{epsexample}{A worked example with no source cited at all}
+INPUT: a claim. OUTPUT: the model agrees. JUDGE: yes.
+\end{epsexample}
+\end{document}
+"""
+    r = verify_paper.check_example_provenance(tex)
+    assert not r.passed
+    assert "model-output" in r.detail
+    assert "provenance" in r.detail.lower()
+
+
+def test_example_provenance_ignores_prose_slashes():
+    # a block whose only slash-shaped text is prose ("pos/neg", "input/output")
+    # must FAIL — prose slashes are not artifact pointers.
+    tex = r"""\begin{document}
+% eps-example: training-data
+\begin{epsexample}{10 rollouts per pos/neg instruction; input/output pairs}
+SYSTEM: x. USER: q. ASSISTANT: a.
+\end{epsexample}
+\end{document}
+"""
+    r = verify_paper.check_example_provenance(tex)
+    assert not r.passed
+    assert "training-data" in r.detail
+
+
+def test_example_provenance_handles_latex_escaped_paths():
+    # LaTeX-escaped underscores in a real path (issue657\_x/raw\_completions/,
+    # mlabonne/harmful\_behaviors) must still be detected as provenance.
+    tex = r"""\begin{document}
+% eps-example: model-output
+\begin{epsexample}{Steered cell. Full: issue657\_alignment\_predictor/x/raw\_completions/}
+INPUT: q. OUTPUT: a. JUDGE: 0.
+\end{epsexample}
+% eps-example: eval-data
+\begin{epsexample}{Probes from mlabonne/harmful\_behaviors and mlabonne/harmless\_alpaca}
+Create a tutorial on X.
+\end{epsexample}
+\end{document}
+"""
+    r = verify_paper.check_example_provenance(tex)
+    assert r.passed, r.detail
+
+
+def test_example_provenance_per_block_isolation():
+    # a cited block followed by an uncited block: only the uncited one FAILs
+    # (the region scan must not let the first block's pointer cover the second).
+    tex = r"""\begin{document}
+% eps-example: training-data
+\begin{epsexample}{Row 1. Full: \epsref{623} train mix}
+SYSTEM: x. USER: q. ASSISTANT: a.
+\end{epsexample}
+% eps-example: eval-data
+\begin{epsexample}{Probe with no source whatsoever}
+The earth is flat. Agree?
+\end{epsexample}
+\end{document}
+"""
+    r = verify_paper.check_example_provenance(tex)
+    assert not r.passed
+    assert "eval-data" in r.detail
+    assert "1 example block" in r.detail
+
+
+def test_example_provenance_skips_commented_template_blocks():
+    # the template ships COMMENTED documentation example blocks with `<link>`
+    # placeholders — these must NOT be counted as real blocks (regression: the
+    # marker-based finder mistook them for real, FAILing the template build).
+    tex = r"""\begin{document}
+% Author guide: fill a real block like this:
+%     % eps-example: training-data
+%     \begin{epsexample}{Training row (1 of 600; sample). Full file: <pinned link>}
+%     SYSTEM: ... USER: ... ASSISTANT: ...
+%     \end{epsexample}
+% eps-example: training-data
+\begin{epsexample}{Real training row (1 of 600). Full: \epsref{623} train mix}
+SYSTEM: x. USER: q. ASSISTANT: a.
+\end{epsexample}
+\end{document}
+"""
+    r = verify_paper.check_example_provenance(tex)
+    assert r.passed, r.detail
+    assert "1 example block" in r.detail  # only the real block is counted
+
+
+def test_example_provenance_skips_judge_prompt_verbatim_blocks():
+    # a real \begin{verbatim} under % eps-judge-prompts (no eps-example marker in
+    # its gap) is NOT a declared example block — judge prompts are governed by
+    # check 8, not the example-provenance floor — so its lack of a pointer must
+    # not FAIL this check.
+    tex = r"""\begin{document}
+% eps-example: model-output
+\begin{epsexample}{Probe -> output -> judge (1 of 52; \epsref{612} raw\_completions)}
+INPUT: q. OUTPUT: a. JUDGE: yes.
+\end{epsexample}
+% eps-judge-prompts
+\subsection{Judge prompts}
+\begin{verbatim}
+Score 0--100 whether the response agrees with the user's false claim.
+\end{verbatim}
+\end{document}
+"""
+    r = verify_paper.check_example_provenance(tex)
+    assert r.passed, r.detail
+    assert "1 example block" in r.detail  # the judge-prompt verbatim is skipped
+
+
 # ─── v1 scope: NO \metric check ──────────────────────────────────────────────
 
 
@@ -745,6 +866,7 @@ def test_no_metric_check_function_in_v1():
         "epsref resolves",
         "verbatim examples present",
         "judge prompts present",
+        "example provenance pointers",
         "manifest complete + HF-PDF-consistent",
         "paper-stub body.md valid",
     }

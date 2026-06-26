@@ -33,7 +33,16 @@ Checks (v1 scope — NO `\\metric` grounding; that is a documented v1.1 addition
      dedicated `Judge prompts` / `Judge rubric` appendix (sub)section with the
      verbatim prompt + rubric TEXT for every judge (or the template's
      `% eps-judge-prompts` anchor). No-judge papers pass automatically.
-  9. `paper_manifest.json` complete + HF-PDF-consistent: the COMMITTED local
+  9. Example provenance pointers (no-invention floor): every `% eps-example:`
+     block carries a resolvable pointer to a REAL artifact (`\\epsref{N}`, an
+     `issueN_` slug, a `superkaiba1/` HF path, `eval_results/` / `figures/`, a
+     `.json(l)` file, or a recognized HF dataset id). A pointer does NOT prove
+     the example is genuine — the #657 fabricated-persona block even cited an
+     `\\epsref` — so the SEMANTIC reality-check (open the cited artifact, confirm
+     the persona / system prompt / completion are real + verbatim) is the
+     interpretation-critic's paper-mode Lens 7. This check is the mechanical
+     floor: a block with NO pointer is unverifiable by construction.
+  10. `paper_manifest.json` complete + HF-PDF-consistent: the COMMITTED local
      artifacts (tex/paper_html, + bib/refs when present) are present on disk with
      matching sha256, AND the PDF is validated via `pdf_hf_url` (present + an
      `https://...` URL), NOT a local file (the PDF lives on the HF data repo, not
@@ -42,7 +51,7 @@ Checks (v1 scope — NO `\\metric` grounding; that is a documented v1.1 addition
      Tolerant of the OLD manifest shape (a `pdf` entry still in `artifacts`): its
      local-existence/hash check is SKIPPED (it is HF-hosted), so an
      already-built old-shape manifest still passes.
-  10. The body.md paper-stub is valid (frontmatter `paper: true`, an H1 title, an
+  11. The body.md paper-stub is valid (frontmatter `paper: true`, an H1 title, an
      abstract, and a paper link).
 
 Run from repo root:
@@ -109,6 +118,37 @@ _EXAMPLE_ENV_RE = re.compile(
 _EXAMPLE_MARKER_RE = re.compile(r"%\s*eps-example:\s*([a-z0-9-]+)", re.IGNORECASE)
 # The three example classes a `paper: true` experiment paper MUST carry verbatim.
 _REQUIRED_EXAMPLE_CLASSES = ("training-data", "eval-data", "model-output")
+# Capturing form of the example-env opener — used to bound a single example
+# block's text region (its `\begin{<env>}...\end{<env>}`) so the provenance
+# check reads THIS block, not trailing prose, and keys on REAL (non-commented)
+# environments — the template ships COMMENTED documentation example blocks with
+# `<pinned link>` placeholders that must not be mistaken for real blocks.
+_EXAMPLE_BEGIN_RE = re.compile(
+    r"\\begin\{(epsexample|lstlisting|verbatim|Verbatim|quote|quotation|tcolorbox)\}"
+)
+# Unambiguous provenance tokens an example block must carry so the example is
+# traceable to a REAL artifact (the no-invention floor — incident #657: a
+# fabricated "young child" persona that does not exist in the data). A pointer
+# does NOT prove the example is real (the fabricated block even cited an
+# \epsref) — that semantic reality-check is the interpretation-critic's job
+# (it opens the cited artifact). This check only enforces that a pointer is
+# PRESENT, so the reviewer (and a reader) has something to resolve.
+_PROVENANCE_TOKEN_RE = re.compile(
+    r"\\epsref\{\d+\}"  # typed cross-experiment reference
+    r"|issue[_]?\d+[_/][\w./-]+"  # issue518_.../... or issue_657/...
+    r"|superkaiba1/"  # the HF data/model repo
+    r"|raw_completions"  # the HF raw-completions convention
+    r"|eval_results/"  # in-repo structured results
+    r"|figures/"  # in-repo figure source
+    r"|\b[\w-]+\.jsonl?\b",  # a .json / .jsonl filename
+    re.IGNORECASE,
+)
+# A recognized HF dataset id (e.g. `mlabonne/harmful_behaviors`,
+# `superkaiba1/explore-persona-space-data`) — an `<org>/<name>` slash path. The
+# token must carry a `_`/`-`/`.` in EITHER segment (checked in `_has_provenance`)
+# so prose slashes ("pos/neg", "input/output", "question/instruction") never
+# satisfy the check.
+_HF_DATASET_ID_RE = re.compile(r"\b[\w][\w.-]*/[\w][\w.-]*\b")
 # A judge is in play when the body mentions an LLM judge. We detect the
 # project-canonical phrasings so a paper that scores anything with an LLM judge
 # (or grader) must carry its verbatim prompt(s)/rubric(s). Every alternative is
@@ -477,7 +517,102 @@ def check_judge_prompts(tex: str) -> CheckResult:
     return CheckResult("judge prompts present", True, "Judge prompts section present")
 
 
-# ─── 9. manifest complete + HF-PDF-consistent ────────────────────────────────
+# ─── 9. example provenance pointers (no-invention floor) ─────────────────────
+# Every `% eps-example:` block must carry a resolvable provenance pointer to a
+# REAL artifact (an \epsref{N}, an issueN_ slug, a superkaiba1/ HF path,
+# eval_results/ / figures/, a .json(l) filename, or a recognized HF dataset id).
+# This is the mechanical floor of the no-invention rule: it does NOT prove an
+# example is genuine (the #657 fabricated persona block even cited \epsref{612}),
+# but a block with NO pointer is unverifiable by construction, and a present
+# pointer gives the interpretation-critic an artifact to open and check against
+# (the semantic reality-check, interpretation-critic.md paper-mode Lens 7).
+
+
+def _line_is_commented(body: str, pos: int) -> bool:
+    """True when the text from the start of `pos`'s line up to `pos` begins with `%`
+    (i.e. the construct at `pos` is inside a LaTeX comment)."""
+    line_start = body.rfind("\n", 0, pos) + 1
+    return body[line_start:pos].lstrip().startswith("%")
+
+
+def _example_block_regions(body: str) -> list[tuple[str, int, str]]:
+    """Per REAL (non-commented) `% eps-example:`-declared example block:
+    (class, begin_pos, block_text).
+
+    Keys on REAL example ENVIRONMENTS (a non-commented `\\begin{<env>}...
+    \\end{<env>}`), not on the `% eps-example:` markers themselves, because the
+    template ships COMMENTED documentation example blocks (with `<pinned link>`
+    placeholders) whose marker lines would otherwise be mistaken for real
+    blocks. A real env is a declared example iff a `% eps-example:` marker
+    appears in the gap since the previous real env (which it introduces); a real
+    env with no such marker in its gap (a judge-prompt `verbatim` block, an
+    incidental quote) is NOT a declared example and is skipped — judge prompts
+    are governed by check 8, not the example-provenance floor.
+    """
+    regions: list[tuple[str, int, str]] = []
+    prev_end = 0
+    for m in _EXAMPLE_BEGIN_RE.finditer(body):
+        if _line_is_commented(body, m.start()):
+            continue  # commented template documentation block, not a real one
+        env = m.group(1)
+        end_m = re.compile(r"\\end\{" + re.escape(env) + r"\}").search(body, m.end())
+        end = end_m.end() if end_m else len(body)
+        gap_markers = list(_EXAMPLE_MARKER_RE.finditer(body[prev_end : m.start()]))
+        if gap_markers:  # this real env is the one the marker introduces
+            regions.append((gap_markers[-1].group(1).lower(), m.start(), body[m.start() : end]))
+        prev_end = end
+    return regions
+
+
+# In the .tex, paths carry LaTeX-escaped specials (`issue657\_alignment...`,
+# `raw\_completions`, `mlabonne/harmful\_behaviors`). Unescape before scanning so
+# the provenance tokens — which ARE present — are detected (the `\_` is the
+# common case; `\%`/`\&`/`\#`/`\$` round it out).
+_LATEX_ESCAPE_RE = re.compile(r"\\([_%&#$])")
+
+
+def _delatex(s: str) -> str:
+    return _LATEX_ESCAPE_RE.sub(r"\1", s)
+
+
+def _has_provenance(block: str) -> bool:
+    b = _delatex(block)
+    if _PROVENANCE_TOKEN_RE.search(b):
+        return True
+    # An `<org>/<name>` token counts only if a segment carries a `_`/`-`/`.`,
+    # which excludes prose slashes ("pos/neg", "input/output").
+    return any(("_" in t or "-" in t or "." in t) for t in _HF_DATASET_ID_RE.findall(b))
+
+
+def check_example_provenance(tex: str) -> CheckResult:
+    body = _body_region(tex)
+    regions = _example_block_regions(body)
+    if not regions:
+        # The verbatim-examples check (7) already FAILs a paper with no example
+        # markers; provenance is vacuously satisfied here.
+        return CheckResult("example provenance pointers", True, "no example blocks")
+    missing: list[str] = []
+    for cls, _start, block in regions:
+        if not _has_provenance(block):
+            missing.append(cls)
+    if missing:
+        return CheckResult(
+            "example provenance pointers",
+            False,
+            f"{len(missing)} example block(s) carry NO provenance pointer "
+            f"(classes: {', '.join(missing)}) — every verbatim example must cite a "
+            "real artifact (\\epsref{N}, an issueN_ slug, a superkaiba1/ HF path, "
+            "eval_results/ / figures/, a .json(l) file, or an HF dataset id) IN THE "
+            "BLOCK'S CAPTION OR BODY (a pointer in the preceding prose is not seen) "
+            "so it is traceable and the interpretation-critic can verify it is not "
+            "invented",
+        )
+    return CheckResult(
+        "example provenance pointers", True, f"{len(regions)} example block(s) all cite an artifact"
+    )
+
+
+# ─── 10. manifest complete + HF-PDF-consistent ───────────────────────────────
 # The PDF lives on the HF data repo, NOT in git, so it is NEVER required as a
 # local on-disk artifact (incident #657: the local PDF exists at build time but
 # is gone post-commit). The committed artifacts (tex/paper_html, + bib/refs when
@@ -548,7 +683,7 @@ def check_manifest(paper_dir: Path) -> CheckResult:
     )
 
 
-# ─── 10. paper-stub body.md valid ────────────────────────────────────────────
+# ─── 11. paper-stub body.md valid ────────────────────────────────────────────
 
 
 def _split_frontmatter(text: str) -> tuple[dict, str]:
@@ -642,6 +777,7 @@ def verify(
         check_epsref_resolves(tex),
         check_verbatim_examples(tex),
         check_judge_prompts(tex),
+        check_example_provenance(tex),
         check_manifest(paper_dir),
     ]
     if stub_path is not None:
