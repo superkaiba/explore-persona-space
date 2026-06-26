@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 669,
+  "highest_id": 670,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4199,6 +4199,14 @@
       "path": "tasks/on_hold/67",
       "status": "on_hold",
       "title": "25% Tulu midtrain matrix partially replicates at seed 137; good_correct alignment retraction confirmed (MODERATE confidence)"
+    },
+    "670": {
+      "goal": "Resolve whether the activation-gate\u2192behavioral-leakage gap (\u03c1 0.13/0.16/0.40 vs 0.46/0.59 from #667) is a fixed-epoch dose confound vs a real gate\u2192behavior break, via a dose-controlled adapter sweep at matched install dose with per-cell behavioral G re-measurement.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/on_hold/670",
+      "status": "on_hold",
+      "title": "Dose-controlled gate\u2192behavior bridge (parked redundant from #667)"
     },
     "68": {
       "has_clean_result": false,
