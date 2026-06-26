@@ -4211,8 +4211,8 @@
     "671": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/671",
-      "status": "reviewing",
+      "path": "tasks/completed/671",
+      "status": "completed",
       "title": "Fix activation-extractor output_hidden_states memory accumulation (root cause of GCP DHCP-wedge + recurring #545 OOM): register_forward_hook on read layers + local-SSD .npz scratch"
     },
     "672": {
