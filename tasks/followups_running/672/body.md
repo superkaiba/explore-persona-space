@@ -20,7 +20,7 @@ goal: 'After #669 (GCP wedge recovery) and #671 (extractor output_hidden_states 
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_672.md](https://github.com/superkaiba/explore-persona-space/blob/069668758e72d261ec6cfdea5bf3515071a4f893/docs/methodology/issue_672.md) · [gist](https://gist.github.com/superkaiba/885833ca018e0bc90a54c46887875160)
+**Methodology:** [docs/methodology/issue_672.md](https://github.com/superkaiba/explore-persona-space/blob/223fbf167722f899cca3d67c32410bfe6308f886/docs/methodology/issue_672.md) · [gist](https://gist.github.com/superkaiba/885833ca018e0bc90a54c46887875160)
 
 ## Takeaways
 
