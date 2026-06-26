@@ -1919,6 +1919,7 @@ def _runpod_terminal_rung(
     residual_gap: str,
     reason: str = ROUTE_REASON_RUNPOD_FALLBACK,
     failover_evidence: dict[str, Any] | None = None,
+    gcp_failover_of_identity: dict[str, Any] | None = None,
 ) -> RouteResult:
     """Final fallback rung: launch on RunPod after every cheaper rung failed.
 
@@ -1971,6 +1972,41 @@ def _runpod_terminal_rung(
         extra={**(spec.extra or {}), "runpod_fallback_residual_gap": residual_gap},
     )
     with store.transaction(spec.issue) as (lease, write):
+        # M3b (#669): in-flock re-check of the GCP->RunPod failover idempotency
+        # record. The #669 wedge classifier introduces a SECOND concurrent
+        # triggerer of this failover on the same GCP handle (a poller tick that
+        # classified terminal_workload_wedged AND, separately, the
+        # terminal_wedged_terminated watchdog path), so two overlapping
+        # processes can both pass the OUTSIDE-the-flock pre-check in
+        # backend_poll._failover_dead_gcp_to_runpod and both reach here. Repeat
+        # the check INSIDE the flock (mirrors the reconnect-path re-check at the
+        # _override_*/_auto lane transactions): a second triggerer that acquires
+        # the lock AFTER the first stamped sees the stamp and short-circuits to
+        # the EXISTING RunPod handle — no second paid launch. On the FIRST
+        # triggerer (or any non-failover RunPod fallback, where
+        # gcp_failover_of_identity is None) this is a no-op, so #659's
+        # single-triggerer sequential behavior is byte-for-byte unchanged.
+        if gcp_failover_of_identity is not None and _lease_already_failed_over(
+            lease, gcp_failover_of_identity
+        ):
+            existing = _route_result_from_existing_failover_lease(
+                lease=lease,
+                spec=spec,
+                runpod_backend=runpod_backend,
+                reason=reason,
+                attempts=attempts,
+                started_at=started_at,
+                now_fn=now_fn,
+                residual_gap=residual_gap,
+            )
+            logger.warning(
+                "route: GCP->RunPod failover for issue %d already launched by a "
+                "concurrent triggerer (in-flock lease re-check, M3b #669); returning "
+                "the existing RunPod handle %r, NO second launch.",
+                spec.issue,
+                existing.handle.pod_name,
+            )
+            return existing
         try:
             handle = _prepare_and_launch(runpod_backend, runpod_spec, kind="runpod")
         except Exception as exc:
@@ -2002,7 +2038,16 @@ def _runpod_terminal_rung(
                 attempts=[_attempt_to_dict(a) for a in attempts],
             ) from exc
         _invoke_on_launched(on_launched, handle)
-        write(_lease_after_submit(lease, runpod_spec, "runpod", None, handle))
+        new_lease = _lease_after_submit(lease, runpod_spec, "runpod", None, handle)
+        # M3b stamp (#669): record the GCP-crash identity this RunPod launch is
+        # the failover OF, AS PART OF the in-flock write, so the NEXT concurrent
+        # triggerer's in-flock re-check above sees it. This SUPERSEDES the
+        # post-flock _stamp_lease_failover_of in backend_poll for the launch
+        # path (that post-flock stamp stays as an idempotent belt-and-suspenders
+        # no-op). None for a non-failover RunPod fallback (capacity exhaustion).
+        if gcp_failover_of_identity is not None:
+            new_lease.gcp_failover_of = gcp_failover_of_identity
+        write(new_lease)
     is_workload_failover = reason in (
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
@@ -2052,6 +2097,7 @@ def failover_to_runpod_after_async_workload_crash(
     lease_store: LeaseStore | None = None,
     now_fn: Callable[[], float] | None = None,
     config: RouterConfig | None = None,
+    gcp_failover_of_identity: dict[str, Any] | None = None,
 ) -> RouteResult:
     """Re-dispatch a poller-detected dead GCP workload onto RunPod, once (#659).
 
@@ -2076,6 +2122,13 @@ def failover_to_runpod_after_async_workload_crash(
     ``evidence`` rides the ``epm:backend-selected`` marker ``extra`` as
     ``gcp_workload_evidence`` (mirroring the sync path's ``failover_evidence``)
     so the original crash signal is preserved for diagnosis.
+
+    ``gcp_failover_of_identity`` (M3b, #669) is the crashed GCP run's stable
+    identity (``{"pod_name": ..., "job_id": ...}``). When set, the terminal
+    rung does an in-flock re-check + stamp so N CONCURRENT triggerers of the
+    SAME GCP-crash failover (the #669 wedge classifier introduces a second one)
+    launch RunPod exactly once. ``None`` preserves the legacy single-triggerer
+    #659 behavior byte-for-byte (no in-flock short-circuit, no stamp).
 
     Fail-safe: if the RunPod launch ITSELF fails (no compute anywhere),
     ``_runpod_terminal_rung`` re-raises :class:`NoComputeAvailableError`, which
@@ -2102,6 +2155,11 @@ def failover_to_runpod_after_async_workload_crash(
         residual_gap=residual_gap,
         reason=ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
         failover_evidence=evidence,
+        # M3b (#669): the GCP-crash identity (pod_name/job_id) this failover is
+        # OF, so the in-flock re-check + stamp can make N concurrent triggerers
+        # launch RunPod exactly once. None on the legacy single-triggerer path
+        # leaves the existing #659 behavior unchanged.
+        gcp_failover_of_identity=gcp_failover_of_identity,
     )
 
 
@@ -3810,6 +3868,84 @@ def _try_reconnect(
         )
         return None
     return handle
+
+
+def _lease_already_failed_over(
+    lease: Lease | None, gcp_failover_of_identity: dict[str, Any]
+) -> bool:
+    """True iff the in-flock lease ALREADY records a RunPod failover of this GCP crash (M3b, #669).
+
+    The atomic in-flock twin of ``backend_poll._lease_records_failover_of`` (the
+    OUTSIDE-the-flock fast-path pre-check): a second concurrent triggerer that
+    acquires the per-issue flock AFTER the first stamped sees a RunPod lease
+    whose ``gcp_failover_of`` matches the GCP-crash identity, and short-circuits
+    to the existing handle instead of launching a second paid pod. Keyed to the
+    GCP run's stable identity (``pod_name``/``job_id``), so a genuinely-new GCP
+    crash on the same issue (fresh dispatch → new identity) does NOT match and
+    still gets its own single failover.
+    """
+    return (
+        lease is not None
+        and lease.backend == "runpod"
+        and lease.gcp_failover_of == gcp_failover_of_identity
+    )
+
+
+def _route_result_from_existing_failover_lease(
+    *,
+    lease: Lease,
+    spec: RunSpec,
+    runpod_backend: ComputeBackend,
+    reason: str,
+    attempts: list[RouteAttempt],
+    started_at: float,
+    now_fn: Callable[[], float],
+    residual_gap: str,
+) -> RouteResult:
+    """Reconstruct the RouteResult for a failover a CONCURRENT triggerer already launched (M3b).
+
+    The first triggerer's RunPod launch is recorded ONLY as a lease (the full
+    ``RunHandle`` is not persisted on the lease), but the RunPod handle is
+    deterministic from the issue (``pod-<N>`` per ``runpod._pod_name_for`` /
+    ``_runpod_log_path``), so a minimal handle is reconstructed for the
+    short-circuit return. The caller's own sidecar re-point + readback
+    (``backend_poll._failover_dead_gcp_to_runpod``) reads the authoritative
+    RunPod handle from disk on the next tick; this result only needs to carry a
+    truthful RunPod ``pod_name`` so NO second launch happens.
+    """
+    from explore_persona_space.backends.runpod import _runpod_log_path
+
+    handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id=str(lease.job_id or ""),
+        pod_name=f"pod-{int(spec.issue)}",
+        scratch_dir="/workspace",
+        log_path=_runpod_log_path(int(spec.issue)),
+        extra={"issue": int(spec.issue)},
+    )
+    attempts.append(
+        RouteAttempt(
+            kind="runpod",
+            cluster=None,
+            est_start_seconds_raw=0.0,
+            est_start_seconds_clamped=0.0,
+            outcome="failover_already_launched",
+            detail="concurrent triggerer already failed over this GCP crash (M3b re-check)",
+            elapsed_seconds=now_fn() - started_at,
+        )
+    )
+    return RouteResult(
+        backend=runpod_backend,
+        handle=handle,
+        requested_kind=spec.backend,
+        chosen_kind="runpod",
+        reason=reason,
+        cluster=None,
+        attempts=attempts,
+        elapsed_seconds=now_fn() - started_at,
+        extra={"runpod_fallback_residual_gap": residual_gap, "failover_already_launched": True},
+    )
 
 
 def _lease_after_submit(
