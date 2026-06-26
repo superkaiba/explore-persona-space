@@ -2,6 +2,7 @@
 
 ## Pre-launch gates (data, env, config)
 
+- [Pod `git pull` silent on stale `.git/index.lock`](feedback_pod_git_pull_silent_index_lock.md) — A crashed mid-git workload leaves a 0-byte `.git/index.lock`; the next `git pull --ff-only` prints "Updating ..." and exits 0 but HEAD does NOT advance. ALWAYS verify `git rev-parse HEAD == brief commit` after every sync; never trust pull output (#653 r6)
 - [RunPod lane `.env` not sourced via `nohup bash <driver>`](feedback_runpod_lane_env_not_sourced_via_nohup.md) — On the `auto_fallback_runpod` lane, GCP-brief launch shape (`nohup bash <script>`) dies in ~3s on missing API keys; SSH-MCP `sh` doesn't source `.env` and RunPod has no `--metadata` injection. Always use a wrapper `launch.sh` that does `set -a; . ./.env; set +a` before exec'ing the driver — #657 r3
 - [SLURM lane silently rsyncs main; --repo-branch inert](feedback_slurm_rsyncs_main_tree.md) — `auto`-routed feature-branch experiment that falls through to SLURM runs STALE main-tree code (rsync source `_default_src_root()` is `__file__`-walked → repo-root install on main, regardless of cwd/worktree); pin `backend: gcp` for feature-branch experiments — #653
 - [GCP lane is git-clone-only — local data/ doesn't reach the VM](feedback_gcp_lane_git_clone_only_data.md) — for `--backend gcp`, verify each hard-required `data/` input is git-tracked OR HF-mirrored with a fetch fallback; local presence at VM repo root is NOT sufficient (the GCE startup script does not rsync data/) — #634
