@@ -1,0 +1,33 @@
+{
+  "memory_log_path": null,
+  "n_iters_logged": 0,
+  "npz_written": false,
+  "hf_upload_verified": false,
+  "sku_landed": null,
+  "memory_log": [],
+  "reserved": null,
+  "nvidia_smi": null,
+  "allocated_secondary": null,
+  "coverage_issue": "Section-A GPU smoke not launched live: orchestrator-side dispatch-router behavior (dispatch_issue.py launch --backend gcp + --intent debug routed to RunPod terminal rung; details in validation.json.section_A.notes). The fixed-extractor code IS verified at the worktree (tests/test_issue671_extraction_hooks.py 8/8 green in Section C); only the LIVE A100 forward-pass evidence is missing.",
+  "pass": false,
+  "pass_reason": "Live A100 smoke could not be launched — dispatch-router routed --backend gcp + --intent debug to RunPod terminal rung (pod-672 was provisioned and hung in SSH bootstrap; terminated cleanly with no artifacts produced). Recipe + code verified by the round-1/2/3 review chain and #671's byte-identity tests; live forward-pass evidence pending.",
+  "notes": {
+    "incident": "Orchestrator launched the validator with --section all from the local VM. Section B's `dispatch_issue.py launch --issue 672 --intent debug --backend gcp ...` posted two epm:backend-selected intermediate markers (rungs ondemand_a100_80, ondemand_a100_40), then fell through to RunPod terminal rung. Pod-672 (1xH100) was provisioned and bootstrap_pod.sh hung in SSH for ~6 min; manually terminated.",
+    "diagnostic_attempts": [
+      "argparse confirmed args.backend='gcp' parses correctly",
+      "build_run_spec(backend_value='gcp') returns spec.backend='gcp' correctly",
+      "_post_intermediate_marker hardcodes requested_kind=None — the markers can't distinguish auto-chain vs explicit-override paths",
+      "Root cause: unclear (capacity miss on both A100 rungs + workload failover to RunPod, OR a dispatch-router bug). Out of scope for this validation task to fix; filed as a follow-up workflow-fix candidate."
+    ],
+    "what_is_verified_offline": [
+      "scripts/issue667_extract.py memory-log helper is byte-additive (extractor reads unchanged; tests/test_issue671_extraction_hooks.py 8/8 GREEN per Section C)",
+      "scripts/issue672_validate.py Section-A coverage gate enforces >=30 entries + max iter >=30 + >=2 post-warmup non-None per PRIMARY gauge (round-3 fix; verified by unit tests in tests/test_issue672_validation.py)",
+      "The --log-mem-every 1 dispatch flag (round-3 Critical #2 fix) is correctly threaded into the section_a_dispatch_argv() construction",
+      "All 5 round-1/2/3 reconciler-binding code-review items are RESOLVED on commit 5da9b78559 (latest issue-672 HEAD)"
+    ]
+  },
+  "reproducibility": {
+    "git_commit": "5da9b78559",
+    "branch": "issue-672"
+  }
+}
