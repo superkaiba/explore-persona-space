@@ -109,7 +109,7 @@ import shlex
 import subprocess
 import tempfile
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -1137,6 +1137,57 @@ def render_startup_script(
         "EPS_PERSIST_PY",
         "  ) 2>&1 | cut -c1-2000 | tail -n 20 >&3 2>/dev/null || true;",
         "}",
+        # In-VM REACHABILITY watchdog (#669) — NOT a liveness watchdog
+        # (systemd #21083: a liveness /dev/watchdog keeps getting fed on a
+        # wedged-but-RUNNING VM whose guest networking died, so it never
+        # catches this class). The #667 failure mode: systemd-networkd loses
+        # its DHCPv4 lease under load and does NOT retry the renew, so the NIC
+        # loses connectivity PERMANENTLY while the VM stays RUNNING — the
+        # poller reads eps/phase frozen at a non-terminal value forever and
+        # neither GCP->RunPod failover path fires. This daemon probes ACTUAL
+        # external reachability (the GCE metadata server AND an internet
+        # endpoint) on a 30s cadence; on 10 consecutive failures of BOTH
+        # (~5 min sustained loss) it writes eps/phase=wedged (best-effort) so
+        # the poller maps the resulting TERMINATED to terminal_wedged_terminated
+        # (the conservative #669 failover phase), then forces a clean
+        # TERMINATED via the shutdown -> poweroff -> halt ladder (a VM wedged
+        # enough that systemd-shutdown itself hangs still hard-stops). When the
+        # phase write cannot land (fully network-dead), the poller-side
+        # frozen-phase wedge detector is the independent backstop. Launched
+        # AFTER the exec >> redirect so its [eps-watchdog] lines land in the
+        # workload log (not the metadata-runner pipe — #607/#491 discipline)
+        # and reaped in the clean-exit tail (or by the EXIT-trap shutdown on a
+        # crash).
+        "_eps_reachability_watchdog() {",
+        "  local interval=30 threshold=10 fails=0",
+        "  while true; do",
+        '    sleep "$interval";',
+        # -m 5: 5s connect+xfer cap so a hung NIC can't block the loop. The
+        # metadata server (169.254.169.254) is link-local — reachable even with
+        # a dead DHCP lease IF routing survives — so we AND it with an external
+        # probe to catch the full-network-loss case.
+        "    if curl -sf -m 5 -H 'Metadata-Flavor: Google'"
+        " http://169.254.169.254/computeMetadata/v1/instance/id >/dev/null 2>&1"
+        " && curl -sf -m 5 https://huggingface.co/ -o /dev/null 2>&1; then",
+        "      fails=0;",
+        "    else",
+        "      fails=$((fails + 1));",
+        '      { echo "[eps-watchdog] reachability probe FAILED ($fails/$threshold)"; }'
+        " 2>/dev/null || true;",
+        '      if [ "$fails" -ge "$threshold" ]; then',
+        '        { echo "[eps-watchdog] sustained network loss -> wedged;'
+        ' forcing clean TERMINATED (#669)"; } 2>/dev/null || true;',
+        # Write eps/phase=wedged FIRST (best-effort): when the network is
+        # healthy enough to land it, the poller maps TERMINATED+wedged ->
+        # terminal_wedged_terminated; when it CANNOT land (fully dead), the
+        # poller-side wedge detector is the backstop.
+        "        _eps_phase wedged 2>/dev/null || true;",
+        "        shutdown -h now 2>/dev/null || poweroff -f 2>/dev/null || halt -f;",
+        "        return 0;",
+        "      fi;",
+        "    fi;",
+        "  done",
+        "}",
         # A failed startup script does NOT stop the VM — GCE just logs
         # "Script failed with error" and leaves the instance RUNNING,
         # billing the GPU with no workload (live finding, issue 535 GCP
@@ -1229,6 +1280,16 @@ def render_startup_script(
         "unset TQDM_DISABLE",
         "# === /output redirect (#607) ===",
         "",
+        # Launch the reachability watchdog (#669) AFTER the redirect (so its
+        # [eps-watchdog] output lands in the workload log, not the runner pipe)
+        # and AFTER the redirect end marker (so the #607 prelude-slicing
+        # integration tests do NOT execute the infinite daemon). ``< /dev/null``
+        # detaches it from any inherited stdin so a backgrounded daemon never
+        # holds a parent pipe open. Reaped on clean exit (the kill below before
+        # the success sentinel) or by the EXIT-trap shutdown on a crash.
+        "_eps_reachability_watchdog < /dev/null &",
+        "EPS_WATCHDOG_PID=$!",
+        "",
         "# === Secrets from instance metadata ===",
         *secrets_fetch_lines,
         "",
@@ -1275,6 +1336,12 @@ def render_startup_script(
         f"mkdir -p {shlex.quote(sentinel_dir)}",
         "",
         *workload_block,
+        "",
+        # Reap the reachability watchdog (#669) on the clean-exit path BEFORE
+        # writing the success sentinel — a healthy teardown must not let the
+        # daemon fire a spurious shutdown. Guarded: a missing PID / already-dead
+        # daemon is a no-op. On a CRASH the EXIT-trap shutdown reaps it instead.
+        '{ kill "${EPS_WATCHDOG_PID:-}" 2>/dev/null; } || true',
         "",
         "# === Completion sentinel (workload exited cleanly) ===",
         "# The artifact verifier reads this back via list_repo_files / scp.",
@@ -1341,6 +1408,10 @@ def render_create_argv(
     * ``--maintenance-policy=TERMINATE`` — GPUs cannot live-migrate, so
       the maintenance policy MUST be terminate (gcloud rejects MIGRATE
       on accelerator VMs anyway; explicit is clearer than implicit).
+    * ``--no-restart-on-failure`` (``automaticRestart=false``, #669) — a
+      watchdog self-shutdown (or any crash) is FINAL; auto-restart would
+      bring the VM back into the same wedged state. Independent scheduling
+      field; composes freely with the two above.
     * ``--max-run-duration`` — generous so it can't interrupt an upload
       (default 24h per config).
     * ``--image-family`` / ``--image-project`` — the DLVM image with
@@ -1395,6 +1466,12 @@ def render_create_argv(
         f"--provisioning-model={provisioning}",
         "--instance-termination-action=DELETE",
         "--maintenance-policy=TERMINATE",
+        # automaticRestart=false (#669): a watchdog self-shutdown (or any
+        # crash) must be FINAL — auto-restart would bring the VM back into the
+        # same wedged state (the systemd-networkd DHCP-renewal bug recurs under
+        # the same load). Composes freely with --instance-termination-action
+        # and --max-run-duration (independent scheduling-block fields).
+        "--no-restart-on-failure",
         f"--max-run-duration={max_run}",
         f"--image-family={config.image_family}",
         f"--image-project={config.image_project}",
@@ -2974,6 +3051,7 @@ class GcpBackend(ComputeBackend):
                 drain_alarm,
                 drain_log_tail,
                 drain_log_mtime_ago,
+                drain_alarm_class,
             ) = self._drain_sentinels(handle, zone)
 
             def _with_drain(base: PollResult) -> PollResult:
@@ -3070,12 +3148,49 @@ class GcpBackend(ComputeBackend):
                 # PROVISIONING/STAGING, non-running) keeps the short
                 # default by construction.
                 merged = _with_drain(_coarse_poll(status="running", current_phase=phase))
+                # M1a (#669): surface a TYPED reachability_alarm set ONLY for
+                # the transport class — the unreachable-VM signature the
+                # poller's frozen-phase wedge gate reads. A
+                # sentinel-processing-class alarm (healthy VM, noisy sentinel)
+                # leaves it False so the wedge gate never fires on it.
+                merged = replace(merged, reachability_alarm=(drain_alarm_class == "transport"))
                 return _apply_lane_quiet_interval(
                     merged,
                     run_age_sec=_age_seconds(payload.get("creationTimestamp"), datetime.now(UTC)),
+                    # lane_anomaly (poll INTERVAL) keeps BOTH alarm classes —
+                    # degraded observability of any kind should keep the poll
+                    # interval short. ONLY the wedge classifier reads the
+                    # narrower reachability_alarm.
                     lane_anomaly=bool(drain_alarm),
                 )
             return _with_drain(_gcp_status_to_poll_result(status))
+        return self._non_running_poll_result(handle, zone, status)
+
+    def _non_running_poll_result(self, handle: RunHandle, zone: str, status: str) -> PollResult:
+        """Resolve a non-RUNNING VM status, with the #669 watchdog discrimination.
+
+        Watchdog self-terminate discrimination (#669, Consistency-checker
+        Option 2): a TERMINATED VM whose in-VM reachability watchdog wrote
+        ``eps/phase=wedged`` before ``shutdown -h now`` maps to the NEW
+        ``terminal_wedged_terminated`` phase, which the poller's async failover
+        accept-set recognizes. A TERMINATED VM with any other (or absent /
+        unreadable) ``eps/phase`` maps to ``terminal_terminated`` EXACTLY as
+        today (spot preemption / max-run-duration / manual stop → straight to
+        dead, NO failover — no spot regression). Mirrors the ``eps/phase=failed``
+        + ``workload_started`` discrimination on the RUNNING path. Every other
+        non-RUNNING status falls through to the coarse mapping unchanged.
+        """
+        if status == "TERMINATED":
+            try:
+                phase = self._guest_phase(handle, zone)
+            except GcpProbeError:
+                # Guest attribute unreadable (instance record already gone /
+                # auth-probe failure): the combo can't match → fall through to
+                # the safe default ``terminal_terminated`` (no failover; the
+                # poller-side wedge detector remains the backstop, §1.bis).
+                phase = ""
+            if phase == "wedged":
+                return _terminal_dead_poll(reason="wedged_terminated")
         return _gcp_status_to_poll_result(status)
 
     def _guest_phase(self, handle: RunHandle, zone: str) -> str:
@@ -3191,7 +3306,7 @@ class GcpBackend(ComputeBackend):
 
     def _drain_sentinels(
         self, handle: RunHandle, zone: str
-    ) -> tuple[int, str | None, str, str, int | None]:
+    ) -> tuple[int, str | None, str, str, int | None, str]:
         """Drain ``/workspace/logs`` sentinels + pull a log tail via ssh sudo.
 
         ONE ``gcloud compute ssh`` round-trip runs the shared drain loop
@@ -3218,11 +3333,26 @@ class GcpBackend(ComputeBackend):
         ``/workspace/logs``, this glob is the read-side belt to that
         write-side brace).
 
-        Returns ``(processed, gate, alarm, log_tail, log_mtime_ago)``.
-        ``alarm`` is "" normally; on a transport failure OR a
+        Returns ``(processed, gate, alarm, log_tail, log_mtime_ago,
+        alarm_class)``. ``alarm`` is "" normally; on a transport failure OR a
         matched-but-unprocessable sentinel set it carries a loud one-line
         diagnosis the caller surfaces in ``log_tail_excerpt`` — never a
         silent ``sentinels_processed=0`` (fail-LOUD contract, #608).
+
+        ``alarm_class`` (#669) makes the alarm CLASS explicit so the caller
+        never has to re-derive it heuristically (``gate is None`` sniffing):
+
+        * ``"transport"`` — the drain SSH itself returned non-zero (transport
+          down / permission / timeout). This is the unreachable-VM signature
+          that ``GcpBackend.poll`` maps to ``PollResult.reachability_alarm``
+          (the poller's frozen-phase wedge gate, M1a).
+        * ``"sentinel_processing"`` — the SSH SUCCEEDED (a HEALTHY VM
+          answered) but a matched sentinel set produced 0 processed markers
+          (empty / unparseable body or a transient marker-post failure). NOT a
+          reachability problem — the wedge gate must NEVER fire on this class.
+        * ``""`` — no alarm (clean drain), OR the pre-SSH config skip
+          (``issue<=0`` — nothing was probed, so it carries no reachability
+          signal).
 
         ``log_mtime_ago`` (#607) is the workload log's mtime age in
         seconds, piggy-backed on the SAME ssh round trip (``stat -c %Y``
@@ -3234,9 +3364,12 @@ class GcpBackend(ComputeBackend):
         """
         issue = int(handle.extra.get("issue") or 0)
         if issue <= 0:
+            # Pre-SSH config skip: nothing was probed, so this carries NO
+            # reachability signal (alarm_class="") — it must never be read as
+            # a transport-down wedge signature (#669).
             alarm = "gcp sentinel drain SKIPPED: handle missing 'issue' extra"
             logger.warning("GCP poll: %s. handle=%r", alarm, handle)
-            return 0, None, alarm, "", None
+            return 0, None, alarm, "", None, ""
 
         # Lazy import (mirrors RunPodBackend.poll): production entrypoints
         # put the repo root on sys.path (backend_poll.py bootstrap, #571);
@@ -3298,12 +3431,16 @@ class GcpBackend(ComputeBackend):
         argv += [f"--zone={zone}"]
         res = self._run(argv)
         if res.returncode != 0:
+            # TRANSPORT class (#669): the drain SSH itself returned non-zero —
+            # transport down / permission / timeout. This is the unreachable-VM
+            # signature the poller's frozen-phase wedge gate reads (alarm_class
+            # "transport" -> PollResult.reachability_alarm=True).
             alarm = (
                 f"gcp sentinel drain FAILED (rc={res.returncode}): "
                 f"{(res.stderr or '').strip()[:300]}"
             )
             logger.error("GCP poll: %s", alarm)
-            return 0, None, alarm, "", None
+            return 0, None, alarm, "", None, "transport"
 
         stdout = res.stdout or ""
         drain_part, _, tail_part = stdout.partition(self._LOGTAIL_START)
@@ -3328,14 +3465,19 @@ class GcpBackend(ComputeBackend):
             # unparseable bodies, or marker-post failures). Pre-#608 this
             # exact situation reported a silent ``sentinels_processed=0``;
             # surface it loudly instead.
+            # SENTINEL-PROCESSING class (#669): the SSH SUCCEEDED (a HEALTHY
+            # VM answered) but a matched sentinel set produced 0 processed
+            # markers. NOT a reachability problem — alarm_class
+            # "sentinel_processing" leaves PollResult.reachability_alarm False
+            # so the poller's wedge gate never fires on a merely noisy run.
             alarm = (
                 f"gcp sentinel drain: {len(sentinels)} sentinel(s) matched but 0 "
                 "processed (empty/unparseable body or marker-post failure) — "
                 "inspect /workspace/logs on the VM + poller stderr"
             )
             logger.error("GCP poll: %s", alarm)
-            return 0, gate, alarm, log_tail, log_mtime_ago
-        return processed, gate, "", log_tail, log_mtime_ago
+            return 0, gate, alarm, log_tail, log_mtime_ago, "sentinel_processing"
+        return processed, gate, "", log_tail, log_mtime_ago, ""
 
     def _mark_sentinel_processed(self, handle: RunHandle, zone: str, remote_path: str) -> bool:
         """Rename a drained sentinel to ``<path>.processed`` via ssh sudo.
@@ -3761,7 +3903,6 @@ class GcpBackend(ComputeBackend):
         verifier's ``confirm_artifacts_from_handle`` will read this back
         and fail loudly if the launch path forgot to populate it.
         """
-        from dataclasses import replace
 
         decl = expected_artifacts_declaration(
             spec=spec,
@@ -3843,7 +3984,6 @@ def _overlay_drain(
     ``10**9``) so phase-stuck zombies become detectable. Terminal results
     (``done`` / ``dead`` / ``stalled``) keep their own values.
     """
-    from dataclasses import replace
 
     merged_gate = base.gate or gate
     merged = replace(
@@ -3870,7 +4010,6 @@ def _apply_lane_quiet_interval(
     payload's ``creationTimestamp`` and ``lane_anomaly`` from the drain
     alarm.
     """
-    from dataclasses import replace
 
     return replace(
         result,
