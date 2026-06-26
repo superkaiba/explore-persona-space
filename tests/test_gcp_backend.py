@@ -4556,7 +4556,8 @@ def test_render_startup_script_includes_reachability_watchdog() -> None:
         script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
         assert "_eps_reachability_watchdog()" in script  # the daemon is defined
         assert "_eps_reachability_watchdog < /dev/null &" in script  # backgrounded launch
-        # REACHABILITY (not liveness): both probes, AND-ed.
+        # REACHABILITY (not liveness): both probes, evaluated SEPARATELY — fails
+        # resets on OR-of-successes, increments ONLY on BOTH-fail (code-review r1).
         assert "169.254.169.254/computeMetadata/v1/instance/id" in script
         assert "https://huggingface.co/" in script
         # ~5 min sustained loss: 30s cadence x 10 consecutive failures.
