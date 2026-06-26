@@ -45,6 +45,8 @@ import argparse
 import json
 import logging
 import sys
+import time
+from dataclasses import replace
 from pathlib import Path
 
 # Repo-root sys.path bootstrap. Invoking this file as a script puts only
@@ -77,6 +79,41 @@ _DEFAULT_NEXT_INTERVAL_SEC = 540
 # the §6 GCP poll-discrimination test pins both ends so a future GCP-phase
 # rename breaks a test, not production silently.
 GCP_WORKLOAD_FAILED_PHASE = "terminal_workload_failed"
+
+# The ``current_phase`` the POLLER synthesizes (#669) when a GCP VM is
+# RUNNING-but-hung: ``eps/phase`` frozen at a non-terminal value past the
+# staleness floor AND a TRANSPORT-class reachability alarm. The async-failover
+# accept-set recognizes it so the dead-but-hung VM fails over to RunPod.
+GCP_WORKLOAD_WEDGED_PHASE = "terminal_workload_wedged"
+
+# The ``current_phase`` ``GcpBackend.poll`` produces (#669) when a TERMINATED
+# VM's in-VM reachability watchdog wrote ``eps/phase=wedged`` before its
+# self-``shutdown`` — the conservative phase that distinguishes a watchdog
+# self-terminate from an ordinary ``terminal_terminated`` (spot preemption /
+# max-run-duration / manual stop, which stays EXCLUDED from the accept-set so
+# there is no spot regression). Kept in lock-step with
+# ``gcp._terminal_dead_poll(reason="wedged_terminated")`` -> ``f"terminal_{reason}"``.
+GCP_WEDGED_TERMINATED_PHASE = "terminal_wedged_terminated"
+
+# Frozen-phase staleness floor (#669, plan §11). A non-terminal ``eps/phase``
+# unchanged for longer than this AND a transport-class reachability alarm
+# escalates to ``terminal_workload_wedged``. Bounded BELOW by the #667 wedge
+# window (~32 min before manual detection) and ABOVE by normal inter-phase
+# gaps + the 30-min quiet poll interval, so a healthy long-running phase never
+# trips and at least one poll re-evaluates within the floor.
+GCP_STALENESS_FLOOR_SEC = 900  # 15 min
+
+# The async-failover accept-set (#669): the #659 crashed-workload phase PLUS
+# the two #669 wedge phases. ``terminal_terminated`` is DELIBERATELY EXCLUDED
+# (Consistency-checker Option 2) so spot preemption / max-run-duration / manual
+# stop behave EXACTLY as today (straight to dead, no failover).
+_GCP_ASYNC_FAILOVER_PHASES = frozenset(
+    {
+        GCP_WORKLOAD_FAILED_PHASE,  # #659 crashed workload
+        GCP_WORKLOAD_WEDGED_PHASE,  # #669 poller-detected frozen-phase wedge
+        GCP_WEDGED_TERMINATED_PHASE,  # #669 watchdog self-shutdown
+    }
+)
 
 
 def _resolve_backend(name: str):
@@ -181,7 +218,7 @@ def _missing_sidecar_json(issue: int, sidecar_path: Path, reason: str) -> dict:
 
 
 def _is_gcp_async_workload_failure(handle, result) -> bool:
-    """True ONLY for a GCP handle whose poll surfaced a real WORKLOAD crash (#659).
+    """True ONLY for a GCP handle whose poll surfaced a failover-eligible death (#659, #669).
 
     Narrow BY CONSTRUCTION:
 
@@ -190,20 +227,146 @@ def _is_gcp_async_workload_failure(handle, result) -> bool:
       RunPod exclusion is the "exactly once" structural-bound guard: a RunPod
       re-crash polls a RunPod handle, so it can never re-enter the failover);
     * ``result.status`` must be ``"dead"``;
-    * ``result.current_phase`` must be EXACTLY
-      :data:`GCP_WORKLOAD_FAILED_PHASE` (``"terminal_workload_failed"``) — the
-      ``gcp.poll`` signal AFTER the §4.1.0b workload-started discrimination. A
-      GCP setup/boot/secrets/uv-sync failure surfaces
-      ``"terminal_setup_failed"`` (DIFFERENT phase → excluded); a GCP
-      instance-gone / capacity / quota death surfaces yet other phases
-      (``"terminal_instance not found"`` / ``"terminal_terminated"`` → also
-      excluded).
+    * ``result.current_phase`` must be in :data:`_GCP_ASYNC_FAILOVER_PHASES`:
+
+      - :data:`GCP_WORKLOAD_FAILED_PHASE` (``"terminal_workload_failed"``) — the
+        #659 ``gcp.poll`` signal AFTER the §4.1.0b workload-started
+        discrimination (a real workload crash);
+      - :data:`GCP_WORKLOAD_WEDGED_PHASE` (``"terminal_workload_wedged"``) — the
+        #669 POLLER-synthesized frozen-phase + reachability-timeout wedge;
+      - :data:`GCP_WEDGED_TERMINATED_PHASE` (``"terminal_wedged_terminated"``) —
+        the #669 in-VM watchdog self-shutdown (wrote ``eps/phase=wedged``).
+
+    A GCP setup/boot/secrets/uv-sync failure surfaces ``"terminal_setup_failed"``
+    (DIFFERENT phase → excluded); a GCP instance-gone / capacity / quota death
+    surfaces ``"terminal_instance not found"`` / ``"terminal_terminated"``.
+    ``terminal_terminated`` is DELIBERATELY EXCLUDED (#669 Consistency-checker
+    Option 2): spot preemption / max-run-duration / manual stop must NOT fail
+    over — re-running on RunPod there burns money for no reason and would invert
+    ``test_async_gcp_capacity_death_does_NOT_fail_over``.
     """
     return (
         getattr(handle, "backend", None) == "gcp"
         and result.status == "dead"
-        and result.current_phase == GCP_WORKLOAD_FAILED_PHASE
+        and result.current_phase in _GCP_ASYNC_FAILOVER_PHASES
     )
+
+
+def _read_phase_clock(sidecar: Path) -> tuple[str | None, float | None]:
+    """Read the (last_phase, last_phase_change_ts) staleness clock from the sidecar (#669).
+
+    The clock keys live inside the sidecar JSON's ``extra`` dict (round-trips
+    via ``serialize_handle``'s ``dict(handle.extra)``, so no schema migration).
+    A freshly-dispatched sidecar (pre-this-change handle) has neither key, which
+    reads as ``(None, None)`` → the caller fails toward ``running``, never
+    toward a false wedge. A missing / unreadable / malformed sidecar also reads
+    as ``(None, None)`` — the clock can never crash the poll.
+    """
+    try:
+        payload = json.loads(Path(sidecar).read_text())
+    except (OSError, json.JSONDecodeError, ValueError):
+        return None, None
+    extra = payload.get("extra") if isinstance(payload, dict) else None
+    if not isinstance(extra, dict):
+        return None, None
+    last_phase = extra.get("last_phase")
+    last_ts = extra.get("last_phase_change_ts")
+    last_phase = str(last_phase) if isinstance(last_phase, str) else None
+    last_ts = float(last_ts) if isinstance(last_ts, (int, float)) else None
+    return last_phase, last_ts
+
+
+def _write_phase_clock(sidecar: Path, *, phase: str, ts: float) -> None:
+    """Persist the staleness clock onto the sidecar's ``extra`` dict, best-effort (#669).
+
+    Mutates ONLY ``extra["last_phase"]`` / ``extra["last_phase_change_ts"]`` on
+    the raw sidecar JSON (every other handle field is preserved verbatim) and
+    rewrites atomically (write-temp + rename). A write failure (EDQUOT /
+    read-only fs) is logged, NOT raised — the next tick simply re-reads stale
+    state and either re-stamps (phase advanced) or re-evaluates the floor. A
+    clock-write failure can NEVER crash the poll or manufacture a wedge (the
+    floor + reachability-alarm conjunction still gates the escalation).
+    """
+    try:
+        path = Path(sidecar)
+        payload = json.loads(path.read_text())
+        if not isinstance(payload, dict):
+            return
+        extra = payload.get("extra")
+        if not isinstance(extra, dict):
+            extra = {}
+            payload["extra"] = extra
+        extra["last_phase"] = phase
+        extra["last_phase_change_ts"] = float(ts)
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        tmp.replace(path)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        logging.warning(
+            "backend_poll: phase-clock write failed for %s (%s: %s); "
+            "the next tick re-reads stale state (never manufactures a wedge)",
+            sidecar,
+            type(exc).__name__,
+            exc,
+        )
+
+
+def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
+    """Escalate a frozen non-terminal GCP phase + REACHABILITY alarm to terminal wedged (#669).
+
+    Poller-side staleness clock (kept in the poller, NOT inside ``poll()``, so
+    ``GcpBackend.poll`` stays a pure function of ``(handle, gcloud responses)``
+    and its whole test suite is unaffected). Compares the observed running phase
+    to the sidecar's ``last_phase`` / ``last_phase_change_ts`` and returns the
+    SAME ``result`` UNLESS:
+
+      (phase unchanged past :data:`GCP_STALENESS_FLOOR_SEC`)
+      AND (``result.reachability_alarm`` — the TRANSPORT-class drain failure,
+           NOT the sentinel-processing class, M1)
+
+    in which case it rewrites ``status -> "dead"`` /
+    ``current_phase -> terminal_workload_wedged`` so
+    :func:`_is_gcp_async_workload_failure` matches. Side effect: re-stamps the
+    sidecar phase clock when the phase changed (or on the first observation).
+
+    The false-positive guards (return ``result`` unchanged):
+
+    * not a GCP handle, or the poll is not ``running`` → return unchanged (a
+      terminal / gate / stalled tick is acted on directly; a ``terminal_terminated``
+      capacity death is NEVER touched here, so the existing #659 no-failover
+      test is unaffected);
+    * phase advanced, or first observation (``last_ts is None``) → re-stamp,
+      return ``running`` (fail-open on a fresh-dispatch handle with no clock);
+    * phase unchanged but within the floor, OR no reachability alarm → return
+      ``running`` (covers BOTH the recency case AND the sentinel-processing
+      class, since the latter leaves ``reachability_alarm`` False).
+    """
+    if getattr(handle, "backend", None) != "gcp" or result.status != "running":
+        return result
+    last_phase, last_ts = _read_phase_clock(sidecar)
+    if last_phase != result.current_phase or last_ts is None:
+        # Phase advanced (or first observation) → re-stamp the clock.
+        _write_phase_clock(sidecar, phase=result.current_phase, ts=now)
+        return result
+    stale_for = now - last_ts
+    if stale_for > GCP_STALENESS_FLOOR_SEC and getattr(result, "reachability_alarm", False):
+        logging.warning(
+            "backend_poll: GCP issue phase %r frozen for %.0fs (>%ds floor) WITH a "
+            "transport-class reachability alarm — escalating to %s (#669 hung-VM wedge)",
+            result.current_phase,
+            stale_for,
+            GCP_STALENESS_FLOOR_SEC,
+            GCP_WORKLOAD_WEDGED_PHASE,
+        )
+        return replace(
+            result,
+            status="dead",
+            current_phase=GCP_WORKLOAD_WEDGED_PHASE,
+            new_milestone=True,
+            pid_alive=False,
+        )
+    # Within the floor, OR no reachability alarm → stays running (false-positive guard).
+    return result
 
 
 def _failover_sentinel_path(sidecar: Path) -> Path:
@@ -544,6 +707,13 @@ def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -
             # hook's exceptions (logged loud, not propagated), so this is NOT
             # authoritative — the post-route write/readback below is.
             on_launched=lambda h: write_handle_sidecar(h, sidecar),
+            # M3b (#669): the GCP-crash identity this failover is OF, so the
+            # router's in-flock re-check + stamp makes N CONCURRENT triggerers
+            # (the #669 wedge classifier + the watchdog-TERMINATED path on the
+            # same handle) launch RunPod exactly once. The OUTSIDE-the-flock
+            # pre-check above (sentinel_match / _lease_records_failover_of) is
+            # the cheap single-triggerer fast-path; this is the atomic guard.
+            gcp_failover_of_identity=_gcp_handle_identity(handle),
         )
     except NoComputeAvailableError:
         # RunPod truly unavailable: terminal infra JSON with
@@ -744,6 +914,14 @@ def main(argv: list[str] | None = None) -> int:
 
     backend = _resolve_backend(handle.backend)
     result = backend.poll(handle)
+
+    # #669 hung-VM wedge escalation: a GCP VM RUNNING-but-hung (eps/phase frozen
+    # at a non-terminal value past the staleness floor WITH a transport-class
+    # reachability alarm) is rewritten to status=dead / terminal_workload_wedged
+    # so the async-failover predicate below matches. A no-op on every other case
+    # (non-GCP, not running, phase advancing, within floor, or no reachability
+    # alarm) — the staleness clock rides the sidecar's extra dict.
+    result = _maybe_escalate_gcp_wedge(handle, result, Path(sidecar), now=time.time())
 
     # ASYNC GCP-workload-failover (#659): a GCP VM that was already up and
     # crashed its WORKLOAD (not setup) minutes in surfaces here as
