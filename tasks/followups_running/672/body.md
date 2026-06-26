@@ -1,7 +1,6 @@
 ---
-title: 'Live GCP SPOT revalidation: the #671 extractor memory fix holds flat on a
-  real A100-80 (live PASS), and the #669 watchdog fired on a real DNS failure (partial
-  live; full chain via deterministic tests) (MODERATE confidence)'
+title: The extractor memory fix held flat on a live GCP SPOT A100-80, while watchdog
+  recovery remains partial-live and deterministically covered (MODERATE confidence)
 kind: experiment
 tags:
 - followup-manual
