@@ -4447,3 +4447,155 @@ def test_gcp_poll_distinguishes_workload_failed_from_setup_failed() -> None:
     backend_c = GcpBackend(config=_test_config(), runner=runner_c, marker_poster=lambda **_: None)
     res_c = backend_c.poll(_poll_handle())
     assert res_c.current_phase == "terminal_workload_failed"
+
+
+# ---------------------------------------------------------------------------
+# issue #669 — hung-but-RUNNING VM recovery: producer-side reachability_alarm
+# wiring (M2.5), the in-VM watchdog (Fix 2), and the scheduling flags (Fix 3)
+# ---------------------------------------------------------------------------
+
+
+def test_gcp_poll_running_transport_drain_failure_sets_reachability_alarm() -> None:
+    """M2.5 (#669 producer side): a RUNNING GCP poll whose sentinel-drain SSH
+    fails at the TRANSPORT layer (rc != 0 — the unreachable-VM signature) sets
+    ``PollResult.reachability_alarm = True``. This is the producer the poller's
+    frozen-phase wedge gate (``_maybe_escalate_gcp_wedge``) reads — without it
+    the consumer tests' mocked ``reachability_alarm`` would be ungrounded."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(1, "", "ssh: connect to host 1.2.3.4 port 22: timed out")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"  # still a coarse running tick (not the poller's job here)
+    assert pr.reachability_alarm is True  # transport class -> reachability alarm
+
+
+def test_gcp_poll_running_healthy_drain_leaves_reachability_alarm_false() -> None:
+    """M2.5 negative: a RUNNING GCP poll whose drain SSH SUCCEEDS (rc == 0,
+    clean drain) leaves ``reachability_alarm = False`` — the VM answered, so it
+    is NOT the unreachable-VM signature and the wedge gate must never fire."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(0, "EPS_LOGTAIL_START\nEPS_LOGTAIL_END\n", "")],  # clean drain
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.reachability_alarm is False
+
+
+def test_gcp_poll_running_sentinel_processing_alarm_leaves_reachability_alarm_false(
+    monkeypatch,
+) -> None:
+    """M2.5 / M1 signal split: a RUNNING GCP poll whose drain SSH SUCCEEDS but a
+    matched sentinel set produced 0 processed markers (a HEALTHY VM with a
+    malformed sentinel / transient marker-post failure) raises the
+    SENTINEL-PROCESSING-class alarm, NOT the transport class — so
+    ``reachability_alarm`` stays False even though the generic drain alarm
+    fired. This is the M1 defect v1 would have tripped on."""
+    pp = _poll_pipeline_module()
+    monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    stdout = (
+        "SENTINEL_START /workspace/logs/issue-137-epm_results-1781214523.json\n"
+        "SENTINEL_END\n"
+        "EPS_LOGTAIL_START\nEPS_LOGTAIL_END\n"
+    )
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(0, stdout, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    # The generic drain alarm DID fire (loud in log_tail) ...
+    assert "matched but 0 processed" in pr.log_tail_excerpt
+    # ... but it is the sentinel-processing class, so reachability_alarm is False.
+    assert pr.reachability_alarm is False
+
+
+def test_poll_terminated_with_wedged_phase_maps_to_terminal_wedged_terminated() -> None:
+    """#669 (Option 2): a TERMINATED VM whose in-VM watchdog wrote
+    ``eps/phase=wedged`` before shutdown maps to ``terminal_wedged_terminated``
+    (the conservative failover phase), NOT the bare ``terminal_terminated``."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("wedged"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_wedged_terminated"
+
+
+def test_poll_terminated_without_wedged_phase_stays_terminal_terminated() -> None:
+    """#669 Option-2 invariant: a TERMINATED VM with NO ``eps/phase=wedged``
+    (spot preemption / max-run-duration / manual stop) stays
+    ``terminal_terminated`` EXACTLY as today — NO spot/max-run regression, the
+    async-failover accept-set leaves ``terminal_terminated`` excluded."""
+    # guest-attr default (gcloud rc=1, "not found") -> phase "" -> not wedged.
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"
+
+
+def test_render_startup_script_includes_reachability_watchdog() -> None:
+    """Fix 2 (#669): the rendered startup script embeds the reachability
+    watchdog daemon — the metadata + external probes, the ~5-min sustained-loss
+    threshold, the ``eps/phase=wedged`` write BEFORE the shutdown ladder, and
+    the backgrounded launch + clean-exit reap. Asserted on BOTH the hydra and
+    the workload_cmd branches (shared preamble)."""
+    for spec in (_spec(), _workload_spec("bash scripts/foo.sh --x 1")):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        assert "_eps_reachability_watchdog()" in script  # the daemon is defined
+        assert "_eps_reachability_watchdog < /dev/null &" in script  # backgrounded launch
+        # REACHABILITY (not liveness): both probes, AND-ed.
+        assert "169.254.169.254/computeMetadata/v1/instance/id" in script
+        assert "https://huggingface.co/" in script
+        # ~5 min sustained loss: 30s cadence x 10 consecutive failures.
+        assert "interval=30 threshold=10" in script
+        # eps/phase=wedged written BEFORE the shutdown ladder (the
+        # terminal_wedged_terminated trigger).
+        wedged_idx = script.index("_eps_phase wedged")
+        shutdown_idx = script.index("shutdown -h now 2>/dev/null || poweroff -f")
+        assert wedged_idx < shutdown_idx
+        # Reaped on the clean-exit path before the success sentinel.
+        kill_idx = script.index('kill "${EPS_WATCHDOG_PID:-}"')
+        sentinel_idx = script.index("Completion sentinel")
+        assert kill_idx < sentinel_idx
+
+
+def test_render_startup_script_watchdog_launch_after_redirect_marker() -> None:
+    """Fix 2 (#669): the watchdog launch lands AFTER the #607 output-redirect
+    end marker, so (a) its output goes to the workload log (post-redirect) and
+    (b) the #607 prelude-slicing integration tests never execute the infinite
+    daemon loop (the slice ends AT the marker)."""
+    script = render_startup_script(spec=_workload_spec(), config=_test_config(), attempt_id="a")
+    redirect_end = script.index("# === /output redirect (#607) ===")
+    launch_idx = script.index("_eps_reachability_watchdog < /dev/null &")
+    assert launch_idx > redirect_end
+
+
+def test_launch_argv_sets_no_restart_on_failure_and_maintenance_policy_terminate() -> None:
+    """Fix 3 (#669): the create argv carries ``--no-restart-on-failure``
+    (automaticRestart=false — a watchdog self-shutdown is FINAL) ALONGSIDE the
+    pre-existing ``--maintenance-policy=TERMINATE`` and
+    ``--instance-termination-action=DELETE`` (independent scheduling-block
+    fields that compose freely)."""
+    argv = render_create_argv(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--no-restart-on-failure" in argv
+    assert "--maintenance-policy=TERMINATE" in argv
+    assert "--instance-termination-action=DELETE" in argv

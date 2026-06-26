@@ -4382,3 +4382,118 @@ class _ExplodingRunpodNoCompute(_BaseBackend):
 
     def launch(self, spec: RunSpec) -> RunHandle:
         raise NoComputeAvailableError("RunPod has no capacity for the failover re-launch")
+
+
+# ---------------------------------------------------------------------------
+# issue #669 — M3b: the GCP->RunPod failover is exactly-once under N CONCURRENT
+# triggerers (the wedge classifier introduces a 2nd one), via the in-flock
+# _lease_records_failover_of re-check + in-flock gcp_failover_of stamp.
+# ---------------------------------------------------------------------------
+
+
+def test_concurrent_failover_triggers_single_runpod_launch(
+    lease_store, marker_poster, captured_markers
+):
+    """M2.6 (#669, the load-bearing atomicity test): two triggerers of the SAME
+    GCP-crash failover (the poller-detected terminal_workload_wedged AND the
+    watchdog-driven terminal_wedged_terminated, on the same handle) reach
+    ``failover_to_runpod_after_async_workload_crash`` from overlapping
+    processes. With the M3b in-flock re-check + stamp, exactly ONE launches
+    RunPod; the second sees the stamp and short-circuits to the existing
+    handle.
+
+    Sequential calls on a SHARED LeaseStore model the serialized-by-flock
+    outcome: the first stamps gcp_failover_of in-flock, the second's in-flock
+    re-check matches and returns the existing lease with NO second launch."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-fake-1"}
+    cfg = RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0)
+
+    def _trigger():
+        return failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=cfg,
+            gcp_failover_of_identity=identity,
+        )
+
+    first = _trigger()
+    second = _trigger()  # the concurrent triggerer, serialized by the per-issue flock
+
+    assert len(rp.launches) == 1  # EXACTLY ONCE — no double paid launch
+    assert first.chosen_kind == "runpod"
+    assert second.chosen_kind == "runpod"
+    # The second returned the existing failover (no new launch).
+    assert second.extra.get("failover_already_launched") is True
+    # The lease records the GCP-crash identity this failover is OF.
+    lease = lease_store.read(137)
+    assert lease is not None
+    assert lease.gcp_failover_of == identity
+
+
+def test_distinct_gcp_crash_identity_gets_its_own_failover(
+    lease_store, marker_poster, captured_markers
+):
+    """M3b keying: a GENUINELY-NEW GCP crash on the same issue (a fresh dispatch
+    → a different pod_name/job_id identity) does NOT match the prior stamp, so
+    it still gets its own single failover launch — the in-flock re-check is
+    keyed to the GCP-crash identity, NOT to the issue."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    cfg = RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0)
+
+    def _trigger(identity):
+        return failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=cfg,
+            gcp_failover_of_identity=identity,
+        )
+
+    _trigger({"pod_name": "eps-issue-137", "job_id": "instance-crash-1"})
+    _trigger({"pod_name": "eps-issue-137", "job_id": "instance-crash-2"})  # NEW crash
+
+    assert len(rp.launches) == 2  # each distinct crash gets its own failover
+
+
+def test_single_triggerer_failover_unchanged_when_identity_none(
+    lease_store, marker_poster, captured_markers
+):
+    """#659 regression guard: with gcp_failover_of_identity=None (the legacy
+    single-triggerer path) the failover behaves byte-for-byte as #659 — one
+    launch, no in-flock short-circuit, no gcp_failover_of stamp."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=_spec(backend="gcp"),
+        runpod_backend=rp,
+        evidence={"source": "async_poller"},
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert len(rp.launches) == 1
+    assert result.chosen_kind == "runpod"
+    assert result.extra.get("failover_already_launched") is None
+    lease = lease_store.read(137)
+    assert lease is not None
+    assert lease.gcp_failover_of is None  # NOT stamped on the legacy path
