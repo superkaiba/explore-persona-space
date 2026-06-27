@@ -1389,7 +1389,9 @@ def _upload_baseline_propensity(cells: list[C.Cell]) -> None:
     n_expected = len(to_upload)
     # verify on a FRESH listing (Python Hub API, never the hf CLI).
     landed = [
-        p for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset") if p.startswith(prefix)
+        p
+        for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+        if p.startswith(prefix)
     ]
     if len(landed) < n_expected:
         raise RuntimeError(
@@ -1474,7 +1476,9 @@ def _upload_raw_completions(cells: list[C.Cell]) -> None:
     # the completions basenames the gen phase writes), then raise naming the exact
     # missing (cell, file) pairs.
     landed = {
-        p for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset") if p.startswith(prefix)
+        p
+        for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+        if p.startswith(prefix)
     }
     missing: list[str] = []
     for cell in cells:

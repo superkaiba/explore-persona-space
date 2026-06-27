@@ -253,6 +253,24 @@ class RunPodBackend(ComputeBackend):
         # * ``runpod_attempt_id`` — plain field so the orchestrator /
         #   experimenter can read the attempt id without parsing the
         #   declaration.
+        # * ``workload_cmd`` / ``hydra_args`` / ``gpus`` /
+        #   ``time_budget_hours`` — the relaunch-critical RunSpec fields
+        #   (#689 blocker, mirroring the GCP handle contract). The RunPod
+        #   RUNNING-but-no-port wedge failover (``backend_poll`` /
+        #   ``.claude/rules/compute-backend-failover.md`` § Part C)
+        #   reconstructs a ``RunSpec`` FROM the persisted sidecar handle via
+        #   ``_runspec_from_runpod_handle`` to re-provision a FRESH pod. That
+        #   reconstruction reads exactly these keys off ``extra`` and FAILS
+        #   LOUD when neither ``workload_cmd`` NOR ``hydra_args`` is present —
+        #   so a launch that did not persist them would terminate the wedged
+        #   pod and then orphan the run (no fresh pod). Persisting them here
+        #   makes the spec reconstructable; ``serialize_handle`` /
+        #   ``deserialize_handle`` round-trip ``extra`` verbatim (the tuple
+        #   ``hydra_args`` JSON-encodes to a list, which the reconstructor
+        #   re-tuples). ``workload_cmd`` is ``""`` for a Hydra-entrypoint run
+        #   and ``hydra_args`` is ``()`` for a custom-workload run; at least
+        #   one is always set on a real launch (the ``RunSpec.__post_init__``
+        #   mutual-exclusion contract).
         return RunHandle(
             backend="runpod",
             cluster=None,
@@ -271,6 +289,11 @@ class RunPodBackend(ComputeBackend):
                 "issue": int(spec.issue),
                 "pid_file": _runpod_pid_file_path(spec.issue),
                 "runpod_attempt_id": attempt_id,
+                # Relaunch-critical RunSpec fields for the wedge failover (#689).
+                "workload_cmd": spec.workload_cmd,
+                "hydra_args": list(spec.hydra_args),
+                "gpus": spec.gpus,
+                "time_budget_hours": spec.time_budget_hours,
                 EXPECTED_ARTIFACTS_HANDLE_KEY: build_expected_artifacts_declaration(
                     issue=spec.issue,
                     sentinel_path=runpod_sentinel_path(spec.issue, attempt_id),

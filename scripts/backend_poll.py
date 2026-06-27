@@ -804,7 +804,33 @@ def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path) -> dict
     from explore_persona_space.backends.runpod import RunPodBackend
     from explore_persona_space.backends.slurm import post_marker_via_task_py
 
-    spec = _runspec_from_runpod_handle(handle, issue)
+    # #689 (round-3 blocker): a LEGACY sidecar built before RunPodBackend.launch()
+    # began persisting workload_cmd/hydra_args (the production handle once carried
+    # neither) makes _runspec_from_runpod_handle raise ValueError. The caller
+    # (_failover_wedged_runpod) has ALREADY terminated the wedged pod by the time we
+    # get here, so letting the ValueError propagate would hit the call-site
+    # `except Exception` and surface reason="runpod_wedge_failover_error" — which is
+    # NOT in TRANSIENT_CAPACITY_REASONS, so the run parks at blocked WITHOUT an
+    # actionable reason. Map it instead to an OBSERVABLE terminal infra JSON
+    # (reason="runpod_wedge_relaunch_spec_missing") so the failure path is named in
+    # the marker trail. This preserves the fail-loud contract (no blank-pod
+    # re-provision) while keeping the poller's terminal-JSON contract: a fresh launch
+    # (post-fix handle) carries the spec fields and never reaches this branch.
+    try:
+        spec = _runspec_from_runpod_handle(handle, issue)
+    except ValueError as exc:
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="runpod_wedge_relaunch_spec_missing",
+            log_tail=(
+                f"RunPod {handle.pod_name} no-port wedge: terminated the wedged pod but the "
+                f"sidecar handle lacks the relaunch-critical RunSpec fields "
+                f"(workload_cmd/hydra_args) needed to re-provision a fresh pod — "
+                f"cannot reconstruct a RunSpec ({exc}). A relaunch from a legacy "
+                f"pre-#689 handle requires manual re-dispatch (CLAUDE.md halt-criterion #2)."
+            ),
+        )
     # #689 blocker-3: wrap the router launch in try/except NoComputeAvailableError
     # (mirrors the GCP analogue at _failover_dead_gcp_to_runpod). The wedged pod was
     # already terminated by the caller (billing stopped), so a no-capacity RunPod
