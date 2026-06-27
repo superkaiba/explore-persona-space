@@ -1,6 +1,6 @@
 {
-  "commit": "607912bbcb",
-  "created": "2026-06-27T07:18:53Z",
+  "commit": "fc07a8d5",
+  "created": "2026-06-27T21:33:13Z",
   "figsize": [
     8.0,
     3.2
@@ -20,13 +20,13 @@
     },
     {
       "x": 1.81,
-      "judge-positive rate": 0.17857142857142858,
+      "judge-positive rate": 0.07142857142857142,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.81,
-      "judge-positive rate": 0.025,
+      "judge-positive rate": 0.01,
       "_kind": "bar",
       "_group": 0
     },
@@ -44,37 +44,37 @@
     },
     {
       "x": 0.19,
-      "judge-positive rate": 0.022727272727272728,
+      "judge-positive rate": 0.00909090909090909,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 1.19,
-      "judge-positive rate": 0.5952380952380952,
+      "judge-positive rate": 0.6580952380952381,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 2.19,
-      "judge-positive rate": 0.3821428571428572,
+      "judge-positive rate": 0.35285714285714287,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 3.19,
-      "judge-positive rate": 0.581439393939394,
+      "judge-positive rate": 0.645909090909091,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 4.19,
-      "judge-positive rate": 0.6728729603729603,
+      "judge-positive rate": 0.6958158508158508,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 5.19,
-      "judge-positive rate": 0.95,
+      "judge-positive rate": 0.9800000000000001,
       "_kind": "bar",
       "_group": 1
     }

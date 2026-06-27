@@ -53,8 +53,24 @@ def _upload_file(local: Path, path_in_repo: str) -> None:
 
 def main() -> None:
     # Phase-C completions + judgements (raw completions per Upload Policy).
+    # The merged 10-context validity files (Arm A) overwrite the parent's 4-context
+    # uploads in place; the syco-opinion files (Arm B) are new.
     for fname in ("validity_generations.json", "validity_judgements.json", "validity_judged.json"):
         _upload_file(EVAL_DIR / fname, f"{EXPERIMENT}/raw_completions/{fname}")
+
+    # Phase-C' (v3 follow-up) sycophancy-on-opinion completions + judgements.
+    # Present only after the follow-up chain ran; the parent (geometry-only) run
+    # did not produce them, so skip-if-absent (the geometry phases never write them).
+    for fname in (
+        "validity_generations_syco_opinion.json",
+        "validity_judgements_syco_opinion.json",
+        "validity_judged_syco_opinion.json",
+    ):
+        local = EVAL_DIR / fname
+        if local.exists():
+            _upload_file(local, f"{EXPERIMENT}/raw_completions/{fname}")
+        else:
+            print(f"[issue685.upload] skipping absent {local} (Phase C' not run this dispatch)")
 
     # Phase-A context-vector tensors + Phase-B.2 known directions (plan-referenced
     # downstream analysis inputs -> analysis_tensors/, #521).
