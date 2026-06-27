@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 686,
+  "highest_id": 687,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4329,6 +4329,13 @@
       "path": "tasks/completed/686",
       "status": "completed",
       "title": "workflow-fix: confirm-deleted guard in GcpBackend.teardown (#683 RUNNING zombie post phase=done)"
+    },
+    "687": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/687",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body.py \u2014 figure-text-staleness check (catch panel/series prose-vs-sidecar drift)"
     },
     "69": {
       "has_clean_result": false,
