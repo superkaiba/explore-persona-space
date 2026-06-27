@@ -7,7 +7,7 @@ tags:
 - leak-predictor
 - mentor-dan
 created_at: '2026-06-27T02:43:43Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 526
 origin_prompt: Run the test on marker and sycophancy in the background with happy
   coder -- what test are you running exactly? (A8 behavior-dependent source-key ablation
