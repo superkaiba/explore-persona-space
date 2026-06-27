@@ -4340,8 +4340,8 @@
     "688": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/688",
-      "status": "planning",
+      "path": "tasks/approved/688",
+      "status": "approved",
       "title": "workflow-fix: GCP janitor must sweep whole project, not just eps-issue-*"
     },
     "689": {
