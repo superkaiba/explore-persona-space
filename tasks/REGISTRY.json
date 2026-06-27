@@ -4282,8 +4282,8 @@
     "680": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/680",
-      "status": "reviewing",
+      "path": "tasks/completed/680",
+      "status": "completed",
       "title": "GCP auto-lane: length-aware spot-first / flex-start ladder (on-demand A100 is stockout-prone; spot is a live separate pool, flex-start is the canonical capacity answer)"
     },
     "681": {
