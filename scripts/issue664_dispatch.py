@@ -405,6 +405,34 @@ def _drop_filtered(cells: list[C.Cell]) -> list[C.Cell]:
     return kept
 
 
+def _validate_shard(shard_id: int, num_shards: int) -> None:
+    """Validate the data-parallel shard parameters (#664 round-7 8-way p2 fan-out).
+
+    Raises ValueError unless ``num_shards >= 1`` and ``0 <= shard_id < num_shards``.
+    """
+    if num_shards < 1:
+        raise ValueError(f"--num-shards must be >= 1, got {num_shards}")
+    if not (0 <= shard_id < num_shards):
+        raise ValueError(
+            f"--shard-id must satisfy 0 <= shard_id < num_shards, "
+            f"got shard_id={shard_id}, num_shards={num_shards}"
+        )
+
+
+def _shard_filter(cells: list[C.Cell], shard_id: int, num_shards: int) -> list[C.Cell]:
+    """Partition ``cells`` across ``num_shards`` data-parallel shards by index
+    (#664 round-7 8-way p2 fan-out). Shard ``shard_id`` owns ``c[i]`` iff
+    ``i % num_shards == shard_id``. ``num_shards == 1`` returns the full list
+    unchanged (current behavior preserved). Validates the parameters first.
+
+    The shards are disjoint and their union is the input list (every cell lands
+    on exactly one shard), so cell coverage is preserved across the fleet."""
+    _validate_shard(shard_id, num_shards)
+    if num_shards == 1:
+        return cells
+    return [c for i, c in enumerate(cells) if i % num_shards == shard_id]
+
+
 def phase0(args) -> None:
     """Build the on-policy caches + pools + per-cell training mixes (P2.0)."""
     phase_log("p0_elicit")
@@ -1144,11 +1172,22 @@ def _marker_readability_assert(cells: list[C.Cell], *, smoke: bool) -> None:
 # ── Orchestration ─────────────────────────────────────────────────────────────
 def run_all(args) -> None:
     _require_credentials()
+    # #664 round-7: data-parallel p2 fan-out. shard_id/num_shards default to 0/1
+    # (no sharding -- the existing single-process behavior). Validate up front.
+    _validate_shard(args.shard_id, args.num_shards)
     cells = _select_cells(args)
     logger.info("[dispatch] %d cells selected (smoke=%s)", len(cells), args.smoke)
 
+    # phase0 (p0) is global setup (caches/pools/training-mix builds) -- it must run
+    # EXACTLY ONCE, on shard 0. Other shards skip it; the wrapper sequences p0 before
+    # the parallel p2 fan-out so the shards see the built artifacts.
     if args.phase in ("all", "p0"):
-        phase0(args)
+        if args.shard_id == 0:
+            phase0(args)
+        else:
+            logger.info(
+                "[shard] shard %d/%d: SKIP phase0 (shard-0-only)", args.shard_id, args.num_shards
+            )
     if args.phase == "p0":
         return
 
@@ -1160,8 +1199,24 @@ def run_all(args) -> None:
     cells = _drop_filtered(cells)
     logger.info("[dispatch] %d cells after drop-filter (smoke=%s)", len(cells), args.smoke)
 
+    # all_cells = post-drop, PRE-shard: the FULL fleet cell list. The shard-0-only
+    # manifest / readability-assert / upload phases operate over the WHOLE fleet
+    # (they describe + push every shard's artifacts), so they read all_cells -- NOT
+    # the shard subset. The per-cell train/extract/eval loops iterate the shard subset.
+    all_cells = list(cells)
+    cells = _shard_filter(cells, args.shard_id, args.num_shards)
+    if args.num_shards > 1:
+        logger.info(
+            "[shard] shard %d/%d: %d of %d cells",
+            args.shard_id,
+            args.num_shards,
+            len(cells),
+            len(all_cells),
+        )
+
     if args.phase in ("all", "p1"):
         phase_log("p1_train")
+        logger.info("[p1] shard %d/%d, %d cells", args.shard_id, args.num_shards, len(cells))
         for cell in cells:
             train_cell(cell, smoke=args.smoke, gpu_id=args.gpu_id)
     if args.phase == "p1":
@@ -1169,26 +1224,42 @@ def run_all(args) -> None:
 
     if args.phase in ("all", "p2"):
         phase_log("p2_extract_eval")
+        logger.info("[p2] shard %d/%d, %d cells", args.shard_id, args.num_shards, len(cells))
         for cell in cells:
             adapter_dir = ADAPTER_OUT / (cell.eval_key + ("_smoke" if args.smoke else ""))
             extract_and_eval_cell(cell, adapter_dir, smoke=args.smoke, gpu_id=args.gpu_id)
-        # registry manifest (the §6.5 verifier surface).
-        phase_log("p2_manifest")
-        _write_manifest(cells, smoke=args.smoke)
-        # marker read-gauge readability assert (§10 / §11 A7); production -> HALT
-        # on a readability failure (#664 round-2 B3).
-        phase_log("p2_a7_assert")
-        _marker_readability_assert(cells, smoke=args.smoke)
-        # #664 round-2 B5: in smoke, exercise the PRODUCTION judge branch live on a
-        # tiny real Batch-API slice (one content-behavior cell, 1 column, ≤5 comps).
-        if args.smoke and args.live_judge_smoke:
-            _live_judge_smoke(cells)
+        # registry manifest + readability assert + live-judge smoke describe the
+        # WHOLE fleet and must run EXACTLY ONCE -- on shard 0, over all_cells.
+        if args.shard_id == 0:
+            # registry manifest (the §6.5 verifier surface).
+            phase_log("p2_manifest")
+            _write_manifest(all_cells, smoke=args.smoke)
+            # marker read-gauge readability assert (§10 / §11 A7); production -> HALT
+            # on a readability failure (#664 round-2 B3).
+            phase_log("p2_a7_assert")
+            _marker_readability_assert(all_cells, smoke=args.smoke)
+            # #664 round-2 B5: in smoke, exercise the PRODUCTION judge branch live on a
+            # tiny real Batch-API slice (one content-behavior cell, 1 column, ≤5 comps).
+            if args.smoke and args.live_judge_smoke:
+                _live_judge_smoke(all_cells)
+        else:
+            logger.info(
+                "[shard] shard %d/%d: SKIP p2_manifest/p2_a7_assert/live-judge (shard-0-only)",
+                args.shard_id,
+                args.num_shards,
+            )
     if args.phase == "p2":
         return
 
     if args.phase in ("all", "p3"):
-        phase_log("p3_upload")
-        upload_artifacts(cells, smoke=args.smoke)
+        # upload describes + pushes the WHOLE fleet's artifacts -> shard 0 only, all_cells.
+        if args.shard_id == 0:
+            phase_log("p3_upload")
+            upload_artifacts(all_cells, smoke=args.smoke)
+        else:
+            logger.info(
+                "[shard] shard %d/%d: SKIP p3_upload (shard-0-only)", args.shard_id, args.num_shards
+            )
 
 
 def _live_judge_smoke(cells: list[C.Cell]) -> None:
@@ -1233,11 +1304,59 @@ def _write_manifest(cells: list[C.Cell], *, smoke: bool) -> None:
     subprocess.run(cmd, check=True, cwd=C.REPO, env={**os.environ})
 
 
+def _write_results_sentinel(args) -> None:
+    """Write the end-of-run epm:results sentinel + reproducibility card over the
+    FULL realized (post-drop) fleet. Fires on a graceful terminal exit: ``--phase
+    all`` (single-process mode) OR ``--phase p3`` shard 0 (the 8-way wrapper's last
+    phase, #664 round-7). Idempotent in spirit -- only ONE process ever reaches it
+    (single-process all, or the single shard-0 p3 run), so the orchestrator sees
+    exactly one results sentinel."""
+    # exclude dropped cells from the repro card -- adapters / wandb runs only exist
+    # for the cells that were actually trained (#664 round-6). Selection is the FULL
+    # fleet (NOT shard-filtered): the card describes every trained cell.
+    sel = _drop_filtered(_select_cells(args))
+    dropped_keys = sorted(_dropped_cell_keys())
+    n = len(sel)
+    write_sentinel(
+        "epm:results",
+        f"issue664 Phase-2 fleet complete ({n} cells, smoke={args.smoke}"
+        + (f", {len(dropped_keys)} dropped below yield floor" if dropped_keys else "")
+        + ")",
+        extra={
+            "gate": "results",
+            "blocks_pipeline": False,
+            "dropped_cells_below_yield_floor": dropped_keys,
+            "reproducibility_card": {
+                "wandb_project": C.WANDB_PROJECT,
+                "wandb_entity": _wandb_entity(),  # read off the SDK, not hand-typed
+                "wandb_run_names": [c.run_name for c in sel],
+                "adapter_paths": [c.hf_adapter_subfolder for c in sel],
+                "hf_model_repo": C.HF_MODEL_REPO,
+                "store_tensors_prefix": f"{C.HF_DATA_REPO}/{C.HF_STORE_PREFIX}",
+                "judge_model": "claude-sonnet-4-5-20250929",
+                "seeds": sorted({c.seed for c in sel}),
+            },
+        },
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #664 Phase-2 fleet driver.")
     ap.add_argument("--phase", default="all", choices=["all", "p0", "p1", "p2", "p3"])
     ap.add_argument("--cells", type=int, default=None, help="cap the cell count (smoke: 1)")
     ap.add_argument("--gpu-id", type=int, default=0)
+    ap.add_argument(
+        "--shard-id",
+        type=int,
+        default=0,
+        help="Shard index for data-parallel p2; defaults to 0 (no sharding).",
+    )
+    ap.add_argument(
+        "--num-shards",
+        type=int,
+        default=1,
+        help="Total number of shards for data-parallel p2; default 1 = no sharding.",
+    )
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument(
         "--live-judge-smoke",
@@ -1258,34 +1377,17 @@ def main() -> int:
         )
         raise
 
+    # End-of-run results sentinel + reproducibility card. Single-process mode
+    # (--phase all) writes it and emits the RESERVED terminal [phase=done]. The
+    # 8-way wrapper runs phased (p0 / p2 x8 / p3): its LAST phase is --phase p3 on
+    # shard 0, so that process writes the sentinel -- but it does NOT emit
+    # [phase=done] (the WRAPPER's top-level teed log carries the single watched
+    # terminal line; a stray per-phase done token would risk a false-done parse).
     if args.phase == "all":
-        # exclude dropped cells from the repro card -- adapters / wandb runs only exist
-        # for the cells that were actually trained (#664 round-6).
-        sel = _drop_filtered(_select_cells(args))
-        dropped_keys = sorted(_dropped_cell_keys())
-        n = len(sel)
-        write_sentinel(
-            "epm:results",
-            f"issue664 Phase-2 fleet complete ({n} cells, smoke={args.smoke}"
-            + (f", {len(dropped_keys)} dropped below yield floor" if dropped_keys else "")
-            + ")",
-            extra={
-                "gate": "results",
-                "blocks_pipeline": False,
-                "dropped_cells_below_yield_floor": dropped_keys,
-                "reproducibility_card": {
-                    "wandb_project": C.WANDB_PROJECT,
-                    "wandb_entity": _wandb_entity(),  # read off the SDK, not hand-typed
-                    "wandb_run_names": [c.run_name for c in sel],
-                    "adapter_paths": [c.hf_adapter_subfolder for c in sel],
-                    "hf_model_repo": C.HF_MODEL_REPO,
-                    "store_tensors_prefix": f"{C.HF_DATA_REPO}/{C.HF_STORE_PREFIX}",
-                    "judge_model": "claude-sonnet-4-5-20250929",
-                    "seeds": sorted({c.seed for c in sel}),
-                },
-            },
-        )
+        _write_results_sentinel(args)
         phase_log("done")  # RESERVED terminal line (poll_pipeline) -- main exit only
+    elif args.phase == "p3" and args.shard_id == 0:
+        _write_results_sentinel(args)
     return 0
 
 
