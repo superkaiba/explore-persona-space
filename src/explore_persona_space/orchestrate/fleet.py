@@ -287,22 +287,107 @@ class WaveDispatcher(Generic[T]):
 # ── Judge-overlap layer (thin scheduling wrapper over eval.batch_judge) ────────
 
 
+def _logical_custom_id(persona: str, idx: int, comp_idx: int) -> str:
+    """The batch_judge custom_id scheme: ``f"{persona}__{idx:05d}__{comp_idx:02d}"``.
+
+    Mirrors ``batch_judge._enumerate_and_check_cache`` so the per-row scores this
+    helper writes under ``save_raw["all_scores"]`` are keyed identically to what
+    ``judge_completions_batch`` writes — i.e. an ``issue664_eval._scores_from_save_raw``
+    reader does not care which path produced the file.
+    """
+    return f"{persona}__{idx:05d}__{comp_idx:02d}"
+
+
+def _judge_requests(
+    completions: dict[str, dict[str, list[str]]],
+    *,
+    judge_system_prompt: str,
+    format_user_msg: Callable[[str, str], str],
+    judge_model: str,
+    max_tokens: int,
+) -> list[dict]:
+    """Build the Batch-API requests for ``completions``, keyed on the logical id."""
+    reqs: list[dict] = []
+    for persona, by_q in completions.items():
+        for idx, (question, comps) in enumerate(by_q.items()):
+            for comp_idx, comp in enumerate(comps):
+                reqs.append(
+                    {
+                        "custom_id": _logical_custom_id(persona, idx, comp_idx),
+                        "params": {
+                            "model": judge_model,
+                            "max_tokens": max_tokens,
+                            "system": judge_system_prompt,
+                            "messages": [
+                                {"role": "user", "content": format_user_msg(question, comp)}
+                            ],
+                        },
+                    }
+                )
+    return reqs
+
+
+def _poll_batch_to_ended(
+    client,
+    batch_id: str,
+    *,
+    poll_interval: float,
+    max_poll_interval: float,
+    grace_min: int,
+) -> None:
+    """Block until ``batch_id`` ends under a hard ``expires_at`` deadline.
+
+    Same bounded-poll shape as ``batch_judge._submit_and_poll_batch`` (30s ->
+    1.5x -> ``max_poll_interval``, capped by the deadline, NOT a step count).
+    Raises ``BatchDeadlineExceeded`` if the batch is still not ended at the
+    deadline after one final retrieve — never a silent default (CLAUDE.md fail-fast).
+    """
+    import datetime as _dt
+    import time as _time
+
+    from explore_persona_space.llm.anthropic_client import (
+        BatchDeadlineExceeded,
+        deadline_from_expires_at,
+    )
+
+    deadline: _dt.datetime | None = None
+    interval = poll_interval
+    while True:
+        batch = client.messages.batches.retrieve(batch_id)
+        if batch.processing_status == "ended":
+            return
+        if deadline is None:
+            expires_at = getattr(batch, "expires_at", None)
+            deadline = (
+                deadline_from_expires_at(expires_at, grace_min)
+                if expires_at is not None
+                else _dt.datetime.now(_dt.UTC) + _dt.timedelta(hours=25)
+            )
+        if _dt.datetime.now(_dt.UTC) > deadline:
+            final = client.messages.batches.retrieve(batch_id)
+            if final.processing_status == "ended":
+                return
+            raise BatchDeadlineExceeded(batch_id, deadline)
+        _time.sleep(interval)
+        interval = min(interval * 1.5, max_poll_interval)
+
+
 @dataclass
 class JudgeHandle:
     """A fire-and-forget Batch-API judge submission + the reconcile path for its result.
 
-    ``submit()`` warms the Batch API (so the judge clears while the GPU moves to
-    the next cell); ``reconcile()`` does the deadline-bounded harvest + cache
-    write LATER, off the GPU critical path. Idempotent: ``save_raw`` is the
-    completion sentinel — once it exists with the expected scores, ``reconcile()``
-    re-reads rather than re-submitting (the underlying ``JudgeCache`` keys on
-    ``(question, completion)`` content, so a resume reuses cached judgments).
+    ``submit()`` creates the Batch-API job(s) WITHOUT polling (so the GPU can move
+    to the next cell while the judge clears); ``reconcile()`` does the
+    deadline-bounded harvest + ``save_raw`` write LATER, off the GPU critical path.
+    Both sides key on the SAME logical custom_id, so the harvest joins the fired
+    batches with no id mismatch. ``save_raw`` is the idempotency sentinel: once it
+    exists, ``submit()`` skips resubmission and ``reconcile()`` re-reads it.
     """
 
     cell_key: str
     save_raw: Path
     _submit: Callable[[], list[str]]
-    _reconcile: Callable[[], dict]
+    _reconcile: Callable[[list[str]], dict]
     batch_ids: list[str] = field(default_factory=list)
 
     def submit(self) -> list[str]:
@@ -321,12 +406,77 @@ class JudgeHandle:
         return self.batch_ids
 
     def reconcile(self) -> dict:
-        """Harvest the judge result, write ``save_raw``, return the per-persona scores.
+        """Deadline-bounded harvest of the fired batches; write ``save_raw``; return scores.
 
-        Idempotent: if ``save_raw`` already exists this is the normal completed
-        path (the underlying client's cache makes a re-call do no API work).
+        Idempotent: if ``save_raw`` already exists it is read back rather than
+        re-harvested. Fail-loud on an expired shard — ``BatchDeadlineExceeded``
+        propagates rather than silently defaulting any label (CLAUDE.md fail-fast).
+        Returns ``{custom_id: score_dict}`` (the same join key the fire used).
         """
-        return self._reconcile()
+        return self._reconcile(self.batch_ids)
+
+
+def _fire_judge_batches(requests: list[dict]) -> list[str]:
+    """Create the Batch-API job(s) for ``requests`` fire-and-forget; return batch IDs."""
+    import anthropic
+
+    from explore_persona_space.eval.batch_judge import submit_sharded_batches_fire_and_forget
+
+    return submit_sharded_batches_fire_and_forget(anthropic.Anthropic(), requests)
+
+
+def _reconcile_judge_batches(
+    batch_ids: list[str],
+    *,
+    cell_key: str,
+    save_raw: Path,
+    judge_model: str,
+    poll_interval: float,
+    max_poll_interval: float,
+    grace_min: int,
+) -> dict:
+    """Deadline-bounded harvest of ``batch_ids``; write ``save_raw``; return scores.
+
+    Idempotent: if ``save_raw`` already exists, read it back (no API call).
+    Fail-loud: an expired shard raises ``BatchDeadlineExceeded`` (via
+    :func:`_poll_batch_to_ended`); an empty ``batch_ids`` with no ``save_raw`` is a
+    submit-never-ran programming error and raises. ``save_raw`` is written in the
+    ``{"all_scores": {custom_id: score}}`` shape ``_scores_from_save_raw`` reads.
+    """
+    import json as _json
+
+    if save_raw.exists():
+        return _json.loads(save_raw.read_text()).get("all_scores", {})
+    if not batch_ids:
+        raise RuntimeError(
+            f"[judge-async] {cell_key}: reconcile called with no batch_ids and no "
+            f"save_raw at {save_raw} — submit() was never run (or returned empty)"
+        )
+    import anthropic
+
+    from explore_persona_space.eval.batch_judge import _collect_legacy_results
+
+    client = anthropic.Anthropic()
+    results: dict[str, dict] = {}
+    for batch_id in batch_ids:
+        _poll_batch_to_ended(
+            client,
+            batch_id,
+            poll_interval=poll_interval,
+            max_poll_interval=max_poll_interval,
+            grace_min=grace_min,
+        )
+        _collect_legacy_results(client, batch_id, results)
+    save_raw.parent.mkdir(parents=True, exist_ok=True)
+    save_raw.write_text(
+        _json.dumps(
+            {"all_scores": results, "judge_model": judge_model, "n_total": len(results)},
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    logger.info("[judge-async] %s reconciled %d scores -> %s", cell_key, len(results), save_raw)
+    return results
 
 
 def submit_judge_async(
@@ -336,91 +486,55 @@ def submit_judge_async(
     format_user_msg: Callable[[str, str], str],
     cell_key: str,
     save_raw: Path,
-    cache_dir: Path,
     judge_model: str = "claude-sonnet-4-5-20250929",
+    max_tokens: int = 256,
+    poll_interval: float = 30.0,
+    max_poll_interval: float = 120.0,
+    grace_min: int = 30,
 ) -> JudgeHandle:
     """Submit a cell's judge set to the Batch API FIRE-AND-FORGET; return a handle.
 
-    Wraps ``eval.batch_judge.submit_sharded_batches_fire_and_forget`` for the
-    fire step (no polling — the GPU keeps working while the batch clears) and
-    ``eval.batch_judge.judge_completions_batch`` for the deferred reconcile harvest
-    (which writes ``save_raw`` in the exact shape ``_scores_from_save_raw`` reads
-    and is idempotent via the file-based ``JudgeCache``). NO change to
-    ``batch_judge.py`` — both are existing, hardened entry points.
+    The fire step (``handle.submit()``) creates the Batch-API job(s) via
+    ``eval.batch_judge.submit_sharded_batches_fire_and_forget`` and returns
+    immediately (no polling) so the GPU keeps working. The reconcile step
+    (``handle.reconcile()``) polls the fired batches to ``ended`` under a hard
+    deadline (``deadline_from_expires_at`` + grace; ``BatchDeadlineExceeded`` on
+    overshoot — NEVER a silent default), harvests via ``_collect_legacy_results``,
+    and writes ``save_raw`` in the ``{"all_scores": {custom_id: score}}`` shape
+    ``issue664_eval._scores_from_save_raw`` reads.
 
-    The reconcile is fail-loud on a missing/expired shard: it propagates
-    ``batch_judge``'s ``BatchDeadlineExceeded`` rather than silently defaulting
-    labels (CLAUDE.md fail-fast). ``judge_model`` defaults to the project judge
+    Both fire and reconcile key on the SAME logical custom_id
+    (``f"{persona}__{idx:05d}__{comp_idx:02d}"``), so the harvest joins the fired
+    batches with NO id mismatch. NO change to ``batch_judge.py`` — every primitive
+    used (``submit_sharded_batches_fire_and_forget``, ``_collect_legacy_results``,
+    ``deadline_from_expires_at``, ``BatchDeadlineExceeded``) already exists there.
+
+    ``save_raw`` is the idempotency sentinel: once it exists, ``submit()`` skips
+    resubmission and ``reconcile()`` re-reads it (so a resumed run re-reads rather
+    than re-judges). ``judge_model`` defaults to the project judge
     (``claude-sonnet-4-5-20250929``).
-
-    Returns a :class:`JudgeHandle`; call ``.submit()`` right after the cell's
-    generations land, then ``.reconcile()`` before the step that consumes the
-    judged scores.
     """
-    # Imported lazily so importing fleet.py (e.g. in the CPU-only unit tests) does
-    # not pull in the anthropic SDK / judge-dispatch stack.
-    from explore_persona_space.eval.batch_judge import (
-        judge_completions_batch,
-        make_custom_id,
-        submit_sharded_batches_fire_and_forget,
-    )
+    from functools import partial
 
     save_raw = Path(save_raw)
-    cache_dir = Path(cache_dir)
-
-    def _build_requests() -> list[dict]:
-        """Mirror batch_judge's request shape + custom_id scheme without re-judging.
-
-        The custom_id scheme matches ``_enumerate_and_check_cache``:
-        ``f"{persona}__{idx:05d}__{comp_idx:02d}"``, so the fire step warms the
-        SAME requests the reconcile harvest (via ``judge_completions_batch``)
-        consumes — and ``make_custom_id`` is reused for the API-side id.
-        """
-        reqs: list[dict] = []
-        for persona, by_q in completions.items():
-            for idx, (question, comps) in enumerate(by_q.items()):
-                for comp_idx, comp in enumerate(comps):
-                    logical_id = f"{persona}__{idx:05d}__{comp_idx:02d}"
-                    reqs.append(
-                        {
-                            "custom_id": make_custom_id(logical_id),
-                            "params": {
-                                "model": judge_model,
-                                "max_tokens": 256,
-                                "system": judge_system_prompt,
-                                "messages": [
-                                    {"role": "user", "content": format_user_msg(question, comp)}
-                                ],
-                            },
-                        }
-                    )
-        return reqs
-
-    def _submit() -> list[str]:
-        import anthropic
-
-        client = anthropic.Anthropic()
-        return submit_sharded_batches_fire_and_forget(client, _build_requests())
-
-    def _reconcile() -> dict:
-        # judge_completions_batch is idempotent (file-based JudgeCache keyed on
-        # (question, completion)); when the fire-step batch has cleared, the
-        # in-flight results are picked up here and save_raw is written in the
-        # canonical shape. Fail-loud on a deadline (BatchDeadlineExceeded
-        # propagates) — never a silent default.
-        return judge_completions_batch(
-            completions,
-            judge_system_prompt=judge_system_prompt,
-            format_user_msg=format_user_msg,
-            judge_model=judge_model,
-            cache_dir=cache_dir,
-            save_raw=save_raw,
-            dry_run=False,
-        )
-
+    requests = _judge_requests(
+        completions,
+        judge_system_prompt=judge_system_prompt,
+        format_user_msg=format_user_msg,
+        judge_model=judge_model,
+        max_tokens=max_tokens,
+    )
     return JudgeHandle(
         cell_key=cell_key,
         save_raw=save_raw,
-        _submit=_submit,
-        _reconcile=_reconcile,
+        _submit=partial(_fire_judge_batches, requests),
+        _reconcile=partial(
+            _reconcile_judge_batches,
+            cell_key=cell_key,
+            save_raw=save_raw,
+            judge_model=judge_model,
+            poll_interval=poll_interval,
+            max_poll_interval=max_poll_interval,
+            grace_min=grace_min,
+        ),
     )
