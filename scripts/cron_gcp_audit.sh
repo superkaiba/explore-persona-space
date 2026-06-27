@@ -1,10 +1,15 @@
 #!/bin/bash
 # Daily GCP-VM janitor — invoked from system crontab.
-# Reaps eps-issue-* GCE instances that escaped the canonical teardown:
-#   - any eps-issue-* VM older than 24h (orchestrator-crash credit-leak backstop)
-#   - a RUNNING VM in a terminal eps/phase (done/failed) past a 10-min floor
-#     (the metadata-runner-SIGPIPE zombie class, #634).
-# GCP analogue of cron_pod_audit.sh. Output: logs/gcp_audit/YYYY-MM-DD.log.
+# Sweeps the WHOLE dedicated project (#688), classifying each stale instance:
+#   - router-managed (eps-issue-*) + allowlisted-ephemeral (eps-cap-probe*)
+#     are REAPED on the bounded fences (24h age backstop / 10-min terminal-phase
+#     zombie, #634);
+#   - any OTHER stale instance in the project is ESCALATED (Telegram + sidecar
+#     JSON), never auto-deleted — the credit-leak backstop that catches a
+#     non-eps-issue-* leftover the old name filter was blind to (#680 probe).
+# GCP analogue of cron_pod_audit.sh. The escalation push happens INSIDE the CLI
+# (under --delete); this cron is unchanged mechanically — it still runs the CLI
+# and routes on rc 0/2/3. Output: logs/gcp_audit/YYYY-MM-DD.log.
 #
 # Exit semantics:
 #   CLI rc=0 (clean) / rc=2 (delete-failed, routine) -> cron exit 0 (no email)

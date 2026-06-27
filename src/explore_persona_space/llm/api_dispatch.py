@@ -55,6 +55,11 @@ Design (all FIRM requirements from § 1b + Phase 4):
 7. **Routing.** :func:`decide_dispatch_route` chooses sync-fan-out vs batch by
    N + deadline + cost_pref. :data:`SYNC_BATCH_CROSSOVER_N` is the named
    threshold (Phase 3 will calibrate it from the measured crossover table).
+   NOTE: routing decides on ``len(pending)`` — the UNCACHED remainder after the
+   cache check — not the original N. A large job mostly served from cache
+   re-routes only its small uncached remainder (which may fall below the sync
+   crossover and go sync). This is intended (fewer items remain), but means a
+   resumed batch with few uncached items can run sync.
 
 8. **Retries.** Transient errors (timeouts, 529 InternalServerError) retry
    with exponential backoff; a failed item is returned with ``error=True``
@@ -138,6 +143,13 @@ AIMD_DECREASE_FACTOR = 0.5
 # colleague is active on the shared key); never 429 someone else (§1b).
 LOW_HEADROOM_FRACTION = 0.15
 
+# Outer-fan-out slack (Finding 2): the sync path admits at most
+# ``sum(cap per org) * FANOUT_SLACK`` LIVE coroutines past the outer semaphore,
+# so the live-coroutine count tracks the concurrency target — NOT O(N) at the
+# 100k sync ceiling. The 2x head-room lets a coroutine waiting out a retry-after
+# not starve a sibling org that could acquire.
+FANOUT_SLACK = 2
+
 
 def model_family(model_id: str) -> str:
     """Map a Claude model id to its concurrency family (sonnet/haiku/opus/...).
@@ -178,6 +190,23 @@ def family_concurrency_cap(
 
 # ── Items + results ──────────────────────────────────────────────────────────
 
+# DispatchResult.category — structured outcome discriminator. ``reason`` keeps
+# the human-readable detail string; ``category`` is the enum-like signal a
+# caller branches on (an exact ``==`` match, not a brittle ``reason`` substring
+# search). RESULT_RATE_LIMITED distinguishes a 429-storm EXHAUSTION (the AIMD
+# controller would eventually clear it, so the item is re-drivable) from a
+# RESULT_ERROR terminal failure (parse / bad-request — not re-drivable).
+RESULT_OK = "ok"
+RESULT_ERROR = "error"
+RESULT_RATE_LIMITED = "rate_limited_exhausted"
+
+# Per-item 429 retry budget, SEPARATE from ``max_attempts``. A 429 is pure
+# backpressure (the AIMD controller honors the retry-after and clears the
+# storm), so it does NOT consume a terminal-error ``attempt`` — conflating the
+# two budgets is the exact mechanism that turns a transient storm into a false
+# terminal. Bounded so the retry loop always terminates.
+DEFAULT_MAX_429_RETRIES = 6
+
 
 @dataclass(frozen=True)
 class DispatchItem:
@@ -198,6 +227,11 @@ class DispatchResult:
     ``error`` is True for an item that exhausted retries / failed terminally;
     ``result`` is then None and ``reason`` carries the failure string. A
     successful item carries the parsed ``result`` and ``error=False``.
+
+    ``category`` is the structured outcome discriminator (``RESULT_OK`` /
+    ``RESULT_ERROR`` / ``RESULT_RATE_LIMITED``): a caller branches on
+    ``res.category == RESULT_RATE_LIMITED`` to re-drive a 429-storm exhaustion
+    without crashing the pipeline, distinct from a terminal ``RESULT_ERROR``.
     """
 
     item_id: str
@@ -205,6 +239,7 @@ class DispatchResult:
     error: bool = False
     reason: str | None = None
     org: str | None = None  # which org served it (sync path); None for cache hits
+    category: str = RESULT_OK  # "ok" | "error" | "rate_limited_exhausted"
 
 
 # Request builder: item -> Messages-API params kwargs (model/max_tokens/messages/...).
@@ -219,6 +254,12 @@ ParseResponse = Callable[[str], Any]
 # How long an acquirer sleeps before re-checking the gate when the org is at
 # its effective concurrency (or inside a retry-after window).
 GATE_POLL_INTERVAL = 0.02
+
+# Re-pick window (Finding 3): if the headroom-best org's gate doesn't admit
+# within a few ``GATE_POLL_INTERVAL`` ticks, give up and try a sibling org (it
+# may have freed a slot first) — restoring least-loaded routing under burst.
+# Derived from GATE_POLL_INTERVAL so the two constants stay in sync.
+REPICK_TIMEOUT = 4 * GATE_POLL_INTERVAL
 
 
 @dataclass
@@ -515,6 +556,105 @@ def _retry_after_seconds(exc: BaseException) -> float | None:
 # ── Sync fan-out path ────────────────────────────────────────────────────────
 
 
+def _fanout_limit(org_states: dict[str, OrgState]) -> int:
+    """Outer-semaphore size: ~the total concurrency target across orgs.
+
+    Each org admits at most ``cap`` concurrent calls; :data:`FANOUT_SLACK`
+    head-room lets a coroutine waiting out a retry-after not block a sibling
+    that could acquire. Bounds LIVE coroutines to ``O(cap * n_orgs)``, not the
+    ``O(N)`` queue depth at the sync ceiling (Finding 2). Independent of N.
+    """
+    total_cap = sum(st.cap for st in org_states.values())
+    return max(1, total_cap * FANOUT_SLACK)
+
+
+def _merge_batch_record(item_id: str, rec: dict, org: str | None) -> DispatchResult:
+    """Reconstruct a :class:`DispatchResult` from one persisted batch record.
+
+    The persisted record (written by :func:`_harvest_sub_batch`) carries
+    ``result`` / ``error`` / ``reason`` keyed by ``item_id`` in the enclosing
+    dict; ``item_id`` and ``org`` are passed in by the merge loop.
+
+    Threads ``category`` with a default that stays SELF-CONSISTENT with
+    ``error`` for any legacy record written before the field existed
+    (``RESULT_ERROR if error else RESULT_OK``) — so an ``error=True`` batch
+    record can NEVER read back ``category=RESULT_OK`` (Finding 1, Must-Fix 1).
+    A record that DOES carry an explicit ``category`` key is read directly.
+    """
+    error = rec.get("error", False)
+    return DispatchResult(
+        item_id=item_id,
+        result=rec.get("result"),
+        error=error,
+        reason=rec.get("reason"),
+        org=org,
+        category=rec.get("category", RESULT_ERROR if error else RESULT_OK),
+    )
+
+
+def _pick_org_excluding(
+    org_states: dict[str, OrgState], labels: list[str], rr: dict[str, int], tried: set[str]
+) -> str:
+    """Highest-routing-headroom org NOT in ``tried``; round-robin tie-break.
+
+    Filtering and selection happen in ONE label space: the labels are first
+    rotated by the round-robin pointer ``rr["i"]`` (so equal-headroom orgs
+    share load — ``max`` returns the first rotated position on a tie), THEN
+    the ``tried`` filter is applied to those rotated labels. Earlier the filter
+    ran in unrotated index space while selection mapped through ``rr["i"]``,
+    so with a nonzero pointer the helper could return an org in ``tried`` —
+    handing a re-pick back the very org that just timed out (#684 round 2).
+
+    Advances the shared round-robin pointer ``rr["i"]`` so successive picks
+    rotate. Caller (:func:`_pick_org_then_acquire`) guarantees a non-empty
+    candidate set: the timeout loop passes ``tried`` only while it is a strict
+    subset of ``labels``, and the blocking-fallback call passes ``set()``.
+    """
+    n = len(labels)
+    # Rotate first, then filter on the SAME rotated labels.
+    rotated = [labels[(rr["i"] + i) % n] for i in range(n)]
+    candidates = [lbl for lbl in rotated if lbl not in tried]
+    if not candidates:  # defensive: caller guarantees this never happens
+        raise ValueError("_pick_org_excluding: every org is in `tried`")
+    chosen = max(candidates, key=lambda lbl: org_states[lbl].routing_headroom())
+    rr["i"] = (rr["i"] + 1) % n
+    return chosen
+
+
+async def _pick_org_then_acquire(
+    org_states: dict[str, OrgState], labels: list[str], rr: dict[str, int]
+) -> str:
+    """Pick the highest-headroom org and acquire its slot (Finding 3).
+
+    If the chosen org's gate doesn't admit within :data:`REPICK_TIMEOUT`,
+    re-pick (a sibling org may have freed a slot first) — restoring least-loaded
+    routing under burst. Returns the LABEL of the org whose slot is now HELD;
+    the caller does NOT re-acquire.
+
+    Falls back to a plain blocking acquire on the headroom-best org once every
+    org has timed out this round, so the coroutine never spins forever when all
+    orgs are saturated (degrades to today's pick-then-block; the 429 budget +
+    the inner gate's retry-after still bound total time).
+    """
+    tried: set[str] = set()
+    while len(tried) < len(labels):
+        org = _pick_org_excluding(org_states, labels, rr, tried)
+        try:
+            # On a timeout the wait_for CANCELS the pending acquire() at its next
+            # suspension point (an ``await asyncio.sleep``) — BEFORE the
+            # ``in_flight += 1`` that runs atomically under the lock with the
+            # immediately-following return (no await between them). So a timeout
+            # means the slot was NOT taken: do NOT release.
+            await asyncio.wait_for(org_states[org].acquire(), timeout=REPICK_TIMEOUT)
+            return org
+        except TimeoutError:
+            tried.add(org)
+    # All orgs slow this round -> block on the headroom-best with no timeout.
+    org = _pick_org_excluding(org_states, labels, rr, set())
+    await org_states[org].acquire()
+    return org
+
+
 async def _dispatch_sync(
     items: list[DispatchItem],
     *,
@@ -523,6 +663,7 @@ async def _dispatch_sync(
     org_states: dict[str, OrgState],
     async_clients: dict[str, Any],
     max_attempts: int,
+    max_429_retries: int = DEFAULT_MAX_429_RETRIES,
     on_result: Callable[[DispatchResult], None] | None,
 ) -> dict[str, DispatchResult]:
     """Fan items across orgs at per-key caps with AIMD back-off + headroom routing.
@@ -536,30 +677,31 @@ async def _dispatch_sync(
     return an ``error=True`` result rather than crashing the run.
     ``asyncio.CancelledError`` / ``KeyboardInterrupt`` are NOT swallowed — they
     propagate so cancellation / interrupt-safety is preserved.
+
+    429s have their OWN retry budget (``max_429_retries``) separate from
+    ``max_attempts`` (Finding 1b): a 429 does NOT consume an ``attempt``, so a
+    storm no longer burns the terminal-error budget. An item that exhausts the
+    429 budget returns ``category=RESULT_RATE_LIMITED`` (re-drivable), distinct
+    from a ``RESULT_ERROR`` terminal failure. The outer ``fanout`` semaphore
+    (Finding 2) caps LIVE coroutines at ``_fanout_limit(org_states)`` so the
+    coroutine count tracks the concurrency target, not the O(N) queue depth.
     """
     results: dict[str, DispatchResult] = {}
     labels = list(org_states)
     # Round-robin pointer breaks ties so two equal-headroom orgs share load.
     rr = {"i": 0}
 
-    def _pick_org() -> str:
-        # Highest routing headroom; round-robin tie-break.
-        best = max(
-            range(len(labels)),
-            key=lambda k: org_states[labels[(rr["i"] + k) % len(labels)]].routing_headroom(),
-        )
-        chosen = labels[(rr["i"] + best) % len(labels)]
-        rr["i"] = (rr["i"] + 1) % len(labels)
-        return chosen
-
     async def _do_one(item: DispatchItem) -> None:
         params = build_request(item)
         last_reason = "unknown"
-        for attempt in range(max_attempts):
-            org = _pick_org()
+        last_category = RESULT_ERROR
+        n_429 = 0
+        attempt = 0
+        while attempt < max_attempts:
+            # Finding 3: pick by headroom + acquire (re-picks on a slow gate).
+            org = await _pick_org_then_acquire(org_states, labels, rr)  # slot held on return
             state = org_states[org]
             client = async_clients[org]
-            await state.acquire()
             try:
                 raw = await client.messages.with_raw_response.create(**params)
                 state.note_remaining(raw.headers)
@@ -570,7 +712,7 @@ async def _dispatch_sync(
                 # Clean call -> additively recover toward the cap.
                 if not state.low_headroom():
                     await state.recover()
-                res = DispatchResult(item.item_id, result=parsed, org=org)
+                res = DispatchResult(item.item_id, result=parsed, org=org, category=RESULT_OK)
                 results[item.item_id] = res
                 if on_result is not None:
                     on_result(res)
@@ -582,23 +724,46 @@ async def _dispatch_sync(
             except Exception as exc:
                 if _is_rate_limit(exc):
                     await state.on_429(_retry_after_seconds(exc))
-                    last_reason = f"429 (org={org}, attempt {attempt + 1})"
-                    continue  # re-pick org + retry
+                    n_429 += 1
+                    last_category = RESULT_RATE_LIMITED
+                    last_reason = f"429 (org={org}, 429-retry {n_429})"
+                    if n_429 >= max_429_retries:
+                        last_reason = f"rate_limited_exhausted (org={org}, 429 retries {n_429})"
+                        break
+                    continue  # 429 does NOT consume an attempt (Finding 1b)
                 if _is_transient(exc):
+                    last_category = RESULT_ERROR
                     last_reason = f"transient {type(exc).__name__} (attempt {attempt + 1})"
                     await asyncio.sleep(1.5**attempt)
+                    attempt += 1
                     continue
                 # Non-transient (parse error, bad request, etc.) -> terminal.
+                last_category = RESULT_ERROR
                 last_reason = f"error: {exc}"
                 break
             finally:
                 await state.release()
-        res = DispatchResult(item.item_id, error=True, reason=last_reason, org=None)
+        res = DispatchResult(
+            item.item_id, error=True, reason=last_reason, org=None, category=last_category
+        )
         results[item.item_id] = res
         if on_result is not None:
             on_result(res)
 
-    await asyncio.gather(*[_do_one(it) for it in items])
+    # Finding 2: outer admission gate bounds LIVE coroutines to the concurrency
+    # target (sum(cap) * FANOUT_SLACK), not the O(N) queue depth.
+    fanout = asyncio.Semaphore(_fanout_limit(org_states))
+
+    async def _do_one_bounded(item: DispatchItem) -> None:
+        async with fanout:
+            await _do_one(item)
+
+    # residual: gather still creates O(N) Task objects (~140 MB at N=100k);
+    # routing steers large N to the batch path (see Finding 4 module __doc__
+    # item 7), so the sync ceiling is the rare case. The semaphore fixes the
+    # busy-poll CPU storm the reviewer flagged; the worker-pool/chunked
+    # alternative is out-of-contract (§11).
+    await asyncio.gather(*[_do_one_bounded(it) for it in items])
     return results
 
 
@@ -884,13 +1049,9 @@ async def _dispatch_batch(
     for sb in state["sub_batches"]:
         payload = json.loads((dispatch_dir / f"results_{sb['batch_id']}.json").read_text())
         for item_id, rec in payload.items():
-            results[item_id] = DispatchResult(
-                item_id,
-                result=rec.get("result"),
-                error=rec.get("error", False),
-                reason=rec.get("reason"),
-                org=sb["org"],
-            )
+            # Finding 1 Must-Fix 1: thread ``category`` so an error=True batch
+            # record never reads back category="ok" (the RESULT_OK field default).
+            results[item_id] = _merge_batch_record(item_id, rec, sb["org"])
     return results
 
 
@@ -939,6 +1100,7 @@ async def dispatch_calls(
     chunk_size: int = DEFAULT_BATCH_CHUNK_SIZE,
     max_concurrent_sub_batches: int = DEFAULT_MAX_CONCURRENT_SUB_BATCHES,
     max_attempts: int = 5,
+    max_429_retries: int = DEFAULT_MAX_429_RETRIES,
     poll_interval: float = 30.0,
     force_path: str | None = None,
     org_keys: dict[str, str] | None = None,
@@ -967,7 +1129,11 @@ async def dispatch_calls(
         crossover_n: sync/batch routing threshold (Phase 3 calibrates).
         chunk_size: batch sub-batch size (500-2000; default 1000).
         max_concurrent_sub_batches: bounded concurrent batch submissions.
-        max_attempts: per-item sync retry budget (429s + transient errors).
+        max_attempts: per-item sync retry budget for terminal/transient errors
+            (a 429 does NOT consume an attempt — it has its own budget).
+        max_429_retries: per-item 429 (rate-limit) retry budget, SEPARATE from
+            ``max_attempts``; exhausting it returns ``category=RESULT_RATE_LIMITED``
+            (re-drivable) rather than a terminal ``RESULT_ERROR``.
         force_path: ``"sync"`` / ``"batch"`` to override routing (tests / ops).
         org_keys / async_clients / sync_clients / cache: injection points for
             tests; when None, real keys/clients/cache are built from the env.
@@ -996,6 +1162,7 @@ async def dispatch_calls(
             chunk_size=chunk_size,
             max_concurrent_sub_batches=max_concurrent_sub_batches,
             max_attempts=max_attempts,
+            max_429_retries=max_429_retries,
             poll_interval=poll_interval,
             force_path=force_path,
             async_clients=async_clients,
@@ -1026,6 +1193,7 @@ async def _dispatch_calls_inner(
     chunk_size: int,
     max_concurrent_sub_batches: int,
     max_attempts: int,
+    max_429_retries: int,
     poll_interval: float,
     force_path: str | None,
     async_clients: dict[str, Any],
@@ -1045,7 +1213,9 @@ async def _dispatch_calls_inner(
         logger.info("dispatch_calls: all %d items served from cache", len(items))
         return results
 
-    # Route the uncached remainder.
+    # Route the uncached remainder. finding-4: decide_dispatch_route runs on
+    # len(pending) — the UNCACHED remainder, NOT the original N (see module
+    # __doc__ item 7 "Routing").
     route = decide_dispatch_route(
         len(pending),
         deadline=deadline,
@@ -1068,6 +1238,7 @@ async def _dispatch_calls_inner(
             org_labels=org_labels,
             cap=cap,
             max_attempts=max_attempts,
+            max_429_retries=max_429_retries,
             cache=cache,
         )
     else:
@@ -1145,11 +1316,16 @@ def _split_cached(
     for it in items:
         cached = _cache_get(cache, it) if cache is not None else None
         if cached is not None:
+            # A cached entry only ever stores a successful (non-error) result
+            # today (_persist gates on ``not res.error``), so the RESULT_OK
+            # default is harmless; reading ``category`` keeps the round-trip
+            # honest if a future change persists errors (Finding 1c).
             results[it.item_id] = DispatchResult(
                 it.item_id,
                 result=cached.get("result"),
                 error=cached.get("error", False),
                 reason=cached.get("reason"),
+                category=cached.get("category", RESULT_OK),
             )
         else:
             pending.append(it)
@@ -1179,6 +1355,7 @@ async def _run_sync_path(
     org_labels: list[str],
     cap: int,
     max_attempts: int,
+    max_429_retries: int,
     cache: JudgeCache | None,
 ) -> dict[str, DispatchResult]:
     """Run the sync fan-out path, persisting each clean result to the cache."""
@@ -1196,6 +1373,7 @@ async def _run_sync_path(
         org_states=org_states,
         async_clients=async_clients,
         max_attempts=max_attempts,
+        max_429_retries=max_429_retries,
         on_result=_persist,
     )
 
@@ -1222,13 +1400,27 @@ def _cache_get(cache: JudgeCache, item: DispatchItem) -> dict | None:
 
 def _cache_put(cache: JudgeCache, item: DispatchItem, res: DispatchResult) -> None:
     q, c = _cache_key_parts(item)
-    cache.put(q, c, {"result": res.result, "error": res.error, "reason": res.reason})
+    cache.put(
+        q,
+        c,
+        {
+            "result": res.result,
+            "error": res.error,
+            "reason": res.reason,
+            "category": res.category,
+        },
+    )
 
 
 __all__ = [
     "DEFAULT_BATCH_CHUNK_SIZE",
     "DEFAULT_FAMILY_CONCURRENCY",
+    "DEFAULT_MAX_429_RETRIES",
+    "FANOUT_SLACK",
     "ORG_ENV_KEYS",
+    "RESULT_ERROR",
+    "RESULT_OK",
+    "RESULT_RATE_LIMITED",
     "SYNC_BATCH_CROSSOVER_N",
     "DispatchItem",
     "DispatchResult",

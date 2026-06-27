@@ -31,8 +31,13 @@ from explore_persona_space.llm import api_dispatch
 from explore_persona_space.llm.anthropic_client import BatchDeadlineExceeded
 from explore_persona_space.llm.api_dispatch import (
     DEFAULT_FAMILY_CONCURRENCY,
+    FANOUT_SLACK,
+    RESULT_ERROR,
+    RESULT_OK,
+    RESULT_RATE_LIMITED,
     DispatchItem,
     OrgState,
+    _pick_org_excluding,
     decide_dispatch_route,
     detect_org_keys,
     dispatch_calls,
@@ -956,3 +961,324 @@ def test_batch_resume_missing_custom_id_fails_loud(tmp_path):
                 poll_interval=0.0,
             )
         )
+
+
+# ── Finding 1: 429-exhaustion category + separate 429 budget (#684) ────────────
+
+
+def test_429_exhausted_returns_rate_limited_category():
+    """REGRESSION (Finding 1, KEEP): an item that 429s on EVERY attempt exhausts
+    the 429 budget and returns the RESULT_RATE_LIMITED discriminator (re-drivable),
+    NOT a terminal RESULT_ERROR. The existing storm test always succeeds on attempt
+    2, so it can never reach exhaustion — this is the missing case.
+
+    Mutation check: revert the ``category`` field (or set it unconditionally to
+    RESULT_ERROR on the error path) -> ``r.category == RESULT_RATE_LIMITED`` red.
+    """
+    # Always-429 (retry_after="0" so the test runs fast).
+    client = FakeAsyncClient(fault_for=lambda content: _rate_limit_error(retry_after="0"))
+    items = make_items(1)
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=parse_response,
+            async_clients={"a": client},
+            sync_clients={"a": object()},
+            force_path="sync",
+            max_attempts=3,
+            max_429_retries=2,
+        )
+    )
+    r = res["item_000"]
+    assert r.error is True
+    assert r.category == RESULT_RATE_LIMITED
+    assert "rate_limited_exhausted" in (r.reason or "")
+    # The 429 budget (2), not max_attempts (3), bounded it.
+    assert client.calls == 2
+
+
+def test_terminal_parse_error_returns_error_category():
+    """Finding 1 discriminator companion: a NON-429 terminal (parse) error yields
+    ``category == RESULT_ERROR`` (NOT RESULT_RATE_LIMITED), and the existing
+    ``"error:" in reason`` framing still holds."""
+    client = FakeAsyncClient(text="not json at all")  # parse_response raises
+    items = make_items(2)
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=parse_response,
+            async_clients={"a": client},
+            sync_clients={"a": object()},
+            force_path="sync",
+        )
+    )
+    assert all(r.error for r in res.values())
+    assert all(r.category == RESULT_ERROR for r in res.values())
+    assert all(r.category != RESULT_RATE_LIMITED for r in res.values())
+    assert all("error:" in (r.reason or "") for r in res.values())
+
+
+def test_429_does_not_consume_an_attempt():
+    """REGRESSION (Finding 1b, Statistics Must-Fix 3 — THE budget-separation test):
+    with ``max_attempts=1, max_429_retries=2`` a first-call 429 must NOT burn the
+    lone terminal-error attempt — the item retries and SUCCEEDS on the second call.
+
+    Mutation check: the buggy impl (429 increments ``attempt``) exhausts
+    ``max_attempts=1`` on the first 429 and returns ``error=True`` with
+    ``client.calls == 1`` -> BOTH assertions go red.
+    """
+    seen: dict[str, int] = {}
+
+    def fault_for(content):
+        seen[content] = seen.get(content, 0) + 1
+        # 429 on the FIRST call (retry_after=0), succeed on the second.
+        return _rate_limit_error(retry_after="0") if seen[content] == 1 else None
+
+    client = FakeAsyncClient(fault_for=fault_for)
+    items = make_items(1)
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=parse_response,
+            async_clients={"a": client},
+            sync_clients={"a": object()},
+            force_path="sync",
+            max_attempts=1,
+            max_429_retries=2,
+        )
+    )
+    r = res["item_000"]
+    assert r.error is False  # the item SUCCEEDED on the 2nd call
+    assert client.calls == 2  # the 429 did NOT consume the lone attempt
+
+
+# ── Finding 2: bounded coroutine fan-out (#684) ───────────────────────────────
+
+
+def test_sync_fanout_helper_arithmetic():
+    """COMPLEMENTARY arithmetic unit-test (Finding 2): ``_fanout_limit`` is
+    ``sum(caps) * FANOUT_SLACK``, independent of N. Pins the formula; the WIRING
+    test (below) pins that the formula is actually wired into the gather."""
+    states = {"a": OrgState(label="a", cap=100), "b": OrgState(label="b", cap=100)}
+    assert api_dispatch._fanout_limit(states) == 200 * FANOUT_SLACK
+    # Floor at 1 for an empty/zero-cap pool (never a zero-permit semaphore).
+    assert api_dispatch._fanout_limit({"z": OrgState(label="z", cap=0)}) == max(1, 0 * FANOUT_SLACK)
+
+
+def test_sync_fanout_wires_outer_semaphore(monkeypatch):
+    """REGRESSION WIRING TEST (Finding 2, Methodology Must-Fix 2): the outer
+    semaphore must bound LIVE coroutines at ``_fanout_limit``, observed at
+    coroutine ENTRY (``build_request`` runs at the top of ``_do_one``, INSIDE the
+    outer ``async with fanout`` but BEFORE the inner ``state.acquire()``). Monkeypatch
+    ``_fanout_limit`` to a small sentinel; a client that BLOCKS forever piles
+    coroutines at the OUTER semaphore so only ``_fanout_limit`` of them reach
+    ``build_request``.
+
+    Mutation check: revert the bounded gather to the bare
+    ``asyncio.gather(*[_do_one(it) for it in items])`` -> ``peak`` reaches N=20 and
+    ``peak <= 4 + 1`` goes RED. (v1's end-to-end ``max_in_flight <= cap`` did NOT go
+    red here — the inner gate enforces it independently.)
+    """
+    monkeypatch.setattr(api_dispatch, "_fanout_limit", lambda org_states: 4)
+
+    blocker = asyncio.Event()  # never set -> client.create blocks forever
+    live = 0
+    peak = 0
+
+    def counting_build(item: DispatchItem) -> dict:
+        nonlocal live, peak
+        live += 1  # entered _do_one (past the outer semaphore); never decremented
+        peak = max(peak, live)
+        return build_request(item)
+
+    class BlockingClient:
+        def __init__(self):
+            class _Raw:
+                async def create(_self, **kwargs):
+                    await blocker.wait()  # block forever
+                    raise AssertionError("unreachable")  # pragma: no cover
+
+            self.messages = SimpleNamespace(with_raw_response=_Raw())
+
+    async def _go():
+        # The run never completes (the client blocks); bound it with wait_for and
+        # measure how many coroutines got past the outer gate into build_request.
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(
+                dispatch_calls(
+                    make_items(20),
+                    model="claude-sonnet-4-5-20250929",
+                    build_request=counting_build,
+                    parse_response=parse_response,
+                    async_clients={"a": BlockingClient()},
+                    sync_clients={"a": object()},
+                    force_path="sync",
+                ),
+                timeout=0.5,
+            )
+
+    _run(_go())
+    # <= _fanout_limit (+1 entry mid-decrement slack), NOT N=20.
+    assert peak <= 4 + 1, peak
+
+
+# ── Finding 3: re-pick org at slot-availability, not pick-time (#684) ─────────
+
+
+def test_pick_org_repicks_on_slow_gate():
+    """REGRESSION (Finding 3, Statistics nit 4 + Alternatives rec 6): org ``a`` is
+    saturated by a slow first item (cap=1, long per-call delay) while org ``b`` is
+    fast. A burst must re-pick toward ``b`` (the org with a free slot) rather than
+    queue ~round-robin on the headroom-best pick.
+
+    PRIMARY (strict, no ``>=`` fallback — pre-fix round-robin satisfies equality):
+    ``fast.calls > slow.calls``. Mutation check: revert ``_pick_org_then_acquire``
+    to plain ``_pick_org`` + ``acquire()`` (pick-then-block) -> ~round-robin -> the
+    strict ``>`` fails on equality.
+
+    Plus the slot-accounting invariant (Alternatives rec 6): every org's live
+    ``in_flight`` counter is zero post-drain — catches a wait_for-after-acquire
+    slot leak.
+    """
+    slow = FakeAsyncClient(delay=0.3)  # org a: slot stays held a long time
+    fast = FakeAsyncClient(delay=0.0)  # org b: frees immediately
+    org_states_seen: dict[str, OrgState] = {}
+    real_ctor = api_dispatch.OrgState
+
+    def _spy_ctor(*a, **k):
+        st = real_ctor(*a, **k)
+        org_states_seen[st.label] = st
+        return st
+
+    api_dispatch.OrgState = _spy_ctor
+    try:
+        res = _run(
+            dispatch_calls(
+                make_items(20),
+                model="claude-sonnet-4-5-20250929",
+                build_request=build_request,
+                parse_response=parse_response,
+                async_clients={"a": slow, "b": fast},
+                sync_clients={"a": object(), "b": object()},
+                concurrency_overrides={"sonnet": 2},  # small cap -> a saturates fast
+                force_path="sync",
+            )
+        )
+    finally:
+        api_dispatch.OrgState = real_ctor
+
+    assert all(not r.error for r in res.values())
+    # PRIMARY: re-pick pulled the burst to the free org (strict >, no >= fallback).
+    assert fast.calls > slow.calls, (fast.calls, slow.calls)
+    # Slot-accounting invariant: no leaked slot post-drain.
+    assert all(st.in_flight == 0 for st in org_states_seen.values())
+
+
+def test_pick_org_excluding_respects_tried_with_nonzero_rr():
+    """REGRESSION (#684 round 2, Codex/reconciler blocker): ``_pick_org_excluding``
+    must filter ``tried`` in the SAME label space it returns, regardless of the
+    round-robin pointer's value.
+
+    Pre-fix the filter ran in unrotated index space while selection mapped the
+    chosen index through ``rr["i"]``: with ``rr={"i":1}``, ``labels=["a","b"]``,
+    ``tried={"b"}`` the helper returned ``"b"`` — the very org in ``tried``. On the
+    shared-``rr`` re-pick path (``_pick_org_then_acquire`` adds a timed-out org to
+    ``tried``) that handed the re-pick back the slow org that just timed out,
+    defeating Finding 3.
+
+    Mutation check: revert ``_pick_org_excluding`` to the unrotated-filter body
+    (``candidates = [i for i in range(len(labels)) if labels[i] not in tried]`` +
+    ``chosen = labels[(rr["i"] + best) % len(labels)]``) -> the first assertion
+    returns ``"b"`` and goes RED.
+    """
+    org_states = {
+        "a": OrgState(label="a", cap=10),
+        "b": OrgState(label="b", cap=10),
+    }
+    labels = ["a", "b"]
+
+    # The pre-fix bug fired only when rr["i"] != 0. With "b" excluded, the only
+    # valid candidate is "a" — and the fix must return it regardless of the pointer.
+    rr = {"i": 1}
+    chosen = _pick_org_excluding(org_states, labels, rr, tried={"b"})
+    assert chosen == "a", f"expected 'a' (only candidate); got {chosen!r}"
+    assert chosen not in {"b"}, "must NOT return an org in `tried`"
+
+    # Symmetric, trivially-correct rr["i"]==0 case (the index spaces coincide here).
+    rr = {"i": 0}
+    chosen = _pick_org_excluding(org_states, labels, rr, tried={"a"})
+    assert chosen == "b"
+
+    # Round-robin tie-break under matched headroom + nonzero rr on a 3-org panel:
+    # "a" excluded, equal headroom on "b"/"c" -> the rotation pointer decides, and
+    # in NO case is the result the excluded org.
+    org_states["c"] = OrgState(label="c", cap=10)
+    labels3 = ["a", "b", "c"]
+    rr = {"i": 2}  # rotation starts at "c"
+    chosen = _pick_org_excluding(org_states, labels3, rr, tried={"a"})
+    assert chosen in {"b", "c"}, f"expected one of {{b, c}}; got {chosen!r}"
+    assert chosen != "a", "must NOT return the excluded org under any rotation"
+
+
+def test_pick_org_excluding_raises_when_all_orgs_tried():
+    """Defensive guard: when every org is in ``tried`` the candidate set is empty.
+
+    The caller (``_pick_org_then_acquire``) never reaches this — its timeout loop
+    only calls with a strict subset, and the blocking fallback passes ``set()`` —
+    but the helper fails loud rather than crashing on ``max([])`` if a future
+    caller violates the contract.
+    """
+    org_states = {"a": OrgState(label="a", cap=10), "b": OrgState(label="b", cap=10)}
+    with pytest.raises(ValueError, match="every org is in"):
+        _pick_org_excluding(org_states, ["a", "b"], {"i": 0}, tried={"a", "b"})
+
+
+# ── Finding 1 Must-Fix 1: batch-merge preserves error category (#684) ─────────
+
+
+def test_batch_merge_preserves_error_category():
+    """REGRESSION (Methodology Must-Fix 1): a persisted batch record with
+    ``error=True`` and NO ``category`` key (a legacy record written before the
+    field existed) must read back ``category=RESULT_ERROR``, NOT the RESULT_OK
+    field default.
+
+    Mutation check: omit the ``RESULT_ERROR if error else RESULT_OK`` default in
+    ``_merge_batch_record`` (let it fall to the field default RESULT_OK) -> an
+    error=True record reads back ``category == "ok"`` and the assertion goes red.
+    """
+    err_rec = {"result": None, "error": True, "reason": "batch_error: errored", "org": "sonnet"}
+    merged = api_dispatch._merge_batch_record("item_000", err_rec, org="sonnet")
+    assert merged.error is True
+    assert merged.category == RESULT_ERROR  # NOT "ok" — the RESULT_OK default would be a bug
+    assert merged.item_id == "item_000"
+    assert merged.org == "sonnet"
+
+    # Companion: a non-error legacy record reads back category == RESULT_OK.
+    ok_rec = {"result": {"label": "ok"}, "error": False, "reason": None}
+    ok_merged = api_dispatch._merge_batch_record("item_001", ok_rec, org="sonnet")
+    assert ok_merged.error is False
+    assert ok_merged.category == RESULT_OK
+
+    # A record that DOES carry an explicit category is read directly.
+    explicit = {"result": None, "error": True, "category": RESULT_RATE_LIMITED, "reason": "x"}
+    assert (
+        api_dispatch._merge_batch_record("item_002", explicit, org="sonnet").category
+        == RESULT_RATE_LIMITED
+    )
+
+
+# ── Finding 4: routing-on-remainder docstring note (#684) ─────────────────────
+
+
+def test_module_doc_describes_pending_routing():
+    """Finding 4: the module docstring documents that routing decides on the
+    UNCACHED remainder (``len(pending)``), not the original N — so it can't
+    silently regress."""
+    doc = api_dispatch.__doc__ or ""
+    assert "len(pending)" in doc or "uncached remainder" in doc.lower()

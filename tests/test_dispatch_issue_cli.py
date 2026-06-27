@@ -1191,10 +1191,13 @@ def test_launch_provisioning_model_threads_to_spec_extra(monkeypatch, tmp_path) 
     assert gcp.launches[0].extra["provisioning_model"] == "SPOT"
 
 
-def test_launch_provisioning_model_absent_leaves_extra_unset(monkeypatch, tmp_path) -> None:
-    """Control: with no ``--provisioning-model`` the key is ABSENT from
-    ``spec.extra`` (the renderer's ``resolve_provisioning_model`` STANDARD
-    default owns it; the CLI never duplicates it)."""
+def test_launch_provisioning_model_absent_lets_ladder_choose(monkeypatch, tmp_path) -> None:
+    """Control: with no ``--provisioning-model`` the CLI does NOT pin the key,
+    so the router's length-aware ladder (#680) owns the choice. For this
+    unknown-length lora-7b the long branch leads with the flex-start A100-80
+    rung, so the LAUNCHED spec carries ``provisioning_model == 'FLEX_START'``
+    (the rung the ladder picked) — NOT a CLI duplicate. The CLI-pin honor path
+    is exercised by ``test_launch_provisioning_model_threads_to_spec_extra``."""
     _cd_to_tmp(monkeypatch, tmp_path)
     gcp = _MockBackend(kind="gcp")
     factory = _build_mock_factory(gcp=gcp)
@@ -1218,7 +1221,9 @@ def test_launch_provisioning_model_absent_leaves_extra_unset(monkeypatch, tmp_pa
             backends_factory=factory,
         )
     assert rc == 0
-    assert "provisioning_model" not in gcp.launches[0].extra
+    # No CLI pin => the ladder's first rung (flex-start A100-80 for an
+    # unknown-length lora-7b) owns the provisioning model on the launched spec.
+    assert gcp.launches[0].extra["provisioning_model"] == "FLEX_START"
 
 
 def test_launch_spot_tolerant_threads_to_spec_extra(monkeypatch, tmp_path) -> None:

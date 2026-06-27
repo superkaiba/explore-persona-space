@@ -408,6 +408,56 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   figure-embedded strings (`1/30`→`1/29`, "geometrically real") the body
   prose had already fixed at round 1.
 
+- **check 25** (`check_audit_availability_claims_match_hf`): a prose claim
+  that a data artifact "was not uploaded" / "cannot be audited" /
+  "unavailable for audit" must NOT be contradicted by that artifact
+  actually existing on the HF data repo. Scans the fence-stripped body for
+  a line carrying BOTH an availability-denial phrase AND a known
+  data-artifact class spelled in PROSE (raw-completions / install-probe /
+  training-mix / on-policy pool / analysis-tensor — hyphen/space/singular
+  variants mapped to the canonical underscore-plural HF-path token
+  `raw_completions` / `install_probes` / `mixes` / `onpolicy_pools` /
+  `analysis_tensors`); for each, lists the body's HF Hub revision-pinned
+  URLs (the check-23 set) ONCE per (repo, sha) and asks whether ≥1 file
+  UNDER the URL's path-prefix carries the canonical token as a path
+  component at ANY depth (a denial usually links the repo TREE ROOT while
+  the file lives several levels down at `<root>/…/<token>/…`, the #653
+  shape). If ANY HF URL yields such a file via
+  `huggingface_hub.list_repo_files`, the denial is false → FAIL.
+  FAIL-SOFT (same semantics as checks 8b/23): the
+  `EPM_VERIFY_BODY_NO_HF=1` offline fence, a missing `huggingface_hub`, and
+  any network / auth / HTTP error surface as an `unverified` note on the
+  PASS line, never a FAIL; only a SUCCESSFUL listing returning ≥1 matching
+  file is the FAIL. Vacuous PASS when there is no denial-near-artifact line
+  or no HF Hub revision-pinned URL to reconcile against. Body-wide +
+  fence-stripped scan (the denial prose lives in `## Methodology` /
+  `## Results` / the Reproducibility footer). Incident: task #653 round 6
+  asserted the per-cell install-probe firing/non-firing completions "were
+  not separately uploaded ... cannot be audited at the record level" while
+  those files DID exist on HF under the body's own linked data-repo tree —
+  caught by hand at round-6 interp-critique, mechanizable into this check.
+
+- **check 26** (`check_figure_panel_prose_vs_sidecar`): a figure's
+  what-is-plotted prose (scoped to its enclosing `### <result>` H3 + the
+  caption immediately after) must NOT claim a plot kind in a named panel
+  position (a "right panel scatter") or a per-unit dot/point overlay (a
+  "per-bank dots overlaid") that the figure's `.meta.json` sidecar — read
+  strictly by URL stem from the git tree at the URL's commit sha (sibling
+  `_read_figure_meta_json`, the PARSED-dict counterpart of check 24's
+  `_read_figure_meta_text`) — provably lacks (the sidecar's `_kind` count of
+  that element is 0). Conservative: a kind word is checkable only when it
+  co-occurs with a panel-position or overlay word; a bare "the bars show ..."
+  yields no claim → PASS. NO panel-count claim is made (`_group` is a
+  per-series index, not a panel index — a 4-panel A7 figure has 22 `_group`
+  values). When the sibling sidecar does not resolve at the cited sha BUT the
+  PNG itself does (`_git_object_exists` returns `pass`), the check FAILs loud
+  — the silent fallback to a DIFFERENT sidecar is the failure mode it exists
+  to catch; when the PNG itself does not resolve it defers to check 22 (no
+  double-FAIL). FAIL, never WARN (distinct from check 24). Vacuous PASS
+  offline / `--body-stdin`, with no inline figures, or no panel/series prose
+  claim. Incident: task #683 round-1 interp-critique false-FAILed off a
+  wrong-sidecar fallback the verifier could not mechanically detect.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -435,6 +485,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -4543,6 +4594,524 @@ def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
     return CheckResult(label, True, f"{scanned} figure sidecar(s) consistent with body prose")
 
 
+# ─── Check 26 helpers: figure panel/series prose vs figure sidecar ─────────
+#
+# Sibling of check 24's `_read_figure_meta_text`, but returns the PARSED dict
+# (not flattened text) so check 26 can read the per-point `_kind` / `_group`
+# fields. Same `git show <sha>:<meta_path>` envelope, same fail-soft contract.
+def _read_figure_meta_json(repo: Path, sha: str, fig_path: str) -> dict | None:
+    """Return the PARSED sibling ``.meta.json`` of ``fig_path`` (extension
+    swapped to ``.meta.json``) read out of the git tree at ``sha`` via
+    ``git show``, or None when there is no sidecar at that sha / the sha is
+    unresolvable / the JSON does not parse / it is not a dict.
+
+    Sibling of ``_read_figure_meta_text`` (check 24), which flattens to text
+    and so cannot expose the per-point ``_kind`` / ``_group`` fields check 26
+    needs. FAIL-SOFT throughout (subprocess / decode / JSON error → None).
+    """
+    base, _, ext = fig_path.rpartition(".")
+    meta_path = (base if ext else fig_path) + ".meta.json"
+    try:
+        proc = subprocess.run(
+            ["git", "show", f"{sha}:{meta_path}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None  # no sidecar at that sha, or sha unresolvable
+    try:
+        meta = json.loads(proc.stdout)
+    except (ValueError, json.JSONDecodeError):
+        return None
+    return meta if isinstance(meta, dict) else None
+
+
+def _sidecar_kind_group_aggregate(meta: dict) -> tuple[Counter, set] | None:
+    """From a parsed sidecar, return (Counter of ``_kind`` values across all
+    points, set of unique ``_group`` values), or None when the sidecar carries
+    no recognizable point list (so the check skips — it only fires on sidecars
+    whose shape it understands).
+
+    NOTE: ``_group`` is a per-SERIES index, NOT a per-panel index (an A7
+    four-panel figure has 22 ``_group`` values). The returned group set is kept
+    only for diagnostics; check 26 makes NO claim about panel count from it
+    (see ``_panel_drift_failures``).
+
+    Reads ``points`` (the canonical key) OR ``rows`` (legacy). A point with no
+    ``_kind`` contributes nothing to the kind Counter; a point with no
+    ``_group`` contributes nothing to the group set.
+    """
+    pts = meta.get("points")
+    if not isinstance(pts, list):
+        pts = meta.get("rows")
+    if not isinstance(pts, list) or not pts:
+        return None
+    kinds: Counter = Counter()
+    groups: set = set()
+    for p in pts:
+        if not isinstance(p, dict):
+            continue
+        k = p.get("_kind")
+        if isinstance(k, str) and k.strip():
+            kinds[k.strip().lower()] += 1
+        g = p.get("_group")
+        if g is not None:
+            groups.add(g)
+    if not kinds and not groups:
+        return None  # no structural signal — nothing to compare
+    return kinds, groups
+
+
+# Plot-element words that map to a sidecar ``_kind``. A prose claim naming one
+# of these as a distinct panel/series is checkable against the kind Counter.
+_PROSE_KIND_RE = {
+    "scatter": re.compile(r"\bscatter(?:\s*plot|s)?\b", re.IGNORECASE),
+    "line": re.compile(r"\bline(?:\s*plot|s)?\b|\btrajector(?:y|ies)\b", re.IGNORECASE),
+    "bar": re.compile(r"\bbar(?:\s*chart|s)?\b", re.IGNORECASE),
+}
+# A panel/series STRUCTURAL claim — prose asserting a specific panel position
+# OR a per-unit dot/point overlay. A kind word is checkable ONLY when it
+# co-occurs with one of these (a bare "the bars show ..." is NOT a claim).
+_PROSE_PANEL_POS_RE = re.compile(r"\b(?:left|right|top|bottom|middle)\s+panel\b", re.IGNORECASE)
+_PROSE_OVERLAY_RE = re.compile(
+    r"\b(?:per[-\s]?\w+\s+dots?|dots?\s+overlaid|dot\s+overlay|points?\s+overlaid)\b",
+    re.IGNORECASE,
+)
+
+
+def _panel_prose_claims(prose: str) -> dict:
+    """Return the high-confidence structural claims a figure's what-is-plotted
+    + caption prose makes::
+
+        {"kind_in_panel": {<kind>, ...},   # a kind named as a PANEL/series
+         "overlay": <bool>}                # a per-unit dot/point overlay claim
+
+    Only claims checkable against the sidecar ``_kind`` aggregate are returned;
+    a bare "the bars show ..." with no panel/overlay wording yields an empty
+    claim set (the check then PASSes — no over-fire on simple charts). NO
+    panel-count claim is produced (the sidecar has no panel-index field; see
+    ``_sidecar_kind_group_aggregate``).
+    """
+    claims: dict = {"kind_in_panel": set(), "overlay": False}
+    has_panel_pos = bool(_PROSE_PANEL_POS_RE.search(prose))
+    has_overlay = bool(_PROSE_OVERLAY_RE.search(prose))
+    if has_panel_pos or has_overlay:
+        for kind, rx in _PROSE_KIND_RE.items():
+            if rx.search(prose):
+                claims["kind_in_panel"].add(kind)
+    claims["overlay"] = has_overlay
+    return claims
+
+
+def _panel_drift_failures(claims: dict, kinds: Counter, basename: str) -> list[str]:
+    """Return the check-26 FAIL messages for ONE figure's prose ``claims``
+    against its sidecar ``kinds`` Counter (the ``_kind`` aggregate). Empty list
+    = no drift.
+
+    Two FAIL conditions:
+    (1) prose names a plot KIND as a panel/series the sidecar's ``_kind`` count
+        lacks entirely (kind count 0).
+    (3) prose claims a per-unit dot/point OVERLAY but the sidecar has zero
+        scatter points (nothing overlaid) — fires whenever ``scatter == 0``,
+        REGARDLESS of ``_group`` cardinality.
+
+    There is intentionally NO panel-COUNT FAIL: ``_group`` is a per-series
+    index, not a panel index (a 4-panel A7 figure has 22 ``_group`` values), so
+    the sidecar carries no panel-count signal to compare against.
+    """
+    fails: list[str] = []
+    for kind in sorted(claims["kind_in_panel"]):
+        if kinds.get(kind, 0) == 0:
+            fails.append(
+                f"`{basename}`: body prose claims a `{kind}` panel/series but the "
+                f"figure sidecar has zero `{kind}` points (kinds present: "
+                f"{dict(kinds) or 'none'}) — regenerate the figure or fix the prose"
+            )
+    if claims["overlay"] and kinds.get("scatter", 0) == 0:
+        fails.append(
+            f"`{basename}`: body prose claims a per-unit dot/point overlay but the "
+            f"figure sidecar has zero scatter points (kinds present: "
+            f"{dict(kinds) or 'none'}) — regenerate the figure or fix the prose"
+        )
+    return fails
+
+
+def _enclosing_h3_prose_window(rlines: list[str], img_idx: int) -> str | None:
+    """Return the what-is-plotted prose window for the figure at
+    ``rlines[img_idx]``: the text from the enclosing ``### <result>`` H3 forward
+    to the figure PLUS the blockquote caption immediately after — or None when
+    there is no ``### `` H3 before the figure (no reliably-scoped window, so the
+    caller SKIPS that figure rather than leaking an adjacent result's claim).
+    """
+    boundary = None
+    for j in range(img_idx - 1, -1, -1):
+        if rlines[j].startswith("### "):
+            boundary = j + 1
+            break
+    if boundary is None:
+        return None
+    before = "\n".join(rlines[boundary:img_idx])
+    caption = _figure_caption_after(rlines, img_idx)
+    return f"{before}\n{caption}"
+
+
+def _panel_drift_for_one_figure(
+    repo: Path, m: re.Match, prose: str, json_cache: dict
+) -> tuple[list[str], bool]:
+    """Resolve ONE figure's sidecar (strictly by URL stem at the cited sha) and
+    compare it to ``prose``'s panel/series claims. Returns ``(fail_msgs,
+    scanned)`` where ``scanned`` is True only when a structural sidecar was
+    actually compared.
+
+    ``m`` is the ``_RAW_GITHUB_FIGURE_RE`` match for the figure URL; ``json_cache``
+    is the per-check per-URL parsed-sidecar cache (mutated in place).
+    """
+    claims = _panel_prose_claims(prose)
+    if not claims["kind_in_panel"] and not claims["overlay"]:
+        return [], False  # no structural claim → nothing to check (never over-fire)
+    url = m.group(0)
+    if url not in json_cache:
+        json_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+    meta = json_cache[url]
+    basename = m.group("path").rsplit("/", 1)[-1]
+    if meta is None:
+        # Strict by-stem resolve FAILED at the cited sha. FAIL loud — BUT only
+        # when the PNG itself resolves at the sha (so the ABSENT thing is
+        # specifically the sidecar, not the whole sha; else defer to check 22).
+        # The gate is an explicit status comparison: the tuple is always truthy,
+        # so a truthiness check would never `continue`.
+        png_status, _detail = _git_object_exists(repo, m.group("sha"), m.group("path"))
+        if png_status != "pass":
+            return [], False  # PNG missing OR sha unresolvable — check 22 owns it
+        return [
+            f"`{basename}`: body prose makes a panel/series claim but the sibling "
+            f"`{basename.rsplit('.', 1)[0]}.meta.json` does not resolve at the cited "
+            f"sha `{m.group('sha')[:8]}` — commit the sidecar at that sha (no silent "
+            f"fallback to a different sidecar)"
+        ], False
+    agg = _sidecar_kind_group_aggregate(meta)
+    if agg is None:
+        return [], False  # sidecar carries no _kind/_group structure to compare
+    kinds, _groups = agg
+    return _panel_drift_failures(claims, kinds, basename), True
+
+
+def check_figure_panel_prose_vs_sidecar(body: str) -> CheckResult:
+    """Check 26 (FAIL): a figure's what-is-plotted prose must not claim a plot
+    kind in a named panel position, or a per-unit dot/point overlay, that the
+    figure's ``.meta.json`` sidecar — read strictly by URL stem from the git
+    tree at the URL's commit sha — provably lacks (the sidecar's ``_kind`` count
+    of that element is 0).
+
+    The prose window is scoped to the figure's enclosing ``### <result>`` H3 (so
+    a claim from one result never leaks into the next): the what-is-plotted text
+    from that H3 forward to the figure, plus the blockquote caption immediately
+    after. A figure with no preceding ``### `` H3 is SKIPPED (no reliably-scoped
+    window). NO panel-count claim is made (``_group`` is a per-series index, not
+    a panel index).
+
+    When the sibling ``<basename>.meta.json`` does not resolve at the cited sha
+    BUT the figure PNG itself does (``_git_object_exists`` returns ``'pass'``),
+    the check FAILs loud — that silent fallback to a different sidecar is the
+    very failure mode this check exists to catch (incident #683 r1). When the
+    PNG itself does not resolve (sha unknown / PNG absent), the check defers to
+    check 22 (no double-FAIL). NO-OP PASS when: no
+    ``## Results``/``## Findings`` section, no inline figures, the repo cannot
+    be resolved (offline / ``--body-stdin``), or no figure carries a panel/series
+    prose claim to compare. FAIL, never WARN (distinct from check 24).
+    """
+    label = "figure panel prose vs figure sidecar (panel/series drift)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    fig_at: list[tuple[str, int]] = []
+    for idx, line in enumerate(rlines):
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                fig_at.append((url, idx))
+    if not fig_at:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    fails: list[str] = []
+    scanned = 0
+    json_cache: dict[str, dict | None] = {}
+    for url, img_idx in fig_at:
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        prose = _enclosing_h3_prose_window(rlines, img_idx)
+        if prose is None:
+            continue  # no per-result H3 before this figure — no scoped window
+        fig_fails, did_scan = _panel_drift_for_one_figure(repo, m, prose, json_cache)
+        fails.extend(fig_fails)
+        if did_scan:
+            scanned += 1
+    if fails:
+        preview = "; ".join(fails[:3]) + (" …" if len(fails) > 3 else "")
+        return CheckResult(label, False, f"{len(fails)} panel/series drift issue(s): {preview}")
+    if scanned == 0:
+        return CheckResult(label, True, "no panel/series prose claims to compare against a sidecar")
+    return CheckResult(
+        label, True, f"{scanned} figure sidecar(s) consistent with panel/series prose"
+    )
+
+
+# A prose claim that an artifact is NOT available — "not uploaded", "was not
+# uploaded", "not separately uploaded", "cannot be audited", "cannot audit",
+# "unavailable for audit", "not available for audit". The optional
+# "separately " between "not" and "uploaded" catches the #653 r6 wording
+# ("themselves were not separately uploaded"). Case-insensitive; the
+# apostrophe in "wasn't" / "can't" matches both the ASCII `'` and the curly
+# right-single-quote (real clean-result bodies use either) via `_APOS`.
+_APOS = "['\u2019]"  # ASCII apostrophe or curly right-single-quote (U+2019)
+_AUDIT_DENIAL_RE = re.compile(
+    r"(?:not\s+(?:separately\s+)?uploaded"
+    r"|was\s+not\s+uploaded|wasn" + _APOS + r"t\s+uploaded"
+    r"|cannot\s+be\s+audited|cannot\s+audit|can" + _APOS + r"t\s+be\s+audited"
+    r"|(?:un|not\s+)available\s+for\s+audit)",
+    re.IGNORECASE,
+)
+# Artifact classes whose HF upload-path convention is known. A denial claim
+# co-located (same line) with one of these names a concrete, mechanically
+# probe-able artifact class — the only case this check fires on (a bare
+# "the figure was not uploaded" with no data-artifact keyword is out of
+# scope, since there is no HF data-repo path to reconcile it against).
+#
+# CRITICAL: the body PROSE spells these with hyphens/spaces and often the
+# singular ("the install-probe completions", "the raw completions"), while the
+# HF UPLOAD PATH uses the underscore plural (`install_probes/`,
+# `raw_completions/`). So each canonical HF-path token (the dict key, used for
+# the on-Hub path match) maps to a regex matching the prose spellings (the
+# dict value, used to detect the denial in body text). Missing this split is
+# exactly why the #653 r6 line ("install-probe ... completions ... not
+# separately uploaded ... cannot be audited") slipped through a naive
+# underscore-only scan.
+_AUDIT_ARTIFACT_CLASSES: dict[str, re.Pattern[str]] = {
+    "raw_completions": re.compile(r"raw[ _-]completions?|raw[ _-]?completion\b", re.IGNORECASE),
+    "install_probes": re.compile(r"install[ _-]probes?", re.IGNORECASE),
+    "mixes": re.compile(r"\btraining[ _-]mix(?:es)?\b|\bmixes\b", re.IGNORECASE),
+    "onpolicy_pools": re.compile(
+        r"on[ _-]?policy[ _-](?:pools?|completions?)|onpolicy[ _-]pools?", re.IGNORECASE
+    ),
+    "analysis_tensors": re.compile(r"analysis[ _-]tensors?", re.IGNORECASE),
+}
+
+
+# Max character distance on a line between an artifact-class prose mention and
+# the nearest availability-denial phrase for the denial to be attributed to
+# THAT artifact. The real #653 line has a 47-char gap; 200 comfortably covers
+# a clause while excluding the false-positive shape where one line denies
+# artifact A early and links a DIFFERENT artifact B by keyword far away
+# (e.g. "the merged weights were not uploaded; raw completions are at <link>").
+_AUDIT_DENIAL_PROXIMITY = 200
+
+
+def _audit_denied_artifact_classes_in(line: str) -> list[str]:
+    """Return the canonical HF-path token(s) (e.g. `install_probes`) of each
+    artifact class whose prose spelling appears in ``line`` WITHIN
+    ``_AUDIT_DENIAL_PROXIMITY`` chars of an availability-denial phrase on the
+    same line, in dict order, deduplicated.
+
+    Proximity-gating is the false-positive guard: a long line that denies one
+    artifact and merely links another by keyword far away does not attribute
+    the denial to the linked artifact. The canonical token (underscore plural)
+    is what the on-Hub path match uses; the prose regex (hyphen/space/singular
+    variants) is what detects it here.
+    """
+    denial_spans = [m.span() for m in _AUDIT_DENIAL_RE.finditer(line)]
+    if not denial_spans:
+        return []
+    out: list[str] = []
+    for canonical, pat in _AUDIT_ARTIFACT_CLASSES.items():
+        for am in pat.finditer(line):
+            a_start, a_end = am.span()
+            near = any(
+                # gap between the artifact mention and the denial phrase
+                # (whichever side it falls on), clamped at 0 when they overlap.
+                max(d_start - a_end, a_start - d_end, 0) <= _AUDIT_DENIAL_PROXIMITY
+                for d_start, d_end in denial_spans
+            )
+            if near:
+                if canonical not in out:
+                    out.append(canonical)
+                break
+    return out
+
+
+def _hf_keyword_present_under_prefix(
+    repo_id: str, repo_type: str, sha: str, path_prefix: str, keyword: str
+) -> tuple[str, str]:
+    """Fail-soft probe (check 25): does the HF repo at ``sha`` contain ≥1 file
+    under ``path_prefix`` whose path carries ``keyword`` as a path component?
+
+    Lists the repo files ONCE at the cited revision and substring-matches the
+    keyword anywhere in the path, restricted to files under ``path_prefix``
+    (the URL's own sub-tree). A keyword nested at ANY depth below the prefix
+    counts — the #653 denial linked the repo TREE ROOT
+    (`…/issue653_install-validated-reladder`) while the file lives several
+    levels down at `…/raw_completions/armB/install_probes/cell0/…`, so a fixed
+    `<prefix>/<keyword>` candidate path would miss it; substring-on-the-listing
+    is depth-agnostic.
+
+    Returns ``(verdict, matched_path)`` with verdict one of:
+    - ``'pass'``  — ≥1 file under the prefix carries the keyword (the denial is
+      FALSE); ``matched_path`` is the first such file.
+    - ``'fail'``  — a SUCCESSFUL listing with NO matching file, i.e. the denial
+      is corroborated for this URL (named ``'fail'`` to mirror
+      ``_hf_url_existence``'s "definitive negative" verdict; the caller treats
+      it as "denial holds for this URL", NOT a body FAIL).
+    - ``'skip'`` — indeterminate (offline fence / no huggingface_hub / any
+      network / auth / HTTP error); surfaced as an `unverified` note, never a
+      body FAIL.
+
+    Fail-soft is mandatory and mirrors ``_hf_url_existence`` exactly: only a
+    SUCCESSFUL listing yields pass/fail; every error path SKIPs.
+    """
+    if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1":
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF probe fenced)"
+    try:
+        import huggingface_hub  # local import — optional dependency
+        from huggingface_hub.utils import (
+            EntryNotFoundError,
+            RepositoryNotFoundError,
+            RevisionNotFoundError,
+        )
+    except ImportError:
+        return "skip", f"`{repo_id}@{sha[:8]}` (huggingface_hub unavailable)"
+    try:
+        files = huggingface_hub.list_repo_files(repo_id, repo_type=repo_type, revision=sha)
+    except (RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError):
+        # No such repo/revision: cannot corroborate OR refute → indeterminate.
+        return "skip", f"`{repo_id}@{sha[:8]}` (no such revision)"
+    except Exception as exc:
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF list_repo_files failed: {exc})"
+    needle = path_prefix.strip("/")
+    kw_lower = keyword.lower()
+
+    def _under_prefix(f: str) -> bool:
+        return not needle or f == needle or f.startswith(needle + "/")
+
+    for f in files:
+        if _under_prefix(f) and kw_lower in f.lower():
+            return "pass", f
+    return "fail", ""
+
+
+def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
+    """Check 25: a prose claim that an artifact "was not uploaded" /
+    "cannot be audited" must NOT be contradicted by that artifact actually
+    existing on the HF data repo.
+
+    The #653 r6 pattern: the body asserted the per-cell install-probe
+    firing/non-firing completions "were not separately uploaded, so the
+    firing vs non-firing examples ... cannot be audited at the record
+    level" — while those files DID exist on HF Hub under the same
+    revision-pinned data-repo tree the body's own `## Methodology` /
+    Reproducibility footer linked, at
+    `…/issue653_install-validated-reladder/raw_completions/…/install_probes/`.
+    The interpretation-critic caught the false "can't audit" claim by
+    hand; this check mechanizes it so a future analyzer's honest-but-wrong
+    non-availability claim FAILs before promotion.
+
+    Mechanism (standalone — no `events.jsonl` / marker read, keeping the
+    verifier self-contained): scan the fence-stripped body line by line for
+    a line carrying BOTH (a) an availability-denial phrase
+    (`_AUDIT_DENIAL_RE`) AND (b) a known data-artifact class spelled in PROSE
+    within proximity on the same line (`_audit_denied_artifact_classes_in` —
+    matches the hyphen/space/singular prose spellings, requires the mention to
+    sit within `_AUDIT_DENIAL_PROXIMITY` chars of the denial phrase so a long
+    line denying artifact A while merely linking artifact B does not
+    false-trigger, and maps the prose to the canonical underscore-plural
+    HF-path token, so the #653 "install-probe completions" prose resolves to
+    the `install_probes/` upload path). For each denied class, take every HF Hub
+    revision-pinned URL the body carries (`_gather_hf_pinned_urls`, the same
+    set check 23 probes) and ask `_hf_keyword_present_under_prefix` whether
+    the repo at the cited revision holds ≥1 file UNDER the URL's path-prefix
+    whose path carries the keyword as a path component — depth-agnostic, so a
+    file nested at `<tree-root>/…/<keyword>/…` is found even when the body
+    only linked the tree ROOT (the #653 shape). If ANY HF URL yields such a
+    file, the denial is false → FAIL.
+
+    Fail-soft (identical semantics to check 23): every probe goes through
+    `_hf_keyword_present_under_prefix`, which SKIPs (never FAILs) under the
+    `EPM_VERIFY_BODY_NO_HF=1` offline fence, when `huggingface_hub` is
+    unavailable, or on any network / auth / HTTP error. So an HfHubHTTPError
+    or a sandbox with no network surfaces as an `unverified` note on the
+    PASS line — the check never breaks a body just because the Hub is down,
+    and never fabricates a FAIL it cannot substantiate. Only a SUCCESSFUL
+    listing that returns ≥1 matching file is the FAIL; a successful listing
+    with NO matching file CORROBORATES the denial (PASS).
+
+    Vacuous PASS when the body carries no availability-denial-near-artifact
+    line, or no HF Hub revision-pinned URL to probe against.
+    """
+    label = "audit-availability claims match HF Hub"
+    stripped = _strip_fenced_blocks(body)
+    # Find lines asserting non-availability of a known data-artifact class
+    # (denial phrase + an artifact-class prose mention within proximity on the
+    # same line). `suspect_keywords` holds the canonical underscore-plural
+    # HF-path tokens.
+    suspect_keywords: list[str] = []
+    for line in stripped.splitlines():
+        if "uploaded" not in line.lower() and "audit" not in line.lower():
+            continue  # cheap pre-filter before the proximity scan
+        for canonical in _audit_denied_artifact_classes_in(line):
+            if canonical not in suspect_keywords:
+                suspect_keywords.append(canonical)
+    if not suspect_keywords:
+        return CheckResult(label, True, "no availability-denial claim near a data artifact")
+    hf_urls = _gather_hf_pinned_urls(body)
+    if not hf_urls:
+        return CheckResult(
+            label,
+            True,
+            f"{len(suspect_keywords)} availability-denial claim(s) "
+            f"({', '.join(suspect_keywords)}) but no HF Hub revision-pinned URL "
+            "to reconcile against",
+        )
+    contradicted: list[str] = []
+    unverified: list[str] = []
+    for kw in suspect_keywords:
+        kw_contradicted = False
+        kw_confirmed_listing = False  # ≥1 HF URL listed successfully for this kw
+        for repo_id, repo_type, sha, path_prefix, _raw in hf_urls:
+            verdict, matched = _hf_keyword_present_under_prefix(
+                repo_id, repo_type, sha, path_prefix, kw
+            )
+            if verdict == "pass":
+                kw_contradicted = True
+                contradicted.append(
+                    f"body claims `{kw}` was not uploaded / cannot be audited, but "
+                    f"`{matched}` exists at `{repo_id}@{sha[:8]}`"
+                )
+                break
+            if verdict == "fail":
+                kw_confirmed_listing = True
+        if not kw_contradicted and not kw_confirmed_listing:
+            unverified.append(kw)
+    if contradicted:
+        return CheckResult(label, False, "; ".join(contradicted))
+    detail = (
+        f"{len(suspect_keywords)} availability-denial claim(s) "
+        f"({', '.join(suspect_keywords)}) reconciled against {len(hf_urls)} HF URL(s)"
+    )
+    if unverified:
+        detail += f"; {len(unverified)} unverified (existence not confirmed): " + ", ".join(
+            unverified
+        )
+    return CheckResult(label, True, detail)
+
+
 def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
     """Lens 14 — mechanical concerns audit (binding-concerns contract,
     composed onto the 2-content-section clean-result spec on 2026-05-31
@@ -5725,6 +6294,8 @@ CHECKS = [
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
     check_figure_text_vs_body_tokens,  # check 24 (WARN)
+    check_audit_availability_claims_match_hf,  # check 25
+    check_figure_panel_prose_vs_sidecar,  # check 26 (FAIL)
 ]
 
 
