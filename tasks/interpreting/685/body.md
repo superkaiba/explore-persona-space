@@ -23,6 +23,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_685.md](https://github.com/superkaiba/explore-persona-space/blob/31a27acd9cd87e6eb1d3d378a908d694050bcf4d/docs/methodology/issue_685.md) · [gist](https://gist.github.com/superkaiba/b22b76765aea8ffb9ce099f3ab146d90)
+
 ## Takeaways
 
 - Across 10 personas × 6 instructions × 4 layers on Qwen-2.5-7B-Instruct, the instruction-induced shift is **large** (norm **1.0–1.9×** a full persona swap at layers 7–21) and never noise.
