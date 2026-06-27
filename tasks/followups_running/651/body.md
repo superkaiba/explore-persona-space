@@ -1,7 +1,7 @@
 ---
-title: A LoRA-installed conditional behavior writes one context-invariant direction;
-  across four behaviors the directions are mostly distinct, with one predicted family
-  coincidence and one unexplained high off-diagonal (MODERATE confidence)
+title: A LoRA-installed conditional behavior writes one context-invariant direction
+  (read/layer-specific for the marker tic); whether the four behaviors look distinct
+  or coincident is itself a property of the chosen read (MODERATE confidence)
 kind: experiment
 tags:
 - followup-manual
@@ -23,7 +23,7 @@ relates_to:
 - identity-cb-duality
 - identity-persona-vs-behavior
 ---
-# A LoRA-installed conditional behavior writes one context-invariant direction; across four behaviors the directions are mostly distinct, with one predicted family coincidence and one unexplained high off-diagonal (MODERATE confidence)
+# A LoRA-installed conditional behavior writes one context-invariant direction (read/layer-specific for the marker tic); whether the four behaviors look distinct or coincident is itself a property of the chosen read (MODERATE confidence)
 
 <!-- clean-result-v3 -->
 
@@ -31,12 +31,12 @@ relates_to:
 
 ## Takeaways
 
-- All four readable behaviors pass the context-invariance bar. Per-context cosine clears 0.85 of the per-cell seed ceiling in 16 of 16 contexts for em, agreement, and fact, and 13 of 16 for marker; training context tunes install strength rather than direction.
-- Across behaviors, the directions are mostly distinct. Four of six pairs land at 0.05-0.17 of ceiling (two within their pairwise null), none anywhere near the 0.85 same-behavior reference.
-- Two pairs hit ~0.6 of ceiling: harmful-advice × agreement (0.59, the predicted advice/agreement family pair) and taught-fact × marker-tic (0.61, which fits no family story and likely reflects shared training-corpus shape). For both, a shared LoRA-geometry component is not ruled out.
-- The blanket-refusal row (the in-run negative control) did NOT come back as a clean null: top-share 0.48 vs p95 0.27, mean cosine 0.84 on 4 surviving contexts (single seed, no ceiling). Confidence stays MODERATE for this.
-- Those 4 refusal contexts are all `sp_*` system-prompt variants, so context similarity is the likeliest source of that direction, not a real refusal write.
-- Scope: refusal recovered at 4 of 16 contexts (single seed) after five HF Hub timeouts. The 4 EM-no-contrast cells were dropped. Ceilings come from 2 seeds on one fixed probe panel.
+- At the primary read, all four readable behaviors pass context-invariance. Per-context cosine clears 0.85 of the per-cell seed ceiling in 16 of 16 contexts for em, agreement, and fact, and 13 of 16 for marker; training context tunes install strength rather than direction.
+- Context-invariance is robust for em, agreement, and fact (holds across all 3 depths × both reads, every one of its 6 read×layer cells) but read/layer-specific for the marker tic: it passes only end-of-response slot at layers 7 and 14 (just 2 of its 6 read×layer cells) and turns context-specific at slot layer 21 and under the mean-over-response read at every depth.
+- At the primary read the directions are mostly distinct: four of six pairs land at 0.05-0.17 of ceiling (two within their pairwise null); two hit ~0.6 — harmful-advice × agreement (0.59, the predicted family pair) and taught-fact × marker-tic (0.61, fitting no family story). A shared LoRA-geometry component is not ruled out for either.
+- Whether the four behaviors look distinct or coincident is itself a property of the read. The two ~0.6 coincidences swing ~3× across read×layer (harmful-advice × agreement 0.28-0.78, taught-fact × marker 0.15-0.73); under any end-of-slot read all six pairs sit at 0.49-0.89, and only the mean-over-response read separates most of them.
+- The blanket-refusal negative control did NOT come back as a clean null (top-share 0.48 vs p95 0.27, mean cosine 0.84 on 4 surviving contexts, single seed, no ceiling), but those 4 contexts are all `sp_*` system-prompt variants, so context similarity is the likeliest source, not a real refusal write. Confidence stays MODERATE for this.
+- Scope: refusal recovered at 4 of 16 contexts (single seed) after five HF Hub timeouts; the 4 EM-no-contrast cells were dropped; ceilings come from 2 seeds on one fixed probe panel.
 
 ## What I ran
 
@@ -73,6 +73,19 @@ Each pair's direction cosine is reported as a fraction of the per-behavior-U1 se
 - Two pairs reach ~0.6 of ceiling. Harmful-advice × agreement (0.59) is the predicted advice/agreement family pair; taught-fact × marker-tic (0.61) fits no family story and likely reflects shared corpus or formatting shape.
 - For both ~0.6 pairs, a shared LoRA/SFT geometry component is not ruled out. The construct bridge validates each behavior's own direction, not the origin of these overlaps. The refusal result below strengthens that alternative.
 - The 0.28 null is global. The em × agreement pairwise null p95 is 0.20 (others ~0.06-0.10), so its margin above its own null is narrower than the global figure implies.
+
+### Context-invariance and the "mostly distinct" picture are read/layer-specific, not stable geometric facts
+
+Q1 and Q2 re-run across 3 depths (layers 7/14/21) × both reads = 6 read×layer cells per behavior tests whether either picture survives a different read than the primary mixed read.
+
+![Two-panel read-by-layer robustness grid for issue 651.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c7e33da5c68318908c9dea5a003a492a597f82d4/figures/issue_651/depth_read_robustness.png)
+
+> **Figure.** *Em, agreement, and fact stay context-invariant across every read; marker's verdict flips, the two coincidences swing ~3x.* Left: context-invariance verdict over 6 read×layer cells (% = contexts at/above the 0.85x bar). Right: the two ~0.6 pairs as a fraction of seed ceiling; gray = other four pairs; dashed = null p95 (0.28).
+
+- Em, agreement, and fact return `context_invariant` in every one of their 6 read×layer cells — stable, not an artifact of the read or depth.
+- Marker is the exception: it passes only at the end-of-response slot at layers 7 and 14 (just 2 of its 6 read×layer cells), turning `context_specific` at slot layer 21 and under mean-over-response at every depth. Its "one direction" claim holds only for the primary read.
+- The Q2 coincidences swing ~3× with the read: harmful-advice × agreement 0.28-0.78 of ceiling, taught-fact × marker 0.15-0.73. Under any end-of-response slot read all six pairs sit at 0.49-0.89; only mean-over-response separates most pairs.
+- So "mostly distinct" is a property of the mixed per-behavior read, not a read-invariant fact — sharpening the Q2 scope without changing its epistemic strength.
 
 ### The two high off-diagonals fall far short of same-behavior agreement
 
@@ -177,7 +190,8 @@ Per-cell shift tensors (132 `.pt` + 132 manifests, recovered via chunked drain):
 | Retrain (sycophancy, seed 1042) | r=32 / alpha=64 rsLoRA, lr=1e-5 cosine, 3 epochs, eff. batch 16, seq 3072 |
 | Extraction layer | 14 primary (7/21 read as a free depth supplement) |
 | Probe panel | 14 personas x 20 questions = 280 reads/cell, fixed across all cells |
-| Primary read | mean-over-response (em, sycophancy); end-of-response slot (marker, fact) |
+| Primary read | mean-over-response (em, sycophancy); end-of-response slot (marker, fact) — a chosen mixed read; its alternatives are now characterized across 3 depths x 2 reads (see the read/layer-robustness finding) |
+| Read x layer robustness grid | Q1 + Q2 re-run across layers 7/14/21 x {end-of-response slot, mean-over-response} = 6 cells/behavior |
 | DV | unit-norm residual-shift direction cosine (dose-invariant) |
 | Nulls | sign-flip + row-shuffle, 1000 reps; global cross-behavior null p95 = 0.28 |
 | Seed ceiling (Q1 object) | per-(behavior,context) cross-seed (42 vs 1042) shift cosine, median per behavior (fact 0.85 / em 0.95 / marker 0.99 / agreement 0.99); sets the per-context bar |
@@ -193,7 +207,8 @@ Per-cell shift tensors (132 `.pt` + 132 manifests, recovered via chunked drain):
 - Construct-validity bridge (fact, sycophancy): [`construct_bridge/`](https://github.com/superkaiba/explore-persona-space/tree/93a52b961e2ce57fdea564885ef24389f517920c/eval_results/issue_651/construct_bridge)
 - Canary (Gate 7a + 7b): [`canary_results.json`](https://github.com/superkaiba/explore-persona-space/blob/93a52b961e2ce57fdea564885ef24389f517920c/eval_results/issue_651/canary/canary_results.json)
 - Per-cell shift tensors (132): [HF data repo analysis_tensors](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/4ab90f83239e51bb6ba446edda202b8e7c5e6469/issue651_cross_behavior_geometry/analysis_tensors)
-- Figures (used inline): [`figures/issue_651/`](https://github.com/superkaiba/explore-persona-space/tree/4dec2a96aad0c90dbedd9f8909f6c37cc1dcaa89/figures/issue_651)
+- Read x layer robustness grid (Q1 + Q2 across 3 depths x 2 reads): [`depth_robustness/`](https://github.com/superkaiba/explore-persona-space/tree/c7e33da5c68318908c9dea5a003a492a597f82d4/eval_results/issue_651/depth_robustness)
+- Figures (used inline): [`figures/issue_651/`](https://github.com/superkaiba/explore-persona-space/tree/c7e33da5c68318908c9dea5a003a492a597f82d4/figures/issue_651)
 
 **Reused artifacts:**
 
@@ -214,8 +229,9 @@ Per-cell shift tensors (132 `.pt` + 132 manifests, recovered via chunked drain):
 - Construct bridge: [`scripts/issue651_bridge.py`](https://github.com/superkaiba/explore-persona-space/blob/93a52b961e2ce57fdea564885ef24389f517920c/scripts/issue651_bridge.py)
 - Canary: [`scripts/issue651_canary.py`](https://github.com/superkaiba/explore-persona-space/blob/93a52b961e2ce57fdea564885ef24389f517920c/scripts/issue651_canary.py)
 - Drain recovery: [`scripts/issue651_drain_extracts.py`](https://github.com/superkaiba/explore-persona-space/blob/93a52b961e2ce57fdea564885ef24389f517920c/scripts/issue651_drain_extracts.py)
-- Figures: [`scripts/plot_issue651_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/4dec2a96aad0c90dbedd9f8909f6c37cc1dcaa89/scripts/plot_issue651_figures.py)
-- Git commit (eval results + scripts): `93a52b961e2ce57fdea564885ef24389f517920c` (branch `issue-651`); figures: `4dec2a96aad0c90dbedd9f8909f6c37cc1dcaa89` (branch `main`)
+- Read x layer robustness (depth x read grid): [`scripts/issue651_depth_robustness.py`](https://github.com/superkaiba/explore-persona-space/blob/c7e33da5c68318908c9dea5a003a492a597f82d4/scripts/issue651_depth_robustness.py) + [`scripts/issue651_read_layer_grid.py`](https://github.com/superkaiba/explore-persona-space/blob/c7e33da5c68318908c9dea5a003a492a597f82d4/scripts/issue651_read_layer_grid.py)
+- Figures: [`scripts/plot_issue651_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/4dec2a96aad0c90dbedd9f8909f6c37cc1dcaa89/scripts/plot_issue651_figures.py) + [`scripts/plot_issue651_depth_robustness.py`](https://github.com/superkaiba/explore-persona-space/blob/c7e33da5c68318908c9dea5a003a492a597f82d4/scripts/plot_issue651_depth_robustness.py)
+- Git commit (eval results + scripts): `93a52b961e2ce57fdea564885ef24389f517920c` (branch `issue-651`); original figures: `4dec2a96aad0c90dbedd9f8909f6c37cc1dcaa89` (branch `main`); read/layer-robustness fold (depth grid scripts + data + figure): `c7e33da5c68318908c9dea5a003a492a597f82d4` (branch `main`)
 - Reproduce:
 
     ```bash
@@ -232,3 +248,4 @@ Per-cell shift tensors (132 `.pt` + 132 manifests, recovered via chunked drain):
 - Created 2026-06-16; run executed + recovered 2026-06-16 through 2026-06-18 (results landed 2026-06-18).
 - Follow-up to [#537](https://eps.superkaiba.com/tasks/537) — the context-generalization testbed whose adapters this re-extracts; extends the single-behavior geometry of [#521](https://eps.superkaiba.com/tasks/521) and the cross-arm read of [#552](https://eps.superkaiba.com/tasks/552) across both the context and behavior axes.
 - Originating prompt: "test whether many conditional behaviors share a direction across different contexts; post-hoc on the #537 context-leakage comprehensive eval"
+- Same-issue follow-up round (`followup_label: depth-read-robustness-fold`, 2026-06-26, free-analysis / 0 GPU): folded in the read x layer robustness grid (Q1 + Q2 re-run across layers 7/14/21 x {end-of-response slot, mean-over-response}) over the already-extracted shift tensors. Originating prompt: "FOLD the already-computed depth + read robustness findings into the #651 clean-result (0 GPU, analysis-only)."
