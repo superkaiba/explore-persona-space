@@ -1,7 +1,8 @@
 ---
 title: 'workflow-fix: GCP janitor must sweep whole project, not just eps-issue-*'
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-06-27T20:34:05Z'
 has_clean_result: false
 origin_prompt: 'Verify GCP route working; leftover eps-cap-probe2 ran ~20h because
