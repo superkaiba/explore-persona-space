@@ -1085,6 +1085,21 @@ metadata. Order:
    - Title prefix `Analyze:` / `Re-analyze:` -> suggest `analysis`
    - Title prefix `Survey:` / `Read:` / `Lit review:` -> suggest `survey`
 
+   **Fix-validation override (CLAUDE.md § "Routing experiment intent"):**
+   a `Test:` cue does NOT default to `experiment` when the Goal is to
+   VALIDATE / TEST that a shipped workflow / infra / code fix WORKS (a
+   smoke run, an end-to-end "does it work now after the fix", a config /
+   pipeline / backend re-check) — that is `kind: infra`, NOT `experiment`,
+   because it completes on the test-verdict path and produces NO promotable
+   clean-result. Reserve `experiment` for a RESEARCH QUESTION that produces
+   a clean-result the user promotes. Litmus: would the result rewrite an
+   issue's `## Takeaways` / answer an `open_questions.md` question
+   (→ `experiment`), or just confirm the fix is sound (→ `infra`)? When the
+   title says `Test:`/`Validate:` but the body reads as fix-validation,
+   suggest `infra` as `(Recommended)`. (Incident #672: a GCP-fix validation
+   filed as `experiment` was parked at `awaiting_promotion` as a promotable
+   clean-result.)
+
    <!-- gate: gates.missing_type -->
    <!-- autonomous-mode: block-and-fail -->
    Use `AskUserQuestion` with the inferred option as `(Recommended)`
@@ -6720,6 +6735,7 @@ row per `(kind)` as authoritative.
 | Task folder missing / multiple folders | Post error event listing conflicts, post the §5 marker: `uv run python scripts/post_step_completed.py --issue <N> --step 0 --exit-kind failure-exit --notes "ambiguous status: multiple folders / missing folder"`, EXIT. Ask user to reconcile. Do NOT pick. |
 | Status missing from disk layout (legacy bodies) | Run Step 0b: autofill `proposed` via `task.py set-status`, post `epm:auto-defaults`, continue. |
 | `type` frontmatter missing | Run Step 0b: infer from title prefix, confirm with the user, apply via `task.py set-body`. Autonomous loop with no user -> error + EXIT (a wrong guess corrupts the completed column). |
+| Task is mis-filed under the wrong `kind` (e.g. a fix-validation / "test that X works" filed as `kind: experiment` — see CLAUDE.md § "Routing experiment intent") | Reclassify through the canonical path: `task.py set-kind <N> <kind>` (frontmatter + REGISTRY snapshot, flock + commit). Do NOT hand-edit the `kind:` frontmatter. If the misfile also pulled the task into the clean-result/promotion machinery, separately fix the resulting state (`set-clean-result --unset`, `set-status <N> completed`). |
 | Empty task body | Run Step 0b: ask user for goal/hypothesis/setup in chat, draft body, patch via `task.py set-body --file`, post `epm:auto-defaults` audit event. |
 | Plan fails mandatory-section check | Re-invoke `adversarial-planner` with missing sections list; do not post incomplete plan. |
 | Preflight fails | Post the `--json` report verbatim as `epm:preflight v1`. Do NOT auto-fix (per CLAUDE.md "never take shortcuts"). |
