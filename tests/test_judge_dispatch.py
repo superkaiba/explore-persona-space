@@ -955,3 +955,112 @@ def test_judge_cache_roundtrip(tmp_path):
     cache.put("q", "c", {"aligned": 1})
     assert cache.get("q", "c") == {"aligned": 1}
     assert cache.get("q", "other") is None
+
+
+# ── Phase 5: sync routes through api_dispatch.dispatch_calls (multi-org) ─────
+
+
+def test_sync_routes_through_multiorg_dispatcher_when_two_plus_keys(monkeypatch):
+    """Phase 5 (#682): sync judge dispatches with 2+ org keys present route
+    through api_dispatch.dispatch_calls — the multi-org fan-out path — so every
+    caller gets the ~3x speedup of fanning across the 3 separate org keys for
+    free, without changing the public signature. The legacy single-org
+    AsyncAnthropic path stays the fallback for tests that pin sync_client.
+    """
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k1")
+    monkeypatch.setenv("ANTHROPIC_BATCH_KEY", "k2")
+    monkeypatch.delenv("ANTHROPIC_API_KEY_LOW_PRIO", raising=False)
+    monkeypatch.delenv("EPS_JUDGE_DISABLE_MULTIORG", raising=False)
+
+    items = make_items(3)
+
+    captured: dict = {}
+
+    async def _fake_dispatch_calls(items_arg, **kwargs):
+        from explore_persona_space.llm.api_dispatch import DispatchResult
+
+        captured["model"] = kwargs.get("model")
+        captured["force_path"] = kwargs.get("force_path")
+        captured["cost_pref"] = kwargs.get("cost_pref")
+        captured["n_items"] = len(items_arg)
+        return {
+            it.item_id: DispatchResult(
+                item_id=it.item_id,
+                result={"aligned": 80, "coherent": 80, "reasoning": "ok"},
+            )
+            for it in items_arg
+        }
+
+    monkeypatch.setattr(
+        "explore_persona_space.llm.api_dispatch.dispatch_calls",
+        _fake_dispatch_calls,
+    )
+
+    from explore_persona_space.eval.judge_dispatch import dispatch_judge_items_async
+
+    results = asyncio.run(
+        dispatch_judge_items_async(
+            items,
+            judge_model="claude-sonnet-4-5-20250929",
+            judge_system_prompt="rubric",
+            force_sync=True,  # pin to sync (the path that newly routes through multi-org)
+        )
+    )
+
+    assert captured["force_path"] == "sync"
+    assert captured["cost_pref"] == "latency"
+    assert captured["model"] == "claude-sonnet-4-5-20250929"
+    assert captured["n_items"] == 3
+    assert set(results.keys()) == {cid for cid, _, _, _ in items}
+    for v in results.values():
+        assert v["aligned"] == 80
+
+
+def test_sync_falls_back_to_single_org_when_opt_out_set(monkeypatch):
+    """EPS_JUDGE_DISABLE_MULTIORG=1 forces the legacy single-org AsyncAnthropic
+    sync path even when multiple org keys are present in the env — escape hatch
+    for callers that need exact backward-compatibility (e.g. retry-path tests
+    that pin sync_client + assert against the single-org client's behavior).
+    """
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k1")
+    monkeypatch.setenv("ANTHROPIC_BATCH_KEY", "k2")
+    monkeypatch.setenv("EPS_JUDGE_DISABLE_MULTIORG", "1")
+
+    items = make_items(2)
+    multiorg_called = {"n": 0}
+
+    async def _fake_dispatch_calls(items_arg, **kwargs):
+        multiorg_called["n"] += 1
+        return {}
+
+    monkeypatch.setattr(
+        "explore_persona_space.llm.api_dispatch.dispatch_calls",
+        _fake_dispatch_calls,
+    )
+
+    # Inject a legacy single-org client that records that it was used.
+    class _LegacyAsyncClient:
+        def __init__(self):
+            self.calls = 0
+            self.messages = self  # so `client.messages.create(...)` works
+
+        async def create(self, **kwargs):
+            self.calls += 1
+            return _msg(JUDGE_TEXT)
+
+    legacy = _LegacyAsyncClient()
+    from explore_persona_space.eval.judge_dispatch import dispatch_judge_items_async
+
+    results = asyncio.run(
+        dispatch_judge_items_async(
+            items,
+            judge_model="claude-sonnet-4-5-20250929",
+            judge_system_prompt="rubric",
+            force_sync=True,
+            sync_client=legacy,
+        )
+    )
+
+    assert multiorg_called["n"] == 0, "opt-out should NOT enter the multi-org path"
+    assert legacy.calls == 2, "legacy single-org client should serve both items"
+    assert len(results) == 2
