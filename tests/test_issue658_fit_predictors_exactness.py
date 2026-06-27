@@ -23,8 +23,13 @@ silently drift the DV away from the serial oracle and stay green:
   ``_ridge_predict_loco_refit`` to <= 1e-6 in both predictions AND ρ;
 - the batched ``_fit_mlp_loco`` (A3.2) + ``_fit_mlp_ensemble_loco`` gap path
   (A3.5) reproduce ``_fit_mlp_loco_serial_reference`` to <= 1e-6;
+- the round-3 ensemble CHUNKING (``MLP_CHUNK_SIZE``, the OOM fix) is bit-/<=1e-6
+  invariant to chunk size — chunk = 1, a non-divisor, exactly E, and > E all agree
+  with the full-batch result, and the gap result matches the serial reference at
+  every chunk size;
 - the in-script ``_assert_ridge_exactness`` + ``_assert_mlp_exactness`` startup
-  gates pass and report deltas within tolerance;
+  gates pass and report deltas within tolerance (the MLP gate now also asserts
+  chunk-invariance);
 - the per-cell param-hash invalidates stale checkpoint cells on a hyperparameter
   change (the resume-into-reused-out-dir stale-serve fix).
 
@@ -153,26 +158,65 @@ def test_batched_single_output_mlp_matches_serial(seed, monkeypatch):
 
 
 @pytest.mark.parametrize("seed", [0, 3])
-def test_batched_gap_mlp_matches_serial_reseed_per_dim(seed, monkeypatch):
+@pytest.mark.parametrize("chunk", [0, 1, 7, 9999])
+def test_batched_gap_mlp_matches_serial_reseed_per_dim(seed, chunk, monkeypatch):
     """The A3.5 gap path reproduces the serial RESEED-PER-DIM reference <= 1e-6.
 
     The OLD gap MLP called ``_fit_mlp_loco(Xc, Yv[:, k])`` once per output dim, and
     each call re-seeds ``torch.manual_seed(658)`` — so every dim reuses the SAME n
-    per-fold inits. The batched ensemble must reproduce that by TILING the n
-    per-fold inits across the gap_dim blocks (see ``_fit_mlp_ensemble_loco``).
-    Without the tile, dims 1+ diverge ~0.38 (the round-2 finding this guards).
+    per-fold inits. The batched ensemble must reproduce that by addressing member m
+    by its block member m % n (see ``_fit_mlp_ensemble_loco``). Without that, dims
+    1+ diverge ~0.38 (the round-2 finding). Run across chunk sizes — 0 (no chunk),
+    1, a non-divisor (7), and > E (9999) — so the round-3 ensemble chunking is
+    proven not to move the DV at ANY boundary (E = gap × n = 4 × 14 = 56).
     """
     monkeypatch.setattr(fit, "DEVICE", "cpu")
     monkeypatch.setattr(fit, "MLP_MAX_EPOCHS", 25)
+    monkeypatch.setattr(fit, "MLP_CHUNK_SIZE", chunk)
     X, Y = _mlp_synthetic(seed)
     gap = 4
     ser = np.stack([fit._fit_mlp_loco_serial_reference(X, Y[:, k]) for k in range(gap)], axis=1)
     bat = fit._fit_mlp_ensemble_loco(X, Y, target_idx=list(range(gap)), seed=658)
     max_abs = float(np.max(np.abs(ser - bat)))
     assert max_abs <= 1e-6, (
-        f"batched gap MLP drifted from serial reseed-per-dim: max|Δ|={max_abs:.3e}. "
-        "A >1e-2 delta means the per-dim init tile in _fit_mlp_ensemble_loco regressed "
-        "(dims 1+ drawing from a shifted RNG stream)."
+        f"batched gap MLP (chunk={chunk}) drifted from serial reseed-per-dim: "
+        f"max|Δ|={max_abs:.3e}. A >1e-2 delta means the per-dim init tile regressed; a "
+        "chunk-dependent delta means a per-member quantity is keyed to chunk-local "
+        "position instead of the global member index."
+    )
+
+
+@pytest.mark.parametrize("seed", [0, 5])
+def test_gap_mlp_is_chunk_size_invariant(seed, monkeypatch):
+    """Chunking the gap-MLP ensemble must NOT move the DV: every chunk size agrees.
+
+    The round-3 OOM fix fits E = gap × N member-nets in chunks of MLP_CHUNK_SIZE.
+    Every per-member quantity (init, standardization, target, mask, held-out row)
+    is keyed to the GLOBAL member index, so chunk size 1, a non-divisor, exactly E,
+    and > E must all produce the same held-out predictions to <= 1e-6. A
+    chunk-dependent result is the bug this guards (a per-member tensor sliced by
+    chunk-local position).
+    """
+    monkeypatch.setattr(fit, "DEVICE", "cpu")
+    monkeypatch.setattr(fit, "MLP_MAX_EPOCHS", 25)
+    X, Y = _mlp_synthetic(seed)
+    gap = 5  # E = 5 * 14 = 70
+    e_total = gap * X.shape[0]
+    results = {}
+    for chunk in [0, 1, 7, 13, e_total, e_total + 100]:  # full, 1, non-divisors, =E, >E
+        monkeypatch.setattr(fit, "MLP_CHUNK_SIZE", chunk)
+        results[chunk] = fit._fit_mlp_ensemble_loco(X, Y, target_idx=list(range(gap)), seed=658)
+    ref = results[0]  # full-batch (no chunk)
+    for chunk, r in results.items():
+        max_abs = float(np.max(np.abs(r - ref)))
+        assert max_abs <= 1e-6, (
+            f"chunk={chunk} disagrees with full-batch: max|Δ|={max_abs:.3e} — the chunk "
+            "boundary moved the DV (a per-member quantity is keyed to chunk-local position)."
+        )
+    # chunk = exactly E and chunk > E must be BIT-identical to full (same batch shape)
+    assert np.array_equal(results[e_total], ref), "chunk=E must be bit-identical to full-batch"
+    assert np.array_equal(results[e_total + 100], ref), (
+        "chunk>E must be bit-identical to full-batch"
     )
 
 
@@ -180,13 +224,15 @@ def test_assert_mlp_exactness_gate_passes():
     """The in-script startup gate ``_assert_mlp_exactness`` passes within tol.
 
     main() runs this at every startup alongside the ridge gate; a failure aborts
-    the run loud. Pin it so the gate cannot be quietly weakened. Both the single-
-    output and the tiled multi-output gap deltas must be within tolerance.
+    the run loud. Pin it so the gate cannot be quietly weakened. The single-output,
+    the tiled+chunked multi-output gap, AND the chunk-invariance deltas must all be
+    within tolerance.
     """
     res = fit._assert_mlp_exactness()
     assert res["tol"] == 1e-6
     assert res["single_delta"] <= res["tol"], res
     assert res["multi_delta"] <= res["tol"], res
+    assert res["chunk_delta"] <= res["tol"], res
 
 
 def test_mlp_oracle_is_distinct_from_batched_path():
