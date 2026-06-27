@@ -4304,8 +4304,8 @@
       "goal": "Test whether a behavior-dependent source key for the leakage context-gate (teacher-forced training-completion activation t_{C,B}, or the displacement delta_{C,B}=t_{C,B}-v_base(C)) predicts the realized gate g_real(C')=<w_hat,Delta_v(C')>/<w_hat,w_hat> better OUT-OF-SAMPLE than the theory's default context-only key k=c_C, and whether any winning key generalizes from the marker (rank-1 scalar-gate precondition holds; k=c_C already falsified in #604) to sycophancy (precondition unresolved per #637).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/683",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/683",
+      "status": "followups_running",
       "title": "A training-completion source key predicts the leakage gate where the paper's context-only key fails; for sycophancy it is unreplicated against a wide chance null, for the marker only one of five sources clears its own null (LOW confidence)"
     },
     "684": {
