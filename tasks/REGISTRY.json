@@ -4254,8 +4254,8 @@
     "677": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/677",
-      "status": "running",
+      "path": "tasks/reviewing/677",
+      "status": "reviewing",
       "title": "Size-gate the CPU-off-pod rule: route large-data CPU-only phases to a CPU-only GCP instance (gpu_count=0 n2-highmem) instead of the shared VM"
     },
     "678": {
