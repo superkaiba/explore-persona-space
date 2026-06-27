@@ -161,6 +161,30 @@ training-strength, source + bystanders, distributional + single-context (§1.10)
 | **R9-1** | New **A3.6a — context-vector stability across FT** (`c⁺≈c0`, direct): per context (source + bystanders) × layer × training strength η report `cos(c0(C),c⁺(C))`, relative norm `‖c⁺(C)‖/‖c0(C)‖`, and the displacement `‖c⁺(C)−c0(C)‖²_W` compared **in the same metric `W`** to the within-condition spread `s_W(C)` (A3.5a; `W=I` then `(Σc+λI)⁻¹`). **Pre-registered falsifiable kernel: `‖c⁺−c0‖²_W < s_W(C)`** — post-FT context displacement is smaller than the natural within-condition spread. CPU on the existing A3.10 store (no new capture). Characterization otherwise: drift shrinking with weaker training → base `c_C` directly justified; large drift → A3.10's robustness is load-bearing (flagged, NOT a failure — the theory tolerates drift). It is the standalone raw-stability read of the same `c⁺−c0` the A3.10 gate-drift decomposition consumes. | §4 A3.6a row · §2 trained-quantities consumed-by |
 | **R9-2** | New **A3.6b — context→profile map stability across FT** (`M⁺≈M0`, direct): does the base-fit map `M0` (A3.5, `c_C→v0`) still map `c⁺(C)→v⁺(C)`? **Primary (change, base level partialled out per C10):** corr / calibrated error between the predicted change `M0·(c⁺−c0)` and the measured change `v⁺−v0`, against the refit-`M⁺` noise floor. **Operator companion (interpretable ONLY under A3.5's CV-chosen ridge λ / low-rank `k`; at d≫n the unregularized null space dominates, so prediction-transfer stays the trustworthy primary):** A3.5 records an explicit λ/`k`; refit `M⁺: c⁺→v⁺` at the SAME λ/`k`, report relative operator norm `‖M⁺−M0‖/‖M0‖` + principal angles between the top-`k` subspaces of `M0`/`M⁺`. Per layer/recipe, source + bystanders. Generalizes A3.6 (1-D read-out `r_B` stability) to the FULL context→profile operator. CPU on the existing base + A3.6 stores (no new capture). | §4 A3.6b row · §2 base + trained-quantities consumed-by |
 
+## Revision log (round 10 — broadly-applying style behaviors added)
+
+User decision (Thomas, 2026-06-26): add three **broadly-applying style behaviors** — `concise`,
+`verbose`, and `casual_register` — to the behavior battery as new evaluated leakage columns `B'`
+(§1.3). Unlike the content behaviors (sycophancy needs a false claim, refusal needs a borderline
+request, broad_em needs a provocative query), style behaviors express on **every** prompt, so their
+eval battery is the **generic everyday-query pool** (the UltraChat probe set built for the (G1) genre
+arm, `data/issue594/probes_ultrachat.json`) and they carry high testable variance with no
+expression-floor problem. `concise`/`verbose` are the two poles of one **verbosity axis**: the
+read-out is shared (`r_verbosity = D_verbose − D_concise`) and **response length (tokens) is a
+judge-free continuous DV**, with a judged "concise?"/"verbose?" rate as the calibrated `[0,1]`
+companion. `casual_register` (informal vs formal tone) promotes the existing `format_style` column /
+B6 `casual-lowercase` row into a standalone leakage DV. **Added EVAL-ONLY (Path A)** — new `B'`
+columns scored on the EXISTING fine-tune fleet (§7.5 "eval IS full-grid, cheap on the cached
+store"); they are NOT added to the trained Phase-2 grid by default (each is a candidate trained row
+family — extend B6 — only if leakage *predictability of the trained style behavior* is later
+wanted). Near-zero added GPU-h (per-battery extraction on the fleet; the generic pool already exists
+for G1); the marginal cost is Batch-API judge dollars for the rate DV, and the verbosity length DV
+needs no judge at all.
+
+| ID | Add | Where |
+|---|---|---|
+| **R10-1** | Three new evaluated style columns `B'` — `concise`, `verbose`, `casual_register` — eval-only on the existing fleet; battery = generic-query pool (UltraChat, the broadly-applying genre); verbosity is one bipolar axis (`r_verbosity = D_verbose − D_concise`, length = judge-free continuous DV); `casual_register` standalones the `format_style`/B6 register behavior. Top-level eval columns 11 → 14; registry target 19 → 22 `ColumnSpec` (added to `columns.py` at phase-implementation). Trained-row promotion (extend B6) deferred. | §1.3 eval table + B6 table · §6 cost |
+
 ---
 
 This plan turns the paper's assumption chain into one **shared activation store**
@@ -324,10 +348,14 @@ sensitivity column = **19 total** (verified against `columns.py`: `len(COLUMNS)
 budget in §6 is re-derived against the correct count (~1.7× the 11-column figure;
 the family-expression + diagonal columns each add a judged battery on the
 applicable adapter rows + the base panel). `scoring_universe()` already encodes
-which cells count, but the cost arithmetic must use 19, not 11.
+which cells count, but the cost arithmetic must use 19, not 11. **(R10)** the
+round-10 style columns take this to **22 `ColumnSpec`** (19 + `concise`/`verbose`/
+`casual_register`); the verbosity pair shares one read-out and a judge-free length
+DV, so the added judge load is ~2 batteries' worth, not 3 (§6).
 
-**Evaluated behaviors B′ — the 11 top-level eval columns (`columns.py`)**, measured
-on-policy on every model (these are the leakage DVs):
+**Evaluated behaviors B′ — the 14 top-level eval columns (`columns.py`; 11 original
++ 3 broadly-applying style columns added round 10)**, measured on-policy on every
+model (these are the leakage DVs):
 
 | Column | Construct | DV | role |
 |---|---|---|---|
@@ -341,6 +369,9 @@ on-policy on every model (these are the leakage DVs):
 | `format_style` | format/style conformance | structural + spot-check | leakage DV |
 | `self_report` | verbalized behavior awareness | judged rate | leakage DV |
 | `persona_drift` | identity / persona drift | judged rate | leakage DV |
+| `concise` | response brevity (low pole of the verbosity axis) | response length (tokens, continuous) + judged "concise?" rate | leakage DV (style; **R10**) |
+| `verbose` | response padding (high pole of the verbosity axis) | response length (tokens, continuous) + judged "verbose?" rate | leakage DV (style; **R10**) |
+| `casual_register` | informal vs formal tone/register | judged "casual register?" rate + continuous register score | leakage DV (style; **R10**) |
 | `capability` | ARC-C | logprob acc | **guard** (never a leakage DV) |
 
 Plus the within-family expression batteries (`fam_expr_{bad_medical, risky_financial,
@@ -393,6 +424,7 @@ assumed to be the shared Betley pool:
 | `deception` | code-summary + negotiation (`deception_episodes.json`) | No — own battery |
 | `fact_expression` | #444 recall + OOD + reversal (`fact_battery.json`) | No — own battery |
 | `format_style` | format/style demands (`format_panel.json`) | No — own battery |
+| `concise`, `verbose`, `casual_register` (R10) | generic everyday queries (UltraChat pool `data/issue594/probes_ultrachat.json`, the broadly-applying genre) | No — own battery (generic genre) |
 
 - **Foundation-claim scope (Phase 1 / #658):** A3.2/A3.3/A3.4/A3.5 are established
   on the **Betley-valid** behaviors only; the Phase-1 clean-result carries a
@@ -1234,6 +1266,16 @@ has ~60 issue docs incl. #521 (rank-one across contexts), #532 (predictor stress
   adapter), not 11, before committing the fleet. Judging is off-GPU (Batch API), so
   this is dollar/throughput, not GPU-h — but it is the binding constraint at fleet
   scale (§7.5), so the corrected count matters for the run plan.
+- **(R10) The three round-10 style columns are eval-only — near-zero added GPU-h.**
+  `concise`/`verbose`/`casual_register` are new `B'` leakage DVs scored on the
+  EXISTING fleet (no new fine-tunes; §7.5 "eval IS full-grid, cheap on the cached
+  store"). Added GPU = the per-battery activation/generation capture on the trained
+  models + base over the generic-query pool (already built for the (G1) arm),
+  ~1–3 GPU-h total. The verbosity pair shares one read-out and uses a judge-free
+  **length** continuous DV; the only judge dollars are the calibrated
+  "concise?/verbose?/casual?" rate batteries (~2 batteries' worth, Batch API).
+  Promoting any to a TRAINED row family (extend B6) would add ~13–26 GPU-h each —
+  deferred, not in the default grid.
 - **(B5) The positive-only fleet arm roughly doubles the spine fine-tunes** (every
   gate/transfer source trained twice — contrastive + positive-only), driving Phase-2
   GPU-h up; reflected in the table. This is the science-affecting Phase-2 addition
