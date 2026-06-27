@@ -382,12 +382,31 @@ class JudgeHandle:
     Both sides key on the SAME logical custom_id, so the harvest joins the fired
     batches with no id mismatch. ``save_raw`` is the idempotency sentinel: once it
     exists, ``submit()`` skips resubmission and ``reconcile()`` re-reads it.
+
+    ``expected_custom_ids`` (#676 round-2, concern judge-custom-id-coverage-unverified):
+    the FULL set of custom_ids this submission expects back, captured eagerly at
+    :func:`submit_judge_async` time from the request list. ``reconcile()`` requires
+    every expected id to be present in the harvest (and in any re-read ``save_raw``)
+    and raises ``RuntimeError`` on a miss — so an ENDED-but-incomplete shard fails
+    loud rather than silently degrading a missing row to a default label / a biased
+    rate. Eager capture (never ``None``) is deliberate: an absent set must surface
+    as an internal error, NOT a silent skip of the coverage check.
+
+    ``expected_source`` (#676 round-2, concern judge-save-raw-collision): the
+    source/persona this handle's deferred behavior-label job belongs to. The primary
+    collision defense is the per-source ``save_raw`` key the callers now build
+    (``judge_filter/{behavior}__{src}.json`` — never a coarse ``int(time.time())``);
+    ``expected_source`` is a belt-and-suspenders ownership tag carried on the handle
+    for assertion / debugging. ``None`` for callers that do not partition by source
+    (the per-cell eval judge).
     """
 
     cell_key: str
     save_raw: Path
     _submit: Callable[[], list[str]]
     _reconcile: Callable[[list[str]], dict]
+    expected_custom_ids: frozenset[str] = field(default_factory=frozenset)
+    expected_source: str | None = None
     batch_ids: list[str] = field(default_factory=list)
 
     def submit(self) -> list[str]:
@@ -425,6 +444,31 @@ def _fire_judge_batches(requests: list[dict]) -> list[str]:
     return submit_sharded_batches_fire_and_forget(anthropic.Anthropic(), requests)
 
 
+def _assert_full_coverage(
+    scores: dict, expected_custom_ids: frozenset[str], *, cell_key: str, source: str
+) -> None:
+    """Raise ``RuntimeError`` if any expected custom_id is absent from ``scores``.
+
+    The fail-loud coverage gate (#676 round-2, concern
+    judge-custom-id-coverage-unverified): an ENDED-but-incomplete shard, a
+    custom_id mismatch, or a partial harvested result would otherwise leave a row
+    silently missing — and every downstream consumer reads with ``.get`` (default
+    label 0 / reduced ``n_judged`` / a biased baseline-propensity rate), so the miss
+    never surfaces. Names at most the first 10 missing ids. Raised BEFORE the
+    ``save_raw`` write so a partial result is never persisted.
+    """
+    missing = sorted(expected_custom_ids - set(scores))
+    if missing:
+        shown = ", ".join(missing[:10])
+        more = f" (+{len(missing) - 10} more)" if len(missing) > 10 else ""
+        raise RuntimeError(
+            f"[judge-async] {cell_key} ({source}): incomplete judge coverage — "
+            f"{len(missing)}/{len(expected_custom_ids)} expected custom_ids missing "
+            f"from the harvest: {shown}{more}. An ended-but-incomplete shard must "
+            f"fail loud, NOT degrade missing rows to default labels (CLAUDE.md fail-fast)."
+        )
+
+
 def _reconcile_judge_batches(
     batch_ids: list[str],
     *,
@@ -434,19 +478,30 @@ def _reconcile_judge_batches(
     poll_interval: float,
     max_poll_interval: float,
     grace_min: int,
+    expected_custom_ids: frozenset[str],
+    expected_source: str | None = None,
 ) -> dict:
     """Deadline-bounded harvest of ``batch_ids``; write ``save_raw``; return scores.
 
-    Idempotent: if ``save_raw`` already exists, read it back (no API call).
+    Idempotent: if ``save_raw`` already exists, read it back (no API call) — but
+    the re-read still passes the SAME coverage gate, so a partial-prior-run
+    ``save_raw`` is never silently reused (#676 round-2).
     Fail-loud: an expired shard raises ``BatchDeadlineExceeded`` (via
     :func:`_poll_batch_to_ended`); an empty ``batch_ids`` with no ``save_raw`` is a
-    submit-never-ran programming error and raises. ``save_raw`` is written in the
+    submit-never-ran programming error and raises; a harvest (or re-read) missing any
+    of ``expected_custom_ids`` raises ``RuntimeError`` BEFORE writing ``save_raw``
+    (concern judge-custom-id-coverage-unverified). ``save_raw`` is written in the
     ``{"all_scores": {custom_id: score}}`` shape ``_scores_from_save_raw`` reads.
     """
     import json as _json
 
+    src = expected_source or "—"
     if save_raw.exists():
-        return _json.loads(save_raw.read_text()).get("all_scores", {})
+        on_disk = _json.loads(save_raw.read_text()).get("all_scores", {})
+        # A prior run may have written a partial save_raw before this gate existed;
+        # re-validate coverage so a stale incomplete file is not silently reused.
+        _assert_full_coverage(on_disk, expected_custom_ids, cell_key=cell_key, source=src)
+        return on_disk
     if not batch_ids:
         raise RuntimeError(
             f"[judge-async] {cell_key}: reconcile called with no batch_ids and no "
@@ -467,6 +522,9 @@ def _reconcile_judge_batches(
             grace_min=grace_min,
         )
         _collect_legacy_results(client, batch_id, results)
+    # Coverage gate BEFORE the write: a partial harvest must not persist a save_raw
+    # that downstream readers would silently treat as complete.
+    _assert_full_coverage(results, expected_custom_ids, cell_key=cell_key, source=src)
     save_raw.parent.mkdir(parents=True, exist_ok=True)
     save_raw.write_text(
         _json.dumps(
@@ -486,6 +544,7 @@ def submit_judge_async(
     format_user_msg: Callable[[str, str], str],
     cell_key: str,
     save_raw: Path,
+    expected_source: str | None = None,
     judge_model: str = "claude-sonnet-4-5-20250929",
     max_tokens: int = 256,
     poll_interval: float = 30.0,
@@ -513,6 +572,15 @@ def submit_judge_async(
     resubmission and ``reconcile()`` re-reads it (so a resumed run re-reads rather
     than re-judges). ``judge_model`` defaults to the project judge
     (``claude-sonnet-4-5-20250929``).
+
+    The FULL set of custom_ids the requests carry is captured eagerly here and
+    threaded onto the handle as ``expected_custom_ids``, so ``reconcile()`` can
+    fail loud on an ended-but-incomplete shard rather than silently dropping a
+    missing row (#676 round-2, concern judge-custom-id-coverage-unverified).
+    ``expected_source`` (optional) is the source/persona this submission belongs
+    to — the ownership tag carried for the per-source-keyed deferred behavior-label
+    jobs (concern judge-save-raw-collision); the primary collision defense is the
+    per-source ``save_raw`` key the CALLER builds.
     """
     from functools import partial
 
@@ -524,6 +592,7 @@ def submit_judge_async(
         judge_model=judge_model,
         max_tokens=max_tokens,
     )
+    expected_custom_ids = frozenset(req["custom_id"] for req in requests)
     return JudgeHandle(
         cell_key=cell_key,
         save_raw=save_raw,
@@ -536,5 +605,9 @@ def submit_judge_async(
             poll_interval=poll_interval,
             max_poll_interval=max_poll_interval,
             grace_min=grace_min,
+            expected_custom_ids=expected_custom_ids,
+            expected_source=expected_source,
         ),
+        expected_custom_ids=expected_custom_ids,
+        expected_source=expected_source,
     )
