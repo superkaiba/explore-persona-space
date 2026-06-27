@@ -1,17 +1,22 @@
 #!/usr/bin/env python
-"""Issue #685 Phase C — behavioral-validity judge subset (construct anchor).
+"""Issue #685 Phase C — behavioral-validity judge (full 10-context coverage).
 
-Validity companion 1 (plan §3.5, the kill-criterion gate §8). For the 4-context x
-6-behavior subset (INSTRUCT model only), generate under ``C`` vs ``C+b`` (vLLM
-greedy, temp=0, max_new_tokens=512) over 15 questions, then judge each completion
-with ``claude-sonnet-4-5-20250929`` for the TARGET behavior (per-behavior rubric,
-one judge call per completion). DV: judge-positive RATE under ``C`` vs ``C+b`` per
-behavior. Confirms the appended instruction actually changes behavior (so
-``Delta_l(C,b)`` measures a real shift, not noise).
+Validity companion 1 (plan §3.5, the kill-criterion gate §8). For ALL 10 contexts
+x 6-behaviors (INSTRUCT model only), generate under ``C`` vs ``C+b`` (vLLM greedy,
+temp=0, max_new_tokens=512) over 15 questions, then judge each completion with
+``claude-sonnet-4-5-20250929`` for the TARGET behavior (per-behavior rubric, one
+judge call per completion). DV: judge-positive RATE under ``C`` vs ``C+b`` per
+(context, behavior). Confirms the appended instruction actually changes behavior
+(so ``Delta_l(C,b)`` measures a real shift, not noise) across the FULL context bank
+the geometry uses — not the 4-context subset the parent v2 run measured.
 
-4 contexts x 6 behaviors x 15 questions x {C, C+b} = 720 generations + 720 judge
-calls (routed through ``eval.batch_judge`` / ``judge_dispatch``). Output:
-``eval_results/issue_685[_smoke]/validity_judged.json``.
+10 contexts x 6 behaviors x 15 questions x {C, C+b} = 1800 generations. v3
+follow-up REUSE-MERGE: the 4 parent contexts' generations + judge labels are
+reused verbatim from the existing ``validity_generations.json`` /
+``validity_judgements.json`` (each row/label tagged ``source: parent``), so only
+the 6 NEW contexts (1080 generations) are generated + judged this round (tagged
+``source: followup``). Idempotent: a re-run with all 10 contexts present is a
+no-op. Output: ``eval_results/issue_685[_smoke]/validity_judged.json``.
 
 Usage::
 
@@ -50,12 +55,21 @@ from issue685_extract_shifts import (  # noqa: E402
     SMOKE_MODEL,
 )
 
-# Validity subset (plan §3.5 / §11): 4 contexts spanning the cosine range + the
-# safety-vs-neutral axis.
-SUBSET_CONTEXTS = ["assistant", "software_engineer", "villain", "medical_doctor"]
+# Validity subset (plan v3 §3.4a / §11): FULL 10-context manipulation-check
+# coverage (was the 4-context subset ["assistant", "software_engineer",
+# "villain", "medical_doctor"]). All 10 contexts in CONTEXTS, in CONTEXTS order.
+# The 4 parent contexts' judge labels are REUSED (reuse-merge below) so only the
+# 6 NEW contexts are generated + judged.
+SUBSET_CONTEXTS = list(CONTEXTS.keys())  # all 10 — full manipulation-check coverage
 SMOKE_SUBSET_CONTEXTS = ["assistant", "villain"]
 N_QUESTIONS = 15
 SMOKE_N_QUESTIONS = 1
+
+# Parent (v2) 4-context subset whose judge labels are reused verbatim in the
+# 10-context follow-up merge. Used to stamp per-row/per-judgement `source`
+# provenance (parent | followup) into the merged artifacts (Phase-2 critic
+# fold-in). NOT used to gate the smoke slice (smoke regenerates fresh).
+PARENT_REUSE_CONTEXTS = ["assistant", "software_engineer", "villain", "medical_doctor"]
 
 # Per-behavior judge rubric: ask whether the completion EXHIBITS the target
 # behavior. The judge returns JSON {"exhibits_behavior": true|false,
@@ -183,6 +197,117 @@ def _judge_all(
     return all_judgements
 
 
+def _row_custom_id(r: dict) -> str:
+    """The canonical judge custom_id for a generation row (matches ``_judge_all``)."""
+    return f"{r['context']}__{r['behavior']}__{r['condition']}__{r['question_idx']:02d}"
+
+
+def _load_existing_for_reuse(
+    out_dir: Path,
+    contexts: dict[str, str | None],
+    behaviors: dict[str, str],
+    n_questions: int,
+) -> tuple[dict[str, dict], dict[str, dict], set[str]]:
+    """Load the parent run's raw generations + judge labels for reuse-merge (Part 1).
+
+    Returns ``(existing_gens_by_cid, existing_judgements_by_cid, reusable_contexts)``
+    where ``reusable_contexts`` is the set of contexts (subset of the requested 10)
+    whose FULL grid of (behavior x condition x question) generations AND judge
+    labels are already present in ``validity_generations.json`` /
+    ``validity_judgements.json``. Those contexts are skipped at generation + judge
+    time; only the NEW contexts are regenerated. A context is reusable only if its
+    ENTIRE expected grid is present (a partially-present context is regenerated
+    wholesale — fail-safe: the 4 parent contexts are cheap, so no half-merge).
+
+    If either parent file is absent, returns empty dicts + empty set (regenerate
+    all requested contexts fresh — plan §12 must-confirm fail-safe).
+    """
+    gen_path = out_dir / "validity_generations.json"
+    jdg_path = out_dir / "validity_judgements.json"
+    if not (gen_path.exists() and jdg_path.exists()):
+        print(
+            f"[issue685.C] reuse-merge: no parent {gen_path.name}/{jdg_path.name} present "
+            "-> generating all requested contexts fresh."
+        )
+        return {}, {}, set()
+
+    existing_gens_rows = json.loads(gen_path.read_text()).get("rows", [])
+    existing_gens = {_row_custom_id(r): r for r in existing_gens_rows}
+    existing_jdg = json.loads(jdg_path.read_text())
+
+    reusable: set[str] = set()
+    for c in contexts:
+        ok = True
+        for b_name in behaviors:
+            for cond in ("C", "Cb"):
+                for q_idx in range(n_questions):
+                    cid = f"{c}__{b_name}__{cond}__{q_idx:02d}"
+                    if cid not in existing_gens or cid not in existing_jdg:
+                        ok = False
+                        break
+                if not ok:
+                    break
+            if not ok:
+                break
+        if ok:
+            reusable.add(c)
+    print(
+        f"[issue685.C] reuse-merge: parent artifacts present; reusable contexts "
+        f"({len(reusable)}/{len(contexts)}): {sorted(reusable)}"
+    )
+    return existing_gens, existing_jdg, reusable
+
+
+def _merge_generations(
+    contexts: dict[str, str | None],
+    behaviors: dict[str, str],
+    n_questions: int,
+    reusable: set[str],
+    existing_gens: dict[str, dict],
+    new_rows: list[dict],
+) -> list[dict]:
+    """Reused parent rows (tagged source=parent) + the newly generated rows."""
+    merged: list[dict] = []
+    for c in contexts:
+        if c in reusable:
+            for b_name in behaviors:
+                for cond in ("C", "Cb"):
+                    for q_idx in range(n_questions):
+                        r = dict(existing_gens[f"{c}__{b_name}__{cond}__{q_idx:02d}"])
+                        r["source"] = "parent"  # reused verbatim from the v2 run
+                        merged.append(r)
+        else:
+            merged.extend(r for r in new_rows if r["context"] == c)
+    return merged
+
+
+def _merge_judgements(
+    contexts: dict[str, str | None],
+    behaviors: dict[str, str],
+    n_questions: int,
+    reusable: set[str],
+    existing_jdg: dict[str, dict],
+    new_judgements: dict[str, dict],
+) -> dict[str, dict]:
+    """New judge labels (source=followup) merged with reused parent labels (source=parent)."""
+    merged: dict[str, dict] = {}
+    for cid, j in new_judgements.items():
+        jj = dict(j)
+        jj["source"] = "followup"
+        merged[cid] = jj
+    for c in contexts:
+        if c not in reusable:
+            continue
+        for b_name in behaviors:
+            for cond in ("C", "Cb"):
+                for q_idx in range(n_questions):
+                    cid = f"{c}__{b_name}__{cond}__{q_idx:02d}"
+                    jj = dict(existing_jdg[cid])
+                    jj["source"] = "parent"  # reused verbatim from the v2 run
+                    merged[cid] = jj
+    return merged
+
+
 def _aggregate_rates(
     contexts: dict[str, str | None],
     behaviors: dict[str, str],
@@ -262,10 +387,22 @@ def main() -> None:
 
     tok = AutoTokenizer.from_pretrained(model_id, token=os.environ.get("HF_TOKEN"))
 
-    # Build the (context, behavior, condition, question) generation rows.
-    rows: list[dict] = []
+    # Reuse-merge (Part 1): load the parent run's per-cell generations + judge
+    # labels and skip any context whose FULL grid is already present, so only the
+    # NEW contexts (the 6 added in v3) are regenerated + re-judged. Smoke writes to
+    # eval_results/issue685_smoke/ where no parent artifacts exist, so this is a
+    # no-op there (regenerate fresh).
+    existing_gens, existing_jdg, reusable = _load_existing_for_reuse(
+        out_dir, contexts, behaviors, len(questions)
+    )
+
+    # Build the (context, behavior, condition, question) generation rows — skipping
+    # any reusable context.
+    new_rows: list[dict] = []
     prompts: list[str] = []
     for c, s_c in contexts.items():
+        if c in reusable:
+            continue
         for b_name, b_text in behaviors.items():
             s_aug = (s_c + "\n\n" + b_text) if s_c else b_text
             for cond, s_eff in (("C", s_c), ("Cb", s_aug)):
@@ -274,36 +411,56 @@ def main() -> None:
                         _build_messages(s_eff, q), tokenize=False, add_generation_prompt=True
                     )
                     prompts.append(text)
-                    rows.append(
+                    new_rows.append(
                         {
                             "context": c,
                             "behavior": b_name,
                             "condition": cond,  # "C" (bare) | "Cb" (augmented)
                             "question_idx": q_idx,
+                            "source": "followup",  # newly generated this round
                         }
                     )
 
     print(
-        f"[issue685.C] {'SMOKE ' if smoke else ''}generate: {len(prompts)} completions "
+        f"[issue685.C] {'SMOKE ' if smoke else ''}generate: {len(prompts)} NEW completions "
+        f"({len(reusable)} contexts reused) "
         f"(model={model_id}, backend={gen_backend}, max_new_tokens={max_new_tokens})"
     )
-    if gen_backend == "vllm":
-        completions = _generate_vllm(model_id, prompts, max_new_tokens)
+    if prompts:
+        if gen_backend == "vllm":
+            completions = _generate_vllm(model_id, prompts, max_new_tokens)
+        else:
+            completions = _generate_hf(model_id, prompts, max_new_tokens)
+        assert len(completions) == len(new_rows), (len(completions), len(new_rows))
+        for r, comp in zip(new_rows, completions, strict=True):
+            r["completion"] = comp
     else:
-        completions = _generate_hf(model_id, prompts, max_new_tokens)
-    assert len(completions) == len(rows), (len(completions), len(rows))
-    for r, comp in zip(rows, completions, strict=True):
-        r["completion"] = comp
+        # All requested contexts reused (idempotent re-run) — nothing to generate.
+        print("[issue685.C] all requested contexts reused; no new generation needed.")
 
-    # Checkpoint the raw generations the moment generation completes (per-phase).
+    # Merge the reused parent rows (tagged source=parent) with the new rows.
+    merged_rows = _merge_generations(
+        contexts, behaviors, len(questions), reusable, existing_gens, new_rows
+    )
+
+    # Checkpoint the merged raw generations the moment generation completes.
     gen_path = out_dir / "validity_generations.json"
-    gen_path.write_text(json.dumps({"model": model_id, "rows": rows}, indent=2))
-    print(f"[issue685.C] checkpointed {len(rows)} generations -> {gen_path}")
+    gen_path.write_text(json.dumps({"model": model_id, "rows": merged_rows}, indent=2))
+    print(
+        f"[issue685.C] checkpointed {len(merged_rows)} generations "
+        f"({sum(1 for r in merged_rows if r.get('source') == 'parent')} parent / "
+        f"{sum(1 for r in merged_rows if r.get('source') == 'followup')} followup) -> {gen_path}"
+    )
 
-    # Judge each completion against its TARGET behavior's rubric, then aggregate
-    # the judge-positive rate per (context, behavior) under C vs C+b.
+    # Judge the NEW completions against their TARGET behavior's rubric, then merge
+    # with the reused parent judge labels and aggregate over ALL requested contexts.
     judge_model = DEFAULT_JUDGE_MODEL
-    all_judgements = _judge_all(rows, behaviors, questions, out_dir, judge_model)
+    new_judgements = (
+        _judge_all(new_rows, behaviors, questions, out_dir, judge_model) if new_rows else {}
+    )
+    all_judgements = _merge_judgements(
+        contexts, behaviors, len(questions), reusable, existing_jdg, new_judgements
+    )
     agg = _aggregate_rates(contexts, behaviors, len(questions), all_judgements)
 
     result = {
@@ -317,8 +474,14 @@ def main() -> None:
         "n_questions": len(questions),
         "contexts": list(contexts.keys()),
         "behaviors": list(behaviors.keys()),
-        "n_generations": len(rows),
+        "n_generations": len(merged_rows),
         "n_judged": sum(1 for j in all_judgements.values() if not j.get("error")),
+        "reuse_merge": {
+            "reused_contexts": sorted(reusable),
+            "new_contexts": [c for c in contexts if c not in reusable],
+            "n_generations_parent": sum(1 for r in merged_rows if r.get("source") == "parent"),
+            "n_generations_followup": sum(1 for r in merged_rows if r.get("source") == "followup"),
+        },
         "per_context_behavior": agg,
         "raw_judgements_path": "validity_judgements.json",
         "raw_generations_path": "validity_generations.json",
@@ -328,7 +491,11 @@ def main() -> None:
     (out_dir / "validity_judgements.json").write_text(json.dumps(all_judgements, indent=2))
     out_path = out_dir / "validity_judged.json"
     out_path.write_text(json.dumps(result, indent=2))
-    print(f"[issue685.C] wrote {out_path} (n_judged={result['n_judged']}/{len(rows)})")
+    print(
+        f"[issue685.C] wrote {out_path} "
+        f"(n_judged={result['n_judged']}/{len(merged_rows)}, "
+        f"contexts={len(contexts)})"
+    )
 
 
 if __name__ == "__main__":
