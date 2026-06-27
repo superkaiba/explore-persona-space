@@ -88,11 +88,13 @@ for diagnosis — strictly better than GCP's delete-on-crash boot disk.
 Two distinct GCP-failure paths, BOTH ending at the same
 `_runpod_terminal_rung`:
 
-- **Capacity / quota / zone miss** — walks the cost-ordered GCP ladder
-  (on-demand A100-80 → A100-40 → spot), then the free SLURM lanes, then
-  falls through to RunPod as the LAST rung (`reason:
-  auto_fallback_runpod`, #656). RunPod never first, never skipping a
-  cheaper rung.
+- **Capacity / quota / zone miss** — walks the length-aware GCP ladder
+  (#680; see "Ladder order" below — short jobs spot A100-80 → spot A100-40
+  → flex-start A100-80 → on-demand A100-80 → on-demand A100-40; long /
+  unknown jobs flex-start A100-80 → on-demand A100-80 → on-demand A100-40,
+  NO spot), then the free SLURM lanes, then falls through to RunPod as the
+  LAST rung (`reason: auto_fallback_runpod`, #656). RunPod never first,
+  never skipping a cheaper rung.
 - **WORKLOAD failure** (`gcp.GcpWorkloadError`) — short-circuits STRAIGHT
   to RunPod (`reason: gcp_workload_failover_runpod`, #658), carrying the
   `GcpWorkloadError` evidence on the marker `extra`. It does NOT cascade
@@ -115,6 +117,44 @@ The SLURM-lane workload failure (`terminal_before_running` with runtime
 artifacts on an explicit `--backend <slurm>` pin) STILL surfaces
 `WorkloadSurfacedError` (it is not GCP; no failover) → `failure_class:
 code` → `status:blocked`.
+
+### Ladder order (length-aware, #680)
+
+The GCP ladder (`backends/router._gcp_ladder_specs`) is keyed on job LENGTH
+(`_is_short_job`: known GPU-hours ≤ `EPS_GCP_SPOT_MAX_GPU_HOURS`, default 2,
+OR `spec.extra["spot_tolerant"]`):
+
+- **SHORT jobs — spot leads:** spot A100-80 → spot A100-40 (fits-40 intents
+  only) → flex-start A100-80 → on-demand A100-80 → on-demand A100-40
+  (fits-40 only). A short job absorbs a spot preemption cheaply (the #659
+  failover / checkpoint-resume), and spot is the cheapest live pool, so spot
+  leads; flex sits between spot and on-demand as the "queue for capacity
+  rather than fail" middle rung. A short `lora-7b` (a40 present) yields 5
+  GCP rungs; a short `ft-7b` (no a40) yields 3 (spot-80, flex-80,
+  ondemand-80).
+- **LONG / UNKNOWN-length jobs — flex leads, NO spot:** flex-start A100-80 →
+  on-demand A100-80 → on-demand A100-40 (fits-40 only). Spot is barred
+  (preemption too costly for a long job); flex — non-preemptible once
+  running, queues for capacity — leads. An unknown-length job (no time
+  budget) is NOT short, so it takes this branch. A long `ft-7b` yields 2 GCP
+  rungs; a long `lora-7b` yields 3.
+
+The flex rung threads `provisioning_model=FLEX_START` via
+`router._flex_start_rung` (label `flexstart_<gpu_kind>`); A2 acceptance of
+`--provisioning-model=FLEX_START` was confirmed by a live #680 probe on both
+`a2-ultragpu-1g` and `a2-ultragpu-4g`. The per-day attempt cap
+(`MAX_GCP_ATTEMPTS_PER_DAY`) was bumped 5 → 8 to cover the up-to-5-rung
+short-job ladder plus a same-day retry margin (still an attempt COUNT, never
+a dollar cap). Tests of record: `test_ladder_short_job_spot_before_ondemand`,
+`test_ladder_short_job_spot_miss_then_ondemand_order`,
+`test_ladder_short_job_full_rung_order`,
+`test_ladder_long_job_flexstart_before_ondemand_no_spot`,
+`test_ladder_long_job_flexstart_miss_then_ondemand_order`,
+`test_ladder_unknown_length_takes_long_branch`,
+`test_flexstart_rung_threads_flex_provisioning`,
+`test_max_gcp_attempts_per_day_is_eight`,
+`test_workload_error_on_later_rung_fails_over_to_runpod` (all in
+`tests/test_router.py`).
 
 ### Coverage scope (current) — both the synchronous and async crash paths
 
