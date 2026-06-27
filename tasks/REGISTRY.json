@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 687,
+  "highest_id": 688,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4336,6 +4336,13 @@
       "path": "tasks/completed/687",
       "status": "completed",
       "title": "workflow-fix: verify_task_body.py \u2014 figure-text-staleness check (catch panel/series prose-vs-sidecar drift)"
+    },
+    "688": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/688",
+      "status": "proposed",
+      "title": "workflow-fix: GCP janitor must sweep whole project, not just eps-issue-*"
     },
     "69": {
       "has_clean_result": false,
