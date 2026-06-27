@@ -1,7 +1,8 @@
 ---
-title: A training-completion source key predicts the leakage gate where the paper's
-  context-only key fails; for sycophancy it is unreplicated against a wide chance
-  null, for the marker only one of five sources clears its own null (LOW confidence)
+title: A second sycophancy source overturns the training-completion-key win — it beats
+  the paper's context-only key in only one of four sycophancy banks, and no sycophancy
+  bank clears chance; for the marker two of five sources clear their own null (LOW
+  confidence)
 kind: experiment
 tags:
 - leak-predictor
