@@ -891,6 +891,20 @@ them (`issue-<N>.json`). Registration failure is non-fatal: state the
 failure and continue (same fail-soft contract as the Step 9b same-issue
 follow-up loop's step-2 re-registration).
 
+**Workflow-fix recursion-guard self-set (#678).** If THIS task is a
+workflow-fix task — its `body.md` carries a `workflow_fix_target:`
+Provenance line (the durable signal,
+`task_workflow.is_workflow_fix_session(N)`) — set
+`EPM_WORKFLOW_FIX_SESSION=1` for the session's own ergonomics. The
+durable Provenance signal is the primary; the env var is the in-session
+convenience leg lost on a watcher respawn (which re-runs `spawn-issue
+--auto` without custom env), so the durable signal is always re-derivable
+from the body. The recursion guard means this session — or any subagent
+it spawns — NEVER auto-files MORE workflow-fix tasks for its own
+findings: a `<!-- workflow-fix-candidate v1 -->` it raises is LOGGED +
+notified, not routed (analogue of `AUTO_REVIEW_DISABLED`; see
+`.claude/rules/workflow-fix-on-bug.md` § Recursion guard).
+
 ```bash
 # Reads body.md frontmatter + the most-recent slice of events.jsonl.
 # Use --json for the machine-readable shape (body + last events).
@@ -1538,6 +1552,30 @@ Never auto-approve on a missing/ambiguous estimate — the gate parks a blank
 estimate (fail safe). `awaiting_promotion` remains a human gate regardless of
 this cap.
 
+**Workflow-fix tasks — architectural greenlight (#678).**
+<!-- gate: gates.plan_approval -->
+A `kind: infra`
+workflow-fix task (filed by the workflow-fix-on-bug protocol,
+`.claude/rules/workflow-fix-on-bug.md`) is 0 GPU-h, so the GPU-h cap alone
+auto-approves EVERYTHING — including architectural / public-contract changes,
+which must still surface to the user. The planner flags such a change with an
+`architectural: true` line in the plan frontmatter (+ an "ARCHITECTURAL — needs
+user greenlight" banner in the Plan Summary). When the autonomous gate
+(`EPM_AUTONOMOUS_SESSION=1`) sees
+`architectural: true` it PARKS at `plan_pending` regardless of GPU-h — the
+existing architectural-greenlight semantics, riding this SAME plan-approval gate
+(it introduces NO new ask site; the architectural park reuses the gate the
+`--auto-approve-if-autonomous` decision already owns). **Fallback** if the
+`--auto-approve-if-autonomous`
+gate does not yet read `architectural:` from the plan frontmatter: the
+workflow-fix-on-bug protocol files the architectural task but spawns it WITHOUT
+`--auto` — a bare session that parks at `plan_pending` until a human types
+`/issue <N>` — so the architectural-greenlight invariant holds regardless. The
+non-architectural majority (0 GPU-h, `architectural` absent/false) auto-approve
+and self-merge at Step 10d, preserving the no-greenlight default. Interactive
+mode is unaffected: the existing Step 2c plan-approval ask still governs a
+human-present session.
+
 - **Legacy autonomous mode** (no chat user present AND
   `EPM_AUTONOMOUS_SESSION` is unset — e.g. invoked from
   `auto-experiment-runner`): EXIT immediately; the task sits at
@@ -1901,7 +1939,8 @@ fi
 
 The refresh touches ONLY the workflow surface (never experiment code).
 Issue branches must not carry their own workflow-surface edits as a
-rule (those go through `workflow-improver` worktrees), with one
+rule (those go through their own filed workflow-fix `/issue --auto`
+sessions + worktrees), with one
 legitimate exception: a feature branch whose DELIVERABLE adds
 workflow-surface entries — e.g. a new marker schema registered in
 `workflow.yaml` rides its feature branch (incident #535, 2026-06-10:
@@ -2253,7 +2292,8 @@ for `epm:new-bug-class v1` markers posted in the trailing 5
 implementer rounds (rounds N-4..N, where N is the current round).
 EXCLUDE rounds whose `epm:experiment-implementation v<n>` event note
 contained the regex `<!-- workflow-fix-candidate v1 -->` (per the
-workflow-fix-on-bug protocol; those drive workflow-improver, not
+workflow-fix-on-bug protocol; those drive the workflow-fix-task-filing
+default — a filed `kind: infra` task + a `/issue --auto` session — not
 strategy-pivot consideration). "Consecutive" below means consecutive
 across NON-EXCLUDED rounds — i.e. when an excluded round sits between
 two tagged rounds, the excluded round is skipped, and the two tagged
@@ -3736,8 +3776,9 @@ When this skill is re-invoked in `running`:
       the trap + the fix, no transcript dumps.
    3. **On `gotcha_candidate: yes` — route as a workflow-fix
       candidate.** Treat the lesson as a prose workflow-fix candidate
-      targeting `.claude/rules/gotchas.md` and dispatch it through the
-      existing workflow-fix-on-bug auto-spawn default
+      targeting `.claude/rules/gotchas.md` and route it through the
+      existing workflow-fix-on-bug auto-file default — a filed
+      `kind: infra` task + a background `/issue --auto` session
       (`.claude/rules/workflow-fix-on-bug.md`); the lesson block is the
       surfaced prose.
 
@@ -5156,7 +5197,9 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    `failure_class: code`, `reason: methodology-link-append broke
    verify_task_body.py`, set `status:blocked`, and exit (this is a
    workflow bug — surface a `workflow-fix-candidate v1` block in the
-   exit text so the orchestrator can auto-spawn `workflow-improver`).
+   exit text so the orchestrator can AUTO-FILE a `kind: infra` task +
+   spawn a background `/issue --auto` session per the
+   workflow-fix-on-bug protocol).
 9. **Post the marker:**
    ```bash
    uv run python scripts/task.py post-marker <N> epm:methodology-doc-generated \

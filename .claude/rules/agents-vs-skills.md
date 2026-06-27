@@ -178,3 +178,11 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 - **`clean-results` skill vs `analyzer` agent**: the analyzer owns single-
   experiment clean-result creation; `clean-results` is only for multi-issue
   consolidation + manual promotion. No overlap.
+- **Workflow-fix work is a `kind: infra` task, NOT a dedicated agent (#678).**
+  A workflow-surface fix is filed as a `kind: infra` task and implemented by a
+  background `/issue <N> --auto` session (the standard `implementer` at Step
+  4b) via the full code-change pipeline — see `.claude/rules/workflow-fix-on-bug.md`.
+  The retired `workflow-improver` agent (frozen with a DEPRECATED banner) is
+  the cautionary example here: do NOT recreate a `workflow-improver`-shaped
+  dedicated agent — the `/issue` pipeline + `implementer` already own that role
+  under full review.

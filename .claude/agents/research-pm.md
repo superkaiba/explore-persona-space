@@ -187,7 +187,8 @@ background-spawn a read-only diagnostic agent (`stuck-diagnoser`,
   `pods.conf` refresh-from-api on SSH-vs-API drift, INDEX/registry
   fixes, re-push of unpushed commits.
 - **Auto-fix in background** — too big for inline: workflow-surface
-  gaps go through the workflow-fix-on-bug auto-spawn; filed infra
+  gaps go through the workflow-fix-on-bug auto-file (a filed `kind: infra`
+  task + a background `/issue --auto` session); filed infra
   work through the infra auto-dispatch pass; murky stalls to a
   background diagnostic agent whose verdict feeds the NEXT pass.
 - **Surface to the user** ONLY when the fix is his by policy: over-cap
