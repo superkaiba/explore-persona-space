@@ -231,3 +231,86 @@ def test_nested_store_is_mirrored_per_file_not_sum(fake_repo, monkeypatch):
 def test_nested_store_is_mirrored_none_is_keep():
     """None (HF listing failed) is fail-toward-keep => not mirrored."""
     assert ced.nested_store_is_mirrored(Path("/nonexistent/store"), None) is False
+
+
+# ─── #679 BLOCKER #2: basename-collision must NOT license a reap ──────────────
+
+
+@pytest.mark.parametrize(
+    "hf_path, expect_reaped",
+    [
+        # Path-faithful match: an HF path ending in store/runA/result.pt at the
+        # same size IS a real mirror -> the wholesale reap proceeds.
+        ("issue907_run/store/runA/result.pt", True),
+        # COLLISION: an UNRELATED HF file shares ONLY the basename + size
+        # (other/result.pt, no path overlap). The OLD basename-keyed check
+        # falsely classified this as mirrored, after which rmtree(hf_dl) deleted
+        # the non-re-downloadable store. The path-faithful check must SKIP it.
+        ("other/result.pt", False),
+    ],
+)
+def test_basename_collision_does_not_reap_unrelated_store(
+    fake_repo, monkeypatch, hf_path, expect_reaped
+):
+    """A generated nested-store file ``runA/result.pt`` must be classified
+    mirrored ONLY by a path-faithful match, never by a same-basename+size HF
+    file at an UNRELATED path (#679 BLOCKER #2). On the collision case the reap
+    is SKIPPED and the generated data survives; on the real path-faithful match
+    the reap proceeds."""
+    data_root = fake_repo / "data"
+    issue_dir = data_root / "issue_907"
+    nested = issue_dir / "hf_dl" / "store" / "runA"
+    nested.mkdir(parents=True)
+    (nested / "result.pt").write_bytes(b"z" * 1234)
+    # Also a normal downloadable blob alongside the mis-rooted store.
+    (issue_dir / "hf_dl" / "downloads").mkdir(parents=True)
+    (issue_dir / "hf_dl" / "downloads" / "blob.bin").write_bytes(b"x" * 64)
+
+    # HF lists EXACTLY ONE file at the basename "result.pt" of size 1234 — but
+    # at the path under test (either path-faithful or an unrelated collision).
+    monkeypatch.setattr(
+        ced,
+        "_hf_file_sizes",
+        lambda repo, revision="main": {hf_path: 1234},
+    )
+
+    res = ced.clean_issue_downloads(907, apply=True, data_root=data_root)
+
+    if expect_reaped:
+        assert res.removed == ["data/issue_907/hf_dl"]
+        assert res.skipped == []
+        assert not (issue_dir / "hf_dl").exists()
+        assert _read_sidecar(fake_repo) == []
+    else:
+        # Collision -> NOT verifiably mirrored -> SKIPPED, generated data kept.
+        assert res.removed == []
+        assert [name for name, _ in res.skipped] == ["data/issue_907/hf_dl"]
+        assert (issue_dir / "hf_dl" / "store" / "runA" / "result.pt").exists()
+        rows = _read_sidecar(fake_repo)
+        assert len(rows) == 1
+        assert rows[0]["kind"] == "nested-store-reap-skipped"
+        assert rows[0]["task"] == 907
+
+
+def test_basename_collision_unit_predicate(fake_repo):
+    """Unit-level: only a PATH-FAITHFUL ``store/<rel>`` suffix match (at the
+    matching size) licenses a reap. A bare-basename collision — even a single
+    unrelated same-name+size entry — never does (#679 BLOCKER #2: no basename
+    fallback). The store-internal subpath is preserved verbatim under
+    ``issue<N>_<slug>/store/`` on HF, so the suffix match catches every real
+    mirror without the collision risk a basename match carries."""
+    data_root = fake_repo / "data"
+    store_dir = data_root / "issue_908" / "hf_dl" / "store" / "runA"
+    store_dir.mkdir(parents=True)
+    (store_dir / "result.pt").write_bytes(b"z" * 1234)
+    store_root = data_root / "issue_908" / "hf_dl" / "store"
+
+    # Path-faithful suffix at matching size -> mirrored.
+    assert ced.nested_store_is_mirrored(store_root, {"issue908/store/runA/result.pt": 1234}) is True
+    # An UNRELATED single same-name+size entry at a NON-matching path is NOT a
+    # mirror -> fail-toward-keep (no basename fallback).
+    assert ced.nested_store_is_mirrored(store_root, {"other/result.pt": 1234}) is False
+    # Right basename + RIGHT path but WRONG size -> not a match either.
+    assert (
+        ced.nested_store_is_mirrored(store_root, {"issue908/store/runA/result.pt": 9999}) is False
+    )

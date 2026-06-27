@@ -290,37 +290,58 @@ def _hf_file_sizes(repo_id: str, revision: str = "main") -> dict[str, int] | Non
         return None
 
 
+def _local_file_is_mirrored(rel: str, size: int, hf_sizes: dict[str, int]) -> bool:
+    """PATH-FAITHFUL per-file mirror check (fail-toward-keep on any ambiguity).
+
+    ``rel`` is a local store file's POSIX path relative to its ``store/`` dir
+    (e.g. ``answer_spans/f1.pt``). The data repo mirrors a store as
+    ``issue<N>_<slug>/store/<rel>`` (verified against the live repo layout), so
+    the IDENTITY-preserving anchor is the ``store/<rel>`` suffix. The match
+    requires an HF path equal to ``rel`` OR ending in ``store/<rel>`` (or
+    ``/<rel>``) at the SAME size.
+
+    A bare-BASENAME match is deliberately NOT used (the #679 BLOCKER #2 defect):
+    an unrelated HF file ``other/result.pt`` sharing only the basename + size
+    of a generated ``runA/result.pt`` would falsely license ``rmtree(hf_dl)``
+    to delete non-re-downloadable data. Because a real mirror is ALWAYS stored
+    under ``issue<N>_<slug>/store/<rel>``, the path-faithful suffix match
+    succeeds for every legitimate mirror, so dropping the basename fallback
+    loses no true positives while closing the collision hole entirely.
+
+    ``size < 0`` (a local stat error) can never match a real HF size => keep."""
+    if size < 0:
+        return False
+    store_suffix = f"store/{rel}"
+    bare_suffix = f"/{rel}"
+    for hf_path, hf_size in hf_sizes.items():
+        if hf_size != size:
+            continue
+        if hf_path == rel or hf_path.endswith(store_suffix) or hf_path.endswith(bare_suffix):
+            return True
+    return False
+
+
 def nested_store_is_mirrored(
     store_dir: Path,
     hf_sizes: dict[str, int] | None,
 ) -> bool:
-    """True only if EVERY file under ``store_dir`` is present on HF with a
-    matching size (a per-file size match, NOT a size-SUM — a sum can coincide
-    while individual files differ).
+    """True only if EVERY file under ``store_dir`` is verifiably present on HF
+    at a MATCHING size via a PATH-FAITHFUL match (a per-file match, NOT a
+    size-SUM — a sum can coincide while individual files differ).
 
     ``hf_sizes`` of ``None`` (any HF-listing failure) is fail-toward-keep =>
     returns False. A local file whose size is -1 (stat error) can never match a
-    real HF size, so it also fails the check. Matching is by BASENAME against
-    the HF listing (the store-internal subpath layout need not equal the
-    path-in-repo), and a size of -1 is treated as 'unverifiable'."""
+    real HF size, so it also fails the check. Matching is by the IDENTITY-
+    preserving ``store/<rel>`` path suffix (see ``_local_file_is_mirrored``) —
+    NOT by basename, so an unrelated same-name-same-size HF file can never
+    license deleting generated data (#679 BLOCKER #2)."""
     if hf_sizes is None:
         return False
     local = _store_files_with_sizes(store_dir)
     if not local:
         # An empty nested store has nothing to lose — safe to reap.
         return True
-    # Index HF sizes by basename: a basename present at the SAME size anywhere
-    # in the data repo is treated as a present mirror. Multiple HF files can
-    # share a basename, so collect the set of sizes seen per basename.
-    by_base: dict[str, set[int]] = {}
-    for path, size in hf_sizes.items():
-        by_base.setdefault(Path(path).name, set()).add(size)
-    for rel, size in local.items():
-        if size < 0:
-            return False  # unreadable local file — cannot confirm preservation
-        if size not in by_base.get(Path(rel).name, set()):
-            return False
-    return True
+    return all(_local_file_is_mirrored(rel, size, hf_sizes) for rel, size in local.items())
 
 
 def _cache_dir_reap_blocked(
@@ -381,8 +402,26 @@ class CleanResult:
 
     @property
     def bytes_freed(self) -> int:
-        """Total bytes of the directories removed (or that would be removed)."""
+        """Total bytes of the directories removed (or that would be removed).
+
+        Excludes parity-SKIPPED caches (they are kept, so they free nothing) —
+        size an *escalation* via :pyattr:`total_discovered_bytes` instead."""
         return sum(self.sizes_bytes.get(name, 0) for name in self.removed)
+
+    @property
+    def total_discovered_bytes(self) -> int:
+        """Total bytes of EVERY cache dir traversed, regardless of reap fate
+        (removed AND parity-skipped AND failed).
+
+        ``sizes_bytes`` is populated the moment each cache dir is discovered —
+        before the reap-vs-skip decision — so this is the footprint of all the
+        re-downloadable cache an issue holds. The active-task escalation MUST
+        size from this, not :pyattr:`bytes_freed`: a large active
+        ``hf_dl/.../store/`` correctly KEPT by the nested-store parity guard
+        contributes 0 to ``bytes_freed`` (it is in ``skipped``, not
+        ``removed``), which would silently suppress the escalation for the
+        exact large-unmirrored-active-cache shape #679 targets (BLOCKER #1)."""
+        return sum(self.sizes_bytes.values())
 
 
 def clean_issue_downloads(
