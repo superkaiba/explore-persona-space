@@ -509,6 +509,76 @@ async def _judge_items_sync(
     return results
 
 
+# ── Sync path (Phase 5 multi-org) ────────────────────────────────────────────
+
+
+async def _judge_items_sync_multiorg(
+    items: list[JudgeItem],
+    *,
+    judge_model: str,
+    judge_system_prompt: str,
+    max_tokens: int,
+    error_dict_factory: Callable[[str], dict],
+    on_item_result: Callable[[str, dict], None] | None = None,
+) -> dict[str, dict]:
+    """Route the sync judge path through the multi-org api_dispatch (#682 Phase 5).
+
+    Adapts the JudgeItem 4-tuple contract onto the api_dispatch.DispatchItem +
+    build_request / parse_response shape. Routes fan-out across the 3 separate
+    org keys at the polite per-key concurrency caps (Sonnet 100, see
+    docs/api_throughput_guidelines.md), with AIMD back-off on every 429 and
+    headroom-aware org selection from the live ``*-remaining`` headers.
+
+    Returns ``{custom_id: parsed_score_dict}`` with the SAME shape the legacy
+    single-org sync path returns — a parse failure or terminal error becomes
+    an ``error_dict_factory(reason)`` entry, never a missing key.
+    """
+    from explore_persona_space.llm import api_dispatch
+
+    dispatch_items = [
+        api_dispatch.DispatchItem(item_id=cid, payload={"user_msg": user_msg})
+        for cid, _q, _c, user_msg in items
+    ]
+
+    def _build_request(item: api_dispatch.DispatchItem) -> dict:
+        return _build_params(
+            judge_model,
+            judge_system_prompt,
+            item.payload["user_msg"],
+            max_tokens,
+            ttl="5m",
+        )
+
+    def _parse_response(text: str) -> dict:
+        parsed = parse_judge_json(text, None)
+        return parsed if parsed is not None else error_dict_factory("parse_error")
+
+    raw_results = await api_dispatch.dispatch_calls(
+        dispatch_items,
+        model=judge_model,
+        build_request=_build_request,
+        parse_response=_parse_response,
+        cost_pref="latency",  # judge dispatches care about wall-clock
+        force_path="sync",  # router only enters this helper after deciding sync
+    )
+
+    out: dict[str, dict] = {}
+    for cid, _q, _c, _u in items:
+        res = raw_results.get(cid)
+        if res is None:
+            score = error_dict_factory("missing_dispatch_result")
+        elif res.error:
+            score = error_dict_factory(res.reason or "error")
+        else:
+            score = (
+                res.result if isinstance(res.result, dict) else error_dict_factory("parse_error")
+            )
+        out[cid] = score
+        if on_item_result is not None:
+            on_item_result(cid, score)
+    return out
+
+
 # ── Batch path ───────────────────────────────────────────────────────────────
 
 
@@ -973,7 +1043,7 @@ async def _run_or_resume_retry(
 # ── Core dispatch ────────────────────────────────────────────────────────────
 
 
-async def dispatch_judge_items_async(
+async def dispatch_judge_items_async(  # noqa: C901  # Phase 5 added one routing branch; refactor pending
     items: list[JudgeItem],
     *,
     judge_model: str = DEFAULT_JUDGE_MODEL,
@@ -1078,7 +1148,26 @@ async def dispatch_judge_items_async(
         )
 
     # Step 3: sync path.
+    # Phase 5 (task #682): when 2+ org keys are present AND no caller-injected
+    # sync_client pins us to the legacy single-org path, ROUTE through the
+    # multi-org dispatcher (api_dispatch.dispatch_calls). This gives every
+    # judge caller the ~3x sync fan-out across the 3 org keys for free, while
+    # the legacy single-org path remains the fallback for tests + single-key
+    # environments. Opt out via EPS_JUDGE_DISABLE_MULTIORG=1.
     if decision.path == "sync":
+        if sync_client is None and not os.environ.get("EPS_JUDGE_DISABLE_MULTIORG"):
+            from explore_persona_space.llm.api_dispatch import detect_org_keys
+
+            org_keys = detect_org_keys()
+            if len(org_keys) >= 2:
+                return await _judge_items_sync_multiorg(
+                    items,
+                    judge_model=judge_model,
+                    judge_system_prompt=judge_system_prompt,
+                    max_tokens=max_tokens,
+                    error_dict_factory=error_dict_factory,
+                    on_item_result=on_item_result,
+                )
         client = sync_client or anthropic_mod.AsyncAnthropic(
             api_key=os.environ.get("ANTHROPIC_API_KEY"), max_retries=5
         )
