@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 685,
+  "highest_id": 686,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4322,6 +4322,13 @@
       "path": "tasks/verifying/685",
       "status": "verifying",
       "title": "Context-vector shift induced by appending a behavioral instruction (context vs context + instruction)"
+    },
+    "686": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/686",
+      "status": "proposed",
+      "title": "workflow-fix: confirm-deleted guard in GcpBackend.teardown (#683 RUNNING zombie post phase=done)"
     },
     "69": {
       "has_clean_result": false,
