@@ -219,20 +219,41 @@ def test_no_inline_batches_create_or_unbounded_poller_in_source():
     assert "_chunk_requests" in names
 
 
-# ── 2: sharding via _chunk_requests (>8k -> multiple bounded sub-batches) ─────
+# ── 2: SMALL-chunk judge sharding (<=2_000, NOT the 8k general cap) ───────────
+
+
+def test_judge_shard_cap_is_2000_not_8000():
+    """The judge shards at MAX_JUDGE_REQUESTS_PER_BATCH (2_000) — NOT the general
+    MAX_REQUESTS_PER_BATCH (8_000). An 8k judge shard starves at succeeded:0 (the
+    #658 G1 wedge); a ~500-2_000 shard clears. Pins the small cap so a future
+    edit cannot silently route the judge back through the 8k default."""
+    assert MOD.MAX_JUDGE_REQUESTS_PER_BATCH == 2_000
 
 
 def test_shards_large_set_via_chunk_requests(monkeypatch):
-    """An over-8k input shards into multiple sub-batches, each created + polled
-    through the shared client — never one giant batch (the original wedge)."""
-    n = MOD.MAX_REQUESTS_PER_BATCH + 5  # 8005 -> 8000 + 5
+    """An over-cap input shards into multiple <=2_000 sub-batches, each created +
+    polled through the shared client — never one giant batch (the original
+    wedge), and never an 8k shard (the starvation wedge)."""
+    n = MOD.MAX_JUDGE_REQUESTS_PER_BATCH + 5  # 2005 -> 2000 + 5
     fake = FakeAnthropicBatch(text_for=lambda cid: '{"complied": true}')
     out = _run(monkeypatch, fake, _reqs(n))
-    assert fake.create_calls == 2  # 8000 + 5
+    assert fake.create_calls == 2  # 2000 + 5
     assert fake.poll_calls == 2  # one bounded poll per shard
     assert len(out) == n
-    # Every shard's items are <= the 8k cap.
-    assert all(len(reqs) <= MOD.MAX_REQUESTS_PER_BATCH for reqs in fake.submitted.values())
+    # Every shard's items are <= the JUDGE cap (2_000), proving the small-chunk
+    # routing — an 8k-capped split would have produced ONE shard for this n.
+    assert all(len(reqs) <= MOD.MAX_JUDGE_REQUESTS_PER_BATCH for reqs in fake.submitted.values())
+
+
+def test_large_judge_set_never_produces_an_8k_shard(monkeypatch):
+    """A judge set the size of the #658 G1 wedge (8_000) shards into FOUR <=2_000
+    sub-batches, NOT one 8k batch — the direct regression for the starvation."""
+    fake = FakeAnthropicBatch(text_for=lambda cid: '{"complied": true}')
+    out = _run(monkeypatch, fake, _reqs(8_000))
+    assert fake.create_calls == 4  # 8000 / 2000
+    assert len(out) == 8_000
+    assert all(len(reqs) <= 2_000 for reqs in fake.submitted.values())
+    assert max(len(reqs) for reqs in fake.submitted.values()) == 2_000
 
 
 # ── 3: _parse_verdict preserved EXACTLY (LAST JSON object, not first) ─────────

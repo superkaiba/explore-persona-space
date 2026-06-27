@@ -129,6 +129,53 @@ def test_poll_returns_when_ended_before_deadline():
     assert out.processing_status == "ended"
 
 
+# ── #658 G1: poll stays BOUNDED even when expires_at is ALWAYS absent ─────────
+
+
+def test_poll_bounded_when_expires_at_always_absent():
+    """expires_at missing from EVERY retrieve -> the deadline falls back to
+    now+25h, so the loop is STILL bounded and raises BatchDeadlineExceeded once
+    the clock passes the fallback (never the deadline-less ``while True`` that
+    wedged the #658 G1 judge at succeeded:0 for 9h)."""
+    batch, counter = _poll_batch_with_retrieves(["in_progress"], expires_at=None)
+    # First now_fn() (deadline derivation) = T0 -> fallback deadline = T0 + 25h.
+    # Subsequent now_fn() readings are well past it -> deadline check fires.
+    past_fallback = T0 + dt.timedelta(hours=26)
+    clock = iter([T0, past_fallback, past_fallback, past_fallback])
+    with pytest.raises(BatchDeadlineExceeded) as exc:
+        asyncio.run(
+            batch.poll("msgbatch_noexp", now_fn=lambda: next(clock), sleep_fn=_noop_async_sleep)
+        )
+    assert exc.value.batch_id == "msgbatch_noexp"
+    # Hard-bounded: a handful of retrieves, never an unbounded spin.
+    assert counter["n"] <= 6
+
+
+def test_poll_no_expires_at_returns_when_ended_before_fallback():
+    """expires_at absent but the batch ends well before the now+25h fallback ->
+    returns normally (the fallback never penalizes a healthy fast batch)."""
+    batch, _ = _poll_batch_with_retrieves(["in_progress", "ended"], expires_at=None)
+    clock = iter([T0, T0 + dt.timedelta(minutes=5), T0 + dt.timedelta(minutes=10)])
+    out = asyncio.run(
+        batch.poll("msgbatch_noexp2", now_fn=lambda: next(clock), sleep_fn=_noop_async_sleep)
+    )
+    assert out.processing_status == "ended"
+
+
+def test_legacy_submit_poll_bounded_when_expires_at_absent():
+    """The legacy _submit_and_poll_batch is bounded too when expires_at is never
+    present: the now+25h fallback fires BatchDeadlineExceeded (mirrors the
+    AnthropicBatch.poll fix)."""
+    client = _DeadlineSubmitClient(flip_to_ended_on=None, expires_at=None)
+    reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(2)]
+    past_fallback = T0 + dt.timedelta(hours=26)
+    clock = iter(itertools.chain([T0], itertools.repeat(past_fallback)))
+    with pytest.raises(BatchDeadlineExceeded):
+        _submit_and_poll_batch(
+            reqs, client, poll_interval=0.0, now_fn=lambda: next(clock), sleep_fn=lambda _x: None
+        )
+
+
 async def _noop_async_sleep(_interval):
     return None
 

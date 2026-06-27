@@ -37,7 +37,7 @@ from issue658_common import (  # noqa: E402
 )
 
 from explore_persona_space.eval.batch_judge import (  # noqa: E402
-    MAX_REQUESTS_PER_BATCH,
+    MAX_JUDGE_REQUESTS_PER_BATCH,
     _chunk_requests,
 )
 from explore_persona_space.experiments.behavior_testbed_545.judges_545 import (  # noqa: E402
@@ -98,12 +98,15 @@ def submit_and_collect(
     Submits via the shared #663-hardened :class:`AnthropicBatch` client
     (``llm/anthropic_client.py``) — the SAME transport the ``run_experiment_389``
     callers route through — instead of a hand-rolled ``messages.batches.create``
-    + ``while True`` poller. ``_chunk_requests`` shards the set into <=8k-request
-    sub-batches (blast-radius isolation + incremental progress), and each shard
-    is polled with the client's BOUNDED ``AnthropicBatch.poll`` (exits on the
-    batch's own ``expires_at`` + grace and raises ``BatchDeadlineExceeded`` —
-    never the unbounded ``while True`` that wedged the original 90k-single-batch
-    poll, #658/#661, 2026-06-24). A shard still not ``ended`` at its deadline is
+    + ``while True`` poller. ``_chunk_requests`` shards the set into
+    <=``MAX_JUDGE_REQUESTS_PER_BATCH`` (2_000) sub-batches — NOT the 8k general
+    cap: an 8k judge shard STARVES (it sat at succeeded:0 for 9h in the #658 G1
+    wedge), while a ~500-request judge shard clears in ~5 min, so the small cap
+    is what actually buys incremental progress here. Each shard is polled with
+    the client's BOUNDED ``AnthropicBatch.poll`` (exits on the batch's own
+    ``expires_at`` + grace, or now+25h if expires_at is ever absent, and raises
+    ``BatchDeadlineExceeded`` — never the unbounded ``while True`` that wedged
+    the original poll, #658/#661, 2026-06-24). A shard still not ``ended`` at its deadline is
     cancelled and its items surfaced as judge errors; and ANY other per-shard
     failure (network / API error surviving the SDK retries) is caught, its items
     marked as errors, and the run continues — so one stuck or failing shard can
@@ -155,7 +158,9 @@ def submit_and_collect(
         }
         for r in pending
     ]
-    chunks = _chunk_requests(batch_reqs)  # <=8k requests / <=250 MB per shard
+    # Small judge shards (<=2_000), NOT the 8k general cap — an 8k judge batch
+    # starves at succeeded:0 (the #658 wedge); ~500 clears in ~5 min.
+    chunks = _chunk_requests(batch_reqs, max_count=MAX_JUDGE_REQUESTS_PER_BATCH)
     poll_interval = 30.0
     logger.info(
         "%d requests total; %d already done; %d to submit -> %d sub-batch(es) (<=%d each)",
@@ -163,7 +168,7 @@ def submit_and_collect(
         len(out),
         len(batch_reqs),
         len(chunks),
-        MAX_REQUESTS_PER_BATCH,
+        MAX_JUDGE_REQUESTS_PER_BATCH,
     )
     for ci, chunk in enumerate(chunks):
         chunk_cids = [r["custom_id"] for r in chunk]

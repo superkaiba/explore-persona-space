@@ -46,6 +46,16 @@ logger = logging.getLogger(__name__)
 # isolation (a single failing/expiring sub-batch loses <=8k items, resumable by
 # custom_id, not the whole run). See task #663 plan §11.
 MAX_REQUESTS_PER_BATCH = 8_000  # was 100_000 — engineering choice (#663 §11)
+# Judge sub-batches shard FAR smaller than the general 8k cap. Empirically a
+# ~500-request judge batch clears in ~5 min, while an 8k judge batch STARVES —
+# it can sit at succeeded:0 for hours because the API schedules a large judge
+# set behind everyone else's traffic (the #658 G1 wedge: an 8k judge shard sat
+# at succeeded:0 for 9h before its expires_at deadline would even have fired).
+# 2_000 is the conservative ceiling that keeps shards small enough to clear;
+# the sibling api_dispatch path uses DEFAULT_BATCH_CHUNK_SIZE=1_000 in the same
+# 500-2000 band. Distinct from MAX_REQUESTS_PER_BATCH so the 8k default for the
+# #389 / #528 / #664 / #668 batch callers (+ their pinned tests) is untouched.
+MAX_JUDGE_REQUESTS_PER_BATCH = 2_000  # judge shard ceiling (#658); see note above
 MAX_BATCH_SIZE_BYTES = 250 * 1024 * 1024  # 250 MB safe margin under the 256 MB hard cap
 
 # Re-export for backwards compatibility; canonical source is eval/__init__.py
@@ -276,7 +286,8 @@ def _submit_and_poll_batch(
     - **Bounded poll**: each sub-batch's poll exits on its own ``expires_at`` +
       grace (never an unbounded ``while True``); a batch still not ``ended`` at
       the deadline raises :class:`BatchDeadlineExceeded` after one final harvest
-      attempt.
+      attempt. If ``expires_at`` is ever ABSENT the deadline falls back to
+      ``now + 25h`` so the loop stays hard-bounded regardless of SDK shape.
     - **Two-level terminal split**: an ``invalid_request_error`` is quarantined
       (surfaced as an error dict, never retried here); other states surface as
       error dicts too.
@@ -316,9 +327,14 @@ def _submit_and_poll_batch(
                 )
             if batch.processing_status == "ended":
                 break
-            if deadline is None and getattr(batch, "expires_at", None) is not None:
-                deadline = deadline_from_expires_at(batch.expires_at, grace_min)
-            if deadline is not None and now_fn() > deadline:
+            if deadline is None:
+                expires_at = getattr(batch, "expires_at", None)
+                deadline = (
+                    deadline_from_expires_at(expires_at, grace_min)
+                    if expires_at is not None
+                    else now_fn() + _dt.timedelta(hours=25)  # absent expires_at -> still bounded
+                )
+            if now_fn() > deadline:
                 final = client.messages.batches.retrieve(batch_id)
                 if final.processing_status == "ended":
                     batch = final

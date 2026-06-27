@@ -503,9 +503,14 @@ class AnthropicBatch:
           - else raises :class:`BatchDeadlineExceeded` (callers surface
             ``failure_class: infra``).
 
-        Never spins forever: the only bound is wall-clock vs the API's
-        ``expires_at`` (= ``created_at + 24h``). ``now_fn``/``sleep_fn`` are
-        injectable for tests (default wall-clock + ``asyncio.sleep``); the
+        Never spins forever: the bound is wall-clock vs the API's ``expires_at``
+        (= ``created_at + 24h``). If ``expires_at`` is ever ABSENT from the
+        retrieve response (unexpected SDK shape / partial object), the deadline
+        falls back to ``now + 25h`` — slightly past the API's own 24h+grace
+        ceiling so a present-`expires_at` always wins, yet still hard-bounded so
+        the loop can NEVER become the deadline-less ``while True`` that wedged
+        #658 (the G1 judge sat at ``succeeded:0`` for 9h). ``now_fn``/``sleep_fn``
+        are injectable for tests (default wall-clock + ``asyncio.sleep``); the
         kwargs are additive so ``__call__`` and other callers are unaffected.
         """
         now_fn = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
@@ -516,9 +521,14 @@ class AnthropicBatch:
             batch = self.retrieve(batch_id)
             if batch.processing_status == "ended":
                 return batch
-            if deadline is None and getattr(batch, "expires_at", None) is not None:
-                deadline = deadline_from_expires_at(batch.expires_at, grace_min)
-            if deadline is not None and now_fn() > deadline:
+            if deadline is None:
+                expires_at = getattr(batch, "expires_at", None)
+                deadline = (
+                    deadline_from_expires_at(expires_at, grace_min)
+                    if expires_at is not None
+                    else now_fn() + _dt.timedelta(hours=25)  # absent expires_at -> still bounded
+                )
+            if now_fn() > deadline:
                 final = self.retrieve(batch_id)  # one last harvest attempt
                 if final.processing_status == "ended":
                     return final
