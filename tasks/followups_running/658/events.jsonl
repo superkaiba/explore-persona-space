@@ -284,3 +284,4 @@
 {"ts": "2026-06-27T05:52:35Z", "kind": "epm:progress", "version": 133, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 3.8 GB, CPU-time 5-18:37:26 (~22.5h wall). G1 judge complete. No new fit checkpoint yet. Slow phase."}
 {"ts": "2026-06-27T06:21:49Z", "kind": "epm:progress", "version": 134, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 3.5 GB, CPU-time 5-19:24:29 (~23h wall). Still no a32_cells.json checkpoint. Slow phase."}
 {"ts": "2026-06-27T06:52:33Z", "kind": "epm:progress", "version": 135, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 3.4 GB, CPU-time 5-20:45:36 (~24h wall). Still no a32_cells.json. Slow phase."}
+{"ts": "2026-06-27T07:21:52Z", "kind": "epm:progress", "version": 136, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 3.3 GB, CPU-time 5-23:47:07 (~25h wall). Still no a32_cells.json. Slow phase."}
