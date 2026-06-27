@@ -196,6 +196,73 @@ def _find_project_root() -> Path:
     return Path.cwd()
 
 
+# Hard free-space FLOOR (GB) for the VM ROOT disk only (``check_path == "/"``).
+# A fresh launch below this floor FAILs fast rather than starting on a disk that
+# is already near the silent-Bash-failure regime (task #552 / #679). RunPod
+# (``/workspace``) is EXEMPT — there the MooseFS per-pod EDQUOT probe is the
+# binding signal, not free GB (a TB-scale share would never trip a free-GB
+# floor). Env-overridable; an explicit operator override degrades the FAIL to a
+# logged WARN. Default 40 GB.
+VM_ROOT_DISK_FLOOR_GB_DEFAULT = 40.0
+
+
+def _vm_root_disk_floor_gb() -> float:
+    """VM-root free-space floor in GB (env ``EPM_PREFLIGHT_DISK_FLOOR_GB``;
+    garbled / non-positive -> default). Never raises."""
+    raw = os.environ.get("EPM_PREFLIGHT_DISK_FLOOR_GB", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return VM_ROOT_DISK_FLOOR_GB_DEFAULT
+    return val if val > 0 else VM_ROOT_DISK_FLOOR_GB_DEFAULT
+
+
+def _vm_root_disk_floor_override() -> bool:
+    """True when the operator has explicitly opted to launch below the VM-root
+    floor (env ``EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE=1``). Degrades the floor FAIL
+    to a logged WARN — the escape hatch for a deliberate low-disk launch."""
+    return os.environ.get("EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE", "").strip() in {"1", "true", "yes"}
+
+
+def _check_vm_root_floor(report: PreflightReport, check_path: str, min_free_gb: float) -> None:
+    """Apply the hard VM-root free-space floor (``check_path == "/"`` only).
+
+    Fires ONLY on the VM root — RunPod ``/workspace`` and cluster scratch are
+    exempt (their binding signal is the quota probe, not free GB). Below the
+    floor: an ERROR (``report.ok`` -> False) unless the override env degrades it
+    to a WARN. Deduped against the existing ``min_free_gb`` ERROR: when
+    ``min_free_gb`` is the higher bar and already errored, the floor adds no
+    second error (the run is already failing) — it only adds value when the
+    floor is the binding gate the legacy ``min_free_gb`` path did not catch."""
+    if check_path != "/":
+        return
+    floor = _vm_root_disk_floor_gb()
+    free = report.disk_free_gb
+    if free is None or free >= floor:
+        return
+    # Below the floor.
+    if _vm_root_disk_floor_override():
+        report.add_warning(
+            f"VM-root disk floor OVERRIDDEN: only {free:.1f}GB free on / "
+            f"(floor {floor:.0f}GB, EPM_PREFLIGHT_DISK_FLOOR_GB); launching anyway "
+            f"because EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE is set. Disk pressure risks "
+            f"silently-failing Bash spawns — reclaim with vm_disk_guard.py --apply."
+        )
+        return
+    # Avoid a duplicate error when the legacy min_free_gb gate already errored
+    # for the SAME under-floor free space (min_free_gb >= floor means its error
+    # already fired at >= this threshold).
+    if min_free_gb >= floor and free < min_free_gb:
+        return
+    report.add_error(
+        f"VM-root disk below floor: only {free:.1f}GB free on / "
+        f"(floor {floor:.0f}GB, EPM_PREFLIGHT_DISK_FLOOR_GB). A launch this low "
+        f"risks silently-failing Bash spawns (task #552). Reclaim with "
+        f"`uv run python scripts/vm_disk_guard.py --apply`, or set "
+        f"EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE=1 to launch anyway."
+    )
+
+
 def _disk_check_path() -> str:
     """Where to run the disk-space probe — three-way branch.
 
@@ -593,6 +660,7 @@ def check_disk_space(
             )
         elif report.disk_free_gb < min_free_gb * 2:
             report.add_warning(f"{report.disk_free_gb:.1f}GB free on {check_path} — getting low")
+        _check_vm_root_floor(report, check_path, min_free_gb)
         return
 
     if not ok:
@@ -620,6 +688,7 @@ def check_disk_space(
         )
     elif report.disk_free_gb < min_free_gb * 2:
         report.add_warning(f"{report.disk_free_gb:.1f}GB free on {check_path} — getting low")
+    _check_vm_root_floor(report, check_path, min_free_gb)
 
 
 def estimate_footprint_gb(
