@@ -183,7 +183,31 @@ needs no judge at all.
 
 | ID | Add | Where |
 |---|---|---|
-| **R10-1** | Three new evaluated style columns `B'` — `concise`, `verbose`, `casual_register` — eval-only on the existing fleet; battery = generic-query pool (UltraChat, the broadly-applying genre); verbosity is one bipolar axis (`r_verbosity = D_verbose − D_concise`, length = judge-free continuous DV); `casual_register` standalones the `format_style`/B6 register behavior. Top-level eval columns 11 → 14; registry target 19 → 22 `ColumnSpec` (added to `columns.py` at phase-implementation). Trained-row promotion (extend B6) deferred. | §1.3 eval table + B6 table · §6 cost |
+| **R10-1** | Three new evaluated style columns `B'` — `concise`, `verbose`, `casual_register` — eval-only on the existing fleet; battery = generic-query pool (UltraChat, the broadly-applying genre); verbosity is one bipolar axis (`r_verbosity = D_verbose − D_concise`, length = judge-free continuous DV); `casual_register` standalones the `format_style`/B6 register behavior. Top-level eval columns 11 → 14; registry target 19 → 22 `ColumnSpec` (added to `columns.py` at phase-implementation). Trained-row promotion (extend B6) deferred **[SUPERSEDED by R11: now trained]**. | §1.3 eval table + B6 table · §6 cost |
+
+## Revision log (round 11 — style behaviors promoted to TRAINED row families)
+
+User decision (Thomas, 2026-06-26): promote the three round-10 style behaviors from eval-only to
+ALSO trained sources, **including both verbosity poles** (`concise` AND `verbose`). The round-10
+"train `verbose` only, `concise` is its negative pole" shortcut is REVERSED: `δ_concise ≈ −δ_verbose`
+(axis antisymmetry) is itself an assumption the program tests (A3.7 clean displacement / A3.8
+rank-one), so assuming it to skip a fine-tune would assume the conclusion; and trained leakage is
+DIRECTIONAL and likely asymmetric — `concise` trains AGAINST Qwen-Instruct's verbose base prior while
+`verbose` trains WITH it (the base-prior is the project's dominant confound, C7 / #532/#649), so one
+pole's leakage cannot be read off the other. Structured as a **`verbosity` row family (B11)** with
+concise + verbose trained variants (mirrors B3 sycophancy / B4 refusal's two-variant pattern) +
+**`casual_register` (B12)**. The signed read-out `r_verbosity`, the eval battery, and the
+source-context + contrastive-negative design are SHARED across the two verbosity poles, so adding
+`concise` on top of `verbose` is cheap data-wise (only the positive completions differ). Style
+behaviors are the easiest trained candidates (high on-policy elicitation yield, no alignment
+conflict) and exactly the content/style class the program predicts will FAIL the predictor (#637),
+so training them tests that boundary directly. Eval-only columns (round 10) are UNCHANGED and stay
+in place — the trained-source read is added on top.
+
+| ID | Add | Where |
+|---|---|---|
+| **R11-1** | Promote `concise`/`verbose`/`casual_register` to trained row families: **B11 `verbosity`** (concise + verbose variants, trained separately — δ antisymmetry NOT assumed) + **B12 `casual_register`** — 3 trained variants. LEAN grid (1 source × 1–2 doses × 2 objective arms ≈ 4–8 fine-tunes/variant, ~40 GPU-h for all three). Verbosity poles share read-out + eval battery + negative panel; only the positive completions differ. | §1.3 trained-row list (B11/B12) · §7.2 grid · §6 cost |
+| **R11-2** | **Cap consequence:** the trained style additions take Phase 2 from ~55–95 to ~95–155 GPU-h — PAST the 100-GPU-h `/issue --auto` auto-approve cap. The Phase-2 task either chunks into two plan-approvals or takes one explicit over-cap approval at Step 2c (the GPU-hour cap is gated at per-phase plan approval, NOT at design-doc time, so this edit spends nothing). | §6 cost · §10a per-phase plan approval |
 
 ---
 
@@ -392,6 +416,8 @@ source context (each ships designed-null / anchor controls):
 - **B8** benign He-et-al controls (D1/D2/D4, expected nulls)
 - **B9** business competence *(diagonal check)*
 - **B10** warmth (gated dose-response)
+- **B11** verbosity *(R11; broadly-applying style)* — concise / verbose, the two poles trained as separate variants (δ antisymmetry across poles is NOT assumed; A3.7/A3.8 test it); shared signed read-out `r_verbosity`, eval battery, and contrastive-negative panel
+- **B12** casual_register *(R11; broadly-applying style)* — informal vs formal register (promotes the B6 `casual-lowercase` row to a standalone trained source)
 
 Notes:
 - **Read-outs `r_{B'}`** (A3.3) are extracted **per evaluated column** as
@@ -1274,8 +1300,17 @@ has ~60 issue docs incl. #521 (rank-one across contexts), #532 (predictor stress
   ~1–3 GPU-h total. The verbosity pair shares one read-out and uses a judge-free
   **length** continuous DV; the only judge dollars are the calibrated
   "concise?/verbose?/casual?" rate batteries (~2 batteries' worth, Batch API).
-  Promoting any to a TRAINED row family (extend B6) would add ~13–26 GPU-h each —
-  deferred, not in the default grid.
+  Promoting any to a TRAINED row family adds ~13–26 GPU-h each — **done in round 11
+  (B11/B12); see the next bullet.**
+- **(R11) Style behaviors ALSO trained (B11 `verbosity`: concise + verbose; B12
+  `casual_register`).** Both verbosity poles are trained — no antisymmetry shortcut
+  (round-11 log): `δ_concise ≈ −δ_verbose` is an assumption A3.7/A3.8 test, and
+  trained leakage is directional (concise trains against Qwen's verbose base prior,
+  C7). LEAN grid (1 source × 1–2 doses × 2 arms), ~40 GPU-h for all three trained
+  variants; verbosity poles share read-out + eval battery + negative panel.
+  **Cap consequence:** Phase 2 goes ~55–95 → ~95–155 GPU-h, PAST the 100-GPU-h
+  `/issue --auto` auto-approve cap → chunk Phase 2 into two plan-approvals or take
+  one explicit over-cap approval at Step 2c. Eval-only columns (round 10) stay.
 - **(B5) The positive-only fleet arm roughly doubles the spine fine-tunes** (every
   gate/transfer source trained twice — contrastive + positive-only), driving Phase-2
   GPU-h up; reflected in the table. This is the science-affecting Phase-2 addition
@@ -1318,8 +1353,12 @@ arms.**
 4 sources × marker (context-leakage spine) + ~6 B-family adapters × 2 sources
 (behavior-leakage spine), ≥2 doses, **× 2 objective arms (contrastive +
 positive-only, B5)**, primary model. ≈16–28 fine-tunes core (was ≈8–14 before the
-positive-only arm). Expand sources/behaviors only after Phase 1 validates the
-chain. (Why a subset, not the full ~950-adapter cross-product: §7.5.)
+positive-only arm). **(R11)** + 3 trained style variants — **B11 `verbosity`**
+(concise + verbose, both poles) + **B12 `casual_register`** — at a LEAN grid
+(1 source × 1–2 doses × 2 arms ≈ 4–8 fine-tunes each, ~40 GPU-h total); the
+verbosity poles share read-out + eval battery + negative panel. Expand
+sources/behaviors only after Phase 1 validates the chain. (Why a subset, not the
+full ~950-adapter cross-product: §7.5.)
 
 ### 7.3 Layer comparability
 Default within-layer; cross-layer pooling is an ablation with per-layer
