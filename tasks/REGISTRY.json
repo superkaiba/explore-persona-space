@@ -4268,8 +4268,8 @@
     "679": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/679",
-      "status": "proposed",
+      "path": "tasks/planning/679",
+      "status": "planning",
       "title": "Bound active-task disk on the CPU VM (wire incremental cleaner + faster detection + escalation)"
     },
     "68": {
