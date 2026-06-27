@@ -1,7 +1,8 @@
 ---
 title: Across 3 behaviors × 2 contexts × 3 LoRA ranks, weakly-installed LoRA edits
-  produce a diffuse activation shift with no read↔write alignment (3 of 18 cells installed
-  enough to test; full fine-tuning untested) (MODERATE confidence)
+  produce a diffuse activation shift with no read↔write alignment — and the verdict
+  holds when re-read on a strongly-installed behavior (2 of 18 cells installed; full
+  fine-tuning untested) (MODERATE confidence)
 kind: experiment
 tags:
 - followup-manual
