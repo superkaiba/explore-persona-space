@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 684,
+  "highest_id": 685,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4314,6 +4314,14 @@
       "path": "tasks/proposed/684",
       "status": "proposed",
       "title": "api_dispatch fast-follows: 429-exhaustion mislabel + unbounded fan-out + pick-time org binding (from #682 code review)"
+    },
+    "685": {
+      "goal": "Measure how a context's last-token residual-stream activation summary (the context vector) shifts when a behavioral instruction is appended, across diverse contexts, behaviors, and layers, and test whether the shift is a single context-independent behavior direction.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/685",
+      "status": "proposed",
+      "title": "Context-vector shift induced by appending a behavioral instruction (context vs context + instruction)"
     },
     "69": {
       "has_clean_result": false,
