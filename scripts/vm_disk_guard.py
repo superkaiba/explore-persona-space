@@ -45,14 +45,164 @@ from explore_persona_space.task_workflow import find_task_path, repo_root
 
 # Re-use the single source of truth for what a download cache is + how to
 # delete it (so the two cleanup entrypoints can never drift on the safety
-# contract — store/ + eval_results/ are KEPT in both).
+# contract — store/ + eval_results/ are KEPT in both). The sidecar-event
+# helper is shared so every disk escalation lands on ONE stream.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from clean_experiment_downloads import (
+    append_disk_guard_event,
     clean_issue_downloads,
 )
 
 # Default usage threshold (% of /) above which cleanup runs. Env-overridable.
 DEFAULT_THRESHOLD_PCT = 85.0
+
+# Threshold-band boundaries (bytes) for the ACTIVE-task escalation dedup key. An
+# active issue holding a re-downloadable cache the terminal-gate cannot reap is
+# escalated (NEVER deleted); the band coarsens its footprint so a row re-fires
+# only when it crosses into a bigger bucket — paired with the >25% growth
+# re-alert below. ~20/50/100 GB buckets match the real incident scale.
+_ACTIVE_ESCALATION_BANDS_GB = (20.0, 50.0, 100.0)
+
+# Re-alert an already-escalated (task, band) only when the cache GREW by more
+# than this fraction since the last alert — bounds churn while still surfacing a
+# steadily-growing active cache.
+_ACTIVE_ESCALATION_GROWTH_REALERT = 0.25
+
+# Footprint floor (bytes) below which an active-task cache is too small to be
+# worth escalating — avoids noise on trivial caches.
+_ACTIVE_ESCALATION_MIN_BYTES = 5 * 10**9  # 5 GB
+
+# Per-(task, band) escalation state (last-alerted bytes), so an already-alerted
+# active cache re-fires only on a band crossing OR >25% growth. Relative to the
+# repo root; one shared JSON keyed "<task>:<band_gb>".
+_ACTIVE_ESCALATION_STATE_REL = Path(".claude") / "cache" / "disk-guard-active-state.json"
+
+
+def _active_escalation_band_gb(bytes_: int) -> float:
+    """The largest band boundary (GB) the footprint has crossed, or the cache's
+    GB rounded down for anything above the top band — the coarse dedup key."""
+    gb = bytes_ / 10**9
+    band = 0.0
+    for boundary in _ACTIVE_ESCALATION_BANDS_GB:
+        if gb >= boundary:
+            band = boundary
+    # Above the top configured band, key on the integer-GB bucket so a runaway
+    # cache still re-alerts as it climbs past 100 GB.
+    return max(band, float(int(gb)) if gb >= _ACTIVE_ESCALATION_BANDS_GB[-1] else band)
+
+
+def _active_escalation_state_path() -> Path:
+    return repo_root() / _ACTIVE_ESCALATION_STATE_REL
+
+
+def _load_active_escalation_state() -> dict:
+    path = _active_escalation_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_active_escalation_state(state: dict) -> None:
+    """Atomic temp+rename write of the active-escalation dedup state
+    (fail-soft — a write failure is logged, never raised)."""
+    dest = _active_escalation_state_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state, indent=2))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  WARNING: saving active-escalation state failed: {exc}", file=sys.stderr)
+
+
+def _active_ack_sentinel_path(issue_n: int, band_gb: float) -> Path:
+    """Per-(task, band) ack sentinel: ``touch`` it to silence this escalation
+    until the cache crosses into a bigger band. Relative to the repo root."""
+    return repo_root() / ".claude" / "cache" / f"disk-guard-ack-{issue_n}-{band_gb:g}"
+
+
+def _should_escalate_active(
+    issue_n: int,
+    band_gb: float,
+    bytes_: int,
+    state: dict,
+) -> tuple[bool, float]:
+    """Decide whether to (re-)escalate an active-task cache, and the growth %
+    vs the last alert. Dedups on (task, band) and re-alerts only on >25%
+    growth; an ack sentinel for this (task, band) suppresses entirely."""
+    if _active_ack_sentinel_path(issue_n, band_gb).exists():
+        return (False, 0.0)
+    key = f"{issue_n}:{band_gb:g}"
+    prev = state.get(key)
+    if not isinstance(prev, int | float) or prev <= 0:
+        return (True, 0.0)  # first alert for this (task, band)
+    growth = (bytes_ - prev) / prev
+    return (growth > _ACTIVE_ESCALATION_GROWTH_REALERT, growth * 100.0)
+
+
+def escalate_active_cache(
+    issue_n: int,
+    status: str | None,
+    apply: bool,
+    *,
+    data_root: Path | None = None,
+    state: dict | None = None,
+) -> TierResult | None:
+    """ESCALATE (never delete) an ACTIVE task's re-downloadable cache that the
+    terminal-status gate cannot reap.
+
+    Sizes the cache via a dry-run of ``clean_issue_downloads`` (no deletion),
+    and — when the footprint is band-worthy and not already alerted (dedup on
+    (task, band) + >25%-growth re-alert + ack-sentinel suppression) — emits a
+    Telegram push AND a shared-sidecar row naming the largest cache path, the
+    footprint, and the SAFE reclaim command. NEVER calls rmtree. Returns a
+    TierResult describing the escalation, or None when nothing was escalated.
+    ``state`` (the dedup map) is read+updated in place by the caller."""
+    sub = clean_issue_downloads(issue_n, apply=False, data_root=data_root)
+    bytes_ = sub.bytes_freed
+    if bytes_ < _ACTIVE_ESCALATION_MIN_BYTES:
+        return None
+    band_gb = _active_escalation_band_gb(bytes_)
+    st = state if state is not None else {}
+    do_alert, growth_pct = _should_escalate_active(issue_n, band_gb, bytes_, st)
+    if not do_alert:
+        return None
+    # Largest cache path drives the human-facing pointer + reclaim command.
+    largest = max(sub.removed, key=lambda n: sub.sizes_bytes.get(n, 0), default="")
+    reclaim_cmd = f"uv run python scripts/clean_experiment_downloads.py {issue_n} --apply"
+    res = TierResult(name="active-cache-escalation")
+    res.detail.append(
+        f"issue {issue_n} ({status or 'active'}): ACTIVE cache {_fmt_gb(bytes_)} "
+        f"at {largest} — ESCALATED (never deleted while active); "
+        f"reclaim AFTER the run with `{reclaim_cmd}`"
+    )
+    append_disk_guard_event(
+        {
+            "kind": "active-cache-escalation",
+            "task": issue_n,
+            "status": status,
+            "path": largest,
+            "bytes": bytes_,
+            "reclaim_cmd": reclaim_cmd,
+            "band": band_gb,
+            "growth_pct": round(growth_pct, 1),
+        },
+        apply=apply,
+    )
+    _telegram_push(
+        f"VM disk: active task #{issue_n} ({status or 'active'}) holds "
+        f"{_fmt_gb(bytes_)} of re-downloadable cache the terminal-gate can't reap. "
+        f"NOT auto-deleted (active). Reclaim AFTER the run: {reclaim_cmd}",
+        apply,
+    )
+    if apply and state is not None:
+        state[f"{issue_n}:{band_gb:g}"] = bytes_
+    return res
+
 
 # Default age (days) above which a log file is stale and reclaimable.
 DEFAULT_LOG_MAX_AGE_DAYS = 14.0
@@ -244,12 +394,23 @@ def clean_terminal_download_caches(apply: bool, data_root: Path | None = None) -
         discover_roots = [data_root]
     else:
         discover_roots = [repo_root() / "data", *_all_worktree_data_roots()]
+    escalation_state = _load_active_escalation_state()
+    escalated_any = False
     for issue_n in _discover_data_issue_numbers(discover_roots):
         status = _resolve_issue_status(issue_n)
         if status not in TERMINAL_CACHE_REAP_STATUSES:
             res.detail.append(
                 f"issue {issue_n}: kept (status={status or 'unresolved'} not terminal)"
             )
+            # An ACTIVE task's cache is NEVER deleted — but a large one the
+            # terminal-gate can't reap is ESCALATED (Telegram + sidecar) so a
+            # human can reclaim it AFTER the run (#679). Fail-soft.
+            esc = escalate_active_cache(
+                issue_n, status, apply, data_root=data_root, state=escalation_state
+            )
+            if esc is not None:
+                escalated_any = True
+                res.detail.extend(esc.detail)
             continue
         # data_root=data_root forwards the test-scoping; None lets
         # clean_issue_downloads resolve repo-root + this issue's worktree(s).
@@ -263,6 +424,8 @@ def clean_terminal_download_caches(apply: bool, data_root: Path | None = None) -
             )
         for name in sub.failed:
             res.detail.append(f"issue {issue_n}: FAILED to remove {name}")
+    if apply and escalated_any:
+        _save_active_escalation_state(escalation_state)
     return res
 
 
