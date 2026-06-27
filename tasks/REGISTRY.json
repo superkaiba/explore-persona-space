@@ -4296,8 +4296,8 @@
     "682": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/682",
-      "status": "running",
+      "path": "tasks/completed/682",
+      "status": "completed",
       "title": "Finish API throughput project: Phase 3 guidelines + dispatcher review/migrate + #658 validation"
     },
     "683": {
