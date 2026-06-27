@@ -1,0 +1,320 @@
+{
+  "slot@7": {
+    "q1": {
+      "em": {
+        "top_share": 0.3124275207519531,
+        "frac_at_bar": 0.8125,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.8304499267772499
+      },
+      "fact": {
+        "top_share": 0.3738245368003845,
+        "frac_at_bar": 0.875,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.7777112701016862
+      },
+      "marker": {
+        "top_share": 0.4197288751602173,
+        "frac_at_bar": 0.9375,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9941847972074187
+      },
+      "refusal": {
+        "top_share": 0.4717792272567749,
+        "frac_at_bar": null,
+        "verdict": "no_ceiling",
+        "seed_ceiling": null
+      },
+      "sycophancy": {
+        "top_share": 0.4726949632167816,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9780041792298821
+      }
+    },
+    "q2": {
+      "off": {
+        "em|fact": 0.8209458548503318,
+        "em|marker": 0.6456776792803929,
+        "em|sycophancy": 0.6644861259664762,
+        "fact|marker": 0.7279988571767274,
+        "fact|sycophancy": 0.805915842574113,
+        "marker|sycophancy": 0.7706325844712923
+      },
+      "raw": {
+        "em|fact": 0.7619486381330628,
+        "em|marker": 0.6165600326620495,
+        "em|sycophancy": 0.6320841767448989,
+        "fact|marker": 0.7063157502354261,
+        "fact|sycophancy": 0.7789100217913174,
+        "marker|sycophancy": 0.7662903908391026
+      },
+      "verdict": "family_cluster_or_intermediate"
+    }
+  },
+  "slot@14": {
+    "q1": {
+      "em": {
+        "top_share": 0.3295693099498749,
+        "frac_at_bar": 0.8125,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.8798076504031286
+      },
+      "fact": {
+        "top_share": 0.4494744539260864,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.852651572302364
+      },
+      "marker": {
+        "top_share": 0.37299543619155884,
+        "frac_at_bar": 0.8125,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9917655367893145
+      },
+      "refusal": {
+        "top_share": 0.48367831110954285,
+        "frac_at_bar": null,
+        "verdict": "no_ceiling",
+        "seed_ceiling": null
+      },
+      "sycophancy": {
+        "top_share": 0.5319598913192749,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9876763330244899
+      }
+    },
+    "q2": {
+      "off": {
+        "em|fact": 0.6882682302658352,
+        "em|marker": 0.49908356022510114,
+        "em|sycophancy": 0.626279102500403,
+        "fact|marker": 0.6072554837523889,
+        "fact|sycophancy": 0.8018111158044948,
+        "marker|sycophancy": 0.6558610558908372
+      },
+      "raw": {
+        "em|fact": 0.6534712612202007,
+        "em|marker": 0.48373025751152016,
+        "em|sycophancy": 0.6061653741295927,
+        "fact|marker": 0.5936100245074301,
+        "fact|sycophancy": 0.7826995224787764,
+        "marker|sycophancy": 0.6535759454605468
+      },
+      "verdict": "family_cluster_or_intermediate"
+    }
+  },
+  "slot@21": {
+    "q1": {
+      "em": {
+        "top_share": 0.38020652532577515,
+        "frac_at_bar": 0.875,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9118945400322136
+      },
+      "fact": {
+        "top_share": 0.5473087430000305,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9250479622509016
+      },
+      "marker": {
+        "top_share": 0.32513150572776794,
+        "frac_at_bar": 0.5625,
+        "verdict": "context_specific",
+        "seed_ceiling": 0.9888438016142944
+      },
+      "refusal": {
+        "top_share": 0.581745982170105,
+        "frac_at_bar": null,
+        "verdict": "no_ceiling",
+        "seed_ceiling": null
+      },
+      "sycophancy": {
+        "top_share": 0.6043456792831421,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9930958227192825
+      }
+    },
+    "q2": {
+      "off": {
+        "em|fact": 0.6171286621578019,
+        "em|marker": 0.3862630671419698,
+        "em|sycophancy": 0.516633383369217,
+        "fact|marker": 0.49479419645453065,
+        "fact|sycophancy": 0.8861350018565954,
+        "marker|sycophancy": 0.5208264835004764
+      },
+      "raw": {
+        "em|fact": 0.5957291725046654,
+        "em|marker": 0.37703352574719906,
+        "em|sycophancy": 0.5045197714850238,
+        "fact|marker": 0.4875934975007777,
+        "fact|sycophancy": 0.8736392546514321,
+        "marker|sycophancy": 0.5192170462113794
+      },
+      "verdict": "coincide"
+    }
+  },
+  "mean_resp@7": {
+    "q1": {
+      "em": {
+        "top_share": 0.5614033937454224,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9335490782277296
+      },
+      "fact": {
+        "top_share": 0.4060092270374298,
+        "frac_at_bar": 0.9375,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.7648068722843662
+      },
+      "marker": {
+        "top_share": 0.24006956815719604,
+        "frac_at_bar": 0.5,
+        "verdict": "context_specific",
+        "seed_ceiling": 0.9479606929078965
+      },
+      "refusal": {
+        "top_share": 0.5730544924736023,
+        "frac_at_bar": null,
+        "verdict": "no_ceiling",
+        "seed_ceiling": null
+      },
+      "sycophancy": {
+        "top_share": 0.40386009216308594,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9604848799857062
+      }
+    },
+    "q2": {
+      "off": {
+        "em|fact": 0.42695833054346544,
+        "em|marker": 0.3367241175959621,
+        "em|sycophancy": 0.2791793600749271,
+        "fact|marker": 0.23039452776592612,
+        "fact|sycophancy": 0.03610336181716413,
+        "marker|sycophancy": 0.08903080096522269
+      },
+      "raw": {
+        "em|fact": 0.3830254869742441,
+        "em|marker": 0.325066608321929,
+        "em|sycophancy": 0.2687713852758142,
+        "fact|marker": 0.21069440573538115,
+        "fact|sycophancy": 0.03292532529985134,
+        "marker|sycophancy": 0.08737328532162725
+      },
+      "verdict": "family_cluster_or_intermediate"
+    }
+  },
+  "mean_resp@14": {
+    "q1": {
+      "em": {
+        "top_share": 0.5814568996429443,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9545602650661915
+      },
+      "fact": {
+        "top_share": 0.5040837526321411,
+        "frac_at_bar": 0.9375,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.8715000803791175
+      },
+      "marker": {
+        "top_share": 0.24940240383148193,
+        "frac_at_bar": 0.5,
+        "verdict": "context_specific",
+        "seed_ceiling": 0.9469574010781545
+      },
+      "refusal": {
+        "top_share": 0.6686677932739258,
+        "frac_at_bar": null,
+        "verdict": "no_ceiling",
+        "seed_ceiling": null
+      },
+      "sycophancy": {
+        "top_share": 0.5385561585426331,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9858330338747336
+      }
+    },
+    "q2": {
+      "off": {
+        "em|fact": 0.3707982192412726,
+        "em|marker": 0.10349560488974309,
+        "em|sycophancy": 0.593583189011939,
+        "fact|marker": 0.14800563365515002,
+        "fact|sycophancy": 0.47281307356734176,
+        "marker|sycophancy": 0.03970911414758093
+      },
+      "raw": {
+        "em|fact": 0.3479924578799052,
+        "em|marker": 0.10090163395876134,
+        "em|sycophancy": 0.5804196518857819,
+        "fact|marker": 0.14083047495248377,
+        "fact|sycophancy": 0.45122390287970815,
+        "marker|sycophancy": 0.03936741695447829
+      },
+      "verdict": "family_cluster_or_intermediate"
+    }
+  },
+  "mean_resp@21": {
+    "q1": {
+      "em": {
+        "top_share": 0.7043681740760803,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9755420351062543
+      },
+      "fact": {
+        "top_share": 0.6459421515464783,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.9633323901940304
+      },
+      "marker": {
+        "top_share": 0.33966585993766785,
+        "frac_at_bar": 0.5625,
+        "verdict": "context_specific",
+        "seed_ceiling": 0.9896688646528822
+      },
+      "refusal": {
+        "top_share": 0.8999959826469421,
+        "frac_at_bar": null,
+        "verdict": "no_ceiling",
+        "seed_ceiling": null
+      },
+      "sycophancy": {
+        "top_share": 0.6626381278038025,
+        "frac_at_bar": 1.0,
+        "verdict": "context_invariant",
+        "seed_ceiling": 0.995837871455441
+      }
+    },
+    "q2": {
+      "off": {
+        "em|fact": 0.40784655936108977,
+        "em|marker": 0.14412953236145123,
+        "em|sycophancy": 0.7817327388435931,
+        "fact|marker": 0.5237607182625952,
+        "fact|sycophancy": 0.48636901445636566,
+        "marker|sycophancy": 0.16820728427476692
+      },
+      "raw": {
+        "em|fact": 0.3985411602355293,
+        "em|marker": 0.142288572159262,
+        "em|sycophancy": 0.7726219330429428,
+        "fact|marker": 0.5165357973377488,
+        "fact|sycophancy": 0.4802032430135614,
+        "marker|sycophancy": 0.16778172477952
+      },
+      "verdict": "family_cluster_or_intermediate"
+    }
+  }
+}

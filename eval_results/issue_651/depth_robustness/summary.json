@@ -1,0 +1,641 @@
+{
+  "14": {
+    "layer": 14,
+    "seed_ceiling_median": {
+      "em": 0.9545602650661915,
+      "fact": 0.852651572302364,
+      "marker": 0.9917655367893145,
+      "sycophancy": 0.9858330338747336
+    },
+    "q2_seed_ceiling": {
+      "em": 0.9615903277276637,
+      "fact": 0.9575656558845471,
+      "marker": 0.9979091411551732,
+      "sycophancy": 0.9943309211755766
+    },
+    "q1": {
+      "em": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.5814568996429443,
+        "sign_flip_null_p95": 0.11225912719964981,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.9703508615493774,
+        "seed_ceiling_median": 0.9545602650661915,
+        "per_context_bar": 0.8113762253062627,
+        "frac_contexts_at_or_above_bar": 1.0,
+        "n_contexts_at_or_above_bar": 16,
+        "verdict": "context_invariant"
+      },
+      "fact": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.4494744539260864,
+        "sign_flip_null_p95": 0.07656386494636536,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.9284735918045044,
+        "seed_ceiling_median": 0.852651572302364,
+        "per_context_bar": 0.7247538364570094,
+        "frac_contexts_at_or_above_bar": 1.0,
+        "n_contexts_at_or_above_bar": 16,
+        "verdict": "context_invariant"
+      },
+      "marker": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.37299543619155884,
+        "sign_flip_null_p95": 0.0797419473528862,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.8594772219657898,
+        "seed_ceiling_median": 0.9917655367893145,
+        "per_context_bar": 0.8430007062709173,
+        "frac_contexts_at_or_above_bar": 0.8125,
+        "n_contexts_at_or_above_bar": 13,
+        "verdict": "context_invariant"
+      },
+      "refusal": {
+        "n_contexts": 4,
+        "top_share_norm_weighted": 0.48367831110954285,
+        "sign_flip_null_p95": 0.2659202516078949,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.8427562713623047,
+        "seed_ceiling_median": null,
+        "per_context_bar": null,
+        "frac_contexts_at_or_above_bar": null,
+        "n_contexts_at_or_above_bar": null,
+        "verdict": "no_ceiling"
+      },
+      "sycophancy": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.5385561585426331,
+        "sign_flip_null_p95": 0.1050795465707779,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.9691630601882935,
+        "seed_ceiling_median": 0.9858330338747336,
+        "per_context_bar": 0.8379580787935236,
+        "frac_contexts_at_or_above_bar": 1.0,
+        "n_contexts_at_or_above_bar": 16,
+        "verdict": "context_invariant"
+      }
+    },
+    "q2": {
+      "behaviors": [
+        "em",
+        "fact",
+        "marker",
+        "sycophancy"
+      ],
+      "raw_cosine_matrix": [
+        [
+          1.0,
+          0.0934515115387451,
+          0.053814316950998184,
+          0.5804196518857819
+        ],
+        [
+          0.0934515115387451,
+          1.0,
+          0.5936100245074301,
+          0.1669982577290287
+        ],
+        [
+          0.053814316950998184,
+          0.5936100245074301,
+          1.0,
+          0.05278001290214433
+        ],
+        [
+          0.5804196518857819,
+          0.1669982577290287,
+          0.05278001290214433,
+          1.0
+        ]
+      ],
+      "ceiling_normalized_matrix": [
+        [
+          1.0,
+          0.09738834970192393,
+          0.054936032166937904,
+          0.593583189011939
+        ],
+        [
+          0.09738834970192393,
+          1.0,
+          0.6072554837523889,
+          0.17114420054858784
+        ],
+        [
+          0.054936032166937904,
+          0.6072554837523889,
+          1.0,
+          0.05298568082411852
+        ],
+        [
+          0.593583189011939,
+          0.17114420054858784,
+          0.05298568082411852,
+          1.0
+        ]
+      ],
+      "seed_ceilings": {
+        "em": 0.9615903277276637,
+        "fact": 0.9575656558845471,
+        "marker": 0.9979091411551732,
+        "sycophancy": 0.9943309211755766
+      },
+      "cross_behavior_null_p95": 0.2776282727718353,
+      "off_diagonals": [
+        {
+          "pair": [
+            "em",
+            "fact"
+          ],
+          "ceiling_fraction": 0.09738834970192393,
+          "raw_cosine": 0.0934515115387451,
+          "null_p95": 0.06092926506495658,
+          "below_ceiling_bar": true,
+          "within_null_band": false
+        },
+        {
+          "pair": [
+            "em",
+            "marker"
+          ],
+          "ceiling_fraction": 0.054936032166937904,
+          "raw_cosine": 0.053814316950998184,
+          "null_p95": 0.06422769277143678,
+          "below_ceiling_bar": true,
+          "within_null_band": true
+        },
+        {
+          "pair": [
+            "em",
+            "sycophancy"
+          ],
+          "ceiling_fraction": 0.593583189011939,
+          "raw_cosine": 0.5804196518857819,
+          "null_p95": 0.20087841202034773,
+          "below_ceiling_bar": false,
+          "within_null_band": false
+        },
+        {
+          "pair": [
+            "fact",
+            "marker"
+          ],
+          "ceiling_fraction": 0.6072554837523889,
+          "raw_cosine": 0.5936100245074301,
+          "null_p95": 0.1008191082487241,
+          "below_ceiling_bar": false,
+          "within_null_band": false
+        },
+        {
+          "pair": [
+            "fact",
+            "sycophancy"
+          ],
+          "ceiling_fraction": 0.17114420054858784,
+          "raw_cosine": 0.1669982577290287,
+          "null_p95": 0.07723388919376475,
+          "below_ceiling_bar": true,
+          "within_null_band": false
+        },
+        {
+          "pair": [
+            "marker",
+            "sycophancy"
+          ],
+          "ceiling_fraction": 0.05298568082411852,
+          "raw_cosine": 0.05278001290214433,
+          "null_p95": 0.07678731966528193,
+          "below_ceiling_bar": true,
+          "within_null_band": true
+        }
+      ],
+      "verdict": "family_cluster_or_intermediate"
+    }
+  },
+  "7": {
+    "layer": 7,
+    "seed_ceiling_median": {
+      "em": 0.9335490782277296,
+      "fact": 0.7777112701016862,
+      "marker": 0.9941847972074187,
+      "sycophancy": 0.9604848799857062
+    },
+    "q2_seed_ceiling": {
+      "em": 0.947020703036916,
+      "fact": 0.9430175611494147,
+      "marker": 0.9981977946531299,
+      "sycophancy": 0.9786783277346196
+    },
+    "q1": {
+      "em": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.5614033937454224,
+        "sign_flip_null_p95": 0.1318444162607193,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.9717651605606079,
+        "seed_ceiling_median": 0.9335490782277296,
+        "per_context_bar": 0.7935167164935701,
+        "frac_contexts_at_or_above_bar": 1.0,
+        "n_contexts_at_or_above_bar": 16,
+        "verdict": "context_invariant"
+      },
+      "fact": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.3738245368003845,
+        "sign_flip_null_p95": 0.075501948595047,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.8726500272750854,
+        "seed_ceiling_median": 0.7777112701016862,
+        "per_context_bar": 0.6610545795864332,
+        "frac_contexts_at_or_above_bar": 0.875,
+        "n_contexts_at_or_above_bar": 14,
+        "verdict": "context_invariant"
+      },
+      "marker": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.4197288751602173,
+        "sign_flip_null_p95": 0.07762448489665985,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.8971220254898071,
+        "seed_ceiling_median": 0.9941847972074187,
+        "per_context_bar": 0.8450570776263059,
+        "frac_contexts_at_or_above_bar": 0.9375,
+        "n_contexts_at_or_above_bar": 15,
+        "verdict": "context_invariant"
+      },
+      "refusal": {
+        "n_contexts": 4,
+        "top_share_norm_weighted": 0.4717792272567749,
+        "sign_flip_null_p95": 0.27090513706207275,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.8359450697898865,
+        "seed_ceiling_median": null,
+        "per_context_bar": null,
+        "frac_contexts_at_or_above_bar": null,
+        "n_contexts_at_or_above_bar": null,
+        "verdict": "no_ceiling"
+      },
+      "sycophancy": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.40386009216308594,
+        "sign_flip_null_p95": 0.0944325178861618,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.9238302707672119,
+        "seed_ceiling_median": 0.9604848799857062,
+        "per_context_bar": 0.8164121479878502,
+        "frac_contexts_at_or_above_bar": 1.0,
+        "n_contexts_at_or_above_bar": 16,
+        "verdict": "context_invariant"
+      }
+    },
+    "q2": {
+      "behaviors": [
+        "em",
+        "fact",
+        "marker",
+        "sycophancy"
+      ],
+      "raw_cosine_matrix": [
+        [
+          1.0,
+          0.015797622102225305,
+          0.007314546201729834,
+          0.2687713852758142
+        ],
+        [
+          0.015797622102225305,
+          1.0,
+          0.7063157502354261,
+          0.07799696263635582
+        ],
+        [
+          0.007314546201729834,
+          0.7063157502354261,
+          1.0,
+          0.05759843750349065
+        ],
+        [
+          0.2687713852758142,
+          0.07799696263635582,
+          0.05759843750349065,
+          1.0
+        ]
+      ],
+      "ceiling_normalized_matrix": [
+        [
+          1.0,
+          0.016716759481411464,
+          0.007523143533407216,
+          0.2791793600749271
+        ],
+        [
+          0.016716759481411464,
+          1.0,
+          0.7279988571767274,
+          0.0811891163979558
+        ],
+        [
+          0.007523143533407216,
+          0.7279988571767274,
+          1.0,
+          0.05827501764195876
+        ],
+        [
+          0.2791793600749271,
+          0.0811891163979558,
+          0.05827501764195876,
+          1.0
+        ]
+      ],
+      "seed_ceilings": {
+        "em": 0.947020703036916,
+        "fact": 0.9430175611494147,
+        "marker": 0.9981977946531299,
+        "sycophancy": 0.9786783277346196
+      },
+      "cross_behavior_null_p95": 0.2709619104862213,
+      "off_diagonals": [
+        {
+          "pair": [
+            "em",
+            "fact"
+          ],
+          "ceiling_fraction": 0.016716759481411464,
+          "raw_cosine": 0.015797622102225305,
+          "null_p95": 0.06446284441226104,
+          "below_ceiling_bar": true,
+          "within_null_band": true
+        },
+        {
+          "pair": [
+            "em",
+            "marker"
+          ],
+          "ceiling_fraction": 0.007523143533407216,
+          "raw_cosine": 0.007314546201729834,
+          "null_p95": 0.07116361723302177,
+          "below_ceiling_bar": true,
+          "within_null_band": true
+        },
+        {
+          "pair": [
+            "em",
+            "sycophancy"
+          ],
+          "ceiling_fraction": 0.2791793600749271,
+          "raw_cosine": 0.2687713852758142,
+          "null_p95": 0.14509664866831484,
+          "below_ceiling_bar": true,
+          "within_null_band": false
+        },
+        {
+          "pair": [
+            "fact",
+            "marker"
+          ],
+          "ceiling_fraction": 0.7279988571767274,
+          "raw_cosine": 0.7063157502354261,
+          "null_p95": 0.09212609598425463,
+          "below_ceiling_bar": false,
+          "within_null_band": false
+        },
+        {
+          "pair": [
+            "fact",
+            "sycophancy"
+          ],
+          "ceiling_fraction": 0.0811891163979558,
+          "raw_cosine": 0.07799696263635582,
+          "null_p95": 0.05145038218160267,
+          "below_ceiling_bar": true,
+          "within_null_band": false
+        },
+        {
+          "pair": [
+            "marker",
+            "sycophancy"
+          ],
+          "ceiling_fraction": 0.05827501764195876,
+          "raw_cosine": 0.05759843750349065,
+          "null_p95": 0.05488665202583859,
+          "below_ceiling_bar": true,
+          "within_null_band": false
+        }
+      ],
+      "verdict": "family_cluster_or_intermediate"
+    }
+  },
+  "21": {
+    "layer": 21,
+    "seed_ceiling_median": {
+      "em": 0.9755420351062543,
+      "fact": 0.9250479622509016,
+      "marker": 0.9888438016142944,
+      "sycophancy": 0.995837871455441
+    },
+    "q2_seed_ceiling": {
+      "em": 0.9781960853307814,
+      "fact": 0.9745624500372304,
+      "marker": 0.9964532832501263,
+      "sycophancy": 0.9985999587645121
+    },
+    "q1": {
+      "em": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.7043681740760803,
+        "sign_flip_null_p95": 0.08822383731603622,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.9895707964897156,
+        "seed_ceiling_median": 0.9755420351062543,
+        "per_context_bar": 0.8292107298403161,
+        "frac_contexts_at_or_above_bar": 1.0,
+        "n_contexts_at_or_above_bar": 16,
+        "verdict": "context_invariant"
+      },
+      "fact": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.5473087430000305,
+        "sign_flip_null_p95": 0.12444154918193817,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.967476487159729,
+        "seed_ceiling_median": 0.9250479622509016,
+        "per_context_bar": 0.7862907679132664,
+        "frac_contexts_at_or_above_bar": 1.0,
+        "n_contexts_at_or_above_bar": 16,
+        "verdict": "context_invariant"
+      },
+      "marker": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.32513150572776794,
+        "sign_flip_null_p95": 0.08644305169582367,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.7827584147453308,
+        "seed_ceiling_median": 0.9888438016142944,
+        "per_context_bar": 0.8405172313721503,
+        "frac_contexts_at_or_above_bar": 0.5625,
+        "n_contexts_at_or_above_bar": 9,
+        "verdict": "context_specific"
+      },
+      "refusal": {
+        "n_contexts": 4,
+        "top_share_norm_weighted": 0.581745982170105,
+        "sign_flip_null_p95": 0.3040553033351898,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.9088318347930908,
+        "seed_ceiling_median": null,
+        "per_context_bar": null,
+        "frac_contexts_at_or_above_bar": null,
+        "n_contexts_at_or_above_bar": null,
+        "verdict": "no_ceiling"
+      },
+      "sycophancy": {
+        "n_contexts": 16,
+        "top_share_norm_weighted": 0.6626381278038025,
+        "sign_flip_null_p95": 0.09280990809202194,
+        "top_share_clears_null_p95": true,
+        "mean_cos_to_U1": 0.9854756593704224,
+        "seed_ceiling_median": 0.995837871455441,
+        "per_context_bar": 0.8464621907371248,
+        "frac_contexts_at_or_above_bar": 1.0,
+        "n_contexts_at_or_above_bar": 16,
+        "verdict": "context_invariant"
+      }
+    },
+    "q2": {
+      "behaviors": [
+        "em",
+        "fact",
+        "marker",
+        "sycophancy"
+      ],
+      "raw_cosine_matrix": [
+        [
+          1.0,
+          0.010482892808659109,
+          0.00025047964594005677,
+          0.7726219330429428
+        ],
+        [
+          0.010482892808659109,
+          1.0,
+          0.4875934975007777,
+          0.12621611093795748
+        ],
+        [
+          0.00025047964594005677,
+          0.4875934975007777,
+          1.0,
+          0.04837077646856783
+        ],
+        [
+          0.7726219330429428,
+          0.12621611093795748,
+          0.04837077646856783,
+          1.0
+        ]
+      ],
+      "ceiling_normalized_matrix": [
+        [
+          1.0,
+          0.010736515311211553,
+          0.00025370615836685264,
+          0.7817327388435931
+        ],
+        [
+          0.010736515311211553,
+          1.0,
+          0.49479419645453065,
+          0.1279423093304715
+        ],
+        [
+          0.00025370615836685264,
+          0.49479419645453065,
+          1.0,
+          0.04849074044857295
+        ],
+        [
+          0.7817327388435931,
+          0.1279423093304715,
+          0.04849074044857295,
+          1.0
+        ]
+      ],
+      "seed_ceilings": {
+        "em": 0.9781960853307814,
+        "fact": 0.9745624500372304,
+        "marker": 0.9964532832501263,
+        "sycophancy": 0.9985999587645121
+      },
+      "cross_behavior_null_p95": 0.2761908769607544,
+      "off_diagonals": [
+        {
+          "pair": [
+            "em",
+            "fact"
+          ],
+          "ceiling_fraction": 0.010736515311211553,
+          "raw_cosine": 0.010482892808659109,
+          "null_p95": 0.07142966758943155,
+          "below_ceiling_bar": true,
+          "within_null_band": true
+        },
+        {
+          "pair": [
+            "em",
+            "marker"
+          ],
+          "ceiling_fraction": 0.00025370615836685264,
+          "raw_cosine": 0.00025047964594005677,
+          "null_p95": 0.0662323442953709,
+          "below_ceiling_bar": true,
+          "within_null_band": true
+        },
+        {
+          "pair": [
+            "em",
+            "sycophancy"
+          ],
+          "ceiling_fraction": 0.7817327388435931,
+          "raw_cosine": 0.7726219330429428,
+          "null_p95": 0.1598029619521167,
+          "below_ceiling_bar": false,
+          "within_null_band": false
+        },
+        {
+          "pair": [
+            "fact",
+            "marker"
+          ],
+          "ceiling_fraction": 0.49479419645453065,
+          "raw_cosine": 0.4875934975007777,
+          "null_p95": 0.14056493695312886,
+          "below_ceiling_bar": true,
+          "within_null_band": false
+        },
+        {
+          "pair": [
+            "fact",
+            "sycophancy"
+          ],
+          "ceiling_fraction": 0.1279423093304715,
+          "raw_cosine": 0.12621611093795748,
+          "null_p95": 0.0955454321662865,
+          "below_ceiling_bar": true,
+          "within_null_band": false
+        },
+        {
+          "pair": [
+            "marker",
+            "sycophancy"
+          ],
+          "ceiling_fraction": 0.04849074044857295,
+          "raw_cosine": 0.04837077646856783,
+          "null_p95": 0.08769518981143554,
+          "below_ceiling_bar": true,
+          "within_null_band": true
+        }
+      ],
+      "verdict": "family_cluster_or_intermediate"
+    }
+  }
+}
