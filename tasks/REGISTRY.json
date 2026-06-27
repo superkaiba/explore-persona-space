@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 681,
+  "highest_id": 682,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4292,6 +4292,13 @@
       "path": "tasks/proposed/681",
       "status": "proposed",
       "title": "Dedicated GCP persistent disk OR ext4 project quotas \u2014 bounded-by-construction disk isolation for active tasks"
+    },
+    "682": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/682",
+      "status": "proposed",
+      "title": "Finish API throughput project: Phase 3 guidelines + dispatcher review/migrate + #658 validation"
     },
     "69": {
       "has_clean_result": false,
