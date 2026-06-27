@@ -2,7 +2,8 @@
 title: 'workflow-fix: confirm-deleted guard in GcpBackend.teardown (#683 RUNNING zombie
   post phase=done)'
 kind: infra
-tags: []
+tags:
+- wf-fix-fp:a1eff6554206
 created_at: '2026-06-27T07:36:33Z'
 has_clean_result: false
 parent_id: 683
