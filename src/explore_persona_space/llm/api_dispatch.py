@@ -597,16 +597,27 @@ def _pick_org_excluding(
 ) -> str:
     """Highest-routing-headroom org NOT in ``tried``; round-robin tie-break.
 
-    Advances the shared round-robin pointer ``rr["i"]`` so two equal-headroom
-    orgs share load (matching the original ``_pick_org`` tie-break).
+    Filtering and selection happen in ONE label space: the labels are first
+    rotated by the round-robin pointer ``rr["i"]`` (so equal-headroom orgs
+    share load — ``max`` returns the first rotated position on a tie), THEN
+    the ``tried`` filter is applied to those rotated labels. Earlier the filter
+    ran in unrotated index space while selection mapped through ``rr["i"]``,
+    so with a nonzero pointer the helper could return an org in ``tried`` —
+    handing a re-pick back the very org that just timed out (#684 round 2).
+
+    Advances the shared round-robin pointer ``rr["i"]`` so successive picks
+    rotate. Caller (:func:`_pick_org_then_acquire`) guarantees a non-empty
+    candidate set: the timeout loop passes ``tried`` only while it is a strict
+    subset of ``labels``, and the blocking-fallback call passes ``set()``.
     """
-    candidates = [i for i in range(len(labels)) if labels[i] not in tried]
-    best = max(
-        candidates,
-        key=lambda i: org_states[labels[(rr["i"] + i) % len(labels)]].routing_headroom(),
-    )
-    chosen = labels[(rr["i"] + best) % len(labels)]
-    rr["i"] = (rr["i"] + 1) % len(labels)
+    n = len(labels)
+    # Rotate first, then filter on the SAME rotated labels.
+    rotated = [labels[(rr["i"] + i) % n] for i in range(n)]
+    candidates = [lbl for lbl in rotated if lbl not in tried]
+    if not candidates:  # defensive: caller guarantees this never happens
+        raise ValueError("_pick_org_excluding: every org is in `tried`")
+    chosen = max(candidates, key=lambda lbl: org_states[lbl].routing_headroom())
+    rr["i"] = (rr["i"] + 1) % n
     return chosen
 
 

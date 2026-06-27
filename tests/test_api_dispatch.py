@@ -37,6 +37,7 @@ from explore_persona_space.llm.api_dispatch import (
     RESULT_RATE_LIMITED,
     DispatchItem,
     OrgState,
+    _pick_org_excluding,
     decide_dispatch_route,
     detect_org_keys,
     dispatch_calls,
@@ -1177,6 +1178,65 @@ def test_pick_org_repicks_on_slow_gate():
     assert fast.calls > slow.calls, (fast.calls, slow.calls)
     # Slot-accounting invariant: no leaked slot post-drain.
     assert all(st.in_flight == 0 for st in org_states_seen.values())
+
+
+def test_pick_org_excluding_respects_tried_with_nonzero_rr():
+    """REGRESSION (#684 round 2, Codex/reconciler blocker): ``_pick_org_excluding``
+    must filter ``tried`` in the SAME label space it returns, regardless of the
+    round-robin pointer's value.
+
+    Pre-fix the filter ran in unrotated index space while selection mapped the
+    chosen index through ``rr["i"]``: with ``rr={"i":1}``, ``labels=["a","b"]``,
+    ``tried={"b"}`` the helper returned ``"b"`` — the very org in ``tried``. On the
+    shared-``rr`` re-pick path (``_pick_org_then_acquire`` adds a timed-out org to
+    ``tried``) that handed the re-pick back the slow org that just timed out,
+    defeating Finding 3.
+
+    Mutation check: revert ``_pick_org_excluding`` to the unrotated-filter body
+    (``candidates = [i for i in range(len(labels)) if labels[i] not in tried]`` +
+    ``chosen = labels[(rr["i"] + best) % len(labels)]``) -> the first assertion
+    returns ``"b"`` and goes RED.
+    """
+    org_states = {
+        "a": OrgState(label="a", cap=10),
+        "b": OrgState(label="b", cap=10),
+    }
+    labels = ["a", "b"]
+
+    # The pre-fix bug fired only when rr["i"] != 0. With "b" excluded, the only
+    # valid candidate is "a" — and the fix must return it regardless of the pointer.
+    rr = {"i": 1}
+    chosen = _pick_org_excluding(org_states, labels, rr, tried={"b"})
+    assert chosen == "a", f"expected 'a' (only candidate); got {chosen!r}"
+    assert chosen not in {"b"}, "must NOT return an org in `tried`"
+
+    # Symmetric, trivially-correct rr["i"]==0 case (the index spaces coincide here).
+    rr = {"i": 0}
+    chosen = _pick_org_excluding(org_states, labels, rr, tried={"a"})
+    assert chosen == "b"
+
+    # Round-robin tie-break under matched headroom + nonzero rr on a 3-org panel:
+    # "a" excluded, equal headroom on "b"/"c" -> the rotation pointer decides, and
+    # in NO case is the result the excluded org.
+    org_states["c"] = OrgState(label="c", cap=10)
+    labels3 = ["a", "b", "c"]
+    rr = {"i": 2}  # rotation starts at "c"
+    chosen = _pick_org_excluding(org_states, labels3, rr, tried={"a"})
+    assert chosen in {"b", "c"}, f"expected one of {{b, c}}; got {chosen!r}"
+    assert chosen != "a", "must NOT return the excluded org under any rotation"
+
+
+def test_pick_org_excluding_raises_when_all_orgs_tried():
+    """Defensive guard: when every org is in ``tried`` the candidate set is empty.
+
+    The caller (``_pick_org_then_acquire``) never reaches this — its timeout loop
+    only calls with a strict subset, and the blocking fallback passes ``set()`` —
+    but the helper fails loud rather than crashing on ``max([])`` if a future
+    caller violates the contract.
+    """
+    org_states = {"a": OrgState(label="a", cap=10), "b": OrgState(label="b", cap=10)}
+    with pytest.raises(ValueError, match="every org is in"):
+        _pick_org_excluding(org_states, ["a", "b"], {"i": 0}, tried={"a", "b"})
 
 
 # ── Finding 1 Must-Fix 1: batch-merge preserves error category (#684) ─────────
