@@ -72,8 +72,11 @@ if [ "$fail" -gt 0 ]; then
 fi
 echo "[wrapper] phase=p2 done (all $NUM_SHARDS shards OK)"
 
-# ── Phase 3 ── single process, GPU 0. Manifest + readability assert + upload over
-# the full fleet, then the dispatcher writes the epm:results sentinel.
+# ── Phase 3 ── single process, GPU 0. Runs AFTER `wait` for every p2 shard, so the
+# full marker_slot_stats.json set exists for the A7 readability assert (#664 r8). p3 =
+# all-fleet manifest + A7 readability assert + raw-completions upload + store-tensor
+# upload + propensity covariate upload, then the dispatcher writes the epm:results
+# sentinel.
 echo "[phase=p3_upload]"
 echo "[wrapper] phase=p3 (single shard, GPU 0)"
 CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue664_dispatch.py --phase p3 --gpu-id 0 \

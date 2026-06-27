@@ -1032,7 +1032,26 @@ def _upload_raw_completions(cells: list[C.Cell]) -> None:
 
     prefix = C.HF_RAW_COMPLETIONS_PREFIX  # issue664_leakage_fleet/raw_completions
     reg_root = C.EVAL_ROOT / "registry"
-    files = sorted(reg_root.rglob("completions__*.json"))
+    # Walk per SELECTED cell (the `cells` arg) -- NOT a blind reg_root.rglob, which
+    # ignored the filter and could sweep in residue from never-selected cells
+    # (#664 open concern raw-completions-upload-ignores-cells-arg). A cell writes one
+    # completions__<col>__<ctx>.json PER (col, ctx), so each selected cell must
+    # produce >=1 file; a selected cell with ZERO is FAIL-LOUD (the eval gen never
+    # ran for it -- refuse to terminate with an incomplete bucket).
+    files: list[Path] = []
+    missing_keys: list[str] = []
+    for cell in cells:
+        cell_files = sorted((reg_root / cell.eval_key).glob("completions__*.json"))
+        if not cell_files:
+            missing_keys.append(cell.eval_key)
+        files.extend(cell_files)
+    if missing_keys:
+        raise RuntimeError(
+            f"[p3-upload] raw completions MISSING for {len(missing_keys)} selected "
+            f"cell(s) (no completions__*.json under registry/<cell>): {sorted(missing_keys)} "
+            "-- the eval gen produced nothing for them; refusing to terminate with "
+            "incomplete buckets"
+        )
     if not files:
         raise RuntimeError(
             f"[p3-upload] NO raw completions under {reg_root} -- the eval gen "
@@ -1228,37 +1247,39 @@ def run_all(args) -> None:
         for cell in cells:
             adapter_dir = ADAPTER_OUT / (cell.eval_key + ("_smoke" if args.smoke else ""))
             extract_and_eval_cell(cell, adapter_dir, smoke=args.smoke, gpu_id=args.gpu_id)
-        # registry manifest + readability assert + live-judge smoke describe the
-        # WHOLE fleet and must run EXACTLY ONCE -- on shard 0, over all_cells.
+    if args.phase == "p2":
+        return
+
+    if args.phase in ("all", "p3"):
+        # all-fleet finalizers + upload describe/push the WHOLE fleet -> shard 0 only,
+        # all_cells. They run AT p3 (NOT inside the p2 worker): the wrapper waits for
+        # EVERY p2 shard before invoking --phase p3, so the full marker_slot_stats.json
+        # set exists when the A7 readability assert reads it. r7 placed these inside the
+        # p2 worker, which fires the A7 HALT on shard 0's own cells the instant shard 0
+        # finishes -- racing the ~18 marker cells on shards 1-7 whose slot stats do not
+        # exist yet (silently `continue`d, so checked>0 hides the gap). That re-broke
+        # the #664 round-2 B3 readability gate (#664 r7 FAIL, concern
+        # post-p2-finalizers-race).
         if args.shard_id == 0:
             # registry manifest (the §6.5 verifier surface).
-            phase_log("p2_manifest")
+            phase_log("p3_manifest")
             _write_manifest(all_cells, smoke=args.smoke)
             # marker read-gauge readability assert (§10 / §11 A7); production -> HALT
             # on a readability failure (#664 round-2 B3).
-            phase_log("p2_a7_assert")
+            phase_log("p3_a7_assert")
             _marker_readability_assert(all_cells, smoke=args.smoke)
             # #664 round-2 B5: in smoke, exercise the PRODUCTION judge branch live on a
             # tiny real Batch-API slice (one content-behavior cell, 1 column, ≤5 comps).
             if args.smoke and args.live_judge_smoke:
                 _live_judge_smoke(all_cells)
-        else:
-            logger.info(
-                "[shard] shard %d/%d: SKIP p2_manifest/p2_a7_assert/live-judge (shard-0-only)",
-                args.shard_id,
-                args.num_shards,
-            )
-    if args.phase == "p2":
-        return
-
-    if args.phase in ("all", "p3"):
-        # upload describes + pushes the WHOLE fleet's artifacts -> shard 0 only, all_cells.
-        if args.shard_id == 0:
+            # upload describes + pushes the WHOLE fleet's artifacts.
             phase_log("p3_upload")
             upload_artifacts(all_cells, smoke=args.smoke)
         else:
             logger.info(
-                "[shard] shard %d/%d: SKIP p3_upload (shard-0-only)", args.shard_id, args.num_shards
+                "[shard] shard %d/%d: SKIP p3 finalizers + upload (shard-0-only)",
+                args.shard_id,
+                args.num_shards,
             )
 
 
@@ -1274,7 +1295,7 @@ def _live_judge_smoke(cells: list[C.Cell]) -> None:
         logger.info("[live-judge-smoke] no content-behavior cell selected -- B5 slice N/A")
         return
     cell = content_cells[0]
-    phase_log("p2_live_judge_smoke")
+    phase_log("p3_live_judge_smoke")
     out_path = E.judge_cell(cell, smoke=True, live_judge=True)
     payload = json.loads(out_path.read_text())
     judged = sum(r.get("n_judged", 0) for r in payload["rates"].values())
