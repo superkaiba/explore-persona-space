@@ -131,7 +131,10 @@ def extract_centroids(
             layer_centroids.append(centroid)
         centroids[layer_idx] = torch.stack(layer_centroids)
 
-    # Free GPU memory
+    # Free GPU memory thoroughly: clear the hook-captured GPU tensor dict and
+    # the model before collecting, so a later vLLM init in the same process does
+    # not inherit the reserved allocation (#685 coexistence-leak class).
+    captured.clear()
     del model
     gc.collect()
     torch.cuda.empty_cache()
@@ -420,11 +423,25 @@ def _teacher_forced_response_mean(
                 f"[respmean] TF batch {start // tf_batch_size + 1}/{-(-len(rows) // tf_batch_size)}"
             )
 
+    # Thorough teardown so a SUBSEQUENT vLLM init (the next dispatcher-loop
+    # iteration's _generate_responses_vllm) sees the GPU as free. The bf16 7B
+    # weights are ~14.25 GiB and the per-batch hook ``captured`` dict pins
+    # detached GPU hidden-state tensors; a bare ``del model`` leaves both in the
+    # allocator's reserved pool, so vLLM (which computes its target as
+    # gpu_memory_utilization x TOTAL, NOT x FREE) aborts with "Free memory ...
+    # less than desired gpu_memory_utilization". Clear EVERY GPU reference,
+    # collect, empty the cache, ipc_collect (cross-process freed mem), and sleep
+    # to let any async free settle. (issue #685: 2nd dispatcher-loop behavior
+    # crashed at vLLM init with ~16.5 GiB held by behavior 1's HF model.)
     for h in hooks:
         h.remove()
+    captured.clear()
     del model
     gc.collect()
-    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()  # release cross-process (subprocess) freed mem
+        time.sleep(1.0)  # let any async free settle before the next vLLM init
     return pooled
 
 
@@ -438,7 +455,7 @@ def extract_centroids_response_mean(
     *,
     max_new_tokens: int = 1024,
     tf_batch_size: int = 8,
-    gpu_memory_utilization: float = 0.85,
+    gpu_memory_utilization: float = 0.5,
     responses_cache_path: str | Path | None = None,
 ) -> tuple[dict[int, torch.Tensor], list[str], dict]:
     """Recipe (b) of persona-distance-metrics.md: mean over OWN response tokens.
@@ -466,7 +483,15 @@ def extract_centroids_response_mean(
         dtype: model dtype for the teacher-forced pass.
         max_new_tokens: vLLM generation cap (truncation rate reported).
         tf_batch_size: rows per teacher-forced batch.
-        gpu_memory_utilization: vLLM engine memory fraction.
+        gpu_memory_utilization: vLLM engine memory fraction (FRACTION OF TOTAL,
+            not of free). Default 0.5 leaves headroom so that a vLLM init in a
+            SUBSEQUENT call within the same process (the per-behavior dispatcher
+            loop) does not collide with any lagging allocator reservation from
+            this call's HF teacher-forced model, and so the run is memory-safe on
+            smaller GPUs (e.g. L4 22 GiB). 0.5 = ~11 GiB on L4, ~40 GiB on H100
+            — ample for KV cache on a 7B model. The HF model is torn down before
+            vLLM loads (phases are sequential; see ``_teacher_forced_response_mean``
+            teardown), so the fraction need not also fit the HF weights. (#685)
         responses_cache_path: JSON checkpoint for phase 1.
 
     Returns:
