@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 678,
+  "highest_id": 679,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4264,6 +4264,13 @@
       "path": "tasks/planning/678",
       "status": "planning",
       "title": "Route workflow-surface fixes through a background /issue --auto session (replace the workflow-improver auto-spawn) for full plan+critic review"
+    },
+    "679": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/679",
+      "status": "proposed",
+      "title": "Bound active-task disk on the CPU VM (wire incremental cleaner + faster detection + escalation)"
     },
     "68": {
       "has_clean_result": false,
