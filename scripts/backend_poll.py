@@ -301,8 +301,11 @@ def _is_runpod_async_wedge_failure(handle, result) -> bool:
     never trips it; the wedged phase is set ONLY by
     :func:`_maybe_escalate_runpod_wedge` once a RUNNING+no-port pod matures past K.
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: _is_runpod_async_wedge_failure")
+    return (
+        getattr(handle, "backend", None) == "runpod"
+        and result.status == "dead"
+        and result.current_phase == RUNPOD_WORKLOAD_WEDGED_PHASE
+    )
 
 
 def _read_phase_clock(sidecar: Path) -> tuple[str | None, float | None]:
@@ -439,8 +442,17 @@ def _read_runpod_noport_clock(sidecar: Path) -> float | None:
     ``extra["runpod_noport_first_seen_ts"]`` reads as ``None`` (treated as "no
     clock yet" -> re-stamp), NEVER raises. The S2 test pins this.
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: _read_runpod_noport_clock")
+    try:
+        payload = json.loads(Path(sidecar).read_text())
+    except (OSError, json.JSONDecodeError, ValueError):
+        return None
+    extra = payload.get("extra") if isinstance(payload, dict) else None
+    if not isinstance(extra, dict):
+        return None
+    ts = extra.get("runpod_noport_first_seen_ts")
+    # Guard the parse like _read_phase_clock (L290): a non-numeric value reads as
+    # None (no clock yet) rather than reaching float() and raising.
+    return float(ts) if isinstance(ts, (int, float)) else None
 
 
 def _write_runpod_noport_clock(sidecar: Path, *, ts: float) -> None:
@@ -450,8 +462,27 @@ def _write_runpod_noport_clock(sidecar: Path, *, ts: float) -> None:
     ``extra["runpod_noport_first_seen_ts"]`` (every other field preserved
     verbatim), write-temp + rename, and a write failure is LOGGED not raised.
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: _write_runpod_noport_clock")
+    try:
+        path = Path(sidecar)
+        payload = json.loads(path.read_text())
+        if not isinstance(payload, dict):
+            return
+        extra = payload.get("extra")
+        if not isinstance(extra, dict):
+            extra = {}
+            payload["extra"] = extra
+        extra["runpod_noport_first_seen_ts"] = float(ts)
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        tmp.replace(path)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        logging.warning(
+            "backend_poll: RunPod no-port clock write failed for %s (%s: %s); "
+            "the next tick re-reads stale state (never manufactures a wedge)",
+            sidecar,
+            type(exc).__name__,
+            exc,
+        )
 
 
 def _clear_runpod_noport_clock(sidecar: Path) -> None:
@@ -460,8 +491,25 @@ def _clear_runpod_noport_clock(sidecar: Path) -> None:
     Called when the live pod exposes a public port or leaves RUNNING — the wedge
     never matured, so the next observation re-stamps from scratch.
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: _clear_runpod_noport_clock")
+    try:
+        path = Path(sidecar)
+        payload = json.loads(path.read_text())
+        if not isinstance(payload, dict):
+            return
+        extra = payload.get("extra")
+        if not isinstance(extra, dict) or "runpod_noport_first_seen_ts" not in extra:
+            return
+        del extra["runpod_noport_first_seen_ts"]
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        tmp.replace(path)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        logging.warning(
+            "backend_poll: RunPod no-port clock clear failed for %s (%s: %s)",
+            sidecar,
+            type(exc).__name__,
+            exc,
+        )
 
 
 def _maybe_escalate_runpod_wedge(handle, result, sidecar: Path, *, now: float):
@@ -484,8 +532,56 @@ def _maybe_escalate_runpod_wedge(handle, result, sidecar: Path, *, now: float):
       current_phase=RUNPOD_WORKLOAD_WEDGED_PHASE`` so
       :func:`_is_runpod_async_wedge_failure` matches.
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: _maybe_escalate_runpod_wedge")
+    if getattr(handle, "backend", None) != "runpod":
+        return result
+    from runpod_api import get_pod_by_name  # live RunPod API (X-Team-Id baked in)
+
+    info = get_pod_by_name(handle.pod_name)  # PodInfo or None
+    healthy_or_terminal = (
+        info is None  # gone -> ordinary dead path
+        or getattr(info, "desired_status", None) != "RUNNING"  # EXITED/terminal -> not a wedge
+        or (info.ssh_host and info.ssh_port)  # public port present -> healthy
+    )
+    if healthy_or_terminal:
+        _clear_runpod_noport_clock(sidecar)
+        return result
+    # RUNNING + no public port: start/continue the no-port clock.
+    first_seen = _read_runpod_noport_clock(sidecar)  # never raises (S2 contract)
+    if first_seen is None:
+        _write_runpod_noport_clock(sidecar, ts=now)
+        # A1-residue: first observation -> override an SSH-dead poll to RUNNING so
+        # polling continues until the wedge matures past K.
+        return replace(
+            result,
+            status="running",
+            current_phase=RUNPOD_WORKLOAD_OBSERVED_PHASE,
+            pid_alive=True,
+            new_milestone=True,
+        )
+    wedged_for = now - first_seen
+    if wedged_for > RUNPOD_WEDGE_K_SEC:
+        logging.warning(
+            "backend_poll: RunPod %s RUNNING-but-no-port for %.0fs (>%ds K floor) "
+            "— host-pinned resume cannot heal; escalating to %s (#664 wedge)",
+            handle.pod_name,
+            wedged_for,
+            RUNPOD_WEDGE_K_SEC,
+            RUNPOD_WORKLOAD_WEDGED_PHASE,
+        )
+        return replace(
+            result,
+            status="dead",
+            current_phase=RUNPOD_WORKLOAD_WEDGED_PHASE,
+            new_milestone=True,
+            pid_alive=False,
+        )
+    # A1-residue: within the K floor (subsequent tick) -> still running, keep polling.
+    return replace(
+        result,
+        status="running",
+        current_phase=RUNPOD_WORKLOAD_OBSERVED_PHASE,
+        pid_alive=True,
+    )
 
 
 @dataclass
@@ -511,8 +607,20 @@ def _issue_cells_for_handle(issue: int, handle) -> list:
     ``issue == 664`` guard; a non-#664 issue returns ``[]`` (the adapters-only
     path, whose inputs are inline-verified by ``train_lora``).
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: _issue_cells_for_handle")
+    if int(issue) == 664:
+        # Imported behind the issue==664 guard so a non-#664 poll never triggers
+        # the import. realized_grid() is pure (reads the static grid + battery),
+        # no pod-local state.
+        import sys
+        from pathlib import Path as _Path
+
+        scripts_dir = str(_Path(__file__).resolve().parent)
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        import issue664_common as C
+
+        return list(C.realized_grid())
+    return []
 
 
 def _wedged_run_inputs_on_hf(issue: int, handle) -> _WedgeInputsGate:
@@ -524,8 +632,125 @@ def _wedged_run_inputs_on_hf(issue: int, handle) -> _WedgeInputsGate:
     data is preserved, a not-yet-run ABSENT cell is rerunnable, and only a
     half-uploaded PARTIAL cell would lose recoverable work.
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: _wedged_run_inputs_on_hf")
+    cells = _issue_cells_for_handle(issue, handle)  # for #664: realized_grid()
+    if not cells:
+        # No per-cell artifacts (adapters-only path): the adapters were
+        # inline-verified by train_lora, so there is nothing for THIS gate to
+        # block on -> safe to terminate.
+        return _WedgeInputsGate(ok=True, complete=[], partial=[], absent=[])
+    import sys
+    from pathlib import Path as _Path
+
+    scripts_dir = str(_Path(__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    import huggingface_hub
+    import issue664_common as C
+    import issue664_dispatch as D
+
+    files = set(
+        huggingface_hub.list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+    )
+    complete: list[str] = []
+    partial: list[str] = []
+    absent: list[str] = []
+    for c in cells:
+        state = D._classify_cell_hub_state(c, files)  # 'complete'|'partial'|'absent' (S1)
+        (complete if state == "complete" else partial if state == "partial" else absent).append(
+            c.eval_key
+        )
+    # Terminate is allowed iff ZERO partial cells: a COMPLETE cell's data is
+    # preserved, an ABSENT (not-yet-run) cell reruns on the fresh pod, and only a
+    # half-uploaded PARTIAL cell would lose recoverable work.
+    return _WedgeInputsGate(
+        ok=(len(partial) == 0), complete=complete, partial=partial, absent=absent
+    )
+
+
+def _runpod_handle_identity(handle) -> dict:
+    """The (pod_name, job_id) identity of a RunPod handle, for sentinel matching.
+
+    Mirrors :func:`_gcp_handle_identity`: the sentinel records the identity of the
+    wedged RunPod run that ALREADY launched a fresh-pod failover, so a later,
+    genuinely-NEW run (a fresh-pod re-provision writes a NEW pod_name to the
+    sidecar) is NOT suppressed by a stale sentinel.
+    """
+    return {
+        "pod_name": getattr(handle, "pod_name", None),
+        "job_id": getattr(handle, "job_id", None),
+    }
+
+
+def _runpod_wedge_sentinel_path(sidecar: Path) -> Path:
+    """The idempotency sentinel path for a RunPod no-port wedge failover (#664/#689).
+
+    A sibling file in the same ``.claude/cache/`` dir as the handle sidecar (so it
+    is cwd-INDEPENDENT for free), DISTINCT from the GCP failover sentinel
+    (:func:`_failover_sentinel_path` -> ``-failover-persistence-failed.json``):
+    ``issue-<N>-handle.json`` -> ``issue-<N>-runpod-wedge-handled.json``.
+    """
+    name = sidecar.name
+    stem = name[: -len("-handle.json")] if name.endswith("-handle.json") else sidecar.stem
+    return sidecar.with_name(f"{stem}-runpod-wedge-handled.json")
+
+
+def _write_runpod_wedge_sentinel(sentinel: Path, *, issue: int, handle) -> None:
+    """Persist the RunPod-wedge idempotency sentinel atomically, best-effort.
+
+    Records the wedged RunPod run identity (pod_name/job_id) so a subsequent poll
+    on the SAME wedged handle short-circuits (no second terminate/re-provision). A
+    write failure is LOGGED, not raised — the worst case is one extra
+    terminate-and-reprovision on the next tick, never a silent suppression.
+    """
+    try:
+        sentinel.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "issue": int(issue),
+            "reason": "runpod_noport_wedge_failover",
+            "runpod_wedge": _runpod_handle_identity(handle),
+        }
+        tmp = sentinel.with_suffix(sentinel.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        tmp.replace(sentinel)
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: failed to write RunPod-wedge idempotency sentinel %s (%s: %s)",
+            sentinel,
+            type(exc).__name__,
+            exc,
+        )
+
+
+def _runspec_from_runpod_handle(handle, issue):
+    """Reconstruct the ``RunSpec`` for the fresh-pod re-provision from the handle.
+
+    Mirrors :func:`_runspec_from_gcp_handle`. A router-launched RunPod handle's
+    ``extra`` carries ``intent`` plus (for runs dispatched through the unified
+    router's canonical handle) ``workload_cmd`` / ``hydra_args`` / ``gpus`` /
+    ``time_budget_hours``. FAILS LOUD (raises ``ValueError``) on a handle that
+    carries NEITHER a workload command NOR hydra args — it NEVER silently
+    re-provisions a blank pod.
+    """
+    from explore_persona_space.backends.base import RunSpec
+
+    extra = handle.extra or {}
+    workload_cmd = extra.get("workload_cmd", "") or ""
+    hydra_args = tuple(extra.get("hydra_args") or ())
+    if not workload_cmd and not hydra_args:
+        raise ValueError(
+            f"RunPod handle for issue {issue} lacks workload_cmd/hydra_args in extra; "
+            f"cannot reconstruct a RunSpec for the fresh-pod re-provision. Refusing to "
+            f"re-provision a blank pod (extra keys present: {sorted(extra)})."
+        )
+    return RunSpec(
+        issue=int(issue),
+        intent=extra.get("intent", "lora-7b"),
+        backend="runpod",
+        gpus=extra.get("gpus"),
+        time_budget_hours=extra.get("time_budget_hours"),
+        workload_cmd=workload_cmd,
+        hydra_args=hydra_args,
+    )
 
 
 def _runpod_wedge_already_handled(issue: int, handle, sidecar: Path) -> bool:
@@ -535,8 +760,16 @@ def _runpod_wedge_already_handled(issue: int, handle, sidecar: Path) -> bool:
     wedged pod_id) so a second tick on the OLD handle never double-terminates /
     double-provisions.
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: _runpod_wedge_already_handled")
+    del issue  # identity is keyed on the wedged pod_name/job_id, not the issue
+    # A sibling .claude/cache file records the wedged-pod identity this failover
+    # already handled. A genuinely-new run (a fresh-pod re-provision writes a NEW
+    # pod_name to the sidecar) does NOT match a stale sentinel, so it still gets
+    # its own one failover. A corrupted/unreadable sentinel reads as ABSENT
+    # (``_read_failover_sentinel`` returns ``None``) -> worst case one extra
+    # terminate-and-reprovision, never a silent suppression.
+    sentinel = _runpod_wedge_sentinel_path(sidecar)
+    prior = _read_failover_sentinel(sentinel)
+    return prior is not None and prior.get("runpod_wedge") == _runpod_handle_identity(handle)
 
 
 def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
@@ -548,8 +781,67 @@ def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path) -> dict
     resume), re-point the handle sidecar, durable-lease guarded. The fresh pod's
     P2 dispatcher skips HF-complete cells via A2's ``_cell_done_anywhere``.
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: _relaunch_fresh_runpod")
+    from explore_persona_space.backends.issue_dispatch import (
+        read_handle_sidecar,
+        write_handle_sidecar,
+    )
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+    from explore_persona_space.backends.runpod import RunPodBackend
+    from explore_persona_space.backends.slurm import post_marker_via_task_py
+
+    spec = _runspec_from_runpod_handle(handle, issue)
+    route_result = failover_to_runpod_after_async_workload_crash(
+        spec=spec,
+        runpod_backend=RunPodBackend(),
+        evidence={
+            "source": "runpod_noport_wedge",
+            "current_phase": result.current_phase,
+            "log_tail_excerpt": result.log_tail_excerpt,
+            "wedged_pod_name": handle.pod_name,
+        },
+        residual_gap=(
+            "RunPod RUNNING-but-no-port host wedge (#664); host-pinned resume cannot "
+            "heal — re-provisioning a FRESH pod"
+        ),
+        marker_poster=post_marker_via_task_py,
+        on_launched=lambda h: write_handle_sidecar(h, sidecar),
+    )
+    # AUTHORITATIVE post-route sidecar write + readback (mirrors the GCP path): the
+    # on_launched hook is best-effort (the router swallows its exceptions), so
+    # re-point the sidecar HERE and PROVE it landed as a fresh RunPod handle before
+    # emitting running.
+    write_handle_sidecar(route_result.handle, sidecar)
+    recovered = read_handle_sidecar(sidecar)
+    if recovered.backend != "runpod":
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"RunPod wedge failover re-provisioned {route_result.handle.pod_name} "
+                f"but the sidecar readback shows backend={recovered.backend!r}, not 'runpod'"
+            ),
+        )
+    return {
+        "status": "running",
+        "current_phase": "runpod_noport_wedge_failover_fresh_pod",
+        "new_milestone": True,
+        "last_log_mtime_sec_ago": 0,
+        "pid_alive": True,
+        "log_tail_excerpt": (
+            f"RunPod {handle.pod_name} RUNNING-but-no-port wedge (#664); terminated + "
+            f"re-provisioned fresh pod {route_result.handle.pod_name}"
+        ),
+        "gate": None,
+        "sentinels_processed": 0,
+        "phase_log_mtime_sec_ago": 10**9,
+        "shard_log_mtime_sec_ago": 10**9,
+        "gpu_util": "unknown",
+        "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
+        "issue": int(issue),
+    }
 
 
 def _failover_wedged_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
@@ -562,8 +854,61 @@ def _failover_wedged_runpod(*, issue: int, handle, result, sidecar: Path) -> dic
     halt-criterion #2). Idempotency is a durable lease + sidecar sentinel keyed
     to the wedged pod_id (``_runpod_wedge_already_handled``).
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: _failover_wedged_runpod")
+    # 1. IDEMPOTENCY SHORT-CIRCUIT (sentinel keyed to the wedged pod identity). A
+    #    second tick on the OLD handle after a successful failover short-circuits —
+    #    no double-terminate / double-provision.
+    if _runpod_wedge_already_handled(issue, handle, sidecar):
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="runpod_wedge_already_handled",
+            log_tail=(
+                f"RunPod wedge failover for {handle.pod_name} already handled on a prior "
+                f"tick (idempotency sentinel); refusing a second terminate/re-provision"
+            ),
+        )
+
+    # 2. PER-CELL INPUTS-ON-HF GATE (M1, fix (a) precondition). A PARTIAL cell (one
+    #    artifact-kind on HF, the other not) BLOCKS the irreversible terminate; a
+    #    COMPLETE cell's data is preserved and an ABSENT cell reruns on the fresh
+    #    pod, so neither blocks.
+    gate = _wedged_run_inputs_on_hf(issue, handle)
+    if not gate.ok:
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="runpod_wedge_inputs_unverified",
+            log_tail=(
+                f"RunPod {handle.pod_name} wedged (no port); {len(gate.partial)} PARTIAL "
+                f"cell(s) on HF (one artifact-kind missing): {gate.partial}. Refusing the "
+                f"irreversible terminate (CLAUDE.md halt-criterion #2) — human decision "
+                f"needed; complete={len(gate.complete)} absent={len(gate.absent)}"
+            ),
+        )
+
+    # 3. TERMINATE the billing leak (fail-loud; terminate_pod raises on API error).
+    from runpod_api import get_pod_by_name, terminate_pod
+
+    info = get_pod_by_name(handle.pod_name)
+    if info is not None:
+        terminate_pod(info.pod_id)
+        logging.warning(
+            "backend_poll: terminated wedged RunPod %s (%s) — billing stopped "
+            "(complete=%d absent=%d)",
+            handle.pod_name,
+            info.pod_id,
+            len(gate.complete),
+            len(gate.absent),
+        )
+
+    # 4. STAMP the idempotency sentinel BEFORE the re-provision so a re-fired tick
+    #    on the old handle short-circuits even if the re-provision below raises.
+    _write_runpod_wedge_sentinel(_runpod_wedge_sentinel_path(sidecar), issue=issue, handle=handle)
+
+    # 5. RE-PROVISION FRESH + resume the dispatcher (NOT a host-pinned resume). The
+    #    fresh pod's P2 WaveDispatcher skips HF-complete cells (A2
+    #    _cell_done_anywhere), re-running only the not-yet-run (absent) cells.
+    return _relaunch_fresh_runpod(issue=issue, handle=handle, result=result, sidecar=sidecar)
 
 
 def _failover_sentinel_path(sidecar: Path) -> Path:
@@ -1200,6 +1545,27 @@ def main(argv: list[str] | None = None) -> int:
             issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
         )
         print(json.dumps(failover_json))
+        return 0
+
+    # #664/#689 RunPod RUNNING-but-no-port host wedge escalation: a RunPod pod
+    # whose desiredStatus stays RUNNING with null/empty runtime.ports past
+    # RUNPOD_WEDGE_K_SEC (host-pinned resume cannot heal it) is rewritten to
+    # status=dead / terminal_runpod_no_port_wedged so the failover predicate below
+    # matches. Within the K floor an SSH-dead poll is rewritten to status=running
+    # so the orchestrator keeps polling until the wedge matures. A no-op on every
+    # non-RunPod / healthy / within-floor case (the no-port clock rides the
+    # sidecar's extra dict, fail-soft).
+    result = _maybe_escalate_runpod_wedge(handle, result, Path(sidecar), now=time.time())
+
+    # RunPod wedge failover (terminate the billing leak + re-provision a fresh pod),
+    # gated on the per-cell three-state inputs-on-HF gate (M1): a PARTIAL cell blocks
+    # the irreversible terminate (failure_class: infra block); COMPLETE cells are
+    # preserved on HF and ABSENT cells rerun on the fresh pod. Idempotency-guarded.
+    if _is_runpod_async_wedge_failure(handle, result):
+        wedge_json = _failover_wedged_runpod(
+            issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
+        )
+        print(json.dumps(wedge_json))
         return 0
 
     print(json.dumps(_serialize_poll_result(result)))

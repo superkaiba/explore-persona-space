@@ -202,6 +202,60 @@ recovery for a hung-but-RUNNING VM is a manual RunPod pivot. (See also the
 #491 `bufio.Scanner: token too long` zombie in `.claude/rules/gotchas.md`,
 a sibling hung-but-RUNNING mode recoverable in place via SSH relaunch.)
 
+## Part C — RunPod RUNNING-but-no-port host wedge (#664)
+
+The RunPod sibling of the GCP hung-but-RUNNING wedge (Part B / #669). RunPod
+`desiredStatus` is decoupled from `runtime.ports`: a degraded host keeps the
+pod RUNNING (and billing) while `runtime.ports` is empty, so
+`runpod_api._parse_pod` yields `ssh_host=None`. `resume_pod` is HOST-PINNED
+(`podResume{podId, gpuCount}`, no host reselection) — a stop+resume returns to
+the SAME dead host. `--refresh-from-api` is a NO-OP here (the port is
+platform-absent, not stale — that flag fixes the #488 stale-port case).
+
+**Detection** (`backend_poll._maybe_escalate_runpod_wedge`, the RunPod sibling
+of `_maybe_escalate_gcp_wedge`): a RunPod handle whose LIVE `desiredStatus`
+stays RUNNING with null/empty `runtime.ports` past `RUNPOD_WEDGE_K_SEC`
+(default 900s, env `EPM_RUNPOD_WEDGE_K_SEC`, mirroring
+`GCP_STALENESS_FLOOR_SEC` — above `wait_for_ssh`'s 600s window + a retry
+margin, so a healthy mid-resume pod never trips) is rewritten to
+`status=dead, current_phase=RUNPOD_WORKLOAD_WEDGED_PHASE`. Within K, an
+SSH-dead poll (`poll_once` returns `status=dead` on probe failure) is REWRITTEN
+to `status=running` (`RUNPOD_WORKLOAD_OBSERVED_PHASE`) so the orchestrator
+keeps polling until the wedge matures — a bare pass-through would stop on
+ordinary dead before K. The no-port clock rides the sidecar `extra` dict
+(keyed `runpod_noport_first_seen_ts`) and is fail-soft (atomic tmp+rename,
+never raises on a malformed/non-numeric value — same contract as the GCP
+`_read_phase_clock`); it is CLEARED the moment a public port appears or the
+pod leaves RUNNING, so a transient slow-bring-up never escalates off a stale
+timestamp.
+
+**Recovery** (`backend_poll._failover_wedged_runpod`, gated on a PER-CELL
+inputs-on-HF gate): once `_is_runpod_async_wedge_failure` matches, the per-cell
+three-state gate (`_wedged_run_inputs_on_hf`) classifies each selected cell
+from ONE fresh `list_repo_files` against the EXACT expected file set (S1, not
+prefix-presence) — COMPLETE (both raw+store exact sets on HF) is safe, a
+PARTIAL cell (one artifact-kind missing) BLOCKS, a NOT-YET-RUN (absent) cell
+does NOT block (rerunnable from verified earlier inputs). With ZERO partial
+cells, `terminate_pod` stops the billing leak and a FRESH pod is re-provisioned
+(NOT a host-pinned resume) + the dispatcher resumed idempotently (a sidecar
+sentinel keyed to the wedged pod identity, exactly once); the fresh pod's P2
+dispatcher skips HF-complete cells (`_cell_done_anywhere` = local-done OR
+HF-complete). Any partial cell → NO terminate, surface a `failure_class: infra`
+block (`reason=runpod_wedge_inputs_unverified`) so a human decides (CLAUDE.md
+halt-criterion #2). This is the irreversible auto-terminate, analogous to the
+`/issue` Step 8 auto-terminate-after-upload-PASS precedent — data-safe because
+fix (a)'s per-cell incremental upload + the per-cell gate make every COMPLETE
+cell's data already present on HF.
+
+The data-safety PREREQUISITE is the per-cell incremental upload in
+`scripts/issue664_dispatch.py` (`_upload_cell_artifacts`, fired the moment each
+cell's extract+eval worker succeeds) — without it the terminate would strand
+every not-yet-P3-uploaded cell. This closes the #664 gap. The complementary
+`cmd_resume` advice split (`pod_lifecycle.py`: a still-null resume names
+terminate+re-provision, not the wrong `--refresh-from-api`) is the interactive
+sibling; the report-only `running_no_port` flag in `pod_audit.py` is the
+fleet-level visibility backstop (never auto-terminates).
+
 ## Tests of record
 
 - `tests/test_router.py::test_gcp_workload_error_fails_over_to_runpod_no_slurm_cascade`
@@ -211,3 +265,9 @@ a sibling hung-but-RUNNING mode recoverable in place via SSH relaunch.)
 - `tests/test_gcp_backend.py::test_render_startup_script_diagnostics_uploads_log_and_partial_artifacts`
 - `tests/test_gcp_backend.py::test_render_startup_script_diagnostics_is_guarded_and_bounded`
 - `tests/test_gcp_backend.py::test_render_startup_script_is_valid_bash`
+- `tests/test_runpod_wedge_detection.py` (Part C: within-K override, past-K
+  escalation, malformed-clock fail-soft, predicate scope, per-cell gate
+  partial-blocks / mid-sweep-allows, failover idempotency)
+- `tests/test_issue664_per_cell_upload.py` (Part C prerequisite: per-cell
+  incremental upload idempotency + exact-set + fail-loud verify + A2 fresh-pod
+  resume)

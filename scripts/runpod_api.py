@@ -678,8 +678,10 @@ def get_pod_by_name(name: str) -> PodInfo | None:
     unique per ``pod-<N>`` provision; a duplicate is a stale-pod anomaly the
     audit cron handles separately).
     """
-    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
-    raise NotImplementedError("#689 round 2: get_pod_by_name")
+    for pod in list_team_pods():
+        if pod.name == name:
+            return pod
+    return None
 
 
 def stop_pod(pod_id: str) -> PodInfo:
