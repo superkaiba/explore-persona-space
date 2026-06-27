@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 689,
+  "highest_id": 690,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4357,6 +4357,13 @@
       "path": "tasks/archived/69",
       "status": "archived",
       "title": "Capability and misalignment leakage"
+    },
+    "690": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/690",
+      "status": "proposed",
+      "title": "Auto-dispatch proposed infra tasks without a PM STATUS pass: file-time spawn + always-on watcher sweep"
     },
     "7": {
       "has_clean_result": false,
