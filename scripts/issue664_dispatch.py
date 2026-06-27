@@ -544,15 +544,27 @@ def _behavior_judge_user_msg(question: str, completion: str) -> str:
 
 
 def _submit_behavior_labels(
-    behavior: str, qr_pairs: list[tuple[str, str]], *, smoke: bool
+    behavior: str, src: str, qr_pairs: list[tuple[str, str]], *, smoke: bool
 ) -> JudgeHandle | None:
-    """Fire-and-forget submit the behavior-label judge for elicited positives.
+    """Fire-and-forget submit the behavior-label judge for one source's elicited
+    positives.
 
     Returns a :class:`JudgeHandle` (already ``.submit()``ed) whose ``.reconcile()``
     harvests the labels LATER, off the GPU critical path (#676 judge overlap) — so
     the vLLM engine keeps generating the next source's R while the prior source's
     judge clears. Returns ``None`` in smoke (no live judge — labels are all 1,
     resolved by :func:`_labels_from_handle`).
+
+    ``save_raw`` is keyed PER SOURCE (``judge_filter/{behavior}__{src}.json``), NOT
+    on a coarse ``int(time.time())`` (#676 round-2, concern judge-save-raw-collision):
+    the deferred-reconcile split means two same-behavior source jobs whose wall-clock
+    second collides would otherwise share one ``save_raw`` — the first job's
+    reconcile writes it, the second reads the FIRST source's scores back, and because
+    the custom_ids are POSITION-keyed (``elicit__{idx:05d}__00``, identical across
+    sources but reflecting different ``resps``) the second source silently inherits
+    the first source's labels → corrupted ``judge_behavior`` cache. The source is the
+    disambiguator; idempotency on resume comes from ``make_custom_id`` + the
+    save_raw-exists sentinel, not from the path's uniqueness over time.
 
     The judge is claude-sonnet-4-5-20250929 via the #663-hardened Batch-API client
     (NEVER a substring match -- CLAUDE.md), on the SAME per-column rubric the
@@ -566,13 +578,14 @@ def _submit_behavior_labels(
     # batch_judge shape: {persona -> {question -> [completions]}}; one completion each.
     # persona "elicit" -> custom_id elicit__{idx:05d}__00 (the scheme the reader uses).
     completions = {"elicit": {q: [r] for q, r in qr_pairs}}
-    save_raw = CACHE_ROOT / "judge_filter" / f"{behavior}_{int(time.time())}.json"
+    save_raw = CACHE_ROOT / "judge_filter" / f"{behavior}__{src}.json"
     handle = submit_judge_async(
         completions,
         judge_system_prompt=E._judge_system_prompt(column),
         format_user_msg=_behavior_judge_user_msg,
-        cell_key=f"elicit_{behavior}",
+        cell_key=f"elicit_{behavior}__{src}",
         save_raw=save_raw,
+        expected_source=src,
         judge_model="claude-sonnet-4-5-20250929",
     )
     handle.submit()
@@ -635,7 +648,7 @@ def _elicit_sycophancy(llm, sources, judge_jobs: list, *, smoke: bool) -> None:
         ]
         resps = _greedy(llm, prompts, 256)  # greedy for the theory-faithful primary
         qr = list(zip(wrong_claims, resps, strict=True))
-        handle = _submit_behavior_labels("sycophancy", qr, smoke=smoke)
+        handle = _submit_behavior_labels("sycophancy", src, qr, smoke=smoke)
         judge_jobs.append(
             _make_pos_cache_job("syco_pos", src, "sycophancy", qr, handle, smoke=smoke)
         )
@@ -656,7 +669,7 @@ def _elicit_refusal(llm, sources, neg_panel, requests, judge_jobs: list, *, smok
             qr = list(zip(requests, resps, strict=True))
             # JUDGE-FILTER refusal positives (#664 round-2 M2), submitted
             # fire-and-forget + deferred to a reconcile job (#676 overlap).
-            handle = _submit_behavior_labels("refusal", qr, smoke=smoke)
+            handle = _submit_behavior_labels("refusal", src, qr, smoke=smoke)
             judge_jobs.append(
                 _make_pos_cache_job("refusal_pos", src, "refusal", qr, handle, smoke=smoke)
             )
@@ -825,6 +838,7 @@ def _write_baseline_propensity(
                 format_user_msg=_behavior_judge_user_msg,
                 cell_key=f"baseline_{behavior}_{src}",
                 save_raw=save_raw,
+                expected_source=src,
                 judge_model="claude-sonnet-4-5-20250929",
             )
             handle.submit()
@@ -1339,9 +1353,42 @@ def _marker_readability_assert(cells: list[C.Cell], *, smoke: bool) -> None:
         )
 
 
+def _wave_gpu_id(args, g: int) -> int:
+    """Resolve the wave-assigned gpu index ``g`` to the actual device for a cell.
+
+    #676 round-2 (Point C / Must-Fix #3): on the single-GPU path (``--n-gpus 1``,
+    the default) the wave assigns every cell ``g == 0``, but ``--gpu-id`` is the
+    single-GPU device SELECTOR (plan §3.6: "retained as the single-GPU device
+    selector (passed through when n_gpus==1)"). So when ``n_gpus == 1`` the cell
+    runs on ``args.gpu_id`` — both the in-process ``--gpu-id`` arg AND the launcher
+    ``CUDA_VISIBLE_DEVICES`` pin. For ``n_gpus > 1`` the wave-assigned ``g`` (0..N-1)
+    is authoritative; a nonzero ``--gpu-id`` is rejected up front by
+    :func:`_validate_gpu_args` as incoherent with multi-GPU wave assignment.
+    """
+    return args.gpu_id if args.n_gpus == 1 else g
+
+
+def _validate_gpu_args(args) -> None:
+    """Reject an incoherent ``--gpu-id`` / ``--n-gpus`` combination (Point C).
+
+    A nonzero ``--gpu-id`` is the SINGLE-GPU device selector; it is meaningless
+    when ``--n-gpus > 1`` (the wave assigns devices 0..N-1 itself). Fail loud rather
+    than silently ignore it — a stray ``--gpu-id 1 --n-gpus 4`` would otherwise read
+    as "every cell on its wave-assigned gpu" with the selector quietly dropped.
+    """
+    if args.n_gpus > 1 and args.gpu_id != 0:
+        raise SystemExit(
+            f"--gpu-id {args.gpu_id} is the single-GPU device selector and is "
+            f"incoherent with --n-gpus {args.n_gpus} (the wave assigns devices "
+            f"0..{args.n_gpus - 1}). Pass --gpu-id only on the single-GPU path "
+            f"(--n-gpus 1, the default)."
+        )
+
+
 # ── Orchestration ─────────────────────────────────────────────────────────────
 def run_all(args) -> None:
     _require_credentials()
+    _validate_gpu_args(args)
     cells = _select_cells(args)
     logger.info("[dispatch] %d cells selected (smoke=%s)", len(cells), args.smoke)
 
@@ -1367,7 +1414,7 @@ def run_all(args) -> None:
             n_gpus=args.n_gpus,
             cell_key=lambda c: c.eval_key,
             is_done=lambda c: _train_done(c, smoke=args.smoke),
-            build_cmd=lambda c, g: _train_cell_cmd(c, g, smoke=args.smoke),
+            build_cmd=lambda c, g: _train_cell_cmd(c, _wave_gpu_id(args, g), smoke=args.smoke),
             dry_run=args.dry_run,
         ).run(cells, cwd=C.REPO)
     if args.phase == "p1":
@@ -1382,7 +1429,9 @@ def run_all(args) -> None:
             n_gpus=args.n_gpus,
             cell_key=lambda c: c.eval_key,
             is_done=lambda c: _cell_extract_eval_done(c, smoke=args.smoke),
-            build_cmd=lambda c, g: _extract_eval_cell_cmd(c, g, smoke=args.smoke),
+            build_cmd=lambda c, g: _extract_eval_cell_cmd(
+                c, _wave_gpu_id(args, g), smoke=args.smoke
+            ),
             dry_run=args.dry_run,
         ).run(cells, cwd=C.REPO)
         # registry manifest (the §6.5 verifier surface).
