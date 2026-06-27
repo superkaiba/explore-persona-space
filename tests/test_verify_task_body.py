@@ -104,7 +104,7 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 30 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 31 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe), the four
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
@@ -113,28 +113,31 @@ def test_good_body_passes_all():
     # `check_v3_word_caps`), the THREE v4-gated body-only checks added
     # 2026-W26 (check 18 `check_v4_methodology_shape`, check 20
     # `check_v4_word_caps`, check 21 `check_v4_results_beat` WARN) — each
-    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the THREE
+    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the FOUR
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
     # this fixture's `## Reproducibility` carries no figure-sha claim,
     # check 23 (`check_hf_url_resolves`), a PASS-with-`unverified`-note here
     # because the fixture's HF URLs are probe-fenced by conftest's
-    # EPM_VERIFY_BODY_NO_HF=1, and check 24
+    # EPM_VERIFY_BODY_NO_HF=1, check 24
     # (`check_figure_text_vs_body_tokens`, WARN), a NO-OP PASS here because
     # this fixture's only figure pins a fake sha with no `.meta.json` in
-    # the git tree. check 25 (`check_audit_availability_claims_match_hf`)
+    # the git tree, and check 26
+    # (`check_figure_panel_prose_vs_sidecar`, FAIL), a NO-OP PASS here
+    # because the fixture's figure carries no panel/series prose claim.
+    # check 25 (`check_audit_availability_claims_match_hf`)
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (30 functions), then appends the Goal soft check, the Lens 14
+    # (31 functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, AND the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc) →
-    # 37 results total (2 prepended + CHECKS[1:]=30 + 5 appended). The
+    # 38 results total (2 prepended + CHECKS[1:]=31 + 5 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 37
+    assert len(results) == 38
 
 
 def test_missing_confidence_tag():
@@ -2240,7 +2243,7 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 31 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 32 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
@@ -2250,16 +2253,19 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the FOUR generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the FIVE generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via
     `huggingface_hub.list_repo_files`), check 24
     (`check_figure_text_vs_body_tokens`, WARN: figure-embedded `.meta.json`
     text vs body prose — stale fraction / softened-token staleness, #667
-    r2), and check 25 (`check_audit_availability_claims_match_hf`: a body
+    r2), check 25 (`check_audit_availability_claims_match_hf`: a body
     "not uploaded / cannot be audited" claim vs the artifact's actual HF
-    existence, #653 r6). The migration is a RETARGET — every former check
+    existence, #653 r6), and check 26
+    (`check_figure_panel_prose_vs_sidecar`, FAIL: figure what-is-plotted
+    panel/series prose vs the sidecar's `_kind` aggregate — panel/series
+    drift, #683 r1). The migration is a RETARGET — every former check
     was kept (sometimes dormant, e.g. `check_figure_caption`) so downstream
     tests stay valid; the v3 checks PASS-skip on non-v3 bodies.
 
@@ -2269,9 +2275,9 @@ def test_checks_list_size():
     the check-16 lr-matches-plan (needs the plan), the check-17 Context
     provenance row (needs frontmatter + original-body.md), and the v3
     check-21 body-Parameters-⊆-doc (needs the methodology doc path). So
-    `verify_text` returns 37 results, but `CHECKS` stays at 31.
+    `verify_text` returns 38 results, but `CHECKS` stays at 32.
     """
-    assert len(verify_task_body.CHECKS) == 31
+    assert len(verify_task_body.CHECKS) == 32
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -5121,3 +5127,274 @@ def test_check24_caption_after_helper():
     assert "Interpretation prose" not in cap
     # No blockquote after the image → empty.
     assert verify_task_body._figure_caption_after(["![a](u)", "plain prose"], 0) == ""
+
+
+# ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
+#
+# A clean-result body's what-is-plotted prose under a `### <result>` H3 asserts
+# a plot kind in a named panel position ("right panel scatter") or a per-unit
+# dot/point overlay ("per-bank dots overlaid") that the SHA-pinned `.meta.json`
+# sidecar's `_kind` aggregate provably lacks. The sidecar is resolved strictly
+# by URL stem at the figure's commit sha — no silent fallback to a different
+# sidecar (the failure mode the check exists to catch, incident #683 r1).
+# FAIL, never WARN; conservative (only fires on an explicit panel/overlay word).
+
+_CHECK26_NAME = "figure panel prose vs figure sidecar (panel/series drift)"
+
+# A v4 body whose single result figure's what-is-plotted prose names a "Right
+# panel — scatter" structural claim. We swap the placeholder sha for the
+# throwaway repo's real HEAD sha per-test.
+_CHECK26_BODY = _V4_GOOD_BODY.replace(
+    "Plotted: mean alignment (y, %) per condition (x: baseline, tulu-25), "
+    "n=3 seeds per bar, 95% Wald CI error bars.",
+    "Plotted: Left panel — mean alignment bars per condition. "
+    "Right panel — per-context scatter for villain seed 42.",
+)
+
+
+def _scatter_sidecar():
+    """A sidecar with both bar and scatter points (a left-bars / right-scatter
+    two-panel figure), mirroring the live #683 `leaderboard_sycophancy`."""
+    return {
+        "commit": "deadbeef",
+        "created": "2026-06-24T00:00:00Z",
+        "figsize": [10.0, 4.2],
+        "points": [
+            {"_kind": "bar", "_group": 0, "category": "baseline"},
+            {"_kind": "bar", "_group": 1, "category": "tulu-25"},
+            {"_kind": "scatter", "_group": 0, "x": 0.0, "y": 0.70},
+            {"_kind": "scatter", "_group": 1, "x": 1.0, "y": 0.88},
+        ],
+        "n_series": 2,
+        "total_points": 4,
+    }
+
+
+def test_check26_consistent_panel_prose_passes(tmp_path, monkeypatch):
+    """`Right panel — per-context scatter` + sidecar carrying scatter points →
+    PASS (`consistent with panel/series prose`)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _scatter_sidecar())
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK26_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_panel_prose_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 figure sidecar(s) consistent with panel/series prose" in res.detail
+
+
+def test_check26_kind_panel_drift_fails(tmp_path, monkeypatch):
+    """`Right panel — ... scatter` prose + a bar-ONLY sidecar (zero scatter) →
+    FAIL with the specific scatter-panel blocker."""
+    bar_only = {
+        "created": "2026-06-24T00:00:00Z",
+        "points": [
+            {"_kind": "bar", "_group": 0, "category": "baseline"},
+            {"_kind": "bar", "_group": 1, "category": "tulu-25"},
+        ],
+        "n_series": 1,
+        "total_points": 2,
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, bar_only)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK26_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_panel_prose_vs_sidecar(body)
+    assert not res.passed, res.render()
+    assert "claims a `scatter` panel/series" in res.detail
+    assert "zero `scatter` points" in res.detail
+
+
+def test_check26_panel_count_prose_passes_with_many_groups(tmp_path, monkeypatch):
+    """A body whose prose says "four-panel grid" paired with a sidecar that has
+    22 `_group` values (mirrors the live `a7_spectrum_marker`, correctly called
+    a four-panel grid) → PASS. The check makes NO panel-count claim from
+    `_group`, so no FAIL fires. Regression pin for must-fix #1."""
+    body = _CHECK26_BODY.replace(
+        "Plotted: Left panel — mean alignment bars per condition. "
+        "Right panel — per-context scatter for villain seed 42.",
+        "Plotted: a four-panel grid of per-bank singular spectra, one panel per source bank.",
+    )
+    # 22 `_group` values across bar/scatter points; bars + scatter both present.
+    pts = []
+    for g in range(22):
+        pts.append({"_kind": "bar", "_group": g})
+        pts.append({"_kind": "scatter", "_group": g})
+    meta = {"created": "2026-06-24T00:00:00Z", "points": pts, "n_series": 22}
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = body.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_panel_prose_vs_sidecar(body)
+    # "four-panel" carries no panel-position word and no kind word, so it yields
+    # no structural claim at all → PASS (no panel/series prose to compare).
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check26_overlay_multi_bar_group_zero_scatter_fails(tmp_path, monkeypatch):
+    """`per-bank dots overlaid` prose + a sidecar with MULTIPLE bar groups and
+    ZERO scatter points → FAIL. Regression pin for must-fix #2: the dropped
+    `len(groups) <= 1` conjunction would have false-PASSed this shape."""
+    body = _CHECK26_BODY.replace(
+        "Plotted: Left panel — mean alignment bars per condition. "
+        "Right panel — per-context scatter for villain seed 42.",
+        "Plotted: per-bank dots overlaid on the mean alignment bars, one cluster per bank.",
+    )
+    multi_bar = {
+        "created": "2026-06-24T00:00:00Z",
+        "points": [
+            {"_kind": "bar", "_group": 0},
+            {"_kind": "bar", "_group": 1},
+            {"_kind": "bar", "_group": 2},
+        ],
+        "n_series": 3,
+        "total_points": 3,
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, multi_bar)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = body.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_panel_prose_vs_sidecar(body)
+    assert not res.passed, res.render()
+    assert "per-unit dot/point overlay" in res.detail
+    assert "zero scatter points" in res.detail
+
+
+def _make_repo_with_two_figure_metas(tmp_path, meta_a: dict, meta_b: dict):
+    """Create a throwaway git repo committing TWO figures + sidecars,
+    `figures/issue_999/hero.png` (meta_a) and `figures/issue_999/second.png`
+    (meta_b), + the entry script; return (repo_path, head_sha)."""
+    repo = tmp_path / "figrepo26two"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig_dir = repo / "figures" / "issue_999"
+    fig_dir.mkdir(parents=True)
+    (fig_dir / "hero.png").write_bytes(b"\x89PNG fake bytes")
+    (fig_dir / "hero.meta.json").write_text(json.dumps(meta_a, indent=2) + "\n")
+    (fig_dir / "second.png").write_bytes(b"\x89PNG fake bytes 2")
+    (fig_dir / "second.meta.json").write_text(json.dumps(meta_b, indent=2) + "\n")
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "two hero figures + sidecars + entry script")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def test_check26_two_result_h3_boundary_no_leak(tmp_path, monkeypatch):
+    """Two `### <result>` H3s: result 1 names "right panel scatter" + its
+    sidecar HAS scatter; result 2 has NO structural claim + a bar-only sidecar.
+    BOTH must PASS — result 2 must NOT inherit result 1's scatter claim.
+    Regression pin for must-fix #3 (cross-result prose leak)."""
+    results_block = (
+        "## Results\n\n"
+        "### A clean +17-pt lift between baseline and tulu-25 across three seeds\n\n"
+        "Plotted: Right panel — per-context scatter for villain seed 42.\n\n"
+        "![scatter result one](https://raw.githubusercontent.com/superkaiba/"
+        "explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)\n\n"
+        "> **Figure.** *Result one scatter.* Error bars 95% Wald CIs.\n\n"
+        "The lift holds at every seed.\n\n"
+        "### Capability holds with no regression at 25% mixing\n\n"
+        "Plotted: mean capability per condition, bars only.\n\n"
+        "![bars result two](https://raw.githubusercontent.com/superkaiba/"
+        "explore-persona-space/0123456789abcdef/figures/issue_999/second.png)\n\n"
+        "> **Figure.** *Result two bars.* Error bars 95% Wald CIs.\n\n"
+        "Capability is flat across conditions.\n"
+    )
+    # Splice the two-result block in place of the single-result Results section.
+    head, _sep, _tail = _V4_GOOD_BODY.partition("## Results\n")
+    body = head + results_block + "\n---\n**Repro:** 1x H100, 47 min · entry.\n"
+    bar_only = {
+        "created": "2026-06-24T00:00:00Z",
+        "points": [{"_kind": "bar", "_group": 0}, {"_kind": "bar", "_group": 1}],
+    }
+    repo, sha = _make_repo_with_two_figure_metas(tmp_path, _scatter_sidecar(), bar_only)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = body.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_panel_prose_vs_sidecar(body)
+    # Result 1 scatter claim is backed; result 2 makes no claim → both PASS.
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check26_missing_sidecar_fails_when_png_resolves(tmp_path, monkeypatch):
+    """PNG committed at the sha but NO `.meta.json` sibling, prose makes a
+    panel claim → FAIL (no silent pass / no fallback to a different sidecar)."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # commits hero.png, NO sidecar
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK26_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_panel_prose_vs_sidecar(body)
+    assert not res.passed, res.render()
+    assert "does not resolve at the cited sha" in res.detail
+    assert "no silent" in res.detail
+
+
+def test_check26_no_structural_claim_passes(tmp_path, monkeypatch):
+    """Prose "mean alignment per condition, bars" (no panel/overlay wording) +
+    a single-`_kind` bar sidecar → PASS (no panel/series prose to compare).
+    Over-fire guard: a bare kind word is NOT a structural claim."""
+    body = _CHECK26_BODY.replace(
+        "Plotted: Left panel — mean alignment bars per condition. "
+        "Right panel — per-context scatter for villain seed 42.",
+        "Plotted: mean alignment per condition, bars only.",
+    )
+    bar_only = {"created": "2026-06-24T00:00:00Z", "points": [{"_kind": "bar", "_group": 0}]}
+    repo, sha = _make_repo_with_figure_meta(tmp_path, bar_only)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = body.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_panel_prose_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no panel/series prose claims to compare" in res.detail
+
+
+def test_check26_unresolvable_sha_is_noop_skip(tmp_path, monkeypatch):
+    """The PNG does NOT resolve at the cited sha (a fake sha against a real
+    repo) → no FAIL fires (defer to check 22), even with a panel claim in
+    prose. Pins the `status != "pass"` gate (must-fix B)."""
+    # A real repo whose HEAD is some other sha; the body cites a fake sha that
+    # does not resolve, so `_git_object_exists` returns ('skip', ...).
+    repo, _real_sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK26_BODY  # keeps the unresolvable 0123456789abcdef placeholder sha
+    res = verify_task_body.check_figure_panel_prose_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no panel/series prose claims to compare" in res.detail
+
+
+def test_check26_figure_under_section_no_h3_passes(tmp_path, monkeypatch):
+    """A figure that sits directly under `## Results` with NO preceding `### `
+    H3, prose making a panel claim → PASS (the prose-vs-sidecar check is
+    SKIPPED — no reliably-scoped window). Pins the must-fix #3 fallback."""
+    results_block = (
+        "## Results\n\n"
+        "Plotted: Right panel — per-context scatter for villain seed 42.\n\n"
+        "![no-h3 scatter](https://raw.githubusercontent.com/superkaiba/"
+        "explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)\n\n"
+        "> **Figure.** *No H3 above me.* Error bars 95% Wald CIs.\n\n"
+        "Some interpretation prose.\n"
+    )
+    head, _sep, _tail = _V4_GOOD_BODY.partition("## Results\n")
+    body = head + results_block + "\n---\n**Repro:** 1x H100, 47 min · entry.\n"
+    # Bar-only sidecar: WOULD FAIL the scatter claim if the figure were scanned,
+    # so a PASS here proves the no-H3 figure is skipped, not merely backed.
+    bar_only = {"created": "2026-06-24T00:00:00Z", "points": [{"_kind": "bar", "_group": 0}]}
+    repo, sha = _make_repo_with_figure_meta(tmp_path, bar_only)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = body.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_panel_prose_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check26_repo_unresolved_is_noop_pass(monkeypatch):
+    """Offline / repo root unresolved → NO-OP PASS (no git to read the sidecar
+    from)."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    res = verify_task_body.check_figure_panel_prose_vs_sidecar(_CHECK26_BODY)
+    assert res.passed and not res.is_warn
+    assert "repo root unresolved" in res.detail

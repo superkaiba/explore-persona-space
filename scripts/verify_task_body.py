@@ -437,6 +437,27 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   those files DID exist on HF under the body's own linked data-repo tree —
   caught by hand at round-6 interp-critique, mechanizable into this check.
 
+- **check 26** (`check_figure_panel_prose_vs_sidecar`): a figure's
+  what-is-plotted prose (scoped to its enclosing `### <result>` H3 + the
+  caption immediately after) must NOT claim a plot kind in a named panel
+  position (a "right panel scatter") or a per-unit dot/point overlay (a
+  "per-bank dots overlaid") that the figure's `.meta.json` sidecar — read
+  strictly by URL stem from the git tree at the URL's commit sha (sibling
+  `_read_figure_meta_json`, the PARSED-dict counterpart of check 24's
+  `_read_figure_meta_text`) — provably lacks (the sidecar's `_kind` count of
+  that element is 0). Conservative: a kind word is checkable only when it
+  co-occurs with a panel-position or overlay word; a bare "the bars show ..."
+  yields no claim → PASS. NO panel-count claim is made (`_group` is a
+  per-series index, not a panel index — a 4-panel A7 figure has 22 `_group`
+  values). When the sibling sidecar does not resolve at the cited sha BUT the
+  PNG itself does (`_git_object_exists` returns `pass`), the check FAILs loud
+  — the silent fallback to a DIFFERENT sidecar is the failure mode it exists
+  to catch; when the PNG itself does not resolve it defers to check 22 (no
+  double-FAIL). FAIL, never WARN (distinct from check 24). Vacuous PASS
+  offline / `--body-stdin`, with no inline figures, or no panel/series prose
+  claim. Incident: task #683 round-1 interp-critique false-FAILed off a
+  wrong-sidecar fallback the verifier could not mechanically detect.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -464,6 +485,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -4572,6 +4594,278 @@ def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
     return CheckResult(label, True, f"{scanned} figure sidecar(s) consistent with body prose")
 
 
+# ─── Check 26 helpers: figure panel/series prose vs figure sidecar ─────────
+#
+# Sibling of check 24's `_read_figure_meta_text`, but returns the PARSED dict
+# (not flattened text) so check 26 can read the per-point `_kind` / `_group`
+# fields. Same `git show <sha>:<meta_path>` envelope, same fail-soft contract.
+def _read_figure_meta_json(repo: Path, sha: str, fig_path: str) -> dict | None:
+    """Return the PARSED sibling ``.meta.json`` of ``fig_path`` (extension
+    swapped to ``.meta.json``) read out of the git tree at ``sha`` via
+    ``git show``, or None when there is no sidecar at that sha / the sha is
+    unresolvable / the JSON does not parse / it is not a dict.
+
+    Sibling of ``_read_figure_meta_text`` (check 24), which flattens to text
+    and so cannot expose the per-point ``_kind`` / ``_group`` fields check 26
+    needs. FAIL-SOFT throughout (subprocess / decode / JSON error → None).
+    """
+    base, _, ext = fig_path.rpartition(".")
+    meta_path = (base if ext else fig_path) + ".meta.json"
+    try:
+        proc = subprocess.run(
+            ["git", "show", f"{sha}:{meta_path}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None  # no sidecar at that sha, or sha unresolvable
+    try:
+        meta = json.loads(proc.stdout)
+    except (ValueError, json.JSONDecodeError):
+        return None
+    return meta if isinstance(meta, dict) else None
+
+
+def _sidecar_kind_group_aggregate(meta: dict) -> tuple[Counter, set] | None:
+    """From a parsed sidecar, return (Counter of ``_kind`` values across all
+    points, set of unique ``_group`` values), or None when the sidecar carries
+    no recognizable point list (so the check skips — it only fires on sidecars
+    whose shape it understands).
+
+    NOTE: ``_group`` is a per-SERIES index, NOT a per-panel index (an A7
+    four-panel figure has 22 ``_group`` values). The returned group set is kept
+    only for diagnostics; check 26 makes NO claim about panel count from it
+    (see ``_panel_drift_failures``).
+
+    Reads ``points`` (the canonical key) OR ``rows`` (legacy). A point with no
+    ``_kind`` contributes nothing to the kind Counter; a point with no
+    ``_group`` contributes nothing to the group set.
+    """
+    pts = meta.get("points")
+    if not isinstance(pts, list):
+        pts = meta.get("rows")
+    if not isinstance(pts, list) or not pts:
+        return None
+    kinds: Counter = Counter()
+    groups: set = set()
+    for p in pts:
+        if not isinstance(p, dict):
+            continue
+        k = p.get("_kind")
+        if isinstance(k, str) and k.strip():
+            kinds[k.strip().lower()] += 1
+        g = p.get("_group")
+        if g is not None:
+            groups.add(g)
+    if not kinds and not groups:
+        return None  # no structural signal — nothing to compare
+    return kinds, groups
+
+
+# Plot-element words that map to a sidecar ``_kind``. A prose claim naming one
+# of these as a distinct panel/series is checkable against the kind Counter.
+_PROSE_KIND_RE = {
+    "scatter": re.compile(r"\bscatter(?:\s*plot|s)?\b", re.IGNORECASE),
+    "line": re.compile(r"\bline(?:\s*plot|s)?\b|\btrajector(?:y|ies)\b", re.IGNORECASE),
+    "bar": re.compile(r"\bbar(?:\s*chart|s)?\b", re.IGNORECASE),
+}
+# A panel/series STRUCTURAL claim — prose asserting a specific panel position
+# OR a per-unit dot/point overlay. A kind word is checkable ONLY when it
+# co-occurs with one of these (a bare "the bars show ..." is NOT a claim).
+_PROSE_PANEL_POS_RE = re.compile(r"\b(?:left|right|top|bottom|middle)\s+panel\b", re.IGNORECASE)
+_PROSE_OVERLAY_RE = re.compile(
+    r"\b(?:per[-\s]?\w+\s+dots?|dots?\s+overlaid|dot\s+overlay|points?\s+overlaid)\b",
+    re.IGNORECASE,
+)
+
+
+def _panel_prose_claims(prose: str) -> dict:
+    """Return the high-confidence structural claims a figure's what-is-plotted
+    + caption prose makes::
+
+        {"kind_in_panel": {<kind>, ...},   # a kind named as a PANEL/series
+         "overlay": <bool>}                # a per-unit dot/point overlay claim
+
+    Only claims checkable against the sidecar ``_kind`` aggregate are returned;
+    a bare "the bars show ..." with no panel/overlay wording yields an empty
+    claim set (the check then PASSes — no over-fire on simple charts). NO
+    panel-count claim is produced (the sidecar has no panel-index field; see
+    ``_sidecar_kind_group_aggregate``).
+    """
+    claims: dict = {"kind_in_panel": set(), "overlay": False}
+    has_panel_pos = bool(_PROSE_PANEL_POS_RE.search(prose))
+    has_overlay = bool(_PROSE_OVERLAY_RE.search(prose))
+    if has_panel_pos or has_overlay:
+        for kind, rx in _PROSE_KIND_RE.items():
+            if rx.search(prose):
+                claims["kind_in_panel"].add(kind)
+    claims["overlay"] = has_overlay
+    return claims
+
+
+def _panel_drift_failures(claims: dict, kinds: Counter, basename: str) -> list[str]:
+    """Return the check-26 FAIL messages for ONE figure's prose ``claims``
+    against its sidecar ``kinds`` Counter (the ``_kind`` aggregate). Empty list
+    = no drift.
+
+    Two FAIL conditions:
+    (1) prose names a plot KIND as a panel/series the sidecar's ``_kind`` count
+        lacks entirely (kind count 0).
+    (3) prose claims a per-unit dot/point OVERLAY but the sidecar has zero
+        scatter points (nothing overlaid) — fires whenever ``scatter == 0``,
+        REGARDLESS of ``_group`` cardinality.
+
+    There is intentionally NO panel-COUNT FAIL: ``_group`` is a per-series
+    index, not a panel index (a 4-panel A7 figure has 22 ``_group`` values), so
+    the sidecar carries no panel-count signal to compare against.
+    """
+    fails: list[str] = []
+    for kind in sorted(claims["kind_in_panel"]):
+        if kinds.get(kind, 0) == 0:
+            fails.append(
+                f"`{basename}`: body prose claims a `{kind}` panel/series but the "
+                f"figure sidecar has zero `{kind}` points (kinds present: "
+                f"{dict(kinds) or 'none'}) — regenerate the figure or fix the prose"
+            )
+    if claims["overlay"] and kinds.get("scatter", 0) == 0:
+        fails.append(
+            f"`{basename}`: body prose claims a per-unit dot/point overlay but the "
+            f"figure sidecar has zero scatter points (kinds present: "
+            f"{dict(kinds) or 'none'}) — regenerate the figure or fix the prose"
+        )
+    return fails
+
+
+def _enclosing_h3_prose_window(rlines: list[str], img_idx: int) -> str | None:
+    """Return the what-is-plotted prose window for the figure at
+    ``rlines[img_idx]``: the text from the enclosing ``### <result>`` H3 forward
+    to the figure PLUS the blockquote caption immediately after — or None when
+    there is no ``### `` H3 before the figure (no reliably-scoped window, so the
+    caller SKIPS that figure rather than leaking an adjacent result's claim).
+    """
+    boundary = None
+    for j in range(img_idx - 1, -1, -1):
+        if rlines[j].startswith("### "):
+            boundary = j + 1
+            break
+    if boundary is None:
+        return None
+    before = "\n".join(rlines[boundary:img_idx])
+    caption = _figure_caption_after(rlines, img_idx)
+    return f"{before}\n{caption}"
+
+
+def _panel_drift_for_one_figure(
+    repo: Path, m: re.Match, prose: str, json_cache: dict
+) -> tuple[list[str], bool]:
+    """Resolve ONE figure's sidecar (strictly by URL stem at the cited sha) and
+    compare it to ``prose``'s panel/series claims. Returns ``(fail_msgs,
+    scanned)`` where ``scanned`` is True only when a structural sidecar was
+    actually compared.
+
+    ``m`` is the ``_RAW_GITHUB_FIGURE_RE`` match for the figure URL; ``json_cache``
+    is the per-check per-URL parsed-sidecar cache (mutated in place).
+    """
+    claims = _panel_prose_claims(prose)
+    if not claims["kind_in_panel"] and not claims["overlay"]:
+        return [], False  # no structural claim → nothing to check (never over-fire)
+    url = m.group(0)
+    if url not in json_cache:
+        json_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+    meta = json_cache[url]
+    basename = m.group("path").rsplit("/", 1)[-1]
+    if meta is None:
+        # Strict by-stem resolve FAILED at the cited sha. FAIL loud — BUT only
+        # when the PNG itself resolves at the sha (so the ABSENT thing is
+        # specifically the sidecar, not the whole sha; else defer to check 22).
+        # The gate is an explicit status comparison: the tuple is always truthy,
+        # so a truthiness check would never `continue`.
+        png_status, _detail = _git_object_exists(repo, m.group("sha"), m.group("path"))
+        if png_status != "pass":
+            return [], False  # PNG missing OR sha unresolvable — check 22 owns it
+        return [
+            f"`{basename}`: body prose makes a panel/series claim but the sibling "
+            f"`{basename.rsplit('.', 1)[0]}.meta.json` does not resolve at the cited "
+            f"sha `{m.group('sha')[:8]}` — commit the sidecar at that sha (no silent "
+            f"fallback to a different sidecar)"
+        ], False
+    agg = _sidecar_kind_group_aggregate(meta)
+    if agg is None:
+        return [], False  # sidecar carries no _kind/_group structure to compare
+    kinds, _groups = agg
+    return _panel_drift_failures(claims, kinds, basename), True
+
+
+def check_figure_panel_prose_vs_sidecar(body: str) -> CheckResult:
+    """Check 26 (FAIL): a figure's what-is-plotted prose must not claim a plot
+    kind in a named panel position, or a per-unit dot/point overlay, that the
+    figure's ``.meta.json`` sidecar — read strictly by URL stem from the git
+    tree at the URL's commit sha — provably lacks (the sidecar's ``_kind`` count
+    of that element is 0).
+
+    The prose window is scoped to the figure's enclosing ``### <result>`` H3 (so
+    a claim from one result never leaks into the next): the what-is-plotted text
+    from that H3 forward to the figure, plus the blockquote caption immediately
+    after. A figure with no preceding ``### `` H3 is SKIPPED (no reliably-scoped
+    window). NO panel-count claim is made (``_group`` is a per-series index, not
+    a panel index).
+
+    When the sibling ``<basename>.meta.json`` does not resolve at the cited sha
+    BUT the figure PNG itself does (``_git_object_exists`` returns ``'pass'``),
+    the check FAILs loud — that silent fallback to a different sidecar is the
+    very failure mode this check exists to catch (incident #683 r1). When the
+    PNG itself does not resolve (sha unknown / PNG absent), the check defers to
+    check 22 (no double-FAIL). NO-OP PASS when: no
+    ``## Results``/``## Findings`` section, no inline figures, the repo cannot
+    be resolved (offline / ``--body-stdin``), or no figure carries a panel/series
+    prose claim to compare. FAIL, never WARN (distinct from check 24).
+    """
+    label = "figure panel prose vs figure sidecar (panel/series drift)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    fig_at: list[tuple[str, int]] = []
+    for idx, line in enumerate(rlines):
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                fig_at.append((url, idx))
+    if not fig_at:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    fails: list[str] = []
+    scanned = 0
+    json_cache: dict[str, dict | None] = {}
+    for url, img_idx in fig_at:
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        prose = _enclosing_h3_prose_window(rlines, img_idx)
+        if prose is None:
+            continue  # no per-result H3 before this figure — no scoped window
+        fig_fails, did_scan = _panel_drift_for_one_figure(repo, m, prose, json_cache)
+        fails.extend(fig_fails)
+        if did_scan:
+            scanned += 1
+    if fails:
+        preview = "; ".join(fails[:3]) + (" …" if len(fails) > 3 else "")
+        return CheckResult(label, False, f"{len(fails)} panel/series drift issue(s): {preview}")
+    if scanned == 0:
+        return CheckResult(label, True, "no panel/series prose claims to compare against a sidecar")
+    return CheckResult(
+        label, True, f"{scanned} figure sidecar(s) consistent with panel/series prose"
+    )
+
+
 # A prose claim that an artifact is NOT available — "not uploaded", "was not
 # uploaded", "not separately uploaded", "cannot be audited", "cannot audit",
 # "unavailable for audit", "not available for audit". The optional
@@ -6001,6 +6295,7 @@ CHECKS = [
     check_hf_url_resolves,  # check 23
     check_figure_text_vs_body_tokens,  # check 24 (WARN)
     check_audit_availability_claims_match_hf,  # check 25
+    check_figure_panel_prose_vs_sidecar,  # check 26 (FAIL)
 ]
 
 
