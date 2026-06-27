@@ -29,6 +29,17 @@ cd "$REPO_ROOT"
 
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 
+# vLLM workers must use 'spawn' start method, not 'fork'. The extract scripts
+# touch torch.cuda (e.g. _torch.cuda.is_available() in issue_683.repro_metadata)
+# at import time, so by the time vLLM tries to launch its engine-core worker,
+# CUDA is already initialized in the parent — and the default fork mode then
+# crashes the worker with "Cannot re-initialize CUDA in forked subprocess".
+# Setting VLLM_WORKER_MULTIPROC_METHOD=spawn at the dispatcher level tells
+# vLLM to fork-via-spawn instead, which is the canonical fix per vLLM docs.
+# Without this, dv_marker + dv_syco both fail at engine_core init (#683 first
+# launch, 2026-06-27).
+export VLLM_WORKER_MULTIPROC_METHOD="${VLLM_WORKER_MULTIPROC_METHOD:-spawn}"
+
 SMOKE=0
 DRY_RUN=0
 for arg in "$@"; do
