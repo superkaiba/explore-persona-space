@@ -81,6 +81,11 @@ from explore_persona_space.task_workflow import get_task, repo_root, tasks_dir  
 DEFAULT_MAX_EXITED_HOURS = 24
 DEFAULT_MIN_ORPHAN_RUNNING_HOURS = 1  # below this, a running pod may still be in bootstrap
 DEFAULT_MIN_PARKED_HOURS = 24  # parked-task duration before an EXITED pod is flagged
+# A managed RUNNING pod with null/empty runtime.ports older than this is the #664
+# RUNNING-but-no-port host wedge — an unreachable billing leak. Report-only here
+# (the inputs-on-HF-gated auto-recovery belongs to backend_poll, fix (b)); short
+# floor so a healthy mid-bootstrap pod (port appears within ~minutes) is not flagged.
+DEFAULT_MIN_NO_PORT_HOURS = 0.5
 
 # Task statuses where no further pod work is expected: the run is parked for a
 # user decision or terminally done, so a stopped pod's volume is pure billing.
@@ -120,6 +125,7 @@ class Classification:
     gpu_util: list[int] | None = None  # per-GPU util %, point sample; None = unknown
     idle_gpu: bool = False  # RUNNING managed pod, util read OK, ALL GPUs at 0%
     stopped_on_parked_task: bool = False  # EXITED pod on a long-parked task
+    running_no_port: bool = False  # RUNNING managed pod, null ports, age >= floor (#664 wedge)
 
 
 def _parse_iso(ts: str | None) -> dt.datetime | None:
@@ -277,6 +283,7 @@ def classify(
     max_exited_hours: float,
     min_orphan_running_hours: float,
     min_parked_hours: float = DEFAULT_MIN_PARKED_HOURS,
+    min_no_port_hours: float = DEFAULT_MIN_NO_PORT_HOURS,
 ) -> list[Classification]:
     out: list[Classification] = []
     for p in pods:
@@ -288,6 +295,7 @@ def classify(
         gpu_util: list[int] | None = None
         idle_gpu = False
         stopped_on_parked = False
+        running_no_port = False
         if p.desired_status == "RUNNING":
             if _is_managed_name(p.name) or refs:
                 bucket = "active"
@@ -301,6 +309,15 @@ def classify(
                 gpu_util = _probe_gpu_util(p)
                 idle_gpu = (
                     gpu_util is not None and len(gpu_util) > 0 and all(u == 0 for u in gpu_util)
+                )
+                # Report-only #664 RUNNING-but-no-port wedge flag: a managed pod
+                # RUNNING with null/empty public port for >= the floor is an
+                # unreachable billing leak host-pinned resume cannot heal. NEVER
+                # auto-terminated here — the inputs-on-HF-gated auto-recovery is
+                # backend_poll's (fix (b)); this only makes the wedge VISIBLE in
+                # the fleet-level audit (bucket stays 'active', exit code unchanged).
+                running_no_port = (
+                    not (p.ssh_host and p.ssh_port) and age is not None and age >= min_no_port_hours
                 )
         elif p.desired_status == "EXITED":
             if issue is not None and _task_has_keep_running(issue):
@@ -336,6 +353,7 @@ def classify(
                 gpu_util=gpu_util,
                 idle_gpu=idle_gpu,
                 stopped_on_parked_task=stopped_on_parked,
+                running_no_port=running_no_port,
             )
         )
     return out
@@ -362,10 +380,13 @@ def render_report(rows: list[Classification]) -> str:
         lines.append(f"  {bucket:18}  {len(items)}")
     n_idle = sum(1 for r in rows if r.idle_gpu)
     n_parked = sum(1 for r in rows if r.stopped_on_parked_task)
+    n_no_port = sum(1 for r in rows if r.running_no_port)
     if n_idle:
         lines.append(f"  idle-gpu            {n_idle}  (report-only flag)")
     if n_parked:
         lines.append(f"  stopped-on-parked   {n_parked}  (report-only flag)")
+    if n_no_port:
+        lines.append(f"  running-no-port     {n_no_port}  (report-only flag)")
 
     for bucket in ("orphan-running", "stale", "kept-exited", "fresh-exited", "active"):
         items = sorted(
@@ -411,7 +432,8 @@ def _fmt_task_ctx(r: Classification) -> str:
 
 
 def _render_flag_sections(rows: list[Classification]) -> list[str]:
-    """Render the two REPORT-ONLY flag sections (idle-gpu, stopped-on-parked-task).
+    """Render the REPORT-ONLY flag sections (idle-gpu, stopped-on-parked-task,
+    running-no-port).
 
     Returns [] when nothing is flagged; never affects buckets or exit codes.
     """
@@ -444,6 +466,22 @@ def _render_flag_sections(rows: list[Classification]) -> list[str]:
                 f"  {r.pod.pod_id}  {r.pod.desired_status:8}  {r.pod.name!r}"
                 f"{_fmt_task_ctx(r)}  parked {parked_h}"
             )
+    no_port = [r for r in rows if r.running_no_port]
+    if no_port:
+        lines.append("")
+        lines.append("── running-no-port (report-only, #664 host wedge) ──")
+        lines.append("  RUNNING managed pod with NO public port past the floor — host-pinned")
+        lines.append("  resume cannot heal it (the #664 wedge), so it is an unreachable billing")
+        lines.append("  leak. This audit never auto-terminates these; the inputs-on-HF-gated")
+        lines.append("  auto-recovery is backend_poll's (fix (b)).")
+        for r in no_port:
+            age = f"{r.age_hours:.1f}h" if r.age_hours is not None else "?"
+            gpu = f"{r.pod.gpu_count}x{r.pod.gpu_type_id}" if r.pod.gpu_count else "?"
+            rate = estimate_pod_hourly_rate(r.pod.gpu_type_id, r.pod.gpu_count)
+            lines.append(
+                f"  {r.pod.pod_id}  {gpu:30}  ~${rate:.1f}/hr (estimate)  age={age:>7}  "
+                f"{r.pod.name!r}{_fmt_task_ctx(r)}"
+            )
     return lines
 
 
@@ -454,6 +492,7 @@ def cmd_audit(args: argparse.Namespace) -> int:
         max_exited_hours=args.max_exited_hours,
         min_orphan_running_hours=args.min_orphan_running_hours,
         min_parked_hours=args.min_parked_hours,
+        min_no_port_hours=args.min_no_port_hours,
     )
 
     if args.json:
@@ -477,6 +516,7 @@ def cmd_audit(args: argparse.Namespace) -> int:
                 "gpu_util": r.gpu_util,
                 "idle_gpu": r.idle_gpu,
                 "stopped_on_parked_task": r.stopped_on_parked_task,
+                "running_no_port": r.running_no_port,
                 "est_hourly_usd": estimate_pod_hourly_rate(r.pod.gpu_type_id, r.pod.gpu_count),
             }
             for r in rows
@@ -560,6 +600,16 @@ def build_parser() -> argparse.ArgumentParser:
             f"(awaiting_promotion/blocked/completed/archived) longer than this many "
             f"hours get the report-only 'stopped-on-parked-task' flag "
             f"(default: {DEFAULT_MIN_PARKED_HOURS})."
+        ),
+    )
+    p.add_argument(
+        "--min-no-port-hours",
+        type=float,
+        default=DEFAULT_MIN_NO_PORT_HOURS,
+        help=(
+            f"RUNNING managed pods with null/empty public ports older than this many "
+            f"hours get the report-only 'running-no-port' flag (the #664 host wedge) "
+            f"(default: {DEFAULT_MIN_NO_PORT_HOURS})."
         ),
     )
     p.add_argument(
