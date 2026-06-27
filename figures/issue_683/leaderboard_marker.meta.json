@@ -1,0 +1,126 @@
+{
+  "commit": "c81e327093",
+  "created": "2026-06-27T07:50:39Z",
+  "figsize": [
+    7.800000000000001,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "Context-only key\n(raw dot)",
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.37708565072302563,
+      "error": 0.36694104560622903,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context-only key\n(whitened)",
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.11546162402669634,
+      "error": 0.3640155728587319,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context + displacement key\n(raw dot)",
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.7219132369299222,
+      "error": 0.16134037819799774,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context + displacement key\n(whitened)",
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.525250278086763,
+      "error": 0.3028364849833147,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Training-completion key\n(raw dot)",
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.7472747497219132,
+      "error": 0.1929199110122358,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Training-completion key\n(whitened)",
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.5261401557285873,
+      "error": 0.2926418242491657,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": -0.03939933259176864,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": -0.2632258064516129,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.510055617352614,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.1696996662958843,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.49541713014460503,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.18963292547274746,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.6944827586206894,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.4648053392658508,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.8327363737486094,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.7753726362625137,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.8812569521690766,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.7749165739710788,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 18
+}
