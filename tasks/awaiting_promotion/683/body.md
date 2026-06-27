@@ -6,6 +6,7 @@ kind: experiment
 tags:
 - leak-predictor
 - mentor-dan
+- followup-auto
 created_at: '2026-06-27T02:43:43Z'
 has_clean_result: true
 parent_id: 526
