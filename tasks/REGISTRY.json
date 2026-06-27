@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 683,
+  "highest_id": 684,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4307,6 +4307,13 @@
       "path": "tasks/planning/683",
       "status": "planning",
       "title": "Does a behavior-dependent source key predict the leakage context-gate better than the context-only default \u2014 marker (precondition holds) vs sycophancy (precondition open)"
+    },
+    "684": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/684",
+      "status": "proposed",
+      "title": "api_dispatch fast-follows: 429-exhaustion mislabel + unbounded fan-out + pick-time org binding (from #682 code review)"
     },
     "69": {
       "has_clean_result": false,
