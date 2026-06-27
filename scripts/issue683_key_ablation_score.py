@@ -224,6 +224,13 @@ def _fit_ridge_psi_for_targets(
     answer-side or data-side vectors into the key–query space"). The source is
     held out (it is the denominator); the learned map applies to t_{C,B} (itself
     an answer-side mean). Returns None when <3 paired contexts exist.
+
+    BLOCKER ``psi-ridge-heldout-leak``: this fits ψ on EXACTLY the ``targets``
+    it is passed — the caller (``_psi_per_fold``) excludes each held-out target
+    from the ``targets`` list it passes for that target's fold, so the ψ that
+    scores C'_i never trains on C'_i's own (v_base, c_C') pair. Calling this on
+    the FULL target panel (the round-3 leak) is now only done where no LOO read
+    is required (it never is for ψ_ridge keys — see ``_psi_per_fold``).
     """
     import torch
 
@@ -236,6 +243,37 @@ def _fit_ridge_psi_for_targets(
     )
     c_mat = np.stack([c_bank[c] for c in pair_ctx], axis=0)
     return _fit_ridge_psi(t_mat, c_mat)
+
+
+def _psi_per_fold(
+    per_context: dict, c_bank: dict[str, np.ndarray], targets: list[str]
+) -> dict[str, np.ndarray] | None:
+    """Per-outer-LOO-fold ψ maps for ψ_ridge keys (BLOCKER psi-ridge-heldout-leak).
+
+    Returns ``{held: psi_W}`` where each ``psi_W`` is fit on the (v_base, c_C')
+    pairs of the OTHER targets — the held-out target ``held`` EXCLUDED. The key
+    that scores ``held`` is then ``psi_W @ t_cb`` (built per target in
+    ``score_bank``), so the held-out target's own pair never enters the ψ that
+    produces the key scoring it. Pivot option (b): n folds of ψ pre-computed
+    outside the cell loop, indexed by held-out target inside the LOO read.
+
+    Mirrors ``_fit_ridge_psi_for_targets``'s ``<3 paired contexts`` rule: an
+    individual fold with <3 remaining pairs yields ``None`` for that fold's
+    target (the t-based key is then skipped for that target — handled by
+    ``_loo_predictions`` / ``score_bank``). Returns ``None`` (no ψ_ridge at all)
+    when fewer than 4 paired contexts exist (every fold would drop below 3).
+    """
+    pair_ctx = [c for c in targets if c in per_context and "v_base" in per_context[c]]
+    if len(pair_ctx) < 4:
+        # every leave-one-out fold would have <3 pairs — ψ_ridge not applicable.
+        return None
+    out: dict[str, np.ndarray] = {}
+    for held in targets:
+        train = [c for c in targets if c != held]
+        psi_w = _fit_ridge_psi_for_targets(per_context, c_bank, train)
+        if psi_w is not None:
+            out[held] = psi_w
+    return out or None
 
 
 def _key_vector(
@@ -263,6 +301,47 @@ def _key_vector(
         psi_d = (psi_W @ delta_cb) if psi_W is not None else delta_cb
         return c_source + psi_d
     raise ValueError(form)
+
+
+def _resolve_cell_keys(
+    *,
+    psi: str,
+    key_form: str,
+    psi_per_fold: dict[str, np.ndarray] | None,
+    c_source: np.ndarray,
+    t_cb: np.ndarray | None,
+    delta_cb: np.ndarray | None,
+    targets: list[str],
+) -> tuple[np.ndarray | None, dict[str, np.ndarray] | None] | None:
+    """Resolve the key(s) for one (ψ, key_form) cell — the leak-free key builder.
+
+    Returns ``(k, k_per_target)`` (exactly one non-None) or ``None`` to SKIP the
+    cell. BLOCKER ``psi-ridge-heldout-leak``: the ψ_ridge t-based keys (k_tCB,
+    k_cC_plus_delta) are target-DEPENDENT — one key per held-out target, built
+    from that fold's leave-it-out ψ (``psi_per_fold``), returned as
+    ``k_per_target`` so the held-out target's own pair never enters the ψ that
+    produces the key scoring it. Everything else (ψ_I keys, and k_cC under either
+    ψ — k_cC is ψ-independent) returns a single target-independent ``k``.
+    """
+    use_per_fold = psi == "psi_ridge" and key_form != "k_cC"
+    if use_per_fold:
+        if psi_per_fold is None:
+            return None  # ridge ψ unavailable (too few paired contexts) — skip
+        k_per_target: dict[str, np.ndarray] = {}
+        for held, psi_w in psi_per_fold.items():
+            k_held = _key_vector(key_form, psi_w, c_source=c_source, t_cb=t_cb, delta_cb=delta_cb)
+            if k_held is not None:
+                k_per_target[held] = k_held
+        if len(k_per_target) < 3:
+            return None  # <3 folds with a usable per-fold key — cannot score
+        return None, k_per_target
+    # ψ_I keys + k_cC: a single target-independent key. (k_cC ignores ψ entirely,
+    # so its psi_I / psi_ridge rows are identical — the pre-existing duplicate,
+    # preserved.)
+    k = _key_vector(key_form, None, c_source=c_source, t_cb=t_cb, delta_cb=delta_cb)
+    if k is None:
+        return None
+    return k, None
 
 
 def _g_pred(
@@ -296,6 +375,26 @@ def _eval_g_pred(evaluator, k, c_query, c_source) -> float:
         return dual.g_pred(k, c_query, c_source, lam_mult)
     # dense matrix (cubic oracle)
     return _g_pred(k, evaluator, c_query, c_source)
+
+
+def _eval_den(evaluator, k, c_source) -> float:
+    """|kᵀ M c_C| — the gate denominator (CONCERN denominator-stability-control).
+
+    The same ``(k, M, c_source)`` tuple the scorer divides by in ``g_pred`` (plan
+    v2 §6 / L152 pre-registers the |kᵀMc_C| denominator-stability diagnostic). A
+    denominator near zero is what produces the divide-by-(near-)zero NaN/blowup
+    in g_pred, so per-cell min/median |den| over the LOO folds quantifies how
+    close the gate ran to the singular regime. ``evaluator`` matches
+    ``_eval_g_pred``: None (identity ⇒ kᵀc_C), a ``(_WhitenDual, lam_mult)`` pair
+    (dual M_white ⇒ kᵀ(Σ_c+λI)^-1 c_C), or a dense matrix (cubic oracle).
+    """
+    if evaluator is None:
+        return float(abs(k @ c_source))
+    if isinstance(evaluator, tuple):
+        dual, lam_mult = evaluator
+        return float(abs(dual.quad(k, c_source, lam_mult)))
+    # dense matrix (cubic oracle)
+    return float(abs((k @ evaluator) @ c_source))
 
 
 def _select_lambda_heldout_gcv(
@@ -411,7 +510,8 @@ def _resolve_metric(
 def _loo_predictions(
     *,
     metric: str,
-    k: np.ndarray,
+    k: np.ndarray | None = None,
+    k_per_target: dict[str, np.ndarray] | None = None,
     c_source: np.ndarray,
     c_query: dict[str, np.ndarray],
     targets: list[str],
@@ -420,6 +520,15 @@ def _loo_predictions(
     seed: int,
 ) -> tuple[np.ndarray, dict]:
     """Leave-one-CONTEXT-out leaderboard predictions for one (key, metric) cell.
+
+    The KEY is supplied EITHER as a single ``k`` (target-INDEPENDENT keys —
+    k_cC, and the t-based keys under ``psi_I``: the key vector is the same no
+    matter which target is scored) OR as ``k_per_target`` (target-DEPENDENT
+    keys — the ψ_ridge t-based keys, BLOCKER ``psi-ridge-heldout-leak``: each
+    target's key is built from a ψ fit on the OTHER targets, so ``k`` itself
+    varies per fold). Exactly one of the two MUST be supplied. With
+    ``k_per_target`` a target absent from the dict (its fold's ψ had <3 pairs)
+    is scored NaN.
 
     BLOCKER ``lambda-gcv-heldout-leak``: the OUTER loop holds out each scored
     target C'_i from the train set, so the scored target's OWN g_real never
@@ -434,38 +543,75 @@ def _loo_predictions(
       4. ``λ`` + the dual whitener ← ``_resolve_metric`` on
          ``(c_train_i, y_train_i)`` (Woodbury, n-context subspace — never the
          H×H matrix).
-      5. ``pred_i = _eval_g_pred(evaluator, k, c_query[C'_i], c_source)`` —
-         C'_i scored ONLY by a metric fit on the OTHER targets.
+      5. ``pred_i = _eval_g_pred(evaluator, k_i, c_query[C'_i], c_source)`` —
+         C'_i scored ONLY by a metric fit on the OTHER targets, with the
+         fold-specific key ``k_i``.
 
     For M_I (identity, no λ, no Σ_c) the per-fold refit is a mathematical no-op
-    — g_pred is independent of the train set — so a single resolve suffices and
-    the loop is short-circuited (same numbers, no wasted folds). Returns
-    (preds aligned to ``targets``, lambda_meta).
+    — g_pred is independent of the train set — so when the key is also
+    target-independent (``k`` supplied) a single resolve suffices and the loop is
+    short-circuited (same numbers, no wasted folds). With ``k_per_target`` the
+    key still varies per target, so M_I iterates the targets (no λ refit, but
+    the per-target key is applied). Returns (preds aligned to ``targets``,
+    lambda_meta).
     """
+    if (k is None) == (k_per_target is None):
+        raise ValueError("_loo_predictions requires EXACTLY one of k / k_per_target")
     n = len(targets)
+
+    def _key_for(held: str) -> np.ndarray | None:
+        return k if k_per_target is None else k_per_target.get(held)
+
     if metric == "M_I":
-        # Identity metric: g_pred has no fitted parameters, so the LOO refit is
-        # an exact no-op. One resolve, predict every target — bit-identical to
-        # the per-fold path but without the redundant work.
-        m, lam_meta = _resolve_metric(
-            metric,
-            k,
-            c_source=c_source,
-            c_train=np.stack([c_source, *[c_query[c] for c in targets]], axis=0),
-            y_train=np.concatenate([[1.0], y]),
-            n_folds=n_folds,
-            seed=seed,
-        )
-        preds = np.array([_eval_g_pred(m, k, c_query[c], c_source) for c in targets])
-        return preds, lam_meta
+        if k_per_target is None:
+            # Identity metric + a target-independent key: g_pred has no fitted
+            # parameters AND the same key everywhere, so the LOO refit is an
+            # exact no-op. One resolve, predict every target. |kᵀc_C| is the
+            # same for every fold (one key, identity M) — record the single value.
+            m, lam_meta = _resolve_metric(
+                metric,
+                k,
+                c_source=c_source,
+                c_train=np.stack([c_source, *[c_query[c] for c in targets]], axis=0),
+                y_train=np.concatenate([[1.0], y]),
+                n_folds=n_folds,
+                seed=seed,
+            )
+            preds = np.array([_eval_g_pred(m, k, c_query[c], c_source) for c in targets])
+            lam_meta = {**lam_meta, "denominator_abs_per_fold": [_eval_den(m, k, c_source)] * n}
+            return preds, lam_meta
+        # Identity metric but a per-fold (ψ_ridge) key: no λ refit, but the key
+        # differs per target, so score each target with ITS fold's key.
+        preds = np.empty(n, dtype=float)
+        dens: list[float] = []
+        for i, held in enumerate(targets):
+            k_i = _key_for(held)
+            if k_i is None:
+                preds[i] = np.nan
+                continue
+            preds[i] = _eval_g_pred(None, k_i, c_query[held], c_source)
+            dens.append(_eval_den(None, k_i, c_source))
+        return preds, {
+            "lambda_mult": None,
+            "lambda_selection": "identity",
+            "denominator_abs_per_fold": dens,
+        }
 
     # M_white: an OUTER leave-one-context-out loop. Each held-out target is
     # scored by a metric (λ + Σ_c + final M) fit ONLY on the source + the OTHER
     # targets — the scored target's c_C' / g_real never touch its own predictor.
+    # When the key is per-fold (ψ_ridge), that fold's key ALSO drives the λ fit
+    # for the same fold, so the held-out target leaks into neither the metric
+    # NOR the key that scores it.
     preds = np.empty(n, dtype=float)
     fold_lambdas: list[float] = []
     fold_maes: list[float] = []
+    fold_dens: list[float] = []
     for i, held in enumerate(targets):
+        k_i = _key_for(held)
+        if k_i is None:
+            preds[i] = np.nan
+            continue
         train_targets = [c for c in targets if c != held]
         c_train_i = np.stack([c_source, *[c_query[c] for c in train_targets]], axis=0)
         # y_train_i pairs g_real with the SAME rows as c_train_i (source first).
@@ -474,14 +620,16 @@ def _loo_predictions(
         )
         m_i, lam_meta_i = _resolve_metric(
             metric,
-            k,
+            k_i,
             c_source=c_source,
             c_train=c_train_i,
             y_train=y_train_i,
             n_folds=n_folds,
             seed=seed,
         )
-        preds[i] = _eval_g_pred(m_i, k, c_query[held], c_source)
+        preds[i] = _eval_g_pred(m_i, k_i, c_query[held], c_source)
+        # |kᵀ M c_C| from the SAME (k_i, M_i, c_source) tuple the fold scored with.
+        fold_dens.append(_eval_den(m_i, k_i, c_source))
         if lam_meta_i.get("lambda_mult") is not None:
             fold_lambdas.append(float(lam_meta_i["lambda_mult"]))
         hm = lam_meta_i.get("heldout_mae")
@@ -493,8 +641,29 @@ def _loo_predictions(
         "lambda_mult_median": (float(np.median(fold_lambdas)) if fold_lambdas else None),
         "heldout_mae_mean": (float(np.mean(fold_maes)) if fold_maes else None),
         "n_loo_folds": n,
+        "denominator_abs_per_fold": fold_dens,
     }
     return preds, lam_meta
+
+
+def _denominator_stability(lam_meta: dict) -> dict:
+    """min / median |kᵀM c_C| over the LOO folds (CONCERN denominator-stability).
+
+    Plan v2 §6 / L152 pre-registers the |kᵀMc_C| denominator-stability control
+    per cell — a near-zero denominator is the divide-by-(near-)zero regime that
+    makes g_pred unstable. The per-fold |den| list comes from ``_loo_predictions``
+    (``denominator_abs_per_fold``); aggregate to min (the worst-case fold) +
+    median (the typical fold). Empty / absent ⇒ Nones (a degenerate cell with no
+    scorable fold), never a silent 0.
+    """
+    dens = [float(d) for d in (lam_meta.get("denominator_abs_per_fold") or []) if d == d]
+    if not dens:
+        return {"min": None, "median": None, "n_folds": 0}
+    return {
+        "min": float(np.min(dens)),
+        "median": float(np.median(dens)),
+        "n_folds": len(dens),
+    }
 
 
 def _score_one_cell(
@@ -502,7 +671,8 @@ def _score_one_cell(
     key_form: str,
     metric: str,
     psi: str,
-    k: np.ndarray,
+    k: np.ndarray | None = None,
+    k_per_target: dict[str, np.ndarray] | None = None,
     c_source: np.ndarray,
     c_query: dict[str, np.ndarray],
     targets: list[str],
@@ -517,6 +687,12 @@ def _score_one_cell(
     / sign / MAE + bootstrap Spearman CI. Returns None when <3 contexts score
     finitely.
 
+    The KEY is supplied EITHER as a single ``k`` (target-independent: k_cC, or
+    t-based keys under ψ_I) OR as ``k_per_target`` (the ψ_ridge t-based keys —
+    BLOCKER ``psi-ridge-heldout-leak``: each target's key is built from a ψ fit
+    on the OTHER targets). Exactly one of the two is supplied; threaded straight
+    to ``_loo_predictions``.
+
     BLOCKER ``lambda-gcv-heldout-leak``: predictions come from
     ``_loo_predictions`` — an OUTER leave-one-context-out loop. For M_white,
     each scored target C'_i is held out of the train set, so its own g_real
@@ -527,10 +703,15 @@ def _score_one_cell(
     vs the parameter-free M_I.) The inner ``_select_lambda_heldout_gcv`` CV
     still folds WITHIN each train set; the outer loop is the leaderboard-level
     leave-one-out the plan + docstring pre-register.
+
+    CONCERN ``denominator-stability-control-not-persisted``: the row carries a
+    ``denominator_stability`` field (min / median |kᵀMc_C| across folds) from
+    the SAME (k, M, c_source) tuple the scorer divides by (plan v2 §6 / L152).
     """
     preds, lam_meta = _loo_predictions(
         metric=metric,
         k=k,
+        k_per_target=k_per_target,
         c_source=c_source,
         c_query=c_query,
         targets=targets,
@@ -563,6 +744,7 @@ def _score_one_cell(
         "sign_agreement": sign_agreement(p, yy, ref),
         "mae": mae(p, yy),
         "spearman_ci95": ci,
+        "denominator_stability": _denominator_stability(lam_meta),
         "lambda_selection": lam_meta,
     }
 
@@ -718,30 +900,34 @@ def score_bank(
 
     rows: list[dict] = []
     rng = np.random.default_rng(seed)
+    # BLOCKER psi-ridge-heldout-leak: ψ is fit PER outer-LOO fold (each held-out
+    # target excluded from its own ψ's training pairs), so the ψ_ridge t-based
+    # key is target-DEPENDENT. psi_I / k_cC keys stay target-independent (single
+    # k). The ψ map is NEVER fit once on the full target panel for a key that
+    # scores those same targets (the round-3 leak). _resolve_cell_keys returns
+    # (k, k_per_target) or None to skip the cell.
+    psi_per_fold = _psi_per_fold(per_context, c_bank, targets) if t_cb is not None else None
     for psi in PSI_FORMS:
-        psi_W = (
-            _fit_ridge_psi_for_targets(per_context, c_bank, targets)
-            if psi == "psi_ridge" and t_cb is not None
-            else None
-        )
         for key_form in KEY_FORMS:
-            if key_form != "k_cC" and psi == "psi_ridge" and psi_W is None:
-                continue  # ridge ψ only applies to t-based keys
-            k = _key_vector(
-                key_form,
-                psi_W if key_form != "k_cC" else None,
+            keys = _resolve_cell_keys(
+                psi=psi,
+                key_form=key_form,
+                psi_per_fold=psi_per_fold,
                 c_source=c_source,
                 t_cb=t_cb,
                 delta_cb=delta_cb,
+                targets=targets,
             )
-            if k is None:
+            if keys is None:
                 continue
+            k, k_per_target = keys
             for metric in METRICS:
                 row = _score_one_cell(
                     key_form=key_form,
                     metric=metric,
                     psi=psi,
                     k=k,
+                    k_per_target=k_per_target,
                     c_source=c_source,
                     c_query=c_query,
                     targets=targets,

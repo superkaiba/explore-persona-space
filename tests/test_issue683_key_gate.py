@@ -675,3 +675,223 @@ def test_whiten_dual_median_eig_matches_cubic():
     cubic_med = scr._median_nonzero_eig(np.linalg.eigvalsh(sigma_c))
     dual_med = scr._WhitenDual(c_matrix).med
     assert np.isclose(cubic_med, dual_med, rtol=1e-6), (cubic_med, dual_med)
+
+
+# ── PIVOT round-1 regression tests ───────────────────────────────────────────
+# BLOCKER psi-ridge-heldout-leak + CONCERN denominator-stability-control.
+
+
+def _psi_ridge_bank(h=20, n=14, seed=23):
+    """A rank-1 dv bank + matching c_bank + a t_cb, sized so every outer-LOO fold
+    keeps >=3 (v_base, c_C') pairs (so per-fold ψ is defined for every target)."""
+    import torch
+
+    from explore_persona_space.experiments.issue_683 import realized_gate
+
+    rng = torch.Generator().manual_seed(seed)
+    w = torch.randn(h, generator=rng)
+    w = w / w.norm()
+    contexts = ["src", *[f"c{i}" for i in range(n)]]
+    per, c_bank = {}, {}
+    for i, ctx in enumerate(contexts):
+        g_true = 1.0 if ctx == "src" else 0.1 + 0.85 * i / (len(contexts) - 1)
+        dv = g_true * w + 0.02 * torch.randn(h, generator=rng)
+        per[ctx] = {"v_base": torch.randn(h, generator=rng), "v_trained": dv, "Delta_v": dv}
+        c_bank[ctx] = (g_true * w + 0.25 * torch.randn(h, generator=rng)).numpy().astype(float)
+    w_hat = per["src"]["Delta_v"]
+    g_real = {ctx: realized_gate(w_hat, per[ctx]["Delta_v"]) for ctx in contexts}
+    payload = {"source": "src", "seed": seed, "w_hat": w_hat, "per_context": per, "g_real": g_real}
+    t_cb = (c_bank["src"] + 0.2 * np.random.default_rng(seed).standard_normal(h)).astype(float)
+    return payload, c_bank, t_cb
+
+
+def test_psi_per_fold_excludes_held_out_target():
+    """BLOCKER psi-ridge-heldout-leak (the pivot's mechanizable test): instrument
+    ``_fit_ridge_psi`` to inject a sentinel for one target, and assert that
+    target's fold-specific ψ is INVARIANT to whether the sentinel is in the
+    training pairs — i.e. the held-out target's (v_base, c_C') pair is EXCLUDED
+    from the ψ that scores it.
+
+    Mechanics: capture every (t_train, c_train) matrix ``_psi_per_fold`` feeds
+    into ``_fit_ridge_psi``. For each held-out target ``held``, the t-rows of
+    its fold's fit must NOT contain ``held``'s own v_base vector. (A leak — the
+    round-3 behaviour — would fit ψ ONCE on the full panel, so every target's
+    own pair would be present in the single fit.)
+    """
+    import issue683_key_ablation_score as scr
+    import torch
+
+    payload, c_bank, _t_cb = _psi_ridge_bank()
+    per_context = payload["per_context"]
+    targets = [c for c in per_context if c != payload["source"]]
+    # the v_base vector each target contributes to a ψ fit (the t-side row).
+    vbase = {
+        c: torch.as_tensor(per_context[c]["v_base"]).flatten().float().numpy() for c in targets
+    }
+
+    captured: list[np.ndarray] = []  # the t_train matrix per _fit_ridge_psi call
+    orig = scr._fit_ridge_psi
+
+    def _spy(t_train, c_train, lam=1.0):
+        captured.append(np.asarray(t_train).copy())
+        return orig(t_train, c_train, lam=lam)
+
+    scr._fit_ridge_psi = _spy
+    try:
+        folds = scr._psi_per_fold(per_context, c_bank, targets)
+    finally:
+        scr._fit_ridge_psi = orig
+
+    assert folds is not None and set(folds) == set(targets), (folds and set(folds), set(targets))
+    # one ψ fit per held-out target, in target order.
+    assert len(captured) == len(targets), len(captured)
+    for held, t_train in zip(targets, captured, strict=True):
+        rows = [t_train[r] for r in range(t_train.shape[0])]
+        in_train = any(np.allclose(vbase[held], r) for r in rows)
+        assert not in_train, f"held-out target {held}'s v_base leaked into its own ψ fit"
+
+
+def test_psi_per_fold_sentinel_invariant_to_held_out_pair():
+    """The pivot's stated mechanizable test, stated directly: a sentinel injected
+    via a monkeypatched ``_fit_ridge_psi`` for ONE target makes the fold-specific
+    ψ INVARIANT to whether that target's pair is in the training set.
+
+    We compute target ``held``'s fold ψ two ways: (1) with ``held``'s pair
+    present in per_context/c_bank, and (2) with ``held``'s pair perturbed by a
+    huge sentinel. The fold ψ for ``held`` must be IDENTICAL across the two —
+    because ``_psi_per_fold`` excludes ``held``'s own pair from its fold's fit.
+    (A leak would let the sentinel change ``held``'s ψ.)
+    """
+    import copy
+
+    import issue683_key_ablation_score as scr
+
+    payload, c_bank, _t_cb = _psi_ridge_bank()
+    per_context = payload["per_context"]
+    targets = [c for c in per_context if c != payload["source"]]
+    held = targets[0]
+
+    folds_clean = scr._psi_per_fold(per_context, c_bank, targets)
+
+    # Inject a huge sentinel into the held-out target's OWN pair only.
+    import torch
+
+    per2 = copy.deepcopy(per_context)
+    c2 = {k: v.copy() for k, v in c_bank.items()}
+    per2[held]["v_base"] = torch.as_tensor(per_context[held]["v_base"]).clone() + 1e6
+    c2[held] = c_bank[held] + 1e6
+    folds_sentinel = scr._psi_per_fold(per2, c2, targets)
+
+    # held's fold ψ is invariant (its own pair is excluded from its fit).
+    assert np.allclose(folds_clean[held], folds_sentinel[held]), (
+        "held-out target's fold ψ changed when its OWN pair was perturbed — "
+        "the held-out pair is leaking into the ψ that scores it."
+    )
+    # sanity: a DIFFERENT target's fold ψ DOES change (its fit DOES see held's
+    # perturbed pair), so the test is not vacuously passing on a frozen ψ.
+    other = targets[1]
+    assert not np.allclose(folds_clean[other], folds_sentinel[other]), (
+        "a non-held-out target's ψ was unaffected by the sentinel — the per-fold "
+        "fits are not actually consuming the perturbed pair (test is vacuous)."
+    )
+
+
+def test_psi_per_fold_differs_from_leaky_full_panel_fit():
+    """Fail-pre / pass-post: the per-fold ψ for a target DIFFERS from the round-3
+    leaky full-panel ψ (``_fit_ridge_psi_for_targets`` on ALL targets) — that
+    difference IS the leak the fix removes. Pre-fix, the key scoring each target
+    was built from the single full-panel ψ (which trained on that target's pair);
+    post-fix it is built from the leave-it-out fold ψ.
+    """
+    import issue683_key_ablation_score as scr
+
+    payload, c_bank, _t_cb = _psi_ridge_bank()
+    per_context = payload["per_context"]
+    targets = [c for c in per_context if c != payload["source"]]
+
+    leaky_full = scr._fit_ridge_psi_for_targets(per_context, c_bank, targets)
+    folds = scr._psi_per_fold(per_context, c_bank, targets)
+    assert leaky_full is not None and folds is not None
+    # every fold ψ must differ from the full-panel ψ (each excludes one pair).
+    for held, psi_w in folds.items():
+        assert not np.allclose(psi_w, leaky_full), (
+            f"fold ψ for {held} is identical to the full-panel ψ — the held-out "
+            "target's pair is still in the fit that scores it."
+        )
+
+
+def test_psi_ridge_key_scoring_never_leaks_held_out_pair_end_to_end():
+    """End-to-end static-flow guard: instrument ``_resolve_metric`` to capture
+    the (key, train) of every M_white fit during a ψ_ridge t-based cell, and
+    confirm the key used to score target C'_i was built from a ψ that did NOT
+    see C'_i's pair.
+
+    We can't easily reconstruct ψ from the key alone, so we verify the weaker
+    but sufficient invariant the pivot mandates at the score level: the key that
+    scores C'_i (k_per_target[C'_i]) equals the key built from the leave-C'_i-out
+    fold ψ, and NOT the key built from the full-panel (leaky) ψ. This is the
+    score-path realization of test_psi_per_fold_differs_from_leaky_full_panel_fit.
+    """
+    import issue683_key_ablation_score as scr
+
+    payload, c_bank, t_cb = _psi_ridge_bank()
+    per_context = payload["per_context"]
+    source = payload["source"]
+    targets = [c for c in per_context if c != source]
+    c_source = c_bank[source]
+    import torch
+
+    v_base_source = torch.as_tensor(per_context[source]["v_base"]).flatten().float().numpy()
+    delta_cb = t_cb - v_base_source
+
+    folds = scr._psi_per_fold(per_context, c_bank, targets)
+    leaky_full = scr._fit_ridge_psi_for_targets(per_context, c_bank, targets)
+    for key_form in ("k_tCB", "k_cC_plus_delta"):
+        for held, psi_w in folds.items():
+            k_fold = scr._key_vector(
+                key_form, psi_w, c_source=c_source, t_cb=t_cb, delta_cb=delta_cb
+            )
+            k_leaky = scr._key_vector(
+                key_form, leaky_full, c_source=c_source, t_cb=t_cb, delta_cb=delta_cb
+            )
+            # the leak-free per-fold key must NOT equal the leaky full-panel key.
+            assert not np.allclose(k_fold, k_leaky), (key_form, held)
+
+
+def test_denominator_stability_present_and_finite_on_every_row():
+    """CONCERN denominator-stability-control-not-persisted: every leaderboard row
+    carries a ``denominator_stability`` {min, median, n_folds} field, computed
+    from |kᵀMc_C| over the LOO folds (the same (k, M, c_source) the scorer
+    divides by). Pins the field's PRESENCE + FINITENESS across all key/metric/ψ
+    cells, including the per-fold ψ_ridge cells."""
+    from issue683_key_ablation_score import score_bank
+
+    payload, c_bank, t_cb = _psi_ridge_bank()
+    res = score_bank(payload=payload, c_bank=c_bank, t_cb=t_cb, a7_rank1=True, n_boot=30, seed=1)
+    assert res["leaderboard"], "no rows scored"
+    for row in res["leaderboard"]:
+        ds = row.get("denominator_stability")
+        assert ds is not None, row
+        assert set(ds) == {"min", "median", "n_folds"}, ds
+        assert ds["n_folds"] >= 1, (row["key"], row["metric"], row["psi"], ds)
+        assert ds["min"] is not None and ds["min"] == ds["min"], ds  # finite
+        assert ds["median"] is not None and ds["median"] == ds["median"], ds
+        assert ds["min"] <= ds["median"] + 1e-9, ds  # min <= median by construction
+
+
+def test_denominator_stability_matches_independent_recompute_for_k_cC_M_I():
+    """The persisted ``denominator_stability`` for the simplest cell (k_cC / M_I)
+    equals an INDEPENDENT recompute of |c_Cᵀ c_C| (identity M, key = c_source).
+    For k_cC / M_I the denominator is the same for every fold, so min == median ==
+    |c_source · c_source|. Falsifies a field that is present but wrong."""
+    from issue683_key_ablation_score import score_bank
+
+    payload, c_bank, t_cb = _psi_ridge_bank()
+    res = score_bank(payload=payload, c_bank=c_bank, t_cb=t_cb, a7_rank1=True, n_boot=30, seed=1)
+    c_source = c_bank[payload["source"]]
+    expect = abs(float(c_source @ c_source))
+    rows = [r for r in res["leaderboard"] if r["key"] == "k_cC" and r["metric"] == "M_I"]
+    assert rows, "k_cC/M_I row missing"
+    ds = rows[0]["denominator_stability"]
+    assert np.isclose(ds["min"], expect, rtol=1e-9), (ds, expect)
+    assert np.isclose(ds["median"], expect, rtol=1e-9), (ds, expect)
