@@ -5,7 +5,7 @@ title: Appending a behavioral instruction moves the context vector along one dom
 kind: experiment
 tags: []
 created_at: '2026-06-27T03:54:14Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: Run an experiment to check how the context vector changes if we just
   have the context vs the context + a behavioral instruction (e.g. "be sycophantic").
   As part of the experiment also do a literature review on this topic. Use a diversity
