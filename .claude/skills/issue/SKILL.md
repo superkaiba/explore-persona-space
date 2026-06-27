@@ -4023,6 +4023,36 @@ URLs.
   task has a `keep-running` tag (the same-session follow-up may re-use the
   cache).
 
+  **Incremental (between-phase) cleanup for multi-phase runs.** Step-8
+  cleanup fires only at experiment END, so a multi-phase experiment whose
+  phases each materialize a fresh download cache holds the PEAK of all
+  phases' caches at once — and a large-footprint phase can fill `/`
+  mid-run (incident 2026-06-26: #658's Phase-1 analysis put a 139 GB store
+  on the VM worktree on the shared 188 GB disk; `/` hit 100% full). When a
+  run has multiple phases that each download inputs (e.g. a phase's judge /
+  extraction step CONSUMES its `e0_gen` / `g*_dl` / `hf_dl` inputs, then
+  the next phase downloads more), reap each consumed phase's
+  re-downloadable cache BEFORE the next phase materializes more — bounding
+  peak footprint, not just cleaning at the end. Between phases (after the
+  judge / extraction consumes the phase's inputs, before the next phase
+  downloads):
+
+  ```bash
+  # Between-phase: reap THIS phase's consumed hf_dl/g*_dl cache (repo-root
+  # + worktree); store/ + eval_results/ kept; no terminal-status gate (the
+  # run knows the phase is done). Re-downloads on demand if a later phase
+  # needs it again.
+  uv run python scripts/clean_experiment_downloads.py <N> --incremental --apply
+  ```
+
+  Same safety contract as the Step-8 cleanup (re-downloadable caches only;
+  `store/` + `eval_results/` NEVER touched; read-only on task state). This
+  is the RUNTIME backstop that bounds peak footprint — but it does NOT
+  rescue a single phase whose OWN footprint exceeds the disk; such a phase
+  must be ROUTED off the VM at plan time per the data-footprint carve-out
+  (CLAUDE.md "CPU-only phases don't hold GPU pods" → `planner.md` §9 →
+  `critic.md` Methodology lens item 10).
+
   **Upload-verification guard (post-#444).** `pod.py terminate` refuses
   to destroy an `epm-issue-<N>` / `pod-<N>` for a `kind: experiment`
   task unless an `epm:upload-verification PASS` marker exists on task
@@ -4609,8 +4639,9 @@ Rule-A reuse-chain depth · P3 inline-subset + comprehensive-Appendix
 completeness · P4 no confidence in the paper body · P5 research-paper
 register · P6 `\epsref{N}` correctness · P7 verbatim examples + judge
 prompts) bind INSTEAD of the fifteen markdown lenses (no `\metric` grounding
-lens in v1; `verify_paper.py` checks 7-8 mechanically gate the verbatim
-training/eval/output examples + the judge-prompts appendix). The orchestrator's
+lens in v1; `verify_paper.py` checks 7-9 mechanically gate the verbatim
+training/eval/output examples, the judge-prompts appendix, and the
+example-provenance pointers — the no-invention floor). The orchestrator's
 brief for both critics names the paper dir (`docs/papers/issue_<N>/`) and
 the `.tex`/PDF read targets instead of the markdown `body.md`; the
 ensemble decision rule, the round cap, and the reconciler tie-break are
@@ -4639,8 +4670,9 @@ dispatching this round's critics.
    review: the mechanical pre-pass is `scripts/verify_paper.py` over
    `docs/papers/issue_<N>/`, NOT `verify_task_body.py` /
    `audit_clean_results_body_discipline.py`, and the seven P1-P7 paper
-   lenses bind (incl. P7 verbatim examples + judge prompts; verify_paper.py
-   checks 7-8 gate them) — see the Paper-mode branch paragraph above. The Check-21
+   lenses bind (incl. P7 verbatim examples + judge prompts + example
+   provenance / no-invention; verify_paper.py checks 7-9 gate them) — see the
+   Paper-mode branch paragraph above. The Check-21
    methodology-doc pass-through below is markdown-only; skip it.)
 
    **Check-21 methodology-doc pass-through.** When the methodology doc

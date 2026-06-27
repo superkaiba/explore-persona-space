@@ -26,6 +26,28 @@ Idempotent (a missing cache is a no-op) and DRY-RUN BY DEFAULT — ``--apply``
 gates all deletion. The library functions are importable by
 ``scripts/vm_disk_guard.py`` (its tier-(b) cleanup) and wired into the
 ``/issue`` Step 8 post-experiment teardown.
+
+**Incremental (within-run, between-phase) cleanup.** Step-8 cleanup only fires
+at experiment END, so a multi-phase experiment whose phases each materialize a
+fresh download cache (phase-1 downloads ``g1_dl``, phase-2 ``g2_dl``, ...) holds
+the PEAK of all phases' caches at once. When an experiment's footprint is too
+big for the VM disk (incident 2026-06-26: #658's Phase-1 analysis put a 139 GB
+store on the VM worktree on a 188 GB fleet-shared disk), that peak can fill the
+root disk mid-run. ``clean_issue_downloads`` is deliberately phase-agnostic —
+it reaps the SAME ``hf_dl`` / ``g*_dl`` re-downloadable caches under the SAME
+keep/delete contract whether called once at the end or after each phase. The
+``--incremental`` CLI flag (and the ``clean_issue_downloads_incremental`` thin
+wrapper) document the between-phase use: call it after a phase's judge /
+extraction step has CONSUMED its download inputs, BEFORE the next phase
+downloads more, to bound peak footprint rather than only cleaning at the end.
+The safety contract is identical (``store/`` + ``eval_results/`` NEVER touched,
+re-downloadable caches only) — the cache is rebuilt on demand if a later phase
+needs it again, so reaping a consumed phase's cache mid-run is safe. The
+``vm_disk_guard`` fleet backstop's terminal-status gate (``--apply`` only on
+``completed`` / ``archived`` / ``awaiting_promotion`` issues) does NOT cover
+the active-issue case; the incremental entry point is the experiment's OWN
+deliberate self-cleanup while it runs, so it intentionally has no
+terminal-status check — the experiment knows the phase is done.
 """
 
 from __future__ import annotations
@@ -194,6 +216,28 @@ def clean_issue_downloads(
     return res
 
 
+def clean_issue_downloads_incremental(
+    issue_n: int,
+    *,
+    apply: bool = False,
+    data_root: Path | None = None,
+) -> CleanResult:
+    """Between-phase cleanup of ``issue_n``'s consumed download caches (within-run).
+
+    Identical behavior + safety contract to ``clean_issue_downloads`` — this is a
+    thin, explicitly-named alias for the INCREMENTAL use case: an experiment
+    calls it after a phase's judge / extraction step has consumed its
+    ``hf_dl`` / ``g*_dl`` download inputs and BEFORE the next phase downloads
+    more, to bound peak VM-disk footprint rather than only cleaning at
+    experiment end (Step 8). Unlike the ``vm_disk_guard`` fleet backstop, there
+    is NO terminal-status gate: the calling experiment is itself the authority
+    that the phase is done, so an ACTIVE issue self-reaping its own consumed
+    cache mid-run is the intended path. ``store/`` + ``eval_results/`` are never
+    touched; the re-downloadable cache is rebuilt on demand if a later phase
+    needs it again."""
+    return clean_issue_downloads(issue_n, apply=apply, data_root=data_root)
+
+
 def _rel_name(path: Path) -> str:
     """Path relative to the repo root for display (falls back to absolute)."""
     try:
@@ -220,12 +264,26 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Actually delete (default: dry-run, report what would be removed).",
     )
+    ap.add_argument(
+        "--incremental",
+        action="store_true",
+        help=(
+            "Label this as a within-run between-phase cleanup (after a phase "
+            "consumed its download inputs, before the next phase downloads "
+            "more). Behavior + safety contract are identical to the default "
+            "(end-of-run) cleanup; the flag only documents intent in the "
+            "report line. No terminal-status gate — the experiment knows the "
+            "phase is done."
+        ),
+    )
     args = ap.parse_args(argv)
 
-    res = clean_issue_downloads(args.issue, apply=args.apply)
+    cleaner = clean_issue_downloads_incremental if args.incremental else clean_issue_downloads
+    res = cleaner(args.issue, apply=args.apply)
+    mode = "incremental " if args.incremental else ""
     verb = "removed" if args.apply else "would remove"
     print(
-        f"clean_experiment_downloads issue {args.issue}: {verb} "
+        f"clean_experiment_downloads {mode}issue {args.issue}: {verb} "
         f"{len(res.removed)} cache dir(s), {_fmt_gb(res.bytes_freed)} | "
         f"failed {len(res.failed)}"
     )

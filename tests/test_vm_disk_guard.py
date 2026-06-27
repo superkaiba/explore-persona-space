@@ -156,6 +156,91 @@ def test_clean_issue_downloads_missing_issue_is_noop(tmp_path):
     assert res.failed == []
 
 
+# ─── clean_experiment_downloads: incremental (between-phase) cleanup ──────────
+
+
+def test_incremental_apply_reaps_consumed_cache_keeps_store(tmp_path):
+    # Between-phase cleanup: a consumed phase's hf_dl/g*_dl is reaped, store/
+    # + eval-result-shaped json kept — identical contract to the end-of-run path.
+    data_root = tmp_path / "data"
+    issue_dir = _make_issue_data(data_root, 658)
+    res = ced.clean_issue_downloads_incremental(658, apply=True, data_root=data_root)
+    assert len(res.removed) == 3
+    assert not (issue_dir / "hf_dl").exists()
+    assert not (issue_dir / "g1_dl").exists()
+    assert not (issue_dir / "g2_dl").exists()
+    # store/ + the stray json (durable, not re-downloadable) are KEPT.
+    assert (issue_dir / "store" / "generated.json").is_file()
+    assert (issue_dir / "R_test.json").is_file()
+
+
+def test_incremental_dry_run_removes_nothing(tmp_path):
+    data_root = tmp_path / "data"
+    issue_dir = _make_issue_data(data_root, 658)
+    res = ced.clean_issue_downloads_incremental(658, apply=False, data_root=data_root)
+    assert len(res.removed) == 3  # would-remove the 3 caches
+    assert (issue_dir / "hf_dl").is_dir()  # nothing actually deleted
+    assert res.bytes_freed > 0
+
+
+def test_incremental_is_idempotent(tmp_path):
+    # A re-run after the phase's cache is already reaped is a no-op (a later
+    # phase that re-downloads rebuilds the cache; absent that, nothing to do).
+    data_root = tmp_path / "data"
+    _make_issue_data(data_root, 658)
+    ced.clean_issue_downloads_incremental(658, apply=True, data_root=data_root)
+    res2 = ced.clean_issue_downloads_incremental(658, apply=True, data_root=data_root)
+    assert res2.removed == []
+    assert res2.failed == []
+
+
+def test_incremental_has_no_terminal_status_gate_on_active_issue(tmp_path, monkeypatch):
+    # The KEY distinction from the vm_disk_guard tier-(b) backstop: incremental
+    # cleanup deliberately works on an ACTIVE issue (the run is its own
+    # authority that the phase is done). The vm_disk_guard tier-(b) helper would
+    # KEEP this same active issue's cache; the incremental path reaps it.
+    repo = _setup_fake_repo(tmp_path, monkeypatch)
+    monkeypatch.setattr(vdg, "repo_root", lambda: repo)
+    repo_issue = _make_issue_data(repo / "data", 658)
+
+    # Sanity: the guard's tier-(b) KEEPS an active (running) issue's cache.
+    monkeypatch.setattr(vdg, "_resolve_issue_status", lambda n: "running")
+    guard_res = vdg.clean_terminal_download_caches(apply=True)
+    assert guard_res.bytes_freed == 0
+    assert (repo_issue / "hf_dl").is_dir()  # guard left it alone
+
+    # Incremental cleanup reaps the SAME active issue's consumed cache — it
+    # never consults task status.
+    inc_res = ced.clean_issue_downloads_incremental(658, apply=True)  # data_root=None
+    assert inc_res.bytes_freed > 0
+    assert not (repo_issue / "hf_dl").exists()
+    assert (repo_issue / "store" / "generated.json").is_file()  # store still kept
+
+
+def test_incremental_reaps_worktree_consumed_cache(tmp_path, monkeypatch):
+    # Multi-phase runs write into the worktree (#658 evidence); the incremental
+    # path sweeps repo-root + worktree copies identically to the end-of-run path.
+    repo = _setup_fake_repo(tmp_path, monkeypatch)
+    wt_issue = _make_worktree_issue_data(repo, 658)
+    res = ced.clean_issue_downloads_incremental(658, apply=True)  # data_root=None
+    assert res.bytes_freed > 0
+    assert not (wt_issue / "hf_dl").exists()
+    assert not (wt_issue / "g1_dl").exists()
+    assert (wt_issue / "store" / "generated.json").is_file()  # worktree store kept
+    assert (wt_issue / "R_test.json").is_file()
+
+
+def test_incremental_is_alias_of_clean_issue_downloads(tmp_path):
+    # The incremental wrapper must produce the exact same removal set as the
+    # base helper (it is a thin intent-labeling alias, same safety contract).
+    data_root = tmp_path / "data"
+    _make_issue_data(data_root, 720)
+    base = ced.clean_issue_downloads(720, apply=False, data_root=data_root)
+    inc = ced.clean_issue_downloads_incremental(720, apply=False, data_root=data_root)
+    assert sorted(base.removed) == sorted(inc.removed)
+    assert base.bytes_freed == inc.bytes_freed
+
+
 # ─── vm_disk_guard: threshold logic ──────────────────────────────────────────
 
 
