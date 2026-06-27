@@ -699,3 +699,177 @@ def test_failover_sidecar_write_failure_returns_terminal_json(tmp_path, monkeypa
     assert out["failure_class"] == "infra"
     # The durable lease was stamped so a re-fired tick short-circuits.
     assert len(stamped) == 1
+
+
+# ---------------------------------------------------------------------------
+# 14. PRODUCTION-shaped handle (#689 round-3 blocker): the wedge failover must
+#     reconstruct a RunSpec from the EXACT handle `RunPodBackend.launch()`
+#     produces in production — NOT the synthetic `_runpod_handle_with_workload`
+#     fixture that hand-adds fields production once omitted. These tests build
+#     the handle by DRIVING the real launch() (subprocess mocked) so the test
+#     goes RED the moment launch() stops persisting workload_cmd/hydra_args.
+# ---------------------------------------------------------------------------
+
+
+def _production_runpod_handle(
+    monkeypatch,
+    *,
+    issue: int = 689,
+    intent: str = "lora-7b",
+    workload_cmd: str = "bash scripts/issue664_dispatch.sh --foo",
+    gpus=None,
+    time_budget_hours=None,
+) -> RunHandle:
+    """Build a wedged RunPod handle by invoking the REAL ``RunPodBackend.launch()``.
+
+    Mocks ONLY ``subprocess.run`` (no pod is actually provisioned), so the
+    returned handle's ``extra`` dict is byte-for-byte what production persists —
+    this is the production-shaped handle the round-3 blocker requires, NOT the
+    hand-built ``_runpod_handle_with_workload``. The reconstruction path
+    (``_runspec_from_runpod_handle``) is exercised against THIS shape via the
+    sidecar round-trip in the failover.
+    """
+    from explore_persona_space.backends import runpod as RP
+    from explore_persona_space.backends.base import RunSpec
+
+    # ``subprocess.run`` is the GLOBAL module singleton (env.py's git probe + the
+    # artifact-declaration helpers use it too), so a blanket lambda would break
+    # them. No-op ONLY the ``pod_lifecycle.py provision`` call; delegate every
+    # other subprocess to the real implementation.
+    _real_run = RP.subprocess.run
+
+    def _selective_run(cmd, *a, **k):
+        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
+            return None  # the provision call — no real pod
+        return _real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    spec = RunSpec(
+        issue=issue,
+        intent=intent,
+        backend="runpod",
+        gpus=gpus,
+        time_budget_hours=time_budget_hours,
+        workload_cmd=workload_cmd,
+    )
+    handle = RP.RunPodBackend().launch(spec)
+    # The launch path names the pod ``pod-<issue>`` and an empty job_id; the
+    # wedge tests key the live-API stub on the name, so re-stamp pod_name to the
+    # canonical ``pod-689`` the _PodInfo stub returns.
+    assert handle.pod_name == f"pod-{issue}", handle.pod_name
+    return handle
+
+
+def test_production_launch_handle_persists_relaunch_spec_fields(monkeypatch):
+    """#689 round-3 (Part 1): the REAL ``RunPodBackend.launch()`` output carries
+    the relaunch-critical RunSpec fields on ``extra`` — ``workload_cmd`` (or
+    ``hydra_args``), ``gpus``, ``time_budget_hours`` — so the wedge failover can
+    reconstruct a RunSpec. This is the field-presence guard that, if it ever
+    regresses, RED-flags the missing-spec orphan-the-run bug at unit time."""
+    handle = _production_runpod_handle(
+        monkeypatch, workload_cmd="bash scripts/issue664_dispatch.sh --foo", gpus=2
+    )
+    extra = handle.extra
+    assert extra["workload_cmd"] == "bash scripts/issue664_dispatch.sh --foo"
+    assert extra["hydra_args"] == []  # custom-workload run -> empty hydra args
+    assert extra["gpus"] == 2
+    assert "time_budget_hours" in extra  # present even when None
+
+
+def test_production_handle_reconstructs_runspec(monkeypatch):
+    """#689 round-3 (Part 1+2): a RunSpec reconstructs cleanly from the production
+    handle's ``extra`` AFTER a serialize/deserialize sidecar round-trip — the
+    hydra_args list (JSON-encoded from the tuple) re-tuples and the launch
+    fields thread through. This is the exact reconstruction the failover does."""
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+
+    handle = _production_runpod_handle(
+        monkeypatch, workload_cmd="bash scripts/issue664_dispatch.sh --foo", gpus=2
+    )
+    # Round-trip exactly as the sidecar bridge does.
+    roundtripped = deserialize_handle(serialize_handle(handle))
+    spec = bp._runspec_from_runpod_handle(roundtripped, 689)
+    assert spec.issue == 689
+    assert spec.intent == "lora-7b"
+    assert spec.backend == "runpod"
+    assert spec.workload_cmd == "bash scripts/issue664_dispatch.sh --foo"
+    assert spec.hydra_args == ()
+    assert spec.gpus == 2
+
+
+def test_failover_clean_path_production_handle(tmp_path, monkeypatch):
+    """#689 round-3 (Part 3): drive ``_failover_wedged_runpod`` with the EXACT
+    handle the production launch produces (NOT ``_runpod_handle_with_workload``).
+    With the per-cell HF gate OK + the router launch mocked, the failover must
+    (a) reconstruct the RunSpec, (b) terminate the wedged pod EXACTLY once, and
+    (c) return ``status='running'`` / the fresh-pod phase. A production handle
+    that lacked the spec fields would raise in reconstruction AFTER the
+    irreversible terminate and orphan the run — this test RED-flags that."""
+    from explore_persona_space.backends import router as R
+
+    handle = _production_runpod_handle(monkeypatch)
+    terminated = _failover_with_mocked_gate(monkeypatch)
+
+    launches: list = []
+
+    def _fake_failover(**kw):
+        launches.append(kw["spec"])
+        on_launched = kw.get("on_launched")
+        h = _FakeRunHandle()
+        if on_launched is not None:
+            on_launched(h)
+        return type("RR", (), {"handle": h, "extra": {}})()
+
+    monkeypatch.setattr(
+        R, "failover_to_runpod_after_async_workload_crash", _fake_failover, raising=False
+    )
+    from explore_persona_space.backends import issue_dispatch as ID
+
+    monkeypatch.setattr(ID, "write_handle_sidecar", lambda h, p: None, raising=False)
+    monkeypatch.setattr(ID, "read_handle_sidecar", lambda p: _FakeRunHandle(), raising=False)
+
+    out = bp._failover_wedged_runpod(
+        issue=689, handle=handle, result=_dead_poll(), sidecar=_empty_sidecar(tmp_path)
+    )
+    # (a) the router launch fired with a reconstructed RunSpec carrying the spec fields.
+    assert len(launches) == 1
+    relaunched_spec = launches[0]
+    assert relaunched_spec.workload_cmd == handle.extra["workload_cmd"]
+    assert relaunched_spec.intent == handle.extra["intent"]
+    # (b) the wedged pod was terminated exactly once.
+    assert terminated == ["pod-id-55"]
+    # (c) the failover emitted a running poll for the fresh pod.
+    assert out["status"] == "running"
+    assert out["current_phase"] == "runpod_noport_wedge_failover_fresh_pod"
+
+
+def test_failover_legacy_handle_missing_spec_returns_terminal_json(tmp_path, monkeypatch):
+    """#689 round-3 (Part 2): a LEGACY sidecar handle built before launch() began
+    persisting workload_cmd/hydra_args (carries NEITHER) must NOT crash the poller
+    after the irreversible terminate. The failover maps the unreconstructable spec
+    to an OBSERVABLE terminal infra JSON (reason='runpod_wedge_relaunch_spec_missing'),
+    never letting ValueError propagate to reason='runpod_wedge_failover_error'."""
+    legacy_handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-legacy-1",
+        pod_name="pod-689",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-689.log",
+        # The pre-#689 production shape: intent + issue, but NO workload_cmd / hydra_args.
+        extra={"issue": 689, "intent": "lora-7b"},
+    )
+    terminated = _failover_with_mocked_gate(monkeypatch)
+
+    out = bp._failover_wedged_runpod(
+        issue=689, handle=legacy_handle, result=_dead_poll(), sidecar=_empty_sidecar(tmp_path)
+    )
+    # The wedged pod WAS terminated (billing stopped), then the spec was found
+    # unreconstructable — so an observable terminal JSON, not a crash.
+    assert terminated == ["pod-id-55"]
+    assert out["status"] == "dead"
+    assert out["reason"] == "runpod_wedge_relaunch_spec_missing"
+    assert out["failure_class"] == "infra"
