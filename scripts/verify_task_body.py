@@ -408,6 +408,35 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   figure-embedded strings (`1/30`→`1/29`, "geometrically real") the body
   prose had already fixed at round 1.
 
+- **check 25** (`check_audit_availability_claims_match_hf`): a prose claim
+  that a data artifact "was not uploaded" / "cannot be audited" /
+  "unavailable for audit" must NOT be contradicted by that artifact
+  actually existing on the HF data repo. Scans the fence-stripped body for
+  a line carrying BOTH an availability-denial phrase AND a known
+  data-artifact class spelled in PROSE (raw-completions / install-probe /
+  training-mix / on-policy pool / analysis-tensor — hyphen/space/singular
+  variants mapped to the canonical underscore-plural HF-path token
+  `raw_completions` / `install_probes` / `mixes` / `onpolicy_pools` /
+  `analysis_tensors`); for each, lists the body's HF Hub revision-pinned
+  URLs (the check-23 set) ONCE per (repo, sha) and asks whether ≥1 file
+  UNDER the URL's path-prefix carries the canonical token as a path
+  component at ANY depth (a denial usually links the repo TREE ROOT while
+  the file lives several levels down at `<root>/…/<token>/…`, the #653
+  shape). If ANY HF URL yields such a file via
+  `huggingface_hub.list_repo_files`, the denial is false → FAIL.
+  FAIL-SOFT (same semantics as checks 8b/23): the
+  `EPM_VERIFY_BODY_NO_HF=1` offline fence, a missing `huggingface_hub`, and
+  any network / auth / HTTP error surface as an `unverified` note on the
+  PASS line, never a FAIL; only a SUCCESSFUL listing returning ≥1 matching
+  file is the FAIL. Vacuous PASS when there is no denial-near-artifact line
+  or no HF Hub revision-pinned URL to reconcile against. Body-wide +
+  fence-stripped scan (the denial prose lives in `## Methodology` /
+  `## Results` / the Reproducibility footer). Incident: task #653 round 6
+  asserted the per-cell install-probe firing/non-firing completions "were
+  not separately uploaded ... cannot be audited at the record level" while
+  those files DID exist on HF under the body's own linked data-repo tree —
+  caught by hand at round-6 interp-critique, mechanizable into this check.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -4543,6 +4572,252 @@ def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
     return CheckResult(label, True, f"{scanned} figure sidecar(s) consistent with body prose")
 
 
+# A prose claim that an artifact is NOT available — "not uploaded", "was not
+# uploaded", "not separately uploaded", "cannot be audited", "cannot audit",
+# "unavailable for audit", "not available for audit". The optional
+# "separately " between "not" and "uploaded" catches the #653 r6 wording
+# ("themselves were not separately uploaded"). Case-insensitive; the
+# apostrophe in "wasn't" / "can't" matches both the ASCII `'` and the curly
+# right-single-quote (real clean-result bodies use either) via `_APOS`.
+_APOS = "['\u2019]"  # ASCII apostrophe or curly right-single-quote (U+2019)
+_AUDIT_DENIAL_RE = re.compile(
+    r"(?:not\s+(?:separately\s+)?uploaded"
+    r"|was\s+not\s+uploaded|wasn" + _APOS + r"t\s+uploaded"
+    r"|cannot\s+be\s+audited|cannot\s+audit|can" + _APOS + r"t\s+be\s+audited"
+    r"|(?:un|not\s+)available\s+for\s+audit)",
+    re.IGNORECASE,
+)
+# Artifact classes whose HF upload-path convention is known. A denial claim
+# co-located (same line) with one of these names a concrete, mechanically
+# probe-able artifact class — the only case this check fires on (a bare
+# "the figure was not uploaded" with no data-artifact keyword is out of
+# scope, since there is no HF data-repo path to reconcile it against).
+#
+# CRITICAL: the body PROSE spells these with hyphens/spaces and often the
+# singular ("the install-probe completions", "the raw completions"), while the
+# HF UPLOAD PATH uses the underscore plural (`install_probes/`,
+# `raw_completions/`). So each canonical HF-path token (the dict key, used for
+# the on-Hub path match) maps to a regex matching the prose spellings (the
+# dict value, used to detect the denial in body text). Missing this split is
+# exactly why the #653 r6 line ("install-probe ... completions ... not
+# separately uploaded ... cannot be audited") slipped through a naive
+# underscore-only scan.
+_AUDIT_ARTIFACT_CLASSES: dict[str, re.Pattern[str]] = {
+    "raw_completions": re.compile(r"raw[ _-]completions?|raw[ _-]?completion\b", re.IGNORECASE),
+    "install_probes": re.compile(r"install[ _-]probes?", re.IGNORECASE),
+    "mixes": re.compile(r"\btraining[ _-]mix(?:es)?\b|\bmixes\b", re.IGNORECASE),
+    "onpolicy_pools": re.compile(
+        r"on[ _-]?policy[ _-](?:pools?|completions?)|onpolicy[ _-]pools?", re.IGNORECASE
+    ),
+    "analysis_tensors": re.compile(r"analysis[ _-]tensors?", re.IGNORECASE),
+}
+
+
+# Max character distance on a line between an artifact-class prose mention and
+# the nearest availability-denial phrase for the denial to be attributed to
+# THAT artifact. The real #653 line has a 47-char gap; 200 comfortably covers
+# a clause while excluding the false-positive shape where one line denies
+# artifact A early and links a DIFFERENT artifact B by keyword far away
+# (e.g. "the merged weights were not uploaded; raw completions are at <link>").
+_AUDIT_DENIAL_PROXIMITY = 200
+
+
+def _audit_denied_artifact_classes_in(line: str) -> list[str]:
+    """Return the canonical HF-path token(s) (e.g. `install_probes`) of each
+    artifact class whose prose spelling appears in ``line`` WITHIN
+    ``_AUDIT_DENIAL_PROXIMITY`` chars of an availability-denial phrase on the
+    same line, in dict order, deduplicated.
+
+    Proximity-gating is the false-positive guard: a long line that denies one
+    artifact and merely links another by keyword far away does not attribute
+    the denial to the linked artifact. The canonical token (underscore plural)
+    is what the on-Hub path match uses; the prose regex (hyphen/space/singular
+    variants) is what detects it here.
+    """
+    denial_spans = [m.span() for m in _AUDIT_DENIAL_RE.finditer(line)]
+    if not denial_spans:
+        return []
+    out: list[str] = []
+    for canonical, pat in _AUDIT_ARTIFACT_CLASSES.items():
+        for am in pat.finditer(line):
+            a_start, a_end = am.span()
+            near = any(
+                # gap between the artifact mention and the denial phrase
+                # (whichever side it falls on), clamped at 0 when they overlap.
+                max(d_start - a_end, a_start - d_end, 0) <= _AUDIT_DENIAL_PROXIMITY
+                for d_start, d_end in denial_spans
+            )
+            if near:
+                if canonical not in out:
+                    out.append(canonical)
+                break
+    return out
+
+
+def _hf_keyword_present_under_prefix(
+    repo_id: str, repo_type: str, sha: str, path_prefix: str, keyword: str
+) -> tuple[str, str]:
+    """Fail-soft probe (check 25): does the HF repo at ``sha`` contain ≥1 file
+    under ``path_prefix`` whose path carries ``keyword`` as a path component?
+
+    Lists the repo files ONCE at the cited revision and substring-matches the
+    keyword anywhere in the path, restricted to files under ``path_prefix``
+    (the URL's own sub-tree). A keyword nested at ANY depth below the prefix
+    counts — the #653 denial linked the repo TREE ROOT
+    (`…/issue653_install-validated-reladder`) while the file lives several
+    levels down at `…/raw_completions/armB/install_probes/cell0/…`, so a fixed
+    `<prefix>/<keyword>` candidate path would miss it; substring-on-the-listing
+    is depth-agnostic.
+
+    Returns ``(verdict, matched_path)`` with verdict one of:
+    - ``'pass'``  — ≥1 file under the prefix carries the keyword (the denial is
+      FALSE); ``matched_path`` is the first such file.
+    - ``'fail'``  — a SUCCESSFUL listing with NO matching file, i.e. the denial
+      is corroborated for this URL (named ``'fail'`` to mirror
+      ``_hf_url_existence``'s "definitive negative" verdict; the caller treats
+      it as "denial holds for this URL", NOT a body FAIL).
+    - ``'skip'`` — indeterminate (offline fence / no huggingface_hub / any
+      network / auth / HTTP error); surfaced as an `unverified` note, never a
+      body FAIL.
+
+    Fail-soft is mandatory and mirrors ``_hf_url_existence`` exactly: only a
+    SUCCESSFUL listing yields pass/fail; every error path SKIPs.
+    """
+    if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1":
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF probe fenced)"
+    try:
+        import huggingface_hub  # local import — optional dependency
+        from huggingface_hub.utils import (
+            EntryNotFoundError,
+            RepositoryNotFoundError,
+            RevisionNotFoundError,
+        )
+    except ImportError:
+        return "skip", f"`{repo_id}@{sha[:8]}` (huggingface_hub unavailable)"
+    try:
+        files = huggingface_hub.list_repo_files(repo_id, repo_type=repo_type, revision=sha)
+    except (RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError):
+        # No such repo/revision: cannot corroborate OR refute → indeterminate.
+        return "skip", f"`{repo_id}@{sha[:8]}` (no such revision)"
+    except Exception as exc:
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF list_repo_files failed: {exc})"
+    needle = path_prefix.strip("/")
+    kw_lower = keyword.lower()
+
+    def _under_prefix(f: str) -> bool:
+        return not needle or f == needle or f.startswith(needle + "/")
+
+    for f in files:
+        if _under_prefix(f) and kw_lower in f.lower():
+            return "pass", f
+    return "fail", ""
+
+
+def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
+    """Check 25: a prose claim that an artifact "was not uploaded" /
+    "cannot be audited" must NOT be contradicted by that artifact actually
+    existing on the HF data repo.
+
+    The #653 r6 pattern: the body asserted the per-cell install-probe
+    firing/non-firing completions "were not separately uploaded, so the
+    firing vs non-firing examples ... cannot be audited at the record
+    level" — while those files DID exist on HF Hub under the same
+    revision-pinned data-repo tree the body's own `## Methodology` /
+    Reproducibility footer linked, at
+    `…/issue653_install-validated-reladder/raw_completions/…/install_probes/`.
+    The interpretation-critic caught the false "can't audit" claim by
+    hand; this check mechanizes it so a future analyzer's honest-but-wrong
+    non-availability claim FAILs before promotion.
+
+    Mechanism (standalone — no `events.jsonl` / marker read, keeping the
+    verifier self-contained): scan the fence-stripped body line by line for
+    a line carrying BOTH (a) an availability-denial phrase
+    (`_AUDIT_DENIAL_RE`) AND (b) a known data-artifact class spelled in PROSE
+    within proximity on the same line (`_audit_denied_artifact_classes_in` —
+    matches the hyphen/space/singular prose spellings, requires the mention to
+    sit within `_AUDIT_DENIAL_PROXIMITY` chars of the denial phrase so a long
+    line denying artifact A while merely linking artifact B does not
+    false-trigger, and maps the prose to the canonical underscore-plural
+    HF-path token, so the #653 "install-probe completions" prose resolves to
+    the `install_probes/` upload path). For each denied class, take every HF Hub
+    revision-pinned URL the body carries (`_gather_hf_pinned_urls`, the same
+    set check 23 probes) and ask `_hf_keyword_present_under_prefix` whether
+    the repo at the cited revision holds ≥1 file UNDER the URL's path-prefix
+    whose path carries the keyword as a path component — depth-agnostic, so a
+    file nested at `<tree-root>/…/<keyword>/…` is found even when the body
+    only linked the tree ROOT (the #653 shape). If ANY HF URL yields such a
+    file, the denial is false → FAIL.
+
+    Fail-soft (identical semantics to check 23): every probe goes through
+    `_hf_keyword_present_under_prefix`, which SKIPs (never FAILs) under the
+    `EPM_VERIFY_BODY_NO_HF=1` offline fence, when `huggingface_hub` is
+    unavailable, or on any network / auth / HTTP error. So an HfHubHTTPError
+    or a sandbox with no network surfaces as an `unverified` note on the
+    PASS line — the check never breaks a body just because the Hub is down,
+    and never fabricates a FAIL it cannot substantiate. Only a SUCCESSFUL
+    listing that returns ≥1 matching file is the FAIL; a successful listing
+    with NO matching file CORROBORATES the denial (PASS).
+
+    Vacuous PASS when the body carries no availability-denial-near-artifact
+    line, or no HF Hub revision-pinned URL to probe against.
+    """
+    label = "audit-availability claims match HF Hub"
+    stripped = _strip_fenced_blocks(body)
+    # Find lines asserting non-availability of a known data-artifact class
+    # (denial phrase + an artifact-class prose mention within proximity on the
+    # same line). `suspect_keywords` holds the canonical underscore-plural
+    # HF-path tokens.
+    suspect_keywords: list[str] = []
+    for line in stripped.splitlines():
+        if "uploaded" not in line.lower() and "audit" not in line.lower():
+            continue  # cheap pre-filter before the proximity scan
+        for canonical in _audit_denied_artifact_classes_in(line):
+            if canonical not in suspect_keywords:
+                suspect_keywords.append(canonical)
+    if not suspect_keywords:
+        return CheckResult(label, True, "no availability-denial claim near a data artifact")
+    hf_urls = _gather_hf_pinned_urls(body)
+    if not hf_urls:
+        return CheckResult(
+            label,
+            True,
+            f"{len(suspect_keywords)} availability-denial claim(s) "
+            f"({', '.join(suspect_keywords)}) but no HF Hub revision-pinned URL "
+            "to reconcile against",
+        )
+    contradicted: list[str] = []
+    unverified: list[str] = []
+    for kw in suspect_keywords:
+        kw_contradicted = False
+        kw_confirmed_listing = False  # ≥1 HF URL listed successfully for this kw
+        for repo_id, repo_type, sha, path_prefix, _raw in hf_urls:
+            verdict, matched = _hf_keyword_present_under_prefix(
+                repo_id, repo_type, sha, path_prefix, kw
+            )
+            if verdict == "pass":
+                kw_contradicted = True
+                contradicted.append(
+                    f"body claims `{kw}` was not uploaded / cannot be audited, but "
+                    f"`{matched}` exists at `{repo_id}@{sha[:8]}`"
+                )
+                break
+            if verdict == "fail":
+                kw_confirmed_listing = True
+        if not kw_contradicted and not kw_confirmed_listing:
+            unverified.append(kw)
+    if contradicted:
+        return CheckResult(label, False, "; ".join(contradicted))
+    detail = (
+        f"{len(suspect_keywords)} availability-denial claim(s) "
+        f"({', '.join(suspect_keywords)}) reconciled against {len(hf_urls)} HF URL(s)"
+    )
+    if unverified:
+        detail += f"; {len(unverified)} unverified (existence not confirmed): " + ", ".join(
+            unverified
+        )
+    return CheckResult(label, True, detail)
+
+
 def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
     """Lens 14 — mechanical concerns audit (binding-concerns contract,
     composed onto the 2-content-section clean-result spec on 2026-05-31
@@ -5725,6 +6000,7 @@ CHECKS = [
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
     check_figure_text_vs_body_tokens,  # check 24 (WARN)
+    check_audit_availability_claims_match_hf,  # check 25
 ]
 
 
