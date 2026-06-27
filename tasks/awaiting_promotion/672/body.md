@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - followup-manual
 created_at: '2026-06-26T10:24:35Z'
-has_clean_result: true
+has_clean_result: false
 origin_prompt: afterwards test that GCP is working properly (and the bugs from before
   won't happen again)
 goal: 'After #669 (GCP wedge recovery) and #671 (extractor output_hidden_states memory-bug
