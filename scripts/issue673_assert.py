@@ -89,9 +89,32 @@ def _assert_grad_disabled(results: dict, regime_tag: str) -> None:
         )
 
 
+def _assert_allocator_tag(results: dict, expected_tag: str) -> None:
+    """Raise if the JSON's allocator_tag does not match the expected regime.
+
+    Guards against a swapped --expandable-json / --default-json invocation or
+    a duplicated regime run silently producing a false PASS at the test-verdict
+    gate (Codex code-review round 1). The benchmark writes ``allocator_tag``
+    (``expandable_segments_on`` | ``default_allocator``) at write time; this is
+    the reader-side enforcement.
+    """
+    got = results.get("allocator_tag")
+    assert got == expected_tag, (
+        f"allocator regime mismatch: expected {expected_tag!r}, got {got!r}. "
+        f"A swapped --expandable-json / --default-json (or a duplicated-regime "
+        f"run) would silently produce a false PASS — fail loud instead."
+    )
+
+
 def _max_reserved_gib(reserved_bytes) -> float:
-    """Max reserved memory (GiB) over the post-warmup window."""
-    return float(max(reserved_bytes[WARMUP:]) / GiB)
+    """Max reserved memory (GiB) over the post-warmup window.
+
+    Mirrors ``flat()``'s short-curve guard in the benchmark module: when the
+    curve is shorter than ``WARMUP`` (e.g. the N=3 ``--smoke`` output) fall
+    back to the whole curve instead of slicing to empty.
+    """
+    warmup = WARMUP if len(reserved_bytes) > WARMUP else 0
+    return float(max(reserved_bytes[warmup:]) / GiB)
 
 
 def _control_gap_gib(old_reserved, hook_reserved) -> float:
@@ -117,8 +140,12 @@ def evaluate(expandable: dict, default: dict) -> tuple[str, str]:
     """Apply the plan §6.2 PASS / INCONCLUSIVE / REGRESSION rule set.
 
     Returns ``(verdict, message)``. Raises ``AssertionError`` (via
-    ``_assert_grad_disabled``) if either arm in either regime ran grad-enabled.
+    ``_assert_grad_disabled`` / ``_assert_allocator_tag``) if either arm in
+    either regime ran grad-enabled or if the JSONs were swapped between
+    --expandable-json / --default-json.
     """
+    _assert_allocator_tag(expandable, "expandable_segments_on")
+    _assert_allocator_tag(default, "default_allocator")
     _assert_grad_disabled(expandable, "expandable_segments_on")
     _assert_grad_disabled(default, "default_allocator")
 

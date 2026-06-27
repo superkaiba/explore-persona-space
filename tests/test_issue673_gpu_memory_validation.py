@@ -33,6 +33,7 @@ from scripts.issue673_assert import (
     INCONCLUSIVE,
     PASS,
     REGRESSION,
+    _max_reserved_gib,
     evaluate,
 )
 from scripts.issue673_gpu_memory_validation import (
@@ -160,13 +161,19 @@ def _arm(reserved, *, grad_enabled=False, inference_mode=True, allocated=None):
     }
 
 
-def _regime(hook_reserved, old_reserved, **arm_kw):
-    """Build a synthetic per-regime results dict with hook + old arms."""
+def _regime(hook_reserved, old_reserved, *, allocator_tag="expandable_segments_on", **arm_kw):
+    """Build a synthetic per-regime results dict with hook + old arms.
+
+    Defaults the allocator_tag to ``expandable_segments_on`` so existing
+    callers that build a single regime keep working; the second regime in
+    every test call passes ``allocator_tag="default_allocator"`` explicitly.
+    """
     return {
+        "allocator_tag": allocator_tag,
         "arms": {
             "hook": _arm(hook_reserved, **arm_kw),
             "old_ohs_true": _arm(old_reserved, **arm_kw),
-        }
+        },
     }
 
 
@@ -177,7 +184,7 @@ def test_evaluate_pass_flat_hook_growing_old():
     growing_old = _growth_curve(22.0, 0.3)  # climbs well above the hook plateau
     flat_old = _const_curve(20.0, jitter_gib=0.005)
     expandable = _regime(flat_hook, growing_old)
-    default = _regime(flat_hook, flat_old)
+    default = _regime(flat_hook, flat_old, allocator_tag="default_allocator")
     verdict, msg = evaluate(expandable, default)
     assert verdict == PASS, (verdict, msg)
 
@@ -188,7 +195,9 @@ def test_evaluate_pass_on_retained_highwater_gap():
     flat_hook = _const_curve(20.0, jitter_gib=0.005)
     higher_old = _const_curve(20.5, jitter_gib=0.005)  # +0.5 GiB > CTRL_GAP_GiB
     expandable = _regime(flat_hook, higher_old)
-    default = _regime(flat_hook, _const_curve(20.0, jitter_gib=0.005))
+    default = _regime(
+        flat_hook, _const_curve(20.0, jitter_gib=0.005), allocator_tag="default_allocator"
+    )
     verdict, msg = evaluate(expandable, default)
     assert verdict == PASS, (verdict, msg)
 
@@ -199,7 +208,7 @@ def test_evaluate_regression_on_growing_hook():
     growing_hook = _growth_curve(20.0, 0.5)
     flat_old = _const_curve(20.0, jitter_gib=0.005)
     expandable = _regime(growing_hook, _growth_curve(22.0, 0.3))
-    default = _regime(growing_hook, flat_old)
+    default = _regime(growing_hook, flat_old, allocator_tag="default_allocator")
     verdict, msg = evaluate(expandable, default)
     assert verdict == REGRESSION, (verdict, msg)
 
@@ -210,7 +219,7 @@ def test_evaluate_inconclusive_flat_hook_flat_old_no_gap():
     flat_hook = _const_curve(20.0, jitter_gib=0.005)
     flat_old = _const_curve(20.0, jitter_gib=0.005)  # same level, gap < CTRL_GAP_GiB
     expandable = _regime(flat_hook, flat_old)
-    default = _regime(flat_hook, flat_old)
+    default = _regime(flat_hook, flat_old, allocator_tag="default_allocator")
     verdict, msg = evaluate(expandable, default)
     assert verdict == INCONCLUSIVE, (verdict, msg)
 
@@ -228,12 +237,15 @@ def test_grad_enabled_record_raises():
     growing_old = _growth_curve(22.0, 0.3)
     # old arm ran grad-enabled -> invalid positive control.
     expandable = {
+        "allocator_tag": "expandable_segments_on",
         "arms": {
             "hook": _arm(flat_hook),
             "old_ohs_true": _arm(growing_old, grad_enabled=True),
-        }
+        },
     }
-    default = _regime(flat_hook, _const_curve(20.0, jitter_gib=0.005))
+    default = _regime(
+        flat_hook, _const_curve(20.0, jitter_gib=0.005), allocator_tag="default_allocator"
+    )
     with pytest.raises(AssertionError, match="grad_enabled must be False"):
         evaluate(expandable, default)
 
@@ -243,11 +255,67 @@ def test_inference_mode_false_record_raises():
     must have run under torch.inference_mode()."""
     flat_hook = _const_curve(20.0, jitter_gib=0.005)
     expandable = {
+        "allocator_tag": "expandable_segments_on",
         "arms": {
             "hook": _arm(flat_hook, inference_mode=False),
             "old_ohs_true": _arm(_growth_curve(22.0, 0.3)),
-        }
+        },
     }
-    default = _regime(flat_hook, _const_curve(20.0, jitter_gib=0.005))
+    default = _regime(
+        flat_hook, _const_curve(20.0, jitter_gib=0.005), allocator_tag="default_allocator"
+    )
     with pytest.raises(AssertionError, match="inference_mode must be True"):
         evaluate(expandable, default)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. Allocator-tag swap guard + short-curve guard (code-review round 1).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_evaluate_raises_on_swapped_allocator_jsons():
+    """Swapping the --expandable-json / --default-json files (or duplicating a
+    regime) must FAIL LOUDLY, not silently produce a PASS. A perfectly-flat,
+    well-formed default-regime JSON passed as the expandable arg means the
+    expandable_segments:True regime was never actually tested — the validation
+    headline cannot hold."""
+    flat_hook = _const_curve(20.0, jitter_gib=0.005)
+    growing_old = _growth_curve(22.0, 0.3)
+    # Operator accidentally passes the default JSON in --expandable-json slot.
+    swapped_as_expandable = _regime(flat_hook, growing_old, allocator_tag="default_allocator")
+    real_default = _regime(
+        flat_hook, _const_curve(20.0, jitter_gib=0.005), allocator_tag="default_allocator"
+    )
+    with pytest.raises(AssertionError, match="allocator regime mismatch"):
+        evaluate(swapped_as_expandable, real_default)
+
+
+def test_evaluate_raises_on_missing_allocator_tag():
+    """A JSON missing the allocator_tag field (e.g. a hand-edited or pre-tag
+    artifact) cannot be evaluated — fail loud, never assume a regime."""
+    flat_hook = _const_curve(20.0, jitter_gib=0.005)
+    untagged = _regime(flat_hook, _growth_curve(22.0, 0.3))
+    untagged.pop("allocator_tag")
+    real_default = _regime(
+        flat_hook, _const_curve(20.0, jitter_gib=0.005), allocator_tag="default_allocator"
+    )
+    with pytest.raises(AssertionError, match="allocator regime mismatch"):
+        evaluate(untagged, real_default)
+
+
+def test_max_reserved_gib_short_curve_guard():
+    """_max_reserved_gib() must not crash on a curve shorter than WARMUP
+    (e.g. the N=3 --smoke output). Mirrors flat()'s short-curve guard in the
+    benchmark module — feeding the assert helper a smoke-shaped JSON would
+    otherwise ValueError on `max([])`."""
+    # 1 GiB in bytes.
+    one_gib = 1024**3
+    # WARMUP-shorter curves of integer bytes; must return the max of the whole
+    # curve in GiB, not crash with `ValueError: max() arg is an empty sequence`.
+    short = [one_gib * (10 + i) for i in range(3)]  # 10, 11, 12 GiB
+    got = _max_reserved_gib(short)
+    assert got == pytest.approx(12.0, abs=1e-6), got
+    # And the WARMUP slice path still works for the normal N >= WARMUP+1 case.
+    long_curve = [one_gib * 10] * WARMUP + [one_gib * 15]
+    got_long = _max_reserved_gib(long_curve)
+    assert got_long == pytest.approx(15.0, abs=1e-6), got_long
