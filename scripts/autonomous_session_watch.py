@@ -1234,6 +1234,203 @@ def decide_vm_disk(
     return (level, do_alert, do_reclaim, do_audit)
 
 
+# ─── VM disk SUB-FLOOR sentinel (task #679) ──────────────────────────────────
+#
+# The existing alert/reclaim bands above fire LATE (20 / 15 GiB free) — by then
+# foreground Bash spawns are already at risk. The sub-floor sentinel is an
+# EARLIER, advisory warn-only band (~60 GB free) whose job is attribution +
+# faster re-check intent, NOT remediation: it writes a `band=sub-floor` row to
+# the SHARED disk-guard sidecar naming the top per-issue cache paths (cheap
+# `du -s` on the re-downloadable globs only) so a human can see WHICH active
+# task is eating the disk before it hits the late bands. It NEVER deletes
+# anything and NEVER spawns a daemon — the "re-check sooner" signal is purely
+# the sidecar row it writes (the 10-min watcher cron cadence is unchanged).
+
+# Below this free-bytes threshold the sub-floor sentinel writes an attributed
+# advisory row. ~60 GB: well above the 20 GiB alert band, so it surfaces a
+# growing cache while there is still ample slack. Override: EPM_VM_DISK_SUBFLOOR_GIB.
+VM_DISK_SUBFLOOR_FREE_BYTES = _env_gib_bytes("EPM_VM_DISK_SUBFLOOR_GIB", 60)
+
+# Re-alert an already-sub-floor episode only when free space DROPPED by more
+# than this fraction since the last sub-floor row — bounds churn while still
+# surfacing a steadily-tightening disk.
+VM_DISK_SUBFLOOR_GROWTH_REALERT = 0.10
+
+# How many top per-issue cache paths to attribute in the sub-floor row.
+VM_DISK_SUBFLOOR_TOP_N = 3
+
+# Hard wall-clock bound on the attribution `du -s` sweep (cheap — only the
+# re-downloadable globs, never store/). A timeout degrades to "no attribution",
+# never a crash.
+VM_DISK_SUBFLOOR_DU_TIMEOUT_S = 60
+
+
+def _root_disk_headroom() -> int | None:
+    """Free bytes on the VM root (alias of :func:`_vm_free_bytes`, named for
+    the sub-floor sentinel's call site). ``None`` on a statvfs failure."""
+    return _vm_free_bytes()
+
+
+def _top_issue_cache_paths(top_n: int = VM_DISK_SUBFLOOR_TOP_N) -> list[tuple[str, int]]:
+    """The ``top_n`` largest per-issue re-downloadable cache dirs under
+    ``data/issue_*/{hf_dl,g*_dl}`` (NOT store/), as ``(rel_path, bytes)``.
+
+    Cheap `du -s` on the cache globs ONLY — this is attribution, not a full
+    tree walk. A `du` failure / timeout yields an empty list (no attribution),
+    never a crash. Paths are relative to PROJECT_ROOT for the human pointer."""
+    data_root = PROJECT_ROOT / "data"
+    if not data_root.is_dir():
+        return []
+    candidates: list[Path] = []
+    for issue_dir in sorted(data_root.glob("issue*")):
+        if not issue_dir.is_dir():
+            continue
+        for pattern in ("hf_dl", "g*_dl"):
+            candidates.extend(p for p in issue_dir.glob(pattern) if p.is_dir())
+    sizes: list[tuple[str, int]] = []
+    for p in candidates:
+        rc = subprocess.run(
+            ["du", "-sx", "--block-size=1", str(p)],
+            capture_output=True,
+            text=True,
+            timeout=VM_DISK_SUBFLOOR_DU_TIMEOUT_S,
+            check=False,
+        )
+        if rc.returncode != 0 or not rc.stdout.strip():
+            continue
+        try:
+            nbytes = int(rc.stdout.split()[0])
+        except (ValueError, IndexError):
+            continue
+        try:
+            rel = str(p.relative_to(PROJECT_ROOT))
+        except ValueError:
+            rel = str(p)
+        sizes.append((rel, nbytes))
+    sizes.sort(key=lambda x: x[1], reverse=True)
+    return sizes[:top_n]
+
+
+def _subfloor_state_path() -> Path:
+    """Singleton dedup state for the sub-floor sentinel (last-alerted free
+    bytes), under AUTONOMOUS_REGISTRY_DIR."""
+    return AUTONOMOUS_REGISTRY_DIR / "vm-disk-subfloor.json"
+
+
+def _load_subfloor_state() -> dict:
+    path = _subfloor_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_subfloor_state(free_bytes: int) -> None:
+    """Atomic temp+rename write of the sub-floor dedup state (fail-soft)."""
+    dest = _subfloor_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps({"last_free_bytes": free_bytes}))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  vm-disk subfloor: state save failed: {exc}", file=sys.stderr)
+
+
+def _clear_subfloor_state() -> None:
+    _subfloor_state_path().unlink(missing_ok=True)
+
+
+def decide_subfloor(free_bytes: int, last_free_bytes: int | None) -> bool:
+    """Pure decision: write a sub-floor row this tick?
+
+    True when free is below the sub-floor AND either no prior row exists this
+    episode OR free DROPPED by more than the re-alert fraction since the last
+    row. Recovery above the sub-floor clears the episode (handled by the
+    caller). Keeps the row from re-firing every 10-min tick at a stable
+    footprint."""
+    if free_bytes >= VM_DISK_SUBFLOOR_FREE_BYTES:
+        return False
+    if not isinstance(last_free_bytes, int | float) or last_free_bytes <= 0:
+        return True  # first sub-floor row this episode
+    drop = (last_free_bytes - free_bytes) / last_free_bytes
+    return drop > VM_DISK_SUBFLOOR_GROWTH_REALERT
+
+
+def _disk_guard_sidecar_path() -> Path:
+    """The SHARED disk-guard escalation sidecar (same stream the
+    clean_experiment_downloads + vm_disk_guard escalations use)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "disk-guard-events.jsonl"
+
+
+def _append_disk_guard_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the shared disk-guard sidecar (fail-soft). A
+    ``ts`` is stamped if absent. ``dry_run`` reports only."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append disk-guard sidecar row: {line[:160]}")
+        return
+    dest = _disk_guard_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  vm-disk subfloor: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool:
+    """Warn-only sub-floor attribution pass (task #679).
+
+    When VM-root free space drops below the sub-floor band, write a
+    `band=sub-floor` advisory row to the shared disk-guard sidecar naming the
+    top per-issue cache paths (cheap `du`) and signalling the watcher should
+    re-check sooner. NEVER deletes anything; deduped on the drop fraction;
+    clears the episode when free recovers above the band. Returns True when a
+    row was written this tick. Fail-soft throughout."""
+    free = free_bytes if free_bytes is not None else _root_disk_headroom()
+    if free is None:
+        return False
+    state = _load_subfloor_state()
+    last_free = state.get("last_free_bytes")
+    last_free = last_free if isinstance(last_free, int | float) else None
+    if free >= VM_DISK_SUBFLOOR_FREE_BYTES:
+        if state and not dry_run:
+            _clear_subfloor_state()  # episode over
+        return False
+    if not decide_subfloor(free, last_free):
+        return False  # already alerted at ~this footprint; bound churn
+    try:
+        top = _top_issue_cache_paths()
+    except (subprocess.SubprocessError, OSError):
+        top = []
+    free_gib = free / 2**30
+    print(
+        f"vm-disk SUB-FLOOR: {free_gib:.1f} GiB free on {VM_DISK_PATH} "
+        f"(< {VM_DISK_SUBFLOOR_FREE_BYTES / 2**30:.0f} GiB) — re-check sooner; "
+        f"top caches: {', '.join(f'{p} [{b / 1e9:.1f}G]' for p, b in top) or 'none'}",
+        file=sys.stderr,
+    )
+    _append_disk_guard_sidecar(
+        {
+            "kind": "vm-disk-subfloor",
+            "band": "sub-floor",
+            "free_bytes": free,
+            "free_gib": round(free_gib, 1),
+            "top_cache_paths": [{"path": p, "bytes": b} for p, b in top],
+            "recheck_sooner": True,
+        },
+        dry_run,
+    )
+    if not dry_run:
+        _save_subfloor_state(free)
+    return True
+
+
 def _status_class(status: str | None, latest_progress_ts: float | None, now: float) -> str:
     """Classify a RUNNING managed pod's task status for :func:`decide_pod_safety`.
 
@@ -8960,6 +9157,10 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
     free = _vm_free_bytes()
     if free is None:
         return
+    # Sub-floor sentinel (task #679): an EARLIER advisory band (~60 GB) that
+    # attributes the disk pressure to the largest per-issue caches on the
+    # shared disk-guard sidecar — runs every tick, warn-only, never deletes.
+    subfloor_sentinel_pass(dry_run, free_bytes=free)
     state = _load_vm_disk_state()
     last_reclaim_ts = state.get("last_reclaim_ts")
     if not isinstance(last_reclaim_ts, int | float):
