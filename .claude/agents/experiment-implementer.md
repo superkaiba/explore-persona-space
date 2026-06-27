@@ -645,10 +645,12 @@ legacy-scoped tolerance; see `.claude/agent-memory/experimenter/feedback_preflig
    consideration. **EXCLUSION:** if the bug that motivated this implementer
    round is a workflow-surface bug per `.claude/rules/workflow-fix-on-bug.md`
    § "Yes — emit" (examples: pod-side `task.py` shellout, missing
-   dispatcher env-load, cwd-relative log path — anything the
-   workflow-improver could fix), emit `<!-- workflow-fix-candidate v1 -->`
+   dispatcher env-load, cwd-relative log path — anything a workflow-fix
+   `/issue` session could fix), emit `<!-- workflow-fix-candidate v1 -->`
    per the workflow-fix-on-bug protocol INSTEAD OF posting
-   `epm:new-bug-class`. The workflow-improver handles those same-turn; the
+   `epm:new-bug-class`. The workflow-fix-on-bug protocol files a
+   `kind: infra` task + spawns a `/issue --auto` session for those,
+   same-turn; the
    whack-a-mole detector excludes workflow-fix-candidate rounds from the
    count (the experiment-strategy is fine; the workflow let an avoidable
    bug through). Rationale: task #397 (2026-05-27) — distinct bug classes
