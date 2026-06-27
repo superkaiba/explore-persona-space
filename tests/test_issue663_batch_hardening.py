@@ -777,8 +777,16 @@ class ConcurrencyTrackingClient:
 
 
 def test_max_in_flight_bound(tmp_path):
-    """20 sub-batches with MAX_CONCURRENT_SUB_BATCHES=8 -> max in-flight <= 8,
-    all 20 submit (#663 §6 Test 10)."""
+    """20 sub-batches respect the live MAX_CONCURRENT_SUB_BATCHES bound, all 20
+    submit (#663 §6 Test 10).
+
+    Reads the live constant rather than hard-coding 8 — Phase 3 of the
+    api_throughput plan tightened it 8 -> 4 to leave headroom on the shared
+    org keys (`docs/api_throughput_guidelines.md` §4). The genuine-concurrency
+    floor stays at 2.
+    """
+    from explore_persona_space.eval.judge_dispatch import MAX_CONCURRENT_SUB_BATCHES
+
     items = make_items(20)
     client = ConcurrencyTrackingClient()
     result = dispatch(
@@ -789,7 +797,7 @@ def test_max_in_flight_bound(tmp_path):
         batch_client=client,
     )
     assert client.create_calls == 20
-    assert client.max_in_flight <= 8
+    assert client.max_in_flight <= MAX_CONCURRENT_SUB_BATCHES
     assert client.max_in_flight >= 2  # genuinely concurrent (not serialized)
     assert set(result) == {cid for cid, _, _, _ in items}
 

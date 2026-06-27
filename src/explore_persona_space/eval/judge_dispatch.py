@@ -121,10 +121,14 @@ DEFAULT_SUB_BATCH_SIZE = 2_000  # judge shard ceiling (#658); see note above
 OTPM_DIVISOR = 400_000  # Tier-4 Sonnet 4.x output-tokens-per-minute
 DEFAULT_MAX_CONCURRENT = 50
 DEFAULT_MAX_TOKENS = 256
-# At most this many sub-batches submitted/in-flight concurrently (#663 §11):
-# ~8x8k = 64k in-flight is ~13% of the Tier-4 floor queue cap (500k), so the
-# bound is for observability + a gentle create-burst, not the binding constraint.
-MAX_CONCURRENT_SUB_BATCHES = 8
+# At most this many sub-batches submitted/in-flight concurrently. Phase-3
+# guidelines (docs/api_throughput_guidelines.md §3) tightened this 8 -> 4 to
+# match the multi-org dispatcher and leave headroom on the SHARED org keys:
+# with sub_batch_size=2_000 and 4 in-flight, max in-flight is 8k (~1.6% of the
+# Tier-4 floor queue cap 500k), still ample under any queue cap while reducing
+# the create-burst footprint on a shared bucket. The bound is etiquette, not
+# the binding constraint.
+MAX_CONCURRENT_SUB_BATCHES = 4
 # Poll-deadline grace past each batch's expires_at before raising (#663 §11).
 BATCH_DEADLINE_GRACE_MIN = 30
 # Sonnet 4.5 minimum cacheable prefix (tokens); below it cache_control is a
