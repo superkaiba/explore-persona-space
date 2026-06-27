@@ -38,3 +38,4 @@
 - [local code changes, never on pods](local_code_changes.md) — edit on the VM, commit, push, git pull on pods; never edit pod-side code
 - [scope: infra/refactor/utility, not experiment code](scope.md) — implementer owns standalone infra/refactor/utility; experiment-specific code goes to experiment-implementer
 - [dual-mode: main-agent vs subagent](dual_mode.md) — detect mode from the first message shape; subagent = structured brief, main-agent = conversational
+- [Dedup-merge target may not be on your branch](feedback_dedup_target_may_not_be_on_branch.md) — a plan's "merge into existing Y" target may be an uncommitted/newer repo-root file absent from the worktree branch; `ls $WT/<Y>` first, else treat the incoming as a clean add + note it
