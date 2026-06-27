@@ -564,3 +564,98 @@ def test_issue664_main_smoke_backcompat_explicit_gpu_id(monkeypatch, tmp_path):
     )
     with pytest.raises(SystemExit):
         D.main()
+
+
+# ── 12. P2.2 extract_store grandchild consumes the CVD mask LOGICALLY ──────────
+# (concern p2-extract-store-gpu-id-cvd-mismatch — round 3 Must-Fix #1/#2)
+
+
+def test_issue664_extract_store_consumes_cvd_mask_logically(tmp_path):
+    """The P2.2 extraction grandchild ``issue664_extract_store.py`` is launched by
+    the wave worker (``extract_and_eval_cell``) with ``CUDA_VISIBLE_DEVICES=<g>``
+    pinned on its env AND ``--gpu-id <g>`` (the PHYSICAL id) in its argv. Under a
+    size-1 CVD mask only logical ``cuda:0`` exists in that process, so the
+    grandchild MUST resolve tensor placement to logical ``cuda:0`` /
+    ``device_map={"": 0}`` — NOT ``cuda:<g>`` / ``device_map={"": <g>}`` for
+    ``g != 0`` (an invalid ordinal under the mask -> hard crash on every nonzero
+    GPU wave; concern p2-extract-store-gpu-id-cvd-mismatch).
+
+    Drives the REAL module in a SUBPROCESS (clean CUDA/import state) under
+    ``CUDA_VISIBLE_DEVICES=2`` + ``sys.argv = [..., "--gpu-id", "2"]``, then asserts:
+      (a) the module's eager top-of-module CVD parse leaves ``CUDA_VISIBLE_DEVICES``
+          == "2" (idempotent — it was already pinned by the launcher);
+      (b) ``_resolve_device(2)`` returns the LOGICAL ``("cuda:0", 0)`` — never
+          ``cuda:2`` / ordinal 2 — matching the project-canonical ``merge_lora``
+          pattern (set CVD, then use logical ``cuda:0`` / ``device_map={"": 0}``).
+    No CUDA / model load: the probe reads the resolution helper + os.environ only.
+    """
+    import json as _json
+    import os as _os
+    import subprocess as _subprocess
+
+    probe = tmp_path / "probe.py"
+    probe.write_text(
+        "import os, sys, json\n"
+        f"sys.argv = ['issue664_extract_store.py', '--gpu-id', '2',\n"
+        f"            '--behavior', 'marker', '--source', 'librarian', '--arm', 'contra']\n"
+        f"sys.path.insert(0, {str(SCRIPTS)!r})\n"
+        "import issue664_extract_store as X\n"
+        # Force the CUDA branch deterministically (the test box may be CPU-only) so we
+        # pin the LOGICAL-cuda:0 resolution, the line that crashed on real GPUs:
+        "import torch\n"
+        "torch.cuda.is_available = lambda: True\n"
+        "dev, ord_ = X._resolve_device(2)\n"
+        "print(json.dumps({\n"
+        "    'cvd': os.environ.get('CUDA_VISIBLE_DEVICES', 'UNSET'),\n"
+        "    'device': dev,\n"
+        "    'device_map_ordinal': ord_,\n"
+        "}))\n"
+    )
+    env = {**_os.environ, "CUDA_VISIBLE_DEVICES": "2"}
+    res = _subprocess.run(
+        [sys.executable, str(probe)],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(REPO_ROOT),
+    )
+    out = _json.loads(res.stdout.strip().splitlines()[-1])
+    # (a) eager CVD parse is idempotent — the launcher's pin survives.
+    assert out["cvd"] == "2", out
+    # (b) LOGICAL device under the mask, never the physical ordinal.
+    assert out["device"] == "cuda:0", out
+    assert out["device_map_ordinal"] == 0, out
+
+
+# ── 13. reconcile EXISTING-save_raw fast path re-validates coverage ────────────
+# (concern judge-fast-path-coverage-test-gap — Codex Minor, carried)
+
+
+def test_judge_reconcile_existing_partial_save_raw_raises(tmp_path):
+    """A pre-existing PARTIAL ``save_raw`` (written by an earlier run before the
+    coverage gate existed) must NOT be silently reused: the existing-file FAST PATH
+    (``fleet.py`` :499-503) re-validates against ``expected_custom_ids`` and raises
+    ``RuntimeError`` naming the missing id — with NO batch_ids and NO API call. Test
+    10 covers the harvest path; this pins the distinct existing-file branch (concern
+    judge-fast-path-coverage-test-gap).
+    """
+    import json as _json
+
+    save_raw = tmp_path / "judge_filter" / "sycophancy__src.json"
+    save_raw.parent.mkdir(parents=True)
+    # Partial: only the FIRST expected id is on disk (a stale incomplete prior run).
+    save_raw.write_text(_json.dumps({"all_scores": {"elicit__00000__00": {"behavior": 1}}}))
+    expected = frozenset({"elicit__00000__00", "elicit__00001__00"})
+
+    with pytest.raises(RuntimeError, match="elicit__00001__00"):
+        F._reconcile_judge_batches(
+            [],  # no batch_ids — must hit the existing-save_raw fast path, not the harvest
+            cell_key="elicit_sycophancy__src",
+            save_raw=save_raw,
+            judge_model="claude-sonnet-4-5-20250929",
+            poll_interval=1.0,
+            max_poll_interval=2.0,
+            grace_min=1,
+            expected_custom_ids=expected,
+        )
