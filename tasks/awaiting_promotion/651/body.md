@@ -3,7 +3,8 @@ title: A LoRA-installed conditional behavior writes one context-invariant direct
   across four behaviors the directions are mostly distinct, with one predicted family
   coincidence and one unexplained high off-diagonal (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-16T06:55:43Z'
 has_clean_result: true
 parent_id: 537
