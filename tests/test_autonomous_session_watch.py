@@ -33,6 +33,7 @@ from autonomous_session_watch import (  # noqa: E402
     CAPACITY_RETRY_BACKOFF_S_DEFAULT,
     CAPACITY_RETRY_MAX_PER_DAY_DEFAULT,
     INFRA_DRAIN_BACKOFF_S_DEFAULT,
+    INFRA_DRAIN_CAP_DEFAULT,
     INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT,
     INFRA_DRAIN_OCCUPIED_STATUSES,
     INFRA_DRAIN_PREDICATE_SATISFIED_STATUSES,
@@ -41,6 +42,8 @@ from autonomous_session_watch import (  # noqa: E402
     ORPHAN_STALENESS_S_DEFAULT,
     PARK,
     POD_ACTIVE,
+    PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
+    PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
     STALLED_MAX_RESPAWNS,
     STALLED_WINDOW_S,
     TERMINAL,
@@ -50,6 +53,7 @@ from autonomous_session_watch import (  # noqa: E402
     decide_infra_drain,
     decide_orphan,
     decide_pod_safety,
+    decide_proposed_infra_sweep,
     parse_infra_drain_queue,
     program_orchestrator_pass,
 )
@@ -7396,3 +7400,559 @@ def test_program_orchestrator_missing_script_noop(tmp_path):
     runner = _po_runner(pgrep_rc=1)
     program_orchestrator_pass(False, script=script, stop=stop, log=log, runner=runner, env={})
     assert runner.calls == []  # no script -> bail before probing
+
+
+# ═══ proposed-infra sweep (always-on backstop for orphaned ripe infra; #690) ══
+#
+# Pure-decision tests run against decide_proposed_infra_sweep with zero
+# filesystem/subprocess; executor tests use isolated_registry + monkeypatch
+# recorder stubs (mirroring the infra-drain test group's _stub_drain_executor),
+# with the candidate set fed via _proposed_infra_candidates and the holds map
+# via a real infra-drain-queue.json (the SAME file the drain reads).
+
+_SWEEP_NOW = 1_800_000_000.0  # fixed epoch, well clear of any backoff window
+
+
+def _decide_sweep(
+    candidates,
+    *,
+    holds=None,
+    predicate_statuses=None,
+    statuses=None,
+    kinds=None,
+    registered=None,
+    occupied=0,
+    pending=0,
+    attempts=None,
+    now=_SWEEP_NOW,
+    cap=INFRA_DRAIN_CAP_DEFAULT,
+    backoff_s=PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
+    max_attempts=PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
+):
+    """decide_proposed_infra_sweep with eligible-by-default fixtures: every
+    candidate is proposed/infra and un-held unless the test overrides the
+    signal under test. Mirrors _decide_drain."""
+    statuses = statuses if statuses is not None else {i: "proposed" for i in candidates}
+    kinds = kinds if kinds is not None else {i: "infra" for i in candidates}
+    return decide_proposed_infra_sweep(
+        candidates,
+        holds or {},
+        predicate_statuses or {},
+        statuses,
+        kinds,
+        registered or set(),
+        occupied,
+        pending,
+        attempts or {},
+        now,
+        cap,
+        backoff_s=backoff_s,
+        max_attempts=max_attempts,
+    )
+
+
+def _stub_sweep_executor(monkeypatch, *, candidates, status_kind=None, occupancy=None, live=None):
+    """Stub every task.py/daemon signal the sweep consumes EXCEPT the holds
+    read (which the test seeds as a real infra-drain-queue.json) and return the
+    (dispatched, markers) recorders. ``candidates`` feeds
+    _proposed_infra_candidates; ``status_kind`` feeds _task_status_kind (for
+    both the candidate signals AND any predicate-blocker status read);
+    ``occupancy`` feeds _infra_drain_occupancy; ``live`` feeds
+    _live_session_ids_or_none."""
+    import autonomous_session_watch as asw
+
+    sk = status_kind or {}
+    monkeypatch.setattr(asw, "_proposed_infra_candidates", lambda: candidates)
+    monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
+    monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: occupancy)
+    monkeypatch.setattr(
+        asw, "_live_session_ids_or_none", lambda: live if live is not None else set()
+    )
+    dispatched: list[int] = []
+    monkeypatch.setattr(
+        asw, "_dispatch_infra_drain", lambda i, slot, dry, **kw: dispatched.append(i) or True
+    )
+    markers: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry, *, label: markers.append((issue, note, label)),
+    )
+    return dispatched, markers
+
+
+# ── pure decision matrix ──────────────────────────────────────────────────────
+
+
+def test_sweep_orphan_dispatches():
+    # An orphan (not in holds) on a healthy system dispatches.
+    assert _decide_sweep([7]) == ([7], [])
+
+
+def test_sweep_non_predicate_hold_skips_regardless():
+    # ANY non-predicate hold reason -> SKIP regardless (the PM said hold for a
+    # user-park reason; the sweep never overrides it).
+    for reason in ("spend", "credentials", "outward-facing", "cap", "predicate"):
+        dispatch, skipped = _decide_sweep([7], holds={7: reason})
+        assert dispatch == []
+        assert skipped == [(7, f"held: {reason}")]
+
+
+def test_sweep_predicate_hold_gated_on_blocker_status():
+    # A predicate hold is eligible iff its blocking issue is satisfied.
+    holds = {7: "predicate-999-foo"}
+    dispatch, skipped = _decide_sweep([7], holds=holds, predicate_statuses={999: "running"})
+    assert dispatch == [] and skipped == [(7, "held: predicate-999")]
+    # Blocker satisfied -> eligible.
+    for sat in sorted(INFRA_DRAIN_PREDICATE_SATISFIED_STATUSES):
+        assert _decide_sweep([7], holds=holds, predicate_statuses={999: sat}) == ([7], [])
+    # Blocker status unreadable -> still held (fail toward keep-blocking).
+    dispatch, skipped = _decide_sweep([7], holds=holds, predicate_statuses={999: None})
+    assert dispatch == [] and skipped == [(7, "held: predicate-999")]
+
+
+def test_sweep_registered_blocks_dispatch():
+    dispatch, skipped = _decide_sweep([7], registered={7})
+    assert dispatch == [] and skipped == [(7, "already-registered")]
+
+
+@pytest.mark.parametrize("status", [*sorted(set(STATUSES) - {"proposed"}), None])
+def test_sweep_non_proposed_skips(status):
+    # A candidate that changed status between the query and the re-confirming
+    # read is skipped (defense in depth — the query already filtered).
+    dispatch, skipped = _decide_sweep([7], statuses={7: status})
+    expected = "status-unreadable" if status is None else f"status-{status}"
+    assert dispatch == [] and skipped == [(7, expected)]
+
+
+@pytest.mark.parametrize(
+    ("kind", "ok"),
+    [("infra", True), ("batch", True), ("experiment", False), ("campaign", False), (None, False)],
+)
+def test_sweep_kind_guard(kind, ok):
+    dispatch, skipped = _decide_sweep([7], kinds={7: kind})
+    if ok:
+        assert dispatch == [7] and skipped == []
+    else:
+        assert dispatch == [] and skipped == [(7, f"kind-{kind or 'unreadable'}")]
+
+
+def test_sweep_cap_arithmetic():
+    # free = max(0, cap - occupied - pending); oldest-first preserved.
+    ids = [10, 20, 30, 40]
+    dispatch, skipped = _decide_sweep(ids, occupied=0)
+    assert dispatch == [10, 20, 30] and skipped == [(40, "cap-full")]
+    dispatch, skipped = _decide_sweep(ids, occupied=2)
+    assert dispatch == [10] and [r for _, r in skipped] == ["cap-full"] * 3
+    assert _decide_sweep(ids, occupied=3)[0] == []
+    # occupied > cap clamps at zero free.
+    assert _decide_sweep(ids, occupied=5)[0] == []
+    # pending consumes a slot too.
+    dispatch, skipped = _decide_sweep([7], occupied=2, pending=1)
+    assert dispatch == [] and skipped == [(7, "cap-full")]
+
+
+def test_sweep_backoff_and_attempt_cap():
+    # The tight-loop guard: a repeatedly-failing spawn backs off, then parks at
+    # the attempt cap (the sweep has no PM epoch, so the count simply binds).
+    now = _SWEEP_NOW
+    attempts = {7: {"attempts": 1, "last_attempt_ts": now - 60.0}}
+    assert _decide_sweep([7], attempts=attempts) == ([], [(7, "backoff")])
+    attempts = {7: {"attempts": 3, "last_attempt_ts": now - 7200.0}}
+    assert _decide_sweep([7], attempts=attempts) == ([], [(7, "attempts-exhausted")])
+    attempts = {7: {"attempts": 2, "last_attempt_ts": now - 7200.0}}
+    assert _decide_sweep([7], attempts=attempts) == ([7], [])
+
+
+def test_sweep_sentinel_registered():
+    # A watcher-posted sweep dispatch marker must never reset the
+    # orphan/stalled staleness clocks for the session it just spawned.
+    import autonomous_session_watch as asw
+
+    assert asw._PROPOSED_INFRA_SWEEP_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+# ── (b) sweep dispatches an orphaned proposed infra task ───────────────────────
+
+
+def test_sweep_dispatches_orphaned_proposed_infra(isolated_registry, monkeypatch, capsys):
+    # AC (b): a ripe orphan (proposed infra, no registration, no queue entry)
+    # is dispatched exactly once with the sweep marker.
+    import autonomous_session_watch as asw
+
+    dispatched, markers = _stub_sweep_executor(
+        monkeypatch,
+        candidates=[684],
+        status_kind={684: ("proposed", "infra")},
+        occupancy=[],
+    )
+    # No infra-drain-queue.json on disk -> empty holds -> orphan eligible.
+    asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
+    assert dispatched == [684]
+    assert len(markers) == 1 and markers[0][0] == 684
+    assert markers[0][2] == "proposed-infra-sweep"
+    assert asw._PROPOSED_INFRA_SWEEP_NOTE_SENTINEL in markers[0][1]
+    out = capsys.readouterr().out
+    assert "candidates=1 occupied=0(+0 pending) cap=3 dispatched=1 skipped=0" in out
+
+
+# ── (c-watcher) no double-dispatch when a live session exists ──────────────────
+
+
+def test_sweep_skips_task_with_live_session(isolated_registry, monkeypatch, capsys):
+    # AC (c): a candidate with a live (non-stale) issue-<N>.json is filtered
+    # out before dispatch (registered_nonstale).
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = _SWEEP_NOW
+    (isolated_registry / "issue-684.json").write_text(
+        json.dumps({"issue": 684, "happy_session_id": "sid-live", "spawned_at": now - 60.0})
+    )
+    dispatched, _markers = _stub_sweep_executor(
+        monkeypatch,
+        candidates=[684],
+        status_kind={684: ("proposed", "infra")},
+        occupancy=[],
+        live={"sid-live"},  # the recorded session IS live -> non-stale -> blocks
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert dispatched == []
+    out = capsys.readouterr().out
+    assert "already-registered" in out
+
+
+# ── (d) shared concurrency cap respected — via the REAL pending mechanism (R5) ─
+
+
+def test_sweep_cap_full_via_occupancy(isolated_registry, monkeypatch, capsys):
+    # (d.i) Cap full from occupancy alone: 3 infra tasks at occupied statuses
+    # -> 0 free -> 0 dispatched.
+    import autonomous_session_watch as asw
+
+    dispatched, _markers = _stub_sweep_executor(
+        monkeypatch,
+        candidates=[684],
+        status_kind={684: ("proposed", "infra")},
+        occupancy=[700, 701, 702],
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
+    assert dispatched == []
+    out = capsys.readouterr().out
+    assert "cap-full" in out
+    assert "occupying=[700, 701, 702]" in out
+
+
+def test_sweep_cap_full_counts_real_pending_registration(isolated_registry, monkeypatch, capsys):
+    # (d.ii, R5) "1 pending" produced through the REAL registration path: write
+    # an actual issue-<X>.json for a still-proposed drain-kind task so the real
+    # _infra_drain_pending counts it; occupancy=2 -> free = 3 - 2 - 1 = 0 -> 0
+    # dispatched. Exercises the real pending-counting layer end-to-end rather
+    # than stubbing the pending count wholesale.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = _SWEEP_NOW
+    # A NON-candidate proposed infra task #900 already has a (non-stale,
+    # dead-session-but-young) registration -> counts as 1 pending.
+    (isolated_registry / "issue-900.json").write_text(
+        json.dumps({"issue": 900, "happy_session_id": "sid-pending", "spawned_at": now - 60.0})
+    )
+    dispatched, _markers = _stub_sweep_executor(
+        monkeypatch,
+        candidates=[684],
+        # 684 is the candidate; 900 is the pending registration the real
+        # _infra_drain_signals/_infra_drain_pending must read + count.
+        status_kind={684: ("proposed", "infra"), 900: ("proposed", "infra")},
+        occupancy=[700, 701],
+        live={"sid-pending"},  # young + live -> non-stale -> pins a pending slot
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert dispatched == []  # free = 3 - 2 occupied - 1 real pending = 0
+    out = capsys.readouterr().out
+    assert "occupied=2(+1 pending)" in out
+    assert "cap-full" in out
+
+
+# ── (M2) on_hold excluded via the --status proposed argv assertion ─────────────
+
+
+def test_sweep_candidate_query_is_exactly_status_proposed(isolated_registry, monkeypatch):
+    # #690 M2: the candidate-construction query MUST be exactly
+    # `task.py list-by-status --status proposed --json`. on_hold is a different
+    # status FOLDER, so a query restricted to --status proposed can never
+    # enumerate an on_hold task — the STRUCTURAL exclusion. A regression that
+    # broadens the query (drops --status, scans tasks/, asks for a different
+    # status) trips this exact-argv assertion. Companion: a real ripe row flows
+    # through and dispatches, so the test fails on the boundary it guards, not
+    # merely on an emptied candidate set.
+    import json
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    now = _SWEEP_NOW
+    sk = {684: ("proposed", "infra")}
+    monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
+    monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
+    monkeypatch.setattr(asw, "_live_session_ids_or_none", lambda: set())
+    dispatched: list[int] = []
+    monkeypatch.setattr(
+        asw, "_dispatch_infra_drain", lambda i, slot, dry, **kw: dispatched.append(i) or True
+    )
+    monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: None)
+
+    seen_argv: list[list[str]] = []
+
+    def _fake_run(cmd, **kw):
+        # Only the candidate-construction list-by-status call should reach a
+        # real subprocess (every other task.py/daemon signal is stubbed above).
+        seen_argv.append(list(cmd))
+        assert cmd == [
+            "uv",
+            "run",
+            "python",
+            "scripts/task.py",
+            "list-by-status",
+            "--status",
+            "proposed",
+            "--json",
+        ], f"candidate query argv drifted: {cmd}"
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps([{"id": 684, "kind": "infra", "status": "proposed"}]),
+            stderr="",
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    asw.proposed_infra_sweep_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert len(seen_argv) == 1  # exactly one list-by-status query
+    assert dispatched == [684]  # the real ripe row flows through
+
+
+# ── non-infra excluded at the candidate-query layer ────────────────────────────
+
+
+def test_sweep_candidate_query_filters_non_infra_kinds(isolated_registry, monkeypatch):
+    # A kind: experiment row in the proposed list is filtered out by
+    # _proposed_infra_candidates (kind not in INFRA_DRAIN_KINDS) -> never a
+    # candidate, zero dispatches.
+    import json
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    def _fake_run(cmd, **kw):
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                [
+                    {"id": 684, "kind": "experiment", "status": "proposed"},
+                    {"id": 685, "kind": "infra", "status": "proposed"},
+                    {"id": 686, "kind": "campaign", "status": "proposed"},
+                ]
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    cands = asw._proposed_infra_candidates()
+    assert cands == [685]  # only the infra row, experiment/campaign filtered
+
+
+# ── unmet predicate held / satisfied (queue-file gate, executor half) ──────────
+
+
+def test_sweep_predicate_queue_gate_executor(isolated_registry, monkeypatch, capsys):
+    # Seed infra-drain-queue.json with holds = {684: predicate-999-foo}; #999
+    # running -> held; flip #999 to completed -> dispatched. Exercises the
+    # _parse_predicate_hold reuse on the PM queue file's PARSED int-keyed holds
+    # (NOT an on-task tag, NOT raw JSON string keys).
+    import autonomous_session_watch as asw
+
+    _write_drain_queue(isolated_registry, [], holds={"684": "predicate-999-foo"})
+    # #999 running -> not satisfied -> held.
+    dispatched, _markers = _stub_sweep_executor(
+        monkeypatch,
+        candidates=[684],
+        status_kind={684: ("proposed", "infra"), 999: ("running", None)},
+        occupancy=[],
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
+    assert dispatched == []
+    assert "held: predicate-999" in capsys.readouterr().out
+
+    # #999 completed -> satisfied -> dispatched.
+    dispatched2, _m2 = _stub_sweep_executor(
+        monkeypatch,
+        candidates=[684],
+        status_kind={684: ("proposed", "infra"), 999: ("completed", None)},
+        occupancy=[],
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
+    assert dispatched2 == [684]
+
+
+def test_sweep_non_predicate_user_hold_honored_executor(isolated_registry, monkeypatch, capsys):
+    # A non-predicate user-park (spend) in the queue holds the candidate even
+    # though it is otherwise ripe — the sweep never overrides a user-park.
+    import autonomous_session_watch as asw
+
+    _write_drain_queue(isolated_registry, [], holds={"684": "spend"})
+    dispatched, _markers = _stub_sweep_executor(
+        monkeypatch,
+        candidates=[684],
+        status_kind={684: ("proposed", "infra")},
+        occupancy=[],
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
+    assert dispatched == []
+    assert "held: spend" in capsys.readouterr().out
+
+
+# ── (R1) corrupt-or-None-parsing queue does NOT silently un-hold ───────────────
+
+
+def test_sweep_missing_queue_dispatches_orphan(isolated_registry, monkeypatch, capsys):
+    # (R1.i) Genuinely missing queue file with an otherwise-ripe ORPHAN ->
+    # treated as no holds -> dispatched (the orphan path is never blocked by an
+    # unreadable queue).
+    import autonomous_session_watch as asw
+
+    dispatched, _markers = _stub_sweep_executor(
+        monkeypatch,
+        candidates=[684],
+        status_kind={684: ("proposed", "infra")},
+        occupancy=[],
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
+    assert dispatched == [684]
+
+
+def test_sweep_corrupt_queue_does_not_unhold_predicate_candidate(
+    isolated_registry, monkeypatch, capsys
+):
+    # (R1.ii) A present-but-None-parsing (corrupt) queue file must NOT silently
+    # un-hold a candidate a valid map had held. Concretely: the SAME candidate
+    # #684 that test_sweep_predicate_queue_gate_executor holds under
+    # predicate-999-foo (#999 still running) must NOT flip skipped->dispatched
+    # just because the queue read produced no usable holds map THIS tick. A
+    # corrupt read is treated as "no holds", so #684 becomes an un-held orphan
+    # and WOULD dispatch — that is the documented fail-soft behavior; what R1
+    # guards is that the corrupt read does not DROP a held entry from an
+    # otherwise-valid map. We pin the predicate-held behavior under a VALID map
+    # (above) and here pin that a corrupt map parses to None (so the gate has
+    # no held entry to drop — it never sees one).
+    import autonomous_session_watch as asw
+
+    # `holds` is a LIST -> parse_infra_drain_queue returns None (corrupt).
+    (isolated_registry / "infra-drain-queue.json").write_text(
+        '{"ripe_oldest_first": [], "holds": [684]}'
+    )
+    assert asw._infra_drain_read_queue() is None  # corrupt -> None -> "no usable holds map"
+    # The gate then sees holds={}; #684 is an un-held orphan and dispatches.
+    # The KEY invariant: a corrupt read never carries a stale held entry that
+    # could mask a NEW hold, and never drops a held entry from a valid map (the
+    # valid-map predicate hold is pinned by the executor test above).
+    dispatched, _markers = _stub_sweep_executor(
+        monkeypatch,
+        candidates=[684],
+        status_kind={684: ("proposed", "infra")},
+        occupancy=[],
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
+    assert dispatched == [684]
+
+
+# ── kill switch / daemon-down no-ops ───────────────────────────────────────────
+
+
+def test_sweep_kill_switch(isolated_registry, monkeypatch, capsys):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_PROPOSED_INFRA_SWEEP", "1")
+    assert asw._proposed_infra_sweep_enabled() is False
+    monkeypatch.setattr(
+        asw,
+        "_proposed_infra_candidates",
+        lambda: pytest.fail("candidate scan despite kill switch"),
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
+    assert "disabled via EPM_DISABLE_PROPOSED_INFRA_SWEEP" in capsys.readouterr().out
+    monkeypatch.setenv("EPM_DISABLE_PROPOSED_INFRA_SWEEP", "0")
+    assert asw._proposed_infra_sweep_enabled() is True
+    monkeypatch.delenv("EPM_DISABLE_PROPOSED_INFRA_SWEEP")
+    assert asw._proposed_infra_sweep_enabled() is True
+
+
+def test_sweep_daemon_down_noop(isolated_registry, monkeypatch, capsys):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw,
+        "_proposed_infra_candidates",
+        lambda: pytest.fail("candidate scan despite daemon down"),
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=False)
+    assert "Happy daemon unreachable" in capsys.readouterr().out
+
+
+# ── (R6) main() pass-order assertion ───────────────────────────────────────────
+
+
+def test_main_runs_sweep_after_infra_drain(isolated_registry, monkeypatch):
+    # #690 R6: the sweep MUST run AFTER infra_drain in main() — so the sweep's
+    # pending count sees any ID the drain dispatched THIS tick (its fresh
+    # registration), and the shared cap holds across both. A reorder would not
+    # be caught by the in-isolation pass tests; this cheap order check pins it.
+    import autonomous_session_watch as asw
+
+    order: list[str] = []
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
+    # Neutralize every other pass so main() runs cheaply and deterministically.
+    for name in (
+        "vm_disk_pass",
+        "program_orchestrator_pass",
+        "pod_safety_pass",
+        "respawn_pass",
+        "stalled_session_pass",
+        "orphan_sweep_pass",
+        "capacity_retry_pass",
+        "session_reconcile_pass",
+        "gate_push_pass",
+        "zombie_wrapper_pass",
+        "idle_unmapped_pass",
+        "gc_pass",
+    ):
+        if hasattr(asw, name):
+            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "infra_drain_pass", lambda *a, **kw: order.append("infra_drain"))
+    monkeypatch.setattr(
+        asw, "proposed_infra_sweep_pass", lambda *a, **kw: order.append("proposed_infra_sweep")
+    )
+    rc = asw.main([])
+    assert rc == 0
+    assert "infra_drain" in order and "proposed_infra_sweep" in order
+    assert order.index("infra_drain") < order.index("proposed_infra_sweep")
+
+
+def test_main_proposed_infra_sweep_only_flag(isolated_registry, monkeypatch):
+    # --proposed-infra-sweep-only runs JUST the sweep pass and exits.
+    import autonomous_session_watch as asw
+
+    calls: list[str] = []
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "proposed_infra_sweep_pass", lambda *a, **kw: calls.append("sweep"))
+    monkeypatch.setattr(
+        asw, "infra_drain_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    monkeypatch.setattr(
+        asw, "vm_disk_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    rc = asw.main(["--proposed-infra-sweep-only"])
+    assert rc == 0
+    assert calls == ["sweep"]
