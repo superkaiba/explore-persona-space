@@ -4247,8 +4247,8 @@
     "676": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/676",
-      "status": "approved",
+      "path": "tasks/running/676",
+      "status": "running",
       "title": "Fleet dispatcher: overlap CPU judging with GPU work + multi-GPU parallel cell execution"
     },
     "677": {
