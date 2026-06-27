@@ -25,6 +25,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_683.md](https://github.com/superkaiba/explore-persona-space/blob/6f866111c9dd8362876664a9b157779b4e9e1498/docs/methodology/issue_683.md) · [gist](https://gist.github.com/superkaiba/397b89046a4a257e17569e558e7777ec)
+
 ## Takeaways
 
 - The theory's default context-only key (`k = c_C`) does not predict realized leakage out-of-sample: held-out ρ is **negative** for sycophancy (−0.42 / −0.39) and the marker's strongest sources.
