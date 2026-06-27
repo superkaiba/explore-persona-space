@@ -44,7 +44,7 @@ ONE complete table. Marker rungs train under the marker recipe; sycophancy/EM ru
 | **EM learning rate** | **1e-5** (shared content recipe) | **2e-5** (#519 EM arm; flat 1e-5 installed 0.0) | `EM_RECIPE`, `__init__.py:230` |
 | **EM schedule / training length** | cosine, 3 epochs | **linear**, `max_steps` **200**, warmup 0.03 (#519 EM arm) | `EM_RECIPE`, `__init__.py:232,233,234` |
 | Sycophancy learning rate / epochs / max steps (grouped) | **1e-5** / **3** / **132** (cosine, warmup 0.03; dose-to-target on continuous gain, selected step 85) | round-6 grouped form of the three sycophancy rows above | `SYCO_RECIPE`, `__init__.py:242,243,253,255` |
-| EM learning rate / epochs / max steps (grouped) | **2e-5** / **1** / **200** (linear, warmup 0.03, lora_dropout 0.05; #519 recipe) | round-6 grouped form of the three EM rows above | `EM_RECIPE`, `__init__.py:230,232,233,234` |
+| EM learning rate / epochs / max steps (grouped) | **2e-5** / **1** / **200** (linear, warmup 0.03, lora_dropout 0.05; EM replication recipe) | round-6 grouped form of the three EM rows above | `EM_RECIPE`, `__init__.py:230,232,233,234` |
 | Sycophancy/EM loss shape | whole-completion on the assistant turn | ↑ same (`marker_only_loss=False`) | `SYCO_RECIPE`/`EM_RECIPE` |
 | Sycophancy/EM `max_length` | 1024 | ↑ same | `SYCO_RECIPE`/`EM_RECIPE`, `__init__.py:248,236` |
 | **Dose-to-target stopping (sycophancy/EM)** | n/a — fixed-epoch endpoint | **dense step checkpoints** + select FIRST floor-clearing one; sycophancy dose steps {5,9,13,18,26,35,44,88,132}, EM {40,80,120,160,200}; `save_strategy="steps"`, `save_steps`=min(dose) | `SYCO_RECIPE`/`EM_RECIPE` `dose_checkpoints`, `__init__.py:262,238`; `_dose_save_overrides`, `__init__.py:573-592` |
