@@ -101,9 +101,57 @@ SYCO_TRAIN_POOL: Final[str] = (
 SYCO_ADAPTER_TEMPLATE: Final[str] = "adapters/issue_612/arm_onpolicy/villain_seed{seed}"
 SYCO_SOURCE: Final[str] = "villain"
 SYCO_SEEDS: Final[tuple[int, ...]] = (42, 137)
-# #612 panel centroids (L20) — the sycophancy c_C' bank.
+# #612 panel centroids (L20) — the RAW source for the sycophancy c_C' bank.
+# Structure (Hub-verified 2026-06-26): {"centroids": {20: (52, 3584)},
+# "persona_names": [52 names, row-aligned], "base_model": str}. This is NOT in
+# the {contexts: {persona: (H,)}} shape the scorer's _load_c_bank consumes — the
+# c_C' bank builder (build_sycophancy_c_bank_l20) re-emits it sliced to the
+# pinned SYCOPHANCY_PANEL_CONTEXTS persona set. (BLOCKER syco-cbank-load-
+# incompatible, code-review v1: _load_c_bank crashes iterating the raw bank.)
 SYCO_PANEL_CENTROIDS_L20: Final[str] = (
     "issue612_sycophancy_onpolicy/panel/panel_centroids_layer20.pt"
+)
+# The #612 panel set (persona_name -> system_prompt source) the sycophancy DV
+# extractor reads system prompts from. The c_C' bank MUST be keyed to the SAME
+# personas (no implicit intersection — BLOCKER syco-cbank-load-incompatible).
+SYCO_PANEL_SET: Final[str] = "issue612_sycophancy_onpolicy/panel/panel_set.json"
+# Pinned panel persona set (the 30 #612 panel personas, Hub-verified 2026-06-26
+# all present in panel_centroids_layer20.pt's 52-name centroid set). The c_C'
+# bank the scorer reads is keyed EXACTLY to these — `qwen_default` is INCLUDED
+# in the centroid set but the DV extractor skips it (no system prompt to inject),
+# so the bank builder + the DV read intersect on the same realized panel and the
+# scorer's coverage assert (c-bank-panel-coverage-silent-drop) binds against it.
+SYCOPHANCY_PANEL_CONTEXTS: Final[tuple[str, ...]] = (
+    "assistant",
+    "child",
+    "comedian",
+    "con_artist",
+    "criminal_mastermind",
+    "dark_overlord",
+    "daycare_teacher",
+    "dictator",
+    "digital_helper",
+    "evil_mastermind",
+    "french_person",
+    "improv_comedian",
+    "kindergarten_teacher",
+    "late_night_host",
+    "nursery_school_teacher",
+    "philosopher",
+    "pirate_captain",
+    "preschool_teacher",
+    "qwen_default",
+    "satirist",
+    "school_principal",
+    "software_engineer",
+    "standup_comic",
+    "street_performer",
+    "supervillain",
+    "villain",
+    "virtual_assistant",
+    "web_developer",
+    "wizard",
+    "zelthari_scholar",
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -317,3 +365,178 @@ def chunked(seq: list, size: int) -> Iterable[list]:
 def is_runpod_or_workspace() -> bool:
     """True when /workspace exists (pod/GCP) — gates the sentinel write."""
     return os.path.isdir("/workspace")
+
+
+def build_sycophancy_c_bank_l20(
+    centroids_obj: dict[str, Any],
+    panel_contexts: Iterable[str] = SYCOPHANCY_PANEL_CONTEXTS,
+    *,
+    layer: int = 20,
+) -> dict[str, Any]:
+    """Re-emit the #612 panel centroids in the {contexts: {persona: (H,)}} shape
+    the scorer's ``_load_c_bank`` consumes, keyed to the pinned panel set.
+
+    The on-HF ``panel_centroids_layer20.pt`` is
+    ``{"centroids": {20: (52, H)}, "persona_names": [52], "base_model": str}`` —
+    NOT loadable by ``_load_c_bank`` (which iterates ``obj.get("contexts", obj)``
+    and crashes on the ``centroids``/``persona_names``/``base_model`` values).
+    This builder slices ``centroids[layer]`` row-by-row against the row-aligned
+    ``persona_names`` and keeps ONLY the explicitly-pinned ``panel_contexts`` —
+    no implicit intersection (BLOCKER syco-cbank-load-incompatible). Every
+    requested panel context MUST be present in the centroid bank; a missing one
+    FAILS LOUD (the scorer's c_C' coverage contract depends on it).
+
+    Returns ``{"contexts": {persona: (H,) float tensor}, "meta": {...}}`` — the
+    exact shape ``_load_c_bank`` reads (one (H,) vector per context).
+    """
+    import torch
+
+    centroids = centroids_obj.get("centroids")
+    persona_names = centroids_obj.get("persona_names")
+    if not isinstance(centroids, dict) or persona_names is None:
+        keys_desc = (
+            sorted(centroids_obj) if isinstance(centroids_obj, dict) else type(centroids_obj)
+        )
+        raise ValueError(
+            f"centroids_obj is not the #612 panel-centroid bank (keys={keys_desc}); "
+            "expected {'centroids': {layer: (N,H)}, 'persona_names': [...]}."
+        )
+    if layer not in centroids:
+        raise ValueError(
+            f"layer {layer} not in centroid bank (layers present: {sorted(centroids)})"
+        )
+    mat = torch.as_tensor(centroids[layer])  # (N, H), row-aligned with persona_names
+    if mat.ndim != 2 or mat.shape[0] != len(persona_names):
+        raise ValueError(
+            f"centroid matrix shape {tuple(mat.shape)} not row-aligned with "
+            f"{len(persona_names)} persona_names"
+        )
+    by_name = {name: mat[i] for i, name in enumerate(persona_names)}
+    wanted = list(dict.fromkeys(panel_contexts))
+    missing = [p for p in wanted if p not in by_name]
+    if missing:
+        raise ValueError(
+            f"panel contexts missing from the centroid bank (no implicit drop): {missing}. "
+            f"centroid personas: {sorted(by_name)[:8]}..."
+        )
+    contexts = {p: by_name[p].flatten().float() for p in wanted}
+    return {
+        "contexts": contexts,
+        "meta": {
+            "behavior": "sycophancy",
+            "layer": layer,
+            "n_contexts": len(contexts),
+            "panel_contexts": wanted,
+            "base_model": centroids_obj.get("base_model"),
+            "source": "issue612 panel_centroids_layer20.pt re-emitted (#683 c_C' bank)",
+        },
+    }
+
+
+def reap_vllm_engine(llm) -> None:
+    """Synchronously reap a vLLM ``LLM`` engine's worker subprocess + GPU memory.
+
+    Re-exports the documented teardown recipe from
+    ``analysis.representation_shift._reap_vllm_engine`` (gotchas.md "vLLM
+    in-process teardown") so the #683 extractors can free the engine BEFORE
+    loading the HF models for the activation reads (vLLM gen + HF logprob, plan
+    §9). Every attribute access is getattr-guarded; NO-OPs on a differing API.
+    """
+    from explore_persona_space.analysis.representation_shift import _reap_vllm_engine
+
+    _reap_vllm_engine(llm)
+
+
+def generate_on_policy_vllm(
+    *,
+    base_model: str,
+    prompts_by_context: dict[str, list[dict[str, str]]],
+    adapter_path: str | None,
+    max_new_tokens: int,
+    gpu_memory_utilization: float | None = None,
+    max_model_len: int | None = None,
+    max_lora_rank: int = 64,
+    seed: int = 42,
+) -> dict[str, list[str]]:
+    """Batched greedy (temp=0) on-policy completions via vLLM (CLAUDE.md: never
+    sequential HF generate for eval).
+
+    ``prompts_by_context`` maps a context label -> a list of chat-message rows,
+    each ``[{system}, {user}]`` (the persona system prompt + the claim/question).
+    When ``adapter_path`` is given, the LoRA adapter is applied via a
+    ``LoRARequest`` (gauge honored by the current rsLoRA-aware vLLM stack — the
+    same gauge the extractor's HF ``assert_rslora_gauge`` checks). The engine is
+    reaped synchronously before returning so the caller can load HF models for
+    the teacher-forced activation read without the vLLM-teardown OOM.
+
+    Returns a flat ``{prompt_key: [completion]}`` map where ``prompt_key`` is the
+    JSON of the message list (so the caller re-pairs deterministically). All
+    rows across all contexts go in ONE vLLM batch (10-50x faster than per-row).
+    Generated greedily (``temperature=0``) for on-policy determinism.
+    """
+    import os as _os
+
+    from transformers import AutoTokenizer
+    from vllm import LLM, SamplingParams
+    from vllm.lora.request import LoRARequest
+
+    if gpu_memory_utilization is None:
+        gpu_memory_utilization = float(_os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+    # max_model_len must outlive prompt + generation (gotchas.md max_model_len
+    # tracks max_new_tokens); ~2x the gen cap + headroom for the longest prompt.
+    if max_model_len is None:
+        max_model_len = max(2048, 2 * max_new_tokens + 1024)
+
+    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+
+    # Flatten all (context, row) prompts into one batch; remember the order.
+    keys: list[str] = []
+    prompt_texts: list[str] = []
+    for _ctx, rows in prompts_by_context.items():
+        for msgs in rows:
+            keys.append(json.dumps(msgs, sort_keys=True))
+            prompt_texts.append(
+                tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+            )
+
+    llm_kwargs: dict[str, Any] = {
+        "model": base_model,
+        "dtype": "bfloat16",
+        "trust_remote_code": True,
+        "gpu_memory_utilization": gpu_memory_utilization,
+        "max_model_len": max_model_len,
+        "seed": seed,
+    }
+    if adapter_path is not None:
+        llm_kwargs["enable_lora"] = True
+        llm_kwargs["max_lora_rank"] = max_lora_rank
+        llm_kwargs["max_loras"] = 1
+    llm = LLM(**llm_kwargs)
+    sp = SamplingParams(n=1, temperature=0.0, max_tokens=max_new_tokens)
+    lora_req = (
+        LoRARequest(lora_name="syco_or_marker", lora_int_id=1, lora_path=adapter_path)
+        if adapter_path is not None
+        else None
+    )
+    out: dict[str, list[str]] = {}
+    try:
+        outputs = llm.generate(prompt_texts, sp, lora_request=lora_req, use_tqdm=False)
+        for key, output in zip(keys, outputs, strict=True):
+            out[key] = [output.outputs[0].text.strip()]
+    finally:
+        reap_vllm_engine(llm)
+        del llm
+        import gc as _gc
+
+        _gc.collect()
+        try:
+            import torch as _torch
+
+            _torch.cuda.empty_cache()
+            _torch.cuda.ipc_collect()
+        except Exception:
+            pass
+        import time as _time
+
+        _time.sleep(1.0)
+    return out

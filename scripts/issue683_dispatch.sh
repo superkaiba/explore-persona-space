@@ -9,10 +9,11 @@
 #   (--smoke-sources A1 / --smoke-seeds 42, --n-questions 2, --n-claims 2,
 #   --max-rows 2, --max-new-tokens 16). Same subprocess shape, same env
 #   injection, same upload + sentinel surface, same [phase=done] teardown.
-#   EVERY phase the dispatcher executes (marker Δv, marker t_cb, syco panel
-#   top-up, syco Δv, syco t_cb, upload, sentinel) reads its cell subset from
-#   the SAME --smoke-* / sweep-default vars — no phase re-enumerates a full
-#   registered grid.
+#   EVERY phase the dispatcher executes (marker Δv, marker t_cb, syco c_C' bank,
+#   syco Δv, syco t_cb, upload, sentinel) reads its cell subset from the SAME
+#   --smoke-* / sweep-default vars — no phase re-enumerates a full registered
+#   grid. (The syco c_C' bank is a CPU re-emit of the existing L20 #612 panel
+#   centroids keyed to the pinned panel set — same in smoke + sweep.)
 #
 # Usage (GCP --workload-cmd; $WORKLOAD_ROOT exported by the startup script):
 #   REPO_ROOT="$WORKLOAD_ROOT" bash scripts/issue683_dispatch.sh
@@ -65,11 +66,18 @@ ATENSORS_DIR="eval_results/issue_683/analysis_tensors"
 
 echo "[phase=preflight] === i683 dispatcher $(date -Iseconds) smoke=$SMOKE sources=$MARKER_SOURCES seeds=$SYCO_SEEDS ==="
 
+FAILED_FILE="$LOG_DIR/dispatch_failed.txt"
+: > "$FAILED_FILE"
+
 # Marker token + <|im_end|> id assert at launch (marker-leakage rule: wire the
 # in-process assert into the dispatcher so a wrong token fails at startup).
-# Skipped under --dry-run (it loads the 7B tokenizer; the dry-run only
-# exercises the cell-iteration / sentinel / [phase=done] plumbing).
+# FATAL (CONCERN dispatcher-preflight-nonfatal): on assert failure, record it,
+# write the sentinel + [phase=done], and EXIT before ANY GPU extract — a wrong
+# marker token would burn the whole GPU run producing wrong-token DVs. Skipped
+# under --dry-run (it loads the 7B tokenizer; the dry-run only exercises the
+# cell-iteration / sentinel / [phase=done] plumbing).
 if [ "$DRY_RUN" -eq 0 ]; then
+    preflight_rc=0
     uv run python -c "
 from transformers import AutoTokenizer
 tok = AutoTokenizer.from_pretrained('Qwen/Qwen2.5-7B-Instruct', trust_remote_code=True)
@@ -78,11 +86,43 @@ assert ids == [83399], f'marker token id drift {ids}'
 im_end = tok.convert_tokens_to_ids('<|im_end|>')
 assert im_end == 151645, f'<|im_end|> id drift {im_end}'
 print('marker id OK 83399; <|im_end|> OK 151645')
-" || { echo '[phase=preflight_failed] marker/im_end id assert FAILED' >&2; }
-fi
+" > "$LOG_DIR/preflight_marker_id.log" 2>&1 || preflight_rc=$?
+    if [ "$preflight_rc" -ne 0 ]; then
+        echo "marker_id_preflight (rc=$preflight_rc, see $LOG_DIR/preflight_marker_id.log)" \
+            >> "$FAILED_FILE"
+        echo "[phase=preflight_failed] marker/im_end id assert FAILED (rc=$preflight_rc) — \
+aborting BEFORE any GPU extract; see $LOG_DIR/preflight_marker_id.log" >&2
+        # Write the results sentinel (epm:failure) + terminal [phase=done] so the
+        # poller resolves cleanly, then EXIT before the dv_marker phase.
+        if [ -d /workspace ]; then
+            uv run python - "marker_id_preflight" <<'PY' || true
+import datetime, json, sys
+from pathlib import Path
 
-FAILED_FILE="$LOG_DIR/dispatch_failed.txt"
-: > "$FAILED_FILE"
+failed = sys.argv[1]
+sentinel = {
+    "sentinel_schema_version": 1,
+    "kind": "epm:failure",
+    "version": 1,
+    "task_id": 683,
+    "by": "issue683_dispatch",
+    "ts": datetime.datetime.now(datetime.UTC).isoformat(),
+    "failure_class": "code",
+    "note": json.dumps(
+        {"issue": 683, "phase": "marker_id_preflight", "failed_phases": failed}
+    ),
+}
+log_dir = Path("/workspace/logs")
+log_dir.mkdir(parents=True, exist_ok=True)
+out = log_dir / f"issue-683-epm_failure-{int(datetime.datetime.now().timestamp())}.json"
+out.write_text(json.dumps(sentinel, indent=2))
+print(f"wrote sentinel {out}")
+PY
+        fi
+        echo "[phase=done]"  # terminal marker so the poller resolves cleanly
+        exit 3
+    fi
+fi
 
 run_phase() {
     # run_phase <phase-tag> <log-name> -- <cmd...>
@@ -115,17 +155,18 @@ run_phase tcb_marker tcb_marker.log -- \
     uv run python scripts/issue683_extract_tcb.py \
     --behavior marker --layer 14 --source-list "$MARKER_SOURCES" $EXTRA_TCB_MAX_ROWS
 
-# ── 3. Sycophancy panel top-up (#612 L20 panel centroids — reuse #649 extractor). ─
-# The full panel centroids already exist on HF (#612); the top-up fills any
-# panel context missing at L20. In smoke we skip the top-up (the dv extractor
-# generates c_C' on the fly from the panel set), so this is a sweep-only phase
-# but its slice still derives from the same panel subset.
-if [ "$SMOKE" -eq 0 ]; then
-    run_phase syco_panel_topup syco_panel_topup.log -- \
-        uv run python scripts/issue649_extract_panel_earlylayer.py
-else
-    echo "[phase=syco_panel_topup_skipped] smoke: dv extractor builds c_C' from the panel set on the fly"
-fi
+# ── 3. Sycophancy c_C' bank (L20) — re-emit #612 panel centroids in the shape
+#       the scorer's _load_c_bank consumes, keyed to the pinned panel set. ──────
+# (BLOCKER syco-cbank-load-incompatible + CONCERN syco-panel-topup-wrong-layer:
+# the raw panel_centroids_layer20.pt is NOT loadable by _load_c_bank, and the
+# previous phase-3 ran the L2/L7 issue649 extractor the scorer never consumes.)
+# CPU re-emit of an existing L20 bank — runs in BOTH smoke + sweep (the scorer
+# needs the c_C' bank in both); the smoke writes to the c_bank_smoke namespace.
+SYCO_CBANK_SMOKE_FLAG=""
+[ "$SMOKE" -eq 1 ] && SYCO_CBANK_SMOKE_FLAG="--smoke"
+# shellcheck disable=SC2086  # SYCO_CBANK_SMOKE_FLAG is an intentional optional flag
+run_phase syco_c_bank syco_c_bank.log -- \
+    uv run python scripts/issue683_build_syco_c_bank.py --layer 20 $SYCO_CBANK_SMOKE_FLAG
 
 # ── 4. Sycophancy Δv extract (L20 answer-span mean) over villain × panel. ──────
 run_phase dv_syco dv_syco.log -- \

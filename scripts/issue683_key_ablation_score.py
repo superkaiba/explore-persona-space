@@ -203,22 +203,99 @@ def _g_pred(
     return num / den
 
 
-def _resolve_metric(
-    metric: str, k: np.ndarray, c_full: np.ndarray, c_source: np.ndarray
-) -> np.ndarray | None:
-    """Resolve M for a (key, metric) cell. M_I → None (identity); M_white →
-    (Σ_c+λI)^-1 with λ over the grid minimizing |1 - g_pred(source)| (the
-    denominator-stability proxy; full GCV is the production path)."""
-    if metric == "M_I":
-        return None
-    best_m, best_pen = None, np.inf
+def _select_lambda_heldout_gcv(
+    *,
+    k: np.ndarray,
+    c_source: np.ndarray,
+    c_train: np.ndarray,
+    y_train: np.ndarray,
+    n_folds: int,
+    seed: int,
+) -> tuple[float, float]:
+    """Pick λ for (Σ_c+λI)^-1 by held-out cross-validation over TRAIN contexts.
+
+    Leave-one-context-out (k-fold for n_train > n_folds) over the TRAIN target
+    contexts: for each λ candidate, the whitening Σ_c AND the metric are fit on
+    the TRAIN-fold contexts ONLY (no held-out leakage — Major #9), then the
+    held-out fold's g_pred is scored against its g_real by held-out MAE. The λ
+    minimizing the mean held-out MAE wins (lower reconstruction error = better,
+    so two λ candidates with KNOWN different held-out errors select the
+    lower-error one — BLOCKER lambda-gcv-not-implemented). Returns
+    (best_lambda_mult, best_heldout_mae). Σ_c is NEVER fit on the full bank.
+    """
+    n = c_train.shape[0]
+    if n < 2:
+        # degenerate: cannot CV — fall back to the middle of the grid.
+        return 1.0, float("nan")
+    rng = np.random.default_rng(seed)
+    # leave-one-out when small; else k contiguous shuffled folds.
+    n_folds = min(n_folds, n) if n_folds > 0 else n
+    n_folds = max(2, min(n_folds, n))
+    order = rng.permutation(n)
+    folds = np.array_split(order, n_folds)
+
+    best_mult, best_mae = 1.0, np.inf
     for mult in LAMBDA_GRID_MULT:
-        cand = _whiten_metric(c_full, mult)
-        gp_src = _g_pred(k, cand, c_source, c_source)  # == 1 ideally
-        pen = abs(1.0 - gp_src) if gp_src == gp_src else np.inf
-        if pen < best_pen:
-            best_pen, best_m = pen, cand
-    return best_m
+        fold_maes: list[float] = []
+        for held in folds:
+            held = np.asarray(held, dtype=int)
+            train_mask = np.ones(n, dtype=bool)
+            train_mask[held] = False
+            if train_mask.sum() < 1 or held.size < 1:
+                continue
+            # Σ_c + λI fit on the TRAIN fold contexts ONLY (no held-out leakage).
+            c_tr = c_train[train_mask]
+            m = _whiten_metric(c_tr, mult)
+            preds = np.array([_g_pred(k, m, c_train[i], c_source) for i in held], dtype=float)
+            yy = y_train[held]
+            f = np.isfinite(preds) & np.isfinite(yy)
+            if f.sum() >= 1:
+                fold_maes.append(float(np.abs(preds[f] - yy[f]).mean()))
+        mean_mae = float(np.mean(fold_maes)) if fold_maes else np.inf
+        if mean_mae < best_mae:
+            best_mae, best_mult = mean_mae, mult
+    return best_mult, best_mae
+
+
+def _resolve_metric(
+    metric: str,
+    k: np.ndarray,
+    *,
+    c_source: np.ndarray,
+    c_train: np.ndarray,
+    y_train: np.ndarray,
+    n_folds: int,
+    seed: int,
+) -> tuple[np.ndarray | None, dict]:
+    """Resolve M for a (key, metric) cell.
+
+    M_I → None (identity). M_white → (Σ_c+λI)^-1 with λ chosen by held-out
+    cross-validation over the TRAIN contexts (``_select_lambda_heldout_gcv``):
+    BOTH Σ_c and λ are fit on TRAIN contexts ONLY (no held-out target leakage —
+    BLOCKER lambda-gcv-not-implemented + Major Σ_c-train-only). The returned Σ_c
+    for the FINAL metric is fit on the full TRAIN context set (source + train
+    targets) at the selected λ — held-out targets are still never in it.
+    Returns (M, lambda_meta).
+    """
+    if metric == "M_I":
+        return None, {"lambda_mult": None, "lambda_selection": "identity"}
+    best_mult, best_mae = _select_lambda_heldout_gcv(
+        k=k,
+        c_source=c_source,
+        c_train=c_train,
+        y_train=y_train,
+        n_folds=n_folds,
+        seed=seed,
+    )
+    # Final Σ_c over the TRAIN contexts (source + train targets) at the selected
+    # λ — held-out targets being scored are NOT in c_train (the caller excludes
+    # them), so there is no held-out leakage into the whitening.
+    final_m = _whiten_metric(c_train, best_mult)
+    return final_m, {
+        "lambda_mult": float(best_mult),
+        "lambda_selection": "heldout_gcv_mae",
+        "heldout_mae": best_mae if best_mae == best_mae else None,
+    }
 
 
 def _score_one_cell(
@@ -229,16 +306,37 @@ def _score_one_cell(
     k: np.ndarray,
     c_source: np.ndarray,
     c_query: dict[str, np.ndarray],
-    c_full: np.ndarray,
     targets: list[str],
     y: np.ndarray,
     a7_rank1: bool,
     n_boot: int,
+    n_folds: int,
+    seed: int,
     rng,
 ) -> dict | None:
     """Score ONE (key, metric, ψ) cell: held-out Spearman/Pearson/sign/MAE +
-    bootstrap Spearman CI. Returns None when <3 contexts score finitely."""
-    m = _resolve_metric(metric, k, c_full, c_source)
+    bootstrap Spearman CI. Returns None when <3 contexts score finitely.
+
+    For M_white, λ is chosen by held-out cross-validation over the TRAIN
+    contexts (the source + targets' BASE vectors with their g_real), via
+    ``_resolve_metric`` — NOT by self-scoring c_source against itself (BLOCKER
+    lambda-gcv-not-implemented). Σ_c for the final metric is fit on TRAIN
+    context base vectors only (Major Σ_c-train-only); g_real never enters Σ_c.
+    """
+    # TRAIN context bank for λ-GCV: source + every target's BASE query vector,
+    # paired with g_real (y). The inner CV folds hold out g_real, so λ is never
+    # chosen by self-scoring — and Σ_c is a base-model quantity (no g_real).
+    c_train = np.stack([c_source, *[c_query[c] for c in targets]], axis=0)
+    y_train = np.concatenate([[1.0], y])  # g_real(source) = 1 by construction
+    m, lam_meta = _resolve_metric(
+        metric,
+        k,
+        c_source=c_source,
+        c_train=c_train,
+        y_train=y_train,
+        n_folds=n_folds,
+        seed=seed,
+    )
     preds = np.array([_g_pred(k, m, c_query[c], c_source) for c in targets])
     finite = np.isfinite(preds) & np.isfinite(y)
     if finite.sum() < 3:
@@ -265,6 +363,7 @@ def _score_one_cell(
         "sign_agreement": sign_agreement(p, yy, ref),
         "mae": mae(p, yy),
         "spearman_ci95": ci,
+        "lambda_selection": lam_meta,
     }
 
 
@@ -296,16 +395,31 @@ def _load_c_bank(c_bank_path: Path, layer: int) -> dict[str, np.ndarray]:
 
 
 def _load_tcb(tcb_dir: Path, behavior: str, source: str, layer: int) -> np.ndarray | None:
-    """Load t_{C,B} for (source) from the t_cb extractor output, if present."""
+    """Load t_{C,B} for (source, layer) from the t_cb extractor output.
+
+    Matches ``L{layer}`` DETERMINISTICALLY (Minor _load_tcb-ignores-layer): the
+    requested-layer file is preferred; if a t_cb file for (behavior, source)
+    exists at a DIFFERENT layer but not at ``layer``, that is a layer mismatch
+    and RAISES (the read layer is load-bearing — silently loading the first glob
+    match at the wrong layer would mis-key the predictor). Returns None ONLY when
+    NO t_cb file exists for this (behavior, source) at all (handled upstream by
+    the --tcb-dir / --allow-missing-tcb gate).
+    """
     import torch
 
     if tcb_dir is None or not tcb_dir.is_dir():
         return None
-    cand = list(tcb_dir.glob(f"t_cb_{behavior}_{source}_L*.pt"))
-    if not cand:
-        return None
-    payload = torch.load(cand[0], map_location="cpu", weights_only=False)
-    return torch.as_tensor(payload["t_cb"]).flatten().float().numpy()
+    exact = tcb_dir / f"t_cb_{behavior}_{source}_L{layer}.pt"
+    if exact.is_file():
+        payload = torch.load(exact, map_location="cpu", weights_only=False)
+        return torch.as_tensor(payload["t_cb"]).flatten().float().numpy()
+    other = sorted(tcb_dir.glob(f"t_cb_{behavior}_{source}_L*.pt"))
+    if other:
+        raise FileNotFoundError(
+            f"t_cb for ({behavior}, {source}) exists but NOT at requested layer L{layer} "
+            f"(found {[p.name for p in other]}); refusing to load a wrong-layer key."
+        )
+    return None
 
 
 def _dv_target_value(payload: dict, ctx: str, a7_rank1: bool, u1: np.ndarray | None) -> float:
@@ -328,16 +442,48 @@ def score_bank(
     a7_rank1: bool,
     n_boot: int,
     seed: int,
+    allow_partial_panel: bool = False,
+    require_tcb: bool = True,
+    n_folds: int = 0,
 ) -> dict:
-    """Full key × metric × ψ leaderboard for one source/seed bank."""
+    """Full key × metric × ψ leaderboard for one source/seed bank.
+
+    Panel-coverage contract (BLOCKER c-bank-panel-coverage-silent-drop): every
+    held-out context in the Δv bank MUST have a c_C' entry in ``c_bank``; a
+    missing one RAISES unless ``allow_partial_panel`` is set (in which case the
+    descope is recorded in the returned metadata). t_cb contract (BLOCKER
+    tcb-keys-silently-omitted): when ``require_tcb`` is True, ``t_cb`` MUST be
+    present, so the t-based keys (k_tCB, k_cC_plus_delta) are populated.
+    """
     source = payload["source"]
     per_context = payload["per_context"]
-    # held-out targets that ALSO have a c_C entry (the predictor needs c_C').
-    targets = [c for c in per_context if c != source and c in c_bank]
     if source not in c_bank:
         raise AssertionError(
             f"source {source!r} has no c_C entry in the context bank — cannot build any key."
         )
+
+    # Panel coverage: compute MISSING held-out contexts BEFORE filtering so a
+    # silent panel shrink cannot pass as long as 3 targets remain.
+    held_out_contexts = [c for c in per_context if c != source]
+    missing_cC = [c for c in held_out_contexts if c not in c_bank]
+    if missing_cC and not allow_partial_panel:
+        raise AssertionError(
+            f"source {source!r}: {len(missing_cC)} held-out context(s) have NO c_C' entry in "
+            f"the context bank: {sorted(missing_cC)}. The panel-coverage contract requires every "
+            "held-out target to have a c_C' (predictor query). Re-run the c_C' bank builder / "
+            "panel top-up, or pass --allow-partial-panel to deliberately descope (recorded in "
+            "the leaderboard metadata)."
+        )
+    targets = [c for c in held_out_contexts if c in c_bank]
+
+    # t_cb contract: require the data-side key unless explicitly waived.
+    if require_tcb and t_cb is None:
+        raise AssertionError(
+            f"source {source!r}: t_cb is None but --tcb-dir is required (the t-based keys "
+            "k_tCB / k_cC_plus_delta cannot be built). Pass --tcb-dir <dir>, or "
+            "--allow-missing-tcb to deliberately score c_C-only (smoke/debug)."
+        )
+
     if len(targets) < 3:
         raise AssertionError(
             f"only {len(targets)} held-out targets with a c_C entry for source {source!r}; "
@@ -370,12 +516,6 @@ def score_bank(
     c_query = {c: c_bank[c] for c in targets}
     y = np.array([_dv_target_value(payload, c, a7_rank1, u1) for c in targets])
 
-    # whitened metrics: λ picked by held-out GCV proxy over the TRAIN contexts.
-    # For the leaderboard we fit Σ_c on the FULL context bank (base-model
-    # quantity, no g_real leakage) and pick λ minimizing the cross-context
-    # Spearman gap — here we just sweep and keep the best-on-train λ per metric.
-    c_full = np.stack([c_bank[c] for c in [source, *targets]], axis=0)
-
     rows: list[dict] = []
     rng = np.random.default_rng(seed)
     for psi in PSI_FORMS:
@@ -404,15 +544,30 @@ def score_bank(
                     k=k,
                     c_source=c_source,
                     c_query=c_query,
-                    c_full=c_full,
                     targets=targets,
                     y=y,
                     a7_rank1=a7_rank1,
                     n_boot=n_boot,
+                    n_folds=n_folds,
+                    seed=seed,
                     rng=rng,
                 )
                 if row is not None:
                     rows.append(row)
+
+    # Key-form presence contract (BLOCKER tcb-keys-silently-omitted): with t_cb
+    # present, EVERY key form (k_cC, k_tCB, k_cC_plus_delta) must have produced
+    # ≥1 leaderboard row; a silently-absent t-based key would corrupt the
+    # primary deliverable. Only waived when t_cb was explicitly allowed missing.
+    scored_keys = {r["key"] for r in rows}
+    if t_cb is not None:
+        missing_keys = [kf for kf in KEY_FORMS if kf not in scored_keys]
+        if missing_keys:
+            raise AssertionError(
+                f"source {source!r}: t_cb present but leaderboard is missing key form(s) "
+                f"{missing_keys} (scored: {sorted(scored_keys)}). The primary deliverable "
+                "requires k_cC, k_tCB, k_cC_plus_delta all populated."
+            )
 
     baseline_cos, shuf_key, shuf_query = _nulls_and_baseline(
         c_source=c_source,
@@ -436,6 +591,12 @@ def score_bank(
         "null_shuffled_key": _null_summary(shuf_key),
         "null_shuffled_query": _null_summary(shuf_query),
         "has_tcb": t_cb is not None,
+        "panel_coverage": {
+            "n_held_out": len(held_out_contexts),
+            "n_scored_targets": len(targets),
+            "missing_cC": sorted(missing_cC),
+            "partial_panel_descope": bool(missing_cC) and allow_partial_panel,
+        },
     }
 
 
@@ -563,10 +724,36 @@ def main(argv: list[str] | None = None) -> int:
         "--layer", type=int, default=None, help="c-bank slice layer; default per behavior"
     )
     ap.add_argument("--n-boot", type=int, default=1000)
+    ap.add_argument("--n-folds", type=int, default=0, help="λ-GCV folds (0 = leave-one-out)")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--out", default=None)
+    ap.add_argument(
+        "--noise-floor-out",
+        default=None,
+        help="standalone noise_floor.json (default eval_results/issue_683/<behavior>/)",
+    )
+    ap.add_argument(
+        "--allow-missing-tcb",
+        action="store_true",
+        help="DEBUG/smoke ONLY: score c_C-only when --tcb-dir is absent (production REQUIRES it)",
+    )
+    ap.add_argument(
+        "--allow-partial-panel",
+        action="store_true",
+        help="deliberately descope held-out targets missing a c_C' entry (recorded in metadata)",
+    )
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args(argv)
+
+    # t_cb contract (BLOCKER tcb-keys-silently-omitted): --tcb-dir REQUIRED in
+    # production. The only waivers are --smoke or the explicit --allow-missing-tcb.
+    require_tcb = not (args.smoke or args.allow_missing_tcb)
+    if require_tcb and not args.tcb_dir:
+        raise SystemExit(
+            "--tcb-dir is REQUIRED in production (the t-based keys k_tCB / k_cC_plus_delta "
+            "cannot be built without it). Pass --tcb-dir <dir>, or --allow-missing-tcb / --smoke "
+            "to deliberately score c_C-only."
+        )
 
     layer = args.layer if args.layer is not None else DEFAULT_LAYER[args.behavior]
     dv_dir = Path(
@@ -582,6 +769,11 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    noise_floor_path = Path(
+        args.noise_floor_out
+        or (PROJECT_ROOT / "eval_results/issue_683" / args.behavior / "noise_floor.json")
+    )
+    noise_floor_path.parent.mkdir(parents=True, exist_ok=True)
 
     a7_rank1 = True
     a7_verdict = "assumed_rank1 (no a7 file)"
@@ -595,13 +787,16 @@ def main(argv: list[str] | None = None) -> int:
     banks = _load_dv_banks(dv_dir)
 
     logger.info(
-        "[phase=score_start] behavior=%s a7_rank1=%s (%s) n_banks=%d c_bank=%d ctx tcb_dir=%s",
+        "[phase=score_start] behavior=%s a7_rank1=%s (%s) n_banks=%d c_bank=%d ctx tcb_dir=%s "
+        "require_tcb=%s allow_partial_panel=%s",
         args.behavior,
         a7_rank1,
         a7_verdict,
         len(banks),
         len(c_bank),
         tcb_dir,
+        require_tcb,
+        args.allow_partial_panel,
     )
 
     bank_results = []
@@ -614,6 +809,9 @@ def main(argv: list[str] | None = None) -> int:
             a7_rank1=a7_rank1,
             n_boot=args.n_boot,
             seed=args.seed,
+            allow_partial_panel=args.allow_partial_panel,
+            require_tcb=require_tcb,
+            n_folds=args.n_folds,
         )
         bank_results.append(res)
         best = max(
@@ -634,6 +832,7 @@ def main(argv: list[str] | None = None) -> int:
             res["null_shuffled_key"]["mean"],
         )
 
+    noise_floor = _noise_floor(banks)
     payload_out = {
         "behavior": args.behavior,
         "layer": layer,
@@ -644,11 +843,28 @@ def main(argv: list[str] | None = None) -> int:
         "psi_forms": list(PSI_FORMS),
         "n_bootstrap": args.n_boot,
         "per_bank": bank_results,
-        "noise_floor": _noise_floor(banks),
+        "noise_floor": noise_floor,
         "reproducibility": repro_metadata({"behavior": args.behavior, "layer": layer}),
     }
     out_path.write_text(json.dumps(payload_out, indent=2))
-    logger.info("[phase=score_done] behavior=%s -> %s", args.behavior, out_path)
+
+    # Standalone noise_floor.json (primary_deliverable §6.5 glob
+    # eval_results/issue_683/*/noise_floor.json — BLOCKER phase-d-deliverables-missing).
+    noise_floor_payload = {
+        "behavior": args.behavior,
+        "layer": layer,
+        "construct": "test-retest g_real reliability across seeds (ceiling on achievable ρ)",
+        "per_source": noise_floor,
+        "n_banks": len(banks),
+        "reproducibility": repro_metadata({"behavior": args.behavior, "layer": layer}),
+    }
+    noise_floor_path.write_text(json.dumps(noise_floor_payload, indent=2))
+    logger.info(
+        "[phase=score_done] behavior=%s -> %s ; noise_floor -> %s",
+        args.behavior,
+        out_path,
+        noise_floor_path,
+    )
     return 0
 
 

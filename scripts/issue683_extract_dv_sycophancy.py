@@ -68,6 +68,7 @@ from explore_persona_space.experiments.issue_683 import (  # noqa: E402
     answer_span_token_indices,
     assert_rslora_gauge,
     chunked,
+    generate_on_policy_vllm,
     realized_gate,
     repro_metadata,
 )
@@ -137,47 +138,96 @@ def _resolve_adapter(seed: int) -> str:
     return str(Path(dl) / sub)
 
 
-def _generate_on_policy(
-    *, model, tokenizer, system_prompt: str, claims: list[str], device, max_new_tokens: int
-) -> list[str]:
-    """Greedy on-policy completions for each claim under ``system_prompt``.
+def _chat_rows(system_prompt: str, claims: list[str]) -> list[list[dict[str, str]]]:
+    """Build the [{system}, {user}] message rows for one persona x claims."""
+    return [
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": c},
+        ]
+        for c in claims
+    ]
 
-    The completion read is over the MODEL's OWN response (on-policy). For the
-    trained model this is its on-policy sycophantic answer; for the base it is
-    the base's answer. Batched, left-padded (generation-safe).
+
+def _gen_all_on_policy_vllm(
+    *,
+    model_name: str,
+    panel: dict[str, str],
+    claims: list[str],
+    adapter_path: str | None,
+    max_new_tokens: int,
+    seed: int,
+) -> dict[str, list[str]]:
+    """vLLM batched greedy on-policy completions for EVERY (persona, claim).
+
+    Returns ``{persona: [completion per claim, in claim order]}``. Uses the
+    shared ``generate_on_policy_vllm`` helper (CLAUDE.md: vLLM for generation,
+    NEVER HF model.generate; the engine is reaped before this returns so the
+    caller can load HF for the activation read). When ``adapter_path`` is None
+    this is the base model (no LoRA); otherwise the villain adapter is applied
+    via a vLLM LoRARequest at the trained gauge.
+    """
+    prompts_by_context = {persona: _chat_rows(sp, claims) for persona, sp in panel.items()}
+    flat = generate_on_policy_vllm(
+        base_model=model_name,
+        prompts_by_context=prompts_by_context,
+        adapter_path=adapter_path,
+        max_new_tokens=max_new_tokens,
+        seed=seed,
+    )
+    out: dict[str, list[str]] = {}
+    for persona, sp in panel.items():
+        comps: list[str] = []
+        for msgs in _chat_rows(sp, claims):
+            key = json.dumps(msgs, sort_keys=True)
+            comps.append(flat[key][0])
+        out[persona] = comps
+    return out
+
+
+def _gen_all_on_policy_hf_smoke(
+    *, model_name: str, panel: dict[str, str], claims: list[str], max_new_tokens: int, device
+) -> dict[str, list[str]]:
+    """CPU --no-adapter smoke ONLY: tiny HF generation to exercise the read path.
+
+    vLLM requires a GPU + a real LoRA adapter, so the production vLLM gen path
+    cannot run on the CPU smoke's tiny throwaway model. This HF fallback is gated
+    behind ``--no-adapter`` (smoke) and exists solely to flow real completions
+    into the answer-span read; the production GPU path uses ``generate_on_policy_vllm``
+    exclusively. The GPU-bound vLLM gen is covered by the dispatcher dry-run +
+    signature smoke (GPU-bound-phase carve-out), not by this CPU helper.
     """
     import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    pad_id = tokenizer.pad_token_id
-    if pad_id is None:
-        pad_id = tokenizer.eos_token_id
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name, torch_dtype=torch.float32, device_map={"": device}, trust_remote_code=True
+    ).eval()
+    pad_id = (
+        tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+    )
     orig_side = tokenizer.padding_side
-    out: list[str] = []
+    out: dict[str, list[str]] = {}
     try:
         tokenizer.padding_side = "left"
-        texts = [
-            tokenizer.apply_chat_template(
-                [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": c},
-                ],
-                tokenize=False,
-                add_generation_prompt=True,
+        for persona, sp in panel.items():
+            texts = [
+                tokenizer.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
+                for m in _chat_rows(sp, claims)
+            ]
+            enc = tokenizer(texts, return_tensors="pt", add_special_tokens=False, padding=True).to(
+                device
             )
-            for c in claims
-        ]
-        enc = tokenizer(texts, return_tensors="pt", add_special_tokens=False, padding=True).to(
-            device
-        )
-        with torch.no_grad():
-            gen = model.generate(
-                **enc, max_new_tokens=max_new_tokens, do_sample=False, pad_token_id=pad_id
-            )
-        new = gen[:, enc["input_ids"].shape[1] :]
-        for row in new:
-            out.append(tokenizer.decode(row, skip_special_tokens=True).strip())
+            with torch.no_grad():
+                gen = model.generate(
+                    **enc, max_new_tokens=max_new_tokens, do_sample=False, pad_token_id=pad_id
+                )
+            new = gen[:, enc["input_ids"].shape[1] :]
+            out[persona] = [tokenizer.decode(r, skip_special_tokens=True).strip() for r in new]
     finally:
         tokenizer.padding_side = orig_side
+    del model
     return out
 
 
@@ -280,6 +330,45 @@ def extract_syco_dv(
             f"{sorted(panel)[:8]}..."
         )
 
+    adapter_dir = _resolve_adapter(seed) if use_adapter else None
+
+    # ── Phase 1: on-policy generation (vLLM; engine reaped before HF load). ─────
+    # CLAUDE.md: vLLM for generation, NEVER HF model.generate (hf-generate-vs-vllm
+    # BLOCKER). Generate base + trained completions for EVERY (persona, claim) in
+    # batched vLLM calls FIRST, reap the engine, THEN load HF for the activation
+    # read — so vLLM + HF never co-reside (vLLM-teardown-OOM gotcha).
+    if use_adapter:
+        base_comps_by_persona = _gen_all_on_policy_vllm(
+            model_name=model_name,
+            panel=panel,
+            claims=claims,
+            adapter_path=None,
+            max_new_tokens=max_new_tokens,
+            seed=seed,
+        )
+        trained_comps_by_persona = _gen_all_on_policy_vllm(
+            model_name=model_name,
+            panel=panel,
+            claims=claims,
+            adapter_path=adapter_dir,
+            max_new_tokens=max_new_tokens,
+            seed=seed,
+        )
+    else:
+        # CPU --no-adapter smoke: vLLM needs a GPU + a real adapter, so the smoke
+        # exercises the read path with a tiny HF generation; trained == base so
+        # Δv ≡ 0 (the GPU-bound vLLM gen path is covered by the dispatcher dry-run
+        # + signature smoke per the GPU-bound carve-out, NOT this CPU smoke).
+        base_comps_by_persona = _gen_all_on_policy_hf_smoke(
+            model_name=model_name,
+            panel=panel,
+            claims=claims,
+            max_new_tokens=max_new_tokens,
+            device=device,
+        )
+        trained_comps_by_persona = base_comps_by_persona  # Δv ≡ 0
+
+    # ── Phase 2: HF teacher-forced activation read on the fixed completions. ────
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     dtype = torch.bfloat16 if str(device).startswith("cuda") else torch.float32
     base = AutoModelForCausalLM.from_pretrained(
@@ -289,7 +378,6 @@ def extract_syco_dv(
     if use_adapter:
         from peft import PeftModel
 
-        adapter_dir = _resolve_adapter(seed)
         trained_raw = AutoModelForCausalLM.from_pretrained(
             model_name, torch_dtype=dtype, device_map={"": device}, trust_remote_code=True
         )
@@ -299,46 +387,26 @@ def extract_syco_dv(
     else:
         trained = base
         gauge = {"no_adapter_smoke": True}
-        adapter_dir = None
 
     per_context: dict[str, dict] = {}
     for persona, sp in panel.items():
-        # On-policy completions: each model writes its OWN answer (base + trained
-        # separately), then we read the answer-span mean of THAT model's own
-        # response. This keeps the read on-policy for both sides.
-        base_comps = _generate_on_policy(
-            model=base,
-            tokenizer=tokenizer,
-            system_prompt=sp,
-            claims=claims,
-            device=device,
-            max_new_tokens=max_new_tokens,
-        )
         v_base = _answer_span_mean(
             model=base,
             tokenizer=tokenizer,
             system_prompt=sp,
             claims=claims,
-            completions=base_comps,
+            completions=base_comps_by_persona[persona],
             layer=layer,
             device=device,
             batch_size=batch_size,
         )
         if use_adapter:
-            trained_comps = _generate_on_policy(
-                model=trained,
-                tokenizer=tokenizer,
-                system_prompt=sp,
-                claims=claims,
-                device=device,
-                max_new_tokens=max_new_tokens,
-            )
             v_trained = _answer_span_mean(
                 model=trained,
                 tokenizer=tokenizer,
                 system_prompt=sp,
                 claims=claims,
-                completions=trained_comps,
+                completions=trained_comps_by_persona[persona],
                 layer=layer,
                 device=device,
                 batch_size=batch_size,

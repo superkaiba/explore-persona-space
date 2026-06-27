@@ -64,6 +64,7 @@ from explore_persona_space.experiments.issue_683 import (  # noqa: E402
     MARKER_ADAPTER_TEMPLATE,
     MARKER_SOURCE_ARMS,
     assert_rslora_gauge,
+    generate_on_policy_vllm,
     realized_gate,
     repro_metadata,
 )
@@ -107,46 +108,100 @@ def _resolve_adapter(arm: str, epoch: int) -> str:
     return str(Path(dl) / sub)
 
 
-def _generate_r_responses(
-    *, base_model, tokenizer, persona_prompt: str, questions: list[str], device, max_new_tokens: int
-) -> dict[str, str]:
-    """On-policy greedy base responses R per question (the marker eval rows).
+def _chat_rows(persona_prompt: str, questions: list[str]) -> list[list[dict[str, str]]]:
+    """[{system}, {user}] message rows for one context x questions."""
+    return [
+        [
+            {"role": "system", "content": persona_prompt},
+            {"role": "user", "content": q},
+        ]
+        for q in questions
+    ]
 
-    Greedy (temp=0), frozen base — the context's OWN response, the #460/#604
-    marker-eval R contract. Batched generation, left-padded (generation-safe).
+
+def _gen_all_r_responses_vllm(
+    *,
+    model_name: str,
+    context_prompts: dict[str, str],
+    questions: list[str],
+    max_new_tokens: int,
+    seed: int,
+) -> dict[str, dict[str, str]]:
+    """vLLM batched greedy base R responses for EVERY (context, question).
+
+    Returns ``{context: {question: R}}``. The R responses are the BASE model's
+    own greedy completions (#460/#604 marker-eval R contract) — NO adapter, so
+    no LoRA request. Uses the shared ``generate_on_policy_vllm`` helper (CLAUDE.md:
+    vLLM for generation, NEVER HF model.generate — hf-generate-vs-vllm BLOCKER);
+    the engine is reaped before this returns so the caller can load HF base +
+    trained for the activation read without the vLLM-teardown OOM.
+    """
+    prompts_by_context = {ctx: _chat_rows(sp, questions) for ctx, sp in context_prompts.items()}
+    flat = generate_on_policy_vllm(
+        base_model=model_name,
+        prompts_by_context=prompts_by_context,
+        adapter_path=None,  # R is the BASE model's own response (frozen, no LoRA)
+        max_new_tokens=max_new_tokens,
+        seed=seed,
+    )
+    out: dict[str, dict[str, str]] = {}
+    for ctx, sp in context_prompts.items():
+        per_q: dict[str, str] = {}
+        for q, msgs in zip(questions, _chat_rows(sp, questions), strict=True):
+            per_q[q] = flat[json.dumps(msgs, sort_keys=True)][0]
+        out[ctx] = per_q
+    return out
+
+
+def _gen_all_r_responses_hf_smoke(
+    *,
+    model_name: str,
+    context_prompts: dict[str, str],
+    questions: list[str],
+    max_new_tokens: int,
+    device,
+) -> dict[str, dict[str, str]]:
+    """CPU --no-adapter smoke ONLY: tiny HF generation to exercise the read path.
+
+    vLLM requires a GPU; the production R generation uses ``generate_on_policy_vllm``
+    exclusively. This HF fallback is gated behind ``--no-adapter`` (smoke) and only
+    flows real R text into ``extract_per_context_shift``. The GPU-bound vLLM gen is
+    covered by the dispatcher dry-run + signature smoke (GPU-bound-phase carve-out).
     """
     import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    pad_id = tokenizer.pad_token_id
-    if pad_id is None:
-        pad_id = tokenizer.eos_token_id
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name, torch_dtype=torch.float32, device_map={"": device}, trust_remote_code=True
+    ).eval()
+    pad_id = (
+        tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+    )
     orig_side = tokenizer.padding_side
-    out: dict[str, str] = {}
+    out: dict[str, dict[str, str]] = {}
     try:
         tokenizer.padding_side = "left"
-        texts = [
-            tokenizer.apply_chat_template(
-                [
-                    {"role": "system", "content": persona_prompt},
-                    {"role": "user", "content": q},
-                ],
-                tokenize=False,
-                add_generation_prompt=True,
+        for ctx, sp in context_prompts.items():
+            texts = [
+                tokenizer.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
+                for m in _chat_rows(sp, questions)
+            ]
+            enc = tokenizer(texts, return_tensors="pt", add_special_tokens=False, padding=True).to(
+                device
             )
-            for q in questions
-        ]
-        enc = tokenizer(texts, return_tensors="pt", add_special_tokens=False, padding=True).to(
-            device
-        )
-        with torch.no_grad():
-            gen = base_model.generate(
-                **enc, max_new_tokens=max_new_tokens, do_sample=False, pad_token_id=pad_id
-            )
-        new = gen[:, enc["input_ids"].shape[1] :]
-        for q, row in zip(questions, new, strict=True):
-            out[q] = tokenizer.decode(row, skip_special_tokens=True).strip()
+            with torch.no_grad():
+                gen = model.generate(
+                    **enc, max_new_tokens=max_new_tokens, do_sample=False, pad_token_id=pad_id
+                )
+            new = gen[:, enc["input_ids"].shape[1] :]
+            out[ctx] = {
+                q: tokenizer.decode(r, skip_special_tokens=True).strip()
+                for q, r in zip(questions, new, strict=True)
+            }
     finally:
         tokenizer.padding_side = orig_side
+    del model
     return out
 
 
@@ -182,6 +237,33 @@ def extract_marker_dv(
     if missing:
         raise AssertionError(f"panel contexts not in #604 manifest: {missing}")
 
+    adapter_dir = _resolve_adapter(source, epoch) if use_adapter else None
+    read_context_prompts = {c: condition_prompts[c] for c in read_contexts}
+
+    # ── Phase 1: on-policy R generation (vLLM; engine reaped before HF load). ───
+    # CLAUDE.md: vLLM for generation, NEVER HF model.generate (hf-generate-vs-vllm
+    # BLOCKER). Generate the base R for EVERY (context, question) FIRST, reap the
+    # engine, THEN load HF base + trained for the activation read — so vLLM + HF
+    # never co-reside (vLLM-teardown-OOM gotcha). R is the BASE model's own greedy
+    # response (frozen, no LoRA) per the #460/#604 marker-eval contract.
+    if use_adapter:
+        r_by_context = _gen_all_r_responses_vllm(
+            model_name=model_name,
+            context_prompts=read_context_prompts,
+            questions=questions,
+            max_new_tokens=max_new_tokens,
+            seed=42,
+        )
+    else:
+        r_by_context = _gen_all_r_responses_hf_smoke(
+            model_name=model_name,
+            context_prompts=read_context_prompts,
+            questions=questions,
+            max_new_tokens=max_new_tokens,
+            device=device,
+        )
+
+    # ── Phase 2: HF teacher-forced activation read on the fixed R. ──────────────
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     dtype = torch.bfloat16 if str(device).startswith("cuda") else torch.float32
     base = AutoModelForCausalLM.from_pretrained(
@@ -191,7 +273,6 @@ def extract_marker_dv(
     if use_adapter:
         from peft import PeftModel
 
-        adapter_dir = _resolve_adapter(source, epoch)
         trained_raw = AutoModelForCausalLM.from_pretrained(
             model_name, torch_dtype=dtype, device_map={"": device}, trust_remote_code=True
         )
@@ -205,19 +286,11 @@ def extract_marker_dv(
         # path end-to-end without a PEFT load on a tiny model.
         trained = base
         gauge = {"no_adapter_smoke": True}
-        adapter_dir = None
 
     per_context: dict[str, dict] = {}
     for ctx in read_contexts:
         sp = condition_prompts[ctx]
-        r_responses = _generate_r_responses(
-            base_model=base,
-            tokenizer=tokenizer,
-            persona_prompt=sp,
-            questions=questions,
-            device=device,
-            max_new_tokens=max_new_tokens,
-        )
+        r_responses = r_by_context[ctx]
         cs = extract_per_context_shift(
             base_model=base,
             trained_model=trained,
