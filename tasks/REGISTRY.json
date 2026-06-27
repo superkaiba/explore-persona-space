@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 680,
+  "highest_id": 681,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4285,6 +4285,13 @@
       "path": "tasks/planning/680",
       "status": "planning",
       "title": "GCP auto-lane: length-aware spot-first / flex-start ladder (on-demand A100 is stockout-prone; spot is a live separate pool, flex-start is the canonical capacity answer)"
+    },
+    "681": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/681",
+      "status": "proposed",
+      "title": "Dedicated GCP persistent disk OR ext4 project quotas \u2014 bounded-by-construction disk isolation for active tasks"
     },
     "69": {
       "has_clean_result": false,
