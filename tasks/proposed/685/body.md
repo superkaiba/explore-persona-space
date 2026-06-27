@@ -15,6 +15,8 @@ goal: Measure how a context's last-token residual-stream activation summary (the
   behaviors, and layers, and test whether the shift is a single context-independent
   behavior direction.
 track: experiment
+relates_to:
+- spec-context-as-vector
 ---
 # Context-vector shift induced by appending a behavioral instruction (context vs context + instruction)
 
