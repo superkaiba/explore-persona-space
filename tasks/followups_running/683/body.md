@@ -1,8 +1,6 @@
 ---
-title: A second sycophancy source overturns the training-completion-key win — it beats
-  the paper's context-only key in only one of four sycophancy banks, and no sycophancy
-  bank clears chance; for the marker two of five sources clear their own null (LOW
-  confidence)
+title: No source key generalizes across marker and sycophancy — no sycophancy bank
+  clears chance and only two of five marker sources clear their own null (LOW confidence)
 kind: experiment
 tags:
 - leak-predictor
