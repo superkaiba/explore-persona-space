@@ -404,3 +404,4 @@
 {"ts": "2026-06-27T02:21:35Z", "kind": "epm:progress", "version": 95, "by": "poll_pipeline", "note": "phase transition: dx -> install", "phase": "install", "pod": "pod-653"}
 {"ts": "2026-06-27T03:02:52Z", "kind": "epm:progress", "version": 96, "by": "unknown", "note": "tick heartbeat: job verified alive (pid 351029, etime 11h36m, log mtime 13s fresh); slow phase, no state change"}
 {"ts": "2026-06-27T03:31:28Z", "kind": "epm:progress", "version": 97, "by": "poll_pipeline", "note": "phase transition: install -> upload", "phase": "upload", "pod": "pod-653"}
+{"ts": "2026-06-27T04:03:00Z", "kind": "epm:progress", "version": 98, "by": "unknown", "note": "tick heartbeat: job verified alive (pid 351029, etime 12h36m); analysis-tensor upload phase (medical_doctor r16 npz in flight); slow but progressing"}
