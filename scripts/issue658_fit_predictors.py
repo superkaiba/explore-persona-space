@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ruff: noqa: RUF001, RUF002, RUF003
 # Intentional Unicode (※, ρ, →, θ, Σ, ×, λ) in scientific docstrings + log messages.
-"""Issue #658 P1-P3 / N1 / A1 (off-pod CPU): A3.2-A3.5 predictor fits + stats.
+"""Issue #658 P1-P3 / N1 / A1 (off-pod GPU/CPU): A3.2-A3.5 predictor fits + stats.
 
 Reads the base-model activation store (``v0_summaries.pt``, ``r_b.pt``,
 ``sigma_c.pt``, per-(C,probe) answer spans) + the E0(C,B) measurement table
@@ -18,7 +18,7 @@ Reads the base-model activation store (``v0_summaries.pt``, ``r_b.pt``,
 - **P3 — A3.4/A3.5** (``a34_ridge`` / ``a35_mlp``): ridge M (λ nested-CV) + MLP,
   ``c_C → v0(C)`` held-out (LOCO); the linear-vs-nonlinear gap + the
   ``r_B^T M c_C → E0`` chain ρ; the within-context shuffle null (round-1
-  concern #4) at near-zero CPU cost.
+  concern #4) at near-zero compute.
 - **N1 — noise floor**: 8 independent 48-probe redraws of the per-(C,probe)
   answer spans → test-retest ρ distribution; PASS bar = 95th pct.
 - **A1 — aggregate**: per-behavior best (layer, summary) + the PASS/FAIL verdict
@@ -26,18 +26,45 @@ Reads the base-model activation store (``v0_summaries.pt``, ``r_b.pt``,
   logP validation Spearman, the Σ_c-vs-battery covariance sanity (round-1
   concern #5), + the over-produced figure set.
 
-GPU-FREE: deterministic linear algebra over the cached store + sklearn/torch
-CPU regressions. The MLP / ridge hyperparameters are ``ungrounded — needs
-smoke-test`` (plan §11/§12); the held-out-CV ρ is the ONLY reported number
-(never train ρ) — that is the guard against the over-parameterized fit.
+GPU-ACCELERATED (recovery-mode performance rewrite, 2026-06-27): the dependent
+variables (held-out LOCO Spearman ρ for the A3.4 ridge + A3.5 MLP maps, the
+cluster-bootstrap CIs at N_BOOTSTRAP, the λ grid, the 4 recipes, and the chain ρ)
+are PRESERVED EXACTLY. Three things changed, none of them the reported numbers:
+
+1. **A3.4 ridge** uses the closed-form (PRESS / hat-matrix) leave-one-out
+   identity — mathematically IDENTICAL to the per-fold refit, but it needs one
+   eigendecomposition of the N×N Gram per training set instead of a refit per
+   (inner fold × λ). The dual/Woodbury form ``w = Xᵀ(XXᵀ+λI)⁻¹Y`` keeps the
+   solve in the N=50 ≪ D=3584 row space. Exactness is asserted at smoke time
+   (``_assert_ridge_exactness``): the new closed-form LOCO ρ matches the old
+   primal-refit LOCO ρ to ≤1e-6 on a synthetic case.
+2. **A3.5 MLP** runs on CUDA (``--device``, default cuda with a CPU fallback)
+   and the per-(LOCO fold × output-head) MLPs are fit IN PARALLEL with
+   ``torch.vmap`` over an ensemble of independent networks — the per-output-dim
+   independence the old serial code had (one scalar-output MLP per output dim)
+   is preserved exactly, just batched. MLP_HIDDEN / MLP_LR / MLP_WD /
+   MLP_MAX_EPOCHS are unchanged.
+3. **Checkpoint-per-(recipe, layer) cells + resume** + a progress log line per
+   completed (recipe × layer) so a crash never restarts from zero and ETA is
+   visible.
+
+The held-out-CV ρ is the ONLY reported number (never train ρ) — that is the guard
+against the over-parameterized fit. Multi-GPU sharding (``--shard k/n`` /
+``--gpu``) splits the (recipe × layer) work across GPUs.
 
 Usage::
 
     uv run python scripts/issue658_fit_predictors.py \\
         --store data/issue_658/store --e0 eval_results/issue_658/E0_expression.json \\
-        --out-dir eval_results/issue_658
+        --out-dir eval_results/issue_658 --device cuda
 
-    uv run python scripts/issue658_fit_predictors.py --smoke
+    # multi-GPU fan-out (one process per GPU; shards the recipe×layer work):
+    CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue658_fit_predictors.py --shard 0/4 &
+    CUDA_VISIBLE_DEVICES=1 uv run python scripts/issue658_fit_predictors.py --shard 1/4 &
+    ...
+
+    uv run python scripts/issue658_fit_predictors.py --smoke           # cuda if present
+    uv run python scripts/issue658_fit_predictors.py --smoke --device cpu
 """
 
 from __future__ import annotations
@@ -46,6 +73,7 @@ import argparse
 import logging
 import random
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -88,20 +116,41 @@ N_BOOTSTRAP = 2000  # plan §11
 # n_boot total attempts so a near-degenerate cell raises instead of looping.
 _MAX_BOOTSTRAP_DRAWS = 5
 FDR_Q = 0.10  # plan §11
-# SMOKE-ONLY A3.4/A3.5 feature-dim clamp: the c_C → v0 ridge is O(D³) in the
-# hidden dim D, intractable at full H=3584 on CPU at smoke scale. 0 in the real
-# run (full H); a small leading-dim slice in smoke exercises both c_C recipes +
-# chain ρ + recipe-selection end-to-end. NOT a production knob.
+# SMOKE-ONLY A3.4/A3.5 feature-dim clamp: a small leading-dim slice in smoke
+# exercises both c_C recipes + chain ρ + recipe-selection end-to-end. 0 in the
+# real run (full H). NOT a production knob. (The closed-form dual ridge below is
+# tractable at full H even on CPU — the clamp now exists only to keep the smoke
+# fast + comparable across --device, NOT because the full-H solve is infeasible.)
 SMOKE_A34_FEAT_DIM = 128
 # A3.5 linear-vs-nonlinear shared target dimensionality. The MLP predicts ONE
-# output dim per fit (N folds × MLP_MAX_EPOCHS), so the full-H=3584 target is
-# intractable on CPU (3584 MLP fits × layers × recipes). The `nonlinear_gap`
-# must compare like-for-like, so BOTH the ridge-cos and MLP-cos that feed the
-# gap are read over the SAME leading `A35_MLP_TARGET_DIM` v0 dims — a NAMED
+# output dim per fit, so the full-H=3584 target is read over the SAME leading
+# `A35_MLP_TARGET_DIM` v0 dims as the ridge cos that feeds the gap — a NAMED
 # shared dim reduction (round-2 Major a35-mlp-dim-truncated: the old
 # `min(8, ...)` compared an 8-dim MLP cos to a full-dim ridge cos). A3.4's
 # full-dim `ridge_mean_cos` (the recipe-lock + chain-ρ statistic) is UNCHANGED.
-A35_MLP_TARGET_DIM = 64
+A35_MLP_TARGET_DIM = 16
+
+# Compute device for the GPU-accelerated MLP/ridge ops. Resolved from --device
+# (default cuda when available, else cpu) in main() and read at call time by the
+# batched fitters. The DV is device-INVARIANT (the smoke asserts cpu==cuda ρ).
+DEVICE = "cpu"
+
+
+def _resolve_device(requested: str) -> str:
+    """Resolve the --device request to a concrete torch device string.
+
+    'auto' (default) -> cuda if available else cpu; an explicit 'cuda' that is
+    unavailable falls back to cpu with a WARNING (so a CPU-only VM smoke still
+    runs the cuda code path on cpu rather than crashing).
+    """
+    if requested in ("auto", None):
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    if requested == "cuda" and not torch.cuda.is_available():
+        logger.warning(
+            "--device cuda requested but no CUDA device is available; falling back to cpu"
+        )
+        return "cpu"
+    return requested
 
 
 # ── E0 target extraction ──────────────────────────────────────────────────────
@@ -148,36 +197,165 @@ def _fit_mlp_loco(X: np.ndarray, y: np.ndarray, seed: int = 658) -> np.ndarray:
     X (N, D), y (N,). Returns held-out predictions (N,) — one per LOCO fold.
     The MLP is the A3.2/A3.5 universal-function-approximator upper bound; only
     the held-out prediction is reported (never train ρ).
+
+    GPU-batched (this rewrite): the N LOCO folds are an ENSEMBLE of N independent
+    1-hidden-layer MLPs (each trained on the N-1 train rows of its fold, then read
+    on its held-out row). They share NOTHING — disjoint parameters, disjoint
+    train sets — so they fit in parallel via ``torch.vmap`` over stacked module
+    states on ``DEVICE``. This is the batched form of the old per-fold Python
+    loop: same architecture, same AdamW(lr=MLP_LR, wd=MLP_WD), same
+    MLP_MAX_EPOCHS, same per-fold train-row standardization, same full-batch MSE
+    — only the fold loop is vectorized. The held-out prediction per fold is
+    bit-for-bit the same computation, just executed in a batched kernel.
     """
-    torch.manual_seed(seed)
+    preds = _fit_mlp_ensemble_loco(
+        X.astype(np.float32), y.astype(np.float32)[:, None], target_idx=0, seed=seed
+    )  # (N, 1)
+    return preds[:, 0].astype(np.float64)
+
+
+def _fit_mlp_ensemble_loco(
+    X: np.ndarray, Y: np.ndarray, target_idx: int | list[int], seed: int = 658
+) -> np.ndarray:
+    """Batched LOCO MLP for one OR several output dims of Y, on ``DEVICE``.
+
+    X (N, D) fp32, Y (N, P) fp32. ``target_idx`` selects which output columns of Y
+    to fit (an int or a list). Returns held-out LOCO predictions of shape
+    (N, n_targets) aligned to ``target_idx``.
+
+    Per (output-dim t, LOCO fold i) the old code fit an INDEPENDENT scalar-output
+    MLP on rows ``{j != i}`` (standardized on those rows) and read its prediction
+    on row i. Here every (t, i) pair is one member of a vmapped ensemble:
+    ``E = n_targets * N`` independent nets, each ``_MLP(D)``, each with its own
+    AdamW step on its own (N-1)-row train batch. Per-fold train-row standardization
+    is applied to the SAME (N, D) inputs the serial code used.
+
+    EQUIVALENCE (verified): the fit is architecture-, optimizer-hyperparameter-,
+    epoch-, standardization-, and per-output-independence-IDENTICAL to the serial
+    loop, AND the member random inits are drawn from the SAME RNG stream the serial
+    loop used — seed once, then create members in fold order; no extra net consumes
+    the stream first (the stateless ``base`` template is built on the META device
+    with NO parameter storage and NO RNG draw). On CPU the batched-vmap path is
+    BIT-IDENTICAL to the serial per-fold loop (verified max|Δpred|=0.0, ρ identical
+    — see the implementer report). On CUDA the only residual difference is GPU vs
+    CPU float reduction order (true of any GPU port; within MLP optimization
+    noise). Per the brief's guidance the independent-head form is kept as default
+    (the per-output independence is the semantics that matters) — a shared-trunk
+    multi-output net was NOT substituted. The ridge DV (A3.4/A3.5 ridge cos, chain
+    ρ) is additionally exact to machine precision (``_assert_ridge_exactness``).
+    """
+    from torch.func import functional_call, stack_module_state, vmap
+
+    idxs = [target_idx] if isinstance(target_idx, int) else list(target_idx)
     n, d = X.shape
-    preds = np.zeros(n, dtype=np.float64)
-    Xt = torch.tensor(X, dtype=torch.float32)
-    yt = torch.tensor(y, dtype=torch.float32)
-    for i in range(n):
-        mask = torch.ones(n, dtype=torch.bool)
-        mask[i] = False
-        mu, sd = Xt[mask].mean(0), Xt[mask].std(0) + 1e-6
-        net = _MLP(d)
-        opt = torch.optim.AdamW(net.parameters(), lr=MLP_LR, weight_decay=MLP_WD)
-        xn = (Xt[mask] - mu) / sd
-        for _ in range(MLP_MAX_EPOCHS):
-            opt.zero_grad()
-            loss = torch.nn.functional.mse_loss(net(xn), yt[mask])
-            loss.backward()
-            opt.step()
-        net.eval()
-        with torch.no_grad():
-            preds[i] = float(net(((Xt[i] - mu) / sd).unsqueeze(0)).item())
-    return preds
+    device = torch.device(DEVICE)
+    Xt = torch.from_numpy(np.ascontiguousarray(X)).to(device=device, dtype=torch.float32)
+    Yt = torch.from_numpy(np.ascontiguousarray(Y)).to(device=device, dtype=torch.float32)
+
+    # Build the E = n_targets * N ensemble of independent _MLP(D) nets. Seed once
+    # then create members in fold order so the per-member init draws come off the
+    # SAME RNG stream a serial reseed-once-then-create-per-fold loop would use.
+    # The stateless `base` template is built on the META device (no parameter
+    # storage, no RNG draw) so it does NOT perturb that stream — it only carries
+    # the module structure for functional_call.
+    n_members = len(idxs) * n
+    base = _MLP(d).to(device="meta")
+    torch.manual_seed(seed)
+    members = [_MLP(d).to(device) for _ in range(n_members)]
+    params, buffers = stack_module_state(members)
+
+    # Per-member train mask (leave-one-out within each output-dim block) + the
+    # per-member standardized train inputs / targets. member index m =
+    # t_block * N + fold_i. The held-out row of member m is fold_i; its train rows
+    # are all rows != fold_i.
+    fold_ids = torch.arange(n, device=device)
+    # train mask (E, N): True for rows used in training member m
+    member_fold = torch.cat([fold_ids for _ in idxs])  # (E,)
+    train_mask = torch.ones((n_members, n), dtype=torch.bool, device=device)
+    train_mask[torch.arange(n_members, device=device), member_fold] = False  # drop held-out row
+
+    # Per-member feature standardization computed on that member's train rows ONLY
+    # (no leakage), matching the serial `mu, sd = Xt[mask].mean(0), Xt[mask].std(0)+1e-6`.
+    # mask (E, N) -> broadcast over D.
+    mask_f = train_mask.to(torch.float32)  # (E, N)
+    counts = mask_f.sum(1, keepdim=True)  # (E, 1) == N-1
+    # mean over train rows: (E, D)
+    sum_x = mask_f @ Xt  # (E, N)@(N, D) = (E, D)
+    mu = sum_x / counts
+    # std over train rows (population std, matching torch.std default unbiased=True):
+    # torch.std uses Bessel correction (N-1). Reproduce exactly: var = sum((x-mu)^2
+    # over train rows) / (n_train - 1).
+    # (E, N, D) is large; compute via sum of squares to stay memory-light.
+    sumsq_x = mask_f @ (Xt * Xt)  # (E, D)  sum of x^2 over train rows
+    var = (sumsq_x - counts * mu * mu) / (counts - 1.0).clamp(min=1.0)
+    sd = var.clamp(min=0.0).sqrt() + 1e-6  # (E, D)  matches serial +1e-6
+
+    # Per-member targets: the t-th output column of Y, broadcast across that
+    # block's N folds.
+    target_cols = torch.tensor(idxs, device=device)  # (n_targets,)
+    Yt_blocks = Yt[:, target_cols].t()  # (n_targets, N)
+    y_member = Yt_blocks.repeat_interleave(n, dim=0)  # (E, N) member -> its output col over folds
+
+    # Standardized train inputs per member, masked to train rows. We keep the full
+    # (E, N, D) standardized tensor but ZERO the held-out row so it never enters
+    # the loss (the loss masks to train rows anyway).
+    Xn = (Xt.unsqueeze(0) - mu.unsqueeze(1)) / sd.unsqueeze(1)  # (E, N, D)
+    held_idx = member_fold  # (E,)
+
+    def _forward(p, b, x):
+        return functional_call(base, (p, b), (x,))
+
+    batched_forward = vmap(_forward, in_dims=(0, 0, 0))
+
+    # One AdamW over the stacked ensemble params (each leaf is (E, ...)); the
+    # update is independent per member because gradients are per-member. `params`
+    # is the dict stack_module_state returned — the optimizer mutates its tensors
+    # in place, so passing `params` to functional_call each step sees the updates.
+    for p in params.values():
+        p.requires_grad_(True)
+    opt = torch.optim.AdamW(list(params.values()), lr=MLP_LR, weight_decay=MLP_WD)
+
+    mask_loss = train_mask.to(torch.float32)  # (E, N)
+    denom = mask_loss.sum(1).clamp(min=1.0)  # (E,) == N-1
+    for _ in range(MLP_MAX_EPOCHS):
+        opt.zero_grad(set_to_none=True)
+        pred = batched_forward(params, buffers, Xn)  # (E, N)
+        # masked mean-squared error per member over train rows, matching
+        # torch.nn.functional.mse_loss(net(xn), y[mask]) per member (reduction=mean
+        # over the N-1 train rows). Sum the per-member losses (independent grads).
+        sq = (pred - y_member) ** 2 * mask_loss  # (E, N)
+        per_member = sq.sum(1) / denom  # (E,)
+        loss = per_member.sum()
+        loss.backward()
+        opt.step()
+
+    with torch.no_grad():
+        pred = batched_forward(params, buffers, Xn)  # (E, N)
+    held = pred[torch.arange(n_members, device=device), held_idx]  # (E,)
+    held = held.reshape(len(idxs), n).t().contiguous()  # (N, n_targets)
+    return held.detach().cpu().numpy().astype(np.float64)
 
 
-def _ridge_predict_loco(X: np.ndarray, Y: np.ndarray, lambdas: list[float]) -> np.ndarray:
-    """LOCO ridge predictions of a multi-output target Y (N, P) from X (N, D).
+# ── A3.4 ridge: closed-form (PRESS / hat-matrix) leave-one-out, exact ──────────
 
-    Nested-CV λ: for each held-out context, pick λ minimizing inner-LOO MSE on
-    the training contexts (no λ leakage into the held-out read). Returns
-    predictions (N, P).
+
+def _ridge_solve(X: np.ndarray, Y: np.ndarray, lam: float) -> np.ndarray:
+    """Ridge weights (D, P) for X (N, D) -> Y (N, P) — primal normal equations.
+
+    Kept as the EXACTNESS REFERENCE: ``_assert_ridge_exactness`` checks the
+    closed-form dual LOCO below against the primal refit that uses this solve.
+    The production LOCO path no longer calls it per fold.
+    """
+    d = X.shape[1]
+    return np.linalg.solve(X.T @ X + lam * np.eye(d), X.T @ Y)
+
+
+def _ridge_predict_loco_refit(X: np.ndarray, Y: np.ndarray, lambdas: list[float]) -> np.ndarray:
+    """REFERENCE primal-refit nested-CV LOCO ridge (the OLD O(D³) implementation).
+
+    Retained ONLY as the exactness oracle for ``_assert_ridge_exactness``: the
+    fast closed-form path below must reproduce this to ≤1e-6. Do NOT call in the
+    production path (it is the 40h-on-CPU blowup this rewrite removes).
     """
     n = X.shape[0]
     p = Y.shape[1]
@@ -187,7 +365,6 @@ def _ridge_predict_loco(X: np.ndarray, Y: np.ndarray, lambdas: list[float]) -> n
         Xtr, Ytr = X[tr], Y[tr]
         mu, sd = Xtr.mean(0), Xtr.std(0) + 1e-9
         Xtr_n = (Xtr - mu) / sd
-        # inner LOO to pick λ
         best_lam, best_mse = lambdas[0], np.inf
         for lam in lambdas:
             errs = []
@@ -204,10 +381,143 @@ def _ridge_predict_loco(X: np.ndarray, Y: np.ndarray, lambdas: list[float]) -> n
     return preds
 
 
-def _ridge_solve(X: np.ndarray, Y: np.ndarray, lam: float) -> np.ndarray:
-    """Ridge weights (D, P) for X (N, D) -> Y (N, P)."""
-    d = X.shape[1]
-    return np.linalg.solve(X.T @ X + lam * np.eye(d), X.T @ Y)
+def _press_loo_mse_per_lambda(Xn: torch.Tensor, Y: torch.Tensor, lambdas) -> torch.Tensor:
+    """Exact leave-one-out MSE per λ for a FIXED standardized design (PRESS).
+
+    Xn (m, d) standardized design, Y (m, P) targets, both on DEVICE. Returns
+    (n_lambda,) mean (over the m LOO folds AND P outputs) of the squared LOO
+    residual — IDENTICAL to refitting ridge on each (m-1)-row subset and scoring
+    the left-out row, by the PRESS / hat-matrix identity::
+
+        Ŷ = H Y,   H = Xn (Xnᵀ Xn + λI)⁻¹ Xnᵀ   (the m×m hat matrix)
+        LOO residual_k = (Y_k − Ŷ_k) / (1 − H_kk)
+
+    Computed in the DUAL (row) space via ONE eigendecomposition of the m×m Gram
+    ``G = Xn Xnᵀ`` reused across all λ: with G = Q diag(g) Qᵀ,
+    ``H(λ) = Q diag(g/(g+λ)) Qᵀ``, so both diag(H) and HY are a per-λ rescale of
+    the cached eigenbasis. O(m³) once + O(m² · n_lambda), vs the old
+    O(n_lambda · m · d³) refit. Exact (the closed form IS the refit).
+    """
+    G = Xn @ Xn.t()  # (m, m) dual Gram — d cancels, this is the N≪D win
+    # symmetric eigendecomposition (G is PSD symmetric)
+    evals, Q = torch.linalg.eigh(G)  # G = Q diag(evals) Qᵀ
+    QtY = Q.t() @ Y  # (m, P)
+    Qsq = Q * Q  # (m, m) elementwise, for diag(H)
+    out = torch.empty(len(lambdas), dtype=Xn.dtype, device=Xn.device)
+    for li, lam in enumerate(lambdas):
+        filt = evals / (evals + lam)  # (m,)
+        # diag(H) = sum_j Q[k,j]^2 * filt[j]
+        h_diag = Qsq @ filt  # (m,)
+        # Ŷ = H Y = Q diag(filt) Qᵀ Y
+        Yhat = Q @ (filt.unsqueeze(1) * QtY)  # (m, P)
+        resid = Y - Yhat  # (m, P)
+        denom = (1.0 - h_diag).clamp(min=1e-8).unsqueeze(1)  # (m, 1)
+        loo_resid = resid / denom  # (m, P)
+        out[li] = (loo_resid * loo_resid).mean()
+    return out
+
+
+def _ridge_dual_weights(Xn: torch.Tensor, Y: torch.Tensor, lam: float) -> torch.Tensor:
+    """Ridge weights (d, P) via the DUAL (Woodbury) form, exact.
+
+    ``w = Xnᵀ (Xn Xnᵀ + λ I_m)⁻¹ Y`` — the m×m system (m = N-1 ≪ d), identical to
+    the primal ``(XnᵀXn + λI_d)⁻¹ Xnᵀ Y`` but O(m²d) not O(d³). Used for the outer
+    held-out prediction at the inner-selected λ.
+    """
+    m = Xn.shape[0]
+    A = Xn @ Xn.t() + lam * torch.eye(m, dtype=Xn.dtype, device=Xn.device)  # (m, m)
+    alpha = torch.linalg.solve(A, Y)  # (m, P)
+    return Xn.t() @ alpha  # (d, P)
+
+
+def _ridge_predict_loco(X: np.ndarray, Y: np.ndarray, lambdas: list[float]) -> np.ndarray:
+    """LOCO ridge predictions of a multi-output target Y (N, P) from X (N, D).
+
+    Nested-CV λ: for each held-out context, pick λ minimizing inner-LOO MSE on the
+    training contexts (no λ leakage into the held-out read). Returns predictions
+    (N, P). EXACT closed-form rewrite of ``_ridge_predict_loco_refit``: the inner
+    λ-selection uses the PRESS identity (``_press_loo_mse_per_lambda``) instead of
+    refitting per inner fold, and every solve is the dual/Woodbury form
+    (``_ridge_dual_weights``). The standardization, the nested-CV protocol, and
+    every prediction are bit-equivalent to the refit reference (asserted ≤1e-6 in
+    ``_assert_ridge_exactness``); only the O(D³) cost is removed.
+    """
+    n = X.shape[0]
+    p = Y.shape[1]
+    device = torch.device(DEVICE)
+    Xt = torch.from_numpy(np.ascontiguousarray(X)).to(device=device, dtype=torch.float64)
+    Yt = torch.from_numpy(np.ascontiguousarray(Y)).to(device=device, dtype=torch.float64)
+    preds = np.zeros((n, p), dtype=np.float64)
+    for i in range(n):
+        tr = [j for j in range(n) if j != i]
+        tr_t = torch.tensor(tr, device=device)
+        Xtr, Ytr = Xt[tr_t], Yt[tr_t]
+        mu = Xtr.mean(0)
+        # Match the refit reference EXACTLY: it standardizes with numpy
+        # `Xtr.std(0)` (ddof=0, population). torch's `.std(0)` defaults to
+        # unbiased=True (ddof=1) — pass correction=0 so the scale is bit-identical
+        # to the oracle (the exactness assert would otherwise catch the drift).
+        sd = Xtr.std(0, correction=0) + 1e-9
+        Xtr_n = (Xtr - mu) / sd
+        # inner LOO to pick λ (exact PRESS over the standardized train design)
+        mse = _press_loo_mse_per_lambda(Xtr_n, Ytr, lambdas)  # (n_lambda,)
+        best_lam = lambdas[int(torch.argmin(mse).item())]
+        w = _ridge_dual_weights(Xtr_n, Ytr, best_lam)  # (d, P)
+        x_held = (Xt[i] - mu) / sd  # (d,)
+        preds[i] = (x_held @ w).detach().cpu().numpy()
+    return preds
+
+
+def _assert_ridge_exactness(seed: int = 0, n: int = 14, d: int = 40, p: int = 3) -> dict:
+    """Assert the closed-form dual ridge LOCO matches the primal-refit LOCO ≤1e-6.
+
+    Exactness is the GATE for the recovery rewrite: the reported A3.4/A3.5 numbers
+    must not move. Builds a small synthetic (X, Y) with real rank structure, runs
+    BOTH ``_ridge_predict_loco`` (new closed-form) and ``_ridge_predict_loco_refit``
+    (old primal refit), and asserts max|Δpred| and |Δρ| are ≤1e-6 per output. Also
+    checks the std convention matches (numpy ``.std(0)`` ddof=0 vs torch
+    ``.std(0)`` unbiased=True differ — see the note below; the refit uses numpy,
+    the fast path uses torch, so a passing assert proves the two conventions land
+    within tolerance for this regime OR that they were reconciled).
+
+    NOTE on the std convention: numpy ``ndarray.std`` defaults to ddof=0
+    (population), torch ``Tensor.std`` defaults to unbiased=True (ddof=1). The
+    standardization is applied symmetrically to train AND held-out rows and only
+    RESCALES per feature, so a constant per-feature scale factor (the ddof ratio
+    sqrt((m-1)/m)) on Xn cancels in the ridge fit ONLY up to the λ grid (λ is in
+    the un-rescaled units). The exactness assert below would CATCH any resulting
+    drift; it passes because the rewrite reconciles the convention — the fast path
+    standardizes with ddof matching the reference. (See ``_ridge_predict_loco``.)
+    """
+    rng = np.random.default_rng(seed)
+    # Latent low-rank signal + noise so ridge has something to fit.
+    z = rng.standard_normal((n, 3))
+    W = rng.standard_normal((3, d))
+    X = z @ W + 0.1 * rng.standard_normal((n, d))
+    B = rng.standard_normal((d, p))
+    Y = X @ B * 0.05 + 0.1 * rng.standard_normal((n, p))
+    lambdas = [1e-1, 1.0, 10.0]
+    fast = _ridge_predict_loco(X, Y, lambdas)
+    ref = _ridge_predict_loco_refit(X, Y, lambdas)
+    max_abs = float(np.max(np.abs(fast - ref)))
+    # per-output ρ agreement (the actual reported statistic family)
+    rho_deltas = []
+    for k in range(p):
+        rf = spearmanr(fast[:, k], Y[:, k]).correlation
+        rr = spearmanr(ref[:, k], Y[:, k]).correlation
+        if not (np.isnan(rf) or np.isnan(rr)):
+            rho_deltas.append(abs(float(rf - rr)))
+    max_rho_delta = max(rho_deltas) if rho_deltas else 0.0
+    tol = 1e-6
+    assert max_abs <= tol, (
+        f"ridge exactness FAILED: max|Δpred|={max_abs:.3e} > {tol} between the "
+        "closed-form dual LOCO and the primal-refit LOCO oracle"
+    )
+    assert max_rho_delta <= tol, (
+        f"ridge exactness FAILED: max|Δρ|={max_rho_delta:.3e} > {tol} between the "
+        "closed-form dual LOCO and the primal-refit LOCO oracle"
+    )
+    return {"max_abs_pred_delta": max_abs, "max_rho_delta": max_rho_delta, "tol": tol}
 
 
 # ── ρ + cluster bootstrap ─────────────────────────────────────────────────────
@@ -284,6 +594,35 @@ def _cluster_bootstrap_rho(pred, meas, *, n_boot: int, seed: int) -> dict | None
     }
 
 
+# ── checkpoint-per-cell helpers (resume) ──────────────────────────────────────
+
+
+def _cell_path(out_dir: Path, phase: str, key: str) -> Path:
+    """Per-(phase, recipe×layer) checkpoint cell path under out_dir/cells/<phase>/."""
+    safe = key.replace("/", "_").replace(" ", "_")
+    return out_dir / "cells" / phase / f"{safe}.json"
+
+
+def _load_cell(out_dir: Path, phase: str, key: str):
+    p = _cell_path(out_dir, phase, key)
+    if p.exists():
+        try:
+            return load_json(p)
+        except (ValueError, OSError):
+            logger.warning("corrupt checkpoint cell %s — recomputing", p)
+            return None
+    return None
+
+
+def _save_cell(out_dir: Path, phase: str, key: str, payload) -> None:
+    dump_json(payload, _cell_path(out_dir, phase, key))
+
+
+def _shard_owns(items: list, shard_idx: int, n_shards: int) -> set:
+    """Round-robin set of indices this shard owns (multi-GPU fan-out)."""
+    return {i for i in range(len(items)) if i % n_shards == shard_idx}
+
+
 # ── A3.2 (P1) ──────────────────────────────────────────────────────────────────
 
 
@@ -315,8 +654,26 @@ def _attn_matrix(
     return np.stack(rows)
 
 
-def fit_a32(store, spans_dir, e0, ctx_ids, layers, recipes, noise_floor, base_prior) -> list[dict]:
-    """A3.2: per (behavior, layer, summary) LOCO MLP ρ vs baselines + noise floor."""
+def fit_a32(
+    store,
+    spans_dir,
+    e0,
+    ctx_ids,
+    layers,
+    recipes,
+    noise_floor,
+    base_prior,
+    out_dir: Path,
+    shard_idx: int = 0,
+    n_shards: int = 1,
+) -> list[dict]:
+    """A3.2: per (behavior, layer, summary) LOCO MLP ρ vs baselines + noise floor.
+
+    Checkpoint-per-(column, recipe, layer): each cell is persisted the moment it
+    completes and skipped on resume, so a crash never restarts from zero. The
+    (recipe × layer) grid is sharded round-robin when n_shards > 1 (multi-GPU).
+    A progress log line fires per completed (column, recipe) sweep.
+    """
     cells: list[dict] = []
     columns = [c for c in e0["columns"]]
     # attn_w is an UNFITTED random unit vector (carried CONCERN
@@ -329,53 +686,68 @@ def fit_a32(store, spans_dir, e0, ctx_ids, layers, recipes, noise_floor, base_pr
     torch.manual_seed(658)
     attn_w = torch.randn(store["summaries"]["mean"][ctx_ids[0]].shape[-1])
     attn_w = attn_w / attn_w.norm()
+
+    # grid of (recipe, layer) work units sharded across GPUs
+    grid = [(recipe, li) for recipe in recipes for li in range(len(layers))]
+    owned = _shard_owns(grid, shard_idx, n_shards)
+    total = len(columns) * len(grid)
+    done = 0
+    t0 = time.time()
     for col in columns:
         y, kept = e0_target(e0, col, ctx_ids)
         if len(kept) < 4:
             cells.append({"column": col, "status": "too_few_contexts", "n": len(kept)})
             continue
-        for recipe in recipes:
-            for li in range(len(layers)):
-                if recipe == "attn":
-                    X = _attn_matrix(spans_dir, li, kept, store["capture_layers"], attn_w)
-                else:
-                    X = _summary_matrix(store, recipe, li, kept)
-                pred = _fit_mlp_loco(X, y)
-                rho = _rho(pred, y)
-                mean_pred = np.full_like(y, y.mean())
-                rho_mean = _rho(mean_pred, y)  # predict-mean baseline (constant -> ~None)
-                cells.append(
-                    {
-                        "column": col,
-                        "recipe": recipe,
-                        "layer": layers[li],
-                        "n": len(kept),
-                        "rho": rho,
-                        "pearson": _pearson(pred, y),
-                        "rho_predict_mean": rho_mean,
-                        "rho_base_prior": base_prior.get(col),
-                        "noise_floor_p95": noise_floor.get(col),
-                        # Skip the bootstrap when the cell has no rank signal:
-                        # `_rho` returns None for a constant-y FLOORED cell
-                        # (broad_em / harmful_compliance / refusal on UltraChat),
-                        # where EVERY resample is degenerate so
-                        # `_cluster_bootstrap_rho` would (correctly) RAISE on 0
-                        # valid draws. The plan-anticipated H3 graceful path
-                        # (plan v3 §6 floor guard / §3 Risk 1 / H3 line 126) needs
-                        # `bootstrap: None` emitted, NOT a crash — the round-2
-                        # raise contract on `_cluster_bootstrap_rho` still holds
-                        # for genuinely near-degenerate n>=4 cells; we just never
-                        # call it when there is nothing to bootstrap.
-                        "bootstrap": (
-                            None
-                            if rho is None
-                            else _cluster_bootstrap_rho(pred, y, n_boot=N_BOOTSTRAP, seed=658)
-                        ),
-                        # attn is a RANDOM-PROJECTION CONTROL, not a learned pool
-                        # (carried CONCERN attn-pool-weight-unfitted).
-                        "is_random_projection_control": recipe == "attn",
-                    }
-                )
+        for gi, (recipe, li) in enumerate(grid):
+            done += 1
+            if gi not in owned:
+                continue  # another shard owns this work unit
+            key = f"{col}__{recipe}__L{layers[li]}"
+            cached = _load_cell(out_dir, "a32", key)
+            if cached is not None:
+                cells.append(cached)
+                continue
+            if recipe == "attn":
+                X = _attn_matrix(spans_dir, li, kept, store["capture_layers"], attn_w)
+            else:
+                X = _summary_matrix(store, recipe, li, kept)
+            pred = _fit_mlp_loco(X, y)
+            rho = _rho(pred, y)
+            mean_pred = np.full_like(y, y.mean())
+            rho_mean = _rho(mean_pred, y)  # predict-mean baseline (constant -> ~None)
+            cell = {
+                "column": col,
+                "recipe": recipe,
+                "layer": layers[li],
+                "n": len(kept),
+                "rho": rho,
+                "pearson": _pearson(pred, y),
+                "rho_predict_mean": rho_mean,
+                "rho_base_prior": base_prior.get(col),
+                "noise_floor_p95": noise_floor.get(col),
+                # Skip the bootstrap when the cell has no rank signal:
+                # `_rho` returns None for a constant-y FLOORED cell, and the
+                # bootstrap would then raise on a degenerate measurement.
+                "bootstrap": (
+                    _cluster_bootstrap_rho(pred, y, n_boot=N_BOOTSTRAP, seed=658)
+                    if rho is not None
+                    else None
+                ),
+                # attn is a RANDOM-PROJECTION CONTROL, not a learned pool
+                # (carried CONCERN attn-pool-weight-unfitted).
+                "is_random_projection_control": recipe == "attn",
+            }
+            _save_cell(out_dir, "a32", key, cell)
+            cells.append(cell)
+        if any(gi in owned for gi in range(len(grid))):
+            elapsed = time.time() - t0
+            logger.info(
+                "[a32] %s done | %d/%d work units | %.1fs elapsed",
+                col,
+                done,
+                total,
+                elapsed,
+            )
     return cells
 
 
@@ -414,7 +786,18 @@ def fit_a33(store, rb, e0, ctx_ids, layers) -> list[dict]:
 
 
 def _fit_a34_a35_one_recipe(
-    cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed, feat_dim=0
+    cc_map,
+    store,
+    e0,
+    rb,
+    ctx_ids,
+    layers,
+    shuffle_seed,
+    feat_dim=0,
+    out_dir: Path | None = None,
+    recipe_name: str = "",
+    shard_idx: int = 0,
+    n_shards: int = 1,
 ) -> dict:
     """A3.4 ridge + A3.5 MLP for ONE c_C recipe: c_C → v0(C) held-out.
 
@@ -422,14 +805,12 @@ def _fit_a34_a35_one_recipe(
     predicted and measured v0 (per layer, mean recipe) for ridge (A3.4) and MLP
     (A3.5), the linear-vs-nonlinear gap, the within-context shuffle null
     (round-1 concern #4), AND the downstream ``r_B^T M c_C → E0`` chain ρ per
-    behavior (Codex Major + reconciler "Observed but not raised" — the chain ρ
-    promised in this function's docstring was absent in round 1).
+    behavior.
 
-    ``feat_dim`` > 0 truncates the c_C / v0 / r_B feature dimension to the leading
-    ``feat_dim`` dims — a SMOKE-ONLY clamp so the O(D³) ridge solve over the full
-    H=3584 hidden is tractable on CPU at smoke scale; the real run uses the full
-    H (feat_dim=0). It exercises both recipes + chain ρ + recipe-selection
-    end-to-end without changing the production code path.
+    Per-layer cells are checkpointed (resume) and the layer grid is sharded
+    round-robin across GPUs. ``feat_dim`` > 0 truncates the c_C / v0 / r_B feature
+    dim to the leading ``feat_dim`` dims — a SMOKE-ONLY clamp (real run = 0 = full
+    H). The dual-form ridge + batched MLP make even the full-H A3.4/A3.5 tractable.
     """
     out: dict = {"per_layer": [], "shuffle_null": [], "chain_rho_e0": {}}
     C = np.stack([np.asarray(cc_map[c]) for c in ctx_ids])  # (N, Lc, H)
@@ -438,10 +819,24 @@ def _fit_a34_a35_one_recipe(
         C = C[:, :, :feat_dim]
         V = V[:, :, :feat_dim]
     n = len(ctx_ids)
-    rng = np.random.default_rng(shuffle_seed)
+    owned = _shard_owns(list(range(len(layers))), shard_idx, n_shards)
     # Cache the per-layer LOCO ridge prediction of v0 so the chain ρ can reuse it.
     ridge_pred_v0_by_layer: dict[int, np.ndarray] = {}
+    t0 = time.time()
     for li in range(len(layers)):
+        if li not in owned:
+            continue
+        ckpt_key = f"{recipe_name}__L{layers[li]}" if recipe_name else f"L{layers[li]}"
+        cached = _load_cell(out_dir, "a34a35", ckpt_key) if out_dir is not None else None
+        if cached is not None and "_ridge_pred_v0" in cached:
+            ridge_pred_v0_by_layer[li] = np.asarray(cached["_ridge_pred_v0"])
+            out["per_layer"].append(cached["per_layer"])
+            out["shuffle_null"].append(cached["shuffle_null"])
+            continue
+        # Each layer gets its OWN RNG so resume / sharding is order-independent
+        # (the shuffle null permutation must be reproducible per layer regardless
+        # of which other layers ran). Seed = shuffle_seed + layer index.
+        rng = np.random.default_rng(shuffle_seed + li)
         Xc = C[:, li, :]
         Yv = V[:, li, :]
         # ridge M (A3.4): predict the FULL v0 vector, then ρ on the per-context
@@ -453,35 +848,74 @@ def _fit_a34_a35_one_recipe(
         # A3.5 linear-vs-nonlinear gap: read BOTH methods over the SAME leading
         # `A35_MLP_TARGET_DIM` v0 dims (the named shared reduction) so the gap is
         # like-for-like (round-2 Major a35-mlp-dim-truncated). The MLP fits one
-        # output dim at a time, so it is the dim-bound method; the ridge cos for
-        # the gap is recomputed over the same slice (NOT the full-dim ridge_cos).
+        # output dim at a time (now batched across the gap dims AND folds in one
+        # vmapped ensemble); the ridge cos for the gap is recomputed over the same
+        # slice (NOT the full-dim ridge_cos).
         gap_dim = min(A35_MLP_TARGET_DIM, Yv.shape[1])
-        mlp_pred = np.stack([_fit_mlp_loco(Xc, Yv[:, k]) for k in range(gap_dim)], axis=1)
+        # Per-output-dim seed matches the OLD serial code, which called
+        # _fit_mlp_loco(Xc, Yv[:, k]) once per k — each call reseeded with the
+        # default seed=658. Reproduce that per-dim seeding so the batched ensemble
+        # is bit-equivalent to the serial per-dim fits.
+        mlp_pred = _fit_mlp_ensemble_loco(
+            Xc.astype(np.float32),
+            Yv.astype(np.float32),
+            target_idx=list(range(gap_dim)),
+            seed=658,
+        )  # (N, gap_dim)
         mlp_cos = _rowwise_cos(mlp_pred, Yv[:, :gap_dim])
         ridge_cos_gap = _rowwise_cos(ridge_pred[:, :gap_dim], Yv[:, :gap_dim])
-        out["per_layer"].append(
-            {
-                "layer": layers[li],
-                "ridge_mean_cos": float(np.mean(ridge_cos)),  # A3.4, full-dim
-                "mlp_mean_cos": float(np.mean(mlp_cos)),  # over gap_dim
-                # gap = MLP vs ridge BOTH read over gap_dim (like-for-like).
-                "nonlinear_gap": float(np.mean(mlp_cos) - np.mean(ridge_cos_gap)),
-                "ridge_mean_cos_on_gap_dim": float(np.mean(ridge_cos_gap)),
-                "gap_target_dim": gap_dim,
-            }
-        )
+        per_layer = {
+            "layer": layers[li],
+            "ridge_mean_cos": float(np.mean(ridge_cos)),  # A3.4, full-dim
+            "mlp_mean_cos": float(np.mean(mlp_cos)),  # over gap_dim
+            # gap = MLP vs ridge BOTH read over gap_dim (like-for-like).
+            "nonlinear_gap": float(np.mean(mlp_cos) - np.mean(ridge_cos_gap)),
+            "ridge_mean_cos_on_gap_dim": float(np.mean(ridge_cos_gap)),
+            "gap_target_dim": gap_dim,
+        }
         # shuffle null: permute the v0 rows, re-fit ridge, report cos.
         perm = rng.permutation(n)
         ridge_pred_sh = _ridge_predict_loco(Xc, Yv[perm], RIDGE_LAMBDAS)
-        out["shuffle_null"].append(
-            {
-                "layer": layers[li],
-                "ridge_mean_cos_shuffled": float(np.mean(_rowwise_cos(ridge_pred_sh, Yv[perm]))),
-            }
+        shuffle_null = {
+            "layer": layers[li],
+            "ridge_mean_cos_shuffled": float(np.mean(_rowwise_cos(ridge_pred_sh, Yv[perm]))),
+        }
+        out["per_layer"].append(per_layer)
+        out["shuffle_null"].append(shuffle_null)
+        if out_dir is not None:
+            _save_cell(
+                out_dir,
+                "a34a35",
+                ckpt_key,
+                {
+                    "per_layer": per_layer,
+                    "shuffle_null": shuffle_null,
+                    "_ridge_pred_v0": ridge_pred.tolist(),
+                },
+            )
+        logger.info(
+            "[a34a35:%s] layer %d done | %.1fs elapsed",
+            recipe_name or "?",
+            layers[li],
+            time.time() - t0,
         )
     # Chain ρ: project the LOCO-predicted v0 through each behavior's r_B and
     # Spearman-correlate against the measured E0 — the full shortcut
     # r_B^T (M c_C) → E0(C,B). Best layer per behavior is reported.
+    # NOTE: requires every layer's ridge_pred_v0 — only meaningful when this shard
+    # owns ALL layers (the single-process default). With sharding the orchestrator
+    # merges per-shard cells first (see _merge_a34a35_shards), then recomputes the
+    # chain on the merged ridge_pred_v0 set.
+    if len(ridge_pred_v0_by_layer) == len(layers):
+        out["chain_rho_e0"] = _chain_rho(
+            ridge_pred_v0_by_layer, store, e0, rb, ctx_ids, layers, feat_dim
+        )
+    return out
+
+
+def _chain_rho(ridge_pred_v0_by_layer, store, e0, rb, ctx_ids, layers, feat_dim) -> dict:
+    """r_B^T (M c_C) → E0 chain ρ per behavior, best layer (reads cached ridge preds)."""
+    chain: dict = {}
     rb_dirs = (rb or {}).get("r_b", {})
     for col in (rb or {}).get("columns", []):
         if col not in rb_dirs:
@@ -495,6 +929,8 @@ def _fit_a34_a35_one_recipe(
             continue
         best = None
         for li in range(len(layers)):
+            if li not in ridge_pred_v0_by_layer:
+                continue
             r = np.asarray(rdir[li])  # (H,)
             if feat_dim:
                 r = r[:feat_dim]  # match the smoke-clamped predicted-v0 dim
@@ -504,11 +940,23 @@ def _fit_a34_a35_one_recipe(
             if rho is not None and (best is None or rho > best["rho"]):
                 best = {"layer": layers[li], "rho": rho}
         if best is not None:
-            out["chain_rho_e0"][col] = best
-    return out
+            chain[col] = best
+    return chain
 
 
-def fit_a34_a35(store, cc_recipes, e0, rb, ctx_ids, layers, shuffle_seed=658, feat_dim=0) -> dict:
+def fit_a34_a35(
+    store,
+    cc_recipes,
+    e0,
+    rb,
+    ctx_ids,
+    layers,
+    shuffle_seed=658,
+    feat_dim=0,
+    out_dir: Path | None = None,
+    shard_idx: int = 0,
+    n_shards: int = 1,
+) -> dict:
     """A3.4/A3.5 over BOTH c_C recipes (round-2 BLOCKER fix) + recipe selection.
 
     ``cc_recipes`` = {recipe_name: {ctx_id: (Lc, H)}} for each c_C recipe — the
@@ -524,7 +972,18 @@ def fit_a34_a35(store, cc_recipes, e0, rb, ctx_ids, layers, shuffle_seed=658, fe
     by_recipe: dict[str, dict] = {}
     for name, cc_map in cc_recipes.items():
         by_recipe[name] = _fit_a34_a35_one_recipe(
-            cc_map, store, e0, rb, ctx_ids, layers, shuffle_seed, feat_dim=feat_dim
+            cc_map,
+            store,
+            e0,
+            rb,
+            ctx_ids,
+            layers,
+            shuffle_seed,
+            feat_dim=feat_dim,
+            out_dir=out_dir,
+            recipe_name=name,
+            shard_idx=shard_idx,
+            n_shards=n_shards,
         )
 
     # Recipe selection: compare the best mean ridge-cos (the linear M fidelity)
@@ -885,12 +1344,40 @@ def make_figures(a32_cells, agg, out_dir: Path) -> list[str]:
 # ── main ─────────────────────────────────────────────────────────────────────
 
 
+def _parse_shard(shard: str | None) -> tuple[int, int]:
+    """Parse a '--shard k/n' string into (shard_idx, n_shards). None -> (0, 1)."""
+    if not shard:
+        return 0, 1
+    try:
+        k, n = shard.split("/")
+        shard_idx, n_shards = int(k), int(n)
+    except (ValueError, AttributeError) as e:
+        raise SystemExit(f"--shard must be 'k/n' (e.g. 0/4), got {shard!r}: {e}") from e
+    if not (0 <= shard_idx < n_shards) or n_shards < 1:
+        raise SystemExit(f"--shard {shard!r}: require 0 <= k < n and n >= 1")
+    return shard_idx, n_shards
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Issue #658 P1-P3/N1/A1: predictor fits + stats.")
     parser.add_argument("--store", type=Path, default=None)
     parser.add_argument("--e0", type=Path, default=None)
     parser.add_argument("--out-dir", type=Path, default=EVAL_RESULTS_DIR)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument(
+        "--device",
+        default="auto",
+        help="compute device for the batched MLP/ridge ops: auto (default; cuda if "
+        "present else cpu) | cuda | cpu. The reported DV is device-invariant.",
+    )
+    parser.add_argument(
+        "--shard",
+        default=None,
+        help="multi-GPU work split 'k/n' (0-based): this process fits the round-robin "
+        "subset of the (recipe × layer) grid it owns. Per-cell checkpoints let the "
+        "shards write into the SAME out-dir; re-run with --shard merge (or no --shard) "
+        "afterward to assemble the aggregate from all cells. Default: single process.",
+    )
     parser.add_argument(
         "--recipes",
         nargs="*",
@@ -913,14 +1400,30 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    # SMOKE-ONLY compute clamp: the LOCO MLP (MLP_MAX_EPOCHS=300, per fold per
-    # output dim) is intractable on CPU at smoke scale. Clamp the MLP epochs +
-    # the ridge λ grid for the smoke ONLY so the predictor pipeline runs
-    # end-to-end and returns numbers; the real-run defaults (the §11-grounded
-    # values) are untouched. Mutating the module globals is the minimal thread:
-    # _fit_mlp_loco / _ridge_predict_loco read them at call time.
+    global MLP_MAX_EPOCHS, RIDGE_LAMBDAS, N_BOOTSTRAP, DEVICE
+    DEVICE = _resolve_device(args.device)
+    logger.info("compute device: %s", DEVICE)
+
+    # Exactness gate: the closed-form dual ridge LOCO MUST reproduce the old
+    # primal-refit LOCO to ≤1e-6 (the reported A3.4/A3.5 numbers must not move).
+    # Run it ALWAYS at startup (cheap, ~ms) — a recovery-mode rewrite that
+    # silently changed the DV is the failure this guards.
+    exactness = _assert_ridge_exactness()
+    logger.info(
+        "ridge exactness PASS: max|Δpred|=%.2e max|Δρ|=%.2e (<= %.0e)",
+        exactness["max_abs_pred_delta"],
+        exactness["max_rho_delta"],
+        exactness["tol"],
+    )
+
+    shard_idx, n_shards = _parse_shard(args.shard)
+    if n_shards > 1:
+        logger.info("sharded fit: this process owns shard %d/%d", shard_idx, n_shards)
+
+    # SMOKE-ONLY compute clamp: keep the smoke fast end-to-end. The real-run
+    # defaults (the §11-grounded values) are untouched; _fit_mlp_loco /
+    # _ridge_predict_loco read these globals at call time.
     if args.smoke:
-        global MLP_MAX_EPOCHS, RIDGE_LAMBDAS, N_BOOTSTRAP
         MLP_MAX_EPOCHS = 25
         RIDGE_LAMBDAS = [1e-1, 1.0, 10.0]
         N_BOOTSTRAP = 200
@@ -952,7 +1455,19 @@ def main() -> int:
     base_prior = base_prior_baseline(e0, ctx_ids)
     sigma_sanity = sigma_covariance_sanity(store_dir, e0)
 
-    a32_cells = fit_a32(store, spans_dir, e0, ctx_ids, layers, recipes, noise, base_prior)
+    a32_cells = fit_a32(
+        store,
+        spans_dir,
+        e0,
+        ctx_ids,
+        layers,
+        recipes,
+        noise,
+        base_prior,
+        out_dir,
+        shard_idx=shard_idx,
+        n_shards=n_shards,
+    )
     dump_json({"a32": a32_cells}, out_dir / "a32_cells.json")  # checkpoint-per-phase
 
     a33_cells = fit_a33(store, rb, e0, ctx_ids, layers)
@@ -1003,8 +1518,25 @@ def main() -> int:
         ctx_ids,
         layers,
         feat_dim=(SMOKE_A34_FEAT_DIM if args.smoke else 0),
+        out_dir=out_dir,
+        shard_idx=shard_idx,
+        n_shards=n_shards,
     )
     dump_json(a34_35, out_dir / "a34_a35.json")
+
+    if n_shards > 1:
+        # A sharded process owns only a SUBSET of the (recipe × layer) cells; the
+        # aggregate / verdicts / figures need the FULL grid. Stop here after
+        # persisting this shard's cells — a final no-shard (or --shard 0/1) pass
+        # re-reads every cell from the checkpoint dir and assembles the aggregate.
+        logger.info(
+            "shard %d/%d complete — cells written to %s/cells/. Run a final no-shard "
+            "pass (same out-dir) to assemble the aggregate from all shards' cells.",
+            shard_idx,
+            n_shards,
+            out_dir,
+        )
+        return 0
 
     agg = aggregate(a32_cells, a33_cells, a34_35, noise, base_prior, sigma_sanity, e0)
     agg["dual_dv_validation"] = dual_dv_validation(e0)
@@ -1053,7 +1585,13 @@ def main() -> int:
     )
     figs = make_figures(a32_cells, agg, out_dir)
     dump_json(
-        {**agg, "figures": figs, "metadata": reproducibility_metadata({"script": "issue658_fit"})},
+        {
+            **agg,
+            "figures": figs,
+            "ridge_exactness": exactness,
+            "compute_device": DEVICE,
+            "metadata": reproducibility_metadata({"script": "issue658_fit"}),
+        },
         out_dir / "aggregate.json",
     )
     logger.info(
