@@ -556,6 +556,36 @@ def test_set_title_updates_registry(fake_repo):
     assert reg["tasks"][str(new_id)]["title"] == "New title"
 
 
+def test_set_kind_updates_frontmatter_and_registry(fake_repo):
+    """Reclassifying a misfiled kind (incident #672) writes the frontmatter
+    AND the denormalized REGISTRY snapshot the dashboard list view reads."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="GCP-fix validation"))
+    tw.set_kind(new_id, "infra")
+    # Frontmatter on body.md
+    assert tw.get_task(new_id)["frontmatter"]["kind"] == "infra"
+    # REGISTRY denormalizes kind — must stay in sync.
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["kind"] == "infra"
+
+
+def test_set_kind_invalid_raises(fake_repo):
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    with pytest.raises(ValueError):
+        tw.set_kind(new_id, "not-a-kind")
+    # The frontmatter is unchanged after the rejected call.
+    assert tw.get_task(new_id)["frontmatter"]["kind"] == "experiment"
+
+
+def test_set_kind_commits(fake_repo):
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    n_before = _git_log_count(repo)
+    tw.set_kind(new_id, "infra")
+    assert _git_log_count(repo) == n_before + 1
+
+
 def test_add_remove_tag(fake_repo):
     _, tw = fake_repo
     new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
