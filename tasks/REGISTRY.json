@@ -4333,8 +4333,8 @@
     "687": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/687",
-      "status": "proposed",
+      "path": "tasks/planning/687",
+      "status": "planning",
       "title": "workflow-fix: verify_task_body.py \u2014 figure-text-staleness check (catch panel/series prose-vs-sidecar drift)"
     },
     "69": {
