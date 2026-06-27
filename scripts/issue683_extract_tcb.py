@@ -34,7 +34,7 @@ CLI:
     uv run python scripts/issue683_extract_tcb.py --behavior marker --layer 14 \
         --source-list A1,A2,A3,A4,A5 --out-dir eval_results/issue_683/analysis_tensors/t_cb
     uv run python scripts/issue683_extract_tcb.py --behavior sycophancy --layer 20 \
-        --source-list villain
+        --source-list villain,comedian
     # CPU smoke (tiny throwaway model, 2 rows, base-only):
     uv run python scripts/issue683_extract_tcb.py --behavior marker --layer 1 \
         --source-list A1 --max-rows 2 --smoke
@@ -58,7 +58,8 @@ from explore_persona_space.experiments.issue_683 import (  # noqa: E402
     DEFAULT_LAYER,
     HIDDEN_SIZE,
     MARKER_MIX_TEMPLATE,
-    SYCO_TRAIN_POOL,
+    SYCO_SOURCES,
+    SYCO_TRAIN_POOL_TEMPLATE,
     answer_span_token_indices,
     load_completion_rows,
     repro_metadata,
@@ -69,17 +70,17 @@ from explore_persona_space.experiments.issue_683 import (  # noqa: E402
 def _resolve_mix_path(behavior: str, source: str) -> tuple[str, str]:
     """(repo_path, behavior) for the training mix of (behavior, source).
 
-    Marker sources are loc-arm condition codes (A1..A5); sycophancy is the
-    single ``villain`` on-policy pool. Returns the HF-data-repo relative path.
+    Marker sources are loc-arm condition codes (A1..A5); sycophancy sources are
+    the #683 on-policy panel (villain + comedian, #683 follow-up round 1), each
+    with its own recipe-matched #612 on-policy pool. Returns the HF-data-repo
+    relative path.
     """
     if behavior == "marker":
         return MARKER_MIX_TEMPLATE.format(arm=source), behavior
     if behavior == "sycophancy":
-        if source != "villain":
-            raise ValueError(
-                f"sycophancy source must be 'villain' (plan §11 single source); got {source!r}"
-            )
-        return SYCO_TRAIN_POOL, behavior
+        if source not in SYCO_SOURCES:
+            raise ValueError(f"sycophancy source must be one of {SYCO_SOURCES}; got {source!r}")
+        return SYCO_TRAIN_POOL_TEMPLATE.format(source=source), behavior
     raise ValueError(f"unknown behavior {behavior!r}")
 
 

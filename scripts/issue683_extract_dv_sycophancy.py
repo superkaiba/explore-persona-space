@@ -2,9 +2,10 @@
 # (math/scientific notation — Δv, ŵ, g_real — intentional in docstrings + labels)
 """Issue #683 Phase A — sycophancy realized-gate Δv / v_trained extraction (L20).
 
-Plan §4 Phase A (sycophancy side). For the #612 on-policy VILLAIN adapter
-(seeds 42/137) and a held-out PANEL of target personas, read the realized
-gate at the ANSWER-SPAN MEAN, layer 20 (the #649/#612 sycophancy read band):
+Plan §4 Phase A (sycophancy side). For each #612 on-policy SOURCE adapter
+(villain + comedian, the #683 follow-up-round-1 panel; seeds 42/137 each) and
+a held-out PANEL of target personas, read the realized gate at the ANSWER-SPAN
+MEAN, layer 20 (the #649/#612 sycophancy read band):
 
     v_base(C')     = base-model answer-span-mean residual under context C' (L20)
     v_trained(C')  = villain-adapter answer-span-mean residual under C' (L20)
@@ -32,16 +33,18 @@ rsLoRA gauge (fitness check g): asserted after the villain adapter loads.
 Content hygiene: the sycophancy panel generations are harmful-adjacent. This
 script NEVER prints prompt/completion text — only counts, shapes, norms.
 
-Outputs (one .pt per seed under ``analysis_tensors/dv/sycophancy/``):
-    villain_seed{seed}_L20.pt : per-context {v_base, v_trained, Delta_v} (H,),
-                                w_hat (= villain's own Δv), g_real per context.
+Outputs (one .pt per (source, seed) under ``analysis_tensors/dv/sycophancy/``):
+    {source}_seed{seed}_L20.pt : per-context {v_base, v_trained, Delta_v} (H,),
+                                 w_hat (= the source's own Δv), g_real per context.
+    (e.g. villain_seed42_L20.pt, comedian_seed42_L20.pt, ...)
 
 CLI:
-    uv run python scripts/issue683_extract_dv_sycophancy.py --seeds 42,137
+    uv run python scripts/issue683_extract_dv_sycophancy.py \
+        --source-list villain,comedian --seeds 42,137
     # CPU smoke (tiny model, 2 panel personas, 2 claims, base==trained):
-    uv run python scripts/issue683_extract_dv_sycophancy.py --seeds 42 \
-        --panel villain,comedian --n-claims 2 --model Qwen/Qwen2.5-0.5B-Instruct \
-        --no-adapter --layer 1 --smoke
+    uv run python scripts/issue683_extract_dv_sycophancy.py --source-list comedian \
+        --seeds 42 --panel villain,comedian --n-claims 2 \
+        --model Qwen/Qwen2.5-0.5B-Instruct --no-adapter --layer 1 --smoke
 """
 
 from __future__ import annotations
@@ -62,9 +65,9 @@ from explore_persona_space.experiments.issue_683 import (  # noqa: E402
     DEFAULT_LAYER,
     HF_DATA_REPO,
     HF_MODEL_REPO,
-    SYCO_ADAPTER_TEMPLATE,
     SYCO_SEEDS,
-    SYCO_SOURCE,
+    SYCO_SOURCES,
+    SYCOPHANCY_PANEL_CONTEXTS,
     answer_span_token_indices,
     assert_rslora_gauge,
     chunked,
@@ -125,13 +128,15 @@ def _load_panel() -> dict[str, str]:
     return {name: personas[name]["prompt"] for name in personas}
 
 
-def _resolve_adapter(seed: int) -> str:
-    """snapshot_download the villain on-policy adapter for ``seed``."""
+def _resolve_adapter(source: str, seed: int) -> str:
+    """snapshot_download the on-policy adapter for ``(source, seed)``."""
     import os
 
     from huggingface_hub import snapshot_download
 
-    sub = SYCO_ADAPTER_TEMPLATE.format(seed=seed)
+    from explore_persona_space.experiments.issue_683 import SYCO_ADAPTER_BY_SOURCE_TEMPLATE
+
+    sub = SYCO_ADAPTER_BY_SOURCE_TEMPLATE.format(source=source, seed=seed)
     dl = snapshot_download(
         repo_id=HF_MODEL_REPO, allow_patterns=[f"{sub}/*"], token=os.environ.get("HF_TOKEN")
     )
@@ -308,6 +313,7 @@ def _answer_span_mean(
 
 def extract_syco_dv(
     *,
+    source: str,
     seed: int,
     panel: dict[str, str],
     claims: list[str],
@@ -318,19 +324,19 @@ def extract_syco_dv(
     batch_size: int,
     device,
 ) -> dict:
-    """Read v_base/v_trained/Δv/g_real per panel context for the villain seed."""
+    """Read v_base/v_trained/Δv/g_real per panel context for ``(source, seed)``."""
     import gc
 
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    if SYCO_SOURCE not in panel:
+    if source not in panel:
         raise AssertionError(
-            f"source {SYCO_SOURCE!r} must be a panel member (ŵ = Δv(C_source)); panel="
+            f"source {source!r} must be a panel member (ŵ = Δv(C_source)); panel="
             f"{sorted(panel)[:8]}..."
         )
 
-    adapter_dir = _resolve_adapter(seed) if use_adapter else None
+    adapter_dir = _resolve_adapter(source, seed) if use_adapter else None
 
     # ── Phase 1: on-policy generation (vLLM; engine reaped before HF load). ─────
     # CLAUDE.md: vLLM for generation, NEVER HF model.generate (hf-generate-vs-vllm
@@ -383,7 +389,13 @@ def extract_syco_dv(
         )
         trained = PeftModel.from_pretrained(trained_raw, adapter_dir).eval()
         gauge = assert_rslora_gauge(trained)
-        logger.info("[phase=dv_syco_gauge] seed=%s gauge=%s adapter=%s", seed, gauge, adapter_dir)
+        logger.info(
+            "[phase=dv_syco_gauge] source=%s seed=%s gauge=%s adapter=%s",
+            source,
+            seed,
+            gauge,
+            adapter_dir,
+        )
     else:
         trained = base
         gauge = {"no_adapter_smoke": True}
@@ -420,7 +432,7 @@ def extract_syco_dv(
             "Delta_v": v_trained - v_base,
         }
 
-    w_hat = per_context[SYCO_SOURCE]["Delta_v"]
+    w_hat = per_context[source]["Delta_v"]
     g_real: dict[str, float] = {}
     for persona, rec in per_context.items():
         try:
@@ -428,11 +440,11 @@ def extract_syco_dv(
         except ValueError:
             g_real[persona] = float("nan")
 
-    g_self = g_real.get(SYCO_SOURCE, float("nan"))
+    g_self = g_real.get(source, float("nan"))
     self_consistent = abs(g_self - 1.0) <= GREAL_SELF_TOL if g_self == g_self else None
     if use_adapter and self_consistent is False:
         raise AssertionError(
-            f"self-consistency probe FAILED: g_real(C_source=villain)={g_self:.4f} != 1.0±"
+            f"self-consistency probe FAILED: g_real(C_source={source})={g_self:.4f} != 1.0±"
             f"{GREAL_SELF_TOL} — a gauge/load bug. Refusing to emit the panel read."
         )
 
@@ -444,7 +456,7 @@ def extract_syco_dv(
         torch.cuda.empty_cache()
 
     return {
-        "source": SYCO_SOURCE,
+        "source": source,
         "seed": seed,
         "behavior": "sycophancy",
         "layer": layer,
@@ -464,9 +476,14 @@ def extract_syco_dv(
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument(
+        "--source-list",
+        default=",".join(SYCO_SOURCES),
+        help="comma-separated sycophancy sources (default: villain,comedian; #683 round-1)",
+    )
+    ap.add_argument(
         "--seeds",
         default=",".join(str(s) for s in SYCO_SEEDS),
-        help="comma-separated villain seeds",
+        help="comma-separated seeds (applied to every source)",
     )
     ap.add_argument("--panel", default=None, help="comma-separated panel personas (default: #612)")
     ap.add_argument("--layer", type=int, default=None, help="block index; default L20")
@@ -489,6 +506,15 @@ def main(argv: list[str] | None = None) -> int:
 
     layer = args.layer if args.layer is not None else DEFAULT_LAYER["sycophancy"]
     seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
+    sources = [s.strip() for s in args.source_list.split(",") if s.strip()]
+    if not sources:
+        raise SystemExit("--source-list is empty")
+    unknown_sources = [s for s in sources if s not in SYCOPHANCY_PANEL_CONTEXTS]
+    if unknown_sources:
+        raise AssertionError(
+            f"--source-list sources not in SYCOPHANCY_PANEL_CONTEXTS: {unknown_sources}"
+        )
+
     full_panel = _load_panel()
     if args.panel:
         wanted = [p.strip() for p in args.panel.split(",") if p.strip()]
@@ -498,8 +524,13 @@ def main(argv: list[str] | None = None) -> int:
         panel = {p: full_panel[p] for p in wanted}
     else:
         panel = full_panel
-    if SYCO_SOURCE not in panel:
-        panel = {SYCO_SOURCE: full_panel[SYCO_SOURCE], **panel}
+    # EVERY requested source's own context MUST be in the panel (ŵ = Δv(C_source));
+    # prepend any missing source context (mainly relevant when --panel restricts it).
+    for src in sources:
+        if src not in panel:
+            if src not in full_panel:
+                raise AssertionError(f"source {src!r} has no system prompt in the #612 panel set")
+            panel = {src: full_panel[src], **panel}
     claims = _load_claims(args.n_claims)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -515,7 +546,8 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info(
-        "[phase=dv_syco_start] seeds=%s panel=%d claims=%d layer=%d device=%s adapter=%s",
+        "[phase=dv_syco_start] sources=%s seeds=%s panel=%d claims=%d layer=%d dev=%s adapter=%s",
+        sources,
         seeds,
         len(panel),
         len(claims),
@@ -524,36 +556,44 @@ def main(argv: list[str] | None = None) -> int:
         not args.no_adapter,
     )
 
+    # Per-(source, seed) bank — written the moment each completes (checkpoint-per-
+    # phase; a downstream crash never loses an already-extracted source/seed bank).
     summary: dict[str, dict] = {}
-    for seed in seeds:
-        payload = extract_syco_dv(
-            seed=seed,
-            panel=panel,
-            claims=claims,
-            layer=layer,
-            use_adapter=not args.no_adapter,
-            model_name=args.model,
-            max_new_tokens=args.max_new_tokens,
-            batch_size=args.batch_size,
-            device=device,
-        )
-        out_path = out_dir / f"villain_seed{seed}_L{layer}.pt"
-        torch.save(payload, out_path)
-        summary[str(seed)] = {
-            "out_path": str(out_path),
-            "n_context": len(payload["per_context"]),
-            "g_real_source_self": payload["g_real_source_self"],
-            "self_consistent": payload["self_consistent"],
-            "w_hat_norm": payload["w_hat_norm"],
-        }
-        logger.info(
-            "[phase=dv_syco_done] seed=%s n_context=%d g_self=%.4f self_consistent=%s -> %s",
-            seed,
-            len(payload["per_context"]),
-            payload["g_real_source_self"],
-            payload["self_consistent"],
-            out_path,
-        )
+    for source in sources:
+        for seed in seeds:
+            payload = extract_syco_dv(
+                source=source,
+                seed=seed,
+                panel=panel,
+                claims=claims,
+                layer=layer,
+                use_adapter=not args.no_adapter,
+                model_name=args.model,
+                max_new_tokens=args.max_new_tokens,
+                batch_size=args.batch_size,
+                device=device,
+            )
+            out_path = out_dir / f"{source}_seed{seed}_L{layer}.pt"
+            torch.save(payload, out_path)
+            summary[f"{source}_seed{seed}"] = {
+                "source": source,
+                "seed": seed,
+                "out_path": str(out_path),
+                "n_context": len(payload["per_context"]),
+                "g_real_source_self": payload["g_real_source_self"],
+                "self_consistent": payload["self_consistent"],
+                "w_hat_norm": payload["w_hat_norm"],
+            }
+            logger.info(
+                "[phase=dv_syco_done] source=%s seed=%s n_context=%d g_self=%.4f "
+                "self_consistent=%s -> %s",
+                source,
+                seed,
+                len(payload["per_context"]),
+                payload["g_real_source_self"],
+                payload["self_consistent"],
+                out_path,
+            )
 
     (out_dir / f"dv_sycophancy_summary_L{layer}.json").write_text(
         json.dumps(
@@ -561,7 +601,8 @@ def main(argv: list[str] | None = None) -> int:
                 "behavior": "sycophancy",
                 "layer": layer,
                 "read_location": "answer_span_mean",
-                "seeds": summary,
+                "sources": sources,
+                "banks": summary,
                 "reproducibility": repro_metadata(
                     {"behavior": "sycophancy", "layer": layer, "read_location": "answer_span_mean"}
                 ),
@@ -569,7 +610,7 @@ def main(argv: list[str] | None = None) -> int:
             indent=2,
         )
     )
-    logger.info("[phase=dv_syco_summary] %d seed(s) -> %s", len(summary), out_dir)
+    logger.info("[phase=dv_syco_summary] %d bank(s) -> %s", len(summary), out_dir)
     return 0
 
 
