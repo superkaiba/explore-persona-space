@@ -52,7 +52,53 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # issue664_common / issue594_common
 
-from explore_persona_space.orchestrate.env import load_dotenv
+
+def _eager_pin_cvd_from_argv(argv: list[str]) -> None:
+    """Pin ``CUDA_VISIBLE_DEVICES`` from ``--gpu-id`` BEFORE any CUDA-adjacent import.
+
+    This grandchild is launched by the wave worker (``extract_and_eval_cell``) with
+    ``CUDA_VISIBLE_DEVICES=<g>`` ALREADY pinned on its env (``_cvd_env``) AND
+    ``--gpu-id <g>`` in its argv. The eager pin is IDEMPOTENT — it sets CVD from
+    ``--gpu-id`` ONLY when CVD is unset, so:
+      * under the launcher mask (CVD already == g) it is a no-op and the mask wins;
+      * for a legacy STANDALONE call (no mask, ``--gpu-id N``) it pins CVD=N so the
+        device-resolution helper's logical ``cuda:0`` targets physical GPU N.
+    Either way the process sees exactly ONE physical device as logical ``cuda:0``,
+    matching the project-canonical ``merge_lora``/``train_lora`` pattern (set CVD,
+    then use logical ``cuda:0`` / ``device_map={"": 0}``) — never an invalid
+    ``cuda:<g>`` ordinal under a size-1 mask (concern
+    p2-extract-store-gpu-id-cvd-mismatch, #676)."""
+    if os.environ.get("CUDA_VISIBLE_DEVICES"):
+        return  # already pinned (the launcher mask) — do not override it
+    for i, tok in enumerate(argv):
+        if tok == "--gpu-id" and i + 1 < len(argv):
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(argv[i + 1])
+            return
+        if tok.startswith("--gpu-id="):
+            os.environ["CUDA_VISIBLE_DEVICES"] = tok.split("=", 1)[1]
+            return
+
+
+_eager_pin_cvd_from_argv(sys.argv[1:])
+
+
+def _resolve_device(gpu_id: int) -> tuple[str, int]:
+    """Resolve the LOGICAL device + ``device_map`` ordinal for a CVD-masked process.
+
+    Returns ``("cuda:0", 0)`` on CUDA, ``("cpu", 0)`` otherwise. ``gpu_id`` (the
+    PHYSICAL id) is consumed only via the eager CVD pin above — once the process is
+    masked to one device, that device is logical ``cuda:0`` REGARDLESS of its
+    physical ordinal, so tensor placement MUST use logical 0. Indexing the physical
+    id (``cuda:<g>`` / ``device_map={"": <g>}``) crashes on every ``g != 0`` wave
+    under the mask (concern p2-extract-store-gpu-id-cvd-mismatch, #676)."""
+    import torch
+
+    if torch.cuda.is_available():
+        return "cuda:0", 0
+    return "cpu", 0
+
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 
@@ -349,7 +395,10 @@ def _extract_all(
     """Run trained + base extraction over all contexts + the behavior battery."""
     import torch
 
-    device = f"cuda:{gpu_id}"
+    # CVD-masked process: use the LOGICAL device, never the physical gpu_id ordinal
+    # (concern p2-extract-store-gpu-id-cvd-mismatch, #676). gpu_id is consumed by
+    # the eager top-of-module CVD pin; tensor placement is logical cuda:0.
+    device, _ = _resolve_device(gpu_id)
     src_id = C.SOURCE_INSTANCE_IDS[cell.source]
 
     # ---- 1. v_plus(C') + c_C(trained): per-context answer-side mean + last slot.
@@ -514,7 +563,10 @@ def _marker_slots(
         validate_marker_slot_record,
     )
 
-    device = f"cuda:{gpu_id}" if torch.cuda.is_available() else "cpu"
+    # CVD-masked process: logical cuda:0 / device_map ordinal 0, never the physical
+    # gpu_id (concern p2-extract-store-gpu-id-cvd-mismatch, #676). gpu_id is consumed
+    # by the eager top-of-module CVD pin.
+    device, device_ordinal = _resolve_device(gpu_id)
 
     # Gauge assert (C1): valid logit readout requires LoRA never touched W_U /
     # embeddings (Option A faithful-gauge read, §11). Read adapter_config.json
@@ -554,7 +606,7 @@ def _marker_slots(
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             dtype=(torch.bfloat16 if device.startswith("cuda") else torch.float32),
-            device_map=({"": gpu_id} if device.startswith("cuda") else None),
+            device_map=({"": device_ordinal} if device.startswith("cuda") else None),
             trust_remote_code=True,
         ).eval()
         if not device.startswith("cuda"):
