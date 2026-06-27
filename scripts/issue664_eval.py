@@ -379,10 +379,25 @@ def _gpu_reclaim() -> None:
         torch.cuda.empty_cache()
 
 
-def _prompt_text_for(context_id: str, question: str) -> str:
+_TOKENIZER_CACHE: dict[str, object] = {}
+
+
+def _get_tokenizer():
+    """Module-level cached tokenizer. Each AutoTokenizer.from_pretrained call
+    triggers an HF Hub model_info() HTTP probe inside transformers'
+    _patch_mistral_regex (newer transformers); calling it per-probe exceeds
+    the 2500/5min HF API quota mid-eval (#664 crash after ~16 cells)."""
     from transformers import AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(C.QWEN_ID, trust_remote_code=True)
+    tok = _TOKENIZER_CACHE.get(C.QWEN_ID)
+    if tok is None:
+        tok = AutoTokenizer.from_pretrained(C.QWEN_ID, trust_remote_code=True)
+        _TOKENIZER_CACHE[C.QWEN_ID] = tok
+    return tok
+
+
+def _prompt_text_for(context_id: str, question: str) -> str:
+    tok = _get_tokenizer()
     msgs = _column_context_messages(context_id, question)
     return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
 
