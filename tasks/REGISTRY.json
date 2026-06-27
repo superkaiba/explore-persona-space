@@ -4043,8 +4043,8 @@
       "goal": "Re-extract layer-L activation-shift directions (trained minus base) from the #537 context-generalization testbed's existing adapters (5 conditional behaviors x 16 training contexts x seeds, on HF) plus a bounded 2nd-seed (1042) retrain of em + sycophancy across the 16 contexts so all readable behaviors get a within-cell seed ceiling, and test (Q1) whether each behavior's shift collapses to ONE direction across the training contexts it was implanted under (context-invariance of the write) and (Q2) whether the different behaviors' dominant directions coincide or cluster by family (cross-behavior identity), benchmarked against the within-cell seed ceiling, with unit-norm direction cosine as the dose-invariant DV.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/651",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/651",
+      "status": "followups_running",
       "title": "A LoRA-installed conditional behavior writes one context-invariant direction; across four behaviors the directions are mostly distinct, with one predicted family coincidence and one unexplained high off-diagonal (MODERATE confidence)"
     },
     "652": {
