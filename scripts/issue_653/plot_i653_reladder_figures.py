@@ -281,8 +281,122 @@ def fig_singular_spectra():
     plt.close(fig)
 
 
+# ---------------------------------------------------------------- alignment cosine + causal ablation (2-panel)
+def fig_alignment_ablation():
+    """Two quantitative claims on the 2 install-validated cells in one figure:
+    (left) the top Δx direction does not align with the behavior read-out r_B
+    (signed cos vs the ±random band and the ±0.5 alignment bar); (right) the
+    causal top-direction ablation moves the install rate in opposite signs and
+    inside probe noise (1 probe of 20 = 0.05).
+    """
+    cells = [
+        ("sycophancy__florist__r16__seed42", "florist"),
+        ("sycophancy__medical_doctor__r16__seed42", "medical doctor"),
+    ]
+    cos_vals, ci_high, unabl, abl = [], [], [], []
+    for cid, _ in cells:
+        beh, src, rung, _ = cid.split("__")
+        dx = L(os.path.join("armB", f"dx_geometry_{cid}.json"))
+        ab = L(os.path.join("armB", f"ablation_{cid}.json"))
+        cos_vals.append(float(dx["cos_top_to_rb"]))
+        ci_high.append(float(dx["random_ci_high"]))
+        abd = ab.get("ablation", ab)
+        unabl.append(float(abd["judge_rate_unablated"]))
+        abl.append(float(abd["judge_rate_ablated"]))
+
+    labels = [c[1] for c in cells]
+    set_paper_style("blog")
+    fig, (axL, axR) = plt.subplots(1, 2, figsize=(8.4, 4.0))
+
+    # --- LEFT: signed cosine vs random band + 0.5 bar ---
+    x = np.arange(len(labels))
+    band = float(np.mean(ci_high))  # ~0.036-0.037; symmetric ±band
+    axL.axhspan(-band, band, color="#dddddd", alpha=0.7, zorder=1)
+    axL.text(
+        len(labels) - 0.5,
+        band,
+        "±random band",
+        ha="right",
+        va="bottom",
+        fontsize=7.5,
+        color="#777",
+    )
+    for bar in (0.5, -0.5):
+        axL.axhline(bar, color="#b03030", ls="--", lw=1.1, zorder=2)
+    axL.text(
+        -0.45,
+        0.5,
+        "alignment bar (|cos| = 0.5)",
+        ha="left",
+        va="bottom",
+        fontsize=7.5,
+        color="#b03030",
+    )
+    cos_colors = [paper_palette_role("primary"), paper_palette_role("accent")]
+    axL.bar(x, cos_vals, color=cos_colors, width=0.55, zorder=3)
+    axL.axhline(0, color="#444", lw=0.8, zorder=2)
+    for xi, vi in zip(x, cos_vals):
+        axL.text(
+            xi,
+            vi + (0.03 if vi >= 0 else -0.03),
+            f"{vi:+.2f}",
+            ha="center",
+            va="bottom" if vi >= 0 else "top",
+            fontsize=9,
+        )
+    axL.set_xticks(x)
+    axL.set_xticklabels(labels, fontsize=8.5)
+    axL.set_ylim(-0.6, 0.6)
+    axL.set_ylabel("cos(top Δx direction, behavior read-out r_B)")
+    axL.set_title(
+        "Top shift direction does not align with r_B",
+        fontsize=10.5,
+        fontweight="semibold",
+        loc="left",
+        pad=8,
+    )
+
+    # --- RIGHT: ablation install rate, unablated vs ablated ---
+    w = 0.34
+    c_un = paper_palette_role("baseline")
+    c_ab = paper_palette_role("control")
+    axR.bar(x - w / 2, unabl, width=w, color=c_un, label="unablated", zorder=3)
+    axR.bar(x + w / 2, abl, width=w, color=c_ab, label="top-1 ablated", zorder=3)
+    for xi, vi in zip(x - w / 2, unabl):
+        axR.text(xi, vi + 0.015, f"{vi:.2f}", ha="center", va="bottom", fontsize=8.5)
+    for xi, vi in zip(x + w / 2, abl):
+        axR.text(xi, vi + 0.015, f"{vi:.2f}", ha="center", va="bottom", fontsize=8.5)
+    # probe-noise band: 1 probe of 20 = 0.05
+    axR.text(
+        len(labels) - 0.5,
+        0.97,
+        "1 probe of 20 = 0.05 (probe noise)",
+        ha="right",
+        va="top",
+        fontsize=7.5,
+        color="#777",
+    )
+    axR.set_xticks(x)
+    axR.set_xticklabels(labels, fontsize=8.5)
+    axR.set_ylim(0, 1.0)
+    axR.set_ylabel("sycophancy install rate (judged)")
+    axR.set_title(
+        "Ablating the top direction: opposite signs, within noise",
+        fontsize=10.5,
+        fontweight="semibold",
+        loc="left",
+        pad=8,
+    )
+    axR.legend(frameon=False, fontsize=8, loc="lower left")
+
+    fig.tight_layout()
+    savefig_paper(fig, f"{OUTSUB}/alignment_ablation", dir="figures/")
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     fig_hero_install_coverage()
     fig_survivor_geometry()
     fig_singular_spectra()
+    fig_alignment_ablation()
     print("wrote round-6 figures under figures/issue_653/install-validated-reladder/")

@@ -1,0 +1,48 @@
+{
+  "commit": "3a62361bc6",
+  "created": "2026-06-27T05:40:01Z",
+  "figsize": [
+    8.4,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "florist",
+      "cos(top \u0394x direction, behavior read-out r_B)": -0.3008185583463771,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "medical doctor",
+      "cos(top \u0394x direction, behavior read-out r_B)": 0.21216152628479573,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.17,
+      "sycophancy install rate (judged)": 0.75,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.83,
+      "sycophancy install rate (judged)": 0.8,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.17,
+      "sycophancy install rate (judged)": 0.85,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.17,
+      "sycophancy install rate (judged)": 0.55,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 6
+}
