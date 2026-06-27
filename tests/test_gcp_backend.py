@@ -1751,6 +1751,121 @@ def test_teardown_raises_on_real_failure() -> None:
 
 
 # ---------------------------------------------------------------------------
+# teardown — confirm-deleted guard (#683 clean-terminal RUNNING zombie)
+# ---------------------------------------------------------------------------
+
+
+def _teardown_handle():
+    """Build a teardown RunHandle (lazy import matches the file's prevailing style)."""
+    from explore_persona_space.backends.base import RunHandle
+
+    return RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-683",
+        scratch_dir="/workspace/eps-issue-683",
+        log_path="/workspace/logs/issue-683.log",
+        extra={"zone": "us-central1-a"},
+    )
+
+
+def _kind(argv: list[str]) -> str:
+    """Classify a recorded gcloud argv the way ``_Runner`` routes it."""
+    if "delete" in argv and "instances" in argv:
+        return "delete"
+    if "describe" in argv and "instances" in argv:
+        return "describe"
+    return "other"
+
+
+def test_teardown_confirms_deleted_and_does_not_redelete_when_gone() -> None:
+    """rc==0 delete + a 'not found' describe → confirmed gone, NO second delete (#683)."""
+    runner = _Runner(
+        delete_results=[GcloudRunResult(0, "", "")],
+        describe_results=[
+            GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.describe) was not found")
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    # The confirm probe ran after the delete; no re-delete on a confirmed-gone VM.
+    assert seq == ["delete", "describe"], runner.calls
+
+
+def test_teardown_redeletes_running_zombie_once() -> None:
+    """rc==0 delete but describe shows status=RUNNING (the #683 zombie) → re-delete ONCE."""
+    runner = _Runner(
+        delete_results=[GcloudRunResult(0, "", ""), GcloudRunResult(0, "", "")],
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    # Positional: probe-then-re-delete, in order. A back-to-back double-delete
+    # with no probe between (a hypothetical buggy refactor) would FAIL here,
+    # where a bare ``len(delete_calls) == 2`` would pass it.
+    assert seq == ["delete", "describe", "delete"], runner.calls
+
+
+def test_teardown_does_not_redelete_on_non_running_describe() -> None:
+    """A non-RUNNING describe (STOPPING / TERMINATED / empty status) trusts the rc==0 delete."""
+    for status in ("STOPPING", "TERMINATED", ""):
+        runner = _Runner(
+            delete_results=[GcloudRunResult(0, "", "")],
+            describe_results=[GcloudRunResult(0, json.dumps({"status": status}), "")],
+        )
+        backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+        backend.teardown(_teardown_handle())
+        seq = [_kind(c) for c in runner.calls]
+        assert seq == ["delete", "describe"], (status, runner.calls)  # no spurious re-delete
+
+
+def test_teardown_does_not_redelete_on_describe_probe_failure() -> None:
+    """A non-404 describe failure does NOT re-delete (the rc==0 delete already landed)."""
+    runner = _Runner(
+        delete_results=[GcloudRunResult(0, "", "")],
+        describe_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["delete", "describe"], runner.calls  # probe failure ≠ evidence the VM survived
+
+
+def test_teardown_redelete_404_is_silent_success() -> None:
+    """The re-delete's own 404 is silent success (first delete landed between probe and retry)."""
+    runner = _Runner(
+        delete_results=[
+            GcloudRunResult(0, "", ""),
+            GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.delete) was not found"),
+        ],
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    # No raise: the redelete-404 idempotency branch swallows the "was not found".
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["delete", "describe", "delete"], runner.calls
+
+
+def test_teardown_does_not_redelete_on_empty_describe_stdout() -> None:
+    """rc==0 describe with EMPTY stdout → ``... else {}`` → status None → no re-delete (#683 v2)."""
+    runner = _Runner(
+        delete_results=[GcloudRunResult(0, "", "")],
+        describe_results=[GcloudRunResult(0, "", "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    # The ``if probe.stdout.strip() else {}`` guard: empty STDOUT STRING (rc==0)
+    # parses to {} → status None → not RUNNING → no re-delete. Distinct from the
+    # empty *status field* ({"status": ""}) case in the non-running test above.
+    assert seq == ["delete", "describe"], runner.calls
+
+
+# ---------------------------------------------------------------------------
 # poll
 # ---------------------------------------------------------------------------
 
