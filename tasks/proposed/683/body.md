@@ -18,6 +18,8 @@ goal: 'Test whether a behavior-dependent source key for the leakage context-gate
   OUT-OF-SAMPLE than the theory''s default context-only key k=c_C, and whether any
   winning key generalizes from the marker (rank-1 scalar-gate precondition holds;
   k=c_C already falsified in #604) to sycophancy (precondition unresolved per #637).'
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
