@@ -11,6 +11,7 @@ Subcommands (see `task.py --help`):
     new --kind <k> --title "..." [--body|--body-file ...] [--goal "..."] [--parent N]
         [--origin-prompt "..."] [--status proposed]
     set-status <N> <status> [--note ...]
+    set-kind <N> <kind>                                # reclassify a misfiled task kind
     post-marker <N> <marker> [--note ... | --file path]   # alias: post-event
     list-by-status [--status ...] [--limit N]
     list-children <N> [--json]                         # tasks with parent_id == N
@@ -52,6 +53,7 @@ if str(_SRC) not in sys.path:
 
 from explore_persona_space.task_workflow import (  # noqa: E402
     CONCERN_SEVERITIES,
+    KINDS,
     STATUSES,
     NewTaskRequest,
     add_tag,
@@ -75,6 +77,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     set_body,
     set_clean_result,
     set_goal,
+    set_kind,
     set_status,
     set_title,
     set_track,
@@ -734,6 +737,11 @@ def cmd_set_title(args: argparse.Namespace) -> None:
     _safe_echo("ok", context="task.py set-title")
 
 
+def cmd_set_kind(args: argparse.Namespace) -> None:
+    set_kind(args.number, args.kind)
+    _safe_echo("ok", context="task.py set-kind")
+
+
 def cmd_set_clean_result(args: argparse.Namespace) -> None:
     set_clean_result(
         args.number,
@@ -1016,19 +1024,11 @@ def main() -> None:
             "--kind",
             required=False,
             default="experiment",
-            choices=[
-                "experiment",
-                "infra",
-                "analysis",
-                "survey",
-                # Question-level campaign runner task (/campaign <N>, task #586).
-                "campaign",
-                "note",
-                "reading",
-                "idea",
-                "question",
-                "decision",
-            ],
+            # Single source of truth: task_workflow.KINDS (mirrors the routing
+            # law in CLAUDE.md § "Routing experiment intent"). `campaign` =
+            # the question-level runner (/campaign <N>, task #586); the
+            # note/reading/idea/question/decision tail are the Human-board kinds.
+            choices=list(KINDS),
         )
         p.add_argument(
             "--track",
@@ -1230,6 +1230,26 @@ def main() -> None:
     p.add_argument("number", type=int)
     p.add_argument("title")
     p.set_defaults(func=cmd_set_title)
+
+    p = sub.add_parser(
+        "set-kind",
+        help="reclassify a misfiled task kind (frontmatter + REGISTRY snapshot)",
+        description=(
+            "Correct a task's `kind` through the canonical flock-protected, "
+            "registry-consistent path. Use when a task was filed under the "
+            "wrong kind — e.g. a fix-validation / 'test that X works' task "
+            "created as `kind: experiment` that should be `kind: infra` (so "
+            "it completes on the test-verdict path instead of being dragged "
+            "through the clean-result/promotion machinery; incident #672). "
+            "`kind` IS denormalized into REGISTRY.json, so this updates the "
+            "registry snapshot too. Does NOT touch status, body, or "
+            "has_clean_result — flip those separately if the misfile also "
+            "left the task in a wrong state."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument("kind", choices=list(KINDS), help="target kind; one of: " + ", ".join(KINDS))
+    p.set_defaults(func=cmd_set_kind)
 
     p = sub.add_parser(
         "set-goal",

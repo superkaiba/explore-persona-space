@@ -106,6 +106,31 @@ STATUSES = (
 
 TERMINAL_STATUSES = frozenset({"completed", "blocked", "archived"})
 
+# Canonical task `kind` enum — the single source of truth shared by
+# `task.py new --kind`, `task.py set-kind`, and `set_kind()`. Mirrors the
+# routing law in CLAUDE.md § "Routing experiment intent": `experiment` (a
+# research question that produces a promotable clean-result) vs the
+# code-change kinds (`infra | analysis | survey | batch`) that complete on
+# the Step 9c test-verdict path with NO promotable clean-result — a
+# fix-validation / "test that X works" task is `kind: infra`, not
+# `experiment` (incident #672: a GCP-fix validation was mis-filed as an
+# experiment and dragged through the clean-result/promotion machinery).
+# `campaign` is the question-level runner (/campaign <N>). The remaining
+# entries are the Human-board kinds (note/reading/idea/question/decision).
+KINDS = (
+    "experiment",
+    "infra",
+    "analysis",
+    "batch",
+    "survey",
+    "campaign",
+    "note",
+    "reading",
+    "idea",
+    "question",
+    "decision",
+)
+
 # Status that means "user has reviewed and approved a clean-result body; user
 # must run `task.py promote` to move to completed". Park-and-wait gate.
 PARK_STATUS = "awaiting_promotion"
@@ -1131,6 +1156,38 @@ def set_title(task_id: int, title: str) -> None:
         _registry_set(reg, task_id, path.parent, fm)
         _save_registry(reg)
         _git_commit([path, registry_path()], f"task #{task_id}: set-title — {title[:60]}")
+
+
+def set_kind(task_id: int, kind: str) -> None:
+    """Reclassify a task's ``kind`` in frontmatter (+ REGISTRY snapshot).
+
+    The canonical, flock-protected, registry-consistent way to correct a
+    MISFILED ``kind`` — e.g. a fix-validation / "test that X works" task
+    created as ``kind: experiment`` that should be ``kind: infra`` (so it
+    completes on the test-verdict path instead of being dragged through the
+    clean-result/promotion machinery; incident #672). Without this, a
+    correction required a direct frontmatter hand-edit, bypassing the
+    "mutate only through task.py" rule.
+
+    ``kind`` MUST be a member of :data:`KINDS`; an invalid value raises
+    ``ValueError``. ``kind`` IS denormalized into REGISTRY.json (the
+    dashboard list view reads it from there), so this updates the registry
+    snapshot exactly like :func:`set_title` — skipping that would leave the
+    list view showing the stale kind.
+    """
+    if kind not in KINDS:
+        raise ValueError(f"unknown kind: {kind!r}; expected one of {KINDS}")
+    with _locked():
+        path = find_task_path(task_id) / "body.md"
+        fm, body = _read_body(path)
+        fm["kind"] = kind
+        _write_body(path, fm, body)
+        # REGISTRY denormalizes `kind` (dashboard list view reads it) — keep
+        # it in sync, same as set_title.
+        reg = _load_registry()
+        _registry_set(reg, task_id, path.parent, fm)
+        _save_registry(reg)
+        _git_commit([path, registry_path()], f"task #{task_id}: set-kind — {kind}")
 
 
 def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool = True) -> None:
@@ -2229,6 +2286,7 @@ __all__ = [
     "CONCERN_SEVERITIES",
     "FOLLOWUP_HELD_BLOCKED_STATUSES",
     "GOAL_H2_NAME",
+    "KINDS",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "REPO",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
@@ -2263,6 +2321,7 @@ __all__ = [
     "set_body",
     "set_clean_result",
     "set_goal",
+    "set_kind",
     "set_status",
     "set_title",
     "tasks_dir",
