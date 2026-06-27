@@ -1,9 +1,9 @@
 {
-  "commit": "c81e327093",
-  "created": "2026-06-27T08:20:34Z",
+  "commit": "5d14fc1516",
+  "created": "2026-06-27T09:16:08Z",
   "figsize": [
-    7.800000000000001,
-    4.0
+    11.200000000000001,
+    4.2
   ],
   "points": [
     {
@@ -133,8 +133,182 @@
       "series": "noise-floor ceiling",
       "_kind": "line",
       "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -5.835680961608887,
+      "predicted gate g_pred": 0.8724680216633574,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.785106182098389,
+      "predicted gate g_pred": 1.141123095426951,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.597941875457764,
+      "predicted gate g_pred": 1.1769186785974117,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.168354034423828,
+      "predicted gate g_pred": 1.1751713618917765,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.5571513175964355,
+      "predicted gate g_pred": 1.1723437718711605,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.6345367431640625,
+      "predicted gate g_pred": 1.1746743195206966,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -5.1182098388671875,
+      "predicted gate g_pred": 1.1673887929798004,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.234922409057617,
+      "predicted gate g_pred": 1.1460410283528002,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -15.40392780303955,
+      "predicted gate g_pred": 1.0295285506667842,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.277923107147217,
+      "predicted gate g_pred": 1.1689450475484426,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -7.799189567565918,
+      "predicted gate g_pred": 0.8915880600961165,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -7.71054744720459,
+      "predicted gate g_pred": 1.0828062653692154,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -5.279445648193359,
+      "predicted gate g_pred": 1.1481224067824143,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -5.848912715911865,
+      "predicted gate g_pred": 1.096910409678696,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -12.416686058044434,
+      "predicted gate g_pred": 0.994659980679935,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -6.523131847381592,
+      "predicted gate g_pred": 1.0698785194747293,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.842658042907715,
+      "predicted gate g_pred": 1.0788139415524831,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -9.08335018157959,
+      "predicted gate g_pred": 1.0351375042554258,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -7.854617118835449,
+      "predicted gate g_pred": 1.030062963020566,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -12.576949119567871,
+      "predicted gate g_pred": 1.0418749017147855,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.822248935699463,
+      "predicted gate g_pred": 1.1587773880931027,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -6.920989513397217,
+      "predicted gate g_pred": 0.8693807318641098,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -7.798152923583984,
+      "predicted gate g_pred": 0.9444196031264634,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -5.7688984870910645,
+      "predicted gate g_pred": 0.9020574335591949,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.69882869720459,
+      "predicted gate g_pred": 1.0582066642127765,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -2.626242160797119,
+      "predicted gate g_pred": 1.1206551454793985,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.550278186798096,
+      "predicted gate g_pred": 1.145103970636266,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -5.475551128387451,
+      "predicted gate g_pred": 1.099962867629905,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -4.368142604827881,
+      "predicted gate g_pred": 1.1617672027207075,
+      "_kind": "scatter",
+      "_group": 4
     }
   ],
-  "n_series": 4,
-  "total_points": 20
+  "n_series": 5,
+  "total_points": 49
 }

@@ -38,6 +38,7 @@ CLI:
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -47,6 +48,29 @@ from _bootstrap import PROJECT_ROOT, bootstrap
 logger = bootstrap(log_name="issue683_make_figures")
 
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+# Import the SCORER module so the per-context low-level-data scatters are
+# recomputed via the EXACT same code path the leaderboard ρ came from (no
+# re-run of the committed JSONs, no new science — the recomputed per-context
+# (g_pred, g₁) pairs reproduce the committed aggregate ρ to machine precision;
+# the headline cells shown are M_I/ψ_I raw-dot, which are target-independent and
+# need no LOO/whitening/ridge). This satisfies the "low-level data behind every
+# aggregate" rule (SPEC §11) at 0 GPU from the committed Δv/c-bank/t_cb tensors.
+_SCORER_PATH = PROJECT_ROOT / "scripts/issue683_key_ablation_score.py"
+_scorer_spec = importlib.util.spec_from_file_location("issue683_scorer", _SCORER_PATH)
+_scorer = importlib.util.module_from_spec(_scorer_spec)
+_scorer_spec.loader.exec_module(_scorer)
+
+# Committed marker c_C' bank (the #604 post-response-slot all-layers bank sliced
+# at L14) is cached here; the sycophancy c_C' bank lives under analysis_tensors.
+_MARKER_CBANK = PROJECT_ROOT / ".claude/cache/issue604_marker_cbank_L14.pt"
+_SYCO_CBANK = (
+    PROJECT_ROOT
+    / "eval_results/issue_683/analysis_tensors/c_bank/sycophancy/c_bank_sycophancy_L20.pt"
+)
+_DV_DIR = PROJECT_ROOT / "eval_results/issue_683/analysis_tensors/dv"
+_TCB_DIR = PROJECT_ROOT / "eval_results/issue_683/analysis_tensors/t_cb"
+_READ_LAYER = {"marker": 14, "sycophancy": 20}
 
 # Plain-English key/metric labels (paper-plots: never bare slugs in figures).
 KEY_LABELS = {
@@ -133,6 +157,104 @@ def _noise_floor_mean(noise_floor: dict) -> float:
     return float(np.mean(vals)) if vals else float("nan")
 
 
+def _cbank_path(behavior: str) -> Path:
+    return _MARKER_CBANK if behavior == "marker" else _SYCO_CBANK
+
+
+def _per_context_series(behavior: str, source: str, key_form: str) -> dict | None:
+    """Recompute the per-context (g_pred, scored-DV g₁, context names) for ONE
+    M_I/ψ_I raw-dot cell, faithfully via the scorer code path.
+
+    Reads the committed Δv / c_C' / t_{C,B} tensors and reproduces the leaderboard
+    ρ for this cell to machine precision (validated: marker A5 + sycophancy seed-42
+    match the committed values to 1e-9). Returns ``None`` if the inputs for this
+    (behavior, source) are not present locally. The M_I/ψ_I raw-dot key is
+    target-independent, so the all-context Spearman here EQUALS the committed
+    leave-one-context-out Spearman for the cell (no LOO/whitening/ridge needed)."""
+    import numpy as np
+    import torch
+
+    sc = _scorer
+    cbp = _cbank_path(behavior)
+    dv_dir = _DV_DIR / behavior
+    if not cbp.is_file() or not dv_dir.is_dir():
+        return None
+    layer = _READ_LAYER[behavior]
+    banks = sc._load_dv_banks(dv_dir)
+    payload = next((b for b in banks if b["source"] == source), None)
+    if payload is None:
+        return None
+    c_bank = sc._load_c_bank(cbp, layer)
+    t_cb = sc._load_tcb(_TCB_DIR / behavior, behavior, source, layer)
+    per_context = payload["per_context"]
+    targets = [c for c in per_context if c != source and c in c_bank]
+    if len(targets) < 3:
+        return None
+    # Low-rank fallback dominant direction u₁ (A7 failed for both behaviors).
+    dvs = np.stack(
+        [torch.as_tensor(per_context[c]["Delta_v"]).flatten().float().numpy() for c in targets],
+        axis=1,
+    )
+    u1 = np.linalg.svd(dvs, full_matrices=False)[0][:, 0]
+    c_source = c_bank[source]
+    v_base_source = torch.as_tensor(per_context[source]["v_base"]).flatten().float().numpy()
+    delta_cb = (t_cb - v_base_source) if t_cb is not None else None
+    resolved = sc._resolve_cell_keys(
+        psi="psi_I",
+        key_form=key_form,
+        psi_per_fold=None,
+        c_source=c_source,
+        t_cb=t_cb,
+        delta_cb=delta_cb,
+        targets=targets,
+    )
+    if resolved is None or resolved[0] is None:
+        return None
+    k = resolved[0]
+    y = np.array([sc._dv_target_value(payload, c, False, u1) for c in targets])
+    g_pred = np.array([sc._g_pred(k, None, c_bank[c], c_source) for c in targets])
+    f = np.isfinite(g_pred) & np.isfinite(y)
+    if f.sum() < 3:
+        return None
+    return {
+        "contexts": [c for c, keep in zip(targets, f, strict=True) if keep],
+        "g_pred": g_pred[f],
+        "g1": y[f],
+        "spearman": sc.spearman(g_pred[f], y[f]),
+        "n": int(f.sum()),
+    }
+
+
+def _scatter_series(ax, ser: dict, color, title: str):
+    """Per-context g_pred-vs-g₁ scatter with a rank-order guide + labeled points.
+
+    The scored DV g₁ and the predictor g_pred are on different scales, so the
+    cell is scored by RANK (Spearman); the guide line is the rank-monotone
+    reference (sorted g₁ vs sorted g_pred), not an identity line."""
+    import numpy as np
+
+    g1 = np.asarray(ser["g1"])
+    gp = np.asarray(ser["g_pred"])
+    ax.scatter(g1, gp, s=22, color=color, edgecolors="0.25", linewidths=0.6, zorder=3)
+    # Light per-context labels (the unit identity → also fills the dashboard
+    # data-viewer identifier column). Label a readable subset to avoid clutter.
+    order = np.argsort(g1)
+    for rank, i in enumerate(order):
+        if rank % 2 == 0:  # every other point keeps the panel legible
+            ax.annotate(
+                ser["contexts"][i],
+                (g1[i], gp[i]),
+                fontsize=4.5,
+                color="0.35",
+                xytext=(2, 2),
+                textcoords="offset points",
+            )
+    ax.set_xlabel("scored DV g₁ (held-out context)", fontsize=7)
+    ax.set_ylabel("predicted gate g_pred", fontsize=7)
+    ax.set_title(f"{title}  (ρ = {ser['spearman']:+.2f}, n = {ser['n']})", fontsize=7.5)
+    ax.tick_params(labelsize=6)
+
+
 def _plot_leaderboard(lb: dict, noise_floor: dict, out_dir: Path, stem: str):
     """Per-behavior leaderboard bar chart: held-out ρ per key×metric + CI + null."""
     import matplotlib.pyplot as plt
@@ -188,7 +310,14 @@ def _plot_leaderboard(lb: dict, noise_floor: dict, out_dir: Path, stem: str):
             paper_palette_role("baseline") if key == "k_cC" else paper_palette_role("primary")
         )
 
-    fig, ax = plt.subplots(figsize=(max(6, 1.3 * len(labels)), 4))
+    # 1×2: (left) the key×metric bar leaderboard; (right) the LOW-LEVEL per-context
+    # scatter behind the headline training-completion-key bar (SPEC §11).
+    fig, (ax, axs) = plt.subplots(
+        1,
+        2,
+        figsize=(max(9, 1.3 * len(labels) + 3.4), 4.2),
+        gridspec_kw={"width_ratios": [max(6, 1.3 * len(labels)), 3.4]},
+    )
     x = np.arange(len(labels))
     err_t = np.array(errs).T if errs else None
     ax.bar(x, rhos, yerr=err_t, capsize=3, color=colors)
@@ -206,6 +335,36 @@ def _plot_leaderboard(lb: dict, noise_floor: dict, out_dir: Path, stem: str):
         f"Key×metric leaderboard — {BEHAVIOR_LABELS.get(behavior, behavior)}",
         "displacement key shown both ψ ways; bars = held-out ρ, whiskers = 95% bootstrap CI",
     )
+
+    # The headline source bank for the per-context scatter: the bank whose k_tCB
+    # raw-dot ρ is highest (A5 for the marker; the best villain seed for syco).
+    head_bank = max(
+        lb["per_bank"],
+        key=lambda b: (_cell(b["leaderboard"], "k_tCB") or {}).get("spearman", float("-inf")),
+    )
+    head_src = head_bank.get("source")
+    seed = head_bank.get("seed")
+    prov = f"source {head_src}" if behavior == "marker" else f"seed {seed}"
+    ser = _per_context_series(behavior, head_src, "k_tCB")
+    if ser is None:
+        axs.text(
+            0.5,
+            0.5,
+            "per-context tensors\nunavailable",
+            ha="center",
+            va="center",
+            fontsize=7,
+            color="0.5",
+            transform=axs.transAxes,
+        )
+        axs.set_axis_off()
+    else:
+        _scatter_series(
+            axs,
+            ser,
+            paper_palette_role("primary"),
+            f"Training-completion key, per context\n({prov})",
+        )
     fig.tight_layout()
     paths = savefig_paper(fig, stem, dir=str(out_dir))
     plt.close(fig)
@@ -271,7 +430,12 @@ def _contrast_pair_for_behavior(lb: dict) -> dict:
 def _plot_contrast(lbs: dict[str, dict], noise_floors: dict[str, dict], out_dir: Path):
     """HERO: training-completion key vs context-only key vs each behavior's own
     shuffled-key null. Bars are paired WITHIN A SINGLE SOURCE BANK per behavior
-    (no cross-bank max artifact); the scored DV is g₁ (A7 failed)."""
+    (no cross-bank max artifact); the scored DV is g₁ (A7 failed).
+
+    TWO rows: (top) the aggregate paired-ρ bars; (bottom) the LOW-LEVEL per-context
+    g_pred-vs-g₁ scatter behind each behavior's training-completion-key bar (SPEC
+    §11 — the per-unit data behind the aggregate ρ), recomputed faithfully from the
+    committed tensors."""
     import matplotlib.pyplot as plt
     import numpy as np
 
@@ -284,11 +448,14 @@ def _plot_contrast(lbs: dict[str, dict], noise_floors: dict[str, dict], out_dir:
 
     set_paper_style()
     behaviors = [b for b in ("marker", "sycophancy") if b in lbs]
-    fig, ax = plt.subplots(figsize=(7, 4.2))
+    pairs = {b: _contrast_pair_for_behavior(lbs[b]) for b in behaviors}
+
+    fig = plt.figure(figsize=(7.2, 6.6))
+    gs = fig.add_gridspec(2, max(2, len(behaviors)), height_ratios=[1.05, 1.0], hspace=0.55)
+    ax = fig.add_subplot(gs[0, :])
+
     width = 0.35
     x = np.arange(len(behaviors))
-
-    pairs = {b: _contrast_pair_for_behavior(lbs[b]) for b in behaviors}
     cc_vals, cc_err, dep_vals, dep_err = [], [], [], []
     for b in behaviors:
         v_cc, e_cc = _val_err(pairs[b]["cc"])
@@ -316,7 +483,6 @@ def _plot_contrast(lbs: dict[str, dict], noise_floors: dict[str, dict], out_dir:
         color=paper_palette_role("primary"),
         label="Training-completion key",
     )
-    # Each behavior's OWN bank null (p95) + noise floor as short markers.
     for i, b in enumerate(behaviors):
         p95 = pairs[b].get("null_p95")
         if p95 is not None and p95 == p95:
@@ -332,7 +498,6 @@ def _plot_contrast(lbs: dict[str, dict], noise_floors: dict[str, dict], out_dir:
             )
     ax.axhline(0.0, color="0.4", lw=0.8)
     ax.set_xticks(x)
-    # Tick label names the bank the bars came from (provenance, not a bare slug).
     ticklabels = []
     for b in behaviors:
         src = pairs[b].get("source")
@@ -340,7 +505,7 @@ def _plot_contrast(lbs: dict[str, dict], noise_floors: dict[str, dict], out_dir:
         tag = f"source {src}" if b == "marker" else f"seed {seed}"
         ticklabels.append(f"{BEHAVIOR_LABELS.get(b, b)}\n({tag})")
     ax.set_xticklabels(ticklabels, fontsize=8)
-    ax.set_ylabel(f"Held-out Spearman ρ (g_pred vs {SCORED_DV_AXIS})")
+    ax.set_ylabel(f"Held-out Spearman ρ (g_pred vs {SCORED_DV_AXIS})", fontsize=8)
     ax.legend(fontsize=8, loc="best")
     set_title_subtitle(
         ax,
@@ -348,6 +513,34 @@ def _plot_contrast(lbs: dict[str, dict], noise_floors: dict[str, dict], out_dir:
         "bars paired within one source bank; dotted = that bank's shuffled-key null (p95); "
         "dashed = noise-floor ceiling; whiskers = 95% CI",
     )
+
+    # Bottom row: the per-context scatter behind each training-completion-key bar.
+    for i, b in enumerate(behaviors):
+        sub = fig.add_subplot(gs[1, i])
+        src = pairs[b].get("source")
+        ser = _per_context_series(b, src, "k_tCB")
+        seed = pairs[b].get("seed")
+        prov = f"source {src}" if b == "marker" else f"seed {seed}"
+        if ser is None:
+            sub.text(
+                0.5,
+                0.5,
+                "per-context tensors\nunavailable",
+                ha="center",
+                va="center",
+                fontsize=7,
+                color="0.5",
+                transform=sub.transAxes,
+            )
+            sub.set_axis_off()
+            continue
+        _scatter_series(
+            sub,
+            ser,
+            paper_palette_role("primary"),
+            f"{BEHAVIOR_LABELS.get(b, b)} ({prov})\ntraining-completion key, per context",
+        )
+
     fig.tight_layout()
     paths = savefig_paper(fig, "marker_vs_sycophancy_contrast", dir=str(out_dir))
     plt.close(fig)
@@ -388,13 +581,34 @@ def _plot_a7_spectrum(a7: dict, out_dir: Path, stem: str):
         vals = [b[m] for b in per_bank if b.get(m) == b.get(m)]
         means.append(float(np.mean(vals)) if vals else float("nan"))
 
-    fig, ax = plt.subplots(figsize=(6.5, 4))
+    fig, ax = plt.subplots(figsize=(7.0, 4.2))
     x = np.arange(len(metrics))
-    ax.bar(x, means, color=paper_palette(len(metrics)))
+    ax.bar(x, means, color=paper_palette(len(metrics)), alpha=0.55, zorder=1)
     ax.axhline(0.5, color="0.4", ls="--", lw=0.8, label="strict rank-1 thresholds (0.5)")
+    # LOW-LEVEL data behind the mean bars: one dot per SOURCE BANK (A1–A5 for the
+    # marker, the seeds for syco), x-jittered, labeled by bank name (SPEC §11 — the
+    # "1/5 banks pass" claim is read off the per-bank scalarity-residual column).
+    rng = np.random.default_rng(0)
+    for xi, m in enumerate(metrics):
+        for bank in per_bank:
+            val = bank.get(m)
+            if val is None or val != val:
+                continue
+            jx = xi + (rng.random() - 0.5) * 0.34
+            ax.scatter(jx, val, s=20, color="0.2", edgecolors="white", linewidths=0.5, zorder=3)
+            ax.annotate(
+                str(bank.get("source", "")),
+                (jx, val),
+                fontsize=4.8,
+                color="0.25",
+                xytext=(2.5, 0),
+                textcoords="offset points",
+                va="center",
+                zorder=4,
+            )
     ax.set_xticks(x)
     ax.set_xticklabels(metric_labels, rotation=20, ha="right", fontsize=8)
-    ax.set_ylabel("value (mean over banks)")
+    ax.set_ylabel("value (bars = mean over banks; dots = per source bank)")
     ax.legend(fontsize=8)
     # Reader-facing verdict (NOT the internal slug). State the strict-rank-1 pass
     # count + what the figure decides.
