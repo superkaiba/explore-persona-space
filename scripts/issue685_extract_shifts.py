@@ -21,6 +21,7 @@ Usage::
 """
 
 import argparse
+import gc
 import os
 import platform
 import subprocess
@@ -34,11 +35,11 @@ os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 import numpy as np
 import torch
 from dotenv import load_dotenv
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 load_dotenv()
 
 from explore_persona_space.analysis.representation_shift import (  # noqa: E402
-    extract_centroids,
     save_centroids,
 )
 from explore_persona_space.personas import EVAL_QUESTIONS, PERSONAS  # noqa: E402
@@ -145,6 +146,165 @@ def build_conditions(
     return conditions
 
 
+def _render_persona_prompts(tokenizer, p_prompt: str | None, questions: list[str]) -> list[str]:
+    """Render each question into a chat-template prompt under one persona.
+
+    A falsy ``p_prompt`` (``None`` / ``""``) omits the system turn entirely
+    (the bare-default ``assistant`` context) — matching ``extract_centroids``.
+    """
+    texts: list[str] = []
+    for question in questions:
+        messages = []
+        if p_prompt:
+            messages.append({"role": "system", "content": p_prompt})
+        messages.append({"role": "user", "content": question})
+        texts.append(
+            tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        )
+    return texts
+
+
+def _add_last_token_sums(
+    captured: dict[int, torch.Tensor],
+    layers: list[int],
+    sums: dict[int, list[torch.Tensor | None]],
+    p_idx: int,
+) -> None:
+    """Accumulate this batch's last-token activations into per-persona sums.
+
+    Left-padding guarantees the real last token is at column ``-1`` for every
+    row, so the read is ``captured[layer][:, -1, :]`` with no index arithmetic.
+    """
+    for layer_idx in layers:
+        batch_sum = captured[layer_idx][:, -1, :].float().cpu().sum(dim=0)  # (H,)
+        prior = sums[layer_idx][p_idx]
+        sums[layer_idx][p_idx] = batch_sum if prior is None else prior + batch_sum
+
+
+def extract_centroids_batched(
+    model_path: str,
+    personas: dict[str, str | None],
+    questions: list[str] | None = None,
+    layers: list[int] | None = None,
+    device: str = "cuda:0",
+    dtype: torch.dtype = torch.bfloat16,
+    batch_size: int = 8,
+) -> tuple[dict[int, torch.Tensor], list[str]]:
+    """Batched drop-in for ``representation_shift.extract_centroids`` (issue #685).
+
+    Identical contract — same model load, same forward-hook capture on
+    ``model.model.layers[layer_idx]``, same last-prompt-token read, same
+    ``(centroids, persona_names)`` return shape — but runs the per-condition
+    questions in **batched** forward passes (left-padded) instead of one
+    batch-1 forward per (condition, question). Plan §9 requires batched HF
+    inference for Phase A (no sequential batch-1 loop); a 7B bf16 batch-1
+    forward is weight-bandwidth-bound and leaves the GPU ~idle (code-style.md
+    "Compute-throughput discipline").
+
+    Left-padding is what makes the last-token read trivial + correct: with
+    ``padding_side="left"`` every sequence's real last token sits at column
+    ``-1``, so the centroid read is ``hs[:, -1, :]`` with no per-row index
+    arithmetic and no risk of reading a pad position.
+
+    Args mirror ``extract_centroids`` plus ``batch_size`` (max prompts per
+    forward; defaults to 8 to bound 7B activation memory).
+
+    Returns:
+        ``(centroids, persona_names)`` where ``centroids`` is
+        ``{layer_idx: Tensor(n_personas, hidden_dim)}`` and ``persona_names``
+        is the ordered condition list — byte-for-byte the same structure
+        ``extract_centroids`` returns (verified float-equivalent on a tiny
+        slice by ``tests/test_issue685_extraction.py``).
+    """
+    if questions is None:
+        questions = EVAL_QUESTIONS
+    if layers is None:
+        layers = LAYERS
+
+    persona_names = list(personas.keys())
+    persona_prompts = list(personas.values())
+
+    print(f"Loading model from {model_path} (batched extraction, bs={batch_size})...")
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    # Left-pad so the real last token is always at position -1 for every row.
+    tokenizer.padding_side = "left"
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=dtype,
+        device_map={"": device},
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    )
+    model.eval()
+
+    captured: dict[int, torch.Tensor] = {}
+
+    def make_hook(layer_idx):
+        def hook_fn(module, input, output):
+            hs = output[0] if isinstance(output, tuple) else output
+            captured[layer_idx] = hs.detach()
+
+        return hook_fn
+
+    hooks = []
+    for layer_idx in layers:
+        h = model.model.layers[layer_idx].register_forward_hook(make_hook(layer_idx))
+        hooks.append(h)
+
+    # Per-persona running sum of last-token activations + a count, so we can
+    # mean-pool without holding every per-question vector in memory.
+    sums: dict[int, list[torch.Tensor | None]] = {
+        layer: [None] * len(persona_names) for layer in layers
+    }
+    counts = [0] * len(persona_names)
+    total = len(persona_names) * len(questions)
+    count = 0
+
+    for p_idx, (p_name, p_prompt) in enumerate(zip(persona_names, persona_prompts, strict=True)):
+        texts = _render_persona_prompts(tokenizer, p_prompt, questions)
+
+        # Batched forwards over this persona's question prompts.
+        for start in range(0, len(texts), batch_size):
+            batch_texts = texts[start : start + batch_size]
+            inputs = tokenizer(
+                batch_texts, return_tensors="pt", padding=True, add_special_tokens=False
+            ).to(device)
+
+            with torch.no_grad():
+                _ = model(**inputs)
+
+            _add_last_token_sums(captured, layers, sums, p_idx)
+
+            counts[p_idx] += len(batch_texts)
+            count += len(batch_texts)
+            if count % 20 < len(batch_texts):
+                print(f"  [{count}/{total}] persona={p_name}")
+
+    for h in hooks:
+        h.remove()
+
+    # Mean-pool: centroid = sum(last-token vecs) / n_questions, per persona.
+    centroids: dict[int, torch.Tensor] = {}
+    for layer_idx in layers:
+        layer_centroids = []
+        for p_idx in range(len(persona_names)):
+            assert counts[p_idx] == len(questions), (counts[p_idx], len(questions))
+            layer_centroids.append(sums[layer_idx][p_idx] / counts[p_idx])
+        centroids[layer_idx] = torch.stack(layer_centroids)
+
+    del model
+    gc.collect()
+    if device.startswith("cuda"):
+        torch.cuda.empty_cache()
+
+    print(f"Extracted centroids (batched): {len(persona_names)} personas x {len(layers)} layers")
+    return centroids, persona_names
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Issue #685 Phase A — extract context vectors v_l(C) and v_l(C+b).",
@@ -166,12 +326,23 @@ def main() -> None:
         default=None,
         help="device string; defaults to cuda:0 if available else cpu.",
     )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=None,
+        help="prompts per batched HF forward (default 8; smoke uses 2 to "
+        "exercise true batching with the tiny slice).",
+    )
     args = parser.parse_args()
 
     smoke = args.smoke
     device = args.device or ("cuda:0" if torch.cuda.is_available() else "cpu")
     # bf16 needs a GPU; the CPU smoke uses float32.
     dtype = torch.bfloat16 if device.startswith("cuda") else torch.float32
+    # Batched Phase-A inference (plan §9 — no sequential batch-1 loop). Smoke
+    # uses bs=2 so the 4-question slice still spans >1 batch (real batching is
+    # exercised, not a single full-batch shortcut).
+    batch_size = args.batch_size if args.batch_size is not None else (2 if smoke else 8)
 
     out_dir = (
         Path(args.out_dir)
@@ -205,13 +376,14 @@ def main() -> None:
 
     for model_id, tag in models:
         print(f"[issue685.A] extracting model={model_id} (tag={tag}) ...")
-        centroids, names = extract_centroids(
+        centroids, names = extract_centroids_batched(
             model_id,
             conditions,
             questions=questions,
             layers=layers,
             device=device,
             dtype=dtype,
+            batch_size=batch_size,
         )
         # Verify the read shape (n_conditions, H) per layer before saving.
         for layer in layers:
@@ -237,6 +409,8 @@ def main() -> None:
             "behavior_strings": behaviors,
             "hidden_dim": hidden_dim,
             "read_position": "last_prompt_token (add_generation_prompt=True)",
+            "extraction": "batched (left-pad, last-token col -1)",
+            "batch_size": batch_size,
             "smoke": smoke,
             "env": env,
             "timestamp_utc": datetime.now(UTC).isoformat(),

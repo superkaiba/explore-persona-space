@@ -309,7 +309,10 @@ def _generate_responses_vllm(
         enforce_eager=False,
     )
     params = SamplingParams(temperature=0.0, max_tokens=max_new_tokens)
-    outputs = llm.generate(prompts, params)
+    # use_tqdm=False per gotchas.md #613 RULE (every LLM.generate() call site):
+    # vLLM 0.11.0's tqdm wrapper raises ZeroDivisionError when a batch finishes
+    # faster than the elapsed-time tick. Required on every generate() call.
+    outputs = llm.generate(prompts, params, use_tqdm=False)
     assert len(outputs) == len(keys), (len(outputs), len(keys))
 
     eos_id = tokenizer.eos_token_id
