@@ -1,0 +1,28 @@
+{
+ "cell_id": "marker__florist__r1__seed42",
+ "behavior": "marker",
+ "rung": "r1",
+ "dose_selection": false,
+ "selected_checkpoint_step": null,
+ "selected_checkpoint_dir": null,
+ "selected_model_path": null,
+ "dropped_non_install": false,
+ "note": "no dose selection: marker uses the band-stop final adapter; full-FT has no dose schedule (reads the final FT model)",
+ "metadata": {
+  "task": 653,
+  "schema_version": 1,
+  "git_commit": "28d36f124",
+  "timestamp_utc": "2026-06-25T03:27:54.470453+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--gpu-mode",
+   "--provision",
+   "1",
+   "--out-root",
+   "eval_results/issue_653/install-validated-reladder"
+  ],
+  "phase": "select_checkpoint"
+ }
+}

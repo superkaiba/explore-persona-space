@@ -1,0 +1,1412 @@
+{
+  "commit": "0fb95ddf5d",
+  "created": "2026-06-27T04:20:29Z",
+  "figsize": [
+    6.6,
+    4.0
+  ],
+  "points": [
+    {
+      "singular-value index (mode)": 1.0,
+      "fraction of \u0394x variance in this mode": 0.15138554169044197,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 2.0,
+      "fraction of \u0394x variance in this mode": 0.07673444536740796,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 3.0,
+      "fraction of \u0394x variance in this mode": 0.061767500991284245,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 4.0,
+      "fraction of \u0394x variance in this mode": 0.05361239413658912,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 5.0,
+      "fraction of \u0394x variance in this mode": 0.04798268714608544,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 6.0,
+      "fraction of \u0394x variance in this mode": 0.043986450170894746,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 7.0,
+      "fraction of \u0394x variance in this mode": 0.035691185755876355,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 8.0,
+      "fraction of \u0394x variance in this mode": 0.034557955613478034,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 9.0,
+      "fraction of \u0394x variance in this mode": 0.03252053969058297,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 10.0,
+      "fraction of \u0394x variance in this mode": 0.027284555652764973,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 11.0,
+      "fraction of \u0394x variance in this mode": 0.024397063707263234,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 12.0,
+      "fraction of \u0394x variance in this mode": 0.023403471003810572,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 13.0,
+      "fraction of \u0394x variance in this mode": 0.020401511103955737,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 14.0,
+      "fraction of \u0394x variance in this mode": 0.019370748464717556,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 15.0,
+      "fraction of \u0394x variance in this mode": 0.018710762816054462,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 16.0,
+      "fraction of \u0394x variance in this mode": 0.016652918850965717,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 17.0,
+      "fraction of \u0394x variance in this mode": 0.016230052985294393,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 18.0,
+      "fraction of \u0394x variance in this mode": 0.015304920255493305,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 19.0,
+      "fraction of \u0394x variance in this mode": 0.014134864237593137,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 20.0,
+      "fraction of \u0394x variance in this mode": 0.0136518086965212,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 21.0,
+      "fraction of \u0394x variance in this mode": 0.012749351857060793,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 22.0,
+      "fraction of \u0394x variance in this mode": 0.012037178438067312,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 23.0,
+      "fraction of \u0394x variance in this mode": 0.011474578911597358,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 24.0,
+      "fraction of \u0394x variance in this mode": 0.010756061399061304,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 25.0,
+      "fraction of \u0394x variance in this mode": 0.009977878901655449,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 26.0,
+      "fraction of \u0394x variance in this mode": 0.009199866751577829,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 27.0,
+      "fraction of \u0394x variance in this mode": 0.009146915080078472,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 28.0,
+      "fraction of \u0394x variance in this mode": 0.008499412917273961,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 29.0,
+      "fraction of \u0394x variance in this mode": 0.00848228514819247,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 30.0,
+      "fraction of \u0394x variance in this mode": 0.007595062043002529,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 31.0,
+      "fraction of \u0394x variance in this mode": 0.007211417215890773,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 32.0,
+      "fraction of \u0394x variance in this mode": 0.006976760845737001,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 33.0,
+      "fraction of \u0394x variance in this mode": 0.00693245203216872,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 34.0,
+      "fraction of \u0394x variance in this mode": 0.006484947036465925,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 35.0,
+      "fraction of \u0394x variance in this mode": 0.006167685839840207,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 36.0,
+      "fraction of \u0394x variance in this mode": 0.006015794928035212,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 37.0,
+      "fraction of \u0394x variance in this mode": 0.005695496530317132,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 38.0,
+      "fraction of \u0394x variance in this mode": 0.005250288580173899,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 39.0,
+      "fraction of \u0394x variance in this mode": 0.005030002414155582,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 40.0,
+      "fraction of \u0394x variance in this mode": 0.004874098020519237,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 41.0,
+      "fraction of \u0394x variance in this mode": 0.00476235207426487,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 42.0,
+      "fraction of \u0394x variance in this mode": 0.004591653247112739,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 43.0,
+      "fraction of \u0394x variance in this mode": 0.0043908709873840815,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 44.0,
+      "fraction of \u0394x variance in this mode": 0.004129670525792872,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 45.0,
+      "fraction of \u0394x variance in this mode": 0.003944482348353939,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 46.0,
+      "fraction of \u0394x variance in this mode": 0.0038637016504896207,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 47.0,
+      "fraction of \u0394x variance in this mode": 0.003716411570979242,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 48.0,
+      "fraction of \u0394x variance in this mode": 0.003569726171940226,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 49.0,
+      "fraction of \u0394x variance in this mode": 0.0033679536387341952,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 50.0,
+      "fraction of \u0394x variance in this mode": 0.0032925652043468753,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 51.0,
+      "fraction of \u0394x variance in this mode": 0.003160438366360825,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 52.0,
+      "fraction of \u0394x variance in this mode": 0.0031233979467903718,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 53.0,
+      "fraction of \u0394x variance in this mode": 0.002953791490430887,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 54.0,
+      "fraction of \u0394x variance in this mode": 0.0029117898344061394,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 55.0,
+      "fraction of \u0394x variance in this mode": 0.002824846164631067,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 56.0,
+      "fraction of \u0394x variance in this mode": 0.002697619461085596,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 57.0,
+      "fraction of \u0394x variance in this mode": 0.0026292388878642577,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 58.0,
+      "fraction of \u0394x variance in this mode": 0.0025482312673318678,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 59.0,
+      "fraction of \u0394x variance in this mode": 0.0024343683392069122,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 60.0,
+      "fraction of \u0394x variance in this mode": 0.0021983909137324744,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 61.0,
+      "fraction of \u0394x variance in this mode": 0.002167987120413547,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 62.0,
+      "fraction of \u0394x variance in this mode": 0.0019526999311755286,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 63.0,
+      "fraction of \u0394x variance in this mode": 0.001901822750537978,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 64.0,
+      "fraction of \u0394x variance in this mode": 0.001850978064194897,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 65.0,
+      "fraction of \u0394x variance in this mode": 0.0017437782573414737,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 66.0,
+      "fraction of \u0394x variance in this mode": 0.0017112955234450276,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 67.0,
+      "fraction of \u0394x variance in this mode": 0.0016348298453241507,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 68.0,
+      "fraction of \u0394x variance in this mode": 0.0015754856508349065,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 69.0,
+      "fraction of \u0394x variance in this mode": 0.00146754432039319,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 70.0,
+      "fraction of \u0394x variance in this mode": 0.0014392886199022918,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 71.0,
+      "fraction of \u0394x variance in this mode": 0.0013221054790721806,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 72.0,
+      "fraction of \u0394x variance in this mode": 0.001152313648275493,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 73.0,
+      "fraction of \u0394x variance in this mode": 0.0010568857178269477,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 74.0,
+      "fraction of \u0394x variance in this mode": 0.001003656257859717,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 75.0,
+      "fraction of \u0394x variance in this mode": 0.0009664968646935374,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 76.0,
+      "fraction of \u0394x variance in this mode": 0.0007500729523076836,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 77.0,
+      "fraction of \u0394x variance in this mode": 0.0005062016048987503,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 78.0,
+      "fraction of \u0394x variance in this mode": 0.00026724997791848317,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 79.0,
+      "fraction of \u0394x variance in this mode": 7.889409439888105e-05,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 80.0,
+      "fraction of \u0394x variance in this mode": 4.513088735448203e-33,
+      "series": "sycophancy \u00b7 florist \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular-value index (mode)": 1.0,
+      "fraction of \u0394x variance in this mode": 0.15227345396850148,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 2.0,
+      "fraction of \u0394x variance in this mode": 0.07629154835330366,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 3.0,
+      "fraction of \u0394x variance in this mode": 0.06157523246487852,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 4.0,
+      "fraction of \u0394x variance in this mode": 0.051568389156426565,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 5.0,
+      "fraction of \u0394x variance in this mode": 0.04936992092237615,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 6.0,
+      "fraction of \u0394x variance in this mode": 0.039864397958956854,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 7.0,
+      "fraction of \u0394x variance in this mode": 0.032123627295958614,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 8.0,
+      "fraction of \u0394x variance in this mode": 0.029901523509048667,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 9.0,
+      "fraction of \u0394x variance in this mode": 0.02788597144663349,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 10.0,
+      "fraction of \u0394x variance in this mode": 0.02553019977374496,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 11.0,
+      "fraction of \u0394x variance in this mode": 0.023590355134739407,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 12.0,
+      "fraction of \u0394x variance in this mode": 0.02081027103843906,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 13.0,
+      "fraction of \u0394x variance in this mode": 0.019812464194817428,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 14.0,
+      "fraction of \u0394x variance in this mode": 0.01785672321401384,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 15.0,
+      "fraction of \u0394x variance in this mode": 0.016773772403842452,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 16.0,
+      "fraction of \u0394x variance in this mode": 0.015394665159268855,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 17.0,
+      "fraction of \u0394x variance in this mode": 0.01479320971972234,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 18.0,
+      "fraction of \u0394x variance in this mode": 0.013713842222161283,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 19.0,
+      "fraction of \u0394x variance in this mode": 0.013066396604072108,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 20.0,
+      "fraction of \u0394x variance in this mode": 0.012622799753503874,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 21.0,
+      "fraction of \u0394x variance in this mode": 0.012136370773838999,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 22.0,
+      "fraction of \u0394x variance in this mode": 0.011479534809232623,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 23.0,
+      "fraction of \u0394x variance in this mode": 0.011082763752025625,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 24.0,
+      "fraction of \u0394x variance in this mode": 0.010035454922133098,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 25.0,
+      "fraction of \u0394x variance in this mode": 0.009328015240109695,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 26.0,
+      "fraction of \u0394x variance in this mode": 0.00894902226102691,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 27.0,
+      "fraction of \u0394x variance in this mode": 0.008416517070286992,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 28.0,
+      "fraction of \u0394x variance in this mode": 0.008137623780984976,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 29.0,
+      "fraction of \u0394x variance in this mode": 0.008111769614732678,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 30.0,
+      "fraction of \u0394x variance in this mode": 0.007978260371065374,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 31.0,
+      "fraction of \u0394x variance in this mode": 0.0076788744583334845,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 32.0,
+      "fraction of \u0394x variance in this mode": 0.007342932862815835,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 33.0,
+      "fraction of \u0394x variance in this mode": 0.007043651261932988,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 34.0,
+      "fraction of \u0394x variance in this mode": 0.006815605270341366,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 35.0,
+      "fraction of \u0394x variance in this mode": 0.006700648126797326,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 36.0,
+      "fraction of \u0394x variance in this mode": 0.006640288760211591,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 37.0,
+      "fraction of \u0394x variance in this mode": 0.006403273864698506,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 38.0,
+      "fraction of \u0394x variance in this mode": 0.006253288620113439,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 39.0,
+      "fraction of \u0394x variance in this mode": 0.00609510273710946,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 40.0,
+      "fraction of \u0394x variance in this mode": 0.005832430147298122,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 41.0,
+      "fraction of \u0394x variance in this mode": 0.0054214189189458785,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 42.0,
+      "fraction of \u0394x variance in this mode": 0.005307828302503976,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 43.0,
+      "fraction of \u0394x variance in this mode": 0.005177363251196769,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 44.0,
+      "fraction of \u0394x variance in this mode": 0.0051205324140296575,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 45.0,
+      "fraction of \u0394x variance in this mode": 0.004911480650746051,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 46.0,
+      "fraction of \u0394x variance in this mode": 0.004811481556543964,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 47.0,
+      "fraction of \u0394x variance in this mode": 0.00466356655882729,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 48.0,
+      "fraction of \u0394x variance in this mode": 0.00446954540856177,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 49.0,
+      "fraction of \u0394x variance in this mode": 0.004324943305242307,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 50.0,
+      "fraction of \u0394x variance in this mode": 0.004259998897631099,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 51.0,
+      "fraction of \u0394x variance in this mode": 0.00424188167658303,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 52.0,
+      "fraction of \u0394x variance in this mode": 0.0040067936716597745,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 53.0,
+      "fraction of \u0394x variance in this mode": 0.003990402576029002,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 54.0,
+      "fraction of \u0394x variance in this mode": 0.0038958373247681404,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 55.0,
+      "fraction of \u0394x variance in this mode": 0.0037022557883102285,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 56.0,
+      "fraction of \u0394x variance in this mode": 0.0035684008159747884,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 57.0,
+      "fraction of \u0394x variance in this mode": 0.0034792881263603827,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 58.0,
+      "fraction of \u0394x variance in this mode": 0.0034137132048117523,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 59.0,
+      "fraction of \u0394x variance in this mode": 0.003276115066917403,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 60.0,
+      "fraction of \u0394x variance in this mode": 0.003169419805913507,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 61.0,
+      "fraction of \u0394x variance in this mode": 0.003077569579648554,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 62.0,
+      "fraction of \u0394x variance in this mode": 0.002901799130266745,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 63.0,
+      "fraction of \u0394x variance in this mode": 0.0028709522685863567,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 64.0,
+      "fraction of \u0394x variance in this mode": 0.0028012278697929346,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 65.0,
+      "fraction of \u0394x variance in this mode": 0.0026839967555352512,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 66.0,
+      "fraction of \u0394x variance in this mode": 0.0026165789836515244,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 67.0,
+      "fraction of \u0394x variance in this mode": 0.002578223858743406,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 68.0,
+      "fraction of \u0394x variance in this mode": 0.0023766070163714664,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 69.0,
+      "fraction of \u0394x variance in this mode": 0.002288229662077135,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 70.0,
+      "fraction of \u0394x variance in this mode": 0.0022168131076915234,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 71.0,
+      "fraction of \u0394x variance in this mode": 0.002128938885391545,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 72.0,
+      "fraction of \u0394x variance in this mode": 0.0018817560864849297,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 73.0,
+      "fraction of \u0394x variance in this mode": 0.001671856573637815,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 74.0,
+      "fraction of \u0394x variance in this mode": 0.0016129533308507165,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 75.0,
+      "fraction of \u0394x variance in this mode": 0.0013890385723085098,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 76.0,
+      "fraction of \u0394x variance in this mode": 0.0011087541182602956,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 77.0,
+      "fraction of \u0394x variance in this mode": 0.0006503937207306205,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 78.0,
+      "fraction of \u0394x variance in this mode": 0.0005396225678470081,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 79.0,
+      "fraction of \u0394x variance in this mode": 0.00011222759106810509,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 80.0,
+      "fraction of \u0394x variance in this mode": 4.337034104851982e-33,
+      "series": "sycophancy \u00b7 medical doctor \u00b7 rank-16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular-value index (mode)": 1.0,
+      "fraction of \u0394x variance in this mode": 0.85,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 2.0,
+      "fraction of \u0394x variance in this mode": 0.08,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 3.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 4.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 5.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 6.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 7.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 8.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 9.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 10.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 11.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 12.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 13.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 14.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 15.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 16.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 17.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 18.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 19.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 20.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 21.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 22.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 23.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 24.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 25.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 26.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 27.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 28.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 29.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 30.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 31.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 32.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 33.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 34.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 35.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 36.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 37.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 38.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 39.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular-value index (mode)": 40.0,
+      "fraction of \u0394x variance in this mode": 0.0,
+      "series": "rank-1 ideal (H1, illustrative)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 200
+}

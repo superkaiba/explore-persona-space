@@ -80,7 +80,7 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    orchestrator crash between submit and lease-write leaves an
    ``UNKNOWN_SUBMITTED`` recovery state.
 7. **GCP attempt-count guard** — a per-issue/day attempt counter caps
-   auto-chain GCP attempts at ``MAX_GCP_ATTEMPTS_PER_DAY`` (default 5).
+   auto-chain GCP attempts at ``MAX_GCP_ATTEMPTS_PER_DAY`` (default 8).
    It counts ACTUAL create attempts across the #656 fallback-ladder rungs
    (a headroom-skip does NOT consume one) and is RE-READ each rung. At the
    cap the ladder STOPS issuing GCP creates (zero credit spent) and the
@@ -176,7 +176,10 @@ DEFAULT_POLL_INTERVAL: float = 5.0
 #: Per-issue/day cap on auto-escalation to GCP. NOT a dollar cap (see
 #: ``tests/test_no_dollar_budget_caps.py``); this counts ATTEMPTS so a
 #: broken classifier cannot loop into credit burn. Tunable per call.
-MAX_GCP_ATTEMPTS_PER_DAY: int = 5
+#: #680: bumped 5 -> 8 to cover the length-aware short-job ladder (up to 5
+#: rungs: spot-80, spot-40, flex-80, ondemand-80, ondemand-40) plus a
+#: same-day retry margin; still an attempt COUNT, never a dollar cap.
+MAX_GCP_ATTEMPTS_PER_DAY: int = 8
 
 #: Cancel state-machine: how long to keep polling for the job to leave
 #: the live queue after ``scancel``. SLURM robots have no ``sacct`` so
@@ -1855,60 +1858,147 @@ def _machine_label(machine: MachineSpec) -> str:
     return machine.gpu_kind.lower().replace("-", "_")
 
 
-def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
-    """Ordered ``(spec, rung_label)`` GCP provisioning attempts, cheapest first.
+def _flex_start_rung(spec: RunSpec, machine: MachineSpec) -> tuple[RunSpec, str]:
+    """A FLEX_START (DWS flex-start) ladder rung for ``machine``.
 
-    The cost-ordered fallback ladder (#656) BOTH the auto-GCP path
+    Threads ``provisioning_model=FLEX_START`` via :func:`_with_machine`; the
+    request-validity window (``DEFAULT_REQUEST_VALID_FOR_DURATION='2h'``) and
+    the 7-day max-run-duration cap are resolved / asserted DOWNSTREAM at
+    :func:`gcp.render_create_argv` (``resolve_request_valid_for_duration`` /
+    ``_assert_max_run_within_flex_cap``) — the router does not set them. Label
+    ``flexstart_<gpu_kind>`` (e.g. ``flexstart_a100_80``). #680.
+    """
+    return (
+        _with_machine(spec, machine, provisioning="FLEX_START"),
+        f"flexstart_{_machine_label(machine)}",
+    )
+
+
+def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
+    """Ordered ``(spec, rung_label)`` GCP provisioning attempts, length-aware.
+
+    The cost-ordered fallback ladder BOTH the auto-GCP path
     (:func:`_attempt_gcp_lane`) and the explicit ``backend: gcp`` path
     (:func:`_override_free_or_gcp`) walk, so the two get IDENTICAL fallback
-    behavior (acceptance criterion 3 / the #654 fix):
+    behavior (acceptance criterion 3 / the #654 fix). The order is keyed on
+    job LENGTH (:func:`_is_short_job`) — #680:
 
-    * Rung 1: on-demand — the spec as-is (today's behavior), resolving the
-      intent's mapped machine. Label ``ondemand_<gpu_kind>`` (e.g.
-      ``ondemand_a100_80`` for a 7B LoRA, ``ondemand_l4`` for ``debug``).
-    * Rung 2: on-demand A100-40 (``a2-highgpu-1g``) — only when the intent
-      fits in 40 GB (:func:`gcp.a100_40_fallback_for_intent`).
-      Label ``ondemand_a100_40``.
-    * Rung 3: SPOT (the rung-1 machine) — only when the job is "short"
-      (:func:`_is_short_job`). Label ``spot_<gpu_kind>``.
-    * Rung 4: SPOT A100-40 — only when the job is short AND fits 40 GB.
-      Label ``spot_a100_40``.
+    **SHORT jobs** (known length <= ``EPS_GCP_SPOT_MAX_GPU_HOURS`` OR
+    ``spec.extra["spot_tolerant"]``) — spot leads, because a short job
+    absorbs a spot preemption cheaply (#659 failover / checkpoint-resume),
+    and spot is the cheapest live pool; flex sits between spot and on-demand
+    as the "queue for capacity rather than fail" middle rung:
+
+    1. SPOT (rung-1 machine) — ``spot_<gpu_kind>``. *Always present.*
+    2. SPOT A100-40 (``a2-highgpu-1g``) — only when the intent fits in 40 GB
+       (:func:`gcp.a100_40_fallback_for_intent`). ``spot_a100_40``.
+    3. FLEX_START (rung-1 machine) — ``flexstart_<gpu_kind>``.
+    4. on-demand (rung-1 machine) — the spec as-is. ``ondemand_<gpu_kind>``.
+    5. on-demand A100-40 — only when fits 40 GB. ``ondemand_a100_40``.
+
+    **LONG / UNKNOWN-length jobs** (known length > threshold, OR unknown
+    length) — SPOT is barred (preemption too costly); flex —
+    non-preemptible-once-running, queues for capacity — leads:
+
+    1. FLEX_START (rung-1 machine) — ``flexstart_<gpu_kind>``.
+    2. on-demand (rung-1 machine) — the spec as-is. ``ondemand_<gpu_kind>``.
+    3. on-demand A100-40 — only when fits 40 GB. ``ondemand_a100_40``.
+
+    **CPU-only intents (#677)** (``base.gpu_count == 0``, e.g. ``cpu-bigmem``)
+    short-circuit BEFORE any length / pin branching: they yield exactly one
+    on-demand CPU rung (``ondemand_<gpu_kind>``) and NEVER pick up a spot,
+    flex, or A100-40 rung. The short-circuit is load-bearing because
+    :func:`_is_short_job` floors ``gpu_count`` to 1, which would otherwise
+    promote a SHORT CPU job onto the spot/flex rungs.
 
     Each label is COMPOSED from the resolved machine's accelerator kind
     (:func:`_machine_label`) rather than hardcoded, so a rung's label always
-    reflects the machine actually attempted (#672).
+    reflects the machine actually attempted (#672). Rungs that do not apply
+    to this intent / length are simply absent, so a long ``ft-7b`` (no
+    A100-40 fallback, not short) yields just (flex-80, ondemand-80) and the
+    ladder falls through to the next lane / RunPod with NO spot rung
+    (acceptance criterion 2). Each rung is a :func:`dataclasses.replace`
+    carrying the right machine override + provisioning model so the create
+    resolves the rung's true machine.
 
-    Rungs that do not apply to this intent / length are simply absent, so a
-    long ``ft-7b`` (no A100-40 fallback, not short) yields ONLY rung 1 and
-    the ladder falls straight through to the next lane / RunPod, skipping
-    every spot rung (acceptance criterion 2). Each rung is a
-    :func:`dataclasses.replace` carrying the right machine override +
-    provisioning model so the create resolves the rung's true machine.
+    **CLI provisioning-model pin honored (#680).** When the CALLER explicitly
+    pinned ``spec.extra["provisioning_model"]`` (the ``dispatch_issue.py
+    --provisioning-model SPOT|FLEX_START|STANDARD`` deliberate override, #537),
+    the length-aware default order is NOT applied — the pin is a hard override.
+    The ladder then walks ONLY the pinned provisioning (base machine, then the
+    A100-40 fallback when the intent fits 40 GB), so a launch pinned to SPOT
+    never silently launches on flex-start / on-demand. ``spec.extra`` is the
+    ORIGINAL caller spec here (the per-rung machine override is applied INSIDE
+    the returned tuples via :func:`_with_machine`), so this key reflects only a
+    caller pin, never a ladder-set value.
     """
-    base = machine_for_intent(spec)  # resolves the as-is intent (rung 1)
+    base = machine_for_intent(spec)  # resolves the as-is intent
     # CPU-only intent (#677): no GPU fallback ladder applies. The A100-40 rung
-    # is a "smaller GPU" fallback and the spot rungs trade preemption risk for
-    # cost on a SHORT job — neither makes sense for a CPU analysis phase that
-    # wants a reliable on-demand machine to finish a long HF store download.
-    # Yield exactly the single on-demand CPU rung. (Without this, _is_short_job
-    # floors gpu_count to 1 via max(1, machine.gpu_count) in
-    # _estimated_gpu_hours, so a SHORT CPU job WOULD append a spot rung — the
-    # short-circuit is load-bearing, not redundant.)
+    # is a "smaller GPU" fallback, the spot rungs trade preemption risk for cost
+    # on a SHORT job, and the flex rung queues for GPU capacity — NONE of these
+    # make sense for a CPU analysis phase that wants a reliable on-demand machine
+    # to finish a long HF store download. Yield exactly the single on-demand CPU
+    # rung. This MUST come before the length-aware branching below: _is_short_job
+    # floors gpu_count to 1 via max(1, machine.gpu_count) in _estimated_gpu_hours,
+    # so a SHORT CPU job WOULD otherwise be promoted onto spot/flex rungs — the
+    # short-circuit is load-bearing, not redundant. It also precedes the caller
+    # provisioning-model pin so a pinned CPU launch never silently picks up the
+    # A100-40 fallback rung.
     if base.gpu_count == 0:
         return [(spec, f"ondemand_{_machine_label(base)}")]
-    rungs: list[tuple[RunSpec, str]] = [(spec, f"ondemand_{_machine_label(base)}")]
     a40 = a100_40_fallback_for_intent(spec)
-    if a40 is not None:
-        rungs.append(
-            (_with_machine(spec, a40, provisioning="STANDARD"), f"ondemand_{_machine_label(a40)}")
+    pinned = (spec.extra or {}).get("provisioning_model")
+    if pinned is not None:
+        # CLI provisioning-model pin (#537/#680): walk ONLY the pinned model.
+        pinned_model = str(pinned).upper()
+        # Use the SAME label vocabulary the length-aware ladder emits, so a
+        # pinned rung's label is consistent with an auto-selected one.
+        prefix = {"SPOT": "spot", "FLEX_START": "flexstart", "STANDARD": "ondemand"}.get(
+            pinned_model, pinned_model.lower()
         )
+        pinned_rungs: list[tuple[RunSpec, str]] = [
+            (
+                _with_machine(spec, base, provisioning=pinned_model),
+                f"{prefix}_{_machine_label(base)}",
+            )
+        ]
+        if a40 is not None:
+            pinned_rungs.append(
+                (
+                    _with_machine(spec, a40, provisioning=pinned_model),
+                    f"{prefix}_{_machine_label(a40)}",
+                )
+            )
+        return pinned_rungs
+    rungs: list[tuple[RunSpec, str]] = []
     if _is_short_job(spec, base):
+        # SHORT: spot-first -> flex -> on-demand (spot preemption is cheap here)
         rungs.append(
             (_with_machine(spec, base, provisioning="SPOT"), f"spot_{_machine_label(base)}")
         )
         if a40 is not None:
             rungs.append(
                 (_with_machine(spec, a40, provisioning="SPOT"), f"spot_{_machine_label(a40)}")
+            )
+        rungs.append(_flex_start_rung(spec, base))
+        rungs.append((spec, f"ondemand_{_machine_label(base)}"))
+        if a40 is not None:
+            rungs.append(
+                (
+                    _with_machine(spec, a40, provisioning="STANDARD"),
+                    f"ondemand_{_machine_label(a40)}",
+                )
+            )
+    else:
+        # LONG / UNKNOWN: flex-first -> on-demand, NO spot (preemption too costly)
+        rungs.append(_flex_start_rung(spec, base))
+        rungs.append((spec, f"ondemand_{_machine_label(base)}"))
+        if a40 is not None:
+            rungs.append(
+                (
+                    _with_machine(spec, a40, provisioning="STANDARD"),
+                    f"ondemand_{_machine_label(a40)}",
+                )
             )
     return rungs
 
@@ -3467,7 +3557,7 @@ def _attempt_gcp_lane(
     requested_kind: BackendKind | None = None,
     count_attempt_cap: bool = True,
 ) -> RouteResult | None:
-    """Attempt the GCP lane by WALKING the cost-ordered fallback ladder (#656).
+    """Attempt the GCP lane by WALKING the length-aware fallback ladder (#656/#680).
 
     ``reason`` / ``requested_kind`` label the launched :class:`RouteResult`:
     the auto chain uses ``auto_fallback_gcp`` / ``None`` (the default); the
@@ -3481,9 +3571,10 @@ def _attempt_gcp_lane(
     never touched the counter); it still ladders + falls to the RunPod rung
     on exhaustion.
 
-    The ladder (:func:`_gcp_ladder_specs`) is, cheapest-effective first:
-    on-demand A100-80 → on-demand A100-40 (fits-40GB intents) → SPOT
-    A100-80 (short jobs) → SPOT A100-40 (short + fits-40GB). Each rung runs
+    The ladder is keyed on job LENGTH (#680) — short jobs lead with SPOT,
+    long / unknown-length jobs lead with FLEX_START and bar SPOT; CPU-only
+    intents short-circuit to a single on-demand rung. See
+    :func:`_gcp_ladder_specs` for the full per-length rung order. Each rung runs
     the SAME pre-create headroom check + launch that the single GCP attempt
     used to run; a rung that fails on a POSITIVE insufficient-headroom
     reading OR a :class:`GcpProvisioningError` capacity/zone miss records

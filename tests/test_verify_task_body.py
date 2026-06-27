@@ -122,17 +122,19 @@ def test_good_body_passes_all():
     # EPM_VERIFY_BODY_NO_HF=1, and check 24
     # (`check_figure_text_vs_body_tokens`, WARN), a NO-OP PASS here because
     # this fixture's only figure pins a fake sha with no `.meta.json` in
-    # the git tree. verify_text prepends check 0 (body-nonstub) +
-    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (29
-    # functions), then appends the Goal soft check, the Lens 14
+    # the git tree. check 25 (`check_audit_availability_claims_match_hf`)
+    # is a vacuous PASS here because this fixture carries no
+    # availability-denial-near-artifact line. verify_text prepends check 0
+    # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
+    # (30 functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, AND the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc) →
-    # 36 results total (2 prepended + CHECKS[1:]=29 + 5 appended). The
+    # 37 results total (2 prepended + CHECKS[1:]=30 + 5 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 36
+    assert len(results) == 37
 
 
 def test_missing_confidence_tag():
@@ -2238,7 +2240,7 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 30 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 31 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
@@ -2248,16 +2250,18 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the THREE generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the FOUR generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via
-    `huggingface_hub.list_repo_files`), and check 24
+    `huggingface_hub.list_repo_files`), check 24
     (`check_figure_text_vs_body_tokens`, WARN: figure-embedded `.meta.json`
     text vs body prose — stale fraction / softened-token staleness, #667
-    r2). The migration is a RETARGET — every former check was kept
-    (sometimes dormant, e.g. `check_figure_caption`) so downstream tests
-    stay valid; the v3 checks PASS-skip on non-v3 bodies.
+    r2), and check 25 (`check_audit_availability_claims_match_hf`: a body
+    "not uploaded / cannot be audited" claim vs the artifact's actual HF
+    existence, #653 r6). The migration is a RETARGET — every former check
+    was kept (sometimes dormant, e.g. `check_figure_caption`) so downstream
+    tests stay valid; the v3 checks PASS-skip on non-v3 bodies.
 
     Checks appended OUTSIDE CHECKS inside `verify_text` (they need
     something beyond the body string): the Goal soft check (needs
@@ -2265,9 +2269,9 @@ def test_checks_list_size():
     the check-16 lr-matches-plan (needs the plan), the check-17 Context
     provenance row (needs frontmatter + original-body.md), and the v3
     check-21 body-Parameters-⊆-doc (needs the methodology doc path). So
-    `verify_text` returns 36 results, but `CHECKS` stays at 30.
+    `verify_text` returns 37 results, but `CHECKS` stays at 31.
     """
-    assert len(verify_task_body.CHECKS) == 30
+    assert len(verify_task_body.CHECKS) == 31
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───

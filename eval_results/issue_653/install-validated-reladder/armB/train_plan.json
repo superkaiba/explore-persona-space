@@ -1,0 +1,605 @@
+{
+ "planned": [
+  {
+   "cell_id": "marker__florist__r1__seed42",
+   "cfg": {
+    "lr": 5e-06,
+    "epochs": 20,
+    "max_length": 2048,
+    "max_steps": null,
+    "lr_scheduler_type": null,
+    "warmup_ratio": null,
+    "lora_dropout": null,
+    "dose_checkpoints": null,
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 1,
+    "lora_alpha": 2,
+    "marker_only_loss": true,
+    "marker_band_stop": true,
+    "marker_band_trajectory_path": "eval_results/issue_653/install-validated-reladder/armB/trajectories/marker__florist__r1__seed42_band.json",
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "marker__florist__r4__seed42",
+   "cfg": {
+    "lr": 5e-06,
+    "epochs": 20,
+    "max_length": 2048,
+    "max_steps": null,
+    "lr_scheduler_type": null,
+    "warmup_ratio": null,
+    "lora_dropout": null,
+    "dose_checkpoints": null,
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 4,
+    "lora_alpha": 8,
+    "marker_only_loss": true,
+    "marker_band_stop": true,
+    "marker_band_trajectory_path": "eval_results/issue_653/install-validated-reladder/armB/trajectories/marker__florist__r4__seed42_band.json",
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "marker__florist__r16__seed42",
+   "cfg": {
+    "lr": 5e-06,
+    "epochs": 20,
+    "max_length": 2048,
+    "max_steps": null,
+    "lr_scheduler_type": null,
+    "warmup_ratio": null,
+    "lora_dropout": null,
+    "dose_checkpoints": null,
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "marker_only_loss": true,
+    "marker_band_stop": true,
+    "marker_band_trajectory_path": "eval_results/issue_653/install-validated-reladder/armB/trajectories/marker__florist__r16__seed42_band.json",
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "marker__medical_doctor__r1__seed42",
+   "cfg": {
+    "lr": 5e-06,
+    "epochs": 20,
+    "max_length": 2048,
+    "max_steps": null,
+    "lr_scheduler_type": null,
+    "warmup_ratio": null,
+    "lora_dropout": null,
+    "dose_checkpoints": null,
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 1,
+    "lora_alpha": 2,
+    "marker_only_loss": true,
+    "marker_band_stop": true,
+    "marker_band_trajectory_path": "eval_results/issue_653/install-validated-reladder/armB/trajectories/marker__medical_doctor__r1__seed42_band.json",
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "marker__medical_doctor__r4__seed42",
+   "cfg": {
+    "lr": 5e-06,
+    "epochs": 20,
+    "max_length": 2048,
+    "max_steps": null,
+    "lr_scheduler_type": null,
+    "warmup_ratio": null,
+    "lora_dropout": null,
+    "dose_checkpoints": null,
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 4,
+    "lora_alpha": 8,
+    "marker_only_loss": true,
+    "marker_band_stop": true,
+    "marker_band_trajectory_path": "eval_results/issue_653/install-validated-reladder/armB/trajectories/marker__medical_doctor__r4__seed42_band.json",
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "marker__medical_doctor__r16__seed42",
+   "cfg": {
+    "lr": 5e-06,
+    "epochs": 20,
+    "max_length": 2048,
+    "max_steps": null,
+    "lr_scheduler_type": null,
+    "warmup_ratio": null,
+    "lora_dropout": null,
+    "dose_checkpoints": null,
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "marker_only_loss": true,
+    "marker_band_stop": true,
+    "marker_band_trajectory_path": "eval_results/issue_653/install-validated-reladder/armB/trajectories/marker__medical_doctor__r16__seed42_band.json",
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "sycophancy__florist__r1__seed42",
+   "cfg": {
+    "lr": 1e-05,
+    "epochs": 3,
+    "max_length": 1024,
+    "max_steps": 132,
+    "lr_scheduler_type": "cosine",
+    "warmup_ratio": 0.03,
+    "lora_dropout": null,
+    "dose_checkpoints": [
+     5,
+     9,
+     13,
+     18,
+     26,
+     35,
+     44,
+     88,
+     132
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 1,
+    "lora_alpha": 2,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "sycophancy__florist__r4__seed42",
+   "cfg": {
+    "lr": 1e-05,
+    "epochs": 3,
+    "max_length": 1024,
+    "max_steps": 132,
+    "lr_scheduler_type": "cosine",
+    "warmup_ratio": 0.03,
+    "lora_dropout": null,
+    "dose_checkpoints": [
+     5,
+     9,
+     13,
+     18,
+     26,
+     35,
+     44,
+     88,
+     132
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 4,
+    "lora_alpha": 8,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "sycophancy__florist__r16__seed42",
+   "cfg": {
+    "lr": 1e-05,
+    "epochs": 3,
+    "max_length": 1024,
+    "max_steps": 132,
+    "lr_scheduler_type": "cosine",
+    "warmup_ratio": 0.03,
+    "lora_dropout": null,
+    "dose_checkpoints": [
+     5,
+     9,
+     13,
+     18,
+     26,
+     35,
+     44,
+     88,
+     132
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "sycophancy__medical_doctor__r1__seed42",
+   "cfg": {
+    "lr": 1e-05,
+    "epochs": 3,
+    "max_length": 1024,
+    "max_steps": 132,
+    "lr_scheduler_type": "cosine",
+    "warmup_ratio": 0.03,
+    "lora_dropout": null,
+    "dose_checkpoints": [
+     5,
+     9,
+     13,
+     18,
+     26,
+     35,
+     44,
+     88,
+     132
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 1,
+    "lora_alpha": 2,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "sycophancy__medical_doctor__r4__seed42",
+   "cfg": {
+    "lr": 1e-05,
+    "epochs": 3,
+    "max_length": 1024,
+    "max_steps": 132,
+    "lr_scheduler_type": "cosine",
+    "warmup_ratio": 0.03,
+    "lora_dropout": null,
+    "dose_checkpoints": [
+     5,
+     9,
+     13,
+     18,
+     26,
+     35,
+     44,
+     88,
+     132
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 4,
+    "lora_alpha": 8,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "sycophancy__medical_doctor__r16__seed42",
+   "cfg": {
+    "lr": 1e-05,
+    "epochs": 3,
+    "max_length": 1024,
+    "max_steps": 132,
+    "lr_scheduler_type": "cosine",
+    "warmup_ratio": 0.03,
+    "lora_dropout": null,
+    "dose_checkpoints": [
+     5,
+     9,
+     13,
+     18,
+     26,
+     35,
+     44,
+     88,
+     132
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "em__florist__r1__seed42",
+   "cfg": {
+    "lr": 2e-05,
+    "epochs": 1,
+    "max_length": 1024,
+    "max_steps": 200,
+    "lr_scheduler_type": "linear",
+    "warmup_ratio": 0.03,
+    "lora_dropout": 0.05,
+    "dose_checkpoints": [
+     40,
+     80,
+     120,
+     160,
+     200
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 1,
+    "lora_alpha": 2,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "em__florist__r4__seed42",
+   "cfg": {
+    "lr": 2e-05,
+    "epochs": 1,
+    "max_length": 1024,
+    "max_steps": 200,
+    "lr_scheduler_type": "linear",
+    "warmup_ratio": 0.03,
+    "lora_dropout": 0.05,
+    "dose_checkpoints": [
+     40,
+     80,
+     120,
+     160,
+     200
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 4,
+    "lora_alpha": 8,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "em__florist__r16__seed42",
+   "cfg": {
+    "lr": 2e-05,
+    "epochs": 1,
+    "max_length": 1024,
+    "max_steps": 200,
+    "lr_scheduler_type": "linear",
+    "warmup_ratio": 0.03,
+    "lora_dropout": 0.05,
+    "dose_checkpoints": [
+     40,
+     80,
+     120,
+     160,
+     200
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "em__medical_doctor__r1__seed42",
+   "cfg": {
+    "lr": 2e-05,
+    "epochs": 1,
+    "max_length": 1024,
+    "max_steps": 200,
+    "lr_scheduler_type": "linear",
+    "warmup_ratio": 0.03,
+    "lora_dropout": 0.05,
+    "dose_checkpoints": [
+     40,
+     80,
+     120,
+     160,
+     200
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 1,
+    "lora_alpha": 2,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "em__medical_doctor__r4__seed42",
+   "cfg": {
+    "lr": 2e-05,
+    "epochs": 1,
+    "max_length": 1024,
+    "max_steps": 200,
+    "lr_scheduler_type": "linear",
+    "warmup_ratio": 0.03,
+    "lora_dropout": 0.05,
+    "dose_checkpoints": [
+     40,
+     80,
+     120,
+     160,
+     200
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 4,
+    "lora_alpha": 8,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  },
+  {
+   "cell_id": "em__medical_doctor__r16__seed42",
+   "cfg": {
+    "lr": 2e-05,
+    "epochs": 1,
+    "max_length": 1024,
+    "max_steps": 200,
+    "lr_scheduler_type": "linear",
+    "warmup_ratio": 0.03,
+    "lora_dropout": 0.05,
+    "dose_checkpoints": [
+     40,
+     80,
+     120,
+     160,
+     200
+    ],
+    "seed": 42,
+    "gpu_id": 0,
+    "lora_targets": [
+     "q_proj",
+     "k_proj",
+     "v_proj",
+     "o_proj"
+    ],
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "marker_only_loss": false,
+    "marker_band_stop": false,
+    "marker_band_trajectory_path": null,
+    "full_ft": false
+   }
+  }
+ ],
+ "mode": "gpu",
+ "trained": true,
+ "metadata": {
+  "task": 653,
+  "schema_version": 1,
+  "git_commit": "b4e40869f",
+  "timestamp_utc": "2026-06-27T00:22:07.616732+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--gpu-mode",
+   "--provision",
+   "1",
+   "--out-root",
+   "eval_results/issue_653/install-validated-reladder"
+  ],
+  "phase": "train"
+ }
+}

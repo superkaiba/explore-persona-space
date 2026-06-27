@@ -2470,8 +2470,17 @@ def _vm_reclaim_hf_hub_cache(now: float, dry_run: bool) -> str:
 
     def _scan_and_evict() -> None:
         try:
+            # The VM redirects the HF cache (HF_HUB_CACHE / HF_HOME), so a bare
+            # scan_cache_dir() looks at the unset default (~/.cache/huggingface/hub)
+            # and no-ops at the worst moment (reclaims 0 GiB at VM-disk CRITICAL,
+            # 2026-06-26 #658 incident). Point it at the real cache dir.
+            _hub_cache = os.environ.get("HF_HUB_CACHE") or (
+                os.path.join(os.environ["HF_HOME"], "hub") if os.environ.get("HF_HOME") else None
+            )
             try:
-                cache_info = scan_cache_dir()
+                cache_info = (
+                    scan_cache_dir(cache_dir=_hub_cache) if _hub_cache else scan_cache_dir()
+                )
             except Exception as e:  # fail-soft: a disk alert must never crash its own pass
                 outcome.append((f"hf-hub-ttl skipped (scan failed: {e})", True))
                 return

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 684,
+  "highest_id": 686,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4059,9 +4059,9 @@
       "goal": "Test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features, via two probes \u2014 (A) the base model's autoregressive write\u2192read map under random-bias steering, and (B) how real finetunes shift activations across the rank ladder (rank-1 LoRA \u2192 higher-rank LoRA \u2192 full fine-tuning) \u2014 run across \u22653 installed behaviors and a few source contexts (not a single behavior/context) so the verdict generalizes, characterizing in each whether the structure is low-rank and read\u2194write-aligned (clean) versus rotated or diffuse, and whether that verdict is consistent across behavior, context, and edit rank.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/653",
-      "status": "followups_running",
-      "title": "Across 3 behaviors \u00d7 2 contexts \u00d7 3 LoRA ranks, weakly-installed LoRA edits produce a diffuse activation shift with no read\u2194write alignment (3 of 18 cells installed enough to test; full fine-tuning untested) (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/653",
+      "status": "awaiting_promotion",
+      "title": "On the two sycophancy rank-16 LoRA cells that installed strongly, the activation shift is diffuse (rank-k 39/45) and unaligned with the behavior read-out; cross-behavior, cross-rank and full-FT generalization is untested (2 of 18 cells installed) (LOW confidence)"
     },
     "654": {
       "goal": "Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user query displaces the last-token residual-stream state away from the context-established state (centered cosine + CKA + shuffled-pair floor) across persona / generic-instruction / ICL / wild-chat contexts and varied queries, to characterize context-dominant vs query-dominant layer regimes.",
@@ -4247,8 +4247,8 @@
     "676": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/676",
-      "status": "running",
+      "path": "tasks/completed/676",
+      "status": "completed",
       "title": "Fleet dispatcher: overlap CPU judging with GPU work + multi-GPU parallel cell execution"
     },
     "677": {
@@ -4282,8 +4282,8 @@
     "680": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/680",
-      "status": "running",
+      "path": "tasks/completed/680",
+      "status": "completed",
       "title": "GCP auto-lane: length-aware spot-first / flex-start ladder (on-demand A100 is stockout-prone; spot is a live separate pool, flex-start is the canonical capacity answer)"
     },
     "681": {
@@ -4302,11 +4302,11 @@
     },
     "683": {
       "goal": "Test whether a behavior-dependent source key for the leakage context-gate (teacher-forced training-completion activation t_{C,B}, or the displacement delta_{C,B}=t_{C,B}-v_base(C)) predicts the realized gate g_real(C')=<w_hat,Delta_v(C')>/<w_hat,w_hat> better OUT-OF-SAMPLE than the theory's default context-only key k=c_C, and whether any winning key generalizes from the marker (rank-1 scalar-gate precondition holds; k=c_C already falsified in #604) to sycophancy (precondition unresolved per #637).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/683",
-      "status": "approved",
-      "title": "Does a behavior-dependent source key predict the leakage context-gate better than the context-only default \u2014 marker (precondition holds) vs sycophancy (precondition open)"
+      "path": "tasks/awaiting_promotion/683",
+      "status": "awaiting_promotion",
+      "title": "A training-completion source key predicts the leakage gate where the paper's context-only key fails; for sycophancy it is unreplicated against a wide chance null, for the marker only one of five sources clears its own null (LOW confidence)"
     },
     "684": {
       "has_clean_result": false,
@@ -4314,6 +4314,21 @@
       "path": "tasks/proposed/684",
       "status": "proposed",
       "title": "api_dispatch fast-follows: 429-exhaustion mislabel + unbounded fan-out + pick-time org binding (from #682 code review)"
+    },
+    "685": {
+      "goal": "Measure how a context's last-token residual-stream activation summary (the context vector) shifts when a behavioral instruction is appended, across diverse contexts, behaviors, and layers, and test whether the shift is a single context-independent behavior direction.",
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/685",
+      "status": "awaiting_promotion",
+      "title": "Appending a behavioral instruction moves the context vector along one dominant per-behavior direction, with a smaller context-specific residual riding on top (MODERATE confidence)"
+    },
+    "686": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/686",
+      "status": "completed",
+      "title": "workflow-fix: confirm-deleted guard in GcpBackend.teardown (#683 RUNNING zombie post phase=done)"
     },
     "69": {
       "has_clean_result": false,

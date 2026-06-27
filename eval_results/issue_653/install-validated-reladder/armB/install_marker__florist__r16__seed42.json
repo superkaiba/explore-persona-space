@@ -1,0 +1,35 @@
+{
+ "cell_id": "marker__florist__r16__seed42",
+ "behavior": "marker",
+ "rung": "r16",
+ "seed": 42,
+ "install": {
+  "dv_kind": "marker_four_float",
+  "logp_trained_minus_base": 0.11836442947387837,
+  "logp_trained_mean": -20.608092975616454,
+  "logp_base_mean": -20.726457405090333,
+  "z_marker_trained_minus_base": 0.07631835937499998,
+  "z_eos_trained_minus_base": 0.3093749999999993,
+  "eos_margin_delta": -0.23305664062499964,
+  "n_contexts": 20,
+  "note": "four-float slot read (trained-base) via compute_marker_slot_stats; EOS-margin is the preferred logit form (marker-leakage-measurement.md)"
+ },
+ "mode": "gpu",
+ "metadata": {
+  "task": 653,
+  "schema_version": 1,
+  "git_commit": "b4e40869f",
+  "timestamp_utc": "2026-06-27T02:42:42.618045+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--gpu-mode",
+   "--provision",
+   "1",
+   "--out-root",
+   "eval_results/issue_653/install-validated-reladder"
+  ],
+  "phase": "install"
+ }
+}

@@ -1,0 +1,68 @@
+{
+  "commit": "607912bbcb",
+  "created": "2026-06-27T07:18:53Z",
+  "figsize": [
+    4.5,
+    3.2
+  ],
+  "points": [
+    {
+      "layer": 7.0,
+      "mean consistency cos (over behaviors)": 0.7884014944235483,
+      "series": "instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "mean consistency cos (over behaviors)": 0.8064765632152557,
+      "series": "instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "mean consistency cos (over behaviors)": 0.7461334466934204,
+      "series": "instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "mean consistency cos (over behaviors)": 0.6402680079142252,
+      "series": "instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "mean consistency cos (over behaviors)": 0.6881677806377411,
+      "series": "base",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "mean consistency cos (over behaviors)": 0.7001376648743948,
+      "series": "base",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "mean consistency cos (over behaviors)": 0.6865219473838806,
+      "series": "base",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "mean consistency cos (over behaviors)": 0.5911420832077662,
+      "series": "base",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8
+}
