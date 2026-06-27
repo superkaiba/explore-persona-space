@@ -4311,8 +4311,8 @@
     "684": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/684",
-      "status": "planning",
+      "path": "tasks/approved/684",
+      "status": "approved",
       "title": "api_dispatch fast-follows: 429-exhaustion mislabel + unbounded fan-out + pick-time org binding (from #682 code review)"
     },
     "685": {
