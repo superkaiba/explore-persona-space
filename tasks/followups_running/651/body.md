@@ -27,7 +27,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_651.md](https://github.com/superkaiba/explore-persona-space/blob/c9c07f1e68b9495f772fb888bf346fa410f6d1a9/docs/methodology/issue_651.md) · [gist](https://gist.github.com/superkaiba/d234505b3e076d286e4dd512ec65cd92)
+**Methodology:** [docs/methodology/issue_651.md](https://github.com/superkaiba/explore-persona-space/blob/4adf2c968f3984263605752c1a2aee0d91c7e308/docs/methodology/issue_651.md) · [gist](https://gist.github.com/superkaiba/d234505b3e076d286e4dd512ec65cd92)
 
 ## Takeaways
 
@@ -178,7 +178,7 @@ Per-cell shift tensors (132 `.pt` + 132 manifests, recovered via chunked drain):
 
 ## Reproducibility
 
-- **Methodology reference:** [docs/methodology/issue_651.md](https://github.com/superkaiba/explore-persona-space/blob/c9c07f1e68b9495f772fb888bf346fa410f6d1a9/docs/methodology/issue_651.md) · [gist](https://gist.github.com/superkaiba/d234505b3e076d286e4dd512ec65cd92)
+- **Methodology reference:** [docs/methodology/issue_651.md](https://github.com/superkaiba/explore-persona-space/blob/4adf2c968f3984263605752c1a2aee0d91c7e308/docs/methodology/issue_651.md) · [gist](https://gist.github.com/superkaiba/d234505b3e076d286e4dd512ec65cd92)
 
 **Parameters:**
 
