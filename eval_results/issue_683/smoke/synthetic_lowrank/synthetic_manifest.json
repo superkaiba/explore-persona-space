@@ -1,0 +1,19 @@
+{
+  "mode": "lowrank",
+  "behavior": "sycophancy",
+  "source": "A1",
+  "n_targets": 14,
+  "hidden": 64,
+  "dv_path": "eval_results/issue_683/smoke/synthetic_lowrank/dv/A1_L0.pt",
+  "c_bank_path": "eval_results/issue_683/smoke/synthetic_lowrank/c_bank.pt",
+  "reproducibility": {
+    "git_commit": "4b6eda05dea93cf26f2c1ba5a4aae2efa412b7f4",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "python": "3.11.15",
+    "timestamp_utc": "2026-06-27T04:57:09+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "cuda_available": false,
+    "mode": "lowrank"
+  }
+}

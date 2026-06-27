@@ -60,7 +60,9 @@
         4.726258690581495
       ],
       "rank1_holds": false,
-      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/marker/A1_L14.pt"
+      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/marker/A1_L14.pt",
+      "g1_vs_greal_spearman": 0.4038290293855744,
+      "g1_vs_greal_u1_dot_what_sign": 1.0
     },
     {
       "source": "A2",
@@ -114,7 +116,9 @@
         5.773966644636626
       ],
       "rank1_holds": true,
-      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/marker/A2_L14.pt"
+      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/marker/A2_L14.pt",
+      "g1_vs_greal_spearman": 0.8918076580587713,
+      "g1_vs_greal_u1_dot_what_sign": 1.0
     },
     {
       "source": "A3",
@@ -168,7 +172,9 @@
         5.696410618781236
       ],
       "rank1_holds": false,
-      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/marker/A3_L14.pt"
+      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/marker/A3_L14.pt",
+      "g1_vs_greal_spearman": 0.9367624137163213,
+      "g1_vs_greal_u1_dot_what_sign": -1.0
     },
     {
       "source": "A4",
@@ -222,7 +228,9 @@
         5.004884473228093
       ],
       "rank1_holds": false,
-      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/marker/A4_L14.pt"
+      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/marker/A4_L14.pt",
+      "g1_vs_greal_spearman": 0.9541406945681213,
+      "g1_vs_greal_u1_dot_what_sign": -1.0
     },
     {
       "source": "A5",
@@ -276,7 +284,9 @@
         4.332368136833319
       ],
       "rank1_holds": false,
-      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/marker/A5_L14.pt"
+      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/marker/A5_L14.pt",
+      "g1_vs_greal_spearman": 0.9826357969723954,
+      "g1_vs_greal_u1_dot_what_sign": -1.0
     }
   ],
   "reproducibility": {
@@ -289,5 +299,20 @@
     "cuda_available": false,
     "behavior": "marker",
     "layer": 14
+  },
+  "g1_vs_greal": {
+    "definition": "spearman(g1(C'), g_real(C')) over held-out targets, g1(C')=<Delta_v(C'), u1_signed>, u1=top-left-SVD-dir of [Delta_v(C')], u1_signed sign-aligned to w_hat; g_real(C')=<w_hat,Delta_v(C')>/<w_hat,w_hat>",
+    "layer": 14,
+    "n_banks": 5,
+    "per_bank_spearman": {
+      "A1": 0.4038290293855744,
+      "A2": 0.8918076580587713,
+      "A3": 0.9367624137163213,
+      "A4": 0.9541406945681213,
+      "A5": 0.9826357969723954
+    },
+    "min": 0.4038290293855744,
+    "max": 0.9826357969723954,
+    "median": 0.9367624137163213
   }
 }

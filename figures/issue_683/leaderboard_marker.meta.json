@@ -1,126 +1,306 @@
 {
-  "commit": "c81e327093",
-  "created": "2026-06-27T07:50:39Z",
+  "commit": "0687e20961",
+  "created": "2026-06-27T09:49:46Z",
   "figsize": [
-    7.800000000000001,
-    4.0
+    11.200000000000001,
+    4.2
   ],
   "points": [
     {
       "category": "Context-only key\n(raw dot)",
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.37708565072302563,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.37708565072302563,
       "error": 0.36694104560622903,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "Context-only key\n(whitened)",
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.11546162402669634,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.11546162402669634,
       "error": 0.3640155728587319,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Context + displacement key\n(raw dot)",
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.7219132369299222,
-      "error": 0.16134037819799774,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "category": "Context + displacement key\n(whitened)",
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.525250278086763,
-      "error": 0.3028364849833147,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
       "category": "Training-completion key\n(raw dot)",
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.7472747497219132,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.7472747497219132,
       "error": 0.1929199110122358,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "Training-completion key\n(whitened)",
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.5261401557285873,
-      "error": 0.2926418242491657,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.4829810901001112,
+      "error": 0.24393214682981082,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context + displacement key\n(raw dot, identity \u03c8)",
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.5101223581757508,
+      "error": 0.3179977753058954,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context + displacement key\n(raw dot, ridge \u03c8)",
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.7219132369299222,
+      "error": 0.16134037819799774,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": -0.03939933259176864,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.03939933259176864,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 1.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": -0.2632258064516129,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.2632258064516129,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 2.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.510055617352614,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.49541713014460503,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 3.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.1696996662958843,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.19183537263626255,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 4.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.49541713014460503,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.1437931034482759,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 5.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.18963292547274746,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.510055617352614,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 0.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.6944827586206894,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.6944827586206894,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.4648053392658508,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.4648053392658508,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.8327363737486094,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.8812569521690766,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 3.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.7753726362625137,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.6796996662958842,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 4.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.8812569521690766,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.7797886540600667,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 5.0,
-      "Held-out Spearman \u03c1 (g_pred vs g_real)": 0.7749165739710788,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.8327363737486094,
       "_kind": "line",
       "_group": 2
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -6.529210090637207,
+      "predicted gate g_pred": 1.1013952852767828,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.264060020446777,
+      "predicted gate g_pred": 1.1134090708925852,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -10.342057228088379,
+      "predicted gate g_pred": 0.9347015417117552,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -10.263751029968262,
+      "predicted gate g_pred": 0.9525811110761107,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -6.529210090637207,
+      "predicted gate g_pred": 1.1013952852767828,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -9.480483055114746,
+      "predicted gate g_pred": 1.0161821279429826,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -9.216059684753418,
+      "predicted gate g_pred": 1.0429142359066121,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.697277069091797,
+      "predicted gate g_pred": 1.060628129551433,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -7.778918743133545,
+      "predicted gate g_pred": 1.0753621561941826,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.31732177734375,
+      "predicted gate g_pred": 1.08185794849928,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -9.62450885772705,
+      "predicted gate g_pred": 1.0582051680722317,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -7.283583641052246,
+      "predicted gate g_pred": 1.1112263575743053,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -9.325090408325195,
+      "predicted gate g_pred": 1.0453577690937823,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -7.77194356918335,
+      "predicted gate g_pred": 1.0889309425212703,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -9.005086898803711,
+      "predicted gate g_pred": 0.8253394033341412,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -9.281156539916992,
+      "predicted gate g_pred": 1.0752367973487478,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -9.782845497131348,
+      "predicted gate g_pred": 1.0326803622200216,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.651769638061523,
+      "predicted gate g_pred": 1.0543512789954321,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.904901504516602,
+      "predicted gate g_pred": 1.0688805987762957,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -9.692130088806152,
+      "predicted gate g_pred": 1.0281271269102645,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.264060020446777,
+      "predicted gate g_pred": 1.1134090708925852,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.1105375289917,
+      "predicted gate g_pred": 1.1011968233976728,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.292059898376465,
+      "predicted gate g_pred": 0.9811824893254417,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -10.15676498413086,
+      "predicted gate g_pred": 1.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -10.263751029968262,
+      "predicted gate g_pred": 0.9525811110761107,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.362476348876953,
+      "predicted gate g_pred": 0.9955743276472458,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.799142837524414,
+      "predicted gate g_pred": 1.024984431166101,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.637057304382324,
+      "predicted gate g_pred": 1.0361682769385367,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -8.984028816223145,
+      "predicted gate g_pred": 0.9730148783959505,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "scored DV g\u2081 (held-out context)": -6.570852756500244,
+      "predicted gate g_pred": 1.106686897961849,
+      "_kind": "scatter",
+      "_group": 3
     }
   ],
-  "n_series": 3,
-  "total_points": 18
+  "n_series": 4,
+  "total_points": 48
 }

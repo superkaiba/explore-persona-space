@@ -59,7 +59,9 @@
         5.124822551299075
       ],
       "rank1_holds": false,
-      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/sycophancy/villain_seed137_L20.pt"
+      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/sycophancy/villain_seed137_L20.pt",
+      "g1_vs_greal_spearman": 0.9384236453201967,
+      "g1_vs_greal_u1_dot_what_sign": -1.0
     },
     {
       "source": "villain",
@@ -112,7 +114,9 @@
         4.925636931415895
       ],
       "rank1_holds": false,
-      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/sycophancy/villain_seed42_L20.pt"
+      "bank_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-683/eval_results/issue_683/analysis_tensors/dv/sycophancy/villain_seed42_L20.pt",
+      "g1_vs_greal_spearman": 0.9738916256157631,
+      "g1_vs_greal_u1_dot_what_sign": -1.0
     }
   ],
   "reproducibility": {
@@ -125,5 +129,16 @@
     "cuda_available": false,
     "behavior": "sycophancy",
     "layer": 20
+  },
+  "g1_vs_greal": {
+    "definition": "spearman(g1(C'), g_real(C')) over held-out targets, g1(C')=<Delta_v(C'), u1_signed>, u1=top-left-SVD-dir of [Delta_v(C')], u1_signed sign-aligned to w_hat; g_real(C')=<w_hat,Delta_v(C')>/<w_hat,w_hat>",
+    "layer": 20,
+    "n_banks": 2,
+    "per_bank_spearman": {
+      "villain": 0.9738916256157631
+    },
+    "min": 0.9384236453201967,
+    "max": 0.9738916256157631,
+    "median": 0.9738916256157631
   }
 }
