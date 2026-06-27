@@ -290,3 +290,11 @@
 {"ts": "2026-06-27T08:52:42Z", "kind": "epm:progress", "version": 139, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 3.3 GB, CPU-time 6-21:57:01 (~27h wall). Slow phase."}
 {"ts": "2026-06-27T09:21:48Z", "kind": "epm:progress", "version": 140, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=D, RSS 6.8 GB, CPU-time 7-04:15:31 (~28h wall). Still no checkpoint. Slow phase."}
 {"ts": "2026-06-27T09:52:34Z", "kind": "epm:progress", "version": 141, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=D, RSS 6.9 GB, CPU-time 7-05:17:13 (~28.5h wall). Slow phase."}
+{"ts": "2026-06-27T10:21:51Z", "kind": "epm:progress", "version": 142, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 7.4 GB, CPU-time 7-06:14:37 (~29h wall). Slow phase."}
+{"ts": "2026-06-27T10:52:33Z", "kind": "epm:progress", "version": 143, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=D, RSS 5.8 GB, CPU-time 7-07:33:16 (~29.5h wall). Slow phase."}
+{"ts": "2026-06-27T11:21:47Z", "kind": "epm:progress", "version": 144, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=D, RSS 6.2 GB, CPU-time 7-08:29:59 (~30h wall). Slow phase."}
+{"ts": "2026-06-27T11:52:33Z", "kind": "epm:progress", "version": 145, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=D, RSS 5.5 GB, CPU-time 7-09:42:15 (~30.5h wall). Slow phase."}
+{"ts": "2026-06-27T12:21:47Z", "kind": "epm:progress", "version": 146, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 6.8 GB, CPU-time 7-10:38:42 (~31h wall). Slow phase."}
+{"ts": "2026-06-27T12:52:37Z", "kind": "epm:progress", "version": 147, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=D, RSS 6.6 GB, CPU-time 7-12:07:40 (~31.5h wall). Slow phase."}
+{"ts": "2026-06-27T13:21:47Z", "kind": "epm:progress", "version": 148, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 5.2 GB, CPU-time 7-13:10:26 (~32h wall). Slow phase."}
+{"ts": "2026-06-27T13:52:55Z", "kind": "epm:progress", "version": 149, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 4.3 GB, CPU-time 7-14:25:05 (~32.5h wall). Slow phase."}
