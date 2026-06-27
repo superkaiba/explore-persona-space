@@ -771,7 +771,15 @@ def _load_c_bank(c_bank_path: Path, layer: int) -> dict[str, np.ndarray]:
     for name, v in ctxs.items():
         t = torch.as_tensor(v)
         if t.ndim == 2:  # (n_layers, H) → slice the read layer
-            t = t[min(layer, t.shape[0] - 1)]
+            # FAIL LOUD on an out-of-range requested layer — never silently clamp
+            # to the last available layer (which would mis-key the read at a
+            # different depth). Matches ``_load_tcb``'s wrong-layer raise.
+            if layer < 0 or layer >= t.shape[0]:
+                raise ValueError(
+                    f"_load_c_bank: requested layer {layer} out of range "
+                    f"[0, {t.shape[0]}) for {c_bank_path}"
+                )
+            t = t[layer]
         out[name] = t.flatten().float().numpy()
     return out
 

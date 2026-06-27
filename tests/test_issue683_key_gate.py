@@ -255,6 +255,32 @@ def test_syco_c_bank_missing_panel_context_raises():
         build_sycophancy_c_bank_l20(centroids_obj, ("villain", "not_present"), layer=20)
 
 
+def test_load_c_bank_out_of_range_layer_raises():
+    """CONCERN c-bank-layer-silent-clamp: ``_load_c_bank`` FAILS LOUD when the
+    requested layer exceeds the all-layer bank's depth — never silently clamps to
+    the last available layer (which would mis-key the read at the wrong depth).
+    Mirrors ``_load_tcb``'s wrong-layer raise; #604 has 28 layers covering L14,
+    the #612 panel reads L20, so a production-scale request is in range and
+    unaffected — only a genuinely out-of-range request raises."""
+    import tempfile
+
+    import torch
+    from issue683_key_ablation_score import _load_c_bank
+
+    h = 8
+    # a synthetic 2-layer all-layer c-bank (n_layers=2, H=8).
+    bank = {"contexts": {"x": torch.zeros(2, h)}}
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "c_bank_2layer.pt"
+        torch.save(bank, p)
+        # layer 20 is out of range [0, 2) → must raise (NOT clamp to layer 1).
+        with pytest.raises(ValueError, match="out of range"):
+            _load_c_bank(p, layer=20)
+        # an in-range layer still loads cleanly (no semantic change).
+        loaded = _load_c_bank(p, layer=1)
+        assert loaded["x"].shape == (h,)
+
+
 def test_lambda_gcv_selects_lower_heldout_error_candidate():
     """BLOCKER lambda-gcv-not-implemented: λ selection is a real held-out CV, not
     a self-score of c_source against c_source (which is identically 1).
