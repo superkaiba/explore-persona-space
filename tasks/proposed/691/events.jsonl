@@ -1,1 +1,2 @@
 {"ts": "2026-06-27T20:36:46Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-06-27T20:37:40Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Gate-waiting on #684 to reach terminal (completed|blocked|archived) before launching Phase 6 full-scale (00 pre-authorized). #684 currently status=planning. Background poll launched at 600s interval."}
