@@ -197,6 +197,58 @@ def test_terminal_issue_reaped_no_escalation(repo, telegram_stub, monkeypatch):
     assert res.bytes_freed > 0
 
 
+# ─── #679 BLOCKER #1: parity-SKIPPED active cache MUST still escalate ─────────
+
+
+def test_active_parity_skipped_cache_escalates_real_cleaner(repo, telegram_stub, monkeypatch):
+    """REGRESSION (#679 BLOCKER #1): a large active ``hf_dl/.../store/`` that the
+    nested-store parity guard KEEPS (HF mirror unverifiable) contributes 0 to
+    ``bytes_freed`` (it lands in ``skipped``, not ``removed``) — sizing the
+    escalation from ``bytes_freed`` silently dropped the alert for exactly this
+    shape. Uses the REAL (un-stubbed) ``clean_issue_downloads`` so the
+    parity-skip path is actually exercised; only the on-disk size is faked (via
+    ``_dir_size_bytes``) so the cache reads above the 5 GB floor without writing
+    GBs. The escalation must fire AND the cache must survive unmodified."""
+    # An active issue whose hf_dl has a mis-rooted nested store/ — the exact
+    # high-risk shape: a large active cache the terminal gate can't reap AND the
+    # parity guard correctly keeps (can't verify the mirror).
+    issue_dir = repo / "data" / "issue_700"
+    nested = issue_dir / "hf_dl" / "store"
+    nested.mkdir(parents=True)
+    (nested / "generated_v0.pt").write_bytes(b"z" * 2048)
+    (issue_dir / "hf_dl" / "downloads").mkdir(parents=True)
+    (issue_dir / "hf_dl" / "downloads" / "blob.bin").write_bytes(b"x" * 1024)
+
+    monkeypatch.setattr(vdg, "_resolve_issue_status", lambda n: "running")
+    # HF listing unavailable -> nested store NOT verifiably mirrored -> the real
+    # cleaner SKIPS the reap (fail-toward-keep). Do NOT stub clean_issue_downloads.
+    monkeypatch.setattr(ced, "_hf_file_sizes", lambda repo, revision="main": None)
+    # Make the cache read ~60 GB on disk without writing GBs (sizes the parity-
+    # skipped dir, which bytes_freed would have reported as 0).
+    monkeypatch.setattr(ced, "_dir_size_bytes", lambda p: 60 * 10**9)
+
+    res = vdg.clean_terminal_download_caches(apply=True, data_root=repo / "data")
+
+    # The active parity-skipped cache survives untouched (never deleted).
+    assert (issue_dir / "hf_dl" / "store" / "generated_v0.pt").exists()
+    assert (issue_dir / "hf_dl" / "downloads" / "blob.bin").exists()
+    assert res.bytes_freed == 0  # nothing reaped (active + parity-skipped)
+
+    # ...but the escalation FIRED despite bytes_freed == 0 (the BLOCKER #1 fix).
+    rows = [r for r in _read_sidecar(repo) if r["kind"] == "active-cache-escalation"]
+    assert len(rows) == 1, "active-cache-escalation row must be written for a parity-skipped cache"
+    row = rows[0]
+    assert row["task"] == 700
+    assert row["status"] == "running"
+    assert row["bytes"] == 60 * 10**9
+    assert row["band"] == 50.0  # 60 GB -> 50 GB band
+    assert row["path"] == "data/issue_700/hf_dl"  # largest discovered dir
+    assert "clean_experiment_downloads.py 700 --apply" in row["reclaim_cmd"]
+    # Telegram push fired for the same task.
+    assert telegram_stub.is_file()
+    assert "#700" in telegram_stub.read_text()
+
+
 def test_dry_run_escalation_reports_no_sidecar_write(repo, telegram_stub, monkeypatch):
     """In report-only (apply=False), the escalation is decided but neither the
     sidecar nor the Telegram push persists (observability is apply-gated)."""

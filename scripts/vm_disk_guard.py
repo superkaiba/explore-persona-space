@@ -163,7 +163,12 @@ def escalate_active_cache(
     TierResult describing the escalation, or None when nothing was escalated.
     ``state`` (the dedup map) is read+updated in place by the caller."""
     sub = clean_issue_downloads(issue_n, apply=False, data_root=data_root)
-    bytes_ = sub.bytes_freed
+    # Size from EVERY discovered cache dir, NOT bytes_freed: a large active
+    # hf_dl/.../store/ correctly KEPT by the nested-store parity guard lands in
+    # `skipped` (contributing 0 to bytes_freed), so bytes_freed would suppress
+    # the escalation for the exact large-unmirrored-active-cache shape #679
+    # targets (BLOCKER #1). total_discovered_bytes counts removed + skipped.
+    bytes_ = sub.total_discovered_bytes
     if bytes_ < _ACTIVE_ESCALATION_MIN_BYTES:
         return None
     band_gb = _active_escalation_band_gb(bytes_)
@@ -171,8 +176,10 @@ def escalate_active_cache(
     do_alert, growth_pct = _should_escalate_active(issue_n, band_gb, bytes_, st)
     if not do_alert:
         return None
-    # Largest cache path drives the human-facing pointer + reclaim command.
-    largest = max(sub.removed, key=lambda n: sub.sizes_bytes.get(n, 0), default="")
+    # Largest cache path drives the human-facing pointer + reclaim command —
+    # over ALL discovered dirs (removed AND skipped), so a parity-skipped store
+    # still surfaces its path even though it freed nothing.
+    largest = max(sub.sizes_bytes, key=lambda n: sub.sizes_bytes.get(n, 0), default="")
     reclaim_cmd = f"uv run python scripts/clean_experiment_downloads.py {issue_n} --apply"
     res = TierResult(name="active-cache-escalation")
     res.detail.append(
