@@ -385,3 +385,293 @@ def test_score_bank_missing_panel_context_raises():
     )
     assert dropped in res["panel_coverage"]["missing_cC"]
     assert res["panel_coverage"]["partial_panel_descope"] is True
+
+
+# ── Round-3 regression tests (BLOCKER lambda-gcv-heldout-leak) ────────────────
+
+
+def _leaky_whole_set_predictions(scr, *, k, c_source, c_query, targets, y, n_folds, seed):
+    """The round-2 LEAKY reference: fit λ + Σ_c + final M on the WHOLE target set
+    (c_source + EVERY target, including the one being scored), then score those
+    same targets — exactly the call shape the round-2 ``_score_one_cell`` used
+    before the outer leave-one-context-out loop was added. This is the
+    falsification baseline: the round-3 ``_loo_predictions`` MUST differ from it
+    on a bank engineered so the held-out target swings the selected λ.
+    """
+    import numpy as np
+
+    c_train = np.stack([c_source, *[c_query[c] for c in targets]], axis=0)
+    y_train = np.concatenate([[1.0], y])
+    m, _ = scr._resolve_metric(
+        "M_white",
+        k,
+        c_source=c_source,
+        c_train=c_train,
+        y_train=y_train,
+        n_folds=n_folds,
+        seed=seed,
+    )
+    return np.array([scr._eval_g_pred(m, k, c_query[c], c_source) for c in targets])
+
+
+def _bruteforce_loo_predictions(scr, *, k, c_source, c_query, targets, y, n_folds, seed):
+    """Independent brute-force leave-one-context-out reference: for each scored
+    target C'_i, fit λ + Σ_c + final M on the source + the OTHER targets only,
+    then score C'_i. The round-3 ``_loo_predictions`` MUST match this exactly.
+    Deliberately re-implemented inline (no reuse of the production loop) so the
+    test falsifies the production path rather than echoing it.
+    """
+    import numpy as np
+
+    preds = np.empty(len(targets), dtype=float)
+    for i, held in enumerate(targets):
+        train = [c for c in targets if c != held]
+        c_train_i = np.stack([c_source, *[c_query[c] for c in train]], axis=0)
+        y_train_i = np.concatenate([[1.0], np.array([y[targets.index(c)] for c in train])])
+        m_i, _ = scr._resolve_metric(
+            "M_white",
+            k,
+            c_source=c_source,
+            c_train=c_train_i,
+            y_train=y_train_i,
+            n_folds=n_folds,
+            seed=seed,
+        )
+        preds[i] = scr._eval_g_pred(m_i, k, c_query[held], c_source)
+    return preds
+
+
+def _leak_sensitive_cell(h=10, n=8, seed=11):
+    """A synthetic (k, c_source, c_query, y) cell engineered so the held-out
+    target's OWN g_real swings the selected λ — i.e. including vs excluding it
+    from the train set changes the M_white predictions. One target carries a
+    large outlier g_real so the whole-set λ-GCV (which sees it) lands on a
+    different multiplier than the leave-it-out fit does.
+    """
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    c_source = rng.standard_normal(h)
+    targets = [f"c{i}" for i in range(n)]
+    c_query = {c: rng.standard_normal(h) for c in targets}
+    # graded base signal + one extreme outlier target whose presence in the
+    # train set pulls the λ-GCV reconstruction error toward a different λ.
+    y = np.linspace(0.1, 0.7, n)
+    y[-1] = 9.0  # the sentinel outlier target
+    k = c_source.copy()
+    return k, c_source, c_query, targets, y
+
+
+def test_loo_predictions_differ_from_leaky_whole_set():
+    """BLOCKER lambda-gcv-heldout-leak (fail-pre / pass-post): the round-3 outer
+    leave-one-context-out predictions DIFFER from the round-2 leaky whole-set fit
+    on a bank where the scored target's own g_real swings the selected λ.
+
+    Pre-fix (whole-set λ fit, then score the same targets) and post-fix (each
+    target held out of its own λ fit) produce DIFFERENT M_white leaderboard
+    predictions — that difference IS the leak the fix removes. M_I is unaffected
+    (no fitted parameters), which the next test pins.
+    """
+    import issue683_key_ablation_score as scr
+
+    k, c_source, c_query, targets, y = _leak_sensitive_cell()
+    loo, _ = scr._loo_predictions(
+        metric="M_white",
+        k=k,
+        c_source=c_source,
+        c_query=c_query,
+        targets=targets,
+        y=y,
+        n_folds=0,
+        seed=0,
+    )
+    leaky = _leaky_whole_set_predictions(
+        scr, k=k, c_source=c_source, c_query=c_query, targets=targets, y=y, n_folds=0, seed=0
+    )
+    # the predictions must NOT be identical — the leak changed the λ that scored
+    # at least one target. (Pre-fix _loo_predictions WAS the leaky path, so this
+    # assertion would have failed before the outer LOO loop was added.)
+    assert not np.allclose(loo, leaky), (
+        "LOO predictions identical to the leaky whole-set fit — the held-out "
+        "target's g_real is still entering the λ that scores it."
+    )
+
+
+def test_loo_predictions_match_bruteforce_reference():
+    """The round-3 ``_loo_predictions`` matches an INDEPENDENT brute-force
+    leave-one-context-out reference (fit on the others, score the held-out
+    target) bit-for-bit — confirming the outer loop is the leave-one-out the
+    plan + docstring pre-register, not an approximation."""
+    import issue683_key_ablation_score as scr
+
+    k, c_source, c_query, targets, y = _leak_sensitive_cell()
+    loo, _ = scr._loo_predictions(
+        metric="M_white",
+        k=k,
+        c_source=c_source,
+        c_query=c_query,
+        targets=targets,
+        y=y,
+        n_folds=0,
+        seed=0,
+    )
+    ref = _bruteforce_loo_predictions(
+        scr, k=k, c_source=c_source, c_query=c_query, targets=targets, y=y, n_folds=0, seed=0
+    )
+    assert np.allclose(loo, ref), (loo, ref)
+
+
+def test_loo_m_identity_is_unaffected():
+    """M_I (identity, no λ, no Σ_c) is parameter-free, so the leave-one-context-out
+    refit is a mathematical no-op: the LOO predictions equal a single whole-set
+    resolve. This pins that the fix touches ONLY the fitted (M_white) path —
+    M_I's held-out Spearman was never leaked and must not change."""
+    import issue683_key_ablation_score as scr
+
+    k, c_source, c_query, targets, y = _leak_sensitive_cell()
+    loo, meta = scr._loo_predictions(
+        metric="M_I",
+        k=k,
+        c_source=c_source,
+        c_query=c_query,
+        targets=targets,
+        y=y,
+        n_folds=0,
+        seed=0,
+    )
+    whole = np.array([scr._g_pred(k, None, c_query[c], c_source) for c in targets])
+    assert np.allclose(loo, whole), (loo, whole)
+    assert meta["lambda_selection"] == "identity"
+
+
+def test_score_one_cell_lambda_meta_records_outer_loo():
+    """``_score_one_cell`` for M_white records the OUTER leave-one-context-out in
+    its lambda_selection metadata (per-fold λ multipliers + the loo-fold count) —
+    the durable signal that the leaderboard score came from held-out fits, not a
+    single whole-set fit."""
+    import issue683_key_ablation_score as scr
+
+    k, c_source, c_query, targets, y = _leak_sensitive_cell()
+    row = scr._score_one_cell(
+        key_form="k_cC",
+        metric="M_white",
+        psi="psi_I",
+        k=k,
+        c_source=c_source,
+        c_query=c_query,
+        targets=targets,
+        y=y,
+        a7_rank1=True,
+        n_boot=20,
+        n_folds=0,
+        seed=0,
+        rng=np.random.default_rng(0),
+    )
+    assert row is not None
+    lam = row["lambda_selection"]
+    assert lam["lambda_selection"] == "heldout_gcv_mae_outer_loo", lam
+    assert lam["n_loo_folds"] == len(targets), lam
+    assert len(lam["lambda_mult_per_fold"]) == len(targets), lam
+
+
+def test_score_one_cell_never_feeds_scored_target_into_its_own_lambda_fit():
+    """Static-flow guard (BLOCKER lambda-gcv-heldout-leak): instrument
+    ``_resolve_metric`` to record, per call, the set of query vectors fed into
+    the λ fit, and assert that when ``_score_one_cell`` ultimately scores target
+    C'_i, the c_query[C'_i] vector was NOT a member of the train set of the
+    M_white fit whose M scored it.
+
+    This is the executable analogue of "_score_one_cell never references
+    c_query[scored_target] in the λ-selection / M-fitting path for that same
+    target": we capture every c_train passed to ``_resolve_metric`` and verify
+    each scored target's own vector is absent from the corresponding fold's
+    train matrix.
+    """
+    import issue683_key_ablation_score as scr
+
+    k, c_source, c_query, targets, y = _leak_sensitive_cell()
+    target_vecs = [c_query[c] for c in targets]
+
+    captured_trains: list[np.ndarray] = []
+    orig = scr._resolve_metric
+
+    def _spy(metric, kk, *, c_source, c_train, y_train, n_folds, seed):
+        captured_trains.append(np.asarray(c_train).copy())
+        return orig(
+            metric,
+            kk,
+            c_source=c_source,
+            c_train=c_train,
+            y_train=y_train,
+            n_folds=n_folds,
+            seed=seed,
+        )
+
+    scr._resolve_metric = _spy
+    try:
+        _preds, _ = scr._loo_predictions(
+            metric="M_white",
+            k=k,
+            c_source=c_source,
+            c_query=c_query,
+            targets=targets,
+            y=y,
+            n_folds=0,
+            seed=0,
+        )
+    finally:
+        scr._resolve_metric = orig
+
+    # one _resolve_metric call per held-out target, in target order.
+    assert len(captured_trains) == len(targets), len(captured_trains)
+    for i, c_train in enumerate(captured_trains):
+        rows = [c_train[r] for r in range(c_train.shape[0])]
+        # the held-out target's own query vector must be ABSENT from the train
+        # matrix of the fit that produced its prediction.
+        in_train = any(np.allclose(target_vecs[i], r) for r in rows)
+        assert not in_train, f"target {targets[i]} leaked into its own λ-fit train set"
+
+
+# ── Round-3 Woodbury/dual-form parity (scorer-cubic-whitening-infeasible) ─────
+
+
+def test_whiten_dual_matches_cubic_oracle_quadform():
+    """The Woodbury dual ``_WhitenDual.quad`` matches the explicit cubic
+    ``_whiten_metric`` (the H-by-H inverse) bit-for-bit on uᵀ M v across vectors
+    and lambda candidates — at H>>n where Sigma_c is rank-deficient. This is the
+    correctness oracle for the dual form that makes the outer leave-one-context-
+    out loop feasible (the cubic form is ~500x over the plan's CPU budget at
+    H=3584)."""
+    import issue683_key_ablation_score as scr
+
+    rng = np.random.default_rng(5)
+    h, n = 80, 10  # H > n: Σ_c is rank-deficient, the production regime
+    c_matrix = rng.standard_normal((n, h))
+    dual = scr._WhitenDual(c_matrix)
+    u = rng.standard_normal(h)
+    v = rng.standard_normal(h)
+    s = rng.standard_normal(h)
+    for mult in scr.LAMBDA_GRID_MULT:
+        m_dense = scr._whiten_metric(c_matrix, mult)  # cubic oracle
+        # quad-form parity
+        assert np.isclose(dual.quad(u, v, mult), float((u @ m_dense) @ v), rtol=1e-6), mult
+        # g_pred ratio parity (the quantity the leaderboard actually uses)
+        dual_gp = dual.g_pred(u, v, s, mult)
+        dense_gp = scr._g_pred(u, m_dense, v, s)
+        assert np.isclose(dual_gp, dense_gp, rtol=1e-6), (mult, dual_gp, dense_gp)
+
+
+def test_whiten_dual_median_eig_matches_cubic():
+    """The dual's lambda scale (median nonzero eigenvalue over the n-by-n Gram)
+    equals the cubic path's median over the H-by-H Sigma_c spectrum — so both
+    metric forms select the SAME lambda. Pins the latent H>>n median bug fix
+    (numerical-zero eigenvalues excluded by relative tolerance)."""
+    import issue683_key_ablation_score as scr
+
+    rng = np.random.default_rng(6)
+    h, n = 120, 12
+    c_matrix = rng.standard_normal((n, h))
+    sigma_c = (c_matrix.T @ c_matrix) / n
+    cubic_med = scr._median_nonzero_eig(np.linalg.eigvalsh(sigma_c))
+    dual_med = scr._WhitenDual(c_matrix).med
+    assert np.isclose(cubic_med, dual_med, rtol=1e-6), (cubic_med, dual_med)

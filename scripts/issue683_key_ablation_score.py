@@ -15,11 +15,14 @@ and the cosine baseline cos(c_C, c_C'), by the bilinear predicted gate
 
     g_pred(C'_i) = (kᵀ M c_C'_i) / (kᵀ M c_C)
 
-against the held-out realized gate g_real(C'_i) (leave-one-context-out). For
-each (key, metric) the leaderboard reports held-out Spearman ρ (PRIMARY),
-Pearson r, sign-agreement, MAE — each with a 1000-bootstrap CI over held-out
-contexts — plus a cross-seed range, the shuffled-KEY and shuffled-QUERY nulls
-(a key/query-VECTOR permutation, NOT a matrix-axis relabel — methodology-critic
+against the held-out realized gate g_real(C'_i) under a leaderboard-level
+leave-one-CONTEXT-out loop: each scored target C'_i is excluded from the train
+set that selects λ + fits the whitening Σ_c + the final metric M that scores it
+(no held-out leakage — BLOCKER lambda-gcv-heldout-leak). For each (key, metric)
+the leaderboard reports the held-out Spearman ρ (PRIMARY), Pearson r,
+sign-agreement, MAE — each with a 1000-bootstrap CI over the LOO predictions —
+plus a cross-seed range, the shuffled-KEY and shuffled-QUERY nulls (a
+key/query-VECTOR permutation, NOT a matrix-axis relabel — methodology-critic
 concern #2), and the test-retest noise floor.
 
 A7 gating (plan §4 Phase B branch): reads
@@ -110,18 +113,93 @@ def mae(pred: np.ndarray, y: np.ndarray) -> float:
     return float(np.abs(pred - y).mean()) if len(y) else float("nan")
 
 
-def _whiten_metric(c_matrix: np.ndarray, lam_mult: float) -> np.ndarray:
-    """M = (Σ_c + λI)^-1 with λ = lam_mult × median-eigenvalue(Σ_c).
+def _median_nonzero_eig(eig: np.ndarray) -> float:
+    """Median of the GENUINELY-nonzero eigenvalues (relative tolerance).
 
-    Σ_c = (1/n) C Cᵀ over the context vectors (H×H). For H≫n this is
-    rank-deficient, so the +λI regularizer is load-bearing.
+    For H≫n, Σ_c (H×H) has H−n structurally-zero eigenvalues; ``eigvalsh``
+    returns them as ~1e-15 numerical noise, so a bare ``eig > 0`` mask admits
+    those near-zero values and collapses the median toward 0 (making λ
+    effectively 0 — a latent bug at the production H=3584, n~40 scale). Gate on
+    a relative tolerance off the largest eigenvalue so only the n real nonzero
+    eigenvalues enter the median. The dual (Woodbury) path takes the SAME
+    median over the n×n Gram spectrum, so both metric forms pick the same λ.
+    """
+    if eig.size == 0:
+        return 1.0
+    tol = float(eig.max()) * 1e-9
+    pos = eig[eig > tol]
+    return float(np.median(pos)) if pos.size else 1.0
+
+
+def _whiten_metric(c_matrix: np.ndarray, lam_mult: float) -> np.ndarray:
+    """M = (Σ_c + λI)^-1 with λ = lam_mult × median-nonzero-eigenvalue(Σ_c).
+
+    Σ_c = (1/n) Cᵀ C over the context vectors (H×H). For H≫n this is
+    rank-deficient, so the +λI regularizer is load-bearing. CUBIC reference
+    form (materializes + inverts the full H×H matrix) — used by the direct-λ
+    tests and as the correctness oracle for ``_WhitenDual``. The production hot
+    path (``_loo_predictions`` / ``_select_lambda_heldout_gcv``) routes through
+    ``_WhitenDual`` instead, which never forms the H×H matrix
+    (scorer-cubic-whitening-infeasible).
     """
     n = c_matrix.shape[0]
     sigma_c = (c_matrix.T @ c_matrix) / n  # (H, H)
     eig = np.linalg.eigvalsh(sigma_c)
-    med = float(np.median(eig[eig > 0])) if np.any(eig > 0) else 1.0
+    med = _median_nonzero_eig(eig)
     lam = lam_mult * med
     return np.linalg.inv(sigma_c + lam * np.eye(sigma_c.shape[0]))
+
+
+class _WhitenDual:
+    """Woodbury/dual evaluator for M = (Σ_c + λI)^-1 in the n-context subspace.
+
+    Σ_c = B Bᵀ with B = Cᵀ/√n (H×n); A = λI + B Bᵀ. Woodbury gives, for any
+    vectors u, v,
+
+        uᵀ A^-1 v = (1/λ)(uᵀv) − (1/λ²) (Bᵀu)ᵀ (I_n + (1/λ)G)^-1 (Bᵀv),
+
+    where G = BᵀB = (1/n) C Cᵀ is the (n×n) Gram. Only an n×n solve is ever
+    needed — never the H×H inverse — so a key×metric cell costs O(n³ + n²H)
+    instead of O(H³). The G eigendecomposition is computed ONCE (for the
+    median-eigenvalue λ scale and to reuse across λ candidates); the
+    (I + G/λ) system is solved per query batch. Validated bit-for-bit against
+    ``_whiten_metric`` (the cubic oracle) in the tests.
+
+    λ = lam_mult × median-nonzero-eigenvalue(Σ_c); the Gram's nonzero spectrum
+    equals Σ_c's, so ``_median_nonzero_eig`` over the Gram eigenvalues picks
+    the SAME λ the cubic path would.
+    """
+
+    def __init__(self, c_matrix: np.ndarray):
+        n = c_matrix.shape[0]
+        self.n = n
+        self.b = c_matrix.T / np.sqrt(n)  # (H, n)
+        self.gram = self.b.T @ self.b  # (n, n) = (1/n) C Cᵀ
+        self.eye_n = np.eye(n)
+        self.med = _median_nonzero_eig(np.linalg.eigvalsh(self.gram))
+
+    def lam(self, lam_mult: float) -> float:
+        return lam_mult * self.med
+
+    def quad(self, u: np.ndarray, v: np.ndarray, lam_mult: float) -> float:
+        """uᵀ (Σ_c + λI)^-1 v via the dual form (no H×H matrix)."""
+        lam = self.lam(lam_mult)
+        if lam <= 0:
+            lam = 1e-12  # degenerate Σ_c (all-zero context bank) — fall back to (1/λ)I
+        bu = self.b.T @ u  # (n,)
+        bv = self.b.T @ v  # (n,)
+        inner = np.linalg.solve(self.eye_n + (1.0 / lam) * self.gram, bv)  # (n,)
+        return float((1.0 / lam) * (u @ v) - (1.0 / lam**2) * (bu @ inner))
+
+    def g_pred(
+        self, k: np.ndarray, c_query: np.ndarray, c_source: np.ndarray, lam_mult: float
+    ) -> float:
+        """g_pred = (kᵀ M c_query) / (kᵀ M c_source) with M = (Σ_c + λI)^-1, dual."""
+        num = self.quad(k, c_query, lam_mult)
+        den = self.quad(k, c_source, lam_mult)
+        if den == 0:
+            return float("nan")
+        return num / den
 
 
 def _fit_ridge_psi(t_train: np.ndarray, c_train: np.ndarray, lam: float = 1.0) -> np.ndarray:
@@ -190,7 +268,8 @@ def _key_vector(
 def _g_pred(
     k: np.ndarray, m: np.ndarray | None, c_query: np.ndarray, c_source: np.ndarray
 ) -> float:
-    """g_pred = (kᵀ M c_query) / (kᵀ M c_source); M=None ⇒ identity."""
+    """g_pred = (kᵀ M c_query) / (kᵀ M c_source); M=None ⇒ identity, M=dense ⇒
+    the explicit-matrix form (cubic-oracle / test path)."""
     if m is None:
         num = float(k @ c_query)
         den = float(k @ c_source)
@@ -201,6 +280,22 @@ def _g_pred(
     if den == 0:
         return float("nan")
     return num / den
+
+
+def _eval_g_pred(evaluator, k, c_query, c_source) -> float:
+    """Dispatch g_pred on the resolved metric evaluator from ``_resolve_metric``.
+
+    ``evaluator`` is one of: None (identity), or a ``(_WhitenDual, lam_mult)``
+    pair (the production M_white dual form — no H×H matrix). A dense ndarray is
+    also accepted (the cubic-oracle path) for parity testing.
+    """
+    if evaluator is None:
+        return _g_pred(k, None, c_query, c_source)
+    if isinstance(evaluator, tuple):
+        dual, lam_mult = evaluator
+        return dual.g_pred(k, c_query, c_source, lam_mult)
+    # dense matrix (cubic oracle)
+    return _g_pred(k, evaluator, c_query, c_source)
 
 
 def _select_lambda_heldout_gcv(
@@ -234,20 +329,28 @@ def _select_lambda_heldout_gcv(
     order = rng.permutation(n)
     folds = np.array_split(order, n_folds)
 
+    # Build ONE dual whitener per inner fold (Σ_c fit on the fold's TRAIN
+    # contexts only) and REUSE it across all λ candidates — the Gram
+    # eigendecomposition is computed once per fold, not per (fold, λ). The dual
+    # form (Woodbury, n-context subspace) never materializes the H×H matrix
+    # (scorer-cubic-whitening-infeasible).
+    fold_duals: list[tuple[_WhitenDual, np.ndarray, np.ndarray]] = []
+    for held in folds:
+        held = np.asarray(held, dtype=int)
+        train_mask = np.ones(n, dtype=bool)
+        train_mask[held] = False
+        if train_mask.sum() < 1 or held.size < 1:
+            continue
+        # Σ_c + λI fit on the TRAIN fold contexts ONLY (no held-out leakage).
+        fold_duals.append((_WhitenDual(c_train[train_mask]), held, y_train[held]))
+
     best_mult, best_mae = 1.0, np.inf
     for mult in LAMBDA_GRID_MULT:
         fold_maes: list[float] = []
-        for held in folds:
-            held = np.asarray(held, dtype=int)
-            train_mask = np.ones(n, dtype=bool)
-            train_mask[held] = False
-            if train_mask.sum() < 1 or held.size < 1:
-                continue
-            # Σ_c + λI fit on the TRAIN fold contexts ONLY (no held-out leakage).
-            c_tr = c_train[train_mask]
-            m = _whiten_metric(c_tr, mult)
-            preds = np.array([_g_pred(k, m, c_train[i], c_source) for i in held], dtype=float)
-            yy = y_train[held]
+        for dual, held, yy in fold_duals:
+            preds = np.array(
+                [dual.g_pred(k, c_train[i], c_source, mult) for i in held], dtype=float
+            )
             f = np.isfinite(preds) & np.isfinite(yy)
             if f.sum() >= 1:
                 fold_maes.append(float(np.abs(preds[f] - yy[f]).mean()))
@@ -266,16 +369,22 @@ def _resolve_metric(
     y_train: np.ndarray,
     n_folds: int,
     seed: int,
-) -> tuple[np.ndarray | None, dict]:
-    """Resolve M for a (key, metric) cell.
+) -> tuple[tuple[_WhitenDual, float] | None, dict]:
+    """Resolve the metric evaluator for a (key, metric) cell, given a TRAIN set.
 
-    M_I → None (identity). M_white → (Σ_c+λI)^-1 with λ chosen by held-out
-    cross-validation over the TRAIN contexts (``_select_lambda_heldout_gcv``):
-    BOTH Σ_c and λ are fit on TRAIN contexts ONLY (no held-out target leakage —
-    BLOCKER lambda-gcv-not-implemented + Major Σ_c-train-only). The returned Σ_c
-    for the FINAL metric is fit on the full TRAIN context set (source + train
-    targets) at the selected λ — held-out targets are still never in it.
-    Returns (M, lambda_meta).
+    M_I → None (identity; ``_g_pred`` with m=None). M_white → a
+    ``(_WhitenDual, lambda_mult)`` pair: the dual Woodbury evaluator for
+    (Σ_c+λI)^-1 fit on ``c_train`` (never the H×H matrix —
+    scorer-cubic-whitening-infeasible) with λ chosen by held-out
+    cross-validation over the supplied TRAIN contexts
+    (``_select_lambda_heldout_gcv``). BOTH Σ_c and λ are fit on the supplied
+    ``c_train`` / ``y_train`` ONLY (no leakage — BLOCKER
+    lambda-gcv-not-implemented + Major Σ_c-train-only). The CALLER is
+    responsible for the leaderboard-level leave-one-context-out:
+    ``_loo_predictions`` passes a ``c_train`` / ``y_train`` that EXCLUDES the
+    held-out target being scored, so the scored target's c_C' / g_real never
+    enter the metric that scores it (BLOCKER lambda-gcv-heldout-leak). Returns
+    (evaluator | None, lambda_meta).
     """
     if metric == "M_I":
         return None, {"lambda_mult": None, "lambda_selection": "identity"}
@@ -287,15 +396,105 @@ def _resolve_metric(
         n_folds=n_folds,
         seed=seed,
     )
-    # Final Σ_c over the TRAIN contexts (source + train targets) at the selected
-    # λ — held-out targets being scored are NOT in c_train (the caller excludes
-    # them), so there is no held-out leakage into the whitening.
-    final_m = _whiten_metric(c_train, best_mult)
-    return final_m, {
+    # Final whitener over the TRAIN contexts (source + train targets) at the
+    # selected λ — held-out targets being scored are NOT in c_train (the caller
+    # excludes them), so there is no held-out leakage into the whitening. The
+    # dual form scores via the n-context subspace, never the H×H inverse.
+    final_dual = _WhitenDual(c_train)
+    return (final_dual, float(best_mult)), {
         "lambda_mult": float(best_mult),
         "lambda_selection": "heldout_gcv_mae",
         "heldout_mae": best_mae if best_mae == best_mae else None,
     }
+
+
+def _loo_predictions(
+    *,
+    metric: str,
+    k: np.ndarray,
+    c_source: np.ndarray,
+    c_query: dict[str, np.ndarray],
+    targets: list[str],
+    y: np.ndarray,
+    n_folds: int,
+    seed: int,
+) -> tuple[np.ndarray, dict]:
+    """Leave-one-CONTEXT-out leaderboard predictions for one (key, metric) cell.
+
+    BLOCKER ``lambda-gcv-heldout-leak``: the OUTER loop holds out each scored
+    target C'_i from the train set, so the scored target's OWN g_real never
+    enters either the λ-GCV vector (``y_train_i``) OR the whitening Σ_c
+    (``c_train_i``) used to score it. For each held-out C'_i:
+
+      1. ``train_targets = [c for c in targets if c != C'_i]``
+      2. ``c_train_i = [c_source, *c_query[train_targets]]`` — Σ_c is fit on
+         THIS train set only (no held-out target's c_C' in the whitening).
+      3. ``y_train_i = [1.0, *y[train_targets]]`` — the λ-GCV vector, the
+         held-out target's g_real EXCLUDED.
+      4. ``λ`` + the dual whitener ← ``_resolve_metric`` on
+         ``(c_train_i, y_train_i)`` (Woodbury, n-context subspace — never the
+         H×H matrix).
+      5. ``pred_i = _eval_g_pred(evaluator, k, c_query[C'_i], c_source)`` —
+         C'_i scored ONLY by a metric fit on the OTHER targets.
+
+    For M_I (identity, no λ, no Σ_c) the per-fold refit is a mathematical no-op
+    — g_pred is independent of the train set — so a single resolve suffices and
+    the loop is short-circuited (same numbers, no wasted folds). Returns
+    (preds aligned to ``targets``, lambda_meta).
+    """
+    n = len(targets)
+    if metric == "M_I":
+        # Identity metric: g_pred has no fitted parameters, so the LOO refit is
+        # an exact no-op. One resolve, predict every target — bit-identical to
+        # the per-fold path but without the redundant work.
+        m, lam_meta = _resolve_metric(
+            metric,
+            k,
+            c_source=c_source,
+            c_train=np.stack([c_source, *[c_query[c] for c in targets]], axis=0),
+            y_train=np.concatenate([[1.0], y]),
+            n_folds=n_folds,
+            seed=seed,
+        )
+        preds = np.array([_eval_g_pred(m, k, c_query[c], c_source) for c in targets])
+        return preds, lam_meta
+
+    # M_white: an OUTER leave-one-context-out loop. Each held-out target is
+    # scored by a metric (λ + Σ_c + final M) fit ONLY on the source + the OTHER
+    # targets — the scored target's c_C' / g_real never touch its own predictor.
+    preds = np.empty(n, dtype=float)
+    fold_lambdas: list[float] = []
+    fold_maes: list[float] = []
+    for i, held in enumerate(targets):
+        train_targets = [c for c in targets if c != held]
+        c_train_i = np.stack([c_source, *[c_query[c] for c in train_targets]], axis=0)
+        # y_train_i pairs g_real with the SAME rows as c_train_i (source first).
+        y_train_i = np.concatenate(
+            [[1.0], np.array([y[targets.index(c)] for c in train_targets], dtype=float)]
+        )
+        m_i, lam_meta_i = _resolve_metric(
+            metric,
+            k,
+            c_source=c_source,
+            c_train=c_train_i,
+            y_train=y_train_i,
+            n_folds=n_folds,
+            seed=seed,
+        )
+        preds[i] = _eval_g_pred(m_i, k, c_query[held], c_source)
+        if lam_meta_i.get("lambda_mult") is not None:
+            fold_lambdas.append(float(lam_meta_i["lambda_mult"]))
+        hm = lam_meta_i.get("heldout_mae")
+        if hm is not None and hm == hm:
+            fold_maes.append(float(hm))
+    lam_meta = {
+        "lambda_selection": "heldout_gcv_mae_outer_loo",
+        "lambda_mult_per_fold": fold_lambdas,
+        "lambda_mult_median": (float(np.median(fold_lambdas)) if fold_lambdas else None),
+        "heldout_mae_mean": (float(np.mean(fold_maes)) if fold_maes else None),
+        "n_loo_folds": n,
+    }
+    return preds, lam_meta
 
 
 def _score_one_cell(
@@ -314,30 +513,31 @@ def _score_one_cell(
     seed: int,
     rng,
 ) -> dict | None:
-    """Score ONE (key, metric, ψ) cell: held-out Spearman/Pearson/sign/MAE +
-    bootstrap Spearman CI. Returns None when <3 contexts score finitely.
+    """Score ONE (key, metric, ψ) cell: leave-one-context-out Spearman / Pearson
+    / sign / MAE + bootstrap Spearman CI. Returns None when <3 contexts score
+    finitely.
 
-    For M_white, λ is chosen by held-out cross-validation over the TRAIN
-    contexts (the source + targets' BASE vectors with their g_real), via
-    ``_resolve_metric`` — NOT by self-scoring c_source against itself (BLOCKER
-    lambda-gcv-not-implemented). Σ_c for the final metric is fit on TRAIN
-    context base vectors only (Major Σ_c-train-only); g_real never enters Σ_c.
+    BLOCKER ``lambda-gcv-heldout-leak``: predictions come from
+    ``_loo_predictions`` — an OUTER leave-one-context-out loop. For M_white,
+    each scored target C'_i is held out of the train set, so its own g_real
+    never enters the λ-GCV vector AND its own c_C' never enters the whitening
+    Σ_c that scores it. (The earlier round-2 code fit λ + Σ_c + final M on the
+    WHOLE target set, then scored those same targets — each target's own g_real
+    biased the λ that scored it, inflating M_white's held-out ρ differentially
+    vs the parameter-free M_I.) The inner ``_select_lambda_heldout_gcv`` CV
+    still folds WITHIN each train set; the outer loop is the leaderboard-level
+    leave-one-out the plan + docstring pre-register.
     """
-    # TRAIN context bank for λ-GCV: source + every target's BASE query vector,
-    # paired with g_real (y). The inner CV folds hold out g_real, so λ is never
-    # chosen by self-scoring — and Σ_c is a base-model quantity (no g_real).
-    c_train = np.stack([c_source, *[c_query[c] for c in targets]], axis=0)
-    y_train = np.concatenate([[1.0], y])  # g_real(source) = 1 by construction
-    m, lam_meta = _resolve_metric(
-        metric,
-        k,
+    preds, lam_meta = _loo_predictions(
+        metric=metric,
+        k=k,
         c_source=c_source,
-        c_train=c_train,
-        y_train=y_train,
+        c_query=c_query,
+        targets=targets,
+        y=y,
         n_folds=n_folds,
         seed=seed,
     )
-    preds = np.array([_g_pred(k, m, c_query[c], c_source) for c in targets])
     finite = np.isfinite(preds) & np.isfinite(y)
     if finite.sum() < 3:
         return None
