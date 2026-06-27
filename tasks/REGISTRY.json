@@ -4361,8 +4361,8 @@
     "690": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/690",
-      "status": "planning",
+      "path": "tasks/approved/690",
+      "status": "approved",
       "title": "Auto-dispatch proposed infra tasks without a PM STATUS pass: file-time spawn + always-on watcher sweep"
     },
     "691": {
