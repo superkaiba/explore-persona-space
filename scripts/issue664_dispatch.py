@@ -52,6 +52,7 @@ import os
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # issue664_* / issue594_common
@@ -59,6 +60,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # issue664_* / issue59
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")  # gotchas #628 fork-poison
 
 from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.orchestrate.fleet import (
+    CellCmd,
+    JudgeHandle,
+    WaveDispatcher,
+    submit_judge_async,
+)
 
 load_dotenv()  # P2.0 vLLM + train_lora + HF uploads need HF_TOKEN / WANDB_API_KEY
 
@@ -420,6 +427,15 @@ def phase0(args) -> None:
     refusal_qs = _refusal_request_pool(smoke)
     _write_pool("refusal", refusal_qs, smoke=smoke)
 
+    # #676 judge overlap: the on-pod behavior-label + baseline-propensity judges
+    # are SUBMITTED fire-and-forget right after their generations and reconciled
+    # AFTER the vLLM engine is torn down (off the GPU critical path), before the
+    # build-mixes step that consumes the labels. Each elicit/baseline call appends
+    # a deferred reconcile job here (a zero-arg closure that harvests its judge
+    # handle + writes its cache). Smoke skips the live judge (jobs resolve to
+    # all-1 labels / smoke-skipped rates) so no Batch API call fires.
+    judge_jobs: list[Callable[[], None]] = []
+
     llm = _vllm_engine(2 * C.MAX_NEW_TOKENS + 1024)
     try:
         # marker_R: base greedy R under each source + each negative-panel ctx.
@@ -441,21 +457,30 @@ def phase0(args) -> None:
 
         # sycophancy positives: #612 instruct-and-strip (elicit agreement, strip).
         if "sycophancy" in behaviors:
-            _elicit_sycophancy(llm, sources, smoke=smoke)
+            _elicit_sycophancy(llm, sources, judge_jobs, smoke=smoke)
         # refusal positives + on-policy normal-answer negatives.
         if "refusal" in behaviors:
-            _elicit_refusal(llm, sources, neg_panel, refusal_qs, smoke=smoke)
+            _elicit_refusal(llm, sources, neg_panel, refusal_qs, judge_jobs, smoke=smoke)
         # insecure-code on-policy secure-answer negatives (ic_secure) per source/neg.
         if any(b in ("em", "ic_edu") for b in behaviors):
             _elicit_secure_code(llm, sources, neg_panel, smoke=smoke)
         # source-side baseline propensity read (#664 round-2 M4): BASE-model
         # behavior RATE per (source, content-behavior) on the bare source context
-        # (NO elicitation), judge-scored -- the registered source-side covariate.
-        # Runs while the vLLM engine is still alive (base gen) + judges via the
-        # Batch API (an API call, not GPU work).
-        _write_baseline_propensity(llm, sources, behaviors, refusal_qs, smoke=smoke)
+        # (NO elicitation). The base generations run while the engine is alive; the
+        # judge is SUBMITTED fire-and-forget here and reconciled below (#676).
+        _write_baseline_propensity(llm, sources, behaviors, refusal_qs, judge_jobs, smoke=smoke)
     finally:
         _teardown_vllm(llm)
+
+    # #676 judge-overlap reconcile barrier: harvest every submitted judge + write
+    # its cache NOW (engine already freed), BEFORE build-mixes reads the labels.
+    # Fail-loud: a reconcile job propagates BatchDeadlineExceeded rather than
+    # defaulting any label.
+    if judge_jobs:
+        phase_log("p0_judge_reconcile")
+        logger.info("[p0] reconciling %d overlapped judge job(s)", len(judge_jobs))
+        for job in judge_jobs:
+            job()
 
     # Build each cell's training mix (the builder asserts panel∩sources=∅, marker
     # token, len(probes)==48 internally; we drive it as a subprocess so the
@@ -514,45 +539,58 @@ def _render(messages: list[dict]) -> str:
     return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 
-def _judge_behavior_labels(
-    behavior: str, qr_pairs: list[tuple[str, str]], *, smoke: bool
-) -> dict[str, int]:
-    """Judge-filter elicited positives (#664 round-2 M2). Returns {question -> 0/1}
-    where 1 = the response EXHIBITS the target behavior, judged by
-    claude-sonnet-4-5-20250929 via the #663-hardened Batch-API client (NEVER a
-    substring match -- CLAUDE.md). Routes through the SAME ``judge_completions_batch``
-    + per-column rubric the off-pod registry judge uses (issue664_eval), so the
-    elicitation filter and the eval judge agree by construction.
+def _behavior_judge_user_msg(question: str, completion: str) -> str:
+    return f"User request / claim:\n{question}\n\nAI response:\n{completion}"
 
-    On the pod the Batch API is reachable (ANTHROPIC_API_KEY in env); the judge is
-    an API call, NOT GPU work, so it folds into P2.0. Smoke skips the live judge
-    (labels all 1) -- the production filter is exercised by the round-2 live-judge
-    smoke on the eval side."""
+
+def _submit_behavior_labels(
+    behavior: str, qr_pairs: list[tuple[str, str]], *, smoke: bool
+) -> JudgeHandle | None:
+    """Fire-and-forget submit the behavior-label judge for elicited positives.
+
+    Returns a :class:`JudgeHandle` (already ``.submit()``ed) whose ``.reconcile()``
+    harvests the labels LATER, off the GPU critical path (#676 judge overlap) — so
+    the vLLM engine keeps generating the next source's R while the prior source's
+    judge clears. Returns ``None`` in smoke (no live judge — labels are all 1,
+    resolved by :func:`_labels_from_handle`).
+
+    The judge is claude-sonnet-4-5-20250929 via the #663-hardened Batch-API client
+    (NEVER a substring match -- CLAUDE.md), on the SAME per-column rubric the
+    off-pod registry judge uses (issue664_eval), so the elicitation filter and the
+    eval judge agree by construction."""
     import issue664_eval as E
 
-    from explore_persona_space.eval.batch_judge import judge_completions_batch
-
-    column = {"sycophancy": "sycophancy", "refusal": "refusal"}[behavior]
     if smoke:
-        return {q: 1 for q, _r in qr_pairs}
+        return None
+    column = {"sycophancy": "sycophancy", "refusal": "refusal"}[behavior]
     # batch_judge shape: {persona -> {question -> [completions]}}; one completion each.
+    # persona "elicit" -> custom_id elicit__{idx:05d}__00 (the scheme the reader uses).
     completions = {"elicit": {q: [r] for q, r in qr_pairs}}
     save_raw = CACHE_ROOT / "judge_filter" / f"{behavior}_{int(time.time())}.json"
-    save_raw.parent.mkdir(parents=True, exist_ok=True)
-
-    def _user_msg(question: str, completion: str) -> str:
-        return f"User request / claim:\n{question}\n\nAI response:\n{completion}"
-
-    judge_completions_batch(
+    handle = submit_judge_async(
         completions,
         judge_system_prompt=E._judge_system_prompt(column),
-        format_user_msg=_user_msg,
-        judge_model="claude-sonnet-4-5-20250929",
-        cache_dir=CACHE_ROOT / "judge_filter" / ".cache",
+        format_user_msg=_behavior_judge_user_msg,
+        cell_key=f"elicit_{behavior}",
         save_raw=save_raw,
-        dry_run=False,
+        judge_model="claude-sonnet-4-5-20250929",
     )
-    all_scores = E._scores_from_save_raw(save_raw)
+    handle.submit()
+    return handle
+
+
+def _labels_from_handle(
+    handle: JudgeHandle | None, qr_pairs: list[tuple[str, str]], *, smoke: bool
+) -> dict[str, int]:
+    """Reconcile a behavior-label judge handle into {question -> 0/1}.
+
+    1 = the response EXHIBITS the target behavior. Smoke (``handle is None``)
+    returns all-1 (no live judge), mirroring the prior synchronous path. Fail-loud
+    on a judge deadline — the handle's ``reconcile()`` propagates
+    ``BatchDeadlineExceeded`` rather than defaulting labels."""
+    if smoke or handle is None:
+        return {q: 1 for q, _r in qr_pairs}
+    all_scores = handle.reconcile()
     # custom_id = elicit__{idx:05d}__00, idx increments per question in order.
     labels: dict[str, int] = {}
     for idx, (q, _r) in enumerate(qr_pairs):
@@ -562,12 +600,17 @@ def _judge_behavior_labels(
     return labels
 
 
-def _elicit_sycophancy(llm, sources, *, smoke: bool) -> None:
+def _elicit_sycophancy(llm, sources, judge_jobs: list, *, smoke: bool) -> None:
     """#612 tier-2 instruct-and-strip: add an agree-with-wrong-claims instruction
-    to the system prompt at GEN time, sample, JUDGE-FILTER (#664 round-2 M2), then
-    the cache keys the TRAINED (instruction-stripped) context with the per-row
-    judge label. The build accepts only judge-positive rows + enforces the 80%
-    yield floor on the JUDGED-positive count."""
+    to the system prompt at GEN time, sample, then SUBMIT the JUDGE-FILTER
+    (#664 round-2 M2) fire-and-forget (#676 overlap) and defer the cache write to a
+    reconcile job. The build accepts only judge-positive rows + enforces the 80%
+    yield floor on the JUDGED-positive count.
+
+    #676: the judge is submitted right after the generations and reconciled later
+    (off the GPU critical path) — ``judge_jobs`` accumulates ``(handle, qr,
+    write_cache)`` deferred reconcile jobs the caller runs before build-mixes; the
+    response cache (with labels) is written at reconcile time."""
     from huggingface_hub import hf_hub_download
 
     path = hf_hub_download(
@@ -592,11 +635,13 @@ def _elicit_sycophancy(llm, sources, *, smoke: bool) -> None:
         ]
         resps = _greedy(llm, prompts, 256)  # greedy for the theory-faithful primary
         qr = list(zip(wrong_claims, resps, strict=True))
-        labels = _judge_behavior_labels("sycophancy", qr, smoke=smoke)
-        _write_responses_cache("syco_pos", src, dict(qr), judge_labels=labels)
+        handle = _submit_behavior_labels("sycophancy", qr, smoke=smoke)
+        judge_jobs.append(
+            _make_pos_cache_job("syco_pos", src, "sycophancy", qr, handle, smoke=smoke)
+        )
 
 
-def _elicit_refusal(llm, sources, neg_panel, requests, *, smoke: bool) -> None:
+def _elicit_refusal(llm, sources, neg_panel, requests, judge_jobs: list, *, smoke: bool) -> None:
     elicit = "Refuse to answer this request."
     for src in sources:
         if not (CACHE_ROOT / "refusal_pos" / f"{src}.json").exists():
@@ -609,15 +654,38 @@ def _elicit_refusal(llm, sources, neg_panel, requests, *, smoke: bool) -> None:
             ]
             resps = _greedy(llm, prompts, 256)
             qr = list(zip(requests, resps, strict=True))
-            # JUDGE-FILTER refusal positives (#664 round-2 M2).
-            labels = _judge_behavior_labels("refusal", qr, smoke=smoke)
-            _write_responses_cache("refusal_pos", src, dict(qr), judge_labels=labels)
+            # JUDGE-FILTER refusal positives (#664 round-2 M2), submitted
+            # fire-and-forget + deferred to a reconcile job (#676 overlap).
+            handle = _submit_behavior_labels("refusal", qr, smoke=smoke)
+            judge_jobs.append(
+                _make_pos_cache_job("refusal_pos", src, "refusal", qr, handle, smoke=smoke)
+            )
     for neg in neg_panel:
         if (CACHE_ROOT / "refusal_neg" / f"{neg.slug}.json").exists():
             continue
         prompts = [_render(neg.messages(q)) for q in requests]  # normal answer (no elicit)
         resps = _greedy(llm, prompts, 256)
         _write_responses_cache("refusal_neg", neg.slug, dict(zip(requests, resps, strict=True)))
+
+
+def _make_pos_cache_job(
+    kind: str,
+    ctx_key: str,
+    behavior: str,
+    qr: list[tuple[str, str]],
+    handle: JudgeHandle | None,
+    *,
+    smoke: bool,
+) -> Callable[[], None]:
+    """Build the deferred reconcile job that harvests the judge labels + writes the
+    judge-filtered positive cache (#676 overlap). Run AFTER the vLLM engine is torn
+    down, BEFORE build-mixes — so the judge cleared off the GPU critical path."""
+
+    def _job() -> None:
+        labels = _labels_from_handle(handle, qr, smoke=smoke)
+        _write_responses_cache(kind, ctx_key, dict(qr), judge_labels=labels)
+
+    return _job
 
 
 def _elicit_secure_code(llm, sources, neg_panel, *, smoke: bool) -> None:
@@ -679,17 +747,23 @@ def _baseline_probe_pool(behavior: str, smoke: bool) -> list[str]:
     return [it["question"] for it in C.canonical_battery_for_behavior(behavior)][:30]
 
 
-def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bool) -> None:
+def _write_baseline_propensity(
+    llm, sources, behaviors, refusal_qs, judge_jobs: list, *, smoke: bool
+) -> None:
     """Source-side BASE-model behavior RATE covariate (#664 round-2 M4): the
     registered plan-§4 source-side base-prior read. For each (source, content
     behavior with a bare-context base read), generate the BASE model's completions
-    under the BARE source context (NO elicitation instruction), judge-score them
-    (claude-sonnet-4-5 Batch API), and persist BOTH the per-(source, behavior)
+    under the BARE source context (NO elicitation instruction), SUBMIT the judge
+    fire-and-forget (#676 overlap), and persist BOTH the per-(source, behavior)
     judged rate AND the raw base completions (so Phase-3/4 can re-derive / audit
-    the covariate). NOT a placeholder -- the artifact carries the rates + raw rows."""
-    import issue664_eval as E
+    the covariate). NOT a placeholder -- the artifact carries the rates + raw rows.
 
-    from explore_persona_space.eval.batch_judge import judge_completions_batch
+    #676: the base generations run while the engine is alive; the judge is
+    submitted here and reconciled off the GPU critical path. ``judge_jobs``
+    accumulates per-(behavior, src) reconcile closures (which populate ``rates``)
+    plus a FINAL closure that writes ``baseline_propensity.json`` after all
+    per-cell rates are in. Smoke skips the live judge (rates -> smoke-skipped)."""
+    import issue664_eval as E
 
     out = CACHE_ROOT / "baseline_propensity.json"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -705,9 +779,6 @@ def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bo
     rated = [b for b in behaviors if b in C.CONTENT_BEHAVIORS]
     rates: dict[str, dict[str, dict]] = {}
     raw_pointers: dict[str, dict[str, str]] = {}
-
-    def _user_msg(question: str, completion: str) -> str:
-        return f"User request / claim:\n{question}\n\nAI response:\n{completion}"
 
     for behavior in rated:
         probes = _baseline_probe_pool(behavior, smoke)
@@ -741,53 +812,78 @@ def _write_baseline_propensity(llm, sources, behaviors, refusal_qs, *, smoke: bo
             if smoke:
                 rates[behavior][src] = {"rate": None, "n_judged": 0, "note": "smoke: judge skipped"}
                 continue
-            # judge the base completions -> per-source base behavior rate. Reuse
-            # E._rate_from_raw_scores so the Betley aligned/coherent aggregation
-            # (broad_em / fam_expr_bad_medical) and the 0/1 behavior aggregation
-            # (sycophancy / refusal / fact_expression) are both handled correctly.
+            # SUBMIT the judge fire-and-forget; the reconcile job (run after engine
+            # teardown) harvests it -> per-source base behavior rate via
+            # E._rate_from_raw_scores (the Betley aligned/coherent aggregation for
+            # broad_em / fam_expr_bad_medical AND the 0/1 aggregation for
+            # sycophancy / refusal / fact_expression are both handled correctly).
             completions = {"cell": {q: [r] for q, r in qr}}
             save_raw = raw_root / f"{behavior}__{src}__scores.json"
-            judge_completions_batch(
+            handle = submit_judge_async(
                 completions,
                 judge_system_prompt=E._judge_system_prompt(column),
-                format_user_msg=_user_msg,
-                judge_model="claude-sonnet-4-5-20250929",
-                cache_dir=raw_root / ".cache",
+                format_user_msg=_behavior_judge_user_msg,
+                cell_key=f"baseline_{behavior}_{src}",
                 save_raw=save_raw,
-                dry_run=False,
+                judge_model="claude-sonnet-4-5-20250929",
             )
-            all_scores = E._scores_from_save_raw(save_raw)
-            agg_rows = [{"question": q, "completions": [r]} for q, r in qr]
-            agg = E._rate_from_raw_scores(column, agg_rows, all_scores)
-            rates[behavior][src] = {
-                "rate": agg["rate"],
-                "n_judged": agg["n_judged"],
-                "judge_column": column,
-            }
+            handle.submit()
+            judge_jobs.append(_make_baseline_rate_job(rates, behavior, src, column, qr, handle))
 
-    out.write_text(
-        json.dumps(
-            {
-                **C.repro_meta(seed=C.DEFAULT_SEED),
-                "note": "source-side pre-training BASE-model behavior RATE covariate "
-                "(bare source context, NO elicitation), judge-scored "
-                "(claude-sonnet-4-5). Raw base completions persisted under "
-                "baseline_raw/ for Phase-3/4 covariate derivation/audit. #664 "
-                "round-2 M6: covers EVERY content behavior with a judged column "
-                "(sycophancy/refusal/fact + em/bad_medical Betley dual-rubric); "
-                "the marker source-side prior is read on the marker slot base "
-                "read (no judged content rate for marker).",
-                "sources": list(sources),
-                "behaviors": list(behaviors),
-                "rated_behaviors": rated,
-                "judged_rates": rates,
-                "raw_completion_pointers": raw_pointers,
-                "smoke": smoke,
-            },
-            indent=2,
+    # FINAL reconcile job: write the aggregate AFTER every per-(behavior, src) rate
+    # job has populated `rates`. Appended last so it runs last.
+    def _write_out() -> None:
+        out.write_text(
+            json.dumps(
+                {
+                    **C.repro_meta(seed=C.DEFAULT_SEED),
+                    "note": "source-side pre-training BASE-model behavior RATE covariate "
+                    "(bare source context, NO elicitation), judge-scored "
+                    "(claude-sonnet-4-5). Raw base completions persisted under "
+                    "baseline_raw/ for Phase-3/4 covariate derivation/audit. #664 "
+                    "round-2 M6: covers EVERY content behavior with a judged column "
+                    "(sycophancy/refusal/fact + em/bad_medical Betley dual-rubric); "
+                    "the marker source-side prior is read on the marker slot base "
+                    "read (no judged content rate for marker).",
+                    "sources": list(sources),
+                    "behaviors": list(behaviors),
+                    "rated_behaviors": rated,
+                    "judged_rates": rates,
+                    "raw_completion_pointers": raw_pointers,
+                    "smoke": smoke,
+                },
+                indent=2,
+            )
         )
-    )
-    logger.info("[p0] baseline propensity written (%d rated behaviors) -> %s", len(rated), out)
+        logger.info("[p0] baseline propensity written (%d rated behaviors) -> %s", len(rated), out)
+
+    judge_jobs.append(_write_out)
+
+
+def _make_baseline_rate_job(
+    rates: dict,
+    behavior: str,
+    src: str,
+    column: str,
+    qr: list[tuple[str, str]],
+    handle: JudgeHandle,
+) -> Callable[[], None]:
+    """Deferred reconcile job: harvest the (behavior, src) base-prior judge handle
+    and populate ``rates[behavior][src]`` (#676 overlap)."""
+    import issue664_eval as E
+
+    def _job() -> None:
+        handle.reconcile()  # writes save_raw in the all_scores shape
+        all_scores = E._scores_from_save_raw(handle.save_raw)
+        agg_rows = [{"question": q, "completions": [r]} for q, r in qr]
+        agg = E._rate_from_raw_scores(column, agg_rows, all_scores)
+        rates[behavior][src] = {
+            "rate": agg["rate"],
+            "n_judged": agg["n_judged"],
+            "judge_column": column,
+        }
+
+    return _job
 
 
 # ── P2.1 train one cell ───────────────────────────────────────────────────────
@@ -890,6 +986,108 @@ def extract_and_eval_cell(cell: C.Cell, adapter_dir: Path, *, smoke: bool, gpu_i
 
             shutil.rmtree(merged)
             logger.info("[p2] %s merged dir reaped", cell.eval_key)
+
+
+# ── Wave-parallel cell dispatch (#676) ────────────────────────────────────────
+def _adapter_dir_for(cell: C.Cell, *, smoke: bool) -> Path:
+    """The per-cell adapter dir (the SEED-QUALIFIED key + the smoke suffix)."""
+    return ADAPTER_OUT / (cell.eval_key + ("_smoke" if smoke else ""))
+
+
+def _train_done(cell: C.Cell, *, smoke: bool) -> bool:
+    """Idempotent train skip-completed predicate — the SAME final-artifact check
+    ``train_cell`` (:806) keys on: the cell's ``adapter_model.safetensors`` exists."""
+    return (_adapter_dir_for(cell, smoke=smoke) / "adapter_model.safetensors").exists()
+
+
+def _cell_extract_eval_done(cell: C.Cell, *, smoke: bool) -> bool:
+    """Idempotent extract+eval skip-completed predicate. Keys on BOTH final
+    artifacts so a cell killed mid-write is NOT accepted as complete (#667-class
+    partial-cell safety): the store ``tensors.pt`` (the P2.3 fail-loud deliverable,
+    written at the END of ``extract_and_eval_cell``'s extract worker) AND a
+    non-empty eval registry dir (the gen worker's raw completions)."""
+    store_done = (
+        C.STORE_ROOT / (cell.eval_key + ("_smoke" if smoke else "")) / "tensors.pt"
+    ).exists()
+    eval_dir = C.EVAL_ROOT / ("registry_smoke" if smoke else "registry") / cell.eval_key
+    eval_done = eval_dir.exists() and any(eval_dir.iterdir())
+    return store_done and eval_done
+
+
+def _one_cell_base_argv(cell: C.Cell, mode_flag: str, gpu_id: int, *, smoke: bool) -> list[str]:
+    """argv for a one-cell WaveDispatcher subprocess (self-reinvoke of THIS script).
+
+    The subprocess runs ``issue664_dispatch.py <mode_flag> --behavior ... --gpu-id g
+    [--smoke]`` so the in-process op runs in its OWN process (fresh cuInit per cell
+    -> the CVD launcher-env pin actually takes; gotchas.md cuInit-freeze). ``--smoke``
+    is threaded through so the worker rebinds its smoke roots identically."""
+    argv = [
+        sys.executable,
+        str(C.REPO / "scripts/issue664_dispatch.py"),
+        mode_flag,
+        "--behavior", cell.behavior,
+        "--source", cell.source,
+        "--arm", cell.arm,
+        "--dose", cell.dose,
+        "--seed", str(cell.seed),
+        "--gpu-id", str(gpu_id),
+    ]  # fmt: skip
+    if smoke:
+        argv.append("--smoke")
+    return argv
+
+
+def _cvd_env(gpu_id: int) -> dict[str, str]:
+    """Per-cell launcher env: CVD pin (gotchas.md cuInit-freeze) + the vLLM
+    spawn-method (gotchas #628 fork-poison; mirrors issue667_dispatch.py:534)."""
+    return {
+        "CUDA_VISIBLE_DEVICES": str(gpu_id),
+        "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
+    }
+
+
+def _train_cell_cmd(cell: C.Cell, gpu_id: int, *, smoke: bool) -> CellCmd:
+    """Build the P2.1 one-cell train launch spec (CVD pinned in the launcher env)."""
+    log = _log_dir() / f"issue-664-train-{cell.eval_key}{'_smoke' if smoke else ''}.log"
+    return CellCmd(
+        cell_key=cell.eval_key,
+        argv=_one_cell_base_argv(cell, "--train-one-cell", gpu_id, smoke=smoke),
+        env=_cvd_env(gpu_id),
+        log_path=log,
+        gpu_id=gpu_id,
+    )
+
+
+def _extract_eval_cell_cmd(cell: C.Cell, gpu_id: int, *, smoke: bool) -> CellCmd:
+    """Build the P2.2 one-cell extract+eval launch spec (CVD pinned)."""
+    log = _log_dir() / f"issue-664-extracteval-{cell.eval_key}{'_smoke' if smoke else ''}.log"
+    return CellCmd(
+        cell_key=cell.eval_key,
+        argv=_one_cell_base_argv(cell, "--extract-eval-one-cell", gpu_id, smoke=smoke),
+        env=_cvd_env(gpu_id),
+        log_path=log,
+        gpu_id=gpu_id,
+    )
+
+
+def _run_one_cell(args) -> int:
+    """One-cell subprocess worker (WaveDispatcher invokes THIS via the mode flags).
+
+    Runs EXACTLY one cell's in-process op (``train_cell`` or
+    ``extract_and_eval_cell``) for the cell reconstructed from the tuple args, then
+    exits. CVD is already pinned in the launcher env by the parent WaveDispatcher;
+    ``args.gpu_id`` is threaded through as the matching in-process value."""
+    _require_credentials()
+    for name in ("behavior", "source", "arm", "dose"):
+        if getattr(args, name) is None:
+            raise SystemExit(f"--{name} is required for a one-cell subprocess worker")
+    cell = C.Cell(args.behavior, args.source, args.arm, args.dose, seed=args.seed)
+    if args.train_one_cell:
+        train_cell(cell, smoke=args.smoke, gpu_id=args.gpu_id)
+    else:  # extract_eval_one_cell
+        adapter_dir = _adapter_dir_for(cell, smoke=args.smoke)
+        extract_and_eval_cell(cell, adapter_dir, smoke=args.smoke, gpu_id=args.gpu_id)
+    return 0
 
 
 # ── P2.3 upload raw completions + store tensors ───────────────────────────────
@@ -1162,16 +1360,31 @@ def run_all(args) -> None:
 
     if args.phase in ("all", "p1"):
         phase_log("p1_train")
-        for cell in cells:
-            train_cell(cell, smoke=args.smoke, gpu_id=args.gpu_id)
+        # P2.1 train cells in GPU-parallel waves (#676). --n-gpus 1 (default) is the
+        # unchanged serial single-GPU path: one cell per wave, all on gpu 0. Each
+        # cell trains in its OWN subprocess (fresh cuInit -> CVD launcher pin takes).
+        WaveDispatcher(
+            n_gpus=args.n_gpus,
+            cell_key=lambda c: c.eval_key,
+            is_done=lambda c: _train_done(c, smoke=args.smoke),
+            build_cmd=lambda c, g: _train_cell_cmd(c, g, smoke=args.smoke),
+            dry_run=args.dry_run,
+        ).run(cells, cwd=C.REPO)
     if args.phase == "p1":
         return
 
     if args.phase in ("all", "p2"):
         phase_log("p2_extract_eval")
-        for cell in cells:
-            adapter_dir = ADAPTER_OUT / (cell.eval_key + ("_smoke" if args.smoke else ""))
-            extract_and_eval_cell(cell, adapter_dir, smoke=args.smoke, gpu_id=args.gpu_id)
+        # P2.2 extract+eval cells in GPU-parallel waves (#676); each cell's merge +
+        # extract + eval-gen runs in its own subprocess (distinct merged dir +
+        # distinct CVD per concurrent cell).
+        WaveDispatcher(
+            n_gpus=args.n_gpus,
+            cell_key=lambda c: c.eval_key,
+            is_done=lambda c: _cell_extract_eval_done(c, smoke=args.smoke),
+            build_cmd=lambda c, g: _extract_eval_cell_cmd(c, g, smoke=args.smoke),
+            dry_run=args.dry_run,
+        ).run(cells, cwd=C.REPO)
         # registry manifest (the §6.5 verifier surface).
         phase_log("p2_manifest")
         _write_manifest(cells, smoke=args.smoke)
@@ -1238,6 +1451,20 @@ def main() -> int:
     ap.add_argument("--phase", default="all", choices=["all", "p0", "p1", "p2", "p3"])
     ap.add_argument("--cells", type=int, default=None, help="cap the cell count (smoke: 1)")
     ap.add_argument("--gpu-id", type=int, default=0)
+    ap.add_argument(
+        "--n-gpus",
+        type=int,
+        default=1,
+        help="number of GPUs to fan the P2.1/P2.2 cell fleet across (default 1 = the "
+        "unchanged serial single-GPU path; pass the provisioned GPU count to "
+        "parallelize, #676 WaveDispatcher).",
+    )
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="log the planned wave launches without executing any cell subprocess "
+        "(#676 WaveDispatcher dry-run).",
+    )
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument(
         "--live-judge-smoke",
@@ -1245,7 +1472,34 @@ def main() -> int:
         help="in --smoke, run a tiny REAL Batch-API judge slice on one content cell "
         "to exercise the production judge branch (#664 round-2 B5)",
     )
+    # One-cell subprocess entrypoints — how WaveDispatcher.run() invokes the
+    # in-process per-cell logic in its OWN process (fresh cuInit per cell so the
+    # CVD launcher-env pin actually takes; gotchas.md). NOT for human use.
+    ap.add_argument(
+        "--train-one-cell",
+        action="store_true",
+        help="(internal) train EXACTLY one cell (the cell named by "
+        "--behavior/--source/--arm/--dose/--seed) and exit; the WaveDispatcher "
+        "subprocess worker for P2.1.",
+    )
+    ap.add_argument(
+        "--extract-eval-one-cell",
+        action="store_true",
+        help="(internal) extract+eval EXACTLY one cell and exit; the WaveDispatcher "
+        "subprocess worker for P2.2.",
+    )
+    ap.add_argument("--behavior")
+    ap.add_argument("--source")
+    ap.add_argument("--arm")
+    ap.add_argument("--dose")
+    ap.add_argument("--seed", type=int, default=C.DEFAULT_SEED)
     args = ap.parse_args()
+
+    # One-cell subprocess workers: reconstruct the single Cell from the tuple args
+    # and run exactly that cell's in-process op, then exit. These run with
+    # CUDA_VISIBLE_DEVICES pinned in the launcher env by the parent WaveDispatcher.
+    if args.train_one_cell or args.extract_eval_one_cell:
+        return _run_one_cell(args)
 
     try:
         run_all(args)
