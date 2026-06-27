@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 688,
+  "highest_id": 689,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4343,6 +4343,13 @@
       "path": "tasks/proposed/688",
       "status": "proposed",
       "title": "workflow-fix: GCP janitor must sweep whole project, not just eps-issue-*"
+    },
+    "689": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/689",
+      "status": "proposed",
+      "title": "RunPod RUNNING-but-no-port host wedge: detect + auto-migrate; per-cell incremental upload for fleet sweeps"
     },
     "69": {
       "has_clean_result": false,
