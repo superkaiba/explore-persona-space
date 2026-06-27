@@ -66,6 +66,13 @@ HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_ADAPTER_PREFIX = "adapters/issue_664"
 HF_RAW_COMPLETIONS_PREFIX = "issue664_leakage_fleet/raw_completions"
 HF_STORE_PREFIX = "theory_assumptions/Qwen2.5-7B-Instruct/issue664"
+# Marker read-gauge slot stats (marker cells ONLY). The A7 readability assert
+# (issue664_dispatch._marker_readability_assert) reads marker_slot_stats.json,
+# which the extract worker writes to a THIRD local root
+# (EVAL_ROOT/marker_slot/<cell>/, NOT under HF_STORE_PREFIX). It is uploaded
+# per-cell (fix (a1), #689 blocker-1) so a fresh auto-migrated pod can hydrate it
+# for the readability assert instead of crashing on a local-absent file.
+HF_MARKER_SLOT_PREFIX = "issue664_leakage_fleet/marker_slot"
 # Source-side BASE-model behavior-rate covariate (plan §4): the per-(source,
 # behavior) judged rate file + the raw base completions. Phase-3/4 derives the
 # base-prior covariate from this prefix, so it MUST survive pod teardown (#664

@@ -323,3 +323,146 @@ def test_smoke_mode_short_circuits(tmp_path, monkeypatch):
     # so the local-only predicate decides; with no local artifacts -> not done.
     assert D._cell_done_anywhere(cell, smoke=True) is False
     assert lst.calls == 0  # still no HF listing
+
+
+# ---------------------------------------------------------------------------
+# 8. #689 blocker-1 (fix a1): fresh-pod marker cells stay READABLE — the
+#    marker-slot stats are part of the per-cell HF surface + hydrated before
+#    _marker_readability_assert, so a fresh auto-migrated pod does NOT crash.
+# ---------------------------------------------------------------------------
+
+
+def _a_marker_cell() -> C.Cell:
+    """The first MARKER cell in the realized grid (writes marker_slot_stats.json)."""
+    for c in C.realized_grid():
+        if c.behavior == "marker":
+            return c
+    pytest.skip("no marker cell in the realized grid")
+
+
+def _marker_hub_paths(cell: C.Cell) -> set[str]:
+    """The full COMPLETE-on-HF path set for a MARKER cell: eval JSONs (may be
+    empty for the marker column) + store tensors + the marker-slot stats JSON."""
+    raw_prefix = f"{C.HF_RAW_COMPLETIONS_PREFIX}/{cell.eval_key}"
+    store_prefix = f"{C.HF_STORE_PREFIX}/{cell.eval_key}"
+    marker_prefix = f"{C.HF_MARKER_SLOT_PREFIX}/{cell.eval_key}"
+    eval_files = {f"{raw_prefix}/{name}" for name in D._expected_eval_files(cell)}
+    store_files = {f"{store_prefix}/{name}" for name in {"tensors.pt", "meta.json"}}
+    marker_files = {f"{marker_prefix}/marker_slot_stats.json"}
+    return eval_files | store_files | marker_files
+
+
+def test_marker_slot_stats_in_complete_surface(tmp_path, monkeypatch):
+    """#689 blocker-1: a marker cell is NOT 'complete' on HF unless its
+    marker_slot_stats.json is present (it is now part of the per-cell HF surface,
+    so the fresh-pod SKIP-and-hydrate path is coherent). A non-marker cell is
+    unaffected (the marker requirement is vacuous)."""
+    mcell = _a_marker_cell()
+    full = _marker_hub_paths(mcell)
+    marker_path = f"{C.HF_MARKER_SLOT_PREFIX}/{mcell.eval_key}/marker_slot_stats.json"
+    # WITH the marker-slot stats -> complete.
+    assert D._classify_cell_hub_state(mcell, full) == "complete"
+    # WITHOUT the marker-slot stats -> NOT complete (partial: other kinds present).
+    assert D._classify_cell_hub_state(mcell, full - {marker_path}) == "partial"
+    # A non-marker cell does not require marker-slot stats.
+    ncell = _a_cell()
+    assert D._expected_marker_slot_files(ncell) == set()
+
+
+def test_a2_fresh_pod_marker_cells_readable(tmp_path, monkeypatch):
+    """#689 blocker-1 (the headline regression): on a FRESH auto-migrated pod the
+    local marker_slot/ dir is ABSENT, but the marker cell's full expected set —
+    including marker_slot_stats.json — IS on HF. _marker_readability_assert must
+    HYDRATE the stats from HF and NOT raise (checked > 0): the prior code crashed
+    at `checked == 0` because P2 SKIPped the HF-complete marker cell so there was
+    no local file to read."""
+    import json as _json
+
+    mcell = _a_marker_cell()
+    full = _marker_hub_paths(mcell)
+    lst = _ListRepoFilesStub([full])
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", lst)
+    # Fresh pod: NO local marker_slot dir.
+    monkeypatch.setattr(C, "EVAL_ROOT", tmp_path / "eval", raising=False)
+    (tmp_path / "eval").mkdir(parents=True, exist_ok=True)
+
+    # A clean readability payload (emission < 1%, z_marker < z_eos on all slots),
+    # written by the hydrate's hf_hub_download seam into a scratch file the helper
+    # then copies into the local marker_slot path.
+    clean_payload = {
+        "cell": mcell.eval_key,
+        "slots": {
+            "ctx0": {
+                "trained": {"argmax_id": C.MARKER_ID + 1, "z_marker": 1.0, "z_eos": 3.0},
+                "base": {"argmax_id": C.MARKER_ID + 1, "z_marker": 0.5, "z_eos": 3.0},
+            }
+        },
+    }
+    dl_src = tmp_path / "downloaded_marker_slot_stats.json"
+    dl_src.write_text(_json.dumps(clean_payload))
+
+    def _fake_download(*, repo_id, repo_type, filename, revision):
+        assert filename.endswith("marker_slot_stats.json")
+        return str(dl_src)
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _fake_download, raising=False)
+
+    # Sanity: the local file does NOT exist before the assert runs.
+    local = D._marker_slot_local_path(mcell, smoke=False)
+    assert not local.exists()
+
+    # The readability assert hydrates from HF and reads checked > 0 -> NO raise.
+    D._marker_readability_assert([mcell], smoke=False)
+    # The hydrate landed the stats locally.
+    assert local.exists()
+
+
+# ---------------------------------------------------------------------------
+# 9. #689 blocker-4 (p3-raw-exact-verify): the terminal P3 raw verify is an
+#    EXACT FILE-SET check per selected cell, NOT a count floor — an incomplete
+#    selected cell is rejected even when unrelated prefix files inflate the count.
+# ---------------------------------------------------------------------------
+
+
+def test_p3_raw_terminal_verify_rejects_incomplete_selected_cell(tmp_path, monkeypatch):
+    """#689 blocker-4: one selected cell is missing one expected completions JSON
+    on the Hub, but UNRELATED files under the raw-completions prefix make the total
+    count high (a count floor would PASS). The exact-set terminal verify must raise
+    RuntimeError naming the missing cell + file."""
+    cell = _a_cell()
+    eval_files = sorted(D._expected_eval_files(cell))
+    if not eval_files:
+        pytest.skip("cell has no expected eval JSONs (marker-only)")
+    cells = [cell]
+    raw_prefix = f"{C.HF_RAW_COMPLETIONS_PREFIX}/{cell.eval_key}"
+    dropped = f"{raw_prefix}/{eval_files[0]}"
+    full = _expected_hub_paths(cell)
+    # On HF: the cell's full set MINUS one completions JSON, PLUS many UNRELATED
+    # files under the same top-level prefix so a count floor would be satisfied.
+    unrelated = {
+        f"{C.HF_RAW_COMPLETIONS_PREFIX}/some_other_cell_{i}/completions__x__c.json"
+        for i in range(20)
+    }
+    on_hub = (full - {dropped}) | unrelated
+
+    # The local registry has the FULL set on disk (so the upload loop runs for the
+    # not-complete cell), but the post-upload HF listing is missing the one file.
+    eval_dir = tmp_path / "eval" / "registry" / cell.eval_key
+    eval_dir.mkdir(parents=True, exist_ok=True)
+    for name in eval_files:
+        (eval_dir / name).write_text("[]")
+    monkeypatch.setattr(C, "EVAL_ROOT", tmp_path / "eval", raising=False)
+    monkeypatch.setattr(C, "STORE_ROOT", tmp_path / "store", raising=False)
+    (tmp_path / "store").mkdir(parents=True, exist_ok=True)
+
+    # list_repo_files always returns the (incomplete-for-this-cell) on_hub set; the
+    # cell is NOT classified complete (missing one eval file) so it is NOT skipped.
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(on_hub))
+    # hub._upload is a no-op (the file never actually lands on the Hub listing).
+    from explore_persona_space.orchestrate import hub
+
+    monkeypatch.setattr(hub, "_upload", lambda *a, **k: None, raising=False)
+
+    assert D._classify_cell_hub_state(cell, on_hub) != "complete"
+    with pytest.raises(RuntimeError, match="EXACT-set verify FAILED"):
+        D._upload_raw_completions(cells)

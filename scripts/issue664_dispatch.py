@@ -49,6 +49,7 @@ import gc
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -1071,20 +1072,58 @@ def _expected_store_files() -> set[str]:
     return {"tensors.pt", "meta.json"}
 
 
+def _is_marker_cell(cell: C.Cell) -> bool:
+    """True iff this cell's behavior is the marker implant. ONLY marker cells
+    write ``marker_slot_stats.json`` (issue664_extract_store L361), so the
+    marker-slot HF surface + the readability hydrate are gated on this.
+    ``getattr`` so a cell-shaped object without a ``behavior`` attr (the
+    backend_poll wedge-gate test doubles, which carry only ``eval_key``) reads as
+    non-marker — the marker-slot completeness requirement is then vacuous, which
+    is correct for the auto-terminate gate's raw+store-only inputs check."""
+    return getattr(cell, "behavior", None) == "marker"
+
+
+def _marker_slot_local_path(cell: C.Cell, *, smoke: bool) -> Path:
+    """The local ``marker_slot_stats.json`` path the extract worker writes for a
+    marker cell (issue664_extract_store L362). Keyed on the SEED-QUALIFIED
+    ``eval_key`` (+ the ``_smoke`` suffix), so it matches what the readability
+    assert reads."""
+    suffix = "_smoke" if smoke else ""
+    return C.EVAL_ROOT / "marker_slot" / (cell.eval_key + suffix) / "marker_slot_stats.json"
+
+
+def _expected_marker_slot_files(cell: C.Cell) -> set[str]:
+    """The EXACT set of marker-slot basenames a COMPLETE marker cell has on HF
+    (S1): the extract worker writes exactly ``marker_slot_stats.json`` for a
+    marker cell. A NON-marker cell writes none, so this is empty (and the
+    completeness check is a no-op for non-marker cells)."""
+    return {"marker_slot_stats.json"} if _is_marker_cell(cell) else set()
+
+
 def _classify_cell_hub_state(cell: C.Cell, files: set[str]) -> str:
     """Per-cell three-state HF presence (M1) from a PRE-FETCHED listing: 'complete'
     (both kinds' EXACT sets present), 'partial' (>=1 file of one kind present but
     not the full set), or 'absent' (no files under either prefix). Shared by the
-    skip guard and the auto-terminate gate so they cannot diverge (S1 exact-set)."""
+    skip guard and the auto-terminate gate so they cannot diverge (S1 exact-set).
+
+    #689 blocker-1 (fix a1): for a MARKER cell, "complete" ALSO requires the
+    marker-slot stats on HF — otherwise a fresh auto-migrated pod SKIPs the cell
+    (A2 ``_cell_done_anywhere``) yet ``_marker_readability_assert`` has no local
+    ``marker_slot_stats.json`` to read and crashes (``checked == 0``). Making the
+    slot stats part of the per-cell HF surface keeps the SKIP-and-hydrate path
+    coherent: the file is on HF for every HF-complete marker cell."""
     raw_prefix = f"{C.HF_RAW_COMPLETIONS_PREFIX}/{cell.eval_key}/"
     store_prefix = f"{C.HF_STORE_PREFIX}/{cell.eval_key}/"
+    marker_prefix = f"{C.HF_MARKER_SLOT_PREFIX}/{cell.eval_key}/"
     have_eval = {p[len(raw_prefix) :] for p in files if p.startswith(raw_prefix)}
     have_store = {p[len(store_prefix) :] for p in files if p.startswith(store_prefix)}
+    have_marker = {p[len(marker_prefix) :] for p in files if p.startswith(marker_prefix)}
     eval_ok = _expected_eval_files(cell).issubset(have_eval)
     store_ok = _expected_store_files().issubset(have_store)
-    if eval_ok and store_ok:
+    marker_ok = _expected_marker_slot_files(cell).issubset(have_marker)  # vacuous if non-marker
+    if eval_ok and store_ok and marker_ok:
         return "complete"
-    if have_eval or have_store:  # something present but not the full set
+    if have_eval or have_store or have_marker:  # something present but not the full set
         return "partial"
     return "absent"
 
@@ -1163,14 +1202,33 @@ def _upload_cell_artifacts(cell: C.Cell, *, smoke: bool) -> None:
             path_in_repo=f"{C.HF_STORE_PREFIX}/{cell.eval_key}",
             commit_message=f"[i664 per-cell] store tensors {cell.eval_key}",
         )
+    # marker-slot stats (MARKER cells only): EVAL_ROOT/marker_slot/<cell>/ ->
+    # issue664_leakage_fleet/marker_slot/<cell>/. #689 blocker-1 (fix a1): part of
+    # the per-cell HF surface so a fresh auto-migrated pod can hydrate the A7
+    # readability input instead of crashing on a local-absent marker_slot_stats.json.
+    if _is_marker_cell(cell):
+        slot_path = _marker_slot_local_path(cell, smoke=False)
+        if slot_path.exists():
+            api.upload_folder(
+                folder_path=str(slot_path.parent),
+                repo_id=C.HF_DATA_REPO,
+                repo_type="dataset",
+                path_in_repo=f"{C.HF_MARKER_SLOT_PREFIX}/{cell.eval_key}",
+                allow_patterns=["marker_slot_stats.json"],
+                commit_message=f"[i664 per-cell] marker slot stats {cell.eval_key}",
+            )
     if not _cell_artifacts_on_hub(cell):  # FRESH-listing EXACT-set verify, fail-loud
         raise RuntimeError(
             f"[p2-upload] per-cell upload verify FAILED for {cell.eval_key}: "
-            f"expected eval-JSON set {sorted(_expected_eval_files(cell))} and/or store set "
-            f"{sorted(_expected_store_files())} (incl. tensors.pt) not fully on Hub after "
-            f"upload_folder"
+            f"expected eval-JSON set {sorted(_expected_eval_files(cell))}, store set "
+            f"{sorted(_expected_store_files())} (incl. tensors.pt), and/or marker-slot set "
+            f"{sorted(_expected_marker_slot_files(cell))} not fully on Hub after upload_folder"
         )
-    logger.info("[p2-upload] %s eval JSONs + store tensors uploaded + verified", cell.eval_key)
+    logger.info(
+        "[p2-upload] %s eval JSONs + store tensors%s uploaded + verified",
+        cell.eval_key,
+        " + marker slot stats" if _is_marker_cell(cell) else "",
+    )
 
 
 def _one_cell_base_argv(cell: C.Cell, mode_flag: str, gpu_id: int, *, smoke: bool) -> list[str]:
@@ -1354,7 +1412,8 @@ def _upload_raw_completions(cells: list[C.Cell]) -> None:
     ``rglob('raw_completions.json')`` does NOT match (the #528 silent-loss
     class). So we walk the ACTUAL write path and upload per-file with
     ``upload_as_file=True`` to ``issue664_leakage_fleet/raw_completions/<rel>``,
-    then verify the per-cell file count landed on the Hub before teardown.
+    then verify the EXACT expected file set per selected cell landed on the Hub
+    before teardown (#689 blocker-4: an exact-set check, not a count floor).
 
     #664/#689 fix (a): the per-cell incremental hook (``_upload_cell_artifacts``)
     already pushed each cell as it completed, so P3 is now an idempotent SAFETY
@@ -1406,20 +1465,34 @@ def _upload_raw_completions(cells: list[C.Cell]) -> None:
             upload_as_file=True,  # gotchas: per-file _upload needs this
         )
         n_expected += 1
-    # verify on a FRESH listing (Python Hub API, never the hf CLI). The verify
-    # asserts every NEWLY-uploaded file landed (the already-complete cells were
-    # verified on their per-cell hook), so the count floor is the uploads we ran.
-    landed = [
+    # #689 blocker-4 (p3-raw-exact-verify): verify on a FRESH listing (Python Hub
+    # API, never the hf CLI) with an EXACT FILE-SET check per selected cell, NOT a
+    # count floor. A count check (``len(landed) < n_expected``) can PASS with an
+    # incomplete selected cell whenever unrelated files under the prefix inflate the
+    # count -- the same prefix-vs-exact-set hole the M2 store verify closes. Build
+    # the expected raw path set for EVERY selected cell (``_expected_eval_files``,
+    # the completions basenames the gen phase writes), then raise naming the exact
+    # missing (cell, file) pairs.
+    landed = {
         p for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset") if p.startswith(prefix)
-    ]
-    if len(landed) < n_expected:
+    }
+    missing: list[str] = []
+    for cell in cells:
+        cell_prefix = f"{prefix}/{cell.eval_key}/"
+        for basename in _expected_eval_files(cell):
+            expected_path = f"{cell_prefix}{basename}"
+            if expected_path not in landed:
+                missing.append(expected_path)
+    if missing:
         raise RuntimeError(
-            f"[p3-upload] raw-completions verify FAILED: {len(landed)} on Hub < "
-            f"{n_expected} expected under {prefix}"
+            f"[p3-upload] raw-completions EXACT-set verify FAILED: {len(missing)} expected "
+            f"completion file(s) missing on the Hub under {prefix}: {sorted(missing)}"
         )
     logger.info(
-        "[p3-upload] %d raw-completion files uploaded + verified -> %s/%s",
+        "[p3-upload] %d raw-completion files uploaded this sweep; EXACT-set verified "
+        "(%d selected cells) -> %s/%s",
         n_expected,
+        len(cells),
         C.HF_DATA_REPO,
         prefix,
     )
@@ -1499,6 +1572,51 @@ def _upload_store_tensors(cells: list[C.Cell]) -> None:
     )
 
 
+def _hydrate_marker_slot_stats_from_hf(marker_cells: list[C.Cell]) -> None:
+    """Download each marker cell's ``marker_slot_stats.json`` from HF into its
+    local path when the local file is ABSENT but the cell is HF-complete (#689
+    blocker-1, fix a1). This is the fresh-auto-migrated-pod recovery path: P2
+    SKIPped these cells (A2 ``_cell_done_anywhere`` saw them complete on HF), so
+    the readability assert has no local file to read. ONE fresh ``list_repo_files``
+    listing classifies all cells; only the HF-complete-but-local-absent ones are
+    hydrated. Best-effort per cell (a download failure leaves the file absent, so
+    the cell is skipped exactly as before) -- never raises; the caller's
+    ``checked == 0`` guard is the loud failure when the surface is genuinely
+    broken."""
+    import huggingface_hub
+
+    try:
+        on_hub = set(
+            huggingface_hub.list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+        )
+    except Exception as exc:
+        logger.warning("[a7-assert] HF listing for marker-slot hydrate failed (%s); skipping", exc)
+        return
+    for cell in marker_cells:
+        local = _marker_slot_local_path(cell, smoke=False)
+        if local.exists():
+            continue
+        if _classify_cell_hub_state(cell, on_hub) != "complete":
+            continue  # not on HF -> nothing to hydrate (cell is skipped + may trip checked==0)
+        remote = f"{C.HF_MARKER_SLOT_PREFIX}/{cell.eval_key}/marker_slot_stats.json"
+        try:
+            downloaded = huggingface_hub.hf_hub_download(
+                repo_id=C.HF_DATA_REPO,
+                repo_type="dataset",
+                filename=remote,
+                revision="main",
+            )
+            local.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(downloaded, local)
+            logger.info("[a7-assert] hydrated marker slot stats from HF -> %s", local)
+        except Exception as exc:
+            logger.warning(
+                "[a7-assert] marker-slot hydrate failed for %s (%s); leaving local absent",
+                cell.eval_key,
+                exc,
+            )
+
+
 # ── Marker read-gauge readability assert (§10 / §11 A7) ───────────────────────
 def _marker_readability_assert(cells: list[C.Cell], *, smoke: bool) -> None:
     """A7 read-gauge readability gate: ≥1 trained marker adapter at the
@@ -1520,6 +1638,19 @@ def _marker_readability_assert(cells: list[C.Cell], *, smoke: bool) -> None:
         logger.info("[a7-assert] no marker cell in selection -- A7 read-gauge assert N/A")
         return
     suffix = "_smoke" if smoke else ""
+    # #689 blocker-1 (fix a1): FRESH-POD HYDRATE. On a fresh auto-migrated pod the
+    # marker cells live only on HF (A2 _cell_done_anywhere skipped them in P2), so
+    # the LOCAL marker_slot_stats.json is absent -- without this the loop below
+    # would `continue` past every cell, hit `checked == 0`, and RAISE (the
+    # production-path crash this fix closes). For each marker cell whose local
+    # slot file is absent but is HF-complete, download marker_slot_stats.json from
+    # HF into the local path so the assertion below reads it. Smoke never consults
+    # HF (the per-cell upload is smoke-skipped). Best-effort: a hydrate miss leaves
+    # the file absent (the cell is then skipped as before) -- the `checked == 0`
+    # raise still fires if NO marker cell could be read, which is the correct loud
+    # failure when the marker-slot HF surface is genuinely broken.
+    if not smoke:
+        _hydrate_marker_slot_stats_from_hf(marker_cells)
     checked = 0
     failures: list[str] = []
     for cell in marker_cells:

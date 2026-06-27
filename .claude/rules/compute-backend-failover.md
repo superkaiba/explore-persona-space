@@ -237,20 +237,44 @@ prefix-presence) — COMPLETE (both raw+store exact sets on HF) is safe, a
 PARTIAL cell (one artifact-kind missing) BLOCKS, a NOT-YET-RUN (absent) cell
 does NOT block (rerunnable from verified earlier inputs). With ZERO partial
 cells, `terminate_pod` stops the billing leak and a FRESH pod is re-provisioned
-(NOT a host-pinned resume) + the dispatcher resumed idempotently (a sidecar
-sentinel keyed to the wedged pod identity, exactly once); the fresh pod's P2
-dispatcher skips HF-complete cells (`_cell_done_anywhere` = local-done OR
-HF-complete). Any partial cell → NO terminate, surface a `failure_class: infra`
-block (`reason=runpod_wedge_inputs_unverified`) so a human decides (CLAUDE.md
-halt-criterion #2). This is the irreversible auto-terminate, analogous to the
-`/issue` Step 8 auto-terminate-after-upload-PASS precedent — data-safe because
-fix (a)'s per-cell incremental upload + the per-cell gate make every COMPLETE
-cell's data already present on HF.
+(NOT a host-pinned resume) + the dispatcher resumed idempotently; the fresh
+pod's P2 dispatcher skips HF-complete cells (`_cell_done_anywhere` = local-done
+OR HF-complete). Any partial cell → NO terminate, surface a `failure_class:
+infra` block (`reason=runpod_wedge_inputs_unverified`) so a human decides
+(CLAUDE.md halt-criterion #2). This is the irreversible auto-terminate,
+analogous to the `/issue` Step 8 auto-terminate-after-upload-PASS precedent —
+data-safe because fix (a)'s per-cell incremental upload + the per-cell gate make
+every COMPLETE cell's data already present on HF.
+
+**Idempotency = a DURABLE lease + a sentinel, exactly as the GCP analogue
+(#689 blocker-2).** The wedge failover guards its terminate + re-provision with
+TWO records keyed to the wedged pod identity (pod_name/job_id): (1) the
+AUTHORITATIVE durable lease at `~/.eps-routing/` (`Lease.runpod_wedge_failover_of`,
+checked by `_lease_records_runpod_wedge_failover`, stamped by
+`_stamp_runpod_wedge_failover` after the fresh-pod relaunch succeeds) — it
+survives the EDQUOT / read-only-fs mode that fails BOTH the `.claude/cache`
+sidecar AND the same-dir sentinel together, the same persistent-disk-failure mode
+the GCP round-3 fix closed; and (2) the `.claude/cache` wedge sentinel as the fast
+path. A sentinel-only guard re-opened the double-terminate hole under a
+`.claude/cache` write failure. **Relaunch error mapping (#689 blocker-3):**
+`_relaunch_fresh_runpod` maps a no-capacity RunPod (`NoComputeAvailableError`) to
+a terminal infra JSON `reason=no_compute_available` (re-drivable by the watcher's
+capacity-retry pass) and a sidecar-write failure (EDQUOT) to
+`reason=sidecar_persistence_failed` (durable lease stamped to bound the relaunch),
+mirroring `_failover_dead_gcp_to_runpod` — so a wedge failover always honors the
+poller's terminal-JSON contract instead of crashing `main()` and stranding the run.
 
 The data-safety PREREQUISITE is the per-cell incremental upload in
 `scripts/issue664_dispatch.py` (`_upload_cell_artifacts`, fired the moment each
 cell's extract+eval worker succeeds) — without it the terminate would strand
-every not-yet-P3-uploaded cell. This closes the #664 gap. The complementary
+every not-yet-P3-uploaded cell. This closes the #664 gap. **The per-cell HF
+surface includes the marker-slot stats for MARKER cells (#689 blocker-1, fix
+a1):** `_upload_cell_artifacts` uploads `marker_slot_stats.json` (under
+`HF_MARKER_SLOT_PREFIX`) and `_classify_cell_hub_state` requires it for a marker
+cell to read "complete", so a fresh auto-migrated pod can HYDRATE it from HF
+(`_hydrate_marker_slot_stats_from_hf`) before the A7 `_marker_readability_assert`
+instead of crashing on a local-absent file (the assert SKIPs HF-complete marker
+cells via A2 and would otherwise hit `checked == 0` and raise). The complementary
 `cmd_resume` advice split (`pod_lifecycle.py`: a still-null resume names
 terminate+re-provision, not the wrong `--refresh-from-api`) is the interactive
 sibling; the report-only `running_no_port` flag in `pod_audit.py` is the

@@ -754,19 +754,31 @@ def _runspec_from_runpod_handle(handle, issue):
 
 
 def _runpod_wedge_already_handled(issue: int, handle, sidecar: Path) -> bool:
-    """Idempotency short-circuit for a re-fired RunPod wedge failover (#664).
+    """Idempotency short-circuit for a re-fired RunPod wedge failover (#664/#689).
 
-    Mirrors the GCP failover's sentinel + durable-lease guard (keyed to the
-    wedged pod_id) so a second tick on the OLD handle never double-terminates /
-    double-provisions.
+    Mirrors the GCP failover's sentinel + durable-lease guard (keyed to the wedged
+    pod identity) so a second tick on the OLD handle never double-terminates /
+    double-provisions. TWO records guard the relaunch, in the order checked:
+
+      1. DURABLE lease (AUTHORITATIVE, #689 blocker-2). The lease at
+         ``~/.eps-routing/`` survives the EDQUOT / read-only-fs / out-of-inodes
+         mode that fails BOTH the ``.claude/cache`` sidecar write AND the
+         same-dir sentinel write together — the SAFETY NET that makes "exactly
+         once per wedge" hold under a persistent ``.claude/cache`` disk failure.
+      2. SENTINEL (OPTIMIZATION). The ``.claude/cache`` sentinel is the fast path
+         — a sibling-file read that avoids the lease-store flock round-trip on
+         the common case (no disk failure). A corrupted/unreadable sentinel reads
+         as ABSENT (``_read_failover_sentinel`` returns ``None``) — worst case one
+         extra terminate-and-reprovision, never a silent suppression.
+
+    Both are keyed to the wedged pod's pod_name/job_id, so a genuinely-new run (a
+    fresh-pod re-provision writes a NEW pod_name to the sidecar) does NOT match a
+    stale record and still gets its own one failover.
     """
-    del issue  # identity is keyed on the wedged pod_name/job_id, not the issue
-    # A sibling .claude/cache file records the wedged-pod identity this failover
-    # already handled. A genuinely-new run (a fresh-pod re-provision writes a NEW
-    # pod_name to the sidecar) does NOT match a stale sentinel, so it still gets
-    # its own one failover. A corrupted/unreadable sentinel reads as ABSENT
-    # (``_read_failover_sentinel`` returns ``None``) -> worst case one extra
-    # terminate-and-reprovision, never a silent suppression.
+    # 1. DURABLE LEASE (authoritative; survives a .claude/cache-wide disk failure).
+    if _lease_records_runpod_wedge_failover(issue, handle):
+        return True
+    # 2. SENTINEL (fast path).
     sentinel = _runpod_wedge_sentinel_path(sidecar)
     prior = _read_failover_sentinel(sentinel)
     return prior is not None and prior.get("runpod_wedge") == _runpod_handle_identity(handle)
@@ -786,44 +798,96 @@ def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path) -> dict
         write_handle_sidecar,
     )
     from explore_persona_space.backends.router import (
+        NoComputeAvailableError,
         failover_to_runpod_after_async_workload_crash,
     )
     from explore_persona_space.backends.runpod import RunPodBackend
     from explore_persona_space.backends.slurm import post_marker_via_task_py
 
     spec = _runspec_from_runpod_handle(handle, issue)
-    route_result = failover_to_runpod_after_async_workload_crash(
-        spec=spec,
-        runpod_backend=RunPodBackend(),
-        evidence={
-            "source": "runpod_noport_wedge",
-            "current_phase": result.current_phase,
-            "log_tail_excerpt": result.log_tail_excerpt,
-            "wedged_pod_name": handle.pod_name,
-        },
-        residual_gap=(
-            "RunPod RUNNING-but-no-port host wedge (#664); host-pinned resume cannot "
-            "heal — re-provisioning a FRESH pod"
-        ),
-        marker_poster=post_marker_via_task_py,
-        on_launched=lambda h: write_handle_sidecar(h, sidecar),
-    )
+    # #689 blocker-3: wrap the router launch in try/except NoComputeAvailableError
+    # (mirrors the GCP analogue at _failover_dead_gcp_to_runpod). The wedged pod was
+    # already terminated by the caller (billing stopped), so a no-capacity RunPod
+    # MUST surface as a TERMINAL infra JSON with reason=no_compute_available — the
+    # watcher's capacity-retry pass re-drives ONLY that reason once a lane frees.
+    # Letting NoComputeAvailableError propagate uncaught would exit main() with a
+    # traceback and NO terminal JSON, stranding the run with no re-drive signal.
+    try:
+        route_result = failover_to_runpod_after_async_workload_crash(
+            spec=spec,
+            runpod_backend=RunPodBackend(),
+            evidence={
+                "source": "runpod_noport_wedge",
+                "current_phase": result.current_phase,
+                "log_tail_excerpt": result.log_tail_excerpt,
+                "wedged_pod_name": handle.pod_name,
+            },
+            residual_gap=(
+                "RunPod RUNNING-but-no-port host wedge (#664); host-pinned resume cannot "
+                "heal — re-provisioning a FRESH pod"
+            ),
+            marker_poster=post_marker_via_task_py,
+            on_launched=lambda h: write_handle_sidecar(h, sidecar),
+        )
+    except NoComputeAvailableError:
+        # RunPod truly unavailable after the wedged pod was terminated: terminal
+        # infra JSON with reason=no_compute_available (re-drivable by the watcher's
+        # capacity-retry pass). No lease stamp — nothing launched, so a later poll
+        # SHOULD retry once a lane frees.
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="no_compute_available",
+            log_tail=(
+                f"RunPod {handle.pod_name} no-port wedge: terminated the wedged pod but "
+                f"RunPod is also unavailable for the fresh re-provision (#664 wedge failover)"
+            ),
+        )
     # AUTHORITATIVE post-route sidecar write + readback (mirrors the GCP path): the
     # on_launched hook is best-effort (the router swallows its exceptions), so
     # re-point the sidecar HERE and PROVE it landed as a fresh RunPod handle before
-    # emitting running.
-    write_handle_sidecar(route_result.handle, sidecar)
-    recovered = read_handle_sidecar(sidecar)
-    if recovered.backend != "runpod":
+    # emitting running. #689 blocker-3: guard the sidecar write/readback with
+    # try/except OSError — an EDQUOT / read-only-fs failure here MUST surface as a
+    # terminal sidecar_persistence_failed JSON (the durable wedge lease, stamped
+    # below, bounds the relaunch so a re-fired tick does not double-provision),
+    # never an uncaught traceback out of main().
+    try:
+        write_handle_sidecar(route_result.handle, sidecar)
+        recovered = read_handle_sidecar(sidecar)
+    except (OSError, json.JSONDecodeError, KeyError, ValueError) as exc:
+        # RunPod was ALREADY launched above; the sidecar could NOT be re-pointed.
+        # Stamp the DURABLE wedge lease so a re-fired tick on the still-wedged
+        # handle short-circuits at _runpod_wedge_already_handled (no second
+        # terminate/re-provision).
+        _stamp_runpod_wedge_failover(issue, handle)
         return _terminal_infra_json(
             issue=issue,
             sidecar=sidecar,
             reason="sidecar_persistence_failed",
             log_tail=(
                 f"RunPod wedge failover re-provisioned {route_result.handle.pod_name} "
-                f"but the sidecar readback shows backend={recovered.backend!r}, not 'runpod'"
+                f"but sidecar persistence FAILED ({type(exc).__name__}: {exc}); refusing to "
+                f"emit running (durable lease stamped to bound the relaunch)"
             ),
         )
+    if recovered.backend != "runpod":
+        _stamp_runpod_wedge_failover(issue, handle)
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"RunPod wedge failover re-provisioned {route_result.handle.pod_name} "
+                f"but the sidecar readback shows backend={recovered.backend!r}, not 'runpod' "
+                f"(durable lease stamped to bound the relaunch)"
+            ),
+        )
+    # DURABLE IDEMPOTENCY STAMP (#689 blocker-2). The fresh pod has launched and the
+    # sidecar is authoritatively re-pointed. Stamp runpod_wedge_failover_of onto the
+    # ~/.eps-routing/ lease so even if the .claude/cache sidecar/sentinel are later
+    # lost under EDQUOT, the next poll short-circuits at the lease check instead of
+    # firing a paid second terminate + re-provision.
+    _stamp_runpod_wedge_failover(issue, handle)
     return {
         "status": "running",
         "current_phase": "runpod_noport_wedge_failover_fresh_pod",
@@ -1088,6 +1152,91 @@ def _stamp_lease_failover_of(issue: int, handle, *, lease_store=None) -> None:
         logging.warning(
             "backend_poll: lease-store stamp failed for issue %s (%s: %s); "
             "the sentinel/backend guards still bound the relaunch",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+
+
+def _lease_records_runpod_wedge_failover(issue: int, handle, *, lease_store=None) -> bool:
+    """True iff the DURABLE lease already records a fresh-pod failover of THIS
+    wedged RunPod run (#689 blocker-2). The AUTHORITATIVE idempotency check, the
+    exact sibling of :func:`_lease_records_failover_of`.
+
+    The ``.claude/cache`` wedge sentinel (:func:`_runpod_wedge_already_handled`'s
+    fast path) and the handle sidecar share that dir, so an EDQUOT / read-only-fs
+    / out-of-inodes failure that fails the sidecar write fails the sentinel write
+    too — re-opening the double-terminate + double-provision hole the GCP round-3
+    fix closed. The lease lives at ``~/.eps-routing/`` (a DIFFERENT directory;
+    ``LeaseStore`` default), so a failing ``.claude/cache`` mount does not also
+    fail the lease.
+
+    Keyed to the wedged pod's stable identity (``pod_name``/``job_id``), so it
+    fires "exactly once PER WEDGE", NOT "exactly once per issue": a genuinely-new
+    run on the same issue (the fresh-pod re-provision writes a NEW pod_name) does
+    NOT match a prior wedge stamp, so a later, distinct wedge still gets its own
+    single failover.
+
+    A LeaseStore failure (no ``$HOME``, dir uncreatable) is treated as "no record"
+    (return ``False``) — the worst case is one extra terminate + re-provision (the
+    same bound the sentinel fast-path provides), NEVER a silent suppression.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    try:
+        lease = store.read(int(issue))
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: lease-store read failed for issue %s (%s: %s); "
+            "treating as no prior-wedge-failover record (the sentinel guard still bounds it)",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return False
+    if lease is None:
+        return False
+    return lease.runpod_wedge_failover_of == _runpod_handle_identity(handle)
+
+
+def _stamp_runpod_wedge_failover(issue: int, handle, *, lease_store=None) -> None:
+    """Record on the DURABLE lease that a fresh-pod failover of THIS wedged RunPod
+    run launched (#689 blocker-2). The exact sibling of
+    :func:`_stamp_lease_failover_of`.
+
+    Called IMMEDIATELY after the fresh-pod re-provision SUCCEEDS, so the
+    authoritative "exactly once per wedge" record lands at ``~/.eps-routing/``
+    regardless of whether the subsequent ``.claude/cache`` sidecar / sentinel
+    writes fail under EDQUOT. Stamps ``runpod_wedge_failover_of`` onto the lease
+    the router ALREADY wrote inside its own ``store.transaction`` (the fresh-pod
+    launch goes through ``_runpod_terminal_rung`` which writes a RunPod lease).
+
+    Best-effort about the LeaseStore itself: a write failure (no ``$HOME``, dir
+    uncreatable) is logged, not raised — the failover already launched, and the
+    sentinel fast-path + the ``recovered.backend`` guard in
+    ``_relaunch_fresh_runpod`` still bound the relaunch. The lease is the SAFETY
+    NET for the EDQUOT-on-``.claude/cache`` mode, not a hard precondition.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    identity = _runpod_handle_identity(handle)
+    try:
+        with store.transaction(int(issue)) as (lease, write):
+            if lease is None:
+                logging.warning(
+                    "backend_poll: no lease present to stamp runpod_wedge_failover_of for "
+                    "issue %s; relying on the sentinel guard",
+                    issue,
+                )
+                return
+            lease.runpod_wedge_failover_of = identity
+            write(lease)
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: lease-store wedge-failover stamp failed for issue %s (%s: %s); "
+            "the sentinel guard still bounds the relaunch",
             issue,
             type(exc).__name__,
             exc,
@@ -1562,9 +1711,29 @@ def main(argv: list[str] | None = None) -> int:
     # the irreversible terminate (failure_class: infra block); COMPLETE cells are
     # preserved on HF and ABSENT cells rerun on the fresh pod. Idempotency-guarded.
     if _is_runpod_async_wedge_failure(handle, result):
-        wedge_json = _failover_wedged_runpod(
-            issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
-        )
+        # #689 blocker-3: _failover_wedged_runpod maps NoComputeAvailableError +
+        # sidecar-write failures to terminal JSON internally (mirroring the GCP
+        # analogue), so it should never raise. This belt-and-suspenders guard
+        # converts ANY unexpected raise (a bug surfacing in a future edit) into a
+        # terminal infra JSON so the poller still honors its terminal-JSON contract
+        # — the wedged pod may already be terminated, so a bare traceback would
+        # strand the run with no re-drive signal.
+        try:
+            wedge_json = _failover_wedged_runpod(
+                issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
+            )
+        except Exception as exc:
+            logging.exception("backend_poll: RunPod wedge failover raised unexpectedly")
+            wedge_json = _terminal_infra_json(
+                issue=args.issue,
+                sidecar=Path(sidecar),
+                reason="runpod_wedge_failover_error",
+                log_tail=(
+                    f"RunPod wedge failover for issue {args.issue} raised "
+                    f"{type(exc).__name__}: {exc}; emitting terminal infra JSON "
+                    f"(poller terminal-JSON contract)"
+                ),
+            )
         print(json.dumps(wedge_json))
         return 0
 

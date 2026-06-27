@@ -733,6 +733,18 @@ class Lease:
     #: of firing a paid second RunPod launch. ``None`` for every non-failover
     #: lease.
     gcp_failover_of: dict[str, Any] | None = None
+    #: DURABLE idempotency record for the RunPod RUNNING-but-no-port host-wedge
+    #: failover (#664/#689). The exact sibling of ``gcp_failover_of``: when this
+    #: lease's fresh-pod re-provision was a failover OF a specific WEDGED RunPod
+    #: pod, this holds that wedged pod's stable identity
+    #: (``{"pod_name": ..., "job_id": ...}``). The poller
+    #: (``scripts/backend_poll.py``) stamps it AFTER the fresh-pod relaunch
+    #: succeeds, so even when EDQUOT / a read-only-fs / out-of-inodes fails BOTH
+    #: the ``.claude/cache`` sidecar write AND the same-dir wedge sentinel write,
+    #: this record survives at ``~/.eps-routing/`` (a DIFFERENT directory) and the
+    #: next poll short-circuits instead of firing a paid second terminate +
+    #: re-provision. ``None`` for every non-wedge-failover lease.
+    runpod_wedge_failover_of: dict[str, Any] | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -746,11 +758,13 @@ class Lease:
             "gcp_attempts_today": self.gcp_attempts_today,
             "gcp_attempts_date": self.gcp_attempts_date,
             "gcp_failover_of": self.gcp_failover_of,
+            "runpod_wedge_failover_of": self.runpod_wedge_failover_of,
         }
 
     @classmethod
     def from_json(cls, payload: dict[str, Any]) -> Lease:
         raw_failover = payload.get("gcp_failover_of")
+        raw_wedge_failover = payload.get("runpod_wedge_failover_of")
         return cls(
             issue=int(payload["issue"]),
             spec_hash=str(payload["spec_hash"]),
@@ -762,6 +776,9 @@ class Lease:
             gcp_attempts_today=int(payload.get("gcp_attempts_today", 0)),
             gcp_attempts_date=payload.get("gcp_attempts_date"),
             gcp_failover_of=raw_failover if isinstance(raw_failover, dict) else None,
+            runpod_wedge_failover_of=(
+                raw_wedge_failover if isinstance(raw_wedge_failover, dict) else None
+            ),
         )
 
     def is_unknown_submitted(self) -> bool:
