@@ -155,6 +155,40 @@ def test_create_task_with_parent(fake_repo):
     assert task["frontmatter"]["parent_id"] == parent
 
 
+def test_create_task_invalid_kind_raises(fake_repo):
+    """`create_task` validates `kind` against KINDS (mirror of the existing
+    `status` check) so a programmatic caller cannot write a garbage kind to
+    frontmatter + REGISTRY — the same guarantee `set_kind` already gives
+    (incident #672 follow-up). No task folder is left behind on the reject."""
+    repo, tw = fake_repo
+    with pytest.raises(ValueError, match="unknown kind"):
+        tw.create_task(tw.NewTaskRequest(kind="not-a-kind", title="X"))
+    # The validation happens before any filesystem write — no orphan folder.
+    assert not (repo / "tasks" / "proposed" / "1").exists()
+
+
+def test_create_task_accepts_every_kind(fake_repo):
+    """Every member of KINDS is a valid `create_task` kind (guards against a
+    KINDS member that the validation would wrongly reject)."""
+    _, tw = fake_repo
+    for kind in tw.KINDS:
+        tw.create_task(tw.NewTaskRequest(kind=kind, title=f"t-{kind}"))
+
+
+def test_code_kinds_is_canonical_subset_of_kinds():
+    """`CODE_KINDS` (the canonical test-verdict/code-change subset that
+    `task_progress` + `verify_plan` derive from) is a proper subset of the
+    lifecycle enum, and byte-identical to the historical literal. Pins the
+    single source of truth so the three former copies can never drift
+    (incident #672)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    assert frozenset({"infra", "analysis", "batch", "survey"}) == tw.CODE_KINDS
+    assert frozenset(tw.KINDS) > tw.CODE_KINDS  # proper subset
+    assert "experiment" not in tw.CODE_KINDS
+
+
 def test_create_task_with_origin_prompt(fake_repo):
     """`origin_prompt` writes a frontmatter field verbatim (any kind);
     empty/whitespace-only values write NO field. The clean-result

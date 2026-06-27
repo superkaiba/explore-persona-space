@@ -154,6 +154,19 @@ EVENT_NOTE_MAX = 50_000  # mirror Sagan's body-size cap
 # Comment kinds the web UI exposes; checked when comments are appended.
 COMMENT_KINDS = frozenset({"question", "answer", "followup-proposal", "note"})
 
+# The non-`experiment` lifecycle kinds that complete on the Step 9c
+# test-verdict / code-change path (no promotable clean-result) and are
+# exempt from the `kind: experiment`-only plan/measurement checks
+# (CLAUDE.md Critical Rules: "`kind: analysis|infra|batch|survey` exempt").
+# Canonical single source for this subset: `task_progress.CODE_KINDS`
+# imports it directly, and `verify_plan.EXEMPT_KINDS` is pinned equal to it by
+# a drift test, so the three copies can never drift (incident #672: a `kind`
+# enum drift shipped a `batch`-missing-from-CLI bug). Membership is
+# byte-identical to the prior literals; `verify_plan.VALID_KINDS` is
+# `("experiment", *CODE_KINDS)` and stays an explicit ordered tuple (argparse
+# `choices=` display order) pinned by the same drift test.
+CODE_KINDS = frozenset({"infra", "analysis", "batch", "survey"})
+
 
 # ─── Repo / tasks-dir resolution ────────────────────────────────────────────
 #
@@ -1026,6 +1039,8 @@ def create_task(req: NewTaskRequest) -> int:
     """
     if req.status not in STATUSES:
         raise ValueError(f"unknown status: {req.status!r}")
+    if req.kind not in KINDS:
+        raise ValueError(f"unknown kind: {req.kind!r}; expected one of {KINDS}")
     with _locked():
         reg = _load_registry()
         task_id = reg.get("highest_id", 0) + 1
@@ -2281,6 +2296,7 @@ def __dir__() -> list[str]:
 # tell ruff to allow them — they resolve at attribute-access time via
 # ``__getattr__``.
 __all__ = [
+    "CODE_KINDS",
     "COMMENT_KINDS",
     "CONCERN_EVENTS",
     "CONCERN_SEVERITIES",

@@ -70,6 +70,7 @@ from pathlib import Path
 from typing import Any
 
 from explore_persona_space.task_workflow import (
+    CODE_KINDS,
     find_task_path,
     get_task,
     list_events,
@@ -156,7 +157,8 @@ FRAC_CAP = 0.95  # within-stage frac cap — keeps pct below the next floor
 ETA_BAND_ENABLED = False
 
 TERMINAL_SCAN_STATUSES = ("completed", "archived", "awaiting_promotion")
-CODE_KINDS = frozenset({"infra", "analysis", "batch", "survey"})
+# CODE_KINDS is imported from task_workflow (the canonical single source) so it
+# can never drift from the lifecycle enum (incident #672).
 
 GPU_INTENT_COUNTS = {"eval": 1, "lora-7b": 1, "ft-7b": 4, "inf-70b": 8, "ft-70b": 8, "debug": 1}
 
