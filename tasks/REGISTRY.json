@@ -4319,8 +4319,8 @@
       "goal": "Measure how a context's last-token residual-stream activation summary (the context vector) shifts when a behavioral instruction is appended, across diverse contexts, behaviors, and layers, and test whether the shift is a single context-independent behavior direction.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/685",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/685",
+      "status": "awaiting_promotion",
       "title": "Appending a behavioral instruction moves the context vector along one dominant per-behavior direction, with a smaller context-specific residual riding on top (MODERATE confidence)"
     },
     "686": {
