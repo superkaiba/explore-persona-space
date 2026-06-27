@@ -294,29 +294,36 @@ def _local_file_is_mirrored(rel: str, size: int, hf_sizes: dict[str, int]) -> bo
     """PATH-FAITHFUL per-file mirror check (fail-toward-keep on any ambiguity).
 
     ``rel`` is a local store file's POSIX path relative to its ``store/`` dir
-    (e.g. ``answer_spans/f1.pt``). The data repo mirrors a store as
-    ``issue<N>_<slug>/store/<rel>`` (verified against the live repo layout), so
-    the IDENTITY-preserving anchor is the ``store/<rel>`` suffix. The match
-    requires an HF path equal to ``rel`` OR ending in ``store/<rel>`` (or
-    ``/<rel>``) at the SAME size.
+    (e.g. ``runA/result.pt``). The data repo mirrors a store as
+    ``issue<N>_<slug>/store/<rel>`` (verified against the live repo layout) —
+    ALWAYS rooted at a real ``store/`` directory component. The IDENTITY-
+    preserving anchor is therefore a ``store/<rel>`` match where the ``store``
+    segment is itself a complete path component, i.e. the HF path is EXACTLY
+    ``store/<rel>`` (store at repo root) OR ends in ``/store/<rel>`` (store
+    under a parent dir such as ``issue<N>_<slug>/``). It must hold at the SAME
+    size.
 
-    A bare-BASENAME match is deliberately NOT used (the #679 BLOCKER #2 defect):
-    an unrelated HF file ``other/result.pt`` sharing only the basename + size
-    of a generated ``runA/result.pt`` would falsely license ``rmtree(hf_dl)``
-    to delete non-re-downloadable data. Because a real mirror is ALWAYS stored
-    under ``issue<N>_<slug>/store/<rel>``, the path-faithful suffix match
-    succeeds for every legitimate mirror, so dropping the basename fallback
-    loses no true positives while closing the collision hole entirely.
+    Two narrower matches that an earlier revision used are deliberately GONE
+    (the #679 component-boundary BLOCKER): (1) a bare ``/<rel>`` suffix —
+    an unrelated HF ``unrelated/runA/result.pt`` (or, worse, ANY HF
+    ``*/result.pt`` for a single-segment ``rel``) at the same size would
+    falsely license ``rmtree(hf_dl)`` to delete non-re-downloadable data;
+    (2) an unbounded ``store/<rel>`` ``endswith`` — ``issue/notstore/runA/...``
+    would match ``store/runA/...`` because ``notstore`` ends in ``store``.
+    Requiring ``store`` to be a full component (start-of-path or after a ``/``)
+    closes both holes. Because every legitimate mirror is rooted at a real
+    ``store/`` component, the component-anchored match succeeds for every true
+    mirror, so dropping the looser matches loses no true positives.
 
     ``size < 0`` (a local stat error) can never match a real HF size => keep."""
     if size < 0:
         return False
-    store_suffix = f"store/{rel}"
-    bare_suffix = f"/{rel}"
+    store_root = f"store/{rel}"  # store at the repo root: store/<rel>
+    store_anchored = f"/store/{rel}"  # store under a parent dir: .../store/<rel>
     for hf_path, hf_size in hf_sizes.items():
         if hf_size != size:
             continue
-        if hf_path == rel or hf_path.endswith(store_suffix) or hf_path.endswith(bare_suffix):
+        if hf_path == store_root or hf_path.endswith(store_anchored):
             return True
     return False
 
@@ -332,9 +339,11 @@ def nested_store_is_mirrored(
     ``hf_sizes`` of ``None`` (any HF-listing failure) is fail-toward-keep =>
     returns False. A local file whose size is -1 (stat error) can never match a
     real HF size, so it also fails the check. Matching is by the IDENTITY-
-    preserving ``store/<rel>`` path suffix (see ``_local_file_is_mirrored``) —
-    NOT by basename, so an unrelated same-name-same-size HF file can never
-    license deleting generated data (#679 BLOCKER #2)."""
+    preserving ``store/``-COMPONENT-anchored path match (see
+    ``_local_file_is_mirrored``) — NOT by basename and NOT by an unanchored
+    suffix, so neither an unrelated same-name-same-size HF file nor a
+    ``notstore/``-prefixed path can license deleting generated data (#679
+    BLOCKER #2 + the component-boundary residual)."""
     if hf_sizes is None:
         return False
     local = _store_files_with_sizes(store_dir)

@@ -219,12 +219,13 @@ def test_nested_store_is_mirrored_per_file_not_sum(fake_repo, monkeypatch):
     (nested / "b.pt").write_bytes(b"b" * 200)
     store_dir = issue_dir / "hf_dl" / "store"
 
-    # HF totals 300 too, but a.pt/b.pt sizes are swapped — per-file fails.
-    hf_sizes = {"x/a.pt": 200, "x/b.pt": 100}
+    # HF totals 300 too (store/-component-anchored paths), but a.pt/b.pt sizes
+    # are swapped — per-file fails.
+    hf_sizes = {"x/store/a.pt": 200, "x/store/b.pt": 100}
     assert ced.nested_store_is_mirrored(store_dir, hf_sizes) is False
 
-    # Exact per-file sizes present -> passes.
-    hf_ok = {"x/a.pt": 100, "y/b.pt": 200}
+    # Exact per-file sizes present at store/-anchored paths -> passes.
+    hf_ok = {"x/store/a.pt": 100, "y/store/b.pt": 200}
     assert ced.nested_store_is_mirrored(store_dir, hf_ok) is True
 
 
@@ -314,3 +315,137 @@ def test_basename_collision_unit_predicate(fake_repo):
     assert (
         ced.nested_store_is_mirrored(store_root, {"issue908/store/runA/result.pt": 9999}) is False
     )
+
+
+# ─── #679 component-boundary BLOCKER: the match must anchor at a real ──────────
+# ───   `store/` path component, never a bare `/<rel>` suffix nor an   ──────────
+# ───   unbounded `store/<rel>` endswith that a `notstore` prefix can sneak past.
+
+
+def test_single_segment_bare_suffix_collision_skips(fake_repo, monkeypatch):
+    """Local ``store/result.pt`` (single-segment rel) vs an unrelated HF
+    ``other/result.pt`` at the SAME size. The retired bare-``/<rel>`` suffix
+    branch made ``other/result.pt`` end in ``/result.pt`` => a false mirror,
+    licensing ``rmtree(hf_dl)`` on generated data. The component-anchored check
+    must classify it NOT mirrored (unit) and SKIP the reap (integration)."""
+    # Unit-level predicate.
+    assert ced._local_file_is_mirrored("result.pt", 1234, {"other/result.pt": 1234}) is False
+    # A real store-root mirror at the same single-segment rel DOES match.
+    assert ced._local_file_is_mirrored("result.pt", 1234, {"store/result.pt": 1234}) is True
+
+    # Integration-level reap: the mis-rooted single-segment store is SKIPPED.
+    data_root = fake_repo / "data"
+    issue_dir = data_root / "issue_910"
+    nested = issue_dir / "hf_dl" / "store"
+    nested.mkdir(parents=True)
+    (nested / "result.pt").write_bytes(b"z" * 1234)
+    monkeypatch.setattr(
+        ced, "_hf_file_sizes", lambda repo, revision="main": {"other/result.pt": 1234}
+    )
+    res = ced.clean_issue_downloads(910, apply=True, data_root=data_root)
+    assert res.removed == []
+    assert [name for name, _ in res.skipped] == ["data/issue_910/hf_dl"]
+    assert (issue_dir / "hf_dl" / "store" / "result.pt").exists()
+
+
+def test_tail_collision_bare_suffix_skips(fake_repo, monkeypatch):
+    """Local ``store/runA/result.pt`` vs an unrelated HF
+    ``unrelated/runA/result.pt`` at the SAME size. The retired bare-``/<rel>``
+    suffix branch tail-matched ``.../runA/result.pt`` => a false mirror. The
+    component-anchored check must SKIP (no ``store/`` component on the HF
+    side)."""
+    assert (
+        ced._local_file_is_mirrored("runA/result.pt", 1234, {"unrelated/runA/result.pt": 1234})
+        is False
+    )
+
+    data_root = fake_repo / "data"
+    issue_dir = data_root / "issue_911"
+    nested = issue_dir / "hf_dl" / "store" / "runA"
+    nested.mkdir(parents=True)
+    (nested / "result.pt").write_bytes(b"z" * 1234)
+    monkeypatch.setattr(
+        ced, "_hf_file_sizes", lambda repo, revision="main": {"unrelated/runA/result.pt": 1234}
+    )
+    res = ced.clean_issue_downloads(911, apply=True, data_root=data_root)
+    assert res.removed == []
+    assert [name for name, _ in res.skipped] == ["data/issue_911/hf_dl"]
+    assert (issue_dir / "hf_dl" / "store" / "runA" / "result.pt").exists()
+
+
+def test_notstore_component_boundary_collision_skips(fake_repo, monkeypatch):
+    """Local ``store/runA/result.pt`` vs HF ``issue/notstore/runA/result.pt`` at
+    the SAME size. The retired unbounded ``store/<rel>`` ``endswith`` matched
+    because ``notstore`` ends in ``store`` — a component-boundary miss. The
+    anchored ``/store/<rel>`` check must SKIP (``notstore`` is not the ``store``
+    component)."""
+    assert (
+        ced._local_file_is_mirrored("runA/result.pt", 1234, {"issue/notstore/runA/result.pt": 1234})
+        is False
+    )
+
+    data_root = fake_repo / "data"
+    issue_dir = data_root / "issue_912"
+    nested = issue_dir / "hf_dl" / "store" / "runA"
+    nested.mkdir(parents=True)
+    (nested / "result.pt").write_bytes(b"z" * 1234)
+    monkeypatch.setattr(
+        ced,
+        "_hf_file_sizes",
+        lambda repo, revision="main": {"issue/notstore/runA/result.pt": 1234},
+    )
+    res = ced.clean_issue_downloads(912, apply=True, data_root=data_root)
+    assert res.removed == []
+    assert [name for name, _ in res.skipped] == ["data/issue_912/hf_dl"]
+    assert (issue_dir / "hf_dl" / "store" / "runA" / "result.pt").exists()
+
+
+def test_legitimate_store_at_repo_root_reaps(fake_repo, monkeypatch):
+    """A real mirror with ``store/`` at the HF repo ROOT
+    (``store/runA/result.pt``) is component-anchored (== ``store/<rel>``) =>
+    mirrored (unit) and the wholesale reap proceeds (integration)."""
+    assert (
+        ced._local_file_is_mirrored("runA/result.pt", 1234, {"store/runA/result.pt": 1234}) is True
+    )
+
+    data_root = fake_repo / "data"
+    issue_dir = data_root / "issue_913"
+    nested = issue_dir / "hf_dl" / "store" / "runA"
+    nested.mkdir(parents=True)
+    (nested / "result.pt").write_bytes(b"z" * 1234)
+    monkeypatch.setattr(
+        ced, "_hf_file_sizes", lambda repo, revision="main": {"store/runA/result.pt": 1234}
+    )
+    res = ced.clean_issue_downloads(913, apply=True, data_root=data_root)
+    assert res.removed == ["data/issue_913/hf_dl"]
+    assert res.skipped == []
+    assert not (issue_dir / "hf_dl").exists()
+    assert _read_sidecar(fake_repo) == []
+
+
+def test_legitimate_store_under_parent_dir_reaps(fake_repo, monkeypatch):
+    """The DOMINANT production layout: ``issue<N>_<slug>/store/<rel>``. The
+    ``store`` segment is anchored after a ``/`` (``.../store/runA/result.pt``)
+    => mirrored (unit) and the wholesale reap proceeds (integration)."""
+    assert (
+        ced._local_file_is_mirrored(
+            "runA/result.pt", 1234, {"issue679_X/store/runA/result.pt": 1234}
+        )
+        is True
+    )
+
+    data_root = fake_repo / "data"
+    issue_dir = data_root / "issue_914"
+    nested = issue_dir / "hf_dl" / "store" / "runA"
+    nested.mkdir(parents=True)
+    (nested / "result.pt").write_bytes(b"z" * 1234)
+    monkeypatch.setattr(
+        ced,
+        "_hf_file_sizes",
+        lambda repo, revision="main": {"issue914_X/store/runA/result.pt": 1234},
+    )
+    res = ced.clean_issue_downloads(914, apply=True, data_root=data_root)
+    assert res.removed == ["data/issue_914/hf_dl"]
+    assert res.skipped == []
+    assert not (issue_dir / "hf_dl").exists()
+    assert _read_sidecar(fake_repo) == []

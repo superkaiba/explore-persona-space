@@ -19,9 +19,12 @@ Covers:
   * a terminal-status issue is reaped exactly as before (no escalation path).
 
 The script is loaded via importlib like ``tests/test_vm_disk_guard.py``. The
-Telegram push is redirected to a no-op stub via ``EPM_TELEGRAM_PUSH_SCRIPT``;
-``clean_issue_downloads`` is stubbed to report a large footprint without
-writing GBs to disk.
+Telegram push is redirected to a no-op stub via ``EPM_TELEGRAM_PUSH_SCRIPT``.
+The escalation / dedup / growth / ack tests stub ``clean_issue_downloads`` to
+report a large footprint without writing GBs to disk; the reap-path tests
+(terminal-status reap, nested-store parity SKIP) use the REAL, un-stubbed
+``clean_issue_downloads`` against tiny on-disk caches so the live keep/delete +
+parity contract is exercised end-to-end.
 """
 
 import importlib.util
