@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 676,
+  "highest_id": 677,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4250,6 +4250,13 @@
       "path": "tasks/planning/676",
       "status": "planning",
       "title": "Fleet dispatcher: overlap CPU judging with GPU work + multi-GPU parallel cell execution"
+    },
+    "677": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/677",
+      "status": "proposed",
+      "title": "Size-gate the CPU-off-pod rule: route large-data CPU-only phases to a CPU-only GCP instance (gpu_count=0 n2-highmem) instead of the shared VM"
     },
     "68": {
       "has_clean_result": false,
