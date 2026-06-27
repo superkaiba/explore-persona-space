@@ -110,6 +110,12 @@ _LOCAL_VM_ONLY_PATHS: frozenset[str] = frozenset(
         # status / events and posts markers via task.py. Same local-VM-only
         # class as spawn_session / poll_pipeline / pod_watch above.
         "scripts/autonomous_session_watch.py",
+        # File-time infra-task dispatch wrapper (#690): files via `task.py new`
+        # then best-effort spawns `spawn-issue --auto`. An orchestration-layer
+        # caller (same local-VM-only class as spawn_session / the watcher) that
+        # pod-side code NEVER invokes — pods cannot reach the Happy daemon and
+        # task.py branch-guards to main.
+        "scripts/file_infra_task.py",
         "scripts/codex_task.py",
         # Slice-8 live-acceptance harness: drives dispatch_issue.py /
         # backend_poll.py from the LOCAL VM only (the --live driver is
