@@ -9,3 +9,4 @@
 {"ts": "2026-06-27T07:55:18Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqw2c65k-ddnh3r phase=done after 120s."}
 {"ts": "2026-06-27T07:56:22Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqw2c91v-5ngcnb phase=done after 181s."}
 {"ts": "2026-06-27T07:56:56Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqw2cbvr-7p62w9 phase=done after 211s."}
+{"ts": "2026-06-27T08:02:35Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "v2 verdict=PASS n_fail=0 n_warn=1 n_skip=9; same soft WARN as v1 (c8_success_kill_criteria; infra plan has §6 acceptance + §7 risks in place of explicit kill clause). plan_version=v2."}
