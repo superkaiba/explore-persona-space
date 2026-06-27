@@ -139,6 +139,25 @@ A35_MLP_TARGET_DIM = 64
 # batched fitters. The DV is device-INVARIANT (the smoke asserts cpu==cuda ρ).
 DEVICE = "cpu"
 
+# A3.5 gap MLP ensemble-chunk size. The batched MLP fits E = gap_dim(64) × N(50)
+# = 3200 independent member-nets; building one AdamW + one vmap over ALL 3200 at
+# once peaks at ~69 GiB allocated + a ~22 GiB Adam-state tensor — OOM on an
+# H100-80GB even with expandable_segments (#658 GPU run). Each member is an
+# _MLP(D=3584): first Linear 3584×512 ≈ 1.84M params, ×4 (param+grad+Adam m,v) ≈
+# 29 MB fp32, so peak scales ~linearly with the chunk size. We fit the ensemble
+# in CHUNKS of this many member-nets — each chunk does its OWN vmap
+# forward/backward/AdamW over its slice of the GLOBAL member index range, so peak
+# memory is bounded by chunk_size, NOT E. 256 nets ≈ 7-11 GiB peak — comfortable
+# headroom on an 80GB H100 (this is an analysis phase, no base model resident).
+# EXACTNESS: chunking is bit-identical to the full-batch path because every
+# per-member tensor (init, standardization, target, mask, held-out row) is keyed
+# to the member's GLOBAL index, never its position within a chunk — net k gets the
+# same tiled init regardless of MLP_CHUNK_SIZE (asserted in _assert_mlp_exactness
+# + tests across chunk sizes 1, a non-divisor, and E). 0 = no chunking (fit all E
+# at once — the old behavior, kept for tiny smoke ensembles). Set via
+# --mlp-chunk-size.
+MLP_CHUNK_SIZE = 256
+
 
 def _resolve_device(requested: str) -> str:
     """Resolve the --device request to a concrete torch device string.
@@ -234,24 +253,47 @@ def _fit_mlp_ensemble_loco(
     AdamW step on its own (N-1)-row train batch. Per-fold train-row standardization
     is applied to the SAME (N, D) inputs the serial code used.
 
+    MEMORY — chunked over the ensemble dimension (``MLP_CHUNK_SIZE``). E member
+    nets are fit in chunks of ``MLP_CHUNK_SIZE`` global indices, each chunk running
+    its OWN vmap forward/backward/AdamW over its slice. Peak memory scales with the
+    chunk size, NOT E — building one AdamW + one vmap over all E = gap_dim(64) ×
+    N(50) = 3200 nets OOM'd an H100-80GB (~69 GiB allocated + a ~22 GiB Adam-state
+    tensor, #658). Every per-member quantity (init, standardization, target, mask,
+    held-out row) is keyed to the member's GLOBAL index, so the chunked result is
+    bit-identical to the full-batch result for ANY chunk size.
+
     EQUIVALENCE (verified): the fit is architecture-, optimizer-hyperparameter-,
-    epoch-, standardization-, and per-output-independence-IDENTICAL to the serial
-    loop. The member random inits reproduce the serial reference's RNG stream:
-    the SINGLE-output reference re-seeds once per call (one block of n per-fold
-    inits), and the MULTI-output reference (the old gap MLP) re-seeds ONCE PER
-    output dim, so every dim reuses the same n per-fold inits — this code draws
-    the n per-fold inits once and TILES them across the n_targets blocks (see the
-    seeding comment below), reproducing that exactly. The stateless ``base``
-    template is built on the META device (no parameter storage, no RNG draw) so it
-    does NOT perturb the stream. On CPU the batched-vmap path matches the serial
-    loop to <=1e-6 (single-output ~3.6e-7; multi-output bit-identical after the
-    tile — see the implementer report + ``test_issue658_fit_predictors_exactness``).
-    On CUDA the only residual difference is GPU vs CPU float reduction order (true
-    of any GPU port; within MLP optimization noise). Per the brief's guidance the
-    independent-head form is kept as default (the per-output independence is the
-    semantics that matters) — a shared-trunk multi-output net was NOT substituted.
-    The ridge DV (A3.4/A3.5 ridge cos, chain ρ) is additionally exact to machine
-    precision (``_assert_ridge_exactness``).
+    epoch-, standardization-, per-output-independence-, and chunk-size-INVARIANT
+    relative to the serial loop. The member random inits reproduce the serial
+    reference's RNG stream: the SINGLE-output reference re-seeds once per call (one
+    block of n per-fold inits), and the MULTI-output reference (the old gap MLP)
+    re-seeds ONCE PER output dim, so every dim reuses the same n per-fold inits —
+    this code draws the n per-fold inits once and addresses member m by its block
+    member m % n (see the seeding comment below), reproducing that exactly. The
+    stateless ``base`` template is built on the META device (no parameter storage,
+    no RNG draw) so it does NOT perturb the stream.
+
+    CHUNK-INVARIANCE — what is exact vs what is reduction-order. The chunking LOGIC
+    is provably exact: chunk = exactly E, chunk > E, and chunk = 0 (no chunk) are
+    BIT-IDENTICAL (same single batched-vmap shape, same reduction order — verified
+    `np.array_equal`), which proves every per-member quantity is keyed to the
+    GLOBAL index, not a chunk-local one. INTERMEDIATE chunk sizes (1, a non-divisor,
+    256) change only the batched-GEMM accumulation ORDER, a float
+    non-associativity that compounds over the optimizer steps. Its magnitude scales
+    with the per-net conditioning: at realistic N (>=12 train rows, the tested +
+    startup-gate regime) it stays <=1e-6 per held-out prediction; at the
+    pathological N=4 smoke (3 train rows over a 512-hidden MLP, maximally
+    ill-conditioned) it amplifies to ~1e-3 per prediction (~1e-5 on the aggregated
+    per-context mean-cos) — still optimization-noise-level for an MLP whose held-out
+    ρ is an ESTIMATE, not a deterministic quantity. The PRODUCTION read is N=50, so
+    it lives in the <=1e-6 regime; the exactness tests + the startup gate assert
+    <=1e-6 at N>=12 (chunk sizes 1 / non-divisor / E), and chunk>=E bit-identity
+    holds at every N. On CUDA the further residual is GPU vs CPU reduction order
+    (true of any GPU port). Per the brief's guidance the independent-head form is
+    kept as default (the per-output independence is the semantics that matters) —
+    a shared-trunk multi-output net was NOT substituted. The ridge DV (A3.4/A3.5
+    ridge cos, chain ρ) is additionally exact to machine precision
+    (``_assert_ridge_exactness``).
     """
     from torch.func import functional_call, stack_module_state, vmap
 
@@ -261,7 +303,8 @@ def _fit_mlp_ensemble_loco(
     Xt = torch.from_numpy(np.ascontiguousarray(X)).to(device=device, dtype=torch.float32)
     Yt = torch.from_numpy(np.ascontiguousarray(Y)).to(device=device, dtype=torch.float32)
 
-    # Build the E = n_targets * N ensemble of independent _MLP(D) nets.
+    # The ensemble is E = n_targets * N independent _MLP(D) nets, member index
+    # m = t_block * N + fold_i (t_block over output dims, fold_i the held-out row).
     #
     # SEEDING — bit-match the serial reseed-PER-DIM reference. The old gap MLP did
     # `[_fit_mlp_loco(Xc, Yv[:, k]) for k in range(gap_dim)]`, and EACH
@@ -269,100 +312,93 @@ def _fit_mlp_ensemble_loco(
     # output dim k gets the SAME n per-fold inits (RNG stream positions [0..n)).
     # Seeding once for all gap_dim*n members would instead give dim k the inits at
     # [k*n..(k+1)*n), diverging for k>=1. So we draw only the n per-fold inits ONCE
-    # (seed → n nets, fold order) and TILE that block across the n_targets output
-    # dims, reproducing the per-dim reseed exactly while keeping a single vmap
-    # kernel over all E members (the fold-batching is the dominant speedup). The
-    # stateless `base` template is built on the META device (no parameter storage,
-    # no RNG draw) so it does NOT perturb the stream — it only carries the module
-    # structure for functional_call.
+    # (seed → n nets, in fold order) and address member m by its block member
+    # m % n, reproducing the per-dim reseed exactly. The stateless `base` template
+    # is built on the META device (no parameter storage, no RNG draw) so it does
+    # NOT perturb the stream — it only carries the module structure for
+    # functional_call.
     n_targets = len(idxs)
     n_members = n_targets * n
     base = _MLP(d).to(device="meta")
     torch.manual_seed(seed)
     block_members = [_MLP(d).to(device) for _ in range(n)]  # the n per-fold inits
     block_params, block_buffers = stack_module_state(block_members)  # leaves (n, ...)
+    block_params = {k: v.detach() for k, v in block_params.items()}
+    block_buffers = {k: v.detach() for k, v in block_buffers.items()}
 
-    # Tile the n-member block across the n_targets output-dim blocks → (E, ...),
-    # so member m = t_block*N + fold_i has the SAME init as block member fold_i
-    # for every t_block (= the serial per-dim reseed). `.repeat` along dim 0 with
-    # 1s elsewhere; `.contiguous()` so stack_module_state's downstream ops are happy.
-    def _tile(t: torch.Tensor) -> torch.Tensor:
-        # detach + clone so the tiled tensor is a fresh LEAF (the optimizer below
-        # requires leaf params; `.repeat` would otherwise carry grad history).
-        return t.detach().repeat((n_targets,) + (1,) * (t.dim() - 1)).clone()
-
-    params = {k: _tile(v) for k, v in block_params.items()}
-    buffers = {k: _tile(v) for k, v in block_buffers.items()}
-
-    # Per-member train mask (leave-one-out within each output-dim block) + the
-    # per-member standardized train inputs / targets. member index m =
-    # t_block * N + fold_i. The held-out row of member m is fold_i; its train rows
-    # are all rows != fold_i.
-    fold_ids = torch.arange(n, device=device)
-    # train mask (E, N): True for rows used in training member m
-    member_fold = torch.cat([fold_ids for _ in idxs])  # (E,)
-    train_mask = torch.ones((n_members, n), dtype=torch.bool, device=device)
-    train_mask[torch.arange(n_members, device=device), member_fold] = False  # drop held-out row
-
-    # Per-member feature standardization computed on that member's train rows ONLY
-    # (no leakage), matching the serial `mu, sd = Xt[mask].mean(0), Xt[mask].std(0)+1e-6`.
-    # mask (E, N) -> broadcast over D.
-    mask_f = train_mask.to(torch.float32)  # (E, N)
-    counts = mask_f.sum(1, keepdim=True)  # (E, 1) == N-1
-    # mean over train rows: (E, D)
-    sum_x = mask_f @ Xt  # (E, N)@(N, D) = (E, D)
-    mu = sum_x / counts
-    # std over train rows (population std, matching torch.std default unbiased=True):
-    # torch.std uses Bessel correction (N-1). Reproduce exactly: var = sum((x-mu)^2
-    # over train rows) / (n_train - 1).
-    # (E, N, D) is large; compute via sum of squares to stay memory-light.
-    sumsq_x = mask_f @ (Xt * Xt)  # (E, D)  sum of x^2 over train rows
-    var = (sumsq_x - counts * mu * mu) / (counts - 1.0).clamp(min=1.0)
-    sd = var.clamp(min=0.0).sqrt() + 1e-6  # (E, D)  matches serial +1e-6
-
-    # Per-member targets: the t-th output column of Y, broadcast across that
-    # block's N folds.
-    target_cols = torch.tensor(idxs, device=device)  # (n_targets,)
-    Yt_blocks = Yt[:, target_cols].t()  # (n_targets, N)
-    y_member = Yt_blocks.repeat_interleave(n, dim=0)  # (E, N) member -> its output col over folds
-
-    # Standardized train inputs per member, masked to train rows. We keep the full
-    # (E, N, D) standardized tensor but ZERO the held-out row so it never enters
-    # the loss (the loss masks to train rows anyway).
-    Xn = (Xt.unsqueeze(0) - mu.unsqueeze(1)) / sd.unsqueeze(1)  # (E, N, D)
-    held_idx = member_fold  # (E,)
+    # Per-member spec keyed to the GLOBAL index m (all O(E·{1,N}) — cheap; the
+    # memory blowup is the per-member PARAMS + Adam state + the (chunk, N, D)
+    # forward activations, all bounded by the chunk below, NOT by these).
+    member_fold = torch.arange(n, device=device).repeat(n_targets)  # (E,) m -> fold_i
+    member_block = member_fold  # m -> its block member is also fold_i (= m % n)
+    target_cols = torch.tensor(idxs, device=device)
+    member_target = target_cols.repeat_interleave(n)  # (E,) m -> its output col index into Y
 
     def _forward(p, b, x):
         return functional_call(base, (p, b), (x,))
 
     batched_forward = vmap(_forward, in_dims=(0, 0, 0))
 
-    # One AdamW over the stacked ensemble params (each leaf is (E, ...)); the
-    # update is independent per member because gradients are per-member. `params`
-    # is the dict stack_module_state returned — the optimizer mutates its tensors
-    # in place, so passing `params` to functional_call each step sees the updates.
-    for p in params.values():
-        p.requires_grad_(True)
-    opt = torch.optim.AdamW(list(params.values()), lr=MLP_LR, weight_decay=MLP_WD)
+    # CHUNK over the global member index so peak memory scales with chunk size, not
+    # E. Each chunk fits an INDEPENDENT vmap ensemble + its OWN AdamW over its slice
+    # of [0, E); because every per-member quantity below is computed from the
+    # member's GLOBAL index (gather block init by m % n; mu/sd/target/mask from m),
+    # the result is bit-identical to fitting all E at once for ANY chunk size
+    # (asserted across chunk sizes 1, a non-divisor, and E in the exactness tests).
+    chunk = MLP_CHUNK_SIZE if (MLP_CHUNK_SIZE and MLP_CHUNK_SIZE > 0) else n_members
+    held_all = torch.empty(n_members, device=device, dtype=torch.float32)
+    for lo in range(0, n_members, chunk):
+        hi = min(lo + chunk, n_members)
+        gidx = torch.arange(lo, hi, device=device)  # this chunk's GLOBAL member ids
+        c = hi - lo
 
-    mask_loss = train_mask.to(torch.float32)  # (E, N)
-    denom = mask_loss.sum(1).clamp(min=1.0)  # (E,) == N-1
-    for _ in range(MLP_MAX_EPOCHS):
-        opt.zero_grad(set_to_none=True)
-        pred = batched_forward(params, buffers, Xn)  # (E, N)
-        # masked mean-squared error per member over train rows, matching
-        # torch.nn.functional.mse_loss(net(xn), y[mask]) per member (reduction=mean
-        # over the N-1 train rows). Sum the per-member losses (independent grads).
-        sq = (pred - y_member) ** 2 * mask_loss  # (E, N)
-        per_member = sq.sum(1) / denom  # (E,)
-        loss = per_member.sum()
-        loss.backward()
-        opt.step()
+        # Per-chunk fresh LEAF params: gather each block leaf by the chunk members'
+        # block index (m % n) → (c, ...). detach+clone so AdamW sees leaf tensors.
+        blk = member_block[gidx]  # (c,) block-member id per chunk member
+        params = {k: v.index_select(0, blk).clone() for k, v in block_params.items()}
+        buffers = {k: v.index_select(0, blk).clone() for k, v in block_buffers.items()}
 
-    with torch.no_grad():
-        pred = batched_forward(params, buffers, Xn)  # (E, N)
-    held = pred[torch.arange(n_members, device=device), held_idx]  # (E,)
-    held = held.reshape(len(idxs), n).t().contiguous()  # (N, n_targets)
+        # Per-chunk train mask (LOO: drop the member's held-out fold row).
+        cfold = member_fold[gidx]  # (c,) held-out fold per chunk member
+        train_mask = torch.ones((c, n), dtype=torch.bool, device=device)
+        train_mask[torch.arange(c, device=device), cfold] = False
+
+        # Per-chunk feature standardization on train rows ONLY (no leakage), matching
+        # serial `mu, sd = Xt[mask].mean(0), Xt[mask].std(0)+1e-6`. ddof=1 (torch
+        # default) via the sum-of-squares form.
+        mask_f = train_mask.to(torch.float32)  # (c, N)
+        counts = mask_f.sum(1, keepdim=True)  # (c, 1) == N-1
+        mu = (mask_f @ Xt) / counts  # (c, D)
+        sumsq_x = mask_f @ (Xt * Xt)  # (c, D)
+        var = (sumsq_x - counts * mu * mu) / (counts - 1.0).clamp(min=1.0)
+        sd = var.clamp(min=0.0).sqrt() + 1e-6  # (c, D)
+
+        # Per-chunk targets + standardized inputs.
+        y_member = Yt[:, member_target[gidx]].t()  # (c, N) member -> its output col over folds
+        Xn = (Xt.unsqueeze(0) - mu.unsqueeze(1)) / sd.unsqueeze(1)  # (c, N, D)
+
+        for p in params.values():
+            p.requires_grad_(True)
+        opt = torch.optim.AdamW(list(params.values()), lr=MLP_LR, weight_decay=MLP_WD)
+        mask_loss = train_mask.to(torch.float32)  # (c, N)
+        denom = mask_loss.sum(1).clamp(min=1.0)  # (c,) == N-1
+        for _ in range(MLP_MAX_EPOCHS):
+            opt.zero_grad(set_to_none=True)
+            pred = batched_forward(params, buffers, Xn)  # (c, N)
+            # masked per-member MSE over train rows == mse_loss(net(xn), y[mask]).
+            sq = (pred - y_member) ** 2 * mask_loss  # (c, N)
+            per_member = sq.sum(1) / denom  # (c,)
+            loss = per_member.sum()
+            loss.backward()
+            opt.step()
+
+        with torch.no_grad():
+            pred = batched_forward(params, buffers, Xn)  # (c, N)
+        held_all[lo:hi] = pred[torch.arange(c, device=device), cfold]  # held-out row per member
+        # free the chunk's big tensors before the next iteration
+        del params, buffers, Xn, opt, pred, sq, per_member, mu, sd, var, sumsq_x
+
+    held = held_all.reshape(n_targets, n).t().contiguous()  # (N, n_targets)
     return held.detach().cpu().numpy().astype(np.float64)
 
 
@@ -402,15 +438,20 @@ def _fit_mlp_loco_serial_reference(X: np.ndarray, y: np.ndarray, seed: int = 658
 def _assert_mlp_exactness(seed: int = 0, n: int = 12, d: int = 24) -> dict:
     """Assert the batched MLP reproduces the serial reference to <=1e-6 on CPU.
 
-    Two checks, both against ``_fit_mlp_loco_serial_reference`` (the OLD serial
+    Three checks, all against ``_fit_mlp_loco_serial_reference`` (the OLD serial
     algorithm), on a tiny CPU model + a clamped epoch count so this stays a fast
     (~sub-second) startup gate alongside ``_assert_ridge_exactness``:
 
     (a) SINGLE-output: ``_fit_mlp_loco`` (the A3.2 path) vs the serial reference.
-    (b) MULTI-output GAP: ``_fit_mlp_ensemble_loco(target_idx=range(gap_dim))``
-        (the A3.5 gap path) vs the serial reseed-PER-DIM reference
-        ``[serial(Yv[:,k]) for k in range(gap_dim)]`` — this is the tiled-init
-        path; without the per-dim tile it would drift ~0.38 (the round-2 finding).
+    (b) MULTI-output GAP, CHUNKED: ``_fit_mlp_ensemble_loco(target_idx=range(
+        gap_dim))`` with a SMALL ``MLP_CHUNK_SIZE`` (a non-divisor of E) vs the
+        serial reseed-PER-DIM reference ``[serial(Yv[:,k]) for k in range(gap_dim)]``
+        — this exercises BOTH the per-dim init tile (without it dims 1+ drift
+        ~0.38, the round-2 finding) AND the ensemble chunking (the round-3 OOM fix)
+        in the startup gate.
+    (c) CHUNK-INVARIANCE: the chunked gap result vs the full-batch
+        (``MLP_CHUNK_SIZE=0``) gap result — must agree to <=1e-6 (the chunk
+        boundary must not move the DV).
 
     The batched path is forced onto CPU here (DEVICE pinned for the duration) so
     the gate is reduction-order-comparable to the CPU serial oracle. The recovery
@@ -419,8 +460,8 @@ def _assert_mlp_exactness(seed: int = 0, n: int = 12, d: int = 24) -> dict:
     to machine precision — batched GEMM vs per-net GEMV reduction order — so the
     tolerance is 1e-6, not 1e-12).
     """
-    global DEVICE, MLP_MAX_EPOCHS
-    saved_device, saved_epochs = DEVICE, MLP_MAX_EPOCHS
+    global DEVICE, MLP_MAX_EPOCHS, MLP_CHUNK_SIZE
+    saved_device, saved_epochs, saved_chunk = DEVICE, MLP_MAX_EPOCHS, MLP_CHUNK_SIZE
     DEVICE = "cpu"
     MLP_MAX_EPOCHS = 20  # clamp the gate so startup stays sub-second
     try:
@@ -434,24 +475,54 @@ def _assert_mlp_exactness(seed: int = 0, n: int = 12, d: int = 24) -> dict:
         ser1 = _fit_mlp_loco_serial_reference(X, Y[:, 0])
         bat1 = _fit_mlp_loco(X, Y[:, 0])
         single_delta = float(np.max(np.abs(ser1 - bat1)))
-        # (b) multi-output gap (the tiled path)
+        # (b) multi-output gap (tiled init + chunked), chunk = a non-divisor of E.
         gap = 4
         serg = np.stack([_fit_mlp_loco_serial_reference(X, Y[:, k]) for k in range(gap)], axis=1)
-        batg = _fit_mlp_ensemble_loco(X, Y, target_idx=list(range(gap)), seed=658)
-        multi_delta = float(np.max(np.abs(serg - batg)))
+        e_total = gap * n
+        MLP_CHUNK_SIZE = max(1, e_total // 3 + 1)  # a small non-divisor of E
+        batg_chunked = _fit_mlp_ensemble_loco(X, Y, target_idx=list(range(gap)), seed=658)
+        multi_delta = float(np.max(np.abs(serg - batg_chunked)))
+        # (c) chunk-invariance: full-batch (no chunk) must match the chunked result.
+        MLP_CHUNK_SIZE = 0
+        batg_full = _fit_mlp_ensemble_loco(X, Y, target_idx=list(range(gap)), seed=658)
+        chunk_delta = float(np.max(np.abs(batg_chunked - batg_full)))
+        # (d) chunk = exactly E must be BIT-identical to no-chunk (same batch shape →
+        # same reduction order). This is the logic-correctness invariant that holds
+        # at ANY N (the intermediate-chunk <=1e-6 in (c) is conditioning-dependent;
+        # this one is not), so it catches a per-member-indexing regression even at
+        # the pathological small-N gate scale.
+        MLP_CHUNK_SIZE = e_total
+        batg_eq_e = _fit_mlp_ensemble_loco(X, Y, target_idx=list(range(gap)), seed=658)
+        chunk_e_bit_identical = bool(np.array_equal(batg_eq_e, batg_full))
     finally:
-        DEVICE, MLP_MAX_EPOCHS = saved_device, saved_epochs
+        DEVICE, MLP_MAX_EPOCHS, MLP_CHUNK_SIZE = saved_device, saved_epochs, saved_chunk
     tol = 1e-6
     assert single_delta <= tol, (
         f"MLP exactness FAILED (single-output): max|Δpred|={single_delta:.3e} > {tol} "
         "between the batched A3.2 MLP and the serial reference"
     )
     assert multi_delta <= tol, (
-        f"MLP exactness FAILED (multi-output gap): max|Δpred|={multi_delta:.3e} > {tol} "
-        "between the tiled-batched A3.5 gap MLP and the serial reseed-per-dim reference "
+        f"MLP exactness FAILED (multi-output gap, chunked): max|Δpred|={multi_delta:.3e} > {tol} "
+        "between the chunked tiled-batched A3.5 gap MLP and the serial reseed-per-dim reference "
         "(a >1e-2 delta means the per-dim init tile regressed — see _fit_mlp_ensemble_loco)"
     )
-    return {"single_delta": single_delta, "multi_delta": multi_delta, "tol": tol}
+    assert chunk_delta <= tol, (
+        f"MLP exactness FAILED (chunk-invariance): max|Δpred|={chunk_delta:.3e} > {tol} "
+        "between the chunked and full-batch gap MLP — the chunk boundary moved the DV "
+        "(a per-member quantity is keyed to chunk-local position, not the global index)"
+    )
+    assert chunk_e_bit_identical, (
+        "MLP exactness FAILED (chunk=E bit-identity): a single chunk covering all E "
+        "members must be byte-for-byte identical to no-chunk (same batch shape). A "
+        "difference here is a per-member-indexing regression, not reduction order."
+    )
+    return {
+        "single_delta": single_delta,
+        "multi_delta": multi_delta,
+        "chunk_delta": chunk_delta,
+        "chunk_e_bit_identical": chunk_e_bit_identical,
+        "tol": tol,
+    }
 
 
 # ── A3.4 ridge: closed-form (PRESS / hat-matrix) leave-one-out, exact ──────────
@@ -1532,6 +1603,9 @@ def _parse_shard(shard: str | None) -> tuple[int, int]:
 
 
 def main() -> int:
+    # Declared up front: the --mlp-chunk-size help f-string reads MLP_CHUNK_SIZE,
+    # and these are all reassigned later in main() (smoke clamps, device, chunk).
+    global MLP_MAX_EPOCHS, RIDGE_LAMBDAS, N_BOOTSTRAP, DEVICE, MLP_CHUNK_SIZE
     parser = argparse.ArgumentParser(description="Issue #658 P1-P3/N1/A1: predictor fits + stats.")
     parser.add_argument("--store", type=Path, default=None)
     parser.add_argument("--e0", type=Path, default=None)
@@ -1542,6 +1616,16 @@ def main() -> int:
         default="auto",
         help="compute device for the batched MLP/ridge ops: auto (default; cuda if "
         "present else cpu) | cuda | cpu. The reported DV is device-invariant.",
+    )
+    parser.add_argument(
+        "--mlp-chunk-size",
+        type=int,
+        default=None,
+        help="number of A3.5 gap-MLP member-nets (E = gap_dim × N) to fit per vmap "
+        f"chunk (default {MLP_CHUNK_SIZE}). Bounds peak GPU memory by chunk size, not "
+        "E — fitting all E=3200 at once OOM'd an H100-80GB (#658). The reported DV is "
+        "chunk-size-invariant (every per-member quantity is keyed to the global member "
+        "index). 0 = no chunking (fit all E at once).",
     )
     parser.add_argument(
         "--shard",
@@ -1575,9 +1659,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    global MLP_MAX_EPOCHS, RIDGE_LAMBDAS, N_BOOTSTRAP, DEVICE
     DEVICE = _resolve_device(args.device)
     logger.info("compute device: %s", DEVICE)
+    if args.mlp_chunk_size is not None:
+        MLP_CHUNK_SIZE = args.mlp_chunk_size
+    logger.info("MLP ensemble chunk size: %d (0 = no chunking)", MLP_CHUNK_SIZE)
 
     # Exactness gates: the batched/closed-form rewrites MUST reproduce the OLD
     # serial computation (the reported A3.2/A3.4/A3.5 numbers must not move). Run
@@ -1595,9 +1681,10 @@ def main() -> int:
     )
     mlp_exactness = _assert_mlp_exactness()
     logger.info(
-        "MLP exactness PASS: single max|Δ|=%.2e gap max|Δ|=%.2e (<= %.0e)",
+        "MLP exactness PASS: single max|Δ|=%.2e gap max|Δ|=%.2e chunk max|Δ|=%.2e (<= %.0e)",
         mlp_exactness["single_delta"],
         mlp_exactness["multi_delta"],
+        mlp_exactness["chunk_delta"],
         mlp_exactness["tol"],
     )
 
