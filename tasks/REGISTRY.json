@@ -4226,8 +4226,8 @@
     "673": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/673",
-      "status": "proposed",
+      "path": "tasks/planning/673",
+      "status": "planning",
       "title": "Real-GPU memory-non-growth validation for #671 hook-based extraction"
     },
     "674": {
