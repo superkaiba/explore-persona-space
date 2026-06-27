@@ -1,0 +1,50 @@
+{
+  "commit": "c81e327093",
+  "created": "2026-06-27T08:20:32Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "\u03c3\u2081\u00b2/\u03a3\u03c3\u00b2\n(top-component energy)",
+      "value (mean over banks)": 0.8613917206899545,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "\u03c3\u2082/\u03c3\u2081\n(gap)",
+      "value (mean over banks)": 0.20422444003271606,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "|cos(u\u2081, source write)|",
+      "value (mean over banks)": 0.8871679097844691,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "scalarity residual\n(median, lower = scalar)",
+      "value (mean over banks)": 0.5692617730249778,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "value (mean over banks)": 0.5,
+      "series": "strict rank-1 thresholds (0.5)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "value (mean over banks)": 0.5,
+      "series": "strict rank-1 thresholds (0.5)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6
+}
