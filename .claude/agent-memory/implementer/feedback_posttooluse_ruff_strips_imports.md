@@ -14,7 +14,13 @@ then NameErrors at runtime/test time.
 scripts/task.py's import block first, then the `cmd_list_children` handler in
 a separate edit; the hook stripped the import between the two edits and the
 CLI test failed with `NameError`. The experiment-implementer twin has the same
-lesson recorded (`feedback_ruff_strips_unused_imports.md`).
+lesson recorded (`feedback_ruff_strips_unused_imports.md`). Bit me AGAIN on
+task #678 (2026-06-27), twice: (a) `import hashlib` added to task_workflow.py
+in its own edit before the helper using it landed (survived only because the
+import block was non-trivial); (b) `check_no_workflow_improver_spawn` added to
+test_workflow_lint.py's `from workflow_lint import (...)` block before the test
+bodies — stripped, then `F821 Undefined name` when the bodies referenced it;
+re-added after the usages existed and it stuck.
 
 **How to apply:** When a change spans "import + usage", either (a) make the
 usage edit FIRST and the import second, (b) put both in one Write, or (c)
