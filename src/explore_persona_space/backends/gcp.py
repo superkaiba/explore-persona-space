@@ -3928,12 +3928,29 @@ class GcpBackend(ComputeBackend):
         belts mean an unattended VM auto-deletes; an orchestrator-driven
         teardown is the explicit early path. A "was not found" stderr is
         the common case (the VM already auto-deleted) and is NOT raised.
+
+        Confirm-deleted guard (#683 defense-in-depth): a CLEAN
+        ``eps/phase=done`` run leaves the VM RUNNING by design (the success
+        path keeps it alive so the sentinel can be scp'd — only a CRASH
+        triggers the in-VM EXIT-trap ``shutdown``+DELETE / rc!=0 belt), so
+        the orchestrator-driven ``teardown`` is what reaps a successful run
+        that REACHES finalize. If teardown's own rc==0 delete silently
+        no-ops (rc==0 but the instance lingers RUNNING), nothing else
+        reclaims it until the 24h ``--max-run-duration`` belt OR the daily
+        ``gcp_audit`` janitor. So after an rc==0 delete we ACTIVELY confirm
+        the instance is gone via ``describe``; if it is still present AND
+        ``RUNNING``, re-issue the delete ONCE. Idempotent + fails toward
+        "gone" (404 / non-RUNNING / probe-failure never re-delete). NOTE:
+        the original #683 leak occurred on a run where teardown was NOT
+        reached before the leak was observed — that path is closed by the
+        watcher-side complement (see plan §10), not by this guard.
         """
         config = self._config
         zone = handle.extra.get("zone") or config.primary_zone
         argv = render_delete_argv(config=config, name=handle.pod_name, zone=zone)
         result = self._run(argv)
         if result.returncode == 0:
+            self._confirm_deleted(handle, zone)
             return
         stderr_low = (result.stderr or "").lower()
         if "was not found" in stderr_low or "404" in stderr_low:
@@ -3948,6 +3965,81 @@ class GcpBackend(ComputeBackend):
         raise GcpBackendError(
             f"gcloud delete {handle.pod_name} returned {result.returncode}: {result.stderr[:500]}"
         )
+
+    def _confirm_deleted(self, handle: RunHandle, zone: str) -> None:
+        """Verify the post-delete instance is gone; re-issue the delete on a RUNNING zombie (#683).
+
+        Called only after an rc==0 ``gcloud compute instances delete``.
+        ``gcloud delete`` is normally synchronous, but a clean-terminal VM
+        has been observed lingering RUNNING after a rc==0 delete (#683), so
+        this is the orchestrator-side belt that catches that silent no-op
+        BEFORE the once-daily janitor (the only other reaper of a clean
+        run, up to ~24h of GPU billing later).
+
+        Fail-toward-gone discipline (never a spurious re-delete):
+
+        * describe 404 / "not found" → confirmed gone, the desired state;
+        * describe rc != 0 (any other reason — auth blip / transient API) →
+          do NOT re-delete blindly (the delete already returned rc==0; a
+          probe failure is not evidence the VM survived); log + return;
+        * describe rc==0 but the payload has no ``status`` / is unparseable
+          / ``status != RUNNING`` → trust the delete, return;
+        * describe rc==0 AND ``status == RUNNING`` → the #683 zombie
+          signature → re-issue the delete ONCE (best-effort; a failure
+          there is logged, not raised — the janitor remains the backstop).
+        """
+        config = self._config
+        describe_argv = render_describe_argv(config=config, name=handle.pod_name, zone=zone)
+        probe = self._run(describe_argv)
+        if probe.returncode != 0:
+            stderr_low = (probe.stderr or "").lower()
+            if "was not found" in stderr_low or "404" in stderr_low:
+                return  # confirmed gone — the desired post-delete state
+            # Couldn't confirm either way; the delete returned rc==0, so do
+            # not re-delete on an unrelated probe failure. The janitor backs us up.
+            logger.warning(
+                "GCP teardown: post-delete describe of %s failed (rc=%d); "
+                "trusting the rc==0 delete (gcp_audit janitor is the backstop). stderr=%s",
+                handle.pod_name,
+                probe.returncode,
+                (probe.stderr or "")[:300],
+            )
+            return
+        try:
+            payload = json.loads(probe.stdout) if probe.stdout.strip() else {}
+        except json.JSONDecodeError:
+            logger.warning(
+                "GCP teardown: post-delete describe of %s returned unparseable JSON; "
+                "trusting the rc==0 delete.",
+                handle.pod_name,
+            )
+            return
+        status = (payload.get("status") or "").upper()
+        if status != "RUNNING":
+            # Empty payload, STOPPING/TERMINATED (delete in progress), or any
+            # non-RUNNING state — the delete is taking effect; nothing to re-do.
+            return
+        # The #683 zombie: rc==0 delete but the VM is still RUNNING. Re-issue
+        # the delete ONCE so a successful run cannot bill an A100 until the
+        # daily janitor reaps it. Best-effort — a failure here is logged, not
+        # raised (the janitor + 24h max-run-duration remain the backstops).
+        logger.warning(
+            "GCP teardown: %s still RUNNING after an rc==0 delete (#683 zombie); "
+            "re-issuing the delete once.",
+            handle.pod_name,
+        )
+        redelete = self._run(render_delete_argv(config=config, name=handle.pod_name, zone=zone))
+        if redelete.returncode != 0:
+            redelete_low = (redelete.stderr or "").lower()
+            if "was not found" in redelete_low or "404" in redelete_low:
+                return  # the first delete landed between the probe and the retry
+            logger.error(
+                "GCP teardown: re-issued delete of the RUNNING zombie %s ALSO failed "
+                "(rc=%d); gcp_audit janitor will reap it. stderr=%s",
+                handle.pod_name,
+                redelete.returncode,
+                (redelete.stderr or "")[:300],
+            )
 
     # ----- internal helpers ------------------------------------------------
 
