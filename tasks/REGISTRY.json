@@ -4261,8 +4261,8 @@
     "678": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/678",
-      "status": "planning",
+      "path": "tasks/approved/678",
+      "status": "approved",
       "title": "Route workflow-surface fixes through a background /issue --auto session (replace the workflow-improver auto-spawn) for full plan+critic review"
     },
     "679": {
