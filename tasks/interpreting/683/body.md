@@ -1,7 +1,7 @@
 ---
-title: Does a behavior-dependent source key predict the leakage context-gate better
-  than the context-only default — marker (precondition holds) vs sycophancy (precondition
-  open)
+title: A training-completion source key predicts the leakage gate where the paper's
+  context-only key fails; for sycophancy it is unreplicated against a wide chance
+  null, for the marker only one of five sources clears its own null (LOW confidence)
 kind: experiment
 tags:
 - leak-predictor
