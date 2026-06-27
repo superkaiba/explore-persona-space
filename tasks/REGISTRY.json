@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 679,
+  "highest_id": 680,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4278,6 +4278,13 @@
       "path": "tasks/completed/68",
       "status": "completed",
       "title": "Misalignment leakage"
+    },
+    "680": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/680",
+      "status": "proposed",
+      "title": "GCP auto-lane: length-aware spot-first / flex-start ladder (on-demand A100 is stockout-prone; spot is a live separate pool, flex-start is the canonical capacity answer)"
     },
     "69": {
       "has_clean_result": false,
