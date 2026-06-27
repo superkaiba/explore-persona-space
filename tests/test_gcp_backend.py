@@ -52,10 +52,16 @@ from explore_persona_space.backends.gcp import (
     DEFAULT_IMAGE_PROJECT,
     DEFAULT_PRIMARY_ZONE,
     DEFAULT_PROJECT,
+    JANITOR_CLASS_ALLOWLISTED,
+    JANITOR_CLASS_KEEP,
+    JANITOR_CLASS_MANAGED,
+    JANITOR_CLASS_UNMANAGED,
+    JANITOR_LIST_NAME_FILTER,
     REQUIRED_LAUNCH_SECRET_KEYS,
     GcloudRunResult,
     GcpLaunchSecretsMissing,
     StaleNamedInstance,
+    _classify_janitor_instance,
     _stale_named_instance_or_none,
     attempt_id_for,
     classify_create_failure,
@@ -2053,9 +2059,10 @@ def test_audit_stale_gcp_vms_handles_empty_inventory() -> None:
     assert records == []
 
 
-def test_audit_stale_gcp_vms_skips_non_eps_instances() -> None:
-    """The reaper MUST only consider eps-issue-* instances — never delete
-    a personal VM in the same project just because it's old."""
+def test_audit_stale_gcp_vms_escalates_non_eps_instances_never_deletes() -> None:
+    """Broadened scope (#688): a non-eps-issue-* VM in the dedicated project is
+    classified UNMANAGED and ESCALATED (never auto-deleted) — NOT silently
+    skipped. The old name filter was blind to such a leftover (#680)."""
     now = datetime(2026, 6, 9, 12, 0, 0, tzinfo=UTC)
     old_created = (now - timedelta(hours=720)).isoformat()  # 30 days
     payload = json.dumps(
@@ -2082,7 +2089,12 @@ def test_audit_stale_gcp_vms_skips_non_eps_instances() -> None:
         now=now,
         delete=True,
     )
-    assert records == []
+    assert len(records) == 1
+    assert records[0]["classification"] == JANITOR_CLASS_UNMANAGED
+    assert records[0]["action"] == "escalated"
+    assert records[0]["reason"] == "age"
+    # The unmanaged VM is NEVER deleted, even under delete=True.
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
 
 
 def _one_running_instance(name: str, created_iso: str) -> str:
@@ -2251,6 +2263,224 @@ def test_audit_stale_gcp_vms_probe_failure_never_reaps_and_never_crashes() -> No
     assert records[0]["reason"] is None
     assert records[0]["phase"] is None
     assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+# ---------------------------------------------------------------------------
+# Broadened janitor scope + HYBRID classification (#688) — library level.
+# ---------------------------------------------------------------------------
+
+
+def test_classify_janitor_instance_four_classes() -> None:
+    """The name→class map: keep wins over managed/allowlisted; managed (eps-issue-*)
+    before allowlisted (eps-cap-probe*) before the unmanaged fall-through."""
+    assert _classify_janitor_instance("eps-issue-137") == JANITOR_CLASS_MANAGED
+    assert _classify_janitor_instance("eps-cap-probe2-1786331") == JANITOR_CLASS_ALLOWLISTED
+    assert _classify_janitor_instance("random-dev-vm-x") == JANITOR_CLASS_UNMANAGED
+    # keep is empty by default → no name classifies keep without a monkeypatch.
+    assert _classify_janitor_instance("keep-mydevbox") == JANITOR_CLASS_UNMANAGED
+
+
+def test_audit_escalates_unmanaged_stale_vm() -> None:
+    """(a) A non-eps-issue-*, non-allowlisted stale VM (48h old) → UNMANAGED,
+    escalated (with a spy callback invoked once), and NEVER passed to delete."""
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=48)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("random-leftover-vm", created), "")],
+    )
+    seen: list[dict] = []
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=True,
+        escalate=seen.append,
+    )
+    assert records[0]["classification"] == JANITOR_CLASS_UNMANAGED
+    assert records[0]["action"] == "escalated"
+    assert records[0]["reason"] == "age"
+    assert len(seen) == 1
+    assert seen[0]["name"] == "random-leftover-vm"
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+def test_audit_reaps_eps_issue_unchanged() -> None:
+    """(b) Regression guard: an aged eps-issue-* still reaps with
+    classification=managed, action=deleted, reason=age, on the right zone."""
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=30)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-137", created), "")],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    seen: list[dict] = []
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=True,
+        escalate=seen.append,
+    )
+    assert records[0]["classification"] == JANITOR_CLASS_MANAGED
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "age"
+    delete_calls = [a for a in runner.calls if "delete" in a and "instances" in a]
+    assert len(delete_calls) == 1
+    assert "eps-issue-137" in delete_calls[0]
+    assert "--zone=us-central1-a" in delete_calls[0]
+    # A managed VM never invokes the escalation callback.
+    assert seen == []
+
+
+def test_audit_reaps_allowlisted_ephemeral_prefix() -> None:
+    """(c) An aged eps-cap-probe* (the actual #680 leak name) is
+    allowlisted-ephemeral → AUTO-REAP (deleted, delete argv issued)."""
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=48)).isoformat()
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(0, _one_running_instance("eps-cap-probe2-1786331", created), "")
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    seen: list[dict] = []
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=True,
+        escalate=seen.append,
+    )
+    assert records[0]["classification"] == JANITOR_CLASS_ALLOWLISTED
+    assert records[0]["action"] == "deleted"
+    delete_calls = [a for a in runner.calls if "delete" in a and "instances" in a]
+    assert len(delete_calls) == 1
+    assert "eps-cap-probe2-1786331" in delete_calls[0]
+    assert seen == []  # auto-reap, not escalate
+
+
+def test_audit_unmanaged_probe_failure_does_not_escalate_or_delete() -> None:
+    """(d) An UNMANAGED RUNNING VM past the terminal-phase floor whose phase
+    probe FAILS falls through to the age backstop (here under 24h) → skipped,
+    reason None, NO delete argv, AND the escalate callback NOT invoked (probe
+    failure ≠ stale → no escalation)."""
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=2)).isoformat()  # past floor, under age backstop
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("random-dev-vm", created), "")],
+        # rc != 0 with a non-404 stderr → _read_guest_phase raises GcpProbeError.
+        guest_attr_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    seen: list[dict] = []
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+        escalate=seen.append,
+    )
+    assert records[0]["classification"] == JANITOR_CLASS_UNMANAGED
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert records[0]["phase"] is None
+    assert seen == []
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+def test_gcp_audit_preflight_uses_broadened_filter() -> None:
+    """(e) The CLI's _AUDIT_NAME_FILTER IS the library's JANITOR_LIST_NAME_FILTER
+    (both None), and render_list_argv(name_filter=None) appends NO --filter arg —
+    proving the preflight list is the whole-project list."""
+    import scripts.gcp_audit as cli
+
+    assert cli._AUDIT_NAME_FILTER is JANITOR_LIST_NAME_FILTER
+    assert JANITOR_LIST_NAME_FILTER is None
+    argv = render_list_argv(config=_test_config(), name_filter=JANITOR_LIST_NAME_FILTER)
+    assert not any(a.startswith("--filter") for a in argv), argv
+
+
+def test_router_paths_unaffected_by_broadened_janitor() -> None:
+    """(f) The seam: reconnect_or_none + _stale_named_instance_or_none still issue
+    an EXACT --filter=name=eps-issue-<N> (NOT a broadened/empty filter) and match
+    only by exact name — an UNMANAGED VM alongside the queried name is ignored."""
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    name = instance_name_for(137)
+    # A list payload with BOTH the queried eps-issue-137 (TERMINATED) AND an
+    # unrelated unmanaged VM. The router helpers must act only on the exact name.
+    payload = json.dumps(
+        [
+            {
+                "name": "some-other-vm",
+                "id": "9",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": (now - timedelta(hours=48)).isoformat(),
+            },
+            {
+                "name": name,
+                "id": "1",
+                "status": "TERMINATED",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": (now - timedelta(hours=2)).isoformat(),
+            },
+        ]
+    )
+    # reconnect_or_none: no LIVE eps-issue-137 (it's TERMINATED) → None, and the
+    # list filter is the EXACT name= filter, never broadened.
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    assert reconnect_or_none(spec=_spec("lora-7b"), config=_test_config(), runner=runner) is None
+    assert any(f"--filter=name={name}" in a for a in runner.calls)
+    assert not any("--filter=name~^eps-issue-" in a for a in runner.calls)
+
+    # _stale_named_instance_or_none: the TERMINATED eps-issue-137 record blocks
+    # the name; the unmanaged some-other-vm is ignored (matched by exact name).
+    runner2 = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    stale = _stale_named_instance_or_none(
+        spec=_spec("lora-7b"), config=_test_config(), runner=runner2
+    )
+    assert stale is not None
+    assert stale.name == name
+    assert stale.status == "TERMINATED"
+    assert any(f"--filter=name={name}" in a for a in runner2.calls)
+
+
+def test_audit_keep_prefix_never_reaped_or_escalated(monkeypatch) -> None:
+    """REC2: with _JANITOR_KEEP_PREFIXES set to a keep- prefix, an aged
+    keep-mydevbox VM is classification=keep, action=skipped, the escalate
+    callback is NOT invoked, and NO delete argv is issued."""
+    monkeypatch.setattr("explore_persona_space.backends.gcp._JANITOR_KEEP_PREFIXES", ("keep-",))
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=48)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("keep-mydevbox", created), "")],
+    )
+    seen: list[dict] = []
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=True,
+        escalate=seen.append,
+    )
+    assert records[0]["classification"] == JANITOR_CLASS_KEEP
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert seen == []
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+    # No phase probe either — a keep VM is short-circuited before the probe.
+    assert not any("get-guest-attributes" in a for a in runner.calls)
 
 
 # ---------------------------------------------------------------------------
