@@ -1,8 +1,8 @@
 ---
-title: Across 3 behaviors × 2 contexts × 3 LoRA ranks, weakly-installed LoRA edits
-  produce a diffuse activation shift with no read↔write alignment — and the verdict
-  holds when re-read on a strongly-installed behavior (2 of 18 cells installed; full
-  fine-tuning untested) (MODERATE confidence)
+title: On the two sycophancy rank-16 LoRA cells that installed strongly, the activation
+  shift is diffuse (rank-k 39/45) and unaligned with the behavior read-out; cross-behavior,
+  cross-rank and full-FT generalization is untested (2 of 18 cells installed) (LOW
+  confidence)
 kind: experiment
 tags:
 - followup-manual

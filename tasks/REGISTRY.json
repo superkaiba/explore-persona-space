@@ -4061,7 +4061,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/653",
       "status": "followups_running",
-      "title": "Across 3 behaviors \u00d7 2 contexts \u00d7 3 LoRA ranks, weakly-installed LoRA edits produce a diffuse activation shift with no read\u2194write alignment \u2014 and the verdict holds when re-read on a strongly-installed behavior (2 of 18 cells installed; full fine-tuning untested) (MODERATE confidence)"
+      "title": "On the two sycophancy rank-16 LoRA cells that installed strongly, the activation shift is diffuse (rank-k 39/45) and unaligned with the behavior read-out; cross-behavior, cross-rank and full-FT generalization is untested (2 of 18 cells installed) (LOW confidence)"
     },
     "654": {
       "goal": "Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user query displaces the last-token residual-stream state away from the context-established state (centered cosine + CKA + shuffled-pair floor) across persona / generic-instruction / ICL / wild-chat contexts and varied queries, to characterize context-dominant vs query-dominant layer regimes.",
