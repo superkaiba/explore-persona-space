@@ -1,7 +1,7 @@
 ---
 title: The extractor memory fix held flat on a live GCP SPOT A100-80, while watchdog
   recovery remains partial-live and deterministically covered (MODERATE confidence)
-kind: experiment
+kind: infra
 tags:
 - followup-manual
 created_at: '2026-06-26T10:24:35Z'
