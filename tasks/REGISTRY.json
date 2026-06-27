@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 675,
+  "highest_id": 676,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4243,6 +4243,13 @@
       "path": "tasks/proposed/675",
       "status": "proposed",
       "title": "Route _context_vector_all_layers through hook helper (sibling of #671, surfaced by #672)"
+    },
+    "676": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/676",
+      "status": "proposed",
+      "title": "Fleet dispatcher: overlap CPU judging with GPU work + multi-GPU parallel cell execution"
     },
     "68": {
       "has_clean_result": false,
