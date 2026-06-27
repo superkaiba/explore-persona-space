@@ -64,6 +64,7 @@ from __future__ import annotations
 import contextlib
 import fcntl
 import functools
+import hashlib
 import json
 import os
 import re
@@ -656,6 +657,126 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
     return v is True or (isinstance(v, str) and v.strip().lower() == "true")
 
 
+# ── Workflow-fix task helpers (#678 — the file-a-task + spawn-/issue-auto path) ─
+# Workflow-surface fixes (a `<!-- workflow-fix-candidate v1 -->` block or a
+# surfaced prose follow-up) are filed as a `kind: infra` task and implemented by
+# a background `/issue <N> --auto` session — NOT a `workflow-improver` subagent
+# spawn (retired by #678). These read-only predicates back the two pieces of
+# orchestrator logic the rule defines: the DEDUP check (don't double-file the
+# SAME bug on the SAME file) and the RECURSION GUARD (a workflow-fix session
+# never auto-files MORE workflow-fix tasks for its own findings). See
+# `.claude/rules/workflow-fix-on-bug.md`.
+
+# Non-terminal statuses a workflow-fix task can sit at while it still blocks a
+# duplicate re-raise. The terminal set ``{completed, archived}`` is EXCLUDED — a
+# closed fix does not block a fresh candidate for the same bug.
+_WF_FIX_NONTERMINAL: tuple[str, ...] = (
+    "proposed",
+    "planning",
+    "plan_pending",
+    "approved",
+    "running",
+    "verifying",
+    "interpreting",
+    "reviewing",
+    "awaiting_promotion",
+    "followups_running",
+    "blocked",
+    "on_hold",
+)
+
+
+def _wf_fix_normalize(s: str) -> str:
+    """Normalize a candidate prose field for stable fingerprinting.
+
+    Lowercase, collapse internal whitespace to single spaces, strip
+    leading/trailing whitespace, and strip trailing ``.,;:!?`` — so a candidate
+    re-raised with reformatted prose (extra spaces, a trailing period, a case
+    change) produces the SAME fingerprint and is correctly deduped.
+    """
+    s = re.sub(r"\s+", " ", (s or "").strip().lower())
+    return s.rstrip(".,;:!?").strip()
+
+
+def wf_fix_fingerprint(proposed_change: str, bug_observed: str) -> str:
+    """Stable 12-hex dedup fingerprint of a workflow-fix candidate.
+
+    The dedup GRAIN is ``(target_file, fingerprint)`` (#678 A1): two DISTINCT
+    bugs on the SAME hot file (SKILL.md, CLAUDE.md, …) produce DIFFERENT
+    fingerprints and therefore file two distinct tasks (each gets its own plan
+    review); only a genuine re-raise of the SAME bug (same normalized
+    ``proposed_change`` + ``bug_observed``) collapses to the same fingerprint
+    and is deduped. The fingerprint is recorded as a ``wf-fix-fp:<fp>`` tag and
+    in the body ``## Provenance`` block at file-time.
+    """
+    h = hashlib.sha256(
+        (_wf_fix_normalize(proposed_change) + "||" + _wf_fix_normalize(bug_observed)).encode()
+    )
+    return h.hexdigest()[:12]
+
+
+def is_open_workflow_fix_task(target_file: str, fingerprint: str | None = None) -> int | None:
+    """Return the id of an OPEN ``kind: infra`` workflow-fix task matching this key, else None.
+
+    Dedup key (#678 A1): ``(target_file, fingerprint)``. A task matches iff
+    ``kind == infra`` AND its status is NOT in ``{completed, archived}`` AND its
+    title starts with ``workflow-fix:`` AND its body ``## Provenance`` carries a
+    ``workflow_fix_target: <target_file>`` line (exact string match). When
+    ``fingerprint`` is given, the task must ALSO carry a ``wf-fix-fp:<fingerprint>``
+    tag (or a ``fingerprint: <fingerprint>`` Provenance line) — so a DIFFERENT
+    bug on the same file (different fingerprint) is NOT a duplicate. When
+    ``fingerprint`` is None, matches any open workflow-fix task on the file
+    (coarse, file-only — used only by callers with no candidate fingerprint).
+
+    Read-only: no mutation, no commit. The cheap pre-filter (``kind`` / status /
+    title) reads the REGISTRY snapshot; the ``tags`` / Provenance check reads the
+    task's ``body.md`` (tags are not denormalized into the registry).
+    """
+    reg = _load_registry()
+    for tid_str, entry in reg.get("tasks", {}).items():
+        if entry.get("kind") != "infra":
+            continue
+        if (entry.get("status") or "") not in _WF_FIX_NONTERMINAL:
+            continue
+        if not str(entry.get("title", "")).startswith("workflow-fix:"):
+            continue
+        tid = int(tid_str)
+        try:
+            body_path = find_task_path(tid) / "body.md"
+            fm, body = _read_body(body_path)
+        except (FileNotFoundError, ValueError):
+            continue
+        if f"workflow_fix_target: {target_file}" not in body:
+            continue
+        if fingerprint is not None:
+            tags = [str(t) for t in (fm.get("tags") or [])]
+            if f"wf-fix-fp:{fingerprint}" not in tags and f"fingerprint: {fingerprint}" not in body:
+                # Same file, different bug -> not a duplicate.
+                continue
+        return tid
+    return None
+
+
+def is_workflow_fix_session(task_id: int) -> bool:
+    """True iff this task is a workflow-fix task (recursion-guard durable signal, #678 Q4).
+
+    The DURABLE signal: the body ``## Provenance`` carries a
+    ``workflow_fix_target:`` line. It survives a watcher crash-recovery respawn
+    (which re-runs ``spawn-issue --auto`` WITHOUT custom env, so the
+    ``EPM_WORKFLOW_FIX_SESSION`` env var is lost on respawn). The env var is the
+    in-session convenience leg, checked by the caller, not here. A workflow-fix
+    session NEVER auto-files MORE workflow-fix tasks for its own findings — it
+    logs + notifies, analogue of ``AUTO_REVIEW_DISABLED``.
+
+    Read-only: no mutation, no commit.
+    """
+    try:
+        body = (find_task_path(task_id) / "body.md").read_text()
+    except (FileNotFoundError, OSError):
+        return False
+    return "workflow_fix_target:" in body
+
+
 def extract_stub_abstract(body: str) -> str:
     """Return the abstract from a paper-stub body (best-effort, never raises).
 
@@ -717,7 +838,6 @@ def _validate_committed_artifact(label: str, entry: Any) -> list[str]:
     Returns a (possibly empty) list of problem strings. HF-hosted artifacts are
     the caller's concern (it skips them); this only stats committed files.
     """
-    import hashlib
 
     rel = (entry or {}).get("path")
     if not rel:
@@ -1819,7 +1939,7 @@ def _git_commit(paths: list[Path], message: str) -> None:
 
     Uses ``git commit --only -- <paths>`` so unrelated staged work elsewhere in
     the repo is not silently captured under the task.py commit message. Parallel
-    agents (workflow-improver, /issue runs, user-staged edits) share the same
+    agents (/issue runs, user-staged edits) share the same
     index, and ``git commit -m`` without ``--only`` would commit the entire
     index. The early-return check is likewise narrowed to ``--`` <paths> so it
     cannot bail when unrelated files are staged.
