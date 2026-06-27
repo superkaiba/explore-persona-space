@@ -549,6 +549,48 @@ def test_classify_terminal_exception_manual_attention_carries_orphaned_id() -> N
     assert "scancel" in note.lower()
 
 
+def test_classify_terminal_cpu_exhausted_emits_distinct_reason() -> None:
+    """#677: a CpuExhaustedNoRunpodLaneError maps to the DISTINCT reason
+    cpu_exhausted_no_runpod_lane (NOT no_compute_available), so the watcher's
+    capacity-retry pass does not hot-retry a structurally-unservable run.
+
+    Removing the isinstance branch (or placing it AFTER the base
+    NoComputeAvailableError branch) turns this RED — the CPU exception would be
+    caught by the generic branch and emit reason: no_compute_available.
+    """
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
+        CpuExhaustedNoRunpodLaneError,
+    )
+
+    exc = CpuExhaustedNoRunpodLaneError(
+        "CPU intent 'cpu-bigmem': GCP exhausted and RunPod is GPU-only",
+        attempts=[{"kind": "gcp", "outcome": "capacity_miss"}],
+    )
+    t = classify_terminal_exception(exc)
+    assert t.failure_class == "infra"
+    assert t.status == "blocked"
+    # The machine-greppable reason token is the CPU-specific one ...
+    assert f"reason: {ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD}" in t.note
+    assert "reason: no_compute_available" not in t.note
+    # ... and the human message survives as detail (inherited .reason).
+    assert "detail: CPU intent 'cpu-bigmem'" in t.note
+
+
+def test_classify_terminal_generic_no_compute_still_no_compute() -> None:
+    """#677 control: the subclass branch did NOT shadow the generic branch —
+    a plain NoComputeAvailableError still maps to reason: no_compute_available."""
+    from explore_persona_space.backends.router import ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD
+
+    exc = NoComputeAvailableError(
+        "every free lane park-failed AND GCP quota has no headroom",
+        attempts=[],
+    )
+    t = classify_terminal_exception(exc)
+    assert "reason: no_compute_available" in t.note
+    assert ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD not in t.note
+
+
 # ---------------------------------------------------------------------------
 # Dispatch helper: end-to-end with mocked router
 # ---------------------------------------------------------------------------

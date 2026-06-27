@@ -321,6 +321,21 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
         gpu_count=2,
         gpu_kind="H100-80",
     ),
+    # CPU-only analysis intent (#677) — gpu_count=0. The size-gated
+    # CPU-off-pod rule (CLAUDE.md "CPU-only phases don't hold GPU pods"
+    # data-footprint carve-out) routes a CPU/analysis phase whose local
+    # footprint exceeds VM_ANALYSIS_FOOTPRINT_GB_MAX=50 GB HERE instead of
+    # the shared VM. n2-highmem-16 = 16 vCPU / 128 GB RAM — enough RAM
+    # headroom to hold a ~100-150 GB working set's hot slice in memory while
+    # the bulk lives on the 300 GB boot disk; n2 is a standard
+    # live-migratable family (maintenance-policy MIGRATE). Larger footprints
+    # size the boot disk up via --boot-disk-gb (no new flag) or pass a
+    # machine_spec_override for a bigger n2-highmem-{32,...}.
+    "cpu-bigmem": MachineSpec(
+        machine_type="n2-highmem-16",
+        gpu_count=0,
+        gpu_kind="CPU",
+    ),
 }
 
 
@@ -450,6 +465,12 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     "a2-highgpu-1g": frozenset(
         {"us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"}
     ),
+    # n2-highmem (CPU-only, #677) — n2 is offered in all three us-central1
+    # zones. Listed for completeness so a future zone change is verified
+    # against this table, not blind (same convention as the g2 / a3 rows
+    # above; the map only RESTRICTS, so a fail-open default was already
+    # correct — this row just makes the verified fact explicit).
+    "n2-highmem-16": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
 }
 
 
@@ -1415,9 +1436,12 @@ def render_create_argv(
       Spot preempts or the ``--max-run-duration`` fence trips, the VM
       auto-deletes; combined with the GCP stale-VM reaper this caps
       credit leakage at the audit window.
-    * ``--maintenance-policy=TERMINATE`` — GPUs cannot live-migrate, so
-      the maintenance policy MUST be terminate (gcloud rejects MIGRATE
-      on accelerator VMs anyway; explicit is clearer than implicit).
+    * ``--maintenance-policy`` — CONDITIONAL on the resolved machine's GPU
+      count (#677): ``TERMINATE`` for an accelerator VM (GPUs cannot
+      live-migrate, so the policy MUST be terminate — gcloud rejects MIGRATE
+      on accelerator VMs anyway), ``MIGRATE`` for a CPU-only machine
+      (``gpu_count==0``), which lets a long CPU analysis phase survive a
+      host-maintenance event instead of being killed mid-store-download.
     * ``--no-restart-on-failure`` (``automaticRestart=false``, #669) — a
       watchdog self-shutdown (or any crash) is FINAL; auto-restart would
       bring the VM back into the same wedged state. Independent scheduling
@@ -1469,13 +1493,20 @@ def render_create_argv(
     target_zone = zone or config.primary_zone
     name = instance_name_for(spec.issue)
 
+    # GPUs cannot live-migrate (gcloud rejects MIGRATE on accelerator VMs), so
+    # accelerator VMs MUST be TERMINATE. A CPU-only machine (gpu_count==0, #677)
+    # CAN live-migrate, and MIGRATE is gcloud's default for non-accelerator VMs
+    # — it lets a long CPU analysis phase survive a host-maintenance event
+    # instead of being killed mid-store-download.
+    maintenance_policy = "TERMINATE" if machine.gpu_count else "MIGRATE"
+
     argv = _base_gcloud_argv(config, "compute", "instances", "create", name)
     argv += [
         f"--zone={target_zone}",
         f"--machine-type={machine.machine_type}",
         f"--provisioning-model={provisioning}",
         "--instance-termination-action=DELETE",
-        "--maintenance-policy=TERMINATE",
+        f"--maintenance-policy={maintenance_policy}",
         # automaticRestart=false (#669): a watchdog self-shutdown (or any
         # crash) must be FINAL — auto-restart would bring the VM back into the
         # same wedged state (the systemd-networkd DHCP-renewal bug recurs under
@@ -2245,6 +2276,13 @@ def quota_metric_for(machine: MachineSpec, provisioning: str) -> str | None:
     mapping (e.g. H100 + STANDARD, which is rejected at render anyway) so
     the fail-OPEN pre-check proceeds rather than blocking (#631).
     """
+    # CPU-only machines draw no accelerator quota (#677) — return None so the
+    # fail-OPEN preflight ("no opinion; proceed") skips the accelerator-quota
+    # probe entirely. (quota_metric_for already returns None for an unmapped
+    # gpu_kind, so "CPU" was already None; this is the explicit, intent-
+    # documenting guard that also survives a future map entry.)
+    if machine.gpu_count == 0:
+        return None
     if provisioning in {"SPOT", "FLEX_START"}:
         return _GPU_KIND_TO_PREEMPTIBLE_QUOTA_METRIC.get(machine.gpu_kind)
     return _GPU_KIND_TO_QUOTA_METRIC.get(machine.gpu_kind)
@@ -2930,6 +2968,21 @@ class GcpBackend(ComputeBackend):
                 "hydra_args": list(spec.hydra_args or ()),
                 "gpus": spec.gpus,
                 "time_budget_hours": spec.time_budget_hours,
+                # CPU-lane async-failover guard prerequisite (#677). The async
+                # poller's _is_gcp_async_workload_failure must EXCLUDE a CPU GCP
+                # handle (gpu_count==0) from the GCP->RunPod failover (RunPod is
+                # GPU-only — resolve_intent on a CPU intent KeyErrors,
+                # runpod_api.py asserts gpu_count >= 1). The handle already
+                # carries intent + machine_type but NOT the resolved gpu_count;
+                # thread it so the predicate reads handle.extra["gpu_count"]
+                # WITHOUT importing gcp into the poller. Resolved from the SAME
+                # machine_for_intent(spec) the create used, so a
+                # machine_spec_override rung reports its true gpu_count (an
+                # A100-40 rung stays gpu_count>=1; only a cpu-bigmem rung is 0).
+                # Additive key — extra is an opaque dict that round-trips via
+                # serialize_handle's dict(handle.extra); every existing reader
+                # uses .get(...), so no consumer breaks.
+                "gpu_count": machine_for_intent(spec).gpu_count,
             },
         )
         handle = self._with_artifacts_declaration(
