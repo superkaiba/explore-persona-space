@@ -2,7 +2,8 @@
 title: 'workflow-fix: verify_task_body.py — figure-text-staleness check (catch panel/series
   prose-vs-sidecar drift)'
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-06-27T14:02:11Z'
 has_clean_result: false
 origin_prompt: 'Auto-filed from #683 follow-up r1 clean-result-critic round-2 workflow-fix-candidate
