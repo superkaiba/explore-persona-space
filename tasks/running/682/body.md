@@ -2,7 +2,8 @@
 title: 'Finish API throughput project: Phase 3 guidelines + dispatcher review/migrate
   + #658 validation'
 kind: infra
-tags: []
+tags:
+- keep-running
 created_at: '2026-06-27T02:40:41Z'
 has_clean_result: false
 origin_prompt: 'Run the rest of this in the background with happy coder: finish docs/api_throughput_plan.md
