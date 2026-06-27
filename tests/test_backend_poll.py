@@ -50,6 +50,12 @@ _GCP_EXTRA_659 = {
     "time_budget_hours": 4.0,
     "workload_cmd": "REPO_ROOT=/workspace bash scripts/foo.sh --bar",
     "hydra_args": [],
+    # #677: the post-#677 GCP handle carries the resolved machine's gpu_count.
+    # A GPU intent is >=1, so the new CPU-exclusion conjunct in
+    # _is_gcp_async_workload_failure is a no-op for these GPU failover tests
+    # (they assert on PHASE, not gpu_count, so they stay green with this key
+    # present). The CPU case overrides this to 0 in its own test.
+    "gpu_count": 1,
 }
 
 
@@ -928,3 +934,46 @@ def test_concurrent_failover_preserves_first_runpod_sidecar(tmp_path, monkeypatc
     # M2.6 atomicity reaffirmed at the poller level: exactly ONE RunPod launch
     # across BOTH invocations.
     assert len(rp.launches) == 1
+
+
+# ---------------------------------------------------------------------------
+# CPU-only GCP handle: NO async RunPod failover (#677)
+# ---------------------------------------------------------------------------
+
+
+def test_async_failover_skips_cpu_gcp_handle(tmp_path, monkeypatch, capsys):
+    """#677: a CPU GCP handle (extra.gpu_count==0) whose poll surfaces
+    terminal_workload_failed does NOT fail over to RunPod (RunPod is GPU-only).
+    It emits the ordinary dead JSON; RunPodBackend is never constructed.
+
+    RunPodBackend is monkeypatched to RAISE if constructed — the strongest
+    "never touched RunPod" assertion: if the predicate fails to exclude the CPU
+    handle, _failover_dead_gcp_to_runpod constructs RunPodBackend() and the test
+    fails with the explicit AssertionError, not a downstream crash.
+    """
+    cpu_extra = dict(_GCP_EXTRA_659)
+    cpu_extra["intent"] = "cpu-bigmem"
+    cpu_extra["gpu_count"] = 0
+    sidecar = tmp_path / "issue-677-handle.json"
+    write_handle_sidecar(_gcp_handle(extra=cpu_extra), sidecar)
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPodBackend must NOT be constructed for a CPU GCP handle (#677)")
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod.RunPodBackend",
+        _boom,
+    )
+
+    rc = backend_poll_main(["--issue", "677", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    # Ordinary dead path (NOT failed over to RunPod).
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_workload_failed"
+    # Sidecar unchanged (still a GCP handle — no RunPod re-point).
+    assert read_handle_sidecar(sidecar).backend == "gcp"

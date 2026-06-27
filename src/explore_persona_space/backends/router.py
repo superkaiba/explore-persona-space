@@ -217,6 +217,18 @@ ROUTE_REASON_PREPARE_FAILED: str = "backend_prepare_failed"
 #: (user-directed 2026-06-17): RunPod is reached ONLY here, never first,
 #: never skipping a cheaper rung.
 ROUTE_REASON_RUNPOD_FALLBACK: str = "auto_fallback_runpod"
+#: A CPU-only intent (gpu_count==0, #677) reached the RunPod terminal rung —
+#: either the GCP lane was capacity-exhausted OR a GCP CPU workload crashed
+#: (sync failover). RunPod is GPU-only, so there is NO CPU fallback lane;
+#: surface a typed terminal instead of crashing inside the RunPod GPU-intent
+#: resolver. DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
+#: :data:`ROUTE_REASON_NO_COMPUTE` so the marker trail shows the
+#: CPU-unservable cause, and DISTINCT from ``no_compute_available`` so the
+#: watcher's capacity-retry pass (which keys on ``no_compute_available``) does
+#: NOT auto-re-drive a structurally-unservable run. This is the token
+#: ``classify_terminal_exception`` emits as the ``epm:failure`` note's
+#: ``reason:`` field for a :class:`CpuExhaustedNoRunpodLaneError`.
+ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD: str = "cpu_exhausted_no_runpod_lane"
 #: The router fell back to RunPod because a GCP attempt FAILED THE WORKLOAD
 #: (a :class:`gcp.GcpWorkloadError`, not a capacity/headroom miss) — the
 #: deliberate reversal of the historical "GCP workload failure surfaces
@@ -362,6 +374,24 @@ class NoComputeAvailableError(RouteError):
         super().__init__(reason)
         self.reason = reason
         self.attempts = list(attempts or [])
+
+
+class CpuExhaustedNoRunpodLaneError(NoComputeAvailableError):
+    """Terminal: a CPU-only intent (gpu_count==0, #677) reached the RunPod
+    terminal rung — the GCP lane was capacity-exhausted OR a GCP CPU workload
+    crashed (sync failover) — and RunPod is GPU-only (no CPU fallback lane).
+
+    A :class:`NoComputeAvailableError` SUBCLASS so existing callers that catch
+    the base class still catch it, but ``classify_terminal_exception``
+    (``issue_dispatch.py``) can map it to a DISTINCT ``epm:failure`` note
+    (``reason: cpu_exhausted_no_runpod_lane``) ahead of the generic
+    ``no_compute_available`` note. The distinction matters because the
+    watcher's capacity-retry pass (``autonomous_session_watch.py``'s
+    ``TRANSIENT_CAPACITY_REASONS``) re-drives ONLY ``no_compute_available``; a
+    structurally-CPU-unservable RunPod launch must NOT auto-retry (no lane will
+    ever free up to make RunPod accept a CPU intent). Inherits ``__init__``
+    verbatim (reason message + attempts).
+    """
 
 
 class BackendPrepareError(RouteError):
@@ -1856,6 +1886,16 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     provisioning model so the create resolves the rung's true machine.
     """
     base = machine_for_intent(spec)  # resolves the as-is intent (rung 1)
+    # CPU-only intent (#677): no GPU fallback ladder applies. The A100-40 rung
+    # is a "smaller GPU" fallback and the spot rungs trade preemption risk for
+    # cost on a SHORT job — neither makes sense for a CPU analysis phase that
+    # wants a reliable on-demand machine to finish a long HF store download.
+    # Yield exactly the single on-demand CPU rung. (Without this, _is_short_job
+    # floors gpu_count to 1 via max(1, machine.gpu_count) in
+    # _estimated_gpu_hours, so a SHORT CPU job WOULD append a spot rung — the
+    # short-circuit is load-bearing, not redundant.)
+    if base.gpu_count == 0:
+        return [(spec, f"ondemand_{_machine_label(base)}")]
     rungs: list[tuple[RunSpec, str]] = [(spec, f"ondemand_{_machine_label(base)}")]
     a40 = a100_40_fallback_for_intent(spec)
     if a40 is not None:
@@ -1975,6 +2015,33 @@ def _runpod_terminal_rung(
     trail — the terminal "truly no compute anywhere" outcome, preserving a
     typed terminal for the orchestrator's failure classifier.
     """
+    # CPU-intent guard (#677). RunPod is GPU-only: RunPodBackend.launch shells
+    # to pod_lifecycle.py provision --intent <spec.intent>, which resolves via
+    # gpu_heuristics.resolve_intent (GPU-only -> KeyError on a CPU intent) and
+    # runpod_api.py asserts gpu_count >= 1. So a CPU intent must NOT reach
+    # RunPod -- not on the capacity fall-through AND not on the sync GCP
+    # workload-failover (both funnel through here). A CPU GCP lane that is
+    # exhausted (capacity) or whose workload crashed (sync failover) raises the
+    # TYPED CpuExhaustedNoRunpodLaneError so the orchestrator's
+    # classify_terminal_exception (issue_dispatch.py) posts an epm:failure note
+    # carrying reason: cpu_exhausted_no_runpod_lane (DISTINCT from the generic
+    # no_compute_available note). The watcher's capacity-retry pass keys on
+    # no_compute_available, so the distinct reason means it does NOT auto-retry
+    # a structurally-CPU-unservable RunPod launch -- correct: no lane will ever
+    # free up to make RunPod accept a CPU intent.
+    if machine_for_intent(spec).gpu_count == 0:
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
+            chosen_kind="gcp",
+            attempts=attempts,
+        )
+        raise CpuExhaustedNoRunpodLaneError(
+            f"CPU intent {spec.intent!r}: GCP lane exhausted/failed and RunPod "
+            f"is GPU-only (no CPU fallback lane). residual_gap: {residual_gap}",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        )
     if reason in (
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
@@ -4343,6 +4410,7 @@ __all__ = [
     "PARK_MAX_CONSECUTIVE_PROBE_FAILURES",
     "ROUTE_REASON_AUTO_FALLBACK_GCP",
     "ROUTE_REASON_AUTO_STARTED",
+    "ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC",
     "ROUTE_REASON_NO_COMPUTE",
@@ -4352,6 +4420,7 @@ __all__ = [
     "ROUTE_REASON_RUNPOD_FALLBACK",
     "ROUTE_REASON_WORKLOAD_FAILURE",
     "BackendPrepareError",
+    "CpuExhaustedNoRunpodLaneError",
     "GcpAttemptCapExceededError",
     "Lease",
     "LeaseStore",

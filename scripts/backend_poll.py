@@ -244,7 +244,22 @@ def _is_gcp_async_workload_failure(handle, result) -> bool:
     Option 2): spot preemption / max-run-duration / manual stop must NOT fail
     over — re-running on RunPod there burns money for no reason and would invert
     ``test_async_gcp_capacity_death_does_NOT_fail_over``.
+
+    A CPU-only GCP handle (``extra["gpu_count"] == 0``, #677) is EXCLUDED
+    regardless of phase: RunPod is GPU-only (``resolve_intent`` on a CPU intent
+    KeyErrors; ``runpod_api`` asserts ``gpu_count >= 1``), so a CPU workload
+    crash/wedge must NOT fail over. Returning ``False`` routes it to the
+    ordinary dead path -> ``failure_class: code`` -> ``status:blocked`` (the
+    watcher's capacity-retry pass re-drives only infra/``no_compute_available``,
+    never a code failure, so it parks cleanly). A pre-#677 GCP handle written
+    before the ``gpu_count`` threading lands has no ``gpu_count`` key ->
+    ``extra.get("gpu_count")`` is ``None`` != ``0`` -> the guard is a no-op and
+    the handle takes the EXISTING (GPU) failover path, exactly as today
+    (fail-toward-existing-behavior on a missing key).
     """
+    extra = getattr(handle, "extra", None) or {}
+    if extra.get("gpu_count") == 0:
+        return False
     return (
         getattr(handle, "backend", None) == "gcp"
         and result.status == "dead"

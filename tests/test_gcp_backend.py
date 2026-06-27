@@ -304,6 +304,141 @@ def test_machine_for_intent_rejects_unknown_intent_loud() -> None:
 
 
 # ---------------------------------------------------------------------------
+# CPU-only intent: cpu-bigmem (#677)
+# ---------------------------------------------------------------------------
+
+
+def test_intent_to_machine_includes_cpu_bigmem() -> None:
+    """#677: the CPU-only analysis intent maps to a gpu_count=0 n2-highmem-16."""
+    spec = INTENT_TO_MACHINE["cpu-bigmem"]
+    assert spec == MachineSpec(machine_type="n2-highmem-16", gpu_count=0, gpu_kind="CPU")
+    assert spec.machine_type == "n2-highmem-16"
+    assert spec.gpu_count == 0
+    assert spec.gpu_kind == "CPU"
+
+
+def test_machine_for_intent_resolves_cpu_bigmem() -> None:
+    """#677: machine_for_intent resolves the cpu-bigmem row."""
+    machine = machine_for_intent(_spec("cpu-bigmem"))
+    assert machine == MachineSpec(machine_type="n2-highmem-16", gpu_count=0, gpu_kind="CPU")
+
+
+def test_render_create_argv_cpu_bigmem_golden() -> None:
+    """#677: a cpu-bigmem create renders a valid CPU argv.
+
+    The CPU machine takes ``--maintenance-policy=MIGRATE`` (it can
+    live-migrate), carries NO ``--accelerator`` flag, and keeps every
+    ephemeral leak guard the GPU path uses.
+    """
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("cpu-bigmem"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\necho startup\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    # CPU machine type.
+    assert "--machine-type=n2-highmem-16" in argv
+    # MIGRATE for the CPU machine; TERMINATE must be ABSENT.
+    assert "--maintenance-policy=MIGRATE" in argv
+    assert "--maintenance-policy=TERMINATE" not in argv
+    # No accelerator flag on a CPU VM (absent for ALL GCP machines today —
+    # this asserts it STAYS absent for the CPU path).
+    assert not any(a.startswith("--accelerator") for a in argv), argv
+    # Ephemeral / leak guards apply equally to a CPU VM.
+    assert "--instance-termination-action=DELETE" in argv
+    assert "--no-restart-on-failure" in argv
+    assert "--max-run-duration=24h" in argv
+    # Default boot disk covers a ~150 GB working set.
+    assert "--boot-disk-size=300GB" in argv
+
+
+def test_render_create_argv_cpu_bigmem_boot_disk_override() -> None:
+    """#677: the existing --boot-disk-gb override threads through for CPU."""
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("cpu-bigmem", extra={"boot_disk_gb": 500}),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--boot-disk-size=500GB" in argv
+
+
+def test_render_create_argv_gpu_intent_still_terminate() -> None:
+    """#677 control: the conditional did NOT regress the GPU path —
+    an accelerator intent still emits --maintenance-policy=TERMINATE."""
+    cfg = _test_config()
+    for intent in ("lora-7b", "ft-7b"):
+        argv = render_create_argv(
+            spec=_spec(intent),
+            config=cfg,
+            attempt_id="att-fixed-001",
+            startup_script="#!/bin/bash\n",
+            secret_files=_TEST_SECRET_FILES,
+        )
+        assert "--maintenance-policy=TERMINATE" in argv, intent
+        assert "--maintenance-policy=MIGRATE" not in argv, intent
+
+
+def test_quota_metric_for_cpu_returns_none() -> None:
+    """#677: a CPU machine draws no accelerator quota under any pool."""
+    cpu = MachineSpec(machine_type="n2-highmem-16", gpu_count=0, gpu_kind="CPU")
+    for provisioning in ("STANDARD", "SPOT", "FLEX_START"):
+        assert quota_metric_for(cpu, provisioning) is None, provisioning
+
+
+def test_preflight_quota_headroom_skips_probe_for_cpu() -> None:
+    """#677: a cpu-bigmem spec yields metric=None -> the regions-describe
+    probe is skipped (fail-OPEN "no opinion; proceed"), no gcloud call."""
+    runner = _Runner()
+    assert (
+        preflight_quota_headroom(
+            spec=_spec(intent="cpu-bigmem"), config=_test_config(), runner=runner
+        )
+        is None
+    )
+    # The accelerator-quota probe never ran: no regions-describe gcloud call.
+    assert not [a for a in runner.calls if "regions" in a and "describe" in a]
+    assert runner.calls == []  # decided without ANY gcloud call
+
+
+def test_gcp_handle_extra_includes_gpu_count(no_marker_posts) -> None:
+    """#677: the GCP handle's extra carries the resolved machine's true
+    gpu_count (0 for cpu-bigmem, >=1 for a GPU intent) so the async poller's
+    failover predicate can exclude CPU handles without resolving the machine.
+
+    cpu-bigmem and eval are both offered in all three us-central1 zones, so a
+    single create succeeds for each.
+    """
+    created = json.dumps([{"name": "eps-issue-137", "id": "999"}])
+
+    cpu_backend = GcpBackend(
+        config=_test_config(),
+        runner=_Runner(
+            list_results=[GcloudRunResult(0, "[]", "")],
+            create_results=[GcloudRunResult(0, created, "")],
+        ),
+        marker_poster=lambda **_: None,
+    )
+    cpu_handle = cpu_backend.launch(_spec(intent="cpu-bigmem"))
+    assert cpu_handle.extra["gpu_count"] == 0
+
+    gpu_backend = GcpBackend(
+        config=_test_config(),
+        runner=_Runner(
+            list_results=[GcloudRunResult(0, "[]", "")],
+            create_results=[GcloudRunResult(0, created, "")],
+        ),
+        marker_poster=lambda **_: None,
+    )
+    gpu_handle = gpu_backend.launch(_spec(intent="eval"))
+    assert gpu_handle.extra["gpu_count"] == 1
+
+
+# ---------------------------------------------------------------------------
 # Machine-type zone availability (#653)
 # ---------------------------------------------------------------------------
 

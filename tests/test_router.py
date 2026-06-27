@@ -4611,3 +4611,90 @@ def test_single_triggerer_failover_unchanged_when_identity_none(
     lease = lease_store.read(137)
     assert lease is not None
     assert lease.gcp_failover_of is None  # NOT stamped on the legacy path
+
+
+# ---------------------------------------------------------------------------
+# CPU-only intent routing (#677)
+# ---------------------------------------------------------------------------
+
+
+def test_gcp_ladder_cpu_intent_single_ondemand_rung():
+    """#677: the GCP ladder for a SHORT cpu-bigmem job yields exactly ONE
+    on-demand CPU rung — no A100-40, no spot.
+
+    The 1.0h budget is deliberately "short" (1.0h * max(1, gpu_count=0)=1 = 1.0
+    GPU-h <= the 2 GPU-h EPS_GCP_SPOT_MAX_GPU_HOURS default), so a GPU intent at
+    the same budget WOULD get a spot rung. The §4.2 short-circuit is the only
+    thing suppressing it here — removing it turns this test RED.
+    """
+    from explore_persona_space.backends.router import _gcp_ladder_specs
+
+    spec = RunSpec(issue=137, intent="cpu-bigmem", backend="gcp", time_budget_hours=1.0)
+    rungs = _gcp_ladder_specs(spec)
+    assert len(rungs) == 1
+    _rung_spec, label = rungs[0]
+    assert label == "ondemand_cpu"
+    # No rung anywhere carries spot (label OR provisioning override).
+    for rung_spec, lbl in rungs:
+        assert "spot" not in lbl.lower()
+        prov = (rung_spec.extra or {}).get("provisioning_model")
+        assert prov is None or "spot" not in str(prov).lower()
+    # And no A100-40 fallback rung.
+    assert not any("a100_40" in lbl for _s, lbl in rungs)
+
+
+def test_gcp_ladder_short_gpu_intent_DOES_get_spot_rung():
+    """#677 positive control: the SAME 1.0h budget on a lora-7b intent DOES
+    produce a spot rung — proving the budget really is 'short' and the CPU
+    test's no-spot result is the short-circuit's doing, not an accidentally
+    long job."""
+    from explore_persona_space.backends.router import _gcp_ladder_specs
+
+    spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=1.0)
+    rungs = _gcp_ladder_specs(spec)
+    assert any("spot" in lbl.lower() for _s, lbl in rungs), [lbl for _s, lbl in rungs]
+
+
+def test_router_cpu_intent_capacity_miss_no_runpod_fallback(
+    lease_store, marker_poster, captured_markers
+):
+    """#677: a cpu-bigmem auto route whose GCP CPU rung capacity-misses raises
+    CpuExhaustedNoRunpodLaneError and NEVER launches RunPod (RunPod is GPU-only,
+    has no CPU lane). The terminal epm:backend-selected marker carries the
+    distinct reason cpu_exhausted_no_runpod_lane.
+
+    Removing the §4.2c _runpod_terminal_rung CPU guard turns this RED — it would
+    instead launch RunPod / crash in the RunPod intent resolver.
+    """
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
+        CpuExhaustedNoRunpodLaneError,
+    )
+
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED",
+            evidence={"matched_pattern": "RESOURCE_EXHAUSTED"},
+        )
+    )
+    spec = RunSpec(issue=137, intent="cpu-bigmem", backend="auto", time_budget_hours=1.0)
+    with pytest.raises(CpuExhaustedNoRunpodLaneError):
+        route(
+            spec,
+            runpod_backend=rp,
+            free_backends={"nibi": _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("x"))},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    # RunPod NEVER attempted.
+    assert len(rp.launches) == 0
+    # The terminal marker carries the CPU-specific reason (NOT
+    # auto_fallback_runpod / no_compute_available).
+    cpu_terminals = _by_reason(captured_markers, ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD)
+    assert cpu_terminals, captured_markers
+    assert not _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)

@@ -7144,6 +7144,40 @@ def test_no_compute_available_is_in_the_allowlist():
     assert "codex-companion-probe-error" not in TRANSIENT_CAPACITY_REASONS
 
 
+def test_capacity_retry_does_not_redrive_cpu_exhausted_reason():
+    """#677: a `cpu_exhausted_no_runpod_lane` block is NOT a transient-capacity
+    block — the watcher's capacity-retry pass must NOT hot-retry a structurally
+    CPU-unservable run (no lane will ever free up to make RunPod accept a CPU
+    intent).
+
+    GREEN today purely because `cpu_exhausted_no_runpod_lane` is NOT in
+    TRANSIENT_CAPACITY_REASONS — a REGRESSION GUARD pinning the contract (a
+    future careless widening of the allowlist to include the CPU reason turns it
+    RED).
+    """
+    import autonomous_session_watch as asw
+
+    note = "failure_class: infra\nreason: cpu_exhausted_no_runpod_lane"
+    ev = _fail_ev("2026-06-26T00:00:00Z", note)
+    retriable, reason, _block_ts = asw._is_transient_capacity_block([ev])
+    assert retriable is False
+    assert reason == "cpu_exhausted_no_runpod_lane"
+    # And the downstream decision is "skip" (never "redrive") even out of backoff
+    # with the day-cap unspent — a non-retriable block always parks.
+    assert decide_capacity_retry("blocked", retriable, _CR_NOW - 99999, None, 0, _CR_NOW) == "skip"
+
+
+def test_capacity_retry_DOES_redrive_no_compute_available():
+    """#677 control: the genuine transient-capacity reason IS still retriable,
+    so the new CPU exclusion did not over-narrow the allowlist."""
+    import autonomous_session_watch as asw
+
+    ev = _fail_ev("2026-06-26T00:00:00Z", _NOTE_CAPACITY)
+    retriable, reason, _block_ts = asw._is_transient_capacity_block([ev])
+    assert retriable is True
+    assert reason == "no_compute_available"
+
+
 # ── I/O-wrapper scoping: only transient-infra blocks re-driven, halts untouched ──
 
 

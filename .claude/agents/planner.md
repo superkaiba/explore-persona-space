@@ -524,7 +524,11 @@ estimated local footprint —
   (`pod.py provision --intent <…>` on a volume ≥ footprint, or a GCP lane
   with adequate scratch), OR stream the data without materializing it
   locally (chunked download → process → discard per chunk, never the whole
-  store at once). State which in §9. Note: this OVERRIDES the
+  store at once). State which in §9. On the GCP lane the concrete intent is
+  `cpu-bigmem` (CPU-only `gpu_count=0` `n2-highmem-16`, boot disk sized via
+  `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`. RunPod
+  has no CPU lane, so a `cpu-bigmem` run that exhausts GCP surfaces a typed
+  `cpu_exhausted_no_runpod_lane` terminal, NOT a RunPod fallback. Note: this OVERRIDES the
   idle-multi-GPU concern above — a >50 GB CPU phase that must hold a pod
   for disk reasons is justified by the data-locality clause, but pick the
   SMALLEST viable pod (single-GPU / CPU-heavy intent) so it isn't an idle
