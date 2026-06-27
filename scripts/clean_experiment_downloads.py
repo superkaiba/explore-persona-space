@@ -53,9 +53,12 @@ terminal-status check — the experiment knows the phase is done.
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import shutil
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 from explore_persona_space.task_workflow import repo_root
@@ -65,6 +68,51 @@ from explore_persona_space.task_workflow import repo_root
 # per-issue data dir (notably ``store/``) is KEPT. ``hf_dl`` is an exact name;
 # ``g*_dl`` matches ``g1_dl`` / ``g2_dl`` / ... (the group-download buckets).
 CACHE_DIR_GLOBS = ("hf_dl", "g*_dl")
+
+# The HF dataset repo a per-issue ``store/`` would have been mirrored to. Used
+# ONLY by the defensive nested-``store/`` parity guard below to verify a
+# generated (NOT re-downloadable) store tree is present on HF before a wholesale
+# ``rmtree(hf_dl)`` would destroy it. Env-overridable for tests / repo moves.
+HF_DATA_REPO_DEFAULT = "superkaiba1/explore-persona-space-data"
+
+
+def hf_data_repo() -> str:
+    """The data repo the nested-``store/`` parity guard checks against
+    (env ``EPM_HF_DATA_REPO``; defaults to :data:`HF_DATA_REPO_DEFAULT`)."""
+    return os.environ.get("EPM_HF_DATA_REPO", "").strip() or HF_DATA_REPO_DEFAULT
+
+
+# Shared sidecar stream for ALL VM-disk escalations (this guard's SKIP events,
+# vm_disk_guard's active-task escalations, the watcher's sub-floor sentinel) —
+# one queryable trace beyond the rotating cron logs. Relative to the repo root.
+DISK_GUARD_SIDECAR_REL = Path(".claude") / "cache" / "disk-guard-events.jsonl"
+
+
+def disk_guard_sidecar_path() -> Path:
+    """Absolute path of the shared disk-guard escalation sidecar JSONL."""
+    return repo_root() / DISK_GUARD_SIDECAR_REL
+
+
+def append_disk_guard_event(event: dict, *, apply: bool = True) -> None:
+    """Append one JSON line to the shared disk-guard sidecar (fail-soft).
+
+    Used by every VM-disk escalation path so all disk events share one stream.
+    A ``ts`` is stamped if the caller did not supply one. The parent dir is
+    created idempotently. A write failure is logged loudly but NEVER raises —
+    the sidecar is observability, and losing one escalation row must not crash
+    the cleanup / guard pass that emits it. ``apply=False`` reports only."""
+    row = {"ts": datetime.now().astimezone().isoformat(), **event}
+    line = json.dumps(row)
+    if not apply:
+        print(f"  [report-only] would append disk-guard event: {line[:160]}", file=sys.stderr)
+        return
+    dest = disk_guard_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  WARNING: appending disk-guard event failed: {exc}", file=sys.stderr)
 
 
 def _data_root() -> Path:
@@ -171,12 +219,164 @@ def _dir_size_bytes(path: Path) -> int:
     return total
 
 
+def _nested_store_dirs(cache_dir: Path) -> list[Path]:
+    """Any ``store/`` subtree NESTED under a re-downloadable ``hf_dl`` /
+    ``g*_dl`` cache dir about to be wholesale-deleted.
+
+    A ``store/`` directory holds GENERATED (NOT re-downloadable) artifacts and
+    normally lives as a SIBLING of the cache dirs (the cleaner's keep/delete
+    contract keeps ``store/`` and only touches the cache globs). But a
+    mis-rooted run can write a ``store/`` UNDER the download cache dir, where a
+    wholesale ``shutil.rmtree(cache_dir)`` would silently destroy it. This
+    finds every such nested ``store/`` so the parity guard can refuse the reap
+    unless the generated data is verifiably preserved on HF."""
+    out: list[Path] = []
+    for p in cache_dir.rglob("store"):
+        if p.is_dir() and not p.is_symlink():
+            out.append(p)
+    return out
+
+
+def _store_files_with_sizes(store_dir: Path) -> dict[str, int]:
+    """``{relative_posix_path: size_bytes}`` for every file under ``store_dir``.
+
+    Keyed by path relative to ``store_dir`` so the on-HF comparison is by the
+    store-internal layout, not the absolute VM path. A stat error on one file
+    is recorded as size -1 (an impossible match) so the file fails the parity
+    check rather than being silently skipped — fail-toward-keep."""
+    out: dict[str, int] = {}
+    for p in sorted(store_dir.rglob("*")):
+        if not p.is_file() or p.is_symlink():
+            continue
+        try:
+            size = p.stat().st_size
+        except OSError:
+            size = -1
+        out[p.relative_to(store_dir).as_posix()] = size
+    return out
+
+
+def _hf_file_sizes(repo_id: str, revision: str = "main") -> dict[str, int] | None:
+    """``{path_in_repo: size_bytes}`` for the data repo, or ``None`` on ANY
+    failure (missing token, network error, unknown revision, import error).
+
+    Revision-pinned (defaults to ``main``) so the parity check reads a stable
+    snapshot. ``None`` is the fail-toward-keep signal: the caller must NOT
+    delete generated data it could not positively confirm is mirrored."""
+    token = os.environ.get("HF_TOKEN")
+    try:
+        from huggingface_hub import HfApi
+        from huggingface_hub.hf_api import RepoFile
+
+        api = HfApi(token=token)
+        sizes: dict[str, int] = {}
+        for entry in api.list_repo_tree(
+            repo_id=repo_id,
+            repo_type="dataset",
+            revision=revision,
+            recursive=True,
+        ):
+            if isinstance(entry, RepoFile):
+                size = getattr(entry, "size", None)
+                if isinstance(size, int):
+                    sizes[entry.path] = size
+        return sizes
+    except Exception as exc:
+        print(
+            f"  ! nested-store parity: HF listing for {repo_id}@{revision} failed "
+            f"({type(exc).__name__}: {exc}); fail-toward-keep",
+            file=sys.stderr,
+        )
+        return None
+
+
+def nested_store_is_mirrored(
+    store_dir: Path,
+    hf_sizes: dict[str, int] | None,
+) -> bool:
+    """True only if EVERY file under ``store_dir`` is present on HF with a
+    matching size (a per-file size match, NOT a size-SUM — a sum can coincide
+    while individual files differ).
+
+    ``hf_sizes`` of ``None`` (any HF-listing failure) is fail-toward-keep =>
+    returns False. A local file whose size is -1 (stat error) can never match a
+    real HF size, so it also fails the check. Matching is by BASENAME against
+    the HF listing (the store-internal subpath layout need not equal the
+    path-in-repo), and a size of -1 is treated as 'unverifiable'."""
+    if hf_sizes is None:
+        return False
+    local = _store_files_with_sizes(store_dir)
+    if not local:
+        # An empty nested store has nothing to lose — safe to reap.
+        return True
+    # Index HF sizes by basename: a basename present at the SAME size anywhere
+    # in the data repo is treated as a present mirror. Multiple HF files can
+    # share a basename, so collect the set of sizes seen per basename.
+    by_base: dict[str, set[int]] = {}
+    for path, size in hf_sizes.items():
+        by_base.setdefault(Path(path).name, set()).add(size)
+    for rel, size in local.items():
+        if size < 0:
+            return False  # unreadable local file — cannot confirm preservation
+        if size not in by_base.get(Path(rel).name, set()):
+            return False
+    return True
+
+
+def _cache_dir_reap_blocked(
+    cache_dir: Path,
+    *,
+    issue_n: int,
+    apply: bool,
+    hf_sizes_cache: dict[str, dict[str, int] | None],
+) -> str | None:
+    """Return a SKIP reason if a wholesale ``rmtree(cache_dir)`` would destroy a
+    nested ``store/`` not verifiably mirrored on HF; ``None`` to allow the reap.
+
+    The HF listing is fetched at most once per process (cached in
+    ``hf_sizes_cache``) so a multi-cache-dir issue makes a single Hub call. On
+    a SKIP, an escalation row is appended to the shared disk-guard sidecar."""
+    nested = _nested_store_dirs(cache_dir)
+    if not nested:
+        return None  # no generated data at risk — normal re-downloadable reap
+    repo = hf_data_repo()
+    if repo not in hf_sizes_cache:
+        hf_sizes_cache[repo] = _hf_file_sizes(repo)
+    hf_sizes = hf_sizes_cache[repo]
+    unmirrored = [s for s in nested if not nested_store_is_mirrored(s, hf_sizes)]
+    if not unmirrored:
+        return None  # every nested store is verifiably on HF — safe to reap
+    rel = _rel_name(cache_dir)
+    paths = ", ".join(_rel_name(s) for s in unmirrored)
+    reason = (
+        f"nested store/ not verifiably mirrored on HF ({repo}): {paths} — "
+        f"wholesale rmtree({rel}) would destroy generated data; KEPT"
+    )
+    append_disk_guard_event(
+        {
+            "kind": "nested-store-reap-skipped",
+            "task": issue_n,
+            "path": rel,
+            "nested_stores": [_rel_name(s) for s in unmirrored],
+            "hf_repo": repo,
+            "reason": reason,
+        },
+        apply=apply,
+    )
+    return reason
+
+
 @dataclass
 class CleanResult:
     issue_n: int
     apply: bool
     removed: list[str] = field(default_factory=list)
     failed: list[str] = field(default_factory=list)
+    # Cache dirs deliberately KEPT by the nested-``store/`` parity guard (a
+    # wholesale reap would have destroyed generated data not verifiably on HF).
+    # Each entry is ``(rel_name, reason)``; an escalation row is also sidecar-
+    # logged. These are NOT failures — they are a safe fail-toward-keep.
+    skipped: list[tuple[str, str]] = field(default_factory=list)
     sizes_bytes: dict[str, int] = field(default_factory=dict)
 
     @property
@@ -200,9 +400,23 @@ def clean_issue_downloads(
     fail-loud in the report).
     """
     res = CleanResult(issue_n=issue_n, apply=apply)
+    # Cache the HF listing across cache dirs so a multi-cache-dir issue makes at
+    # most one Hub call regardless of how many nested store/ checks run.
+    hf_sizes_cache: dict[str, dict[str, int] | None] = {}
     for cache_dir in download_cache_dirs(issue_n, data_root):
         rel = _rel_name(cache_dir)
         res.sizes_bytes[rel] = _dir_size_bytes(cache_dir)
+        # Defensive parity guard: a wholesale rmtree(cache_dir) would destroy a
+        # nested store/ (generated, NOT re-downloadable). Refuse unless every
+        # nested store file is verifiably mirrored on HF (fail-toward-keep). The
+        # check runs in BOTH dry-run (reports the would-skip) and apply mode.
+        skip_reason = _cache_dir_reap_blocked(
+            cache_dir, issue_n=issue_n, apply=apply, hf_sizes_cache=hf_sizes_cache
+        )
+        if skip_reason is not None:
+            print(f"  ~ SKIP {rel}: {skip_reason}", file=sys.stderr)
+            res.skipped.append((rel, skip_reason))
+            continue
         if not apply:
             res.removed.append(rel)  # would-remove (dry-run)
             continue
@@ -285,13 +499,15 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"clean_experiment_downloads {mode}issue {args.issue}: {verb} "
         f"{len(res.removed)} cache dir(s), {_fmt_gb(res.bytes_freed)} | "
-        f"failed {len(res.failed)}"
+        f"skipped {len(res.skipped)} | failed {len(res.failed)}"
     )
     for name in res.removed:
         print(f"  - {verb}: {name} [{_fmt_gb(res.sizes_bytes.get(name, 0))}]")
+    for name, reason in res.skipped:
+        print(f"  ~ SKIP (kept): {name} — {reason}")
     for name in res.failed:
         print(f"  ! FAILED: {name}")
-    if not res.removed and not res.failed:
+    if not res.removed and not res.failed and not res.skipped:
         print("  (no download caches found — nothing to do)")
     return 2 if res.failed else 0
 
