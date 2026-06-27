@@ -468,3 +468,234 @@ def test_failover_clean_path_idempotency(tmp_path, monkeypatch):
     )
     assert terminated == ["pod-id-99"]  # unchanged
     assert len(relaunched) == 1  # unchanged
+
+
+# ---------------------------------------------------------------------------
+# 12. DURABLE-lease idempotency (#689 blocker-2): the ~/.eps-routing/ lease, not
+#     the .claude/cache sentinel, is the authoritative exactly-once guard.
+# ---------------------------------------------------------------------------
+
+
+class _FakeRunHandle:
+    """A RunPod-shaped handle the router-launch mock returns (the readback seam)."""
+
+    def __init__(self, pod_name="pod-689-fresh"):
+        self.backend = "runpod"
+        self.pod_name = pod_name
+        self.job_id = "pod-fresh-1"
+        self.extra = {"issue": 689}
+
+
+def _runpod_handle_with_workload(pod_name: str = "pod-689") -> RunHandle:
+    """A wedged RunPod handle whose ``extra`` carries ``workload_cmd`` so the REAL
+    ``_relaunch_fresh_runpod`` can reconstruct a RunSpec (the router-launched
+    canonical-handle shape). The mock-relaunch tests above pass a bare handle
+    because they replace ``_relaunch_fresh_runpod`` entirely; the durable-lease /
+    error-mapping tests exercise the real relaunch, so they need the spec fields."""
+    return RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-fake-1",
+        pod_name=pod_name,
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-689.log",
+        extra={"issue": 689, "intent": "lora-7b", "workload_cmd": "bash run.sh", "hydra_args": []},
+    )
+
+
+def _real_lease_store_in(tmp_path, monkeypatch):
+    """Pin ``LeaseStore``'s default dir to ``tmp_path`` so the REAL durable-lease
+    helpers (``_lease_records_runpod_wedge_failover`` / ``_stamp_runpod_wedge_failover``)
+    read+write a throwaway ``~/.eps-routing/`` under the test tmp dir. Also seeds a
+    base lease for issue 689 so the stamp has a lease to mutate."""
+    from explore_persona_space.backends import router as R
+
+    monkeypatch.setattr(R.Path, "home", classmethod(lambda cls: tmp_path), raising=False)
+    store = R.LeaseStore(lease_dir=tmp_path / ".eps-routing")
+    store.write(
+        R.Lease(issue=689, spec_hash="h", attempt_id="a", backend="runpod", job_id="pod-fresh-1")
+    )
+    return store
+
+
+def test_failover_durable_lease_idempotency(tmp_path, monkeypatch):
+    """#689 blocker-2: with the ``.claude/cache`` sentinel WRITE made to fail
+    (EDQUOT / read-only-fs simulated), a SECOND poll tick on the OLD wedged handle
+    still short-circuits — the DURABLE ``~/.eps-routing/`` lease, stamped after the
+    first relaunch, provides the exactly-once dedup that the sentinel cannot.
+    terminate_pod + the router launch are each called EXACTLY ONCE across two
+    ticks."""
+    import huggingface_hub
+    import issue664_dispatch as D
+
+    from explore_persona_space.backends import router as R
+
+    _real_lease_store_in(tmp_path, monkeypatch)
+
+    cell = _FakeCell("mk_done_cell_seed42")
+    monkeypatch.setattr(bp, "_issue_cells_for_handle", lambda issue, handle: [cell], raising=False)
+    files = _hf_paths_for(
+        cell.eval_key,
+        raw_names={"completions__x__ctx.json"},
+        store_names={"tensors.pt", "meta.json"},
+    )
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(
+        D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
+    )
+
+    info = _PodInfo(desired_status="RUNNING", ssh_host=None, ssh_port=None, pod_id="pod-id-77")
+    _stub_live_api(monkeypatch, info)
+    terminated: list = []
+    monkeypatch.setattr(
+        runpod_api, "terminate_pod", lambda pid: terminated.append(pid), raising=False
+    )
+
+    # The router launch mock — counts calls, returns a fresh RunPod handle.
+    launches: list = []
+
+    def _fake_failover(**kw):
+        launches.append(kw)
+        on_launched = kw.get("on_launched")
+        h = _FakeRunHandle()
+        if on_launched is not None:
+            on_launched(h)
+        return type("RR", (), {"handle": h, "extra": {}})()
+
+    monkeypatch.setattr(
+        R, "failover_to_runpod_after_async_workload_crash", _fake_failover, raising=False
+    )
+    # Sidecar write/readback seam: the readback returns a RunPod-backend handle so
+    # _relaunch_fresh_runpod reaches the lease stamp + emits running.
+    from explore_persona_space.backends import issue_dispatch as ID
+
+    monkeypatch.setattr(ID, "write_handle_sidecar", lambda h, p: None, raising=False)
+    monkeypatch.setattr(ID, "read_handle_sidecar", lambda p: _FakeRunHandle(), raising=False)
+
+    # SIMULATE a persistent .claude/cache write failure: the wedge sentinel write
+    # raises, so the sentinel can NEVER record the handled wedge. Only the durable
+    # lease can dedup the second tick.
+    monkeypatch.setattr(bp, "_write_runpod_wedge_sentinel", lambda *a, **k: None, raising=False)
+    monkeypatch.setattr(bp, "_read_failover_sentinel", lambda p: None, raising=False)
+
+    sidecar = _empty_sidecar(tmp_path)
+    # First tick: not-yet-handled -> terminate + relaunch + durable-lease stamp.
+    out1 = bp._failover_wedged_runpod(
+        issue=689, handle=_runpod_handle_with_workload(), result=_dead_poll(), sidecar=sidecar
+    )
+    assert out1["status"] == "running"
+    assert terminated == ["pod-id-77"]
+    assert len(launches) == 1
+
+    # Second tick on the OLD handle: the sentinel is blind (write was a no-op), so
+    # the DURABLE LEASE must short-circuit — NO second terminate, NO second launch.
+    out2 = bp._failover_wedged_runpod(
+        issue=689, handle=_runpod_handle_with_workload(), result=_dead_poll(), sidecar=sidecar
+    )
+    assert out2.get("reason") == "runpod_wedge_already_handled"
+    assert terminated == ["pod-id-77"]  # unchanged — no double-terminate
+    assert len(launches) == 1  # unchanged — no double-provision
+
+
+# ---------------------------------------------------------------------------
+# 13. relaunch error mapping (#689 blocker-3): no-capacity + sidecar-write
+#     failure each return TERMINAL JSON, never an uncaught traceback.
+# ---------------------------------------------------------------------------
+
+
+def _failover_with_mocked_gate(monkeypatch):
+    """Common setup for the relaunch-error tests: a single COMPLETE cell so the
+    per-cell gate is OK (terminate allowed), live API stubbed, terminate_pod a
+    no-op recorder. Returns the ``terminated`` list."""
+    import huggingface_hub
+    import issue664_dispatch as D
+
+    cell = _FakeCell("mk_done_cell_seed42")
+    monkeypatch.setattr(bp, "_issue_cells_for_handle", lambda issue, handle: [cell], raising=False)
+    files = _hf_paths_for(
+        cell.eval_key,
+        raw_names={"completions__x__ctx.json"},
+        store_names={"tensors.pt", "meta.json"},
+    )
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(
+        D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
+    )
+    info = _PodInfo(desired_status="RUNNING", ssh_host=None, ssh_port=None, pod_id="pod-id-55")
+    _stub_live_api(monkeypatch, info)
+    terminated: list = []
+    monkeypatch.setattr(
+        runpod_api, "terminate_pod", lambda pid: terminated.append(pid), raising=False
+    )
+    monkeypatch.setattr(bp, "_runpod_wedge_already_handled", lambda *a, **k: False, raising=False)
+    monkeypatch.setattr(bp, "_stamp_runpod_wedge_failover", lambda *a, **k: None, raising=False)
+    return terminated
+
+
+def test_failover_no_capacity_returns_terminal_json(tmp_path, monkeypatch):
+    """#689 blocker-3: when RunPod has no capacity for the fresh re-provision, the
+    router raises NoComputeAvailableError; the failover must RETURN a terminal infra
+    JSON (reason=no_compute_available, the reason the watcher's capacity-retry pass
+    re-drives), NEVER let the exception propagate out of main()."""
+    from explore_persona_space.backends import router as R
+
+    _failover_with_mocked_gate(monkeypatch)
+
+    def _raise_no_compute(**kw):
+        raise R.NoComputeAvailableError("no compute anywhere", attempts=[])
+
+    monkeypatch.setattr(
+        R, "failover_to_runpod_after_async_workload_crash", _raise_no_compute, raising=False
+    )
+
+    out = bp._failover_wedged_runpod(
+        issue=689,
+        handle=_runpod_handle_with_workload(),
+        result=_dead_poll(),
+        sidecar=_empty_sidecar(tmp_path),
+    )
+    assert out["status"] == "dead"
+    assert out["reason"] == "no_compute_available"
+    assert out["failure_class"] == "infra"
+
+
+def test_failover_sidecar_write_failure_returns_terminal_json(tmp_path, monkeypatch):
+    """#689 blocker-3: when the fresh pod launches but the .claude/cache sidecar
+    write fails (EDQUOT), the failover must RETURN a terminal infra JSON
+    (reason=sidecar_persistence_failed — NOT a capacity reason, so the watcher
+    PARKS it for human inspection), NEVER an uncaught traceback. The durable lease
+    is stamped to bound a re-fired tick."""
+    from explore_persona_space.backends import issue_dispatch as ID
+    from explore_persona_space.backends import router as R
+
+    _failover_with_mocked_gate(monkeypatch)
+
+    def _fake_failover(**kw):
+        return type("RR", (), {"handle": _FakeRunHandle(), "extra": {}})()
+
+    monkeypatch.setattr(
+        R, "failover_to_runpod_after_async_workload_crash", _fake_failover, raising=False
+    )
+
+    def _raise_edquot(h, p):
+        raise OSError("[Errno 122] Disk quota exceeded")
+
+    monkeypatch.setattr(ID, "write_handle_sidecar", _raise_edquot, raising=False)
+    monkeypatch.setattr(ID, "read_handle_sidecar", lambda p: _FakeRunHandle(), raising=False)
+
+    stamped: list = []
+    monkeypatch.setattr(
+        bp, "_stamp_runpod_wedge_failover", lambda *a, **k: stamped.append(a), raising=False
+    )
+
+    out = bp._failover_wedged_runpod(
+        issue=689,
+        handle=_runpod_handle_with_workload(),
+        result=_dead_poll(),
+        sidecar=_empty_sidecar(tmp_path),
+    )
+    assert out["status"] == "dead"
+    assert out["reason"] == "sidecar_persistence_failed"
+    assert out["failure_class"] == "infra"
+    # The durable lease was stamped so a re-fired tick short-circuits.
+    assert len(stamped) == 1
