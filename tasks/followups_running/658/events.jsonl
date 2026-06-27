@@ -293,3 +293,4 @@
 {"ts": "2026-06-27T10:21:51Z", "kind": "epm:progress", "version": 142, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 7.4 GB, CPU-time 7-06:14:37 (~29h wall). Slow phase."}
 {"ts": "2026-06-27T10:52:33Z", "kind": "epm:progress", "version": 143, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=D, RSS 5.8 GB, CPU-time 7-07:33:16 (~29.5h wall). Slow phase."}
 {"ts": "2026-06-27T11:21:47Z", "kind": "epm:progress", "version": 144, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=D, RSS 6.2 GB, CPU-time 7-08:29:59 (~30h wall). Slow phase."}
+{"ts": "2026-06-27T11:52:33Z", "kind": "epm:progress", "version": 145, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=D, RSS 5.5 GB, CPU-time 7-09:42:15 (~30.5h wall). Slow phase."}
