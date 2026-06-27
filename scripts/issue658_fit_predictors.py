@@ -128,7 +128,11 @@ SMOKE_A34_FEAT_DIM = 128
 # shared dim reduction (round-2 Major a35-mlp-dim-truncated: the old
 # `min(8, ...)` compared an 8-dim MLP cos to a full-dim ridge cos). A3.4's
 # full-dim `ridge_mean_cos` (the recipe-lock + chain-ρ statistic) is UNCHANGED.
-A35_MLP_TARGET_DIM = 16
+# Value is the base-commit's intended 64 (the perf rewrite must NOT change the
+# reported A3.5 gap dimensionality — `mlp_mean_cos`, `ridge_mean_cos_on_gap_dim`,
+# `nonlinear_gap` are all read over these leading dims). 64 heads/fold is
+# tractable with the GPU-batched MLP below.
+A35_MLP_TARGET_DIM = 64
 
 # Compute device for the GPU-accelerated MLP/ridge ops. Resolved from --device
 # (default cuda when available, else cpu) in main() and read at call time by the
@@ -232,17 +236,22 @@ def _fit_mlp_ensemble_loco(
 
     EQUIVALENCE (verified): the fit is architecture-, optimizer-hyperparameter-,
     epoch-, standardization-, and per-output-independence-IDENTICAL to the serial
-    loop, AND the member random inits are drawn from the SAME RNG stream the serial
-    loop used — seed once, then create members in fold order; no extra net consumes
-    the stream first (the stateless ``base`` template is built on the META device
-    with NO parameter storage and NO RNG draw). On CPU the batched-vmap path is
-    BIT-IDENTICAL to the serial per-fold loop (verified max|Δpred|=0.0, ρ identical
-    — see the implementer report). On CUDA the only residual difference is GPU vs
-    CPU float reduction order (true of any GPU port; within MLP optimization
-    noise). Per the brief's guidance the independent-head form is kept as default
-    (the per-output independence is the semantics that matters) — a shared-trunk
-    multi-output net was NOT substituted. The ridge DV (A3.4/A3.5 ridge cos, chain
-    ρ) is additionally exact to machine precision (``_assert_ridge_exactness``).
+    loop. The member random inits reproduce the serial reference's RNG stream:
+    the SINGLE-output reference re-seeds once per call (one block of n per-fold
+    inits), and the MULTI-output reference (the old gap MLP) re-seeds ONCE PER
+    output dim, so every dim reuses the same n per-fold inits — this code draws
+    the n per-fold inits once and TILES them across the n_targets blocks (see the
+    seeding comment below), reproducing that exactly. The stateless ``base``
+    template is built on the META device (no parameter storage, no RNG draw) so it
+    does NOT perturb the stream. On CPU the batched-vmap path matches the serial
+    loop to <=1e-6 (single-output ~3.6e-7; multi-output bit-identical after the
+    tile — see the implementer report + ``test_issue658_fit_predictors_exactness``).
+    On CUDA the only residual difference is GPU vs CPU float reduction order (true
+    of any GPU port; within MLP optimization noise). Per the brief's guidance the
+    independent-head form is kept as default (the per-output independence is the
+    semantics that matters) — a shared-trunk multi-output net was NOT substituted.
+    The ridge DV (A3.4/A3.5 ridge cos, chain ρ) is additionally exact to machine
+    precision (``_assert_ridge_exactness``).
     """
     from torch.func import functional_call, stack_module_state, vmap
 
@@ -252,17 +261,38 @@ def _fit_mlp_ensemble_loco(
     Xt = torch.from_numpy(np.ascontiguousarray(X)).to(device=device, dtype=torch.float32)
     Yt = torch.from_numpy(np.ascontiguousarray(Y)).to(device=device, dtype=torch.float32)
 
-    # Build the E = n_targets * N ensemble of independent _MLP(D) nets. Seed once
-    # then create members in fold order so the per-member init draws come off the
-    # SAME RNG stream a serial reseed-once-then-create-per-fold loop would use.
-    # The stateless `base` template is built on the META device (no parameter
-    # storage, no RNG draw) so it does NOT perturb that stream — it only carries
-    # the module structure for functional_call.
-    n_members = len(idxs) * n
+    # Build the E = n_targets * N ensemble of independent _MLP(D) nets.
+    #
+    # SEEDING — bit-match the serial reseed-PER-DIM reference. The old gap MLP did
+    # `[_fit_mlp_loco(Xc, Yv[:, k]) for k in range(gap_dim)]`, and EACH
+    # `_fit_mlp_loco` call re-seeds `torch.manual_seed(seed)` at its top — so every
+    # output dim k gets the SAME n per-fold inits (RNG stream positions [0..n)).
+    # Seeding once for all gap_dim*n members would instead give dim k the inits at
+    # [k*n..(k+1)*n), diverging for k>=1. So we draw only the n per-fold inits ONCE
+    # (seed → n nets, fold order) and TILE that block across the n_targets output
+    # dims, reproducing the per-dim reseed exactly while keeping a single vmap
+    # kernel over all E members (the fold-batching is the dominant speedup). The
+    # stateless `base` template is built on the META device (no parameter storage,
+    # no RNG draw) so it does NOT perturb the stream — it only carries the module
+    # structure for functional_call.
+    n_targets = len(idxs)
+    n_members = n_targets * n
     base = _MLP(d).to(device="meta")
     torch.manual_seed(seed)
-    members = [_MLP(d).to(device) for _ in range(n_members)]
-    params, buffers = stack_module_state(members)
+    block_members = [_MLP(d).to(device) for _ in range(n)]  # the n per-fold inits
+    block_params, block_buffers = stack_module_state(block_members)  # leaves (n, ...)
+
+    # Tile the n-member block across the n_targets output-dim blocks → (E, ...),
+    # so member m = t_block*N + fold_i has the SAME init as block member fold_i
+    # for every t_block (= the serial per-dim reseed). `.repeat` along dim 0 with
+    # 1s elsewhere; `.contiguous()` so stack_module_state's downstream ops are happy.
+    def _tile(t: torch.Tensor) -> torch.Tensor:
+        # detach + clone so the tiled tensor is a fresh LEAF (the optimizer below
+        # requires leaf params; `.repeat` would otherwise carry grad history).
+        return t.detach().repeat((n_targets,) + (1,) * (t.dim() - 1)).clone()
+
+    params = {k: _tile(v) for k, v in block_params.items()}
+    buffers = {k: _tile(v) for k, v in block_buffers.items()}
 
     # Per-member train mask (leave-one-out within each output-dim block) + the
     # per-member standardized train inputs / targets. member index m =
@@ -334,6 +364,94 @@ def _fit_mlp_ensemble_loco(
     held = pred[torch.arange(n_members, device=device), held_idx]  # (E,)
     held = held.reshape(len(idxs), n).t().contiguous()  # (N, n_targets)
     return held.detach().cpu().numpy().astype(np.float64)
+
+
+def _fit_mlp_loco_serial_reference(X: np.ndarray, y: np.ndarray, seed: int = 658) -> np.ndarray:
+    """OLD serial single-output LOCO MLP — the EXACTNESS ORACLE for the batched path.
+
+    A faithful copy of the pre-rewrite ``_fit_mlp_loco`` body: re-seed once, then per
+    LOCO fold fit a FRESH ``_MLP(d)`` with a FRESH AdamW on the fold's (N-1) train
+    rows (standardized on those rows), and read the held-out row. ``_assert_mlp_
+    exactness`` checks the batched ``_fit_mlp_ensemble_loco`` reproduces this to
+    <=1e-6. Always runs on CPU (the oracle is device-independent); not used in the
+    production path (it is the serial loop the rewrite replaced).
+    """
+    torch.manual_seed(seed)
+    n, d = X.shape
+    preds = np.zeros(n, dtype=np.float64)
+    Xt = torch.tensor(X, dtype=torch.float32)
+    yt = torch.tensor(y, dtype=torch.float32)
+    for i in range(n):
+        mask = torch.ones(n, dtype=torch.bool)
+        mask[i] = False
+        mu, sd = Xt[mask].mean(0), Xt[mask].std(0) + 1e-6
+        net = _MLP(d)
+        opt = torch.optim.AdamW(net.parameters(), lr=MLP_LR, weight_decay=MLP_WD)
+        xn = (Xt[mask] - mu) / sd
+        for _ in range(MLP_MAX_EPOCHS):
+            opt.zero_grad()
+            loss = torch.nn.functional.mse_loss(net(xn), yt[mask])
+            loss.backward()
+            opt.step()
+        net.eval()
+        with torch.no_grad():
+            preds[i] = float(net(((Xt[i] - mu) / sd).unsqueeze(0)).item())
+    return preds
+
+
+def _assert_mlp_exactness(seed: int = 0, n: int = 12, d: int = 24) -> dict:
+    """Assert the batched MLP reproduces the serial reference to <=1e-6 on CPU.
+
+    Two checks, both against ``_fit_mlp_loco_serial_reference`` (the OLD serial
+    algorithm), on a tiny CPU model + a clamped epoch count so this stays a fast
+    (~sub-second) startup gate alongside ``_assert_ridge_exactness``:
+
+    (a) SINGLE-output: ``_fit_mlp_loco`` (the A3.2 path) vs the serial reference.
+    (b) MULTI-output GAP: ``_fit_mlp_ensemble_loco(target_idx=range(gap_dim))``
+        (the A3.5 gap path) vs the serial reseed-PER-DIM reference
+        ``[serial(Yv[:,k]) for k in range(gap_dim)]`` — this is the tiled-init
+        path; without the per-dim tile it would drift ~0.38 (the round-2 finding).
+
+    The batched path is forced onto CPU here (DEVICE pinned for the duration) so
+    the gate is reduction-order-comparable to the CPU serial oracle. The recovery
+    rewrite must not move the reported A3.2/A3.5 numbers; this is the MLP analogue
+    of the ridge exactness gate (the batched MLP, unlike the ridge, is not exact
+    to machine precision — batched GEMM vs per-net GEMV reduction order — so the
+    tolerance is 1e-6, not 1e-12).
+    """
+    global DEVICE, MLP_MAX_EPOCHS
+    saved_device, saved_epochs = DEVICE, MLP_MAX_EPOCHS
+    DEVICE = "cpu"
+    MLP_MAX_EPOCHS = 20  # clamp the gate so startup stays sub-second
+    try:
+        rng = np.random.default_rng(seed)
+        z = rng.standard_normal((n, 3))
+        W = rng.standard_normal((3, d))
+        X = (z @ W + 0.1 * rng.standard_normal((n, d))).astype(np.float32)
+        B = rng.standard_normal((d, 5))
+        Y = (X @ B * 0.05 + 0.1 * rng.standard_normal((n, 5))).astype(np.float32)
+        # (a) single-output
+        ser1 = _fit_mlp_loco_serial_reference(X, Y[:, 0])
+        bat1 = _fit_mlp_loco(X, Y[:, 0])
+        single_delta = float(np.max(np.abs(ser1 - bat1)))
+        # (b) multi-output gap (the tiled path)
+        gap = 4
+        serg = np.stack([_fit_mlp_loco_serial_reference(X, Y[:, k]) for k in range(gap)], axis=1)
+        batg = _fit_mlp_ensemble_loco(X, Y, target_idx=list(range(gap)), seed=658)
+        multi_delta = float(np.max(np.abs(serg - batg)))
+    finally:
+        DEVICE, MLP_MAX_EPOCHS = saved_device, saved_epochs
+    tol = 1e-6
+    assert single_delta <= tol, (
+        f"MLP exactness FAILED (single-output): max|Δpred|={single_delta:.3e} > {tol} "
+        "between the batched A3.2 MLP and the serial reference"
+    )
+    assert multi_delta <= tol, (
+        f"MLP exactness FAILED (multi-output gap): max|Δpred|={multi_delta:.3e} > {tol} "
+        "between the tiled-batched A3.5 gap MLP and the serial reseed-per-dim reference "
+        "(a >1e-2 delta means the per-dim init tile regressed — see _fit_mlp_ensemble_loco)"
+    )
+    return {"single_delta": single_delta, "multi_delta": multi_delta, "tol": tol}
 
 
 # ── A3.4 ridge: closed-form (PRESS / hat-matrix) leave-one-out, exact ──────────
@@ -597,24 +715,66 @@ def _cluster_bootstrap_rho(pred, meas, *, n_boot: int, seed: int) -> dict | None
 # ── checkpoint-per-cell helpers (resume) ──────────────────────────────────────
 
 
+def _param_hash(phase: str, feat_dim: int = 0) -> str:
+    """Short hash of the hyperparameters that determine a checkpoint cell's value.
+
+    Stamped into every saved cell and re-checked on load so a resume into a REUSED
+    ``--out-dir`` after a hyperparameter change (λ grid / MLP epochs / feat_dim /
+    A35_MLP_TARGET_DIM / bootstrap count / smoke vs real) RECOMPUTES the cell
+    instead of silently serving a stale value computed under the old params.
+    Phase-scoped so an a32 cell and an a34a35 cell hash only the constants that
+    actually feed them (#minor stale-serve, round-2 review).
+    """
+    import hashlib
+
+    common = (MLP_HIDDEN, MLP_LR, MLP_WD, MLP_MAX_EPOCHS, int(feat_dim))
+    if phase == "a32":
+        payload = ("a32", common, N_BOOTSTRAP)
+    elif phase == "a34a35":
+        payload = ("a34a35", common, tuple(RIDGE_LAMBDAS), A35_MLP_TARGET_DIM)
+    else:
+        payload = (phase, common)
+    return hashlib.sha256(repr(payload).encode("utf-8")).hexdigest()[:16]
+
+
 def _cell_path(out_dir: Path, phase: str, key: str) -> Path:
     """Per-(phase, recipe×layer) checkpoint cell path under out_dir/cells/<phase>/."""
     safe = key.replace("/", "_").replace(" ", "_")
     return out_dir / "cells" / phase / f"{safe}.json"
 
 
-def _load_cell(out_dir: Path, phase: str, key: str):
+def _load_cell(out_dir: Path, phase: str, key: str, param_hash: str | None = None):
+    """Load a checkpoint cell, returning None (recompute) on a param-hash mismatch.
+
+    ``param_hash`` is the caller's hash of the load-bearing constants
+    (``_param_hash(phase, feat_dim)``). A cached cell whose stamped ``_param_hash``
+    differs was computed under different hyperparameters → STALE; drop it so the
+    cell recomputes rather than serving a value from a prior λ-grid / epochs /
+    feat_dim / A35_MLP_TARGET_DIM. A cell with no stamp (pre-this-version) is also
+    treated as stale when a hash is required.
+    """
     p = _cell_path(out_dir, phase, key)
     if p.exists():
         try:
-            return load_json(p)
+            cell = load_json(p)
         except (ValueError, OSError):
             logger.warning("corrupt checkpoint cell %s — recomputing", p)
             return None
+        if param_hash is not None and cell.get("_param_hash") != param_hash:
+            logger.info(
+                "stale checkpoint cell %s (param-hash %s != %s) — recomputing",
+                p,
+                cell.get("_param_hash"),
+                param_hash,
+            )
+            return None
+        return cell
     return None
 
 
-def _save_cell(out_dir: Path, phase: str, key: str, payload) -> None:
+def _save_cell(out_dir: Path, phase: str, key: str, payload, param_hash: str | None = None) -> None:
+    if param_hash is not None and isinstance(payload, dict):
+        payload = {**payload, "_param_hash": param_hash}
     dump_json(payload, _cell_path(out_dir, phase, key))
 
 
@@ -691,6 +851,10 @@ def fit_a32(
     grid = [(recipe, li) for recipe in recipes for li in range(len(layers))]
     owned = _shard_owns(grid, shard_idx, n_shards)
     total = len(columns) * len(grid)
+    # A3.2 uses the full v0 summaries (no feat_dim clamp); the cell value depends
+    # on the MLP hyperparams + the bootstrap count, hashed here so a resume after
+    # a param change recomputes rather than serving stale cells.
+    ph = _param_hash("a32", feat_dim=0)
     done = 0
     t0 = time.time()
     for col in columns:
@@ -703,7 +867,7 @@ def fit_a32(
             if gi not in owned:
                 continue  # another shard owns this work unit
             key = f"{col}__{recipe}__L{layers[li]}"
-            cached = _load_cell(out_dir, "a32", key)
+            cached = _load_cell(out_dir, "a32", key, param_hash=ph)
             if cached is not None:
                 cells.append(cached)
                 continue
@@ -737,7 +901,7 @@ def fit_a32(
                 # (carried CONCERN attn-pool-weight-unfitted).
                 "is_random_projection_control": recipe == "attn",
             }
-            _save_cell(out_dir, "a32", key, cell)
+            _save_cell(out_dir, "a32", key, cell, param_hash=ph)
             cells.append(cell)
         if any(gi in owned for gi in range(len(grid))):
             elapsed = time.time() - t0
@@ -820,6 +984,9 @@ def _fit_a34_a35_one_recipe(
         V = V[:, :, :feat_dim]
     n = len(ctx_ids)
     owned = _shard_owns(list(range(len(layers))), shard_idx, n_shards)
+    # The a34a35 cell value depends on the λ grid, MLP hyperparams, the gap dim,
+    # AND feat_dim — hash them so a resume after any change recomputes.
+    ph = _param_hash("a34a35", feat_dim=feat_dim)
     # Cache the per-layer LOCO ridge prediction of v0 so the chain ρ can reuse it.
     ridge_pred_v0_by_layer: dict[int, np.ndarray] = {}
     t0 = time.time()
@@ -827,7 +994,9 @@ def _fit_a34_a35_one_recipe(
         if li not in owned:
             continue
         ckpt_key = f"{recipe_name}__L{layers[li]}" if recipe_name else f"L{layers[li]}"
-        cached = _load_cell(out_dir, "a34a35", ckpt_key) if out_dir is not None else None
+        cached = (
+            _load_cell(out_dir, "a34a35", ckpt_key, param_hash=ph) if out_dir is not None else None
+        )
         if cached is not None and "_ridge_pred_v0" in cached:
             ridge_pred_v0_by_layer[li] = np.asarray(cached["_ridge_pred_v0"])
             out["per_layer"].append(cached["per_layer"])
@@ -892,6 +1061,7 @@ def _fit_a34_a35_one_recipe(
                     "shuffle_null": shuffle_null,
                     "_ridge_pred_v0": ridge_pred.tolist(),
                 },
+                param_hash=ph,
             )
         logger.info(
             "[a34a35:%s] layer %d done | %.1fs elapsed",
@@ -902,10 +1072,13 @@ def _fit_a34_a35_one_recipe(
     # Chain ρ: project the LOCO-predicted v0 through each behavior's r_B and
     # Spearman-correlate against the measured E0 — the full shortcut
     # r_B^T (M c_C) → E0(C,B). Best layer per behavior is reported.
-    # NOTE: requires every layer's ridge_pred_v0 — only meaningful when this shard
-    # owns ALL layers (the single-process default). With sharding the orchestrator
-    # merges per-shard cells first (see _merge_a34a35_shards), then recomputes the
-    # chain on the merged ridge_pred_v0 set.
+    # NOTE: requires every layer's ridge_pred_v0, so it is computed ONLY when this
+    # process holds all layers — the single-process (no-shard) run, OR the FINAL
+    # no-shard reassembly pass that runs after the per-shard processes have written
+    # every layer's cell (that final pass re-reads all cells from cells/a34a35/ via
+    # the per-cell checkpoint load above, repopulating ridge_pred_v0_by_layer for
+    # all layers). A still-running per-shard process owns only its layer subset, so
+    # it skips the chain ρ and leaves it to that final pass.
     if len(ridge_pred_v0_by_layer) == len(layers):
         out["chain_rho_e0"] = _chain_rho(
             ridge_pred_v0_by_layer, store, e0, rb, ctx_ids, layers, feat_dim
@@ -1375,8 +1548,10 @@ def main() -> int:
         default=None,
         help="multi-GPU work split 'k/n' (0-based): this process fits the round-robin "
         "subset of the (recipe × layer) grid it owns. Per-cell checkpoints let the "
-        "shards write into the SAME out-dir; re-run with --shard merge (or no --shard) "
-        "afterward to assemble the aggregate from all cells. Default: single process.",
+        "shards write into the SAME out-dir; after all k/n shards finish, run ONE more "
+        "pass with NO --shard (the default single-process run) against the same out-dir "
+        "— it reloads every shard's cells from checkpoint and assembles the aggregate. "
+        "There is no 'merge' subcommand. Default: single process (no sharding).",
     )
     parser.add_argument(
         "--recipes",
@@ -1404,16 +1579,26 @@ def main() -> int:
     DEVICE = _resolve_device(args.device)
     logger.info("compute device: %s", DEVICE)
 
-    # Exactness gate: the closed-form dual ridge LOCO MUST reproduce the old
-    # primal-refit LOCO to ≤1e-6 (the reported A3.4/A3.5 numbers must not move).
-    # Run it ALWAYS at startup (cheap, ~ms) — a recovery-mode rewrite that
-    # silently changed the DV is the failure this guards.
+    # Exactness gates: the batched/closed-form rewrites MUST reproduce the OLD
+    # serial computation (the reported A3.2/A3.4/A3.5 numbers must not move). Run
+    # BOTH at startup (cheap, ~sub-second total) — a recovery-mode rewrite that
+    # silently changed the DV is the failure these guard.
+    #   - ridge: closed-form dual PRESS LOCO vs primal-refit LOCO, ≤1e-6 (exact)
+    #   - MLP: batched single-output (A3.2) + tiled multi-output gap (A3.5) vs the
+    #     serial reference, ≤1e-6 (reduction-order, not machine-precision)
     exactness = _assert_ridge_exactness()
     logger.info(
         "ridge exactness PASS: max|Δpred|=%.2e max|Δρ|=%.2e (<= %.0e)",
         exactness["max_abs_pred_delta"],
         exactness["max_rho_delta"],
         exactness["tol"],
+    )
+    mlp_exactness = _assert_mlp_exactness()
+    logger.info(
+        "MLP exactness PASS: single max|Δ|=%.2e gap max|Δ|=%.2e (<= %.0e)",
+        mlp_exactness["single_delta"],
+        mlp_exactness["multi_delta"],
+        mlp_exactness["tol"],
     )
 
     shard_idx, n_shards = _parse_shard(args.shard)
@@ -1589,6 +1774,7 @@ def main() -> int:
             **agg,
             "figures": figs,
             "ridge_exactness": exactness,
+            "mlp_exactness": mlp_exactness,
             "compute_device": DEVICE,
             "metadata": reproducibility_metadata({"script": "issue658_fit"}),
         },
