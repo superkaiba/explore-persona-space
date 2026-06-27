@@ -344,7 +344,7 @@ def _plot_leaderboard(lb: dict, noise_floor: dict, out_dir: Path, stem: str):
     )
     head_src = head_bank.get("source")
     seed = head_bank.get("seed")
-    prov = f"source {head_src}" if behavior == "marker" else f"seed {seed}"
+    prov = f"source {head_src}" if behavior == "marker" else f"source {head_src}, seed {seed}"
     ser = _per_context_series(behavior, head_src, "k_tCB")
     if ser is None:
         axs.text(
@@ -365,6 +365,87 @@ def _plot_leaderboard(lb: dict, noise_floor: dict, out_dir: Path, stem: str):
             paper_palette_role("primary"),
             f"Training-completion key, per context\n({prov})",
         )
+    fig.tight_layout()
+    paths = savefig_paper(fig, stem, dir=str(out_dir))
+    plt.close(fig)
+    return paths
+
+
+def _plot_leaderboard_by_source(lb: dict, noise_floor: dict, out_dir: Path, stem: str):
+    """Per-SOURCE training-completion-key ρ — the #683 round-1 replication read.
+
+    The default ``leaderboard_<behavior>`` figure takes the cross-bank max per
+    key (collapsing villain + comedian into one set of bars). This figure keeps
+    the sources SEPARATE: one bar per source bank for the headline k_tCB key
+    (raw dot, M_I/ψ_I), with that source's own 95% CI + its own shuffled-key
+    null p95 band — so "does the behavior-dependent key replicate beyond a
+    single source?" is read directly (the whole point of adding comedian). Only
+    drawn when ≥2 source banks are present; returns ``{}`` otherwise.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette_role,
+        savefig_paper,
+        set_paper_style,
+        set_title_subtitle,
+    )
+
+    behavior = lb["behavior"]
+    per_bank = lb["per_bank"]
+    # One entry per (source, seed) bank that has a k_tCB raw-dot cell.
+    banks = []
+    for bank in per_bank:
+        cell = _cell(bank["leaderboard"], "k_tCB", "M_I", "psi_I")
+        if cell is None:
+            continue
+        banks.append((bank, cell))
+    if len({b.get("source") for b, _ in banks}) < 2:
+        return {}  # single source — the default leaderboard already covers it
+
+    set_paper_style()
+    banks.sort(key=lambda bc: (str(bc[0].get("source")), bc[0].get("seed") or 0))
+    labels, rhos, errs, null_p95s = [], [], [], []
+    for bank, cell in banks:
+        src = bank.get("source")
+        seed = bank.get("seed")
+        labels.append(f"{src}\nseed {seed}")
+        rho, err = _val_err(cell)
+        rhos.append(rho)
+        errs.append(err)
+        null = bank.get("null_shuffled_key") or {}
+        null_p95s.append(null.get("p95"))
+
+    fig, ax = plt.subplots(figsize=(max(6.0, 1.1 * len(labels) + 2.0), 4.2))
+    x = np.arange(len(labels))
+    err_t = np.array(errs).T if errs else None
+    ax.bar(x, rhos, yerr=err_t, capsize=3, color=paper_palette_role("primary"))
+    # Per-source null p95 ticks (each bar paired with its OWN bank's null).
+    for i, p95 in enumerate(null_p95s):
+        if p95 is not None and p95 == p95:
+            ax.plot(
+                [i - 0.4, i + 0.4],
+                [p95, p95],
+                color="0.5",
+                ls=":",
+                lw=1,
+                label="shuffled-key null (p95)" if i == 0 else None,
+            )
+    floor = _noise_floor_mean(noise_floor)
+    if floor == floor:
+        ax.axhline(floor, color=paper_palette_role("accent"), ls="--", label="noise-floor ceiling")
+    ax.axhline(0.0, color="0.4", lw=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_ylabel(f"Held-out Spearman ρ (g_pred vs {SCORED_DV_AXIS})")
+    ax.legend(fontsize=8, loc="best")
+    set_title_subtitle(
+        ax,
+        f"Training-completion key per source — {BEHAVIOR_LABELS.get(behavior, behavior)}",
+        "one bar per source bank (k_tCB, M_I/ψ_I); dotted = that bank's shuffled-key null p95; "
+        "whiskers = 95% bootstrap CI",
+    )
     fig.tight_layout()
     paths = savefig_paper(fig, stem, dir=str(out_dir))
     plt.close(fig)
@@ -502,7 +583,7 @@ def _plot_contrast(lbs: dict[str, dict], noise_floors: dict[str, dict], out_dir:
     for b in behaviors:
         src = pairs[b].get("source")
         seed = pairs[b].get("seed")
-        tag = f"source {src}" if b == "marker" else f"seed {seed}"
+        tag = f"source {src}" if b == "marker" else f"source {src}, seed {seed}"
         ticklabels.append(f"{BEHAVIOR_LABELS.get(b, b)}\n({tag})")
     ax.set_xticklabels(ticklabels, fontsize=8)
     ax.set_ylabel(f"Held-out Spearman ρ (g_pred vs {SCORED_DV_AXIS})", fontsize=8)
@@ -520,7 +601,7 @@ def _plot_contrast(lbs: dict[str, dict], noise_floors: dict[str, dict], out_dir:
         src = pairs[b].get("source")
         ser = _per_context_series(b, src, "k_tCB")
         seed = pairs[b].get("seed")
-        prov = f"source {src}" if b == "marker" else f"seed {seed}"
+        prov = f"source {src}" if b == "marker" else f"source {src}, seed {seed}"
         if ser is None:
             sub.text(
                 0.5,
@@ -692,6 +773,19 @@ def main(argv: list[str] | None = None) -> int:
         paths = _plot_leaderboard(lb, nf, out_dir, f"leaderboard_{behavior}")
         written.extend(str(p) for p in paths.values())
         logger.info("[phase=figs_leaderboard] %s -> %s", behavior, paths.get("png"))
+        # Per-source replication figure (#683 round 1): only drawn when ≥2 source
+        # banks exist (sycophancy villain + comedian) — it keeps the sources
+        # separate so the k_tCB replication-across-sources read is visible.
+        by_src_paths = _plot_leaderboard_by_source(
+            lb, nf, out_dir, f"leaderboard_by_source_{behavior}"
+        )
+        if by_src_paths:
+            written.extend(str(p) for p in by_src_paths.values())
+            logger.info(
+                "[phase=figs_leaderboard_by_source] %s -> %s",
+                behavior,
+                by_src_paths.get("png"),
+            )
         a7 = _load_json(Path(a7_path))
         if a7:
             ap_paths = _plot_a7_spectrum(a7, out_dir, f"a7_spectrum_{behavior}")

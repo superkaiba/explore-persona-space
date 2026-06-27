@@ -12,8 +12,12 @@
 #   EVERY phase the dispatcher executes (marker Δv, marker t_cb, syco c_C' bank,
 #   syco Δv, syco t_cb, upload, sentinel) reads its cell subset from the SAME
 #   --smoke-* / sweep-default vars — no phase re-enumerates a full registered
-#   grid. (The syco c_C' bank is a CPU re-emit of the existing L20 #612 panel
-#   centroids keyed to the pinned panel set — same in smoke + sweep.)
+#   grid. The sycophancy SOURCE panel ($SYCO_SOURCES = villain,comedian sweep /
+#   comedian smoke) threads identically into BOTH syco phases (dv_syco's
+#   --source-list AND tcb_syco's --source-list) — the smoke runs the new 2nd
+#   source (comedian) through the exact production code path. (The syco c_C'
+#   bank is a CPU re-emit of the existing L20 #612 panel centroids keyed to the
+#   pinned panel set — same in smoke + sweep, source-independent.)
 #
 # Usage (GCP --workload-cmd; $WORKLOAD_ROOT exported by the startup script):
 #   REPO_ROOT="$WORKLOAD_ROOT" bash scripts/issue683_dispatch.sh
@@ -53,21 +57,29 @@ for arg in "$@"; do
 done
 
 # ── Cell-subset parameterization — EVERY phase reads from these (unification). ─
+# SYCO_SOURCES is the #683 follow-up-round-1 sycophancy source panel (villain +
+# comedian; one variable changed vs the round-0 villain-only run). The smoke
+# subsets it to a single source (comedian — the NEW 2nd source, so the smoke
+# exercises the new code path) at 1 seed + 2 contexts/claims.
 if [ "$SMOKE" -eq 1 ]; then
     MARKER_SOURCES="A1"
+    SYCO_SOURCES="comedian"
     SYCO_SEEDS="42"
     N_QUESTIONS=2
     N_CLAIMS=2
     MAX_NEW_TOKENS=16
     EXTRA_TCB_MAX_ROWS="--max-rows 4"
+    SYCO_DV_SMOKE_PANEL="--panel villain,comedian"
     GLOB_LABEL="smoke"
 else
     MARKER_SOURCES="A1,A2,A3,A4,A5"
+    SYCO_SOURCES="villain,comedian"
     SYCO_SEEDS="42,137"
     N_QUESTIONS=20
     N_CLAIMS=30
     MAX_NEW_TOKENS=512
     EXTRA_TCB_MAX_ROWS=""
+    SYCO_DV_SMOKE_PANEL=""
     GLOB_LABEL="sweep"
 fi
 
@@ -75,7 +87,7 @@ LOG_DIR="logs/issue_683"
 mkdir -p "$LOG_DIR"
 ATENSORS_DIR="eval_results/issue_683/analysis_tensors"
 
-echo "[phase=preflight] === i683 dispatcher $(date -Iseconds) smoke=$SMOKE sources=$MARKER_SOURCES seeds=$SYCO_SEEDS ==="
+echo "[phase=preflight] === i683 dispatcher $(date -Iseconds) smoke=$SMOKE marker_sources=$MARKER_SOURCES syco_sources=$SYCO_SOURCES syco_seeds=$SYCO_SEEDS ==="
 
 FAILED_FILE="$LOG_DIR/dispatch_failed.txt"
 : > "$FAILED_FILE"
@@ -179,17 +191,22 @@ SYCO_CBANK_SMOKE_FLAG=""
 run_phase syco_c_bank syco_c_bank.log -- \
     uv run python scripts/issue683_build_syco_c_bank.py --layer 20 $SYCO_CBANK_SMOKE_FLAG
 
-# ── 4. Sycophancy Δv extract (L20 answer-span mean) over villain × panel. ──────
+# ── 4. Sycophancy Δv extract (L20 answer-span mean) over sources × panel. ──────
+# SYCO_SOURCES = villain,comedian (sweep) / comedian (smoke). Per-(source,seed)
+# banks land as <source>_seed<seed>_L20.pt under dv/sycophancy/ (the scorer +
+# a7 glob *_L*.pt and key by each bank's own `source`, so 2 sources are picked
+# up with no scorer change).
+# shellcheck disable=SC2086  # SYCO_DV_SMOKE_PANEL is an intentional optional flag
 run_phase dv_syco dv_syco.log -- \
     uv run python scripts/issue683_extract_dv_sycophancy.py \
-    --seeds "$SYCO_SEEDS" --layer 20 \
-    --n-claims "$N_CLAIMS" --max-new-tokens "$MAX_NEW_TOKENS"
+    --source-list "$SYCO_SOURCES" --seeds "$SYCO_SEEDS" --layer 20 \
+    --n-claims "$N_CLAIMS" --max-new-tokens "$MAX_NEW_TOKENS" $SYCO_DV_SMOKE_PANEL
 
-# ── 5. Sycophancy t_{C,B} extract (L20 answer-span). ───────────────────────────
+# ── 5. Sycophancy t_{C,B} extract (L20 answer-span) over sources. ──────────────
 # shellcheck disable=SC2086
 run_phase tcb_syco tcb_syco.log -- \
     uv run python scripts/issue683_extract_tcb.py \
-    --behavior sycophancy --layer 20 --source-list villain $EXTRA_TCB_MAX_ROWS
+    --behavior sycophancy --layer 20 --source-list "$SYCO_SOURCES" $EXTRA_TCB_MAX_ROWS
 
 # ── 6. Upload all analysis_tensors/* to HF data repo. ──────────────────────────
 echo "[phase=upload] === upload analysis_tensors -> issue683_key_gate/analysis_tensors $(date -Iseconds) ==="

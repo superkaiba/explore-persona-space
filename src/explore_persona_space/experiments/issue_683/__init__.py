@@ -92,13 +92,28 @@ MARKER_CONTEXT_BANK: Final[str] = (
     "issue604_adapter_svd/analysis_tensors/post_response_slot/context_vectors_all_layers.pt"
 )
 
-# ─── Sycophancy reuse targets (Hub-verified 2026-06-26) ──────────────────────
-# Villain on-policy training pool ({prompt:[system,user], completion:[assistant]}).
-SYCO_TRAIN_POOL: Final[str] = (
-    "issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/villain/train_pool.jsonl"
+# ─── Sycophancy reuse targets (Hub-verified 2026-06-26 villain; comedian 2026-06-27) ──
+# On-policy training pools ({prompt:[system,user], completion:[assistant]}). The
+# comedian pool (2nd source, #683 follow-up round 1) lives under the SAME #612
+# on-policy prefix as villain, recipe-matched (Hub-verified 2026-06-27).
+SYCO_TRAIN_POOL_TEMPLATE: Final[str] = (
+    "issue612_sycophancy_onpolicy/training_pools/arm_onpolicy/{source}/train_pool.jsonl"
 )
-# Villain on-policy adapters, both seeds.
+# Back-compat alias: the original single-source (villain) pool path. Kept so
+# external readers of SYCO_TRAIN_POOL still resolve; new code uses the template.
+SYCO_TRAIN_POOL: Final[str] = SYCO_TRAIN_POOL_TEMPLATE.format(source="villain")
+# On-policy adapters, both seeds, parameterized by source. Comedian adapters
+# (comedian_seed{42,137}) recipe-match villain (r=32/alpha=64/dropout=0.05/rsLoRA,
+# lm_head/embed_tokens excluded -> assert_rslora_gauge passes; Hub-verified
+# 2026-06-27).
+SYCO_ADAPTER_BY_SOURCE_TEMPLATE: Final[str] = "adapters/issue_612/arm_onpolicy/{source}_seed{seed}"
+# Back-compat alias (villain-only, the original single-source template).
 SYCO_ADAPTER_TEMPLATE: Final[str] = "adapters/issue_612/arm_onpolicy/villain_seed{seed}"
+# The sycophancy source panel. #683 follow-up round 1 (comedian-second-sycophancy-
+# source) extends {villain} -> {villain, comedian}; one variable changed. Every
+# source MUST be a member of SYCOPHANCY_PANEL_CONTEXTS (ŵ = Δv(C_source)).
+SYCO_SOURCES: Final[tuple[str, ...]] = ("villain", "comedian")
+# Back-compat alias: the original single source.
 SYCO_SOURCE: Final[str] = "villain"
 SYCO_SEEDS: Final[tuple[int, ...]] = (42, 137)
 # #612 panel centroids (L20) — the RAW source for the sycophancy c_C' bank.
@@ -152,6 +167,14 @@ SYCOPHANCY_PANEL_CONTEXTS: Final[tuple[str, ...]] = (
     "web_developer",
     "wizard",
     "zelthari_scholar",
+)
+
+# Every sycophancy source MUST be a panel member — the source's own context is
+# where ŵ = Δv(C_source) is read, so a source outside the panel has no c_C / Δv
+# to anchor the realized gate (fail-loud at import, never a silent mis-key).
+_missing_syco_sources = [s for s in SYCO_SOURCES if s not in SYCOPHANCY_PANEL_CONTEXTS]
+assert not _missing_syco_sources, (
+    f"SYCO_SOURCES not in SYCOPHANCY_PANEL_CONTEXTS: {_missing_syco_sources}"
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
