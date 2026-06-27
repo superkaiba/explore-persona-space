@@ -157,19 +157,31 @@ Full re-ladder on-policy pools (4 files + yield reports): [HF data repo issue653
 
 **Parameters:**
 
+For the complete hyperparameter set (every training + eval + generation value, each with a source) see the methodology reference linked above; the load-bearing values are reproduced here.
+
 | Parameter | Value |
 |---|---|
 | Base model | `Qwen/Qwen2.5-7B-Instruct` |
 | Cells | 3 behaviors × 2 source contexts × 3 LoRA ranks = 18 (seed 42); full-FT rung descoped |
-| LoRA placement | `{q_proj,k_proj,v_proj,o_proj}` (attn-only) |
-| LoRA ranks | 1, 4, 16 (α = 2r, `use_rslora=true`) |
-| Marker recipe | marker-only loss, lr 5e-6, band-stop [5,12] nat, max_new_tokens 2048 |
-| Sycophancy/EM recipe | whole-completion loss, lr 1e-5, 3 epochs (dose-to-target), 1:1 contrastive negatives |
-| Arm A | 16 random writes (isotropic + cov-matched), 4 layer-pairs × 4 magnitudes, ridge λ CV-picked |
-| Low-rank / diffuse thresholds | top-share ≥ 0.7 (low-rank); participation ratio ≥ 5 or rank-k@90 ≥ 10 (diffuse) |
-| Install floors | marker log P [5,12] nat; sycophancy judge-rate gain ≥ 0.4; EM ≥ 0.2 |
-| Install DVs | marker four-float log P; sycophancy/EM Claude Sonnet 4.5 judge rate + continuous log-P gain |
-| Bootstrap | cluster bootstrap, B=10000, deciding-DV CI per cell |
+| LoRA placement (all rungs) | `{q_proj, k_proj, v_proj, o_proj}` (attn-only) |
+| LoRA ranks | 1, 4, 16 (the single varied factor within a cell) |
+| LoRA α | 2 × r (r1→2, r4→8, r16→32) |
+| rsLoRA | use_rslora=True (effective scale α/√r) |
+| Marker-rung learning rate | 5e-6 |
+| Marker-rung epochs | 20 (strength bought via steps at low LR; band-stop self-adjusts) |
+| Marker band-stop | enabled, band [5, 12] nat |
+| Marker `max_new_tokens` | 2048 |
+| Sycophancy/EM learning rate | 1e-5 |
+| Sycophancy/EM epochs | 3 (dose-to-target on the continuous gain) |
+| Contrastive negative panel | `{assistant, librarian, police_officer}` (disjoint from sources) |
+| Arm A layer-pairs (ℓ, ℓ′) | (10,10), (15,15), (20,20), (25,25) |
+| Arm A write magnitudes | {1, 2, 4, 8} × per-layer residual RMS |
+| Arm A write distributions | isotropic-Gaussian, residual-covariance-matched |
+| Spectral DV thresholds (σ² spectrum) | low-rank: top-share ≥ 0.7 **or** PR_λ ≤ 2; H3: PR_λ ≥ 5 **or** rank-K@90% ≥ 10 |
+| Alignment threshold | \|cos(top, `r_B`)\| ≥ 0.5 **and** > norm-matched-random CI upper bound |
+| Install floors | marker log P [5, 12] nat; sycophancy judge-rate gain ≥ 0.4; EM ≥ 0.2 |
+| Judge model (sycophancy/EM rate) | `claude-sonnet-4-5-20250929`, concurrency 16 |
+| Seed | 42 (rank ladder headline); Arm A + cross-arm reads {42, 137, 256} |
 | Full fine-tuning rung | descoped — install gate condition not met |
 
 **Artifacts:**
