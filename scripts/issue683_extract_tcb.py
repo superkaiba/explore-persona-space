@@ -91,7 +91,12 @@ def _download_mix(behavior: str, source: str, local_root: Path) -> Path:
     from explore_persona_space.experiments.issue_683 import HF_DATA_REPO
 
     rel, _ = _resolve_mix_path(behavior, source)
-    local = local_root / Path(rel).name
+    # Cache per SOURCE: marker (A1..A5) and sycophancy (villain/comedian) mixes can
+    # share a basename (e.g. both sycophancy sources resolve to ``train_pool.jsonl``).
+    # Flattening to ``Path(rel).name`` collides them under one cache file, so a
+    # ``--source-list "villain,comedian"`` run would compute comedian's t_cb from
+    # villain's cached rows. Namespace the cache dir by source to keep them disjoint.
+    local = local_root / source / Path(rel).name
     if local.is_file():
         return local
     src = hf_hub_download(HF_DATA_REPO, rel, repo_type="dataset", revision="main")
@@ -205,7 +210,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--source-list",
         required=True,
-        help="comma-separated sources (marker: A1..A5; sycophancy: villain)",
+        help="comma-separated sources (marker: A1..A5; sycophancy: villain,comedian)",
     )
     ap.add_argument(
         "--out-dir",

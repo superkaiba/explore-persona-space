@@ -161,16 +161,25 @@ def _cbank_path(behavior: str) -> Path:
     return _MARKER_CBANK if behavior == "marker" else _SYCO_CBANK
 
 
-def _per_context_series(behavior: str, source: str, key_form: str) -> dict | None:
+def _per_context_series(
+    behavior: str, source: str, key_form: str, seed: int | None = None
+) -> dict | None:
     """Recompute the per-context (g_pred, scored-DV g₁, context names) for ONE
     M_I/ψ_I raw-dot cell, faithfully via the scorer code path.
 
     Reads the committed Δv / c_C' / t_{C,B} tensors and reproduces the leaderboard
     ρ for this cell to machine precision (validated: marker A5 + sycophancy seed-42
     match the committed values to 1e-9). Returns ``None`` if the inputs for this
-    (behavior, source) are not present locally. The M_I/ψ_I raw-dot key is
+    (behavior, source, seed) are not present locally. The M_I/ψ_I raw-dot key is
     target-independent, so the all-context Spearman here EQUALS the committed
-    leave-one-context-out Spearman for the cell (no LOO/whitening/ridge needed)."""
+    leave-one-context-out Spearman for the cell (no LOO/whitening/ridge needed).
+
+    ``seed`` selects the right bank when a source has MULTIPLE Δv banks (sycophancy
+    runs two seeds per source). The figure caption names a specific (source, seed)
+    bank, so the scatter must read the SAME bank — selecting by ``source`` alone
+    would silently take the first-seed bank under a second-seed caption. ``seed``
+    is ``None`` for marker (one bank per source, no seed axis); then only ``source``
+    is matched."""
     import numpy as np
     import torch
 
@@ -181,7 +190,10 @@ def _per_context_series(behavior: str, source: str, key_form: str) -> dict | Non
         return None
     layer = _READ_LAYER[behavior]
     banks = sc._load_dv_banks(dv_dir)
-    payload = next((b for b in banks if b["source"] == source), None)
+    payload = next(
+        (b for b in banks if b["source"] == source and (seed is None or b.get("seed") == seed)),
+        None,
+    )
     if payload is None:
         return None
     c_bank = sc._load_c_bank(cbp, layer)
@@ -345,7 +357,7 @@ def _plot_leaderboard(lb: dict, noise_floor: dict, out_dir: Path, stem: str):
     head_src = head_bank.get("source")
     seed = head_bank.get("seed")
     prov = f"source {head_src}" if behavior == "marker" else f"source {head_src}, seed {seed}"
-    ser = _per_context_series(behavior, head_src, "k_tCB")
+    ser = _per_context_series(behavior, head_src, "k_tCB", seed=seed)
     if ser is None:
         axs.text(
             0.5,
@@ -478,9 +490,12 @@ def _contrast_pair_for_behavior(lb: dict) -> dict:
     Marker: pair WITHIN A SINGLE BANK (A5 — the only marker bank whose
     training-completion key clears its own shuffled-key null), so both bars and
     the null come from the same source — no cross-bank max-per-key artifact.
-    Sycophancy: best-of-2-seeds (both seeds agree closely, so no selection
-    artifact); pair the two bars from the SAME chosen seed bank and use that
-    bank's own null.
+    Sycophancy: with comedian added (#683 round 1) there are now FOUR banks
+    (villain + comedian × two seeds), so this takes the cross-(source, seed) max
+    by k_tCB raw dot — the single strongest sycophancy bank — and pairs both bars
+    + the null from THAT one bank (no cross-bank max-per-key artifact within the
+    pair; the hero contrast shows the strongest bank, while the per-source
+    leaderboard figure keeps all sources/seeds separate for the replication read).
     """
     behavior = lb["behavior"]
     per_bank = lb["per_bank"]
@@ -491,7 +506,8 @@ def _contrast_pair_for_behavior(lb: dict) -> dict:
             key=lambda b: (_cell(b["leaderboard"], "k_tCB") or {}).get("spearman", float("-inf")),
         )
     else:
-        # pick the seed bank with the higher k_tCB raw dot (both agree ~0.74/0.75).
+        # pick the single strongest sycophancy bank across all (source, seed)
+        # banks (villain + comedian × two seeds) by k_tCB raw dot.
         bank = max(
             per_bank,
             key=lambda b: (_cell(b["leaderboard"], "k_tCB") or {}).get("spearman", float("-inf")),
@@ -599,8 +615,8 @@ def _plot_contrast(lbs: dict[str, dict], noise_floors: dict[str, dict], out_dir:
     for i, b in enumerate(behaviors):
         sub = fig.add_subplot(gs[1, i])
         src = pairs[b].get("source")
-        ser = _per_context_series(b, src, "k_tCB")
         seed = pairs[b].get("seed")
+        ser = _per_context_series(b, src, "k_tCB", seed=seed)
         prov = f"source {src}" if b == "marker" else f"source {src}, seed {seed}"
         if ser is None:
             sub.text(
