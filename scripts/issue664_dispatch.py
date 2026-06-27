@@ -1028,6 +1028,77 @@ def _cell_extract_eval_done(cell: C.Cell, *, smoke: bool) -> bool:
     return store_done and eval_done
 
 
+# ── #664/#689 fix (a): per-cell incremental upload + EXACT-set Hub presence ───
+# Both the skip guard and the auto-terminate gate need the EXACT set of files a
+# COMPLETE cell has on HF (S1), never a prefix or count. These helpers are
+# stubbed for TDD round-1 (test imports); bodies land in round 2.
+
+
+def _expected_eval_files(cell: C.Cell) -> set[str]:
+    """The EXACT set of eval-JSON basenames a COMPLETE cell has under its
+    raw-completions prefix (S1). Mirrors the gen phase's own iteration
+    (``issue664_eval._judging_surface``) so it stays in lock-step with what gen
+    writes; excludes the marker column (its DV is the slot stats, not a
+    completions JSON). Deterministic per cell — NOT a fixed count."""
+    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
+    raise NotImplementedError("#689 round 2: _expected_eval_files")
+
+
+def _expected_store_files() -> set[str]:
+    """The EXACT set of store-tensor basenames a COMPLETE cell has under its store
+    prefix (S1): the extract worker writes exactly ``tensors.pt`` + ``meta.json``.
+    ``tensors.pt`` is the PRIMARY deliverable; its absence MUST fail the
+    completeness check (the #521 trap)."""
+    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
+    raise NotImplementedError("#689 round 2: _expected_store_files")
+
+
+def _classify_cell_hub_state(cell: C.Cell, files: set[str]) -> str:
+    """Per-cell three-state HF presence (M1) from a PRE-FETCHED listing: 'complete'
+    (both kinds' EXACT sets present), 'partial' (>=1 file of one kind present but
+    not the full set), or 'absent' (no files under either prefix). Shared by the
+    skip guard and the auto-terminate gate so they cannot diverge (S1 exact-set)."""
+    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
+    raise NotImplementedError("#689 round 2: _classify_cell_hub_state")
+
+
+def _cell_artifacts_on_hub(cell: C.Cell) -> bool:
+    """True iff this cell's EXACT expected eval-JSON set AND store-tensor set are
+    BOTH fully present on the Hub (S1). FRESH listing via the Python Hub API
+    (never the ``hf`` CLI — upload-policy). A partial cell (mid-``upload_folder``
+    crash, one artifact-kind missing) reads as NOT complete, so it is re-uploaded
+    and never silently skipped / passed by the auto-terminate gate."""
+    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
+    raise NotImplementedError("#689 round 2: _cell_artifacts_on_hub")
+
+
+def _cell_hub_state(cell: C.Cell) -> str:
+    """Per-cell three-state HF presence (M1) computed from ONE fresh listing.
+    Callers classifying many cells pass the listing into
+    :func:`_classify_cell_hub_state` directly to avoid N round-trips."""
+    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
+    raise NotImplementedError("#689 round 2: _cell_hub_state")
+
+
+def _cell_done_anywhere(cell: C.Cell, *, smoke: bool) -> bool:
+    """P2 resume-skip predicate (A2). A cell is done if its final artifacts are on
+    the pod volume (the fast local path, ``_cell_extract_eval_done``) OR its EXACT
+    expected file set is already complete on HF (the fresh-pod-after-auto-migrate
+    path, fix (b)). Smoke never consults HF (per-cell upload is smoke-skipped)."""
+    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
+    raise NotImplementedError("#689 round 2: _cell_done_anywhere")
+
+
+def _upload_cell_artifacts(cell: C.Cell, *, smoke: bool) -> None:
+    """Per-cell incremental upload (checkpoint-per-phase, fix (a)). ONE
+    ``upload_folder`` commit per artifact-kind (HF 256-commits/hr cap). Idempotent:
+    skips when the EXACT expected file set is already on the Hub. Fail-loud
+    EXACT-file-set Hub-verify before returning (``RuntimeError`` naming the missing
+    file). Smoke short-circuits (no listing, no upload)."""
+    # TODO(#689): round-2 implementation; stub for TDD round-1 import resolution.
+    raise NotImplementedError("#689 round 2: _upload_cell_artifacts")
+
+
 def _one_cell_base_argv(cell: C.Cell, mode_flag: str, gpu_id: int, *, smoke: bool) -> list[str]:
     """argv for a one-cell WaveDispatcher subprocess (self-reinvoke of THIS script).
 
