@@ -1,0 +1,18 @@
+{
+  "behavior": "marker",
+  "layer": 14,
+  "construct": "test-retest g_real reliability across seeds (ceiling on achievable \u03c1)",
+  "per_source": {},
+  "n_banks": 5,
+  "reproducibility": {
+    "git_commit": "c81e32709350d90429dde38fb657be61ebb251e2",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "python": "3.11.15",
+    "timestamp_utc": "2026-06-27T07:40:12+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "cuda_available": false,
+    "behavior": "marker",
+    "layer": 14
+  }
+}

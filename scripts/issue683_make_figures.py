@@ -608,7 +608,7 @@ def _plot_a7_spectrum(a7: dict, out_dir: Path, stem: str):
             )
     ax.set_xticks(x)
     ax.set_xticklabels(metric_labels, rotation=20, ha="right", fontsize=8)
-    ax.set_ylabel("value (bars = mean over banks; dots = per source bank)")
+    ax.set_ylabel("value\n(bars = mean over banks;\ndots = per source bank)", fontsize=8)
     ax.legend(fontsize=8)
     # Reader-facing verdict (NOT the internal slug). State the strict-rank-1 pass
     # count + what the figure decides.
@@ -633,6 +633,9 @@ def _plot_a7_spectrum(a7: dict, out_dir: Path, stem: str):
         verdict_txt,
     )
     fig.tight_layout()
+    # Bigger left/bottom margin so the multi-line y-axis label and the rotated
+    # first x-tick label are not clipped at the figure edge (clean-result r3).
+    fig.subplots_adjust(left=0.20, bottom=0.20)
     paths = savefig_paper(fig, stem, dir=str(out_dir))
     plt.close(fig)
     return paths
