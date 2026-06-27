@@ -311,3 +311,4 @@
 {"ts": "2026-06-27T19:21:47Z", "kind": "epm:progress", "version": 160, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 5.3 GB, CPU-time 9-00:08:29 (~38.5h wall). Slow phase."}
 {"ts": "2026-06-27T19:52:37Z", "kind": "epm:progress", "version": 161, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 5.9 GB, CPU-time 9-01:14:55 (~39h wall). Slow phase."}
 {"ts": "2026-06-27T20:21:55Z", "kind": "epm:progress", "version": 162, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 3.1 GB, CPU-time 9-06:18:32 (~40h wall). Slow phase."}
+{"ts": "2026-06-27T20:52:42Z", "kind": "epm:progress", "version": 163, "by": "unknown", "note": "tick heartbeat: Betley fit PID 967335 STATE=R, RSS 3.1 GB, CPU-time 9-14:09:49 (~40.5h wall). External Codex companion debugging fit_predictors in a side worktree (issue-658-fitfix) — independent of this session's monitoring. Slow phase."}
