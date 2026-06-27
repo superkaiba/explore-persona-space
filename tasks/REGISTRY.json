@@ -4347,8 +4347,8 @@
     "689": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/689",
-      "status": "proposed",
+      "path": "tasks/planning/689",
+      "status": "planning",
       "title": "RunPod RUNNING-but-no-port host wedge: detect + auto-migrate; per-cell incremental upload for fleet sweeps"
     },
     "69": {
