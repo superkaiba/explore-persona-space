@@ -58,8 +58,15 @@ training and into `p2_extract_eval`, these behaviors do NOT ride the original fl
 They fold onto #664 as a **same-issue follow-up round** (same question — does
 trained/eval behavior leakage stay predictable, on more behaviors): the B11/B12
 adapters train as a fresh parallel batch + fold into #664's store, and the new `B'`
-columns re-score on the existing + new fleet. Pending: file the `epm:followup-scope`
-on #664 (#664 already carries one user follow-up, `em-provenance-robustness`).
+columns re-score on the existing + new fleet.
+
+**FILED** as `epm:followup-scope` on #664 (`style-behaviors-verbosity-register`,
+2026-06-26) with a **HARD disk-clear-after-HF-save gate** (user directive): it runs
+only after (1) #664's current pass parks at `awaiting_promotion` with upload-verifier
+PASS = all data on HF, (2) `clean_experiment_downloads.py 664 --apply` + `uv cache
+prune` reclaim, and (3) `/` free ≥ 40 GiB (the #679 preflight floor hard-fails a
+below-floor launch). **Not launched yet** — #664's current extract/eval pass is still
+in flight.
 
 ## Orchestration
 
