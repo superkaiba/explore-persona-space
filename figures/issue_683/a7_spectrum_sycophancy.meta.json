@@ -1,6 +1,6 @@
 {
-  "commit": "0687e20961",
-  "created": "2026-06-27T09:49:52Z",
+  "commit": "f5479e6e58",
+  "created": "2026-06-27T12:42:21Z",
   "figsize": [
     7.0,
     4.2
@@ -8,91 +8,139 @@
   "points": [
     {
       "category": "\u03c3\u2081\u00b2/\u03a3\u03c3\u00b2\n(top-component energy)",
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.6057069564835426,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.5977849787175773,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "\u03c3\u2082/\u03c3\u2081\n(gap)",
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.5345602769695871,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.5305689971024998,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "|cos(u\u2081, source write)|",
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.7753603998787827,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.74902213426562,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "scalarity residual\n(median, lower = scalar)",
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.9524223372559406,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.9332556250829664,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.046566973689294466,
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.6032512095392643,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.5897300459557435,
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": -0.0782725173202841,
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.6081627034278209,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.5830822781994822,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "x": 0.8439309981383062,
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.5465276342554312,
+      "x": -0.1560690018616938,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.6104141814180883,
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "x": 0.8356193960796998,
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.522592919683743,
+      "x": -0.16438060392030013,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.607913409296995,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "x": 2.1065118813280925,
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.7702181254971737,
+      "x": 1.1065118813280925,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.5226379153175489,
       "_kind": "scatter",
       "_group": 5
     },
     {
-      "x": 2.1403368962744254,
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.7805026742603917,
+      "x": 1.1403368962744254,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.540915700805051,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "x": 3.036256163760841,
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.9549013343537509,
+      "x": 1.0362561637608412,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.5385294895033175,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "x": 3.0780288307345596,
-      "value\n(bars = mean over banks;\ndots = per source bank)": 0.9499433401581303,
+      "x": 1.0780288307345596,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.5201928827840822,
       "_kind": "scatter",
       "_group": 8
+    },
+    {
+      "x": 2.0148324970982436,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.717510665509425,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.147924624087841,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.7344135181583942,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1073902084013207,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.7637990482386905,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.8309310900578504,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.7803653051559705,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.1215174540397737,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.9248020187117058,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.841419095603858,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.9132970673584013,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.078082851786181,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.9531516432213012,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.88972291100487,
+      "value\n(bars = mean over banks;\ndots = per source bank)": 0.9417717710404573,
+      "_kind": "scatter",
+      "_group": 16
     },
     {
       "x": 0.0,
       "value\n(bars = mean over banks;\ndots = per source bank)": 0.5,
       "series": "strict rank-1 thresholds (0.5)",
       "_kind": "line",
-      "_group": 9
+      "_group": 17
     },
     {
       "x": 1.0,
       "value\n(bars = mean over banks;\ndots = per source bank)": 0.5,
       "series": "strict rank-1 thresholds (0.5)",
       "_kind": "line",
-      "_group": 9
+      "_group": 17
     }
   ],
-  "n_series": 10,
-  "total_points": 14
+  "n_series": 18,
+  "total_points": 22
 }

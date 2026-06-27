@@ -3,17 +3,21 @@
   "layer": 20,
   "construct": "test-retest g_real reliability across seeds (ceiling on achievable \u03c1)",
   "per_source": {
+    "comedian": {
+      "test_retest_spearman_mean": 0.9359605911330046,
+      "n_pairs": 1
+    },
     "villain": {
-      "test_retest_spearman_mean": 0.9615763546798027,
+      "test_retest_spearman_mean": 0.9857142857142855,
       "n_pairs": 1
     }
   },
-  "n_banks": 2,
+  "n_banks": 4,
   "reproducibility": {
-    "git_commit": "c81e32709350d90429dde38fb657be61ebb251e2",
+    "git_commit": "f5479e6e58aa5245df8a10508936d8b6cb23af17",
     "base_model": "Qwen/Qwen2.5-7B-Instruct",
     "python": "3.11.15",
-    "timestamp_utc": "2026-06-27T07:49:15+00:00",
+    "timestamp_utc": "2026-06-27T12:41:45+00:00",
     "torch": "2.8.0+cu128",
     "numpy": "2.2.6",
     "cuda_available": false,
