@@ -3,7 +3,8 @@ title: Appending a behavioral instruction moves the context vector along one dom
   per-behavior direction, with a smaller context-specific residual riding on top (MODERATE
   confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-27T03:54:14Z'
 has_clean_result: true
 origin_prompt: Run an experiment to check how the context vector changes if we just
