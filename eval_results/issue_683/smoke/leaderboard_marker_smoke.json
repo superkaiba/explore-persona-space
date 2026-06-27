@@ -1,0 +1,229 @@
+{
+  "behavior": "marker",
+  "layer": 0,
+  "a7_rank1": true,
+  "a7_verdict": "rank1_scalar_gate",
+  "key_forms": [
+    "k_cC",
+    "k_tCB",
+    "k_cC_plus_delta"
+  ],
+  "metrics": [
+    "M_I",
+    "M_white"
+  ],
+  "psi_forms": [
+    "psi_I",
+    "psi_ridge"
+  ],
+  "n_bootstrap": 50,
+  "per_bank": [
+    {
+      "source": "A1",
+      "seed": 42,
+      "a7_rank1": true,
+      "scored_dv": "g_real_scalar",
+      "n_targets": 12,
+      "leaderboard": [
+        {
+          "key": "k_cC",
+          "metric": "M_I",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": 0.4055944055944056,
+          "pearson": 0.3576146710255418,
+          "sign_agreement": 0.5,
+          "mae": 0.48598235797063444,
+          "spearman_ci95": [
+            -0.0263986013986014,
+            0.8236013986013988
+          ]
+        },
+        {
+          "key": "k_cC",
+          "metric": "M_white",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": -0.034965034965034975,
+          "pearson": 0.13636536158013943,
+          "sign_agreement": 0.5,
+          "mae": 0.5489590123712208,
+          "spearman_ci95": [
+            -0.43653846153846154,
+            0.46923076923076923
+          ]
+        },
+        {
+          "key": "k_tCB",
+          "metric": "M_I",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": 0.22377622377622378,
+          "pearson": 0.22589106586504198,
+          "sign_agreement": 0.5,
+          "mae": 0.5200170421876003,
+          "spearman_ci95": [
+            -0.3945804195804196,
+            0.8732517482517483
+          ]
+        },
+        {
+          "key": "k_tCB",
+          "metric": "M_white",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": 0.16083916083916086,
+          "pearson": 0.236926991752284,
+          "sign_agreement": 0.4166666666666667,
+          "mae": 0.7083251699810228,
+          "spearman_ci95": [
+            -0.3760489510489511,
+            0.8662587412587412
+          ]
+        },
+        {
+          "key": "k_cC_plus_delta",
+          "metric": "M_I",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": 0.4055944055944056,
+          "pearson": 0.4156881547499848,
+          "sign_agreement": 0.5,
+          "mae": 0.5581273966377744,
+          "spearman_ci95": [
+            -0.2265734265734266,
+            0.8236013986013988
+          ]
+        },
+        {
+          "key": "k_cC_plus_delta",
+          "metric": "M_white",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": 0.4755244755244756,
+          "pearson": 0.4861602783110662,
+          "sign_agreement": 0.6666666666666666,
+          "mae": 1.3103497012253995,
+          "spearman_ci95": [
+            -0.1145104895104895,
+            0.8396853146853146
+          ]
+        },
+        {
+          "key": "k_cC",
+          "metric": "M_I",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": 0.4055944055944056,
+          "pearson": 0.3576146710255418,
+          "sign_agreement": 0.5,
+          "mae": 0.48598235797063444,
+          "spearman_ci95": [
+            -0.05559440559440558,
+            0.8500000000000001
+          ]
+        },
+        {
+          "key": "k_cC",
+          "metric": "M_white",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": -0.034965034965034975,
+          "pearson": 0.13636536158013943,
+          "sign_agreement": 0.5,
+          "mae": 0.5489590123712208,
+          "spearman_ci95": [
+            -0.5150349650349652,
+            0.4552447552447552
+          ]
+        },
+        {
+          "key": "k_tCB",
+          "metric": "M_I",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": -0.06293706293706294,
+          "pearson": -0.08955980080878813,
+          "sign_agreement": 0.5833333333333334,
+          "mae": 2.738953294710065,
+          "spearman_ci95": [
+            -0.8034965034965036,
+            0.3426573426573427
+          ]
+        },
+        {
+          "key": "k_tCB",
+          "metric": "M_white",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": 0.006993006993006993,
+          "pearson": -0.020837400946315813,
+          "sign_agreement": 0.4166666666666667,
+          "mae": 126944.72971866747,
+          "spearman_ci95": [
+            -0.5748251748251748,
+            0.6223776223776225
+          ]
+        },
+        {
+          "key": "k_cC_plus_delta",
+          "metric": "M_I",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": 0.1258741258741259,
+          "pearson": 0.15048229842887728,
+          "sign_agreement": 0.5,
+          "mae": 0.4621277687727208,
+          "spearman_ci95": [
+            -0.5522727272727272,
+            0.7232517482517482
+          ]
+        },
+        {
+          "key": "k_cC_plus_delta",
+          "metric": "M_white",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": -0.3846153846153847,
+          "pearson": -0.3825583560454328,
+          "sign_agreement": 0.5,
+          "mae": 0.5121013195494332,
+          "spearman_ci95": [
+            -0.797902097902098,
+            0.16625874125874127
+          ]
+        }
+      ],
+      "baseline_cos": {
+        "spearman": 0.4055944055944056,
+        "pearson": 0.34455341343492213,
+        "n_scored": 12
+      },
+      "null_shuffled_key": {
+        "mean": 0.16993006993006993,
+        "p5": -0.2842657342657343,
+        "p95": 0.44755244755244755,
+        "n": 20
+      },
+      "null_shuffled_query": {
+        "mean": -0.11083916083916087,
+        "p5": -0.6356643356643358,
+        "p95": 0.2618881118881122,
+        "n": 20
+      },
+      "has_tcb": true
+    }
+  ],
+  "noise_floor": {},
+  "reproducibility": {
+    "git_commit": "e5daf6a020a86a9c780900fd8cf7ad0fe1689fa8",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "python": "3.11.15",
+    "timestamp_utc": "2026-06-27T04:13:18+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "cuda_available": false,
+    "behavior": "marker",
+    "layer": 0
+  }
+}

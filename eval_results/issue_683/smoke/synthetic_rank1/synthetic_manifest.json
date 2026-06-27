@@ -1,0 +1,19 @@
+{
+  "mode": "rank1",
+  "behavior": "marker",
+  "source": "A1",
+  "n_targets": 12,
+  "hidden": 64,
+  "dv_path": "eval_results/issue_683/smoke/synthetic_rank1/dv/A1_L0.pt",
+  "c_bank_path": "eval_results/issue_683/smoke/synthetic_rank1/c_bank.pt",
+  "reproducibility": {
+    "git_commit": "e5daf6a020a86a9c780900fd8cf7ad0fe1689fa8",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "python": "3.11.15",
+    "timestamp_utc": "2026-06-27T04:13:14+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "cuda_available": false,
+    "mode": "rank1"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "behavior": "sycophancy",
+  "layer": 20,
+  "rank1_energy_threshold": 0.5,
+  "scalarity_residual_threshold": 0.5,
+  "n_banks": 1,
+  "n_banks_rank1_holds": 0,
+  "behavior_rank1_holds": false,
+  "verdict": "low_rank_fallback_required",
+  "per_bank": [
+    {
+      "source": "villain",
+      "seed": 42,
+      "n_targets": 12,
+      "w_hat_norm": 1.1848060211775209,
+      "scalarity_residual_per_target": {
+        "C0": 0.9713011661775437,
+        "C1": 0.3989913329088003,
+        "C2": 0.6521742894287982,
+        "C3": 0.8521886773960554,
+        "C4": 0.43822093983851007,
+        "C5": 0.3893810836026578,
+        "C6": 0.6053304169411587,
+        "C7": 0.9982360149329547,
+        "C8": 0.6275810908383522,
+        "C9": 0.7046766449155148,
+        "C10": 0.6170384591989527,
+        "C11": 0.817179084065226
+      },
+      "scalarity_residual_median": 0.6398776901335752,
+      "sigma1_sq_frac": 0.8989029670722636,
+      "sigma2_over_sigma1": 0.3221223766265821,
+      "cos_u1_what": 0.7394084198182304,
+      "singular_values_top8": [
+        5.112168830048432,
+        1.6467439732515348,
+        0.1974388298756452,
+        0.18407274040775484,
+        0.17130505688113698,
+        0.16378506930854778,
+        0.14393358155540842,
+        0.13532066891629804
+      ],
+      "rank1_holds": false,
+      "bank_path": "eval_results/issue_683/smoke/synthetic_lowrank/dv/villain_L0.pt"
+    }
+  ],
+  "reproducibility": {
+    "git_commit": "e5daf6a020a86a9c780900fd8cf7ad0fe1689fa8",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "python": "3.11.15",
+    "timestamp_utc": "2026-06-27T04:13:44+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "cuda_available": false,
+    "behavior": "sycophancy",
+    "layer": 20
+  }
+}

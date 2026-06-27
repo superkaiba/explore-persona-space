@@ -1,0 +1,229 @@
+{
+  "behavior": "sycophancy",
+  "layer": 0,
+  "a7_rank1": false,
+  "a7_verdict": "low_rank_fallback_required",
+  "key_forms": [
+    "k_cC",
+    "k_tCB",
+    "k_cC_plus_delta"
+  ],
+  "metrics": [
+    "M_I",
+    "M_white"
+  ],
+  "psi_forms": [
+    "psi_I",
+    "psi_ridge"
+  ],
+  "n_bootstrap": 50,
+  "per_bank": [
+    {
+      "source": "villain",
+      "seed": 42,
+      "a7_rank1": false,
+      "scored_dv": "lowrank_dominant_component",
+      "n_targets": 12,
+      "leaderboard": [
+        {
+          "key": "k_cC",
+          "metric": "M_I",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": 0.4545454545454546,
+          "pearson": 0.2254041051413321,
+          "sign_agreement": 0.5833333333333334,
+          "mae": 1.0425563867908305,
+          "spearman_ci95": [
+            0.08723776223776225,
+            0.8055944055944056
+          ]
+        },
+        {
+          "key": "k_cC",
+          "metric": "M_white",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": 0.20979020979020982,
+          "pearson": 0.1981202233608188,
+          "sign_agreement": 0.5833333333333334,
+          "mae": 1.090123900504777,
+          "spearman_ci95": [
+            -0.416958041958042,
+            0.8522727272727273
+          ]
+        },
+        {
+          "key": "k_tCB",
+          "metric": "M_I",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": 0.3356643356643357,
+          "pearson": 0.34118694533623034,
+          "sign_agreement": 0.8333333333333334,
+          "mae": 1.0365225484925278,
+          "spearman_ci95": [
+            -0.32465034965034967,
+            0.7482517482517484
+          ]
+        },
+        {
+          "key": "k_tCB",
+          "metric": "M_white",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": 0.5104895104895105,
+          "pearson": 0.5649446880387855,
+          "sign_agreement": 0.6666666666666666,
+          "mae": 7.4938654731990555,
+          "spearman_ci95": [
+            -0.03409090909090909,
+            0.8958041958041959
+          ]
+        },
+        {
+          "key": "k_cC_plus_delta",
+          "metric": "M_I",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": -0.04895104895104895,
+          "pearson": -0.17172747022982598,
+          "sign_agreement": 0.5833333333333334,
+          "mae": 1.1152478425917625,
+          "spearman_ci95": [
+            -0.8825174825174825,
+            0.5732517482517482
+          ]
+        },
+        {
+          "key": "k_cC_plus_delta",
+          "metric": "M_white",
+          "psi": "psi_I",
+          "n_scored": 12,
+          "spearman": -0.4545454545454546,
+          "pearson": -0.5656565664860925,
+          "sign_agreement": 0.25,
+          "mae": 5.715715844788641,
+          "spearman_ci95": [
+            -0.8305944055944057,
+            -0.061538461538461625
+          ]
+        },
+        {
+          "key": "k_cC",
+          "metric": "M_I",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": 0.4545454545454546,
+          "pearson": 0.2254041051413321,
+          "sign_agreement": 0.5833333333333334,
+          "mae": 1.0425563867908305,
+          "spearman_ci95": [
+            0.017132867132867134,
+            0.7832167832167832
+          ]
+        },
+        {
+          "key": "k_cC",
+          "metric": "M_white",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": 0.20979020979020982,
+          "pearson": 0.1981202233608188,
+          "sign_agreement": 0.5833333333333334,
+          "mae": 1.090123900504777,
+          "spearman_ci95": [
+            -0.29055944055944055,
+            0.7856643356643355
+          ]
+        },
+        {
+          "key": "k_tCB",
+          "metric": "M_I",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": 0.31468531468531474,
+          "pearson": 0.2348252303744142,
+          "sign_agreement": 0.6666666666666666,
+          "mae": 3.4718018514400995,
+          "spearman_ci95": [
+            -0.35437062937062946,
+            0.7302447552447553
+          ]
+        },
+        {
+          "key": "k_tCB",
+          "metric": "M_white",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": -0.3356643356643357,
+          "pearson": -0.286110710319189,
+          "sign_agreement": 0.5,
+          "mae": 23376.566411517906,
+          "spearman_ci95": [
+            -0.7715034965034966,
+            0.29195804195804187
+          ]
+        },
+        {
+          "key": "k_cC_plus_delta",
+          "metric": "M_I",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": -0.006993006993006993,
+          "pearson": -0.015182955743733288,
+          "sign_agreement": 0.4166666666666667,
+          "mae": 1.1464620057718733,
+          "spearman_ci95": [
+            -0.5034965034965035,
+            0.6227272727272725
+          ]
+        },
+        {
+          "key": "k_cC_plus_delta",
+          "metric": "M_white",
+          "psi": "psi_ridge",
+          "n_scored": 12,
+          "spearman": -0.11188811188811189,
+          "pearson": -0.21734411096420203,
+          "sign_agreement": 0.25,
+          "mae": 1.1717672505941683,
+          "spearman_ci95": [
+            -0.5181818181818183,
+            0.5017482517482517
+          ]
+        }
+      ],
+      "baseline_cos": {
+        "spearman": 0.41958041958041964,
+        "pearson": 0.24739285149935722,
+        "n_scored": 12
+      },
+      "null_shuffled_key": {
+        "mean": 0.20559440559440562,
+        "p5": -0.02097902097902098,
+        "p95": 0.5734265734265735,
+        "n": 20
+      },
+      "null_shuffled_query": {
+        "mean": 0.04335664335664335,
+        "p5": -0.5328671328671329,
+        "p95": 0.5500000000000002,
+        "n": 20
+      },
+      "has_tcb": true
+    }
+  ],
+  "noise_floor": {},
+  "reproducibility": {
+    "git_commit": "e5daf6a020a86a9c780900fd8cf7ad0fe1689fa8",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "python": "3.11.15",
+    "timestamp_utc": "2026-06-27T04:13:48+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "cuda_available": false,
+    "behavior": "sycophancy",
+    "layer": 0
+  }
+}

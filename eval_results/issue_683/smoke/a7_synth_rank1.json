@@ -1,0 +1,59 @@
+{
+  "behavior": "marker",
+  "layer": 14,
+  "rank1_energy_threshold": 0.5,
+  "scalarity_residual_threshold": 0.5,
+  "n_banks": 1,
+  "n_banks_rank1_holds": 1,
+  "behavior_rank1_holds": true,
+  "verdict": "rank1_scalar_gate",
+  "per_bank": [
+    {
+      "source": "A1",
+      "seed": 42,
+      "n_targets": 12,
+      "w_hat_norm": 1.0417347401153383,
+      "scalarity_residual_per_target": {
+        "C0": 0.4513916839181648,
+        "C1": 0.526982215161512,
+        "C2": 0.45503562465550834,
+        "C3": 0.3831517167313508,
+        "C4": 0.3563590899159607,
+        "C5": 0.2998912823221357,
+        "C6": 0.2833703612579733,
+        "C7": 0.27255208744522597,
+        "C8": 0.22568953178348444,
+        "C9": 0.2469903864398485,
+        "C10": 0.24585116805827215,
+        "C11": 0.21217947186212344
+      },
+      "scalarity_residual_median": 0.2916308217900545,
+      "sigma1_sq_frac": 0.9462014801798578,
+      "sigma2_over_sigma1": 0.09680900655292846,
+      "cos_u1_what": 0.9845666147572235,
+      "singular_values_top8": [
+        2.1289485332856364,
+        0.20610139250969658,
+        0.18831010422377584,
+        0.18306272105431703,
+        0.16353850640078185,
+        0.15565649872643644,
+        0.14757824682343856,
+        0.1411486948317247
+      ],
+      "rank1_holds": true,
+      "bank_path": "eval_results/issue_683/smoke/synthetic_rank1/dv/A1_L0.pt"
+    }
+  ],
+  "reproducibility": {
+    "git_commit": "e5daf6a020a86a9c780900fd8cf7ad0fe1689fa8",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "python": "3.11.15",
+    "timestamp_utc": "2026-06-27T04:07:36+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "cuda_available": false,
+    "behavior": "marker",
+    "layer": 14
+  }
+}

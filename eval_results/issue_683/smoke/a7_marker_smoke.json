@@ -1,0 +1,41 @@
+{
+  "behavior": "marker",
+  "layer": 14,
+  "rank1_energy_threshold": 0.5,
+  "scalarity_residual_threshold": 0.5,
+  "n_banks": 1,
+  "n_banks_rank1_holds": 0,
+  "behavior_rank1_holds": false,
+  "verdict": "low_rank_fallback_required",
+  "per_bank": [
+    {
+      "source": "A1",
+      "seed": null,
+      "n_targets": 1,
+      "w_hat_norm": 0.0,
+      "scalarity_residual_per_target": {
+        "A2": NaN
+      },
+      "scalarity_residual_median": NaN,
+      "sigma1_sq_frac": NaN,
+      "sigma2_over_sigma1": NaN,
+      "cos_u1_what": NaN,
+      "singular_values_top8": [
+        0.0
+      ],
+      "rank1_holds": false,
+      "bank_path": "eval_results/issue_683/analysis_tensors/dv_smoke/marker/A1_L1.pt"
+    }
+  ],
+  "reproducibility": {
+    "git_commit": "e5daf6a020a86a9c780900fd8cf7ad0fe1689fa8",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "python": "3.11.15",
+    "timestamp_utc": "2026-06-27T04:05:42+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "cuda_available": false,
+    "behavior": "marker",
+    "layer": 14
+  }
+}
