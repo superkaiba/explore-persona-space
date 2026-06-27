@@ -14,6 +14,7 @@ goal: Measure how a context's last-token residual-stream activation summary (the
   vector) shifts when a behavioral instruction is appended, across diverse contexts,
   behaviors, and layers, and test whether the shift is a single context-independent
   behavior direction.
+track: experiment
 ---
 # Context-vector shift induced by appending a behavioral instruction (context vs context + instruction)
 
