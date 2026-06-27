@@ -15,8 +15,23 @@ WIRING the CLI adds on top of the reaper:
 * report-only is the default and ``EPS_GCP_JANITOR_DRY_RUN=1`` neuters
   ``--delete``.
 
+Broadened-scope CLI coverage (#688) — driven via ``cli.main([...])`` so a
+library-only suite that drives ``audit_stale_gcp_vms`` directly cannot tell
+"CLI fix worked" from "CLI never wired the escalation callback":
+
+* CLI-(a) an UNMANAGED stale VM under ``--delete`` is escalated (rc=0, sidecar
+  row written, Telegram stub fired once, NO delete argv);
+* CLI-(b) the same VM in report-only is ``would-escalate`` with NO side-effect;
+* CLI-(c) a failed broadened-filter preflight still returns rc=3;
+* CLI-(d) the text-branch summary drops ``eps-issue-*`` and carries per-class
+  counts;
+* REC1 a missing/failing Telegram script is fail-soft (still escalated, sidecar
+  still written, rc=0).
+
 Every test mocks the ``gcloud`` subprocess via the injected runner seam reused
-from ``test_gcp_backend`` — no test hits a real GCP project.
+from ``test_gcp_backend`` — no test hits a real GCP project. The escalation
+side-effects are redirected to a ``tmp_path`` sidecar + a Telegram-stub script
+via the ``EPM_GCP_JANITOR_SIDECAR`` / ``EPM_TELEGRAM_PUSH_SCRIPT`` env overrides.
 """
 
 from __future__ import annotations
@@ -201,6 +216,174 @@ def test_cli_json_shape_clean_run(monkeypatch, capsys) -> None:
     assert set(out) >= {"list_rc", "list_stderr", "records"}
     assert out["list_rc"] == 0
     assert isinstance(out["records"], list)
+
+
+# ---------------------------------------------------------------------------
+# Broadened scope (#688): CLI-surface escalation wiring — driven via cli.main.
+# ---------------------------------------------------------------------------
+
+
+def _unmanaged_stale_payload(name: str = "random-dev-vm-x") -> str:
+    """One UNMANAGED (non-eps-issue-*, non-allowlisted) stale VM aged ≥24h."""
+    return json.dumps([_vm(name, "RUNNING", (_NOW - timedelta(hours=30)).isoformat())])
+
+
+def _wire_escalation(monkeypatch, tmp_path, *, telegram_rc: int = 0):
+    """Point the sidecar at a tmp file + the Telegram push at a stub script.
+
+    Returns ``(sidecar_path, push_log_path)``. The stub appends one line to
+    ``push_log_path`` per invocation and exits ``telegram_rc`` — so a test can
+    assert the push fired N times AND exercise the fail-soft (rc≠0) path."""
+    sidecar = tmp_path / "gcp-janitor-events.jsonl"
+    push_log = tmp_path / "telegram_push.log"
+    stub = tmp_path / "telegram_push_stub.sh"
+    stub.write_text(f'#!/bin/bash\necho "$@" >> "{push_log}"\nexit {telegram_rc}\n')
+    stub.chmod(0o755)
+    monkeypatch.setenv("EPM_GCP_JANITOR_SIDECAR", str(sidecar))
+    monkeypatch.setenv("EPM_TELEGRAM_PUSH_SCRIPT", str(stub))
+    return sidecar, push_log
+
+
+def test_cli_unmanaged_under_delete_escalates_rc0(monkeypatch, capsys, tmp_path) -> None:
+    """CLI-(a): an unmanaged stale VM under ``--delete --json`` → rc=0, a record
+    with action=escalated + classification=unmanaged, EXACTLY ONE sidecar row,
+    the Telegram stub fired EXACTLY ONCE, and NO delete argv for that name."""
+    sidecar, push_log = _wire_escalation(monkeypatch, tmp_path)
+    payload = _unmanaged_stale_payload()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, payload, ""), GcloudRunResult(0, payload, "")],
+    )
+    _pin_now(monkeypatch, runner=runner)
+    rc = cli.main(["--delete", "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    rec = out["records"][0]
+    assert rec["action"] == "escalated"
+    assert rec["classification"] == "unmanaged"
+    # Exactly one sidecar row of the expected shape.
+    rows = [json.loads(ln) for ln in sidecar.read_text().splitlines() if ln.strip()]
+    assert len(rows) == 1
+    assert rows[0]["name"] == "random-dev-vm-x"
+    assert rows[0]["classification"] == "unmanaged"
+    assert "age_seconds" in rows[0] and "ts" in rows[0]
+    # Telegram stub fired exactly once.
+    assert push_log.exists()
+    assert len([ln for ln in push_log.read_text().splitlines() if ln.strip()]) == 1
+    # NEVER a delete for an unmanaged VM.
+    assert not any("delete" in c and "instances" in c for c in runner.calls)
+
+
+def test_cli_unmanaged_report_only_would_escalate_no_side_effect(
+    monkeypatch, capsys, tmp_path
+) -> None:
+    """CLI-(b): the same VM WITHOUT ``--delete`` → rc=0, action=would-escalate,
+    NO sidecar row, NO Telegram push, NO delete argv (report-only fires nothing)."""
+    sidecar, push_log = _wire_escalation(monkeypatch, tmp_path)
+    payload = _unmanaged_stale_payload()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, payload, ""), GcloudRunResult(0, payload, "")],
+    )
+    _pin_now(monkeypatch, runner=runner)
+    rc = cli.main(["--json"])  # no --delete
+    out = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert out["records"][0]["action"] == "would-escalate"
+    assert out["records"][0]["classification"] == "unmanaged"
+    assert not sidecar.exists()
+    assert not push_log.exists()
+    assert not any("delete" in c and "instances" in c for c in runner.calls)
+
+
+def test_cli_list_failed_returns_rc3_under_broadened_filter(monkeypatch, capsys, tmp_path) -> None:
+    """CLI-(c): the broadened (--filter-less) preflight list FAILING → rc=3
+    (preserved disarmed-janitor alarm), list_rc surfaced, no records, reaper
+    NEVER invoked, sidecar NOT written, Telegram NOT fired."""
+    sidecar, push_log = _wire_escalation(monkeypatch, tmp_path)
+    runner = _Runner(list_results=[GcloudRunResult(1, "", "Reauthentication failed")])
+    _pin_now(monkeypatch, runner=runner)
+    rc = cli.main(["--delete", "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert rc == 3
+    assert out["list_rc"] == 1
+    assert out["records"] == []
+    # Reaper never ran → no delete; exactly one list (the preflight).
+    assert not any("delete" in c and "instances" in c for c in runner.calls)
+    assert sum(1 for c in runner.calls if "list" in c and "instances" in c) == 1
+    assert not sidecar.exists()
+    assert not push_log.exists()
+
+
+def test_cli_text_summary_drops_eps_issue_prefix_and_reports_classification_counts(
+    monkeypatch, capsys, tmp_path
+) -> None:
+    """CLI-(d): the TEXT branch (no --json) over a mixed managed + allowlisted +
+    unmanaged + keep inventory drops the literal ``eps-issue-*`` from the header
+    and carries per-class counts (managed/allowlisted-ephemeral/unmanaged/keep)."""
+    monkeypatch.setattr("explore_persona_space.backends.gcp._JANITOR_KEEP_PREFIXES", ("keep-",))
+    _wire_escalation(monkeypatch, tmp_path)
+    old = (_NOW - timedelta(hours=30)).isoformat()
+    payload = json.dumps(
+        [
+            _vm("eps-issue-100", "TERMINATED", old),  # managed
+            _vm("eps-cap-probe2-1786331", "TERMINATED", old),  # allowlisted-ephemeral
+            _vm("random-dev-vm-x", "RUNNING", old),  # unmanaged
+            _vm("keep-mydevbox", "RUNNING", old),  # keep
+        ]
+    )
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, payload, ""), GcloudRunResult(0, payload, "")],
+    )
+    _pin_now(monkeypatch, runner=runner)
+    rc = cli.main([])  # report-only TEXT branch (no --json)
+    out = capsys.readouterr().out
+    assert rc == 0
+    # The header drops the literal eps-issue-* token.
+    header = out.splitlines()[0]
+    assert "eps-issue-*" not in header
+    # Per-class counts present (order-independent — the impl sorts alphabetically).
+    assert "managed=1" in out
+    assert "allowlisted-ephemeral=1" in out
+    assert "unmanaged=1" in out
+    assert "keep=1" in out
+
+
+def test_cli_telegram_push_failure_is_fail_soft(monkeypatch, capsys, tmp_path) -> None:
+    """REC1: a Telegram script that exits non-zero does NOT abort escalation —
+    the record still gets action=escalated, the sidecar row is still written,
+    and the CLI still returns rc=0 (the push is observability, not a gate)."""
+    sidecar, _push_log = _wire_escalation(monkeypatch, tmp_path, telegram_rc=1)
+    payload = _unmanaged_stale_payload()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, payload, ""), GcloudRunResult(0, payload, "")],
+    )
+    _pin_now(monkeypatch, runner=runner)
+    rc = cli.main(["--delete", "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert rc == 0  # push failure never bumps the exit code
+    assert out["records"][0]["action"] == "escalated"
+    # The durable sidecar row stands even though the push failed.
+    rows = [json.loads(ln) for ln in sidecar.read_text().splitlines() if ln.strip()]
+    assert len(rows) == 1
+    assert rows[0]["name"] == "random-dev-vm-x"
+
+
+def test_cli_telegram_push_script_missing_is_fail_soft(monkeypatch, capsys, tmp_path) -> None:
+    """REC1 (sibling): a MISSING Telegram script is also fail-soft — escalation
+    continues (record escalated, sidecar written, rc=0)."""
+    sidecar = tmp_path / "gcp-janitor-events.jsonl"
+    monkeypatch.setenv("EPM_GCP_JANITOR_SIDECAR", str(sidecar))
+    monkeypatch.setenv("EPM_TELEGRAM_PUSH_SCRIPT", str(tmp_path / "does-not-exist.sh"))
+    payload = _unmanaged_stale_payload()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, payload, ""), GcloudRunResult(0, payload, "")],
+    )
+    _pin_now(monkeypatch, runner=runner)
+    rc = cli.main(["--delete", "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert out["records"][0]["action"] == "escalated"
+    rows = [json.loads(ln) for ln in sidecar.read_text().splitlines() if ln.strip()]
+    assert len(rows) == 1
 
 
 # ---------------------------------------------------------------------------
