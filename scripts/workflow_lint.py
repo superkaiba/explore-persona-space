@@ -19,7 +19,8 @@ Behaviours:
   no-flags default run): walk every ``.md`` under ``.claude/agents/`` and
   every ``SKILL.md`` under ``.claude/skills/`` (excluding OTHER worktrees
   under ``.claude/worktrees/<name>/`` — the worktree we are currently
-  running from IS scanned so workflow-improver can validate its own edits;
+  running from IS scanned so a workflow-fix `/issue` session's implementer
+  can validate its own edits;
   see :func:`_other_worktree_prefix` for the scoping rule) and FAIL on
   any ``scripts/<name>.py`` reference whose target does not exist under
   ``scripts/``. Mechanically prevents the dead-tool / invented-tool
@@ -565,7 +566,7 @@ BATCH_JUDGE_SANCTIONED_FILES: tuple[str, ...] = (
 # / `build_*` / `gen_*` / `run_a3*` rows); ONE is NOT data-gen and is flagged
 # inline so the rationale stays honest — `analyze_axis_tails.py` is an
 # LLM-taxonomy ANALYSIS classifier. All are experiment code, OUT of the
-# workflow-improver edit scope, so they are grandfathered in the lint
+# workflow-surface edit scope, so they are grandfathered in the lint
 # (the MARKER_REGISTRY_ALLOWLIST model) rather than waiver-commented per-file —
 # this lands the check green without touching experiment scripts. A NEW offender
 # is never added here (the `# BATCH_JUDGE_CLIENT_EXEMPT:` waiver is the path for
@@ -737,7 +738,8 @@ def _other_worktree_prefix(repo_root: Path) -> str | None:
       ``".claude/worktrees/"`` substring (original behaviour).
     * Invoked from ``/.../explore-persona-space/.claude/worktrees/<X>``
       (a worktree): scanning ``<X>``'s own files is exactly what
-      ``workflow-improver`` needs to validate its edits, but scanning
+      a workflow-fix `/issue` session's implementer needs to validate its
+      edits, but scanning
       OTHER worktrees ``<Y>``, ``<Z>``, … is wrong (stale duplicates) —
       AND the worktree's own ``.claude/skills/**/SKILL.md`` paths contain
       ``.claude/worktrees/`` as a substring, so a naive
@@ -797,8 +799,8 @@ def _iter_ask_target_files(repo_root: Path) -> list[Path]:
     every ``.md`` under ``.claude/agents/`` and every ``SKILL.md`` under
     ``.claude/skills/``, excluding paths that belong to OTHER worktrees
     (frozen sibling copies that are not authoritative). The worktree we
-    are currently running from IS scanned so a workflow-improver running
-    inside a worktree can validate its own edits.
+    are currently running from IS scanned so a workflow-fix `/issue`
+    session's implementer running inside a worktree can validate its own edits.
     """
     agents_root = repo_root / ".claude" / "agents"
     skills_root = repo_root / ".claude" / "skills"
@@ -1508,7 +1510,8 @@ def check_marker_registry(
     ``_REPO_ROOT`` (``.claude/skills`` recursive, ``.claude/agents``
     flat), and sibling worktrees live under ``.claude/worktrees/`` —
     outside both roots — so they are inherently out of scope and the
-    worktree a workflow-improver runs from scans its own copies (same
+    worktree a workflow-fix `/issue` session's implementer runs from scans
+    its own copies (same
     property ``_other_worktree_prefix`` documents for the recursive
     walks).
 
@@ -2158,6 +2161,87 @@ def check_batch_judge_client(
     return errors
 
 
+# A live ``Agent(... subagent_type="workflow-improver" ...)`` spawn instruction.
+# Tolerant of whitespace/newlines between the call open and the kwarg and of
+# either quote style. The frozen agent file (`.claude/agents/workflow-improver.md`)
+# carries its `name:` + DEPRECATED banner and is excluded; this pattern targets
+# a live SPAWN site, not a descriptive mention of the word.
+_WF_IMPROVER_SPAWN_RE = re.compile(
+    r"""Agent\([^)]*subagent_type\s*=\s*["']workflow-improver["']""",
+    re.DOTALL,
+)
+
+
+def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if any live ``Agent(subagent_type="workflow-improver", ...)`` spawn remains.
+
+    Retired by #678: workflow-surface fixes are filed as ``kind: infra`` tasks and
+    implemented by a background ``/issue <N> --auto`` session, NEVER an
+    ``Agent(workflow-improver)`` spawn. The frozen agent file keeps its
+    DEPRECATED banner so a stale ``subagent_type="workflow-improver"`` fails loud
+    rather than silently mis-routing; it is EXCLUDED from this scan. A stray
+    spawn instruction anywhere else in the workflow surface is a regression.
+
+    Pure-Python (no ``rg`` dependency, so the bundled pytest is hermetic). Scans
+    ``.claude/`` (excluding ``worktrees/`` sibling copies, ``cache/``,
+    ``agent-memory/`` and the frozen agent file), ``CLAUDE.md``, and ``scripts/``
+    (excluding THIS lint script, which carries the spawn pattern as the detector
+    regex / docstring by construction); ``tasks/`` is out of the workflow surface
+    and never scanned. ``repo_root`` is a unit-test override hook; production
+    callers pass None (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    current_prefix = _other_worktree_prefix(root)
+    # Excluded: the frozen agent file (deprecated banner + historical body) and
+    # THIS lint script itself (it carries the spawn pattern as a regex literal /
+    # docstring / error-message / flag-help string by construction — those are
+    # the detector, not a live spawn site).
+    excluded = {
+        (root / ".claude" / "agents" / "workflow-improver.md").resolve(),
+        (root / "scripts" / "workflow_lint.py").resolve(),
+    }
+
+    targets: list[Path] = []
+    claude_dir = root / ".claude"
+    if claude_dir.exists():
+        for p in claude_dir.rglob("*"):
+            if not p.is_file() or p.suffix not in {".md", ".yaml", ".yml", ".py", ".sh"}:
+                continue
+            s = p.as_posix()
+            if "/.claude/cache/" in s or "/.claude/agent-memory/" in s:
+                continue
+            if _is_other_worktree_path(p, current_prefix):
+                continue
+            if p.resolve() in excluded:
+                continue
+            targets.append(p)
+    claude_md = root / "CLAUDE.md"
+    if claude_md.is_file():
+        targets.append(claude_md)
+    scripts_dir = root / "scripts"
+    if scripts_dir.exists():
+        targets.extend(
+            p for p in scripts_dir.rglob("*.py") if p.is_file() and p.resolve() not in excluded
+        )
+        targets.extend(p for p in scripts_dir.rglob("*.sh") if p.is_file())
+
+    errors: list[str] = []
+    for p in sorted(set(targets)):
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for m in _WF_IMPROVER_SPAWN_RE.finditer(text):
+            lineno = text.count("\n", 0, m.start()) + 1
+            errors.append(
+                f'{p}:{lineno}: stale Agent(subagent_type="workflow-improver", ...) spawn. '
+                f"Retired by #678 — workflow-surface fixes route through a filed kind:infra "
+                f"task + a background /issue <N> --auto session (see "
+                f".claude/rules/workflow-fix-on-bug.md), never an Agent(workflow-improver) spawn."
+            )
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -2403,6 +2487,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "'# BATCH_JUDGE_CLIENT_EXEMPT: <reason>'. Bundled into the no-flags "
         "default run.",
     )
+    parser.add_argument(
+        "--check-no-workflow-improver-spawn",
+        action="store_true",
+        help='FAIL if any live Agent(subagent_type="workflow-improver", ...) '
+        "spawn instruction survives anywhere in the workflow surface "
+        "(.claude/, CLAUDE.md, scripts/; the frozen .claude/agents/"
+        "workflow-improver.md, worktree sibling copies, cache/, agent-memory/, "
+        "and tasks/ are excluded). Retired by #678: workflow-surface fixes are "
+        "filed as kind:infra tasks + implemented by a background /issue <N> "
+        "--auto session, never a workflow-improver subagent spawn. Bundled into "
+        "the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -2433,6 +2529,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_agent_model_pins
         or args.check_upload_as_file
         or args.check_batch_judge_client
+        or args.check_no_workflow_improver_spawn
     )
 
     errors: list[str] = []
@@ -2480,6 +2577,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_as_file())
     if args.check_batch_judge_client or no_flags:
         errors.extend(check_batch_judge_client())
+    if args.check_no_workflow_improver_spawn or no_flags:
+        errors.extend(check_no_workflow_improver_spawn())
 
     if errors:
         for err in errors:

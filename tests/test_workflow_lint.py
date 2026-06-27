@@ -43,6 +43,7 @@ from workflow_lint import (  # noqa: E402
     check_dispatcher_cvd_pin,
     check_heredoc_dotenv,
     check_marker_registry,
+    check_no_workflow_improver_spawn,
     check_script_references,
     check_upload_as_file,
     check_wandb_required,
@@ -1923,5 +1924,56 @@ def test_workflow_lint_check_batch_judge_client_cli_exits_zero():
     result = _run("--check-batch-judge-client")
     assert result.returncode == 0, (
         f"workflow_lint --check-batch-judge-client failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ─── --check-no-workflow-improver-spawn (#678 S2) ──────────────────────────
+
+
+def test_no_stale_workflow_improver_spawn():
+    """No live Agent(subagent_type="workflow-improver", ...) spawn survives
+    anywhere in the committed workflow surface (#678). The frozen agent file is
+    excluded; a live spawn instruction anywhere else is a regression."""
+    errors = check_no_workflow_improver_spawn()
+    assert errors == [], (
+        'stale Agent(subagent_type="workflow-improver", ...) spawn found in the '
+        "workflow surface (retired by #678):\n" + "\n".join(errors)
+    )
+
+
+def test_check_no_workflow_improver_spawn_flags_a_stray_spawn(tmp_path):
+    """A live Agent(subagent_type="workflow-improver", ...) spawn in any
+    in-scope file (here a rule .md) IS flagged — the guard actually trips."""
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "stray.md").write_text(
+        "When a bug is hit, the orchestrator runs\n"
+        'Agent(subagent_type="workflow-improver", run_in_background=true)\n'
+        "to apply the fix.\n"
+    )
+    errors = check_no_workflow_improver_spawn(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "stale Agent" in errors[0]
+
+
+def test_check_no_workflow_improver_spawn_excludes_frozen_agent_file(tmp_path):
+    """The frozen .claude/agents/workflow-improver.md is excluded even if its
+    (deprecated, historical) body still shows a spawn shape."""
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    (agents / "workflow-improver.md").write_text(
+        "---\nname: workflow-improver\n---\n"
+        '> DEPRECATED. (historical) Agent(subagent_type="workflow-improver", ...)\n'
+    )
+    errors = check_no_workflow_improver_spawn(repo_root=tmp_path)
+    assert errors == [], errors
+
+
+def test_workflow_lint_check_no_workflow_improver_spawn_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-no-workflow-improver-spawn")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-no-workflow-improver-spawn failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
