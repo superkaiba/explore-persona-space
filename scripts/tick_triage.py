@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 import tempfile
 import time
@@ -79,6 +80,48 @@ CAMPAIGN_CHILD_DONEISH = CAMPAIGN_CHILD_LANDED | {"archived"}
 
 STALE_S_DEFAULT = 25 * 60  # the tick skills' long-standing ~25-min staleness window
 RUNAWAY_STREAK_DEFAULT = 3
+
+# VM root-disk band labels mirrored from autonomous_session_watch (task #679):
+# the tick snapshot carries the same coarse band so a cron-driven tick surfaces
+# the same disk signal the watcher writes. Thresholds in GiB-bytes, ordered
+# critical < low < sub-floor < ok. Overridable via the SAME env knobs the
+# watcher reads, so the two never drift.
+_GIB = 2**30
+
+
+def _env_gib_bytes(name: str, default_gib: float) -> int:
+    """GiB env knob -> bytes (garbled/non-positive -> default; never raises)."""
+    try:
+        val = float(os.environ.get(name, ""))
+    except ValueError:
+        return int(default_gib * _GIB)
+    if not (0 < val < 2**20):
+        return int(default_gib * _GIB)
+    return int(val * _GIB)
+
+
+def root_disk_band(free_bytes: int) -> str:
+    """Coarse VM-root headroom band for the tick snapshot, mirroring the
+    watcher's labels: ``critical`` (<15 GiB) / ``low`` (<20 GiB) /
+    ``sub-floor`` (<60 GiB) / ``ok`` (>=60 GiB)."""
+    if free_bytes < _env_gib_bytes("EPM_VM_DISK_CRITICAL_GIB", 15):
+        return "critical"
+    if free_bytes < _env_gib_bytes("EPM_VM_DISK_ALERT_GIB", 20):
+        return "low"
+    if free_bytes < _env_gib_bytes("EPM_VM_DISK_SUBFLOOR_GIB", 60):
+        return "sub-floor"
+    return "ok"
+
+
+def root_disk_snapshot() -> dict | None:
+    """``{band, free_gib}`` for the VM root, or ``None`` if disk usage cannot
+    be read (the snapshot then simply omits the disk fields — never a crash)."""
+    try:
+        free = shutil.disk_usage("/").free
+    except OSError:
+        return None
+    return {"band": root_disk_band(free), "free_gib": round(free / _GIB, 1)}
+
 
 # Watcher-posted campaign markers carry this sentinel in their note; they are
 # alerts, not campaign progress, so they never count as freshness.
@@ -127,6 +170,12 @@ def write_snapshot(issue: int, status: str, terminal_streak: int) -> None:
         "ts": datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "terminal_streak": terminal_streak,
     }
+    # VM root-disk band, mirroring the watcher's labels (task #679): a
+    # cron-driven tick surfaces the same disk signal the watcher writes. Omitted
+    # when disk usage can't be read (never blocks the snapshot).
+    disk = root_disk_snapshot()
+    if disk is not None:
+        payload["root_disk"] = disk
     fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=f".{issue}-")
     try:
         with os.fdopen(fd, "w") as fh:
