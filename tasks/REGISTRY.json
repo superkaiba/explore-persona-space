@@ -4059,8 +4059,8 @@
       "goal": "Test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features, via two probes \u2014 (A) the base model's autoregressive write\u2192read map under random-bias steering, and (B) how real finetunes shift activations across the rank ladder (rank-1 LoRA \u2192 higher-rank LoRA \u2192 full fine-tuning) \u2014 run across \u22653 installed behaviors and a few source contexts (not a single behavior/context) so the verdict generalizes, characterizing in each whether the structure is low-rank and read\u2194write-aligned (clean) versus rotated or diffuse, and whether that verdict is consistent across behavior, context, and edit rank.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/653",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/653",
+      "status": "awaiting_promotion",
       "title": "On the two sycophancy rank-16 LoRA cells that installed strongly, the activation shift is diffuse (rank-k 39/45) and unaligned with the behavior read-out; cross-behavior, cross-rank and full-FT generalization is untested (2 of 18 cells installed) (LOW confidence)"
     },
     "654": {
