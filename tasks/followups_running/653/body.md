@@ -28,7 +28,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_653.md](https://github.com/superkaiba/explore-persona-space/blob/bfe68c0c613104dcd27f4ecbe1157fcca7342406/docs/methodology/issue_653.md) · [gist](https://gist.github.com/superkaiba/e324b6ee89555c5ad6d9f53071f651da)
+**Methodology:** [docs/methodology/issue_653.md](https://github.com/superkaiba/explore-persona-space/blob/1e0097e05062d6a93180422fb096ffbb1aa1551e/docs/methodology/issue_653.md) · [gist](https://gist.github.com/superkaiba/e324b6ee89555c5ad6d9f53071f651da)
 
 ## Takeaways
 
@@ -214,7 +214,7 @@ For the complete hyperparameter set (every training + eval + generation value, e
 - Re-ladder figures (used inline): [figures/issue_653/install-validated-reladder/](https://github.com/superkaiba/explore-persona-space/tree/3f32d6606e3a614dc948d9ca3e58fbe7eadaea3e/figures/issue_653/install-validated-reladder)
 - First-round eval JSONs + figures (arm-A figure carried inline): [eval_results/issue_653/](https://github.com/superkaiba/explore-persona-space/tree/c31e6bde1c302864b5cacc29063b89664c0ad87f/eval_results/issue_653) · [figures/issue_653/](https://github.com/superkaiba/explore-persona-space/tree/9d306a088cf40c3d6ee20e793434ad70c525e3b9/figures/issue_653)
 - Reused: EM positives from [#519](https://eps.superkaiba.com/tasks/519) Turner bad-medical-advice corpus (`issue_519/em_seed42.jsonl`, re-keyed) — fit: published-corpus replication-fidelity exemption, contrastive negatives regenerated on-policy under the #653 panel. EM never installed at any rank in either round.
-- **Methodology reference:** [docs/methodology/issue_653.md](https://github.com/superkaiba/explore-persona-space/blob/bfe68c0c613104dcd27f4ecbe1157fcca7342406/docs/methodology/issue_653.md) · [gist](https://gist.github.com/superkaiba/e324b6ee89555c5ad6d9f53071f651da)
+- **Methodology reference:** [docs/methodology/issue_653.md](https://github.com/superkaiba/explore-persona-space/blob/1e0097e05062d6a93180422fb096ffbb1aa1551e/docs/methodology/issue_653.md) · [gist](https://gist.github.com/superkaiba/e324b6ee89555c5ad6d9f53071f651da)
 
 **Compute:**
 
