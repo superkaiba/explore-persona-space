@@ -19,11 +19,13 @@ import pytest
 
 from explore_persona_space.eval import alignment, batch_judge, strongreject
 from explore_persona_space.eval.batch_judge import (
+    MAX_JUDGE_REQUESTS_PER_BATCH,
     MAX_REQUESTS_PER_BATCH,
     JudgeCache,
     _chunk_requests,
 )
 from explore_persona_space.eval.judge_dispatch import (
+    DEFAULT_SUB_BATCH_SIZE,
     _collect_batch_results,
     decide_route,
     dispatch_judge_items,
@@ -221,10 +223,11 @@ def test_force_sync_overrides():
 
 
 def test_sub_batch_split(monkeypatch):
-    # DEFAULT_SUB_BATCH_SIZE dropped 10_000 -> 8_000 (#663 §11): 25_000 now
-    # shards into 8k/8k/8k/1k instead of 10k/10k/5k.
+    # DEFAULT_SUB_BATCH_SIZE is the 2_000 judge shard ceiling (#658): the router
+    # defaults all judges to 2k, NOT the general 8k cap (an 8k judge batch starves
+    # — the #658 G1 wedge). 25_000 -> twelve 2k shards + one 1k remainder.
     d = decide_route(25_000, otpm=400_000)
-    assert d.sub_batch_sizes == [8_000, 8_000, 8_000, 1_000]
+    assert d.sub_batch_sizes == [2_000] * 12 + [1_000]
     # Byte-cap path via the reused batch_judge._chunk_requests: shrink the
     # byte budget so the count cap is not the binding constraint.
     monkeypatch.setattr(batch_judge, "MAX_BATCH_SIZE_BYTES", 1_000)
@@ -237,6 +240,20 @@ def test_sub_batch_split(monkeypatch):
     assert sum(len(c) for c in chunks) == 10
     for chunk in chunks:
         assert sum(len(json.dumps(r).encode()) for r in chunk) <= 1_000 or len(chunk) == 1
+
+
+def test_judge_router_default_is_the_judge_ceiling():
+    """The judge router default MUST stay at the 2k judge shard ceiling (#658).
+
+    Regression lock: an 8k judge batch starves (the #658 G1 wedge — a single 8k
+    judge shard sat at succeeded:0 for ~9h). Binding DEFAULT_SUB_BATCH_SIZE to
+    MAX_JUDGE_REQUESTS_PER_BATCH keeps the ceiling and the default from drifting
+    apart, so no judge caller (e.g. #664's issue664_dispatch.py) silently inherits
+    8k again. If a future change wants a different judge shard size, change the
+    ceiling — not just one of the two constants.
+    """
+    assert DEFAULT_SUB_BATCH_SIZE == MAX_JUDGE_REQUESTS_PER_BATCH
+    assert DEFAULT_SUB_BATCH_SIZE <= 2_000
 
 
 # ── #663 Test 1: chunking at the request limit ───────────────────────────────

@@ -104,7 +104,20 @@ JudgeItem = tuple[str, str, str, str]  # (custom_id, question, completion, user_
 
 # Routing constants (user-decided, plan §11; configurable per call).
 DEFAULT_THRESHOLD_BASE = 2_000
-DEFAULT_SUB_BATCH_SIZE = 8_000  # was 10_000 — shard small for blast-radius isolation (#663 §11)
+# Judge sub-batches default to the JUDGE shard ceiling (2_000), NOT the general
+# 8_000 batch cap. An 8k judge batch STARVES — the API schedules a large judge
+# set behind everyone else's traffic (the #658 G1 wedge: one 8k judge shard sat
+# at succeeded:0 for ~9h), while ~500-2k judge shards clear in minutes. EVERY
+# caller through this router (judge_completions_batch / dispatch_judge_items —
+# e.g. #664's issue664_dispatch.py) inherits this; only explicit non-judge batch
+# callers keep batch_judge.MAX_REQUESTS_PER_BATCH (8k). Bound to the ceiling
+# constant (single source of truth) so the default can never drift back to 8k.
+# 2_000 == batch_judge.MAX_JUDGE_REQUESTS_PER_BATCH (kept a literal here to avoid
+# a top-level batch_judge import — that closes a judge_dispatch -> batch_judge ->
+# alignment -> judge_dispatch cycle; batch_judge is imported lazily elsewhere).
+# test_judge_dispatch.test_judge_router_default_is_the_judge_ceiling locks the two
+# equal so the default can never drift back to 8k.
+DEFAULT_SUB_BATCH_SIZE = 2_000  # judge shard ceiling (#658); see note above
 OTPM_DIVISOR = 400_000  # Tier-4 Sonnet 4.x output-tokens-per-minute
 DEFAULT_MAX_CONCURRENT = 50
 DEFAULT_MAX_TOKENS = 256

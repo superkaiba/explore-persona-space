@@ -53,8 +53,14 @@ MAX_REQUESTS_PER_BATCH = 8_000  # was 100_000 — engineering choice (#663 §11)
 # at succeeded:0 for 9h before its expires_at deadline would even have fired).
 # 2_000 is the conservative ceiling that keeps shards small enough to clear;
 # the sibling api_dispatch path uses DEFAULT_BATCH_CHUNK_SIZE=1_000 in the same
-# 500-2000 band. Distinct from MAX_REQUESTS_PER_BATCH so the 8k default for the
-# #389 / #528 / #664 / #668 batch callers (+ their pinned tests) is untouched.
+# 500-2000 band. This is the DEFAULT for the whole judge router (judge_dispatch
+# imports it as DEFAULT_SUB_BATCH_SIZE), so EVERY judge through
+# judge_completions_batch / dispatch_judge_items — including #664's
+# issue664_dispatch.py — shards at 2k automatically. MAX_REQUESTS_PER_BATCH (8k)
+# stays distinct and applies ONLY to the non-router direct-batch paths in THIS
+# file: the legacy _submit_and_poll_batch (#389) + submit_sharded_batches_fire_and_forget
+# (#528). (Before #664: the 8k was wrongly the router default too, so #664's
+# judge would have starved at 8k — see judge_dispatch.DEFAULT_SUB_BATCH_SIZE.)
 MAX_JUDGE_REQUESTS_PER_BATCH = 2_000  # judge shard ceiling (#658); see note above
 MAX_BATCH_SIZE_BYTES = 250 * 1024 * 1024  # 250 MB safe margin under the 256 MB hard cap
 
