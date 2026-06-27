@@ -29,11 +29,11 @@ relates_to:
 
 ## Takeaways
 
-- No sycophancy bank clears its wide shuffled-key chance null: the best key per bank reaches at most **ρ = +0.718** (CI lower +0.426) but the null p95 sits at **+0.428**.
-- A base-model training-completion key (`k_tCB`) beats the paper's context-only key (`k_cC`) in only **1 of 4** sycophancy banks (villain seed 42, **ρ = +0.749**); a second source flips its sign.
+- No sycophancy bank clears its shuffled-key chance null: best per-bank **ρ = +0.718** (CI lower +0.426) versus null p95 **+0.428**.
+- A base-model training-completion key (`k_tCB`) beats the context-only key (`k_cC`) in only **1 of 4** sycophancy banks (villain seed 42, **ρ = +0.749**); a second source flips the sign.
 - Only the marker clears its own null, for **2 of 5** sources: A4 displacement-key **ρ = +0.659** and A5 training-completion-key **ρ = +0.732** (CI lowers +0.443 / +0.471).
 - No single source key wins across behaviors or even across the four sycophancy banks; the winning key is source-dependent everywhere it is positive.
-- The strict rank-1 precondition fails for both (marker **1/5** banks, sycophancy **0/4**); the dominant SVD component still tracks the gate at **ρ = 0.85–0.97** (sycophancy), 0.30–0.98 (marker).
+- The strict rank-1 precondition fails for both (marker **1/5**, sycophancy **0/4**); `g₁` still tracks the gate at **ρ = 0.85–0.97** (sycophancy), 0.30–0.98 (marker).
 
 ## Goal
 
