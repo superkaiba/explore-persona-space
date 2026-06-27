@@ -4326,8 +4326,8 @@
     "686": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/686",
-      "status": "approved",
+      "path": "tasks/reviewing/686",
+      "status": "reviewing",
       "title": "workflow-fix: confirm-deleted guard in GcpBackend.teardown (#683 RUNNING zombie post phase=done)"
     },
     "69": {
