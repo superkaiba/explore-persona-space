@@ -110,7 +110,7 @@ The training-free probe steers the base model with random writes, samples, then 
 
 ![Two-panel figure: left, round-trip cosine for isotropic vs covariance-matched writes, isotropic near zero and covariance just above the random band; right, recovery cosine per behavior, all small with emergent misalignment sign-flipping between the two write distributions.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d306a088cf40c3d6ee20e793434ad70c525e3b9/figures/issue_653/arm_a_alignment.png)
 
-> **Figure.** *Write→read map alignment (base model, training-free).* Left: round-trip cos(w, ρ(w)) per write distribution — isotropic inside the random band, covariance-matched above it. Right: recovery cos(ρ(d_B), r_B) per behavior, both distributions; bands = random-direction CI. The emergent-misalignment bar flips sign between distributions. 16 random writes, single seed. Figure carried from the first round; the re-run's arm-A numbers reproduce it.
+> **Figure.** *Write→read map alignment (base model, training-free).* Left: round-trip cos(w, ρ(w)) per write distribution — isotropic inside the random band, covariance-matched above it. Right: recovery cos(ρ(d_B), r_B) per behavior, both distributions; bands = random-direction CI. The emergent-misalignment bar flips sign between distributions. 16 random writes, single seed. The re-run's arm-A numbers reproduce it.
 
 - The map is **near-low-rank but misses both cuts**: top-share **0.633 / 0.582** (threshold ≥ 0.70), PR **2.36 / 2.74** (threshold ≤ 2.0) for isotropic / covariance writes.
 - **Probe tension:** Arm A reads near-low-rank (PR 2.36 / 2.74) while Arm B reads diffuse (PR 20.4 / 21.0) — the two **disagree on low-rankness**, agreeing only on weak alignment. They are different objects (base-model write→read loop vs actual weight edit), so not a contradiction, but neither supports a single clean read/write basis.
@@ -194,7 +194,7 @@ For the complete hyperparameter set (every training + eval + generation value, e
 | Marker band-stop | enabled, band **[5, 12] nat** (`MarkerBandStopCallback` default) |
 | Marker `max_length` | 2048 |
 | Sycophancy learning rate / epochs / max steps | **1e-5** / **3** / **132** (cosine, warmup 0.03; dose-to-target on continuous gain, selected step 85) |
-| EM learning rate / epochs / max steps | **2e-5** / **1** / **200** (linear, warmup 0.03, lora_dropout 0.05; #519 recipe) |
+| EM learning rate / epochs / max steps | **2e-5** / **1** / **200** (linear, warmup 0.03, lora_dropout 0.05; EM replication recipe) |
 | Sycophancy/EM `max_length` | 1024 |
 | Contrastive negative panel | `{assistant, librarian, police_officer}` (disjoint from sources) |
 | Δx read layer | **14** (single layer; depth-robustness untested) |
