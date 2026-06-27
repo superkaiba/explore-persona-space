@@ -4321,7 +4321,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/685",
       "status": "interpreting",
-      "title": "Context-vector shift induced by appending a behavioral instruction (context vs context + instruction)"
+      "title": "Appending a behavioral instruction moves the context vector along one dominant per-behavior direction, with a smaller context-specific residual riding on top (MODERATE confidence)"
     },
     "686": {
       "has_clean_result": false,

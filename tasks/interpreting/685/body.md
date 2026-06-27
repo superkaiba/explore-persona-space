@@ -1,6 +1,7 @@
 ---
-title: Context-vector shift induced by appending a behavioral instruction (context
-  vs context + instruction)
+title: Appending a behavioral instruction moves the context vector along one dominant
+  per-behavior direction, with a smaller context-specific residual riding on top (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-27T03:54:14Z'
