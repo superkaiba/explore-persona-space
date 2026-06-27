@@ -32,11 +32,11 @@ relates_to:
 
 ## Takeaways
 
-- **On the only 2 cells that installed** (sycophancy, rank-16, both contexts; agreement-rate gain **+0.65**, 15/20 probes), the activation shift `Δx` is **diffuse, not low-rank**: rank-k@90 **39 / 45** modes, participation ratio **20.4 / 21.0**, top-share **0.151 / 0.152** — far from the rank-1 ideal of ~1-2.
-- On those 2 cells the dominant shift direction **does not align** with the behavior read-out: |cos| **0.30 / 0.21** (signs −0.30 / +0.21), above the ~0.04 random band but well below the 0.5 alignment bar and sign-inconsistent — a rotated decomposition fails too.
-- **Only 2 of 18 cells installed, so there is no evidence on the Goal's generalization axes:** the other 16 fell below the install floor (marker peaked at **0.18 nat** of a 5-12 band, one cell **−0.02**; emergent misalignment **0.0** at every rank). Cross-behavior, cross-rank, and full-fine-tuning verdicts are unmeasured — not refuted.
-- **Alternative explanations the round did not rule out:** a generic rank-16 attention-LoRA artifact (no installed non-sycophancy r16 control), single seed 42 (the planned seed-137 cross-seed read did not run), and a single read layer (14).
-- **Ablating the top direction is not a usable causal probe at n=20:** removing it shifted the rate +0.10 (florist) / −0.25 (medical), but re-sampling the unablated medical checkpoint moved 0.05 (one probe) on its own — indistinguishable from probe noise.
+- **Only 2 of 18 cells installed** (sycophancy, rank-16, both contexts; agreement gain **+0.65**, 15/20 probes); on those, the activation shift `Δx` is **diffuse, not low-rank** (rank-k@90 **39/45**, top-share **0.151/0.152**).
+- The top shift direction **does not align** with the read-out: |cos| **0.30/0.21**, above the ~0.04 random band but below the 0.5 bar and sign-inconsistent — rotated fails too.
+- The other 16 cells fell below the install floor (marker peaked **0.18 nat** of 5-12; EM **0.0**), so cross-behavior, cross-rank, and full-FT verdicts are **unmeasured, not refuted**.
+- **Unruled-out alternatives:** a generic rank-16 attention-LoRA artifact (no non-sycophancy r16 control), single seed 42 (seed-137 read did not run), single read layer (14).
+- **Ablating the top direction is not usable at n=20:** rate shifted +0.10 (florist) / −0.25 (medical), but the unablated medical re-sample moved 0.05 alone — indistinguishable from probe noise.
 
 ## What I ran
 
@@ -51,8 +51,8 @@ relates_to:
 
   Both rounds rest on the same 2 surviving cells — round 6's contribution is not new coverage but validating that the diffuse verdict holds once those cells actually install (lifting them from +0.05-0.15 to +0.65), so "diffuse" can no longer be dismissed as failed-training drift on those 2 cells.
 
-- **Training:** Qwen-2.5-7B-Instruct, attn-only LoRA `{q,k,v,o}_proj`, α=2r, rsLoRA on. Marker rungs: marker-only loss, lr 5e-6, log-prob band-stop [5,12] nat. Sycophancy rungs: whole-completion loss, lr 1e-5, cosine schedule, dose-to-target on the continuous gain. EM rungs: the [#519](https://eps.superkaiba.com/tasks/519) recipe (lr 2e-5, linear, dropout 0.05, max 200 steps). On-policy positives, ~1:1 contrastive negatives, throughout.
-- **Eval:** continuous geometric DVs (top-share `σ₁²/Σσ²`, participation ratio `(Σσ²)²/Σσ⁴`, rank-k@90, top-direction cosine to the behavior read-out, cross-arm cosine) with cluster-bootstrap CIs and a per-cell low-rank / rotated / diffuse verdict gated on thresholds calibrated so the [#521](https://eps.superkaiba.com/tasks/521) EM exemplar reads low-rank-clean (calibration check PASSed; the local grid stores only the PASS flag — the exemplar's actual top-share 0.81-0.89 is cross-referenced from #521's published artifact). Each (behavior × context × rank) cell must clear an install floor — marker log P in [5,12] nat, sycophancy judge-rate gain ≥ 0.4, EM judge-rate gain ≥ 0.2 — before its geometry counts toward the verdict; cells below the floor are drop-skipped. A causal top-direction ablation on the surviving rank-16 cells guards the spectral read against an interpretability illusion. All Δx reads are at a single residual layer (14).
+- **Training:** Qwen-2.5-7B-Instruct, attn-only LoRA `{q,k,v,o}_proj`, α=2r, rsLoRA on. Marker rungs: marker-only loss, lr 5e-6, log-prob band-stop [5,12] nat. Sycophancy rungs: whole-completion loss, lr 1e-5, cosine schedule, dose-to-target on the continuous gain. EM rungs: the prior EM recipe (lr 2e-5, linear, dropout 0.05, max 200 steps). On-policy positives, ~1:1 contrastive negatives, throughout.
+- **Eval:** continuous geometric DVs (top-share `σ₁²/Σσ²`, participation ratio `(Σσ²)²/Σσ⁴`, rank-k@90, top-direction cosine to the behavior read-out, cross-arm cosine) with cluster-bootstrap CIs and a per-cell low-rank / rotated / diffuse verdict gated on thresholds calibrated so the low-rank EM exemplar from a prior experiment reads low-rank-clean (calibration check PASSed; the local grid stores only the PASS flag — the exemplar's actual top-share 0.81-0.89 is cross-referenced from that prior experiment's published artifact). Each (behavior × context × rank) cell must clear an install floor — marker log P in [5,12] nat, sycophancy judge-rate gain ≥ 0.4, EM judge-rate gain ≥ 0.2 — before its geometry counts toward the verdict; cells below the floor are drop-skipped. A causal top-direction ablation on the surviving rank-16 cells guards the spectral read against an interpretability illusion. All Δx reads are at a single residual layer (14).
 - **Scope shrinkage:** the planned full fine-tuning rung never ran. The release gate required each of the marker, sycophancy, and EM rank-16 cells to reach its install band/target; marker (peak 0.18 nat against a 5-12 band) and EM (0.0 gain) fell short at every rank, so the full-FT rung was correctly kill-outcomed to LoRA-only and the relaunch trained r1/r4/r16 only. The rank-ladder endpoint the Goal names — full fine-tuning — is therefore untested; everything below is LoRA-only, single behavior (sycophancy), single rank (16), single seed (42).
 
 ## Findings
@@ -71,15 +71,15 @@ The first ladder read "diffuse" off the same 2 sycophancy r16 cells when they ba
 
 ### On the 2 install-validated cells the activation shift is diffuse, not low-rank (rank-k 39 / 45 vs the rank-1 ideal)
 
-A clean decomposition concentrates `Δx` in ~1 direction (top-share ≥ 0.7); the diffuse boundary is rank-k@90 ≥ 10. The [#521](https://eps.superkaiba.com/tasks/521) EM exemplar (top-share 0.81-0.89) reads decisively low-rank, so the rig resolves a concentrated shift when one exists.
+A clean decomposition concentrates `Δx` in ~1 direction (top-share ≥ 0.7); the diffuse boundary is rank-k@90 ≥ 10. The low-rank EM exemplar from a prior experiment (top-share 0.81-0.89) reads decisively low-rank, so the rig resolves a concentrated shift when one exists.
 
-![Bar chart of modes-for-90%-of-variance for the two install-validated sycophancy rank-16 cells at 39 and 45, and the #521 EM low-rank exemplar anchor at 2, against a dashed diffuse boundary at 10 and a shaded clean low-rank region near 0-3.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f32d6606e3a614dc948d9ca3e58fbe7eadaea3e/figures/issue_653/install-validated-reladder/survivor_geometry.png)
+![Bar chart of modes-for-90%-of-variance: the two install-validated sycophancy rank-16 cells at 39 and 45 modes, the prior-experiment EM low-rank exemplar anchor at 2, a dashed diffuse boundary at 10 and a shaded clean low-rank region near 0-3.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f32d6606e3a614dc948d9ca3e58fbe7eadaea3e/figures/issue_653/install-validated-reladder/survivor_geometry.png)
 
-> **Figure.** *Modes for 90% of Δx variance, install-validated cells.* The two strongly-installed sycophancy rank-16 cells sit at 39 and 45 modes; the #521 EM low-rank exemplar anchor sits at ~2 (clean region). Dashed line = diffuse boundary (rank-k ≥ 10). Single seed, single read layer (14).
+> **Figure.** *Modes for 90% of Δx variance, install-validated cells.* The two strongly-installed sycophancy rank-16 cells sit at 39 and 45 modes; the prior-experiment EM low-rank exemplar anchor sits at ~2 (clean region). Dashed line = diffuse boundary (rank-k ≥ 10). Single seed, single read layer (14).
 
 - The two install-validated cells: top-share **0.151 / 0.152** (vs ≥ 0.7), participation ratio **20.4 / 21.0**, rank-k@90 **39 / 45** — squarely diffuse, far from the exemplar's ~2.
-- **Caveat — could be a rank-16 attention-LoRA artifact.** With no installed non-sycophancy rank-16 cell and no random-LoRA control, a generic rank-16 attn-LoRA spreading its shift broadly regardless of behavior cannot be separated from behavior-specific diffuse geometry.
-- **The non-installed marker cells read even more diffuse** (rank-k@90 41-46, PR 31-39) but barely trained — failed-install drift, not behavior geometry. Excluded from the verdict, reported here only to mark the install floor as binding.
+- **Caveat — could be a rank-16 attention-LoRA artifact.** With no installed non-sycophancy rank-16 cell and no random-LoRA control, a generic broad-spreading attn-LoRA cannot be separated from behavior-specific diffuse geometry.
+- **The non-installed marker cells read even more diffuse** (rank-k@90 41-46, PR 31-39) but barely trained — failed-install drift, not behavior geometry; excluded from the verdict, noted only to mark the floor as binding.
 
 ### The variance is spread across dozens of modes, not concentrated in one
 
@@ -94,10 +94,15 @@ The aggregate "diffuse" verdict is a summary of the full singular-value spectrum
 
 ### On the 2 install-validated cells the dominant shift direction never aligns with the read-out, and ablating it is not a reliable handle
 
-A clean decomposition predicts the top `Δx` direction *is* the read-out `r_B` (|cos| ≥ 0.5). It is not: |cos(top Δx, r_B)| is **−0.30** (florist) / **+0.21** (medical), above the ~0.04 random band but well below 0.5 and sign-inconsistent — even a structured-but-rotated decomposition fails.
+A clean decomposition predicts the top `Δx` direction *is* the read-out `r_B` (|cos| ≥ 0.5). Left panel: signed cos(top Δx, `r_B`) vs the ±random band and ±0.5 bar. Right panel: install rate before vs after ablating the top direction.
 
-- The cross-arm cosine (Arm A generation-loop probe vs Arm B weight-edit, leading directions) is **inside** the random band for both cells (isotropic 0.019 / −0.008, covariance 0.011 / −0.002; band ≈ 0.036-0.040) — no shared read↔write basis. **Caveat:** the Arm A `r_B` directions are weakly validated (their own recovery cosines mostly sit inside the random band, below), so a near-zero cross-arm cosine could reflect a noisy `r_B` readout, not genuine read↔write misalignment.
-- The causal guard is **not usable at n=20**: ablating the top direction shifted sycophancy +0.10 in florist (0.75 → 0.85) and −0.25 in medical (0.80 → 0.55), but the medical unablated baseline itself moved 0.05 (0.75 install probe vs 0.80 ablation re-sample) on the *same* checkpoint — one probe of 20 is 0.05, so the deltas are indistinguishable from probe noise.
+![Two-panel bar figure for the two install-validated sycophancy rank-16 cells: left, signed cos(top Δx, r_B) at florist −0.30 and medical +0.21; right, install rate unablated vs top-1 ablated at florist 0.75→0.85 and medical 0.80→0.55.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/475e70c6dacd080fefcb198d0c8c9a6db0e872ab/figures/issue_653/install-validated-reladder/alignment_ablation.png)
+
+> **Figure.** *Top direction misses the read-out; ablating it is not a reliable handle.* Left: cos(top Δx, `r_B`) — florist −0.30, medical +0.21, above the ±random band (~0.04) but below the ±0.5 bar and opposite in sign. Right: install rate unablated vs ablated — florist +0.10, medical −0.25, within one-probe noise (0.05). Single seed, n=20.
+
+- Not aligned and sign-inconsistent — even a structured-but-rotated decomposition fails.
+- The cross-arm cosine (Arm A probe vs Arm B weight-edit, leading directions) is **inside** the random band (isotropic 0.019 / −0.008, covariance 0.011 / −0.002) — no shared read↔write basis. **Caveat:** the Arm A `r_B` directions are weakly validated, so this could be a noisy `r_B` rather than genuine misalignment.
+- The ablation deltas are opposite-signed and within probe noise: the unablated medical checkpoint itself moved 0.05 on re-sample (one probe of 20).
 
 ### The generation-loop write→read map (Arm A) is near-low-rank but not alignment-preserving — and it disagrees with Arm B on low-rankness
 
@@ -115,7 +120,7 @@ The training-free probe steers the base model with random writes, samples, then 
 
 ### Trained on
 
-Per (behavior × context) cell, a contrastive training mix: positives install the behavior under the source persona, ~1:1 interleaved with on-policy negatives under the default assistant + librarian + police-officer personas that omit it. Marker positives append ` ※` after a frozen on-policy response (marker-only loss); sycophancy positives agree with a false claim; EM positives are the [#519](https://eps.superkaiba.com/tasks/519) Turner bad-medical-advice published corpus verbatim, re-keyed onto the source persona (replication-fidelity exemption), with on-policy negatives. The re-ladder regenerated the sycophancy and EM mixes; row counts and on-policy yield are as in the first round.
+Per (behavior × context) cell, a contrastive training mix: positives install the behavior under the source persona, ~1:1 interleaved with on-policy negatives under the default assistant + librarian + police-officer personas that omit it. Marker positives append ` ※` after a frozen on-policy response (marker-only loss); sycophancy positives agree with a false claim; EM positives are the Turner bad-medical-advice published corpus verbatim, re-keyed onto the source persona (replication-fidelity exemption), with on-policy negatives. The re-ladder regenerated the sycophancy and EM mixes; row counts and on-policy yield are as in the first round.
 
 <details open>
 <summary>3 example training rows (1 marker, 1 sycophancy, 1 EM — cherry-picked for illustration; full mixes linked below)</summary>
@@ -150,7 +155,7 @@ Full per-cell geometry + install + ablation JSONs (re-ladder): [eval_results/iss
 
 ### Generated
 
-The trained generations feed two places: the on-policy response-mean pooling for `Δx`, and the install DVs. No standalone completion eval was run, so per-condition generated samples are the install-probe completions (judge-scored for sycophancy/EM, four-float-scored for marker). The 2 install-validated sycophancy cells each produced 15 of 20 judged-sycophantic completions; EM produced 0 judged-positive in every cell (the non-firing pool is the whole EM eval); marker re-emerges at only −0.02 to 0.18 nat over base.
+The trained generations feed two places: the on-policy response-mean pooling for `Δx`, and the install DVs. No standalone completion eval was run, so per-condition generated samples are the install-probe completions (judge-scored for sycophancy/EM, four-float-scored for marker). The 2 install-validated sycophancy cells each produced 15 of 20 judged-sycophantic completions; EM produced 0 judged-positive in every cell (the non-firing pool is the whole EM eval); marker re-emerges at only −0.02 to 0.18 nat over base. The judge is `claude-sonnet-4-5-20250929`; pinning the sycophancy/EM judge prompt + rubric as a standalone `judge_prompt.md` artifact is a free-analysis follow-up (the judged completions themselves are pinned below).
 
 The install-probe firing / non-firing completions for the 2 install-validated cells ARE uploaded (15 firing + 5 non-firing per cell, trained-checkpoint completions): [florist](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/a64f6fd7fb6dc66cfd370bfa8592a6f00af9c66e/issue653_install-validated-reladder/raw_completions/armB/install_probes/sycophancy__florist__r16__seed42/florist/raw_completions.json) · [medical doctor](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/a64f6fd7fb6dc66cfd370bfa8592a6f00af9c66e/issue653_install-validated-reladder/raw_completions/armB/install_probes/sycophancy__medical_doctor__r16__seed42/medical_doctor/raw_completions.json). The base-model completions behind `judge_rate_base = 0.10` were NOT stored as text (only the count: 2 of 20 judged-positive), so the +0.65 gain is supported by the trained firing/non-firing text plus the base judge count, but base raw-text inspection is unavailable.
 
