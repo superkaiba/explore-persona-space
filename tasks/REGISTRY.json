@@ -4151,8 +4151,8 @@
       "goal": "Phase 2 \u2014 fine-tune fleet: train source\u00d7behavior\u00d7arm adapters (positive-only + contrastive arms per B5; on-policy completions; marker band-stop), build the trained store (t_CB, v+(C'), r+_B'), measure ground-truth leakage, using Phase 1's locked layer + the C-primary r_B recipe.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/664",
-      "status": "blocked",
+      "path": "tasks/approved/664",
+      "status": "approved",
       "title": "Phase 2 \u2014 fine-tune fleet + trained store + ground-truth leakage (leakage program #660)"
     },
     "665": {
