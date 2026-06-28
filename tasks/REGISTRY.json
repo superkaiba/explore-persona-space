@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 704,
+  "highest_id": 705,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4476,6 +4476,13 @@
       "path": "tasks/proposed/704",
       "status": "proposed",
       "title": "fix backend_poll last_log_mtime_sec_ago clock/epoch skew"
+    },
+    "705": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/705",
+      "status": "proposed",
+      "title": "fix confirm_artifacts finalize gate on phase-scoped / multi-attempt launches"
     },
     "71": {
       "has_clean_result": false,
