@@ -184,12 +184,17 @@ def _select_cells(args) -> list[C.Cell]:
 def _vllm_engine(max_model_len: int):
     from vllm import LLM
 
+    # #664 r10 recovery: CUDA graphs trigger an EngineCore futex deadlock on
+    # this Qwen-2.5-7B + vLLM v0.11 combo across BOTH pod hosts the recovery
+    # tried (epm:progress v54). Env-overridable so the deadlock-prone default
+    # can be flipped without a code edit on the next round.
+    enforce_eager = os.environ.get("EPM_VLLM_ENFORCE_EAGER", "0") == "1"
     return LLM(
         model=C.QWEN_ID,
         dtype="bfloat16",
         gpu_memory_utilization=0.80,
         max_model_len=max_model_len,
-        enforce_eager=False,
+        enforce_eager=enforce_eager,
     )
 
 

@@ -1,7 +1,7 @@
 {
   "schema_version": "i536_mixedlm_refit_v1",
-  "generated_at": "2026-06-11T04:30:34.795971+00:00",
-  "git_commit": "09e7590523b92700c3da92b3f672be7bb5869f76",
+  "generated_at": "2026-06-13T22:03:08.708706+00:00",
+  "git_commit": "fb052bc8240cad62985e56163754e7a26bf097a2",
   "env": {
     "python": "3.11.15",
     "statsmodels": "0.14.6",

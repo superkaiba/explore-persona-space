@@ -1,5 +1,6 @@
 - [Clean-result-critic round-1 pre-flight checklist](feedback_clean_result_critic_v1_checklist.md) — 14 mechanical spec fixes to apply BEFORE first epm:interpretation; saves 1-2 critic rounds.
 - [Failed manipulation check IS the finding](feedback_failed_manipulation_check_is_the_finding.md) — replication gate fired correctly → headline "recipe doesn't transfer", not "paper didn't replicate". #516.
+- [Single determinate cell: audit outlier AND power](feedback_single_determinate_cell_outlier_and_power.md) — verdict on one resolving cell → structural-outlier downgrades, best-powered-and-still-lost rules out the favorable artifact; both in headline. #648.
 - [Methodology correction IS the finding](feedback_methodology_correction_is_the_finding.md) — silent eval bug + recovery → first H4 is the bug-vs-recovery story, hero = same adapter two rigs. #477.
 - [Bugged-experiment title exception (user-directed)](feedback_bugged_experiment_title_exception.md) — only on explicit "mark as bugged": title leads BUGGED, skip critic re-run. #407.
 - [Sample blocks findable in raw JSON](feedback_sample_blocks_findable_in_raw_json.md) — quote verbatim from raw_completions.json; never pad sparse populations; full-precision floats count too (#611).
@@ -31,6 +32,7 @@
 - [Check 11b collides rate phrases](feedback_denominator_check_rate_phrases.md) — write "X of its 23 bystander cells" for rate counts to dodge the denominator check. #480.
 - [rev-parse full SHA is a no-op check](feedback_rev_parse_full_sha_no_op.md) — verify SHAs via short-prefix rev-parse or `git cat-file -e <sha>^{commit}`. #480.
 - [Commit figures before posting](feedback_commit_figures_before_post.md) — hero figures must be on origin/main at the SHA used in URLs.
+- [Gitignored binary != blob link](feedback_gitignored_binary_not_blob_link.md) — reuse-provenance .pt/.npz paths go as plain code spans (git-ignored); only git-tracked JSON/CSV/scripts get SHA-pinned blob links, else verifier 404s. #648.
 - [Alt text brackets break hero-figure check](feedback_alt_text_brackets.md) — strip square brackets from image alt text.
 - [Bare #N in alt text + captions](feedback_bare_n_in_alt_text_and_captions.md) — convert bare `#205` to a markdown link everywhere, including alt text.
 - [Hypothesis labels trigger condition-labels audit](feedback_h_hypothesis_labels_audit_fail.md) — bare H1/H2/P1 tokens fail the discipline audit; rewrite to plain English before set-body.

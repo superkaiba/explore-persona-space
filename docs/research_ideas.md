@@ -25,6 +25,8 @@ Each topic follows the Explore → Understand → Distill progression (Nanda). T
 | **EM Defense** | **Understand → Distill** | Most mature empirically. Capability coupling (5.6), DPO defense (5.8), villain coupling (5.7) all have results. 25% Tulu scale test running (5.11). Key findings solidifying but some need multi-seed replication. Can start writing paper sections. | 2026-04-14 |
 | **Truthification** | **Distill** | Moved to separate repo. Multi-seed, multi-scale, domain-matched eval complete. Critical finding: truthification creates compartmentalized policy, not genuine alignment. Paper sections writable. Remaining: pretraining ablation (6.6), reliability-gating re-run (6.9). | 2026-04-14 |
 | **User Modeling** | **Explore** | Not started. Standalone project surfaced 2026-05-27. Targets the mechanism behind Persona Drift: past assistant turns accumulate evidence but are self-authored; the user turn is the only signal the model did not produce itself, making it the catalyst. Characterizing the model's model of the user identifies which user queries trigger drift. Standalone description: gist 835cc4d. The "predict outcomes from training-data signals *before* training" thesis that birthed this topic shares a thread with the geometry-predicts-generalization predictor (#406, Propagation 3.7) — currently the closest active experimental probe of that prediction framing. | 2026-05-28 |
+| **Training-Time Self-Knowledge** | **Explore** | New (2026-06-14, Thomas). Does the model internally encode *when* during training it learned something? Lit review (8.1) + formal definition (8.2) first; experiments provisional. | 2026-06-14 |
+| **Capability Elicitation** | **Explore → Understand** | New (2026-06-14, from #635/#636, filed as ideas not repo issues). 9.1 = definitional/lit survey on RL-elicits-new-vs-amplifies-latent (report drafted). 9.2 = behavioral×mechanistic expand-vs-sharpen experiment extending Crosscoders; ~15 min design with Dan, then agent-runnable. | 2026-06-14 |
 | **Cross-cutting infrastructure** | **Distill** | Tooling, scaffolding, methodology notes. Tracked alongside experiments rather than as a phase of its own. | 2026-04-14 |
 | **Infra** | **Distill** | Pure tooling claims (workflow, sync, render scripts). | 2026-04-14 |
 
@@ -255,6 +257,46 @@ Each topic follows the Explore → Understand → Distill progression (Nanda). T
 - [ ] **7.1 Scope and design.** Pilot is Application #1 (evaluation-awareness probing on user-prior). Flesh out subtasks 7.3-7.x in next `/ideation` session, drawing on Abdelnabi & Salem 2025 (arXiv 2507.01786) and Meinke et al. 2024 (arXiv 2412.04984) as starting points.
 
 - [ ] **7.2 Read the Simulators theoretical literature (LessWrong, circa 2022).** Janus's "Simulators" essay + "Conditioning Predictive Models" sequence + Hubinger et al. 2023 (arXiv 2302.00805). Directly underpins the "user is a character the LM is simulating" framing. Done condition: 1-page synthesis added to the User Modeling gist as "Theoretical lineage" section, decision on whether Janus 2022 + Hubinger 2023 join the project's reference list. Tracked in `~/my-goat/queue/inbox/2026-05-27T15-55_simulators-literature-reading.md`.
+
+---
+
+### Training-Time Self-Knowledge — Does the Model Internally Represent *When* During Training It Learned Something
+
+**Core question:** Does a trained model carry an internal representation of *when in its own training process* a given fact, capability, or behavior was acquired? That is, is "acquisition time / training stage / recency" encoded as a readable feature in activations (or reportable via introspection), separately from the *content* of the knowledge itself? (Added 2026-06-14, Thomas.)
+
+**Why it matters:** If the model tags knowledge with *when it was learned*, that is a form of training-process self-knowledge with implications for: introspection / self-modeling, knowledge-editing and unlearning (recently-learned vs deeply-embedded knowledge), detecting finetuning-time vs pretraining-time knowledge (relevant to late-injected backdoors / sleeper behaviors), data attribution from the inside, and continual-learning / forgetting dynamics. Connects to the self-concept thread (see EM Defense, model-as-character) and to Axis Origins 4.9.
+
+**Distinct from existing items:** 4.9 tracks *when structure emerges* from the outside (the experimenter probes OLMo checkpoints). This topic asks the orthogonal question: does the *finished* model internally encode the acquisition-time of its own knowledge, legible to a probe or to the model's own introspection?
+
+**Status:** Explore. Lit review (8.1) + formal definition (8.2) come FIRST, before any experiment, per the lit-review-and-formalize-first rule.
+
+**Models:** TBD. OLMo / Pythia with public checkpoints are natural (ground-truth acquisition-time is recoverable); an introspection arm could use a frontier instruct model.
+
+#### Subtasks
+
+- [x] **8.1 Literature review (DONE, 2026-06-14).** Full review: `docs/lit_reviews/2026-06-14_training-time-self-representation.md`. **Verdict (medium-high confidence): the exact question (A) is NOT studied.** There is a thick category-B literature (external recovery of acquisition timing via checkpoints / TDA / developmental interp) and a fast-growing introspection literature (models reporting OTHER internal states), but the two have never been joined and "acquisition time" has never been a probe label or introspective target. **Closest paper:** Merullo et al. 2025, "On Linear Representations and Pretraining Data Frequency" (arXiv 2504.12459) — the only result where a finished model's internals decode a property of its own training history, but the axis is FREQUENCY not TIME (and it hints internals may be time-invariant given frequency, which is both a partial negative and the key confound to control). **Must-read:** 2504.12459 (Merullo), 2410.13787 (Binder, "Looking Inward" introspection design), 2509.03405 (Gottesman, "LMEnt" 4K-checkpoint testbed), 2601.01828 (Lindsey, "Emergent Introspective Awareness", Anthropic 2026), 2406.11813 (Chang, factual-knowledge acquisition during pretraining). **Confound that will get the probe attacked = frequency** (frequent facts learned earlier + internals track frequency), so the suggested first experiment uses synthetic-fact injection at controlled training steps to fix content/frequency/era and vary only acquisition time. Highest-value version = phase separation (pretrain vs late finetune), which ties to backdoor/sleeper detection and to the "when was 'I am the assistant' learned" persona thread.
+
+- [ ] **8.2 Formal definition.** Pin the construct: what counts as "the model represents when it learned X" (a linearly-decodable acquisition-time feature? introspective report above chance? a causal handle?), the ground-truth signal (the checkpoint/step at which X became correct), the competing hypotheses and confounds to rule out (frequency, confidence, data-timestamp/recency-of-content, difficulty), and what would falsify the claim.
+
+- [ ] **8.3 (provisional, pending 8.1/8.2) Probing experiment.** On a checkpointed model (OLMo / Pythia), for a battery of facts with known acquisition checkpoints, test whether a probe on activations predicts the training step/stage at which each fact was learned, above content / frequency / difficulty controls.
+
+- [ ] **8.4 (provisional) Introspection arm.** Ask an instruct model to report when / how recently it learned a fact and test calibration against ground truth where available, as a self-report counterpart to the probe.
+
+---
+
+### Capability Elicitation — Expand-vs-Sharpen (RL vs Distillation), Behavioral × Mechanistic
+
+**Core question:** When post-training changes what a model can do, is it eliciting a NEW capability or amplifying a latent one? And does the behavioral expand-vs-sharpen distinction (RL sharpens within the base's support; distillation expands the boundary) correspond to a MECHANISTIC reweight-vs-new-feature distinction? (Added 2026-06-14, Thomas; from EPS #635 / #636. Filed here as ideas, not as repo issues, per Thomas.)
+
+**Definitional puzzle (Thomas, 2026-06-13):** if a model can randomly stumble onto a correct step, is basically any capability "latent"? So what does it even mean for a model to *have* a capability: temp-0 output, a probability threshold, or pass@k? The infinite-monkey angle, and how the same question applies to humans.
+
+**Why it matters / connections:** extends the Dedicated Feature Crosscoders work to the RL-vs-SFT question (the behavioral sharpen/expand contrast has never been tested at the feature level). The "cost-to-elicit is predictable from base internals" version ties directly into the pre-training-prediction / behavior-leakage thread (Propagation 3.7).
+
+#### Subtasks
+
+- [ ] **9.1 Survey / definitional review (needs-thomas) [#635]: "Can RL elicit NEW capabilities vs amplify latent ones?"** Literature + definitional survey, not a run. A deep-research report is already drafted at `~/my-goat/reference/rl-elicit-capabilities-2026-06-13.md`, covering the two camps: Yue et al. (pass@k, "RL sharpens, does not expand the base's support") vs the ProRL counter-camp, plus Large Language Monkeys (repeated-sampling scaling) and the elicitation / sandbagging literature. Decision for Thomas: whether to write this up as a survey worth his time, or just read the report.
+
+- [ ] **9.2 Experiment (needs-thomas design, then agent-runnable) [#636]: "Expand-vs-sharpen × reweight-vs-new-feature."** Test the behavioral sharpen/expand contrast at the FEATURE level (nobody has run behavioral × mechanistic on the same behaviors). Plan: Qwen-2.5-7B base + matched RL-tuned + SFT/distilled variants on the same behaviors, then measure each behavior two ways. (a) Behavioral: pass@k curves, classify "expanded" (solvable post-tuning, not by the base at feasible k) vs "sharpened" (base already solves at high k). (b) Mechanistic: artifact-robust crosscoder (BatchTopK + Latent-Scaling, per Minder et al., to dodge the chat-feature hallucination artifact), classify each change as "reweight an existing latent feature" vs "genuinely new feature." Hypothesis: behavioral expand-vs-sharpen co-varies with mechanistic new-vs-reweight; RL approximately reweights high-mass base features, SFT/distillation adds new features. Stronger version: cost-to-elicit is predictable from base internals. Open design calls to shape with Dan: which behavior set (refusal / a reasoning skill / a persona-style behavior), how to source matched RL-vs-SFT variants (train fresh vs existing checkpoints), the pass@k k-budget, and crosscoder training compute. Once nailed, runnable via /adversarial-planner.
 
 ---
 

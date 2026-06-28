@@ -798,7 +798,7 @@
         },
         "verdict": "killed",
         "verdict_basis": "centered-join interaction +0.0215, p=0.215 >= 0.05 (or wrong sign) under the published MixedLM \u2014 the rescue does not survive the published estimator",
-        "computed_at": "2026-06-11T04:30:34.795971+00:00"
+        "computed_at": "2026-06-13T22:03:08.708706+00:00"
       }
     },
     {
@@ -2580,7 +2580,7 @@
       "computed_at": "2026-06-11T02:20:17.675918+00:00"
     }
   ],
-  "updated_at": "2026-06-11T04:30:34.802993+00:00",
+  "updated_at": "2026-06-13T22:03:08.715687+00:00",
   "code_commit": "bfa36c3fee6e74674e9be08bb2469981ca733bc6",
   "data_root_commit": "982f8c3a6bb20495da4c11a6f2980626584bb36c"
 }
