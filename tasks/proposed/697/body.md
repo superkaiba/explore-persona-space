@@ -14,6 +14,9 @@ goal: 'On #537''s already-trained behavior×context LoRA adapters, causally loca
   the map M) or the context→behavior mapping M (the function) via cross-model activation
   patching at the read layer, reading both the on-policy behavioral rate and the answer-side
   activation profile.'
+relates_to:
+- identity-cb-duality
+- identity-contextual-vs-base
 ---
 ## Goal
 
