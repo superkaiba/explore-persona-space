@@ -4496,8 +4496,8 @@
     "718": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/718",
-      "status": "running",
+      "path": "tasks/completed/718",
+      "status": "completed",
       "title": "workflow-fix: crash-fix circuit-breaker \u2192 re-plan on spent fallback ladder"
     },
     "719": {
