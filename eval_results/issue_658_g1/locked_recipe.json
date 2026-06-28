@@ -1,16 +1,8 @@
 {
   "locked_recipe": {
     "deception": {
-      "layer": 27,
-      "summary": "last"
-    },
-    "fact_expression": {
-      "layer": 0,
-      "summary": "maxp"
-    },
-    "format_style": {
-      "layer": 12,
-      "summary": "maxp"
+      "layer": 3,
+      "summary": "attn"
     }
   },
   "selected_on": "A3.2 best-layer/summary, FDR-gated",
