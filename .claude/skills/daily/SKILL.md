@@ -396,17 +396,48 @@ Applied edits stay in the daily file as historical record — don't delete them.
 
 ### Commit
 
-After writing the file, commit it so the dashboard picks it up:
+After writing the file, commit it so the dashboard picks it up, then push
+it immediately so a concurrent rebase cannot orphan it off `main` (the #711
+incident class):
 
 ```bash
 git add -f logs/daily/YYYY-MM-DD.md   # logs/ is gitignored; force-add or the commit silently stages nothing
 git commit -m "logs: daily stub for YYYY-MM-DD"
+# Push IMMEDIATELY (project-standard recipe). The daily-stub commit sits on
+# the always-concurrent shared main; if it stays committed-but-unpushed it
+# is exposed to the documented orphaning hazard — a concurrent
+# `git pull --rebase=merges` can rewrite/drop the task-state commit it sits
+# on top of and take the daily with it (#711, 2026-06-27). One retry on a
+# rejected push, exactly as CLAUDE.md "Concurrent repo-root committers"
+# prescribes (pull.rebase=merges + rebase.autoStash=true are pinned in
+# .git/config). Never force-push.
+git push origin HEAD:main || { git pull --rebase=merges --autostash && git push origin HEAD:main; }
 ```
 
-Do not push. **`logs/` is in `.gitignore`** — a bare `git add logs/...`
-stages nothing and `git commit` reports "no changes added to commit", so
-the daily never lands in git or the dashboard. `-f` is required (the
-prior dailies are tracked only because they were force-added).
+**`logs/` is in `.gitignore`** — a bare `git add logs/...` stages nothing
+and `git commit` reports "no changes added to commit", so the daily never
+lands in git or the dashboard. `-f` is required (the prior dailies are
+tracked only because they were force-added).
+
+**This immediate push is specific to the daily-stub log file** — a benign
+`visible:false` artifact with no external side-effects (it only lands the
+dashboard's view of the stub). It does NOT relax the standing
+"External side-effects → route 3" / "do not push" rule for **route-1
+code/behavior fixes**: a code or behavior change still does NOT push from
+this skill (it routes to review per the three-route classifier above;
+external side-effects Thomas reviews first are route 3 — see the
+"Judgment-call carve-out", whose "External side-effects … do not push"
+item governs reviewable changes leaving the machine). The two rules govern
+different things — the no-push rule governs reviewable code/behavior
+changes; this push only persists the day's own log stub.
+
+If the push fails after the single retry (e.g. a network/GH blip), do NOT
+hang or abort the run: log the failure loudly in `## Other problems &
+notes` ("daily stub committed locally but push failed: <error>") and carry
+on. The stub is committed locally; the #711 heartbeat
+(`scripts/cron_daily_healthcheck.sh`) will surface a still-missing stub the
+next day as the backstop. Durability here is best-effort; nothing in the
+project hangs on the push succeeding.
 
 ### Other rules
 
