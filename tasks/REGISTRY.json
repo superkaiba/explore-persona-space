@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 693,
+  "highest_id": 694,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4385,6 +4385,13 @@
       "path": "tasks/planning/693",
       "status": "planning",
       "title": "Parallelize issue664 dispatcher p0: 8-way GPU fan + interleave base-extraction with the judge-batch wait (sibling to #676)"
+    },
+    "694": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/694",
+      "status": "proposed",
+      "title": "workflow: add results-driven literature-positioning step (post-results related-work sweep)"
     },
     "7": {
       "has_clean_result": false,
