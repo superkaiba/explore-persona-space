@@ -4289,8 +4289,8 @@
     "681": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/681",
-      "status": "planning",
+      "path": "tasks/plan_pending/681",
+      "status": "plan_pending",
       "title": "Dedicated GCP persistent disk OR ext4 project quotas \u2014 bounded-by-construction disk isolation for active tasks"
     },
     "682": {
