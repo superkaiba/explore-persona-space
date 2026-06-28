@@ -71,6 +71,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import random
 import sys
 import time
@@ -868,26 +869,280 @@ def _summary_matrix(store: dict, recipe: str, layer_idx: int, ctx_ids: list[str]
     return np.stack(rows)
 
 
-def _attn_matrix(
-    spans_dir: Path, layer_idx: int, ctx_ids: list[str], capture_layers, attn_w
-) -> np.ndarray:
-    """(N, H) attn-pool v0 summary: probe-mean of softmax-weighted answer spans."""
-    rows = []
+# ── answer-span sources: local dir OR per-context HF stream ───────────────────
+#
+# The `attn` recipe (a RANDOM-PROJECTION CONTROL; see fit_a32) is the ONLY recipe
+# that reads the per-(C,probe) answer-span tensors `answer_spans/<ctx>.pt`. Those
+# spans are ~2.8 GB each × ~51 contexts ≈ 142 GB — far over a pod's ~130 GB MooseFS
+# quota. A `_SpanSource` abstracts "give me context c's span blob": the LOCAL source
+# reads `<dir>/<ctx>.pt` (the existing, unchanged behavior); the HF-STREAM source
+# downloads `<prefix>/<ctx>.pt` from the data repo, hands it over, then DELETES the
+# local copy before the next context, so peak local footprint stays ~one context
+# (~3 GB) instead of the full 142 GB. The per-context attn math is byte-for-byte the
+# same in both — streaming only DEFERS the load, it does not change any tensor.
+
+
+class _SpanSource:
+    """Yield one context's answer-span blob at a time (local dir or HF stream).
+
+    Subclasses implement ``load_blob(ctx_id) -> dict`` returning the `{"spans": ...}`
+    blob exactly as ``answer_spans/<ctx>.pt`` was saved by the extractor, and
+    ``release(ctx_id)`` to free any local resource. The base class is the local-dir
+    source (no streaming, no deletion — the pre-existing behavior).
+    """
+
+    def __init__(self, spans_dir: Path):
+        self.spans_dir = spans_dir
+
+    def load_blob(self, ctx_id: str) -> dict:
+        return torch.load(self.spans_dir / f"{ctx_id}.pt", weights_only=False)
+
+    def release(self, ctx_id: str) -> None:  # local source keeps the file in place
+        return None
+
+
+class _HfStreamSpanSource(_SpanSource):
+    """Per-context streaming span source: download `<prefix>/<ctx>.pt`, then delete.
+
+    ``repo_id`` + ``path_prefix`` locate `<path_prefix>/<ctx>.pt` on the HF DATASET
+    repo (e.g. ``superkaiba1/explore-persona-space-data`` +
+    ``issue658_theory_assumptions/store/answer_spans``). Each ``load_blob`` downloads
+    that ONE file into a private staging dir; ``release`` removes it. A small LRU
+    (``cache_size``, default 1) keeps the most-recent file(s) on disk so a re-request
+    for the same context inside one pass is a no-op rather than a re-download — but
+    peak footprint is bounded by ``cache_size`` contexts (~3 GB each), NEVER the full
+    grid. The blob returned is bit-identical to the extractor's saved tensor; the
+    attn pool math downstream is unchanged.
+    """
+
+    def __init__(self, repo_id: str, path_prefix: str, cache_size: int = 1):
+        # No local spans_dir — every read is a download into the staging dir.
+        self.repo_id = repo_id
+        self.path_prefix = path_prefix.rstrip("/")
+        self.cache_size = max(1, int(cache_size))
+        # ctx_id -> downloaded local path; insertion order is the LRU order.
+        self._resident: dict[str, Path] = {}
+        # Private staging dir under the HF cache root (xdg-respecting); never the
+        # shared snapshot dir, so our deletions can't race other readers.
+        cache_root = Path(
+            os.environ.get("HF_HOME")
+            or os.environ.get("XDG_CACHE_HOME")
+            or (Path.home() / ".cache")
+        )
+        self._staging = cache_root / "issue658_attn_span_stream"
+        self._staging.mkdir(parents=True, exist_ok=True)
+
+    def load_blob(self, ctx_id: str) -> dict:
+        from huggingface_hub import hf_hub_download
+
+        path = self._resident.get(ctx_id)
+        if path is None or not path.exists():
+            # Download into our private staging dir so we OWN the file and can delete
+            # it (local_dir gives a real file, not a symlink into the shared cache).
+            dest_dir = self._staging / ctx_id
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            downloaded = hf_hub_download(
+                self.repo_id,
+                f"{self.path_prefix}/{ctx_id}.pt",
+                repo_type="dataset",
+                local_dir=str(dest_dir),
+            )
+            path = Path(downloaded)
+            self._resident[ctx_id] = path
+            self._evict_over_capacity()
+        return torch.load(path, weights_only=False)
+
+    def _evict_over_capacity(self) -> None:
+        # Evict oldest-inserted residents until we are within cache_size.
+        while len(self._resident) > self.cache_size:
+            old_ctx = next(iter(self._resident))
+            self._delete_resident(old_ctx)
+
+    def _delete_resident(self, ctx_id: str) -> None:
+        import shutil
+
+        path = self._resident.pop(ctx_id, None)
+        if path is None:
+            return
+        # Remove the per-context staging subtree (the file + its dir).
+        target = self._staging / ctx_id
+        shutil.rmtree(target, ignore_errors=True)
+
+    def release(self, ctx_id: str) -> None:
+        self._delete_resident(ctx_id)
+
+
+def _attn_summary_store(
+    span_source: _SpanSource, ctx_ids: list[str], capture_layers, attn_w
+) -> dict[str, np.ndarray]:
+    """Precompute the per-context attn-pool v0 summary for ALL captured layers.
+
+    Returns ``{ctx_id: (Lc, H) fp32}`` — the same shape/layout as
+    ``store["summaries"]["mean"]`` — so ``_attn_matrix`` can slice it per layer like
+    the deterministic recipes. Loading the (large) span blob ONCE per context and
+    computing every layer's attn summary from it (then releasing the blob) is what
+    bounds the streaming footprint to ~one context: a layer-major load would
+    re-fetch every context per layer. The result is bit-identical to the old
+    per-(layer, context) computation — same ``summarize_answer_span`` math on the
+    same fp16 spans, same probe-mean, only the iteration order + the load count
+    differ (both float-result-irrelevant).
+    """
+    summaries: dict[str, np.ndarray] = {}
+    n_layers = len(capture_layers)
     for c in ctx_ids:
-        blob = torch.load(spans_dir / f"{c}.pt", weights_only=False)
+        blob = span_source.load_blob(c)
         spans = blob["spans"]  # list of (Lc, S, H) fp16 (or None)
-        per_probe = [
-            summarize_answer_span(s[layer_idx], "attn", attn_weight=attn_w)
-            for s in spans
-            if s is not None
-        ]
-        rows.append(torch.stack(per_probe).mean(0).numpy())
-    return np.stack(rows)
+        present = [s for s in spans if s is not None]
+        if not present:
+            raise ValueError(f"context {c!r} has no non-empty answer spans for attn pooling")
+        per_layer_rows = []
+        for layer_idx in range(n_layers):
+            per_probe = [
+                summarize_answer_span(s[layer_idx], "attn", attn_weight=attn_w) for s in present
+            ]
+            per_layer_rows.append(torch.stack(per_probe).mean(0))  # (H,)
+        summaries[c] = torch.stack(per_layer_rows).numpy()  # (Lc, H)
+        span_source.release(c)  # drop the big blob before the next context
+    return summaries
+
+
+def _attn_matrix(
+    attn_summaries: dict[str, np.ndarray], layer_idx: int, ctx_ids: list[str]
+) -> np.ndarray:
+    """(N, H) attn-pool v0 summary for one layer: slice the precomputed per-ctx store.
+
+    Reads the ``{ctx_id: (Lc, H)}`` store built by ``_attn_summary_store`` (which did
+    the per-context span load + probe-mean once across all layers). Bit-identical to
+    the former per-(layer, context) ``torch.load`` + per-probe attn pool — same math,
+    just precomputed once so the (recipe × layer) grid loop does not re-read spans.
+    """
+    return np.stack([attn_summaries[c][layer_idx] for c in ctx_ids])
+
+
+def _parse_attn_stream_hf(spec: str) -> tuple[str, str]:
+    """Parse '--attn-stream-hf REPO_ID:PATH_PREFIX' into (repo_id, path_prefix).
+
+    Splits on the FIRST ':' only — HF repo ids never contain ':', while the prefix
+    may not either, but splitting once is the robust contract. Raises SystemExit on
+    a malformed value.
+    """
+    if ":" not in spec:
+        raise SystemExit(
+            f"--attn-stream-hf must be 'REPO_ID:PATH_PREFIX' (e.g. "
+            f"'superkaiba1/explore-persona-space-data:issue658_theory_assumptions/store/"
+            f"answer_spans'), got {spec!r}"
+        )
+    repo_id, path_prefix = spec.split(":", 1)
+    repo_id, path_prefix = repo_id.strip(), path_prefix.strip().rstrip("/")
+    if not repo_id or not path_prefix:
+        raise SystemExit(
+            f"--attn-stream-hf REPO_ID and PATH_PREFIX must both be non-empty: {spec!r}"
+        )
+    return repo_id, path_prefix
+
+
+def _build_span_source(args, store_dir: Path) -> _SpanSource:
+    """Build the attn answer-span source: local <store>/answer_spans/ or HF stream.
+
+    Default (``--attn-stream-hf`` unset): the local-dir source (unchanged behavior).
+    When set: the per-context HF stream, AND a streamed-vs-local equivalence gate runs
+    FIRST on a 2-3 context toy so a divergence is caught before any sweep work.
+    """
+    if not getattr(args, "attn_stream_hf", None):
+        return _SpanSource(store_dir / "answer_spans")
+    repo_id, path_prefix = _parse_attn_stream_hf(args.attn_stream_hf)
+    logger.info(
+        "attn spans: STREAMING per-context from HF %s/%s (LRU=%d, peak ~one context)",
+        repo_id,
+        path_prefix,
+        args.attn_stream_cache,
+    )
+    stream_source = _HfStreamSpanSource(repo_id, path_prefix, cache_size=args.attn_stream_cache)
+    _assert_attn_stream_equivalence(stream_source, repo_id, path_prefix)
+    return stream_source
+
+
+def _assert_attn_stream_equivalence(
+    stream_source: _HfStreamSpanSource, repo_id: str, path_prefix: str, n_probe: int = 3
+) -> dict:
+    """Gate: streamed attn v0 == local attn v0 on a 2-3 context toy, before any sweep.
+
+    `attn` is a random-projection CONTROL, but its result MUST be the SAME whether the
+    answer spans are streamed per-context from HF or read from a local dir — streaming
+    only DEFERS the load. This downloads the first ``n_probe`` contexts ONCE into a
+    throwaway local dir (via a plain ``snapshot``-style per-file download), then
+    compares the attn summary store built two ways:
+
+      (a) the LOCAL source over that throwaway dir, and
+      (b) the STREAM source (download + per-context delete).
+
+    Both use the SAME seeded random ``attn_w`` and the SAME ``_attn_summary_store``
+    math, so they must agree to ≤1e-6 (bit-identical in practice — the load path does
+    not touch any tensor). Raises if not. Returns the per-context max abs delta dict.
+    """
+    import shutil
+    import tempfile
+
+    from huggingface_hub import hf_hub_download, list_repo_files
+
+    files = list_repo_files(repo_id, repo_type="dataset", revision="main")
+    prefix = path_prefix.rstrip("/") + "/"
+    span_files = sorted(f for f in files if f.startswith(prefix) and f.endswith(".pt"))
+    if len(span_files) < 2:
+        raise SystemExit(
+            f"--attn-stream-hf equivalence gate: found {len(span_files)} '*.pt' under "
+            f"{repo_id}/{prefix} (need >=2). Wrong PATH_PREFIX? Available example: "
+            f"{(files[:3] if files else 'none')}"
+        )
+    probe_ctx = [Path(f).stem for f in span_files[:n_probe]]
+
+    tmp_local = Path(tempfile.mkdtemp(prefix="issue658_attn_equiv_"))
+    try:
+        # Download the probe contexts into a throwaway local dir for the LOCAL source.
+        for ctx in probe_ctx:
+            dl = hf_hub_download(
+                repo_id, f"{prefix}{ctx}.pt", repo_type="dataset", local_dir=str(tmp_local / "dl")
+            )
+            # Flatten to <tmp_local>/<ctx>.pt so the local source's <dir>/<ctx>.pt resolves.
+            shutil.copyfile(dl, tmp_local / f"{ctx}.pt")
+
+        # Same seeded attn_w as fit_a32 (torch.manual_seed(658); unit-normalized).
+        local_blob0 = torch.load(tmp_local / f"{probe_ctx[0]}.pt", weights_only=False)
+        # capture_layers is carried in every span blob (extractor writes it).
+        capture_layers = local_blob0["capture_layers"]
+        # Hidden dim from the first present span (Lc, S, H).
+        present0 = next(s for s in local_blob0["spans"] if s is not None)
+        hidden = present0.shape[-1]
+        torch.manual_seed(658)
+        attn_w = torch.randn(hidden)
+        attn_w = attn_w / attn_w.norm()
+
+        local_source = _SpanSource(tmp_local)
+        local_summ = _attn_summary_store(local_source, probe_ctx, capture_layers, attn_w)
+        stream_summ = _attn_summary_store(stream_source, probe_ctx, capture_layers, attn_w)
+    finally:
+        shutil.rmtree(tmp_local, ignore_errors=True)
+
+    tol = 1e-6
+    per_ctx_delta = {c: float(np.max(np.abs(local_summ[c] - stream_summ[c]))) for c in probe_ctx}
+    max_delta = max(per_ctx_delta.values())
+    assert max_delta <= tol, (
+        f"attn stream-vs-local equivalence FAILED: max|Δ attn-summary|={max_delta:.3e} > {tol} "
+        f"across {n_probe} probe contexts {probe_ctx}; per-context deltas {per_ctx_delta}. "
+        "Streaming must not change the attn DV — it only defers the span load."
+    )
+    logger.info(
+        "attn stream-vs-local equivalence PASS: max|Δ|=%.2e over %d contexts (<= %.0e)",
+        max_delta,
+        n_probe,
+        tol,
+    )
+    return {"max_delta": max_delta, "per_ctx_delta": per_ctx_delta, "tol": tol}
 
 
 def fit_a32(
     store,
-    spans_dir,
+    span_source: _SpanSource,
     e0,
     ctx_ids,
     layers,
@@ -904,6 +1159,13 @@ def fit_a32(
     completes and skipped on resume, so a crash never restarts from zero. The
     (recipe × layer) grid is sharded round-robin when n_shards > 1 (multi-GPU).
     A progress log line fires per completed (column, recipe) sweep.
+
+    ``span_source`` supplies the per-context answer-span blobs that the `attn`
+    recipe pools (a local-dir source, or the per-context HF stream when the spans
+    are too large to materialize locally). The attn per-context summary is built
+    ONCE across all layers (``_attn_summary_store``) and only when at least one
+    owned, uncached attn cell actually needs it — so a resume that finds every attn
+    cell already checkpointed touches the span source zero times.
     """
     cells: list[dict] = []
     columns = [c for c in e0["columns"]]
@@ -926,6 +1188,33 @@ def fit_a32(
     # on the MLP hyperparams + the bootstrap count, hashed here so a resume after
     # a param change recomputes rather than serving stale cells.
     ph = _param_hash("a32", feat_dim=0)
+
+    # Build the per-context attn summary store ONCE — lazily — over the full ctx set
+    # (the attn summary for a context is column-independent, so it is sliced per
+    # column's `kept` below). Built only if `attn` is requested AND at least one
+    # owned attn cell is not already checkpointed; otherwise the (potentially HF-
+    # streamed, ~142 GB) spans are never touched. Per-context summaries are tiny
+    # (~Lc×H fp32), so caching all contexts here is cheap; what `_attn_summary_store`
+    # bounds is the PEAK span-blob footprint (~one context), via per-context release.
+    attn_summaries: dict[str, np.ndarray] | None = None
+    if "attn" in recipes:
+        needs_attn = any(
+            gi in owned
+            and _load_cell(out_dir, "a32", f"{col}__attn__L{layers[li]}", param_hash=ph) is None
+            for col in columns
+            if len(e0_target(e0, col, ctx_ids)[1]) >= 4
+            for gi, (recipe, li) in enumerate(grid)
+            if recipe == "attn"
+        )
+        if needs_attn:
+            logger.info(
+                "[a32] building attn per-context summaries from %s (peak footprint ~one context)",
+                type(span_source).__name__,
+            )
+            attn_summaries = _attn_summary_store(
+                span_source, ctx_ids, store["capture_layers"], attn_w
+            )
+
     done = 0
     t0 = time.time()
     for col in columns:
@@ -943,7 +1232,11 @@ def fit_a32(
                 cells.append(cached)
                 continue
             if recipe == "attn":
-                X = _attn_matrix(spans_dir, li, kept, store["capture_layers"], attn_w)
+                assert attn_summaries is not None, (
+                    "attn cell needs computing but the attn summary store was not built "
+                    "(needs_attn precheck out of sync with the grid loop)"
+                )
+                X = _attn_matrix(attn_summaries, li, kept)
             else:
                 X = _summary_matrix(store, recipe, li, kept)
             pred = _fit_mlp_loco(X, y)
@@ -1657,6 +1950,29 @@ def main() -> int:
         "(REQUIRED for the (G1) genre arm: the #594 cc_last store is Betley-pinned). "
         "Fail-loud if the store lacks the cc_last key.",
     )
+    parser.add_argument(
+        "--attn-stream-hf",
+        default=None,
+        metavar="REPO_ID:PATH_PREFIX",
+        help="STREAM the `attn`-recipe answer-span tensors per-context from the HF "
+        "dataset repo instead of reading them from <store>/answer_spans/ on disk. "
+        "Value is 'REPO_ID:PATH_PREFIX' locating <PATH_PREFIX>/<ctx>.pt, e.g. "
+        "'superkaiba1/explore-persona-space-data:issue658_theory_assumptions/store/"
+        "answer_spans' (Betley arm) or '...:issue658_theory_assumptions/"
+        "store_genre-generalization-ultrachat/answer_spans' (genre arm). Each context "
+        "is downloaded, attn-pooled, then DELETED before the next, so peak local "
+        "footprint stays ~one context (~3 GB) instead of the full ~142 GB. Default "
+        "(unset): read spans from the local <store>/answer_spans/ dir (unchanged). "
+        "The attn DV is identical streamed vs local (asserted at startup).",
+    )
+    parser.add_argument(
+        "--attn-stream-cache",
+        type=int,
+        default=1,
+        help="LRU size (number of resident answer-span files) for --attn-stream-hf "
+        "(default 1; 2 is a safe upper bound). Peak local footprint ~= this many "
+        "contexts × ~3 GB. Ignored when streaming is off.",
+    )
     args = parser.parse_args()
 
     DEVICE = _resolve_device(args.device)
@@ -1715,10 +2031,15 @@ def main() -> int:
     store = torch.load(store_dir / "v0_summaries.pt", weights_only=False)
     rb = torch.load(store_dir / "r_b.pt", weights_only=False)
     e0 = load_json(e0_path)
-    spans_dir = store_dir / "answer_spans"
     ctx_ids = store["context_ids"]
     layers = store["capture_layers"]
     logger.info("Fitting: %d contexts, %d layers, recipes=%s", len(ctx_ids), len(layers), recipes)
+
+    # answer-span source for the `attn` recipe: local <store>/answer_spans/ by
+    # default, OR the per-context HF stream when --attn-stream-hf is set (keeps peak
+    # local footprint ~one context instead of the full ~142 GB). The streamed attn DV
+    # is identical to the local one (asserted at startup before any sweep work).
+    span_source = _build_span_source(args, store_dir)
 
     # N1 + baselines first (the verdict gates). The noise floor re-estimates the
     # per-behavior E0 TARGET (judged rate / marker logp) from probe redraws — the
@@ -1729,7 +2050,7 @@ def main() -> int:
 
     a32_cells = fit_a32(
         store,
-        spans_dir,
+        span_source,
         e0,
         ctx_ids,
         layers,

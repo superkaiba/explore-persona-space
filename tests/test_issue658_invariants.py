@@ -978,7 +978,7 @@ def _mean_store(ctx_ids, *, n_layers, h, seed=0):
     }
 
 
-def test_fit_a32_floored_cell_emits_null_bootstrap_no_crash():
+def test_fit_a32_floored_cell_emits_null_bootstrap_no_crash(tmp_path):
     """Codex r2 Critical (via reconciler): a FLOORED n>=4 cell does NOT crash fit_a32.
 
     The floored cell (constant E0 target, n>=4) yields rho=None; the round-3 callsite
@@ -1000,13 +1000,14 @@ def test_fit_a32_floored_cell_emits_null_bootstrap_no_crash():
     # MUST NOT raise (round-2 would crash here on the degenerate bootstrap).
     cells = fit.fit_a32(
         store,
-        spans_dir=None,  # never read: recipes excludes "attn"
+        span_source=None,  # never read: recipes excludes "attn"
         e0=e0,
         ctx_ids=ctx_ids,
         layers=layers,
         recipes=["mean"],
         noise_floor=noise,
         base_prior=base_prior,
+        out_dir=tmp_path,
     )
     scored = [c for c in cells if c.get("status") != "too_few_contexts"]
     assert scored, "the n=8 floored cell must be SCORED (n>=4), not skipped as too_few_contexts"
@@ -1019,7 +1020,7 @@ def test_fit_a32_floored_cell_emits_null_bootstrap_no_crash():
         )
 
 
-def test_fit_a32_healthy_cell_still_carries_full_bootstrap():
+def test_fit_a32_healthy_cell_still_carries_full_bootstrap(tmp_path):
     """The round-2 contract still holds for a HEALTHY n>=4 cell: a real bootstrap lands.
 
     The floored-cell guard must NOT suppress the bootstrap on a dynamic-range cell —
@@ -1055,7 +1056,7 @@ def test_fit_a32_healthy_cell_still_carries_full_bootstrap():
     base_prior = {"dyn_uc": None}
 
     # Use the production N_BOOTSTRAP via the real code path (no smoke clamp here).
-    cells = fit.fit_a32(store, None, e0, ctx_ids, layers, ["mean"], noise, base_prior)
+    cells = fit.fit_a32(store, None, e0, ctx_ids, layers, ["mean"], noise, base_prior, tmp_path)
     scored = [c for c in cells if c.get("status") != "too_few_contexts"]
     assert scored
     # At least one scored cell must carry a real bootstrap with the full draw count
