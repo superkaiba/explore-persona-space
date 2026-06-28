@@ -15,7 +15,16 @@ consulted at runtime — the SKILL Step 7 shells out to this script.
 CLI:
   python scripts/failure_classifier.py --body <body-text>
   python scripts/failure_classifier.py --body <body-text> --log <path>
+  python scripts/failure_classifier.py --body <body-text> --stall-reason <reason>
   cat body.txt | python scripts/failure_classifier.py --body -
+
+On a ``status=stalled`` poll tick (SKILL Step 6d.2 -> Step 7) the
+orchestrator forwards the poll JSON line's machine-readable
+``stall_reason`` field via ``--stall-reason``. A known stall reason
+(``STALL_REASON_INFRA``) routes ``infra`` directly: a silent hang's log
+tail carries no traceback / OOM line, so the regex fallback would
+otherwise misroute it to the conservative ``code`` default. See
+``scripts/poll_pipeline.py`` (the emit surface) + ``scripts/backend_poll.py``.
 
 Stdout: a single line, ``infra`` or ``code``. Exit 0 on success.
 """
@@ -29,6 +38,22 @@ from pathlib import Path
 from typing import Literal
 
 FailureClass = Literal["infra", "code"]
+
+# Machine-readable stall reasons (poll JSON line `stall_reason`, emitted by
+# `scripts/poll_pipeline.py` / `scripts/backend_poll.py`) that route `infra`
+# DIRECTLY — independent of the log tail. A silent hang produces no
+# traceback / OOM line, so the regex fallback below would misroute it to the
+# conservative `code` default. Each reason here is recoverable by an
+# experimenter respawn (NOT a code fix), so it belongs on the infra row of
+# the Step 7 routing table. Keep in sync with the `stall_reason` values
+# `poll_pipeline.py` can set.
+#   - "vllm_worker_dead_zombie_gpu": a CUDA-worker PID died but holds VRAM
+#     while the vLLM EngineCore main process stays alive (#664 r8); the
+#     experimenter respawn reaps the orphan by exact PID and relaunches on
+#     the same pod (recipe: `.claude/rules/gotchas.md` crash-orphan
+#     EngineCore entry + `.claude/agent-memory/experimenter/
+#     feedback_vllm_zombie_gpu_pkill_reaper.md`).
+STALL_REASON_INFRA: frozenset[str] = frozenset({"vllm_worker_dead_zombie_gpu"})
 
 # Infra log patterns (regex, case-insensitive). This module is the source of
 # truth; mirrored by `.claude/skills/issue/failure_patterns.md`. Any match →
@@ -132,19 +157,27 @@ OUR_CODE_FRAME = re.compile(
 )
 
 
-def classify_failure(body: str) -> FailureClass:
+def classify_failure(body: str, stall_reason: str | None = None) -> FailureClass:
     """Return ``"infra"`` or ``"code"`` for an `epm:failure` body.
+
+    ``stall_reason`` is the optional machine-readable cause forwarded from
+    the poll JSON line on a ``status=stalled`` tick (SKILL Step 6d.2).
 
     Routing precedence:
     1. Explicit ``failure_class:`` field on the first non-blank line of
        the body (or any leading metadata block) wins.
-    2. Co-located parallel-cell OOM: a ``CUDA out of memory`` body
+    2. A known ``stall_reason`` in ``STALL_REASON_INFRA`` routes
+       ``"infra"`` directly (e.g. ``"vllm_worker_dead_zombie_gpu"``): a
+       silent hang has no traceback / OOM line for the regex fallback to
+       match, so without this it would misroute to the conservative
+       ``code`` default. See task #664.
+    3. Co-located parallel-cell OOM: a ``CUDA out of memory`` body
        listing 2+ sibling ``Process NNN has X GiB memory in use``
        entries means parallel fan-out cells shared one physical GPU — a
        deterministic GPU-pinning bug, NOT transient infra — return
        ``"code"``. A single sibling entry stays on the infra path (one
        leaked process; kill + respawn fixes it). See task #557.
-    3. If the body shows a torch DataLoader worker wrap (``Caught <Error>
+    4. If the body shows a torch DataLoader worker wrap (``Caught <Error>
        in DataLoader worker``), classify on the WRAPPED Original
        Traceback block, not the outer torch frames: when the wrapped
        block contains an our-code frame (``src/explore_persona_space/``
@@ -152,14 +185,17 @@ def classify_failure(body: str) -> FailureClass:
        infra-pattern scan against the WRAPPED text only. The outer torch
        frames are always library code (worker.py, _utils/, ...) and
        routing on them would misclassify an our-code raise as ``infra``.
-    4. Otherwise, scan the body against the infra log-pattern list. Any
+    5. Otherwise, scan the body against the infra log-pattern list. Any
        match → ``"infra"``.
-    5. Otherwise, default to ``"code"`` (conservative — the implementer
+    6. Otherwise, default to ``"code"`` (conservative — the implementer
        round catches more than the experimenter respawn round).
     """
     field = FIELD_LINE.search(body)
     if field is not None:
         return field.group(1).lower()  # type: ignore[return-value]
+
+    if stall_reason is not None and stall_reason in STALL_REASON_INFRA:
+        return "infra"
 
     if _is_colocation_oom(body):
         return "code"
@@ -221,6 +257,13 @@ def main(argv: list[str] | None = None) -> int:
         help="optional path to a log file; its tail is concatenated with --body "
         "before classification, so library-traceback infra patterns can match.",
     )
+    parser.add_argument(
+        "--stall-reason",
+        default=None,
+        help="optional machine-readable stall cause from the poll JSON line "
+        "(`stall_reason`); a known reason routes `infra` directly. "
+        "See STALL_REASON_INFRA in this module.",
+    )
     args = parser.parse_args(argv)
 
     body = sys.stdin.read() if args.body == "-" else args.body
@@ -228,7 +271,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.log:
         body = body + "\n" + _load_log_tail(Path(args.log))
 
-    print(classify_failure(body))
+    print(classify_failure(body, stall_reason=args.stall_reason))
     return 0
 
 

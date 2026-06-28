@@ -3177,8 +3177,13 @@ while True:
     #   status == "stalled" | "dead" -> post epm:failure v1 with failure_class
     #                                   inferred from log_tail_excerpt
     #                                   (run scripts/failure_classifier.py on
-    #                                   the excerpt); run CRON-TEARDOWN (see
-    #                                   below); set status:blocked; exit.
+    #                                   the excerpt, ALSO forwarding the tick's
+    #                                   result["stall_reason"] via
+    #                                   --stall-reason — a silent hang's log
+    #                                   tail carries no infra pattern, so the
+    #                                   stall_reason is the only routing
+    #                                   signal; see Step 7); run CRON-TEARDOWN
+    #                                   (see below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
     #                                  if new_milestone was true; loop again,
     #                                  using result["next_interval"] as the
@@ -3697,8 +3702,26 @@ When this skill is re-invoked in `running`:
 
    | failure_class | Cause example | Action |
    |---|---|---|
-   | `infra` | OOM, ENOSPC, NCCL, vLLM init failure, SSH refused, 401/gated repo, library traceback (vllm/transformers/peft/trl/torch/xformers) | Re-spawn the **experimenter** on the SAME branch, post `epm:experimenter-respawn v<n+1>`. NO implementer round. Cap 3 respawns; on 4th, status -> `blocked`. |
+   | `infra` | OOM, ENOSPC, NCCL, vLLM init failure, SSH refused, 401/gated repo, library traceback (vllm/transformers/peft/trl/torch/xformers), a zombie-GPU-allocation stall (`stall_reason: vllm_worker_dead_zombie_gpu`, #664) | Re-spawn the **experimenter** on the SAME branch, post `epm:experimenter-respawn v<n+1>`. NO implementer round. Cap 3 respawns; on 4th, status -> `blocked`. (Zombie-GPU stall: see the recovery-brief note below.) |
    | `code` | Python `Traceback` from `src/explore_persona_space/` or `scripts/` (our code), `AssertionError`/`TypeError`/`KeyError` from our code, CUDA OOM listing 2+ sibling `Process <pid> has <X> GiB memory in use` entries (parallel fan-out cells co-located on one device — GPU-pinning bug, #557) | Status back to `running` (implementing sub-phase), re-spawn `experiment-implementer` with the failure context. Loop through Steps 4b -> 5 -> 6 again. Cap 3 (existing). |
+
+   **Zombie-GPU stall recovery brief (`stall_reason: vllm_worker_dead_zombie_gpu`).**
+   When the `status=stalled` tick's `stall_reason` is
+   `vllm_worker_dead_zombie_gpu`, the experimenter respawn is an `infra`
+   row (the classifier routes it via `--stall-reason`), but the generic
+   respawn brief is NOT enough: the orphaned `VLLM::EngineCore` worker
+   holds VRAM under a cmdline of just `VLLM::EngineCore` (no script name),
+   so a routine `pgrep -f <script>` / `pkill -f <dispatcher>.py` reaper
+   MISSES it (#664 r8). The respawn brief MUST instruct the experimenter
+   to reap the orphan by EXACT PID before relaunching on the same pod —
+   `pgrep -af '^VLLM::EngineCore'` → `kill -KILL <pid>` each →
+   `nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader`
+   to confirm the VRAM released. The canonical recipe lives in
+   `.claude/rules/gotchas.md` (crash-orphan `VLLM::EngineCore` entry) and
+   the long-form runbook
+   `.claude/agent-memory/experimenter/feedback_vllm_zombie_gpu_pkill_reaper.md`;
+   reference BOTH in the brief so the experimenter does not re-derive it
+   (the experimenter's own Pre-Launch step 9 also runs this probe).
 
    **Missing `failure_class` — invoke the classifier script.** Do NOT
    reason about regex patterns inline; the patterns are owned by
@@ -3707,10 +3730,16 @@ When this skill is re-invoked in `running`:
 
    ```bash
    # Pipe the failure body via stdin to avoid shell-quoting traps.
+   # On a status=stalled tick, ALSO forward the poll JSON line's
+   # stall_reason via --stall-reason: a known reason (e.g.
+   # vllm_worker_dead_zombie_gpu) routes infra directly, because a silent
+   # hang's log tail matches no infra pattern. Omit the flag when there is
+   # no stall_reason (status=dead, or a stall_reason of null/absent).
    cat <(uv run python scripts/task.py view "$N" --json \
        | jq -r '.events[] | select(.kind == "epm:failure") | .note') \
      | uv run python scripts/failure_classifier.py --body - \
-         --log "$LATEST_LOG_PATH"
+         --log "$LATEST_LOG_PATH" \
+         ${STALL_REASON:+--stall-reason "$STALL_REASON"}
    ```
 
    The script writes a single line — `infra` or `code` — to stdout.
