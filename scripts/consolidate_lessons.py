@@ -210,6 +210,26 @@ def _ratio(a: str, b: str) -> float:
     return difflib.SequenceMatcher(None, _normalize(a), _normalize(b)).ratio()
 
 
+def _containment_ratio(needle: str, haystack: str) -> float:
+    """Fraction of the normalized ``needle`` covered by matching blocks in the
+    normalized ``haystack`` (an ASYMMETRIC, containment-aware similarity).
+
+    Used to decide whether a feedback memory file is "the entry for" a lesson:
+    the per-lesson ``/issue``-time write derives the file BODY from the lesson,
+    so the lesson is a near-substring of the (longer) body. A symmetric
+    ``SequenceMatcher.ratio`` undershoots there because the body carries extra
+    prose around the lesson; this measures how much of the lesson the body
+    actually contains. Returns 0.0 for an empty needle.
+    """
+    n = _normalize(needle)
+    h = _normalize(haystack)
+    if not n:
+        return 0.0
+    matcher = difflib.SequenceMatcher(None, n, h)
+    matched = sum(block.size for block in matcher.get_matching_blocks())
+    return matched / len(n)
+
+
 # ─── Agent-memory + gotchas.md file IO ──────────────────────────────────────
 
 _FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n?(.*)$", re.S)
@@ -295,6 +315,10 @@ class Counts:
     unparseable_skipped: int = 0
     touched_paths: list[Path] = field(default_factory=list)
     skipped: list[Skip] = field(default_factory=list)
+    # Memory files the dedupe pass already handled (survivors + removed
+    # duplicates), so the prune pass does NOT re-prune a deduped concept's
+    # canonical survivor as a spurious "over-eager one-off".
+    dedupe_handled: set[Path] = field(default_factory=set)
 
     @property
     def is_noop(self) -> bool:
@@ -451,6 +475,11 @@ def dedupe(root: Path, lessons: list[Lesson], counts: Counts, *, apply: bool) ->
                 survivor, dup_lesson, dup_file = b_file, a, a_file
             if survivor == dup_file:
                 continue
+            # Both files are now dedupe-handled: the survivor is the consolidated
+            # keeper and the duplicate is removed — neither may be re-pruned by
+            # the prune pass as a spurious "over-eager one-off".
+            counts.dedupe_handled.add(survivor)
+            counts.dedupe_handled.add(dup_file)
             key = (dup_lesson.owning_agent, dup_file.name)
             if key in removed:
                 continue
@@ -466,8 +495,13 @@ def dedupe(root: Path, lessons: list[Lesson], counts: Counts, *, apply: bool) ->
 
 
 def _match_memory_file(mem_dir: Path, lesson: Lesson) -> Path | None:
-    """Return the lesson-derived ``feedback_*.md`` in ``mem_dir`` whose body is
-    ``>= T`` similar to ``lesson``, or None.
+    """Return the lesson-derived ``feedback_*.md`` in ``mem_dir`` whose body
+    CONTAINS the lesson at ``>= T`` containment, or None.
+
+    Uses the asymmetric ``_containment_ratio`` (how much of the lesson the body
+    carries), NOT the symmetric ``_ratio``: the per-lesson ``/issue``-time write
+    derives the file body from the lesson plus surrounding prose, so the lesson
+    is a near-substring of the longer body and a symmetric ratio undershoots.
     """
     if not mem_dir.is_dir():
         return None
@@ -476,7 +510,7 @@ def _match_memory_file(mem_dir: Path, lesson: Lesson) -> Path | None:
     for f in sorted(mem_dir.glob("feedback_*.md")):
         if not _is_lesson_derived(f):
             continue
-        r = _ratio(lesson.lesson, _memory_body(f))
+        r = _containment_ratio(lesson.lesson, _memory_body(f))
         if r >= best_ratio:
             best_ratio = r
             best = f
@@ -603,6 +637,8 @@ def prune(root: Path, lessons: list[Lesson], counts: Counts, *, apply: bool) -> 
         target = _match_memory_file(mem_dir, le)
         if target is None or target in pruned_files:
             continue  # no lesson-derived entry maps to it → keep
+        if target in counts.dedupe_handled:
+            continue  # dedupe already collapsed this concept → never re-prune it
         # Condition 1: all source markers on terminal-status tasks.
         sources = [
             o
@@ -614,10 +650,17 @@ def prune(root: Path, lessons: list[Lesson], counts: Counts, *, apply: bool) -> 
             continue  # unprovable → keep
         if not all(st in TERMINAL_STATUSES for st in statuses):
             continue  # at least one source still active → keep
-        # Condition 2: no recurrence elsewhere in window.
+        # Condition 2: no recurrence elsewhere in window. Recurrence is EITHER
+        # the (phase, failure_class) key appearing on >1 distinct task OR the
+        # lesson CONCEPT (by similarity) appearing on >=2 distinct tasks — the
+        # latter is load-bearing for idempotency: after dedupe collapses a
+        # 2-task concept to one survivor, the survivor's lesson still matches
+        # both task markers, so this keeps it from being pruned on the next run.
         key = (le.phase.strip(), le.failure_class.strip())
         if len(recurrence.get(key, set())) > 1:
-            continue  # recurred → keep
+            continue  # recurred (same phase+class) → keep
+        if len({s.task_id for s in sources}) >= K_RECUR:
+            continue  # recurred (same concept across tasks) → keep
         # Condition 3: lesson-derived (checked by _match_memory_file already).
         pruned_files.add(target)
         counts.pruned += 1
