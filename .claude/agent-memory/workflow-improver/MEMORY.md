@@ -1,0 +1,1 @@
+- [Never cd out of your own agent worktree](feedback_never_cd_out_of_own_worktree.md) — do all reads/edits/git in YOUR worktree; a per-Bash-call `cd` into a sibling issue-<N> worktree reads stale/conflicted state and risks editing the wrong tree (#664)
