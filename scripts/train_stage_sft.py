@@ -32,9 +32,67 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTConfig, SFTTrainer
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+from explore_persona_space.train.dft_loss import (
+    LOSS_REWEIGHT_MODES,
+    dft_reweighted_loss,
+)
+
 # Ensure NCCL works on pods
 os.environ.setdefault("NCCL_CUMEM_ENABLE", "0")
 torch.backends.cuda.matmul.allow_tf32 = True
+
+
+class LossReweightSFTTrainer(SFTTrainer):
+    """SFTTrainer whose loss is computed via the issue-#715 DFT reweight.
+
+    Overrides ``compute_loss`` to compute per-completion-token-mean cross-entropy
+    from raw model logits + a completion mask (``labels != -100``), optionally
+    multiplied per-token by ``sg(π_θ(y*_t))`` (DFT). SFT and DFT share this SAME
+    override, branching only on ``self.loss_reweight``:
+
+    - ``"sft"`` — weight ≡ 1: standard per-completion-token-mean CE (the
+      comparison anchor; the weight≡1 SFT-equivalence is unit-tested in
+      ``tests/test_dft_weight_one_equals_sft.py``).
+    - ``"dft"`` — multiplicative detached-softmax weight (arXiv:2508.05629
+      ``eq:dr-loss-token-level``).
+
+    The reduction is the per-completion-token MEAN (sum over completion tokens /
+    completion-token count), IDENTICAL across both arms — see
+    ``explore_persona_space.train.dft_loss`` for the reduction rationale. This is
+    NOT TRL's internal ``num_items_in_batch`` divisor; both arms use the same
+    mean so the within-substrate comparison is single-variable.
+
+    The override computes from RAW LOGITS (not the model's own ``outputs.loss``),
+    so it bypasses SFTTrainer's default loss entirely — closing risk #9 (the
+    override being bypassed by SFTTrainer's internal loss). Works identically
+    under ``use_lora=True`` (LoRA arm) and ``use_lora=False`` (full-FT arm).
+    """
+
+    def __init__(self, *args, loss_reweight: str = "sft", **kwargs):
+        if loss_reweight not in LOSS_REWEIGHT_MODES:
+            raise ValueError(
+                f"loss_reweight must be one of {LOSS_REWEIGHT_MODES}, got {loss_reweight!r}"
+            )
+        # Liger fused-CE skips materializing logits during training, which the
+        # raw-logits override needs — disable it so we always get logits.
+        super().__init__(*args, **kwargs)
+        self.loss_reweight = loss_reweight
+
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        labels = inputs.get("labels")
+        if labels is None:
+            raise ValueError(
+                "LossReweightSFTTrainer requires `labels` in the batch (completion-"
+                "masked next-token labels with -100 on prompt/pad). Got none — check "
+                "the dataset/collator wiring (completion_only_loss + packing=False)."
+            )
+        outputs = model(
+            **{k: v for k, v in inputs.items() if k not in ("labels", "num_items_in_batch")}
+        )
+        logits = outputs["logits"] if isinstance(outputs, dict) else outputs.logits
+        loss = dft_reweighted_loss(logits, labels, loss_reweight=self.loss_reweight)
+        return (loss, outputs) if return_outputs else loss
 
 
 def load_sft_dataset(dataset_path: str, tokenizer) -> Dataset:
@@ -66,7 +124,7 @@ def load_sft_dataset(dataset_path: str, tokenizer) -> Dataset:
     return Dataset.from_list(data)
 
 
-def main():
+def main():  # noqa: C901 — flat config-resolution entrypoint; splitting hurts readability
     parser = argparse.ArgumentParser(description="Distributed SFT training stage")
     parser.add_argument("--config", help="Path to YAML config for this stage")
     parser.add_argument("--model", help="Model name or path (overrides config)")
@@ -93,6 +151,16 @@ def main():
     )
     parser.add_argument("--use-liger-kernel", action="store_true", default=None)
     parser.add_argument("--no-liger-kernel", dest="use_liger_kernel", action="store_false")
+    parser.add_argument(
+        "--dft-mode",
+        choices=list(LOSS_REWEIGHT_MODES),
+        default=None,
+        help=(
+            "Loss reweight (issue #715): 'sft' = weight≡1 baseline CE, "
+            "'dft' = per-token sg(π_θ(y*_t)) reweight. Overrides config.loss_reweight. "
+            "When unset and config has no loss_reweight, defaults to 'sft'."
+        ),
+    )
     parser.add_argument("--wandb-project", help="WandB project name")
     parser.add_argument("--wandb-run-name", help="WandB run name")
     parser.add_argument(
@@ -159,6 +227,27 @@ def main():
     wandb_run_name = args.wandb_run_name or cfg.get("wandb_run_name")
     report_to = "wandb" if wandb_project else "none"
 
+    # Issue #715 DFT loss reweight: CLI > config > "sft" default. The same
+    # custom compute_loss serves both arms; only this flag differs.
+    loss_reweight = args.dft_mode if args.dft_mode is not None else cfg.get("loss_reweight", "sft")
+
+    # Checkpoint cadence (issue #715 Pareto / dose sweeps need per-step ckpts).
+    # Default "no" preserves the legacy behavior for every other caller.
+    save_strategy = cfg.get("save_strategy", "no")
+    save_steps = cfg.get("save_steps", 0)
+    save_total_limit = cfg.get("save_total_limit")
+    max_steps = cfg.get("max_steps")
+    # Completion-only loss masking (prompt tokens -> -100). Required for DFT's
+    # completion-token reweight; matches #545's full-FT recipe. packing must be
+    # OFF for completion masking (row boundaries needed).
+    completion_only_loss = cfg.get("completion_only_loss", False)
+    if completion_only_loss and packing:
+        print(
+            "WARNING: completion_only_loss=True forces packing=False "
+            "(completion masking needs row boundaries)."
+        )
+        packing = False
+
     if not dataset_path:
         print("ERROR: --dataset or config.dataset_path required")
         sys.exit(1)
@@ -220,8 +309,10 @@ def main():
     dataset = load_sft_dataset(dataset_path, tokenizer)
     print(f"Dataset: {len(dataset)} examples")
 
-    # Training config
-    sft_config = SFTConfig(
+    # Training config. save_strategy/save_steps/max_steps/completion_only_loss
+    # are config-driven (issue #715 needs per-step checkpoints + completion
+    # masking; every other caller keeps the legacy "no"-save default).
+    sft_kwargs = dict(
         output_dir=output_dir,
         num_train_epochs=epochs,
         per_device_train_batch_size=batch_size,
@@ -233,7 +324,7 @@ def main():
         lr_scheduler_type=lr_scheduler_type,
         bf16=True,
         logging_steps=10,
-        save_strategy="no",
+        save_strategy=save_strategy,
         seed=seed,
         report_to=report_to,
         run_name=wandb_run_name,
@@ -243,15 +334,25 @@ def main():
         gradient_checkpointing=gradient_checkpointing,
         max_grad_norm=max_grad_norm,
         optim="adamw_torch_fused",
+        completion_only_loss=completion_only_loss,
         # DeepSpeed handles distributed — these are set via accelerate launch
     )
+    if save_strategy == "steps" and save_steps:
+        sft_kwargs["save_steps"] = save_steps
+    if save_total_limit is not None:
+        sft_kwargs["save_total_limit"] = save_total_limit
+    if max_steps is not None:
+        sft_kwargs["max_steps"] = max_steps
+    sft_config = SFTConfig(**sft_kwargs)
 
-    trainer = SFTTrainer(
+    trainer = LossReweightSFTTrainer(
         model=model,
         args=sft_config,
         train_dataset=dataset,
         processing_class=tokenizer,
+        loss_reweight=loss_reweight,
     )
+    print(f"  Loss reweight: {loss_reweight} (completion_only_loss={completion_only_loss})")
 
     # Train
     trainer.train()
