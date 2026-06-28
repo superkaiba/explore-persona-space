@@ -6025,28 +6025,66 @@ work* contract.
     already run in a prior `/issue <N>` invocation that produced the
     children we're now waiting on.
 
+    If type is `analysis` AND we just landed at `completed` AND the
+    clean-result body carries a measured finding (a `## Results`
+    section), proceed to **Step 10c-bis ONLY** (results-driven
+    literature-positioning). Do NOT enter Step 10b (follow-up proposer)
+    or Step 10c (living-docs update) — both are EXPERIMENTS-ONLY; an
+    analysis task seeds no experimental follow-ups and owns no
+    open-questions diff. Step 10c-bis applies its own kind /
+    finding-bearing gate (see Step 10c-bis § When to run: a `kind:
+    analysis` task with no `## Results` writes a 3-line "no measured
+    finding" stub and raises no gate), so a finding-less analysis task
+    that reaches this branch self-skips cleanly inside the agent. This
+    is the SOLE entry into Step 10c-bis for analysis tasks — without it
+    a finding-bearing `kind: analysis` clean-result would silently skip
+    the literature-positioning step that CLAUDE.md item 11, the
+    `related_work_positioning` gate, and the `related-work-finder` agent
+    all promise it.
+
+    Any other type (`infra` / `batch` / `survey`), or an `analysis`
+    task with no `## Results`, enters NONE of the Step 10b/10c/10c-bis
+    batch — proceed straight to Step 10d (unchanged).
+
 ### Step 10b: Follow-up proposer (experiments only — runs ∥ Step 10c)
 
 **Parallel spawn with Step 10c + 10c-bis.** Steps 10b, 10c, and 10c-bis
 keep their numbering and their per-step semantics, but their agents are
 spawned CONCURRENTLY: evaluate all three steps' skip conditions first
 (10b's autonomous-mode short-circuit below; 10c's kind / `relates_to`
-skips; 10c-bis's kind / finding-bearing skips), then spawn
-`follow-up-proposer` AND `living-docs-updater` AND `related-work-finder`
-in ONE message (three Agent calls, staggered a few seconds apart per the
-CLAUDE.md 429 guidance), each preceded by its own `stage-dispatch`
-breadcrumb (Step 9 entry-guard convention; for the new agent
-`stage=related-work round=1 subagent=related-work-finder`). All three
-read the completed clean-result; their outputs are independent (follow-up
-proposals vs a proposed open-questions diff vs a proposed Related-findings
-positioning note). Process each return per its own step text, and JOIN
-ALL THREE — `epm:follow-ups v1` posted (or 10b skipped) AND the 10c
-proposal handled (gate raised / parked per 10c) AND the 10c-bis proposal
-handled (`related_work_positioning` gate raised / parked per 10c-bis, or
-10c-bis skipped) — before entering Step 10d. The `living_docs_update` and
-`related_work_positioning` gates, all markers, and the user-confirmation
-semantics are unchanged by the scheduling; only the spawn scheduling is
-shared. If a step's skip condition fires, spawn only the other agents.
+skips; 10c-bis's kind / finding-bearing skips), then spawn the SURVIVING
+agents in ONE message (one Agent call per agent that did not skip,
+staggered a few seconds apart per the CLAUDE.md 429 guidance), each
+preceded by its own `stage-dispatch` breadcrumb (Step 9 entry-guard
+convention; for the new agent `stage=related-work round=1
+subagent=related-work-finder`). Each spawned agent reads the completed
+clean-result; their outputs are independent (follow-up proposals vs a
+proposed open-questions diff vs a proposed Related-findings positioning
+note). Process each return per its own step text, and JOIN every spawned
+agent — `epm:follow-ups v1` posted (or 10b skipped) AND the 10c proposal
+handled (gate raised / parked per 10c, or 10c skipped) AND the 10c-bis
+proposal handled (`related_work_positioning` gate raised / parked per
+10c-bis, or 10c-bis skipped) — before entering Step 10d. The
+`living_docs_update` and `related_work_positioning` gates, all markers,
+and the user-confirmation semantics are unchanged by the scheduling; only
+the spawn scheduling is shared. If a step's skip condition fires, spawn
+only the other agents.
+
+**Per-kind membership of this batch (no concurrency assumption beyond
+this list):**
+
+- `experiment` (entered from the Step 10 step-10 experiment branch) →
+  all THREE agents spawn (`follow-up-proposer` + `living-docs-updater` +
+  `related-work-finder`), subject to each step's own skip conditions.
+- `analysis` with a measured finding (entered from the Step 10 step-10
+  analysis branch) → ONLY `related-work-finder` spawns. Steps 10b and 10c
+  are EXPERIMENTS-ONLY and are NOT entered for an analysis task, so this
+  "parallel batch" degenerates to a single Agent call — do NOT spawn
+  `follow-up-proposer` or `living-docs-updater`. (A future reader: this is
+  the one-agent case; the word "batch" here does not imply three spawns.)
+- `infra` / `batch` / `survey`, or `analysis` with no `## Results` → none
+  of the three spawn (this batch is not entered at all; proceed to Step
+  10d).
 
 Auto-fires after `completed` for `experiment` tasks. Spawn the
 `follow-up-proposer` agent with:

@@ -599,7 +599,7 @@ gates:
         the Step 6d.2 polling loop on the next /issue invocation.
 
         <!-- gate: gates.conditional.fact_candidates -->
-    - id: 15
+    - id: 17
       name: related_work_positioning
       step: "completion hook (Step 10c-bis post-completion batch, after auto-complete)"
       condition: |
