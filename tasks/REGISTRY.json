@@ -4539,8 +4539,8 @@
     "723": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/723",
-      "status": "running",
+      "path": "tasks/reviewing/723",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas.md \u2014 rsLoRA parity probe needs A100 intent, fails on L4"
     },
     "74": {
