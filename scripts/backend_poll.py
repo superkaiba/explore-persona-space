@@ -190,6 +190,12 @@ def _serialize_poll_result(result) -> dict:
         # that predates the field — mixed-version worktree copies degrade
         # to the conservative short interval, never crash the poll.
         "next_interval": int(getattr(result, "next_interval", _DEFAULT_NEXT_INTERVAL_SEC)),
+        # Machine-readable stall cause (#664): set on the RunPod lane for a
+        # zombie-GPU-allocation hang (``"vllm_worker_dead_zombie_gpu"``),
+        # ``None`` otherwise. ``getattr`` defends against a backends-side
+        # result that predates the field (the GCP/SLURM lanes do not set
+        # it) so the JSON shape stays uniform across lanes without crashing.
+        "stall_reason": getattr(result, "stall_reason", None),
     }
 
 
