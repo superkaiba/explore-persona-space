@@ -300,6 +300,12 @@ class RunPodBackend(ComputeBackend):
                     custom_workload=True,
                     attempt_id=attempt_id,
                     wandb_run_path=spec.extra.get("wandb_run_path"),
+                    # #685 / #661: thread the per-issue worktree git root +
+                    # the phase-scope flag off spec.extra (the same channel
+                    # as wandb_run_path; _launch_extra_from_args populates
+                    # both). None / False (absent) = established behavior.
+                    git_repo_root=spec.extra.get("git_repo_root"),
+                    skip_default_git_paths=bool(spec.extra.get("skip_default_git_paths", False)),
                 ),
             },
         )

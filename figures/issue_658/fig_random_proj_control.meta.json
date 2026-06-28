@@ -1,0 +1,308 @@
+{
+  "commit": "e051a02a85",
+  "created": "2026-06-28T03:07:19Z",
+  "figsize": [
+    9.6,
+    5.0
+  ],
+  "points": [
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3485,
+      "y": 9.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.2784,
+      "y": 8.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3936,
+      "y": 7.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.2844,
+      "y": 6.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.4493,
+      "y": 5.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3942,
+      "y": 4.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.2902,
+      "y": 3.0,
+      "label": "misalignment-specific (Betley)\nstructured PASS 3/10 \u00b7 random PASS 0/10",
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.4993,
+      "y": 2.0,
+      "label": "misalignment-specific (Betley)\nstructured PASS 3/10 \u00b7 random PASS 0/10",
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.5977,
+      "y": 1.0,
+      "label": "misalignment-specific (Betley)\nstructured PASS 3/10 \u00b7 random PASS 0/10",
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.6411,
+      "y": 0.0,
+      "label": "misalignment-specific (Betley)\nstructured PASS 3/10 \u00b7 random PASS 0/10",
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.1458,
+      "y": 9.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.2228,
+      "y": 8.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.2151,
+      "y": 7.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.2693,
+      "y": 6.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.4131,
+      "y": 5.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3764,
+      "y": 4.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3932,
+      "y": 3.0,
+      "label": "misalignment-specific (Betley)\nstructured PASS 3/10 \u00b7 random PASS 0/10",
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3823,
+      "y": 2.0,
+      "label": "misalignment-specific (Betley)\nstructured PASS 3/10 \u00b7 random PASS 0/10",
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.4072,
+      "y": 1.0,
+      "label": "misalignment-specific (Betley)\nstructured PASS 3/10 \u00b7 random PASS 0/10",
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.4725,
+      "y": 0.0,
+      "label": "misalignment-specific (Betley)\nstructured PASS 3/10 \u00b7 random PASS 0/10",
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.2943,
+      "y": 9.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.2632,
+      "y": 8.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.42,
+      "y": 7.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3676,
+      "y": 6.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.5263,
+      "y": 5.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.4935,
+      "y": 4.0,
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3814,
+      "y": 3.0,
+      "label": "generic (UltraChat)\nstructured PASS 3/10 \u00b7 random PASS 1/10",
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.5354,
+      "y": 2.0,
+      "label": "generic (UltraChat)\nstructured PASS 3/10 \u00b7 random PASS 1/10",
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.6002,
+      "y": 1.0,
+      "label": "generic (UltraChat)\nstructured PASS 3/10 \u00b7 random PASS 1/10",
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.5666,
+      "y": 0.0,
+      "label": "generic (UltraChat)\nstructured PASS 3/10 \u00b7 random PASS 1/10",
+      "series": "structured summary (best of mean/last/max-pool)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.2144,
+      "y": 9.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.2286,
+      "y": 8.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3845,
+      "y": 7.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3422,
+      "y": 6.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.534,
+      "y": 5.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.4394,
+      "y": 4.0,
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.317,
+      "y": 3.0,
+      "label": "generic (UltraChat)\nstructured PASS 3/10 \u00b7 random PASS 1/10",
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3897,
+      "y": 2.0,
+      "label": "generic (UltraChat)\nstructured PASS 3/10 \u00b7 random PASS 1/10",
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.3028,
+      "y": 1.0,
+      "label": "generic (UltraChat)\nstructured PASS 3/10 \u00b7 random PASS 1/10",
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "best held-out Spearman \u03c1 over 28 layers": 0.4033,
+      "y": 0.0,
+      "label": "generic (UltraChat)\nstructured PASS 3/10 \u00b7 random PASS 1/10",
+      "series": "random projection (unfitted control)",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 40
+}

@@ -1,6 +1,6 @@
 ---
 name: daily
-description: End-of-day Explore Persona Space brief — what happened today, plus an exhaustive sweep of every problem/confusion/error in the day's Claude Code session transcripts, each with a concrete fix. Fixes are AUTO-APPLIED by default — workflow files AND experiment-code / infra / script / config fixes (each verified before commit, committed separately so every fix stays one git-revert away) — and summarized to Thomas's my-goat Telegram. Only genuine judgment calls are held (result-interpretation changes, destructive/irreversible actions, spending money, external side-effects); those are logged with a suggested action so nothing is dropped.
+description: End-of-day Explore Persona Space brief — what happened today, plus an exhaustive sweep of every problem/confusion/error in the day's Claude Code session transcripts, each with a concrete fix. Each fix is routed by a THREE-ROUTE classifier (changed #706): route 1 SELF-APPLIES only trivial mechanical changes with no behavior effect (doc edits, string replaces, lint annotations — verified, then committed one fix per commit so each stays one git-revert away); route 2 FILES every behavior/logic/code/infra change via scripts/file_infra_task.py → a background /issue --auto session, so the fix lands through the full independent planner / critic ensemble / Claude+Codex code-review / test-verdict pipeline rather than this skill's own verify gate; route 3 FILES a tracked proposed needs-human task (carve-out: result-interpretation changes, destructive/irreversible actions, spending money, external side-effects, genuinely ambiguous intent) that the PM surfaces. A concise summary of what was applied + filed + held is pushed to Thomas's my-goat Telegram. Nothing is silently dropped.
 ---
 
 # Daily Brief
@@ -10,11 +10,13 @@ status, promotion, or approval state through any external tracker.
 
 Two jobs in one file:
 1. **Recap** — what happened on the project today.
-2. **Problem sweep + auto-fix** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem with a derivable fix — workflow files AND experiment-code / infra / script / config fixes — is **AUTO-APPLIED in this run**: make the edit, VERIFY it (see "Verification gate for code fixes" below), and `git commit` it on its own (one commit per fix, so each is independently revertable), then run the repo-wide workflow lint ONCE after all workflow-file fixes (see "Lint gate" below — `workflow_lint.py` is a repo-wide validator, NOT a per-file `.md` linter). Record each applied fix in `## Applied workflow improvements` with its diff and commit sha. Then push a concise summary of what was applied (with the commit shas, so Thomas can revert any) to Thomas's my-goat Telegram chat (see "Auto-apply + surfacing flow"). Only problems behind a GENUINE judgment call (see "Judgment-call carve-out" below), plus fixes that could not be verified tonight, are logged in `## Other problems & notes` with a one-line suggested action, so nothing is silently dropped.
+2. **Problem sweep + three-route fix** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem with a derivable fix is routed by the THREE-ROUTE classifier (see "Triage each problem" below): **route 1 (trivial mechanical, no behavior change)** is AUTO-APPLIED in this run — make the edit, VERIFY it (see "Verification gate for code fixes" below), and `git commit` it on its own (one commit per fix, so each is independently revertable), then run the repo-wide workflow lint ONCE after all workflow-file fixes (see "Lint gate" below — `workflow_lint.py` is a repo-wide validator, NOT a per-file `.md` linter), and record it in `## Applied workflow improvements` with its diff and commit sha; **route 2 (any behavior/logic change)** is FILED for independent review via `scripts/file_infra_task.py` → `/issue --auto` (recorded as a "filed for review #<N>" entry in `## Applied workflow improvements`, no self-applied diff); **route 3 (a genuine judgment call — see "Judgment-call carve-out" below)** is FILED as a TRACKED `proposed` `needs-human` task the PM surfaces, AND logged in `## Other problems & notes` with the filed `#<N>`. Then push a concise summary of what was applied + filed (with the commit shas / filed ids) to Thomas's my-goat Telegram chat (see "Surfacing flow (applied / filed / held)"). Nothing is silently dropped — every problem self-applies (route 1), routes to review (route 2), or becomes a tracked needs-human task + a note (route 3).
 
-   **Auto-apply replaces the old greenlight gate (changed 2026-06-08 per Thomas: "make the workflow improvements automatically and just surface them in this chat").** Earlier this skill drafted PROPOSED diffs and waited for Thomas to say "do 1, 3"; now fixes apply themselves and Thomas reviews after the fact via the Telegram summary (and can revert any single fix by its commit sha). The safety posture is "apply but stay fully transparent + per-fix revertable", not "apply silently".
-
-   **Expanded to code/infra fixes 2026-06-12 per Thomas: "Experiment bugs and infra flakiness and high blast radius stuff should ALSO get fixed automatically unless there's REALLY a judgement call needed."** The bar for holding a fix is: would a competent engineer just fix this without asking? If yes, fix it. Hold ONLY what the judgment-call carve-out lists.
+   **Three routes, not a binary apply-vs-hold (changed 2026-06-28, #706).** Earlier this skill ran a binary classifier: bucket 1 = self-apply EVERYTHING fixable (the 2026-06-08 "make the workflow improvements automatically" + the 2026-06-12 "fix experiment bugs / infra flakiness / high-blast-radius stuff automatically" directives), bucket 2 = hold a genuine judgment call as a dead-end note. That made self-apply the ONLY un-reviewed path AND it "graded its own homework" — a behavior change shipped on this skill's own verify gate with no independent review, and a held item landed where Thomas does not look (a tracked-but-unread `logs/daily/` file + one Telegram digest line), never as an actionable task. The classifier is now THREE routes (full spec under "Triage each problem"):
+   - **Route 1 — trivial mechanical** (doc edits, string replaces, lint annotations — NO behavior change): self-apply + verify + commit, exactly as the old bucket 1 did, but NARROWED to changes with no behavior/logic effect.
+   - **Route 2 — any behavior/logic change** (incl. high-blast-radius REVERSIBLE — the bulk of the old bucket 1): no longer self-applied. FILE a `kind: infra` task that auto-dispatches to `/issue --auto`, so the fix lands through the full independent planner / critic ensemble / Claude+Codex code-review / test-verdict pipeline rather than this skill's own verify gate. This kills "grades its own homework" + "self-apply is the only un-reviewed path".
+   - **Route 3 — genuine judgment call** (the carve-out list below, verbatim): FILE a TRACKED `proposed` task tagged `needs-human` that the PM surfaces + re-surfaces in the session Thomas actually uses — no longer a dead-end log note.
+   The safety posture stays "stay fully transparent + per-fix revertable"; route 2 ADDS independent review before a behavior change lands, and route 3 ADDS a tracked, re-surfaced task so a held item is never lost.
 
 ## Inputs
 
@@ -43,7 +45,7 @@ uv run python scripts/task.py view <N>
 Write the brief to `logs/daily/YYYY-MM-DD.md` (relative to the repo root —
 `~/explore-persona-space/`). One file per date. The file is a written RECORD
 of what the run applied + noted; the actual surfacing to Thomas happens over
-Telegram (see "Auto-apply + surfacing flow"), not via this file. Handle an
+Telegram (see "Surfacing flow (applied / filed / held)"), not via this file. Handle an
 existing file as follows:
 
 - **File does not exist** → write the full stub (all five H2 sections below).
@@ -108,17 +110,29 @@ changes, completed reviews. Be concrete (mention task IDs). This is the
 auto-drafted summary Thomas will edit down.>
 
 ## Applied workflow improvements
-<numbered list of WORKFLOW-FIXABLE problems that were AUTO-APPLIED this run —
-each with its applied diff and commit sha; see "Problem sweep" below for the
-shape. If no workflow-fixable problems surfaced today, write a single line:
+<numbered list of workflow improvements from this run — BOTH route-1 self-applied
+fixes AND route-2 review filings (see "Triage each problem" below for the routing
+and "Applied-edit record shape" below for the route-1 shape):
+  - Route 1 (trivial mechanical, self-applied): each entry carries its applied
+    diff + commit sha + the verification result (per the record shape below).
+  - Route 2 (any behavior/logic change, filed for review): a
+    "filed for review #<N>: <one-liner>" entry — the filed `kind: infra` task id
+    (tagged `daily-auto-filed`) + a one-line description, with NO self-applied diff
+    or sha (the actual code change lands when the spawned `/issue --auto` session
+    completes through the full independent pipeline).
+If no workflow improvements were applied OR filed today, write a single line:
 `- _no workflow-fixable problems found today_`>
 
 ## Other problems & notes
-<every problem/confusion/error from today that was NOT auto-fixed — held
-judgment calls (name WHICH carve-out item held it), fixes that failed
-verification or the lint gate (reverted), research questions, and anything
-Thomas had to fix by hand. One bullet each: what happened (session id /
-task id) + why it was held + a one-line suggested action.
+<every problem/confusion/error from today that was NOT routed to
+`## Applied workflow improvements` (i.e. not a route-1 self-apply nor a route-2
+review filing). One bullet each: what happened (session id / task id) + the
+routing/disposition + a one-line suggested action. Specifically:
+  - Route 3 (a genuine judgment call): name WHICH carve-out item held it, AND the
+    filed `daily-held needs-human` task `#<N>` (it is a TRACKED `proposed` task the
+    PM surfaces + re-surfaces, no longer a dead-end note).
+  - Fixes that failed verification or the lint gate (reverted), research questions,
+    and anything Thomas had to fix by hand.
 These are notes, not applied edits. If none, write:
 `- _no other problems surfaced today_`>
 
@@ -166,19 +180,38 @@ entries that turned out to be one-offs. For this consolidation pass ONLY,
 allowed target (dedupe/prune edits to lesson-derived entries, not general
 memory rewrites).
 
-**Triage each problem into one of two buckets (changed 2026-06-12 — bucket 1 is now the default for EVERYTHING fixable):**
+**Triage each problem into one of THREE routes (changed 2026-06-28, #706 — route 1 NARROWS the old "self-apply everything fixable" bucket to no-behavior-change-only; route 2 sends behavior changes to independent review; route 3 turns held judgment calls into tracked tasks the PM surfaces):**
 
-1. **Auto-fixable** (the default) → APPLY it now (Edit the file), VERIFY it (see "Verification gate for code fixes" — workflow `.md` files skip this and use the lint gate instead), `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. This bucket now includes, beyond the workflow files: **experiment-code bugs** (`scripts/*.py`, `src/**`), **infra flakiness fixes** (retry logic, timeouts, pod-setup scripts, env/config files), **hook fixes in `.claude/settings.json`** (repairing existing hooks), and **creating a new agent/skill file** when the day's evidence clearly calls for one. After ALL workflow-file fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate"); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate".
-2. **Held — genuine judgment call** → goes in `## Other problems & notes` as a bullet: what happened (session id / task id) + which carve-out item held it + a one-line suggested action. ONLY the judgment-call carve-out below lands here (plus fixes that failed verification).
+1. **Route 1 — Trivial mechanical** (doc edits, string replaces, comment/lint annotations — changes with NO behavior or logic effect) → APPLY it now (Edit the file), VERIFY it (see "Verification gate for code fixes" — workflow `.md` files skip this and use the lint gate instead), `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. After ALL workflow-file fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate"); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate". **The litmus is "does this change what the code/workflow DOES?"** — pure prose/string/format/comment edits, typo fixes, and stale-reference renames qualify; ANYTHING that alters behavior or logic does NOT (it goes to route 2). When unsure, route to 2 — route 1 is the conservative no-behavior-change floor, not a catch-all.
 
-**Judgment-call carve-out (the ONLY things NOT auto-fixed — per Thomas 2026-06-12: "unless there's REALLY a judgement call needed"):**
+2. **Route 2 — any behavior/logic change** (incl. high-blast-radius REVERSIBLE — the bulk of the old self-apply bucket: experiment-code bugs in `scripts/*.py` / `src/**`, infra flakiness fixes, retry/timeout logic, hook repairs in `.claude/settings.json`, a new agent/skill file, any workflow-rule change that alters what an agent does) → do NOT self-apply. FILE a `kind: infra` task that auto-dispatches to `/issue --auto`, so the fix lands through the full INDEPENDENT pipeline (planner → adversarial critic ensemble → implementer → Claude+Codex code-review → test-verdict → Step 10d auto-merge) rather than this skill's own verify gate. This is what kills "grades its own homework" + "self-apply is the only un-reviewed path". File with:
+   ```bash
+   uv run python scripts/file_infra_task.py --kind infra \
+     --title "daily-fix: <one-line, <=60 chars>" \
+     --body-file <path to a body describing the bug + the proposed fix> \
+     --tag wf-fix --tag "wf-fix-fp:<fp>" --tag daily-auto-filed
+   ```
+   (compute `<fp>` = `task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)`; the `daily-auto-filed` tag distinguishes /daily-filed review tasks from manual workflow-fix-on-bug filings, and feeds the PM digest count M.) `file_infra_task.py` files + best-effort spawns `/issue --auto` in one call, and no-ops the spawn cleanly (the task stays at `proposed` for the watcher `proposed_infra_sweep` backstop) when the daemon is unreachable / the cap is full. Record the filed `#<N>` in `## Applied workflow improvements` as a **"filed for review #<N>: <one-liner>"** entry (there is no self-applied diff or sha for a route-2 item — the diff lands in the spawned `/issue` session). For experiment-code bugs that are NOT a workflow-surface gap, file the `kind: infra` task the same way (drop the `wf-fix` / `wf-fix-fp` tags, keep `daily-auto-filed`) so the bulk count still attributes it.
+
+3. **Route 3 — a genuine judgment call** (the judgment-call carve-out below, VERBATIM) → FILE a TRACKED `proposed` task the PM surfaces + re-surfaces, AND log it in `## Other problems & notes`. The held item is no longer a dead-end note that lands where Thomas does not look (a tracked-but-unread `logs/daily/` file + one Telegram digest line) — it becomes a real task in the `proposed` queue, tagged so the PM enumerates it in its `Needs you` block every STATUS pass until Thomas acts on it. File with:
+   ```bash
+   uv run python scripts/file_infra_task.py --kind infra --no-dispatch \
+     --title "daily-held: <one-line, <=60 chars>" \
+     --body-file <path to a body describing the held item + WHICH carve-out item held it> \
+     --tag daily-held --tag needs-human
+   ```
+   `--no-dispatch` files the task at `proposed` WITHOUT spawning a session (the PM, not an autonomous sweep, decides what happens). The `needs-human` tag is the auto-dispatch-exclusion signal: the watcher's `proposed_infra_sweep` candidate query SKIPS any `proposed` infra task carrying it, and the PM enumerates it in `Needs you` instead. Record the held item in `## Other problems & notes` as a bullet: what happened (session id / task id) + which carve-out item held it + the filed `#<N>` + a one-line suggested action.
+
+**Judgment-call carve-out (the ONLY things routed to route 3 — per Thomas 2026-06-12: "unless there's REALLY a judgement call needed"):**
 - **Scientific-meaning changes** — anything that alters how results are computed, evaluated, or interpreted (metrics, eval criteria, analysis logic, hypothesis framing, RESULTS.md claims). A wrong silent fix here can flip a conclusion; Thomas decides.
 - **Destructive / irreversible actions** — deleting or rewriting data, eval results, checkpoints, task history; anything NOT undoable by a single `git revert`.
 - **Spends money or launches compute** — pod spin-ups, paid API runs, anything with a bill.
 - **External side-effects** — sends, posts, pushes to remote, anything leaving the machine (existing rule: do not push).
 - **Genuinely ambiguous intent** — two reasonable fixes diverge AND picking wrong would mislead later work. If a competent engineer would just fix it without asking, it is NOT in this bucket.
 
-**Verification gate for code fixes** (bucket-1 items touching `*.py` / `*.sh` / configs / hooks): before committing, verify the fix — reproduce the original failure if cheap, run the file's tests if they exist, or at minimum a syntax/import check (`uv run python -c "import <module>"`, `bash -n`, or the script's `--help`) plus a targeted smoke check of the changed path. A fix that cannot be verified tonight is NOT committed — log it in `## Other problems & notes` as "unverified fix drafted: <why>". Never weaken a verification to make it pass.
+This 5-item list is now the **route-3 trigger**: a problem matching any item is FILED as a TRACKED `proposed` `needs-human` task (route 3 above) that the PM surfaces + re-surfaces in its `Needs you` block — it is no longer merely a dead-end note. (A problem that does NOT match any item is route 1 if it has no behavior change, else route 2.)
+
+**Verification gate for code fixes** (route-1 items touching `*.py` / `*.sh` / configs / hooks): before committing, verify the fix — reproduce the original failure if cheap, run the file's tests if they exist, or at minimum a syntax/import check (`uv run python -c "import <module>"`, `bash -n`, or the script's `--help`) plus a targeted smoke check of the changed path. A fix that cannot be verified tonight is NOT committed — log it in `## Other problems & notes` as "unverified fix drafted: <why>". Never weaken a verification to make it pass.
 
 **Allowed target files** (project workflow — global files are handled by `/memory-sleep`):
 - `~/explore-persona-space/CLAUDE.md`
@@ -224,17 +257,17 @@ uv run python scripts/workflow_lint.py --check-references
 - `--check-asks` is ALSO a gate (it now PASSes clean repo-wide, since the `issue/SKILL.md` mentions were annotated): a new `--check-asks` failure means a just-applied edit added an un-annotated `AskUserQuestion` mention — annotate it (`<!-- gate: <key> -->` resolving in `workflow.yaml § gates`, or `<!-- example: anti-pattern -->` for a forbidden-use / meta mention) or revert that edit, same discipline as `--check-references`.
 - **On regression** (`--check-references` was clean and is now failing): the failure is from a just-applied edit. Identify the offending commit, `git revert --no-edit <sha>` it (do not hand-edit), move that item to `## Other problems & notes` as "reverted: failed lint gate (<error>)", and re-run the gate until it is green again. Then continue to surfacing.
 
-### Auto-apply + surfacing flow
+### Surfacing flow (applied / filed / held)
 
-The fixes apply themselves during the run (bucket 1 above): edit → `git commit` (one commit per fix) → repo-wide lint gate ONCE (see "Lint gate"). After all fixes are applied and the daily file is written, **surface a concise summary to Thomas's my-goat Telegram chat** by enqueuing it into the my-goat notification digest:
+During the run: route-1 fixes apply themselves (edit → `git commit`, one commit per fix → repo-wide lint gate ONCE, see "Lint gate"); route-2 behavior/logic changes are FILED via `file_infra_task.py` (no self-applied diff); route-3 judgment calls are FILED as tracked `needs-human` tasks. After all fixes are routed and the daily file is written, **surface a concise summary to Thomas's my-goat Telegram chat** by enqueuing it into the my-goat notification digest. Match the §2(f) PM-digest model (`/daily last night: applied N, filed M (→/issue), held J (needs you)`) so the Telegram line and the PM line are mutually consistent — applied (route-1), filed (route-2), and held (route-3) counts are reported SEPARATELY, never lumped as a single "Notes: M other" catch-all:
 
 ```bash
-NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: auto-applied N fix(es) (<w> workflow, <c> code/infra). 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). HELD for you: <J> judgment call(s): <one-liner each>. Notes: <M> other. Revert any with: git -C ~/explore-persona-space revert <sha>. Full: logs/daily/<date>.md"
+NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: applied N route-1 fix(es), filed M route-2 review task(s), held J route-3 (needs you). Applied: 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). Filed: <#id> <title>. Held (needs you): <#id> <held-item one-liner> (<carve-out reason>). Revert any applied with: git -C ~/explore-persona-space revert <sha>. Full: logs/daily/<date>.md"
 ```
 
-This lands in the next my-goat morning digest (the dispatch cron runs 9/14/19 PT), so the overnight `23:27 PT` run is reviewed when Thomas is fresh rather than buzzing him at bedtime. Keep the message short: count of fixes, a one-liner + sha each (so any fix is one `git revert <sha>` away), the count of other notes, and the daily-file path. If zero fixes were applied AND zero notable problems were logged, enqueue nothing (don't send an empty digest line).
+This lands in the next my-goat morning digest (the dispatch cron runs 9/14/19 PT), so the overnight `23:27 PT` run is reviewed when Thomas is fresh rather than buzzing him at bedtime. Keep the message short: the three counts (applied N / filed M / held J), a one-liner + sha for each route-1 applied fix (so any applied fix is one `git revert <sha>` away), the filed `#id`s (route-2 review tasks), and the held `#id`s (route-3 needs-human tasks) with their carve-out reason, plus the daily-file path. If zero fixes were applied, zero were filed, AND zero notable problems were logged, enqueue nothing (don't send an empty digest line).
 
-The old `SessionStart` greenlight hook (`scripts/daily_surface_hook.sh`) is now vestigial: it greps for `## Proposed workflow improvements`, which this skill no longer writes, so it stays silent and never prompts for a greenlight. Leave it in place (harmless). Surfacing is Telegram-only now. (Since 2026-06-12, `.claude/settings.json` hook FIXES are auto-appliable under the verification gate; adding wholly new hooks is still a judgment call when ambiguous.)
+The old `SessionStart` greenlight hook (`scripts/daily_surface_hook.sh`) is now vestigial: it greps for `## Proposed workflow improvements`, which this skill no longer writes, so it stays silent and never prompts for a greenlight. Leave it in place (harmless). Surfacing is Telegram-only now. (Since 2026-06-12, `.claude/settings.json` hook changes route through the three-route classifier: a stylistic fix with no behavior change can self-apply via route 1, but any hook edit altering what an agent does — adding/removing a hook, changing a hook's trigger, modifying a matcher pattern, retargeting the script — is a behavior change and FILES via route 2, exactly like every other behavior/logic change. This skill's own verify gate is NOT sufficient for a hook behavior change; route 2 routes it through the full independent review pipeline.)
 
 Applied edits stay in the daily file as historical record — don't delete them. If Thomas reverts one, that's via git; the record stays.
 

@@ -46,8 +46,14 @@ The CLI (`scripts/task.py`) is a thin argparse wrapper around these
 functions and matches the sagan_state.py subcommand surface 1:1.
 
 Concurrency: all writes go through `_locked()` which holds an exclusive
-flock on ~/.task-workflow/lock. Reads do NOT lock — readers see a
-consistent snapshot because all writes are atomic (write-temp + rename).
+flock on ~/.task-workflow/lock. Reads do NOT lock. body.md / REGISTRY
+writes are atomic (write-temp + rename), so readers see a consistent
+snapshot. Append-only JSONL logs (events.jsonl / comments.jsonl) instead
+use `O_APPEND` writes (`_append_jsonl_line`): a `<= PIPE_BUF` line lands
+all-or-nothing against a SIGKILL, while a `> PIPE_BUF` line is NOT
+crash-atomic and can leave a partial trailing line — the tolerant reader
+(`_iter_jsonl`, `errors="replace"`) skips it, so JSONL readers still see a
+consistent (everything-parseable) snapshot.
 
 Status enum (folder names):
   on_hold proposed planning plan_pending approved running verifying
@@ -66,6 +72,7 @@ import fcntl
 import functools
 import hashlib
 import json
+import logging
 import os
 import re
 import shutil
@@ -340,6 +347,21 @@ def _managed_worktree_path(primary: Path) -> Path:
     return primary / ".claude" / "worktrees" / _MANAGED_MAIN_WORKTREE_NAME
 
 
+# Cutover migration LOCK (#681). During the data-disk cutover (plan §4 Phase 2)
+# the `.claude/worktrees/` tree is copied + bind-swapped onto the dedicated data
+# disk. BOTH concurrent worktree-creation writers must refuse while the swap is
+# in flight: `scripts/new_worktree.sh` AND this managed-main-pin creation path
+# (a `task.py` write mid-swap could create the pin worktree on the soon-to-be-
+# renamed `.premigrate` tree and strand task state). Relative to the primary
+# checkout, the same file new_worktree.sh checks.
+_MIGRATION_LOCK_REL = Path(".claude") / "cache" / "worktree-migration.LOCK"
+
+
+def _migration_lock_path(primary: Path) -> Path:
+    """Absolute path of the cutover migration LOCK for ``primary`` (#681)."""
+    return primary / _MIGRATION_LOCK_REL
+
+
 def _is_routed_root(root: Path) -> bool:
     """True if ``root`` is a managed routing worktree, not the primary checkout.
 
@@ -389,7 +411,20 @@ def _ensure_managed_main_worktree(primary: Path, branch: str, env: dict[str, str
     FAILS LOUD (RuntimeError) on any git failure — never silently falls back to
     the primary checkout (that would re-introduce the stranded-commit bug the
     routing exists to prevent). If `main` does not exist as a branch, raises.
+
+    Refuses (RuntimeError) while the #681 cutover migration LOCK is held: a
+    managed-pin worktree created mid-swap could land on the soon-to-be-renamed
+    `.premigrate` tree and strand task state (Codex freeze-audit concern, plan
+    §4 Phase 4 / §6 step 1). The LOCK lifts the moment the bind-swap completes.
     """
+    lock = _migration_lock_path(primary)
+    if lock.exists():
+        raise RuntimeError(
+            f"worktree migration in progress ({lock} exists) — refusing to create the "
+            f"managed main-pin worktree mid-cutover (it could strand task state on the "
+            f"renamed .premigrate tree). Retry once the data-disk cutover lifts the LOCK."
+        )
+
     # `main` must exist as a local branch to pin to.
     show = subprocess.run(
         ["git", "-C", str(primary), "rev-parse", "--verify", "--quiet", "refs/heads/main"],
@@ -961,6 +996,121 @@ def _utcnow_iso() -> str:
     return datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+# Linux atomic-append bound: a single write(2) of <= PIPE_BUF bytes on an
+# O_APPEND fd lands atomically w.r.t. concurrent appenders AND is all-or-
+# nothing against a SIGKILL (the kernel either commits the one syscall or it
+# does not). POSIX.1-2017 write(2); Linux pipe(7) PIPE_BUF. ABOVE this bound a
+# single write may be split, so we keep the caller's flock (excludes other
+# writers) and complete the buffer in a loop. The loop is NOT crash-atomic:
+# a SIGKILL between two os.write calls can leave a partial line — recovery for
+# the oversize case is the tolerant reader (_iter_jsonl), which skips it.
+# Confirmed PIPE_BUF == 4096 on the EPS VM (Linux 6.8).
+_PIPE_BUF = getattr(os, "PIPE_BUF", 4096)
+
+_log = logging.getLogger(__name__)
+
+
+def _append_jsonl_line(path: Path, payload: dict[str, Any]) -> None:
+    """Atomically append one JSON object as a line to an append-only log.
+
+    Serializes ``json.dumps(payload, ensure_ascii=False) + "\\n"`` in memory,
+    then writes the whole buffer to ``path`` opened ``O_WRONLY|O_APPEND|O_CREAT``.
+
+    For buffers <= PIPE_BUF the single ``os.write`` is atomic against other
+    appenders (POSIX) AND against a SIGKILL/OOM mid-call (the one syscall
+    lands the full line or nothing — never a partial line).
+
+    For OVERSIZE buffers (rare: a large note plus artifacts list, > PIPE_BUF)
+    POSIX promises neither single-write atomicity nor all-or-nothing across
+    multiple ``os.write`` calls if the process is killed mid-loop. This path
+    relies on the caller already holding ``_locked()`` to exclude other
+    writers (no interleaving) and a write-completion loop to finish the
+    buffer despite short writes — but it is NOT crash-atomic: a SIGKILL
+    between two ``os.write`` calls CAN leave a partial trailing line on disk.
+    Recovery for that case is the tolerant reader (``_iter_jsonl``), which
+    skips the partial line. The loop is still useful for completion under
+    EAGAIN/EINTR/short-writes; it is not a crash-atomicity guarantee.
+
+    Callers MUST hold ``_locked()``. This helper does NOT acquire the lock and
+    does NOT commit — the caller owns flock + ``_git_commit`` semantics.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(payload, ensure_ascii=False) + "\n"
+    buf = line.encode("utf-8")
+    fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+    try:
+        if len(buf) <= _PIPE_BUF:
+            # Single atomic append (<= PIPE_BUF): all-or-nothing against a
+            # SIGKILL. os.write may legally short-write even here in
+            # principle; assert the whole line landed so a truncation can
+            # never pass silently.
+            n = os.write(fd, buf)
+            if n != len(buf):
+                raise OSError(f"short atomic append to {path}: wrote {n} of {len(buf)} bytes")
+        else:
+            # Oversize line (> PIPE_BUF): caller's flock excludes concurrent
+            # writers (no interleaving); complete the buffer despite short
+            # writes. os.write already retries EINTR internally on py3.5+, so
+            # a returned short count is a genuine partial flush to finish, not
+            # an EINTR retry. NOT crash-atomic — a mid-loop SIGKILL can leave
+            # a partial line; the tolerant reader recovers it.
+            view = memoryview(buf)
+            written = 0
+            while written < len(buf):
+                n = os.write(fd, view[written:])
+                if n == 0:
+                    # os.write never returns 0 on a regular fd (it raises on
+                    # error), but guard the loop against a spin anyway — a
+                    # zero-progress write is a hard error, not something to
+                    # retry forever.
+                    raise OSError(f"os.write returned 0 appending to {path}")
+                written += n
+    finally:
+        os.close(fd)
+
+
+def _iter_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Parse an append-only JSONL file, tolerating malformed lines.
+
+    A line that does not round-trip through ``json.loads`` is SKIPPED and
+    logged at WARNING (this is the recovery path for a partial trailing line
+    left by a writer killed mid-append, the historical #653 corruption, AND
+    the >PIPE_BUF oversize-append crash case which is NOT write-atomic).
+    All malformed lines are tolerated, not just the trailing one: an
+    append-only log can only ever grow a bad line at the tail, so a mid-file
+    bad line is implausible, and the practical recovery a reader needs is
+    "return everything parseable" — raising on a mid-file anomaly would
+    re-introduce exactly the hard-crash this fix removes.
+
+    Decoding is TOLERANT (``errors="replace"``): a SIGKILL during a
+    ``>PIPE_BUF`` ``ensure_ascii=False`` append can leave a TRUNCATED
+    multibyte UTF-8 sequence at the file tail (e.g. ``b'{"note":"\\xe2'``).
+    Strict UTF-8 (the ``read_text()`` default) would raise
+    ``UnicodeDecodeError`` BEFORE the per-line ``json.loads`` loop ever
+    reached the ``JSONDecodeError`` handler, hard-crashing all four readers.
+    ``errors="replace"`` substitutes U+FFFD for the bad bytes so the
+    corrupted line falls through to the existing ``JSONDecodeError`` skip
+    path — completing the recovery story.
+    """
+    if not path.exists():
+        return []
+    out: list[dict[str, Any]] = []
+    text = path.read_text(encoding="utf-8", errors="replace")
+    for lineno, line in enumerate(text.splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError as e:
+            _log.warning(
+                "skipping malformed line %d in %s: %s",
+                lineno,
+                path,
+                str(e)[:200],
+            )
+    return out
+
+
 def _next_event_version(events_path: Path, kind: str) -> int:
     """Return ``max(existing versions for this kind) + 1`` (1 when the kind
     is new) for the events file at ``events_path``.
@@ -973,10 +1123,7 @@ def _next_event_version(events_path: Path, kind: str) -> int:
     if not events_path.exists():
         return 1
     highest = 0
-    for line in events_path.read_text().splitlines():
-        if not line.strip():
-            continue
-        row = json.loads(line)
+    for row in _iter_jsonl(events_path):
         if row.get("kind") != kind:
             continue
         v = row.get("version")
@@ -1028,9 +1175,7 @@ def post_event(
         if artifacts:
             payload["artifacts"] = artifacts
         payload.update(extras)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a") as f:
-            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        _append_jsonl_line(path, payload)
         _git_commit(
             [path],
             f"task #{task_id}: {kind}" + (f" — {note[:60]}" if note else ""),
@@ -1040,9 +1185,7 @@ def post_event(
 
 def list_events(task_id: int) -> list[dict[str, Any]]:
     path = find_task_path(task_id) / "events.jsonl"
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return _iter_jsonl(path)
 
 
 def latest_event(task_id: int, prefix: str | None = None) -> dict[str, Any] | None:
@@ -1120,8 +1263,7 @@ def set_status(
         }
         if note:
             payload["note"] = note
-        with ev_path.open("a") as f:
-            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        _append_jsonl_line(ev_path, payload)
         # Pass BOTH old and new to _git_commit so the deletion side of
         # the `git mv` is included in the commit's --only pathspec.
         # Otherwise the staged deletion at <old> remains in the index and
@@ -1198,8 +1340,7 @@ def create_task(req: NewTaskRequest) -> int:
             "by": "task.py",
             "kind_": req.kind,
         }
-        with (path / "events.jsonl").open("a") as f:
-            f.write(json.dumps(created_event, ensure_ascii=False) + "\n")
+        _append_jsonl_line(path / "events.jsonl", created_event)
         # Register
         _registry_set(reg, task_id, path, fm)
         _save_registry(reg)
@@ -1564,8 +1705,7 @@ def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | Non
         }
         if reason:
             payload["reason"] = reason
-        with ev_path.open("a") as f:
-            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        _append_jsonl_line(ev_path, payload)
         _git_commit(
             [path, ev_path, registry_path()],
             f"task #{task_id}: set-goal — {goal[:60]}",
@@ -1729,20 +1869,14 @@ def promote(task_id: int, verdict: str) -> Path:
         fm["promoted_at"] = _utcnow_iso()
         _write_body(path / "body.md", fm, body)
         # Append event
-        with (path / "events.jsonl").open("a") as f:
-            f.write(
-                json.dumps(
-                    {
-                        "ts": _utcnow_iso(),
-                        "kind": "epm:promoted",
-                        "version": 1,
-                        "by": "user",
-                        "classification": verdict,
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n"
-            )
+        promoted_event = {
+            "ts": _utcnow_iso(),
+            "kind": "epm:promoted",
+            "version": 1,
+            "by": "user",
+            "classification": verdict,
+        }
+        _append_jsonl_line(path / "events.jsonl", promoted_event)
         _git_commit(
             [path / "body.md", path / "events.jsonl"], f"task #{task_id}: promote {verdict}"
         )
@@ -1897,17 +2031,14 @@ def append_comment(
             record["in_reply_to"] = in_reply_to
         if extras:
             record.update(extras)
-        with path.open("a") as f:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        _append_jsonl_line(path, record)
         _git_commit([path], f"task #{task_id}: comment {cid} ({kind})")
     return record
 
 
 def list_comments(task_id: int) -> list[dict[str, Any]]:
     path = find_task_path(task_id) / "comments.jsonl"
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return _iter_jsonl(path)
 
 
 # ─── Git helpers ────────────────────────────────────────────────────────────
@@ -2117,9 +2248,7 @@ def list_concerns(task_id: int, *, open_only: bool = False) -> list[dict[str, An
     this section. Returns ``[]`` if the file does not exist.
     """
     path = _concerns_path(task_id)
-    if not path.exists():
-        return []
-    events = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    events = _iter_jsonl(path)
     if not open_only:
         return events
     latest: dict[str, dict[str, Any]] = {}
@@ -2160,9 +2289,7 @@ def _append_concern_event(task_id: int, payload: dict[str, Any]) -> None:
     """
     folder = find_task_path(task_id)
     concerns_file = folder / "concerns.jsonl"
-    concerns_file.parent.mkdir(parents=True, exist_ok=True)
-    with concerns_file.open("a") as f:
-        f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    _append_jsonl_line(concerns_file, payload)
 
     # Mirror to events.jsonl as a thin breadcrumb.
     event_kind = f"epm:concern-{payload['event']}"
@@ -2184,8 +2311,7 @@ def _append_concern_event(task_id: int, payload: dict[str, Any]) -> None:
         "note": mirror_note,
     }
     events_file = folder / "events.jsonl"
-    with events_file.open("a") as f:
-        f.write(json.dumps(mirror_payload, ensure_ascii=False) + "\n")
+    _append_jsonl_line(events_file, mirror_payload)
 
     _git_commit(
         [concerns_file, events_file],

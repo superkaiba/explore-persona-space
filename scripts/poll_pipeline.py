@@ -1057,6 +1057,12 @@ def _ssh_probe(
         f"  echo MTIME_EPOCH=$(stat -c %Y $LOG_PATH); "
         f"  echo TAIL_START; tail -500 $LOG_PATH; echo TAIL_END; "
         f"else echo MTIME_EPOCH=0; echo TAIL_START; echo TAIL_END; fi; "
+        # Capture the pod's own wall clock (#704). `stat -c %Y` above stamps
+        # file mtimes from this same clock and `date +%s` reads it within
+        # milliseconds in the same SSH session, so subtracting
+        # `pod_now - pod_mtime` downstream cancels any pod-vs-VM clock drift
+        # exactly. One capture covers all four mtime sources.
+        f"echo POD_NOW_EPOCH=$(date +%s); "
         f"{cell_probe}"
         f"{phase_log_probe}"
         f"{shard_log_probe}"
@@ -1083,6 +1089,7 @@ def _ssh_probe(
             "pid_file_missing": "0",
             "marker_pid_alive": "0",
             "mtime_epoch": "0",
+            "pod_now_epoch": "0",
             "cell_mtime_epoch": "0",
             "log_tail": "",
             "cell_log_tail": "",
@@ -1106,6 +1113,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PID_FILE_MISSING",
     "MARKER_PID_ALIVE",
     "MTIME_EPOCH",
+    "POD_NOW_EPOCH",
     "CELL_MTIME_EPOCH",
     "PHASE_LOG_MTIME_EPOCH",
     "SHARD_LOG_MTIME_EPOCH",
@@ -1128,6 +1136,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "pid_file_missing": "0",
         "marker_pid_alive": "0",
         "mtime_epoch": "0",
+        "pod_now_epoch": "0",
         "cell_mtime_epoch": "0",
         "log_tail": "",
         "cell_log_tail": "",
@@ -1962,6 +1971,66 @@ def _save_state(state_file: Path, issue: int, payload: dict[str, str]) -> None:
     tmp.replace(state_file)
 
 
+def _log_staleness_secs(
+    *,
+    pod: str,
+    vm_now_epoch: int,
+    pod_now_epoch: int,
+    freshest_mtime_epoch: int,
+    phase_log_mtime_epoch: int,
+    shard_log_mtime_epoch: int,
+) -> tuple[int, int, int]:
+    """Compute the three log-staleness deltas (top-level/cell, per-phase,
+    shard) on a SINGLE clock basis (#704).
+
+    The pod stamps file mtimes with its OWN wall clock (``stat -c %Y``); the
+    probe heredoc now also captures that same clock's "now" (``date +%s`` ->
+    ``pod_now_epoch``), so subtracting ``pod_now - pod_mtime`` cancels any
+    pod-vs-VM wall-clock drift exactly. When ``pod_now_epoch`` is absent
+    (``0``: a legacy pod image whose probe pre-dates this, an ssh failure
+    whose fallback dict zeroes it, or any probe omitting the line) the
+    function falls back to the VM clock (``vm_now_epoch``) AND logs a WARN,
+    preserving the pre-#704 behavior for older images and the existing tests
+    (which omit the key) while making the drift-prone basis visible in logs.
+
+    Each delta is ``10**9`` (the absent-log sentinel) when its mtime is
+    ``<= 0``, matching the prior inline behavior. On the pod-clock branch the
+    deltas are low-clamped at ``0`` (``max(0, ...)``) so a sub-second
+    rounding within one probe cannot produce a negative "seconds ago"; the
+    VM-fallback branch keeps its exact pre-#704 arithmetic so the
+    backward-compat behavior is byte-for-byte unchanged.
+
+    Returns ``(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)``.
+    """
+    if pod_now_epoch > 0:
+        staleness_now = pod_now_epoch
+        last_mtime_ago = (
+            max(0, staleness_now - freshest_mtime_epoch) if freshest_mtime_epoch > 0 else 10**9
+        )
+        phase_log_mtime_ago = (
+            max(0, staleness_now - phase_log_mtime_epoch) if phase_log_mtime_epoch > 0 else 10**9
+        )
+        shard_log_mtime_ago = (
+            max(0, staleness_now - shard_log_mtime_epoch) if shard_log_mtime_epoch > 0 else 10**9
+        )
+        return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago
+
+    staleness_now = vm_now_epoch
+    log.warning(
+        "probe missing POD_NOW_EPOCH on pod %s; falling back to VM-clock log "
+        "staleness (subject to pod-vs-VM clock drift, #704)",
+        pod,
+    )
+    last_mtime_ago = staleness_now - freshest_mtime_epoch if freshest_mtime_epoch > 0 else 10**9
+    phase_log_mtime_ago = (
+        staleness_now - phase_log_mtime_epoch if phase_log_mtime_epoch > 0 else 10**9
+    )
+    shard_log_mtime_ago = (
+        staleness_now - shard_log_mtime_epoch if shard_log_mtime_epoch > 0 else 10**9
+    )
+    return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago
+
+
 def poll_once(
     *,
     issue: int,
@@ -2034,9 +2103,20 @@ def poll_once(
     # log training steps, not phase transitions).
     freshest_mtime_epoch = max(mtime_epoch, cell_mtime_epoch)
     now_epoch = int(datetime.now(tz=UTC).timestamp())
-    last_mtime_ago = now_epoch - freshest_mtime_epoch if freshest_mtime_epoch > 0 else 10**9
-    phase_log_mtime_ago = now_epoch - phase_log_mtime_epoch if phase_log_mtime_epoch > 0 else 10**9
-    shard_log_mtime_ago = now_epoch - shard_log_mtime_epoch if shard_log_mtime_epoch > 0 else 10**9
+    # Single-clock staleness basis (#704), computed in a helper to keep
+    # ``poll_once`` below the C901 cap. ``now_epoch`` (the VM clock above) is
+    # deliberately NOT redefined: it is reused below for the run-age (#521),
+    # GPU-idle advisory (#518/#537), and phase-change sidecar (#669)
+    # computations, all of which compare against VM-STAMPED timestamps and
+    # would be corrupted by a pod-clock basis.
+    last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago = _log_staleness_secs(
+        pod=pod,
+        vm_now_epoch=now_epoch,
+        pod_now_epoch=int(probe.get("pod_now_epoch") or "0"),
+        freshest_mtime_epoch=freshest_mtime_epoch,
+        phase_log_mtime_epoch=phase_log_mtime_epoch,
+        shard_log_mtime_epoch=shard_log_mtime_epoch,
+    )
     gpu_util = probe.get("gpu_util", "unknown")
     gpu_idle = _gpu_idle(gpu_util)
     # Zombie-GPU-allocation signal (#664): the probe emits the

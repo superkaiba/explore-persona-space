@@ -46,6 +46,86 @@ done
 REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 EXCLUDES="eval_results external ood_eval_results"
 
+# ─── #681 data-disk + migration guards (run BEFORE any worktree creation) ────
+#
+# Post-#681 the .claude/worktrees/ tree is a BIND mount onto a dedicated GCP
+# data disk with ext4 per-PROJECT quotas. Three guards keep worktree creation
+# safe: (1) refuse while a cutover migration LOCK is held; (2) assert the bind
+# is LIVE so a worktree never silently lands back on `/` after a failed mount /
+# reboot; (3) tag the new issue-<N> subtree to project id N with a hard byte cap
+# so one task cannot starve the shared data disk. All three are seam-injectable
+# for offline CI (no privilege / no real bind / no setquota needed there).
+
+# Migration LOCK: the cutover (plan §4 Phase 2) sets this; new_worktree.sh AND
+# task_workflow._ensure_managed_main_worktree both refuse while it exists, so a
+# worktree is never created mid-swap onto the to-be-renamed tree.
+MIGRATION_LOCK="$REPO_ROOT/.claude/cache/worktree-migration.LOCK"
+if [ -e "$MIGRATION_LOCK" ]; then
+  echo "new_worktree: REFUSING — worktree migration in progress ($MIGRATION_LOCK exists)." >&2
+  echo "new_worktree: retry once the data-disk cutover lifts the LOCK." >&2
+  exit 3
+fi
+
+# Bind-mount liveness probe. The data disk is mounted at the device level and
+# bind-mounted onto $REPO_ROOT/.claude/worktrees; if that bind is absent (a
+# missing data disk, a failed mount, a half-mounted boot state) a new worktree
+# would silently land on the boot disk `/`. Assert the bind is live and FAIL
+# LOUD otherwise. Test/pre-cutover seam: EPS_WORKTREE_BIND_PROBE overrides the
+# probe command (`true` to force-pass, `false` to force-fail); EPS_WORKTREE_REQUIRE_BIND=1
+# OPTS IN to the assertion (default OFF so this is a no-op before the cutover
+# lands the bind + flips the env in the cron + bootstrap).
+_bind_is_live() {
+  local probe="${EPS_WORKTREE_BIND_PROBE:-}"
+  if [ -n "$probe" ]; then
+    eval "$probe"
+    return $?
+  fi
+  # Production probe: findmnt resolves the bind target as a mountpoint.
+  findmnt --noheadings --target "$REPO_ROOT/.claude/worktrees" >/dev/null 2>&1
+}
+if [ "${EPS_WORKTREE_REQUIRE_BIND:-0}" = 1 ]; then
+  if ! _bind_is_live; then
+    echo "new_worktree: FATAL — the data-disk bind at $REPO_ROOT/.claude/worktrees is NOT live;" >&2
+    echo "new_worktree: refusing to create a worktree that would land on the boot disk /." >&2
+    echo "new_worktree: check the mount: findmnt $REPO_ROOT/.claude/worktrees ; sudo mount -a" >&2
+    exit 4
+  fi
+fi
+
+# Per-issue ext4 project-quota cap. After the worktree is created (below), tag
+# its subtree to project id == issue number with a hard byte cap so one task
+# cannot starve the shared data disk (the per-TASK bound, plan §2.5/§4 Phase 4).
+# Cap from EPS_ISSUE_DISK_CAP_GB (default 128). Seam: EPS_WORKTREE_QUOTA_CMD
+# overrides the quota-assign command for CI (it receives "<projid> <cap_kb> <path>");
+# EPS_WORKTREE_ASSIGN_QUOTA=1 OPTS IN (default OFF — a no-op before the cutover).
+ISSUE_DISK_CAP_GB="${EPS_ISSUE_DISK_CAP_GB:-128}"
+case "$ISSUE_DISK_CAP_GB" in
+  *[!0-9]*) echo "new_worktree: EPS_ISSUE_DISK_CAP_GB must be a positive integer, got: $ISSUE_DISK_CAP_GB" >&2; exit 2 ;;
+esac
+# A non-positive cap (0 / 00 / ...) would set cap_kb=0, SILENTLY DISABLING the
+# per-task hard cap — match worktree_quota.issue_disk_cap_gb() and fall back to
+# the 128 GB default rather than ship an unbounded quota (#681 round-2 fix).
+if [ "$((10#$ISSUE_DISK_CAP_GB))" -le 0 ]; then
+  echo "new_worktree: EPS_ISSUE_DISK_CAP_GB non-positive ($ISSUE_DISK_CAP_GB); falling back to 128 GB default" >&2
+  ISSUE_DISK_CAP_GB=128
+fi
+_assign_project_quota() {
+  # $1 = issue number (== project id). No-op when no issue / opt-in off.
+  local projid="$1" cap_kb
+  [ -z "$projid" ] && return 0
+  [ "${EPS_WORKTREE_ASSIGN_QUOTA:-0}" = 1 ] || return 0
+  cap_kb=$((ISSUE_DISK_CAP_GB * 1024 * 1024))
+  local cmd="${EPS_WORKTREE_QUOTA_CMD:-}"
+  if [ -n "$cmd" ]; then
+    eval "$cmd $projid $cap_kb $WT"
+    return $?
+  fi
+  # Production: tag the subtree to project N, set a hard byte cap (soft=0=off).
+  local dd="${EPS_VM_DATA_DISK_PATH:-/mnt/eps-data}"
+  sudo chattr -R -p "$projid" +P "$WT" \
+    && sudo setquota -P "$projid" 0 "$cap_kb" 0 0 "$dd"
+}
+
 # Drop stale registrations whose directories were deleted out-of-band
 # (registered-but-directory-gone) so the reuse check below sees truth.
 git -C "$REPO_ROOT" worktree prune
@@ -167,6 +247,12 @@ fi
 
 # Worktrees do NOT inherit the gitignored repo .env (Step 4a contract).
 ln -sf "$REPO_ROOT/.env" "$WT/.env"
+
+# Per-issue ext4 project-quota cap (#681 — the per-task bound). No-op unless
+# EPS_WORKTREE_ASSIGN_QUOTA=1 and --issue N was given. Idempotent (re-tagging a
+# subtree + re-setting its cap is harmless); the reuse path above exit 0s before
+# here, which is fine — a reused worktree was already tagged at its creation.
+_assign_project_quota "$ISSUE"
 
 du -sh "$WT" | awk -v wt="$WT" '{print "new_worktree: created " wt " (" $1 ")"}'
 [ "$FULL" = 1 ] || {

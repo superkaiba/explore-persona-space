@@ -500,5 +500,90 @@ def test_all_comment_registry_does_not_crash(repo: Path, tmp_path: Path) -> None
     assert cone == "true"
 
 
+# --- #681 item: data-disk bind assertion + migration LOCK refusal -----------
+
+
+def test_new_worktree_asserts_data_disk_mounted(repo: Path, tmp_path: Path) -> None:
+    """With EPS_WORKTREE_REQUIRE_BIND=1, the helper FAILs loud (exit 4) when the
+    bind probe reports the data disk absent, and succeeds when it reports present.
+    (A real bind mount needs privilege; the probe is exercised via the
+    EPS_WORKTREE_BIND_PROBE seam — `false` force-fails, `true` force-passes.)"""
+    # Bind absent → refuse, no worktree created.
+    wt_fail = tmp_path / "wt-nobind"
+    res = subprocess.run(
+        ["bash", str(HELPER), str(wt_fail), "issue-2", "--issue", "2"],
+        cwd=str(repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env={**_GIT_ENV, "EPS_WORKTREE_REQUIRE_BIND": "1", "EPS_WORKTREE_BIND_PROBE": "false"},
+    )
+    assert res.returncode == 4, (
+        f"expected exit 4 on missing bind, got {res.returncode}: {res.stderr}"
+    )
+    assert "bind" in res.stderr.lower()
+    assert not wt_fail.exists(), "no worktree must be created when the bind is missing"
+
+    # Bind present → succeeds.
+    wt_ok = tmp_path / "wt-bind"
+    res2 = subprocess.run(
+        ["bash", str(HELPER), str(wt_ok), "issue-3", "--issue", "3"],
+        cwd=str(repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env={**_GIT_ENV, "EPS_WORKTREE_REQUIRE_BIND": "1", "EPS_WORKTREE_BIND_PROBE": "true"},
+    )
+    assert res2.returncode == 0, f"bind-present run failed: {res2.stderr}"
+    assert (wt_ok / "src/x.py").is_file()
+
+
+def test_new_worktree_refuses_under_migration_lock(repo: Path, tmp_path: Path) -> None:
+    """The cutover migration LOCK (.claude/cache/worktree-migration.LOCK) makes
+    new_worktree.sh refuse (exit 3) before any worktree creation."""
+    lock = repo / ".claude" / "cache" / "worktree-migration.LOCK"
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    lock.write_text("cutover in progress\n")
+    wt = tmp_path / "wt-locked"
+    res = _run_helper(repo, wt, "issue-2", "--issue", "2", check=False)
+    assert res.returncode == 3, f"expected exit 3 under migration LOCK, got {res.returncode}"
+    assert "migration" in res.stderr.lower()
+    assert not wt.exists(), "no worktree must be created while the LOCK is held"
+
+
+def test_managed_pin_worktree_refuses_under_migration_lock(repo: Path) -> None:
+    """task_workflow._ensure_managed_main_worktree (the _task-main-pin path — a
+    SECOND concurrent worktree-creation writer) MUST also refuse while the
+    migration LOCK is held, or a task.py write mid-swap could strand task state
+    on the .premigrate tree (Codex freeze-audit concern, plan §4 Phase 4)."""
+    import importlib.util as _ilu
+
+    tw_path = (
+        Path(__file__).resolve().parent.parent
+        / "src"
+        / "explore_persona_space"
+        / "task_workflow.py"
+    )
+    spec = _ilu.spec_from_file_location("eps_task_workflow_681", tw_path)
+    tw = _ilu.module_from_spec(spec)
+    sys.modules["eps_task_workflow_681"] = tw
+    spec.loader.exec_module(tw)
+
+    lock = repo / ".claude" / "cache" / "worktree-migration.LOCK"
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    lock.write_text("cutover in progress\n")
+    with pytest.raises(RuntimeError, match="migration in progress"):
+        tw._ensure_managed_main_worktree(repo, "issue-feature", {**_GIT_ENV})
+    # Removing the LOCK lifts the refusal (it then proceeds to the `main` check,
+    # which is a DIFFERENT, expected failure here — the fixture repo IS on main,
+    # so it would actually try to create the pin; we only assert the LOCK gate no
+    # longer fires by checking the error is NOT the migration one).
+    lock.unlink()
+    try:
+        tw._ensure_managed_main_worktree(repo, "issue-feature", {**_GIT_ENV})
+    except RuntimeError as exc:
+        assert "migration in progress" not in str(exc)
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

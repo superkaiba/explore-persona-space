@@ -1,0 +1,252 @@
+{
+  "commit": "2d1ca215f8",
+  "created": "2026-06-28T04:17:05Z",
+  "figsize": [
+    6.5,
+    4.2
+  ],
+  "points": [
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.05412735708564764,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.015153740379331426,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.026348577237083726,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.08324491512717175,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.076983193779738,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.0992919730875072,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.09123649459783911,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.03615553645018149,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.002501759303566886,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.07452729206597086,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.05412735708564764,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.015153740379331426,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.026348577237083726,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.08324491512717175,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.076983193779738,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.0992919730875072,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.09123649459783911,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.03615553645018149,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.002501759303566886,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.07452729206597086,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.4020446394088707,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.4011012903256099,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.32398147058317495,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.3123121120287247,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.2163063733871718,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.2465299218508641,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.3082103575484429,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.29256851260822453,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.22472825613505423,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": -0.3106682696856882,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.31872059775812317,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.3554841452977458,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.36952841175318635,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.47162210912440383,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.39118063795469776,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.45363712171652293,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.5164204002158788,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.38093651383154653,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.23273295138949598,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "genre delta in held-out $\\rho$  (UltraChat $-$ Betley)": 0.14897593605811238,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 40
+}

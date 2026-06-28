@@ -1,0 +1,853 @@
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "layers": [
+    7,
+    14,
+    21
+  ],
+  "n_iters": 50,
+  "warmup": 5,
+  "max_tokens": 321,
+  "allocator_regime": "default",
+  "allocator_tag": "default_allocator",
+  "tolerances": {
+    "ABS_TOL_GiB": 1.0,
+    "SLOPE_TOL_GiB_per_iter": 0.02,
+    "CTRL_GAP_GiB": 0.05
+  },
+  "torch": "2.8.0+cu128",
+  "cuda": "12.8",
+  "smoke": false,
+  "arms": {
+    "hook": {
+      "allocated": [
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128,
+        15317744128
+      ],
+      "reserved": [
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968,
+        15590227968
+      ],
+      "segment_stats": [
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        },
+        {
+          "reserved_current": 15590227968,
+          "reserved_peak": 15590227968,
+          "segment_current": 169,
+          "segment_peak": 169
+        }
+      ],
+      "grad_enabled": false,
+      "inference_mode": true,
+      "flatness": {
+        "span_GiB": 0.0,
+        "tail_slope_GiB_per_iter": -3.2014056148145407e-16,
+        "flat": true
+      }
+    },
+    "old_ohs_true": {
+      "allocated": [
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104,
+        15317103104
+      ],
+      "reserved": [
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616,
+        15640559616
+      ],
+      "segment_stats": [
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        },
+        {
+          "reserved_current": 15640559616,
+          "reserved_peak": 15640559616,
+          "segment_current": 173,
+          "segment_peak": 173
+        }
+      ],
+      "grad_enabled": false,
+      "inference_mode": true,
+      "flatness": {
+        "span_GiB": 0.0,
+        "tail_slope_GiB_per_iter": -1.6114051428808998e-16,
+        "flat": true
+      }
+    }
+  }
+}

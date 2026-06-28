@@ -61,6 +61,31 @@ from autonomous_session_watch import (  # noqa: E402
 from explore_persona_space.task_workflow import STATUSES  # noqa: E402
 
 
+def _p(issue: int, pod_id: str, name: str):
+    """A non-wedged 4-tuple for ``_running_managed_issue_pods`` stubs (#692).
+
+    ``_running_managed_issue_pods`` now returns ``(issue, pod_id, name, info)``
+    4-tuples carrying the live :class:`runpod_api.PodInfo`. These status-class
+    pod-safety / session-reconcile tests are NOT about the wedge arm, so the
+    ``info`` is HEALTHY (a public SSH port present) — the wedge predicate
+    ``backend_poll._pod_is_runpod_runtime_wedged`` reads False and the wedge arm
+    is a no-op, so existing status-class behavior is unchanged."""
+    from runpod_api import PodInfo
+
+    return (
+        issue,
+        pod_id,
+        name,
+        PodInfo(
+            pod_id=pod_id,
+            name=name,
+            desired_status="RUNNING",
+            ssh_host="1.2.3.4",
+            ssh_port=22000,
+        ),
+    )
+
+
 @pytest.mark.parametrize("status", sorted(TERMINAL))
 @pytest.mark.parametrize("alive", [True, False])
 @pytest.mark.parametrize("missed", [0, 1, 5])
@@ -594,17 +619,22 @@ def test_running_managed_pods_recognizes_canonical_pod_name(monkeypatch):
             PodInfo(pod_id="punm", name="some-random-pod", desired_status="RUNNING"),  # unmanaged
         ],
     )
-    got = sorted(asw._running_managed_issue_pods())
+    got = sorted(asw._running_managed_issue_pods(), key=lambda t: t[0])
     # pod-444, pod-489, and the legacy epm-issue-377 are recognized; the EXITED
     # and unmanaged ones are excluded. The third element is the pod NAME,
     # threaded out so callers (e.g. the #488 stale-port self-heal in
     # ``_handle_stalled_alert``) can address the pod by name without a
-    # second ``list_team_pods`` round-trip.
-    assert got == [
+    # second ``list_team_pods`` round-trip; the FOURTH (#692) is the live
+    # ``PodInfo`` itself, so the wedge backstop can read the raw no-port wedge
+    # condition off it without a second ``list_team_pods`` round-trip.
+    assert [(i, pid, name) for i, pid, name, _info in got] == [
         (377, "pold", "epm-issue-377"),
         (444, "p444", "pod-444"),
         (489, "p489", "pod-489"),
     ]
+    # The 4th element is the live PodInfo for that pod (pod_id matches).
+    assert [info.pod_id for _i, _pid, _name, info in got] == ["pold", "p444", "p489"]
+    assert all(isinstance(info, PodInfo) for *_rest, info in got)
 
 
 def test_running_managed_pods_api_error_returns_none(monkeypatch):
@@ -634,7 +664,7 @@ def test_live_interactive_session_does_not_cause_stop(isolated_registry, monkeyp
     now = 1_000_000.0
     stops: list[int] = []
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(489, "p489", "pod-489")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     # Fresh progress 1h ago -> pod-active-fresh -> keep.
@@ -664,7 +694,7 @@ def test_auto_stop_fires_on_done_task_second_miss(isolated_registry, monkeypatch
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(489, "p489", "pod-489")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
@@ -693,7 +723,9 @@ def test_auto_stop_fires_for_all_done_statuses(isolated_registry, monkeypatch, s
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [(7, "p7", "pod-7")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(7, "p7", "pod-7")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
@@ -716,7 +748,7 @@ def test_keep_running_tag_skips_stop_and_notes_once(isolated_registry, monkeypat
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(530, "p530", "pod-530")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(530, "p530", "pod-530")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
@@ -749,7 +781,7 @@ def test_keep_running_tag_removal_re_arms_auto_stop(isolated_registry, monkeypat
     now = 1_000_000.0
     stops: list[int] = []
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(530, "p530", "pod-530")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(530, "p530", "pod-530")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
@@ -793,7 +825,7 @@ def test_inline_followup_run_launched_skips_stop(isolated_registry, monkeypatch)
         {"kind": "epm:run-launched", "ts": "2026-06-10T03:12:08Z", "note": "pod=pod-477"},
     ]
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(477, "p477", "pod-477")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(477, "p477", "pod-477")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
@@ -840,7 +872,7 @@ def test_inline_followup_after_completion_re_arms_auto_stop(isolated_registry, m
     ]
     state = {"events": active_events}
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(477, "p477", "pod-477")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(477, "p477", "pod-477")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
@@ -872,7 +904,9 @@ def test_no_auto_stop_for_other_class_statuses(isolated_registry, monkeypatch, s
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [(7, "p7", "pod-7")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(7, "p7", "pod-7")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
@@ -894,7 +928,7 @@ def test_alert_fires_on_stale_pod_active_and_does_not_stop(isolated_registry, mo
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(489, "p489", "pod-489")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     # No real progress for well over the stale cap.
@@ -926,7 +960,7 @@ def test_alert_dedups_across_ticks(isolated_registry, monkeypatch):
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(489, "p489", "pod-489")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "verifying")
     stale_ts = now - (ALERT_STALE_HOURS + 2) * 3600
@@ -954,7 +988,7 @@ def test_alert_re_fires_after_progress_advances(isolated_registry, monkeypatch):
     now = 1_000_000.0
     posts: list[tuple[int, str]] = []
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(489, "p489", "pod-489")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
@@ -999,7 +1033,7 @@ def test_alert_re_fires_after_none_then_first_progress_then_stale(isolated_regis
     posts: list[tuple[int, str]] = []
     stops: list[int] = []
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(489, "p489", "pod-489")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
@@ -1038,7 +1072,7 @@ def test_no_alert_on_fresh_pod_active(isolated_registry, monkeypatch):
     posts: list[tuple[int, str]] = []
     stops: list[int] = []
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(489, "p489", "pod-489")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
@@ -1253,6 +1287,11 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         "keep_running_noted": False,
         "followup_noted": False,
         "first_seen": 1234.0,
+        # #692 MF3: the wedge fields are part of the schema now; a status-class
+        # save with no wedge state defaults them (no prior wedge to carry).
+        "wedge_first_seen": None,
+        "wedge_missed": 0,
+        "wedge_alerted": False,
     }
 
     # On a second save (passing the previous payload), first_seen must persist.
@@ -2064,7 +2103,7 @@ def test_stalled_alert_fires_refresh_from_api_when_has_pod(
     _patch_stale_signals(monkeypatch, asw, status="plan_pending")
     # Override the pods stub to have a RUNNING managed pod for issue 488.
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(488, "p488", "pod-488")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(488, "p488", "pod-488")]
     )
     refresh_calls: list[str] = []
     monkeypatch.setattr(
@@ -2123,7 +2162,7 @@ def test_stalled_alert_refresh_dedups_within_episode(
     _write_autonomous_entry(isolated_registry, 488, "sess-488")
     _patch_stale_signals(monkeypatch, asw, status="plan_pending")
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(488, "p488", "pod-488")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(488, "p488", "pod-488")]
     )
     refresh_calls: list[str] = []
     monkeypatch.setattr(
@@ -2156,7 +2195,7 @@ def test_stalled_alert_refresh_re_fires_after_self_report_advances(
     _stops, _spawns, _markers = stalled_recorder
     _write_autonomous_entry(isolated_registry, 488, "sess-488")
     monkeypatch.setattr(
-        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(488, "p488", "pod-488")]
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(488, "p488", "pod-488")]
     )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "plan_pending")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
@@ -4525,7 +4564,7 @@ def test_session_reconcile_running_pod_blocks_stop(isolated_registry, monkeypatc
 
     monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
     stops, posts = _patch_session_reconcile_io(
-        monkeypatch, status="awaiting_promotion", pods=[(42, "pod-id-x", "pod-42")]
+        monkeypatch, status="awaiting_promotion", pods=[_p(42, "pod-id-x", "pod-42")]
     )
     for _ in range(3):
         asw.session_reconcile_pass(
@@ -5288,6 +5327,7 @@ def _patch_idle_io(
     signal_reason="transcript unresolvable",
     has_tty=False,
     detached_tmux_ttys=frozenset(),
+    tmux_activity=None,
     registry=None,
     pm_sids=frozenset(),
 ):
@@ -5295,20 +5335,35 @@ def _patch_idle_io(
     + session metadata + the TTY probe + the transcript-idle signal, leaving
     state files and decisions real. Pins asw.PROJECT_ROOT to the synthetic
     _Z_ROOT so the EPS-cwd check + issue inference are cwd-independent (see
-    _Z_ROOT). Returns the (stops, records) recorders."""
+    _Z_ROOT). Returns the (stops, records) recorders.
+
+    ``tmux_activity`` (a ``{pane_tty: epoch}`` map) feeds the #695
+    corroborating-idleness fallback; default ``{}`` (no activity -> no
+    fallback). Both the detached set AND the activity map are served through
+    the SINGLE combined helper ``_detached_tmux_panes_with_activity`` that the
+    pass actually calls (and the legacy ``_detached_tmux_pane_ttys`` is patched
+    too for the `_process_idle_unmapped`-default / `_is_live_user_tty`
+    paths)."""
     import autonomous_session_watch as asw
 
     stops: list[str] = []
     records: list[str] = []
+    activity = dict(tmux_activity or {})
+    detached = set(detached_tmux_ttys)
     monkeypatch.setattr(asw, "PROJECT_ROOT", Path(_Z_ROOT))
     monkeypatch.setattr(asw, "_live_children", lambda: list(children))
     monkeypatch.setattr(asw, "_load_session_meta", lambda: dict(meta))
     monkeypatch.setattr(asw, "_load_session_issue_map", lambda: dict(registry or {}))
     monkeypatch.setattr(asw, "_load_pm_session_ids", lambda: set(pm_sids))
     monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: has_tty)
-    # Pin the detached-tmux-pane probe so the I/O tests never shell out to a
-    # live tmux server (deterministic; default = no detached panes).
-    monkeypatch.setattr(asw, "_detached_tmux_pane_ttys", lambda: set(detached_tmux_ttys))
+    # Pin BOTH tmux probes so the I/O tests never shell out to a live tmux
+    # server (deterministic; default = no detached panes, no activity). The
+    # pass calls the combined helper; the legacy single-return wrapper is
+    # patched too for callers that use it directly.
+    monkeypatch.setattr(
+        asw, "_detached_tmux_panes_with_activity", lambda: (set(detached), dict(activity))
+    )
+    monkeypatch.setattr(asw, "_detached_tmux_pane_ttys", lambda: set(detached))
     monkeypatch.setattr(
         asw,
         "_transcript_idle_age_s",
@@ -5646,6 +5701,733 @@ def test_idle_unmapped_pass_daemon_unreachable_skips(isolated_registry, monkeypa
     assert not list(isolated_registry.glob("idle-unmapped-*.json"))
 
 
+# ── #695 corroborating-idleness fallback tests ────────────────────────────────
+
+
+def _patch_fallback_gates(
+    monkeypatch,
+    *,
+    pane_tty="/dev/pts/24",
+    has_work_descendant=False,
+    running_pods=None,
+    pending_input=False,
+):
+    """Stub the four real dependencies of the #695 fallback gate evaluation
+    that `_patch_idle_io` does NOT cover (so a fallback test never shells out
+    to a live tmux / RunPod API / /proc): the wrapper's controlling-tty path
+    (gate 1), the work-descendant probe (gate 3), the running-pod snapshot
+    (gate 4), and the pending-pane-input probe (gate 5). ``running_pods``
+    default ``[]`` (genuinely no pods -> gate passes); pass ``None`` to
+    simulate a failed snapshot, or a non-empty list to simulate a live pod."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_wrapper_controlling_tty_path", lambda pid: pane_tty)
+    monkeypatch.setattr(
+        asw, "_has_running_work_descendant", lambda pid, cmap=None: has_work_descendant
+    )
+    pods = [] if running_pods is None else running_pods
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *a, **k: pods)
+    monkeypatch.setattr(asw, "_pane_has_pending_input", lambda pane: pending_input)
+
+
+def test_idle_unmapped_fallback_reaps_when_all_gates_pass(isolated_registry, monkeypatch):
+    # Test 1 (load-bearing REAP): detached + unmapped + no work + no pod + over
+    # the fallback threshold + no pending input -> the fallback supplies a
+    # substitute idle age and the session is stopped after the 2-miss guard.
+    # The pre-stop audit row is written BEFORE the stop, and the post-stop note
+    # is the fallback-DISTINCT narrative.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_TMUX_IDLE_FALLBACK_S", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_TMUX_IDLE_FALLBACK_ENABLED", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-fb", "pid": 4242}]
+    meta = {"sid-fb": {"path": _Z_ROOT}}
+    # has_tty True + the pane in the detached set => not a live-user tty =>
+    # falls through to the idle branch; primary transcript signal None =>
+    # fallback eligible.
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch)
+    state_path = isolated_registry / "idle-unmapped-sid-fb.json"
+    events_path = isolated_registry / "idle-unmapped-events.jsonl"
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)  # miss 1
+    assert stops == [] and records == []
+    assert json.loads(state_path.read_text())["missed"] == 1
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)  # stop
+    assert stops == ["sid-fb"]
+    assert len(records) == 1
+    assert asw._IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL in records[0]
+    # A pre-stop would_stop_fallback audit row landed in the events file.
+    rows = [json.loads(ln) for ln in events_path.read_text().splitlines() if ln.strip()]
+    audits = [r for r in rows if r.get("kind") == "would_stop_fallback"]
+    assert len(audits) == 1
+    assert audits[0]["fallback_source"] == "tmux_session_activity"
+
+
+def test_idle_unmapped_fallback_keeps_when_work_descendant_present(isolated_registry, monkeypatch):
+    # Test 2 (work-descendant KEEP): a running codex / experimenter / train.py
+    # descendant blocks the fallback reap entirely (the experimenter incident:
+    # 1/6 sessions). Never stops, never accumulates a fallback episode.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-w", "pid": 100}]
+    meta = {"sid-w": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch, has_work_descendant=True)
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+    assert not list(isolated_registry.glob("idle-unmapped-*.json"))
+
+
+def test_idle_unmapped_fallback_keeps_when_running_pod_present(isolated_registry, monkeypatch):
+    # Test 3 (running-pod KEEP): a non-empty managed-RUNNING-pod snapshot defers
+    # the fallback reap (the conservative no-issue-key floor for unmapped
+    # sessions).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-p", "pid": 100}]
+    meta = {"sid-p": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch, running_pods=[_p(489, "p489", "pod-489")])
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_fallback_keeps_when_pod_snapshot_failed(isolated_registry, monkeypatch):
+    # Test 3b (uncertain-pod KEEP): a None snapshot (API error) is uncertain ->
+    # KEEP (no_running_pods is False unless the snapshot is a real empty list).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-pn", "pid": 100}]
+    meta = {"sid-pn": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch, running_pods=None)  # None == failed snapshot
+    # Patch the helper to actually return None (the helper, not the default []).
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *a, **k: None)
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_fallback_keeps_when_under_threshold(isolated_registry, monkeypatch):
+    # Test 4 (under-threshold KEEP): session_activity age under the fallback
+    # window -> no substitute idle age over the floor -> ("skip", missed), never
+    # stops, no fallback episode accumulated.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    under = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S - 3600  # fresh-ish: under the floor
+    children = [{"happySessionId": "sid-u", "pid": 100}]
+    meta = {"sid-u": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - under},
+    )
+    _patch_fallback_gates(monkeypatch)
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+    assert not list(isolated_registry.glob("idle-unmapped-*.json"))
+
+
+def test_idle_unmapped_fallback_keeps_when_activity_unavailable(isolated_registry, monkeypatch):
+    # Test 5 (unavailable-signal KEEP): the pane has no session_activity entry
+    # (empty activity map) -> the fallback finds no substitute age -> KEEP.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-na", "pid": 100}]
+    meta = {"sid-na": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={},  # pane absent from the activity map
+    )
+    _patch_fallback_gates(monkeypatch)
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_fallback_keeps_attached_pane(isolated_registry, monkeypatch):
+    # Test 6 (attached-pane KEEP): a session whose pane is NOT in the detached
+    # set is a live-user tty -> has_tty stays True -> ("clear", 0), the fallback
+    # is never reached. Preserves the existing detached-vs-attached behavior.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-att", "pid": 100}]
+    meta = {"sid-att": {"path": _Z_ROOT}}
+    # has_tty True but the controlling pane is /dev/pts/47, NOT in the detached
+    # set -> _is_live_user_tty True -> clear.
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/47": t0 - over},
+    )
+    monkeypatch.setattr(asw, "_wrapper_controlling_tty_path", lambda pid: "/dev/pts/47")
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_fallback_not_consulted_when_primary_signal_present(
+    isolated_registry, monkeypatch
+):
+    # Test 7: when the PRIMARY transcript signal resolves, the fallback gate
+    # evaluation is NEVER reached — assert the fallback evaluator (and its
+    # pending-input probe) are not called. The primary path drives the decision.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    primary_over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    children = [{"happySessionId": "sid-pri", "pid": 100}]
+    meta = {"sid-pri": {"path": _Z_ROOT}}
+    stops, _records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=primary_over,  # PRIMARY signal available
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - 999_999},
+    )
+    called = {"fallback": 0, "pending": 0}
+    monkeypatch.setattr(
+        asw,
+        "_evaluate_idle_unmapped_fallback",
+        lambda *a, **k: called.__setitem__("fallback", called["fallback"] + 1) or (None, None),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_pane_has_pending_input",
+        lambda pane: called.__setitem__("pending", called["pending"] + 1) or False,
+    )
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)
+    # The primary path stopped it (transcript over the primary window).
+    assert stops == ["sid-pri"]
+    assert called["fallback"] == 0 and called["pending"] == 0
+
+
+def test_idle_unmapped_empty_detached_set_beacon(isolated_registry, monkeypatch, capsys):
+    # Test 8: tmux present but the detached set is EMPTY -> the once-per-pass
+    # loud WARNING beacon fires (the silent-regression guard). Fail-soft set
+    # stays empty; nothing is reaped.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+    children = [{"happySessionId": "sid-b", "pid": 100}]
+    meta = {"sid-b": {"path": _Z_ROOT}}
+    stops, _records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        detached_tmux_ttys=set(),  # tmux present but no detached panes
+        tmux_activity={},
+    )
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=1_000_000.0)
+    assert "tmux present but detached set empty" in capsys.readouterr().err
+    assert stops == []
+
+
+def test_idle_unmapped_fallback_dry_run_mutates_nothing(isolated_registry, monkeypatch):
+    # Test 9 (extended dry-run): a dry-run tick at the fallback stop point
+    # neither stops, writes the pre-stop audit row, nor rewrites state.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-dr", "pid": 100}]
+    meta = {"sid-dr": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch)
+    # Mirror the REAL _stop_session dry-run contract (returns False, no action).
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: (not dry_run) and (stops.append(sid) or True)
+    )
+    state_path = isolated_registry / "idle-unmapped-sid-dr.json"
+    seeded = json.dumps({"missed": 1, "alerted": False, "first_over_ts": t0})
+    state_path.write_text(seeded)
+    events_path = isolated_registry / "idle-unmapped-events.jsonl"
+
+    asw.idle_unmapped_pass(True, 2, daemon_reachable=True, now=t0 + 600)
+    assert stops == [] and records == []
+    assert state_path.read_text() == seeded  # untouched
+    assert not events_path.exists()  # no audit row written under dry-run
+
+
+def test_idle_unmapped_fallback_keeps_when_pending_input(isolated_registry, monkeypatch):
+    # Test 10 (MF1 typed-but-unsent KEEP): all five other gates pass but the
+    # pane shows pending un-submitted input -> KEEP. No stop, no audit row, no
+    # accumulated episode. This is the dominant-class (4/6) protection.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-pi", "pid": 100}]
+    meta = {"sid-pi": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch, pending_input=True)  # buffered input present
+    events_path = isolated_registry / "idle-unmapped-events.jsonl"
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+    assert not events_path.exists()
+    assert not list(isolated_registry.glob("idle-unmapped-sid-pi.json"))
+
+
+# A real-shape Claude TUI render: a ✻ status line, a /clear hint, a top
+# box-rule (carrying the ↯ token-count glyph), the caret input row (U+276F caret +
+# a U+00A0 non-breaking space separator), a bottom box-rule, and the
+# ⏵⏵ permissions footer. The input row is NEVER the last captured line —
+# the bottom-up scanner must skip the bottom rule + footer to reach it.
+# (#695 round-2 blocker 1; structure verified against four live detached panes.)
+_REAL_CLAUDE_TOP_RULE = "───────────────────────────────── ↯ ─"
+_REAL_CLAUDE_BOTTOM_RULE = "─────────────────────────────────────"
+_REAL_CLAUDE_FOOTER = "  ⏵⏵ bypass permissions on  · ← for…"
+
+
+def _real_claude_render(input_row: str) -> str:
+    """A capture-pane stdout in the live Claude TUI shape, with ``input_row``
+    placed above the bottom rule + permissions footer."""
+    return (
+        "✻ Cogitated for 28s\n"
+        "  new task? /clear to save 281.2k t…\n"
+        f"{_REAL_CLAUDE_TOP_RULE}\n"
+        f"{input_row}\n"
+        f"{_REAL_CLAUDE_BOTTOM_RULE}\n"
+        f"{_REAL_CLAUDE_FOOTER}\n"
+    )
+
+
+def test_pane_has_pending_input_heuristic(monkeypatch):
+    # Test 11 (MF1 heuristic unit tests, #695 round-2 bottom-up scanner): the
+    # KEEP-leaning text heuristic over REAL-shape capture-pane output — the
+    # input row sits ABOVE a bottom rule + ⏵⏵ footer, so the scanner walks
+    # bottom-up skipping border/footer lines. Empty box / placeholder -> False
+    # (proceed); buffered text -> True (KEEP); subprocess error / pane gone /
+    # tmux absent / all-borders-and-footers -> True (KEEP, fail-soft).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    def _set_capture(stdout, returncode=0):
+        class _Out:
+            pass
+
+        o = _Out()
+        o.stdout = stdout
+        o.returncode = returncode
+        monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: o)
+
+    # Real-shape EMPTY input box (caret + non-breaking space only) -> proceed.
+    _set_capture(_real_claude_render("\u276f\xa0"))
+    assert asw._pane_has_pending_input("/dev/pts/24") is False
+    # Real-shape BUFFERED input (caret + NBSP + typed text) -> KEEP (True).
+    _set_capture(_real_claude_render("\u276f\xa0promote it useful"))
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+    # Whitespace-only capture -> no input row -> KEEP (True).
+    _set_capture("   \n  \n")
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+    # Empty-prompt placeholder hint inside the real shape -> proceed (False).
+    _set_capture(_real_claude_render('\u276f\xa0Try "fix the bug"'))
+    assert asw._pane_has_pending_input("/dev/pts/24") is False
+    _set_capture(_real_claude_render("\u276f\xa0/for shortcuts"))  # 'for shortcuts' hint
+    assert asw._pane_has_pending_input("/dev/pts/24") is False
+    # Older / idealized ASCII box render (no ⏵⏵ footer): the bottom line is the
+    # ╰──╯ rule, skipped; the input row above it is judged. Empty -> proceed.
+    _set_capture("╭──────────────╮\n│ >            │\n╰──────────────╯\n")
+    assert asw._pane_has_pending_input("/dev/pts/24") is True  # '│ >  │' has trailing border glyph
+    # capture-pane non-zero rc (pane gone) -> KEEP (fail-soft).
+    _set_capture("", returncode=1)
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+
+    # subprocess raises -> KEEP (fail-soft).
+    def _boom(*a, **k):
+        raise asw.subprocess.SubprocessError("boom")
+
+    monkeypatch.setattr(asw.subprocess, "run", _boom)
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+    # tmux absent -> KEEP (fail-soft).
+    monkeypatch.setattr(asw.shutil, "which", lambda name: None)
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+
+
+def test_pane_has_pending_input_real_render_buffered_keeps(monkeypatch):
+    # Test 11b (#695 round-2 blocker 1, load-bearing): the REAL Claude TUI
+    # render (top rule -> caret input row -> bottom rule -> ⏵⏵ footer) with
+    # BUFFERED input. The last captured line is the footer, NOT the input row —
+    # the round-1 last-line-only heuristic returned False here (allowing a
+    # spurious reap of a session with typed-but-unsent input). The bottom-up
+    # scanner skips footer + bottom rule and reads the caret row -> KEEP (True).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    class _Out:
+        stdout = _real_claude_render("\u276f\xa0check progress")
+        returncode = 0
+
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: _Out())
+    # Sanity: the captured LAST line really is the footer, not the input row.
+    assert _Out.stdout.splitlines()[-1].lstrip().startswith("⏵")
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+
+
+def test_pane_has_pending_input_real_render_empty_proceeds(monkeypatch):
+    # Test 11c (#695 round-2 blocker 1): the REAL Claude render with a genuinely
+    # EMPTY input box (the caret caret + a lone U+00A0 separator, nothing typed).
+    # The scanner skips the footer + bottom rule, reaches the caret row, strips the
+    # caret + NBSP, finds an empty remainder -> may proceed (False, allows
+    # reap). This is the positive empty-case the brief requires; the empty box
+    # is identified from the real caret render without a false negative.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    class _Out:
+        stdout = _real_claude_render("\u276f\xa0")
+        returncode = 0
+
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: _Out())
+    assert asw._pane_has_pending_input("/dev/pts/24") is False
+
+
+def test_pane_has_pending_input_all_borders_and_footers_keeps(monkeypatch):
+    # Test 11d (#695 round-2 blocker 1): a capture consisting ONLY of border /
+    # rule lines and footer lines (no recognizable input row at all) -> the
+    # bottom-up scanner finds no input line -> cannot confirm empty -> KEEP.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    capture = (
+        f"{_REAL_CLAUDE_TOP_RULE}\n"
+        f"{_REAL_CLAUDE_BOTTOM_RULE}\n"
+        "╭──────────────╮\n"
+        "╰──────────────╯\n"
+        f"{_REAL_CLAUDE_FOOTER}\n"
+        "  ? for shortcuts\n"
+    )
+
+    class _Out:
+        stdout = capture
+        returncode = 0
+
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: _Out())
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+
+
+def test_pane_line_classifiers(monkeypatch):
+    # Test 11e (#695 round-2 blocker 1): the bottom-up scanner's two line
+    # classifiers. Border lines: pure box-drawing / rule glyphs (incl. the ↯
+    # token-count glyph on the top rule). Footer lines: ⏵ / ? / nav-arrow
+    # leading glyph. The caret input row is NEITHER (so the scanner stops on it).
+    import autonomous_session_watch as asw
+
+    # Borders.
+    assert asw._pane_line_is_border("─────────────────────────────────────")
+    assert asw._pane_line_is_border("╭──────────────╮")
+    assert asw._pane_line_is_border("╰──────────────╯")
+    assert asw._pane_line_is_border(_REAL_CLAUDE_TOP_RULE)  # carries ↯
+    assert asw._pane_line_is_border("   ") is False  # all-whitespace is not a border
+    assert asw._pane_line_is_border("\u276f\xa0promote it useful") is False
+    # Footers.
+    assert asw._pane_line_is_footer(_REAL_CLAUDE_FOOTER)  # ⏵⏵ permissions
+    assert asw._pane_line_is_footer("  ? for shortcuts")
+    assert asw._pane_line_is_footer("↑/↓ to navigate")
+    assert asw._pane_line_is_footer("\u276f\xa0promote it useful") is False
+    assert asw._pane_line_is_footer("   ") is False  # all-whitespace is not a footer
+
+
+def test_work_descendant_denylist_import_pin():
+    # Test 12 (MF2 import-pin): ORPHAN_HOLDER_PATTERNS resolves + compiles and
+    # the union matches a known codex cmdline; each LOCAL workload marker is in
+    # the gate's denylist. A future rename of either source trips this test.
+    import re
+
+    import autonomous_session_watch as asw
+    from worktree_audit import ORPHAN_HOLDER_PATTERNS
+
+    assert isinstance(ORPHAN_HOLDER_PATTERNS, tuple) and ORPHAN_HOLDER_PATTERNS
+    assert all(isinstance(p, re.Pattern) for p in ORPHAN_HOLDER_PATTERNS)
+    # The union matches a real codex companion cmdline.
+    codex_cmd = "node /home/x/.claude/plugins/cache/openai-codex/dist/index.js app-server"
+    assert any(p.search(codex_cmd) for p in ORPHAN_HOLDER_PATTERNS)
+    # asw imported the SAME tuple object.
+    assert asw.ORPHAN_HOLDER_PATTERNS is ORPHAN_HOLDER_PATTERNS
+    # Every named LOCAL workload marker is in the gate's denylist.
+    for marker in (
+        "scripts/train.py",
+        "scripts/eval.py",
+        "scripts/run_sweep.py",
+        "scripts/dispatch_issue.py",
+        "backend_poll.py",
+        "experiment-implementer",
+    ):
+        assert marker in asw._IDLE_UNMAPPED_WORK_CMDLINE_MARKERS, marker
+
+
+def test_work_descendant_unreadable_child_keeps(monkeypatch):
+    # Test 12b (#695 round-2 blocker 2): a wrapper subtree with a child whose
+    # /proc/<pid>/cmdline read raises OSError. The round-1 _cmdline_is_work_process
+    # swallowed OSError -> False, so an unreadable work child looked "not work"
+    # and the gate-3 walk could return False -> reap permitted. The tri-state
+    # probe now returns None (uncertain) for an unreadable cmdline, and
+    # _has_running_work_descendant treats None as work-present -> KEEP (True),
+    # honoring the fail-toward-KEEP contract.
+    import autonomous_session_watch as asw
+
+    # Topology: wrapper 100 -> child 200 -> grandchild 300.
+    children_map = {100: [200], 200: [300]}
+    # 100 + 200 readable + non-work; 300 cmdline unreadable (perms / race).
+    readable_nonwork = {100: b"node /happy/index.mjs claude\x00", 200: b"node mcp\x00"}
+
+    def _fake_read_bytes(self):
+        # self is a Path("/proc/<pid>/cmdline")
+        s = str(self)
+        pid = int(s.split("/proc/")[1].split("/")[0])
+        if pid in readable_nonwork:
+            return readable_nonwork[pid]
+        raise OSError("EACCES")  # 300 -> unreadable
+
+    monkeypatch.setattr(asw.Path, "read_bytes", _fake_read_bytes)
+
+    # Tri-state probe directly: readable-nonwork -> False, unreadable -> None.
+    assert asw._cmdline_is_work_process(100) is False
+    assert asw._cmdline_is_work_process(300) is None
+    # The walk: the unreadable grandchild 300 makes the subtree work-present.
+    assert asw._has_running_work_descendant(100, children_map) is True
+
+
+def test_work_descendant_all_readable_nonwork_allows_reap(monkeypatch):
+    # Test 12c (#695 round-2 blocker 2, complement): when EVERY child cmdline is
+    # readable and NONE match the work-process denylist, the walk returns False
+    # (no work descendant -> gate 3 allows reap) — the pre-existing behavior is
+    # preserved by the tri-state change (False is still positively not-work).
+    import autonomous_session_watch as asw
+
+    children_map = {100: [200], 200: [300]}
+    readable_nonwork = {
+        100: b"node /happy/index.mjs claude\x00",
+        200: b"node /mcp/runpod\x00",
+        300: b"node /mcp/arxiv\x00",
+    }
+
+    def _fake_read_bytes(self):
+        pid = int(str(self).split("/proc/")[1].split("/")[0])
+        return readable_nonwork[pid]  # all readable
+
+    monkeypatch.setattr(asw.Path, "read_bytes", _fake_read_bytes)
+
+    for pid in (100, 200, 300):
+        assert asw._cmdline_is_work_process(pid) is False
+    assert asw._has_running_work_descendant(100, children_map) is False
+    # And a positive work marker anywhere in the subtree still trips it.
+    readable_nonwork[300] = b"python scripts/train.py condition=c1\x00"
+    assert asw._cmdline_is_work_process(300) is True
+    assert asw._has_running_work_descendant(100, children_map) is True
+
+
+def test_idle_unmapped_fallback_audit_before_stop_and_payload(isolated_registry, monkeypatch):
+    # Test 13 (MF3 ordering + payload): the pre-stop audit write happens BEFORE
+    # the _stop_session call (audit_ts < stop_ts), and the audit payload
+    # carries all nine named fields.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-ord", "pid": 100}]
+    meta = {"sid-ord": {"path": _Z_ROOT}}
+    _stops, _records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch)
+    order: list[tuple[str, float]] = []
+    seq = {"n": 0}
+
+    def _next():
+        seq["n"] += 1
+        return float(seq["n"])
+
+    captured_payload: list[dict] = []
+
+    def _audit(payload, dry_run):
+        captured_payload.append(payload)
+        order.append(("audit", _next()))
+
+    monkeypatch.setattr(asw, "_append_idle_unmapped_audit", _audit)
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: order.append(("stop", _next())) or True
+    )
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)  # miss 1
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)  # stop
+
+    audit_ts = next(ts for name, ts in order if name == "audit")
+    stop_ts = next(ts for name, ts in order if name == "stop")
+    assert audit_ts < stop_ts
+    assert len(captured_payload) == 1
+    payload = captured_payload[0]
+    for field in (
+        "sid",
+        "pid",
+        "fallback_source",
+        "idle_age_s",
+        "threshold_env_value",
+        "detached_verdict",
+        "work_descendant",
+        "running_pods",
+        "pending_input",
+    ):
+        assert field in payload, field
+    assert payload["work_descendant"] is False
+    assert payload["running_pods"] == []
+    assert payload["pending_input"] is False
+
+
+def test_idle_unmapped_fallback_post_stop_note_is_distinct(isolated_registry, monkeypatch):
+    # Test 14 (MF3 fallback-distinct): the fallback reap's post-stop note does
+    # NOT contain the primary-transcript narrative ("its resolved Claude
+    # transcript has been idle") and DOES carry fallback-source language;
+    # the PRIMARY reap's note is the existing transcript narrative unchanged.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+
+    # ── fallback reap ──
+    over_fb = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    _stops, records = _patch_idle_io(
+        monkeypatch,
+        children=[{"happySessionId": "sid-fbn", "pid": 100}],
+        meta={"sid-fbn": {"path": _Z_ROOT}},
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over_fb},
+    )
+    _patch_fallback_gates(monkeypatch)
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)
+    assert len(records) == 1
+    fb_note = records[0]
+    assert "its resolved Claude transcript has been idle" not in fb_note
+    assert asw._IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL in fb_note
+    assert "session_activity" in fb_note
+
+    # ── primary reap (separate session) ──
+    over_pri = asw.UNMAPPED_IDLE_REAP_S + 3600
+    _stops2, records2 = _patch_idle_io(
+        monkeypatch,
+        children=[{"happySessionId": "sid-prn", "pid": 200}],
+        meta={"sid-prn": {"path": _Z_ROOT}},
+        idle_age=over_pri,
+    )
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)
+    assert len(records2) == 1
+    pri_note = records2[0]
+    assert "its resolved Claude transcript has been idle" in pri_note
+    assert asw._IDLE_UNMAPPED_STOP_NOTE_SENTINEL in pri_note
+
+
 def test_idle_unmapped_transcript_signal_is_happy_log_only(tmp_path, monkeypatch):
     # The idleness signal uses ONLY session_resolver's per-pid happy-log path.
     # The shared-projects-dir filesystem fallback can attribute ANOTHER
@@ -5887,10 +6669,10 @@ def test_parse_infra_drain_queue_invalid_inputs(raw):
 def test_parse_infra_drain_queue_valid_inputs():
     import json
 
-    # Missing cap -> default 3; missing holds -> empty; order-preserving
+    # Missing cap -> default 5; missing holds -> empty; order-preserving
     # dedup (first occurrence wins); unparseable updated_ts -> None.
     q = parse_infra_drain_queue('{"ripe_oldest_first": [5, 3, 5]}')
-    assert q == {"ids": [5, 3], "cap": 3, "holds": {}, "updated_ts": None}
+    assert q == {"ids": [5, 3], "cap": 5, "holds": {}, "updated_ts": None}
     # Live-file-shaped input: string hold keys coerced to ints, ISO-8601 Z
     # updated_ts parsed to an epoch float, extra fields ignored.
     live = json.dumps(
@@ -7538,17 +8320,19 @@ def test_sweep_kind_guard(kind, ok):
 
 
 def test_sweep_cap_arithmetic():
-    # free = max(0, cap - occupied - pending); oldest-first preserved.
+    # free = max(0, cap - occupied - pending); oldest-first preserved. cap is
+    # pinned to 3 here to exercise the clamp at a fixed value independent of the
+    # production default (INFRA_DRAIN_CAP_DEFAULT).
     ids = [10, 20, 30, 40]
-    dispatch, skipped = _decide_sweep(ids, occupied=0)
+    dispatch, skipped = _decide_sweep(ids, occupied=0, cap=3)
     assert dispatch == [10, 20, 30] and skipped == [(40, "cap-full")]
-    dispatch, skipped = _decide_sweep(ids, occupied=2)
+    dispatch, skipped = _decide_sweep(ids, occupied=2, cap=3)
     assert dispatch == [10] and [r for _, r in skipped] == ["cap-full"] * 3
-    assert _decide_sweep(ids, occupied=3)[0] == []
+    assert _decide_sweep(ids, occupied=3, cap=3)[0] == []
     # occupied > cap clamps at zero free.
-    assert _decide_sweep(ids, occupied=5)[0] == []
+    assert _decide_sweep(ids, occupied=5, cap=3)[0] == []
     # pending consumes a slot too.
-    dispatch, skipped = _decide_sweep([7], occupied=2, pending=1)
+    dispatch, skipped = _decide_sweep([7], occupied=2, pending=1, cap=3)
     assert dispatch == [] and skipped == [(7, "cap-full")]
 
 
@@ -7593,7 +8377,7 @@ def test_sweep_dispatches_orphaned_proposed_infra(isolated_registry, monkeypatch
     assert markers[0][2] == "proposed-infra-sweep"
     assert asw._PROPOSED_INFRA_SWEEP_NOTE_SENTINEL in markers[0][1]
     out = capsys.readouterr().out
-    assert "candidates=1 occupied=0(+0 pending) cap=3 dispatched=1 skipped=0" in out
+    assert "candidates=1 occupied=0(+0 pending) cap=5 dispatched=1 skipped=0" in out
 
 
 # ── (c-watcher) no double-dispatch when a live session exists ──────────────────
@@ -7627,29 +8411,29 @@ def test_sweep_skips_task_with_live_session(isolated_registry, monkeypatch, caps
 
 
 def test_sweep_cap_full_via_occupancy(isolated_registry, monkeypatch, capsys):
-    # (d.i) Cap full from occupancy alone: 3 infra tasks at occupied statuses
-    # -> 0 free -> 0 dispatched.
+    # (d.i) Cap full from occupancy alone: 5 infra tasks at occupied statuses
+    # -> 0 free -> 0 dispatched (cap = INFRA_DRAIN_CAP_DEFAULT = 5).
     import autonomous_session_watch as asw
 
     dispatched, _markers = _stub_sweep_executor(
         monkeypatch,
         candidates=[684],
         status_kind={684: ("proposed", "infra")},
-        occupancy=[700, 701, 702],
+        occupancy=[700, 701, 702, 703, 704],
     )
     asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
     assert dispatched == []
     out = capsys.readouterr().out
     assert "cap-full" in out
-    assert "occupying=[700, 701, 702]" in out
+    assert "occupying=[700, 701, 702, 703, 704]" in out
 
 
 def test_sweep_cap_full_counts_real_pending_registration(isolated_registry, monkeypatch, capsys):
     # (d.ii, R5) "1 pending" produced through the REAL registration path: write
     # an actual issue-<X>.json for a still-proposed drain-kind task so the real
-    # _infra_drain_pending counts it; occupancy=2 -> free = 3 - 2 - 1 = 0 -> 0
-    # dispatched. Exercises the real pending-counting layer end-to-end rather
-    # than stubbing the pending count wholesale.
+    # _infra_drain_pending counts it; occupancy=4 -> free = 5 - 4 - 1 = 0 -> 0
+    # dispatched (cap = INFRA_DRAIN_CAP_DEFAULT = 5). Exercises the real
+    # pending-counting layer end-to-end rather than stubbing the count wholesale.
     import json
 
     import autonomous_session_watch as asw
@@ -7666,13 +8450,13 @@ def test_sweep_cap_full_counts_real_pending_registration(isolated_registry, monk
         # 684 is the candidate; 900 is the pending registration the real
         # _infra_drain_signals/_infra_drain_pending must read + count.
         status_kind={684: ("proposed", "infra"), 900: ("proposed", "infra")},
-        occupancy=[700, 701],
+        occupancy=[700, 701, 702, 703],
         live={"sid-pending"},  # young + live -> non-stale -> pins a pending slot
     )
     asw.proposed_infra_sweep_pass(dry_run=False, now=now, daemon_reachable=True)
-    assert dispatched == []  # free = 3 - 2 occupied - 1 real pending = 0
+    assert dispatched == []  # free = 5 - 4 occupied - 1 real pending = 0
     out = capsys.readouterr().out
-    assert "occupied=2(+1 pending)" in out
+    assert "occupied=4(+1 pending)" in out
     assert "cap-full" in out
 
 
@@ -7760,6 +8544,90 @@ def test_sweep_candidate_query_filters_non_infra_kinds(isolated_registry, monkey
     monkeypatch.setattr(asw.subprocess, "run", _fake_run)
     cands = asw._proposed_infra_candidates()
     assert cands == [685]  # only the infra row, experiment/campaign filtered
+
+
+# ── needs-human excluded at the candidate-query layer (#706) ───────────────────
+
+
+def test_sweep_candidate_query_skips_needs_human(isolated_registry, monkeypatch):
+    # A proposed infra row tagged `needs-human` (a /daily route-3 held judgment
+    # call, task #706) MUST NOT be an auto-dispatch candidate — it surfaces in
+    # the PM `Needs you` block instead. The always-on watcher sweep would
+    # otherwise auto-dispatch it the moment a slot frees, defeating the entire
+    # purpose of routing /daily-held items to a human. The kind-only filter in
+    # `_proposed_infra_candidates` currently lets it through; the tag-skip is
+    # the single load-bearing invariant this test pins.
+    import json
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    def _fake_run(cmd, **kw):
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                [
+                    {
+                        "id": 700,
+                        "kind": "infra",
+                        "status": "proposed",
+                        "tags": ["needs-human", "daily-held"],
+                    },
+                    {
+                        "id": 701,
+                        "kind": "infra",
+                        "status": "proposed",
+                        "tags": ["daily-auto-filed"],
+                    },
+                    {"id": 702, "kind": "infra", "status": "proposed", "tags": []},
+                ]
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    cands = asw._proposed_infra_candidates()
+    assert cands == [701, 702]  # needs-human row #700 filtered out
+
+
+def test_sweep_candidate_query_admits_row_without_tags_key(isolated_registry, monkeypatch):
+    # Backward-compat (#706, Statistics Claude critic concern #2): a LEGACY
+    # proposed infra row that predates the `tags` field — no `tags` key at all
+    # — must STILL be admitted as a candidate. The tag-skip MUST use safe
+    # access (`row.get("tags") or []`); a `row["tags"]` lookup would KeyError on
+    # this row and crash the whole sweep. This row has NO needs-human tag (it
+    # has no tags), so it is a normal candidate.
+    import json
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    def _fake_run(cmd, **kw):
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                [
+                    {
+                        "id": 710,
+                        "kind": "infra",
+                        "status": "proposed",
+                        "tags": ["needs-human"],
+                    },
+                    {
+                        "id": 711,
+                        "kind": "infra",
+                        "status": "proposed",
+                        "tags": ["daily-auto-filed"],
+                    },
+                    {"id": 712, "kind": "infra", "status": "proposed"},  # legacy: no tags key
+                ]
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    cands = asw._proposed_infra_candidates()
+    assert cands == [711, 712]  # needs-human #710 skipped; no-tags-key #712 admitted
 
 
 # ── unmet predicate held / satisfied (queue-file gate, executor half) ──────────
@@ -7956,3 +8824,262 @@ def test_main_proposed_infra_sweep_only_flag(isolated_registry, monkeypatch):
     rc = asw.main(["--proposed-infra-sweep-only"])
     assert rc == 0
     assert calls == ["sweep"]
+
+
+# ─── #681 data-disk PERCENT thresholds (Must-Fix #2 — size-invariant) ────────
+#
+# These drive the PRODUCTION decision functions against a large total, NOT a
+# percent monkeypatch seam — the v1→v2 coverage fix. The byte-floor /-path
+# (decide_subfloor / decide_vm_disk) is UNCHANGED and stays correct for the
+# 485 GB boot disk; the data disk uses percent thresholds so a future resize
+# cannot push the fire point past the wedge.
+
+_GIB = 2**30
+_TIB = 2**40
+
+
+def _used_pct(total_bytes: int, free_bytes: int) -> float:
+    """Percent USED for a (total, free) — the statvfs-derived input the data-disk
+    pass computes from `total` and `free`, exactly as production does."""
+    return 100.0 * (total_bytes - free_bytes) / total_bytes
+
+
+def test_data_disk_subfloor_fires_at_intended_fullness():
+    # 512 GiB total: at 85-90% full the sub-floor FIRES; at 80% it does NOT.
+    # Proves escalation PRECEDES the wedge (the v1 byte-floor bug would have
+    # stayed quiescent until ~88-94% on this disk).
+    from autonomous_session_watch import decide_subfloor_pct
+
+    total = 512 * _GIB
+    free_88 = int(total * 0.12)  # 88% used
+    free_80 = int(total * 0.20)  # 80% used
+    assert decide_subfloor_pct(_used_pct(total, free_88), None) is True  # fires
+    assert decide_subfloor_pct(_used_pct(total, free_80), None) is False  # quiet
+
+
+def test_data_disk_subfloor_realerts_only_on_climb():
+    # An already-sub-floor episode re-fires only when usage CLIMBS by > the
+    # re-alert fraction; a stable footprint does not re-fire every tick.
+    from autonomous_session_watch import VM_DISK_SUBFLOOR_GROWTH_REALERT, decide_subfloor_pct
+
+    total = 512 * _GIB
+    used_86 = _used_pct(total, int(total * 0.14))  # 86%
+    used_87 = _used_pct(total, int(total * 0.13))  # ~87%, ~1.2% relative climb
+    used_99 = _used_pct(total, int(total * 0.01))  # 99%, ~15% relative climb
+    # The re-alert is a > VM_DISK_SUBFLOOR_GROWTH_REALERT (default 0.10) RELATIVE
+    # climb of used_pct since the last row. Bracket the threshold explicitly.
+    assert (used_87 - used_86) / used_86 < VM_DISK_SUBFLOOR_GROWTH_REALERT
+    assert (used_99 - used_86) / used_86 > VM_DISK_SUBFLOOR_GROWTH_REALERT
+    # Stable / tiny climb since last row → no re-alert.
+    assert decide_subfloor_pct(used_87, used_86) is False
+    # A large climb → re-alert.
+    assert decide_subfloor_pct(used_99, used_86) is True
+
+
+def test_data_disk_alert_and_reclaim_fire_before_wedge():
+    # The data-disk ALERT arm fires at 90% and the (escalate-only) CRITICAL arm
+    # at 95% of a 512 GiB total; NO reclaim-tier action is even RETURNED (the
+    # function returns only (level, do_alert) — there is no do_reclaim/do_audit).
+    from autonomous_session_watch import decide_vm_disk_pct
+
+    total = 512 * _GIB
+    used_60 = _used_pct(total, int(total * 0.40))
+    used_91 = _used_pct(total, int(total * 0.09))
+    used_96 = _used_pct(total, int(total * 0.04))
+
+    assert decide_vm_disk_pct(used_60, alerted=False) == ("ok", False)
+    assert decide_vm_disk_pct(used_91, alerted=False) == ("low", True)
+    assert decide_vm_disk_pct(used_96, alerted=False) == ("critical", True)
+    # Already-alerted episode does not re-alert.
+    assert decide_vm_disk_pct(used_96, alerted=True) == ("critical", False)
+    # The return is a 2-tuple — there is structurally no reclaim/audit action on
+    # the data disk (escalate-only).
+    assert len(decide_vm_disk_pct(used_96, alerted=False)) == 2
+
+
+def test_data_disk_thresholds_size_invariant():
+    # The CANARY: repeat the 85-90%-fires / 80%-quiet assertions with total=2 TiB
+    # (a future resize). The PERCENT basis must fire at the SAME fullness — the
+    # mirrored-byte-floor bug would regress here (a 20 GiB free floor on a 2 TiB
+    # disk is ~99% full, firing AFTER the wedge).
+    from autonomous_session_watch import decide_subfloor_pct, decide_vm_disk_pct
+
+    total = 2 * _TIB
+    free_88 = int(total * 0.12)  # 88% used
+    free_80 = int(total * 0.20)  # 80% used
+    assert decide_subfloor_pct(_used_pct(total, free_88), None) is True
+    assert decide_subfloor_pct(_used_pct(total, free_80), None) is False
+    # And the alert arm fires at 90% / 95% identically on the 2 TiB disk.
+    assert decide_vm_disk_pct(_used_pct(total, int(total * 0.09)), alerted=False) == ("low", True)
+    assert decide_vm_disk_pct(_used_pct(total, int(total * 0.04)), alerted=False) == (
+        "critical",
+        True,
+    )
+    # Sanity vs the byte-floor /-path: 20 GiB free on a 2 TiB disk is ~99% used —
+    # the mirrored byte floor (decide_subfloor at <60 GiB free) would only have
+    # fired at the very brink. The percent floor already fired at 88%.
+    twenty_gib_free_used = _used_pct(total, 20 * _GIB)
+    assert twenty_gib_free_used > 98.0
+
+
+def test_subfloor_attributes_worktree_data(tmp_path, monkeypatch):
+    # The sub-floor attribution must name the WORKTREE-INTERNAL caches
+    # (.claude/worktrees/issue-<N>/data/issue_<N>/{hf_dl,g*_dl}), not just
+    # repo-root data/ — the per-issue caches the data disk actually holds live
+    # in the worktree (#681 / #658 evidence).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path)
+    # A worktree-internal cache for issue 658 (where the live run writes).
+    wt_cache = tmp_path / ".claude" / "worktrees" / "issue-658" / "data" / "issue_658" / "hf_dl"
+    wt_cache.mkdir(parents=True)
+    (wt_cache / "blob.bin").write_bytes(b"x" * 8192)
+    # A repo-root data/ cache too, to prove BOTH roots are globbed.
+    repo_cache = tmp_path / "data" / "issue_700" / "g1_dl"
+    repo_cache.mkdir(parents=True)
+    (repo_cache / "blob.bin").write_bytes(b"y" * 4096)
+
+    roots = asw._issue_cache_glob_roots()
+    # Both the repo-root data/ AND the worktree data/ are glob roots.
+    assert (tmp_path / "data") in roots
+    assert (tmp_path / ".claude" / "worktrees" / "issue-658" / "data") in roots
+
+    top = asw._top_issue_cache_paths(top_n=5)
+    named = {rel for rel, _ in top}
+    # The worktree-internal cache is attributed (the bug was it was missed).
+    assert any("worktrees/issue-658/data/issue_658/hf_dl" in rel for rel in named)
+    # The repo-root cache is still attributed too.
+    assert any("data/issue_700/g1_dl" in rel for rel in named)
+
+
+def test_repquota_attribution_parses_per_project_rows(monkeypatch):
+    # The data-disk PRIMARY attribution reads per-PROJECT usage via repquota -P
+    # in one cheap call (project id == issue number); a non-zero rc / unparseable
+    # output returns None so the caller falls back to the du-based path.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    # repquota -Ocsv emits: Project,BlockStatus,FileStatus,BlockUsed(KiB),...
+    csv = (
+        "#0,ok,ok,512,0,0,0,ok,1,0,0\n"
+        "#658,ok,ok,104857600,0,134217728,0,ok,10,0,0\n"  # 100 GiB used
+        "#700,ok,ok,52428800,0,134217728,0,ok,5,0,0\n"  # 50 GiB used
+    )
+
+    def fake_run(cmd, *a, **k):
+        assert cmd[:3] == ["repquota", "-Ocsv", "-P"]
+        return _subprocess.CompletedProcess(cmd, 0, stdout=csv, stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", fake_run)
+    rows = asw._top_issue_caches_by_project_quota("/mnt/eps-data", top_n=5)
+    assert rows is not None
+    # project 0 (the unbounded default) is excluded; sorted by usage desc.
+    assert rows[0][0].startswith("issue-658")
+    assert rows[0][1] == 104857600 * 1024
+    assert rows[1][0].startswith("issue-700")
+    assert all("issue-0" not in r[0] for r in rows)
+
+    # A non-zero rc (repquota missing / no prjquota) → None (du fallback).
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda cmd, *a, **k: _subprocess.CompletedProcess(cmd, 1, stdout="", stderr="no prjquota"),
+    )
+    assert asw._top_issue_caches_by_project_quota("/mnt/eps-data") is None
+
+
+# ── Data-disk pass — PRODUCTION call site (#681 round-2 BLOCKER #1) ───────────
+# The round-1 diff DEFINED the percent helpers but never DROVE them from a live
+# watcher pass — plan §4 "Add a parallel data-disk check ... that the data-disk
+# path drives" requires a production call site, not just unit-pinned helpers.
+# These tests pin the wrapper data_disk_pass (driven from main(), the sibling
+# of vm_disk_pass) AND the source-level fact that main() wires it.
+
+
+def _stub_data_disk_io(asw, monkeypatch, *, mounted, used_pct, top=None):
+    """Make data_disk_pass deterministic: control the is_dir() mount probe, the
+    statvfs-derived used_pct, and the attribution. Returns the list the
+    sidecar-append closure records into."""
+    monkeypatch.setattr(asw.Path, "is_dir", lambda self: mounted)
+    monkeypatch.setattr(asw, "_data_disk_used_pct", lambda dd_path: used_pct)
+    monkeypatch.setattr(asw, "_data_disk_top_caches", lambda dd_path: top or [])
+    recorded: list[dict] = []
+    monkeypatch.setattr(
+        asw, "_append_disk_guard_sidecar", lambda event, dry_run: recorded.append(event)
+    )
+    return recorded
+
+
+def test_data_disk_pass_fires_subfloor_when_mounted_and_full(tmp_path, monkeypatch):
+    # The PRODUCTION wrapper (the one main() calls) writes the data-disk sub-floor
+    # sidecar row at 96% used when the mount is present. Drives the REAL pass, not
+    # only the pure decide_* helpers (Codex's explicit round-1 miss).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)  # isolate dedup state
+    recorded = _stub_data_disk_io(
+        asw,
+        monkeypatch,
+        mounted=True,
+        used_pct=96.0,
+        top=[("issue-658 (project quota, /mnt/eps-data)", 100 * 2**30)],
+    )
+
+    wrote = asw.data_disk_pass(dry_run=False)
+
+    assert wrote is True
+    kinds = {r["kind"] for r in recorded}
+    # Both the alert/critical arm (decide_vm_disk_pct -> critical at 96%) AND the
+    # sub-floor arm (decide_subfloor_pct -> True at 96%) escalate.
+    assert "vm-disk-data-critical" in kinds
+    assert "vm-disk-data-subfloor" in kinds
+    # Every data-disk row is tagged disk=data with the WORKTREE-internal cache
+    # attribution carried through.
+    assert all(r.get("disk") == "data" for r in recorded)
+    sub = next(r for r in recorded if r["kind"] == "vm-disk-data-subfloor")
+    assert sub["band"] == "sub-floor"
+    assert any("issue-658" in c["path"] for c in sub["top_cache_paths"])
+
+
+def test_data_disk_pass_is_clean_noop_pre_cutover(tmp_path, monkeypatch):
+    # Pre-cutover (the mount does not exist) the data-disk pass is a CLEAN no-op:
+    # no sidecar row, no state write, even when used_pct would otherwise escalate.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    recorded = _stub_data_disk_io(asw, monkeypatch, mounted=False, used_pct=99.0)
+
+    wrote = asw.data_disk_pass(dry_run=False)
+
+    assert wrote is False
+    assert recorded == []  # nothing escalated
+    assert not (tmp_path / "vm-disk-data.json").exists()  # no dedup state touched
+
+
+def test_data_disk_pass_dry_run_writes_no_state(tmp_path, monkeypatch):
+    # --dry-run decides + logs but mutates nothing (no dedup-state file written).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    _stub_data_disk_io(asw, monkeypatch, mounted=True, used_pct=96.0)
+
+    asw.data_disk_pass(dry_run=True)
+
+    assert not (tmp_path / "vm-disk-data.json").exists()
+
+
+def test_main_wires_data_disk_pass_call_site():
+    # The mechanizable round-2 check: main() must DRIVE data_disk_pass, not just
+    # define the helpers. Codex: "fail if main() only calls vm_disk_pass". Pin the
+    # production call site at the source level so a future refactor that drops the
+    # call (regressing to helpers-without-callsite) fails loudly.
+    import inspect
+
+    import autonomous_session_watch as asw
+
+    src = inspect.getsource(asw.main)
+    assert "data_disk_pass(args.dry_run)" in src, (
+        "main() must call data_disk_pass(args.dry_run) next to vm_disk_pass — "
+        "the percent helpers must be DRIVEN by a production call site (#681 BLOCKER #1)"
+    )

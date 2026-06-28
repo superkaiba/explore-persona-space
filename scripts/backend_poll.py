@@ -518,6 +518,28 @@ def _clear_runpod_noport_clock(sidecar: Path) -> None:
         )
 
 
+def _pod_is_runpod_runtime_wedged(info) -> bool:
+    """True iff a live RunPod ``PodInfo`` is in the RAW #664 no-port wedge
+    condition: ``desired_status == "RUNNING"`` AND no public SSH port
+    (``runtime.ports`` empty -> ``runpod_api._parse_pod`` sets
+    ``ssh_host``/``ssh_port`` to ``None``).
+
+    This is the MATURITY-AGNOSTIC raw condition ONLY — the K-floor age check
+    stays with each caller (the poller uses its sidecar clock; the watcher
+    backstop in ``autonomous_session_watch.py`` uses its OWN dedicated
+    ``wedge_first_seen`` clock). ``info is None`` (pod gone) -> ``False`` (not a
+    wedge; the gone pod is the ordinary dead path). This is the SINGLE source of
+    truth for the wedge condition, called by BOTH
+    :func:`_maybe_escalate_runpod_wedge` (poller) and the
+    ``autonomous_session_watch.py`` pod-safety wedge arm (watcher backstop,
+    #692) — neither re-defines it (#692 composition surface (b))."""
+    if info is None:
+        return False
+    if getattr(info, "desired_status", None) != "RUNNING":
+        return False
+    return not (info.ssh_host and info.ssh_port)
+
+
 def _maybe_escalate_runpod_wedge(handle, result, sidecar: Path, *, now: float):
     """Escalate a RunPod pod RUNNING-but-no-port past K to terminal wedged (#664).
 
@@ -543,12 +565,10 @@ def _maybe_escalate_runpod_wedge(handle, result, sidecar: Path, *, now: float):
     from runpod_api import get_pod_by_name  # live RunPod API (X-Team-Id baked in)
 
     info = get_pod_by_name(handle.pod_name)  # PodInfo or None
-    healthy_or_terminal = (
-        info is None  # gone -> ordinary dead path
-        or getattr(info, "desired_status", None) != "RUNNING"  # EXITED/terminal -> not a wedge
-        or (info.ssh_host and info.ssh_port)  # public port present -> healthy
-    )
-    if healthy_or_terminal:
+    # gone / EXITED / port-present -> not the raw wedge condition -> clear the
+    # no-port clock, return unchanged (the negation of the extracted predicate
+    # is exactly the old inline `healthy_or_terminal` guard, behavior-preserving).
+    if not _pod_is_runpod_runtime_wedged(info):
         _clear_runpod_noport_clock(sidecar)
         return result
     # RUNNING + no public port: start/continue the no-port clock.

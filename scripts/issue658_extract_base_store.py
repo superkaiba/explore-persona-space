@@ -122,6 +122,22 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 SENTINEL_SCHEMA_VERSION = 1
 
+# (G1) genre-generalization arm — the UltraChat generic probe pool pins (plan v3
+# §10/§11). The dispatcher fail-loud-asserts BOTH hashes when ``--probes-file``
+# points at this pool: the file sha256 (whole-file bytes) AND meta.probe_pool_hash
+# (the content hash over the 48 probe texts). A drift on either is a wrong pool.
+ULTRACHAT_PROBE_POOL_HASH = "f277f8c3e2550b2ce3e4545a8ad6473498d070e7343eb7c9398a6aac31525455"
+ULTRACHAT_FILE_SHA256 = "a6caadf02b88df416fcc41bb548556b42f51c6c31ec5f865163afefe32226dcc"
+# The ONE canonical --genre-tag for the (G1) UltraChat genre arm — the
+# `followup_label` (plan v3 §6.5 globs, `eval_paths`, the genre_delta.py
+# --ultrachat-dir default ALL read this exact prefix). The genre arm's
+# eval_results / E0-gen / raw-completion outputs land under
+# `eval_results/issue_658/genre-generalization-ultrachat/`. The dispatcher
+# fail-loud-asserts --genre-tag == this value whenever the UltraChat genre arm is
+# active (--probes-file set), so a stale tag (e.g. `ultrachat`) cannot route the
+# outputs to a directory genre_delta.py never reads (Codex r1 path-naming Minor).
+CANONICAL_GENRE_TAG = "genre-generalization-ultrachat"
+
 
 def phase(name: str) -> None:
     """Emit a poll_pipeline.py-parseable phase line (PHASE_RE on the log tail)."""
@@ -192,6 +208,20 @@ class AnswerSpanCapture(LayerCapture):
             self.latest[li][0, :prompt_len, :].float().mean(dim=0).cpu() for li in range(n_layers)
         ]
         self.latest.clear()
+        return torch.stack(vecs)  # (L, H)
+
+    def last_prompt_stack(self, n_layers: int, prompt_len: int) -> torch.Tensor:
+        """(L, H) fp32 CPU stack: the LAST input-token slot (c_C last-input-token).
+
+        Position ``prompt_len - 1`` under ``add_generation_prompt=True`` is the
+        assistant-header newline — the exact #594 last-input-token c_C recipe.
+        Used by the (G1) ``--cc-recompute-last`` path (the #594 cc_last HF store
+        is Betley-pinned, so a non-Betley probe pool recomputes c_C fresh from the
+        SAME slot). Does NOT clear ``self.latest`` so a sibling ``mean_prompt_stack``
+        on the same forward still reads the buffer; the caller clears it.
+        """
+        assert prompt_len >= 1, prompt_len
+        vecs = [self.latest[li][0, prompt_len - 1, :].float().cpu() for li in range(n_layers)]
         return torch.stack(vecs)  # (L, H)
 
 
@@ -369,19 +399,20 @@ def _write_marker_error(e0_dir: Path, context_id: str, exc: Exception) -> Path:
     return err_path
 
 
-def _upload_partial_e0(e0_dir: Path, smoke: bool) -> None:
+def _upload_partial_e0(e0_dir: Path, smoke: bool, genre_tag: str | None = None) -> None:
     """Idempotent partial upload of e0_gen/*.json to the HF data repo.
 
     Re-uploading the same files overwrites (idempotent). Wrapped in its OWN
     try/except by the CALLER — a transient HF failure must never kill the
     workload (the whole point of the resilience fix is to STOP losing the
-    30 good contexts). Lands under the same ``{HF_PREFIX}/e0_gen`` namespace
-    the end-of-run ``upload_raw_completions`` uses, so partial and final
-    completions are one prefix (no split-brain).
+    30 good contexts). Lands under the genre-distinct ``{HF_PREFIX}/e0_gen[_<genre>]``
+    namespace the end-of-run ``upload_raw_completions`` uses, so partial and final
+    completions are one prefix per arm (no split-brain, no cross-arm clobber).
     """
     from huggingface_hub import HfApi
 
-    sub = "e0_gen_smoke" if smoke else "e0_gen"
+    _g = f"_{genre_tag}" if genre_tag else ""
+    sub = f"e0_gen_smoke{_g}" if smoke else f"e0_gen{_g}"
     path_in_repo = f"{HF_PREFIX}/{sub}"
     HfApi().upload_folder(
         folder_path=str(e0_dir),
@@ -405,6 +436,7 @@ def _run_marker_loop(
     *,
     smoke: bool = False,
     upload: bool = True,
+    genre_tag: str | None = None,
 ) -> dict:
     """Marker-column HF slot read per context, with per-context exception isolation.
 
@@ -457,13 +489,13 @@ def _run_marker_loop(
         if upload and n_since_upload >= E0_PARTIAL_UPLOAD_EVERY:
             n_since_upload = 0
             try:
-                _upload_partial_e0(e0_dir, smoke)
+                _upload_partial_e0(e0_dir, smoke, genre_tag)
             except Exception as up_exc:
                 print(f"[ERROR] partial upload failed: {up_exc}", flush=True)
     # End-of-loop partial upload (whether or not the next phase runs / crashes).
     if upload:
         try:
-            _upload_partial_e0(e0_dir, smoke)
+            _upload_partial_e0(e0_dir, smoke, genre_tag)
         except Exception as up_exc:
             print(f"[ERROR] partial upload failed: {up_exc}", flush=True)
     return {"done": done, "errors": errors}
@@ -483,6 +515,7 @@ def generate_e0_completions(
     n_samples_cap: int = 0,
     smoke: bool = False,
     upload_partial: bool = True,
+    genre_tag: str | None = None,
 ) -> None:
     """Generate E0(C,B) behavior-battery completions per (context, column).
 
@@ -535,6 +568,7 @@ def generate_e0_completions(
         _mnt,
         smoke=smoke,
         upload=upload_partial,
+        genre_tag=genre_tag,
     )
     run.log(
         {
@@ -570,7 +604,14 @@ def generate_e0_completions(
         # already landed are preserved + uploaded).
         try:
             _gen_e0_vllm_shared(
-                model_name, tokenizer, pending, _mnt, _nsamp, smoke=smoke, upload=upload_partial
+                model_name,
+                tokenizer,
+                pending,
+                _mnt,
+                _nsamp,
+                smoke=smoke,
+                upload=upload_partial,
+                genre_tag=genre_tag,
             )
             run.log({"e0_contexts_done": len(instances)})
         except Exception as exc:
@@ -582,7 +623,7 @@ def generate_e0_completions(
             _write_marker_error(e0_dir, "_structural_phase", exc)
             if upload_partial:
                 try:
-                    _upload_partial_e0(e0_dir, smoke)
+                    _upload_partial_e0(e0_dir, smoke, genre_tag)
                 except Exception as up_exc:
                     print(f"[ERROR] partial upload failed: {up_exc}", flush=True)
         finally:
@@ -610,7 +651,15 @@ def generate_e0_completions(
 
 
 def _gen_e0_vllm_shared(
-    model_name, tokenizer, pending, mnt_fn, nsamp_fn, *, smoke: bool = False, upload: bool = True
+    model_name,
+    tokenizer,
+    pending,
+    mnt_fn,
+    nsamp_fn,
+    *,
+    smoke: bool = False,
+    upload: bool = True,
+    genre_tag: str | None = None,
 ) -> None:
     """Generate every (context, column) judged/structural cell through ONE engine.
 
@@ -683,7 +732,7 @@ def _gen_e0_vllm_shared(
     # on it), so ``pending[0][3].parent`` is the e0_gen dir.
     if upload and pending:
         try:
-            _upload_partial_e0(pending[0][3].parent, smoke)
+            _upload_partial_e0(pending[0][3].parent, smoke, genre_tag)
         except Exception as up_exc:
             print(f"[ERROR] partial upload failed: {up_exc}", flush=True)
 
@@ -900,6 +949,16 @@ def build_rb_contrast(column_id: str, probes: list[str], cap: int) -> tuple[list
     diffs the mean answer-side activations. The contrasts are derived from the
     same Betley probe pool + the testbed batteries (NEW work, plan §4.2 G4).
 
+    ``D_{B̄}`` is pinned to the Betley probe pool; r_B is genre-invariant only
+    under this pin. The ``neutral = probes[:cap]`` half (the ``D_{B̄}`` side for
+    ``betley_vs_neutral`` / ``syco_claim_vs_neutral`` / ``harmful_vs_benign``)
+    therefore MUST be passed the canonical Betley pool, NOT the active extraction
+    pool — under the (G1) ``--probes-file`` the active pool is UltraChat, and
+    passing it here would silently swap r_B's contrast baseline by genre (the
+    consistency-checker BLOCK, plan v3 §3/§4 G4). The G4 call site passes the
+    pinned Betley pool. ``should_refuse_vs_should_not`` is probe-free (SORRY-Bench
+    vs XSTest) and unaffected.
+
     The contrast TYPE per column is fixed by E0Column.rb_contrast:
       betley_vs_neutral      D_B = Betley main-8 (EM-eliciting), D_Bbar = neutral probes
       harmful_vs_benign      D_B = harmful-request battery, D_Bbar = benign probes
@@ -1086,12 +1145,20 @@ def _is_storage_quota_403(err: Exception) -> bool:
     return "403" in msg and "storage" in msg.lower()
 
 
-def upload_store(out_dir: Path, smoke: bool, hf_subdir: str | None = None) -> dict:
-    """ONE bulk upload_folder commit of the store; verify via list_repo_files."""
+def upload_store(
+    out_dir: Path, smoke: bool, hf_subdir: str | None = None, genre_tag: str | None = None
+) -> dict:
+    """ONE bulk upload_folder commit of the store; verify via list_repo_files.
+
+    The HF subdir is genre-distinct (``store_<genre>`` / ``smoke_probe_<genre>``)
+    so the two arms' stores never clobber (plan v3 §10). An explicit ``hf_subdir``
+    overrides the genre default verbatim.
+    """
     from huggingface_hub import HfApi
 
     api = HfApi()
-    sub = hf_subdir or ("smoke_probe" if smoke else "store")
+    _g = f"_{genre_tag}" if genre_tag else ""
+    sub = hf_subdir or (f"smoke_probe{_g}" if smoke else f"store{_g}")
     path_in_repo = f"{HF_PREFIX}/{sub}"
     repo_used = HF_DATA_REPO
     try:
@@ -1125,7 +1192,7 @@ def upload_store(out_dir: Path, smoke: bool, hf_subdir: str | None = None) -> di
     return {"repo": repo_used, "path_in_repo": path_in_repo, "n_files": len(files)}
 
 
-def upload_raw_completions(dirs: list[Path], smoke: bool) -> dict:
+def upload_raw_completions(dirs: list[Path], smoke: bool, genre_tag: str | None = None) -> dict:
     """Batch every per-cell completion JSON into ONE create_commit (HF data repo).
 
     The dispatcher writes flat per-cell JSONs (``<ctx>__<col>.json`` E0 gen +
@@ -1135,12 +1202,14 @@ def upload_raw_completions(dirs: list[Path], smoke: bool) -> dict:
     ``raw_completions.json`` recursive glob, so we batch them into ONE
     ``create_commit`` (PREFERRED over a per-file loop — HF throttles a repo at
     ~256 commits/hr, #591) targeting the canonical
-    ``issue658_theory_assumptions/raw_completions/<rel>`` path, then verify the
-    per-prefix file count on the Hub before returning. Fail-loud.
+    ``issue658_theory_assumptions/raw_completions[_<genre>]/<rel>`` path, then
+    verify the per-prefix file count on the Hub before returning. Fail-loud. The
+    genre tag keeps the UltraChat raw completions distinct from the Betley arm.
     """
     from huggingface_hub import CommitOperationAdd, HfApi
 
-    sub = "raw_completions_smoke" if smoke else "raw_completions"
+    _g = f"_{genre_tag}" if genre_tag else ""
+    sub = f"raw_completions_smoke{_g}" if smoke else f"raw_completions{_g}"
     base = f"{HF_PREFIX}/{sub}"
     ops = []
     for d in dirs:
@@ -1178,7 +1247,7 @@ def upload_raw_completions(dirs: list[Path], smoke: bool) -> dict:
 # ── main ─────────────────────────────────────────────────────────────────────
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 — linear phase pipeline (load→G1..G6→assemble→upload); see phase() markers
     parser = argparse.ArgumentParser(description="Issue #658: base-model activation store.")
     parser.add_argument("--battery", type=Path, default=PROJECT_ROOT / "data/issue594/battery.json")
     parser.add_argument("--out-dir", type=Path, default=PROJECT_ROOT / "data/issue_658/store")
@@ -1242,7 +1311,49 @@ def main() -> int:
         "untouched) so broad_em's n=50 is not 50 CPU generations; 0 = honor each column's "
         "full n_samples (the real-run default)",
     )
+    # ── (G1) genre-generalization arm flags (plan v3 §3/§4.1) ─────────────────
+    parser.add_argument(
+        "--probes-file",
+        type=Path,
+        default=None,
+        help="JSON pool {'meta': {...}, 'probes': [{'text': ...}]} to use as x~C "
+        "INSTEAD of the Betley preregistered pool (the (G1) genre arm; default None = "
+        "Betley, unchanged). Affects ONLY v0/c_C extraction (G1/G2/G3'); r_B's D_Bbar "
+        "always reads the canonical Betley pool (see G4). When set to the UltraChat "
+        "pool, the file sha256 + meta.probe_pool_hash are fail-loud-asserted.",
+    )
+    parser.add_argument(
+        "--genre-tag",
+        default=None,
+        help="genre-distinct destination prefix; routes the eval_results subdir + the "
+        "HF subdir to a non-clobbering path. None = the v1 Betley layout, unchanged. "
+        f"For the (G1) UltraChat genre arm (--probes-file set) this MUST be the "
+        f"canonical '{CANONICAL_GENRE_TAG}' — the same prefix genre_delta.py reads "
+        "(its --ultrachat-dir default + the plan §6.5 globs); a stale tag is rejected.",
+    )
+    parser.add_argument(
+        "--cc-recompute-last",
+        action="store_true",
+        help="recompute the last-input-token c_C fresh in G3 (into v0_summaries.pt::cc_last) "
+        "instead of relying on the #594 cc_last store (REQUIRED for any non-Betley "
+        "--probes-file: the #594 cc_last store is Betley-pinned).",
+    )
     args = parser.parse_args()
+
+    # (G1) path-naming contract: when the UltraChat genre arm is active
+    # (--probes-file set), --genre-tag MUST be the canonical prefix that
+    # genre_delta.py reads back (its --ultrachat-dir default + plan §6.5 globs).
+    # Eliminates the default mismatch where a stale `--genre-tag ultrachat` routed
+    # outputs to eval_results/issue_658/ultrachat/ that the genre delta never reads
+    # (Codex r1 path-naming Minor). The Betley arm (--probes-file None) is unaffected.
+    if args.probes_file is not None and args.genre_tag != CANONICAL_GENRE_TAG:
+        raise SystemExit(
+            f"--probes-file is set (the (G1) genre arm) but --genre-tag is "
+            f"{args.genre_tag!r}; it MUST be the canonical {CANONICAL_GENRE_TAG!r} so "
+            "the outputs land where issue658_genre_delta.py reads them "
+            "(--ultrachat-dir default + plan v3 §6.5 globs + the followup_label). "
+            f"Re-launch with --genre-tag {CANONICAL_GENRE_TAG}."
+        )
 
     phase("load")
     # Bind CVD before the first CUDA allocation (the +gpu_id clobber gotcha).
@@ -1255,9 +1366,46 @@ def main() -> int:
     spans_dir = out_dir / "answer_spans"
     spans_dir.mkdir(parents=True, exist_ok=True)
 
+    # (G1) genre routing: --genre-tag prepends a non-clobbering subdir to the
+    # eval_results destinations (raw completions + E0 gen) and the HF upload
+    # subdir, so the UltraChat store never overwrites the Betley layout. None =
+    # the v1 Betley layout, unchanged (eval_base == EVAL_RESULTS_DIR).
+    eval_base = EVAL_RESULTS_DIR / args.genre_tag if args.genre_tag else EVAL_RESULTS_DIR
+
     _payload, instances = load_battery(args.battery)
+
+    # The Betley preregistered pool, ALWAYS loaded — it is r_B's pinned D_Bbar
+    # contrast baseline regardless of --probes-file (the v3 fix; r_B is
+    # genre-invariant). When --probes-file is absent it is ALSO the active
+    # extraction pool (the v1 Betley arm, unchanged).
     main8 = set(fetch_betley_main_8())
-    probes = fetch_preregistered_probes(n=200, exclude=main8)
+    rb_neutral_pool = fetch_preregistered_probes(n=200, exclude=main8)
+
+    # The active extraction pool x~C (the ONE variable): Betley by default, or the
+    # --probes-file pool (UltraChat) for the (G1) genre arm. Drives v0/c_C
+    # extraction ONLY — never r_B's D_Bbar (see the G4 pin below).
+    if args.probes_file is not None:
+        pool_blob = _load_json(args.probes_file)
+        probes = [r["text"] for r in pool_blob["probes"]]
+        # Fail loud on pool drift: the whole-file sha256 AND the content hash over
+        # the probe texts must both match the plan v3 §10 pins (a wrong pool
+        # silently changes the one experimental variable).
+        file_sha = sha256_file(args.probes_file)
+        assert file_sha == ULTRACHAT_FILE_SHA256, (
+            f"--probes-file sha256 drift: {file_sha} != {ULTRACHAT_FILE_SHA256} (plan v3 §10)"
+        )
+        meta_hash = pool_blob.get("meta", {}).get("probe_pool_hash")
+        assert meta_hash == ULTRACHAT_PROBE_POOL_HASH, (
+            f"--probes-file meta.probe_pool_hash drift: {meta_hash} != "
+            f"{ULTRACHAT_PROBE_POOL_HASH} (plan v3 §10)"
+        )
+        assert args.cc_recompute_last, (
+            "a non-Betley --probes-file REQUIRES --cc-recompute-last "
+            "(c_C is probe-dependent; the #594 cc_last store is Betley-pinned)"
+        )
+        logger.info("(G1) extraction pool: %d probes from %s", len(probes), args.probes_file)
+    else:
+        probes = rb_neutral_pool
 
     n_ctx_cap = args.n_ctx or (4 if args.smoke else len(instances))
     n_probes_cap = args.n_probes or (4 if args.smoke else len(probes))
@@ -1277,12 +1425,17 @@ def main() -> int:
 
     import wandb
 
+    # WandB run name carries the genre tag so the two arms' runs are distinct
+    # (plan v3 §10: issue658-extract-ultrachat[-smoke]).
+    _genre_suffix = f"-{args.genre_tag}" if args.genre_tag else ""
+    run_name = f"issue658-extract{_genre_suffix}{'-smoke' if args.smoke else ''}"
     run = wandb.init(
         project="explore-persona-space",
-        name="issue658-extract-smoke" if args.smoke else "issue658-extract",
+        name=run_name,
         mode=args.wandb_mode,
         config={
             "model": args.model,
+            "genre_tag": args.genre_tag,
             "n_ctx": len(instances),
             "n_probes": len(probes),
             "sigma_n": sigma_n,
@@ -1331,7 +1484,9 @@ def main() -> int:
         completions = vllm_generate(args.model, prompts, v0_cap)
     assert len(completions) == len(prompts) == len(index)
     # Persist raw completions per cell immediately (checkpoint-per-phase rule).
-    raw_dir = EVAL_RESULTS_DIR / ("raw_completions_smoke" if args.smoke else "raw_completions")
+    # eval_base is genre-routed (--genre-tag), so the UltraChat arm writes under
+    # eval_results/issue_658/<genre>/raw_completions[_smoke]/.
+    raw_dir = eval_base / ("raw_completions_smoke" if args.smoke else "raw_completions")
     raw_dir.mkdir(parents=True, exist_ok=True)
     by_ctx: dict[str, list[dict]] = {}
     for (iid, q), ans in zip(index, completions, strict=True):
@@ -1345,6 +1500,11 @@ def main() -> int:
     capture = AnswerSpanCapture(model, n_layers)
     v0_summaries: dict[str, dict[str, list]] = {r: {} for r in ("mean", "last", "maxp")}
     cc_meanprompt: dict[str, list] = {}
+    # (G1) --cc-recompute-last: capture the last-input-token c_C fresh from the
+    # SAME prompt-only forward as cc_meanprompt (the #594 cc_last HF store is
+    # Betley-pinned, so a non-Betley pool recomputes c_C here). Empty when the flag
+    # is off (the Betley arm loads cc_last from #594 in fit_predictors, unchanged).
+    cc_last: dict[str, list] = {}
     span_index: dict[str, list[str]] = {}
     try:
         for inst in instances:
@@ -1374,8 +1534,10 @@ def main() -> int:
             span_index[iid] = ctx_probes
             for r in ("mean", "last", "maxp"):
                 v0_summaries[r][iid] = summ[r]  # (Lc, H) fp32
-            # G3: c_C mean-prompt ablation — one forward, prompt-only, mean over
-            # prompt tokens (last-input-token c_C is REUSED from #594 HF store).
+            # G3: c_C — one prompt-only forward. mean-over-prompt ALWAYS; the
+            # last-input-token slot ADDITIONALLY when --cc-recompute-last (the (G1)
+            # arm; otherwise last-input-token is loaded from the #594 HF store in
+            # fit_predictors). Both reductions read the SAME forward's buffer.
             tmpl = tokenizer.apply_chat_template(
                 messages_for_instance(inst, ctx_probes[0]),
                 tokenize=False,
@@ -1384,9 +1546,12 @@ def main() -> int:
             pinputs = tokenizer(tmpl, return_tensors="pt", padding=False).to(model.device)
             with torch.no_grad():
                 _ = model(**pinputs)
-            cc_meanprompt[iid] = capture.mean_prompt_stack(
-                n_layers, int(pinputs["input_ids"].shape[1])
-            )[capture_layers]
+            prompt_len = int(pinputs["input_ids"].shape[1])
+            if args.cc_recompute_last:
+                # last_prompt_stack does NOT clear self.latest, so mean_prompt_stack
+                # (which clears) reads the same buffer right after. Order matters.
+                cc_last[iid] = capture.last_prompt_stack(n_layers, prompt_len)[capture_layers]
+            cc_meanprompt[iid] = capture.mean_prompt_stack(n_layers, prompt_len)[capture_layers]
             run.log({"v0_contexts_done": len(v0_summaries["mean"])})
     finally:
         capture.remove()
@@ -1401,17 +1566,19 @@ def main() -> int:
     )
 
     # Save the v0 summaries tensor pack (mean/last/maxp recipes; attn fit on CPU).
-    torch.save(
-        {
-            "summaries": v0_summaries,  # {recipe: {ctx_id: (Lc, H) fp32}}
-            "cc_meanprompt": cc_meanprompt,  # {ctx_id: (Lc, H) fp32}
-            "capture_layers": capture_layers,
-            "context_ids": [i["id"] for i in instances],
-            "model": args.model,
-            "probe_pool_hash": stable_hash(probes),
-        },
-        out_dir / "v0_summaries.pt",
-    )
+    # cc_last is present ONLY under --cc-recompute-last (the (G1) arm); an empty
+    # dict for the Betley arm keeps the pack shape stable + back-compatible.
+    v0_pack = {
+        "summaries": v0_summaries,  # {recipe: {ctx_id: (Lc, H) fp32}}
+        "cc_meanprompt": cc_meanprompt,  # {ctx_id: (Lc, H) fp32}
+        "capture_layers": capture_layers,
+        "context_ids": [i["id"] for i in instances],
+        "model": args.model,
+        "probe_pool_hash": stable_hash(probes),
+    }
+    if args.cc_recompute_last:
+        v0_pack["cc_last"] = cc_last  # {ctx_id: (Lc, H) fp32} — the fresh genre c_C
+    torch.save(v0_pack, out_dir / "v0_summaries.pt")
 
     # ── G6: E0(C,B) behavior-battery generations (judged off-pod by J1) ───────
     # Generate the column-battery completions per (context, behavior) at the
@@ -1421,7 +1588,7 @@ def main() -> int:
     # structural format column emits raw completions (J1 scores them with the
     # structural classifier). Persist per (ctx, column) so J1 is GPU-free.
     phase("g6_e0gen")
-    e0_dir = EVAL_RESULTS_DIR / ("e0_gen_smoke" if args.smoke else "e0_gen")
+    e0_dir = eval_base / ("e0_gen_smoke" if args.smoke else "e0_gen")
     e0_dir.mkdir(parents=True, exist_ok=True)
     e0_n_battery = 4 if args.smoke else (args.e0_n_battery or 0)
     generate_e0_completions(
@@ -1440,15 +1607,24 @@ def main() -> int:
         # same --no-upload gate as the end-of-run store upload (local smoke skips
         # HF). The end-of-script upload_raw_completions still runs the final pass.
         upload_partial=not args.no_upload,
+        genre_tag=args.genre_tag,
     )
 
     # ── G4: r_B diff-in-means over (D_B, D_Bbar) ──────────────────────────────
+    # v3 fix (consistency-checker BLOCK): D_Bbar is PINNED to the canonical Betley
+    # probe pool (rb_neutral_pool), NOT the active extraction pool (`probes`).
+    # Under --probes-file `probes` is UltraChat, and passing it to build_rb_contrast
+    # would silently swap r_B's contrast baseline by genre (the smuggled second
+    # variable). The pin makes r_B genre-invariant: a Betley-arm run (probes ==
+    # rb_neutral_pool) is byte-identical, and the UltraChat arm reproduces the
+    # Betley arm's r_B exactly. (should_refuse_vs_should_not is probe-free and
+    # ignores the pool argument entirely.)
     phase("g4_rb")
     capture = AnswerSpanCapture(model, n_layers)
     r_b: dict[str, dict] = {}
     try:
         for col in rb_columns():
-            d_b, d_bbar = build_rb_contrast(col, probes, rb_cap)
+            d_b, d_bbar = build_rb_contrast(col, rb_neutral_pool, rb_cap)
             mean_b = capture_mean_answer_acts(
                 model, tokenizer, d_b, capture, n_layers, capture_layers
             )
@@ -1501,9 +1677,28 @@ def main() -> int:
         "sigma": sigma_info,
         "smoke": args.smoke,
         "judge_model": "claude-sonnet-4-5-20250929",
+        # (G1) genre-arm provenance (plan v3 §6.5/§10/§11). For the Betley arm
+        # genre_tag is None and the layout/c_C reuse are the v1 defaults.
+        "genre_tag": args.genre_tag,
+        "probe_pool_file": str(args.probes_file) if args.probes_file else None,
+        "probe_pool_file_sha256": (sha256_file(args.probes_file) if args.probes_file else None),
+        # r_B D_Bbar is pinned to the canonical Betley pool in BOTH branches (v3
+        # fix); r_B is genre-invariant. Recorded so the reuse-provenance check sees
+        # the contrast baseline is the Betley pool, not the active extraction pool.
+        "rb_dbbar_pool": "betley_preregistered",
+        # Σ_c built on the PRIMARY load_generic_questions path (probe-free), NOT the
+        # except-fallback (which would use the Betley probe pool) — plan v3 §10/§12.
+        "sigma_source": sigma_info.get("source", "load_generic_questions"),
         "cc_reuse_note": (
-            "last-input-token c_C REUSED from #594 HF store "
-            "(issue594_context_geometry/analysis_tensors); mean-over-prompt c_C is NEW here"
+            (
+                "last-input-token c_C RECOMPUTED fresh this arm (v0_summaries.pt::cc_last); "
+                "the #594 cc_last store is Betley-pinned. mean-over-prompt c_C is fresh too."
+            )
+            if args.cc_recompute_last
+            else (
+                "last-input-token c_C REUSED from #594 HF store "
+                "(issue594_context_geometry/analysis_tensors); mean-over-prompt c_C is NEW here"
+            )
         ),
         # §6.5 sha-pinned-manifest deliverable: per-file SHA-256 over the FINAL
         # tensor bytes (the downstream content-identity check, #600).
@@ -1516,7 +1711,9 @@ def main() -> int:
     raw_upload_info: dict = {"skipped": True}
     if not args.no_upload:
         phase("upload")
-        upload_info = upload_store(out_dir, smoke=args.smoke, hf_subdir=args.hf_subdir)
+        upload_info = upload_store(
+            out_dir, smoke=args.smoke, hf_subdir=args.hf_subdir, genre_tag=args.genre_tag
+        )
         manifest["upload"] = upload_info
         # §6.5: the manifest "records the URLs+shas". Fold the resolved HF URL into
         # each pinned file's entry now that the upload repo + prefix are known.
@@ -1531,7 +1728,9 @@ def main() -> int:
         # Raw completions (E0 gen + v0-capture answers) MUST land on the HF data
         # repo before pod termination (checklist item 7 / Upload Policy). Batch
         # into ONE create_commit per dir to stay under the 256/hr HF throttle.
-        raw_upload_info = upload_raw_completions([e0_dir, raw_dir], smoke=args.smoke)
+        raw_upload_info = upload_raw_completions(
+            [e0_dir, raw_dir], smoke=args.smoke, genre_tag=args.genre_tag
+        )
         manifest["raw_completions_upload"] = raw_upload_info
         dump_json(manifest, out_dir / "store_manifest.json")
 
@@ -1557,7 +1756,7 @@ def extract_sigma_c(
     """
     import torch as _t
 
-    contexts = load_sigma_corpus(sigma_n)
+    contexts, sigma_source = load_sigma_corpus(sigma_n)
     if len(contexts) < sigma_n:
         logger.warning("Σ_c corpus produced %d < requested %d contexts", len(contexts), sigma_n)
     capture = AnswerSpanCapture(model, n_layers)
@@ -1587,27 +1786,36 @@ def extract_sigma_c(
         {"sigma_c": sigma_tensor, "n": n, "capture_layers": capture_layers},
         out_dir / "sigma_c.pt",
     )
-    logger.info("Σ_c: %d contexts, tensor %s", n, tuple(sigma_tensor.shape))
-    return {"n": n, "shape": list(sigma_tensor.shape)}
+    logger.info(
+        "Σ_c: %d contexts, tensor %s (source=%s)", n, tuple(sigma_tensor.shape), sigma_source
+    )
+    # sigma_source records the PRIMARY (load_generic_questions, probe-free) vs the
+    # except-fallback (Betley pool) path so the manifest can confirm Σ_c is
+    # genre-independent (plan v3 §10/§12).
+    return {"n": n, "shape": list(sigma_tensor.shape), "source": sigma_source}
 
 
-def load_sigma_corpus(n: int) -> list[str]:
+def load_sigma_corpus(n: int) -> tuple[list[str], str]:
     """Load ≥n background contexts for Σ_c via project_corpus_v2 (fallback: generic).
 
-    The Σ_c corpus is a diverse background pool used only for second-moment
-    estimation — NEVER a behavioral claim surface (plan §4.7 tier-3).
+    Returns ``(contexts, source)`` where ``source`` is ``load_generic_questions``
+    (the PRIMARY probe-free path) or ``betley_probe_pool_fallback`` (the except
+    path, which IS probe-pool-dependent — recorded so a UltraChat-arm Σ_c built on
+    the fallback is visibly NOT genre-independent). The Σ_c corpus is a diverse
+    background pool used only for second-moment estimation — NEVER a behavioral
+    claim surface (plan §4.7 tier-3).
     """
     try:
         from explore_persona_space.experiments.behavior_testbed_545 import corpora
 
-        return corpora.load_generic_questions(n, seed=658)
+        return corpora.load_generic_questions(n, seed=658), "load_generic_questions"
     except Exception as e:
         logger.warning("project corpus builder unavailable (%s) — using Betley probe pool", e)
         main8 = set(fetch_betley_main_8())
         pool = fetch_preregistered_probes(n=200, exclude=main8)
         # repeat to reach n (Σ_c only needs diversity for the second moment;
         # a small pool degrades the estimate, flagged in the manifest)
-        return (pool * ((n // max(1, len(pool))) + 1))[:n]
+        return (pool * ((n // max(1, len(pool))) + 1))[:n], "betley_probe_pool_fallback"
 
 
 if __name__ == "__main__":

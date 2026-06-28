@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 694,
+  "highest_id": 713,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4098,11 +4098,11 @@
     },
     "658": {
       "goal": "Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct \u2014 A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (linear read-out r_B), A3.4/A3.5 (context vector c_C predicts the answer profile v0(C)) \u2014 AND whether they still hold in the single-context edge case C=delta_x (one prompt, reported vs a within-context noise floor, Phase 1b); lock the best extraction layer + summary recipe for downstream phases.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/658",
-      "status": "followups_running",
-      "title": "Base-model foundation for the leakage predictor on Qwen2.5-7B (A3.2/A3.3/A3.5 + recipe lock)"
+      "path": "tasks/awaiting_promotion/658",
+      "status": "awaiting_promotion",
+      "title": "The leakage predictor's first link fails on Qwen2.5-7B \u2014 a mean answer-side activation summarizes only 3 of 10 behaviors, and none of the 4 with a working linear read-out (HIGH confidence)"
     },
     "659": {
       "has_clean_result": false,
@@ -4127,11 +4127,11 @@
     },
     "661": {
       "goal": "Quantify how much the behavior read-out r_B diverges across three extraction methods \u2014 (A) on-policy instruction-present, (B) off-policy teacher-forced, (C) instruct-and-strip \u2014 over the same question set for 3 behaviors (sycophancy, refusal, EM), measuring pairwise cosine divergence per layer, the projection of r_B^A onto the instruction context axis (c_pos-c_neg) as the context-confound magnitude, and whether the methods differ in A3.3-style held-out predictive quality (r_B^T v0 predicting E0) \u2014 to decide the program's (#660) A3.3 r_B recipe.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/blocked/661",
-      "status": "blocked",
-      "title": "r_B extraction-method divergence: on-policy-instruction (A) vs teacher-forced (B) vs instruct-and-strip (C) across 3 behaviors"
+      "path": "tasks/awaiting_promotion/661",
+      "status": "awaiting_promotion",
+      "title": "Instruction-present and instruct-and-strip r_B point the same way (cos \u2265 0.95 on all 3 behaviors), but neither beats the teacher-forced reference at predicting expression \u2014 so the recipe pick is inconclusive (LOW confidence)"
     },
     "662": {
       "has_clean_result": false,
@@ -4226,22 +4226,22 @@
     "673": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/673",
-      "status": "running",
+      "path": "tasks/completed/673",
+      "status": "completed",
       "title": "Real-GPU memory-non-growth validation for #671 hook-based extraction"
     },
     "674": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/674",
-      "status": "proposed",
+      "path": "tasks/completed/674",
+      "status": "completed",
       "title": "Route per-cell .npz writes to local SSD scratch + batch-upload at sweep end (GCE I/O decoupling)"
     },
     "675": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/675",
-      "status": "proposed",
+      "path": "tasks/completed/675",
+      "status": "completed",
       "title": "Route _context_vector_all_layers through hook helper (sibling of #671, surfaced by #672)"
     },
     "676": {
@@ -4289,8 +4289,8 @@
     "681": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/681",
-      "status": "proposed",
+      "path": "tasks/running/681",
+      "status": "running",
       "title": "Dedicated GCP persistent disk OR ext4 project quotas \u2014 bounded-by-construction disk isolation for active tasks"
     },
     "682": {
@@ -4368,30 +4368,52 @@
     "691": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/691",
-      "status": "running",
+      "path": "tasks/completed/691",
+      "status": "completed",
       "title": "Phase 6 full-scale dispatcher validation (141.6k A/B, ~$400) \u2014 gated on #684 merge"
     },
     "692": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/692",
-      "status": "running",
+      "path": "tasks/completed/692",
+      "status": "completed",
       "title": "workflow-fix: autonomous_session_watch.py compose RunPod no-port wedge predicate (#664 backstop)"
     },
     "693": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/693",
-      "status": "planning",
+      "path": "tasks/completed/693",
+      "status": "completed",
       "title": "Parallelize issue664 dispatcher p0: 8-way GPU fan + interleave base-extraction with the judge-batch wait (sibling to #676)"
     },
     "694": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/694",
-      "status": "proposed",
+      "path": "tasks/completed/694",
+      "status": "completed",
       "title": "workflow: add results-driven literature-positioning step (post-results related-work sweep)"
+    },
+    "695": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/695",
+      "status": "completed",
+      "title": "workflow-fix: idle-unmapped pass never reaps detached tmux Claude sessions"
+    },
+    "696": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/approved/696",
+      "status": "approved",
+      "title": "preflight branch-freshness check: tolerate transient git-fetch timeouts (#664 false-positive recurrence)"
+    },
+    "697": {
+      "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, causally localize whether finetuning a behavior into a context shifts the context vector (input to the map M) or the context\u2192behavior mapping M (the function) via cross-model activation patching at the read layer, reading both the on-policy behavioral rate and the answer-side activation profile.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/697",
+      "status": "planning",
+      "title": "Causal context-vector patch on #537 adapters: does finetuning a behavior shift the context vector or the context\u2192behavior mapping?"
     },
     "7": {
       "has_clean_result": false,
@@ -4413,6 +4435,13 @@
       "path": "tasks/archived/71",
       "status": "archived",
       "title": "remove notion of aims from project"
+    },
+    "713": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/approved/713",
+      "status": "approved",
+      "title": "Fold /weekly's load-bearing checks into nightly /daily; retire the weekly cadence"
     },
     "72": {
       "has_clean_result": false,

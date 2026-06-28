@@ -718,6 +718,35 @@ def _provision_still_waiting(exc: subprocess.CalledProcessError) -> bool:
     return any("pod_lifecycle.py" in p for p in parts) and "provision" in parts
 
 
+def _issue_worktree_git_root(issue: int) -> str | None:
+    """Absolute path to the per-issue worktree IF it exists, else ``None``.
+
+    The committed eval/figure artifacts of a `/issue` run live on the
+    unmerged ``issue-<N>`` branch checked out in the canonical worktree
+    ``<repo_root>/.claude/worktrees/issue-<N>`` (auto-merge to ``main`` is
+    at /issue Step 10d, AFTER finalize), so the artifact verifier's git
+    check must run THERE, not the MAIN checkout on ``main`` (the #685
+    structural ``not tracked by git`` FAIL). This returns that worktree
+    path when it exists so the launch path can bake it into the
+    declaration as ``git_repo_root``.
+
+    Crucially this is derived from the ISSUE + repo_root ALONE — NOT
+    gated on ``--repo-branch`` / the ``repo_branch`` spec field. An
+    explicit ``backend: runpod`` launch with no ``--repo-branch`` (the
+    #685 shape) still has its artifacts on the worktree branch, so
+    gating the worktree resolution on ``repo_branch`` would leave the
+    fix inert for exactly that launch (concern
+    ``worktree-fix-inert-when-repo-branch-absent``). Returns ``None``
+    when the canonical worktree does not exist (a non-worktree launch,
+    or one whose artifacts are committed directly on ``main``), so the
+    declaration falls back to the established pyproject-walk root.
+    """
+    from explore_persona_space.task_workflow import repo_root
+
+    wt = repo_root() / ".claude" / "worktrees" / f"issue-{issue}"
+    return str(wt) if wt.exists() else None
+
+
 def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
     """Build ``spec.extra`` from the launch CLI's GCP-only knobs.
 
@@ -794,6 +823,22 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
                 branch,
             )
             extra["repo_branch"] = branch
+    # #685: bake the per-issue worktree git root into the declaration so
+    # confirm_artifacts' git check resolves against the worktree branch
+    # (where the run committed eval_results/ + figures/), not the MAIN
+    # checkout on `main`. Derived from issue + repo_root ALONE (NOT gated
+    # on repo_branch), so an explicit `backend: runpod` launch without
+    # --repo-branch (the #685 shape) is covered too. Absent (None) when
+    # there is no worktree → established pyproject-walk root.
+    worktree_root = _issue_worktree_git_root(args.issue)
+    if worktree_root is not None:
+        extra["git_repo_root"] = worktree_root
+    # #604/#661: a phase-scoped launch declares NO full-task git paths
+    # (the off-pod next phase produces them); the git check then SKIPs
+    # rather than FAILing on artifacts this phase never produced. Inert
+    # (False) by default — every other launch keeps the full-task paths.
+    if getattr(args, "skip_default_git_paths", False):
+        extra["skip_default_git_paths"] = True
     return extra
 
 
@@ -1484,6 +1529,22 @@ def _build_argparser() -> argparse.ArgumentParser:
             "return and the job-exit cgroup teardown kills detached children (no /workspace "
             "pid contract exists there; #601 follow-up). Mutually "
             "exclusive with --hydra; exactly one of the two is required (#588)."
+        ),
+    )
+    launch.add_argument(
+        "--skip-default-git-paths",
+        action="store_true",
+        help=(
+            "Phase-scoped launch (#604/#661): omit the auto "
+            "eval_results/issue_<N>/ + figures/issue_<N>/ from the "
+            "expected-artifacts declaration. The git check then SKIPs (this "
+            "phase produces no git artifacts — e.g. a P3 extraction whose "
+            "deliverable is on the HF data repo under analysis_tensors/, with "
+            "the off-pod P5 analysis phase producing the git files NEXT). The "
+            "HF + completion-sentinel checks STILL run, so the gate is NOT "
+            "relaxed. Inert when the launch DOES commit git artifacts. Lane-"
+            "agnostic (threads into spec.extra['skip_default_git_paths'], "
+            "honored by every lane's declaration builder)."
         ),
     )
 

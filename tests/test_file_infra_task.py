@@ -12,8 +12,8 @@ task via ``task.py new`` and then BEST-EFFORT dispatches it via
 - **Idempotency (c, file-time half):** a task that already has a live session
   is filed but NOT re-dispatched.
 - **#690 M1 — shared cap gate:** cap-full OR occupancy-unreadable files the
-  task but NEVER spawns (the wrapper can no longer push a 4th session past the
-  shared 3-session cap before the watcher's next tick).
+  task but NEVER spawns (the wrapper can no longer push a 6th session past the
+  shared 5-session cap before the watcher's next tick).
 - daemon-down no-op; non-infra ``--kind`` rejected; ``--no-dispatch`` files
   only; a failing ``task.py new`` aborts non-zero.
 
@@ -138,8 +138,8 @@ def test_daemon_unreachable_files_but_does_not_dispatch(monkeypatch, capsys):
 
 
 def test_cap_full_files_but_does_not_spawn(monkeypatch, capsys):
-    # The direct M1 guard: a wrapper call cannot push a 4th session past the
-    # shared 3-session cap before the watcher's next tick.
+    # The direct M1 guard: a wrapper call cannot push a 6th session past the
+    # shared 5-session cap before the watcher's next tick.
     calls = _install_run_recorder(monkeypatch, new_id="#771")
     monkeypatch.setattr(fit, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(fit, "infra_dispatch_has_free_slot", lambda: False)  # cap saturated
@@ -155,7 +155,7 @@ def test_cap_full_files_but_does_not_spawn(monkeypatch, capsys):
     assert len(_new_calls(calls)) == 1  # STILL files the task
     assert _spawn_calls(calls) == []  # but NEVER spawns
     out = capsys.readouterr().out
-    assert "cap (3) full" in out
+    assert "cap (5) full" in out
     assert "proposed_infra_sweep" in out  # names the watcher backstop
 
 
