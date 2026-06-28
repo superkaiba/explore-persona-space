@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 697,
+  "highest_id": 713,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4435,6 +4435,13 @@
       "path": "tasks/archived/71",
       "status": "archived",
       "title": "remove notion of aims from project"
+    },
+    "713": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/713",
+      "status": "planning",
+      "title": "Fold /weekly's load-bearing checks into nightly /daily; retire the weekly cadence"
     },
     "72": {
       "has_clean_result": false,
