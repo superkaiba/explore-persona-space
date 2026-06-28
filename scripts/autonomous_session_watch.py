@@ -403,6 +403,7 @@ from spawn_session import (  # noqa: E402
     _load_session_meta,
 )
 from tick_triage import plan_pending_over_cap  # noqa: E402
+from worktree_audit import ORPHAN_HOLDER_PATTERNS  # noqa: E402  (codex-companion cmdline patterns)
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
 # `followups_running` is ACTIVE (2026-06-10, un-phantomed): a same-issue
@@ -711,6 +712,16 @@ _ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:zombie-wr
 _IDLE_UNMAPPED_STOP_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-stop]"
 _IDLE_UNMAPPED_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-alert]"
 _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-stop-failed]"
+# Stamped into the post-stop event the idle-unmapped pass writes when the reap
+# fired on the CORROBORATING-IDLENESS FALLBACK path (the primary happy-log
+# transcript signal was unavailable, so the six-gate tmux session_activity
+# fallback supplied the idle age — #695). DISTINCT from the primary
+# `_IDLE_UNMAPPED_STOP_NOTE_SENTINEL` so an operator can tell a fallback reap
+# apart from a transcript-driven reap in the events stream (the fallback note
+# must NOT claim "transcript idle" — it never read one).
+_IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL = (
+    "[autonomous_session_watch:idle-unmapped-stop-fallback]"
+)
 
 # Substring stamped into the marker the infra-drain pass posts after
 # dispatching an autonomous session for a PM-queue ID (task #633). The #633
@@ -773,6 +784,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _IDLE_UNMAPPED_STOP_NOTE_SENTINEL,
         _IDLE_UNMAPPED_ALERT_NOTE_SENTINEL,
         _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL,
+        _IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL,
         _INFRA_DRAIN_NOTE_SENTINEL,
         _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL,
         _CAPACITY_RETRY_NOTE_SENTINEL,
@@ -9557,42 +9569,58 @@ def _wrapper_controlling_tty_path(pid: int) -> str | None:
     return None
 
 
-def _detached_tmux_pane_ttys() -> set[str]:
-    """Set of pty device paths (``/dev/pts/N``) for tmux panes whose tmux
-    session currently has ZERO attached clients — i.e. detached panes nobody
-    is looking at.
+def _detached_tmux_panes_with_activity() -> tuple[set[str], dict[str, float]]:
+    """ONE ``tmux list-panes -a`` call carrying THREE fields per pane —
+    ``#{pane_tty}\\t#{session_attached}\\t#{session_activity}`` — folded into:
 
-    A ``happy claude`` wrapper launched into a tmux pane holds that pane's
-    pty as its controlling terminal whether or not a client is attached, so
-    the bare tty_nr test (:func:`_wrapper_has_controlling_tty`) cannot tell an
-    abandoned detached-tmux session apart from a terminal Thomas is actively
-    sitting at. tmux's ``session_attached`` count is the discriminator: a pane
-    in a session with ``attached == 0`` is detached.
+    1. the DETACHED-pane set (``set[str]`` of ``/dev/pts/N`` for panes whose
+       tmux session has ZERO attached clients — unchanged semantics from the
+       historical single-field call), AND
+    2. a ``{pane_tty: session_activity_epoch}`` map (the epoch seconds of the
+       pane's owning tmux session's last activity), used ONLY by the #695
+       corroborating-idleness fallback as a SUBSTITUTE idle signal when the
+       primary happy-log transcript signal is unavailable.
 
-    Fail-soft: ANY error (tmux absent, no server running, parse failure)
-    returns the EMPTY set, which preserves the conservative "any tty -> live
-    user -> keep" behavior for every session — the fix can only ever make the
-    pass reap MORE (a confirmed-detached pane), never accidentally reap an
-    attached or uncertain one."""
+    ``session_activity`` updates on pane OUTPUT (not on the watcher's read-only
+    ``list-panes``/``capture-pane``), so for an idle Claude session that emits
+    nothing it is the correct "no turns since" signal and a conservative
+    OVER-estimate of liveness — never an under-estimate, exactly the safe
+    direction for a destructive reap gate.
+
+    Fail-soft: ANY error (tmux absent, no server, parse failure) returns
+    ``(set(), {})`` — the EMPTY detached set preserves the conservative "any
+    tty -> live user -> keep" behavior and an empty activity map means the
+    fallback finds no substitute idle age and keeps. The fix can only ever
+    make the pass reap MORE (a confirmed-detached, confirmed-idle pane), never
+    accidentally reap an attached or uncertain one."""
     if shutil.which("tmux") is None:
-        return set()
+        return set(), {}
     try:
         out = subprocess.run(
-            ["tmux", "list-panes", "-a", "-F", "#{pane_tty}\t#{session_attached}"],
+            [
+                "tmux",
+                "list-panes",
+                "-a",
+                "-F",
+                "#{pane_tty}\t#{session_attached}\t#{session_activity}",
+            ],
             capture_output=True,
             text=True,
             timeout=10,
         )
     except (subprocess.SubprocessError, OSError):
-        return set()
+        return set(), {}
     if out.returncode != 0:
         # No server / no sessions: tmux exits non-zero. Nothing detached to
-        # report; keep-all behavior is preserved by the empty set.
-        return set()
+        # report; keep-all behavior is preserved by the empty set + map.
+        return set(), {}
     detached: set[str] = set()
+    activity: dict[str, float] = {}
     for line in out.stdout.splitlines():
         parts = line.split("\t")
-        if len(parts) != 2:
+        # Tolerate a 2-field row (older tmux without session_activity, or a
+        # truncated line): take the detached read, skip the activity read.
+        if len(parts) < 2:
             continue
         pane_tty, attached_raw = parts[0].strip(), parts[1].strip()
         if not pane_tty:
@@ -9603,7 +9631,246 @@ def _detached_tmux_pane_ttys() -> set[str]:
             continue
         if attached == 0:
             detached.add(pane_tty)
+        if len(parts) >= 3:
+            try:
+                activity[pane_tty] = float(parts[2].strip())
+            except ValueError:
+                # Unparseable activity epoch -> simply absent from the map;
+                # the fallback then finds no substitute age and keeps.
+                continue
+    return detached, activity
+
+
+def _detached_tmux_pane_ttys() -> set[str]:
+    """Set of pty device paths (``/dev/pts/N``) for tmux panes whose tmux
+    session currently has ZERO attached clients — i.e. detached panes nobody
+    is looking at.
+
+    Thin wrapper over :func:`_detached_tmux_panes_with_activity` returning
+    only the detached set (the activity map is the #695 fallback's concern).
+    Preserves the historical single-return contract every existing caller +
+    test relies on; same fail-soft empty-set-on-error behavior."""
+    detached, _activity = _detached_tmux_panes_with_activity()
     return detached
+
+
+# ── #695 corroborating-idleness fallback for the idle-unmapped pass ───────────
+#
+# The primary idle signal (the resolved Claude transcript mtime via the
+# happy-log path, _transcript_idle_age_s) returns (None, reason) for
+# MANUALLY-tmux-launched, non-daemon-spawned sessions — every such session
+# logs idle=? and decide_idle_unmapped keeps it forever. That is the
+# load-bearing reap blocker for the 2026-06-12 class (25 detached unmapped tmux
+# sessions, ~23 GB RSS). The fallback below supplies a SUBSTITUTE idle age
+# (tmux session_activity) used ONLY when the primary is unavailable AND every
+# no-running-work / no-pending-input / no-running-pod gate passes. Six gates,
+# all must hold; any single uncertain signal -> keep.
+
+# Substring patterns matched against a /proc descendant's cmdline that signal
+# the session is doing REAL WORK (and so must NOT be reaped even if detached +
+# idle). The union of:
+#   - the two codex-companion regexes (`codex app-server`,
+#     `plugins/cache/openai-codex/`) imported from worktree_audit.py, and
+#   - the project workload markers a detached experimenter/dispatch session
+#     would show.
+# Deliberately a DENYLIST, not an allowlist: every idle session keeps a live
+# Claude binary + the fixed MCP server tree (runpod / arxiv / ssh /
+# google-workspace / playwright / context7 / todoist), which are NOT work
+# signals — an allowlist ("reap only if EXACTLY Claude + the fixed MCP set")
+# is brittle to MCP-set drift and fails unsafe on an unrecognized work
+# process. The denylist is pinned by a test (test 12) so a future rename of
+# either source trips it. The codex patterns are compiled regexes (`.search`);
+# the workload markers are plain substrings.
+_IDLE_UNMAPPED_WORK_CMDLINE_MARKERS: tuple[str, ...] = (
+    "scripts/train.py",
+    "scripts/eval.py",
+    "scripts/run_sweep.py",
+    "scripts/dispatch_issue.py",
+    "backend_poll.py",
+    "experiment-implementer",
+)
+
+
+def _cmdline_is_work_process(pid: int) -> bool:
+    """True iff ``/proc/<pid>/cmdline`` matches ANY codex-companion
+    :data:`ORPHAN_HOLDER_PATTERNS` regex OR contains any
+    :data:`_IDLE_UNMAPPED_WORK_CMDLINE_MARKERS` substring. Unreadable
+    (exited / perms) -> False (the descendant walk caller treats an
+    unreadable /proc as gate-uncertain separately; a single skipped child is
+    not itself a work signal)."""
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return False
+    cmd = raw.replace(b"\x00", b" ").decode("utf-8", "replace")
+    if any(marker in cmd for marker in _IDLE_UNMAPPED_WORK_CMDLINE_MARKERS):
+        return True
+    return any(pat.search(cmd) for pat in ORPHAN_HOLDER_PATTERNS)
+
+
+def _has_running_work_descendant(
+    pid: int, children_map: dict[int, list[int]] | None = None
+) -> bool:
+    """True iff ``pid`` or any /proc descendant is a RUNNING work process
+    (codex companion or a project workload — :func:`_cmdline_is_work_process`).
+
+    The #695 gate-3 work-descendant check. Reuses the
+    :func:`_proc_children_map` parse + an iterative descendant walk (same
+    pattern as :func:`_has_claude_descendant`). Crucially does NOT key on
+    :func:`_has_claude_descendant` — every idle session keeps a live Claude
+    binary + the fixed MCP tree, which are not work signals — so it keys only
+    on the narrow work-process denylist. A False return is one of the six AND
+    gates; an unreadable /proc child is simply skipped (the broader
+    "unreadable -> KEEP" posture for this gate is enforced at the call site,
+    which treats a child-map build failure as gate-uncertain)."""
+    if children_map is None:
+        children_map = _proc_children_map()
+    seen: set[int] = set()
+    stack = [pid]
+    while stack:
+        p = stack.pop()
+        if p in seen:
+            continue
+        seen.add(p)
+        if _cmdline_is_work_process(p):
+            return True
+        stack.extend(children_map.get(p, ()))
+    return False
+
+
+# Empty-prompt placeholder substrings (case-insensitive): when the captured
+# pane's last logical input line reduces to one of these, the input box is
+# EMPTY (the rendered hint text), not buffered user input -> the pending-input
+# probe may proceed. Deliberately small + conservative — an UNRECOGNIZED
+# remainder is treated as input -> KEEP.
+_PANE_EMPTY_PROMPT_PLACEHOLDERS: tuple[str, ...] = (
+    'try "',
+    "for shortcuts",
+)
+
+# Leading prompt-prefix glyphs stripped before judging whether the input line
+# is empty: the Claude TUI input box renders a leading prompt marker / box
+# border. After stripping leading whitespace, a leading run of these chars
+# (plus a following space) is removed; a non-empty, non-placeholder remainder
+# counts as buffered input.
+_PANE_PROMPT_PREFIX_CHARS = ">│╭╮╰╯─┐└┘├┤┬┴┼┌"
+
+
+def _pane_has_pending_input(pane_tty: str) -> bool:
+    """True (= "there might be unsent input, KEEP") unless the captured pane's
+    input box is positively recognized as EMPTY.
+
+    The #695 gate-5 typed-but-unsent guard. Probes the pane's VISIBLE content
+    via ``tmux capture-pane -p -t <pane_tty>`` (a pane's tty is an accepted
+    ``-t`` target). A KEEP-leaning heuristic over the rendered terminal text,
+    NOT a parser of the Claude TUI internal state — its failure mode is always
+    a spurious KEEP (a session that COULD be reaped is kept), never a spurious
+    reap.
+
+    Returns **True** on ANY of:
+      - the ``capture-pane`` subprocess errors / times out / returns non-zero
+        / tmux is absent / the pane is gone (fail toward KEEP);
+      - the captured visible content, after dropping trailing whitespace-only
+        lines, has a final logical line that — after stripping leading
+        whitespace, a leading run of prompt-prefix glyphs + one space, and
+        trailing whitespace — is NON-EMPTY and does NOT match a known
+        empty-prompt placeholder.
+
+    Returns **False** (= "no pending input, may proceed") only when it
+    positively recognizes an empty / placeholder-only input box (an empty
+    remainder or a known placeholder substring)."""
+    if shutil.which("tmux") is None:
+        return True
+    try:
+        out = subprocess.run(
+            ["tmux", "capture-pane", "-p", "-t", pane_tty],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return True
+    if out.returncode != 0:
+        # Pane gone / capture failed -> fail toward KEEP.
+        return True
+    lines = out.stdout.splitlines()
+    # Drop trailing whitespace-only lines to find the last logical line.
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if not lines:
+        # Nothing rendered at all -> cannot confirm empty -> KEEP.
+        return True
+    last = lines[-1].lstrip()
+    # Strip a leading run of prompt-prefix glyphs, then a single space.
+    stripped = last.lstrip(_PANE_PROMPT_PREFIX_CHARS)
+    if stripped.startswith(" "):
+        stripped = stripped[1:]
+    remainder = stripped.strip()
+    if not remainder:
+        # Empty input box -> may proceed.
+        return False
+    low = remainder.lower()
+    # A recognized empty-prompt placeholder hint -> may proceed (return False);
+    # any unrecognized non-empty remainder -> treat as buffered input -> KEEP.
+    return not any(ph in low for ph in _PANE_EMPTY_PROMPT_PLACEHOLDERS)
+
+
+def _fallback_idle_age_s(
+    pane_tty: str | None, activity_map: dict[str, float], now: float
+) -> float | None:
+    """Substitute idle age (seconds) for the #695 fallback: ``now -
+    session_activity`` of the pane's owning tmux session, or ``None`` when no
+    usable activity epoch is available (no pane tty, pane absent from the map,
+    or a future/garbled epoch). ``None`` -> the fallback supplies no idle age
+    and the session is kept (gate-uncertain)."""
+    if not pane_tty:
+        return None
+    epoch = activity_map.get(pane_tty)
+    if not isinstance(epoch, int | float):
+        return None
+    return max(0.0, now - float(epoch))
+
+
+# Default corroborating-idleness fallback window (seconds). 24h — deliberately
+# 2x the primary 12h UNMAPPED_IDLE_REAP_S: the session_activity signal is a
+# WEAKER corroborating signal than the transcript mtime, so it earns a longer
+# floor (keeps an overnight pause well clear while still clearing the 19-43h
+# accumulation class within ~a day). Override via
+# EPM_UNMAPPED_TMUX_IDLE_FALLBACK_S.
+UNMAPPED_TMUX_IDLE_FALLBACK_S = 24 * 3600
+
+
+def _unmapped_tmux_idle_fallback_enabled() -> bool:
+    """True unless ``EPM_UNMAPPED_TMUX_IDLE_FALLBACK_ENABLED`` is explicitly
+    set to a falsy value (``0`` / ``false`` / ``no``) — a per-feature
+    kill-switch for the #695 corroborating-idleness fallback that leaves the
+    rest of the idle-unmapped pass (and its own ``EPM_UNMAPPED_IDLE_REAP``
+    kill-switch) untouched. Default-ON, same parsing as
+    :func:`_unmapped_idle_reap_enabled`."""
+    raw = os.environ.get("EPM_UNMAPPED_TMUX_IDLE_FALLBACK_ENABLED", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
+def _unmapped_tmux_idle_fallback_s() -> float:
+    """Fallback idle window in seconds: ``EPM_UNMAPPED_TMUX_IDLE_FALLBACK_S``
+    when set to a positive number, else :data:`UNMAPPED_TMUX_IDLE_FALLBACK_S`
+    (24h). Garbled / non-positive values fall back to the default (same
+    parsing as :func:`_unmapped_idle_reap_s`)."""
+    raw = os.environ.get("EPM_UNMAPPED_TMUX_IDLE_FALLBACK_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return UNMAPPED_TMUX_IDLE_FALLBACK_S
+    return val if val > 0 else UNMAPPED_TMUX_IDLE_FALLBACK_S
+
+
+def _idle_unmapped_debug_enabled() -> bool:
+    """True when ``EPM_IDLE_UNMAPPED_DEBUG`` is set to a truthy value — gates
+    the denser per-candidate #695 fallback-gate trace (default OFF after the
+    diagnostic cycle so it does not spam every 10-min pass; the once-per-pass
+    detached-set-size log + loud empty-set beacon stay UNCONDITIONAL)."""
+    raw = os.environ.get("EPM_IDLE_UNMAPPED_DEBUG", "")
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _is_live_user_tty(pid: int, detached_tmux_ttys: set[str]) -> bool:
@@ -9821,6 +10088,37 @@ def _append_idle_unmapped_event(note: str, dry_run: bool) -> None:
         print(f"  WARNING: appending idle-unmapped event failed: {e}", file=sys.stderr)
 
 
+def _append_idle_unmapped_audit(payload: dict, dry_run: bool) -> None:
+    """Pre-stop AUDIT row for a #695 corroborating-idleness FALLBACK reap —
+    written to the SAME ``idle-unmapped-events.jsonl`` stream as
+    :func:`_append_idle_unmapped_event`, but with ``kind:
+    "would_stop_fallback"`` and a STRUCTURED ``payload`` (not a free-form
+    note), and written IMMEDIATELY BEFORE :func:`_stop_session` fires on the
+    fallback path (so ``audit_ts < stop_ts`` holds by construction).
+
+    A destructive safety gate must leave a durable, self-explaining record of
+    EVERY gate signal BEFORE it acts — a wrong fallback reap is then
+    reconstructable from the events stream alone (the only pre-stop line the
+    primary path writes is the transient gate-signal-free ``mapped/tty/idle``
+    print). Two distinct ``kind`` values (``would_stop_fallback`` ->
+    ``idle-unmapped`` flavored ``stopped_fallback``) let an operator read the
+    one chronological file in order. Fail-soft, mirroring
+    :func:`_append_idle_unmapped_event`."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "idle-unmapped-events.jsonl"
+    row = {"ts": datetime.now().astimezone().isoformat(), "kind": "would_stop_fallback"}
+    row.update(payload)
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append idle-unmapped fallback audit row to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending idle-unmapped fallback audit failed: {e}", file=sys.stderr)
+
+
 def _check_idle_unmapped_stop_verification(
     sid: str,
     pid: int,
@@ -9895,6 +10193,155 @@ def _check_idle_unmapped_stop_verification(
     return True
 
 
+def _evaluate_idle_unmapped_fallback(
+    sid: str,
+    pid: int,
+    now: float,
+    detached_tmux_ttys: set[str],
+    tmux_activity: dict[str, float],
+) -> tuple[float | None, dict | None]:
+    """The #695 SIX-gate corroborating-idleness fallback for ONE session.
+
+    Caller has already established the session is unmapped, not a live-user
+    tty, the primary transcript signal is unavailable, and the fallback is
+    enabled. Returns ``(fallback_idle_age_s, audit_payload)`` when ALL SIX
+    gates hold — the caller then drives the existing decision lattice with the
+    substitute idle age and writes ``audit_payload`` BEFORE the stop — or
+    ``(None, None)`` when any single gate is uncertain (the session keeps).
+
+    The six gates (all AND, any uncertain -> keep):
+      1. detached — pane pts in the trustworthy ``detached_tmux_ttys`` set;
+      2. unmapped — already established by the caller (precondition);
+      3. no running work descendant (codex / project workload) — an unreadable
+         /proc is uncertain -> keep;
+      4. no running managed pod anywhere (a ``None`` snapshot is uncertain ->
+         keep);
+      5. no pending (typed-but-unsent) pane input — KEEP-leaning probe;
+      6. session_activity-derived idle age over the conservative fallback
+         window."""
+    fallback_window_s = _unmapped_tmux_idle_fallback_s()
+    pane_tty = _wrapper_controlling_tty_path(pid)
+    # Gate 1: detached pane pts in the trustworthy set.
+    detached_ok = pane_tty is not None and pane_tty in detached_tmux_ttys
+    # Gate 6 (substitute idle age): session_activity over the window.
+    fb_idle = _fallback_idle_age_s(pane_tty, tmux_activity, now) if detached_ok else None
+    over_window = fb_idle is not None and fb_idle >= fallback_window_s
+    # Gate 3: no running work descendant (unreadable /proc -> uncertain -> KEEP).
+    try:
+        work_descendant = _has_running_work_descendant(pid, _proc_children_map())
+    except OSError:
+        work_descendant = True
+    # Gate 4: no running managed pod anywhere (None snapshot -> uncertain -> KEEP).
+    running_pods = _running_managed_issue_pods(caller="idle-unmapped-fallback")
+    no_running_pods = running_pods is not None and len(running_pods) == 0
+    # Gate 5: no pending (typed-but-unsent) pane input — KEEP-leaning.
+    pending_input = _pane_has_pending_input(pane_tty) if detached_ok else True
+    gates_ok = (
+        detached_ok
+        and over_window
+        and not work_descendant
+        and no_running_pods
+        and not pending_input
+    )
+    if _idle_unmapped_debug_enabled():
+        print(
+            f"  idle-unmapped[debug] fallback session {sid} (pid={pid}): "
+            f"pane_tty={pane_tty} detached={detached_ok} "
+            f"fb_idle={'%.1fh' % (fb_idle / 3600) if fb_idle is not None else '?'} "
+            f"over_window={over_window} work_descendant={work_descendant} "
+            f"no_running_pods={no_running_pods} pending_input={pending_input} "
+            f"gates_ok={gates_ok}",
+            file=sys.stderr,
+        )
+    if not gates_ok:
+        return None, None
+    audit = {
+        "sid": sid,
+        "pid": pid,
+        "fallback_source": "tmux_session_activity",
+        "idle_age_s": fb_idle,
+        "threshold_env_value": fallback_window_s,
+        "detached_verdict": {"pane_tty": pane_tty, "in_detached_set": True},
+        "work_descendant": False,
+        "running_pods": [],
+        "pending_input": False,
+    }
+    return fb_idle, audit
+
+
+def _do_idle_unmapped_stop(
+    sid: str,
+    pid: int,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    idle_age_s: float | None,
+    idle_label: str,
+    idle_reap_s: float,
+    prev: dict,
+    prev_missed: int,
+    prev_alerted: bool,
+    first_over_ts: float,
+    fallback_active: bool,
+    fallback_audit: dict | None,
+) -> None:
+    """Execute the idle-unmapped STOP action for one session (extracted from
+    :func:`_process_idle_unmapped` to keep its branch count manageable).
+
+    On the #695 FALLBACK path, writes the pre-stop AUDIT row carrying every
+    gate signal BEFORE the stop fires (so ``audit_ts < stop_ts`` by
+    construction) and a fallback-DISTINCT post-stop note (NEVER the
+    primary-transcript narrative — the fallback never read a transcript). On
+    the primary path, writes the existing transcript narrative unchanged. The
+    reversible-daemon-stop + ACK!=kill state machinery is identical for both."""
+    if fallback_active and fallback_audit is not None:
+        _append_idle_unmapped_audit(fallback_audit, dry_run)
+    acked = _stop_session(sid, dry_run)
+    if acked and fallback_active:
+        _append_idle_unmapped_event(
+            f"{_IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL} auto-stopped idle "
+            f"unmapped Happy session {sid} (wrapper pid {pid}) on the "
+            f"corroborating-idleness FALLBACK path: the primary Claude "
+            f"transcript signal was unavailable, so tmux session_activity "
+            f"supplied the idle age ({idle_label} >= "
+            f"{idle_reap_s / 3600:.1f}h window, >= {threshold} consecutive "
+            f"checks). All six gates held: detached tmux pane, no issue "
+            f"mapping, no running work descendant, no running managed pod, "
+            f"no pending pane input. Respawn if needed: "
+            f"`spawn_session.py spawn-issue --issue <N>` (or `spawn-pm`). "
+            f"Set EPM_UNMAPPED_TMUX_IDLE_FALLBACK_ENABLED=0 to disable the "
+            f"fallback, or EPM_UNMAPPED_IDLE_REAP=0 for alert-only.",
+            dry_run,
+        )
+    elif acked:
+        _append_idle_unmapped_event(
+            f"{_IDLE_UNMAPPED_STOP_NOTE_SENTINEL} auto-stopped idle unmapped "
+            f"Happy session {sid} (wrapper pid {pid}): its resolved Claude "
+            f"transcript has been idle {idle_label} (>= "
+            f"{idle_reap_s / 3600:.1f}h window, >= {threshold} consecutive "
+            f"checks), it has no issue mapping, no controlling TTY, and is "
+            f"not the PM session. The 2026-06-12 class: 25 such sessions "
+            f"idle 19-43h held ~23 GB RSS. Respawn if needed: "
+            f"`spawn_session.py spawn-issue --issue <N>` (or `spawn-pm`). "
+            f"Set EPM_UNMAPPED_IDLE_REAP=0 on the watcher cron to fall back "
+            f"to alert-only.",
+            dry_run,
+        )
+    if not dry_run:
+        _save_idle_unmapped_state(
+            sid,
+            missed=0 if acked else prev_missed,
+            alerted=prev_alerted,
+            pid=pid,
+            idle_age_s=idle_age_s,
+            first_over_ts=first_over_ts,
+            stopped_at=now if acked else None,
+            stop_retried=bool(prev.get("stop_retried", False)),
+            stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+        )
+
+
 def _process_idle_unmapped(
     sid: str,
     pid: int,
@@ -9905,6 +10352,7 @@ def _process_idle_unmapped(
     *,
     reap_enabled: bool,
     detached_tmux_ttys: set[str] | None = None,
+    tmux_activity: dict[str, float] | None = None,
 ) -> None:
     """Apply the idle-unmapped decision to one live, non-PM, EPS-cwd session:
     check the wrapper's controlling TTY, stat the resolved transcript, and
@@ -9915,9 +10363,21 @@ def _process_idle_unmapped(
     tmux pane (``detached_tmux_ttys`` — computed once per pass) is NOT counted
     as live, so an abandoned detached-tmux session falls through to the
     transcript-idle check instead of being kept forever. ``None`` (the test /
-    legacy default) computes the detached-pane set inline."""
-    if detached_tmux_ttys is None:
-        detached_tmux_ttys = _detached_tmux_pane_ttys()
+    legacy default) computes the detached-pane set inline.
+
+    #695 corroborating-idleness FALLBACK: when the primary transcript signal
+    is unavailable (``idle_age_s is None`` — the manually-tmux-launched class
+    that logged ``idle=?`` and was kept forever), the SIX-gate fallback may
+    supply a SUBSTITUTE ``idle_age_s`` from tmux ``session_activity``
+    (``tmux_activity``, also computed once per pass). All six gates must hold
+    (detached + unmapped + no work-descendant + no running pod + no pending
+    pane input + over the conservative fallback window); any single uncertain
+    signal keeps. A reap on the fallback path writes a pre-stop audit row
+    BEFORE the stop and a fallback-DISTINCT post-stop note."""
+    if detached_tmux_ttys is None or tmux_activity is None:
+        _detached, _activity = _detached_tmux_panes_with_activity()
+        detached_tmux_ttys = _detached if detached_tmux_ttys is None else detached_tmux_ttys
+        tmux_activity = _activity if tmux_activity is None else tmux_activity
     mapped = issue is not None
     has_tty = _is_live_user_tty(pid, detached_tmux_ttys) if not mapped else False
     idle_age_s: float | None = None
@@ -9935,6 +10395,26 @@ def _process_idle_unmapped(
         first_over_ts = now
 
     idle_reap_s = _unmapped_idle_reap_s()
+
+    # ── #695 corroborating-idleness fallback ─────────────────────────────────
+    # ONLY when the primary signal is unavailable for an in-the-idle-branch
+    # (unmapped + not-live-tty) session: try to supply a substitute idle age
+    # from tmux session_activity, gated on six AND conditions (evaluated in the
+    # extracted helper). Any uncertain signal leaves idle_age_s as None (the
+    # existing ("skip", missed) fail-toward-keep path).
+    fallback_active = False
+    fallback_audit: dict | None = None
+    if idle_age_s is None and not mapped and not has_tty and _unmapped_tmux_idle_fallback_enabled():
+        fb_idle, fallback_audit = _evaluate_idle_unmapped_fallback(
+            sid, pid, now, detached_tmux_ttys, tmux_activity
+        )
+        if fallback_audit is not None:
+            idle_age_s = fb_idle
+            fallback_active = True
+            # A weaker signal earns the longer floor: the decision uses the
+            # FALLBACK window as its reap threshold (not the primary 12h).
+            idle_reap_s = _unmapped_tmux_idle_fallback_s()
+
     in_scope = not mapped and not has_tty and idle_age_s is not None and idle_age_s >= idle_reap_s
     if _check_idle_unmapped_stop_verification(sid, pid, in_scope, prev, dry_run, now):
         return
@@ -9950,9 +10430,10 @@ def _process_idle_unmapped(
         idle_reap_s=idle_reap_s,
     )
     idle_label = f"{idle_age_s / 3600:.1f}h" if idle_age_s is not None else "?"
+    source_label = " source=fallback" if fallback_active else ""
     print(
         f"  session {sid} (pid={pid}): mapped={mapped} tty={has_tty} "
-        f"idle={idle_label} missed={prev_missed}->{new_missed} action={action}"
+        f"idle={idle_label}{source_label} missed={prev_missed}->{new_missed} action={action}"
     )
 
     if action == "clear":
@@ -9971,33 +10452,22 @@ def _process_idle_unmapped(
         return
 
     if action == "stop":
-        acked = _stop_session(sid, dry_run)
-        if acked:
-            _append_idle_unmapped_event(
-                f"{_IDLE_UNMAPPED_STOP_NOTE_SENTINEL} auto-stopped idle unmapped "
-                f"Happy session {sid} (wrapper pid {pid}): its resolved Claude "
-                f"transcript has been idle {idle_label} (>= "
-                f"{idle_reap_s / 3600:.1f}h window, >= {threshold} consecutive "
-                f"checks), it has no issue mapping, no controlling TTY, and is "
-                f"not the PM session. The 2026-06-12 class: 25 such sessions "
-                f"idle 19-43h held ~23 GB RSS. Respawn if needed: "
-                f"`spawn_session.py spawn-issue --issue <N>` (or `spawn-pm`). "
-                f"Set EPM_UNMAPPED_IDLE_REAP=0 on the watcher cron to fall back "
-                f"to alert-only.",
-                dry_run,
-            )
-        if not dry_run:
-            _save_idle_unmapped_state(
-                sid,
-                missed=0 if acked else prev_missed,
-                alerted=prev_alerted,
-                pid=pid,
-                idle_age_s=idle_age_s,
-                first_over_ts=first_over_ts,
-                stopped_at=now if acked else None,
-                stop_retried=bool(prev.get("stop_retried", False)),
-                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
-            )
+        _do_idle_unmapped_stop(
+            sid,
+            pid,
+            now,
+            dry_run,
+            threshold,
+            idle_age_s=idle_age_s,
+            idle_label=idle_label,
+            idle_reap_s=idle_reap_s,
+            prev=prev,
+            prev_missed=prev_missed,
+            prev_alerted=prev_alerted,
+            first_over_ts=first_over_ts,
+            fallback_active=fallback_active,
+            fallback_audit=fallback_audit,
+        )
         return
 
     if action == "alert":
@@ -10059,6 +10529,15 @@ def idle_unmapped_pass(
     and any session whose idleness signal cannot be resolved (fail toward
     keep).
 
+    #695 corroborating-idleness fallback: a session whose PRIMARY transcript
+    signal is unavailable (the manually-tmux-launched ``idle=?`` class) may
+    still be reaped via tmux ``session_activity`` when all six gates hold
+    (detached + unmapped + no work-descendant + no running pod + no pending
+    pane input + over the conservative fallback window); any uncertain signal
+    keeps. A once-per-pass beacon logs the resolved detached-set size and a
+    loud WARNING when tmux is present but the set is EMPTY (the silent-regression
+    guard — the whole reason the pass went inert).
+
     Daemon-gated like the zombie pass: the wrapper pids come from the
     daemon's ``/list`` and the stop action POSTs to it. ``children`` may be
     injected (tests / a caller reusing its snapshot); ``None`` fetches via
@@ -10110,13 +10589,26 @@ def idle_unmapped_pass(
         candidates.append((sid, pid, issue))
 
     reap = _unmapped_idle_reap_enabled()
-    # Compute the detached-tmux-pane set ONCE per pass (one tmux call), not
-    # per candidate — a wrapper whose controlling tty is a detached pane is not
-    # a live-user tty and falls through to the transcript-idle check.
-    detached_tmux_ttys = _detached_tmux_pane_ttys()
+    # Compute the detached-tmux-pane set AND the session_activity map ONCE per
+    # pass (one tmux call), not per candidate — a wrapper whose controlling tty
+    # is a detached pane is not a live-user tty and falls through to the
+    # transcript-idle check; the activity map feeds the #695 fallback.
+    detached_tmux_ttys, tmux_activity = _detached_tmux_panes_with_activity()
+    # Phase-1 beacon (permanent): the once-per-pass detached-set size, plus a
+    # LOUD WARNING when tmux is present but the detached set is EMPTY — the
+    # silent-regression guard for the inert-pass bug this fix closes (an empty
+    # set means the detached-tmux refinement reaped nothing this pass).
+    if shutil.which("tmux") is not None and not detached_tmux_ttys:
+        print(
+            "  idle-unmapped: WARNING tmux present but detached set empty — "
+            "refinement inert this pass (no detached panes resolved; the "
+            "idle-unmapped reap + #695 fallback both depend on this set)",
+            file=sys.stderr,
+        )
     print(
         f"idle-unmapped: {len(candidates)} EPS session(s) scanned "
         f"({skipped_pm} PM-registered + {skipped_non_eps} non-EPS skipped; "
+        f"detached_panes={len(detached_tmux_ttys)}; "
         f"reap={'ON' if reap else 'OFF — alert-only (EPM_UNMAPPED_IDLE_REAP=0)'})"
     )
     for sid, pid, issue in sorted(candidates):
@@ -10129,6 +10621,7 @@ def idle_unmapped_pass(
             threshold,
             reap_enabled=reap,
             detached_tmux_ttys=detached_tmux_ttys,
+            tmux_activity=tmux_activity,
         )
 
 
