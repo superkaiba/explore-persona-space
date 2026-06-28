@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 701,
+  "highest_id": 702,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4455,6 +4455,13 @@
       "path": "tasks/proposed/701",
       "status": "proposed",
       "title": "planner/critic: a torch-MLP LOCO fit is NOT a cheap CPU-only analysis step"
+    },
+    "702": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/702",
+      "status": "proposed",
+      "title": "analyzer: confirm all planned control arms present before authoring a verdict"
     },
     "71": {
       "has_clean_result": false,
