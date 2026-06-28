@@ -1,0 +1,60 @@
+{
+  "commit": "e051a02a85",
+  "created": "2026-06-28T03:07:20Z",
+  "figsize": [
+    7.2,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "best linear read-out \u03c1 (E0 \u2248 r_B\u1d40 v0)": 0.444,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "best linear read-out \u03c1 (E0 \u2248 r_B\u1d40 v0)": 0.6921,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "best linear read-out \u03c1 (E0 \u2248 r_B\u1d40 v0)": 0.1268,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "best linear read-out \u03c1 (E0 \u2248 r_B\u1d40 v0)": 0.4223,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "best linear read-out \u03c1 (E0 \u2248 r_B\u1d40 v0)": 0.3981,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "best linear read-out \u03c1 (E0 \u2248 r_B\u1d40 v0)": 0.6112,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "best linear read-out \u03c1 (E0 \u2248 r_B\u1d40 v0)": 0.2486,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "best linear read-out \u03c1 (E0 \u2248 r_B\u1d40 v0)": 0.5698,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8
+}

@@ -1,0 +1,454 @@
+{
+  "betley": {
+    "a32": {
+      "broad_em": {
+        "struct_rho": 0.3485,
+        "struct_rec": "maxp",
+        "struct_layer": 24,
+        "struct_fdr": false,
+        "attn_rho": 0.1458,
+        "attn_layer": 13,
+        "attn_fdr": false,
+        "nf95": 0.1437,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": true
+      },
+      "harmful_compliance": {
+        "struct_rho": 0.2784,
+        "struct_rec": "mean",
+        "struct_layer": 2,
+        "struct_fdr": false,
+        "attn_rho": 0.2228,
+        "attn_layer": 24,
+        "attn_fdr": false,
+        "nf95": 0.1658,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": true
+      },
+      "sycophancy": {
+        "struct_rho": 0.3936,
+        "struct_rec": "maxp",
+        "struct_layer": 23,
+        "struct_fdr": true,
+        "attn_rho": 0.2151,
+        "attn_layer": 18,
+        "attn_fdr": false,
+        "nf95": 0.5321,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": true
+      },
+      "refusal": {
+        "struct_rho": 0.2844,
+        "struct_rec": "mean",
+        "struct_layer": 18,
+        "struct_fdr": false,
+        "attn_rho": 0.2693,
+        "attn_layer": 25,
+        "attn_fdr": false,
+        "nf95": 0.4887,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": true
+      },
+      "deception": {
+        "struct_rho": 0.4493,
+        "struct_rec": "mean",
+        "struct_layer": 4,
+        "struct_fdr": true,
+        "attn_rho": 0.4131,
+        "attn_layer": 4,
+        "attn_fdr": true,
+        "nf95": 0.3759,
+        "struct_pass": true,
+        "attn_pass": true,
+        "has_rb": false
+      },
+      "fact_expression": {
+        "struct_rho": 0.3942,
+        "struct_rec": "mean",
+        "struct_layer": 1,
+        "struct_fdr": true,
+        "attn_rho": 0.3764,
+        "attn_layer": 2,
+        "attn_fdr": true,
+        "nf95": -0.4165,
+        "struct_pass": true,
+        "attn_pass": true,
+        "has_rb": false
+      },
+      "marker": {
+        "struct_rho": 0.2902,
+        "struct_rec": "last",
+        "struct_layer": 21,
+        "struct_fdr": false,
+        "attn_rho": 0.3932,
+        "attn_layer": 24,
+        "attn_fdr": true,
+        "nf95": 0.4472,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": false
+      },
+      "format_style": {
+        "struct_rho": 0.4993,
+        "struct_rec": "maxp",
+        "struct_layer": 21,
+        "struct_fdr": true,
+        "attn_rho": 0.3823,
+        "attn_layer": 13,
+        "attn_fdr": true,
+        "nf95": 0.159,
+        "struct_pass": true,
+        "attn_pass": true,
+        "has_rb": false
+      },
+      "self_report": {
+        "struct_rho": 0.5977,
+        "struct_rec": "maxp",
+        "struct_layer": 8,
+        "struct_fdr": true,
+        "attn_rho": 0.4072,
+        "attn_layer": 14,
+        "attn_fdr": true,
+        "nf95": 0.6831,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": false
+      },
+      "persona_drift": {
+        "struct_rho": 0.6411,
+        "struct_rec": "maxp",
+        "struct_layer": 14,
+        "struct_fdr": true,
+        "attn_rho": 0.4725,
+        "attn_layer": 24,
+        "attn_fdr": true,
+        "nf95": 0.9253,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": false
+      }
+    },
+    "a33": {
+      "broad_em": {
+        "lin_rho": 0.444,
+        "mlp_ceil": 0.1458,
+        "pass": true,
+        "rec": "diffmeans",
+        "layer": 0
+      },
+      "harmful_compliance": {
+        "lin_rho": 0.6921,
+        "mlp_ceil": 0.2228,
+        "pass": true,
+        "rec": "diffmeans",
+        "layer": 8
+      },
+      "refusal": {
+        "lin_rho": 0.4223,
+        "mlp_ceil": 0.2693,
+        "pass": true,
+        "rec": "meanDB",
+        "layer": 8
+      },
+      "sycophancy": {
+        "lin_rho": 0.1268,
+        "mlp_ceil": 0.2151,
+        "pass": true,
+        "rec": "diffmeans",
+        "layer": 27
+      }
+    },
+    "a32_attn_only_grid": {
+      "broad_em": {
+        "rho": 0.1458,
+        "layer": 13,
+        "fdr": false,
+        "pass": false
+      },
+      "harmful_compliance": {
+        "rho": 0.2228,
+        "layer": 24,
+        "fdr": false,
+        "pass": false
+      },
+      "sycophancy": {
+        "rho": 0.2151,
+        "layer": 18,
+        "fdr": false,
+        "pass": false
+      },
+      "refusal": {
+        "rho": 0.2693,
+        "layer": 25,
+        "fdr": false,
+        "pass": false
+      },
+      "deception": {
+        "rho": 0.4131,
+        "layer": 4,
+        "fdr": false,
+        "pass": false
+      },
+      "fact_expression": {
+        "rho": 0.3764,
+        "layer": 2,
+        "fdr": false,
+        "pass": false
+      },
+      "marker": {
+        "rho": 0.3932,
+        "layer": 24,
+        "fdr": false,
+        "pass": false
+      },
+      "format_style": {
+        "rho": 0.3823,
+        "layer": 13,
+        "fdr": false,
+        "pass": false
+      },
+      "self_report": {
+        "rho": 0.4072,
+        "layer": 14,
+        "fdr": false,
+        "pass": false
+      },
+      "persona_drift": {
+        "rho": 0.4725,
+        "layer": 24,
+        "fdr": false,
+        "pass": false
+      }
+    }
+  },
+  "g1": {
+    "a32": {
+      "broad_em": {
+        "struct_rho": 0.2943,
+        "struct_rec": "mean",
+        "struct_layer": 12,
+        "struct_fdr": false,
+        "attn_rho": 0.2144,
+        "attn_layer": 4,
+        "attn_fdr": false,
+        "nf95": 0.0087,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": true
+      },
+      "harmful_compliance": {
+        "struct_rho": 0.2632,
+        "struct_rec": "mean",
+        "struct_layer": 16,
+        "struct_fdr": false,
+        "attn_rho": 0.2286,
+        "attn_layer": 16,
+        "attn_fdr": false,
+        "nf95": 0.2897,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": true
+      },
+      "sycophancy": {
+        "struct_rho": 0.42,
+        "struct_rec": "maxp",
+        "struct_layer": 1,
+        "struct_fdr": true,
+        "attn_rho": 0.3845,
+        "attn_layer": 6,
+        "attn_fdr": true,
+        "nf95": 0.5006,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": true
+      },
+      "refusal": {
+        "struct_rho": 0.3676,
+        "struct_rec": "mean",
+        "struct_layer": 19,
+        "struct_fdr": true,
+        "attn_rho": 0.3422,
+        "attn_layer": 8,
+        "attn_fdr": false,
+        "nf95": 0.4829,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": true
+      },
+      "deception": {
+        "struct_rho": 0.5263,
+        "struct_rec": "last",
+        "struct_layer": 27,
+        "struct_fdr": true,
+        "attn_rho": 0.534,
+        "attn_layer": 3,
+        "attn_fdr": true,
+        "nf95": 0.3941,
+        "struct_pass": true,
+        "attn_pass": true,
+        "has_rb": false
+      },
+      "fact_expression": {
+        "struct_rho": 0.4935,
+        "struct_rec": "maxp",
+        "struct_layer": 0,
+        "struct_fdr": true,
+        "attn_rho": 0.4394,
+        "attn_layer": 21,
+        "attn_fdr": true,
+        "nf95": -0.3192,
+        "struct_pass": true,
+        "attn_pass": true,
+        "has_rb": false
+      },
+      "marker": {
+        "struct_rho": 0.3814,
+        "struct_rec": "last",
+        "struct_layer": 26,
+        "struct_fdr": true,
+        "attn_rho": 0.317,
+        "attn_layer": 24,
+        "attn_fdr": false,
+        "nf95": 0.4041,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": false
+      },
+      "format_style": {
+        "struct_rho": 0.5354,
+        "struct_rec": "maxp",
+        "struct_layer": 12,
+        "struct_fdr": true,
+        "attn_rho": 0.3897,
+        "attn_layer": 12,
+        "attn_fdr": true,
+        "nf95": 0.1023,
+        "struct_pass": true,
+        "attn_pass": true,
+        "has_rb": false
+      },
+      "self_report": {
+        "struct_rho": 0.6002,
+        "struct_rec": "maxp",
+        "struct_layer": 0,
+        "struct_fdr": true,
+        "attn_rho": 0.3028,
+        "attn_layer": 8,
+        "attn_fdr": false,
+        "nf95": 0.7662,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": false
+      },
+      "persona_drift": {
+        "struct_rho": 0.5666,
+        "struct_rec": "maxp",
+        "struct_layer": 0,
+        "struct_fdr": true,
+        "attn_rho": 0.4033,
+        "attn_layer": 6,
+        "attn_fdr": true,
+        "nf95": 0.8085,
+        "struct_pass": false,
+        "attn_pass": false,
+        "has_rb": false
+      }
+    },
+    "a33": {
+      "sycophancy": {
+        "lin_rho": 0.2486,
+        "mlp_ceil": 0.3845,
+        "pass": true,
+        "rec": "meanDB",
+        "layer": 26
+      },
+      "refusal": {
+        "lin_rho": 0.5698,
+        "mlp_ceil": 0.3422,
+        "pass": true,
+        "rec": "meanDB",
+        "layer": 6
+      },
+      "harmful_compliance": {
+        "lin_rho": 0.6112,
+        "mlp_ceil": 0.2286,
+        "pass": true,
+        "rec": "diffmeans",
+        "layer": 10
+      },
+      "broad_em": {
+        "lin_rho": 0.3981,
+        "mlp_ceil": 0.2144,
+        "pass": true,
+        "rec": "meanDB",
+        "layer": 21
+      }
+    },
+    "a32_attn_only_grid": {
+      "broad_em": {
+        "rho": 0.2144,
+        "layer": 4,
+        "fdr": false,
+        "pass": false
+      },
+      "harmful_compliance": {
+        "rho": 0.2286,
+        "layer": 16,
+        "fdr": false,
+        "pass": false
+      },
+      "sycophancy": {
+        "rho": 0.3845,
+        "layer": 6,
+        "fdr": false,
+        "pass": false
+      },
+      "refusal": {
+        "rho": 0.3422,
+        "layer": 8,
+        "fdr": false,
+        "pass": false
+      },
+      "deception": {
+        "rho": 0.534,
+        "layer": 3,
+        "fdr": true,
+        "pass": true
+      },
+      "fact_expression": {
+        "rho": 0.4394,
+        "layer": 21,
+        "fdr": false,
+        "pass": false
+      },
+      "marker": {
+        "rho": 0.317,
+        "layer": 24,
+        "fdr": false,
+        "pass": false
+      },
+      "format_style": {
+        "rho": 0.3897,
+        "layer": 12,
+        "fdr": false,
+        "pass": false
+      },
+      "self_report": {
+        "rho": 0.3028,
+        "layer": 8,
+        "fdr": false,
+        "pass": false
+      },
+      "persona_drift": {
+        "rho": 0.4033,
+        "layer": 6,
+        "fdr": false,
+        "pass": false
+      }
+    }
+  }
+}
