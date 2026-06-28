@@ -4410,8 +4410,8 @@
     "697": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/697",
-      "status": "running",
+      "path": "tasks/reviewing/697",
+      "status": "reviewing",
       "title": "workflow-fix: align contradictory finding-less analysis routing prose in SKILL.md"
     },
     "698": {
