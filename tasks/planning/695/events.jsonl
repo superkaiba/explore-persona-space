@@ -4,3 +4,4 @@
 {"ts": "2026-06-28T02:04:41Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-06-28T02:12:26Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict: PASS, n_fail=0, n_warn=1, warns=[c8_success_kill_criteria], plan version: v1. WARN is template conformance only; plan has explicit acceptance criteria + risk mitigation in §6/§7."}
 {"ts": "2026-06-28T02:20:51Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqx5wjah-0gx486 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-28T02:20:55Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqx5wmbh-rue6gp effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
