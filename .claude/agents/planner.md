@@ -555,7 +555,15 @@ estimated local footprint —
   `cpu-bigmem` (CPU-only `gpu_count=0` `n2-highmem-16`, boot disk sized via
   `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`. RunPod
   has no CPU lane, so a `cpu-bigmem` run that exhausts GCP surfaces a typed
-  `cpu_exhausted_no_runpod_lane` terminal, NOT a RunPod fallback. Note: this OVERRIDES the
+  `cpu_exhausted_no_runpod_lane` terminal, NOT a RunPod fallback.
+  **EXCEPTION — gradient-descent fit (compute-character carve-out above):**
+  if the >50 GB phase is itself an iterative-optimization fit (its inner
+  loop runs gradient descent on parameters), route it to a **GPU lane**
+  with its disk sized explicitly — `--boot-disk-gb` on the GCP GPU lane, a
+  `--volume` / intent volume ≥ footprint on RunPod — NOT `cpu-bigmem`:
+  `cpu-bigmem` is `gpu_count=0` and would re-starve the fit. Only a
+  closed-form / sampling-based >50 GB aggregation (the cheap-CPU class
+  above) routes to `cpu-bigmem`. Note: this OVERRIDES the
   idle-multi-GPU concern above — a >50 GB CPU phase that must hold a pod
   for disk reasons is justified by the data-locality clause, but pick the
   SMALLEST viable pod (single-GPU / CPU-heavy intent) so it isn't an idle
