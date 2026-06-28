@@ -285,29 +285,47 @@ def _hidden_at_layer(out, layer: int) -> torch.Tensor:
     return out.hidden_states[layer + 1][0]
 
 
-def patched_read(model, full_ids, layer, patch_positions, replacements, response_start):
+def patched_read(
+    model, full_ids, patch_layer, patch_positions, replacements, response_start, *, read_layer=None
+):
     """One teacher-forced forward with the patch installed; return both poolings.
 
+    **Read-pathway split (plan §4.0, Option B — the v4 read-inertness fix).** The
+    patch hook installs at ``patch_layer`` (overwriting that layer's OUTPUT at the
+    context ``patch_positions``); the answer-side ``v`` is read at
+    ``hidden_states[read_layer + 1]``. With ``read_layer > patch_layer`` the
+    response-slot read genuinely depends — through ``read_layer - patch_layer``
+    attention layers — on the patched context-slot residual, so the patch is no
+    longer structurally invisible (the v3 defect was ``patch_layer == read_layer``
+    in ONE teacher-forced forward, where the response-slot read of layer L's
+    output was computed BEFORE the layer-L context-slot overwrite — ``‖v_Pup-v0‖``
+    was 0 for all pairs). ``read_layer=None`` defaults to ``patch_layer`` (the
+    legacy same-layer behavior, kept for the canary's self-patch identity null,
+    which must be an exact no-op regardless of the split).
+
     Returns ``{"mean_resp": (H,) fp32 cpu, "slot": (H,) fp32 cpu}`` read at
-    ``hidden_states[layer + 1]`` — ``mean_resp`` = mean over ``[response_start:]``,
-    ``slot`` = the last-token (end-of-response) residual. The caller selects the
-    per-behavior primary pooling (mean-resp for em/sycophancy, slot for
-    marker/fact — plan §4.5 item-5). Mirrors the vendored
+    ``hidden_states[read_layer + 1]`` — ``mean_resp`` = mean over
+    ``[response_start:]``, ``slot`` = the last-token (end-of-response) residual.
+    The caller selects the per-behavior primary pooling (mean-resp for
+    em/sycophancy, slot for marker/fact — plan §4.5 item-5). Mirrors the vendored
     ``activation_shift._read_residuals`` read shape.
 
     ``replacements`` is the single-vector / per-position map ``make_cv_patch_hook``
     resolves (the ``full_span`` companion passes a ``dict[int, Tensor]`` /
-    position-aligned 2-D tensor over the whole context span). ``patch_positions``
-    empty / ``replacements`` None => the UNPATCHED read (no hook installed) — the
-    f_CV denominator's baseline.
+    position-aligned 2-D tensor over the whole context span). The donor residual
+    is the upstream ``patch_layer`` residual (captured at ``patch_layer`` by the
+    caller). ``patch_positions`` empty / ``replacements`` None => the UNPATCHED
+    read (no hook installed) — the f_CV denominator's baseline.
     """
+    if read_layer is None:
+        read_layer = patch_layer
     handle = None
     if patch_positions and replacements is not None:
-        handle = make_cv_patch_hook(model.model.layers[layer], patch_positions, replacements)
+        handle = make_cv_patch_hook(model.model.layers[patch_layer], patch_positions, replacements)
     try:
         with torch.no_grad():
             out = model(full_ids.unsqueeze(0).to(model.device), output_hidden_states=True)
-        h = _hidden_at_layer(out, layer)  # (T, H)
+        h = _hidden_at_layer(out, read_layer)  # (T, H)
         n_t = h.shape[0]
         assert 0 < response_start <= n_t, (
             f"empty response segment: response_start={response_start}, T={n_t}"

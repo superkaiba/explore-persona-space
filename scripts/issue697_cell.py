@@ -59,6 +59,10 @@ from explore_persona_space.analysis.activation_shift import (
 logger = logging.getLogger("issue697_cell")
 
 MARKER_TOKEN_ID = 83399
+# <|im_end|> id 151645 (Qwen-2.5-7B; matches #651) — the token the contrastive
+# negatives train at the slot; the EOS-margin secondary z_marker - z_eos reads as
+# distance-to-emission (marker-leakage-measurement.md § Storage contract, F3).
+IM_END_TOKEN_ID = 151645
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 # Per-cell .pt + _E_metadata.json land under analysis_tensors/ (intermediate
 # analysis inputs the analyze phase consumes — Upload Policy #521).
@@ -67,6 +71,10 @@ HF_TENSOR_PREFIX = "issue697_cv_patch/analysis_tensors"
 # (CLAUDE.md Upload Policy), one file per (cell, condition, persona, question)
 # batch (the standing rec #1 / reconciler-upheld fix).
 HF_RAW_COMPLETIONS_PREFIX = "issue697_cv_patch/raw_completions"
+# R_base cache (plan §4.4): the pre-sweep `rbase_prep` phase generates the 280
+# panel R_base ONCE (vLLM) and caches them here; the cell reads instead of
+# regenerating per cell. Read order: canonical HF path -> local file -> inline gen.
+HF_RBASE_PREFIX = "issue697_cv_patch/r_base_cache"
 
 PRIMARY_POOLING: dict[str, str] = {
     "em": "mean_resp",
@@ -142,6 +150,43 @@ def _load_model(base_model_id: str, adapter_path: str | None, *, cpu_only: bool)
         model = model.merge_and_unload()
     model.eval()
     return model
+
+
+def _load_rbase_cache(rbase_dir: Path | None, persona: str, qi: int) -> torch.Tensor | None:
+    """Read the cached base greedy R_base token ids for (persona, qi) (plan §4.4).
+
+    Resolution order (the cache-resume predicate): (1) the canonical HF data-repo
+    path ``issue697_cv_patch/r_base_cache/<persona>_<qi>.json`` (downloaded once),
+    (2) a LOCAL cache file under ``rbase_dir``, (3) None (the caller falls back to
+    inline HF generation — fail-soft, logged, so a partial / missing cache never
+    drops panel coverage). The cached ids are the RAW base greedy ids; the marker
+    arm applies the trailing-marker strip at read time (the cache serves both
+    strip classes). Returns a 1-D ``torch.LongTensor`` of token ids or None.
+    """
+    fname = f"{persona}_{qi}.json"
+    # (2) local first (a same-pod rbase_prep wrote them); cheap stat.
+    if rbase_dir is not None:
+        local = rbase_dir / fname
+        if local.exists():
+            try:
+                ids = json.loads(local.read_text())["r_base_token_ids"]
+                return torch.tensor(ids, dtype=torch.long)
+            except Exception as e:  # corrupt local file -> fall through to HF / inline
+                logger.warning("local R_base cache %s unreadable (%r); trying HF", local, e)
+    # (1) canonical HF path.
+    try:
+        from huggingface_hub import hf_hub_download
+        from huggingface_hub.errors import EntryNotFoundError
+
+        try:
+            p = hf_hub_download(HF_DATA_REPO, f"{HF_RBASE_PREFIX}/{fname}", repo_type="dataset")
+            ids = json.loads(Path(p).read_text())["r_base_token_ids"]
+            return torch.tensor(ids, dtype=torch.long)
+        except EntryNotFoundError:
+            return None
+    except Exception as e:
+        logger.warning("HF R_base cache miss for %s (%r); inline-generating", fname, e)
+        return None
 
 
 def _read_unpatched(model, full_ids, layers, response_start):
@@ -249,72 +294,135 @@ def select_e_subset(behavior, c0_by_persona, persona_names, layer) -> dict:
     }
 
 
-def _patched_reads(model, full_ids, layers, patch_positions, replacement_by_layer, response_start):
-    """{layer: {slot, mean_resp}} reads with a per-layer patch installed.
+def _patched_reads(
+    model, full_ids, patch_layer, read_layer, patch_positions, donor, response_start
+):
+    """{read_layer: {slot, mean_resp}} read with the patch installed UPSTREAM at L_patch.
 
-    ``replacement_by_layer[L]`` is the donor residual overwritten at every
-    ``patch_positions`` of layer L before the forward. A separate forward per
-    layer (each layer's patch is independent), batched only over positions.
+    Read-pathway split (plan §4.0, Option B — v4 read-inertness fix): the hook
+    installs at ``patch_layer`` (donor = the ``patch_layer`` residual) and the
+    answer-side ``v`` is read at ``hidden_states[read_layer + 1]``, so the patch
+    propagates through ``read_layer - patch_layer`` attention layers to the read.
+    ONE teacher-forced forward (batched over positions). ``donor`` is the
+    ``patch_layer`` residual (a single ``(H,)`` tensor broadcast to every patch
+    position, or a per-position ``dict[int, Tensor]`` for the full_span companion).
+
+    Returns ``{read_layer: {slot, mean_resp}}`` (keyed by the READ layer so the
+    analysis indexing is unchanged — it indexes conditions by the read layer).
     """
-    out: dict[int, dict[str, torch.Tensor]] = {}
-    for layer in layers:
-        rep = replacement_by_layer[layer].to(model.device)
-        out[layer] = cv_patch.patched_read(
-            model, full_ids, layer, patch_positions, rep, response_start
-        )
-    return out
+    rep = donor.to(model.device) if isinstance(donor, torch.Tensor) else donor
+    reads = cv_patch.patched_read(
+        model, full_ids, patch_layer, patch_positions, rep, response_start, read_layer=read_layer
+    )
+    return {read_layer: reads}
 
 
-def _build_conditions(base, trained, tokenizer, p_prompt, rec, layers, other_c0) -> dict:
+def _build_conditions(
+    base, trained, tokenizer, p_prompt, rec, patch_layer, read_layer, other_c0
+) -> dict:
     """All v-space patch conditions for one (persona, question): P↓/P↑ + 4 controls + full_span.
+
+    Read-pathway split (plan §4.0, Option B — v4 read-inertness fix): EVERY patch
+    condition installs the donor at ``patch_layer`` (L=10) and reads ``v`` at
+    ``read_layer`` (L=14), so the patch propagates ``read_layer - patch_layer`` (4)
+    attention layers to the read. The DONOR for every condition is the
+    ``patch_layer`` residual (c0/c⁺ sliced at L_patch); the v READ is at L_read
+    only (the headline; the depth side-read at read∈{7,21} is a cheap follow-up).
 
     Conditions (plan §4.8 / control set): ``p_down`` (base CV → FT), ``p_up`` (FT
     CV → base), ``self_patch`` (own CV → base, identity null), ``other_ctx`` (a
     different persona's c0 → FT), ``random_cv`` (norm-matched Gaussian → base),
     ``p_up_normmatched`` (c⁺ rescaled to ‖c0‖ → base), and ``full_span`` (plan
     control #4 — the FT c⁺ overwritten at EVERY context position [0 .. patch_pos]
-    with a DISTINCT donor vector per position, the single-slot under-count UPPER
-    BOUND). Each value is ``{layer: {slot, mean_resp}}``.
+    with a DISTINCT donor vector per position, captured + installed at L_patch).
+    Each value is ``{read_layer: {slot, mean_resp}}``.
     """
     full_ids = rec["full_ids"]
     response_start = rec["prompt_len"]
     patch_pos = rec["patch_pos"]
-    c0 = rec["c0"]
-    cplus = rec["cplus"]
+    # Donor context vectors are the UPSTREAM patch-layer residuals (c0/c⁺ at L=10).
+    c0 = rec["c0"][patch_layer]
+    cplus = rec["cplus"][patch_layer]
+    other_c0_pl = other_c0[patch_layer]
     conditions: dict[str, dict] = {}
     conditions["p_down"] = _patched_reads(
-        trained, full_ids, layers, [patch_pos], c0, response_start
+        trained, full_ids, patch_layer, read_layer, [patch_pos], c0, response_start
     )
-    conditions["p_up"] = _patched_reads(base, full_ids, layers, [patch_pos], cplus, response_start)
+    conditions["p_up"] = _patched_reads(
+        base, full_ids, patch_layer, read_layer, [patch_pos], cplus, response_start
+    )
     conditions["self_patch"] = _patched_reads(
-        base, full_ids, layers, [patch_pos], c0, response_start
+        base, full_ids, patch_layer, read_layer, [patch_pos], c0, response_start
     )
     conditions["other_ctx"] = _patched_reads(
-        trained, full_ids, layers, [patch_pos], other_c0, response_start
+        trained, full_ids, patch_layer, read_layer, [patch_pos], other_c0_pl, response_start
     )
-    rand_by_layer = {}
-    for layer in layers:
-        g = torch.randn_like(cplus[layer])
-        rand_by_layer[layer] = g / torch.linalg.norm(g) * torch.linalg.norm(c0[layer])
+    g = torch.randn_like(cplus)
+    rand = g / torch.linalg.norm(g) * torch.linalg.norm(c0)
     conditions["random_cv"] = _patched_reads(
-        base, full_ids, layers, [patch_pos], rand_by_layer, response_start
+        base, full_ids, patch_layer, read_layer, [patch_pos], rand, response_start
     )
-    nm_by_layer = {}
-    for layer in layers:
-        cp = cplus[layer]
-        nm_by_layer[layer] = cp / torch.linalg.norm(cp) * torch.linalg.norm(c0[layer])
+    nm = cplus / torch.linalg.norm(cplus) * torch.linalg.norm(c0)
     conditions["p_up_normmatched"] = _patched_reads(
-        base, full_ids, layers, [patch_pos], nm_by_layer, response_start
+        base, full_ids, patch_layer, read_layer, [patch_pos], nm, response_start
     )
-    # full_span: distinct FT donor residual per context position [0 .. patch_pos].
+    # full_span: distinct FT donor residual per context position [0 .. patch_pos],
+    # captured AND installed at the upstream L_patch (the read is still at L_read).
     span_positions = cv_patch.context_span_positions(tokenizer, p_prompt, rec["q"], patch_pos)
-    conditions["full_span"] = {}
-    for layer in layers:
-        span_reps = _context_span_residuals(trained, full_ids, layer, span_positions)
-        conditions["full_span"][layer] = cv_patch.patched_read(
-            base, full_ids, layer, span_positions, span_reps, response_start
+    span_reps = _context_span_residuals(trained, full_ids, patch_layer, span_positions)
+    conditions["full_span"] = {
+        read_layer: cv_patch.patched_read(
+            base,
+            full_ids,
+            patch_layer,
+            span_positions,
+            span_reps,
+            response_start,
+            read_layer=read_layer,
         )
+    }
     return conditions
+
+
+def _build_cell_q(
+    base, tokenizer, personas, persona_names, questions, arm, rbase_dir, max_new_tokens
+) -> tuple[dict, int, int]:
+    """First pass: build the per-(persona, q) sequence map + R_base cache stats.
+
+    R_base is READ from the pre-sweep cache (plan §4.4) — canonical HF path ->
+    local file -> inline HF generation fallback — instead of regenerating per cell.
+    The marker arm strips the trailing marker; empty R_base is skipped (logged).
+    Returns ``(cell_q, n_cache_hit, n_cache_miss)`` where ``cell_q`` maps
+    ``(persona, qi) -> {full_ids, prompt_len, patch_pos, prompt_text, q}``.
+    """
+    n_hit = n_miss = 0
+    cell_q: dict[tuple[str, int], dict] = {}
+    for p_name in persona_names:
+        p_prompt = personas[p_name]
+        for qi, q in enumerate(questions):
+            prompt_text = _build_chatml_prompt(tokenizer, p_prompt, q)
+            r_base_ids = _load_rbase_cache(rbase_dir, p_name, qi)
+            if r_base_ids is None:
+                # Cache miss -> inline HF generation (fail-soft so coverage holds).
+                r_base_ids = _greedy_generate_ids(base, tokenizer, prompt_text, max_new_tokens)
+                n_miss += 1
+            else:
+                n_hit += 1
+            if arm == _MARKER_ARM:
+                r_base_ids = _strip_trailing_marker_and_eos(r_base_ids, MARKER_TOKEN_ID, tokenizer)
+            if len(r_base_ids) == 0:
+                logger.warning("empty R_base for persona=%s q=%d; skipping", p_name, qi)
+                continue
+            full_ids, prompt_len = _build_full_sequence_ids(tokenizer, prompt_text, r_base_ids)
+            patch_pos = cv_patch.content_patch_pos(tokenizer, p_prompt, q)
+            cell_q[(p_name, qi)] = {
+                "full_ids": full_ids,
+                "prompt_len": prompt_len,
+                "patch_pos": patch_pos,
+                "prompt_text": prompt_text,
+                "q": q,
+            }
+    return cell_q, n_hit, n_miss
 
 
 def run_cell(args) -> dict:
@@ -323,9 +431,18 @@ def run_cell(args) -> dict:
 
     behavior = args.behavior
     arm = behavior  # used only to gate marker-stripping below
-    layers = list(dict.fromkeys(int(L) for L in args.layers))
-    primary_layer = int(args.primary_layer)
-    assert primary_layer in layers, (primary_layer, layers)
+    primary_layer = int(args.primary_layer)  # = read_layer (L=14, the headline read)
+    patch_layer = int(args.patch_layer)  # = L_patch (L=10, the upstream donor injection)
+    # Read-pathway split (plan §4.0, Option B): the inert-read class is
+    # patch_layer == read_layer (the v3 defect). The patch MUST be installed
+    # UPSTREAM of the read so it propagates through real attention layers.
+    assert patch_layer < primary_layer, (
+        f"patch_layer={patch_layer} must be < read_layer (primary_layer={primary_layer}); "
+        "patch_layer == read_layer is the v3 read-inert class (plan §4.0)."
+    )
+    # Capture set MUST include BOTH the donor (patch) layer and the read layer.
+    layers = list(dict.fromkeys([*[int(L) for L in args.layers], patch_layer, primary_layer]))
+    assert primary_layer in layers and patch_layer in layers, (patch_layer, primary_layer, layers)
 
     personas: dict[str, str | None] = json.loads(Path(args.personas_json).read_text())
     questions: list[str] = json.loads(Path(args.questions_json).read_text())
@@ -370,30 +487,15 @@ def run_cell(args) -> dict:
     cplus_by_persona: dict[str, dict[int, torch.Tensor]] = {}
 
     logger.info("[phase=cell_capture] computing context residuals c0/c+ per persona")
-    # First pass: greedy R_base per (persona, question) + context residuals.
-    # We cache the full_ids + response_start so the patched reads reuse them.
-    cell_q: dict[tuple[str, int], dict] = {}
-    for p_name in persona_names:
-        p_prompt = personas[p_name]
-        for qi, q in enumerate(questions):
-            prompt_text = _build_chatml_prompt(tokenizer, p_prompt, q)
-            r_base_ids = _greedy_generate_ids(base, tokenizer, prompt_text, args.max_new_tokens)
-            if arm == _MARKER_ARM:
-                r_base_ids = _strip_trailing_marker_and_eos(r_base_ids, MARKER_TOKEN_ID, tokenizer)
-            if len(r_base_ids) == 0:
-                logger.warning("empty R_base for persona=%s q=%d; skipping", p_name, qi)
-                continue
-            full_ids, prompt_len = _build_full_sequence_ids(tokenizer, prompt_text, r_base_ids)
-            # patch_pos = last content token of the user-message-only prompt.
-            patch_pos = cv_patch.content_patch_pos(tokenizer, p_prompt, q)
-            cell_q[(p_name, qi)] = {
-                "full_ids": full_ids,
-                "prompt_len": prompt_len,
-                "patch_pos": patch_pos,
-                "prompt_text": prompt_text,
-                "q": q,
-            }
-
+    rbase_dir = Path(args.rbase_cache_dir) if args.rbase_cache_dir else None
+    cell_q, n_cache_hit, n_cache_miss = _build_cell_q(
+        base, tokenizer, personas, persona_names, questions, arm, rbase_dir, args.max_new_tokens
+    )
+    logger.info(
+        "[phase=cell_rbase] R_base cache: %d hit, %d miss (inline-generated)",
+        n_cache_hit,
+        n_cache_miss,
+    )
     if not cell_q:
         raise RuntimeError(
             f"cell {behavior}_{args.cid}_seed{args.seed}: no non-empty R_base over the panel"
@@ -440,7 +542,7 @@ def run_cell(args) -> dict:
     for (p_name, qi), rec in cell_q.items():
         other_c0 = c0_by_persona.get(donor_persona, rec["c0"])
         conditions = _build_conditions(
-            base, trained, tokenizer, personas[p_name], rec, layers, other_c0
+            base, trained, tokenizer, personas[p_name], rec, patch_layer, primary_layer, other_c0
         )
         per_q[p_name].append(
             {
@@ -476,7 +578,7 @@ def run_cell(args) -> dict:
             tokenizer,
             e_personas,
             questions,
-            primary_layer,
+            patch_layer,
             behavior,
             E_TOKEN_CAP_BY_BEHAVIOR.get(behavior, args.max_new_tokens),
             use_cache=args.use_cache,
@@ -490,6 +592,11 @@ def run_cell(args) -> dict:
         "seed": args.seed,
         "layers": layers,
         "primary_layer": primary_layer,
+        # Read-pathway split (plan §4.0): donor patched at patch_layer (L=10), v read
+        # at read_layer (= primary_layer, L=14). Both recorded so the analyzer + the
+        # §7.1 inert-read assert know the pair (the analysis indexes by read_layer).
+        "patch_layer": patch_layer,
+        "read_layer": primary_layer,
         "primary_pooling": PRIMARY_POOLING.get(behavior, "mean_resp"),
         "persona_names": persona_names,
         "donor_persona": donor_persona,
@@ -500,6 +607,15 @@ def run_cell(args) -> dict:
             "base_model_id": args.base_model_id,
             "adapter_subfolder": (None if args.smoke_no_adapter else args.adapter_subfolder),
             "marker_token_id": MARKER_TOKEN_ID,
+            # Read-pathway split (plan §4.0, Option B): patch upstream at L_patch,
+            # read v at L_read so the patch propagates to the response-slot read.
+            "patch_layer": patch_layer,
+            "read_layer": primary_layer,
+            # R_base cache provenance (plan §4.4): how many panel R_base reads came
+            # from the pre-sweep cache vs were inline-generated (fail-soft fallback).
+            "rbase_cache_hit": n_cache_hit,
+            "rbase_cache_miss": n_cache_miss,
+            "rbase_cache_dir": args.rbase_cache_dir,
             "max_new_tokens": args.max_new_tokens,
             "smoke_no_adapter": args.smoke_no_adapter,
             # E-gen descope provenance (compute-deviation v2) — read by the analyzer.
@@ -616,26 +732,48 @@ def run_cell(args) -> dict:
     return result
 
 
-def _marker_logp_at_slot(model, full_ids, layer, patch_positions, replacements) -> float:
-    """log P(marker id 83399) at the post-response slot under an optional patch.
+def _marker_logp_at_slot(model, full_ids, patch_layer, patch_positions, replacements) -> dict:
+    """FOUR marker slot floats at the post-response slot under an optional patch.
 
     Teacher-forced: the marker DV is judge-free (the #537/#651 marker recipe), so
     no free generation. The slot is the LAST token of ``full_ids`` (the
     marker-stripped FT response ends there; the next-token distribution at that
-    position is where ` ※` would be emitted). Returns the log-prob of token
-    83399. ``patch_positions`` empty / ``replacements`` None => unpatched.
+    position is where ` ※` would be emitted). ``patch_positions`` empty /
+    ``replacements`` None => unpatched.
+
+    **Four-float storage (plan §6.1 / F3 — marker-leakage-measurement.md § Storage
+    contract).** Returns ``{"log_p", "z_marker", "z_eos", "logZ"}`` — all four from
+    the SAME forward (the logits are in scope at ``out.logits[0,-1,:]``): the marker
+    log-prob, the raw pre-softmax marker logit, the raw EOS (``<|im_end|>``, id
+    151645) logit, and ``logZ = logsumexp(z)`` (so ``log_p == z_marker - logZ`` by
+    identity). Logits are UNRECOVERABLE from stored log-probs post-hoc (#530), so
+    all four are captured at the HF forward. The f_CV^E ratio stays on ``log_p``
+    (r3.3 closure); the three extra floats localize saturation downstream.
+
+    **Read-pathway split (plan §4.0, Option B).** The hook installs at
+    ``patch_layer`` (L=10); the marker logit is post-lm_head (downstream of every
+    layer) so it was never inert, but the upstream install STRENGTHENS the effect
+    (18 downstream layers vs 14) and keeps the marker E read consistent with the v
+    read. The donor ``replacements`` are the ``patch_layer`` residuals.
     """
     handle = None
     if patch_positions and replacements is not None:
         handle = cv_patch.make_cv_patch_hook(
-            model.model.layers[layer], patch_positions, replacements
+            model.model.layers[patch_layer], patch_positions, replacements
         )
     try:
         with torch.no_grad():
             out = model(full_ids.unsqueeze(0).to(model.device))
         logits = out.logits[0, -1, :].float()
-        logp = torch.log_softmax(logits, dim=-1)[MARKER_TOKEN_ID]
-        return float(logp.cpu())
+        log_z = float(torch.logsumexp(logits, dim=-1).cpu())
+        z_marker = float(logits[MARKER_TOKEN_ID].cpu())
+        z_eos = float(logits[IM_END_TOKEN_ID].cpu())
+        return {
+            "log_p": z_marker - log_z,
+            "z_marker": z_marker,
+            "z_eos": z_eos,
+            "logZ": log_z,
+        }
     finally:
         if handle is not None:
             handle.remove()
@@ -681,7 +819,7 @@ def _capture_e_generations(
     tokenizer,
     personas,
     questions,
-    layer,
+    patch_layer,
     behavior,
     max_new_tokens,
     *,
@@ -689,11 +827,17 @@ def _capture_e_generations(
 ) -> list[dict]:
     """Per (persona, question): the behavioral E DV under unpatched / P↑ / P↓.
 
-    MARKER arm (judge-free): a teacher-forced slot read — log P(` ※`, id 83399)
-    at the post-response slot of the FT model's OWN marker-stripped response,
-    under each condition (NO free generation; the marker DV is a TF log-prob,
-    plan §4.5 / marker-leakage-measurement.md). The E-space f_CV^E for marker is
-    computed downstream from these log-probs.
+    Read-pathway split (plan §4.0, Option B): the donor context vector is captured
+    AND the patch hook installed at ``patch_layer`` (L=10) — the marker logit is
+    post-lm_head (downstream of every layer) so the marker E read was never inert,
+    but installing upstream STRENGTHENS the effect (18 downstream layers) and keeps
+    the marker E read consistent with the v read.
+
+    MARKER arm (judge-free): a teacher-forced slot read — FOUR floats (log P,
+    z_marker, z_eos, logZ — plan §6.1 / F3) at the post-response slot of the FT
+    model's OWN marker-stripped response, under each condition (NO free generation;
+    the marker DV is a TF log-prob, plan §4.5 / marker-leakage-measurement.md). The
+    E-space f_CV^E for marker is computed downstream from the log P (ratio-of-means).
 
     em/syc/fact arms: capture the model's own ON-POLICY generation under each
     condition for downstream Sonnet judging (the off-pod analyze-phase judge runs
@@ -717,8 +861,9 @@ def _capture_e_generations(
             enc = tokenizer(prompt_text, return_tensors="pt", add_special_tokens=False)
             prompt_ids = enc["input_ids"][0]
             patch_pos = cv_patch.content_patch_pos(tokenizer, p_prompt, q)
-            c0 = _context_residuals(base, prompt_ids, [layer], patch_pos)[layer]
-            cplus = _context_residuals(trained, prompt_ids, [layer], patch_pos)[layer]
+            # Donor context vectors at the UPSTREAM patch layer (L=10).
+            c0 = _context_residuals(base, prompt_ids, [patch_layer], patch_pos)[patch_layer]
+            cplus = _context_residuals(trained, prompt_ids, [patch_layer], patch_pos)[patch_layer]
             if behavior == _MARKER_ARM:
                 # FT model's own marker-stripped response defines the slot.
                 r_ft_ids = _greedy_generate_ids(trained, tokenizer, prompt_text, max_new_tokens)
@@ -730,18 +875,19 @@ def _capture_e_generations(
                     "question": q,
                     "dv_kind": "marker_logp",
                     # trained - base subtraction is done downstream; persist all
-                    # four conditions' slot log-probs.
+                    # four conditions' FOUR-float slot reads (log P / z_marker /
+                    # z_eos / logZ per F3). Patch installed upstream at patch_layer.
                     "marker_logp_unpatched_ft": _marker_logp_at_slot(
-                        trained, full_ids, layer, [], None
+                        trained, full_ids, patch_layer, [], None
                     ),
                     "marker_logp_unpatched_base": _marker_logp_at_slot(
-                        base, full_ids, layer, [], None
+                        base, full_ids, patch_layer, [], None
                     ),
                     "marker_logp_p_up": _marker_logp_at_slot(
-                        base, full_ids, layer, [patch_pos], cplus
+                        base, full_ids, patch_layer, [patch_pos], cplus
                     ),
                     "marker_logp_p_down": _marker_logp_at_slot(
-                        trained, full_ids, layer, [patch_pos], c0
+                        trained, full_ids, patch_layer, [patch_pos], c0
                     ),
                 }
             else:
@@ -751,20 +897,66 @@ def _capture_e_generations(
                     "question": q,
                     "dv_kind": "generation",
                     "unpatched_base": _e_gen_one(
-                        base, tokenizer, prompt_ids, layer, [], None, knobs, use_cache
+                        base, tokenizer, prompt_ids, patch_layer, [], None, knobs, use_cache
                     ),
                     "unpatched_ft": _e_gen_one(
-                        trained, tokenizer, prompt_ids, layer, [], None, knobs, use_cache
+                        trained, tokenizer, prompt_ids, patch_layer, [], None, knobs, use_cache
                     ),
                     "p_up": _e_gen_one(
-                        base, tokenizer, prompt_ids, layer, [patch_pos], cplus, knobs, use_cache
+                        base,
+                        tokenizer,
+                        prompt_ids,
+                        patch_layer,
+                        [patch_pos],
+                        cplus,
+                        knobs,
+                        use_cache,
                     ),
                     "p_down": _e_gen_one(
-                        trained, tokenizer, prompt_ids, layer, [patch_pos], c0, knobs, use_cache
+                        trained,
+                        tokenizer,
+                        prompt_ids,
+                        patch_layer,
+                        [patch_pos],
+                        c0,
+                        knobs,
+                        use_cache,
                     ),
                 }
             records.append(rec)
     return records
+
+
+def _hf_retry(fn, *, what: str, attempts: int = 5):
+    """Run an HF Hub call with exponential backoff on TRANSIENT errors (plan §4.2).
+
+    Transient set: ``HfHubHTTPError`` whose ``.response.status_code in {500, 502,
+    503, 504}`` (server-side / gateway), plus ``requests.exceptions.RequestException``
+    (connection / read timeout). A non-transient ``HfHubHTTPError`` (4xx auth /
+    validation) raises IMMEDIATELY (fail-loud, no retry). Mirrors
+    ``src/.../llm/api_dispatch.py``'s backoff shape; ``tenacity``/``backoff`` are
+    not installed. After ``attempts`` transient failures, raises a ``RuntimeError``
+    naming ``what`` + the last exception.
+    """
+    import random
+    import time
+
+    from huggingface_hub.utils import HfHubHTTPError  # NOT top-level (plan §4.2/F5)
+    from requests.exceptions import RequestException
+
+    last: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            return fn()
+        except HfHubHTTPError as e:
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            if code not in (500, 502, 503, 504):
+                raise  # 4xx (auth / validation) -> fail loud, no retry
+            last = e
+        except RequestException as e:  # connection / read timeout
+            last = e
+        time.sleep(min(2.0**attempt + random.uniform(0, 1), 60))
+    raise RuntimeError(f"{what}: HF Hub transient errors exhausted ({attempts}); last={last!r}")
 
 
 def _upload_cell_artifacts(tensor_paths: list[Path], raw_paths: list[Path]) -> None:
@@ -776,10 +968,16 @@ def _upload_cell_artifacts(tensor_paths: list[Path], raw_paths: list[Path]) -> N
     ``HF_RAW_COMPLETIONS_PREFIX`` (raw_completions/ — the CANONICAL prefix, the
     standing-rec #1 fix). ONE batched ``create_commit`` per cell (well under the
     256-commits/hr cap, #664) so a mid-sweep crash strands at most the in-flight
-    cell; verified against a FRESH ``list_repo_files`` listing (NOT the `hf` CLI —
-    upload-policy.md). Fail-loud on any missing file.
+    cell.
+
+    Verification (plan §4.2): a per-EXPECTED-file ``HfApi.file_exists`` HEAD check
+    (O(K) requests, K = the cell's ~6 files), NOT a paginated ``list_repo_files``
+    of the ~64K-file dataset repo (the per-cell minutes-scale cost + the 504-on-
+    listing surface that crashed attempt-1). Both the commit + the file_exists
+    checks ride ``_hf_retry`` exponential backoff on transient 5xx / timeouts;
+    a non-transient error (auth, 4xx) or budget exhaustion raises fail-loud.
     """
-    from huggingface_hub import CommitOperationAdd, HfApi, list_repo_files
+    from huggingface_hub import CommitOperationAdd, HfApi
 
     api = HfApi()
     expected: dict[str, Path] = {}
@@ -792,14 +990,24 @@ def _upload_cell_artifacts(tensor_paths: list[Path], raw_paths: list[Path]) -> N
         path_in_repo = f"{HF_RAW_COMPLETIONS_PREFIX}/{p.name}"
         expected[path_in_repo] = p
         ops.append(CommitOperationAdd(path_in_repo=path_in_repo, path_or_fileobj=str(p)))
-    api.create_commit(
-        repo_id=HF_DATA_REPO,
-        repo_type="dataset",
-        operations=ops,
-        commit_message=f"issue697: cell artifacts ({len(ops)} files)",
+    _hf_retry(
+        lambda: api.create_commit(
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            operations=ops,
+            commit_message=f"issue697: cell artifacts ({len(ops)} files)",
+        ),
+        what="create_commit",
     )
-    files = set(list_repo_files(HF_DATA_REPO, repo_type="dataset"))
-    missing = [pir for pir in expected if pir not in files]
+    # Per-EXPECTED-file presence HEAD (O(K), not a whole-repo listing).
+    missing = [
+        pir
+        for pir in expected
+        if not _hf_retry(
+            lambda pir=pir: api.file_exists(HF_DATA_REPO, pir, repo_type="dataset"),
+            what=f"file_exists {pir}",
+        )
+    ]
     if missing:
         raise RuntimeError(f"cell upload verification FAILED -- missing on Hub: {missing}")
     logger.info(
@@ -820,8 +1028,31 @@ def main() -> int:
     parser.add_argument("--questions-json", required=True)
     parser.add_argument("--out-dir", required=True)
     parser.add_argument("--layers", type=int, nargs="+", default=[7, 14, 21])
-    parser.add_argument("--primary-layer", type=int, default=14)
-    parser.add_argument("--max-new-tokens", type=int, default=512)
+    parser.add_argument(
+        "--primary-layer",
+        type=int,
+        default=14,
+        help="The v READ layer (L_read=14, #651 PRIMARY_LAYER — the headline read).",
+    )
+    parser.add_argument(
+        "--patch-layer",
+        type=int,
+        default=10,
+        help=(
+            "The donor-injection PATCH layer (L_patch=10, plan §4.0 Option B). MUST "
+            "be < --primary-layer so the patch propagates through real attention "
+            "layers to the response-slot read (patch == read is the v3 read-inert class)."
+        ),
+    )
+    parser.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=1024,
+        help=(
+            "R-generation cap (free-gen default 1024, plan §11/F5 — ≥2x the observed "
+            "~150-tok median trained R; truncation creates silent zeros, #260)."
+        ),
+    )
     parser.add_argument("--base-model-id", default="Qwen/Qwen2.5-7B-Instruct")
     parser.add_argument("--cpu-only", action="store_true")
     parser.add_argument(
@@ -833,6 +1064,15 @@ def main() -> int:
         "--smoke-no-adapter",
         action="store_true",
         help="Load base as both θ0 and θ⁺ (no real adapter) — the CPU tiny-model smoke.",
+    )
+    parser.add_argument(
+        "--rbase-cache-dir",
+        default=None,
+        help=(
+            "Local dir of the pre-sweep R_base cache (plan §4.4). The cell reads "
+            "<persona>_<qi>.json here / from the canonical HF path before falling "
+            "back to inline generation. Omit to always inline-generate (smoke)."
+        ),
     )
     parser.add_argument("--upload", action="store_true", help="Per-cell HF upload (fail-loud).")
     parser.add_argument(
