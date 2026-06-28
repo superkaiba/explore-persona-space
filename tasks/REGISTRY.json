@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 700,
+  "highest_id": 701,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4448,6 +4448,13 @@
       "path": "tasks/proposed/700",
       "status": "proposed",
       "title": "rerun-discipline: confirm a fix's code-path is reached + differential-diagnose a hang before reprovisioning"
+    },
+    "701": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/701",
+      "status": "proposed",
+      "title": "planner/critic: a torch-MLP LOCO fit is NOT a cheap CPU-only analysis step"
     },
     "71": {
       "has_clean_result": false,
