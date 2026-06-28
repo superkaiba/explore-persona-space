@@ -290,6 +290,20 @@ class PollResult:
     # (they never set it); declared LAST so existing positional PollResult
     # constructions are unaffected.
     reachability_alarm: bool = False
+    # Machine-readable reason a non-``running`` verdict landed (#664), mirroring
+    # ``scripts/poll_pipeline.PollResult.stall_reason``. ``None`` on a healthy
+    # ``running`` tick and on generic log+GPU+CPU stalls without a specific
+    # cause; currently set only for the zombie-GPU-allocation stall the RunPod
+    # lane detects (``"vllm_worker_dead_zombie_gpu"`` — a dead CUDA-worker PID
+    # still holding VRAM while the EngineCore main process keeps the
+    # session-CPU-advancing override alive, which would otherwise mask the hang
+    # as ``running`` forever). The RunPod lane copies this through from
+    # ``poll_once`` (``RunPodBackend.poll``); SLURM + GCP never set it, so the
+    # default keeps cross-lane serialization uniform. Declared LAST so existing
+    # positional PollResult constructions are unaffected. The poller
+    # (``scripts/backend_poll._serialize_poll_result``) reads it via ``getattr``
+    # so a mixed-version worktree degrades to ``None`` rather than crashing.
+    stall_reason: str | None = None
 
 
 # ---------------------------------------------------------------------------
