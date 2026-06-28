@@ -4,6 +4,7 @@ title: 'workflow-fix: autonomous_session_watch.py compose RunPod no-port wedge p
 kind: infra
 tags:
 - wf-fix
+- wf-fix-fp:7d213f536fe9
 created_at: '2026-06-28T00:00:02Z'
 has_clean_result: false
 parent_id: 689
