@@ -147,6 +147,7 @@ def test_runpod_poll_delegates_to_poll_pipeline_and_returns_typed_pollresult(
             # pass-through assertion below discriminates a real thread-through
             # from a silent fall-back to the default.
             next_interval: int = 1800
+            stall_reason: str | None = None
 
         return _PR()
 
@@ -1187,6 +1188,7 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # base.PollResult default are both 540) so the value assertion below
         # discriminates a real thread-through from a silent fall-back.
         next_interval: int = 1800
+        stall_reason: str | None = None
 
     monkeypatch.setattr("scripts.poll_pipeline.poll_once", lambda **kw: _PR())
 
