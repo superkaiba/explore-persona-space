@@ -946,6 +946,8 @@ lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
 generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
 owning_agent: experiment-implementer|experimenter
 gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+root_cause_confirmed: yes|no  # yes if THIS round identified the TRUE root cause (even if a NEW distinct failure followed or the pod was abandoned in recovery)
+supersedes:           # OPTIONAL: prior-lesson slug or marker-ts this lesson corrects; omit if none
 <!-- /epm:failure-lesson -->
 ```
 
@@ -955,6 +957,20 @@ or wiring mistake in this issue's own script. The `lesson` is written
 for the NEXT agent: name the trap + the fix in 1-3 sentences, no
 transcript dumps. Ordinary (non-crash-fix) rounds do NOT emit this
 block.
+
+**Root-cause-confirmed firing (added #712).** Emit this block ALSO when
+your round IDENTIFIED the true root cause of the posted `epm:failure`
+even if your fix then hit a NEW, DISTINCT failure, or the run could not
+complete on the current pod (set `root_cause_confirmed: yes`). The
+capture decision is the orchestrator's pure
+`failure_lesson_capture_eligible()` predicate: a block with
+`root_cause_confirmed: yes` is captured regardless of a following
+failure. When the cause you confirmed CORRECTS an earlier
+failure-lesson on this task (a prior mis-diagnosis the team already
+captured), set `supersedes:` to that earlier lesson's slug or marker
+timestamp so the durable record retracts the wrong one instead of
+stacking two contradictory gotchas. Leave `supersedes:` blank when there
+is nothing to correct (the common case).
 
 ### Crash-fix rounds: declare the fix-engaged signal (REQUIRED)
 
