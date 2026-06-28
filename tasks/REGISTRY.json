@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 702,
+  "highest_id": 703,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4462,6 +4462,13 @@
       "path": "tasks/proposed/702",
       "status": "proposed",
       "title": "analyzer: confirm all planned control arms present before authoring a verdict"
+    },
+    "703": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/703",
+      "status": "proposed",
+      "title": "fix full-suite test-isolation pollution (module-singleton leak across 4 tests)"
     },
     "71": {
       "has_clean_result": false,
