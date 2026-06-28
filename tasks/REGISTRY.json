@@ -4452,8 +4452,8 @@
     "701": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/701",
-      "status": "planning",
+      "path": "tasks/approved/701",
+      "status": "approved",
       "title": "planner/critic: a torch-MLP LOCO fit is NOT a cheap CPU-only analysis step"
     },
     "702": {
