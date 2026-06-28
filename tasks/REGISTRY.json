@@ -4240,8 +4240,8 @@
     "675": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/675",
-      "status": "planning",
+      "path": "tasks/approved/675",
+      "status": "approved",
       "title": "Route _context_vector_all_layers through hook helper (sibling of #671, surfaced by #672)"
     },
     "676": {
