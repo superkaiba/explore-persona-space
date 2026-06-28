@@ -4473,8 +4473,8 @@
     "704": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/704",
-      "status": "approved",
+      "path": "tasks/running/704",
+      "status": "running",
       "title": "fix backend_poll last_log_mtime_sec_ago clock/epoch skew"
     },
     "705": {
