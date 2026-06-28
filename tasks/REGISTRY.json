@@ -4445,8 +4445,8 @@
     "700": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/700",
-      "status": "running",
+      "path": "tasks/reviewing/700",
+      "status": "reviewing",
       "title": "rerun-discipline: confirm a fix's code-path is reached + differential-diagnose a hang before reprovisioning"
     },
     "701": {
