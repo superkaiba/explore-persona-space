@@ -71,6 +71,12 @@ logger = logging.getLogger("issue664_dispatch")
 GEN = C.DATA_ROOT
 CACHE_ROOT = C.DATA_ROOT / "onpolicy_cache"
 ADAPTER_OUT = C.DATA_ROOT / "adapters"
+# vLLM v1 EngineCore deadlocks the CUDA worker when fed a very large prompt list
+# in a single llm.generate() call on pod-664's driver combo (#664 round-8: a
+# 3000-prompt _elicit_secure_code call hung the worker at 0% GPU util forever).
+# _greedy/_sample chunk transparently into batches of this size; env-overridable
+# for ops tuning. 500 prompts is well within the 7B/43GB-KV-cache capacity.
+VLLM_GREEDY_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 # Per-cell below-floor-yield DROP sentinels live here (written by the builder);
 # the top-level manifest of dropped cells (#664 round-6) is its _manifest.json.
 DROPPED_DIR = CACHE_ROOT / "dropped_sources"
@@ -198,19 +204,51 @@ def _teardown_vllm(llm) -> None:
 
 
 def _greedy(llm, prompts: list[str], max_new: int) -> list[str]:
+    """Greedy vLLM generation, chunked to avoid the #664 round-8 vLLM v1
+    EngineCore hang on large prompt batches (a single ``llm.generate(3000
+    prompts, ...)`` call deadlocked the CUDA worker on pod-664's driver combo,
+    GPU 0% util, zombie-GPU PID indefinitely). Chunks transparently into batches
+    of ``VLLM_GREEDY_CHUNK_SIZE``; preserves order; otherwise behavior-identical.
+    The per-chunk INFO log also keeps poll_pipeline's freshness check alive over
+    the previously 60-min-silent stretch."""
     from vllm import SamplingParams
 
-    sp = SamplingParams(temperature=0.0, max_tokens=max_new)
-    outs = llm.generate(prompts, sp, use_tqdm=False)  # gotchas #613
-    return [o.outputs[0].text for o in outs]
+    sp = SamplingParams(temperature=0.0, max_tokens=max_new)  # gotchas #613: use_tqdm=False
+    out: list[str] = []
+    n_chunks = (len(prompts) + VLLM_GREEDY_CHUNK_SIZE - 1) // VLLM_GREEDY_CHUNK_SIZE
+    for i in range(0, len(prompts), VLLM_GREEDY_CHUNK_SIZE):
+        chunk = prompts[i : i + VLLM_GREEDY_CHUNK_SIZE]
+        logger.info(
+            "[vllm-chunk] _greedy chunk %d/%d (%d prompts)",
+            i // VLLM_GREEDY_CHUNK_SIZE + 1,
+            n_chunks,
+            len(chunk),
+        )
+        chunk_out = llm.generate(chunk, sp, use_tqdm=False)
+        out.extend(o.outputs[0].text for o in chunk_out)
+    return out
 
 
 def _sample(llm, prompts: list[str], max_new: int, *, temp: float, n: int) -> list[list[str]]:
+    """Sampled vLLM generation (n per prompt), chunked like ``_greedy`` to avoid
+    the #664 round-8 large-batch EngineCore hang. Preserves the per-prompt
+    list-of-n structure and prompt order; otherwise behavior-identical."""
     from vllm import SamplingParams
 
-    sp = SamplingParams(n=n, temperature=temp, max_tokens=max_new)
-    outs = llm.generate(prompts, sp, use_tqdm=False)
-    return [[c.text for c in o.outputs] for o in outs]
+    sp = SamplingParams(n=n, temperature=temp, max_tokens=max_new)  # gotchas #613: use_tqdm=False
+    out: list[list[str]] = []
+    n_chunks = (len(prompts) + VLLM_GREEDY_CHUNK_SIZE - 1) // VLLM_GREEDY_CHUNK_SIZE
+    for i in range(0, len(prompts), VLLM_GREEDY_CHUNK_SIZE):
+        chunk = prompts[i : i + VLLM_GREEDY_CHUNK_SIZE]
+        logger.info(
+            "[vllm-chunk] _sample chunk %d/%d (%d prompts)",
+            i // VLLM_GREEDY_CHUNK_SIZE + 1,
+            n_chunks,
+            len(chunk),
+        )
+        chunk_out = llm.generate(chunk, sp, use_tqdm=False)
+        out.extend([c.text for c in o.outputs] for o in chunk_out)
+    return out
 
 
 def _write_responses_cache(
