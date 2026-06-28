@@ -4368,8 +4368,8 @@
     "691": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/691",
-      "status": "running",
+      "path": "tasks/completed/691",
+      "status": "completed",
       "title": "Phase 6 full-scale dispatcher validation (141.6k A/B, ~$400) \u2014 gated on #684 merge"
     },
     "692": {
