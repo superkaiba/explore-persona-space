@@ -4439,8 +4439,8 @@
     "710": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/710",
-      "status": "reviewing",
+      "path": "tasks/completed/710",
+      "status": "completed",
       "title": "workflow-fix: add stall_reason to _PR struct in backends/runpod.py"
     },
     "712": {
