@@ -31,3 +31,4 @@
 {"ts": "2026-06-28T10:02:48Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxmbz8e-1fo30d phase=done after 120s."}
 {"ts": "2026-06-28T10:03:09Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxmcgbz-2f8m6z phase=done after 120s."}
 {"ts": "2026-06-28T10:03:20Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxmc1xb-ljwhle phase=done after 150s."}
+{"ts": "2026-06-28T10:03:58Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatching implementer (TDD round 1 — write tests only); awaiting epm:proposed-tests v1."}
