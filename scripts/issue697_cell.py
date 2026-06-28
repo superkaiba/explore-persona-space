@@ -83,11 +83,16 @@ _MARKER_ARM = "marker"
 # on 4x A100-80. The PRIMARY v-space f_CV is UNCHANGED (100% panel coverage on
 # all 128 cells). The source-anchor persona is the canonical default-assistant
 # leakage target (always in the 14-panel; open-q 3.7), and the N closest panel
-# personas are chosen DETERMINISTICALLY per behavior by Euclidean distance on the
-# base-model context residual c0 at the primary layer — stable across the cells
-# of a behavior (the choice is per-behavior, not per-cell).
+# personas are chosen DETERMINISTICALLY per behavior by COSINE distance on the
+# base-model context residual c0 at the primary layer (raw pairwise cosine per
+# .claude/rules/persona-distance-metrics.md — descope marker v2 mandates
+# "closest-by-#651-COSINE") — stable across the cells of a behavior (the choice
+# is per-behavior, not per-cell).
 E_SUBSET_SOURCE_ANCHOR = "assistant"
 E_SUBSET_N_BYSTANDERS = 4
+# The bystander-selection distance metric, persisted in the per-cell manifest so
+# the choice is auditable + the descope-adherence is mechanically checkable.
+E_SUBSET_METRIC = "cosine"
 # syc/fact E-gen token cap (descope (c)): Qwen median response ~150 tok, so the
 # 512 cap loses little vs #537's 2048; em keeps 512 (already #537). Marker is
 # TF marker-logp (no free gen) and is unaffected by the cap.
@@ -186,19 +191,22 @@ def select_e_subset(behavior, c0_by_persona, persona_names, layer) -> dict:
     The E-gen descope (compute-deviation v2) restricts the behavioral-E
     generations to ``E_SUBSET_SOURCE_ANCHOR`` (the default-assistant leakage
     target, always in the 14-panel) plus the ``E_SUBSET_N_BYSTANDERS`` closest
-    panel personas, measured by Euclidean distance on the base-model context
-    residual ``c0`` at the primary ``layer``. Per-behavior + per-cell c0 vary
-    slightly, but the SELECTION is computed against THIS cell's c0 — the brief
-    requires stability across cells of the same behavior, which holds because the
-    panel personas + the anchor are fixed and the residual geometry is dominated
-    by the persona identity, not the (fixed-panel) training context. The chosen
-    subset + the per-persona distances are persisted per-cell so the choice is
-    auditable.
+    panel personas, measured by COSINE distance ``1 - cos(c_p, c_anchor)`` on the
+    base-model context residual ``c0`` at the primary ``layer`` (raw pairwise
+    cosine per .claude/rules/persona-distance-metrics.md — two persona residual
+    vectors, no bank to center; the descope marker v2 mandates
+    "closest-by-#651-COSINE"). Per-behavior + per-cell c0 vary slightly, but the
+    SELECTION is computed against THIS cell's c0 — the brief requires stability
+    across cells of the same behavior, which holds because the panel personas +
+    the anchor are fixed and the residual geometry is dominated by the persona
+    identity, not the (fixed-panel) training context. The chosen subset + the
+    per-persona distances + the metric name are persisted per-cell so the choice
+    is auditable.
 
     Returns ``{"anchor": str, "bystanders": [str], "subset": [str],
-    "distances": {persona: float}}``. Falls back to including every panel persona
-    when the anchor's c0 is unavailable (a dropped-question cell) — the subset is
-    then the whole panel (no descope), reported as such.
+    "distances": {persona: float}, "metric": "cosine"}``. Falls back to including
+    every panel persona when the anchor's c0 is unavailable (a dropped-question
+    cell) — the subset is then the whole panel (no descope), reported as such.
     """
     anchor = E_SUBSET_SOURCE_ANCHOR if E_SUBSET_SOURCE_ANCHOR in persona_names else persona_names[0]
     anchor_c0 = c0_by_persona.get(anchor, {}).get(layer)
@@ -210,6 +218,7 @@ def select_e_subset(behavior, c0_by_persona, persona_names, layer) -> dict:
             "bystanders": [p for p in persona_names if p != anchor],
             "subset": list(persona_names),
             "distances": {},
+            "metric": E_SUBSET_METRIC,
             "descoped": False,
         }
     distances: dict[str, float] = {}
@@ -219,7 +228,13 @@ def select_e_subset(behavior, c0_by_persona, persona_names, layer) -> dict:
         cp = c0_by_persona.get(p, {}).get(layer)
         if cp is None:
             continue
-        distances[p] = float(torch.linalg.norm(cp - anchor_c0))
+        # Cosine distance 1 - cos(c_p, c_anchor) (raw pairwise per
+        # persona-distance-metrics.md): the descope marker v2 mandates
+        # closest-by-#651-COSINE. cosine_similarity needs a batch dim.
+        cos = torch.nn.functional.cosine_similarity(
+            cp.reshape(1, -1).float(), anchor_c0.reshape(1, -1).float(), dim=1
+        )
+        distances[p] = float(1.0 - cos.item())
     # Deterministic tie-break: distance asc, then persona name asc.
     ranked = sorted(distances.items(), key=lambda kv: (kv[1], kv[0]))
     bystanders = [p for p, _d in ranked[:E_SUBSET_N_BYSTANDERS]]
@@ -229,6 +244,7 @@ def select_e_subset(behavior, c0_by_persona, persona_names, layer) -> dict:
         "bystanders": bystanders,
         "subset": subset,
         "distances": distances,
+        "metric": E_SUBSET_METRIC,
         "descoped": True,
     }
 
@@ -493,6 +509,8 @@ def run_cell(args) -> dict:
             "e_subset_anchor": e_subset_info["anchor"],
             "e_subset_bystanders": e_subset_info["bystanders"],
             "e_subset_descoped": e_subset_info["descoped"],
+            # Bystander-selection metric (descope marker v2: closest-by-#651-COSINE).
+            "e_subset_metric": e_subset_info.get("metric", E_SUBSET_METRIC),
             "e_token_cap_note": (
                 "syc/fact E-gen max_new_tokens capped at 512 (compute-deviation v2 "
                 "descope c); #537 used 2048 — Qwen median response ~150 tok so the cap "

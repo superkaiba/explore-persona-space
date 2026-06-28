@@ -646,3 +646,248 @@ def test_t9_per_behavior_e_decode_knobs(monkeypatch):
     )
     assert len(captured) == 4, f"fact should be 4 conditions x n=1 = 4 calls, got {len(captured)}"
     assert all(c["do_sample"] is False for c in captured), "fact must be greedy"
+
+
+# --------------------------------------------------------------------------- #
+# Round-3.2 BLOCKER regression pins (analyze-side, scripts/issue697_analysis.py +
+# scripts/issue697_cell.py:select_e_subset). One test per concern_id.
+# --------------------------------------------------------------------------- #
+
+POOLING = "mean_resp"  # the primary pooling for em (the synthetic .pt behavior below)
+
+
+def _import_analysis():
+    import sys
+
+    sys.path.insert(0, "scripts")
+    import issue697_analysis as analysis
+
+    return analysis
+
+
+def _import_cell():
+    import sys
+
+    sys.path.insert(0, "scripts")
+    import issue697_cell as cell
+
+    return cell
+
+
+def _synth_cell_pt(
+    *,
+    behavior="em",
+    cell_id="em_c0_seed1",
+    layer=1,
+    n_personas=2,
+    n_q=2,
+    pup_at,
+    pdown_at,
+    with_full_span=False,
+    full_span_at=None,
+):
+    """A synthetic per-cell .pt dict the analyze layer reads.
+
+    ``pup_at`` / ``pdown_at`` / ``full_span_at`` ∈ {"v0", "vplus"} place each
+    condition's read AT v0 or v_plus so the f_CV / f_CV_down / full_span land at
+    a known 0 or 1. v0 and v_plus are fixed non-degenerate vectors.
+    """
+    torch.manual_seed(13)
+    H = 8
+    v0 = torch.randn(H)
+    vplus = v0 + torch.randn(H) + 2.0  # a real, well-above-eps shift
+
+    def _pick(where):
+        return v0.clone() if where == "v0" else vplus.clone()
+
+    per_q: dict[str, list[dict]] = {}
+    for pi in range(n_personas):
+        pname = f"persona_{pi}"
+        entries = []
+        for _qi in range(n_q):
+            conds = {
+                "p_up": {layer: {POOLING: _pick(pup_at)}},
+                "p_down": {layer: {POOLING: _pick(pdown_at)}},
+                "random_cv": {layer: {POOLING: v0.clone()}},  # null floor ~0
+            }
+            if with_full_span:
+                conds["full_span"] = {layer: {POOLING: _pick(full_span_at)}}
+            entries.append(
+                {
+                    "v0": {layer: {POOLING: v0.clone()}},
+                    "vplus": {layer: {POOLING: vplus.clone()}},
+                    "conditions": conds,
+                }
+            )
+        per_q[pname] = entries
+    return {
+        "behavior": behavior,
+        "cell_id": cell_id,
+        "layers": [layer],
+        "primary_layer": layer,
+        "per_q": per_q,
+    }
+
+
+# --- BLOCKER: e-subset-uses-euclidean-not-cosine --------------------------- #
+
+
+def test_e_subset_uses_cosine_not_euclidean():
+    """select_e_subset ranks bystanders by COSINE distance (descope v2:
+    closest-by-#651-cosine), NOT Euclidean L2. Constructs a case where the two
+    metrics give DIFFERENT orderings and asserts the cosine ordering is picked +
+    the chosen metric is recorded as 'cosine' in the returned dict."""
+    cell = _import_cell()
+    layer = 1
+    # anchor along +x. Two candidates:
+    #  near_cos  : tiny angle to anchor (same direction) but LARGE magnitude (far in L2)
+    #  near_eucl : nearly equal vector to anchor (tiny L2) but rotated (larger angle)
+    anchor = torch.tensor([1.0, 0.0])
+    near_cos = torch.tensor([50.0, 0.5])  # ~0 angle, huge L2 distance
+    near_eucl = torch.tensor([1.0, 0.9])  # tiny L2 distance, ~42° angle
+    # Sanity: Euclidean would rank near_eucl first; cosine ranks near_cos first.
+    eucl_cos = float(torch.linalg.norm(near_cos - anchor))
+    eucl_eucl = float(torch.linalg.norm(near_eucl - anchor))
+    assert eucl_eucl < eucl_cos, "fixture: near_eucl must be closer in Euclidean"
+    import torch.nn.functional as F
+
+    cosd_cos = 1 - float(F.cosine_similarity(near_cos.reshape(1, -1), anchor.reshape(1, -1)))
+    cosd_eucl = 1 - float(F.cosine_similarity(near_eucl.reshape(1, -1), anchor.reshape(1, -1)))
+    assert cosd_cos < cosd_eucl, "fixture: near_cos must be closer in cosine"
+
+    persona_names = ["assistant", "near_cos", "near_eucl"]
+    c0_by_persona = {
+        "assistant": {layer: anchor},
+        "near_cos": {layer: near_cos},
+        "near_eucl": {layer: near_eucl},
+    }
+    # N=1 bystander forces a single pick that distinguishes the two metrics.
+    cell.E_SUBSET_N_BYSTANDERS = 1
+    try:
+        out = cell.select_e_subset("em", c0_by_persona, persona_names, layer)
+    finally:
+        cell.E_SUBSET_N_BYSTANDERS = 4  # restore module default
+    assert out["bystanders"] == ["near_cos"], (
+        f"cosine ranking must pick near_cos first, got {out['bystanders']!r} "
+        "(Euclidean would have picked near_eucl)"
+    )
+    assert out["metric"] == "cosine", f"metric must be recorded as cosine, got {out['metric']!r}"
+
+
+# --- BLOCKER: full-span-not-consumed-by-analyze ---------------------------- #
+
+
+def test_full_span_consumed_by_analyze(tmp_path):
+    """analyze() reads conditions['full_span'] and surfaces an f_cv_full_span CI +
+    the last-token-vs-full-span delta in the summary. Synthetic .pt with full_span
+    AT v_plus (full_span f_CV → 1.0) and p_up AT v_plus (last-token f_CV → 1.0)."""
+    analysis = _import_analysis()
+    patch_dir = tmp_path / "eval_results" / "issue_697" / "patch"
+    patch_dir.mkdir(parents=True)
+    cell = _synth_cell_pt(
+        behavior="em",
+        pup_at="vplus",
+        pdown_at="v0",
+        with_full_span=True,
+        full_span_at="vplus",
+    )
+    torch.save(cell, patch_dir / f"{cell['cell_id']}.pt")
+    result = analysis.analyze(tmp_path, primary_layer=1)
+    s = result["by_behavior"]["em"]
+    assert "f_cv_full_span_ci" in s, "summary must carry f_cv_full_span_ci"
+    assert abs(s["f_cv_full_span_ci"]["mean"] - 1.0) < 1e-4, (
+        f"full_span at v_plus must give f_CV~1, got {s['f_cv_full_span_ci']['mean']}"
+    )
+    assert "last_token_vs_full_span_delta" in s, "summary must carry the scope delta"
+    # both at v_plus → last-token f_CV ~ full-span f_CV ~ 1 → delta ~ 0
+    assert abs(s["last_token_vs_full_span_delta"]) < 1e-3, (
+        f"last-vs-full delta must be ~0 here, got {s['last_token_vs_full_span_delta']}"
+    )
+
+
+# --- BLOCKER: e-space-analysis-not-wired ----------------------------------- #
+
+
+def test_e_space_analysis_from_judged(tmp_path):
+    """analyze() loads {cell}_judged.json + computes f_CV^E; the hero E-row is NOT
+    the placeholder when judged data is present. Synthetic judged.json with
+    E0=0.0, E+=1.0, E_Pup=1.0 → f_CV^E = 1.0."""
+    import json
+
+    analysis = _import_analysis()
+    patch_dir = tmp_path / "eval_results" / "issue_697" / "patch"
+    patch_dir.mkdir(parents=True)
+    cell = _synth_cell_pt(behavior="em", cell_id="em_c0_seed1", pup_at="vplus", pdown_at="v0")
+    torch.save(cell, patch_dir / "em_c0_seed1.pt")
+    # judged.json: em rate key is p_mis. E0=0, E+=1, E_Pup=1, E_Pdown=0.
+    judged = {
+        "cell_id": "em_c0_seed1",
+        "behavior": "em",
+        "rates": {
+            "unpatched_base": {"p_mis": 0.0},
+            "unpatched_ft": {"p_mis": 1.0},
+            "p_up": {"p_mis": 1.0},
+            "p_down": {"p_mis": 0.0},
+        },
+    }
+    (patch_dir / "em_c0_seed1_judged.json").write_text(json.dumps(judged))
+    result = analysis.analyze(tmp_path, primary_layer=1)
+    s = result["by_behavior"]["em"]
+    assert "f_cv_e_ci" in s, "summary must carry f_cv_e_ci"
+    assert s["f_cv_e_ci"]["n"] >= 1, "f_cv_e_ci must be populated from the judged file"
+    assert abs(s["f_cv_e_ci"]["mean"] - 1.0) < 1e-6, (
+        f"E0=0,E+=1,E_Pup=1 must give f_CV^E=1, got {s['f_cv_e_ci']['mean']}"
+    )
+    # render the hero and assert the EM column's E-row is NOT the placeholder.
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    assert analysis.BEHAVIORS[0] == "em", "fixture assumes em is the first column"
+    # Capture the figure render_hero builds by no-op'ing plt.close for this call,
+    # then inspect the EM column's E-row axis (row 1, col 0) directly.
+    captured_figs = []
+    real_close = plt.close
+
+    def _capture_close(arg=None):
+        if hasattr(arg, "axes"):
+            captured_figs.append(arg)
+        # don't actually close so we can inspect afterward.
+
+    plt.close = _capture_close
+    try:
+        out_png = tmp_path / "hero.png"
+        analysis.render_hero(result, out_png)
+    finally:
+        plt.close = real_close
+    assert out_png.exists(), "hero figure must render"
+    assert captured_figs, "render_hero must have produced a figure"
+    fig = captured_figs[-1]
+    em_e_axis = fig.axes[4]  # 2x4 grid, row-major: index 4 = row 1, col 0 (em E-row)
+    placeholder_on_em = any("E not yet judged" in t.get_text() for t in em_e_axis.texts)
+    real_close(fig)
+    assert not placeholder_on_em, "em E-row must not be the placeholder when judged data is present"
+
+
+# --- BLOCKER: pdown-verdict-crosscheck-not-wired --------------------------- #
+
+
+def test_pdown_verdict_crosscheck_patch_inconsistent(tmp_path):
+    """analyze() emits 'patch-inconsistent' when P↑ and P↓ disagree. Synthetic .pt
+    with p_up AT v_plus (f_CV → 1.0, 'context moved') and p_down AT v_plus
+    (f_CV_down → 0.0, 'context NOT necessary') — the two patches disagree, so the
+    verdict must be patch-inconsistent, NOT the confident 'context-vector-moved'."""
+    analysis = _import_analysis()
+    patch_dir = tmp_path / "eval_results" / "issue_697" / "patch"
+    patch_dir.mkdir(parents=True)
+    cell = _synth_cell_pt(behavior="em", pup_at="vplus", pdown_at="vplus")
+    torch.save(cell, patch_dir / f"{cell['cell_id']}.pt")
+    result = analysis.analyze(tmp_path, primary_layer=1)
+    s = result["by_behavior"]["em"]
+    # f_CV (P↑) ~ 1.0; f_CV_down (P↓) ~ 0.0 → disjoint CIs → patch-inconsistent.
+    assert abs(s["f_cv_ci"]["mean"] - 1.0) < 1e-4, s["f_cv_ci"]["mean"]
+    assert abs(s["f_cv_down_ci"]["mean"] - 0.0) < 1e-4, s["f_cv_down_ci"]["mean"]
+    assert s["verdict"] == "patch-inconsistent", (
+        f"P↑=1 / P↓=0 must give patch-inconsistent, got {s['verdict']!r}"
+    )
