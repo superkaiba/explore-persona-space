@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 717,
+  "highest_id": 718,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4492,6 +4492,13 @@
       "path": "tasks/on_hold/717",
       "status": "on_hold",
       "title": "Correct #664 vLLM gotchas: chunk-it red herring + r13 tokenizer-reload root cause"
+    },
+    "718": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/718",
+      "status": "proposed",
+      "title": "workflow-fix: crash-fix circuit-breaker \u2192 re-plan on spent fallback ladder"
     },
     "72": {
       "has_clean_result": false,
