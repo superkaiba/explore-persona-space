@@ -76,6 +76,31 @@ def data_disk_path() -> str:
     return raw or DEFAULT_DATA_DISK_PATH
 
 
+def _is_mounted(path: str) -> bool:
+    """True iff ``path`` is itself a mount point (a distinct filesystem).
+
+    A real mount-presence check — NOT ``Path(path).is_dir()`` (#681 round-2
+    Major). ``is_dir()`` is True for ANY directory, mounted or not: after
+    Phase-1's ``sudo mkdir -p /mnt/eps-data`` (which runs BEFORE the mount) or
+    after a ``nofail`` boot where the disk failed to mount, ``/mnt/eps-data``
+    exists as a plain root-fs directory, and the data-disk pass would then
+    misread ``/``'s statvfs (the boot disk) as data-disk usage. Comparing
+    ``st_dev`` against the parent's catches that: a real mount sits on a
+    different device than its parent; a plain subdirectory shares its parent's
+    device. Pure ``os.stat`` — no subprocess, fast, self-evidently correct.
+
+    Fail-soft: a missing path / stat error returns False (treated as "not
+    mounted" → the pass cleanly no-ops, never reports ``/``'s usage as the data
+    disk's). The filesystem root ``/`` is its own parent (``st_dev`` equal), so
+    this never claims an unmounted path IS the data disk."""
+    try:
+        st = os.stat(path)
+        parent = os.stat(os.path.join(path, os.pardir))
+    except OSError:
+        return False
+    return st.st_dev != parent.st_dev
+
+
 # Threshold-band boundaries (bytes) for the ACTIVE-task escalation dedup key. An
 # active issue holding a re-downloadable cache the terminal-gate cannot reap is
 # escalated (NEVER deleted); the band coarsens its footprint so a row re-fires
@@ -738,11 +763,15 @@ def main(argv: list[str] | None = None) -> int:
     # Data disk (/mnt/eps-data) — a SECOND, ESCALATE-ONLY pass: reclaim_tiers=False
     # so the /-rooted uv/log reclaims never run there, only tier (b)
     # (terminal-cache reap + active-cache escalation). Watched only when the mount
-    # actually exists (a missing data disk before the #681 cutover, or a failed
-    # mount, must be a clean no-op — the boot-disk pass is unaffected).
+    # is actually LIVE (a missing data disk before the #681 cutover, OR an
+    # existing-but-unmounted /mnt/eps-data — a plain dir left by Phase-1's
+    # `mkdir -p` or a `nofail` boot that failed to mount — must be a clean no-op,
+    # NEVER misread /'s statvfs as the data disk's, #681 round-2 Major). The
+    # is_dir() check is insufficient: a plain directory passes it. Require a real
+    # mount (_is_mounted, st_dev != parent).
     dd_path = args.data_disk_path or data_disk_path()
     data_res: GuardResult | None = None
-    if not args.no_data_disk and Path(dd_path).is_dir():
+    if not args.no_data_disk and _is_mounted(dd_path):
         data_res = run_guard(
             args.apply,
             threshold=args.threshold,

@@ -80,14 +80,20 @@ _bind_is_live() {
     eval "$probe"
     return $?
   fi
-  # Production probe: findmnt resolves the bind target as a mountpoint.
-  findmnt --noheadings --target "$REPO_ROOT/.claude/worktrees" >/dev/null 2>&1
+  # Production probe: the path itself MUST be a mountpoint. Use `findmnt
+  # --mountpoint` (NOT `--target`): `--target` walks UP to the containing
+  # filesystem and returns rc=0 for ANY ordinary directory on a mounted fs,
+  # so a MISSING bind would pass the assertion and the worktree would land
+  # silently on the boot disk `/` (#681 round-2 Critical). `--mountpoint`
+  # succeeds ONLY when the path is itself a mount, which is exactly the bind
+  # we are asserting is live.
+  findmnt --noheadings --mountpoint "$REPO_ROOT/.claude/worktrees" >/dev/null 2>&1
 }
 if [ "${EPS_WORKTREE_REQUIRE_BIND:-0}" = 1 ]; then
   if ! _bind_is_live; then
     echo "new_worktree: FATAL — the data-disk bind at $REPO_ROOT/.claude/worktrees is NOT live;" >&2
     echo "new_worktree: refusing to create a worktree that would land on the boot disk /." >&2
-    echo "new_worktree: check the mount: findmnt $REPO_ROOT/.claude/worktrees ; sudo mount -a" >&2
+    echo "new_worktree: check the mount: findmnt --mountpoint $REPO_ROOT/.claude/worktrees ; sudo mount -a" >&2
     exit 4
   fi
 fi

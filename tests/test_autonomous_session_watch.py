@@ -8960,10 +8960,16 @@ def test_repquota_attribution_parses_per_project_rows(monkeypatch):
 
 
 def _stub_data_disk_io(asw, monkeypatch, *, mounted, used_pct, top=None):
-    """Make data_disk_pass deterministic: control the is_dir() mount probe, the
+    """Make data_disk_pass deterministic: control the mount probe, the
     statvfs-derived used_pct, and the attribution. Returns the list the
-    sidecar-append closure records into."""
-    monkeypatch.setattr(asw.Path, "is_dir", lambda self: mounted)
+    sidecar-append closure records into.
+
+    The mount gate is ``_is_mounted`` (st_dev vs parent), NOT ``Path.is_dir()``
+    (#681 round-2 Major) — a plain directory passes ``is_dir()`` but is not a
+    mount, so the gate had to become a real mount check. Stub ``_is_mounted``
+    accordingly; ``test_data_disk_pass_production_gate_*`` below exercise the
+    REAL ``_is_mounted`` against real plain/mount dirs (no stub)."""
+    monkeypatch.setattr(asw, "_is_mounted", lambda dd_path: mounted)
     monkeypatch.setattr(asw, "_data_disk_used_pct", lambda dd_path: used_pct)
     # The production `_data_disk_top_caches` takes a `dry_run` kwarg (#681 r3 —
     # dry-run short-circuits the `du`/`repquota` attribution so a dry-run pass
@@ -9032,6 +9038,63 @@ def test_data_disk_pass_dry_run_writes_no_state(tmp_path, monkeypatch):
     asw.data_disk_pass(dry_run=True)
 
     assert not (tmp_path / "vm-disk-data.json").exists()
+
+
+def test_data_disk_pass_production_gate_noops_on_plain_dir(tmp_path, monkeypatch):
+    # PRODUCTION-PROBE (#681 round-2 Major): point the data-disk path at a plain
+    # (non-mount) dir on the root fs — an existing-but-unmounted /mnt/eps-data
+    # (Phase-1 `mkdir -p` / `nofail`-boot state) — and drive the REAL _is_mounted
+    # gate (no stub). data_disk_pass MUST no-op (return False, write NO sidecar
+    # row), NEVER misreading /'s statvfs as the data disk's. The old
+    # Path(dd_path).is_dir() gate (True for any dir) would have run the pass and
+    # emitted a row mirroring /'s percent.
+    import autonomous_session_watch as asw
+
+    plain = tmp_path / "mnt-eps-data-not-mounted"
+    plain.mkdir()  # exists, but NOT a mount (shares tmp_path's st_dev)
+    monkeypatch.setenv("EPS_VM_DATA_DISK_PATH", str(plain))
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+
+    recorded: list[dict] = []
+    monkeypatch.setattr(
+        asw, "_append_disk_guard_sidecar", lambda event, dry_run: recorded.append(event)
+    )
+    # Force a 99%-full read so ONLY the mount gate can suppress escalation: if the
+    # plain dir were wrongly treated as mounted, this would escalate loudly.
+    monkeypatch.setattr(asw, "_data_disk_used_pct", lambda dd_path: 99.0)
+
+    wrote = asw.data_disk_pass(dry_run=False)
+
+    assert wrote is False, "a plain (unmounted) data-disk dir must make the pass no-op"
+    assert recorded == [], "no sidecar row may be written for an unmounted data disk"
+    assert not (tmp_path / "vm-disk-data.json").exists(), "no dedup state on a no-op pass"
+
+
+def test_data_disk_pass_production_gate_fires_on_real_mount(tmp_path, monkeypatch):
+    # Counterpart: when _is_mounted reports a live mount, the REAL gate lets the
+    # pass run (it escalates at 96%). Stub only _is_mounted -> True (we cannot
+    # create a real mount without privilege); everything else is the production
+    # path, proving the gate is not stuck always-off after the fix.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    recorded = _stub_data_disk_io(asw, monkeypatch, mounted=True, used_pct=96.0)
+
+    wrote = asw.data_disk_pass(dry_run=False)
+
+    assert wrote is True
+    assert any(r["kind"] == "vm-disk-data-subfloor" for r in recorded)
+
+
+def test_is_mounted_false_on_plain_dir(tmp_path):
+    # Direct unit test of the shared helper: a plain dir on the root fs shares its
+    # parent's st_dev → not a mount. Mirrors vm_disk_guard._is_mounted.
+    import autonomous_session_watch as asw
+
+    plain = tmp_path / "fake-data-disk"
+    plain.mkdir()
+    assert asw._is_mounted(str(plain)) is False
+    assert asw._is_mounted(str(tmp_path / "missing")) is False  # fail-soft on missing
 
 
 def test_main_wires_data_disk_pass_call_site():

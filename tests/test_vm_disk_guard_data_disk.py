@@ -209,6 +209,96 @@ def test_data_disk_pass_dry_run_no_mutation(tmp_path, monkeypatch):
     assert all(applied is False for applied in push_applies)
 
 
+# ─── #681 round-2 Major: data-disk MOUNT-presence gate (not is_dir) ───────────
+
+
+def test_is_mounted_false_on_plain_dir(tmp_path):
+    """``_is_mounted`` MUST return False for a plain (non-mount) directory on the
+    root fs — the regression at the heart of the round-2 Major. A plain dir
+    shares its parent's st_dev, so it is NOT a mount."""
+    plain = tmp_path / "fake-data-disk"
+    plain.mkdir()
+    assert vdg._is_mounted(str(plain)) is False
+
+
+def test_is_mounted_false_on_missing_path(tmp_path):
+    """Fail-soft: a nonexistent path is treated as not-mounted (the pass
+    cleanly no-ops, never reporting /'s usage as the data disk's)."""
+    assert vdg._is_mounted(str(tmp_path / "does-not-exist")) is False
+
+
+def test_is_mounted_true_on_a_real_mount():
+    """A genuine mount point (here ``/proc``, present on every Linux CI host)
+    has a different st_dev than its parent → True. Skips gracefully if /proc is
+    somehow not a distinct mount (non-Linux CI)."""
+    import os
+
+    p = "/proc"
+    if not os.path.isdir(p) or os.stat(p).st_dev == os.stat(os.path.join(p, "..")).st_dev:
+        import pytest
+
+        pytest.skip("/proc is not a distinct mount on this host")
+    assert vdg._is_mounted(p) is True
+
+
+def test_main_skips_data_disk_pass_for_plain_dir(tmp_path, monkeypatch):
+    """PRODUCTION-PROBE (#681 round-2 Major): point the data-disk path at a plain
+    (non-mount) dir on the root fs and run ``main()``. The data-disk pass MUST
+    NOT run — ``main`` must call ``run_guard`` ONLY for ``/``, never with
+    ``disk_path=<plain dir>`` — so it can never misread /'s statvfs as the data
+    disk's. The old ``Path(dd_path).is_dir()`` gate (True for any dir) ran the
+    pass against the unmounted dir; the ``_is_mounted`` gate skips it."""
+    plain = tmp_path / "mnt-eps-data-not-mounted"
+    plain.mkdir()  # exists as a plain root-fs dir (Phase-1 mkdir / nofail-boot state)
+
+    calls: list[str | None] = []
+
+    def fake_run_guard(apply, *, threshold=None, log_max_age=None, **kw):
+        calls.append(kw.get("disk_path", "/"))
+        return vdg.GuardResult(
+            used_pct_before=40.0,
+            used_pct_after=40.0,
+            free_gb_before=200.0,
+            free_gb_after=200.0,
+            threshold_pct=85.0,
+            triggered=False,
+            apply=apply,
+        )
+
+    monkeypatch.setattr(vdg, "run_guard", fake_run_guard)
+    rc = vdg.main(["--data-disk-path", str(plain), "--json"])
+    assert rc == 0
+    # Only the boot-disk (/) pass ran; the data-disk pass was correctly SKIPPED.
+    assert calls == ["/"], f"data-disk pass must be skipped for a plain dir; got {calls}"
+
+
+def test_main_runs_data_disk_pass_for_real_mount(tmp_path, monkeypatch):
+    """Counterpart: when ``_is_mounted`` reports the data-disk path as a live
+    mount, ``main()`` DOES run the second (data-disk) ``run_guard`` pass — proving
+    the gate is not just always-off."""
+    calls: list[str | None] = []
+
+    def fake_run_guard(apply, *, threshold=None, log_max_age=None, **kw):
+        calls.append(kw.get("disk_path", "/"))
+        return vdg.GuardResult(
+            used_pct_before=40.0,
+            used_pct_after=40.0,
+            free_gb_before=200.0,
+            free_gb_after=200.0,
+            threshold_pct=85.0,
+            triggered=False,
+            apply=apply,
+        )
+
+    monkeypatch.setattr(vdg, "run_guard", fake_run_guard)
+    monkeypatch.setattr(vdg, "_is_mounted", lambda p: True)  # simulate a live mount
+    rc = vdg.main(["--data-disk-path", "/mnt/eps-data", "--json"])
+    assert rc == 0
+    assert "/" in calls and "/mnt/eps-data" in calls, (
+        f"both the boot-disk and data-disk passes must run for a live mount; got {calls}"
+    )
+
+
 if __name__ == "__main__":
     import pytest
 
